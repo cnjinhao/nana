@@ -1,0 +1,7 @@
+﻿Please refer to the Library Installation Documentation for the detailed installation instructions.
+http://nanapro.org/en-us/help/instl_lib_doc.htm
+NOTE: The method of library installation for VC2003/2005/2008/2010/2012 is only for the version older than 0.8. Since version 0.8, the library only works in VC2013 and later. If you have not VC2013 installed, please choose the latest Codeblocks instead.
+
+请参考库安装文档获取详细的安装步骤。
+http://nanapro.org/zh-cn/help/instl_lib_doc.htm
+注意: 针对VC2003/2005/2008/2010/2012的安装方法只适用于低于0.8的版本。从0.8版起，该库对Visual C++的最低版本要求是2013。如果您没有安装VC2013，可以使用最新版的CodeBlocks代替。
