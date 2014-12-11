@@ -129,7 +129,9 @@ namespace nana
 		void load(nana::string file);
 		void store(nana::string file);
 		void store(nana::string file, nana::unicode encoding);
-		textbox& reset(nana::string = {});      ///< discard the old text and set a newtext
+
+		//A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
+		textbox& reset(nana::string = nana::string());      ///< discard the old text and set a newtext
 
 		/// The file of last store operation.
 		nana::string filename() const;
