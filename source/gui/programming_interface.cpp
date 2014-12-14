@@ -157,7 +157,7 @@ namespace API
 			if(restrict::window_manager.available(iwd))
 			{
 				iwd->drawer.graphics.make(iwd->dimension.width, iwd->dimension.height);
-				iwd->drawer.graphics.rectangle(iwd->color.background, true);
+				iwd->drawer.graphics.rectangle(iwd->colors.background, true);
 				iwd->drawer.attached(wd, dr);
 				iwd->drawer.refresh();	//Always redrawe no matter it is visible or invisible. This can make the graphics data correctly.
 			}
@@ -790,24 +790,24 @@ namespace API
 			restrict::bedrock.pump_event(wd, false);
 	}
 
-	nana::color_t foreground(window wd)
+	nana::color_t foreground(window wd)	//deprecated
 	{
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->color.foreground;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.foreground;
 		return 0;
 	}
 
-	color_t foreground(window wd, color_t col)
+	color_t foreground(window wd, color_t col)	//deprecated
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->color.foreground;
+			color_t prev = iwd->colors.foreground;
 			if(prev != col)
 			{
-				iwd->color.foreground = col;
+				iwd->colors.foreground = col;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -815,24 +815,24 @@ namespace API
 		return 0;
 	}
 
-	color_t background(window wd)
+	color_t background(window wd)	//deprecated
 	{
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->color.background;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.background;
 		return 0;
 	}
 
-	color_t background(window wd, color_t col)
+	color_t background(window wd, color_t col)	//deprecated
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->color.background;
+			color_t prev = iwd->colors.background;
 			if(prev != col)
 			{
-				iwd->color.background = col;
+				iwd->colors.background = col;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -840,30 +840,107 @@ namespace API
 		return 0;
 	}
 
-	color_t active(window wd)
+	color_t active(window wd)	//deprecated
 	{
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->color.active;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.active;
 		return 0;
 	}
 
-	color_t active(window wd, color_t col)
+	color_t active(window wd, color_t col)	//deprecated
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->color.active;
+			color_t prev = iwd->colors.active;
 			if(prev != col)
 			{
-				iwd->color.active = col;
+				iwd->colors.active = col;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
 		}
 		
 		return 0;
+	}
+
+
+	expr_color fgcolor(window wd)
+	{
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.fgcolor;
+		return{};
+	}
+
+	expr_color fgcolor(window wd, const expr_color& col)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			auto prev = iwd->colors.fgcolor;
+			if (prev != col)
+			{
+				iwd->colors.fgcolor = col;
+				restrict::window_manager.update(iwd, true, false);
+			}
+			return prev;
+		}
+		return{};
+	}
+
+	expr_color bgcolor(window wd)
+	{
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.bgcolor;
+		return{};
+	}
+
+	expr_color bgcolor(window wd, const expr_color& col)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			auto prev = iwd->colors.bgcolor;
+			if (prev != col)
+			{
+				iwd->colors.bgcolor = col;
+				restrict::window_manager.update(iwd, true, false);
+			}
+			return prev;
+		}
+		return{};
+	}
+
+	expr_color activated_color(window wd)
+	{
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.activated;
+		return{};
+	}
+
+	expr_color activated_color(window wd, const expr_color& col)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			auto prev = iwd->colors.activated;
+			if (prev != col)
+			{
+				iwd->colors.activated = col;
+				restrict::window_manager.update(iwd, true, false);
+			}
+			return prev;
+		}
+
+		return{};
 	}
 
 	void create_caret(window wd, unsigned width, unsigned height)

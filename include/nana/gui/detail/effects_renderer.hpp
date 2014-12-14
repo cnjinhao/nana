@@ -110,7 +110,7 @@ namespace nana{
 						auto graph = wd->root_graph;
 						nana::paint::pixel_buffer pixbuf(graph->handle(), r);
 
-						pixel_rgb_t px0, px1, px2, px3;
+						pixel_argb_t px0, px1, px2, px3;
 						
 						px0 = pixbuf.pixel(0, 0);
 						px1 = pixbuf.pixel(r.width - 1, 0);
@@ -120,12 +120,12 @@ namespace nana{
 						good_r.x = good_r.y = 1;
 						good_r.width = r.width - 2;
 						good_r.height = r.height - 2;
-						pixbuf.rectangle(good_r, wd->color.active, 0.95, false);
+						pixbuf.rectangle(good_r, wd->colors.active, 0.95, false);
 
 						good_r.x = good_r.y = 0;
 						good_r.width = r.width;
 						good_r.height = r.height;
-						pixbuf.rectangle(good_r, wd->color.active, 0.4, false);
+						pixbuf.rectangle(good_r, wd->colors.active, 0.4, false);
 
 						pixbuf.pixel(0, 0, px0);
 						pixbuf.pixel(r.width - 1, 0, px1);

@@ -283,7 +283,6 @@ namespace detail
 	};
 
 	drawable_impl_type::drawable_impl_type()
-		:	fgcolor_(0xFFFFFFFF)
 	{
 		string.tab_length = 4;
 		string.tab_pixels = 0;
@@ -302,14 +301,76 @@ namespace detail
 #endif
 	}
 
-	void drawable_impl_type::fgcolor(unsigned color)
+	void drawable_impl_type::set_color(nana::color_t col)
 	{
-		if(color != fgcolor_)
+		color_ = col;
+	}
+
+	void drawable_impl_type::set_text_color(nana::color_t col)
+	{
+		text_color_ = col;
+		update_text_color();
+	}
+
+	void drawable_impl_type::update_color()
+	{
+		if (color_ != current_color_)
+		{
+			auto & spec = nana::detail::platform_spec::instance();
+			platform_scope_guard lock;
+
+			current_color_ = color_;
+			auto col = color_;
+			switch (spec.screen_depth())
+			{
+			case 16:
+				col = ((((col >> 16) & 0xFF) * 31 / 255) << 11) |
+					((((col >> 8) & 0xFF) * 63 / 255) << 5) |
+					(col & 0xFF) * 31 / 255;
+				break;
+			}
+			::XSetForeground(spec.open_display(), context, col);
+			::XSetBackground(spec.open_display(), context, col);
+		}
+	}
+
+	void drawable_impl_type::update_text_color()
+	{
+		if (text_color_ != current_color_)
+		{
+			auto & spec = nana::detail::platform_spec::instance();
+			platform_scope_guard lock;
+
+			current_color_ = text_color_;
+			auto col = text_color_;
+			switch (spec.screen_depth())
+			{
+			case 16:
+				col = ((((col >> 16) & 0xFF) * 31 / 255) << 11) |
+					((((col >> 8) & 0xFF) * 63 / 255) << 5) |
+					(col & 0xFF) * 31 / 255;
+				break;
+			}
+			::XSetForeground(spec.open_display(), context, col);
+			::XSetBackground(spec.open_display(), context, col);
+
+#if defined(NANA_UNICODE)
+			xft_fgcolor.color.red = ((0xFF0000 & col) >> 16) * 0x101;
+			xft_fgcolor.color.green = ((0xFF00 & col) >> 8) * 0x101;
+			xft_fgcolor.color.blue = (0xFF & col) * 0x101;
+			xft_fgcolor.color.alpha = 0xFFFF;
+#endif
+		}
+	}
+
+	void drawable_impl_type::fgcolor(nana::color_t color)
+	{
+		if (color != current_color_)
 		{
 			auto & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard psg;
 
-			fgcolor_ = color;
+			current_color_ = color;
 			switch(spec.screen_depth())
 			{
 			case 16:

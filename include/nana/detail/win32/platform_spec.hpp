@@ -91,8 +91,8 @@ namespace detail
 
 		HDC		context;
 		HBITMAP	pixmap;
-		pixel_rgb_t*	pixbuf_ptr;
-		std::size_t		bytes_per_line;
+		pixel_argb_t*	pixbuf_ptr{nullptr};
+		std::size_t		bytes_per_line{0};
 		font_ptr_t font;
 
 		struct pen_spec
@@ -136,9 +136,15 @@ namespace detail
 		drawable_impl_type();
 		~drawable_impl_type();
 
-		void fgcolor(nana::color_t);
+		void fgcolor(nana::color_t);	//deprecated
+		void set_color(nana::color_t);
+		void set_text_color(nana::color_t);
+
+		void update_pen();
+		void update_brush();
 	private:
-		unsigned fgcolor_;
+		unsigned color_{ 0xffffffff };
+		unsigned text_color_{0xffffffff};
 	};
 
 	class platform_spec

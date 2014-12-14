@@ -136,7 +136,7 @@ namespace nana
 						nana::rectangle crook_r = r;
 						crook_r.width = 16;
 						crook_.radio(at.check_style == checks::option);
-						crook_.draw(graph, 0xE6EFF4, 0x0, crook_r, element_state::normal);  
+						crook_.draw(graph, ::nana::expr_color(0xE6, 0xEF, 0xF4), colors::black, crook_r, element_state::normal);  
 					}
 				}
 

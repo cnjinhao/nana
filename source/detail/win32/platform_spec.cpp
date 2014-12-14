@@ -21,17 +21,15 @@ namespace nana
 namespace detail
 {
 	drawable_impl_type::drawable_impl_type()
-		:	pixbuf_ptr(nullptr), bytes_per_line(0),
-			fgcolor_(0xFFFFFFFF)
 	{
 		pen.handle = nullptr;
-		pen.color = nana::null_color;
+		pen.color = 0xffffffff;
 		pen.style = -1;
 		pen.width = -1;
 
 		brush.handle = nullptr;
 		brush.style = brush_spec::Solid;
-		brush.color = nana::null_color;
+		brush.color = 0xffffffff;
 
 		round_region.handle = nullptr;
 		round_region.radius_x = round_region.radius_y = 0;
@@ -52,14 +50,40 @@ namespace detail
 
 	void drawable_impl_type::fgcolor(nana::color_t col)
 	{
-		if(this->fgcolor_ != col)
+		set_text_color(col);
+	}
+
+	void drawable_impl_type::set_color(nana::color_t col)
+	{
+		color_ = col;
+	}
+
+	void drawable_impl_type::set_text_color(nana::color_t col)
+	{
+		if(text_color_ != col)
 		{
 			::SetTextColor(context, NANA_RGB(col));
-			fgcolor_ = col;
+			text_color_ = col;
 		}
 	}
 
-	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, nana::color_t color)
+	void drawable_impl_type::update_pen()
+	{
+		if (pen.color != color_)
+		{
+			pen.handle = ::CreatePen(PS_SOLID, 1, NANA_RGB(color_));
+			::DeleteObject(::SelectObject(context, pen.handle));
+			pen.color = color_;
+		}
+	}
+
+	void drawable_impl_type::update_brush()
+	{
+		if (brush.color != color_)
+			brush.set(context, brush.style, color_);
+	}
+	
+	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, nana::color_t color)	//deprecated
 	{
 		if(this->color != color || this->width != width || this->style != style)
 		{

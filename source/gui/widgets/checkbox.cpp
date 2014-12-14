@@ -93,7 +93,7 @@ namespace checkbox
 
 			void drawer::_m_draw_checkbox(graph_reference graph, unsigned first_line_height)
 			{
-				impl_->crook.draw(graph, widget_->background(), widget_->foreground(), rectangle(0, first_line_height > 16 ? (first_line_height - 16) / 2 : 0, 16, 16), API::element_state(*widget_));
+				impl_->crook.draw(graph, widget_->bgcolor(), widget_->fgcolor(), rectangle(0, first_line_height > 16 ? (first_line_height - 16) / 2 : 0, 16, 16), API::element_state(*widget_));
 			}
 
 			void drawer::_m_draw_title(graph_reference graph)

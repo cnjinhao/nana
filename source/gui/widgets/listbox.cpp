@@ -28,7 +28,7 @@ namespace nana
 		namespace listbox
 		{
 			//struct cell
-				cell::format::format(color_t bgcolor, color_t fgcolor)
+				cell::format::format(const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor)
 					: bgcolor{ bgcolor }, fgcolor{ fgcolor }
 				{}
 
@@ -53,7 +53,7 @@ namespace nana
 						custom_format(new format{ fmt })	//make_unique
 				{}
 
-				cell::cell(nana::string text, color_t bgcolor, color_t fgcolor)
+				cell::cell(nana::string text, const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor)
 					:	text(std::move(text)),
 						custom_format{ new format{ bgcolor, fgcolor } }	//make_unique
 				{}
@@ -577,8 +577,10 @@ namespace nana
 				typedef std::vector<cell> container;
 
 				container cells;
-				color_t bgcolor{0xFF000000};
-				color_t fgcolor{0xFF000000};
+				//color_t bgcolor{0xFF000000};	//deprecated
+				//color_t fgcolor{0xFF000000};
+				nana::expr_color bgcolor;
+				nana::expr_color fgcolor;
 				paint::image img;
 				nana::size img_show_size;
 
@@ -616,7 +618,7 @@ namespace nana
 					cells.emplace_back(std::move(s));
 				}
 
-				item_t(nana::string&& s, color_t bg, color_t fg)
+				item_t(nana::string&& s, const nana::expr_color& bg, const nana::expr_color& fg)
 					:	bgcolor(bg),
 						fgcolor(fg)
 				{
@@ -2343,12 +2345,15 @@ namespace nana
 					size_type n = essence_->number_of_lister_items(true);
 					if(0 == n)return;
 					widget * wdptr = essence_->lister.wd_ptr();
-					nana::color_t bgcolor = wdptr->background();
-					nana::color_t txtcolor = wdptr->foreground();
+					//nana::color_t bgcolor = wdptr->background();
+					//nana::color_t txtcolor = wdptr->foreground(); //deprecated
+					auto bgcolor = wdptr->bgcolor();
+					auto fgcolor = wdptr->fgcolor();
 
 					unsigned header_w = essence_->header.pixels();
+					essence_->graph->set_color(bgcolor);
 					if(header_w - essence_->scroll.offset_x < rect.width)
-						essence_->graph->rectangle(rect.x + header_w - essence_->scroll.offset_x, rect.y, rect.width - (header_w - essence_->scroll.offset_x), rect.height, bgcolor, true);
+						essence_->graph->rectangle(rectangle{ rect.x + static_cast<int>(header_w)-essence_->scroll.offset_x, rect.y, rect.width - (header_w - essence_->scroll.offset_x), rect.height }, true);
 
 					es_lister & lister = essence_->lister;
 					//The Tracker indicates the item where mouse placed.
@@ -2391,7 +2396,7 @@ namespace nana
 								if(n-- == 0)	break;
 								state = (tracker == idx	? essence_t::state_t::highlighted : essence_t::state_t::normal);
 
-								_m_draw_item(i_categ->items[lister.absolute(index_pair(idx.cat, offs))], x, y, txtoff, header_w, rect, subitems, bgcolor, txtcolor, state);
+								_m_draw_item(i_categ->items[lister.absolute(index_pair(idx.cat, offs))], x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
 								y += essence_->item_size;
 							}
 						}
@@ -2402,7 +2407,7 @@ namespace nana
 								if(n-- == 0)	break;
 								state = (tracker == idx ? essence_t::state_t::highlighted : essence_t::state_t::normal);
 
-								_m_draw_item(*i, x, y, txtoff, header_w, rect, subitems, bgcolor, txtcolor, state);
+								_m_draw_item(*i, x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
 								y += essence_->item_size;
 							}
 						}
@@ -2431,7 +2436,7 @@ namespace nana
 								if(n-- == 0)	break;
 								state = (idx == tracker ? essence_t::state_t::highlighted : essence_t::state_t::normal);
 
-								_m_draw_item(i_categ->items[lister.absolute(index_pair(idx.cat, pos))], x, y, txtoff, header_w, rect, subitems, bgcolor, txtcolor, state);
+								_m_draw_item(i_categ->items[lister.absolute(index_pair(idx.cat, pos))], x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
 								y += essence_->item_size;
 								++idx.item;
 							}
@@ -2444,7 +2449,7 @@ namespace nana
 
 								state = (idx == tracker ? essence_t::state_t::highlighted : essence_t::state_t::normal);
 
-								_m_draw_item(m, x, y, txtoff, header_w, rect, subitems, bgcolor, txtcolor, state);
+								_m_draw_item(m, x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
 								y += essence_->item_size;
 
 								++idx.item;
@@ -2452,21 +2457,25 @@ namespace nana
 						}
 					}
 
-					if(y < rect.y + static_cast<int>(rect.height))
-						essence_->graph->rectangle(rect.x, y, rect.width, rect.y + rect.height - y, bgcolor, true);
+					if (y < rect.y + static_cast<int>(rect.height))
+					{
+						essence_->graph->set_color(bgcolor);
+						essence_->graph->rectangle(rectangle{ rect.x, y, rect.width, rect.y + rect.height - y }, true);
+					}
 				}
 			private:
-				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::color_t bgcolor, essence_t::state_t state) const
+				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::expr_color bgcolor, essence_t::state_t state) const
 				{
 					bool sel = categ.selected();
 					if(sel && (categ.expand == false))
-						bgcolor = 0xD5EFFC;
+						bgcolor = nana::expr_color(0xD5, 0xEF, 0xFC);
 
-					if(state == essence_t::state_t::highlighted)
-						bgcolor = essence_->graph->mix(bgcolor, 0x99DEFD, 0.8);
+					if (state == essence_t::state_t::highlighted)
+						bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);
 
 					auto graph = essence_->graph;
-					graph->rectangle(x, y, width, essence_->item_size, bgcolor, true);
+					graph->set_color(bgcolor);
+					graph->rectangle(rectangle{ x, y, width, essence_->item_size }, true);
 
 					nana::paint::gadget::arrow_16_pixels(*graph, x + 5, y + (essence_->item_size - 16) /2, 0x3399, 2, (categ.expand ? nana::paint::gadget::directions::to_north : nana::paint::gadget::directions::to_south));
 					nana::size text_s = graph->text_extent_size(categ.text);
@@ -2491,25 +2500,26 @@ namespace nana
 					}
 				}
 
-				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color_t bgcolor, nana::color_t txtcolor, essence_t::state_t state) const
+				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::expr_color bgcolor, nana::expr_color fgcolor, essence_t::state_t state) const
 				{
 					if(item.flags.selected)
-						bgcolor = 0xD5EFFC;
-					else if ((item.bgcolor & 0xFF000000) == 0)
+						bgcolor = nana::expr_color(0xD5, 0xEF, 0xFC);
+					else if (!item.bgcolor.invisible())
 						bgcolor = item.bgcolor;
 
-					if((item.fgcolor & 0xFF000000) == 0)
-						txtcolor = item.fgcolor;
+					if(!item.fgcolor.invisible())
+						fgcolor = item.fgcolor;
 
 					auto graph = essence_->graph;
-					if(essence_t::state_t::highlighted == state)
-						bgcolor = graph->mix(bgcolor, 0x99DEFD, 0.8);
+					if (essence_t::state_t::highlighted == state)
+						bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);// = graph->mix(bgcolor, 0x99DEFD, 0.8); //deprecated
 
 					unsigned show_w = width - essence_->scroll.offset_x;
 					if(show_w >= r.width) show_w = r.width;
 
 					//draw the background
-					graph->rectangle(r.x, y, show_w, essence_->item_size, bgcolor, true);
+					graph->set_color(bgcolor);
+					graph->rectangle(rectangle{ r.x, y, show_w, essence_->item_size }, true);
 
 					int item_xpos = x;
 					bool first = true;
@@ -2541,7 +2551,7 @@ namespace nana
 								typedef std::remove_reference<decltype(crook_renderer_)>::type::state state;
 
 								crook_renderer_.check(item.flags.checked ?  state::checked : state::unchecked);
-								crook_renderer_.draw(*graph, bgcolor, txtcolor, essence_->checkarea(item_xpos, y), estate);
+								crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
 							}
 
 							auto & m_cell = item.cells[index];
@@ -2559,32 +2569,37 @@ namespace nana
 								ext_w += 18;
 							}
 
-							auto cell_txtcolor = txtcolor;
-							if (m_cell.custom_format)
+							auto cell_txtcolor = fgcolor;
+							if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))
 							{
-								if (!item.flags.selected && !(m_cell.custom_format->bgcolor & 0xFF000000))
+								if (!item.flags.selected)
 								{
 									auto cell_bgcolor = m_cell.custom_format->bgcolor;
 									if (essence_t::state_t::highlighted == state)
-										cell_bgcolor = graph->mix(cell_bgcolor, 0x99DEFD, 0.8);
-									graph->rectangle(item_xpos, y, header.pixels, essence_->item_size, cell_bgcolor, true);
+										cell_bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8); //= graph->mix(cell_bgcolor, 0x99DEFD, 0.8); //deprecated
+									graph->set_color(cell_bgcolor);
+									graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
 								}
 
-								if (!(m_cell.custom_format->bgcolor & 0xFF000000))
-									cell_txtcolor = m_cell.custom_format->fgcolor;
+								cell_txtcolor = m_cell.custom_format->fgcolor;
 							}
-							graph->string(item_xpos + ext_w, y + txtoff, cell_txtcolor, m_cell.text);
+							graph->set_text_color(cell_txtcolor);
+							graph->string(point{ item_xpos + ext_w, y + txtoff }, m_cell.text);
 
-							if(ts.width + ext_w > header.pixels)
+							if (ts.width + ext_w > header.pixels)
 							{
 								//The text is painted over the next subitem
 								int xpos = item_xpos + header.pixels - essence_->suspension_width;
-								graph->rectangle(xpos, y + 2, essence_->suspension_width, essence_->item_size - 4, bgcolor, true);
-								graph->string(xpos, y + 2, txtcolor, STR("..."));
+
+								graph->set_color(bgcolor);
+								graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
+								graph->set_text_color(fgcolor);
+								graph->string(point{ xpos, y + 2 }, STR("..."));
 
 								//Erase the part that over the next subitem.
-								auto erase_bgcolor = index + 1 < seqs.size() ? bgcolor : item.bgcolor;
-								graph->rectangle(item_xpos + header.pixels, y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4, erase_bgcolor, true);
+								if (index + 1 >= seqs.size())
+									graph->set_color(item.bgcolor);
+								graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
 							}
 						}
 
@@ -3021,26 +3036,26 @@ namespace nana
 					return cat_->items.at(pos_.item).flags.selected;
 				}
 
-				item_proxy & item_proxy::bgcolor(nana::color_t col)
+				item_proxy & item_proxy::bgcolor(const nana::expr_color& col)
 				{
-					cat_->items.at(pos_.item).flags.selected;
+					cat_->items.at(pos_.item).bgcolor = col;
 					ess_->update();
 					return *this;
 				}
 
-				nana::color_t item_proxy::bgcolor() const
+				nana::expr_color item_proxy::bgcolor() const
 				{
 					return cat_->items.at(pos_.item).bgcolor;
 				}
 
-				item_proxy& item_proxy::fgcolor(nana::color_t col)
+				item_proxy& item_proxy::fgcolor(const nana::expr_color& col)
 				{
 					cat_->items.at(pos_.item).fgcolor = col;
 					ess_->update();
 					return *this;
 				}
 
-				nana::color_t item_proxy::fgcolor() const
+				nana::expr_color item_proxy::fgcolor() const
 				{
 					return cat_->items.at(pos_.item).fgcolor;
 				}
@@ -3265,8 +3280,8 @@ namespace nana
 					if(wd && !(API::empty_window(wd->handle())))
 					{
 						auto & m = cat_->items.back();
-						m.bgcolor = wd->background();
-						m.fgcolor = wd->foreground();
+						m.bgcolor = wd->bgcolor();
+						m.fgcolor = wd->fgcolor();
 						ess_->update();
 					}
 				}
@@ -3425,8 +3440,8 @@ namespace nana
 					if (wd && !(API::empty_window(wd->handle())))
 					{
 						auto & m = cat_->items.back();
-						m.bgcolor = wd->background();
-						m.fgcolor = wd->foreground();
+						m.bgcolor = wd->bgcolor();
+						m.fgcolor = wd->fgcolor();
 						ess_->update();
 					}
 				}
@@ -3534,8 +3549,8 @@ namespace nana
 				if (false == API::empty_window(wd))
 				{
 					auto & item = ess.lister.at(pos);
-					item.bgcolor = API::background(wd);
-					item.fgcolor = API::foreground(wd);
+					item.bgcolor = bgcolor();
+					item.fgcolor = fgcolor();
 					ess.update();
 				}
 			}

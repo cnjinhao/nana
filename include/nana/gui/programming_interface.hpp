@@ -201,12 +201,20 @@ namespace API
 	void	capture_ignore_children(bool ignore); ///< Enables or disables the captured window whether redirects the mouse input to its children if the mouse is over its children.
 	void modal_window(window);                    ///< Blocks the routine til the specified window is closed.
 	void wait_for(window);
-	color_t foreground(window);
-	color_t foreground(window, color_t);
-	color_t background(window);
-	color_t background(window, color_t);
-	color_t	active(window);
-	color_t	active(window, color_t);
+	
+	color_t foreground(window);				//deprecated
+	color_t foreground(window, color_t);	//deprecated
+	color_t background(window);				//deprecated
+	color_t background(window, color_t);	//deprecated
+	color_t	active(window);					//deprecated
+	color_t	active(window, color_t);		//deprecated
+
+	expr_color fgcolor(window);
+	expr_color fgcolor(window, const expr_color&);
+	expr_color bgcolor(window);
+	expr_color bgcolor(window, const expr_color&);
+	expr_color activated_color(window);
+	expr_color activated_color(window, const expr_color&);
 
 	void create_caret(window, unsigned width, unsigned height);
 	void destroy_caret(window);

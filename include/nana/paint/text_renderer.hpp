@@ -18,6 +18,8 @@ namespace nana
 
 			void render(int x, int y, nana::color_t, const nana::char_t*, std::size_t len, unsigned restricted_pixels);
 			nana::size extent_size(int x, int y, const nana::char_t*, std::size_t len, unsigned restricted_pixels) const;
+
+			void render(const nana::point&, const nana::char_t*, std::size_t len, unsigned restricted_pixels, bool omiited);
 		private:
 			graph_reference graph_;
 			align text_align_;

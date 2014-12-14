@@ -259,9 +259,9 @@ namespace gadget
 		}
 	}
 
-	void cross(graphics& graph, int x, int y, uint32_t size, uint32_t thickness, nana::color_t color)
+	void cross(graphics& graph, int x, int y, uint32_t size, uint32_t thickness, ::nana::color_t color) //deprecated
 	{
-		if(thickness + 2 <= size)
+		if (thickness + 2 <= size)
 		{
 			int gap = (size - thickness) / 2;
 
@@ -300,15 +300,72 @@ namespace gadget
 			ps[11].x = x + gap;
 			ps[11].y = y + gap;
 
-			nana::color_t dkcolor = graph.mix(color, 0x0, 0.5);
-			for(int i = 0; i < 11; ++i)
+			nana::color_t dkcolor = graph.mix(color, 0x0, 0.5);	//deprecated
+
+			for (int i = 0; i < 11; ++i)
 				graph.line(ps[i], ps[i + 1], dkcolor);
 			graph.line(ps[11], ps[0], dkcolor);
 
 			graph.rectangle(ps[10].x + 1, ps[10].y + 1, (gap << 1) + thickness - 2, thickness - 2, color, true);
 			graph.rectangle(ps[0].x + 1, ps[0].y + 1, thickness - 2, (gap << 1) + thickness - 2, color, true);
-
 		}
+
+	}
+
+	void cross(graphics& graph, int x, int y, uint32_t size, uint32_t thickness, const ::nana::expr_color& color)
+	{
+			if (thickness + 2 <= size)
+			{
+				int gap = (size - thickness) / 2;
+
+				nana::point ps[12];
+				ps[0].x = x + gap;
+				ps[1].x = ps[0].x + thickness - 1;
+				ps[1].y = ps[0].y = y;
+
+				ps[2].x = ps[1].x;
+				ps[2].y = y + gap;
+
+				ps[3].x = ps[2].x + gap;
+				ps[3].y = ps[2].y;
+
+				ps[4].x = ps[3].x;
+				ps[4].y = ps[3].y + thickness - 1;
+
+				ps[5].x = ps[1].x;
+				ps[5].y = ps[4].y;
+
+				ps[6].x = ps[5].x;
+				ps[6].y = ps[5].y + gap;
+
+				ps[7].x = x + gap;
+				ps[7].y = ps[6].y;
+
+				ps[8].x = ps[7].x;
+				ps[8].y = ps[4].y;
+
+				ps[9].x = x;
+				ps[9].y = ps[4].y;
+
+				ps[10].x = x;
+				ps[10].y = y + gap;
+
+				ps[11].x = x + gap;
+				ps[11].y = y + gap;
+
+				::nana::expr_color darker(0, 0, 0);
+				darker.blend(color, true);
+				graph.set_color(darker);
+
+				for (int i = 0; i < 11; ++i)
+					graph.line(ps[i], ps[i + 1]);
+				graph.line(ps[11], ps[0]);
+
+				graph.set_color(color);
+				graph.rectangle(rectangle{ ps[10].x + 1, ps[10].y + 1, (gap << 1) + thickness - 2, thickness - 2 }, true);
+				graph.rectangle(rectangle{ ps[0].x + 1, ps[0].y + 1, thickness - 2, (gap << 1) + thickness - 2 }, true);
+
+			}
 	}
 }//end namespace gadget
 	

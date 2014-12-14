@@ -102,7 +102,7 @@ namespace nana{	namespace paint
 
 							pixbuf_.open(info->bmiHeader.biWidth, height_pixels);
 
-							pixel_rgb_t * d = pixbuf_.raw_ptr(0);
+							auto d = pixbuf_.raw_ptr(0);
 
 							if(16 <= info->bmiHeader.biBitCount)
 							{
@@ -110,23 +110,23 @@ namespace nana{	namespace paint
 							}
 							else if(8 == info->bmiHeader.biBitCount)
 							{
-								const pixel_rgb_t * const lend = d + info->bmiHeader.biWidth * height_pixels;
+								const auto lend = d + info->bmiHeader.biWidth * height_pixels;
 
 								if(info->bmiHeader.biHeight < 0)
 								{
-									const unsigned char* s = bits;
+									auto s = bits;
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
-										const unsigned char * s_p = s;
+										auto d_p = d;
+										auto dpend = d_p + info->bmiHeader.biWidth;
+										auto s_p = s;
 										while(d_p != dpend)
 										{
 											rgb_quad & rgb = info->bmiColors[*s_p++];
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 										}
 										d = dpend;
@@ -135,19 +135,19 @@ namespace nana{	namespace paint
 								}
 								else
 								{
-									const unsigned char* s = bits + bytes_per_line * (height_pixels - 1);
+									const auto* s = bits + bytes_per_line * (height_pixels - 1);
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
-										const unsigned char * s_p = s;
+										auto d_p = d;
+										auto* const dpend = d_p + info->bmiHeader.biWidth;
+										const auto * s_p = s;
 										while(d_p != dpend)
 										{
 											rgb_quad & rgb = info->bmiColors[*s_p++];
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 										}
 										d = dpend;
@@ -157,23 +157,23 @@ namespace nana{	namespace paint
 							}
 							else if(4 == info->bmiHeader.biBitCount)
 							{
-								const pixel_rgb_t * const lend = d + info->bmiHeader.biWidth * height_pixels;
+								const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
 								if(info->bmiHeader.biHeight < 0)
 								{
 									const unsigned char* s = bits;
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
+										auto d_p = d;
+										auto * const dpend = d_p + info->bmiHeader.biWidth;
 										unsigned index = 0;
 										while(d_p != dpend)
 										{
 											rgb_quad & rgb = info->bmiColors[(index & 1) ? (s[index >> 1] & 0xF) : (s[index >> 1] & 0xF0) >> 4];
 
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 											++index;
 										}
@@ -183,21 +183,21 @@ namespace nana{	namespace paint
 								}
 								else
 								{
-									const unsigned char* s = bits + bytes_per_line * (height_pixels - 1);
+									const auto* s = bits + bytes_per_line * (height_pixels - 1);
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
+										auto d_p = d;
+										auto * const dpend = d_p + info->bmiHeader.biWidth;
 
 										unsigned index = 0;
 										while(d_p != dpend)
 										{
 											rgb_quad & rgb = info->bmiColors[(index & 1) ? (s[index >> 1] & 0xF) : (s[index >> 1] & 0xF0) >> 4];
 
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 											++index;
 										}
@@ -208,24 +208,24 @@ namespace nana{	namespace paint
 							}
 							else if(2 == info->bmiHeader.biBitCount)
 							{
-								const pixel_rgb_t * const lend = d + info->bmiHeader.biWidth * height_pixels;
+								const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
 								if(info->bmiHeader.biHeight < 0)
 								{
 									const unsigned char* s = bits;
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
+										auto d_p = d;
+										auto * const dpend = d_p + info->bmiHeader.biWidth;
 										unsigned index = 0;
 										while(d_p != dpend)
 										{
 											unsigned shift = (3 - (index & 0x3)) << 1; // (index % 4) * 2
 											rgb_quad& rgb = info->bmiColors[(s[index >> 2] & (0x3 << shift))>>shift];
 
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 											++index;
 										}
@@ -235,11 +235,11 @@ namespace nana{	namespace paint
 								}
 								else
 								{
-									const unsigned char* s = bits + bytes_per_line * (height_pixels - 1);
+									const auto* s = bits + bytes_per_line * (height_pixels - 1);
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
+										auto d_p = d;
+										auto * const dpend = d_p + info->bmiHeader.biWidth;
 
 										unsigned index = 0;
 										while(d_p != dpend)
@@ -247,10 +247,10 @@ namespace nana{	namespace paint
 											unsigned shift = (3 - (index & 0x3)) << 1; // (index % 4) * 2
 											rgb_quad& rgb = info->bmiColors[(s[index >> 2] & (0x3 << shift))>>shift];
 
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 											++index;
 										}
@@ -261,24 +261,24 @@ namespace nana{	namespace paint
 							}
 							else if(1 == info->bmiHeader.biBitCount)
 							{
-								const pixel_rgb_t * const lend = d + info->bmiHeader.biWidth * height_pixels;
+								const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
 								if(info->bmiHeader.biHeight < 0)
 								{
-									const unsigned char* s = bits;
+									const auto* s = bits;
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
+										auto d_p = d;
+										auto * const dpend = d_p + info->bmiHeader.biWidth;
 										unsigned index = 0;
 										while(d_p != dpend)
 										{
 											unsigned bi = (7 - (index & 7));	//(index % 8)
 											rgb_quad & rgb = info->bmiColors[(s[index >> 3] & (1 << bi)) >> bi];
 
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 											++index;
 										}
@@ -288,11 +288,11 @@ namespace nana{	namespace paint
 								}
 								else
 								{
-									const unsigned char* s = bits + bytes_per_line * (height_pixels - 1);
+									const auto* s = bits + bytes_per_line * (height_pixels - 1);
 									while(d < lend)
 									{
-										pixel_rgb_t * d_p = d;
-										pixel_rgb_t * const dpend = d_p + info->bmiHeader.biWidth;
+										auto d_p = d;
+										auto * const dpend = d_p + info->bmiHeader.biWidth;
 
 										unsigned index = 0;
 										while(d_p != dpend)
@@ -300,10 +300,10 @@ namespace nana{	namespace paint
 											unsigned bi = (7 - (index & 7));
 											rgb_quad & rgb = info->bmiColors[(s[index >> 3] & (1 << bi)) >> bi];
 
-											d_p->u.element.red = rgb.rgbRed;
-											d_p->u.element.green = rgb.rgbGreen;
-											d_p->u.element.blue = rgb.rgbBlue;
-											d_p->u.element.alpha_channel = rgb.rgbReserved;
+											d_p->element.red = rgb.rgbRed;
+											d_p->element.green = rgb.rgbGreen;
+											d_p->element.blue = rgb.rgbBlue;
+											d_p->element.alpha_channel = rgb.rgbReserved;
 											++d_p;
 											++index;
 										}

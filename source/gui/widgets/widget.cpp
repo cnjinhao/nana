@@ -143,22 +143,42 @@ namespace nana
 
 		void widget::foreground(nana::color_t value)
 		{
-			_m_foreground(value);
+			_m_fgcolor(expr_color(static_cast<colors>(value)));
 		}
 
 		nana::color_t widget::foreground() const
 		{
-			return _m_foreground();
+			return _m_fgcolor().argb().value;
 		}
 
 		void widget::background(nana::color_t value)
 		{
-			_m_background(value);
+			_m_bgcolor(expr_color(static_cast<colors>(value)));
 		}
 
 		nana::color_t widget::background() const
 		{
-			return _m_background();
+			return _m_bgcolor().argb().value;
+		}
+
+		void widget::fgcolor(const nana::expr_color& col)
+		{
+			_m_fgcolor(col);
+		}
+
+		nana::expr_color widget::fgcolor() const
+		{
+			return _m_fgcolor();
+		}
+
+		void widget::bgcolor(const nana::expr_color& col)
+		{
+			_m_bgcolor(col);
+		}
+
+		nana::expr_color widget::bgcolor() const
+		{
+			return _m_bgcolor();
 		}
 
 		general_events& widget::events() const
@@ -261,24 +281,24 @@ namespace nana
 			return API::typeface(handle());
 		}
 
-		void widget::_m_foreground(nana::color_t value)
+		void widget::_m_fgcolor(const nana::expr_color& col)
 		{
-			API::foreground(handle(), value);
+			API::fgcolor(handle(), col);
 		}
 
-		nana::color_t widget::_m_foreground() const
+		nana::expr_color widget::_m_fgcolor() const
 		{
-			return API::foreground(handle());
+			return API::fgcolor(handle());
 		}
 
-		void widget::_m_background(nana::color_t value)
+		void widget::_m_bgcolor(const nana::expr_color& col)
 		{
-			API::background(handle(), value);
+			API::bgcolor(handle(), col);
 		}
 
-		nana::color_t widget::_m_background() const
+		nana::expr_color widget::_m_bgcolor() const
 		{
-			return API::background(handle());
+			return API::bgcolor(handle());
 		}
 
 	//end class widget

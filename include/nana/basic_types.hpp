@@ -103,21 +103,84 @@ namespace nana
 
 	const color_t null_color = 0xFFFFFFFF;
 
-	struct pixel_rgb_t
+	union pixel_argb_t
 	{
-		union
+		struct element_tag
 		{
-			struct element_tag
-			{
-				unsigned int blue:8;
-				unsigned int green:8;
-				unsigned int red:8;
-				unsigned int alpha_channel:8;
-			}element;
-
-			color_t color;
-		}u;
+			unsigned int blue:8;
+			unsigned int green:8;
+			unsigned int red:8;
+			unsigned int alpha_channel:8;
+		}element;
+		color_t value;
 	};
+
+	union pixel_rgba_t
+	{
+		struct element_tag
+		{
+			unsigned int alpha_channel : 8;
+			unsigned int blue : 8;
+			unsigned int green : 8;
+			unsigned int red : 8;
+		}element;
+		color_t value;
+	};
+
+	using pixel_color_t = pixel_argb_t;
+
+	//http://www.w3.org/TR/2011/REC-css3-color-20110607/
+	//4.3. Extended color keywords
+	enum class colors
+	{
+		black	= 0x0,
+		blue	= 0x0000FF,
+
+		gray	= 0x808080,
+		green	= 0x00FF00,
+		red		= 0xFF0000,
+		white	= 0xFFFFFF,
+
+		button_face_shadow_start = 0xF5F4F2,
+		button_face_shadow_end = 0xD5D2CA,
+		button_face = 0xD4D0C8,
+		dark_border = 0x404040,
+		gray_border = 0x808080,
+		highlight = 0x1CC4F7
+	};
+
+	class expr_color
+	{
+	public:
+		expr_color() = default;
+		expr_color(colors);
+		expr_color(colors, double alpha);
+		expr_color(unsigned red, unsigned green, unsigned blue);
+		expr_color(unsigned red, unsigned green, unsigned blue, double alpha);
+
+		void blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha);
+
+		///< Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
+		void blend(const expr_color& bgcolor, double alpha);
+
+		bool invisible() const;
+		pixel_argb_t argb() const;
+		pixel_rgba_t rgba() const;
+
+		const double& r() const;
+		const double& g() const;
+		const double& b() const;
+		const double& a() const;
+
+		bool operator==(const expr_color& other) const;
+		bool operator!=(const expr_color& other) const;
+	private:
+		double r_;
+		double g_;
+		double b_;
+		double a_{ 0.0 };
+	};
+
 
 	struct rectangle;
 

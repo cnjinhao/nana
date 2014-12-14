@@ -13,6 +13,124 @@
 
 namespace nana
 {
+	//class color
+
+	expr_color::expr_color(colors col)
+		: expr_color((static_cast<unsigned>(col)& 0xFF0000) >> 16, (static_cast<unsigned>(col)& 0xFF00) >> 8, static_cast<unsigned>(col)& 0xFF)
+	{
+	}
+
+	expr_color::expr_color(colors col, double alpha)
+		: expr_color((static_cast<unsigned>(col)& 0xFF0000) >> 16, (static_cast<unsigned>(col)& 0xFF00) >> 8, static_cast<unsigned>(col)& 0xFF, alpha)
+	{
+	}
+
+	expr_color::expr_color(unsigned red, unsigned green, unsigned blue)
+		: a_(1.0), r_(red), g_(green), b_(blue)
+	{
+	}
+	
+	expr_color::expr_color(unsigned red, unsigned green, unsigned blue, double alpha)
+		: a_(alpha), r_(red), g_(green), b_(blue)
+	{
+		if (alpha < 0.0)
+			a_ = 0.0;
+		else if (alpha > 1.0)
+			a_ = 1.0;
+	}
+
+	void expr_color::blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha)
+	{
+		if (a_ < 1.0)
+		{
+			if (0.0 < a_)
+			{
+				if (ignore_bgcolor_alpha || (1.0 == bgcolor.b_))
+				{
+					r_ = r_ * a_ + bgcolor.r_ * (1.0 - a_);
+					g_ = g_ * a_ + bgcolor.g_ * (1.0 - a_);
+					b_ = b_ * a_ + bgcolor.b_ * (1.0 - a_);
+					a_ = 1.0;
+				}
+				else
+				{
+					r_ = r_ * a_ + bgcolor.r_ * bgcolor.a_ * (1.0 - a_);
+					g_ = g_ * a_ + bgcolor.g_ * bgcolor.a_ * (1.0 - a_);
+					b_ = b_ * a_ + bgcolor.b_ * bgcolor.a_ * (1.0 - a_);
+					a_ = a_ + (bgcolor.a_ * (1.0 - a_));
+				}
+			}
+			else
+			{
+				r_ = bgcolor.r_;
+				g_ = bgcolor.g_;
+				b_ = bgcolor.b_;
+				a_ = (ignore_bgcolor_alpha ? 1.0 : bgcolor.a_);
+			}
+		}
+	}
+
+	void expr_color::blend(const expr_color& bgcolor, double alpha)
+	{
+		r_ = r_ * alpha + bgcolor.r_ * (1.0 - alpha);
+		g_ = g_ * alpha + bgcolor.g_ * (1.0 - alpha);
+		b_ = b_ * alpha + bgcolor.b_ * (1.0 - alpha);
+		a_ = 1.0;
+	}
+
+	bool expr_color::invisible() const
+	{
+		return (a_ == 0.0);
+	}
+	
+	pixel_argb_t expr_color::argb() const
+	{
+		pixel_argb_t argb;
+		argb.element.red = static_cast<unsigned>(r_);
+		argb.element.green = static_cast<unsigned>(g_);
+		argb.element.blue = static_cast<unsigned>(b_);
+		argb.element.alpha_channel = static_cast<unsigned>(a_ * 255);
+		return argb;
+	}
+
+	pixel_rgba_t expr_color::rgba() const
+	{
+		pixel_rgba_t rgba;
+		rgba.element.red = static_cast<unsigned>(r_);
+		rgba.element.green = static_cast<unsigned>(g_);
+		rgba.element.blue = static_cast<unsigned>(b_);
+		rgba.element.alpha_channel = static_cast<unsigned>(a_ * 255);
+		return rgba;
+	}
+
+	const double& expr_color::r() const
+	{
+		return r_;
+	}
+	const double& expr_color::g() const
+	{
+		return g_;
+	}
+	const double& expr_color::b() const
+	{
+		return b_;
+	}
+
+	const double& expr_color::a() const
+	{
+		return a_;
+	}
+
+	bool expr_color::operator==(const expr_color& other) const
+	{
+		return (r_ == other.r_ && g_ == other.g_ && b_ == other.b_ && a_ == other.a_);
+	}
+	bool expr_color::operator!=(const expr_color& other) const
+	{
+		return (r_ != other.r_ || g_ == other.g_ || b_ == other.b_ || a_ == other.a_);
+	}
+
+	//end class color
 	//struct point
 		point::point():x(0), y(0){}
 		point::point(int x, int y):x(x), y(y){}

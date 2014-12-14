@@ -83,43 +83,44 @@ namespace detail
 	{
 		delete [] table;
 	}
-
-	nana::pixel_rgb_t fade_color(nana::pixel_rgb_t bgcolor, nana::pixel_rgb_t fgcolor, double fade_rate)
+	/*
+	nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, double fade_rate)	//deprecated
 	{
-		pixel_rgb_t ret;
+		pixel_color_t ret;
 		double lrate = 1.0 - fade_rate;
 
-		ret.u.element.red = static_cast<unsigned char>(bgcolor.u.element.red * fade_rate + fgcolor.u.element.red * lrate);
-		ret.u.element.green = static_cast<unsigned char>(bgcolor.u.element.green * fade_rate + fgcolor.u.element.green * lrate);
-		ret.u.element.blue = static_cast<unsigned char>(bgcolor.u.element.blue * fade_rate + fgcolor.u.element.blue * lrate);
-		ret.u.element.alpha_channel = 0;
+		ret.element.red = static_cast<unsigned char>(bgcolor.element.red * fade_rate + fgcolor.element.red * lrate);
+		ret.element.green = static_cast<unsigned char>(bgcolor.element.green * fade_rate + fgcolor.element.green * lrate);
+		ret.element.blue = static_cast<unsigned char>(bgcolor.element.blue * fade_rate + fgcolor.element.blue * lrate);
+		ret.element.alpha_channel = 0;
 		return ret;
 	}
 
-	nana::pixel_rgb_t fade_color(nana::pixel_rgb_t bgcolor, nana::pixel_rgb_t fgcolor, const unsigned char* const fade_table)
+	nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, const unsigned char* const fade_table)	//deprecated
 	{
 		const unsigned char * const s_fade_table = fade_table + 0x100;
 
-		bgcolor.u.element.red = fade_table[bgcolor.u.element.red] + s_fade_table[fgcolor.u.element.red];
-		bgcolor.u.element.green = fade_table[bgcolor.u.element.green] + s_fade_table[fgcolor.u.element.green];
-		bgcolor.u.element.blue = fade_table[bgcolor.u.element.blue] + s_fade_table[fgcolor.u.element.blue];
+		bgcolor.element.red = fade_table[bgcolor.element.red] + s_fade_table[fgcolor.element.red];
+		bgcolor.element.green = fade_table[bgcolor.element.green] + s_fade_table[fgcolor.element.green];
+		bgcolor.element.blue = fade_table[bgcolor.element.blue] + s_fade_table[fgcolor.element.blue];
 		return bgcolor;
 	}
+	*/
 
-	nana::pixel_rgb_t fade_color_intermedia(nana::pixel_rgb_t fgcolor, const unsigned char* fade_table)
+	nana::pixel_color_t fade_color_intermedia(nana::pixel_color_t fgcolor, const unsigned char* fade_table)
 	{
 		fade_table += 0x100;
-		fgcolor.u.element.red = fade_table[fgcolor.u.element.red];
-		fgcolor.u.element.green = fade_table[fgcolor.u.element.green];
-		fgcolor.u.element.blue = fade_table[fgcolor.u.element.blue];
+		fgcolor.element.red = fade_table[fgcolor.element.red];
+		fgcolor.element.green = fade_table[fgcolor.element.green];
+		fgcolor.element.blue = fade_table[fgcolor.element.blue];
 		return fgcolor;
 	}
 
-	nana::pixel_rgb_t fade_color_by_intermedia(nana::pixel_rgb_t bgcolor, nana::pixel_rgb_t fgcolor_intermedia, const unsigned char* const fade_table)
+	nana::pixel_color_t fade_color_by_intermedia(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor_intermedia, const unsigned char* const fade_table)
 	{
-		bgcolor.u.element.red = fade_table[bgcolor.u.element.red] + fgcolor_intermedia.u.element.red;
-		bgcolor.u.element.green = fade_table[bgcolor.u.element.green] + fgcolor_intermedia.u.element.green;
-		bgcolor.u.element.blue = fade_table[bgcolor.u.element.blue] + fgcolor_intermedia.u.element.blue;
+		bgcolor.element.red = fade_table[bgcolor.element.red] + fgcolor_intermedia.element.red;
+		bgcolor.element.green = fade_table[bgcolor.element.green] + fgcolor_intermedia.element.green;
+		bgcolor.element.blue = fade_table[bgcolor.element.blue] + fgcolor_intermedia.element.blue;
 		return bgcolor;
 	}
 
@@ -141,14 +142,14 @@ namespace detail
 
 		for(std::size_t row = 0; row < r.height; ++row)
 		{
-			nana::pixel_rgb_t * i = pixbuf.raw_ptr(row) + r.x;
-			const nana::pixel_rgb_t * const end = i + r.width;
+			auto i = pixbuf.raw_ptr(row) + r.x;
+			const auto end = i + r.width;
 			for(; i < end; ++i)
 			{
-				unsigned px_r = ((static_cast<unsigned>((i->u.color & 0xFF0000) * lrate) + red) & 0xFF0000);
-				unsigned px_g = ((static_cast<unsigned>((i->u.color & 0xFF00) * lrate) + green) & 0xFF00);
-				unsigned px_b = ((static_cast<unsigned>((i->u.color & 0xFF) * lrate) + blue) & 0xFF);
-				i->u.color = (px_r | px_g | px_b);
+				unsigned px_r = ((static_cast<unsigned>((i->value & 0xFF0000) * lrate) + red) & 0xFF0000);
+				unsigned px_g = ((static_cast<unsigned>((i->value & 0xFF00) * lrate) + green) & 0xFF00);
+				unsigned px_b = ((static_cast<unsigned>((i->value & 0xFF) * lrate) + blue) & 0xFF);
+				i->value = (px_r | px_g | px_b);
 			}
 		}
 		pixbuf.paste(nana::rectangle(r.x, 0, r.width, r.height), dw, r.x, r.y);
@@ -195,15 +196,15 @@ namespace detail
 		return extents;
 	}
 
-	void draw_string(drawable_type dw, int x, int y, const nana::char_t * str, std::size_t len)
+	void draw_string(drawable_type dw, const nana::point& pos, const nana::char_t * str, std::size_t len)
 	{
 #if defined(NANA_WINDOWS)
-		::TextOut(dw->context, x, y, str, static_cast<int>(len));
+		::TextOut(dw->context, pos.x, pos.y, str, static_cast<int>(len));
 #elif defined(NANA_X11)
 	#if defined(NANA_UNICODE)
 		std::string utf8str = nana::charset(nana::string(str, len));
 		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
-		::XftDrawStringUtf8(dw->xftdraw, &(dw->xft_fgcolor), fs, x, y + fs->ascent,
+		::XftDrawStringUtf8(dw->xftdraw, &(dw->xft_fgcolor), fs, pos.x, pos.y + fs->ascent,
 							reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size());
 	#else
 		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->handle);
@@ -221,7 +222,7 @@ namespace detail
 			if(descent < (*i)->descent)
 				descent = (*i)->descent;
 		}
-		XmbDrawString(display, dw->pixmap, reinterpret_cast<XFontSet>(dw->font->handle), dw->context, x, y + ascent + descent, buf, len);
+		XmbDrawString(display, dw->pixmap, reinterpret_cast<XFontSet>(dw->font->handle), dw->context, pos.x, pos.y + ascent + descent, buf, len);
 	#endif
 #endif
 	}

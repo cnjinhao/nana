@@ -72,7 +72,7 @@ namespace nana
 								const bool is_alpha_enabled = ((PNG_COLOR_MASK_ALPHA & color_type) != 0);
 								pixbuf_.alpha_channel(is_alpha_enabled);
 
-								if(is_alpha_enabled && (png_rowbytes == png_width * sizeof(pixel_rgb_t)))
+								if(is_alpha_enabled && (png_rowbytes == png_width * sizeof(pixel_argb_t)))
 								{
 									for(int i = 0; i < png_height; ++i)
 										row_ptrs[i] = reinterpret_cast<png_bytep>(pixbuf_.raw_ptr(i));
@@ -85,9 +85,9 @@ namespace nana
 										auto p = pixbuf_.raw_ptr(i);
 										for (int u = 0; u < png_width; ++u)
 										{
-											auto t = p[u].u.element.red;
-											p[u].u.element.red = p[u].u.element.blue;
-											p[u].u.element.blue = t;
+											auto t = p[u].element.red;
+											p[u].element.red = p[u].element.blue;
+											p[u].element.blue = t;
 										}
 									}
 								}
@@ -103,32 +103,32 @@ namespace nana
 
 									std::size_t png_pixel_bytes = png_rowbytes / png_width;
 
-									pixel_rgb_t * rgb_row_ptr = pixbuf_.raw_ptr(0);
+									pixel_argb_t * rgb_row_ptr = pixbuf_.raw_ptr(0);
 									for(int y = 0; y < png_height; ++y)
 									{
 										png_bytep png_ptr = row_ptrs[y];
 
-										pixel_rgb_t * rgb_end = rgb_row_ptr + png_width;
+										pixel_argb_t * rgb_end = rgb_row_ptr + png_width;
 
 										if(is_alpha_enabled)
 										{
-											for(pixel_rgb_t * i = rgb_row_ptr; i < rgb_end; ++i)
+											for(pixel_argb_t * i = rgb_row_ptr; i < rgb_end; ++i)
 											{
-												i->u.element.red = png_ptr[0];
-												i->u.element.green = png_ptr[1];
-												i->u.element.blue = png_ptr[2];
-												i->u.element.alpha_channel = png_ptr[3];
+												i->element.red = png_ptr[0];
+												i->element.green = png_ptr[1];
+												i->element.blue = png_ptr[2];
+												i->element.alpha_channel = png_ptr[3];
 												png_ptr += png_pixel_bytes;
 											}
 										}
 										else
 										{
-											for(pixel_rgb_t * i = rgb_row_ptr; i < rgb_end; ++i)
+											for(pixel_argb_t * i = rgb_row_ptr; i < rgb_end; ++i)
 											{
-												i->u.element.red = png_ptr[0];
-												i->u.element.green = png_ptr[1];
-												i->u.element.blue = png_ptr[2];
-												i->u.element.alpha_channel = 255;
+												i->element.red = png_ptr[0];
+												i->element.green = png_ptr[1];
+												i->element.blue = png_ptr[2];
+												i->element.alpha_channel = 255;
 												png_ptr += png_pixel_bytes;
 											}
 										}

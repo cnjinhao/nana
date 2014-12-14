@@ -20,12 +20,8 @@ namespace nana{	namespace drawerbase
 		//trigger
 		//@brief: draw the button
 		trigger::trigger()
-			:	widget_(nullptr),
-				graph_(nullptr),
-				cite_("button")
 		{
 			attr_.e_state = element_state::normal;
-
 			attr_.omitted = attr_.focused = attr_.pushed = attr_.enable_pushed = attr_.keep_pressed =  false;
 			attr_.focus_color = true;
 			attr_.icon = nullptr;
@@ -40,7 +36,7 @@ namespace nana{	namespace drawerbase
 		{
 			graph_ = &graph;
 
-			widget_ = &widget;
+			wdg_ = &widget;
 			window wd = widget;
 
 			API::tabstop(wd);
@@ -61,7 +57,7 @@ namespace nana{	namespace drawerbase
 				attr_.pushed = pshd;
 				if(false == pshd)
 				{
-					if (API::find_window(API::cursor_position()) == widget_->handle())
+					if (API::find_window(API::cursor_position()) == wdg_->handle())
 						attr_.e_state = element_state::hovered;
 					else
 						attr_.e_state = element_state::normal;
@@ -128,13 +124,13 @@ namespace nana{	namespace drawerbase
 			attr_.keep_pressed = true;
 
 			_m_draw(graph);
-			API::capture_window(*widget_, true);
+			API::capture_window(*wdg_, true);
 			API::lazy_refresh();
 		}
 
 		void trigger::mouse_up(graph_reference graph, const arg_mouse&)
 		{
-			API::capture_window(*widget_, false);
+			API::capture_window(*wdg_, false);
 			attr_.keep_pressed = false;
 			if(attr_.enable_pushed && (false == attr_.pushed))
 			{
@@ -173,7 +169,7 @@ namespace nana{	namespace drawerbase
 			default:
 				return;
 			}
-			API::move_tabstop(widget_->handle(), ch_tabstop_next);
+			API::move_tabstop(*wdg_, ch_tabstop_next);
 		}
 
 		void trigger::focus(graph_reference graph, const arg_focus& arg)
@@ -185,7 +181,7 @@ namespace nana{	namespace drawerbase
 
 		void trigger::_m_draw_title(graph_reference graph, bool enabled)
 		{
-			nana::string text = widget_->caption();
+			nana::string text = wdg_->caption();
 
 			nana::string::value_type shortkey;
 			nana::string::size_type shortkey_pos;
@@ -201,11 +197,14 @@ namespace nana{	namespace drawerbase
 				icon_sz.width += 5;
 			}
 
-			int x = (static_cast<int>(gsize.width  - 1  - ts.width) >> 1);
-			int y = (static_cast<int>(gsize.height - 1 - ts.height) >> 1);
+			//int x = (static_cast<int>(gsize.width  - 1 - ts.width) >> 1);	//deprecated
+			//int y = (static_cast<int>(gsize.height - 1 - ts.height) >> 1);
+			nana::point pos{
+				static_cast<int>(gsize.width - 1 - ts.width) >> 1, static_cast<int>(gsize.height - 1 - ts.height) >> 1
+			};
 
-			if(x < static_cast<int>(icon_sz.width))
-				x = static_cast<int>(icon_sz.width);
+			if(pos.x < static_cast<int>(icon_sz.width))
+				pos.x = static_cast<int>(icon_sz.width);
 
 			unsigned omitted_pixels = gsize.width - icon_sz.width;
 			std::size_t txtlen = str.size();
@@ -217,35 +216,53 @@ namespace nana{	namespace drawerbase
 				{
 					if (element_state::pressed == attr_.e_state)
 					{
-						++x;
-						++y;
+						++pos.x;
+						++pos.y;
 					}
-					color_t fgcolor = (attr_.focus_color ? (attr_.focused ? 0xFF : attr_.fgcolor) : attr_.fgcolor);
+					//color_t fgcolor = (attr_.focus_color ? (attr_.focused ? 0xFF : attr_.fgcolor) : attr_.fgcolor);
+					auto fgcolor = attr_.fgcolor;
+					if (attr_.focus_color && attr_.focused)
+						fgcolor = ::nana::expr_color(colors::blue);
+
+					graph.set_text_color(fgcolor);
+
+					/*
 					if(attr_.omitted)
-						tr.render(x, y, fgcolor, txtptr, txtlen, omitted_pixels, true);
+						tr.render(x, y, fgcolor.argb().value, txtptr, txtlen, omitted_pixels, true);	//deprecated
 					else
 						graph.bidi_string(x, y, fgcolor, txtptr, txtlen);
+					*/
+
+					if (attr_.omitted)
+						tr.render(pos, txtptr, txtlen, omitted_pixels, true);	//deprecated
+					else
+						graph.bidi_string(pos, txtptr, txtlen);
 
 					if(shortkey)
 					{
 						unsigned off_w = (shortkey_pos ? graph.text_extent_size(str, static_cast<unsigned>(shortkey_pos)).width : 0);
 						nana::size shortkey_size = graph.text_extent_size(txtptr + shortkey_pos, 1);
-						x += off_w;
-						y += shortkey_size.height;
-						graph.line(x, y, x + shortkey_size.width - 1, y, 0x0);
+						pos.x += off_w;
+						pos.y += static_cast<int>(shortkey_size.height);
+						//graph.line(x, y, x + shortkey_size.width - 1, y, 0x0);	//deprecated
+						graph.set_color(::nana::expr_color(colors::black));
+						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y });
 					}
 				}
 				else
 				{
+					graph.set_text_color(::nana::expr_color(colors::white));
 					if(attr_.omitted)
 					{
-						tr.render(x + 1, y + 1, 0xFFFFFF, txtptr, txtlen, omitted_pixels, true);
-						tr.render(x, y, 0x808080, txtptr, txtlen, omitted_pixels, true);
+						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, true);
+						graph.set_text_color(::nana::expr_color(colors::gray));
+						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
 					}
 					else
 					{
-						graph.bidi_string(x + 1, y + 1, 0xFFFFFF, txtptr, txtlen);
-						graph.bidi_string(x, y, 0x808080, txtptr, txtlen);
+						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen);
+						graph.set_text_color(::nana::expr_color(colors::gray));
+						graph.bidi_string(pos, txtptr, txtlen);
 					}
 				}
 			}
@@ -256,11 +273,10 @@ namespace nana{	namespace drawerbase
 
 		void trigger::_m_draw(graph_reference graph)
 		{
-			window wd = widget_->handle();
-			bool eb = API::window_enabled(wd);
+			bool eb = wdg_->enabled();;
 
-			attr_.bgcolor = API::background(wd);
-			attr_.fgcolor = API::foreground(wd);
+			attr_.bgcolor = wdg_->bgcolor();
+			attr_.fgcolor = wdg_->fgcolor();
 
 			element_state e_state = attr_.e_state;
 			if (eb)
@@ -278,7 +294,7 @@ namespace nana{	namespace drawerbase
 
 			if (false == cite_.draw(graph, attr_.bgcolor, attr_.fgcolor, graph.size(), e_state))
 			{
-				if (bground_mode::basic != API::effects_bground_mode(wd))
+				if (bground_mode::basic != API::effects_bground_mode(wdg_->handle()))
 				{
 					_m_draw_background(graph);
 					_m_draw_border(graph);
@@ -291,15 +307,21 @@ namespace nana{	namespace drawerbase
 		{
 			nana::rectangle r(graph.size());
 			r.pare_off(1);
-			nana::color_t color_start = nana::paint::graphics::mix(attr_.bgcolor, 0xFFFFFF, 0.2);
-			nana::color_t color_end = nana::paint::graphics::mix(attr_.bgcolor, 0x0, 0.95);
+
+			//nana::color_t color_start = nana::paint::graphics::mix(attr_.bgcolor.argb().value, 0xFFFFFF, 0.2);	//deprecated
+			//nana::color_t color_end = nana::paint::graphics::mix(attr_.bgcolor.argb().value, 0x0, 0.95);
+			::nana::expr_color from(colors::white);
+			from.blend(attr_.bgcolor, 0.8);
+			::nana::expr_color to(colors::black);
+			to.blend(attr_.bgcolor, 0.05);
 
 			if (element_state::pressed == attr_.e_state)
 			{
 				r.x = r.y = 2;
-				std::swap(color_start, color_end);
+				std::swap(from, to);
 			}
-			graph.shadow_rectangle(r, color_start, color_end, true);
+			//graph.shadow_rectangle(r, color_start, color_end, true);	//deprecated
+			graph.gradual_rectangle(r, from, to, true);
 		}
 
 		void trigger::_m_draw_border(graph_reference graph)
@@ -329,7 +351,7 @@ namespace nana{	namespace drawerbase
 		{
 			arg_mouse arg;
 			arg.evt_code = event_code::click;
-			arg.window_handle = widget_->handle();
+			arg.window_handle = wdg_->handle();
 			arg.ctrl = arg.shift = false;
 			arg.mid_button = arg.right_button = false;
 			arg.left_button = true;

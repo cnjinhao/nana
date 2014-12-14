@@ -112,7 +112,8 @@ namespace nana
 			void rectangle_line(const ::nana::rectangle&, color_t left, color_t top, color_t right, color_t bottom);
 			void round_rectangle(int x, int y, unsigned width, unsigned height, unsigned radius_x, unsigned radius_y, color_t, bool solid, color_t color_if_solid);
 			void round_rectangle(const ::nana::rectangle&, unsigned radius_x, unsigned radius_y, color_t, bool solid, color_t color_if_solid);
-			void shadow_rectangle(const ::nana::rectangle&, color_t beg_color, color_t end_color, bool vertical);
+
+			void shadow_rectangle(const ::nana::rectangle&, color_t beg_color, color_t end_color, bool vertical);	//deprecated
 			void shadow_rectangle(int x, int y, unsigned width, unsigned height, color_t beg_color, color_t end_color, bool vertical); ///< Draws a width and height rectangle at (x, y) and the color in range of [begin, end]
 
 			void line(int x1, int y1, int x2, int y2, color_t);     ///<  Draws a line from point (x1, y1) to point (x2, y2) in the specified color.
@@ -151,7 +152,20 @@ namespace nana
 			void release();
 			void save_as_file(const char*);
 
-			static color_t mix(color_t colorX, color_t colorY, double persent);
+			static color_t mix(color_t colorX, color_t colorY, double persent);	//deprecated
+
+			void set_color(const ::nana::expr_color&);
+			void set_text_color(const ::nana::expr_color&);
+
+			unsigned bidi_string(const nana::point&, const char_t *, std::size_t len);
+			void string(nana::point, const char_t*, std::size_t len);
+			void string(const nana::point&, const char_t*);
+			void string(const nana::point&, const nana::string&);
+
+			void line(const nana::point&, const nana::point&);
+			void rectangle(const ::nana::rectangle&, bool solid);
+
+			void gradual_rectangle(const ::nana::rectangle&, const ::nana::expr_color& from, const ::nana::expr_color& to, bool vertical);
 		private:
 			std::shared_ptr< ::nana::detail::drawable_impl_type> dwptr_;
 			font			font_shadow_;

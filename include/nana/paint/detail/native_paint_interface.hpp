@@ -25,16 +25,16 @@ namespace detail
 	void free_fade_table(const unsigned char*);
 
 	//color = bgcolor * fade_rate + fgcolor * (1 - fade_rate);
-	nana::pixel_rgb_t fade_color(nana::pixel_rgb_t bgcolor, nana::pixel_rgb_t fgcolor, double fade_rate);
-	nana::pixel_rgb_t fade_color(nana::pixel_rgb_t bgcolor, nana::pixel_rgb_t fgcolor, const unsigned char* const fade_table);
-	nana::pixel_rgb_t fade_color_intermedia(nana::pixel_rgb_t fgcolor, const unsigned char* fade_table);
-	nana::pixel_rgb_t fade_color_by_intermedia(nana::pixel_rgb_t bgcolor, nana::pixel_rgb_t fgcolor_intermedia, const unsigned char* const fade_table);
+	//nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, double fade_rate);	//deprecated
+	nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, const unsigned char* const fade_table);
+	nana::pixel_color_t fade_color_intermedia(nana::pixel_color_t fgcolor, const unsigned char* fade_table);
+	nana::pixel_color_t fade_color_by_intermedia(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor_intermedia, const unsigned char* const fade_table);
 
 	void blend(drawable_type dw, const nana::rectangle& r, nana::color_t, double fade_rate);
 
 	nana::size raw_text_extent_size(drawable_type, const nana::char_t*, std::size_t len);
 	nana::size text_extent_size(drawable_type, const nana::char_t*, std::size_t len);
-	void draw_string(drawable_type, int x, int y, const nana::char_t *, std::size_t len);
+	void draw_string(drawable_type, const nana::point&, const nana::char_t *, std::size_t len);
 }//end namespace detail
 }//end namespace paint
 }//end namespace nana

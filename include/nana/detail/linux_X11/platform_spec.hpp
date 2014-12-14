@@ -84,11 +84,6 @@ namespace detail
 	{
 		typedef std::shared_ptr<font_tag> font_ptr_t;
 
-		drawable_impl_type();
-		~drawable_impl_type();
-
-		void fgcolor(unsigned color);
-
 		Pixmap	pixmap;
 		GC	context;
 		font_ptr_t font;
@@ -104,11 +99,23 @@ namespace detail
 #if defined(NANA_UNICODE)
 		XftDraw * xftdraw;
 		XftColor	xft_fgcolor;
-		XftColor	xft_bgcolor;
+		//XftColor	xft_bgcolor;	//deprecated
 		const std::string charset(const nana::string& str, const std::string& strcode);
 #endif
+		drawable_impl_type();
+		~drawable_impl_type();
+
+		void fgcolor(nana::color_t); //deprecated
+		void set_color(nana::color_t);
+		void set_text_color(nana::color_t);
+
+		void update_color();
+		void update_text_color();
 	private:
-		unsigned fgcolor_;
+		unsigned current_color_{ 0xFFFFFF };
+		unsigned color_{ 0xFFFFFFFF };
+		unsigned text_color_{ 0xFFFFFFFF };
+
 #if defined(NANA_UNICODE)
 		struct conv_tag
 		{

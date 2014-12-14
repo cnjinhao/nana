@@ -28,7 +28,8 @@ namespace gadget
 
 	void arrow_16_pixels(nana::paint::graphics&, int x, int y, unsigned color, uint32_t style, directions::t direction);
 	void close_16_pixels(nana::paint::graphics&, int x, int y, uint32_t style, uint32_t color);
-	void cross(nana::paint::graphics&, int x, int y, uint32_t size, uint32_t thickness, nana::color_t color);
+	void cross(nana::paint::graphics&, int x, int y, uint32_t size, uint32_t thickness, nana::color_t color);	//deprecated
+	void cross(nana::paint::graphics&, int x, int y, uint32_t size, uint32_t thickness, const nana::expr_color&);
 
 }//end namespace gadget
 	

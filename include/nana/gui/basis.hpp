@@ -98,7 +98,7 @@ namespace nana
 		};
 	};
 
-	namespace color
+	namespace color	//deprecated
 	{
 		enum
 		{

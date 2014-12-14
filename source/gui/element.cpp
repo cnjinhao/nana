@@ -19,7 +19,7 @@ namespace nana
 		class crook
 			: public crook_interface
 		{
-			bool draw(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
+			bool draw(graph_reference graph, const nana::expr_color& bgcolor, const nana::expr_color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
 			{
 				if(crook_data.radio)
 				{
@@ -129,21 +129,28 @@ namespace nana
 				}
 				else
 				{
-					const nana::color_t highlighted = 0x5EB6F7;
-
+					//const nana::color_t highlighted = 0x5EB6F7;	//deprecated
+					nana::expr_color highlighted(0x5e, 0xb6, 0xf7);
+					auto bld_bgcolor = bgcolor;
+					auto bld_fgcolor = fgcolor;
 					switch(es)
 					{
 					case element_state::hovered:
 					case element_state::focus_hovered:
-						bgcolor = graph.mix(bgcolor, highlighted, 0.8);
-						fgcolor = graph.mix(fgcolor, highlighted, 0.8);
+						bld_bgcolor.blend(highlighted, 0.8);
+						bld_fgcolor.blend(highlighted, 0.8);
+						//bgcolor = graph.mix(bgcolor, highlighted, 0.8);	//deprecated
+						//fgcolor = graph.mix(fgcolor, highlighted, 0.8);
 						break;
 					case element_state::pressed:
-						bgcolor = graph.mix(bgcolor, highlighted, 0.4);
-						fgcolor = graph.mix(fgcolor, highlighted, 0.4);
+						bld_bgcolor.blend(highlighted, 0.4);
+						bld_fgcolor.blend(highlighted, 0.4);
+						//bgcolor = graph.mix(bgcolor, highlighted, 0.4);	//deprecated
+						//fgcolor = graph.mix(fgcolor, highlighted, 0.4);
 						break;
 					case element_state::disabled:
-						bgcolor = fgcolor = 0xB2B7BC;
+						bld_bgcolor = bld_fgcolor = nana::expr_color(0xb2, 0xb7, 0xbc);
+						//bgcolor = fgcolor = 0xB2B7BC;	//deprecated
 						break;
 					default:
 						//Leave things as they are
@@ -152,8 +159,11 @@ namespace nana
 					const int x = r.x + 1;
 					const int y = r.y + 1;
 
-					graph.rectangle(x, y, 13, 13, fgcolor, false);
-					graph.rectangle(x + 1, y + 1, 11, 11, bgcolor, true);
+					graph.set_color(bld_bgcolor);
+					graph.rectangle(rectangle{ x + 1, y + 1, 11, 11 }, true);
+
+					graph.set_color(bld_fgcolor);
+					graph.rectangle(rectangle{ x, y, 13, 13 }, false);
 
 					switch(crook_data.check_state)
 					{
@@ -166,19 +176,19 @@ namespace nana
 							{
 								sx++;
 								sy++;
-								graph.line(sx, sy, sx, sy + 3, fgcolor);
+								graph.line(point{ sx, sy }, point{ sx, sy + 3 });
 							}
 
 							for(int i = 0; i < 4; i++)
 							{
 								sx++;
 								sy--;
-								graph.line(sx, sy, sx, sy + 3, fgcolor);
+								graph.line(point{ sx, sy }, point{ sx, sy + 3 });
 							}
 						}
 						break;
 					case state::partial:
-						graph.rectangle(x + 2, y + 2, 9, 9, fgcolor, true);
+						graph.rectangle(rectangle{ x + 2, y + 2, 9, 9 }, true);
 						break;
 					default:
 						break;
@@ -191,7 +201,7 @@ namespace nana
 		class menu_crook
 			: public crook_interface
 		{
-			bool draw(graph_reference graph, nana::color_t, nana::color_t fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
+			bool draw(graph_reference graph, const ::nana::expr_color&, const ::nana::expr_color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
 			{
 				if(crook_data.check_state == state::unchecked)
 					return true;
@@ -228,14 +238,27 @@ namespace nana
 					int x = r.x + (static_cast<int>(r.width) - 16) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 16) / 2;
 
-					nana::color_t light = graph.mix(fgcolor, 0xFFFFFF, 0.5);
+					::nana::expr_color light(colors::white);
+					light.blend(fgcolor, 0.5);
 
-					graph.line(x + 3, y + 7, x + 6, y + 10, fgcolor);
+					graph.set_color(fgcolor);
+					graph.line(point{ x + 3, y + 7 }, point{ x + 6, y + 10 });
+					graph.line(point{ x + 7, y + 9 }, point{ x + 12, y + 4 });
+
+					graph.set_color(light);
+					graph.line(point{ x + 3, y + 8 }, point{ x + 6, y + 11 });
+					graph.line(point{ x + 7, y + 10 }, point{ x + 12, y + 5 });
+					graph.line(point{ x + 4, y + 7 }, point{ x + 6, y + 9 });
+					graph.line(point{ x + 7, y + 8 }, point{ x + 11, y + 4 });
+					//nana::color_t light = graph.mix(fgcolor, 0xFFFFFF, 0.5);	//deprecated
+					/*
+					graph.line(point{ x + 3, y + 7 }, point{ x + 6, y + 10 }, fgcolor);	//deprecated
 					graph.line(x + 7, y + 9, x + 12, y + 4, fgcolor);
 					graph.line(x + 3, y + 8, x + 6, y + 11, light);
 					graph.line(x + 7, y + 10, x + 12, y + 5, light);
 					graph.line(x + 4, y + 7, x + 6, y + 9, light);
 					graph.line(x + 7, y + 8, x + 11, y + 4, light);
+					*/
 				}
 				return true;
 			}
@@ -433,7 +456,7 @@ namespace nana
 			keeper_ = element::provider().keeper_crook(name);
 		}
 
-		bool facade<element::crook>::draw(graph_reference graph, nana::color_t bgcol, nana::color_t fgcol, const nana::rectangle& r, element_state es)
+		bool facade<element::crook>::draw(graph_reference graph, const ::nana::expr_color& bgcol, const ::nana::expr_color& fgcol, const nana::rectangle& r, element_state es)
 		{
 			return (*keeper_)->draw(graph, bgcol, fgcol, r, es, data_);
 		}
@@ -470,7 +493,7 @@ namespace nana
 			ref_ptr_ = detail::bedrock::instance().get_element_store().bground(name);
 		}
 
-		bool cite_bground::draw(graph_reference dst, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle& r, element_state state)
+		bool cite_bground::draw(graph_reference dst, const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor, const nana::rectangle& r, element_state state)
 		{
 			if (ref_ptr_ && *ref_ptr_)
 				return (*ref_ptr_)->draw(dst, bgcolor, fgcolor, r, state);
@@ -656,7 +679,7 @@ namespace nana
 		}
 
 		//Implement the methods of bground_interface.
-		bool bground::draw(graph_reference dst, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle& to_r, element_state state)
+		bool bground::draw(graph_reference dst, const ::nana::expr_color&, const ::nana::expr_color&, const nana::rectangle& to_r, element_state state)
 		{
 			if (nullptr == method_)
 				return false;

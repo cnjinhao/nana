@@ -19,14 +19,14 @@ namespace nana{	namespace paint
 {
 	///@brief	Seek a pixel address by using offset bytes
 	///@return	the specified pixel address
-	inline pixel_rgb_t * pixel_at(pixel_rgb_t * p, std::size_t bytes)
+	inline pixel_argb_t * pixel_at(pixel_argb_t * p, std::size_t bytes)
 	{
-		return reinterpret_cast<pixel_rgb_t*>(reinterpret_cast<char*>(p) + bytes);
+		return reinterpret_cast<pixel_argb_t*>(reinterpret_cast<char*>(p) + bytes);
 	}
 
-	inline const pixel_rgb_t * pixel_at(const pixel_rgb_t * p, std::size_t bytes)
+	inline const pixel_argb_t * pixel_at(const pixel_argb_t * p, std::size_t bytes)
 	{
-		return reinterpret_cast<const pixel_rgb_t*>(reinterpret_cast<const char*>(p) + bytes);
+		return reinterpret_cast<const pixel_argb_t*>(reinterpret_cast<const char*>(p) + bytes);
 	}
 
 	class pixel_buffer
@@ -60,9 +60,9 @@ namespace nana{	namespace paint
 		std::size_t bytes_per_line() const;
 		nana::size size() const;
 
-		pixel_rgb_t * at(const point& pos) const;
-		pixel_rgb_t * raw_ptr(std::size_t row) const;
-		pixel_rgb_t * operator[](std::size_t row) const;
+		pixel_argb_t * at(const point& pos) const;
+		pixel_argb_t * raw_ptr(std::size_t row) const;
+		pixel_argb_t * operator[](std::size_t row) const;
 
 		void put(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bits_per_pixel, std::size_t bytes_per_line, bool is_negative);
 		
@@ -70,10 +70,11 @@ namespace nana{	namespace paint
 		void line(const nana::point& pos_beg, const nana::point& pos_end, nana::color_t color, double fade_rate);
 
 		void rectangle(const nana::rectangle&, nana::color_t, double fade_rate, bool solid);
-		void shadow_rectangle(const nana::rectangle&, nana::color_t beg, nana::color_t end, double fade_rate, bool vertical);
+		void shadow_rectangle(const nana::rectangle&, nana::color_t beg, nana::color_t end, double fade_rate, bool vertical);	//deprecated
+		void gradual_rectangle(const ::nana::rectangle&, const ::nana::expr_color& from, const ::nana::expr_color& to, double fade_rate, bool vertical);
 		
-		pixel_rgb_t pixel(int x, int y) const;
-		void pixel(int x, int y, pixel_rgb_t);
+		pixel_argb_t pixel(int x, int y) const;
+		void pixel(int x, int y, pixel_argb_t);
 
 		void paste(drawable_type, int x, int y) const;
 		void paste(const nana::rectangle& s_r, drawable_type, int x, int y) const;

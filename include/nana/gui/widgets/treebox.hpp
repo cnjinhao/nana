@@ -74,11 +74,13 @@ namespace nana
 				virtual ~renderer_interface()
 				{}
 
-				virtual void bground(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void expander(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void crook(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void icon(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void text(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
+				virtual void set_color(const nana::expr_color& bgcolor, const nana::expr_color& fgcolor) = 0;
+
+				virtual void bground(graph_reference, const compset_interface *) const = 0;
+				virtual void expander(graph_reference, const compset_interface *) const = 0;
+				virtual void crook(graph_reference, const compset_interface *) const = 0;
+				virtual void icon(graph_reference, const compset_interface *) const = 0;
+				virtual void text(graph_reference, const compset_interface *) const = 0;
 			};
 
 			class item_proxy;

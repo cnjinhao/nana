@@ -347,9 +347,12 @@ namespace nana
 
 				visible = false;
 
-				color.foreground = 0x0;
-				color.background = nana::color::button_face;
-				color.active = 0x60C8FD;
+				colors.foreground = 0x0;	//deprecated
+				colors.background = nana::color::button_face;
+				colors.active = 0x60C8FD;
+				colors.fgcolor = ::nana::expr_color(::nana::colors::black);
+				colors.bgcolor = ::nana::expr_color(static_cast<::nana::colors>(nana::color::button_face));
+				colors.activated = ::nana::expr_color(0x60, 0xc8, 0xfd);
 
 				effect.edge_nimbus = effects::edge_nimbus::none;
 				effect.bground = nullptr;
