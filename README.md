@@ -10,4 +10,4 @@ Nana is licensed under the [Boost Software License].
 
 ## Support
 
-The best way to get help with Nana library is by visiting http://nanapro.org/help/index.htm
+The best way to get help with Nana library is by visiting http://nanapro.org/help.htm
