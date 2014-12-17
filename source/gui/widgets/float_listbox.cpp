@@ -18,10 +18,6 @@ namespace nana
 	namespace drawerbase{
 		namespace float_listbox
 		{
-			//class item_renderer
-				item_renderer::~item_renderer(){}
-			//end class item_renderer
-
 			class def_item_renderer
 				: public item_renderer
 			{
@@ -36,26 +32,39 @@ namespace nana
 
 				void render(widget_reference, graph_reference graph, const nana::rectangle& r, const item_interface* item, state_t state)
 				{
-					if(state == StateHighlighted)
+					if (state == StateHighlighted)
 					{
-						graph.rectangle(r, 0xAFC7E3, false);
+						::nana::expr_color clr{ 0xaf, 0xc7, 0xe3 };
+						graph.rectangle(r, false, clr);
 
-						graph.set_pixel(r.x, r.y, 0xFFFFFF);
-						graph.set_pixel(r.x + r.width - 1, r.y, 0xFFFFFF);
-						graph.set_pixel(r.x, r.y + r.height - 1, 0xFFFFFF);
-						graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1, 0xFFFFFF);
+						//graph.set_pixel(r.x, r.y, 0xFFFFFF);	//deprecated
+						//graph.set_pixel(r.x + r.width - 1, r.y, 0xFFFFFF);
+						//graph.set_pixel(r.x, r.y + r.height - 1, 0xFFFFFF);
+						//graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1, 0xFFFFFF);
 
-						graph.set_pixel(r.x + 1, r.y + 1, 0xAFC7E3);
-						graph.set_pixel(r.x + r.width - 2, r.y + 1, 0xAFC7E3);
-						graph.set_pixel(r.x + 1, r.y + r.height - 2, 0xAFC7E3);
-						graph.set_pixel(r.x + r.width - 2, r.y + r.height - 2, 0xAFC7E3);
+						graph.set_color(colors::white);
+						graph.set_pixel(r.x, r.y);
+						graph.set_pixel(r.x + r.width - 1, r.y);
+						graph.set_pixel(r.x, r.y + r.height - 1);
+						graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1);
+
+						//graph.set_pixel(r.x + 1, r.y + 1, 0xAFC7E3);	//deprecated
+						//graph.set_pixel(r.x + r.width - 2, r.y + 1, 0xAFC7E3);
+						//graph.set_pixel(r.x + 1, r.y + r.height - 2, 0xAFC7E3);
+						//graph.set_pixel(r.x + r.width - 2, r.y + r.height - 2, 0xAFC7E3);
+
+						graph.set_color(clr);
+						graph.set_pixel(r.x + 1, r.y + 1);
+						graph.set_pixel(r.x + r.width - 2, r.y + 1);
+						graph.set_pixel(r.x + 1, r.y + r.height - 2);
+						graph.set_pixel(r.x + r.width - 2, r.y + r.height - 2);
 
 						nana::rectangle po_r(r);
-						graph.rectangle(po_r.pare_off(1), 0xEBF4FB, false);
-						graph.shadow_rectangle(po_r.pare_off(1), 0xDDECFD, 0xC2DCFD, true);
+						graph.rectangle(po_r.pare_off(1), false, { 0xEB, 0xF4, 0xFB });
+						graph.gradual_rectangle(po_r.pare_off(1), { 0xDD, 0xEC, 0xFD }, { 0xC2, 0xDC, 0xFD }, true);
 					}
 					else
-						graph.rectangle(r, 0xFFFFFF, true);
+						graph.rectangle(r, true, colors::white);
 					
 					int x = r.x + 2;
 					if(image_enabled_)
@@ -100,7 +109,8 @@ namespace nana
 						}
 						x += (image_pixels_ + 2);
 					}
-					graph.string(x, r.y + 2, 0x0, item->text());
+					graph.set_text_color(colors::black);
+					graph.string({ x, r.y + 2 }, item->text());
 				}
 
 				unsigned item_pixels(graph_reference graph) const
@@ -108,12 +118,6 @@ namespace nana
 					return graph.text_extent_size(STR("jHWn/?\\{[(0569")).height + 4;
 				}
 			};//end class item_renderer
-
-			//struct module_def
-				module_def::module_def()
-					:max_items(10), index(npos)
-				{}
-			//end struct module_def
 
 			//class drawer_impl
 			class drawer_impl
@@ -339,11 +343,11 @@ namespace nana
 						_m_open_scrollbar(*widget_, pages);
 					}
 					else
-						graph_->string(4, 4, 0x808080, STR("Empty Listbox, No Module!"));
+						graph_->string({ 4, 4 }, STR("Empty Listbox, No Module!"), {0x80, 0x80, 0x80});
 
 					//Draw border
-					graph_->rectangle(0x0, false);
-					graph_->rectangle(nana::rectangle(graph_->size()).pare_off(1), 0xFFFFFF, false);
+					graph_->rectangle(false, colors::black);
+					graph_->rectangle(nana::rectangle(graph_->size()).pare_off(1), false, colors::white);
 				}
 			private:
 				bool _m_image_enabled() const

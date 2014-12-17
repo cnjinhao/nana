@@ -39,7 +39,64 @@ namespace nana
 			a_ = 1.0;
 	}
 
-	void expr_color::blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha)
+	expr_color& expr_color::from_rgb(unsigned red, unsigned green, unsigned blue)
+	{
+		r_ = red;
+		g_ = green;
+		b_ = blue;
+		return *this;
+	}
+
+	double rgb_from_hue(double v1, double v2, double h)
+	{
+		if (h < 0.0)
+			h += 1.0;
+		else if (h > 1.0)
+			h -= 1.0;
+
+		if (h < 0.1666666) return v1 + (v2 - v1) * (6.0 * h);
+		if (h < 0.5) return v2;
+		if (h < 0.6666666) return v1 + (v2 - v1) * (4.0 - h * 6.0);
+		return v1;
+	}
+
+	expr_color& expr_color::from_hsl(double hue, double saturation, double lightness)
+	{
+		if (0.0 == saturation)
+		{
+			r_ = lightness * 255.0;
+			g_ = r_;
+			b_ = r_;
+		}
+		else
+		{
+			double var2;
+			if (lightness < 0.5)
+				var2 = lightness * (1.0 + saturation);
+			else
+				var2 = (lightness + saturation) - (saturation * lightness);
+
+			double var1 = 2.0 * lightness - var2;
+
+			r_ = 255.0 * rgb_from_hue(var1, var2, hue + 0.33333);
+			g_ = 255.0 * rgb_from_hue(var1, var2, hue);
+			b_ = 255.0 * rgb_from_hue(var1, var2, hue - 0.33333);
+		}
+		return *this;
+	}
+
+	expr_color& expr_color::alpha(double al)
+	{
+		if (al < 0.0)
+			a_ = 0.0;
+		else if (al > 1.0)
+			a_ = 1.0;
+		else
+			a_ = al;
+		return *this;
+	}
+
+	expr_color& expr_color::blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha)
 	{
 		if (a_ < 1.0)
 		{
@@ -68,19 +125,26 @@ namespace nana
 				a_ = (ignore_bgcolor_alpha ? 1.0 : bgcolor.a_);
 			}
 		}
+		return *this;
 	}
 
-	void expr_color::blend(const expr_color& bgcolor, double alpha)
+	expr_color& expr_color::blend(const expr_color& bgcolor, double alpha)
 	{
 		r_ = r_ * alpha + bgcolor.r_ * (1.0 - alpha);
 		g_ = g_ * alpha + bgcolor.g_ * (1.0 - alpha);
 		b_ = b_ * alpha + bgcolor.b_ * (1.0 - alpha);
 		a_ = 1.0;
+		return *this;
 	}
 
 	bool expr_color::invisible() const
 	{
 		return (a_ == 0.0);
+	}
+
+	pixel_color_t expr_color::px_color() const
+	{
+		return argb();
 	}
 	
 	pixel_argb_t expr_color::argb() const
@@ -123,11 +187,11 @@ namespace nana
 
 	bool expr_color::operator==(const expr_color& other) const
 	{
-		return (r_ == other.r_ && g_ == other.g_ && b_ == other.b_ && a_ == other.a_);
+		return (px_color().value == other.px_color().value);
 	}
 	bool expr_color::operator!=(const expr_color& other) const
 	{
-		return (r_ != other.r_ || g_ == other.g_ || b_ == other.b_ || a_ == other.a_);
+		return (px_color().value != other.px_color().value);
 	}
 
 	//end class color

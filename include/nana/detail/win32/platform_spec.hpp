@@ -137,6 +137,7 @@ namespace detail
 		~drawable_impl_type();
 
 		void fgcolor(nana::color_t);	//deprecated
+		unsigned get_color() const;
 		void set_color(nana::color_t);
 		void set_text_color(nana::color_t);
 

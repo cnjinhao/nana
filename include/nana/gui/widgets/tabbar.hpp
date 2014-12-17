@@ -57,7 +57,7 @@ namespace nana
 			class event_agent_interface
 			{
 			public:
-				virtual ~event_agent_interface() = 0;
+				virtual ~event_agent_interface() = default;
 				virtual void added(std::size_t) = 0;
 				virtual void activated(std::size_t) = 0;
 				virtual bool removed(std::size_t) = 0;
@@ -67,18 +67,18 @@ namespace nana
 			{
 			public:
 				typedef item_renderer item_renderer_type;
-				typedef nana::paint::graphics & graph_reference;
+				typedef ::nana::paint::graphics & graph_reference;
 				enum state_t{disable, normal, highlight, press};
 
 				struct item_t
 				{
-					nana::rectangle r;
-					nana::color_t	bgcolor;
-					nana::color_t	fgcolor;
+					::nana::rectangle r;
+					::nana::expr_color	bgcolor;
+					::nana::expr_color	fgcolor;
 				};
 
-				virtual ~item_renderer() = 0;
-				virtual void background(graph_reference, const nana::rectangle& r, nana::color_t bgcolor) = 0;
+				virtual ~item_renderer() = default;
+				virtual void background(graph_reference, const nana::rectangle& r, const ::nana::expr_color& bgcolor) = 0;
 				virtual void item(graph_reference, const item_t&, bool active, state_t) = 0;
 				virtual void close_fly(graph_reference, const nana::rectangle&, bool active, state_t) = 0;
 
@@ -150,7 +150,7 @@ namespace nana
 				std::size_t length() const;
 				bool close_fly(bool);
 				void relate(size_t, window);
-				void tab_color(std::size_t, bool is_bgcolor, nana::color_t);
+				void tab_color(std::size_t, bool is_bgcolor, const ::nana::expr_color&);
 				void tab_image(size_t, const nana::paint::image&);
 				void text(std::size_t, const nana::string&);
 				nana::string text(std::size_t) const;

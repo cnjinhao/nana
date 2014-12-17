@@ -26,8 +26,8 @@ namespace nana
 			private:
 				void refresh(graph_reference graph)
 				{
-					graph.rectangle(0x0, false);
-					graph.rectangle(1, 1, graph.width() - 2, graph.height() - 2, 0xF0F0F0, true);
+					graph.rectangle(false, colors::black);
+					graph.rectangle(::nana::rectangle(graph.size()).pare_off(1), true, {0xf0, 0xf0, 0xf0});
 				}
 			};
 

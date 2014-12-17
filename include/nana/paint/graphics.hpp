@@ -99,12 +99,13 @@ namespace nana
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
 
-			unsigned bidi_string(int x, int y, color_t, const char_t *, std::size_t len);
-			void string(int x, int y, color_t, const ::nana::string&, std::size_t len);
-			void string(int x, int y, color_t, const ::nana::string&);
-			void string(int x, int y, color_t, const char_t*, std::size_t len);
-			void string(int x, int y, color_t, const char_t*);
+			//unsigned bidi_string(int x, int y, color_t, const char_t *, std::size_t len);	//deprecated
+			//void string(int x, int y, color_t, const ::nana::string&, std::size_t len);
+			//void string(int x, int y, color_t, const ::nana::string&);
+			//void string(int x, int y, color_t, const char_t*, std::size_t len);
+			//void string(int x, int y, color_t, const char_t*);
 
+			/*
 			void set_pixel(int x, int y, color_t);
 			void rectangle(int x, int y, unsigned width, unsigned height, color_t, bool solid);
 			void rectangle(color_t, bool solid);
@@ -119,8 +120,9 @@ namespace nana
 			void line(int x1, int y1, int x2, int y2, color_t);     ///<  Draws a line from point (x1, y1) to point (x2, y2) in the specified color.
 			void line(const point& beg, const point& end, color_t);
 			void lines(const point* points, std::size_t n_of_points, color_t);
-			void line_begin(int x, int y);
 			void line_to(int x, int y, color_t);
+			*/
+			void line_begin(int x, int y);
 
 			void bitblt(int x, int y, const graphics& source);     ///<   Transfers the source to the specified point.
 			void bitblt(const ::nana::rectangle& r_dst, native_window_type src);  ///< Transfers the color data corresponding to r_dst from the src window to this graphics.
@@ -141,7 +143,7 @@ namespace nana
 			void rgb_to_wb();   ///< Transform a color graphics into black&white.
 
 			void stretch(const ::nana::rectangle& src_r, graphics& dst, const ::nana::rectangle& r) const;
-			void stretch(graphics& dst, const ::nana::rectangle& r) const;
+			void stretch(graphics& dst, const ::nana::rectangle&) const;
 
 			void flush();
 
@@ -152,20 +154,36 @@ namespace nana
 			void release();
 			void save_as_file(const char*);
 
-			static color_t mix(color_t colorX, color_t colorY, double persent);	//deprecated
+			//static color_t mix(color_t colorX, color_t colorY, double persent);	//deprecated
 
 			void set_color(const ::nana::expr_color&);
 			void set_text_color(const ::nana::expr_color&);
 
 			unsigned bidi_string(const nana::point&, const char_t *, std::size_t len);
-			void string(nana::point, const char_t*, std::size_t len);
-			void string(const nana::point&, const char_t*);
-			void string(const nana::point&, const nana::string&);
 
-			void line(const nana::point&, const nana::point&);
+			void blend(const ::nana::rectangle& r, const ::nana::expr_color&, double fade_rate);
+
+			void set_pixel(int x, int y, const ::nana::expr_color&);
+			void set_pixel(int x, int y);
+
+			void string(point, const char_t*, std::size_t len);
+			void string(const point&, const char_t*);
+			void string(const point&, const ::nana::string&);
+			void string(const point&, const ::nana::string&, const expr_color&);
+
+			void line(const point&, const point&);
+			void line(const point&, const point&, const expr_color&);
+			void line_to(const point&, const expr_color&);
+			void line_to(const point&);
+
+			void rectangle(bool solid);
+			void rectangle(bool solid, const expr_color&);
 			void rectangle(const ::nana::rectangle&, bool solid);
+			void rectangle(const ::nana::rectangle&, bool solid, const expr_color&);
+			void frame_rectangle(const ::nana::rectangle&, const expr_color& left, const expr_color& top, const expr_color& right, const expr_color& bottom);
 
-			void gradual_rectangle(const ::nana::rectangle&, const ::nana::expr_color& from, const ::nana::expr_color& to, bool vertical);
+			void gradual_rectangle(const ::nana::rectangle&, const expr_color& from, const expr_color& to, bool vertical);
+			void round_rectangle(const ::nana::rectangle&, unsigned radius_x, unsigned radius_y, const expr_color&, bool solid, const expr_color& color_if_solid);
 		private:
 			std::shared_ptr< ::nana::detail::drawable_impl_type> dwptr_;
 			font			font_shadow_;

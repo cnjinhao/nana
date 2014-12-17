@@ -88,7 +88,7 @@ namespace checkbox
 			void drawer::_m_draw_background(graph_reference graph)
 			{
 				if(bground_mode::basic != API::effects_bground_mode(*widget_))
-					graph.rectangle(API::background(*widget_), true);
+					graph.rectangle(true, API::bgcolor(*widget_));
 			}
 
 			void drawer::_m_draw_checkbox(graph_reference graph, unsigned first_line_height)
@@ -98,21 +98,23 @@ namespace checkbox
 
 			void drawer::_m_draw_title(graph_reference graph)
 			{
-				if(graph.width() > 16 + interval)
+				if (graph.width() > 16 + interval)
 				{
 					nana::string title = widget_->caption();
 
-					unsigned fgcolor = widget_->foreground();
 					unsigned pixels = graph.width() - (16 + interval);
 
 					nana::paint::text_renderer tr(graph);
-					if(API::window_enabled(widget_->handle()) == false)
+					if (API::window_enabled(widget_->handle()) == false)
 					{
-						tr.render(17 + interval, 2, 0xFFFFFF, title.c_str(), title.length(), pixels);
-						fgcolor = 0x808080;
+						graph.set_text_color(colors::white);
+						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels);
+						graph.set_text_color({ 0x80, 0x80, 0x80 });
 					}
+					else
+						graph.set_text_color(widget_->fgcolor());
 
-					tr.render(16 + interval, 1, fgcolor, title.c_str(), title.length(), pixels);
+					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels);
 				}
 			}
 		//end class drawer

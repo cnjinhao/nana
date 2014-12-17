@@ -8,50 +8,54 @@ namespace nana
 		namespace slider
 		{
 
-			provider::~provider(){}
-
-			renderer::~renderer(){}
-
 			class interior_renderer
 				: public renderer
 			{
 			private:
 				virtual void background(window wd, graph_reference graph, bool isglass)
 				{
-					if(isglass == false)
-						graph.rectangle(API::background(wd), true);
+					if(!isglass)
+						graph.rectangle(true, API::bgcolor(wd));
 				}
 
 				virtual void bar(window, graph_reference graph, const bar_t& bi)
 				{
 					//draw border
-					const nana::color_t dark = 0x83909F;
-					const nana::color_t gray = 0x9DAEC2;
+					::nana::expr_color lt(0x83, 0x90, 0x97), rb(0x9d,0xae,0xc2);
+					graph.frame_rectangle(bi.r, lt, lt, rb, rb);
+					//const nana::color_t dark = 0x83909F;	//deprecated
+					//const nana::color_t gray = 0x9DAEC2;
 
-					graph.rectangle_line(bi.r, 
-							dark, dark, gray, gray);
+					//graph.rectangle_line(bi.r, 
+					//		dark, dark, gray, gray);	//deprecated
 				}
 
 				virtual void adorn(window, graph_reference graph, const adorn_t& ad)
 				{
-					int len = ad.bound.y - ad.bound.x;
-					const unsigned upperblock = ad.block - ad.block / 2;
+					auto len = static_cast<const unsigned>(ad.bound.y - ad.bound.x);
+					const auto upperblock = ad.block - ad.block / 2;
+
+					::nana::expr_color clr_from(0x84, 0xc5, 0xff), clr_trans(0x0f, 0x41, 0xcd), clr_to(0x6e, 0x96, 0xff);
 					if(ad.horizontal)
 					{
-						graph.shadow_rectangle(ad.bound.x, ad.fixedpos, len, upperblock, 0x84C5FF, 0x0F41CD, true);
-						graph.shadow_rectangle(ad.bound.x, ad.fixedpos + upperblock, len, ad.block - upperblock, 0x0F41CD, 0x6E96FF, true);
+						//graph.shadow_rectangle(ad.bound.x, ad.fixedpos, len, upperblock, 0x84C5FF, 0x0F41CD, true);	//deprecated
+						//graph.shadow_rectangle(ad.bound.x, ad.fixedpos + upperblock, len, ad.block - upperblock, 0x0F41CD, 0x6E96FF, true);
+						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos, len, upperblock }, clr_from, clr_trans, true);
+						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos + static_cast<int>(upperblock), len, ad.block - upperblock }, clr_trans, clr_to, true);
 					}
 					else
 					{
-						graph.shadow_rectangle(ad.fixedpos, ad.bound.x, upperblock, len, 0x84C5FF, 0x0F41CD, false);
-						graph.shadow_rectangle(ad.fixedpos + upperblock, ad.bound.x, ad.block - upperblock, len, 0x0F41CD, 0x6E96FF, false);
+						//graph.shadow_rectangle(ad.fixedpos, ad.bound.x, upperblock, len, 0x84C5FF, 0x0F41CD, false);	//deprecatd
+						//graph.shadow_rectangle(ad.fixedpos + upperblock, ad.bound.x, ad.block - upperblock, len, 0x0F41CD, 0x6E96FF, false);
+						graph.gradual_rectangle({ ad.fixedpos, ad.bound.x, upperblock, len }, clr_from, clr_trans, false);	//deprecatd
+						graph.gradual_rectangle({ ad.fixedpos + static_cast<int>(upperblock), ad.bound.x, ad.block - upperblock, len }, clr_trans, clr_to, false);
 					}
 				}
 
 				virtual void adorn_textbox(window, graph_reference graph, const nana::string& str, const nana::rectangle & r)
 				{
-					graph.rectangle(r, 0xFFFFFF, false);
-					graph.string(r.x + 2, r.y + 1, 0xFFFFFF, str);
+					graph.rectangle(r, false, colors::white);
+					graph.string({ r.x + 2, r.y + 1 }, str, colors::white);
 				}
 
 				virtual void slider(window, graph_reference graph, const slider_t& s)
@@ -67,7 +71,7 @@ namespace nana
 						r.y = s.pos;
 						r.height = s.scale;
 					}
-					graph.round_rectangle(r, 3, 3, 0x0, true, 0xF0F0F0);
+					graph.round_rectangle(r, 3, 3, colors::black, true, {0xf0,0xf0,0xf0});
 				}
 			};
 

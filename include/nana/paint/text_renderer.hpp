@@ -13,13 +13,16 @@ namespace nana
 			
 			text_renderer(graph_reference graph, align = align::left);
 
-			void render(int x, int y, nana::color_t, const nana::char_t*, std::size_t len);
-			void render(int x, int y, nana::color_t, const nana::char_t*, std::size_t len, unsigned restricted_pixels, bool omitted);
+			//void render(int x, int y, nana::color_t, const nana::char_t*, std::size_t len);	//deprecated
+			//void render(int x, int y, nana::color_t, const nana::char_t*, std::size_t len, unsigned restricted_pixels, bool omitted);	//deprecated
 
-			void render(int x, int y, nana::color_t, const nana::char_t*, std::size_t len, unsigned restricted_pixels);
+			//void render(int x, int y, nana::color_t, const nana::char_t*, std::size_t len, unsigned restricted_pixels);	//deprecated
+
 			nana::size extent_size(int x, int y, const nana::char_t*, std::size_t len, unsigned restricted_pixels) const;
 
-			void render(const nana::point&, const nana::char_t*, std::size_t len, unsigned restricted_pixels, bool omiited);
+			void render(const point&, const char_t*, std::size_t len);
+			void render(const point&, const char_t*, std::size_t len, unsigned restricted_pixels, bool omitted);
+			void render(const point&, const char_t*, std::size_t len, unsigned restricted_pixels);
 		private:
 			graph_reference graph_;
 			align text_align_;

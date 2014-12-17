@@ -73,12 +73,14 @@ namespace nana
 		void move(int x, int y);
 		void move(const rectangle&);
 
+		/*
 		void foreground(nana::color_t);		//deprecated
 		nana::color_t foreground() const;
 		void background(nana::color_t);
 		nana::color_t background() const;
+		*/
 
-		void fgcolor(const nana::expr_color&);		//deprecated
+		void fgcolor(const nana::expr_color&);
 		nana::expr_color fgcolor() const;
 		void bgcolor(const nana::expr_color&);
 		nana::expr_color bgcolor() const;

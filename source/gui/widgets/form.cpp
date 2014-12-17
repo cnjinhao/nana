@@ -18,8 +18,6 @@ namespace nana
 		namespace form
 		{
 		//class trigger
-			trigger::trigger():wd_(nullptr){}
-
 			void trigger::attached(widget_reference widget, graph_reference graph)
 			{
 				wd_ = &widget;
@@ -27,14 +25,15 @@ namespace nana
 
 			void trigger::refresh(graph_reference graph)
 			{
-				graph.rectangle(API::background(*wd_), true);
+				graph.rectangle(true, API::bgcolor(*wd_));
 			}
-
-			void trigger::resized(graph_reference graph, const arg_resized&)
+			/*
+			void trigger::resized(graph_reference graph, const arg_resized&)	//deprecated
 			{
 				graph.rectangle(API::background(*wd_), true);
 				API::lazy_refresh();
 			}
+			*/
 		}//end namespace form
 	}//end namespace drawerbase
 

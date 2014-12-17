@@ -164,7 +164,7 @@ namespace nana
 
 		categorize(window wd, const rectangle& r = rectangle(), bool visible = true)
 		{
-			this->get_drawer_trigger().template create_event_agent(*this);
+			this->get_drawer_trigger().create_event_agent(*this);
 			this->create(wd, r, visible);
 		}
 

@@ -38,8 +38,8 @@ namespace nana
 				{
 				}
 
-				item(const nana::string& s)
-					: item_text(s)
+				item(nana::string&& s)
+					: item_text(std::move(s))
 				{}
 			private:
 				//implement item_interface methods
@@ -85,7 +85,7 @@ namespace nana
 				{
 					widget_ = static_cast< ::nana::combox*>(&wd);
 					editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph);
-					editor_->border_renderer([this](graph_reference graph, nana::color_t bgcolor){
+					editor_->border_renderer([this](graph_reference graph, const ::nana::expr_color& bgcolor){
 						draw_border(graph, bgcolor);
 					});
 					editor_->multi_lines(false);
@@ -100,9 +100,9 @@ namespace nana
 					graph_ = nullptr;
 				}
 
-				void insert(const nana::string& text)
+				void insert(nana::string&& text)
 				{
-					items_.emplace_back(std::make_shared<item>(text));
+					items_.emplace_back(std::make_shared<item>(std::move(text)));
 					API::refresh_window(widget_->handle());
 				}
 
@@ -284,11 +284,11 @@ namespace nana
 					_m_draw_image();
 				}
 
-				void draw_border(graph_reference graph, nana::color_t bgcolor)
+				void draw_border(graph_reference graph, const ::nana::expr_color& bgcolor)
 				{
-					graph.rectangle((state_.focused ? 0x0595E2 : 0x999A9E), false);
+					graph.rectangle(false, (state_.focused ? ::nana::expr_color(0x05, 0x95, 0xE2) : ::nana::expr_color(0x99, 0x9A, 0x9E)));
 					nana::rectangle r(graph.size());
-					graph.rectangle(r.pare_off(1), bgcolor, false);
+					graph.rectangle(r.pare_off(1), false, bgcolor);
 				}
 
 				std::size_t the_number_of_options() const
@@ -439,20 +439,20 @@ namespace nana
 					}
 				}
 
-				void _m_draw_background(graph_reference graph, const nana::rectangle&, nana::color_t)
+				void _m_draw_background(graph_reference graph, const rectangle&, const ::nana::expr_color&)
 				{
-					nana::rectangle r(graph.size());
-					nana::color_t color_start = color::button_face_shadow_start;
-					nana::color_t color_end = color::button_face_shadow_end;
+					::nana::rectangle r(graph.size());
+					auto clr_from = colors::button_face_shadow_start;
+					auto clr_to = colors::button_face_shadow_end;
 					if(state_.state == state_t::pressed)
 					{
 						r.pare_off(2);
-						std::swap(color_start, color_end);
+						std::swap(clr_from, clr_to);
 					}
 					else
 						r.pare_off(1);
 
-					graph.shadow_rectangle(r, color_start, color_end, true);
+					graph.gradual_rectangle(r, clr_from, clr_to, true);
 				}
 
 				void _m_draw_push_button(bool enabled)
@@ -467,39 +467,40 @@ namespace nana
 					int bottom = graph_->height() - 2;
 					int mid = top + (bottom - top) * 5 / 18;
 
-					nana::color_t topcol, topcol_ln, botcol, botcol_ln;
-					nana::color_t arrow_color;
+					::nana::expr_color topcol, topcol_ln, botcol, botcol_ln;
+					::nana::expr_color arrow_color{ colors::white };
 					if (enabled && items_.size())
 					{
-						arrow_color = 0xFFFFFF;
 						double percent = 1;
 						if (has_lister() || (state_.state == state_t::pressed && state_.pointer_where == where_t::push_button))
 							percent = 0.8;
 						else if (state_.state == state_t::mouse_over)
 							percent = 0.9;
 
-						topcol_ln = graphics::mix(0x3F476C, 0xFFFFFF, percent);
-						botcol_ln = graphics::mix(0x031141, 0xFFFFFF, percent);
-						topcol = graphics::mix(0x3F83B4, 0xFFFFFF, percent);
-						botcol = graphics::mix(0x0C4A95, 0xFFFFFF, percent);
+						topcol_ln = expr_color{ 0x3F, 0x47, 0x6C }.blend(arrow_color, percent);
+						botcol_ln = expr_color{ 0x03, 0x31, 0x114 }.blend(arrow_color, percent);
+						topcol = expr_color{ 0x3F, 83, 84 }.blend(arrow_color, percent);
+						botcol = expr_color{ 0x0c, 0x4a, 0x9a }.blend(arrow_color, percent);
 					}
 					else
 					{
-						arrow_color = 0xFFFFFF;
-						topcol_ln = 0x7F7F7F;
-						botcol_ln = 0x505050;
-						topcol = 0xC3C3C3;
-						botcol = 0xA0A0A0;
+						topcol_ln = { 0x7F, 0x7F, 0x7F };
+						botcol_ln = { 0x50, 0x50, 0x50 };
+						topcol = { 0xC3, 0xC3, 0xC3 };
+						botcol = { 0xA0, 0xA0, 0xA0 };
 					}
 
-					graph_->line(left, top, left, mid, topcol_ln);
-					graph_->line(right - 1, top, right - 1, mid, topcol_ln);
+					graph_->set_color(topcol_ln);
+					graph_->line({ left, top }, { left, mid });
+					graph_->line({ right - 1, top }, { right - 1, mid });
 
-					graph_->line(left, mid + 1, left, bottom, botcol_ln);
-					graph_->line(right - 1, mid + 1, right - 1, bottom, botcol_ln);
+					graph_->set_color(botcol_ln);
+					graph_->line({ left, mid + 1 }, { left, bottom });
+					graph_->line({ right - 1, mid + 1 }, { right - 1, bottom });
 
-					graph_->rectangle(left + 1, top, right - left - 2, mid - top + 1, topcol, true);
-					graph_->rectangle(left + 1, mid + 1, right - left - 2, bottom - mid, botcol, true);
+
+					graph_->rectangle({ left + 1, top, static_cast<unsigned>(right - left - 2), static_cast<unsigned>(mid - top + 1) }, true, topcol);
+					graph_->rectangle({ left + 1, mid + 1, static_cast<unsigned>(right - left - 2), static_cast<unsigned>(bottom - mid) }, true, botcol);
 
 					gadget::arrow_16_pixels(*graph_, left, top + ((bottom - top) / 2) - 7, arrow_color, 1, gadget::directions::to_south);
 				}
@@ -579,7 +580,6 @@ namespace nana
 				trigger::~trigger()
 				{
 					delete drawer_;
-					drawer_ = nullptr;
 				}
 
 				void trigger::set_accept(std::function<bool(nana::char_t)>&& pred)
@@ -599,7 +599,8 @@ namespace nana
 
 				void trigger::attached(widget_reference wdg, graph_reference graph)
 				{
-					wdg.background(0xFFFFFF);
+					wdg.bgcolor(colors::white);
+					//wdg.background(0xFFFFFF);	//deprecated
 					drawer_->attached(wdg, graph);
 
 					API::effects_edge_nimbus(wdg, effects::edge_nimbus::active);
@@ -668,15 +669,12 @@ namespace nana
 
 				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
-					if(drawer_->widget_ptr()->enabled())
+					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
 					{
-						if(false == drawer_->has_lister())
-						{
-							drawer_->editor()->mouse_up(arg.left_button, arg.pos);
-							drawer_->set_mouse_press(false);
-							drawer_->draw();
-							API::lazy_refresh();
-						}
+						drawer_->editor()->mouse_up(arg.left_button, arg.pos);
+						drawer_->set_mouse_press(false);
+						drawer_->draw();
+						API::lazy_refresh();
 					}
 				}
 
@@ -709,7 +707,7 @@ namespace nana
 
 				void trigger::key_press(graph_reference, const arg_keyboard& arg)
 				{
-					if(false == drawer_->widget_ptr()->enabled())
+					if(!drawer_->widget_ptr()->enabled())
 						return;
 
 					if(drawer_->editable())
@@ -906,10 +904,10 @@ namespace nana
 			create(wd, rectangle(), visible);
 		}
 
-		combox::combox(window wd, const nana::string& text, bool visible)
+		combox::combox(window wd, nana::string text, bool visible)
 		{
 			create(wd, rectangle(), visible);
-			caption(text);
+			caption(std::move(text));
 		}
 
 		combox::combox(window wd, const nana::char_t* text, bool visible)
@@ -925,18 +923,20 @@ namespace nana
 
 		void combox::clear()
 		{
-			internal_scope_guard sg;
+			internal_scope_guard lock;
 			get_drawer_trigger().get_drawer_impl().clear();
 			API::refresh_window(handle());
 		}
 
 		void combox::editable(bool eb)
 		{
+			internal_scope_guard lock;
 			get_drawer_trigger().get_drawer_impl().editable(eb);
 		}
 
 		bool combox::editable() const
 		{
+			internal_scope_guard lock;
 			return get_drawer_trigger().get_drawer_impl().editable();
 		}
 
@@ -946,45 +946,53 @@ namespace nana
 			get_drawer_trigger().set_accept(std::move(pred));
 		}
 
-		combox& combox::push_back(const nana::string& text)
+		combox& combox::push_back(nana::string text)
 		{
-			get_drawer_trigger().get_drawer_impl().insert(text);
+			internal_scope_guard lock;
+			get_drawer_trigger().get_drawer_impl().insert(std::move(text));
 			return *this;
 		}
 
 		std::size_t combox::the_number_of_options() const
 		{
+			internal_scope_guard lock;
 			return get_drawer_trigger().get_drawer_impl().the_number_of_options();
 		}
 
 		std::size_t combox::option() const
 		{
+			internal_scope_guard lock;
 			return get_drawer_trigger().get_drawer_impl().option();
 		}
 
 		void combox::option(std::size_t i)
 		{
+			internal_scope_guard lock;
 			get_drawer_trigger().get_drawer_impl().option(i, false);
 			API::update_window(handle());
 		}
 
 		nana::string combox::text(std::size_t i) const
 		{
+			internal_scope_guard lock;
 			return get_drawer_trigger().get_drawer_impl().at(i).item_text;
 		}
 
 		void combox::erase(std::size_t pos)
 		{
+			internal_scope_guard lock;
 			get_drawer_trigger().get_drawer_impl().erase(pos);
 		}
 
 		void combox::renderer(item_renderer* ir)
 		{
+			internal_scope_guard lock;
 			get_drawer_trigger().get_drawer_impl().renderer(ir);
 		}
 
 		void combox::image(std::size_t i, const nana::paint::image& img)
 		{
+			internal_scope_guard lock;
 			if(empty()) return;
 
 			auto & impl = get_drawer_trigger().get_drawer_impl();
@@ -995,42 +1003,47 @@ namespace nana
 
 		nana::paint::image combox::image(std::size_t pos) const
 		{
+			internal_scope_guard lock;
 			return get_drawer_trigger().get_drawer_impl().at(pos).item_image;
 		}
 
 		void combox::image_pixels(unsigned px)
 		{
+			internal_scope_guard lock;
 			if(get_drawer_trigger().get_drawer_impl().image_pixels(px))
 				API::refresh_window(*this);
 		}
 
 		nana::string combox::_m_caption() const
 		{
-			internal_scope_guard isg;
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().get_drawer_impl().editor();
 			return (editor ? editor->text() : nana::string());
 		}
 
 		void combox::_m_caption(nana::string&& str)
 		{
-			internal_scope_guard isg;
+			internal_scope_guard lock;
 			get_drawer_trigger().get_drawer_impl().text(std::move(str));
 			API::refresh_window(*this);
 		}
 
 		nana::any * combox::_m_anyobj(std::size_t pos, bool alloc_if_empty) const
 		{
+			internal_scope_guard lock;
 			return get_drawer_trigger().get_drawer_impl().anyobj(pos, alloc_if_empty);
 		}
 
 		auto combox::_m_at_key(std::shared_ptr<nana::detail::key_interface>&& p) -> item_proxy
 		{
+			internal_scope_guard lock;
 			auto & impl = get_drawer_trigger().get_drawer_impl();
 			return item_proxy(&impl, impl.at_key(std::move(p)));
 		}
 
 		void combox::_m_erase(nana::detail::key_interface* p)
 		{
+			internal_scope_guard lock;
 			get_drawer_trigger().get_drawer_impl().erase(p);
 		}
 	//end class combox

@@ -23,7 +23,6 @@ namespace nana
 			class trigger: public drawer_trigger
 			{
 			public:
-				trigger();
 				unsigned value() const;
 				unsigned value(unsigned);
 				unsigned inc();
@@ -41,13 +40,13 @@ namespace nana
 				bool _m_check_changing(unsigned) const;
 			private:
 				static const unsigned border = 2;
-				widget * widget_;
-				nana::paint::graphics* graph_;
-				unsigned draw_width_;
-				bool has_value_;
-				bool unknown_;
-				unsigned max_;
-				unsigned value_;
+				widget * widget_{nullptr};
+				nana::paint::graphics* graph_{nullptr};
+				unsigned draw_width_{static_cast<unsigned>(-1)};
+				bool has_value_{true};
+				bool unknown_{false};
+				unsigned max_{100};
+				unsigned value_{0};
 			}; //end class drawer
 		}
 	}//end namespace drawerbase

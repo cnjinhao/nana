@@ -123,7 +123,7 @@ namespace nana
 						for(int left = 0; left < 12; ++left)
 						{
 							if((*colormap)[top][left] != 0xFFFFFF)
-								graph.set_pixel(left + x, top + y, (*colormap)[top][left]);
+								graph.set_pixel(left + x, top + y, static_cast<colors>((*colormap)[top][left]));
 						}
 					}
 				}
@@ -228,7 +228,7 @@ namespace nana
 						{
 							if(colormap[u][v] & 0xFF000000)
 								continue;
-							graph.set_pixel(x + v, y, colormap[u][v]);
+							graph.set_pixel(x + v, y, static_cast<colors>(colormap[u][v]));
 						}
 						++y;
 					}

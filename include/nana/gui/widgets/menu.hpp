@@ -104,7 +104,7 @@ namespace nana
 					checks check_style;
 				};
 
-				virtual ~renderer_interface() = 0;
+				virtual ~renderer_interface() = default;
 
 				virtual void background(graph_reference, window) = 0;
 				virtual void item(graph_reference, const nana::rectangle&, const attr&) = 0;

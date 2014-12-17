@@ -202,12 +202,14 @@ namespace API
 	void modal_window(window);                    ///< Blocks the routine til the specified window is closed.
 	void wait_for(window);
 	
+	/*
 	color_t foreground(window);				//deprecated
 	color_t foreground(window, color_t);	//deprecated
 	color_t background(window);				//deprecated
 	color_t background(window, color_t);	//deprecated
 	color_t	active(window);					//deprecated
 	color_t	active(window, color_t);		//deprecated
+	*/
 
 	expr_color fgcolor(window);
 	expr_color fgcolor(window, const expr_color&);

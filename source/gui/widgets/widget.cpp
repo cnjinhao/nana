@@ -141,7 +141,8 @@ namespace nana
 			_m_move(r);
 		}
 
-		void widget::foreground(nana::color_t value)
+		/*
+		void widget::foreground(nana::color_t value) //deprecated
 		{
 			_m_fgcolor(expr_color(static_cast<colors>(value)));
 		}
@@ -160,6 +161,7 @@ namespace nana
 		{
 			return _m_bgcolor().argb().value;
 		}
+		*/
 
 		void widget::fgcolor(const nana::expr_color& col)
 		{

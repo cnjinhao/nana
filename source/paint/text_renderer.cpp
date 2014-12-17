@@ -118,13 +118,14 @@ namespace nana
 			{
 				graphics & graph;
 				int x, endpos;
-				nana::color_t color;	//deprecated
+				//nana::color_t color;	//deprecated
+				::nana::expr_color fgcolor;
 				unsigned omitted_pixels;
 				nana::unicode_bidi bidi;
 				std::vector<nana::unicode_bidi::entity> reordered;
 
-				draw_string_omitted(graphics& graph, int x, int endpos, nana::color_t color, bool omitted)
-					: graph(graph), x(x), endpos(endpos), color(color)
+				draw_string_omitted(graphics& graph, int x, int endpos, const ::nana::expr_color& fgcolor, bool omitted)
+					: graph(graph), x(x), endpos(endpos), fgcolor(fgcolor)
 				{
 					omitted_pixels = (omitted ? graph.text_extent_size(STR("..."), 3).width : 0);
 					if(endpos - x > static_cast<int>(omitted_pixels))
@@ -169,7 +170,8 @@ namespace nana
 							nana::paint::graphics dum_graph(r.width, r.height);
 
 							dum_graph.bitblt(r, graph, pos);
-							dum_graph.string(0, 0, color, i.begin, len);
+							dum_graph.set_text_color(fgcolor);
+							dum_graph.string({}, i.begin, len);
 
 							r.x = pos.x;
 							r.y = top;
@@ -553,7 +555,8 @@ namespace nana
 			: graph_(graph), text_align_(ta)
 		{}
 
-		void text_renderer::render(int x, int y, nana::color_t col, const nana::char_t * str, std::size_t len)
+		/*
+		void text_renderer::render(int x, int y, color_t col, const char_t * str, std::size_t len)
 		{
 			if(graph_)
 			{
@@ -562,8 +565,8 @@ namespace nana
 				helper::for_each_line(str, len, y, ds);
 			}
 		}
-
-		void text_renderer::render(int x, int y, nana::color_t col, const nana::char_t * str, std::size_t len, unsigned restricted_pixels, bool omitted)
+		
+		void text_renderer::render(int x, int y, color_t col, const char_t * str, std::size_t len, unsigned restricted_pixels, bool omitted)	//deprecated
 		{
 			if(graph_)
 			{
@@ -572,8 +575,9 @@ namespace nana
 				helper::for_each_line(str, len, y, dso);
 			}
 		}
-
-		void text_renderer::render(int x, int y, nana::color_t col, const nana::char_t * str, std::size_t len, unsigned restricted_pixels)
+		*/
+		/*
+		void text_renderer::render(int x, int y, color_t col, const nana::char_t * str, std::size_t len, unsigned restricted_pixels)
 		{
 			if(graph_)
 			{
@@ -582,8 +586,9 @@ namespace nana
 				helper::for_each_line(str, len, y, dsacl);
 			}
 		}
+		*/
 
-		nana::size text_renderer::extent_size(int x, int y, const nana::char_t* str, std::size_t len, unsigned restricted_pixels) const
+		nana::size text_renderer::extent_size(int x, int y, const char_t* str, std::size_t len, unsigned restricted_pixels) const
 		{
 			nana::size extents;
 			if(graph_)
@@ -596,12 +601,30 @@ namespace nana
 			return extents;
 		}
 
-		void text_renderer::render(const nana::point& pos, const nana::char_t* str, std::size_t len, unsigned restricted_pixels, bool omitted)
+		void text_renderer::render(const point& pos, const char_t * str, std::size_t len)
+		{
+			if (graph_)
+			{
+				helper::draw_string ds(graph_.handle(), pos.x, static_cast<int>(graph_.width()), text_align_);
+				helper::for_each_line(str, len, pos.y, ds);
+			}
+		}
+
+		void text_renderer::render(const point& pos, const char_t* str, std::size_t len, unsigned restricted_pixels, bool omitted)
 		{
 			if (graph_)
 			{
 				helper::draw_string_omitted dso(graph_, pos.x, pos.x + static_cast<int>(restricted_pixels), omitted);
 				helper::for_each_line(str, len, pos.y, dso);
+			}
+		}
+
+		void text_renderer::render(const point& pos, const char_t * str, std::size_t len, unsigned restricted_pixels)
+		{
+			if (graph_)
+			{
+				helper::draw_string_auto_changing_lines dsacl(graph_, pos.x, pos.x + static_cast<int>(restricted_pixels), text_align_);
+				helper::for_each_line(str, len, pos.y, dsacl);
 			}
 		}
 		//end class text_renderer

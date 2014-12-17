@@ -2209,7 +2209,7 @@ namespace nana
 					_m_draw(essence_->header.cont(), r);
 
 					const int y = r.y + r.height - 1;
-					essence_->graph->line(r.x, y, r.x + r.width, y, 0xDEDFE1);
+					essence_->graph->line({ r.x, y }, { r.x + static_cast<int>(r.width), y }, { 0xDE, 0xDF, 0xE1 });
 				}
 			private:
 				size_type _m_target_strip(int x, const nana::rectangle& rect, size_type grab, bool& place_front)
@@ -2239,7 +2239,7 @@ namespace nana
 							x = (place_front ? item_xpos : essence_->header.xpos(essence_->header.neighbor(i, false)));
 
 							if(i != npos)
-								essence_->graph->rectangle(x - essence_->scroll.offset_x + rect.x, rect.y, 2, rect.height, 0xFF0000, true);
+								essence_->graph->rectangle({ x - essence_->scroll.offset_x + rect.x, rect.y, 2, rect.height }, true, colors::red);
 						}
 						return i;
 					}
@@ -2254,7 +2254,7 @@ namespace nana
 					unsigned height = rect.height - 1;
 
 					int txtop = (rect.height - essence_->text_height) / 2 + rect.y;
-					nana::color_t txtcolor = essence_->lister.wd_ptr()->foreground();
+					auto txtcolor = essence_->lister.wd_ptr()->fgcolor();
 
 					auto state = essence_t::state_t::normal;
 					//check whether grabing an item, if item_spliter_ != npos, that indicates the grab item is a spliter.
@@ -2270,7 +2270,7 @@ namespace nana
 							if(next_x > rect.x)
 							{
 								_m_draw_item(graph, x, rect.y, height, txtop, txtcolor, i, (i.index == essence_->pointer_where.second ? state : essence_t::state_t::normal));
-								graph.line(next_x - 1, rect.y, next_x - 1, bottom_y, 0xDEDFE1);
+								graph.line({ next_x - 1, rect.y }, { next_x - 1, bottom_y }, { 0xDE, 0xDF, 0xE1 });
 							}
 							x = next_x;
 							if(x - rect.x > static_cast<int>(rect.width)) break;
@@ -2278,30 +2278,30 @@ namespace nana
 					}
 
 					if(x - rect.x < static_cast<int>(rect.width))
-						graph.rectangle(x, rect.y, rect.width - x + rect.x, height, 0xF1F2F4, true);
+						graph.rectangle({ x, rect.y, rect.width - x + rect.x, height }, true, { 0xF1, 0xF2, 0xF4 });
 				}
 
 				template<typename Item>
-				void _m_draw_item(graph_reference graph, int x, int y, unsigned height, int txtop, nana::color_t txtcolor, const Item& item, essence_t::state_t state)
+				void _m_draw_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::expr_color& fgcolor, const Item& item, essence_t::state_t state)
 				{
-					nana::color_t bgcolor;
+					::nana::expr_color bgcolor;
 					typedef essence_t::state_t state_t;
 					switch(state)
 					{
-					case state_t::normal:		bgcolor = 0xF1F2F4; break;
-					case state_t::highlighted:	bgcolor = 0xFFFFFF; break;
+					case state_t::normal:		bgcolor.from_rgb(0xf1, 0xf2, 0xf4); break;
+					case state_t::highlighted:	bgcolor = colors::white; break;
 					case state_t::pressed:
-					case state_t::grabed:		bgcolor = 0x8BD6F6; break;
-					case state_t::floated:		bgcolor = 0xBABBBC;	break;
+					case state_t::grabed:		bgcolor.from_rgb(0x8B, 0xD6, 0xF6); break;
+					case state_t::floated:		bgcolor.from_rgb(0xBA, 0xBB, 0xBC);	break;
 					}
 
-					graph.rectangle(x, y, item.pixels, height, bgcolor, true);
-					graph.string(x + 5, txtop, txtcolor, item.text);
+					graph.rectangle({ x, y, item.pixels, height }, true, bgcolor);
+					graph.string({ x + 5, txtop }, item.text, fgcolor);
 
 					if(item.index == essence_->lister.sort_index())
 					{
 						nana::paint::gadget::directions::t dir = essence_->lister.sort_reverse() ? nana::paint::gadget::directions::to_south : nana::paint::gadget::directions::to_north;
-						nana::paint::gadget::arrow_16_pixels(graph, x + (item.pixels - 16) / 2, -4, 0x0, 0, dir);
+						nana::paint::gadget::arrow_16_pixels(graph, x + (item.pixels - 16) / 2, -4, colors::black, 0, dir);
 					}
 				}
 
@@ -2313,7 +2313,7 @@ namespace nana
 					ext_graph.typeface(essence_->graph->typeface());
 
 					int txtop = (essence_->header_size - essence_->text_height) / 2;
-					_m_draw_item(ext_graph, 0, 0, essence_->header_size, txtop, 0xFFFFFF, item, essence_t::state_t::floated);
+					_m_draw_item(ext_graph, 0, 0, essence_->header_size, txtop, colors::white, item, essence_t::state_t::floated);
 
 					int xpos = essence_->header.xpos(item.index) + pos.x - ref_xpos_;
 					ext_graph.blend(ext_graph.size(), *(essence_->graph), nana::point(xpos - essence_->scroll.offset_x + rect.x, rect.y), 0.5);
@@ -2477,9 +2477,10 @@ namespace nana
 					graph->set_color(bgcolor);
 					graph->rectangle(rectangle{ x, y, width, essence_->item_size }, true);
 
-					nana::paint::gadget::arrow_16_pixels(*graph, x + 5, y + (essence_->item_size - 16) /2, 0x3399, 2, (categ.expand ? nana::paint::gadget::directions::to_north : nana::paint::gadget::directions::to_south));
+					nana::paint::gadget::arrow_16_pixels(*graph, x + 5, y + (essence_->item_size - 16) / 2, { 0x0, 0x33, 0x99 }, 2, (categ.expand ? nana::paint::gadget::directions::to_north : nana::paint::gadget::directions::to_south));
 					nana::size text_s = graph->text_extent_size(categ.text);
-					graph->string(x + 20, y + txtoff, 0x3399, categ.text);
+
+					graph->string({ x + 20, y + txtoff }, categ.text, {0, 0x33, 0x99});
 
 					std::stringstream ss;
 					ss<<'('<<static_cast<unsigned>(categ.items.size())<<')';
@@ -2487,11 +2488,13 @@ namespace nana
 
 					unsigned str_w = graph->text_extent_size(str).width;
 
-					graph->string(x + 25 + text_s.width, y + txtoff, 0x3399, str);
+					graph->string({ x + 25 + static_cast<int>(text_s.width), y + txtoff }, str);
 
-					if(x + 35 + text_s.width + str_w < x + width)
-						graph->line(x + 30 + text_s.width + str_w, y + essence_->item_size / 2, x + width - 5, y + essence_->item_size / 2, 0x3399);
-
+					if (x + 35 + text_s.width + str_w < x + width)
+					{
+						::nana::point pos{ x + 30 + static_cast<int>(text_s.width + str_w), y + static_cast<int>(essence_->item_size) / 2 };
+						graph->line(pos, { x + static_cast<int>(width)-5, pos.y }, { 0x0, 0x33, 0x99 });
+					}
 					//Draw selecting inner rectangle
 					if(sel && categ.expand == false)
 					{
@@ -2603,7 +2606,7 @@ namespace nana
 							}
 						}
 
-						graph->line(item_xpos - 1, y, item_xpos - 1, y + essence_->item_size - 1, 0xEBF4F9);
+						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, { 0xEB, 0xF4, 0xF9 });
 
 						item_xpos += header.pixels;
 						first = false;
@@ -2618,13 +2621,14 @@ namespace nana
 				{
 					//Draw selecting inner rectangle
 					auto graph = essence_->graph;
-					graph->rectangle(x , y , width, essence_->item_size, 0x99DEFD, false);
+					graph->rectangle({ x, y, width, essence_->item_size }, false, { 0x99, 0xDE, 0xFD });
 
-					graph->rectangle(x + 1, y + 1, width - 2, essence_->item_size - 2, 0xFFFFFF, false);
-					graph->set_pixel(x, y, 0xFFFFFF);
-					graph->set_pixel(x, y + essence_->item_size - 1, 0xFFFFFF);
-					graph->set_pixel(x + width - 1, y, 0xFFFFFF);
-					graph->set_pixel(x + width - 1, y + essence_->item_size - 1, 0xFFFFFF);
+					graph->set_color(colors::white);
+					graph->rectangle({ x + 1, y + 1, width - 2, essence_->item_size - 2 }, false);
+					graph->set_pixel(x, y);
+					graph->set_pixel(x, y + essence_->item_size - 1);
+					graph->set_pixel(x + width - 1, y);
+					graph->set_pixel(x + width - 1, y + essence_->item_size - 1);
 				}
 			private:
 				essence_t * essence_;
@@ -2674,12 +2678,16 @@ namespace nana
 					auto & graph = *essence_->graph;
 					auto size = graph.size();
 					//Draw Border
-					graph.rectangle(0x9CB6C5, false);
-					graph.line(1, 1, 1, size.height - 2, 0xFFFFFF);
-					graph.line(size.width - 2, 1, size.width - 2, size.height - 2, 0xFFFFFF);
+					graph.rectangle(false, {0x9c, 0xb6, 0xc5});
+					graph.line({ 1, 1 }, {1, static_cast<int>(size.height) - 2}, colors::white);
+					graph.line({ static_cast<int>(size.width) - 2, 1 }, { static_cast<int>(size.width) - 2, static_cast<int>(size.height) - 2 });
 
 					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
-						graph.rectangle(size.width - 1 - essence_->scroll.scale, size.height - 1 - essence_->scroll.scale, essence_->scroll.scale, essence_->scroll.scale, nana::color::button_face, true);
+						graph.rectangle({ static_cast<int>(size.width - 1 - essence_->scroll.scale),
+											static_cast<int>(size.height - 1 - essence_->scroll.scale),
+											essence_->scroll.scale,
+											essence_->scroll.scale },
+										true, colors::button_face);
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
@@ -2688,7 +2696,7 @@ namespace nana
 					typeface_changed(graph);
 
 					essence_->lister.bind(essence_, widget);
-					widget.background(0xFFFFFF);
+					widget.bgcolor(colors::white);
 				}
 
 				void trigger::detached()

@@ -41,7 +41,7 @@ namespace nana
 			class provider
 			{
 			public:
-				virtual ~provider() = 0;
+				virtual ~provider() = default;
 				virtual nana::string adorn_trace(unsigned vmax, unsigned vadorn) const = 0;
 			};
 
@@ -74,7 +74,7 @@ namespace nana
 					unsigned vcur_scale;	//pixels of vcur scale.
 				};
 
-				virtual ~renderer() = 0;
+				virtual ~renderer() = default;
 
 				virtual void background(window, graph_reference, bool isglass) = 0;
 				virtual void adorn(window, graph_reference, const adorn_t&) = 0;

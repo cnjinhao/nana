@@ -330,21 +330,23 @@ namespace nana{	namespace drawerbase
 			int right = r.width - 1;
 			int bottom = r.height - 1;
 
-			graph.rectangle_line(r,
-					0x7F7F7F, 0x7F7F7F, 0x707070, 0x707070);
+			::nana::expr_color lt{0x7f,0x7f,0x7f}, rb{0x70,0x70,0x70};
+			graph.frame_rectangle(r, lt, lt, rb, rb);
 
-			graph.set_pixel(1, 1, 0x919191);
-			graph.set_pixel(right - 1, 1, 0x919191);
-			graph.set_pixel(right - 1, bottom - 1, 0x919191);
-			graph.set_pixel(1, bottom - 1, 0x919191);
+			graph.set_color({0x91,0x91,0x91});
+			graph.set_pixel(1, 1);
+			graph.set_pixel(right - 1, 1);
+			graph.set_pixel(right - 1, bottom - 1);
+			graph.set_pixel(1, bottom - 1);
 
-			graph.set_pixel(0, 0, color::button_face);
-			graph.set_pixel(right, 0, color::button_face);
-			graph.set_pixel(0, bottom, color::button_face);
-			graph.set_pixel(right, bottom, color::button_face);
+			graph.set_color(colors::button_face);
+			graph.set_pixel(0, 0);
+			graph.set_pixel(right, 0);
+			graph.set_pixel(0, bottom);
+			graph.set_pixel(right, bottom);
 
 			if (element_state::pressed == attr_.e_state)
-				graph.rectangle(r.pare_off(1), 0xC3C3C3, false);
+				graph.rectangle(r.pare_off(1), false, {0xc3, 0xc3, 0xc3});
 		}
 
 		void trigger::emit_click()

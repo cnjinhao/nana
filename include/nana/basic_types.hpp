@@ -98,10 +98,10 @@ namespace nana
 	typedef unsigned char	uint8_t;
 	typedef unsigned long	uint32_t;
 	typedef unsigned		uint_t;
-	typedef unsigned		color_t;
+	typedef unsigned		color_t;	//deprecated
 	typedef long long long_long_t;
 
-	const color_t null_color = 0xFFFFFFFF;
+	//const color_t null_color = 0xFFFFFFFF;	//deprecated
 
 	union pixel_argb_t
 	{
@@ -141,6 +141,7 @@ namespace nana
 		red		= 0xFF0000,
 		white	= 0xFFFFFF,
 
+		//temporary defintions, these will be replaced by color schema
 		button_face_shadow_start = 0xF5F4F2,
 		button_face_shadow_end = 0xD5D2CA,
 		button_face = 0xD4D0C8,
@@ -158,12 +159,17 @@ namespace nana
 		expr_color(unsigned red, unsigned green, unsigned blue);
 		expr_color(unsigned red, unsigned green, unsigned blue, double alpha);
 
-		void blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha);
+		expr_color& alpha(double);	///< Sets alpha channel
+		expr_color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
+		expr_color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
+
+		expr_color& blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha);
 
 		///< Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
-		void blend(const expr_color& bgcolor, double alpha);
+		expr_color& blend(const expr_color& bgcolor, double alpha);
 
 		bool invisible() const;
+		pixel_color_t px_color() const;
 		pixel_argb_t argb() const;
 		pixel_rgba_t rgba() const;
 

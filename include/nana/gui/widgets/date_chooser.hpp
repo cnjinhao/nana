@@ -45,7 +45,7 @@ namespace nana
 				void week_name(unsigned index, const nana::string&);
 				void month_name(unsigned index, const nana::string&);
 			private:
-				void _m_init_color();
+				//void _m_init_color();	//deprecated
 				where _m_pos_where(graph_reference, int x, int y);
 				void _m_draw(graph_reference);
 				void _m_draw_topbar(graph_reference);
@@ -91,10 +91,10 @@ namespace nana
 
 				struct color_tag
 				{
-					nana::color_t highlight;
-					nana::color_t selected;
-					nana::color_t normal;
-					nana::color_t bkcolor;
+					::nana::expr_color highlight;
+					::nana::expr_color selected;
+					::nana::expr_color normal;
+					::nana::expr_color bgcolor;
 				}color_;
 			};
 		

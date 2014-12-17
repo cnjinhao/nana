@@ -120,12 +120,12 @@ namespace nana{
 						good_r.x = good_r.y = 1;
 						good_r.width = r.width - 2;
 						good_r.height = r.height - 2;
-						pixbuf.rectangle(good_r, wd->colors.active, 0.95, false);
+						pixbuf.rectangle(good_r, wd->colors.activated.px_color().value, 0.95, false);
 
 						good_r.x = good_r.y = 0;
 						good_r.width = r.width;
 						good_r.height = r.height;
-						pixbuf.rectangle(good_r, wd->colors.active, 0.4, false);
+						pixbuf.rectangle(good_r, wd->colors.activated.px_color().value, 0.4, false);
 
 						pixbuf.pixel(0, 0, px0);
 						pixbuf.pixel(r.width - 1, 0, px1);

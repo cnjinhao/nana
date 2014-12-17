@@ -25,13 +25,10 @@ namespace nana
 		{
 			class drawer: public drawer_trigger
 			{
-			public:
-				drawer();
-			private:
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
 			private:
-				window window_;
+				window window_{nullptr};
 			};
 		}// end namespace panel
 	}//end namespace drawerbase

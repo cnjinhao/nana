@@ -81,9 +81,9 @@ namespace nana
 				bool _m_check() const;
 				void _m_adjust_scroll(graph_reference);
 				void _m_background(graph_reference);
-				void _m_button_frame(graph_reference, int x, int y, unsigned width, unsigned height, int state);
+				void _m_button_frame(graph_reference, ::nana::rectangle, int state);
 				void _m_draw_scroll(graph_reference, int state);
-				void _m_draw_button(graph_reference, int x, int y, unsigned width, unsigned height, buttons what, int state);
+				void _m_draw_button(graph_reference, ::nana::rectangle, buttons what, int state);
 			private:
 				metrics_type &metrics_;
 				bool	vertical_;

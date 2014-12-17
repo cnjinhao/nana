@@ -177,9 +177,9 @@ namespace detail
 
 		struct
 		{
-			color_t foreground;	//deprecated
-			color_t	background; //deprecated
-			color_t	active;		//deprecated
+			//color_t foreground;	//deprecated
+			//color_t	background; //deprecated
+			//color_t	active;		//deprecated
 
 			expr_color fgcolor;
 			expr_color bgcolor;

@@ -100,38 +100,41 @@ namespace nana
 
 				void item_renderer::background(const nana::point& pos, const nana::size& size, state_t state)
 				{
-					nana::color_t bground = API::background(handle_);
-					nana::color_t border, body, corner;
+					auto bground = API::fgcolor(handle_);
+					::nana::expr_color border, body, corner;
 
 					switch(state)
 					{
 					case item_renderer::state_highlight:
-						border = nana::color::highlight;
-						body = 0xC0DDFC;
-						corner = paint::graphics::mix(body, bground, 0.5);
+						border = colors::highlight;
+						body.from_rgb(0xC0, 0xDD, 0xFC);
+						corner = body;
+						corner.blend(bground, 0.5);
 						break;
 					case item_renderer::state_selected:
-						border = nana::color::dark_border;
-						body = 0xFFFFFF;
-						corner = paint::graphics::mix(border, bground, 0.5);
+						border = colors::dark_border;
+						body = colors::white;
+						corner = body;
+						corner.blend(bground, 0.5);
 						break;
 					default:	//Don't process other states.
 						return;
 					}
 
 					nana::rectangle r(pos, size);
-					graph_.rectangle(r, border, false);
+					graph_.rectangle(r, false, border);
 
-					graph_.set_pixel(pos.x, pos.y, corner);
-					graph_.set_pixel(pos.x + size.width - 1, pos.y, corner);
-					graph_.set_pixel(pos.x, pos.y + size.height - 1, corner);
-					graph_.set_pixel(pos.x + size.width - 1, pos.y + size.height - 1, corner);
-					graph_.rectangle(r.pare_off(1), body, true);
+					graph_.set_color(corner);
+					graph_.set_pixel(pos.x, pos.y);
+					graph_.set_pixel(pos.x + size.width - 1, pos.y);
+					graph_.set_pixel(pos.x, pos.y + size.height - 1);
+					graph_.set_pixel(pos.x + size.width - 1, pos.y + size.height - 1);
+					graph_.rectangle(r.pare_off(1), true, body);
 				}
 
 				void item_renderer::caption(int x, int y, const nana::string& text)
 				{
-					graph_.string(x, y, 0x0, text);
+					graph_.string({ x, y }, text, colors::black);
 				}
 			//end class item_renderer
 
@@ -508,8 +511,8 @@ namespace nana
 
 				void trigger::_m_draw()
 				{
-					nana::color_t bground_color = API::background(*widget_);
-					graph_->rectangle(bground_color, true);
+					auto bgcolor = API::bgcolor(*widget_);
+					graph_->rectangle(true, bgcolor);
 
 					item_renderer ird(*widget_, *graph_);
 
@@ -538,8 +541,8 @@ namespace nana
 						{
 							int x = item_pos.x + item_s.width;
 							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
-							graph_->line(x, y1, x, y2, paint::graphics::mix(color::gray_border, bground_color, 0.6));
-							graph_->line(x + 1, y1, x + 1, y2, paint::graphics::mix(color::button_face_shadow_end, bground_color, 0.5));
+							graph_->line({ x, y1 }, { x, y2 }, ::nana::expr_color(colors::gray_border).blend(bgcolor, 0.6));
+							graph_->line({ x + 1, y1 }, { x + 1, y2 }, ::nana::expr_color(colors::button_face_shadow_end).blend(bgcolor, 0.5));
 						}
 
 						//Draw text, the text is transformed from orignal for hotkey character
@@ -555,7 +558,7 @@ namespace nana
 							graph_->text_metrics(ascent, descent, inleading);
 							int x = item_pos.x + 8 + off_w;
 							int y = item_pos.y + text_top_off + ascent + 1;
-							graph_->line(x, y, x + hotkey_size.width - 1, y, 0x0);
+							graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, ::nana::colors::black);
 						}
 
 						item_pos.x += i->size.width;

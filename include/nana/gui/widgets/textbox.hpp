@@ -79,7 +79,7 @@ namespace nana
 				void typeface_changed(graph_reference)				override;
 			private:
 				void _m_text_area(unsigned width, unsigned height);
-				void _m_draw_border(graph_reference, nana::color_t bgcolor);
+				void _m_draw_border(graph_reference, const ::nana::expr_color& bgcolor);
 			private:
 				widget*	widget_;
 				struct status_type

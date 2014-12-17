@@ -37,11 +37,9 @@ namespace nana
 			{
 				std::vector<std::shared_ptr<item_interface>> items;
 
-				std::size_t max_items;			// the number of items display.
-				mutable std::size_t index;		// the result of the selection.
+				std::size_t max_items{10};			// the number of items display.
+				mutable std::size_t index{::nana::npos};		// the result of the selection.
 				mutable bool have_selected;
-
-				module_def();
 			};
 
 			class item_renderer
@@ -51,7 +49,7 @@ namespace nana
 				typedef paint::graphics& graph_reference;
 				enum state_t{StateNone, StateHighlighted};
 
-				virtual ~item_renderer() = 0;
+				virtual ~item_renderer() = default;
 				virtual void image(bool enabled, unsigned pixels) = 0;
 				virtual void render(widget_reference, graph_reference, const nana::rectangle&, const item_interface*, state_t) = 0;
 				virtual unsigned item_pixels(graph_reference) const = 0;

@@ -169,15 +169,15 @@ namespace nana
 
 		combox();
 		combox(window, bool visible);
-		combox(window, const nana::string& text, bool visible = true);
-		combox(window, const nana::char_t* text, bool visible = true);
+		combox(window, nana::string, bool visible = true);
+		combox(window, const nana::char_t*, bool visible = true);
 		combox(window, const rectangle& r = rectangle(), bool visible = true);
 		
 		void clear();
 		void editable(bool);
 		bool editable() const;
 		void set_accept(std::function<bool(nana::char_t)>);
-		combox& push_back(const nana::string&);
+		combox& push_back(nana::string);
 		std::size_t the_number_of_options() const;
 		std::size_t option() const;   ///< Index of the last selected, from drop-down list, item.
 		void option(std::size_t);   ///< Select the text specified by index

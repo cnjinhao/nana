@@ -53,6 +53,11 @@ namespace detail
 		set_text_color(col);
 	}
 
+	unsigned drawable_impl_type::get_color() const
+	{
+		return color_;
+	}
+
 	void drawable_impl_type::set_color(nana::color_t col)
 	{
 		color_ = col;

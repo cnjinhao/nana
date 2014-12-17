@@ -223,7 +223,7 @@ namespace nana
 							show_scroll();
 
 						//Draw background
-						data.graph->rectangle(data.widget_ptr->background(), true);
+						data.graph->rectangle(true, data.widget_ptr->bgcolor());
 
 						//Draw tree
 						attr.tree_cont.for_each(shape.first, Renderer(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, 1)));
@@ -1093,26 +1093,26 @@ namespace nana
 
 					if(compset->comp_attribute(component::bground, attr))
 					{
-						const nana::color_t color_table[][2] = {	{0xE8F5FD, 0xD8F0FA}, //highlighted
-															{0xC4E8FA, 0xB6E6FB}, //Selected and highlighted
-															{0xD5EFFC, 0x99DEFD}  //Selected but not highlighted
+						const ::nana::expr_color color_table[][2] = { { { 0xE8, 0xF5, 0xFD }, { 0xD8, 0xF0, 0xFA } }, //highlighted
+						{ { 0xC4, 0xE8, 0xFA }, { 0xB6, 0xE6, 0xFB } }, //Selected and highlighted
+						{ { 0xD5, 0xEF, 0xFC }, {0x99, 0xDE, 0xFD } }  //Selected but not highlighted
 														};
 
-						const nana::color_t *colptr = nullptr;
+						const ::nana::expr_color *clrptr = nullptr;
 						if(compset->item_attribute().mouse_pointed)
 						{
 							if(compset->item_attribute().selected)
-								colptr = color_table[1];
+								clrptr = color_table[1];
 							else
-								colptr = color_table[0];
+								clrptr = color_table[0];
 						}
 						else if(compset->item_attribute().selected)
-							colptr = color_table[2];
+							clrptr = color_table[2];
 
-						if(colptr)
+						if (clrptr)
 						{
-							graph.rectangle(attr.area, colptr[1], false);
-							graph.rectangle(attr.area.pare_off(1), *colptr, true);
+							graph.rectangle(attr.area, false, clrptr[1]);
+							graph.rectangle(attr.area.pare_off(1), true, *clrptr);
 						}
 					}
 				}
@@ -1131,7 +1131,7 @@ namespace nana
 							style = 0;
 							dir = gadget::directions::to_east;
 						}
-						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? 0x1CC4F7 : 0x0), style, dir);
+						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? expr_color(0x1C, 0xC4, 0xF7) : expr_color(colors::black)), style, dir);
 					}
 				}
 
@@ -1409,7 +1409,7 @@ namespace nana
 						renderer_->text(item_graph, this);
 
 						item_graph.paste(attr.area, *graph_, 1, 1);
-						graph_->rectangle(0x0, false);
+						graph_->rectangle(false, colors::black);
 					}
 				}
 			private:
@@ -1798,7 +1798,7 @@ namespace nana
 				{
 					impl_->data.graph = &graph;
 
-					widget.background(0xFFFFFF);
+					widget.bgcolor(colors::white);
 					impl_->data.widget_ptr = static_cast< ::nana::treebox*>(&widget);
 					widget.caption(STR("Nana Treebox"));
 				}

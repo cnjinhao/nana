@@ -522,8 +522,8 @@ namespace paint
 			}
 			return false;
 		}
-
-		unsigned graphics::bidi_string(int x, int y, color_t col, const nana::char_t* str, std::size_t len)
+		/*
+		unsigned graphics::bidi_string(int x, int y, color_t col, const nana::char_t* str, std::size_t len)	//deprecated
 		{
 			int origin_x = x;
 			unicode_bidi bidi;
@@ -536,7 +536,9 @@ namespace paint
 			}
 			return static_cast<unsigned>(x - origin_x);
 		}
+		*/
 
+		/*
 		void graphics::string(int x, int y, color_t color, const nana::string& str, std::size_t len)
 		{
 			string(x, y, color, str.c_str(), len);
@@ -592,7 +594,9 @@ namespace paint
 		{
 			string(x, y, c, str, nana::strlen(str));
 		}
+		*/
 
+		/*
 		void graphics::set_pixel(int x, int y, color_t color)
 		{
 			if(handle_)
@@ -816,7 +820,7 @@ namespace paint
 #endif
 			if(changed_ == false) changed_ = true;
 		}
-
+		*/
 		void graphics::line_begin(int x, int y)
 		{
 			if(!handle_)	return;
@@ -828,7 +832,7 @@ namespace paint
 			handle_->line_begin_pos.y = y;
 #endif
 		}
-
+		/*
 		void graphics::line_to(int x, int y, color_t color)
 		{
 			if(!handle_)	return;
@@ -846,6 +850,7 @@ namespace paint
 #endif
 			if(changed_ == false) changed_ = true;
 		}
+		*/
 
 		void graphics::bitblt(int x, int y, const graphics& src)
 		{
@@ -1177,7 +1182,7 @@ namespace paint
 #endif
 			}
 		}
-		
+		/*
 		color_t graphics::mix(color_t a, color_t b, double fade_rate)	//deprecated
 		{
 			pixel_argb_t pa, pb, ret;
@@ -1191,6 +1196,7 @@ namespace paint
 
 			return ret.value;
 		}
+		*/
 
 		void graphics::set_color(const ::nana::expr_color& col)
 		{
@@ -1216,6 +1222,39 @@ namespace paint
 				moved_pos.x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
 			}
 			return static_cast<unsigned>(moved_pos.x - pos.x);
+		}
+
+		void graphics::blend(const nana::rectangle& r, const ::nana::expr_color& clr, double fade_rate)
+		{
+			if (handle_)
+			{
+				nana::paint::detail::blend(handle_, r, clr.px_color().value, fade_rate);
+				if (changed_ == false) changed_ = true;
+			}
+		}
+
+		void graphics::set_pixel(int x, int y, const ::nana::expr_color& clr)
+		{
+			if (handle_)
+			{
+				handle_->set_color(clr.px_color().value);
+				set_pixel(x, y);
+			}
+		}
+
+		void graphics::set_pixel(int x, int y)
+		{
+			if (handle_)
+			{
+#if defined(NANA_WINDOWS)
+				::SetPixel(handle_->context, x, y, NANA_RGB(handle_->get_color()));
+#elif defined(NANA_X11)
+				Display* disp = nana::detail::platform_spec::instance().open_display();
+				handle_->update_color();
+				::XDrawPoint(disp, handle_->pixmap, handle_->context, x, y);
+#endif
+				if (changed_ == false) changed_ = true;
+			}
 		}
 
 		void graphics::string(nana::point pos, const char_t* str, std::size_t len)
@@ -1270,6 +1309,12 @@ namespace paint
 			string(pos, str.data(), str.size());
 		}
 
+		void graphics::string(const point& pos, const ::nana::string& text, const expr_color& clr)
+		{
+			set_text_color(clr);
+			string(pos, text.data(), text.size());
+		}
+
 		void graphics::line(const nana::point& pos1, const nana::point& pos2)
 		{
 			if ((!handle_) || (pos1 == pos2))	return;
@@ -1286,6 +1331,48 @@ namespace paint
 			::XDrawLine(disp, handle_->pixmap, handle_->context, pos1.x, pos1.y, pos2.x, pos2.y);
 #endif
 			if (changed_ == false) changed_ = true;
+		}
+
+		void graphics::line(const point& pos_a, const point& pos_b, const expr_color& clr)
+		{
+			set_color(clr);
+			line(pos_a, pos_b);
+		}
+
+		void graphics::line_to(const point& pos, const expr_color& clr)
+		{
+			if (!handle_) return;
+			handle_->set_color(clr.px_color().value);
+			line_to(pos);
+		}
+
+		void graphics::line_to(const point& pos)
+		{
+			if (!handle_)	return;
+#if defined(NANA_WINDOWS)
+			handle_->update_pen();
+			::LineTo(handle_->context, pos.x, pos.y);
+#elif defined(NANA_X11)
+			Display* disp = nana::detail::platform_spec::instance().open_display();
+			handle_->update_color();
+			::XDrawLine(disp, handle_->pixmap, handle_->context,
+				handle_->line_begin_pos.x, handle_->line_begin_pos.y,
+				x, y);
+			handle_->line_begin_pos.x = x;
+			handle_->line_begin_pos.y = y;
+#endif
+			if (changed_ == false) changed_ = true;
+		}
+
+		void graphics::rectangle(bool solid)
+		{
+			rectangle(size(), solid);
+		}
+
+		void graphics::rectangle(bool solid, const ::nana::expr_color& clr)
+		{
+			set_color(clr);
+			rectangle(size(), solid);
 		}
 
 		void graphics::rectangle(const ::nana::rectangle& r, bool solid)
@@ -1306,6 +1393,23 @@ namespace paint
 #endif
 				if (changed_ == false) changed_ = true;
 			}
+		}
+
+		void graphics::rectangle(const ::nana::rectangle& r, bool solid, const expr_color& clr)
+		{
+			set_color(clr);
+			rectangle(r, solid);
+		}
+
+		void graphics::frame_rectangle(const ::nana::rectangle& r, const ::nana::expr_color& left_clr, const ::nana::expr_color& top_clr, const ::nana::expr_color& right_clr, const ::nana::expr_color& bottom_clr)
+		{
+			int right = r.right() - 1;
+			int bottom = r.bottom() - 1;
+			line_begin(r.x, r.y);
+			line_to({ right, r.y }, top_clr);
+			line_to({ right, bottom }, right_clr);
+			line_to({ r.x, bottom }, bottom_clr);
+			line_to({ r.x, r.y }, left_clr);
 		}
 
 		void graphics::gradual_rectangle(const ::nana::rectangle& r, const ::nana::expr_color& from, const ::nana::expr_color& to, bool vertical)
@@ -1363,6 +1467,40 @@ namespace paint
 			}
 #endif
 			if (changed_ == false) changed_ = true;
+		}
+
+		void graphics::round_rectangle(const ::nana::rectangle& r, unsigned radius_x, unsigned radius_y, const expr_color& clr, bool solid, const expr_color& solid_clr)
+		{
+			if (handle_)
+			{
+#if defined(NANA_WINDOWS)
+				handle_->set_color(clr.px_color().value);
+				if (solid)
+				{
+					handle_->update_pen();
+					handle_->brush.set(handle_->context, handle_->brush.Solid, solid_clr.px_color().value);
+					::RoundRect(handle_->context, r.x, r.y, r.right(), r.bottom(), static_cast<int>(radius_x * 2), static_cast<int>(radius_y * 2));
+				}
+				else
+				{
+					handle_->update_brush();
+					handle_->round_region.set(r, radius_x, radius_y);
+					::FrameRgn(handle_->context, handle_->round_region.handle, handle_->brush.handle, 1, 1);
+				}
+				if(changed_ == false) changed_ = true;
+#elif defined(NANA_X11)
+				if(solid && (color == solid_clr))
+				{
+					rectangle(r, true, color);
+				}
+				else
+				{
+					rectangle(r, false, color);
+					if(solid)
+						rectangle(rectangle(r).pare_off(1), true, solid_clr);
+				}
+#endif
+			}
 		}
 	//end class graphics
 

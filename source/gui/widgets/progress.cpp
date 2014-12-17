@@ -18,11 +18,6 @@ namespace nana
 		namespace progress
 		{
 			//class trigger
-			trigger::trigger()
-				:   graph_(nullptr), draw_width_(static_cast<unsigned>(-1)), has_value_(true),
-                    unknown_(false), max_(100), value_(0)
-			{}
-
 			void trigger::attached(widget_reference wd, graph_reference graph)
 			{
 				widget_	= &wd;
@@ -112,8 +107,9 @@ namespace nana
 			void trigger::_m_draw_box(graph_reference graph)
 			{
 				rectangle r = graph.size();
-				graph.shadow_rectangle(r, color::button_face_shadow_end, color::button_face_shadow_start, true);
-				graph.rectangle_line(r, 0x808080, 0x808080, 0xFFFFFF, 0xFFFFFF);
+				graph.gradual_rectangle(r, colors::button_face_shadow_end, colors::button_face_shadow_start, true);
+				::nana::expr_color lt{ 0x80, 0x80, 0x80 }, rb{colors::white};
+				graph.frame_rectangle(r, lt, lt, rb, rb);
 			}
 
 			void trigger::_m_draw_progress(graph_reference graph)
@@ -124,7 +120,7 @@ namespace nana
 				if(false == unknown_)
 				{
 					if(draw_width_)
-						graph.shadow_rectangle(border, border, draw_width_, height, 0x6FFFA8, 0x107515, true);
+						graph.gradual_rectangle({ static_cast<int>(border), static_cast<int>(border), draw_width_, height }, { 0x6F, 0xFF, 0xA8 }, { 0x10, 0x75, 0x15 }, true);
 				}
 				else
 				{
@@ -134,7 +130,7 @@ namespace nana
 					int right = (value_ >= width - 1 + border? width - 1 + border: value_);
 
 					if(right >= left)
-						graph.shadow_rectangle(left, border, right - left + 1, height, 0x6FFFA8, 0x107515, true);
+						graph.gradual_rectangle({ left, static_cast<int>(border), static_cast<unsigned>(right - left + 1), height }, { 0x6F, 0xFF, 0xA8 }, { 0x10, 0x75, 0x15 }, true);
 
 					if(value_ >= width + block)	value_ = 0;
 				}

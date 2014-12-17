@@ -157,7 +157,7 @@ namespace API
 			if(restrict::window_manager.available(iwd))
 			{
 				iwd->drawer.graphics.make(iwd->dimension.width, iwd->dimension.height);
-				iwd->drawer.graphics.rectangle(iwd->colors.background, true);
+				iwd->drawer.graphics.rectangle(true, iwd->colors.bgcolor);
 				iwd->drawer.attached(wd, dr);
 				iwd->drawer.refresh();	//Always redrawe no matter it is visible or invisible. This can make the graphics data correctly.
 			}
@@ -790,11 +790,12 @@ namespace API
 			restrict::bedrock.pump_event(wd, false);
 	}
 
+	/*
 	nana::color_t foreground(window wd)	//deprecated
 	{
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.foreground;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.fgcolor.px_color().value;
 		return 0;
 	}
 
@@ -804,10 +805,10 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->colors.foreground;
+			color_t prev = iwd->colors.fgcolor.px_color().value;
 			if(prev != col)
 			{
-				iwd->colors.foreground = col;
+				iwd->colors.fgcolor = static_cast<colors>(col);
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -819,7 +820,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.background;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.bgcolor.px_color().value;
 		return 0;
 	}
 
@@ -829,10 +830,10 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->colors.background;
+			color_t prev = iwd->colors.bgcolor.px_color().value;
 			if(prev != col)
 			{
-				iwd->colors.background = col;
+				iwd->colors.bgcolor = static_cast<colors>(col);
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -844,20 +845,20 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.active;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.activated.px_color().value;
 		return 0;
 	}
 
-	color_t active(window wd, color_t col)	//deprecated
+	color_t active(window wd, color_t clr)	//deprecated
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->colors.active;
-			if(prev != col)
+			color_t prev = iwd->colors.activated.px_color().value;
+			if (prev != clr)
 			{
-				iwd->colors.active = col;
+				iwd->colors.activated = static_cast<colors>(clr);
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -865,6 +866,7 @@ namespace API
 		
 		return 0;
 	}
+	*/
 
 
 	expr_color fgcolor(window wd)

@@ -67,7 +67,7 @@ namespace nana
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
 				size_type _m_which(int x, int y, bool want_if_disabled) const;
-				void _m_draw_background(nana::color_t);
+				void _m_draw_background(const ::nana::expr_color&);
 				void _m_draw();
 				void _m_owner_sized(const arg_resized&);
 			private:
@@ -87,7 +87,7 @@ namespace nana
 	public:
 		typedef std::size_t size_type;      ///< A type to count the number of elements.
 
-		toolbar();
+		toolbar() = default;
 		toolbar(window, bool visible);
 		toolbar(window, const rectangle& = rectangle(), bool visible = true);
 

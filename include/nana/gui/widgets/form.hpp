@@ -24,12 +24,11 @@ namespace nana
 			class trigger: public drawer_trigger
 			{
 			public:
-				trigger();
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
-				void resized(graph_reference, const arg_resized&) override;
+				//void resized(graph_reference, const arg_resized&) override; //deprecated
 			private:
-				widget*	wd_;
+				widget*	wd_{nullptr};
 			};
 		}//end namespace form
 	}//end namespace drawerbase

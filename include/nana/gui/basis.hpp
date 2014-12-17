@@ -97,7 +97,7 @@ namespace nana
 			os_insert		= 0x2D, os_del
 		};
 	};
-
+	/*
 	namespace color	//deprecated
 	{
 		enum
@@ -115,6 +115,7 @@ namespace nana
 			highlight = 0x1CC4F7
 		};
 	};
+	*/
 
 	enum class cursor
 	{
