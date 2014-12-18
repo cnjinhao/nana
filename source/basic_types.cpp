@@ -13,15 +13,21 @@
 
 namespace nana
 {
+	rgb_color::rgb_color(unsigned clr)
+		: blue((0xFF00 & clr) >> 8), green(0xFF & clr), red((0xFF0000 & clr) >> 16)
+	{}
+
 	//class color
+	expr_color::expr_color(colors clr)
+		: expr_color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF)
+	{}
 
-	expr_color::expr_color(colors col)
-		: expr_color((static_cast<unsigned>(col)& 0xFF0000) >> 16, (static_cast<unsigned>(col)& 0xFF00) >> 8, static_cast<unsigned>(col)& 0xFF)
-	{
-	}
+	expr_color::expr_color(colors clr, double alpha)
+		: expr_color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF, alpha)
+	{}
 
-	expr_color::expr_color(colors col, double alpha)
-		: expr_color((static_cast<unsigned>(col)& 0xFF0000) >> 16, (static_cast<unsigned>(col)& 0xFF00) >> 8, static_cast<unsigned>(col)& 0xFF, alpha)
+	expr_color::expr_color(const rgb_color& rgb)
+		: a_(1.0), r_(rgb.red), g_(rgb.green), b_(rgb.blue)
 	{
 	}
 

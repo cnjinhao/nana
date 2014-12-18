@@ -79,7 +79,6 @@ namespace nana
 					if(ue.what == ue.none || (API::window_enabled(wd) == false))
 					{	//the mouse is out of the widget.
 						style_.bgcolor.blend(expr_color{ 0xa0, 0xc9, 0xf5 }, 0.9);
-						//style_.bgcolor = nana::paint::graphics::mix(style_.bgcolor, 0xA0C9F5, 0.9);	//deprecated
 					}
 					graph.rectangle(r, true, style_.bgcolor);
 				}
@@ -131,21 +130,16 @@ namespace nana
 						::nana::expr_color clr{ 0x3C, 0x7F, 0xB1 };
 						if(has_child)
 						{
-							int left = r.x + r.width - 16;
-							_m_item_bground(graph, left, top, 15, height, state_arrow);
 							width -= 16;
-							--left;
-							//graph.line(left, top, left, r.y + height, 0x3C7FB1);//deprecated
-							graph.set_color(clr);
-							graph.line({ left, top }, { left, r.y + static_cast<int>(height) });
+
+							int left = r.x + r.width - 17;
+							_m_item_bground(graph, left + 1, top, 15, height, state_arrow);
+							graph.line({ left, top }, { left, r.y + static_cast<int>(height) }, clr);
 						}
 
 						_m_item_bground(graph, r.x + 1, top, width, height, state_name);
-						//graph.rectangle(r, 0x3C7FB1, false);	//deprecated
-						graph.set_color(clr);
-						graph.rectangle(r, false);
+						graph.rectangle(r, false, clr);
 					}
-					//graph.string(strpos.x, strpos.y, style_.fgcolor, name);	//deprecated
 					graph.string(strpos, name, style_.fgcolor);
 
 					if(has_child)
@@ -159,17 +153,11 @@ namespace nana
 				{
 					rectangle r{ graph.size() };
 
-					graph.set_color({ 0xf0, 0xf0, 0xf0 });
-					graph.rectangle(r, false);
+					graph.rectangle(r, false, { 0xf0, 0xf0, 0xf0 });
 
 					expr_color lb(0x9d, 0xab, 0xb9);
 					expr_color tr(0x48, 0x4e, 0x55);
 					graph.frame_rectangle(r.pare_off(1), lb, tr, tr, lb);
-
-					//deprecated
-					//graph.rectangle(0xF0F0F0, false);
-					//graph.rectangle_line(nana::rectangle(graph.size()).pare_off(1),
-					//					0x9DABB9, 0x484E55, 0x484E55, 0x9DABB9);
 				}
 			private:
 				void _m_item_bground(graph_reference graph, int x, int y, unsigned width, unsigned height, mouse_action state)
@@ -177,35 +165,25 @@ namespace nana
 					const unsigned half = (height - 2) / 2;
 					int left = x + 1;
 					int top = y + 1;
-					//nana::color_t upcol, downcol; // deprecated
 					nana::expr_color clr_top(0xea, 0xea, 0xea), clr_bottom(0xdc, 0xdc, 0xdc);
 					switch(state)
 					{
 					case mouse_action::over:
-						clr_top = expr_color(0xdf, 0xf2, 0xfc);
-						clr_bottom = expr_color(0xa9, 0xda, 0xf5);
-						//upcol = 0x0DFF2FC;	//deprecated
-						//downcol = 0xA9DAF5;
+						clr_top.from_rgb(0xdf, 0xf2, 0xfc);
+						clr_bottom.from_rgb(0xa9, 0xda, 0xf5);
 						break;
 					case mouse_action::pressed:
-						//upcol = 0xA6D7F2;	//deprecated
-						//downcol = 0x92C4F6;
-						clr_top = expr_color(0xa6, 0xd7, 0xf2);
-						clr_bottom = expr_color(0x92, 0xc4, 0xf6);
+						clr_top.from_rgb(0xa6, 0xd7, 0xf2);
+						clr_bottom.from_rgb(0x92, 0xc4, 0xf6);
 						++left;
 						++top;
 						break;
-					//case mouse_action::normal:	//deprecated
 					default:
-						//upcol = 0xEAEAEA;	//deprecated
-						//downcol = 0xDCDCDC;
 						break;
 					}
 
 					graph.rectangle(rectangle{ left, top, width - 2, half }, true, clr_top);
 					graph.rectangle(rectangle{ left, top + static_cast<int>(half), width - 2, (height - 2) - half }, true, clr_bottom);
-					//graph.rectangle(left, top, width - 2, half, upcol, true);	//deprecated
-					//graph.rectangle(left, top + static_cast<int>(half), width - 2, (height - 2) - half, downcol, true);
 					if(mouse_action::pressed == state)
 					{
 						int bottom = y + height - 1;
@@ -219,13 +197,6 @@ namespace nana
 						graph.set_color(expr_color(0xa6, 0xc7, 0xd9));
 						graph.line(point{ x, y }, point{ right, y });
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
-
-						//graph.line(x, y, right, y, 0x6E8D9F);	//deprecated
-						//graph.line(x, y + 1, x, bottom, 0x6E8D9F);
-						//++x;
-						//++y;
-						//graph.line(x, y, right, y, 0xA6C7D9);
-						//graph.line(x, y + 1, x, bottom, 0xA6C7D9);
 					}
 				}
 
@@ -416,7 +387,6 @@ namespace nana
 				void attach(window wd, nana::paint::graphics* graph)
 				{
 					window_ = wd;
-					//API::background(wd, 0xFFFFFF);	//deprecated
 					API::bgcolor(wd, colors::white);
 					graph_ = graph;
 				}

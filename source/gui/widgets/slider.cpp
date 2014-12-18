@@ -23,11 +23,6 @@ namespace nana
 					//draw border
 					::nana::expr_color lt(0x83, 0x90, 0x97), rb(0x9d,0xae,0xc2);
 					graph.frame_rectangle(bi.r, lt, lt, rb, rb);
-					//const nana::color_t dark = 0x83909F;	//deprecated
-					//const nana::color_t gray = 0x9DAEC2;
-
-					//graph.rectangle_line(bi.r, 
-					//		dark, dark, gray, gray);	//deprecated
 				}
 
 				virtual void adorn(window, graph_reference graph, const adorn_t& ad)
@@ -38,15 +33,11 @@ namespace nana
 					::nana::expr_color clr_from(0x84, 0xc5, 0xff), clr_trans(0x0f, 0x41, 0xcd), clr_to(0x6e, 0x96, 0xff);
 					if(ad.horizontal)
 					{
-						//graph.shadow_rectangle(ad.bound.x, ad.fixedpos, len, upperblock, 0x84C5FF, 0x0F41CD, true);	//deprecated
-						//graph.shadow_rectangle(ad.bound.x, ad.fixedpos + upperblock, len, ad.block - upperblock, 0x0F41CD, 0x6E96FF, true);
 						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos, len, upperblock }, clr_from, clr_trans, true);
 						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos + static_cast<int>(upperblock), len, ad.block - upperblock }, clr_trans, clr_to, true);
 					}
 					else
 					{
-						//graph.shadow_rectangle(ad.fixedpos, ad.bound.x, upperblock, len, 0x84C5FF, 0x0F41CD, false);	//deprecatd
-						//graph.shadow_rectangle(ad.fixedpos + upperblock, ad.bound.x, ad.block - upperblock, len, 0x0F41CD, 0x6E96FF, false);
 						graph.gradual_rectangle({ ad.fixedpos, ad.bound.x, upperblock, len }, clr_from, clr_trans, false);	//deprecatd
 						graph.gradual_rectangle({ ad.fixedpos + static_cast<int>(upperblock), ad.bound.x, ad.block - upperblock, len }, clr_trans, clr_to, false);
 					}

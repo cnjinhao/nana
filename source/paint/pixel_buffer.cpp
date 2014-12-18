@@ -776,7 +776,7 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::line(const nana::point &pos_beg, const nana::point &pos_end, nana::color_t color, double fade_rate)
+	void pixel_buffer::line(const point &pos_beg, const point &pos_end, const ::nana::expr_color& clr, double fade_rate)
 	{
 		pixel_buffer_storage * sp = storage_.get();
 		if(nullptr == sp) return;
@@ -785,21 +785,25 @@ namespace nana{	namespace paint
 		//are always in the area of rectangle, good_pos_beg is left point, good_pos_end is right.
 		nana::point good_pos_beg, good_pos_end;
 		if(intersection(nana::rectangle(sp->pixel_size), pos_beg, pos_end, good_pos_beg, good_pos_end))
-			(*(sp->img_pro.line))->process(*this, good_pos_beg, good_pos_end, color, fade_rate);
+			(*(sp->img_pro.line))->process(*this, good_pos_beg, good_pos_end, clr, fade_rate);
 	}
 
-	void pixel_buffer::rectangle(const nana::rectangle &r, nana::color_t col, double fade_rate, bool solid)
+	void pixel_buffer::rectangle(const nana::rectangle &r, const ::nana::expr_color& clr, double fade_rate, bool solid)
 	{
 		pixel_buffer_storage * sp = storage_.get();
 		if((nullptr == sp) || (fade_rate == 1.0)) return;
 
 		bool fade = (fade_rate != 0.0);
 		unsigned char * fade_table = nullptr;
+		std::unique_ptr<unsigned char[]> autoptr;
+
+		auto rgb_color = clr.px_color().value;
 		nana::pixel_argb_t rgb_imd;
 		if(fade)
 		{
-			fade_table = detail::alloc_fade_table(1 - fade_rate);
-			rgb_imd.value = col;
+			autoptr = detail::alloc_fade_table(1 - fade_rate);
+			fade_table = autoptr.get();
+			rgb_imd.value = rgb_color;
 			rgb_imd = detail::fade_color_intermedia(rgb_imd, fade_table);
 		}
 
@@ -830,7 +834,7 @@ namespace nana{	namespace paint
 				for (int top = ybeg; top < yend; ++top)
 				{
 					for (auto i = lineptr; i != end; ++i)
-						i->value = col;
+						i->value = rgb_color;
 
 					lineptr += sp->pixel_size.width;
 					end = lineptr + (xend - xbeg);
@@ -857,8 +861,8 @@ namespace nana{	namespace paint
 			{
 				for(;i != end; ++i, ++i_other)
 				{
-					i->value = col;
-					i_other->value = col;
+					i->value = rgb_color;
+					i_other->value = rgb_color;
 				}
 			}
 		}
@@ -877,7 +881,7 @@ namespace nana{	namespace paint
 				else
 				{
 					for(;i != end; ++i)
-						i->value = col;
+						i->value = rgb_color;
 				}
 			}
 
@@ -895,7 +899,7 @@ namespace nana{	namespace paint
 				else
 				{
 					for(;i != end; ++i)
-						i->value = col;
+						i->value = rgb_color;
 				}
 			}
 		}
@@ -924,8 +928,8 @@ namespace nana{	namespace paint
 			{
 				while(true)
 				{
-					i->value = col;
-					i_other->value = col;
+					i->value = rgb_color;
+					i_other->value = rgb_color;
 					if(i == end)
 						break;
 
@@ -955,7 +959,7 @@ namespace nana{	namespace paint
 				{
 					while(true)
 					{
-						i->value = col;
+						i->value = rgb_color;
 						if(i == end)	break;
 
 						i += sp->pixel_size.width;
@@ -981,78 +985,11 @@ namespace nana{	namespace paint
 				{
 					while(true)
 					{
-						i->value = col;
+						i->value = rgb_color;
 						if(i == end)	break;
 						i += sp->pixel_size.width;
 					}
 				}
-			}
-		}
-
-		detail::free_fade_table(fade_table);
-	}
-
-	void pixel_buffer::shadow_rectangle(const nana::rectangle& draw_rct, nana::color_t beg, nana::color_t end, double fade_rate, bool vertical)
-	{
-		pixel_buffer_storage * sp = storage_.get();
-		if(nullptr == sp) return;
-
-		nana::rectangle rct;
-		if(false == overlap(nana::rectangle(sp->pixel_size), draw_rct, rct))
-			return;
-
-		int deltapx = int(vertical ? rct.height : rct.width);
-		if(sp && deltapx)
-		{
-			nana::color_t r, g, b;
-			const int delta_r = (int(end & 0xFF0000) - int(r = (beg & 0xFF0000))) / deltapx;
-			const int delta_g = (int((end & 0xFF00) << 8) - int(g = ((beg & 0xFF00) << 8))) / deltapx;
-			const int delta_b = (int((end & 0xFF) << 16 ) - int(b = ((beg & 0xFF)<< 16))) / deltapx;
-
-			auto pxbuf = sp->raw_pixel_buffer + rct.x + rct.y * sp->pixel_size.width;
-			if(vertical)
-			{
-				if(deltapx + rct.y > 0)
-				{
-					unsigned align_4 = (rct.width & ~3);
-					unsigned align_reset = rct.width & 3;
-					while(deltapx--)
-					{
-						nana::pixel_argb_t px;
-
-						px.value = ((r += delta_r) & 0xFF0000) | (((g += delta_g) & 0xFF0000) >> 8) | (((b += delta_b) & 0xFF0000) >> 16);
-						
-						auto dpx = pxbuf;
-						for(auto dpx_end = pxbuf + align_4; dpx != dpx_end; dpx += 4)
-						{
-							*dpx = px;
-							dpx[1] = px;
-							dpx[2] = px;
-							dpx[3] = px;
-						}
-
-						for(auto dpx_end = dpx + align_reset; dpx != dpx_end; ++dpx)
-							*dpx = px;
-
-						pxbuf += sp->pixel_size.width;
-					}
-				}
-			}
-			else
-			{
-				if(deltapx + rct.x > 0)
-				{
-					auto pxbuf_end = pxbuf + rct.width;
-
-					for(; pxbuf != pxbuf_end; ++pxbuf)
-					{
-						nana::pixel_argb_t px;
-						px.value = ((r += delta_r) & 0xFF0000) | (((g += delta_g) & 0xFF0000) >> 8) | (((b += delta_b) & 0xFF0000) >> 16);
-						auto dpx_end = pxbuf + rct.height * sp->pixel_size.width;
-						for(auto dpx = pxbuf; dpx != dpx_end; dpx += sp->pixel_size.width)
-							*dpx = px;
-					}
-				}			
 			}
 		}
 	}
@@ -1071,7 +1008,7 @@ namespace nana{	namespace paint
 		{
 			auto beg = from.argb().value;
 			auto end = to.argb().value;
-			nana::color_t r, g, b;
+			unsigned r, g, b;
 			const int delta_r = (int(end & 0xFF0000) - int(r = (beg & 0xFF0000))) / deltapx;
 			const int delta_g = (int((end & 0xFF00) << 8) - int(g = ((beg & 0xFF00) << 8))) / deltapx;
 			const int delta_b = (int((end & 0xFF) << 16) - int(b = ((beg & 0xFF) << 16))) / deltapx;

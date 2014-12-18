@@ -27,13 +27,6 @@ namespace nana
 			{
 				graph.rectangle(true, API::bgcolor(*wd_));
 			}
-			/*
-			void trigger::resized(graph_reference graph, const arg_resized&)	//deprecated
-			{
-				graph.rectangle(API::background(*wd_), true);
-				API::lazy_refresh();
-			}
-			*/
 		}//end namespace form
 	}//end namespace drawerbase
 

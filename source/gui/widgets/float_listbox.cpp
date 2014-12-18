@@ -37,21 +37,11 @@ namespace nana
 						::nana::expr_color clr{ 0xaf, 0xc7, 0xe3 };
 						graph.rectangle(r, false, clr);
 
-						//graph.set_pixel(r.x, r.y, 0xFFFFFF);	//deprecated
-						//graph.set_pixel(r.x + r.width - 1, r.y, 0xFFFFFF);
-						//graph.set_pixel(r.x, r.y + r.height - 1, 0xFFFFFF);
-						//graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1, 0xFFFFFF);
-
 						graph.set_color(colors::white);
 						graph.set_pixel(r.x, r.y);
 						graph.set_pixel(r.x + r.width - 1, r.y);
 						graph.set_pixel(r.x, r.y + r.height - 1);
 						graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1);
-
-						//graph.set_pixel(r.x + 1, r.y + 1, 0xAFC7E3);	//deprecated
-						//graph.set_pixel(r.x + r.width - 2, r.y + 1, 0xAFC7E3);
-						//graph.set_pixel(r.x + 1, r.y + r.height - 2, 0xAFC7E3);
-						//graph.set_pixel(r.x + r.width - 2, r.y + r.height - 2, 0xAFC7E3);
 
 						graph.set_color(clr);
 						graph.set_pixel(r.x + 1, r.y + 1);

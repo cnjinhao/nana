@@ -352,8 +352,9 @@ namespace detail
 
 				if(d_rgb && s_rgb)
 				{
-					unsigned char* tablebuf = detail::alloc_fade_table(fade_rate);//new unsigned char[0x100 * 2];
-					unsigned char* d_table = tablebuf;
+					auto ptr = detail::alloc_fade_table(fade_rate);//new unsigned char[0x100 * 2];
+
+					unsigned char* d_table = ptr.get();
 					unsigned char* s_table = d_table + 0x100;
 
 					const unsigned rest = s_r.width & 0x3;
@@ -396,7 +397,6 @@ namespace detail
 						d_rgb = pixel_at(d_rgb, d_step_bytes);
 						s_rgb = pixel_at(s_rgb, s_step_bytes);
 					}
-					detail::free_fade_table(tablebuf);
 				}
 			}
 		};
@@ -405,15 +405,19 @@ namespace detail
 		class bresenham_line
 			: public image_process::line_interface
 		{
-			virtual void process(paint::pixel_buffer & pixbuf, const nana::point& pos_beg, const nana::point& pos_end, nana::color_t color, double fade_rate) const
+			virtual void process(paint::pixel_buffer & pixbuf, const nana::point& pos_beg, const nana::point& pos_end, const ::nana::expr_color& clr, double fade_rate) const
 			{
+				auto rgb_color = clr.px_color().value;
 				const std::size_t bytes_pl = pixbuf.bytes_per_line();
+				
 				unsigned char * fade_table = nullptr;
+				std::unique_ptr<unsigned char[]> autoptr;
 				nana::pixel_argb_t rgb_imd;
 				if(fade_rate != 0.0)
 				{
-					fade_table = detail::alloc_fade_table(1 - fade_rate);
-					rgb_imd.value = color;
+					autoptr = detail::alloc_fade_table(1 - fade_rate);
+					fade_table = autoptr.get();
+					rgb_imd.value = rgb_color;
 					rgb_imd = detail::fade_color_intermedia(rgb_imd, fade_table);
 				}
 
@@ -447,7 +451,7 @@ namespace detail
 					{
 						for(int x = 0; x < delta.x; ++x)
 						{
-							i->value = color;
+							i->value = rgb_color;
 							i = pixel_at(i, step_bytes);
 						}			
 					}
@@ -479,7 +483,7 @@ namespace detail
 						{
 							for(int x = 0; x < delta.x; ++x)
 							{
-								i->value = color;
+								i->value = rgb_color;
 								if(error >= 0)
 								{
 									error -= dx_2;
@@ -513,7 +517,7 @@ namespace detail
 						{
 							for (int y = 0; y < delta.y; ++y)
 							{
-								i->value = color;
+								i->value = rgb_color;
 								if(error >= 0)
 								{
 									error -= dy_2;
@@ -525,8 +529,6 @@ namespace detail
 						}
 					}
 				}
-
-				detail::free_fade_table(fade_table);
 			}
 		};
 

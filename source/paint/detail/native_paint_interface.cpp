@@ -48,9 +48,10 @@ namespace detail
 	}
 
 
-	unsigned char * alloc_fade_table(double fade_rate)
+	std::unique_ptr<unsigned char[]> alloc_fade_table(double fade_rate)
 	{
-		unsigned char* tablebuf = new unsigned char[0x100 * 2];
+		std::unique_ptr<unsigned char[]> ptr(new unsigned char[0x100 * 2]);
+		unsigned char* tablebuf = ptr.get();
 		unsigned char* d_table = tablebuf;
 		unsigned char* s_table = d_table + 0x100;
 
@@ -76,36 +77,8 @@ namespace detail
 			d_table += 4;
 			s_table += 4;
 		}
-		return tablebuf;
+		return ptr;
 	}
-
-	void free_fade_table(const unsigned char* table)
-	{
-		delete [] table;
-	}
-	/*
-	nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, double fade_rate)	//deprecated
-	{
-		pixel_color_t ret;
-		double lrate = 1.0 - fade_rate;
-
-		ret.element.red = static_cast<unsigned char>(bgcolor.element.red * fade_rate + fgcolor.element.red * lrate);
-		ret.element.green = static_cast<unsigned char>(bgcolor.element.green * fade_rate + fgcolor.element.green * lrate);
-		ret.element.blue = static_cast<unsigned char>(bgcolor.element.blue * fade_rate + fgcolor.element.blue * lrate);
-		ret.element.alpha_channel = 0;
-		return ret;
-	}
-
-	nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, const unsigned char* const fade_table)	//deprecated
-	{
-		const unsigned char * const s_fade_table = fade_table + 0x100;
-
-		bgcolor.element.red = fade_table[bgcolor.element.red] + s_fade_table[fgcolor.element.red];
-		bgcolor.element.green = fade_table[bgcolor.element.green] + s_fade_table[fgcolor.element.green];
-		bgcolor.element.blue = fade_table[bgcolor.element.blue] + s_fade_table[fgcolor.element.blue];
-		return bgcolor;
-	}
-	*/
 
 	nana::pixel_color_t fade_color_intermedia(nana::pixel_color_t fgcolor, const unsigned char* fade_table)
 	{
@@ -124,7 +97,7 @@ namespace detail
 		return bgcolor;
 	}
 
-	void blend(drawable_type dw, const nana::rectangle& area, unsigned color, double fade_rate)
+	void blend(drawable_type dw, const nana::rectangle& area, pixel_color_t color, double fade_rate)
 	{
 		if(fade_rate <= 0) return;
 		if(fade_rate > 1) fade_rate = 1;
@@ -133,9 +106,9 @@ namespace detail
 		if(false == nana::overlap(drawable_size(dw), area, r))
 			return;
 
-		unsigned red = static_cast<unsigned>((color & 0xFF0000) * fade_rate);
-		unsigned green = static_cast<unsigned>((color & 0xFF00) * fade_rate);
-		unsigned blue = static_cast<unsigned>((color & 0xFF) * fade_rate);
+		unsigned red = static_cast<unsigned>((color.value & 0xFF0000) * fade_rate);
+		unsigned green = static_cast<unsigned>((color.value & 0xFF00) * fade_rate);
+		unsigned blue = static_cast<unsigned>((color.value & 0xFF) * fade_rate);
 
 		double lrate = 1 - fade_rate;
 		pixel_buffer pixbuf(dw, r.y, r.height);

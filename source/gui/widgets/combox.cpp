@@ -600,7 +600,6 @@ namespace nana
 				void trigger::attached(widget_reference wdg, graph_reference graph)
 				{
 					wdg.bgcolor(colors::white);
-					//wdg.background(0xFFFFFF);	//deprecated
 					drawer_->attached(wdg, graph);
 
 					API::effects_edge_nimbus(wdg, effects::edge_nimbus::active);

@@ -347,9 +347,6 @@ namespace nana
 
 				visible = false;
 
-				//colors.foreground = 0x0;	//deprecated
-				//colors.background = nana::color::button_face;
-				//colors.active = 0x60C8FD;
 				colors.fgcolor = ::nana::colors::black;
 				colors.bgcolor = ::nana::colors::button_face;
 				colors.activated.from_rgb(0x60, 0xc8, 0xfd);

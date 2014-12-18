@@ -37,8 +37,6 @@ namespace nana
 
 			struct
 			{
-				//unsigned background_shadow_start;	//deprecated
-				//unsigned background_shadow_end;
 				::nana::expr_color gradual_from;
 				::nana::expr_color gradual_to;
 				bool	horizontal;

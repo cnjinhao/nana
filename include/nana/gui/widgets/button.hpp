@@ -68,8 +68,6 @@ namespace nana{
 					bool enable_pushed;
 					bool focus_color;
 					paint::image * icon;
-					//color_t bgcolor;	//deprecated
-					//color_t fgcolor;
 					::nana::expr_color bgcolor;
 					::nana::expr_color fgcolor;
 				}attr_;

@@ -98,33 +98,30 @@ namespace nana
 	typedef unsigned char	uint8_t;
 	typedef unsigned long	uint32_t;
 	typedef unsigned		uint_t;
-	typedef unsigned		color_t;	//deprecated
 	typedef long long long_long_t;
-
-	//const color_t null_color = 0xFFFFFFFF;	//deprecated
 
 	union pixel_argb_t
 	{
 		struct element_tag
 		{
-			unsigned int blue:8;
-			unsigned int green:8;
-			unsigned int red:8;
-			unsigned int alpha_channel:8;
+			unsigned char blue;
+			unsigned char green;
+			unsigned char red;
+			unsigned char alpha_channel;
 		}element;
-		color_t value;
+		unsigned value;
 	};
 
 	union pixel_rgba_t
 	{
 		struct element_tag
 		{
-			unsigned int alpha_channel : 8;
-			unsigned int blue : 8;
-			unsigned int green : 8;
-			unsigned int red : 8;
+			unsigned char alpha_channel;
+			unsigned char blue;
+			unsigned char green;
+			unsigned char red;
 		}element;
-		color_t value;
+		unsigned value;
 	};
 
 	using pixel_color_t = pixel_argb_t;
@@ -150,12 +147,24 @@ namespace nana
 		highlight = 0x1CC4F7
 	};
 
+#pragma pack(1)
+	struct rgb_color
+	{
+		unsigned char blue;
+		unsigned char green;
+		unsigned char red;
+
+		rgb_color(unsigned clr);
+	};
+#pragma pack()
+
 	class expr_color
 	{
 	public:
 		expr_color() = default;
 		expr_color(colors);
 		expr_color(colors, double alpha);
+		expr_color(const rgb_color&);
 		expr_color(unsigned red, unsigned green, unsigned blue);
 		expr_color(unsigned red, unsigned green, unsigned blue, double alpha);
 

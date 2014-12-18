@@ -1,6 +1,7 @@
 /*
  *	Paint Graphics Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -99,29 +100,6 @@ namespace nana
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
 
-			//unsigned bidi_string(int x, int y, color_t, const char_t *, std::size_t len);	//deprecated
-			//void string(int x, int y, color_t, const ::nana::string&, std::size_t len);
-			//void string(int x, int y, color_t, const ::nana::string&);
-			//void string(int x, int y, color_t, const char_t*, std::size_t len);
-			//void string(int x, int y, color_t, const char_t*);
-
-			/*
-			void set_pixel(int x, int y, color_t);
-			void rectangle(int x, int y, unsigned width, unsigned height, color_t, bool solid);
-			void rectangle(color_t, bool solid);
-			void rectangle(const ::nana::rectangle&, color_t, bool solid);
-			void rectangle_line(const ::nana::rectangle&, color_t left, color_t top, color_t right, color_t bottom);
-			void round_rectangle(int x, int y, unsigned width, unsigned height, unsigned radius_x, unsigned radius_y, color_t, bool solid, color_t color_if_solid);
-			void round_rectangle(const ::nana::rectangle&, unsigned radius_x, unsigned radius_y, color_t, bool solid, color_t color_if_solid);
-
-			void shadow_rectangle(const ::nana::rectangle&, color_t beg_color, color_t end_color, bool vertical);	//deprecated
-			void shadow_rectangle(int x, int y, unsigned width, unsigned height, color_t beg_color, color_t end_color, bool vertical); ///< Draws a width and height rectangle at (x, y) and the color in range of [begin, end]
-
-			void line(int x1, int y1, int x2, int y2, color_t);     ///<  Draws a line from point (x1, y1) to point (x2, y2) in the specified color.
-			void line(const point& beg, const point& end, color_t);
-			void lines(const point* points, std::size_t n_of_points, color_t);
-			void line_to(int x, int y, color_t);
-			*/
 			void line_begin(int x, int y);
 
 			void bitblt(int x, int y, const graphics& source);     ///<   Transfers the source to the specified point.
@@ -131,7 +109,6 @@ namespace nana
 			void bitblt(const ::nana::rectangle& r_dst, const graphics& src, const point& p_src);///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
 
 			void blend(const ::nana::rectangle& s_r, graphics& dst, const point& d_pos, double fade_rate) const;///< blends with the dst object.
-			void blend(const ::nana::rectangle& r, color_t, double fade_rate);      ///< blends the specifed block width the specified color.
 
 			void blur(const ::nana::rectangle& r, std::size_t radius);      ///< Blur process.
 
@@ -153,8 +130,6 @@ namespace nana
 			void setsta();      ///<  	Clears the status if the graphics object had been changed
 			void release();
 			void save_as_file(const char*);
-
-			//static color_t mix(color_t colorX, color_t colorY, double persent);	//deprecated
 
 			void set_color(const ::nana::expr_color&);
 			void set_text_color(const ::nana::expr_color&);

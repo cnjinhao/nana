@@ -1662,7 +1662,6 @@ namespace nana{	namespace widgets
 			auto fgcolor = API::fgcolor(window_);
 			if (!API::window_enabled(window_))
 				fgcolor.blend(bgcolor, 0.5);
-				//fgcolor = nana::paint::graphics::mix(bgcolor, fgcolor, 0.5);	//deprecated
 
 			//Draw background
 			if(attributes_.enable_background)
@@ -2544,7 +2543,6 @@ namespace nana{	namespace widgets
 					{
 						if (selected)
 						{
-							//color = 0xFFFFFF;	//deprecated
 							graph_.set_text_color(colors::white);
 							graph_.rectangle({ x, top, str_w, line_h_pixels }, true);
 						}

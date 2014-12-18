@@ -66,7 +66,6 @@ namespace nana
 					{
 						bgcolor = m.bgcolor;
 						blcolor = expr_color{ colors::black }.blend(m.bgcolor, 0.5);
-						//dark_bgcolor = nana::paint::graphics::mix(m.bgcolor, 0, 0.9); //deprecated
 						dark_bgcolor = expr_color{ colors::black }.blend(m.bgcolor, 0.1);
 					}
 
@@ -89,7 +88,6 @@ namespace nana
 					if (sta == item_renderer::highlight)
 						beg.blend(colors::white, 0.5);
 
-					//graph.shadow_rectangle(r.x + 2, r.y + 2, r.width - 4, r.height - 2, beg,  end, true);	//deprecated
 					graph.gradual_rectangle(round_r.pare_off(2), beg, end, true);
 				}
 

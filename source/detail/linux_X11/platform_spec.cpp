@@ -301,14 +301,14 @@ namespace detail
 #endif
 	}
 
-	void drawable_impl_type::set_color(nana::color_t col)
+	void drawable_impl_type::set_color(const ::nana::expr_color& clr)
 	{
-		color_ = col;
+		color_ = clr.px_color().value;
 	}
 
-	void drawable_impl_type::set_text_color(nana::color_t col)
+	void drawable_impl_type::set_text_color(const ::nana::expr_color& clr)
 	{
-		text_color_ = col;
+		text_color_ = clr.px_color().value;
 		update_text_color();
 	}
 
@@ -363,28 +363,30 @@ namespace detail
 		}
 	}
 
-	void drawable_impl_type::fgcolor(nana::color_t color)
+	void drawable_impl_type::fgcolor(const ::nana::expr_color& clr)
 	{
-		if (color != current_color_)
+		auto rgb = clr.px_color().value;
+
+		if (rgb != current_color_)
 		{
 			auto & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard psg;
 
-			current_color_ = color;
+			current_color_ = rgb;
 			switch(spec.screen_depth())
 			{
 			case 16:
-				color = ((((color >> 16) & 0xFF) * 31 / 255) << 11)	|
+				rgb = ((((color >> 16) & 0xFF) * 31 / 255) << 11) |
 					((((color >> 8) & 0xFF) * 63 / 255) << 5)	|
 					(color & 0xFF) * 31 / 255;
 				break;
 			}
-			::XSetForeground(spec.open_display(), context, color);
-			::XSetBackground(spec.open_display(), context, color);
+			::XSetForeground(spec.open_display(), context, rgb);
+			::XSetBackground(spec.open_display(), context, rgb);
 #if defined(NANA_UNICODE)
-			xft_fgcolor.color.red = ((0xFF0000 & color) >> 16) * 0x101;
-			xft_fgcolor.color.green = ((0xFF00 & color) >> 8) * 0x101;
-			xft_fgcolor.color.blue = (0xFF & color) * 0x101;
+			xft_fgcolor.color.red = ((0xFF0000 & rgb) >> 16) * 0x101;
+			xft_fgcolor.color.green = ((0xFF00 & rgb) >> 8) * 0x101;
+			xft_fgcolor.color.blue = (0xFF & rgb) * 0x101;
 			xft_fgcolor.color.alpha = 0xFFFF;
 #endif
 		}

@@ -97,25 +97,6 @@ namespace nana
 			os_insert		= 0x2D, os_del
 		};
 	};
-	/*
-	namespace color	//deprecated
-	{
-		enum
-		{
-			white	= 0xFFFFFF,
-			blue	= 0x0000FF,
-			green	= 0x00FF00,
-			red		= 0xFF0000,
-
-			button_face_shadow_start = 0xF5F4F2,
-			button_face_shadow_end = 0xD5D2CA,
-			button_face = 0xD4D0C8,
-			dark_border	= 0x404040,
-			gray_border	= 0x808080,
-			highlight = 0x1CC4F7
-		};
-	};
-	*/
 
 	enum class cursor
 	{

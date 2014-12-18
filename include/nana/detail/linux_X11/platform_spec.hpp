@@ -1,6 +1,7 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -99,15 +100,14 @@ namespace detail
 #if defined(NANA_UNICODE)
 		XftDraw * xftdraw;
 		XftColor	xft_fgcolor;
-		//XftColor	xft_bgcolor;	//deprecated
 		const std::string charset(const nana::string& str, const std::string& strcode);
 #endif
 		drawable_impl_type();
 		~drawable_impl_type();
 
-		void fgcolor(nana::color_t); //deprecated
-		void set_color(nana::color_t);
-		void set_text_color(nana::color_t);
+		void fgcolor(const ::nana::expr_color&); //deprecated
+		void set_color(const ::nana::expr_color&);
+		void set_text_color(const ::nana::expr_color&);
 
 		void update_color();
 		void update_text_color();

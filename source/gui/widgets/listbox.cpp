@@ -577,8 +577,6 @@ namespace nana
 				typedef std::vector<cell> container;
 
 				container cells;
-				//color_t bgcolor{0xFF000000};	//deprecated
-				//color_t fgcolor{0xFF000000};
 				nana::expr_color bgcolor;
 				nana::expr_color fgcolor;
 				paint::image img;
@@ -2345,8 +2343,6 @@ namespace nana
 					size_type n = essence_->number_of_lister_items(true);
 					if(0 == n)return;
 					widget * wdptr = essence_->lister.wd_ptr();
-					//nana::color_t bgcolor = wdptr->background();
-					//nana::color_t txtcolor = wdptr->foreground(); //deprecated
 					auto bgcolor = wdptr->bgcolor();
 					auto fgcolor = wdptr->fgcolor();
 
@@ -2515,7 +2511,7 @@ namespace nana
 
 					auto graph = essence_->graph;
 					if (essence_t::state_t::highlighted == state)
-						bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);// = graph->mix(bgcolor, 0x99DEFD, 0.8); //deprecated
+						bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);
 
 					unsigned show_w = width - essence_->scroll.offset_x;
 					if(show_w >= r.width) show_w = r.width;
@@ -2579,7 +2575,7 @@ namespace nana
 								{
 									auto cell_bgcolor = m_cell.custom_format->bgcolor;
 									if (essence_t::state_t::highlighted == state)
-										cell_bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8); //= graph->mix(cell_bgcolor, 0x99DEFD, 0.8); //deprecated
+										cell_bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);
 									graph->set_color(cell_bgcolor);
 									graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
 								}

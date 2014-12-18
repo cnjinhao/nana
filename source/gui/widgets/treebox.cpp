@@ -1356,14 +1356,12 @@ namespace nana
 				}
 			private:
 				trigger::implement * impl_;
-				//nana::color_t bgcolor_;	//deprecated
-				//nana::color_t fgcolor_;
-				nana::expr_color bgcolor_;
-				nana::expr_color fgcolor_;
-				nana::point pos_;
+				::nana::expr_color bgcolor_;
+				::nana::expr_color fgcolor_;
+				::nana::point pos_;
 				const node_type * iterated_node_;
 				item_attribute_t node_attr_;
-				nana::rectangle node_r_;
+				::nana::rectangle node_r_;
 			};
 		}
 

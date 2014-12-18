@@ -1,6 +1,7 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -102,7 +103,7 @@ namespace detail
 			int style;
 			int width;
 
-			void set(HDC context, int style, int width, nana::color_t color);
+			void set(HDC context, int style, int width,unsigned color);
 		}pen;
 
 		struct brush_spec
@@ -111,9 +112,9 @@ namespace detail
 
 			HBRUSH handle;
 			t style;
-			nana::color_t color;
+			unsigned color;
 
-			void set(HDC context, t style, nana::color_t color);
+			void set(HDC context, t style, unsigned color);
 		}brush;
 
 		struct round_region_spec
@@ -136,10 +137,10 @@ namespace detail
 		drawable_impl_type();
 		~drawable_impl_type();
 
-		void fgcolor(nana::color_t);	//deprecated
+		void fgcolor(const ::nana::expr_color&);	//deprecated
 		unsigned get_color() const;
-		void set_color(nana::color_t);
-		void set_text_color(nana::color_t);
+		void set_color(const ::nana::expr_color&);
+		void set_text_color(const ::nana::expr_color&);
 
 		void update_pen();
 		void update_brush();

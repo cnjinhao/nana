@@ -26,7 +26,6 @@ namespace nana
 			public:
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
-				//void resized(graph_reference, const arg_resized&) override; //deprecated
 			private:
 				widget*	wd_{nullptr};
 			};

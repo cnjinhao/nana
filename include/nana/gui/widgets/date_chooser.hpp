@@ -45,7 +45,6 @@ namespace nana
 				void week_name(unsigned index, const nana::string&);
 				void month_name(unsigned index, const nana::string&);
 			private:
-				//void _m_init_color();	//deprecated
 				where _m_pos_where(graph_reference, int x, int y);
 				void _m_draw(graph_reference);
 				void _m_draw_topbar(graph_reference);

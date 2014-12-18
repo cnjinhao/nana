@@ -197,8 +197,6 @@ namespace nana{	namespace drawerbase
 				icon_sz.width += 5;
 			}
 
-			//int x = (static_cast<int>(gsize.width  - 1 - ts.width) >> 1);	//deprecated
-			//int y = (static_cast<int>(gsize.height - 1 - ts.height) >> 1);
 			nana::point pos{
 				static_cast<int>(gsize.width - 1 - ts.width) >> 1, static_cast<int>(gsize.height - 1 - ts.height) >> 1
 			};
@@ -226,15 +224,8 @@ namespace nana{	namespace drawerbase
 
 					graph.set_text_color(fgcolor);
 
-					/*
-					if(attr_.omitted)
-						tr.render(x, y, fgcolor.argb().value, txtptr, txtlen, omitted_pixels, true);	//deprecated
-					else
-						graph.bidi_string(x, y, fgcolor, txtptr, txtlen);
-					*/
-
 					if (attr_.omitted)
-						tr.render(pos, txtptr, txtlen, omitted_pixels, true);	//deprecated
+						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
 					else
 						graph.bidi_string(pos, txtptr, txtlen);
 
@@ -244,8 +235,7 @@ namespace nana{	namespace drawerbase
 						nana::size shortkey_size = graph.text_extent_size(txtptr + shortkey_pos, 1);
 						pos.x += off_w;
 						pos.y += static_cast<int>(shortkey_size.height);
-						//graph.line(x, y, x + shortkey_size.width - 1, y, 0x0);	//deprecated
-						graph.set_color(::nana::expr_color(colors::black));
+						graph.set_color(colors::black);
 						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y });
 					}
 				}
@@ -308,8 +298,6 @@ namespace nana{	namespace drawerbase
 			nana::rectangle r(graph.size());
 			r.pare_off(1);
 
-			//nana::color_t color_start = nana::paint::graphics::mix(attr_.bgcolor.argb().value, 0xFFFFFF, 0.2);	//deprecated
-			//nana::color_t color_end = nana::paint::graphics::mix(attr_.bgcolor.argb().value, 0x0, 0.95);
 			::nana::expr_color from(colors::white);
 			from.blend(attr_.bgcolor, 0.8);
 			::nana::expr_color to(colors::black);
@@ -320,7 +308,6 @@ namespace nana{	namespace drawerbase
 				r.x = r.y = 2;
 				std::swap(from, to);
 			}
-			//graph.shadow_rectangle(r, color_start, color_end, true);	//deprecated
 			graph.gradual_rectangle(r, from, to, true);
 		}
 

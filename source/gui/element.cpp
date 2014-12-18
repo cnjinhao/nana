@@ -1,3 +1,15 @@
+/*
+*	Elements of GUI Gadgets
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/element.cpp
+*/
+
 #include <nana/gui/element.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/element_store.hpp>
@@ -129,7 +141,6 @@ namespace nana
 				}
 				else
 				{
-					//const nana::color_t highlighted = 0x5EB6F7;	//deprecated
 					nana::expr_color highlighted(0x5e, 0xb6, 0xf7);
 					auto bld_bgcolor = bgcolor;
 					auto bld_fgcolor = fgcolor;
@@ -139,18 +150,13 @@ namespace nana
 					case element_state::focus_hovered:
 						bld_bgcolor.blend(highlighted, 0.8);
 						bld_fgcolor.blend(highlighted, 0.8);
-						//bgcolor = graph.mix(bgcolor, highlighted, 0.8);	//deprecated
-						//fgcolor = graph.mix(fgcolor, highlighted, 0.8);
 						break;
 					case element_state::pressed:
 						bld_bgcolor.blend(highlighted, 0.4);
 						bld_fgcolor.blend(highlighted, 0.4);
-						//bgcolor = graph.mix(bgcolor, highlighted, 0.4);	//deprecated
-						//fgcolor = graph.mix(fgcolor, highlighted, 0.4);
 						break;
 					case element_state::disabled:
 						bld_bgcolor = bld_fgcolor = nana::expr_color(0xb2, 0xb7, 0xbc);
-						//bgcolor = fgcolor = 0xB2B7BC;	//deprecated
 						break;
 					default:
 						//Leave things as they are
@@ -250,15 +256,6 @@ namespace nana
 					graph.line(point{ x + 7, y + 10 }, point{ x + 12, y + 5 });
 					graph.line(point{ x + 4, y + 7 }, point{ x + 6, y + 9 });
 					graph.line(point{ x + 7, y + 8 }, point{ x + 11, y + 4 });
-					//nana::color_t light = graph.mix(fgcolor, 0xFFFFFF, 0.5);	//deprecated
-					/*
-					graph.line(point{ x + 3, y + 7 }, point{ x + 6, y + 10 }, fgcolor);	//deprecated
-					graph.line(x + 7, y + 9, x + 12, y + 4, fgcolor);
-					graph.line(x + 3, y + 8, x + 6, y + 11, light);
-					graph.line(x + 7, y + 10, x + 12, y + 5, light);
-					graph.line(x + 4, y + 7, x + 6, y + 9, light);
-					graph.line(x + 7, y + 8, x + 11, y + 4, light);
-					*/
 				}
 				return true;
 			}

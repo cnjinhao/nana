@@ -278,14 +278,14 @@ namespace nana
 			this->get_drawer_trigger().relate(pos, wd);
 		}
 
-		void tab_bgcolor(std::size_t i, nana::color_t color)
+		void tab_bgcolor(std::size_t i, const ::nana::expr_color& clr)
 		{
-			this->get_drawer_trigger().tab_color(i, true, color);
+			this->get_drawer_trigger().tab_color(i, true, clr);
 		}
 
-		void tab_fgcolor(std::size_t i, nana::color_t color)
+		void tab_fgcolor(std::size_t i, const ::nana::expr_color& clr)
 		{
-			this->get_drawer_trigger().tab_color(i, false, color);
+			this->get_drawer_trigger().tab_color(i, false, clr);
 		}
 
 		void tab_image(std::size_t i, const nana::paint::image& img)

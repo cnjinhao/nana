@@ -26,8 +26,6 @@ namespace nana
 				{
 					if(fade_rate_ < 0.001)
 						return;
-
-					//nana::color_t color = API::background(wd);	//deprecated
 					graph.blend(graph.size(), API::bgcolor(wd), fade_rate_);
 				}
 			private:

@@ -209,7 +209,6 @@ namespace nana
 					graph.rectangle(r, false, clr);
 
 					graph.set_color(clr.blend(colors::white, 0.5));
-					//unsigned color_x = graph.mix(color, 0xFFFFFF, 0.5);	//deprecated
 
 					r.pare_off(2);
 

@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -319,8 +319,8 @@ namespace paint
 				if(dw)
 				{
 					//dw->fgcolor(0);
-					dw->set_color(0x0);
-					dw->set_text_color(0x0);
+					dw->set_color(colors::black);
+					dw->set_text_color(colors::black);
 #if defined(NANA_WINDOWS)
 					dw->bytes_per_line = width * sizeof(pixel_argb_t);
 #else
@@ -522,305 +522,7 @@ namespace paint
 			}
 			return false;
 		}
-		/*
-		unsigned graphics::bidi_string(int x, int y, color_t col, const nana::char_t* str, std::size_t len)	//deprecated
-		{
-			int origin_x = x;
-			unicode_bidi bidi;
-			std::vector<unicode_bidi::entity> reordered;
-			bidi.linestr(str, len, reordered);
-			for(auto & i : reordered)
-			{
-				string(x, y, col, i.begin, i.end - i.begin);
-				x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
-			}
-			return static_cast<unsigned>(x - origin_x);
-		}
-		*/
 
-		/*
-		void graphics::string(int x, int y, color_t color, const nana::string& str, std::size_t len)
-		{
-			string(x, y, color, str.c_str(), len);
-		}
-
-		void graphics::string(int x, int y, color_t color, const nana::string& str)
-		{
-			string(x, y, color, str.c_str(), str.size());
-		}
-
-		void graphics::string(int x, int y, color_t color, const nana::char_t* str, std::size_t len)
-		{
-			if(handle_ && str && len)
-			{
-				handle_->set_text_color(color);
-
-				const nana::char_t * end = str + len;
-				const nana::char_t * i = std::find(str, end, '\t');
-				if(i != end)
-				{
-					std::size_t tab_pixels = handle_->string.tab_length * handle_->string.tab_pixels;
-					while(true)
-					{
-						len = i - str;
-						if(len)
-						{
-							//Render a part that does not contains a tab
-							detail::draw_string(handle_, point{ x, y }, str, len);
-							x += detail::raw_text_extent_size(handle_, str, len).width;
-						}
-
-						str = i;
-						while(str != end && (*str == '\t'))
-							++str;
-
-						if(str != end)
-						{
-							//Now i_tab is not a tab, but a non-tab character following the previous tabs
-							x += static_cast<int>(tab_pixels * (str - i));
-							i = std::find(str, end, '\t');
-						}
-						else
-							break;
-					}
-				}
-				else
-					detail::draw_string(handle_, point{ x, y }, str, len);
-				if(changed_ == false) changed_ = true;
-			}
-		}
-
-		void graphics::string(int x, int y, color_t c, const nana::char_t* str)
-		{
-			string(x, y, c, str, nana::strlen(str));
-		}
-		*/
-
-		/*
-		void graphics::set_pixel(int x, int y, color_t color)
-		{
-			if(handle_)
-			{
-#if defined(NANA_WINDOWS)
-				::SetPixel(handle_->context, x, y, NANA_RGB(color));
-#elif defined(NANA_X11)
-				Display* disp = nana::detail::platform_spec::instance().open_display();
-				handle_->fgcolor(color);
-				::XDrawPoint(disp, handle_->pixmap, handle_->context,x, y);
-#endif
-				if(changed_ == false) changed_ = true;
-			}
-		}
-
-		void graphics::rectangle(int x, int y, unsigned width, unsigned height, color_t color, bool solid)
-		{
-			if((static_cast<int>(width) > -x) && (static_cast<int>(height) > -y) && width && height && handle_)
-			{
-#if defined(NANA_WINDOWS)
-				::RECT r = {x, y, static_cast<long>(x + width), static_cast<long>(y + height)};
-				handle_->brush.set(handle_->context, handle_->brush.Solid, color);
-				(solid ? ::FillRect : ::FrameRect)(handle_->context, &r, handle_->brush.handle);
-#elif defined(NANA_X11)
-				Display* disp = nana::detail::platform_spec::instance().open_display();
-				handle_->fgcolor(color);
-				if(solid)
-					::XFillRectangle(disp, handle_->pixmap, handle_->context, x, y, width, height);
-				else
-					::XDrawRectangle(disp, handle_->pixmap, handle_->context, x, y, width - 1, height - 1);
-#endif
-				if(changed_ == false) changed_ = true;
-			}
-		}
-
-		void graphics::rectangle(nana::color_t color, bool solid)
-		{
-			rectangle(0, 0, size_.width, size_.height, color, solid);
-		}
-
-		void graphics::rectangle(const nana::rectangle & r, color_t color, bool solid)
-		{
-			rectangle(r.x, r.y, r.width, r.height, color, solid);
-		}
-
-		void graphics::rectangle_line(const nana::rectangle& r, color_t color_left, color_t color_top, color_t color_right, color_t color_bottom)
-		{
-			int right = r.x + r.width - 1;
-			int bottom = r.y + r.height -1;
-			line_begin(r.x, r.y);
-			line_to(right, r.y, color_top);
-			line_to(right, bottom, color_right);
-			line_to(r.x, bottom, color_bottom);
-			line_to(r.x, r.y, color_left);
-		}
-
-		void graphics::round_rectangle(int x, int y, unsigned width, unsigned height, unsigned radius_x, unsigned radius_y, color_t color, bool solid, color_t color_if_solid)
-		{
-			if(handle_)
-			{
-#if defined(NANA_WINDOWS)
-				handle_->pen.set(handle_->context, PS_SOLID, 1, color);
-				if(solid)
-				{
-					handle_->brush.set(handle_->context, handle_->brush.Solid, color_if_solid);
-					::RoundRect(handle_->context, x, y, x + static_cast<int>(width), y + static_cast<int>(height), static_cast<int>(radius_x * 2), static_cast<int>(radius_y * 2));
-				}
-				else
-				{
-					handle_->brush.set(handle_->context, handle_->brush.Solid, color);
-					handle_->round_region.set(nana::rectangle(x, y, width, height), radius_x , radius_y);
-					::FrameRgn(handle_->context, handle_->round_region.handle, handle_->brush.handle, 1, 1);
-				}
-				if(changed_ == false) changed_ = true;
-#elif defined(NANA_X11)
-				if(solid && (color == color_if_solid))
-				{
-					rectangle(x, y, width, height, color, true);
-				}
-				else
-				{
-					rectangle(x, y, width, height, color, false);
-					if(solid)
-						rectangle(x + 1, y + 1, width - 2, height - 2, color_if_solid, true);
-				}
-#endif
-			}
-		}
-
-		void graphics::round_rectangle(const nana::rectangle& r, unsigned radius_x, unsigned radius_y, color_t color, bool solid, color_t color_if_solid)
-		{
-			round_rectangle(r.x, r.y, r.width, r.height, radius_x, radius_y, color, solid, color_if_solid);
-		}
-
-		void graphics::shadow_rectangle(const nana::rectangle& r, color_t beg_color, color_t end_color, bool vertical)
-		{
-#if defined(NANA_WINDOWS)
-			if(pxbuf_.open(handle_))
-			{
-				pxbuf_.shadow_rectangle(r, beg_color, end_color, 0.0, vertical);
-				pxbuf_.paste(handle_, 0, 0);
-			}
-#elif defined(NANA_X11)
-			shadow_rectangle(r.x, r.y, r.width, r.height, beg_color, end_color, vertical);
-#endif
-		}
-
-		void graphics::shadow_rectangle(int x, int y, unsigned width, unsigned height, color_t color_begin, color_t color_end, bool vertical)
-		{
-#if defined(NANA_WINDOWS)
-			if(pxbuf_.open(handle_))
-			{
-				pxbuf_.shadow_rectangle(nana::rectangle(x, y, width, height), color_begin, color_end, 0.0, vertical);
-				pxbuf_.paste(handle_, 0, 0);
-			}
-#elif defined(NANA_X11)
-			if(0 == handle_) return;
-
-			int deltapx = int(vertical ? height : width);
-			double r, g, b;
-			const double delta_r = int(((color_end & 0xFF0000) >> 16) - (r = ((color_begin & 0xFF0000) >> 16))) / double(deltapx);
-			const double delta_g = int(((color_end & 0xFF00) >> 8) - (g = ((color_begin & 0xFF00) >> 8))) / double(deltapx);
-			const double delta_b = int((color_end & 0xFF) - (b = (color_begin & 0xFF))) / double(deltapx);
-
-			unsigned last_color =  (int(r) << 16) | (int(g) << 8) | int(b);
-
-			Display * disp = nana::detail::platform_spec::instance().open_display();
-			handle_->fgcolor(last_color);
-			const int endpos = deltapx + (vertical ? y : x);
-			if(endpos > 0)
-			{
-				if(vertical)
-				{
-					int x1 = x, x2 = x + static_cast<int>(width);
-					for(; y < endpos; ++y)
-					{
-						::XDrawLine(disp, handle_->pixmap, handle_->context, x1, y, x2, y);
-						unsigned new_color = (int(r += delta_r) << 16) | (int(g += delta_g) << 8) | int(b += delta_b);
-						if(new_color != last_color)
-						{
-							last_color = new_color;
-							handle_->fgcolor(last_color);
-						}
-					}
-				}
-				else
-				{
-					int y1 = y, y2 = y + static_cast<int>(height);
-					for(; x < endpos; ++x)
-					{
-						::XDrawLine(disp, handle_->pixmap, handle_->context, x, y1, x, y2);
-						unsigned new_color = (int(r += delta_r) << 16) | (int(g += delta_g) << 8) | int(b += delta_b);
-						if(new_color != last_color)
-						{
-							last_color = new_color;
-							handle_->fgcolor(last_color);
-						}
-					}
-				}
-			}
-#endif
-			if(changed_ == false) changed_ = true;
-		}
-
-		void graphics::line(int x1, int y1, int x2, int y2, color_t color)
-		{
-			if(!handle_)	return;
-			handle_->set_color(color);
-#if defined(NANA_WINDOWS)
-			if(x1 != x2 || y1 != y2)
-			{
-				handle_->update_pen();
-				//handle_->pen.set(handle_->context, PS_SOLID, 1, color);	//deprecated
-
-				::MoveToEx(handle_->context, x1, y1, 0);
-				::LineTo(handle_->context, x2, y2);
-			}
-			::SetPixel(handle_->context, x2, y2, NANA_RGB(color));
-#elif defined(NANA_X11)
-			Display* disp = nana::detail::platform_spec::instance().open_display();
-			//handle_->fgcolor(color);	//deprecated
-			handle_->update_color();
-			::XDrawLine(disp, handle_->pixmap, handle_->context, x1, y1, x2, y2);
-#endif
-			if(changed_ == false) changed_ = true;
-		}
-
-		void graphics::line(const point& beg, const point& end, color_t color)
-		{
-			line(beg.x, beg.y, end.x, end.y, color);
-		}
-
-		void graphics::lines(const point* points, std::size_t n_of_points, color_t color)
-		{
-			if(!handle_ || nullptr == points || 0 == n_of_points)	return;
-#if defined(NANA_WINDOWS)
-
-			handle_->pen.set(handle_->context, PS_SOLID, 1, color);
-
-			::MoveToEx(handle_->context, points->x, points->y, nullptr);
-			const point * end = points + n_of_points;
-			for(const point * i = points + 1; i != end; ++i)
-				::LineTo(handle_->context, i->x, i->y);
-
-			if(*points != *(end - 1))
-				::SetPixel(handle_->context, (end-1)->x, (end-1)->y, NANA_RGB(color));
-#elif defined(NANA_X11)
-			Display* disp = nana::detail::platform_spec::instance().open_display();
-			handle_->fgcolor(color);
-
-			XPoint * const x11points = new XPoint[n_of_points];
-			XPoint * end = x11points + n_of_points;
-			for(XPoint * i = x11points; i != end; ++i)
-			{
-				i->x = points->x;
-				i->y = points->y;
-				++points;
-			}
-			::XDrawLines(disp, handle_->pixmap, handle_->context, x11points, static_cast<int>(n_of_points), CoordModePrevious);
-			delete [] x11points;
-#endif
-			if(changed_ == false) changed_ = true;
-		}
-		*/
 		void graphics::line_begin(int x, int y)
 		{
 			if(!handle_)	return;
@@ -832,25 +534,6 @@ namespace paint
 			handle_->line_begin_pos.y = y;
 #endif
 		}
-		/*
-		void graphics::line_to(int x, int y, color_t color)
-		{
-			if(!handle_)	return;
-#if defined(NANA_WINDOWS)
-			handle_->pen.set(handle_->context, PS_SOLID, 1, color);
-			::LineTo(handle_->context, x, y);
-#elif defined(NANA_X11)
-			Display* disp = nana::detail::platform_spec::instance().open_display();
-			handle_->fgcolor(color);
-			::XDrawLine(disp, handle_->pixmap, handle_->context,
-						handle_->line_begin_pos.x, handle_->line_begin_pos.y,
-						x, y);
-			handle_->line_begin_pos.x = x;
-			handle_->line_begin_pos.y = y;
-#endif
-			if(changed_ == false) changed_ = true;
-		}
-		*/
 
 		void graphics::bitblt(int x, int y, const graphics& src)
 		{
@@ -934,15 +617,6 @@ namespace paint
 				s_pixbuf.blend(s_r, dst.handle_, d_pos, fade_rate);
 
 				if(dst.changed_ == false) dst.changed_ = true;
-			}
-		}
-
-		void graphics::blend(const nana::rectangle& r, nana::color_t color, double fade_rate)
-		{
-			if(handle_)
-			{
-				nana::paint::detail::blend(handle_, r, color, fade_rate);
-				if(changed_ == false) changed_ = true;
 			}
 		}
 
@@ -1182,32 +856,17 @@ namespace paint
 #endif
 			}
 		}
-		/*
-		color_t graphics::mix(color_t a, color_t b, double fade_rate)	//deprecated
-		{
-			pixel_argb_t pa, pb, ret;
-			ret.value = 0;
-			pa.value = a;
-			pb.value = b;
-
-			ret.element.red = static_cast<unsigned char>(pa.element.red * fade_rate + pb.element.red * (1 - fade_rate));
-			ret.element.green = static_cast<unsigned char>(pa.element.green * fade_rate + pb.element.green * (1 - fade_rate));
-			ret.element.blue = static_cast<unsigned char>(pa.element.blue * fade_rate + pb.element.blue * (1 - fade_rate));
-
-			return ret.value;
-		}
-		*/
 
 		void graphics::set_color(const ::nana::expr_color& col)
 		{
 			if (handle_)
-				handle_->set_color(col.argb().value);
+				handle_->set_color(col);
 		}
 
 		void graphics::set_text_color(const ::nana::expr_color& col)
 		{
 			if (handle_)
-				handle_->set_text_color(col.argb().value);
+				handle_->set_text_color(col);
 		}
 
 		unsigned graphics::bidi_string(const nana::point& pos, const char_t * str, std::size_t len)
@@ -1228,7 +887,7 @@ namespace paint
 		{
 			if (handle_)
 			{
-				nana::paint::detail::blend(handle_, r, clr.px_color().value, fade_rate);
+				nana::paint::detail::blend(handle_, r, clr.px_color(), fade_rate);
 				if (changed_ == false) changed_ = true;
 			}
 		}
@@ -1237,7 +896,7 @@ namespace paint
 		{
 			if (handle_)
 			{
-				handle_->set_color(clr.px_color().value);
+				handle_->set_color(clr);
 				set_pixel(x, y);
 			}
 		}
@@ -1342,7 +1001,7 @@ namespace paint
 		void graphics::line_to(const point& pos, const expr_color& clr)
 		{
 			if (!handle_) return;
-			handle_->set_color(clr.px_color().value);
+			handle_->set_color(clr);
 			line_to(pos);
 		}
 
@@ -1474,7 +1133,7 @@ namespace paint
 			if (handle_)
 			{
 #if defined(NANA_WINDOWS)
-				handle_->set_color(clr.px_color().value);
+				handle_->set_color(clr);
 				if (solid)
 				{
 					handle_->update_pen();

@@ -118,7 +118,6 @@ namespace nana
 			{
 				graphics & graph;
 				int x, endpos;
-				//nana::color_t color;	//deprecated
 				::nana::expr_color fgcolor;
 				unsigned omitted_pixels;
 				nana::unicode_bidi bidi;
@@ -452,7 +451,8 @@ namespace nana
 								std::size_t len = i.end - i.begin;
 								if(len > 1)
 								{
-									unsigned * pxbuf = new unsigned[len];
+									std::unique_ptr<unsigned[]> scope_res(new unsigned[len]);
+									auto pxbuf = scope_res.get();
 									//Find the char that should be splitted
 									graph.glyph_pixels(i.begin, len, pxbuf);
 									std::size_t idx_head = 0, idx_splitted;
@@ -520,8 +520,6 @@ namespace nana
 											}
 										}
 									}while(idx_head < len);
-
-									delete [] pxbuf;
 								}
 								else
 									xpos = x + static_cast<int>(i_ts_keeper->width);
@@ -554,39 +552,6 @@ namespace nana
 		text_renderer::text_renderer(graph_reference graph, align ta)
 			: graph_(graph), text_align_(ta)
 		{}
-
-		/*
-		void text_renderer::render(int x, int y, color_t col, const char_t * str, std::size_t len)
-		{
-			if(graph_)
-			{
-				helper::draw_string ds(graph_.handle(), x, static_cast<int>(graph_.width()), text_align_);
-				ds.dw->fgcolor(col);
-				helper::for_each_line(str, len, y, ds);
-			}
-		}
-		
-		void text_renderer::render(int x, int y, color_t col, const char_t * str, std::size_t len, unsigned restricted_pixels, bool omitted)	//deprecated
-		{
-			if(graph_)
-			{
-				helper::draw_string_omitted dso(graph_, x, x + static_cast<int>(restricted_pixels), col, omitted);
-				graph_.handle()->fgcolor(col);
-				helper::for_each_line(str, len, y, dso);
-			}
-		}
-		*/
-		/*
-		void text_renderer::render(int x, int y, color_t col, const nana::char_t * str, std::size_t len, unsigned restricted_pixels)
-		{
-			if(graph_)
-			{
-				helper::draw_string_auto_changing_lines dsacl(graph_, x, x + static_cast<int>(restricted_pixels), text_align_);
-				graph_.handle()->fgcolor(col);
-				helper::for_each_line(str, len, y, dsacl);
-			}
-		}
-		*/
 
 		nana::size text_renderer::extent_size(int x, int y, const char_t* str, std::size_t len, unsigned restricted_pixels) const
 		{
@@ -628,7 +593,5 @@ namespace nana
 			}
 		}
 		//end class text_renderer
-
-
 	}
 }

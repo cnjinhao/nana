@@ -1,6 +1,7 @@
 /*
  *	A date chooser Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -63,15 +64,6 @@ namespace nana
 					if(0 <= index && index < 12)
 						this->monthstr_[index] = str;
 				}
-				/*
-				void trigger::_m_init_color()	//deprecated
-				{
-					color_.selected = 0x2F3699;
-					color_.highlight = 0x4D56C8;
-					color_.normal = 0x0;
-					color_.bkcolor = 0x88C4FF;
-				}
-				*/
 
 				trigger::where trigger::_m_pos_where(graph_reference graph, int x, int y)
 				{
@@ -99,12 +91,7 @@ namespace nana
 
 				void trigger::_m_draw(graph_reference graph)
 				{
-					//_m_init_color();	//deprecated
-
 					const unsigned width = graph.width() - 2;
-
-					//graph.rectangle(0xB0B0B0, false);	//deprecated
-					//graph.rectangle(1, 1, width, topbar_height, 0xFFFFFF, true);
 
 					graph.rectangle(false, {0xb0, 0xb0, 0xb0});
 					graph.rectangle({ 1, 1, width, static_cast<unsigned>(topbar_height) }, true, colors::white);

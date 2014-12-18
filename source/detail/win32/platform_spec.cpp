@@ -48,9 +48,9 @@ namespace detail
 		::DeleteObject(round_region.handle);
 	}
 
-	void drawable_impl_type::fgcolor(nana::color_t col)
+	void drawable_impl_type::fgcolor(const ::nana::expr_color& clr)
 	{
-		set_text_color(col);
+		set_text_color(clr);
 	}
 
 	unsigned drawable_impl_type::get_color() const
@@ -58,17 +58,18 @@ namespace detail
 		return color_;
 	}
 
-	void drawable_impl_type::set_color(nana::color_t col)
+	void drawable_impl_type::set_color(const ::nana::expr_color& clr)
 	{
-		color_ = col;
+		color_ = clr.px_color().value;
 	}
 
-	void drawable_impl_type::set_text_color(nana::color_t col)
+	void drawable_impl_type::set_text_color(const ::nana::expr_color& clr)
 	{
-		if(text_color_ != col)
+		auto rgb = clr.px_color().value;
+		if (text_color_ != rgb)
 		{
-			::SetTextColor(context, NANA_RGB(col));
-			text_color_ = col;
+			::SetTextColor(context, NANA_RGB(rgb));
+			text_color_ = rgb;
 		}
 	}
 
@@ -88,28 +89,28 @@ namespace detail
 			brush.set(context, brush.style, color_);
 	}
 	
-	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, nana::color_t color)	//deprecated
+	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, unsigned clr)
 	{
-		if(this->color != color || this->width != width || this->style != style)
+		if (this->color != clr || this->width != width || this->style != style)
 		{
-			this->color = color;
+			this->color = clr;
 			this->width = width;
 			this->style = style;
-			this->handle = ::CreatePen(style, width, NANA_RGB(color));
+			this->handle = ::CreatePen(style, width, NANA_RGB(clr));
 			::DeleteObject(::SelectObject(context, this->handle));
 		}
 	}
 
-	void drawable_impl_type::brush_spec::set(HDC context, drawable_impl_type::brush_spec::t style, nana::color_t color)
+	void drawable_impl_type::brush_spec::set(HDC context, drawable_impl_type::brush_spec::t style, unsigned rgb)
 	{
-		if(this->color != color || this->style != style)
+		if (this->color != rgb || this->style != style)
 		{
-			this->color = color;
+			this->color = rgb;
 			this->style = style;
 			switch(style)
 			{
 			case brush_spec::HatchBDiagonal:
-				this->handle = ::CreateHatchBrush(HS_BDIAGONAL, NANA_RGB(color));
+				this->handle = ::CreateHatchBrush(HS_BDIAGONAL, NANA_RGB(rgb));
 				break;
 			case brush_spec::Solid:
 			default:
