@@ -1225,9 +1225,7 @@ namespace nana
 
 					if(pos_.y < item_pos_.y + static_cast<int>(node_r.height))
 					{
-						int logic_x = pos_.x - item_pos_.x;
-						int logic_y = pos_.y - item_pos_.y;
-
+						auto logic_pos = pos_ - item_pos_;
 						node_ = &node;
 
 						for(int comp = static_cast<int>(component::begin); comp != static_cast<int>(component::end); ++comp)
@@ -1235,7 +1233,7 @@ namespace nana
 							nana::rectangle r = node_r;
 							if(comp_placer->locate(static_cast<component>(comp), node_attr_, &r))
 							{
-								if(r.is_hit(logic_x, logic_y))
+								if(r.is_hit(logic_pos))
 								{
 									what_ = static_cast<component>(comp);
 									if(component::expender == what_ && (false == node_attr_.has_children))
@@ -1275,10 +1273,7 @@ namespace nana
 
 				nana::rectangle trigger::item_locator::text_pos() const
 				{
-					auto r = node_text_r_;
-					r.x += item_pos_.x;
-					r.y += item_pos_.y;
-					return r;
+					return{node_text_r_.x + item_pos_.x, node_text_r_.y + item_pos_.y, node_text_r_.width, node_text_r_.height};
 				}
 			//end class item_locator
 
@@ -1289,10 +1284,10 @@ namespace nana
 				typedef tree_cont_type::node_type node_type;
 
 				item_renderer(implement * impl, const nana::point& pos)
-					:impl_(impl), pos_(pos)
+					:	impl_(impl), pos_(pos),
+						bgcolor_(impl->data.widget_ptr->bgcolor()),
+						fgcolor_(impl->data.widget_ptr->fgcolor())
 				{
-					bgcolor_ = impl_->data.widget_ptr->bgcolor();
-					fgcolor_ = impl_->data.widget_ptr->fgcolor();
 				}
 
 				//affect
@@ -1762,7 +1757,6 @@ namespace nana
 
 				unsigned trigger::node_width(const node_type *node) const
 				{
-					//return (static_cast<int>(impl_->data.graph->text_extent_size(node->value.second.text).width) + impl_->shape.text_offset * 2 + static_cast<unsigned>(impl_->shape.crook_pixels + impl_->shape.image_pixels));
 					node_attribute node_attr;
 					impl_->assign_node_attr(node_attr, node);
 					return impl_->data.comp_placer->item_width(*impl_->data.graph, node_attr);

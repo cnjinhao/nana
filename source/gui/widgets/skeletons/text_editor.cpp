@@ -1165,12 +1165,16 @@ namespace nana{	namespace widgets
 
 		bool text_editor::respone_keyboard(nana::char_t key, bool enterable)	//key is a character of ASCII code
 		{
-			if (keyboard::end_of_text == key)
+			switch (key)
 			{
+			case keyboard::end_of_text:
 				copy();
 				return false;
+			case keyboard::select_all:
+				select(true);
+				return true;
 			}
-
+			
 			if (attributes_.editable && enterable)
 			{
 				switch (key)
@@ -1577,6 +1581,7 @@ namespace nana{	namespace widgets
 				if(select_.b.y) --select_.b.y;
 				select_.b.x = static_cast<unsigned>(textbase_.getline(select_.b.y).size());
 				select_.mode_selection = selection::mode_method_selected;
+				render(true);
 				return true;
 			}
 
@@ -1939,6 +1944,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::move_left()
 		{
+			bool do_render = false;
 			if(_m_cancel_select(1) == false)
 			{
 				if(points_.caret.x)
@@ -1952,23 +1958,19 @@ namespace nana{	namespace widgets
 					if (attributes_.line_wrapped)
 						adjust_y = behavior_->adjust_caret_into_screen();
 
-					bool adjust_x = _m_move_offset_x_while_over_border(-2);
-
-					if (adjust_x || adjust_y)
-						render(true);
+					do_render = (_m_move_offset_x_while_over_border(-2) || adjust_y);
 				}
 				else if(points_.caret.y)
 				{	//Move to previous line
 					points_.caret.x = static_cast<unsigned>(textbase_.getline(-- points_.caret.y).size());
-					if (behavior_->adjust_caret_into_screen())
-						render(true);
+					do_render = behavior_->adjust_caret_into_screen();
 				}
 			}
 			else
-			{
-				behavior_->adjust_caret_into_screen();
+				do_render = behavior_->adjust_caret_into_screen();
+
+			if (do_render)
 				render(true);
-			}
 
 			_m_scrollbar();
 			points_.xpos = points_.caret.x;
@@ -1976,6 +1978,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::move_right()
 		{
+			bool do_render = false;
 			if(_m_cancel_select(2) == false)
 			{
 				nana::string lnstr = textbase_.getline(points_.caret.y);
@@ -1987,23 +1990,20 @@ namespace nana{	namespace widgets
 						++points_.caret.x;
 #endif
 					bool adjust_y = (attributes_.line_wrapped && behavior_->adjust_caret_into_screen());
-					if (_m_move_offset_x_while_over_border(2) || adjust_y)
-						render(true);
+					do_render = (_m_move_offset_x_while_over_border(2) || adjust_y);
 				}
 				else if(textbase_.lines() && (points_.caret.y < textbase_.lines() - 1))
 				{	//Move to next line
 					points_.caret.x = 0;
 					++ points_.caret.y;
-
-					if (behavior_->adjust_caret_into_screen())
-						render(true);
+					do_render = behavior_->adjust_caret_into_screen();
 				}
 			}
 			else
-			{
-				if (behavior_->adjust_caret_into_screen())
-					render(true);
-			}
+				do_render = behavior_->adjust_caret_into_screen();
+
+			if (do_render)
+				render(true);
 
 			_m_scrollbar();
 			points_.xpos = points_.caret.x;

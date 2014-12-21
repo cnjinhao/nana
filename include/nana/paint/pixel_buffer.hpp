@@ -1,6 +1,7 @@
 /*
  *	Pixel Buffer Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -19,14 +20,14 @@ namespace nana{	namespace paint
 {
 	///@brief	Seek a pixel address by using offset bytes
 	///@return	the specified pixel address
-	inline pixel_argb_t * pixel_at(pixel_argb_t * p, std::size_t bytes)
+	inline pixel_color_t * pixel_at(pixel_color_t * p, std::size_t bytes)
 	{
-		return reinterpret_cast<pixel_argb_t*>(reinterpret_cast<char*>(p) + bytes);
+		return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(p)+bytes);
 	}
 
-	inline const pixel_argb_t * pixel_at(const pixel_argb_t * p, std::size_t bytes)
+	inline const pixel_color_t * pixel_at(const pixel_color_t * p, std::size_t bytes)
 	{
-		return reinterpret_cast<const pixel_argb_t*>(reinterpret_cast<const char*>(p) + bytes);
+		return reinterpret_cast<const pixel_color_t*>(reinterpret_cast<const char*>(p)+bytes);
 	}
 
 	class pixel_buffer
@@ -34,7 +35,7 @@ namespace nana{	namespace paint
 		struct pixel_buffer_storage;
 		typedef bool (pixel_buffer:: * unspecified_bool_t)() const;
 	public:
-		pixel_buffer();
+		pixel_buffer() = default;
 		pixel_buffer(drawable_type, const nana::rectangle& want_rectangle);
 		pixel_buffer(drawable_type, std::size_t top, std::size_t lines);
 		pixel_buffer(std::size_t width, std::size_t height);
@@ -60,9 +61,9 @@ namespace nana{	namespace paint
 		std::size_t bytes_per_line() const;
 		nana::size size() const;
 
-		pixel_argb_t * at(const point& pos) const;
-		pixel_argb_t * raw_ptr(std::size_t row) const;
-		pixel_argb_t * operator[](std::size_t row) const;
+		pixel_color_t * at(const point& pos) const;
+		pixel_color_t * raw_ptr(std::size_t row) const;
+		pixel_color_t * operator[](std::size_t row) const;
 
 		void put(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bits_per_pixel, std::size_t bytes_per_line, bool is_negative);
 		
@@ -70,11 +71,10 @@ namespace nana{	namespace paint
 		void line(const ::nana::point& pos_beg, const ::nana::point& pos_end, const ::nana::expr_color&, double fade_rate);
 
 		void rectangle(const nana::rectangle&, const ::nana::expr_color&, double fade_rate, bool solid);
-		//void shadow_rectangle(const nana::rectangle&, nana::color_t beg, nana::color_t end, double fade_rate, bool vertical);	//deprecated
 		void gradual_rectangle(const ::nana::rectangle&, const ::nana::expr_color& from, const ::nana::expr_color& to, double fade_rate, bool vertical);
 		
-		pixel_argb_t pixel(int x, int y) const;
-		void pixel(int x, int y, pixel_argb_t);
+		pixel_color_t pixel(int x, int y) const;
+		void pixel(int x, int y, pixel_color_t);
 
 		void paste(drawable_type, int x, int y) const;
 		void paste(const nana::rectangle& s_r, drawable_type, int x, int y) const;
