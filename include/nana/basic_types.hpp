@@ -147,16 +147,10 @@ namespace nana
 		highlight = 0x1CC4F7
 	};
 
-#pragma pack(1)
-	struct rgb_color
-	{
-		unsigned char blue;
-		unsigned char green;
-		unsigned char red;
-
-		rgb_color(unsigned clr);
-	};
-#pragma pack()
+	//Some helper types to identify an integer as color.
+	enum class color_rgb :	unsigned{};
+	enum class color_argb:	unsigned{};
+	enum class color_rgba : unsigned{};
 
 	class expr_color
 	{
@@ -164,7 +158,9 @@ namespace nana
 		expr_color() = default;
 		expr_color(colors);
 		expr_color(colors, double alpha);
-		expr_color(const rgb_color&);
+		expr_color(color_rgb);
+		expr_color(color_argb);
+		expr_color(color_rgba);
 		expr_color(unsigned red, unsigned green, unsigned blue);
 		expr_color(unsigned red, unsigned green, unsigned blue, double alpha);
 
@@ -193,7 +189,7 @@ namespace nana
 		double r_;
 		double g_;
 		double b_;
-		double a_{ 0.0 };
+		double a_{ 0.0 };	//invisible
 	};
 
 

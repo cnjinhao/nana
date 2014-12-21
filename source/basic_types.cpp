@@ -13,10 +13,6 @@
 
 namespace nana
 {
-	rgb_color::rgb_color(unsigned clr)
-		: blue((0xFF00 & clr) >> 8), green(0xFF & clr), red((0xFF0000 & clr) >> 16)
-	{}
-
 	//class color
 	expr_color::expr_color(colors clr)
 		: expr_color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF)
@@ -26,10 +22,26 @@ namespace nana
 		: expr_color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF, alpha)
 	{}
 
-	expr_color::expr_color(const rgb_color& rgb)
-		: a_(1.0), r_(rgb.red), g_(rgb.green), b_(rgb.blue)
-	{
-	}
+	expr_color::expr_color(color_rgb rgb)
+		:	r_((static_cast<int>(rgb) >> 16) & 0xFF),
+			g_((static_cast<int>(rgb) >> 8) & 0xFF),
+			b_(static_cast<int>(rgb) & 0xFF),
+			a_(1.0)
+	{}
+
+	expr_color::expr_color(color_argb argb)
+		:	r_((static_cast<int>(argb) >> 16) & 0xFF),
+			g_((static_cast<int>(argb) >> 8) & 0xFF),
+			b_(static_cast<int>(argb) & 0xFF),
+			a_(((static_cast<int>(argb) >> 24) & 0xFF) / 255.0)
+	{}
+
+	expr_color::expr_color(color_rgba rgba)
+		:	r_((static_cast<int>(rgba) >> 24) & 0xFF),
+			g_((static_cast<int>(rgba) >> 16) & 0xFF),
+			b_((static_cast<int>(rgba) >> 8) & 0xFF),
+			a_((static_cast<int>(rgba) & 0xFF) / 255.0)
+	{}
 
 	expr_color::expr_color(unsigned red, unsigned green, unsigned blue)
 		: a_(1.0), r_(red), g_(green), b_(blue)
