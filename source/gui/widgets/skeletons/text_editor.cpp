@@ -1059,15 +1059,14 @@ namespace nana{	namespace widgets
 				secondary_pos.y = 0;
 
 				unsigned len = 0;
-				auto & mtr = linemtr_[charpos.y];
-				for (auto & ts : mtr.line_sections)
+				for (auto & ts : linemtr_[charpos.y].line_sections)
 				{
 					len = static_cast<unsigned>(ts.end - ts.begin);
 					if (len >= secondary_pos.x)
 						return true;
 
 					++secondary_pos.y;
-					secondary_pos.x -= static_cast<unsigned>(len);
+					secondary_pos.x -= len;
 				}
 				--secondary_pos.y;
 				secondary_pos.x = len;
@@ -1476,12 +1475,11 @@ namespace nana{	namespace widgets
 
 		bool text_editor::getline(std::size_t pos, nana::string& text) const
 		{
-			if(pos < textbase_.lines())
-			{
-				text = textbase_.getline(pos);
-				return true;
-			}
-			return false;
+			if (textbase_.lines() <= pos)
+				return false;
+
+			text = textbase_.getline(pos);
+			return true;
 		}
 
 		void text_editor::text(nana::string str)
@@ -1634,12 +1632,11 @@ namespace nana{	namespace widgets
 
 		bool text_editor::mask(nana::char_t ch)
 		{
-			if(mask_char_ != ch)
-			{
-				mask_char_ = ch;
-				return true;
-			}
-			return false;
+			if (mask_char_ == ch)
+				return false;
+
+			mask_char_ = ch;
+			return true;
 		}
 
 		unsigned text_editor::width_pixels() const
@@ -2264,7 +2261,6 @@ namespace nana{	namespace widgets
 				if(a.y != b.y)
 				{
 					textbase_.erase(a.y, a.x, nana::string::npos);
-
 					textbase_.erase(a.y + 1, b.y - a.y - 1);
 
 					textbase_.erase(a.y + 1, 0, b.x);
@@ -2420,7 +2416,7 @@ namespace nana{	namespace widgets
 				if(static_cast<int>(width) - points_.offset.x >= _m_endx())
 				{	//Out of screen text area
 					points_.offset.x = width - _m_endx() + 1;
-					string_type::size_type rest_size = lnstr.size() - points_.caret.x;
+					auto rest_size = lnstr.size() - points_.caret.x;
 					points_.offset.x += static_cast<int>(_m_text_extent_size(lnstr.c_str() + points_.caret.x, (rest_size >= static_cast<unsigned>(many) ? static_cast<unsigned>(many) : rest_size)).width);
 					return true;
 				}
@@ -2506,14 +2502,14 @@ namespace nana{	namespace widgets
 
 		void text_editor::_m_draw_string(int top, const ::nana::expr_color& clr, const nana::upoint& str_pos, const nana::string& linestr, bool if_mask) const
 		{
-			int x = text_area_.area.x - points_.offset.x;
-			int xend = text_area_.area.x + static_cast<int>(text_area_.area.width);
+			::nana::point text_pos{ text_area_.area.x - points_.offset.x, top };
+			const int xend = text_area_.area.x + static_cast<int>(text_area_.area.width);
 
 			if (if_mask && mask_char_)
 			{
 				nana::string maskstr;
 				maskstr.append(linestr.size(), mask_char_);
-				graph_.string({ x, top }, maskstr, clr);
+				graph_.string(text_pos, maskstr, clr);
 				return;
 			}
 
@@ -2539,20 +2535,20 @@ namespace nana{	namespace widgets
 					std::size_t len = ent.end - ent.begin;
 					unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
 
-					if ((x + static_cast<int>(str_w) > text_area_.area.x) && (x < xend))
+					if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 					{
 						if (selected)
 						{
 							graph_.set_text_color(colors::white);
-							graph_.rectangle({ x, top, str_w, line_h_pixels }, true);
+							graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
 						}
 
-						graph_.string({x, top}, ent.begin, len);
+						graph_.string(text_pos, ent.begin, len);
 					}
-					x += static_cast<int>(str_w);
+					text_pos.x += static_cast<int>(str_w);
 				}
 				if (selected)
-					graph_.rectangle({ x, top, whitespace_w, line_h_pixels }, true);
+					graph_.rectangle({ text_pos, { whitespace_w, line_h_pixels } }, true);
 			}
 			else
 			{
@@ -2576,22 +2572,22 @@ namespace nana{	namespace widgets
 					{
 						std::size_t len = ent.end - ent.begin;
 						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
-						if ((x + static_cast<int>(str_w) > text_area_.area.x) && (x < xend))
+						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 						{
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
 
-							if (pos + len <= a.x || pos >= b.x)
+							if ((pos + len <= a.x || pos >= b.x) || (a.x <= pos && pos + len <= b.x))
 							{
-								//NOT selected
-								graph_.set_text_color(clr);
-								graph_.string({ x, top }, ent.begin, len);
-							}
-							else if (a.x <= pos && pos + len <= b.x)
-							{
-								//Whole selected
-								graph_.rectangle({ x, top, str_w, line_h_pixels }, true);
-								graph_.set_text_color(colors::white);
-								graph_.string({x, top}, ent.begin, len);
+								//NOT selected or Wholly seleceted
+								if (a.x <= pos)
+								{
+									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+									graph_.set_text_color(colors::white);
+								}
+								else
+									graph_.set_text_color(clr);
+
+								graph_.string(text_pos, ent.begin, len);
 							}
 							else if (pos <= a.x && a.x < pos + len)
 							{	//Partial selected
@@ -2606,19 +2602,25 @@ namespace nana{	namespace widgets
 									graph_.set_text_color(clr);
 									if (_m_is_right_text(ent))
 									{	//RTL
-										rtl_string(point{x, top}, ent.begin, len, str_w, head_w, sel_w);
+										rtl_string(text_pos, ent.begin, len, str_w, head_w, sel_w);
 									}
 									else
 									{	//LTR
-										graph_.string({ x, top }, ent.begin, a.x - pos);
+										graph_.string(text_pos, ent.begin, a.x - pos);
 
-										graph_.rectangle({x + static_cast<int>(head_w), top, sel_w, line_h_pixels}, true);
+										auto part_pos = text_pos;
+										part_pos.x += static_cast<int>(head_w);
+
+										graph_.rectangle({ part_pos, { sel_w, line_h_pixels } }, true);
 
 										graph_.set_text_color(colors::white);
-										graph_.string({ x + static_cast<int>(head_w), top }, ent.begin + (a.x - pos), endpos - a.x);
+										graph_.string(part_pos, ent.begin + (a.x - pos), endpos - a.x);
 
 										if (static_cast<size_t>(endpos) < pos + len)
-											graph_.string({x + static_cast<int>(head_w + sel_w), top}, ent.begin + (endpos - pos), pos + len - endpos);
+										{
+											part_pos.x += static_cast<int>(sel_w);
+											graph_.string(part_pos, ent.begin + (endpos - pos), pos + len - endpos);
+										}
 									}
 								}
 							}
@@ -2630,20 +2632,20 @@ namespace nana{	namespace widgets
 								if (_m_is_right_text(ent))
 								{	//RTL
 									graph_.set_text_color(clr);
-									rtl_string({x, top}, ent.begin, len, str_w, 0, sel_w);
+									rtl_string(text_pos, ent.begin, len, str_w, 0, sel_w);
 								}
 								else
 								{	//LTR
-									graph_.rectangle({ x, top, sel_w, line_h_pixels }, true);
+									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
 
 									graph_.set_text_color(colors::white);
-									graph_.string({ x, top }, ent.begin, endpos - pos);
+									graph_.string(text_pos, ent.begin, endpos - pos);
 									graph_.set_text_color(clr);
-									graph_.string({x + static_cast<int>(sel_w), top}, ent.begin + (endpos - pos), pos + len - endpos);
+									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + (endpos - pos), pos + len - endpos);
 								}
 							}
 						}
-						x += static_cast<int>(str_w);
+						text_pos.x += static_cast<int>(str_w);
 					}
 				}
 				else if (a.y == str_pos.y)
@@ -2652,43 +2654,43 @@ namespace nana{	namespace widgets
 					{
 						std::size_t len = ent.end - ent.begin;
 						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
-						if ((x + static_cast<int>(str_w) > text_area_.area.x) && (x < xend))
+						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 						{
 							graph_.set_text_color(clr);
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
-							if (pos + len <= a.x)
+							if ((pos + len <= a.x) || (a.x < pos))	//Not selected or Wholly selected
 							{
-								//Not selected
-								graph_.string({x, top}, ent.begin, len);
-							}
-							else if (a.x < pos)
-							{
-								//Whole selected
-								graph_.rectangle({ x, top, str_w, line_h_pixels }, true, { 0x33, 0x99, 0xFF });
-								graph_.set_text_color(colors::white);
-								graph_.string({x, top}, ent.begin, len);
+								if (a.x < pos)
+								{
+									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true, { 0x33, 0x99, 0xFF });
+									graph_.set_text_color(colors::white);
+								}
+								graph_.string(text_pos, ent.begin, len);
 							}
 							else
 							{
 								unsigned head_w = graph_.glyph_extent_size(ent.begin, len, 0, a.x - pos).width;
 								if (_m_is_right_text(ent))
 								{	//RTL
-									rtl_string(point{x, top}, ent.begin, len, str_w, head_w, str_w - head_w);
+									rtl_string(text_pos, ent.begin, len, str_w, head_w, str_w - head_w);
 								}
 								else
 								{	//LTR
-									graph_.string({ x, top }, ent.begin, a.x - pos);
-									graph_.rectangle({ x + static_cast<int>(head_w), top, str_w - head_w, line_h_pixels }, true);
+									graph_.string(text_pos, ent.begin, a.x - pos);
+
+									::nana::point part_pos{ text_pos.x + static_cast<int>(head_w), text_pos.y };
+
+									graph_.rectangle({ part_pos, {str_w - head_w, line_h_pixels } }, true);
 									graph_.set_text_color(colors::white);
-									graph_.string({ x + static_cast<int>(head_w), top }, ent.begin + a.x - pos, len - (a.x - pos));
+									graph_.string(part_pos, ent.begin + a.x - pos, len - (a.x - pos));
 								}
 							}
 						}
 
-						x += static_cast<int>(str_w);
+						text_pos.x += static_cast<int>(str_w);
 					}
 					if (a.y <= static_cast<unsigned>(str_pos.y) && static_cast<unsigned>(str_pos.y) < b.y)
-						graph_.rectangle({ x, top, whitespace_w, line_h_pixels }, true);
+						graph_.rectangle({ text_pos, { whitespace_w, line_h_pixels } }, true);
 				}
 				else if (b.y == str_pos.y)
 				{
@@ -2696,37 +2698,37 @@ namespace nana{	namespace widgets
 					{
 						std::size_t len = ent.end - ent.begin;
 						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
-						if ((x + static_cast<int>(str_w) > text_area_.area.x) && (x < xend))
+						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 						{
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
 							graph_.set_text_color(clr);
 							if (pos + len <= b.x)
 							{
-								graph_.rectangle({ x, top, str_w, line_h_pixels }, true);
+								graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
 								graph_.set_text_color(colors::white);
-								graph_.string({ x, top }, ent.begin, len);
+								graph_.string(text_pos, ent.begin, len);
 							}
 							else if (pos <= b.x && b.x < pos + len)
 							{
 								unsigned sel_w = graph_.glyph_extent_size(ent.begin, len, 0, b.x - pos).width;
 								if (_m_is_right_text(ent))
 								{	//RTL
-									rtl_string(point{ x, top }, ent.begin, len, str_w, 0, sel_w);
+									rtl_string(text_pos, ent.begin, len, str_w, 0, sel_w);
 								}
 								else
 								{
-									graph_.rectangle({ x, top, sel_w, line_h_pixels }, true);
+									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
 
 									graph_.set_text_color(colors::white);
-									graph_.string({ x, top }, ent.begin, b.x - pos);
+									graph_.string(text_pos, ent.begin, b.x - pos);
 									graph_.set_text_color(clr);
-									graph_.string({ x + static_cast<int>(sel_w), top }, ent.begin + b.x - pos, len - (b.x - pos));
+									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + b.x - pos, len - (b.x - pos));
 								}
 							}
 							else
-								graph_.string({x, top}, ent.begin, len);
+								graph_.string(text_pos, ent.begin, len);
 						}
-						x += static_cast<int>(str_w);
+						text_pos.x += static_cast<int>(str_w);
 					}
 				}
 			}

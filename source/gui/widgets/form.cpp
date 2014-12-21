@@ -49,6 +49,11 @@ namespace nana
 		form::form(window owner, const rectangle& r, const appearance& apr)
 			: form_base_t(owner, false, r, apr)
 		{}
+
+		void form::modality() const
+		{
+			API::modal_window(handle());
+		}
 	//end class form
 
 	//class nested_form

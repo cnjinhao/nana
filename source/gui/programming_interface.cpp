@@ -529,9 +529,9 @@ namespace API
 		}
 	}
 
-	void bring_to_top(window wd)
+	void bring_top(window wd, bool activated)
 	{
-		restrict::interface_type::bring_to_top(root(wd));
+		restrict::interface_type::bring_top(root(wd), activated);
 	}
 
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after)

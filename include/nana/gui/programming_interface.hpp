@@ -158,7 +158,7 @@ namespace API
 	void move_window(window, int x, int y);
 	void move_window(window wd, const rectangle&);
 
-	void bring_to_top(window);
+	void bring_top(window, bool activated);
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after);
 
 	nana::size window_size(window);

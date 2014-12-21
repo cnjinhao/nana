@@ -933,7 +933,7 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::bring_to_top(native_window_type wd)
+		void native_interface::bring_top(native_window_type wd, bool activated)
 		{
 #if defined(NANA_WINDOWS)
 			HWND native_wd = reinterpret_cast<HWND>(wd);
@@ -944,7 +944,7 @@ namespace nana{
 			HWND fg_wd = ::GetForegroundWindow();
 			DWORD fg_tid = ::GetWindowThreadProcessId(fg_wd, nullptr);
 			::AttachThreadInput(::GetCurrentThreadId(), fg_tid, TRUE);
-			::ShowWindow(native_wd, SW_SHOWNORMAL);
+			::ShowWindow(native_wd, activated ? SW_SHOWNORMAL : SW_SHOWNOACTIVATE);
 			::SetWindowPos(native_wd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 			::SetWindowPos(native_wd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 			::AttachThreadInput(::GetCurrentThreadId(), fg_tid, FALSE);

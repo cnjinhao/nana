@@ -171,6 +171,21 @@ namespace nana
 			API::umake_event(eh);
 		}
 
+		widget& widget::register_shortkey(char_t key)
+		{
+			if (key)
+				API::register_shortkey(handle(), static_cast<unsigned long>(key));
+			else
+				API::unregister_shortkey(handle());
+			return *this;
+		}
+
+		widget& widget::take_active(bool activated, window take_if_not_activated)
+		{
+			API::take_active(handle(), activated, take_if_not_activated);
+			return *this;
+		}
+
 		widget& widget::tooltip(const nana::string& text)
 		{
 			nana::tooltip::set(*this, text);

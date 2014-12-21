@@ -81,6 +81,10 @@ namespace nana
 		general_events& events() const;
 
 		void umake_event(event_handle eh) const;              ///< Deletes an event callback by a handle.
+
+		widget& register_shortkey(char_t);	///< Registers a shortkey. To remove a registered key, pass 0.
+
+		widget& take_active(bool activated, window take_if_not_activated);
 		widget& tooltip(const nana::string&);
 
 		operator dummy_bool_type() const;
@@ -327,11 +331,6 @@ namespace nana
 			API::activate_window(handle_);
 		}
 
-		void bring_to_top()
-		{
-			API::bring_to_top(handle_);
-		}
-
 		window handle() const
 		{
 			return handle_;
@@ -340,6 +339,11 @@ namespace nana
 		native_window_type native_handle() const
 		{
 			return API::root(handle_);
+		}
+
+		void bring_top(bool activated)
+		{
+			API::bring_top(handle(), activated);
 		}
 
 		window owner() const
@@ -362,9 +366,15 @@ namespace nana
 			API::zoom_window(handle_, ask_for_max);
 		}
 
-		bool is_zoomed(bool ask_for_max) const
+		bool is_zoomed(bool check_maximized) const
 		{
-			return API::is_window_zoomed(handle_, ask_for_max);
+			return API::is_window_zoomed(handle_, check_maximized);
+		}
+
+		widget_object& z_order(window wd_after, z_order_action action_if_no_wd_after)
+		{
+			API::set_window_z_order(handle_, wd_after, action_if_no_wd_after);
+			return *this;
 		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()
