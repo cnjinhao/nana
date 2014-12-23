@@ -202,12 +202,12 @@ namespace API
 	void modal_window(window);                    ///< Blocks the routine til the specified window is closed.
 	void wait_for(window);
 
-	expr_color fgcolor(window);
-	expr_color fgcolor(window, const expr_color&);
-	expr_color bgcolor(window);
-	expr_color bgcolor(window, const expr_color&);
-	expr_color activated_color(window);
-	expr_color activated_color(window, const expr_color&);
+	color fgcolor(window);
+	color fgcolor(window, const color&);
+	color bgcolor(window);
+	color bgcolor(window, const color&);
+	color activated_color(window);
+	color activated_color(window, const color&);
 
 	void create_caret(window, unsigned width, unsigned height);
 	void destroy_caret(window);

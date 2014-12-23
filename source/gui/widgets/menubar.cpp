@@ -101,7 +101,7 @@ namespace nana
 				void item_renderer::background(const nana::point& pos, const nana::size& size, state_t state)
 				{
 					auto bground = API::fgcolor(handle_);
-					::nana::expr_color border, body, corner;
+					::nana::color border, body, corner;
 
 					switch(state)
 					{
@@ -541,8 +541,8 @@ namespace nana
 						{
 							int x = item_pos.x + item_s.width;
 							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
-							graph_->line({ x, y1 }, { x, y2 }, ::nana::expr_color(colors::gray_border).blend(bgcolor, 0.6));
-							graph_->line({ x + 1, y1 }, { x + 1, y2 }, ::nana::expr_color(colors::button_face_shadow_end).blend(bgcolor, 0.5));
+							graph_->line({ x, y1 }, { x, y2 }, ::nana::color(colors::gray_border).blend(bgcolor, 0.6));
+							graph_->line({ x + 1, y1 }, { x + 1, y2 }, ::nana::color(colors::button_face_shadow_end).blend(bgcolor, 0.5));
 						}
 
 						//Draw text, the text is transformed from orignal for hotkey character

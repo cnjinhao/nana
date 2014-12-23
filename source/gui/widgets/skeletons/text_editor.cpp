@@ -248,7 +248,7 @@ namespace nana{	namespace widgets
 			virtual std::size_t take_lines(std::size_t pos) const = 0;
 
 			virtual void update_line(std::size_t textline, std::size_t secondary_before) = 0;
-			virtual void render(const ::nana::expr_color& fgcolor) = 0;
+			virtual void render(const ::nana::color& fgcolor) = 0;
 			virtual	nana::point		caret_to_screen(upoint) = 0;
 			virtual nana::upoint	screen_to_caret(point scrpos) = 0;
 			virtual bool move_caret_ns(bool to_north) = 0;
@@ -286,7 +286,7 @@ namespace nana{	namespace widgets
 				editor_._m_draw_string(top, API::fgcolor(editor_.window_), nana::upoint(0, editor_.points_.caret.y), editor_.textbase_.getline(textline), true);
 			}
 
-			void render(const ::nana::expr_color& fgcolor) override
+			void render(const ::nana::color& fgcolor) override
 			{
 				auto & points = editor_.points_;
 
@@ -700,7 +700,7 @@ namespace nana{	namespace widgets
 					editor_.render(API::is_focus_window(editor_.window_));
 			}
 
-			void render(const ::nana::expr_color& fgcolor) override
+			void render(const ::nana::color& fgcolor) override
 			{
 				std::size_t scrlines = editor_.screen_lines();
 
@@ -1246,7 +1246,7 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		void text_editor::border_renderer(std::function<void(nana::paint::graphics&, const ::nana::expr_color&)> f)
+		void text_editor::border_renderer(std::function<void(nana::paint::graphics&, const ::nana::color&)> f)
 		{
 			text_area_.border_renderer = f;
 		}
@@ -2036,9 +2036,9 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		::nana::expr_color text_editor::_m_bgcolor() const
+		::nana::color text_editor::_m_bgcolor() const
 		{
-			return (!API::window_enabled(window_) ? expr_color{ 0xE0, 0xE0, 0xE0 } : API::bgcolor(window_));
+			return (!API::window_enabled(window_) ? color{ 0xE0, 0xE0, 0xE0 } : API::bgcolor(window_));
 		}
 
 		bool text_editor::_m_scroll_text(bool vert)
@@ -2500,7 +2500,7 @@ namespace nana{	namespace widgets
 			graph_.string({ text_area_.area.x - points_.offset.x, text_area_.area.y }, attributes_.tip_string, {0x78, 0x78, 0x78});
 		}
 
-		void text_editor::_m_draw_string(int top, const ::nana::expr_color& clr, const nana::upoint& str_pos, const nana::string& linestr, bool if_mask) const
+		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& linestr, bool if_mask) const
 		{
 			::nana::point text_pos{ text_area_.area.x - points_.offset.x, top };
 			const int xend = text_area_.area.x + static_cast<int>(text_area_.area.width);
@@ -2575,11 +2575,13 @@ namespace nana{	namespace widgets
 						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 						{
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
+							const auto str_end = pos + len;
 
-							if ((pos + len <= a.x || pos >= b.x) || (a.x <= pos && pos + len <= b.x))
+							//NOT selected or Wholly seleceted
+							if ((str_end <= a.x || pos >= b.x) || (a.x <= pos && str_end <= b.x))
 							{
-								//NOT selected or Wholly seleceted
-								if (a.x <= pos)
+								//Wholly selected
+								if (a.x <= pos && str_end <= b.x)
 								{
 									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
 									graph_.set_text_color(colors::white);
@@ -2589,9 +2591,9 @@ namespace nana{	namespace widgets
 
 								graph_.string(text_pos, ent.begin, len);
 							}
-							else if (pos <= a.x && a.x < pos + len)
+							else if (pos <= a.x && a.x < str_end)
 							{	//Partial selected
-								int endpos = static_cast<int>(b.x < pos + len ? b.x : pos + len);
+								int endpos = static_cast<int>(b.x < str_end ? b.x : str_end);
 								std::unique_ptr<unsigned> pxbuf_ptr(new unsigned[len]);
 								unsigned * pxbuf = pxbuf_ptr.get();
 								if (graph_.glyph_pixels(ent.begin, len, pxbuf))
@@ -2616,15 +2618,16 @@ namespace nana{	namespace widgets
 										graph_.set_text_color(colors::white);
 										graph_.string(part_pos, ent.begin + (a.x - pos), endpos - a.x);
 
-										if (static_cast<size_t>(endpos) < pos + len)
+										if (static_cast<size_t>(endpos) < str_end)
 										{
+											graph_.set_text_color(clr);
 											part_pos.x += static_cast<int>(sel_w);
-											graph_.string(part_pos, ent.begin + (endpos - pos), pos + len - endpos);
+											graph_.string(part_pos, ent.begin + (endpos - pos), str_end - endpos);
 										}
 									}
 								}
 							}
-							else if (pos <= b.x && b.x < pos + len)
+							else if (pos <= b.x && b.x < str_end)
 							{	//Partial selected
 								int endpos = b.x;
 								unsigned sel_w = graph_.glyph_extent_size(ent.begin, len, 0, endpos - pos).width;
@@ -2641,12 +2644,12 @@ namespace nana{	namespace widgets
 									graph_.set_text_color(colors::white);
 									graph_.string(text_pos, ent.begin, endpos - pos);
 									graph_.set_text_color(clr);
-									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + (endpos - pos), pos + len - endpos);
+									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + (endpos - pos), str_end - endpos);
 								}
 							}
 						}
 						text_pos.x += static_cast<int>(str_w);
-					}
+					}//end for
 				}
 				else if (a.y == str_pos.y)
 				{

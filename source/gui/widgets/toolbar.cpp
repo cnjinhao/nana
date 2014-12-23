@@ -140,7 +140,7 @@ namespace nana
 				enum class state_t{normal, highlighted, selected};
 				const static unsigned extra_size = 6;
 
-				item_renderer(nana::paint::graphics& graph, bool textout, unsigned scale, const ::nana::expr_color& bgcolor)
+				item_renderer(nana::paint::graphics& graph, bool textout, unsigned scale, const ::nana::color& bgcolor)
 					:graph(graph), textout(textout), scale(scale), bgcolor(bgcolor)
 				{}
 
@@ -178,7 +178,7 @@ namespace nana
 							gh.paste(graph, pos.x, pos.y);
 						}
 						else if(state == state_t::normal)
-							graph.blend(nana::rectangle(pos, size), ::nana::expr_color(0xc0, 0xdd, 0xfc).blend(bgcolor, 0.5), 0.25);
+							graph.blend(nana::rectangle(pos, size), ::nana::color(0xc0, 0xdd, 0xfc).blend(bgcolor, 0.5), 0.25);
 
 						x += scale;
 						width -= scale;
@@ -194,7 +194,7 @@ namespace nana
 				nana::paint::graphics& graph;
 				bool textout;
 				unsigned scale;
-				::nana::expr_color bgcolor;
+				::nana::color bgcolor;
 			};
 
 			struct drawer::drawer_impl_type
@@ -393,9 +393,9 @@ namespace nana
 					return npos;
 				}
 
-				void drawer::_m_draw_background(const ::nana::expr_color& clr)
+				void drawer::_m_draw_background(const ::nana::color& clr)
 				{
-					graph_->gradual_rectangle(graph_->size(), ::nana::expr_color(colors::white).blend(clr, 0.1), ::nana::expr_color(colors::black).blend(clr, 0.05), true);
+					graph_->gradual_rectangle(graph_->size(), ::nana::color(colors::white).blend(clr, 0.1), ::nana::color(colors::black).blend(clr, 0.05), true);
 				}
 
 				void drawer::_m_draw()

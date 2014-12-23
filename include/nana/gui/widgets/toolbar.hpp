@@ -67,7 +67,7 @@ namespace nana
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
 				size_type _m_which(int x, int y, bool want_if_disabled) const;
-				void _m_draw_background(const ::nana::expr_color&);
+				void _m_draw_background(const ::nana::color&);
 				void _m_draw();
 				void _m_owner_sized(const arg_resized&);
 			private:

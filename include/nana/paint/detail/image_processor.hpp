@@ -405,7 +405,7 @@ namespace detail
 		class bresenham_line
 			: public image_process::line_interface
 		{
-			virtual void process(paint::pixel_buffer & pixbuf, const nana::point& pos_beg, const nana::point& pos_end, const ::nana::expr_color& clr, double fade_rate) const
+			virtual void process(paint::pixel_buffer & pixbuf, const nana::point& pos_beg, const nana::point& pos_end, const ::nana::color& clr, double fade_rate) const
 			{
 				auto rgb_color = clr.px_color().value;
 				const std::size_t bytes_pl = pixbuf.bytes_per_line();

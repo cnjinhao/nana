@@ -209,7 +209,7 @@ namespace gadget
 
 	//arrow_16_pixels
 	//param@style: 0 = hollow, 1 = solid
-	void arrow_16_pixels(nana::paint::graphics& graph, int x, int y, const nana::expr_color& clr, uint32_t style, directions::t dir)
+	void arrow_16_pixels(nana::paint::graphics& graph, int x, int y, const nana::color& clr, uint32_t style, directions::t dir)
 	{
 		graph.set_color(clr);
 		switch(style)
@@ -230,7 +230,7 @@ namespace gadget
 		}
 	}
 
-	void close_16_pixels(::nana::paint::graphics& graph, int x, int y, uint32_t style, const ::nana::expr_color& clr)
+	void close_16_pixels(::nana::paint::graphics& graph, int x, int y, uint32_t style, const ::nana::color& clr)
 	{
 		graph.set_color(clr);
 		if(0 == style)
@@ -261,7 +261,7 @@ namespace gadget
 		}
 	}
 
-	void cross(graphics& graph, int x, int y, uint32_t size, uint32_t thickness, const ::nana::expr_color& color)
+	void cross(graphics& graph, int x, int y, uint32_t size, uint32_t thickness, const ::nana::color& color)
 	{
 			if (thickness + 2 <= size)
 			{
@@ -302,7 +302,7 @@ namespace gadget
 				ps[11].x = x + gap;
 				ps[11].y = y + gap;
 
-				::nana::expr_color darker(0, 0, 0);
+				::nana::color darker(0, 0, 0);
 				darker.blend(color, true);
 				graph.set_color(darker);
 

@@ -85,7 +85,7 @@ namespace nana
 				{
 					widget_ = static_cast< ::nana::combox*>(&wd);
 					editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph);
-					editor_->border_renderer([this](graph_reference graph, const ::nana::expr_color& bgcolor){
+					editor_->border_renderer([this](graph_reference graph, const ::nana::color& bgcolor){
 						draw_border(graph, bgcolor);
 					});
 					editor_->multi_lines(false);
@@ -284,9 +284,9 @@ namespace nana
 					_m_draw_image();
 				}
 
-				void draw_border(graph_reference graph, const ::nana::expr_color& bgcolor)
+				void draw_border(graph_reference graph, const ::nana::color& bgcolor)
 				{
-					graph.rectangle(false, (state_.focused ? ::nana::expr_color(0x05, 0x95, 0xE2) : ::nana::expr_color(0x99, 0x9A, 0x9E)));
+					graph.rectangle(false, (state_.focused ? ::nana::color(0x05, 0x95, 0xE2) : ::nana::color(0x99, 0x9A, 0x9E)));
 					nana::rectangle r(graph.size());
 					graph.rectangle(r.pare_off(1), false, bgcolor);
 				}
@@ -439,7 +439,7 @@ namespace nana
 					}
 				}
 
-				void _m_draw_background(graph_reference graph, const rectangle&, const ::nana::expr_color&)
+				void _m_draw_background(graph_reference graph, const rectangle&, const ::nana::color&)
 				{
 					::nana::rectangle r(graph.size());
 					auto clr_from = colors::button_face_shadow_start;
@@ -467,8 +467,8 @@ namespace nana
 					int bottom = graph_->height() - 2;
 					int mid = top + (bottom - top) * 5 / 18;
 
-					::nana::expr_color topcol, topcol_ln, botcol, botcol_ln;
-					::nana::expr_color arrow_color{ colors::white };
+					::nana::color topcol, topcol_ln, botcol, botcol_ln;
+					::nana::color arrow_color{ colors::white };
 					if (enabled && items_.size())
 					{
 						double percent = 1;
@@ -477,10 +477,10 @@ namespace nana
 						else if (state_.state == state_t::mouse_over)
 							percent = 0.9;
 
-						topcol_ln = expr_color{ 0x3F, 0x47, 0x6C }.blend(arrow_color, percent);
-						botcol_ln = expr_color{ 0x03, 0x31, 0x114 }.blend(arrow_color, percent);
-						topcol = expr_color{ 0x3F, 83, 84 }.blend(arrow_color, percent);
-						botcol = expr_color{ 0x0c, 0x4a, 0x9a }.blend(arrow_color, percent);
+						topcol_ln = color{ 0x3F, 0x47, 0x6C }.blend(arrow_color, percent);
+						botcol_ln = color{ 0x03, 0x31, 0x114 }.blend(arrow_color, percent);
+						topcol = color{ 0x3F, 83, 84 }.blend(arrow_color, percent);
+						botcol = color{ 0x0c, 0x4a, 0x9a }.blend(arrow_color, percent);
 					}
 					else
 					{

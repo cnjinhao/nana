@@ -14,41 +14,41 @@
 namespace nana
 {
 	//class color
-	expr_color::expr_color(colors clr)
-		: expr_color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF)
+	color::color(colors clr)
+		: color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF)
 	{}
 
-	expr_color::expr_color(colors clr, double alpha)
-		: expr_color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF, alpha)
+	color::color(colors clr, double alpha)
+		: color((static_cast<unsigned>(clr)& 0xFF0000) >> 16, (static_cast<unsigned>(clr)& 0xFF00) >> 8, static_cast<unsigned>(clr)& 0xFF, alpha)
 	{}
 
-	expr_color::expr_color(color_rgb rgb)
+	color::color(color_rgb rgb)
 		:	r_((static_cast<int>(rgb) >> 16) & 0xFF),
 			g_((static_cast<int>(rgb) >> 8) & 0xFF),
 			b_(static_cast<int>(rgb) & 0xFF),
 			a_(1.0)
 	{}
 
-	expr_color::expr_color(color_argb argb)
+	color::color(color_argb argb)
 		:	r_((static_cast<int>(argb) >> 16) & 0xFF),
 			g_((static_cast<int>(argb) >> 8) & 0xFF),
 			b_(static_cast<int>(argb) & 0xFF),
 			a_(((static_cast<int>(argb) >> 24) & 0xFF) / 255.0)
 	{}
 
-	expr_color::expr_color(color_rgba rgba)
+	color::color(color_rgba rgba)
 		:	r_((static_cast<int>(rgba) >> 24) & 0xFF),
 			g_((static_cast<int>(rgba) >> 16) & 0xFF),
 			b_((static_cast<int>(rgba) >> 8) & 0xFF),
 			a_((static_cast<int>(rgba) & 0xFF) / 255.0)
 	{}
 
-	expr_color::expr_color(unsigned red, unsigned green, unsigned blue)
+	color::color(unsigned red, unsigned green, unsigned blue)
 		: a_(1.0), r_(red), g_(green), b_(blue)
 	{
 	}
 	
-	expr_color::expr_color(unsigned red, unsigned green, unsigned blue, double alpha)
+	color::color(unsigned red, unsigned green, unsigned blue, double alpha)
 		: a_(alpha), r_(red), g_(green), b_(blue)
 	{
 		if (alpha < 0.0)
@@ -57,7 +57,7 @@ namespace nana
 			a_ = 1.0;
 	}
 
-	expr_color& expr_color::from_rgb(unsigned red, unsigned green, unsigned blue)
+	color& color::from_rgb(unsigned red, unsigned green, unsigned blue)
 	{
 		r_ = red;
 		g_ = green;
@@ -78,7 +78,7 @@ namespace nana
 		return v1;
 	}
 
-	expr_color& expr_color::from_hsl(double hue, double saturation, double lightness)
+	color& color::from_hsl(double hue, double saturation, double lightness)
 	{
 		if (0.0 == saturation)
 		{
@@ -103,7 +103,7 @@ namespace nana
 		return *this;
 	}
 
-	expr_color& expr_color::alpha(double al)
+	color& color::alpha(double al)
 	{
 		if (al < 0.0)
 			a_ = 0.0;
@@ -114,7 +114,7 @@ namespace nana
 		return *this;
 	}
 
-	expr_color& expr_color::blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha)
+	color& color::blend(const color& bgcolor, bool ignore_bgcolor_alpha)
 	{
 		if (a_ < 1.0)
 		{
@@ -146,7 +146,7 @@ namespace nana
 		return *this;
 	}
 
-	expr_color& expr_color::blend(const expr_color& bgcolor, double alpha)
+	color& color::blend(const color& bgcolor, double alpha)
 	{
 		r_ = r_ * alpha + bgcolor.r_ * (1.0 - alpha);
 		g_ = g_ * alpha + bgcolor.g_ * (1.0 - alpha);
@@ -155,17 +155,17 @@ namespace nana
 		return *this;
 	}
 
-	bool expr_color::invisible() const
+	bool color::invisible() const
 	{
 		return (a_ == 0.0);
 	}
 
-	pixel_color_t expr_color::px_color() const
+	pixel_color_t color::px_color() const
 	{
 		return argb();
 	}
 	
-	pixel_argb_t expr_color::argb() const
+	pixel_argb_t color::argb() const
 	{
 		pixel_argb_t argb;
 		argb.element.red = static_cast<unsigned>(r_);
@@ -175,7 +175,7 @@ namespace nana
 		return argb;
 	}
 
-	pixel_rgba_t expr_color::rgba() const
+	pixel_rgba_t color::rgba() const
 	{
 		pixel_rgba_t rgba;
 		rgba.element.red = static_cast<unsigned>(r_);
@@ -185,29 +185,29 @@ namespace nana
 		return rgba;
 	}
 
-	const double& expr_color::r() const
+	const double& color::r() const
 	{
 		return r_;
 	}
-	const double& expr_color::g() const
+	const double& color::g() const
 	{
 		return g_;
 	}
-	const double& expr_color::b() const
+	const double& color::b() const
 	{
 		return b_;
 	}
 
-	const double& expr_color::a() const
+	const double& color::a() const
 	{
 		return a_;
 	}
 
-	bool expr_color::operator==(const expr_color& other) const
+	bool color::operator==(const color& other) const
 	{
 		return (px_color().value == other.px_color().value);
 	}
-	bool expr_color::operator!=(const expr_color& other) const
+	bool color::operator!=(const color& other) const
 	{
 		return (px_color().value != other.px_color().value);
 	}

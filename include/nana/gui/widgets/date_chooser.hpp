@@ -90,10 +90,10 @@ namespace nana
 
 				struct color_tag
 				{
-					::nana::expr_color highlight;
-					::nana::expr_color selected;
-					::nana::expr_color normal;
-					::nana::expr_color bgcolor;
+					::nana::color highlight;
+					::nana::color selected;
+					::nana::color normal;
+					::nana::color bgcolor;
 				}color_;
 			};
 		

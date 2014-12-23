@@ -74,7 +74,7 @@ namespace nana
 					return true;
 				}
 
-				void render(graph_reference graph, const ::nana::expr_color& fgcolor, align th, align_v tv)
+				void render(graph_reference graph, const ::nana::color& fgcolor, align th, align_v tv)
 				{
 					traceable_.clear();
 
@@ -216,7 +216,7 @@ namespace nana
 					}
 				}
 
-				void _m_set_default(const ::nana::paint::font& ft, const ::nana::expr_color& fgcolor)
+				void _m_set_default(const ::nana::paint::font& ft, const ::nana::color& fgcolor)
 				{
 					def_.font_name = ft.name();
 					def_.font_size = ft.size();
@@ -224,7 +224,7 @@ namespace nana
 					def_.fgcolor = fgcolor;
 				}
 
-				const ::nana::expr_color& _m_fgcolor(nana::widgets::skeletons::fblock* fp)
+				const ::nana::color& _m_fgcolor(nana::widgets::skeletons::fblock* fp)
 				{
 					while(fp->fgcolor.invisible())
 					{
@@ -609,7 +609,7 @@ namespace nana
 					::nana::string font_name;
 					std::size_t font_size;
 					bool	font_bold;
-					::nana::expr_color fgcolor;
+					::nana::color fgcolor;
 				}def_;
 			};
 

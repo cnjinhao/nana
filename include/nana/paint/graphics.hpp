@@ -131,34 +131,34 @@ namespace nana
 			void release();
 			void save_as_file(const char*);
 
-			void set_color(const ::nana::expr_color&);
-			void set_text_color(const ::nana::expr_color&);
+			void set_color(const ::nana::color&);
+			void set_text_color(const ::nana::color&);
 
 			unsigned bidi_string(const nana::point&, const char_t *, std::size_t len);
 
-			void blend(const ::nana::rectangle& r, const ::nana::expr_color&, double fade_rate);
+			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
 
-			void set_pixel(int x, int y, const ::nana::expr_color&);
+			void set_pixel(int x, int y, const ::nana::color&);
 			void set_pixel(int x, int y);
 
 			void string(point, const char_t*, std::size_t len);
 			void string(const point&, const char_t*);
 			void string(const point&, const ::nana::string&);
-			void string(const point&, const ::nana::string&, const expr_color&);
+			void string(const point&, const ::nana::string&, const color&);
 
 			void line(const point&, const point&);
-			void line(const point&, const point&, const expr_color&);
-			void line_to(const point&, const expr_color&);
+			void line(const point&, const point&, const color&);
+			void line_to(const point&, const color&);
 			void line_to(const point&);
 
 			void rectangle(bool solid);
-			void rectangle(bool solid, const expr_color&);
+			void rectangle(bool solid, const color&);
 			void rectangle(const ::nana::rectangle&, bool solid);
-			void rectangle(const ::nana::rectangle&, bool solid, const expr_color&);
-			void frame_rectangle(const ::nana::rectangle&, const expr_color& left, const expr_color& top, const expr_color& right, const expr_color& bottom);
+			void rectangle(const ::nana::rectangle&, bool solid, const color&);
+			void frame_rectangle(const ::nana::rectangle&, const color& left, const color& top, const color& right, const color& bottom);
 
-			void gradual_rectangle(const ::nana::rectangle&, const expr_color& from, const expr_color& to, bool vertical);
-			void round_rectangle(const ::nana::rectangle&, unsigned radius_x, unsigned radius_y, const expr_color&, bool solid, const expr_color& color_if_solid);
+			void gradual_rectangle(const ::nana::rectangle&, const color& from, const color& to, bool vertical);
+			void round_rectangle(const ::nana::rectangle&, unsigned radius_x, unsigned radius_y, const color&, bool solid, const color& color_if_solid);
 		private:
 			std::shared_ptr< ::nana::detail::drawable_impl_type> dwptr_;
 			font			font_shadow_;

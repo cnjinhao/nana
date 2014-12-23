@@ -444,8 +444,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 		bool	bold;
 		bool	bold_empty;	//bold should be ignored if bold_empty is true
 		aligns::t	text_align;
-		::nana::expr_color	bgcolor;	//If the color is not specified, it will be ignored, and the system will search for its parent.
-		::nana::expr_color	fgcolor;	//ditto
+		::nana::color	bgcolor;	//If the color is not specified, it will be ignored, and the system will search for its parent.
+		::nana::color	fgcolor;	//ditto
 
 		::nana::string	target;
 		::nana::string	url;

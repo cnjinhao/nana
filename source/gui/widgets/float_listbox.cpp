@@ -34,7 +34,7 @@ namespace nana
 				{
 					if (state == StateHighlighted)
 					{
-						::nana::expr_color clr{ 0xaf, 0xc7, 0xe3 };
+						::nana::color clr{ 0xaf, 0xc7, 0xe3 };
 						graph.rectangle(r, false, clr);
 
 						graph.set_color(colors::white);

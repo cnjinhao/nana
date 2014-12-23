@@ -714,7 +714,7 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::line(const point &pos_beg, const point &pos_end, const ::nana::expr_color& clr, double fade_rate)
+	void pixel_buffer::line(const point &pos_beg, const point &pos_end, const ::nana::color& clr, double fade_rate)
 	{
 		auto sp = storage_.get();
 		if(nullptr == sp) return;
@@ -726,7 +726,7 @@ namespace nana{	namespace paint
 			(*(sp->img_pro.line))->process(*this, good_pos_beg, good_pos_end, clr, fade_rate);
 	}
 
-	void pixel_buffer::rectangle(const nana::rectangle &r, const ::nana::expr_color& clr, double fade_rate, bool solid)
+	void pixel_buffer::rectangle(const nana::rectangle &r, const ::nana::color& clr, double fade_rate, bool solid)
 	{
 		auto sp = storage_.get();
 		if((nullptr == sp) || (fade_rate == 1.0)) return;
@@ -927,7 +927,7 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::gradual_rectangle(const ::nana::rectangle& draw_rct, const ::nana::expr_color& from, const ::nana::expr_color& to, double fade_rate, bool vertical)
+	void pixel_buffer::gradual_rectangle(const ::nana::rectangle& draw_rct, const ::nana::color& from, const ::nana::color& to, double fade_rate, bool vertical)
 	{
 		auto sp = storage_.get();
 		if (nullptr == sp) return;

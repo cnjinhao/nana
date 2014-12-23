@@ -74,7 +74,7 @@ namespace nana
 				virtual ~renderer_interface()
 				{}
 
-				virtual void set_color(const nana::expr_color& bgcolor, const nana::expr_color& fgcolor) = 0;
+				virtual void set_color(const nana::color& bgcolor, const nana::color& fgcolor) = 0;
 
 				virtual void bground(graph_reference, const compset_interface *) const = 0;
 				virtual void expander(graph_reference, const compset_interface *) const = 0;

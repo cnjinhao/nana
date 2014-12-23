@@ -857,13 +857,13 @@ namespace paint
 			}
 		}
 
-		void graphics::set_color(const ::nana::expr_color& col)
+		void graphics::set_color(const ::nana::color& col)
 		{
 			if (handle_)
 				handle_->set_color(col);
 		}
 
-		void graphics::set_text_color(const ::nana::expr_color& col)
+		void graphics::set_text_color(const ::nana::color& col)
 		{
 			if (handle_)
 				handle_->set_text_color(col);
@@ -883,7 +883,7 @@ namespace paint
 			return static_cast<unsigned>(moved_pos.x - pos.x);
 		}
 
-		void graphics::blend(const nana::rectangle& r, const ::nana::expr_color& clr, double fade_rate)
+		void graphics::blend(const nana::rectangle& r, const ::nana::color& clr, double fade_rate)
 		{
 			if (handle_)
 			{
@@ -892,7 +892,7 @@ namespace paint
 			}
 		}
 
-		void graphics::set_pixel(int x, int y, const ::nana::expr_color& clr)
+		void graphics::set_pixel(int x, int y, const ::nana::color& clr)
 		{
 			if (handle_)
 			{
@@ -968,7 +968,7 @@ namespace paint
 			string(pos, str.data(), str.size());
 		}
 
-		void graphics::string(const point& pos, const ::nana::string& text, const expr_color& clr)
+		void graphics::string(const point& pos, const ::nana::string& text, const color& clr)
 		{
 			set_text_color(clr);
 			string(pos, text.data(), text.size());
@@ -992,13 +992,13 @@ namespace paint
 			if (changed_ == false) changed_ = true;
 		}
 
-		void graphics::line(const point& pos_a, const point& pos_b, const expr_color& clr)
+		void graphics::line(const point& pos_a, const point& pos_b, const color& clr)
 		{
 			set_color(clr);
 			line(pos_a, pos_b);
 		}
 
-		void graphics::line_to(const point& pos, const expr_color& clr)
+		void graphics::line_to(const point& pos, const color& clr)
 		{
 			if (!handle_) return;
 			handle_->set_color(clr);
@@ -1028,7 +1028,7 @@ namespace paint
 			rectangle(size(), solid);
 		}
 
-		void graphics::rectangle(bool solid, const ::nana::expr_color& clr)
+		void graphics::rectangle(bool solid, const ::nana::color& clr)
 		{
 			set_color(clr);
 			rectangle(size(), solid);
@@ -1054,13 +1054,13 @@ namespace paint
 			}
 		}
 
-		void graphics::rectangle(const ::nana::rectangle& r, bool solid, const expr_color& clr)
+		void graphics::rectangle(const ::nana::rectangle& r, bool solid, const color& clr)
 		{
 			set_color(clr);
 			rectangle(r, solid);
 		}
 
-		void graphics::frame_rectangle(const ::nana::rectangle& r, const ::nana::expr_color& left_clr, const ::nana::expr_color& top_clr, const ::nana::expr_color& right_clr, const ::nana::expr_color& bottom_clr)
+		void graphics::frame_rectangle(const ::nana::rectangle& r, const ::nana::color& left_clr, const ::nana::color& top_clr, const ::nana::color& right_clr, const ::nana::color& bottom_clr)
 		{
 			int right = r.right() - 1;
 			int bottom = r.bottom() - 1;
@@ -1071,7 +1071,7 @@ namespace paint
 			line_to({ r.x, r.y }, left_clr);
 		}
 
-		void graphics::gradual_rectangle(const ::nana::rectangle& r, const ::nana::expr_color& from, const ::nana::expr_color& to, bool vertical)
+		void graphics::gradual_rectangle(const ::nana::rectangle& r, const ::nana::color& from, const ::nana::color& to, bool vertical)
 		{
 #if defined(NANA_WINDOWS)
 			if (pxbuf_.open(handle_))
@@ -1128,7 +1128,7 @@ namespace paint
 			if (changed_ == false) changed_ = true;
 		}
 
-		void graphics::round_rectangle(const ::nana::rectangle& r, unsigned radius_x, unsigned radius_y, const expr_color& clr, bool solid, const expr_color& solid_clr)
+		void graphics::round_rectangle(const ::nana::rectangle& r, unsigned radius_x, unsigned radius_y, const color& clr, bool solid, const color& solid_clr)
 		{
 			if (handle_)
 			{

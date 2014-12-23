@@ -177,9 +177,9 @@ namespace detail
 
 		struct
 		{
-			expr_color fgcolor;
-			expr_color bgcolor;
-			expr_color activated;
+			color fgcolor;
+			color bgcolor;
+			color activated;
 		}colors;
 
 		struct

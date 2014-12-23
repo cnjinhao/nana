@@ -31,7 +31,7 @@ namespace nana
 		class crook
 			: public crook_interface
 		{
-			bool draw(graph_reference graph, const nana::expr_color& bgcolor, const nana::expr_color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
+			bool draw(graph_reference graph, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
 			{
 				if(crook_data.radio)
 				{
@@ -141,7 +141,7 @@ namespace nana
 				}
 				else
 				{
-					nana::expr_color highlighted(0x5e, 0xb6, 0xf7);
+					nana::color highlighted(0x5e, 0xb6, 0xf7);
 					auto bld_bgcolor = bgcolor;
 					auto bld_fgcolor = fgcolor;
 					switch(es)
@@ -156,7 +156,7 @@ namespace nana
 						bld_fgcolor.blend(highlighted, 0.4);
 						break;
 					case element_state::disabled:
-						bld_bgcolor = bld_fgcolor = nana::expr_color(0xb2, 0xb7, 0xbc);
+						bld_bgcolor = bld_fgcolor = nana::color(0xb2, 0xb7, 0xbc);
 						break;
 					default:
 						//Leave things as they are
@@ -207,7 +207,7 @@ namespace nana
 		class menu_crook
 			: public crook_interface
 		{
-			bool draw(graph_reference graph, const ::nana::expr_color&, const ::nana::expr_color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
+			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
 			{
 				if(crook_data.check_state == state::unchecked)
 					return true;
@@ -244,7 +244,7 @@ namespace nana
 					int x = r.x + (static_cast<int>(r.width) - 16) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 16) / 2;
 
-					::nana::expr_color light(colors::white);
+					::nana::color light(colors::white);
 					light.blend(fgcolor, 0.5);
 
 					graph.set_color(fgcolor);
@@ -453,7 +453,7 @@ namespace nana
 			keeper_ = element::provider().keeper_crook(name);
 		}
 
-		bool facade<element::crook>::draw(graph_reference graph, const ::nana::expr_color& bgcol, const ::nana::expr_color& fgcol, const nana::rectangle& r, element_state es)
+		bool facade<element::crook>::draw(graph_reference graph, const ::nana::color& bgcol, const ::nana::color& fgcol, const nana::rectangle& r, element_state es)
 		{
 			return (*keeper_)->draw(graph, bgcol, fgcol, r, es, data_);
 		}
@@ -490,7 +490,7 @@ namespace nana
 			ref_ptr_ = detail::bedrock::instance().get_element_store().bground(name);
 		}
 
-		bool cite_bground::draw(graph_reference dst, const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor, const nana::rectangle& r, element_state state)
+		bool cite_bground::draw(graph_reference dst, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const nana::rectangle& r, element_state state)
 		{
 			if (ref_ptr_ && *ref_ptr_)
 				return (*ref_ptr_)->draw(dst, bgcolor, fgcolor, r, state);
@@ -676,7 +676,7 @@ namespace nana
 		}
 
 		//Implement the methods of bground_interface.
-		bool bground::draw(graph_reference dst, const ::nana::expr_color&, const ::nana::expr_color&, const nana::rectangle& to_r, element_state state)
+		bool bground::draw(graph_reference dst, const ::nana::color&, const ::nana::color&, const nana::rectangle& to_r, element_state state)
 		{
 			if (nullptr == method_)
 				return false;

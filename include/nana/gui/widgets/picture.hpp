@@ -26,7 +26,7 @@ namespace nana
 			void attached(widget_reference, graph_reference)	override;
 			void load(const nana::char_t* file);
 			void load(const nana::paint::image&);
-			void set_shadow_background(const ::nana::expr_color& from, const ::nana::expr_color& to, bool horizontal);
+			void set_shadow_background(const ::nana::color& from, const ::nana::color& to, bool horizontal);
 			bool bgstyle(bool is_stretch, nana::arrange, int beg, int end);
 		private:
 			void refresh(graph_reference)	override;
@@ -37,8 +37,8 @@ namespace nana
 
 			struct
 			{
-				::nana::expr_color gradual_from;
-				::nana::expr_color gradual_to;
+				::nana::color gradual_from;
+				::nana::color gradual_to;
 				bool	horizontal;
 			}bground_;
 
@@ -72,7 +72,7 @@ namespace nana
                       );
 
         /// Fills a gradual-change color in background. If One of colors is invisible or clr_from is equal to clr_to, it draws background in bgcolor.
-		void set_gradual_background(const ::nana::expr_color& clr_from, const ::nana::expr_color& clr_to, bool horizontal);
+		void set_gradual_background(const ::nana::color& clr_from, const ::nana::color& clr_to, bool horizontal);
 		void transparent(bool);
 		bool transparent() const;
 	};

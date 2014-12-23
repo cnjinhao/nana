@@ -134,7 +134,7 @@ namespace nana
 					{
 						graph.rectangle(r, false, { 0xCD, 0xD3, 0xE6 });
 
-						::nana::expr_color clr(0xE6, 0xEF, 0xF4);
+						::nana::color clr(0xE6, 0xEF, 0xF4);
 						graph.rectangle(nana::rectangle(r).pare_off(1), true, clr);
 
 						nana::rectangle crook_r = r;

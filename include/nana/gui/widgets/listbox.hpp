@@ -33,14 +33,11 @@ namespace nana
 			{
 				struct format
 				{
-					//::nana::color_t bgcolor;
-					//::nana::color_t fgcolor;
-
-					::nana::expr_color bgcolor;
-					::nana::expr_color fgcolor;
+					::nana::color bgcolor;
+					::nana::color fgcolor;
 
 					format() = default;
-					format(const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor);
+					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 				};
 
 				using format_ptr = std::unique_ptr < format > ;
@@ -53,7 +50,7 @@ namespace nana
 				cell(cell&&);
 				cell(nana::string);
 				cell(nana::string, const format&);
-				cell(nana::string, const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor);
+				cell(nana::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 
 				cell& operator=(const cell&);
 				cell& operator=(cell&&);
@@ -216,11 +213,11 @@ namespace nana
 				item_proxy & select(bool);
 				bool selected() const;
 
-				item_proxy & bgcolor(const nana::expr_color&);
-				nana::expr_color bgcolor() const;
+				item_proxy & bgcolor(const nana::color&);
+				nana::color bgcolor() const;
 
-				item_proxy& fgcolor(const nana::expr_color&);
-				nana::expr_color fgcolor() const;
+				item_proxy& fgcolor(const nana::color&);
+				nana::color fgcolor() const;
 
 				index_pair pos() const;
 

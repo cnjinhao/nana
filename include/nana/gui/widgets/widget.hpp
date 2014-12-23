@@ -73,10 +73,10 @@ namespace nana
 		void move(int x, int y);
 		void move(const rectangle&);
 
-		void fgcolor(const nana::expr_color&);
-		nana::expr_color fgcolor() const;
-		void bgcolor(const nana::expr_color&);
-		nana::expr_color bgcolor() const;
+		void fgcolor(const nana::color&);
+		nana::color fgcolor() const;
+		void bgcolor(const nana::color&);
+		nana::color bgcolor() const;
 
 		general_events& events() const;
 
@@ -110,10 +110,10 @@ namespace nana
 		virtual void _m_typeface(const nana::paint::font& font);
 		virtual nana::paint::font _m_typeface() const;
 
-		virtual void _m_fgcolor(const nana::expr_color&);
-		virtual nana::expr_color _m_fgcolor() const;
-		virtual void _m_bgcolor(const nana::expr_color&);
-		virtual nana::expr_color _m_bgcolor() const;
+		virtual void _m_fgcolor(const nana::color&);
+		virtual nana::color _m_fgcolor() const;
+		virtual void _m_bgcolor(const nana::color&);
+		virtual nana::color _m_bgcolor() const;
 	};
 
             /// Base class of all the classes defined as a widget window. Defaultly a widget_tag

@@ -790,7 +790,7 @@ namespace API
 			restrict::bedrock.pump_event(wd, false);
 	}
 
-	expr_color fgcolor(window wd)
+	color fgcolor(window wd)
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
@@ -798,7 +798,7 @@ namespace API
 		return{};
 	}
 
-	expr_color fgcolor(window wd, const expr_color& col)
+	color fgcolor(window wd, const color& col)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
@@ -815,7 +815,7 @@ namespace API
 		return{};
 	}
 
-	expr_color bgcolor(window wd)
+	color bgcolor(window wd)
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
@@ -823,7 +823,7 @@ namespace API
 		return{};
 	}
 
-	expr_color bgcolor(window wd, const expr_color& col)
+	color bgcolor(window wd, const color& col)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
@@ -840,7 +840,7 @@ namespace API
 		return{};
 	}
 
-	expr_color activated_color(window wd)
+	color activated_color(window wd)
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
@@ -848,7 +848,7 @@ namespace API
 		return{};
 	}
 
-	expr_color activated_color(window wd, const expr_color& col)
+	color activated_color(window wd, const color& col)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;

@@ -220,7 +220,7 @@ namespace nana{	namespace drawerbase
 					//color_t fgcolor = (attr_.focus_color ? (attr_.focused ? 0xFF : attr_.fgcolor) : attr_.fgcolor);
 					auto fgcolor = attr_.fgcolor;
 					if (attr_.focus_color && attr_.focused)
-						fgcolor = ::nana::expr_color(colors::blue);
+						fgcolor = ::nana::color(colors::blue);
 
 					graph.set_text_color(fgcolor);
 
@@ -241,17 +241,17 @@ namespace nana{	namespace drawerbase
 				}
 				else
 				{
-					graph.set_text_color(::nana::expr_color(colors::white));
+					graph.set_text_color(::nana::color(colors::white));
 					if(attr_.omitted)
 					{
 						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, true);
-						graph.set_text_color(::nana::expr_color(colors::gray));
+						graph.set_text_color(::nana::color(colors::gray));
 						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
 					}
 					else
 					{
 						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen);
-						graph.set_text_color(::nana::expr_color(colors::gray));
+						graph.set_text_color(::nana::color(colors::gray));
 						graph.bidi_string(pos, txtptr, txtlen);
 					}
 				}
@@ -298,9 +298,9 @@ namespace nana{	namespace drawerbase
 			nana::rectangle r(graph.size());
 			r.pare_off(1);
 
-			::nana::expr_color from(colors::white);
+			::nana::color from(colors::white);
 			from.blend(attr_.bgcolor, 0.8);
-			::nana::expr_color to(colors::black);
+			::nana::color to(colors::black);
 			to.blend(attr_.bgcolor, 0.05);
 
 			if (element_state::pressed == attr_.e_state)
@@ -317,7 +317,7 @@ namespace nana{	namespace drawerbase
 			int right = r.width - 1;
 			int bottom = r.height - 1;
 
-			::nana::expr_color lt{0x7f,0x7f,0x7f}, rb{0x70,0x70,0x70};
+			::nana::color lt{0x7f,0x7f,0x7f}, rb{0x70,0x70,0x70};
 			graph.frame_rectangle(r, lt, lt, rb, rb);
 
 			graph.set_color({0x91,0x91,0x91});

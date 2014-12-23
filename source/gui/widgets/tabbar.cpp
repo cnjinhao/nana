@@ -27,22 +27,22 @@ namespace nana
 				nana::string text;
 				any	value;
 
-				::nana::expr_color bgcolor;
-				::nana::expr_color fgcolor;
+				::nana::color bgcolor;
+				::nana::color fgcolor;
 			};
 
 			class def_renderer
 				: public item_renderer
 			{
 			private:
-				virtual void background(graph_reference graph, const nana::rectangle& r, const ::nana::expr_color& bgcolor)
+				virtual void background(graph_reference graph, const nana::rectangle& r, const ::nana::color& bgcolor)
 				{
 					if(bgcolor_ != bgcolor)
 					{
 						bgcolor_ = bgcolor;
-						dark_bgcolor_ = ::nana::expr_color{ colors::black }.blend(bgcolor, 0.1);
-						blcolor_ = ::nana::expr_color{ colors::black }.blend(bgcolor, 0.5);
-						ilcolor_ = ::nana::expr_color{ colors::white }.blend(bgcolor, 0.1);
+						dark_bgcolor_ = ::nana::color{ colors::black }.blend(bgcolor, 0.1);
+						blcolor_ = ::nana::color{ colors::black }.blend(bgcolor, 0.5);
+						ilcolor_ = ::nana::color{ colors::white }.blend(bgcolor, 0.1);
 					}
 
 					graph.rectangle(true, bgcolor);
@@ -52,9 +52,9 @@ namespace nana
 				{
 					//*
 					const nana::rectangle & r = m.r;
-					expr_color bgcolor;
-					expr_color blcolor;
-					expr_color dark_bgcolor;
+					color bgcolor;
+					color blcolor;
+					color dark_bgcolor;
 
 					if(m.bgcolor.invisible())
 					{
@@ -65,8 +65,8 @@ namespace nana
 					else
 					{
 						bgcolor = m.bgcolor;
-						blcolor = expr_color{ colors::black }.blend(m.bgcolor, 0.5);
-						dark_bgcolor = expr_color{ colors::black }.blend(m.bgcolor, 0.1);
+						blcolor = color{ colors::black }.blend(m.bgcolor, 0.5);
+						dark_bgcolor = color{ colors::black }.blend(m.bgcolor, 0.1);
 					}
 
 					auto round_r = r;
@@ -81,7 +81,7 @@ namespace nana
 						if (m.bgcolor.invisible())
 							beg = ilcolor_;
 						else
-							beg = expr_color{ m.bgcolor }.blend(colors::white, 0.5);
+							beg = color{ m.bgcolor }.blend(colors::white, 0.5);
 						end = bgcolor;
 					}
 
@@ -96,7 +96,7 @@ namespace nana
 					int x = r.x + (static_cast<int>(r.width) - 14) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 14) / 2;
 					
-					::nana::expr_color clr;
+					::nana::color clr;
 
 					switch(sta)
 					{
@@ -123,20 +123,20 @@ namespace nana
 				virtual void close_fly(graph_reference graph, const nana::rectangle& r, bool active, state_t sta)
 				{
 					using namespace nana::paint;
-					::nana::expr_color clr{ colors::black };
+					::nana::color clr{ colors::black };
 
 					if (sta == item_renderer::highlight)
 					{
-						::nana::expr_color bgcolor{ 0xCC, 0xD2, 0xDD };
-						::nana::expr_color rect_clr{0x9d, 0xa3, 0xab};
+						::nana::color bgcolor{ 0xCC, 0xD2, 0xDD };
+						::nana::color rect_clr{0x9d, 0xa3, 0xab};
 						graph.round_rectangle(r, 1, 1, rect_clr, false, {});
 						nana::rectangle draw_r(r);
-						graph.rectangle(draw_r.pare_off(1), false, ::nana::expr_color{ rect_clr }.blend(bgcolor, 0.8));
-						graph.rectangle(draw_r.pare_off(1), false, ::nana::expr_color{ rect_clr }.blend(bgcolor, 0.4));
-						graph.rectangle(draw_r.pare_off(1), false, ::nana::expr_color{ rect_clr }.blend(bgcolor, 0.2));
+						graph.rectangle(draw_r.pare_off(1), false, ::nana::color{ rect_clr }.blend(bgcolor, 0.8));
+						graph.rectangle(draw_r.pare_off(1), false, ::nana::color{ rect_clr }.blend(bgcolor, 0.4));
+						graph.rectangle(draw_r.pare_off(1), false, ::nana::color{ rect_clr }.blend(bgcolor, 0.2));
 					}
 					else if (!active)
-						clr = ::nana::expr_color{ 0x92, 0x99, 0xA4 };
+						clr = ::nana::color{ 0x92, 0x99, 0xA4 };
 
 					gadget::close_16_pixels(graph, r.x - (16 - r.width) / 2, r.y - (16 - r.height) / 2, 1, clr);
 				}
@@ -163,7 +163,7 @@ namespace nana
 				{
 					using namespace nana::paint::gadget;
 
-					::nana::expr_color fgcolor(colors::black);
+					::nana::color fgcolor(colors::black);
 					int style = 1;
 					if(sta == item_renderer::disable)
 					{
@@ -176,10 +176,10 @@ namespace nana
 						graph.rectangle(r, false, { 0xA0, 0xA0, 0xA0 });
 				}
 			private:
-				::nana::expr_color bgcolor_;
-				::nana::expr_color dark_bgcolor_;
-				::nana::expr_color blcolor_;
-				::nana::expr_color ilcolor_;
+				::nana::color bgcolor_;
+				::nana::color dark_bgcolor_;
+				::nana::color blcolor_;
+				::nana::color ilcolor_;
 			};
 
 			class toolbox
@@ -593,7 +593,7 @@ namespace nana
 					}
 				}
 
-				bool tab_color(std::size_t pos, bool is_bgcolor, const ::nana::expr_color& clr)
+				bool tab_color(std::size_t pos, bool is_bgcolor, const ::nana::color& clr)
 				{
 					if(pos < list_.size())
 					{
@@ -1019,7 +1019,7 @@ namespace nana
 						basis_.graph->line({ end, bottom }, { right, bottom });
 				}
 
-				void _m_render_toolbox(const ::nana::expr_color& bgcolor)
+				void _m_render_toolbox(const ::nana::color& bgcolor)
 				{
 					bool backable = (basis_.scroll_pixels != 0);
 					int xbase = _m_toolbox_pos();
@@ -1165,7 +1165,7 @@ namespace nana
 					layouter_->relate(i, wd);
 				}
 
-				void trigger::tab_color(std::size_t i, bool is_bgcolor, const ::nana::expr_color& clr)
+				void trigger::tab_color(std::size_t i, bool is_bgcolor, const ::nana::color& clr)
 				{
 					if(layouter_->tab_color(i, is_bgcolor, clr))
 						API::refresh_window(layouter_->widget_handle());

@@ -73,12 +73,12 @@ namespace nana
 				struct item_t
 				{
 					::nana::rectangle r;
-					::nana::expr_color	bgcolor;
-					::nana::expr_color	fgcolor;
+					::nana::color	bgcolor;
+					::nana::color	fgcolor;
 				};
 
 				virtual ~item_renderer() = default;
-				virtual void background(graph_reference, const nana::rectangle& r, const ::nana::expr_color& bgcolor) = 0;
+				virtual void background(graph_reference, const nana::rectangle& r, const ::nana::color& bgcolor) = 0;
 				virtual void item(graph_reference, const item_t&, bool active, state_t) = 0;
 				virtual void close_fly(graph_reference, const nana::rectangle&, bool active, state_t) = 0;
 
@@ -150,7 +150,7 @@ namespace nana
 				std::size_t length() const;
 				bool close_fly(bool);
 				void relate(size_t, window);
-				void tab_color(std::size_t, bool is_bgcolor, const ::nana::expr_color&);
+				void tab_color(std::size_t, bool is_bgcolor, const ::nana::color&);
 				void tab_image(size_t, const nana::paint::image&);
 				void text(std::size_t, const nana::string&);
 				nana::string text(std::size_t) const;
@@ -278,12 +278,12 @@ namespace nana
 			this->get_drawer_trigger().relate(pos, wd);
 		}
 
-		void tab_bgcolor(std::size_t i, const ::nana::expr_color& clr)
+		void tab_bgcolor(std::size_t i, const ::nana::color& clr)
 		{
 			this->get_drawer_trigger().tab_color(i, true, clr);
 		}
 
-		void tab_fgcolor(std::size_t i, const ::nana::expr_color& clr)
+		void tab_fgcolor(std::size_t i, const ::nana::color& clr)
 		{
 			this->get_drawer_trigger().tab_color(i, false, clr);
 		}

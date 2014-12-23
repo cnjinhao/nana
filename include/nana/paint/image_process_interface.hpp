@@ -68,7 +68,7 @@ namespace nana
 				virtual void process(paint::pixel_buffer & pixbuf, 
                                       const point& pos_beg,    ///<  left point
                                       const point& pos_end,    ///<  right point 
-                                      const ::nana::expr_color&, 
+                                      const ::nana::color&, 
                                       double fade_rate              ///< blend rate in the range of [0, 1] If not 0, the line is blended to the pixbuf
                                       ) const = 0;
 			};

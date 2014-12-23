@@ -118,12 +118,12 @@ namespace nana
 			{
 				graphics & graph;
 				int x, endpos;
-				::nana::expr_color fgcolor;
+				::nana::color fgcolor;
 				unsigned omitted_pixels;
 				nana::unicode_bidi bidi;
 				std::vector<nana::unicode_bidi::entity> reordered;
 
-				draw_string_omitted(graphics& graph, int x, int endpos, const ::nana::expr_color& fgcolor, bool omitted)
+				draw_string_omitted(graphics& graph, int x, int endpos, const ::nana::color& fgcolor, bool omitted)
 					: graph(graph), x(x), endpos(endpos), fgcolor(fgcolor)
 				{
 					omitted_pixels = (omitted ? graph.text_extent_size(STR("..."), 3).width : 0);

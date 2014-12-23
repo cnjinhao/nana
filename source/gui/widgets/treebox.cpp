@@ -1078,10 +1078,10 @@ namespace nana
 			class internal_renderer
 				: public renderer_interface
 			{
-				nana::expr_color bgcolor_;
-				nana::expr_color fgcolor_;
+				nana::color bgcolor_;
+				nana::color fgcolor_;
 
-				void set_color(const nana::expr_color & bgcolor, const nana::expr_color& fgcolor) override
+				void set_color(const nana::color & bgcolor, const nana::color& fgcolor) override
 				{
 					bgcolor_ = bgcolor;
 					fgcolor_ = fgcolor;
@@ -1093,12 +1093,12 @@ namespace nana
 
 					if(compset->comp_attribute(component::bground, attr))
 					{
-						const ::nana::expr_color color_table[][2] = { { { 0xE8, 0xF5, 0xFD }, { 0xD8, 0xF0, 0xFA } }, //highlighted
+						const ::nana::color color_table[][2] = { { { 0xE8, 0xF5, 0xFD }, { 0xD8, 0xF0, 0xFA } }, //highlighted
 						{ { 0xC4, 0xE8, 0xFA }, { 0xB6, 0xE6, 0xFB } }, //Selected and highlighted
 						{ { 0xD5, 0xEF, 0xFC }, {0x99, 0xDE, 0xFD } }  //Selected but not highlighted
 														};
 
-						const ::nana::expr_color *clrptr = nullptr;
+						const ::nana::color *clrptr = nullptr;
 						if(compset->item_attribute().mouse_pointed)
 						{
 							if(compset->item_attribute().selected)
@@ -1131,7 +1131,7 @@ namespace nana
 							style = 0;
 							dir = gadget::directions::to_east;
 						}
-						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? expr_color(0x1C, 0xC4, 0xF7) : expr_color(colors::black)), style, dir);
+						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? color(0x1C, 0xC4, 0xF7) : color(colors::black)), style, dir);
 					}
 				}
 
@@ -1351,8 +1351,8 @@ namespace nana
 				}
 			private:
 				trigger::implement * impl_;
-				::nana::expr_color bgcolor_;
-				::nana::expr_color fgcolor_;
+				::nana::color bgcolor_;
+				::nana::color fgcolor_;
 				::nana::point pos_;
 				const node_type * iterated_node_;
 				item_attribute_t node_attr_;

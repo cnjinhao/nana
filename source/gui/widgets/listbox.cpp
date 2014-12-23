@@ -28,7 +28,7 @@ namespace nana
 		namespace listbox
 		{
 			//struct cell
-				cell::format::format(const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor)
+				cell::format::format(const ::nana::color& bgcolor, const ::nana::color& fgcolor)
 					: bgcolor{ bgcolor }, fgcolor{ fgcolor }
 				{}
 
@@ -53,7 +53,7 @@ namespace nana
 						custom_format(new format{ fmt })	//make_unique
 				{}
 
-				cell::cell(nana::string text, const ::nana::expr_color& bgcolor, const ::nana::expr_color& fgcolor)
+				cell::cell(nana::string text, const ::nana::color& bgcolor, const ::nana::color& fgcolor)
 					:	text(std::move(text)),
 						custom_format{ new format{ bgcolor, fgcolor } }	//make_unique
 				{}
@@ -577,8 +577,8 @@ namespace nana
 				typedef std::vector<cell> container;
 
 				container cells;
-				nana::expr_color bgcolor;
-				nana::expr_color fgcolor;
+				nana::color bgcolor;
+				nana::color fgcolor;
 				paint::image img;
 				nana::size img_show_size;
 
@@ -616,7 +616,7 @@ namespace nana
 					cells.emplace_back(std::move(s));
 				}
 
-				item_t(nana::string&& s, const nana::expr_color& bg, const nana::expr_color& fg)
+				item_t(nana::string&& s, const nana::color& bg, const nana::color& fg)
 					:	bgcolor(bg),
 						fgcolor(fg)
 				{
@@ -2280,9 +2280,9 @@ namespace nana
 				}
 
 				template<typename Item>
-				void _m_draw_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::expr_color& fgcolor, const Item& item, essence_t::state_t state)
+				void _m_draw_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::color& fgcolor, const Item& item, essence_t::state_t state)
 				{
-					::nana::expr_color bgcolor;
+					::nana::color bgcolor;
 					typedef essence_t::state_t state_t;
 					switch(state)
 					{
@@ -2460,14 +2460,14 @@ namespace nana
 					}
 				}
 			private:
-				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::expr_color bgcolor, essence_t::state_t state) const
+				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::color bgcolor, essence_t::state_t state) const
 				{
 					bool sel = categ.selected();
 					if(sel && (categ.expand == false))
-						bgcolor = nana::expr_color(0xD5, 0xEF, 0xFC);
+						bgcolor = nana::color(0xD5, 0xEF, 0xFC);
 
 					if (state == essence_t::state_t::highlighted)
-						bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);
+						bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
 
 					auto graph = essence_->graph;
 					graph->set_color(bgcolor);
@@ -2499,10 +2499,10 @@ namespace nana
 					}
 				}
 
-				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::expr_color bgcolor, nana::expr_color fgcolor, essence_t::state_t state) const
+				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, essence_t::state_t state) const
 				{
 					if(item.flags.selected)
-						bgcolor = nana::expr_color(0xD5, 0xEF, 0xFC);
+						bgcolor = nana::color(0xD5, 0xEF, 0xFC);
 					else if (!item.bgcolor.invisible())
 						bgcolor = item.bgcolor;
 
@@ -2511,7 +2511,7 @@ namespace nana
 
 					auto graph = essence_->graph;
 					if (essence_t::state_t::highlighted == state)
-						bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);
+						bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
 
 					unsigned show_w = width - essence_->scroll.offset_x;
 					if(show_w >= r.width) show_w = r.width;
@@ -2575,7 +2575,7 @@ namespace nana
 								{
 									auto cell_bgcolor = m_cell.custom_format->bgcolor;
 									if (essence_t::state_t::highlighted == state)
-										cell_bgcolor.blend(::nana::expr_color(0x99, 0xde, 0xfd), 0.8);
+										cell_bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
 									graph->set_color(cell_bgcolor);
 									graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
 								}
@@ -3040,26 +3040,26 @@ namespace nana
 					return cat_->items.at(pos_.item).flags.selected;
 				}
 
-				item_proxy & item_proxy::bgcolor(const nana::expr_color& col)
+				item_proxy & item_proxy::bgcolor(const nana::color& col)
 				{
 					cat_->items.at(pos_.item).bgcolor = col;
 					ess_->update();
 					return *this;
 				}
 
-				nana::expr_color item_proxy::bgcolor() const
+				nana::color item_proxy::bgcolor() const
 				{
 					return cat_->items.at(pos_.item).bgcolor;
 				}
 
-				item_proxy& item_proxy::fgcolor(const nana::expr_color& col)
+				item_proxy& item_proxy::fgcolor(const nana::color& col)
 				{
 					cat_->items.at(pos_.item).fgcolor = col;
 					ess_->update();
 					return *this;
 				}
 
-				nana::expr_color item_proxy::fgcolor() const
+				nana::color item_proxy::fgcolor() const
 				{
 					return cat_->items.at(pos_.item).fgcolor;
 				}

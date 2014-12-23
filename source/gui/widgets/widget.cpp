@@ -141,22 +141,22 @@ namespace nana
 			_m_move(r);
 		}
 
-		void widget::fgcolor(const nana::expr_color& col)
+		void widget::fgcolor(const nana::color& col)
 		{
 			_m_fgcolor(col);
 		}
 
-		nana::expr_color widget::fgcolor() const
+		nana::color widget::fgcolor() const
 		{
 			return _m_fgcolor();
 		}
 
-		void widget::bgcolor(const nana::expr_color& col)
+		void widget::bgcolor(const nana::color& col)
 		{
 			_m_bgcolor(col);
 		}
 
-		nana::expr_color widget::bgcolor() const
+		nana::color widget::bgcolor() const
 		{
 			return _m_bgcolor();
 		}
@@ -276,22 +276,22 @@ namespace nana
 			return API::typeface(handle());
 		}
 
-		void widget::_m_fgcolor(const nana::expr_color& col)
+		void widget::_m_fgcolor(const nana::color& col)
 		{
 			API::fgcolor(handle(), col);
 		}
 
-		nana::expr_color widget::_m_fgcolor() const
+		nana::color widget::_m_fgcolor() const
 		{
 			return API::fgcolor(handle());
 		}
 
-		void widget::_m_bgcolor(const nana::expr_color& col)
+		void widget::_m_bgcolor(const nana::color& col)
 		{
 			API::bgcolor(handle(), col);
 		}
 
-		nana::expr_color widget::_m_bgcolor() const
+		nana::color widget::_m_bgcolor() const
 		{
 			return API::bgcolor(handle());
 		}

@@ -78,7 +78,7 @@ namespace nana
 
 					if(ue.what == ue.none || (API::window_enabled(wd) == false))
 					{	//the mouse is out of the widget.
-						style_.bgcolor.blend(expr_color{ 0xa0, 0xc9, 0xf5 }, 0.9);
+						style_.bgcolor.blend(color{ 0xa0, 0xc9, 0xf5 }, 0.9);
 					}
 					graph.rectangle(r, true, style_.bgcolor);
 				}
@@ -90,7 +90,7 @@ namespace nana
 					if(ui_el_.what == ui_el_.item_root)
 					{
 						_m_item_bground(graph, r.x + 1, r.y, r.width - 2, r.height, (state == mouse_action::pressed ? mouse_action::pressed : mouse_action::over));
-						graph.rectangle(r, false, expr_color{ 0x3C, 0x7F, 0xB1 });
+						graph.rectangle(r, false, color{ 0x3C, 0x7F, 0xB1 });
 						if(state == mouse_action::pressed)
 						{
 							++x;
@@ -127,7 +127,7 @@ namespace nana
 						unsigned width = r.width - 2;
 						unsigned height = r.height - 2;
 
-						::nana::expr_color clr{ 0x3C, 0x7F, 0xB1 };
+						::nana::color clr{ 0x3C, 0x7F, 0xB1 };
 						if(has_child)
 						{
 							width -= 16;
@@ -155,8 +155,8 @@ namespace nana
 
 					graph.rectangle(r, false, { 0xf0, 0xf0, 0xf0 });
 
-					expr_color lb(0x9d, 0xab, 0xb9);
-					expr_color tr(0x48, 0x4e, 0x55);
+					color lb(0x9d, 0xab, 0xb9);
+					color tr(0x48, 0x4e, 0x55);
 					graph.frame_rectangle(r.pare_off(1), lb, tr, tr, lb);
 				}
 			private:
@@ -165,7 +165,7 @@ namespace nana
 					const unsigned half = (height - 2) / 2;
 					int left = x + 1;
 					int top = y + 1;
-					nana::expr_color clr_top(0xea, 0xea, 0xea), clr_bottom(0xdc, 0xdc, 0xdc);
+					nana::color clr_top(0xea, 0xea, 0xea), clr_bottom(0xdc, 0xdc, 0xdc);
 					switch(state)
 					{
 					case mouse_action::over:
@@ -189,12 +189,12 @@ namespace nana
 						int bottom = y + height - 1;
 						int right = x + width - 1;
 
-						graph.set_color(expr_color(0x6e, 0x8d, 0x9f));
+						graph.set_color(color(0x6e, 0x8d, 0x9f));
 						graph.line(point{ x, y }, point{right, y});
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
 						++x;
 						++y;
-						graph.set_color(expr_color(0xa6, 0xc7, 0xd9));
+						graph.set_color(color(0xa6, 0xc7, 0xd9));
 						graph.line(point{ x, y }, point{ right, y });
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
 					}
@@ -206,8 +206,8 @@ namespace nana
 				{
 					//nana::color_t bgcolor;
 					//nana::color_t fgcolor;
-					expr_color bgcolor;
-					expr_color fgcolor;
+					color bgcolor;
+					color fgcolor;
 				}style_;
 			};
 

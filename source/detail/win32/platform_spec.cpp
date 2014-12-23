@@ -48,7 +48,7 @@ namespace detail
 		::DeleteObject(round_region.handle);
 	}
 
-	void drawable_impl_type::fgcolor(const ::nana::expr_color& clr)
+	void drawable_impl_type::fgcolor(const ::nana::color& clr)
 	{
 		set_text_color(clr);
 	}
@@ -58,12 +58,12 @@ namespace detail
 		return color_;
 	}
 
-	void drawable_impl_type::set_color(const ::nana::expr_color& clr)
+	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
 		color_ = clr.px_color().value;
 	}
 
-	void drawable_impl_type::set_text_color(const ::nana::expr_color& clr)
+	void drawable_impl_type::set_text_color(const ::nana::color& clr)
 	{
 		auto rgb = clr.px_color().value;
 		if (text_color_ != rgb)

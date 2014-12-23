@@ -68,8 +68,8 @@ namespace nana{
 					bool enable_pushed;
 					bool focus_color;
 					paint::image * icon;
-					::nana::expr_color bgcolor;
-					::nana::expr_color fgcolor;
+					::nana::color bgcolor;
+					::nana::color fgcolor;
 				}attr_;
 			};
 		}//end namespace button

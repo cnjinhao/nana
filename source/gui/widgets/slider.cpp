@@ -21,7 +21,7 @@ namespace nana
 				virtual void bar(window, graph_reference graph, const bar_t& bi)
 				{
 					//draw border
-					::nana::expr_color lt(0x83, 0x90, 0x97), rb(0x9d,0xae,0xc2);
+					::nana::color lt(0x83, 0x90, 0x97), rb(0x9d,0xae,0xc2);
 					graph.frame_rectangle(bi.r, lt, lt, rb, rb);
 				}
 
@@ -30,7 +30,7 @@ namespace nana
 					auto len = static_cast<const unsigned>(ad.bound.y - ad.bound.x);
 					const auto upperblock = ad.block - ad.block / 2;
 
-					::nana::expr_color clr_from(0x84, 0xc5, 0xff), clr_trans(0x0f, 0x41, 0xcd), clr_to(0x6e, 0x96, 0xff);
+					::nana::color clr_from(0x84, 0xc5, 0xff), clr_trans(0x0f, 0x41, 0xcd), clr_to(0x6e, 0x96, 0xff);
 					if(ad.horizontal)
 					{
 						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos, len, upperblock }, clr_from, clr_trans, true);

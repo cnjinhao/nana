@@ -136,7 +136,7 @@ namespace nana{	namespace widgets
 
 			struct ext_renderer_tag
 			{
-				std::function<void(graph_reference, const nana::rectangle& text_area, const ::nana::expr_color&)> background;
+				std::function<void(graph_reference, const nana::rectangle& text_area, const ::nana::color&)> background;
 			};
 
 			text_editor(window, graph_reference);
@@ -151,7 +151,7 @@ namespace nana{	namespace widgets
 			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
 			bool line_wrapped(bool);
 
-			void border_renderer(std::function<void(graph_reference, const ::nana::expr_color& bgcolor)>);
+			void border_renderer(std::function<void(graph_reference, const ::nana::color& bgcolor)>);
 
 			bool load(const nana::char_t*);
 
@@ -227,7 +227,7 @@ namespace nana{	namespace widgets
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
 		private:
-			::nana::expr_color _m_bgcolor() const;
+			::nana::color _m_bgcolor() const;
 			bool _m_scroll_text(bool vertical);
 			void _m_on_scroll(const arg_mouse&);
 			void _m_scrollbar();
@@ -262,7 +262,7 @@ namespace nana{	namespace widgets
 
 			//_m_draw_string
 			//@brief: Draw a line of string
-			void _m_draw_string(int top, const ::nana::expr_color&, const nana::upoint& str_pos, const nana::string&, bool if_mask) const;
+			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const nana::string&, bool if_mask) const;
 			//_m_draw
 			//@brief: Draw a character at a position specified by caret pos. 
 			//@return: true if beyond the border
@@ -308,7 +308,7 @@ namespace nana{	namespace widgets
 				unsigned	scroll_pixels;
 				unsigned	vscroll;
 				unsigned	hscroll;
-				std::function<void(nana::paint::graphics&, const ::nana::expr_color&)> border_renderer;
+				std::function<void(nana::paint::graphics&, const ::nana::color&)> border_renderer;
 			}text_area_;
 
 			struct selection

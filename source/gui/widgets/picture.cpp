@@ -43,7 +43,7 @@ namespace nana
 				backimg_.image = img;
 			}
 
-			void picture_drawer::set_shadow_background(const ::nana::expr_color& from, const ::nana::expr_color& to, bool horizontal)
+			void picture_drawer::set_shadow_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
 			{
 				bground_.gradual_from = from;
 				bground_.gradual_to = to;
@@ -277,7 +277,7 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		void picture::set_gradual_background(const ::nana::expr_color& from, const ::nana::expr_color& to, bool horizontal)
+		void picture::set_gradual_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
 		{
 			get_drawer_trigger().set_shadow_background(from, to, horizontal);
 		}

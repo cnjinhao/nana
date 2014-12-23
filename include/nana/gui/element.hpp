@@ -35,7 +35,7 @@ namespace nana
 			virtual ~element_interface()
 			{}
 
-			virtual bool draw(graph_reference, const nana::expr_color& bgcolor, const nana::expr_color& fgcolor, const nana::rectangle&, element_state) = 0;
+			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state) = 0;
 		};
 
 		class crook_interface
@@ -53,7 +53,7 @@ namespace nana
 			virtual ~crook_interface()
 			{}
 
-			virtual bool draw(graph_reference, const nana::expr_color& bgcolor, const nana::expr_color& fgcolor, const nana::rectangle&, element_state, const data&) = 0;
+			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state, const data&) = 0;
 		};
 
 		class provider
@@ -122,7 +122,7 @@ namespace nana
 		void switch_to(const char*);
 	public:
 		//Implement element_interface
-		bool draw(graph_reference, const nana::expr_color& bgcolor, const nana::expr_color& fgcolor, const nana::rectangle& r, element_state) override;
+		bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state) override;
 	private:
 		element::crook_interface::data data_;
 		element::crook_interface* const * keeper_;
@@ -144,7 +144,7 @@ namespace nana
 			void set(const cloneable_element&);
 			void set(const char*);
 
-			bool draw(graph_reference, const nana::expr_color& bgcolor, const nana::expr_color& fgcolor, const nana::rectangle&, element_state);
+			bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state);
 		private:
 			cloneable_element holder_;
 			element_interface * place_ptr_;
@@ -174,7 +174,7 @@ namespace nana
 			void stretch_parts(unsigned left, unsigned top, unsigned right, unsigned bottom);
 
 			//Implement the methods of element_interface.
-			virtual bool draw(graph_reference, const nana::expr_color& bgcolor, const nana::expr_color& fgcolor, const nana::rectangle&, element_state);
+			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state);
 		private:
 			struct draw_method;
 			struct draw_image;

@@ -152,26 +152,26 @@ namespace nana
 	enum class color_argb:	unsigned{};
 	enum class color_rgba : unsigned{};
 
-	class expr_color
+	class color
 	{
 	public:
-		expr_color() = default;
-		expr_color(colors);
-		expr_color(colors, double alpha);
-		expr_color(color_rgb);
-		expr_color(color_argb);
-		expr_color(color_rgba);
-		expr_color(unsigned red, unsigned green, unsigned blue);
-		expr_color(unsigned red, unsigned green, unsigned blue, double alpha);
+		color() = default;
+		color(colors);
+		color(colors, double alpha);
+		color(color_rgb);
+		color(color_argb);
+		color(color_rgba);
+		color(unsigned red, unsigned green, unsigned blue);
+		color(unsigned red, unsigned green, unsigned blue, double alpha);
 
-		expr_color& alpha(double);	///< Sets alpha channel
-		expr_color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
-		expr_color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
+		color& alpha(double);	///< Sets alpha channel
+		color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
+		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
 
-		expr_color& blend(const expr_color& bgcolor, bool ignore_bgcolor_alpha);
+		color& blend(const color& bgcolor, bool ignore_bgcolor_alpha);
 
 		///< Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
-		expr_color& blend(const expr_color& bgcolor, double alpha);
+		color& blend(const color& bgcolor, double alpha);
 
 		bool invisible() const;
 		pixel_color_t px_color() const;
@@ -183,8 +183,8 @@ namespace nana
 		const double& b() const;
 		const double& a() const;
 
-		bool operator==(const expr_color& other) const;
-		bool operator!=(const expr_color& other) const;
+		bool operator==(const color& other) const;
+		bool operator!=(const color& other) const;
 	private:
 		double r_;
 		double g_;

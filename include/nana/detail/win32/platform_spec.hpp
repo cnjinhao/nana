@@ -137,10 +137,10 @@ namespace detail
 		drawable_impl_type();
 		~drawable_impl_type();
 
-		void fgcolor(const ::nana::expr_color&);	//deprecated
+		void fgcolor(const ::nana::color&);	//deprecated
 		unsigned get_color() const;
-		void set_color(const ::nana::expr_color&);
-		void set_text_color(const ::nana::expr_color&);
+		void set_color(const ::nana::color&);
+		void set_text_color(const ::nana::color&);
 
 		void update_pen();
 		void update_brush();

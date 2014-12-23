@@ -68,10 +68,10 @@ namespace nana{	namespace paint
 		void put(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bits_per_pixel, std::size_t bytes_per_line, bool is_negative);
 		
 		void line(const std::string& name);
-		void line(const ::nana::point& pos_beg, const ::nana::point& pos_end, const ::nana::expr_color&, double fade_rate);
+		void line(const ::nana::point& pos_beg, const ::nana::point& pos_end, const ::nana::color&, double fade_rate);
 
-		void rectangle(const nana::rectangle&, const ::nana::expr_color&, double fade_rate, bool solid);
-		void gradual_rectangle(const ::nana::rectangle&, const ::nana::expr_color& from, const ::nana::expr_color& to, double fade_rate, bool vertical);
+		void rectangle(const nana::rectangle&, const ::nana::color&, double fade_rate, bool solid);
+		void gradual_rectangle(const ::nana::rectangle&, const ::nana::color& from, const ::nana::color& to, double fade_rate, bool vertical);
 		
 		pixel_color_t pixel(int x, int y) const;
 		void pixel(int x, int y, pixel_color_t);

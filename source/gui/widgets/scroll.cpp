@@ -197,7 +197,7 @@ namespace nana
 			{
 				if(state)
 				{
-					::nana::expr_color clr{0x97, 0x97, 0x97}; //highlight
+					::nana::color clr{0x97, 0x97, 0x97}; //highlight
 					switch(state)
 					{
 					case states::actived:
@@ -318,7 +318,7 @@ namespace nana
 					else
 						r.y = (static_cast<int>(sz.height) - 16) / 2;
 					
-					arrow_16_pixels(graph, r.x, r.y, (_m_check() ? expr_color(colors::black) : expr_color(0x80, 0x80, 0x80)), (states::none == state ? 0 : 1), dir);
+					arrow_16_pixels(graph, r.x, r.y, (_m_check() ? color(colors::black) : color(0x80, 0x80, 0x80)), (states::none == state ? 0 : 1), dir);
 				}
 			}
 		//end class drawer
