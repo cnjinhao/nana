@@ -1099,6 +1099,9 @@ namespace nana{
 			nana::detail::platform_scope_guard psg;
 			::XStringListToTextProperty(&text, 1, &name);
 			::XSetWMName(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &name);
+			::XChangeProperty(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
+					restrict::spec.atombase().net_wm_name, restrict::spec.atombase().utf8_string, 8,
+					PropModeReplace, reinterpret_cast<unsigned char*>(text), mbstr.size());
 #endif
 		}
 

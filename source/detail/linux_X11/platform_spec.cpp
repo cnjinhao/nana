@@ -1,5 +1,6 @@
 /*
  *	Platform Specification Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
@@ -283,13 +284,11 @@ namespace detail
 	};
 
 	drawable_impl_type::drawable_impl_type()
-		:	fgcolor_(0xFFFFFFFF)
 	{
 		string.tab_length = 4;
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
 #if defined(NANA_UNICODE)
-		xftdraw = 0;
 		conv_.handle = ::iconv_open("UTF-8", "UTF-32");
 		conv_.code = "UTF-32";
 #endif
@@ -304,29 +303,29 @@ namespace detail
 
 	void drawable_impl_type::fgcolor(unsigned color)
 	{
-		if(color != fgcolor_)
-		{
-			auto & spec = nana::detail::platform_spec::instance();
-			platform_scope_guard psg;
+		if(color == fgcolor_)
+			return;
 
-			fgcolor_ = color;
-			switch(spec.screen_depth())
-			{
-			case 16:
-				color = ((((color >> 16) & 0xFF) * 31 / 255) << 11)	|
+		auto & spec = nana::detail::platform_spec::instance();
+		platform_scope_guard psg;
+
+		fgcolor_ = color;
+		switch(spec.screen_depth())
+		{
+		case 16:
+			color = ((((color >> 16) & 0xFF) * 31 / 255) << 11)	|
 					((((color >> 8) & 0xFF) * 63 / 255) << 5)	|
 					(color & 0xFF) * 31 / 255;
-				break;
-			}
-			::XSetForeground(spec.open_display(), context, color);
-			::XSetBackground(spec.open_display(), context, color);
-#if defined(NANA_UNICODE)
-			xft_fgcolor.color.red = ((0xFF0000 & color) >> 16) * 0x101;
-			xft_fgcolor.color.green = ((0xFF00 & color) >> 8) * 0x101;
-			xft_fgcolor.color.blue = (0xFF & color) * 0x101;
-			xft_fgcolor.color.alpha = 0xFFFF;
-#endif
+			break;
 		}
+		::XSetForeground(spec.open_display(), context, color);
+		::XSetBackground(spec.open_display(), context, color);
+#if defined(NANA_UNICODE)
+		xft_fgcolor.color.red = ((0xFF0000 & color) >> 16) * 0x101;
+		xft_fgcolor.color.green = ((0xFF00 & color) >> 8) * 0x101;
+		xft_fgcolor.color.blue = (0xFF & color) * 0x101;
+		xft_fgcolor.color.alpha = 0xFFFF;
+#endif
 	}
 
 	class font_deleter
@@ -394,7 +393,7 @@ namespace detail
 			}
 		}
 		else
-			langstr_dup = "zh_CN.UTF-8";
+			langstr_dup = "en_US.UTF-8";
 		std::setlocale(LC_CTYPE, langstr_dup.c_str());
 		if(::XSupportsLocale())
 			::XSetLocaleModifiers(langstr_dup.c_str());
@@ -416,6 +415,7 @@ namespace detail
 		atombase_.net_wm_state_maximized_horz = ::XInternAtom(display_, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
 		atombase_.net_wm_state_maximized_vert = ::XInternAtom(display_, "_NET_WM_STATE_MAXIMIZED_VERT", False);
 		atombase_.net_wm_state_modal = ::XInternAtom(display_, "_NET_WM_STATE_MODAL", False);
+		atombase_.net_wm_name = ::XInternAtom(display_, "_NET_WM_NAME", False);
 		atombase_.net_wm_window_type = ::XInternAtom(display_, "_NET_WM_WINDOW_TYPE", False);
 		atombase_.net_wm_window_type_normal = ::XInternAtom(display_, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 		atombase_.net_wm_window_type_utility = ::XInternAtom(display_, "_NET_WM_WINDOW_TYPE_UTILITY", False);

@@ -1,6 +1,7 @@
 /*
  *	Platform Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -200,11 +201,23 @@ namespace detail
 #if defined(NANA_WINDOWS)
 		::TextOut(dw->context, x, y, str, static_cast<int>(len));
 #elif defined(NANA_X11)
+		auto disp = ::nana::detail::platform_spec::instance().open_display();
 	#if defined(NANA_UNICODE)
+		/*
 		std::string utf8str = nana::charset(nana::string(str, len));
 		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
 		::XftDrawStringUtf8(dw->xftdraw, &(dw->xft_fgcolor), fs, x, y + fs->ascent,
 							reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size());
+		*/
+		auto fs = reinterpret_cast<XftFont*>(dw->font->handle);
+		std::unique_ptr<FT_UInt> glyphs_ptr(new FT_UInt[len]);
+		auto glyphs = glyphs_ptr.get();
+		const auto endstr = str + len;
+		for(auto chr = str; chr != endstr; ++chr)
+		{
+			(*glyphs++) = XftCharIndex(disp, fs, *chr);
+		}
+		XftDrawGlyphs(dw->xftdraw, &(dw->xft_fgcolor), fs, x, y + fs->ascent, glyphs_ptr.get(), len);
 	#else
 		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->handle);
 		XFontSetExtents * ext = ::XExtentsOfFontSet(fs);
@@ -221,7 +234,7 @@ namespace detail
 			if(descent < (*i)->descent)
 				descent = (*i)->descent;
 		}
-		XmbDrawString(display, dw->pixmap, reinterpret_cast<XFontSet>(dw->font->handle), dw->context, x, y + ascent + descent, buf, len);
+		XmbDrawString(disp, dw->pixmap, reinterpret_cast<XFontSet>(dw->font->handle), dw->context, x, y + ascent + descent, buf, len);
 	#endif
 #endif
 	}
