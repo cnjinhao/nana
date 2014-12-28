@@ -174,13 +174,6 @@ namespace detail
 			std::shared_ptr<general_events> events_ptr;
 			general_events* attached_events;
 		}together;
-
-		struct
-		{
-			color fgcolor;
-			color bgcolor;
-			color activated;
-		}colors;
 		
 		widget_colors* expr_colors{ nullptr };
 

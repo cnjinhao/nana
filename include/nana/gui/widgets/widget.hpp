@@ -30,7 +30,7 @@ namespace nana
 	{
 		typedef void(*dummy_bool_type)(widget* (*)(const widget&));
 	public:
-		virtual ~widget();
+		virtual ~widget() = default;
 		virtual window handle() const = 0;			///< Returns the handle of window, returns 0 if window is not created.
 		bool empty() const;							///< Determines whether the manipulator is handling a window.
 		void close();
@@ -38,6 +38,7 @@ namespace nana
 		window parent() const;
 
 		nana::string caption() const;
+		void caption(std::string utf8);
 		void caption(nana::string);
 
 		template<typename ...Args>

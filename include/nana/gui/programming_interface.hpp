@@ -202,6 +202,7 @@ namespace API
 	void refresh_window_tree(window);      ///< Refreshs the specified window and all it’s children windows, then display it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
+	void window_caption(window, const std::string& title_utf8);
 	void window_caption(window, const nana::string& title);
 	nana::string window_caption(window);
 

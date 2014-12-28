@@ -130,8 +130,8 @@ namespace nana
 					pos.y += effective_range_.y;
 				}
 
-				if(	(pos.x + static_cast<int>(size.width) <= rect.x) || (pos.x >= rect.x + static_cast<int>(rect.width)) ||
-					(pos.y + static_cast<int>(size.height) <= rect.y) || (pos.y >= rect.y + static_cast<int>(rect.height))
+				if(	(pos.x + static_cast<int>(size.width) <= rect.x) || (pos.x >= rect.right()) ||
+					(pos.y + static_cast<int>(size.height) <= rect.y) || (pos.y >= rect.bottom())
 					)
 				{//Out of Range without overlap
 					if(false == out_of_range_)
@@ -149,7 +149,7 @@ namespace nana
 						size.width -= (rect.x - pos.x);
 						pos.x = rect.x;
 					}
-					else if(pos.x + size.width > rect.right())
+					else if(pos.x + static_cast<int>(size.width) > rect.right())
 					{
 						size.width -= pos.x + size.width - rect.right();
 					}
@@ -159,7 +159,7 @@ namespace nana
 						size.width -= (rect.y - pos.y);
 						pos.y = rect.y;
 					}
-					else if(pos.y + size.height > rect.bottom())
+					else if(pos.y + static_cast<int>(size.height) > rect.bottom())
 						size.height -= pos.y + size.height - rect.bottom();
 
 					if(out_of_range_)
@@ -297,11 +297,8 @@ namespace nana
 				pos_owner = pos_root = r;
 				dimension = r;
 
-				if(parent)
-				{
-					pos_root.x += parent->pos_root.x;
-					pos_root.y += parent->pos_root.y;
-				}
+				if (parent)
+					pos_root += parent->pos_root;
 			}
 
 			void basic_window::_m_initialize(basic_window* agrparent)
@@ -344,10 +341,6 @@ namespace nana
 				flags.borderless = false;
 
 				visible = false;
-
-				colors.fgcolor = ::nana::colors::black;
-				colors.bgcolor = ::nana::colors::button_face;
-				colors.activated.from_rgb(0x60, 0xc8, 0xfd);
 
 				effect.edge_nimbus = effects::edge_nimbus::none;
 				effect.bground = nullptr;

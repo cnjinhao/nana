@@ -2373,18 +2373,16 @@ namespace nana{	namespace widgets
 
 		nana::size text_editor::_m_text_extent_size(const char_type* str, size_type n) const
 		{
-			if(graph_)
+			if (!graph_)
+				return{};
+
+			if(mask_char_)
 			{
-				if(mask_char_)
-				{
-					nana::string maskstr;
-					maskstr.append(n, mask_char_);
-					return graph_.text_extent_size(maskstr);
-				}
-				else
-					return graph_.text_extent_size(str, static_cast<unsigned>(n));
+				nana::string maskstr;
+				maskstr.append(n, mask_char_);
+				return graph_.text_extent_size(maskstr);
 			}
-			return{};
+			return graph_.text_extent_size(str, static_cast<unsigned>(n));
 		}
 
 		//_m_move_offset_x_while_over_border
@@ -2415,7 +2413,7 @@ namespace nana{	namespace widgets
 				width += text_area_.area.x;
 				if(static_cast<int>(width) - points_.offset.x >= _m_endx())
 				{	//Out of screen text area
-					points_.offset.x = width - _m_endx() + 1;
+					points_.offset.x = static_cast<int>(width) -_m_endx() + 1;
 					auto rest_size = lnstr.size() - points_.caret.x;
 					points_.offset.x += static_cast<int>(_m_text_extent_size(lnstr.c_str() + points_.caret.x, (rest_size >= static_cast<unsigned>(many) ? static_cast<unsigned>(many) : rest_size)).width);
 					return true;

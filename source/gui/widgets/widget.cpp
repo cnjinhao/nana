@@ -20,11 +20,14 @@ namespace nana
 	}
 	//class widget
 	//@brief:The definition of class widget
-		widget::~widget(){}
-
 		nana::string widget::caption() const
 		{
 			return this->_m_caption();
+		}
+
+		void widget::caption(std::string utf8)
+		{
+			_m_caption(std::wstring(::nana::charset(utf8, ::nana::unicode::utf8)));
 		}
 
 		void widget::caption(nana::string str)
