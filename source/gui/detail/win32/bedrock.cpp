@@ -13,16 +13,18 @@
 #include <nana/config.hpp>
 
 #include PLATFORM_SPEC_HPP
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
 #include <nana/system/timepiece.hpp>
-#include <nana/gui/wvl.hpp>
+#include <nana/gui.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
+#include <nana/gui/detail/color_schemes.hpp>
 
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL	0x020A
@@ -175,7 +177,8 @@ namespace detail
 		std::recursive_mutex mutex;
 		thr_context_container thr_contexts;
 
-		element_store estore;
+		color_schemes	schemes;
+		element_store	estore;
 
 		struct cache_type
 		{
@@ -213,7 +216,8 @@ namespace detail
 	static LRESULT WINAPI Bedrock_WIN32_WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	bedrock::bedrock()
-		:impl_(new private_impl)
+		:	pi_data_(new pi_data),
+			impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
@@ -269,6 +273,7 @@ namespace detail
 			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
 		}
 		delete impl_;
+		delete pi_data_;
 	}
 
 	//inc_window

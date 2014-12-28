@@ -28,21 +28,21 @@ namespace nana
 		class event_interface
 		{
 		public:
-			virtual ~event_interface(){}
+			virtual ~event_interface() = default;
 			virtual void remove(event_handle) = 0;
 		};
 
 		class docker_interface
 		{
 		public:
-			virtual ~docker_interface(){}
+			virtual ~docker_interface() = default;
 			virtual event_interface*	get_event() const = 0;
 		};
 
 		class event_arg_interface
 		{
 		public:
-			virtual ~event_arg_interface(){}
+			virtual ~event_arg_interface() = default;
 		};
 
 		void events_operation_register(event_handle);
@@ -471,6 +471,7 @@ namespace nana
 		basic_event<arg_move>		move;
 		basic_event<arg_resizing>	resizing;
 		basic_event<arg_resized>	resized;
+
 		basic_event<arg_destroy>	destroy;
 	};
 

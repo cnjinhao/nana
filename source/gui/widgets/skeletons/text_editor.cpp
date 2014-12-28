@@ -1140,9 +1140,9 @@ namespace nana{	namespace widgets
 		}; //end class behavior_linewrapped
 
 		//class text_editor
-		text_editor::text_editor(window wd, graph_reference graph)
+		text_editor::text_editor(window wd, graph_reference graph, const text_editor_scheme* schm)
 			:	behavior_(new behavior_normal(*this)),
-				window_(wd), graph_(graph)
+			window_(wd), graph_(graph), scheme_(schm)
 		{
 			text_area_.area = graph.size();
 			text_area_.captured = false;
@@ -1661,7 +1661,7 @@ namespace nana{	namespace widgets
 		{
 			const auto bgcolor = _m_bgcolor();
 
-			auto fgcolor = API::fgcolor(window_);
+			auto fgcolor = scheme_->foreground.get_color();
 			if (!API::window_enabled(window_))
 				fgcolor.blend(bgcolor, 0.5);
 
@@ -1727,7 +1727,7 @@ namespace nana{	namespace widgets
 			behavior_->pre_calc_line(points_.caret.y, width_pixels());
 			points_.caret.x ++;
 
-			if(refresh || _m_draw(c, secondary_before))
+			if (refresh || _m_update_caret_line(secondary_before))
 				render(true);
 			else
 				draw_scroll_rectangle();
@@ -2524,7 +2524,8 @@ namespace nana{	namespace widgets
 			//The line of text is in the range of selection
 			nana::upoint a, b;
 			graph_.set_text_color(clr);
-			graph_.set_color({ 0x33, 0x99, 0xFF });
+
+			graph_.set_color(scheme_->selection.get_color());
 
 			//The text is not selected or the whole line text is selected
 			if ((!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
@@ -2539,7 +2540,7 @@ namespace nana{	namespace widgets
 					{
 						if (selected)
 						{
-							graph_.set_text_color(colors::white);
+							graph_.set_text_color(scheme_->selection_text.get_color());
 							graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
 						}
 
@@ -2556,11 +2557,11 @@ namespace nana{	namespace widgets
 					graph_.string(strpos, str, len);
 					paint::graphics graph(glyph_selected, line_h_pixels);
 					graph.typeface(this->graph_.typeface());
-					graph.rectangle(true, { 0x33, 0x99, 0xFF });
+					graph.rectangle(true, scheme_->selection.get_color());
 
 					int sel_xpos = static_cast<int>(str_px - (glyph_front + glyph_selected));
 
-					graph.set_text_color(colors::white);
+					graph_.set_text_color(scheme_->selection_text.get_color());
 					graph.string({-sel_xpos, 0}, str, len);
 					graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_h_pixels), graph);
 				};
@@ -2584,7 +2585,7 @@ namespace nana{	namespace widgets
 								if (a.x <= pos && str_end <= b.x)
 								{
 									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
-									graph_.set_text_color(colors::white);
+									graph_.set_text_color(scheme_->selection_text.get_color());
 								}
 								else
 									graph_.set_text_color(clr);
@@ -2615,7 +2616,7 @@ namespace nana{	namespace widgets
 
 										graph_.rectangle({ part_pos, { sel_w, line_h_pixels } }, true);
 
-										graph_.set_text_color(colors::white);
+										graph_.set_text_color(scheme_->selection_text.get_color());
 										graph_.string(part_pos, ent.begin + (a.x - pos), endpos - a.x);
 
 										if (static_cast<size_t>(endpos) < str_end)
@@ -2641,7 +2642,7 @@ namespace nana{	namespace widgets
 								{	//LTR
 									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
 
-									graph_.set_text_color(colors::white);
+									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, endpos - pos);
 									graph_.set_text_color(clr);
 									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + (endpos - pos), str_end - endpos);
@@ -2666,7 +2667,7 @@ namespace nana{	namespace widgets
 								if (a.x < pos)
 								{
 									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true, { 0x33, 0x99, 0xFF });
-									graph_.set_text_color(colors::white);
+									graph_.set_text_color(scheme_->selection_text.get_color());
 								}
 								graph_.string(text_pos, ent.begin, len);
 							}
@@ -2684,7 +2685,7 @@ namespace nana{	namespace widgets
 									::nana::point part_pos{ text_pos.x + static_cast<int>(head_w), text_pos.y };
 
 									graph_.rectangle({ part_pos, {str_w - head_w, line_h_pixels } }, true);
-									graph_.set_text_color(colors::white);
+									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(part_pos, ent.begin + a.x - pos, len - (a.x - pos));
 								}
 							}
@@ -2708,7 +2709,7 @@ namespace nana{	namespace widgets
 							if (pos + len <= b.x)
 							{
 								graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
-								graph_.set_text_color(colors::white);
+								graph_.set_text_color(scheme_->selection_text.get_color());
 								graph_.string(text_pos, ent.begin, len);
 							}
 							else if (pos <= b.x && b.x < pos + len)
@@ -2721,8 +2722,7 @@ namespace nana{	namespace widgets
 								else
 								{
 									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
-
-									graph_.set_text_color(colors::white);
+									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, b.x - pos);
 									graph_.set_text_color(clr);
 									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + b.x - pos, len - (b.x - pos));
@@ -2737,10 +2737,7 @@ namespace nana{	namespace widgets
 			}
 		}
 
-		//_m_draw
-		//@brief: Draw a character at a position specified by caret pos.
-		//@return: true if beyond the border
-		bool text_editor::_m_draw(nana::char_t c, std::size_t secondary_before)
+		bool text_editor::_m_update_caret_line(std::size_t secondary_before)
 		{
 			if (false == behavior_->adjust_caret_into_screen())
 			{

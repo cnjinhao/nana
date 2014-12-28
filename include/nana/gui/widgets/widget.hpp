@@ -117,14 +117,17 @@ namespace nana
 	};
 
             /// Base class of all the classes defined as a widget window. Defaultly a widget_tag
-	template<typename Category, typename DrawerTrigger, typename Events = nana::general_events>
+	template<typename Category, typename DrawerTrigger, typename Events = ::nana::general_events, typename Scheme = ::nana::widget_colors>
 	class widget_object: public widget
 	{
 	protected:
 		typedef DrawerTrigger drawer_trigger_t;
 	public:
+		using scheme_type = Scheme;
+
 		widget_object()
-			: events_(std::make_shared<Events>())
+			:	events_{ std::make_shared<Events>() },
+				scheme_{ API::dev::make_scheme<Scheme>() }
 		{}
 
 		~widget_object()
@@ -143,12 +146,13 @@ namespace nana
 			return create(parent_wd, rectangle(), visible);
 		}
 
-		bool create(window parent_wd, const rectangle & r = rectangle(), bool visible = true)  ///< in a widget/root window specified by parent_wd.
+		bool create(window parent_wd, const rectangle & r = {}, bool visible = true)  ///< in a widget/root window specified by parent_wd.
 		{
 			if(parent_wd && this->empty())
 			{
 				handle_ = API::dev::create_widget(parent_wd, r, this);
 				API::dev::set_events(handle_, events_);
+				API::dev::set_scheme(handle_, scheme_.get());
 				API::dev::attach_signal(handle_, *this, &widget_object::signal);
 				API::dev::attach_drawer(*this, trigger_);
 				if(visible)
@@ -173,6 +177,11 @@ namespace nana
 		bool borderless() const
 		{
 			return API::widget_borderless(handle_);
+		}
+
+		scheme_type& scheme() const
+		{
+			return *scheme_;
 		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()
@@ -212,18 +221,20 @@ namespace nana
 		window handle_{nullptr};
 		DrawerTrigger trigger_;
 		std::shared_ptr<Events> events_;
+		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object
 
 	        /// Base class of all the classes defined as a non-graphics-buffer widget window. The second template parameter DrawerTrigger is always ignored.\see nana::panel
-	template<typename DrawerTrigger, typename Events>
-	class widget_object<category::lite_widget_tag, DrawerTrigger, Events>: public widget
+	template<typename DrawerTrigger, typename Events, typename Scheme>
+	class widget_object<category::lite_widget_tag, DrawerTrigger, Events, Scheme>: public widget
 	{
 	protected:
 		typedef DrawerTrigger drawer_trigger_t;
 	public:
+		using scheme_type = Scheme;
 
 		widget_object()
-			:	events_(std::make_shared<Events>())
+			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
 		{}
 
 		~widget_object()
@@ -248,6 +259,7 @@ namespace nana
 			{
 				handle_ = API::dev::create_lite_widget(parent_wd, r, this);
 				API::dev::set_events(handle_, events_);
+				API::dev::set_scheme(handle_, scheme_.get());
 				if(visible)
 					API::show_window(handle_, true);
 				this->_m_complete_creation();
@@ -258,6 +270,11 @@ namespace nana
 		window handle() const
 		{
 			return handle_;
+		}
+
+		scheme_type& scheme() const
+		{
+			return *scheme_;
 		}
 	private:
 		void signal(detail::signals::code code, const detail::signals& sig)
@@ -286,16 +303,18 @@ namespace nana
 	private:
 		window handle_{nullptr};
 		std::shared_ptr<Events> events_;
+		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object
 
 
 	        /// Base class of all the classes defined as a root window. \see nana::form
-	template<typename DrawerTrigger, typename Events>
-	class widget_object<category::root_tag, DrawerTrigger, Events>: public widget
+	template<typename DrawerTrigger, typename Events, typename Scheme>
+	class widget_object<category::root_tag, DrawerTrigger, Events, Scheme>: public widget
 	{
 	protected:
 		typedef DrawerTrigger drawer_trigger_t;
 	public:
+		using scheme_type = Scheme;
 
 		widget_object()
 		{
@@ -303,13 +322,13 @@ namespace nana
 			_m_bind_and_attach();
 		}
 
-		widget_object(const rectangle& r, const appearance& apr = appearance())
+		widget_object(const rectangle& r, const appearance& apr = {})
 		{
 			handle_ = API::dev::create_window(nullptr, false, r, apr, this);
 			_m_bind_and_attach();
 		}
 
-		widget_object(window owner, bool nested, const rectangle& r = rectangle(), const appearance& apr = appearance())
+		widget_object(window owner, bool nested, const rectangle& r = {}, const appearance& apr = {})
 		{
 			handle_ = API::dev::create_window(owner, nested, r, apr, this);
 			_m_bind_and_attach();
@@ -376,6 +395,11 @@ namespace nana
 			API::set_window_z_order(handle_, wd_after, action_if_no_wd_after);
 			return *this;
 		}
+
+		scheme_type& scheme() const
+		{
+			return *scheme_;
+		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()
 		{
@@ -410,6 +434,9 @@ namespace nana
 		{
 			events_ = std::make_shared<Events>();
 			API::dev::set_events(handle_, events_);
+
+			scheme_ = API::dev::make_scheme<scheme_type>();
+			API::dev::set_scheme(handle_, scheme_.get());
 			API::dev::attach_signal(handle_, *this, &widget_object::signal);
 			API::dev::attach_drawer(*this, trigger_);
 		}
@@ -422,21 +449,24 @@ namespace nana
 		window handle_;
 		DrawerTrigger trigger_;
 		std::shared_ptr<Events> events_;
+		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object<root_tag>
 
 	           /// Base class of all the classes defined as a frame window. \see nana::frame
-	template<typename Drawer, typename Events>
-	class widget_object<category::frame_tag, Drawer, Events>: public widget{};
+	template<typename Drawer, typename Events, typename Scheme>
+	class widget_object<category::frame_tag, Drawer, Events, Scheme>: public widget{};
 
 	           /// Especialization. Base class of all the classes defined as a frame window. \see nana::frame
-	template<typename Events>
-	class widget_object<category::frame_tag, int, Events>: public widget
+	template<typename Events, typename Scheme>
+	class widget_object<category::frame_tag, int, Events, Scheme>: public widget
 	{
 	protected:
 		typedef int drawer_trigger_t;
 	public:
+		using scheme_type = Scheme;
+
 		widget_object()
-			:	events_(std::make_shared<Events>())
+			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
 		{}
 
 		~widget_object()
@@ -461,6 +491,7 @@ namespace nana
 			{
 				handle_ = API::dev::create_frame(parent_wd, r, this);
 				API::dev::set_events(handle_, events_);
+				API::dev::set_scheme(handle_, scheme_.get());
 				API::dev::attach_signal(handle_, *this, &widget_object::signal);
 				API::show_window(handle_, visible);
 				this->_m_complete_creation();
@@ -471,6 +502,11 @@ namespace nana
 		window handle() const
 		{
 			return handle_;
+		}
+
+		scheme_type& scheme() const
+		{
+			return *scheme_;
 		}
 	private:
 		virtual drawer_trigger* get_drawer_trigger()
@@ -504,6 +540,7 @@ namespace nana
 	private:
 		window handle_{nullptr};
 		std::shared_ptr<Events> events_;
+		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object<category::frame_tag>
 }//end namespace nana
 #endif

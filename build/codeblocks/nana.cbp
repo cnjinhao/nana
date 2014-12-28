@@ -52,6 +52,7 @@
 		<Unit filename="../../source/gui/detail/basic_window.cpp" />
 		<Unit filename="../../source/gui/detail/bedrock_pi.cpp" />
 		<Unit filename="../../source/gui/detail/bedrock_selector.cpp" />
+		<Unit filename="../../source/gui/detail/color_schemes.cpp" />
 		<Unit filename="../../source/gui/detail/drawer.cpp" />
 		<Unit filename="../../source/gui/detail/element_store.cpp" />
 		<Unit filename="../../source/gui/detail/events_operation.cpp" />

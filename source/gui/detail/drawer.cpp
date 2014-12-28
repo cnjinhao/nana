@@ -11,7 +11,7 @@
  */
 
 #include <nana/config.hpp>
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/drawer.hpp>
 #include <nana/gui/detail/dynamic_drawing_object.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>

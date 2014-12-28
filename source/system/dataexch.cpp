@@ -16,7 +16,7 @@
 	#include <windows.h>
 #elif defined(NANA_X11)
 	#include PLATFORM_SPEC_HPP
-	#include GUI_BEDROCK_HPP
+	#include <nana/gui/detail/bedrock.hpp>
 	#include <nana/gui/detail/basic_window.hpp>
 #endif
 

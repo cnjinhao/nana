@@ -47,6 +47,7 @@ namespace nana
 		form(window, const rectangle&, const appearance& = {});
 
 		void modality() const;
+		void wait_for_this();
 	};
 
 	class nested_form : public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>

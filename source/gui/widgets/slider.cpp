@@ -71,8 +71,6 @@ namespace nana
 			public:
 				enum class style{horizontal, vertical};
 				enum class parts{none, bar, slider};
-				//enum dir_t{DirHorizontal, DirVertical};	//deprecated
-				//enum where_t{WhereNone, WhereBar, WhereSlider};
 				
 				typedef drawer_trigger::graph_reference graph_reference;
 

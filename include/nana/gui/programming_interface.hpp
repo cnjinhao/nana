@@ -13,7 +13,7 @@
 #ifndef NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #define NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #include <nana/config.hpp>
-#include GUI_BEDROCK_HPP
+#include "detail/bedrock.hpp"
 #include "effects.hpp"
 #include "detail/general_events.hpp"
 #include <nana/paint/image.hpp>
@@ -45,6 +45,16 @@ namespace API
 		}
 
 		bool set_events(window, const std::shared_ptr<general_events>&);
+		
+		template<typename Scheme>
+		std::unique_ptr<Scheme> make_scheme()
+		{
+			return std::unique_ptr<Scheme>(
+				static_cast<Scheme*>(::nana::detail::bedrock::instance().make_scheme(::nana::detail::scheme_factory<Scheme>()).release()));
+		}
+
+		void set_scheme(window, widget_colors*);
+		widget_colors* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
 		nana::string window_caption(window);
@@ -65,6 +75,13 @@ namespace API
 	}//end namespace detail
 
 	void exit();
+
+	template<typename Scheme>
+	Scheme& get_scheme()
+	{
+		auto & brock = ::nana::detail::bedrock::instance();
+		return static_cast<Scheme&>(brock.get_scheme_template(::nana::detail::scheme_factory<Scheme>{}));
+	}
 
 	nana::string transform_shortkey_text(nana::string text, nana::string::value_type &shortkey, nana::string::size_type *skpos);
 	bool register_shortkey(window, unsigned long);

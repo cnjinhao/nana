@@ -14,7 +14,7 @@
 #define NANA_GUI_DETAIL_BASIC_WINDOW_HPP
 #include "drawer.hpp"
 #include "events_holder.hpp"
-#include "../basis.hpp"
+#include "widget_colors.hpp"
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>
@@ -181,6 +181,8 @@ namespace detail
 			color bgcolor;
 			color activated;
 		}colors;
+		
+		widget_colors* expr_colors{ nullptr };
 
 		struct
 		{

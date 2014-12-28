@@ -14,6 +14,7 @@
 #define NANA_GUI_WIDGETS_COMBOX_HPP
 #include "widget.hpp"
 #include "float_listbox.hpp"
+#include "skeletons/text_editor_scheme.hpp"
 #include <nana/key_type.hpp>
 #include <nana/concepts.hpp>
 #include <functional>
@@ -160,7 +161,7 @@ namespace nana
 	}//end namespace drawerbase
 
 	class combox
-		:	public widget_object<category::widget_tag, drawerbase::combox::trigger, drawerbase::combox::combox_events>,
+		:	public widget_object<category::widget_tag, drawerbase::combox::trigger, drawerbase::combox::combox_events, ::nana::widgets::skeletons::text_editor_scheme>,
 			public nana::concepts::any_objective<std::size_t, 1>
 	{
 	public:

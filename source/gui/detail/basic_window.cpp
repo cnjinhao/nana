@@ -49,9 +49,7 @@ namespace nana
 			void caret_descriptor::effective_range(nana::rectangle rect)
 			{
 				//Chech rect
-				if(	(rect.width && rect.height) &&
-					(rect.x + rect.width > 0) &&
-					(rect.y + rect.height > 0))
+				if (rect.width && rect.height && rect.right() > 0 && rect.bottom() > 0)
 				{
 					if(rect.x < 0)
 					{
@@ -151,9 +149,9 @@ namespace nana
 						size.width -= (rect.x - pos.x);
 						pos.x = rect.x;
 					}
-					else if(pos.x + size.width > rect.x + rect.width)
+					else if(pos.x + size.width > rect.right())
 					{
-						size.width -= pos.x + size.width - (rect.x + rect.width);
+						size.width -= pos.x + size.width - rect.right();
 					}
 
 					if(pos.y < rect.y)
@@ -161,8 +159,8 @@ namespace nana
 						size.width -= (rect.y - pos.y);
 						pos.y = rect.y;
 					}
-					else if(pos.y + size.height > rect.y + rect.height)
-						size.height -= pos.y + size.height - (rect.y + rect.height);
+					else if(pos.y + size.height > rect.bottom())
+						size.height -= pos.y + size.height - rect.bottom();
 
 					if(out_of_range_)
 					{
@@ -228,7 +226,7 @@ namespace nana
 				: widget_ptr(wdg), other(category::root_tag::value)
 			{
 				drawer.bind(this);
-				_m_init_pos_and_size(0, rectangle());
+				_m_init_pos_and_size(nullptr, rectangle());
 				this->_m_initialize(owner);
 			}
 

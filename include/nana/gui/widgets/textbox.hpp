@@ -13,6 +13,7 @@
 #define NANA_GUI_WIDGET_TEXTBOX_HPP
 #include <nana/gui/widgets/widget.hpp>
 #include "skeletons/textbase_export_interface.hpp"
+#include "skeletons/text_editor_scheme.hpp"
 
 namespace nana
 {
@@ -96,7 +97,7 @@ namespace nana
 
     /// Allow users to enter and edit text by typing on the keyboard.
 	class textbox
-		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events>
+		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
 		/// The default constructor without creating the widget.

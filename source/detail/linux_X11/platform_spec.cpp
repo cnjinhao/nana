@@ -22,7 +22,7 @@
 #include <set>
 #include <algorithm>
 #include <nana/paint/graphics.hpp>
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/system/platform.hpp>
 #include <errno.h>

@@ -14,9 +14,9 @@
 #ifndef NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #define NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #include "textbase.hpp"
+#include "text_editor_scheme.hpp"
 #include <nana/gui/widgets/scroll.hpp>
 #include <nana/unicode_bidi.hpp>
-#include <memory>
 
 namespace nana{	namespace widgets
 {
@@ -128,18 +128,18 @@ namespace nana{	namespace widgets
 			class undo_input_text;
 			class undo_move_text;
 		public:
-			typedef nana::char_t	char_type;
+			typedef ::nana::char_t	char_type;
 			typedef textbase<char_type>::size_type size_type;
 			typedef textbase<char_type>::string_type string_type;
 
-			typedef nana::paint::graphics & graph_reference;
+			typedef ::nana::paint::graphics & graph_reference;
 
 			struct ext_renderer_tag
 			{
 				std::function<void(graph_reference, const nana::rectangle& text_area, const ::nana::color&)> background;
 			};
 
-			text_editor(window, graph_reference);
+			text_editor(window, graph_reference, const text_editor_scheme*);
 			~text_editor();
 
 			bool respone_keyboard(nana::char_t, bool enterable);
@@ -263,10 +263,10 @@ namespace nana{	namespace widgets
 			//_m_draw_string
 			//@brief: Draw a line of string
 			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const nana::string&, bool if_mask) const;
-			//_m_draw
-			//@brief: Draw a character at a position specified by caret pos. 
-			//@return: true if beyond the border
-			bool _m_draw(nana::char_t, std::size_t secondary_before);
+			//_m_update_caret_line
+			//@brief: redraw whole line specified by caret pos. 
+			//@return: true if caret overs the border
+			bool _m_update_caret_line(std::size_t secondary_before);
 			bool _m_get_sort_select_points(nana::upoint&, nana::upoint&) const;
 
 			void _m_offset_y(int y);
@@ -279,6 +279,8 @@ namespace nana{	namespace widgets
 			undoable<command>	undo_;
 			nana::window window_;
 			graph_reference graph_;
+			const text_editor_scheme* scheme_;
+
 			skeletons::textbase<nana::char_t> textbase_;
 			nana::char_t mask_char_{0};
 

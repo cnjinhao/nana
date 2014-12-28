@@ -99,6 +99,7 @@
     <ClCompile Include="..\..\source\gui\basis.cpp" />
     <ClCompile Include="..\..\source\gui\detail\basic_window.cpp" />
     <ClCompile Include="..\..\source\gui\detail\bedrock_pi.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\color_schemes.cpp" />
     <ClCompile Include="..\..\source\gui\detail\drawer.cpp" />
     <ClCompile Include="..\..\source\gui\detail\element_store.cpp" />
     <ClCompile Include="..\..\source\gui\detail\events_operation.cpp" />

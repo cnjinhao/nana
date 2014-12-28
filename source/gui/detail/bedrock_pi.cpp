@@ -12,7 +12,7 @@
 
 #include <nana/config.hpp>
 #include PLATFORM_SPEC_HPP
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
@@ -118,6 +118,16 @@ namespace nana
 
 				set_cursor(wd, wd->predef_cursor, thrd);
 			}
+		}
+
+		widget_colors& bedrock::get_scheme_template(scheme_factory_base&& factory)
+		{
+			return pi_data_->scheme.scheme_template(std::move(factory));
+		}
+
+		std::unique_ptr<widget_colors> bedrock::make_scheme(scheme_factory_base&& factory)
+		{
+			return pi_data_->scheme.create(std::move(factory));
 		}
 
 		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::detail::event_arg_interface& event_arg)

@@ -150,6 +150,22 @@ namespace API
 			return false;
 		}
 
+		void set_scheme(window wd, widget_colors* wdg_colors)
+		{
+			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+			internal_scope_guard lock;
+			if (restrict::window_manager.available(iwd))
+				iwd->expr_colors = wdg_colors;
+		}
+
+
+		widget_colors* get_scheme(window wd)
+		{
+			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+			internal_scope_guard lock;
+			return (restrict::window_manager.available(iwd) ? iwd->expr_colors : nullptr);
+		}
+
 		void attach_drawer(widget& wd, drawer_trigger& dr)
 		{
 			const auto iwd = reinterpret_cast<restrict::core_window_t*>(wd.handle());
@@ -794,20 +810,20 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.fgcolor;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->expr_colors->foreground.get_color();
 		return{};
 	}
 
-	color fgcolor(window wd, const color& col)
+	color fgcolor(window wd, const color& clr)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd))
 		{
-			auto prev = iwd->colors.fgcolor;
-			if (prev != col)
+			auto prev = iwd->expr_colors->foreground.get_color();
+			if (prev != clr)
 			{
-				iwd->colors.fgcolor = col;
+				iwd->expr_colors->foreground = clr;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -819,20 +835,20 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.bgcolor;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->expr_colors->background.get_color();
 		return{};
 	}
 
-	color bgcolor(window wd, const color& col)
+	color bgcolor(window wd, const color& clr)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd))
 		{
-			auto prev = iwd->colors.bgcolor;
-			if (prev != col)
+			auto prev = iwd->expr_colors->background.get_color();
+			if (prev != clr)
 			{
-				iwd->colors.bgcolor = col;
+				iwd->expr_colors->background = clr;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -844,20 +860,20 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->colors.activated;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->expr_colors->activated.get_color();
 		return{};
 	}
 
-	color activated_color(window wd, const color& col)
+	color activated_color(window wd, const color& clr)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd))
 		{
-			auto prev = iwd->colors.activated;
-			if (prev != col)
+			auto prev = iwd->expr_colors->activated.get_color();
+			if (prev != clr)
 			{
-				iwd->colors.activated = col;
+				iwd->expr_colors->activated = clr;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;

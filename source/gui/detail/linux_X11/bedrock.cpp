@@ -12,7 +12,7 @@
 
 #include <nana/config.hpp>
 #include PLATFORM_SPEC_HPP
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
@@ -165,13 +165,14 @@ namespace detail
 	}
 
 	bedrock::bedrock()
-		: impl_(new private_impl)
+		: pi_data_(new pi_data), impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance().msg_set(timer_proc, window_proc_dispatcher);
 	}
 
 	bedrock::~bedrock()
 	{
+		delete pi_data_;
 		delete impl_;
 	}
 

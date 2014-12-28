@@ -54,6 +54,11 @@ namespace nana
 		{
 			API::modal_window(handle());
 		}
+
+		void form::wait_for_this()
+		{
+			API::wait_for(handle());
+		}
 	//end class form
 
 	//class nested_form

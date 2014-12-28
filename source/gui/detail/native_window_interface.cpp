@@ -23,7 +23,7 @@
 	#include <nana/paint/detail/image_ico.hpp>
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
-	#include GUI_BEDROCK_HPP
+	#include <nana/gui/detail/bedrock.hpp>
 #endif
 
 namespace nana{

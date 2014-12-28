@@ -84,7 +84,9 @@ namespace nana
 				void attached(widget_reference wd, graph_reference graph)
 				{
 					widget_ = static_cast< ::nana::combox*>(&wd);
-					editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph);
+
+					auto scheme = dynamic_cast< ::nana::widgets::skeletons::text_editor_scheme*>(API::dev::get_scheme(wd));
+					editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph, scheme);
 					editor_->border_renderer([this](graph_reference graph, const ::nana::color& bgcolor){
 						draw_border(graph, bgcolor);
 					});

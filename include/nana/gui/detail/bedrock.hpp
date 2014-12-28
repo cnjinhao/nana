@@ -16,6 +16,7 @@
 #include "events_operation.hpp"
 #include "runtime_manager.hpp"
 #include "general_events.hpp"
+#include "color_schemes.hpp"
 #include "internal_scope_guard.hpp"
 
 namespace nana
@@ -76,6 +77,9 @@ namespace detail
 		void set_cursor(core_window_t*, nana::cursor, thread_context*);
 		void define_state_cursor(core_window_t*, nana::cursor, thread_context*);
 		void undefine_state_cursor(core_window_t*, thread_context*);
+
+		widget_colors& get_scheme_template(scheme_factory_base&&);
+		std::unique_ptr<widget_colors> make_scheme(scheme_factory_base&&);
 	public:
 		window_manager_t	wd_manager;
 		events_operation	evt_operation;
@@ -92,6 +96,8 @@ namespace detail
 	private:
 		static bedrock bedrock_object;
 
+		struct pi_data;
+		pi_data*	pi_data_;
 		struct private_impl;
 		private_impl *impl_;
 	};//end class bedrock

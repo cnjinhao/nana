@@ -57,7 +57,9 @@ namespace nana{	namespace drawerbase {
 			widget_ = &wdg;
 			evt_agent_.reset(new event_agent(static_cast< ::nana::textbox&>(wdg)));
 
-			editor_ = new text_editor(wd, graph);
+			auto scheme = API::dev::get_scheme(wdg);
+
+			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
 			editor_->textbase().set_event_agent(evt_agent_.get());
 			editor_->border_renderer([this](graph_reference graph, const ::nana::color& clr){
 				this->_m_draw_border(graph, clr);
