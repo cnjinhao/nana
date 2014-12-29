@@ -1693,10 +1693,11 @@ namespace nana
 			//			the state of the struct does not effect on member funcions, therefore all data members are public.
 			struct essence_t
 			{
-				enum class state_t{normal, highlighted, pressed, grabed, floated};
+				enum class state_t{normal, highlighted, pressed, grabbed, floated};
 				enum class where_t{unknown = -1, header, lister, checker};
 
-				nana::paint::graphics *graph{nullptr};
+				::nana::listbox::scheme_type* scheme_ptr{nullptr};
+				::nana::paint::graphics *graph{nullptr};
 				bool auto_draw{true};
 				bool checkable{false};
 				bool if_image{false};
@@ -2207,9 +2208,14 @@ namespace nana
 					_m_draw(essence_->header.cont(), r);
 
 					const int y = r.y + r.height - 1;
-					essence_->graph->line({ r.x, y }, { r.x + static_cast<int>(r.width), y }, { 0xDE, 0xDF, 0xE1 });
+					essence_->graph->line({ r.x, y }, { r.x + static_cast<int>(r.width), y }, _m_border_color());
 				}
 			private:
+				::nana::color _m_border_color() const
+				{
+					return essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.8);
+				}
+
 				size_type _m_target_strip(int x, const nana::rectangle& rect, size_type grab, bool& place_front)
 				{
 					//convert x to header logic coordinate.
@@ -2268,32 +2274,36 @@ namespace nana
 							if(next_x > rect.x)
 							{
 								_m_draw_item(graph, x, rect.y, height, txtop, txtcolor, i, (i.index == essence_->pointer_where.second ? state : essence_t::state_t::normal));
-								graph.line({ next_x - 1, rect.y }, { next_x - 1, bottom_y }, { 0xDE, 0xDF, 0xE1 });
+								graph.line({ next_x - 1, rect.y }, { next_x - 1, bottom_y }, _m_border_color());
 							}
+
+							if(next_x > rect.right())
+								break;
+
 							x = next_x;
-							if(x - rect.x > static_cast<int>(rect.width)) break;
 						}
 					}
 
 					if(x - rect.x < static_cast<int>(rect.width))
-						graph.rectangle({ x, rect.y, rect.width - x + rect.x, height }, true, { 0xF1, 0xF2, 0xF4 });
+						graph.rectangle({ x, rect.y, rect.width - x + rect.x, height }, true, essence_->scheme_ptr->header_bgcolor);
 				}
 
 				template<typename Item>
 				void _m_draw_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::color& fgcolor, const Item& item, essence_t::state_t state)
 				{
+					essence_->scheme_ptr->header_bgcolor.get_color();
 					::nana::color bgcolor;
 					typedef essence_t::state_t state_t;
 					switch(state)
 					{
-					case state_t::normal:		bgcolor.from_rgb(0xf1, 0xf2, 0xf4); break;
-					case state_t::highlighted:	bgcolor = colors::white; break;
+					case state_t::normal:		bgcolor = essence_->scheme_ptr->header_bgcolor.get_color(); break;
+					case state_t::highlighted:	bgcolor = essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::white, 0.5); break;
 					case state_t::pressed:
-					case state_t::grabed:		bgcolor.from_rgb(0x8B, 0xD6, 0xF6); break;
-					case state_t::floated:		bgcolor.from_rgb(0xBA, 0xBB, 0xBC);	break;
+					case state_t::grabbed:		bgcolor = essence_->scheme_ptr->header_grabbed.get_color(); break;
+					case state_t::floated:		bgcolor = essence_->scheme_ptr->header_floated.get_color();	break;
 					}
 
-					graph.rectangle({ x, y, item.pixels, height }, true, bgcolor);
+					graph.gradual_rectangle({ x, y, item.pixels, height }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.9), true);
 					graph.string({ x + 5, txtop }, item.text, fgcolor);
 
 					if(item.index == essence_->lister.sort_index())
@@ -2467,7 +2477,7 @@ namespace nana
 						bgcolor = nana::color(0xD5, 0xEF, 0xFC);
 
 					if (state == essence_t::state_t::highlighted)
-						bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
+						bgcolor = bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
 
 					auto graph = essence_->graph;
 					graph->set_color(bgcolor);
@@ -2501,8 +2511,8 @@ namespace nana
 
 				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, essence_t::state_t state) const
 				{
-					if(item.flags.selected)
-						bgcolor = nana::color(0xD5, 0xEF, 0xFC);
+					if (item.flags.selected)
+						bgcolor = essence_->scheme_ptr->item_selected;
 					else if (!item.bgcolor.invisible())
 						bgcolor = item.bgcolor;
 
@@ -2511,7 +2521,12 @@ namespace nana
 
 					auto graph = essence_->graph;
 					if (essence_t::state_t::highlighted == state)
-						bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
+					{
+						if (item.flags.selected)
+							bgcolor = bgcolor.blend(colors::black, 0.98);
+						else
+							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);
+					}
 
 					unsigned show_w = width - essence_->scroll.offset_x;
 					if(show_w >= r.width) show_w = r.width;
@@ -2541,7 +2556,7 @@ namespace nana
 									{
 									case essence_t::state_t::highlighted:
 										estate = element_state::hovered;	break;
-									case essence_t::state_t::grabed:
+									case essence_t::state_t::grabbed:
 										estate = element_state::pressed;	break;
 									default:	break;
 									}
@@ -2573,10 +2588,10 @@ namespace nana
 							{
 								if (!item.flags.selected)
 								{
-									auto cell_bgcolor = m_cell.custom_format->bgcolor;
 									if (essence_t::state_t::highlighted == state)
-										cell_bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
-									graph->set_color(cell_bgcolor);
+										graph->set_color(m_cell.custom_format->bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8));
+									else
+										graph->set_color(m_cell.custom_format->bgcolor);
 									graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
 								}
 
@@ -2688,6 +2703,7 @@ namespace nana
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
+					essence_->scheme_ptr = static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));
 					essence_->graph = &graph;
 					typeface_changed(graph);
 
@@ -2719,7 +2735,7 @@ namespace nana
 					{
 						if(essence_->pointer_where.first == essence_t::where_t::header)
 						{
-							essence_->ptr_state = essence_t::state_t::grabed;
+							essence_->ptr_state = essence_t::state_t::grabbed;
 							nana::point pos = arg.pos;
 							essence_->widget_to_header(pos);
 							drawer_header_->grab(pos, true);
@@ -2728,7 +2744,7 @@ namespace nana
 						}
 					}
 
-					if(essence_->ptr_state == essence_t::state_t::grabed)
+					if(essence_->ptr_state == essence_t::state_t::grabbed)
 					{
 						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);
@@ -2756,7 +2772,7 @@ namespace nana
 							}
 						}
 					}
-					if(set_spliter == false && essence_->ptr_state != essence_t::state_t::grabed)
+					if(set_spliter == false && essence_->ptr_state != essence_t::state_t::grabbed)
 					{
 						if((drawer_header_->item_spliter() != npos) || (essence_->lister.wd_ptr()->cursor() == cursor::size_we))
 						{
@@ -2783,7 +2799,7 @@ namespace nana
 					typedef essence_t::state_t state_t;
 					if((essence_->pointer_where.first != essence_t::where_t::unknown) || (essence_->ptr_state != state_t::normal))
 					{
-						if(essence_->ptr_state != state_t::grabed)
+						if(essence_->ptr_state != state_t::grabbed)
 						{
 							essence_->pointer_where.first = essence_t::where_t::unknown;
 							essence_->ptr_state = state_t::normal;
@@ -2892,7 +2908,7 @@ namespace nana
 							}
 						}
 					}
-					else if(prev_state == state_t::grabed)
+					else if(prev_state == state_t::grabbed)
 					{
 						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);

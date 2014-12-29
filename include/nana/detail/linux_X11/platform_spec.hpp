@@ -223,9 +223,9 @@ namespace detail
 		void read_keystate(XKeyEvent&);
 
 		XIC	caret_input_context(native_window_type) const;
-		void caret_open(native_window_type, unsigned width, unsigned height);
+		void caret_open(native_window_type, const ::nana::size&);
 		void caret_close(native_window_type);
-		void caret_pos(native_window_type, int x, int y);
+		void caret_pos(native_window_type, const ::nana::point&);
 		void caret_visible(native_window_type, bool);
 		void caret_flash(caret_tag&);
 		bool caret_update(native_window_type, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph);

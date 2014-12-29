@@ -78,7 +78,7 @@ namespace nana
 
 					if(ue.what == ue.none || (API::window_enabled(wd) == false))
 					{	//the mouse is out of the widget.
-						style_.bgcolor.blend(color{ 0xa0, 0xc9, 0xf5 }, 0.9);
+						style_.bgcolor = style_.bgcolor.blend(color{ 0xa0, 0xc9, 0xf5 }, 0.9);
 					}
 					graph.rectangle(r, true, style_.bgcolor);
 				}

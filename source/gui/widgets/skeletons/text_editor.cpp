@@ -1528,7 +1528,7 @@ namespace nana{	namespace widgets
 				API::caret_visible(window_, visible);
 
 				if(visible)
-					API::caret_pos(window_, pos.x, pos.y);
+					API::caret_pos(window_, pos);
 			}
 		}
 

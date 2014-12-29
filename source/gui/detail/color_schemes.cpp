@@ -29,6 +29,18 @@ namespace nana
 			return *this;
 		}
 
+		color_proxy& color_proxy::operator = (color_rgb clr)
+		{
+			color_ = std::make_shared<::nana::color>(clr);
+			return *this;
+		}
+
+		color_proxy& color_proxy::operator = (colors clr)
+		{
+			color_ = std::make_shared<::nana::color>(clr);
+			return *this;
+		}
+
 		color color_proxy::get_color() const
 		{
 			return *color_;

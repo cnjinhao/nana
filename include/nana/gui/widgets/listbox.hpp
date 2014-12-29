@@ -431,6 +431,15 @@ namespace nana
 				basic_event<arg_listbox> checked;
 				basic_event<arg_listbox> selected;
 			};
+
+			struct scheme
+				: public widget_colors
+			{
+				color_proxy header_bgcolor{static_cast<color_rgb>(0xf1f2f4)};
+				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
+				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
+				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
+			};
 		}
 	}//end namespace drawerbase
 
@@ -442,7 +451,7 @@ The user can \a drag the header to \a reisize it or to \a reorganize it.
 By \a clicking on a header the list get \a reordered, first up, and then down alternatively,
 */
 	class listbox
-		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events>,
+		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:

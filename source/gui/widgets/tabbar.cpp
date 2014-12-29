@@ -40,9 +40,10 @@ namespace nana
 					if(bgcolor_ != bgcolor)
 					{
 						bgcolor_ = bgcolor;
-						dark_bgcolor_ = ::nana::color{ colors::black }.blend(bgcolor, 0.1);
-						blcolor_ = ::nana::color{ colors::black }.blend(bgcolor, 0.5);
-						ilcolor_ = ::nana::color{ colors::white }.blend(bgcolor, 0.1);
+
+						dark_bgcolor_ = bgcolor.blend(colors::black, 0.9);
+						blcolor_ = bgcolor.blend(colors::black, 0.5);
+						ilcolor_ = bgcolor.blend(colors::white, 0.9);
 					}
 
 					graph.rectangle(true, bgcolor);
@@ -65,8 +66,8 @@ namespace nana
 					else
 					{
 						bgcolor = m.bgcolor;
-						blcolor = color{ colors::black }.blend(m.bgcolor, 0.5);
-						dark_bgcolor = color{ colors::black }.blend(m.bgcolor, 0.1);
+						blcolor = m.bgcolor.blend(colors::black, 0.5);
+						dark_bgcolor = m.bgcolor.blend(colors::black, 0.9);
 					}
 
 					auto round_r = r;
@@ -81,12 +82,12 @@ namespace nana
 						if (m.bgcolor.invisible())
 							beg = ilcolor_;
 						else
-							beg = color{ m.bgcolor }.blend(colors::white, 0.5);
+							beg = m.bgcolor.blend(colors::white, 0.5);
 						end = bgcolor;
 					}
 
 					if (sta == item_renderer::highlight)
-						beg.blend(colors::white, 0.5);
+						beg = beg.blend(colors::white, 0.5);
 
 					graph.gradual_rectangle(round_r.pare_off(2), beg, end, true);
 				}
@@ -131,9 +132,9 @@ namespace nana
 						::nana::color rect_clr{0x9d, 0xa3, 0xab};
 						graph.round_rectangle(r, 1, 1, rect_clr, false, {});
 						nana::rectangle draw_r(r);
-						graph.rectangle(draw_r.pare_off(1), false, ::nana::color{ rect_clr }.blend(bgcolor, 0.8));
-						graph.rectangle(draw_r.pare_off(1), false, ::nana::color{ rect_clr }.blend(bgcolor, 0.4));
-						graph.rectangle(draw_r.pare_off(1), false, ::nana::color{ rect_clr }.blend(bgcolor, 0.2));
+						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.8));
+						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.4));
+						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.2));
 					}
 					else if (!active)
 						clr = ::nana::color{ 0x92, 0x99, 0xA4 };

@@ -114,45 +114,49 @@ namespace nana
 		return *this;
 	}
 
-	color& color::blend(const color& bgcolor, bool ignore_bgcolor_alpha)
+	color color::blend(const color& bgcolor, bool ignore_bgcolor_alpha) const
 	{
 		if (a_ < 1.0)
 		{
+			color result;
 			if (0.0 < a_)
 			{
 				if (ignore_bgcolor_alpha || (1.0 == bgcolor.b_))
 				{
-					r_ = r_ * a_ + bgcolor.r_ * (1.0 - a_);
-					g_ = g_ * a_ + bgcolor.g_ * (1.0 - a_);
-					b_ = b_ * a_ + bgcolor.b_ * (1.0 - a_);
-					a_ = 1.0;
+					result.r_ = r_ * a_ + bgcolor.r_ * (1.0 - a_);
+					result.g_ = g_ * a_ + bgcolor.g_ * (1.0 - a_);
+					result.b_ = b_ * a_ + bgcolor.b_ * (1.0 - a_);
+					result.a_ = 1.0;
 				}
 				else
 				{
-					r_ = r_ * a_ + bgcolor.r_ * bgcolor.a_ * (1.0 - a_);
-					g_ = g_ * a_ + bgcolor.g_ * bgcolor.a_ * (1.0 - a_);
-					b_ = b_ * a_ + bgcolor.b_ * bgcolor.a_ * (1.0 - a_);
-					a_ = a_ + (bgcolor.a_ * (1.0 - a_));
+					result.r_ = r_ * a_ + bgcolor.r_ * bgcolor.a_ * (1.0 - a_);
+					result.g_ = g_ * a_ + bgcolor.g_ * bgcolor.a_ * (1.0 - a_);
+					result.b_ = b_ * a_ + bgcolor.b_ * bgcolor.a_ * (1.0 - a_);
+					result.a_ = a_ + (bgcolor.a_ * (1.0 - a_));
 				}
 			}
 			else
 			{
-				r_ = bgcolor.r_;
-				g_ = bgcolor.g_;
-				b_ = bgcolor.b_;
-				a_ = (ignore_bgcolor_alpha ? 1.0 : bgcolor.a_);
+				result.r_ = bgcolor.r_;
+				result.g_ = bgcolor.g_;
+				result.b_ = bgcolor.b_;
+				result.a_ = (ignore_bgcolor_alpha ? 1.0 : bgcolor.a_);
 			}
+			return result;
 		}
+
 		return *this;
 	}
 
-	color& color::blend(const color& bgcolor, double alpha)
+	color color::blend(const color& bgcolor, double alpha) const
 	{
-		r_ = r_ * alpha + bgcolor.r_ * (1.0 - alpha);
-		g_ = g_ * alpha + bgcolor.g_ * (1.0 - alpha);
-		b_ = b_ * alpha + bgcolor.b_ * (1.0 - alpha);
-		a_ = 1.0;
-		return *this;
+		color result;
+		result.r_ = r_ * alpha + bgcolor.r_ * (1.0 - alpha);
+		result.g_ = g_ * alpha + bgcolor.g_ * (1.0 - alpha);
+		result.b_ = b_ * alpha + bgcolor.b_ * (1.0 - alpha);
+		result.a_ = 1.0;
+		return result;
 	}
 
 	bool color::invisible() const

@@ -230,7 +230,7 @@ namespace API
 	void create_caret(window, unsigned width, unsigned height);
 	void destroy_caret(window);
 	void caret_effective_range(window, const rectangle&);
-	void caret_pos(window, int x, int y);
+	void caret_pos(window, const ::nana::point&);
 	nana::point caret_pos(window);
 	nana::size caret_size(window);
 	void caret_size(window, const size&);

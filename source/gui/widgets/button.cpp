@@ -298,10 +298,8 @@ namespace nana{	namespace drawerbase
 			nana::rectangle r(graph.size());
 			r.pare_off(1);
 
-			::nana::color from(colors::white);
-			from.blend(attr_.bgcolor, 0.8);
-			::nana::color to(colors::black);
-			to.blend(attr_.bgcolor, 0.05);
+			auto from = attr_.bgcolor.blend(colors::white, 0.2);
+			auto to = attr_.bgcolor.blend(colors::black, 0.95);
 
 			if (element_state::pressed == attr_.e_state)
 			{

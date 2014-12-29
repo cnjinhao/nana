@@ -1193,13 +1193,13 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::caret_create(native_window_type wd, unsigned width, unsigned height)
+		void native_interface::caret_create(native_window_type wd, const ::nana::size& caret_sz)
 		{
 #if defined(NANA_WINDOWS)
-			::CreateCaret(reinterpret_cast<HWND>(wd), 0, int(width), int(height));
+			::CreateCaret(reinterpret_cast<HWND>(wd), 0, int(caret_sz.width), int(caret_sz.height));
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
-			restrict::spec.caret_open(wd, width, height);
+			restrict::spec.caret_open(wd, caret_sz);
 #endif
 		}
 
@@ -1216,21 +1216,21 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::caret_pos(native_window_type wd, int x, int y)
+		void native_interface::caret_pos(native_window_type wd, const point& pos)
 		{
 #if defined(NANA_WINDOWS)
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
 				auto cp = new nana::detail::messages::caret;
-				cp->x = x;
-				cp->y = y;
+				cp->x = pos.x;
+				cp->y = pos.y;
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::operate_caret, 2, reinterpret_cast<LPARAM>(cp));
 			}
 			else
-				::SetCaretPos(x, y);
+				::SetCaretPos(pos.x, pos.y);
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
-			restrict::spec.caret_pos(wd, x, y);
+			restrict::spec.caret_pos(wd, pos);
 #endif
 		}
 

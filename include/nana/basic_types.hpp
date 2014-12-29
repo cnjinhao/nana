@@ -309,10 +309,10 @@ namespace nana
 		color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
 		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
 
-		color& blend(const color& bgcolor, bool ignore_bgcolor_alpha);
+		color blend(const color& bgcolor, bool ignore_bgcolor_alpha) const;
 
 		///< Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
-		color& blend(const color& bgcolor, double alpha);
+		color blend(const color& bgcolor, double alpha) const;
 
 		bool invisible() const;
 		pixel_color_t px_color() const;

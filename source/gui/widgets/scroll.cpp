@@ -208,7 +208,8 @@ namespace nana
 					
 					graph.rectangle(r, false, clr);
 
-					graph.set_color(clr.blend(colors::white, 0.5));
+					clr = clr.blend(colors::white, 0.5);
+					graph.set_color(clr);
 
 					r.pare_off(2);
 

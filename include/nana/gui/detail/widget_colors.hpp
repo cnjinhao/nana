@@ -25,6 +25,8 @@ namespace nana
 		color_proxy(colors);
 		color_proxy& operator=(const color_proxy&);
 		color_proxy& operator=(const ::nana::color&);
+		color_proxy& operator=(color_rgb);
+		color_proxy& operator=(colors);
 		color get_color() const;
 		operator color() const;
 	private:

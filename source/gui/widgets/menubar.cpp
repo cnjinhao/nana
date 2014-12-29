@@ -108,14 +108,12 @@ namespace nana
 					case item_renderer::state_highlight:
 						border = colors::highlight;
 						body.from_rgb(0xC0, 0xDD, 0xFC);
-						corner = body;
-						corner.blend(bground, 0.5);
+						corner = body.blend(bground, 0.5);
 						break;
 					case item_renderer::state_selected:
 						border = colors::dark_border;
 						body = colors::white;
-						corner = body;
-						corner.blend(bground, 0.5);
+						corner = body.blend(bground, 0.5);
 						break;
 					default:	//Don't process other states.
 						return;
@@ -541,8 +539,8 @@ namespace nana
 						{
 							int x = item_pos.x + item_s.width;
 							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
-							graph_->line({ x, y1 }, { x, y2 }, ::nana::color(colors::gray_border).blend(bgcolor, 0.6));
-							graph_->line({ x + 1, y1 }, { x + 1, y2 }, ::nana::color(colors::button_face_shadow_end).blend(bgcolor, 0.5));
+							graph_->line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.4));
+							graph_->line({ x + 1, y1 }, { x + 1, y2 }, bgcolor.blend(colors::button_face_shadow_end, 0.5));
 						}
 
 						//Draw text, the text is transformed from orignal for hotkey character

@@ -908,12 +908,12 @@ namespace API
 		}
 	}
 
-	void caret_pos(window wd, int x, int y)
+	void caret_pos(window wd, const point& pos)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd) && iwd->together.caret)
-			iwd->together.caret->position(x, y);
+			iwd->together.caret->position(pos.x, pos.y);
 	}
 
 	nana::point caret_pos(window wd)

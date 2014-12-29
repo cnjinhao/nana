@@ -141,19 +141,19 @@ namespace nana
 				}
 				else
 				{
-					nana::color highlighted(0x5e, 0xb6, 0xf7);
+					::nana::color highlighted(0x5e, 0xb6, 0xf7);
 					auto bld_bgcolor = bgcolor;
 					auto bld_fgcolor = fgcolor;
 					switch(es)
 					{
 					case element_state::hovered:
 					case element_state::focus_hovered:
-						bld_bgcolor.blend(highlighted, 0.8);
-						bld_fgcolor.blend(highlighted, 0.8);
+						bld_bgcolor = bgcolor.blend(highlighted, 0.8);
+						bld_fgcolor = fgcolor.blend(highlighted, 0.8);
 						break;
 					case element_state::pressed:
-						bld_bgcolor.blend(highlighted, 0.4);
-						bld_fgcolor.blend(highlighted, 0.4);
+						bld_bgcolor = bgcolor.blend(highlighted, 0.4);
+						bld_fgcolor = fgcolor.blend(highlighted, 0.4);
 						break;
 					case element_state::disabled:
 						bld_bgcolor = bld_fgcolor = nana::color(0xb2, 0xb7, 0xbc);
@@ -244,14 +244,11 @@ namespace nana
 					int x = r.x + (static_cast<int>(r.width) - 16) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 16) / 2;
 
-					::nana::color light(colors::white);
-					light.blend(fgcolor, 0.5);
-
 					graph.set_color(fgcolor);
 					graph.line(point{ x + 3, y + 7 }, point{ x + 6, y + 10 });
 					graph.line(point{ x + 7, y + 9 }, point{ x + 12, y + 4 });
 
-					graph.set_color(light);
+					graph.set_color(fgcolor.blend(colors::white, 0.5));
 					graph.line(point{ x + 3, y + 8 }, point{ x + 6, y + 11 });
 					graph.line(point{ x + 7, y + 10 }, point{ x + 12, y + 5 });
 					graph.line(point{ x + 4, y + 7 }, point{ x + 6, y + 9 });

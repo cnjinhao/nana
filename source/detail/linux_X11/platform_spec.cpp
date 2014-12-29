@@ -715,7 +715,7 @@ namespace detail
 		return 0;
 	}
 
-	void platform_spec::caret_open(native_window_type wd, unsigned width, unsigned height)
+	void platform_spec::caret_open(native_window_type wd, const ::nana::size& caret_sz)
 	{
 		bool is_start_routine = false;
 		platform_scope_guard psg;
@@ -794,12 +794,11 @@ namespace detail
 		}
 
 		addr->visible = false;
-		addr->graph.make(width, height);
+		addr->graph.make(caret_sz.width, caret_sz.height);
 		addr->graph.rectangle(0x0, true);
-		addr->rev_graph.make(width, height);
+		addr->rev_graph.make(caret_sz.width, caret_sz.height);
 
-		addr->size.width = width;
-		addr->size.height = height;
+		addr->size = caret_sz;
 
 		if(addr->input_context && (false == addr->has_input_method_focus))
 		{
@@ -872,7 +871,7 @@ namespace detail
 		}
 	}
 
-	void platform_spec::caret_pos(native_window_type wd, int x, int y)
+	void platform_spec::caret_pos(native_window_type wd, const point& pos)
 	{
 		platform_scope_guard psg;
 		auto i = caret_holder_.carets.find(wd);
@@ -880,8 +879,7 @@ namespace detail
 		{
 			caret_tag & crt = *i->second;
 			caret_reinstate(crt);
-			crt.pos.x = x;
-			crt.pos.y = y;
+			crt.pos = pos;
 		}
 	}
 

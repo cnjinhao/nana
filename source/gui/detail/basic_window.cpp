@@ -21,7 +21,7 @@ namespace nana
 				{
 					if(active)
 					{
-						native_interface::caret_create(wd_->root, size_.width, size_.height);
+						native_interface::caret_create(wd_->root, size_);
 						real_visible_state_ = false;
 						visible_ = false;
 						this->position(point_.x, point_.y);
@@ -173,7 +173,7 @@ namespace nana
 					if(paint_size_ != size)
 					{
 						native_interface::caret_destroy(wd_->root);
-						native_interface::caret_create(wd_->root, size.width, size.height);
+						native_interface::caret_create(wd_->root, size);
 						real_visible_state_ = false;
 						if(visible_)
 							_m_visible(true);
@@ -181,7 +181,7 @@ namespace nana
 						paint_size_ = size;
 					}
 				
-					native_interface::caret_pos(wd_->root, wd_->pos_root.x + pos.x, wd_->pos_root.y + pos.y);
+					native_interface::caret_pos(wd_->root, wd_->pos_root + pos);
 				}
 			}
 		//end class caret_descriptor

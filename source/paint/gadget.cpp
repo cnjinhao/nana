@@ -302,8 +302,7 @@ namespace gadget
 				ps[11].x = x + gap;
 				ps[11].y = y + gap;
 
-				::nana::color darker(0, 0, 0);
-				darker.blend(color, true);
+				auto darker = color.blend(colors::black, true);
 				graph.set_color(darker);
 
 				for (int i = 0; i < 11; ++i)

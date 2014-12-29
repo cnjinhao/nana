@@ -395,7 +395,7 @@ namespace nana
 
 				void drawer::_m_draw_background(const ::nana::color& clr)
 				{
-					graph_->gradual_rectangle(graph_->size(), ::nana::color(colors::white).blend(clr, 0.1), ::nana::color(colors::black).blend(clr, 0.05), true);
+					graph_->gradual_rectangle(graph_->size(), clr.blend(colors::white, 0.9), clr.blend(colors::black, 0.95), true);
 				}
 
 				void drawer::_m_draw()
