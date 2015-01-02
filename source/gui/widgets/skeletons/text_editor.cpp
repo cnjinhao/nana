@@ -1193,7 +1193,7 @@ namespace nana{	namespace widgets
 					undo(false);
 					break;
 				default:
-					if (key >= 0xFF || (32 <= key && key <= 126))
+					if (key > 0x7F || (32 <= key && key <= 126))
 						put(key);
 					else if (sizeof(nana::char_t) == sizeof(char))
 					{	//Non-Unicode Version for Non-English characters

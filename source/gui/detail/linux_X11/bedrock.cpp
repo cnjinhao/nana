@@ -954,7 +954,7 @@ namespace detail
 						}
 
 						keybuf[len] = 0;
-						nana::char_t keychar;
+						nana::char_t keychar = 0;
 						switch(status)
 						{
 						case XLookupKeySym:
@@ -983,8 +983,6 @@ namespace detail
 								keychar = keyboard::os_insert; break;
 							case XK_Delete:
 								keychar = keyboard::os_del; break;
-							default:
-								keychar = keysym;
 							}
 							context.platform.keychar = keychar;
 							if(keychar == keyboard::tab && (false == (msgwnd->flags.tab & detail::tab_type::eating))) //Tab
@@ -1001,7 +999,7 @@ namespace detail
 							{
 								context.is_alt_pressed = true;
 							}
-							else
+							else if(keychar)
 							{
 								arg_keyboard arg;
 								arg.ignore = false;
@@ -1019,7 +1017,7 @@ namespace detail
 							}
 						case XLookupChars:
 							{
-								const nana::char_t * charbuf;
+								const ::nana::char_t* charbuf;
 #if defined(NANA_UNICODE)
 								nana::detail::charset_conv charset("UTF-32", "UTF-8");
 								const std::string& str = charset.charset(std::string(keybuf, keybuf + len));

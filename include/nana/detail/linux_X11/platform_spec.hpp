@@ -1,6 +1,7 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -102,13 +103,12 @@ namespace detail
 			unsigned whitespace_pixels;
 		}string;
 #if defined(NANA_UNICODE)
-		XftDraw * xftdraw;
+		XftDraw * xftdraw{nullptr};
 		XftColor	xft_fgcolor;
-		XftColor	xft_bgcolor;
 		const std::string charset(const nana::string& str, const std::string& strcode);
 #endif
 	private:
-		unsigned fgcolor_;
+		unsigned fgcolor_{0xFFFFFFFF};
 #if defined(NANA_UNICODE)
 		struct conv_tag
 		{
@@ -131,6 +131,7 @@ namespace detail
 		Atom net_wm_state_maximized_horz;
 		Atom net_wm_state_maximized_vert;
 		Atom net_wm_state_modal;
+		Atom net_wm_name;
 		Atom net_wm_window_type;
 		Atom net_wm_window_type_normal;
 		Atom net_wm_window_type_utility;
