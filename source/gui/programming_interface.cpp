@@ -307,16 +307,6 @@ namespace API
 		restrict::window_manager.unregister_shortkey(reinterpret_cast<restrict::core_window_t*>(wd), false);
 	}
 
-	nana::size screen_size()
-	{
-		return restrict::interface_type::screen_size();
-	}
-
-	rectangle screen_area_from_point(const point& pos)
-	{
-		return restrict::interface_type::screen_area_from_point(pos);
-	}
-
 	nana::point	cursor_position()
 	{
 		return restrict::interface_type::cursor_position();
@@ -324,7 +314,7 @@ namespace API
 
 	nana::rectangle make_center(unsigned width, unsigned height)
 	{
-		nana::size screen = restrict::interface_type::screen_size();
+		nana::size screen = restrict::interface_type::primary_monitor_size();
 		nana::rectangle result(
 			width > screen.width? 0: (screen.width - width)>>1,
 			height > screen.height? 0: (screen.height - height)>> 1,

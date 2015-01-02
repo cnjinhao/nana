@@ -378,8 +378,9 @@ namespace nana
 
 	struct size
 	{
+		using value_type = unsigned;
 		size();
-		size(unsigned width, unsigned height);
+		size(value_type width, value_type height);
 		size(const rectangle&);
 
 		size& operator=(const rectangle&);
@@ -390,8 +391,8 @@ namespace nana
 		bool operator!=(const size& rhs) const;
 		size operator+(const size&) const;
 
-		unsigned width;
-		unsigned height;
+		value_type width;
+		value_type height;
 	};
 
 	struct rectangle

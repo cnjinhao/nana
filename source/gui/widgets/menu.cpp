@@ -177,7 +177,7 @@ namespace nana
 
 				menu_builder()
 				{
-					root_.max_pixels = API::screen_size().width * 2 / 3;
+					root_.max_pixels = screen::primary_monitor_size().width * 2 / 3;
 					root_.item_pixels = 24;
 					renderer_ = pat::cloneable<renderer_interface>(internal_renderer());
 				}
@@ -657,7 +657,7 @@ namespace nana
 					API::calc_screen_point(*widget_, pos);
 
 					//get the screen coordinates of the widget pos.
-					auto scr_area = API::screen_area_from_point(detail_.monitor_pos);
+					auto scr_area = screen::from_point(detail_.monitor_pos)->area();
 
 					if(pos.x + size.width > scr_area.x + scr_area.width)
 						pos.x = static_cast<int>(scr_area.x + scr_area.width - size.width);

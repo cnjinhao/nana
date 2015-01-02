@@ -117,6 +117,7 @@
     <ClCompile Include="..\..\source\gui\notifier.cpp" />
     <ClCompile Include="..\..\source\gui\place.cpp" />
     <ClCompile Include="..\..\source\gui\programming_interface.cpp" />
+    <ClCompile Include="..\..\source\gui\screen.cpp" />
     <ClCompile Include="..\..\source\gui\state_cursor.cpp" />
     <ClCompile Include="..\..\source\gui\timer.cpp" />
     <ClCompile Include="..\..\source\gui\tooltip.cpp" />

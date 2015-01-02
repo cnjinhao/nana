@@ -1,6 +1,7 @@
 /*
  *	Nana GUI Library Definition
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,6 +16,7 @@
 #define NANA_GUI_WVL_HPP
 
 #include "programming_interface.hpp"
+#include "screen.hpp"
 #include "widgets/form.hpp"
 #include "drawing.hpp"
 #include "msgbox.hpp"

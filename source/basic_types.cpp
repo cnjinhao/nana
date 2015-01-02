@@ -323,7 +323,7 @@ namespace nana
 
 	//struct size
 		size::size():width(0), height(0){}
-		size::size(unsigned width, unsigned height):width(width), height(height){}
+		size::size(value_type width, value_type height) : width(width), height(height){}
 		size::size(const rectangle& r)
 			: width(r.width), height(r.height)
 		{}

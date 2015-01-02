@@ -146,7 +146,7 @@ namespace nana{
 #endif
 
 	//struct native_interface
-		nana::size native_interface::screen_size()
+		nana::size native_interface::primary_monitor_size()
 		{
 #if defined(NANA_WINDOWS)
 			return nana::size(::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN));
@@ -176,12 +176,9 @@ namespace nana{
 									mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top);
 				}
 			}
-#elif defined(NANA_X11)
 #endif
-			return screen_size();
+			return primary_monitor_size();
 		}
-
-		
 
 		//platform-dependent
 		native_interface::window_result native_interface::create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& app)

@@ -87,8 +87,6 @@ namespace API
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 
-	nana::size	screen_size();
-	rectangle	screen_area_from_point(const point&);
 	nana::point	cursor_position();
 	rectangle make_center(unsigned width, unsigned height);           ///< Retrieves a rectangle which is in the center of the screen.
 	rectangle make_center(window, unsigned width, unsigned height);   ///< Retrieves a rectangle which is in the center of the window

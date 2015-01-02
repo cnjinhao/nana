@@ -1,59 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
-	<File name="..\..\source\gui\detail\native_window_interface.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4901" topLine="171" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\gui\widgets\listbox.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="12428" topLine="532" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\gui\detail\window_layout.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5198" topLine="161" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\gui\widgets\menu.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="27717" topLine="1044" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\gui\detail\window_manager.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="30124" topLine="1046" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\gui\dragger.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1316" topLine="59" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\audio\detail\audio_device.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6256" topLine="215" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\paint\image.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3714" topLine="168" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\audio\detail\buffer_preparation.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1924" topLine="62" />
-		</Cursor>
-	</File>
 	<File name="..\..\source\gui\element.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="20890" topLine="542" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\gui\widgets\tabbar.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="18615" topLine="760" />
 		</Cursor>
 	</File>
 	<File name="..\..\source\gui\filebox.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -61,14 +11,29 @@
 			<Cursor1 position="22934" topLine="871" />
 		</Cursor>
 	</File>
+	<File name="..\..\source\audio\detail\buffer_preparation.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1924" topLine="62" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\msgbox.cpp" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="48249" topLine="407" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\widgets\tabbar.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="18615" topLine="760" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\audio\detail\audio_device.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6256" topLine="215" />
+		</Cursor>
+	</File>
 	<File name="..\..\source\gui\widgets\textbox.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="11188" topLine="459" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\paint\text_renderer.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5894" topLine="205" />
 		</Cursor>
 	</File>
 	<File name="..\..\source\charset.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -79,11 +44,6 @@
 	<File name="..\..\source\gui\widgets\toolbar.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="2244" topLine="84" />
-		</Cursor>
-	</File>
-	<File name="..\..\source\gui\msgbox.cpp" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="48249" topLine="407" />
 		</Cursor>
 	</File>
 	<File name="..\..\source\gui\widgets\treebox.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -101,24 +61,19 @@
 			<Cursor1 position="5022" topLine="159" />
 		</Cursor>
 	</File>
-	<File name="..\..\source\threads\pool.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5569" topLine="249" />
-		</Cursor>
-	</File>
 	<File name="..\..\source\filesystem\fs_utility.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="1562" topLine="57" />
 		</Cursor>
 	</File>
-	<File name="..\..\source\gui\tooltip.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4739" topLine="194" />
-		</Cursor>
-	</File>
 	<File name="..\..\source\gui\animation.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="1164" topLine="43" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\tooltip.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4739" topLine="194" />
 		</Cursor>
 	</File>
 	<File name="..\..\source\gui\widgets\button.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -136,6 +91,11 @@
 			<Cursor1 position="6160" topLine="196" />
 		</Cursor>
 	</File>
+	<File name="..\..\source\paint\image.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3714" topLine="168" />
+		</Cursor>
+	</File>
 	<File name="..\..\source\gui\widgets\checkbox.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="6998" topLine="275" />
@@ -149,6 +109,46 @@
 	<File name="..\..\source\gui\widgets\date_chooser.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="457" topLine="3" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\paint\text_renderer.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5894" topLine="205" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\threads\pool.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5569" topLine="249" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\detail\native_window_interface.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4901" topLine="171" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\detail\window_layout.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5198" topLine="161" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\widgets\listbox.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="12428" topLine="532" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\detail\window_manager.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="30124" topLine="1046" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\widgets\menu.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="27717" topLine="1044" />
+		</Cursor>
+	</File>
+	<File name="..\..\source\gui\dragger.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1316" topLine="59" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

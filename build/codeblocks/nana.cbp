@@ -69,6 +69,7 @@
 		<Unit filename="../../source/gui/notifier.cpp" />
 		<Unit filename="../../source/gui/place.cpp" />
 		<Unit filename="../../source/gui/programming_interface.cpp" />
+		<Unit filename="../../source/gui/screen.cpp" />
 		<Unit filename="../../source/gui/state_cursor.cpp" />
 		<Unit filename="../../source/gui/timer.cpp" />
 		<Unit filename="../../source/gui/tooltip.cpp" />

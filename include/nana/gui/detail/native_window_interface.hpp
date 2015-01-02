@@ -1,6 +1,7 @@
 /*
  *	Platform Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -33,7 +34,7 @@ namespace detail
 			unsigned extra_height;	//extra border size, it is useful in Windows, ignore in X11 always 0
 		};
 
-		static nana::size	screen_size();
+		static nana::size	primary_monitor_size();
 		static rectangle screen_area_from_point(const point&);
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
 		static native_window_type create_child_window(native_window_type, const rectangle&);

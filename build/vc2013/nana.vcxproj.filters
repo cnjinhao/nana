@@ -294,5 +294,8 @@
     <ClCompile Include="..\..\source\gui\detail\color_schemes.cpp">
       <Filter>Source Files\nana\gui\detail</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\screen.cpp">
+      <Filter>Source Files\nana\gui</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
