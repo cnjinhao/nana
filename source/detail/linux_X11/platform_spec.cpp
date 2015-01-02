@@ -1,5 +1,6 @@
 /*
  *	Platform Specification Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
@@ -288,7 +289,6 @@ namespace detail
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
 #if defined(NANA_UNICODE)
-		xftdraw = 0;
 		conv_.handle = ::iconv_open("UTF-8", "UTF-32");
 		conv_.code = "UTF-32";
 #endif
@@ -457,7 +457,7 @@ namespace detail
 			}
 		}
 		else
-			langstr_dup = "zh_CN.UTF-8";
+			langstr_dup = "en_US.UTF-8";
 		std::setlocale(LC_CTYPE, langstr_dup.c_str());
 		if(::XSupportsLocale())
 			::XSetLocaleModifiers(langstr_dup.c_str());
@@ -479,6 +479,7 @@ namespace detail
 		atombase_.net_wm_state_maximized_horz = ::XInternAtom(display_, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
 		atombase_.net_wm_state_maximized_vert = ::XInternAtom(display_, "_NET_WM_STATE_MAXIMIZED_VERT", False);
 		atombase_.net_wm_state_modal = ::XInternAtom(display_, "_NET_WM_STATE_MODAL", False);
+		atombase_.net_wm_name = ::XInternAtom(display_, "_NET_WM_NAME", False);
 		atombase_.net_wm_window_type = ::XInternAtom(display_, "_NET_WM_WINDOW_TYPE", False);
 		atombase_.net_wm_window_type_normal = ::XInternAtom(display_, "_NET_WM_WINDOW_TYPE_NORMAL", False);
 		atombase_.net_wm_window_type_utility = ::XInternAtom(display_, "_NET_WM_WINDOW_TYPE_UTILITY", False);

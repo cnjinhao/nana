@@ -799,16 +799,31 @@ namespace nana
 					switch(utf_x_)
 					{
 					case unicode::utf8:
+#if defined(NANA_MINGW)
+						strbuf = detail::utf8_to_utf16(data_, true);
+						detail::put_utf16char(strbuf, 0, true);
+#else
 						strbuf = detail::utf8_to_utf32(data_, true);
 						detail::put_utf32char(strbuf, 0, true);
+#endif
 						break;
 					case unicode::utf16:
+#if defined(NANA_MINGW)
+						strbuf = data_;
+						detail::put_utf16char(strbuf, 0, true);
+#else
 						strbuf = detail::utf16_to_utf32(data_);
 						detail::put_utf32char(strbuf, 0, true);
+#endif
 						break;
 					case unicode::utf32:
+#if defined(NANA_MINGW)
+						strbuf = detail::utf32_to_utf16(data_);
+						detail::put_utf16char(strbuf, 0, true);
+#else
 						strbuf = data_;
 						detail::put_utf32char(strbuf, 0, true);
+#endif
 						break;
 					}
 
@@ -892,13 +907,25 @@ namespace nana
 					switch(utf_x_)
 					{
 					case unicode::utf8:
+#if defined(NANA_MINGW)
+						bytes = detail::utf8_to_utf16(data_, true);
+#else
 						bytes = detail::utf8_to_utf32(data_, true);
+#endif
 						break;
 					case unicode::utf16:
+#if defined(NANA_MINGW)
+						bytes = data_;
+#else
 						bytes = detail::utf16_to_utf32(data_);
+#endif
 						break;
 					case unicode::utf32:
+#if defined(NANA_MINGW)
+						bytes = detail::utf32_to_utf16(data_);
+#else
 						bytes = data_;
+#endif
 						break;
 					}
 					return std::wstring(reinterpret_cast<const wchar_t*>(bytes.c_str()), bytes.size() / sizeof(wchar_t));
@@ -957,11 +984,23 @@ namespace nana
 				switch(encoding)
 				{
 				case unicode::utf8:
+#if defined(NANA_MINGW)
+					return detail::utf16_to_utf8(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
+#else
 					return detail::utf32_to_utf8(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
+#endif
 				case unicode::utf16:
-					return detail::utf32_to_utf16(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
-				case unicode::utf32:
+#if defined(NANA_MINGW)
 					return std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t));
+#else
+					return detail::utf32_to_utf16(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
+#endif
+				case unicode::utf32:
+#if defined(NANA_MINGW)
+					return detail::utf16_to_utf32(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
+#else
+					return std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t));
+#endif
 				}
 				return {};
 			}

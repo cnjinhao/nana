@@ -98,7 +98,7 @@ namespace detail
 			unsigned whitespace_pixels;
 		}string;
 #if defined(NANA_UNICODE)
-		XftDraw * xftdraw;
+		XftDraw * xftdraw{nullptr};
 		XftColor	xft_fgcolor;
 		const std::string charset(const nana::string& str, const std::string& strcode);
 #endif
@@ -138,6 +138,7 @@ namespace detail
 		Atom net_wm_state_maximized_horz;
 		Atom net_wm_state_maximized_vert;
 		Atom net_wm_state_modal;
+		Atom net_wm_name;
 		Atom net_wm_window_type;
 		Atom net_wm_window_type_normal;
 		Atom net_wm_window_type_utility;

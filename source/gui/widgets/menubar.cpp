@@ -575,10 +575,14 @@ namespace nana
 
 
 	//class menubar
-		menubar::menubar(){}
 		menubar::menubar(window wd)
 		{
 			create(wd);
+		}
+
+		menubar::~menubar()
+		{
+			API::umake_event(evt_resized_);
 		}
 
 		void menubar::create(window wd)
@@ -586,6 +590,12 @@ namespace nana
 			widget_object<category::widget_tag, drawerbase::menubar::trigger>
 				::create(wd, rectangle(nana::size(API::window_size(wd).width, 28)));
 			API::attach_menubar(handle());
+			evt_resized_ = API::events(wd).resized([this](const ::nana::arg_resized& arg)
+			{
+				auto sz = this->size();
+				sz.width = arg.width;
+				this->size(sz);
+			});
 		}
 
 		menu& menubar::push_back(const nana::string& text)
