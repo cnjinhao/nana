@@ -200,7 +200,7 @@ namespace nana
 			}
 		}
 
-		general_events& _m_get_general_events() const
+		general_events& _m_get_general_events() const override
 		{
 			return *events_;
 		}
@@ -275,7 +275,7 @@ namespace nana
 			}
 		}
 
-		general_events& _m_get_general_events() const
+		general_events& _m_get_general_events() const override
 		{
 			return *events_;
 		}
@@ -404,7 +404,7 @@ namespace nana
 			API::dev::attach_drawer(*this, trigger_);
 		}
 
-		general_events& _m_get_general_events() const
+		general_events& _m_get_general_events() const override
 		{
 			return *events_;
 		}
@@ -487,7 +487,7 @@ namespace nana
 			}
 		}
 
-		general_events& _m_get_general_events() const
+		general_events& _m_get_general_events() const override
 		{
 			return *events_;
 		}

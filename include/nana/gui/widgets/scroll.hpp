@@ -180,7 +180,7 @@ namespace nana
 					return false;
 				}
 			private:
-				void attached(widget_reference widget, graph_reference graph)
+				void attached(widget_reference widget, graph_reference graph) override
 				{
 					graph_ = &graph;
 					widget_ = static_cast< ::nana::scroll<Vertical>*>(&widget);
@@ -190,12 +190,12 @@ namespace nana
 					timer_.elapse(std::bind(&trigger::_m_tick, this));
 				}
 
-				void detached()
+				void detached() override
 				{
 					graph_ = nullptr;
 				}
 
-				void refresh(graph_reference graph)
+				void refresh(graph_reference graph) override
 				{
 					drawer_.draw(graph, metrics_.what);
 				}
@@ -213,7 +213,7 @@ namespace nana
 					API::lazy_refresh();
 				}
 
-				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg)
+				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
 					bool redraw = false;
 					if(metrics_.pressed && (metrics_.what == buttons::scroll))
@@ -240,7 +240,7 @@ namespace nana
 					}
 				}
 
-				void mouse_down(graph_reference graph, const arg_mouse& arg)
+				void mouse_down(graph_reference graph, const arg_mouse& arg) override
 				{
 					if(arg.left_button)
 					{
@@ -275,7 +275,7 @@ namespace nana
 					}
 				}
 
-				void mouse_up(graph_reference graph, const arg_mouse& arg)
+				void mouse_up(graph_reference graph, const arg_mouse& arg) override
 				{
 					timer_.stop();
 
@@ -287,7 +287,7 @@ namespace nana
 					API::lazy_refresh();
 				}
 
-				void mouse_leave(graph_reference graph, const arg_mouse&)
+				void mouse_leave(graph_reference graph, const arg_mouse&) override
 				{
 					if(metrics_.pressed) return;
 
@@ -296,7 +296,7 @@ namespace nana
 					API::lazy_refresh();
 				}
 
-				void mouse_wheel(graph_reference graph, const arg_wheel& arg)
+				void mouse_wheel(graph_reference graph, const arg_wheel& arg) override
 				{
 					if(make_step(arg.upwards == false, 3))
 					{

@@ -127,7 +127,7 @@ namespace nana
 		class arg_eval;
 
 		template<typename Return>
-		class arg_function
+		class arg_function: public eval_arg
 		{
 		public:
 			arg_function(std::function<Return()> fn)

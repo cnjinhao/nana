@@ -19,7 +19,7 @@ namespace nana
 		{
 			//class trigger
 			trigger::trigger()
-				:   graph_(nullptr), draw_width_(static_cast<unsigned>(-1)), has_value_(true),
+				:   graph_(nullptr), draw_width_(static_cast<unsigned>(-1)),
                     unknown_(false), max_(100), value_(0)
 			{}
 

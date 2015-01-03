@@ -3023,7 +3023,7 @@ namespace nana
 
 				item_proxy & item_proxy::bgcolor(nana::color_t col)
 				{
-					cat_->items.at(pos_.item).flags.selected;
+					cat_->items.at(pos_.item).bgcolor = col;
 					ess_->update();
 					return *this;
 				}
