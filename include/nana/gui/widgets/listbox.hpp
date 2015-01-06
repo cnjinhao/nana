@@ -481,8 +481,8 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		template<typename Key>
 		cat_proxy operator[](const Key & ck)
 		{
-			typedef typename nana::detail::type_escape<Key>::type key_t;
-			std::shared_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t>>(ck), [](nana::detail::key_interface* p)
+			using catkey = typename ::nana::detail::type_escape<Key>::type;
+			std::shared_ptr<nana::detail::key_interface> p(new nana::key<catkey, std::less<catkey>>(ck), [](nana::detail::key_interface* p)
 			{
 				delete p;
 			});
@@ -493,8 +493,8 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		template<typename Key>
 		cat_proxy operator[](Key && ck)
 		{
-			typedef typename nana::detail::type_escape<Key>::type key_t;
-			std::shared_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t>>(std::move(ck)), [](nana::detail::key_interface* p)
+			using catkey = typename ::nana::detail::type_escape<Key>::type;
+			std::shared_ptr<nana::detail::key_interface> p(new nana::key<catkey, std::less<catkey>>(std::move(ck)), [](nana::detail::key_interface* p)
 			{
 				delete p;
 			});
