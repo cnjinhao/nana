@@ -14,6 +14,7 @@
 #define NANA_BASIC_TYPES_HPP
 
 #include <nana/deploy.hpp>
+#include <cctype>
 
 namespace nana
 {

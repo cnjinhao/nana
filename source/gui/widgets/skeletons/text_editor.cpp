@@ -15,6 +15,8 @@
 #include <nana/system/dataexch.hpp>
 #include <nana/unicode_bidi.hpp>
 #include <numeric>
+#include <cwctype>
+#include <set>
 
 namespace nana{	namespace widgets
 {
@@ -1139,10 +1141,167 @@ namespace nana{	namespace widgets
 			std::vector<line_metrics> linemtr_;
 		}; //end class behavior_linewrapped
 
+
+		struct keyword_scheme
+		{
+			::nana::color fgcolor;
+			::nana::color bgcolor;
+		};
+
+		struct keyword_desc
+		{
+			::nana::string text;
+			std::string scheme;
+			bool case_sensitive;
+			bool whole_word_matched;
+
+			keyword_desc(const ::nana::string& txt, const std::string& schm, bool cs, bool wwm)
+				: text(txt), scheme(schm), case_sensitive(cs), whole_word_matched(wwm)
+			{}
+		};
+
+		struct text_editor::keywords
+		{
+			std::map<std::string, std::shared_ptr<keyword_scheme>> schemes;
+			std::deque<keyword_desc> kwbase;
+		};
+
+		struct entity
+		{
+			const ::nana::char_t* begin;
+			const ::nana::char_t* end;
+			const keyword_scheme * scheme;
+		};
+
+		class text_editor::keyword_parser
+		{
+		public:
+			void parse(const ::nana::string& text, const keywords* kwptr)
+			{
+				if (text.empty())
+					return;
+
+				std::vector<entity> entities;
+
+				auto test_whole_word = [&text](std::size_t pos, std::size_t len)
+				{
+					if (pos)
+					{
+						auto chr = text[pos - 1];
+						if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
+							return false;
+					}
+
+					if (pos + len < text.size())
+					{
+						auto chr = text[pos + len];
+
+						auto is = std::iswalpha(chr);
+						is = std::isspace(chr);
+						if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
+							return false;
+					}
+
+					return true;
+				};
+
+				auto test_overlapped = [&entities](const ::nana::char_t* begin, const ::nana::char_t* end)
+				{
+					for (auto & en : entities)
+					{
+						if ((begin <= en.begin && en.begin < end) || (begin <= en.end && en.end < end))
+							return true;
+					}
+					return false;
+				};
+
+				::nana::cistring cistr;
+				for (auto & ds : kwptr->kwbase)
+				{
+					std::size_t pos;
+					const ::nana::char_t* begin;
+					const ::nana::char_t* end;
+					if (ds.case_sensitive)
+					{
+						pos = text.find(ds.text);
+						if (pos == text.npos)
+							continue;
+
+						if (ds.whole_word_matched)
+						{
+							if (!test_whole_word(pos, ds.text.size()))
+								continue;
+						}
+
+						begin = text.data() + pos;
+						end = begin + ds.text.size();
+					}
+					else
+					{
+						if (cistr.empty())
+							cistr.append(text.data(), text.size());
+
+						pos = cistr.find(ds.text.data());
+						if (pos == cistr.npos)
+							continue;
+
+						if (ds.whole_word_matched)
+						{
+							if (!test_whole_word(pos, ds.text.size()))
+								continue;
+						}
+
+						begin = text.data() + pos;
+						end = begin + ds.text.size();
+					}
+
+					auto ki = kwptr->schemes.find(ds.scheme);
+					if (ki != kwptr->schemes.end() && ki->second)
+					{
+						schemes_.emplace(ds.scheme, ki->second);
+						entities.emplace_back();
+						auto & last = entities.back();
+						last.begin = begin;
+						last.end = end;
+						last.scheme = ki->second.get();
+					}
+				}
+
+				if (!entities.empty())
+				{
+					std::sort(entities.begin(), entities.end(), [](const entity& a, const entity& b)
+					{
+						return (a.begin < b.begin);
+					});
+
+					auto previous = entities.begin();
+					auto i = previous + 1;
+					while(i != entities.end())
+					{
+						if (previous->end > i->begin)
+							i = entities.erase(i);
+						else
+							++i;
+					}
+				}
+
+				entities_.swap(entities);
+			}
+
+			const std::vector<entity>& entities() const
+			{
+				return entities_;
+			}
+		private:
+			std::vector<entity> entities_;
+			std::map<std::string, std::shared_ptr<keyword_scheme>> schemes_;
+		};
+
 		//class text_editor
 		text_editor::text_editor(window wd, graph_reference graph, const text_editor_scheme* schm)
 			:	behavior_(new behavior_normal(*this)),
-			window_(wd), graph_(graph), scheme_(schm)
+				window_(wd), graph_(graph),
+				scheme_(schm), keywords_(new keywords)
 		{
 			text_area_.area = graph.size();
 			text_area_.captured = false;
@@ -1160,6 +1319,50 @@ namespace nana{	namespace widgets
 		text_editor::~text_editor()
 		{
 			//For instance of unique_ptr pimpl idiom.
+		}
+
+		void text_editor::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
+		{
+			if (fgcolor.invisible() && fgcolor.invisible())
+			{
+				keywords_->schemes.erase(name);
+				return;
+			}
+
+			auto sp = std::make_shared<keyword_scheme>();
+			sp->fgcolor = fgcolor;
+			sp->bgcolor = bgcolor;
+			keywords_->schemes[name] = sp;
+		}
+
+		void text_editor::erase_highlight(const std::string& name)
+		{
+			keywords_->schemes.erase(name);
+		}
+
+		void text_editor::set_keyword(const ::nana::string& kw, const std::string& name, bool case_sensitive, bool whole_word_matched)
+		{
+			for (auto & ds : keywords_->kwbase)
+			{
+				if (ds.text == kw)
+				{
+					ds.scheme = name;
+					ds.case_sensitive = case_sensitive;
+					ds.whole_word_matched = whole_word_matched;
+					return;
+				}
+			}
+			keywords_->kwbase.emplace_back(kw, name, case_sensitive, whole_word_matched);
+		}
+
+		void text_editor::erase_keyword(const ::nana::string& kw)
+		{
+			auto i = std::find_if(keywords_->kwbase.begin(), keywords_->kwbase.end(), [&kw](keyword_desc& kd){
+				return (kd.text == kw);
+			});
+
+			if (i != keywords_->kwbase.end())
+				keywords_->kwbase.erase(i);
 		}
 
 		bool text_editor::respone_keyboard(nana::char_t key, bool enterable)	//key is a character of ASCII code
@@ -2498,6 +2701,74 @@ namespace nana{	namespace widgets
 			graph_.string({ text_area_.area.x - points_.offset.x, text_area_.area.y }, attributes_.tip_string, {0x78, 0x78, 0x78});
 		}
 
+		void text_editor::_m_draw_parse_string(const keyword_parser& parser, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t* str, std::size_t len) const
+		{
+			graph_.string(pos, str, len);
+			if (parser.entities().empty())
+				return;
+
+			std::unique_ptr<unsigned[]> glyph_px(new unsigned[len]);
+			graph_.glyph_pixels(str, len, glyph_px.get());
+			auto glyphs = glyph_px.get();
+			
+			auto px_h = line_height();
+			auto px_w = std::accumulate(glyphs, glyphs + len, unsigned{});
+
+			::nana::paint::graphics canvas;
+			canvas.make(px_w, px_h);
+			canvas.typeface(graph_.typeface());
+			::nana::point canvas_text_pos;
+
+			auto ent_pos = pos;
+			const auto str_end = str + len;
+			auto & entities = parser.entities();
+
+				for (auto & ent : entities)
+				{
+					const ::nana::char_t* ent_begin = nullptr;
+
+					int ent_off = 0;
+					if (str <= ent.begin && ent.begin < str_end)
+					{
+						ent_begin = ent.begin;
+						ent_off = std::accumulate(glyphs, glyphs + (ent.begin - str), 0);
+					}
+					else if (ent.begin <= str && str < ent.end)
+						ent_begin = str;
+
+					if (ent_begin)
+					{
+						auto ent_end = (ent.end < str_end ? ent.end : str_end);
+						auto ent_pixels = std::accumulate(glyphs + (ent_begin - str), glyphs + (ent_end - str), unsigned{});
+
+						if (ent.scheme->bgcolor.invisible())
+							canvas.set_color(_m_bgcolor());
+						else
+							canvas.set_color(ent.scheme->bgcolor);
+						canvas.rectangle(true);
+
+						if (ent.scheme->fgcolor.invisible())
+							canvas.set_text_color(fgcolor);
+						else
+							canvas.set_text_color(ent.scheme->fgcolor);
+
+						ent_pos.x += ent_off;
+
+						if (rtl)
+						{
+							//draw the whole text if it is a RTL text, because Arbic language is transformable.
+							canvas.string({}, str, len);
+							graph_.bitblt({ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
+						}
+						else
+						{
+							canvas.string({}, ent_begin, ent_end - ent_begin);
+							graph_.bitblt({ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
+						}
+					}
+				}
+		}
+
 		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& linestr, bool if_mask) const
 		{
 			::nana::point text_pos{ text_area_.area.x - points_.offset.x, top };
@@ -2514,6 +2785,10 @@ namespace nana{	namespace widgets
 			unicode_bidi bidi;
 			std::vector<unicode_bidi::entity> reordered;
 			bidi.linestr(linestr.c_str(), linestr.size(), reordered);
+
+			//Parse highlight keywords
+			keyword_parser parser;
+			parser.parse(linestr, keywords_.get());
 
 			auto whitespace_w = graph_.text_extent_size(STR(" "), 1).width;
 
@@ -2540,9 +2815,10 @@ namespace nana{	namespace widgets
 						{
 							graph_.set_text_color(scheme_->selection_text.get_color());
 							graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+							graph_.string(text_pos, ent.begin, len);
 						}
-
-						graph_.string(text_pos, ent.begin, len);
+						else
+							_m_draw_parse_string(parser, _m_is_right_text(ent), text_pos, clr, ent.begin, len);
 					}
 					text_pos.x += static_cast<int>(str_w);
 				}

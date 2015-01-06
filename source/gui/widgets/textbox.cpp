@@ -485,6 +485,47 @@ namespace nana{	namespace drawerbase {
 			return *this;
 		}
 
+		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->set_highlight(name, fgcolor, bgcolor);
+		}
+
+		void textbox::erase_highlight(const std::string& name)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->erase_highlight(name);
+		}
+
+		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				for (auto & kw : kw_list)
+					editor->set_keyword(kw, name, case_sensitive, whole_word_match);
+			}
+		}
+
+		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				for (auto & kw : kw_list_utf8)
+					editor->set_keyword(::nana::charset(kw, ::nana::unicode::utf8), name, case_sensitive, whole_word_match);
+			}
+		}
+
+		void textbox::erase_keyword(const nana::string& kw)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->erase_keyword(kw);
+		}
+
 		//Override _m_caption for caption()
 		nana::string textbox::_m_caption() const
 		{

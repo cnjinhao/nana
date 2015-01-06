@@ -182,6 +182,12 @@ namespace nana
 		double to_double() const;
 		textbox& from(int);
 		textbox& from(double);
+
+		void set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor);
+		void erase_highlight(const std::string& name);
+		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list);
+		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
+		void erase_keyword(const nana::string& kw);
 	protected:
 		//Overrides widget's virtual functions
 		::nana::string _m_caption() const override;

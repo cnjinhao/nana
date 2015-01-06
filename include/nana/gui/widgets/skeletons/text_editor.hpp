@@ -127,6 +127,9 @@ namespace nana{	namespace widgets
 			class undo_backspace;
 			class undo_input_text;
 			class undo_move_text;
+
+			struct keywords;
+			class keyword_parser;
 		public:
 			typedef ::nana::char_t	char_type;
 			typedef textbase<char_type>::size_type size_type;
@@ -141,6 +144,11 @@ namespace nana{	namespace widgets
 
 			text_editor(window, graph_reference, const text_editor_scheme*);
 			~text_editor();
+
+			void set_highlight(const std::string& name, const ::nana::color&, const ::nana::color&);
+			void erase_highlight(const std::string& name);
+			void set_keyword(const ::nana::string& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
+			void erase_keyword(const ::nana::string& kw);
 
 			bool respone_keyboard(nana::char_t, bool enterable);
 
@@ -260,6 +268,7 @@ namespace nana{	namespace widgets
 
 			void _m_draw_tip_string() const;
 
+			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t*, std::size_t len) const;
 			//_m_draw_string
 			//@brief: Draw a line of string
 			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const nana::string&, bool if_mask) const;
@@ -280,6 +289,7 @@ namespace nana{	namespace widgets
 			nana::window window_;
 			graph_reference graph_;
 			const text_editor_scheme* scheme_;
+			std::unique_ptr<keywords> keywords_;
 
 			skeletons::textbase<nana::char_t> textbase_;
 			nana::char_t mask_char_{0};
