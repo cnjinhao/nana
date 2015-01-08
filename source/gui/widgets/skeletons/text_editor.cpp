@@ -2703,6 +2703,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::_m_draw_parse_string(const keyword_parser& parser, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t* str, std::size_t len) const
 		{
+			graph_.set_text_color(fgcolor);
 			graph_.string(pos, str, len);
 			if (parser.entities().empty())
 				return;
@@ -2827,8 +2828,10 @@ namespace nana{	namespace widgets
 			}
 			else
 			{
-				auto rtl_string = [this, line_h_pixels](point strpos, const nana::char_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected){
-					graph_.string(strpos, str, len);
+				auto rtl_string = [this, line_h_pixels, &parser, &clr](point strpos, const nana::char_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected){
+					this->_m_draw_parse_string(parser, true, strpos, clr, str, len);
+
+					//Draw selected part
 					paint::graphics graph(glyph_selected, line_h_pixels);
 					graph.typeface(this->graph_.typeface());
 					graph.rectangle(true, scheme_->selection.get_color());
@@ -2852,19 +2855,18 @@ namespace nana{	namespace widgets
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
 							const auto str_end = pos + len;
 
-							//NOT selected or Wholly seleceted
+							//NOT selected or seleceted all
 							if ((str_end <= a.x || pos >= b.x) || (a.x <= pos && str_end <= b.x))
 							{
-								//Wholly selected
+								//selected all
 								if (a.x <= pos && str_end <= b.x)
 								{
 									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
+									graph_.string(text_pos, ent.begin, len);
 								}
 								else
-									graph_.set_text_color(clr);
-
-								graph_.string(text_pos, ent.begin, len);
+									_m_draw_parse_string(parser, false, text_pos, clr, ent.begin, len);
 							}
 							else if (pos <= a.x && a.x < str_end)
 							{	//Partial selected
@@ -2883,21 +2885,20 @@ namespace nana{	namespace widgets
 									}
 									else
 									{	//LTR
-										graph_.string(text_pos, ent.begin, a.x - pos);
+										_m_draw_parse_string(parser, false, text_pos, clr, ent.begin, a.x - pos);
 
 										auto part_pos = text_pos;
 										part_pos.x += static_cast<int>(head_w);
 
+										//Draw selected part
 										graph_.rectangle({ part_pos, { sel_w, line_h_pixels } }, true);
-
 										graph_.set_text_color(scheme_->selection_text.get_color());
 										graph_.string(part_pos, ent.begin + (a.x - pos), endpos - a.x);
 
 										if (static_cast<size_t>(endpos) < str_end)
 										{
-											graph_.set_text_color(clr);
 											part_pos.x += static_cast<int>(sel_w);
-											graph_.string(part_pos, ent.begin + (endpos - pos), str_end - endpos);
+											_m_draw_parse_string(parser, false, part_pos, clr, ent.begin + (endpos - pos), str_end - endpos);
 										}
 									}
 								}
@@ -2914,12 +2915,14 @@ namespace nana{	namespace widgets
 								}
 								else
 								{	//LTR
+									//Draw selected part
 									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
-
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, endpos - pos);
-									graph_.set_text_color(clr);
-									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + (endpos - pos), str_end - endpos);
+
+									//graph_.set_text_color(clr);	//deprecated
+									//graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + (endpos - pos), str_end - endpos);
+									_m_draw_parse_string(parser, false, text_pos + ::nana::point(static_cast<int>(sel_w), 0), clr, ent.begin + (endpos - pos), str_end - endpos);
 								}
 							}
 						}
@@ -2936,14 +2939,17 @@ namespace nana{	namespace widgets
 						{
 							graph_.set_text_color(clr);
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
-							if ((pos + len <= a.x) || (a.x < pos))	//Not selected or Wholly selected
+							if ((pos + len <= a.x) || (a.x < pos))	//Not selected or selected all
 							{
 								if (a.x < pos)
 								{
+									//Draw selected all
 									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true, { 0x33, 0x99, 0xFF });
 									graph_.set_text_color(scheme_->selection_text.get_color());
+									graph_.string(text_pos, ent.begin, len);
 								}
-								graph_.string(text_pos, ent.begin, len);
+								else
+									_m_draw_parse_string(parser, false, text_pos, clr, ent.begin, len);
 							}
 							else
 							{
@@ -2958,6 +2964,7 @@ namespace nana{	namespace widgets
 
 									::nana::point part_pos{ text_pos.x + static_cast<int>(head_w), text_pos.y };
 
+									//Draw selected part
 									graph_.rectangle({ part_pos, {str_w - head_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(part_pos, ent.begin + a.x - pos, len - (a.x - pos));
@@ -2982,6 +2989,7 @@ namespace nana{	namespace widgets
 							graph_.set_text_color(clr);
 							if (pos + len <= b.x)
 							{
+								//Draw selected part
 								graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
 								graph_.set_text_color(scheme_->selection_text.get_color());
 								graph_.string(text_pos, ent.begin, len);
@@ -2995,15 +3003,16 @@ namespace nana{	namespace widgets
 								}
 								else
 								{
+									//draw selected part
 									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, b.x - pos);
-									graph_.set_text_color(clr);
-									graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + b.x - pos, len - (b.x - pos));
+
+									_m_draw_parse_string(parser, false, text_pos + ::nana::point(static_cast<int>(sel_w), 0), clr, ent.begin + b.x - pos, len - (b.x - pos));
 								}
 							}
 							else
-								graph_.string(text_pos, ent.begin, len);
+								_m_draw_parse_string(parser, false, text_pos, clr, ent.begin, len);
 						}
 						text_pos.x += static_cast<int>(str_w);
 					}
