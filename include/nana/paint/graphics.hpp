@@ -74,7 +74,6 @@ namespace nana
 			typedef ::nana::native_window_type native_window_type;
 
 			graphics();
-			graphics(unsigned width, unsigned height);   ///< size in pixel
 			graphics(const ::nana::size&);                 ///< size in pixel
 			graphics(const graphics&);      ///< the resource is not copyed, the two graphics objects refer to the *SAME* resource
 			graphics& operator=(const graphics&);
@@ -85,9 +84,10 @@ namespace nana
 			drawable_type handle() const;
 			const void* pixmap() const;
 			const void* context() const;
-			void make(unsigned width, unsigned height);       ///< Creates a bitmap resource that size is width by height in pixel
-			void resize(unsigned width, unsigned height);
-			void typeface(const font&);                       ///< Selects a specified font type into the graphics object.
+
+			void make(const ::nana::size&);					///< Creates a bitmap resource that size is width by height in pixel
+			void resize(const ::nana::size&);
+			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;
 			::nana::size	text_extent_size(const char_t*) const;    ///< Computes the width and height of the specified string of text.
 			::nana::size	text_extent_size(const string&) const;    ///< Computes the width and height of the specified string of text.

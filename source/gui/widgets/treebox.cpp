@@ -1391,7 +1391,7 @@ namespace nana
 					comp_attribute_t attr;
 					if(comp_attribute(component::text, attr))
 					{
-						nana::paint::graphics item_graph(item_r_.width, item_r_.height);
+						nana::paint::graphics item_graph({ item_r_.width, item_r_.height });
 						item_graph.typeface(graph_->typeface());
 
 						renderer_->set_color(widget_->bgcolor(), widget_->fgcolor());

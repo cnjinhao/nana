@@ -378,11 +378,9 @@ namespace nana
 				dw->draw(graphics);
 		}
 
-		//If the drawer_trigger didn't declear a lazy refresh, then use the refresh().
-		void drawer::_m_use_refresh()
+		bool drawer::_m_lazy_decleared() const
 		{
-			if (basic_window::update_state::refresh != core_window_->other.upd_state)
-				refresh();
+			return (basic_window::update_state::refresh != core_window_->other.upd_state);
 		}
 	}//end namespace detail
 }//end namespace nana

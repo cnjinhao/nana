@@ -831,7 +831,7 @@ namespace nana
 			if(graph_ptr->empty())
 			{
 				graph_ptr = &substitute;
-				graph_ptr->make(10, 10);
+				graph_ptr->make({ 10, 10 });
 			}
 
 			return impl->renderer.measure(*graph_ptr, limited, impl->text_align, impl->text_align_v);

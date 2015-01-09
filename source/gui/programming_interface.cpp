@@ -172,7 +172,7 @@ namespace API
 			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
 			{
-				iwd->drawer.graphics.make(iwd->dimension.width, iwd->dimension.height);
+				iwd->drawer.graphics.make(iwd->dimension);
 				iwd->drawer.graphics.rectangle(true, iwd->expr_colors->background.get_color());
 				iwd->drawer.attached(wd, dr);
 				iwd->drawer.refresh();	//Always redrawe no matter it is visible or invisible. This can make the graphics data correctly.

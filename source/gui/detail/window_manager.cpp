@@ -546,8 +546,8 @@ namespace detail
 				{
 					wd->dimension.width = r.width;
 					wd->dimension.height = r.height;
-					wd->drawer.graphics.make(r.width, r.height);
-					wd->root_graph->make(r.width, r.height);
+					wd->drawer.graphics.make(wd->dimension);
+					wd->root_graph->make(wd->dimension);
 					native_interface::move_window(wd->root, r);
 
 					arg_resized arg;
@@ -612,7 +612,7 @@ namespace detail
 			if(category::lite_widget_tag::value != wd->other.category)
 			{
 				bool graph_state = wd->drawer.graphics.empty();
-				wd->drawer.graphics.make(sz.width, sz.height);
+				wd->drawer.graphics.make(sz);
 
 				//It shall make a typeface_changed() call when the graphics state is changing.
 				//Because when a widget is created with zero-size, it may get some wrong result in typeface_changed() call
@@ -622,7 +622,7 @@ namespace detail
 
 				if(category::root_tag::value == wd->other.category)
 				{
-					wd->root_graph->make(sz.width, sz.height);
+					wd->root_graph->make(sz);
 					if(false == passive)
 						native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height));
 				}
@@ -637,7 +637,7 @@ namespace detail
 					//update the bground buffer of glass window.
 					if(wd->effect.bground && wd->parent)
 					{
-						wd->other.glass_buffer.make(sz.width, sz.height);
+						wd->other.glass_buffer.make(sz);
 						wndlayout_type::make_bground(wd);
 					}
 				}
@@ -767,7 +767,7 @@ namespace detail
 			if (!impl_->wd_register.available(wd))
 				return false;
 
-			result.make(wd->drawer.graphics.width(), wd->drawer.graphics.height());
+			result.make(wd->drawer.graphics.size());
 			result.bitblt(0, 0, wd->drawer.graphics);
 			wndlayout_type::paste_children_to_graphics(wd, result);
 			return true;

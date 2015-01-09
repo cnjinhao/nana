@@ -166,7 +166,7 @@ namespace nana
 							r.width = endpos - pos.x;
 							r.height = ts.height;
 
-							nana::paint::graphics dum_graph(r.width, r.height);
+							nana::paint::graphics dum_graph({ r.width, r.height });
 
 							dum_graph.bitblt(r, graph, pos);
 							dum_graph.set_text_color(fgcolor);

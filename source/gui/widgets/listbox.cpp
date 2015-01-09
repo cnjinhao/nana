@@ -2317,7 +2317,7 @@ namespace nana
 				{
 					const auto & item = essence_->header.column(essence_->pointer_where.second);
 
-					nana::paint::graphics ext_graph(item.pixels, essence_->header_size);
+					nana::paint::graphics ext_graph({ item.pixels, essence_->header_size });
 					ext_graph.typeface(essence_->graph->typeface());
 
 					int txtop = (essence_->header_size - essence_->text_height) / 2;

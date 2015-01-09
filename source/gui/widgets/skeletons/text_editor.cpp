@@ -1473,7 +1473,7 @@ namespace nana{	namespace widgets
 
 			text_area_.area = r;
 			if(attributes_.enable_counterpart)
-				attributes_.counterpart.make(r.width, r.height);
+				attributes_.counterpart.make({ r.width, r.height });
 
 			behavior_->pre_calc_lines(width_pixels());
 			_m_scrollbar();
@@ -1529,7 +1529,7 @@ namespace nana{	namespace widgets
 		{
 			attributes_.enable_counterpart = enb;
 			if(enb)
-				attributes_.counterpart.make(text_area_.area.width, text_area_.area.height);
+				attributes_.counterpart.make({ text_area_.area.width, text_area_.area.height });
 			else
 				attributes_.counterpart.release();
 		}
@@ -2716,7 +2716,7 @@ namespace nana{	namespace widgets
 			auto px_w = std::accumulate(glyphs, glyphs + len, unsigned{});
 
 			::nana::paint::graphics canvas;
-			canvas.make(px_w, px_h);
+			canvas.make({ px_w, px_h });
 			canvas.typeface(graph_.typeface());
 			::nana::point canvas_text_pos;
 
@@ -2832,7 +2832,7 @@ namespace nana{	namespace widgets
 					this->_m_draw_parse_string(parser, true, strpos, clr, str, len);
 
 					//Draw selected part
-					paint::graphics graph(glyph_selected, line_h_pixels);
+					paint::graphics graph({ glyph_selected, line_h_pixels });
 					graph.typeface(this->graph_.typeface());
 					graph.rectangle(true, scheme_->selection.get_color());
 
@@ -2920,8 +2920,6 @@ namespace nana{	namespace widgets
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, endpos - pos);
 
-									//graph_.set_text_color(clr);	//deprecated
-									//graph_.string(text_pos + ::nana::point(static_cast<int>(sel_w), 0), ent.begin + (endpos - pos), str_end - endpos);
 									_m_draw_parse_string(parser, false, text_pos + ::nana::point(static_cast<int>(sel_w), 0), clr, ent.begin + (endpos - pos), str_end - endpos);
 								}
 							}

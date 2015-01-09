@@ -172,7 +172,7 @@ namespace nana
 						item.image.paste(size, graph, pos);
 						if(item.enable == false)
 						{
-							nana::paint::graphics gh(size.width, size.height);
+							nana::paint::graphics gh(size);
 							gh.bitblt(size, graph, pos);
 							gh.rgb_to_wb();
 							gh.paste(graph, pos.x, pos.y);

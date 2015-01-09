@@ -123,7 +123,7 @@ namespace nana
 			void _m_bground_pre();
 			void _m_bground_end();
 			void _m_draw_dynamic_drawing_object();
-			void _m_use_refresh();
+			bool _m_lazy_decleared() const;
 
 			template<typename Arg, typename Mfptr>
 			void _m_emit(event_code evt_code, const Arg& arg, Mfptr mfptr)
@@ -144,9 +144,11 @@ namespace nana
 						else
 							(realizer_->*mfptr)(graphics, arg);
 
-						_m_use_refresh();
-						_m_draw_dynamic_drawing_object();
-						_m_bground_end();
+						if (_m_lazy_decleared())
+						{
+							_m_draw_dynamic_drawing_object();
+							_m_bground_end();
+						}
 					}
 				}
 			}

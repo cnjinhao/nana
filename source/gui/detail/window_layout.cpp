@@ -183,7 +183,7 @@ namespace nana
 
 				//Enable the effect.
 				data_sect.effects_bground_windows.push_back(wd);
-				wd->other.glass_buffer.make(wd->dimension.width, wd->dimension.height);
+				wd->other.glass_buffer.make(wd->dimension);
 				make_bground(wd);
 				return true;
 			}

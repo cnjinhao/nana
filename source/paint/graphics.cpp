@@ -198,16 +198,10 @@ namespace paint
 			:handle_(nullptr), changed_(false)
 		{}
 
-		graphics::graphics(unsigned width, unsigned height)
-			:handle_(nullptr), changed_(true)
-		{
-			make(width, height);
-		}
-
 		graphics::graphics(const nana::size& sz)
 			:handle_(nullptr), changed_(true)
 		{
-			make(sz.width, sz.height);
+			make(sz);
 		}
 
 		graphics::graphics(const graphics& rhs)
@@ -255,9 +249,9 @@ namespace paint
 			return (handle_? handle_->context : nullptr);
 		}
 
-		void graphics::make(unsigned width, unsigned height)
+		void graphics::make(const ::nana::size& sz)
 		{
-			if(handle_ == nullptr || size_ != nana::size(width, height))
+			if(handle_ == nullptr || size_ != sz)
 			{
 				//The object will be delete while dwptr_ is performing a release.
 				drawable_type dw = new nana::detail::drawable_impl_type;
@@ -277,12 +271,12 @@ namespace paint
 
 				BITMAPINFO bmi;
 				bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-				bmi.bmiHeader.biWidth = width;
-				bmi.bmiHeader.biHeight = -static_cast<int>(height);
+				bmi.bmiHeader.biWidth = sz.width;
+				bmi.bmiHeader.biHeight = -static_cast<int>(sz.height);
 				bmi.bmiHeader.biPlanes = 1;
 				bmi.bmiHeader.biBitCount = 32;         // four 8-bit components
 				bmi.bmiHeader.biCompression = BI_RGB;
-				bmi.bmiHeader.biSizeImage = (width * height) << 2;
+				bmi.bmiHeader.biSizeImage = (sz.width * sz.height) << 2;
 
 				HBITMAP bmp = ::CreateDIBSection(cdc, &bmi, DIB_RGB_COLORS, reinterpret_cast<void**>(&(dw->pixbuf_ptr)), 0, 0);
 
@@ -310,7 +304,7 @@ namespace paint
 				Display* disp = spec.open_display();
 				int screen = DefaultScreen(disp);
 				Window root = ::XRootWindow(disp, screen);
-				dw->pixmap = ::XCreatePixmap(disp, root, (width ? width : 1), (height ? height : 1), DefaultDepth(disp, screen));
+				dw->pixmap = ::XCreatePixmap(disp, root, (sz.width ? sz.width : 1), (sz.height ? sz.height : 1), DefaultDepth(disp, screen));
 				dw->context = ::XCreateGC(disp, dw->pixmap, 0, 0);
 	#if defined(NANA_UNICODE)
 				dw->xftdraw = ::XftDrawCreate(disp, dw->pixmap, spec.screen_visual(), spec.colormap());
@@ -318,18 +312,16 @@ namespace paint
 #endif
 				if(dw)
 				{
-					//dw->fgcolor(0);
 					dw->set_color(colors::black);
 					dw->set_text_color(colors::black);
 #if defined(NANA_WINDOWS)
-					dw->bytes_per_line = width * sizeof(pixel_argb_t);
+					dw->bytes_per_line = sz.width * sizeof(pixel_argb_t);
 #else
 					dw->update_text_color();
 #endif
-					dwptr_ = std::shared_ptr<nana::detail::drawable_impl_type>(dw, detail::drawable_deleter());
+					dwptr_.reset(dw, detail::drawable_deleter{});
 					handle_ = dw;
-					size_.width = width;
-					size_.height = height;
+					size_ = sz;
 
 					handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, STR("\t"), 1).width;
 					handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, STR(" "), 1).width;
@@ -339,10 +331,10 @@ namespace paint
 			if(changed_ == false) changed_ = true;
 		}
 
-		void graphics::resize(unsigned width, unsigned height)
+		void graphics::resize(const ::nana::size& sz)
 		{
 			graphics duplicate(*this);
-			make(width, height);
+			make(sz);
 			bitblt(0, 0, duplicate);
 		}
 

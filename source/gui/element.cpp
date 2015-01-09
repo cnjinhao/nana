@@ -547,7 +547,7 @@ namespace nana
 			draw_method * clone() const override
 			{
 				auto p = new draw_graph;
-				p->graph.make(graph.width(), graph.height());
+				p->graph.make(graph.size());
 				graph.paste(p->graph, 0, 0);
 				return p;
 			}
