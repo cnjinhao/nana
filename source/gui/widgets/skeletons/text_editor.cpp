@@ -218,7 +218,7 @@ namespace nana{	namespace widgets
 					editor_._m_move_select(false);
 					return;
 				}
-				
+
 				editor_.select_.a = dest_a_;
 				editor_.select_.b = dest_b_;
 				editor_.points_.caret = sel_a_;
@@ -257,7 +257,7 @@ namespace nana{	namespace widgets
 			virtual bool adjust_caret_into_screen() = 0;
 		};
 
-		
+
 		class text_editor::behavior_normal
 			: public editor_behavior_interface
 		{
@@ -638,7 +638,7 @@ namespace nana{	namespace widgets
 				}
 
 				auto & mtr = linemtr_[line];
-				
+
 				mtr.take_lines = line_sections.size();
 				mtr.line_sections.swap(line_sections);
 
@@ -946,7 +946,7 @@ namespace nana{	namespace widgets
 			void _m_set_offset_by_secondary(std::size_t primary, std::size_t secondary)
 			{
 				std::size_t lines = 0;
-				
+
 				for_each(linemtr_.begin(), linemtr_.begin() + primary, [&lines](const line_metrics& mtr) mutable
 				{
 					lines += mtr.take_lines;
@@ -1112,7 +1112,7 @@ namespace nana{	namespace widgets
 				}
 				else
 					screen_line = static_cast<std::size_t>((y - text_area.area.y) / static_cast<int>(editor_.line_height()) + points.offset.y);
-				
+
 				std::size_t primary = 0;
 				for (auto & mtr : linemtr_)
 				{
@@ -1188,24 +1188,11 @@ namespace nana{	namespace widgets
 					if (pos + len < text.size())
 					{
 						auto chr = text[pos + len];
-
-						auto is = std::iswalpha(chr);
-						is = std::isspace(chr);
 						if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
 							return false;
 					}
 
 					return true;
-				};
-
-				auto test_overlapped = [&entities](const ::nana::char_t* begin, const ::nana::char_t* end)
-				{
-					for (auto & en : entities)
-					{
-						if ((begin <= en.begin && en.begin < end) || (begin <= en.end && en.end < end))
-							return true;
-					}
-					return false;
 				};
 
 				::nana::cistring cistr;
@@ -1369,7 +1356,7 @@ namespace nana{	namespace widgets
 				select(true);
 				return true;
 			}
-			
+
 			if (attributes_.editable && enterable)
 			{
 				switch (key)
@@ -1451,7 +1438,7 @@ namespace nana{	namespace widgets
 		{
 			if (!textbase_.load(fs))
 				return false;
-			
+
 			_m_reset();
 			behavior_->pre_calc_lines(width_pixels());
 			render(API::is_focus_window(window_));
@@ -1498,7 +1485,7 @@ namespace nana{	namespace widgets
 
 			if (attributes_.multi_lines == ml)
 				return false;
-			
+
 			attributes_.multi_lines = ml;
 
 			if (!ml)
@@ -1531,7 +1518,7 @@ namespace nana{	namespace widgets
 		{
 			undo_.enable(enb);
 		}
-		
+
 		bool text_editor::undo_enabled() const
 		{
 			return undo_.enabled();
@@ -1584,7 +1571,7 @@ namespace nana{	namespace widgets
 		{
 			if (!hit_text_area(scrpos))
 				return false;
-			
+
 			if(left_button)
 			{
 				API::capture_window(window_, true);
@@ -1613,7 +1600,7 @@ namespace nana{	namespace widgets
 			cursor cur = cursor::iterm;
 			if ((!hit_text_area(scrpos)) && (!text_area_.captured))
 				cur = cursor::arrow;
-			
+
 			API::window_cursor(window_, cur);
 
 			if(left_button)
@@ -1720,7 +1707,7 @@ namespace nana{	namespace widgets
 					else if (API::caret_size(window_).height != line_pixels)
 						reset_caret_height();
 				}
-				
+
 				API::caret_visible(window_, visible);
 
 				if(visible)
@@ -1883,7 +1870,7 @@ namespace nana{	namespace widgets
 		void text_editor::put(nana::string text)
 		{
 			auto undo_ptr = std::unique_ptr<undo_input_text>{ new undo_input_text(*this, text) };
-			
+
 			undo_ptr->set_selected_text();
 
 			//Do not forget to assign the _m_erase_select() to caret
@@ -1910,11 +1897,11 @@ namespace nana{	namespace widgets
 		{
 			auto undo_ptr = std::unique_ptr < undo_input_text > {new undo_input_text(*this, nana::string(1, c))};
 			bool refresh = (select_.a != select_.b);
-			
+
 			undo_ptr->set_selected_text();
 			if(refresh)
 				points_.caret = _m_erase_select();
-			
+
 			undo_ptr->set_caret_pos();
 			undo_.push(std::move(undo_ptr));
 
@@ -1950,7 +1937,7 @@ namespace nana{	namespace widgets
 		{
 			nana::string text;
 			nana::system::dataexch().get(text);
-			
+
 			if (!text.empty())
 				put(std::move(text));
 		}
@@ -2482,7 +2469,7 @@ namespace nana{	namespace widgets
 			nana::upoint a, b;
 			if (!_m_get_sort_select_points(a, b))
 				return false;
-			
+
 			if(a.y != b.y)
 			{
 				text = textbase_.getline(a.y).substr(a.x);
@@ -2699,7 +2686,7 @@ namespace nana{	namespace widgets
 			std::unique_ptr<unsigned[]> glyph_px(new unsigned[len]);
 			graph_.glyph_pixels(str, len, glyph_px.get());
 			auto glyphs = glyph_px.get();
-			
+
 			auto px_h = line_height();
 			auto px_w = std::accumulate(glyphs, glyphs + len, unsigned{});
 

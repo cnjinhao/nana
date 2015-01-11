@@ -119,8 +119,8 @@ namespace nana
 					if (::EnumDisplaySettings(disp.DeviceName, ENUM_CURRENT_SETTINGS, &mode))
 					{
 						if (mode.dmPosition.x == mi.rcWork.left && mode.dmPosition.y == mi.rcWork.top &&
-							(mode.dmPelsWidth == mi.rcWork.right - mi.rcWork.left) &&
-							(mode.dmPelsHeight == mi.rcWork.bottom - mi.rcWork.top))
+							(static_cast<int>(mode.dmPelsWidth) == mi.rcWork.right - mi.rcWork.left) &&
+							(static_cast<int>(mode.dmPelsHeight) == mi.rcWork.bottom - mi.rcWork.top))
 						{
 							return std::make_shared<real_display>(static_cast<std::size_t>(index - 1), rectangle{ mode.dmPosition.x, mode.dmPosition.y, static_cast<unsigned>(mode.dmPelsWidth), static_cast<unsigned>(mode.dmPelsHeight) });
 						}

@@ -1284,9 +1284,10 @@ namespace nana
 				typedef tree_cont_type::node_type node_type;
 
 				item_renderer(implement * impl, const nana::point& pos)
-					:	impl_(impl), pos_(pos),
+					:	impl_(impl),
 						bgcolor_(impl->data.widget_ptr->bgcolor()),
-						fgcolor_(impl->data.widget_ptr->fgcolor())
+						fgcolor_(impl->data.widget_ptr->fgcolor()),
+						pos_(pos)
 				{
 				}
 
