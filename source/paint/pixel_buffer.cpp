@@ -102,7 +102,7 @@ namespace nana{	namespace paint
 				delete [] raw_pixel_buffer;
 				throw std::runtime_error("Nana.pixel_buffer: XCreateImage failed");
 			}
-			
+
 			if(static_cast<int>(bytes_per_line) != x11.image->bytes_per_line)
 			{
 				x11.image->data = nullptr;
@@ -127,7 +127,7 @@ namespace nana{	namespace paint
 		{
 #if defined(NANA_X11)
 			nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
-			
+
 			//Ensure that the pixmap is updated before we copy its content.
 			::XFlush(spec.open_display());
 			x11.image = ::XGetImage(spec.open_display(), drawable->pixmap, valid_r.x, valid_r.y, valid_r.width, valid_r.height, AllPlanes, ZPixmap);
@@ -168,7 +168,7 @@ namespace nana{	namespace paint
 
 			if(x11.image->data != reinterpret_cast<char*>(raw_pixel_buffer))
 				delete [] raw_pixel_buffer;
-			
+
 			XDestroyImage(x11.image);
 #else
 			if(nullptr == drawable)	//not attached
@@ -228,18 +228,11 @@ namespace nana{	namespace paint
 
 				auto d = rawptr;
 				const unsigned char* s;
-				int src_bytes_per_line;
 
 				if (is_negative)
-				{
 					s = rawbits;
-					src_bytes_per_line = -static_cast<int>(bytes_per_line);
-				}
 				else
-				{
 					s = rawbits + bytes_per_line * (height - 1);
-					src_bytes_per_line = static_cast<int>(bytes_per_line);
-				}
 
 				for(std::size_t i = 0; i < height; ++i)
 				{
@@ -311,14 +304,14 @@ namespace nana{	namespace paint
 		}
 
 		void put(Drawable dw, GC gc, int src_x, int src_y, int x, int y, unsigned width, unsigned height)
-		{		
+		{
 			auto & spec = nana::detail::platform_spec::instance();
 			Display * disp = spec.open_display();
 			const int depth = spec.screen_depth();
 
 			XImage* img = ::XCreateImage(disp, spec.screen_visual(), depth, ZPixmap, 0, 0, pixel_size.width, pixel_size.height, (16 == depth ? 16 : 32), 0);
 			if(sizeof(pixel_color_t) * 8 == depth || 24 == depth)
-			{	
+			{
 				img->data = reinterpret_cast<char*>(raw_pixel_buffer);
 				::XPutImage(disp, dw, gc,
 							img, src_x, src_y, x, y, width, height);
@@ -330,7 +323,7 @@ namespace nana{	namespace paint
 				unsigned short * const fast_table = table_holder.get();
 				for(int i = 0; i < 256; ++i)
 					fast_table[i] = i * 31 / 255;
-				
+
 				std::size_t length = width * height;
 
 				std::unique_ptr<unsigned short[]> px_holder(new unsigned short[length]);
@@ -347,7 +340,7 @@ namespace nana{	namespace paint
 				{
 					unsigned sp_line_len = pixel_size.width;
 					auto sp = raw_pixel_buffer + (src_x + sp_line_len * src_y);
-					
+
 					unsigned top = 0;
 					while(true)
 					{
@@ -363,7 +356,7 @@ namespace nana{	namespace paint
 
 				img->data = reinterpret_cast<char*>(px_holder.get());
 				::XPutImage(disp, dw, gc,
-					img, src_x, src_y, x, y, width, height);				
+					img, src_x, src_y, x, y, width, height);
 			}
 			img->data = nullptr;	//Set null pointer to avoid XDestroyImage destroyes the buffer.
 			XDestroyImage(img);
@@ -529,7 +522,7 @@ namespace nana{	namespace paint
 				}
 				img_data += image->bytes_per_line;
 				pixbuf += want_r.width;
-			}			
+			}
 		}
 		else
 		{

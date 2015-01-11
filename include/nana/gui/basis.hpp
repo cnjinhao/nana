@@ -63,10 +63,9 @@ namespace nana
 		struct frame_tag: widget_tag{ static const flags value = flags::frame; };
 	}// end namespace category
 
-	typedef detail::native_window_handle_impl * native_window_type;
-
-	typedef detail::window_handle_impl*	window; ///< \see [What is window class ](https://sourceforge.net/p/nanapro/discussion/general/thread/bd0fabfb/) 
-	typedef detail::event_handle_impl*	event_handle;
+	using native_window_type = detail::native_window_handle_impl*;
+	using window = detail::window_handle_impl*; ///< \see [What is window class ](https://sourceforge.net/p/nanapro/discussion/general/thread/bd0fabfb/) 
+	using event_handle = detail::event_handle_impl*;
 
 
 	struct keyboard

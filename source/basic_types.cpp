@@ -2,8 +2,8 @@
  *	Basic Types definition
  *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/basic_types.cpp
@@ -44,12 +44,12 @@ namespace nana
 	{}
 
 	color::color(unsigned red, unsigned green, unsigned blue)
-		: a_(1.0), r_(red), g_(green), b_(blue)
+		: r_(red), g_(green), b_(blue), a_(1.0)
 	{
 	}
-	
+
 	color::color(unsigned red, unsigned green, unsigned blue, double alpha)
-		: a_(alpha), r_(red), g_(green), b_(blue)
+		: r_(red), g_(green), b_(blue), a_(alpha)
 	{
 		if (alpha < 0.0)
 			a_ = 0.0;
@@ -168,7 +168,7 @@ namespace nana
 	{
 		return argb();
 	}
-	
+
 	pixel_argb_t color::argb() const
 	{
 		pixel_argb_t argb;

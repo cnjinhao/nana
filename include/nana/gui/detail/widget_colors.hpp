@@ -7,7 +7,7 @@
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/color_schemes.hpp
+*	@file: nana/gui/widget_colors.hpp
 *	@description:
 */
 #ifndef NANA_DETAIL_WIDGET_COLORS_HPP
