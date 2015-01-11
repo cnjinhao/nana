@@ -250,7 +250,6 @@ namespace nana{	namespace widgets
 
 			bool _m_cancel_select(int align);
 			unsigned _m_tabs_pixels(size_type tabs) const;
-			nana::size _m_text_extent_size(const char_type*) const;
 			nana::size _m_text_extent_size(const char_type*, size_type n) const;
 
 			//_m_move_offset_x_while_over_border

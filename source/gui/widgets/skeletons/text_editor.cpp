@@ -422,7 +422,7 @@ namespace nana{	namespace widgets
 
 				editor_._m_get_scrollbar_size();
 
-				const auto delta_pixels = editor_._m_text_extent_size(STR("    ")).width;
+				const auto delta_pixels = editor_._m_text_extent_size(STR("    "), 4).width;
 				auto x = points.caret.x;
 				const string_type& lnstr = textbase.getline(points.caret.y);
 
@@ -432,7 +432,7 @@ namespace nana{	namespace widgets
 
 				unsigned area_w = editor_._m_text_area().width;
 
-				bool adjusted = true;
+				bool adjusted_cond = true;
 				if (static_cast<int>(text_w) < points.offset.x)
 				{
 					points.offset.x = (text_w > delta_pixels ? text_w - delta_pixels : 0);
@@ -440,13 +440,13 @@ namespace nana{	namespace widgets
 				else if (area_w && (text_w >= points.offset.x + area_w))
 					points.offset.x = text_w - area_w + 2;
 				else
-					adjusted = false;
+					adjusted_cond = false;
 
+				bool adjusted_cond2 = true;
 				int value = points.offset.y;
 				if (scrlines && (points.caret.y >= points.offset.y + scrlines))
 				{
 					value = static_cast<int>(points.caret.y - scrlines) + 1;
-					adjusted = true;
 				}
 				else if (static_cast<int>(points.caret.y) < points.offset.y)
 				{
@@ -454,39 +454,32 @@ namespace nana{	namespace widgets
 						value = 0;
 					else
 						value = static_cast<int>(points.offset.y - scrlines);
-					adjusted = true;
 				}
 				else if (points.offset.y && (textbase.lines() <= scrlines))
-				{
 					value = 0;
-					adjusted = true;
-				}
+				else
+					adjusted_cond2 = false;
 
 				editor_._m_offset_y(value);
 				editor_._m_scrollbar();
-				return adjusted;
+				return (adjusted_cond || adjusted_cond2);
 			}
 		private:
 			std::size_t	_m_textline_from_screen(int y) const
 			{
-				const auto & textbase = editor_.textbase_;
-				const auto & text_area = editor_.text_area_;
-				auto & points = editor_.points_;
+				const std::size_t textlines = editor_.textbase_.lines();
+				if (0 == textlines)
+					return 0;
 
-				if (textbase.lines())
-				{
-					if (y < static_cast<int>(text_area.area.y))
-						y = points.offset.y ? points.offset.y - 1 : 0;
-					else
-						y = (y - static_cast<int>(text_area.area.y)) / static_cast<int>(editor_.line_height()) + points.offset.y;
+				const int offset_top = editor_.points_.offset.y;
+				const int text_area_top = editor_.text_area_.area.y;
 
-					if (textbase.lines() <= static_cast<unsigned>(y))
-						return textbase.lines() - 1;
-					else
-						return static_cast<std::size_t>(y);
-				}
+				if (y < text_area_top)
+					y = offset_top ? offset_top - 1 : 0;
+				else
+					y = (y - text_area_top) / static_cast<int>(editor_.line_height()) + offset_top;
 
-				return 0;
+				return (textlines <= static_cast<unsigned>(y) ? textlines - 1 : static_cast<std::size_t>(y));
 			}
 		private:
 			text_editor& editor_;
@@ -602,7 +595,7 @@ namespace nana{	namespace widgets
 					{
 						if (text_px != str_w)
 						{
-							line_sections.push_back(text_section(secondary_begin, ts.begin));
+							line_sections.emplace_back(secondary_begin, ts.begin);
 							line_sections.back().pixels = text_px - str_w;
 							text_px = str_w;
 							secondary_begin = ts.begin;
@@ -2567,11 +2560,6 @@ namespace nana{	namespace widgets
 			nana::char_t ws[2] = {};
 			ws[0] = mask_char_ ? mask_char_ : ' ';
 			return static_cast<unsigned>(tabs * graph_.text_extent_size(ws).width * text_area_.tab_space);
-		}
-
-		nana::size text_editor::_m_text_extent_size(const char_type* str) const
-		{
-			return _m_text_extent_size(str, nana::strlen(str));
 		}
 
 		nana::size text_editor::_m_text_extent_size(const char_type* str, size_type n) const
