@@ -74,7 +74,7 @@ namespace detail
 	struct basic_window
 		: public events_holder
 	{
-		typedef std::vector<basic_window*> container;
+		using container = std::vector<basic_window*>;
 
 		struct root_context
 		{
@@ -119,6 +119,8 @@ namespace detail
 		bool is_ancestor_of(const basic_window* wd) const;
 		bool visible_parents() const;
 		bool belong_to_lazy() const;
+
+		bool is_draw_through() const;	///< Determines whether it is a draw-through window.
 	public:
 		//Override event_holder
 		bool set_events(const std::shared_ptr<general_events>&) override;
@@ -206,6 +208,8 @@ namespace detail
 #endif
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
+
+				std::function<void()> draw_through;	///< A draw through renderer for root widgets.
 			};
 
 			const category::flags category;

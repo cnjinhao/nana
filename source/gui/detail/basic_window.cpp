@@ -292,6 +292,13 @@ namespace nana
 				return false;
 			}
 
+			bool basic_window::is_draw_through() const
+			{
+				if (::nana::category::flags::root == this->other.category)
+					return static_cast<bool>(other.attribute.root->draw_through);
+				return false;
+			}
+
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
 				pos_owner = pos_root = r;

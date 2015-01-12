@@ -67,6 +67,7 @@ namespace detail
 		bool whether_keyboard_shortkey() const;
 
 		element_store& get_element_store() const;
+		void map_through_widgets(core_window_t*, native_drawable_type);
 	public:
 		void event_expose(core_window_t *, bool exposed);
 		void event_move(core_window_t*, int x, int y);

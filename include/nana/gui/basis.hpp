@@ -25,6 +25,7 @@ namespace nana
 		struct native_window_handle_impl{};
 		struct window_handle_impl{};
 		struct event_handle_impl{};
+		struct native_drawable_impl{};
 	}
 
 	enum class checkstate
@@ -66,6 +67,7 @@ namespace nana
 	using native_window_type = detail::native_window_handle_impl*;
 	using window = detail::window_handle_impl*; ///< \see [What is window class ](https://sourceforge.net/p/nanapro/discussion/general/thread/bd0fabfb/) 
 	using event_handle = detail::event_handle_impl*;
+	using native_drawable_type = detail::native_drawable_impl*;
 
 
 	struct keyboard
