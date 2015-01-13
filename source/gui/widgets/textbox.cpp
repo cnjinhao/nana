@@ -61,9 +61,6 @@ namespace nana{	namespace drawerbase {
 
 			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
 			editor_->textbase().set_event_agent(evt_agent_.get());
-			editor_->border_renderer([this](graph_reference graph, const ::nana::color& clr){
-				this->_m_draw_border(graph, clr);
-			});
 
 			_m_text_area(graph.width(), graph.height());
 
@@ -176,16 +173,6 @@ namespace nana{	namespace drawerbase {
 					r.height = (height > 4 ? height - 4 : 0);
 				}
 				editor_->text_area(r);
-			}
-		}
-
-		void drawer::_m_draw_border(graph_reference graph, const ::nana::color& bgcolor)
-		{
-			if (!API::widget_borderless(widget_->handle()))
-			{
-				nana::rectangle r(graph.size());
-				graph.rectangle(r, false, (status_.has_focus ? ::nana::color(0x05, 0x95, 0xE2) : ::nana::color(0x99, 0x9A, 0x9E)));
-				graph.rectangle(r.pare_off(1), false, bgcolor);
 			}
 		}
 	//end class drawer

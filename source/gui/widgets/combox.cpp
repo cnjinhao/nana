@@ -87,9 +87,6 @@ namespace nana
 
 					auto scheme = dynamic_cast< ::nana::widgets::skeletons::text_editor_scheme*>(API::dev::get_scheme(wd));
 					editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph, scheme);
-					editor_->border_renderer([this](graph_reference graph, const ::nana::color& bgcolor){
-						draw_border(graph, bgcolor);
-					});
 					editor_->multi_lines(false);
 					editable(false);
 					graph_ = &graph;
@@ -284,13 +281,6 @@ namespace nana
 					}
 					_m_draw_push_button(enb);
 					_m_draw_image();
-				}
-
-				void draw_border(graph_reference graph, const ::nana::color& bgcolor)
-				{
-					graph.rectangle(false, (state_.focused ? ::nana::color(0x05, 0x95, 0xE2) : ::nana::color(0x99, 0x9A, 0x9E)));
-					nana::rectangle r(graph.size());
-					graph.rectangle(r.pare_off(1), false, bgcolor);
 				}
 
 				std::size_t the_number_of_options() const

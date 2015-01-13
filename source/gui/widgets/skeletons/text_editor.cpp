@@ -12,6 +12,7 @@
 */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
+#include <nana/gui/element.hpp>
 #include <nana/system/dataexch.hpp>
 #include <nana/unicode_bidi.hpp>
 #include <numeric>
@@ -1294,6 +1295,15 @@ namespace nana{	namespace widgets
 			API::create_caret(wd, 1, line_height());
 			API::bgcolor(wd, colors::white);
 			API::fgcolor(wd, colors::black);
+
+			text_area_.border_renderer = [this](graph_reference graph, const ::nana::color& bgcolor)
+			{
+				if (!API::widget_borderless(this->window_))
+				{
+					::nana::facade<element::border> facade;
+					facade.draw(graph, bgcolor, API::fgcolor(this->window_), API::window_size(this->window_), API::element_state(this->window_));
+				}
+			};
 		}
 
 		text_editor::~text_editor()
@@ -1591,6 +1601,7 @@ namespace nana{	namespace widgets
 				else
 					select_.mode_selection = selection::mode_no_selected;
 			}
+
 			text_area_.border_renderer(graph_, _m_bgcolor());
 			return true;
 		}
@@ -1848,6 +1859,9 @@ namespace nana{	namespace widgets
 			if (!API::window_enabled(window_))
 				fgcolor.blend(bgcolor, 0.5);
 
+			if (API::widget_borderless(window_))
+				graph_.rectangle(false, bgcolor);
+
 			//Draw background
 			if(attributes_.enable_background)
 				graph_.rectangle(text_area_.area, true, bgcolor);
@@ -1864,6 +1878,7 @@ namespace nana{	namespace widgets
 				_m_draw_tip_string();
 
 			draw_scroll_rectangle();
+
 			text_area_.border_renderer(graph_, bgcolor);
 		}
 	//public:

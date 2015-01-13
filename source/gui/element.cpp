@@ -234,7 +234,7 @@ namespace nana
 						{
 							if(colormap[u][v] & 0xFF000000)
 								continue;
-							graph.set_pixel(x + v, y, static_cast<colors>(colormap[u][v]));
+							graph.set_pixel(x + v, y, static_cast<color_rgb>(colormap[u][v]));
 						}
 						++y;
 					}
@@ -257,7 +257,18 @@ namespace nana
 				return true;
 			}
 		};
-	}
+
+		class border_depressed
+			: public border_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, unsigned weight)
+			{
+				graph.rectangle(r, false, static_cast<color_rgb>((element_state::focus_hovered == estate || element_state::focus_normal == estate) ? 0x0595E2 : 0x999A9E));
+				graph.rectangle(::nana::rectangle{r}.pare_off(1), false, bgcolor);
+				return true;
+			}
+		};
+	}//end namespace element
 
 	template<typename ElementInterface>
 	class element_object
@@ -267,11 +278,6 @@ namespace nana
 		typedef pat::cloneable<element::provider::factory_interface<element_t>> factory_interface;
 
 	public:
-		element_object()
-			:	element_ptr_(nullptr)
-		{
-		}
-
 		~element_object()
 		{
 			if(factory_)
@@ -306,7 +312,7 @@ namespace nana
 		}
 	private:
 		factory_interface factory_;	//Keep the factory for destroying the element
-		element_t * element_ptr_;
+		element_t * element_ptr_{nullptr};
 		std::vector<std::pair<element_t*, factory_interface>> spare_;
 	};
 
@@ -326,6 +332,7 @@ namespace nana
 		element_manager()
 		{
 			crook_.employee = nullptr;
+			border_.employee = nullptr;
 		}
 
 	public:
@@ -339,6 +346,8 @@ namespace nana
 
 				element::add_crook<element::crook>("");
 				element::add_crook<element::menu_crook>("menu_crook");
+
+				element::add_border<element::border_depressed>("");
 			}
 			return obj;
 		}
@@ -352,8 +361,18 @@ namespace nana
 		{
 			return _m_get(name, crook_).keeper();
 		}
+
+		void border(const std::string& name, const pat::cloneable<element::provider::factory_interface<element::border_interface>>& factory)
+		{
+			_m_add(name, border_, factory);
+		}
+
+		element::border_interface * const * border(const std::string& name) const
+		{
+			return _m_get(name, border_).keeper();
+		}
 	private:
-		typedef std::lock_guard<std::recursive_mutex> lock_guard;
+		using lock_guard = std::lock_guard<std::recursive_mutex>;
 
 		template<typename ElementInterface>
 		void _m_add(const std::string& name, item<ElementInterface>& m, const pat::cloneable<element::provider::factory_interface<ElementInterface>>& factory)
@@ -384,7 +403,8 @@ namespace nana
 
 	private:
 		mutable std::recursive_mutex mutex_;
-		item<element::crook_interface> crook_;
+		item<element::crook_interface>	crook_;
+		item<element::border_interface>	border_;
 	};
 
 	namespace element
@@ -398,6 +418,16 @@ namespace nana
 		crook_interface* const * provider::keeper_crook(const std::string& name)
 		{
 			return element_manager::instance().crook(name);
+		}
+
+		void provider::add_border(const std::string& name, const pat::cloneable<factory_interface<border_interface>>& factory)
+		{
+			element_manager::instance().border(name, factory);
+		}
+
+		border_interface* const * provider::keeper_border(const std::string& name)
+		{
+			return element_manager::instance().border(name);
 		}
 	}//end namespace element
 
@@ -455,6 +485,26 @@ namespace nana
 			return (*keeper_)->draw(graph, bgcol, fgcol, r, es, data_);
 		}
 	//end class facade<element::crook>
+
+	//class facade<element::border>
+		facade<element::border>::facade()
+			: facade(nullptr)
+		{}
+
+		facade<element::border>::facade(const char* name)
+			: keeper_(element::provider().keeper_border(name ? name : ""))
+		{}
+
+		void facade<element::border>::switch_to(const char* name)
+		{
+			keeper_ = element::provider().keeper_border(name);
+		}
+
+		bool facade<element::border>::draw(graph_reference graph, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state es)
+		{
+			return (*keeper_)->draw(graph, bgcolor, fgcolor, r, es, 2);
+		}
+	//end class facade<element::border>
 
 	namespace element
 	{

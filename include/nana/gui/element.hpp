@@ -30,19 +30,17 @@ namespace nana
 		class element_interface
 		{
 		public:
-			typedef paint::graphics & graph_reference;
+			using graph_reference = paint::graphics&;
 
-			virtual ~element_interface()
-			{}
-
+			virtual ~element_interface() = default;
 			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state) = 0;
 		};
 
 		class crook_interface
 		{
 		public:
-			typedef paint::graphics & graph_reference;
-			typedef checkstate	state;
+			using graph_reference = paint::graphics&;
+			using state = checkstate;
 
 			struct data
 			{
@@ -50,10 +48,17 @@ namespace nana
 				bool	radio;
 			};
 				
-			virtual ~crook_interface()
-			{}
-
+			virtual ~crook_interface() = default;
 			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state, const data&) = 0;
+		};
+
+		class border_interface
+		{
+		public:
+			using graph_reference = paint::graphics&;
+			
+			virtual ~border_interface() = default;
+			virtual bool draw(graph_reference, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle&, element_state, unsigned weight) = 0;
 		};
 
 		class provider
@@ -87,16 +92,27 @@ namespace nana
 
 			void add_crook(const std::string& name, const pat::cloneable<factory_interface<crook_interface>>&);
 			crook_interface* const * keeper_crook(const std::string& name);
+
+			void add_border(const std::string&, const pat::cloneable<factory_interface<border_interface>>&);
+			border_interface* const * keeper_border(const std::string&);
 		};
 
+		class crook;
 		template<typename UserElement>
 		void add_crook(const std::string& name)
 		{
-			typedef provider::factory<UserElement, crook_interface> factory_t;
+			using factory_t = provider::factory<UserElement, crook_interface>;
 			provider().add_crook(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
 		}
 
-		class crook;
+		class border;
+
+		template<typename BorderElement>
+		void add_border(const std::string& name)
+		{
+			using factory_t = provider::factory<BorderElement, border_interface>;
+			provider().add_border(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
+		}
 	}//end namespace element
 
 	template<typename Element> class facade;
@@ -106,8 +122,8 @@ namespace nana
 		: public element::element_interface
 	{
 	public:
-		typedef ::nana::paint::graphics & graph_reference;
-		typedef element::crook_interface::state state;
+		using graph_reference = ::nana::paint::graphics &;
+		using state = element::crook_interface::state;
 
 		facade();
 		facade(const char* name);
@@ -126,7 +142,24 @@ namespace nana
 	private:
 		element::crook_interface::data data_;
 		element::crook_interface* const * keeper_;
-	};
+	}; //end class facade<element::crook>
+
+	template<>
+	class facade<element::border>
+		: public element::element_interface
+	{
+		using graph_reference = ::nana::paint::graphics &;
+	public:
+		facade();
+		facade(const char* name);
+
+		void switch_to(const char*);
+	public:
+		//Implement element_interface
+		bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state) override;
+	private:
+		element::border_interface* const * keeper_;
+	};//end class facade<element::border>
 
 	namespace element
 	{
