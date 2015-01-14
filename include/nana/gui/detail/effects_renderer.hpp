@@ -3,7 +3,6 @@
 #include <nana/gui/effects.hpp>
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/pixel_buffer.hpp>
-
 #include <nana/gui/layout_utility.hpp>
 
 namespace nana{
@@ -12,7 +11,7 @@ namespace nana{
 		template<typename CoreWindow>
 		class edge_nimbus_renderer
 		{
-			edge_nimbus_renderer(){}
+			edge_nimbus_renderer() = default;
 		public:
 			typedef CoreWindow core_window_t;
 			typedef window_layout window_layer;
@@ -44,7 +43,7 @@ namespace nana{
 					auto graph = root_wd->root_graph;
 
 					std::vector<core_window_t*> erase;
-					std::vector<rectangle>	r_set;
+					std::vector<std::pair<rectangle,core_window_t*>>	rd_set;
 					nana::rectangle r;
 					for(auto & action : nimbus)
 					{
@@ -53,8 +52,12 @@ namespace nana{
 							if(action.window == wd)
 								rendered = true;
 
-							r_set.push_back(r);
-							action.rendered = true;
+							//Avoiding duplicated rendering. If the window is declared to lazy refresh, it should be rendered.
+							if (!action.rendered || (action.window->other.upd_state == core_window_t::update_state::refresh))
+							{
+								rd_set.emplace_back(r, action.window);
+								action.rendered = true;
+							}
 						}
 						else if(action.rendered)
 						{
@@ -77,13 +80,9 @@ namespace nana{
 						graph->paste(native, r, r.x, r.y);
 					}
 
-					auto visual_iterator = r_set.begin();
 					//Render
-					for(auto & action : nimbus)
-					{
-						if(action.rendered)
-							_m_render_edge_nimbus(action.window, *(visual_iterator++));
-					}
+					for (auto & rd : rd_set)
+						_m_render_edge_nimbus(rd.second, rd.first);
 				}
 				return rendered;
 			}
@@ -102,7 +101,7 @@ namespace nana{
 				nana::rectangle r(visual);
 				r.pare_off(-static_cast<int>(weight()));
 				nana::rectangle good_r;
-				if(overlap(r, nana::rectangle(wd->root_graph->size()), good_r))
+				if(overlap(r, wd->root_graph->size(), good_r))
 				{
 					if(	(good_r.x < wd->pos_root.x) || (good_r.y < wd->pos_root.y) ||
 						(good_r.x + good_r.width > visual.x + visual.width) || (good_r.y + good_r.height > visual.y + visual.height))

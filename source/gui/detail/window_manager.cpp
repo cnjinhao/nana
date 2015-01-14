@@ -18,6 +18,7 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/layout_utility.hpp>
+#include <nana/gui/detail/effects_renderer.hpp>
 #include <stdexcept>
 #include <algorithm>
 
@@ -746,6 +747,12 @@ namespace detail
 					{
 						wndlayout_type::paint(wd, false, false);
 						this->map(wd);
+					}
+					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
+					{
+						//Update the nimbus effect
+						using nimbus_renderer = detail::edge_nimbus_renderer<core_window_t>;
+						nimbus_renderer::instance().render(wd);
 					}
 				}
 				else

@@ -380,7 +380,7 @@ namespace nana
 
 		bool drawer::_m_lazy_decleared() const
 		{
-			return (basic_window::update_state::refresh != core_window_->other.upd_state);
+			return (basic_window::update_state::refresh == core_window_->other.upd_state);
 		}
 	}//end namespace detail
 }//end namespace nana
