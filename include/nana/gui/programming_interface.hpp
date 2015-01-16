@@ -24,6 +24,17 @@ namespace nana
 	class drawer_trigger;
 	class widget;
 
+	namespace dev
+	{
+		/// Traits for widget classes
+		template<typename Widget>
+		struct widget_traits
+		{
+			using event_type = ::nana::general_events;
+			using scheme_type = ::nana::widget_colors;
+		};
+	}
+
 namespace API
 {
 	void effects_edge_nimbus(window, effects::edge_nimbus);
@@ -75,13 +86,6 @@ namespace API
 	}//end namespace detail
 
 	void exit();
-
-	template<typename Scheme>
-	Scheme& get_scheme()
-	{
-		auto & brock = ::nana::detail::bedrock::instance();
-		return static_cast<Scheme&>(brock.get_scheme_template(::nana::detail::scheme_factory<Scheme>{}));
-	}
 
 	nana::string transform_shortkey_text(nana::string text, nana::string::value_type &shortkey, nana::string::size_type *skpos);
 	bool register_shortkey(window, unsigned long);
@@ -142,16 +146,16 @@ namespace API
 	bool	set_parent_window(window, window new_parent);
 
 	template<typename Widget=::nana::widget>
-	typename ::nana::dev::event_mapping<Widget>::type & events(window wd)
+	typename ::nana::dev::widget_traits<Widget>::event_type & events(window wd)
 	{
-		typedef typename ::nana::dev::event_mapping<Widget>::type event_type;
+		using event_type = typename ::nana::dev::widget_traits<Widget>::event_type;
 
 		internal_scope_guard lock;
 		auto * general_evt = detail::get_general_events(wd);
 		if (nullptr == general_evt)
 			throw std::invalid_argument("API::events(): bad parameter window handle, no events object or invalid window handle.");
 
-		if (std::is_same<decltype(*general_evt), event_type>::value)
+		if (std::is_same<::nana::general_events, event_type>::value)
 			return *static_cast<event_type*>(general_evt);
 
 		auto * widget_evt = dynamic_cast<event_type*>(general_evt);
@@ -168,6 +172,25 @@ namespace API
 	}
 
 	void umake_event(event_handle);
+
+	template<typename Widget = ::nana::widget>
+	typename ::nana::dev::widget_traits<Widget>::scheme_type & scheme(window wd)
+	{
+		using scheme_type = typename ::nana::dev::widget_traits<Widget>::scheme_type;
+
+		internal_scope_guard lock;
+		auto * wdg_colors = ::nana::dev::get_scheme(wd);
+		if (nullptr == wdg_colors)
+			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
+
+		if (std::is_same<::nana::widget_colors, scheme_type>::value)
+			return *static_cast<scheme_type*>(wdg_colors);
+
+		auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
+		if (nullptr == comp_wdg_colors)
+			throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
+		return *comp_wdg_colors;
+	}
 
 	nana::point window_position(window);
 	void move_window(window, int x, int y);

@@ -22,9 +22,7 @@
 
 namespace nana
 {
-	class drawer_trigger;
-
-	        /// Abstract class for defining the capacity interface.
+	/// Abstract class for defining the capacity interface.
 	class widget
 		: nana::noncopyable, nana::nonmovable
 	{

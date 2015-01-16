@@ -483,16 +483,6 @@ namespace nana
 			basic_event<arg_unload>	unload;
 		};
 	}//end namespace detail
-
-	namespace dev
-	{
-		template<typename Widget>
-		struct event_mapping
-		{
-			typedef general_events type;
-		};
-	}//end namespace dev
-
 }//end namespace nana
 
 #endif
