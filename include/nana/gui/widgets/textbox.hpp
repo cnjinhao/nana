@@ -193,5 +193,16 @@ namespace nana
 		void _m_caption(::nana::string&&) override;
 		void _m_typeface(const paint::font&) override;
 	};
+
+	namespace dev
+	{
+		/// Traits for widget classes
+		template<>
+		struct widget_traits<textbox>
+		{
+			using event_type = drawerbase::textbox::textbox_events;
+			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
+		};
+	}
 }//end namespace nana
 #endif

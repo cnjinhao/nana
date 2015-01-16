@@ -230,5 +230,15 @@ namespace nana
 		void _m_caption(nana::string&&) override;
 		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
+
+	namespace dev
+	{
+		template<>
+		struct widget_traits<combox>
+		{
+			using event_type = drawerbase::combox::combox_events;
+			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
+		};
+	}
 }
 #endif

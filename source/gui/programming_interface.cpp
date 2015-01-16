@@ -158,7 +158,6 @@ namespace API
 				iwd->expr_colors = wdg_colors;
 		}
 
-
 		widget_colors* get_scheme(window wd)
 		{
 			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);

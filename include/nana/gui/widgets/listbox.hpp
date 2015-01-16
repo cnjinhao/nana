@@ -556,5 +556,15 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
 		void _m_ease_key(nana::detail::key_interface*);
 	};
+
+	namespace dev
+	{
+		template<>
+		struct widget_traits<listbox>
+		{
+			using event_type = drawerbase::listbox::listbox_events;
+			using scheme_type = drawerbase::listbox::scheme;
+		};
+	}
 }//end namespace nana
 #endif
