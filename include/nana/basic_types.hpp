@@ -464,6 +464,16 @@ namespace nana
 	{
 		top, center, bottom
 	};
+
+	///The definition of the four corners of the world
+	enum class direction
+	{
+		north,
+		south,
+		east,
+		west,
+		southeast
+	};
 }//end namespace nana
 
 #endif
