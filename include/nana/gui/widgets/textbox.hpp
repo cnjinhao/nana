@@ -82,11 +82,6 @@ namespace nana
 				void _m_text_area(unsigned width, unsigned height);
 			private:
 				widget*	widget_;
-				struct status_type
-				{
-					bool has_focus;		//Indicates whether it has the keyboard focus
-				}status_;
-
 				std::function<bool(nana::char_t)> pred_acceptive_;
 				widgets::skeletons::text_editor * editor_;
 				std::unique_ptr<event_agent>	evt_agent_;

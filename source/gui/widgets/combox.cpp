@@ -12,6 +12,7 @@
 
 #include <nana/gui/wvl.hpp>
 #include <nana/gui/widgets/combox.hpp>
+#include <nana/gui/element.hpp>
 #include <nana/paint/gadget.hpp>
 #include <nana/system/dataexch.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
@@ -494,7 +495,9 @@ namespace nana
 					graph_->rectangle({ left + 1, top, static_cast<unsigned>(right - left - 2), static_cast<unsigned>(mid - top + 1) }, true, topcol);
 					graph_->rectangle({ left + 1, mid + 1, static_cast<unsigned>(right - left - 2), static_cast<unsigned>(bottom - mid) }, true, botcol);
 
-					gadget::arrow_16_pixels(*graph_, left, top + ((bottom - top) / 2) - 7, arrow_color, 1, gadget::directions::to_south);
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(::nana::direction::south);
+					arrow.draw(*graph_, {}, arrow_color, { left, top + (bottom - top) / 2 - 7, 16, 16 }, element_state::normal);
 				}
 
 				void _m_draw_image()

@@ -21,12 +21,6 @@ namespace paint
 {
 namespace gadget
 {
-	struct directions
-	{
-		enum t{to_east, to_southeast, to_south, to_southwest, to_west, to_northwest, to_north, to_northeast};
-	};
-
-	void arrow_16_pixels(nana::paint::graphics&, int x, int y, const color&, uint32_t style, directions::t direction);
 	void close_16_pixels(nana::paint::graphics&, int x, int y, uint32_t style, const color&);
 	void cross(nana::paint::graphics&, int x, int y, uint32_t size, uint32_t thickness, const nana::color&);
 

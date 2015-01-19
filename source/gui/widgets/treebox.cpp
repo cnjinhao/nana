@@ -1122,16 +1122,17 @@ namespace nana
 					comp_attribute_t attr;
 					if(compset->comp_attribute(component::expender, attr))
 					{
-						using namespace nana::paint;
-
-						uint32_t style = 1;
-						gadget::directions::t dir = gadget::directions::to_southeast;
-						if(! compset->item_attribute().expended)
+						facade<element::arrow> arrow("solid_triangle");
+						arrow.direction(direction::southeast);
+						if (!compset->item_attribute().expended)
 						{
-							style = 0;
-							dir = gadget::directions::to_east;
+							arrow.switch_to("hollow_triangle");
+							arrow.direction(direction::east);
 						}
-						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? color(0x1C, 0xC4, 0xF7) : color(colors::black)), style, dir);
+						auto r = attr.area;
+						r.y += (attr.area.height - 16) / 2;
+						r.width = r.height = 16;
+						arrow.draw(graph, bgcolor_, (attr.mouse_pointed ? colors::deep_sky_blue : colors::black), r, element_state::normal);
 					}
 				}
 

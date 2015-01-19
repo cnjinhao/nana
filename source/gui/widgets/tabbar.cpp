@@ -11,6 +11,7 @@
 #include <nana/gui/widgets/tabbar.hpp>
 #include <nana/gui/widgets/menu.hpp>
 #include <nana/paint/text_renderer.hpp>
+#include <nana/gui/element.hpp>
 #include <stdexcept>
 #include <list>
 
@@ -145,36 +146,39 @@ namespace nana
 				virtual void back(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
 					using namespace nana::paint::gadget;
-					_m_draw_arrow(graph, r, sta, directions::to_west);
+					_m_draw_arrow(graph, r, sta, direction::west);
 				}
 
 				virtual void next(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
 					using namespace nana::paint::gadget;
-					_m_draw_arrow(graph, r, sta, directions::to_east);
+					_m_draw_arrow(graph, r, sta, direction::east);
 				}
 
 				virtual void list(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
 					using namespace nana::paint::gadget;
-					_m_draw_arrow(graph, r, sta, directions::to_south);
+					_m_draw_arrow(graph, r, sta, direction::south);
 				}
 			private:
-				void _m_draw_arrow(graph_reference graph, const nana::rectangle& r, state_t sta, nana::paint::gadget::directions::t dir)
+				void _m_draw_arrow(graph_reference graph, const nana::rectangle& r, state_t sta, ::nana::direction dir)
 				{
-					using namespace nana::paint::gadget;
-
-					::nana::color fgcolor(colors::black);
-					int style = 1;
-					if(sta == item_renderer::disable)
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(dir);
+					colors fgcolor = colors::black;
+					if (item_renderer::disable == sta)
 					{
-						style = 0;
-						fgcolor = { 0x80, 0x80, 0x80 };
+						arrow.switch_to("hollow_triangle");
+						fgcolor = colors::gray;
 					}
-					arrow_16_pixels(graph, r.x + (r.width - 16) / 2, r.y + (r.height - 16) / 2, fgcolor, style, dir);
+					auto arrow_r = r;
+					arrow_r.x += static_cast<int>(arrow_r.width - 16) / 2;
+					arrow_r.y += static_cast<int>(arrow_r.height - 16) / 2;
+					arrow_r.width = arrow_r.height = 16;
+					arrow.draw(graph, bgcolor_, fgcolor, arrow_r, element_state::normal);
 
 					if(item_renderer::highlight == sta)
-						graph.rectangle(r, false, { 0xA0, 0xA0, 0xA0 });
+						graph.rectangle(r, false, colors::dark_gray);
 				}
 			private:
 				::nana::color bgcolor_;

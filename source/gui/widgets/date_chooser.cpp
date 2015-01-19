@@ -11,6 +11,7 @@
  */
 
 #include <nana/gui/widgets/date_chooser.hpp>
+#include <nana/gui/element.hpp>
 #include <nana/paint/gadget.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
@@ -122,13 +123,16 @@ namespace nana
 
 				void trigger::_m_draw_topbar(graph_reference graph)
 				{
-					int ypos = (topbar_height - 16) / 2 + 1;
+					::nana::color arrow_bgcolor;
+					::nana::rectangle arrow_r{ static_cast<int>(border_size), (topbar_height - 16) / 2 + 1, 16, 16 };
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(::nana::direction::west);
+					arrow.draw(graph, arrow_bgcolor, (pos_ == where::left_button ? color_.highlight : color_.normal), arrow_r, element_state::normal);
 
-					const auto color = color_.normal;
-
-					nana::paint::gadget::arrow_16_pixels(graph, border_size, ypos, (pos_ == where::left_button ? color_.highlight : color), 1, nana::paint::gadget::directions::to_west);
-					nana::paint::gadget::arrow_16_pixels(graph, graph.width() - (border_size + 16 + 1), ypos, (pos_ == where::right_button ? color_.highlight : color), 1, nana::paint::gadget::directions::to_east);
-
+					arrow_r.x = static_cast<int>(graph.width()) - static_cast<int>(border_size + 17);
+					arrow.direction(::nana::direction::east);
+					arrow.draw(graph, arrow_bgcolor, (pos_ == where::right_button ? color_.highlight : color_.normal), arrow_r, element_state::normal);
+					
 					if(graph.width() > 32 + border_size * 2)
 					{
 						std::stringstream ss;
@@ -143,12 +147,12 @@ namespace nana
 
 						nana::size txt_s = graph.text_extent_size(str);
 
-						ypos = (topbar_height - static_cast<int>(txt_s.height)) / 2 + 1;
+						int top = (topbar_height - static_cast<int>(txt_s.height)) / 2 + 1;
 
 						int xpos = static_cast<int>(graph.width() - txt_s.width) / 2;
 						if(xpos < border_size + 16) xpos = 16 + border_size + 1;
 
-						graph.string({ xpos, ypos }, str, (pos_ == where::topbar ? color_.highlight : color));
+						graph.string({ xpos, top }, str, (pos_ == where::topbar ? color_.highlight : color_.normal));
 					}
 				}
 

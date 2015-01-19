@@ -968,13 +968,14 @@ namespace paint
 
 		void graphics::line(const nana::point& pos1, const nana::point& pos2)
 		{
-			if ((!handle_) || (pos1 == pos2))	return;
+			if (!handle_)	return;
 #if defined(NANA_WINDOWS)
 			handle_->update_pen();
-
-			::MoveToEx(handle_->context, pos1.x, pos1.y, 0);
-			::LineTo(handle_->context, pos2.x, pos2.y);
-
+			if (pos1 != pos2)
+			{
+				::MoveToEx(handle_->context, pos1.x, pos1.y, 0);
+				::LineTo(handle_->context, pos2.x, pos2.y);
+			}
 			::SetPixel(handle_->context, pos2.x, pos2.y, NANA_RGB(handle_->pen.color));
 #elif defined(NANA_X11)
 			Display* disp = nana::detail::platform_spec::instance().open_display();

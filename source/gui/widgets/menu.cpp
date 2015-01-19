@@ -158,7 +158,9 @@ namespace nana
 
 				void sub_arrow(graph_reference graph, const nana::point& pos, unsigned pixels, const attr&)
 				{
-					nana::paint::gadget::arrow_16_pixels(graph, pos.x, pos.y + static_cast<int>(pixels - 16) / 2, colors::black, 0, nana::paint::gadget::directions::to_east);
+					facade<element::arrow> arrow("hollow_triangle");
+					arrow.direction(::nana::direction::east);
+					arrow.draw(graph, {}, colors::black, { pos.x, pos.y + static_cast<int>(pixels - 16) / 2, 16, 16 }, element_state::normal);
 				}
 
 			private:

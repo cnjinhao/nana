@@ -11,6 +11,7 @@
  */
 
 #include <nana/gui/widgets/scroll.hpp>
+#include <nana/gui/element.hpp>
 
 namespace nana
 {
@@ -291,35 +292,40 @@ namespace nana
 			{
 				if(_m_check())
 					_m_button_frame(graph, r, state);
-				
-				using namespace nana::paint::gadget;
 
 				if(buttons::first == what || buttons::second == what)
 				{
-					nana::size sz = graph.size();
-					directions::t dir;
-					if(buttons::second == what)
+					auto sz = graph.size();
+					int top = static_cast<int>(sz.height - fixedsize);
+					int left = static_cast<int>(sz.width - fixedsize);
+
+					direction dir;
+					if (buttons::second == what)
 					{
-						if(vertical_)
+						if (vertical_)
 						{
-							r.y = static_cast<int>(sz.height - fixedsize);
-							dir = directions::to_south;
+							r.y = top;
+							dir = direction::south;
 						}
 						else
 						{
-							r.x = static_cast<int>(sz.width - fixedsize);
-							dir = directions::to_east;
+							r.x = left;
+							dir = direction::east;
 						}
 					}
 					else
-						dir = vertical_ ? directions::to_north : directions::to_west;
+						dir = vertical_ ? direction::north : direction::west;
 
-					if(vertical_)
-						r.x = (static_cast<int>(sz.width) - 16) / 2;
+					if (vertical_)
+						r.x = left / 2;
 					else
-						r.y = (static_cast<int>(sz.height) - 16) / 2;
-					
-					arrow_16_pixels(graph, r.x, r.y, (_m_check() ? color(colors::black) : color(0x80, 0x80, 0x80)), (states::none == state ? 0 : 1), dir);
+						r.y = top / 2;
+
+					r.width = r.height = 16;
+
+					facade<element::arrow> arrow(states::none == state ? "hollow_triangle" : "solid_triangle");
+					arrow.direction(dir);
+					arrow.draw(graph, {}, (_m_check() ? colors::black : colors::gray), r, element_state::normal);
 				}
 			}
 		//end class drawer

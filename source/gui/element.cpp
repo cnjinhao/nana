@@ -316,7 +316,7 @@ namespace nana
 			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, ::nana::direction dir) override
 			{
 				int x = r.x + 3;
-				int y = r.x + 3;
+				int y = r.y + 3;
 				switch (dir)
 				{
 				case ::nana::direction::east:

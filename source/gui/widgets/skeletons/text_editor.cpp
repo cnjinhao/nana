@@ -1842,6 +1842,11 @@ namespace nana{	namespace widgets
 			return (text_area_.area.width > caret_px ? text_area_.area.width - caret_px : 0);
 		}
 
+		window text_editor::window_handle() const
+		{
+			return window_;
+		}
+
 		void text_editor::draw_scroll_rectangle()
 		{
 			if(text_area_.vscroll && text_area_.hscroll)

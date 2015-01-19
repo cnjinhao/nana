@@ -13,6 +13,7 @@
 #include <nana/gui/wvl.hpp>
 #include <nana/gui/widgets/categorize.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
+#include <nana/gui/element.hpp>
 #include <nana/paint/gadget.hpp>
 #include <nana/gui/widgets/detail/tree_cont.hpp>
 #include <stdexcept>
@@ -85,23 +86,24 @@ namespace nana
 
 				virtual void root_arrow(graph_reference graph, const nana::rectangle& r, mouse_action state)
 				{
-					int x = r.x + (r.width - 16) / 2;
-					int y = r.y + (r.height - 16) / 2;
+					::nana::rectangle arrow_r{r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16};
+
 					if(ui_el_.what == ui_el_.item_root)
 					{
 						_m_item_bground(graph, r.x + 1, r.y, r.width - 2, r.height, (state == mouse_action::pressed ? mouse_action::pressed : mouse_action::over));
 						graph.rectangle(r, false, color{ 0x3C, 0x7F, 0xB1 });
 						if(state == mouse_action::pressed)
 						{
-							++x;
-							++y;
+							++arrow_r.x;
+							++arrow_r.y;
 						}
 					}
 					else
 						graph.rectangle(r, true, style_.bgcolor);
 
-					nana::paint::gadget::arrow_16_pixels(graph, x, y,
-						style_.fgcolor, 3, nana::paint::gadget::directions::to_west);
+					facade<element::arrow> arrow("double");
+					arrow.direction(::nana::direction::west);
+					arrow.draw(graph, {}, style_.fgcolor, arrow_r, element_state::normal);
 				}
 
 				void item(graph_reference graph, const nana::rectangle& r, std::size_t index, const nana::string& name, unsigned txtheight, bool has_child, mouse_action state)
@@ -144,8 +146,9 @@ namespace nana
 
 					if(has_child)
 					{
-						nana::paint::gadget::arrow_16_pixels(graph, r.x + r.width - 16, r.y + (r.height - 16)/2,
-							style_.fgcolor, 3, nana::paint::gadget::directions::to_east);
+						facade<element::arrow> arrow("double");
+						arrow.direction(::nana::direction::east);
+						arrow.draw(graph, {}, style_.fgcolor, { r.right() - 16, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
 					}
 				}
 

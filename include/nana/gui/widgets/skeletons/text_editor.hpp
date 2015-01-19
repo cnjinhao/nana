@@ -207,6 +207,7 @@ namespace nana{	namespace widgets
 
 			/// Returns width of text area excluding the vscroll size.
 			unsigned width_pixels() const;
+			window window_handle() const;
 		public:
 			void draw_scroll_rectangle();
 			void render(bool focused);

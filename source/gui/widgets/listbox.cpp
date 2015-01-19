@@ -2308,8 +2308,9 @@ namespace nana
 
 					if(item.index == essence_->lister.sort_index())
 					{
-						nana::paint::gadget::directions::t dir = essence_->lister.sort_reverse() ? nana::paint::gadget::directions::to_south : nana::paint::gadget::directions::to_north;
-						nana::paint::gadget::arrow_16_pixels(graph, x + (item.pixels - 16) / 2, -4, colors::black, 0, dir);
+						facade<element::arrow> arrow("hollow_triangle");
+						arrow.direction(essence_->lister.sort_reverse() ? ::nana::direction::south : ::nana::direction::north);
+						arrow.draw(graph, {}, colors::black, { x + static_cast<int>(item.pixels - 16) / 2, -4, 16, 16 }, element_state::normal);
 					}
 				}
 
@@ -2483,8 +2484,10 @@ namespace nana
 					graph->set_color(bgcolor);
 					graph->rectangle(rectangle{ x, y, width, essence_->item_size }, true);
 
-					nana::paint::gadget::arrow_16_pixels(*graph, x + 5, y + (essence_->item_size - 16) / 2, { 0x0, 0x33, 0x99 }, 2, (categ.expand ? nana::paint::gadget::directions::to_north : nana::paint::gadget::directions::to_south));
-					nana::size text_s = graph->text_extent_size(categ.text);
+					facade<element::arrow> arrow("double");
+					arrow.direction(categ.expand ? ::nana::direction::north : ::nana::direction::south);
+					::nana::rectangle arrow_r{ x + 5, y + static_cast<int>(essence_->item_size - 16) / 2, 16, 16 };
+					arrow.draw(*graph, {}, static_cast<color_rgb>(0x3399), arrow_r, element_state::normal);
 
 					graph->string({ x + 20, y + txtoff }, categ.text, {0, 0x33, 0x99});
 
@@ -2494,6 +2497,7 @@ namespace nana
 
 					unsigned str_w = graph->text_extent_size(str).width;
 
+					auto text_s = graph->text_extent_size(categ.text);
 					graph->string({ x + 25 + static_cast<int>(text_s.width), y + txtoff }, str);
 
 					if (x + 35 + text_s.width + str_w < x + width)

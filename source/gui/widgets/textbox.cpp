@@ -33,7 +33,6 @@ namespace nana{	namespace drawerbase {
 		drawer::drawer()
 			: widget_(nullptr), editor_(nullptr)
 		{
-			status_.has_focus = false;
 		}
 
 		drawer::text_editor* drawer::editor()
@@ -78,15 +77,14 @@ namespace nana{	namespace drawerbase {
 
 		void drawer::refresh(graph_reference graph)
 		{
-			editor_->render(status_.has_focus);
+			editor_->render(API::is_focus_window(*widget_));
 		}
 
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
-			status_.has_focus = arg.getting;
 			refresh(graph);
 
-			editor_->show_caret(status_.has_focus);
+			editor_->show_caret(arg.getting);
 			editor_->reset_caret();
 			API::lazy_refresh();
 		}
