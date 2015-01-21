@@ -58,16 +58,15 @@ namespace nana
 			class drawer_impl
 			{
 			public:
-				typedef nana::paint::graphics & graph_reference;
-				typedef widget	& widget_reference;
+				using graph_reference = paint::graphics&;
+				using widget_reference = widget&;
 
 				enum class where_t{unknown, text, push_button};
-				enum class state_t{none, mouse_over, pressed};
 
 				drawer_impl()
 				{
 					state_.focused = false;
-					state_.state = state_t::none;
+					state_.button_state = element_state::normal;
 					state_.pointer_where = where_t::unknown;
 					state_.lister = nullptr;
 				}
@@ -195,13 +194,13 @@ namespace nana
 
 				void set_mouse_over(bool mo)
 				{
-					state_.state = mo ? state_t::mouse_over : state_t::none;
+					state_.button_state = (mo ? element_state::hovered : element_state::normal);
 					state_.pointer_where = where_t::unknown;
 				}
 
 				void set_mouse_press(bool mp)
 				{
-					state_.state = (mp ? state_t::pressed : state_t::mouse_over);
+					state_.button_state = (mp ? element_state::pressed : element_state::hovered);
 				}
 
 				void set_focused(bool f)
@@ -310,8 +309,8 @@ namespace nana
 					{
 						auto pos = API::cursor_position();
 						API::calc_window_point(widget_->handle(), pos);
-						if(calc_where(*graph_, pos.x, pos.y))
-							state_.state = state_t::none;
+						if (calc_where(*graph_, pos.x, pos.y))
+							state_.button_state = element_state::normal;
 
 						editor_->text(items_[index]->item_text);
 						_m_draw_push_button(widget_->enabled());
@@ -437,7 +436,8 @@ namespace nana
 					::nana::rectangle r(graph.size());
 					auto clr_from = colors::button_face_shadow_start;
 					auto clr_to = colors::button_face_shadow_end;
-					if(state_.state == state_t::pressed)
+
+					if (element_state::pressed == state_.button_state)
 					{
 						r.pare_off(2);
 						std::swap(clr_from, clr_to);
@@ -450,54 +450,30 @@ namespace nana
 
 				void _m_draw_push_button(bool enabled)
 				{
-					using namespace nana::paint;
+					::nana::rectangle r{graph_->size()};
+					r.x = r.right() - 16;
+					r.y = 1;
+					r.width = 16;
+					r.height -= 2;
 
-					if (nullptr == graph_) return;
-
-					int left = graph_->width() - 17;
-					int right = left + 16;
-					int top = 1;
-					int bottom = graph_->height() - 2;
-					int mid = top + (bottom - top) * 5 / 18;
-
-					::nana::color topcol, topcol_ln, botcol, botcol_ln;
-					::nana::color arrow_color{ colors::white };
-					if (enabled && items_.size())
+					auto estate = state_.button_state;
+					if (enabled && !items_.empty())
 					{
-						double percent = 1;
-						if (has_lister() || (state_.state == state_t::pressed && state_.pointer_where == where_t::push_button))
-							percent = 0.8;
-						else if (state_.state == state_t::mouse_over)
-							percent = 0.9;
-
-						topcol_ln = color{ 0x3F, 0x47, 0x6C }.blend(arrow_color, percent);
-						botcol_ln = color{ 0x03, 0x31, 0x114 }.blend(arrow_color, percent);
-						topcol = color{ 0x3F, 83, 84 }.blend(arrow_color, percent);
-						botcol = color{ 0x0c, 0x4a, 0x9a }.blend(arrow_color, percent);
+						if (has_lister() || (element_state::pressed == estate && state_.pointer_where == where_t::push_button))
+							estate = element_state::pressed;
 					}
 					else
-					{
-						topcol_ln = { 0x7F, 0x7F, 0x7F };
-						botcol_ln = { 0x50, 0x50, 0x50 };
-						topcol = { 0xC3, 0xC3, 0xC3 };
-						botcol = { 0xA0, 0xA0, 0xA0 };
-					}
+						estate = element_state::disabled;
 
-					graph_->set_color(topcol_ln);
-					graph_->line({ left, top }, { left, mid });
-					graph_->line({ right - 1, top }, { right - 1, mid });
-
-					graph_->set_color(botcol_ln);
-					graph_->line({ left, mid + 1 }, { left, bottom });
-					graph_->line({ right - 1, mid + 1 }, { right - 1, bottom });
-
-
-					graph_->rectangle({ left + 1, top, static_cast<unsigned>(right - left - 2), static_cast<unsigned>(mid - top + 1) }, true, topcol);
-					graph_->rectangle({ left + 1, mid + 1, static_cast<unsigned>(right - left - 2), static_cast<unsigned>(bottom - mid) }, true, botcol);
+					facade<element::button> button;
+					button.draw(*graph_, ::nana::color{ 3, 65, 140 }, colors::white, r, estate);
 
 					facade<element::arrow> arrow("solid_triangle");
 					arrow.direction(::nana::direction::south);
-					arrow.draw(*graph_, {}, arrow_color, { left, top + (bottom - top) / 2 - 7, 16, 16 }, element_state::normal);
+
+					r.y += (r.height / 2) - 7;
+					r.width = r.height = 16;
+					arrow.draw(*graph_, {}, colors::white, r, element_state::normal);
 				}
 
 				void _m_draw_image()
@@ -558,7 +534,7 @@ namespace nana
 				struct state_type
 				{
 					bool	focused;
-					state_t	state;
+					element_state button_state;
 					where_t	pointer_where;
 
 					nana::float_listbox * lister;

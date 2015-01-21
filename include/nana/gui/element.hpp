@@ -106,6 +106,9 @@ namespace nana
 
 			void add_arrow(const std::string&, const pat::cloneable<factory_interface<arrow_interface>>&);
 			arrow_interface* const * keeper_arrow(const std::string&);
+
+			void add_button(const std::string&, const pat::cloneable<factory_interface<element_interface>>&);
+			element_interface* const* keeper_button(const std::string&);
 		};
 
 		class crook;
@@ -130,6 +133,14 @@ namespace nana
 		{
 			using factory_t = provider::factory<ArrowElement, arrow_interface>;
 			provider().add_arrow(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
+		}
+
+		class button;
+		template<typename ButtonElement>
+		void add_button(const std::string& name)
+		{
+			using factory_t = provider::factory<ButtonElement, element_interface>;
+			provider().add_button(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
 		}
 	}//end namespace element
 
@@ -199,6 +210,20 @@ namespace nana
 		element::arrow_interface* const * keeper_;
 		::nana::direction dir_{::nana::direction::north};
 	};//end class facade<element::arrow>
+
+	template<>
+	class facade<element::button>
+		: public element::element_interface
+	{
+	public:
+		facade(const char* name = nullptr);
+		void switch_to(const char*);
+	public:
+		//Implement element_interface
+		bool draw(graph_reference, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle&, element_state) override;
+	private:
+		element::element_interface* const * keeper_;
+	};//end class facade<element::button>
 
 
 	namespace element

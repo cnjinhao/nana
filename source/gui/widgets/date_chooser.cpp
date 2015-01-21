@@ -66,25 +66,24 @@ namespace nana
 						this->monthstr_[index] = str;
 				}
 
-				trigger::where trigger::_m_pos_where(graph_reference graph, int x, int y)
+				trigger::where trigger::_m_pos_where(graph_reference graph, const ::nana::point& pos)
 				{
 					int xend = static_cast<int>(graph.width()) - 1;
 					int yend = static_cast<int>(graph.height()) - 1;
-					if(0 < y && y < static_cast<int>(topbar_height))
+					if(0 < pos.y && pos.y < static_cast<int>(topbar_height))
 					{
-						if(static_cast<int>(border_size) < x && x < xend)
+						if(static_cast<int>(border_size) < pos.x && pos.x < xend)
 						{
-							if(x < border_size + 16)
+							if(pos.x < border_size + 16)
 								return where::left_button;
-							else if(xend - border_size - 16 < x)
+							else if(xend - border_size - 16 < pos.x)
 								return where::right_button;
 							return where::topbar;
 						}
 					}
-					else if(topbar_height < y && y < yend)
+					else if(topbar_height < pos.y && pos.y < yend)
 					{
-						trace_pos_.x = x;
-						trace_pos_.y = y;
+						trace_pos_ = pos;
 						return where::textarea;
 					}
 					return where::none;
@@ -476,7 +475,7 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
-					where pos = _m_pos_where(graph, arg.pos.x, arg.pos.y);
+					where pos = _m_pos_where(graph, arg.pos);
 					if(pos == pos_ && pos_ != where::textarea) return;
 					pos_ = pos;
 					_m_draw(graph);
@@ -494,7 +493,7 @@ namespace nana
 				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
 					bool redraw = true;
-					where pos = _m_pos_where(graph, arg.pos.x, arg.pos.y);
+					where pos = _m_pos_where(graph, arg.pos);
 					transform_action tfid = transform_action::none;
 
 					if(pos == where::topbar)

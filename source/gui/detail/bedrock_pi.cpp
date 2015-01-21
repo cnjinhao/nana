@@ -63,7 +63,7 @@ namespace nana
 				}
 
 				wd_manager.refresh_tree(wd);
-				wd_manager.map(wd);
+				wd_manager.map(wd, false);
 			}
 		}
 

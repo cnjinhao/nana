@@ -176,9 +176,9 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::map_thread_root_buffer(bedrock::core_window_t* wnd)
+	void bedrock::map_thread_root_buffer(core_window_t*, bool forced)
 	{
-		//GUI in X11 is not thread-dependent, so no implementation.
+		//GUI in X11 is thread-independent, so no implementation.
 	}
 
 	//inc_window
@@ -619,7 +619,8 @@ namespace detail
 				msgwnd = brock.wd_manager.find_window(native_window, xevent.xcrossing.x, xevent.xcrossing.y);
 				if(msgwnd)
 				{
-					msgwnd->flags.action = mouse_action::over;
+					if (mouse_action::pressed != msgwnd->flags.action)
+						msgwnd->flags.action = mouse_action::over;
 					hovered_wd = msgwnd;
 
 					arg_mouse arg;
@@ -870,7 +871,8 @@ namespace detail
 						else
 						{
 							evt_code = event_code::mouse_enter;
-							msgwnd->flags.action = mouse_action::over;
+							if (mouse_action::pressed != msgwnd->flags.action)
+								msgwnd->flags.action = mouse_action::over;
 						}
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
@@ -883,7 +885,10 @@ namespace detail
 				{
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, xevent);
-					msgwnd->flags.action = mouse_action::over;
+					
+					if (mouse_action::pressed != msgwnd->flags.action)
+						msgwnd->flags.action = mouse_action::over;
+
 					if (hovered_wd != msgwnd)
 					{
 						hovered_wd = msgwnd;

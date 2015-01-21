@@ -671,7 +671,7 @@ namespace detail
 		}
 
 		//Copy the root buffer that wnd specified into DeviceContext
-		void window_manager::map(core_window_t* wd)
+		void window_manager::map(core_window_t* wd, bool forced)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -682,9 +682,9 @@ namespace detail
 				wd->drawer.map(reinterpret_cast<window>(wd));
 #elif defined(NANA_WINDOWS)
 				if(nana::system::this_thread_id() == wd->thread_id)
-					wd->drawer.map(reinterpret_cast<window>(wd));
+					wd->drawer.map(reinterpret_cast<window>(wd), forced);
 				else
-					bedrock::instance().map_thread_root_buffer(wd);
+					bedrock::instance().map_thread_root_buffer(wd, forced);
 #endif
 			}
 		}
@@ -693,7 +693,7 @@ namespace detail
 		//@brief:	update is used for displaying the screen-off buffer.
 		//			Because of a good efficiency, if it is called in an event procedure and the event procedure window is the
 		//			same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
-		bool window_manager::update(core_window_t* wd, bool redraw, bool force)
+		bool window_manager::update(core_window_t* wd, bool redraw, bool forced)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -701,10 +701,10 @@ namespace detail
 
 			if (wd->visible && wd->visible_parents())
 			{
-				if(force || (false == wd->belong_to_lazy()))
+				if(forced || (false == wd->belong_to_lazy()))
 				{
 					wndlayout_type::paint(wd, redraw, false);
-					this->map(wd);
+					this->map(wd, forced);
 				}
 				else
 				{
@@ -746,13 +746,13 @@ namespace detail
 					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
 					{
 						wndlayout_type::paint(wd, false, false);
-						this->map(wd);
+						this->map(wd, force_copy_to_screen);
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
 						//Update the nimbus effect
 						using nimbus_renderer = detail::edge_nimbus_renderer<core_window_t>;
-						nimbus_renderer::instance().render(wd);
+						nimbus_renderer::instance().render(wd, force_copy_to_screen);
 					}
 				}
 				else
@@ -935,7 +935,7 @@ namespace detail
 
 					if (impl_->wd_register.available(wd))
 					{
-						wd->flags.capture = true;
+						wd->flags.captured = true;
 						native_interface::capture_window(wd->root, value);
 						auto prev = attr_.capture.window;
 						if(prev && (prev != wd))
@@ -953,6 +953,7 @@ namespace detail
 			else if(wd == attr_.capture.window)
 			{
 				attr_.capture.window = nullptr;
+				wd->flags.captured = false;
 				if(attr_cap.size())
 				{
 					std::pair<core_window_t*, bool> last = attr_cap.back();
@@ -964,6 +965,7 @@ namespace detail
 						attr_.capture.ignore_children = last.second;
 						native_interface::capture_window(last.first->root, true);
 						native_interface::calc_window_point(last.first->root, pos);
+						last.first->flags.captured = true;
 						attr_.capture.inside = _m_effective(last.first, pos);
 					}
 				}

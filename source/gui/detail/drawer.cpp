@@ -242,7 +242,7 @@ namespace nana
 			_m_emit(event_code::shortkey, arg, &drawer_trigger::shortkey);
 		}
 
-		void drawer::map(window wd)	//Copy the root buffer to screen
+		void drawer::map(window wd, bool forced)	//Copy the root buffer to screen
 		{
 			if(wd)
 			{
@@ -264,7 +264,7 @@ namespace nana
 #endif
 				}
 
-				if(false == edge_nimbus_renderer_t::instance().render(iwd))
+				if (false == edge_nimbus_renderer_t::instance().render(iwd, forced))
 				{
 					nana::rectangle vr;
 					if(bedrock_type::window_manager_t::wndlayout_type::read_visual_rectangle(iwd, vr))

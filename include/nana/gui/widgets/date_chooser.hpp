@@ -45,7 +45,7 @@ namespace nana
 				void week_name(unsigned index, const nana::string&);
 				void month_name(unsigned index, const nana::string&);
 			private:
-				where _m_pos_where(graph_reference, int x, int y);
+				where _m_pos_where(graph_reference, const ::nana::point& pos);
 				void _m_draw(graph_reference);
 				void _m_draw_topbar(graph_reference);
 				void _m_make_drawing_basis(drawing_basis&, graph_reference, const nana::point& refpos);

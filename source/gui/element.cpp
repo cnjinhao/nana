@@ -476,7 +476,57 @@ namespace nana
 					graph.set_pixel(x, y + 5);
 				}
 			}
-		};
+		};//end class arrow_double
+
+		class annex_button
+			: public element_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& arg_bgcolor, const ::nana::color& fgcolor, const rectangle& r, element_state estate) override
+			{
+				auto bgcolor = arg_bgcolor;
+
+				switch (estate)
+				{
+				case element_state::hovered:
+				case element_state::focus_hovered:
+					bgcolor = arg_bgcolor.blend(colors::white, 0.8);
+					break;
+				case element_state::pressed:
+					bgcolor = arg_bgcolor.blend(colors::black, 0.8);
+					break;
+				default:
+					break;
+				}
+
+				auto part_px = (r.height - 3) * 5 / 13;
+				graph.rectangle(r, false, bgcolor.blend(colors::black, 0.6));
+				
+				::nana::point left_top{ r.x + 1, r.y + 1 }, right_top{r.right() - 2, r.y + 1};
+				::nana::point left_mid{ r.x + 1, r.y + 1 + static_cast<int>(part_px) }, right_mid{ right_top.x, left_mid.y };
+				::nana::point left_bottom{ r.x + 1, r.bottom() - 2 }, right_bottom{ r.right() - 2, r.bottom() - 2 };
+
+				graph.set_color(bgcolor.blend(colors::white, 0.9));
+				graph.line(left_top, left_mid);
+				graph.line(right_top, right_mid);
+
+				graph.set_color(bgcolor.blend(colors::white, 0.5));
+				graph.line(left_top, right_top);
+
+				left_mid.y++;
+				right_mid.y++;
+				graph.set_color(bgcolor.blend(colors::black, 0.8));
+				graph.line(left_mid, left_bottom);
+				graph.line(right_mid, right_bottom);
+
+				::nana::rectangle part_r{ r.x + 2, r.y + 2, r.width - 4, part_px };
+				graph.rectangle(part_r, true, bgcolor.blend(colors::white, 0.8));
+
+				part_r.y += static_cast<int>(part_r.height);
+				part_r.height = (r.height - 3 - part_r.height);
+				graph.rectangle(part_r, true, bgcolor);
+				return true;
+			}
+		};//end class annex_button
 	}//end namespace element
 
 	template<typename ElementInterface>
@@ -558,10 +608,12 @@ namespace nana
 
 				element::add_border<element::border_depressed>("");
 				
-				element::add_arrow<element::arrowhead>("");
+				element::add_arrow<element::arrowhead>("");				//"arrowhead" in default
 				element::add_arrow<element::arrow_double>("double");
 				element::add_arrow<element::arrow_solid_triangle>("solid_triangle");
 				element::add_arrow<element::arrow_hollow_triangle>("hollow_triangle");
+
+				element::add_button<element::annex_button>("");	//"annex" in default
 			}
 			return obj;
 		}
@@ -594,6 +646,16 @@ namespace nana
 		element::arrow_interface * const * arrow(const std::string& name) const
 		{
 			return _m_get((name.empty() ? "arrowhead" : name), arrow_).keeper();
+		}
+
+		void button(const std::string& name, const pat::cloneable<element::provider::factory_interface<element::element_interface>>& factory)
+		{
+			_m_add((name.empty() ? "annex" : name), button_, factory);
+		}
+
+		element::element_interface * const * button(const std::string& name) const
+		{
+			return _m_get((name.empty() ? "annex" : name), button_).keeper();
 		}
 	private:
 		using lock_guard = std::lock_guard<std::recursive_mutex>;
@@ -630,6 +692,7 @@ namespace nana
 		item<element::crook_interface>	crook_;
 		item<element::border_interface>	border_;
 		item<element::arrow_interface>	arrow_;
+		item<element::element_interface>	button_;
 	};
 
 	namespace element
@@ -663,6 +726,16 @@ namespace nana
 		arrow_interface* const * provider::keeper_arrow(const std::string& name)
 		{
 			return element_manager::instance().arrow(name);
+		}
+
+		void provider::add_button(const std::string& name, const pat::cloneable<factory_interface<element_interface>>& factory)
+		{
+			element_manager::instance().button(name, factory);
+		}
+
+		element_interface* const* provider::keeper_button(const std::string& name)
+		{
+			return element_manager::instance().button(name);
 		}
 	}//end namespace element
 
@@ -705,7 +778,7 @@ namespace nana
 
 		void facade<element::crook>::switch_to(const char* name)
 		{
-			keeper_ = element::provider().keeper_crook(name);
+			keeper_ = element::provider().keeper_crook(name ? name : "");
 		}
 
 		bool facade<element::crook>::draw(graph_reference graph, const ::nana::color& bgcol, const ::nana::color& fgcol, const nana::rectangle& r, element_state es)
@@ -721,7 +794,7 @@ namespace nana
 
 		void facade<element::border>::switch_to(const char* name)
 		{
-			keeper_ = element::provider().keeper_border(name);
+			keeper_ = element::provider().keeper_border(name ? name : "");
 		}
 
 		bool facade<element::border>::draw(graph_reference graph, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state es)
@@ -753,6 +826,23 @@ namespace nana
 			return (*keeper_)->draw(graph, bgcolor, fgcolor, r, estate, dir_);
 		}
 	//end class facade<element::arrow>
+
+	//class facade<element::button>::
+		facade<element::button>::facade(const char* name)
+			: keeper_(element::provider().keeper_button(name ? name : ""))
+		{}
+
+		void facade<element::button>::switch_to(const char* name)
+		{
+			keeper_ = element::provider().keeper_button(name ? name : "");
+		}
+
+		//Implement element_interface
+		bool facade<element::button>::draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate)
+		{
+			return (*keeper_)->draw(graph, bgcolor, fgcolor, r, estate);
+		}
+	//end class facade<element::button>
 
 	namespace element
 	{

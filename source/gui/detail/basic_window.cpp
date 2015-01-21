@@ -327,7 +327,7 @@ namespace nana
 				}
 
 				predef_cursor = cursor::arrow;
-				flags.capture = false;
+				flags.captured = false;
 				flags.dbl_click = true;
 				flags.enabled = true;
 				flags.modal = false;

@@ -139,6 +139,7 @@
     <ClCompile Include="..\..\source\gui\widgets\scroll.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\skeletons\text_editor.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\slider.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\tabbar.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\textbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\toolbar.cpp" />

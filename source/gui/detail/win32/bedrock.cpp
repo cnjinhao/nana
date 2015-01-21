@@ -342,9 +342,9 @@ namespace detail
 		return bedrock_object;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t* wd)
+	void bedrock::map_thread_root_buffer(core_window_t* wd, bool forced)
 	{
-		::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), 0);
+		::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), static_cast<LPARAM>(forced ? TRUE : FALSE));
 	}
 
 	void interior_helper_for_menu(MSG& msg, native_window_type menu_window)
@@ -596,7 +596,7 @@ namespace detail
 			}
 			return true;
 		case nana::detail::messages::map_thread_root_buffer:
-			bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam));
+			bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam), (TRUE == lParam));
 			::UpdateWindow(wd);
 			return true;
 		case nana::detail::messages::remote_thread_move_window:
@@ -1060,7 +1060,10 @@ namespace detail
 						else
 						{
 							evt_code = event_code::mouse_enter;
-							msgwnd->flags.action = mouse_action::over;
+							if (pressed_wd == msgwnd)
+								msgwnd->flags.action = mouse_action::pressed;
+							else if (mouse_action::pressed != msgwnd->flags.action)
+								msgwnd->flags.action = mouse_action::over;
 						}
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, pmdec);
@@ -1073,9 +1076,14 @@ namespace detail
 				{
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
-					msgwnd->flags.action = mouse_action::over;
+
 					if (hovered_wd != msgwnd)
 					{
+						if (pressed_wd == msgwnd)
+							msgwnd->flags.action = mouse_action::pressed;
+						else if (mouse_action::pressed != msgwnd->flags.action)
+							msgwnd->flags.action = mouse_action::over;
+
 						hovered_wd = msgwnd;
 						arg.evt_code = event_code::mouse_enter;
 						brock.emit(event_code::mouse_enter, msgwnd, arg, true, &context);
@@ -1105,21 +1113,34 @@ namespace detail
 						auto scrolled_wd = brock.wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), scr_pos.x, scr_pos.y);
 
 						def_window_proc = true;
-						while (scrolled_wd)
+						auto evt_wd = scrolled_wd;
+						while (evt_wd)
 						{
-							if (scrolled_wd->together.attached_events->mouse_wheel.length() != 0)
+							if (evt_wd->together.attached_events->mouse_wheel.length() != 0)
 							{
 								def_window_proc = false;
 								nana::point mspos{ scr_pos.x, scr_pos.y };
-								brock.wd_manager.calc_window_point(scrolled_wd, mspos);
+								brock.wd_manager.calc_window_point(evt_wd, mspos);
 
 								arg_wheel arg;
 								arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
-								assign_arg(arg, scrolled_wd, pmdec);
-								brock.emit(event_code::mouse_wheel, scrolled_wd, arg, true, &context);
+								assign_arg(arg, evt_wd, pmdec);
+								brock.emit(event_code::mouse_wheel, evt_wd, arg, true, &context);
 								break;
 							}
-							scrolled_wd = scrolled_wd->parent;
+							evt_wd = evt_wd->parent;
+						}
+
+						if (scrolled_wd && (nullptr == evt_wd))
+						{
+							nana::point mspos{ scr_pos.x, scr_pos.y };
+							brock.wd_manager.calc_window_point(scrolled_wd, mspos);
+
+							arg_wheel arg;
+							arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
+							assign_arg(arg, scrolled_wd, pmdec);
+							brock.emit_drawer(event_code::mouse_wheel, scrolled_wd, arg, &context);
+							brock.wd_manager.do_lazy_refresh(scrolled_wd, false);
 						}
 					}
 					else

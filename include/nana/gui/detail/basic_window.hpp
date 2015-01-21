@@ -155,7 +155,7 @@ namespace detail
 		{
 			bool enabled	:1;
 			bool dbl_click	:1;
-			bool capture	:1;	//if mouse button is down, it always receive mouse move even the mouse is out of its rectangle
+			bool captured	:1;	//if mouse button is down, it always receive mouse move even the mouse is out of its rectangle
 			bool modal		:1;
 			bool take_active:1;	//If take_active is false, other.active_window still keeps the focus.
 			bool refreshing	:1;
