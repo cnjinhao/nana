@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -43,11 +43,6 @@ namespace nana{	namespace drawerbase {
 		const drawer::text_editor* drawer::editor() const
 		{
 			return editor_;
-		}
-
-		void drawer::set_accept(std::function<bool(nana::char_t)> && fn)
-		{
-			pred_acceptive_ = std::move(fn);
 		}
 
 		void drawer::attached(widget_reference wdg, graph_reference graph)
@@ -139,8 +134,7 @@ namespace nana{	namespace drawerbase {
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			bool enterable = widget_->enabled() && (!pred_acceptive_ || pred_acceptive_(arg.key));
-			if (editor_->respone_keyboard(arg.key, enterable))
+			if (editor_->respone_keyboard(arg.key))
 				API::lazy_refresh();
 		}
 
@@ -348,7 +342,9 @@ namespace nana{	namespace drawerbase {
 		void textbox::set_accept(std::function<bool(nana::char_t)> fn)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().set_accept(std::move(fn));
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->set_accept(std::move(fn));
 		}
 
 		textbox& textbox::tip_string(nana::string str)

@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -62,7 +62,6 @@ namespace nana
 				drawer();
 				text_editor * editor();
 				const text_editor * editor() const;
-				void set_accept(std::function<bool(nana::char_t)> &&);
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
@@ -82,7 +81,6 @@ namespace nana
 				void _m_text_area(unsigned width, unsigned height);
 			private:
 				widget*	widget_;
-				std::function<bool(nana::char_t)> pred_acceptive_;
 				widgets::skeletons::text_editor * editor_;
 				std::unique_ptr<event_agent>	evt_agent_;
 			};

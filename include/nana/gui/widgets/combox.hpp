@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -52,8 +52,6 @@ namespace nana
 				trigger();
 				~trigger();
 
-				void set_accept(std::function<bool(nana::char_t)>&&);
-
 				drawer_impl& get_drawer_impl();
 				const drawer_impl& get_drawer_impl() const;
 			private:
@@ -70,7 +68,6 @@ namespace nana
 				void key_press(graph_reference, const arg_keyboard&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
-				std::function<bool(nana::char_t)> pred_acceptive_;
 				drawer_impl * drawer_;
 			};
 

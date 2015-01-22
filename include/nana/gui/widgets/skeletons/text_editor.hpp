@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -131,15 +131,20 @@ namespace nana{	namespace widgets
 			struct keywords;
 			class keyword_parser;
 		public:
-			typedef ::nana::char_t	char_type;
-			typedef textbase<char_type>::size_type size_type;
-			typedef textbase<char_type>::string_type string_type;
+			using char_type = ::nana::char_t;
+			using size_type = textbase<char_type>::size_type;
+			using string_type = textbase<char_type>::string_type;
 
-			typedef ::nana::paint::graphics & graph_reference;
+			using graph_reference = ::nana::paint::graphics&;
 
 			struct ext_renderer_tag
 			{
 				std::function<void(graph_reference, const nana::rectangle& text_area, const ::nana::color&)> background;
+			};
+
+			enum class accepts
+			{
+				no_restrict, integer, real
 			};
 
 			text_editor(window, graph_reference, const text_editor_scheme*);
@@ -150,7 +155,9 @@ namespace nana{	namespace widgets
 			void set_keyword(const ::nana::string& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
 			void erase_keyword(const ::nana::string& kw);
 
-			bool respone_keyboard(nana::char_t, bool enterable);
+			void set_accept(std::function<bool(char_type)>);
+			void set_accept(accepts);
+			bool respone_keyboard(char_type);
 
 			void typeface_changed();
 
@@ -163,8 +170,8 @@ namespace nana{	namespace widgets
 
 			bool load(const nana::char_t*);
 
-			//text_area
-			//@return: Returns true if the area of text is changed.
+			/// Sets the text area.
+			/// @return true if the area is changed with the new value.
 			bool text_area(const nana::rectangle&);
 			bool tip_string(nana::string&&);
 
@@ -188,8 +195,7 @@ namespace nana{	namespace widgets
 			void text(nana::string);
 			nana::string text() const;
 
-			//move_caret
-			//@brief: Set caret position through text coordinate
+			/// Sets caret position through text coordinate.
 			void move_caret(const upoint&);
 			void move_caret_end();
 			void reset_caret_height() const;
@@ -198,7 +204,7 @@ namespace nana{	namespace widgets
 
 			bool selected() const;
 			bool select(bool);
-			//Set the end position of a selected string
+			/// Sets the end position of a selected string.
 			void set_end_caret();
 			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos) const;
@@ -236,6 +242,7 @@ namespace nana{	namespace widgets
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
 		private:
+			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
 			bool _m_scroll_text(bool vertical);
 			void _m_on_scroll(const arg_mouse&);
@@ -253,17 +260,15 @@ namespace nana{	namespace widgets
 			unsigned _m_tabs_pixels(size_type tabs) const;
 			nana::size _m_text_extent_size(const char_type*, size_type n) const;
 
-			//_m_move_offset_x_while_over_border
-			//@brief: Moves the view window
+			/// Moves the view of window.
 			bool _m_move_offset_x_while_over_border(int many);
 			bool _m_move_select(bool record_undo);
 
 			int _m_text_top_base() const;
-			//_m_endx
-			//@brief: Gets the right point of text area
+
+			/// Returns the right point of text area.
 			int _m_endx() const;
-			//_m_endy
-			//@brief: Get the bottom point of text area
+			/// Returns the bottom point of text area.
 			int _m_endy() const;
 
 			void _m_draw_tip_string() const;
@@ -298,6 +303,9 @@ namespace nana{	namespace widgets
 
 			struct attributes
 			{
+				accepts acceptive{ accepts::no_restrict };
+				std::function<bool(char_type)> pred_acceptive;
+
 				nana::string tip_string;
 
 				bool line_wrapped{false};

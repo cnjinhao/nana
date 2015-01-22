@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -61,13 +61,13 @@ namespace nana
 				using graph_reference = paint::graphics&;
 				using widget_reference = widget&;
 
-				enum class where_t{unknown, text, push_button};
+				enum class parts{none, text, push_button};
 
 				drawer_impl()
 				{
 					state_.focused = false;
 					state_.button_state = element_state::normal;
-					state_.pointer_where = where_t::unknown;
+					state_.pointer_where = parts::none;
 					state_.lister = nullptr;
 				}
 
@@ -105,7 +105,7 @@ namespace nana
 					API::refresh_window(widget_->handle());
 				}
 
-				where_t get_where() const
+				parts get_where() const
 				{
 					return state_.pointer_where;
 				}
@@ -174,14 +174,13 @@ namespace nana
 
 				bool calc_where(graph_reference graph, int x, int y)
 				{
-					auto new_where = where_t::unknown;
-
+					auto new_where = parts::none;
 					if(1 < x && x < static_cast<int>(graph.width()) - 2 && 1 < y && y < static_cast<int>(graph.height()) - 2)
 					{
 						if((editor_->attr().editable == false) || (static_cast<int>(graph.width()) - 22 <= x))
-							new_where = where_t::push_button;
+							new_where = parts::push_button;
 						else
-							new_where = where_t::text;
+							new_where = parts::text;
 					}
 
 					if(new_where != state_.pointer_where)
@@ -195,7 +194,7 @@ namespace nana
 				void set_mouse_over(bool mo)
 				{
 					state_.button_state = (mo ? element_state::hovered : element_state::normal);
-					state_.pointer_where = where_t::unknown;
+					state_.pointer_where = parts::none;
 				}
 
 				void set_mouse_press(bool mp)
@@ -459,7 +458,7 @@ namespace nana
 					auto estate = state_.button_state;
 					if (enabled && !items_.empty())
 					{
-						if (has_lister() || (element_state::pressed == estate && state_.pointer_where == where_t::push_button))
+						if (has_lister() || (element_state::pressed == estate && state_.pointer_where == parts::push_button))
 							estate = element_state::pressed;
 					}
 					else
@@ -521,21 +520,21 @@ namespace nana
 					img.stretch(img.size(), *graph_, nana::rectangle(pos, imgsz));
 				}
 			private:
-				std::vector<std::shared_ptr<item> > items_;
+				std::vector<std::shared_ptr<item>> items_;
 				nana::float_listbox::module_type module_;
-				::nana::combox * widget_ = nullptr;
-				nana::paint::graphics * graph_ = nullptr;
-				drawerbase::float_listbox::item_renderer* item_renderer_ = nullptr;
+				::nana::combox * widget_{ nullptr };
+				nana::paint::graphics * graph_{ nullptr };
+				drawerbase::float_listbox::item_renderer* item_renderer_{ nullptr };
 
-				bool image_enabled_ = false;
-				unsigned image_pixels_ = 16;
-				widgets::skeletons::text_editor * editor_ = nullptr;
+				bool image_enabled_{ false };
+				unsigned image_pixels_{ 16 };
+				widgets::skeletons::text_editor * editor_{ nullptr };
 
 				struct state_type
 				{
 					bool	focused;
 					element_state button_state;
-					where_t	pointer_where;
+					parts	pointer_where;
 
 					nana::float_listbox * lister;
 					std::size_t	item_index_before_selection;
@@ -551,11 +550,6 @@ namespace nana
 				trigger::~trigger()
 				{
 					delete drawer_;
-				}
-
-				void trigger::set_accept(std::function<bool(nana::char_t)>&& pred)
-				{
-					pred_acceptive_ = std::move(pred);
 				}
 
 				drawer_impl& trigger::get_drawer_impl()
@@ -626,7 +620,7 @@ namespace nana
 					{
 						auto * editor = drawer_->editor();
 						if(false == editor->mouse_down(arg.left_button, arg.pos))
-							if(drawer_impl::where_t::push_button == drawer_->get_where())
+							if(drawer_impl::parts::push_button == drawer_->get_where())
 								drawer_->open_lister();
 
 						drawer_->draw();
@@ -716,8 +710,7 @@ namespace nana
 
 				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
 				{
-					bool enterable = drawer_->widget_ptr()->enabled() && (!pred_acceptive_ || pred_acceptive_(arg.key));
-					if (drawer_->editor()->respone_keyboard(arg.key, enterable))
+					if (drawer_->editor()->respone_keyboard(arg.key))
 						API::lazy_refresh();
 				}
 			//end class trigger
@@ -913,7 +906,9 @@ namespace nana
 		void combox::set_accept(std::function<bool(nana::char_t)> pred)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().set_accept(std::move(pred));
+			auto editor = get_drawer_trigger().get_drawer_impl().editor();
+			if(editor)
+				editor->set_accept(std::move(pred));
 		}
 
 		combox& combox::push_back(nana::string text)

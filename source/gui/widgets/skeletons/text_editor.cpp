@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1355,7 +1355,17 @@ namespace nana{	namespace widgets
 				keywords_->kwbase.erase(i);
 		}
 
-		bool text_editor::respone_keyboard(nana::char_t key, bool enterable)	//key is a character of ASCII code
+		void text_editor::set_accept(std::function<bool(char_type)> pred)
+		{
+			attributes_.pred_acceptive = std::move(pred);
+		}
+
+		void text_editor::set_accept(accepts acceptive)
+		{
+			attributes_.acceptive = acceptive;
+		}
+
+		bool text_editor::respone_keyboard(char_type key)	//key is a character of ASCII code
 		{
 			switch (key)
 			{
@@ -1367,7 +1377,7 @@ namespace nana{	namespace widgets
 				return true;
 			}
 
-			if (attributes_.editable && enterable)
+			if (attributes_.editable && API::window_enabled(window_) && (!attributes_.pred_acceptive || attributes_.pred_acceptive(key)))
 			{
 				switch (key)
 				{
@@ -1389,6 +1399,9 @@ namespace nana{	namespace widgets
 					undo(false);
 					break;
 				default:
+					if (!_m_accepts(key))
+						return false;
+
 					if (key > 0x7F || (32 <= key && key <= 126))
 						put(key);
 					else if (sizeof(nana::char_t) == sizeof(char))
@@ -1958,6 +1971,19 @@ namespace nana{	namespace widgets
 			nana::string text;
 			nana::system::dataexch().get(text);
 
+			//If it is required check the acceptable
+			if (accepts::no_restrict != attributes_.acceptive)
+			{
+				for (auto i = text.begin(); i != text.end(); ++i)
+				{
+					if (!_m_accepts(*i))
+					{
+						text.erase(i, text.end());
+						break;
+					}
+				}
+			}
+
 			if (!text.empty())
 				put(std::move(text));
 		}
@@ -2237,6 +2263,23 @@ namespace nana{	namespace widgets
 				}
 			}
 			return false;
+		}
+
+		bool text_editor::_m_accepts(char_type ch) const
+		{
+			if (accepts::no_restrict == attributes_.acceptive)
+				return true;
+
+			//Checks the input whether it meets the requirement for a numeric.
+			auto str = text();
+
+			if ('+' == ch || '-' == ch)
+				return str.empty();
+
+			if ((accepts::real == attributes_.acceptive) && ('.' == ch))
+				return (str.find(L'.') == str.npos);
+
+			return ('0' <= ch && ch <= '9');
 		}
 
 		::nana::color text_editor::_m_bgcolor() const

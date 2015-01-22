@@ -137,7 +137,7 @@ namespace nana
 							timer_.interval(intv / 2);
 					});
 
-					timer_.interval(1000);
+					timer_.interval(600);
 				}
 
 				void attach(::nana::widget& wdg, ::nana::paint::graphics& graph)
@@ -185,6 +185,11 @@ namespace nana
 					}
 				}
 
+				void draw_spins()
+				{
+					_m_draw_spins(buttons::none);
+				}
+
 				void render()
 				{
 					editor_->render(API::is_focus_window(editor_->window_handle()));
@@ -208,7 +213,7 @@ namespace nana
 					{
 						API::capture_window(editor_->window_handle(), false);
 						timer_.stop();
-						timer_.interval(1000);
+						timer_.interval(600);
 					}
 
 					if (buttons::none != spin_stated_)
@@ -409,6 +414,24 @@ namespace nana
 				API::lazy_refresh();
 			}
 			
+			void drawer::key_press(graph_reference, const arg_keyboard& arg)
+			{
+				if (impl_->editor()->move(arg.key))
+				{
+					impl_->editor()->reset_caret();
+					impl_->draw_spins();
+					API::lazy_refresh();
+				}
+			}
+
+			void drawer::key_char(graph_reference, const arg_keyboard& arg)
+			{
+				if (impl_->editor()->respone_keyboard(arg.key))
+				{
+					impl_->draw_spins();
+					API::lazy_refresh();
+				}
+			}
 		}
 	}//end namespace drawerbase
 
@@ -423,6 +446,20 @@ namespace nana
 	spinbox::spinbox(window wd, const nana::rectangle& r, bool visible)
 	{
 		this->create(wd, r, visible);
+	}
+
+	void spinbox::editable(bool accept)
+	{
+		internal_scope_guard lock;
+		auto editor = get_drawer_trigger().impl()->editor();
+		if (editor)
+			editor->editable(accept);
+	}
+
+	bool spinbox::editable() const
+	{
+		auto editor = get_drawer_trigger().impl()->editor();
+		return (editor ? editor->attr().editable : false);
 	}
 
 	void spinbox::range(int begin, int last, int step)
@@ -451,6 +488,39 @@ namespace nana
 		using namespace drawerbase::spinbox;
 		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(steps)));
 		API::refresh_window(handle());
+	}
+
+
+	void spinbox::set_accept(std::function<bool(::nana::char_t)> pred)
+	{
+		internal_scope_guard lock;
+		auto editor = get_drawer_trigger().impl()->editor();
+		if (editor)
+			editor->set_accept(std::move(pred));
+	}
+
+	void spinbox::set_accept_integer()
+	{
+		using accepts = ::nana::widgets::skeletons::text_editor::accepts;
+		auto editor = get_drawer_trigger().impl()->editor();
+		if (editor)
+			editor->set_accept(accepts::integer);
+	}
+
+	void spinbox::set_accept_real()
+	{
+		using accepts = ::nana::widgets::skeletons::text_editor::accepts;
+		auto editor = get_drawer_trigger().impl()->editor();
+		if (editor)
+			editor->set_accept(accepts::real);
+	}
+
+	void spinbox::remove_accept()
+	{
+		using accepts = ::nana::widgets::skeletons::text_editor::accepts;
+		auto editor = get_drawer_trigger().impl()->editor();
+		if (editor)
+			editor->set_accept(accepts::no_restrict);
 	}
 
 	void spinbox::qualify(std::wstring prefix, std::wstring suffix)

@@ -47,6 +47,8 @@ namespace nana
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse& arg)	override;
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
+				void key_press(graph_reference, const arg_keyboard&) override;
+				void key_char(graph_reference, const arg_keyboard&) override;
 			private:
 				implementation * const impl_;
 			};
@@ -58,15 +60,40 @@ namespace nana
 		: public widget_object <category::widget_tag, drawerbase::spinbox::drawer, ::nana::general_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
+		/// Constructs a spinbox.
 		spinbox();
 		spinbox(window, bool visible);
 		spinbox(window, const nana::rectangle& = {}, bool visible = true);
 
+		/// Sets the widget whether it accepts user keyboard input.
+		/// @param accept Set to indicate whether it accepts uesr keyboard input.
+		void editable(bool accept);
+
+		/// Determines whether the widget accepts user keyboard input.
+		bool editable() const;
+
+		/// Sets the numeric spin values and step.
 		void range(int begin, int last, int step);
 		void range(double begin, double last, double step);
+
+		/// Sets the string spin values.
 		void range(std::initializer_list<std::string> steps_utf8);
 		void range(std::initializer_list<std::wstring> steps);
 
+		/// Sets a predicator that determines whether accepts the current user input.
+		/// @param pred Predicator to determines the input.
+		void set_accept(std::function<bool(::nana::char_t)> pred);
+
+		/// Sets the spinbox that only accepts integer input.
+		void set_accept_integer();
+
+		/// Sets the spinbox that only accepts real number input.
+		void set_accept_real();
+
+		/// Removes the accept excluding predicate accept.
+		void remove_accept();
+
+		/// Sets the qualifications
 		void qualify(std::wstring prefix, std::wstring suffix);
 		void qualify(const std::string & prefix_utf8, const std::string& suffix_utf8);
 	private:
