@@ -10,10 +10,9 @@
  *	@file: nana/gui/widgets/combox.cpp
  */
 
-#include <nana/gui/wvl.hpp>
+#include <nana/gui.hpp>
 #include <nana/gui/widgets/combox.hpp>
 #include <nana/gui/element.hpp>
-#include <nana/paint/gadget.hpp>
 #include <nana/system/dataexch.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
@@ -71,11 +70,6 @@ namespace nana
 					state_.lister = nullptr;
 				}
 
-				~drawer_impl()
-				{
-					clear();
-				}
-
 				void renderer(drawerbase::float_listbox::item_renderer* ir)
 				{
 					item_renderer_ = ir;
@@ -103,11 +97,6 @@ namespace nana
 				{
 					items_.emplace_back(std::make_shared<item>(std::move(text)));
 					API::refresh_window(widget_->handle());
-				}
-
-				parts get_where() const
-				{
-					return state_.pointer_where;
 				}
 
 				nana::any * anyobj(std::size_t pos, bool allocate_if_empty) const
@@ -169,7 +158,7 @@ namespace nana
 
 				bool editable() const
 				{
-					return (editor_ ? editor_->attr().editable : false);
+					return (editor_ && editor_->attr().editable);
 				}
 
 				bool calc_where(graph_reference graph, int x, int y)
@@ -183,12 +172,11 @@ namespace nana
 							new_where = parts::text;
 					}
 
-					if(new_where != state_.pointer_where)
-					{
-						state_.pointer_where = new_where;
-						return true;
-					}
-					return false;
+					if (new_where == state_.pointer_where)
+						return false;
+					
+					state_.pointer_where = new_where;
+					return true;
 				}
 
 				void set_mouse_over(bool mo)
@@ -217,9 +205,9 @@ namespace nana
 					return (state_.lister != nullptr);
 				}
 
-				void open_lister()
+				void open_lister_if_push_button_positioned()
 				{
-					if((nullptr == state_.lister) && !items_.empty())
+					if((nullptr == state_.lister) && !items_.empty() && (parts::push_button == state_.pointer_where))
 					{
 						module_.items.clear();
 						std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
@@ -245,29 +233,30 @@ namespace nana
 
 				void move_items(bool upwards, bool circle)
 				{
-					if(nullptr == state_.lister)
+					if (state_.lister)
 					{
-						std::size_t orig_i = module_.index;
-						if(upwards)
-						{
-							if(module_.index && (module_.index < items_.size()))
-								-- module_.index;
-							else if(circle)
-								module_.index = items_.size() - 1;
-						}
-						else
-						{
-							if((module_.index + 1) < items_.size())
-								++ module_.index;
-							else if(circle)
-								module_.index = 0;
-						}
-
-						if(orig_i != module_.index)
-							option(module_.index, false);
+						state_.lister->move_items(upwards, circle);
+						return;
+					}
+					
+					auto pos = module_.index;
+					if (upwards)
+					{
+						if (pos && (pos < items_.size()))
+							--pos;
+						else if (circle)
+							pos = items_.size() - 1;
 					}
 					else
-						state_.lister->move_items(upwards, circle);
+					{
+						if ((pos + 1) < items_.size())
+							++pos;
+						else if (circle)
+							pos = 0;
+					}
+
+					if (pos != module_.index)
+						option(pos, false);
 				}
 
 				void draw()
@@ -315,7 +304,6 @@ namespace nana
 						_m_draw_push_button(widget_->enabled());
 						_m_draw_image();
 
-						//Yes, it's safe to static_cast here!
 						widget_->events().selected.emit(::nana::arg_combox(*widget_));
 					}
 				}
@@ -325,9 +313,8 @@ namespace nana
 					std::size_t pos = 0;
 					for (auto & m : items_)
 					{
-						if (m->key && nana::detail::pred_equal_by_less(m->key.get(), p.get()))
+						if (m->key && detail::pred_equal_by_less(m->key.get(), p.get()))
 							return pos;
-
 						++pos;
 					}
 
@@ -341,16 +328,17 @@ namespace nana
 					return pos;
 				}
 
-				void erase(nana::detail::key_interface * kv)
+				void erase(detail::key_interface * kv)
 				{
-					for (auto i = items_.begin(); i != items_.end(); ++i)
+					std::size_t pos = 0;
+					for (auto & m : items_)
 					{
-						if ((*i)->key && nana::detail::pred_equal_by_less((*i)->key.get(), kv))
+						if (m->key && detail::pred_equal_by_less(m->key.get(), kv))
 						{
-							std::size_t pos = i - items_.begin();
-							this->erase(pos);
+							erase(pos);
 							return;
 						}
+						++pos;
 					}
 				}
 
@@ -366,28 +354,22 @@ namespace nana
 
 				void erase(std::size_t pos)
 				{
-					if (pos < items_.size())
+					if (pos >= items_.size())
+						return;
+
+					if (pos == module_.index)
 					{
-						if (pos == module_.index)
-						{
-							module_.index = nana::npos;
-							this->widget_->caption(L"");
-						}
-						else if ((nana::npos != module_.index) && (pos < module_.index))
-							--module_.index;
-
-						items_.erase(items_.begin() + pos);
-
-						//Redraw, because the state of push button is changed when the last item is created.
-						if (items_.empty())
-							API::refresh_window(*widget_);
+						module_.index = ::nana::npos;
+						this->widget_->caption(L"");
 					}
-				}
+					else if ((::nana::npos != module_.index) && (pos < module_.index))
+						--module_.index;
 
-				void text(nana::string&& str)
-				{
-					if (editor_)
-						editor_->text(std::move(str));
+					items_.erase(items_.begin() + pos);
+
+					//Redraw, because the state of push button is changed when the last item is removed.
+					if (items_.empty())
+						API::refresh_window(*widget_);
 				}
 
 				void image(std::size_t pos, const nana::paint::image& img)
@@ -405,12 +387,11 @@ namespace nana
 
 				bool image_pixels(unsigned px)
 				{
-					if(image_pixels_ != px)
-					{
-						image_pixels_ = px;
-						return true;
-					}
-					return false;
+					if (image_pixels_ == px)
+						return false;
+					
+					image_pixels_ = px;
+					return true;
 				}
 			private:
 				void _m_lister_close_sig()
@@ -432,19 +413,17 @@ namespace nana
 
 				void _m_draw_background(graph_reference graph, const rectangle&, const ::nana::color&)
 				{
-					::nana::rectangle r(graph.size());
 					auto clr_from = colors::button_face_shadow_start;
 					auto clr_to = colors::button_face_shadow_end;
 
+					int pare_off_px = 1;
 					if (element_state::pressed == state_.button_state)
 					{
-						r.pare_off(2);
+						pare_off_px = 2;
 						std::swap(clr_from, clr_to);
 					}
-					else
-						r.pare_off(1);
 
-					graph.gradual_rectangle(r, clr_from, clr_to, true);
+					graph.gradual_rectangle(::nana::rectangle(graph.size()).pare_off(pare_off_px), clr_from, clr_to, true);
 				}
 
 				void _m_draw_push_button(bool enabled)
@@ -620,8 +599,7 @@ namespace nana
 					{
 						auto * editor = drawer_->editor();
 						if(false == editor->mouse_down(arg.left_button, arg.pos))
-							if(drawer_impl::parts::push_button == drawer_->get_where())
-								drawer_->open_lister();
+							drawer_->open_lister_if_push_button_positioned();
 
 						drawer_->draw();
 						if(editor->attr().editable)
@@ -768,7 +746,7 @@ namespace nana
 				{
 					if (pos_ == nana::npos)
 						return false;
-					return (impl_->at(pos_).item_text == static_cast<nana::string>(nana::charset(s)));
+					return (impl_->at(pos_).item_text == static_cast<nana::string>(nana::charset(s, nana::unicode::utf8)));
 				}
 
 				bool item_proxy::operator == (const wchar_t * s) const
@@ -793,12 +771,11 @@ namespace nana
 				/// Behavior of Iterator
 				item_proxy & item_proxy::operator++()
 				{
-					if (nana::npos == pos_)
-						return *this;
-
-					if (++pos_ == impl_->the_number_of_options())
-						pos_ = nana::npos;
-
+					if (nana::npos != pos_)
+					{
+						if (++pos_ == impl_->the_number_of_options())
+							pos_ = nana::npos;
+					}
 					return *this;
 				}
 
@@ -887,26 +864,26 @@ namespace nana
 		void combox::clear()
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().clear();
+			_m_impl().clear();
 			API::refresh_window(handle());
 		}
 
 		void combox::editable(bool eb)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().editable(eb);
+			_m_impl().editable(eb);
 		}
 
 		bool combox::editable() const
 		{
 			internal_scope_guard lock;
-			return get_drawer_trigger().get_drawer_impl().editable();
+			return _m_impl().editable();
 		}
 
 		void combox::set_accept(std::function<bool(nana::char_t)> pred)
 		{
 			internal_scope_guard lock;
-			auto editor = get_drawer_trigger().get_drawer_impl().editor();
+			auto editor = _m_impl().editor();
 			if(editor)
 				editor->set_accept(std::move(pred));
 		}
@@ -914,45 +891,45 @@ namespace nana
 		combox& combox::push_back(nana::string text)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().insert(std::move(text));
+			_m_impl().insert(std::move(text));
 			return *this;
 		}
 
 		std::size_t combox::the_number_of_options() const
 		{
 			internal_scope_guard lock;
-			return get_drawer_trigger().get_drawer_impl().the_number_of_options();
+			return _m_impl().the_number_of_options();
 		}
 
 		std::size_t combox::option() const
 		{
 			internal_scope_guard lock;
-			return get_drawer_trigger().get_drawer_impl().option();
+			return _m_impl().option();
 		}
 
-		void combox::option(std::size_t i)
+		void combox::option(std::size_t pos)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().option(i, false);
+			_m_impl().option(pos, false);
 			API::update_window(handle());
 		}
 
-		nana::string combox::text(std::size_t i) const
+		nana::string combox::text(std::size_t pos) const
 		{
 			internal_scope_guard lock;
-			return get_drawer_trigger().get_drawer_impl().at(i).item_text;
+			return _m_impl().at(pos).item_text;
 		}
 
 		void combox::erase(std::size_t pos)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().erase(pos);
+			_m_impl().erase(pos);
 		}
 
 		void combox::renderer(item_renderer* ir)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().renderer(ir);
+			_m_impl().renderer(ir);
 		}
 
 		void combox::image(std::size_t i, const nana::paint::image& img)
@@ -960,7 +937,7 @@ namespace nana
 			internal_scope_guard lock;
 			if(empty()) return;
 
-			auto & impl = get_drawer_trigger().get_drawer_impl();
+			auto & impl = _m_impl();
 			impl.image(i, img);
 			if(i == impl.option())
 				API::refresh_window(*this);
@@ -969,47 +946,61 @@ namespace nana
 		nana::paint::image combox::image(std::size_t pos) const
 		{
 			internal_scope_guard lock;
-			return get_drawer_trigger().get_drawer_impl().at(pos).item_image;
+			return _m_impl().at(pos).item_image;
 		}
 
 		void combox::image_pixels(unsigned px)
 		{
 			internal_scope_guard lock;
-			if(get_drawer_trigger().get_drawer_impl().image_pixels(px))
+			if (_m_impl().image_pixels(px))
 				API::refresh_window(*this);
 		}
 
 		nana::string combox::_m_caption() const
 		{
 			internal_scope_guard lock;
-			auto editor = get_drawer_trigger().get_drawer_impl().editor();
+			auto editor = _m_impl().editor();
 			return (editor ? editor->text() : nana::string());
 		}
 
 		void combox::_m_caption(nana::string&& str)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().text(std::move(str));
+
+			auto editor = _m_impl().editor();
+			if (editor)
+				editor->text(std::move(str));
+
 			API::refresh_window(*this);
 		}
 
 		nana::any * combox::_m_anyobj(std::size_t pos, bool alloc_if_empty) const
 		{
 			internal_scope_guard lock;
-			return get_drawer_trigger().get_drawer_impl().anyobj(pos, alloc_if_empty);
+			return _m_impl().anyobj(pos, alloc_if_empty);
 		}
 
 		auto combox::_m_at_key(std::shared_ptr<nana::detail::key_interface>&& p) -> item_proxy
 		{
 			internal_scope_guard lock;
-			auto & impl = get_drawer_trigger().get_drawer_impl();
+			auto & impl = _m_impl();
 			return item_proxy(&impl, impl.at_key(std::move(p)));
 		}
 
 		void combox::_m_erase(nana::detail::key_interface* p)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().get_drawer_impl().erase(p);
+			_m_impl().erase(p);
+		}
+
+		drawerbase::combox::drawer_impl & combox::_m_impl()
+		{
+			return get_drawer_trigger().get_drawer_impl();
+		}
+
+		const drawerbase::combox::drawer_impl& combox::_m_impl() const
+		{
+			return get_drawer_trigger().get_drawer_impl();
 		}
 	//end class combox
 }

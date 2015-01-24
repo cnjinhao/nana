@@ -494,6 +494,8 @@ namespace nana
 				case element_state::pressed:
 					bgcolor = arg_bgcolor.blend(colors::black, 0.8);
 					break;
+				case element_state::disabled:
+					bgcolor = colors::dark_gray;
 				default:
 					break;
 				}

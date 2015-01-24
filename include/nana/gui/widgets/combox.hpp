@@ -221,6 +221,8 @@ namespace nana
 	private:
 		item_proxy _m_at_key(std::shared_ptr<nana::detail::key_interface>&&);
 		void _m_erase(nana::detail::key_interface*);
+		drawerbase::combox::drawer_impl & _m_impl();
+		const drawerbase::combox::drawer_impl& _m_impl() const;
 	private:
 		//Overrides widget's virtual functions
 		nana::string _m_caption() const override;

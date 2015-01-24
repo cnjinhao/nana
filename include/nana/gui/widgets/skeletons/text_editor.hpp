@@ -271,8 +271,6 @@ namespace nana{	namespace widgets
 			/// Returns the bottom point of text area.
 			int _m_endy() const;
 
-			void _m_draw_tip_string() const;
-
 			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t*, std::size_t len) const;
 			//_m_draw_string
 			//@brief: Draw a line of string
