@@ -142,6 +142,7 @@ namespace nana{	namespace drawerbase {
 		{
 			_m_text_area(arg.width, arg.height);
 			refresh(graph);
+			editor_->reset_caret();
 			API::lazy_refresh();
 		}
 
