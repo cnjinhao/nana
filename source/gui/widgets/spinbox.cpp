@@ -157,13 +157,18 @@ namespace nana
 					API::eat_tabstop(wd, true);
 					API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 					API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
-					_m_reset_text_area();
+					reset_text_area();
 				}
 
 				void detach()
 				{
 					delete editor_;
 					editor_ = nullptr;
+				}
+
+				::nana::string value() const
+				{
+					return range_->value();
 				}
 
 				void set_range(std::unique_ptr<range_interface> ptr)
@@ -268,6 +273,15 @@ namespace nana
 					
 					return false;
 				}
+
+				void reset_text_area()
+				{
+					auto spins_r = _m_spins_area();
+					if (spins_r.x == 0)
+						editor_->text_area({});
+					else
+						editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
+				}
 			private:
 				void _m_text()
 				{
@@ -277,15 +291,6 @@ namespace nana
 						editor_->text(std::move(text));
 						_m_draw_spins(spin_stated_);
 					}
-				}
-
-				void _m_reset_text_area()
-				{
-					auto spins_r = _m_spins_area();
-					if (spins_r.x == 0)
-						editor_->text_area({});
-					else
-						editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
 				}
 
 				::nana::rectangle _m_spins_area() const
@@ -432,6 +437,14 @@ namespace nana
 					API::lazy_refresh();
 				}
 			}
+
+			void drawer::resized(graph_reference graph, const arg_resized& arg)
+			{
+				impl_->reset_text_area();
+				impl_->render();
+				impl_->editor()->reset_caret();
+				API::lazy_refresh();
+			}
 		}
 	}//end namespace drawerbase
 
@@ -490,6 +503,33 @@ namespace nana
 		API::refresh_window(handle());
 	}
 
+	::nana::string spinbox::value() const
+	{
+		internal_scope_guard lock;
+		if (handle())
+			return get_drawer_trigger().impl()->value();
+		return{};
+	}
+
+	int spinbox::to_int() const
+	{
+		//std::stoi is not defined by MinGW
+		std::wstringstream ss;
+		ss << value();
+		int n = 0;
+		ss >> n;
+		return n;
+	}
+
+	double spinbox::to_double() const
+	{
+		//std::stod is not defined by MinGW
+		std::wstringstream ss;
+		ss << value();
+		double d = 0;
+		ss >> d;
+		return d;
+	}
 
 	void spinbox::set_accept(std::function<bool(::nana::char_t)> pred)
 	{

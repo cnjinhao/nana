@@ -9,17 +9,20 @@
  *
  *	@file: nana/gui/msgbox.hpp
  */
-#include <nana/gui/msgbox.hpp>
-#include <nana/gui/programming_interface.hpp>
+
+//#include <nana/gui/msgbox.hpp>	//deprecated
+//#include <nana/gui/programming_interface.hpp>	//deprecated
+#include <nana/gui.hpp>
+#include <nana/gui/widgets/label.hpp>
+#include <nana/gui/widgets/button.hpp>
+#include <nana/gui/widgets/spinbox.hpp>
+#include <nana/gui/place.hpp>
+#include <nana/internationalization.hpp>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
-	#include <nana/gui/wvl.hpp>
-	#include <nana/gui/widgets/label.hpp>
-	#include <nana/gui/widgets/button.hpp>
 	#include <nana/gui/widgets/picture.hpp>
 	#include <nana/paint/pixel_buffer.hpp>
-	#include <nana/gui/place.hpp>
 #endif
 
 namespace nana
@@ -107,7 +110,7 @@ namespace nana
 					const unsigned text_pixels = 500 - ico_pixels;
 					text_.create(*this, nana::rectangle(12 + ico_pixels, 25, 1, 1));
 
-					text_.background(0xFFFFFF);
+					text_.bgcolor(colors::white);
 					text_.caption(text);
 
 					nana::size ts = text_.measure(text_pixels);
@@ -319,146 +322,294 @@ namespace nana
 		};
 #endif
 
-		//class msgbox
-		msgbox::msgbox()
-			: wd_(nullptr), button_(ok), icon_(icon_none)
-		{}
+	//class msgbox
+	msgbox::msgbox()
+		: wd_(nullptr), button_(ok), icon_(icon_none)
+	{}
 
-		msgbox::msgbox(const msgbox& rhs)
-			: wd_(rhs.wd_), title_(rhs.title_), button_(rhs.button_), icon_(rhs.icon_)
+	msgbox::msgbox(const msgbox& rhs)
+		: wd_(rhs.wd_), title_(rhs.title_), button_(rhs.button_), icon_(rhs.icon_)
+	{
+		sstream_<<rhs.sstream_.str();
+	}
+
+	msgbox& msgbox::operator=(const msgbox& rhs)
+	{
+		if(this != &rhs)
 		{
-			sstream_<<rhs.sstream_.str();
+			wd_ = rhs.wd_;
+			title_ = rhs.title_;
+			button_ = rhs.button_;
+			icon_ = rhs.icon_;
+			sstream_ << rhs.sstream_.str();
 		}
+		return *this;
+	}
 
-		msgbox& msgbox::operator=(const msgbox& rhs)
-		{
-			if(this != &rhs)
-			{
-				wd_ = rhs.wd_;
-				title_ = rhs.title_;
-				button_ = rhs.button_;
-				icon_ = rhs.icon_;
-				sstream_ << rhs.sstream_.str();
-			}
-			return *this;
-		}
+	msgbox::msgbox(const nana::string& title)
+		: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
+	{}
 
-		msgbox::msgbox(const nana::string& title)
-			: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
-		{}
+	msgbox::msgbox(window wd, const nana::string& title)
+		: wd_(wd), title_(title), button_(ok), icon_(icon_none)
+	{}
 
-		msgbox::msgbox(window wd, const nana::string& title)
-			: wd_(wd), title_(title), button_(ok), icon_(icon_none)
-		{}
+	msgbox::msgbox(window wd, const nana::string& title, button_t b)
+		: wd_(wd), title_(title), button_(b), icon_(icon_none)
+	{}
 
-		msgbox::msgbox(window wd, const nana::string& title, button_t b)
-			: wd_(wd), title_(title), button_(b), icon_(icon_none)
-		{}
+	msgbox& msgbox::icon(icon_t ic)
+	{
+		icon_ = ic;
+		return *this;
+	}
 
-		msgbox& msgbox::icon(icon_t ic)
-		{
-			icon_ = ic;
-			return *this;
-		}
+	void msgbox::clear()
+	{
+		sstream_.str("");
+		sstream_.clear();
+	}
 
-		void msgbox::clear()
-		{
-			sstream_.str("");
-			sstream_.clear();
-		}
-
-		msgbox & msgbox::operator<<(const nana::string& str)
-		{
+	msgbox & msgbox::operator<<(const nana::string& str)
+	{
 #if defined(NANA_UNICODE)
-			sstream_<<static_cast<std::string>(nana::charset(str));
+		sstream_<<static_cast<std::string>(nana::charset(str));
 #else
-			sstream_<<str;
+		sstream_<<str;
 #endif
-			return *this;
-		}
+		return *this;
+	}
 
-		msgbox & msgbox::operator<<(const nana::char_t* str)
-		{
+	msgbox & msgbox::operator<<(const nana::char_t* str)
+	{
 #if defined(NANA_UNICODE)
-			sstream_<<static_cast<std::string>(nana::charset(str));;
+		sstream_<<static_cast<std::string>(nana::charset(str));;
 #else
-			sstream_<<str;
+		sstream_<<str;
 #endif
-			return *this;
-		}
+		return *this;
+	}
 
-		msgbox & msgbox::operator<<(const nana::charset& cs)
-		{
-			std::string str = cs;
-			sstream_ << str;
-			return *this;
-		}
+	msgbox & msgbox::operator<<(const nana::charset& cs)
+	{
+		std::string str = cs;
+		sstream_ << str;
+		return *this;
+	}
 
-		msgbox & msgbox::operator<<(std::ostream& (*manipulator)(std::ostream&))
-		{
-			sstream_<<manipulator;
-			return *this;
-		}
+	msgbox & msgbox::operator<<(std::ostream& (*manipulator)(std::ostream&))
+	{
+		sstream_<<manipulator;
+		return *this;
+	}
 
-		msgbox::pick_t msgbox::show() const
-		{
+	msgbox::pick_t msgbox::show() const
+	{
 #if defined(NANA_WINDOWS)
-			int type = 0;
-			switch(button_)
-			{
-			case msgbox::ok:
-				type = MB_OK;
-				break;
-			case msgbox::yes_no:
-				type = MB_YESNO;
-				break;
-			case msgbox::yes_no_cancel:
-				type = MB_YESNOCANCEL;
-				break;
-			}
+		int type = 0;
+		switch(button_)
+		{
+		case msgbox::ok:
+			type = MB_OK;
+			break;
+		case msgbox::yes_no:
+			type = MB_YESNO;
+			break;
+		case msgbox::yes_no_cancel:
+			type = MB_YESNOCANCEL;
+			break;
+		}
 
-			switch(icon_)
-			{
-			case msgbox::icon_error:
-				type |= MB_ICONERROR;
-				break;
-			case msgbox::icon_question:
-				type |= MB_ICONQUESTION;
-				break;
-			case msgbox::icon_information:
-				type |= MB_ICONINFORMATION;
-				break;
-			case msgbox::icon_warning:
-				type |= MB_ICONWARNING;
-				break;
-            default:    break;
-			}
+		switch(icon_)
+		{
+		case msgbox::icon_error:
+			type |= MB_ICONERROR;
+			break;
+		case msgbox::icon_question:
+			type |= MB_ICONQUESTION;
+			break;
+		case msgbox::icon_information:
+			type |= MB_ICONINFORMATION;
+			break;
+		case msgbox::icon_warning:
+			type |= MB_ICONWARNING;
+			break;
+        default:    break;
+		}
 
 		#if defined(NANA_UNICODE)
 			int bt = ::MessageBoxW(reinterpret_cast<HWND>(API::root(wd_)), static_cast<std::wstring>(nana::charset(sstream_.str())).c_str(), title_.c_str(), type);
 		#else
 			int bt = ::MessageBoxA(reinterpret_cast<HWND>(API::root(wd_), sstream_.str().c_str(), title_.c_str(), type);
 		#endif
-			switch(bt)
-			{
-			case IDOK:
-				return pick_ok;
-			case IDYES:
-				return pick_yes;
-			case IDNO:
-				return pick_no;
-			case IDCANCEL:
-				return pick_cancel;
-			}
-
+		switch(bt)
+		{
+		case IDOK:
+			return pick_ok;
+		case IDYES:
 			return pick_yes;
-#elif defined(NANA_X11)
-			msgbox_window box(wd_, title_, button_, icon_);
-			box.prompt(nana::charset(sstream_.str()));
-			return box.pick();
-#endif
-			return pick_yes;
+		case IDNO:
+			return pick_no;
+		case IDCANCEL:
+			return pick_cancel;
 		}
 
-		//end class msgbox
+		return pick_yes;
+#elif defined(NANA_X11)
+		msgbox_window box(wd_, title_, button_, icon_);
+		box.prompt(nana::charset(sstream_.str()));
+		return box.pick();
+#endif
+		return pick_yes;
+	}
+	//end class msgbox
+
+
+	//class inputbox
+
+	class inputbox_window
+		: public ::nana::form
+	{
+	public:
+		inputbox_window(window owner, const ::nana::string & desc, const ::nana::string& title, const ::nana::string& label, unsigned input_widget_size)
+			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
+		{
+			desc_.create(*this);
+			desc_.format(true).caption(desc);
+			auto desc_extent = desc_.measure(470);
+			desc_extent.height += 8;
+
+			label_.create(*this);
+			label_.format(true).caption(label);
+			label_.text_align(::nana::align::left, ::nana::align_v::center);
+			auto label_extent = label_.measure(230);
+			label_extent.height += 8;
+
+			btn_ok_.create(*this);
+			btn_ok_.i18n(i18n_eval("Nana.OK"));
+			btn_ok_.events().click([this]{
+				close();
+				valid_input_ = true;
+			});
+			
+			btn_cancel_.create(*this);
+			btn_cancel_.i18n(i18n_eval("Nana.Cancel"));
+			btn_cancel_.events().click([this]{
+				close();
+			});
+
+			place_.bind(*this);
+			std::stringstream ss;
+			ss << "margin=10 vert <desc weight=" << desc_extent.height << "><weight=" << label_extent.height << "<label weight=" << label_extent.width << "><margin=[0,0,0,10] input";
+			if (input_widget_size)
+				ss << " weight=" << input_widget_size;
+			ss << ">><margin=[10,0,0,0] buttons arrange=100 gap=10 weight=23>";
+
+			place_.div(ss.str().data());
+			place_["desc"] << desc_;
+			place_["label"] << label_;
+			place_["buttons"] << btn_ok_ << btn_cancel_;
+
+			unsigned height = 20 + desc_extent.height + label_extent.height + 10 + 23;
+			size({ 500, height });
+			caption(title);
+		}
+
+		void set_input(window handle)
+		{
+			place_["input"] << handle;
+			place_.collocate();
+			show();
+		}
+
+		bool valid_input() const
+		{
+			return valid_input_;
+		}
+	private:
+		::nana::label	desc_;
+		::nana::label	label_;
+		::nana::button	btn_ok_;
+		::nana::button	btn_cancel_;
+		bool	valid_input_{ false };
+		::nana::place	place_;
+	};
+
+	inputbox::inputbox(window owner, ::nana::string desc, ::nana::string title, ::nana::string label)
+		:	owner_{ owner }, valid_input_{ false }, modal_mode_{false},
+			description_(std::move(desc)),
+			title_(std::move(title)),
+			label_(std::move(label))
+	{}
+
+	void inputbox::set_modal()
+	{
+		modal_mode_ = true;
+	}
+
+	bool inputbox::valid() const
+	{
+		return valid_input_;
+	}
+
+	int inputbox::get_int(int value, int begin, int last, int step)
+	{
+		int longest = (std::abs((begin < 0 ? begin * 10 : begin)) < std::abs(last < 0 ? last * 10 : last) ? last : begin);
+		std::wstringstream ss;
+		ss << longest;
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		auto input_widget_size = graph.text_extent_size(ss.str()).width + 34;
+		auto t1 = graph.typeface();
+
+		inputbox_window inp_window(owner_, description_, title_, label_, input_widget_size);
+		::nana::spinbox spinbox(inp_window);
+		spinbox.range(begin, last, step);
+		spinbox.set_accept_integer();
+		inp_window.set_input(spinbox);
+		auto t2 = spinbox.typeface();
+		if (modal_mode_)
+			inp_window.modality();
+		else
+			API::wait_for(inp_window);
+
+		valid_input_ = inp_window.valid_input();
+		return spinbox.to_int();
+	}
+
+	double inputbox::get_double(double value, double begin, double last, double step)
+	{
+		std::wstring longest;
+		for (auto i = begin; i < last; i += step)
+		{
+			std::wstringstream ss;
+			ss << i;
+			auto str = ss.str();
+			if (str.size() > longest.size())
+				longest = str;
+		}
+
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		auto input_widget_size = graph.text_extent_size(longest).width + 34;
+
+		inputbox_window inp_window(owner_, description_, title_, label_, input_widget_size);
+		::nana::spinbox spinbox(inp_window);
+		spinbox.range(begin, last, step);
+		spinbox.set_accept_real();
+		inp_window.set_input(spinbox);
+
+		if (modal_mode_)
+			inp_window.modality();
+		else
+			API::wait_for(inp_window);
+
+		valid_input_ = inp_window.valid_input();
+		return spinbox.to_double();
+	}
+
+	::nana::string inputbox::get_string()
+	{
+		return{};
+	}
+
+	//end class inputbox
 }

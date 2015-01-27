@@ -91,6 +91,26 @@ namespace nana
 		button_t button_;
 		icon_t icon_;
 	};
+
+	class inputbox
+	{
+	public:
+		inputbox(window, ::nana::string description, ::nana::string title = ::nana::string(), ::nana::string label = ::nana::string());
+
+		void set_modal();
+		bool valid() const;
+		int get_int(int value, int begin, int last, int step);
+		double get_double(double value, double begin, double last, double step);
+		::nana::string get_string();
+	private:
+		window owner_;
+		bool valid_input_;
+		bool modal_mode_;
+
+		::nana::string description_;
+		::nana::string title_;
+		::nana::string label_;
+	};
 }//end namespace nana
 
 #endif

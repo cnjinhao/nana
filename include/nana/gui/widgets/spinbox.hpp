@@ -49,6 +49,7 @@ namespace nana
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 				void key_press(graph_reference, const arg_keyboard&) override;
 				void key_char(graph_reference, const arg_keyboard&) override;
+				void resized(graph_reference, const arg_resized&) override;
 			private:
 				implementation * const impl_;
 			};
@@ -79,6 +80,11 @@ namespace nana
 		/// Sets the string spin values.
 		void range(std::initializer_list<std::string> steps_utf8);
 		void range(std::initializer_list<std::wstring> steps);
+
+		/// Gets the spined value
+		::nana::string value() const;
+		int to_int() const;
+		double to_double() const;
 
 		/// Sets a predicator that determines whether accepts the current user input.
 		/// @param pred Predicator to determines the input.

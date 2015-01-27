@@ -144,6 +144,15 @@ namespace nana
 		static std::shared_ptr<data>& get_data_ptr()
 		{
 			static std::shared_ptr<data> data_ptr;
+			if (!data_ptr)
+			{
+				data_ptr = std::make_shared<data>();
+
+				//Initialize the predefined language text
+				auto & table = data_ptr->table;
+				table["Nana.OK"].assign(L"OK");
+				table["Nana.Cancel"].assign(L"Cancel");
+			}
 			return data_ptr;
 		}
 
@@ -206,6 +215,16 @@ namespace nana
 						break;
 				}
 				impl->table[std::move(msgid)].swap(str);
+			}
+
+			//Assign all language texts to the new table.
+			auto & cur_table = get_data_ptr()->table;
+			auto & new_table = impl->table;
+			for (auto & m : cur_table)
+			{
+				auto & value = new_table[m.first];
+				if (value.empty())
+					value = m.second;
 			}
 
 			get_data_ptr().swap(impl);
@@ -288,22 +307,17 @@ namespace nana
 	void internationalization::set(std::string msgid, nana::string msgstr)
 	{
 		auto & ptr = internationalization_parts::get_data_ptr();
-		if (!ptr)
-			ptr = std::make_shared<internationalization_parts::data>();
 		ptr->table[msgid].swap(msgstr);
 	}
 
 	bool internationalization::_m_get(std::string& msgid, nana::string& msgstr) const
 	{
-		auto impl = internationalization_parts::get_data_ptr();
-		if (impl)
+		auto & impl = internationalization_parts::get_data_ptr();
+		auto i = impl->table.find(msgid);
+		if (i != impl->table.end())
 		{
-			auto i = impl->table.find(msgid);
-			if (i != impl->table.end())
-			{
-				msgstr = i->second;
-				return true;
-			}
+			msgstr = i->second;
+			return true;
 		}
 
 		msgstr = nana::charset(std::move(msgid), nana::unicode::utf8);
