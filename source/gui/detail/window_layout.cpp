@@ -308,8 +308,14 @@ namespace nana
 				{
 					if (is_redraw || called_by_notify)
 					{
-						if (called_by_notify)
+						//The background is made by more than calling by notification(such as redraw of parent,
+						//redraw of siblings which are covered by wd), sometimes it should be remade when an attribute
+						//of the wd is changed(such as its background color is changed).
+						if (called_by_notify || wd->flags.make_bground_declared)
+						{
 							make_bground(wd);
+							wd->flags.make_bground_declared = false;
+						}
 
 						wd->flags.refreshing = true;
 						wd->drawer.refresh();

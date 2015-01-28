@@ -163,7 +163,8 @@ namespace detail
 			bool dropable	:1; //Whether the window has make mouse_drop event.
 			bool fullscreen	:1;	//When the window is maximizing whether it fit for fullscreen.
 			bool borderless :1;
-			unsigned Reserved	:22;
+			bool make_bground_declared : 1;	//explicitly make bground for bground effects
+			unsigned Reserved	:21;
 			unsigned char tab;		//indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 		}flags;
@@ -175,7 +176,7 @@ namespace detail
 			general_events* attached_events;
 		}together;
 		
-		widget_colors* expr_colors{ nullptr };
+		widget_colors* scheme{ nullptr };
 
 		struct
 		{

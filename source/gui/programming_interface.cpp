@@ -110,6 +110,10 @@ namespace API
 			iwd->effect.bground = new_effect_ptr;
 			iwd->effect.bground_fade_rate = fade_rate;
 			restrict::window_manager.enable_effects_bground(iwd, true);
+			
+			if (fade_rate < 0.01)
+				iwd->flags.make_bground_declared = true;
+
 			API::refresh_window(wd);
 		}
 	}
@@ -155,14 +159,14 @@ namespace API
 			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard lock;
 			if (restrict::window_manager.available(iwd))
-				iwd->expr_colors = wdg_colors;
+				iwd->scheme = wdg_colors;
 		}
 
 		widget_colors* get_scheme(window wd)
 		{
 			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard lock;
-			return (restrict::window_manager.available(iwd) ? iwd->expr_colors : nullptr);
+			return (restrict::window_manager.available(iwd) ? iwd->scheme : nullptr);
 		}
 
 		void attach_drawer(widget& wd, drawer_trigger& dr)
@@ -172,7 +176,7 @@ namespace API
 			if(restrict::window_manager.available(iwd))
 			{
 				iwd->drawer.graphics.make(iwd->dimension);
-				iwd->drawer.graphics.rectangle(true, iwd->expr_colors->background.get_color());
+				iwd->drawer.graphics.rectangle(true, iwd->scheme->background.get_color());
 				iwd->drawer.attached(wd, dr);
 				iwd->drawer.refresh();	//Always redrawe no matter it is visible or invisible. This can make the graphics data correctly.
 			}
@@ -805,7 +809,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->expr_colors->foreground.get_color();
+			return reinterpret_cast<restrict::core_window_t*>(wd)->scheme->foreground.get_color();
 		return{};
 	}
 
@@ -815,10 +819,10 @@ namespace API
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd))
 		{
-			auto prev = iwd->expr_colors->foreground.get_color();
+			auto prev = iwd->scheme->foreground.get_color();
 			if (prev != clr)
 			{
-				iwd->expr_colors->foreground = clr;
+				iwd->scheme->foreground = clr;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -830,7 +834,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->expr_colors->background.get_color();
+			return reinterpret_cast<restrict::core_window_t*>(wd)->scheme->background.get_color();
 		return{};
 	}
 
@@ -840,10 +844,15 @@ namespace API
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd))
 		{
-			auto prev = iwd->expr_colors->background.get_color();
+			auto prev = iwd->scheme->background.get_color();
 			if (prev != clr)
 			{
-				iwd->expr_colors->background = clr;
+				iwd->scheme->background = clr;
+				
+				//If the bground mode of this window is basic, it should remake the background
+				if (iwd->effect.bground && iwd->effect.bground_fade_rate < 0.01) // fade rate < 0.01 means it is basic mode
+					iwd->flags.make_bground_declared = true;
+
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
@@ -855,7 +864,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->expr_colors->activated.get_color();
+			return reinterpret_cast<restrict::core_window_t*>(wd)->scheme->activated.get_color();
 		return{};
 	}
 
@@ -865,10 +874,10 @@ namespace API
 		internal_scope_guard lock;
 		if (restrict::window_manager.available(iwd))
 		{
-			auto prev = iwd->expr_colors->activated.get_color();
+			auto prev = iwd->scheme->activated.get_color();
 			if (prev != clr)
 			{
-				iwd->expr_colors->activated = clr;
+				iwd->scheme->activated = clr;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;

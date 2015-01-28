@@ -339,6 +339,7 @@ namespace nana
 				flags.refreshing = false;
 				flags.destroying = false;
 				flags.borderless = false;
+				flags.make_bground_declared = false;
 
 				visible = false;
 
