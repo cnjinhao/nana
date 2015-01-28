@@ -97,7 +97,9 @@ namespace API
 	}
 
 	void effects_bground(window wd, const effects::bground_factory_interface& factory, double fade_rate)
-	{	
+	{
+		if (fade_rate < 0.0 || fade_rate > 1.0)
+			throw std::invalid_argument("effects_bground: value range of fade_rate must be [0, 1].");
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard isg;
 		if(restrict::window_manager.available(iwd))
