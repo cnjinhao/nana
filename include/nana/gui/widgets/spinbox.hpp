@@ -17,10 +17,27 @@
 
 namespace nana
 {
+	class spinbox;
+
+	struct arg_spinbox
+	{
+		spinbox & widget;
+
+		arg_spinbox(spinbox& wdg)
+			: widget{ wdg }
+		{}
+	};
+
 	namespace drawerbase
 	{
 		namespace spinbox
 		{
+			struct spinbox_events
+				: public general_events
+			{
+				basic_event<arg_spinbox> text_changed;
+			};
+
 			/// Declaration of internal spinbox implementation
 			class implementation;
 
@@ -58,7 +75,7 @@ namespace nana
 
 	/// Spinbox Widget
 	class spinbox
-		: public widget_object <category::widget_tag, drawerbase::spinbox::drawer, ::nana::general_events, ::nana::widgets::skeletons::text_editor_scheme>
+		: public widget_object <category::widget_tag, drawerbase::spinbox::drawer, drawerbase::spinbox::spinbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
 		/// Constructs a spinbox.
@@ -83,6 +100,7 @@ namespace nana
 
 		/// Gets the spined value
 		::nana::string value() const;
+		void value(const ::nana::string&);
 		int to_int() const;
 		double to_double() const;
 

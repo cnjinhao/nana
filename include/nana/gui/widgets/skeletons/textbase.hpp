@@ -1,7 +1,7 @@
 /*
  *	A textbase class implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -511,6 +511,9 @@ namespace skeletons
 				_m_first_change();
 				changed_ = true;
 			}
+
+			if (evt_agent_)
+				evt_agent_->text_changed();
 		}
 	private:
 		std::deque<string_type>	text_cont_;

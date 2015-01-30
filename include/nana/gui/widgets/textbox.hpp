@@ -40,14 +40,16 @@ namespace nana
 				: public general_events
 			{
 				basic_event<arg_textbox> first_change;
+				basic_event<arg_textbox> text_changed;
 			};
 
 			class event_agent
 				: public widgets::skeletons::textbase_event_agent_interface
 			{
 			public:
-				event_agent(::nana::textbox& wdg);
+				event_agent(::nana::textbox&);
 				void first_change() override;
+				void text_changed() override;
 			private:
 				::nana::textbox & widget_;
 			};
@@ -57,7 +59,7 @@ namespace nana
 				: public drawer_trigger
 			{
 			public:
-				typedef widgets::skeletons::text_editor text_editor;
+				using text_editor = widgets::skeletons::text_editor;
 
 				drawer();
 				text_editor * editor();

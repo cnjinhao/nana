@@ -145,14 +145,8 @@ namespace nana
 		{
 			static std::shared_ptr<data> data_ptr;
 			if (!data_ptr)
-			{
 				data_ptr = std::make_shared<data>();
 
-				//Initialize the predefined language text
-				auto & table = data_ptr->table;
-				table["Nana.OK"].assign(L"OK");
-				table["Nana.Cancel"].assign(L"Cancel");
-			}
 			return data_ptr;
 		}
 

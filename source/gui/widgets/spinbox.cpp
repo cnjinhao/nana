@@ -21,6 +21,24 @@ namespace nana
 	{
 		namespace spinbox
 		{
+			class event_agent
+				: public widgets::skeletons::textbase_event_agent_interface
+			{
+			public:
+				event_agent(::nana::spinbox& wdg)
+					: widget_{ wdg }
+				{}
+
+				void first_change() override{}	//empty, because spinbox does not have this event.
+
+				void text_changed() override
+				{
+					widget_.events().text_changed.emit(::nana::arg_spinbox{ widget_ });
+				}
+			private:
+				::nana::spinbox & widget_;
+			};
+
 			enum class buttons
 			{
 				none, increase, decrease
@@ -32,6 +50,8 @@ namespace nana
 				virtual ~range_interface() = default;
 
 				virtual std::wstring value() const = 0;
+				virtual bool value(const std::wstring&) = 0;
+				virtual bool check_value(const std::wstring&) const = 0;
 				virtual void spin(bool increase) = 0;
 			};
 
@@ -49,6 +69,31 @@ namespace nana
 					std::wstringstream ss;
 					ss << value_;
 					return ss.str();
+				}
+
+				bool value(const std::wstring& value_str) override
+				{
+					std::wstringstream ss;
+					ss << value_str;
+
+					T v;
+					ss >> v;
+					if (begin_ <= v && v <= last_)
+					{
+						value_ = v;
+						return true;
+					}
+					return false;
+				}
+
+				bool check_value(const std::wstring& value_str) const override
+				{
+					std::wstringstream ss;
+					ss << value_str;
+
+					T v;
+					ss >> v;
+					return (begin_ <= v && v <= last_);
 				}
 
 				void spin(bool increase) override
@@ -95,6 +140,27 @@ namespace nana
 						return{};
 
 					return texts_[pos_];
+				}
+
+				bool value(const std::wstring& value_str) override
+				{
+					auto i = std::find(texts_.cbegin(), texts_.cend(), value_str);
+					if (i != texts_.cend())
+					{
+						pos_ = i - texts_.cbegin();
+						return true;
+					}
+					return false;
+				}
+
+				bool check_value(const std::wstring& str) const override
+				{
+					for (auto & s : texts_)
+					{
+						if (s.find(str) != s.npos)
+							return true;
+					}
+					return false;
 				}
 
 				void spin(bool increase) override
@@ -147,6 +213,15 @@ namespace nana
 					auto scheme = static_cast<::nana::widgets::skeletons::text_editor_scheme*>(API::dev::get_scheme(wd));
 					editor_ = new ::nana::widgets::skeletons::text_editor(wd, graph, scheme);
 					editor_->multi_lines(false);
+					editor_->set_accept([this](::nana::char_t ch)
+					{
+						auto str = editor_->text();
+						str += ch;
+						return range_->check_value(str);
+					});
+
+					evt_agent_.reset(new event_agent(static_cast<nana::spinbox&>(wdg)));
+					editor_->textbase().set_event_agent(evt_agent_.get());
 
 					if (!range_)
 						range_.reset(new range_numeric<int>(0, 100, 1));
@@ -169,6 +244,15 @@ namespace nana
 				::nana::string value() const
 				{
 					return range_->value();
+				}
+
+				bool value(const ::nana::string& value_str)
+				{
+					if (!range_->value(value_str))
+						return false;
+
+					_m_text();
+					return true;
 				}
 
 				void set_range(std::unique_ptr<range_interface> ptr)
@@ -344,6 +428,7 @@ namespace nana
 			private:
 				::nana::paint::graphics * graph_{nullptr};
 				::nana::widgets::skeletons::text_editor * editor_{nullptr};
+				std::unique_ptr<event_agent> evt_agent_;
 				buttons spin_stated_{ buttons::none };
 				std::unique_ptr<range_interface> range_;
 				::nana::timer timer_;
@@ -509,6 +594,16 @@ namespace nana
 		if (handle())
 			return get_drawer_trigger().impl()->value();
 		return{};
+	}
+
+	void spinbox::value(const ::nana::string& s)
+	{
+		internal_scope_guard lock;
+		if (handle())
+		{
+			if (get_drawer_trigger().impl()->value(s))
+				API::refresh_window(handle());
+		}
 	}
 
 	int spinbox::to_int() const

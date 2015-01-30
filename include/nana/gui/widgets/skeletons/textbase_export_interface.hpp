@@ -1,7 +1,7 @@
 /*
  *	Definitions of textbase export interfaces
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -25,6 +25,7 @@ namespace nana{	namespace widgets
 			virtual ~textbase_event_agent_interface() = default;
 
 			virtual void first_change() = 0;	///< An event for the text first change after text has been opened or stored.
+			virtual void text_changed() = 0;	///< An event for the change of text.
 		};
 	}//end namespace skeletons
 }//end namespace widgets

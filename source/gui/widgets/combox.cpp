@@ -16,6 +16,7 @@
 #include <nana/system/dataexch.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
+#include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
 
 namespace nana
 {
@@ -23,6 +24,24 @@ namespace nana
 	{
 		namespace combox
 		{
+			class event_agent
+				: public widgets::skeletons::textbase_event_agent_interface
+			{
+			public:
+				event_agent(::nana::combox& wdg)
+					: widget_{wdg}
+				{}
+
+				void first_change() override{}	//empty, because combox does not have this event.
+
+				void text_changed() override
+				{
+					widget_.events().text_changed.emit(::nana::arg_combox{ widget_ });
+				}
+			private:
+				::nana::combox & widget_;
+			};
+
 			struct item
 				: public float_listbox::item_interface
 			{
@@ -84,6 +103,9 @@ namespace nana
 					editor_->multi_lines(false);
 					editable(false);
 					graph_ = &graph;
+
+					evt_agent_.reset(new event_agent{ static_cast<nana::combox&>(wd) });
+					editor_->textbase().set_event_agent(evt_agent_.get());
 				}
 
 				void detached()
@@ -508,7 +530,7 @@ namespace nana
 				bool image_enabled_{ false };
 				unsigned image_pixels_{ 16 };
 				widgets::skeletons::text_editor * editor_{ nullptr };
-
+				std::unique_ptr<event_agent> evt_agent_;
 				struct state_type
 				{
 					bool	focused;

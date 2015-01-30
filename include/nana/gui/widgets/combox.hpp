@@ -29,7 +29,7 @@ namespace nana
 		combox & widget;
 
 		arg_combox(combox& wdg)
-			: widget(wdg)
+			: widget{ wdg }
 		{}
 	};
 
@@ -40,7 +40,8 @@ namespace nana
 			struct combox_events
 				: public general_events
 			{
-				basic_event<arg_combox> selected;
+				basic_event<arg_combox>	selected;
+				basic_event<arg_combox> text_changed;
 			};
 
 			class drawer_impl;

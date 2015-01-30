@@ -27,7 +27,12 @@ namespace nana{	namespace drawerbase {
 			{
 				widget_.events().first_change.emit(::nana::arg_textbox{ widget_ });
 			}
-		//
+
+			void event_agent::text_changed()
+			{
+				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_ });
+			}
+		//end class event_agent
 
 	//class draweer
 		drawer::drawer()
