@@ -1,7 +1,7 @@
 /*
  *	A date chooser Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,10 +28,7 @@ namespace nana
 					: widget_(nullptr), chose_(false), page_(page::date), pos_(where::none)
 				{
 					const nana::string ws[] = {STR("S"), STR("M"), STR("T"), STR("W"), STR("T"), STR("F"), STR("S")};
-					const nana::string ms[] = {STR("January"), STR("February"), STR("March"), STR("April"), STR("May"), STR("June"), STR("July"), STR("August"), STR("September"), STR("October"), STR("November"), STR("December")};
-
 					for(int i = 0; i < 7; ++i)	weekstr_[i] = ws[i];
-					for(int i = 0; i < 12; ++i) monthstr_[i] = ms[i];
 
 					nana::date d;
 					chdate_.year = chmonth_.year = d.read().year;
@@ -58,12 +55,6 @@ namespace nana
 				{
 					if(0 <= index && index < 7)
 						this->weekstr_[index] = str;
-				}
-
-				void trigger::month_name(unsigned index, const nana::string& str)
-				{
-					if(0 <= index && index < 12)
-						this->monthstr_[index] = str;
 				}
 
 				trigger::where trigger::_m_pos_where(graph_reference graph, const ::nana::point& pos)
@@ -132,6 +123,8 @@ namespace nana
 					arrow.direction(::nana::direction::east);
 					arrow.draw(graph, arrow_bgcolor, (pos_ == where::right_button ? color_.highlight : color_.normal), arrow_r, element_state::normal);
 					
+					const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+
 					if(graph.width() > 32 + border_size * 2)
 					{
 						std::stringstream ss;
@@ -139,7 +132,7 @@ namespace nana
 						nana::string str;
 						if(page_ == page::date)
 						{
-							str += monthstr_[chmonth_.month - 1];
+							str += ::nana::internationalization()(monthstr[chmonth_.month - 1]);
 							str += STR("  ");
 						}
 						str += nana::charset(ss.str());
@@ -313,11 +306,13 @@ namespace nana
 					drawing_basis dbasis;
 					_m_make_drawing_basis(dbasis, graph, refpos);
 
+					const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+					::nana::internationalization i18n;
 					for(int y = 0; y < 3; ++y)
 						for(int x = 0; x < 4; ++x)
 						{
 							int index = x + y * 4;
-							_m_draw_pos(dbasis, graph, x, y, monthstr_[index], true, (chmonth_.year == chdate_.year) && (index + 1 == chdate_.month));
+							_m_draw_pos(dbasis, graph, x, y, i18n(monthstr[index]), true, (chmonth_.year == chdate_.year) && (index + 1 == chdate_.month));
 						}
 				}
 
@@ -661,12 +656,6 @@ namespace nana
 		void date_chooser::weekstr(unsigned index, const nana::string& str)
 		{
 			get_drawer_trigger().week_name(index, str);
-			API::refresh_window(*this);
-		}
-
-		void date_chooser::monthstr(unsigned index, const nana::string& str)
-		{
-			get_drawer_trigger().month_name(index, str);
 			API::refresh_window(*this);
 		}
 	//end class date_chooser

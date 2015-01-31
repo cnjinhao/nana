@@ -1,7 +1,7 @@
 /*
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -10,13 +10,15 @@
  *	@file: nana/gui/msgbox.hpp
  */
 
-//#include <nana/gui/msgbox.hpp>	//deprecated
-//#include <nana/gui/programming_interface.hpp>	//deprecated
 #include <nana/gui.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/widgets/button.hpp>
 #include <nana/gui/widgets/spinbox.hpp>
+#include <nana/gui/widgets/combox.hpp>
+#include <nana/gui/widgets/textbox.hpp>
+#include <nana/gui/widgets/panel.hpp>
 #include <nana/gui/place.hpp>
+#include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -471,53 +473,62 @@ namespace nana
 		: public ::nana::form
 	{
 	public:
-		inputbox_window(window owner, const ::nana::string & desc, const ::nana::string& title, const ::nana::string& label, unsigned input_widget_size)
+		inputbox_window(window owner, const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels)
 			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
 		{
 			desc_.create(*this);
 			desc_.format(true).caption(desc);
 			auto desc_extent = desc_.measure(470);
-			desc_extent.height += 8;
-
-			label_.create(*this);
-			label_.format(true).caption(label);
-			label_.text_align(::nana::align::left, ::nana::align_v::center);
-			auto label_extent = label_.measure(230);
-			label_extent.height += 8;
 
 			btn_ok_.create(*this);
-			btn_ok_.i18n(i18n_eval("Nana.OK"));
+			btn_ok_.i18n(i18n_eval("OK"));
 			btn_ok_.events().click([this]{
 				close();
 				valid_input_ = true;
 			});
 			
 			btn_cancel_.create(*this);
-			btn_cancel_.i18n(i18n_eval("Nana.Cancel"));
+			btn_cancel_.i18n(i18n_eval("Cancel"));
 			btn_cancel_.events().click([this]{
 				close();
 			});
 
+			unsigned height = 20 + desc_extent.height + 10 + 38;
+
 			place_.bind(*this);
 			std::stringstream ss;
-			ss << "margin=10 vert <desc weight=" << desc_extent.height << "><weight=" << label_extent.height << "<label weight=" << label_extent.width << "><margin=[0,0,0,10] input";
-			if (input_widget_size)
-				ss << " weight=" << input_widget_size;
-			ss << ">><margin=[10,0,0,0] buttons arrange=100 gap=10 weight=23>";
+			ss << "margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
+			
+			for (std::size_t i = 0; i < contents; ++i)
+				ss << "<weight=27 margin=[3] input_"<<i<<">";
+			height += 28 * contents;
+
+			ss << "><margin=[15] weight=38<><buttons arrange=80 gap=10 weight=170>>";
 
 			place_.div(ss.str().data());
 			place_["desc"] << desc_;
-			place_["label"] << label_;
 			place_["buttons"] << btn_ok_ << btn_cancel_;
 
-			unsigned height = 20 + desc_extent.height + label_extent.height + 10 + 23;
-			size({ 500, height });
+			if (desc_extent.width < 170)
+				desc_extent.width = 170;
+
+			//Make sure the complete display of input extent
+			if (desc_extent.width < fixed_pixels)
+				desc_extent.width = fixed_pixels;
+
+			size({ desc_extent.width + 20, height });
 			caption(title);
 		}
 
-		void set_input(window handle)
+		void set_input(const std::vector<window>& inputs)
 		{
-			place_["input"] << handle;
+			std::size_t index = 0;
+			for (auto wd : inputs)
+			{
+				std::stringstream ss;
+				ss << "input_" << index++;
+				place_[ss.str().data()] << wd;
+			}
 			place_.collocate();
 			show();
 		}
@@ -528,88 +539,478 @@ namespace nana
 		}
 	private:
 		::nana::label	desc_;
-		::nana::label	label_;
 		::nana::button	btn_ok_;
 		::nana::button	btn_cancel_;
 		bool	valid_input_{ false };
 		::nana::place	place_;
 	};
 
-	inputbox::inputbox(window owner, ::nana::string desc, ::nana::string title, ::nana::string label)
-		:	owner_{ owner }, valid_input_{ false }, modal_mode_{false},
-			description_(std::move(desc)),
-			title_(std::move(title)),
-			label_(std::move(label))
-	{}
-
-	void inputbox::set_modal()
+	//class integer
+	struct inputbox::integer::implement
 	{
-		modal_mode_ = true;
+		int value;
+		int begin;
+		int last;
+		int step;
+
+		::nana::string label_text;
+		::nana::panel<false> dock;
+		::nana::label label;
+		::nana::spinbox spinbox;
+	};
+
+	inputbox::integer::integer(::nana::string label, int init_value, int begin, int last, int step)
+		: impl_(new implement)
+	{
+		auto impl = impl_.get();
+		impl->value = init_value;
+		impl->begin = begin;
+		impl->last = last;
+		impl->step = step;
+		impl->label_text = std::move(label);
 	}
 
-	bool inputbox::valid() const
+	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	inputbox::integer::~integer(){}
+
+	int inputbox::integer::value() const
 	{
-		return valid_input_;
+		return impl_->value;
 	}
 
-	int inputbox::get_int(int value, int begin, int last, int step)
+	//Implementation of abstract_content
+	const ::nana::string& inputbox::integer::label() const
 	{
-		int longest = (std::abs((begin < 0 ? begin * 10 : begin)) < std::abs(last < 0 ? last * 10 : last) ? last : begin);
+		return impl_->label_text;
+	}
+
+	window inputbox::integer::create(window parent, unsigned label_px)
+	{
+		auto impl = impl_.get();
+		impl->dock.create(parent);
+
+		impl->label.create(impl->dock, rectangle{ 0, 0, label_px, 0 });
+		impl->label.text_align(::nana::align::right, ::nana::align_v::center);
+		impl->label.caption(impl->label_text);
+		impl->label.format(true);
+
+		//get the longest value
+		int longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
 		std::wstringstream ss;
 		ss << longest;
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
-		auto input_widget_size = graph.text_extent_size(ss.str()).width + 34;
-		auto t1 = graph.typeface();
+		auto value_px = graph.text_extent_size(ss.str()).width + 34;
 
-		inputbox_window inp_window(owner_, description_, title_, label_, input_widget_size);
-		::nana::spinbox spinbox(inp_window);
-		spinbox.range(begin, last, step);
-		spinbox.set_accept_integer();
-		inp_window.set_input(spinbox);
-		auto t2 = spinbox.typeface();
-		if (modal_mode_)
-			inp_window.modality();
-		else
-			API::wait_for(inp_window);
+		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
+		impl->spinbox.range(impl->begin, impl->last, impl->step);
+		impl->spinbox.set_accept_integer();
 
-		valid_input_ = inp_window.valid_input();
-		return spinbox.to_int();
+		//Workaround for no implementation of std::to_wstring by MinGW.
+		ss.str(L"");
+		ss.clear();
+		ss << impl->value;
+		impl->spinbox.value(ss.str());
+
+		impl->dock.events().resized([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		{
+			impl->label.size({ label_px, arg.height });
+			impl->spinbox.size({ value_px, arg.height });
+		});
+
+		impl->spinbox.events().destroy([impl]
+		{
+			impl->value = impl->spinbox.to_int();
+		});
+
+		return impl->dock;
 	}
 
-	double inputbox::get_double(double value, double begin, double last, double step)
+	unsigned inputbox::integer::fixed_pixels() const
 	{
-		std::wstring longest;
-		for (auto i = begin; i < last; i += step)
+		return 0;
+	}
+	//end class integer
+
+
+	//class real
+	struct inputbox::real::implement
+	{
+		double value;
+		double begin;
+		double last;
+		double step;
+
+		::nana::string label_text;
+		::nana::panel<false> dock;
+		::nana::label label;
+		::nana::spinbox spinbox;
+	};
+
+	inputbox::real::real(::nana::string label, double init_value, double begin, double last, double step)
+		: impl_(new implement)
+	{
+		auto impl = impl_.get();
+		impl->value = init_value;
+		impl->begin = begin;
+		impl->last = last;
+		impl->step = step;
+		impl->label_text = std::move(label);
+	}
+
+	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	inputbox::real::~real(){}
+
+	double inputbox::real::value() const
+	{
+		return impl_->value;
+	}
+
+	//Implementation of abstract_content
+	const ::nana::string& inputbox::real::label() const
+	{
+		return impl_->label_text;
+	}
+
+	window inputbox::real::create(window parent, unsigned label_px)
+	{
+		auto impl = impl_.get();
+		impl->dock.create(parent);
+
+		impl->label.create(impl->dock, rectangle{ 0, 0, label_px, 0 });
+		impl->label.text_align(::nana::align::right, ::nana::align_v::center);
+		impl->label.caption(impl->label_text);
+		impl->label.format(true);
+
+		//get the longest value
+		auto longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
+		std::wstringstream ss;
+		ss << longest;
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		auto value_px = graph.text_extent_size(ss.str()).width + 34;
+
+		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
+		impl->spinbox.range(impl->begin, impl->last, impl->step);
+		impl->spinbox.set_accept_real();
+
+		//Workaround for no implementation of std::to_wstring by MinGW.
+		ss.str(L"");
+		ss.clear();
+		ss << impl->value;
+		impl->spinbox.value(ss.str());
+
+		impl->dock.events().resized([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
-			std::wstringstream ss;
-			ss << i;
-			auto str = ss.str();
-			if (str.size() > longest.size())
-				longest = str;
+			impl->label.size({ label_px, arg.height });
+			impl->spinbox.size({ value_px, arg.height });
+		});
+
+		impl->spinbox.events().destroy([impl]
+		{
+			impl->value = impl->spinbox.to_int();
+		});
+
+		return impl->dock;
+	}
+
+	unsigned inputbox::real::fixed_pixels() const
+	{
+		return 0;
+	}
+	//end class real
+
+
+	//class text
+	struct inputbox::text::implement
+	{
+		::nana::string value;
+		std::vector< ::nana::string> options;
+
+		::nana::string label_text;
+		::nana::panel<false> dock;
+		::nana::label label;
+		::nana::combox combox;
+		::nana::textbox textbox;
+	};
+
+	inputbox::text::text(::nana::string label)
+		: impl_(new implement)
+	{
+		impl_->label_text = std::move(label);
+	}
+
+	inputbox::text::text(::nana::string label, std::vector<::nana::string> options)
+		: impl_(new implement)
+	{
+		impl_->options.swap(options);
+		impl_->label_text = std::move(label);
+	}
+
+	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	inputbox::text::~text(){}
+
+	::nana::string inputbox::text::value() const
+	{
+		return impl_->value;
+	}
+
+	//Implementation of abstract_content
+	const ::nana::string& inputbox::text::label() const
+	{
+		return impl_->label_text;
+	}
+
+	window inputbox::text::create(window parent, unsigned label_px)
+	{
+		auto impl = impl_.get();
+		impl->dock.create(parent);
+
+		impl->label.create(impl->dock, rectangle{ 0, 0, label_px, 0 });
+		impl->label.text_align(::nana::align::right, ::nana::align_v::center);
+		impl->label.caption(impl->label_text);
+		impl->label.format(true);
+
+		unsigned value_px = 0;
+		if (impl->options.empty())
+		{
+			impl->textbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, 0, 0 });
+		}
+		else
+		{
+			//get the longest value
+			paint::graphics graph{ ::nana::size{ 10, 10 } };
+			for (auto & s : impl->options)
+			{
+				auto px = graph.text_extent_size(s).width;
+				if (px > value_px)
+					value_px = px;
+			}
+			value_px += 34;
+
+			impl->combox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
+
+			for (auto & s : impl->options)
+				impl->combox.push_back(s);
 		}
 
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
-		auto input_widget_size = graph.text_extent_size(longest).width + 34;
+		impl->dock.events().resized([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		{
+			impl->label.size({ label_px, arg.height });
+			if (value_px)
+				impl->combox.size({ value_px, arg.height });
+			else
+				impl->textbox.size({arg.width - label_px - 10, arg.height});
+		});
 
-		inputbox_window inp_window(owner_, description_, title_, label_, input_widget_size);
-		::nana::spinbox spinbox(inp_window);
-		spinbox.range(begin, last, step);
-		spinbox.set_accept_real();
-		inp_window.set_input(spinbox);
-
-		if (modal_mode_)
-			inp_window.modality();
-		else
-			API::wait_for(inp_window);
-
-		valid_input_ = inp_window.valid_input();
-		return spinbox.to_double();
+		auto & wdg = (value_px ? static_cast<widget&>(impl->combox) : static_cast<widget&>(impl->textbox));
+		wdg.events().destroy([&wdg, impl]
+		{
+			impl->value = wdg.caption();
+		});
+		return impl->dock;
 	}
 
-	::nana::string inputbox::get_string()
+	unsigned inputbox::text::fixed_pixels() const
 	{
-		return{};
+		return 0;
+	}
+	//end class text
+
+
+	//class date
+	struct inputbox::date::implement
+	{
+		int year;
+		int month;
+		int day;
+
+		::nana::string label_text;
+		::nana::panel<false> dock;
+		::nana::label label;
+		::nana::combox wdg_month;
+		::nana::spinbox wdg_day;
+		::nana::spinbox wdg_year;
+	};
+
+	inputbox::date::date(::nana::string label)
+		: impl_(new implement)
+	{
+		impl_->label_text = std::move(label);
 	}
 
+	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	inputbox::date::~date(){}
+
+	::nana::string inputbox::date::value() const
+	{
+		std::wstringstream ss;
+		ss << impl_->month << L'-' << impl_->day << L", " << impl_->year;
+		return ss.str();
+	}
+
+	int inputbox::date::year() const
+	{
+		return impl_->year;
+	}
+
+	int inputbox::date::month() const
+	{
+		return impl_->month;
+	}
+	int inputbox::date::day() const
+	{
+		return impl_->day;
+	}
+
+	//Implementation of abstract_content
+	const ::nana::string& inputbox::date::label() const
+	{
+		return impl_->label_text;
+	}
+
+	window inputbox::date::create(window parent, unsigned label_px)
+	{
+		auto impl = impl_.get();
+		impl->dock.create(parent);
+
+		impl->label.create(impl->dock, rectangle{ 0, 0, label_px, 0 });
+		impl->label.text_align(::nana::align::right, ::nana::align_v::center);
+		impl->label.caption(impl->label_text);
+		impl->label.format(true);
+
+		int left = static_cast<int>(label_px + 10);
+		impl->wdg_month.create(impl->dock, rectangle{left, 0, 94, 0});
+
+		::nana::internationalization i18n;
+		const char * monthstr[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+		for (auto i = std::begin(monthstr), end = std::end(monthstr); i != end; ++i)
+			impl->wdg_month.push_back(i18n(*i));
+
+		left += 104;
+		impl->wdg_day.create(impl->dock, rectangle{ left, 0, 38, 0 });
+		impl->wdg_day.range(1, 31, 1);
+		impl->wdg_day.set_accept_integer();
+
+		left += 48;
+		impl->wdg_year.create(impl->dock, rectangle{left, 0, 50, 0});
+		impl->wdg_year.range(1601, 9999, 1);
+		impl->wdg_year.set_accept_integer();
+
+		auto date = ::nana::date().read();
+		impl->wdg_month.option(date.month - 1);
+
+		std::wstringstream ss;
+		ss << date.day;
+		impl->wdg_day.value(ss.str());
+		ss.str(L"");
+		ss.clear();
+		ss << date.year;
+		impl->wdg_year.value(ss.str());
+
+		impl->dock.events().resized([impl, label_px](const ::nana::arg_resized& arg)
+		{
+			impl->label.size({ label_px, arg.height });
+			auto sz = impl->wdg_month.size();
+			sz.height = arg.height;
+			impl->wdg_month.size(sz);
+
+			sz = impl->wdg_day.size();
+			sz.height = arg.height;
+			impl->wdg_day.size(sz);
+
+			sz = impl->wdg_year.size();
+			sz.height = arg.height;
+			impl->wdg_year.size(sz);
+		});
+
+		impl->wdg_day.events().destroy([impl]
+		{
+			impl->day = impl->wdg_day.to_int();
+			impl->month = impl->wdg_month.option() + 1;
+		});
+
+		impl->wdg_year.events().destroy([impl]
+		{
+			impl->year = impl->wdg_year.to_int();
+		});
+
+		auto make_days = [impl]
+		{
+			int days[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+			auto month = impl->wdg_month.option() + 1;
+			
+			if (2 == month)
+			{
+				auto year = impl->wdg_year.to_int();
+				if (((0 == year % 4) && (year % 100)) || (0 == (year % 400)))
+					days[1] = 29;
+			}
+
+			auto day = impl->wdg_day.to_int();
+			impl->wdg_day.range(1, days[month - 1], 1); //It resets the current value of wdg_day
+			
+			if (day > days[month - 1])
+				day = days[month - 1];
+			
+			std::wstringstream ss;
+			ss << day;
+			impl->wdg_day.value(ss.str());
+		};
+
+		impl->wdg_year.events().text_changed(make_days);
+		impl->wdg_month.events().selected(make_days);
+
+		return impl->dock;
+	}
+
+	unsigned inputbox::date::fixed_pixels() const
+	{
+		return 202;
+	}
+	//end class date
+
+
+	inputbox::inputbox(window owner, ::nana::string desc, ::nana::string title)
+		:	owner_{ owner },
+			description_(std::move(desc)),
+			title_(std::move(title))
+	{}
+
+	void inputbox::_m_fetch_args(std::vector<abstract_content*>&)
+	{}
+
+
+	bool inputbox::_m_open(std::vector<abstract_content*>& contents, bool modal)
+	{
+		unsigned label_px = 0, fixed_px = 0;
+		paint::graphics graph({ 5, 5 });
+		for (auto p : contents)
+		{
+			auto px = graph.text_extent_size(p->label()).width;
+			if (px > label_px)
+				label_px = px;
+
+			px = p->fixed_pixels();
+			if (px > fixed_px)
+				fixed_px = px;
+		}
+
+		if (label_px > 120)
+			label_px = 120;
+
+		inputbox_window input_wd(owner_, description_, title_, contents.size(), label_px + 10 + fixed_px);
+
+		std::vector<window> inputs;
+		for (auto p : contents)
+			inputs.push_back(p->create(input_wd, label_px));
+
+		input_wd.set_input(inputs);
+
+		if (modal)
+			input_wd.modality();
+		else
+			API::wait_for(input_wd);
+
+		return input_wd.valid_input();
+	}
 	//end class inputbox
 }

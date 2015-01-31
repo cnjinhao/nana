@@ -1,7 +1,7 @@
 /*
  *	A date chooser Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -43,7 +43,6 @@ namespace nana
 				bool chose() const;
 				nana::date read() const;
 				void week_name(unsigned index, const nana::string&);
-				void month_name(unsigned index, const nana::string&);
 			private:
 				where _m_pos_where(graph_reference, const ::nana::point& pos);
 				void _m_draw(graph_reference);
@@ -64,7 +63,6 @@ namespace nana
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
 				nana::string weekstr_[7];
-				nana::string monthstr_[12];
 
 				widget * widget_;
 				
@@ -115,7 +113,6 @@ namespace nana
 		bool chose() const;
 		nana::date read() const;
 		void weekstr(unsigned index, const nana::string&);///<Set the week strings which will be displayed for day, index is in range of [0, 6]
-		void monthstr(unsigned index, const nana::string&);///<Set the month strings which will be displayed for month. index is in range of [0, 11]
 	};
 }//end namespace nana
 
