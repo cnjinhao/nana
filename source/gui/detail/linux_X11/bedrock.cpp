@@ -381,10 +381,10 @@ namespace detail
 	{
 		if(evt_code != arg.evt_code)
 			throw std::runtime_error("Nana.bedrock: Invalid event arg.");
-		return emit(evt_code, wd, static_cast<const ::nana::detail::event_arg_interface&>(arg), ask_update, thrd);
+		return emit(evt_code, wd, static_cast<const ::nana::event_arg&>(arg), ask_update, thrd);
 	}
 
-	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::detail::event_arg_interface& arg, bool ask_update, thread_context* thrd)
+	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd)
 	{
 		if(wd_manager.available(wd) == false)
 			return false;
@@ -411,7 +411,7 @@ namespace detail
 		return true;
 	}
 
-	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::detail::event_arg_interface& arg, thread_context* thrd)
+	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, thread_context* thrd)
 	{
 		if(wd_manager.available(wd) == false)
 			return false;

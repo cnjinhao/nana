@@ -25,6 +25,7 @@ namespace nana
     class combox;
 
 	struct arg_combox
+		: public event_arg
 	{
 		combox & widget;
 

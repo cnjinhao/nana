@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -81,16 +81,16 @@ namespace detail
 		widget_colors& get_scheme_template(scheme_factory_base&&);
 		std::unique_ptr<widget_colors> make_scheme(scheme_factory_base&&);
 	public:
-		window_manager_t	wd_manager;
 		events_operation	evt_operation;
+		window_manager_t	wd_manager;
 
 		runtime_manager<core_window_t*, bedrock>	rt_manager;
 
 		bool emit(event_code, core_window_t*, const arg_mouse&, bool ask_update, thread_context*);
-		bool emit(event_code, core_window_t*, const event_arg_interface&, bool ask_update, thread_context*);
-		bool emit_drawer(event_code, core_window_t*, const event_arg_interface&, thread_context*);
+		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*);
+		bool emit_drawer(event_code, core_window_t*, const event_arg&, thread_context*);
 	private:
-		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg_interface&);
+		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg&);
 		void _m_event_filter(event_code, core_window_t*, thread_context*);
 		void _m_except_handler();
 	private:

@@ -15,7 +15,13 @@
 #include <stdexcept>
 #include <sstream>
 
-namespace nana{	namespace drawerbase {
+namespace nana
+{
+	arg_textbox::arg_textbox(textbox& wdg)
+		: widget{wdg}
+	{}
+
+namespace drawerbase {
 	namespace textbox
 	{
 		//class event_agent

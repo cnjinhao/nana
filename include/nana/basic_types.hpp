@@ -315,6 +315,7 @@ namespace nana
 		///< Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
 		color blend(const color& bgcolor, double alpha) const;
 
+		///< Determines whether the color is completely transparent.
 		bool invisible() const;
 		pixel_color_t px_color() const;
 		pixel_argb_t argb() const;

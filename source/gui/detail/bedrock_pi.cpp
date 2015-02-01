@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -25,6 +25,20 @@
 
 namespace nana
 {
+	//class event_arg
+	event_arg::~event_arg(){}
+
+	void event_arg::stop_propagation() const
+	{
+		stop_propagation_ = true;
+	}
+	
+	bool event_arg::propagation_stopped() const
+	{
+		return stop_propagation_;
+	}
+	//end class event_arg
+
 	namespace detail
 	{
 		void events_operation_register(event_handle evt)
@@ -130,7 +144,7 @@ namespace nana
 			return pi_data_->scheme.create(std::move(factory));
 		}
 
-		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::detail::event_arg_interface& event_arg)
+		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::event_arg& event_arg)
 		{
 			switch (evt_code)
 			{

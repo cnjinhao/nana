@@ -20,8 +20,11 @@ namespace nana
 	class textbox;
 
 	struct arg_textbox
+		: public event_arg
 	{
 		textbox& widget;
+
+		arg_textbox(textbox&);
 	};
 
 	namespace widgets

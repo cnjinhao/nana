@@ -1,7 +1,7 @@
 /*
 *	Definition of General Events
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -39,15 +39,20 @@ namespace nana
 			virtual event_interface*	get_event() const = 0;
 		};
 
-		class event_arg_interface
-		{
-		public:
-			virtual ~event_arg_interface() = default;
-		};
-
 		void events_operation_register(event_handle);
 		void events_operation_cancel(event_handle);
 	}//end namespace detail
+
+	class event_arg
+	{
+	public:
+		virtual ~event_arg();
+
+		void stop_propagation() const;
+		bool propagation_stopped() const;
+	private:
+		mutable bool stop_propagation_{ false };
+	};
 
 	struct general_events;
 
@@ -62,15 +67,16 @@ namespace nana
 		{
 			basic_event * const event_ptr;
 			std::function<void(arg_reference)> invoke;
-			bool flag_entered = false;
-			bool flag_deleted = false;
+			bool flag_entered{ false };
+			bool flag_deleted{ false };
+			bool unignorable{false};
 
-			docker(basic_event * s, std::function<void(arg_reference)> && ivk)
-				: event_ptr(s), invoke(std::move(ivk))
+			docker(basic_event * s, std::function<void(arg_reference)> && ivk, bool unignorable_flag)
+				: event_ptr(s), invoke(std::move(ivk)), unignorable(unignorable_flag)
 			{}
 
-			docker(basic_event * s, const std::function<void(arg_reference)> & ivk)
-				: event_ptr(s), invoke(ivk)
+			docker(basic_event * s, const std::function<void(arg_reference)> & ivk, bool unignorable_flag)
+				: event_ptr(s), invoke(ivk), unignorable(unignorable_flag)
 			{}
 
 			~docker()
@@ -91,8 +97,8 @@ namespace nana
 			if (nullptr == dockers_)
 				dockers_.reset(new std::vector<std::unique_ptr<docker>>);
 
-			typedef typename std::remove_reference<Function>::type prototype;
-			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn))));
+			using prototype = typename std::remove_reference<Function>::type;
+			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
 			auto evt = reinterpret_cast<event_handle>(static_cast<detail::docker_interface*>(dck.get()));
 			dockers_->emplace(dockers_->begin(), std::move(dck));
 			detail::events_operation_register(evt);
@@ -113,8 +119,8 @@ namespace nana
 			if (nullptr == dockers_)
 				dockers_.reset(new std::vector<std::unique_ptr<docker>>);
 
-			typedef typename std::remove_reference<Function>::type prototype;
-			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn))));
+			using prototype = typename std::remove_reference<Function>::type;
+			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
 			auto evt = reinterpret_cast<event_handle>(static_cast<detail::docker_interface*>(dck.get()));
 			dockers_->emplace_back(std::move(dck));
 			detail::events_operation_register(evt);
@@ -125,6 +131,24 @@ namespace nana
 		event_handle operator()(Function&& fn)
 		{
 			return connect(std::forward<Function>(fn));
+		}
+
+		template<typename Function>
+		event_handle connect_unignorable(Function && fn, bool in_front = false)
+		{
+			internal_scope_guard lock;
+			if (nullptr == dockers_)
+				dockers_.reset(new std::vector<std::unique_ptr<docker>>);
+
+			using prototype = typename std::remove_reference<Function>::type;
+			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true));
+			auto evt = reinterpret_cast<event_handle>(static_cast<detail::docker_interface*>(dck.get()));
+			if (in_front)
+				dockers_->emplace(dockers_->begin(), std::move(dck));
+			else
+				dockers_->emplace_back(std::move(dck));
+			detail::events_operation_register(evt);
+			return evt;
 		}
 
 		std::size_t length() const
@@ -158,20 +182,30 @@ namespace nana
 				(*output++) = dck.get();
 			}
 
+			bool stop_propagation = false;
 			for (; transitory != output; ++transitory)
 			{
-				std::unique_ptr<docker> p(*transitory);
-				auto i = std::find(dockers.begin(), dockers.end(), p);
+				auto docker_ptr = *transitory;
+				if (stop_propagation && !docker_ptr->unignorable)
+					continue;
+
+				auto i = std::find_if(dockers.begin(), dockers.end(), [docker_ptr](std::unique_ptr<docker>& p){
+					return (docker_ptr == p.get());
+				});
+
 				if (i != dockers.end())
 				{
-					(*transitory)->flag_entered = true;
-					(*transitory)->invoke(arg);
-					(*transitory)->flag_entered = false;
+					docker_ptr->flag_entered = true;
+					docker_ptr->invoke(arg);
 
-					if ((*transitory)->flag_deleted)
+					if (arg.propagation_stopped())
+						stop_propagation = true;
+					
+					docker_ptr->flag_entered = false;
+
+					if (docker_ptr->flag_deleted)
 						dockers.erase(i);
 				}
-				p.release();
 			}
 		}
 
@@ -182,7 +216,7 @@ namespace nana
 				dockers_.reset();
 		}
 
-		void remove(event_handle evt)
+		void remove(event_handle evt) override
 		{
 			internal_scope_guard lock;
 			if (dockers_)
@@ -362,7 +396,7 @@ namespace nana
 	};
 
 	struct arg_mouse
-		: public detail::event_arg_interface
+		: public event_arg
 	{
 		event_code evt_code;
 		::nana::window window_handle;
@@ -386,27 +420,27 @@ namespace nana
 		unsigned distance;	//expressed in multiples or divisions of 120
 	};
 
-	struct arg_dropfiles : public detail::event_arg_interface
+	struct arg_dropfiles : public event_arg
 	{
 		::nana::window	window_handle;
 		::nana::point	pos;
 		std::vector<nana::string>	files;
 	};
 
-	struct arg_expose : public detail::event_arg_interface
+	struct arg_expose : public event_arg
 	{
 		::nana::window window_handle;
 		bool exposed;
 	};
 
-	struct arg_focus : public detail::event_arg_interface
+	struct arg_focus : public event_arg
 	{
 		::nana::window window_handle;
 		::nana::native_window_type receiver;
 		bool getting;
 	};
 
-	struct arg_keyboard : public detail::event_arg_interface
+	struct arg_keyboard : public event_arg
 	{
 		event_code evt_code;
 		::nana::window window_handle;
@@ -416,21 +450,21 @@ namespace nana
 		bool shift;
 	};
 
-	struct arg_move : public detail::event_arg_interface
+	struct arg_move : public event_arg
 	{
 		::nana::window window_handle;
 		int x;
 		int y;
 	};
 
-	struct arg_resized : public detail::event_arg_interface
+	struct arg_resized : public event_arg
 	{
 		::nana::window window_handle;
 		unsigned width;
 		unsigned height;
 	};
 
-	struct arg_resizing : public detail::event_arg_interface
+	struct arg_resizing : public event_arg
 	{
 		::nana::window window_handle;
 		window_border border;
@@ -438,13 +472,13 @@ namespace nana
 		mutable unsigned height;
 	};
 
-	struct arg_unload : public detail::event_arg_interface
+	struct arg_unload : public event_arg
 	{
 		::nana::window window_handle;
 		mutable bool cancel;
 	};
 
-	struct arg_destroy : public detail::event_arg_interface
+	struct arg_destroy : public event_arg
 	{
 		::nana::window window_handle;
 	};

@@ -20,6 +20,7 @@ namespace nana
 	class spinbox;
 
 	struct arg_spinbox
+		: public event_arg
 	{
 		spinbox & widget;
 
@@ -123,7 +124,17 @@ namespace nana
 	private:
 		::nana::string _m_caption() const;
 		void _m_caption(::nana::string&&);
-	};
+	}; //end class spinbox
+
+	namespace dev
+	{
+		template<>
+		struct widget_traits<spinbox>
+		{
+			using event_type = drawerbase::spinbox::spinbox_events;
+			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
+		};
+	}
 }//end namespace nana
 
 #endif //NANA_GUI_WIDGET_SPINBOX_HPP
