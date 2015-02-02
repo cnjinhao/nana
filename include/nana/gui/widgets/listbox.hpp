@@ -552,6 +552,9 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		size_type size_categ() const;                   ///<Get the number of categories
 		size_type size_item() const;                    ///<The number of items in the default category
 		size_type size_item(size_type cat) const;          ///<The number of items in category "cat"
+
+		void enable_single(bool for_selection, bool category_limited);
+		void disable_single(bool for_selection);
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
