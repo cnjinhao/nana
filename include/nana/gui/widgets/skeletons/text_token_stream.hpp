@@ -45,9 +45,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		tokenizer(const nana::string& s, bool format_enabled)
 			:	iptr_(s.data()),
 				endptr_(s.data() + s.size()),
-				format_enabled_(format_enabled),
-				format_state_(false),
-				revert_token_(token::eof)
+				format_enabled_(format_enabled)
 		{
 		}
 
@@ -414,17 +412,14 @@ namespace nana{ namespace widgets{	namespace skeletons
 			}
 		}
 	private:
-		const nana::char_t * iptr_;
-		const nana::char_t * endptr_;
+		const ::nana::char_t * iptr_;
+		const ::nana::char_t * endptr_;
 		const bool	format_enabled_;
-		bool	format_state_;
+		bool	format_state_{false};
 
-		nana::string idstr_;
+		::nana::string idstr_;
 		std::pair<nana::string, nana::string> binary_;
-
-		std::size_t	whspace_size_;
-
-		token revert_token_;
+		token revert_token_{token::eof};
 	};
 
 	//The fblock states a format, and a format from which it is inherted
@@ -528,7 +523,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 	{
 	public:
 		data_image(const nana::string& imgpath, const nana::size & sz, std::size_t limited)
-			: image_(imgpath), limited_(limited)
+			: image_(imgpath)//, limited_(limited)
 		{
 			size_ = image_.size();
 
@@ -597,7 +592,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 		nana::string str_;
 		nana::paint::image image_;
 		nana::size size_;
-		std::size_t limited_;
 	};
 
 	class dstream
@@ -927,7 +921,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 		}
 
 	private:
-		bool format_enabled_;
 		std::vector<fblock*> fblocks_;
 		std::list<std::deque<value> > lines_;
 

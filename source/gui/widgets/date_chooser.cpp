@@ -53,7 +53,7 @@ namespace nana
 
 				void trigger::week_name(unsigned index, const nana::string& str)
 				{
-					if(0 <= index && index < 7)
+					if(index < 7)
 						this->weekstr_[index] = str;
 				}
 

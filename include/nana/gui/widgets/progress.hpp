@@ -40,6 +40,7 @@ namespace nana
 				bool _m_check_changing(unsigned) const;
 			private:
 				static const unsigned border = 2;
+
 				widget * widget_{nullptr};
 				nana::paint::graphics* graph_{nullptr};
 				unsigned draw_width_{static_cast<unsigned>(-1)};

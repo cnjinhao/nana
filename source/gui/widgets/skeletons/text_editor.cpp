@@ -643,7 +643,7 @@ namespace nana{	namespace widgets
 					pre_calc_line(i, pixels);
 			}
 
-			std::size_t take_lines() const
+			std::size_t take_lines() const override
 			{
 				std::size_t lines = 0;
 				for (auto & mtr : linemtr_)
@@ -652,7 +652,7 @@ namespace nana{	namespace widgets
 				return lines;
 			}
 
-			std::size_t take_lines(std::size_t pos) const
+			std::size_t take_lines(std::size_t pos) const override
 			{
 				return (pos < linemtr_.size() ? linemtr_[pos].take_lines : 0);
 			}

@@ -416,8 +416,6 @@ namespace nana
 		/// Determinte whether the checkbox is enabled.
 		bool checkable() const;
 
-		treebox& icon(const nana::string& id, const node_image_type& node_img);
-
 		node_image_type& icon(const nana::string& id) const;
 
 		void icon_erase(const nana::string& id);

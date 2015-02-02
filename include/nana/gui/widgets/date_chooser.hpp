@@ -56,7 +56,7 @@ namespace nana
 				bool _m_get_trace(point, int & res);
 				void _m_perf_transform(transform_action tfid, graph_reference,  graph_reference dirtybuf, graph_reference newbuf, const nana::point& refpos);
 			private:
-				void refresh(graph_reference);
+				void refresh(graph_reference) override;
 				void attached(widget_reference, graph_reference)	override;
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
