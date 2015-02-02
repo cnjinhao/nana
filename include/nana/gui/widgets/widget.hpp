@@ -399,6 +399,16 @@ namespace nana
 		{
 			return *scheme_;
 		}
+
+		void draw_through(std::function<void()> draw_fn)
+		{
+			API::draw_through(handle(), draw_fn);
+		}
+
+		void map_through_widgets(native_drawable_type drawable)
+		{
+			API::map_through_widgets(handle(), drawable);
+		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()
 		{

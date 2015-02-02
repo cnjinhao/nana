@@ -1286,6 +1286,15 @@ namespace detail
 				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));
 				break;
 			case WM_PAINT:
+				if (msgwnd->is_draw_through())
+				{
+					msgwnd->other.attribute.root->draw_through();
+
+					::PAINTSTRUCT ps;
+					::BeginPaint(root_window, &ps);
+					::EndPaint(root_window, &ps);
+				}
+				else
 				{
 					::PAINTSTRUCT ps;
 					::HDC dc = ::BeginPaint(root_window, &ps);
@@ -1600,6 +1609,26 @@ namespace detail
 	element_store& bedrock::get_element_store() const
 	{
 		return impl_->estore;
+	}
+
+	void bedrock::map_through_widgets(core_window_t* wd, native_drawable_type drawable)
+	{
+#if defined(NANA_WINDOWS)
+		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);
+
+		for (auto child : wd->children)
+		{
+			if (!child->visible) continue;
+
+			if (::nana::category::flags::widget == child->other.category)
+			{
+				::BitBlt(reinterpret_cast<HDC>(drawable), child->pos_root.x, child->pos_root.y, static_cast<int>(child->dimension.width), static_cast<int>(child->dimension.height),
+					graph_context, child->pos_root.x, child->pos_root.y, SRCCOPY);
+			}
+			else if (::nana::category::flags::lite_widget == child->other.category)
+				map_through_widgets(child, drawable);
+		}
+#endif	
 	}
 
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const arg_mouse& arg, bool ask_update, thread_context* thrd)

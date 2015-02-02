@@ -675,7 +675,7 @@ namespace detail
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			if (impl_->wd_register.available(wd))
+			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
 			{
 				//Copy the root buffer that wd specified into DeviceContext
 #if defined(NANA_LINUX)
@@ -739,7 +739,7 @@ namespace detail
 			if (false == impl_->wd_register.available(wd))
 				return false;
 
-			if(wd->visible)
+			if(wd->visible && (!wd->is_draw_through()))
 			{
 				if (wd->visible_parents())
 				{

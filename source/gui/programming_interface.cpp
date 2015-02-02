@@ -354,6 +354,11 @@ namespace API
 		return (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)) == false);
 	}
 
+	bool is_window(window wd)
+	{
+		return restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd));
+	}
+
 	void enable_dropfiles(window wd, bool enb)
 	{
 		internal_scope_guard lock;
@@ -567,6 +572,27 @@ namespace API
 			return true;
 		}
 		return false;
+	}
+
+	void draw_through(window wd, std::function<void()> draw_fn)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (!restrict::bedrock.wd_manager.available(iwd))
+			throw std::invalid_argument("draw_through: invalid window parameter");
+
+		if (::nana::category::flags::root != iwd->other.category)
+			throw std::invalid_argument("draw_through: the window is not a root widget");
+
+		iwd->other.attribute.root->draw_through.swap(draw_fn);
+	}
+
+	void map_through_widgets(window wd, native_drawable_type drawable)
+	{
+		auto iwd = reinterpret_cast<::nana::detail::basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::bedrock.wd_manager.available(iwd) && iwd->is_draw_through() )
+			restrict::bedrock.map_through_widgets(iwd, drawable);
 	}
 
 	nana::size window_size(window wd)

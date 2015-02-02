@@ -20,19 +20,27 @@ namespace nana
 	//@brief:	This name is only visible for this compiling-unit
 	namespace restrict
 	{
-		typedef detail::bedrock::core_window_t core_window_t;
-		extern detail::bedrock& bedrock;
-
-		inline detail::drawer& get_drawer(window wd)
+		namespace
 		{
-			return reinterpret_cast<core_window_t*>(wd)->drawer;
+			using core_window_t = detail::bedrock::core_window_t;
+
+			inline detail::drawer& get_drawer(window wd)
+			{
+				return reinterpret_cast<core_window_t*>(wd)->drawer;
+			}
 		}
 	}
     
     //class drawing
   		drawing::drawing(window wd)
 			:handle_(wd)
-  		{}
+  		{
+			if (!API::is_window(wd))
+				throw std::invalid_argument("drawing: invalid window parameter");
+
+			if (reinterpret_cast<restrict::core_window_t*>(wd)->is_draw_through())
+				throw std::invalid_argument("drawing: the window is draw_through enabled");
+		}
   		
   		drawing::~drawing(){} //Just for polymorphism
 

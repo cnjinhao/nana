@@ -119,7 +119,8 @@ namespace API
 
 	void window_icon_default(const paint::image&);
 	void window_icon(window, const paint::image&);
-	bool empty_window(window);                            ///< Determines whether a window is existing.
+	bool empty_window(window);		///< Determines whether a window is existing.
+	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
 	void enable_dropfiles(window, bool);
 
     /// \brief Retrieves the native window of a Nana.GUI window.
@@ -198,6 +199,9 @@ namespace API
 
 	void bring_top(window, bool activated);
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after);
+
+	void draw_through(window, std::function<void()>);
+	void map_through_widgets(window, native_drawable_type);
 
 	nana::size window_size(window);
 	void window_size(window, const size&);
