@@ -2404,8 +2404,7 @@ namespace nana
 				void _m_draw(const Container& cont, const nana::rectangle& rect)
 				{
 					graph_reference graph = *(essence_->graph);
-					int x = rect.x - essence_->scroll.offset_x;
-					unsigned height = rect.height - 1;
+					
 
 					int txtop = (rect.height - essence_->text_height) / 2 + rect.y;
 					auto txtcolor = essence_->lister.wd_ptr()->fgcolor();
@@ -2415,7 +2414,9 @@ namespace nana
 					if(essence_->pointer_where.first == parts::header && (item_spliter_ == npos))
 						state = essence_->ptr_state;
 
-					int bottom_y = static_cast<int>(rect.y + rect.height - 2);
+					const unsigned height = rect.height - 1;
+					const int bottom_y = rect.bottom() - 2;
+					int x = rect.x - essence_->scroll.offset_x;
 					for(auto & i: cont)
 					{
 						if(i.visible)
@@ -2427,15 +2428,14 @@ namespace nana
 								graph.line({ next_x - 1, rect.y }, { next_x - 1, bottom_y }, _m_border_color());
 							}
 
-							if(next_x > rect.right())
-								break;
-
 							x = next_x;
+							if (x > rect.right())
+								break;
 						}
 					}
 
-					if(x - rect.x < static_cast<int>(rect.width))
-						graph.rectangle({ x, rect.y, rect.width - x + rect.x, height }, true, essence_->scheme_ptr->header_bgcolor);
+					if (x < rect.right())
+						graph.rectangle({ x, rect.y, static_cast<unsigned>(rect.right() - x), height }, true, essence_->scheme_ptr->header_bgcolor);
 				}
 
 				template<typename Item>
