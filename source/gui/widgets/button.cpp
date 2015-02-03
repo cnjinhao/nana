@@ -1,7 +1,7 @@
 /*
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -479,7 +479,7 @@ namespace nana{	namespace drawerbase
 
 			void button::_m_complete_creation()
 			{
-				events().shortkey.connect([this]
+				events().shortkey.connect_unignorable([this]
 				{
 					_m_shortkey();
 				});

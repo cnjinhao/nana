@@ -741,21 +741,21 @@ namespace nana
 						API::register_menu_window(this->handle(), !owner_menubar);
 					}
 
-					events().destroy.connect([this]{
+					events().destroy.connect_unignorable([this]{
 						_m_destroy();
 					});
 
-					events().key_press.connect([this](const arg_keyboard& arg){
+					events().key_press.connect_unignorable([this](const arg_keyboard& arg){
 						_m_key_down(arg);
 					});
 
-					events().mouse_up.connect([this]{
+					events().mouse_up.connect_unignorable([this]{
 						pick();
 					});
 
 					if (want_focus_)
 					{
-						event_focus_ = events().focus.connect([this](const arg_focus& arg)
+						event_focus_ = events().focus.connect_unignorable([this](const arg_focus& arg)
 						{
 							_m_focus_changed(arg);
 						});
@@ -993,7 +993,7 @@ namespace nana
 				void _m_make_mouse_event()
 				{
 					state_.mouse_pos = API::cursor_position();
-					events().mouse_move.connect([this]{
+					events().mouse_move.connect_unignorable([this]{
 						_m_mouse_event();
 					});
 				}
@@ -1324,7 +1324,7 @@ namespace nana
 			{
 				close();
 				impl_->uiobj = &(form_loader<drawerbase::menu::menu_window, false>()(wd, point(x, y), &(*impl_->mbuilder.renderer())));
-				impl_->uiobj->events().destroy.connect([this]{
+				impl_->uiobj->events().destroy.connect_unignorable([this]{
 					_m_destroy_menu_window();
 				});
 				impl_->uiobj->popup(impl_->mbuilder.data(), called_by_menubar);

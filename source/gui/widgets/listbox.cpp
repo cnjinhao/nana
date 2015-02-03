@@ -2020,10 +2020,10 @@ namespace nana
 						{
 							scroll.h.create(wd, r);
 							API::take_active(scroll.h.handle(), false, wd);
-							scroll.h.events().mouse_move.connect([this](const nana::arg_mouse& arg){
+							scroll.h.events().mouse_move.connect_unignorable([this](const nana::arg_mouse& arg){
 								_m_answer_scroll(arg);
 							});
-							scroll.h.events().mouse_up.connect([this](const nana::arg_mouse& arg){
+							scroll.h.events().mouse_up.connect_unignorable([this](const nana::arg_mouse& arg){
 								_m_answer_scroll(arg);
 							});
 						}
@@ -2040,12 +2040,12 @@ namespace nana
 						{
 							scroll.v.create(wd, r);
 							API::take_active(scroll.v.handle(), false, wd);
-							scroll.v.events().mouse_move.connect([this](const ::nana::arg_mouse& arg)
+							scroll.v.events().mouse_move.connect_unignorable([this](const ::nana::arg_mouse& arg)
 							{
 								_m_answer_scroll(arg);
 							});
 
-							scroll.v.events().mouse_up.connect([this](const ::nana::arg_mouse& arg)
+							scroll.v.events().mouse_up.connect_unignorable([this](const ::nana::arg_mouse& arg)
 							{
 								_m_answer_scroll(arg);
 							});

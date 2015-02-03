@@ -1,7 +1,7 @@
 /*
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -593,7 +593,7 @@ namespace nana
 					r.width = r.height = 100;
 					style_.listbox = &(form_loader<nana::float_listbox>()(window_, r, true));
 					style_.listbox->set_module(style_.module, 16);
-					style_.listbox->events().destroy.connect([this]
+					style_.listbox->events().destroy.connect_unignorable([this]
 					{
 						_m_list_closed();
 					});

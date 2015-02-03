@@ -53,7 +53,7 @@ namespace nana
 				place_.bind(*this);
 
 				yes_.create(*this);
-				yes_.events().click([this](const arg_mouse& arg)
+				yes_.events().click.connect_unignorable([this](const arg_mouse& arg)
 				{
 					_m_click(arg);
 				});
@@ -65,7 +65,7 @@ namespace nana
 					yes_.caption(STR("Yes"));
 					no_.create(*this);
 					no_.caption(STR("No"));
-					no_.events().click([this](const arg_mouse& arg)
+					no_.events().click.connect_unignorable([this](const arg_mouse& arg)
 					{
 						_m_click(arg);
 					});
@@ -76,7 +76,7 @@ namespace nana
 					{
 						cancel_.create(*this);
 						cancel_.caption(STR("Cancel"));
-						cancel_.events().click([this](const arg_mouse& arg)
+						cancel_.events().click.connect_unignorable([this](const arg_mouse& arg)
 						{
 							_m_click(arg);
 						});
@@ -482,14 +482,14 @@ namespace nana
 
 			btn_ok_.create(*this);
 			btn_ok_.i18n(i18n_eval("OK"));
-			btn_ok_.events().click([this]{
+			btn_ok_.events().click.connect_unignorable([this]{
 				close();
 				valid_input_ = true;
 			});
 			
 			btn_cancel_.create(*this);
 			btn_cancel_.i18n(i18n_eval("Cancel"));
-			btn_cancel_.events().click([this]{
+			btn_cancel_.events().click.connect_unignorable([this]{
 				close();
 			});
 
@@ -611,13 +611,13 @@ namespace nana
 		ss << impl->value;
 		impl->spinbox.value(ss.str());
 
-		impl->dock.events().resized([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
 			impl->spinbox.size({ value_px, arg.height });
 		});
 
-		impl->spinbox.events().destroy([impl]
+		impl->spinbox.events().destroy.connect_unignorable([impl]
 		{
 			impl->value = impl->spinbox.to_int();
 		});
@@ -698,13 +698,13 @@ namespace nana
 		ss << impl->value;
 		impl->spinbox.value(ss.str());
 
-		impl->dock.events().resized([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
 			impl->spinbox.size({ value_px, arg.height });
 		});
 
-		impl->spinbox.events().destroy([impl]
+		impl->spinbox.events().destroy.connect_unignorable([impl]
 		{
 			impl->value = impl->spinbox.to_int();
 		});
@@ -792,7 +792,7 @@ namespace nana
 				impl->combox.push_back(s);
 		}
 
-		impl->dock.events().resized([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
 			if (value_px)
@@ -802,7 +802,7 @@ namespace nana
 		});
 
 		auto & wdg = (value_px ? static_cast<widget&>(impl->combox) : static_cast<widget&>(impl->textbox));
-		wdg.events().destroy([&wdg, impl]
+		wdg.events().destroy.connect_unignorable([&wdg, impl]
 		{
 			impl->value = wdg.caption();
 		});
@@ -906,7 +906,7 @@ namespace nana
 		ss << date.year;
 		impl->wdg_year.value(ss.str());
 
-		impl->dock.events().resized([impl, label_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
 			auto sz = impl->wdg_month.size();
@@ -922,13 +922,13 @@ namespace nana
 			impl->wdg_year.size(sz);
 		});
 
-		impl->wdg_day.events().destroy([impl]
+		impl->wdg_day.events().destroy.connect_unignorable([impl]
 		{
 			impl->day = impl->wdg_day.to_int();
 			impl->month = impl->wdg_month.option() + 1;
 		});
 
-		impl->wdg_year.events().destroy([impl]
+		impl->wdg_year.events().destroy.connect_unignorable([impl]
 		{
 			impl->year = impl->wdg_year.to_int();
 		});
@@ -956,8 +956,8 @@ namespace nana
 			impl->wdg_day.value(ss.str());
 		};
 
-		impl->wdg_year.events().text_changed(make_days);
-		impl->wdg_month.events().selected(make_days);
+		impl->wdg_year.events().text_changed.connect_unignorable(make_days);
+		impl->wdg_month.events().selected.connect_unignorable(make_days);
 
 		return impl->dock;
 	}

@@ -1,5 +1,6 @@
 /*
  *	A Toolbar Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
@@ -277,7 +278,7 @@ namespace nana
 
 					widget_ = static_cast< ::nana::toolbar*>(&widget);
 					widget.caption(STR("Nana Toolbar"));
-					impl_->event_size = widget.events().resized.connect(std::bind(&drawer::_m_owner_sized, this, std::placeholders::_1));
+					impl_->event_size = widget.events().resized.connect_unignorable(std::bind(&drawer::_m_owner_sized, this, std::placeholders::_1));
 
 				}
 

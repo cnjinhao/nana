@@ -1556,7 +1556,7 @@ namespace nana
 				splitter_.cursor(splitter_cursor_);
 
 				dragger_.trigger(splitter_);
-				splitter_.events().mouse_down.connect([this](const arg_mouse& arg)
+				splitter_.events().mouse_down.connect_unignorable([this](const arg_mouse& arg)
 				{
 					if (false == arg.left_button)
 						return;
@@ -1584,7 +1584,7 @@ namespace nana
 					right_pixels_ = area_right.*px_ptr;
 				});
 
-				splitter_.events().mouse_move.connect([this](const arg_mouse& arg)
+				splitter_.events().mouse_move.connect_unignorable([this](const arg_mouse& arg)
 				{
 					if (false == arg.left_button)
 						return;

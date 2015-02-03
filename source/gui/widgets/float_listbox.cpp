@@ -1,7 +1,7 @@
 /*
  *	A float_listbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -242,7 +242,7 @@ namespace nana
 					if(wd)
 					{
 						widget_ = wd;
-						wd->events().mouse_wheel.connect([this](const arg_wheel& arg){
+						wd->events().mouse_wheel.connect_unignorable([this](const arg_wheel& arg){
 							scroll_items(arg.upwards);
 						});
 					}
