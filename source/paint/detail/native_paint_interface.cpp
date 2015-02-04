@@ -191,7 +191,7 @@ namespace detail
 		{
 			(*glyphs++) = XftCharIndex(disp, fs, *chr);
 		}
-		XftDrawGlyphs(dw->xftdraw, &(dw->xft_fgcolor), fs, x, y + fs->ascent, glyphs_ptr.get(), len);
+		XftDrawGlyphs(dw->xftdraw, &(dw->xft_fgcolor), fs, pos.x, pos.y + fs->ascent, glyphs_ptr.get(), len);
 	#else
 		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->handle);
 		XFontSetExtents * ext = ::XExtentsOfFontSet(fs);

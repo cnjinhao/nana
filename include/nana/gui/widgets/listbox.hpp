@@ -421,7 +421,7 @@ namespace nana
 		mutable drawerbase::listbox::item_proxy item;
 		bool	selected;
 
-		arg_listbox(drawerbase::listbox::item_proxy&, bool selected);
+		arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
 	};
 
 	namespace drawerbase

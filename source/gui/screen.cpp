@@ -47,8 +47,7 @@ namespace nana
 #else
 			if (0 == index_)
 			{
-				position_.x = position_.y = 0;
-				size_ = detail::native_interface::primary_monitor_size();
+				area_ = detail::native_interface::primary_monitor_size();
 				return;
 			}
 #endif
@@ -61,7 +60,7 @@ namespace nana
 		}
 	public:
 		//Implementation of display
-		std::size_t index() const override
+		std::size_t get_index() const override
 		{
 			return index_;
 		}
@@ -72,7 +71,7 @@ namespace nana
 		}
 	private:
 		const std::size_t	index_;
-		::nana::rectangle area_;
+		::nana::rectangle	area_;
 	};
 
 	//class screen

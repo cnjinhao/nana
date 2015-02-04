@@ -1009,9 +1009,8 @@ namespace paint
 			handle_->update_color();
 			::XDrawLine(disp, handle_->pixmap, handle_->context,
 				handle_->line_begin_pos.x, handle_->line_begin_pos.y,
-				x, y);
-			handle_->line_begin_pos.x = x;
-			handle_->line_begin_pos.y = y;
+				pos.x, pos.y);
+			handle_->line_begin_pos = pos;
 #endif
 			if (changed_ == false) changed_ = true;
 		}
@@ -1064,18 +1063,18 @@ namespace paint
 			line_to({ r.x, r.y }, left_clr);
 		}
 
-		void graphics::gradual_rectangle(const ::nana::rectangle& r, const ::nana::color& from, const ::nana::color& to, bool vertical)
+		void graphics::gradual_rectangle(const ::nana::rectangle& rct, const ::nana::color& from, const ::nana::color& to, bool vertical)
 		{
 #if defined(NANA_WINDOWS)
 			if (pxbuf_.open(handle_))
 			{
-				pxbuf_.gradual_rectangle(r, from, to, 0.0, vertical);
+				pxbuf_.gradual_rectangle(rct, from, to, 0.0, vertical);
 				pxbuf_.paste(handle_, 0, 0);
 			}
 #elif defined(NANA_X11)
 			if (nullptr == handle_) return;
 
-			double deltapx = double(vertical ? height : width);
+			double deltapx = double(vertical ? rct.height : rct.width);
 			double r, g, b;
 			const double delta_r = (to.r() - (r = from.r())) / deltapx;
 			const double delta_g = (to.g() - (g = from.g())) / deltapx;
@@ -1084,13 +1083,14 @@ namespace paint
 			unsigned last_color = (int(r) << 16) | (int(g) << 8) | int(b);
 
 			Display * disp = nana::detail::platform_spec::instance().open_display();
-			handle_->fgcolor(last_color);
-			const int endpos = deltapx + (vertical ? y : x);
+			handle_->fgcolor(static_cast<color_rgb>(last_color));
+			const int endpos = deltapx + (vertical ? rct.y : rct.x);
 			if (endpos > 0)
 			{
 				if (vertical)
 				{
-					int x1 = x, x2 = x + static_cast<int>(width);
+					int x1 = rct.x, x2 = rct.right();
+					auto y = rct.y;
 					for (; y < endpos; ++y)
 					{
 						::XDrawLine(disp, handle_->pixmap, handle_->context, x1, y, x2, y);
@@ -1098,13 +1098,14 @@ namespace paint
 						if (new_color != last_color)
 						{
 							last_color = new_color;
-							handle_->fgcolor(last_color);
+							handle_->fgcolor(static_cast<color_rgb>(last_color));
 						}
 					}
 				}
 				else
 				{
-					int y1 = y, y2 = y + static_cast<int>(height);
+					int y1 = rct.y, y2 = rct.bottom();
+					auto x = rct.x;
 					for (; x < endpos; ++x)
 					{
 						::XDrawLine(disp, handle_->pixmap, handle_->context, x, y1, x, y2);
@@ -1112,7 +1113,7 @@ namespace paint
 						if (new_color != last_color)
 						{
 							last_color = new_color;
-							handle_->fgcolor(last_color);
+							handle_->fgcolor(static_cast<color_rgb>(last_color));
 						}
 					}
 				}
@@ -1141,15 +1142,15 @@ namespace paint
 				}
 				if(changed_ == false) changed_ = true;
 #elif defined(NANA_X11)
-				if(solid && (color == solid_clr))
+				if(solid && (clr == solid_clr))
 				{
-					rectangle(r, true, color);
+					rectangle(r, true, clr);
 				}
 				else
 				{
-					rectangle(r, false, color);
+					rectangle(r, false, clr);
 					if(solid)
-						rectangle(rectangle(r).pare_off(1), true, solid_clr);
+						rectangle(::nana::rectangle(r).pare_off(1), true, solid_clr);
 				}
 #endif
 			}

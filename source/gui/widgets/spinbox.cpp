@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/spanbox.cpp
+ *	@file: nana/gui/widgets/spinbox.cpp
  */
 
 #include <nana/gui/widgets/spinbox.hpp>
@@ -17,6 +17,9 @@
 
 namespace nana
 {
+	arg_spinbox::arg_spinbox(spinbox& wdg): widget(wdg)
+	{}
+
 	namespace drawerbase
 	{
 		namespace spinbox
@@ -26,7 +29,7 @@ namespace nana
 			{
 			public:
 				event_agent(::nana::spinbox& wdg)
-					: widget_{ wdg }
+					: widget_(wdg)
 				{}
 
 				void first_change() override{}	//empty, because spinbox does not have this event.

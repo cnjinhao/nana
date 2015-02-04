@@ -25,7 +25,7 @@ namespace nana
 		virtual ~display() = default;
 
 		/// The index of monitor.
-		virtual std::size_t index() const = 0;
+		virtual std::size_t get_index() const = 0;
 
 		/// Returns the positional coordinates and size of the display device in reference to the desktop area
 		virtual const ::nana::rectangle& area() const = 0;

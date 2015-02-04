@@ -679,7 +679,7 @@ namespace detail
 			{
 				//Copy the root buffer that wd specified into DeviceContext
 #if defined(NANA_LINUX)
-				wd->drawer.map(reinterpret_cast<window>(wd));
+				wd->drawer.map(reinterpret_cast<window>(wd), forced);
 #elif defined(NANA_WINDOWS)
 				if(nana::system::this_thread_id() == wd->thread_id)
 					wd->drawer.map(reinterpret_cast<window>(wd), forced);

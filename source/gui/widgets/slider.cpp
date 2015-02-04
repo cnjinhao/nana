@@ -4,7 +4,7 @@
 namespace nana
 {
 	arg_slider::arg_slider(slider& wdg)
-		: widget{ wdg }
+		: widget(wdg)
 	{}
 
 	namespace drawerbase

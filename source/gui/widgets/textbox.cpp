@@ -18,7 +18,7 @@
 namespace nana
 {
 	arg_textbox::arg_textbox(textbox& wdg)
-		: widget{wdg}
+		: widget(wdg)
 	{}
 
 namespace drawerbase {

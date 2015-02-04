@@ -34,17 +34,17 @@ namespace nana
 			: public form
 		{
 		public:
-			msgbox_window(window wd, const nana::string& title, msgbox::button_t btn, msgbox::icon_t ico)
-				:	form(wd, nana::rectangle(1, 1, 1, 1), appear::decorate<>()),
+			msgbox_window(window wd, const ::nana::string& title, msgbox::button_t btn, msgbox::icon_t ico)
+				:	form(wd, rectangle(1, 1, 1, 1), appear::decorate<>()),
 					owner_(wd), pick_(msgbox::pick_yes)
 			{
 				this->caption(title);
 				drawing dw(*this);
-				dw.draw([this](::nana::paint::graphics& graph)
+				dw.draw([this](paint::graphics& graph)
 				{
-					graph.rectangle(nana::rectangle{0, 0, graph.width(), graph.height() - 50}, 0xFFFFFF, true);
+					graph.rectangle(rectangle{0, 0, graph.width(), graph.height() - 50}, true, colors::white);
 					if(ico_.empty() == false)
-						ico_.stretch(ico_.size(), graph, ::nana::rectangle{12, 25, 32, 32});
+						ico_.stretch(ico_.size(), graph, rectangle{12, 25, 32, 32});
 				});
 
 				unsigned width_pixel = 45;
@@ -298,7 +298,7 @@ namespace nana
 					{
 						nana::paint::pixel_buffer pxbuf(32, 32);
 						pxbuf.put(reinterpret_cast<const unsigned char*>(rawpx), 32, 32, 32, 4*32, true);
-						ico_.make(32, 32);
+						ico_.make({32, 32});
 						pxbuf.paste(ico_.handle(), 0, 0);
 					}
 			}
@@ -869,6 +869,8 @@ namespace nana
 
 	window inputbox::date::create(window parent, unsigned label_px)
 	{
+		auto today = ::nana::date().read();
+		
 		auto impl = impl_.get();
 		impl->dock.create(parent);
 
@@ -887,7 +889,7 @@ namespace nana
 
 		left += 104;
 		impl->wdg_day.create(impl->dock, rectangle{ left, 0, 38, 0 });
-		impl->wdg_day.range(1, 31, 1);
+		impl->wdg_day.range(1, ::nana::date::month_days(today.year, today.month), 1);
 		impl->wdg_day.set_accept_integer();
 
 		left += 48;
@@ -895,15 +897,14 @@ namespace nana
 		impl->wdg_year.range(1601, 9999, 1);
 		impl->wdg_year.set_accept_integer();
 
-		auto date = ::nana::date().read();
-		impl->wdg_month.option(date.month - 1);
+		impl->wdg_month.option(today.month - 1);
 
 		std::wstringstream ss;
-		ss << date.day;
+		ss << today.day;
 		impl->wdg_day.value(ss.str());
 		ss.str(L"");
 		ss.clear();
-		ss << date.year;
+		ss << today.year;
 		impl->wdg_year.value(ss.str());
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
@@ -935,21 +936,15 @@ namespace nana
 
 		auto make_days = [impl]
 		{
-			int days[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 			auto month = impl->wdg_month.option() + 1;
-			
-			if (2 == month)
-			{
-				auto year = impl->wdg_year.to_int();
-				if (((0 == year % 4) && (year % 100)) || (0 == (year % 400)))
-					days[1] = 29;
-			}
+			auto year = impl->wdg_year.to_int();
+			int days = ::nana::date::month_days(year, month);
 
 			auto day = impl->wdg_day.to_int();
-			impl->wdg_day.range(1, days[month - 1], 1); //It resets the current value of wdg_day
+			impl->wdg_day.range(1, days, 1); //It resets the current value of wdg_day
 			
-			if (day > days[month - 1])
-				day = days[month - 1];
+			if (day > days)
+				day = days;
 			
 			std::wstringstream ss;
 			ss << day;

@@ -3663,7 +3663,7 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-	arg_listbox::arg_listbox(drawerbase::listbox::item_proxy& m, bool selected)
+	arg_listbox::arg_listbox(const drawerbase::listbox::item_proxy& m, bool selected)
 		: item(m), selected(selected)
 	{
 	

@@ -22,16 +22,13 @@
 namespace nana
 {
 	/// A list box combined with a textbox - the list box should drop down when the user selects the arrow next to the control
-    class combox;
+	class combox;
 
 	struct arg_combox
 		: public event_arg
 	{
 		combox & widget;
-
-		arg_combox(combox& wdg)
-			: widget{ wdg }
-		{}
+		arg_combox(combox&);
 	};
 
 	namespace drawerbase

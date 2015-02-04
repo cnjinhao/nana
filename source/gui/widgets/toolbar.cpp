@@ -18,7 +18,7 @@
 namespace nana
 {
 	arg_toolbar::arg_toolbar(toolbar& tbar, std::size_t btn)
-		: widget{ tbar }, button{btn}
+		: widget(tbar), button{btn}
 	{}
 
 	namespace drawerbase

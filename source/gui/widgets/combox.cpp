@@ -20,6 +20,9 @@
 
 namespace nana
 {
+	arg_combox::arg_combox(combox& wdg): widget(wdg)
+	{}
+
 	namespace drawerbase
 	{
 		namespace combox
@@ -29,7 +32,7 @@ namespace nana
 			{
 			public:
 				event_agent(::nana::combox& wdg)
-					: widget_{wdg}
+					: widget_(wdg)
 				{}
 
 				void first_change() override{}	//empty, because combox does not have this event.

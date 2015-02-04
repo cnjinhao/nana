@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -139,7 +139,11 @@ namespace nana
 						{
 							realizer_->_m_reset_overrided();
 							(realizer_->*mfptr)(graphics, arg);
-							mth_state_[pos] = (realizer_->_m_overrided() ? method_state::overrided : method_state::not_overrided);
+							
+							//Check realizer, when the window is closed in that event handler, the drawer will be
+							//detached and realizer will be a nullptr
+							if(realizer_)
+								mth_state_[pos] = (realizer_->_m_overrided() ? method_state::overrided : method_state::not_overrided);
 						}
 						else
 							(realizer_->*mfptr)(graphics, arg);

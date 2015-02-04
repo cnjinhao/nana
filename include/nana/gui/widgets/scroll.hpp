@@ -27,7 +27,7 @@ namespace nana
 		scroll<Vert> & widget;
 
 		arg_scroll(scroll<Vert> & wdg)
-			: widget{ wdg }
+			: widget(wdg)
 		{}
 	};
 
@@ -312,7 +312,7 @@ namespace nana
 			private:
 				void _m_emit_value_changed()
 				{
-					widget_->events().value_changed.emit(::nana::arg_scroll<Vertical>({*widget_}));
+					widget_->events().value_changed.emit(::nana::arg_scroll<Vertical>(*widget_));
 				}
 
 				void _m_tick()

@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/spanbox.hpp
+ *	@file: nana/gui/widgets/spinbox.hpp
  */
 
 #ifndef NANA_GUI_WIDGET_SPINBOX_HPP
@@ -23,10 +23,7 @@ namespace nana
 		: public event_arg
 	{
 		spinbox & widget;
-
-		arg_spinbox(spinbox& wdg)
-			: widget{ wdg }
-		{}
+		arg_spinbox(spinbox&);
 	};
 
 	namespace drawerbase

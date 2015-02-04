@@ -180,7 +180,7 @@ namespace API
 		using scheme_type = typename ::nana::dev::widget_traits<Widget>::scheme_type;
 
 		internal_scope_guard lock;
-		auto * wdg_colors = ::nana::dev::get_scheme(wd);
+		auto * wdg_colors = dev::get_scheme(wd);
 		if (nullptr == wdg_colors)
 			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
 

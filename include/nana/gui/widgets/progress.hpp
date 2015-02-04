@@ -44,7 +44,7 @@ namespace nana
 				widget * widget_{nullptr};
 				nana::paint::graphics* graph_{nullptr};
 				unsigned draw_width_{static_cast<unsigned>(-1)};
-				bool has_value_{true};
+				//bool has_value_{true};	//deprecated
 				bool unknown_{false};
 				unsigned max_{100};
 				unsigned value_{0};

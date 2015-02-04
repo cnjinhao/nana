@@ -376,9 +376,9 @@ namespace detail
 			switch(spec.screen_depth())
 			{
 			case 16:
-				rgb = ((((color >> 16) & 0xFF) * 31 / 255) << 11) |
-					((((color >> 8) & 0xFF) * 63 / 255) << 5)	|
-					(color & 0xFF) * 31 / 255;
+				rgb = ((((rgb >> 16) & 0xFF) * 31 / 255) << 11) |
+					((((rgb >> 8) & 0xFF) * 63 / 255) << 5)	|
+					(rgb & 0xFF) * 31 / 255;
 				break;
 			}
 			::XSetForeground(spec.open_display(), context, rgb);
@@ -795,9 +795,9 @@ namespace detail
 		}
 
 		addr->visible = false;
-		addr->graph.make(caret_sz.width, caret_sz.height);
-		addr->graph.rectangle(0x0, true);
-		addr->rev_graph.make(caret_sz.width, caret_sz.height);
+		addr->graph.make(caret_sz);
+		addr->graph.rectangle(true, colors::black);
+		addr->rev_graph.make(caret_sz);
 
 		addr->size = caret_sz;
 
@@ -1128,7 +1128,7 @@ namespace detail
 	const nana::paint::graphics& platform_spec::keep_window_icon(native_window_type wd, const nana::paint::image& img)
 	{
 		nana::paint::graphics & graph = iconbase_[wd];
-		graph.make(img.size().width, img.size().height);
+		graph.make(img.size());
 		img.paste(graph, 0, 0);
 		return graph;
 	}
