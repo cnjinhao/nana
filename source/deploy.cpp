@@ -1,9 +1,10 @@
 /*
  *	The Deploy Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/depoly.cpp
@@ -13,7 +14,7 @@
 
 #include <nana/deploy.hpp>
 #include <cstdlib>
-#include <exception>
+#include <stdexcept>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_LINUX)
@@ -47,7 +48,7 @@ namespace nana
 		return ::wcscpy(dest, source);
 #else
 		return ::strcpy(dest, source);
-#endif	
+#endif
 	}
 
 	int stoi(const std::string& str, std::size_t * pos, int base)

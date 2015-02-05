@@ -266,7 +266,7 @@ namespace nana
 			return (this->empty() == false);
 		}
 
-		window handle() const
+		window handle() const override
 		{
 			return handle_;
 		}
@@ -349,7 +349,7 @@ namespace nana
 			API::activate_window(handle_);
 		}
 
-		window handle() const
+		window handle() const override
 		{
 			return handle_;
 		}
@@ -508,7 +508,7 @@ namespace nana
 			return (this->empty() == false);
 		}
 
-		window handle() const
+		window handle() const override
 		{
 			return handle_;
 		}

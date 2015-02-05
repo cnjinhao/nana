@@ -12,6 +12,7 @@
 
 #include <nana/basic_types.hpp>
 #include <regex>
+#include <algorithm>
 
 namespace nana
 {
@@ -102,7 +103,12 @@ namespace nana
 			return;
 		}
 
-		std::transform(css_color.begin(), css_color.end(), css_color.begin(), std::tolower);
+		//std::tolower is not allowed because of concept requirements
+		std::transform(css_color.begin(), css_color.end(), css_color.begin(), [](char ch){
+			if('A' <= ch && ch <= 'Z')
+				return static_cast<char>(ch - ('A' - 'a'));
+			return ch;
+		});
 		auto endpos = css_color.find(' ', pos + 1);
 		if (endpos == css_color.npos)
 			endpos = css_color.size();
@@ -144,11 +150,8 @@ namespace nana
 
 			rgb.emplace_back(i->str());
 
-			bool is_real;
-			if (is_real = (rgb.back().back() == '%'))
-				pat.assign("(\\d*\\.)?\\d+\\%");
-			else
-				pat.assign("\\d+");
+			const bool is_real = (rgb.back().back() == '%');
+			pat.assign(is_real ? "(\\d*\\.)?\\d+\\%" : "\\d+");
 
 			for (++i; i != end; ++i)
 			{
