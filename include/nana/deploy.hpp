@@ -42,6 +42,14 @@ namespace nana
 	std::size_t strlen(const char_t* str);
 	double strtod(const char_t* str, char_t** endptr);
 	char_t* strcpy(char_t* dest, const char_t* source);
+
+	//Workaround for no implemenation of std::stoi in MinGW.
+	int stoi(const std::string&, std::size_t * pos = nullptr, int base = 10);
+	int stoi(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
+
+	//Workaround for no implemenation of std::stod in MinGW.
+	double stod(const std::string&, std::size_t * pos = nullptr);
+	double stod(const std::wstring&, std::size_t* pos = nullptr);
 }
 
 #if defined(NANA_WINDOWS)

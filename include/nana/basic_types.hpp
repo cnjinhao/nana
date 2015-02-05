@@ -306,8 +306,16 @@ namespace nana
 		color(unsigned red, unsigned green, unsigned blue);
 		color(unsigned red, unsigned green, unsigned blue, double alpha);
 
+		/// Initializes the color with a CSS-like rgb string.
+		color(std::string css_rgb);
+
 		color& alpha(double);	///< Sets alpha channel
 		color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
+
+		/// Sets color with a HSL value.
+		/// @param hue in range of [0, 360]
+		/// @param saturation in range of [0, 1]
+		/// @param lightness  in range of [0, 1]
 		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
 
 		color blend(const color& bgcolor, bool ignore_bgcolor_alpha) const;

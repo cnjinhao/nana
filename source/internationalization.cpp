@@ -343,12 +343,7 @@ namespace nana
 					erase_n = str.size() - offset;
 
 				//If there is not a parameter for %argNNN, the %argNNN will be erased.
-
-				//a workaround, MinGW does not provide std::stoi
-				std::wstringstream ss;
-				std::size_t arg;
-				ss<<str.substr(offset + 4, arg_n);
-				ss>>arg;
+				std::size_t arg = static_cast<std::size_t>(::nana::stoi(str.substr(offset + 4, arg_n)));
 
 				if (arg_strs && arg < arg_strs->size())
 					str.replace(offset, erase_n, (*arg_strs)[arg]);

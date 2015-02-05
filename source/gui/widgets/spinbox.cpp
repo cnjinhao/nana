@@ -611,22 +611,12 @@ namespace nana
 
 	int spinbox::to_int() const
 	{
-		//std::stoi is not defined by MinGW
-		std::wstringstream ss;
-		ss << value();
-		int n = 0;
-		ss >> n;
-		return n;
+		return ::nana::stoi(value());
 	}
 
 	double spinbox::to_double() const
 	{
-		//std::stod is not defined by MinGW
-		std::wstringstream ss;
-		ss << value();
-		double d = 0;
-		ss >> d;
-		return d;
+		return ::nana::stod(value());
 	}
 
 	void spinbox::set_accept(std::function<bool(::nana::char_t)> pred)

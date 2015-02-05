@@ -11,6 +11,7 @@
  */
 
 #include <nana/basic_types.hpp>
+#include <regex>
 
 namespace nana
 {
@@ -58,6 +59,168 @@ namespace nana
 			a_ = 1.0;
 	}
 
+	//Initializes the color with a CSS-like string
+	//contributor: BigDave(mortis2007 at hotmail co uk)
+	//date: February 3, 2015
+	//maintainor: Jinhao, extended the support of CSS-spec
+	color::color(std::string css_color)
+		: a_(1.0)
+	{
+		const char * excpt_what = "color: invalid rgb format";
+
+		auto pos = css_color.find_first_not_of(' ');
+		if (pos == css_color.npos)
+			throw std::invalid_argument(excpt_what);
+
+		if ('#' == css_color[pos])
+		{
+			if (css_color.size() < pos + 4)
+				throw std::invalid_argument(excpt_what);
+
+			auto endpos = css_color.find_first_not_of("0123456789abcdefABCDEF", pos + 1);
+			if (endpos == css_color.npos)
+				endpos = static_cast<decltype(endpos)>(css_color.size());
+			
+			if ((endpos - pos != 4) && (endpos - pos != 7))
+				throw std::invalid_argument(excpt_what);
+
+			auto n = ::nana::stoi(css_color.substr(pos + 1, endpos - pos - 1), nullptr, 16);
+
+			if (endpos - pos == 4)
+			{
+				r_ = ((0xF00 & n) >> 4) | ((0xF00 & n) >> 8);
+				g_ = (0xF0 & n) | ((0xF0 & n) >> 4);
+				b_ = (0xF & n) | ((0xF & n) << 4);
+			}
+			else
+			{
+				r_ = (0xFF0000 & n) >> 16;
+				g_ = (0xFF00 & n) >> 8;
+				b_ = (0xFF & n);
+			}
+
+			return;
+		}
+
+		std::transform(css_color.begin(), css_color.end(), css_color.begin(), std::tolower);
+		auto endpos = css_color.find(' ', pos + 1);
+		if (endpos == css_color.npos)
+			endpos = css_color.size();
+
+		if ((endpos - pos == 11) && (css_color.substr(pos, 11) == "transparent"))
+		{
+			r_ = 0;
+			g_ = 0;
+			b_ = 0;
+			a_ = 0;
+			return;
+		}
+
+		auto type_end = css_color.find_first_of(" (", pos + 1);
+
+		if (type_end == css_color.npos || ((type_end - pos != 3) && (type_end - pos != 4)))	//rgb/hsl = 3, rgba/hsla = 4
+			throw std::invalid_argument(excpt_what);
+
+		bool has_alpha = false;
+		if (type_end - pos == 4) //maybe rgba/hsla
+		{
+			if (css_color[pos + 3] != 'a')
+				throw std::invalid_argument(excpt_what);
+			has_alpha = true;
+		}
+
+		std::regex pat;
+		std::regex_iterator<std::string::iterator> i, end;
+		auto type_name = css_color.substr(pos, 3);
+		if ("rgb" == type_name)
+		{
+			pat.assign("(\\d*\\.)?\\d+\\%?");
+			i = std::regex_iterator<std::string::iterator>(css_color.begin() + pos, css_color.end(), pat);
+
+			if (i == end)
+				throw std::invalid_argument(excpt_what);
+			
+			std::vector<std::string> rgb;
+
+			rgb.emplace_back(i->str());
+
+			bool is_real;
+			if (is_real = (rgb.back().back() == '%'))
+				pat.assign("(\\d*\\.)?\\d+\\%");
+			else
+				pat.assign("\\d+");
+
+			for (++i; i != end; ++i)
+			{
+				rgb.emplace_back(i->str());
+				if (rgb.size() == 3)
+					break;
+			}
+
+			if (rgb.size() != 3)
+				throw std::invalid_argument(excpt_what);
+
+			if (is_real)
+			{
+				auto pr = ::nana::stod(rgb[0].substr(0, rgb[0].size() - 1));
+				r_ = (pr > 100 ? 255.0 : 2.55 * pr);
+
+				pr = ::nana::stod(rgb[1].substr(0, rgb[1].size() - 1));
+				g_ = (pr > 100 ? 255.0 : 2.55 * pr);
+
+				pr = ::nana::stod(rgb[2].substr(0, rgb[2].size() - 1));
+				b_ = (pr > 100 ? 255.0 : 2.55 * pr);
+			}
+			else
+			{
+				r_ = ::nana::stod(rgb[0]);
+				if (r_ > 255.0)	r_ = 255;
+
+				g_ = ::nana::stod(rgb[1]);
+				if (g_ > 255.0)	g_ = 255;
+
+				b_ = ::nana::stod(rgb[2]);
+				if (b_ > 255.0)	b_ = 255;
+			}
+		}
+		else if ("hsl" == type_name)
+		{
+			pat.assign("(\\d*\\.)?\\d+");
+			i = std::regex_iterator<std::string::iterator>(css_color.begin() + pos, css_color.end(), pat);
+
+			if (i == end)
+				throw std::invalid_argument(excpt_what);
+
+			auto h = ::nana::stod(i->str());
+
+			pat.assign("(\\d*\\.)?\\d+\\%");
+
+			if (++i == end)
+				throw std::invalid_argument(excpt_what);
+
+			auto str = i->str();
+			auto s = ::nana::stod(str.substr(0, str.size() - 1));
+
+			if (++i == end)
+				throw std::invalid_argument(excpt_what);
+
+			str = i->str();
+			auto l = ::nana::stod(str.substr(0, str.size() - 1));
+
+			from_hsl(h, s / 100, l / 100);
+		}
+		else
+			throw std::invalid_argument(excpt_what);	//invalid color type
+
+		if (has_alpha)
+		{
+			pat.assign("(\\d*\\.)?\\d+");
+			if (++i == end)
+				throw std::invalid_argument(excpt_what);	//invalid alpha value
+			a_ = ::nana::stod(i->str());
+		}
+	}
+
 	color& color::from_rgb(unsigned red, unsigned green, unsigned blue)
 	{
 		r_ = red;
@@ -97,6 +260,7 @@ namespace nana
 
 			double var1 = 2.0 * lightness - var2;
 
+			hue /= 360;
 			r_ = 255.0 * rgb_from_hue(var1, var2, hue + 0.33333);
 			g_ = 255.0 * rgb_from_hue(var1, var2, hue);
 			b_ = 255.0 * rgb_from_hue(var1, var2, hue - 0.33333);
