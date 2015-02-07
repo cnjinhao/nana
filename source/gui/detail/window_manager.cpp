@@ -321,7 +321,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(parent) == false)
-				return nullptr;
+				throw std::invalid_argument("invalid parent/owner handle");
 
 			core_window_t * wd;
 			if(is_lite)

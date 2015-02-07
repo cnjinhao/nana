@@ -837,6 +837,14 @@ namespace nana
 			return impl->renderer.measure(*graph_ptr, limited, impl->text_align, impl->text_align_v);
 		}
 
+		::nana::size label::measure(paint::graphics& graph, const ::nana::string& str, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align)
+		{
+			drawerbase::label::renderer rd;
+			rd.format(format_enabled);
+			rd.parse(str);
+			return rd.measure(graph, allowed_width_in_pixel, h_align, v_align);
+		}
+
 		label& label::text_align(align th, align_v tv)
 		{
 			internal_scope_guard isg;

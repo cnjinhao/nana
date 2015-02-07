@@ -93,8 +93,8 @@ namespace nana
 		void range(double begin, double last, double step);
 
 		/// Sets the string spin values.
-		void range(std::initializer_list<std::string> steps_utf8);
-		void range(std::initializer_list<std::wstring> steps);
+		void range(std::initializer_list<std::string> values_utf8);
+		void range(std::initializer_list<std::wstring> values);
 
 		/// Gets the spined value
 		::nana::string value() const;
@@ -102,22 +102,9 @@ namespace nana
 		int to_int() const;
 		double to_double() const;
 
-		/// Sets a predicator that determines whether accepts the current user input.
-		/// @param pred Predicator to determines the input.
-		void set_accept(std::function<bool(::nana::char_t)> pred);
-
-		/// Sets the spinbox that only accepts integer input.
-		void set_accept_integer();
-
-		/// Sets the spinbox that only accepts real number input.
-		void set_accept_real();
-
-		/// Removes the accept excluding predicate accept.
-		void remove_accept();
-
-		/// Sets the qualifications
-		void qualify(std::wstring prefix, std::wstring suffix);
-		void qualify(const std::string & prefix_utf8, const std::string& suffix_utf8);
+		/// Sets the modifiers
+		void modifier(std::wstring prefix, std::wstring suffix);
+		void modifier(const std::string & prefix_utf8, const std::string& suffix_utf8);
 	private:
 		::nana::string _m_caption() const;
 		void _m_caption(::nana::string&&);

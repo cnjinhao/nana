@@ -20,6 +20,7 @@
 #include <nana/gui/place.hpp>
 #include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
+#include <functional>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
@@ -473,7 +474,7 @@ namespace nana
 		: public ::nana::form
 	{
 	public:
-		inputbox_window(window owner, const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels)
+		inputbox_window(window owner, const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
 			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
 		{
 			desc_.create(*this);
@@ -483,6 +484,10 @@ namespace nana
 			btn_ok_.create(*this);
 			btn_ok_.i18n(i18n_eval("OK"));
 			btn_ok_.events().click.connect_unignorable([this]{
+
+				if (verifier_ && !verifier_(handle()))
+					return;
+
 				close();
 				valid_input_ = true;
 			});
@@ -500,8 +505,15 @@ namespace nana
 			ss << "margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
 			
 			for (std::size_t i = 0; i < contents; ++i)
-				ss << "<weight=27 margin=[3] input_"<<i<<">";
-			height += 28 * contents;
+			{
+				unsigned px = 27;
+				if (each_height[i] > 27)
+					px = each_height[i];
+
+				ss << "<weight="<<px<<" margin=[3] input_" << i << ">";
+
+				height += px + 1;
+			}
 
 			ss << "><margin=[15] weight=38<><buttons arrange=80 gap=10 weight=170>>";
 
@@ -520,8 +532,10 @@ namespace nana
 			caption(title);
 		}
 
-		void set_input(const std::vector<window>& inputs)
+		void set_input(const std::vector<window>& inputs, std::function<bool(window)> verifier)
 		{
+			verifier_ = std::move(verifier);
+
 			std::size_t index = 0;
 			for (auto wd : inputs)
 			{
@@ -543,6 +557,7 @@ namespace nana
 		::nana::button	btn_cancel_;
 		bool	valid_input_{ false };
 		::nana::place	place_;
+		std::function<bool(window)> verifier_;
 	};
 
 	//class integer
@@ -603,7 +618,7 @@ namespace nana
 
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
-		impl->spinbox.set_accept_integer();
+		//impl->spinbox.set_accept_integer(); //deprecated
 
 		//Workaround for no implementation of std::to_wstring by MinGW.
 		ss.str(L"");
@@ -613,8 +628,8 @@ namespace nana
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
-			impl->label.size({ label_px, arg.height });
-			impl->spinbox.size({ value_px, arg.height });
+			impl->label.size({ label_px, 24 });
+			impl->spinbox.size({ value_px, 24 });
 		});
 
 		impl->spinbox.events().destroy.connect_unignorable([impl]
@@ -690,7 +705,7 @@ namespace nana
 
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
-		impl->spinbox.set_accept_real();
+		//impl->spinbox.set_accept_real();	//deprecated
 
 		//Workaround for no implementation of std::to_wstring by MinGW.
 		ss.str(L"");
@@ -700,8 +715,8 @@ namespace nana
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
-			impl->label.size({ label_px, arg.height });
-			impl->spinbox.size({ value_px, arg.height });
+			impl->label.size({ label_px, 24 });
+			impl->spinbox.size({ value_px, 24 });
 		});
 
 		impl->spinbox.events().destroy.connect_unignorable([impl]
@@ -790,15 +805,17 @@ namespace nana
 
 			for (auto & s : impl->options)
 				impl->combox.push_back(s);
+
+			impl->combox.option(0);
 		}
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
 			if (value_px)
-				impl->combox.size({ value_px, arg.height });
+				impl->combox.size({ value_px, 24 });
 			else
-				impl->textbox.size({arg.width - label_px - 10, arg.height});
+				impl->textbox.size({arg.width - label_px - 10, 24});
 		});
 
 		auto & wdg = (value_px ? static_cast<widget&>(impl->combox) : static_cast<widget&>(impl->textbox));
@@ -890,12 +907,12 @@ namespace nana
 		left += 104;
 		impl->wdg_day.create(impl->dock, rectangle{ left, 0, 38, 0 });
 		impl->wdg_day.range(1, ::nana::date::month_days(today.year, today.month), 1);
-		impl->wdg_day.set_accept_integer();
+		//impl->wdg_day.set_accept_integer();	//deprecated
 
 		left += 48;
 		impl->wdg_year.create(impl->dock, rectangle{left, 0, 50, 0});
 		impl->wdg_year.range(1601, 9999, 1);
-		impl->wdg_year.set_accept_integer();
+		//impl->wdg_year.set_accept_integer();	//deprecated
 
 		impl->wdg_month.option(today.month - 1);
 
@@ -911,15 +928,15 @@ namespace nana
 		{
 			impl->label.size({ label_px, arg.height });
 			auto sz = impl->wdg_month.size();
-			sz.height = arg.height;
+			sz.height = 24;
 			impl->wdg_month.size(sz);
 
 			sz = impl->wdg_day.size();
-			sz.height = arg.height;
+			sz.height = 24;
 			impl->wdg_day.size(sz);
 
 			sz = impl->wdg_year.size();
-			sz.height = arg.height;
+			sz.height = 24;
 			impl->wdg_year.size(sz);
 		});
 
@@ -970,35 +987,40 @@ namespace nana
 			title_(std::move(title))
 	{}
 
+	void inputbox::verify(std::function<bool(window)> verifier)
+	{
+		verifier_ = std::move(verifier);
+	}
+
 	void inputbox::_m_fetch_args(std::vector<abstract_content*>&)
 	{}
 
 
 	bool inputbox::_m_open(std::vector<abstract_content*>& contents, bool modal)
 	{
+		std::vector<unsigned> each_pixels;
 		unsigned label_px = 0, fixed_px = 0;
 		paint::graphics graph({ 5, 5 });
 		for (auto p : contents)
 		{
-			auto px = graph.text_extent_size(p->label()).width;
-			if (px > label_px)
-				label_px = px;
+			auto px = label::measure(graph, p->label(), 150, true, align::right, align_v::center);
+			if (px.width > label_px)
+				label_px = px.width;
 
-			px = p->fixed_pixels();
-			if (px > fixed_px)
-				fixed_px = px;
+			px.width = p->fixed_pixels();
+			if (px.width > fixed_px)
+				fixed_px = px.width;
+
+			each_pixels.push_back(px.height);
 		}
 
-		if (label_px > 120)
-			label_px = 120;
-
-		inputbox_window input_wd(owner_, description_, title_, contents.size(), label_px + 10 + fixed_px);
+		inputbox_window input_wd(owner_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
 
 		std::vector<window> inputs;
 		for (auto p : contents)
 			inputs.push_back(p->create(input_wd, label_px));
 
-		input_wd.set_input(inputs);
+		input_wd.set_input(inputs, verifier_);
 
 		if (modal)
 			input_wd.modality();

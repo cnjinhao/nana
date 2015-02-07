@@ -53,7 +53,11 @@ namespace nana
 				virtual ~range_interface() = default;
 
 				virtual std::wstring value() const = 0;
-				virtual bool value(const std::wstring&) = 0;
+
+				//sets a new value, the diff indicates whether the new value is different from the current value.
+				//returns true if the new value is acceptable.
+				virtual bool value(const std::wstring& new_value, bool& diff) = 0;
+
 				virtual bool check_value(const std::wstring&) const = 0;
 				virtual void spin(bool increase) = 0;
 			};
@@ -74,29 +78,57 @@ namespace nana
 					return ss.str();
 				}
 
-				bool value(const std::wstring& value_str) override
+				bool value(const std::wstring& value_str, bool & diff) override
 				{
 					std::wstringstream ss;
 					ss << value_str;
 
 					T v;
 					ss >> v;
-					if (begin_ <= v && v <= last_)
-					{
-						value_ = v;
-						return true;
-					}
-					return false;
+					if (v < begin_ || last_ < v)
+						return false;
+	
+					diff = (value_ != v);
+					value_ = v;
+					return true;
 				}
 
-				bool check_value(const std::wstring& value_str) const override
+				bool check_value(const std::wstring& str) const override
 				{
-					std::wstringstream ss;
-					ss << value_str;
+					if (str.empty())
+						return true;
 
-					T v;
-					ss >> v;
-					return (begin_ <= v && v <= last_);
+					auto size = str.size();
+					std::size_t pos = 0;
+					if (str[0] == '+' || str[0] == '-')
+						pos = 1;
+
+					if (std::is_same<T, int>::value)
+					{
+						for (; pos < size; ++pos)
+						{
+							auto ch = str[pos];
+							if (ch < '0' || '9' < ch)
+								return false;
+						}
+					}
+					else
+					{
+						bool dot = false;
+						for (; pos < size; ++pos)
+						{
+							auto ch = str[pos];
+							if (('.' == ch) && (!dot))
+							{
+								dot = true;
+								continue;
+							}
+
+							if (ch < '0' || '9' < ch)
+								return false;
+						}
+					}
+					return true;
 				}
 
 				void spin(bool increase) override
@@ -145,11 +177,12 @@ namespace nana
 					return texts_[pos_];
 				}
 
-				bool value(const std::wstring& value_str) override
+				bool value(const std::wstring& value_str, bool & diff) override
 				{
 					auto i = std::find(texts_.cbegin(), texts_.cend(), value_str);
 					if (i != texts_.cend())
 					{
+						diff = (*i == value_str);
 						pos_ = i - texts_.cbegin();
 						return true;
 					}
@@ -158,12 +191,15 @@ namespace nana
 
 				bool check_value(const std::wstring& str) const override
 				{
-					for (auto & s : texts_)
+					if (str.empty())
+						return true;
+
+					auto i = std::find_if(texts_.cbegin(), texts_.cend(), [&str](const std::wstring& value)
 					{
-						if (s.find(str) != s.npos)
-							return true;
-					}
-					return false;
+						return (value.find(str) != value.npos);
+					});
+
+					return (i != texts_.cend());
 				}
 
 				void spin(bool increase) override
@@ -198,7 +234,7 @@ namespace nana
 					timer_.elapse([this]
 					{
 						range_->spin(buttons::increase == spin_stated_);
-						_m_text();
+						reset_text();
 						API::update_window(editor_->window_handle());
 
 						auto intv = timer_.interval();
@@ -219,7 +255,15 @@ namespace nana
 					editor_->set_accept([this](::nana::char_t ch)
 					{
 						auto str = editor_->text();
-						str += ch;
+						auto pos = editor_->caret().x;
+						if (ch == '\b')
+						{
+							if (pos > 0)
+								str.erase(pos - 1, 1);
+						}
+						else
+							str.insert(pos, 1, ch);
+
 						return range_->check_value(str);
 					});
 
@@ -229,7 +273,7 @@ namespace nana
 					if (!range_)
 						range_.reset(new range_numeric<int>(0, 100, 1));
 
-					_m_text();
+					reset_text();
 
 					API::tabstop(wd);
 					API::eat_tabstop(wd, true);
@@ -251,10 +295,12 @@ namespace nana
 
 				bool value(const ::nana::string& value_str)
 				{
-					if (!range_->value(value_str))
+					bool diff;
+					if (!range_->value(value_str, diff))
 						return false;
-
-					_m_text();
+					
+					if (diff)
+						reset_text();
 					return true;
 				}
 
@@ -262,17 +308,17 @@ namespace nana
 				{
 					range_.swap(ptr);
 
-					_m_text();
+					reset_text();
 				}
 
-				void qualify(std::wstring&& prefix, std::wstring&& suffix)
+				void modifier(std::wstring&& prefix, std::wstring&& suffix)
 				{
-					surround_.prefix = std::move(prefix);
-					surround_.suffix = std::move(suffix);
+					modifier_.prefix = std::move(prefix);
+					modifier_.suffix = std::move(suffix);
 
 					if (editor_)
 					{
-						_m_text();
+						reset_text();
 						API::update_window(editor_->window_handle());
 					}
 				}
@@ -296,7 +342,7 @@ namespace nana
 				void mouse_wheel(bool upwards)
 				{
 					range_->spin(!upwards);
-					_m_text();
+					reset_text();
 				}
 
 				bool mouse_button(const ::nana::arg_mouse& arg, bool pressed)
@@ -315,10 +361,11 @@ namespace nana
 						{
 							API::capture_window(editor_->window_handle(), true);
 							range_->spin(buttons::increase == spin_stated_);
-							_m_text();
+							reset_text();
 							timer_.start();
 						}
-						_m_draw_spins(spin_stated_);
+						else
+							_m_draw_spins(spin_stated_);
 						return true;
 					}
 
@@ -369,16 +416,20 @@ namespace nana
 					else
 						editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
 				}
-			private:
-				void _m_text()
+
+				void reset_text()
 				{
-					if (editor_)
-					{
-						std::wstring text = surround_.prefix + range_->value() + surround_.suffix;
-						editor_->text(std::move(text));
-						_m_draw_spins(spin_stated_);
-					}
+					if (!editor_)
+						return;
+
+					if (API::is_focus_window(editor_->window_handle()))
+						editor_->text(range_->value());
+					else
+						editor_->text(modifier_.prefix + range_->value() + modifier_.suffix);
+
+					_m_draw_spins(spin_stated_);
 				}
+			private:
 
 				::nana::rectangle _m_spins_area() const
 				{
@@ -436,11 +487,11 @@ namespace nana
 				std::unique_ptr<range_interface> range_;
 				::nana::timer timer_;
 
-				struct surround_data
+				struct modifiers
 				{
 					std::wstring prefix;
 					std::wstring suffix;
-				}surround_;
+				}modifier_;
 			};
 
 			//class drawer
@@ -469,8 +520,9 @@ namespace nana
 				impl_->render();
 			}
 
-			void drawer::focus(graph_reference, const arg_focus&)
+			void drawer::focus(graph_reference, const arg_focus& arg)
 			{
+				impl_->reset_text();
 				impl_->render();
 				impl_->editor()->reset_caret();
 				API::lazy_refresh();
@@ -521,7 +573,9 @@ namespace nana
 			{
 				if (impl_->editor()->respone_keyboard(arg.key))
 				{
-					impl_->draw_spins();
+					if (!impl_->value(impl_->editor()->text()))
+						impl_->draw_spins();
+
 					API::lazy_refresh();
 				}
 			}
@@ -619,46 +673,14 @@ namespace nana
 		return ::nana::stod(value());
 	}
 
-	void spinbox::set_accept(std::function<bool(::nana::char_t)> pred)
+	void spinbox::modifier(std::wstring prefix, std::wstring suffix)
 	{
-		internal_scope_guard lock;
-		auto editor = get_drawer_trigger().impl()->editor();
-		if (editor)
-			editor->set_accept(std::move(pred));
+		get_drawer_trigger().impl()->modifier(std::move(prefix), std::move(suffix));
 	}
 
-	void spinbox::set_accept_integer()
+	void spinbox::modifier(const std::string & prefix_utf8, const std::string& suffix_utf8)
 	{
-		using accepts = ::nana::widgets::skeletons::text_editor::accepts;
-		auto editor = get_drawer_trigger().impl()->editor();
-		if (editor)
-			editor->set_accept(accepts::integer);
-	}
-
-	void spinbox::set_accept_real()
-	{
-		using accepts = ::nana::widgets::skeletons::text_editor::accepts;
-		auto editor = get_drawer_trigger().impl()->editor();
-		if (editor)
-			editor->set_accept(accepts::real);
-	}
-
-	void spinbox::remove_accept()
-	{
-		using accepts = ::nana::widgets::skeletons::text_editor::accepts;
-		auto editor = get_drawer_trigger().impl()->editor();
-		if (editor)
-			editor->set_accept(accepts::no_restrict);
-	}
-
-	void spinbox::qualify(std::wstring prefix, std::wstring suffix)
-	{
-		get_drawer_trigger().impl()->qualify(std::move(prefix), std::move(suffix));
-	}
-
-	void spinbox::qualify(const std::string & prefix_utf8, const std::string& suffix_utf8)
-	{
-		qualify(static_cast<std::wstring>(::nana::charset(prefix_utf8, ::nana::unicode::utf8)), static_cast<std::wstring>(::nana::charset(suffix_utf8, ::nana::unicode::utf8)));
+		modifier(static_cast<std::wstring>(::nana::charset(prefix_utf8, ::nana::unicode::utf8)), static_cast<std::wstring>(::nana::charset(suffix_utf8, ::nana::unicode::utf8)));
 	}
 
 	::nana::string spinbox::_m_caption() const

@@ -206,6 +206,9 @@ namespace nana
 
 			return _m_open(contents, true);
 		}
+
+		/// Sets a verifier to verify the user input.
+		void verify(std::function<bool(window)> verifier);
 	private:
 		void _m_fetch_args(std::vector<abstract_content*>&);
 
@@ -221,6 +224,7 @@ namespace nana
 		window owner_;
 		::nana::string description_;
 		::nana::string title_;
+		std::function<bool(window)> verifier_;
 	};
 }//end namespace nana
 
