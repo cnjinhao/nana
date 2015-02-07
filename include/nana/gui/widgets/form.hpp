@@ -24,12 +24,10 @@ namespace nana
 			class trigger: public drawer_trigger
 			{
 			public:
-				trigger();
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
-				void resized(graph_reference, const arg_resized&) override;
 			private:
-				widget*	wd_;
+				widget*	wd_{nullptr};
 			};
 		}//end namespace form
 	}//end namespace drawerbase
@@ -47,6 +45,9 @@ namespace nana
 		form(window, const ::nana::size& = { 300, 200 }, const appearance& = {});
         /// Creates a window at the point and size specified by rect, with the specified appearance. This window is always floating above its owner.
 		form(window, const rectangle&, const appearance& = {});
+
+		void modality() const;
+		void wait_for_this();
 	};
 
 	class nested_form : public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>

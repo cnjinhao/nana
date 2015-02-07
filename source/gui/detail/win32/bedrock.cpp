@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,16 +13,18 @@
 #include <nana/config.hpp>
 
 #include PLATFORM_SPEC_HPP
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
 #include <nana/system/timepiece.hpp>
-#include <nana/gui/wvl.hpp>
+#include <nana/gui.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
+#include <nana/gui/detail/color_schemes.hpp>
 
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL	0x020A
@@ -175,7 +177,8 @@ namespace detail
 		std::recursive_mutex mutex;
 		thr_context_container thr_contexts;
 
-		element_store estore;
+		color_schemes	schemes;
+		element_store	estore;
 
 		struct cache_type
 		{
@@ -213,7 +216,8 @@ namespace detail
 	static LRESULT WINAPI Bedrock_WIN32_WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	bedrock::bedrock()
-		:impl_(new private_impl)
+		:	pi_data_(new pi_data),
+			impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
@@ -269,6 +273,7 @@ namespace detail
 			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
 		}
 		delete impl_;
+		delete pi_data_;
 	}
 
 	//inc_window
@@ -337,9 +342,9 @@ namespace detail
 		return bedrock_object;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t* wd)
+	void bedrock::map_thread_root_buffer(core_window_t* wd, bool forced)
 	{
-		::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), 0);
+		::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), static_cast<LPARAM>(forced ? TRUE : FALSE));
 	}
 
 	void interior_helper_for_menu(MSG& msg, native_window_type menu_window)
@@ -591,7 +596,7 @@ namespace detail
 			}
 			return true;
 		case nana::detail::messages::map_thread_root_buffer:
-			bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam));
+			bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam), (TRUE == lParam));
 			::UpdateWindow(wd);
 			return true;
 		case nana::detail::messages::remote_thread_move_window:
@@ -1003,7 +1008,7 @@ namespace detail
 						arg.evt_code = event_code::mouse_up;
 						emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
-						auto evt_ptr = msgwnd->together.events_ptr;
+						//auto evt_ptr = msgwnd->together.events_ptr;	//deprecated
 
 						if (fire_click)
 						{
@@ -1055,7 +1060,10 @@ namespace detail
 						else
 						{
 							evt_code = event_code::mouse_enter;
-							msgwnd->flags.action = mouse_action::over;
+							if (pressed_wd == msgwnd)
+								msgwnd->flags.action = mouse_action::pressed;
+							else if (mouse_action::pressed != msgwnd->flags.action)
+								msgwnd->flags.action = mouse_action::over;
 						}
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, pmdec);
@@ -1068,9 +1076,14 @@ namespace detail
 				{
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
-					msgwnd->flags.action = mouse_action::over;
+
 					if (hovered_wd != msgwnd)
 					{
+						if (pressed_wd == msgwnd)
+							msgwnd->flags.action = mouse_action::pressed;
+						else if (mouse_action::pressed != msgwnd->flags.action)
+							msgwnd->flags.action = mouse_action::over;
+
 						hovered_wd = msgwnd;
 						arg.evt_code = event_code::mouse_enter;
 						brock.emit(event_code::mouse_enter, msgwnd, arg, true, &context);
@@ -1100,21 +1113,34 @@ namespace detail
 						auto scrolled_wd = brock.wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), scr_pos.x, scr_pos.y);
 
 						def_window_proc = true;
-						while (scrolled_wd)
+						auto evt_wd = scrolled_wd;
+						while (evt_wd)
 						{
-							if (scrolled_wd->together.attached_events->mouse_wheel.length() != 0)
+							if (evt_wd->together.attached_events->mouse_wheel.length() != 0)
 							{
 								def_window_proc = false;
 								nana::point mspos{ scr_pos.x, scr_pos.y };
-								brock.wd_manager.calc_window_point(scrolled_wd, mspos);
+								brock.wd_manager.calc_window_point(evt_wd, mspos);
 
 								arg_wheel arg;
 								arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
-								assign_arg(arg, scrolled_wd, pmdec);
-								brock.emit(event_code::mouse_wheel, scrolled_wd, arg, true, &context);
+								assign_arg(arg, evt_wd, pmdec);
+								brock.emit(event_code::mouse_wheel, evt_wd, arg, true, &context);
 								break;
 							}
-							scrolled_wd = scrolled_wd->parent;
+							evt_wd = evt_wd->parent;
+						}
+
+						if (scrolled_wd && (nullptr == evt_wd))
+						{
+							nana::point mspos{ scr_pos.x, scr_pos.y };
+							brock.wd_manager.calc_window_point(scrolled_wd, mspos);
+
+							arg_wheel arg;
+							arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
+							assign_arg(arg, scrolled_wd, pmdec);
+							brock.emit_drawer(event_code::mouse_wheel, scrolled_wd, arg, &context);
+							brock.wd_manager.do_lazy_refresh(scrolled_wd, false);
 						}
 					}
 					else
@@ -1260,6 +1286,15 @@ namespace detail
 				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));
 				break;
 			case WM_PAINT:
+				if (msgwnd->is_draw_through())
+				{
+					msgwnd->other.attribute.root->draw_through();
+
+					::PAINTSTRUCT ps;
+					::BeginPaint(root_window, &ps);
+					::EndPaint(root_window, &ps);
+				}
+				else
 				{
 					::PAINTSTRUCT ps;
 					::HDC dc = ::BeginPaint(root_window, &ps);
@@ -1576,15 +1611,35 @@ namespace detail
 		return impl_->estore;
 	}
 
+	void bedrock::map_through_widgets(core_window_t* wd, native_drawable_type drawable)
+	{
+#if defined(NANA_WINDOWS)
+		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);
+
+		for (auto child : wd->children)
+		{
+			if (!child->visible) continue;
+
+			if (::nana::category::flags::widget == child->other.category)
+			{
+				::BitBlt(reinterpret_cast<HDC>(drawable), child->pos_root.x, child->pos_root.y, static_cast<int>(child->dimension.width), static_cast<int>(child->dimension.height),
+					graph_context, child->pos_root.x, child->pos_root.y, SRCCOPY);
+			}
+			else if (::nana::category::flags::lite_widget == child->other.category)
+				map_through_widgets(child, drawable);
+		}
+#endif	
+	}
+
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const arg_mouse& arg, bool ask_update, thread_context* thrd)
 	{
 		if (evt_code != arg.evt_code)
 			throw std::runtime_error("Nana.bedrock: invalid event arg.");
 
-		return emit(evt_code, wd, static_cast<const ::nana::detail::event_arg_interface&>(arg), ask_update, thrd);
+		return emit(evt_code, wd, static_cast<const ::nana::event_arg&>(arg), ask_update, thrd);
 	}
 
-	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::detail::event_arg_interface& arg, bool ask_update, thread_context* thrd)
+	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd)
 	{
 		if (wd_manager.available(wd) == false)
 			return false;
@@ -1611,7 +1666,7 @@ namespace detail
 		return true;
 	}
 
-	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::detail::event_arg_interface& arg, thread_context* thrd)
+	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, thread_context* thrd)
 	{
 		if (bedrock_object.wd_manager.available(wd) == false)
 			return false;

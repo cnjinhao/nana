@@ -21,7 +21,7 @@ namespace nana
 				{
 					if(active)
 					{
-						native_interface::caret_create(wd_->root, size_.width, size_.height);
+						native_interface::caret_create(wd_->root, size_);
 						real_visible_state_ = false;
 						visible_ = false;
 						this->position(point_.x, point_.y);
@@ -49,9 +49,7 @@ namespace nana
 			void caret_descriptor::effective_range(nana::rectangle rect)
 			{
 				//Chech rect
-				if(	(rect.width && rect.height) &&
-					(rect.x + rect.width > 0) &&
-					(rect.y + rect.height > 0))
+				if (rect.width && rect.height && rect.right() > 0 && rect.bottom() > 0)
 				{
 					if(rect.x < 0)
 					{
@@ -132,8 +130,8 @@ namespace nana
 					pos.y += effective_range_.y;
 				}
 
-				if(	(pos.x + static_cast<int>(size.width) <= rect.x) || (pos.x >= rect.x + static_cast<int>(rect.width)) ||
-					(pos.y + static_cast<int>(size.height) <= rect.y) || (pos.y >= rect.y + static_cast<int>(rect.height))
+				if(	(pos.x + static_cast<int>(size.width) <= rect.x) || (pos.x >= rect.right()) ||
+					(pos.y + static_cast<int>(size.height) <= rect.y) || (pos.y >= rect.bottom())
 					)
 				{//Out of Range without overlap
 					if(false == out_of_range_)
@@ -151,9 +149,9 @@ namespace nana
 						size.width -= (rect.x - pos.x);
 						pos.x = rect.x;
 					}
-					else if(pos.x + size.width > rect.x + rect.width)
+					else if(pos.x + static_cast<int>(size.width) > rect.right())
 					{
-						size.width -= pos.x + size.width - (rect.x + rect.width);
+						size.width -= pos.x + size.width - rect.right();
 					}
 
 					if(pos.y < rect.y)
@@ -161,8 +159,8 @@ namespace nana
 						size.width -= (rect.y - pos.y);
 						pos.y = rect.y;
 					}
-					else if(pos.y + size.height > rect.y + rect.height)
-						size.height -= pos.y + size.height - (rect.y + rect.height);
+					else if(pos.y + static_cast<int>(size.height) > rect.bottom())
+						size.height -= pos.y + size.height - rect.bottom();
 
 					if(out_of_range_)
 					{
@@ -175,7 +173,7 @@ namespace nana
 					if(paint_size_ != size)
 					{
 						native_interface::caret_destroy(wd_->root);
-						native_interface::caret_create(wd_->root, size.width, size.height);
+						native_interface::caret_create(wd_->root, size);
 						real_visible_state_ = false;
 						if(visible_)
 							_m_visible(true);
@@ -183,7 +181,7 @@ namespace nana
 						paint_size_ = size;
 					}
 				
-					native_interface::caret_pos(wd_->root, wd_->pos_root.x + pos.x, wd_->pos_root.y + pos.y);
+					native_interface::caret_pos(wd_->root, wd_->pos_root + pos);
 				}
 			}
 		//end class caret_descriptor
@@ -228,7 +226,7 @@ namespace nana
 				: widget_ptr(wdg), other(category::root_tag::value)
 			{
 				drawer.bind(this);
-				_m_init_pos_and_size(0, rectangle());
+				_m_init_pos_and_size(nullptr, rectangle());
 				this->_m_initialize(owner);
 			}
 
@@ -294,16 +292,20 @@ namespace nana
 				return false;
 			}
 
+			bool basic_window::is_draw_through() const
+			{
+				if (::nana::category::flags::root == this->other.category)
+					return static_cast<bool>(other.attribute.root->draw_through);
+				return false;
+			}
+
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
 				pos_owner = pos_root = r;
 				dimension = r;
 
-				if(parent)
-				{
-					pos_root.x += parent->pos_root.x;
-					pos_root.y += parent->pos_root.y;
-				}
+				if (parent)
+					pos_root += parent->pos_root;
 			}
 
 			void basic_window::_m_initialize(basic_window* agrparent)
@@ -332,7 +334,7 @@ namespace nana
 				}
 
 				predef_cursor = cursor::arrow;
-				flags.capture = false;
+				flags.captured = false;
 				flags.dbl_click = true;
 				flags.enabled = true;
 				flags.modal = false;
@@ -344,12 +346,9 @@ namespace nana
 				flags.refreshing = false;
 				flags.destroying = false;
 				flags.borderless = false;
+				flags.make_bground_declared = false;
 
 				visible = false;
-
-				color.foreground = 0x0;
-				color.background = nana::color::button_face;
-				color.active = 0x60C8FD;
 
 				effect.edge_nimbus = effects::edge_nimbus::none;
 				effect.bground = nullptr;

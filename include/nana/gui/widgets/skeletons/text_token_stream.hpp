@@ -45,9 +45,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		tokenizer(const nana::string& s, bool format_enabled)
 			:	iptr_(s.data()),
 				endptr_(s.data() + s.size()),
-				format_enabled_(format_enabled),
-				format_state_(false),
-				revert_token_(token::eof)
+				format_enabled_(format_enabled)
 		{
 		}
 
@@ -414,17 +412,14 @@ namespace nana{ namespace widgets{	namespace skeletons
 			}
 		}
 	private:
-		const nana::char_t * iptr_;
-		const nana::char_t * endptr_;
+		const ::nana::char_t * iptr_;
+		const ::nana::char_t * endptr_;
 		const bool	format_enabled_;
-		bool	format_state_;
+		bool	format_state_{false};
 
-		nana::string idstr_;
+		::nana::string idstr_;
 		std::pair<nana::string, nana::string> binary_;
-
-		std::size_t	whspace_size_;
-
-		token revert_token_;
+		token revert_token_{token::eof};
 	};
 
 	//The fblock states a format, and a format from which it is inherted
@@ -439,16 +434,16 @@ namespace nana{ namespace widgets{	namespace skeletons
 			};
 		};
 
-		nana::string	font;
+		::nana::string	font;
 		std::size_t		font_size;
 		bool	bold;
 		bool	bold_empty;	//bold should be ignored if bold_empty is true
 		aligns::t	text_align;
-		nana::color_t	bgcolor;	//If the color is not specified, it will be ignored, and the system will search for its parent.
-		nana::color_t	fgcolor;	//ditto
+		::nana::color	bgcolor;	//If the color is not specified, it will be ignored, and the system will search for its parent.
+		::nana::color	fgcolor;	//ditto
 
-		nana::string	target;
-		nana::string	url;
+		::nana::string	target;
+		::nana::string	url;
 
 		fblock * parent;
 	};
@@ -528,7 +523,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 	{
 	public:
 		data_image(const nana::string& imgpath, const nana::size & sz, std::size_t limited)
-			: image_(imgpath), limited_(limited)
+			: image_(imgpath)//, limited_(limited)
 		{
 			size_ = image_.size();
 
@@ -597,7 +592,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 		nana::string str_;
 		nana::paint::image image_;
 		nana::size size_;
-		std::size_t limited_;
 	};
 
 	class dstream
@@ -741,41 +735,45 @@ namespace nana{ namespace widgets{	namespace skeletons
 					switch(tknizer.read())
 					{
 					case token::number:
-						fp->fgcolor = tknizer.number();
+					{
+						pixel_color_t px;
+						px.value = static_cast<unsigned>(tknizer.number());
+						fp->fgcolor = {px.element.red, px.element.green, px.element.blue};
+					}
 						break;
 					case token::red:
-						fp->fgcolor = 0xFF0000;
+						fp->fgcolor = colors::red;
 						break;
 					case token::green:
-						fp->fgcolor = 0xFF00;
+						fp->fgcolor = colors::green;
 						break;
 					case token::blue:
-						fp->fgcolor = 0xFF;
+						fp->fgcolor = colors::blue;
 						break;
 					case token::white:
-						fp->fgcolor = 0xFFFFFF;
+						fp->fgcolor = colors::white;
 						break;
 					case token::black:
-						fp->fgcolor = 0x0;
+						fp->fgcolor = colors::black;
 						break;
 					default:
 						throw std::runtime_error("");
 					}
 					break;
 				case token::red:	//support the omitting of color.
-					fp->fgcolor = 0xFF0000;
+					fp->fgcolor = colors::red;
 					break;
 				case token::green:	//support the omitting of color.
-					fp->fgcolor = 0xFF00;
+					fp->fgcolor = colors::green;
 					break;
 				case token::blue:	//support the omitting of color.
-					fp->fgcolor = 0xFF;
+					fp->fgcolor = colors::blue;
 					break;
 				case token::white:	//support the omitting of color.
-					fp->fgcolor = 0xFFFFFF;
+					fp->fgcolor = colors::white;
 					break;
 				case token::black:	//support the omitting of color.
-					fp->fgcolor = 0x0;
+					fp->fgcolor = colors::black;
 					break;
 				case token::baseline:
 					fp->text_align = fblock::aligns::baseline;
@@ -867,10 +865,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 			fbp->bold_empty = true;
 			fbp->text_align = fblock::aligns::baseline;
 
-			//Refer to the definition for the color specification.
-			fbp->bgcolor = 0xFFFFFFFF;
-			fbp->fgcolor = 0xFFFFFFFF;
-
 			fbp->parent = nullptr;
 
 			fblocks_.push_back(fbp);
@@ -910,8 +904,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				v.data_ptr = new data_text(idstr);
 				break;
 			default:
-				int * debug = 0;	//for debug
-				*debug = 0;
+				break;
 			}
 
 			line.push_back(v);
@@ -928,7 +921,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 		}
 
 	private:
-		bool format_enabled_;
 		std::vector<fblock*> fblocks_;
 		std::list<std::deque<value> > lines_;
 

@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -33,10 +33,11 @@ namespace nana
 			{
 				struct format
 				{
-					::nana::color_t bgcolor;
-					::nana::color_t fgcolor;
+					::nana::color bgcolor;
+					::nana::color fgcolor;
 
-					format(color_t bgcolor = 0xFF000000, color_t fgcolor = 0xFF000000);
+					format() = default;
+					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 				};
 
 				using format_ptr = std::unique_ptr < format > ;
@@ -49,7 +50,7 @@ namespace nana
 				cell(cell&&);
 				cell(nana::string);
 				cell(nana::string, const format&);
-				cell(nana::string, color_t bgcolor, color_t fgcolor);
+				cell(nana::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 
 				cell& operator=(const cell&);
 				cell& operator=(cell&&);
@@ -212,11 +213,11 @@ namespace nana
 				item_proxy & select(bool);
 				bool selected() const;
 
-				item_proxy & bgcolor(nana::color_t);
-				nana::color_t bgcolor() const;
+				item_proxy & bgcolor(const nana::color&);
+				nana::color bgcolor() const;
 
-				item_proxy& fgcolor(nana::color_t);
-				nana::color_t fgcolor() const;
+				item_proxy& fgcolor(const nana::color&);
+				nana::color fgcolor() const;
 
 				index_pair pos() const;
 
@@ -415,9 +416,12 @@ namespace nana
 	}//end namespace drawerbase
 
 	struct arg_listbox
+		: public event_arg
 	{
 		mutable drawerbase::listbox::item_proxy item;
 		bool	selected;
+
+		arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
 	};
 
 	namespace drawerbase
@@ -430,6 +434,15 @@ namespace nana
 				basic_event<arg_listbox> checked;
 				basic_event<arg_listbox> selected;
 			};
+
+			struct scheme
+				: public widget_colors
+			{
+				color_proxy header_bgcolor{static_cast<color_rgb>(0xf1f2f4)};
+				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
+				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
+				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
+			};
 		}
 	}//end namespace drawerbase
 
@@ -441,7 +454,7 @@ The user can \a drag the header to \a reisize it or to \a reorganize it.
 By \a clicking on a header the list get \a reordered, first up, and then down alternatively,
 */
 	class listbox
-		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events>,
+		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:
@@ -471,8 +484,8 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		template<typename Key>
 		cat_proxy operator[](const Key & ck)
 		{
-			typedef typename nana::detail::type_escape<Key>::type key_t;
-			std::shared_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t>>(ck), [](nana::detail::key_interface* p)
+			using catkey = typename ::nana::detail::type_escape<Key>::type;
+			std::shared_ptr<nana::detail::key_interface> p(new nana::key<catkey, std::less<catkey>>(ck), [](nana::detail::key_interface* p)
 			{
 				delete p;
 			});
@@ -483,8 +496,8 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		template<typename Key>
 		cat_proxy operator[](Key && ck)
 		{
-			typedef typename nana::detail::type_escape<Key>::type key_t;
-			std::shared_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t>>(std::move(ck)), [](nana::detail::key_interface* p)
+			using catkey = typename ::nana::detail::type_escape<Key>::type;
+			std::shared_ptr<nana::detail::key_interface> p(new nana::key<catkey, std::less<catkey>>(std::move(ck)), [](nana::detail::key_interface* p)
 			{
 				delete p;
 			});
@@ -539,6 +552,9 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		size_type size_categ() const;                   ///<Get the number of categories
 		size_type size_item() const;                    ///<The number of items in the default category
 		size_type size_item(size_type cat) const;          ///<The number of items in category "cat"
+
+		void enable_single(bool for_selection, bool category_limited);
+		void disable_single(bool for_selection);
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
@@ -546,5 +562,15 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
 		void _m_ease_key(nana::detail::key_interface*);
 	};
+
+	namespace dev
+	{
+		template<>
+		struct widget_traits<listbox>
+		{
+			using event_type = drawerbase::listbox::listbox_events;
+			using scheme_type = drawerbase::listbox::scheme;
+		};
+	}
 }//end namespace nana
 #endif

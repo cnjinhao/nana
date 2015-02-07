@@ -6,16 +6,6 @@ namespace nana
 {
 namespace paint
 {
-	namespace image_process
-	{
-		//There are definitions of pure virtual destructor of image processor interfaces
-		stretch_interface::~stretch_interface(){}
-		alpha_blend_interface::~alpha_blend_interface(){}
-		blend_interface::~blend_interface(){}
-		line_interface::~line_interface(){}
-		blur_interface::~blur_interface(){}
-	}
-
 	namespace detail
 	{
 	//class image_process_provider

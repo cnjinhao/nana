@@ -1,6 +1,7 @@
 /*
  *	A CheckBox Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -88,31 +89,33 @@ namespace checkbox
 			void drawer::_m_draw_background(graph_reference graph)
 			{
 				if(bground_mode::basic != API::effects_bground_mode(*widget_))
-					graph.rectangle(API::background(*widget_), true);
+					graph.rectangle(true, API::bgcolor(*widget_));
 			}
 
 			void drawer::_m_draw_checkbox(graph_reference graph, unsigned first_line_height)
 			{
-				impl_->crook.draw(graph, widget_->background(), widget_->foreground(), rectangle(0, first_line_height > 16 ? (first_line_height - 16) / 2 : 0, 16, 16), API::element_state(*widget_));
+				impl_->crook.draw(graph, widget_->bgcolor(), widget_->fgcolor(), rectangle(0, first_line_height > 16 ? (first_line_height - 16) / 2 : 0, 16, 16), API::element_state(*widget_));
 			}
 
 			void drawer::_m_draw_title(graph_reference graph)
 			{
-				if(graph.width() > 16 + interval)
+				if (graph.width() > 16 + interval)
 				{
 					nana::string title = widget_->caption();
 
-					unsigned fgcolor = widget_->foreground();
 					unsigned pixels = graph.width() - (16 + interval);
 
 					nana::paint::text_renderer tr(graph);
-					if(API::window_enabled(widget_->handle()) == false)
+					if (API::window_enabled(widget_->handle()) == false)
 					{
-						tr.render(17 + interval, 2, 0xFFFFFF, title.c_str(), title.length(), pixels);
-						fgcolor = 0x808080;
+						graph.set_text_color(colors::white);
+						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels);
+						graph.set_text_color({ 0x80, 0x80, 0x80 });
 					}
+					else
+						graph.set_text_color(widget_->fgcolor());
 
-					tr.render(16 + interval, 1, fgcolor, title.c_str(), title.length(), pixels);
+					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels);
 				}
 			}
 		//end class drawer
@@ -205,8 +208,8 @@ namespace checkbox
 			element_tag el;
 
 			el.uiobj = &uiobj;
-			el.eh_checked = uiobj.events().click.connect_front(std::bind(&radio_group::_m_checked, this, std::placeholders::_1));
-			el.eh_destroy = uiobj.events().destroy.connect(std::bind(&radio_group::_m_destroy, this, std::placeholders::_1));
+			el.eh_checked = uiobj.events().click.connect_unignorable(std::bind(&radio_group::_m_checked, this, std::placeholders::_1), true);
+			el.eh_destroy = uiobj.events().destroy.connect_unignorable(std::bind(&radio_group::_m_destroy, this, std::placeholders::_1));
 			ui_container_.push_back(el);
 		}
 

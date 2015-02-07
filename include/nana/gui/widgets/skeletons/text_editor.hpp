@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -14,9 +14,9 @@
 #ifndef NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #define NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #include "textbase.hpp"
+#include "text_editor_scheme.hpp"
 #include <nana/gui/widgets/scroll.hpp>
 #include <nana/unicode_bidi.hpp>
-#include <memory>
 
 namespace nana{	namespace widgets
 {
@@ -127,22 +127,37 @@ namespace nana{	namespace widgets
 			class undo_backspace;
 			class undo_input_text;
 			class undo_move_text;
-		public:
-			typedef nana::char_t	char_type;
-			typedef textbase<char_type>::size_type size_type;
-			typedef textbase<char_type>::string_type string_type;
 
-			typedef nana::paint::graphics & graph_reference;
+			struct keywords;
+			class keyword_parser;
+		public:
+			using char_type = ::nana::char_t;
+			using size_type = textbase<char_type>::size_type;
+			using string_type = textbase<char_type>::string_type;
+
+			using graph_reference = ::nana::paint::graphics&;
 
 			struct ext_renderer_tag
 			{
-				std::function<void(graph_reference, const nana::rectangle& text_area, nana::color_t)> background;
+				std::function<void(graph_reference, const nana::rectangle& text_area, const ::nana::color&)> background;
 			};
 
-			text_editor(window, graph_reference);
+			enum class accepts
+			{
+				no_restrict, integer, real
+			};
+
+			text_editor(window, graph_reference, const text_editor_scheme*);
 			~text_editor();
 
-			bool respone_keyboard(nana::char_t, bool enterable);
+			void set_highlight(const std::string& name, const ::nana::color&, const ::nana::color&);
+			void erase_highlight(const std::string& name);
+			void set_keyword(const ::nana::string& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
+			void erase_keyword(const ::nana::string& kw);
+
+			void set_accept(std::function<bool(char_type)>);
+			void set_accept(accepts);
+			bool respone_keyboard(char_type);
 
 			void typeface_changed();
 
@@ -151,12 +166,12 @@ namespace nana{	namespace widgets
 			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
 			bool line_wrapped(bool);
 
-			void border_renderer(std::function<void(graph_reference, nana::color_t bgcolor)>);
+			void border_renderer(std::function<void(graph_reference, const ::nana::color& bgcolor)>);
 
 			bool load(const nana::char_t*);
 
-			//text_area
-			//@return: Returns true if the area of text is changed.
+			/// Sets the text area.
+			/// @return true if the area is changed with the new value.
 			bool text_area(const nana::rectangle&);
 			bool tip_string(nana::string&&);
 
@@ -180,8 +195,7 @@ namespace nana{	namespace widgets
 			void text(nana::string);
 			nana::string text() const;
 
-			//move_caret
-			//@brief: Set caret position through text coordinate
+			/// Sets caret position through text coordinate.
 			void move_caret(const upoint&);
 			void move_caret_end();
 			void reset_caret_height() const;
@@ -190,7 +204,7 @@ namespace nana{	namespace widgets
 
 			bool selected() const;
 			bool select(bool);
-			//Set the end position of a selected string
+			/// Sets the end position of a selected string.
 			void set_end_caret();
 			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos) const;
@@ -199,6 +213,7 @@ namespace nana{	namespace widgets
 
 			/// Returns width of text area excluding the vscroll size.
 			unsigned width_pixels() const;
+			window window_handle() const;
 		public:
 			void draw_scroll_rectangle();
 			void render(bool focused);
@@ -227,46 +242,43 @@ namespace nana{	namespace widgets
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
 		private:
-			nana::color_t _m_bgcolor() const;
+			bool _m_accepts(char_type) const;
+			::nana::color _m_bgcolor() const;
 			bool _m_scroll_text(bool vertical);
 			void _m_on_scroll(const arg_mouse&);
 			void _m_scrollbar();
-			nana::size _m_text_area() const;
+			::nana::size _m_text_area() const;
 			void _m_get_scrollbar_size();
 			void _m_reset();
-			nana::upoint _m_put(nana::string);
-			nana::upoint _m_erase_select();
+			::nana::upoint _m_put(nana::string);
+			::nana::upoint _m_erase_select();
 
 			bool _m_make_select_string(nana::string&) const;
 			static bool _m_resolve_text(const nana::string&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
 
 			bool _m_cancel_select(int align);
 			unsigned _m_tabs_pixels(size_type tabs) const;
-			nana::size _m_text_extent_size(const char_type*) const;
 			nana::size _m_text_extent_size(const char_type*, size_type n) const;
 
-			//_m_move_offset_x_while_over_border
-			//@brief: Moves the view window
+			/// Moves the view of window.
 			bool _m_move_offset_x_while_over_border(int many);
 			bool _m_move_select(bool record_undo);
 
 			int _m_text_top_base() const;
-			//_m_endx
-			//@brief: Gets the right point of text area
+
+			/// Returns the right point of text area.
 			int _m_endx() const;
-			//_m_endy
-			//@brief: Get the bottom point of text area
+			/// Returns the bottom point of text area.
 			int _m_endy() const;
 
-			void _m_draw_tip_string() const;
-
+			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t*, std::size_t len) const;
 			//_m_draw_string
 			//@brief: Draw a line of string
-			void _m_draw_string(int top, nana::color_t color, const nana::upoint& str_pos, const nana::string&, bool if_mask) const;
-			//_m_draw
-			//@brief: Draw a character at a position specified by caret pos. 
-			//@return: true if beyond the border
-			bool _m_draw(nana::char_t, std::size_t secondary_before);
+			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const nana::string&, bool if_mask) const;
+			//_m_update_caret_line
+			//@brief: redraw whole line specified by caret pos. 
+			//@return: true if caret overs the border
+			bool _m_update_caret_line(std::size_t secondary_before);
 			bool _m_get_sort_select_points(nana::upoint&, nana::upoint&) const;
 
 			void _m_offset_y(int y);
@@ -279,6 +291,9 @@ namespace nana{	namespace widgets
 			undoable<command>	undo_;
 			nana::window window_;
 			graph_reference graph_;
+			const text_editor_scheme* scheme_;
+			std::unique_ptr<keywords> keywords_;
+
 			skeletons::textbase<nana::char_t> textbase_;
 			nana::char_t mask_char_{0};
 
@@ -286,6 +301,9 @@ namespace nana{	namespace widgets
 
 			struct attributes
 			{
+				accepts acceptive{ accepts::no_restrict };
+				std::function<bool(char_type)> pred_acceptive;
+
 				nana::string tip_string;
 
 				bool line_wrapped{false};
@@ -308,7 +326,7 @@ namespace nana{	namespace widgets
 				unsigned	scroll_pixels;
 				unsigned	vscroll;
 				unsigned	hscroll;
-				std::function<void(nana::paint::graphics&, nana::color_t)> border_renderer;
+				std::function<void(nana::paint::graphics&, const ::nana::color&)> border_renderer;
 			}text_area_;
 
 			struct selection

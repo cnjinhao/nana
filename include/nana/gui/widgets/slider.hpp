@@ -1,7 +1,7 @@
 /*
  *	A Slider Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,8 +19,11 @@ namespace nana
 	class slider;
 
 	struct arg_slider
+		: public event_arg
 	{
 		slider & widget;
+
+		arg_slider(slider&);
 	};
 
 	namespace drawerbase
@@ -41,7 +44,7 @@ namespace nana
 			class provider
 			{
 			public:
-				virtual ~provider() = 0;
+				virtual ~provider() = default;
 				virtual nana::string adorn_trace(unsigned vmax, unsigned vadorn) const = 0;
 			};
 
@@ -74,7 +77,7 @@ namespace nana
 					unsigned vcur_scale;	//pixels of vcur scale.
 				};
 
-				virtual ~renderer() = 0;
+				virtual ~renderer() = default;
 
 				virtual void background(window, graph_reference, bool isglass) = 0;
 				virtual void adorn(window, graph_reference, const adorn_t&) = 0;

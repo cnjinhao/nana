@@ -11,7 +11,7 @@
  */
 
 #include <nana/config.hpp>
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/drawer.hpp>
 #include <nana/gui/detail/dynamic_drawing_object.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
@@ -242,7 +242,7 @@ namespace nana
 			_m_emit(event_code::shortkey, arg, &drawer_trigger::shortkey);
 		}
 
-		void drawer::map(window wd)	//Copy the root buffer to screen
+		void drawer::map(window wd, bool forced)	//Copy the root buffer to screen
 		{
 			if(wd)
 			{
@@ -264,7 +264,7 @@ namespace nana
 #endif
 				}
 
-				if(false == edge_nimbus_renderer_t::instance().render(iwd))
+				if (false == edge_nimbus_renderer_t::instance().render(iwd, forced))
 				{
 					nana::rectangle vr;
 					if(bedrock_type::window_manager_t::wndlayout_type::read_visual_rectangle(iwd, vr))
@@ -378,11 +378,9 @@ namespace nana
 				dw->draw(graphics);
 		}
 
-		//If the drawer_trigger didn't declear a lazy refresh, then use the refresh().
-		void drawer::_m_use_refresh()
+		bool drawer::_m_lazy_decleared() const
 		{
-			if (basic_window::update_state::refresh != core_window_->other.upd_state)
-				refresh();
+			return (basic_window::update_state::refresh == core_window_->other.upd_state);
 		}
 	}//end namespace detail
 }//end namespace nana

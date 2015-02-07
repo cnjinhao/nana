@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,7 @@
 
 #include <nana/config.hpp>
 #include PLATFORM_SPEC_HPP
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
@@ -165,19 +165,20 @@ namespace detail
 	}
 
 	bedrock::bedrock()
-		: impl_(new private_impl)
+		: pi_data_(new pi_data), impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance().msg_set(timer_proc, window_proc_dispatcher);
 	}
 
 	bedrock::~bedrock()
 	{
+		delete pi_data_;
 		delete impl_;
 	}
 
-	void bedrock::map_thread_root_buffer(bedrock::core_window_t* wnd)
+	void bedrock::map_thread_root_buffer(core_window_t*, bool forced)
 	{
-		//GUI in X11 is not thread-dependent, so no implementation.
+		//GUI in X11 is thread-independent, so no implementation.
 	}
 
 	//inc_window
@@ -376,14 +377,20 @@ namespace detail
 		return impl_->estore;
 	}
 
+	void bedrock::map_through_widgets(core_window_t* wd, native_drawable_type drawable)
+	{
+		//No implementation for Linux
+	}
+
+
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const arg_mouse& arg, bool ask_update, thread_context* thrd)
 	{
 		if(evt_code != arg.evt_code)
 			throw std::runtime_error("Nana.bedrock: Invalid event arg.");
-		return emit(evt_code, wd, static_cast<const ::nana::detail::event_arg_interface&>(arg), ask_update, thrd);
+		return emit(evt_code, wd, static_cast<const ::nana::event_arg&>(arg), ask_update, thrd);
 	}
 
-	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::detail::event_arg_interface& arg, bool ask_update, thread_context* thrd)
+	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd)
 	{
 		if(wd_manager.available(wd) == false)
 			return false;
@@ -410,7 +417,7 @@ namespace detail
 		return true;
 	}
 
-	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::detail::event_arg_interface& arg, thread_context* thrd)
+	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, thread_context* thrd)
 	{
 		if(wd_manager.available(wd) == false)
 			return false;
@@ -618,7 +625,8 @@ namespace detail
 				msgwnd = brock.wd_manager.find_window(native_window, xevent.xcrossing.x, xevent.xcrossing.y);
 				if(msgwnd)
 				{
-					msgwnd->flags.action = mouse_action::over;
+					if (mouse_action::pressed != msgwnd->flags.action)
+						msgwnd->flags.action = mouse_action::over;
 					hovered_wd = msgwnd;
 
 					arg_mouse arg;
@@ -869,7 +877,8 @@ namespace detail
 						else
 						{
 							evt_code = event_code::mouse_enter;
-							msgwnd->flags.action = mouse_action::over;
+							if (mouse_action::pressed != msgwnd->flags.action)
+								msgwnd->flags.action = mouse_action::over;
 						}
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
@@ -882,7 +891,10 @@ namespace detail
 				{
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, xevent);
-					msgwnd->flags.action = mouse_action::over;
+					
+					if (mouse_action::pressed != msgwnd->flags.action)
+						msgwnd->flags.action = mouse_action::over;
+
 					if (hovered_wd != msgwnd)
 					{
 						hovered_wd = msgwnd;

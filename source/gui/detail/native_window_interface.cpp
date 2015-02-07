@@ -23,7 +23,7 @@
 	#include <nana/paint/detail/image_ico.hpp>
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
-	#include GUI_BEDROCK_HPP
+	#include <nana/gui/detail/bedrock.hpp>
 #endif
 
 namespace nana{
@@ -146,7 +146,7 @@ namespace nana{
 #endif
 
 	//struct native_interface
-		nana::size native_interface::screen_size()
+		nana::size native_interface::primary_monitor_size()
 		{
 #if defined(NANA_WINDOWS)
 			return nana::size(::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN));
@@ -176,12 +176,9 @@ namespace nana{
 									mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top);
 				}
 			}
-#elif defined(NANA_X11)
 #endif
-			return screen_size();
+			return primary_monitor_size();
 		}
-
-		
 
 		//platform-dependent
 		native_interface::window_result native_interface::create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& app)
@@ -933,7 +930,7 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::bring_to_top(native_window_type wd)
+		void native_interface::bring_top(native_window_type wd, bool activated)
 		{
 #if defined(NANA_WINDOWS)
 			HWND native_wd = reinterpret_cast<HWND>(wd);
@@ -944,7 +941,7 @@ namespace nana{
 			HWND fg_wd = ::GetForegroundWindow();
 			DWORD fg_tid = ::GetWindowThreadProcessId(fg_wd, nullptr);
 			::AttachThreadInput(::GetCurrentThreadId(), fg_tid, TRUE);
-			::ShowWindow(native_wd, SW_SHOWNORMAL);
+			::ShowWindow(native_wd, activated ? SW_SHOWNORMAL : SW_SHOWNOACTIVATE);
 			::SetWindowPos(native_wd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 			::SetWindowPos(native_wd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 			::AttachThreadInput(::GetCurrentThreadId(), fg_tid, FALSE);
@@ -1196,13 +1193,13 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::caret_create(native_window_type wd, unsigned width, unsigned height)
+		void native_interface::caret_create(native_window_type wd, const ::nana::size& caret_sz)
 		{
 #if defined(NANA_WINDOWS)
-			::CreateCaret(reinterpret_cast<HWND>(wd), 0, int(width), int(height));
+			::CreateCaret(reinterpret_cast<HWND>(wd), 0, int(caret_sz.width), int(caret_sz.height));
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
-			restrict::spec.caret_open(wd, width, height);
+			restrict::spec.caret_open(wd, caret_sz);
 #endif
 		}
 
@@ -1219,21 +1216,21 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::caret_pos(native_window_type wd, int x, int y)
+		void native_interface::caret_pos(native_window_type wd, const point& pos)
 		{
 #if defined(NANA_WINDOWS)
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
 				auto cp = new nana::detail::messages::caret;
-				cp->x = x;
-				cp->y = y;
+				cp->x = pos.x;
+				cp->y = pos.y;
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::operate_caret, 2, reinterpret_cast<LPARAM>(cp));
 			}
 			else
-				::SetCaretPos(x, y);
+				::SetCaretPos(pos.x, pos.y);
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
-			restrict::spec.caret_pos(wd, x, y);
+			restrict::spec.caret_pos(wd, pos);
 #endif
 		}
 

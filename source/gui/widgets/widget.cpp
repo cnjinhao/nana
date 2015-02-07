@@ -20,11 +20,14 @@ namespace nana
 	}
 	//class widget
 	//@brief:The definition of class widget
-		widget::~widget(){}
-
 		nana::string widget::caption() const
 		{
 			return this->_m_caption();
+		}
+
+		void widget::caption(std::string utf8)
+		{
+			_m_caption(std::wstring(::nana::charset(utf8, ::nana::unicode::utf8)));
 		}
 
 		void widget::caption(nana::string str)
@@ -141,24 +144,24 @@ namespace nana
 			_m_move(r);
 		}
 
-		void widget::foreground(nana::color_t value)
+		void widget::fgcolor(const nana::color& col)
 		{
-			_m_foreground(value);
+			_m_fgcolor(col);
 		}
 
-		nana::color_t widget::foreground() const
+		nana::color widget::fgcolor() const
 		{
-			return _m_foreground();
+			return _m_fgcolor();
 		}
 
-		void widget::background(nana::color_t value)
+		void widget::bgcolor(const nana::color& col)
 		{
-			_m_background(value);
+			_m_bgcolor(col);
 		}
 
-		nana::color_t widget::background() const
+		nana::color widget::bgcolor() const
 		{
-			return _m_background();
+			return _m_bgcolor();
 		}
 
 		general_events& widget::events() const
@@ -169,6 +172,21 @@ namespace nana
 		void widget::umake_event(event_handle eh) const
 		{
 			API::umake_event(eh);
+		}
+
+		widget& widget::register_shortkey(char_t key)
+		{
+			if (key)
+				API::register_shortkey(handle(), static_cast<unsigned long>(key));
+			else
+				API::unregister_shortkey(handle());
+			return *this;
+		}
+
+		widget& widget::take_active(bool activated, window take_if_not_activated)
+		{
+			API::take_active(handle(), activated, take_if_not_activated);
+			return *this;
 		}
 
 		widget& widget::tooltip(const nana::string& text)
@@ -261,24 +279,24 @@ namespace nana
 			return API::typeface(handle());
 		}
 
-		void widget::_m_foreground(nana::color_t value)
+		void widget::_m_fgcolor(const nana::color& col)
 		{
-			API::foreground(handle(), value);
+			API::fgcolor(handle(), col);
 		}
 
-		nana::color_t widget::_m_foreground() const
+		nana::color widget::_m_fgcolor() const
 		{
-			return API::foreground(handle());
+			return API::fgcolor(handle());
 		}
 
-		void widget::_m_background(nana::color_t value)
+		void widget::_m_bgcolor(const nana::color& col)
 		{
-			API::background(handle(), value);
+			API::bgcolor(handle(), col);
 		}
 
-		nana::color_t widget::_m_background() const
+		nana::color widget::_m_bgcolor() const
 		{
-			return API::background(handle());
+			return API::bgcolor(handle());
 		}
 
 	//end class widget

@@ -1,7 +1,7 @@
 /*
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,6 +13,7 @@
 #include <nana/gui/wvl.hpp>
 #include <nana/gui/widgets/categorize.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
+#include <nana/gui/element.hpp>
 #include <nana/paint/gadget.hpp>
 #include <nana/gui/widgets/detail/tree_cont.hpp>
 #include <stdexcept>
@@ -73,35 +74,36 @@ namespace nana
 				void background(graph_reference graph, window wd, const nana::rectangle& r, const ui_element& ue)
 				{
 					ui_el_ = ue;
-					style_.bgcolor = API::background(wd);
-					style_.fgcolor = API::foreground(wd);
+					style_.bgcolor = API::bgcolor(wd);
+					style_.fgcolor = API::fgcolor(wd);
 
 					if(ue.what == ue.none || (API::window_enabled(wd) == false))
 					{	//the mouse is out of the widget.
-						style_.bgcolor = nana::paint::graphics::mix(style_.bgcolor, 0xA0C9F5, 0.9);
+						style_.bgcolor = style_.bgcolor.blend(color{ 0xa0, 0xc9, 0xf5 }, 0.9);
 					}
-					graph.rectangle(r, style_.bgcolor, true);
+					graph.rectangle(r, true, style_.bgcolor);
 				}
 
 				virtual void root_arrow(graph_reference graph, const nana::rectangle& r, mouse_action state)
 				{
-					int x = r.x + (r.width - 16) / 2;
-					int y = r.y + (r.height - 16) / 2;
+					::nana::rectangle arrow_r{r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16};
+
 					if(ui_el_.what == ui_el_.item_root)
 					{
 						_m_item_bground(graph, r.x + 1, r.y, r.width - 2, r.height, (state == mouse_action::pressed ? mouse_action::pressed : mouse_action::over));
-						graph.rectangle(r, 0x3C7FB1, false);
+						graph.rectangle(r, false, color{ 0x3C, 0x7F, 0xB1 });
 						if(state == mouse_action::pressed)
 						{
-							++x;
-							++y;
+							++arrow_r.x;
+							++arrow_r.y;
 						}
 					}
 					else
-						graph.rectangle(r, style_.bgcolor, true);
+						graph.rectangle(r, true, style_.bgcolor);
 
-					nana::paint::gadget::arrow_16_pixels(graph, x, y,
-						style_.fgcolor, 3, nana::paint::gadget::directions::to_west);
+					facade<element::arrow> arrow("double");
+					arrow.direction(::nana::direction::west);
+					arrow.draw(graph, {}, style_.fgcolor, arrow_r, element_state::normal);
 				}
 
 				void item(graph_reference graph, const nana::rectangle& r, std::size_t index, const nana::string& name, unsigned txtheight, bool has_child, mouse_action state)
@@ -126,31 +128,39 @@ namespace nana
 						int top = r.y + 1;
 						unsigned width = r.width - 2;
 						unsigned height = r.height - 2;
+
+						::nana::color clr{ 0x3C, 0x7F, 0xB1 };
 						if(has_child)
 						{
-							int left = r.x + r.width - 16;
-							_m_item_bground(graph, left, top, 15, height, state_arrow);
 							width -= 16;
-							--left;
-							graph.line(left, top, left, r.y + height, 0x3C7FB1);
+
+							int left = r.x + r.width - 17;
+							_m_item_bground(graph, left + 1, top, 15, height, state_arrow);
+							graph.line({ left, top }, { left, r.y + static_cast<int>(height) }, clr);
 						}
+
 						_m_item_bground(graph, r.x + 1, top, width, height, state_name);
-						graph.rectangle(r, 0x3C7FB1, false);
+						graph.rectangle(r, false, clr);
 					}
-					graph.string(strpos.x, strpos.y, style_.fgcolor, name);
+					graph.string(strpos, name, style_.fgcolor);
 
 					if(has_child)
 					{
-						nana::paint::gadget::arrow_16_pixels(graph, r.x + r.width - 16, r.y + (r.height - 16)/2,
-							style_.fgcolor, 3, nana::paint::gadget::directions::to_east);
+						facade<element::arrow> arrow("double");
+						arrow.direction(::nana::direction::east);
+						arrow.draw(graph, {}, style_.fgcolor, { r.right() - 16, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
 					}
 				}
 
 				void border(graph_reference graph)
 				{
-					graph.rectangle(0xF0F0F0, false);
-					graph.rectangle_line(nana::rectangle(graph.size()).pare_off(1),
-										0x9DABB9, 0x484E55, 0x484E55, 0x9DABB9);
+					rectangle r{ graph.size() };
+
+					graph.rectangle(r, false, { 0xf0, 0xf0, 0xf0 });
+
+					color lb(0x9d, 0xab, 0xb9);
+					color tr(0x48, 0x4e, 0x55);
+					graph.frame_rectangle(r.pare_off(1), lb, tr, tr, lb);
 				}
 			private:
 				void _m_item_bground(graph_reference graph, int x, int y, unsigned width, unsigned height, mouse_action state)
@@ -158,38 +168,38 @@ namespace nana
 					const unsigned half = (height - 2) / 2;
 					int left = x + 1;
 					int top = y + 1;
-					nana::color_t upcol, downcol;
+					nana::color clr_top(0xea, 0xea, 0xea), clr_bottom(0xdc, 0xdc, 0xdc);
 					switch(state)
 					{
 					case mouse_action::over:
-						upcol = 0x0DFF2FC;
-						downcol = 0xA9DAF5;
+						clr_top.from_rgb(0xdf, 0xf2, 0xfc);
+						clr_bottom.from_rgb(0xa9, 0xda, 0xf5);
 						break;
 					case mouse_action::pressed:
-						upcol = 0xA6D7F2;
-						downcol = 0x92C4F6;
+						clr_top.from_rgb(0xa6, 0xd7, 0xf2);
+						clr_bottom.from_rgb(0x92, 0xc4, 0xf6);
 						++left;
 						++top;
 						break;
-					case mouse_action::normal:
 					default:
-						upcol = 0xEAEAEA;
-						downcol = 0xDCDCDC;
 						break;
 					}
 
-					graph.rectangle(left, top, width - 2, half, upcol, true);
-					graph.rectangle(left, top + static_cast<int>(half), width - 2, (height - 2) - half, downcol, true);
+					graph.rectangle(rectangle{ left, top, width - 2, half }, true, clr_top);
+					graph.rectangle(rectangle{ left, top + static_cast<int>(half), width - 2, (height - 2) - half }, true, clr_bottom);
 					if(mouse_action::pressed == state)
 					{
 						int bottom = y + height - 1;
 						int right = x + width - 1;
-						graph.line(x, y, right, y, 0x6E8D9F);
-						graph.line(x, y + 1, x, bottom, 0x6E8D9F);
+
+						graph.set_color(color(0x6e, 0x8d, 0x9f));
+						graph.line(point{ x, y }, point{right, y});
+						graph.line(point{ x, y + 1 }, point{ x, bottom });
 						++x;
 						++y;
-						graph.line(x, y, right, y, 0xA6C7D9);
-						graph.line(x, y + 1, x, bottom, 0xA6C7D9);
+						graph.set_color(color(0xa6, 0xc7, 0xd9));
+						graph.line(point{ x, y }, point{ right, y });
+						graph.line(point{ x, y + 1 }, point{ x, bottom });
 					}
 				}
 
@@ -197,8 +207,10 @@ namespace nana
 				ui_element	ui_el_;
 				struct style_tag
 				{
-					nana::color_t bgcolor;
-					nana::color_t fgcolor;
+					//nana::color_t bgcolor;
+					//nana::color_t fgcolor;
+					color bgcolor;
+					color fgcolor;
 				}style_;
 			};
 
@@ -369,7 +381,6 @@ namespace nana
 				};
 
 				scheme()
-					: graph_(nullptr)
 				{
 					proto_.ui_renderer = pat::cloneable<renderer>(interior_renderer());
 					style_.mode = mode::normal;
@@ -379,7 +390,7 @@ namespace nana
 				void attach(window wd, nana::paint::graphics* graph)
 				{
 					window_ = wd;
-					API::background(wd, 0xFFFFFF);
+					API::bgcolor(wd, colors::white);
 					graph_ = graph;
 				}
 
@@ -582,7 +593,7 @@ namespace nana
 					r.width = r.height = 100;
 					style_.listbox = &(form_loader<nana::float_listbox>()(window_, r, true));
 					style_.listbox->set_module(style_.module, 16);
-					style_.listbox->events().destroy.connect([this]
+					style_.listbox->events().destroy.connect_unignorable([this]
 					{
 						_m_list_closed();
 					});
@@ -637,7 +648,7 @@ namespace nana
 
 				nana::rectangle _m_make_root_rectangle() const
 				{
-					return nana::rectangle(1, 1, 16, _m_item_fix_scale());
+					return{ 1, 1, 16, _m_item_fix_scale() };
 				}
 
 				//_m_make_rectangle
@@ -765,8 +776,8 @@ namespace nana
 					}
 				}
 			private:
-				window	window_;
-				nana::paint::graphics * graph_;
+				window	window_{nullptr};
+				nana::paint::graphics * graph_{nullptr};
 				nana::string splitstr_;
 				std::size_t	head_;
 				unsigned	item_height_;

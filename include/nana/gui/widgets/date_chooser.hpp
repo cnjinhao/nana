@@ -1,7 +1,7 @@
 /*
  *	A date chooser Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -43,10 +43,8 @@ namespace nana
 				bool chose() const;
 				nana::date read() const;
 				void week_name(unsigned index, const nana::string&);
-				void month_name(unsigned index, const nana::string&);
 			private:
-				void _m_init_color();
-				where _m_pos_where(graph_reference, int x, int y);
+				where _m_pos_where(graph_reference, const ::nana::point& pos);
 				void _m_draw(graph_reference);
 				void _m_draw_topbar(graph_reference);
 				void _m_make_drawing_basis(drawing_basis&, graph_reference, const nana::point& refpos);
@@ -58,14 +56,13 @@ namespace nana
 				bool _m_get_trace(point, int & res);
 				void _m_perf_transform(transform_action tfid, graph_reference,  graph_reference dirtybuf, graph_reference newbuf, const nana::point& refpos);
 			private:
-				void refresh(graph_reference);
+				void refresh(graph_reference) override;
 				void attached(widget_reference, graph_reference)	override;
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
 				nana::string weekstr_[7];
-				nana::string monthstr_[12];
 
 				widget * widget_;
 				
@@ -91,10 +88,10 @@ namespace nana
 
 				struct color_tag
 				{
-					nana::color_t highlight;
-					nana::color_t selected;
-					nana::color_t normal;
-					nana::color_t bkcolor;
+					::nana::color highlight;
+					::nana::color selected;
+					::nana::color normal;
+					::nana::color bgcolor;
 				}color_;
 			};
 		
@@ -116,7 +113,6 @@ namespace nana
 		bool chose() const;
 		nana::date read() const;
 		void weekstr(unsigned index, const nana::string&);///<Set the week strings which will be displayed for day, index is in range of [0, 6]
-		void monthstr(unsigned index, const nana::string&);///<Set the month strings which will be displayed for month. index is in range of [0, 11]
 	};
 }//end namespace nana
 

@@ -12,6 +12,7 @@
 #include <nana/gui/tooltip.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/timer.hpp>
+#include <nana/gui/screen.hpp>
 #include <memory>
 
 namespace nana
@@ -26,14 +27,14 @@ namespace nana
 			private:
 				void refresh(graph_reference graph)
 				{
-					graph.rectangle(0x0, false);
-					graph.rectangle(1, 1, graph.width() - 2, graph.height() - 2, 0xF0F0F0, true);
+					graph.rectangle(false, colors::black);
+					graph.rectangle(::nana::rectangle(graph.size()).pare_off(1), true, {0xf0, 0xf0, 0xf0});
 				}
 			};
 
 			nana::point pos_by_screen(nana::point pos, const nana::size& sz, bool overlap_allowed)
 			{
-				auto scr_area = API::screen_area_from_point(pos);
+				auto scr_area = screen::from_point(pos)->area();
 				if (pos.x + sz.width > scr_area.x + scr_area.width)
 					pos.x = static_cast<int>(scr_area.x + scr_area.width - sz.width);
 				if (pos.x < scr_area.x)
@@ -76,7 +77,7 @@ namespace nana
 				void tooltip_text(const nana::string& text) override
 				{
 					label_.caption(text);
-					auto text_s = label_.measure(API::screen_size().width * 2 / 3);
+					auto text_s = label_.measure(screen::from_window(label_)->area().width * 2 / 3);
 					this->size(nana::size{ text_s.width + 10, text_s.height + 10 });
 					label_.move(rectangle{ 5, 5, text_s.width, text_s.height });
 

@@ -44,7 +44,6 @@ namespace drawerbase
 		private:
 			static const int interval = 4;
 			widget* widget_;
-			unsigned state_;
 			std::unique_ptr<implement> imptr_;
 			implement * impl_;
 		};

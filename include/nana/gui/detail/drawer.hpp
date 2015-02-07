@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -110,7 +110,7 @@ namespace nana
 			void key_char(const arg_keyboard&);
 			void key_release(const arg_keyboard&);
 			void shortkey(const arg_keyboard&);
-			void map(window);	//Copy the root buffer to screen
+			void map(window, bool forced);	//Copy the root buffer to screen
 			void refresh();
 			drawer_trigger* realizer() const;
 			void attached(widget&, drawer_trigger&);
@@ -123,7 +123,7 @@ namespace nana
 			void _m_bground_pre();
 			void _m_bground_end();
 			void _m_draw_dynamic_drawing_object();
-			void _m_use_refresh();
+			bool _m_lazy_decleared() const;
 
 			template<typename Arg, typename Mfptr>
 			void _m_emit(event_code evt_code, const Arg& arg, Mfptr mfptr)
@@ -139,14 +139,20 @@ namespace nana
 						{
 							realizer_->_m_reset_overrided();
 							(realizer_->*mfptr)(graphics, arg);
-							mth_state_[pos] = (realizer_->_m_overrided() ? method_state::overrided : method_state::not_overrided);
+							
+							//Check realizer, when the window is closed in that event handler, the drawer will be
+							//detached and realizer will be a nullptr
+							if(realizer_)
+								mth_state_[pos] = (realizer_->_m_overrided() ? method_state::overrided : method_state::not_overrided);
 						}
 						else
 							(realizer_->*mfptr)(graphics, arg);
 
-						_m_use_refresh();
-						_m_draw_dynamic_drawing_object();
-						_m_bground_end();
+						if (_m_lazy_decleared())
+						{
+							_m_draw_dynamic_drawing_object();
+							_m_bground_end();
+						}
 					}
 				}
 			}

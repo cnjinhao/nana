@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -14,6 +14,7 @@
 #define NANA_GUI_WIDGETS_COMBOX_HPP
 #include "widget.hpp"
 #include "float_listbox.hpp"
+#include "skeletons/text_editor_scheme.hpp"
 #include <nana/key_type.hpp>
 #include <nana/concepts.hpp>
 #include <functional>
@@ -21,15 +22,13 @@
 namespace nana
 {
 	/// A list box combined with a textbox - the list box should drop down when the user selects the arrow next to the control
-    class combox;
+	class combox;
 
 	struct arg_combox
+		: public event_arg
 	{
 		combox & widget;
-
-		arg_combox(combox& wdg)
-			: widget(wdg)
-		{}
+		arg_combox(combox&);
 	};
 
 	namespace drawerbase
@@ -39,7 +38,8 @@ namespace nana
 			struct combox_events
 				: public general_events
 			{
-				basic_event<arg_combox> selected;
+				basic_event<arg_combox>	selected;
+				basic_event<arg_combox> text_changed;
 			};
 
 			class drawer_impl;
@@ -50,8 +50,6 @@ namespace nana
 			public:
 				trigger();
 				~trigger();
-
-				void set_accept(std::function<bool(nana::char_t)>&&);
 
 				drawer_impl& get_drawer_impl();
 				const drawer_impl& get_drawer_impl() const;
@@ -69,7 +67,6 @@ namespace nana
 				void key_press(graph_reference, const arg_keyboard&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
-				std::function<bool(nana::char_t)> pred_acceptive_;
 				drawer_impl * drawer_;
 			};
 
@@ -160,7 +157,7 @@ namespace nana
 	}//end namespace drawerbase
 
 	class combox
-		:	public widget_object<category::widget_tag, drawerbase::combox::trigger, drawerbase::combox::combox_events>,
+		:	public widget_object<category::widget_tag, drawerbase::combox::trigger, drawerbase::combox::combox_events, ::nana::widgets::skeletons::text_editor_scheme>,
 			public nana::concepts::any_objective<std::size_t, 1>
 	{
 	public:
@@ -169,15 +166,15 @@ namespace nana
 
 		combox();
 		combox(window, bool visible);
-		combox(window, const nana::string& text, bool visible = true);
-		combox(window, const nana::char_t* text, bool visible = true);
+		combox(window, nana::string, bool visible = true);
+		combox(window, const nana::char_t*, bool visible = true);
 		combox(window, const rectangle& r = rectangle(), bool visible = true);
 		
 		void clear();
 		void editable(bool);
 		bool editable() const;
 		void set_accept(std::function<bool(nana::char_t)>);
-		combox& push_back(const nana::string&);
+		combox& push_back(nana::string);
 		std::size_t the_number_of_options() const;
 		std::size_t option() const;   ///< Index of the last selected, from drop-down list, item.
 		void option(std::size_t);   ///< Select the text specified by index
@@ -223,11 +220,23 @@ namespace nana
 	private:
 		item_proxy _m_at_key(std::shared_ptr<nana::detail::key_interface>&&);
 		void _m_erase(nana::detail::key_interface*);
+		drawerbase::combox::drawer_impl & _m_impl();
+		const drawerbase::combox::drawer_impl& _m_impl() const;
 	private:
 		//Overrides widget's virtual functions
 		nana::string _m_caption() const override;
 		void _m_caption(nana::string&&) override;
 		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
+
+	namespace dev
+	{
+		template<>
+		struct widget_traits<combox>
+		{
+			using event_type = drawerbase::combox::combox_events;
+			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
+		};
+	}
 }
 #endif

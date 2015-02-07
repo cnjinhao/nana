@@ -1,6 +1,7 @@
 /*
  *	A Toolbar Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,6 +17,10 @@
 
 namespace nana
 {
+	arg_toolbar::arg_toolbar(toolbar& tbar, std::size_t btn)
+		: widget(tbar), button{btn}
+	{}
+
 	namespace drawerbase
 	{
 		namespace toolbar
@@ -29,45 +34,43 @@ namespace nana
 
 			struct item_type
 			{
-				enum{TypeButton, TypeContainer};
+				enum kind{ button, container};
 
 				typedef std::size_t size_type;
 
 				nana::string text;
 				nana::paint::image image;
-				unsigned	pixels;
+				unsigned	pixels{0};
 				nana::size	textsize;
-				bool		enable;
-				window other;
+				bool		enable{true};
+				window other{nullptr};
 
-				int type;
+				kind type;
 				std::function<void(size_type, size_type)> answer;
 				std::vector<listitem> children;
 
-				item_type(const nana::string& text, const nana::paint::image& img, int type)
-					:text(text), image(img), pixels(0), enable(true), other(nullptr), type(type)
+				item_type(const nana::string& text, const nana::paint::image& img, kind type)
+					:text(text), image(img), type(type)
 				{}
 			};
 
 			class container
 			{
-				container(const container&);
-				container& operator=(const container&);
+				container(const container&) = delete;
+				container& operator=(const container&) = delete;
 			public:
 				typedef std::vector<item_type*>::size_type size_type;
 				typedef std::vector<item_type*>::iterator iterator;
 				typedef std::vector<item_type*>::const_iterator const_iterator;
 
-				container()
-				{}
-
+				container() = default;
 				~container()
 				{
 					for(auto ptr : cont_)
 						delete ptr;
 				}
 
-				void insert(size_type pos, const nana::string& text, const nana::paint::image& img, int type)
+				void insert(size_type pos, const nana::string& text, const nana::paint::image& img, item_type::kind type)
 				{
 					item_type* m = new item_type(text, img, type);
 
@@ -79,12 +82,12 @@ namespace nana
 
 				void push_back(const nana::string& text, const nana::paint::image& img)
 				{
-					insert(cont_.size(), text, img, item_type::TypeButton);
+					insert(cont_.size(), text, img, item_type::kind::button);
 				}
 
 				void push_back(const nana::string& text)
 				{
-					insert(cont_.size(), text, nana::paint::image(), item_type::TypeButton);
+					insert(cont_.size(), text, nana::paint::image(), item_type::kind::button);
 				}
 
 				void insert(size_type pos)
@@ -142,22 +145,22 @@ namespace nana
 				enum class state_t{normal, highlighted, selected};
 				const static unsigned extra_size = 6;
 
-				item_renderer(nana::paint::graphics& graph, bool textout, unsigned scale, nana::color_t color)
-					:graph(graph), textout(textout), scale(scale), color(color)
+				item_renderer(nana::paint::graphics& graph, bool textout, unsigned scale, const ::nana::color& bgcolor)
+					:graph(graph), textout(textout), scale(scale), bgcolor(bgcolor)
 				{}
 
 				void operator()(int x, int y, unsigned width, unsigned height, item_type& item, state_t state)
 				{
 					//draw background
 					if(state != state_t::normal)
-						graph.rectangle(x, y, width, height, 0x3399FF, false);
+						graph.rectangle({ x, y, width, height }, false, { 0x33, 0x99, 0xFF });
 					switch(state)
 					{
 					case state_t::highlighted:
-						graph.shadow_rectangle(x + 1, y + 1, width - 2, height - 2, color, /*graph.mix(color, 0xC0DDFC, 0.5)*/ 0xC0DDFC, true);
+						graph.gradual_rectangle({ x + 1, y + 1, width - 2, height - 2 }, bgcolor, { 0xC0, 0xDD, 0xFC }, true);
 						break;
 					case state_t::selected:
-						graph.shadow_rectangle(x + 1, y + 1, width - 2, height - 2, color, /*graph.mix(color, 0x99CCFF, 0.5)*/0x99CCFF, true);
+						graph.gradual_rectangle({ x + 1, y + 1, width - 2, height - 2 }, bgcolor, { 0x99, 0xCC, 0xFF }, true);
 					default:	break;
 					}
 
@@ -174,13 +177,13 @@ namespace nana
 						item.image.paste(size, graph, pos);
 						if(item.enable == false)
 						{
-							nana::paint::graphics gh(size.width, size.height);
+							nana::paint::graphics gh(size);
 							gh.bitblt(size, graph, pos);
 							gh.rgb_to_wb();
 							gh.paste(graph, pos.x, pos.y);
 						}
 						else if(state == state_t::normal)
-							graph.blend(nana::rectangle(pos, size), graph.mix(color, 0xC0DDFC, 0.5), 0.25);
+							graph.blend(nana::rectangle(pos, size), ::nana::color(0xc0, 0xdd, 0xfc).blend(bgcolor, 0.5), 0.25);
 
 						x += scale;
 						width -= scale;
@@ -188,7 +191,7 @@ namespace nana
 
 					if(textout)
 					{
-						graph.string(x + (width - item.textsize.width) / 2, y + (height - item.textsize.height) / 2, 0x0, item.text);
+						graph.string({ x + static_cast<int>(width - item.textsize.width) / 2, y + static_cast<int>(height - item.textsize.height) / 2 }, item.text);
 					}
 				}
 
@@ -196,27 +199,19 @@ namespace nana
 				nana::paint::graphics& graph;
 				bool textout;
 				unsigned scale;
-				nana::color_t color;
+				::nana::color bgcolor;
 			};
 
 			struct drawer::drawer_impl_type
 			{
-				event_handle event_size;
-				unsigned scale;
-				bool textout;
-				size_type which;
-				item_renderer::state_t state;
+				event_handle event_size{nullptr};
+				unsigned scale{16};
+				bool textout{false};
+				size_type which{npos};
+				item_renderer::state_t state{item_renderer::state_t::normal};
 
 				container cont;
-				nana::tooltip tooltip;
-
-				drawer_impl_type()
-					:	event_size(nullptr),
-						scale(16),
-						textout(false),
-						which(npos),
-						state(item_renderer::state_t::normal)
-				{}
+				::nana::tooltip tooltip;
 			};
 
 			//class drawer
@@ -283,7 +278,7 @@ namespace nana
 
 					widget_ = static_cast< ::nana::toolbar*>(&widget);
 					widget.caption(STR("Nana Toolbar"));
-					impl_->event_size = widget.events().resized.connect(std::bind(&drawer::_m_owner_sized, this, std::placeholders::_1));
+					impl_->event_size = widget.events().resized.connect_unignorable(std::bind(&drawer::_m_owner_sized, this, std::placeholders::_1));
 
 				}
 
@@ -403,19 +398,20 @@ namespace nana
 					return npos;
 				}
 
-				void drawer::_m_draw_background(nana::color_t color)
+				void drawer::_m_draw_background(const ::nana::color& clr)
 				{
-					graph_->shadow_rectangle(graph_->size(), graph_->mix(color, 0xFFFFFF, 0.9), graph_->mix(color, 0x0, 0.95), true);
+					graph_->gradual_rectangle(graph_->size(), clr.blend(colors::white, 0.9), clr.blend(colors::black, 0.95), true);
 				}
 
 				void drawer::_m_draw()
 				{
 					int x = 2, y = 2;
 
-					unsigned color = API::background(widget_->handle());
-					_m_draw_background(color);
+					auto bgcolor = API::bgcolor(widget_->handle());
+					graph_->set_text_color(bgcolor);
+					_m_draw_background(bgcolor);
 
-					item_renderer ir(*graph_, impl_->textout, impl_->scale, color);
+					item_renderer ir(*graph_, impl_->textout, impl_->scale, bgcolor);
 					size_type index = 0;
 
 					for(auto item : impl_->cont)
@@ -428,7 +424,7 @@ namespace nana
 						}
 						else
 						{
-							graph_->line(x + 2, y + 2, x + 2, y + impl_->scale + ir.extra_size - 4, 0x808080);
+							graph_->line({ x + 2, y + 2 }, { x + 2, y + static_cast<int>(impl_->scale + ir.extra_size) - 4 }, { 0x80, 0x80, 0x80 });
 							x += 6;
 						}
 						++index;
@@ -463,9 +459,6 @@ namespace nana
 	}//end namespace drawerbase
 
 	//class toolbar
-		toolbar::toolbar()
-		{}
-
 		toolbar::toolbar(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);

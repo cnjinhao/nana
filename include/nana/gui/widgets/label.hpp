@@ -69,6 +69,8 @@ namespace nana
 		/// "corrected" size that changes lines to fit the text into the specified width
 		nana::size measure(unsigned allowed_width_in_pixel) const;
 
+		static ::nana::size measure(::nana::paint::graphics&, const ::nana::string&, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align);
+
 		label& text_align(align horizontal_align, align_v vertical_align= align_v::top);
 	private:
 		//Overrides widget's virtual function

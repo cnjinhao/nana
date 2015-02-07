@@ -40,9 +40,9 @@ namespace nana
 					: dw(dw), x(x), endpos(endpos), text_align(ta)
 				{}
 
-				unsigned operator()(int top, const nana::char_t * buf, std::size_t bufsize)
+				unsigned operator()(const int top, const nana::char_t * buf, std::size_t bufsize)
 				{
-					int xpos = x;
+					nana::point pos{ x, top };
 					unsigned pixels = 0;
 					bidi.linestr(buf, bufsize, reordered);
 					switch(text_align)
@@ -54,11 +54,11 @@ namespace nana
 							nana::size ts = detail::text_extent_size(dw, ent.begin, len);
 							if(ts.height > pixels)	pixels = ts.height;
 						
-							if(xpos + static_cast<int>(ts.width) > 0)
-								detail::draw_string(dw, xpos, top, ent.begin, len);
+							if(pos.x + static_cast<int>(ts.width) > 0)
+								detail::draw_string(dw, pos, ent.begin, len);
 
-							xpos += static_cast<int>(ts.width);
-							if(xpos >= endpos)
+							pos.x += static_cast<int>(ts.width);
+							if(pos.x >= endpos)
 								break;
 						}
 						break;
@@ -74,15 +74,15 @@ namespace nana
 								widths.push_back(ts.width);
 							}
 
-							xpos += (endpos - xpos - static_cast<int>(lenpx))/2;
+							pos.x += (endpos - pos.x - static_cast<int>(lenpx))/2;
 							auto ipx = widths.begin();
 							for(auto & ent : reordered)
 							{
-								if(xpos + static_cast<int>(*ipx) > 0)
-									detail::draw_string(dw, xpos, top, ent.begin, ent.end - ent.begin);
+								if(pos.x + static_cast<int>(*ipx) > 0)
+									detail::draw_string(dw, pos, ent.begin, ent.end - ent.begin);
 
-								xpos += static_cast<int>(*ipx);
-								if(xpos >= endpos)
+								pos.x += static_cast<int>(*ipx);
+								if(pos.x >= endpos)
 									break;
 							}
 						}
@@ -90,7 +90,7 @@ namespace nana
 					case align::right:
 						{
 							int xend = endpos;
-							std::swap(xpos, xend);
+							std::swap(pos.x, xend);
 							for(auto i = reordered.rbegin(), end = reordered.rend(); i != end; ++i)
 							{
 								auto & ent = *i;
@@ -98,13 +98,13 @@ namespace nana
 								nana::size ts = detail::text_extent_size(dw, ent.begin, len);
 								if(ts.height > pixels)	pixels = ts.height;
 
-								if(xpos > xend)
+								if(pos.x > xend)
 								{
-									xpos -= static_cast<int>(ts.width);
-									detail::draw_string(dw, xpos, top, i->begin, len);
+									pos.x -= static_cast<int>(ts.width);
+									detail::draw_string(dw, pos, i->begin, len);
 								}
 							
-								if(xpos <= xend || xpos <= 0)
+								if(pos.x <= xend || pos.x <= 0)
 									break;
 							}
 						}
@@ -118,13 +118,13 @@ namespace nana
 			{
 				graphics & graph;
 				int x, endpos;
-				nana::color_t color;
+				::nana::color fgcolor;
 				unsigned omitted_pixels;
 				nana::unicode_bidi bidi;
 				std::vector<nana::unicode_bidi::entity> reordered;
 
-				draw_string_omitted(graphics& graph, int x, int endpos, nana::color_t color, bool omitted)
-					: graph(graph), x(x), endpos(endpos), color(color)
+				draw_string_omitted(graphics& graph, int x, int endpos, const ::nana::color& fgcolor, bool omitted)
+					: graph(graph), x(x), endpos(endpos), fgcolor(fgcolor)
 				{
 					omitted_pixels = (omitted ? graph.text_extent_size(STR("..."), 3).width : 0);
 					if(endpos - x > static_cast<int>(omitted_pixels))
@@ -133,10 +133,20 @@ namespace nana
 						this->endpos = x;
 				}
 
-				unsigned operator()(int top, const nana::char_t * buf, std::size_t bufsize)
+				draw_string_omitted(graphics& graph, int x, int endpos, bool omitted)
+					: graph(graph), x(x), endpos(endpos)
+				{
+					omitted_pixels = (omitted ? graph.text_extent_size(STR("..."), 3).width : 0);
+					if (endpos - x > static_cast<int>(omitted_pixels))
+						this->endpos -= omitted_pixels;
+					else
+						this->endpos = x;
+				}
+
+				unsigned operator()(const int top, const nana::char_t * buf, std::size_t bufsize)
 				{
 					drawable_type dw = graph.handle();
-					int xpos = x;
+					::nana::point pos{ x, top };
 					unsigned pixels = 0;
 					bidi.linestr(buf, bufsize, reordered);
 					for(auto & i : reordered)
@@ -145,27 +155,28 @@ namespace nana
 						nana::size ts = detail::text_extent_size(dw, i.begin, len);
 						if(ts.height > pixels)	pixels = ts.height;
 						
-						if(xpos + static_cast<int>(ts.width) <= endpos)
+						if(pos.x + static_cast<int>(ts.width) <= endpos)
 						{
-							detail::draw_string(dw, xpos, top, i.begin, len);
-							xpos += static_cast<int>(ts.width);
+							detail::draw_string(dw, pos, i.begin, len);
+							pos.x += static_cast<int>(ts.width);
 						}
 						else
 						{
 							nana::rectangle r;
-							r.width = endpos - xpos;
+							r.width = endpos - pos.x;
 							r.height = ts.height;
 
-							nana::paint::graphics dum_graph(r.width, r.height);
+							nana::paint::graphics dum_graph({ r.width, r.height });
 
-							dum_graph.bitblt(r, graph, nana::point(xpos, top));
-							dum_graph.string(0, 0, color, i.begin, len);
+							dum_graph.bitblt(r, graph, pos);
+							dum_graph.set_text_color(fgcolor);
+							dum_graph.string({}, i.begin, len);
 
-							r.x = xpos;
+							r.x = pos.x;
 							r.y = top;
 							graph.bitblt(r, dum_graph);
 							if(omitted_pixels)
-								detail::draw_string(dw, endpos, top, STR("..."), 3);
+								detail::draw_string(dw, point{ endpos, top }, STR("..."), 3);
 							break;
 						}
 					}
@@ -187,7 +198,7 @@ namespace nana
 					: graph(graph), x(x), endpos(endpos), text_align(ta)
 				{}
 
-				unsigned operator()(int top, const nana::char_t * buf, std::size_t bufsize)
+				unsigned operator()(const int top, const nana::char_t * buf, std::size_t bufsize)
 				{
 					unsigned pixels = 0;
 
@@ -208,7 +219,7 @@ namespace nana
 					{
 						pixels = 0;
 						unsigned line_pixels = 0;
-						int xpos = x;
+						nana::point pos{ x, top };
 						int orig_top = top;
 						auto i_ts_keeper = ts_keeper.cbegin();
 						for(auto & i : reordered)
@@ -216,7 +227,7 @@ namespace nana
 							if(line_pixels < i_ts_keeper->height)
 								line_pixels = i_ts_keeper->height;
 
-							bool beyond_edge = (xpos + static_cast<int>(i_ts_keeper->width) > endpos);
+							bool beyond_edge = (pos.x + static_cast<int>(i_ts_keeper->width) > endpos);
 							if(beyond_edge)
 							{
 								std::size_t len = i.end - i.begin;
@@ -229,21 +240,21 @@ namespace nana
 
 									do
 									{
-										idx_splitted = find_splitted(idx_head, len, xpos, endpos, pxbuf);
+										idx_splitted = find_splitted(idx_head, len, pos.x, endpos, pxbuf);
 										if(idx_splitted == len)
 										{
-											detail::draw_string(dw, xpos, top, i.begin + idx_head, idx_splitted - idx_head);
+											detail::draw_string(dw, pos, i.begin + idx_head, idx_splitted - idx_head);
 											for(std::size_t i = idx_head; i < len; ++i)
-												xpos += static_cast<int>(pxbuf[i]);
+												pos.x += static_cast<int>(pxbuf[i]);
 											break;
 										}
 										//Check the word whether it is splittable.
 										if(splittable(i.begin, idx_splitted))
 										{
-											detail::draw_string(dw, xpos, top, i.begin + idx_head, idx_splitted - idx_head);
+											detail::draw_string(dw, pos, i.begin + idx_head, idx_splitted - idx_head);
 											idx_head = idx_splitted;
-											xpos = x;
-											top += line_pixels;
+											pos.x = x;
+											pos.y += line_pixels;
 											line_pixels = i_ts_keeper->height;
 										}
 										else
@@ -260,10 +271,10 @@ namespace nana
 
 											if(u != head)
 											{
-												detail::draw_string(dw, xpos, top, head, u - head);
+												detail::draw_string(dw, pos, head, u - head);
 												idx_head += u - head;
-												xpos = x;
-												top += line_pixels;
+												pos.x = x;
+												pos.y += static_cast<int>(line_pixels);
 												line_pixels = i_ts_keeper->height;
 											}
 											else
@@ -276,17 +287,17 @@ namespace nana
 														break;
 												}
 												std::size_t splen = u - head;
-												top += line_pixels;
-												xpos = x;
-												detail::draw_string(dw, x, top, head, splen);
+												pos.y += static_cast<int>(line_pixels);
+												pos.x = x;
+												detail::draw_string(dw, pos, head, splen);
 												line_pixels = i_ts_keeper->height;
 
 												for(std::size_t k = idx_head; k < idx_head + splen; ++k)
-													xpos += static_cast<int>(pxbuf[k]);
-												if(xpos >= endpos)
+													pos.x += static_cast<int>(pxbuf[k]);
+												if (pos.x >= endpos)
 												{
-													xpos = x;
-													top += line_pixels;
+													pos.x = x;
+													pos.y += static_cast<int>(line_pixels);
 													line_pixels = i_ts_keeper->height;
 												}
 												idx_head += splen;
@@ -298,15 +309,17 @@ namespace nana
 								}
 								else
 								{
-									detail::draw_string(dw, x, top += static_cast<int>(line_pixels), i.begin, 1);
-									xpos = x + static_cast<int>(i_ts_keeper->width);
+									pos.x = x;
+									pos.y += static_cast<int>(line_pixels);
+									detail::draw_string(dw, pos, i.begin, 1);
+									pos.x += static_cast<int>(i_ts_keeper->width);
 								}
 								line_pixels = 0;
 							}
 							else
 							{
-								detail::draw_string(dw, xpos, top, i.begin, i.end - i.begin);
-								xpos += static_cast<int>(i_ts_keeper->width);
+								detail::draw_string(dw, pos, i.begin, i.end - i.begin);
+								pos.x += static_cast<int>(i_ts_keeper->width);
 							}
 
 							++i_ts_keeper;
@@ -319,24 +332,24 @@ namespace nana
 						//The text could be drawn in a line.
 						if((align::left == text_align) || (align::center == text_align))
 						{
-							int xpos = x;
+							point pos{ x, top };
 							if(align::center == text_align)
-								xpos += (endpos - x - static_cast<int>(str_w)) / 2;
+								pos.x += (endpos - x - static_cast<int>(str_w)) / 2;
 							auto i_ts_keeper = ts_keeper.cbegin();
 							for(auto & ent : reordered)
 							{
 								const nana::size & ts = *i_ts_keeper;
 
-								if(xpos + static_cast<int>(ts.width) > 0)
-									detail::draw_string(dw, xpos, top, ent.begin, ent.end - ent.begin);
+								if (pos.x + static_cast<int>(ts.width) > 0)
+									detail::draw_string(dw, pos, ent.begin, ent.end - ent.begin);
 
-								xpos += static_cast<int>(ts.width);
+								pos.x += static_cast<int>(ts.width);
 								++i_ts_keeper;
 							}					
 						}
 						else if(align::right == text_align)
 						{
-							int xpos = endpos;
+							point pos{ endpos, top };
 							auto i_ts_keeper = ts_keeper.crbegin();
 							for(auto i = reordered.crbegin(), end = reordered.crend(); i != end; ++i)
 							{
@@ -344,9 +357,9 @@ namespace nana
 								std::size_t len = ent.end - ent.begin;
 								const nana::size & ts = *i_ts_keeper;
 
-								xpos -= ts.width;
-								if(xpos >= 0)
-									detail::draw_string(dw, xpos, top, ent.begin, len);
+								pos.x -= static_cast<int>(ts.width);
+								if (pos.x >= 0)
+									detail::draw_string(dw, pos, ent.begin, len);
 								++i_ts_keeper;
 							}							
 						}
@@ -438,7 +451,8 @@ namespace nana
 								std::size_t len = i.end - i.begin;
 								if(len > 1)
 								{
-									unsigned * pxbuf = new unsigned[len];
+									std::unique_ptr<unsigned[]> scope_res(new unsigned[len]);
+									auto pxbuf = scope_res.get();
 									//Find the char that should be splitted
 									graph.glyph_pixels(i.begin, len, pxbuf);
 									std::size_t idx_head = 0, idx_splitted;
@@ -506,8 +520,6 @@ namespace nana
 											}
 										}
 									}while(idx_head < len);
-
-									delete [] pxbuf;
 								}
 								else
 									xpos = x + static_cast<int>(i_ts_keeper->width);
@@ -541,37 +553,7 @@ namespace nana
 			: graph_(graph), text_align_(ta)
 		{}
 
-		void text_renderer::render(int x, int y, nana::color_t col, const nana::char_t * str, std::size_t len)
-		{
-			if(graph_)
-			{
-				helper::draw_string ds(graph_.handle(), x, static_cast<int>(graph_.width()), text_align_);
-				ds.dw->fgcolor(col);
-				helper::for_each_line(str, len, y, ds);
-			}
-		}
-
-		void text_renderer::render(int x, int y, nana::color_t col, const nana::char_t * str, std::size_t len, unsigned restricted_pixels, bool omitted)
-		{
-			if(graph_)
-			{
-				helper::draw_string_omitted dso(graph_, x, x + static_cast<int>(restricted_pixels), col, omitted);
-				graph_.handle()->fgcolor(col);
-				helper::for_each_line(str, len, y, dso);
-			}
-		}
-
-		void text_renderer::render(int x, int y, nana::color_t col, const nana::char_t * str, std::size_t len, unsigned restricted_pixels)
-		{
-			if(graph_)
-			{
-				helper::draw_string_auto_changing_lines dsacl(graph_, x, x + static_cast<int>(restricted_pixels), text_align_);
-				graph_.handle()->fgcolor(col);
-				helper::for_each_line(str, len, y, dsacl);
-			}
-		}
-
-		nana::size text_renderer::extent_size(int x, int y, const nana::char_t* str, std::size_t len, unsigned restricted_pixels) const
+		nana::size text_renderer::extent_size(int x, int y, const char_t* str, std::size_t len, unsigned restricted_pixels) const
 		{
 			nana::size extents;
 			if(graph_)
@@ -583,8 +565,33 @@ namespace nana
 			}
 			return extents;
 		}
+
+		void text_renderer::render(const point& pos, const char_t * str, std::size_t len)
+		{
+			if (graph_)
+			{
+				helper::draw_string ds(graph_.handle(), pos.x, static_cast<int>(graph_.width()), text_align_);
+				helper::for_each_line(str, len, pos.y, ds);
+			}
+		}
+
+		void text_renderer::render(const point& pos, const char_t* str, std::size_t len, unsigned restricted_pixels, bool omitted)
+		{
+			if (graph_)
+			{
+				helper::draw_string_omitted dso(graph_, pos.x, pos.x + static_cast<int>(restricted_pixels), omitted);
+				helper::for_each_line(str, len, pos.y, dso);
+			}
+		}
+
+		void text_renderer::render(const point& pos, const char_t * str, std::size_t len, unsigned restricted_pixels)
+		{
+			if (graph_)
+			{
+				helper::draw_string_auto_changing_lines dsacl(graph_, pos.x, pos.x + static_cast<int>(restricted_pixels), text_align_);
+				helper::for_each_line(str, len, pos.y, dsacl);
+			}
+		}
 		//end class text_renderer
-
-
 	}
 }

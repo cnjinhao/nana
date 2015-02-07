@@ -958,8 +958,7 @@ namespace nana
 
 			unsigned level_of_run = begin_character->level;
 			bool head_of_run = true;
-			std::vector<entity>::iterator last = end - 1;
-			std::vector<entity>::iterator begin_neutral = end;
+			auto begin_neutral = end;
 
 			//N1. A sequence of neutrals takes the direction of the surrounding strong text if the text on both sides has the same direction.
 			//European and Arabic numbers act as if they were R in terms of their influence on neutrals.

@@ -18,8 +18,6 @@ namespace nana
 		namespace form
 		{
 		//class trigger
-			trigger::trigger():wd_(nullptr){}
-
 			void trigger::attached(widget_reference widget, graph_reference graph)
 			{
 				wd_ = &widget;
@@ -27,13 +25,7 @@ namespace nana
 
 			void trigger::refresh(graph_reference graph)
 			{
-				graph.rectangle(API::background(*wd_), true);
-			}
-
-			void trigger::resized(graph_reference graph, const arg_resized&)
-			{
-				graph.rectangle(API::background(*wd_), true);
-				API::lazy_refresh();
+				graph.rectangle(true, API::bgcolor(*wd_));
 			}
 		}//end namespace form
 	}//end namespace drawerbase
@@ -57,6 +49,16 @@ namespace nana
 		form::form(window owner, const rectangle& r, const appearance& apr)
 			: form_base_t(owner, false, r, apr)
 		{}
+
+		void form::modality() const
+		{
+			API::modal_window(handle());
+		}
+
+		void form::wait_for_this()
+		{
+			API::wait_for(handle());
+		}
 	//end class form
 
 	//class nested_form

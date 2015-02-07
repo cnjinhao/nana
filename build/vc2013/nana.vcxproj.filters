@@ -291,5 +291,14 @@
     <ClCompile Include="..\..\source\internationalization.cpp">
       <Filter>Source Files\nana</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\color_schemes.cpp">
+      <Filter>Source Files\nana\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\screen.cpp">
+      <Filter>Source Files\nana\gui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp">
+      <Filter>Source Files\nana\gui\widgets</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

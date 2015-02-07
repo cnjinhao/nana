@@ -1,9 +1,10 @@
 /*
  *	The Deploy Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/depoly.cpp
@@ -12,7 +13,8 @@
  */
 
 #include <nana/deploy.hpp>
-
+#include <cstdlib>
+#include <stdexcept>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_LINUX)
@@ -46,7 +48,89 @@ namespace nana
 		return ::wcscpy(dest, source);
 #else
 		return ::strcpy(dest, source);
-#endif	
+#endif
+	}
+
+	int stoi(const std::string& str, std::size_t * pos, int base)
+	{
+#if defined(NANA_MINGW)
+		auto sptr = str.c_str();
+		char *end;
+		errno = 0;
+		auto result = std::strtol(sptr, &end, base);
+
+		if (sptr == end)
+			throw std::invalid_argument("invalid stoi argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoi argument out of range");
+
+		if (pos)
+			*pos = (std::size_t)(end - sptr);
+		return ((int)result);
+#else
+		return std::stoi(str, pos, base);
+#endif
+	}
+
+	int stoi(const std::wstring& str, std::size_t* pos, int base)
+	{
+#if defined(NANA_MINGW)
+		auto sptr = str.data();
+		wchar_t *end;
+		errno = 0;
+		auto result = std::wcstol(sptr, &end, base);
+
+		if (sptr == end)
+			throw std::invalid_argument("invalid stoi argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoi argument out of range");
+
+		if (pos)
+			*pos = (std::size_t)(end - sptr);
+		return ((int)result);
+#else
+		return std::stoi(str, pos, base);
+#endif
+	}
+
+	double stod(const std::string& str, std::size_t * pos)
+	{
+#ifdef NANA_MINGW
+		auto *ptr = str.data();
+		errno = 0;
+		char *end;
+		auto result = std::strtod(ptr, &end);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stod argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+#else
+		return std::stod(str, pos);
+#endif
+	}
+
+	double stod(const std::wstring& str, std::size_t* pos)
+	{
+#ifdef NANA_MINGW
+		auto *ptr = str.data();
+		errno = 0;
+		wchar_t *end;
+		auto result = std::wcstod(ptr, &end);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stod argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+#else
+		return std::stod(str, pos);
+#endif
 	}
 
 	bool is_incomplete(const nana::string& str, unsigned pos)

@@ -23,7 +23,7 @@
 #include <set>
 #include <algorithm>
 #include <nana/paint/graphics.hpp>
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/system/platform.hpp>
 #include <errno.h>
@@ -301,31 +301,95 @@ namespace detail
 #endif
 	}
 
-	void drawable_impl_type::fgcolor(unsigned color)
+	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
-		if(color == fgcolor_)
-			return;
+		color_ = clr.px_color().value;
+	}
 
-		auto & spec = nana::detail::platform_spec::instance();
-		platform_scope_guard psg;
+	void drawable_impl_type::set_text_color(const ::nana::color& clr)
+	{
+		text_color_ = clr.px_color().value;
+		update_text_color();
+	}
 
-		fgcolor_ = color;
-		switch(spec.screen_depth())
+	void drawable_impl_type::update_color()
+	{
+		if (color_ != current_color_)
 		{
-		case 16:
-			color = ((((color >> 16) & 0xFF) * 31 / 255) << 11)	|
-					((((color >> 8) & 0xFF) * 63 / 255) << 5)	|
-					(color & 0xFF) * 31 / 255;
-			break;
+			auto & spec = nana::detail::platform_spec::instance();
+			platform_scope_guard lock;
+
+			current_color_ = color_;
+			auto col = color_;
+			switch (spec.screen_depth())
+			{
+			case 16:
+				col = ((((col >> 16) & 0xFF) * 31 / 255) << 11) |
+					((((col >> 8) & 0xFF) * 63 / 255) << 5) |
+					(col & 0xFF) * 31 / 255;
+				break;
+			}
+			::XSetForeground(spec.open_display(), context, col);
+			::XSetBackground(spec.open_display(), context, col);
 		}
-		::XSetForeground(spec.open_display(), context, color);
-		::XSetBackground(spec.open_display(), context, color);
+	}
+
+	void drawable_impl_type::update_text_color()
+	{
+		if (text_color_ != current_color_)
+		{
+			auto & spec = nana::detail::platform_spec::instance();
+			platform_scope_guard lock;
+
+			current_color_ = text_color_;
+			auto col = text_color_;
+			switch (spec.screen_depth())
+			{
+			case 16:
+				col = ((((col >> 16) & 0xFF) * 31 / 255) << 11) |
+					((((col >> 8) & 0xFF) * 63 / 255) << 5) |
+					(col & 0xFF) * 31 / 255;
+				break;
+			}
+			::XSetForeground(spec.open_display(), context, col);
+			::XSetBackground(spec.open_display(), context, col);
+
 #if defined(NANA_UNICODE)
-		xft_fgcolor.color.red = ((0xFF0000 & color) >> 16) * 0x101;
-		xft_fgcolor.color.green = ((0xFF00 & color) >> 8) * 0x101;
-		xft_fgcolor.color.blue = (0xFF & color) * 0x101;
-		xft_fgcolor.color.alpha = 0xFFFF;
+			xft_fgcolor.color.red = ((0xFF0000 & col) >> 16) * 0x101;
+			xft_fgcolor.color.green = ((0xFF00 & col) >> 8) * 0x101;
+			xft_fgcolor.color.blue = (0xFF & col) * 0x101;
+			xft_fgcolor.color.alpha = 0xFFFF;
 #endif
+		}
+	}
+
+	void drawable_impl_type::fgcolor(const ::nana::color& clr)
+	{
+		auto rgb = clr.px_color().value;
+
+		if (rgb != current_color_)
+		{
+			auto & spec = nana::detail::platform_spec::instance();
+			platform_scope_guard psg;
+
+			current_color_ = rgb;
+			switch(spec.screen_depth())
+			{
+			case 16:
+				rgb = ((((rgb >> 16) & 0xFF) * 31 / 255) << 11) |
+					((((rgb >> 8) & 0xFF) * 63 / 255) << 5)	|
+					(rgb & 0xFF) * 31 / 255;
+				break;
+			}
+			::XSetForeground(spec.open_display(), context, rgb);
+			::XSetBackground(spec.open_display(), context, rgb);
+#if defined(NANA_UNICODE)
+			xft_fgcolor.color.red = ((0xFF0000 & rgb) >> 16) * 0x101;
+			xft_fgcolor.color.green = ((0xFF00 & rgb) >> 8) * 0x101;
+			xft_fgcolor.color.blue = (0xFF & rgb) * 0x101;
+			xft_fgcolor.color.alpha = 0xFFFF;
+#endif
+		}
 	}
 
 	class font_deleter
@@ -652,7 +716,7 @@ namespace detail
 		return 0;
 	}
 
-	void platform_spec::caret_open(native_window_type wd, unsigned width, unsigned height)
+	void platform_spec::caret_open(native_window_type wd, const ::nana::size& caret_sz)
 	{
 		bool is_start_routine = false;
 		platform_scope_guard psg;
@@ -731,12 +795,11 @@ namespace detail
 		}
 
 		addr->visible = false;
-		addr->graph.make(width, height);
-		addr->graph.rectangle(0x0, true);
-		addr->rev_graph.make(width, height);
+		addr->graph.make(caret_sz);
+		addr->graph.rectangle(true, colors::black);
+		addr->rev_graph.make(caret_sz);
 
-		addr->size.width = width;
-		addr->size.height = height;
+		addr->size = caret_sz;
 
 		if(addr->input_context && (false == addr->has_input_method_focus))
 		{
@@ -809,7 +872,7 @@ namespace detail
 		}
 	}
 
-	void platform_spec::caret_pos(native_window_type wd, int x, int y)
+	void platform_spec::caret_pos(native_window_type wd, const point& pos)
 	{
 		platform_scope_guard psg;
 		auto i = caret_holder_.carets.find(wd);
@@ -817,8 +880,7 @@ namespace detail
 		{
 			caret_tag & crt = *i->second;
 			caret_reinstate(crt);
-			crt.pos.x = x;
-			crt.pos.y = y;
+			crt.pos = pos;
 		}
 	}
 
@@ -1066,7 +1128,7 @@ namespace detail
 	const nana::paint::graphics& platform_spec::keep_window_icon(native_window_type wd, const nana::paint::image& img)
 	{
 		nana::paint::graphics & graph = iconbase_[wd];
-		graph.make(img.size().width, img.size().height);
+		graph.make(img.size());
 		img.paste(graph, 0, 0);
 		return graph;
 	}

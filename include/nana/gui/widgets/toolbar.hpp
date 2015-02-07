@@ -1,7 +1,7 @@
 /*
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -21,9 +21,12 @@ namespace nana
 	class toolbar;
 
 	struct arg_toolbar
+		: public event_arg
 	{
 		toolbar& widget;
 		std::size_t button;
+
+		arg_toolbar(toolbar&, std::size_t);
 	};
 
 	namespace drawerbase
@@ -67,7 +70,7 @@ namespace nana
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
 				size_type _m_which(int x, int y, bool want_if_disabled) const;
-				void _m_draw_background(nana::color_t);
+				void _m_draw_background(const ::nana::color&);
 				void _m_draw();
 				void _m_owner_sized(const arg_resized&);
 			private:
@@ -87,7 +90,7 @@ namespace nana
 	public:
 		typedef std::size_t size_type;      ///< A type to count the number of elements.
 
-		toolbar();
+		toolbar() = default;
 		toolbar(window, bool visible);
 		toolbar(window, const rectangle& = rectangle(), bool visible = true);
 

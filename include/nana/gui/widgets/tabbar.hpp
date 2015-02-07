@@ -1,7 +1,7 @@
 /*
  *	A Tabbar implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,9 +24,14 @@ namespace nana
 
 	template<typename T>
 	struct arg_tabbar
+		: public event_arg
 	{
 		tabbar<T> & widget;
 		T & value;
+
+		arg_tabbar(tabbar<T>& wdg, T& v)
+			: widget{ wdg }, value{ v }
+		{}
 	};
 
 	template<typename T>
@@ -57,7 +62,7 @@ namespace nana
 			class event_agent_interface
 			{
 			public:
-				virtual ~event_agent_interface() = 0;
+				virtual ~event_agent_interface() = default;
 				virtual void added(std::size_t) = 0;
 				virtual void activated(std::size_t) = 0;
 				virtual bool removed(std::size_t) = 0;
@@ -67,18 +72,18 @@ namespace nana
 			{
 			public:
 				typedef item_renderer item_renderer_type;
-				typedef nana::paint::graphics & graph_reference;
+				typedef ::nana::paint::graphics & graph_reference;
 				enum state_t{disable, normal, highlight, press};
 
 				struct item_t
 				{
-					nana::rectangle r;
-					nana::color_t	bgcolor;
-					nana::color_t	fgcolor;
+					::nana::rectangle r;
+					::nana::color	bgcolor;
+					::nana::color	fgcolor;
 				};
 
-				virtual ~item_renderer() = 0;
-				virtual void background(graph_reference, const nana::rectangle& r, nana::color_t bgcolor) = 0;
+				virtual ~item_renderer() = default;
+				virtual void background(graph_reference, const nana::rectangle& r, const ::nana::color& bgcolor) = 0;
 				virtual void item(graph_reference, const item_t&, bool active, state_t) = 0;
 				virtual void close_fly(graph_reference, const nana::rectangle&, bool active, state_t) = 0;
 
@@ -150,7 +155,7 @@ namespace nana
 				std::size_t length() const;
 				bool close_fly(bool);
 				void relate(size_t, window);
-				void tab_color(std::size_t, bool is_bgcolor, nana::color_t);
+				void tab_color(std::size_t, bool is_bgcolor, const ::nana::color&);
 				void tab_image(size_t, const nana::paint::image&);
 				void text(std::size_t, const nana::string&);
 				nana::string text(std::size_t) const;
@@ -278,14 +283,14 @@ namespace nana
 			this->get_drawer_trigger().relate(pos, wd);
 		}
 
-		void tab_bgcolor(std::size_t i, nana::color_t color)
+		void tab_bgcolor(std::size_t i, const ::nana::color& clr)
 		{
-			this->get_drawer_trigger().tab_color(i, true, color);
+			this->get_drawer_trigger().tab_color(i, true, clr);
 		}
 
-		void tab_fgcolor(std::size_t i, nana::color_t color)
+		void tab_fgcolor(std::size_t i, const ::nana::color& clr)
 		{
-			this->get_drawer_trigger().tab_color(i, false, color);
+			this->get_drawer_trigger().tab_color(i, false, clr);
 		}
 
 		void tab_image(std::size_t i, const nana::paint::image& img)

@@ -1,7 +1,7 @@
 /*
  *	A Basic Window Widget Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -14,7 +14,7 @@
 #define NANA_GUI_DETAIL_BASIC_WINDOW_HPP
 #include "drawer.hpp"
 #include "events_holder.hpp"
-#include "../basis.hpp"
+#include "widget_colors.hpp"
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>
@@ -74,7 +74,7 @@ namespace detail
 	struct basic_window
 		: public events_holder
 	{
-		typedef std::vector<basic_window*> container;
+		using container = std::vector<basic_window*>;
 
 		struct root_context
 		{
@@ -119,6 +119,8 @@ namespace detail
 		bool is_ancestor_of(const basic_window* wd) const;
 		bool visible_parents() const;
 		bool belong_to_lazy() const;
+
+		bool is_draw_through() const;	///< Determines whether it is a draw-through window.
 	public:
 		//Override event_holder
 		bool set_events(const std::shared_ptr<general_events>&) override;
@@ -155,7 +157,7 @@ namespace detail
 		{
 			bool enabled	:1;
 			bool dbl_click	:1;
-			bool capture	:1;	//if mouse button is down, it always receive mouse move even the mouse is out of its rectangle
+			bool captured	:1;	//if mouse button is down, it always receive mouse move even the mouse is out of its rectangle
 			bool modal		:1;
 			bool take_active:1;	//If take_active is false, other.active_window still keeps the focus.
 			bool refreshing	:1;
@@ -163,7 +165,8 @@ namespace detail
 			bool dropable	:1; //Whether the window has make mouse_drop event.
 			bool fullscreen	:1;	//When the window is maximizing whether it fit for fullscreen.
 			bool borderless :1;
-			unsigned Reserved	:22;
+			bool make_bground_declared : 1;	//explicitly make bground for bground effects
+			unsigned Reserved	:21;
 			unsigned char tab;		//indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 		}flags;
@@ -174,13 +177,8 @@ namespace detail
 			std::shared_ptr<general_events> events_ptr;
 			general_events* attached_events;
 		}together;
-
-		struct
-		{
-			color_t foreground;
-			color_t	background;
-			color_t	active;
-		}color;
+		
+		widget_colors* scheme{ nullptr };
 
 		struct
 		{
@@ -211,6 +209,8 @@ namespace detail
 #endif
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
+
+				std::function<void()> draw_through;	///< A draw through renderer for root widgets.
 			};
 
 			const category::flags category;

@@ -1,6 +1,7 @@
 /*
  *	A Scroll Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -10,6 +11,7 @@
  */
 
 #include <nana/gui/widgets/scroll.hpp>
+#include <nana/gui/element.hpp>
 
 namespace nana
 {
@@ -139,31 +141,26 @@ namespace nana
 
 				_m_background(graph);
 
-				unsigned width, height;
-				int x, y;
+				::nana::rectangle r(graph.size());
 				if(vertical_)
 				{
-					x = 0;
-					y = graph.height() - fixedsize;
-					width = graph.width();
-					height = fixedsize;
+					r.y = r.height - fixedsize;
+					r.height = fixedsize;
 				}
 				else
 				{
-					x = graph.width() - fixedsize;
-					y = 0;
-					width = fixedsize;
-					height = graph.height();
+					r.x = r.width - fixedsize;
+					r.width = fixedsize;
 				}
 
 				int state = ((_m_check() == false || what == buttons::none) ? states::none : states::highlight);
 				int moused_state = (_m_check() ? (metrics_.pressed ? states::selected : states::actived) : states::none);
 
 				//draw first
-				_m_draw_button(graph, 0, 0, width, height, buttons::first, (buttons::first == what ? moused_state : state));
+				_m_draw_button(graph, { 0, 0, r.width, r.height }, buttons::first, (buttons::first == what ? moused_state : state));
 
 				//draw second
-				_m_draw_button(graph, x, y, width, height, buttons::second, (buttons::second == what ? moused_state : state));
+				_m_draw_button(graph, r, buttons::second, (buttons::second == what ? moused_state : state));
 
 				//draw scroll
 				_m_draw_scroll(graph, (buttons::scroll == what ? moused_state : states::highlight));
@@ -172,7 +169,7 @@ namespace nana
 		//private:
 			void drawer::_m_background(graph_reference graph)
 			{
-				graph.rectangle(0xF0F0F0, true);
+				graph.rectangle(true, {0xf0, 0xf0, 0xf0});
 
 				if(metrics_.pressed && _m_check())
 				{
@@ -193,45 +190,44 @@ namespace nana
 						return;
 
 					if(width && height)
-						graph.rectangle(x, y, width, height, 0xDCDCDC, true);
+						graph.rectangle({ x, y, width, height }, true, {0xDC, 0xDC, 0xDC});
 				}
 			}
 
-			void drawer::_m_button_frame(graph_reference graph, int x, int y, unsigned width, unsigned height, int state)
+			void drawer::_m_button_frame(graph_reference graph, rectangle r, int state)
 			{
 				if(state)
 				{
-					unsigned color = 0x979797; //highlight
+					::nana::color clr{0x97, 0x97, 0x97}; //highlight
 					switch(state)
 					{
 					case states::actived:
-						color = 0x86D5FD; break;
+						clr.from_rgb(0x86, 0xD5, 0xFD); break;
 					case states::selected:
-						color = 0x3C7FB1; break;
+						clr.from_rgb(0x3C, 0x7F, 0xB1); break;
 					}
 					
-					graph.rectangle(rectangle(x, y, width, height), color, false);
+					graph.rectangle(r, false, clr);
 
-					unsigned color_x = graph.mix(color, 0xFFFFFF, 0.5);
+					clr = clr.blend(colors::white, 0.5);
+					graph.set_color(clr);
 
-					x += 2;
-					y += 2;
-					width -= 4;
-					height -= 4;
+					r.pare_off(2);
 
 					if(vertical_)
 					{
-						unsigned half = width / 2;
-						graph.rectangle(x + (width - half), y, half, height, color_x, true);
-						width -= half;
+						unsigned half = r.width / 2;
+						graph.rectangle({ r.x + static_cast<int>(r.width - half), r.y, half, r.height }, true);
+						r.width -= half;
 					}
 					else
 					{
-						unsigned half = height / 2;
-						graph.rectangle(x, y + height - half, width, half, color_x, true);
-						height -= half;
+						unsigned half = r.height / 2;
+						graph.rectangle({r.x, r.y + static_cast<int>(r.height - half), r.width, half}, true);
+						r.height -= half;
 					}
-					graph.shadow_rectangle(x, y, width, height, 0xFFFFFF, color_x, !vertical_);
+					//graph.shadow_rectangle(x, y, width, height, 0xFFFFFF, color_x, !vertical_);
+					graph.gradual_rectangle(r, colors::white, clr, !vertical_);
 				}
 			}
 
@@ -275,63 +271,61 @@ namespace nana
 			{
 				if(_m_check())
 				{
-					int x, y;
-					unsigned width, height;
+					::nana::rectangle r(graph.size());
 
 					if(vertical_)
 					{
-						x = 0;
-						y = fixedsize + metrics_.scroll_pos;
-
-						width = graph.width();
-						height = static_cast<unsigned>(metrics_.scroll_length);
+						r.y = fixedsize + metrics_.scroll_pos;
+						r.height = static_cast<unsigned>(metrics_.scroll_length);
 					}
 					else
 					{
-						x = fixedsize + metrics_.scroll_pos;
-						y = 0;
-
-						width = static_cast<unsigned>(metrics_.scroll_length);
-						height = graph.height();						
+						r.x = fixedsize + metrics_.scroll_pos;
+						r.width = static_cast<unsigned>(metrics_.scroll_length);					
 					}
 
-					_m_button_frame(graph, x, y, width, height, state);
+					_m_button_frame(graph, r, state);
 				}
 			}
 
-			void drawer::_m_draw_button(graph_reference graph, int x, int y, unsigned width, unsigned height, buttons what, int state)
+			void drawer::_m_draw_button(graph_reference graph, rectangle r, buttons what, int state)
 			{
 				if(_m_check())
-					_m_button_frame(graph, x, y, width, height, state);
-				
-				using namespace nana::paint::gadget;
+					_m_button_frame(graph, r, state);
 
 				if(buttons::first == what || buttons::second == what)
 				{
-					nana::size sz = graph.size();
-					directions::t dir;
-					if(buttons::second == what)
+					auto sz = graph.size();
+					int top = static_cast<int>(sz.height - fixedsize);
+					int left = static_cast<int>(sz.width - fixedsize);
+
+					direction dir;
+					if (buttons::second == what)
 					{
-						if(vertical_)
+						if (vertical_)
 						{
-							y = static_cast<int>(sz.height - fixedsize);
-							dir = directions::to_south;
+							r.y = top;
+							dir = direction::south;
 						}
 						else
 						{
-							x = static_cast<int>(sz.width - fixedsize);
-							dir = directions::to_east;
+							r.x = left;
+							dir = direction::east;
 						}
 					}
 					else
-						dir = vertical_ ? directions::to_north : directions::to_west;
+						dir = vertical_ ? direction::north : direction::west;
 
-					if(vertical_)
-						x = (static_cast<int>(sz.width) - 16) / 2;
+					if (vertical_)
+						r.x = left / 2;
 					else
-						y = (static_cast<int>(sz.height) - 16) / 2;
-					
-					arrow_16_pixels(graph, x, y, _m_check() ? 0x0 : 0x808080, (states::none == state ? 0 : 1), dir);
+						r.y = top / 2;
+
+					r.width = r.height = 16;
+
+					facade<element::arrow> arrow(states::none == state ? "hollow_triangle" : "solid_triangle");
+					arrow.direction(dir);
+					arrow.draw(graph, {}, (_m_check() ? colors::black : colors::gray), r, element_state::normal);
 				}
 			}
 		//end class drawer

@@ -105,38 +105,42 @@ namespace nana
 					nana::size sz = graph.size();
 					sz.width -= 30;
 					sz.height -= 2;
-					graph.rectangle(color::gray_border, false);
-					graph.rectangle(1, 1, 28, sz.height, 0xF6F6F6, true);
-					graph.rectangle(29, 1, sz.width, sz.height, 0xFFFFFF, true);
+					graph.rectangle(false, colors::gray_border);
+					graph.rectangle({ 1, 1, 28, sz.height }, true, { 0xf6, 0xf6, 0xf6 });
+					graph.rectangle({ 29, 1, sz.width, sz.height }, true, colors::white);
 				}
 
 				void item(graph_reference graph, const nana::rectangle& r, const attr& at)
 				{
 					if(at.item_state == state::active)
 					{
-						graph.rectangle(r, 0xA8D8EB, false);
+						graph.rectangle(r, false, {0xa8, 0xd8, 0xeb});
 						nana::point points[4] = {
 							nana::point(r.x, r.y),
 							nana::point(r.x + r.width - 1, r.y),
 							nana::point(r.x, r.y + r.height - 1),
 							nana::point(r.x + r.width - 1, r.y + r.height - 1)
 						};
+
+						graph.set_color({0xc0, 0xdd, 0xfc});
 						for(int i = 0; i < 4; ++i)
-							graph.set_pixel(points[i].x, points[i].y, 0xC0DDFC);
+							graph.set_pixel(points[i].x, points[i].y);
 
 						if(at.enabled)
-							graph.shadow_rectangle(nana::rectangle(r).pare_off(1), 0xE8F0F4, 0xDBECF4, true);
+							graph.gradual_rectangle(nana::rectangle(r).pare_off(1), { 0xE8, 0xF0, 0xF4 }, { 0xDB,0xEC,0xF4 }, true);
 					}
 
 					if(at.checked && (checks::none != at.check_style))
 					{
-						graph.rectangle(r, 0xCDD3E6, false);
-						graph.rectangle(nana::rectangle(r).pare_off(1), 0xE6EFF4, true);
+						graph.rectangle(r, false, { 0xCD, 0xD3, 0xE6 });
+
+						::nana::color clr(0xE6, 0xEF, 0xF4);
+						graph.rectangle(nana::rectangle(r).pare_off(1), true, clr);
 
 						nana::rectangle crook_r = r;
 						crook_r.width = 16;
 						crook_.radio(at.check_style == checks::option);
-						crook_.draw(graph, 0xE6EFF4, 0x0, crook_r, element_state::normal);  
+						crook_.draw(graph, clr, colors::black, crook_r, element_state::normal);
 					}
 				}
 
@@ -147,23 +151,21 @@ namespace nana
 
 				void item_text(graph_reference graph, const nana::point& pos, const nana::string& text, unsigned text_pixels, const attr& at)
 				{
+					graph.set_color(at.enabled ? colors::black : colors::gray_border);
 					nana::paint::text_renderer tr(graph);
-					tr.render(pos.x, pos.y, (at.enabled ? 0x0 : nana::color::gray_border), text.c_str(), text.length(), text_pixels, true);
+					tr.render(pos, text.c_str(), text.length(), text_pixels, true);
 				}
 
 				void sub_arrow(graph_reference graph, const nana::point& pos, unsigned pixels, const attr&)
 				{
-					nana::paint::gadget::arrow_16_pixels(graph, pos.x, pos.y + static_cast<int>(pixels - 16) / 2, 0x0, 0, nana::paint::gadget::directions::to_east);
+					facade<element::arrow> arrow("hollow_triangle");
+					arrow.direction(::nana::direction::east);
+					arrow.draw(graph, {}, colors::black, { pos.x, pos.y + static_cast<int>(pixels - 16) / 2, 16, 16 }, element_state::normal);
 				}
 
 			private:
 				facade<element::crook> crook_;
 			};
-
-			//class renderer_interface
-				renderer_interface::~renderer_interface()
-				{}
-			//end class renderer_interface
 
 			class menu_builder
 				: noncopyable
@@ -177,7 +179,7 @@ namespace nana
 
 				menu_builder()
 				{
-					root_.max_pixels = API::screen_size().width * 2 / 3;
+					root_.max_pixels = screen::primary_monitor_size().width * 2 / 3;
 					root_.item_pixels = 24;
 					renderer_ = pat::cloneable<renderer_interface>(internal_renderer());
 				}
@@ -537,7 +539,7 @@ namespace nana
 							renderer->item(*graph_, item_r, attr);
 
 							//Draw text, the text is transformed from orignal for hotkey character
-							nana::string::value_type hotkey;
+							nana::char_t hotkey;
 							nana::string::size_type hotkey_pos;
 							nana::string text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
 
@@ -555,7 +557,9 @@ namespace nana
 									nana::size hotkey_size = graph_->text_extent_size(text.c_str() + hotkey_pos, 1);
 									int x = item_r.x + 40 + off_w;
 									int y = item_r.y + text_top_off + hotkey_size.height;
-									graph_->line(x, y, x + hotkey_size.width - 1, y, 0x0);
+
+									graph_->set_color(colors::black);
+									graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y });
 								}
 							}
 
@@ -566,7 +570,8 @@ namespace nana
 						}
 						else
 						{
-							graph_->line(item_r.x + 40, item_r.y, graph_->width() - 1, item_r.y, nana::color::gray_border);
+							graph_->set_color(colors::gray_border);
+							graph_->line({ item_r.x + 40, item_r.y }, { static_cast<int>(graph_->width()) - 1, item_r.y });
 							item_r.y += 2;
 						}
 
@@ -654,7 +659,7 @@ namespace nana
 					API::calc_screen_point(*widget_, pos);
 
 					//get the screen coordinates of the widget pos.
-					auto scr_area = API::screen_area_from_point(detail_.monitor_pos);
+					auto scr_area = screen::from_point(detail_.monitor_pos)->area();
 
 					if(pos.x + size.width > scr_area.x + scr_area.width)
 						pos.x = static_cast<int>(scr_area.x + scr_area.width - size.width);
@@ -736,21 +741,21 @@ namespace nana
 						API::register_menu_window(this->handle(), !owner_menubar);
 					}
 
-					events().destroy.connect([this]{
+					events().destroy.connect_unignorable([this]{
 						_m_destroy();
 					});
 
-					events().key_press.connect([this](const arg_keyboard& arg){
+					events().key_press.connect_unignorable([this](const arg_keyboard& arg){
 						_m_key_down(arg);
 					});
 
-					events().mouse_up.connect([this]{
+					events().mouse_up.connect_unignorable([this]{
 						pick();
 					});
 
 					if (want_focus_)
 					{
-						event_focus_ = events().focus.connect([this](const arg_focus& arg)
+						event_focus_ = events().focus.connect_unignorable([this](const arg_focus& arg)
 						{
 							_m_focus_changed(arg);
 						});
@@ -988,7 +993,7 @@ namespace nana
 				void _m_make_mouse_event()
 				{
 					state_.mouse_pos = API::cursor_position();
-					events().mouse_move.connect([this]{
+					events().mouse_move.connect_unignorable([this]{
 						_m_mouse_event();
 					});
 				}
@@ -1319,7 +1324,7 @@ namespace nana
 			{
 				close();
 				impl_->uiobj = &(form_loader<drawerbase::menu::menu_window, false>()(wd, point(x, y), &(*impl_->mbuilder.renderer())));
-				impl_->uiobj->events().destroy.connect([this]{
+				impl_->uiobj->events().destroy.connect_unignorable([this]{
 					_m_destroy_menu_window();
 				});
 				impl_->uiobj->popup(impl_->mbuilder.data(), called_by_menubar);

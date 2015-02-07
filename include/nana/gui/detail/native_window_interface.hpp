@@ -1,6 +1,7 @@
 /*
  *	Platform Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -33,7 +34,7 @@ namespace detail
 			unsigned extra_height;	//extra border size, it is useful in Windows, ignore in X11 always 0
 		};
 
-		static nana::size	screen_size();
+		static nana::size	primary_monitor_size();
 		static rectangle screen_area_from_point(const point&);
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
 		static native_window_type create_child_window(native_window_type, const rectangle&);
@@ -58,7 +59,7 @@ namespace detail
 		static nana::point	window_position(native_window_type);
 		static void	move_window(native_window_type, int x, int y);
 		static void	move_window(native_window_type, const rectangle&);
-		static void bring_to_top(native_window_type);
+		static void bring_top(native_window_type, bool activated);
 		static void	set_window_z_order(native_window_type, native_window_type wd_after, z_order_action action_if_no_wd_after);
 
 		static void	window_size(native_window_type, const size&);
@@ -69,9 +70,9 @@ namespace detail
 		static nana::point	cursor_position();
 		static native_window_type get_owner_window(native_window_type);
 		//For Caret
-		static void	caret_create(native_window_type, unsigned width, unsigned height);
+		static void	caret_create(native_window_type, const ::nana::size&);
 		static void caret_destroy(native_window_type);
-		static void	caret_pos(native_window_type, int x, int y);
+		static void	caret_pos(native_window_type, const ::nana::point&);
 		static void caret_visible(native_window_type, bool);
 
 		static void	set_focus(native_window_type);

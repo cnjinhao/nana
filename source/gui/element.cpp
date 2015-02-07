@@ -1,3 +1,15 @@
+/*
+*	Elements of GUI Gadgets
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/element.cpp
+*/
+
 #include <nana/gui/element.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/element_store.hpp>
@@ -19,7 +31,7 @@ namespace nana
 		class crook
 			: public crook_interface
 		{
-			bool draw(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
+			bool draw(graph_reference graph, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
 			{
 				if(crook_data.radio)
 				{
@@ -123,27 +135,28 @@ namespace nana
 						for(int left = 0; left < 12; ++left)
 						{
 							if((*colormap)[top][left] != 0xFFFFFF)
-								graph.set_pixel(left + x, top + y, (*colormap)[top][left]);
+								graph.set_pixel(left + x, top + y, static_cast<colors>((*colormap)[top][left]));
 						}
 					}
 				}
 				else
 				{
-					const nana::color_t highlighted = 0x5EB6F7;
-
+					::nana::color highlighted(0x5e, 0xb6, 0xf7);
+					auto bld_bgcolor = bgcolor;
+					auto bld_fgcolor = fgcolor;
 					switch(es)
 					{
 					case element_state::hovered:
 					case element_state::focus_hovered:
-						bgcolor = graph.mix(bgcolor, highlighted, 0.8);
-						fgcolor = graph.mix(fgcolor, highlighted, 0.8);
+						bld_bgcolor = bgcolor.blend(highlighted, 0.8);
+						bld_fgcolor = fgcolor.blend(highlighted, 0.8);
 						break;
 					case element_state::pressed:
-						bgcolor = graph.mix(bgcolor, highlighted, 0.4);
-						fgcolor = graph.mix(fgcolor, highlighted, 0.4);
+						bld_bgcolor = bgcolor.blend(highlighted, 0.4);
+						bld_fgcolor = fgcolor.blend(highlighted, 0.4);
 						break;
 					case element_state::disabled:
-						bgcolor = fgcolor = 0xB2B7BC;
+						bld_bgcolor = bld_fgcolor = nana::color(0xb2, 0xb7, 0xbc);
 						break;
 					default:
 						//Leave things as they are
@@ -152,8 +165,11 @@ namespace nana
 					const int x = r.x + 1;
 					const int y = r.y + 1;
 
-					graph.rectangle(x, y, 13, 13, fgcolor, false);
-					graph.rectangle(x + 1, y + 1, 11, 11, bgcolor, true);
+					graph.set_color(bld_bgcolor);
+					graph.rectangle(rectangle{ x + 1, y + 1, 11, 11 }, true);
+
+					graph.set_color(bld_fgcolor);
+					graph.rectangle(rectangle{ x, y, 13, 13 }, false);
 
 					switch(crook_data.check_state)
 					{
@@ -166,19 +182,19 @@ namespace nana
 							{
 								sx++;
 								sy++;
-								graph.line(sx, sy, sx, sy + 3, fgcolor);
+								graph.line(point{ sx, sy }, point{ sx, sy + 3 });
 							}
 
 							for(int i = 0; i < 4; i++)
 							{
 								sx++;
 								sy--;
-								graph.line(sx, sy, sx, sy + 3, fgcolor);
+								graph.line(point{ sx, sy }, point{ sx, sy + 3 });
 							}
 						}
 						break;
 					case state::partial:
-						graph.rectangle(x + 2, y + 2, 9, 9, fgcolor, true);
+						graph.rectangle(rectangle{ x + 2, y + 2, 9, 9 }, true);
 						break;
 					default:
 						break;
@@ -191,7 +207,7 @@ namespace nana
 		class menu_crook
 			: public crook_interface
 		{
-			bool draw(graph_reference graph, nana::color_t, nana::color_t fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
+			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
 			{
 				if(crook_data.check_state == state::unchecked)
 					return true;
@@ -218,7 +234,7 @@ namespace nana
 						{
 							if(colormap[u][v] & 0xFF000000)
 								continue;
-							graph.set_pixel(x + v, y, colormap[u][v]);
+							graph.set_pixel(x + v, y, static_cast<color_rgb>(colormap[u][v]));
 						}
 						++y;
 					}
@@ -228,19 +244,292 @@ namespace nana
 					int x = r.x + (static_cast<int>(r.width) - 16) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 16) / 2;
 
-					nana::color_t light = graph.mix(fgcolor, 0xFFFFFF, 0.5);
+					graph.set_color(fgcolor);
+					graph.line(point{ x + 3, y + 7 }, point{ x + 6, y + 10 });
+					graph.line(point{ x + 7, y + 9 }, point{ x + 12, y + 4 });
 
-					graph.line(x + 3, y + 7, x + 6, y + 10, fgcolor);
-					graph.line(x + 7, y + 9, x + 12, y + 4, fgcolor);
-					graph.line(x + 3, y + 8, x + 6, y + 11, light);
-					graph.line(x + 7, y + 10, x + 12, y + 5, light);
-					graph.line(x + 4, y + 7, x + 6, y + 9, light);
-					graph.line(x + 7, y + 8, x + 11, y + 4, light);
+					graph.set_color(fgcolor.blend(colors::white, 0.5));
+					graph.line(point{ x + 3, y + 8 }, point{ x + 6, y + 11 });
+					graph.line(point{ x + 7, y + 10 }, point{ x + 12, y + 5 });
+					graph.line(point{ x + 4, y + 7 }, point{ x + 6, y + 9 });
+					graph.line(point{ x + 7, y + 8 }, point{ x + 11, y + 4 });
 				}
 				return true;
 			}
 		};
-	}
+
+		class border_depressed
+			: public border_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, unsigned weight)
+			{
+				graph.rectangle(r, false, static_cast<color_rgb>((element_state::focus_hovered == estate || element_state::focus_normal == estate) ? 0x0595E2 : 0x999A9E));
+				graph.rectangle(::nana::rectangle{r}.pare_off(1), false, bgcolor);
+				return true;
+			}
+		};
+
+		class arrow_solid_triangle
+			: public arrow_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, direction dir) override
+			{
+				::nana::point pos{ r.x + 3, r.y + 3 };
+				switch (dir)
+				{
+				case ::nana::direction::east:
+					pos.x += 3;
+					pos.y += 1;
+					for (int i = 0; i < 5; ++i)
+						graph.line(point{ pos.x + i, pos.y + i }, point{ pos.x + i, pos.y + 8 - i });
+					break;
+				case ::nana::direction::south:
+					pos.y += 3;
+					for (int i = 0; i < 5; ++i)
+						graph.line(point{ pos.x + i, pos.y + i }, point{ pos.x + 8 - i, pos.y + i });
+					break;
+				case ::nana::direction::west:
+					pos.x += 5;
+					pos.y += 1;
+					for (int i = 0; i < 5; ++i)
+						graph.line(point{ pos.x - i, pos.y + i }, point{ pos.x - i, pos.y + 8 - i });
+					break;
+				case ::nana::direction::north:
+					pos.y += 7;
+					for (int i = 0; i < 5; ++i)
+						graph.line(point{ pos.x + i, pos.y - i }, point{ pos.x + 8 - i, pos.y - i });
+					break;
+				case direction::southeast:
+					pos.x += 2;
+					pos.y += 7;
+					for (int i = 0; i < 6; ++i)
+						graph.line(point{ pos.x + i, pos.y - i }, point{ pos.x + 5, pos.y - i });
+					break;
+				}
+				return true;
+			}
+		};//end class arrow_solid_triangle
+
+		class arrow_hollow_triangle
+			: public arrow_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, ::nana::direction dir) override
+			{
+				int x = r.x + 3;
+				int y = r.y + 3;
+				switch (dir)
+				{
+				case ::nana::direction::east:
+					x += 3;
+					graph.line(point{ x, y + 1 }, point{ x, y + 9 });
+					graph.line(point{ x + 1, y + 2 }, point{ x + 4, y + 5 });
+					graph.line(point{ x + 3, y + 6 }, point{ x + 1, y + 8 });
+					break;
+				case direction::southeast:
+					x += 7;
+					y += 6;
+					graph.line(point{ x - 5 , y + 1 }, point{ x, y + 1 });
+					graph.line(point{ x, y - 4 }, point{ x, y });
+					graph.line(point{ x - 4, y }, point{ x - 1, y - 3 });
+					break;
+				case direction::south:
+					y += 3;
+					graph.line(point{ x, y }, point{ x + 8, y });
+					graph.line(point{ x + 1, y + 1 }, point{ x + 4, y + 4 });
+					graph.line(point{ x + 7, y + 1 }, point{ x + 5, y + 3 });
+					break;
+				case direction::west:
+					x += 5;
+					y += 1;
+					graph.line(point{ x, y }, point{ x, y + 8 });
+					graph.line(point{ x - 4, y + 4 }, point{ x - 1, y + 1 });
+					graph.line(point{ x - 3, y + 5 }, point{ x - 1, y + 7 });
+					break;
+				case direction::north:
+					y += 7;
+					graph.line(point{ x, y }, point{ x + 8, y });
+					graph.line(point{ x + 1, y - 1 }, point{ x + 4, y - 4 });
+					graph.line(point{ x + 5, y - 3 }, point{ x + 7, y - 1 });
+					break;
+				}
+				return true;
+			}
+		};//end class arrow_hollow_triangle
+
+		class arrowhead
+			: public arrow_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, ::nana::direction dir) override
+			{
+				int x = r.x;
+				int y = r.y + 5;
+				switch (dir)
+				{
+				case direction::north:
+				{
+					x += 3;
+					int pixels = 1;
+					for (int l = 0; l < 4; ++l)
+					{
+						for (int i = 0; i < pixels; ++i)
+						{
+							if (l == 3 && i == 3)
+								continue;
+							graph.set_pixel(x + i, y);
+						}
+
+						x--;
+						y++;
+						pixels += 2;
+					}
+
+					graph.set_pixel(x + 1, y);
+					graph.set_pixel(x + 2, y);
+					graph.set_pixel(x + 6, y);
+					graph.set_pixel(x + 7, y);
+				}
+				break;
+				case direction::south:
+				{
+					graph.set_pixel(x, y);
+					graph.set_pixel(x + 1, y);
+					graph.set_pixel(x + 5, y);
+					graph.set_pixel(x + 6, y);
+
+					++y;
+					int pixels = 7;
+					for (int l = 0; l < 4; ++l)
+					{
+						for (int i = 0; i < pixels; ++i)
+						{
+							if (l != 0 || i != 3)
+								graph.set_pixel(x + i, y);
+						}
+
+						x++;
+						y++;
+						pixels -= 2;
+					}
+				}
+				default:break;
+				}
+				return true;
+			}
+		};//end class arrowhead
+
+		class arrow_double
+			: public arrow_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, ::nana::direction dir) override
+			{
+				int x = r.x;
+				int y = r.y;
+				switch (dir)
+				{
+				case direction::east:
+					_m_line(graph, x + 4, y + 6, true);
+					_m_line(graph, x + 5, y + 7, true);
+					_m_line(graph, x + 6, y + 8, true);
+					_m_line(graph, x + 5, y + 9, true);
+					_m_line(graph, x + 4, y + 10, true);
+					break;
+				case direction::west:
+					_m_line(graph, x + 5, y + 6, true);
+					_m_line(graph, x + 4, y + 7, true);
+					_m_line(graph, x + 3, y + 8, true);
+					_m_line(graph, x + 4, y + 9, true);
+					_m_line(graph, x + 5, y + 10, true);
+					break;
+				case direction::south:
+					_m_line(graph, x + 5, y + 4, false);
+					_m_line(graph, x + 6, y + 5, false);
+					_m_line(graph, x + 7, y + 6, false);
+					_m_line(graph, x + 8, y + 5, false);
+					_m_line(graph, x + 9, y + 4, false);
+					break;
+				case direction::north:
+					_m_line(graph, x + 5, y + 6, false);
+					_m_line(graph, x + 6, y + 5, false);
+					_m_line(graph, x + 7, y + 4, false);
+					_m_line(graph, x + 8, y + 5, false);
+					_m_line(graph, x + 9, y + 6, false);
+					break;
+				default:
+					break;
+				}
+				return true;
+			}
+
+			static void _m_line(nana::paint::graphics & graph, int x, int y, bool horizontal)
+			{
+				graph.set_pixel(x, y);
+				if (horizontal)
+				{
+					graph.set_pixel(x + 1, y);
+					graph.set_pixel(x + 4, y);
+					graph.set_pixel(x + 5, y);
+				}
+				else
+				{
+					graph.set_pixel(x, y + 1);
+					graph.set_pixel(x, y + 4);
+					graph.set_pixel(x, y + 5);
+				}
+			}
+		};//end class arrow_double
+
+		class annex_button
+			: public element_interface
+		{
+			bool draw(graph_reference graph, const ::nana::color& arg_bgcolor, const ::nana::color& fgcolor, const rectangle& r, element_state estate) override
+			{
+				auto bgcolor = arg_bgcolor;
+
+				switch (estate)
+				{
+				case element_state::hovered:
+				case element_state::focus_hovered:
+					bgcolor = arg_bgcolor.blend(colors::white, 0.8);
+					break;
+				case element_state::pressed:
+					bgcolor = arg_bgcolor.blend(colors::black, 0.8);
+					break;
+				case element_state::disabled:
+					bgcolor = colors::dark_gray;
+				default:
+					break;
+				}
+
+				auto part_px = (r.height - 3) * 5 / 13;
+				graph.rectangle(r, false, bgcolor.blend(colors::black, 0.6));
+				
+				::nana::point left_top{ r.x + 1, r.y + 1 }, right_top{r.right() - 2, r.y + 1};
+				::nana::point left_mid{ r.x + 1, r.y + 1 + static_cast<int>(part_px) }, right_mid{ right_top.x, left_mid.y };
+				::nana::point left_bottom{ r.x + 1, r.bottom() - 2 }, right_bottom{ r.right() - 2, r.bottom() - 2 };
+
+				graph.set_color(bgcolor.blend(colors::white, 0.9));
+				graph.line(left_top, left_mid);
+				graph.line(right_top, right_mid);
+
+				graph.set_color(bgcolor.blend(colors::white, 0.5));
+				graph.line(left_top, right_top);
+
+				left_mid.y++;
+				right_mid.y++;
+				graph.set_color(bgcolor.blend(colors::black, 0.8));
+				graph.line(left_mid, left_bottom);
+				graph.line(right_mid, right_bottom);
+
+				::nana::rectangle part_r{ r.x + 2, r.y + 2, r.width - 4, part_px };
+				graph.rectangle(part_r, true, bgcolor.blend(colors::white, 0.8));
+
+				part_r.y += static_cast<int>(part_r.height);
+				part_r.height = (r.height - 3 - part_r.height);
+				graph.rectangle(part_r, true, bgcolor);
+				return true;
+			}
+		};//end class annex_button
+	}//end namespace element
 
 	template<typename ElementInterface>
 	class element_object
@@ -250,11 +539,6 @@ namespace nana
 		typedef pat::cloneable<element::provider::factory_interface<element_t>> factory_interface;
 
 	public:
-		element_object()
-			:	element_ptr_(nullptr)
-		{
-		}
-
 		~element_object()
 		{
 			if(factory_)
@@ -289,7 +573,7 @@ namespace nana
 		}
 	private:
 		factory_interface factory_;	//Keep the factory for destroying the element
-		element_t * element_ptr_;
+		element_t * element_ptr_{nullptr};
 		std::vector<std::pair<element_t*, factory_interface>> spare_;
 	};
 
@@ -309,6 +593,7 @@ namespace nana
 		element_manager()
 		{
 			crook_.employee = nullptr;
+			border_.employee = nullptr;
 		}
 
 	public:
@@ -322,6 +607,15 @@ namespace nana
 
 				element::add_crook<element::crook>("");
 				element::add_crook<element::menu_crook>("menu_crook");
+
+				element::add_border<element::border_depressed>("");
+				
+				element::add_arrow<element::arrowhead>("");				//"arrowhead" in default
+				element::add_arrow<element::arrow_double>("double");
+				element::add_arrow<element::arrow_solid_triangle>("solid_triangle");
+				element::add_arrow<element::arrow_hollow_triangle>("hollow_triangle");
+
+				element::add_button<element::annex_button>("");	//"annex" in default
 			}
 			return obj;
 		}
@@ -335,8 +629,38 @@ namespace nana
 		{
 			return _m_get(name, crook_).keeper();
 		}
+
+		void border(const std::string& name, const pat::cloneable<element::provider::factory_interface<element::border_interface>>& factory)
+		{
+			_m_add(name, border_, factory);
+		}
+
+		element::border_interface * const * border(const std::string& name) const
+		{
+			return _m_get(name, border_).keeper();
+		}
+
+		void arrow(const std::string& name, const pat::cloneable<element::provider::factory_interface<element::arrow_interface>>& factory)
+		{
+			_m_add((name.empty() ? "arrowhead" : name), arrow_, factory);
+		}
+
+		element::arrow_interface * const * arrow(const std::string& name) const
+		{
+			return _m_get((name.empty() ? "arrowhead" : name), arrow_).keeper();
+		}
+
+		void button(const std::string& name, const pat::cloneable<element::provider::factory_interface<element::element_interface>>& factory)
+		{
+			_m_add((name.empty() ? "annex" : name), button_, factory);
+		}
+
+		element::element_interface * const * button(const std::string& name) const
+		{
+			return _m_get((name.empty() ? "annex" : name), button_).keeper();
+		}
 	private:
-		typedef std::lock_guard<std::recursive_mutex> lock_guard;
+		using lock_guard = std::lock_guard<std::recursive_mutex>;
 
 		template<typename ElementInterface>
 		void _m_add(const std::string& name, item<ElementInterface>& m, const pat::cloneable<element::provider::factory_interface<ElementInterface>>& factory)
@@ -367,7 +691,10 @@ namespace nana
 
 	private:
 		mutable std::recursive_mutex mutex_;
-		item<element::crook_interface> crook_;
+		item<element::crook_interface>	crook_;
+		item<element::border_interface>	border_;
+		item<element::arrow_interface>	arrow_;
+		item<element::element_interface>	button_;
 	};
 
 	namespace element
@@ -382,17 +709,40 @@ namespace nana
 		{
 			return element_manager::instance().crook(name);
 		}
+
+		void provider::add_border(const std::string& name, const pat::cloneable<factory_interface<border_interface>>& factory)
+		{
+			element_manager::instance().border(name, factory);
+		}
+
+		border_interface* const * provider::keeper_border(const std::string& name)
+		{
+			return element_manager::instance().border(name);
+		}
+
+		void provider::add_arrow(const std::string& name, const pat::cloneable<factory_interface<arrow_interface>>& factory)
+		{
+			element_manager::instance().arrow(name, factory);
+		}
+
+		arrow_interface* const * provider::keeper_arrow(const std::string& name)
+		{
+			return element_manager::instance().arrow(name);
+		}
+
+		void provider::add_button(const std::string& name, const pat::cloneable<factory_interface<element_interface>>& factory)
+		{
+			element_manager::instance().button(name, factory);
+		}
+
+		element_interface* const* provider::keeper_button(const std::string& name)
+		{
+			return element_manager::instance().button(name);
+		}
 	}//end namespace element
 
 	//facades
 	//template<> class facade<element::crook>
-		facade<element::crook>::facade()
-			:	keeper_(element::provider().keeper_crook(""))
-		{
-			data_.check_state = state::unchecked;
-			data_.radio = false;
-		}
-
 		facade<element::crook>::facade(const char* name)
 			:	keeper_(element::provider().keeper_crook(name ? name : ""))
 		{
@@ -430,14 +780,71 @@ namespace nana
 
 		void facade<element::crook>::switch_to(const char* name)
 		{
-			keeper_ = element::provider().keeper_crook(name);
+			keeper_ = element::provider().keeper_crook(name ? name : "");
 		}
 
-		bool facade<element::crook>::draw(graph_reference graph, nana::color_t bgcol, nana::color_t fgcol, const nana::rectangle& r, element_state es)
+		bool facade<element::crook>::draw(graph_reference graph, const ::nana::color& bgcol, const ::nana::color& fgcol, const nana::rectangle& r, element_state es)
 		{
 			return (*keeper_)->draw(graph, bgcol, fgcol, r, es, data_);
 		}
 	//end class facade<element::crook>
+
+	//class facade<element::border>
+		facade<element::border>::facade(const char* name)
+			: keeper_(element::provider().keeper_border(name ? name : ""))
+		{}
+
+		void facade<element::border>::switch_to(const char* name)
+		{
+			keeper_ = element::provider().keeper_border(name ? name : "");
+		}
+
+		bool facade<element::border>::draw(graph_reference graph, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state es)
+		{
+			return (*keeper_)->draw(graph, bgcolor, fgcolor, r, es, 2);
+		}
+	//end class facade<element::border>
+
+	//class facade<element::arrow>
+		facade<element::arrow>::facade(const char* name)
+			:	keeper_(element::provider().keeper_arrow(name ? name : ""))
+		{
+		}
+
+		void facade<element::arrow>::switch_to(const char* name)
+		{
+			keeper_ = element::provider().keeper_arrow(name ? name : "");
+		}
+
+		void facade<element::arrow>::direction(::nana::direction dir)
+		{
+			dir_ = dir;
+		}
+
+		//Implement element_interface
+		bool facade<element::arrow>::draw(graph_reference graph, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state estate)
+		{
+			graph.set_color(fgcolor);
+			return (*keeper_)->draw(graph, bgcolor, fgcolor, r, estate, dir_);
+		}
+	//end class facade<element::arrow>
+
+	//class facade<element::button>::
+		facade<element::button>::facade(const char* name)
+			: keeper_(element::provider().keeper_button(name ? name : ""))
+		{}
+
+		void facade<element::button>::switch_to(const char* name)
+		{
+			keeper_ = element::provider().keeper_button(name ? name : "");
+		}
+
+		//Implement element_interface
+		bool facade<element::button>::draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate)
+		{
+			return (*keeper_)->draw(graph, bgcolor, fgcolor, r, estate);
+		}
+	//end class facade<element::button>
 
 	namespace element
 	{
@@ -470,7 +877,7 @@ namespace nana
 			ref_ptr_ = detail::bedrock::instance().get_element_store().bground(name);
 		}
 
-		bool cite_bground::draw(graph_reference dst, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle& r, element_state state)
+		bool cite_bground::draw(graph_reference dst, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const nana::rectangle& r, element_state state)
 		{
 			if (ref_ptr_ && *ref_ptr_)
 				return (*ref_ptr_)->draw(dst, bgcolor, fgcolor, r, state);
@@ -530,7 +937,7 @@ namespace nana
 			draw_method * clone() const override
 			{
 				auto p = new draw_graph;
-				p->graph.make(graph.width(), graph.height());
+				p->graph.make(graph.size());
 				graph.paste(p->graph, 0, 0);
 				return p;
 			}
@@ -656,7 +1063,7 @@ namespace nana
 		}
 
 		//Implement the methods of bground_interface.
-		bool bground::draw(graph_reference dst, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle& to_r, element_state state)
+		bool bground::draw(graph_reference dst, const ::nana::color&, const ::nana::color&, const nana::rectangle& to_r, element_state state)
 		{
 			if (nullptr == method_)
 				return false;

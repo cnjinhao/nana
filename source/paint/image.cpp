@@ -1,6 +1,7 @@
 /*
  *	Paint Image Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -62,6 +63,8 @@ namespace paint
 					::DeleteObject(info.hbmMask);
 					return true;
 				}
+#else
+				if(is_ico_){}	//kill the unused compiler warning in Linux.
 #endif
 				return false;
 			}

@@ -1,7 +1,7 @@
 /*
  *	A Treebox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -18,6 +18,10 @@
 
 namespace nana
 {
+	arg_treebox::arg_treebox(treebox& wdg, drawerbase::treebox::item_proxy& m, bool op)
+		: widget(wdg), item(m), operated{op}
+	{}
+
 	namespace drawerbase
 	{
 		//Here defines some function objects
@@ -25,53 +29,137 @@ namespace nana
 		{
 			typedef trigger::node_type node_type;
 
-				bool no_sensitive_compare(const nana::string& text, const nana::char_t *pattern, std::size_t len)
+			bool no_sensitive_compare(const nana::string& text, const nana::char_t *pattern, std::size_t len)
+			{
+				if(len <= text.length())
 				{
-					if(len <= text.length())
+					const nana::char_t * s = text.c_str();
+					for(std::size_t i = 0; i < len; ++i)
 					{
-						const nana::char_t * s = text.c_str();
-						for(std::size_t i = 0; i < len; ++i)
+						if('a' <= s[i] && s[i] <= 'z')
 						{
-							if('a' <= s[i] && s[i] <= 'z')
-							{
-								if(pattern[i] != s[i] - ('a' - 'A'))
-									return false;
-							}
-							else
-								if(pattern[i] != s[i]) return false;
+							if(pattern[i] != s[i] - ('a' - 'A'))
+								return false;
 						}
-						return true;
+						else
+							if(pattern[i] != s[i]) return false;
 					}
-					return false;
+					return true;
+				}
+				return false;
+			}
+
+			const node_type* find_track_child_node(const node_type* node, const node_type * end, const nana::char_t* pattern, std::size_t len, bool &finish)
+			{
+				if(node->value.second.expanded)
+				{
+					node = node->child;
+					while(node)
+					{
+					if(no_sensitive_compare(node->value.second.text, pattern, len)) return node;
+
+						if(node == end) break;
+
+						if(node->value.second.expanded)
+						{
+							auto t = find_track_child_node(node, end, pattern, len, finish);
+							if(t || finish)
+								return t;
+						}
+						node = node->next;
+					}
 				}
 
-				const node_type* find_track_child_node(const node_type* node, const node_type * end, const nana::char_t* pattern, std::size_t len, bool &finish)
+				finish = (node && (node == end));
+				return nullptr;
+			}
+
+			class tlwnd_drawer
+				: public drawer_trigger, public compset_interface
+			{
+			public:
+				typedef drawer_trigger::graph_reference graph_reference;
+
+				void assign(const item_attribute_t & item_attr, const pat::cloneable<renderer_interface>* renderer, const pat::cloneable<compset_placer_interface> * compset_placer)
 				{
-					if(node->value.second.expanded)
+					if(renderer && compset_placer)
 					{
-						node = node->child;
+						renderer_ = *renderer;
+						placer_ = *compset_placer;
 
-						while(node)
-						{
-							if(no_sensitive_compare(node->value.second.text, pattern, len)) return node;
+						item_attr_ = item_attr;
 
-							if(node == end) break;
-
-							if(node->value.second.expanded)
-							{
-								auto t = find_track_child_node(node, end, pattern, len, finish);
-								if(t || finish)
-									return t;
-							}
-							node = node->next;
-						}
+						_m_draw();
 					}
+				}
+			private:
+				void _m_draw()
+				{
+					item_r_.x = item_r_.y = 0;
+					item_r_.width = placer_->item_width(*this->graph_, item_attr_);
+					item_r_.height = placer_->item_height(*this->graph_);
 
-					finish = (node && (node == end));
-					return nullptr;
+					comp_attribute_t attr;
+					if(comp_attribute(component::text, attr))
+					{
+						nana::paint::graphics item_graph({ item_r_.width, item_r_.height });
+						item_graph.typeface(graph_->typeface());
+
+						renderer_->set_color(widget_->bgcolor(), widget_->fgcolor());
+						renderer_->bground(item_graph, this);
+						renderer_->expander(item_graph, this);
+						renderer_->crook(item_graph, this);
+						renderer_->icon(item_graph, this);
+						renderer_->text(item_graph, this);
+
+						item_graph.paste(attr.area, *graph_, 1, 1);
+						graph_->rectangle(false, colors::black);
+					}
+				}
+			private:
+				// Implementation of drawer_trigger
+				void attached(widget_reference wd, graph_reference graph) override
+				{
+					widget_ = &wd;
+					graph_ = &graph;
+					graph.typeface(widget_->typeface());
+				}
+			private:
+				// Implementation of compset_interface
+				virtual const item_attribute_t& item_attribute() const override
+				{
+					return item_attr_;
 				}
 
-			class tooltip_window;
+				virtual bool comp_attribute(component_t comp, comp_attribute_t& comp_attr) const override
+				{
+					comp_attr.area = item_r_;
+					return placer_->locate(comp, item_attr_, &comp_attr.area);
+				}
+			private:
+				::nana::paint::graphics * graph_;
+				::nana::pat::cloneable<renderer_interface> renderer_;
+				::nana::pat::cloneable<compset_placer_interface> placer_;
+				widget	*widget_;
+				item_attribute_t item_attr_;
+				nana::rectangle item_r_;
+			};//end class tlwnd_drawer
+
+			class tooltip_window
+				: public widget_object<category::root_tag, tlwnd_drawer>
+			{
+			public:
+				tooltip_window(window wd, const rectangle& r)
+					: widget_object<category::root_tag, tlwnd_drawer>(wd, false, rectangle(r).pare_off(-1), appear::bald<appear::floating>())
+				{
+					API::take_active(handle(), false, nullptr);
+				}
+
+				drawer_trigger_t & impl()
+				{
+					return get_drawer_trigger();
+				}
+			};//end class tooltip_window
 
 			//item_locator should be defined before the definition of basic_implement
 			class trigger::item_locator
@@ -223,7 +311,7 @@ namespace nana
 							show_scroll();
 
 						//Draw background
-						data.graph->rectangle(data.widget_ptr->background(), true);
+						data.graph->rectangle(true, data.widget_ptr->bgcolor());
 
 						//Draw tree
 						attr.tree_cont.for_each(shape.first, Renderer(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, 1)));
@@ -1078,66 +1166,76 @@ namespace nana
 			class internal_renderer
 				: public renderer_interface
 			{
-				void bground(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				nana::color bgcolor_;
+				nana::color fgcolor_;
+
+				void set_color(const nana::color & bgcolor, const nana::color& fgcolor) override
+				{
+					bgcolor_ = bgcolor;
+					fgcolor_ = fgcolor;
+				}
+
+				void bground(graph_reference graph, const compset_interface * compset) const override
 				{
 					comp_attribute_t attr;
 
 					if(compset->comp_attribute(component::bground, attr))
 					{
-						const nana::color_t color_table[][2] = {	{0xE8F5FD, 0xD8F0FA}, //highlighted
-															{0xC4E8FA, 0xB6E6FB}, //Selected and highlighted
-															{0xD5EFFC, 0x99DEFD}  //Selected but not highlighted
+						const ::nana::color color_table[][2] = { { { 0xE8, 0xF5, 0xFD }, { 0xD8, 0xF0, 0xFA } }, //highlighted
+						{ { 0xC4, 0xE8, 0xFA }, { 0xB6, 0xE6, 0xFB } }, //Selected and highlighted
+						{ { 0xD5, 0xEF, 0xFC }, {0x99, 0xDE, 0xFD } }  //Selected but not highlighted
 														};
 
-						const nana::color_t *colptr = nullptr;
+						const ::nana::color *clrptr = nullptr;
 						if(compset->item_attribute().mouse_pointed)
 						{
 							if(compset->item_attribute().selected)
-								colptr = color_table[1];
+								clrptr = color_table[1];
 							else
-								colptr = color_table[0];
+								clrptr = color_table[0];
 						}
 						else if(compset->item_attribute().selected)
-							colptr = color_table[2];
+							clrptr = color_table[2];
 
-						if(colptr)
+						if (clrptr)
 						{
-							graph.rectangle(attr.area, colptr[1], false);
-							graph.rectangle(attr.area.pare_off(1), *colptr, true);
+							graph.rectangle(attr.area, false, clrptr[1]);
+							graph.rectangle(attr.area.pare_off(1), true, *clrptr);
 						}
 					}
 				}
 
-				void expander(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				void expander(graph_reference graph, const compset_interface * compset) const override
 				{
 					comp_attribute_t attr;
 					if(compset->comp_attribute(component::expender, attr))
 					{
-						using namespace nana::paint;
-
-						uint32_t style = 1;
-						gadget::directions::t dir = gadget::directions::to_southeast;
-						if(! compset->item_attribute().expended)
+						facade<element::arrow> arrow("solid_triangle");
+						arrow.direction(direction::southeast);
+						if (!compset->item_attribute().expended)
 						{
-							style = 0;
-							dir = gadget::directions::to_east;
+							arrow.switch_to("hollow_triangle");
+							arrow.direction(direction::east);
 						}
-						gadget::arrow_16_pixels(graph, attr.area.x, attr.area.y + (attr.area.height - 16) / 2, (attr.mouse_pointed ? 0x1CC4F7 : 0x0), style, dir);
+						auto r = attr.area;
+						r.y += (attr.area.height - 16) / 2;
+						r.width = r.height = 16;
+						arrow.draw(graph, bgcolor_, (attr.mouse_pointed ? colors::deep_sky_blue : colors::black), r, element_state::normal);
 					}
 				}
 
-				void crook(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				void crook(graph_reference graph, const compset_interface * compset) const override
 				{
 					comp_attribute_t attr;
 					if(compset->comp_attribute(component::crook, attr))
 					{
 						attr.area.y += (attr.area.height - 16) / 2;
 						crook_.check(compset->item_attribute().checked);
-						crook_.draw(graph, bgcolor, fgcolor, attr.area, attr.mouse_pointed ? element_state::hovered : element_state::normal);
+						crook_.draw(graph, bgcolor_, fgcolor_, attr.area, attr.mouse_pointed ? element_state::hovered : element_state::normal);
 					}
 				}
 
-				virtual void icon(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				virtual void icon(graph_reference graph, const compset_interface * compset) const override
 				{
 					comp_attribute_t attr;
 					if(compset->comp_attribute(component::icon, attr))
@@ -1170,11 +1268,14 @@ namespace nana
 					}
 				}
 
-				virtual void text(graph_reference graph, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface * compset) const override
+				virtual void text(graph_reference graph, const compset_interface * compset) const override
 				{
 					comp_attribute_t attr;
-					if(compset->comp_attribute(component::text, attr))
-						graph.string(attr.area.x, attr.area.y + 3, fgcolor, compset->item_attribute().text);
+					if (compset->comp_attribute(component::text, attr))
+					{
+						graph.set_text_color(fgcolor_);
+						graph.string(point{ attr.area.x, attr.area.y + 3 }, compset->item_attribute().text);
+					}
 				}
 
 			private:
@@ -1213,9 +1314,7 @@ namespace nana
 
 					if(pos_.y < item_pos_.y + static_cast<int>(node_r.height))
 					{
-						int logic_x = pos_.x - item_pos_.x;
-						int logic_y = pos_.y - item_pos_.y;
-
+						auto logic_pos = pos_ - item_pos_;
 						node_ = &node;
 
 						for(int comp = static_cast<int>(component::begin); comp != static_cast<int>(component::end); ++comp)
@@ -1223,7 +1322,7 @@ namespace nana
 							nana::rectangle r = node_r;
 							if(comp_placer->locate(static_cast<component>(comp), node_attr_, &r))
 							{
-								if(r.is_hit(logic_x, logic_y))
+								if(r.is_hit(logic_pos))
 								{
 									what_ = static_cast<component>(comp);
 									if(component::expender == what_ && (false == node_attr_.has_children))
@@ -1263,10 +1362,7 @@ namespace nana
 
 				nana::rectangle trigger::item_locator::text_pos() const
 				{
-					auto r = node_text_r_;
-					r.x += item_pos_.x;
-					r.y += item_pos_.y;
-					return r;
+					return{node_text_r_.x + item_pos_.x, node_text_r_.y + item_pos_.y, node_text_r_.width, node_text_r_.height};
 				}
 			//end class item_locator
 
@@ -1277,10 +1373,11 @@ namespace nana
 				typedef tree_cont_type::node_type node_type;
 
 				item_renderer(implement * impl, const nana::point& pos)
-					:impl_(impl), pos_(pos)
+					:	impl_(impl),
+						bgcolor_(impl->data.widget_ptr->bgcolor()),
+						fgcolor_(impl->data.widget_ptr->fgcolor()),
+						pos_(pos)
 				{
-					bgcolor_ = impl_->data.widget_ptr->background();
-					fgcolor_ = impl_->data.widget_ptr->foreground();
 				}
 
 				//affect
@@ -1310,11 +1407,12 @@ namespace nana
 					node_r_.height = comp_placer->item_height(*impl_->data.graph);
 
 					auto renderer = draw_impl->data.renderer;
-					renderer->bground(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
-					renderer->expander(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
-					renderer->crook(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
-					renderer->icon(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
-					renderer->text(*draw_impl->data.graph, bgcolor_, fgcolor_, this);
+					renderer->set_color(bgcolor_, fgcolor_);
+					renderer->bground(*draw_impl->data.graph, this);
+					renderer->expander(*draw_impl->data.graph, this);
+					renderer->crook(*draw_impl->data.graph, this);
+					renderer->icon(*draw_impl->data.graph, this);
+					renderer->text(*draw_impl->data.graph, this);
 
 					pos_.y += node_r_.height;
 
@@ -1343,107 +1441,18 @@ namespace nana
 				}
 			private:
 				trigger::implement * impl_;
-				nana::color_t bgcolor_;
-				nana::color_t fgcolor_;
-				nana::point pos_;
+				::nana::color bgcolor_;
+				::nana::color fgcolor_;
+				::nana::point pos_;
 				const node_type * iterated_node_;
 				item_attribute_t node_attr_;
-				nana::rectangle node_r_;
+				::nana::rectangle node_r_;
 			};
 		}
 
 		//Treebox Implementation
 		namespace treebox
 		{
-			class tlwnd_drawer
-				: public drawer_trigger, public compset_interface
-			{
-			public:
-				typedef drawer_trigger::graph_reference graph_reference;
-
-				void assign(const item_attribute_t & item_attr, const pat::cloneable<renderer_interface>* renderer, const pat::cloneable<compset_placer_interface> * compset_placer)
-				{
-					if(renderer && compset_placer)
-					{
-						renderer_ = *renderer;
-						placer_ = *compset_placer;
-
-						item_attr_ = item_attr;
-
-						_m_draw();
-					}
-				}
-			private:
-				void _m_draw()
-				{
-					item_r_.x = item_r_.y = 0;
-					item_r_.width = placer_->item_width(*this->graph_, item_attr_);
-					item_r_.height = placer_->item_height(*this->graph_);
-
-					comp_attribute_t attr;
-					if(comp_attribute(component::text, attr))
-					{
-						nana::paint::graphics item_graph(item_r_.width, item_r_.height);
-						item_graph.typeface(graph_->typeface());
-
-						auto bgcolor = widget_->background();
-						auto fgcolor = widget_->foreground();
-						renderer_->bground(item_graph, bgcolor, fgcolor, this);
-						renderer_->expander(item_graph, bgcolor, fgcolor, this);
-						renderer_->crook(item_graph, bgcolor, fgcolor, this);
-						renderer_->icon(item_graph, bgcolor, fgcolor, this);
-						renderer_->text(item_graph, bgcolor, fgcolor, this);
-
-						item_graph.paste(attr.area, *graph_, 1, 1);
-						graph_->rectangle(0x0, false);
-					}
-				}
-			private:
-				// Implementation of drawer_trigger
-				void attached(widget_reference wd, graph_reference graph) override
-				{
-					widget_ = &wd;
-					graph_ = &graph;
-					graph.typeface(widget_->typeface());
-				}
-			private:
-				// Implementation of compset_interface
-				virtual const item_attribute_t& item_attribute() const override
-				{
-					return item_attr_;
-				}
-
-				virtual bool comp_attribute(component_t comp, comp_attribute_t& comp_attr) const override
-				{
-					comp_attr.area = item_r_;
-					return placer_->locate(comp, item_attr_, &comp_attr.area);
-				}
-			private:
-				::nana::paint::graphics * graph_;
-				::nana::pat::cloneable<renderer_interface> renderer_;
-				::nana::pat::cloneable<compset_placer_interface> placer_;
-				widget	*widget_;
-				item_attribute_t item_attr_;
-				nana::rectangle item_r_;
-			};//end class tlwnd_drawer
-
-			class tooltip_window
-				: public widget_object<category::root_tag, tlwnd_drawer>
-			{
-			public:
-				tooltip_window(window wd, const rectangle& r)
-					: widget_object<category::root_tag, tlwnd_drawer>(wd, false, rectangle(r).pare_off(-1), appear::bald<appear::floating>())
-				{
-					API::take_active(handle(), false, nullptr);
-				}
-
-				drawer_trigger_t & impl()
-				{
-					return get_drawer_trigger();
-				}
-			};//end class tooltip_window
-
-
 			//class trigger
 				//struct treebox_node_type
 					trigger::treebox_node_type::treebox_node_type()
@@ -1750,7 +1759,6 @@ namespace nana
 
 				unsigned trigger::node_width(const node_type *node) const
 				{
-					//return (static_cast<int>(impl_->data.graph->text_extent_size(node->value.second.text).width) + impl_->shape.text_offset * 2 + static_cast<unsigned>(impl_->shape.crook_pixels + impl_->shape.image_pixels));
 					node_attribute node_attr;
 					impl_->assign_node_attr(node_attr, node);
 					return impl_->data.comp_placer->item_width(*impl_->data.graph, node_attr);
@@ -1784,7 +1792,7 @@ namespace nana
 				{
 					impl_->data.graph = &graph;
 
-					widget.background(0xFFFFFF);
+					widget.bgcolor(colors::white);
 					impl_->data.widget_ptr = static_cast< ::nana::treebox*>(&widget);
 					widget.caption(STR("Nana Treebox"));
 				}

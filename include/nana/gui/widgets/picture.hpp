@@ -1,7 +1,7 @@
 /*
  *	A Picture Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -26,7 +26,7 @@ namespace nana
 			void attached(widget_reference, graph_reference)	override;
 			void load(const nana::char_t* file);
 			void load(const nana::paint::image&);
-			void set_shadow_background(unsigned begin_color, unsigned end_color, bool horizontal);
+			void set_shadow_background(const ::nana::color& from, const ::nana::color& to, bool horizontal);
 			bool bgstyle(bool is_stretch, nana::arrange, int beg, int end);
 		private:
 			void refresh(graph_reference)	override;
@@ -35,13 +35,12 @@ namespace nana
 			widget* widget_;
 			nana::paint::graphics* graph_;
 
-			struct	runtime_type
+			struct
 			{
-				runtime_type();
-				unsigned background_shadow_start;
-				unsigned background_shadow_end;
+				::nana::color gradual_from;
+				::nana::color gradual_to;
 				bool	horizontal;
-			}runtime_;
+			}bground_;
 
 			struct back_image_tag
 			{
@@ -72,8 +71,8 @@ namespace nana
                       int end             ///< specify the stretchy area of image.
                       );
 
-        /// Fills a gradual change color in background.
-		void set_shadow_background(unsigned begin_color, unsigned end_color, bool horizontal);
+        /// Fills a gradual-change color in background. If One of colors is invisible or clr_from is equal to clr_to, it draws background in bgcolor.
+		void set_gradual_background(const ::nana::color& clr_from, const ::nana::color& clr_to, bool horizontal);
 		void transparent(bool);
 		bool transparent() const;
 	};

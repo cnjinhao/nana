@@ -53,10 +53,10 @@ namespace nana{
 				void _m_draw_background(graph_reference);
 				void _m_draw_border(graph_reference);
 			private:
-				widget* widget_;
-				paint::graphics* graph_;
+				widget* wdg_{nullptr};
+				paint::graphics* graph_{nullptr};
 
-				element::cite_bground cite_;
+				element::cite_bground cite_{"button"};
 
 				struct attr_tag
 				{
@@ -68,8 +68,8 @@ namespace nana{
 					bool enable_pushed;
 					bool focus_color;
 					paint::image * icon;
-					color_t bgcolor;
-					color_t fgcolor;
+					::nana::color bgcolor;
+					::nana::color fgcolor;
 				}attr_;
 			};
 		}//end namespace button

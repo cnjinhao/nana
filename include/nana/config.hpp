@@ -18,7 +18,6 @@
 //Windows:
 	#define NANA_WINDOWS	1
 	#define PLATFORM_SPEC_HPP <nana/detail/win32/platform_spec.hpp>
-	#define GUI_BEDROCK_HPP <nana/gui/detail/bedrock.hpp>
 
 	//Test if it is MINGW
 	#if defined(__MINGW32__)
@@ -31,8 +30,6 @@
 	#define NANA_LINUX	1
 	#define NANA_X11	1
 	#define PLATFORM_SPEC_HPP <nana/detail/linux_X11/platform_spec.hpp>
-	#define GUI_BEDROCK_HPP <nana/gui/detail/bedrock.hpp>
-
 	#define STD_CODECVT_NOT_SUPPORTED
 #endif
 

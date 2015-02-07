@@ -85,11 +85,6 @@ namespace detail
 	{
 		typedef std::shared_ptr<font_tag> font_ptr_t;
 
-		drawable_impl_type();
-		~drawable_impl_type();
-
-		void fgcolor(unsigned color);
-
 		Pixmap	pixmap;
 		GC	context;
 		font_ptr_t font;
@@ -107,8 +102,20 @@ namespace detail
 		XftColor	xft_fgcolor;
 		const std::string charset(const nana::string& str, const std::string& strcode);
 #endif
+		drawable_impl_type();
+		~drawable_impl_type();
+
+		void fgcolor(const ::nana::color&); //deprecated
+		void set_color(const ::nana::color&);
+		void set_text_color(const ::nana::color&);
+
+		void update_color();
+		void update_text_color();
 	private:
-		unsigned fgcolor_{0xFFFFFFFF};
+		unsigned current_color_{ 0xFFFFFF };
+		unsigned color_{ 0xFFFFFFFF };
+		unsigned text_color_{ 0xFFFFFFFF };
+
 #if defined(NANA_UNICODE)
 		struct conv_tag
 		{
@@ -217,9 +224,9 @@ namespace detail
 		void read_keystate(XKeyEvent&);
 
 		XIC	caret_input_context(native_window_type) const;
-		void caret_open(native_window_type, unsigned width, unsigned height);
+		void caret_open(native_window_type, const ::nana::size&);
 		void caret_close(native_window_type);
-		void caret_pos(native_window_type, int x, int y);
+		void caret_pos(native_window_type, const ::nana::point&);
 		void caret_visible(native_window_type, bool);
 		void caret_flash(caret_tag&);
 		bool caret_update(native_window_type, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph);

@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,7 @@
 
 #include <nana/config.hpp>
 #include PLATFORM_SPEC_HPP
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
@@ -25,6 +25,20 @@
 
 namespace nana
 {
+	//class event_arg
+	event_arg::~event_arg(){}
+
+	void event_arg::stop_propagation() const
+	{
+		stop_propagation_ = true;
+	}
+	
+	bool event_arg::propagation_stopped() const
+	{
+		return stop_propagation_;
+	}
+	//end class event_arg
+
 	namespace detail
 	{
 		void events_operation_register(event_handle evt)
@@ -63,7 +77,7 @@ namespace nana
 				}
 
 				wd_manager.refresh_tree(wd);
-				wd_manager.map(wd);
+				wd_manager.map(wd, false);
 			}
 		}
 
@@ -120,7 +134,17 @@ namespace nana
 			}
 		}
 
-		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::detail::event_arg_interface& event_arg)
+		widget_colors& bedrock::get_scheme_template(scheme_factory_base&& factory)
+		{
+			return pi_data_->scheme.scheme_template(std::move(factory));
+		}
+
+		std::unique_ptr<widget_colors> bedrock::make_scheme(scheme_factory_base&& factory)
+		{
+			return pi_data_->scheme.create(std::move(factory));
+		}
+
+		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::event_arg& event_arg)
 		{
 			switch (evt_code)
 			{

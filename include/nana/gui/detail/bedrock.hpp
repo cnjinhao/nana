@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,6 +16,7 @@
 #include "events_operation.hpp"
 #include "runtime_manager.hpp"
 #include "general_events.hpp"
+#include "color_schemes.hpp"
 #include "internal_scope_guard.hpp"
 
 namespace nana
@@ -41,7 +42,7 @@ namespace detail
 
 		~bedrock();
 		void pump_event(window, bool is_modal);
-		void map_thread_root_buffer(core_window_t* );
+		void map_thread_root_buffer(core_window_t*, bool forced);
 		static int inc_window(unsigned tid = 0);
 		thread_context* open_thread_context(unsigned tid = 0);
 		thread_context* get_thread_context(unsigned tid = 0);
@@ -66,6 +67,7 @@ namespace detail
 		bool whether_keyboard_shortkey() const;
 
 		element_store& get_element_store() const;
+		void map_through_widgets(core_window_t*, native_drawable_type);
 	public:
 		void event_expose(core_window_t *, bool exposed);
 		void event_move(core_window_t*, int x, int y);
@@ -76,22 +78,27 @@ namespace detail
 		void set_cursor(core_window_t*, nana::cursor, thread_context*);
 		void define_state_cursor(core_window_t*, nana::cursor, thread_context*);
 		void undefine_state_cursor(core_window_t*, thread_context*);
+
+		widget_colors& get_scheme_template(scheme_factory_base&&);
+		std::unique_ptr<widget_colors> make_scheme(scheme_factory_base&&);
 	public:
-		window_manager_t	wd_manager;
 		events_operation	evt_operation;
+		window_manager_t	wd_manager;
 
 		runtime_manager<core_window_t*, bedrock>	rt_manager;
 
 		bool emit(event_code, core_window_t*, const arg_mouse&, bool ask_update, thread_context*);
-		bool emit(event_code, core_window_t*, const event_arg_interface&, bool ask_update, thread_context*);
-		bool emit_drawer(event_code, core_window_t*, const event_arg_interface&, thread_context*);
+		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*);
+		bool emit_drawer(event_code, core_window_t*, const event_arg&, thread_context*);
 	private:
-		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg_interface&);
+		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg&);
 		void _m_event_filter(event_code, core_window_t*, thread_context*);
 		void _m_except_handler();
 	private:
 		static bedrock bedrock_object;
 
+		struct pi_data;
+		pi_data*	pi_data_;
 		struct private_impl;
 		private_impl *impl_;
 	};//end class bedrock

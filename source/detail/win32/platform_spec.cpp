@@ -1,6 +1,7 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,17 +22,15 @@ namespace nana
 namespace detail
 {
 	drawable_impl_type::drawable_impl_type()
-		:	pixbuf_ptr(nullptr), bytes_per_line(0),
-			fgcolor_(0xFFFFFFFF)
 	{
 		pen.handle = nullptr;
-		pen.color = nana::null_color;
+		pen.color = 0xffffffff;
 		pen.style = -1;
 		pen.width = -1;
 
 		brush.handle = nullptr;
 		brush.style = brush_spec::Solid;
-		brush.color = nana::null_color;
+		brush.color = 0xffffffff;
 
 		round_region.handle = nullptr;
 		round_region.radius_x = round_region.radius_y = 0;
@@ -50,37 +49,69 @@ namespace detail
 		::DeleteObject(round_region.handle);
 	}
 
-	void drawable_impl_type::fgcolor(nana::color_t col)
+	void drawable_impl_type::fgcolor(const ::nana::color& clr)
 	{
-		if(this->fgcolor_ != col)
+		set_text_color(clr);
+	}
+
+	unsigned drawable_impl_type::get_color() const
+	{
+		return color_;
+	}
+
+	void drawable_impl_type::set_color(const ::nana::color& clr)
+	{
+		color_ = clr.px_color().value;
+	}
+
+	void drawable_impl_type::set_text_color(const ::nana::color& clr)
+	{
+		auto rgb = clr.px_color().value;
+		if (text_color_ != rgb)
 		{
-			::SetTextColor(context, NANA_RGB(col));
-			fgcolor_ = col;
+			::SetTextColor(context, NANA_RGB(rgb));
+			text_color_ = rgb;
 		}
 	}
 
-	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, nana::color_t color)
+	void drawable_impl_type::update_pen()
 	{
-		if(this->color != color || this->width != width || this->style != style)
+		if (pen.color != color_)
 		{
-			this->color = color;
+			pen.handle = ::CreatePen(PS_SOLID, 1, NANA_RGB(color_));
+			::DeleteObject(::SelectObject(context, pen.handle));
+			pen.color = color_;
+		}
+	}
+
+	void drawable_impl_type::update_brush()
+	{
+		if (brush.color != color_)
+			brush.set(context, brush.style, color_);
+	}
+	
+	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, unsigned clr)
+	{
+		if (this->color != clr || this->width != width || this->style != style)
+		{
+			this->color = clr;
 			this->width = width;
 			this->style = style;
-			this->handle = ::CreatePen(style, width, NANA_RGB(color));
+			this->handle = ::CreatePen(style, width, NANA_RGB(clr));
 			::DeleteObject(::SelectObject(context, this->handle));
 		}
 	}
 
-	void drawable_impl_type::brush_spec::set(HDC context, drawable_impl_type::brush_spec::t style, nana::color_t color)
+	void drawable_impl_type::brush_spec::set(HDC context, drawable_impl_type::brush_spec::t style, unsigned rgb)
 	{
-		if(this->color != color || this->style != style)
+		if (this->color != rgb || this->style != style)
 		{
-			this->color = color;
+			this->color = rgb;
 			this->style = style;
 			switch(style)
 			{
 			case brush_spec::HatchBDiagonal:
-				this->handle = ::CreateHatchBrush(HS_BDIAGONAL, NANA_RGB(color));
+				this->handle = ::CreateHatchBrush(HS_BDIAGONAL, NANA_RGB(rgb));
 				break;
 			case brush_spec::Solid:
 			default:

@@ -1,6 +1,7 @@
 /*
  *	Platform Specification Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -91,8 +92,8 @@ namespace detail
 
 		HDC		context;
 		HBITMAP	pixmap;
-		pixel_rgb_t*	pixbuf_ptr;
-		std::size_t		bytes_per_line;
+		pixel_argb_t*	pixbuf_ptr{nullptr};
+		std::size_t		bytes_per_line{0};
 		font_ptr_t font;
 
 		struct pen_spec
@@ -102,7 +103,7 @@ namespace detail
 			int style;
 			int width;
 
-			void set(HDC context, int style, int width, nana::color_t color);
+			void set(HDC context, int style, int width,unsigned color);
 		}pen;
 
 		struct brush_spec
@@ -111,9 +112,9 @@ namespace detail
 
 			HBRUSH handle;
 			t style;
-			nana::color_t color;
+			unsigned color;
 
-			void set(HDC context, t style, nana::color_t color);
+			void set(HDC context, t style, unsigned color);
 		}brush;
 
 		struct round_region_spec
@@ -136,9 +137,16 @@ namespace detail
 		drawable_impl_type();
 		~drawable_impl_type();
 
-		void fgcolor(nana::color_t);
+		void fgcolor(const ::nana::color&);	//deprecated
+		unsigned get_color() const;
+		void set_color(const ::nana::color&);
+		void set_text_color(const ::nana::color&);
+
+		void update_pen();
+		void update_brush();
 	private:
-		unsigned fgcolor_;
+		unsigned color_{ 0xffffffff };
+		unsigned text_color_{0xffffffff};
 	};
 
 	class platform_spec

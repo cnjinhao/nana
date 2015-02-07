@@ -22,13 +22,10 @@ namespace nana
 		//class picture_drawer
 			picture_drawer::picture_drawer():graph_(nullptr)
 			{
+				bground_.horizontal = true;
 				backimg_.arg = nana::arrange::unknown;
 				backimg_.beg = backimg_.end = 0;
 			}
-
-			picture_drawer::runtime_type::runtime_type()
-				:background_shadow_start(0), background_shadow_end(0), horizontal(true)
-			{}
 
 			void picture_drawer::attached(widget_reference& widget, graph_reference graph)
 			{
@@ -46,11 +43,11 @@ namespace nana
 				backimg_.image = img;
 			}
 
-			void picture_drawer::set_shadow_background(unsigned begin_color, unsigned end_color, bool horizontal)
+			void picture_drawer::set_shadow_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
 			{
-				runtime_.background_shadow_end = end_color;
-				runtime_.background_shadow_start = begin_color;
-				runtime_.horizontal = horizontal;
+				bground_.gradual_from = from;
+				bground_.gradual_to = to;
+				bground_.horizontal = horizontal;
 
 				_m_draw_background();
 			}
@@ -244,10 +241,12 @@ namespace nana
 			{
 				if(graph_ && (bground_mode::basic != API::effects_bground_mode(*widget_)))
 				{
-					if(runtime_.background_shadow_end == runtime_.background_shadow_start)
-						graph_->rectangle((runtime_.background_shadow_end ? runtime_.background_shadow_end : widget_->background()), true);
+					if (bground_.gradual_from.invisible() || bground_.gradual_to.invisible())
+						graph_->rectangle(true, widget_->bgcolor());
+					else if(bground_.gradual_from == bground_.gradual_to)
+						graph_->rectangle(true, bground_.gradual_from);
 					else
-						graph_->shadow_rectangle(graph_->size(), runtime_.background_shadow_start, runtime_.background_shadow_end, !runtime_.horizontal);
+						graph_->gradual_rectangle(graph_->size(), bground_.gradual_from, bground_.gradual_to, !bground_.horizontal);
 				}
 			}
 		//end class picture_drawer
@@ -278,9 +277,9 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		void picture::set_shadow_background(unsigned begin_color, unsigned end_color, bool horizontal)
+		void picture::set_gradual_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
 		{
-			get_drawer_trigger().set_shadow_background(begin_color, end_color, horizontal);
+			get_drawer_trigger().set_shadow_background(from, to, horizontal);
 		}
 
 		void picture::transparent(bool enabled)

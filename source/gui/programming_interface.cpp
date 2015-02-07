@@ -97,7 +97,9 @@ namespace API
 	}
 
 	void effects_bground(window wd, const effects::bground_factory_interface& factory, double fade_rate)
-	{	
+	{
+		if (fade_rate < 0.0 || fade_rate > 1.0)
+			throw std::invalid_argument("effects_bground: value range of fade_rate must be [0, 1].");
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard isg;
 		if(restrict::window_manager.available(iwd))
@@ -110,6 +112,10 @@ namespace API
 			iwd->effect.bground = new_effect_ptr;
 			iwd->effect.bground_fade_rate = fade_rate;
 			restrict::window_manager.enable_effects_bground(iwd, true);
+			
+			if (fade_rate < 0.01)
+				iwd->flags.make_bground_declared = true;
+
 			API::refresh_window(wd);
 		}
 	}
@@ -150,14 +156,29 @@ namespace API
 			return false;
 		}
 
+		void set_scheme(window wd, widget_colors* wdg_colors)
+		{
+			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+			internal_scope_guard lock;
+			if (restrict::window_manager.available(iwd))
+				iwd->scheme = wdg_colors;
+		}
+
+		widget_colors* get_scheme(window wd)
+		{
+			auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+			internal_scope_guard lock;
+			return (restrict::window_manager.available(iwd) ? iwd->scheme : nullptr);
+		}
+
 		void attach_drawer(widget& wd, drawer_trigger& dr)
 		{
 			const auto iwd = reinterpret_cast<restrict::core_window_t*>(wd.handle());
 			internal_scope_guard isg;
 			if(restrict::window_manager.available(iwd))
 			{
-				iwd->drawer.graphics.make(iwd->dimension.width, iwd->dimension.height);
-				iwd->drawer.graphics.rectangle(iwd->color.background, true);
+				iwd->drawer.graphics.make(iwd->dimension);
+				iwd->drawer.graphics.rectangle(true, iwd->scheme->background.get_color());
 				iwd->drawer.attached(wd, dr);
 				iwd->drawer.refresh();	//Always redrawe no matter it is visible or invisible. This can make the graphics data correctly.
 			}
@@ -291,16 +312,6 @@ namespace API
 		restrict::window_manager.unregister_shortkey(reinterpret_cast<restrict::core_window_t*>(wd), false);
 	}
 
-	nana::size screen_size()
-	{
-		return restrict::interface_type::screen_size();
-	}
-
-	rectangle screen_area_from_point(const point& pos)
-	{
-		return restrict::interface_type::screen_area_from_point(pos);
-	}
-
 	nana::point	cursor_position()
 	{
 		return restrict::interface_type::cursor_position();
@@ -308,7 +319,7 @@ namespace API
 
 	nana::rectangle make_center(unsigned width, unsigned height)
 	{
-		nana::size screen = restrict::interface_type::screen_size();
+		nana::size screen = restrict::interface_type::primary_monitor_size();
 		nana::rectangle result(
 			width > screen.width? 0: (screen.width - width)>>1,
 			height > screen.height? 0: (screen.height - height)>> 1,
@@ -341,6 +352,11 @@ namespace API
 	bool empty_window(window wd)
 	{
 		return (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)) == false);
+	}
+
+	bool is_window(window wd)
+	{
+		return restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd));
 	}
 
 	void enable_dropfiles(window wd, bool enb)
@@ -529,9 +545,9 @@ namespace API
 		}
 	}
 
-	void bring_to_top(window wd)
+	void bring_top(window wd, bool activated)
 	{
-		restrict::interface_type::bring_to_top(root(wd));
+		restrict::interface_type::bring_top(root(wd), activated);
 	}
 
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after)
@@ -556,6 +572,27 @@ namespace API
 			return true;
 		}
 		return false;
+	}
+
+	void draw_through(window wd, std::function<void()> draw_fn)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (!restrict::bedrock.wd_manager.available(iwd))
+			throw std::invalid_argument("draw_through: invalid window parameter");
+
+		if (::nana::category::flags::root != iwd->other.category)
+			throw std::invalid_argument("draw_through: the window is not a root widget");
+
+		iwd->other.attribute.root->draw_through.swap(draw_fn);
+	}
+
+	void map_through_widgets(window wd, native_drawable_type drawable)
+	{
+		auto iwd = reinterpret_cast<::nana::detail::basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::bedrock.wd_manager.available(iwd) && iwd->is_draw_through() )
+			restrict::bedrock.map_through_widgets(iwd, drawable);
 	}
 
 	nana::size window_size(window wd)
@@ -667,6 +704,12 @@ namespace API
 	void update_window(window wd)
 	{
 		restrict::window_manager.update(reinterpret_cast<restrict::core_window_t*>(wd), false, true);
+	}
+
+
+	void window_caption(window wd, const std::string& title_utf8)
+	{
+		window_caption(wd, std::wstring(::nana::charset(title_utf8, ::nana::unicode::utf8)));
 	}
 
 	void window_caption(window wd, const nana::string& title)
@@ -790,80 +833,85 @@ namespace API
 			restrict::bedrock.pump_event(wd, false);
 	}
 
-	nana::color_t foreground(window wd)
+	color fgcolor(window wd)
 	{
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->color.foreground;
-		return 0;
+		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+			return reinterpret_cast<restrict::core_window_t*>(wd)->scheme->foreground.get_color();
+		return{};
 	}
 
-	color_t foreground(window wd, color_t col)
+	color fgcolor(window wd, const color& clr)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(iwd))
+		if (restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->color.foreground;
-			if(prev != col)
+			auto prev = iwd->scheme->foreground.get_color();
+			if (prev != clr)
 			{
-				iwd->color.foreground = col;
+				iwd->scheme->foreground = clr;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
 		}
-		return 0;
+		return{};
 	}
 
-	color_t background(window wd)
+	color bgcolor(window wd)
 	{
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->color.background;
-		return 0;
+		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+			return reinterpret_cast<restrict::core_window_t*>(wd)->scheme->background.get_color();
+		return{};
 	}
 
-	color_t background(window wd, color_t col)
+	color bgcolor(window wd, const color& clr)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(iwd))
+		if (restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->color.background;
-			if(prev != col)
+			auto prev = iwd->scheme->background.get_color();
+			if (prev != clr)
 			{
-				iwd->color.background = col;
+				iwd->scheme->background = clr;
+				
+				//If the bground mode of this window is basic, it should remake the background
+				if (iwd->effect.bground && iwd->effect.bground_fade_rate < 0.01) // fade rate < 0.01 means it is basic mode
+					iwd->flags.make_bground_declared = true;
+
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
 		}
-		return 0;
+		return{};
 	}
 
-	color_t active(window wd)
+	color activated_color(window wd)
 	{
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
-			return reinterpret_cast<restrict::core_window_t*>(wd)->color.active;
-		return 0;
+		if (restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
+			return reinterpret_cast<restrict::core_window_t*>(wd)->scheme->activated.get_color();
+		return{};
 	}
 
-	color_t active(window wd, color_t col)
+	color activated_color(window wd, const color& clr)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(iwd))
+		if (restrict::window_manager.available(iwd))
 		{
-			color_t prev = iwd->color.active;
-			if(prev != col)
+			auto prev = iwd->scheme->activated.get_color();
+			if (prev != clr)
 			{
-				iwd->color.active = col;
+				iwd->scheme->activated = clr;
 				restrict::window_manager.update(iwd, true, false);
 			}
 			return prev;
 		}
-		
-		return 0;
+
+		return{};
 	}
 
 	void create_caret(window wd, unsigned width, unsigned height)
@@ -886,12 +934,12 @@ namespace API
 		}
 	}
 
-	void caret_pos(window wd, int x, int y)
+	void caret_pos(window wd, const point& pos)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		if(restrict::window_manager.available(iwd) && iwd->together.caret)
-			iwd->together.caret->position(x, y);
+			iwd->together.caret->position(pos.x, pos.y);
 	}
 
 	nana::point caret_pos(window wd)

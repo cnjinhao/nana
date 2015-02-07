@@ -123,7 +123,7 @@ namespace nana
 		{
 			path_.create(*this);
 			path_.splitstr(STR("/"));
-			path_.events().selected([this](const arg_categorize<int>&)
+			path_.events().selected.connect_unignorable([this](const arg_categorize<int>&)
 			{
 				auto path = path_.caption();
 				auto root = path.substr(0, path.find(STR('/')));
@@ -142,7 +142,7 @@ namespace nana
 			filter_.multi_lines(false);
 			filter_.tip_string(STR("Filter"));
 
-			filter_.events().key_release([this](const arg_keyboard&)
+			filter_.events().key_release.connect_unignorable([this](const arg_keyboard&)
 			{
 				_m_list_fs();
 			});
@@ -150,7 +150,7 @@ namespace nana
 			btn_folder_.create(*this);
 			btn_folder_.caption(STR("&New Folder"));
 
-			btn_folder_.events().click([this](const arg_mouse&)
+			btn_folder_.events().click.connect_unignorable([this](const arg_mouse&)
 			{
 				form fm(this->handle(), API::make_center(*this, 300, 35));
 				fm.caption(STR("Name the new folder"));
@@ -161,12 +161,12 @@ namespace nana
 				button btn(fm, nana::rectangle(170, 5, 60, 25));
 				btn.caption(STR("Create"));
 
-				btn.events().click(folder_creator(*this, fm, folder));
+				btn.events().click.connect_unignorable(folder_creator(*this, fm, folder));
 
 				button btn_cancel(fm, nana::rectangle(235, 5, 60, 25));
 				btn_cancel.caption(STR("Cancel"));
 
-				btn_cancel.events().click([&fm](const arg_mouse&)
+				btn_cancel.events().click.connect_unignorable([&fm](const arg_mouse&)
 				{
 					fm.close();
 				});
@@ -184,8 +184,8 @@ namespace nana
 			auto fn_sel_file = [this](const arg_mouse& arg){
 				_m_sel_file(arg);
 			};
-			ls_file_.events().dbl_click(fn_sel_file);
-			ls_file_.events().mouse_down(fn_sel_file);
+			ls_file_.events().dbl_click.connect_unignorable(fn_sel_file);
+			ls_file_.events().mouse_down.connect_unignorable(fn_sel_file);
 			ls_file_.set_sort_compare(0, [](const nana::string& a, nana::any* fs_a, const nana::string& b, nana::any* fs_b, bool reverse) -> bool
 				{
 					int dira = fs_a->get<item_fs>()->directory ? 1 : 0;
@@ -262,7 +262,7 @@ namespace nana
 			tb_file_.create(*this);
 			tb_file_.multi_lines(false);
 
-			tb_file_.events().key_char([this](const arg_keyboard& arg)
+			tb_file_.events().key_char.connect_unignorable([this](const arg_keyboard& arg)
 			{
 				if(arg.key == nana::keyboard::enter)
 					_m_ok();
@@ -270,19 +270,19 @@ namespace nana
 
 			cb_types_.create(*this);
 			cb_types_.editable(false);
-			cb_types_.events().selected([this](const arg_combox&){ _m_list_fs(); });
+			cb_types_.events().selected.connect_unignorable([this](const arg_combox&){ _m_list_fs(); });
 
 			btn_ok_.create(*this);
 			btn_ok_.caption(STR("&OK"));
 
-			btn_ok_.events().click([this](const arg_mouse&)
+			btn_ok_.events().click.connect_unignorable([this](const arg_mouse&)
 			{
 				_m_ok();
 			});
 			btn_cancel_.create(*this);
 			btn_cancel_.caption(STR("&Cancel"));
 
-			btn_cancel_.events().click([this](const arg_mouse&)
+			btn_cancel_.events().click.connect_unignorable([this](const arg_mouse&)
 			{
 				API::close_window(handle());
 			});
@@ -440,12 +440,12 @@ namespace nana
 				}
 			}
 
-			tree_.events().expanded([this](const arg_treebox& arg)
+			tree_.events().expanded.connect_unignorable([this](const arg_treebox& arg)
 			{
 				_m_tr_expand(arg.item, arg.operated);
 			});
 
-			tree_.events().selected([this](const arg_treebox& arg)
+			tree_.events().selected.connect_unignorable([this](const arg_treebox& arg)
 			{
 				if(arg.operated && (arg.item.value<kind::t>() == kind::filesystem))
 				{

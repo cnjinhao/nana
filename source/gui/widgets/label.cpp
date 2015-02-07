@@ -74,7 +74,7 @@ namespace nana
 					return true;
 				}
 
-				void render(graph_reference graph, nana::color_t fgcolor, align th, align_v tv)
+				void render(graph_reference graph, const ::nana::color& fgcolor, align th, align_v tv)
 				{
 					traceable_.clear();
 
@@ -161,18 +161,18 @@ namespace nana
 					return false;
 				}
 
-				nana::size measure(graph_reference graph, unsigned limited, align th, align_v tv)
+				::nana::size measure(graph_reference graph, unsigned limited, align th, align_v tv)
 				{
-					nana::size retsize;
+					::nana::size retsize;
 
-					nana::paint::font ft = graph.typeface();	//used for restoring the font
+					auto ft = graph.typeface();	//used for restoring the font
 
 					const unsigned def_line_pixels = graph.text_extent_size(STR(" "), 1).height;
 
 					font_ = ft;
 					fblock_ = nullptr;
 
-					_m_set_default(ft, 0);
+					_m_set_default(ft, colors::black);
 					_m_measure(graph);
 
 					render_status rs;
@@ -216,7 +216,7 @@ namespace nana
 					}
 				}
 
-				void _m_set_default(const nana::paint::font& ft, nana::color_t fgcolor)
+				void _m_set_default(const ::nana::paint::font& ft, const ::nana::color& fgcolor)
 				{
 					def_.font_name = ft.name();
 					def_.font_size = ft.size();
@@ -224,9 +224,9 @@ namespace nana
 					def_.fgcolor = fgcolor;
 				}
 
-				nana::color_t _m_fgcolor(nana::widgets::skeletons::fblock* fp)
+				const ::nana::color& _m_fgcolor(nana::widgets::skeletons::fblock* fp)
 				{
-					while(fp->fgcolor == 0xFFFFFFFF)
+					while(fp->fgcolor.invisible())
 					{
 						fp = fp->parent;
 						if(nullptr == fp)
@@ -562,12 +562,12 @@ namespace nana
 
 							if (text_range.second == data_ptr->text().length())
 							{
-								graph.string(rs.pos.x, y, _m_fgcolor(fblock_ptr), data_ptr->text());
+								graph.string({ rs.pos.x, y }, data_ptr->text(), _m_fgcolor(fblock_ptr));
 							}
 							else
 							{
 								nana::string str = data_ptr->text().substr(text_range.first, text_range.second);
-								graph.string(rs.pos.x, y, _m_fgcolor(fblock_ptr), str);
+								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 								sz = graph.text_extent_size(str);
 							}
 							_m_inser_if_traceable(rs.pos.x, y, sz, fblock_ptr);
@@ -600,16 +600,16 @@ namespace nana
 			private:
 				dstream dstream_;
 				bool format_enabled_ = false;
-				nana::widgets::skeletons::fblock * fblock_ = nullptr;
+				::nana::widgets::skeletons::fblock * fblock_ = nullptr;
 				std::deque<traceable> traceable_;
 
-				nana::paint::font font_;
+				::nana::paint::font font_;
 				struct def_font_tag
 				{
-					nana::string font_name;
+					::nana::string font_name;
 					std::size_t font_size;
 					bool	font_bold;
-					nana::color_t fgcolor;
+					::nana::color fgcolor;
 				}def_;
 			};
 
@@ -748,9 +748,9 @@ namespace nana
 
 					window wd = impl_->wd->handle();
 					if(bground_mode::basic != API::effects_bground_mode(wd))
-						graph.rectangle(API::background(wd), true);
+						graph.rectangle(true, API::bgcolor(wd));
 
-					impl_->renderer.render(graph, impl_->wd->foreground(), impl_->text_align, impl_->text_align_v);
+					impl_->renderer.render(graph, API::fgcolor(wd), impl_->text_align, impl_->text_align_v);
 				}
 
 			//end class label_drawer
@@ -831,10 +831,18 @@ namespace nana
 			if(graph_ptr->empty())
 			{
 				graph_ptr = &substitute;
-				graph_ptr->make(10, 10);
+				graph_ptr->make({ 10, 10 });
 			}
 
 			return impl->renderer.measure(*graph_ptr, limited, impl->text_align, impl->text_align_v);
+		}
+
+		::nana::size label::measure(paint::graphics& graph, const ::nana::string& str, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align)
+		{
+			drawerbase::label::renderer rd;
+			rd.format(format_enabled);
+			rd.parse(str);
+			return rd.measure(graph, allowed_width_in_pixel, h_align, v_align);
 		}
 
 		label& label::text_align(align th, align_v tv)

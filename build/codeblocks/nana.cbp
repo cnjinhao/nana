@@ -52,6 +52,7 @@
 		<Unit filename="../../source/gui/detail/basic_window.cpp" />
 		<Unit filename="../../source/gui/detail/bedrock_pi.cpp" />
 		<Unit filename="../../source/gui/detail/bedrock_selector.cpp" />
+		<Unit filename="../../source/gui/detail/color_schemes.cpp" />
 		<Unit filename="../../source/gui/detail/drawer.cpp" />
 		<Unit filename="../../source/gui/detail/element_store.cpp" />
 		<Unit filename="../../source/gui/detail/events_operation.cpp" />
@@ -68,6 +69,7 @@
 		<Unit filename="../../source/gui/notifier.cpp" />
 		<Unit filename="../../source/gui/place.cpp" />
 		<Unit filename="../../source/gui/programming_interface.cpp" />
+		<Unit filename="../../source/gui/screen.cpp" />
 		<Unit filename="../../source/gui/state_cursor.cpp" />
 		<Unit filename="../../source/gui/timer.cpp" />
 		<Unit filename="../../source/gui/tooltip.cpp" />
@@ -89,6 +91,7 @@
 		<Unit filename="../../source/gui/widgets/scroll.cpp" />
 		<Unit filename="../../source/gui/widgets/skeletons/text_editor.cpp" />
 		<Unit filename="../../source/gui/widgets/slider.cpp" />
+		<Unit filename="../../source/gui/widgets/spinbox.cpp" />
 		<Unit filename="../../source/gui/widgets/tabbar.cpp" />
 		<Unit filename="../../source/gui/widgets/textbox.cpp" />
 		<Unit filename="../../source/gui/widgets/toolbar.cpp" />

@@ -1,7 +1,7 @@
 /*
 *	A Message Box Class
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -90,6 +90,141 @@ namespace nana
 		nana::string title_;
 		button_t button_;
 		icon_t icon_;
+	};
+
+	class inputbox
+	{
+		struct abstract_content
+		{
+			virtual ~abstract_content() = default;
+
+			virtual const ::nana::string& label() const = 0;
+			virtual window create(window, unsigned label_px) = 0;
+			virtual unsigned fixed_pixels() const = 0;
+		};
+	public:
+		class integer
+			: public abstract_content
+		{
+			struct implement;
+		public:
+			integer(::nana::string label, int init_value, int begin, int last, int step);
+			~integer();
+
+			int value() const;
+		private:
+			//Implementation of abstract_content
+			const ::nana::string& label() const override;
+			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
+		private:
+			std::unique_ptr<implement> impl_;
+		};
+
+		class real
+			: public abstract_content
+		{
+			struct implement;
+		public:
+			real(::nana::string label, double init_value, double begin, double last, double step);
+			~real();
+
+			double value() const;
+		private:
+			//Implementation of abstract_content
+			const ::nana::string& label() const override;
+			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
+		private:
+			std::unique_ptr<implement> impl_;
+		};
+
+		class text
+			: public abstract_content
+		{
+			struct implement;
+		public:
+			text(::nana::string label);
+			text(::nana::string label, std::vector<::nana::string>);
+
+			~text();
+
+			::nana::string value() const;
+		private:
+			//Implementation of abstract_content
+			const ::nana::string& label() const override;
+			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
+		private:
+			std::unique_ptr<implement> impl_;
+		};
+
+		class date
+			: public abstract_content
+		{
+			struct implement;
+		public:
+			date(::nana::string label);
+
+			~date();
+
+			::nana::string value() const;
+			int year() const;
+			int month() const;	//[1, 12]
+			int day() const;	//[1, 31]
+			unsigned fixed_pixels() const override;
+		private:
+			//Implementation of abstract_content
+			const ::nana::string& label() const override;
+			window create(window, unsigned label_px) override;
+		private:
+			std::unique_ptr<implement> impl_;
+		};
+
+		inputbox(window, ::nana::string description, ::nana::string title = ::nana::string());
+
+		template<typename ...Args>
+		bool show(Args&& ... args)
+		{
+			std::vector<abstract_content*> contents;
+			_m_fetch_args(contents, std::forward<Args>(args)...);
+			
+			if (contents.empty())
+				return false;
+
+			return _m_open(contents, false);
+		}
+
+		template<typename ...Args>
+		bool show_modal(Args&& ... args)
+		{
+			std::vector<abstract_content*> contents;
+			_m_fetch_args(contents, std::forward<Args>(args)...);
+
+			if (contents.empty())
+				return false;
+
+			return _m_open(contents, true);
+		}
+
+		/// Sets a verifier to verify the user input.
+		void verify(std::function<bool(window)> verifier);
+	private:
+		void _m_fetch_args(std::vector<abstract_content*>&);
+
+		template<typename ...Args>
+		void _m_fetch_args(std::vector<abstract_content*>& contents, abstract_content& content, Args&&... args)
+		{
+			contents.push_back(&content);
+			_m_fetch_args(contents, std::forward<Args>(args)...);
+		}
+
+		bool _m_open(std::vector<abstract_content*>&, bool modal);
+	private:
+		window owner_;
+		::nana::string description_;
+		::nana::string title_;
+		std::function<bool(window)> verifier_;
 	};
 }//end namespace nana
 

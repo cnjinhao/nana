@@ -3,14 +3,14 @@
 
 namespace nana
 {
+	arg_slider::arg_slider(slider& wdg)
+		: widget(wdg)
+	{}
+
 	namespace drawerbase
 	{
 		namespace slider
 		{
-
-			provider::~provider(){}
-
-			renderer::~renderer(){}
 
 			class interior_renderer
 				: public renderer
@@ -18,40 +18,39 @@ namespace nana
 			private:
 				virtual void background(window wd, graph_reference graph, bool isglass)
 				{
-					if(isglass == false)
-						graph.rectangle(API::background(wd), true);
+					if(!isglass)
+						graph.rectangle(true, API::bgcolor(wd));
 				}
 
 				virtual void bar(window, graph_reference graph, const bar_t& bi)
 				{
 					//draw border
-					const nana::color_t dark = 0x83909F;
-					const nana::color_t gray = 0x9DAEC2;
-
-					graph.rectangle_line(bi.r, 
-							dark, dark, gray, gray);
+					::nana::color lt(0x83, 0x90, 0x97), rb(0x9d,0xae,0xc2);
+					graph.frame_rectangle(bi.r, lt, lt, rb, rb);
 				}
 
 				virtual void adorn(window, graph_reference graph, const adorn_t& ad)
 				{
-					int len = ad.bound.y - ad.bound.x;
-					const unsigned upperblock = ad.block - ad.block / 2;
+					auto len = static_cast<const unsigned>(ad.bound.y - ad.bound.x);
+					const auto upperblock = ad.block - ad.block / 2;
+
+					::nana::color clr_from(0x84, 0xc5, 0xff), clr_trans(0x0f, 0x41, 0xcd), clr_to(0x6e, 0x96, 0xff);
 					if(ad.horizontal)
 					{
-						graph.shadow_rectangle(ad.bound.x, ad.fixedpos, len, upperblock, 0x84C5FF, 0x0F41CD, true);
-						graph.shadow_rectangle(ad.bound.x, ad.fixedpos + upperblock, len, ad.block - upperblock, 0x0F41CD, 0x6E96FF, true);
+						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos, len, upperblock }, clr_from, clr_trans, true);
+						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos + static_cast<int>(upperblock), len, ad.block - upperblock }, clr_trans, clr_to, true);
 					}
 					else
 					{
-						graph.shadow_rectangle(ad.fixedpos, ad.bound.x, upperblock, len, 0x84C5FF, 0x0F41CD, false);
-						graph.shadow_rectangle(ad.fixedpos + upperblock, ad.bound.x, ad.block - upperblock, len, 0x0F41CD, 0x6E96FF, false);
+						graph.gradual_rectangle({ ad.fixedpos, ad.bound.x, upperblock, len }, clr_from, clr_trans, false);
+						graph.gradual_rectangle({ ad.fixedpos + static_cast<int>(upperblock), ad.bound.x, ad.block - upperblock, len }, clr_trans, clr_to, false);
 					}
 				}
 
 				virtual void adorn_textbox(window, graph_reference graph, const nana::string& str, const nana::rectangle & r)
 				{
-					graph.rectangle(r, 0xFFFFFF, false);
-					graph.string(r.x + 2, r.y + 1, 0xFFFFFF, str);
+					graph.rectangle(r, false, colors::white);
+					graph.string({ r.x + 2, r.y + 1 }, str, colors::white);
 				}
 
 				virtual void slider(window, graph_reference graph, const slider_t& s)
@@ -67,15 +66,15 @@ namespace nana
 						r.y = s.pos;
 						r.height = s.scale;
 					}
-					graph.round_rectangle(r, 3, 3, 0x0, true, 0xF0F0F0);
+					graph.round_rectangle(r, 3, 3, colors::black, true, {0xf0,0xf0,0xf0});
 				}
 			};
 
 			class controller
 			{
 			public:
-				enum dir_t{DirHorizontal, DirVertical};
-				enum where_t{WhereNone, WhereBar, WhereSlider};
+				enum class style{horizontal, vertical};
+				enum class parts{none, bar, slider};
 				
 				typedef drawer_trigger::graph_reference graph_reference;
 
@@ -88,7 +87,7 @@ namespace nana
 					proto_.renderer = pat::cloneable<renderer>(interior_renderer());
 
 					attr_.skdir = seekdir::bilateral;
-					attr_.dir = this->DirHorizontal;
+					attr_.dir = style::horizontal;
 					attr_.vcur = 0;
 					attr_.vmax = 10;
 					attr_.slider_scale = 8;
@@ -147,7 +146,7 @@ namespace nana
 
 				void vertical(bool v)
 				{
-					dir_t dir = (v ? this->DirVertical : this->DirHorizontal);
+					auto dir = (v ? style::vertical : style::horizontal);
 
 					if(dir != attr_.dir)
 					{
@@ -158,7 +157,7 @@ namespace nana
 
 				bool vertical() const
 				{
-					return (this->DirVertical == attr_.dir);
+					return (style::vertical == attr_.dir);
 				}
 
 				void vmax(unsigned m)
@@ -208,56 +207,56 @@ namespace nana
 					attr_.adorn_pos = attr_.pos;
 				}
 
-				where_t seek_where(int x, int y) const
+				parts seek_where(::nana::point pos) const
 				{
 					nana::rectangle r = _m_bar_area();
-					if(attr_.dir == this->DirVertical)
+					if(style::vertical == attr_.dir)
 					{
-						std::swap(x, y);
+						std::swap(pos.x, pos.y);
 						std::swap(r.width, r.height);
 					}
 
-					int pos = _m_slider_pos();
-					if(pos <= x && x < pos + static_cast<int>(attr_.slider_scale))
-						return WhereSlider;
+					int sdpos = _m_slider_pos();
+					if (sdpos <= pos.x && pos.x < sdpos + static_cast<int>(attr_.slider_scale))
+						return parts::slider;
 
-					pos = static_cast<int>(attr_.slider_scale) / 2;
+					sdpos = static_cast<int>(attr_.slider_scale) / 2;
 					
-					if(pos <= x && x < pos + static_cast<int>(r.width))
+					if (sdpos <= pos.x && pos.x < sdpos + static_cast<int>(r.width))
 					{
-						if(y < r.y + static_cast<int>(r.height))
-							return WhereBar;
+						if(pos.y < r.y + static_cast<int>(r.height))
+							return parts::bar;
 					}
-					return WhereNone;
+					return parts::none;
 				}
 
 				//set_slider_pos
 				//move the slider to a position where a mouse click on WhereBar.
-				bool set_slider_pos(int x, int y)
+				bool set_slider_pos(::nana::point pos)
 				{
-					if(this->DirVertical == attr_.dir)
-						std::swap(x, y);
+					if(style::vertical == attr_.dir)
+						std::swap(pos.x, pos.y);
 
-					x -= _m_slider_refpos();
-					if(x < 0)
+					pos.x -= _m_slider_refpos();
+					if(pos.x < 0)
 						return false;
 
-					if(x > static_cast<int>(_m_scale()))
-						x = static_cast<int>(_m_scale());
+					if(pos.x > static_cast<int>(_m_scale()))
+						pos.x = static_cast<int>(_m_scale());
 
-					double pos = attr_.pos;
-					double dx = _m_evaluate_by_seekdir(x);
+					double attr_pos = attr_.pos;
+					double dx = _m_evaluate_by_seekdir(pos.x);
 
 					attr_.pos = dx;
 					attr_.adorn_pos = dx;
 					_m_mk_slider_value_by_pos();
 
-					return (attr_.pos != pos);
+					return (attr_.pos != attr_pos);
 				}
 
 				void set_slider_refpos(::nana::point pos)
 				{
-					if(this->DirVertical == attr_.dir)
+					if(style::vertical == attr_.dir)
 						std::swap(pos.x, pos.y);
 
 					slider_state_.trace = slider_state_.TraceCapture;
@@ -291,21 +290,21 @@ namespace nana
 					return (slider_state_.trace == slider_state_.TraceCapture);
 				}
 
-				bool move_slider(int x, int y)
+				bool move_slider(const ::nana::point& pos)
 				{
-					int mpos = (this->DirHorizontal == attr_.dir ? x : y);
-					int pos = slider_state_.snap_pos + (mpos - slider_state_.refpos.x);
+					int mpos = (style::horizontal == attr_.dir ? pos.x : pos.y);
+					int adorn_pos = slider_state_.snap_pos + (mpos - slider_state_.refpos.x);
 					
-					if(pos > 0) 
+					if (adorn_pos > 0)
 					{
 						int scale = static_cast<int>(_m_scale());
-						if(pos > scale)
-							pos = scale;
+						if (adorn_pos > scale)
+							adorn_pos = scale;
 					}
 					else
-						pos = 0;
+						adorn_pos = 0;
 
-					double dstpos = _m_evaluate_by_seekdir(pos);
+					double dstpos = _m_evaluate_by_seekdir(adorn_pos);
 					attr_.is_draw_adorn = true;
 
 					if(dstpos != attr_.pos)
@@ -317,15 +316,15 @@ namespace nana
 					return false;
 				}
 
-				bool move_adorn(int x, int y)
+				bool move_adorn(const ::nana::point& pos)
 				{
-					double xpos = (this->DirHorizontal == attr_.dir ? x : y);
+					double xpos = (style::horizontal == attr_.dir ? pos.x : pos.y);
 
 					xpos -= _m_slider_refpos();
 					if(xpos > static_cast<int>(_m_scale()))
 						xpos = static_cast<int>(_m_scale());
 
-					int pos = static_cast<int>(attr_.adorn_pos);
+					int adorn_pos = static_cast<int>(attr_.adorn_pos);
 					xpos = _m_evaluate_by_seekdir(xpos);
 
 					attr_.adorn_pos = xpos;
@@ -334,7 +333,7 @@ namespace nana
 					if(slider_state_.trace == slider_state_.TraceNone)
 						slider_state_.trace = slider_state_.TraceOver;
 
-					return (pos != static_cast<int>(xpos));
+					return (adorn_pos != static_cast<int>(xpos));
 				}
 
 				unsigned move_step(bool forward)
@@ -390,7 +389,7 @@ namespace nana
 				{
 					auto sz = other_.graph->size();
 					nana::rectangle r = sz;
-					if(this->DirHorizontal == attr_.dir)
+					if(style::horizontal == attr_.dir)
 					{
 						r.x = attr_.slider_scale / 2 - attr_.border;
 						r.width = (static_cast<int>(sz.width) > (r.x << 1) ? sz.width - (r.x << 1) : 0);
@@ -406,7 +405,7 @@ namespace nana
 				unsigned _m_scale() const
 				{
 					nana::rectangle r = _m_bar_area();
-					return ((this->DirHorizontal == attr_.dir ? r.width : r.height) - attr_.border * 2);
+					return ((style::horizontal == attr_.dir ? r.width : r.height) - attr_.border * 2);
 				}
 
 				double _m_evaluate_by_seekdir(double pos) const
@@ -470,7 +469,7 @@ namespace nana
 				{
 					renderer::bar_t bar;
 
-					bar.horizontal = (this->DirHorizontal == attr_.dir);
+					bar.horizontal = (style::horizontal == attr_.dir);
 					bar.border_size = attr_.border;
 					bar.r = _m_bar_area();
 
@@ -499,35 +498,23 @@ namespace nana
 						nana::string str = proto_.provider->adorn_trace(attr_.vmax, vadorn);
 						if(str.size())
 						{
-							nana::rectangle r;
 							nana::size ts = other_.graph->text_extent_size(str);
 							ts.width += 6;
 							ts.height += 2;
 
-							r.width = ts.width;
-							r.height = ts.height;
-
+							int x, y;
 							const int room = static_cast<int>(attr_.adorn_pos);
 							if(bar.horizontal)
 							{
-								r.y = adorn.fixedpos + static_cast<int>(adorn.block - ts.height) / 2;
-								if(room > static_cast<int>(ts.width + 2))
-									r.x = room - static_cast<int>(ts.width + 2);
-								else
-									r.x = room + 2;
-
-								r.x += this->_m_slider_refpos();
+								y = adorn.fixedpos + static_cast<int>(adorn.block - ts.height) / 2;
+								x = (room > static_cast<int>(ts.width + 2) ? room - static_cast<int>(ts.width + 2) : room + 2) + _m_slider_refpos();
 							}
 							else
 							{
-								r.x = (other_.graph->width() - ts.width) / 2;
-								if(room > static_cast<int>(ts.height + 2))
-									r.y = room - static_cast<int>(ts.height + 2);
-								else
-									r.y = room + 2;
-								r.y += this->_m_slider_refpos();
+								x = (other_.graph->width() - ts.width) / 2;
+								y = (room > static_cast<int>(ts.height + 2) ? room - static_cast<int>(ts.height + 2) : room + 2) + _m_slider_refpos();
 							}
-							proto_.renderer->adorn_textbox(other_.wd, *other_.graph, str, r);
+							proto_.renderer->adorn_textbox(other_.wd, *other_.graph, str, {x, y, ts.width, ts.height});
 						}
 					}
 				}
@@ -536,7 +523,7 @@ namespace nana
 				{
 					renderer::slider_t s;
 					s.pos = static_cast<int>(attr_.pos);
-					s.horizontal = (this->DirHorizontal == attr_.dir);
+					s.horizontal = (style::horizontal == attr_.dir);
 					s.scale = attr_.slider_scale;
 					s.border = attr_.border;
 					proto_.renderer->slider(other_.wd, *other_.graph, s);
@@ -558,7 +545,7 @@ namespace nana
 				struct attr_tag
 				{
 					seekdir skdir;
-					dir_t dir;
+					style dir;
 					unsigned border;
 					unsigned vmax;
 					unsigned vcur;
@@ -612,10 +599,11 @@ namespace nana
 
 				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
 				{
-					controller_t::where_t what = impl_->seek_where(arg.pos.x, arg.pos.y);
-					if(controller_t::WhereBar == what || controller_t::WhereSlider == what)
+					using parts = controller_t::parts;
+					auto what = impl_->seek_where(arg.pos);
+					if(parts::bar == what || parts::slider == what)
 					{
-						bool mkdir = impl_->set_slider_pos(arg.pos.x, arg.pos.y);
+						bool mkdir = impl_->set_slider_pos(arg.pos);
 						impl_->set_slider_refpos(arg.pos);
 						if(mkdir)
 						{
@@ -640,13 +628,13 @@ namespace nana
 					bool mkdraw = false;
 					if(impl_->if_trace_slider())
 					{
-						mkdraw = impl_->move_slider(arg.pos.x, arg.pos.y);
+						mkdraw = impl_->move_slider(arg.pos);
 					}
 					else
 					{
-						controller_t::where_t what = impl_->seek_where(arg.pos.x, arg.pos.y);
-						if(controller_t::WhereNone != what)
-							mkdraw = impl_->move_adorn(arg.pos.x, arg.pos.y);
+						auto what = impl_->seek_where(arg.pos);
+						if(controller_t::parts::none != what)
+							mkdraw = impl_->move_adorn(arg.pos);
 						else
 							mkdraw = impl_->reset_adorn();
 					}

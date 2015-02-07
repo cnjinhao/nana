@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,14 +13,18 @@
 #define NANA_GUI_WIDGET_TEXTBOX_HPP
 #include <nana/gui/widgets/widget.hpp>
 #include "skeletons/textbase_export_interface.hpp"
+#include "skeletons/text_editor_scheme.hpp"
 
 namespace nana
 {
 	class textbox;
 
 	struct arg_textbox
+		: public event_arg
 	{
 		textbox& widget;
+
+		arg_textbox(textbox&);
 	};
 
 	namespace widgets
@@ -39,14 +43,16 @@ namespace nana
 				: public general_events
 			{
 				basic_event<arg_textbox> first_change;
+				basic_event<arg_textbox> text_changed;
 			};
 
 			class event_agent
 				: public widgets::skeletons::textbase_event_agent_interface
 			{
 			public:
-				event_agent(::nana::textbox& wdg);
+				event_agent(::nana::textbox&);
 				void first_change() override;
+				void text_changed() override;
 			private:
 				::nana::textbox & widget_;
 			};
@@ -56,12 +62,11 @@ namespace nana
 				: public drawer_trigger
 			{
 			public:
-				typedef widgets::skeletons::text_editor text_editor;
+				using text_editor = widgets::skeletons::text_editor;
 
 				drawer();
 				text_editor * editor();
 				const text_editor * editor() const;
-				void set_accept(std::function<bool(nana::char_t)> &&);
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
@@ -79,15 +84,8 @@ namespace nana
 				void typeface_changed(graph_reference)				override;
 			private:
 				void _m_text_area(unsigned width, unsigned height);
-				void _m_draw_border(graph_reference, nana::color_t bgcolor);
 			private:
 				widget*	widget_;
-				struct status_type
-				{
-					bool has_focus;		//Indicates whether it has the keyboard focus
-				}status_;
-
-				std::function<bool(nana::char_t)> pred_acceptive_;
 				widgets::skeletons::text_editor * editor_;
 				std::unique_ptr<event_agent>	evt_agent_;
 			};
@@ -96,7 +94,7 @@ namespace nana
 
     /// Allow users to enter and edit text by typing on the keyboard.
 	class textbox
-		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events>
+		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
 		/// The default constructor without creating the widget.
@@ -181,11 +179,28 @@ namespace nana
 		double to_double() const;
 		textbox& from(int);
 		textbox& from(double);
+
+		void set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor);
+		void erase_highlight(const std::string& name);
+		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list);
+		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
+		void erase_keyword(const nana::string& kw);
 	protected:
 		//Overrides widget's virtual functions
 		::nana::string _m_caption() const override;
 		void _m_caption(::nana::string&&) override;
 		void _m_typeface(const paint::font&) override;
 	};
+
+	namespace dev
+	{
+		/// Traits for widget classes
+		template<>
+		struct widget_traits<textbox>
+		{
+			using event_type = drawerbase::textbox::textbox_events;
+			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
+		};
+	}
 }//end namespace nana
 #endif

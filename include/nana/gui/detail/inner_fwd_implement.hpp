@@ -124,7 +124,7 @@ namespace nana{
 
 			root_misc(core_window_t * wd, unsigned width, unsigned height)
 				:	window(wd),
-					root_graph(width, height)
+				root_graph({ width, height })
 			{}
 		};//end struct root_misc
 

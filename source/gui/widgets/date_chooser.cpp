@@ -1,6 +1,7 @@
 /*
  *	A date chooser Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,6 +11,7 @@
  */
 
 #include <nana/gui/widgets/date_chooser.hpp>
+#include <nana/gui/element.hpp>
 #include <nana/paint/gadget.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
@@ -26,15 +28,17 @@ namespace nana
 					: widget_(nullptr), chose_(false), page_(page::date), pos_(where::none)
 				{
 					const nana::string ws[] = {STR("S"), STR("M"), STR("T"), STR("W"), STR("T"), STR("F"), STR("S")};
-					const nana::string ms[] = {STR("January"), STR("February"), STR("March"), STR("April"), STR("May"), STR("June"), STR("July"), STR("August"), STR("September"), STR("October"), STR("November"), STR("December")};
-
 					for(int i = 0; i < 7; ++i)	weekstr_[i] = ws[i];
-					for(int i = 0; i < 12; ++i) monthstr_[i] = ms[i];
 
 					nana::date d;
 					chdate_.year = chmonth_.year = d.read().year;
 					chdate_.month = chmonth_.month = d.read().month;
 					chdate_.day = d.read().day;
+
+					color_.selected = { 0x2F, 0x36, 0x99 };
+					color_.highlight = { 0x4D, 0x56, 0xC8 };
+					color_.normal = colors::black;
+					color_.bgcolor = { 0x88, 0xC4, 0xFF };
 				}
 
 				bool trigger::chose() const
@@ -49,43 +53,28 @@ namespace nana
 
 				void trigger::week_name(unsigned index, const nana::string& str)
 				{
-					if(0 <= index && index < 7)
+					if(index < 7)
 						this->weekstr_[index] = str;
 				}
 
-				void trigger::month_name(unsigned index, const nana::string& str)
-				{
-					if(0 <= index && index < 12)
-						this->monthstr_[index] = str;
-				}
-
-				void trigger::_m_init_color()
-				{
-					color_.selected = 0x2F3699;
-					color_.highlight = 0x4D56C8;
-					color_.normal = 0x0;
-					color_.bkcolor = 0x88C4FF;
-				}
-
-				trigger::where trigger::_m_pos_where(graph_reference graph, int x, int y)
+				trigger::where trigger::_m_pos_where(graph_reference graph, const ::nana::point& pos)
 				{
 					int xend = static_cast<int>(graph.width()) - 1;
 					int yend = static_cast<int>(graph.height()) - 1;
-					if(0 < y && y < static_cast<int>(topbar_height))
+					if(0 < pos.y && pos.y < static_cast<int>(topbar_height))
 					{
-						if(static_cast<int>(border_size) < x && x < xend)
+						if(static_cast<int>(border_size) < pos.x && pos.x < xend)
 						{
-							if(x < border_size + 16)
+							if(pos.x < border_size + 16)
 								return where::left_button;
-							else if(xend - border_size - 16 < x)
+							else if(xend - border_size - 16 < pos.x)
 								return where::right_button;
 							return where::topbar;
 						}
 					}
-					else if(topbar_height < y && y < yend)
+					else if(topbar_height < pos.y && pos.y < yend)
 					{
-						trace_pos_.x = x;
-						trace_pos_.y = y;
+						trace_pos_ = pos;
 						return where::textarea;
 					}
 					return where::none;
@@ -93,12 +82,10 @@ namespace nana
 
 				void trigger::_m_draw(graph_reference graph)
 				{
-					_m_init_color();
-
 					const unsigned width = graph.width() - 2;
 
-					graph.rectangle(0xB0B0B0, false);
-					graph.rectangle(1, 1, width, topbar_height, 0xFFFFFF, true);
+					graph.rectangle(false, {0xb0, 0xb0, 0xb0});
+					graph.rectangle({ 1, 1, width, static_cast<unsigned>(topbar_height) }, true, colors::white);
 
 					_m_draw_topbar(graph);
 
@@ -106,8 +93,8 @@ namespace nana
 					{
 						nana::point refpos(1, static_cast<int>(topbar_height) + 1);
 
-						nana::paint::graphics gbuf(width, graph.height() - 2 - topbar_height);
-						gbuf.rectangle(0xF0F0F0, true);
+						nana::paint::graphics gbuf({ width, graph.height() - 2 - topbar_height });
+						gbuf.rectangle(true, {0xf0, 0xf0, 0xf0});
 
 						switch(page_)
 						{
@@ -126,12 +113,17 @@ namespace nana
 
 				void trigger::_m_draw_topbar(graph_reference graph)
 				{
-					int ypos = (topbar_height - 16) / 2 + 1;
+					::nana::color arrow_bgcolor;
+					::nana::rectangle arrow_r{ static_cast<int>(border_size), (topbar_height - 16) / 2 + 1, 16, 16 };
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(::nana::direction::west);
+					arrow.draw(graph, arrow_bgcolor, (pos_ == where::left_button ? color_.highlight : color_.normal), arrow_r, element_state::normal);
 
-					const nana::color_t color = color_.normal;
-
-					nana::paint::gadget::arrow_16_pixels(graph, border_size, ypos, (pos_ == where::left_button ? color_.highlight : color), 1, nana::paint::gadget::directions::to_west);
-					nana::paint::gadget::arrow_16_pixels(graph, graph.width() - (border_size + 16 + 1), ypos, (pos_ == where::right_button ? color_.highlight : color), 1, nana::paint::gadget::directions::to_east);
+					arrow_r.x = static_cast<int>(graph.width()) - static_cast<int>(border_size + 17);
+					arrow.direction(::nana::direction::east);
+					arrow.draw(graph, arrow_bgcolor, (pos_ == where::right_button ? color_.highlight : color_.normal), arrow_r, element_state::normal);
+					
+					const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 
 					if(graph.width() > 32 + border_size * 2)
 					{
@@ -140,19 +132,19 @@ namespace nana
 						nana::string str;
 						if(page_ == page::date)
 						{
-							str += monthstr_[chmonth_.month - 1];
+							str += ::nana::internationalization()(monthstr[chmonth_.month - 1]);
 							str += STR("  ");
 						}
 						str += nana::charset(ss.str());
 
 						nana::size txt_s = graph.text_extent_size(str);
 
-						ypos = (topbar_height - txt_s.height) / 2 + 1;
+						int top = (topbar_height - static_cast<int>(txt_s.height)) / 2 + 1;
 
-						int xpos = (graph.width() - txt_s.width) / 2;
+						int xpos = static_cast<int>(graph.width() - txt_s.width) / 2;
 						if(xpos < border_size + 16) xpos = 16 + border_size + 1;
 
-						graph.string(xpos, ypos, (pos_ == where::topbar ? color_.highlight : color), str);
+						graph.string({ xpos, top }, str, (pos_ == where::topbar ? color_.highlight : color_.normal));
 					}
 				}
 
@@ -181,9 +173,8 @@ namespace nana
 					nana::rectangle r(static_cast<int>(x * dbasis.row_s), static_cast<int>(y * dbasis.line_s),
 						static_cast<int>(dbasis.row_s), static_cast<int>(dbasis.line_s));
 
-					nana::color_t color{ color_.normal };
-
-					nana::point tpos{ trace_pos_ - dbasis.refpos };
+					auto color = color_.normal;
+					auto tpos = trace_pos_ - dbasis.refpos;
 
 					if((pos_ == where::textarea)
 						&& (r.x <= tpos.x)
@@ -194,22 +185,22 @@ namespace nana
 						if((page_ != page::date) || y)
 						{
 							color = color_.highlight;
-							graph.rectangle(r, color_.bkcolor, true);
+							graph.rectangle(r, true, color_.bgcolor);
 						}
 					}
 
 					if(sel)
 					{
 						color = color_.highlight;
-						graph.rectangle(r, color_.bkcolor, true);
-						graph.rectangle(r, color_.selected, false);
+						graph.rectangle(r, true, color_.bgcolor);
+						graph.rectangle(r, false, color_.selected);
 					}
 
-					if(primary == false)
-						color = 0xB0B0B0;
+					if(false == primary)
+						color = { 0xB0, 0xB0, 0xB0 };
 
 					nana::size txt_s = graph.text_extent_size(str);
-					graph.string(r.x + static_cast<int>(r.width - txt_s.width) / 2, r.y + static_cast<int>(r.height - txt_s.height) / 2, color, str);
+					graph.string({ r.x + static_cast<int>(r.width - txt_s.width) / 2, r.y + static_cast<int>(r.height - txt_s.height) / 2 }, str, color);
 				}
 
 				void trigger::_m_draw_pos(drawing_basis & dbasis, graph_reference graph, int x, int y, int number, bool primary, bool sel)
@@ -315,11 +306,13 @@ namespace nana
 					drawing_basis dbasis;
 					_m_make_drawing_basis(dbasis, graph, refpos);
 
+					const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+					::nana::internationalization i18n;
 					for(int y = 0; y < 3; ++y)
 						for(int x = 0; x < 4; ++x)
 						{
 							int index = x + y * 4;
-							_m_draw_pos(dbasis, graph, x, y, monthstr_[index], true, (chmonth_.year == chdate_.year) && (index + 1 == chdate_.month));
+							_m_draw_pos(dbasis, graph, x, y, i18n(monthstr[index]), true, (chmonth_.year == chdate_.year) && (index + 1 == chdate_.month));
 						}
 				}
 
@@ -417,7 +410,7 @@ namespace nana
 							r.x = static_cast<int>(newbuf.width() - r.width) / 2;
 							r.y = static_cast<int>(newbuf.height() - r.height) / 2;
 
-							dzbuf.rectangle(0xFFFFFF, true);
+							dzbuf.rectangle(true, colors::white);
 							dirtybuf.stretch(dzbuf, r);
 
 							r.width = static_cast<int>(newbuf.width() + delta * (count - i));
@@ -451,7 +444,7 @@ namespace nana
 							r.height = static_cast<int>(newbuf.height() - delta_h * (count - i));
 							r.x = static_cast<int>(newbuf.width() - r.width) / 2;
 							r.y = static_cast<int>(newbuf.height() - r.height) / 2;
-							nzbuf.rectangle(0xFFFFFF, true);
+							nzbuf.rectangle(true, colors::white);
 							newbuf.stretch(nzbuf, r);
 
 							nzbuf.blend(nzbuf.size(), dzbuf, nana::point(), fade * (count - i));
@@ -477,7 +470,7 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
-					where pos = _m_pos_where(graph, arg.pos.x, arg.pos.y);
+					where pos = _m_pos_where(graph, arg.pos);
 					if(pos == pos_ && pos_ != where::textarea) return;
 					pos_ = pos;
 					_m_draw(graph);
@@ -495,7 +488,7 @@ namespace nana
 				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
 					bool redraw = true;
-					where pos = _m_pos_where(graph, arg.pos.x, arg.pos.y);
+					where pos = _m_pos_where(graph, arg.pos);
 					transform_action tfid = transform_action::none;
 
 					if(pos == where::topbar)
@@ -604,12 +597,12 @@ namespace nana
 							nana::point refpos(1, static_cast<int>(topbar_height) + 1);
 							nana::rectangle r(0, 0, graph.width() - 2, graph.height() - 2 - topbar_height);
 
-							nana::paint::graphics dirtybuf(r.width, r.height);
+							nana::paint::graphics dirtybuf({ r.width, r.height });
 							dirtybuf.bitblt(r, graph, refpos);
 
 							_m_draw(graph);
 
-							nana::paint::graphics gbuf(r.width, r.height);
+							nana::paint::graphics gbuf({ r.width, r.height });
 							gbuf.bitblt(r, graph, refpos);
 
 							_m_perf_transform(tfid, graph, dirtybuf, gbuf, refpos);
@@ -663,12 +656,6 @@ namespace nana
 		void date_chooser::weekstr(unsigned index, const nana::string& str)
 		{
 			get_drawer_trigger().week_name(index, str);
-			API::refresh_window(*this);
-		}
-
-		void date_chooser::monthstr(unsigned index, const nana::string& str)
-		{
-			get_drawer_trigger().month_name(index, str);
 			API::refresh_window(*this);
 		}
 	//end class date_chooser

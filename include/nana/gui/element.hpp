@@ -30,19 +30,17 @@ namespace nana
 		class element_interface
 		{
 		public:
-			typedef paint::graphics & graph_reference;
+			using graph_reference = paint::graphics&;
 
-			virtual ~element_interface()
-			{}
-
-			virtual bool draw(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle&, element_state) = 0;
+			virtual ~element_interface() = default;
+			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state) = 0;
 		};
 
 		class crook_interface
 		{
 		public:
-			typedef paint::graphics & graph_reference;
-			typedef checkstate	state;
+			using graph_reference = paint::graphics&;
+			using state = checkstate;
 
 			struct data
 			{
@@ -50,10 +48,25 @@ namespace nana
 				bool	radio;
 			};
 				
-			virtual ~crook_interface()
-			{}
+			virtual ~crook_interface() = default;
+			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state, const data&) = 0;
+		};
 
-			virtual bool draw(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle&, element_state, const data&) = 0;
+		class border_interface
+		{
+		public:
+			using graph_reference = paint::graphics&;
+			
+			virtual ~border_interface() = default;
+			virtual bool draw(graph_reference, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle&, element_state, unsigned weight) = 0;
+		};
+
+		class arrow_interface
+		{
+		public:
+			using graph_reference = paint::graphics&;
+			virtual ~arrow_interface() = default;
+			virtual bool draw(graph_reference, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle&, element_state, direction) = 0;
 		};
 
 		class provider
@@ -87,16 +100,48 @@ namespace nana
 
 			void add_crook(const std::string& name, const pat::cloneable<factory_interface<crook_interface>>&);
 			crook_interface* const * keeper_crook(const std::string& name);
+
+			void add_border(const std::string&, const pat::cloneable<factory_interface<border_interface>>&);
+			border_interface* const * keeper_border(const std::string&);
+
+			void add_arrow(const std::string&, const pat::cloneable<factory_interface<arrow_interface>>&);
+			arrow_interface* const * keeper_arrow(const std::string&);
+
+			void add_button(const std::string&, const pat::cloneable<factory_interface<element_interface>>&);
+			element_interface* const* keeper_button(const std::string&);
 		};
 
+		class crook;
 		template<typename UserElement>
 		void add_crook(const std::string& name)
 		{
-			typedef provider::factory<UserElement, crook_interface> factory_t;
+			using factory_t = provider::factory<UserElement, crook_interface>;
 			provider().add_crook(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
 		}
 
-		class crook;
+		class border;
+		template<typename BorderElement>
+		void add_border(const std::string& name)
+		{
+			using factory_t = provider::factory<BorderElement, border_interface>;
+			provider().add_border(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
+		}
+
+		class arrow;
+		template<typename ArrowElement>
+		void add_arrow(const std::string& name)
+		{
+			using factory_t = provider::factory<ArrowElement, arrow_interface>;
+			provider().add_arrow(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
+		}
+
+		class button;
+		template<typename ButtonElement>
+		void add_button(const std::string& name)
+		{
+			using factory_t = provider::factory<ButtonElement, element_interface>;
+			provider().add_button(name, pat::cloneable<typename factory_t::interface_type>(factory_t()));
+		}
 	}//end namespace element
 
 	template<typename Element> class facade;
@@ -106,11 +151,10 @@ namespace nana
 		: public element::element_interface
 	{
 	public:
-		typedef ::nana::paint::graphics & graph_reference;
-		typedef element::crook_interface::state state;
+		using graph_reference = ::nana::paint::graphics &;
+		using state = element::crook_interface::state;
 
-		facade();
-		facade(const char* name);
+		facade(const char* name = nullptr);
 
 		facade & reverse();
 		facade & check(state);
@@ -122,11 +166,65 @@ namespace nana
 		void switch_to(const char*);
 	public:
 		//Implement element_interface
-		bool draw(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle& r, element_state) override;
+		bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state) override;
 	private:
 		element::crook_interface::data data_;
 		element::crook_interface* const * keeper_;
-	};
+	}; //end class facade<element::crook>
+
+	template<>
+	class facade<element::border>
+		: public element::element_interface
+	{
+		using graph_reference = ::nana::paint::graphics &;
+	public:
+		facade(const char* name = nullptr);
+
+		void switch_to(const char*);
+	public:
+		//Implement element_interface
+		bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state) override;
+	private:
+		element::border_interface* const * keeper_;
+	};//end class facade<element::border>
+
+	template<>
+	class facade<element::arrow>
+		: public element::element_interface
+	{
+		using graph_reference = ::nana::paint::graphics &;
+	public:
+		enum class style
+		{
+			solid
+		};
+
+		facade(const char* name = nullptr);
+
+		void switch_to(const char*);
+		void direction(::nana::direction);
+	public:
+		//Implement element_interface
+		bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state) override;
+	private:
+		element::arrow_interface* const * keeper_;
+		::nana::direction dir_{::nana::direction::north};
+	};//end class facade<element::arrow>
+
+	template<>
+	class facade<element::button>
+		: public element::element_interface
+	{
+	public:
+		facade(const char* name = nullptr);
+		void switch_to(const char*);
+	public:
+		//Implement element_interface
+		bool draw(graph_reference, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle&, element_state) override;
+	private:
+		element::element_interface* const * keeper_;
+	};//end class facade<element::button>
+
 
 	namespace element
 	{
@@ -144,7 +242,7 @@ namespace nana
 			void set(const cloneable_element&);
 			void set(const char*);
 
-			bool draw(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle&, element_state);
+			bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state);
 		private:
 			cloneable_element holder_;
 			element_interface * place_ptr_;
@@ -174,7 +272,7 @@ namespace nana
 			void stretch_parts(unsigned left, unsigned top, unsigned right, unsigned bottom);
 
 			//Implement the methods of element_interface.
-			virtual bool draw(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const nana::rectangle&, element_state);
+			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state);
 		private:
 			struct draw_method;
 			struct draw_image;

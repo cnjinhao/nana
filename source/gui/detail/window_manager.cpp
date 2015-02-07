@@ -12,12 +12,13 @@
  */
 
 #include <nana/config.hpp>
-#include GUI_BEDROCK_HPP
+#include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/handle_manager.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/layout_utility.hpp>
+#include <nana/gui/detail/effects_renderer.hpp>
 #include <stdexcept>
 #include <algorithm>
 
@@ -320,7 +321,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(parent) == false)
-				return nullptr;
+				throw std::invalid_argument("invalid parent/owner handle");
 
 			core_window_t * wd;
 			if(is_lite)
@@ -546,8 +547,8 @@ namespace detail
 				{
 					wd->dimension.width = r.width;
 					wd->dimension.height = r.height;
-					wd->drawer.graphics.make(r.width, r.height);
-					wd->root_graph->make(r.width, r.height);
+					wd->drawer.graphics.make(wd->dimension);
+					wd->root_graph->make(wd->dimension);
 					native_interface::move_window(wd->root, r);
 
 					arg_resized arg;
@@ -612,7 +613,7 @@ namespace detail
 			if(category::lite_widget_tag::value != wd->other.category)
 			{
 				bool graph_state = wd->drawer.graphics.empty();
-				wd->drawer.graphics.make(sz.width, sz.height);
+				wd->drawer.graphics.make(sz);
 
 				//It shall make a typeface_changed() call when the graphics state is changing.
 				//Because when a widget is created with zero-size, it may get some wrong result in typeface_changed() call
@@ -622,7 +623,7 @@ namespace detail
 
 				if(category::root_tag::value == wd->other.category)
 				{
-					wd->root_graph->make(sz.width, sz.height);
+					wd->root_graph->make(sz);
 					if(false == passive)
 						native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height));
 				}
@@ -637,7 +638,7 @@ namespace detail
 					//update the bground buffer of glass window.
 					if(wd->effect.bground && wd->parent)
 					{
-						wd->other.glass_buffer.make(sz.width, sz.height);
+						wd->other.glass_buffer.make(sz);
 						wndlayout_type::make_bground(wd);
 					}
 				}
@@ -670,20 +671,20 @@ namespace detail
 		}
 
 		//Copy the root buffer that wnd specified into DeviceContext
-		void window_manager::map(core_window_t* wd)
+		void window_manager::map(core_window_t* wd, bool forced)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			if (impl_->wd_register.available(wd))
+			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
 			{
 				//Copy the root buffer that wd specified into DeviceContext
 #if defined(NANA_LINUX)
-				wd->drawer.map(reinterpret_cast<window>(wd));
+				wd->drawer.map(reinterpret_cast<window>(wd), forced);
 #elif defined(NANA_WINDOWS)
 				if(nana::system::this_thread_id() == wd->thread_id)
-					wd->drawer.map(reinterpret_cast<window>(wd));
+					wd->drawer.map(reinterpret_cast<window>(wd), forced);
 				else
-					bedrock::instance().map_thread_root_buffer(wd);
+					bedrock::instance().map_thread_root_buffer(wd, forced);
 #endif
 			}
 		}
@@ -692,7 +693,7 @@ namespace detail
 		//@brief:	update is used for displaying the screen-off buffer.
 		//			Because of a good efficiency, if it is called in an event procedure and the event procedure window is the
 		//			same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
-		bool window_manager::update(core_window_t* wd, bool redraw, bool force)
+		bool window_manager::update(core_window_t* wd, bool redraw, bool forced)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -700,10 +701,10 @@ namespace detail
 
 			if (wd->visible && wd->visible_parents())
 			{
-				if(force || (false == wd->belong_to_lazy()))
+				if(forced || (false == wd->belong_to_lazy()))
 				{
 					wndlayout_type::paint(wd, redraw, false);
-					this->map(wd);
+					this->map(wd, forced);
 				}
 				else
 				{
@@ -738,14 +739,20 @@ namespace detail
 			if (false == impl_->wd_register.available(wd))
 				return false;
 
-			if(wd->visible)
+			if(wd->visible && (!wd->is_draw_through()))
 			{
 				if (wd->visible_parents())
 				{
 					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
 					{
 						wndlayout_type::paint(wd, false, false);
-						this->map(wd);
+						this->map(wd, force_copy_to_screen);
+					}
+					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
+					{
+						//Update the nimbus effect
+						using nimbus_renderer = detail::edge_nimbus_renderer<core_window_t>;
+						nimbus_renderer::instance().render(wd, force_copy_to_screen);
 					}
 				}
 				else
@@ -767,7 +774,7 @@ namespace detail
 			if (!impl_->wd_register.available(wd))
 				return false;
 
-			result.make(wd->drawer.graphics.width(), wd->drawer.graphics.height());
+			result.make(wd->drawer.graphics.size());
 			result.bitblt(0, 0, wd->drawer.graphics);
 			wndlayout_type::paste_children_to_graphics(wd, result);
 			return true;
@@ -928,7 +935,7 @@ namespace detail
 
 					if (impl_->wd_register.available(wd))
 					{
-						wd->flags.capture = true;
+						wd->flags.captured = true;
 						native_interface::capture_window(wd->root, value);
 						auto prev = attr_.capture.window;
 						if(prev && (prev != wd))
@@ -946,6 +953,7 @@ namespace detail
 			else if(wd == attr_.capture.window)
 			{
 				attr_.capture.window = nullptr;
+				wd->flags.captured = false;
 				if(attr_cap.size())
 				{
 					std::pair<core_window_t*, bool> last = attr_cap.back();
@@ -957,6 +965,7 @@ namespace detail
 						attr_.capture.ignore_children = last.second;
 						native_interface::capture_window(last.first->root, true);
 						native_interface::calc_window_point(last.first->root, pos);
+						last.first->flags.captured = true;
 						attr_.capture.inside = _m_effective(last.first, pos);
 					}
 				}

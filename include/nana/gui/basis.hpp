@@ -1,7 +1,7 @@
 /*
  *	Basis Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -25,6 +25,7 @@ namespace nana
 		struct native_window_handle_impl{};
 		struct window_handle_impl{};
 		struct event_handle_impl{};
+		struct native_drawable_impl{};
 	}
 
 	enum class checkstate
@@ -63,56 +64,39 @@ namespace nana
 		struct frame_tag: widget_tag{ static const flags value = flags::frame; };
 	}// end namespace category
 
-	typedef detail::native_window_handle_impl * native_window_type;
-
-	typedef detail::window_handle_impl*	window; ///< \see [What is window class ](https://sourceforge.net/p/nanapro/discussion/general/thread/bd0fabfb/) 
-	typedef detail::event_handle_impl*	event_handle;
+	using native_window_type = detail::native_window_handle_impl*;
+	using window = detail::window_handle_impl*; ///< \see [What is window class ](https://sourceforge.net/p/nanapro/discussion/general/thread/bd0fabfb/) 
+	using event_handle = detail::event_handle_impl*;
+	using native_drawable_type = detail::native_drawable_impl*;
 
 
 	struct keyboard
 	{
-		enum t{
+		enum{
 			//Control Code for ASCII
-			select_all	= 0x1,
-			end_of_text		= 0x3,	//Ctrl+C
-			backspace	= 0x8,	tab		= 0x9,
-			enter_n		= 0xA,	enter	= 0xD,	enter_r = 0xD,
-			alt			= 0x12,
-			sync_idel		= 0x16,	//Ctrl+V
-			cancel			= 0x18,	//Ctrl+X
-			end_of_medium	= 0x19,	//Ctrl+Y
-			substitute		= 0x1A,	//Ctrl+Z
-			escape		= 0x1B,
+			start_of_headline = 0x1,	//Ctrl+A
+			end_of_text = 0x3,	//Ctrl+C
+			backspace = 0x8, tab = 0x9,
+			enter_n = 0xA, enter = 0xD, enter_r = 0xD,
+			alt = 0x12,
+			sync_idel = 0x16,	//Ctrl+V
+			cancel = 0x18,	//Ctrl+X
+			end_of_medium = 0x19,	//Ctrl+Y
+			substitute = 0x1A,	//Ctrl+Z
+			escape = 0x1B,
 
 			//The following names are intuitive name of ASCII control codes
-			copy	= 0x3,	//end_of_text
-			paste	= 0x16,	//sync_idel
-			cut		= 0x18,	//cancel
-			redo	= 0x19,	//end_of_medium
-			undo	= 0x1A,	//substitue
+			select_all = start_of_headline,
+			copy = end_of_text,
+			paste = sync_idel,
+			cut = cancel,
+			redo = end_of_medium,
+			undo = substitute,
 
 			//System Code for OS
-			os_pageup		= 0x21,	os_pagedown,
-			os_arrow_left	= 0x25, os_arrow_up, os_arrow_right, os_arrow_down,
-			os_insert		= 0x2D, os_del
-		};
-	};
-
-	namespace color
-	{
-		enum
-		{
-			white	= 0xFFFFFF,
-			blue	= 0x0000FF,
-			green	= 0x00FF00,
-			red		= 0xFF0000,
-
-			button_face_shadow_start = 0xF5F4F2,
-			button_face_shadow_end = 0xD5D2CA,
-			button_face = 0xD4D0C8,
-			dark_border	= 0x404040,
-			gray_border	= 0x808080,
-			highlight = 0x1CC4F7
+			os_pageup = 0x21, os_pagedown,
+			os_arrow_left = 0x25, os_arrow_up, os_arrow_right, os_arrow_down,
+			os_insert = 0x2D, os_del
 		};
 	};
 

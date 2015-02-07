@@ -1,7 +1,7 @@
 /*
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -23,6 +23,7 @@ namespace nana
 
 	template<typename ValueType>
 	struct arg_categorize
+		: public event_arg
 	{
 		categorize<ValueType> & widget;
 		ValueType & value;
@@ -164,7 +165,7 @@ namespace nana
 
 		categorize(window wd, const rectangle& r = rectangle(), bool visible = true)
 		{
-			this->get_drawer_trigger().template create_event_agent(*this);
+			this->get_drawer_trigger().create_event_agent(*this);
 			this->create(wd, r, visible);
 		}
 

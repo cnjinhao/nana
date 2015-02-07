@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,7 +13,7 @@
 #ifndef NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #define NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #include <nana/config.hpp>
-#include GUI_BEDROCK_HPP
+#include "detail/bedrock.hpp"
 #include "effects.hpp"
 #include "detail/general_events.hpp"
 #include <nana/paint/image.hpp>
@@ -23,6 +23,17 @@ namespace nana
 {
 	class drawer_trigger;
 	class widget;
+
+	namespace dev
+	{
+		/// Traits for widget classes
+		template<typename Widget>
+		struct widget_traits
+		{
+			using event_type = ::nana::general_events;
+			using scheme_type = ::nana::widget_colors;
+		};
+	}
 
 namespace API
 {
@@ -45,6 +56,16 @@ namespace API
 		}
 
 		bool set_events(window, const std::shared_ptr<general_events>&);
+		
+		template<typename Scheme>
+		std::unique_ptr<Scheme> make_scheme()
+		{
+			return std::unique_ptr<Scheme>(
+				static_cast<Scheme*>(::nana::detail::bedrock::instance().make_scheme(::nana::detail::scheme_factory<Scheme>()).release()));
+		}
+
+		void set_scheme(window, widget_colors*);
+		widget_colors* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
 		nana::string window_caption(window);
@@ -70,8 +91,6 @@ namespace API
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 
-	nana::size	screen_size();
-	rectangle	screen_area_from_point(const point&);
 	nana::point	cursor_position();
 	rectangle make_center(unsigned width, unsigned height);           ///< Retrieves a rectangle which is in the center of the screen.
 	rectangle make_center(window, unsigned width, unsigned height);   ///< Retrieves a rectangle which is in the center of the window
@@ -100,7 +119,8 @@ namespace API
 
 	void window_icon_default(const paint::image&);
 	void window_icon(window, const paint::image&);
-	bool empty_window(window);                            ///< Determines whether a window is existing.
+	bool empty_window(window);		///< Determines whether a window is existing.
+	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
 	void enable_dropfiles(window, bool);
 
     /// \brief Retrieves the native window of a Nana.GUI window.
@@ -127,16 +147,16 @@ namespace API
 	bool	set_parent_window(window, window new_parent);
 
 	template<typename Widget=::nana::widget>
-	typename ::nana::dev::event_mapping<Widget>::type & events(window wd)
+	typename ::nana::dev::widget_traits<Widget>::event_type & events(window wd)
 	{
-		typedef typename ::nana::dev::event_mapping<Widget>::type event_type;
+		using event_type = typename ::nana::dev::widget_traits<Widget>::event_type;
 
 		internal_scope_guard lock;
 		auto * general_evt = detail::get_general_events(wd);
 		if (nullptr == general_evt)
 			throw std::invalid_argument("API::events(): bad parameter window handle, no events object or invalid window handle.");
 
-		if (std::is_same<decltype(*general_evt), event_type>::value)
+		if (std::is_same<::nana::general_events, event_type>::value)
 			return *static_cast<event_type*>(general_evt);
 
 		auto * widget_evt = dynamic_cast<event_type*>(general_evt);
@@ -145,7 +165,7 @@ namespace API
 		return *widget_evt;
 	}
 
-	template<typename EventArg, typename std::enable_if<std::is_base_of< ::nana::detail::event_arg_interface, EventArg>::value>::type* = nullptr>
+	template<typename EventArg, typename std::enable_if<std::is_base_of< ::nana::event_arg, EventArg>::value>::type* = nullptr>
 	bool emit_event(event_code evt_code, window wd, const EventArg& arg)
 	{
 		auto & brock = ::nana::detail::bedrock::instance();
@@ -154,12 +174,34 @@ namespace API
 
 	void umake_event(event_handle);
 
+	template<typename Widget = ::nana::widget>
+	typename ::nana::dev::widget_traits<Widget>::scheme_type & scheme(window wd)
+	{
+		using scheme_type = typename ::nana::dev::widget_traits<Widget>::scheme_type;
+
+		internal_scope_guard lock;
+		auto * wdg_colors = dev::get_scheme(wd);
+		if (nullptr == wdg_colors)
+			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
+
+		if (std::is_same<::nana::widget_colors, scheme_type>::value)
+			return *static_cast<scheme_type*>(wdg_colors);
+
+		auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
+		if (nullptr == comp_wdg_colors)
+			throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
+		return *comp_wdg_colors;
+	}
+
 	nana::point window_position(window);
 	void move_window(window, int x, int y);
 	void move_window(window wd, const rectangle&);
 
-	void bring_to_top(window);
+	void bring_top(window, bool activated);
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after);
+
+	void draw_through(window, std::function<void()>);
+	void map_through_widgets(window, native_drawable_type);
 
 	nana::size window_size(window);
 	void window_size(window, const size&);
@@ -185,6 +227,7 @@ namespace API
 	void refresh_window_tree(window);      ///< Refreshs the specified window and all it’s children windows, then display it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
+	void window_caption(window, const std::string& title_utf8);
 	void window_caption(window, const nana::string& title);
 	nana::string window_caption(window);
 
@@ -201,17 +244,18 @@ namespace API
 	void	capture_ignore_children(bool ignore); ///< Enables or disables the captured window whether redirects the mouse input to its children if the mouse is over its children.
 	void modal_window(window);                    ///< Blocks the routine til the specified window is closed.
 	void wait_for(window);
-	color_t foreground(window);
-	color_t foreground(window, color_t);
-	color_t background(window);
-	color_t background(window, color_t);
-	color_t	active(window);
-	color_t	active(window, color_t);
+
+	color fgcolor(window);
+	color fgcolor(window, const color&);
+	color bgcolor(window);
+	color bgcolor(window, const color&);
+	color activated_color(window);
+	color activated_color(window, const color&);
 
 	void create_caret(window, unsigned width, unsigned height);
 	void destroy_caret(window);
 	void caret_effective_range(window, const rectangle&);
-	void caret_pos(window, int x, int y);
+	void caret_pos(window, const ::nana::point&);
 	nana::point caret_pos(window);
 	nana::size caret_size(window);
 	void caret_size(window, const size&);

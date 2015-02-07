@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,7 +15,13 @@
 #include <stdexcept>
 #include <sstream>
 
-namespace nana{	namespace drawerbase {
+namespace nana
+{
+	arg_textbox::arg_textbox(textbox& wdg)
+		: widget(wdg)
+	{}
+
+namespace drawerbase {
 	namespace textbox
 	{
 		//class event_agent
@@ -27,13 +33,17 @@ namespace nana{	namespace drawerbase {
 			{
 				widget_.events().first_change.emit(::nana::arg_textbox{ widget_ });
 			}
-		//
+
+			void event_agent::text_changed()
+			{
+				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_ });
+			}
+		//end class event_agent
 
 	//class draweer
 		drawer::drawer()
 			: widget_(nullptr), editor_(nullptr)
 		{
-			status_.has_focus = false;
 		}
 
 		drawer::text_editor* drawer::editor()
@@ -46,22 +56,16 @@ namespace nana{	namespace drawerbase {
 			return editor_;
 		}
 
-		void drawer::set_accept(std::function<bool(nana::char_t)> && fn)
-		{
-			pred_acceptive_ = std::move(fn);
-		}
-
 		void drawer::attached(widget_reference wdg, graph_reference graph)
 		{
 			auto wd = wdg.handle();
 			widget_ = &wdg;
 			evt_agent_.reset(new event_agent(static_cast< ::nana::textbox&>(wdg)));
 
-			editor_ = new text_editor(wd, graph);
+			auto scheme = API::dev::get_scheme(wdg);
+
+			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
 			editor_->textbase().set_event_agent(evt_agent_.get());
-			editor_->border_renderer([this](graph_reference graph, nana::color_t color){
-				this->_m_draw_border(graph, color);
-			});
 
 			_m_text_area(graph.width(), graph.height());
 
@@ -79,15 +83,14 @@ namespace nana{	namespace drawerbase {
 
 		void drawer::refresh(graph_reference graph)
 		{
-			editor_->render(status_.has_focus);
+			editor_->render(API::is_focus_window(*widget_));
 		}
 
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
-			status_.has_focus = arg.getting;
 			refresh(graph);
 
-			editor_->show_caret(status_.has_focus);
+			editor_->show_caret(arg.getting);
 			editor_->reset_caret();
 			API::lazy_refresh();
 		}
@@ -142,8 +145,7 @@ namespace nana{	namespace drawerbase {
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			bool enterable = widget_->enabled() && (!pred_acceptive_ || pred_acceptive_(arg.key));
-			if (editor_->respone_keyboard(arg.key, enterable))
+			if (editor_->respone_keyboard(arg.key))
 				API::lazy_refresh();
 		}
 
@@ -151,6 +153,7 @@ namespace nana{	namespace drawerbase {
 		{
 			_m_text_area(arg.width, arg.height);
 			refresh(graph);
+			editor_->reset_caret();
 			API::lazy_refresh();
 		}
 
@@ -174,16 +177,6 @@ namespace nana{	namespace drawerbase {
 					r.height = (height > 4 ? height - 4 : 0);
 				}
 				editor_->text_area(r);
-			}
-		}
-
-		void drawer::_m_draw_border(graph_reference graph, nana::color_t bgcolor)
-		{
-			if (!API::widget_borderless(widget_->handle()))
-			{
-				nana::rectangle r(graph.size());
-				graph.rectangle(r, (status_.has_focus ? 0x0595E2 : 0x999A9E), false);
-				graph.rectangle(r.pare_off(1), bgcolor, false);
 			}
 		}
 	//end class drawer
@@ -361,7 +354,9 @@ namespace nana{	namespace drawerbase {
 		void textbox::set_accept(std::function<bool(nana::char_t)> fn)
 		{
 			internal_scope_guard lock;
-			get_drawer_trigger().set_accept(std::move(fn));
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+				editor->set_accept(std::move(fn));
 		}
 
 		textbox& textbox::tip_string(nana::string str)
@@ -481,6 +476,47 @@ namespace nana{	namespace drawerbase {
 			ss << d;
 			_m_caption(ss.str());
 			return *this;
+		}
+
+		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->set_highlight(name, fgcolor, bgcolor);
+		}
+
+		void textbox::erase_highlight(const std::string& name)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->erase_highlight(name);
+		}
+
+		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				for (auto & kw : kw_list)
+					editor->set_keyword(kw, name, case_sensitive, whole_word_match);
+			}
+		}
+
+		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				for (auto & kw : kw_list_utf8)
+					editor->set_keyword(::nana::charset(kw, ::nana::unicode::utf8), name, case_sensitive, whole_word_match);
+			}
+		}
+
+		void textbox::erase_keyword(const nana::string& kw)
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->erase_keyword(kw);
 		}
 
 		//Override _m_caption for caption()

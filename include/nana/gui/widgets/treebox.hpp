@@ -1,7 +1,7 @@
 /*
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -74,11 +74,13 @@ namespace nana
 				virtual ~renderer_interface()
 				{}
 
-				virtual void bground(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void expander(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void crook(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void icon(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
-				virtual void text(graph_reference, nana::color_t bgcolor, nana::color_t fgcolor, const compset_interface *) const = 0;
+				virtual void set_color(const nana::color& bgcolor, const nana::color& fgcolor) = 0;
+
+				virtual void bground(graph_reference, const compset_interface *) const = 0;
+				virtual void expander(graph_reference, const compset_interface *) const = 0;
+				virtual void crook(graph_reference, const compset_interface *) const = 0;
+				virtual void icon(graph_reference, const compset_interface *) const = 0;
+				virtual void text(graph_reference, const compset_interface *) const = 0;
 			};
 
 			class item_proxy;
@@ -331,10 +333,13 @@ namespace nana
 	}//end namespace drawerbase
 
 	struct arg_treebox
+		: public event_arg
 	{
 		treebox& widget;
 		drawerbase::treebox::item_proxy & item;
 		bool	operated;
+
+		arg_treebox(treebox&, drawerbase::treebox::item_proxy&, bool operated);
 	};
 
 	namespace drawerbase
@@ -410,8 +415,6 @@ namespace nana
 
 		/// Determinte whether the checkbox is enabled.
 		bool checkable() const;
-
-		treebox& icon(const nana::string& id, const node_image_type& node_img);
 
 		node_image_type& icon(const nana::string& id) const;
 
