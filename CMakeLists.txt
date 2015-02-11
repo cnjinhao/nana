@@ -4,6 +4,10 @@
 project(nana)
 cmake_minimum_required(VERSION 2.8)
 
+#find dependencies
+if(UNIX)
+	find_package(Freetype)
+endif()
 
 option(NANA_ENABLE_PNG "Enable the use of PNG" ON)
 if(NANA_ENABLE_PNG)
