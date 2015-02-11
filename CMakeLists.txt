@@ -1,5 +1,7 @@
 # CMake configuration for Nana
-# Author: ierofant(https://github.com/ierofant)
+# Author: Andrew Kornilov(https://github.com/ierofant)
+# Contributor:
+#	Robert Hauck - Enable support for PNG/Freetype
 
 project(nana)
 cmake_minimum_required(VERSION 2.8)
