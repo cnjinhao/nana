@@ -4,8 +4,34 @@
 project(nana)
 cmake_minimum_required(VERSION 2.8)
 
-string(REGEX REPLACE "/[^/]*$" "" CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR})
-string(REGEX REPLACE "/[^/]*$" "" CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+#find dependencies
+if(UNIX)
+	find_package(Freetype)
+	if (FREETYPE_FOUND)
+		include_directories( ${FREETYPE_INCLUDE_DIRS})
+	endif()
+endif()
+
+option(NANA_ENABLE_PNG "Enable the use of PNG" ON)
+if(NANA_ENABLE_PNG)
+	add_definitions(-DNANA_ENABLE_PNG)
+
+	option(NANA_LIBPNG "Use the included libpng" ON)
+	if(NANA_LIBPNG)
+		add_definitions(-DNANA_LIBPNG)
+	else()
+		find_package(PNG)
+		if (PNG_FOUND)
+			include_directories( ${PNG_INCLUDE_DIRS})
+		endif()
+	endif()
+endif()
+
+
+
+#copy our new config.hpp (with removed PNG defines)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/build/cmake/config.hpp ${CMAKE_SOURCE_DIR}/include/nana/)
+
 
 set(NANA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
 set(NANA_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
