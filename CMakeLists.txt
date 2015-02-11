@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 2.8)
 #find dependencies
 if(UNIX)
 	find_package(Freetype)
+	if (FREETYPE_FOUND)
+		include_directories( ${FREETYPE_INCLUDE_DIRS})
+	endif()
 endif()
 
 option(NANA_ENABLE_PNG "Enable the use of PNG" ON)
