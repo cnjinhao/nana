@@ -1,6 +1,7 @@
 /*
  *	An Animation Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -48,11 +49,7 @@ namespace nana
 		std::size_t length;
 		std::function<bool(std::size_t, paint::graphics&, nana::size&)> frbuilder;
 
-		framebuilder(const std::function<bool(std::size_t, paint::graphics&, nana::size&)>& f, std::size_t l)
-			: length(l), frbuilder(f)
-		{}
-
-		framebuilder(std::size_t l, std::function<bool(std::size_t, paint::graphics&, nana::size)>&& f)
+		framebuilder(std::function<bool(std::size_t, paint::graphics&, nana::size&)> f, std::size_t l)
 			: length(l), frbuilder(std::move(f))
 		{}
 	};
@@ -65,28 +62,16 @@ namespace nana
 			framebuilder
 		};
 
-		frame(const paint::image& r)
+		frame(paint::image img)
 			: type(kind::oneshot)
 		{
-			u.oneshot = new paint::image(r);
+			u.oneshot = new paint::image(std::move(img));
 		}
 
-		frame(paint::image&& r)
-			: type(kind::oneshot)
-		{
-			u.oneshot = new paint::image(std::move(r));
-		}
-
-		frame(const std::function<bool(std::size_t, paint::graphics&, nana::size&)>& frbuilder, std::size_t length)
+		frame(std::function<bool(std::size_t, paint::graphics&, nana::size&)> frbuilder, std::size_t length)
 			: type(kind::framebuilder)
 		{
-			u.frbuilder = new framebuilder(frbuilder, length);
-		}
-
-		frame(std::function<bool(std::size_t, paint::graphics&, nana::size&)>&& frbuilder, std::size_t length)
-			: type(kind::framebuilder)
-		{
-			u.frbuilder = new framebuilder(frbuilder, length);
+			u.frbuilder = new framebuilder(std::move(frbuilder), length);
 		}
 
 		frame(const frame& r)
@@ -323,29 +308,15 @@ namespace nana
 			: impl_(new impl)
 		{}
 
-		void frameset::push_back(const paint::image& m)
+		void frameset::push_back(paint::image img)
 		{
 			bool located = impl_->this_frame != impl_->frames.end();
-			impl_->frames.emplace_back(m);
+			impl_->frames.emplace_back(std::move(img));
 			if(false == located)
 				impl_->this_frame = impl_->frames.begin();
 		}
 
-		void frameset::push_back(paint::image&& m)
-		{
-			impl_->frames.emplace_back(std::move(m));
-			if(1 == impl_->frames.size())
-				impl_->this_frame = impl_->frames.begin();
-		}
-
-		void frameset::push_back(framebuilder&fb, std::size_t length)
-		{
-			impl_->frames.emplace_back(fb, length);
-			if(1 == impl_->frames.size())
-				impl_->this_frame = impl_->frames.begin();
-		}
-
-		void frameset::push_back(framebuilder&& fb, std::size_t length)
+		void frameset::push_back(framebuilder fb, std::size_t length)
 		{
 			impl_->frames.emplace_back(std::move(fb), length);
 			if(1 == impl_->frames.size())
@@ -365,10 +336,14 @@ namespace nana
 
 				std::size_t active;				//The number of active animations
 				std::shared_ptr<std::thread> thread;
+
+				std::size_t fps;
+				double interval;	//milliseconds between 2 frames.
 				double performance_parameter;
 			};
 
-			thread_variable * insert(impl* p);
+			void insert(impl* p);
+			void set_fps(impl*, std::size_t new_fps);
 			void close(impl* p);
 			bool empty() const;
 		private:
@@ -380,8 +355,9 @@ namespace nana
 
 		struct animation::impl
 		{
-			bool	looped;
-			volatile bool	paused;
+			bool	looped{false};
+			volatile bool	paused{true};
+			std::size_t fps;
 
 			std::list<frameset> framesets;
 			std::map<std::string, branch_t> branches;
@@ -399,17 +375,21 @@ namespace nana
 			static performance_manager * perf_manager;
 
 
-			impl()
-				: looped(false), paused(true)
+			impl(std::size_t fps)
+				: fps(fps)
 			{
 				state.this_frameset = framesets.begin();
 
+				if (!perf_manager)
 				{
 					nana::internal_scope_guard lock;
-					if(nullptr == perf_manager)
-						perf_manager = new performance_manager;
+					if (!perf_manager)
+					{
+						auto pm = new performance_manager;
+						perf_manager = pm;
+					}
 				}
-				thr_variable = perf_manager->insert(this);
+				perf_manager->insert(this);
 			}
 
 			~impl()
@@ -457,46 +437,78 @@ namespace nana
 		};//end struct animation::impl
 
 		//class animation::performance_manager
-			auto animation::performance_manager::insert(impl* p) -> thread_variable *
+			void animation::performance_manager::insert(impl* p)
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 				for(auto thr : threads_)
 				{
 					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 
-					if(thr->performance_parameter / (thr->animations.size() + 1) <= 43.3)
+					if ((thr->fps == p->fps) && (thr->performance_parameter / (thr->animations.size() + 1) <= 43.3))
 					{
+						p->thr_variable = thr;
 						thr->animations.push_back(p);
-						return thr;
+						return;
 					}
 				}
 
 				auto thr = new thread_variable;
 				thr->animations.push_back(p);
 				thr->performance_parameter = 0.0;
+				thr->fps = p->fps;
+				thr->interval = 1000.0 / double(p->fps);
 				thr->thread = std::make_shared<std::thread>([this, thr]()
 				{
 					_m_perf_thread(thr);
 				});
 
 				threads_.push_back(thr);
-				return thr;
+				p->thr_variable = thr;
+			}
+
+			void animation::performance_manager::set_fps(impl* p, std::size_t new_fps)
+			{
+				if (p->fps == new_fps)
+					return;
+
+				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				auto i = std::find(threads_.begin(), threads_.end(), p->thr_variable);
+				if (i == threads_.end())
+					return;
+
+				p->fps = new_fps;
+				auto thr = *i;
+
+				//Simply modify the fps parameter if the thread just has one animation.
+				if (thr->animations.size() == 1)
+				{
+					thr->fps = new_fps;
+					thr->interval = 1000.0 / double(new_fps);
+					return;
+				}
+
+				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
+				auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
+				if (u != thr->animations.end())
+					thr->animations.erase(u);
+
+				p->thr_variable = nullptr;
+				insert(p);
 			}
 
 			void animation::performance_manager::close(impl* p)
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				for(auto thr : threads_)
-				{
-					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
+				auto i = std::find(threads_.begin(), threads_.end(), p->thr_variable);
+				if (i == threads_.end())
+					return;
 
-					auto i = std::find(thr->animations.begin(), thr->animations.end(), p);
-					if(i != thr->animations.end())
-					{
-						thr->animations.erase(i);
-						return;
-					}
-				}
+				auto thr = *i;
+				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
+
+				auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
+				if(u != thr->animations.end())
+					thr->animations.erase(u);
 			}
 
 			bool animation::performance_manager::empty() const
@@ -542,8 +554,8 @@ namespace nana
 					if(thrvar->active)
 					{
 						thrvar->performance_parameter = tmpiece.calc();
-						if(thrvar->performance_parameter < 43.4)
-							nana::system::sleep(static_cast<unsigned>(43.4 - thrvar->performance_parameter));
+						if(thrvar->performance_parameter < thrvar->interval)
+							nana::system::sleep(static_cast<unsigned>(thrvar->interval - thrvar->performance_parameter));
 					}
 					else
 					{
@@ -557,15 +569,15 @@ namespace nana
 			}
 		//end class animation::performance_manager
 
-		animation::animation()
-			: impl_(new impl)
+		animation::animation(std::size_t fps)
+			: impl_(new impl(fps))
 		{
 
 		}
 
-		void animation::push_back(const frameset& frms)
+		void animation::push_back(frameset frms)
 		{
-			impl_->framesets.emplace_back(frms);
+			impl_->framesets.emplace_back(std::move(frms));
 			if(1 == impl_->framesets.size())
 				impl_->state.this_frameset = impl_->framesets.begin();
 		}
@@ -633,6 +645,19 @@ namespace nana
 				});
 			}
 			output.points.push_back(pos);
+		}
+
+		void animation::fps(std::size_t n)
+		{
+			if (n == impl_->fps)
+				return;
+
+			impl::perf_manager->set_fps(impl_, n);
+		}
+
+		std::size_t animation::fps() const
+		{
+			return impl_->fps;
 		}
 	//end class animation
 

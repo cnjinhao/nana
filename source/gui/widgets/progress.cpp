@@ -108,7 +108,7 @@ namespace nana
 			{
 				rectangle r = graph.size();
 				graph.gradual_rectangle(r, colors::button_face_shadow_end, colors::button_face_shadow_start, true);
-				::nana::color lt{ 0x80, 0x80, 0x80 }, rb{colors::white};
+				::nana::color lt{ colors::gray }, rb{colors::white};
 				graph.frame_rectangle(r, lt, lt, rb, rb);
 			}
 
