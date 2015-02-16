@@ -133,6 +133,105 @@ namespace nana
 #endif
 	}
 
+	std::wstring to_wstring(double v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif	
+	}
+
+	std::wstring to_wstring(long double v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif		
+	}
+
+	std::wstring to_wstring(unsigned v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif	
+	}
+
+	std::wstring to_wstring(int v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif	
+	}
+
+	std::wstring to_wstring(long v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif		
+	}
+
+	std::wstring to_wstring(unsigned long v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif	
+	}
+
+	std::wstring to_wstring(long long v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif		
+	}
+
+	std::wstring to_wstring(unsigned long long v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif	
+	}
+
+	std::wstring to_wstring(float v)
+	{
+#ifdef NANA_MINGW
+		std::wstringstream ss;
+		ss << v;
+		return ss.str();
+#else
+		return std::to_wstring(v);
+#endif		
+	}
+
 	bool is_incomplete(const nana::string& str, unsigned pos)
 	{
 #ifndef NANA_UNICODE

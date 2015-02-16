@@ -50,6 +50,18 @@ namespace nana
 	//Workaround for no implemenation of std::stod in MinGW.
 	double stod(const std::string&, std::size_t * pos = nullptr);
 	double stod(const std::wstring&, std::size_t* pos = nullptr);
+
+	//Workaround for no implemenation of std::to_wstring in MinGW.
+	std::wstring to_wstring(long double);
+	std::wstring to_wstring(double);
+	std::wstring to_wstring(unsigned);
+	std::wstring to_wstring(int);
+	std::wstring to_wstring(long);
+	std::wstring to_wstring(unsigned long);
+	std::wstring to_wstring(long long);
+	std::wstring to_wstring(unsigned long long);
+	std::wstring to_wstring(float);
+
 }
 
 #if defined(NANA_WINDOWS)

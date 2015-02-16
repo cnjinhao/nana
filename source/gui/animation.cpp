@@ -36,12 +36,8 @@ namespace nana
 
 	struct output_t
 	{
-		drawing::diehard_t diehard;
+		drawing::diehard_t diehard{ nullptr };
 		std::vector<nana::point> points;
-
-		output_t()
-			: diehard(nullptr)
-		{}
 	};
 
 	struct framebuilder
@@ -443,12 +439,14 @@ namespace nana
 				for(auto thr : threads_)
 				{
 					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
-
-					if ((thr->fps == p->fps) && (thr->performance_parameter / (thr->animations.size() + 1) <= 43.3))
+					if (thr->fps == p->fps)
 					{
-						p->thr_variable = thr;
-						thr->animations.push_back(p);
-						return;
+						if (thr->animations.empty() || (thr->performance_parameter * (1.0 + 1.0 / thr->animations.size()) <= 43.3))
+						{
+							p->thr_variable = thr;
+							thr->animations.push_back(p);
+							return;
+						}
 					}
 				}
 

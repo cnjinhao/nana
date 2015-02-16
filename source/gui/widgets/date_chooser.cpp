@@ -127,15 +127,13 @@ namespace nana
 
 					if(graph.width() > 32 + border_size * 2)
 					{
-						std::stringstream ss;
-						ss<<chmonth_.year;
 						nana::string str;
 						if(page_ == page::date)
 						{
-							str += ::nana::internationalization()(monthstr[chmonth_.month - 1]);
+							str = ::nana::internationalization()(monthstr[chmonth_.month - 1]);
 							str += STR("  ");
 						}
-						str += nana::charset(ss.str());
+						str += ::nana::to_wstring(chmonth_.year);
 
 						nana::size txt_s = graph.text_extent_size(str);
 
@@ -205,10 +203,7 @@ namespace nana
 
 				void trigger::_m_draw_pos(drawing_basis & dbasis, graph_reference graph, int x, int y, int number, bool primary, bool sel)
 				{
-				    //The C++ library comes with MinGW does not provide std::to_wstring() conversion
-				    std::wstringstream ss;
-				    ss<<number;
-					_m_draw_pos(dbasis, graph, x, y, nana::charset(ss.str()), primary, sel);
+					_m_draw_pos(dbasis, graph, x, y, ::nana::to_wstring(number), primary, sel);
 				}
 
 				void trigger::_m_draw_ex_days(drawing_basis & dbasis, graph_reference graph, int begx, int begy, bool before)

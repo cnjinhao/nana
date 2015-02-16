@@ -456,25 +456,13 @@ namespace drawerbase {
 
 		textbox& textbox::from(int n)
 		{
-#ifdef NANA_UNICODE
-			std::wstringstream ss;
-#else
-			std::stringstream ss;
-#endif
-			ss << n;
-			_m_caption(ss.str());
+			_m_caption(::nana::to_wstring(n));
 			return *this;
 		}
 
 		textbox& textbox::from(double d)
 		{
-#ifdef NANA_UNICODE
-			std::wstringstream ss;
-#else
-			std::stringstream ss;
-#endif
-			ss << d;
-			_m_caption(ss.str());
+			_m_caption(::nana::to_wstring(d));
 			return *this;
 		}
 

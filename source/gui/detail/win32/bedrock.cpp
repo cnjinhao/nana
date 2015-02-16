@@ -1008,8 +1008,6 @@ namespace detail
 						arg.evt_code = event_code::mouse_up;
 						emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
-						//auto evt_ptr = msgwnd->together.events_ptr;	//deprecated
-
 						if (fire_click)
 						{
 							arg.evt_code = event_code::click;

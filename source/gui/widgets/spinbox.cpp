@@ -73,9 +73,7 @@ namespace nana
 
 				std::wstring value() const override
 				{
-					std::wstringstream ss;
-					ss << value_;
-					return ss.str();
+					return ::nana::to_wstring(value_);
 				}
 
 				bool value(const std::wstring& value_str, bool & diff) override

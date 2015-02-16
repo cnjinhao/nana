@@ -611,20 +611,13 @@ namespace nana
 
 		//get the longest value
 		int longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
-		std::wstringstream ss;
-		ss << longest;
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
-		auto value_px = graph.text_extent_size(ss.str()).width + 34;
+		auto value_px = graph.text_extent_size(::nana::to_wstring(longest)).width + 34;
 
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
-		//impl->spinbox.set_accept_integer(); //deprecated
 
-		//Workaround for no implementation of std::to_wstring by MinGW.
-		ss.str(L"");
-		ss.clear();
-		ss << impl->value;
-		impl->spinbox.value(ss.str());
+		impl->spinbox.value(::nana::to_wstring(impl->value));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
@@ -698,20 +691,13 @@ namespace nana
 
 		//get the longest value
 		auto longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
-		std::wstringstream ss;
-		ss << longest;
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
-		auto value_px = graph.text_extent_size(ss.str()).width + 34;
+		auto value_px = graph.text_extent_size(::nana::to_wstring(longest)).width + 34;
 
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
-		//impl->spinbox.set_accept_real();	//deprecated
 
-		//Workaround for no implementation of std::to_wstring by MinGW.
-		ss.str(L"");
-		ss.clear();
-		ss << impl->value;
-		impl->spinbox.value(ss.str());
+		impl->spinbox.value(::nana::to_wstring(impl->value));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
@@ -859,9 +845,7 @@ namespace nana
 
 	::nana::string inputbox::date::value() const
 	{
-		std::wstringstream ss;
-		ss << impl_->month << L'-' << impl_->day << L", " << impl_->year;
-		return ss.str();
+		return nana::to_wstring(impl_->month) + L'-' + nana::to_wstring(impl_->day) + L", " + nana::to_wstring(impl_->year);
 	}
 
 	int inputbox::date::year() const
@@ -907,22 +891,15 @@ namespace nana
 		left += 104;
 		impl->wdg_day.create(impl->dock, rectangle{ left, 0, 38, 0 });
 		impl->wdg_day.range(1, ::nana::date::month_days(today.year, today.month), 1);
-		//impl->wdg_day.set_accept_integer();	//deprecated
 
 		left += 48;
 		impl->wdg_year.create(impl->dock, rectangle{left, 0, 50, 0});
 		impl->wdg_year.range(1601, 9999, 1);
-		//impl->wdg_year.set_accept_integer();	//deprecated
 
 		impl->wdg_month.option(today.month - 1);
 
-		std::wstringstream ss;
-		ss << today.day;
-		impl->wdg_day.value(ss.str());
-		ss.str(L"");
-		ss.clear();
-		ss << today.year;
-		impl->wdg_year.value(ss.str());
+		impl->wdg_day.value(::nana::to_wstring(today.day));
+		impl->wdg_year.value(::nana::to_wstring(today.year));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
 		{
@@ -962,10 +939,8 @@ namespace nana
 			
 			if (day > days)
 				day = days;
-			
-			std::wstringstream ss;
-			ss << day;
-			impl->wdg_day.value(ss.str());
+
+			impl->wdg_day.value(::nana::to_wstring(day));
 		};
 
 		impl->wdg_year.events().text_changed.connect_unignorable(make_days);
