@@ -723,7 +723,9 @@ namespace nana
 	//class text
 	struct inputbox::text::implement
 	{
-		::nana::string value;
+		::nana::string	value;
+		::nana::string	tip;
+		wchar_t			mask_character{0};
 		std::vector< ::nana::string> options;
 
 		::nana::string label_text;
@@ -748,6 +750,21 @@ namespace nana
 
 	//Instance for impl_ because implmenet is incomplete type at the point of declaration
 	inputbox::text::~text(){}
+
+	void inputbox::text::tip_string(std::wstring tip)
+	{
+		impl_->tip = std::move(tip);
+	}
+
+	void inputbox::text::tip_string(std::string tip_utf8)
+	{
+		impl_->tip = ::nana::charset(tip_utf8, ::nana::unicode::utf8);
+	}
+
+	void inputbox::text::mask_character(wchar_t ch)
+	{
+		impl_->mask_character = ch;
+	}
 
 	::nana::string inputbox::text::value() const
 	{
@@ -774,6 +791,8 @@ namespace nana
 		if (impl->options.empty())
 		{
 			impl->textbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, 0, 0 });
+			impl->textbox.tip_string(impl->tip);
+			impl->textbox.mask(impl->mask_character);
 		}
 		else
 		{
@@ -969,7 +988,6 @@ namespace nana
 
 	void inputbox::_m_fetch_args(std::vector<abstract_content*>&)
 	{}
-
 
 	bool inputbox::_m_open(std::vector<abstract_content*>& contents, bool modal)
 	{

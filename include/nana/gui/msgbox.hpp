@@ -149,6 +149,11 @@ namespace nana
 
 			~text();
 
+			void tip_string(std::wstring tip);
+			void tip_string(std::string tip_utf8);
+
+			void mask_character(wchar_t ch);
+
 			::nana::string value() const;
 		private:
 			//Implementation of abstract_content
