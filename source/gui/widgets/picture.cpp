@@ -1,6 +1,7 @@
 /*
  *	A Picture Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -13,244 +14,83 @@
 
 #include <nana/gui/widgets/picture.hpp>
 #include <nana/paint/image.hpp>
+#include <nana/gui/element.hpp>
 
 namespace nana
 {
-	namespace xpicture
+	namespace drawerbase
 	{
-
-		//class picture_drawer
-			picture_drawer::picture_drawer():graph_(nullptr)
+		namespace picture
+		{
+			struct implement
 			{
-				bground_.horizontal = true;
-				backimg_.arg = nana::arrange::unknown;
-				backimg_.beg = backimg_.end = 0;
-			}
+				widget* wdg_ptr{nullptr};
+				paint::graphics* graph_ptr{nullptr};
 
-			void picture_drawer::attached(widget_reference& widget, graph_reference graph)
-			{
-				widget_ = &widget;
-				graph_ = &graph;
-			}
 
-			void picture_drawer::load(const nana::char_t* file)
-			{
-				backimg_.image.open(file);
-			}
-
-			void picture_drawer::load(const nana::paint::image& img)
-			{
-				backimg_.image = img;
-			}
-
-			void picture_drawer::set_shadow_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
-			{
-				bground_.gradual_from = from;
-				bground_.gradual_to = to;
-				bground_.horizontal = horizontal;
-
-				_m_draw_background();
-			}
-
-			bool picture_drawer::bgstyle(bool is_stretch, nana::arrange arg, int beg, int end)
-			{
-				if(backimg_.image)
+				struct gradual_bground_tag
 				{
-					backimg_.is_stretch = is_stretch;
-					backimg_.arg = arg;
+					::nana::color gradual_from;
+					::nana::color gradual_to;
+					bool	horizontal{true};
+				}gradual_bground;
 
-					if(arg == nana::arrange::horizontal_vertical) return false;
+				struct back_image_tag
+				{
+					paint::image	image;
+					std::unique_ptr<element::bground> bground;
+				}backimg;
+			};
 
-					if(beg < 0) beg = 0;
-					if(end < beg) end = beg;
-					if((backimg_.beg == beg) && (backimg_.end == end)) return false;
-
-					nana::size imgsize = backimg_.image.size();
-					unsigned scale = (arg == nana::arrange::horizontal ? imgsize.width : imgsize.height);
-
-					if(beg < 0)
-						beg = 0;
-					else if(static_cast<unsigned>(beg) >= scale)
-						beg = static_cast<int>(scale) - 1;
-
-					if(end < beg)
-						end = beg;
-					else if(static_cast<unsigned>(end) >= scale)
-						end = static_cast<int>(scale) - 1;
-					
-					backimg_.beg = beg;
-					backimg_.end = end;
-					return true;
-				}
-				
-				backimg_.arg = nana::arrange::unknown;
-				return false;
+			//class drawer
+			drawer::drawer() :impl_(new implement)
+			{
 			}
 
-			void picture_drawer::refresh(graph_reference graph)
+			drawer::~drawer()
 			{
-				if(graph.changed())
+				delete impl_;
+			}
+
+			void drawer::attached(widget_reference& wdg, graph_reference graph)
+			{
+				impl_->wdg_ptr = &wdg;
+				impl_->graph_ptr = &graph;
+			}
+
+			void drawer::refresh(graph_reference graph)
+			{
+				if (!graph.changed())
+					return;
+
+				if (!impl_->backimg.bground)
 				{
 					_m_draw_background();
-					if(backimg_.image.empty() == false)
-					{
-						nana::size imgsize = backimg_.image.size();
-						nana::size gsize = graph.size();
-
-						switch(backimg_.arg)
-						{
-						case nana::arrange::unknown:
-							backimg_.image.paste(graph, 0, 0);
-							break;
-						case nana::arrange::horizontal:
-							if(backimg_.beg < backimg_.end)
-							{
-								unsigned block_tail = imgsize.width - backimg_.end;
-
-								if(backimg_.beg)
-									backimg_.image.paste(nana::rectangle(0, 0, backimg_.beg, imgsize.height), graph, nana::point());
-
-								if(block_tail)
-									backimg_.image.paste(nana::rectangle(static_cast<int>(imgsize.width - block_tail), 0, block_tail, imgsize.height), graph, nana::point(gsize.width - block_tail, 0));
-								
-								if(backimg_.beg < backimg_.end)
-								{
-									unsigned fixed_size = backimg_.beg + block_tail;
-									if(fixed_size < gsize.width)
-									{
-										if(false == backimg_.is_stretch)
-										{
-											unsigned imgarea = backimg_.end - backimg_.beg;
-											fixed_size = gsize.width - fixed_size;
-
-											nana::rectangle r(backimg_.beg, 0, imgarea, imgsize.height);
-											nana::point p_dst(backimg_.beg, 0);
-											
-											while(imgarea < fixed_size)
-											{
-												backimg_.image.paste(r, graph, p_dst);
-												p_dst.x += static_cast<int>(imgarea);
-												fixed_size -= imgarea;
-											}
-											if(fixed_size)
-											{
-												r.width = fixed_size;
-												backimg_.image.paste(r, graph, p_dst);
-											}
-										}
-										else
-											backimg_.image.stretch(nana::rectangle(backimg_.beg, 0, imgsize.width - fixed_size, imgsize.height), graph, nana::rectangle(backimg_.beg, 0, gsize.width - fixed_size, imgsize.height));
-									}
-								}
-							}
-							else
-							{
-								if(false == backimg_.is_stretch)
-								{
-									int x = 0;
-									while(x < static_cast<int>(gsize.width))
-									{
-										backimg_.image.paste(graph, x, 0);
-										x += static_cast<int>(imgsize.width);
-									}									
-								}
-								else
-									backimg_.image.stretch(imgsize, graph, nana::size(gsize.width, imgsize.height));
-							}
-							break;
-						case nana::arrange::vertical:
-							if(backimg_.beg < backimg_.end)
-							{
-								unsigned block_tail = imgsize.height - backimg_.end;
-
-								if(backimg_.beg)
-									backimg_.image.paste(nana::rectangle(0, 0, imgsize.width, static_cast<unsigned>(backimg_.beg)), graph, nana::point());
-
-								if(block_tail)
-									backimg_.image.paste(nana::rectangle(0, static_cast<int>(imgsize.height - block_tail), imgsize.width, block_tail), graph, nana::point(0, gsize.height - block_tail));
-
-								if(backimg_.beg < backimg_.end)
-								{
-									unsigned fixed_size = backimg_.beg + block_tail;
-									if(fixed_size < gsize.height)
-									{
-										if(false == backimg_.is_stretch)
-										{
-											unsigned imgarea = backimg_.end - backimg_.beg;
-											fixed_size = gsize.height - fixed_size;
-
-											nana::rectangle r(0, backimg_.beg, imgsize.width, imgarea);
-											nana::point pos(0, backimg_.beg);
-
-											while(imgarea < fixed_size)
-											{
-												backimg_.image.paste(r, graph, pos);
-												pos.y += static_cast<int>(imgarea);
-												fixed_size -= imgarea;
-											}
-											if(fixed_size)
-											{
-												r.height = fixed_size;
-												backimg_.image.paste(r, graph, pos);
-											}
-										}
-										else
-											backimg_.image.stretch(nana::rectangle(0, backimg_.beg, imgsize.width, imgsize.height - fixed_size), graph, nana::rectangle(0, backimg_.beg, imgsize.width, gsize.height - fixed_size));
-									}
-								}
-							}
-							else
-							{
-								if(false == backimg_.is_stretch)
-								{
-									int y = 0;
-									while(y < static_cast<int>(gsize.height))
-									{
-										backimg_.image.paste(graph, 0, y);
-										y += static_cast<int>(imgsize.height);
-									}
-								}
-								else
-									backimg_.image.stretch(imgsize, graph, nana::rectangle(0, 0, imgsize.width, gsize.height));
-							}
-							break;
-						case nana::arrange::horizontal_vertical:
-							if(backimg_.is_stretch == false)
-							{
-								int y = 0;
-								while(y < static_cast<int>(gsize.height))
-								{
-									int x = 0;
-									while(x < static_cast<int>(gsize.width))
-									{
-										backimg_.image.paste(graph, x, y);
-										x += static_cast<int>(imgsize.width);
-									}
-									y += static_cast<int>(imgsize.height);
-								}
-							}
-							else
-								backimg_.image.stretch(imgsize, graph, gsize);
-							break;
-						}
-					}
+					impl_->backimg.image.paste(graph, 0, 0);
 				}
+				else
+					impl_->backimg.bground->draw(graph, {}, {}, graph.size(), element_state::normal);
+
+				graph.setsta();
 			}
 
-			void picture_drawer::_m_draw_background()
+			void drawer::_m_draw_background()
 			{
-				if(graph_ && (bground_mode::basic != API::effects_bground_mode(*widget_)))
+				auto graph = impl_->graph_ptr;
+				if (graph && (bground_mode::basic != API::effects_bground_mode(*impl_->wdg_ptr)))
 				{
-					if (bground_.gradual_from.invisible() || bground_.gradual_to.invisible())
-						graph_->rectangle(true, widget_->bgcolor());
-					else if(bground_.gradual_from == bground_.gradual_to)
-						graph_->rectangle(true, bground_.gradual_from);
+					auto & bground = impl_->gradual_bground;
+					if (bground.gradual_from.invisible() || bground.gradual_to.invisible())
+						graph->rectangle(true, impl_->wdg_ptr->bgcolor());
+					else if (bground.gradual_from == bground.gradual_to)
+						graph->rectangle(true, bground.gradual_from);
 					else
-						graph_->gradual_rectangle(graph_->size(), bground_.gradual_from, bground_.gradual_to, !bground_.horizontal);
+						graph->gradual_rectangle(graph->size(), bground.gradual_from, bground.gradual_to, !bground.horizontal);
 				}
 			}
-		//end class picture_drawer
-	}//end namespace xpicture
+			//end class drawer
+		}//end namespace picture
+	}//end namespace drawerbase
 
 	//class picture
 		picture::picture(){}
@@ -265,21 +105,44 @@ namespace nana
 			create(wd, r, visible);
 		}
 
-		void picture::load(const nana::paint::image& img)
+		void picture::load(nana::paint::image img)
 		{
-			get_drawer_trigger().load(img);
+			auto& backimg = get_drawer_trigger().impl_->backimg;
+			backimg.image = std::move(img);
+
+			if (backimg.bground)
+				backimg.bground->image(backimg.image, true, {});
+
+			get_drawer_trigger().impl_->graph_ptr->set_changed();
 			API::refresh_window(*this);
 		}
 
-		void picture::bgstyle(bool stretchable, nana::arrange arg, int beg, int end)
+		void picture::stretchable(unsigned left, unsigned top, unsigned right, unsigned bottom)
 		{
-			if(get_drawer_trigger().bgstyle(stretchable, arg, beg, end))
-				API::refresh_window(*this);
+			if (!handle())
+				return;
+
+			auto & backimg = get_drawer_trigger().impl_->backimg;
+			if (!backimg.bground)
+			{
+				backimg.bground.reset(new element::bground);
+				backimg.bground->states({ element_state::normal });
+				backimg.bground->image(backimg.image, true, {});
+			}
+
+			backimg.bground->stretch_parts(left, top, right, bottom);
+			get_drawer_trigger().impl_->graph_ptr->set_changed();
+			API::refresh_window(*this);
 		}
 
 		void picture::set_gradual_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
 		{
-			get_drawer_trigger().set_shadow_background(from, to, horizontal);
+			auto & bground = get_drawer_trigger().impl_->gradual_bground;
+			bground.gradual_from = from;
+			bground.gradual_to = to;
+			bground.horizontal = horizontal;
+			get_drawer_trigger().impl_->graph_ptr->set_changed();
+			API::refresh_window(*this);
 		}
 
 		void picture::transparent(bool enabled)

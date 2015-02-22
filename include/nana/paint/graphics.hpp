@@ -128,6 +128,7 @@ namespace nana
 			unsigned height() const;      ///< Returns the height of the off-screen buffer.
 			::nana::size size() const;
 			void setsta();      ///<  	Clears the status if the graphics object had been changed
+			void set_changed();
 			void release();
 			void save_as_file(const char*);
 
