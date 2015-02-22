@@ -1,6 +1,7 @@
 /*
  *	Utility Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,11 +18,11 @@ namespace nana
 	//overlap test if overlaped between r1 and r2
 	bool overlap(const rectangle& r1, const rectangle& r2)
 	{
-		if(r1.y + int(r1.height) <= r2.y) return false;
-		if(r1.y >= int(r2.y + r2.height)) return false;
+		if (r1.y + long long(r1.height) <= r2.y) return false;
+		if(r1.y >= r2.y + long long(r2.height)) return false;
 
-		if(int(r1.x + r1.width) <= r2.x) return false;
-		if(r1.x >= int(r2.x + r2.width)) return false;
+		if(r1.x + long long(r1.width) <= r2.x) return false;
+		if(r1.x >= r2.x + long long(r2.width)) return false;
 
 		return true;
 	}
@@ -60,7 +61,11 @@ namespace nana
 
 		zoom(ir, op_ir, dr, op_dr);
 
-		if(false == covered(op_dr, good_dr))
+		if (covered(op_dr, good_dr))
+		{
+			overlap({ op_dr }, good_dr, op_dr);
+		}
+		else
 		{
 			op_dr = good_dr;
 			zoom(dr, good_dr, ir, op_ir);
