@@ -17,6 +17,7 @@
 #include <nana/gui/widgets/combox.hpp>
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/panel.hpp>
+#include <nana/gui/widgets/picture.hpp>
 #include <nana/gui/place.hpp>
 #include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
@@ -474,7 +475,7 @@ namespace nana
 		: public ::nana::form
 	{
 	public:
-		inputbox_window(window owner, const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
+		inputbox_window(window owner, paint::image (&imgs)[4], const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
 			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
 		{
 			desc_.create(*this);
@@ -501,8 +502,8 @@ namespace nana
 			unsigned height = 20 + desc_extent.height + 10 + 38;
 
 			place_.bind(*this);
-			std::stringstream ss;
-			ss << "margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
+			std::stringstream ss_content;
+			ss_content << "<margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
 			
 			for (std::size_t i = 0; i < contents; ++i)
 			{
@@ -510,16 +511,12 @@ namespace nana
 				if (each_height[i] > 27)
 					px = each_height[i];
 
-				ss << "<weight="<<px<<" margin=[3] input_" << i << ">";
+				ss_content << "<weight=" << px << " margin=[3] input_" << i << ">";
 
 				height += px + 1;
 			}
 
-			ss << "><margin=[15] weight=38<><buttons arrange=80 gap=10 weight=170>>";
-
-			place_.div(ss.str().data());
-			place_["desc"] << desc_;
-			place_["buttons"] << btn_ok_ << btn_cancel_;
+			ss_content << "><margin=[15] weight=38<><buttons arrange=80 gap=10 weight=170>>>";
 
 			if (desc_extent.width < 170)
 				desc_extent.width = 170;
@@ -528,7 +525,67 @@ namespace nana
 			if (desc_extent.width < fixed_pixels)
 				desc_extent.width = fixed_pixels;
 
-			size({ desc_extent.width + 20, height });
+			desc_extent.width += 20;
+
+			::nana::size img_sz[4];
+
+			if (imgs[2])	//Left
+			{
+				auto & sz = img_sz[2];
+				sz = imgs[2].size();
+				sz.width = static_cast<size::value_type>(double(sz.width) * (double(height) / double(sz.height)));
+				desc_extent.width += sz.width;
+			}
+
+			if (imgs[3])	//Right
+			{
+				auto & sz = img_sz[3];
+				sz = imgs[3].size();
+				sz.width = static_cast<size::value_type>(double(sz.width) * (double(height) / double(sz.height)));
+				desc_extent.width += sz.width;
+			}
+
+			if (imgs[0])	//Top
+			{
+				auto & sz = img_sz[0];
+				sz = imgs[0].size();
+				sz.height = static_cast<size::value_type>(double(sz.height) * (double(desc_extent.width) / double(sz.width)));
+				height += sz.height;
+			}
+
+			if (imgs[1])	//Bottom
+			{
+				auto & sz = img_sz[1];
+				sz = imgs[1].size();
+				sz.height = static_cast<size::value_type>(double(sz.height) * (double(desc_extent.width) / double(sz.width)));
+				height += sz.height;
+			}
+
+			std::stringstream ss;
+			ss << "vert<img_top weight="<<img_sz[0].height<<"><<img_left weight="<<img_sz[2].width<<">"<<ss_content.str()<<"<img_right weight="<<img_sz[3].width<<">><img_bottom weight="<<img_sz[1].height<<">";
+
+			place_.div(ss.str().data());
+			place_["desc"] << desc_;
+			place_["buttons"] << btn_ok_ << btn_cancel_;
+
+			const char * img_fields[4] = {"img_top", "img_bottom", "img_left", "img_right"};
+
+			for (int i = 0; i < 4; ++i)
+			{
+				if (imgs[i])
+				{
+					images_[i].create(*this, true);
+					images_[i].load(imgs[i]);
+					//images_[i].bgstyle(true, ::nana::arrange::horizontal_vertical, 0, 0);
+					images_[i].stretchable(0, 0, 0, 0);
+					place_[img_fields[i]] << images_[i];
+					place_.field_display(img_fields[i], true);
+				}
+				else
+					place_.field_display(img_fields[i], false);
+			}
+
+			size({desc_extent.width, height });
 			caption(title);
 		}
 
@@ -558,7 +615,13 @@ namespace nana
 		bool	valid_input_{ false };
 		::nana::place	place_;
 		std::function<bool(window)> verifier_;
+		::nana::picture	images_[4];
 	};
+
+	unsigned inputbox::abstract_content::fixed_pixels() const
+	{
+		return 0;
+	}
 
 	//class integer
 	struct inputbox::integer::implement
@@ -631,11 +694,6 @@ namespace nana
 		});
 
 		return impl->dock;
-	}
-
-	unsigned inputbox::integer::fixed_pixels() const
-	{
-		return 0;
 	}
 	//end class integer
 
@@ -711,11 +769,6 @@ namespace nana
 		});
 
 		return impl->dock;
-	}
-
-	unsigned inputbox::real::fixed_pixels() const
-	{
-		return 0;
 	}
 	//end class real
 
@@ -830,11 +883,6 @@ namespace nana
 		});
 		return impl->dock;
 	}
-
-	unsigned inputbox::text::fixed_pixels() const
-	{
-		return 0;
-	}
 	//end class text
 
 
@@ -876,6 +924,7 @@ namespace nana
 	{
 		return impl_->month;
 	}
+
 	int inputbox::date::day() const
 	{
 		return impl_->day;
@@ -981,6 +1030,18 @@ namespace nana
 			title_(std::move(title))
 	{}
 
+	void inputbox::image(::nana::paint::image img, bool is_left)
+	{
+		auto pos = (is_left ? 2 : 3);
+		images_[pos] = std::move(img);
+	}
+
+	void inputbox::image_v(::nana::paint::image img, bool is_top)
+	{
+		auto pos = (is_top ? 0 : 1);
+		images_[pos] = std::move(img);
+	}
+
 	void inputbox::verify(std::function<bool(window)> verifier)
 	{
 		verifier_ = std::move(verifier);
@@ -1007,7 +1068,7 @@ namespace nana
 			each_pixels.push_back(px.height);
 		}
 
-		inputbox_window input_wd(owner_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
+		inputbox_window input_wd(owner_, images_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
 
 		std::vector<window> inputs;
 		for (auto p : contents)

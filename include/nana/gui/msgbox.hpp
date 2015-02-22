@@ -100,7 +100,7 @@ namespace nana
 
 			virtual const ::nana::string& label() const = 0;
 			virtual window create(window, unsigned label_px) = 0;
-			virtual unsigned fixed_pixels() const = 0;
+			virtual unsigned fixed_pixels() const;
 		};
 	public:
 		class integer
@@ -116,7 +116,6 @@ namespace nana
 			//Implementation of abstract_content
 			const ::nana::string& label() const override;
 			window create(window, unsigned label_px) override;
-			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};
@@ -134,7 +133,6 @@ namespace nana
 			//Implementation of abstract_content
 			const ::nana::string& label() const override;
 			window create(window, unsigned label_px) override;
-			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};
@@ -159,7 +157,6 @@ namespace nana
 			//Implementation of abstract_content
 			const ::nana::string& label() const override;
 			window create(window, unsigned label_px) override;
-			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};
@@ -177,16 +174,19 @@ namespace nana
 			int year() const;
 			int month() const;	//[1, 12]
 			int day() const;	//[1, 31]
-			unsigned fixed_pixels() const override;
 		private:
 			//Implementation of abstract_content
 			const ::nana::string& label() const override;
 			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};
 
 		inputbox(window, ::nana::string description, ::nana::string title = ::nana::string());
+
+		void image(::nana::paint::image, bool is_left);
+		void image_v(::nana::paint::image, bool is_top);
 
 		template<typename ...Args>
 		bool show(Args&& ... args)
@@ -230,6 +230,7 @@ namespace nana
 		::nana::string description_;
 		::nana::string title_;
 		std::function<bool(window)> verifier_;
+		::nana::paint::image images_[4];
 	};
 }//end namespace nana
 
