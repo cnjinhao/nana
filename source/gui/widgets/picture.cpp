@@ -38,7 +38,11 @@ namespace nana
 				struct back_image_tag
 				{
 					paint::image	image;
-					std::unique_ptr<element::bground> bground;
+					rectangle		valid_area;
+					::nana::align	align_horz{ ::nana::align::left };
+					::nana::align_v align_vert{ ::nana::align_v::top };
+					std::unique_ptr<element::bground> bground;	//If it is not a null ptr, the widget is stretchable mode
+					bool			stretchable{ false };		//If it is true, the widget is stretchable mode without changing aspect ratio.
 				}backimg;
 			};
 
@@ -63,13 +67,92 @@ namespace nana
 				if (!graph.changed())
 					return;
 
-				if (!impl_->backimg.bground)
+				auto graphsize = graph.size();
+
+				auto & backimg = impl_->backimg;
+
+				if (!backimg.bground)
 				{
-					_m_draw_background();
-					impl_->backimg.image.paste(graph, 0, 0);
+					auto valid_area = backimg.valid_area;
+					if (valid_area.empty())
+						valid_area = backimg.image.size();
+
+					if (backimg.stretchable)
+					{
+						auto fit_size = fit_zoom({ valid_area.width, valid_area.height }, graphsize);
+						//::nana::point pos{ int(graphsize.width - fit_size.width), int(graphsize.height - fit_size.height) };
+						::nana::point pos;
+
+						if (fit_size.width != graphsize.width)
+						{
+							switch (backimg.align_horz)
+							{
+							case ::nana::align::left: break;
+							case ::nana::align::center:
+								pos.x = (int(graphsize.width) - int(fit_size.width)) / 2;
+								break;
+							case ::nana::align::right:
+								pos.x = int(graphsize.width) - int(fit_size.width);
+								break;
+							}
+						}
+						else if (fit_size.height != graphsize.height)
+						{
+							switch (backimg.align_vert)
+							{
+							case ::nana::align_v::top: break;
+							case ::nana::align_v::center:
+								pos.y = (int(graphsize.height) - int(fit_size.height)) / 2;
+								break;
+							case ::nana::align_v::bottom:
+								pos.y = int(graphsize.height) - int(fit_size.height);
+								break;
+							}
+						}
+
+						if (fit_size.width < graphsize.width || fit_size.height < graphsize.height)
+							_m_draw_background();
+
+						backimg.image.stretch(valid_area, graph, { pos, fit_size });
+					}
+					else
+					{
+						//The point in which position the image to be drawn. 
+						::nana::point pos;
+
+						switch (backimg.align_horz)
+						{
+						case ::nana::align::left: break;
+						case ::nana::align::center:
+							pos.x = (int(graphsize.width) - int(valid_area.width)) / 2;
+							break;
+						case ::nana::align::right:
+							pos.x = int(graphsize.width) - int(valid_area.width);
+							break;
+						}
+
+						switch (backimg.align_vert)
+						{
+						case ::nana::align_v::top: break;
+						case ::nana::align_v::center:
+							pos.y = (int(graphsize.height) - int(valid_area.height)) / 2;
+							break;
+						case ::nana::align_v::bottom:
+							pos.y = int(graphsize.height) - int(valid_area.height);
+							break;
+						}
+
+						if (valid_area.width < graphsize.width || valid_area.height < graphsize.height)
+							_m_draw_background();
+
+						backimg.image.paste(valid_area, graph, pos);
+					}
 				}
 				else
-					impl_->backimg.bground->draw(graph, {}, {}, graph.size(), element_state::normal);
+				{
+					color invalid_clr_for_call;
+					backimg.bground->draw(graph, invalid_clr_for_call, invalid_clr_for_call, graphsize, element_state::normal);
+				}
 
 				graph.setsta();
 			}
@@ -105,16 +188,40 @@ namespace nana
 			create(wd, r, visible);
 		}
 
-		void picture::load(nana::paint::image img)
+		void picture::load(::nana::paint::image img, const ::nana::rectangle& valid_area)
 		{
+			internal_scope_guard lock;
 			auto& backimg = get_drawer_trigger().impl_->backimg;
 			backimg.image = std::move(img);
+			backimg.valid_area = valid_area;
 
 			if (backimg.bground)
-				backimg.bground->image(backimg.image, true, {});
+				backimg.bground->image(backimg.image, true, valid_area);
 
-			get_drawer_trigger().impl_->graph_ptr->set_changed();
-			API::refresh_window(*this);
+			if (handle())
+			{
+				get_drawer_trigger().impl_->graph_ptr->set_changed();
+				API::refresh_window(*this);
+			}
+		}
+
+		void picture::align(::nana::align horz, align_v vert)
+		{
+			internal_scope_guard lock;
+
+			auto& backimg = get_drawer_trigger().impl_->backimg;
+
+			if (backimg.align_horz == horz && backimg.align_vert == vert)
+				return;
+
+			backimg.align_horz = horz;
+			backimg.align_vert = vert;
+
+			if (handle())
+			{
+				get_drawer_trigger().impl_->graph_ptr->set_changed();
+				API::refresh_window(*this);
+			}
 		}
 
 		void picture::stretchable(unsigned left, unsigned top, unsigned right, unsigned bottom)
@@ -122,17 +229,37 @@ namespace nana
 			if (!handle())
 				return;
 
+			internal_scope_guard lock;
 			auto & backimg = get_drawer_trigger().impl_->backimg;
 			if (!backimg.bground)
 			{
 				backimg.bground.reset(new element::bground);
 				backimg.bground->states({ element_state::normal });
-				backimg.bground->image(backimg.image, true, {});
+				backimg.bground->image(backimg.image, true, backimg.valid_area);
 			}
 
 			backimg.bground->stretch_parts(left, top, right, bottom);
-			get_drawer_trigger().impl_->graph_ptr->set_changed();
-			API::refresh_window(*this);
+			backimg.stretchable = false;
+			if (handle())
+			{
+				get_drawer_trigger().impl_->graph_ptr->set_changed();
+				API::refresh_window(*this);
+			}
+		}
+
+		void picture::stretchable(bool enables)
+		{
+			internal_scope_guard lock;
+
+			auto & backimg = get_drawer_trigger().impl_->backimg;
+			backimg.bground.reset();
+
+			backimg.stretchable = enables;
+			if (handle())
+			{
+				get_drawer_trigger().impl_->graph_ptr->set_changed();
+				API::refresh_window(*this);
+			}
 		}
 
 		void picture::set_gradual_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
@@ -141,8 +268,11 @@ namespace nana
 			bground.gradual_from = from;
 			bground.gradual_to = to;
 			bground.horizontal = horizontal;
-			get_drawer_trigger().impl_->graph_ptr->set_changed();
-			API::refresh_window(*this);
+			if (handle())
+			{
+				get_drawer_trigger().impl_->graph_ptr->set_changed();
+				API::refresh_window(*this);
+			}
 		}
 
 		void picture::transparent(bool enabled)

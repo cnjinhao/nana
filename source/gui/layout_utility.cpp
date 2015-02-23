@@ -246,6 +246,19 @@ namespace nana
 			result_s = ref_s;
 	}
 
+	size fit_zoom(const size& input_s, size ref_s)
+	{
+		double rate_input = double(input_s.width) / double(input_s.height);
+		double rate_ref = double(ref_s.width) / double(ref_s.height);
+
+		if (rate_input < rate_ref)
+			ref_s.width = static_cast<unsigned>(ref_s.height * rate_input);
+		else if (rate_input > rate_ref)
+			ref_s.height = static_cast<unsigned>(ref_s.width / rate_input);
+		
+		return ref_s;
+	}
+
 	void zoom(const rectangle& ref, const rectangle& scaled, const rectangle& ref_dst, rectangle& r)
 	{
 		double rate_x = (scaled.x - ref.x) / double(ref.width);

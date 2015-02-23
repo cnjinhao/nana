@@ -17,6 +17,8 @@
 
 namespace nana
 {
+	class picture;
+
 	namespace drawerbase
 	{
 		namespace picture
@@ -25,6 +27,7 @@ namespace nana
 
 			class drawer : public drawer_trigger
 			{
+				friend class ::nana::picture;
 			public:
 				drawer();
 				~drawer();
@@ -32,7 +35,7 @@ namespace nana
 			private:
 				void refresh(graph_reference)	override;
 				void _m_draw_background();
-			public:
+			private:
 				implement * const impl_;
 			};
 		}//end namespace picture
@@ -47,12 +50,19 @@ namespace nana
 		picture(window, bool visible);
 		picture(window, const rectangle& ={}, bool visible = true);
 
-		void load(nana::paint::image);
+		void load(::nana::paint::image, const rectangle& valid_area = {});
 
+		/// Sets the align of image.
+		void align(align, align_v);
+
+		/// Enables the image to be stretched to the widget size.
 		void stretchable(unsigned left, unsigned top, unsigned right, unsigned bottom);
 
+		/// Enables/disable the image to be stretched without changing aspect ratio.
+		void stretchable(bool);
+
         /// Fills a gradual-change color in background. If One of colors is invisible or clr_from is equal to clr_to, it draws background in bgcolor.
-		void set_gradual_background(const ::nana::color& clr_from, const ::nana::color& clr_to, bool horizontal);
+		void set_gradual_background(const color& clr_from, const color& clr_to, bool horizontal);
 		void transparent(bool);
 		bool transparent() const;
 	};
