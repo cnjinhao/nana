@@ -1,4 +1,16 @@
-#include <nana/gui/filebox.hpp>
+/*
+*	Filebox
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/filebox.cpp
+*/
+
+#include <nana/gui.hpp>
 #include <nana/filesystem/fs_utility.hpp>
 
 #if defined(NANA_WINDOWS)
@@ -858,6 +870,11 @@ namespace nana
 			std::vector<filter> filters;
 		};
 
+		filebox::filebox(bool is_openmode)
+			: filebox(nullptr, is_openmode)
+		{
+		}
+
 		filebox::filebox(window owner, bool open)
 			: impl_(new implement)
 		{
@@ -874,9 +891,25 @@ namespace nana
 #endif
 		}
 
+		filebox::filebox(const filebox& other)
+			: impl_(new implement(*other.impl_))
+		{}
+
 		filebox::~filebox()
 		{
 			delete impl_;
+		}
+
+		filebox& filebox::operator=(const filebox& other)
+		{
+			if (this != &other)
+				*impl_ = *other.impl_;
+			return *this;
+		}
+
+		void filebox::owner(window wd)
+		{
+			impl_->owner = wd;
 		}
 
 		nana::string filebox::title(nana::string s)

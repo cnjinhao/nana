@@ -676,6 +676,9 @@ namespace nana
 
 	int inputbox::integer::value() const
 	{
+		if (!impl_->spinbox.empty())
+			return impl_->spinbox.to_int();
+
 		return impl_->value;
 	}
 
@@ -751,6 +754,9 @@ namespace nana
 
 	double inputbox::real::value() const
 	{
+		if (!impl_->spinbox.empty())
+			return impl_->spinbox.to_double();
+
 		return impl_->value;
 	}
 
@@ -788,7 +794,7 @@ namespace nana
 
 		impl->spinbox.events().destroy.connect_unignorable([impl]
 		{
-			impl->value = impl->spinbox.to_int();
+			impl->value = impl->spinbox.to_double();
 		});
 
 		return impl->dock;
@@ -844,6 +850,11 @@ namespace nana
 
 	::nana::string inputbox::text::value() const
 	{
+		if (!impl_->textbox.empty())
+			return impl_->textbox.caption();
+		else if (!impl_->combox.empty())
+			return impl_->combox.caption();
+
 		return impl_->value;
 	}
 
@@ -869,6 +880,7 @@ namespace nana
 			impl->textbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, 0, 0 });
 			impl->textbox.tip_string(impl->tip);
 			impl->textbox.mask(impl->mask_character);
+			impl->textbox.multi_lines(false);
 		}
 		else
 		{
@@ -940,16 +952,23 @@ namespace nana
 
 	int inputbox::date::year() const
 	{
+		if (!impl_->wdg_year.empty())
+			return impl_->wdg_year.to_int();
+
 		return impl_->year;
 	}
 
 	int inputbox::date::month() const
 	{
+		if (!impl_->wdg_month.empty())
+			return impl_->wdg_month.option() + 1;
 		return impl_->month;
 	}
 
 	int inputbox::date::day() const
 	{
+		if (!impl_->wdg_day.empty())
+			return impl_->wdg_day.to_int();
 		return impl_->day;
 	}
 
@@ -1045,6 +1064,87 @@ namespace nana
 		return 202;
 	}
 	//end class date
+
+	//class path
+	struct inputbox::path::implement
+	{
+		filebox fbox;
+
+		::nana::string value;
+		::nana::string label_text;
+		::nana::panel<false> dock;
+		::nana::label label;
+		::nana::textbox path_edit;
+		::nana::button	browse;
+
+		implement(const filebox& fb, ::nana::string&& labelstr)
+			: fbox(fb), label_text(std::move(labelstr))
+		{}
+	};
+	
+	inputbox::path::path(::nana::string label, const filebox& fb)
+		: impl_(new implement(fb, std::move(label)))
+	{
+	}
+
+	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	inputbox::path::~path(){}
+
+	::nana::string inputbox::path::value() const
+	{
+		if (!impl_->path_edit.empty())
+			return impl_->path_edit.caption();
+
+		return impl_->value;
+	}
+	
+	//Implementation of abstract_content
+	const ::nana::string& inputbox::path::label() const
+	{
+		return impl_->label_text;
+	}
+
+	window inputbox::path::create(window wd, unsigned label_px)
+	{
+		auto impl = impl_.get();
+		impl->dock.create(wd);
+
+		impl->label.create(impl->dock, rectangle{ 0, 0, label_px, 0 });
+		impl->label.text_align(::nana::align::right, ::nana::align_v::center);
+		impl->label.caption(impl->label_text);
+		impl->label.format(true);
+
+		impl->path_edit.create(impl->dock, rectangle{static_cast<int>(label_px + 10), 0, 0, 0});
+		impl->path_edit.caption(impl->fbox.path());
+		impl->path_edit.multi_lines(false);
+
+		impl->browse.create(impl->dock);
+		impl->browse.i18n(i18n_eval("Browse"));
+		impl->browse.events().click([wd, impl]
+		{
+			impl->fbox.owner(wd);
+			if (impl->fbox.show())
+			{
+				impl->value = impl->fbox.file();
+				impl->path_edit.caption(impl->value);
+			}
+		});
+
+		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
+		{
+			impl->label.size({ label_px, arg.height });
+			impl->path_edit.size({arg.width - label_px - 75, arg.height});
+			impl->browse.move({static_cast<int>(arg.width - 60), 0, 60, arg.height});
+		});
+
+		impl->path_edit.events().destroy.connect_unignorable([impl]
+		{
+			impl->value = impl->path_edit.caption();
+		});
+
+		return impl->dock;
+	}
+	//end class path
 
 
 	inputbox::inputbox(window owner, ::nana::string desc, ::nana::string title)

@@ -14,7 +14,7 @@
 #define NANA_GUI_MSGBOX_HPP
 
 #include <sstream>
-#include <nana/gui/basis.hpp>
+#include <nana/gui/filebox.hpp>
 
 namespace nana
 {
@@ -188,7 +188,7 @@ namespace nana
 		{
 			struct implement;
 		public:
-			path(::nana::string label, ::nana::string init_path = ::nana::string());
+			path(::nana::string label, const ::nana::filebox&);
 			~path();
 
 			::nana::string value() const;
@@ -196,7 +196,6 @@ namespace nana
 			//Implementation of abstract_content
 			const ::nana::string& label() const override;
 			window create(window, unsigned label_px) override;
-			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};

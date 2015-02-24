@@ -1,18 +1,41 @@
+/*
+ *	Filebox
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file: nana/gui/filebox.hpp
+ */
+
 #ifndef NANA_GUI_FILEBOX_HPP
 #define NANA_GUI_FILEBOX_HPP
-#include <nana/gui/wvl.hpp>
+#include <nana/gui/basis.hpp>
+#include <vector>
+#include <utility>
 
 namespace nana
 {       /// Create an Open or Save dialog box to let user select the name of a file.
 	class filebox
-		: nana::noncopyable
 	{
 		struct implement;
-	public:
-		typedef std::vector<std::pair<nana::string, nana::string>> filters;
 
+		filebox(filebox&&) = delete;
+		filebox& operator=(filebox&&) = delete;
+	public:
+		using filters = std::vector<std::pair<nana::string, nana::string>>;
+
+		filebox(bool is_open_mode);
 		filebox(window owner, bool is_open_mode);
+		filebox(const filebox&);
 		~filebox();
+
+		filebox& operator=(const filebox&);
+
+		/// Change owner window
+		void owner(window);
 
 		/**	@brief	specify a title for the dialog
 		 *	@param	string	a text for title
