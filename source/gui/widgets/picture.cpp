@@ -80,7 +80,6 @@ namespace nana
 					if (backimg.stretchable)
 					{
 						auto fit_size = fit_zoom({ valid_area.width, valid_area.height }, graphsize);
-						//::nana::point pos{ int(graphsize.width - fit_size.width), int(graphsize.height - fit_size.height) };
 						::nana::point pos;
 
 						if (fit_size.width != graphsize.width)
@@ -176,8 +175,6 @@ namespace nana
 	}//end namespace drawerbase
 
 	//class picture
-		picture::picture(){}
-
 		picture::picture(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);

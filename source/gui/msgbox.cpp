@@ -475,7 +475,7 @@ namespace nana
 		: public ::nana::form
 	{
 	public:
-		inputbox_window(window owner, paint::image (&imgs)[4], const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
+		inputbox_window(window owner, paint::image (&imgs)[4], ::nana::rectangle (&valid_areas)[4], const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
 			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
 		{
 			desc_.create(*this);
@@ -532,7 +532,13 @@ namespace nana
 			if (imgs[2])	//Left
 			{
 				auto & sz = img_sz[2];
-				sz = imgs[2].size();
+				if (!valid_areas[2].empty())
+				{
+					sz.width = valid_areas[2].width;
+					sz.height = valid_areas[2].height;
+				}
+				else
+					sz = imgs[2].size();
 				sz.width = static_cast<size::value_type>(double(sz.width) * (double(height) / double(sz.height)));
 				desc_extent.width += sz.width;
 			}
@@ -540,7 +546,13 @@ namespace nana
 			if (imgs[3])	//Right
 			{
 				auto & sz = img_sz[3];
-				sz = imgs[3].size();
+				if (!valid_areas[3].empty())
+				{
+					sz.width = valid_areas[3].width;
+					sz.height = valid_areas[3].height;
+				}
+				else
+					sz = imgs[3].size();
 				sz.width = static_cast<size::value_type>(double(sz.width) * (double(height) / double(sz.height)));
 				desc_extent.width += sz.width;
 			}
@@ -548,7 +560,13 @@ namespace nana
 			if (imgs[0])	//Top
 			{
 				auto & sz = img_sz[0];
-				sz = imgs[0].size();
+				if (!valid_areas[0].empty())
+				{
+					sz.width = valid_areas[0].width;
+					sz.height = valid_areas[0].height;
+				}
+				else
+					sz = imgs[0].size();
 				sz.height = static_cast<size::value_type>(double(sz.height) * (double(desc_extent.width) / double(sz.width)));
 				height += sz.height;
 			}
@@ -556,7 +574,13 @@ namespace nana
 			if (imgs[1])	//Bottom
 			{
 				auto & sz = img_sz[1];
-				sz = imgs[1].size();
+				if (!valid_areas[1].empty())
+				{
+					sz.width = valid_areas[1].width;
+					sz.height = valid_areas[1].height;
+				}
+				else
+					sz = imgs[1].size();
 				sz.height = static_cast<size::value_type>(double(sz.height) * (double(desc_extent.width) / double(sz.width)));
 				height += sz.height;
 			}
@@ -575,8 +599,7 @@ namespace nana
 				if (imgs[i])
 				{
 					images_[i].create(*this, true);
-					images_[i].load(imgs[i]);
-					//images_[i].bgstyle(true, ::nana::arrange::horizontal_vertical, 0, 0);
+					images_[i].load(imgs[i], valid_areas[i]);
 					images_[i].stretchable(0, 0, 0, 0);
 					place_[img_fields[i]] << images_[i];
 					place_.field_display(img_fields[i], true);
@@ -1030,16 +1053,18 @@ namespace nana
 			title_(std::move(title))
 	{}
 
-	void inputbox::image(::nana::paint::image img, bool is_left)
+	void inputbox::image(::nana::paint::image img, bool is_left, const rectangle& valid_area)
 	{
 		auto pos = (is_left ? 2 : 3);
 		images_[pos] = std::move(img);
+		valid_areas_[pos] = valid_area;
 	}
 
-	void inputbox::image_v(::nana::paint::image img, bool is_top)
+	void inputbox::image_v(::nana::paint::image img, bool is_top, const rectangle& valid_area)
 	{
 		auto pos = (is_top ? 0 : 1);
 		images_[pos] = std::move(img);
+		valid_areas_[pos] = valid_area;
 	}
 
 	void inputbox::verify(std::function<bool(window)> verifier)
@@ -1068,7 +1093,7 @@ namespace nana
 			each_pixels.push_back(px.height);
 		}
 
-		inputbox_window input_wd(owner_, images_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
+		inputbox_window input_wd(owner_, images_, valid_areas_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
 
 		std::vector<window> inputs;
 		for (auto p : contents)

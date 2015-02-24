@@ -46,7 +46,7 @@ namespace nana
 		: public widget_object<category::widget_tag, drawerbase::picture::drawer>
 	{
 	public:
-		picture();
+		picture() = default;
 		picture(window, bool visible);
 		picture(window, const rectangle& ={}, bool visible = true);
 
