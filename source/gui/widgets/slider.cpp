@@ -198,12 +198,12 @@ namespace nana
 
 				unsigned vcur() const
 				{
-					return attr_.vcur;
+					return static_cast<unsigned>(attr_.vcur);
 				}
 
 				void resize()
 				{
-					this->_m_mk_slider_pos_by_value();
+					_m_mk_slider_pos_by_value();
 					attr_.adorn_pos = attr_.pos;
 				}
 
@@ -338,16 +338,18 @@ namespace nana
 
 				unsigned move_step(bool forward)
 				{
-					unsigned cmpvalue = attr_.vcur;
+					unsigned cmpvalue = static_cast<unsigned>(attr_.vcur);
+					auto value = cmpvalue;
 					if(forward)
 					{
-						if(attr_.vcur)
-							--attr_.vcur;
+						if (value)
+							--value;
 					}
-					else if(attr_.vcur < attr_.vmax)
-						++attr_.vcur;
+					else if (value < attr_.vmax)
+						++value;
 
-					if(cmpvalue != attr_.vcur)
+					attr_.vcur = value;
+					if (cmpvalue != value)
 					{
 						_m_mk_slider_pos_by_value();
 						draw();
@@ -436,32 +438,29 @@ namespace nana
 					return static_cast<int>(_m_scale() * attr_.vcur / attr_.vmax);
 				}
 
-				unsigned _m_mk_slider_value_by_pos()
+				void _m_mk_slider_value_by_pos()
 				{
 					if(_m_scale())
 					{
-						auto cmpvalue = attr_.vcur;
-						attr_.vcur = static_cast<unsigned>(attr_.pos * attr_.vmax / _m_scale());
-						if (cmpvalue != attr_.vcur)
+						auto cmpvalue = static_cast<int>(attr_.vcur);
+						attr_.vcur = (attr_.pos * attr_.vmax / _m_scale());
+						if (cmpvalue != static_cast<int>(attr_.vcur))
 							_m_emit_value_changed();
 					}
-					return attr_.vcur;
 				}
 
-				int _m_mk_slider_pos_by_value()
+				void _m_mk_slider_pos_by_value()
 				{
 					attr_.pos = double(_m_scale()) * attr_.vcur / attr_.vmax;
 
 					if(slider_state_.trace == slider_state_.TraceNone)
 						attr_.adorn_pos = attr_.pos;
-					
-					return static_cast<int>(attr_.pos);
 				}
 
 				unsigned _m_value_by_pos(double pos) const
 				{
 					if(_m_scale())
-						return static_cast<int>(pos * attr_.vmax / _m_scale());
+						return static_cast<unsigned>(pos * attr_.vmax / _m_scale());
 					return 0;
 				}
 
@@ -548,7 +547,7 @@ namespace nana
 					style dir;
 					unsigned border;
 					unsigned vmax;
-					unsigned vcur;
+					double vcur;
 					double		pos;
 					bool		is_draw_adorn;
 					double		adorn_pos;
