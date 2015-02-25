@@ -73,7 +73,7 @@ namespace nana
 
 				std::wstring value() const override
 				{
-					return ::nana::to_wstring(value_);
+					return std::to_wstring(value_);
 				}
 
 				bool value(const std::wstring& value_str, bool & diff) override
@@ -663,12 +663,12 @@ namespace nana
 
 	int spinbox::to_int() const
 	{
-		return ::nana::stoi(value());
+		return std::stoi(value());
 	}
 
 	double spinbox::to_double() const
 	{
-		return ::nana::stod(value());
+		return std::stod(value());
 	}
 
 	void spinbox::modifier(std::wstring prefix, std::wstring suffix)

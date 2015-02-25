@@ -343,7 +343,7 @@ namespace nana
 					erase_n = str.size() - offset;
 
 				//If there is not a parameter for %argNNN, the %argNNN will be erased.
-				std::size_t arg = static_cast<std::size_t>(::nana::stoi(str.substr(offset + 4, arg_n)));
+				std::size_t arg = static_cast<std::size_t>(std::stoi(str.substr(offset + 4, arg_n)));
 
 				if (arg_strs && arg < arg_strs->size())
 					str.replace(offset, erase_n, (*arg_strs)[arg]);

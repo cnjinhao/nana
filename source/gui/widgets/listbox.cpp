@@ -18,7 +18,6 @@
 #include <list>
 #include <deque>
 #include <stdexcept>
-#include <sstream>
 #include <algorithm>
 
 namespace nana
@@ -87,66 +86,66 @@ namespace nana
 			}
 			oresolver& oresolver::operator<<(short n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned short n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(int n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned int n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(long n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned long n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 			oresolver& oresolver::operator<<(long long n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned long long n)
 			{
-				cells_.emplace_back(::nana::to_wstring(n));
+				cells_.emplace_back(std::to_wstring(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(float f)
 			{
-				cells_.emplace_back(::nana::to_wstring(f));
+				cells_.emplace_back(std::to_wstring(f));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(double f)
 			{
-				cells_.emplace_back(::nana::to_wstring(f));
+				cells_.emplace_back(std::to_wstring(f));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(long double f)
 			{
-				cells_.emplace_back(::nana::to_wstring(f));
+				cells_.emplace_back(std::to_wstring(f));
 				return *this;
 			}
 
@@ -201,117 +200,82 @@ namespace nana
 			iresolver& iresolver::operator>>(bool& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = (std::stoi(cells_[pos_++].text) == 0);
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(short& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = std::stoi(cells_[pos_++].text);
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(unsigned short& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = static_cast<unsigned short>(std::stoul(cells_[pos_++].text));
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(int& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = std::stoi(cells_[pos_++].text);
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(unsigned int& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = std::stoul(cells_[pos_++].text);
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(long& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = std::stol(cells_[pos_++].text);
 				return *this;
 			}
+
 			iresolver& iresolver::operator>>(unsigned long& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = std::stoul(cells_[pos_++].text);
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(long long& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = std::stoll(cells_[pos_++].text);
 				return *this;
 			}
 			iresolver& iresolver::operator>>(unsigned long long& n)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> n;
-				}
+					n = std::stoull(cells_[pos_++].text);
 				return *this;
 			}
 			iresolver& iresolver::operator>>(float& f)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> f;
-				}
+					f = std::stof(cells_[pos_++].text);
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(double& f)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> f;
-				}
+					f = std::stod(cells_[pos_++].text);
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(long double& f)
 			{
 				if (pos_ < cells_.size())
-				{
-					std::wstringstream ss(cells_[pos_++].text);
-					ss >> f;
-				}
+					f = std::stold(cells_[pos_++].text);
 				return *this;
 			}
 
@@ -1183,8 +1147,9 @@ namespace nana
 					}
 				}
 
-				void item_checked(selection& vec) const
+				selection item_checked() const
 				{
+					selection vec;
 					index_pair id;
 					for(auto & cat : list_)
 					{
@@ -1197,6 +1162,7 @@ namespace nana
 						}
 						++id.cat;
 					}
+					return vec;
 				}
 
 				void select_range(index_pair fr, index_pair to, bool sel)
@@ -2595,7 +2561,7 @@ namespace nana
 
 					graph->string({ x + 20, y + txtoff }, categ.text, txt_color);
 
-					::nana::string str = L'(' + ::nana::to_wstring(categ.items.size()) + L')';
+					::nana::string str = L'(' + std::to_wstring(categ.items.size()) + L')';
 
 					unsigned str_w = graph->text_extent_size(str).width;
 
@@ -3699,8 +3665,7 @@ namespace nana
 			auto & ess = _m_ess();
 			if (ess.lister.insert(pos, std::move(text)))
 			{
-				window wd = handle();
-				if (false == API::empty_window(wd))
+				if (! empty())
 				{
 					auto & item = ess.lister.at(pos);
 					item.bgcolor = bgcolor();
@@ -3722,9 +3687,7 @@ namespace nana
 
 		auto listbox::checked() const -> selection
 		{
-			selection s;
-			_m_ess().lister.item_checked(s);
-			return std::move(s);
+			return _m_ess().lister.item_checked();
 		}
 
 		void listbox::clear(size_type cat)
@@ -3889,11 +3852,6 @@ namespace nana
 		nana::any* listbox::_m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const
 		{
 			return _m_ess().lister.anyobj(index_pair{cat, index}, allocate_if_empty);
-		}
-
-		auto listbox::_m_headers() const -> size_type
-		{
-			return _m_ess().header.cont().size();
 		}
 
 		drawerbase::listbox::category_t* listbox::_m_at_key(std::shared_ptr<nana::detail::key_interface> ptr)
