@@ -1322,6 +1322,7 @@ namespace detail
 					arg.ignore = false;
 					brock.emit(event_code::shortkey, msgwnd, arg, true, &context);
 				}
+				def_window_proc = true;
 				break;
 			case WM_SYSKEYDOWN:
 				if(brock.whether_keyboard_shortkey() == false)
