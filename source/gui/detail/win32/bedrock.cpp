@@ -1342,6 +1342,7 @@ namespace detail
 					else if(brock.get_menu())
 						brock.remove_menu();
 				}
+				def_window_proc = true;
 				break;
 			case WM_SYSKEYUP:
 				if(brock.set_keyboard_shortkey(false) == false)
@@ -1358,6 +1359,7 @@ namespace detail
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 					}
 				}
+				def_window_proc = true;
 				break;
 			case WM_KEYDOWN:
 				if(msgwnd->flags.enabled)
