@@ -21,6 +21,56 @@
 #undef NANA_WINDOWS
 #endif
 
+//Implement workarounds for MinGW
+#if defined(NANA_MINGW)
+namespace std
+{
+	//Workaround for no implemenation of std::stoi in MinGW.
+	int stoi(const std::string&, std::size_t * pos = nullptr, int base = 10);
+	int stoi(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
+
+	//Workaround for no implemenation of std::stof in MinGW.
+	float stof(const std::string&, std::size_t * pos = nullptr);
+	float stof(const std::wstring&, std::size_t* pos = nullptr);
+
+	//Workaround for no implemenation of std::stod in MinGW.
+	double stod(const std::string&, std::size_t * pos = nullptr);
+	double stod(const std::wstring&, std::size_t* pos = nullptr);
+
+	//Workaround for no implemenation of std::stold in MinGW.
+	long double stold(const std::string&, std::size_t * pos = nullptr);
+	long double stold(const std::wstring&, std::size_t* pos = nullptr);
+
+	//Workaround for no implemenation of std::stol in MinGW.
+	long stol(const std::string&, std::size_t* pos = nullptr, int base = 10);
+	long stol(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
+
+	//Workaround for no implemenation of std::stoll in MinGW.
+	long long stoll(const std::string&, std::size_t* pos = nullptr, int base = 10);
+	long long stoll(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
+
+	//Workaround for no implemenation of std::stoul in MinGW.
+	unsigned long stoul(const std::string&, std::size_t* pos = nullptr, int base = 10);
+	unsigned long stoul(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
+
+	//Workaround for no implemenation of std::stoull in MinGW.
+	unsigned long long stoull(const std::string&, std::size_t* pos = nullptr, int base = 10);
+	unsigned long long stoull(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
+
+	//Workaround for no implemenation of std::to_wstring in MinGW.
+	std::wstring to_wstring(long double);
+	std::wstring to_wstring(double);
+	std::wstring to_wstring(unsigned);
+	std::wstring to_wstring(int);
+	std::wstring to_wstring(long);
+	std::wstring to_wstring(unsigned long);
+	std::wstring to_wstring(long long);
+	std::wstring to_wstring(unsigned long long);
+	std::wstring to_wstring(float);
+}
+#endif
+
+
 #ifndef NANA_UNICODE
 	namespace nana
 	{
@@ -40,28 +90,7 @@
 namespace nana
 {
 	std::size_t strlen(const char_t* str);
-	double strtod(const char_t* str, char_t** endptr);
 	char_t* strcpy(char_t* dest, const char_t* source);
-
-	//Workaround for no implemenation of std::stoi in MinGW.
-	int stoi(const std::string&, std::size_t * pos = nullptr, int base = 10);
-	int stoi(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
-
-	//Workaround for no implemenation of std::stod in MinGW.
-	double stod(const std::string&, std::size_t * pos = nullptr);
-	double stod(const std::wstring&, std::size_t* pos = nullptr);
-
-	//Workaround for no implemenation of std::to_wstring in MinGW.
-	std::wstring to_wstring(long double);
-	std::wstring to_wstring(double);
-	std::wstring to_wstring(unsigned);
-	std::wstring to_wstring(int);
-	std::wstring to_wstring(long);
-	std::wstring to_wstring(unsigned long);
-	std::wstring to_wstring(long long);
-	std::wstring to_wstring(unsigned long long);
-	std::wstring to_wstring(float);
-
 }
 
 #if defined(NANA_WINDOWS)

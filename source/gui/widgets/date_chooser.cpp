@@ -133,7 +133,7 @@ namespace nana
 							str = ::nana::internationalization()(monthstr[chmonth_.month - 1]);
 							str += STR("  ");
 						}
-						str += ::nana::to_wstring(chmonth_.year);
+						str += std::to_wstring(chmonth_.year);
 
 						nana::size txt_s = graph.text_extent_size(str);
 
@@ -203,7 +203,7 @@ namespace nana
 
 				void trigger::_m_draw_pos(drawing_basis & dbasis, graph_reference graph, int x, int y, int number, bool primary, bool sel)
 				{
-					_m_draw_pos(dbasis, graph, x, y, ::nana::to_wstring(number), primary, sel);
+					_m_draw_pos(dbasis, graph, x, y, std::to_wstring(number), primary, sel);
 				}
 
 				void trigger::_m_draw_ex_days(drawing_basis & dbasis, graph_reference graph, int begx, int begy, bool before)

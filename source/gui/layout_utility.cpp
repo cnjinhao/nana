@@ -18,11 +18,11 @@ namespace nana
 	//overlap test if overlaped between r1 and r2
 	bool overlap(const rectangle& r1, const rectangle& r2)
 	{
-		if (r1.y + long long(r1.height) <= r2.y) return false;
-		if(r1.y >= r2.y + long long(r2.height)) return false;
+		if (r1.y + (long long)(r1.height) <= r2.y) return false;
+		if(r1.y >= r2.y + (long long)(r2.height)) return false;
 
-		if(r1.x + long long(r1.width) <= r2.x) return false;
-		if(r1.x >= r2.x + long long(r2.width)) return false;
+		if(r1.x + (long long)(r1.width) <= r2.x) return false;
+		if(r1.x >= r2.x + (long long)(r2.width)) return false;
 
 		return true;
 	}
@@ -255,7 +255,7 @@ namespace nana
 			ref_s.width = static_cast<unsigned>(ref_s.height * rate_input);
 		else if (rate_input > rate_ref)
 			ref_s.height = static_cast<unsigned>(ref_s.width / rate_input);
-		
+
 		return ref_s;
 	}
 

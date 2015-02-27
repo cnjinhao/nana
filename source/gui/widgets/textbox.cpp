@@ -456,13 +456,13 @@ namespace drawerbase {
 
 		textbox& textbox::from(int n)
 		{
-			_m_caption(::nana::to_wstring(n));
+			_m_caption(std::to_wstring(n));
 			return *this;
 		}
 
 		textbox& textbox::from(double d)
 		{
-			_m_caption(::nana::to_wstring(d));
+			_m_caption(std::to_wstring(d));
 			return *this;
 		}
 

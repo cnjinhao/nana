@@ -82,7 +82,7 @@ namespace nana{	namespace paint
 						return false;
 
 					std::unique_ptr<char[]> buffer(new char[static_cast<int>(size)]);
-					
+
 					ifs.read(buffer.get(), size);
 					if(size == ifs.gcount())
 					{
@@ -94,7 +94,7 @@ namespace nana{	namespace paint
 
 							//Bitmap file is 4byte-aligned for each line.
 							std::size_t bytes_per_line;
-							const std::size_t height_pixels = abs(info->bmiHeader.biHeight);
+							const std::size_t height_pixels = std::abs(info->bmiHeader.biHeight);
 							if(0 == info->bmiHeader.biSizeImage)
 								bytes_per_line = (((info->bmiHeader.biWidth * info->bmiHeader.biBitCount + 31) & ~31) >> 3);
 							else
@@ -204,7 +204,7 @@ namespace nana{	namespace paint
 										d = dpend;
 										s -= bytes_per_line;
 									}
-								}							
+								}
 							}
 							else if(2 == info->bmiHeader.biBitCount)
 							{
@@ -257,7 +257,7 @@ namespace nana{	namespace paint
 										d = dpend;
 										s -= bytes_per_line;
 									}
-								}							
+								}
 							}
 							else if(1 == info->bmiHeader.biBitCount)
 							{
@@ -310,7 +310,7 @@ namespace nana{	namespace paint
 										d = dpend;
 										s -= bytes_per_line;
 									}
-								}							
+								}
 							}
 						}
 					}

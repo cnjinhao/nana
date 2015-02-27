@@ -15,6 +15,7 @@
 #include <nana/deploy.hpp>
 #include <cstdlib>
 #include <stdexcept>
+
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_LINUX)
@@ -22,38 +23,12 @@
 	#include PLATFORM_SPEC_HPP
 #endif
 
-namespace nana
+#if defined(NANA_MINGW)
+#include <sstream>
+namespace std
 {
-	std::size_t strlen(const char_t* str)
-	{
-#if defined(NANA_UNICODE)
-		return ::wcslen(str);
-#else
-		return ::strlen(str);
-#endif
-	}
-
-	double strtod(const char_t* str, char_t** endptr)
-	{
-#if defined(NANA_UNICODE)
-		return ::wcstod(str, endptr);
-#else
-		return ::strtod(str, endptr);
-#endif
-	}
-
-	char_t* strcpy(char_t* dest, const char_t* source)
-	{
-#if defined(NANA_UNICODE)
-		return ::wcscpy(dest, source);
-#else
-		return ::strcpy(dest, source);
-#endif
-	}
-
 	int stoi(const std::string& str, std::size_t * pos, int base)
 	{
-#if defined(NANA_MINGW)
 		auto sptr = str.c_str();
 		char *end;
 		errno = 0;
@@ -67,14 +42,10 @@ namespace nana
 		if (pos)
 			*pos = (std::size_t)(end - sptr);
 		return ((int)result);
-#else
-		return std::stoi(str, pos, base);
-#endif
 	}
 
 	int stoi(const std::wstring& str, std::size_t* pos, int base)
 	{
-#if defined(NANA_MINGW)
 		auto sptr = str.data();
 		wchar_t *end;
 		errno = 0;
@@ -88,14 +59,42 @@ namespace nana
 		if (pos)
 			*pos = (std::size_t)(end - sptr);
 		return ((int)result);
-#else
-		return std::stoi(str, pos, base);
-#endif
+	}
+
+	float stof(const std::string& str, std::size_t * pos)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		char *end;
+		auto result = std::strtof(ptr, &end);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stof argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	float stof(const std::wstring& str, std::size_t* pos)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		wchar_t *end;
+		auto result = std::wcstof(ptr, &end);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stof argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
 	}
 
 	double stod(const std::string& str, std::size_t * pos)
 	{
-#ifdef NANA_MINGW
 		auto *ptr = str.data();
 		errno = 0;
 		char *end;
@@ -108,14 +107,10 @@ namespace nana
 		if (pos)
 			*pos = (std::size_t)(end - ptr);
 		return result;
-#else
-		return std::stod(str, pos);
-#endif
 	}
 
 	double stod(const std::wstring& str, std::size_t* pos)
 	{
-#ifdef NANA_MINGW
 		auto *ptr = str.data();
 		errno = 0;
 		wchar_t *end;
@@ -128,110 +123,258 @@ namespace nana
 		if (pos)
 			*pos = (std::size_t)(end - ptr);
 		return result;
-#else
-		return std::stod(str, pos);
-#endif
+	}
+
+	long double stold(const std::string& str, std::size_t * pos)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		char *end;
+		auto result = std::strtold(ptr, &end);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stold argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	long double stold(const std::wstring& str, std::size_t* pos)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		wchar_t *end;
+		auto result = std::wcstold(ptr, &end);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stold argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	long stol(const std::string& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		char *end;
+		auto result = std::strtol(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stol argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	long stol(const std::wstring& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		wchar_t *end;
+		auto result = std::wcstol(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stol argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	//Workaround for no implemenation of std::stoll in MinGW.
+	long long stoll(const std::string& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		char* end;
+		auto result = std::strtoll(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoll argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	long long stoll(const std::wstring& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		wchar_t* end;
+		auto result = std::wcstoll(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoll argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	unsigned long long stoull(const std::string& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		char* end;
+		auto result = std::strtoull(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoull argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	unsigned long long stoull(const std::wstring& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		wchar_t* end;
+		auto result = std::wcstoull(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoull argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	//Workaround for no implemenation of std::stoul in MinGW.
+	unsigned long stoul(const std::string& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		char* end;
+		auto result = std::strtoul(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoul argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
+	}
+
+	unsigned long stoul(const std::wstring& str, std::size_t* pos, int base)
+	{
+		auto *ptr = str.data();
+		errno = 0;
+		wchar_t* end;
+		auto result = std::wcstoul(ptr, &end, base);
+
+		if (ptr == end)
+			throw std::invalid_argument("invalid stod argument");
+		if (errno == ERANGE)
+			throw std::out_of_range("stoul argument out of range");
+		if (pos)
+			*pos = (std::size_t)(end - ptr);
+		return result;
 	}
 
 	std::wstring to_wstring(double v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif	
 	}
 
 	std::wstring to_wstring(long double v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif		
 	}
 
 	std::wstring to_wstring(unsigned v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif	
 	}
 
 	std::wstring to_wstring(int v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif	
 	}
 
 	std::wstring to_wstring(long v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif		
 	}
 
 	std::wstring to_wstring(unsigned long v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif	
 	}
 
 	std::wstring to_wstring(long long v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif		
 	}
 
 	std::wstring to_wstring(unsigned long long v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
-#else
-		return std::to_wstring(v);
-#endif	
 	}
 
 	std::wstring to_wstring(float v)
 	{
-#ifdef NANA_MINGW
 		std::wstringstream ss;
 		ss << v;
 		return ss.str();
+	}
+}
+#endif
+
+namespace nana
+{
+	std::size_t strlen(const char_t* str)
+	{
+#if defined(NANA_UNICODE)
+		return ::wcslen(str);
 #else
-		return std::to_wstring(v);
-#endif		
+		return ::strlen(str);
+#endif
 	}
 
+	char_t* strcpy(char_t* dest, const char_t* source)
+	{
+#if defined(NANA_UNICODE)
+		return ::wcscpy(dest, source);
+#else
+		return ::strcpy(dest, source);
+#endif
+	}
+}
+
+namespace nana
+{
 	bool is_incomplete(const nana::string& str, unsigned pos)
 	{
 #ifndef NANA_UNICODE

@@ -11,7 +11,11 @@
  */
 
 #include <nana/basic_types.hpp>
+#if defined(USE_STD_REGEX)
 #include <regex>
+#else
+#include <vector>
+#endif
 #include <algorithm>
 
 namespace nana
@@ -60,10 +64,46 @@ namespace nana
 			a_ = 1.0;
 	}
 
+#if !defined(USE_STD_REGEX)
+	std::string read_number(std::string& str, std::size_t& pos)
+	{
+		pos = str.find_first_of("0123456789", pos);
+		if (pos == str.npos)
+			return{};
+
+		auto end = str.find_first_not_of("0123456789", pos + 1);
+		//integer part
+		if (end == str.npos)
+		{
+			pos = end;
+			return str.substr(pos);
+		}
+
+		if (str[end] == '.')
+		{
+			auto decimal_end = str.find_first_not_of("0123456789", end + 1);
+			if ((decimal_end == str.npos) || (decimal_end == end + 1)) //Because of missing %
+				return{};
+
+			end = decimal_end;
+		}
+
+		auto ch = str[end];
+		if (ch == '%' || ch == ' ' || ch == ',' || ch == ')')
+		{
+			auto start = pos;
+			pos = end + (ch == '%' ? 1 : 0);
+			return str.substr(start, pos - start);
+		}
+		return{};
+	}
+#endif
+
 	//Initializes the color with a CSS-like string
 	//contributor: BigDave(mortis2007 at hotmail co uk)
 	//date: February 3, 2015
 	//maintainor: Jinhao, extended the support of CSS-spec
+
 	color::color(std::string css_color)
 		: a_(1.0)
 	{
@@ -85,7 +125,7 @@ namespace nana
 			if ((endpos - pos != 4) && (endpos - pos != 7))
 				throw std::invalid_argument(excpt_what);
 
-			auto n = ::nana::stoi(css_color.substr(pos + 1, endpos - pos - 1), nullptr, 16);
+			auto n = std::stoi(css_color.substr(pos + 1, endpos - pos - 1), nullptr, 16);
 
 			if (endpos - pos == 4)
 			{
@@ -135,6 +175,7 @@ namespace nana
 			has_alpha = true;
 		}
 
+#if defined(USE_STD_REGEX)
 		std::regex pat;
 		std::regex_iterator<std::string::iterator> i, end;
 		auto type_name = css_color.substr(pos, 3);
@@ -222,6 +263,106 @@ namespace nana
 				throw std::invalid_argument(excpt_what);	//invalid alpha value
 			a_ = ::nana::stod(i->str());
 		}
+#else
+		auto type_name = css_color.substr(pos, 3);
+		pos = css_color.find_first_not_of(' ', type_end);
+		if (pos == css_color.npos || css_color[pos] != '(')
+			throw std::invalid_argument(excpt_what);
+
+		auto str = read_number(css_color, ++pos);
+		if (str.empty())
+			throw std::invalid_argument(excpt_what);
+
+		if ("rgb" == type_name)
+		{
+			std::vector<std::string> rgb;
+
+			rgb.emplace_back(std::move(str));
+
+			const bool is_real = (rgb.back().back() == '%');
+
+			for (int i = 0; i < 2; ++i)
+			{
+				pos = css_color.find_first_not_of(' ', pos);
+				if (pos == css_color.npos || css_color[pos] != ',')
+					throw std::invalid_argument(excpt_what);
+
+				str = read_number(css_color, ++pos);
+				if (str.empty())
+					throw std::invalid_argument(excpt_what);
+
+				rgb.emplace_back(std::move(str));
+				if (rgb.size() == 3)
+					break;
+			}
+
+			if (rgb.size() != 3)
+				throw std::invalid_argument(excpt_what);
+
+			if (is_real)
+			{
+				auto pr = std::stod(rgb[0].substr(0, rgb[0].size() - 1));
+				r_ = (pr > 100 ? 255.0 : 2.55 * pr);
+
+				pr = std::stod(rgb[1].substr(0, rgb[1].size() - 1));
+				g_ = (pr > 100 ? 255.0 : 2.55 * pr);
+
+				pr = std::stod(rgb[2].substr(0, rgb[2].size() - 1));
+				b_ = (pr > 100 ? 255.0 : 2.55 * pr);
+			}
+			else
+			{
+				r_ = std::stod(rgb[0]);
+				if (r_ > 255.0)	r_ = 255;
+
+				g_ = std::stod(rgb[1]);
+				if (g_ > 255.0)	g_ = 255;
+
+				b_ = std::stod(rgb[2]);
+				if (b_ > 255.0)	b_ = 255;
+			}
+		}
+		else if ("hsl" == type_name)
+		{
+			if (str.back() == '%')
+				throw std::invalid_argument(excpt_what);
+
+			auto h = std::stod(str);
+
+			pos = css_color.find_first_not_of(' ', pos);
+			if (pos == css_color.npos || css_color[pos] != ',')
+				throw std::invalid_argument(excpt_what);
+
+			str = read_number(css_color, ++pos);
+			if (str.empty() || str.back() != '%')
+				throw std::invalid_argument(excpt_what);
+
+			auto s = std::stod(str.substr(0, str.size() - 1));
+
+			pos = css_color.find_first_not_of(' ', pos);
+			if (pos == css_color.npos || css_color[pos] != ',')
+				throw std::invalid_argument(excpt_what);
+
+			str = read_number(css_color, ++pos);
+			if (str.empty() || str.back() != '%')
+				throw std::invalid_argument(excpt_what);
+
+			auto l = std::stod(str.substr(0, str.size() - 1));
+
+			from_hsl(h, s / 100, l / 100);
+		}
+		else
+			throw std::invalid_argument(excpt_what);	//invalid color type
+
+		if (has_alpha)
+		{
+			str = read_number(css_color, ++pos);
+			if (str.empty() || str.back() == '%')
+				throw std::invalid_argument(excpt_what); //invalid alpha value
+
+			a_ = std::stod(str);
+		}
+#endif
 	}
 
 	color& color::from_rgb(unsigned red, unsigned green, unsigned blue)

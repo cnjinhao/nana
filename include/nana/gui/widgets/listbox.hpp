@@ -558,7 +558,6 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
-		size_type _m_headers() const;
 		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
 		void _m_ease_key(nana::detail::key_interface*);
 	};
