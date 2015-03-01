@@ -118,9 +118,9 @@ namespace detail
 		bool available(core_window_t *, core_window_t*);
 		bool available(native_window_type);
 
-		core_window_t* create_root(core_window_t* owner, bool nested, rectangle, const appearance&, widget*);
-		core_window_t* create_widget(core_window_t* parent, const rectangle&, bool is_lite, widget*);
-		core_window_t* create_frame(core_window_t* parent, const rectangle&, widget*);
+		core_window_t* create_root(core_window_t*, bool nested, rectangle, const appearance&, widget*);
+		core_window_t* create_widget(core_window_t*, const rectangle&, bool is_lite, widget*);
+		core_window_t* create_frame(core_window_t*, const rectangle&, widget*);
 		bool insert_frame(core_window_t* frame, native_window);
 		bool insert_frame(core_window_t* frame, core_window_t*);
 		void close(core_window_t*);

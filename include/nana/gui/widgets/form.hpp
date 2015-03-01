@@ -1,7 +1,7 @@
 /*
  *	A Form Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -37,7 +37,7 @@ namespace nana
 	class form: public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
 	{
 	public:
-		typedef ::nana::appear appear;
+		using appear = ::nana::appear;
 
 		/// Creates a window at the point and size specified by rect, and with the specified appearance. Creates a form owned by the desktop.
 		form(const rectangle& = API::make_center(300, 200), const appearance& = {});	//Default constructor
@@ -53,7 +53,7 @@ namespace nana
 	class nested_form : public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
 	{
 	public:
-		typedef ::nana::appear appear;
+		using appear = ::nana::appear;
 
 		nested_form(const form&, const rectangle& = {}, const appearance& = {});
 		nested_form(const nested_form&, const rectangle& = {}, const appearance& = {});
