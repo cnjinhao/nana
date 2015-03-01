@@ -30,6 +30,7 @@ namespace nana
 
 	/// Zoom the input_s to fit for ref_s
 	void fit_zoom(const size& input_s, const size& ref_s, size& result_s);
+	size fit_zoom(const size& input_s, size ref_s);
 
 	//zoom
 	//@brief:	Calculate the scaled rectangle by refer dst rectangle, that scale factor is same as that between scaled and refer.

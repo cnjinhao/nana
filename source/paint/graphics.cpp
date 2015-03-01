@@ -800,6 +800,11 @@ namespace paint
 			changed_ = false;
 		}
 
+		void graphics::set_changed()
+		{
+			changed_ = true;
+		}
+
 		void graphics::release()
 		{
 			dwptr_.reset();

@@ -17,62 +17,52 @@
 
 namespace nana
 {
-	namespace xpicture
+	class picture;
+
+	namespace drawerbase
 	{
-		class picture_drawer: public drawer_trigger
+		namespace picture
 		{
-		public:
-			picture_drawer();
-			void attached(widget_reference, graph_reference)	override;
-			void load(const nana::char_t* file);
-			void load(const nana::paint::image&);
-			void set_shadow_background(const ::nana::color& from, const ::nana::color& to, bool horizontal);
-			bool bgstyle(bool is_stretch, nana::arrange, int beg, int end);
-		private:
-			void refresh(graph_reference)	override;
-			void _m_draw_background();
-		private:
-			widget* widget_;
-			nana::paint::graphics* graph_;
+			struct implement;
 
-			struct
+			class drawer : public drawer_trigger
 			{
-				::nana::color gradual_from;
-				::nana::color gradual_to;
-				bool	horizontal;
-			}bground_;
+				friend class ::nana::picture;
+			public:
+				drawer();
+				~drawer();
+				void attached(widget_reference, graph_reference)	override;
+			private:
+				void refresh(graph_reference)	override;
+				void _m_draw_background();
+			private:
+				implement * const impl_;
+			};
+		}//end namespace picture
+	}//end namespace drawerbase
 
-			struct back_image_tag
-			{
-				nana::paint::image	image;
-				bool is_stretch;
-				nana::arrange arg;
-				int beg, end;
-			}backimg_;
-
-		};
-		
-	}//end namespace xpicture
        /// Rectangle area for displaying a bitmap file
 	class picture
-		: public widget_object<category::widget_tag, xpicture::picture_drawer>
+		: public widget_object<category::widget_tag, drawerbase::picture::drawer>
 	{
 	public:
-		picture();
+		picture() = default;
 		picture(window, bool visible);
-		picture(window, const rectangle& = rectangle(), bool visible = true);
+		picture(window, const rectangle& ={}, bool visible = true);
 
-		void load(const nana::paint::image&);
+		void load(::nana::paint::image, const rectangle& valid_area = {});
 
-        /// Sets the background image style.
-		void bgstyle(bool stretchable,    ///< if false the other arguments will be ignored
-                      nana::arrange arg,  ///< stretching the image horizontally or vertically
-                      int beg,            ///< specify the stretchy area of image.
-                      int end             ///< specify the stretchy area of image.
-                      );
+		/// Sets the align of image.
+		void align(align, align_v);
+
+		/// Enables the image to be stretched to the widget size.
+		void stretchable(unsigned left, unsigned top, unsigned right, unsigned bottom);
+
+		/// Enables/disable the image to be stretched without changing aspect ratio.
+		void stretchable(bool);
 
         /// Fills a gradual-change color in background. If One of colors is invisible or clr_from is equal to clr_to, it draws background in bgcolor.
-		void set_gradual_background(const ::nana::color& clr_from, const ::nana::color& clr_to, bool horizontal);
+		void set_gradual_background(const color& clr_from, const color& clr_to, bool horizontal);
 		void transparent(bool);
 		bool transparent() const;
 	};
