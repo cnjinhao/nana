@@ -250,6 +250,11 @@ namespace paint
 			image_ptr_.reset();
 		}
 
+		bool image::alpha() const
+		{
+			return (image_ptr_ ? image_ptr_->alpha_channel() : false);
+		}
+
 		nana::size image::size() const
 		{
 			return (image_ptr_ ? image_ptr_->size() : nana::size());
