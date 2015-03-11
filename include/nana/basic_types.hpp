@@ -18,7 +18,7 @@
 
 namespace nana
 {
-	//A constant value for the invalid position.
+	/// A constant value for the invalid position.
 	const std::size_t npos = static_cast<std::size_t>(-1);
 
 
@@ -127,8 +127,7 @@ namespace nana
 
 	using pixel_color_t = pixel_argb_t;
 
-	//http://www.w3.org/TR/2011/REC-css3-color-20110607/
-	//4.3. Extended color keywords
+	/// See extended CSS color keywords (4.3) in http://www.w3.org/TR/2011/REC-css3-color-20110607/
 	enum class colors
 	{
 		alice_blue = 0xf0f8ff,
@@ -320,10 +319,10 @@ namespace nana
 
 		color blend(const color& bgcolor, bool ignore_bgcolor_alpha) const;
 
-		///< Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
+		/// Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
 		color blend(const color& bgcolor, double alpha) const;
 
-		///< Determines whether the color is completely transparent.
+		/// Determines whether the color is completely transparent.
 		bool invisible() const;
 		pixel_color_t px_color() const;
 		pixel_argb_t argb() const;

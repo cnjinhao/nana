@@ -2528,7 +2528,7 @@ namespace nana{	namespace widgets
 
 				//The number of new lines minus one
 				const auto chp_end = text.data() + (begin == text.npos ? text.size() : begin);
-				for (auto chp = text.data() + (pos + 2); chp != chp_end; ++chp)
+				for (auto chp = text.data() + (pos + 1); chp != chp_end; ++chp) // + 2
 					if (*chp == '\n')
 						lines.emplace_back(0, 0);
 
