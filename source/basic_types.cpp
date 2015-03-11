@@ -18,6 +18,8 @@
 #endif
 #include <algorithm>
 
+#include <stdexcept>
+
 namespace nana
 {
 	//class color

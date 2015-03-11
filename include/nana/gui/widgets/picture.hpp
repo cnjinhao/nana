@@ -34,7 +34,7 @@ namespace nana
 				void attached(widget_reference, graph_reference)	override;
 			private:
 				void refresh(graph_reference)	override;
-				void _m_draw_background();
+				void _m_draw_background(unsigned,unsigned);
 			private:
 				implement * const impl_;
 			};

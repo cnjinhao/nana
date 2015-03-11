@@ -1,7 +1,7 @@
 /*
 *	Implementation of Notifier
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,7 +16,12 @@
 
 #include <unordered_map>
 #include <unordered_set>
+
+#if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
+#include <nana/std_mutex.hpp>
+#else
 #include <mutex>
+#endif
 
 #if defined(NANA_WINDOWS)
 #include <nana/detail/win32/platform_spec.hpp>
