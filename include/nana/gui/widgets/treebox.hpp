@@ -1,4 +1,4 @@
-/*
+/**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -8,7 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/treebox.hpp
- *	@brief:
+ *	 @brief
  *		The treebox organizes the nodes by a key string. 
  *		The treebox would have a vertical scrollbar if the node
  *	is too many to display. And it does not have a horizontal scrollbar,

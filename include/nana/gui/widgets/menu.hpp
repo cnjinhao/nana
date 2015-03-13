@@ -1,4 +1,4 @@
-/*
+/**
  *	A Menu implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
