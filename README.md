@@ -14,7 +14,7 @@ The best way to get help with Nana library is by visiting http://nanapro.org/hel
 
 ## Sending a Pull Request ?
 
-This project is encourage you to contribute it through sending a pull request! There is a simple rule, please don't directly commit your contributions to the master branch. According to your commits, please choose the hotfixes branch or the develop branch. Thank you!
+This project is encourage you to contribute it through sending a pull request! There is a simple rule, please **don't** directly commit your contributions to the **master** branch. According to your commits, please choose the **hotfixes** branch or the **develop** branch. Thank you!
 
 ## Introduction to the Repository
 
