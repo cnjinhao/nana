@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/basic_types.cpp
+ *	@contributos: Jan
  */
 
 #include <nana/basic_types.hpp>
