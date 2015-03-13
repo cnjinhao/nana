@@ -21,6 +21,7 @@
 #include <nana/gui/place.hpp>
 #include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
+#include <nana/gui/filebox.hpp>
 #include <functional>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -352,10 +353,6 @@ namespace nana
 
 	msgbox::msgbox(const nana::string& title)
 		: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
-	{}
-
-	msgbox::msgbox(window wd, const nana::string& title)
-		: wd_(wd), title_(title), button_(ok), icon_(icon_none)
 	{}
 
 	msgbox::msgbox(window wd, const nana::string& title, button_t b)

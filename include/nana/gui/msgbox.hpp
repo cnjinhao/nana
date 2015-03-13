@@ -14,10 +14,12 @@
 #define NANA_GUI_MSGBOX_HPP
 
 #include <sstream>
-#include <nana/gui/filebox.hpp>
 
 namespace nana
 {
+	//Forward declaration of filebox for msgbox
+	class filebox;
+
 	/// Prefabricated modal dialog box (with text, icon and actions buttons) that inform and instruct the user.
 	class msgbox
 	{
@@ -43,11 +45,8 @@ namespace nana
 		/// Construct that creates a message box with a specified title and default button.
 		msgbox(const nana::string&);
 
-		/// Construct that creates a message box with an owner window and a specified title.
-		msgbox(window, const nana::string&);
-
 		/// Construct that creates a message box with an owner windoow, a specified title and buttons. 
-		msgbox(window, const nana::string&, button_t);
+		msgbox(window, const nana::string&, button_t = ok);
 
 		/// Sets an icon for informing user.
 		msgbox& icon(icon_t);
