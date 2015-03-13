@@ -1,15 +1,15 @@
 /*
-*	A text editor implementation
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
-*
-*	Distributed under the Boost Software License, Version 1.0.
-*	(See accompanying file LICENSE_1_0.txt or copy at
-*	http://www.boost.org/LICENSE_1_0.txt)
-*
-*	@file: nana/gui/widgets/skeletons/text_editor.cpp
-*	@description:
-*/
+ *	A text editor implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file: nana/gui/widgets/skeletons/text_editor.cpp
+ *	@contributors: qPCR4vir
+ */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
 #include <nana/gui/element.hpp>
@@ -2528,7 +2528,7 @@ namespace nana{	namespace widgets
 
 				//The number of new lines minus one
 				const auto chp_end = text.data() + (begin == text.npos ? text.size() : begin);
-				for (auto chp = text.data() + (pos + 1); chp != chp_end; ++chp) // + 2
+				for (auto chp = text.data() + (pos + 1); chp != chp_end; ++chp)
 					if (*chp == '\n')
 						lines.emplace_back(0, 0);
 
