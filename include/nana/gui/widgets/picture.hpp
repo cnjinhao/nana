@@ -1,4 +1,4 @@
-/*
+/**
  *	A Picture Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -9,7 +9,7 @@
  *
  *	@file: nana/gui/widgets/picture.hpp
  *
- *	Used for showing a picture
+ *	@brief Used for showing a picture
  */
 #ifndef NANA_GUI_WIDGET_PICTURE_HPP
 #define NANA_GUI_WIDGET_PICTURE_HPP

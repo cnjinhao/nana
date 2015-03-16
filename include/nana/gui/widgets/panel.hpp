@@ -1,4 +1,4 @@
-/*
+/**
  *	A Panel Implementation
  *	Nana C++ Library(http://www.nanaro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -9,7 +9,7 @@
  *
  *	@file: nana/gui/widgets/panel.hpp
  *
- *	@brief: panel is a widget used for placing some widgets.
+ *	@brief panel is a widget used for placing some widgets.
  */
 
 #ifndef NANA_GUI_WIDGETS_PANEL_HPP
