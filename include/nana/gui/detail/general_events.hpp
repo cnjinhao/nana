@@ -430,8 +430,7 @@ namespace nana
 		unsigned distance;	///< expressed in multiples or divisions of 120
 	};
 
-	struct arg_dropfiles : public event_arg  // It could be from arg_mouse ?? 
-                                             // Is possible struct arg_drop:arg_mouse {any data;}; ?
+	struct arg_dropfiles : public event_arg  
 	{
 		::nana::window	window_handle;	    ///<  A handle to the event window
 		::nana::point	pos;	            ///<  cursor position in the event window
