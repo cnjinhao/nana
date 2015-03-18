@@ -1,4 +1,4 @@
-/*
+/**
 *	Definition of General Events
 *	Nana C++ Library(http://www.nanapro.org)
 *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -43,11 +43,13 @@ namespace nana
 		void events_operation_cancel(event_handle);
 	}//end namespace detail
 
+    /// base clase for all event argument types
 	class event_arg
 	{
 	public:
 		virtual ~event_arg();
 
+        /// ignorable handlers behind the current one in a chain of event handlers will not get called.
 		void stop_propagation() const;
 		bool propagation_stopped() const;
 	private:
@@ -56,6 +58,7 @@ namespace nana
 
 	struct general_events;
 
+    /// the type of the members of general_events 
 	template<typename Arg>
 	class basic_event : public detail::event_interface
 	{
@@ -90,6 +93,7 @@ namespace nana
 			}
 		};
 	public:
+        /// It will get called firstly, because it is set at the beginning of the chain.
 		template<typename Function>
 		event_handle connect_front(Function && fn)
 		{
@@ -112,6 +116,7 @@ namespace nana
 			});
 		}
 
+		/// It will not get called if stop_propagation() was called.
 		template<typename Function>
 		event_handle connect(Function && fn)
 		{
@@ -127,13 +132,15 @@ namespace nana
 			return evt;
 		}
 
-		template<typename Function>
+		/// It will not get called if stop_propagation() was called.
+        template<typename Function>
 		event_handle operator()(Function&& fn)
 		{
 			return connect(std::forward<Function>(fn));
 		}
 
-		template<typename Function>
+		/// It will get called because it is unignorable.
+        template<typename Function>
 		event_handle connect_unignorable(Function && fn, bool in_front = false)
 		{
 			internal_scope_guard lock;
@@ -398,16 +405,19 @@ namespace nana
 	struct arg_mouse
 		: public event_arg
 	{
-		event_code evt_code;
-		::nana::window window_handle;
-		::nana::point pos;
-		bool left_button;
-		bool mid_button;
-		bool right_button;
-		bool shift;
-		bool ctrl;
+		event_code evt_code; ///< 
+		::nana::window window_handle;  ///< A handle to the event window
+		::nana::point pos;   ///< cursor position in the event window
+		bool left_button;    ///< mouse left button is pressed?
+		bool mid_button;     ///< mouse middle button is pressed?
+		bool right_button;   ///< mouse right button is pressed?
+		bool shift;          ///< keyboard Shift is pressed?
+		bool ctrl;           ///< keyboard Ctrl is pressed?
 	};
 
+    /// in arg_wheel event_code is event_code::mouse_wheel 
+    /// The type arg_wheel is derived from arg_mouse, a handler 
+    /// with prototype void(const arg_mouse&) can be set for mouse_wheel.
 	struct arg_wheel : public arg_mouse
 	{
 		enum class wheel{
@@ -415,98 +425,99 @@ namespace nana
 			horizontal
 		};
 
-		wheel	which;		///<which wheel is rotated
-		bool	upwards;	///< true if the wheel is rotated to the top/left, depends on which. false otherwise.
-		unsigned distance;	//expressed in multiples or divisions of 120
+		wheel	which;		///< which wheel is rotated
+		bool	upwards;	///< true if the wheel is rotated to the top/left, depends on which and false otherwise
+		unsigned distance;	///< expressed in multiples or divisions of 120
 	};
 
-	struct arg_dropfiles : public event_arg
+	struct arg_dropfiles : public event_arg  
 	{
-		::nana::window	window_handle;
-		::nana::point	pos;
-		std::vector<nana::string>	files;
+		::nana::window	window_handle;	    ///<  A handle to the event window
+		::nana::point	pos;	            ///<  cursor position in the event window
+		std::vector<nana::string>	files;	///<  external filenames
 	};
 
 	struct arg_expose : public event_arg
 	{
-		::nana::window window_handle;
-		bool exposed;
+		::nana::window window_handle;	///< A handle to the event window
+		bool exposed;	                ///< the window is visible?
 	};
 
 	struct arg_focus : public event_arg
 	{
-		::nana::window window_handle;
-		::nana::native_window_type receiver;
-		bool getting;
+		::nana::window window_handle;	      ///< A handle to the event window
+		::nana::native_window_type receiver;  ///< it is a native window handle, and specified which window receives focus
+		bool getting;	                      ///< the window received focus?
 	};
 
 	struct arg_keyboard : public event_arg
 	{
-		event_code evt_code;
-		::nana::window window_handle;
-		mutable nana::char_t key;
-		mutable bool ignore;
-		bool ctrl;
-		bool shift;
+		event_code evt_code;	    ///< it is event_code::key_press in current event
+		::nana::window window_handle;	///< A handle to the event window
+		mutable nana::char_t key;	///< the key corresponding to the key pressed
+		mutable bool ignore;	    ///< this member is not used
+		bool ctrl;	                ///< keyboard Ctrl is pressed?
+		bool shift;	                ///< keyboard Shift is pressed
 	};
 
 	struct arg_move : public event_arg
 	{
-		::nana::window window_handle;
-		int x;
-		int y;
+		::nana::window window_handle;	///< A handle to the event window
+		int x;	                        ///< 
+		int y;	                        ///< 
 	};
 
 	struct arg_resized : public event_arg
 	{
-		::nana::window window_handle;
-		unsigned width;
-		unsigned height;
+		::nana::window window_handle;	///< A handle to the event window
+		unsigned width;	                ///< new width in pixels.
+		unsigned height;	            ///< new height in pixels.
 	};
 
 	struct arg_resizing : public event_arg
 	{
-		::nana::window window_handle;
-		window_border border;
-		mutable unsigned width;
-		mutable unsigned height;
+		::nana::window window_handle;	///< A handle to the event window
+		window_border border;	        ///< the window is being resized by moving border
+		mutable unsigned width;	        ///< new width in pixels. If it is modified, the window's width will be the modified value
+		mutable unsigned height;	    ///< new height in pixels. If it is modified, the window's height will be the modified value
 	};
 
 	struct arg_unload : public event_arg
 	{
-		::nana::window window_handle;
-		mutable bool cancel;
+		::nana::window window_handle;	///< A handle to the event window
+		mutable bool cancel;	        ///< 
 	};
 
 	struct arg_destroy : public event_arg
 	{
-		::nana::window window_handle;
+		::nana::window window_handle;	///< A handle to the event window
 	};
 
+    /// provides some fundamental events that every widget owns.
 	struct general_events
 	{
 		virtual ~general_events(){}
-		basic_event<arg_mouse> mouse_enter;
-		basic_event<arg_mouse> mouse_move;
-		basic_event<arg_mouse> mouse_leave;
-		basic_event<arg_mouse> mouse_down;
-		basic_event<arg_mouse> mouse_up;
-		basic_event<arg_mouse> click;
-		basic_event<arg_mouse> dbl_click;
-		basic_event<arg_wheel> mouse_wheel;
-		basic_event<arg_dropfiles>	mouse_dropfiles;
-		basic_event<arg_expose>	expose;
-		basic_event<arg_focus>	focus;
-		basic_event<arg_keyboard>	key_press;
-		basic_event<arg_keyboard>	key_release;
-		basic_event<arg_keyboard>	key_char;
-		basic_event<arg_keyboard>	shortkey;
+		basic_event<arg_mouse> mouse_enter; ///< the cursor enters the window
+		basic_event<arg_mouse> mouse_move;  ///< the cursor moves on the window
+		basic_event<arg_mouse> mouse_leave; ///< the cursor leaves the window
+		basic_event<arg_mouse> mouse_down;  ///< the user presses the mouse button
+		basic_event<arg_mouse> mouse_up;    ///< the user presses the mouse button
+		basic_event<arg_mouse> click;       ///< the window is clicked, but occurs after mouse_down and before mouse_up
+		basic_event<arg_mouse> dbl_click;   ///< the window is double clicked
+		basic_event<arg_wheel> mouse_wheel; ///< the mouse wheel rotates while the window has focus
+		basic_event<arg_dropfiles>	mouse_dropfiles; ///< the mouse drops some external data while the window enable accepting files
+		basic_event<arg_expose>	expose;     ///< the visibility changes
+		basic_event<arg_focus>	focus;      ///< the window receives or loses keyboard focus
+		basic_event<arg_keyboard>	key_press;   ///< a key is pressed while the window has focus. event code is event_code::key_press
+		basic_event<arg_keyboard>	key_release; ///< a key is released while the window has focus. event code is event_code::key_release
+		basic_event<arg_keyboard>	key_char;    ///< a character, whitespace or backspace is pressed. event code is event_code::key_char
+		basic_event<arg_keyboard>	shortkey;    ///< a defined short key is pressed. event code is event_code::shortkey
 
-		basic_event<arg_move>		move;
-		basic_event<arg_resizing>	resizing;
-		basic_event<arg_resized>	resized;
+		basic_event<arg_move>		move;     ///< the window changes position
+		basic_event<arg_resizing>	resizing; ///< the window is changing its size
+		basic_event<arg_resized>	resized;  ///< the window is changing its size
 
-		basic_event<arg_destroy>	destroy;
+		basic_event<arg_destroy>	destroy;  ///< the window is destroyed, but occurs when all children have been destroyed
 	};
 
 	namespace detail
