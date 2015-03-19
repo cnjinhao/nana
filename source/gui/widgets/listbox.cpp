@@ -2613,6 +2613,8 @@ namespace nana
 					for(auto index : seqs)
 					{
 						const auto & header = essence_->header.column(index);
+                        auto it_bgcolor = bgcolor;
+                        //auto it_fgcolor = fgcolor;
 
 						if ((item.cells.size() > index) && (header.pixels > 5))
 						{
@@ -2622,14 +2624,14 @@ namespace nana
 
 							if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))
 							{
-								if (!item.flags.selected)
-								{
-									if (item_state::highlighted == state)
-										graph->set_color(m_cell.custom_format->bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8));
-									else
-										graph->set_color(m_cell.custom_format->bgcolor);
-									graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
-								}
+								it_bgcolor = m_cell.custom_format->bgcolor; 
+                                if (item.flags.selected)
+                                    it_bgcolor = it_bgcolor.blend( bgcolor , 0.5) ;
+								if (item_state::highlighted == state)
+									it_bgcolor = it_bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
+                                
+                                graph->set_color(it_bgcolor);
+								graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
 
 								cell_txtcolor = m_cell.custom_format->fgcolor;
 							}
@@ -2677,15 +2679,17 @@ namespace nana
 								//The text is painted over the next subitem
 								int xpos = item_xpos + header.pixels - essence_->suspension_width;
 
-								graph->set_color(bgcolor);
+								graph->set_color(it_bgcolor);
 								graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
-								graph->set_text_color(fgcolor);
+								graph->set_text_color(cell_txtcolor);
 								graph->string(point{ xpos, y + 2 }, STR("..."));
 
 								//Erase the part that over the next subitem.
-								if (index + 1 >= seqs.size())
-									graph->set_color(item.bgcolor);
-								graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
+								if (index + 1 <= seqs.size())
+                                {	
+                                    graph->set_color(bgcolor);
+								    graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
+                                }
 							}
 						}
 
