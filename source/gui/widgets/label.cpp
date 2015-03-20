@@ -765,23 +765,27 @@ namespace nana
 		label::label(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);
+            bgcolor(API::bgcolor(wd));
 		}
 
 		label::label(window wd, const nana::string& text, bool visible)
 		{
 			create(wd, rectangle(), visible);
+            bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
 		label::label(window wd, const nana::char_t* text, bool visible)
 		{
 			create(wd, rectangle(), visible);
+            bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
 		label::label(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
+            bgcolor(API::bgcolor(wd));
 		}
 
 		label& label::transparent(bool enabled)
