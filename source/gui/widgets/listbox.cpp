@@ -8,8 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.cpp
- *	@patchs:
- *		Jan 03 2012, unsigned to std::size_t conversion fail for x64, Hiroshi Seki
+ *	@contributors:	Hiroshi Seki, qPCR4vir
  */
 
 #include <nana/gui/widgets/listbox.hpp>
@@ -2614,7 +2613,6 @@ namespace nana
 					{
 						const auto & header = essence_->header.column(index);
                         auto it_bgcolor = bgcolor;
-                        //auto it_fgcolor = fgcolor;
 
 						if ((item.cells.size() > index) && (header.pixels > 5))
 						{

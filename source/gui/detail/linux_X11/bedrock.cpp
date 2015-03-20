@@ -719,12 +719,11 @@ namespace detail
 						if(kill_focus != new_focus)
 							brock.wd_manager.do_lazy_refresh(kill_focus, false);
 					}
+					auto retain = msgwnd->together.event_ptr;
 					msgwnd->root_widget->other.attribute.root->context.focus_changed = false;
-
 					context.event_window = msgwnd;
 
 					pressed_wd = nullptr;
-					//make_eventinfo(ei, msgwnd, message, xevent);
 					msgwnd->flags.action = mouse_action::pressed;
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, ButtonPress, xevent);
@@ -774,6 +773,8 @@ namespace detail
 					msgwnd->flags.action = mouse_action::normal;
 					if(msgwnd->flags.enabled)
 					{
+						auto retain = msgwnd->together.event_ptr;
+
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
 

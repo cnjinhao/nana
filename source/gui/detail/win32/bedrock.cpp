@@ -948,6 +948,8 @@ namespace detail
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 					msgwnd->flags.action = mouse_action::pressed;
+
+					auto retain = msgwnd->together.events_ptr;
 					if (brock.emit(event_code::mouse_down, msgwnd, arg, true, &context))
 					{
 						//If a root_window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
@@ -982,6 +984,8 @@ namespace detail
 				msgwnd->flags.action = mouse_action::normal;
 				if(msgwnd->flags.enabled)
 				{
+					auto retain = msgwnd->together.events_ptr;
+
 					nana::arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 
