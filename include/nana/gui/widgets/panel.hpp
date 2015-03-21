@@ -44,11 +44,13 @@ namespace nana
 		panel(window wd, bool visible)
 		{
 			this->create(wd, rectangle(), visible);
+            bgcolor(API::bgcolor(wd));
 		}
 
 		panel(window wd, const nana::rectangle& r = rectangle(), bool visible = true)
 		{
 			this->create(wd, r, visible);
+            bgcolor(API::bgcolor(wd));
 		}
 
 		bool transparent() const
