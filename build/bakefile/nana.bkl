@@ -27,6 +27,7 @@ library nana {
         audio/detail/audio_device.cpp
         audio/detail/audio_stream.cpp
         audio/detail/buffer_preparation.cpp
+        detail/platform_spec_selector.cpp
         gui/animation.cpp
         gui/basis.cpp
         gui/dragger.cpp
@@ -46,6 +47,7 @@ library nana {
         gui/wvl.cpp
         gui/detail/basic_window.cpp
         gui/detail/bedrock_pi.cpp
+        gui/detail/bedrock_selector.cpp
         gui/detail/color_schemes.cpp
         gui/detail/drawer.cpp
         gui/detail/element_store.cpp
@@ -90,18 +92,5 @@ library nana {
         system/shared_wrapper.cpp
         system/timepiece.cpp
         threads/pool.cpp
-    }
-
-    if ($(toolset) == gnu)
-        sources {
-            detail/platform_spec_selector.cpp
-            gui/detail/bedrock_selector.cpp
-        }
-
-    if ($(toolset) == vs2013) {
-        sources {
-            detail/win32/platform_spec.cpp
-            gui/detail/win32/bedrock.cpp
-        }
     }
 }
