@@ -1181,6 +1181,21 @@ namespace nana
 					if (to.is_item())
 						item_proxy(ess_, to).select(sel);
 				}
+				void select_display_range(index_pair fr_abs, index_pair to_dpl, bool sel)
+				{
+					index_pair fr_dpl (fr_abs.cat, this->display_order(fr_abs.cat, fr_abs.item));
+                    if (fr_dpl > to_dpl)
+						std::swap(fr_dpl, to_dpl);
+
+					for (; fr_dpl != to_dpl; forward(fr_dpl, 1, fr_dpl))
+					{
+						if (fr_dpl.is_item())
+							item_proxy(ess_, index_pair(fr_dpl.cat, absolute( fr_dpl ) )).select(sel);
+					}
+
+					if (to_dpl.is_item())
+						item_proxy(ess_, index_pair(to_dpl.cat, absolute( to_dpl ) )).select(sel);
+				}
 
 				bool select_for_all(bool sel)
 				{
@@ -2609,7 +2624,7 @@ namespace nana
 					graph->set_color(bgcolor);
 					graph->rectangle(rectangle{ r.x, y, show_w, essence_->item_size }, true);
 
-					int item_xpos = x;
+					int item_xpos         = x;
 					unsigned extreme_text = x;
 					bool first = true;
 
@@ -2688,7 +2703,7 @@ namespace nana
 
 								//Erase the part that over the next subitem.
 								if (index + 1 < seqs.size())
-                                {	
+                                {
                                     graph->set_color(bgcolor);
 								    graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
                                 }
@@ -2926,9 +2941,9 @@ namespace nana
 								if (!lister.single_selection())
 								{
 									if (arg.shift)
-										lister.select_range(lister.last_selected, item_pos, sel);
+										lister.select_display_range(lister.last_selected, item_pos, sel);
 									else if (arg.ctrl)
-										sel = !item_proxy(essence_, item_pos).selected();
+										sel = !item_proxy(essence_, item_pos).selected();  
 									else
 										lister.select_for_all(false);
 								}
@@ -2938,7 +2953,7 @@ namespace nana
 								if(item_ptr)
 								{
 									item_ptr->flags.selected = sel;
-									index_pair last_selected(item_pos.cat, lister.absolute(item_pos));
+									index_pair last_selected(item_pos.cat, lister.absolute(item_pos)); 
 
 									arg_listbox arg{item_proxy{essence_, last_selected}, sel};
 									lister.wd_ptr()->events().selected.emit(arg);
