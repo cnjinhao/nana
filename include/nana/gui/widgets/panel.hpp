@@ -8,6 +8,8 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/panel.hpp
+ *	@author: Jinhao
+ *	@contributors: qPCR4vir
  *
  *	@brief panel is a widget used for placing some widgets.
  */
@@ -44,13 +46,13 @@ namespace nana
 		panel(window wd, bool visible)
 		{
 			this->create(wd, rectangle(), visible);
-            bgcolor(API::bgcolor(wd));
+			bgcolor(API::bgcolor(wd));
 		}
 
 		panel(window wd, const nana::rectangle& r = rectangle(), bool visible = true)
 		{
 			this->create(wd, r, visible);
-            bgcolor(API::bgcolor(wd));
+			bgcolor(API::bgcolor(wd));
 		}
 
 		bool transparent() const

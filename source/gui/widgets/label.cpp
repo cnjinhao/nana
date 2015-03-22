@@ -8,6 +8,8 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: source/gui/widgets/label.cpp
+ *	@author: Jinhao
+ *	@contributors: qPCR4vir
  */
 
 #include <nana/gui/widgets/label.hpp>
@@ -771,21 +773,21 @@ namespace nana
 		label::label(window wd, const nana::string& text, bool visible)
 		{
 			create(wd, rectangle(), visible);
-            bgcolor(API::bgcolor(wd));
+			bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
 		label::label(window wd, const nana::char_t* text, bool visible)
 		{
 			create(wd, rectangle(), visible);
-            bgcolor(API::bgcolor(wd));
+			bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
 		label::label(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
-            bgcolor(API::bgcolor(wd));
+			bgcolor(API::bgcolor(wd));
 		}
 
 		label& label::transparent(bool enabled)

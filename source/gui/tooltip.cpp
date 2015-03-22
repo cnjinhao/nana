@@ -34,7 +34,7 @@ namespace nana
 
 			nana::point pos_by_screen(nana::point pos, const nana::size& sz, bool overlap_allowed)
 			{
-				auto scr_area = screen::from_point(pos)->area();
+				auto scr_area = screen().from_point(pos).workarea();
 				if (pos.x + sz.width > scr_area.x + scr_area.width)
 					pos.x = static_cast<int>(scr_area.x + scr_area.width - sz.width);
 				if (pos.x < scr_area.x)
@@ -77,7 +77,7 @@ namespace nana
 				void tooltip_text(const nana::string& text) override
 				{
 					label_.caption(text);
-					auto text_s = label_.measure(screen::from_window(label_)->area().width * 2 / 3);
+					auto text_s = label_.measure(screen().from_window(label_).workarea().width * 2 / 3);
 					this->size(nana::size{ text_s.width + 10, text_s.height + 10 });
 					label_.move(rectangle{ 5, 5, text_s.width, text_s.height });
 

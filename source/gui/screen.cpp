@@ -25,39 +25,22 @@ namespace nana
 		: public display
 	{
 	public:
-		real_display(std::size_t number)
-			: index_(number)
-		{
-#if defined(NANA_WINDOWS)
-			DISPLAY_DEVICE disp;
-			disp.cb = sizeof disp;
-			if (::EnumDisplayDevices(nullptr, static_cast<DWORD>(index_), &disp, 0))
-			{
-				DEVMODE mode;
-				mode.dmSize = sizeof mode;
-				if (::EnumDisplaySettings(disp.DeviceName, ENUM_CURRENT_SETTINGS, &mode))
-				{
-					area_.x = mode.dmPosition.x;
-					area_.y = mode.dmPosition.y;
-					area_.width = mode.dmPelsWidth;
-					area_.height = mode.dmPelsHeight;
-					return;
-				}
-			}
-#else
-			if (0 == index_)
-			{
-				area_ = detail::native_interface::primary_monitor_size();
-				return;
-			}
-#endif
-			throw std::invalid_argument("Nana.Screen: Invalid monitor index.");
-		}
+		real_display() = default;	//For requirement of vector
 
-		real_display(std::size_t number, const ::nana::rectangle& r)
-			: index_(number), area_(r)
+#if defined(NANA_WINDOWS)
+		real_display(std::size_t number, const MONITORINFOEX& mi)
+			:	index_(number),
+				is_primary_(mi.dwFlags & MONITORINFOF_PRIMARY),
+				area_(mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top),
+				workarea_(mi.rcWork.left, mi.rcWork.top, mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top)
 		{
 		}
+#else
+		real_display(std::size_t number, const ::nana::rectangle& r)
+			: index_(number), is_primary_(true), area_(r), workarea_(r)
+		{
+		}
+#endif
 	public:
 		//Implementation of display
 		std::size_t get_index() const override
@@ -65,13 +48,25 @@ namespace nana
 			return index_;
 		}
 
+		bool is_primary_monitor() const override
+		{
+			return is_primary_;
+		}
+
 		const ::nana::rectangle& area() const override
 		{
 			return area_;
 		}
+
+		const ::nana::rectangle& workarea() const override
+		{
+			return workarea_;
+		}
 	private:
-		const std::size_t	index_;
+		std::size_t	index_;
+		bool		is_primary_;
 		::nana::rectangle	area_;
+		::nana::rectangle	workarea_;
 	};
 
 	//class screen
@@ -92,7 +87,58 @@ namespace nana
 		return ::nana::detail::native_interface::primary_monitor_size();
 	}
 
-	std::shared_ptr<display> screen::from_point(const point& pos)
+
+	struct screen::implement
+	{
+		std::vector<real_display> displays;
+
+#if defined(NANA_WINDOWS)
+		void load_monitors()
+		{
+			std::vector<real_display> tmp;
+			::EnumDisplayMonitors(nullptr, nullptr, implement::enum_proc, reinterpret_cast<LPARAM>(&tmp));
+			tmp.swap(displays);
+		}
+
+		static BOOL __stdcall enum_proc(HMONITOR handle, HDC context, LPRECT r, LPARAM self_ptr)
+		{
+			auto disp_cont = reinterpret_cast<std::vector<real_display>*>(self_ptr);
+			MONITORINFOEX mi;
+			mi.cbSize = sizeof(MONITORINFOEX);
+			if (::GetMonitorInfo(handle, &mi))
+				disp_cont->emplace_back(disp_cont->size(), mi);
+			
+			return TRUE;
+		}
+#else
+		void load_monitors()
+		{
+			displays.emplace_back(0, primary_monitor_size());
+		}
+#endif
+
+	};
+
+	screen::screen()
+		: impl_(std::make_shared<implement>())
+	{
+		impl_->load_monitors();
+	}
+
+
+	void screen::reload()
+	{
+		impl_.reset(std::make_shared<implement>());
+		impl_->load_monitors();
+	}
+
+	std::size_t screen::count() const
+	{
+		return impl_->displays.size();
+	}
+
+
+	display& screen::from_point(const point& pos)
 	{
 #if defined(NANA_WINDOWS)
 		typedef HMONITOR(__stdcall * MonitorFromPointT)(POINT, DWORD);
@@ -107,87 +153,47 @@ namespace nana
 			mi.cbSize = sizeof mi;
 			if (::GetMonitorInfo(monitor, &mi))
 			{
-				DISPLAY_DEVICE disp;
-				disp.cb = sizeof disp;
-
-				DWORD index = 0;
-				while (::EnumDisplayDevices(nullptr, index++, &disp, 0))
+				for (auto & disp : impl_->displays)
 				{
-					DEVMODE mode;
-					mode.dmSize = sizeof mode;
-					if (::EnumDisplaySettings(disp.DeviceName, ENUM_CURRENT_SETTINGS, &mode))
-					{
-						if (mode.dmPosition.x == mi.rcWork.left && mode.dmPosition.y == mi.rcWork.top &&
-							(static_cast<int>(mode.dmPelsWidth) == mi.rcWork.right - mi.rcWork.left) &&
-							(static_cast<int>(mode.dmPelsHeight) == mi.rcWork.bottom - mi.rcWork.top))
-						{
-							return std::make_shared<real_display>(static_cast<std::size_t>(index - 1), rectangle{ mode.dmPosition.x, mode.dmPosition.y, static_cast<unsigned>(mode.dmPelsWidth), static_cast<unsigned>(mode.dmPelsHeight) });
-						}
-					}
+					auto & r = disp.area();
+					if (r.x == mi.rcMonitor.left && r.y == mi.rcMonitor.top &&
+						r.width == unsigned(mi.rcMonitor.right - mi.rcMonitor.left) &&
+						r.height == unsigned(mi.rcMonitor.bottom - mi.rcMonitor.top)
+						)
+						return disp;
 				}
 			}
 		}
 #endif
-		return screen().get_primary();
+		return get_primary();
 	}
 
-	std::shared_ptr<display> screen::from_window(window wd)
+	display& screen::from_window(window wd)
 	{
 		::nana::point pos;
 		API::calc_screen_point(wd, pos);
 		return from_point(pos);
 	}
 
-	std::size_t screen::count() const
-	{
-#if defined(NANA_WINDOWS)
-		DISPLAY_DEVICE disp;
-		disp.cb = sizeof disp;
 
-		DWORD index = 0;
-		while (::EnumDisplayDevices(nullptr, index++, &disp, 0));
-		return static_cast<std::size_t>(index - 1);
-#else
-		return 1;
-#endif
+	display& screen::get_display(std::size_t index) const
+	{
+		return impl_->displays.at(index);
 	}
 
-	std::shared_ptr<display> screen::get_display(std::size_t index) const
+	display& screen::get_primary() const
 	{
-		return std::make_shared<real_display>(index);
-	}
+		for (auto & disp : impl_->displays)
+			if (disp.is_primary_monitor())
+				return disp;
 
-	std::shared_ptr<display> screen::get_primary() const
-	{
-#if defined(NANA_WINDOWS)
-		//return rectangle(mi.rcWork.left, mi.rcWork.top,
-		//	mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top);
-		DISPLAY_DEVICE disp;
-		disp.cb = sizeof disp;
-
-		DWORD index = 0;
-		while (::EnumDisplayDevices(nullptr, index++, &disp, 0))
-		{
-			DEVMODE mode;
-			mode.dmSize = sizeof mode;
-			if (::EnumDisplaySettings(disp.DeviceName, ENUM_CURRENT_SETTINGS, &mode))
-			{
-				if (mode.dmPosition.x == 0 && mode.dmPosition.y == 0)
-					return std::make_shared<real_display>(static_cast<std::size_t>(index - 1), rectangle{ mode.dmPosition.x, mode.dmPosition.y, static_cast<unsigned>(mode.dmPelsWidth), static_cast<unsigned>(mode.dmPelsHeight) });
-			}
-		}
-#endif
-		return std::make_shared<real_display>(0);
+		throw std::logic_error("no primary monitor found");
 	}
 
 	void screen::for_each(std::function<void(display&)> fn) const
 	{
-		auto n = count();
-		for (decltype(n) i = 0; i < n; ++i)
-		{
-			real_display disp(i);
+		for (auto & disp : impl_->displays)
 			fn(disp);
-		}
 	}
 	//end class screen
 }
