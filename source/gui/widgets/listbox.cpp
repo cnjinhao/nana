@@ -2714,7 +2714,7 @@ namespace nana
 						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, { 0xEB, 0xF4, 0xF9 });
 
 						item_xpos += header.pixels;
-						if (index + 1 >= seqs.size() && extreme_text > item_xpos)
+						if (index + 1 >= seqs.size() && static_cast<int>(extreme_text) > item_xpos)
                         {
                             graph->set_color(item.bgcolor);
 							graph->rectangle(rectangle{item_xpos , y + 2, extreme_text - item_xpos, essence_->item_size - 4}, true);
