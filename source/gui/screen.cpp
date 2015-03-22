@@ -113,6 +113,7 @@ namespace nana
 #else
 		void load_monitors()
 		{
+			displays.clear();
 			displays.emplace_back(0, primary_monitor_size());
 		}
 #endif
@@ -125,10 +126,12 @@ namespace nana
 		impl_->load_monitors();
 	}
 
-
 	void screen::reload()
 	{
-		impl_.reset(std::make_shared<implement>());
+		//It is only when the screen is a moved-from object that impl_ is empty
+		if (!impl_)
+			impl_.swap(std::make_shared<implement>());
+
 		impl_->load_monitors();
 	}
 

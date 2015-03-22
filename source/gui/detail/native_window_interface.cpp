@@ -13,6 +13,7 @@
 #include <nana/config.hpp>
 #include PLATFORM_SPEC_HPP
 #include <nana/gui/detail/native_window_interface.hpp>
+#include <nana/gui/screen.hpp>
 #if defined(NANA_WINDOWS)
 	#if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
         #include <nana/std_mutex.hpp>
@@ -35,10 +36,10 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			static HICON icon(const nana::paint::image& img)
 			{
-				paint::detail::image_ico * ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
+				auto ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
 				if(ico && ico->ptr())
 						return *(ico->ptr());
-				return 0;
+				return nullptr;
 			}
 #endif
 		};
@@ -51,17 +52,13 @@ namespace nana{
 	{
 		struct window_extra_t
 		{
-			HICON ico;
-
-			window_extra_t()
-				: ico(0)
-			{}
+			HICON ico{nullptr};
 		};
 
 		typedef std::map<native_window_type, window_extra_t> map_t;
 
 	private:
-		tray_manager(){}
+		tray_manager() = default;
 	public:
 		typedef window_extra_t extra_t;
 
@@ -205,35 +202,49 @@ namespace nana{
 			if(owner && (nested == false))
 				::ClientToScreen(reinterpret_cast<HWND>(owner), &pt);
 
-			HWND wnd = ::CreateWindowEx(style_ex, STR("NanaWindowInternal"), STR("Nana Window"),
+			HWND native_wd = ::CreateWindowEx(style_ex, STR("NanaWindowInternal"), STR("Nana Window"),
 											style,
 											pt.x, pt.y, 100, 100,
 											reinterpret_cast<HWND>(owner), 0, ::GetModuleHandle(0), 0);
 
 			//A window may have a border, this should be adjusted the client area fit for the specified size.
 			::RECT client;
-			::GetClientRect(wnd, &client);	//The right and bottom of client by GetClientRect indicate the width and height of the area
+			::GetClientRect(native_wd, &client);	//The right and bottom of client by GetClientRect indicate the width and height of the area
 			::RECT wd_area;
-			::GetWindowRect(wnd, &wd_area);
-			wd_area.right -= wd_area.left;
-			wd_area.bottom -= wd_area.top;
-			if(nested)
+			::GetWindowRect(native_wd, &wd_area);
+
+			screen scr;
+			auto & disp = scr.from_point({wd_area.left, wd_area.right});
+			
+			if ((disp.area().width == r.width && disp.area().height == r.height) ||
+				(disp.workarea().width == r.width && disp.workarea().height == r.height))
 			{
-				wd_area.left = pt.x;
-				wd_area.top = pt.y;
+				::MoveWindow(native_wd, r.x, r.y, r.width, r.height, true);
+			}
+			else
+			{
+				//a dimension with borders and caption title
+				wd_area.right -= wd_area.left;	//wd_area.right = width
+				wd_area.bottom -= wd_area.top;	//wd_area.bottom = height
+				if (nested)
+				{
+					wd_area.left = pt.x;
+					wd_area.top = pt.y;
+				}
+
+				int delta_w = static_cast<int>(r.width) - client.right;
+				int delta_h = static_cast<int>(r.height) - client.bottom;
+
+				::MoveWindow(native_wd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
 			}
 
-			int delta_w = static_cast<int>(r.width) - client.right;
-			int delta_h = static_cast<int>(r.height) - client.bottom;
+			::GetClientRect(native_wd, &client);
+			::GetWindowRect(native_wd, &wd_area);
 
-			::MoveWindow(wnd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
-
-			::GetClientRect(wnd, &client);
-			::GetWindowRect(wnd, &wd_area);
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
 
-			window_result result = {reinterpret_cast<native_window_type>(wnd),
+			window_result result = { reinterpret_cast<native_window_type>(native_wd),
 										static_cast<unsigned>(client.right), static_cast<unsigned>(client.bottom),
 										static_cast<unsigned>(wd_area.right - client.right), static_cast<unsigned>(wd_area.bottom - client.bottom)};
 #elif defined(NANA_X11)
