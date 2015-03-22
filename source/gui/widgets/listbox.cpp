@@ -841,8 +841,11 @@ namespace nana
 					if (pos >= catobj.sorted.size())
 						throw std::out_of_range("listbox: Invalid item position.");
 
-					auto i = std::find(catobj.sorted.begin(), catobj.sorted.end(), pos);
-					return (i != catobj.sorted.end() ? *i : npos);
+                    for (size_type i=0; i<catobj.sorted.size();++i)
+                        if (pos==catobj.sorted[i])
+                            return i;
+					 
+					return   npos ;
 				}
 
 				category_t::container::value_type& at(const index_pair& pos)
