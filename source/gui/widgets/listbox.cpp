@@ -2607,6 +2607,7 @@ namespace nana
 					graph->rectangle(rectangle{ r.x, y, show_w, essence_->item_size }, true);
 
 					int item_xpos = x;
+					unsigned extreme_text = x;
 					bool first = true;
 
 					for(auto index : seqs)
@@ -2683,17 +2684,23 @@ namespace nana
 								graph->string(point{ xpos, y + 2 }, STR("..."));
 
 								//Erase the part that over the next subitem.
-								if (index + 1 <= seqs.size())
+								if (index + 1 < seqs.size())
                                 {	
                                     graph->set_color(bgcolor);
 								    graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
                                 }
+                                extreme_text = std::max (extreme_text, item_xpos + ext_w + ts.width);
 							}
 						}
 
 						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, { 0xEB, 0xF4, 0xF9 });
 
 						item_xpos += header.pixels;
+						if (index + 1 >= seqs.size() && extreme_text > item_xpos)
+                        {
+                            graph->set_color(item.bgcolor);
+							graph->rectangle(rectangle{item_xpos , y + 2, extreme_text - item_xpos, essence_->item_size - 4}, true);
+                        }
 						first = false;
 					}
 
