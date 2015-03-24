@@ -193,7 +193,7 @@ namespace API
 		return *comp_wdg_colors;
 	}
 
-	nana::point window_position(window);
+	point window_position(window);
 	void move_window(window, int x, int y);
 	void move_window(window wd, const rectangle&);
 
@@ -203,9 +203,11 @@ namespace API
 	void draw_through(window, std::function<void()>);
 	void map_through_widgets(window, native_drawable_type);
 
-	nana::size window_size(window);
+	size window_size(window);
 	void window_size(window, const size&);
-	bool window_rectangle(window, rectangle&);
+	size window_outline_size(window);
+	void window_outline_size(window, const size&);
+	bool get_window_rectangle(window, rectangle&);
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
 	void window_enabled(window, bool);
 	bool window_enabled(window);

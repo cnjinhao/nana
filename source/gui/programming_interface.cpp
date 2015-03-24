@@ -1,13 +1,14 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/programming_interface.cpp
+ *	@author: Jinhao
  */
 
 #include <nana/gui/programming_interface.hpp>
@@ -598,7 +599,7 @@ namespace API
 	nana::size window_size(window wd)
 	{
 		nana::rectangle r;
-		API::window_rectangle(wd, r);
+		API::get_window_rectangle(wd, r);
 		return{ r.width, r.height };
 	}
 
@@ -618,7 +619,46 @@ namespace API
 		}
 	}
 
-	bool window_rectangle(window wd, rectangle& r)
+	::nana::size window_outline_size(window wd)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (!restrict::window_manager.available(iwd))
+			return{};
+		
+		auto sz = window_size(wd);
+		sz.width += iwd->extra_width;
+		sz.height += iwd->extra_height;
+		return sz;
+	}
+
+	void window_outline_size(window wd, const size& sz)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			if (category::flags::root == iwd->other.category)
+			{
+				size inner_size = sz;
+				if (inner_size.width < iwd->extra_width)
+					inner_size.width = 0;
+				else
+					inner_size.width -= iwd->extra_width;
+
+				if (inner_size.height < iwd->extra_height)
+					inner_size.height = 0;
+				else
+					inner_size.height -= iwd->extra_height;
+
+				window_size(wd, inner_size);
+			}
+			else
+				window_size(wd, sz);
+		}
+	}
+
+	bool get_window_rectangle(window wd, rectangle& r)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;

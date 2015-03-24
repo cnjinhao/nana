@@ -213,30 +213,19 @@ namespace nana{
 			::RECT wd_area;
 			::GetWindowRect(native_wd, &wd_area);
 
-			screen scr;
-			auto & disp = scr.from_point({wd_area.left, wd_area.right});
-			
-			if ((disp.area().width == r.width && disp.area().height == r.height) ||
-				(disp.workarea().width == r.width && disp.workarea().height == r.height))
+			//a dimension with borders and caption title
+			wd_area.right -= wd_area.left;	//wd_area.right = width
+			wd_area.bottom -= wd_area.top;	//wd_area.bottom = height
+			if (nested)
 			{
-				::MoveWindow(native_wd, r.x, r.y, r.width, r.height, true);
+				wd_area.left = pt.x;
+				wd_area.top = pt.y;
 			}
-			else
-			{
-				//a dimension with borders and caption title
-				wd_area.right -= wd_area.left;	//wd_area.right = width
-				wd_area.bottom -= wd_area.top;	//wd_area.bottom = height
-				if (nested)
-				{
-					wd_area.left = pt.x;
-					wd_area.top = pt.y;
-				}
 
-				int delta_w = static_cast<int>(r.width) - client.right;
-				int delta_h = static_cast<int>(r.height) - client.bottom;
+			int delta_w = static_cast<int>(r.width) - client.right;
+			int delta_h = static_cast<int>(r.height) - client.bottom;
 
-				::MoveWindow(native_wd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
-			}
+			::MoveWindow(native_wd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
 
 			::GetClientRect(native_wd, &client);
 			::GetWindowRect(native_wd, &wd_area);
