@@ -1326,7 +1326,7 @@ namespace nana{	namespace widgets
 			attributes_.acceptive = acceptive;
 		}
 
-		bool text_editor::respone_keyboard(char_type key)	//key is a character of ASCII code
+		bool text_editor::respond_char(char_type key)	//key is a character of ASCII code
 		{
 			switch (key)
 			{
@@ -1375,6 +1375,24 @@ namespace nana{	namespace widgets
 				return true;
 			}
 			return false;
+		}
+
+		bool text_editor::respond_key(char_type key)
+		{
+			switch (key)
+			{
+			case keyboard::os_arrow_left:	move_left();	break;
+			case keyboard::os_arrow_right:	move_right();	break;
+			case keyboard::os_arrow_up:		move_ns(true);	break;
+			case keyboard::os_arrow_down:	move_ns(false);	break;
+			case keyboard::os_del:
+				if (this->attr().editable)
+					del();
+				break;
+			default:
+				return false;
+			}
+			return true;
 		}
 
 		void text_editor::typeface_changed()
@@ -2104,25 +2122,6 @@ namespace nana{	namespace widgets
 			_m_scrollbar();
 
 		}
-
-		bool text_editor::move(nana::char_t key)
-		{
-			switch(key)
-			{
-			case keyboard::os_arrow_left:	move_left();	break;
-			case keyboard::os_arrow_right:	move_right();	break;
-			case keyboard::os_arrow_up:		move_ns(true);	break;
-			case keyboard::os_arrow_down:	move_ns(false);	break;
-			case keyboard::os_del:
-				if (this->attr().editable)
-					del();
-				break;
-			default:
-				return false;
-			}
-			return true;
-		}
-
 
 		void text_editor::move_ns(bool to_north)
 		{

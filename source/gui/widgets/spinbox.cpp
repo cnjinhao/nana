@@ -559,7 +559,7 @@ namespace nana
 			
 			void drawer::key_press(graph_reference, const arg_keyboard& arg)
 			{
-				if (impl_->editor()->respone_key(arg.key))
+				if (impl_->editor()->respond_key(arg.key))
 				{
 					impl_->editor()->reset_caret();
 					impl_->draw_spins();
@@ -569,7 +569,7 @@ namespace nana
 
 			void drawer::key_char(graph_reference, const arg_keyboard& arg)
 			{
-				if (impl_->editor()->respone_char(arg.key))
+				if (impl_->editor()->respond_char(arg.key))
 				{
 					if (!impl_->value(impl_->editor()->text()))
 						impl_->draw_spins();

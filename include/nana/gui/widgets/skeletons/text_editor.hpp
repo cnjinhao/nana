@@ -157,8 +157,8 @@ namespace nana{	namespace widgets
 
 			void set_accept(std::function<bool(char_type)>);
 			void set_accept(accepts);
-			bool respone_char(char_type);
-			bool respone_key(char_type);
+			bool respond_char(char_type);
+			bool respond_key(char_type);
 
 			void typeface_changed();
 
