@@ -677,6 +677,7 @@ namespace nana
 					if(!drawer_->widget_ptr()->enabled())
 						return;
 
+					bool call_other_keys = false;
 					if(drawer_->editable())
 					{
 						bool is_move_up = false;
@@ -684,7 +685,7 @@ namespace nana
 						{
 						case keyboard::os_arrow_left:
 						case keyboard::os_arrow_right:
-							drawer_->editor()->move(arg.key);
+							drawer_->editor()->respone_key(arg.key);
 							drawer_->editor()->reset_caret();
 							break;
 						case keyboard::os_arrow_up:
@@ -692,6 +693,8 @@ namespace nana
 						case keyboard::os_arrow_down:
 							drawer_->move_items(is_move_up, true);
 							break;
+						default:
+							call_other_keys = true;
 						}
 					}
 					else
@@ -706,14 +709,19 @@ namespace nana
 						case keyboard::os_arrow_down:
 							drawer_->move_items(is_move_up, true);
 							break;
+						default:
+							call_other_keys = true;
 						}
 					}
+					if (call_other_keys)
+						drawer_->editor()->respone_key(arg.key);
+
 					API::lazy_refresh();
 				}
 
 				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
 				{
-					if (drawer_->editor()->respone_keyboard(arg.key))
+					if (drawer_->editor()->respone_char(arg.key))
 						API::lazy_refresh();
 				}
 			//end class trigger

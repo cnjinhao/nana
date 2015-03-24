@@ -157,7 +157,8 @@ namespace nana{	namespace widgets
 
 			void set_accept(std::function<bool(char_type)>);
 			void set_accept(accepts);
-			bool respone_keyboard(char_type);
+			bool respone_char(char_type);
+			bool respone_key(char_type);
 
 			void typeface_changed();
 
@@ -227,7 +228,6 @@ namespace nana{	namespace widgets
 			void del();
 			void backspace(bool record_undo = true);
 			void undo(bool reverse);
-			bool move(nana::char_t);
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
