@@ -130,7 +130,7 @@ namespace nana
 	{
 		//It is only when the screen is a moved-from object that impl_ is empty
 		if (!impl_)
-			impl_.swap(std::make_shared<implement>());
+			std::make_shared<implement>().swap(impl_);
 
 		impl_->load_monitors();
 	}
