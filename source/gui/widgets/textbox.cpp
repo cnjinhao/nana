@@ -314,7 +314,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor->line_wrapped(autl))
-				editor->render(API::is_focus_window(handle()));
+				API::update_window(handle());
 
 			return *this;
 		}
@@ -389,7 +389,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if(editor && editor->select(yes))
-				API::refresh_window(*this);
+				API::update_window(*this);
 		}
 
 		void textbox::copy() const
@@ -407,7 +407,7 @@ namespace drawerbase {
 			if(editor)
 			{
 				editor->paste();
-				API::refresh_window(*this);
+				API::update_window(*this);
 			}
 		}
 

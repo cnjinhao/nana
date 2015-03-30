@@ -972,6 +972,7 @@ namespace nana
 
 			const nana::char_t * filter;
 			nana::string filter_holder;
+			nana::string default_extension;
 			if(impl_->filters.size())
 			{
 				for(auto & f : impl_->filters)
@@ -989,6 +990,21 @@ namespace nana
 					}
 					filter_holder += fs;
 					filter_holder += static_cast<nana::string::value_type>('\0');
+
+					//Get the default file extentsion
+					if (default_extension.empty())
+					{
+						pos = fs.find_last_of('.');
+						if (pos != fs.npos)
+						{
+							fs = fs.substr(pos + 1);
+							if (fs != L"*")
+							{
+								default_extension = fs;
+								ofn.lpstrDefExt = default_extension.data();
+							}
+						}
+					}
 				}
 				filter = filter_holder.data();
 			}
@@ -1001,6 +1017,10 @@ namespace nana
 			ofn.lpstrFileTitle = nullptr;
 			ofn.nMaxFileTitle = 0;
 			ofn.lpstrInitialDir = (impl_->path.size() ? impl_->path.c_str() : nullptr);
+			
+			if (!impl_->open_or_save)
+				ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
+			
 			if(FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
 				return false;
 			
