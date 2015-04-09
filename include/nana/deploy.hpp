@@ -15,6 +15,8 @@
 #ifndef NANA_DEPLOY_HPP
 #define NANA_DEPLOY_HPP
 
+#include <stdexcept>
+
 #include <nana/config.hpp>
 #include <nana/charset.hpp>
 #if defined(NANA_LINUX)
@@ -22,7 +24,7 @@
 #endif
 
 //Implement workarounds for MinGW
-#if defined(NANA_MINGW)
+#if defined(NANA_MINGW) && __GNUC_MINOR__ < 8
 namespace std
 {
 	//Workaround for no implemenation of std::stoi in MinGW.
