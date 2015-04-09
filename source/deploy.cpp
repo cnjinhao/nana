@@ -23,7 +23,7 @@
 	#include PLATFORM_SPEC_HPP
 #endif
 
-#if defined(NANA_MINGW) && __GNUC_MINOR__ < 8
+#if defined(NANA_MINGW) && (__GNUC__ == 4) && (__GNUC_MINOR__ < 8)
 #include <sstream>
 namespace std
 {
