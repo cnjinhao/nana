@@ -266,12 +266,6 @@ namespace detail
 			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
 		}
 
-		if(evt_operation.size())
-		{
-			std::stringstream ss;
-			ss<<"Nana.GUI detects a memory leaks in events operation, "<<static_cast<unsigned>(evt_operation.size())<<" event(s) are not uninstalled.";
-			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
-		}
 		delete impl_;
 		delete pi_data_;
 	}
