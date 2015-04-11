@@ -4,6 +4,7 @@ Thumbs.db
 #Ignore files build by Visual Studio
 bii/build/*
 bii/cmake/*
+bii/deps/*
 *.obj
 *.exe
 *.pdb

@@ -2,7 +2,8 @@
 #define NANA_STD_MUTEX_HPP
 #include <nana/config.hpp>
 
-#if defined(STD_THREAD_NOT_SUPPORTED)
+#if defined(STD_THREAD_NOT_SUPPORTED) && !defined(NANA_MINGW) || __GNUC_MINOR__ < 8
+
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/locks.hpp>
@@ -18,5 +19,10 @@ namespace std
     typedef boost::mutex mutex;
     typedef boost::recursive_mutex recursive_mutex;
 }
+#else
+
+#include <mutex>
+
 #endif
+
 #endif // NANA_STD_MUTEX_HPP

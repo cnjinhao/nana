@@ -11,7 +11,7 @@ else()
     set(LIB_SRC ${BII_LIB_SRC})
     
     foreach(cpp ${BII_LIB_SRC})
-        if(${cpp} MATCHES "(include/nana|source)/detail/[A-Za-z0-9_]+/.+$")
+        if(${cpp} MATCHES "/detail/(win32|linux_X11)/.+$")
             list(APPEND trash_files ${cpp})
         endif()
     endforeach()
@@ -100,12 +100,18 @@ if(NOT BIICODE)
         endif()
     endif()
 else()
-    add_definitions(-DNANA_LIBPNG)
     add_definitions(-DNANA_ENABLE_PNG)
 endif()
 
 #Copy our new config.hpp (with removed defines)
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/config.hpp ${CMAKE_CURRENT_SOURCE_DIR}/include/nana/)
+if(NOT BIICODE)
+# I don't know how it works!!!
+message("Check config.hpp and copy")
+execute_process(COMMAND ${CMAKE_COMMAND} 
+    -E copy_if_different 
+    ${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/config.hpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/nana/)
+endif()
     
 if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
