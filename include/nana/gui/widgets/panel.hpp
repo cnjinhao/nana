@@ -9,7 +9,7 @@
  *
  *	@file: nana/gui/widgets/panel.hpp
  *	@author: Jinhao
- *	@contributors: qPCR4vir
+ *	@contributors: Ariel Vina-Rodriguez
  *
  *	@brief panel is a widget used for placing some widgets.
  */

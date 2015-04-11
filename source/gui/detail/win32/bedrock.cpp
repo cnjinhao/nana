@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/win32/bedrock.cpp
+ *	@contributors: Ariel Vina-Rodriguez
  */
 
 #include <nana/config.hpp>
@@ -1101,7 +1102,7 @@ namespace detail
 			case WM_MOUSEHWHEEL:
 				{
 					//The focus window receives the message in Windows system, it should be redirected to the hovered window
-                    ::POINT scr_pos{ pmdec.mouse.x, pmdec.mouse.y}; 	//Screen position
+					::POINT scr_pos{ int(LOWORD(lParam)), int(HIWORD(lParam)) };	//Screen position
 					auto pointer_wd = ::WindowFromPoint(scr_pos);
 					if (pointer_wd == root_window)
 					{
