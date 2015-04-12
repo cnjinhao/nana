@@ -23,8 +23,7 @@
 	#include PLATFORM_SPEC_HPP
 #endif
 
-//Implement workarounds for GCC/MinGW which version is below 4.8.2
-#if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
+#if defined(NANA_MINGW) && (__GNUC__ == 4) && (__GNUC_MINOR__ < 8)
 #include <sstream>
 namespace std
 {
