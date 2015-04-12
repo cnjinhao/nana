@@ -2,7 +2,7 @@
 #define NANA_STD_THREAD_HPP
 #include <nana/config.hpp>
 
-#if NANA_NO_CPP11
+#if STD_THREAD_NOT_SUPPORTED
 #include <boost/thread.hpp>
 namespace std
 {

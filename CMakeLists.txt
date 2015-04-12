@@ -32,6 +32,11 @@ if(BIICODE)
     endif(CMAKE_COMPILER_IS_GNUCXX)
 
     # we'll use the default config file so we can iliminate the following macro definitions
+    if(MSVC)
+        # More MSVC specific compilation flags
+		add_definitions(-D_SCL_SECURE_NO_WARNINGS)
+		add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+    endif()
     
     add_biicode_targets()
     
@@ -52,6 +57,7 @@ if(WIN32)
 		add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
 		option(NANA_THREAD_NOT_SUPPORTED "Use this flag if MinGW version is older than 4.8.1" ON)
 		if(NANA_THREAD_NOT_SUPPORTED)
+            add_definitions(-DNANA_NO_CPP11)    # so that deploy.hpp will compile
 			add_definitions(-DSTD_THREAD_NOT_SUPPORTED)
 		endif()
 	endif()
