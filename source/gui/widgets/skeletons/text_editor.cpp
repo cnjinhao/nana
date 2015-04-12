@@ -8,7 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/skeletons/text_editor.cpp
- *	@contributors: qPCR4vir
+ *	@contributors: Ariel Vina-Rodriguez
  */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
@@ -1133,12 +1133,14 @@ namespace nana{	namespace widgets
 		public:
 			void parse(const ::nana::string& text, const keywords* kwptr)
 			{
-				if (text.empty())
+				if ( kwptr->kwbase.empty() || text.empty() )
 					return;
+
+                using index = ::nana::string::size_type;
 
 				std::vector<entity> entities;
 
-				auto test_whole_word = [&text](std::size_t pos, std::size_t len)
+				auto test_whole_word = [&text](index pos, index len)
 				{
 					if (pos)
 					{
@@ -1160,53 +1162,48 @@ namespace nana{	namespace widgets
 				::nana::cistring cistr;
 				for (auto & ds : kwptr->kwbase)
 				{
-					std::size_t pos;
-					const ::nana::char_t* begin;
-					const ::nana::char_t* end;
-					if (ds.case_sensitive)
-					{
-						pos = text.find(ds.text);
-						if (pos == text.npos)
-							continue;
+                    index pos{0} ;
+                    for (index rest{text.size()}; rest >= ds.text.size() ; ++pos, rest = text.size() - pos)
+                    {
+					    if (ds.case_sensitive)
+					    {
+						    pos = text.find(ds.text, pos);
+						    if (pos == text.npos)
+							    break;
 
-						if (ds.whole_word_matched)
-						{
-							if (!test_whole_word(pos, ds.text.size()))
-								continue;
-						}
+						    if (ds.whole_word_matched)
+						    {
+							    if (!test_whole_word(pos, ds.text.size()))
+								    continue;
+						    }
+					    }
+					    else
+					    {
+						    if (cistr.empty())
+							    cistr.append(text.data(), text.size());
 
-						begin = text.data() + pos;
-						end = begin + ds.text.size();
-					}
-					else
-					{
-						if (cistr.empty())
-							cistr.append(text.data(), text.size());
+						    pos = cistr.find(ds.text.data(), pos);
+						    if (pos == cistr.npos)
+							    break;
 
-						pos = cistr.find(ds.text.data());
-						if (pos == cistr.npos)
-							continue;
+						    if (ds.whole_word_matched)
+						    {
+							    if (!test_whole_word(pos, ds.text.size()))
+								    continue;
+						    }
+					    }
 
-						if (ds.whole_word_matched)
-						{
-							if (!test_whole_word(pos, ds.text.size()))
-								continue;
-						}
-
-						begin = text.data() + pos;
-						end = begin + ds.text.size();
-					}
-
-					auto ki = kwptr->schemes.find(ds.scheme);
-					if (ki != kwptr->schemes.end() && ki->second)
-					{
-						schemes_.emplace(ds.scheme, ki->second);
-						entities.emplace_back();
-						auto & last = entities.back();
-						last.begin = begin;
-						last.end = end;
-						last.scheme = ki->second.get();
-					}
+					    auto ki = kwptr->schemes.find(ds.scheme);
+					    if (ki != kwptr->schemes.end() && ki->second)
+					    {
+						    schemes_.emplace(ds.scheme, ki->second);
+						    entities.emplace_back();
+						    auto & last = entities.back();
+						    last.begin = text.data() + pos;
+						    last.end = last.begin + ds.text.size();
+						    last.scheme = ki->second.get();
+					    }
+                    }
 				}
 
 				if (!entities.empty())
@@ -1221,7 +1218,7 @@ namespace nana{	namespace widgets
 					while(i != entities.end())
 					{
 						if (previous->end > i->begin)
-							i = entities.erase(i);
+							i = entities.erase(i);  // erase overlaping. Left only the first.
 						else
 							++i;
 					}

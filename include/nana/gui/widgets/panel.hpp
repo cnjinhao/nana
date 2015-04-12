@@ -9,7 +9,7 @@
  *
  *	@file: nana/gui/widgets/panel.hpp
  *	@author: Jinhao
- *	@contributors: qPCR4vir
+ *	@contributors: Ariel Vina-Rodriguez
  *
  *	@brief panel is a widget used for placing some widgets.
  */
@@ -46,13 +46,13 @@ namespace nana
 		panel(window wd, bool visible)
 		{
 			this->create(wd, rectangle(), visible);
-			bgcolor(API::bgcolor(wd));
+			this->bgcolor(API::bgcolor(wd));
 		}
 
 		panel(window wd, const nana::rectangle& r = rectangle(), bool visible = true)
 		{
 			this->create(wd, r, visible);
-			bgcolor(API::bgcolor(wd));
+			this->bgcolor(API::bgcolor(wd));
 		}
 
 		bool transparent() const

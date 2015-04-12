@@ -1,6 +1,7 @@
 /*
  *	A Tooltip Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -35,13 +36,13 @@ namespace nana
 			nana::point pos_by_screen(nana::point pos, const nana::size& sz, bool overlap_allowed)
 			{
 				auto scr_area = screen().from_point(pos).workarea();
-				if (pos.x + sz.width > scr_area.x + scr_area.width)
-					pos.x = static_cast<int>(scr_area.x + scr_area.width - sz.width);
+				if (pos.x + static_cast<int>(sz.width) > scr_area.right())
+					pos.x = scr_area.right() - static_cast<int>(sz.width);
 				if (pos.x < scr_area.x)
 					pos.x = scr_area.x;
 
-				if (pos.y + sz.height >= scr_area.y + scr_area.height)
-					pos.y = static_cast<int>(scr_area.y + scr_area.height - sz.height);
+				if (pos.y + static_cast<int>(sz.height) >= scr_area.bottom())
+					pos.y = scr_area.bottom() - static_cast<int>(sz.height);
 				else if (!overlap_allowed)
 					pos.y += 20;	//Add some pixels to avoid overlapping between cursor and tip window.
 

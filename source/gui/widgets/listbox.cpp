@@ -8,7 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.cpp
- *	@contributors:	Hiroshi Seki, qPCR4vir
+ *	@contributors:	Hiroshi Seki, Ariel Vina-Rodriguez
  */
 
 #include <nana/gui/widgets/listbox.hpp>

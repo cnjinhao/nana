@@ -23,7 +23,6 @@ namespace nana
 			void register_evt(event_handle);
 			void cancel(event_handle);
 			void erase(event_handle);
-			std::size_t size() const;
 		private:
 			mutable std::recursive_mutex mutex_;
 			std::unordered_set<event_handle>	register_;
