@@ -1,0 +1,11 @@
+# This file configures your finds of dependencies.
+#
+# It is an ordered list of rules, which will be evaluated in order, of the form:
+#     block_pattern: TAG
+#
+# For each possible block that could resolve your dependencies,
+# only versions with tag >= TAG will be accepted
+
+qiangwu/* : DEV
+* : STABLE
+

@@ -20,4 +20,3 @@
 #elif defined(NANA_LINUX)
 	#include "linux_X11/platform_spec.cpp"
 #endif
-
