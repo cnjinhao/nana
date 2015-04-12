@@ -365,16 +365,26 @@ namespace nana
 					cont_.emplace_back(std::move(text), pixels, static_cast<size_type>(cont_.size()));
 				}
 
-				void item_width(size_type index, unsigned width)
+				void item_width(size_type pos, unsigned width)
 				{
-					if (index >= cont_.size())
+					if (pos >= cont_.size())
 						return;
 
 					for(auto & m : cont_)
 					{
-						if(m.index == index)
+						if(m.index == pos)
 							m.pixels = width;
 					}
+				}
+
+				unsigned item_width(size_type pos) const
+				{
+					for (auto & m : cont_)
+					{
+						if (m.index == pos)
+							return m.pixels;
+					}
+					return 0;
 				}
 
 				unsigned pixels() const
@@ -571,9 +581,9 @@ namespace nana
 
 			struct category_t
 			{
-				typedef std::deque<item_t> container;
+				using container = std::deque<item_t>;
 
-				nana::string text;
+				::nana::string text;
 				std::vector<std::size_t> sorted;
 				container items;
 				bool expand{true};
@@ -583,14 +593,10 @@ namespace nana
 
 				category_t() = default;
 
-				category_t(nana::string&& str)
+				category_t(nana::string str)
 					:text(std::move(str))
 				{}
-
-				category_t(const nana::string& str)
-					:text(str)
-				{}
-
+				
 				bool selected() const
 				{
 					for (auto & m : items)
@@ -604,10 +610,10 @@ namespace nana
 			class es_lister
 			{
 			public:
-				typedef std::list<category_t> container;
+				using container = std::list<category_t>;
 
-				std::function<std::function<bool(const nana::string&, nana::any*,
-								const nana::string&, nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
+				std::function<std::function<bool(const ::nana::string&, ::nana::any*,
+								const ::nana::string&, ::nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
 
 				es_lister()
 				{
@@ -619,8 +625,6 @@ namespace nana
 				{
 					ess_ = ess;
 					widget_ = dynamic_cast<nana::listbox*>(&wd);
-					if(nullptr == widget_)
-						throw std::bad_cast();
 				}
 
 				nana::listbox* wd_ptr() const
@@ -770,7 +774,7 @@ namespace nana
 					return &list_.back();
 				}
 
-				void create_cat(const std::initializer_list<nana::string> & args)
+				void create_cat(const std::initializer_list<nana::string>& args)
 				{
 					for (auto & arg : args)
 						list_.emplace_back(arg);
@@ -3633,6 +3637,19 @@ namespace nana
 			auto & ess = _m_ess();
 			ess.header.create(std::move(text), width);
 			ess.update();
+		}
+
+		listbox& listbox::header_width(size_type pos, unsigned pixels)
+		{
+			auto & ess = _m_ess();
+			ess.header.item_width(pos, pixels);
+			ess.update();
+			return *this;
+		}
+
+		unsigned listbox::header_width(size_type pos) const
+		{
+			return _m_ess().header.item_width(pos);
 		}
 
 		listbox::cat_proxy listbox::append(nana::string s)
