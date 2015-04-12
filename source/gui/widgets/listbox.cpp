@@ -366,16 +366,26 @@ namespace nana
 					cont_.emplace_back(std::move(text), pixels, static_cast<size_type>(cont_.size()));
 				}
 
-				void item_width(size_type index, unsigned width)
+				void item_width(size_type pos, unsigned width)
 				{
-					if (index >= cont_.size())
+					if (pos >= cont_.size())
 						return;
 
 					for(auto & m : cont_)
 					{
-						if(m.index == index)
+						if(m.index == pos)
 							m.pixels = width;
 					}
+				}
+
+				unsigned item_width(size_type pos) const
+				{
+					for (auto & m : cont_)
+					{
+						if (m.index == pos)
+							return m.pixels;
+					}
+					return 0;
 				}
 
 				unsigned pixels() const
@@ -3600,6 +3610,19 @@ namespace nana
 			auto & ess = _m_ess();
 			ess.header.create(std::move(text), width);
 			ess.update();
+		}
+
+		listbox& listbox::header_width(size_type pos, unsigned pixels)
+		{
+			auto & ess = _m_ess();
+			ess.header.item_width(pos, pixels);
+			ess.update();
+			return *this;
+		}
+
+		unsigned listbox::header_width(size_type pos) const
+		{
+			return _m_ess().header.item_width(pos);
 		}
 
 		listbox::cat_proxy listbox::append(nana::string s)

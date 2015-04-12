@@ -474,6 +474,8 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		void auto_draw(bool);                                ///<Set state: Redraw automatically after an operation?
 
 		void append_header(nana::string, unsigned width = 120);///<Appends a new column with a header text and the specified width at the end
+		listbox& header_width(size_type pos, unsigned pixels);
+		unsigned header_width(size_type pos) const;
 
 		cat_proxy append(nana::string);          ///<Appends a new category at the end
 		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
