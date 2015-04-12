@@ -345,6 +345,9 @@
     <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp">
       <Filter>Source Files\nana\gui\widgets</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\group.cpp">
+      <Filter>Source Files\nana\gui\widgets</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\nana\gui\widgets\button.hpp">
@@ -703,6 +706,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\nana\threads\pool.hpp">
       <Filter>Header Files\threads</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\gui\widgets\group.hpp">
+      <Filter>Header Files\gui\widgets</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
