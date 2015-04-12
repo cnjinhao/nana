@@ -9,6 +9,21 @@ Nana is licensed under the [Boost Software License].
 
 [Boost Software License]: http://www.boost.org/LICENSE_1_0.txt
 
+## Biicode
+Nana is available in biicode, download biicode and try the nana example:
+
+```
+> mkdir try-nana
+> cd try-nana
+> bii init
+> bii open qiangwu/nana-example
+> bii find
+> bii build
+> cd bin
+```
+
+Run it! All dependencies will be resovled automatically by biicode! Amazing, isn't it?
+
 ## Support
 
 The best way to get help with Nana library is by visiting http://nanapro.org/help.htm
