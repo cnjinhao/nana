@@ -27,11 +27,21 @@ namespace nana{
     class group
 	    : public panel<true>
     {
-
-
+	    place        plc_outer{*this};
+        panel<false> content  {*this};
+        label        titel/*  {*this}*/;
+        place        plc_inner{content};
+	    unsigned int gap;
+    public:
+        group( widget   &owner,          ///< 
+               string    titel_ ={},     ///< 
+               bool      format =false,  ///< Use a formated label?
+               unsigned  gap =2,         ///< betwen the content  and the external limit
+               rectangle r ={}           ///<
+              );
+        place& plc  (){ return plc_inner; }
+        window inner(){ return content; }
     };
-
-
 
 }//end namespace nana
 #endif
