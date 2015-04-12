@@ -2,7 +2,7 @@
 #define NANA_STD_CONDITION_VARIABLE_HPP
 #include <nana/config.hpp>
 
-#if defined(STD_THREAD_NOT_SUPPORTED) && !defined(NANA_MINGW) || __GNUC_MINOR__ < 8
+#if NANA_NO_CPP11
 
 #include <boost/thread/condition_variable.hpp>
 namespace std

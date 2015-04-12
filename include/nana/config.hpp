@@ -23,7 +23,6 @@
 	#if defined(__MINGW32__)
 		#define NANA_MINGW
 		#define STD_CODECVT_NOT_SUPPORTED
-		//#define STD_THREAD_NOT_SUPPORTED	//Use this flag if MinGW version is older than 4.8.1
 	#endif
 #elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
 //Linux:
@@ -31,13 +30,29 @@
 	#define NANA_X11	1
 	#define PLATFORM_SPEC_HPP <nana/detail/linux_X11/platform_spec.hpp>
 	#define STD_CODECVT_NOT_SUPPORTED
+#else
+#   error   "Only Windows and Unix are support now"
+#endif
+
+// C++11 detection
+#if defined(__GNUC_MINOR__)
+#   if __GNUC_MINOR__ < 8
+#       define NANA_NO_CPP11
+#   endif
+#elif _MSC_VER < 1700
+#   define NANA_NO_CPP11
+#endif
+
+#if defined(NANA_NO_CPP11)
+#   define STD_THREAD_NOT_SUPPORTED
 #endif
 
 //Here defines some flags that tell Nana what features will be supported.
 
-#define NANA_UNICODE
+#define NANA_ENABLE_PNG
+#define NANA_UNICODE    // always use unicode, don't make users confusing!
 
-#if defined(NANA_UNICODE) && defined(NANA_WINDOWS)
+#if defined(NANA_WINDOWS)
 	#ifndef _UNICODE
 		#define _UNICODE
 	#endif
@@ -46,14 +61,5 @@
 		#define UNICODE
 	#endif
 #endif
-
-//Support for PNG
-//	Comment it to disable the feature of support for PNG.
-//#define NANA_ENABLE_PNG
-#if defined(NANA_ENABLE_PNG)
-	//Comment it to use libpng from operating system.
-	#define NANA_LIBPNG
-#endif
-
 
 #endif	//NANA_CONFIG_HPP

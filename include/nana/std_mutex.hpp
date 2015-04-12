@@ -2,7 +2,7 @@
 #define NANA_STD_MUTEX_HPP
 #include <nana/config.hpp>
 
-#if defined(STD_THREAD_NOT_SUPPORTED) && !defined(NANA_MINGW) || __GNUC_MINOR__ < 8
+#if NANA_NO_CPP11
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>

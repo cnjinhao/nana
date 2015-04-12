@@ -24,7 +24,7 @@
 #endif
 
 //Implement workarounds for MinGW
-#if defined(NANA_MINGW) && __GNUC_MINOR__ < 8
+#if NANA_NO_CPP11
 namespace std
 {
 	//Workaround for no implemenation of std::stoi in MinGW.

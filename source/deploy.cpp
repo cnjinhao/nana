@@ -23,7 +23,7 @@
 	#include PLATFORM_SPEC_HPP
 #endif
 
-#if defined(NANA_MINGW) && __GNUC_MINOR__ < 8
+#if NANA_NO_CPP11
 #include <sstream>
 namespace std
 {
