@@ -572,9 +572,9 @@ namespace nana
 
 			struct category_t
 			{
-				typedef std::deque<item_t> container;
+				using container = std::deque<item_t>;
 
-				nana::string text;
+				::nana::string text;
 				std::vector<std::size_t> sorted;
 				container items;
 				bool expand{true};
@@ -584,14 +584,10 @@ namespace nana
 
 				category_t() = default;
 
-				category_t(nana::string&& str)
+				category_t(nana::string str)
 					:text(std::move(str))
 				{}
-
-				category_t(const nana::string& str)
-					:text(str)
-				{}
-
+				
 				bool selected() const
 				{
 					for (auto & m : items)
@@ -605,10 +601,10 @@ namespace nana
 			class es_lister
 			{
 			public:
-				typedef std::list<category_t> container;
+				using container = std::list<category_t>;
 
-				std::function<std::function<bool(const nana::string&, nana::any*,
-								const nana::string&, nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
+				std::function<std::function<bool(const ::nana::string&, ::nana::any*,
+								const ::nana::string&, ::nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
 
 				es_lister()
 				{
@@ -620,8 +616,6 @@ namespace nana
 				{
 					ess_ = ess;
 					widget_ = dynamic_cast<nana::listbox*>(&wd);
-					if(nullptr == widget_)
-						throw std::bad_cast();
 				}
 
 				nana::listbox* wd_ptr() const
@@ -771,7 +765,7 @@ namespace nana
 					return &list_.back();
 				}
 
-				void create_cat(const std::initializer_list<nana::string> & args)
+				void create_cat(const std::initializer_list<nana::string>& args)
 				{
 					for (auto & arg : args)
 						list_.emplace_back(arg);
