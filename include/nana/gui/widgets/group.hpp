@@ -33,14 +33,15 @@ namespace nana{
         place        plc_inner{content};
 	    unsigned int gap;
     public:
-        group( widget   &owner,          ///< 
-               string    titel_ ={},     ///< 
+        group( window    parent,         ///< 
+               string    titel_ ={STR("")},     ///< 
                bool      format =false,  ///< Use a formated label?
                unsigned  gap =2,         ///< betwen the content  and the external limit
                rectangle r ={}           ///<
               );
         place& plc  (){ return plc_inner; }
         window inner(){ return content; }
+        label& lbl  (){ return titel; }
     };
 
 }//end namespace nana
