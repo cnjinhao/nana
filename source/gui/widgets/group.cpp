@@ -18,13 +18,13 @@
 #include <nana/gui/widgets/group.hpp>
 
 namespace nana{
- group::group( widget   &owner,          ///<
+ group::group( window    parent,              ///<
                string    titel_ /*={}*/,     ///<
                bool      format /*=false*/,  ///<
                unsigned  gap /*=2*/,         ///<
                rectangle r /*={} */          ///<
               )
-		    : panel (owner, r),
+		    : panel (parent, r),
               titel (*this, titel_)
 	        {
                 titel.format(format);
@@ -40,15 +40,18 @@ namespace nana{
 		        plc_outer["content"] << content;
 		        plc_outer.collocate();
 
-                color obg = owner.bgcolor();
-                titel.bgcolor(obg.blend(colors::black, 0.975) );
-                color bg=obg.blend(colors::black, 0.950 );
-                bgcolor(bg);
+                color pbg =  API::bgcolor( parent);
+                titel.bgcolor(pbg.blend(colors::black, 0.975) );
+                color bg=pbg.blend(colors::black, 0.950 );
+                bgcolor(pbg);
+                content.bgcolor(bg);
 
                 drawing dw(*this);
-		        dw.draw([gap,sz,bg,obg](paint::graphics& graph)
+
+                // This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
+		        dw.draw([gap,sz,bg,pbg](paint::graphics& graph)
 		        {
-			        graph.rectangle(true, obg);
+			        graph.rectangle(true, pbg);
                     graph.round_rectangle(rectangle(       point ( gap-1                 ,   sz.height/2                       ), 
                                                      nana::size  (graph.width()-2*(gap-1),   graph.height()-sz.height/2-(gap-1))
                                                     ),
