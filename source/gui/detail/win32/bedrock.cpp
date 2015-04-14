@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/win32/bedrock.cpp
+ *	@contributors: Ariel Vina-Rodriguez
  */
 
 #include <nana/config.hpp>
@@ -266,12 +267,6 @@ namespace detail
 			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
 		}
 
-		if(evt_operation.size())
-		{
-			std::stringstream ss;
-			ss<<"Nana.GUI detects a memory leaks in events operation, "<<static_cast<unsigned>(evt_operation.size())<<" event(s) are not uninstalled.";
-			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
-		}
 		delete impl_;
 		delete pi_data_;
 	}
@@ -948,6 +943,8 @@ namespace detail
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 					msgwnd->flags.action = mouse_action::pressed;
+
+					auto retain = msgwnd->together.events_ptr;
 					if (brock.emit(event_code::mouse_down, msgwnd, arg, true, &context))
 					{
 						//If a root_window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
@@ -982,6 +979,8 @@ namespace detail
 				msgwnd->flags.action = mouse_action::normal;
 				if(msgwnd->flags.enabled)
 				{
+					auto retain = msgwnd->together.events_ptr;
+
 					nana::arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 

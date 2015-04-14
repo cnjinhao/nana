@@ -1,4 +1,4 @@
-/*
+/**
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
@@ -1565,8 +1565,9 @@ namespace nana
 
 					auto px_ptr = &nana::rectangle::width;
 
-					auto area_left = leaf_left_->margin_area();
-					auto area_right = leaf_right_->margin_area();
+					//Use field_area of leaf, not margin_area. Otherwise splitter would be at wrong position
+					auto area_left = leaf_left_->field_area;
+					auto area_right = leaf_right_->field_area;
 
 					if (nana::cursor::size_we != splitter_cursor_)
 					{

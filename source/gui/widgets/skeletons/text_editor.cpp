@@ -1,15 +1,15 @@
 /*
-*	A text editor implementation
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
-*
-*	Distributed under the Boost Software License, Version 1.0.
-*	(See accompanying file LICENSE_1_0.txt or copy at
-*	http://www.boost.org/LICENSE_1_0.txt)
-*
-*	@file: nana/gui/widgets/skeletons/text_editor.cpp
-*	@description:
-*/
+ *	A text editor implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file: nana/gui/widgets/skeletons/text_editor.cpp
+ *	@contributors: Ariel Vina-Rodriguez
+ */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
 #include <nana/gui/element.hpp>
@@ -314,7 +314,13 @@ namespace nana{	namespace widgets
 				if (pos.y > static_cast<unsigned>(textbase.lines()))
 					pos.y = static_cast<unsigned>(textbase.lines());
 
-				pos.x = editor_._m_pixels_by_char(textbase.getline(pos.y), pos.x) + editor_.text_area_.area.x;
+				std::unique_ptr<nana::string> mask_str;
+				if (editor_.mask_char_)
+					mask_str.reset(new nana::string(textbase.getline(pos.y).size(), editor_.mask_char_));
+				
+				auto & lnstr = editor_.mask_char_ ? *mask_str : textbase.getline(pos.y);
+
+				pos.x = editor_._m_pixels_by_char(lnstr, pos.x) + editor_.text_area_.area.x;
 
 				int pos_y = static_cast<int>((pos.y - editor_.points_.offset.y) * editor_.line_height() + editor_._m_text_top_base());
 				int pos_x = static_cast<int>(pos.x - editor_.points_.offset.x);
@@ -327,7 +333,13 @@ namespace nana{	namespace widgets
 				nana::upoint res{ 0, static_cast<unsigned>(_m_textline_from_screen(scrpos.y)) };
 
 				//Convert the screen point to text caret point
-				const string_type& lnstr = editor_.textbase_.getline(res.y);
+				const string_type& real_str = editor_.textbase_.getline(res.y);
+
+				std::unique_ptr<nana::string> mask_str;
+				if (editor_.mask_char_)
+					mask_str.reset(new nana::string(real_str.size(), editor_.mask_char_));
+				
+				auto & lnstr = (editor_.mask_char_ ? *mask_str : real_str);
 				if (lnstr.size() > 0)
 				{
 					scrpos.x += (editor_.points_.offset.x - editor_.text_area_.area.x);
@@ -737,17 +749,24 @@ namespace nana{	namespace widgets
 				nana::point scrpos;
 				if (0 != pos.x)
 				{
+					nana::string str;
 					for (auto & sec : mtr.line_sections)
 					{
 						std::size_t chsize = sec.end - sec.begin;
+						str.clear();
+						if (editor_.mask_char_)
+							str.append(chsize, editor_.mask_char_);
+						else
+							str.append(sec.begin, sec.end);
+
 						if (pos.x < chsize)
 						{
-							scrpos.x = editor_._m_pixels_by_char(nana::string(sec.begin, sec.end), pos.x);
+							scrpos.x = editor_._m_pixels_by_char(str, pos.x);
 							break;
 						}
 						else if (pos.x == chsize)
 						{
-							scrpos.x = editor_._m_text_extent_size(nana::string(sec.begin, sec.end).data(), sec.end - sec.begin).width;
+							scrpos.x = editor_._m_text_extent_size(str.data(), sec.end - sec.begin).width;
 							break;
 						}
 						else
@@ -773,13 +792,19 @@ namespace nana{	namespace widgets
 					return{ 0, static_cast<unsigned>(primary) };
 
 				//First of all, find the text of secondary.
-				auto str = mtr.line_sections[secondary];
+				auto real_str = mtr.line_sections[secondary];
+
+				std::unique_ptr<nana::string> mask_str;
+				if (editor_.mask_char_)
+					mask_str.reset(new nana::string(real_str.end - real_str.begin, editor_.mask_char_));
+
+				const ::nana::char_t * str = (editor_.mask_char_ ? mask_str->data() : real_str.begin);
 
 				std::vector<unicode_bidi::entity> reordered;
 				unicode_bidi bidi;
-				bidi.linestr(str.begin, str.end - str.begin, reordered);
+				bidi.linestr(str, real_str.end - real_str.begin, reordered);
 
-				nana::upoint res(static_cast<unsigned>(str.begin - mtr.line_sections.front().begin), static_cast<unsigned>(primary));
+				nana::upoint res(static_cast<unsigned>(real_str.begin - mtr.line_sections.front().begin), static_cast<unsigned>(primary));
 				scrpos.x -= editor_.text_area_.area.x;
 				if (scrpos.x < 0)
 					scrpos.x = 0;
@@ -793,7 +818,7 @@ namespace nana{	namespace widgets
 						std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 
 						res.x += editor_._m_char_by_pixels(ent.begin, len, pxbuf.get(), str_px, scrpos.x, _m_is_right_text(ent));
-						res.x += static_cast<unsigned>(ent.begin - str.begin);
+						res.x += static_cast<unsigned>(ent.begin - str);
 						return res;
 					}
 					scrpos.x -= str_px;
@@ -1133,12 +1158,14 @@ namespace nana{	namespace widgets
 		public:
 			void parse(const ::nana::string& text, const keywords* kwptr)
 			{
-				if (text.empty())
+				if ( kwptr->kwbase.empty() || text.empty() )
 					return;
+
+                using index = ::nana::string::size_type;
 
 				std::vector<entity> entities;
 
-				auto test_whole_word = [&text](std::size_t pos, std::size_t len)
+				auto test_whole_word = [&text](index pos, index len)
 				{
 					if (pos)
 					{
@@ -1160,53 +1187,48 @@ namespace nana{	namespace widgets
 				::nana::cistring cistr;
 				for (auto & ds : kwptr->kwbase)
 				{
-					std::size_t pos;
-					const ::nana::char_t* begin;
-					const ::nana::char_t* end;
-					if (ds.case_sensitive)
-					{
-						pos = text.find(ds.text);
-						if (pos == text.npos)
-							continue;
+                    index pos{0} ;
+                    for (index rest{text.size()}; rest >= ds.text.size() ; ++pos, rest = text.size() - pos)
+                    {
+					    if (ds.case_sensitive)
+					    {
+						    pos = text.find(ds.text, pos);
+						    if (pos == text.npos)
+							    break;
 
-						if (ds.whole_word_matched)
-						{
-							if (!test_whole_word(pos, ds.text.size()))
-								continue;
-						}
+						    if (ds.whole_word_matched)
+						    {
+							    if (!test_whole_word(pos, ds.text.size()))
+								    continue;
+						    }
+					    }
+					    else
+					    {
+						    if (cistr.empty())
+							    cistr.append(text.data(), text.size());
 
-						begin = text.data() + pos;
-						end = begin + ds.text.size();
-					}
-					else
-					{
-						if (cistr.empty())
-							cistr.append(text.data(), text.size());
+						    pos = cistr.find(ds.text.data(), pos);
+						    if (pos == cistr.npos)
+							    break;
 
-						pos = cistr.find(ds.text.data());
-						if (pos == cistr.npos)
-							continue;
+						    if (ds.whole_word_matched)
+						    {
+							    if (!test_whole_word(pos, ds.text.size()))
+								    continue;
+						    }
+					    }
 
-						if (ds.whole_word_matched)
-						{
-							if (!test_whole_word(pos, ds.text.size()))
-								continue;
-						}
-
-						begin = text.data() + pos;
-						end = begin + ds.text.size();
-					}
-
-					auto ki = kwptr->schemes.find(ds.scheme);
-					if (ki != kwptr->schemes.end() && ki->second)
-					{
-						schemes_.emplace(ds.scheme, ki->second);
-						entities.emplace_back();
-						auto & last = entities.back();
-						last.begin = begin;
-						last.end = end;
-						last.scheme = ki->second.get();
-					}
+					    auto ki = kwptr->schemes.find(ds.scheme);
+					    if (ki != kwptr->schemes.end() && ki->second)
+					    {
+						    schemes_.emplace(ds.scheme, ki->second);
+						    entities.emplace_back();
+						    auto & last = entities.back();
+						    last.begin = text.data() + pos;
+						    last.end = last.begin + ds.text.size();
+						    last.scheme = ki->second.get();
+					    }
+                    }
 				}
 
 				if (!entities.empty())
@@ -1221,7 +1243,7 @@ namespace nana{	namespace widgets
 					while(i != entities.end())
 					{
 						if (previous->end > i->begin)
-							i = entities.erase(i);
+							i = entities.erase(i);  // erase overlaping. Left only the first.
 						else
 							++i;
 					}
@@ -1326,7 +1348,7 @@ namespace nana{	namespace widgets
 			attributes_.acceptive = acceptive;
 		}
 
-		bool text_editor::respone_keyboard(char_type key)	//key is a character of ASCII code
+		bool text_editor::respond_char(char_type key)	//key is a character of ASCII code
 		{
 			switch (key)
 			{
@@ -1375,6 +1397,24 @@ namespace nana{	namespace widgets
 				return true;
 			}
 			return false;
+		}
+
+		bool text_editor::respond_key(char_type key)
+		{
+			switch (key)
+			{
+			case keyboard::os_arrow_left:	move_left();	break;
+			case keyboard::os_arrow_right:	move_right();	break;
+			case keyboard::os_arrow_up:		move_ns(true);	break;
+			case keyboard::os_arrow_down:	move_ns(false);	break;
+			case keyboard::os_del:
+				if (this->attr().editable)
+					del();
+				break;
+			default:
+				return false;
+			}
+			return true;
 		}
 
 		void text_editor::typeface_changed()
@@ -2105,25 +2145,6 @@ namespace nana{	namespace widgets
 
 		}
 
-		bool text_editor::move(nana::char_t key)
-		{
-			switch(key)
-			{
-			case keyboard::os_arrow_left:	move_left();	break;
-			case keyboard::os_arrow_right:	move_right();	break;
-			case keyboard::os_arrow_up:		move_ns(true);	break;
-			case keyboard::os_arrow_down:	move_ns(false);	break;
-			case keyboard::os_del:
-				if (this->attr().editable)
-					del();
-				break;
-			default:
-				return false;
-			}
-			return true;
-		}
-
-
 		void text_editor::move_ns(bool to_north)
 		{
 			const bool redraw_required = _m_cancel_select(0);
@@ -2528,7 +2549,7 @@ namespace nana{	namespace widgets
 
 				//The number of new lines minus one
 				const auto chp_end = text.data() + (begin == text.npos ? text.size() : begin);
-				for (auto chp = text.data() + (pos + 2); chp != chp_end; ++chp)
+				for (auto chp = text.data() + (pos + 1); chp != chp_end; ++chp)
 					if (*chp == '\n')
 						lines.emplace_back(0, 0);
 
@@ -2764,18 +2785,17 @@ namespace nana{	namespace widgets
 				}
 		}
 
-		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& linestr, bool if_mask) const
+		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& str, bool if_mask) const
 		{
 			::nana::point text_pos{ text_area_.area.x - points_.offset.x, top };
 			const int xend = text_area_.area.x + static_cast<int>(text_area_.area.width);
 
+			std::unique_ptr<nana::string> mask_str;
 			if (if_mask && mask_char_)
-			{
-				nana::string maskstr;
-				maskstr.append(linestr.size(), mask_char_);
-				graph_.string(text_pos, maskstr, clr);
-				return;
-			}
+				mask_str.reset(new nana::string(str.size(), mask_char_));
+
+
+			auto & linestr = (if_mask && mask_char_ ? *mask_str : str);
 
 			unicode_bidi bidi;
 			std::vector<unicode_bidi::entity> reordered;

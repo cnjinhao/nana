@@ -1,4 +1,4 @@
-/*
+/**
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/combox.hpp
+ *  @file: nana/gui/widgets/combox.hpp
  */
 
 #ifndef NANA_GUI_WIDGETS_COMBOX_HPP

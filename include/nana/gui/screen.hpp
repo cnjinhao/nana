@@ -27,25 +27,37 @@ namespace nana
 		/// The index of monitor.
 		virtual std::size_t get_index() const = 0;
 
+		virtual bool is_primary_monitor() const = 0;
+
 		/// Returns the positional coordinates and size of the display device in reference to the desktop area
 		virtual const ::nana::rectangle& area() const = 0;
+		virtual const ::nana::rectangle& workarea() const = 0;
 	};
 
 	class screen
 	{
+		struct implement;
 	public:
 		static ::nana::size desktop_size();
 		static ::nana::size primary_monitor_size();
-		static std::shared_ptr<display>	from_point(const point&);
-		static std::shared_ptr<display> from_window(window);
+
+		screen();
+
+		/// Reload has no preconditions, it's safe to call on moved-from
+		void reload();
 
 		/// Returns the number of display monitors
 		std::size_t count() const;
 
-		std::shared_ptr<display> get_display(std::size_t index) const;
-		std::shared_ptr<display> get_primary() const;
+		display& from_point(const point&);
+		display& from_window(window);
+
+		display& get_display(std::size_t index) const;
+		display& get_primary() const;
 
 		void for_each(std::function<void(display&)>) const;
+	private:
+		std::shared_ptr<implement> impl_;
 	};
 }//end namespace nana
 

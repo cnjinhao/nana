@@ -8,7 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/layout_utility.hpp
- *
+ *	@contributors: Ryan Gonzalez
  *
  */
 #include <nana/gui/layout_utility.hpp>

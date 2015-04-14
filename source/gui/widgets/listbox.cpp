@@ -8,8 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.cpp
- *	@patchs:
- *		Jan 03 2012, unsigned to std::size_t conversion fail for x64, Hiroshi Seki
+ *	@contributors:	Hiroshi Seki, Ariel Vina-Rodriguez
  */
 
 #include <nana/gui/widgets/listbox.hpp>
@@ -366,16 +365,26 @@ namespace nana
 					cont_.emplace_back(std::move(text), pixels, static_cast<size_type>(cont_.size()));
 				}
 
-				void item_width(size_type index, unsigned width)
+				void item_width(size_type pos, unsigned width)
 				{
-					if (index >= cont_.size())
+					if (pos >= cont_.size())
 						return;
 
 					for(auto & m : cont_)
 					{
-						if(m.index == index)
+						if(m.index == pos)
 							m.pixels = width;
 					}
+				}
+
+				unsigned item_width(size_type pos) const
+				{
+					for (auto & m : cont_)
+					{
+						if (m.index == pos)
+							return m.pixels;
+					}
+					return 0;
 				}
 
 				unsigned pixels() const
@@ -572,9 +581,9 @@ namespace nana
 
 			struct category_t
 			{
-				typedef std::deque<item_t> container;
+				using container = std::deque<item_t>;
 
-				nana::string text;
+				::nana::string text;
 				std::vector<std::size_t> sorted;
 				container items;
 				bool expand{true};
@@ -584,14 +593,10 @@ namespace nana
 
 				category_t() = default;
 
-				category_t(nana::string&& str)
+				category_t(nana::string str)
 					:text(std::move(str))
 				{}
-
-				category_t(const nana::string& str)
-					:text(str)
-				{}
-
+				
 				bool selected() const
 				{
 					for (auto & m : items)
@@ -605,10 +610,10 @@ namespace nana
 			class es_lister
 			{
 			public:
-				typedef std::list<category_t> container;
+				using container = std::list<category_t>;
 
-				std::function<std::function<bool(const nana::string&, nana::any*,
-								const nana::string&, nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
+				std::function<std::function<bool(const ::nana::string&, ::nana::any*,
+								const ::nana::string&, ::nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
 
 				es_lister()
 				{
@@ -620,8 +625,6 @@ namespace nana
 				{
 					ess_ = ess;
 					widget_ = dynamic_cast<nana::listbox*>(&wd);
-					if(nullptr == widget_)
-						throw std::bad_cast();
 				}
 
 				nana::listbox* wd_ptr() const
@@ -771,7 +774,7 @@ namespace nana
 					return &list_.back();
 				}
 
-				void create_cat(const std::initializer_list<nana::string> & args)
+				void create_cat(const std::initializer_list<nana::string>& args)
 				{
 					for (auto & arg : args)
 						list_.emplace_back(arg);
@@ -842,8 +845,11 @@ namespace nana
 					if (pos >= catobj.sorted.size())
 						throw std::out_of_range("listbox: Invalid item position.");
 
-					auto i = std::find(catobj.sorted.begin(), catobj.sorted.end(), pos);
-					return (i != catobj.sorted.end() ? *i : npos);
+                    for (size_type i=0; i<catobj.sorted.size();++i)
+                        if (pos==catobj.sorted[i])
+                            return i;
+					 
+					return   npos ;
 				}
 
 				category_t::container::value_type& at(const index_pair& pos)
@@ -1178,6 +1184,21 @@ namespace nana
 
 					if (to.is_item())
 						item_proxy(ess_, to).select(sel);
+				}
+				void select_display_range(index_pair fr_abs, index_pair to_dpl, bool sel)
+				{
+					index_pair fr_dpl (fr_abs.cat, this->display_order(fr_abs.cat, fr_abs.item));
+                    if (fr_dpl > to_dpl)
+						std::swap(fr_dpl, to_dpl);
+
+					for (; fr_dpl != to_dpl; forward(fr_dpl, 1, fr_dpl))
+					{
+						if (fr_dpl.is_item())
+							item_proxy(ess_, index_pair(fr_dpl.cat, absolute( fr_dpl ) )).select(sel);
+					}
+
+					if (to_dpl.is_item())
+						item_proxy(ess_, index_pair(to_dpl.cat, absolute( to_dpl ) )).select(sel);
 				}
 
 				bool select_for_all(bool sel)
@@ -2607,12 +2628,14 @@ namespace nana
 					graph->set_color(bgcolor);
 					graph->rectangle(rectangle{ r.x, y, show_w, essence_->item_size }, true);
 
-					int item_xpos = x;
+					int item_xpos         = x;
+					unsigned extreme_text = x;
 					bool first = true;
 
 					for(auto index : seqs)
 					{
 						const auto & header = essence_->header.column(index);
+                        auto it_bgcolor = bgcolor;
 
 						if ((item.cells.size() > index) && (header.pixels > 5))
 						{
@@ -2622,14 +2645,14 @@ namespace nana
 
 							if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))
 							{
-								if (!item.flags.selected)
-								{
-									if (item_state::highlighted == state)
-										graph->set_color(m_cell.custom_format->bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8));
-									else
-										graph->set_color(m_cell.custom_format->bgcolor);
-									graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
-								}
+								it_bgcolor = m_cell.custom_format->bgcolor; 
+                                if (item.flags.selected)
+                                    it_bgcolor = it_bgcolor.blend( bgcolor , 0.5) ;
+								if (item_state::highlighted == state)
+									it_bgcolor = it_bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
+                                
+                                graph->set_color(it_bgcolor);
+								graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
 
 								cell_txtcolor = m_cell.custom_format->fgcolor;
 							}
@@ -2677,21 +2700,29 @@ namespace nana
 								//The text is painted over the next subitem
 								int xpos = item_xpos + header.pixels - essence_->suspension_width;
 
-								graph->set_color(bgcolor);
+								graph->set_color(it_bgcolor);
 								graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
-								graph->set_text_color(fgcolor);
+								graph->set_text_color(cell_txtcolor);
 								graph->string(point{ xpos, y + 2 }, STR("..."));
 
 								//Erase the part that over the next subitem.
-								if (index + 1 >= seqs.size())
-									graph->set_color(item.bgcolor);
-								graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
+								if (index + 1 < seqs.size())
+                                {
+                                    graph->set_color(bgcolor);
+								    graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
+                                }
+                                extreme_text = std::max (extreme_text, item_xpos + ext_w + ts.width);
 							}
 						}
 
 						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, { 0xEB, 0xF4, 0xF9 });
 
 						item_xpos += header.pixels;
+						if (index + 1 >= seqs.size() && static_cast<int>(extreme_text) > item_xpos)
+                        {
+                            graph->set_color(item.bgcolor);
+							graph->rectangle(rectangle{item_xpos , y + 2, extreme_text - item_xpos, essence_->item_size - 4}, true);
+                        }
 						first = false;
 					}
 
@@ -2914,19 +2945,19 @@ namespace nana
 								if (!lister.single_selection())
 								{
 									if (arg.shift)
-										lister.select_range(lister.last_selected, item_pos, sel);
+										lister.select_display_range(lister.last_selected, item_pos, sel);
 									else if (arg.ctrl)
-										sel = !item_proxy(essence_, item_pos).selected();
+										sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();  
 									else
 										lister.select_for_all(false);
 								}
 								else
-									sel = !item_proxy(essence_, item_pos).selected();
+									sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();
 
 								if(item_ptr)
 								{
 									item_ptr->flags.selected = sel;
-									index_pair last_selected(item_pos.cat, lister.absolute(item_pos));
+									index_pair last_selected(item_pos.cat, lister.absolute(item_pos)); 
 
 									arg_listbox arg{item_proxy{essence_, last_selected}, sel};
 									lister.wd_ptr()->events().selected.emit(arg);
@@ -3606,6 +3637,19 @@ namespace nana
 			auto & ess = _m_ess();
 			ess.header.create(std::move(text), width);
 			ess.update();
+		}
+
+		listbox& listbox::header_width(size_type pos, unsigned pixels)
+		{
+			auto & ess = _m_ess();
+			ess.header.item_width(pos, pixels);
+			ess.update();
+			return *this;
+		}
+
+		unsigned listbox::header_width(size_type pos) const
+		{
+			return _m_ess().header.item_width(pos);
 		}
 
 		listbox::cat_proxy listbox::append(nana::string s)

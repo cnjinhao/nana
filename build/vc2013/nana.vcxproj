@@ -5,9 +5,17 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -22,7 +30,20 @@
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
@@ -35,14 +56,34 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>../bin/vc2013/</OutDir>
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
+    <OutDir>../bin/vc2013/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>../bin/vc2013/</OutDir>
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <OutDir>../bin/vc2013/</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -52,13 +93,33 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <OutputFile>$(OutDir)\nana_debug.lib</OutputFile>
+      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -70,6 +131,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -78,7 +141,28 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <OutputFile>$(OutDir)\nana_release.lib</OutputFile>
+      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Lib>
+      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -129,6 +213,7 @@
     <ClCompile Include="..\..\source\gui\widgets\float_listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\form.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\frame.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\group.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\label.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\menu.cpp" />
@@ -162,6 +247,128 @@
     <ClCompile Include="..\..\source\threads\pool.cpp" />
     <ClCompile Include="..\..\source\traits.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\nana\any.hpp" />
+    <ClInclude Include="..\..\include\nana\audio\detail\audio_device.hpp" />
+    <ClInclude Include="..\..\include\nana\audio\detail\audio_stream.hpp" />
+    <ClInclude Include="..\..\include\nana\audio\detail\buffer_preparation.hpp" />
+    <ClInclude Include="..\..\include\nana\audio\player.hpp" />
+    <ClInclude Include="..\..\include\nana\basic_types.hpp" />
+    <ClInclude Include="..\..\include\nana\charset.hpp" />
+    <ClInclude Include="..\..\include\nana\concepts.hpp" />
+    <ClInclude Include="..\..\include\nana\config.hpp" />
+    <ClInclude Include="..\..\include\nana\datetime.hpp" />
+    <ClInclude Include="..\..\include\nana\deploy.hpp" />
+    <ClInclude Include="..\..\include\nana\detail\linux_X11\msg_dispatcher.hpp" />
+    <ClInclude Include="..\..\include\nana\detail\linux_X11\msg_packet.hpp" />
+    <ClInclude Include="..\..\include\nana\detail\linux_X11\platform_spec.hpp" />
+    <ClInclude Include="..\..\include\nana\detail\win32\platform_spec.hpp" />
+    <ClInclude Include="..\..\include\nana\exceptions.hpp" />
+    <ClInclude Include="..\..\include\nana\extrlib\png.h" />
+    <ClInclude Include="..\..\include\nana\extrlib\pngconf.h" />
+    <ClInclude Include="..\..\include\nana\extrlib\pnglibconf.h" />
+    <ClInclude Include="..\..\include\nana\extrlib\zlib.h" />
+    <ClInclude Include="..\..\include\nana\filesystem\file_iterator.hpp" />
+    <ClInclude Include="..\..\include\nana\filesystem\fs_utility.hpp" />
+    <ClInclude Include="..\..\include\nana\fwd.hpp" />
+    <ClInclude Include="..\..\include\nana\gui.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\animation.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\basis.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\basic_window.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\bedrock.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\bedrock_pi_data.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\color_schemes.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\drawer.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\dynamic_drawing_object.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\effects_renderer.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\element_store.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\events_holder.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\events_operation.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\event_code.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\general_events.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\handle_manager.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\inner_fwd.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\inner_fwd_implement.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\internal_scope_guard.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\native_window_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\runtime_manager.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\widget_colors.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\window_layout.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\detail\window_manager.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\dragger.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\drawing.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\effects.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\element.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\filebox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\layout_utility.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\msgbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\notifier.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\place.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\programming_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\screen.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\state_cursor.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\timer.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\tooltip.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\button.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\categorize.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\checkbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\combox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\date_chooser.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\detail\compset.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\detail\tree_cont.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\float_listbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\form.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\frame.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\group.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\label.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\listbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\menu.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\menubar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\panel.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\picture.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\progress.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\scroll.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\skeletons\textbase.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\skeletons\textbase_export_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\skeletons\text_editor.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\skeletons\text_editor_scheme.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\skeletons\text_token_stream.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\slider.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\spinbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\tabbar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\textbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\toolbar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\treebox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\widget.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\wvl.hpp" />
+    <ClInclude Include="..\..\include\nana\internationalization.hpp" />
+    <ClInclude Include="..\..\include\nana\key_type.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\detail\image_bmp.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\detail\image_ico.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\detail\image_impl_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\detail\image_png.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\detail\image_processor.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\detail\image_process_provider.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\detail\native_paint_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\gadget.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\graphics.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\image.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\image_process_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\image_process_selector.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\pixel_buffer.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\text_renderer.hpp" />
+    <ClInclude Include="..\..\include\nana\pat\cloneable.hpp" />
+    <ClInclude Include="..\..\include\nana\std_condition_variable.hpp" />
+    <ClInclude Include="..\..\include\nana\std_mutex.hpp" />
+    <ClInclude Include="..\..\include\nana\std_thread.hpp" />
+    <ClInclude Include="..\..\include\nana\system\dataexch.hpp" />
+    <ClInclude Include="..\..\include\nana\system\platform.hpp" />
+    <ClInclude Include="..\..\include\nana\system\shared_wrapper.hpp" />
+    <ClInclude Include="..\..\include\nana\system\timepiece.hpp" />
+    <ClInclude Include="..\..\include\nana\threads\pool.hpp" />
+    <ClInclude Include="..\..\include\nana\traits.hpp" />
+    <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

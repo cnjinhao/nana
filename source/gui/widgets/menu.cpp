@@ -659,13 +659,13 @@ namespace nana
 					API::calc_screen_point(*widget_, pos);
 
 					//get the screen coordinates of the widget pos.
-					auto scr_area = screen::from_point(detail_.monitor_pos)->area();
+					auto scr_area = screen().from_point(detail_.monitor_pos).workarea();
 
-					if(pos.x + size.width > scr_area.x + scr_area.width)
+					if(pos.x + static_cast<int>(size.width) > scr_area.right())
 						pos.x = static_cast<int>(scr_area.x + scr_area.width - size.width);
 					if(pos.x < scr_area.x) pos.x = scr_area.x;
 
-					if(pos.y + size.height > scr_area.y + scr_area.height)
+					if(pos.y + static_cast<int>(size.height) > scr_area.bottom())
 						pos.y = static_cast<int>(scr_area.y + scr_area.height - size.height);
 					if(pos.y < scr_area.y) pos.y = scr_area.y;
 
