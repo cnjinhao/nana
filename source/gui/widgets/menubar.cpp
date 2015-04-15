@@ -232,10 +232,10 @@ namespace nana
 							_m_popup_menu();
 						}
 						else
-							_m_total_close();
+							_m_total_close(true);
 					}
 					else if(npos == state_.active)
-						_m_total_close();
+						_m_total_close(true);
 					else
 						_m_popup_menu();
 
@@ -255,7 +255,7 @@ namespace nana
 					else
 					{
 						state_.behavior = state_.behavior_none;
-						_m_total_close();
+						_m_total_close(true);
 						_m_draw();
 						API::lazy_refresh();
 					}
@@ -305,15 +305,17 @@ namespace nana
 							}
 							break;
 						case keyboard::enter:
+							state_.delay_restore = true;
 							state_.menu->pick();
 							break;
 						default:
 							if(2 != state_.menu->send_shortkey(arg.key))
 							{
-								if(state_.active != npos)
+								if (state_.active != npos)
 								{
-									_m_total_close();
-									if(arg.key == 18) //ALT
+									state_.delay_restore = true;
+									_m_total_close(false);
+									if (arg.key == 18) //ALT
 										state_.behavior = state_.behavior_focus;
 								}
 							}
@@ -366,6 +368,12 @@ namespace nana
 						state_.menu_active = false;
 						_m_draw();
 						API::lazy_refresh();
+					}
+
+					if (state_.delay_restore)
+					{
+						API::restore_menubar_taken_window();
+						state_.delay_restore = false;
 					}
 				}
 
@@ -440,13 +448,14 @@ namespace nana
 					return false;
 				}
 
-				void trigger::_m_total_close()
+				void trigger::_m_total_close(bool try_restore)
 				{
 					_m_close_menu();
 					state_.menu_active = false;
 					state_.behavior = state_.behavior_none;
 
-					API::restore_menubar_taken_window();
+					if (try_restore)
+						API::restore_menubar_taken_window();
 
 					auto pos = API::cursor_position();
 					API::calc_window_point(widget_->handle(), pos);
@@ -471,7 +480,8 @@ namespace nana
 					state_.menu = nullptr;
 					if(state_.passive_close)
 					{
-						_m_total_close();
+						_m_total_close(false);
+
 						_m_draw();
 						API::update_window(widget_->handle());
 					}
@@ -569,7 +579,13 @@ namespace nana
 
 				//struct state_type
 					trigger::state_type::state_type()
-						:active(npos), behavior(behavior_none), menu_active(false), passive_close(true), nullify_mouse(false), menu(nullptr)
+						:	active(npos),
+							behavior(behavior_none),
+							menu_active(false),
+							passive_close(true),
+							nullify_mouse(false),
+							menu(nullptr),
+							delay_restore(false)
 					{}
 				//end struct state_type
 			//end class trigger
