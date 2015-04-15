@@ -8,7 +8,8 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/window_manager.cpp
- *
+ *	@author: Jinhao
+ *	@contributors:	Katsuhisa Yuasa
  */
 
 #include <nana/config.hpp>
@@ -874,6 +875,14 @@ namespace detail
 
 				if (!root_has_been_focused)
 					native_interface::set_focus(root_wd->root);
+
+				//A fix by Katsuhisa Yuasa
+				//The menubar token window will be redirected to the prev focus window when the new
+				//focus window is a menubar.
+				//The focus window will be restore to the prev focus which losts the focus becuase of
+				//memberbar. 
+				if (wd == wd->root_widget->other.attribute.root->menubar)
+					wd = prev_focus;
 
 				brock.set_menubar_taken(wd);
 			}
