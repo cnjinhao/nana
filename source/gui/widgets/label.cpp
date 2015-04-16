@@ -9,7 +9,7 @@
  *
  *	@file: source/gui/widgets/label.cpp
  *	@author: Jinhao
- *	@contributors: qPCR4vir
+ *	@contributors: Ariel Vina-Rodriguez
  */
 
 #include <nana/gui/widgets/label.hpp>
@@ -588,7 +588,7 @@ namespace nana
 
 				std::pair<std::size_t, std::size_t> _m_locate(dstream::linecontainer::iterator& i, std::size_t pos)
 				{
-					std::pair<std::size_t, std::size_t> r;
+					//std::pair<std::size_t, std::size_t> r;	//deprecated
 
 					std::size_t n = i->data_ptr->text().length();
 					while(pos >= n)
@@ -853,24 +853,16 @@ namespace nana
 
 		label& label::text_align(align th, align_v tv)
 		{
-			internal_scope_guard isg;
+			internal_scope_guard lock;
 			auto impl = get_drawer_trigger().impl();
 
-			bool to_update = false;
-			if(impl->text_align != th)
+			if (th != impl->text_align || tv != impl->text_align_v)
 			{
 				impl->text_align = th;
-				to_update = true;
-			}
-
-			if(impl->text_align_v != tv)
-			{
 				impl->text_align_v = tv;
-				to_update = true;
+				API::refresh_window(*this);
 			}
 
-			if(to_update)
-				API::refresh_window(*this);
 			return *this;
 		}
 

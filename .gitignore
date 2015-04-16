@@ -2,6 +2,9 @@
 #ignore thumbnails created by windows
 Thumbs.db
 #Ignore files build by Visual Studio
+bii/build/*
+bii/cmake/*
+bii/deps/*
 *.obj
 *.exe
 *.pdb
@@ -21,7 +24,6 @@ Thumbs.db
 [Bb]in
 [Dd]ebug*/
 *.lib
-*.a
 *.sbr
 obj/
 [Rr]elease*/
@@ -29,4 +31,5 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 *.suo
 *.sdf
-lib/
+
+bii/.hive.db

@@ -34,6 +34,8 @@
 	#define NANA_X11	1
 	#define PLATFORM_SPEC_HPP <nana/detail/linux_X11/platform_spec.hpp>
 	#define STD_CODECVT_NOT_SUPPORTED
+#else
+#	static_assert(false, "Only Windows and Unix are support now");
 #endif
 
 #if defined(NANA_MINGW) || defined(NANA_LINUX)
@@ -44,7 +46,6 @@
 #endif
 
 //Here defines some flags that tell Nana what features will be supported.
-
 #define NANA_UNICODE
 
 #if defined(NANA_UNICODE) && defined(NANA_WINDOWS)

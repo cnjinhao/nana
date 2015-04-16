@@ -10,7 +10,7 @@
  *	@file: nana/gui/place.cpp
  *
  *	@contributions:
- *	min/max and splitter bar initial weight by qPCR4vir.
+ *	min/max and splitter bar initial weight by Ariel Vina-Rodriguez.
  */
 
 #ifndef NANA_GUI_PLACE_HPP

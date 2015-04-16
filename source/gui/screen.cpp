@@ -30,7 +30,7 @@ namespace nana
 #if defined(NANA_WINDOWS)
 		real_display(std::size_t number, const MONITORINFOEX& mi)
 			:	index_(number),
-				is_primary_(mi.dwFlags & MONITORINFOF_PRIMARY),
+				is_primary_(mi.dwFlags & /*MONITORINFOF_PRIMARY*/ 0x1),
 				area_(mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left, mi.rcMonitor.bottom - mi.rcMonitor.top),
 				workarea_(mi.rcWork.left, mi.rcWork.top, mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top)
 		{

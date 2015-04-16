@@ -1,7 +1,7 @@
 /*
 *	A Menubar implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -30,21 +30,21 @@ namespace nana
 		{
 			struct item_type
 			{
-				item_type(const nana::string& text, unsigned long shortkey)
+				item_type(const ::nana::string& text, unsigned long shortkey)
 					: text(text), shortkey(shortkey)
 				{}
 
-				nana::string	text;
+				::nana::string	text;
 				unsigned long	shortkey;
-				nana::menu	menu_obj;
-				nana::point		pos;
-				nana::size		size;
+				::nana::menu	menu_obj;
+				::nana::point	pos;
+				::nana::size	size;
 			};
 
 			class trigger::itembase
 			{
 			public:
-				typedef std::vector<item_type*> container;
+				using container = std::vector<item_type*>;
 
 				~itembase()
 				{
@@ -52,7 +52,7 @@ namespace nana
 						delete i;
 				}
 
-				void append(const nana::string& text, unsigned long shortkey)
+				void append(const ::nana::string& text, unsigned long shortkey)
 				{
 					if(shortkey && shortkey < 0x61) shortkey += (0x61 - 0x41);
 					cont_.push_back(new item_type(text, shortkey));
@@ -122,11 +122,13 @@ namespace nana
 					nana::rectangle r(pos, size);
 					graph_.rectangle(r, false, border);
 
+					int right = pos.x + static_cast<int>(size.width) - 1;
+					int bottom = pos.y + static_cast<int>(size.height) - 1;
 					graph_.set_color(corner);
 					graph_.set_pixel(pos.x, pos.y);
-					graph_.set_pixel(pos.x + size.width - 1, pos.y);
-					graph_.set_pixel(pos.x, pos.y + size.height - 1);
-					graph_.set_pixel(pos.x + size.width - 1, pos.y + size.height - 1);
+					graph_.set_pixel(right, pos.y);
+					graph_.set_pixel(pos.x, bottom);
+					graph_.set_pixel(right, bottom);
 					graph_.rectangle(r.pare_off(1), true, body);
 				}
 
@@ -146,9 +148,9 @@ namespace nana
 					delete items_;
 				}
 
-				nana::menu* trigger::push_back(const nana::string& text)
+				nana::menu* trigger::push_back(const ::nana::string& text)
 				{
-					nana::string::value_type shkey;
+					::nana::string::value_type shkey;
 					API::transform_shortkey_text(text, shkey, nullptr);
 
 					if(shkey)
@@ -157,6 +159,7 @@ namespace nana
 					auto i = items_->cont().size();
 					items_->append(text, shkey);
 					_m_draw();
+					API::update_window(*widget_);
 					return items_->get_menu(i);
 				}
 
@@ -229,10 +232,10 @@ namespace nana
 							_m_popup_menu();
 						}
 						else
-							_m_total_close();
+							_m_total_close(true);
 					}
 					else if(npos == state_.active)
-						_m_total_close();
+						_m_total_close(true);
 					else
 						_m_popup_menu();
 
@@ -252,7 +255,7 @@ namespace nana
 					else
 					{
 						state_.behavior = state_.behavior_none;
-						_m_total_close();
+						_m_total_close(true);
 						_m_draw();
 						API::lazy_refresh();
 					}
@@ -302,15 +305,17 @@ namespace nana
 							}
 							break;
 						case keyboard::enter:
+							state_.delay_restore = true;
 							state_.menu->pick();
 							break;
 						default:
 							if(2 != state_.menu->send_shortkey(arg.key))
 							{
-								if(state_.active != npos)
+								if (state_.active != npos)
 								{
-									_m_total_close();
-									if(arg.key == 18) //ALT
+									state_.delay_restore = true;
+									_m_total_close(false);
+									if (arg.key == 18) //ALT
 										state_.behavior = state_.behavior_focus;
 								}
 							}
@@ -363,6 +368,12 @@ namespace nana
 						state_.menu_active = false;
 						_m_draw();
 						API::lazy_refresh();
+					}
+
+					if (state_.delay_restore)
+					{
+						API::restore_menubar_taken_window();
+						state_.delay_restore = false;
 					}
 				}
 
@@ -437,13 +448,14 @@ namespace nana
 					return false;
 				}
 
-				void trigger::_m_total_close()
+				void trigger::_m_total_close(bool try_restore)
 				{
 					_m_close_menu();
 					state_.menu_active = false;
 					state_.behavior = state_.behavior_none;
 
-					API::restore_menubar_taken_window();
+					if (try_restore)
+						API::restore_menubar_taken_window();
 
 					auto pos = API::cursor_position();
 					API::calc_window_point(widget_->handle(), pos);
@@ -468,7 +480,8 @@ namespace nana
 					state_.menu = nullptr;
 					if(state_.passive_close)
 					{
-						_m_total_close();
+						_m_total_close(false);
+
 						_m_draw();
 						API::update_window(widget_->handle());
 					}
@@ -566,7 +579,13 @@ namespace nana
 
 				//struct state_type
 					trigger::state_type::state_type()
-						:active(npos), behavior(behavior_none), menu_active(false), passive_close(true), nullify_mouse(false), menu(nullptr)
+						:	active(npos),
+							behavior(behavior_none),
+							menu_active(false),
+							passive_close(true),
+							nullify_mouse(false),
+							menu(nullptr),
+							delay_restore(false)
 					{}
 				//end struct state_type
 			//end class trigger
