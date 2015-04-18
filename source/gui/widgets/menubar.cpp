@@ -309,8 +309,14 @@ namespace nana
 							state_.menu->pick();
 							break;
 						default:
-							if(2 != state_.menu->send_shortkey(arg.key))
+							//(as of now...)
+							//send_shortkey has 3 states, 0 = UNKNOWN KEY, 1 = ITEM, 2 = GOTO SUBMENU
+							int sk_state = state_.menu->send_shortkey(arg.key);
+							switch(sk_state)
 							{
+							case 0: //UNKNOWN KEY
+								break;
+							case 1: //ITEM
 								if (state_.active != npos)
 								{
 									state_.delay_restore = true;
@@ -318,9 +324,12 @@ namespace nana
 									if (arg.key == 18) //ALT
 										state_.behavior = state_.behavior_focus;
 								}
-							}
-							else
+								break;
+							case 2: //GOTO SUBMENU
 								state_.menu->goto_submen();
+								break;
+							}
+							break;
 						}
 					}
 					else
@@ -334,6 +343,13 @@ namespace nana
 						case keyboard::os_arrow_left:
 							_m_move(true);
 							break;
+						case keyboard::os_arrow_up:
+						case keyboard::os_arrow_down:
+						case keyboard::enter:
+							state_.menu_active = true;
+							if(_m_popup_menu())
+								state_.menu->goto_next(true);
+							break;
 						case keyboard::escape:
 							if(state_.behavior == state_.behavior_focus)
 							{
@@ -341,6 +357,17 @@ namespace nana
 								state_.behavior = state_.behavior_none;
 								API::restore_menubar_taken_window();
 							}
+							break;
+						default:
+							std::size_t index = items_->find(arg.key);
+							if(index != npos)
+							{
+								state_.active = index;
+								state_.menu_active = true;
+								if(_m_popup_menu())
+									state_.menu->goto_next(true);
+							}
+							break;
 						}
 					}
 
