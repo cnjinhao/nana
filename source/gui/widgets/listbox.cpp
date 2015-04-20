@@ -1,4 +1,4 @@
-/*
+/**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -19,6 +19,7 @@
 #include <deque>
 #include <stdexcept>
 #include <algorithm>
+#include <nana/system/dataexch.hpp>
 
 namespace nana
 {
@@ -1680,25 +1681,30 @@ namespace nana
 
 					if(icat->expand)
 					{
-						std::size_t item_size = icat->items.size() - from.item;
-						if(offs < item_size)
+						std::size_t item_size = icat->items.size() -1- from.item;
+						if(offs <= item_size)
 						{
 							item = from;
 							item.item += offs;
 							return true;
 						}
 						else
+                        {
 							offs -= item_size;
+							item = from;
+							item.item += item_size;
+                        }
 					}
 
 					++from.cat;
 					++icat;
 					for(; icat != list_.end(); ++icat, ++from.cat)
 					{
+						item.cat = from.cat;
+						item.item = npos;
+
 						if(offs-- == 0)
 						{
-							item.cat = from.cat;
-							item.item = npos;
 							return true;
 						}
 
@@ -1706,7 +1712,7 @@ namespace nana
 						{
 							if(offs < icat->items.size())
 							{
-								item.cat = from.cat;
+								//item.cat = from.cat;
 								item.item = offs;
 								return true;
 							}
@@ -1905,8 +1911,8 @@ namespace nana
 						}
 					}
 
-					adjust_scroll_life();
-					adjust_scroll_value();
+					adjust_scroll_life();  // call adjust_scroll_value();
+					adjust_scroll_value(); // again?
 				}
 
 				void update()
@@ -3081,6 +3087,41 @@ namespace nana
 								item_proxy(essence_, i).check(ck);
 						}
 						break;
+                    case keyboard::copy:
+                       {
+                           nana::string str{STR("to_csv()")};
+                           //nana::system::dataexch().set(str);
+                           return;
+                       }
+                    case keyboard::os_pageup :
+						up = true;
+                    case keyboard::os_pagedown:
+                    {
+					    index_pair target;
+                        auto page_range = essence_->scroll.v.range();
+                        if (page_range >1) --page_range;
+					    if(up == false)
+						    essence_->lister.forward(essence_->scroll.offset_y, page_range , target);
+					    else
+						    essence_->lister.backward(essence_->scroll.offset_y,page_range , target);
+
+					    if (target == essence_->scroll.offset_y)
+						    return ;
+					
+                        essence_->lister.select_for_all(false);
+					    essence_->scroll.offset_y = target;
+                        item_proxy it ( essence_  , target); 
+
+                        it.select(true);
+						essence_->trace_selected_item();
+       					essence_->adjust_scroll_life();  // call adjust_scroll_value();
+     					essence_->adjust_scroll_value(); // again?
+
+                        break;
+                        API::refresh_window(essence_->lister.wd_ptr()->handle());
+
+                    }
+
 					default:
 						return;
 					}
