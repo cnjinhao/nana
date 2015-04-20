@@ -1927,8 +1927,8 @@ namespace nana
 						}
 					}
 
-					adjust_scroll_life();
-					adjust_scroll_value();
+					adjust_scroll_life();  // call adjust_scroll_value();
+					adjust_scroll_value(); // again?
 				}
 
 				void update()
@@ -3113,6 +3113,35 @@ namespace nana
 								item_proxy(essence_, i).check(ck);
 						}
 						break;
+                    case keyboard::os_pageup :
+						up = true;
+                    case keyboard::os_pagedown:
+                    {
+					    index_pair target;
+                        auto page_range = essence_->scroll.v.range();
+                        if (page_range >1) --page_range;
+					    if(up == false)
+						    essence_->lister.forward(essence_->scroll.offset_y, page_range , target);
+					    else
+						    essence_->lister.backward(essence_->scroll.offset_y,page_range , target);
+
+					    if (target == essence_->scroll.offset_y)
+						    return ;
+					
+                        essence_->lister.select_for_all(false);
+					    essence_->scroll.offset_y = target;
+                        item_proxy it ( essence_  , target); 
+
+                        it.select(true);
+						essence_->trace_selected_item();
+       					essence_->adjust_scroll_life();  // call adjust_scroll_value();
+     					essence_->adjust_scroll_value(); // again?
+
+                        break;
+                        API::refresh_window(essence_->lister.wd_ptr()->handle());
+
+                    }
+
 					default:
 						return;
 					}
