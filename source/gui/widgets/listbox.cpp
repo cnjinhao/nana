@@ -1680,25 +1680,30 @@ namespace nana
 
 					if(icat->expand)
 					{
-						std::size_t item_size = icat->items.size() - from.item;
-						if(offs < item_size)
+						std::size_t item_size = icat->items.size() -1- from.item;
+						if(offs <= item_size)
 						{
 							item = from;
 							item.item += offs;
 							return true;
 						}
 						else
+                        {
 							offs -= item_size;
+							item = from;
+							item.item += item_size;
+                        }
 					}
 
 					++from.cat;
 					++icat;
 					for(; icat != list_.end(); ++icat, ++from.cat)
 					{
-						if(offs-- == 0)
-						{
 							item.cat = from.cat;
 							item.item = npos;
+
+						if(offs-- == 0)
+						{
 							return true;
 						}
 
@@ -1706,7 +1711,7 @@ namespace nana
 						{
 							if(offs < icat->items.size())
 							{
-								item.cat = from.cat;
+								//item.cat = from.cat;
 								item.item = offs;
 								return true;
 							}
