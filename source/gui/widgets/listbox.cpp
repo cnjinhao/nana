@@ -18,6 +18,7 @@
 #include <deque>
 #include <stdexcept>
 #include <algorithm>
+#include <nana/system/dataexch.hpp>
 
 namespace nana
 {
@@ -1716,8 +1717,8 @@ namespace nana
 					++icat;
 					for(; icat != list_.end(); ++icat, ++from.cat)
 					{
-							item.cat = from.cat;
-							item.item = npos;
+						item.cat = from.cat;
+						item.item = npos;
 
 						if(offs-- == 0)
 						{
@@ -3113,6 +3114,12 @@ namespace nana
 								item_proxy(essence_, i).check(ck);
 						}
 						break;
+                    case keyboard::copy:
+                       {
+                           nana::string str{STR("to_csv()")};
+                           //nana::system::dataexch().set(str);
+                           return;
+                       }
                     case keyboard::os_pageup :
 						up = true;
                     case keyboard::os_pagedown:
