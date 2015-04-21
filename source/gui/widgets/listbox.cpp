@@ -2012,16 +2012,22 @@ namespace nana
 						if(scroll.v.empty())
 						{
 							scroll.v.create(wd, r);
-							API::take_active(scroll.v.handle(), false, wd);
-							scroll.v.events().mouse_move.connect_unignorable([this](const ::nana::arg_mouse& arg)
+							API::take_active(scroll.v.handle(), false, wd);  // install value_changed() not mouse_move ????
+
+							scroll.v.events().value_changed([this](const ::nana::arg_scroll<true>& arg)
 							{
-								_m_answer_scroll(arg);
+								_m_answer_scroll_value(arg);
 							});
 
-							scroll.v.events().mouse_up.connect_unignorable([this](const ::nana::arg_mouse& arg)
-							{
-								_m_answer_scroll(arg);
-							});
+							//scroll.v.events().mouse_move.connect_unignorable([this](const ::nana::arg_mouse& arg)
+							//{
+							//	_m_answer_scroll(arg);
+							//});
+
+							//scroll.v.events().mouse_up.connect_unignorable([this](const ::nana::arg_mouse& arg)
+							//{
+							//	_m_answer_scroll(arg);
+							//});
 						}
 						else
 							scroll.v.move(r);
@@ -2236,6 +2242,16 @@ namespace nana
 
 					if(update)
 						API::refresh_window(lister.wd_ptr()->handle());
+				}
+				void _m_answer_scroll_value(const ::nana::arg_scroll<true>& arg)
+				{
+					index_pair item;
+					if( !lister.forward(item, scroll.v.value(), item)) return;
+
+					if (item == scroll.offset_y) return; 
+
+					scroll.offset_y = item;
+				    API::refresh_window(lister.wd_ptr()->handle());
 				}
 			};
 
