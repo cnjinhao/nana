@@ -419,12 +419,12 @@ namespace nana
 			return this->get_drawer_trigger().step(s);
 		}
 
-		///  \brief Increase/decrease values by a step.
+		///  \brief Increase/decrease values by a step (alternativelly by some number of steps).
 		/// @param forward  it determines whether increase or decrease.
 		/// @return true if the value is changed.
-		bool make_step(bool forward)
+		bool make_step(bool forward, unsigned steps=1)
 		{
-			if(this->get_drawer_trigger().make_step(forward, 1))
+			if(this->get_drawer_trigger().make_step(forward, steps))
 			{
 				API::refresh_window(this->handle());
 				return true;
