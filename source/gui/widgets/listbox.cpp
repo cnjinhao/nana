@@ -2019,15 +2019,6 @@ namespace nana
 								_m_answer_scroll_value(arg);
 							});
 
-							//scroll.v.events().mouse_move.connect_unignorable([this](const ::nana::arg_mouse& arg)
-							//{
-							//	_m_answer_scroll(arg);
-							//});
-
-							//scroll.v.events().mouse_up.connect_unignorable([this](const ::nana::arg_mouse& arg)
-							//{
-							//	_m_answer_scroll(arg);
-							//});
 						}
 						else
 							scroll.v.move(r);
