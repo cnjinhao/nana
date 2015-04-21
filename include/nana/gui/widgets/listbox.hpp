@@ -446,12 +446,12 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-/*! \brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain \a items. 
+/*! \brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain a list of \a items. 
 A category is a text with can be \a selected, \a checked and \a expanded to show the items.
 An item is formed by \a column-fields, each corresponding to one of the \a headers. 
 An item can be \a selected and \a checked.
 The user can \a drag the header to \a reisize it or to \a reorganize it. 
-By \a clicking on a header the list get \a reordered, first up, and then down alternatively,
+By \a clicking on a header the list get \a reordered, first up, and then down alternatively.
 */
 	class listbox
 		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
