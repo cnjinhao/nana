@@ -1354,7 +1354,6 @@ namespace nana
 					}
 				}
 
-
 				void cancel_others_if_single_enabled(bool for_selection, const index_pair& except)
 				{
 					if (!(for_selection ? single_selection_ : single_check_))
@@ -1625,6 +1624,13 @@ namespace nana
 						--i.item;
 
 					return i;
+				}
+
+                index_pair last_displ() const
+				{
+					index_pair i{ last_displ() }; // ??
+
+					return absolute ( i );
 				}
 
 				bool good(size_type cat) const
@@ -2244,7 +2250,50 @@ namespace nana
 					scroll.offset_y = item;
 				    API::refresh_window(lister.wd_ptr()->handle());
 				}
-			};
+                
+#if ( 0 )   
+                void update_selection_range(index_pair to, const arg_mouse& arg)
+				{
+					using item_state = essence_t::item_state;
+					using parts = essence_t::parts;
+					bool update = false;
+					index_pair item_pos;
+					bool sel = true;
+					if (!lister.single_selection())
+					{
+						if (arg.shift)
+							lister.select_display_range(lister.last_selected, item_pos, sel);
+						else if (arg.ctrl)
+							    sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();  
+							else
+								lister.select_for_all(false);
+					}
+					else
+						sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();
+
+						item_ptr->flags.selected = sel;
+						index_pair last_selected(item_pos.cat, lister.absolute(item_pos)); 
+
+						arg_listbox arg{item_proxy{essence_, last_selected}, sel};
+						lister.wd_ptr()->events().selected.emit(arg);
+
+                        if (item_ptr->flags.selected)
+						{
+							lister.cancel_others_if_single_enabled(true, last_selected);
+							essence_->lister.last_selected = last_selected;
+								
+						}
+						else if (essence_->lister.last_selected == last_selected)
+								essence_->lister.last_selected.set_both(npos);
+					}
+					else if(!lister.single_selection())
+							lister.categ_selected(item_pos.cat, true);
+					update = true;
+
+				}
+#endif			
+
+};
 
 			class drawer_header_impl
 			{
@@ -2534,7 +2583,7 @@ namespace nana
 							if(n-- == 0)	break;
 							state = (tracker == idx	? item_state::highlighted : item_state::normal);
 
-							_m_draw_item(i_categ->items[sort_enabled ? lister.absolute(index_pair(idx.cat, offs)) : offs], x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
+							_m_draw_item(i_categ->items[lister.absolute(index_pair(idx.cat, offs)) ], x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
 							y += essence_->item_size;
 						}
 	
@@ -3024,6 +3073,7 @@ namespace nana
 					}
 				}
 
+
 				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
 					using item_state = essence_t::item_state;
@@ -3195,21 +3245,20 @@ namespace nana
 				item_proxy & item_proxy::select(bool s)
 				{
 					auto & m = cat_->items.at(pos_.item);
-					if(m.flags.selected != s)
+					if(m.flags.selected == s) return *this;
+					m.flags.selected = s;
+
+                    arg_listbox arg{*this, s};
+					ess_->lister.wd_ptr()->events().selected.emit(arg);
+
+					if (m.flags.selected)
 					{
-						m.flags.selected = s;
-
-						arg_listbox arg{*this, s};
-						ess_->lister.wd_ptr()->events().selected.emit(arg);
-
-						if (m.flags.selected)
-						{
-							ess_->lister.cancel_others_if_single_enabled(true, pos_);	//Cancel all selections except pos_ if single_selection is enabled.
-							ess_->lister.last_selected = pos_;
-						}
-						else if (ess_->lister.last_selected == pos_)
-							ess_->lister.last_selected.set_both(npos);
+						ess_->lister.cancel_others_if_single_enabled(true, pos_);	//Cancel all selections except pos_ if single_selection is enabled.
+						ess_->lister.last_selected = pos_;
 					}
+					else if (ess_->lister.last_selected == pos_)
+							ess_->lister.last_selected.set_both(npos);
+					
 					return *this;
 				}
 
