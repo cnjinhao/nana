@@ -1271,24 +1271,24 @@ namespace nana
 					return ck;
 				}
 
-				void move_select(bool upwards)
+				void move_select_(bool upwards)
 				{
 					auto next_selected = last_selected;
-					if (next_selected.empty())
+					if (next_selected.empty())  // has no cat ? (cat == npos) => beging from first cat
 					{
 						bool good = false;
-						for(size_type i = 0, size = list_.size(); i < size; ++i)
+						for(size_type i = 0, size = list_.size(); i < size; ++i) // run all cat
 						{
 							if(size_item(i))
 							{
-								//The first item which contains at least one item.
+								//The first category which contains at least one item.
 								next_selected.cat = i;
 								next_selected.item = 0;
 								good = true;
 								break;
 							}
 						}
-						if(good == false) return;   // items in listbox : nothing to select (and an empty but visible cat?)
+						if(! good ) return;   // items in listbox : nothing to select (and an empty but visible cat?)
 					}
 
 					//start moving
@@ -1347,6 +1347,85 @@ namespace nana
 								wd_ptr()->events().selected.emit(arg);
 
 								last_selected = next_selected;
+							}
+							break;
+						}
+						else break;
+					}
+				}
+
+				void move_select(bool upwards, bool deselect=true)
+				{
+					auto next_selected = last_selected;
+					if (next_selected.empty())  // has no cat ? (cat == npos) => beging from first cat
+					{
+						bool good = false;
+						for(size_type i = 0, size = list_.size(); i < size; ++i) // run all cat
+						{
+							if(size_item(i))
+							{
+								//The first category which contains at least one item.
+								next_selected.cat = i;
+								next_selected.item = 0; //absolute( 0 );
+								good = true;
+								break;
+							}
+						}
+						if(! good ) return;   // items in listbox : nothing to select (and an empty but visible cat?)
+					}
+
+					//start moving
+					while(true)
+					{
+						if(upwards == false)
+						{
+							if(good(next_selected.cat))
+							{
+								if (size_item(next_selected.cat) > next_selected.item + 1)
+								{
+									++next_selected.item;
+								}
+								else
+								{
+									next_selected.item = 0;
+									if (size_categ() > next_selected.cat + 1)
+										++next_selected.cat;
+									else
+										next_selected.cat = 0;
+								}
+							}
+							else
+								next_selected.set_both(0);
+						}
+						else
+						{
+							if (0 == next_selected.item)
+							{
+								//there is an item at least definitely, because the start pos is an available item.
+								do
+								{
+									if (0 == next_selected.cat)
+										next_selected.cat = size_categ() - 1;
+									else
+										--next_selected.cat;
+
+								}while (0 == size_item(next_selected.cat));
+
+								next_selected.item = size_item(next_selected.cat) - 1;
+							}
+							else
+								--next_selected.item;
+						}
+
+						if (good(next_selected.cat))
+						{
+							expand(next_selected.cat, true);
+
+							if (good(next_selected))
+							{
+								if (deselect) select_for_all(false);
+								last_selected = index_pair(next_selected.cat, absolute(next_selected));
+                                item_proxy(ess_, last_selected ).select( true) ;
 							}
 							break;
 						}
@@ -2567,7 +2646,6 @@ namespace nana
 
 					auto state = item_state::normal;
 
-					const bool sort_enabled = (essence_->lister.sort_index() != npos);
 					//Here draws a root categ or a first drawing is not a categ.
 					if(idx.cat == 0 || !idx.is_category())
 					{
@@ -2610,7 +2688,7 @@ namespace nana
 							if(n-- == 0)	break;
 							state = (idx == tracker ? item_state::highlighted : item_state::normal);
 
-							_m_draw_item(i_categ->items[sort_enabled ? lister.absolute(index_pair(idx.cat, pos)) : pos], x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
+							_m_draw_item(i_categ->items[ lister.absolute(index_pair(idx.cat, pos))], x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
 							y += essence_->item_size;
 							++idx.item;
 						}
