@@ -77,6 +77,8 @@ namespace API
 		window create_frame(window, const rectangle&, widget* attached);
 
 		paint::graphics* window_graphics(window);
+
+		void delay_restore(bool);
 	}//end namespace dev
 
 
@@ -290,7 +292,6 @@ namespace API
 	void register_menu_window(window, bool has_keyboard);
 	bool attach_menubar(window menubar);
 	void detach_menubar(window menubar);
-	void restore_menubar_taken_window();
 
 	bool is_window_zoomed(window, bool ask_for_max);  ///<Tests a window whether it is maximized or minimized.
 

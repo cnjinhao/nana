@@ -37,21 +37,25 @@ namespace nana
 						::nana::color clr{ 0xaf, 0xc7, 0xe3 };
 						graph.rectangle(r, false, clr);
 
+						auto right = r.right() - 1;
+						auto bottom = r.bottom() - 1;
 						graph.set_color(colors::white);
 						graph.set_pixel(r.x, r.y);
-						graph.set_pixel(r.x + r.width - 1, r.y);
-						graph.set_pixel(r.x, r.y + r.height - 1);
-						graph.set_pixel(r.x + r.width - 1, r.y + r.height - 1);
+						graph.set_pixel(right, r.y);
+						graph.set_pixel(r.x, bottom);
+						graph.set_pixel(right, bottom);
 
+						--right;
+						--bottom;
 						graph.set_color(clr);
 						graph.set_pixel(r.x + 1, r.y + 1);
-						graph.set_pixel(r.x + r.width - 2, r.y + 1);
-						graph.set_pixel(r.x + 1, r.y + r.height - 2);
-						graph.set_pixel(r.x + r.width - 2, r.y + r.height - 2);
+						graph.set_pixel(right, r.y + 1);
+						graph.set_pixel(r.x + 1, bottom);
+						graph.set_pixel(right, bottom);
 
 						nana::rectangle po_r(r);
-						graph.rectangle(po_r.pare_off(1), false, { 0xEB, 0xF4, 0xFB });
-						graph.gradual_rectangle(po_r.pare_off(1), { 0xDD, 0xEC, 0xFD }, { 0xC2, 0xDC, 0xFD }, true);
+						graph.rectangle(po_r.pare_off(1), false, static_cast<color_rgb>(0xEBF4FB));
+						graph.gradual_rectangle(po_r.pare_off(1), static_cast<color_rgb>(0xDDECFD), static_cast<color_rgb>(0xC2DCFD), true);
 					}
 					else
 						graph.rectangle(r, true, colors::white);
@@ -113,13 +117,8 @@ namespace nana
 			class drawer_impl
 			{
 			public:
-				typedef widget& widget_reference;
-				typedef nana::paint::graphics& graph_reference;
-
-				drawer_impl()
-					:	widget_(nullptr), graph_(nullptr), image_pixels_(16),
-						ignore_first_mouseup_(true), module_(nullptr)
-				{}
+				using widget_reference = widget&;
+				using graph_reference = paint::graphics&;
 
 				void clear_state()
 				{
@@ -151,25 +150,19 @@ namespace nana
 				{
 					if(scrollbar_.empty()) return;
 
-					bool update = false;
+					const auto before_change = state_.offset_y;
 					if(upwards)
 					{
-						if(state_.offset_y)
-						{
+						if (before_change)
 							--(state_.offset_y);
-							update = true;
-						}
 					}
 					else 
 					{
-						if((state_.offset_y + module_->max_items) < module_->items.size())
-						{
+						if ((before_change + module_->max_items) < module_->items.size())
 							++(state_.offset_y);
-							update = true;
-						}
 					}
 
-					if(update)
+					if(before_change != state_.offset_y)
 					{
 						draw();
 						scrollbar_.value(state_.offset_y);
@@ -323,8 +316,7 @@ namespace nana
 							state_.renderer->image(_m_image_enabled(), image_pixels_);
 							for(std::size_t i = state_.offset_y; i < items; ++i)
 							{
-								item_renderer::state_t state = item_renderer::StateNone;
-								if(i == state_.index) state = item_renderer::StateHighlighted;
+								auto state = (i != state_.index ? item_renderer::StateNone : item_renderer::StateHighlighted);
 
 								state_.renderer->render(*widget_, *graph_, item_r, module_->items[i].get(), state);
 								item_r.y += item_pixels;
@@ -384,20 +376,20 @@ namespace nana
 						scrollbar_.close();
 				}
 			private:
-				widget * widget_;
-				nana::paint::graphics * graph_;
-				unsigned image_pixels_;		//Define the width pixels of the image area
+				widget * widget_{nullptr};
+				nana::paint::graphics * graph_{nullptr};
+				unsigned image_pixels_{16};		//Define the width pixels of the image area
 
-				bool ignore_first_mouseup_;
+				bool ignore_first_mouseup_{true};
 				struct state_type
 				{
-					std::size_t offset_y;
-					std::size_t index;			//The index of the selected item.
+					std::size_t offset_y{0};
+					std::size_t index{npos};			//The index of the selected item.
 
 					item_renderer * const orig_renderer;
 					item_renderer * renderer;
 
-					state_type(): offset_y(0), index(npos), orig_renderer(new def_item_renderer), renderer(orig_renderer){}
+					state_type(): orig_renderer(new def_item_renderer), renderer(orig_renderer){}
 					~state_type()
 					{
 						delete orig_renderer;
@@ -405,7 +397,7 @@ namespace nana
 				}state_;
 				nana::scroll<true> scrollbar_;
 
-				const module_def* module_;
+				const module_def* module_{nullptr};
 			};
 
 			//class drawer_impl;

@@ -240,6 +240,11 @@ namespace API
 				return &reinterpret_cast<restrict::core_window_t*>(wd)->drawer.graphics;
 			return nullptr;
 		}
+
+		void delay_restore(bool enable)
+		{
+			restrict::bedrock.delay_restore(enable ? 0 : 1);
+		}
 	}//end namespace dev
 
 	//exit
@@ -1200,17 +1205,6 @@ namespace API
 		{
 			if (iwd->root_widget->other.attribute.root->menubar == iwd)
 				iwd->root_widget->other.attribute.root->menubar = nullptr;
-		}
-	}
-
-	void restore_menubar_taken_window()
-	{
-		auto wd = restrict::bedrock.get_menubar_taken();
-		if(wd)
-		{
-			internal_scope_guard lock;
-			restrict::window_manager.set_focus(wd, false);
-			restrict::window_manager.update(wd, true, false);
 		}
 	}
 

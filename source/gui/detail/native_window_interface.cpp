@@ -580,27 +580,30 @@ namespace nana{
 			//event, when the client receives the event, the specified window has been already
 			//destroyed. This is a feature which is different from Windows. So the following
 			//works should be handled before calling XDestroyWindow.
-			auto & bedrock = bedrock::instance();
-			if(wd == bedrock.get_menu())
-				bedrock.empty_menu();
+			auto & brock = bedrock::instance();
+			if(wd == brock.get_menu())
+			{
+				brock.erase_menu(false);
+				brock.delay_restore(3);	//Restores if delay_restore is not decleard
+			}
 
 			Display* disp = restrict::spec.open_display();
 			restrict::spec.remove(wd);
-			auto iwd = bedrock.wd_manager.root(wd);
+			auto iwd = brock.wd_manager.root(wd);
 			if(iwd)
 			{
 				{
 					//Before calling window_manager::destroy, make sure the window is invisible.
 					//It is a behavior like Windows.
-					nana::detail::platform_scope_guard psg;
+					nana::detail::platform_scope_guard lock;
 					restrict::spec.set_error_handler();
 					::XUnmapWindow(disp, reinterpret_cast<Window>(wd));
 					::XFlush(disp);
 					restrict::spec.rev_error_handler();
 				}
-				bedrock.wd_manager.destroy(iwd);
-				bedrock.rt_manager.remove_if_exists(iwd);
-				bedrock.wd_manager.destroy_handle(iwd);
+				brock.wd_manager.destroy(iwd);
+				brock.rt_manager.remove_if_exists(iwd);
+				brock.wd_manager.destroy_handle(iwd);
 			}
 
 			nana::detail::platform_scope_guard psg;
