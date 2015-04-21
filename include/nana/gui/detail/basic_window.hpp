@@ -166,7 +166,8 @@ namespace detail
 			bool fullscreen	:1;	//When the window is maximizing whether it fit for fullscreen.
 			bool borderless :1;
 			bool make_bground_declared : 1;	//explicitly make bground for bground effects
-			unsigned Reserved	:21;
+			bool ignore_menubar_focus : 1;	//A flag indicates whether the menubar sets the focus.
+			unsigned Reserved	:20;
 			unsigned char tab;		//indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 		}flags;

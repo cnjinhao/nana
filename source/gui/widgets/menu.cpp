@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -151,7 +151,7 @@ namespace nana
 
 				void item_text(graph_reference graph, const nana::point& pos, const nana::string& text, unsigned text_pixels, const attr& at)
 				{
-					graph.set_color(at.enabled ? colors::black : colors::gray_border);
+					graph.set_text_color(at.enabled ? colors::black : colors::gray_border);
 					nana::paint::text_renderer tr(graph);
 					tr.render(pos, text.c_str(), text.length(), text_pixels, true);
 				}

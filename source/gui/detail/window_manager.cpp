@@ -884,7 +884,8 @@ namespace detail
 				if (wd == wd->root_widget->other.attribute.root->menubar)
 					wd = prev_focus;
 
-				brock.set_menubar_taken(wd);
+				if (wd != wd->root_widget->other.attribute.root->menubar)
+					brock.set_menubar_taken(wd);
 			}
 			return prev_focus;
 		}

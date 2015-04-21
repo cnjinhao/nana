@@ -185,17 +185,18 @@ namespace detail
 		{
 			struct thread_context_cache
 			{
-				unsigned tid = 0;
-				thread_context *object = nullptr;
+				unsigned tid{ 0 };
+				thread_context *object{ nullptr };
 			}tcontext;
 		}cache;
 
 		struct menu_tag
 		{
-			core_window_t*	taken_window	= nullptr;
-			native_window_type window		= nullptr;
-			native_window_type owner		= nullptr;
-			bool has_keyboard	= false;
+			core_window_t*	taken_window{ nullptr };
+			bool			delay_restore{ false };
+			native_window_type window{ nullptr };
+			native_window_type owner{ nullptr };
+			bool	has_keyboard{false};
 		}menu;
 
 		struct keyboard_tracking_state_tag
@@ -921,8 +922,8 @@ namespace detail
 				if(nullptr == msgwnd)	break;
 
 				//if event on the menubar, just remove the menu if it is not associating with the menubar
-				if((msgwnd == msgwnd->root_widget->other.attribute.root->menubar) && brock.get_menu(msgwnd->root, true))
-					brock.remove_menu();
+				if ((msgwnd == msgwnd->root_widget->other.attribute.root->menubar) && brock.get_menu(msgwnd->root, true))
+					brock.erase_menu(true);
 				else
 					brock.close_menu_if_focus_other_window(msgwnd->root);
 
@@ -1322,13 +1323,12 @@ namespace detail
 				def_window_proc = true;
 				break;
 			case WM_SYSKEYDOWN:
-				if(brock.whether_keyboard_shortkey() == false)
+				if (brock.whether_keyboard_shortkey() == false)
 				{
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
-					if(msgwnd)
+					if (msgwnd)
 					{
-						brock.wd_manager.set_focus(msgwnd, false);
-
+						bool focused = (brock.focus() == msgwnd);
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_press;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
@@ -1336,9 +1336,11 @@ namespace detail
 						arg.key = static_cast<nana::char_t>(wParam);
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_press, msgwnd, arg, true, &context);
+
+						msgwnd->root_widget->flags.ignore_menubar_focus = (focused && (brock.focus() != msgwnd));
 					}
-					else if(brock.get_menu())
-						brock.remove_menu();
+					else
+						brock.erase_menu(true);
 				}
 				def_window_proc = true;
 				break;
@@ -1348,6 +1350,10 @@ namespace detail
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 					if(msgwnd)
 					{
+						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
+						if (set_focus)
+							brock.wd_manager.set_focus(msgwnd, false);
+
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_release;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
@@ -1355,6 +1361,12 @@ namespace detail
 						arg.key = static_cast<nana::char_t>(wParam);
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+
+						if (!set_focus)
+						{
+							brock.set_menubar_taken(nullptr);
+							msgwnd->root_widget->flags.ignore_menubar_focus = false;
+						}
 					}
 				}
 				def_window_proc = true;
@@ -1362,6 +1374,9 @@ namespace detail
 			case WM_KEYDOWN:
 				if(msgwnd->flags.enabled)
 				{
+					if (brock.get_menu())
+						brock.delay_restore(0);	//Enable delay restore
+
 					if(msgwnd->root != brock.get_menu())
 						msgwnd = brock.focus();
 
@@ -1431,6 +1446,8 @@ namespace detail
 				}
 				else
 					brock.set_keyboard_shortkey(false);
+
+				brock.delay_restore(2);	//Restores while key release
 				break;
 			case WM_CLOSE:
 			{
@@ -1448,8 +1465,12 @@ namespace detail
 				break;
 			}
 			case WM_DESTROY:
-				if(msgwnd->root == brock.get_menu())
-					brock.empty_menu();
+				if (msgwnd->root == brock.get_menu())
+				{
+					brock.erase_menu(false);
+					brock.delay_restore(3);	//Restores if delay_restore not decleared
+				}
+
 				brock.wd_manager.destroy(msgwnd);
 
 				nana::detail::platform_spec::instance().release_window_icon(msgwnd->root);
@@ -1512,14 +1533,39 @@ namespace detail
 
 	void bedrock::set_menubar_taken(core_window_t* wd)
 	{
+		auto pre = impl_->menu.taken_window;
 		impl_->menu.taken_window = wd;
+
+		//assigning of a nullptr taken window is to restore the focus of pre taken
+		if ((!wd) && pre)
+		{
+			internal_scope_guard lock;
+			wd_manager.set_focus(pre, false);
+			wd_manager.update(pre, true, false);
+		}
 	}
 
-	bedrock::core_window_t* bedrock::get_menubar_taken()
+	//0:Enable delay, 1:Cancel, 2:Restores, 3: Restores when menu is destroying
+	void bedrock::delay_restore(int state)
 	{
-		core_window_t* wd = impl_->menu.taken_window;
-		impl_->menu.taken_window = nullptr;
-		return wd;
+		switch (state)
+		{
+		case 0:	//Enable
+			break;
+		case 1: //Cancel
+			break;
+		case 2:	//Restore if key released
+			//restores the focus when menu is closed by pressing keyboard
+			if (!impl_->menu.window)
+				set_menubar_taken(nullptr);
+			break;
+		case 3:	//Restores if destroying
+			//when the menu is destroying, restores the focus if delay restore is not declared
+			if (!impl_->menu.delay_restore)
+				set_menubar_taken(nullptr);
+		}
+
+		impl_->menu.delay_restore = (0 == state);
 	}
 
 	bool bedrock::close_menu_if_focus_other_window(native_window_type wd)
@@ -1534,7 +1580,7 @@ namespace detail
 				else
 					return false;
 			}
-			remove_menu();
+			erase_menu(true);
 			return true;
 		}
 		return false;
@@ -1544,7 +1590,7 @@ namespace detail
 	{
 		if(menu_wd && impl_->menu.window != menu_wd)
 		{
-			remove_menu();
+			erase_menu(true);
 
 			impl_->menu.window = menu_wd;
 			impl_->menu.owner = native_interface::get_owner_window(menu_wd);
@@ -1568,21 +1614,13 @@ namespace detail
 		return impl_->menu.window;
 	}
 
-	void bedrock::remove_menu()
+	void bedrock::erase_menu(bool try_destroy)
 	{
-		if(impl_->menu.window)
+		if (impl_->menu.window)
 		{
-			auto delwin = impl_->menu.window;
-			impl_->menu.window = impl_->menu.owner = nullptr;
-			impl_->menu.has_keyboard = false;
-			native_interface::close_window(delwin);
-		}
-	}
-
-	void bedrock::empty_menu()
-	{
-		if(impl_->menu.window)
-		{
+			if (try_destroy)
+				native_interface::close_window(impl_->menu.window);
+			
 			impl_->menu.window = impl_->menu.owner = nullptr;
 			impl_->menu.has_keyboard = false;
 		}

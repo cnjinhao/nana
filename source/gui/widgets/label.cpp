@@ -588,8 +588,6 @@ namespace nana
 
 				std::pair<std::size_t, std::size_t> _m_locate(dstream::linecontainer::iterator& i, std::size_t pos)
 				{
-					//std::pair<std::size_t, std::size_t> r;	//deprecated
-
 					std::size_t n = i->data_ptr->text().length();
 					while(pos >= n)
 					{
