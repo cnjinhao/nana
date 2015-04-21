@@ -1384,7 +1384,7 @@ namespace detail
 					{
 						if((wParam == 9) && (false == (msgwnd->flags.tab & tab_type::eating))) //Tab
 						{
-							auto the_next = brock.wd_manager.tabstop(msgwnd, true);
+							auto the_next = brock.wd_manager.tabstop(msgwnd, (::GetKeyState(VK_SHIFT) >= 0));
 							if(the_next)
 							{
 								brock.wd_manager.set_focus(the_next, false);
