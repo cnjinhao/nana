@@ -444,6 +444,20 @@ namespace nana
 			}
 			return false;
 		}
+
+        ///  \brief Increase/decrease values by a page as if it is scrolled page up.
+		/// @param forward  it determines whether increase or decrease.
+		/// @return true if the vlaue is changed.
+		bool make_page_scroll(bool forward)
+		{
+			if(this->get_drawer_trigger().make_step(forward, range()-1))  
+			{
+				API::refresh_window(this->handle());
+				return true;
+			}
+			return false;
+		}
+
 	};//end class scroll
 }//end namespace nana
 #endif
