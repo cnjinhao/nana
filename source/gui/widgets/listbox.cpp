@@ -895,7 +895,7 @@ namespace nana
 					}
 				}
 
-				std::pair<size_type, size_type> advance(size_type categ, size_type index, size_type n)
+				std::pair<size_type, size_type> advance(size_type categ, size_type index, size_type n)   //    <------------- index
 				{
 					std::pair<size_type, size_type> dpos(npos, npos);
 					if(categ >= size_categ() || (index != npos && index >= size_item(categ))) return dpos;
@@ -948,7 +948,7 @@ namespace nana
 					}
 					return dpos;
 				}
-
+                /// change to index arg
 				size_type distance(size_type cat, size_type index, size_type to_cat, size_type to_index) const
 				{
 					if(cat == to_cat && index == to_index) return 0;
@@ -1253,6 +1253,23 @@ namespace nana
 						++id.cat;
 					}
 				}
+                
+                index_pair find_first_selected()
+                {
+					index_pair id;
+					for(auto & cat : list_)
+					{
+						id.item = 0;
+						for(auto & m : cat.items)  
+						{
+							if(m.flags.selected)
+								return id;  // absolute positions, no relative to display
+							++id.item;
+						}
+						++id.cat;
+					}
+                    return {npos,npos};
+                }
 
 				/// return absolute positions, no relative to display
 				bool item_selected_all_checked(selection& vec) const
@@ -1958,46 +1975,55 @@ namespace nana
 				}
 
 				//keep the first selected item in the display area: the distances are in display positions!
-				void trace_selected_item()
-				{
-					selection svec;             // absolute positions
-					lister.item_selected(svec);
-					if(svec.empty()) return;	//no selected, exit.
-
-					auto & item = svec[0];
-					// Same with current scroll offset item.
-					if(item.item == npos && item.cat == scroll.offset_y_abs.cat && scroll.offset_y_abs.item == npos) // if item==off y and is a cat
-						return;
-
-                    index_pair item_dpl    { lister.relative_pair(item)}  ;   //  ???   scroll_y_dpl_refresh() ;
-
-                    if(      item.cat <  scroll.offset_y_dpl.cat    // in prevoious cat    ---------------- up ----> we need to move
-                        || ((item.cat == scroll.offset_y_dpl.cat) && ( scroll.offset_y_dpl.item != npos)  // is our cat, where we are an item
-                                                                  && (item.item == npos || item.item <  scroll.offset_y_dpl.item))) // problem!!!!!!
-					                                                                            // problem!!!!!!
+                void trace_item_dpl( index_pair dpl_pos )
+                {
+                    if(      dpl_pos.cat <  scroll.offset_y_dpl.cat    // in prevoious cat    ---------------- up ----> we need to move
+                        || ((dpl_pos.cat == scroll.offset_y_dpl.cat) && ( scroll.offset_y_dpl.item != npos)  // is our cat, where we are an item
+                                                                     && (dpl_pos.item == npos || dpl_pos.item <  scroll.offset_y_dpl.item))) 
+					                                                                                    // problem!!!!!!
                     {
-						scroll.offset_y_abs = item;       // scroll.offset_y_dpls = item_dpl;
-						if(lister.expand(item_dpl.cat) == false)
+						if(lister.expand(dpl_pos.cat) == false)
 						{
-							if(lister.categ_selected(item_dpl.cat))
-								item_dpl.item = static_cast<std::size_t>(npos);
+							if(lister.categ_selected(dpl_pos.cat))
+								dpl_pos.item = static_cast<std::size_t>(npos);
 							else
-								lister.expand(item_dpl.cat, true);
+								lister.expand(dpl_pos.cat, true);
 						}
-                        set_scroll_y_dpl(item_dpl);
+                        set_scroll_y_dpl(dpl_pos);     //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs 
 					}
 					else
 					{
-						size_type numbers = number_of_lister_items(false);       // revise
-						size_type off = lister.distance(scroll.offset_y_dpl.cat, scroll.offset_y_dpl.item, item_dpl.cat, item_dpl.item);
+						size_type numbers = number_of_lister_items(false);       // revise ... ok
+						size_type off = lister.distance(scroll.offset_y_dpl.cat, scroll.offset_y_dpl.item, dpl_pos.cat, dpl_pos.item);
 						if(numbers > off) return;
 						auto n_off = lister.advance(scroll.offset_y_dpl.cat, scroll.offset_y_dpl.item, (off - numbers) + 1);
-						if(n_off.first != npos)
+
+						if(n_off.first != npos)       //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs 
                             set_scroll_y_dpl({static_cast<size_type>(n_off.first), static_cast<size_type>(n_off.second)});
 					}
 
-					adjust_scroll_life();  // call adjust_scroll_value();
-					//adjust_scroll_value(); // again?
+					adjust_scroll_life();  // call adjust_scroll_value(); 		//adjust_scroll_value(); // again?
+                }
+
+                void trace_item_abs( index_pair abs_pos )
+                {
+					if(abs_pos.item == npos && abs_pos.cat              == scroll.offset_y_abs.cat 
+                                            && scroll.offset_y_abs.item == npos                      ) // if item==off y and is a cat
+						return;
+
+                    trace_item_dpl( lister.relative_pair(abs_pos))  ;   //  ???   scroll_y_dpl_refresh() ;
+                }
+
+                void trace_last_selected_item( )
+                {
+                    trace_item_abs(lister.last_selected_abs);
+                }
+
+                void trace_first_selected_item()
+				{
+					auto fs=lister.find_first_selected();
+					if( ! fs.empty() ) 
+                       trace_item_abs( fs );
 				}
 
 				void update()
@@ -2030,7 +2056,7 @@ namespace nana
 						scroll.v.value(off);
 					}
 				}
-
+                 
 				void adjust_scroll_life()  // at end call adjust_scroll_value();
 				{
 					internal_scope_guard lock;
@@ -3235,7 +3261,7 @@ namespace nana
 						up = true;
 					case keyboard::os_arrow_down:
 						essence_->lister.move_select(up);
-						essence_->trace_selected_item();
+						essence_->trace_last_selected_item ();
 						break;
 					case STR(' ') :
 						{
@@ -3262,7 +3288,7 @@ namespace nana
                         item_proxy it ( essence_  , target); 
                         essence_->lister.select_for_all(false);
                         it.select(true);
-						essence_->trace_selected_item();
+						//essence_->trace_selected_item();
        			//		essence_->adjust_scroll_life();  // call adjust_scroll_value();
      					//essence_->adjust_scroll_value(); // again?
 
