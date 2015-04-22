@@ -949,45 +949,42 @@ namespace nana
 					return dpos;
 				}
                 /// change to index arg
-				size_type distance(size_type cat, size_type index, size_type to_cat, size_type to_index) const
+				size_type distance(index_pair from, index_pair to) const
 				{
-					if(cat == to_cat && index == to_index) return 0;
+					if(from  == to ) return 0;
 
-					if(to_cat == cat)
+					if(to.cat == from.cat)
 					{
-						if(index > to_index && index != npos)
-							std::swap(index, to_index);
+						if(from.item > to.item && from.item != npos)
+							std::swap(from.item, to.item);
 
-						return (index == npos ? to_index + 1 : to_index - index);
+						return (from.item == npos ? to.item + 1 : to.item - from.item);
 					}
-					else if(to_cat < cat)
-					{
-						std::swap(cat, to_cat);
-						std::swap(index, to_index);
-					}
+					else if(to.cat < from.cat)
+						std::swap(from, to);
 
 					size_type n = 0;
-					auto i = _m_at(cat);
-					if(index == npos)
+					auto i = _m_at(from.cat);
+					if(from.item == npos)
 					{
 						if(i->expand)
 							n = i->items.size();
 					}
 					else
-						n = i->items.size() - (index + 1);
+						n = i->items.size() - (from.item + 1);
 
-					for(++i, ++cat; i != list_.end(); ++i, ++cat)
+					for(++i, ++from.cat; i != list_.end(); ++i, ++from.cat)
 					{
 						++n; //this is a category
-						if(cat != to_cat)
+						if(from.cat != to.cat)
 						{
 							if(i->expand)
 								n += i->items.size();
 						}
 						else
 						{
-							if(to_index != npos)
-								n += (to_index + 1);
+							if(to.item != npos)
+								n += (to.item + 1);
 							break;
 						}
 					}
@@ -1915,7 +1912,7 @@ namespace nana
 					else
 					{
 						size_type numbers = number_of_lister_items(false);       // revise ... ok
-						size_type off = lister.distance(scroll.offset_y_dpl.cat, scroll.offset_y_dpl.item, dpl_pos.cat, dpl_pos.item);
+						size_type off = lister.distance(scroll.offset_y_dpl, dpl_pos);
 						if(numbers > off) return;
 						index_pair n_off = lister.advance(scroll.offset_y_dpl, (off - numbers) + 1);
 
@@ -1973,7 +1970,7 @@ namespace nana
 						if(height >= graph->width()) return;
 						scroll.v.amount(lister.the_number_of_expanded());
 						scroll.v.range(number_of_lister_items(false));
-						size_type off = lister.distance(0, 0, scroll.offset_y_dpl.cat, scroll.offset_y_dpl.item);
+                        size_type off = lister.distance({0,0}, scroll.offset_y_dpl );
 						scroll.v.value(off);
 					}
 				}
