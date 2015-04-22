@@ -3193,7 +3193,7 @@ namespace nana
 							if(essence_->lister.sort_index(essence_->pointer_where.second))
 							{
 								essence_->trace_item_dpl({0,0});
-								draw();
+                                draw();
 								API::lazy_refresh();
 							}
 						}
@@ -3268,6 +3268,7 @@ namespace nana
                                        // move_select(bool upwards=true, bool unselect_previous=true, bool trace_selected=false)
 						essence_->lister.move_select(up, !arg.shift, true);
 						break;
+
 					case STR(' ') :
 						{
 							selection s;
@@ -3276,12 +3277,14 @@ namespace nana
 								item_proxy(essence_, i).check(ck);
 						}
 						break;
+
                     case keyboard::copy:
                        {
                            nana::string str{STR("to_csv()")};
                            //nana::system::dataexch().set(str);
                            return;
                        }
+
                     case keyboard::os_pageup :
 						up = true;
                     case keyboard::os_pagedown:
@@ -3289,16 +3292,12 @@ namespace nana
 					    auto& scrl = essence_->scroll.v;
                         if (! scrl.make_page_scroll(!up)) 
                             return;
-					    index_pair& target = essence_->scroll.offset_y_abs ;
-                        item_proxy it ( essence_  , target); 
                         essence_->lister.select_for_all(false);
-                        it.select(true);
-						//essence_->trace_selected_item();
-       			//		essence_->adjust_scroll_life();  // call adjust_scroll_value();
-     					//essence_->adjust_scroll_value(); // again?
+                        item_proxy {essence_, essence_->scroll_y_abs()  } .select(true);
 
                         break;
                     }
+                   // case keyboard::
 
 					default:
 						return;
