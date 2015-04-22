@@ -3192,6 +3192,7 @@ namespace nana
 						{
 							if(essence_->lister.sort_index(essence_->pointer_where.second))
 							{
+								essence_->trace_item_dpl({0,0});
 								draw();
 								API::lazy_refresh();
 							}
