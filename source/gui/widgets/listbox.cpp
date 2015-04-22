@@ -1298,86 +1298,7 @@ namespace nana
 
                 ///<Selects an item besides the current selected item in the display.
                 /// we are moving in display, but the selection ocurre in abs position
-                void move_select(bool upwards=true, bool unselect_previous=true)
-				{
-					auto next_selected_dpl = relative_pair ( last_selected_abs); // last_selected_dpl; // ??
-					if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
-					{
-						bool good = false;
-						for(size_type i = 0, size = list_.size(); i < size; ++i) // run all cat
-						{
-							if(size_item(i))
-							{
-								//The first category which contains at least one item.
-								next_selected_dpl.cat = i;
-								next_selected_dpl.item = 0;
-								good = true;
-								break;
-							}
-						}
-						if(! good ) return;   // items in listbox : nothing to select (and an empty but visible cat?)
-					}
-
-					//start moving
-					while(true)
-					{
-						if(upwards == false)
-						{
-							if(good(next_selected_dpl.cat))
-							{
-								if (size_item(next_selected_dpl.cat) > next_selected_dpl.item + 1)
-								{
-									++next_selected_dpl.item;
-								}
-								else
-								{
-									next_selected_dpl.item = 0;
-									if (size_categ() > next_selected_dpl.cat + 1)
-										++next_selected_dpl.cat;
-									else
-										next_selected_dpl.cat = 0;
-								}
-							}
-							else
-								next_selected_dpl.set_both(0);
-						}
-						else
-						{
-							if (0 == next_selected_dpl.item)
-							{
-								//there is an item at least definitely, because the start pos is an available item.
-								do
-								{
-									if (0 == next_selected_dpl.cat)
-										next_selected_dpl.cat = size_categ() - 1;
-									else
-										--next_selected_dpl.cat;
-
-								}while (0 == size_item(next_selected_dpl.cat));
-
-								next_selected_dpl.item = size_item(next_selected_dpl.cat) - 1;
-							}
-							else
-								--next_selected_dpl.item;
-						}
-
-						if (good(next_selected_dpl.cat))
-						{
-							expand(next_selected_dpl.cat, true); // revise expand
-
-							if (good(next_selected_dpl))
-							{
-								if (unselect_previous && !single_selection_ ) 
-                                    select_for_all(false);
-
-                                /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
-                                item_proxy::from_display(ess_, next_selected_dpl).select(true);
-							}
-							break;
-						}
-						else break;
-					}
-				}
+                void move_select(bool upwards=true, bool unselect_previous=true, bool trace_selected=false);
 
 				void cancel_others_if_single_enabled(bool for_selection, const index_pair& except)
 				{
@@ -2390,6 +2311,89 @@ namespace nana
                     ess_->scroll_y_dpl_refresh();
 
             }
+            void es_lister::move_select(bool upwards, bool unselect_previous, bool trace_selected)
+				{
+					auto next_selected_dpl = relative_pair ( last_selected_abs); // last_selected_dpl; // ??
+					if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
+					{
+						bool good = false;
+						for(size_type i = 0, size = list_.size(); i < size; ++i) // run all cat
+						{
+							if(size_item(i))
+							{
+								//The first category which contains at least one item.
+								next_selected_dpl.cat = i;
+								next_selected_dpl.item = 0;
+								good = true;
+								break;
+							}
+						}
+						if(! good ) return;   // items in listbox : nothing to select (and an empty but visible cat?)
+					}
+
+					//start moving
+					while(true)
+					{
+						if(upwards == false)
+						{
+							if(good(next_selected_dpl.cat))
+							{
+								if (size_item(next_selected_dpl.cat) > next_selected_dpl.item + 1)
+								{
+									++next_selected_dpl.item;
+								}
+								else
+								{
+									next_selected_dpl.item = 0;
+									if (size_categ() > next_selected_dpl.cat + 1)
+										++next_selected_dpl.cat;
+									else
+										next_selected_dpl.cat = 0;
+								}
+							}
+							else
+								next_selected_dpl.set_both(0);
+						}
+						else
+						{
+							if (0 == next_selected_dpl.item)
+							{
+								//there is an item at least definitely, because the start pos is an available item.
+								do
+								{
+									if (0 == next_selected_dpl.cat)
+										next_selected_dpl.cat = size_categ() - 1;
+									else
+										--next_selected_dpl.cat;
+
+								}while (0 == size_item(next_selected_dpl.cat));
+
+								next_selected_dpl.item = size_item(next_selected_dpl.cat) - 1;
+							}
+							else
+								--next_selected_dpl.item;
+						}
+
+						if (good(next_selected_dpl.cat))
+						{
+							expand(next_selected_dpl.cat, true); // revise expand
+
+							if (good(next_selected_dpl))
+							{
+								if (unselect_previous && !single_selection_ ) 
+                                    select_for_all(false);
+
+                                /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
+                                item_proxy::from_display(ess_, next_selected_dpl).select(true);
+
+                                if (trace_selected)
+                                    ess_->trace_item_dpl(next_selected_dpl);
+							}
+							break;
+						}
+						else break;
+					}
+				}
 
 
 			class drawer_header_impl
@@ -3260,8 +3264,8 @@ namespace nana
 					case keyboard::os_arrow_up:
 						up = true;
 					case keyboard::os_arrow_down:
-						essence_->lister.move_select(up);
-						essence_->trace_last_selected_item ();
+                                       // move_select(bool upwards=true, bool unselect_previous=true, bool trace_selected=false)
+						essence_->lister.move_select(up, !arg.shift, true);
 						break;
 					case STR(' ') :
 						{
