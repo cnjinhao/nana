@@ -895,53 +895,53 @@ namespace nana
 					}
 				}
 
-				std::pair<size_type, size_type> advance(size_type categ, size_type index, size_type n)   //    <------------- index
+				index_pair advance(index_pair from, size_type offset)   //    <------------- index
 				{
-					std::pair<size_type, size_type> dpos(npos, npos);
-					if(categ >= size_categ() || (index != npos && index >= size_item(categ))) return dpos;
+                    index_pair dpos{npos, npos};
+					if(from.cat >= size_categ() || (from.item != npos && from.item >= size_item(from.cat))) 
+                        return dpos;
 
-					dpos.first = categ;
-					dpos.second = index;
+					dpos  = from;
 
-					while(n)
+					while(offset)
 					{
-						if(dpos.second == npos)
+						if(dpos.item == npos)
 						{
-							if(expand(dpos.first) == false)
+							if(expand(dpos.cat) == false)
 							{
-								if(dpos.first + 1 == size_categ())
+								if(dpos.cat + 1 == size_categ())
 									break;
-								++dpos.first;
+								++dpos.cat;
 							}
 							else
-								dpos.second = 0;
-							--n;
+								dpos.item = 0;
+							--offset;
 						}
 						else
 						{
-							size_type rest = size_item(dpos.first) - dpos.second - 1;
+							size_type rest = size_item(dpos.cat) - dpos.item - 1;
 							if(rest == 0)
 							{
-								if(dpos.first + 1 == size_categ())
+								if(dpos.cat + 1 == size_categ())
 									break;
-								++dpos.first;
-								dpos.second = npos;
-								--n;
+								++dpos.cat;
+								dpos.item = npos;
+								--offset;
 							}
-							else if(rest < n)
+							else if(rest < offset)
 							{
-								n -= rest;
-								if(dpos.first + 1 >= size_categ())
+								offset -= rest;
+								if(dpos.cat + 1 >= size_categ())
 								{
-									dpos.second += rest;
+									dpos.item += rest;
 									break;
 								}
-								dpos.second = npos;
-								++dpos.first;
+								dpos.item = npos;
+								++dpos.cat;
 							}
 							else
 							{
-								dpos.second += n;
+								dpos.item += offset;
 								break;
 							}
 						}
@@ -1917,10 +1917,10 @@ namespace nana
 						size_type numbers = number_of_lister_items(false);       // revise ... ok
 						size_type off = lister.distance(scroll.offset_y_dpl.cat, scroll.offset_y_dpl.item, dpl_pos.cat, dpl_pos.item);
 						if(numbers > off) return;
-						auto n_off = lister.advance(scroll.offset_y_dpl.cat, scroll.offset_y_dpl.item, (off - numbers) + 1);
+						index_pair n_off = lister.advance(scroll.offset_y_dpl, (off - numbers) + 1);
 
-						if(n_off.first != npos)       //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs 
-                            set_scroll_y_dpl({static_cast<size_type>(n_off.first), static_cast<size_type>(n_off.second)});
+						if(n_off.cat != npos)       //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs 
+                            set_scroll_y_dpl(n_off);
 					}
 
 					adjust_scroll_life();  // call adjust_scroll_value(); 		//adjust_scroll_value(); // again?
