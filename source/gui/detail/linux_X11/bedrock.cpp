@@ -371,6 +371,7 @@ namespace detail
 		XKeyEvent xkey;
 		nana::detail::platform_spec::instance().read_keystate(xkey);
 		arg.ctrl = (xkey.state & ControlMask);
+		arg.shift = (xkey.state & ShiftMask);
 	}
 
 	bool bedrock::set_keyboard_shortkey(bool yes)
@@ -981,8 +982,8 @@ namespace detail
 						else
 						{
 							nana::detail::platform_scope_guard psg;
-							status = XLookupBoth;
-							len = ::XLookupString(&xevent.xkey, keybuf, 32, &keysym, 0);
+							status = XLookupKeySym;
+							keysym = ::XLookupKeysym(&xevent.xkey, 0);
 						}
 
 						keybuf[len] = 0;
@@ -1019,7 +1020,9 @@ namespace detail
 							context.platform.keychar = keychar;
 							if(keychar == keyboard::tab && (false == (msgwnd->flags.tab & detail::tab_type::eating))) //Tab
 							{
-								auto the_next = brock.wd_manager.tabstop(msgwnd, true);
+								arg_keyboard argkey;
+								brock.get_key_state(argkey);
+								auto the_next = brock.wd_manager.tabstop(msgwnd, !argkey.shift);
 								if(the_next)
 								{
 									brock.wd_manager.set_focus(the_next, false);

@@ -172,7 +172,7 @@ namespace detail
 			{
 				int pending;
 				{
-					nana::detail::platform_scope_guard psg;
+					nana::detail::platform_scope_guard lock;
 					pending = ::XPending(display_);
 					if(pending)
 					{
