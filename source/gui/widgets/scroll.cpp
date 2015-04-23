@@ -122,14 +122,14 @@ namespace nana
 						if(metrics_.value <= metrics_.range)
 							metrics_.value = 0;
 						else
-							metrics_.value -= metrics_.range;
+							metrics_.value -= (metrics_.range-1);
 					}
 					else if(buttons::backward == metrics_.what)
 					{
 						if(metrics_.peak - metrics_.range - metrics_.value <= metrics_.range)
 							metrics_.value = metrics_.peak - metrics_.range;
 						else
-							metrics_.value += metrics_.range;
+							metrics_.value += (metrics_.range-1);
 					}
 				}
 			}
