@@ -3256,7 +3256,7 @@ namespace nana
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
 					bool up = false;
-
+                    index_pair item;
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
@@ -3294,7 +3294,16 @@ namespace nana
 
                         break;
                     }
-                   // case keyboard::
+                    case keyboard::os_home:
+                        essence_->lister.select_for_all(false);
+                        item_proxy::from_display(essence_, {0,0}).select(true);
+                        essence_->trace_last_selected_item ();
+                        break;
+                    case keyboard::os_end:
+                        essence_->lister.select_for_all(false);
+                        item_proxy::from_display(essence_, essence_->lister.last()).select(true);
+                        essence_->trace_last_selected_item ();
+                       break;
 
 					default:
 						return;
