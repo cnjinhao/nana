@@ -3256,7 +3256,6 @@ namespace nana
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
 					bool up = false;
-
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
@@ -3290,8 +3289,14 @@ namespace nana
                         if (! scrl.make_page_scroll(!up)) 
                             return;
                         essence_->lister.select_for_all(false);
-                        item_proxy {essence_, essence_->scroll_y_abs()  } .select(true);
-
+                        if (up)
+                            item_proxy {essence_, essence_->scroll_y_abs()}.select(true); 
+                        else 
+                        {
+                            index_pair idx{essence_->scroll_y_dpl()};
+                            essence_->lister.forward(idx, scrl.range()-1, idx);
+                            item_proxy::from_display(essence_,idx).select(true);
+                        }
                         break;
                     }
                     case keyboard::os_home:
