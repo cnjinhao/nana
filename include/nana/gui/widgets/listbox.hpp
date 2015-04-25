@@ -432,7 +432,7 @@ namespace nana
 		
             struct export_options
             {
-               nana::string sep = nana::string {STR(";" )}, 
+               nana::string sep = nana::string {STR("\t" )}, 
                             endl= nana::string {STR("\n")} ; 
                bool only_selected_items{true}, 
                     only_checked_items {false},
@@ -591,6 +591,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
+        export_options& def_export_options();
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
