@@ -350,16 +350,20 @@ namespace nana
                     nana::string head_str; 
                     bool first{true};
                     for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
-                        {
-                        assert(exp_opt.columns_order[idx] == cont()[idx].index );
-                        assert(cont()[exp_opt.columns_order[idx]].visible || ! exp_opt.only_visible_columns);
+					{
+                        size_type index{exp_opt.columns_order[idx]};
+                        auto col = std::find_if(std::begin(cont()), std::end(cont()), [index](const column_t& col){return col.index == index;});
+                        if(col == std::end(cont()) )
+                            throw std::out_of_range("Trying to export from a lisboxt an inexisting column");
 
-                            if(first)
-                                first=false;
-                            else 
+                        assert(col->visible || ! exp_opt.only_visible_columns);
+
+                        if(first)
+                            first=false;
+                        else 
                             head_str += exp_opt.sep;
 
-						head_str += cont()[idx].text;
+						head_str += col->text;
 					}
                     return head_str;
                 }
@@ -3358,7 +3362,7 @@ namespace nana
                         exp_opt.columns_order = essence_->header.all_headers(true);
                         exp_opt.only_selected_items = true;
                         nana::system::dataexch().set(essence_->to_string(exp_opt));
-                           return;
+                        return;
                     }
 					default:
 						return;
