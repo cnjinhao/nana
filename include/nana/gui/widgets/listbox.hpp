@@ -248,7 +248,7 @@ namespace nana
 					auto && cells = ores.move_cells();
 					auto cols = columns();
 					cells.resize(cols);
-					for (auto pos = 0; pos < cols; ++pos)
+					for (auto pos = 0u; pos < cols; ++pos)
 					{
 						auto & el = cells[pos];
 						if (el.text.size() == 1 && el.text[0] == nana::char_t(0))
