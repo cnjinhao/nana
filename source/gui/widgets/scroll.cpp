@@ -52,20 +52,11 @@ namespace nana
 					pos = screen_pos.x;
 				}
 
-				if(scale >= fixedsize * 2)
-				{
-					if(pos < static_cast<int>(fixedsize))
-						return buttons::first;
-					if(pos > static_cast<int>(scale - fixedsize))
-						return buttons::second;
-				}
-				else
-				{
-					if(pos < static_cast<int>(scale / 2))
-						return buttons::first;
-					if(pos > static_cast<int>(scale / 2))
-						return buttons::second;
-				}
+				const auto bound_pos = static_cast<int>(scale >= fixedsize * 2 ? fixedsize : scale / 2);
+				if (pos < bound_pos)
+					return buttons::first;
+				if (pos > static_cast<int>(scale) - bound_pos)
+					return buttons::second;
 
 				if(metrics_.scroll_length)
 				{
@@ -100,7 +91,7 @@ namespace nana
 					metrics_.scroll_pos = pos;
 					auto value_max = metrics_.peak - metrics_.range;
 					metrics_.value = pos * value_max / scroll_area;
-					if(metrics_.value < metrics_.peak - metrics_.range)
+					if(metrics_.value < value_max)
 					{
 						int selfpos = static_cast<int>(metrics_.value * scroll_area / value_max);
 						int nextpos = static_cast<int>((metrics_.value + 1) * scroll_area / value_max);
@@ -115,22 +106,22 @@ namespace nana
 
 			void drawer::auto_scroll()
 			{
-				if(_m_check())
+				if (!_m_check())
+					return;
+				
+				if(buttons::forward == metrics_.what)
+				{	//backward
+					if(metrics_.value <= metrics_.range)
+						metrics_.value = 0;
+					else
+						metrics_.value -= (metrics_.range-1);
+				}
+				else if(buttons::backward == metrics_.what)
 				{
-					if(buttons::forward == metrics_.what)
-					{	//backward
-						if(metrics_.value <= metrics_.range)
-							metrics_.value = 0;
-						else
-							metrics_.value -= (metrics_.range-1);
-					}
-					else if(buttons::backward == metrics_.what)
-					{
-						if(metrics_.peak - metrics_.range - metrics_.value <= metrics_.range)
-							metrics_.value = metrics_.peak - metrics_.range;
-						else
-							metrics_.value += (metrics_.range-1);
-					}
+					if(metrics_.peak - metrics_.range - metrics_.value <= metrics_.range)
+						metrics_.value = metrics_.peak - metrics_.range;
+					else
+						metrics_.value += (metrics_.range-1);
 				}
 			}
 
@@ -141,26 +132,20 @@ namespace nana
 
 				_m_background(graph);
 
-				::nana::rectangle r(graph.size());
-				if(vertical_)
-				{
-					r.y = r.height - fixedsize;
-					r.height = fixedsize;
-				}
-				else
-				{
-					r.x = r.width - fixedsize;
-					r.width = fixedsize;
-				}
+				rectangle_rotator r(vertical_, graph.size());
+				r.x_ref() = static_cast<int>(r.w() - fixedsize);
+				r.w_ref() = fixedsize;
 
 				int state = ((_m_check() == false || what == buttons::none) ? states::none : states::highlight);
 				int moused_state = (_m_check() ? (metrics_.pressed ? states::selected : states::actived) : states::none);
 
+				auto result = r.result();
+
 				//draw first
-				_m_draw_button(graph, { 0, 0, r.width, r.height }, buttons::first, (buttons::first == what ? moused_state : state));
+				_m_draw_button(graph, { 0, 0, result.width, result.height }, buttons::first, (buttons::first == what ? moused_state : state));
 
 				//draw second
-				_m_draw_button(graph, r, buttons::second, (buttons::second == what ? moused_state : state));
+				_m_draw_button(graph, result, buttons::second, (buttons::second == what ? moused_state : state));
 
 				//draw scroll
 				_m_draw_scroll(graph, (buttons::scroll == what ? moused_state : states::highlight));
@@ -171,64 +156,61 @@ namespace nana
 			{
 				graph.rectangle(true, {0xf0, 0xf0, 0xf0});
 
-				if(metrics_.pressed && _m_check())
+				if (!metrics_.pressed || !_m_check())
+					return;
+				
+				nana::rectangle_rotator r(vertical_, graph.size());
+				if(metrics_.what == buttons::forward)
 				{
-					int x = 0, y = 0;
-					unsigned width = graph.width(), height = graph.height();
-
-					if(metrics_.what == buttons::forward)
-					{
-						*(vertical_ ? &y : &x) = fixedsize;
-						*(vertical_ ? &height: &width) = metrics_.scroll_pos;
-					}
-					else if(buttons::backward == metrics_.what)
-					{
-						*(vertical_ ? &y : &x) = static_cast<int>(fixedsize + metrics_.scroll_pos + metrics_.scroll_length);
-						*(vertical_ ? &height: &width) = static_cast<unsigned>((vertical_ ? graph.height() : graph.width()) - (fixedsize * 2 + metrics_.scroll_pos + metrics_.scroll_length));
-					}
-					else
-						return;
-
-					if(width && height)
-						graph.rectangle({ x, y, width, height }, true, {0xDC, 0xDC, 0xDC});
+					r.x_ref() = static_cast<int>(fixedsize);
+					r.w_ref() = metrics_.scroll_pos;
 				}
+				else if(buttons::backward == metrics_.what)
+				{
+					r.x_ref() = static_cast<int>(fixedsize + metrics_.scroll_pos + metrics_.scroll_length);
+					r.w_ref() = static_cast<unsigned>((vertical_ ? graph.height() : graph.width()) - (fixedsize * 2 + metrics_.scroll_pos + metrics_.scroll_length));
+				}
+				else
+					return;
+
+				auto result = r.result();
+				if (!result.empty())
+					graph.rectangle(result, true, static_cast<color_rgb>(0xDCDCDC));
 			}
 
 			void drawer::_m_button_frame(graph_reference graph, rectangle r, int state)
 			{
-				if(state)
+				if (!state)
+					return;
+				
+				::nana::color clr{0x97, 0x97, 0x97}; //highlight
+				switch(state)
 				{
-					::nana::color clr{0x97, 0x97, 0x97}; //highlight
-					switch(state)
-					{
-					case states::actived:
-						clr.from_rgb(0x86, 0xD5, 0xFD); break;
-					case states::selected:
-						clr.from_rgb(0x3C, 0x7F, 0xB1); break;
-					}
-					
-					graph.rectangle(r, false, clr);
-
-					clr = clr.blend(colors::white, 0.5);
-					graph.set_color(clr);
-
-					r.pare_off(2);
-
-					if(vertical_)
-					{
-						unsigned half = r.width / 2;
-						graph.rectangle({ r.x + static_cast<int>(r.width - half), r.y, half, r.height }, true);
-						r.width -= half;
-					}
-					else
-					{
-						unsigned half = r.height / 2;
-						graph.rectangle({r.x, r.y + static_cast<int>(r.height - half), r.width, half}, true);
-						r.height -= half;
-					}
-					//graph.shadow_rectangle(x, y, width, height, 0xFFFFFF, color_x, !vertical_);
-					graph.gradual_rectangle(r, colors::white, clr, !vertical_);
+				case states::actived:
+					clr.from_rgb(0x86, 0xD5, 0xFD); break;
+				case states::selected:
+					clr.from_rgb(0x3C, 0x7F, 0xB1); break;
 				}
+				
+				graph.rectangle(r, false, clr);
+
+				clr = clr.blend(colors::white, 0.5);
+				graph.set_color(clr);
+
+				r.pare_off(2);
+				if(vertical_)
+				{
+					unsigned half = r.width / 2;
+					graph.rectangle({ r.x + static_cast<int>(r.width - half), r.y, half, r.height }, true);
+					r.width -= half;
+				}
+				else
+				{
+					unsigned half = r.height / 2;
+					graph.rectangle({r.x, r.y + static_cast<int>(r.height - half), r.width, half}, true);
+					r.height -= half;
+				}
+				graph.gradual_rectangle(r, colors::white, clr, !vertical_);
 			}
 
 			bool drawer::_m_check() const
@@ -271,20 +253,11 @@ namespace nana
 			{
 				if(_m_check())
 				{
-					::nana::rectangle r(graph.size());
+					rectangle_rotator r(vertical_, graph.size());
+					r.x_ref() = static_cast<int>(fixedsize + metrics_.scroll_pos);
+					r.w_ref() = static_cast<unsigned>(metrics_.scroll_length);
 
-					if(vertical_)
-					{
-						r.y = fixedsize + metrics_.scroll_pos;
-						r.height = static_cast<unsigned>(metrics_.scroll_length);
-					}
-					else
-					{
-						r.x = fixedsize + metrics_.scroll_pos;
-						r.width = static_cast<unsigned>(metrics_.scroll_length);					
-					}
-
-					_m_button_frame(graph, r, state);
+					_m_button_frame(graph, r.result(), state);
 				}
 			}
 

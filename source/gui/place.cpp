@@ -985,7 +985,7 @@ namespace nana
 			const bool vert = (kind::arrange != kind_of_division);
 
 			auto area_margined = margin_area();
-			area_rotator area(vert, area_margined);
+			rectangle_rotator area(vert, area_margined);
 			auto area_px = area.w();
 
 			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px);
@@ -1001,7 +1001,7 @@ namespace nana
 				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
 
-				area_rotator child_area(vert, child->field_area);
+				rectangle_rotator child_area(vert, child->field_area);
 				child_area.x_ref() = static_cast<int>(position);
 				child_area.y_ref() = area.y();
 				child_area.h_ref() = area.h();
@@ -1591,7 +1591,7 @@ namespace nana
 						return;
 
 					const bool vert = (::nana::cursor::size_we != splitter_cursor_);
-					auto area_px = area_rotator(vert, div_owner->margin_area()).w();
+					auto area_px = rectangle_rotator(vert, div_owner->margin_area()).w();
 					int delta = (vert ? splitter_.pos().y - begin_point_.y : splitter_.pos().x - begin_point_.x);
 
 					int total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
@@ -1632,8 +1632,8 @@ namespace nana
 			{
 				const bool vert = (::nana::cursor::size_we != splitter_cursor_);
 
-				area_rotator left(vert, leaf_left_->field_area);
-				area_rotator right(vert, leaf_right_->field_area);
+				rectangle_rotator left(vert, leaf_left_->field_area);
+				rectangle_rotator right(vert, leaf_right_->field_area);
 				auto area_px = right.right() - left.x();
 				auto right_px = static_cast<int>(limit_px(leaf_right_, init_weight_.get_value(area_px), static_cast<unsigned>(area_px)));
 
@@ -1643,7 +1643,7 @@ namespace nana
 				else if (pos > limited_range.right())
 					pos = limited_range.right();
 
-				area_rotator sp_r(vert, field_area);
+				nana::rectangle_rotator sp_r(vert, field_area);
 				sp_r.x_ref() = pos;
 
 				left.w_ref() = static_cast<unsigned>(pos - left.x());
@@ -1659,7 +1659,7 @@ namespace nana
 				leaf_right_->collocate(wd);
 
 				//Set the leafs' weight
-				area_rotator area(vert, div_owner->field_area);
+				rectangle_rotator area(vert, div_owner->field_area);
 
 				double imd_rate = 100.0 / static_cast<int>(area.w());
 				leaf_left_->weight.assign_percent(imd_rate * static_cast<int>(left.w()));
@@ -1674,14 +1674,14 @@ namespace nana
 				splitter_.move(this->field_area);
 		}
 	private:
-		area_rotator _m_update_splitter_range()
+		rectangle_rotator _m_update_splitter_range()
 		{
 			const bool vert = (cursor::size_ns == splitter_cursor_);
 
-			area_rotator area(vert, div_owner->margin_area());
+			rectangle_rotator area(vert, div_owner->margin_area());
 
-			area_rotator left(vert, leaf_left_->field_area);
-			area_rotator right(vert, leaf_right_->field_area);
+			rectangle_rotator left(vert, leaf_left_->field_area);
+			rectangle_rotator right(vert, leaf_right_->field_area);
 
 			const int left_base = left.x(), right_base = right.right();
 			int pos = left_base;

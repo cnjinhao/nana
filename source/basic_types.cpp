@@ -765,65 +765,65 @@ namespace nana
 		}
 	//end struct rectangle
 
-	//class area_rotator
-		area_rotator::area_rotator(bool rotated, const ::nana::rectangle& area)
+	//class rectangle_rotator
+		rectangle_rotator::rectangle_rotator(bool rotated, const ::nana::rectangle& area)
 			: rotated_(rotated),
 			area_(area)
 		{}
 
-		int area_rotator::x() const
+		int rectangle_rotator::x() const
 		{
 			return (rotated_ ? area_.y : area_.x);
 		}
 
-		int & area_rotator::x_ref()
+		int & rectangle_rotator::x_ref()
 		{
 			return (rotated_ ? area_.y : area_.x);
 		}
 
-		int area_rotator::y() const
+		int rectangle_rotator::y() const
 		{
 			return (rotated_ ? area_.x : area_.y);
 		}
 
-		int & area_rotator::y_ref()
+		int & rectangle_rotator::y_ref()
 		{
 			return (rotated_ ? area_.x : area_.y);
 		}
 
-		unsigned area_rotator::w() const
+		unsigned rectangle_rotator::w() const
 		{
 			return (rotated_ ? area_.height : area_.width);
 		}
 
-		unsigned & area_rotator::w_ref()
+		unsigned & rectangle_rotator::w_ref()
 		{
 			return (rotated_ ? area_.height : area_.width);
 		}
 
-		unsigned area_rotator::h() const
+		unsigned rectangle_rotator::h() const
 		{
 			return (rotated_ ? area_.width : area_.height);
 		}
 
-		unsigned & area_rotator::h_ref()
+		unsigned & rectangle_rotator::h_ref()
 		{
 			return (rotated_ ? area_.width : area_.height);
 		}
 
-		int area_rotator::right() const
+		int rectangle_rotator::right() const
 		{
 			return (rotated_ ? area_.y + static_cast<int>(area_.height) : area_.x + static_cast<int>(area_.width));
 		}
 
-		int area_rotator::bottom() const
+		int rectangle_rotator::bottom() const
 		{
 			return (rotated_ ? area_.x + static_cast<int>(area_.width) : area_.y + static_cast<int>(area_.height));
 		}
 
-		const ::nana::rectangle& area_rotator::result() const
+		const ::nana::rectangle& rectangle_rotator::result() const
 		{
 			return area_;
 		}
-	//end class area_rotator
+	//end class rectangle_rotator
 }
