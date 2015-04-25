@@ -3353,8 +3353,13 @@ namespace nana
 					switch(arg.key)
 					{
                     case keyboard::copy:
-                           nana::system::dataexch().set(essence_->to_string());
+                    {
+                        export_options exp_opt {essence_->def_export_options()};  
+                        exp_opt.columns_order = essence_->header.all_headers(true);
+                        exp_opt.only_selected_items = true;
+                        nana::system::dataexch().set(essence_->to_string(exp_opt));
                            return;
+                    }
 					default:
 						return;
 					}
