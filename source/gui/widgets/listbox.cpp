@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <nana/system/dataexch.hpp>
+#include <cassert>
 
 namespace nana
 {
@@ -344,20 +345,21 @@ namespace nana
                     return idx;
                 }
 
-                nana::string to_string() const
+                nana::string to_string(const export_options& exp_opt) const
                 {
-                    nana::string sep{STR(";")}, endl{STR("\n")}, head_str; 
+                    nana::string head_str; 
                     bool first{true};
-					for(auto & i: cont())
-					{
-						if(i.visible)
+                    for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
                         {
+                        assert(exp_opt.columns_order[idx] == cont()[idx].index );
+                        assert(cont()[exp_opt.columns_order[idx]].visible || ! exp_opt.only_visible_columns);
+
                             if(first)
                                 first=false;
                             else 
-                                head_str += sep;
-							head_str += i.text;
-                        }
+                            head_str += exp_opt.sep;
+
+						head_str += cont()[idx].text;
 					}
                     return head_str;
                 }
@@ -607,18 +609,18 @@ namespace nana
 					return *this;
 				}
 
-                nana::string to_string(const export_options::columns_indexs& col_order) const
+                nana::string to_string(const export_options& exp_opt) const
                 {
-                    nana::string sep{STR(";")}, endl{STR("\n")}, item_str; 
+                    nana::string item_str; 
                     bool first{true};
-                    for( size_type idx{}; idx<col_order.size(); ++idx)
+                    for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
 					{
                             if(first)
                                 first=false;
                             else 
-                                item_str += sep;
+                                item_str += exp_opt.sep;
 
-							item_str += cells[col_order[idx]].text;
+							item_str += cells[exp_opt.columns_order[idx]].text;
 					}
                     return item_str;
                 }
@@ -695,7 +697,7 @@ namespace nana
 					}
 					return nullptr;
 				}
-                nana::string to_string() const;
+                nana::string to_string(const export_options& exp_opt) const;
                 
                 /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
                 void sort()
@@ -1890,11 +1892,9 @@ namespace nana
 					lister.fetch_ordering_comparer = std::bind(&es_header::fetch_comp, &header, std::placeholders::_1);
 				}
 
-                nana::string to_string() const
+                nana::string to_string(const export_options& exp_opt) const
                 {
-                    nana::string sep{STR(";")}, endl{STR("\n")}; 
-                    lister.to_string();
-                    return header.to_string() + endl + lister.to_string() ;
+                    return header.to_string(exp_opt) + exp_opt.endl + lister.to_string(exp_opt) ;
                 }
 
                 const index_pair& scroll_y_abs() const
@@ -2318,48 +2318,6 @@ namespace nana
                     API::refresh_window(lister.wd_ptr()->handle());
 				}
                 
-#if ( 0 )   
-                void update_selection_range(index_pair to, const arg_mouse& arg)
-				{
-					using item_state = essence_t::item_state;
-					using parts = essence_t::parts;
-					bool update = false;
-					index_pair item_pos;
-					bool sel = true;
-					if (!lister.single_selection())
-					{
-						if (arg.shift)
-							lister.select_display_range(lister.last_selected, item_pos, sel);
-						else if (arg.ctrl)
-							    sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();  
-							else
-								lister.select_for_all(false);
-					}
-					else
-						sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();
-
-						item_ptr->flags.selected = sel;
-						index_pair last_selected(item_pos.cat, lister.absolute(item_pos)); 
-
-						arg_listbox arg{item_proxy{essence_, last_selected}, sel};
-						lister.wd_ptr()->events().selected.emit(arg);
-
-                        if (item_ptr->flags.selected)
-						{
-							lister.cancel_others_if_single_enabled(true, last_selected);
-							essence_->lister.last_selected = last_selected;
-								
-						}
-						else if (essence_->lister.last_selected == last_selected)
-								essence_->lister.last_selected.set_both(npos);
-					}
-					else if(!lister.single_selection())
-							lister.categ_selected(item_pos.cat, true);
-					update = true;
-
-				}
-#endif			
-
 };
 
             void es_lister::scroll_refresh()
@@ -2450,24 +2408,23 @@ namespace nana
 						else break;
 					}
 				}
-            nana::string es_lister::to_string() const
+            nana::string es_lister::to_string(const export_options& exp_opt) const
             {
-                nana::string sep{STR(";")}, endl{STR("\n")}, list_str; 
-                auto col_order = ess_->header.all_headers(true);
+                nana::string list_str; 
                 bool first{true};
 				for(auto & cat: cat_container())
 				{
                     if(first)
                             first=false;
                     else
- 						list_str += (cat.text + endl);
+ 						list_str += (cat.text + exp_opt.endl);
 
                     bool first_item{true};
                     for (auto i : cat.sorted)
                     {
                         auto& it= cat.items[i] ;
-                        if(it.flags.selected)
-                            list_str += (it.to_string(col_order) + endl);
+                        if(it.flags.selected || !exp_opt.only_selected_items)
+                            list_str += (it.to_string(exp_opt) + exp_opt.endl);
                     }
 				}
                 return list_str ;
