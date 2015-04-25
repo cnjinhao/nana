@@ -331,7 +331,18 @@ namespace nana
 					{}
 				};
 
-				typedef std::vector<column_t> container;
+				using container = std::vector<column_t> ;
+
+                export_options::columns_indexs all_headers(bool only_visibles) const
+                {
+                    export_options::columns_indexs	idx;				
+					for(auto hd : cont())
+					{
+						if(!only_visibles || hd.visible)  
+							idx.push_back(hd.index);
+					}
+                    return idx;
+                }
 
                 nana::string to_string() const
                 {
