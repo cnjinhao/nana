@@ -429,7 +429,19 @@ namespace nana
 				category_t*	cat_{nullptr};
 				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
 			};
-		}
+		
+            struct export_options
+            {
+               nana::string sep = nana::string {STR(";" )}, 
+                            endl= nana::string {STR("\n")} ; 
+               bool only_selected_items{true}, 
+                    only_checked_items {false},
+                    only_visible_columns{true};
+
+               using columns_indexs = std::vector<size_type>;
+               columns_indexs columns_order;
+            };
+        }
 	}//end namespace drawerbase
 
 	struct arg_listbox
@@ -482,7 +494,9 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		using selection = drawerbase::listbox::selection;    ///<A container type for items.
 		using iresolver = drawerbase::listbox::iresolver;
 		using oresolver = drawerbase::listbox::oresolver;
-		using cell = drawerbase::listbox::cell;
+		using cell      = drawerbase::listbox::cell;
+		using export_options= drawerbase::listbox::export_options;
+		using columns_indexs= drawerbase::listbox::size_type;
 	public:
 		listbox() = default;
 		listbox(window, bool visible);
