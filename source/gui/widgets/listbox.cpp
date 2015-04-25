@@ -3364,6 +3364,12 @@ namespace nana
                         nana::system::dataexch().set(essence_->to_string(exp_opt));
                         return;
                     }
+                    case keyboard::select_all :  
+                        essence_->lister.select_for_all(true);
+					    draw();
+					    API::lazy_refresh();
+                        break;
+
 					default:
 						return;
 					}
