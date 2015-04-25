@@ -333,6 +333,24 @@ namespace nana
 
 				typedef std::vector<column_t> container;
 
+                nana::string to_string() const
+                {
+                    nana::string sep{STR(";")}, endl{STR("\n")}, head_str; 
+                    bool first{true};
+					for(auto & i: cont())
+					{
+						if(i.visible)
+                        {
+                            if(first)
+                                first=false;
+                            else 
+                                head_str += sep;
+							head_str += i.text;
+                        }
+					}
+                    return head_str;
+                }
+
 				bool visible() const
 				{
 					return visible_;
@@ -651,6 +669,39 @@ namespace nana
 					}
 					return nullptr;
 				}
+                nana::string to_string() const
+                {
+                    nana::string sep{STR(";")}, endl{STR("\n")}, list_str{STR("Empieza list: ")}; 
+                    bool first{true};
+					for(auto & cat: cat_container())
+					{
+                        list_str += STR("categorias: ") ;
+                        if(first)
+                                first=false;
+                        else
+                        {
+ 						    //if(cat.selected())
+ 						    list_str += (cat.text + STR("categorias 2 ") + endl);
+                        }
+                        list_str += STR("categorias: ") ;
+                        bool first_it{true};
+                        for (auto i : cat.sorted)
+                        {
+                            auto& it= cat.items[i] ;
+                            if(it.flags.selected)
+                            {
+                                list_str += (it.cells[0].text + endl);
+                                if(first_it)
+                                        first_it=false;
+                                else
+                                {
+                                }
+                            }
+
+                        }
+					}
+                    return list_str + STR("Termina: ");
+                }
 
                 /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
                 void sort()
@@ -1837,6 +1888,13 @@ namespace nana
 					pointer_where.first = parts::unknown;
 					lister.fetch_ordering_comparer = std::bind(&es_header::fetch_comp, &header, std::placeholders::_1);
 				}
+
+                nana::string to_string() const
+                {
+                    nana::string sep{STR(";")}, endl{STR("\n")}; 
+                    lister.to_string();
+                    return header.to_string() + endl + lister.to_string() ;
+                }
 
 				const index_pair& scroll_y_abs() const
 				{
