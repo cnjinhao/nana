@@ -607,6 +607,21 @@ namespace nana
 					return *this;
 				}
 
+                nana::string to_string(const export_options::columns_indexs& col_order) const
+                {
+                    nana::string sep{STR(";")}, endl{STR("\n")}, item_str; 
+                    bool first{true};
+                    for( size_type idx{}; idx<col_order.size(); ++idx)
+					{
+                            if(first)
+                                first=false;
+                            else 
+                                item_str += sep;
+
+							item_str += cells[col_order[idx]].text;
+					}
+                    return item_str;
+                }
 			};
 
 			struct category_t
@@ -680,39 +695,7 @@ namespace nana
 					}
 					return nullptr;
 				}
-                nana::string to_string() const
-                {
-                    nana::string sep{STR(";")}, endl{STR("\n")}, list_str{STR("Empieza list: ")}; 
-                    bool first{true};
-					for(auto & cat: cat_container())
-					{
-                        list_str += STR("categorias: ") ;
-                        if(first)
-                                first=false;
-                        else
-                        {
- 						    //if(cat.selected())
- 						    list_str += (cat.text + STR("categorias 2 ") + endl);
-                        }
-                        list_str += STR("categorias: ") ;
-                        bool first_it{true};
-                        for (auto i : cat.sorted)
-                        {
-                            auto& it= cat.items[i] ;
-                            if(it.flags.selected)
-                            {
-                                list_str += (it.cells[0].text + endl);
-                                if(first_it)
-                                        first_it=false;
-                                else
-                                {
-                                }
-                            }
-
-                        }
-					}
-                    return list_str + STR("Termina: ");
-                }
+                nana::string to_string() const;
                 
                 /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
                 void sort()
@@ -2460,6 +2443,28 @@ namespace nana
 						else break;
 					}
 				}
+            nana::string es_lister::to_string() const
+            {
+                nana::string sep{STR(";")}, endl{STR("\n")}, list_str; 
+                auto col_order = ess_->header.all_headers(true);
+                bool first{true};
+				for(auto & cat: cat_container())
+				{
+                    if(first)
+                            first=false;
+                    else
+ 						list_str += (cat.text + endl);
+
+                    bool first_item{true};
+                    for (auto i : cat.sorted)
+                    {
+                        auto& it= cat.items[i] ;
+                        if(it.flags.selected)
+                            list_str += (it.to_string(col_order) + endl);
+                    }
+				}
+                return list_str ;
+            }
 
 
 			class drawer_header_impl
