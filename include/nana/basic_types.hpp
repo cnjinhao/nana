@@ -434,10 +434,10 @@ namespace nana
 		unsigned height;
 	};
 
-	class area_rotator
+	class rectangle_rotator
 	{
 	public:
-		area_rotator(bool rotated, const ::nana::rectangle& area);
+		rectangle_rotator(bool rotated, const ::nana::rectangle& area);
 
 		int x() const;
 		int & x_ref();
@@ -454,7 +454,7 @@ namespace nana
 	private:
 		bool rotated_;
 		::nana::rectangle area_;
-	};//end class area_rotator
+	};//end class rectangle_rotator
 
 	enum class arrange
 	{

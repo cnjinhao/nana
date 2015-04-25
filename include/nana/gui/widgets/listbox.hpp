@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.hpp
+ *	@contributors: Ariel Vina-Rodriguez
  *
  */
 
