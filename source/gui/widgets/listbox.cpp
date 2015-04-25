@@ -1856,6 +1856,13 @@ namespace nana
 				unsigned item_size{24};
 				unsigned text_height{0};
 				unsigned suspension_width{0};
+                ::nana::listbox::export_options def_exp_options ;
+
+                ::nana::listbox::export_options& def_export_options()
+                {
+			        return def_exp_options;
+                }
+
 
 				es_header header;
 				es_lister lister;  // we have at least one emty cat. the #0
@@ -4190,6 +4197,11 @@ namespace nana
 		{
 			_m_ess().lister.disable_single(for_selection);
 		}
+
+        listbox::export_options& listbox::def_export_options()
+        {
+			return _m_ess().def_export_options();
+        }
 
 		drawerbase::listbox::essence_t & listbox::_m_ess() const
 		{
