@@ -702,7 +702,7 @@ namespace nana
 					}
                     return list_str + STR("Termina: ");
                 }
-
+                
                 /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
                 void sort()
 				{
@@ -1896,7 +1896,7 @@ namespace nana
                     return header.to_string() + endl + lister.to_string() ;
                 }
 
-				const index_pair& scroll_y_abs() const
+                const index_pair& scroll_y_abs() const
 				{
 					return scroll.offset_y_abs;
 				}
@@ -3332,13 +3332,6 @@ namespace nana
 						}
 						break;
 
-                    case keyboard::copy:
-                       {
-                           nana::string str{STR("to_csv()")};
-                           //nana::system::dataexch().set(str);
-                           return;
-                       }
-
                     case keyboard::os_pageup :
 						up = true;
                     case keyboard::os_pagedown:
@@ -3374,6 +3367,19 @@ namespace nana
 					draw();
 					API::lazy_refresh();
 				}
+
+				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
+				{
+					switch(arg.key)
+					{
+                    case keyboard::copy:
+                           nana::system::dataexch().set(essence_->to_string());
+                           return;
+					default:
+						return;
+					}
+				}
+
 			//end class trigger
 
 			//class item_proxy

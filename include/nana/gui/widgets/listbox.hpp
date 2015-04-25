@@ -194,6 +194,7 @@ namespace nana
 				void dbl_click(graph_reference, const arg_mouse&)	override;
 				void resized(graph_reference, const arg_resized&)		override;
 				void key_press(graph_reference, const arg_keyboard&)	override;
+				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
 				essence_t * essence_;
 				drawer_header_impl *drawer_header_;
