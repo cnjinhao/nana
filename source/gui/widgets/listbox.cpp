@@ -351,19 +351,23 @@ namespace nana
                     bool first{true};
                     for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
 					{
-                        size_type index{exp_opt.columns_order[idx]};
-                        auto col = std::find_if(std::begin(cont()), std::end(cont()), [index](const column_t& col){return col.index == index;});
-                        if(col == std::end(cont()) )
-                            throw std::out_of_range("Trying to export from a lisboxt an inexisting column");
-
-                        assert(col->visible || ! exp_opt.only_visible_columns);
-
                         if(first)
                             first=false;
                         else 
                             head_str += exp_opt.sep;
 
-						head_str += col->text;
+                        size_type index{exp_opt.columns_order[idx]};
+                        bool bad{true};
+                        for (auto&col:cont())
+                            if(col.index == index) 
+                            {
+                                bad=false;
+	        					head_str += col.text;
+                                break;
+                            }
+
+                        if(bad)
+                            throw std::out_of_range("Trying to export from a lisboxt an inexisting column");
 					}
                     return head_str;
                 }
