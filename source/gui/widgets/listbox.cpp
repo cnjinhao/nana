@@ -313,14 +313,14 @@ namespace nana
 			}
 			//end class iresolver/oresolver
 
-			class es_header   /// Essence of the columns Header
+            /// Essence of the columns Header
+			class es_header   
 			{
 			public:
-				typedef std::size_t size_type;
 
 				struct column_t
 				{
-					nana::string text;  //< "text" header of the column number "index" with weigth "pixels"
+					nana::string text;  ///< "text" header of the column number "index" with weigth "pixels"
 					unsigned pixels;
 					bool visible{true};
 					size_type index;
@@ -337,10 +337,10 @@ namespace nana
                 export_options::columns_indexs all_headers(bool only_visibles) const
                 {
                     export_options::columns_indexs	idx;				
-					for(auto hd : cont())
+					for(const auto &header : cont())
 					{
-						if(!only_visibles || hd.visible)  
-							idx.push_back(hd.index);
+						if(header.visible || !only_visibles)  
+							idx.push_back(header.index);
 					}
                     return idx;
                 }
@@ -356,18 +356,7 @@ namespace nana
                         else 
                             head_str += exp_opt.sep;
 
-                        size_type index{exp_opt.columns_order[idx]};
-                        bool bad{true};
-                        for (auto&col:cont())
-                            if(col.index == index) 
-                            {
-                                bad=false;
-	        					head_str += col.text;
-                                break;
-                            }
-
-                        if(bad)
-                            throw std::out_of_range("Trying to export from a lisboxt an inexisting column");
+	        			head_str += column_ref(exp_opt.columns_order[idx]).text;
 					}
                     return head_str;
                 }
@@ -438,6 +427,7 @@ namespace nana
 					return pixels;
 				}
 
+                /// return the original order or index previous to any list reorganization of the current column "n".
 				size_type index(size_type n) const
 				{
 					return (n < cont_.size() ? cont_[n].index : npos);
@@ -448,6 +438,7 @@ namespace nana
 					return cont_;
 				}
 
+                /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
 				column_t& column(size_type pos)
 				{
 					for(auto & m : cont_)
@@ -457,18 +448,29 @@ namespace nana
 					}
 					throw std::out_of_range("Nana.GUI.Listbox: invalid header index.");
 				}
+				const column_t& column_ref(size_type pos) const
+                {
+					for(const auto & m : cont_)
+					{
+						if(m.index == pos)
+							return m;
+					}
+					throw std::out_of_range("Nana.GUI.Listbox: invalid header index.");
+                }
 
+                /// return the original index of the current column at x .
 				size_type item_by_x(int x) const
 				{
-					for(auto & m : cont_)
+					for(const auto & col : cont_)  // in current order
 					{
-						if(x < static_cast<int>(m.pixels))
-							return m.index;
-						x -= m.pixels;
+						if(x < static_cast<int>(col.pixels))
+							return col.index;
+						x -= col.pixels;
 					}
 					return npos;
 				}
 
+                /// return the left position of the column originaly at index "pos" .
 				int item_pos(size_type pos, unsigned * pixels) const
 				{
 					int left = 0;
@@ -486,11 +488,11 @@ namespace nana
 					}
 					return left;
 				}
-
+                /// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
 				size_type neighbor(size_type index, bool front) const
 				{
 					size_type n = npos;
-					for(auto i = cont_.cbegin(); i != cont_.cend(); ++i)
+					for(auto i = cont_.cbegin(); i != cont_.cend(); ++i)  // in current order
 					{
 						if(i->index == index)
 						{
@@ -506,16 +508,17 @@ namespace nana
 					}
 					return npos;
 				}
-
+                /// return the original index of the currently first visible col
 				size_type begin() const
 				{
-					for(auto & m : cont_)
+					for(const auto & m : cont_)
 					{
 						if(m.visible) return m.index;
 					}
 					return npos;
 				}
 
+                /// return the original index of the currently last visible col
 				size_type last() const
 				{
 					for(auto i = cont_.rbegin(); i != cont_.rend(); ++i)
@@ -524,25 +527,24 @@ namespace nana
 					}
 					return npos;
 				}
-
+                /// move the col originaly at index to the position currently in front (or after) the col originaly at index "to" invalidating some current index
 				void move(size_type index, size_type to, bool front)
 				{
-					if((index != to) && (index < cont_.size()) && (to < cont_.size()))
-					{
-						auto i = std::find_if(cont_.begin(), cont_.end(), [index](container::value_type& m){
-							return (index == m.index);
-						});
+					if(index == to)           return;
+					if(index >= cont_.size()) return;
+                    if(to    >= cont_.size()) return;
 
-						if (i == cont_.end())
-							return;
+					auto i = std::find_if(cont_.begin(), cont_.end(), [index](container::value_type& m){return (index == m.index);});
 
-						auto from = *i;
-						cont_.erase(i);
+					if (i == cont_.end())
+						return;
 
-						i = std::find_if(cont_.begin(), cont_.end(), [to](const container::value_type& m)->bool{ return (to == m.index); } );
-						if(i != cont_.end())
-							cont_.insert((front ? i : ++i), from);
-					}
+					auto from = *i; // a temp copy 
+					cont_.erase(i);
+
+					i = std::find_if(cont_.begin(), cont_.end(), [to](const container::value_type& m)->bool{ return (to == m.index); } );
+					if(i != cont_.end())
+						cont_.insert((front ? i : ++i), from);
 				}
 			private:
 				bool visible_{true};
@@ -553,7 +555,7 @@ namespace nana
 
 			struct item_t
 			{
-				typedef std::vector<cell> container;
+				using container = std::vector<cell>;
 
 				container cells;
 				nana::color bgcolor;
@@ -2463,13 +2465,13 @@ namespace nana
 					if(essence_->ptr_state == item_state::highlighted)
 					{
 						x -= (r.x - essence_->scroll.offset_x);
-						for(auto & hd : essence_->header.cont())
+						for(auto & hd : essence_->header.cont()) // in current order
 						{
 							if(hd.visible)
 							{
 								if((static_cast<int>(hd.pixels)  - 2 < x) && (x < static_cast<int>(hd.pixels) + 3))
 								{
-									item_spliter_ = hd.index;
+									item_spliter_ = hd.index; // original index
 									return true;
 								}
 								x -= hd.pixels;
@@ -3058,7 +3060,7 @@ namespace nana
 						}
 					}
 
-					if(essence_->ptr_state == item_state::grabbed)
+                    if(essence_->ptr_state == item_state::grabbed)
 					{
 						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);

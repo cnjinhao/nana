@@ -17,6 +17,7 @@
 #include "widget.hpp"
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
+//#include <nana/paint/graphics.hpp>
 #include <functional>
 #include <initializer_list>
 
@@ -28,7 +29,7 @@ namespace nana
 	{
 		namespace listbox
 		{
-			typedef std::size_t size_type;
+			using size_type = std::size_t ;
 
 			struct cell
 			{
@@ -36,7 +37,7 @@ namespace nana
 				{
 					::nana::color bgcolor;
 					::nana::color fgcolor;
-
+                    /// ::nana::paint::font font;  \todo 
 					format() = default;
 					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 				};
