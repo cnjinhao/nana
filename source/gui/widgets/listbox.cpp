@@ -348,6 +348,16 @@ namespace nana
 					return false;
 				}
 
+				bool sortable() const
+				{
+					return sortable_;
+				}
+
+				void sortable(bool enable)
+				{
+					sortable_ = enable;
+				}
+
 				std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)> fetch_comp(std::size_t index) const
 				{
 					if(index < cont_.size())
@@ -507,6 +517,7 @@ namespace nana
 				}
 			private:
 				bool visible_{true};
+				bool sortable_{true};
 				container cont_;
 			};
 
@@ -3183,7 +3194,7 @@ namespace nana
 					auto prev_state = essence_->ptr_state;
 					essence_->ptr_state = item_state::highlighted;
 					//Do sort
-					if (essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
+					if (essence_->header.sortable() && essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
 					{
 						if(essence_->pointer_where.second < essence_->header.cont().size())
 						{
@@ -4016,6 +4027,16 @@ namespace nana
 			if(_where.item < ess->lister.size_item(_where.cat))
 				return ip;
 			return item_proxy(ess);
+		}
+
+		bool listbox::sortable() const
+		{
+			return _m_ess().header.sortable();
+		}
+
+		void listbox::sortable(bool enable)
+		{
+			_m_ess().header.sortable(enable);
 		}
 
 		void listbox::set_sort_compare(size_type col, std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)> strick_ordering)
