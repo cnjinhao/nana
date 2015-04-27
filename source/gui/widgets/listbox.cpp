@@ -834,20 +834,21 @@ namespace nana
 					return sorted_reverse_;
 				}
 
-				///Append a new category with a specified name.
+				///Append a new category with a specified name and return a pointer to it.
 				category_t* create_cat(nana::string&& text)
 				{
 					list_.emplace_back(std::move(text));
 					return &list_.back();
 				}
-
+                /// just append a list of new cat.
 				void create_cat(const std::initializer_list<nana::string>& args)
 				{
 					for (auto & arg : args)
 						list_.emplace_back(arg);
 				}
 
-				category_t* create_cat(std::shared_ptr<nana::detail::key_interface> ptr)
+		        /// will use the key to insert new cat before the first cat with compare less than the key, or at the end of the list of cat and return a ref to that new cat.  ?
+                category_t* create_cat(std::shared_ptr<nana::detail::key_interface> ptr)
 				{
 					for (auto i = list_.begin(); i != list_.end(); ++i)
 					{
@@ -863,7 +864,7 @@ namespace nana
 					list_.back().key_ptr = ptr;
 					return &list_.back();
 				}
-
+                /// add a new cat created at "pos" and return a ref to it 
 				category_t* create_cat(std::size_t pos, nana::string&& text)
 				{
 #if defined(NANA_LINUX) || defined(NANA_MINGW)
