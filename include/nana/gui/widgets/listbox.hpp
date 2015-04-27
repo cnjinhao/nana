@@ -514,8 +514,11 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
 		cat_proxy insert(cat_proxy, nana::string);
 		cat_proxy at(size_type pos) const;
+
+        /// add categories in order when use a key?
 		listbox& ordered_categories(bool);
 
+        /// return a proxy to tha cat with the key or create a new one in the right order
 		template<typename Key>
 		cat_proxy operator[](const Key & ck)
 		{
