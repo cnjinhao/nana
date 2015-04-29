@@ -2297,7 +2297,7 @@ namespace nana
 				void header_seq(std::vector<size_type> &seqs, unsigned lister_w)const
 				{
 					int x = - (scroll.offset_x);
-					for(auto hd : header.cont())
+					for(const auto& hd : header.cont())
 					{
 						if(false == hd.visible) continue;
 						x += hd.pixels;
@@ -2711,7 +2711,9 @@ namespace nana
 					unsigned header_w = essence_->header.pixels();
 					essence_->graph->set_color(bgcolor);
 					if(header_w - essence_->scroll.offset_x < rect.width)
-						essence_->graph->rectangle(rectangle{ rect.x + static_cast<int>(header_w)-essence_->scroll.offset_x, rect.y, rect.width - (header_w - essence_->scroll.offset_x), rect.height }, true);
+						essence_->graph->rectangle(rectangle{ point(rect.x + static_cast<int>(header_w)-essence_->scroll.offset_x,  rect.y), 
+                                                              size(static_cast<int>(rect.width)  + essence_->scroll.offset_x - static_cast<int>(header_w),  rect.height) }, 
+                                                    true);
 
 					es_lister & lister = essence_->lister;
 					//The Tracker indicates the item where mouse placed.
@@ -2739,12 +2741,12 @@ namespace nana
 
 					auto state = item_state::normal;
 
-					//Here draws a root categ or a first drawing is not a categ.
+					//Here we draw the root categ (0) or a first item if the first drawing is not a categ.(item!=npos))
 					if(idx.cat == 0 || !idx.is_category())
 					{
-						if (idx.cat == 0 && idx.is_category())
+						if (idx.cat == 0 && idx.is_category())  // the 0 cat
 						{
-							essence_->scroll.offset_y_dpl.item = 0;
+							essence_->scroll.offset_y_dpl.item = 0;  // no, we draw the first item of cat 0, not the 0 cat itself
 							idx.item = 0;
 						}
 
@@ -2837,7 +2839,7 @@ namespace nana
 
 				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
 				{
-					if (item.flags.selected)
+					if (item.flags.selected)                                    // fetch the "def" colors 
 						bgcolor = essence_->scheme_ptr->item_selected;
 					else if (!item.bgcolor.invisible())
 						bgcolor = item.bgcolor;
@@ -2846,10 +2848,10 @@ namespace nana
 						fgcolor = item.fgcolor;
 
 					auto graph = essence_->graph;
-					if (item_state::highlighted == state)
+					if (item_state::highlighted == state)                          // and blend it if "highlighted"
 					{
 						if (item.flags.selected)
-							bgcolor = bgcolor.blend(colors::black, 0.98);
+							bgcolor = bgcolor.blend(colors::black, 0.98);           // or "selected"
 						else
 							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);
 					}
@@ -2865,20 +2867,22 @@ namespace nana
 					unsigned extreme_text = x;
 					bool first = true;
 
-					for(auto index : seqs)
+                    
+					for(size_type display_order{0}; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
-						const auto & header = essence_->header.column(index);
+						auto index = seqs[display_order];
+                        const auto & header = essence_->header.column(index);     // deduce the corresponding header which is in a kind of dislay order
                         auto it_bgcolor = bgcolor;
 
-						if ((item.cells.size() > index) && (header.pixels > 5))
+						if ((item.cells.size() > index) && (header.pixels > 5))        // process only if the cell is visible
 						{
 							auto cell_txtcolor = fgcolor;
 							auto & m_cell = item.cells[index];
-							nana::size ts = graph->text_extent_size(m_cell.text);
+							nana::size ts = graph->text_extent_size(m_cell.text);        // precalcule text geometry
 
-							if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))
+							if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
 							{
-								it_bgcolor = m_cell.custom_format->bgcolor; 
+								it_bgcolor = m_cell.custom_format->bgcolor;    
                                 if (item.flags.selected)
                                     it_bgcolor = it_bgcolor.blend( bgcolor , 0.5) ;
 								if (item_state::highlighted == state)
@@ -2891,7 +2895,7 @@ namespace nana
 							}
 
 							int ext_w = 5;
-							if(first && essence_->checkable)
+							if(first && essence_->checkable)          //  draw the checkbox if need, only before the first column (display_order=0 ?)
 							{
 								ext_w += 18;
 
@@ -2913,7 +2917,7 @@ namespace nana
 								crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
 							}
 
-							if ((0 == index) && essence_->if_image)
+							if ((0 == index) && essence_->if_image)              //  draw the image if need, ??only before the first column?? (display_order=0 ?)
 							{
 								if (item.img)
 								{
@@ -2926,23 +2930,24 @@ namespace nana
 							}
 
 							graph->set_text_color(cell_txtcolor);
-							graph->string(point{ item_xpos + ext_w, y + txtoff }, m_cell.text);
+							graph->string(point{ item_xpos + ext_w, y + txtoff }, m_cell.text); // draw full text of the cell index (column)
 
-							if (ts.width + ext_w > header.pixels)
+							if (ts.width + ext_w > header.pixels)             // it was an excess
 							{
-								//The text is painted over the next subitem
-								int xpos = item_xpos + header.pixels - essence_->suspension_width;
+								//The text is painted over the next subitem                // here beging the ...
+								int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);  
 
-								graph->set_color(it_bgcolor);
-								graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
+								graph->set_color(it_bgcolor);                                   // litter rect with the  item bg end ... 
+                                graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
 								graph->set_text_color(cell_txtcolor);
 								graph->string(point{ xpos, y + 2 }, STR("..."));
 
 								//Erase the part that over the next subitem.
-								if (index + 1 < seqs.size())
+								if (  display_order  + 1 < seqs.size() )      // this is not the last column
                                 {
-                                    graph->set_color(bgcolor);
-								    graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
+                                    graph->set_color(bgcolor);       // we need to erase the excess, because some cell may not draw text over
+								    graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, 
+                                                               ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
                                 }
                                 extreme_text = std::max (extreme_text, item_xpos + ext_w + ts.width);
 							}
@@ -2951,7 +2956,7 @@ namespace nana
 						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, { 0xEB, 0xF4, 0xF9 });
 
 						item_xpos += header.pixels;
-						if (index + 1 >= seqs.size() && static_cast<int>(extreme_text) > item_xpos)
+						if (display_order + 1 >= seqs.size() && static_cast<int>(extreme_text) > item_xpos)
                         {
                             graph->set_color(item.bgcolor);
 							graph->rectangle(rectangle{item_xpos , y + 2, extreme_text - item_xpos, essence_->item_size - 4}, true);
