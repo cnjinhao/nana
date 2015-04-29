@@ -943,7 +943,7 @@ namespace nana
 					catobj.items.clear();
 					catobj.sorted.clear();
 				}
-
+                /// clear all items in all cat, but not the container of cat self.
 				void clear()
 				{
 					for(auto & m : list_)
@@ -1677,7 +1677,18 @@ namespace nana
 				///Translate relative position (position in display) into absolute position (original data order)
 				size_type absolute(const index_pair& display_pos) const
 				{
-					return (sorted_index_ == npos ? display_pos.item : _m_at(display_pos.cat)->sorted[display_pos.item]);
+                    if(sorted_index_ == npos) 
+                        return display_pos.item ;
+
+                    auto & catobj = *_m_at(display_pos.cat);
+
+                    if(catobj.items.size()==0)
+                       if (display_pos == index_pair{0,0} )
+                            return 0;
+                       else 
+                           return npos;
+
+					return catobj.sorted[display_pos.item] ;
 				}
 				index_pair absolute_pair(const index_pair& display_pos) const
 				{
@@ -1687,7 +1698,8 @@ namespace nana
                 ///Translate absolute position (original data order) into relative position (position in display)
                 size_type relative(const index_pair& pos) const
 				{
-					if (sorted_index_ == npos) return pos.item ;
+					if (sorted_index_ == npos) 
+                        return pos.item ;
 
                     auto & catobj = *_m_at(pos.cat);
 
@@ -1695,6 +1707,10 @@ namespace nana
                         if (pos.item == catobj.sorted[i])
                             return i;
 					 
+                    if (pos == index_pair{0,0} )
+                        if(catobj.items.size()==0)
+                            return 0;
+
 					return   npos ;
 				}
 				index_pair relative_pair(const index_pair& pos) const
@@ -1934,7 +1950,12 @@ namespace nana
 					else if(number)
 						scroll.offset_y_abs.item = number - 1;
 					else
+                    {
 						scroll.offset_y_abs.item = (pos_abs.cat > 0 ? npos : 0);
+                        scroll.offset_y_dpl = scroll.offset_y_abs ;
+                        return ;
+                    }
+                    scroll_y_dpl_refresh() ;
 				}
 				void scroll_y_rel(const index_pair& pos_rel)
 				{
@@ -4025,12 +4046,13 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 			ess.lister.clear(cat);
-			auto pos = ess.scroll_y_dpl();
-			if(pos.cat == cat)
-			{
-				pos.item = (pos.cat > 0 ? npos : 0);
-				ess.set_scroll_y_dpl(pos);
-			}
+            //unsort();   // ??
+
+			  // from current display position
+			  // move to the cat self if not in first cat
+              // move to first item ?? if in first cat
+            ess.scroll_y_abs(ess.scroll_y_abs()); 
+ 
 			ess.update();
 		}
 
@@ -4038,9 +4060,13 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 			ess.lister.clear();
-			auto pos = ess.scroll_y_dpl();
-			pos.item = (pos.cat > 0 ? npos : 0);
-			ess.set_scroll_y_dpl(pos);
+            unsort();   // apperar to be espected
+
+			  // from current display position
+			  // move to the cat self if not in first cat
+              // move to first item ?? if in first cat
+            ess.scroll_y_abs(ess.scroll_y_abs()); 
+ 
 			ess.update();
 		}
 
