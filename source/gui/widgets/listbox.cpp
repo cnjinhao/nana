@@ -1711,7 +1711,7 @@ namespace nana
                         if(catobj.items.size()==0)
                             return 0;
 
-					return   npos ;
+					return   npos   ;
 				}
 				index_pair relative_pair(const index_pair& pos) const
 				{
@@ -1951,7 +1951,7 @@ namespace nana
 						scroll.offset_y_abs.item = number - 1;
 					else
                     {
-						scroll.offset_y_abs.item = (pos_abs.cat > 0 ? npos : 0);
+                        scroll.offset_y_abs.item = (pos_abs.cat > 0 ? npos : 0);
                         scroll.offset_y_dpl = scroll.offset_y_abs ;
                         return ;
                     }
@@ -3326,6 +3326,10 @@ namespace nana
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
 					bool up = false;
+
+                    if (essence_->lister.size_categ()==1 && essence_->lister.size_item(0)==0)
+                       return ; 
+
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
