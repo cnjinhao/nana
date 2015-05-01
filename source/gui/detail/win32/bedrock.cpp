@@ -663,7 +663,6 @@ namespace detail
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
 		case WM_PAINT:
-		case WM_SYSCOMMAND:
 		case WM_CLOSE:
 		case WM_MOUSEACTIVATE:
 		case WM_GETMINMAXINFO:
@@ -1314,6 +1313,7 @@ namespace detail
 				}
 				break;
 			case WM_SYSCHAR:
+				def_window_proc = true;
 				brock.set_keyboard_shortkey(true);
 				msgwnd = brock.wd_manager.find_shortkey(native_window, static_cast<unsigned long>(wParam));
 				if(msgwnd)
@@ -1325,10 +1325,11 @@ namespace detail
 					arg.window_handle = reinterpret_cast<window>(msgwnd);
 					arg.ignore = false;
 					brock.emit(event_code::shortkey, msgwnd, arg, true, &context);
+					def_window_proc = false;
 				}
-				def_window_proc = true;
 				break;
 			case WM_SYSKEYDOWN:
+				def_window_proc = true;
 				if (brock.whether_keyboard_shortkey() == false)
 				{
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
@@ -1348,14 +1349,16 @@ namespace detail
 					else
 						brock.erase_menu(true);
 				}
-				def_window_proc = true;
 				break;
 			case WM_SYSKEYUP:
+				def_window_proc = true;
 				if(brock.set_keyboard_shortkey(false) == false)
 				{
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 					if(msgwnd)
 					{
+						//Don't call default window proc to avoid popuping system menu.
+						def_window_proc = false;
 						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
 						if (set_focus)
 							brock.wd_manager.set_focus(msgwnd, false);
@@ -1375,15 +1378,15 @@ namespace detail
 						}
 					}
 				}
-				def_window_proc = true;
 				break;
 			case WM_KEYDOWN:
 				if(msgwnd->flags.enabled)
 				{
-					if (brock.get_menu())
+					auto menu_wd = brock.get_menu();
+					if (menu_wd)
 						brock.delay_restore(0);	//Enable delay restore
 
-					if(msgwnd->root != brock.get_menu())
+					if (msgwnd->root != menu_wd)
 						msgwnd = brock.focus();
 
 					if(msgwnd)
@@ -1408,6 +1411,17 @@ namespace detail
 							arg.key = static_cast<nana::char_t>(wParam);
 							brock.get_key_state(arg);
 							brock.emit(event_code::key_press, msgwnd, arg, true, &context);
+
+							if (msgwnd->root_widget->other.attribute.root->menubar == msgwnd)
+							{
+								//In order to keep the focus on the menubar, cancel the delay_restore
+								//when pressing ESC to close the menu which is popuped by the menubar.
+								//If no menu popuped by the menubar, it should enable delay restore to
+								//restore the focus for taken window.
+
+								int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(wParam)) ? 1 : 0);
+								brock.delay_restore(cmd);
+							}
 						}
 					}
 				}
@@ -1454,14 +1468,6 @@ namespace detail
 					brock.set_keyboard_shortkey(false);
 
 				brock.delay_restore(2);	//Restores while key release
-				break;
-			case WM_SYSCOMMAND:
-				if (SC_TASKLIST == wParam)
-				{
-					int debug = 0;
-					//brock.close_menu_if_focus_other_window()
-				}
-				def_window_proc = true;
 				break;
 			case WM_CLOSE:
 			{
@@ -1571,7 +1577,7 @@ namespace detail
 			break;
 		case 2:	//Restore if key released
 			//restores the focus when menu is closed by pressing keyboard
-			if (!impl_->menu.window)
+			if ((!impl_->menu.window) && impl_->menu.delay_restore)
 				set_menubar_taken(nullptr);
 			break;
 		case 3:	//Restores if destroying

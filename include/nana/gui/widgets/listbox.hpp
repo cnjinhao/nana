@@ -251,7 +251,7 @@ namespace nana
 					auto && cells = ores.move_cells();
 					auto cols = columns();
 					cells.resize(cols);
-					for (auto pos = 0; pos < cols; ++pos)
+					for (auto pos = 0u; pos < cols; ++pos)
 					{
 						auto & el = cells[pos];
 						if (el.text.size() == 1 && el.text[0] == nana::char_t(0))
@@ -572,7 +572,10 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			_m_ease_key(&key);
 		}
 
-		            ///Sets a strict weak ordering comparer for a column
+		bool sortable() const;
+		void sortable(bool enable);
+		
+		///Sets a strict weak ordering comparer for a column
 		void set_sort_compare(size_type col, std::function<bool(const nana::string&, nana::any*,
 				                                        const nana::string&, nana::any*, bool reverse)> strick_ordering);
 
