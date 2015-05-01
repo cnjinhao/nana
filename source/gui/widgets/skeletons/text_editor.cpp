@@ -18,6 +18,7 @@
 #include <numeric>
 #include <cwctype>
 #include <set>
+#include <algorithm>
 
 namespace nana{	namespace widgets
 {
@@ -688,7 +689,7 @@ namespace nana{	namespace widgets
 					}
 				}
 				else
-					editor_.render(API::is_focus_window(editor_.window_));
+					editor_.render(API::is_focus_ready(editor_.window_));
 			}
 
 			void render(const ::nana::color& fgcolor) override
@@ -1447,7 +1448,7 @@ namespace nana{	namespace widgets
 				move_caret(upoint{});
 
 				_m_scrollbar();
-				render(API::is_focus_window(window_));
+				render(API::is_focus_ready(window_));
 				return true;
 			}
 			return false;
@@ -1465,7 +1466,7 @@ namespace nana{	namespace widgets
 
 			_m_reset();
 			behavior_->pre_calc_lines(width_pixels());
-			render(API::is_focus_window(window_));
+			render(API::is_focus_ready(window_));
 			_m_scrollbar();
 			return true;
 		}
@@ -1716,7 +1717,7 @@ namespace nana{	namespace widgets
 		//Set caret position through text coordinate
 		void text_editor::move_caret(const upoint& crtpos)
 		{
-			if (!API::is_focus_window(window_))
+			if (!API::is_focus_ready(window_))
 				return;
 			
 			const unsigned line_pixels = line_height();
@@ -1758,7 +1759,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::show_caret(bool isshow)
 		{
-			if(isshow == false || API::is_focus_window(window_))
+			if(isshow == false || API::is_focus_ready(window_))
 				API::caret_visible(window_, isshow);
 		}
 
@@ -1923,7 +1924,7 @@ namespace nana{	namespace widgets
 			{
 				behavior_->adjust_caret_into_screen();
 				reset_caret();
-				render(API::is_focus_window(window_));
+				render(API::is_focus_ready(window_));
 				_m_scrollbar();
 
 				points_.xpos = points_.caret.x;

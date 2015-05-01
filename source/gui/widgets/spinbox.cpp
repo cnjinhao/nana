@@ -14,6 +14,7 @@
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/element.hpp>
 #include <nana/gui/timer.hpp>
+#include <algorithm>
 
 namespace nana
 {
@@ -328,7 +329,7 @@ namespace nana
 
 				void render()
 				{
-					editor_->render(API::is_focus_window(editor_->window_handle()));
+					editor_->render(API::is_focus_ready(editor_->window_handle()));
 					_m_draw_spins(spin_stated_);
 				}
 
@@ -420,7 +421,7 @@ namespace nana
 					if (!editor_)
 						return;
 
-					if (API::is_focus_window(editor_->window_handle()))
+					if (API::is_focus_ready(editor_->window_handle()))
 						editor_->text(range_->value());
 					else
 						editor_->text(modifier_.prefix + range_->value() + modifier_.suffix);

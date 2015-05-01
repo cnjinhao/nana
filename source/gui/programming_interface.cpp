@@ -796,7 +796,7 @@ namespace API
 		return cursor::arrow;
 	}
 
-	bool is_focus_window(window wd)
+	bool is_focus_ready(window wd)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
