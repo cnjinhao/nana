@@ -460,6 +460,9 @@ namespace nana
 								API::update_window(widget_->handle());
 							}
 						});
+
+						if (API::focus_window() != this->widget_->handle())
+							API::focus_window(widget_->handle());
 						menu_accessor::popup(*state_.menu, *widget_, m->pos.x, m->pos.y + static_cast<int>(m->size.height));
 						return true;
 					}
