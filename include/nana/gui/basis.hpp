@@ -96,7 +96,8 @@ namespace nana
 			//System Code for OS
 			os_pageup = 0x21, os_pagedown,
 			os_arrow_left = 0x25, os_arrow_up, os_arrow_right, os_arrow_down,
-			os_insert = 0x2D, os_del
+			os_insert = 0x2D, os_del ,
+            os_end = 0x23   , os_home //Pos 1
 		};
 	};
 
