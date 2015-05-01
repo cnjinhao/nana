@@ -83,7 +83,7 @@ namespace drawerbase {
 
 		void drawer::refresh(graph_reference graph)
 		{
-			editor_->render(API::is_focus_window(*widget_));
+			editor_->render(API::is_focus_ready(*widget_));
 		}
 
 		void drawer::focus(graph_reference graph, const arg_focus& arg)

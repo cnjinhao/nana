@@ -556,6 +556,7 @@ namespace nana{
 				{
 					::EnableWindow(native_wd, true);
 					::SetActiveWindow(native_wd);
+					::SetForegroundWindow(native_wd);
 				}
 				else
 					::PostMessage(native_wd, nana::detail::messages::async_activate, 0, 0);

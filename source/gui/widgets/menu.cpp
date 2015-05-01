@@ -106,7 +106,7 @@ namespace nana
 					sz.width -= 30;
 					sz.height -= 2;
 					graph.rectangle(false, colors::gray_border);
-					graph.rectangle({ 1, 1, 28, sz.height }, true, { 0xf6, 0xf6, 0xf6 });
+					graph.rectangle({ 1, 1, 28, sz.height }, true, static_cast<color_rgb>(0xf6f6f6));
 					graph.rectangle({ 29, 1, sz.width, sz.height }, true, colors::white);
 				}
 
@@ -122,17 +122,17 @@ namespace nana
 							nana::point(r.x + r.width - 1, r.y + r.height - 1)
 						};
 
-						graph.set_color({0xc0, 0xdd, 0xfc});
+						graph.set_color(static_cast<color_rgb>(0xc0ddfc));
 						for(int i = 0; i < 4; ++i)
 							graph.set_pixel(points[i].x, points[i].y);
 
 						if(at.enabled)
-							graph.gradual_rectangle(nana::rectangle(r).pare_off(1), { 0xE8, 0xF0, 0xF4 }, { 0xDB,0xEC,0xF4 }, true);
+							graph.gradual_rectangle(nana::rectangle(r).pare_off(1), static_cast<color_rgb>(0xE8F0F4), static_cast<color_rgb>(0xDBECF4), true);
 					}
 
 					if(at.checked && (checks::none != at.check_style))
 					{
-						graph.rectangle(r, false, { 0xCD, 0xD3, 0xE6 });
+						graph.rectangle(r, false, static_cast<color_rgb>(0xCDD3E6));
 
 						::nana::color clr(0xE6, 0xEF, 0xF4);
 						graph.rectangle(nana::rectangle(r).pare_off(1), true, clr);
@@ -363,59 +363,58 @@ namespace nana
 				bool goto_next(bool forword)
 				{
 					state_.nullify_mouse = true;
-					if(menu_->items.size())
-					{
-						std::size_t index = state_.active;
+					if (menu_->items.empty())
+						return false;
 
-						bool end = false;
-						while(true)
+					auto pos = state_.active;
+					const auto lastpos = menu_->items.size() - 1;
+
+					bool end = false;
+					while(true)
+					{
+						if(forword)
 						{
-							if(forword)
+							if(pos == lastpos)
 							{
-								if(index == menu_->items.size() - 1)
+								if (end)
 								{
-									if(end == false)
-									{
-										end = true;
-										index = 0;
-									}
-									else
-									{
-										index = npos;
-										break;
-									}
+									pos = npos;
+									break;
 								}
-								else
-									++index;
+
+								end = true;
+								pos = 0;
 							}
 							else
-							{
-								if(index == 0 || index == npos)
-								{
-									if(end == false)
-									{
-										end = true;
-										index = menu_->items.size() - 1;
-									}
-									else
-										break;
-								}
-								else
-									--index;
-							}
-							if(menu_->items.at(index).flags.splitter == false)
-								break;
+								++pos;
 						}
-
-						if(index != npos && index != state_.active)
+						else
 						{
-							state_.active = index;
-							state_.sub_window = false;
-
-							draw();
-							return true;
+							if(pos == 0 || pos == npos)
+							{
+								if (end)
+									break;
+								
+								end = true;
+								pos = lastpos;
+							}
+							else
+								--pos;
 						}
+
+						if(! menu_->items.at(pos).flags.splitter)
+							break;
 					}
+
+					if(pos != npos && pos != state_.active)
+					{
+						state_.active = pos;
+						state_.sub_window = false;
+
+						draw();
+						return true;
+					}
+					
 					return false;
 				}
 
@@ -486,30 +485,32 @@ namespace nana
 					std::size_t index = 0;
 					for(auto & m : menu_->items)
 					{
-						if(std::tolower(m.hotkey) == key)
+						if (std::tolower(m.hotkey) != key)
 						{
-							if(!m.flags.splitter)
-							{
-								if(m.sub_menu)
-								{
-									state_.active = index;
-									state_.active_timestamp = nana::system::timestamp();
-
-									draw();
-									API::update_window(*widget_);
-									return 2;
-								}
-								else if(m.flags.enabled)
-								{
-									std::move(fn_close_tree_)();
-									item_proxy ip(index, m);
-									m.functor.operator()(ip);
-									return 1;
-								}
-							}
-							break;
+							++index;
+							continue;
 						}
-						++index;
+
+						if(!m.flags.splitter)
+						{
+							if(m.sub_menu)
+							{
+								state_.active = index;
+								state_.active_timestamp = nana::system::timestamp();
+
+								draw();
+								API::update_window(*widget_);
+								return 2;
+							}
+							else if(m.flags.enabled)
+							{
+								std::move(fn_close_tree_)();
+								item_proxy ip(index, m);
+								m.functor.operator()(ip);
+								return 1;
+							}
+						}
+						break;
 					}
 					return 0;
 				}
@@ -529,53 +530,53 @@ namespace nana
 
 					int text_top_off = (item_h_px - graph_->text_extent_size(STR("jh({[")).height) / 2;
 
-					std::size_t index = 0;
+					std::size_t pos = 0;
 					for(auto & m : menu_->items)
 					{
-						if(false == m.flags.splitter)
-						{
-							renderer_interface::attr attr = _m_make_renderer_attr(index == state_.active, m);
-							//Draw item background
-							renderer->item(*graph_, item_r, attr);
-
-							//Draw text, the text is transformed from orignal for hotkey character
-							nana::char_t hotkey;
-							nana::string::size_type hotkey_pos;
-							nana::string text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
-
-							if(m.image.empty() == false)
-								renderer->item_image(*graph_, nana::point(item_r.x + 5, item_r.y + (item_h_px - m.image.size().height) / 2), m.image);
-
-							renderer->item_text(*graph_, nana::point(item_r.x + 40, item_r.y + text_top_off), text, strpixels, attr);
-
-							if(hotkey)
-							{
-								m.hotkey = hotkey;
-								if(m.flags.enabled)
-								{
-									unsigned off_w = (hotkey_pos ? graph_->text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
-									nana::size hotkey_size = graph_->text_extent_size(text.c_str() + hotkey_pos, 1);
-									int x = item_r.x + 40 + off_w;
-									int y = item_r.y + text_top_off + hotkey_size.height;
-
-									graph_->set_color(colors::black);
-									graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y });
-								}
-							}
-
-							if(m.sub_menu)
-								renderer->sub_arrow(*graph_, nana::point(graph_->width() - 20, item_r.y), item_h_px, attr);
-
-							item_r.y += item_r.height + 1;
-						}
-						else
+						if(m.flags.splitter)
 						{
 							graph_->set_color(colors::gray_border);
 							graph_->line({ item_r.x + 40, item_r.y }, { static_cast<int>(graph_->width()) - 1, item_r.y });
 							item_r.y += 2;
+							++pos;
+							continue;
+						}
+						
+						renderer_interface::attr attr = _m_make_renderer_attr(pos == state_.active, m);
+						//Draw item background
+						renderer->item(*graph_, item_r, attr);
+
+						//Draw text, the text is transformed from orignal for hotkey character
+						nana::char_t hotkey;
+						nana::string::size_type hotkey_pos;
+						nana::string text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
+
+						if(m.image.empty() == false)
+							renderer->item_image(*graph_, nana::point(item_r.x + 5, item_r.y + (item_h_px - m.image.size().height) / 2), m.image);
+
+						renderer->item_text(*graph_, nana::point(item_r.x + 40, item_r.y + text_top_off), text, strpixels, attr);
+
+						if(hotkey)
+						{
+							m.hotkey = hotkey;
+							if(m.flags.enabled)
+							{
+								unsigned off_w = (hotkey_pos ? graph_->text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
+								nana::size hotkey_size = graph_->text_extent_size(text.c_str() + hotkey_pos, 1);
+								int x = item_r.x + 40 + off_w;
+								int y = item_r.y + text_top_off + hotkey_size.height;
+
+								graph_->set_color(colors::black);
+								graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y });
+							}
 						}
 
-						++index;
+						if(m.sub_menu)
+							renderer->sub_arrow(*graph_, nana::point(graph_->width() - 20, item_r.y), item_h_px, attr);
+
+						item_r.y += item_r.height + 1;
+
+						++pos;
 					}
 				}
 			private:
@@ -592,9 +593,9 @@ namespace nana
 				std::size_t _m_get_index_by_pos(int x, int y) const
 				{
 					if(	(x < static_cast<int>(detail_.border.x)) ||
-						(x > static_cast<int>(graph_->width() - detail_.border.x)) ||
+						(x > static_cast<int>(graph_->width()) - static_cast<int>(detail_.border.x)) ||
 						(y < static_cast<int>(detail_.border.y)) ||
-						(y > static_cast<int>(graph_->height() - detail_.border.y)))
+						(y > static_cast<int>(graph_->height()) - static_cast<int>(detail_.border.y)))
 						return npos;
 
 					int pos = detail_.border.y;
@@ -662,11 +663,11 @@ namespace nana
 					auto scr_area = screen().from_point(detail_.monitor_pos).workarea();
 
 					if(pos.x + static_cast<int>(size.width) > scr_area.right())
-						pos.x = static_cast<int>(scr_area.x + scr_area.width - size.width);
+						pos.x = scr_area.right() - static_cast<int>(size.width);
 					if(pos.x < scr_area.x) pos.x = scr_area.x;
 
 					if(pos.y + static_cast<int>(size.height) > scr_area.bottom())
-						pos.y = static_cast<int>(scr_area.y + scr_area.height - size.height);
+						pos.y = scr_area.bottom() - static_cast<int>(size.height);
 					if(pos.y < scr_area.y) pos.y = scr_area.y;
 
 					auto owner = API::get_owner_window(*widget_);
@@ -705,7 +706,7 @@ namespace nana
 
 				menu_window(window wd, const point& pos, renderer_interface * rdptr)
 					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>()),
-						want_focus_(nullptr == wd),
+						want_focus_(nullptr == wd || (API::focus_window() != wd)),
 						event_focus_(nullptr)
 				{
 					caption(STR("nana menu window"));
@@ -729,11 +730,6 @@ namespace nana
 						API::activate_window(this->parent());
 						API::take_active(this->handle(), false, nullptr);
 					}
-					else
-					{
-						activate();
-						focus();
-					}
 
 					if(submenu_.parent == nullptr)
 					{
@@ -753,14 +749,6 @@ namespace nana
 						pick();
 					});
 
-					if (want_focus_)
-					{
-						event_focus_ = events().focus.connect_unignorable([this](const arg_focus& arg)
-						{
-							_m_focus_changed(arg);
-						});
-					}
-
 					timer_.interval(100);
 					timer_.elapse([this]{
 						this->_m_check_repeatly();
@@ -768,6 +756,30 @@ namespace nana
 					timer_.start();
 
 					show();
+					
+					if (want_focus_)
+					{
+						event_focus_ = events().focus.connect_unignorable([this](const arg_focus& arg)
+						{
+							//when the focus of the menu window is losing, close the menu.
+							//But here is not every menu window may have focus event installed,
+							//It is only installed when the owner of window is the desktop window.
+
+							if (false == arg.getting && (arg.receiver != API::root(*this)))
+							{
+								for (auto child = submenu_.child; child; child = child->submenu_.child)
+								{
+									if (API::root(child->handle()) == arg.receiver)
+										return;
+								}
+
+								_m_close_all();
+							}
+						});
+
+						focus();
+						activate();
+					}
 				}
 
 				void goto_next(bool forward)
@@ -783,37 +795,31 @@ namespace nana
 						API::update_window(object->handle());
 				}
 
-				bool goto_submenu()
+				bool submenu(bool enter)
 				{
 					menu_window * object = this;
-					while(object->submenu_.child)
+					while (object->submenu_.child)
 						object = object->submenu_.child;
 
 					state_.auto_popup_submenu = false;
+
+					if (enter)
+					{
+						if (object->submenu_.parent)
+						{
+							auto & sub = object->submenu_.parent->submenu_;
+							sub.child = nullptr;
+							sub.object = nullptr;
+
+							object->close();
+							return true;
+						}
+						return false;
+					}
 
 					nana::point pos;
 					menu_type * sbm = object->get_drawer_trigger().retrive_sub_menu(pos, 0);
 					return object->_m_show_submenu(sbm, pos, true);
-				}
-
-				bool exit_submenu()
-				{
-					menu_window * object =this;
-					while(object->submenu_.child)
-						object = object->submenu_.child;
-
-					state_.auto_popup_submenu = false;
-
-					if (object->submenu_.parent)
-					{
-						auto & sub = object->submenu_.parent->submenu_;
-						sub.child = nullptr;
-						sub.object = nullptr;
-
-						object->close();
-						return true;
-					}
-					return false;
 				}
 
 				int send_shortkey(nana::char_t key)
@@ -832,62 +838,52 @@ namespace nana
 						object = object->submenu_.child;
 
 					auto active = object->get_drawer_trigger().active();
-					if (active != npos)
+					auto * menu = object->get_drawer_trigger().data();
+					if ((npos == active) || !menu)
+						return;
+					
+					menu_item_type & item = menu->items.at(active);
+					if (item.flags.splitter == false && item.sub_menu == nullptr)
 					{
-						auto * menu = object->get_drawer_trigger().data();
-						if (menu)
+						//There is a situation that menu will not call functor if the item style is check_option
+						//and it is checked before clicking.
+						bool call_functor = true;
+
+						if (checks::highlight == item.style)
 						{
-							menu_item_type & item = menu->items.at(active);
-							if (item.flags.splitter == false && item.sub_menu == nullptr)
+							item.flags.checked = !item.flags.checked;
+						}
+						else if (checks::option == item.style)
+						{
+							//Forward Looks for a splitter
+							auto pos = active;
+							while (pos)
 							{
-								//There is a situation that menu will not call functor if the item style is check_option
-								//and it is checked before clicking.
-								bool call_functor = true;
-
-								if (checks::highlight == item.style)
-								{
-									item.flags.checked = !item.flags.checked;
-								}
-								else if (checks::option == item.style)
-								{
-									if (active > 0)
-									{
-										//clear the checked state in front of active if it is check_option.
-										auto i = active;
-										do
-										{
-											--i;
-											menu_item_type & im = menu->items.at(i);
-											if (im.flags.splitter) break;
-
-											if (checks::option == im.style && im.flags.checked)
-												im.flags.checked = false;
-										} while (i);
-									}
-
-									for (auto i = active + 1; i < menu->items.size(); ++i)
-									{
-										menu_item_type & im = menu->items.at(i);
-										if (im.flags.splitter) break;
-
-										if ((checks::option == im.style) && im.flags.checked)
-											im.flags.checked = false;
-									}
-
-									item.flags.checked = true;
-								}
-
-								this->_m_close_all();	//means deleting this;
-								//The deleting operation has moved here, because item.functor.operator()(ip)
-								//may create a window, which make a killing focus for menu window, if so the close_all
-								//operation preformences after item.functor.operator()(ip), that would be deleting this object twice!
-
-								if (call_functor && item.flags.enabled && item.functor)
-								{
-									item_type::item_proxy ip(active, item);
-									item.functor.operator()(ip);
-								}
+								if (menu->items.at(--pos).flags.splitter)
+									break;
 							}
+
+							for (; pos < menu->items.size(); ++pos)
+							{
+								menu_item_type & im = menu->items.at(pos);
+								if (im.flags.splitter) break;
+
+								if ((checks::option == im.style) && im.flags.checked)
+									im.flags.checked = false;
+							}
+
+							item.flags.checked = true;
+						}
+
+						this->_m_close_all();	//means deleting this;
+						//The deleting operation has moved here, because item.functor.operator()(ip)
+						//may create a window, which make a killing focus for menu window, if so the close_all
+						//operation preformences after item.functor.operator()(ip), that would be deleting this object twice!
+
+						if (call_functor && item.flags.enabled && item.functor)
+						{
+							item_type::item_proxy ip(active, item);
+							item.functor.operator()(ip);
 						}
 					}
 				}
@@ -943,50 +939,29 @@ namespace nana
 					}
 				}
 
-				//when the focus of the menu window is losing, close the menu.
-				//But here is not every menu window may have focus event installed,
-				//It is only installed when the owner of window is the desktop window.
-				void _m_focus_changed(const arg_focus& arg)
-				{
-					if (false == arg.getting)
-					{
-						for (auto child = submenu_.child; child; child = child->submenu_.child)
-						{
-							if (API::root(child->handle()) == arg.receiver)
-								return;
-						}
-
-						_m_close_all();
-					}
-				}
-
 				void _m_key_down(const arg_keyboard& arg)
 				{
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
-						this->goto_next(false);
-						break;
 					case keyboard::os_arrow_down:
-						this->goto_next(true);
+						this->goto_next(keyboard::os_arrow_down == arg.key);
 						break;
 					case keyboard::os_arrow_left:
-						this->exit_submenu();
-						break;
 					case keyboard::os_arrow_right:
-						this->goto_submenu();
+						this->submenu(keyboard::os_arrow_right == arg.key);
 						break;
 					case keyboard::enter:
 						this->pick();
 						break;
 					default:
-						if(2 != send_shortkey(arg.key))
+						if (2 != send_shortkey(arg.key))
 						{
-							if(API::empty_window(*this) == false)
+							if (API::empty_window(*this) == false)
 								close();
 						}
 						else
-							goto_submenu();
+							this->submenu(true);
 					}
 				}
 
@@ -1165,7 +1140,7 @@ namespace nana
 		{
 			if(impl_->mbuilder.set_sub_menu(index, menu_obj.impl_->mbuilder.data()))
 			{
-				implement::info& minfo = impl_->sub_container[index];
+				auto& minfo = impl_->sub_container[index];
 				minfo.handle = &menu_obj;
 				minfo.kill = false;
 				return true;
@@ -1184,9 +1159,10 @@ namespace nana
 		menu *menu::create_sub_menu(std::size_t index)
 		{
 			menu * sub = new menu;
-			if(link(index, *sub))
+
+			if (this->link(index, *sub))
 			{
-				implement::info& minfo = impl_->sub_container[index];
+				auto& minfo = impl_->sub_container[index];
 				minfo.handle = sub;
 				minfo.kill = true;
 				return sub;
@@ -1255,12 +1231,12 @@ namespace nana
 
 		bool menu::goto_submen()
 		{
-			return (impl_->uiobj ? impl_->uiobj->goto_submenu() : false);
+			return (impl_->uiobj ? impl_->uiobj->submenu(true) : false);
 		}
 
 		bool menu::exit_submenu()
 		{
-			return (impl_->uiobj ? impl_->uiobj->exit_submenu() : false);
+			return (impl_->uiobj ? impl_->uiobj->submenu(false) : false);
 		}
 
 		std::size_t menu::size() const
@@ -1311,21 +1287,17 @@ namespace nana
 			impl_->mbuilder.renderer(rd);
 		}
 
-		void menu::_m_destroy_menu_window()
-		{
-			impl_->uiobj = nullptr;
-			if(impl_->destroy_answer)
-				impl_->destroy_answer();
-		}
-
 		void menu::_m_popup(window wd, int x, int y, bool called_by_menubar)
 		{
 			if (impl_->mbuilder.data().items.size())
 			{
 				close();
+
 				impl_->uiobj = &(form_loader<drawerbase::menu::menu_window, false>()(wd, point(x, y), &(*impl_->mbuilder.renderer())));
 				impl_->uiobj->events().destroy.connect_unignorable([this]{
-					_m_destroy_menu_window();
+					impl_->uiobj = nullptr;
+					if (impl_->destroy_answer)
+						impl_->destroy_answer();
 				});
 				impl_->uiobj->popup(impl_->mbuilder.data(), called_by_menubar);
 			}
