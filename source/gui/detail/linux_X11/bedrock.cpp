@@ -583,7 +583,7 @@ namespace detail
 					delete msg.u.mouse_drop.files;
 					arg.pos.x = msg.u.mouse_drop.x - msgwd->pos_root.x;
 					arg.pos.y = msg.u.mouse_drop.y - msgwd->pos_root.y;
-					msgwd->together.attached_events->mouse_dropfiles.emit(arg);
+					msgwd->together.events_ptr->mouse_dropfiles.emit(arg);
 					brock.wd_manager.do_lazy_refresh(msgwd, false);
 				}
 				break;
@@ -766,7 +766,7 @@ namespace detail
 					nana::point mspos{xevent.xbutton.x, xevent.xbutton.y};
 					while(msgwnd)
 					{
-						if(msgwnd->together.attached_events->mouse_wheel.length() != 0)
+						if(msgwnd->together.events_ptr->mouse_wheel.length() != 0)
 						{
 							mspos -= msgwnd->pos_root;
 							arg_wheel arg;
@@ -810,27 +810,29 @@ namespace detail
 						{
 							if(hit)
 								msgwnd->flags.action = mouse_action::over;
+							
+							auto retain = msgwnd->together.events_ptr;
+							auto evt_ptr = retain.get();
 
-							auto events_ptr = msgwnd->together.events_ptr;
 							arg.evt_code = event_code::mouse_up;
 							emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
 							if(fire_click)
 							{
 								arg.evt_code = event_code::click;
-								msgwnd->together.attached_events->click.emit(arg);
+								evt_ptr->click.emit(arg);
 							}
 
 							if (brock.wd_manager.available(msgwnd))
 							{
 								arg.evt_code = event_code::mouse_up;
-								msgwnd->together.attached_events->mouse_up.emit(arg);
+								evt_ptr->mouse_up.emit(arg);
 							}
 						}
 						else if(fire_click)
 						{
 							arg.evt_code = event_code::click;
-							msgwnd->together.attached_events->click.emit(arg);
+							msgwnd->together.events_ptr->click.emit(arg);
 						}
 						brock.wd_manager.do_lazy_refresh(msgwnd, false);
 					}
@@ -1103,7 +1105,7 @@ namespace detail
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 									brock.get_key_state(arg);
 
-									msgwnd->together.attached_events->key_char.emit(arg);
+									msgwnd->together.events_ptr->key_char.emit(arg);
 									if(arg.ignore == false && brock.wd_manager.available(msgwnd))
 										brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
 								}

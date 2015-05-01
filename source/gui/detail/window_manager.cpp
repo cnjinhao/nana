@@ -21,7 +21,6 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
 #include <stdexcept>
-#include <algorithm>
 
 namespace nana
 {
@@ -192,7 +191,7 @@ namespace detail
 			switch(evtid)
 			{
 			case event_code::mouse_drop:
-				wd->flags.dropable = (is_make || (0 != wd->together.attached_events->mouse_dropfiles.length()));
+				wd->flags.dropable = (is_make || (0 != wd->together.events_ptr->mouse_dropfiles.length()));
 				break;
 			default:
 				break;
@@ -985,11 +984,15 @@ namespace detail
 			}
 			else
 			{
-				auto i = std::find_if(attr_cap.begin(), attr_cap.end(),
-					[wd](const std::pair<core_window_t*, bool> & x){ return (x.first == wd);});
+				for (auto i = attr_cap.begin(), end = attr_cap.end(); i != end; ++i)
+				{
+					if (i->first == wd)
+					{
+						attr_cap.erase(i);
+						break;
+					}
+				}
 
-				if(i != attr_cap.end())
-					attr_cap.erase(i);
 				return attr_.capture.window;
 			}
 			return wd;

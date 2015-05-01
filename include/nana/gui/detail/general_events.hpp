@@ -19,7 +19,6 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include <algorithm>
 
 namespace nana
 {
@@ -63,14 +62,14 @@ namespace nana
 	class basic_event : public detail::event_interface
 	{
 	public:
-		typedef const typename std::remove_reference<Arg>::type & arg_reference;
+		using arg_reference = const typename std::remove_reference<Arg>::type &;
 	private:
 		struct docker
 			: public detail::docker_interface
 		{
 			basic_event * const event_ptr;
 			std::function<void(arg_reference)> invoke;
-			bool flag_entered{ false };
+
 			bool flag_deleted{ false };
 			bool unignorable{false};
 
@@ -91,6 +90,36 @@ namespace nana
 			{
 				return event_ptr;
 			}
+		};
+
+		//class emit_counter is a RAII helper for emitting count
+		//It is used for avoiding a try{}catch block which is required for some finial works when
+		//event handlers throw exceptions.
+		class emit_counter
+		{
+		public:
+			emit_counter(basic_event* evt)
+				: evt_{evt}
+			{
+				++evt->emitting_count_;
+			}
+
+			~emit_counter()
+			{
+				if ((0 == --evt_->emitting_count_) && evt_->deleted_flags_)
+				{
+					evt_->deleted_flags_ = false;
+					for (auto i = evt_->dockers_->begin(); i != evt_->dockers_->end();)
+					{
+						if (i->get()->flag_deleted)
+							i = evt_->dockers_->erase(i);
+						else
+							++i;
+					}
+				}
+			}
+		private:
+			basic_event * const evt_;
 		};
 	public:
         /// It will get called firstly, because it is set at the beginning of the chain.
@@ -164,54 +193,37 @@ namespace nana
 			return (nullptr == dockers_ ? 0 : dockers_->size());
 		}
 
-		void emit(arg_reference& arg) const
+		void emit(arg_reference& arg)
 		{
 			internal_scope_guard lock;
 			if (nullptr == dockers_)
 				return;
 
-			//Make a copy to allow create/destroy a new event handler when the call of emit in an event.
-			const std::size_t fixed_size = 10;
-			docker* fixed_buffer[fixed_size];
-			docker** transitory = fixed_buffer;
+			emit_counter ec(this);
 
-			std::unique_ptr<docker*[]> variable_buffer;
 			auto& dockers = *dockers_;
-			if (dockers.size() > fixed_size)
-			{
-				variable_buffer.reset(new docker*[dockers.size()]);
-				transitory = variable_buffer.get();
-			}
+			const auto dockers_len = dockers.size();
 
-			auto output = transitory;
-			for (auto & dck : dockers)
+			//The dockers may resize when a new event handler is created by a calling handler.
+			//Traverses with position can avaid crash error which caused by a iterator which becomes invalid.
+			for (std::size_t pos = 0; pos < dockers_len; ++pos)
 			{
-				(*output++) = dck.get();
-			}
-
-			bool stop_propagation = false;
-			for (; transitory != output; ++transitory)
-			{
-				auto docker_ptr = *transitory;
-				if (stop_propagation && !docker_ptr->unignorable)
+				auto docker_ptr = dockers[pos].get();
+				if (docker_ptr->flag_deleted)
 					continue;
 
-				auto i = std::find_if(dockers.begin(), dockers.end(), [docker_ptr](std::unique_ptr<docker>& p){
-					return (docker_ptr == p.get());
-				});
-
-				if (i != dockers.end())
+				docker_ptr->invoke(arg);
+				if (arg.propagation_stopped())
 				{
-					docker_ptr->flag_entered = true;
-					docker_ptr->invoke(arg);
+					for (++pos; pos < dockers_len; ++pos)
+					{
+						auto docker_ptr = dockers[pos].get();
+						if (!docker_ptr->unignorable || docker_ptr->flag_deleted)
+							continue;
 
-					if (arg.propagation_stopped())
-						stop_propagation = true;
-					
-					docker_ptr->flag_entered = false;
-
-					if (docker_ptr->flag_deleted)
-						dockers.erase(i);
+						docker_ptr->invoke(arg);
+					}
+					break;
 				}
 			}
 		}
@@ -228,17 +240,20 @@ namespace nana
 			internal_scope_guard lock;
 			if (dockers_)
 			{
-				auto i = std::find_if(dockers_->begin(), dockers_->end(), [evt](const std::unique_ptr<docker>& sp)
+				for (auto i = dockers_->begin(), end = dockers_->end(); i != end; ++i)
 				{
-					return (reinterpret_cast<detail::docker_interface*>(evt) == sp.get());
-				});
-
-				if (i != dockers_->end())
-				{
-					if (i->get()->flag_entered)
-						i->get()->flag_deleted = true;
-					else
-						dockers_->erase(i);
+					if (reinterpret_cast<detail::docker_interface*>(evt) == i->get())
+					{
+						//Checks whether this event is working now.
+						if (emitting_count_ > 1)
+						{
+							i->get()->flag_deleted = true;
+							deleted_flags_ = true;
+						}
+						else
+							dockers_->erase(i);
+						break;
+					}
 				}
 			}
 		}
@@ -399,6 +414,8 @@ namespace nana
 			}
 		};
 	private:
+		unsigned emitting_count_{ 0 };
+		bool deleted_flags_{ false };
 		std::unique_ptr<std::vector<std::unique_ptr<docker>>> dockers_;
 	};
 
