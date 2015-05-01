@@ -16,7 +16,6 @@
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
-#include <algorithm>
 
 namespace nana
 {
@@ -54,7 +53,7 @@ namespace API
 			if (!restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
 				return nullptr;
 
-			return reinterpret_cast<restrict::core_window_t*>(wd)->together.attached_events;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->together.events_ptr.get();
 		}
 	}//end namespace detail
 
@@ -265,8 +264,20 @@ namespace API
 				if((wd->thread_id == tid) && (wd->root != root))
 				{
 					root = wd->root;
-					if(roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
+					for (auto i = roots.cbegin(); i != roots.cend(); ++i)
+					{
+						if (*i == root)
+						{
+							root = nullptr;
+							break;
+						}
+					}
+
+					if (!root)
+					{
+						root = wd->root;
 						roots.push_back(root);
+					}
 				}
 			}
 
