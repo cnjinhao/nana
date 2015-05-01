@@ -17,6 +17,7 @@
 #include "widget.hpp"
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
+//#include <nana/paint/graphics.hpp>
 #include <functional>
 #include <initializer_list>
 
@@ -28,7 +29,7 @@ namespace nana
 	{
 		namespace listbox
 		{
-			typedef std::size_t size_type;
+			using size_type = std::size_t ;
 
 			struct cell
 			{
@@ -36,7 +37,7 @@ namespace nana
 				{
 					::nana::color bgcolor;
 					::nana::color fgcolor;
-
+                    /// ::nana::paint::font font;  \todo 
 					format() = default;
 					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 				};
@@ -195,6 +196,7 @@ namespace nana
 				void dbl_click(graph_reference, const arg_mouse&)	override;
 				void resized(graph_reference, const arg_resized&)		override;
 				void key_press(graph_reference, const arg_keyboard&)	override;
+				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
 				essence_t * essence_;
 				drawer_header_impl *drawer_header_;
@@ -429,7 +431,19 @@ namespace nana
 				category_t*	cat_{nullptr};
 				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
 			};
-		}
+		
+            struct export_options
+            {
+               nana::string sep = nana::string {STR("\t" )}, 
+                            endl= nana::string {STR("\n")} ; 
+               bool only_selected_items{true}, 
+                    only_checked_items {false},
+                    only_visible_columns{true};
+
+               using columns_indexs = std::vector<size_type>;
+               columns_indexs columns_order;
+            };
+        }
 	}//end namespace drawerbase
 
 	struct arg_listbox
@@ -482,7 +496,9 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		using selection = drawerbase::listbox::selection;    ///<A container type for items.
 		using iresolver = drawerbase::listbox::iresolver;
 		using oresolver = drawerbase::listbox::oresolver;
-		using cell = drawerbase::listbox::cell;
+		using cell      = drawerbase::listbox::cell;
+		using export_options= drawerbase::listbox::export_options;
+		using columns_indexs= drawerbase::listbox::size_type;
 	public:
 		listbox() = default;
 		listbox(window, bool visible);
@@ -498,8 +514,11 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
 		cat_proxy insert(cat_proxy, nana::string);
 		cat_proxy at(size_type pos) const;
+
+        /// add categories in order when use a key?
 		listbox& ordered_categories(bool);
 
+        /// return a proxy to tha cat with the key or create a new one in the right order
 		template<typename Key>
 		cat_proxy operator[](const Key & ck)
 		{
@@ -580,6 +599,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
+        export_options& def_export_options();
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
