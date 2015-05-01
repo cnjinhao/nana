@@ -25,7 +25,6 @@
 
 #include <map>
 #include <iterator>
-#include <algorithm>
 
 namespace nana
 {
@@ -260,9 +259,14 @@ namespace nana
 				{
 					if(cond_type::is_queue(handle))
 					{
-						auto i = std::find(queue.begin(), queue.end(), handle);
-						if(i != queue.end())
-							queue.erase(i);
+						for (auto i = queue.begin(); i != queue.end(); ++i)
+						{
+							if (handle == *i)
+							{
+								queue.erase(i);
+								break;
+							}
+						}
 					}
 				}
 			};

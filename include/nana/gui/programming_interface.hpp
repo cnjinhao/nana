@@ -239,7 +239,7 @@ namespace API
 	cursor window_cursor(window);
 
 	void activate_window(window);
-	bool is_focus_window(window);
+	bool is_focus_ready(window);
 	window focus_window();
 	void focus_window(window);
 

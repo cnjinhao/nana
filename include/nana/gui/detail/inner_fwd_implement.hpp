@@ -1,7 +1,7 @@
 /*
  *	Implementations of Inner Forward Declaration
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,7 +19,6 @@
 #include "../../paint/graphics.hpp"
 
 #include <map>
-#include <algorithm>
 
 namespace nana{
 	namespace detail
@@ -62,12 +61,15 @@ namespace nana{
 			void umake(window wd)
 			{
 				if (wd == nullptr) return;
-				auto i = std::find_if(keybase_.begin(), keybase_.end(), [wd](const item_type& m){
-					return (m.handle == wd);
-				});
 
-				if (i != keybase_.end())
-					keybase_.erase(i);
+				for (auto i = keybase_.begin(), end = keybase_.end(); i != end; ++i)
+				{
+					if (i->handle == wd)
+					{
+						keybase_.erase(i);
+						break;
+					}
+				}
 			}
 
 			std::vector<unsigned long> keys(window wd) const

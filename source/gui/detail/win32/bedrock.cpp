@@ -663,6 +663,7 @@ namespace detail
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
 		case WM_PAINT:
+		case WM_SYSCOMMAND:
 		case WM_CLOSE:
 		case WM_MOUSEACTIVATE:
 		case WM_GETMINMAXINFO:
@@ -851,7 +852,7 @@ namespace detail
 			case WM_WINDOWPOSCHANGED:
 				if ((reinterpret_cast<WINDOWPOS*>(lParam)->flags & SWP_SHOWWINDOW) && (!msgwnd->visible))
 					brock.event_expose(msgwnd, true);
-				else if((reinterpret_cast<WINDOWPOS*>(lParam)->flags & SWP_HIDEWINDOW) && msgwnd->visible)
+				else if ((reinterpret_cast<WINDOWPOS*>(lParam)->flags & SWP_HIDEWINDOW) && msgwnd->visible)
 					brock.event_expose(msgwnd, false);
 
 				def_window_proc = true;
@@ -871,6 +872,7 @@ namespace detail
 					if (!brock.emit(event_code::focus, focus, arg, true, &context))
 						brock.wd_manager.set_focus(msgwnd, true);
 				}
+				def_window_proc = true;
 				break;
 			case WM_KILLFOCUS:
 				if(msgwnd->other.attribute.root->focus)
@@ -891,10 +893,14 @@ namespace detail
 				//focus_changed means that during an event procedure if the focus is changed
 				if(brock.wd_manager.available(msgwnd))
 					msgwnd->root_widget->other.attribute.root->context.focus_changed = true;
+
+				def_window_proc = true;
 				break;
 			case WM_MOUSEACTIVATE:
 				if(msgwnd->flags.take_active == false)
 					return MA_NOACTIVATE;
+
+				def_window_proc = true;
 				break;
 			case WM_LBUTTONDBLCLK: case WM_MBUTTONDBLCLK: case WM_RBUTTONDBLCLK:
 				pressed_wd = nullptr;
@@ -1011,19 +1017,19 @@ namespace detail
 						if (fire_click)
 						{
 							arg.evt_code = event_code::click;
-							msgwnd->together.attached_events->click.emit(arg);
+							retain->click.emit(arg);
 						}
 
 						if (brock.wd_manager.available(msgwnd))
 						{
 							arg.evt_code = event_code::mouse_up;
-							msgwnd->together.attached_events->mouse_up.emit(arg);
+							retain->mouse_up.emit(arg);
 						}
 					}
 					else if (fire_click)
 					{
 						arg.evt_code = event_code::click;
-						msgwnd->together.attached_events->click.emit(arg);
+						retain->click.emit(arg);
 					}
 					brock.wd_manager.do_lazy_refresh(msgwnd, false);
 				}
@@ -1114,7 +1120,7 @@ namespace detail
 						auto evt_wd = scrolled_wd;
 						while (evt_wd)
 						{
-							if (evt_wd->together.attached_events->mouse_wheel.length() != 0)
+							if (evt_wd->together.events_ptr->mouse_wheel.length() != 0)
 							{
 								def_window_proc = false;
 								nana::point mspos{ scr_pos.x, scr_pos.y };
@@ -1189,7 +1195,7 @@ namespace detail
 							brock.wd_manager.calc_window_point(msgwnd, dropfiles.pos);
 							dropfiles.window_handle = reinterpret_cast<window>(msgwnd);
 
-							msgwnd->together.attached_events->mouse_dropfiles.emit(dropfiles);
+							msgwnd->together.events_ptr->mouse_dropfiles.emit(dropfiles);
 							brock.wd_manager.do_lazy_refresh(msgwnd, false);
 						}
 					}
@@ -1419,7 +1425,7 @@ namespace detail
 						brock.get_key_state(arg);
 						arg.ignore = false;
 
-						msgwnd->together.attached_events->key_char.emit(arg);
+						msgwnd->together.events_ptr->key_char.emit(arg);
 						if ((false == arg.ignore) && brock.wd_manager.available(msgwnd))
 							brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
 
@@ -1448,6 +1454,14 @@ namespace detail
 					brock.set_keyboard_shortkey(false);
 
 				brock.delay_restore(2);	//Restores while key release
+				break;
+			case WM_SYSCOMMAND:
+				if (SC_TASKLIST == wParam)
+				{
+					int debug = 0;
+					//brock.close_menu_if_focus_other_window()
+				}
+				def_window_proc = true;
 				break;
 			case WM_CLOSE:
 			{
@@ -1537,7 +1551,8 @@ namespace detail
 		impl_->menu.taken_window = wd;
 
 		//assigning of a nullptr taken window is to restore the focus of pre taken
-		if ((!wd) && pre)
+		//don't restore the focus if pre is a menu.
+		if ((!wd) && pre && (pre->root != get_menu()))
 		{
 			internal_scope_guard lock;
 			wd_manager.set_focus(pre, false);
