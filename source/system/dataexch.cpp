@@ -12,6 +12,10 @@
 
 #include <nana/system/dataexch.hpp>
 #include <nana/traits.hpp>
+#include <nana/paint/graphics.hpp>
+#include <vector>
+#include <cassert>
+
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
@@ -31,6 +35,86 @@ namespace nana{ namespace system{
 		void dataexch::set(const nana::string& text)
 		{
 			_m_set(std::is_same<char, nana::char_t>::value ? format::text : format::unicode, text.c_str(), (text.length() + 1) * sizeof(nana::char_t));
+		}
+
+		bool dataexch::set(const nana::paint::graphics& g)
+		{
+#if defined(NANA_WINDOWS)
+			size sz = g.size();
+			paint::pixel_buffer pbuffer;
+			rectangle r;
+			r.x = 0;
+			r.y = 0;
+			r.width = sz.width;
+			r.height = sz.height;
+			pbuffer.attach(g.handle(), r);
+			size_t bytes_per_line = pbuffer.bytes_per_line();
+			size_t bitmap_bytes = bytes_per_line * r.height;
+
+			struct {
+				BITMAPINFOHEADER bmiHeader;
+				RGBQUAD bmiColors[256];
+			} bmi = {0};
+			bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+			HDC hDC = ::GetDC(NULL);
+			if (::GetDIBits(hDC, (HBITMAP)g.pixmap(), 0, 1, NULL, (BITMAPINFO *)&bmi, DIB_RGB_COLORS) == 0) {
+				assert(false);
+				int err = ::GetLastError();
+				::ReleaseDC(NULL, hDC);
+				return false;
+			}
+			if (!::ReleaseDC(NULL, hDC)) {
+				return false;
+			}
+
+			size_t header_size = sizeof(bmi.bmiHeader);
+
+			// Bitmaps are huge, so to avoid unnegligible extra copy, this routine does not use private _m_set method.
+			HGLOBAL h_gmem = ::GlobalAlloc(GHND | GMEM_SHARE, header_size + bitmap_bytes);
+			void * gmem = ::GlobalLock(h_gmem);
+			if (!gmem) {
+				assert(false);
+				goto Label_GlobalFree;
+			}
+			char* p = (char*)gmem;
+			// Fix BITMAPINFOHEADER obtained from GetDIBits WinAPI
+			bmi.bmiHeader.biCompression = BI_RGB;
+			bmi.bmiHeader.biHeight = ::abs(bmi.bmiHeader.biHeight);
+			memcpy(p, &bmi, header_size);
+			p += header_size;
+			// many programs do not support bottom-up DIB, so reversing row order is needed.
+			for (int y=0; y<bmi.bmiHeader.biHeight; ++y) {
+				memcpy(p, pbuffer.raw_ptr(bmi.bmiHeader.biHeight - 1 - y), bytes_per_line);
+				p += bytes_per_line;
+			}
+			if (!::GlobalUnlock(h_gmem) && GetLastError() != NO_ERROR) {
+				assert(false);
+				goto Label_GlobalFree;
+			}
+			if (!::OpenClipboard(::GetFocus())) {
+				goto Label_GlobalFree;
+			}
+			if (!::EmptyClipboard()) {
+				goto Label_GlobalFree;
+			}
+			if (!::SetClipboardData(CF_DIB, h_gmem)) {
+				goto Label_GlobalFree;
+			}
+			if (!::CloseClipboard()) {
+				// really?
+				return false;
+			}
+			return true;
+
+		Label_GlobalFree:
+			::GlobalFree(h_gmem);
+			return false;
+
+//#elif defined(NANA_X11)
+#else
+			throw "not implemented yet.";
+			return false;
+#endif
 		}
 
 		void dataexch::get(nana::string& str)
@@ -78,8 +162,8 @@ namespace nana{ namespace system{
 					case format::unicode:	type = CF_UNICODETEXT;	break;
 					case format::pixmap:	type = CF_BITMAP;		break;
 					}
-					::SetClipboardData(type, g);
-					res = true;
+					HANDLE h = ::SetClipboardData(type, g);
+					res = (h != NULL);
 				}
 				::CloseClipboard();
 			}

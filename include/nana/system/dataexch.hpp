@@ -14,7 +14,13 @@
 #define NANA_SYSTEM_DATAEXCH_HPP
 #include <nana/basic_types.hpp>
 
-namespace nana{ namespace system{
+namespace nana{
+
+namespace paint{
+	class graphics;
+}
+
+namespace system{
             /// a data exchange mechanism through Windows Clipboard, X11 Selection.
 	class dataexch
 	{
@@ -26,6 +32,7 @@ namespace nana{ namespace system{
 
 		void set(const nana::char_t* text);
 		void set(const nana::string& text);
+		bool set(const nana::paint::graphics& g);
 		void get(nana::string& str);
 	private:
 		bool _m_set(unsigned type, const void* buf, std::size_t size);
