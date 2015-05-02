@@ -347,6 +347,7 @@ namespace nana
 				flags.destroying = false;
 				flags.borderless = false;
 				flags.make_bground_declared = false;
+				flags.ignore_menubar_focus = false;
 
 				visible = false;
 
@@ -355,7 +356,6 @@ namespace nana
 				effect.bground_fade_rate = 0;
 
 				together.caret = nullptr;
-				together.attached_events = nullptr;
 
 				extra_width = extra_height = 0;
 
@@ -368,16 +368,15 @@ namespace nana
 
 			bool basic_window::set_events(const std::shared_ptr<general_events>& p)
 			{
-				if (together.attached_events)
+				if (together.events_ptr)
 					return false;
 				together.events_ptr = p;
-				together.attached_events = p.get();
 				return true;
 			}
 
 			general_events * basic_window::get_events() const
 			{
-				return together.attached_events;
+				return together.events_ptr.get();
 			}
 		//end struct basic_window
 	}//end namespace detail

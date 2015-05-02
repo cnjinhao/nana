@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -841,7 +841,10 @@ namespace detail
 						if((attr.your_event_mask & addr->input_context_event_mask) == addr->input_context_event_mask)
 						{
 							XSetWindowAttributes new_attr;
-							new_attr.event_mask = (attr.your_event_mask & ~addr->input_context_event_mask);
+
+							//Don't remove the KeyPress and KeyRelease mask(0x3), otherwise the window will not receive
+							//Keyboard events after destroying caret 
+							new_attr.event_mask = (attr.your_event_mask & ~(addr->input_context_event_mask & (~0x3)));
 							::XChangeWindowAttributes(display_, reinterpret_cast<Window>(wd), CWEventMask, &new_attr);
 						}
 					}

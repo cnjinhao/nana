@@ -22,10 +22,10 @@ namespace nana
 			virtual ~key_interface(){}
 
 			virtual bool same_type(const key_interface*) const = 0;
-			virtual bool compare(const key_interface*) const = 0;
+			virtual bool compare(const key_interface*) const = 0; ///< is this key less than right key? [call it less(rk), less_than(rk) or compare_less(rk)?: if (lk.less_than(rk )) ]
 		};	//end class key_interface
 
-		//Use less compare for equal compare
+		//Use less compare for equal compare [call it equal_by_less()?]
 		inline bool pred_equal_by_less(const key_interface * left, const key_interface* right)
 		{
 			return (left->compare(right) == false) && (right->compare(left) == false);

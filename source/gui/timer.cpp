@@ -109,11 +109,11 @@ namespace nana
 	{
 	public:
 #if defined(NANA_WINDOWS)
-		timer_core(timer_identifier tmid, const nana::basic_event<arg_elapse>& evt_elapse)
+		timer_core(timer_identifier tmid, basic_event<arg_elapse>& evt_elapse)
 			: timer_(tmid), evt_elapse_(evt_elapse)
 		{}
 #else
-		timer_core(const nana::basic_event<arg_elapse>& evt_elapse)
+		timer_core(basic_event<arg_elapse>& evt_elapse)
 			: timer_(this), evt_elapse_(evt_elapse)
 		{}
 #endif
@@ -138,7 +138,7 @@ namespace nana
 		}
 	private:
 		const timer_identifier timer_;
-		const nana::basic_event<arg_elapse> & evt_elapse_;
+		nana::basic_event<arg_elapse> & evt_elapse_;
 	}; //end class timer_core
 
 #if defined(NANA_WINDOWS)

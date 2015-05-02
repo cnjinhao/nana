@@ -1,7 +1,7 @@
-/*
+/**
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <limits>
+#include <algorithm>
 
 namespace nana
 {
@@ -558,18 +559,22 @@ namespace nana
 					return token::identifier;
 				}
 
-				std::string err = "an invalid character '";
-				err += *sp_;
-				err += "'";
-
-				_m_throw_error(err);
+				_m_throw_error(*sp_);
 				return token::error;	//Useless, just for syntax correction.
 			}
 		private:
 			void _m_throw_error(char err_char)
 			{
+				std::string str = "place: invalid character '";
+				str += err_char;
+				str += '\'';
+				_m_throw_error(str);
+			}
+			
+			void _m_throw_error(const std::string& err)
+			{
 				std::stringstream ss;
-				ss << "place: invalid character '" << err_char << "' at " << static_cast<unsigned>(sp_ - divstr_);
+				ss << "place: " << err << " at " << static_cast<unsigned>(sp_ - divstr_);
 				throw std::runtime_error(ss.str());
 			}
 
@@ -578,8 +583,7 @@ namespace nana
 				if (token::equal != read())
 					_m_throw_error("an equal sign is required after '" + idstr_ + "'");
 
-				const char* p = sp_;
-				for (; *p == ' '; ++p);
+				const char* p = _m_eat_whitespace(sp_);
 
 				auto neg_ptr = p;
 				if ('-' == *p)
@@ -598,8 +602,7 @@ namespace nana
 				if (token::equal != read())
 					_m_throw_error("an equal sign is required after '" + idstr + "'");
 
-				const char* p = sp_;
-				for (; *p == ' ' || *p == '\t'; ++p);
+				const char* p = _m_eat_whitespace(sp_);
 
 				reparray_.reset();
 				auto tk = read();
@@ -619,14 +622,7 @@ namespace nana
 				}
 			}
 
-			void _m_throw_error(const std::string& err)
-			{
-				std::stringstream ss;
-				ss << "place: " << err << " at " << static_cast<unsigned>(sp_ - divstr_);
-				throw std::runtime_error(ss.str());
-			}
-
-			const char* _m_eat_whitespace(const char* sp)
+			static const char* _m_eat_whitespace(const char* sp)
 			{
 				while (*sp && !isgraph(*sp))
 					++sp;
@@ -677,7 +673,7 @@ namespace nana
 
 				if (gotcha)
 				{
-					for (; *sp == ' ' || *sp == '\t'; ++sp);
+					sp = _m_eat_whitespace(sp);
 					if ('%' == *sp)
 					{
 						if (number_t::kind::integer == number_.kind_of())
@@ -757,6 +753,20 @@ namespace nana
 			for (auto & e : fastened)
 				API::show_window(e.handle, vsb);
 		}
+
+		static event_handle erase_element(std::vector<element_t>& elements, window handle)
+		{
+			for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
+			{
+				if (i->handle == handle)
+				{
+					auto evt_destroy = i->evt_destroy;
+					elements.erase(i);
+					return evt_destroy;
+				}
+			}
+			return nullptr;
+		}
 	private:
 		//The defintion is moved after the definition of class division
 		template<typename Function>
@@ -768,15 +778,8 @@ namespace nana
 		{
 			return API::events(wd).destroy.connect([this](const arg_destroy& arg)
 			{
-				for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
-				{
-					if (arg.window_handle == i->handle)
-					{
-						elements.erase(i);
-						break;
-					}
-				}
-				place_ptr_->collocate();
+				if (erase_element(elements, arg.window_handle))
+					place_ptr_->collocate();
 			});
 		}
 
@@ -815,13 +818,7 @@ namespace nana
 			//does not change the layout.
 			auto evt = API::events(wd).destroy([this](const arg_destroy& arg)
 			{
-				auto destroyed_wd = arg.window_handle;
-				auto i = std::find_if(fastened.begin(), fastened.end(), [destroyed_wd](element_t& e){
-					return (e.handle == destroyed_wd);
-				});
-
-				if (i != fastened.end())
-					fastened.erase(i);
+				erase_element(fastened, arg.window_handle);
 			});
 
 			fastened.emplace_back(wd, evt);
@@ -929,16 +926,9 @@ namespace nana
 		{
 			for (auto & child : div->children)
 			{
-				if (child->field)
-				{
-					if (vsb)
-					{
-						if (child->visible)
-							child->field->visible(true);
-					}
-					else
-						child->field->visible(false);
-				}
+				if (child->field && (!vsb || child->visible))
+					child->field->visible(vsb);
+
 				_m_visible_for_child(child.get(), vsb);
 			}
 		}
@@ -985,7 +975,7 @@ namespace nana
 			const bool vert = (kind::arrange != kind_of_division);
 
 			auto area_margined = margin_area();
-			area_rotator area(vert, area_margined);
+			rectangle_rotator area(vert, area_margined);
 			auto area_px = area.w();
 
 			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px);
@@ -1001,7 +991,7 @@ namespace nana
 				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
 
-				area_rotator child_area(vert, child->field_area);
+				rectangle_rotator child_area(vert, child->field_area);
 				child_area.x_ref() = static_cast<int>(position);
 				child_area.y_ref() = area.y();
 				child_area.h_ref() = area.h();
@@ -1510,17 +1500,6 @@ namespace nana
 	class place::implement::div_splitter
 		: public division
 	{
-		struct div_block
-		{
-			division * div;
-			int	pixels;
-			double		scale;
-
-			div_block(division* d, int px)
-				: div(d), pixels(px)
-			{}
-		};
-
 		enum{splitter_px = 4};
 	public:
 		div_splitter(place_parts::number_t init_weight)
@@ -1533,14 +1512,9 @@ namespace nana
 			this->weight.assign(splitter_px);
 		}
 
-		void leaf_left(division * d)
+		void set_leaf(bool is_left, division * d)
 		{
-			leaf_left_ = d;
-		}
-
-		void leaf_right(division * d)
-		{
-			leaf_right_ = d;
+			(is_left ? leaf_left_ : leaf_right_) = d;
 		}
 
 		void direction(bool horizontal)
@@ -1565,8 +1539,9 @@ namespace nana
 
 					auto px_ptr = &nana::rectangle::width;
 
-					auto area_left = leaf_left_->margin_area();
-					auto area_right = leaf_right_->margin_area();
+					//Use field_area of leaf, not margin_area. Otherwise splitter would be at wrong position
+					auto area_left = leaf_left_->field_area;
+					auto area_right = leaf_right_->field_area;
 
 					if (nana::cursor::size_we != splitter_cursor_)
 					{
@@ -1590,7 +1565,7 @@ namespace nana
 						return;
 
 					const bool vert = (::nana::cursor::size_we != splitter_cursor_);
-					auto area_px = area_rotator(vert, div_owner->margin_area()).w();
+					auto area_px = rectangle_rotator(vert, div_owner->margin_area()).w();
 					int delta = (vert ? splitter_.pos().y - begin_point_.y : splitter_.pos().x - begin_point_.x);
 
 					int total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
@@ -1631,8 +1606,8 @@ namespace nana
 			{
 				const bool vert = (::nana::cursor::size_we != splitter_cursor_);
 
-				area_rotator left(vert, leaf_left_->field_area);
-				area_rotator right(vert, leaf_right_->field_area);
+				rectangle_rotator left(vert, leaf_left_->field_area);
+				rectangle_rotator right(vert, leaf_right_->field_area);
 				auto area_px = right.right() - left.x();
 				auto right_px = static_cast<int>(limit_px(leaf_right_, init_weight_.get_value(area_px), static_cast<unsigned>(area_px)));
 
@@ -1642,7 +1617,7 @@ namespace nana
 				else if (pos > limited_range.right())
 					pos = limited_range.right();
 
-				area_rotator sp_r(vert, field_area);
+				nana::rectangle_rotator sp_r(vert, field_area);
 				sp_r.x_ref() = pos;
 
 				left.w_ref() = static_cast<unsigned>(pos - left.x());
@@ -1658,7 +1633,7 @@ namespace nana
 				leaf_right_->collocate(wd);
 
 				//Set the leafs' weight
-				area_rotator area(vert, div_owner->field_area);
+				rectangle_rotator area(vert, div_owner->field_area);
 
 				double imd_rate = 100.0 / static_cast<int>(area.w());
 				leaf_left_->weight.assign_percent(imd_rate * static_cast<int>(left.w()));
@@ -1673,14 +1648,14 @@ namespace nana
 				splitter_.move(this->field_area);
 		}
 	private:
-		area_rotator _m_update_splitter_range()
+		rectangle_rotator _m_update_splitter_range()
 		{
 			const bool vert = (cursor::size_ns == splitter_cursor_);
 
-			area_rotator area(vert, div_owner->margin_area());
+			rectangle_rotator area(vert, div_owner->margin_area());
 
-			area_rotator left(vert, leaf_left_->field_area);
-			area_rotator right(vert, leaf_right_->field_area);
+			rectangle_rotator left(vert, leaf_left_->field_area);
+			rectangle_rotator right(vert, leaf_right_->field_area);
 
 			const int left_base = left.x(), right_base = right.right();
 			int pos = left_base;
@@ -1785,7 +1760,7 @@ namespace nana
 				if (!children.empty() && (division::kind::splitter != children.back()->kind_of_division))
 				{
 					auto splitter = new div_splitter(tknizer.number());
-					splitter->leaf_left(children.back().get());
+					splitter->set_leaf(true, children.back().get());
 					children.back()->div_next = splitter;
 					children.emplace_back(splitter);
 				}
@@ -1797,7 +1772,7 @@ namespace nana
 				{
 					children.back()->div_next = div.get();
 					if (division::kind::splitter == children.back()->kind_of_division)
-						dynamic_cast<div_splitter&>(*children.back()).leaf_right(div.get());
+						dynamic_cast<div_splitter&>(*children.back()).set_leaf(false, div.get());
 				}
 				children.emplace_back(div.release());
 			}
@@ -2182,29 +2157,14 @@ namespace nana
 		bool recollocate = false;
 		for (auto & fld : impl_->fields)
 		{
-			auto & elements = fld.second->elements;
-			for (auto i = elements.begin(); i != elements.end();)
+			auto evt = fld.second->erase_element(fld.second->elements, handle);
+			if (evt)
 			{
-				if (i->handle == handle)
-				{
-					API::umake_event(i->evt_destroy);
-					i = elements.erase(i);
-					recollocate |= (nullptr != fld.second->attached);
-				}
-				else
-					++i;
+				API::umake_event(evt);
+				recollocate |= (nullptr != fld.second->attached);
 			}
 
-			auto i = std::find_if(fld.second->fastened.begin(), fld.second->fastened.end(), [handle](implement::field_impl::element_t& e)
-			{
-				return (e.handle == handle);
-			});
-
-			if (i != fld.second->fastened.end())
-			{
-				API::umake_event(i->evt_destroy);
-				fld.second->fastened.erase(i);
-			}
+			API::umake_event( fld.second->erase_element(fld.second->fastened, handle));
 		}
 
 		if (recollocate)

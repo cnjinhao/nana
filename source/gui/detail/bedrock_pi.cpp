@@ -146,6 +146,9 @@ namespace nana
 
 		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::event_arg& event_arg)
 		{
+			auto retain = wd->together.events_ptr;
+			auto evts_ptr = retain.get();
+
 			switch (evt_code)
 			{
 			case event_code::click:
@@ -162,35 +165,36 @@ namespace nana
 
 				void(::nana::detail::drawer::*drawer_event_fn)(const arg_mouse&);
 				::nana::basic_event<arg_mouse>* evt_addr;
+
 				switch (evt_code)
 				{
 				case event_code::click:
 					drawer_event_fn = &drawer::click;
-					evt_addr = &wd->together.attached_events->click;
+					evt_addr = &evts_ptr->click;
 					break;
 				case event_code::dbl_click:
 					drawer_event_fn = &drawer::dbl_click;
-					evt_addr = &wd->together.attached_events->dbl_click;
+					evt_addr = &evts_ptr->dbl_click;
 					break;
 				case event_code::mouse_enter:
 					drawer_event_fn = &drawer::mouse_enter;
-					evt_addr = &wd->together.attached_events->mouse_enter;
+					evt_addr = &evts_ptr->mouse_enter;
 					break;
 				case event_code::mouse_move:
 					drawer_event_fn = &drawer::mouse_move;
-					evt_addr = &wd->together.attached_events->mouse_move;
+					evt_addr = &evts_ptr->mouse_move;
 					break;
 				case event_code::mouse_leave:
 					drawer_event_fn = &drawer::mouse_leave;
-					evt_addr = &wd->together.attached_events->mouse_leave;
+					evt_addr = &evts_ptr->mouse_leave;
 					break;
 				case event_code::mouse_down:
 					drawer_event_fn = &drawer::mouse_down;
-					evt_addr = &wd->together.attached_events->mouse_down;
+					evt_addr = &evts_ptr->mouse_down;
 					break;
 				case event_code::mouse_up:
 					drawer_event_fn = &drawer::mouse_up;
-					evt_addr = &wd->together.attached_events->mouse_up;
+					evt_addr = &evts_ptr->mouse_up;
 					break;
 				default:
 					throw std::runtime_error("Invalid mouse event code");
@@ -209,7 +213,7 @@ namespace nana
 				{
 					wd->drawer.mouse_wheel(*arg);
 					if (!draw_only)
-						wd->together.attached_events->mouse_wheel.emit(*arg);
+						evts_ptr->mouse_wheel.emit(*arg);
 				}
 				break;
 			}
@@ -229,19 +233,19 @@ namespace nana
 				{
 				case event_code::key_press:
 					drawer_event_fn = &drawer::key_press;
-					evt_addr = &wd->together.attached_events->key_press;
+					evt_addr = &evts_ptr->key_press;
 					break;
 				case event_code::key_char:
 					drawer_event_fn = &drawer::key_char;
-					evt_addr = &wd->together.attached_events->key_char;
+					evt_addr = &evts_ptr->key_char;
 					break;
 				case event_code::key_release:
 					drawer_event_fn = &drawer::key_release;
-					evt_addr = &wd->together.attached_events->key_release;
+					evt_addr = &evts_ptr->key_release;
 					break;
 				case event_code::shortkey:
 					drawer_event_fn = &drawer::shortkey;
-					evt_addr = &wd->together.attached_events->shortkey;
+					evt_addr = &evts_ptr->shortkey;
 					break;
 				default:
 					throw std::runtime_error("Invalid keyboard event code");
@@ -256,7 +260,7 @@ namespace nana
 				{
 					auto arg = dynamic_cast<const arg_expose*>(&event_arg);
 					if (arg)
-						wd->together.attached_events->expose.emit(*arg);
+						evts_ptr->expose.emit(*arg);
 				}
 				break;
 			case event_code::focus:
@@ -266,7 +270,7 @@ namespace nana
 				{
 					wd->drawer.focus(*arg);
 					if (!draw_only)
-						wd->together.attached_events->focus.emit(*arg);
+						evts_ptr->focus.emit(*arg);
 				}
 				break;
 			}
@@ -277,7 +281,7 @@ namespace nana
 				{
 					wd->drawer.move(*arg);
 					if (!draw_only)
-						wd->together.attached_events->move.emit(*arg);
+						evts_ptr->move.emit(*arg);
 				}
 				break;
 			}
@@ -288,7 +292,7 @@ namespace nana
 				{
 					wd->drawer.resizing(*arg);
 					if (!draw_only)
-						wd->together.attached_events->resizing.emit(*arg);
+						evts_ptr->resizing.emit(*arg);
 				}
 				break;
 			}
@@ -299,7 +303,7 @@ namespace nana
 				{
 					wd->drawer.resized(*arg);
 					if (!draw_only)
-						wd->together.attached_events->resized.emit(*arg);
+						evts_ptr->resized.emit(*arg);
 				}
 				break;
 			}
@@ -309,9 +313,9 @@ namespace nana
 					auto arg = dynamic_cast<const arg_unload*>(&event_arg);
 					if (arg && (wd->other.category == category::flags::root))
 					{
-						auto evt_ptr = dynamic_cast<events_root_extension*>(wd->together.attached_events);
-						if (evt_ptr)
-							evt_ptr->unload.emit(*arg);
+						auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
+						if (evt_root)
+							evt_root->unload.emit(*arg);
 					}
 				}
 				break;
@@ -320,7 +324,7 @@ namespace nana
 				{
 					auto arg = dynamic_cast<const arg_destroy*>(&event_arg);
 					if (arg)
-						wd->together.attached_events->destroy.emit(*arg);
+						evts_ptr->destroy.emit(*arg);
 				}
 				break;
 			default:

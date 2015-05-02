@@ -101,7 +101,7 @@ namespace nana
 
 		bool widget::focused() const
 		{
-			return API::is_focus_window(handle());
+			return (API::focus_window() == handle());
 		}
 
 		void widget::show()

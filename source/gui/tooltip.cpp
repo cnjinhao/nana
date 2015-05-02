@@ -1,6 +1,7 @@
 /*
  *	A Tooltip Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -34,14 +35,14 @@ namespace nana
 
 			nana::point pos_by_screen(nana::point pos, const nana::size& sz, bool overlap_allowed)
 			{
-				auto scr_area = screen::from_point(pos)->area();
-				if (pos.x + sz.width > scr_area.x + scr_area.width)
-					pos.x = static_cast<int>(scr_area.x + scr_area.width - sz.width);
+				auto scr_area = screen().from_point(pos).workarea();
+				if (pos.x + static_cast<int>(sz.width) > scr_area.right())
+					pos.x = scr_area.right() - static_cast<int>(sz.width);
 				if (pos.x < scr_area.x)
 					pos.x = scr_area.x;
 
-				if (pos.y + sz.height >= scr_area.y + scr_area.height)
-					pos.y = static_cast<int>(scr_area.y + scr_area.height - sz.height);
+				if (pos.y + static_cast<int>(sz.height) >= scr_area.bottom())
+					pos.y = scr_area.bottom() - static_cast<int>(sz.height);
 				else if (!overlap_allowed)
 					pos.y += 20;	//Add some pixels to avoid overlapping between cursor and tip window.
 
@@ -77,7 +78,7 @@ namespace nana
 				void tooltip_text(const nana::string& text) override
 				{
 					label_.caption(text);
-					auto text_s = label_.measure(screen::from_window(label_)->area().width * 2 / 3);
+					auto text_s = label_.measure(screen().from_window(label_).workarea().width * 2 / 3);
 					this->size(nana::size{ text_s.width + 10, text_s.height + 10 });
 					label_.move(rectangle{ 5, 5, text_s.width, text_s.height });
 

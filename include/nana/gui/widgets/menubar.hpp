@@ -24,12 +24,16 @@ namespace nana
 			class item_renderer
 			{
 			public:
-				enum state_t{state_normal, state_highlight, state_selected};
-				typedef nana::paint::graphics& graph_reference;
+				enum class state
+				{
+					normal, highlighted, selected
+				};
+
+				using graph_reference = paint::graphics&;
 
 				item_renderer(window, graph_reference);
-				virtual void background(const nana::point& pos, const nana::size& size, state_t);
-				virtual void caption(int x, int y, const nana::string& text);
+				virtual void background(const point&, const ::nana::size&, state);
+				virtual void caption(const point&, const ::nana::string&);
 			private:
 				window	handle_;
 				graph_reference graph_;
@@ -61,7 +65,6 @@ namespace nana
 				bool _m_popup_menu();
 				void _m_total_close();
 				bool _m_close_menu();
-				void _m_unload_menu_window();
 				std::size_t _m_item_by_pos(const ::nana::point&);
 				bool _m_track_mouse(const ::nana::point&);
 				void _m_draw();

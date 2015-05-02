@@ -129,22 +129,26 @@ namespace checkbox
 		checkbox::checkbox(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);
+            bgcolor(API::bgcolor(wd));
 		}
 
 		checkbox::checkbox(window wd, const nana::string& text, bool visible)
 		{
 			create(wd, rectangle(), visible);
+            bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
 		checkbox::checkbox(window wd, const nana::char_t* text, bool visible)
 		{
 			create(wd, rectangle(), visible);
+            bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
 		checkbox::checkbox(window wd, const nana::rectangle& r, bool visible)
 		{
+            bgcolor(API::bgcolor(wd));
 			create(wd, r, visible);
 		}
 

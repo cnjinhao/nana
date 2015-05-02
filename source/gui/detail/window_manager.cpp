@@ -8,7 +8,8 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/window_manager.cpp
- *
+ *	@author: Jinhao
+ *	@contributors:	Katsuhisa Yuasa
  */
 
 #include <nana/config.hpp>
@@ -20,7 +21,6 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
 #include <stdexcept>
-#include <algorithm>
 
 namespace nana
 {
@@ -191,7 +191,7 @@ namespace detail
 			switch(evtid)
 			{
 			case event_code::mouse_drop:
-				wd->flags.dropable = (is_make || (0 != wd->together.attached_events->mouse_dropfiles.length()));
+				wd->flags.dropable = (is_make || (0 != wd->together.events_ptr->mouse_dropfiles.length()));
 				break;
 			default:
 				break;
@@ -875,7 +875,16 @@ namespace detail
 				if (!root_has_been_focused)
 					native_interface::set_focus(root_wd->root);
 
-				brock.set_menubar_taken(wd);
+				//A fix by Katsuhisa Yuasa
+				//The menubar token window will be redirected to the prev focus window when the new
+				//focus window is a menubar.
+				//The focus window will be restore to the prev focus which losts the focus becuase of
+				//memberbar. 
+				if (wd == wd->root_widget->other.attribute.root->menubar)
+					wd = prev_focus;
+
+				if (wd != wd->root_widget->other.attribute.root->menubar)
+					brock.set_menubar_taken(wd);
 			}
 			return prev_focus;
 		}
@@ -975,11 +984,15 @@ namespace detail
 			}
 			else
 			{
-				auto i = std::find_if(attr_cap.begin(), attr_cap.end(),
-					[wd](const std::pair<core_window_t*, bool> & x){ return (x.first == wd);});
+				for (auto i = attr_cap.begin(), end = attr_cap.end(); i != end; ++i)
+				{
+					if (i->first == wd)
+					{
+						attr_cap.erase(i);
+						break;
+					}
+				}
 
-				if(i != attr_cap.end())
-					attr_cap.erase(i);
 				return attr_.capture.window;
 			}
 			return wd;

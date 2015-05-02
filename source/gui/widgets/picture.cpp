@@ -109,8 +109,7 @@ namespace nana
 							}
 						}
 
-						if (fit_size.width < graphsize.width || fit_size.height < graphsize.height)
-							_m_draw_background();
+						_m_draw_background(fit_size.width, fit_size.height);
 
 						backimg.image.stretch(valid_area, graph, { pos, fit_size });
 					}
@@ -141,14 +140,15 @@ namespace nana
 							break;
 						}
 
-						if (valid_area.width < graphsize.width || valid_area.height < graphsize.height)
-							_m_draw_background();
+						_m_draw_background(valid_area.width, valid_area.height);
 
 						backimg.image.paste(valid_area, graph, pos);
 					}
 				}
 				else
 				{
+					_m_draw_background(graphsize.width, graphsize.height);
+
 					color invalid_clr_for_call;
 					backimg.bground->draw(graph, invalid_clr_for_call, invalid_clr_for_call, graphsize, element_state::normal);
 				}
@@ -156,18 +156,22 @@ namespace nana
 				graph.setsta();
 			}
 
-			void drawer::_m_draw_background()
+			void drawer::_m_draw_background(unsigned w, unsigned h)
 			{
 				auto graph = impl_->graph_ptr;
+
 				if (graph && (bground_mode::basic != API::effects_bground_mode(*impl_->wdg_ptr)))
 				{
-					auto & bground = impl_->gradual_bground;
-					if (bground.gradual_from.invisible() || bground.gradual_to.invisible())
-						graph->rectangle(true, impl_->wdg_ptr->bgcolor());
-					else if (bground.gradual_from == bground.gradual_to)
-						graph->rectangle(true, bground.gradual_from);
-					else
-						graph->gradual_rectangle(graph->size(), bground.gradual_from, bground.gradual_to, !bground.horizontal);
+					if (w < graph->size().width || h < graph->size().width || impl_->backimg.image.alpha())
+					{
+						auto & bground = impl_->gradual_bground;
+						if (bground.gradual_from.invisible() || bground.gradual_to.invisible())
+							graph->rectangle(true, impl_->wdg_ptr->bgcolor());
+						else if (bground.gradual_from == bground.gradual_to)
+							graph->rectangle(true, bground.gradual_from);
+						else
+							graph->gradual_rectangle(graph->size(), bground.gradual_from, bground.gradual_to, !bground.horizontal);
+					}
 				}
 			}
 			//end class drawer

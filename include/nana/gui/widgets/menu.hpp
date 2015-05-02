@@ -1,4 +1,4 @@
-/*
+/**
  *	A Menu implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
@@ -139,16 +139,16 @@ namespace nana
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
 		void close();
-		void image(std::size_t index, const paint::image& icon);
-		void check_style(std::size_t index, checks);
-		void checked(std::size_t index, bool);
-		bool checked(std::size_t index) const;
-		void enabled(std::size_t index, bool);///< Enables or disables the mouse or keyboard input for the item.
-		bool enabled(std::size_t index) const;
-		void erase(std::size_t index);			 	 ///< Removes the item
-		bool link(std::size_t index, menu& menu_obj);///< Link a menu to the item as a sub menu.
-		menu * link(std::size_t index);		 	     ///< Retrieves a linked sub menu of the item.
-		menu *create_sub_menu(std::size_t index);
+		void image(std::size_t pos, const paint::image& icon);
+		void check_style(std::size_t pos, checks);
+		void checked(std::size_t pos, bool);
+		bool checked(std::size_t pos) const;
+		void enabled(std::size_t pos, bool);///< Enables or disables the mouse or keyboard input for the item.
+		bool enabled(std::size_t pos) const;
+		void erase(std::size_t pos);			 	 ///< Removes the item
+		bool link(std::size_t pos, menu& menu_obj);///< Link a menu to the item as a sub menu.
+		menu * link(std::size_t pos);		 	     ///< Retrieves a linked sub menu of the item.
+		menu *create_sub_menu(std::size_t pos);
 		void popup(window owner, int x, int y);     ///< Popup the menu at the owner window. 
 		void popup_await(window owner, int x, int y);
 		void answerer(std::size_t index, const event_fn_t&);  ///< Modify answerer of the specified item.
@@ -171,7 +171,6 @@ namespace nana
 		const pat::cloneable<renderer_interface>& renderer() const;
 
 	private:
-		void _m_destroy_menu_window();
 		void _m_popup(window, int x, int y, bool called_by_menubar);
 	private:
 		implement * impl_;

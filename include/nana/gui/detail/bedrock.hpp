@@ -54,13 +54,14 @@ namespace detail
 		native_window_type root(core_window_t*);
 
 		void set_menubar_taken(core_window_t*);
-		core_window_t* get_menubar_taken();
+
+		//Delay Restores focus when a menu which attached to menubar is closed
+		void delay_restore(int);
 		bool close_menu_if_focus_other_window(native_window_type focus);
 		void set_menu(native_window_type menu_window, bool is_keyboard_condition);
 		native_window_type get_menu(native_window_type owner, bool is_keyboard_condition);
 		native_window_type get_menu();
-		void remove_menu();
-		void empty_menu();
+		void erase_menu(bool try_destroy);
 
 		void get_key_state(arg_keyboard&);
 		bool set_keyboard_shortkey(bool yes);

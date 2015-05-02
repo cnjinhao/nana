@@ -1,4 +1,4 @@
-/*
+/**
  *	A Tabbar implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -7,8 +7,8 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/tabbar.hpp
- *	@brief: A tabbar contains tab items and toolbox for scrolling, closing, selecting items.
+ *   @file:  nana/gui/widgets/tabbar.hpp
+ *	 @brief A tabbar contains tab items and toolbox for scrolling, closing, selecting items.
  *
  */
 #ifndef NANA_GUI_WIDGET_TABBAR_HPP

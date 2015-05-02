@@ -23,8 +23,8 @@
 #undef NANA_WINDOWS
 #endif
 
-//Implement workarounds for MinGW
-#if defined(NANA_MINGW) && (__GNUC__ == 4) && (__GNUC_MINOR__ < 8)
+//Implement workarounds for GCC/MinGW which version is below 4.8.2
+#if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
 namespace std
 {
 	//Workaround for no implemenation of std::stoi in MinGW.

@@ -102,27 +102,18 @@ namespace detail
 		{
 			struct thread_context_cache
 			{
-				unsigned tid;
-				thread_context *object;
+				unsigned tid{ 0 };
+				thread_context *object{ nullptr };
 			}tcontext;
-
-			cache_type()
-			{
-				tcontext.tid = 0;
-				tcontext.object = nullptr;
-			}
 		}cache;
 
 		struct menu_tag
 		{
-			menu_tag()
-				:taken_window(nullptr), window(nullptr), owner(nullptr), has_keyboard(false)
-			{}
-
-			core_window_t*	taken_window;
-			native_window_type window;
-			native_window_type owner;
-			bool has_keyboard;
+			core_window_t*	taken_window{ nullptr };
+			bool			delay_restore{ false };
+			native_window_type window{ nullptr };
+			native_window_type owner{ nullptr };
+			bool	has_keyboard{ false };
 		}menu;
 
 		struct keyboard_tracking_state_tag
@@ -282,14 +273,39 @@ namespace detail
 
 	void bedrock::set_menubar_taken(core_window_t* wd)
 	{
+		auto pre = impl_->menu.taken_window;
 		impl_->menu.taken_window = wd;
+
+		//assigning of a nullptr taken window is to restore the focus of pre taken
+		if ((!wd) && pre)
+		{
+			internal_scope_guard lock;
+			wd_manager.set_focus(pre, false);
+			wd_manager.update(pre, true, false);
+		}
 	}
 
-	bedrock::core_window_t* bedrock::get_menubar_taken()
+	//0:Enable delay, 1:Cancel, 2:Restores, 3: Restores when menu is destroying
+	void bedrock::delay_restore(int state)
 	{
-		core_window_t* wd = impl_->menu.taken_window;
-		impl_->menu.taken_window = nullptr;
-		return wd;
+		switch (state)
+		{
+		case 0:	//Enable
+			break;
+		case 1: //Cancel
+			break;
+		case 2:	//Restore if key released
+			//restores the focus when menu is closed by pressing keyboard
+			if (!impl_->menu.window)
+				set_menubar_taken(nullptr);
+			break;
+		case 3:	//Restores if destroying
+			//when the menu is destroying, restores the focus if delay restore is not declared
+			if (!impl_->menu.delay_restore)
+				set_menubar_taken(nullptr);
+		}
+
+		impl_->menu.delay_restore = (0 == state);
 	}
 
 	bool bedrock::close_menu_if_focus_other_window(native_window_type wd)
@@ -304,7 +320,7 @@ namespace detail
 				else
 					return false;
 			}
-			remove_menu();
+			erase_menu(true);
 			return true;
 		}
 		return false;
@@ -314,7 +330,7 @@ namespace detail
 	{
 		if(menu_window && impl_->menu.window != menu_window)
 		{
-			remove_menu();
+			erase_menu(true);
 			impl_->menu.window = menu_window;
 			impl_->menu.owner = native_interface::get_owner_window(menu_window);
 			impl_->menu.has_keyboard = has_keyboard;
@@ -338,21 +354,13 @@ namespace detail
 		return impl_->menu.window;
 	}
 
-	void bedrock::remove_menu()
+	void bedrock::erase_menu(bool try_destroy)
 	{
-		if(impl_->menu.window)
+		if (impl_->menu.window)
 		{
-			native_window_type delwin = impl_->menu.window;
-			impl_->menu.window = impl_->menu.owner = nullptr;
-			impl_->menu.has_keyboard = false;
-			native_interface::close_window(delwin);
-		}
-	}
+			if (try_destroy)
+				native_interface::close_window(impl_->menu.window);
 
-	void bedrock::empty_menu()
-	{
-		if(impl_->menu.window)
-		{
 			impl_->menu.window = impl_->menu.owner = nullptr;
 			impl_->menu.has_keyboard = false;
 		}
@@ -363,6 +371,7 @@ namespace detail
 		XKeyEvent xkey;
 		nana::detail::platform_spec::instance().read_keystate(xkey);
 		arg.ctrl = (xkey.state & ControlMask);
+		arg.shift = (xkey.state & ShiftMask);
 	}
 
 	bool bedrock::set_keyboard_shortkey(bool yes)
@@ -370,6 +379,11 @@ namespace detail
 		bool ret = impl_->keyboard_tracking_state.has_shortkey_occured;
 		impl_->keyboard_tracking_state.has_shortkey_occured = yes;
 		return ret;
+	}
+
+	bool bedrock::whether_keyboard_shortkey() const
+	{
+		return impl_->keyboard_tracking_state.has_shortkey_occured;
 	}
 
 	element_store& bedrock::get_element_store() const
@@ -569,7 +583,7 @@ namespace detail
 					delete msg.u.mouse_drop.files;
 					arg.pos.x = msg.u.mouse_drop.x - msgwd->pos_root.x;
 					arg.pos.y = msg.u.mouse_drop.y - msgwd->pos_root.y;
-					msgwd->together.attached_events->mouse_dropfiles.emit(arg);
+					msgwd->together.events_ptr->mouse_dropfiles.emit(arg);
 					brock.wd_manager.do_lazy_refresh(msgwd, false);
 				}
 				break;
@@ -700,8 +714,8 @@ namespace detail
 				msgwnd = brock.wd_manager.find_window(native_window, xevent.xbutton.x, xevent.xbutton.y);
 				if(nullptr == msgwnd) break;
 					
-				if((msgwnd == msgwnd->root_widget->other.attribute.root->menubar) && brock.get_menu(msgwnd->root, true))
-					brock.remove_menu();
+				if ((msgwnd == msgwnd->root_widget->other.attribute.root->menubar) && brock.get_menu(msgwnd->root, true))
+					brock.erase_menu(true);
 				else
 					brock.close_menu_if_focus_other_window(msgwnd->root);
 
@@ -719,12 +733,11 @@ namespace detail
 						if(kill_focus != new_focus)
 							brock.wd_manager.do_lazy_refresh(kill_focus, false);
 					}
+					auto retain = msgwnd->together.events_ptr;
 					msgwnd->root_widget->other.attribute.root->context.focus_changed = false;
-
 					context.event_window = msgwnd;
 
 					pressed_wd = nullptr;
-					//make_eventinfo(ei, msgwnd, message, xevent);
 					msgwnd->flags.action = mouse_action::pressed;
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, ButtonPress, xevent);
@@ -753,7 +766,7 @@ namespace detail
 					nana::point mspos{xevent.xbutton.x, xevent.xbutton.y};
 					while(msgwnd)
 					{
-						if(msgwnd->together.attached_events->mouse_wheel.length() != 0)
+						if(msgwnd->together.events_ptr->mouse_wheel.length() != 0)
 						{
 							mspos -= msgwnd->pos_root;
 							arg_wheel arg;
@@ -774,6 +787,8 @@ namespace detail
 					msgwnd->flags.action = mouse_action::normal;
 					if(msgwnd->flags.enabled)
 					{
+						auto retain = msgwnd->together.events_ptr;
+
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
 
@@ -795,27 +810,29 @@ namespace detail
 						{
 							if(hit)
 								msgwnd->flags.action = mouse_action::over;
+							
+							auto retain = msgwnd->together.events_ptr;
+							auto evt_ptr = retain.get();
 
-							auto events_ptr = msgwnd->together.events_ptr;
 							arg.evt_code = event_code::mouse_up;
 							emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
 							if(fire_click)
 							{
 								arg.evt_code = event_code::click;
-								msgwnd->together.attached_events->click.emit(arg);
+								evt_ptr->click.emit(arg);
 							}
 
 							if (brock.wd_manager.available(msgwnd))
 							{
 								arg.evt_code = event_code::mouse_up;
-								msgwnd->together.attached_events->mouse_up.emit(arg);
+								evt_ptr->mouse_up.emit(arg);
 							}
 						}
 						else if(fire_click)
 						{
 							arg.evt_code = event_code::click;
-							msgwnd->together.attached_events->click.emit(arg);
+							msgwnd->together.events_ptr->click.emit(arg);
 						}
 						brock.wd_manager.do_lazy_refresh(msgwnd, false);
 					}
@@ -828,8 +845,11 @@ namespace detail
 					if(brock.wd_manager.available(msgwnd))
 					{
 						//The msgwnd may be destroyed if the window is destroyed by calling native interface of close_window().
-						if(msgwnd->root == brock.get_menu())
-							brock.empty_menu();
+						if (msgwnd->root == brock.get_menu())
+						{
+							brock.erase_menu(false);
+							brock.delay_restore(3);	//Restores if delay_restore not decleared
+						}
 
 						spec.remove(native_window);
 						brock.wd_manager.destroy(msgwnd);
@@ -928,6 +948,9 @@ namespace detail
 				nana::detail::platform_spec::instance().write_keystate(xevent.xkey);
 				if(msgwnd->flags.enabled)
 				{
+					if (brock.get_menu())
+						brock.delay_restore(0);	//Enable delay restore
+
 					if(msgwnd->root != brock.get_menu())
 						msgwnd = brock.focus();
 
@@ -961,8 +984,8 @@ namespace detail
 						else
 						{
 							nana::detail::platform_scope_guard psg;
-							status = XLookupBoth;
-							len = ::XLookupString(&xevent.xkey, keybuf, 32, &keysym, 0);
+							status = XLookupKeySym;
+							keysym = ::XLookupKeysym(&xevent.xkey, 0);
 						}
 
 						keybuf[len] = 0;
@@ -999,7 +1022,9 @@ namespace detail
 							context.platform.keychar = keychar;
 							if(keychar == keyboard::tab && (false == (msgwnd->flags.tab & detail::tab_type::eating))) //Tab
 							{
-								auto the_next = brock.wd_manager.tabstop(msgwnd, true);
+								arg_keyboard argkey;
+								brock.get_key_state(argkey);
+								auto the_next = brock.wd_manager.tabstop(msgwnd, !argkey.shift);
 								if(the_next)
 								{
 									brock.wd_manager.set_focus(the_next, false);
@@ -1010,12 +1035,31 @@ namespace detail
 							else if(keyboard::alt == keychar)
 							{
 								context.is_alt_pressed = true;
+								if (brock.whether_keyboard_shortkey() == false)
+								{
+									msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
+									if (msgwnd)
+									{
+										bool focused = (brock.focus() == msgwnd);
+										arg_keyboard arg;
+										arg.evt_code = event_code::key_press;
+										arg.window_handle = reinterpret_cast<window>(msgwnd);
+										arg.ignore = false;
+										arg.key = static_cast<nana::char_t>(keychar);
+										brock.get_key_state(arg);
+										brock.emit(event_code::key_press, msgwnd, arg, true, &context);
+
+										msgwnd->root_widget->flags.ignore_menubar_focus = (focused && (brock.focus() != msgwnd));
+									}
+									else
+										brock.erase_menu(true);
+								}
 							}
-							else if(keychar)
+							else
 							{
 								arg_keyboard arg;
 								arg.ignore = false;
-								arg.key = keychar;
+								arg.key = keychar ? keychar : xevent.xkey.keycode;
 								arg.evt_code = event_code::key_press;
 								brock.get_key_state(arg);
 								arg.window_handle = reinterpret_cast<window>(msgwnd);
@@ -1061,7 +1105,7 @@ namespace detail
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 									brock.get_key_state(arg);
 
-									msgwnd->together.attached_events->key_char.emit(arg);
+									msgwnd->together.events_ptr->key_char.emit(arg);
 									if(arg.ignore == false && brock.wd_manager.available(msgwnd))
 										brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
 								}
@@ -1092,11 +1136,35 @@ namespace detail
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 					}
+					brock.delay_restore(2);	//Restores while key release
 				}
 				else
 				{
 					context.is_alt_pressed = false;
-					brock.set_keyboard_shortkey(false);
+					if (brock.set_keyboard_shortkey(false) == false)
+					{
+						msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
+						if (msgwnd)
+						{
+							bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
+							if (set_focus)
+								brock.wd_manager.set_focus(msgwnd, false);
+
+							arg_keyboard arg;
+							arg.evt_code = event_code::key_release;
+							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.ignore = false;
+							arg.key = static_cast<nana::char_t>(context.platform.keychar);
+							brock.get_key_state(arg);
+							brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+
+							if (!set_focus)
+							{
+								brock.set_menubar_taken(nullptr);
+								msgwnd->root_widget->flags.ignore_menubar_focus = false;
+							}
+						}
+					}
 				}
 				break;
 			default:

@@ -1,4 +1,4 @@
-/*
+/**
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/scroll.hpp
+ *	@contributors: Ariel Vina-Rodriguez
  */
 #ifndef NANA_GUI_WIDGET_SCROLL_HPP
 #define NANA_GUI_WIDGET_SCROLL_HPP
@@ -49,17 +50,17 @@ namespace nana
 
 			struct metrics_type
 			{
-				typedef std::size_t size_type;
+				using size_type = std::size_t;
 
-				size_type peak;
-				size_type range;
-				size_type step;
-				size_type value;
+				size_type peak;   ///< the whole total
+				size_type range;  ///< how many is shonw on a page, that is, How many to scroll after click on first or second
+				size_type step;   ///< how many to scroll by click in forward  or backward
+				size_type value;  ///< current offset calculated from the very beginnig
 
 				buttons what;
 				bool pressed;
-				size_type	scroll_length;
-				int			scroll_pos;
+				size_type	scroll_length;       ///< the lenght in pixels of the central button show how many of the total (peak) is shonw (range)
+				int			scroll_pos;          ///< in pixels, and correspond to the offsset from the very beginning (value)
 				int			scroll_mouse_offset;
 
 				metrics_type();
@@ -70,11 +71,11 @@ namespace nana
 			public:
 				struct states
 				{
-					enum{none, highlight, actived, selected};
+					enum{ none, highlight, actived, selected };
 				};
 
-				typedef nana::paint::graphics& graph_reference;
-				const static unsigned fixedsize = 16;
+				using graph_reference = paint::graphics&;
+				const static unsigned fixedsize = 16; // make it part of a new "metric" in the widget_scheme
 
 				drawer(metrics_type& m);
 				void set_vertical(bool);
@@ -114,7 +115,7 @@ namespace nana
 
 				void peak(size_type s)
 				{
-					if(graph_ && (metrics_.peak != s))
+					if (graph_ && (metrics_.peak != s))
 					{
 						metrics_.peak = s;
 						API::refresh_window(widget_->handle());
@@ -123,10 +124,10 @@ namespace nana
 
 				void value(size_type s)
 				{
-					if(s + metrics_.range > metrics_.peak)
+					if (s + metrics_.range > metrics_.peak)
 						s = metrics_.peak - metrics_.range;
 
-					if(graph_ && (metrics_.value != s))
+					if (graph_ && (metrics_.value != s))
 					{
 						metrics_.value = s;
 						_m_emit_value_changed();
@@ -137,7 +138,7 @@ namespace nana
 
 				void range(size_type s)
 				{
-					if(graph_ && (metrics_.range != s))
+					if (graph_ && (metrics_.range != s))
 					{
 						metrics_.range = s;
 						API::refresh_window(widget_->handle());
@@ -151,31 +152,31 @@ namespace nana
 
 				bool make_step(bool forward, unsigned multiple)
 				{
-					if(graph_)
+					if (graph_)
 					{
 						size_type step = (multiple > 1 ? metrics_.step * multiple : metrics_.step);
 						size_type value = metrics_.value;
-						if(forward)
+						if (forward)
 						{
 							size_type maxv = metrics_.peak - metrics_.range;
-							if(metrics_.peak > metrics_.range && value < maxv)
+							if (metrics_.peak > metrics_.range && value < maxv)
 							{
-								if(maxv - value >= step)
+								if (maxv - value >= step)
 									value += step;
 								else
 									value = maxv;
 							}
 						}
-						else if(value)
+						else if (value)
 						{
-							if(value > step)
+							if (value > step)
 								value -= step;
 							else
 								value = 0;
 						}
 						size_type cmpvalue = metrics_.value;
 						metrics_.value = value;
-						if(value != cmpvalue)
+						if (value != cmpvalue)
 						{
 							_m_emit_value_changed();
 							return true;
@@ -221,24 +222,24 @@ namespace nana
 				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
 					bool redraw = false;
-					if(metrics_.pressed && (metrics_.what == buttons::scroll))
+					if (metrics_.pressed && (metrics_.what == buttons::scroll))
 					{
 						size_type cmpvalue = metrics_.value;
 						drawer_.scroll_delta_pos(graph, (Vertical ? arg.pos.y : arg.pos.x));
-						if(cmpvalue != metrics_.value)
+						if (cmpvalue != metrics_.value)
 							_m_emit_value_changed();
 						redraw = true;
 					}
 					else
 					{
 						buttons what = drawer_.what(graph, arg.pos);
-						if(metrics_.what != what)
+						if (metrics_.what != what)
 						{
 							redraw = true;
 							metrics_.what = what;
 						}
 					}
-					if(redraw)
+					if (redraw)
 					{
 						drawer_.draw(graph, metrics_.what);
 						API::lazy_refresh();
@@ -247,11 +248,11 @@ namespace nana
 
 				void mouse_down(graph_reference graph, const arg_mouse& arg) override
 				{
-					if(arg.left_button)
+					if (arg.left_button)
 					{
 						metrics_.pressed = true;
 						metrics_.what = drawer_.what(graph, arg.pos);
-						switch(metrics_.what)
+						switch (metrics_.what)
 						{
 						case buttons::first:
 						case buttons::second:
@@ -265,13 +266,13 @@ namespace nana
 							break;
 						case buttons::forward:
 						case buttons::backward:
-							{
-								size_type cmpvalue = metrics_.value;
-								drawer_.auto_scroll();
-								if(cmpvalue != metrics_.value)
-									_m_emit_value_changed();
-							}
-							break;
+						{
+							size_type cmpvalue = metrics_.value;
+							drawer_.auto_scroll();
+							if (cmpvalue != metrics_.value)
+								_m_emit_value_changed();
+						}
+						break;
 						default:	//Ignore buttons::none
 							break;
 						}
@@ -294,7 +295,7 @@ namespace nana
 
 				void mouse_leave(graph_reference graph, const arg_mouse&) override
 				{
-					if(metrics_.pressed) return;
+					if (metrics_.pressed) return;
 
 					metrics_.what = buttons::none;
 					drawer_.draw(graph, buttons::none);
@@ -303,7 +304,7 @@ namespace nana
 
 				void mouse_wheel(graph_reference graph, const arg_wheel& arg) override
 				{
-					if(make_step(arg.upwards == false, 3))
+					if (make_step(arg.upwards == false, 3))
 					{
 						drawer_.draw(graph, metrics_.what);
 						API::lazy_refresh();
@@ -333,7 +334,7 @@ namespace nana
 
 	/// Provides a way to display an object which is larger than the window's client area.
 	template<bool Vertical>
-	class scroll
+	class scroll    // add a widget scheme?
 		: public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events<Vertical>>
 	{
 		typedef widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical> > base_type;
@@ -345,29 +346,29 @@ namespace nana
 
 		/// \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specifying the visible after creating.
+		/// @param visible  specify the visibility after creation.
 		scroll(window wd, bool visible)
 		{
-			this->create(wd, rectangle(), visible);
+			this->create(wd, rectangle(), visible);   // add a widget scheme? and take some colors from these wd?
 		}
 
 		///  \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param r  the size and position of the widget in its parent window coordinate.
-		/// @param visible  specifying the visible after creating.
+		/// @param visible  specify the visibility after creation.
 		scroll(window wd, const rectangle& r, bool visible = true)
 		{
 			this->create(wd, r, visible);
 		}
 
 		///  \brief Determines whether it is scrollable.
-		/// @param for_less  whether it can be scrolled for a less value.
+		/// @param for_less  whether it can be scrolled for a less value (backward or "up" if true, forward or "down" if false).
 		bool scrollable(bool for_less) const
 		{
 			auto & m = this->get_drawer_trigger().metrics();
 			return (for_less ? (0 != m.value) : (m.value < m.peak - m.range));
 		}
-
+		///  the whole total (peak)
 		size_type amount() const
 		{
 			return this->get_drawer_trigger().metrics().peak;
@@ -378,7 +379,7 @@ namespace nana
 			return this->get_drawer_trigger().peak(Max);
 		}
 
-		/// Get the range of the widget.
+		/// Get the range of the widget (how many is shonw on a page, that is, How many to scroll after click on first or second)
 		size_type range() const
 		{
 			return this->get_drawer_trigger().metrics().range;
@@ -390,7 +391,7 @@ namespace nana
 			return this->get_drawer_trigger().range(r);
 		}
 
-		///  \brief Get the value.
+		///  \brief Get the value (current offset calculated from the very beginnig)
 		/// @return the value.
 		size_type value() const
 		{
@@ -419,12 +420,12 @@ namespace nana
 			return this->get_drawer_trigger().step(s);
 		}
 
-		///  \brief Increase/decrease values by a step.
+		///  \brief Increase/decrease values by a step (alternativelly by some number of steps).
 		/// @param forward  it determines whether increase or decrease.
 		/// @return true if the value is changed.
-		bool make_step(bool forward)
+		bool make_step(bool forward, unsigned steps = 1)
 		{
-			if(this->get_drawer_trigger().make_step(forward, 1))
+			if (this->get_drawer_trigger().make_step(forward, steps))
 			{
 				API::refresh_window(this->handle());
 				return true;
@@ -437,13 +438,17 @@ namespace nana
 		/// @return true if the vlaue is changed.
 		bool make_scroll(bool forward)
 		{
-			if(this->get_drawer_trigger().make_step(forward, 3))
-			{
-				API::refresh_window(this->handle());
-				return true;
-			}
-			return false;
+			return this->make_step(forward, 3);	// set this 3 in the metrics of the widget scheme ?
 		}
+
+		///  \brief Increase/decrease values by a page as if it is scrolled page up.
+		/// @param forward  it determines whether increase or decrease.
+		/// @return true if the vlaue is changed.
+		bool make_page_scroll(bool forward)
+		{
+			return this->make_step(forward, range() - 1);
+		}
+
 	};//end class scroll
 }//end namespace nana
 #endif

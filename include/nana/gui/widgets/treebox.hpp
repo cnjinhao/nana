@@ -1,4 +1,4 @@
-/*
+/**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -7,12 +7,12 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/treebox.hpp
- *	@brief:
+ *   @file:   nana/gui/widgets/treebox.hpp
+ *	 @brief
  *		The treebox organizes the nodes by a key string. 
- *		The treebox would have a vertical scrollbar if the node
- *	is too many to display. And it does not have a horizontal scrollbar,
- *	the widget will adjust the node's displaying position for fitting.
+ *		The treebox would have a vertical scrollbar if there are too many nodes
+ *	    to display. It does not have an horizontal scrollbar:
+ *	    the widget will adjust the node's displaying position for fitting.
  */
 
 #ifndef NANA_GUI_WIDGETS_TREEBOX_HPP
@@ -332,12 +332,13 @@ namespace nana
 		}//end namespace treebox
 	}//end namespace drawerbase
 
-	struct arg_treebox
+    ///  a type of treebox event parameter
+	struct arg_treebox 
 		: public event_arg
 	{
-		treebox& widget;
-		drawerbase::treebox::item_proxy & item;
-		bool	operated;
+		treebox& widget;                          ///< where the event occurs
+		drawerbase::treebox::item_proxy & item;   ///< the operated node
+		bool	operated;                         ///< operation state of the event
 
 		arg_treebox(treebox&, drawerbase::treebox::item_proxy&, bool operated);
 	};
@@ -349,28 +350,30 @@ namespace nana
 			struct treebox_events
 				: public general_events
 			{
-				basic_event<arg_treebox> expanded;
-				basic_event<arg_treebox> checked;
-				basic_event<arg_treebox> selected;
-				basic_event<arg_treebox> hovered;
+				basic_event<arg_treebox> expanded; ///< a user expands or shrinks a node
+				basic_event<arg_treebox> checked;  ///< a user checks or unchecks a node
+				basic_event<arg_treebox> selected; ///< a user selects or unselects a node
+				basic_event<arg_treebox> hovered;  ///< a user moves the cursor over a node
 			};
 		}//end namespace treebox
 	}//end namespace drawerbase
 
-    /// Displays a hierarchical list of items, such as the files and directories on a disk.
-	class treebox
+    /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
+    /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
+    class treebox
 		:public widget_object < category::widget_tag, drawerbase::treebox::trigger, drawerbase::treebox::treebox_events>
 	{
 	public:
-        /// A type refers to the item and also used to iterate through the node.
+        /// A type refers to the item and is also used to iterate through the nodes.
 		typedef drawerbase::treebox::item_proxy	item_proxy;
 
+        /// state images for the node
 		typedef drawerbase::treebox::node_image_tag node_image_type;
 
-		/// The interface of treebox item renderer
+		/// The interface of treebox user-defined item renderer
 		typedef drawerbase::treebox::renderer_interface renderer_interface;
 
-		/// The interface of treebox compset_placer
+		/// The interface of treebox compset_placer to define the position of node components
 		typedef drawerbase::treebox::compset_placer_interface compset_placer_interface;
 
 		/// The default constructor without creating the widget.
@@ -378,7 +381,7 @@ namespace nana
 
 		/// \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specifying the visible after creating.
+		/// @param visible  specifying the visibility after creating.
 		treebox(window wd, bool visible);
 
 		/// \brief  The construct that creates a widget.
@@ -388,16 +391,16 @@ namespace nana
 		treebox(window, const nana::rectangle& = rectangle(), bool visible = true);
 
 		template<typename ItemRenderer>
-		treebox & renderer(const ItemRenderer & rd)
+		treebox & renderer(const ItemRenderer & rd) ///< set user-defined node renderer
 		{
 			get_drawer_trigger().renderer(::nana::pat::cloneable<renderer_interface>(rd));
 			return *this;
 		}
 
-		const nana::pat::cloneable<renderer_interface> & renderer() const;
+		const nana::pat::cloneable<renderer_interface> & renderer() const;  ///< get user-defined node renderer
 
 		template<typename Placer>
-		treebox & placer(const Placer & r)
+		treebox & placer(const Placer & r) ///< location of a node components
 		{
 			get_drawer_trigger().placer(::nana::pat::cloneable<compset_placer_interface>(r));
 			return *this;
@@ -406,38 +409,51 @@ namespace nana
 		const nana::pat::cloneable<compset_placer_interface> & placer() const;
 
 		/// \brief  Eanble the widget to be draws automatically when it is operated.
+        ///
+        /// The treebox automatically redraws after certain operations, but, 
+        /// under some circumstances, it is good to disable the automatic drawing mode, 
+        /// for example, before adding nodes in a loop, disable the mode to avoiding 
+        /// frequent and useless refresh for better performance, and then, after 
+        /// the operations, enable the automatic redraw mode again.
 		/// @param bool  whether to enable.
 		void auto_draw(bool);
 
-		/// \brief  Enable the checkbox for each item of the widget.
-		/// @param bool  wheter to enable.
+		/// \brief  Enable the checkboxs for each item of the widget.
+		/// @param bool  indicates whether to show or hide the checkboxs.
 		treebox & checkable(bool enable);
 
-		/// Determinte whether the checkbox is enabled.
-		bool checkable() const;
+		
+		bool checkable() const; ///< Determinte whether the checkboxs are enabled.
 
-		node_image_type& icon(const nana::string& id) const;
+        /// \brief Creates an icon scheme with the specified name.
+        ///
+        /// The icon scheme includes 3 images for node states. 
+        /// These states are 'normal', 'hovered' and 'expanded'. 
+        /// If 'hovered' or 'expanded' are not set, it uses 'normal' state image for these 2 states.
+        /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
+		node_image_type& icon(const nana::string& id ///< the name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
+                               ) const;
 
 		void icon_erase(const nana::string& id);
 
 		item_proxy find(const nana::string& keypath);  ///< Find an item though a specified keypath.
 
         /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
-		item_proxy insert(const nana::string& path_key,   ///< specifies the node hierarchical
+		item_proxy insert(const nana::string& path_key,   ///< specifies the node hierarchy
                            nana::string title      ///< used for displaying
                            ); 
 
         /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
 		item_proxy insert( item_proxy pos,             ///< the parent item node
                            const nana::string& key,    ///< specifies the new node
-                           nana::string title   ///< used for displaying.
+                           nana::string title   ///< title used for displaying in the new node.
                            );
-		item_proxy erase(item_proxy i);
+		item_proxy erase(item_proxy i); ///< Removes the node at pos and return the Item proxy following the removed node
 
-		void erase(const nana::string& keypath);
+		void erase(const nana::string& keypath); ///< Removes the node by the key path. 
 
 		nana::string make_key_path(item_proxy i, const nana::string& splitter) const;///<returns the key path
-		item_proxy selected() const;
+		item_proxy selected() const; ///< returns the selected node
 	};//end class treebox
 }//end namespace nana
 #endif

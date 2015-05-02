@@ -14,6 +14,7 @@
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/element.hpp>
 #include <nana/gui/timer.hpp>
+#include <algorithm>
 
 namespace nana
 {
@@ -328,7 +329,7 @@ namespace nana
 
 				void render()
 				{
-					editor_->render(API::is_focus_window(editor_->window_handle()));
+					editor_->render(API::is_focus_ready(editor_->window_handle()));
 					_m_draw_spins(spin_stated_);
 				}
 
@@ -420,7 +421,7 @@ namespace nana
 					if (!editor_)
 						return;
 
-					if (API::is_focus_window(editor_->window_handle()))
+					if (API::is_focus_ready(editor_->window_handle()))
 						editor_->text(range_->value());
 					else
 						editor_->text(modifier_.prefix + range_->value() + modifier_.suffix);
@@ -559,7 +560,7 @@ namespace nana
 			
 			void drawer::key_press(graph_reference, const arg_keyboard& arg)
 			{
-				if (impl_->editor()->move(arg.key))
+				if (impl_->editor()->respond_key(arg.key))
 				{
 					impl_->editor()->reset_caret();
 					impl_->draw_spins();
@@ -569,7 +570,7 @@ namespace nana
 
 			void drawer::key_char(graph_reference, const arg_keyboard& arg)
 			{
-				if (impl_->editor()->respone_keyboard(arg.key))
+				if (impl_->editor()->respond_char(arg.key))
 				{
 					if (!impl_->value(impl_->editor()->text()))
 						impl_->draw_spins();

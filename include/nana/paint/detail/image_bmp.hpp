@@ -1,3 +1,15 @@
+/*
+ *	Bitmap Format Graphics Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file: nana/paint/detail/image_bmp.hpp
+ *	@contributors: Ryan Gonzalez
+ */
 #ifndef NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 

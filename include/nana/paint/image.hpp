@@ -1,6 +1,7 @@
 /*
  *	Paint Image Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -39,6 +40,8 @@ namespace paint
 		bool empty() const;
 		operator unspecified_bool_t() const;
 		void close();
+
+		bool alpha() const;
 		nana::size size() const;
 		void paste(graphics& dst, int x, int y) const;
 		void paste(const nana::rectangle& r_src, graphics& dst, const point& p_dst) const;///< Paste the area of picture specified by r_src into the destination graphics specified by dst at position p_dst.
