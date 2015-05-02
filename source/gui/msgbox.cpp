@@ -774,7 +774,7 @@ namespace nana
 		impl->label.format(true);
 
 		//get the longest value
-		auto longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
+		auto longest = (std::abs(static_cast<int>(impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(static_cast<int>(impl->last < 0 ? impl->last * 10 : impl->last)) ? impl->last : impl->begin);
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
 		auto value_px = graph.text_extent_size(std::to_wstring(longest)).width + 34;
 
