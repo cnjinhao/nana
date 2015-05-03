@@ -1,4 +1,4 @@
-/*
+/**
  *	A Panel Implementation
  *	Nana C++ Library(http://www.nanaro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -8,8 +8,10 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/panel.hpp
+ *	@author: Jinhao
+ *	@contributors: Ariel Vina-Rodriguez
  *
- *	@brief: panel is a widget used for placing some widgets.
+ *	@brief panel is a widget used for placing some widgets.
  */
 
 #ifndef NANA_GUI_WIDGETS_PANEL_HPP
@@ -44,11 +46,13 @@ namespace nana
 		panel(window wd, bool visible)
 		{
 			this->create(wd, rectangle(), visible);
+			this->bgcolor(API::bgcolor(wd));
 		}
 
 		panel(window wd, const nana::rectangle& r = rectangle(), bool visible = true)
 		{
 			this->create(wd, r, visible);
+			this->bgcolor(API::bgcolor(wd));
 		}
 
 		bool transparent() const

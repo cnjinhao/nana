@@ -77,6 +77,8 @@ namespace API
 		window create_frame(window, const rectangle&, widget* attached);
 
 		paint::graphics* window_graphics(window);
+
+		void delay_restore(bool);
 	}//end namespace dev
 
 
@@ -193,7 +195,7 @@ namespace API
 		return *comp_wdg_colors;
 	}
 
-	nana::point window_position(window);
+	point window_position(window);
 	void move_window(window, int x, int y);
 	void move_window(window wd, const rectangle&);
 
@@ -203,9 +205,11 @@ namespace API
 	void draw_through(window, std::function<void()>);
 	void map_through_widgets(window, native_drawable_type);
 
-	nana::size window_size(window);
+	size window_size(window);
 	void window_size(window, const size&);
-	bool window_rectangle(window, rectangle&);
+	size window_outline_size(window);
+	void window_outline_size(window, const size&);
+	bool get_window_rectangle(window, rectangle&);
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
 	void window_enabled(window, bool);
 	bool window_enabled(window);
@@ -235,7 +239,7 @@ namespace API
 	cursor window_cursor(window);
 
 	void activate_window(window);
-	bool is_focus_window(window);
+	bool is_focus_ready(window);
 	window focus_window();
 	void focus_window(window);
 
@@ -288,7 +292,6 @@ namespace API
 	void register_menu_window(window, bool has_keyboard);
 	bool attach_menubar(window menubar);
 	void detach_menubar(window menubar);
-	void restore_menubar_taken_window();
 
 	bool is_window_zoomed(window, bool ask_for_max);  ///<Tests a window whether it is maximized or minimized.
 

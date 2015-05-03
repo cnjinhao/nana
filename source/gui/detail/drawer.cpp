@@ -21,8 +21,6 @@
 	#include <nana/detail/linux_X11/platform_spec.hpp>
 #endif
 
-#include <algorithm>
-
 namespace nana
 {
 	typedef detail::edge_nimbus_renderer<detail::bedrock::core_window_t> edge_nimbus_renderer_t;
@@ -351,12 +349,13 @@ namespace nana
 		{
 			if(p)
 			{
-				auto i = std::find(dynamic_drawing_objects_.begin(), dynamic_drawing_objects_.end(), p);
-				if (i != dynamic_drawing_objects_.end())
-				{
-					delete (*i);
-					dynamic_drawing_objects_.erase(i);
-				}
+				for (auto i = dynamic_drawing_objects_.begin(); i != dynamic_drawing_objects_.end(); ++i)
+					if (*i == p)
+					{
+						delete (*i);
+						dynamic_drawing_objects_.erase(i);
+						break;
+					}
 			}
 		}
 

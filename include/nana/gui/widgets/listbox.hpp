@@ -1,4 +1,4 @@
-/*
+/**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.hpp
+ *	@contributors: Ariel Vina-Rodriguez
  *
  */
 
@@ -16,6 +17,7 @@
 #include "widget.hpp"
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
+//#include <nana/paint/graphics.hpp>
 #include <functional>
 #include <initializer_list>
 
@@ -27,7 +29,7 @@ namespace nana
 	{
 		namespace listbox
 		{
-			typedef std::size_t size_type;
+			using size_type = std::size_t ;
 
 			struct cell
 			{
@@ -35,7 +37,7 @@ namespace nana
 				{
 					::nana::color bgcolor;
 					::nana::color fgcolor;
-
+                    /// ::nana::paint::font font;  \todo 
 					format() = default;
 					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 				};
@@ -112,7 +114,8 @@ namespace nana
 				std::size_t pos_{0};
 			};
 
-			struct index_pair
+            /// usefull for both absolute and display (sorted) positions
+            struct index_pair
 			{
 				size_type cat;	//The pos of category
 				size_type item;	//the pos of item in a category.
@@ -169,7 +172,8 @@ namespace nana
 			class drawer_header_impl;
 			class drawer_lister_impl;
 
-			class trigger: public drawer_trigger
+			/// mostly works on display positions
+            class trigger: public drawer_trigger
 			{
 			public:
 				trigger();
@@ -192,18 +196,28 @@ namespace nana
 				void dbl_click(graph_reference, const arg_mouse&)	override;
 				void resized(graph_reference, const arg_resized&)		override;
 				void key_press(graph_reference, const arg_keyboard&)	override;
+				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
 				essence_t * essence_;
 				drawer_header_impl *drawer_header_;
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
-			class item_proxy
+            /// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
+			/// item_proxy self, it references and iterators are not invalidated by sort()
+            class item_proxy
 				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
 				item_proxy(essence_t*);
 				item_proxy(essence_t*, const index_pair&);
+
+                /// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
+                static item_proxy from_display(essence_t *ess, const index_pair &relative) ;
+                item_proxy from_display(const index_pair &relative) const;
+
+                /// posible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
+                index_pair to_display() const;
 
 				bool empty() const;
 
@@ -237,7 +251,7 @@ namespace nana
 					auto && cells = ores.move_cells();
 					auto cols = columns();
 					cells.resize(cols);
-					for (auto pos = 0; pos < cols; ++pos)
+					for (auto pos = 0u; pos < cols; ++pos)
 					{
 						auto & el = cells[pos];
 						if (el.text.size() == 1 && el.text[0] == nana::char_t(0))
@@ -318,8 +332,8 @@ namespace nana
 				essence_t * _m_ess() const;
 			private:
 				std::vector<cell> & _m_cells() const;
-				nana::any * _m_value(bool alloc_if_empty);
-				const nana::any * _m_value() const;
+				nana::any         * _m_value(bool alloc_if_empty);
+				const nana::any   * _m_value() const;
 			private:
 				essence_t * ess_;
 				category_t*	cat_{nullptr};
@@ -334,7 +348,7 @@ namespace nana
 				cat_proxy(essence_t*, size_type pos);
 				cat_proxy(essence_t*, category_t*);
 
-				/// Append an item at end of the category, set_value determines whether assign T object to the value of item.
+				/// Append an item at abs end of the category, set_value determines whether assign T object to the value of item.
 				template<typename T>
 				item_proxy append(T&& t, bool set_value = false)
 				{
@@ -367,13 +381,18 @@ namespace nana
 				item_proxy cbegin() const;
 				item_proxy cend() const;
 
-				item_proxy at(size_type pos) const;
+				item_proxy at(size_type pos_abs) const;
 				item_proxy back() const;
 
-				/// Returns the index of a item by its display pos, the index of the item isn't changed after sorting.
+				/// Returns the absolute index of a item by its display pos, the index of the item isn't changed after sorting.
+				/// convert from display order to absolute (find the real item in that display pos) but without check from current active sorting, in fact using just the last sorting !!!
 				size_type index_by_display_order(size_type disp_order) const;
-				size_type display_order(size_type pos) const;
-				size_type position() const;
+				
+          		/// find display order for the real item but without check from current active sorting, in fact using just the last sorting !!!
+                size_type display_order(size_type pos) const;
+				
+                /// this cat position
+                size_type position() const;
 
 				/// Returns the number of items
 				size_type size() const;
@@ -410,9 +429,21 @@ namespace nana
 			private:
 				essence_t*	ess_{nullptr};
 				category_t*	cat_{nullptr};
-				size_type	pos_{0};
+				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
 			};
-		}
+		
+            struct export_options
+            {
+               nana::string sep = nana::string {STR("\t" )}, 
+                            endl= nana::string {STR("\n")} ; 
+               bool only_selected_items{true}, 
+                    only_checked_items {false},
+                    only_visible_columns{true};
+
+               using columns_indexs = std::vector<size_type>;
+               columns_indexs columns_order;
+            };
+        }
 	}//end namespace drawerbase
 
 	struct arg_listbox
@@ -446,12 +477,12 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-/*! \brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain \a items. 
+/*! \brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain a list of \a items. 
 A category is a text with can be \a selected, \a checked and \a expanded to show the items.
 An item is formed by \a column-fields, each corresponding to one of the \a headers. 
 An item can be \a selected and \a checked.
 The user can \a drag the header to \a reisize it or to \a reorganize it. 
-By \a clicking on a header the list get \a reordered, first up, and then down alternatively,
+By \a clicking on a header the list get \a reordered, first up, and then down alternatively.
 */
 	class listbox
 		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
@@ -465,7 +496,9 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		using selection = drawerbase::listbox::selection;    ///<A container type for items.
 		using iresolver = drawerbase::listbox::iresolver;
 		using oresolver = drawerbase::listbox::oresolver;
-		using cell = drawerbase::listbox::cell;
+		using cell      = drawerbase::listbox::cell;
+		using export_options= drawerbase::listbox::export_options;
+		using columns_indexs= drawerbase::listbox::size_type;
 	public:
 		listbox() = default;
 		listbox(window, bool visible);
@@ -474,13 +507,18 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		void auto_draw(bool);                                ///<Set state: Redraw automatically after an operation?
 
 		void append_header(nana::string, unsigned width = 120);///<Appends a new column with a header text and the specified width at the end
+		listbox& header_width(size_type pos, unsigned pixels);
+		unsigned header_width(size_type pos) const;
 
 		cat_proxy append(nana::string);          ///<Appends a new category at the end
 		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
 		cat_proxy insert(cat_proxy, nana::string);
 		cat_proxy at(size_type pos) const;
+
+        /// add categories in order when use a key?
 		listbox& ordered_categories(bool);
 
+        /// return a proxy to tha cat with the key or create a new one in the right order
 		template<typename Key>
 		cat_proxy operator[](const Key & ck)
 		{
@@ -505,7 +543,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			return cat_proxy(&_m_ess(), _m_at_key(p));
 		}
 
-		item_proxy at(const index_pair&) const;
+		item_proxy at(const index_pair &abs_pos) const;
 
 		void insert(const index_pair&, nana::string);         ///<Insert a new item with a text in the first column.
 
@@ -534,20 +572,26 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 			_m_ease_key(&key);
 		}
 
-		            ///Sets a strick weak ordering comparer for a column
+		bool sortable() const;
+		void sortable(bool enable);
+		
+		///Sets a strict weak ordering comparer for a column
 		void set_sort_compare(size_type col, std::function<bool(const nana::string&, nana::any*,
 				                                        const nana::string&, nana::any*, bool reverse)> strick_ordering);
 
-		void sort_col(size_type col, bool reverse = false);
+		/// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+        void sort_col(size_type col, bool reverse = false);
 		size_type sort_col() const;
-		void unsort();
+
+        /// potencially ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+        void unsort();
 		bool freeze_sort(bool freeze);
 
-		selection selected() const;                         ///<Get the indexs of all the selected items
-
+		selection selected() const;                         ///<Get the absolute indexs of all the selected items
+                                    
 		void show_header(bool);
 		bool visible_header() const;
-		void move_select(bool upwards);                     ///<Selects an item besides the current selected item.
+		void move_select(bool upwards);  ///<Selects an item besides the current selected item in the display.
 
 		size_type size_categ() const;                   ///<Get the number of categories
 		size_type size_item() const;                    ///<The number of items in the default category
@@ -555,6 +599,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
+        export_options& def_export_options();
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;

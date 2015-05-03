@@ -1,4 +1,4 @@
-/*
+/**
  *	The fundamental widget class implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
@@ -408,6 +408,16 @@ namespace nana
 		void map_through_widgets(native_drawable_type drawable)
 		{
 			API::map_through_widgets(handle(), drawable);
+		}
+
+		void outline_size(const ::nana::size& sz)
+		{
+			API::window_outline_size(handle(), sz);
+		}
+
+		::nana::size outline_size() const
+		{
+			return API::window_outline_size(handle());
 		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()

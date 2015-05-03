@@ -1,13 +1,14 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/programming_interface.cpp
+ *	@author: Jinhao
  */
 
 #include <nana/gui/programming_interface.hpp>
@@ -15,7 +16,6 @@
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
-#include <algorithm>
 
 namespace nana
 {
@@ -53,7 +53,7 @@ namespace API
 			if (!restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd)))
 				return nullptr;
 
-			return reinterpret_cast<restrict::core_window_t*>(wd)->together.attached_events;
+			return reinterpret_cast<restrict::core_window_t*>(wd)->together.events_ptr.get();
 		}
 	}//end namespace detail
 
@@ -239,6 +239,11 @@ namespace API
 				return &reinterpret_cast<restrict::core_window_t*>(wd)->drawer.graphics;
 			return nullptr;
 		}
+
+		void delay_restore(bool enable)
+		{
+			restrict::bedrock.delay_restore(enable ? 0 : 1);
+		}
 	}//end namespace dev
 
 	//exit
@@ -259,7 +264,17 @@ namespace API
 				if((wd->thread_id == tid) && (wd->root != root))
 				{
 					root = wd->root;
-					if(roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
+					bool exists = false;
+					for (auto i = roots.cbegin(); i != roots.cend(); ++i)
+					{
+						if (*i == root)
+						{
+							exists = true;
+							break;
+						}
+					}
+
+					if (!exists)
 						roots.push_back(root);
 				}
 			}
@@ -598,7 +613,7 @@ namespace API
 	nana::size window_size(window wd)
 	{
 		nana::rectangle r;
-		API::window_rectangle(wd, r);
+		API::get_window_rectangle(wd, r);
 		return{ r.width, r.height };
 	}
 
@@ -618,7 +633,46 @@ namespace API
 		}
 	}
 
-	bool window_rectangle(window wd, rectangle& r)
+	::nana::size window_outline_size(window wd)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (!restrict::window_manager.available(iwd))
+			return{};
+		
+		auto sz = window_size(wd);
+		sz.width += iwd->extra_width;
+		sz.height += iwd->extra_height;
+		return sz;
+	}
+
+	void window_outline_size(window wd, const size& sz)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			if (category::flags::root == iwd->other.category)
+			{
+				size inner_size = sz;
+				if (inner_size.width < iwd->extra_width)
+					inner_size.width = 0;
+				else
+					inner_size.width -= iwd->extra_width;
+
+				if (inner_size.height < iwd->extra_height)
+					inner_size.height = 0;
+				else
+					inner_size.height -= iwd->extra_height;
+
+				window_size(wd, inner_size);
+			}
+			else
+				window_size(wd, sz);
+		}
+	}
+
+	bool get_window_rectangle(window wd, rectangle& r)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
@@ -751,7 +805,7 @@ namespace API
 		return cursor::arrow;
 	}
 
-	bool is_focus_window(window wd)
+	bool is_focus_ready(window wd)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
@@ -1160,17 +1214,6 @@ namespace API
 		{
 			if (iwd->root_widget->other.attribute.root->menubar == iwd)
 				iwd->root_widget->other.attribute.root->menubar = nullptr;
-		}
-	}
-
-	void restore_menubar_taken_window()
-	{
-		auto wd = restrict::bedrock.get_menubar_taken();
-		if(wd)
-		{
-			internal_scope_guard lock;
-			restrict::window_manager.set_focus(wd, false);
-			restrict::window_manager.update(wd, true, false);
 		}
 	}
 

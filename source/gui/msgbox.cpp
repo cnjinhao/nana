@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/msgbox.hpp
@@ -21,7 +21,9 @@
 #include <nana/gui/place.hpp>
 #include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
+#include <nana/gui/filebox.hpp>
 #include <functional>
+#include <cstdlib>  //include std::abs
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
@@ -354,10 +356,6 @@ namespace nana
 		: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
 	{}
 
-	msgbox::msgbox(window wd, const nana::string& title)
-		: wd_(wd), title_(title), button_(ok), icon_(icon_none)
-	{}
-
 	msgbox::msgbox(window wd, const nana::string& title, button_t b)
 		: wd_(wd), title_(title), button_(b), icon_(icon_none)
 	{}
@@ -492,7 +490,7 @@ namespace nana
 				close();
 				valid_input_ = true;
 			});
-			
+
 			btn_cancel_.create(*this);
 			btn_cancel_.i18n(i18n_eval("Cancel"));
 			btn_cancel_.events().click.connect_unignorable([this]{
@@ -504,7 +502,7 @@ namespace nana
 			place_.bind(*this);
 			std::stringstream ss_content;
 			ss_content << "<margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
-			
+
 			for (std::size_t i = 0; i < contents; ++i)
 			{
 				unsigned px = 27;
@@ -699,7 +697,7 @@ namespace nana
 		impl->label.format(true);
 
 		//get the longest value
-		int longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
+		int longest = (std::abs(static_cast<int>(impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(static_cast<int>(impl->last < 0 ? impl->last * 10 : impl->last)) ? impl->last : impl->begin);
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
 		auto value_px = graph.text_extent_size(std::to_wstring(longest)).width + 34;
 
@@ -777,7 +775,7 @@ namespace nana
 		impl->label.format(true);
 
 		//get the longest value
-		auto longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
+		auto longest = (std::abs(static_cast<int>(impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(static_cast<int>(impl->last < 0 ? impl->last * 10 : impl->last)) ? impl->last : impl->begin);
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
 		auto value_px = graph.text_extent_size(std::to_wstring(longest)).width + 34;
 
@@ -788,8 +786,8 @@ namespace nana
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
-			impl->label.size({ label_px, 24 });
-			impl->spinbox.size({ value_px, 24 });
+			impl->label.size(::nana::size{ label_px, 24 });
+			impl->spinbox.size(::nana::size{ value_px, 24 });
 		});
 
 		impl->spinbox.events().destroy.connect_unignorable([impl]
@@ -981,7 +979,7 @@ namespace nana
 	window inputbox::date::create(window parent, unsigned label_px)
 	{
 		auto today = ::nana::date().read();
-		
+
 		auto impl = impl_.get();
 		impl->dock.create(parent);
 
@@ -1046,7 +1044,7 @@ namespace nana
 
 			auto day = impl->wdg_day.to_int();
 			impl->wdg_day.range(1, days, 1); //It resets the current value of wdg_day
-			
+
 			if (day > days)
 				day = days;
 
@@ -1081,7 +1079,7 @@ namespace nana
 			: fbox(fb), label_text(std::move(labelstr))
 		{}
 	};
-	
+
 	inputbox::path::path(::nana::string label, const filebox& fb)
 		: impl_(new implement(fb, std::move(label)))
 	{
@@ -1097,7 +1095,7 @@ namespace nana
 
 		return impl_->value;
 	}
-	
+
 	//Implementation of abstract_content
 	const ::nana::string& inputbox::path::label() const
 	{

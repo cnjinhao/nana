@@ -15,14 +15,16 @@
 #ifndef NANA_DEPLOY_HPP
 #define NANA_DEPLOY_HPP
 
+#include <stdexcept>
+
 #include <nana/config.hpp>
 #include <nana/charset.hpp>
 #if defined(NANA_LINUX)
 #undef NANA_WINDOWS
 #endif
 
-//Implement workarounds for MinGW
-#if defined(NANA_MINGW)
+//Implement workarounds for GCC/MinGW which version is below 4.8.2
+#if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
 namespace std
 {
 	//Workaround for no implemenation of std::stoi in MinGW.
@@ -91,6 +93,20 @@ namespace nana
 {
 	std::size_t strlen(const char_t* str);
 	char_t* strcpy(char_t* dest, const char_t* source);
+#ifdef _MSC_VER
+	template <size_t N>
+	inline char* strcpy(char (&dest)[N], const char* source)
+	{
+		::strncpy_s(dest, source, _TRUNCATE);
+		return dest;
+	}
+	template <size_t N>
+	inline wchar_t* strcpy(wchar_t (&dest)[N], const wchar_t* source)
+	{
+		::wcsncpy_s(dest, source, _TRUNCATE);
+		return dest;
+	}
+#endif // #ifdef _MSC_VER
 }
 
 #if defined(NANA_WINDOWS)

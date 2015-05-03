@@ -1,4 +1,4 @@
-/*
+/**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)

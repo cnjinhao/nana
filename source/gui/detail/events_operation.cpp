@@ -41,12 +41,6 @@ namespace nana
 					reinterpret_cast<detail::docker_interface*>(evt)->get_event()->remove(evt);
 				}
 			}
-
-			std::size_t events_operation::size() const
-			{
-				lock_guard lock(mutex_);
-				return register_.size();
-			}
 		//end namespace events_operation
 	}//end namespace detail
 }//end namespace nana
