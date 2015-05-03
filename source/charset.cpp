@@ -24,7 +24,7 @@
 	#include <codecvt>
 #endif
 
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 	#include <windows.h>
 #endif
 
@@ -54,7 +54,7 @@ namespace nana
 				mbstr.clear();
 				return true;
 			}
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 			int bytes = ::WideCharToMultiByte(CP_ACP, 0, s, -1, 0, 0, 0, 0);
 			if(bytes > 1)
 			{
@@ -87,7 +87,7 @@ namespace nana
 				wcstr.clear();
 				return true;
 			}
-#if defined(NANA_MINGW) 
+#if defined(NANA_WINDOWS)
 			int chars = ::MultiByteToWideChar(CP_ACP, 0, s, -1, 0, 0);
 			if(chars > 1)
 			{
@@ -119,7 +119,7 @@ namespace nana
 				wcstr.clear();
 				return true;
 			}
-#if defined(NANA_MINGW) 
+#if defined(NANA_WINDOWS)
 			int chars = ::MultiByteToWideChar(CP_ACP, 0, s, -1, 0, 0);
 			if(chars > 1)
 			{
