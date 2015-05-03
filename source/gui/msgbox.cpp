@@ -696,7 +696,7 @@ namespace nana
 		impl->label.format(true);
 
 		//get the longest value
-		int longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
+		int longest = (std::abs(static_cast<int>(impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(static_cast<int>(impl->last < 0 ? impl->last * 10 : impl->last)) ? impl->last : impl->begin);
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
 		auto value_px = graph.text_extent_size(std::to_wstring(longest)).width + 34;
 
@@ -774,7 +774,7 @@ namespace nana
 		impl->label.format(true);
 
 		//get the longest value
-		auto longest = (std::abs((impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(impl->last < 0 ? impl->last * 10 : impl->last) ? impl->last : impl->begin);
+		auto longest = (std::abs(static_cast<int>(impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(static_cast<int>(impl->last < 0 ? impl->last * 10 : impl->last)) ? impl->last : impl->begin);
 		paint::graphics graph{ ::nana::size{ 10, 10 } };
 		auto value_px = graph.text_extent_size(std::to_wstring(longest)).width + 34;
 
@@ -785,8 +785,8 @@ namespace nana
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
-			impl->label.size({ label_px, 24 });
-			impl->spinbox.size({ value_px, 24 });
+			impl->label.size(::nana::size{ label_px, 24 });
+			impl->spinbox.size(::nana::size{ value_px, 24 });
 		});
 
 		impl->spinbox.events().destroy.connect_unignorable([impl]

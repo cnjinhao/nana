@@ -602,7 +602,7 @@ namespace nana
 				if (token::equal != read())
 					_m_throw_error("an equal sign is required after '" + idstr + "'");
 
-				const char* p = _m_eat_whitespace(sp_);
+				sp_ = _m_eat_whitespace(sp_);
 
 				reparray_.reset();
 				auto tk = read();

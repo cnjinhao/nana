@@ -22,6 +22,7 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
+#include <algorithm>
 
 namespace nana
 {
