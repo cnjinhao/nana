@@ -264,20 +264,18 @@ namespace API
 				if((wd->thread_id == tid) && (wd->root != root))
 				{
 					root = wd->root;
+					bool exists = false;
 					for (auto i = roots.cbegin(); i != roots.cend(); ++i)
 					{
 						if (*i == root)
 						{
-							root = nullptr;
+							exists = true;
 							break;
 						}
 					}
 
-					if (!root)
-					{
-						root = wd->root;
+					if (!exists)
 						roots.push_back(root);
-					}
 				}
 			}
 

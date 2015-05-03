@@ -24,6 +24,7 @@ bii/deps/*
 [Bb]in
 [Dd]ebug*/
 *.lib
+*.a
 *.sbr
 obj/
 [Rr]elease*/
@@ -31,5 +32,4 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 *.suo
 *.sdf
-
-bii/.hive.db
+lib/

@@ -851,6 +851,7 @@ namespace nana
 					list_.emplace_back(std::move(text));
 					return &list_.back();
 				}
+
                 /// just append a list of new cat.
 				void create_cat(const std::initializer_list<nana::string>& args)
 				{
@@ -1688,16 +1689,13 @@ namespace nana
 				///Translate relative position (position in display) into absolute position (original data order)
 				size_type absolute(const index_pair& display_pos) const
 				{
-                    if(sorted_index_ == npos) 
-                        return display_pos.item ;
+					if(sorted_index_ == npos) 
+						return display_pos.item ;
 
-                    auto & catobj = *_m_at(display_pos.cat);
+					auto & catobj = *_m_at(display_pos.cat);
 
-                    if(catobj.items.size()==0)
-                       if (display_pos == index_pair{0,0} )
-                            return 0;
-                       else 
-                           return npos;
+					if(catobj.items.size()==0)
+						return (display_pos == index_pair{0,0} ? 0 : npos);
 
 					return catobj.sorted[display_pos.item] ;
 				}
@@ -2451,27 +2449,27 @@ namespace nana
 						else break;
 					}
 				}
-            nana::string es_lister::to_string(const export_options& exp_opt) const
-            {
-                nana::string list_str; 
-                bool first{true};
-				for(auto & cat: cat_container())
-				{
-                    if(first)
-                            first=false;
-                    else
- 						list_str += (cat.text + exp_opt.endl);
 
-                    bool first_item{true};
-                    for (auto i : cat.sorted)
-                    {
-                        auto& it= cat.items[i] ;
-                        if(it.flags.selected || !exp_opt.only_selected_items)
-                            list_str += (it.to_string(exp_opt) + exp_opt.endl);
-                    }
+				nana::string es_lister::to_string(const export_options& exp_opt) const
+				{
+					nana::string list_str; 
+					bool first{true};
+					for(auto & cat: cat_container())
+					{
+						if(first)
+							first=false;
+						else
+ 							list_str += (cat.text + exp_opt.endl);
+
+						for (auto i : cat.sorted)
+						{
+							auto& it= cat.items[i] ;
+							if(it.flags.selected || !exp_opt.only_selected_items)
+								list_str += (it.to_string(exp_opt) + exp_opt.endl);
+						}
+					}
+					return list_str ;
 				}
-                return list_str ;
-            }
 
 
 			class drawer_header_impl

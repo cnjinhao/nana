@@ -392,8 +392,7 @@ namespace detail
 						while (::PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 						{
 							if (msg.message == WM_QUIT)   break;
-
-							if ((msg.message == WM_CHAR || msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) || !::IsDialogMessage(native_handle, &msg))
+							if ((WM_KEYFIRST <= msg.message && msg.message <= WM_KEYLAST) || !::IsDialogMessage(native_handle, &msg))
 							{
 								auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
 								if (menu_wd) interior_helper_for_menu(msg, menu_wd);
@@ -449,7 +448,7 @@ namespace detail
         {
              (msgbox(modal_window, STR("An uncaptured std::exception during message pumping: ")).icon(msgbox::icon_information)
                                  <<STR("\n   in form: ") << API::window_caption(modal_window)
-                                 <<STR("\n   exception : ") << e.what() 
+                                 <<STR("\n   exception : ") << e.what()
              ).show();
 
 			 internal_scope_guard lock;
@@ -550,7 +549,7 @@ namespace detail
 		::ScreenToClient(reinterpret_cast<HWND>(wd->root), &point);
 
 		arg.upwards = (pmdec.mouse.button.wheel_delta >= 0);
-		arg.distance = std::abs(pmdec.mouse.button.wheel_delta);
+		arg.distance = static_cast<unsigned>(arg.upwards ? pmdec.mouse.button.wheel_delta : -pmdec.mouse.button.wheel_delta);
 
 		arg.pos.x = static_cast<int>(point.x) - wd->pos_root.x;
 		arg.pos.y = static_cast<int>(point.y) - wd->pos_root.y;
@@ -1359,6 +1358,7 @@ namespace detail
 					{
 						//Don't call default window proc to avoid popuping system menu.
 						def_window_proc = false;
+
 						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
 						if (set_focus)
 							brock.wd_manager.set_focus(msgwnd, false);
@@ -1641,7 +1641,7 @@ namespace detail
 		{
 			if (try_destroy)
 				native_interface::close_window(impl_->menu.window);
-			
+
 			impl_->menu.window = impl_->menu.owner = nullptr;
 			impl_->menu.has_keyboard = false;
 		}
@@ -1687,7 +1687,7 @@ namespace detail
 			else if (::nana::category::flags::lite_widget == child->other.category)
 				map_through_widgets(child, drawable);
 		}
-#endif	
+#endif
 	}
 
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const arg_mouse& arg, bool ask_update, thread_context* thrd)
