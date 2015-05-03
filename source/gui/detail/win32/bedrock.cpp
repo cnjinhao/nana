@@ -392,8 +392,7 @@ namespace detail
 						while (::PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 						{
 							if (msg.message == WM_QUIT)   break;
-
-							if ((msg.message == WM_CHAR || msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) || !::IsDialogMessage(native_handle, &msg))
+							if ((WM_KEYFIRST <= msg.message && msg.message <= WM_KEYLAST) || !::IsDialogMessage(native_handle, &msg))
 							{
 								auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
 								if (menu_wd) interior_helper_for_menu(msg, menu_wd);
@@ -1359,6 +1358,7 @@ namespace detail
 					{
 						//Don't call default window proc to avoid popuping system menu.
 						def_window_proc = false;
+
 						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
 						if (set_focus)
 							brock.wd_manager.set_focus(msgwnd, false);
