@@ -59,7 +59,6 @@ namespace nana{ namespace system{
 			HDC hDC = ::GetDC(NULL);
 			if (::GetDIBits(hDC, (HBITMAP)g.pixmap(), 0, 1, NULL, (BITMAPINFO *)&bmi, DIB_RGB_COLORS) == 0) {
 				assert(false);
-				int err = ::GetLastError();
 				::ReleaseDC(NULL, hDC);
 				return false;
 			}
@@ -72,41 +71,26 @@ namespace nana{ namespace system{
 			// Bitmaps are huge, so to avoid unnegligible extra copy, this routine does not use private _m_set method.
 			HGLOBAL h_gmem = ::GlobalAlloc(GHND | GMEM_SHARE, header_size + bitmap_bytes);
 			void * gmem = ::GlobalLock(h_gmem);
-			if (!gmem) {
-				assert(false);
-				goto Label_GlobalFree;
+			if (gmem) {
+                char* p = (char*)gmem;
+                // Fix BITMAPINFOHEADER obtained from GetDIBits WinAPI
+                bmi.bmiHeader.biCompression = BI_RGB;
+                bmi.bmiHeader.biHeight = ::abs(bmi.bmiHeader.biHeight);
+                memcpy(p, &bmi, header_size);
+                p += header_size;
+                // many programs do not support bottom-up DIB, so reversing row order is needed.
+                for (int y=0; y<bmi.bmiHeader.biHeight; ++y) {
+                    memcpy(p, pbuffer.raw_ptr(bmi.bmiHeader.biHeight - 1 - y), bytes_per_line);
+                    p += bytes_per_line;
+                }
+                if (::GlobalUnlock(h_gmem) || GetLastError() == NO_ERROR)
+                    if (::OpenClipboard(::GetFocus()))
+                        if (::EmptyClipboard())
+                            if (::SetClipboardData(CF_DIB, h_gmem))
+                                if (::CloseClipboard())
+                                    return true;
 			}
-			char* p = (char*)gmem;
-			// Fix BITMAPINFOHEADER obtained from GetDIBits WinAPI
-			bmi.bmiHeader.biCompression = BI_RGB;
-			bmi.bmiHeader.biHeight = ::abs(bmi.bmiHeader.biHeight);
-			memcpy(p, &bmi, header_size);
-			p += header_size;
-			// many programs do not support bottom-up DIB, so reversing row order is needed.
-			for (int y=0; y<bmi.bmiHeader.biHeight; ++y) {
-				memcpy(p, pbuffer.raw_ptr(bmi.bmiHeader.biHeight - 1 - y), bytes_per_line);
-				p += bytes_per_line;
-			}
-			if (!::GlobalUnlock(h_gmem) && GetLastError() != NO_ERROR) {
-				assert(false);
-				goto Label_GlobalFree;
-			}
-			if (!::OpenClipboard(::GetFocus())) {
-				goto Label_GlobalFree;
-			}
-			if (!::EmptyClipboard()) {
-				goto Label_GlobalFree;
-			}
-			if (!::SetClipboardData(CF_DIB, h_gmem)) {
-				goto Label_GlobalFree;
-			}
-			if (!::CloseClipboard()) {
-				// really?
-				return false;
-			}
-			return true;
-
-		Label_GlobalFree:
+		    assert(false);
 			::GlobalFree(h_gmem);
 			return false;
 
@@ -128,7 +112,7 @@ namespace nana{ namespace system{
 				const std::string & utf32str = conv.charset(reinterpret_cast<char*>(res), size);
 				const nana::char_t * utf32ptr = reinterpret_cast<const nana::char_t*>(utf32str.c_str());
 				str.append(utf32ptr + 1, utf32ptr + utf32str.size() / sizeof(nana::char_t));
-#else 
+#else
 				str.reserve(size / sizeof(nana::char_t));
 				str.append(reinterpret_cast<nana::char_t*>(res), reinterpret_cast<nana::char_t*>(res) + size / sizeof(nana::char_t));
 				nana::string::size_type pos = str.find_last_not_of(nana::char_t(0));
@@ -226,7 +210,7 @@ namespace nana{ namespace system{
 			nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
 			native_window_type requester = nullptr;
 			spec.lock_xlib();
-			
+
 			{
 				internal_scope_guard isg;
 				detail::bedrock::core_window_t * wd = detail::bedrock::instance().focus();

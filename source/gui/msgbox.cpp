@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/msgbox.hpp
@@ -23,6 +23,7 @@
 #include <nana/internationalization.hpp>
 #include <nana/gui/filebox.hpp>
 #include <functional>
+#include <cstdlib>  //include std::abs
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
@@ -489,7 +490,7 @@ namespace nana
 				close();
 				valid_input_ = true;
 			});
-			
+
 			btn_cancel_.create(*this);
 			btn_cancel_.i18n(i18n_eval("Cancel"));
 			btn_cancel_.events().click.connect_unignorable([this]{
@@ -501,7 +502,7 @@ namespace nana
 			place_.bind(*this);
 			std::stringstream ss_content;
 			ss_content << "<margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
-			
+
 			for (std::size_t i = 0; i < contents; ++i)
 			{
 				unsigned px = 27;
@@ -978,7 +979,7 @@ namespace nana
 	window inputbox::date::create(window parent, unsigned label_px)
 	{
 		auto today = ::nana::date().read();
-		
+
 		auto impl = impl_.get();
 		impl->dock.create(parent);
 
@@ -1043,7 +1044,7 @@ namespace nana
 
 			auto day = impl->wdg_day.to_int();
 			impl->wdg_day.range(1, days, 1); //It resets the current value of wdg_day
-			
+
 			if (day > days)
 				day = days;
 
@@ -1078,7 +1079,7 @@ namespace nana
 			: fbox(fb), label_text(std::move(labelstr))
 		{}
 	};
-	
+
 	inputbox::path::path(::nana::string label, const filebox& fb)
 		: impl_(new implement(fb, std::move(label)))
 	{
@@ -1094,7 +1095,7 @@ namespace nana
 
 		return impl_->value;
 	}
-	
+
 	//Implementation of abstract_content
 	const ::nana::string& inputbox::path::label() const
 	{
