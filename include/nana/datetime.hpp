@@ -41,6 +41,7 @@ namespace nana
 
 		int day_of_week() const;
 		const value & read() const;
+		void set(const std::tm&);
 
 		static int day_of_week(int year, int month, int day);
 		static unsigned year_days(unsigned year);	///< the number of days in the specified year.
@@ -67,6 +68,7 @@ namespace nana
 		time(const std::tm&);
 		time(unsigned hour, unsigned minute, unsigned second);
 		const value& read() const;
+		void set(const std::tm&);
 	private:
 		value	value_;
 	};//end class time
