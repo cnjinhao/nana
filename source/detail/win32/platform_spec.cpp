@@ -16,7 +16,10 @@
 #include PLATFORM_SPEC_HPP
 #include <shellapi.h>
 #include <stdexcept>
+
+#if defined(_MSC_VER)
 #include <VersionHelpers.h>
+#endif // _MSVC
 
 namespace nana
 {
@@ -90,7 +93,7 @@ namespace detail
 		if (brush.color != color_)
 			brush.set(context, brush.style, color_);
 	}
-	
+
 	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, unsigned clr)
 	{
 		if (this->color != clr || this->width != width || this->style != style)
@@ -185,10 +188,16 @@ namespace detail
 		NONCLIENTMETRICS metrics = {};
 		metrics.cbSize = sizeof metrics;
 #if(WINVER >= 0x0600)
-		if(!IsWindowsVistaOrGreater())
-		{
+#if defined(NANA_MINGW)
+		OSVERSIONINFO osvi = {};
+		osvi.dwOSVersionInfoSize = sizeof(osvi);
+		::GetVersionEx(&osvi);
+		if (osvi.dwMajorVersion < 6)
 			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
-		}
+#else
+		if(!IsWindowsVistaOrGreater())
+			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
+#endif
 #endif
 		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
 		def_font_ptr_ = make_native_font(metrics.lfMessageFont.lfFaceName, font_size_to_height(9), 400, false, false, false);

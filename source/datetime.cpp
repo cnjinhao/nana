@@ -19,7 +19,7 @@
 namespace {
 	void localtime(struct tm& tm)
 	{
-#if defined(NANA_WINDOWS)
+#if defined(NANA_WINDOWS) && !defined(NANA_MINGW)
 		time_t t;
 		::time(&t);
 		if(localtime_s(&tm, &t) != 0)
@@ -274,7 +274,7 @@ namespace nana
 		{
 			value_.hour = t.tm_hour;
 			value_.minute = t.tm_min;
-			value_.second = t.tm_sec;	
+			value_.second = t.tm_sec;
 		}
 
 		time::time(unsigned hour, unsigned minute, unsigned second)
