@@ -21,6 +21,7 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
 #include <stdexcept>
+#include <algorithm>
 
 namespace nana
 {

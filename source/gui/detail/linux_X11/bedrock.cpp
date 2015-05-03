@@ -296,7 +296,7 @@ namespace detail
 			break;
 		case 2:	//Restore if key released
 			//restores the focus when menu is closed by pressing keyboard
-			if (!impl_->menu.window)
+			if ((!impl_->menu.window) && impl_->menu.delay_restore)
 				set_menubar_taken(nullptr);
 			break;
 		case 3:	//Restores if destroying
@@ -948,10 +948,11 @@ namespace detail
 				nana::detail::platform_spec::instance().write_keystate(xevent.xkey);
 				if(msgwnd->flags.enabled)
 				{
-					if (brock.get_menu())
+					auto menu_wd = brock.get_menu();
+					if (menu_wd)
 						brock.delay_restore(0);	//Enable delay restore
 
-					if(msgwnd->root != brock.get_menu())
+					if(msgwnd->root != menu_wd)
 						msgwnd = brock.focus();
 
 					if(msgwnd)
@@ -1018,6 +1019,8 @@ namespace detail
 								keychar = keyboard::os_insert; break;
 							case XK_Delete:
 								keychar = keyboard::os_del; break;
+							default:
+								keychar = keysym;
 							}
 							context.platform.keychar = keychar;
 							if(keychar == keyboard::tab && (false == (msgwnd->flags.tab & detail::tab_type::eating))) //Tab
@@ -1064,6 +1067,12 @@ namespace detail
 								brock.get_key_state(arg);
 								arg.window_handle = reinterpret_cast<window>(msgwnd);
 								brock.emit(event_code::key_press, msgwnd, arg, true, &context);
+
+								if(msgwnd->root_widget->other.attribute.root->menubar == msgwnd)
+								{
+									int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(arg.key)) ? 1 : 0 );
+									brock.delay_restore(cmd);
+								}
 							}
 
 							if(XLookupKeySym == status)
