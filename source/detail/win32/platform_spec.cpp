@@ -16,6 +16,7 @@
 #include PLATFORM_SPEC_HPP
 #include <shellapi.h>
 #include <stdexcept>
+#include <VersionHelpers.h>
 
 namespace nana
 {
@@ -184,11 +185,10 @@ namespace detail
 		NONCLIENTMETRICS metrics = {};
 		metrics.cbSize = sizeof metrics;
 #if(WINVER >= 0x0600)
-		OSVERSIONINFO osvi = {};
-		osvi.dwOSVersionInfoSize = sizeof(osvi);
-		::GetVersionEx(&osvi);
-		if (osvi.dwMajorVersion < 6)
+		if(!IsWindowsVistaOrGreater())
+		{
 			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
+		}
 #endif
 		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
 		def_font_ptr_ = make_native_font(metrics.lfMessageFont.lfFaceName, font_size_to_height(9), 400, false, false, false);

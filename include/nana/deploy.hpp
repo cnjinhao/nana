@@ -93,6 +93,20 @@ namespace nana
 {
 	std::size_t strlen(const char_t* str);
 	char_t* strcpy(char_t* dest, const char_t* source);
+#ifdef _MSC_VER
+	template <size_t N>
+	inline char* strcpy(char (&dest)[N], const char* source)
+	{
+		::strncpy_s(dest, source, _TRUNCATE);
+		return dest;
+	}
+	template <size_t N>
+	inline wchar_t* strcpy(wchar_t (&dest)[N], const wchar_t* source)
+	{
+		::wcsncpy_s(dest, source, _TRUNCATE);
+		return dest;
+	}
+#endif // #ifdef _MSC_VER
 }
 
 #if defined(NANA_WINDOWS)
