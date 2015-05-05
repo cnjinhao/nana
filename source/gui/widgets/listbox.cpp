@@ -1697,7 +1697,7 @@ namespace nana
 				///Translate relative position (position in display) into absolute position (original data order)
 				size_type absolute(const index_pair& display_pos) const
 				{
-					if(sorted_index_ == npos) 
+					if(sorted_index_ == npos || display_pos.item == npos) 
 						return display_pos.item ;
 
 					auto & catobj = *_m_at(display_pos.cat);
