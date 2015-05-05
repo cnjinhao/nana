@@ -1595,26 +1595,21 @@ namespace nana
                 bool categ_selected(size_type cat, bool sel)
 				{
 					bool changed = false;
-					auto & items = _m_at(cat)->items;
 
-					index_pair pos(cat, 0);
-					for(auto & m : items)
+                    cat_proxy cpx{ess_,cat};
+                    for (item_proxy &it : cpx )
 					{
-						if(m.flags.selected != sel)
-						{
-							m.flags.selected = sel;
-
-							arg_listbox arg{ item_proxy(ess_, pos), sel };
-							wd_ptr()->events().selected.emit(arg);
+                        if (it.selected() != sel)
 							changed = true;
+                        it.select(sel);
 
 							if (sel)                         // not check for single_selection_
-								last_selected_abs = pos;
-							else if (last_selected_abs == pos)
+							last_selected_abs = it->pos();
+
+						else if (last_selected_abs == it->pos())
 								last_selected_abs.set_both(npos);
 						}
-						++pos.item;
-					}
+                    last_selected_abs = index_pair{cat,npos};
 					return changed;
 				}
 
