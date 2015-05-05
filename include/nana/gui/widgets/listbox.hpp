@@ -374,6 +374,9 @@ namespace nana
 				cat_proxy& text(nana::string);
 				nana::string text() const;
 
+				cat_proxy & select(bool);
+				bool selected() const;
+
 				/// Behavior of a container
 				void push_back(nana::string);
 

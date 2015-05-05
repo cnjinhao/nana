@@ -1592,26 +1592,7 @@ namespace nana
 				}
 
                 /// set all items in cat to selection sel, emiting events, actualizing last_selected_abs, but not check for single_selection_
-                bool categ_selected(size_type cat, bool sel)
-				{
-					bool changed = false;
-
-                    cat_proxy cpx{ess_,cat};
-                    for (item_proxy &it : cpx )
-                    {
-                        if (it.selected() != sel)
-                            changed = true;
-                        it.select(sel);
-
-						if (sel)                         // not check for single_selection_
-							last_selected_abs = it->pos();
-
-						else if (last_selected_abs == it->pos())
-							last_selected_abs.set_both(npos);
-                    }
-                    last_selected_abs = index_pair{cat,npos};
-					return changed;
-				}
+                bool categ_selected(size_type cat, bool sel);
 
 				void reverse_categ_selected(size_type categ)
 				{
@@ -2458,7 +2439,7 @@ namespace nana
 					}
 				}
 
-				nana::string es_lister::to_string(const export_options& exp_opt) const
+			nana::string es_lister::to_string(const export_options& exp_opt) const
 				{
 					nana::string list_str; 
 					bool first{true};
@@ -2479,6 +2460,22 @@ namespace nana
 					return list_str ;
 				}
 
+            bool es_lister::categ_selected(size_type cat, bool sel)
+			{
+				bool changed = false;    // we need this??
+
+                cat_proxy cpx{ess_,cat};
+                for (item_proxy &it : cpx )
+                {
+                    if (it.selected() != sel)
+                        changed = true;
+                    it.select(sel);
+                }
+
+                last_selected_abs = last_selected_dpl =  index_pair {cat, npos};
+
+				return changed;   // we need this??
+			}
 
 			class drawer_header_impl
 			{
@@ -3736,6 +3733,24 @@ namespace nana
 							break;
 					}
 				}
+
+				cat_proxy & cat_proxy::select(bool sel)
+                {
+                    for (item_proxy &it : *this )
+                        it.select(sel);
+
+                    ess_->lister.last_selected_abs = 
+                    ess_->lister.last_selected_dpl =  index_pair {this->pos_, npos};
+
+                    return *this;
+                }
+				bool cat_proxy::selected() const
+                {
+                    for (item_proxy &it : *this )
+                        if (!it.selected())
+                            return false;
+                    return true;
+                }
 
 				auto cat_proxy::columns() const -> size_type
 				{
