@@ -136,7 +136,7 @@ namespace drawerbase {
 
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
 		{
-			if(editor_->respond_key(arg.key))
+			if(editor_->respond_key(arg))
 			{
 				editor_->reset_caret();
 				API::lazy_refresh();
@@ -145,7 +145,7 @@ namespace drawerbase {
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if (editor_->respond_char(arg.key))
+			if (editor_->respond_char(arg))
 				API::lazy_refresh();
 		}
 

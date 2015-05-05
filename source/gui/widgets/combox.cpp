@@ -685,7 +685,7 @@ namespace nana
 						{
 						case keyboard::os_arrow_left:
 						case keyboard::os_arrow_right:
-							drawer_->editor()->respond_key(arg.key);
+							drawer_->editor()->respond_key(arg);
 							drawer_->editor()->reset_caret();
 							break;
 						case keyboard::os_arrow_up:
@@ -714,14 +714,14 @@ namespace nana
 						}
 					}
 					if (call_other_keys)
-						drawer_->editor()->respond_key(arg.key);
+						drawer_->editor()->respond_key(arg);
 
 					API::lazy_refresh();
 				}
 
 				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
 				{
-					if (drawer_->editor()->respond_char(arg.key))
+					if (drawer_->editor()->respond_char(arg))
 						API::lazy_refresh();
 				}
 			//end class trigger
