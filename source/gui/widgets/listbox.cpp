@@ -1664,32 +1664,32 @@ namespace nana
 				{
 					return ((pos.cat < list_.size()) && (pos.item < size_item(pos.cat)));
 				}
-
+                /// if good return the same item (in arg item), or just the next cat and true, but If fail return false
 				bool good_item(index_pair pos, index_pair& item) const
 				{
 					if (!good(pos.cat))
-						return false;
+						return false;       // cat out of range
 
 					if (pos.is_category())
 					{
-						item = pos;
-						if (0 == pos.cat)
-							item.item = 0;
-
+						item = pos;          // return the cat self
+						if (0 == pos.cat)    // but for cat 0 return first item
+							item.item = 0;   // let check this is good
+                        else
 						return true;
 					}
 
-					auto i = _m_at(pos.cat);
+					auto i = _m_at(pos.cat);         // pos is not a cat and i point to it cat
 					if (pos.item < i->items.size())
 					{
-						item = pos;
+						item = pos;                // good item, return it
 						return true;
 					}
 
-					if (++i == list_.end())
+					if (++i == list_.end())          // item out of range and no more cat
 						return false;
 
-					item.cat = pos.cat + 1;
+					item.cat = pos.cat + 1;         // select the next cat
 					item.item = npos;
 					return true;
 				}
