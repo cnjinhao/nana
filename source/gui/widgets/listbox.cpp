@@ -1639,7 +1639,20 @@ namespace nana
                 /// absolute position of the last displayed item
                 index_pair last_displ() const
 				{
-					return absolute ( last_displ() );
+					return absolute ( last() );
+				}
+
+                /// can be used as the absolute position of the first absolute item, or as the display pos of the first displayed item
+                index_pair first() const
+                {
+                    index_pair fst{0,npos};
+                    good_item(fst,fst);
+                    return fst;
+                }
+                /// absolute position of the first displayed item
+                index_pair first_displ() const
+                {
+					return absolute ( first() );
 				}
 
 				bool good(size_type cat) const
