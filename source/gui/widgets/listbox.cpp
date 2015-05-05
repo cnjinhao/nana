@@ -1598,17 +1598,17 @@ namespace nana
 
                     cat_proxy cpx{ess_,cat};
                     for (item_proxy &it : cpx )
-					{
+                    {
                         if (it.selected() != sel)
-							changed = true;
+                            changed = true;
                         it.select(sel);
 
-							if (sel)                         // not check for single_selection_
+						if (sel)                         // not check for single_selection_
 							last_selected_abs = it->pos();
 
 						else if (last_selected_abs == it->pos())
-								last_selected_abs.set_both(npos);
-						}
+							last_selected_abs.set_both(npos);
+                    }
                     last_selected_abs = index_pair{cat,npos};
 					return changed;
 				}
@@ -1653,7 +1653,7 @@ namespace nana
                 index_pair first_displ() const
                 {
 					return absolute ( first() );
-				}
+                }
 
 				bool good(size_type cat) const
 				{
@@ -1676,7 +1676,7 @@ namespace nana
 						if (0 == pos.cat)    // but for cat 0 return first item
 							item.item = 0;   // let check this is good
                         else
-						return true;
+						    return true;
 					}
 
 					auto i = _m_at(pos.cat);         // pos is not a cat and i point to it cat
@@ -1738,7 +1738,7 @@ namespace nana
                 /// all arg are relative to display order, or all are absolute, but not mixed
 				bool forward(index_pair from, size_type offs, index_pair& item) const
 				{
-					if(!good_item(from, from))
+                    if(!good_item(from, from))
 						return false;
 
 					if(offs == 0)
@@ -1771,7 +1771,7 @@ namespace nana
 						else
                         {
 							offs -= (item_left_in_this_cat+1) ;
-							item = from;
+							item = from;                        
 							item.item += item_left_in_this_cat ;// select the last item
                         }
 					}
@@ -3378,21 +3378,35 @@ namespace nana
                         if (! scrl.make_page_scroll(!up)) 
                             return;
                         essence_->lister.select_for_all(false);
-                        if (up)
-                            item_proxy {essence_, essence_->scroll_y_abs()}.select(true); 
-                        else 
-                        {
-                            index_pair idx{essence_->scroll_y_dpl()};
+
+                        index_pair idx{essence_->scroll_y_dpl()};
+                        if (!up)
                             essence_->lister.forward(idx, scrl.range()-1, idx);
-                            item_proxy::from_display(essence_,idx).select(true);
-                        }
+
+                        if (idx.is_item())
+                           item_proxy::from_display(essence_, idx).select(true);
+                        else 
+                            if(!essence_->lister.single_selection())
+								essence_->lister.categ_selected(idx.cat, true);
+
+                        essence_->trace_last_selected_item ();
+
                         break;
                     }
                     case keyboard::os_home:
+                    {
                         essence_->lister.select_for_all(false);
-                        item_proxy::from_display(essence_, {0,0}).select(true);
+
+                        index_pair frst{essence_->lister.first()};
+                        if (frst.is_item())
+                           item_proxy::from_display(essence_, frst).select(true);
+                        else 
+                            if(!essence_->lister.single_selection())
+								essence_->lister.categ_selected(frst.cat, true);
+
                         essence_->trace_last_selected_item ();
                         break;
+                    }
                     case keyboard::os_end:
                         essence_->lister.select_for_all(false);
                         item_proxy::from_display(essence_, essence_->lister.last()).select(true);
