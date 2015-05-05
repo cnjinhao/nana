@@ -1747,13 +1747,12 @@ namespace nana
 						return true;
 					}
 
-					if(list_.size() <= from.cat) return false;
-
 					if(from.is_category())
 					{
 					    // this is a category, so...
 						// and offs is not 0, this category would not be candidated.
 						// the algorithm above to calc the offset item is always starting with a item.
+                        // we can not select, navigate or highlight begining from a cat?
 						--offs;
 						from.item = 0;
 					}
@@ -1762,7 +1761,7 @@ namespace nana
 
 					if(icat->expand)
 					{
-						std::size_t item_left_in_this_cat = icat->items.size() -1- from.item;
+						std::size_t item_left_in_this_cat = icat->items.size()- from.item -1;
 						if(offs <= item_left_in_this_cat )
 						{
 							item = from;
@@ -1771,14 +1770,15 @@ namespace nana
 						}
 						else
                         {
-							offs -= item_left_in_this_cat ;
+							offs -= (item_left_in_this_cat+1) ;
 							item = from;
-							item.item += item_left_in_this_cat ;
+							item.item += item_left_in_this_cat ;// select the last item
                         }
 					}
 
 					++from.cat;
 					++icat;
+
 					for(; icat != list_.end(); ++icat, ++from.cat)
 					{
 						item.cat = from.cat;
@@ -2203,7 +2203,7 @@ namespace nana
 						}
 						else
 						{
-							new_where.second = (y - header_visible_px() + 1) / item_size;
+							new_where.second = ((y + 1) - header_visible_px()) / item_size; // y>1 !
 							new_where.first = parts::lister;
 							if(checkable)
 							{
@@ -3444,7 +3444,7 @@ namespace nana
 					{
 						auto i = ess_->lister.cat_container().begin();
 						std::advance(i, pos.cat);
-						cat_ = &(*i);
+						cat_ = &(*i);       // what is pos is a cat?
 					}
 				}
 
@@ -3489,7 +3489,7 @@ namespace nana
                 /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
                 item_proxy & item_proxy::select(bool s)
 				{
-					auto & m = cat_->items.at(pos_.item);       // a ref to the real item
+					auto & m = cat_->items.at(pos_.item);       // a ref to the real item     // what is pos is a cat?
 					if(m.flags.selected == s) return *this;     // ignore if no change
 					m.flags.selected = s;                       // actually change selection
 

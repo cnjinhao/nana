@@ -366,6 +366,7 @@ namespace nana
 					return iter;
 				}
 
+				/// Append an item at abs end of the category, using the strins to set the columns (cells) of the new item.
 				void append(std::initializer_list<nana::string>);
 
 				size_type columns() const;
