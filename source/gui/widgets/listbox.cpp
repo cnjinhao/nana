@@ -412,7 +412,7 @@ namespace nana
 					    {
 							m.pixels = width;
                             return;
-					}
+					    }
 				}
 
 				unsigned item_width(size_type pos) const
@@ -4007,6 +4007,24 @@ namespace nana
 			ess.header.item_width(pos, pixels);
 			ess.update();
 			return *this;
+		}
+		unsigned listbox::auto_width(size_type pos, unsigned max)
+		{
+			unsigned max_w{0};
+            auto & ess = _m_ess();
+            for (const auto &cat : ess.lister.cat_container())
+                for (const auto &it : cat.items )
+                {
+                    if (pos >= it.cells.size()) continue;
+                    // precalcule text geometry
+					unsigned ts = static_cast<unsigned> ( ess.graph->text_extent_size(it.cells[pos].text).width);        
+                    if (max_w < ts)
+                        max_w = ts;
+                }
+            if (!max_w) return 0;
+			header_width(pos, max_w < max ? max_w : max);
+			ess.update();
+			return max_w;
 		}
 
 		unsigned listbox::header_width(size_type pos) const

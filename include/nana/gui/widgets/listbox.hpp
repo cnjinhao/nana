@@ -367,7 +367,7 @@ namespace nana
 				}
 
 				/// Appends one item at the end of this category with the specifies text in the column fields
-				void append(std::initializer_list<nana::string>);
+                void append(std::initializer_list<nana::string>);
 
 				size_type columns() const;
 
@@ -559,15 +559,17 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		listbox(window, bool visible);
 		listbox(window, const rectangle& = {}, bool visible = true);
 
-		void auto_draw(bool);                                ///<Set state: Redraw automatically after an operation?
+		void auto_draw(bool);                                ///< Set state: Redraw automatically after an operation?
 
-		listbox& header_width(size_type pos, unsigned pixels);
-		unsigned header_width(size_type pos) const;
         /// Appends a new column with a header text and the specified width at the end, and return it position
         size_type append_header(nana::string header_text, unsigned width = 120);		
+        listbox& header_width(size_type position, unsigned pixels);
+		unsigned header_width(size_type position) const;
+        unsigned auto_width(size_type position, unsigned max=3000);
 
-		cat_proxy append(nana::string);          ///<Appends a new category at the end
-		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
+
+		cat_proxy append(nana::string);          ///< Appends a new category at the end
+		void append(std::initializer_list<nana::string>); ///< Appends categories at the end
 		cat_proxy insert(cat_proxy, nana::string);
 		cat_proxy at(size_type pos) const;
 
