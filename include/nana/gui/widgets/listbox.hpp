@@ -477,6 +477,9 @@ namespace nana
 				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
 				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
 				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
+
+                unsigned max_header_width{3000},     /// \todo how to implement some geometrical parameters ??
+                         ext_w = 5;
 			};
 		}
 	}//end namespace drawerbase
@@ -490,22 +493,6 @@ The user can \a drag the header to \a resize it or to \a reorganize it.
 By \a clicking on one header the list get \a reordered, first up, and then down alternatively.
 
 1. The resolver is used to resolute an object of the specified type for a listbox item.
-2. The any_objective of listbox have a 2-Dimension indexing. The first dimension is for the category, and the second one is for the item of the specified category.
-		int main()
-		{
-		   using namespace nana::gui;
-		   form fm;
-		   listbox lb(fm, nana::rectangle(10, 10, 280, 120));
-		   lb.append_header(STR("Header"), 200);
-		   lb.append_item(STR("int"));
-		   lb.append_item(STR("double"));
-		   lb.anyobj(0, 0, 10);
-		   lb.anyobj(0, 1, 0.1);
-		   int * pi = lb.anyobj<int>(0, 0); 	  // it returns a nullptr if there is not an int object specified.
-		   double * pd = lb.anyobj<double>(0, 1); // it returns a nullptr if there is not an double object specified.
-		   fm.show();
-		   exec();
-		 }
 3. nana::listbox creates the category 0 by default. The member functions without the categ parameter operate the items that belong to category 0.
 4. A sort compare is used for sorting the items. It is a strict weak ordering comparer that must meet the requirement:
 		Irreflexivity (comp(x, x) returns false) 

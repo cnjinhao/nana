@@ -2304,7 +2304,29 @@ namespace nana
 							break;
 					}
 				}
-			private:
+
+		        unsigned auto_width(size_type pos, unsigned max=3000) /// \todo introduce parametr max_header_width
+		        {
+			        unsigned max_w{0}  ;
+                    for (const auto &cat : lister.cat_container())
+                        for (const auto &it : cat.items )
+                        {
+                            if (pos >= it.cells.size()) continue;
+                            // precalcule text geometry
+					        unsigned ts = static_cast<unsigned> ( graph->text_extent_size(it.cells[pos].text).width);        
+                            if (max_w < ts)
+                                max_w = ts;
+                        }
+                    if (!max_w) return 0;
+
+			        unsigned ext_w = scheme_ptr->ext_w ;
+					if( pos == 0 && checkable)    //   only before the first column (display_order=0 ?)
+								ext_w += 18;
+                    header.item_width(pos, max_w + ext_w + 1 < max ? max_w  + ext_w + 1 : max);
+			        return max_w;
+		        }
+            
+           private:
 				void _m_answer_scroll(const arg_mouse& arg)
 				{
 					if(arg.evt_code == event_code::mouse_move && arg.left_button == false) return;
@@ -2907,7 +2929,7 @@ namespace nana
 								cell_txtcolor = m_cell.custom_format->fgcolor;
 							}
 
-							int ext_w = 5;
+							int ext_w = essence_->scheme_ptr->ext_w;
 							if(first && essence_->checkable)          //  draw the checkbox if need, only before the first column (display_order=0 ?)
 							{
 								ext_w += 18;
@@ -3306,6 +3328,14 @@ namespace nana
 
 				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
 				{
+					if (essence_->pointer_where.first == essence_t::parts::header)
+						if (cursor::size_we == essence_->lister.wd_ptr()->cursor())	
+                        {
+ 			               if (essence(). auto_width(drawer_header_->item_spliter() )) // ? in order
+			                   essence().update();
+                           return;
+                       }
+
 					if (essence_->pointer_where.first != essence_t::parts::lister)
 						return;
 
@@ -4010,19 +4040,8 @@ namespace nana
 		}
 		unsigned listbox::auto_width(size_type pos, unsigned max)
 		{
-			unsigned max_w{0};
             auto & ess = _m_ess();
-            for (const auto &cat : ess.lister.cat_container())
-                for (const auto &it : cat.items )
-                {
-                    if (pos >= it.cells.size()) continue;
-                    // precalcule text geometry
-					unsigned ts = static_cast<unsigned> ( ess.graph->text_extent_size(it.cells[pos].text).width);        
-                    if (max_w < ts)
-                        max_w = ts;
-                }
-            if (!max_w) return 0;
-			header_width(pos, max_w < max ? max_w : max);
+			unsigned max_w = ess.auto_width(pos, max);
 			ess.update();
 			return max_w;
 		}
