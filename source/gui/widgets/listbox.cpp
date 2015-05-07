@@ -399,20 +399,19 @@ namespace nana
 					return{};
 				}
 
-				void create(nana::string&& text, unsigned pixels)
+				size_type create(nana::string&& text, unsigned pixels)
 				{
 					cont_.emplace_back(std::move(text), pixels, static_cast<size_type>(cont_.size()));
+                    return cont_.back().index;
 				}
 
 				void item_width(size_type pos, unsigned width)
 				{
-					if (pos >= cont_.size())
-						return;
-
 					for(auto & m : cont_)
-					{
 						if(m.index == pos)
+					    {
 							m.pixels = width;
+                            return;
 					}
 				}
 
@@ -3994,11 +3993,12 @@ namespace nana
 			_m_ess().set_auto_draw(ad);
 		}
 
-		void listbox::append_header(nana::string text, unsigned width)
+		listbox::size_type listbox::append_header(nana::string text, unsigned width)
 		{
 			auto & ess = _m_ess();
-			ess.header.create(std::move(text), width);
+			listbox::size_type index = ess.header.create(std::move(text), width);
 			ess.update();
+            return index;
 		}
 
 		listbox& listbox::header_width(size_type pos, unsigned pixels)
