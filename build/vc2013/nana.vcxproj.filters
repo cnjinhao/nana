@@ -103,6 +103,12 @@
     <Filter Include="Header Files\threads">
       <UniqueIdentifier>{8ea232cf-bd7c-47e3-a694-6a8898b677d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\audio">
+      <UniqueIdentifier>{47e74af5-b32a-4ac7-873c-4304c67b7f7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\audio\detail">
+      <UniqueIdentifier>{19d8169b-f8fe-420a-ba40-0eda3dc6ce28}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp">
