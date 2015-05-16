@@ -45,6 +45,8 @@ namespace detail
 		static void enable_dropfiles(native_window_type, bool);
 		static void enable_window(native_window_type, bool);
 		static bool window_icon(native_window_type, const paint::image&);
+		// (On Windows) The system displays the large icon in the ALT+TAB dialog box, and the small icon in the window caption.
+		static bool window_icon(native_window_type, const paint::image& big_icon, const paint::image& small_icon);
 		static void activate_owner(native_window_type);
 		static void activate_window(native_window_type);
 		static void close_window(native_window_type);

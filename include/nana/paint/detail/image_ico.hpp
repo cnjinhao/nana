@@ -23,6 +23,7 @@ namespace nana{	namespace paint
 			image_ico(bool is_ico);
 
 			bool open(const nana::char_t* filename);
+			bool open(void* buff, size_t sz);
 			bool alpha_channel() const;
 			bool empty() const;
 			void close();

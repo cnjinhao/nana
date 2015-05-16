@@ -75,6 +75,12 @@ namespace nana{	namespace paint
 				this->close();
 			}
 
+			bool open(void* buff, size_t sz)
+			{
+				// TODO: read a BMP file from memory
+				return false;
+			}
+
 			bool open(const nana::char_t* filename)
 			{
 				if(nullptr == filename) return false;

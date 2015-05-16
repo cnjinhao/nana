@@ -112,7 +112,6 @@ namespace detail
 		void signal_fire_caption(core_window_t*, const nana::char_t*);
 		nana::string signal_fire_caption(core_window_t*);
 		void event_filter(core_window_t*, bool is_make, event_code);
-		void default_icon(const nana::paint::image&);
 
 		bool available(core_window_t*);
 		bool available(core_window_t *, core_window_t*);
@@ -133,7 +132,10 @@ namespace detail
 		//@brief:	Delete window handle, the handle type must be a root and a frame.
 		void destroy_handle(core_window_t*);
 
+		void default_icon(const paint::image&);
+		void default_icon(const paint::image& big_icon, const paint::image& small_icon);
 		void icon(core_window_t*, const paint::image&);
+		void icon(core_window_t*, const paint::image& big_icon, const paint::image& small_icon);
 
 		//show
 		//@brief: show or hide a window

@@ -43,7 +43,8 @@ namespace detail
 				root_register	misc_register;
 				handle_manager<core_window_t*, window_manager, window_handle_deleter>	wd_register;
 				signal_manager	signal;
-				paint::image default_icon;
+				paint::image default_icon_big;
+				paint::image default_icon_small;
 			};
 		//end struct wdm_private_impl
 
@@ -199,11 +200,6 @@ namespace detail
 			}
 		}
 
-		void window_manager::default_icon(const paint::image& img)
-		{
-			impl_->default_icon = img;
-		}
-
 		bool window_manager::available(core_window_t* wd)
 		{
 			return impl_->wd_register.available(wd);
@@ -264,7 +260,7 @@ namespace detail
 					insert_frame(owner, wd);
 
 				bedrock::inc_window(wd->thread_id);
-				this->icon(wd, impl_->default_icon);
+				this->icon(wd, impl_->default_icon_big, impl_->default_icon_small);
 				return wd;
 			}
 			return nullptr;
@@ -404,6 +400,18 @@ namespace detail
 			}
 		}
 
+		void window_manager::default_icon(const paint::image& img)
+		{
+			impl_->default_icon_big = img;
+			impl_->default_icon_small = img;
+		}
+
+		void window_manager::default_icon(const nana::paint::image& big, const nana::paint::image& small)
+		{
+			impl_->default_icon_big = big;
+			impl_->default_icon_small = small;
+		}
+
 		void window_manager::icon(core_window_t* wd, const paint::image& img)
 		{
 			if(false == img.empty())
@@ -413,6 +421,19 @@ namespace detail
 				{
 					if(wd->other.category == category::root_tag::value)
 						native_interface::window_icon(wd->root, img);
+				}
+			}
+		}
+
+		void window_manager::icon(core_window_t* wd, const paint::image& big_icon, const paint::image& small_icon)
+		{
+			if(!big_icon.empty() || !small_icon.empty())
+			{
+				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				if (impl_->wd_register.available(wd))
+				{
+					if(wd->other.category == category::root_tag::value)
+						native_interface::window_icon(wd->root, big_icon, small_icon);
 				}
 			}
 		}
