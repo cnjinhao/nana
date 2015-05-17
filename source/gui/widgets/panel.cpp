@@ -20,10 +20,13 @@ namespace nana
 		namespace panel
 		{
 		//class drawer
-			void drawer::attached(widget_reference widget, graph_reference)
+			void drawer::attached(widget_reference wdg, graph_reference)
 			{
-				widget.caption(STR("Nana Panel"));
-				window_ = widget.handle();
+				wdg.caption(STR("panel widget"));
+				window_ = wdg.handle();
+
+				API::ignore_mouse_focus(wdg, true);
+
 			}
 
 			void drawer::refresh(graph_reference graph)

@@ -21,7 +21,7 @@
 #include <memory>
 
 namespace nana{
-	class widget;	//declaration ofr nana/widgets/widget.hpp
+	class widget;	//declaration of nana/widgets/widget.hpp
 namespace detail
 {
 	struct basic_window;
@@ -165,9 +165,10 @@ namespace detail
 			bool dropable	:1; //Whether the window has make mouse_drop event.
 			bool fullscreen	:1;	//When the window is maximizing whether it fit for fullscreen.
 			bool borderless :1;
-			bool make_bground_declared : 1;	//explicitly make bground for bground effects
-			bool ignore_menubar_focus : 1;	//A flag indicates whether the menubar sets the focus.
-			unsigned Reserved	:20;
+			bool make_bground_declared	: 1;	//explicitly make bground for bground effects
+			bool ignore_menubar_focus	: 1;	//A flag indicates whether the menubar sets the focus.
+			bool ignore_mouse_focus		: 1;	//A flag indicates whether the widget accepts focus when clicking on it
+			unsigned Reserved	:19;
 			unsigned char tab;		//indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 		}flags;

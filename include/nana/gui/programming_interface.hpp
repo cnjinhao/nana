@@ -300,6 +300,9 @@ namespace API
 
 	nana::mouse_action mouse_action(window);
 	nana::element_state element_state(window);
+
+	bool ignore_mouse_focus(window, bool ignore);	///< Enables/disables the mouse focus, it returns the previous state
+	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 }//end namespace API
 }//end namespace nana
 

@@ -346,8 +346,9 @@ namespace nana
 				flags.refreshing = false;
 				flags.destroying = false;
 				flags.borderless = false;
-				flags.make_bground_declared = false;
-				flags.ignore_menubar_focus = false;
+				flags.make_bground_declared	= false;
+				flags.ignore_menubar_focus	= false;
+				flags.ignore_mouse_focus	= false;
 
 				visible = false;
 

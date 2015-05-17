@@ -1027,12 +1027,19 @@ namespace detail
 							{
 								arg_keyboard argkey;
 								brock.get_key_state(argkey);
-								auto the_next = brock.wd_manager.tabstop(msgwnd, !argkey.shift);
-								if(the_next)
+								auto tstop_wd = brock.wd_manager.tabstop(msgwnd, argkey.shift);
+								while (tstop_wd)
 								{
-									brock.wd_manager.set_focus(the_next, false);
-									brock.wd_manager.do_lazy_refresh(the_next, true);
-									root_runtime->condition.tabstop_focus_changed = true;
+									if (!tstop_wd->flags.ignore_mouse_focus)
+									{
+										brock.wd_manager.set_focus(tstop_wd, false);
+										brock.wd_manager.do_lazy_refresh(msgwnd, false);
+										brock.wd_manager.do_lazy_refresh(tstop_wd, true);
+										root_runtime->condition.tabstop_focus_changed = true;
+										break;
+									}
+
+									tstop_wd = brock.wd_manager.tabstop(tstop_wd, is_forward);
 								}
 							}
 							else if(keyboard::alt == keychar)

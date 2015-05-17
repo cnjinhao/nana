@@ -935,7 +935,7 @@ namespace detail
 				{
 					pressed_wd = msgwnd;
 					auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
-					if(new_focus)
+					if(new_focus && (!new_focus->flags.ignore_mouse_focus))
 					{
 						auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
 						if(kill_focus != new_focus)
@@ -1393,13 +1393,21 @@ namespace detail
 					{
 						if((wParam == 9) && (false == (msgwnd->flags.tab & tab_type::eating))) //Tab
 						{
-							auto the_next = brock.wd_manager.tabstop(msgwnd, (::GetKeyState(VK_SHIFT) >= 0));
-							if(the_next)
+							bool is_forward = (::GetKeyState(VK_SHIFT) >= 0);
+
+							auto tstop_wd = brock.wd_manager.tabstop(msgwnd, is_forward);
+							while (tstop_wd)
 							{
-								brock.wd_manager.set_focus(the_next, false);
-								brock.wd_manager.do_lazy_refresh(msgwnd, false);
-								brock.wd_manager.do_lazy_refresh(the_next, true);
-								root_runtime->condition.tabstop_focus_changed = true;
+								if (!tstop_wd->flags.ignore_mouse_focus)
+								{
+									brock.wd_manager.set_focus(tstop_wd, false);
+									brock.wd_manager.do_lazy_refresh(msgwnd, false);
+									brock.wd_manager.do_lazy_refresh(tstop_wd, true);
+									root_runtime->condition.tabstop_focus_changed = true;
+									break;
+								}
+
+								tstop_wd = brock.wd_manager.tabstop(tstop_wd, is_forward);
 							}
 						}
 						else
