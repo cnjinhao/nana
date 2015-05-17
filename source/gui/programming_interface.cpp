@@ -1294,5 +1294,25 @@ namespace API
 		}
 		return nana::element_state::normal;
 	}
+
+	bool ignore_mouse_focus(window wd, bool ignore)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			auto state = iwd->flags.ignore_mouse_focus;
+			iwd->flags.ignore_mouse_focus = ignore;
+			return state;
+		}
+		return false;
+	}
+
+	bool ignore_mouse_focus(window wd)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		return (restrict::window_manager.available(iwd) ? iwd->flags.ignore_mouse_focus : false);
+	}
 }//end namespace API
 }//end namespace nana

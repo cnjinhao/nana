@@ -1058,7 +1058,7 @@ namespace detail
 						{
 							++i;
 							core_window_t* ts = (i != end ? (*i) : tabs.front());
-							return (ts != wd ? ts : 0);
+							return (ts != wd ? ts : nullptr);
 						}
 						else
 							return tabs.front();
