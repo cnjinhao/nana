@@ -905,8 +905,15 @@ namespace detail
 				msgwnd = brock.wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if(msgwnd && msgwnd->flags.enabled)
 				{
-					if(msgwnd->flags.take_active)
-						brock.wd_manager.set_focus(msgwnd, false);
+					if (msgwnd->flags.take_active && !msgwnd->flags.ignore_mouse_focus)
+					{
+						auto killed = brock.wd_manager.set_focus(msgwnd, false);
+						if (killed != msgwnd)
+						{
+							brock.wd_manager.do_lazy_refresh(killed, false);
+							msgwnd->root_widget->other.attribute.root->context.focus_changed = false;
+						}
+					}
 
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
@@ -1396,18 +1403,12 @@ namespace detail
 							bool is_forward = (::GetKeyState(VK_SHIFT) >= 0);
 
 							auto tstop_wd = brock.wd_manager.tabstop(msgwnd, is_forward);
-							while (tstop_wd)
+							if (tstop_wd)
 							{
-								if (!tstop_wd->flags.ignore_mouse_focus)
-								{
-									brock.wd_manager.set_focus(tstop_wd, false);
-									brock.wd_manager.do_lazy_refresh(msgwnd, false);
-									brock.wd_manager.do_lazy_refresh(tstop_wd, true);
-									root_runtime->condition.tabstop_focus_changed = true;
-									break;
-								}
-
-								tstop_wd = brock.wd_manager.tabstop(tstop_wd, is_forward);
+								brock.wd_manager.set_focus(tstop_wd, false);
+								brock.wd_manager.do_lazy_refresh(msgwnd, false);
+								brock.wd_manager.do_lazy_refresh(tstop_wd, true);
+								root_runtime->condition.tabstop_focus_changed = true;
 							}
 						}
 						else
