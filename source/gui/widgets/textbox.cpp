@@ -15,6 +15,9 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/inner_fwd_implement.hpp>
+
 namespace nana
 {
 	arg_textbox::arg_textbox(textbox& wdg)
@@ -90,8 +93,13 @@ namespace drawerbase {
 		{
 			refresh(graph);
 			if (arg.getting) {
-				editor_->select(true);
-				editor_->move_caret_end();
+				static auto& brock = detail::bedrock::instance();
+				auto native_window = reinterpret_cast<native_window_type>(arg.receiver);
+				auto* root_runtime = brock.wd_manager.root_runtime(native_window);
+				if (root_runtime && root_runtime->condition.tabstop_focus_changed) {
+					editor_->select(true);
+					editor_->move_caret_end();
+				}
 			}
 			editor_->show_caret(arg.getting);
 			editor_->reset_caret();

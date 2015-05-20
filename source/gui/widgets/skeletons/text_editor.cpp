@@ -1629,7 +1629,10 @@ namespace nana{	namespace widgets
 					select_.mode_selection = selection::mode_mouse_selected;
 				}
 				else
+				{
+					select(false);
 					select_.mode_selection = selection::mode_no_selected;
+				}
 			}
 
 			text_area_.border_renderer(graph_, _m_bgcolor());
