@@ -2954,6 +2954,7 @@ namespace nana{	namespace widgets
 			if (if_mask && mask_char_)
 				mask_str.reset(new nana::string(str.size(), mask_char_));
 
+			bool focused = API::is_focus_ready(window_); // do this many times is not efficient...
 
 			auto & linestr = (if_mask && mask_char_ ? *mask_str : str);
 
@@ -2976,7 +2977,7 @@ namespace nana{	namespace widgets
 			graph_.set_color(scheme_->selection.get_color());
 
 			//The text is not selected or the whole line text is selected
-			if ((!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
+			if (!focused || (!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
 			{
 				bool selected = (a.y < str_pos.y && str_pos.y < b.y);
 				for (auto & ent : reordered)
@@ -2986,7 +2987,7 @@ namespace nana{	namespace widgets
 
 					if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 					{
-						if (selected)
+						if (selected && focused)
 						{
 							graph_.set_text_color(scheme_->selection_text.get_color());
 							graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);

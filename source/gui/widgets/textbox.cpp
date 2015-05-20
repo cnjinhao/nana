@@ -89,7 +89,10 @@ namespace drawerbase {
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
 			refresh(graph);
-
+			if (arg.getting) {
+				editor_->select(true);
+				editor_->move_caret_end();
+			}
 			editor_->show_caret(arg.getting);
 			editor_->reset_caret();
 			API::lazy_refresh();
