@@ -24,7 +24,7 @@
 // http://www.boost.org/doc/libs/1_58_0/libs/filesystem/doc/index.htm     --- 
 // http://www.boost.org/doc/libs/1_34_0/libs/filesystem/doc/index.htm
 // http://www.boost.org/doc/libs/1_58_0/boost/filesystem.hpp 
-
+// https://gcc.gnu.org/onlinedocs/libstdc++/manual/status.html#status.iso.200x --- Table 1.4. g++ C++ Technical Specifications Implementation Status
 
 #ifndef NANA_FILESYSTEM_HPP
 #define NANA_FILESYSTEM_HPP
@@ -49,16 +49,18 @@ namespace nana
 {
 namespace filesystem
 {
-	struct fileinfo
-	{
-		fileinfo();
-#ifdef NANA_WINDOWS
-		fileinfo(const WIN32_FIND_DATA& wfd);
-#elif NANA_LINUX
-		fileinfo(const nana::string& filename, const struct stat &);
-#endif
-		nana::string name;
+    using path = nana::string; 
 
+	struct directory_entry
+	{
+		directory_entry();
+		directory_entry(const nana::string& filename, bool is_directory, unsigned long size)
+            :name{filename}, size{size}, directory{is_directory}
+        {}
+        const path& path() const noexcept{return name;}
+        //operator const path&() const noexcept;
+
+		nana::string name;
 		unsigned long size;
 		bool directory;
 	};
@@ -66,10 +68,10 @@ namespace filesystem
 
     /// an iterator for a sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
 	//template<typename FileInfo>
-	class directory_iterator 		:public std::iterator<std::input_iterator_tag, fileinfo>
+	class directory_iterator 		:public std::iterator<std::input_iterator_tag, directory_entry>
 	{
 	public:
-		typedef fileinfo value_type;
+		using value_type = directory_entry ;
 
 		directory_iterator():end_(true), handle_(nullptr){}
 
@@ -135,7 +137,11 @@ namespace filesystem
 					return;
 				}
 			}
-			value_ = value_type(wfd_);
+
+			value_ = value_type(wfd_.cFileName, 
+                               (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
+                                wfd_.nFileSizeLow);
+
 		#elif defined(NANA_LINUX)
 			path_ = nana::charset(file_path);
 			if(path_.size() && (path_[path_.size() - 1] != '/'))
@@ -160,7 +166,7 @@ namespace filesystem
 					struct stat fst;
 					if(stat((path_ + dnt->d_name).c_str(), &fst) == 0)
 					{
-						value_ = value_type(nana::charset(dnt->d_name), fst);
+						value_ = value_type(nana::charset(dnt->d_name), 0 != S_ISDIR(fst.st_mode), fst.st_size);
 					}
 					else
 					{
@@ -194,7 +200,9 @@ namespace filesystem
 							return;
 						}
 					}
-					value_ = value_type(wfd_);
+			        value_ = value_type(wfd_.cFileName, 
+                               (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
+                                wfd_.nFileSizeLow);
 				}
 				else
 					end_ = true;
@@ -213,7 +221,9 @@ namespace filesystem
 					}
 					struct stat fst;
 					if(stat((path_ + "/" + dnt->d_name).c_str(), &fst) == 0)
-						value_ = value_type(nana::charset(dnt->d_name), fst);
+			            value_ = value_type(wfd_.cFileName, 
+                               (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
+                                wfd_.nFileSizeLow);
 					else
 						value_.name = nana::charset(dnt->d_name);
 				}
@@ -265,7 +275,7 @@ namespace filesystem
 	   return !x.equal(y);
 	}
 
-	//using directory_iterator = directory_iterator<fileinfo> ;
+	//using directory_iterator = directory_iterator<directory_entry> ;
 }//end namespace filesystem
 }//end namespace nana
 
