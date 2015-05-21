@@ -49,20 +49,81 @@ namespace nana
 {
 namespace filesystem
 {
-    using path = nana::string; 
+    enum class file_type 
+    { 
+        none = 0,   ///< has not been determined or an error occurred while trying to determine
+        not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error
+        regular = 1,
+        directory = 2  ,
+        symlink =3, ///< Symbolic link file
+        block =4,  ///< Block special file
+        character= 5 ,  ///< Character special file
+        fifo = 6 ,  ///< FIFO or pipe file
+        socket =7,
+        unknown= 8  ///< The file does exist, but is of an operating system dependent type not covered by any of the other
+    };
+    
+    enum class error  	{	none = 0 		}; 
+
+	struct attribute
+	{
+		long long bytes;
+		bool is_directory;
+		tm modified;
+	};
+
+	bool file_attrib(const nana::string& file, attribute&);
+	long long filesize(const nana::string& file);
+
+	bool mkdir(const nana::string& dir, bool & if_exist);
+	bool modified_file_time(const nana::string& file, struct tm&);
+
+	nana::string path_user();
+	nana::string path_current();
+
+	bool rmfile(const nana::char_t* file);
+	bool rmdir(const nana::char_t* dir, bool fails_if_not_empty);
+	nana::string root(const nana::string& path);
+    
+    /// concerned only with lexical and syntactic aspects and does not necessarily exist in
+    /// external storage, and the pathname is not necessarily valid for the current operating system 
+    /// or for a particular file system 
+    /// A sequence of elements that identify the location of a file within a filesystem. 
+    /// The elements are the:
+    /// rootname (opt), root-directory (opt), and an optional sequence of filenames. 
+    /// The maximum number of elements in the sequence is operating system dependent.
+	class path
+	{
+	public:
+		path();
+		path(const nana::string&);
+
+		bool empty() const;
+		path root() const;
+		file_type what() const;
+
+		nana::string name() const;
+	private:
+#if defined(NANA_WINDOWS)
+		nana::string text_;
+#else
+		std::string text_;
+#endif
+	};
 
 	struct directory_entry
 	{
-		directory_entry();
-		directory_entry(const nana::string& filename, bool is_directory, unsigned long size)
-            :name{filename}, size{size}, directory{is_directory}
-        {}
-        const path& path() const noexcept{return name;}
-        //operator const path&() const noexcept;
-
-		nana::string name;
+		path m_path;
 		unsigned long size;
 		bool directory;
+
+		directory_entry();
+		directory_entry(const nana::string& filename, bool is_directory, unsigned long size)
+            :m_path{filename}, size{size}, directory{is_directory}
+        {}
+        operator const path&() const noexcept;
+        const path& path() const noexcept{return m_path;}
+
 	};
 
 
@@ -100,7 +161,7 @@ namespace filesystem
 		bool equal(const directory_iterator& x) const
 		{
 			if(end_ && (end_ == x.end_)) return true;
-			return (value_.name == x.value_.name);
+			return (value_.path().name() == x.value_.path().name());
 		}
 	private:
 		template<typename Char>
