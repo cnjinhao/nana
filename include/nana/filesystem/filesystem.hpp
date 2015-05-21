@@ -30,6 +30,7 @@
 #define NANA_FILESYSTEM_HPP
 #include <iterator>
 #include <memory>
+#include <chrono>
 
 #include <nana/deploy.hpp>
 
@@ -63,27 +64,62 @@ namespace filesystem
         unknown= 8  ///< The file does exist, but is of an operating system dependent type not covered by any of the other
     };
     
+    enum class perms 
+    {
+        none =0, ///< There are no permissions set for the file.
+        unknown = 0xFFFF  ///<  not known, such as when a file_status object is created without specifying the permissions
+    };
+    //enum class copy_options;
+    //enum class directory_options;
+
+    // class filesystem_error;
     enum class error  	{	none = 0 		}; 
 
-	struct attribute
+	struct attribute  // deprecate ??
 	{
-		long long bytes;
-		bool is_directory;
-		tm modified;
+        uintmax_t size     {};
+        bool      directory{};
+        tm        modified {};
+
+        attribute() {} ;
+        attribute( uintmax_t size, bool is_directory) :size{size}, directory{is_directory} {}
 	};
 
-	bool file_attrib(const nana::string& file, attribute&);
-	long long filesize(const nana::string& file);
+    struct space_info
+    {
+        uintmax_t capacity;
+        uintmax_t free;
+        uintmax_t available;
+    };
+    using file_time_type = std::chrono::time_point< std::chrono::system_clock>;// trivial-clock> ;
 
-	bool mkdir(const nana::string& dir, bool & if_exist);
-	bool modified_file_time(const nana::string& file, struct tm&);
+    class file_status
+    {
+        file_type m_ft = file_type::none;
+        perms     m_prms = perms::unknown;
 
-	nana::string path_user();
-	nana::string path_current();
+       public:
+        explicit file_status(file_type ft = file_type::none, perms prms = perms::unknown) noexcept
+            :m_ft{ft}, m_prms{prms}
+        {}
 
-	bool rmfile(const nana::char_t* file);
-	bool rmdir(const nana::char_t* dir, bool fails_if_not_empty);
-	nana::string root(const nana::string& path);
+        file_status(const file_status& fs) noexcept: m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default;  
+        file_status(file_status&& fs) noexcept: m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default; 
+
+        ~file_status(){};
+        file_status& operator=(const file_status&) noexcept = default;
+        file_status& operator=(file_status&&fs) noexcept  // = default; 
+        { 
+            m_ft=fs.m_ft;  m_prms = fs.m_prms; 
+            return *this;
+        } 
+        // observers
+        file_type type() const noexcept{ return m_ft;}
+        perms permissions() const noexcept{ return m_prms;}
+        // modifiers
+        void type       (file_type ft) noexcept { m_ft=ft ;}
+        void permissions(perms prms)   noexcept { m_prms = prms; }
+    };
     
     /// concerned only with lexical and syntactic aspects and does not necessarily exist in
     /// external storage, and the pathname is not necessarily valid for the current operating system 
@@ -114,18 +150,24 @@ namespace filesystem
 	struct directory_entry
 	{
 		path m_path;
-		unsigned long size;
-		bool directory;
+
+        attribute attr{};
+        //file_status m_status;
 
 		directory_entry();
-		directory_entry(const nana::string& filename, bool is_directory, unsigned long size)
-            :m_path{filename}, size{size}, directory{is_directory}
+		directory_entry(const nana::string& filename, bool is_directory, uintmax_t size)
+            :m_path{filename}, attr{size, is_directory}
         {}
-        operator const path&() const noexcept;
+
+        void assign          (const path& p){ m_path=p;}
+        void replace_filename(const path& p){ m_path=p;}
+
+        //file_status status() const;
+
+        operator const path&() const noexcept{return m_path;};
         const path& path() const noexcept{return m_path;}
 
 	};
-
 
     /// an iterator for a sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
 	//template<typename FileInfo>
@@ -133,14 +175,15 @@ namespace filesystem
 	{
 	public:
 		using value_type = directory_entry ;
+        typedef ptrdiff_t                   difference_type;
+        typedef const directory_entry*      pointer;
+        typedef const directory_entry&      reference;
+        typedef std::input_iterator_tag     iterator_category;
 
 		directory_iterator():end_(true), handle_(nullptr){}
 
-		directory_iterator(const nana::string& file_path)
-			:end_(false), handle_(nullptr)
-		{
-			_m_prepare(file_path);
-		}
+		directory_iterator(const nana::string& file_path) {	_m_prepare(file_path);	}
+		directory_iterator(const path& file_path) {	_m_prepare(file_path.name());	}
 
 		const value_type&
 		operator*() const { return value_; }
@@ -310,7 +353,7 @@ namespace filesystem
 			}
 		};
 	private:
-		bool	end_;
+        bool	end_{false};
 
 #if defined(NANA_WINDOWS)
 		WIN32_FIND_DATA		wfd_;
@@ -320,9 +363,18 @@ namespace filesystem
 #endif
 		std::shared_ptr<find_handle_t> find_ptr_;
 
-		find_handle_t	handle_;
+        find_handle_t	handle_{nullptr};
 		value_type	value_;
 	};
+
+    // enable directory_iterator range-based for statements
+    directory_iterator begin(directory_iterator iter) noexcept   { return iter;  }
+    directory_iterator end(const directory_iterator&) noexcept   { return {};    }
+
+    //class recursive_directory_iterator;
+    //// enable recursive_directory_iterator range-based for statements
+    //recursive_directory_iterator begin(recursive_directory_iterator iter) noexcept;
+    //recursive_directory_iterator end(const recursive_directory_iterator&) noexcept;
 
 	//template<typename Value_Type>
 	inline bool operator==(const directory_iterator/*<Value_Type>*/ & x, const directory_iterator/*<Value_Type>*/ & y)
@@ -336,7 +388,66 @@ namespace filesystem
 	   return !x.equal(y);
 	}
 
-	//using directory_iterator = directory_iterator<directory_entry> ;
+
+    // file_status status(const path& p);
+	bool file_attrib(const nana::string& file, attribute&);
+
+    bool is_directory(file_status s) noexcept{ return s.type() == file_type::directory ;}
+    bool is_directory(const path& p){return directory_iterator(p.name())->attr.directory; }
+    //bool is_directory(const path& p, error_code& ec) noexcept;
+
+    //bool is_regular_file(file_status s) noexcept;
+
+    bool is_empty(const path& p)
+    {
+        directory_iterator d(p) ;
+        return d->attr.directory ? d == directory_iterator()
+                                  : d->attr.size == 0;
+    }
+    //bool is_empty(const path& p, error_code& ec) noexcept;
+
+    uintmax_t file_size(const nana::string& file);  // deprecate?
+    uintmax_t file_size(const path& p){return file_size(p.name());}
+    //uintmax_t file_size(const path& p, error_code& ec) noexcept;
+	//long long filesize(const nana::string& file);
+
+
+    bool create_directories(const path& p);
+    //bool create_directories(const path& p, error_code& ec) noexcept;
+    bool create_directory(const path& p);
+    //bool create_directory(const path& p, error_code& ec) noexcept;
+    bool create_directory(const path& p, const path& attributes);
+    //bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
+	bool create_directory(const nana::string& dir, bool & if_exist);
+    bool create_directory(const path& p, bool & if_exist)
+    {
+        return create_directory(p.name(), if_exist);
+    };
+
+    
+    bool modified_file_time(const nana::string& file, struct tm&);
+
+
+	nana::string path_user();
+	
+    
+    path current_path();
+    //path current_path(error_code& ec);
+    void current_path(const path& p);
+    //void current_path(const path& p, error_code& ec) noexcept;    
+    //nana::string path_current();
+
+
+    //bool remove(const path& p);
+    //bool remove(const path& p, error_code& ec) noexcept;
+	bool rmfile(const nana::char_t* file);
+
+    //uintmax_t remove_all(const path& p);
+    //uintmax_t remove_all(const path& p, error_code& ec) noexcept;
+	bool rmdir(const nana::char_t* dir, bool fails_if_not_empty);
+	nana::string root(const nana::string& path);
+
+
 }//end namespace filesystem
 }//end namespace nana
 

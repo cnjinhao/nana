@@ -134,7 +134,7 @@ namespace filesystem
 
 			for(auto & f : files)
 			{
-				if(f.directory)
+				if(f.attr.directory)
 					rm_dir_recursive(path + f.path().name());
 				else
 					rmfile((path + f.path().name()).c_str());
@@ -196,8 +196,8 @@ namespace filesystem
 			LARGE_INTEGER li;
 			li.u.LowPart = fad.nFileSizeLow;
 			li.u.HighPart = fad.nFileSizeHigh;
-			attr.bytes = li.QuadPart;
-			attr.is_directory = (0 != (fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+			attr.size = li.QuadPart;
+			attr.directory = (0 != (fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
 			detail::filetime_to_c_tm(fad.ftLastWriteTime, attr.modified);
 			return true;
 		}
@@ -214,7 +214,7 @@ namespace filesystem
 		return false;
 	}
 
-	long long filesize(const nana::string& file)
+	uintmax_t file_size(const nana::string& file)
 	{
 #if defined(NANA_WINDOWS)
 		//Some compilation environment may fail to link to GetFileSizeEx
@@ -281,7 +281,7 @@ namespace filesystem
 		return false;
 	}
 
-	bool mkdir(const nana::string& path, bool & if_exist)
+	bool create_directory(const nana::string& path, bool & if_exist)
 	{
 		if_exist = false;
 		if(path.size() == 0) return false;
@@ -414,7 +414,7 @@ namespace filesystem
 		return nana::string();
 	}
 
-	nana::string path_current()
+	path current_path()
 	{
 #if defined(NANA_WINDOWS)
 		nana::char_t buf[MAX_PATH];
