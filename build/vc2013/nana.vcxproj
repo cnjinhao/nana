@@ -67,32 +67,32 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>../bin/vc2013/</OutDir>
+    <OutDir>../bin/</OutDir>
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
-    <OutDir>../bin/vc2013/</OutDir>
+    <OutDir>../bin/</OutDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>../bin/vc2013/</OutDir>
+    <OutDir>../bin/</OutDir>
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
-    <OutDir>../bin/vc2013/</OutDir>
+    <OutDir>../bin/</OutDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
