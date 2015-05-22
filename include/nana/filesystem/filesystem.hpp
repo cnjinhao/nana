@@ -46,7 +46,7 @@
 
  // namespace std { namespace experimental { namespace filesystem { inline namespace v1 {
 
-namespace nana
+namespace nana  { namespace experimental
 {
 namespace filesystem
 {
@@ -73,7 +73,7 @@ namespace filesystem
     //enum class directory_options;
 
     // class filesystem_error;
-    enum class error  	{	none = 0 		}; 
+    enum class error  	{	none = 0 		};  // deprecate ?? 
 
 	struct attribute  // deprecate ??
 	{
@@ -449,6 +449,7 @@ namespace filesystem
 
 
 }//end namespace filesystem
+} //end namespace experimental
 }//end namespace nana
 
 #endif
