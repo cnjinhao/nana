@@ -70,21 +70,29 @@
     <OutDir>../bin/vc2013/</OutDir>
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <OutDir>../bin/vc2013/</OutDir>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>../bin/vc2013/</OutDir>
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <OutDir>../bin/vc2013/</OutDir>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+    <IntDir>..\..\..\temp\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -102,7 +110,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
+      <OutputFile>$(TargetPath)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -119,7 +127,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
+      <OutputFile>$(TargetPath)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -141,7 +149,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
+      <OutputFile>$(TargetPath)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -162,7 +170,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <OutputFile>$(OutDir)\nana_$(ConfigurationName)_$(PlatformShortName).lib</OutputFile>
+      <OutputFile>$(TargetPath)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
