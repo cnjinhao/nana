@@ -139,6 +139,7 @@ namespace filesystem
 		file_type what() const;
 
 		nana::string name() const;
+		operator nana::string() { return name(); }
 	private:
 #if defined(NANA_WINDOWS)
 		nana::string text_;
@@ -154,7 +155,7 @@ namespace filesystem
         attribute attr{};
         //file_status m_status;
 
-		directory_entry();
+		directory_entry(){}
 		directory_entry(const nana::string& filename, bool is_directory, uintmax_t size)
             :m_path{filename}, attr{size, is_directory}
         {}
@@ -368,8 +369,8 @@ namespace filesystem
 	};
 
     // enable directory_iterator range-based for statements
-    directory_iterator begin(directory_iterator iter) noexcept   { return iter;  }
-    directory_iterator end(const directory_iterator&) noexcept   { return {};    }
+	inline directory_iterator begin(directory_iterator iter) noexcept   { return iter;  }
+	inline directory_iterator end(const directory_iterator&) noexcept   { return {};    }
 
     //class recursive_directory_iterator;
     //// enable recursive_directory_iterator range-based for statements
@@ -392,13 +393,13 @@ namespace filesystem
     // file_status status(const path& p);
 	bool file_attrib(const nana::string& file, attribute&);
 
-    bool is_directory(file_status s) noexcept{ return s.type() == file_type::directory ;}
-    bool is_directory(const path& p){return directory_iterator(p.name())->attr.directory; }
+	inline bool is_directory(file_status s) noexcept{ return s.type() == file_type::directory ;}
+	inline bool is_directory(const path& p){return directory_iterator(p.name())->attr.directory; }
     //bool is_directory(const path& p, error_code& ec) noexcept;
 
     //bool is_regular_file(file_status s) noexcept;
 
-    bool is_empty(const path& p)
+	inline bool is_empty(const path& p)
     {
         directory_iterator d(p) ;
         return d->attr.directory ? d == directory_iterator()
@@ -407,7 +408,7 @@ namespace filesystem
     //bool is_empty(const path& p, error_code& ec) noexcept;
 
     uintmax_t file_size(const nana::string& file);  // deprecate?
-    uintmax_t file_size(const path& p){return file_size(p.name());}
+	inline uintmax_t file_size(const path& p){return file_size(p.name());}
     //uintmax_t file_size(const path& p, error_code& ec) noexcept;
 	//long long filesize(const nana::string& file);
 
@@ -419,7 +420,7 @@ namespace filesystem
     bool create_directory(const path& p, const path& attributes);
     //bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
 	bool create_directory(const nana::string& dir, bool & if_exist);
-    bool create_directory(const path& p, bool & if_exist)
+	inline bool create_directory(const path& p, bool & if_exist)
     {
         return create_directory(p.name(), if_exist);
     };
