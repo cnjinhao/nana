@@ -664,7 +664,6 @@ namespace detail
 					auto focus = msgwnd->other.attribute.root->focus;
 					if(focus && focus->together.caret)
 						focus->together.caret->set_active(true);
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = true;
 
 					arg_focus arg;
 					arg.window_handle = reinterpret_cast<window>(focus);
@@ -733,8 +732,8 @@ namespace detail
 						if(kill_focus != new_focus)
 							brock.wd_manager.do_lazy_refresh(kill_focus, false);
 					}
+
 					auto retain = msgwnd->together.events_ptr;
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = false;
 					context.event_window = msgwnd;
 
 					pressed_wd = nullptr;
@@ -748,7 +747,7 @@ namespace detail
 						{
 							pressed_wd = msgwnd;
 							//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
-							if(msgwnd->root_widget->other.attribute.root->context.focus_changed)
+							if (msgwnd->root != native_interface::get_focus_window())
 							{
 								//call the drawer mouse up event for restoring the surface graphics
 								msgwnd->flags.action = mouse_action::normal;

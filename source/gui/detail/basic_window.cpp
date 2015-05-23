@@ -195,7 +195,6 @@ namespace nana
 					{
 					case category::root_tag::value:
 						attribute.root = new attr_root_tag;
-						attribute.root->context.focus_changed = false;
 						break;
 					case category::frame_tag::value:
 						attribute.frame = new attr_frame_tag;
