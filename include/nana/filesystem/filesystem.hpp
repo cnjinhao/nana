@@ -9,7 +9,10 @@
  *	@file: stdex/filesystem/filesystem.hpp
  *	@description:
  *		file_iterator is a toolkit for applying each file and directory in a
- *	specified path.
+ *	    specified path.
+ *  Modiffied by Ariel Vina-Rodriguez:
+ *  Now mimic std::experimental::filesystem::v1   (boost v3)
+ *  and need VC2015 or a C++11 compiler. With a few correction will be compiler by VC2013
  */
 
 // http://en.cppreference.com/w/cpp/experimental/fs
@@ -207,6 +210,12 @@ namespace filesystem
 			if(end_ && (end_ == x.end_)) return true;
 			return (value_.path().name() == x.value_.path().name());
 		}
+    
+		
+		// enable directory_iterator range-based for statements
+	directory_iterator begin( ) noexcept   { return *this;  }
+	directory_iterator end( ) noexcept     { return {};     }
+	
 	private:
 		template<typename Char>
 		static bool _m_ignore(const Char * p)
@@ -368,9 +377,6 @@ namespace filesystem
 		value_type	value_;
 	};
 
-    // enable directory_iterator range-based for statements
-	inline directory_iterator begin(directory_iterator iter) noexcept   { return iter;  }
-	inline directory_iterator end(const directory_iterator&) noexcept   { return {};    }
 
     //class recursive_directory_iterator;
     //// enable recursive_directory_iterator range-based for statements
@@ -407,7 +413,7 @@ namespace filesystem
     }
     //bool is_empty(const path& p, error_code& ec) noexcept;
 
-    uintmax_t file_size(const nana::string& file);  // deprecate?
+           uintmax_t file_size(const nana::string& file);  // deprecate?
 	inline uintmax_t file_size(const path& p){return file_size(p.name());}
     //uintmax_t file_size(const path& p, error_code& ec) noexcept;
 	//long long filesize(const nana::string& file);
