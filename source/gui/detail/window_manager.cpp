@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,7 +42,6 @@ namespace detail
 			{
 				root_register	misc_register;
 				handle_manager<core_window_t*, window_manager, window_handle_deleter>	wd_register;
-				signal_manager	signal;
 				paint::image default_icon;
 			};
 		//end struct wdm_private_impl
@@ -171,22 +170,6 @@ namespace detail
 			impl_->wd_register.all(v);
 		}
 
-		void window_manager::signal_fire_caption(core_window_t* wd, const nana::char_t* str)
-		{
-			detail::signals sig;
-			sig.info.caption = str;
-			impl_->signal.call_signal(wd, signals::code::caption, sig);
-		}
-
-		nana::string window_manager::signal_fire_caption(core_window_t* wd)
-		{
-			nana::string str;
-			detail::signals sig;
-			sig.info.str = &str;
-			impl_->signal.call_signal(wd, signals::code::read_caption, sig);
-			return str;
-		}
-
 		void window_manager::event_filter(core_window_t* wd, bool is_make, event_code evtid)
 		{
 			switch(evtid)
@@ -224,10 +207,10 @@ namespace detail
 			return false;
 		}
 
-		window_manager::core_window_t* window_manager::create_root(core_window_t* owner, bool nested, rectangle r, const appearance& app, widget * wdg)
+		window_manager::core_window_t* window_manager::create_root(core_window_t* owner, bool nested, rectangle r, const appearance& app, widget* wdg)
 		{
 			native_window_type native = nullptr;
-			if(owner)
+			if (owner)
 			{
 				//Thread-Safe Required!
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -235,7 +218,7 @@ namespace detail
 				if (impl_->wd_register.available(owner))
 				{
 					native = (owner->other.category == category::frame_tag::value ?
-										owner->other.attribute.frame->container : owner->root_widget->root);
+						owner->other.attribute.frame->container : owner->root_widget->root);
 					r.x += owner->pos_root.x;
 					r.y += owner->pos_root.y;
 				}
@@ -244,9 +227,9 @@ namespace detail
 			}
 
 			auto result = native_interface::create_window(native, nested, r, app);
-			if(result.native_handle)
+			if (result.native_handle)
 			{
-				core_window_t* wd = new core_window_t(owner, wdg, (category::root_tag**)nullptr);
+				core_window_t* wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
 				wd->flags.take_active = !app.no_activate;
 				wd->title = native_interface::window_caption(result.native_handle);
 
@@ -260,7 +243,7 @@ namespace detail
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd, wd->thread_id);
 
-				if(owner && owner->other.category == category::frame_tag::value)
+				if (owner && owner->other.category == category::frame_tag::value)
 					insert_frame(owner, wd);
 
 				bedrock::inc_window(wd->thread_id);
@@ -277,7 +260,7 @@ namespace detail
 
 			if (impl_->wd_register.available(parent) == false)	return nullptr;
 
-			core_window_t * wd = new core_window_t(parent, r, wdg, (category::frame_tag**)nullptr);
+			core_window_t * wd = new core_window_t(parent, widget_notifier_interface::get_notifier(wdg), r, (category::frame_tag**)nullptr);
 			wd->frame_window(native_interface::create_child_window(parent->root, rectangle(wd->pos_root.x, wd->pos_root.y, r.width, r.height)));
 			impl_->wd_register.insert(wd, wd->thread_id);
 
@@ -324,11 +307,13 @@ namespace detail
 			if (impl_->wd_register.available(parent) == false)
 				throw std::invalid_argument("invalid parent/owner handle");
 
+			auto wdg_notifier = widget_notifier_interface::get_notifier(wdg);
+
 			core_window_t * wd;
-			if(is_lite)
-				wd = new core_window_t(parent, r, wdg, (category::lite_widget_tag**)nullptr);
+			if (is_lite)
+				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::lite_widget_tag**)nullptr);
 			else
-				wd = new core_window_t(parent, r, wdg, (category::widget_tag**)nullptr);
+				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::widget_tag**)nullptr);
 			impl_->wd_register.insert(wd, wd->thread_id);
 			return wd;
 		}
@@ -358,8 +343,8 @@ namespace detail
 					//before the window_manager destroyes the window, and then, window_manager detaches the
 					//non-existing drawer_trigger which is destroyed by destruction of widget. Crash!
 					wd->drawer.detached();
-					impl_->signal.call_signal(wd, signals::code::destroy, signals_);
-					impl_->signal.umake(wd);
+
+					wd->widget_notifier->destroy();
 
 					native_interface::close_window(wd->root);
 				}
@@ -793,7 +778,7 @@ namespace detail
 		::nana::widget* window_manager::get_widget(core_window_t* wd) const
 		{
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			return (impl_->wd_register.available(wd) ? wd->widget_ptr : nullptr);
+			return (impl_->wd_register.available(wd) ? wd->widget_notifier->widget_ptr() : nullptr);
 		}
 
 		std::vector<window_manager::core_window_t*> window_manager::get_children(core_window_t* wd) const
@@ -1151,11 +1136,6 @@ namespace detail
 			return nullptr;
 		}
 
-		void window_manager::_m_attach_signal(core_window_t* wd, signal_invoker_interface* si)
-		{
-			impl_->signal.make(wd, si);
-		}
-
 		bool check_tree(basic_window* wd, basic_window* const cond)
 		{
 			if (wd == cond)	return true;
@@ -1366,8 +1346,7 @@ namespace detail
 			wndlayout_type::enable_effects_bground(wd, false);
 
 			wd->drawer.detached();
-			impl_->signal.call_signal(wd, signals::code::destroy, signals_);
-			impl_->signal.umake(wd);
+			wd->widget_notifier->destroy();
 
 			if(wd->other.category == category::frame_tag::value)
 			{

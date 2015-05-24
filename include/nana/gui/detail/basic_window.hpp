@@ -15,13 +15,12 @@
 #include "drawer.hpp"
 #include "events_holder.hpp"
 #include "widget_colors.hpp"
+#include "widget_notifier_interface.hpp"
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>
-#include <memory>
 
 namespace nana{
-	class widget;	//declaration of nana/widgets/widget.hpp
 namespace detail
 {
 	struct basic_window;
@@ -89,11 +88,11 @@ namespace detail
 
 		//basic_window
 		//@brief: constructor for the root window
-		basic_window(basic_window* owner, widget*, category::root_tag**);
+		basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&&, category::root_tag**);
 
 		template<typename Category>
-		basic_window(basic_window* parent, const rectangle& r, widget* wdg, Category**)
-			: widget_ptr(wdg), other(Category::value)
+		basic_window(basic_window* parent, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, const rectangle& r, Category**)
+			: widget_notifier(std::move(wdg_notifier)), other(Category::value)
 		{
 			drawer.bind(this);
 			if(parent)
@@ -146,7 +145,7 @@ namespace detail
 		basic_window*		root_widget;	//A pointer refers to the root basic window, if the window is a root, the pointer refers to itself.
 		paint::graphics*	root_graph;		//Refer to the root buffer graphics
 		cursor	predef_cursor;
-		widget* const		widget_ptr;
+		std::unique_ptr<widget_notifier_interface> widget_notifier;
 
 		struct flags_type
 		{

@@ -221,8 +221,8 @@ namespace nana
 
 			//basic_window
 			//@brief: constructor for the root window
-			basic_window::basic_window(basic_window* owner, widget* wdg, category::root_tag**)
-				: widget_ptr(wdg), other(category::root_tag::value)
+			basic_window::basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, category::root_tag**)
+				: widget_notifier(std::move(wdg_notifier)), other(category::root_tag::value)
 			{
 				drawer.bind(this);
 				_m_init_pos_and_size(nullptr, rectangle());

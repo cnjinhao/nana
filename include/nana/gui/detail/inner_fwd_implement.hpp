@@ -170,34 +170,6 @@ namespace nana{
 
 			std::map<native_window_type, root_misc> table_;
 		};
-
-
-		class signal_manager
-		{
-			typedef basic_window core_window_t;
-		public:
-			void make(core_window_t* wd, signal_invoker_interface* si)
-			{
-				if (si)
-					table_[wd].reset(si);
-				else
-					table_.erase(wd);
-			}
-
-			void umake(core_window_t * wd)
-			{
-				table_.erase(wd);
-			}
-
-			void call_signal(core_window_t * wd, signals::code code, const signals& s)
-			{
-				auto i = table_.find(wd);
-				if (i != table_.end())
-					i->second->call_signal(code, s);
-			}
-		private:
-			std::map<core_window_t*, std::unique_ptr<signal_invoker_interface>> table_;
-		};
 	}
 }//end namespace nana
 #endif	//NANA_GUI_INNER_FWD_IMPLEMENT_HPP

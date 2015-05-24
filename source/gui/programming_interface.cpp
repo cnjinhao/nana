@@ -770,16 +770,16 @@ namespace API
 	{
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(iwd))
-			restrict::window_manager.signal_fire_caption(iwd, title.c_str());
+		if (restrict::window_manager.available(iwd))
+			iwd->widget_notifier->caption(title);
 	}
 	
 	nana::string window_caption(window wd)
 	{
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(iwd))
-			return restrict::window_manager.signal_fire_caption(iwd);
+		if (restrict::window_manager.available(iwd))
+			return iwd->widget_notifier->caption();
 
 		return{};
 	}

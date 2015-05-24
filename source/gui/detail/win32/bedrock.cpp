@@ -41,16 +41,6 @@ namespace nana
 {
 	void notifications_window_proc(HWND wd, WPARAM wparam, LPARAM lparam); //Defined in notifier.cpp
 
-	//class internal_scope_guard
-		internal_scope_guard::internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager.internal_lock().lock();
-		}
-		internal_scope_guard::~internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager.internal_lock().unlock();
-		}
-	//end class internal_scope_guard
 namespace detail
 {
 	namespace restrict
@@ -985,14 +975,12 @@ namespace detail
 					nana::arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 
-					const bool hit = msgwnd->dimension.is_hit(arg.pos);
-
 					bool fire_click = false;
-					if(msgwnd == pressed_wd)
+					if (msgwnd->dimension.is_hit(arg.pos))
 					{
-						if(msgwnd->flags.enabled && hit)
+						msgwnd->flags.action = mouse_action::over;
+						if ((msgwnd == pressed_wd) && msgwnd->flags.enabled)
 						{
-							msgwnd->flags.action = mouse_action::over;
 							arg.evt_code = event_code::click;
 							emit_drawer(&drawer::click, msgwnd, arg, &context);
 							fire_click = true;
@@ -1002,9 +990,6 @@ namespace detail
 					//Do mouse_up, this handle may be closed by click handler.
 					if(brock.wd_manager.available(msgwnd) && msgwnd->flags.enabled)
 					{
-						if(hit)
-							msgwnd->flags.action = mouse_action::over;
-
 						arg.evt_code = event_code::mouse_up;
 						emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
@@ -1521,15 +1506,10 @@ namespace detail
 		return ::DefWindowProc(root_window, message, wParam, lParam);
 	}
 
-	nana::category::flags bedrock::category(core_window_t* wd)
+	::nana::category::flags bedrock::category(core_window_t* wd)
 	{
-		if(wd)
-		{
-			internal_scope_guard isg;
-			if(wd_manager.available(wd))
-				return wd->other.category;
-		}
-		return nana::category::flags::super;
+		internal_scope_guard lock;
+		return (wd_manager.available(wd) ? wd->other.category : ::nana::category::flags::super);
 	}
 
 	auto bedrock::focus() ->core_window_t*
@@ -1540,13 +1520,8 @@ namespace detail
 
 	native_window_type bedrock::root(core_window_t* wd)
 	{
-		if(wd)
-		{
-			internal_scope_guard isg;
-			if(wd_manager.available(wd))
-				return wd->root;
-		}
-		return nullptr;
+		internal_scope_guard lock;
+		return (wd_manager.available(wd) ? wd->root : nullptr);
 	}
 
 	void bedrock::set_menubar_taken(core_window_t* wd)
