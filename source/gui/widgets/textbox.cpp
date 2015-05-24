@@ -92,11 +92,13 @@ namespace drawerbase {
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
 			refresh(graph);
-			if (arg.getting) {
+			if (!editor_->attr().multi_lines && arg.getting)
+			{
 				static auto& brock = detail::bedrock::instance();
 				auto native_window = reinterpret_cast<native_window_type>(arg.receiver);
 				auto* root_runtime = brock.wd_manager.root_runtime(native_window);
-				if (root_runtime && root_runtime->condition.tabstop_focus_changed) {
+				if (root_runtime && root_runtime->condition.tabstop_focus_changed)
+				{
 					editor_->select(true);
 					editor_->move_caret_end();
 				}

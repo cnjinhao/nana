@@ -1619,20 +1619,12 @@ namespace nana{	namespace widgets
 
 				//Set caret pos by screen point and get the caret pos.
 				auto pos = mouse_caret(scrpos);
-				if(!hit_select_area(pos))
+				if(!select(false))
 				{
-					if(!select(false))
-					{
-						select_.a = points_.caret;	//Set begin caret
-						set_end_caret();
-					}
-					select_.mode_selection = selection::mode_mouse_selected;
+					select_.a = points_.caret;	//Set begin caret
+					set_end_caret();
 				}
-				else
-				{
-					select(false);
-					select_.mode_selection = selection::mode_no_selected;
-				}
+				select_.mode_selection = selection::mode_mouse_selected;
 			}
 
 			text_area_.border_renderer(graph_, _m_bgcolor());
@@ -2345,31 +2337,18 @@ namespace nana{	namespace widgets
 					case keyboard::os_arrow_up:
 					case keyboard::os_home:
 					case keyboard::os_pageup:
-						if (points_.caret == select_.b) {
-							select_.b = select_.a;
-						}else {
-							select_.b = std::max(select_.b, points_.caret);
-						}
-						select_.a = caret;
+						select_.b = caret;
 						break;
 					case keyboard::os_arrow_right:
 					case keyboard::os_arrow_down:
 					case keyboard::os_end:
 					case keyboard::os_pagedown:
-						if (select_.b == points_.caret) {
-							select_.a = std::min(select_.a, points_.caret);
-						}else {
-							select_.a = std::max(select_.b, points_.caret);
-						}
 						select_.b = caret;
 						break;
 					}
 				}else {
 					select_.b = caret;
 					select_.a = caret;
-				}
-				if (select_.a > select_.b) {
-					std::swap(select_.a, select_.b);
 				}
 				points_.caret = caret;
 				behavior_->adjust_caret_into_screen();
