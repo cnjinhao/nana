@@ -142,11 +142,17 @@ namespace filesystem
 		file_type what() const;
 
 		nana::string filename() const;
-		operator nana::string() { return filename(); }
-	private:
 #if defined(NANA_WINDOWS)
+	public:
+		nana::string to_string() const { return text_; }
+		operator nana::string() const { return text_; }
+	private:
 		nana::string text_;
 #else
+	public:
+		std::string to_string() const { return text_; }
+		operator std::string() const { return text_; }
+	private:
 		std::string text_;
 #endif
 	};
@@ -187,7 +193,7 @@ namespace filesystem
 		directory_iterator():end_(true), handle_(nullptr){}
 
 		directory_iterator(const nana::string& file_path) {	_m_prepare(file_path);	}
-		directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
+		//directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
 
 		const value_type&
 		operator*() const { return value_; }
@@ -400,7 +406,8 @@ namespace filesystem
 	bool file_attrib(const nana::string& file, attribute&);
 
 	inline bool is_directory(file_status s) noexcept{ return s.type() == file_type::directory ;}
-	inline bool is_directory(const path& p){return directory_iterator(p.filename())->attr.directory; }
+	inline bool is_directory(const path& p) { return directory_iterator{ p }->attr.directory; }//works??
+	inline bool is_directory(const directory_entry& d) { return d.attr.directory; }
     //bool is_directory(const path& p, error_code& ec) noexcept;
 
     //bool is_regular_file(file_status s) noexcept;
