@@ -1400,10 +1400,10 @@ namespace detail
 							{
 								if (!tstop_wd->flags.ignore_mouse_focus)
 								{
+									root_runtime->condition.tabstop_focus_changed = true;
 									brock.wd_manager.set_focus(tstop_wd, false);
 									brock.wd_manager.do_lazy_refresh(msgwnd, false);
 									brock.wd_manager.do_lazy_refresh(tstop_wd, true);
-									root_runtime->condition.tabstop_focus_changed = true;
 									break;
 								}
 
