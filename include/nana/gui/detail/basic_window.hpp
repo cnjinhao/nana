@@ -76,11 +76,6 @@ namespace detail
 	{
 		using container = std::vector<basic_window*>;
 
-		struct root_context
-		{
-			bool focus_changed;
-		};
-
 		enum class update_state
 		{
 			none, lazy, refresh
@@ -203,7 +198,6 @@ namespace detail
 				std::vector<edge_nimbus_action> effects_edge_nimbus;
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
-				root_context	context;
 				bool			ime_enabled{false};
 #if defined(NANA_WINDOWS)
 				cursor			running_cursor{ nana::cursor::arrow };
@@ -211,7 +205,7 @@ namespace detail
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 
-				std::function<void()> draw_through;	///< A draw through renderer for root widgets.
+				std::function<void()> draw_through;	// A draw through renderer for root widgets.
 			};
 
 			const category::flags category;

@@ -664,7 +664,6 @@ namespace detail
 					auto focus = msgwnd->other.attribute.root->focus;
 					if(focus && focus->together.caret)
 						focus->together.caret->set_active(true);
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = true;
 
 					arg_focus arg;
 					arg.window_handle = reinterpret_cast<window>(focus);
@@ -726,15 +725,15 @@ namespace detail
 					last_mouse_down_window = msgwnd;
 					auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
 
-					if(new_focus)
+					if(new_focus && !new_focus->flags.ignore_mouse_focus)
 					{
 						context.event_window = new_focus;
 						auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
 						if(kill_focus != new_focus)
 							brock.wd_manager.do_lazy_refresh(kill_focus, false);
 					}
+
 					auto retain = msgwnd->together.events_ptr;
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = false;
 					context.event_window = msgwnd;
 
 					pressed_wd = nullptr;
@@ -748,7 +747,7 @@ namespace detail
 						{
 							pressed_wd = msgwnd;
 							//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
-							if(msgwnd->root_widget->other.attribute.root->context.focus_changed)
+							if (msgwnd->root != native_interface::get_focus_window())
 							{
 								//call the drawer mouse up event for restoring the surface graphics
 								msgwnd->flags.action = mouse_action::normal;
@@ -1028,18 +1027,12 @@ namespace detail
 								arg_keyboard argkey;
 								brock.get_key_state(argkey);
 								auto tstop_wd = brock.wd_manager.tabstop(msgwnd, argkey.shift);
-								while (tstop_wd)
+								if (tstop_wd)
 								{
-									if (!tstop_wd->flags.ignore_mouse_focus)
-									{
-										brock.wd_manager.set_focus(tstop_wd, false);
-										brock.wd_manager.do_lazy_refresh(msgwnd, false);
-										brock.wd_manager.do_lazy_refresh(tstop_wd, true);
-										root_runtime->condition.tabstop_focus_changed = true;
-										break;
-									}
-
-									tstop_wd = brock.wd_manager.tabstop(tstop_wd, is_forward);
+									brock.wd_manager.set_focus(tstop_wd, false);
+									brock.wd_manager.do_lazy_refresh(msgwnd, false);
+									brock.wd_manager.do_lazy_refresh(tstop_wd, true);
+									root_runtime->condition.tabstop_focus_changed = true;
 								}
 							}
 							else if(keyboard::alt == keychar)

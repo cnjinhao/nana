@@ -863,8 +863,6 @@ namespace detail
 					if(focus && focus->together.caret)
 						focus->together.caret->set_active(true);
 
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = true;
-
 					arg_focus arg;
 					assign_arg(arg, focus, native_window, true);
 					if (!brock.emit(event_code::focus, focus, arg, true, &context))
@@ -888,9 +886,6 @@ namespace detail
 					//wParam indicates a handle of window that receives the focus.
 					brock.close_menu_if_focus_other_window(reinterpret_cast<native_window_type>(wParam));
 				}
-				//focus_changed means that during an event procedure if the focus is changed
-				if(brock.wd_manager.available(msgwnd))
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = true;
 
 				def_window_proc = true;
 				break;
@@ -905,8 +900,12 @@ namespace detail
 				msgwnd = brock.wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if(msgwnd && msgwnd->flags.enabled)
 				{
-					if(msgwnd->flags.take_active)
-						brock.wd_manager.set_focus(msgwnd, false);
+					if (msgwnd->flags.take_active && !msgwnd->flags.ignore_mouse_focus)
+					{
+						auto killed = brock.wd_manager.set_focus(msgwnd, false);
+						if (killed != msgwnd)
+							brock.wd_manager.do_lazy_refresh(killed, false);
+					}
 
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
@@ -939,10 +938,7 @@ namespace detail
 					{
 						auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
 						if(kill_focus != new_focus)
-						{
 							brock.wd_manager.do_lazy_refresh(kill_focus, false);
-							msgwnd->root_widget->other.attribute.root->context.focus_changed = false;
-						}
 					}
 
 					arg_mouse arg;
@@ -953,7 +949,7 @@ namespace detail
 					if (brock.emit(event_code::mouse_down, msgwnd, arg, true, &context))
 					{
 						//If a root_window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
-						if(msgwnd->root_widget->other.attribute.root->context.focus_changed)
+						if (msgwnd->root != native_interface::get_focus_window())
 						{
 							auto pos = native_interface::cursor_position();
 							auto rootwd = native_interface::find_window(pos.x, pos.y);
@@ -1396,18 +1392,12 @@ namespace detail
 							bool is_forward = (::GetKeyState(VK_SHIFT) >= 0);
 
 							auto tstop_wd = brock.wd_manager.tabstop(msgwnd, is_forward);
-							while (tstop_wd)
+							if (tstop_wd)
 							{
-								if (!tstop_wd->flags.ignore_mouse_focus)
-								{
-									root_runtime->condition.tabstop_focus_changed = true;
-									brock.wd_manager.set_focus(tstop_wd, false);
-									brock.wd_manager.do_lazy_refresh(msgwnd, false);
-									brock.wd_manager.do_lazy_refresh(tstop_wd, true);
-									break;
-								}
-
-								tstop_wd = brock.wd_manager.tabstop(tstop_wd, is_forward);
+								root_runtime->condition.tabstop_focus_changed = true;
+								brock.wd_manager.set_focus(tstop_wd, false);
+								brock.wd_manager.do_lazy_refresh(msgwnd, false);
+								brock.wd_manager.do_lazy_refresh(tstop_wd, true);
 							}
 						}
 						else

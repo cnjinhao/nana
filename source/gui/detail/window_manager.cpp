@@ -1044,34 +1044,24 @@ namespace detail
 				return nullptr;
 
 			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
-			if (tabs.size())
+			if (tabs.empty())
+				return nullptr;
+
+			if ((detail::tab_type::none == wd->flags.tab) || !(detail::tab_type::tabstop & wd->flags.tab))
+				return (forward ? tabs.front() : tabs.back());
+
+			auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
+			if (tabs.cend() == i)
+				return (forward ? tabs.front() : tabs.back());
+
+			if (forward)
 			{
-				if (forward)	//
-				{
-					if (detail::tab_type::none == wd->flags.tab)
-						return (tabs.front());
-					else if (detail::tab_type::tabstop & wd->flags.tab)
-					{
-						auto end = tabs.cend();
-						auto i = std::find(tabs.cbegin(), end, wd);
-						if (i != end)
-						{
-							++i;
-							core_window_t* ts = (i != end ? (*i) : tabs.front());
-							return (ts != wd ? ts : nullptr);
-						}
-						else
-							return tabs.front();
-					}
-				}
-				else if (tabs.size() > 1)	//at least 2 elments in tabs is required when moving perviously. 
-				{
-					auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
-					if (i != tabs.cend())
-						return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
-				}
+				++i;
+				core_window_t* ts = (i != tabs.cend() ? (*i) : tabs.front());
+				return (ts != wd ? ts : nullptr);
 			}
-			return nullptr;
+			
+			return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
 		}
 
 		void window_manager::remove_trash_handle(unsigned tid)
