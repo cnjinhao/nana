@@ -23,16 +23,6 @@
 
 namespace nana
 {
-	//class internal_scope_guard
-		internal_scope_guard::internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager.internal_lock().lock();
-		}
-		internal_scope_guard::~internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager.internal_lock().unlock();
-		}
-	//end class internal_scope_guard
 namespace detail
 {
 #pragma pack(1)
@@ -137,11 +127,6 @@ namespace detail
 	//class bedrock defines a static object itself to implement a static singleton
 	//here is the definition of this object
 	bedrock bedrock::bedrock_object;
-
-	inline window mycast(bedrock::core_window_t* wd)
-	{
-		return reinterpret_cast<window>(wd);
-	}
 
 	Window event_window(const XEvent& event)
 	{

@@ -22,10 +22,18 @@
 
 namespace nana
 {
+	namespace detail
+	{
+		//Forward declaration of widget_notifier_interface
+		class widget_notifier_interface;
+	}
+
 	/// Abstract class for defining the capacity interface.
 	class widget
 		: nana::noncopyable, nana::nonmovable
 	{
+		friend class detail::widget_notifier_interface;
+		class notifier;
 		typedef void(*dummy_bool_type)(widget* (*)(const widget&));
 	public:
 		virtual ~widget() = default;
@@ -88,6 +96,11 @@ namespace nana
 
 		operator dummy_bool_type() const;
 		operator window() const;
+	protected:
+		std::unique_ptr<::nana::detail::widget_notifier_interface> _m_wdg_notifier();
+	private:
+		virtual void _m_notify_destroy() = 0;
+
 	protected:
 		//protected members, a derived class must call this implementation if it overrides an implementation
 		virtual void _m_complete_creation();
@@ -152,7 +165,6 @@ namespace nana
 				handle_ = API::dev::create_widget(parent_wd, r, this);
 				API::dev::set_events(handle_, events_);
 				API::dev::set_scheme(handle_, scheme_.get());
-				API::dev::attach_signal(handle_, *this, &widget_object::signal);
 				API::dev::attach_drawer(*this, trigger_);
 				if(visible)
 					API::show_window(handle_, true);
@@ -193,28 +205,14 @@ namespace nana
 			return trigger_;
 		}
 	private:
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_{nullptr};
@@ -276,28 +274,14 @@ namespace nana
 			return *scheme_;
 		}
 	private:
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_{nullptr};
@@ -430,25 +414,6 @@ namespace nana
 			return trigger_;
 		}
 	private:
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		void _m_bind_and_attach()
 		{
 			events_ = std::make_shared<Events>();
@@ -456,13 +421,17 @@ namespace nana
 
 			scheme_ = API::dev::make_scheme<scheme_type>();
 			API::dev::set_scheme(handle_, scheme_.get());
-			API::dev::attach_signal(handle_, *this, &widget_object::signal);
 			API::dev::attach_drawer(*this, trigger_);
 		}
 
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_;
@@ -511,7 +480,6 @@ namespace nana
 				handle_ = API::dev::create_frame(parent_wd, r, this);
 				API::dev::set_events(handle_, events_);
 				API::dev::set_scheme(handle_, scheme_.get());
-				API::dev::attach_signal(handle_, *this, &widget_object::signal);
 				API::show_window(handle_, visible);
 				this->_m_complete_creation();
 			}
@@ -533,28 +501,14 @@ namespace nana
 			return nullptr;
 		}
 
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_{nullptr};

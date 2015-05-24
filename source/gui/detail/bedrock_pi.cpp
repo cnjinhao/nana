@@ -26,6 +26,18 @@
 
 namespace nana
 {
+	//class internal_scope_guard
+		internal_scope_guard::internal_scope_guard()
+		{
+			detail::bedrock::instance().wd_manager.internal_lock().lock();
+		}
+
+		internal_scope_guard::~internal_scope_guard()
+		{
+			detail::bedrock::instance().wd_manager.internal_lock().unlock();
+		}
+	//end class internal_scope_guard
+
 	//class event_arg
 	event_arg::~event_arg(){}
 

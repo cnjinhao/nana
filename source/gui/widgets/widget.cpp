@@ -1,6 +1,6 @@
 /*
  *	The fundamental widget class implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -11,6 +11,7 @@
 
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/tooltip.hpp>
+#include <nana/gui/detail/widget_notifier_interface.hpp>
 
 namespace nana
 {
@@ -18,8 +19,41 @@ namespace nana
 	{
 		void set_eval(window, i18n_eval&&);
 	}
+
 	//class widget
 	//@brief:The definition of class widget
+		class widget::notifier: public detail::widget_notifier_interface
+		{
+		public:
+			notifier(widget& wdg)
+				: wdg_(wdg)
+			{}
+
+		private:
+			//implementation of widget_notifier_interface
+			widget* widget_ptr() const override
+			{
+				return &wdg_;
+			}
+
+			void destroy() override
+			{
+				wdg_._m_notify_destroy();
+			}
+
+			std::wstring caption() override
+			{
+				return wdg_._m_caption();
+			}
+
+			virtual void caption(std::wstring text)
+			{
+				wdg_._m_caption(std::move(text));
+			}
+		private:
+			widget& wdg_;
+		};
+
 		nana::string widget::caption() const
 		{
 			return this->_m_caption();
@@ -205,6 +239,11 @@ namespace nana
 			return handle();
 		}
 
+		std::unique_ptr<::nana::detail::widget_notifier_interface> widget::_m_wdg_notifier()
+		{
+			return std::unique_ptr<::nana::detail::widget_notifier_interface>(new notifier(*this));
+		}
+
 		void widget::_m_complete_creation()
 		{}
 
@@ -298,7 +337,14 @@ namespace nana
 		{
 			return API::bgcolor(handle());
 		}
-
 	//end class widget
+
+	namespace detail
+	{
+		std::unique_ptr<widget_notifier_interface> widget_notifier_interface::get_notifier(widget* wdg)
+		{
+			return std::unique_ptr<widget_notifier_interface>(new widget::notifier(*wdg));
+		}
+	}
 }//end namespace nana
 

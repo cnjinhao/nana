@@ -48,13 +48,6 @@ namespace API
 	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
 	namespace dev
 	{
-		template<typename Object, typename Concept>
-		void attach_signal(window wd, Object& object, void (Concept::*f)(::nana::detail::signals::code, const ::nana::detail::signals&))
-		{
-			using namespace ::nana::detail;
-			bedrock::instance().wd_manager.attach_signal(reinterpret_cast<bedrock::core_window_t*>(wd), object, f);
-		}
-
 		bool set_events(window, const std::shared_ptr<general_events>&);
 		
 		template<typename Scheme>
