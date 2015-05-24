@@ -110,7 +110,7 @@ namespace nana {
 #endif
 			}
 
-			nana::string path::name() const
+			nana::string path::filename() const
 			{
 				string_t::size_type pos = text_.find_last_of(splstr);
 #if defined(NANA_WINDOWS)
@@ -136,9 +136,9 @@ namespace nana {
 					for (auto & f : files)
 					{
 						if (f.attr.directory)
-							rm_dir_recursive(path + f.path().name());
+							rm_dir_recursive(path + f.path().filename());
 						else
-							rmfile((path + f.path().name()).c_str());
+							rmfile((path + f.path().filename()).c_str());
 					}
 
 					return rmdir(dir.c_str(), true);

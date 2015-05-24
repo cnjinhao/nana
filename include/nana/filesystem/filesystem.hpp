@@ -141,8 +141,8 @@ namespace filesystem
 		path root() const;
 		file_type what() const;
 
-		nana::string name() const;
-		operator nana::string() { return name(); }
+		nana::string filename() const;
+		operator nana::string() { return filename(); }
 	private:
 #if defined(NANA_WINDOWS)
 		nana::string text_;
@@ -159,8 +159,8 @@ namespace filesystem
         //file_status m_status;
 
 		directory_entry(){}
-		directory_entry(const nana::string& filename, bool is_directory, uintmax_t size)
-            :m_path{filename}, attr{size, is_directory}
+		directory_entry(const nana::string& filename_, bool is_directory, uintmax_t size)
+            :m_path{filename_}, attr{size, is_directory}
         {}
 
         void assign          (const path& p){ m_path=p;}
@@ -187,7 +187,7 @@ namespace filesystem
 		directory_iterator():end_(true), handle_(nullptr){}
 
 		directory_iterator(const nana::string& file_path) {	_m_prepare(file_path);	}
-		directory_iterator(const path& file_path) {	_m_prepare(file_path.name());	}
+		directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
 
 		const value_type&
 		operator*() const { return value_; }
@@ -208,7 +208,7 @@ namespace filesystem
 		bool equal(const directory_iterator& x) const
 		{
 			if(end_ && (end_ == x.end_)) return true;
-			return (value_.path().name() == x.value_.path().name());
+			return (value_.path().filename() == x.value_.path().filename());
 		}
     
 		
@@ -284,7 +284,7 @@ namespace filesystem
 					}
 					else
 					{
-						value_.name = nana::charset(dnt->d_name);
+						value_.m_path = nana::charset(dnt->d_name);
 						value_.size = 0;
 						value_.directory = false;
 					}
@@ -339,7 +339,7 @@ namespace filesystem
                                (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
                                 wfd_.nFileSizeLow);
 					else
-						value_.name = nana::charset(dnt->d_name);
+						value_.m_path = nana::charset(dnt->d_name);
 				}
 				else
 					end_ = true;
@@ -400,7 +400,7 @@ namespace filesystem
 	bool file_attrib(const nana::string& file, attribute&);
 
 	inline bool is_directory(file_status s) noexcept{ return s.type() == file_type::directory ;}
-	inline bool is_directory(const path& p){return directory_iterator(p.name())->attr.directory; }
+	inline bool is_directory(const path& p){return directory_iterator(p.filename())->attr.directory; }
     //bool is_directory(const path& p, error_code& ec) noexcept;
 
     //bool is_regular_file(file_status s) noexcept;
@@ -414,7 +414,7 @@ namespace filesystem
     //bool is_empty(const path& p, error_code& ec) noexcept;
 
            uintmax_t file_size(const nana::string& file);  // deprecate?
-	inline uintmax_t file_size(const path& p){return file_size(p.name());}
+	inline uintmax_t file_size(const path& p){return file_size(p.filename());}
     //uintmax_t file_size(const path& p, error_code& ec) noexcept;
 	//long long filesize(const nana::string& file);
 
@@ -428,7 +428,7 @@ namespace filesystem
 	bool create_directory(const nana::string& dir, bool & if_exist);
 	inline bool create_directory(const path& p, bool & if_exist)
     {
-        return create_directory(p.name(), if_exist);
+        return create_directory(p.filename(), if_exist);
     };
 
     
