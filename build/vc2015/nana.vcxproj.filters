@@ -303,6 +303,9 @@
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp">
       <Filter>Source Files\nana\filesystem</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\group.cpp">
+      <Filter>Source Files\nana\gui\widgets</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp">

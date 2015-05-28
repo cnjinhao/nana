@@ -223,6 +223,7 @@
     <ClCompile Include="..\..\source\gui\widgets\float_listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\form.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\frame.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\group.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\label.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\menu.cpp" />
