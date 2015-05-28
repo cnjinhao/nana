@@ -156,6 +156,9 @@ namespace detail
 
 	nana::size text_extent_size(drawable_type dw, const nana::char_t * text, std::size_t len)
 	{
+		if (nullptr == dw || nullptr == text || 0 == len)
+			return{};
+
 		nana::size extents = raw_text_extent_size(dw, text, len);
 
 		const nana::char_t* const end = text + len;
