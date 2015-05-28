@@ -18,6 +18,10 @@
 	#define _SCL_SECURE_NO_WARNINGS
 	#define _CRT_SECURE_NO_DEPRECATE
     #pragma warning(disable : 4996)
+	#if (_MSC_VER < 1900)
+        // is this a good idea?
+        #define NOT_IMPLEMENTED_KEYWORD_noexcept 
+	#endif // _MSC_VER < 1900 
 	#if (_MSC_VER == 1900)
 		 // google: break any code that tries to use codecvt<char16_t> or codecvt<char32_t>.
 		 // google: It appears the C++ libs haven't been compiled with native char16_t/char32_t support.

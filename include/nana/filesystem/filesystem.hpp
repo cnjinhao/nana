@@ -102,26 +102,26 @@ namespace filesystem
         perms     m_prms = perms::unknown;
 
        public:
-        explicit file_status(file_type ft = file_type::none, perms prms = perms::unknown) noexcept
+        explicit file_status(file_type ft = file_type::none, perms prms = perms::unknown) 
             :m_ft{ft}, m_prms{prms}
         {}
 
-        file_status(const file_status& fs) noexcept: m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default;  
-        file_status(file_status&& fs) noexcept: m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default; 
+        file_status(const file_status& fs) : m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default;  
+        file_status(file_status&& fs) : m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default; 
 
         ~file_status(){};
-        file_status& operator=(const file_status&) noexcept = default;
-        file_status& operator=(file_status&&fs) noexcept  // = default; 
+        file_status& operator=(const file_status&)  = default;
+        file_status& operator=(file_status&&fs)   // = default; 
         { 
             m_ft=fs.m_ft;  m_prms = fs.m_prms; 
             return *this;
         } 
         // observers
-        file_type type() const noexcept{ return m_ft;}
-        perms permissions() const noexcept{ return m_prms;}
+        file_type type() const { return m_ft;}
+        perms permissions() const { return m_prms;}
         // modifiers
-        void type       (file_type ft) noexcept { m_ft=ft ;}
-        void permissions(perms prms)   noexcept { m_prms = prms; }
+        void type       (file_type ft)  { m_ft=ft ;}
+        void permissions(perms prms)    { m_prms = prms; }
     };
     
     /// concerned only with lexical and syntactic aspects and does not necessarily exist in
@@ -174,8 +174,8 @@ namespace filesystem
 
         //file_status status() const;
 
-        operator const path&() const noexcept{return m_path;};
-        const path& path() const noexcept{return m_path;}
+        operator const path&() const {return m_path;};
+        const path& path() const {return m_path;}
 
 	};
 
@@ -219,8 +219,8 @@ namespace filesystem
     
 		
 		// enable directory_iterator range-based for statements
-	directory_iterator begin( ) noexcept   { return *this;  }
-	directory_iterator end( ) noexcept     { return {};     }
+	directory_iterator begin( )    { return *this;  }
+	directory_iterator end( )      { return {};     }
 	
 	private:
 		template<typename Char>
@@ -405,7 +405,7 @@ namespace filesystem
     // file_status status(const path& p);
 	bool file_attrib(const nana::string& file, attribute&);
 
-	inline bool is_directory(file_status s) noexcept{ return s.type() == file_type::directory ;}
+	inline bool is_directory(file_status s) { return s.type() == file_type::directory ;}
 	inline bool is_directory(const path& p) { return directory_iterator{ p }->attr.directory; }//works??
 	inline bool is_directory(const directory_entry& d) { return d.attr.directory; }
     //bool is_directory(const path& p, error_code& ec) noexcept;
