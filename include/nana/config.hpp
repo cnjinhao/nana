@@ -15,14 +15,21 @@
 
 
 #if defined(_MSC_VER)
-#if (_MSC_VER == 1900)
- // google: break any code that tries to use codecvt<char16_t> or codecvt<char32_t>.
- // google: It appears the C++ libs haven't been compiled with native char16_t/char32_t support.
- // google: Those definitions are for codecvt<wchar_t>::id, codecvt<unsigned short>::id and codecvt<char>::id respectively. 
- // However, the codecvt<char16_t>::id and codecvt<char32_t>::id definitions aren't there, and indeed, if you look at locale0.cpp in the CRT source code you'll see they're not defined at all.
- // google: That's a known issue, tracked by an active bug (DevDiv#1060849). We were able to update the STL's headers in response to char16_t/char32_t, but we still need to update the separately compiled sources.
-#define STD_CODECVT_NOT_SUPPORTED
-#endif // _MSC_VER == 1900 
+	#define _SCL_SECURE_NO_WARNINGS
+	#define _CRT_SECURE_NO_DEPRECATE
+    #pragma warning(disable : 4996)
+	#if (_MSC_VER < 1900)
+        // is this a good idea?
+        #define NOT_IMPLEMENTED_KEYWORD_noexcept 
+	#endif // _MSC_VER < 1900 
+	#if (_MSC_VER == 1900)
+		 // google: break any code that tries to use codecvt<char16_t> or codecvt<char32_t>.
+		 // google: It appears the C++ libs haven't been compiled with native char16_t/char32_t support.
+		 // google: Those definitions are for codecvt<wchar_t>::id, codecvt<unsigned short>::id and codecvt<char>::id respectively. 
+		 // However, the codecvt<char16_t>::id and codecvt<char32_t>::id definitions aren't there, and indeed, if you look at locale0.cpp in the CRT source code you'll see they're not defined at all.
+		 // google: That's a known issue, tracked by an active bug (DevDiv#1060849). We were able to update the STL's headers in response to char16_t/char32_t, but we still need to update the separately compiled sources.
+		#define STD_CODECVT_NOT_SUPPORTED
+	#endif // _MSC_VER == 1900 
 #endif // _MSVC
 
 //Select platform automatically
