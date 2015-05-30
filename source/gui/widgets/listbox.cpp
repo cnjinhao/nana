@@ -13,6 +13,8 @@
 
 #include <nana/gui/widgets/listbox.hpp>
 #include <nana/gui/widgets/scroll.hpp>
+
+#include <nana/gui/layout_utility.hpp>
 #include <nana/gui/element.hpp>
 #include <list>
 #include <deque>

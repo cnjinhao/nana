@@ -12,12 +12,10 @@
 
 #ifndef NANA_GUI_WIDGET_HPP
 #define NANA_GUI_WIDGET_HPP
-#include <nana/traits.hpp>
 #include "../basis.hpp"
 #include "../programming_interface.hpp"
 #include <nana/internationalization.hpp>
 #include <nana/gui/detail/drawer.hpp>
-#include <nana/gui/layout_utility.hpp>
 #include <functional>
 
 namespace nana

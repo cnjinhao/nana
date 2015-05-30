@@ -13,6 +13,7 @@
  */
 
 #include <nana/gui/widgets/picture.hpp>
+#include <nana/gui/layout_utility.hpp>
 #include <nana/paint/image.hpp>
 #include <nana/gui/element.hpp>
 
