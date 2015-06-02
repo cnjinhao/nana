@@ -144,9 +144,9 @@ namespace nana
 					}
 				}
 
-				void item_image(graph_reference graph, const nana::point& pos, const paint::image& img)
+				void item_image(graph_reference graph, const nana::point& pos, unsigned image_px, const paint::image& img)
 				{
-					img.paste(graph, pos.x, pos.y);
+					img.stretch(img.size(), graph, { pos, ::nana::size(image_px, image_px)});
 				}
 
 				void item_text(graph_reference graph, const nana::point& pos, const nana::string& text, unsigned text_pixels, const attr& at)
@@ -524,6 +524,7 @@ namespace nana
 					renderer->background(*graph_, *widget_);
 
 					const unsigned item_h_px = _m_item_height();
+					const unsigned image_px = item_h_px - 2;
 					nana::rectangle item_r(2, 2, graph_->width() - 4, item_h_px);
 
 					unsigned strpixels = item_r.width - 60;
@@ -552,7 +553,7 @@ namespace nana
 						nana::string text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
 
 						if(m.image.empty() == false)
-							renderer->item_image(*graph_, nana::point(item_r.x + 5, item_r.y + (item_h_px - m.image.size().height) / 2), m.image);
+							renderer->item_image(*graph_, nana::point(item_r.x + 5, item_r.y + static_cast<int>(item_h_px - image_px) / 2 - 1), image_px, m.image);
 
 						renderer->item_text(*graph_, nana::point(item_r.x + 40, item_r.y + text_top_off), text, strpixels, attr);
 

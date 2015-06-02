@@ -17,7 +17,6 @@
 #include "widget.hpp"
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
-//#include <nana/paint/graphics.hpp>
 #include <functional>
 #include <initializer_list>
 

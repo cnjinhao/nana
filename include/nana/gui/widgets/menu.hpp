@@ -108,7 +108,7 @@ namespace nana
 
 				virtual void background(graph_reference, window) = 0;
 				virtual void item(graph_reference, const nana::rectangle&, const attr&) = 0;
-				virtual void item_image(graph_reference, const nana::point&, const paint::image&) = 0;
+				virtual void item_image(graph_reference, const nana::point&, unsigned image_px, const paint::image&) = 0;
 				virtual void item_text(graph_reference, const nana::point&, const nana::string&, unsigned text_pixels, const attr&) = 0;
 				virtual void sub_arrow(graph_reference, const nana::point&, unsigned item_pixels, const attr&) = 0;
 			};
