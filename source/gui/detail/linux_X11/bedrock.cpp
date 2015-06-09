@@ -167,7 +167,7 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t*, bool forced)
+	void bedrock::map_thread_root_buffer(core_window_t*, bool forced, const rectangle*)
 	{
 		//GUI in X11 is thread-independent, so no implementation.
 	}
