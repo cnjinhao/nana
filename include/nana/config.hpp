@@ -18,6 +18,7 @@
 	#define _SCL_SECURE_NO_WARNINGS
 	#define _CRT_SECURE_NO_DEPRECATE
     #pragma warning(disable : 4996)
+
 	#if (_MSC_VER < 1900)
         // is this a good idea?
         #define NOT_IMPLEMENTED_KEYWORD_noexcept 
