@@ -177,6 +177,7 @@
     <ClCompile Include="..\..\source\deploy.cpp" />
     <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp" />
     <ClCompile Include="..\..\source\exceptions.cpp" />
+    <ClCompile Include="..\..\source\filesystem\filesystem.cpp" />
     <ClCompile Include="..\..\source\filesystem\file_iterator.cpp" />
     <ClCompile Include="..\..\source\filesystem\fs_utility.cpp" />
     <ClCompile Include="..\..\source\gui\animation.cpp" />
@@ -246,6 +247,9 @@
     <ClCompile Include="..\..\source\threads\pool.cpp" />
     <ClCompile Include="..\..\source\traits.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
