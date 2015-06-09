@@ -55,6 +55,13 @@ namespace detail
 			unsigned ignore; //determinate that pos or size would be ignored.
 		};
 
+		struct map_thread
+		{
+			rectangle update_area;
+			bool ignore_update_area;
+			bool forced;
+		};
+
 		enum
 		{
 			tray = 0x501,

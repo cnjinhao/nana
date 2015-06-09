@@ -18,6 +18,8 @@
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
 
+#include <iterator>
+
 namespace nana
 {
 	arg_combox::arg_combox(combox& wdg): widget(wdg)

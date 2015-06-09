@@ -13,9 +13,9 @@ namespace nana{
 		{
 			edge_nimbus_renderer() = default;
 		public:
-			typedef CoreWindow core_window_t;
-			typedef window_layout window_layer;
-			typedef nana::paint::graphics & graph_reference;
+			using core_window_t = CoreWindow;
+			using window_layer = window_layout;
+			using graph_reference = ::nana::paint::graphics&;
 
 			static edge_nimbus_renderer& instance()
 			{
@@ -28,7 +28,34 @@ namespace nana{
 				return 2;
 			}
 
-			bool render(core_window_t * wd, bool forced)
+			void erase(core_window_t* wd)
+			{
+				if (effects::edge_nimbus::none == wd->effect.edge_nimbus)
+					return;
+
+				core_window_t * root_wd = wd->root_widget;
+				auto & nimbus = root_wd->other.attribute.root->effects_edge_nimbus;
+
+				for (auto i = nimbus.cbegin(); i != nimbus.cend(); ++i)
+				{
+					if (i->window == wd)
+					{
+						auto pixels = weight();
+						rectangle r{wd->pos_root, wd->dimension};
+						r.x -= static_cast<int>(pixels);
+						r.y -= static_cast<int>(pixels);
+						r.width += static_cast<unsigned>(pixels << 1);
+						r.height += static_cast<unsigned>(pixels << 1);
+
+						root_wd->root_graph->paste(root_wd->root, r, r.x, r.y);
+
+						nimbus.erase(i);
+						break;
+					}
+				}
+			}
+
+			bool render(core_window_t * wd, bool forced, const rectangle* update_area = nullptr)
 			{
 				bool rendered = false;
 				core_window_t * root_wd = wd->root_widget;
@@ -49,8 +76,12 @@ namespace nana{
 					{
 						if(_m_edge_nimbus(focused, action.window) && window_layer::read_visual_rectangle(action.window, r))
 						{
-							if(action.window == wd)
+							if (action.window == wd)
+							{
+								if (update_area)
+									::nana::overlap(*update_area, rectangle(r), r);
 								rendered = true;
+							}
 
 							//Avoiding duplicated rendering. If the window is declared to lazy refresh, it should be rendered.
 							if ((forced && (action.window == wd)) || !action.rendered || (action.window->other.upd_state == core_window_t::update_state::refresh))
