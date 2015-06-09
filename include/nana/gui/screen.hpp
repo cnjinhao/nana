@@ -34,27 +34,38 @@ namespace nana
 		virtual const ::nana::rectangle& workarea() const = 0;
 	};
 
+    /// Provides some functions to get the metrics of the monitors \include screen.cpp
 	class screen
 	{
 		struct implement;
 	public:
-		static ::nana::size desktop_size();
-		static ::nana::size primary_monitor_size();
+        /// gets the size in pixel of the whole virtual desktop
+		static ::nana::size desktop_size();        
+
+        /// gets the resolution in pixel of the primary monitor, 
+        /// if there is only one monitor installed in the system, 
+        /// the return value of primary_monitor_size is equal to desktop_size's.
+		static ::nana::size primary_monitor_size();  
+
 
 		screen();
 
 		/// Reload has no preconditions, it's safe to call on moved-from
 		void reload();
 
-		/// Returns the number of display monitors
+		/// Returns the number of display monitors installed in the system
 		std::size_t count() const;
 
+        /// gets the display monitor that contains the specified point
 		display& from_point(const point&);
+
+        /// gets the display monitor that contains the specified window
 		display& from_window(window);
 
 		display& get_display(std::size_t index) const;
 		display& get_primary() const;
 
+        /// applies a given function to all display monitors
 		void for_each(std::function<void(display&)>) const;
 	private:
 		std::shared_ptr<implement> impl_;

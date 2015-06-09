@@ -300,5 +300,13 @@
     <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp">
       <Filter>Source Files\nana\gui\widgets</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\filesystem\filesystem.cpp">
+      <Filter>Source Files\nana\filesystem</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
