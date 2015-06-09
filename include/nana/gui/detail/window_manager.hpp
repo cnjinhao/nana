@@ -150,9 +150,9 @@ namespace detail
 		core_window_t* root(native_window_type) const;
 
 		//Copy the root buffer that wnd specified into DeviceContext
-		void map(core_window_t*, bool forced);
+		void map(core_window_t*, bool forced, const rectangle* update_area = nullptr);
 
-		bool update(core_window_t*, bool redraw, bool force);
+		bool update(core_window_t*, bool redraw, bool force, const rectangle* update_area = nullptr);
 		void refresh_tree(core_window_t*);
 
 		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen);

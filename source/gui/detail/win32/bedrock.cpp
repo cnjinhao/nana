@@ -338,9 +338,14 @@ namespace detail
 		return bedrock_object;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t* wd, bool forced)
+	void bedrock::map_thread_root_buffer(core_window_t* wd, bool forced, const rectangle* update_area)
 	{
-		::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), static_cast<LPARAM>(forced ? TRUE : FALSE));
+		auto stru = reinterpret_cast<detail::messages::map_thread*>(::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
+		if (stru)
+		{
+			if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), reinterpret_cast<LPARAM>(stru)))
+				::HeapFree(::GetProcessHeap(), 0, stru);
+		}
 	}
 
 	void interior_helper_for_menu(MSG& msg, native_window_type menu_window)
@@ -591,8 +596,12 @@ namespace detail
 			}
 			return true;
 		case nana::detail::messages::map_thread_root_buffer:
-			bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam), (TRUE == lParam));
-			::UpdateWindow(wd);
+			{
+				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);
+				bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
+				::UpdateWindow(wd);
+				::HeapFree(::GetProcessHeap(), 0, stru);
+			}
 			return true;
 		case nana::detail::messages::remote_thread_move_window:
 			{

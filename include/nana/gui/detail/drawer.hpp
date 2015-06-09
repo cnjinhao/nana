@@ -110,7 +110,7 @@ namespace nana
 			void key_char(const arg_keyboard&);
 			void key_release(const arg_keyboard&);
 			void shortkey(const arg_keyboard&);
-			void map(window, bool forced);	//Copy the root buffer to screen
+			void map(window, bool forced, const rectangle* update_area = nullptr);	//Copy the root buffer to screen
 			void refresh();
 			drawer_trigger* realizer() const;
 			void attached(widget&, drawer_trigger&);

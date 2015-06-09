@@ -372,21 +372,26 @@ namespace detail
 		//@brief:	Delete the window handle
 		void window_manager::destroy(core_window_t* wd)
 		{
-			core_window_t* parent = nullptr;
+			//Thread-Safe Required!
+			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			if (impl_->wd_register.available(wd) == false)	return;
+
+			rectangle update_area(wd->pos_owner, wd->dimension);
+
+			auto parent = wd->parent;
+			if (parent)
+				utl::erase(parent->children, wd);
+
+			_m_destroy(wd);
+
+			while (parent && (parent->other.category == ::nana::category::flags::lite_widget))
 			{
-				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				if (impl_->wd_register.available(wd) == false)	return;
-
-				if (wd->parent)
-				{
-					parent = wd->parent;
-					utl::erase(wd->parent->children, wd);
-				}
-
-				_m_destroy(wd);
+				update_area.x += parent->pos_owner.x;
+				update_area.y += parent->pos_owner.y;
+				parent = parent->parent;
 			}
-			update(parent, false, false);
+
+			update(parent, false, false, &update_area);
 		}
 
 		//destroy_handle
@@ -672,7 +677,7 @@ namespace detail
 		}
 
 		//Copy the root buffer that wnd specified into DeviceContext
-		void window_manager::map(core_window_t* wd, bool forced)
+		void window_manager::map(core_window_t* wd, bool forced, const rectangle* update_area)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -680,12 +685,12 @@ namespace detail
 			{
 				//Copy the root buffer that wd specified into DeviceContext
 #if defined(NANA_LINUX)
-				wd->drawer.map(reinterpret_cast<window>(wd), forced);
+				wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
 #elif defined(NANA_WINDOWS)
 				if(nana::system::this_thread_id() == wd->thread_id)
-					wd->drawer.map(reinterpret_cast<window>(wd), forced);
+					wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
 				else
-					bedrock::instance().map_thread_root_buffer(wd, forced);
+					bedrock::instance().map_thread_root_buffer(wd, forced, update_area);
 #endif
 			}
 		}
@@ -694,7 +699,7 @@ namespace detail
 		//@brief:	update is used for displaying the screen-off buffer.
 		//			Because of a good efficiency, if it is called in an event procedure and the event procedure window is the
 		//			same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
-		bool window_manager::update(core_window_t* wd, bool redraw, bool forced)
+		bool window_manager::update(core_window_t* wd, bool redraw, bool forced, const rectangle* update_area)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -705,7 +710,7 @@ namespace detail
 				if(forced || (false == wd->belong_to_lazy()))
 				{
 					wndlayout_type::paint(wd, redraw, false);
-					this->map(wd, forced);
+					this->map(wd, forced, update_area);
 				}
 				else
 				{
@@ -1252,18 +1257,9 @@ namespace detail
 
 			if (!established)
 			{
-				if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
-				{
-					auto & cont = root_attr->effects_edge_nimbus;
-					for (auto i = cont.begin(); i != cont.end(); ++i)
-					{
-						if (i->window == wd)
-						{
-							cont.erase(i);
-							break;
-						}
-					}
-				}
+				//remove the window from edge nimbus effect when it is destroying
+				using edge_nimbus = detail::edge_nimbus_renderer<core_window_t>;
+				edge_nimbus::instance().erase(wd);
 			}
 			else if (pa_root_attr != root_attr)
 			{
