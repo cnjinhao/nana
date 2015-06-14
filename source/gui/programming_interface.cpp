@@ -374,6 +374,16 @@ namespace API
 		return restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd));
 	}
 
+	bool is_destroying(window wd)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (!restrict::window_manager.available(iwd))
+			return false;
+
+		return iwd->flags.destroying;
+	}
+
 	void enable_dropfiles(window wd, bool enb)
 	{
 		internal_scope_guard lock;
@@ -534,12 +544,9 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::window_manager.move(iwd, x, y, false))
 		{
-			if(category::flags::root != iwd->other.category)
-			{
-				do{
-					iwd = iwd->parent;
-				} while (category::flags::lite_widget == iwd->other.category);
-			}
+			if (category::flags::root != iwd->other.category)
+				iwd = iwd->seek_non_lite_widget_ancestor();
+
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
@@ -551,11 +558,8 @@ namespace API
 		if(restrict::window_manager.move(iwd, r))
 		{
 			if (category::flags::root != iwd->other.category)
-			{
-				do{
-					iwd = iwd->parent;
-				} while (category::flags::lite_widget == iwd->other.category);
-			}
+				iwd = iwd->seek_non_lite_widget_ancestor();
+			
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
@@ -624,11 +628,8 @@ namespace API
 		if(restrict::window_manager.size(iwd, sz, false, false))
 		{
 			if (category::flags::root != iwd->other.category)
-			{
-				do{
-					iwd = iwd->parent;
-				} while (category::flags::lite_widget == iwd->other.category);
-			}
+				iwd = iwd->seek_non_lite_widget_ancestor();
+
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}

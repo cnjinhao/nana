@@ -115,6 +115,8 @@ namespace detail
 		bool belong_to_lazy() const;
 
 		bool is_draw_through() const;	///< Determines whether it is a draw-through window.
+
+		basic_window * seek_non_lite_widget_ancestor() const;
 	public:
 		//Override event_holder
 		bool set_events(const std::shared_ptr<general_events>&) override;

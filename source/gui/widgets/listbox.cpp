@@ -13,6 +13,7 @@
 
 #include <nana/gui/widgets/listbox.hpp>
 #include <nana/gui/widgets/scroll.hpp>
+#include <nana/gui/widgets/panel.hpp>
 
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/element.hpp>
@@ -408,9 +409,6 @@ namespace nana
 
 				void item_width(size_type pos, unsigned width)
 				{
-					if (pos >= cont_.size())
-						return;
-
 					for(auto & m : cont_)
 					{
 						if(m.index == pos)
@@ -660,6 +658,8 @@ namespace nana
 
 				//A cat may have a key object to identify the category
 				std::shared_ptr<nana::detail::key_interface> key_ptr;
+
+				std::deque<pat::cloneable<pat::abstract_factory<inline_interface>>> factories;
 
 				category_t() = default;
 
@@ -946,9 +946,15 @@ namespace nana
 
 					return _m_at(pos.cat)->items.at(index);
 				}
+
 				const category_t::container::value_type& at(const index_pair& pos) const
 				{
-					return at(pos);
+					auto index = pos.item;
+
+					if (sorted_index_ != npos)
+						index = absolute(pos);
+
+					return _m_at(pos.cat)->items.at(index);
 				}
 
 				void clear(size_type cat)
@@ -1879,6 +1885,7 @@ namespace nana
 				bool single_check_category_limited_{ false };
 			};//end class es_lister
 
+
 			//struct essence_t
 			//@brief:	this struct gives many data for listbox,
 			//			the state of the struct does not effect on member funcions, therefore all data members are public.
@@ -1886,6 +1893,23 @@ namespace nana
 			{
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
 				enum class parts{unknown = -1, header, lister, checker};
+
+				class inline_indicator
+					: public ::nana::detail::inline_widget_indicator<index_pair, std::wstring>
+				{
+				public:
+					inline_indicator(essence_t* ess)
+						: ess_{ess}
+					{
+					}
+
+					void modify(index_type pos, const value_type& value) const override
+					{
+						ess_->lister.at(pos).cells;
+					}
+				private:
+					essence_t * const ess_;
+				};
 
 				::nana::listbox::scheme_type* scheme_ptr{nullptr};
 				::nana::paint::graphics *graph{nullptr};
@@ -1922,6 +1946,15 @@ namespace nana
 					nana::scroll<true> v;
 					nana::scroll<false> h;
 				}scroll;
+
+
+				struct inline_pane
+				{
+					::nana::panel<false> pane;
+					std::unique_ptr<inline_interface> inline_ptr;
+				};
+
+				std::map<void*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
 
 				essence_t()
 				{
@@ -2107,11 +2140,11 @@ namespace nana
 						{
 							scroll.h.create(wd, r);
 							API::take_active(scroll.h.handle(), false, wd);
-							scroll.h.events().mouse_move.connect_unignorable([this](const nana::arg_mouse& arg){
-								_m_answer_scroll(arg);
-							});
-							scroll.h.events().mouse_up.connect_unignorable([this](const nana::arg_mouse& arg){
-								_m_answer_scroll(arg);
+
+							scroll.h.events().value_changed.connect_unignorable([this](const ::nana::arg_scroll& arg)
+							{
+								scroll.offset_x = static_cast<int>(scroll.h.value());
+								API::refresh_window(this->lister.wd_ptr()->handle());
 							});
 						}
 						else
@@ -2126,13 +2159,20 @@ namespace nana
 						if(scroll.v.empty())
 						{
 							scroll.v.create(wd, r);
-							API::take_active(scroll.v.handle(), false, wd);  // install value_changed() not mouse_move ????
+							API::take_active(scroll.v.handle(), false, wd);
 
-							scroll.v.events().value_changed([this](const ::nana::arg_scroll<true>& arg)
+							scroll.v.events().value_changed([this](const ::nana::arg_scroll& arg)
 							{
-								_m_answer_scroll_value(arg);
-							});
+								index_pair item;
+								if (!lister.forward(item, scroll.v.value(), item)) return;
 
+								if (item == scroll.offset_y_dpl)
+									return;
+
+								set_scroll_y_dpl(item);
+
+								API::refresh_window(this->lister.wd_ptr()->handle());
+							});
 						}
 						else
 							scroll.v.move(r);
@@ -2141,7 +2181,7 @@ namespace nana
 					else if(!scroll.v.empty())
 					{
 						scroll.v.close();
-                        set_scroll_y_dpl({0,0}); //			scroll.offset_y.set_both(0);
+                        set_scroll_y_dpl({0,0});
 
 						nana::rectangle r;
 						if(rect_header(r))
@@ -2311,63 +2351,43 @@ namespace nana
 					for(const auto& hd : header.cont())
 					{
 						if(false == hd.visible) continue;
-						x += hd.pixels;
+						x += static_cast<int>(hd.pixels);
 						if(x > 0)
 							seqs.push_back(hd.index);
 						if(x >= static_cast<int>(lister_w))
 							break;
 					}
 				}
-			private:
-				void _m_answer_scroll(const arg_mouse& arg)
-				{
-					if(arg.evt_code == event_code::mouse_move && arg.left_button == false) return;
 
-					bool update = false;
-					if(arg.window_handle == scroll.v.handle())
+				inline_pane * open_inline(pat::abstract_factory<inline_interface>* factory)
+				{
+					std::unique_ptr<inline_pane> pane_ptr;
+					auto i = inline_buffered_table.find(factory);
+					if (i != inline_buffered_table.end())
 					{
-						index_pair item;
-						if(lister.forward(item, scroll.v.value(), item))
-						{
-							if (item != scroll.offset_y_dpl)
-							{
-					            set_scroll_y_dpl ( item );
-								update = true;
-							}
-						}
-					}
-					else if(arg.window_handle == scroll.h.handle())
-					{
-						if(scroll.offset_x != static_cast<int>(scroll.h.value()))
-						{
-							scroll.offset_x = static_cast<int>(scroll.h.value());
-							update = true;
-						}
+						if (!i->second.empty())
+							pane_ptr = std::move(i->second.front());
 					}
 
-					if(update)
-						API::refresh_window(lister.wd_ptr()->handle());
+					if (!pane_ptr)
+					{
+						pane_ptr.reset(new inline_pane);
+						pane_ptr->pane.create(this->lister.wd_ptr()->handle());
+						pane_ptr->inline_ptr = factory->create();
+						pane_ptr->inline_ptr->create(pane_ptr->pane);
+					}
+
+					auto ptr = pane_ptr.get();
+					inline_table[factory].emplace_back(std::move(pane_ptr));
+					return ptr;
 				}
-				void _m_answer_scroll_value(const ::nana::arg_scroll<true>& arg)
-				{
-					index_pair item;
-					if( !lister.forward(item, scroll.v.value(), item)) return;
-
-					if (item == scroll.offset_y_dpl) 
-                        return; 
-
-					set_scroll_y_dpl ( item );
-
-                    API::refresh_window(lister.wd_ptr()->handle());
-				}
-                
-};
+			};
 
             void es_lister::scroll_refresh()
             {
                     ess_->scroll_y_dpl_refresh();
-
             }
+
             void es_lister::move_select(bool upwards, bool unselect_previous, bool trace_selected)
 				{
 					auto next_selected_dpl = relative_pair ( last_selected_abs); // last_selected_dpl; // ??
@@ -2709,8 +2729,6 @@ namespace nana
 
 				void draw(const nana::rectangle& rect) const
 				{
-					// essence_->scroll_y_dpl_refresh() ; // ????
-
                     internal_scope_guard lock;
 
 					size_type n = essence_->number_of_lister_items(true);
@@ -2752,6 +2770,8 @@ namespace nana
 
 					auto state = item_state::normal;
 
+					essence_->inline_buffered_table.swap(essence_->inline_table);
+
 					//Here we draw the root categ (0) or a first item if the first drawing is not a categ.(item!=npos))
 					if(idx.cat == 0 || !idx.is_category())
 					{
@@ -2767,7 +2787,7 @@ namespace nana
 							if(n-- == 0)	break;
 							state = (tracker == idx	? item_state::highlighted : item_state::normal);
 
-							_m_draw_item(i_categ->items[lister.absolute(index_pair(idx.cat, offs)) ], x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
+							_m_draw_item(*i_categ, i_categ->items[lister.absolute(index_pair(idx.cat, offs)) ], x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
 							y += essence_->item_size;
 						}
 	
@@ -2794,11 +2814,13 @@ namespace nana
 							if(n-- == 0)	break;
 							state = (idx == tracker ? item_state::highlighted : item_state::normal);
 
-							_m_draw_item(i_categ->items[ lister.absolute(index_pair(idx.cat, pos))], x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
+							_m_draw_item(*i_categ, i_categ->items[ lister.absolute(index_pair(idx.cat, pos))], x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
 							y += essence_->item_size;
 							++idx.item;
 						}
 					}
+
+					essence_->inline_buffered_table.clear();
 
 					if (y < rect.y + static_cast<int>(rect.height))
 					{
@@ -2848,7 +2870,7 @@ namespace nana
 					}
 				}
 
-				void _m_draw_item(const item_t& item, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
+				void _m_draw_item(const category_t& cat, const item_t& item, const int x, const int y, const int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
 				{
 					if (item.flags.selected)                                    // fetch the "def" colors 
 						bgcolor = essence_->scheme_ptr->item_selected;
@@ -2858,7 +2880,6 @@ namespace nana
 					if(!item.fgcolor.invisible())
 						fgcolor = item.fgcolor;
 
-					auto graph = essence_->graph;
 					if (item_state::highlighted == state)                          // and blend it if "highlighted"
 					{
 						if (item.flags.selected)
@@ -2870,6 +2891,7 @@ namespace nana
 					unsigned show_w = width - essence_->scroll.offset_x;
 					if(show_w >= r.width) show_w = r.width;
 
+					auto graph = essence_->graph;
 					//draw the background
 					graph->set_color(bgcolor);
 					graph->rectangle(rectangle{ r.x, y, show_w, essence_->item_size }, true);
@@ -2878,12 +2900,11 @@ namespace nana
 					unsigned extreme_text = x;
 					bool first = true;
 
-                    
-					for(size_type display_order{0}; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
+					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
 						auto index = seqs[display_order];
-                        const auto & header = essence_->header.column(index);     // deduce the corresponding header which is in a kind of dislay order
-                        auto it_bgcolor = bgcolor;
+						const auto & header = essence_->header.column(index);     // deduce the corresponding header which is in a kind of dislay order
+						auto it_bgcolor = bgcolor;
 
 						if ((item.cells.size() > index) && (header.pixels > 5))        // process only if the cell is visible
 						{
@@ -2893,27 +2914,28 @@ namespace nana
 
 							if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
 							{
-								it_bgcolor = m_cell.custom_format->bgcolor;    
-                                if (item.flags.selected)
-                                    it_bgcolor = it_bgcolor.blend( bgcolor , 0.5) ;
+								it_bgcolor = m_cell.custom_format->bgcolor;
+								if (item.flags.selected)
+									it_bgcolor = it_bgcolor.blend(bgcolor, 0.5);
 								if (item_state::highlighted == state)
-									it_bgcolor = it_bgcolor.blend(::nana::color(0x99, 0xde, 0xfd), 0.8);
-                                
-                                graph->set_color(it_bgcolor);
+									it_bgcolor = it_bgcolor.blend(static_cast<color_rgb>(0x99defd), 0.8);
+
+								graph->set_color(it_bgcolor);
+
 								graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
 
 								cell_txtcolor = m_cell.custom_format->fgcolor;
 							}
 
 							int ext_w = 5;
-							if(first && essence_->checkable)          //  draw the checkbox if need, only before the first column (display_order=0 ?)
+							if (first && essence_->checkable)          //  draw the checkbox if need, only before the first column (display_order=0 ?)
 							{
 								ext_w += 18;
 
 								element_state estate = element_state::normal;
-								if(essence_->pointer_where.first == parts::checker)
+								if (essence_->pointer_where.first == parts::checker)
 								{
-									switch(state)
+									switch (state)
 									{
 									case item_state::highlighted:
 										estate = element_state::hovered;	break;
@@ -2924,7 +2946,7 @@ namespace nana
 								}
 
 								using state = facade<element::crook>::state;
-								crook_renderer_.check(item.flags.checked ?  state::checked : state::unchecked);
+								crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
 								crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
 							}
 
@@ -2933,7 +2955,7 @@ namespace nana
 								if (item.img)
 								{
 									nana::rectangle img_r(item.img_show_size);
-									img_r.x = static_cast<int>(ext_w) + item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
+									img_r.x = static_cast<int>(ext_w)+item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
 									img_r.y = y + static_cast<int>(essence_->item_size - item.img_show_size.height) / 2;
 									item.img.stretch(item.img.size(), *graph, img_r);
 								}
@@ -2946,27 +2968,34 @@ namespace nana
 							if (ts.width + ext_w > header.pixels)             // it was an excess
 							{
 								//The text is painted over the next subitem                // here beging the ...
-								int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);  
+								int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);
 
 								graph->set_color(it_bgcolor);                                   // litter rect with the  item bg end ... 
-                                graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
-								graph->set_text_color(cell_txtcolor);
+								graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
 								graph->string(point{ xpos, y + 2 }, STR("..."));
 
 								//Erase the part that over the next subitem.
-								if (  display_order  + 1 < seqs.size() )      // this is not the last column
-                                {
-                                    graph->set_color(bgcolor);       // we need to erase the excess, because some cell may not draw text over
-								    graph->rectangle(rectangle{item_xpos + static_cast<int>(header.pixels), y + 2, 
-                                                               ts.width + ext_w - header.pixels, essence_->item_size - 4}, true);
-                                }
-                                extreme_text = std::max (extreme_text, item_xpos + ext_w + ts.width);
+								if (display_order + 1 < seqs.size())      // this is not the last column
+								{
+									graph->set_color(bgcolor);       // we need to erase the excess, because some cell may not draw text over
+									graph->rectangle(rectangle{ item_xpos + static_cast<int>(header.pixels), y + 2,
+										ts.width + ext_w - header.pixels, essence_->item_size - 4 }, true);
+								}
+								extreme_text = std::max(extreme_text, item_xpos + ext_w + ts.width);
 							}
 						}
 
-						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, { 0xEB, 0xF4, 0xF9 });
+						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, static_cast<color_rgb>(0xEBF4F9));
 
-						item_xpos += header.pixels;
+						auto inline_wdg = _m_get_pane(cat, index);
+						if (inline_wdg)
+						{
+							inline_wdg->pane.move({ item_xpos, y, header.pixels, essence_->item_size });
+							inline_wdg->inline_ptr->resize({ header.pixels, essence_->item_size });
+							//inline_wdg->inline_ptr->activate()
+						}
+
+						item_xpos += static_cast<int>(header.pixels);
 						if (display_order + 1 >= seqs.size() && static_cast<int>(extreme_text) > item_xpos)
                         {
                             graph->set_color(item.bgcolor);
@@ -2978,6 +3007,17 @@ namespace nana
 					//Draw selecting inner rectangle
 					if(item.flags.selected)
 						_m_draw_border(r.x, y, show_w);
+				}
+
+				essence_t::inline_pane * _m_get_pane(const category_t& cat, std::size_t pos) const
+				{
+					if (pos < cat.factories.size())
+					{
+						auto & factory = cat.factories[pos];
+						if (factory)
+							return essence_->open_inline(factory.get());
+					}
+					return nullptr;
 				}
 
 				void _m_draw_border(int x, int y, unsigned width) const
@@ -3024,6 +3064,9 @@ namespace nana
 
 				void trigger::draw()
 				{
+					if (API::is_destroying(essence_->lister.wd_ptr()->handle()))
+						return;
+
 					nana::rectangle r;
 
 					if(essence_->header.visible() && essence_->rect_header(r))
@@ -3888,6 +3931,17 @@ namespace nana
 				bool cat_proxy::operator!=(const cat_proxy& r) const
 				{
 					return ! this->operator==(r);
+				}
+
+				void cat_proxy::inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_interface>> factory)
+				{
+					if (column >= ess_->header.cont().size())
+						throw std::out_of_range("listbox.cat_proxy.inline_factory: invalid column index");
+
+					if (column >= cat_->factories.size())
+						cat_->factories.resize(column + 1);
+
+					cat_->factories[column] = std::move(factory);
 				}
 
 				void cat_proxy::_m_append(std::vector<cell> && cells)

@@ -1333,14 +1333,16 @@ namespace detail
 				delete wd->together.caret;
 				wd->together.caret = nullptr;
 			}
+
+			arg_destroy arg;
+			arg.window_handle = reinterpret_cast<window>(wd);
+			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
+
 			//Delete the children widgets.
 			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end; ++i)
 				_m_destroy(*i);
 			wd->children.clear();
 
-			arg_destroy arg;
-			arg.window_handle = reinterpret_cast<window>(wd);
-			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
 			_m_disengage(wd, nullptr);
 			wndlayout_type::enable_effects_bground(wd, false);

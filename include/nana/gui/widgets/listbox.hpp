@@ -15,9 +15,10 @@
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
 #define NANA_GUI_WIDGETS_LISTBOX_HPP
 #include "widget.hpp"
+#include "detail/inline_widget.hpp"
+#include <nana/pat/abstract_factory.hpp>
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
-//#include <nana/paint/graphics.hpp>
 #include <functional>
 #include <initializer_list>
 
@@ -29,7 +30,58 @@ namespace nana
 	{
 		namespace listbox
 		{
-			using size_type = std::size_t ;
+			using size_type = std::size_t;
+
+			/// usefull for both absolute and display (sorted) positions
+			struct index_pair
+			{
+				size_type cat;	//The pos of category
+				size_type item;	//the pos of item in a category.
+
+				index_pair(size_type cat_pos = 0, size_type item_pos = 0)
+					: cat(cat_pos),
+					item(item_pos)
+				{}
+
+				bool empty() const
+				{
+					return (npos == cat);
+				}
+
+				void set_both(size_type n)
+				{
+					cat = item = n;
+				}
+
+				bool is_category() const
+				{
+					return (npos != cat && npos == item);
+				}
+
+				bool is_item() const
+				{
+					return (npos != cat && npos != item);
+				}
+
+				bool operator==(const index_pair& r) const
+				{
+					return (r.cat == cat && r.item == item);
+				}
+
+				bool operator!=(const index_pair& r) const
+				{
+					return !this->operator==(r);
+				}
+
+				bool operator>(const index_pair& r) const
+				{
+					return (cat > r.cat) || (cat == r.cat && item > r.item);
+				}
+			};
+
+			using selection = std::vector<index_pair>;
+
+			using inline_interface = detail::inline_widget_interface<index_pair, std::wstring>;
 
 			struct cell
 			{
@@ -113,55 +165,6 @@ namespace nana
 				const std::vector<cell>& cells_;
 				std::size_t pos_{0};
 			};
-
-            /// usefull for both absolute and display (sorted) positions
-            struct index_pair
-			{
-				size_type cat;	//The pos of category
-				size_type item;	//the pos of item in a category.
-
-				index_pair(size_type cat_pos = 0, size_type item_pos = 0)
-					:	cat(cat_pos),
-						item(item_pos)
-				{}
-
-				bool empty() const
-				{
-					return (npos == cat);
-				}
-
-				void set_both(size_type n)
-				{
-					cat = item = n;
-				}
-
-				bool is_category() const
-				{
-					return (npos != cat && npos == item);
-				}
-
-				bool is_item() const
-				{
-					return (npos != cat && npos != item);
-				}
-
-				bool operator==(const index_pair& r) const
-				{
-					return (r.cat == cat && r.item == item);
-				}
-
-				bool operator!=(const index_pair& r) const
-				{
-					return !this->operator==(r);
-				}
-
-				bool operator>(const index_pair& r) const
-				{
-					return (cat > r.cat) || (cat == r.cat && item > r.item);
-				}
-			};
-
-			typedef std::vector<index_pair> selection;
 
 			//struct essence_t
 			//@brief:	this struct gives many data for listbox,
@@ -344,6 +347,8 @@ namespace nana
 				: public std::iterator < std::input_iterator_tag, cat_proxy >
 			{
 			public:
+				using inline_interface = drawerbase::listbox::inline_interface;
+
 				cat_proxy() = default;
 				cat_proxy(essence_t*, size_type pos);
 				cat_proxy(essence_t*, category_t*);
@@ -423,6 +428,8 @@ namespace nana
 
 				/// Behavior of Iterator
 				bool operator!=(const cat_proxy&) const;
+
+				void inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_interface>> factory);
 			private:
 				void _m_append(std::vector<cell> && cells);
 				void _m_cat_by_pos();
@@ -499,6 +506,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		using cell      = drawerbase::listbox::cell;
 		using export_options= drawerbase::listbox::export_options;
 		using columns_indexs= drawerbase::listbox::size_type;
+		using inline_interface = drawerbase::listbox::inline_interface;
 	public:
 		listbox() = default;
 		listbox(window, bool visible);

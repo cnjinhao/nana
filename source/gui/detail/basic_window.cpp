@@ -298,6 +298,15 @@ namespace nana
 				return false;
 			}
 
+			basic_window * basic_window::seek_non_lite_widget_ancestor() const
+			{
+				auto anc = this->parent;
+				while (anc && (category::flags::lite_widget == anc->other.category))
+					anc = anc->parent;
+				
+				return anc;
+			}
+
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
 				pos_owner = pos_root = r;
