@@ -87,13 +87,11 @@ namespace detail
 			std::vector<thr_refcnt> stack_;
 		};
 	public:
-		typedef native_window_type	native_window;
-		typedef revertible_mutex mutex_type;
+		using native_window = native_window_type;
+		using mutex_type = revertible_mutex;
 
-		typedef basic_window core_window_t;
-		typedef std::vector<core_window_t*> cont_type;
-
-		typedef window_layout	wndlayout_type;
+		using core_window_t = basic_window;
+		using window_layer = window_layout;
 
 		window_manager();
 		~window_manager();
