@@ -265,7 +265,7 @@ namespace nana
 				if (false == edge_nimbus_renderer_t::instance().render(iwd, forced, update_area))
 				{
 					rectangle vr;
-					if (bedrock_type::window_manager_t::wndlayout_type::read_visual_rectangle(iwd, vr))
+					if (bedrock_type::window_manager_t::window_layer::read_visual_rectangle(iwd, vr))
 					{
 						if (update_area)
 							::nana::overlap(*update_area, rectangle(vr), vr);
