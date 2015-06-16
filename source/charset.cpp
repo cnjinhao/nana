@@ -799,7 +799,7 @@ namespace nana
 					switch(utf_x_)
 					{
 					case unicode::utf8:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 						strbuf = detail::utf8_to_utf16(data_, true);
 						detail::put_utf16char(strbuf, 0, true);
 #else
@@ -808,7 +808,7 @@ namespace nana
 #endif
 						break;
 					case unicode::utf16:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 						strbuf = data_;
 						detail::put_utf16char(strbuf, 0, true);
 #else
@@ -817,7 +817,7 @@ namespace nana
 #endif
 						break;
 					case unicode::utf32:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 						strbuf = detail::utf32_to_utf16(data_);
 						detail::put_utf16char(strbuf, 0, true);
 #else
@@ -907,21 +907,21 @@ namespace nana
 					switch(utf_x_)
 					{
 					case unicode::utf8:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 						bytes = detail::utf8_to_utf16(data_, true);
 #else
 						bytes = detail::utf8_to_utf32(data_, true);
 #endif
 						break;
 					case unicode::utf16:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 						bytes = data_;
 #else
 						bytes = detail::utf16_to_utf32(data_);
 #endif
 						break;
 					case unicode::utf32:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 						bytes = detail::utf32_to_utf16(data_);
 #else
 						bytes = data_;
@@ -984,19 +984,19 @@ namespace nana
 				switch(encoding)
 				{
 				case unicode::utf8:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 					return detail::utf16_to_utf8(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
 #else
 					return detail::utf32_to_utf8(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
 #endif
 				case unicode::utf16:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 					return std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t));
 #else
 					return detail::utf32_to_utf16(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
 #endif
 				case unicode::utf32:
-#if defined(NANA_MINGW)
+#if defined(NANA_WINDOWS)
 					return detail::utf16_to_utf32(std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t)));
 #else
 					return std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t));
