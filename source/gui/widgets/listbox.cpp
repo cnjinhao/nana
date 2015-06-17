@@ -1591,7 +1591,7 @@ namespace nana
 				}
 
                 /// set all items in cat to selection sel, emiting events, actualizing last_selected_abs, but not check for single_selection_
-                bool categ_selected(size_type cat, bool sel);
+                void categ_selected(size_type cat, bool sel);
 
 				void reverse_categ_selected(size_type categ)
 				{
@@ -2481,21 +2481,16 @@ namespace nana
 					return list_str ;
 				}
 
-            bool es_lister::categ_selected(size_type cat, bool sel)
+            void es_lister::categ_selected(size_type cat, bool sel)
 			{
-				bool changed = false;    // we need this??
-
                 cat_proxy cpx{ess_,cat};
                 for (item_proxy &it : cpx )
                 {
                     if (it.selected() != sel)
-                        changed = true;
-                    it.select(sel);
+						it.select(sel);
                 }
 
                 last_selected_abs = last_selected_dpl =  index_pair {cat, npos};
-
-				return changed;   // we need this??
 			}
 
 			class drawer_header_impl
@@ -3823,6 +3818,11 @@ namespace nana
 				//Behavior of a container
 				item_proxy cat_proxy::begin() const
 				{
+					auto i = ess_->lister.cat_container().begin();
+					std::advance(i, pos_);
+					if (i->items.empty())
+						return end();
+
 					return item_proxy(ess_, index_pair(pos_, 0));
 				}
 

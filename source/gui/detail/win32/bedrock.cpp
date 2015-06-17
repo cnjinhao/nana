@@ -1400,7 +1400,7 @@ namespace detail
 
 					if(msgwnd)
 					{
-						if((wParam == 9) && (false == (msgwnd->flags.tab & tab_type::eating))) //Tab
+						if((wParam == 9) && (!msgwnd->visible || (false == (msgwnd->flags.tab & tab_type::eating)))) //Tab
 						{
 							auto the_next = brock.wd_manager.tabstop(msgwnd, (::GetKeyState(VK_SHIFT) >= 0));
 							if(the_next)

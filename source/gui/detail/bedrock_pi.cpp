@@ -63,6 +63,17 @@ namespace nana
 			arg.window_handle = reinterpret_cast<window>(wd);
 			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
 			{
+				if (wd->together.caret)
+				{
+					if (exposed)
+					{
+						if (wd->root_widget->other.attribute.root->focus == wd)
+							wd->together.caret->visible(true);
+					}
+					else
+						wd->together.caret->visible(false);
+				}
+
 				if (!exposed)
 				{
 					if (category::flags::root != wd->other.category)

@@ -428,35 +428,34 @@ namespace detail
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			if (impl_->wd_register.available(wd))
+			if (!impl_->wd_register.available(wd))
+				return false;
+
+			if(visible != wd->visible)
 			{
-				if(visible != wd->visible)
+				native_window_type nv = nullptr;
+				switch(wd->other.category)
 				{
-					native_window_type nv = nullptr;
-					switch(wd->other.category)
-					{
-					case category::root_tag::value:
-						nv = wd->root; break;
-					case category::frame_tag::value:
-						nv = wd->other.attribute.frame->container; break;
-					default:	//category::widget_tag, category::lite_widget_tag
-						break;
-					}
-
-					if(visible && wd->effect.bground)
-						wndlayout_type::make_bground(wd);
-
-					//Don't set the visible attr of a window if it is a root.
-					//The visible attr of a root will be set in the expose event.
-					if(category::root_tag::value != wd->other.category)
-						bedrock::instance().event_expose(wd, visible);
-
-					if(nv)
-						native_interface::show_window(nv, visible, wd->flags.take_active);
+				case category::root_tag::value:
+					nv = wd->root; break;
+				case category::frame_tag::value:
+					nv = wd->other.attribute.frame->container; break;
+				default:	//category::widget_tag, category::lite_widget_tag
+					break;
 				}
-				return true;
+
+				if(visible && wd->effect.bground)
+					window_layer::make_bground(wd);
+
+				//Don't set the visible attr of a window if it is a root.
+				//The visible attr of a root will be set in the expose event.
+				if(category::flags::root != wd->other.category)
+					bedrock::instance().event_expose(wd, visible);
+
+				if(nv)
+					native_interface::show_window(nv, visible, wd->flags.take_active);
 			}
-			return false;
+			return true;
 		}
 
 		window_manager::core_window_t* window_manager::find_window(native_window_type root, int x, int y)
@@ -645,7 +644,7 @@ namespace detail
 					if(wd->effect.bground && wd->parent)
 					{
 						wd->other.glass_buffer.make(sz);
-						wndlayout_type::make_bground(wd);
+						window_layer::make_bground(wd);
 					}
 				}
 			}
@@ -709,13 +708,13 @@ namespace detail
 			{
 				if(forced || (false == wd->belong_to_lazy()))
 				{
-					wndlayout_type::paint(wd, redraw, false);
+					window_layer::paint(wd, redraw, false);
 					this->map(wd, forced, update_area);
 				}
 				else
 				{
 					if(redraw)
-						wndlayout_type::paint(wd, true, false);
+						window_layer::paint(wd, true, false);
 					if(wd->other.upd_state == core_window_t::update_state::lazy)
 						wd->other.upd_state = core_window_t::update_state::refresh;
 				}
@@ -730,7 +729,7 @@ namespace detail
 
 			//It's not worthy to redraw if visible is false
 			if (impl_->wd_register.available(wd) && wd->visible && wd->visible_parents())
-				wndlayout_type::paint(wd, true, true);
+				window_layer::paint(wd, true, true);
 		}
 
 		//do_lazy_refresh
@@ -751,7 +750,7 @@ namespace detail
 				{
 					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
 					{
-						wndlayout_type::paint(wd, false, false);
+						window_layer::paint(wd, false, false);
 						this->map(wd, force_copy_to_screen);
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
@@ -762,7 +761,7 @@ namespace detail
 					}
 				}
 				else
-					wndlayout_type::paint(wd, true, false);	//only refreshing if it has an invisible parent
+					window_layer::paint(wd, true, false);	//only refreshing if it has an invisible parent
 			}
 			wd->other.upd_state = core_window_t::update_state::none;
 			return true;
@@ -782,7 +781,7 @@ namespace detail
 
 			result.make(wd->drawer.graphics.size());
 			result.bitblt(0, 0, wd->drawer.graphics);
-			wndlayout_type::paste_children_to_graphics(wd, result);
+			window_layer::paste_children_to_graphics(wd, result);
 			return true;
 		}
 
@@ -791,7 +790,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			return (impl_->wd_register.available(wd) ?
-				wndlayout_type::read_visual_rectangle(wd, r) :
+				window_layer::read_visual_rectangle(wd, r) :
 				false);
 		}
 
@@ -1020,13 +1019,8 @@ namespace detail
 			}
 		}
 
-		auto window_manager::tabstop(core_window_t* wd, bool forward) const -> core_window_t*
+		window_manager::core_window_t* get_tabstop(window_manager::core_window_t* wd, bool forward)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			if (!impl_->wd_register.available(wd))
-				return nullptr;
-
 			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
 			if (tabs.size())
 			{
@@ -1041,7 +1035,7 @@ namespace detail
 						if (i != end)
 						{
 							++i;
-							core_window_t* ts = (i != end ? (*i) : tabs.front());
+							window_manager::core_window_t* ts = (i != end ? (*i) : tabs.front());
 							return (ts != wd ? ts : 0);
 						}
 						else
@@ -1058,6 +1052,29 @@ namespace detail
 			return nullptr;
 		}
 
+		auto window_manager::tabstop(core_window_t* wd, bool forward) const -> core_window_t*
+		{
+			//Thread-Safe Required!
+			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			if (!impl_->wd_register.available(wd))
+				return nullptr;
+
+			auto new_stop = get_tabstop(wd, forward);
+
+			while (new_stop)
+			{
+				if (wd == new_stop)
+					break;
+
+				if (new_stop->flags.enabled && new_stop->visible)
+					return new_stop;
+
+				new_stop = get_tabstop(new_stop, forward);
+			}
+
+			return nullptr;
+		}
+
 		void window_manager::remove_trash_handle(unsigned tid)
 		{
 			impl_->wd_register.delete_trash(tid);
@@ -1068,7 +1085,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd))
-				return wndlayout_type::enable_effects_bground(wd, enabled);
+				return window_layer::enable_effects_bground(wd, enabled);
 
 			return false;
 		}
@@ -1369,7 +1386,7 @@ namespace detail
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
 			_m_disengage(wd, nullptr);
-			wndlayout_type::enable_effects_bground(wd, false);
+			window_layer::enable_effects_bground(wd, false);
 
 			wd->drawer.detached();
 			impl_->signal.call_signal(wd, signals::code::destroy, signals_);
