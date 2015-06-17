@@ -1950,7 +1950,8 @@ namespace nana
 
 				struct inline_pane
 				{
-					::nana::panel<false> pane;
+					::nana::panel<false> pane_bottom;	//pane for pane_widget
+					::nana::panel<false> pane_widget;	//pane for placing user-define widget
 					std::unique_ptr<inline_interface> inline_ptr;
 				};
 
@@ -2372,9 +2373,10 @@ namespace nana
 					if (!pane_ptr)
 					{
 						pane_ptr.reset(new inline_pane);
-						pane_ptr->pane.create(this->lister.wd_ptr()->handle());
+						pane_ptr->pane_bottom.create(this->lister.wd_ptr()->handle());
+						pane_ptr->pane_widget.create(pane_ptr->pane_bottom);
 						pane_ptr->inline_ptr = factory->create();
-						pane_ptr->inline_ptr->create(pane_ptr->pane);
+						pane_ptr->inline_ptr->create(pane_ptr->pane_widget);
 					}
 
 					auto ptr = pane_ptr.get();
@@ -2870,7 +2872,9 @@ namespace nana
 					}
 				}
 
-				void _m_draw_item(const category_t& cat, const item_t& item, const int x, const int y, const int txtoff, unsigned width, const nana::rectangle& r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
+				//Draws an item
+				//@param content_r the rectangle of list content
+				void _m_draw_item(const category_t& cat, const item_t& item, const int x, const int y, const int txtoff, unsigned width, const nana::rectangle& content_r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
 				{
 					if (item.flags.selected)                                    // fetch the "def" colors 
 						bgcolor = essence_->scheme_ptr->item_selected;
@@ -2889,12 +2893,12 @@ namespace nana
 					}
 
 					unsigned show_w = width - essence_->scroll.offset_x;
-					if(show_w >= r.width) show_w = r.width;
+					if(show_w >= content_r.width) show_w = content_r.width;
 
 					auto graph = essence_->graph;
 					//draw the background
 					graph->set_color(bgcolor);
-					graph->rectangle(rectangle{ r.x, y, show_w, essence_->item_size }, true);
+					graph->rectangle(rectangle{ content_r.x, y, show_w, essence_->item_size }, true);
 
 					int item_xpos         = x;
 					unsigned extreme_text = x;
@@ -2990,7 +2994,23 @@ namespace nana
 						auto inline_wdg = _m_get_pane(cat, index);
 						if (inline_wdg)
 						{
-							inline_wdg->pane.move({ item_xpos, y, header.pixels, essence_->item_size });
+							rectangle pane_r;
+							if (::nana::overlap(content_r, { item_xpos, y, header.pixels, essence_->item_size }, pane_r))
+							{
+								::nana::point pane_pos;
+								if (item_xpos < content_r.x)
+									pane_pos.x = item_xpos - content_r.x;
+
+								if (y < content_r.y)
+									pane_pos.y = y - content_r.y;
+
+								inline_wdg->pane_widget.move(pane_pos);	
+								inline_wdg->pane_bottom.move(pane_r);
+							}
+							else
+								inline_wdg->pane_bottom.hide();
+
+							inline_wdg->pane_widget.size({ header.pixels, essence_->item_size });
 							inline_wdg->inline_ptr->resize({ header.pixels, essence_->item_size });
 							//inline_wdg->inline_ptr->activate()
 						}
@@ -3006,7 +3026,7 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if(item.flags.selected)
-						_m_draw_border(r.x, y, show_w);
+						_m_draw_border(content_r.x, y, show_w);
 				}
 
 				essence_t::inline_pane * _m_get_pane(const category_t& cat, std::size_t pos) const
