@@ -31,7 +31,7 @@ namespace nana
 				void unknown(bool);
 				bool unknown() const;
 				bool stop(bool s = true);
-				bool stoped() const;
+				bool stopped() const;
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
@@ -71,7 +71,7 @@ namespace nana
 		void unknown(bool);
 		bool unknown() const;
 		bool stop(bool s=true);  ///< request stop or cancel and return previus stop status
-		bool stoped() const;  
+		bool stopped() const;  
 	};
 }//end namespace nana
 #endif
