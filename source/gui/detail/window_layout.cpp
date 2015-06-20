@@ -24,7 +24,6 @@ namespace nana
 		//class window_layout
 			void window_layout::paint(core_window_t* wd, bool is_redraw, bool is_child_refreshed)
 			{
-
 				if (wd->flags.refreshing)
 					return;
 

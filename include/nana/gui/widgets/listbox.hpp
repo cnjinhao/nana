@@ -81,7 +81,7 @@ namespace nana
 
 			using selection = std::vector<index_pair>;
 
-			using inline_interface = detail::inline_widget_interface<index_pair, std::wstring>;
+			using inline_notifier_interface = detail::inline_widget_notifier_interface<index_pair, std::wstring>;
 
 			struct cell
 			{
@@ -347,7 +347,7 @@ namespace nana
 				: public std::iterator < std::input_iterator_tag, cat_proxy >
 			{
 			public:
-				using inline_interface = drawerbase::listbox::inline_interface;
+				using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
 
 				cat_proxy() = default;
 				cat_proxy(essence_t*, size_type pos);
@@ -429,7 +429,7 @@ namespace nana
 				/// Behavior of Iterator
 				bool operator!=(const cat_proxy&) const;
 
-				void inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_interface>> factory);
+				void inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_notifier_interface>> factory);
 			private:
 				void _m_append(std::vector<cell> && cells);
 				void _m_cat_by_pos();
@@ -506,7 +506,7 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		using cell      = drawerbase::listbox::cell;
 		using export_options= drawerbase::listbox::export_options;
 		using columns_indexs= drawerbase::listbox::size_type;
-		using inline_interface = drawerbase::listbox::inline_interface;
+		using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
 	public:
 		listbox() = default;
 		listbox(window, bool visible);

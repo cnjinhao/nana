@@ -689,16 +689,18 @@ namespace detail
 			{
 				if(forced || (false == wd->belong_to_lazy()))
 				{
-					wndlayout_type::paint(wd, redraw, false);
-					this->map(wd, forced);
+					if (!wd->flags.refreshing)
+					{
+						wndlayout_type::paint(wd, redraw, false);
+						this->map(wd, forced);
+						return true;
+					}
 				}
-				else
-				{
-					if(redraw)
-						wndlayout_type::paint(wd, true, false);
-					if(wd->other.upd_state == core_window_t::update_state::lazy)
-						wd->other.upd_state = core_window_t::update_state::refresh;
-				}
+				else if(redraw)
+					wndlayout_type::paint(wd, true, false);
+
+				if (wd->other.upd_state == core_window_t::update_state::lazy)
+					wd->other.upd_state = core_window_t::update_state::refresh;
 			}
 			return true;
 		}

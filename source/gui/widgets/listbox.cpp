@@ -659,7 +659,7 @@ namespace nana
 				//A cat may have a key object to identify the category
 				std::shared_ptr<nana::detail::key_interface> key_ptr;
 
-				std::deque<pat::cloneable<pat::abstract_factory<inline_interface>>> factories;
+				std::deque<pat::cloneable<pat::abstract_factory<inline_notifier_interface>>> factories;
 
 				category_t() = default;
 
@@ -1907,6 +1907,23 @@ namespace nana
 					{
 						ess_->lister.at(pos).cells;
 					}
+
+					void selected(index_type pos) override
+					{
+						if (ess_->lister.at(pos).flags.selected)
+							return;
+						ess_->lister.select_for_all(false);
+						cat_proxy(ess_, pos.cat).at(pos.item).select(true);
+					}
+
+					void hovered(index_type pos) override
+					{
+						auto offset = ess_->lister.distance(ess_->scroll.offset_y_dpl, pos);
+						ess_->pointer_where.first = parts::lister;
+						ess_->pointer_where.second = offset;
+
+						ess_->update();
+					}
 				private:
 					essence_t * const ess_;
 				};
@@ -1920,7 +1937,10 @@ namespace nana
 				unsigned item_size{24};
 				unsigned text_height{0};
 				unsigned suspension_width{0};
-                ::nana::listbox::export_options def_exp_options ;
+
+				inline_indicator indicator{ this };
+
+                ::nana::listbox::export_options def_exp_options;
 
                 ::nana::listbox::export_options& def_export_options()
                 {
@@ -1952,7 +1972,7 @@ namespace nana
 				{
 					::nana::panel<false> pane_bottom;	//pane for pane_widget
 					::nana::panel<false> pane_widget;	//pane for placing user-define widget
-					std::unique_ptr<inline_interface> inline_ptr;
+					std::unique_ptr<inline_notifier_interface> inline_ptr;
 				};
 
 				std::map<void*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
@@ -2360,7 +2380,7 @@ namespace nana
 					}
 				}
 
-				inline_pane * open_inline(pat::abstract_factory<inline_interface>* factory)
+				inline_pane * open_inline(pat::abstract_factory<inline_notifier_interface>* factory)
 				{
 					std::unique_ptr<inline_pane> pane_ptr;
 					auto i = inline_buffered_table.find(factory);
@@ -2634,7 +2654,6 @@ namespace nana
 				void _m_draw(const Container& cont, const nana::rectangle& rect)
 				{
 					graph_reference graph = *(essence_->graph);
-					
 
 					int txtop = (rect.height - essence_->text_height) / 2 + rect.y;
 					auto txtcolor = essence_->lister.wd_ptr()->fgcolor();
@@ -2654,7 +2673,7 @@ namespace nana
 							int next_x = x + static_cast<int>(i.pixels);
 							if(next_x > rect.x)
 							{
-								_m_draw_item(graph, x, rect.y, height, txtop, txtcolor, i, (i.index == essence_->pointer_where.second ? state : item_state::normal));
+								_m_draw_header_item(graph, x, rect.y, height, txtop, txtcolor, i, (i.index == essence_->pointer_where.second ? state : item_state::normal));
 								graph.line({ next_x - 1, rect.y }, { next_x - 1, bottom_y }, _m_border_color());
 							}
 
@@ -2669,7 +2688,7 @@ namespace nana
 				}
 
 				template<typename Item>
-				void _m_draw_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::color& fgcolor, const Item& item, item_state state)
+				void _m_draw_header_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::color& fgcolor, const Item& item, item_state state)
 				{
 					essence_->scheme_ptr->header_bgcolor.get_color();
 					::nana::color bgcolor;
@@ -2701,10 +2720,10 @@ namespace nana
 					ext_graph.typeface(essence_->graph->typeface());
 
 					int txtop = (essence_->header_size - essence_->text_height) / 2;
-					_m_draw_item(ext_graph, 0, 0, essence_->header_size, txtop, colors::white, item, item_state::floated);
+					_m_draw_header_item(ext_graph, 0, 0, essence_->header_size, txtop, colors::white, item, item_state::floated);
 
 					int xpos = essence_->header.item_pos(item.index, nullptr) + pos.x - ref_xpos_;
-					ext_graph.blend(ext_graph.size(), *(essence_->graph), nana::point(xpos - essence_->scroll.offset_x + rect.x, rect.y), 0.5);
+					ext_graph.blend(rectangle{ ext_graph.size() }, *(essence_->graph), nana::point(xpos - essence_->scroll.offset_x + rect.x, rect.y), 0.5);
 				}
 
 			private:
@@ -2749,7 +2768,7 @@ namespace nana
 					es_lister & lister = essence_->lister;
 					//The Tracker indicates the item where mouse placed.
 					index_pair tracker(npos, npos);
-					auto & ptr_where = essence_->pointer_where;  
+					auto & ptr_where = essence_->pointer_where;
 
                     //if where == lister || where == checker, 'second' indicates the offset to the  relative display-order pos of the scroll offset_y which stands for the first item to be displayed in lister.
 					if((ptr_where.first == parts::lister || ptr_where.first == parts::checker) && ptr_where.second != npos)
@@ -2784,12 +2803,16 @@ namespace nana
 						}
 
 						std::size_t size = i_categ->items.size();
+						index_pair item_index{ idx.cat, 0 };
 						for(std::size_t offs = essence_->scroll.offset_y_dpl.item; offs < size; ++offs, ++idx.item)
 						{
 							if(n-- == 0)	break;
 							state = (tracker == idx	? item_state::highlighted : item_state::normal);
 
-							_m_draw_item(*i_categ, i_categ->items[lister.absolute(index_pair(idx.cat, offs)) ], x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
+							item_index.item = offs;
+							item_index = lister.absolute_pair(item_index);
+
+							_m_draw_item(*i_categ, item_index, x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
 							y += essence_->item_size;
 						}
 	
@@ -2811,12 +2834,16 @@ namespace nana
 							continue;
 
 						auto size = i_categ->items.size();
+						index_pair item_pos{ idx.cat, 0 };
 						for(decltype(size) pos = 0; pos < size; ++pos)
 						{
 							if(n-- == 0)	break;
 							state = (idx == tracker ? item_state::highlighted : item_state::normal);
 
-							_m_draw_item(*i_categ, i_categ->items[ lister.absolute(index_pair(idx.cat, pos))], x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
+							item_pos.item = pos;
+							item_pos.item = lister.absolute(item_pos);
+
+							_m_draw_item(*i_categ, item_pos, x, y, txtoff, header_w, rect, subitems, bgcolor, fgcolor, state);
 							y += essence_->item_size;
 							++idx.item;
 						}
@@ -2874,8 +2901,10 @@ namespace nana
 
 				//Draws an item
 				//@param content_r the rectangle of list content
-				void _m_draw_item(const category_t& cat, const item_t& item, const int x, const int y, const int txtoff, unsigned width, const nana::rectangle& content_r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
+				void _m_draw_item(const category_t& cat, const index_pair& item_pos, const int x, const int y, const int txtoff, unsigned width, const nana::rectangle& content_r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
 				{
+					auto & item = cat.items[item_pos.item];
+
 					if (item.flags.selected)                                    // fetch the "def" colors 
 						bgcolor = essence_->scheme_ptr->item_selected;
 					else if (!item.bgcolor.invisible())
@@ -2961,7 +2990,7 @@ namespace nana
 									nana::rectangle img_r(item.img_show_size);
 									img_r.x = static_cast<int>(ext_w)+item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
 									img_r.y = y + static_cast<int>(essence_->item_size - item.img_show_size.height) / 2;
-									item.img.stretch(item.img.size(), *graph, img_r);
+									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 								}
 								ext_w += 18;
 							}
@@ -2994,6 +3023,7 @@ namespace nana
 						auto inline_wdg = _m_get_pane(cat, index);
 						if (inline_wdg)
 						{
+							//Make sure the user-define inline widgets in right visible rectangle.
 							rectangle pane_r;
 							if (::nana::overlap(content_r, { item_xpos, y, header.pixels, essence_->item_size }, pane_r))
 							{
@@ -3004,7 +3034,7 @@ namespace nana
 								if (y < content_r.y)
 									pane_pos.y = y - content_r.y;
 
-								inline_wdg->pane_widget.move(pane_pos);	
+								inline_wdg->pane_widget.move(pane_pos.x, pane_pos.y);
 								inline_wdg->pane_bottom.move(pane_r);
 							}
 							else
@@ -3012,7 +3042,7 @@ namespace nana
 
 							inline_wdg->pane_widget.size({ header.pixels, essence_->item_size });
 							inline_wdg->inline_ptr->resize({ header.pixels, essence_->item_size });
-							//inline_wdg->inline_ptr->activate()
+							inline_wdg->inline_ptr->activate(essence_->indicator, item_pos);
 						}
 
 						item_xpos += static_cast<int>(header.pixels);
@@ -3199,7 +3229,16 @@ namespace nana
 						}
 					}
 
-					switch(update)
+					if (update)
+					{
+						if (2 == update)
+							draw();
+
+						API::lazy_refresh();
+					}
+
+					/*
+					switch(update)	//deprecated
 					{
 					case 1:
 						API::update_window(essence_->lister.wd_ptr()->handle());
@@ -3209,6 +3248,7 @@ namespace nana
 						API::lazy_refresh();
 						break;
 					}
+					*/
 				}
 
 				void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
@@ -3261,7 +3301,7 @@ namespace nana
 									else if (arg.ctrl)
 										sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();  
 									else
-										lister.select_for_all(false);
+										lister.select_for_all(false);	//cancel all selections
 								}
 								else
 									sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();
@@ -3560,6 +3600,8 @@ namespace nana
 					}
 					else if (ess_->lister.last_selected_abs == pos_)
 							ess_->lister.last_selected_abs.set_both(npos);
+
+					ess_->update();
 					
 					return *this;
 				}
@@ -3953,7 +3995,7 @@ namespace nana
 					return ! this->operator==(r);
 				}
 
-				void cat_proxy::inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_interface>> factory)
+				void cat_proxy::inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_notifier_interface>> factory)
 				{
 					if (column >= ess_->header.cont().size())
 						throw std::out_of_range("listbox.cat_proxy.inline_factory: invalid column index");
