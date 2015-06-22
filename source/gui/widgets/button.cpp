@@ -282,7 +282,7 @@ namespace nana{	namespace drawerbase
 			else
 				e_state = element_state::disabled;
 
-			if (false == cite_.draw(graph, attr_.bgcolor, attr_.fgcolor, graph.size(), e_state))
+			if (false == cite_.draw(graph, attr_.bgcolor, attr_.fgcolor, ::nana::rectangle{ graph.size() }, e_state))
 			{
 				if (bground_mode::basic != API::effects_bground_mode(wdg_->handle()))
 				{

@@ -26,7 +26,7 @@ namespace nana
 				{
 					if(fade_rate_ < 0.001)
 						return;
-					graph.blend(graph.size(), API::bgcolor(wd), fade_rate_);
+					graph.blend(::nana::rectangle{ graph.size() }, API::bgcolor(wd), fade_rate_);
 				}
 			private:
 				const double fade_rate_;
@@ -42,7 +42,7 @@ namespace nana
 
 				void take_effect(window, graph_reference graph) const
 				{
-					graph.blur(graph.size(), radius_);
+					graph.blur(::nana::rectangle{ graph.size() }, radius_);
 				}
 			private:
 				const std::size_t radius_;

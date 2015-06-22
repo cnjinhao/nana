@@ -604,7 +604,7 @@ namespace paint
 			if(dst.handle_ && handle_ && (dst.handle_ != handle_))
 			{
 				pixel_buffer s_pixbuf;
-				s_pixbuf.attach(handle_, size());
+				s_pixbuf.attach(handle_, ::nana::rectangle{ size() });
 
 				s_pixbuf.blend(s_r, dst.handle_, d_pos, fade_rate);
 
@@ -1022,13 +1022,13 @@ namespace paint
 
 		void graphics::rectangle(bool solid)
 		{
-			rectangle(size(), solid);
+			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
 		void graphics::rectangle(bool solid, const ::nana::color& clr)
 		{
 			set_color(clr);
-			rectangle(size(), solid);
+			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
 		void graphics::rectangle(const ::nana::rectangle& r, bool solid)

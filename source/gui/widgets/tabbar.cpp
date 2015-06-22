@@ -947,7 +947,7 @@ namespace nana
 					auto bgcolor = API::bgcolor(basis_.wd);
 					auto fgcolor = API::fgcolor(basis_.wd);
 
-					item_renderer::item_t m = { basis_.graph->size() };
+					item_renderer::item_t m{ ::nana::rectangle{ basis_.graph->size() } };
 
 					basis_.renderer->background(*basis_.graph, m.r, bgcolor);
 
@@ -985,7 +985,7 @@ namespace nana
 							}
 
 							if(false == item.img.empty())
-								item.img.stretch(item.img.size(), *basis_.graph, nana::rectangle(m.r.x + 4, (m.r.height - 16) / 2, 16, 16));
+								item.img.stretch(::nana::rectangle{ item.img.size() }, *basis_.graph, nana::rectangle(m.r.x + 4, (m.r.height - 16) / 2, 16, 16));
 
 							if(item.text.size())
 							{

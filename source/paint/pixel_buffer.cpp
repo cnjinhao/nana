@@ -22,10 +22,10 @@
 
 namespace nana{	namespace paint
 {
-	nana::rectangle valid_rectangle(const nana::size& s, const nana::rectangle& r)
+	nana::rectangle valid_rectangle(const size& s, const rectangle& r)
 	{
 		nana::rectangle good_r;
-		nana::overlap(s, r, good_r);
+		nana::overlap(rectangle{ s }, r, good_r);
 		return good_r;
 	}
 
@@ -384,13 +384,13 @@ namespace nana{	namespace paint
 		close();
 	}
 
-	void pixel_buffer::attach(drawable_type drawable, const nana::rectangle& want_r)
+	void pixel_buffer::attach(drawable_type drawable, const ::nana::rectangle& want_r)
 	{
 		storage_.reset();
 		if(drawable)
 		{
 			nana::rectangle r;
-			if(nana::overlap(nana::paint::detail::drawable_size(drawable), want_r, r))
+			if (::nana::overlap(::nana::rectangle{ nana::paint::detail::drawable_size(drawable) }, want_r, r))
 				storage_ = std::make_shared<pixel_buffer_storage>(drawable, r);
 		}
 	}
@@ -429,16 +429,16 @@ namespace nana{	namespace paint
 
 	bool pixel_buffer::open(drawable_type drawable, const nana::rectangle & want_rectangle)
 	{
-		nana::size sz = nana::paint::detail::drawable_size(drawable);
+		auto sz = nana::paint::detail::drawable_size(drawable);
 		if(want_rectangle.x >= static_cast<int>(sz.width) || want_rectangle.y >= static_cast<int>(sz.height))
 			return false;
 
-		nana::rectangle want_r = want_rectangle;
+		auto want_r = want_rectangle;
 		if(want_r.width == 0) want_r.width = sz.width - want_r.x;
 		if(want_r.height == 0) want_r.height = sz.height - want_r.y;
 
-		nana::rectangle r;
-		if(false == overlap(sz, want_r, r))
+		::nana::rectangle r;
+		if (false == overlap(::nana::rectangle{ sz }, want_r, r))
 			return false;
 #if defined(NANA_WINDOWS)
 		BITMAPINFO bmpinfo;
@@ -1039,13 +1039,13 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::blur(const nana::rectangle& r, std::size_t radius)
+	void pixel_buffer::blur(const ::nana::rectangle& r, std::size_t radius)
 	{
 		auto sp = storage_.get();
 		if(nullptr == sp || radius < 1)	return;
 
-		nana::rectangle good_r;
-		if(overlap(r, this->size(), good_r))
+		::nana::rectangle good_r;
+		if (overlap(r, ::nana::rectangle{ this->size() }, good_r))
 			(*(sp->img_pro.blur))->process(*this, good_r, radius);
 	}
 }//end namespace paint

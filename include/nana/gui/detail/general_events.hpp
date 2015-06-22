@@ -46,7 +46,7 @@ namespace nana
 	class event_arg
 	{
 	public:
-		virtual ~event_arg();
+		virtual ~event_arg() = default;
 
         /// ignorable handlers behind the current one in a chain of event handlers will not get called.
 		void stop_propagation() const;

@@ -174,7 +174,7 @@ namespace nana{
 				}
 			}
 #endif
-			return primary_monitor_size();
+			return rectangle{ primary_monitor_size() };
 		}
 
 		//platform-dependent

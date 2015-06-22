@@ -132,7 +132,7 @@ namespace nana
 
 				_m_background(graph);
 
-				rectangle_rotator r(vertical_, graph.size());
+				rectangle_rotator r(vertical_, ::nana::rectangle{ graph.size() });
 				r.x_ref() = static_cast<int>(r.w() - fixedsize);
 				r.w_ref() = fixedsize;
 
@@ -159,7 +159,7 @@ namespace nana
 				if (!metrics_.pressed || !_m_check())
 					return;
 				
-				nana::rectangle_rotator r(vertical_, graph.size());
+				nana::rectangle_rotator r(vertical_, ::nana::rectangle{ graph.size() });
 				if(metrics_.what == buttons::forward)
 				{
 					r.x_ref() = static_cast<int>(fixedsize);
@@ -253,7 +253,7 @@ namespace nana
 			{
 				if(_m_check())
 				{
-					rectangle_rotator r(vertical_, graph.size());
+					rectangle_rotator r(vertical_, rectangle{ graph.size() });
 					r.x_ref() = static_cast<int>(fixedsize + metrics_.scroll_pos);
 					r.w_ref() = static_cast<unsigned>(metrics_.scroll_length);
 

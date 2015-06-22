@@ -99,7 +99,7 @@ namespace nana
 							nana::point to_pos(x, r.y + 2);
 							to_pos.x += (image_pixels_ - imgsz.width) / 2;
 							to_pos.y += (vpix - imgsz.height) / 2;
-							item->image().stretch(item->image().size(), graph, nana::rectangle(to_pos, imgsz));
+							item->image().stretch(::nana::rectangle{ item->image().size() }, graph, nana::rectangle(to_pos, imgsz));
 						}
 						x += (image_pixels_ + 2);
 					}

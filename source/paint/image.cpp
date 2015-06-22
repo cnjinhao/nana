@@ -263,7 +263,7 @@ namespace paint
 		void image::paste(graphics& dst, int x, int y) const
 		{
 			if(image_ptr_)
-				image_ptr_->paste(image_ptr_->size(), dst, x, y);
+				image_ptr_->paste(::nana::rectangle{ image_ptr_->size() }, dst, x, y);
 		}
 
 		void image::paste(const nana::rectangle& r_src, graphics & dst, const nana::point& p_dst) const

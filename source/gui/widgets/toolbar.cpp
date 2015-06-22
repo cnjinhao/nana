@@ -174,11 +174,11 @@ namespace nana
 						pos.x += static_cast<int>(scale + extra_size - size.width) / 2;
 						pos.y += static_cast<int>(height - size.height) / 2;
 
-						item.image.paste(size, graph, pos);
+						item.image.paste(::nana::rectangle{ size }, graph, pos);
 						if(item.enable == false)
 						{
 							nana::paint::graphics gh(size);
-							gh.bitblt(size, graph, pos);
+							gh.bitblt(::nana::rectangle{ size }, graph, pos);
 							gh.rgb_to_wb();
 							gh.paste(graph, pos.x, pos.y);
 						}
@@ -400,7 +400,7 @@ namespace nana
 
 				void drawer::_m_draw_background(const ::nana::color& clr)
 				{
-					graph_->gradual_rectangle(graph_->size(), clr.blend(colors::white, 0.9), clr.blend(colors::black, 0.95), true);
+					graph_->gradual_rectangle(::nana::rectangle{ graph_->size() }, clr.blend(colors::white, 0.9), clr.blend(colors::black, 0.95), true);
 				}
 
 				void drawer::_m_draw()

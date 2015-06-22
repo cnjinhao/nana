@@ -210,7 +210,7 @@ namespace nana
 						beg = beg->parent;
 					}
 
-					glass_buffer.bitblt(wd->dimension, beg->drawer.graphics, wd->pos_root - beg->pos_root);
+					glass_buffer.bitblt(::nana::rectangle{ wd->dimension }, beg->drawer.graphics, wd->pos_root - beg->pos_root);
 					
 					nana::rectangle r(wd->pos_owner, wd->dimension);
 					for (auto i = layers.rbegin(), layers_rend = layers.rend(); i != layers_rend; ++i)
@@ -240,7 +240,7 @@ namespace nana
 					}
 				}
 				else
-					glass_buffer.bitblt(wd->dimension, wd->parent->drawer.graphics, wd->pos_owner);
+					glass_buffer.bitblt(::nana::rectangle{ wd->dimension }, wd->parent->drawer.graphics, wd->pos_owner);
 
 				const rectangle r_of_wd{ wd->pos_owner, wd->dimension };
 				for (auto child : wd->parent->children)

@@ -76,7 +76,7 @@ namespace nana
 		
 		point pos() const;
 		void move(int x, int y);
-		//void move(const point&);
+		void move(const point&);
 		void move(const rectangle&);
 
 		void fgcolor(const nana::color&);

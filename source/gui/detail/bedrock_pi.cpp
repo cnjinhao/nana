@@ -39,8 +39,6 @@ namespace nana
 	//end class internal_scope_guard
 
 	//class event_arg
-	event_arg::~event_arg(){}
-
 	void event_arg::stop_propagation() const
 	{
 		stop_propagation_ = true;

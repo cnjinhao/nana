@@ -1919,10 +1919,13 @@ namespace nana
 					void hovered(index_type pos) override
 					{
 						auto offset = ess_->lister.distance(ess_->scroll.offset_y_dpl, pos);
-						ess_->pointer_where.first = parts::lister;
-						ess_->pointer_where.second = offset;
 
-						ess_->update();
+						if (ess_->pointer_where.first != parts::lister || ess_->pointer_where.second != offset)
+						{
+							ess_->pointer_where.first = parts::lister;
+							ess_->pointer_where.second = offset;
+							ess_->update();
+						}
 					}
 				private:
 					essence_t * const ess_;
@@ -2386,8 +2389,12 @@ namespace nana
 					auto i = inline_buffered_table.find(factory);
 					if (i != inline_buffered_table.end())
 					{
-						if (!i->second.empty())
-							pane_ptr = std::move(i->second.front());
+						auto & panes = i->second;
+						if (!panes.empty())
+						{
+							pane_ptr = std::move(panes.front());
+							panes.pop_front();
+						}
 					}
 
 					if (!pane_ptr)
@@ -3034,7 +3041,7 @@ namespace nana
 								if (y < content_r.y)
 									pane_pos.y = y - content_r.y;
 
-								inline_wdg->pane_widget.move(pane_pos.x, pane_pos.y);
+								inline_wdg->pane_widget.move(pane_pos);
 								inline_wdg->pane_bottom.move(pane_r);
 							}
 							else
