@@ -728,8 +728,6 @@ namespace nana
 					if((sorted_index_ == npos) || (!resort_))
 						return;
 
-
-
 					auto weak_ordering_comp = fetch_ordering_comparer(sorted_index_);
 					if(weak_ordering_comp)
 					{
@@ -934,6 +932,11 @@ namespace nana
                             return i;
 					 
 					return   npos ;
+				}
+
+				category_t& at(std::size_t cat_pos)
+				{
+					return *(_m_at(cat_pos));
 				}
 
                 /// return a ref to the real item object at display!!! position pos using current sorting only if it is active, and at absolute position if no sorting is currently active.
@@ -1851,7 +1854,7 @@ namespace nana
                 container::iterator _m_at(size_type index)
 				{
 					if(index >= list_.size())
-						throw std::out_of_range("Nana.GUI.Listbox: invalid category index");
+						throw std::out_of_range("nana::listbox: invalid category index");
 
 					auto i = list_.begin();
 					std::advance(i, index);
@@ -1861,7 +1864,7 @@ namespace nana
 				container::const_iterator _m_at(size_type index) const
 				{
 					if(index >= list_.size())
-						throw std::out_of_range("Nana.GUI.Listbox: invalid category index");
+						throw std::out_of_range("nana::listbox: invalid category index");
 
 					auto i = list_.cbegin();
 					std::advance(i, index);
@@ -1976,9 +1979,11 @@ namespace nana
 					::nana::panel<false> pane_bottom;	//pane for pane_widget
 					::nana::panel<false> pane_widget;	//pane for placing user-define widget
 					std::unique_ptr<inline_notifier_interface> inline_ptr;
+					index_pair	item_pos;				//The item index of the inline widget
+					std::size_t	column_pos;
 				};
 
-				std::map<void*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
+				std::map<pat::detail::abstract_factory_base*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
 
 				essence_t()
 				{
@@ -2938,118 +2943,228 @@ namespace nana
 
 					int item_xpos         = x;
 					unsigned extreme_text = x;
-					bool first = true;
+					//bool first = true;	//deprecated
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
-						auto index = seqs[display_order];
-						const auto & header = essence_->header.column(index);     // deduce the corresponding header which is in a kind of dislay order
+						const auto column_pos = seqs[display_order];
+						const auto & header = essence_->header.column(column_pos);     // deduce the corresponding header which is in a kind of dislay order
 						auto it_bgcolor = bgcolor;
 
-						if ((item.cells.size() > index) && (header.pixels > 5))        // process only if the cell is visible
+						if (header.pixels > 5)
 						{
-							auto cell_txtcolor = fgcolor;
-							auto & m_cell = item.cells[index];
-							nana::size ts = graph->text_extent_size(m_cell.text);        // precalcule text geometry
+							int content_pos = 5;
 
-							if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
+							//Draw the image in the 1st column in display order
+							if (0 == display_order)
 							{
-								it_bgcolor = m_cell.custom_format->bgcolor;
-								if (item.flags.selected)
-									it_bgcolor = it_bgcolor.blend(bgcolor, 0.5);
-								if (item_state::highlighted == state)
-									it_bgcolor = it_bgcolor.blend(static_cast<color_rgb>(0x99defd), 0.8);
+								if (essence_->checkable)
+								{
+									content_pos += 18;
 
-								graph->set_color(it_bgcolor);
+									element_state estate = element_state::normal;
+									if (essence_->pointer_where.first == parts::checker)
+									{
+										switch (state)
+										{
+										case item_state::highlighted:
+											estate = element_state::hovered;	break;
+										case item_state::grabbed:
+											estate = element_state::pressed;	break;
+										default:	break;
+										}
+									}
 
-								graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
+									using state = facade<element::crook>::state;
+									crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
+									crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
+								}
 
-								cell_txtcolor = m_cell.custom_format->fgcolor;
+								if (essence_->if_image)
+								{
+									//Draw the image in the 1st column in display order
+									if (item.img)
+									{
+										nana::rectangle img_r(item.img_show_size);
+										img_r.x = content_pos + item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
+										img_r.y = y + static_cast<int>(essence_->item_size - item.img_show_size.height) / 2;
+										item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
+									}
+									content_pos += 18;
+								}
 							}
 
-							int ext_w = 5;
-							if (first && essence_->checkable)          //  draw the checkbox if need, only before the first column (display_order=0 ?)
-							{
-								ext_w += 18;
+							bool draw_column = true;
 
-								element_state estate = element_state::normal;
-								if (essence_->pointer_where.first == parts::checker)
+							if (static_cast<unsigned>(content_pos) < header.pixels)
+							{
+								auto inline_wdg = _m_get_inline_pane(cat, column_pos);
+								if (inline_wdg)
 								{
-									switch (state)
+									//Make sure the user-define inline widgets in right visible rectangle.
+									rectangle pane_r;
+									auto wdg_x = item_xpos + content_pos;
+									auto wdg_w = header.pixels - static_cast<unsigned>(content_pos);
+									if (::nana::overlap(content_r, { wdg_x, y, wdg_w, essence_->item_size }, pane_r))
 									{
-									case item_state::highlighted:
-										estate = element_state::hovered;	break;
-									case item_state::grabbed:
-										estate = element_state::pressed;	break;
-									default:	break;
+										::nana::point pane_pos;
+										if (wdg_x < content_r.x)
+											pane_pos.x = wdg_x - content_r.x;
+
+										if (y < content_r.y)
+											pane_pos.y = y - content_r.y;
+
+										inline_wdg->pane_widget.move(pane_pos);
+										inline_wdg->pane_bottom.move(pane_r);
+									}
+									else
+										inline_wdg->pane_bottom.hide();
+
+									::nana::size sz{ wdg_w, essence_->item_size };
+									inline_wdg->pane_widget.size(sz);
+									inline_wdg->inline_ptr->resize(sz);
+									inline_wdg->item_pos = item_pos;
+									inline_wdg->column_pos = column_pos;
+									inline_wdg->inline_ptr->activate(essence_->indicator, item_pos);
+
+									draw_column = inline_wdg->inline_ptr->whether_to_draw();
+
+									//To reduce the memory usage, the cells may not be allocated
+									if (item.cells.size() > column_pos)
+										inline_wdg->inline_ptr->set(item.cells[column_pos].text);
+									else
+										inline_wdg->inline_ptr->set({});
+								}
+							}
+
+							if (item.cells.size() > column_pos)        // process only if the cell is visible
+							{
+								auto cell_txtcolor = fgcolor;
+								auto & m_cell = item.cells[column_pos];
+								nana::size ts = graph->text_extent_size(m_cell.text);        // precalcule text geometry
+
+								if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
+								{
+									it_bgcolor = m_cell.custom_format->bgcolor;
+									if (item.flags.selected)
+										it_bgcolor = it_bgcolor.blend(bgcolor, 0.5);
+									if (item_state::highlighted == state)
+										it_bgcolor = it_bgcolor.blend(static_cast<color_rgb>(0x99defd), 0.8);
+
+									graph->set_color(it_bgcolor);
+
+									graph->rectangle(rectangle{ item_xpos, y, header.pixels, essence_->item_size }, true);
+
+									cell_txtcolor = m_cell.custom_format->fgcolor;
+								}
+
+								/*	//deprecated
+								if ((0 == display_order) && essence_->checkable)          //  draw the checkbox if need, only before the first column (display_order=0 ?)
+								{
+									content_pos += 18;
+
+									element_state estate = element_state::normal;
+									if (essence_->pointer_where.first == parts::checker)
+									{
+										switch (state)
+										{
+										case item_state::highlighted:
+											estate = element_state::hovered;	break;
+										case item_state::grabbed:
+											estate = element_state::pressed;	break;
+										default:	break;
+										}
+									}
+
+									using state = facade<element::crook>::state;
+									crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
+									crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
+								}
+								*/
+
+								/*
+								if ((0 == display_order) && essence_->if_image)	//deprecated
+								{
+									//Draw the image in the 1st column in display order
+									if (item.img)
+									{
+										nana::rectangle img_r(item.img_show_size);
+										img_r.x = content_pos + item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
+										img_r.y = y + static_cast<int>(essence_->item_size - item.img_show_size.height) / 2;
+										item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
+									}
+									content_pos += 18;
+								}
+								*/
+
+								if (draw_column)
+								{
+									graph->set_text_color(cell_txtcolor);
+									graph->string(point{ item_xpos + content_pos, y + txtoff }, m_cell.text); // draw full text of the cell index (column)
+
+									if (ts.width + static_cast<unsigned>(content_pos) > header.pixels)             // it was an excess
+									{
+										//The text is painted over the next subitem                // here beging the ...
+										int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);
+
+										graph->set_color(it_bgcolor);                                   // litter rect with the  item bg end ... 
+										graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
+										graph->string(point{ xpos, y + 2 }, STR("..."));
+
+										//Erase the part that over the next subitem.
+										if (display_order + 1 < seqs.size())      // this is not the last column
+										{
+											graph->set_color(bgcolor);       // we need to erase the excess, because some cell may not draw text over
+											graph->rectangle(rectangle{ item_xpos + static_cast<int>(header.pixels), y + 2,
+												ts.width + static_cast<unsigned>(content_pos)-header.pixels, essence_->item_size - 4 }, true);
+										}
+										extreme_text = std::max(extreme_text, item_xpos + content_pos + ts.width);
 									}
 								}
-
-								using state = facade<element::crook>::state;
-								crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
-								crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
 							}
 
-							if ((0 == index) && essence_->if_image)              //  draw the image if need, ??only before the first column?? (display_order=0 ?)
+							graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, static_cast<color_rgb>(0xEBF4F9));
+
+							/*
+							if (static_cast<unsigned>(content_pos) < header.pixels)	//deprecated
 							{
-								if (item.img)
+								auto inline_wdg = _m_get_inline_pane(cat, column_pos);
+								if (inline_wdg)
 								{
-									nana::rectangle img_r(item.img_show_size);
-									img_r.x = static_cast<int>(ext_w)+item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
-									img_r.y = y + static_cast<int>(essence_->item_size - item.img_show_size.height) / 2;
-									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
+									//Make sure the user-define inline widgets in right visible rectangle.
+									rectangle pane_r;
+									auto wdg_x = item_xpos + content_pos;
+									auto wdg_w = header.pixels - static_cast<unsigned>(content_pos);
+									if (::nana::overlap(content_r, { wdg_x, y, wdg_w, essence_->item_size }, pane_r))
+									{
+										::nana::point pane_pos;
+										if (wdg_x < content_r.x)
+											pane_pos.x = wdg_x - content_r.x;
+
+										if (y < content_r.y)
+											pane_pos.y = y - content_r.y;
+
+										inline_wdg->pane_widget.move(pane_pos);
+										inline_wdg->pane_bottom.move(pane_r);
+									}
+									else
+										inline_wdg->pane_bottom.hide();
+
+									::nana::size sz{ wdg_w, essence_->item_size };
+									inline_wdg->pane_widget.size(sz);
+									inline_wdg->inline_ptr->resize(sz);
+									inline_wdg->item_pos = item_pos;
+									inline_wdg->column_pos = column_pos;
+									inline_wdg->inline_ptr->activate(essence_->indicator, item_pos);
+
+									//To reduce the memory usage, the cells may not be allocated
+									if (item.cells.size() > column_pos)
+										inline_wdg->inline_ptr->set(item.cells[column_pos].text);
+									else
+										inline_wdg->inline_ptr->set({});
 								}
-								ext_w += 18;
 							}
-
-							graph->set_text_color(cell_txtcolor);
-							graph->string(point{ item_xpos + ext_w, y + txtoff }, m_cell.text); // draw full text of the cell index (column)
-
-							if (ts.width + ext_w > header.pixels)             // it was an excess
-							{
-								//The text is painted over the next subitem                // here beging the ...
-								int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);
-
-								graph->set_color(it_bgcolor);                                   // litter rect with the  item bg end ... 
-								graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
-								graph->string(point{ xpos, y + 2 }, STR("..."));
-
-								//Erase the part that over the next subitem.
-								if (display_order + 1 < seqs.size())      // this is not the last column
-								{
-									graph->set_color(bgcolor);       // we need to erase the excess, because some cell may not draw text over
-									graph->rectangle(rectangle{ item_xpos + static_cast<int>(header.pixels), y + 2,
-										ts.width + ext_w - header.pixels, essence_->item_size - 4 }, true);
-								}
-								extreme_text = std::max(extreme_text, item_xpos + ext_w + ts.width);
-							}
-						}
-
-						graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, static_cast<color_rgb>(0xEBF4F9));
-
-						auto inline_wdg = _m_get_pane(cat, index);
-						if (inline_wdg)
-						{
-							//Make sure the user-define inline widgets in right visible rectangle.
-							rectangle pane_r;
-							if (::nana::overlap(content_r, { item_xpos, y, header.pixels, essence_->item_size }, pane_r))
-							{
-								::nana::point pane_pos;
-								if (item_xpos < content_r.x)
-									pane_pos.x = item_xpos - content_r.x;
-
-								if (y < content_r.y)
-									pane_pos.y = y - content_r.y;
-
-								inline_wdg->pane_widget.move(pane_pos);
-								inline_wdg->pane_bottom.move(pane_r);
-							}
-							else
-								inline_wdg->pane_bottom.hide();
-
-							inline_wdg->pane_widget.size({ header.pixels, essence_->item_size });
-							inline_wdg->inline_ptr->resize({ header.pixels, essence_->item_size });
-							inline_wdg->inline_ptr->activate(essence_->indicator, item_pos);
+							*/
 						}
 
 						item_xpos += static_cast<int>(header.pixels);
@@ -3058,7 +3173,7 @@ namespace nana
                             graph->set_color(item.bgcolor);
 							graph->rectangle(rectangle{item_xpos , y + 2, extreme_text - item_xpos, essence_->item_size - 4}, true);
                         }
-						first = false;
+						//first = false;	//deprecated
 					}
 
 					//Draw selecting inner rectangle
@@ -3066,13 +3181,36 @@ namespace nana
 						_m_draw_border(content_r.x, y, show_w);
 				}
 
-				essence_t::inline_pane * _m_get_pane(const category_t& cat, std::size_t pos) const
+				essence_t::inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
 				{
-					if (pos < cat.factories.size())
+					if (column_pos < cat.factories.size())
 					{
-						auto & factory = cat.factories[pos];
+						auto & factory = cat.factories[column_pos];
 						if (factory)
 							return essence_->open_inline(factory.get());
+					}
+					return nullptr;
+				}
+
+				essence_t::inline_pane* _m_find_inline_pane(const index_pair& pos, std::size_t column_pos) const
+				{
+					auto & cat = essence_->lister.at(pos.cat);
+
+					if (column_pos >= cat.factories.size())
+						return nullptr;
+
+					auto& factory = cat.factories[column_pos];
+					if (!factory)
+						return nullptr;
+
+					auto i = essence_->inline_table.find(factory.get());
+					if (i == essence_->inline_table.end())
+						return nullptr;
+
+					for (auto & inl_widget : i->second)
+					{
+						if (inl_widget->item_pos == pos && inl_widget->column_pos == column_pos)
+							return inl_widget.get();
 					}
 					return nullptr;
 				}
@@ -4063,7 +4201,6 @@ namespace nana
 	arg_listbox::arg_listbox(const drawerbase::listbox::item_proxy& m, bool selected)
 		: item(m), selected(selected)
 	{
-	
 	}
 
 	//class listbox

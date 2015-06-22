@@ -19,8 +19,19 @@ namespace nana
 {
 	namespace pat
 	{
+		namespace detail
+		{
+			//A Base class for abstract factory, avoids decorated name length exceeding for a class template.
+			class abstract_factory_base
+			{
+			public:
+				virtual ~abstract_factory_base() = default;
+			};
+		}
+
 		template<typename Interface>
 		class abstract_factory
+			: public detail::abstract_factory_base
 		{
 		public:
 			using interface_type = Interface;

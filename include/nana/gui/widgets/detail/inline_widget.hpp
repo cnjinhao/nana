@@ -70,8 +70,11 @@ namespace nana
 			/// A message to resize the inline widget
 			virtual void resize(const size&) = 0;
 
-			/// A message to set the value from a item
+			/// A message to set the value from the item
 			virtual void set(const value_type&) = 0;
+
+			/// Determines whether to draw the background of the widget
+			virtual bool whether_to_draw() const = 0;
 		};	//end class inline_widget_notifier_interface
 	}
 }
