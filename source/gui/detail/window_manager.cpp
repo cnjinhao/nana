@@ -1019,35 +1019,35 @@ namespace detail
 			}
 		}
 
+
+		// preconditions of get_tabstop: tabstop is not empty and at least one window is visible
 		window_manager::core_window_t* get_tabstop(window_manager::core_window_t* wd, bool forward)
 		{
 			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
-			if (tabs.size())
+
+			if (forward)
 			{
-				if (forward)	//
+				if (detail::tab_type::none == wd->flags.tab)
+					return (tabs.front());
+				else if (detail::tab_type::tabstop & wd->flags.tab)
 				{
-					if (detail::tab_type::none == wd->flags.tab)
-						return (tabs.front());
-					else if (detail::tab_type::tabstop & wd->flags.tab)
+					auto end = tabs.cend();
+					auto i = std::find(tabs.cbegin(), end, wd);
+					if (i != end)
 					{
-						auto end = tabs.cend();
-						auto i = std::find(tabs.cbegin(), end, wd);
-						if (i != end)
-						{
-							++i;
-							window_manager::core_window_t* ts = (i != end ? (*i) : tabs.front());
-							return (ts != wd ? ts : 0);
-						}
-						else
-							return tabs.front();
+						++i;
+						window_manager::core_window_t* ts = (i != end ? (*i) : tabs.front());
+						return (ts != wd ? ts : 0);
 					}
+					else
+						return tabs.front();
 				}
-				else if (tabs.size() > 1)	//at least 2 elments in tabs is required when moving perviously. 
-				{
-					auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
-					if (i != tabs.cend())
-						return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
-				}
+			}
+			else if (tabs.size() > 1)	//at least 2 elments in tabs are required when moving backward. 
+			{
+				auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
+				if (i != tabs.cend())
+					return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
 			}
 			return nullptr;
 		}
@@ -1059,17 +1059,31 @@ namespace detail
 			if (!impl_->wd_register.available(wd))
 				return nullptr;
 
-			auto new_stop = get_tabstop(wd, forward);
+			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
+			if (tabs.empty())
+				return nullptr;
 
-			while (new_stop)
+			bool precondition = false;
+			for (auto & tab_wd : tabs)
 			{
-				if (wd == new_stop)
+				if (tab_wd->visible)
+				{
+					precondition = true;
 					break;
+				}
+			}
 
-				if (new_stop->flags.enabled && new_stop->visible)
-					return new_stop;
+			if (precondition)
+			{
+				auto new_stop = get_tabstop(wd, forward);
 
-				new_stop = get_tabstop(new_stop, forward);
+				while (new_stop && (wd != new_stop))
+				{
+					if (new_stop->flags.enabled && new_stop->visible)
+						return new_stop;
+
+					new_stop = get_tabstop(new_stop, forward);
+				}
 			}
 
 			return nullptr;
