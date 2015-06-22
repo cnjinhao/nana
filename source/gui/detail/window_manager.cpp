@@ -493,9 +493,6 @@ namespace detail
 						wd->pos_owner.y = y;
 						_m_move_core(wd, delta);
 
-						if(wd->together.caret && wd->together.caret->visible())
-							wd->together.caret->update();
-
 						auto &brock = bedrock::instance();
 						arg_move arg;
 						arg.window_handle = reinterpret_cast<window>(wd);
@@ -522,7 +519,7 @@ namespace detail
 			auto & brock = bedrock::instance();
 			bool moved = false;
 			const bool size_changed = (r.width != wd->dimension.width || r.height != wd->dimension.height);
-			if(wd->other.category != category::root_tag::value)
+			if(category::flags::root != wd->other.category)
 			{
 				//Move child widgets
 				if(r.x != wd->pos_owner.x || r.y != wd->pos_owner.y)
@@ -532,9 +529,6 @@ namespace detail
 					wd->pos_owner.y = r.y;
 					_m_move_core(wd, delta);
 					moved = true;
-
-					if(wd->together.caret && wd->together.caret->visible())
-						wd->together.caret->update();
 
 					arg_move arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
@@ -1425,7 +1419,12 @@ namespace detail
 			if(wd->other.category != category::root_tag::value)	//A root widget always starts at (0, 0) and its childs are not to be changed
 			{
 				wd->pos_root += delta;
-				if(wd->other.category == category::frame_tag::value)
+				if (category::flags::frame != wd->other.category)
+				{
+					if (wd->together.caret && wd->together.caret->visible())
+						wd->together.caret->update();
+				}
+				else
 					native_interface::move_window(wd->other.attribute.frame->container, wd->pos_root.x, wd->pos_root.y);
 
 				for (auto child : wd->children)
