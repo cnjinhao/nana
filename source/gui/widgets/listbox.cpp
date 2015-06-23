@@ -647,6 +647,8 @@ namespace nana
                 }
 			};
 
+			class inline_indicator;
+
 			struct category_t
 			{
 				using container = std::deque<item_t>;
@@ -660,6 +662,7 @@ namespace nana
 				std::shared_ptr<nana::detail::key_interface> key_ptr;
 
 				std::deque<pat::cloneable<pat::abstract_factory<inline_notifier_interface>>> factories;
+				std::deque<std::unique_ptr<inline_indicator>> indicators;
 
 				category_t() = default;
 
@@ -1897,43 +1900,6 @@ namespace nana
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
 				enum class parts{unknown = -1, header, lister, checker};
 
-				class inline_indicator
-					: public ::nana::detail::inline_widget_indicator<index_pair, std::wstring>
-				{
-				public:
-					inline_indicator(essence_t* ess)
-						: ess_{ess}
-					{
-					}
-
-					void modify(index_type pos, const value_type& value) const override
-					{
-						ess_->lister.at(pos).cells;
-					}
-
-					void selected(index_type pos) override
-					{
-						if (ess_->lister.at(pos).flags.selected)
-							return;
-						ess_->lister.select_for_all(false);
-						cat_proxy(ess_, pos.cat).at(pos.item).select(true);
-					}
-
-					void hovered(index_type pos) override
-					{
-						auto offset = ess_->lister.distance(ess_->scroll.offset_y_dpl, pos);
-
-						if (ess_->pointer_where.first != parts::lister || ess_->pointer_where.second != offset)
-						{
-							ess_->pointer_where.first = parts::lister;
-							ess_->pointer_where.second = offset;
-							ess_->update();
-						}
-					}
-				private:
-					essence_t * const ess_;
-				};
-
 				::nana::listbox::scheme_type* scheme_ptr{nullptr};
 				::nana::paint::graphics *graph{nullptr};
 				bool auto_draw{true};
@@ -1943,8 +1909,6 @@ namespace nana
 				unsigned item_size{24};
 				unsigned text_height{0};
 				unsigned suspension_width{0};
-
-				inline_indicator indicator{ this };
 
                 ::nana::listbox::export_options def_exp_options;
 
@@ -1979,6 +1943,7 @@ namespace nana
 					::nana::panel<false> pane_bottom;	//pane for pane_widget
 					::nana::panel<false> pane_widget;	//pane for placing user-define widget
 					std::unique_ptr<inline_notifier_interface> inline_ptr;
+					inline_indicator * indicator;
 					index_pair	item_pos;				//The item index of the inline widget
 					std::size_t	column_pos;
 				};
@@ -2388,7 +2353,7 @@ namespace nana
 					}
 				}
 
-				inline_pane * open_inline(pat::abstract_factory<inline_notifier_interface>* factory)
+				inline_pane * open_inline(pat::abstract_factory<inline_notifier_interface>* factory, inline_indicator* indicator)
 				{
 					std::unique_ptr<inline_pane> pane_ptr;
 					auto i = inline_buffered_table.find(factory);
@@ -2405,6 +2370,7 @@ namespace nana
 					if (!pane_ptr)
 					{
 						pane_ptr.reset(new inline_pane);
+						pane_ptr->indicator = indicator;
 						pane_ptr->pane_bottom.create(this->lister.wd_ptr()->handle());
 						pane_ptr->pane_widget.create(pane_ptr->pane_bottom);
 						pane_ptr->inline_ptr = factory->create();
@@ -2416,6 +2382,52 @@ namespace nana
 					return ptr;
 				}
 			};
+
+			class inline_indicator
+				: public ::nana::detail::inline_widget_indicator<index_pair, std::wstring>
+			{
+			public:
+				using parts = essence_t::parts;
+
+				inline_indicator(essence_t* ess, std::size_t column_pos)
+					: ess_{ ess }, column_pos_{column_pos}
+				{
+				}
+
+				void modify(index_type pos, const value_type& value) const override
+				{
+					auto & cells = ess_->lister.at(pos).cells;
+					if (cells.size() <= column_pos_)
+						cells.resize(column_pos_ + 1);
+
+					cells[column_pos_].text = value;
+					ess_->update();
+				}
+
+				void selected(index_type pos) override
+				{
+					if (ess_->lister.at(pos).flags.selected)
+						return;
+					ess_->lister.select_for_all(false);
+					cat_proxy(ess_, pos.cat).at(pos.item).select(true);
+				}
+
+				void hovered(index_type pos) override
+				{
+					auto offset = ess_->lister.distance(ess_->scroll.offset_y_dpl, pos);
+
+					if (ess_->pointer_where.first != parts::lister || ess_->pointer_where.second != offset)
+					{
+						ess_->pointer_where.first = parts::lister;
+						ess_->pointer_where.second = offset;
+						ess_->update();
+					}
+				}
+			private:
+				essence_t * const ess_;
+				const std::size_t column_pos_;
+			};
+
 
             void es_lister::scroll_refresh()
             {
@@ -3025,7 +3037,7 @@ namespace nana
 									inline_wdg->inline_ptr->resize(sz);
 									inline_wdg->item_pos = item_pos;
 									inline_wdg->column_pos = column_pos;
-									inline_wdg->inline_ptr->activate(essence_->indicator, item_pos);
+									inline_wdg->inline_ptr->activate(*inline_wdg->indicator, item_pos);
 
 									draw_column = inline_wdg->inline_ptr->whether_to_draw();
 
@@ -3187,7 +3199,7 @@ namespace nana
 					{
 						auto & factory = cat.factories[column_pos];
 						if (factory)
-							return essence_->open_inline(factory.get());
+							return essence_->open_inline(factory.get(), cat.indicators[column_pos].get());
 					}
 					return nullptr;
 				}
@@ -4146,9 +4158,13 @@ namespace nana
 						throw std::out_of_range("listbox.cat_proxy.inline_factory: invalid column index");
 
 					if (column >= cat_->factories.size())
+					{
 						cat_->factories.resize(column + 1);
+						cat_->indicators.resize(column + 1);
+					}
 
 					cat_->factories[column] = std::move(factory);
+					cat_->indicators[column].reset(new inline_indicator(ess_, column));
 				}
 
 				void cat_proxy::_m_append(std::vector<cell> && cells)
