@@ -44,7 +44,7 @@ namespace detail
 		bool conf::open(const char* file)
 		{
 			ifs_.open(file);
-			return static_cast<bool>(ifs_ != 0);
+			return static_cast<bool>(ifs_);
 		}
 
 		std::string conf::value(const char* key)

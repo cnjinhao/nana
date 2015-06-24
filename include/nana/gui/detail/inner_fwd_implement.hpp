@@ -121,7 +121,6 @@ namespace nana{
 			{
 				core_window_t*	pressed{nullptr};			//The handle to a window which is being pressed
 				core_window_t*	hovered{nullptr};	//the latest window that mouse moved
-				bool		tabstop_focus_changed{false};	//KeyDown may set it true, if it is true KeyChar will ignore the message
 			}condition;
 
 			root_misc(core_window_t * wd, unsigned width, unsigned height)

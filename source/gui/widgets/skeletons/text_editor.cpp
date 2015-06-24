@@ -1482,6 +1482,8 @@ namespace nana{	namespace widgets
 
 			behavior_->pre_calc_lines(width_pixels());
 			_m_scrollbar();
+
+			move_caret(points_.caret);
 			return true;
 		}
 
