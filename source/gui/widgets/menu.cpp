@@ -700,15 +700,18 @@ namespace nana
 			class menu_window
 				:	public widget_object<category::root_tag, menu_drawer>
 			{
-				typedef menu_drawer drawer_type;
-				typedef widget_object<category::root_tag, menu_drawer> base_type;
+				using drawer_type = menu_drawer;
+				using base_type = widget_object<category::root_tag, menu_drawer>;
 			public:
-				typedef menu_builder::item_type item_type;
+				using item_type = menu_builder::item_type;
 
-				menu_window(window wd, const point& pos, renderer_interface * rdptr)
+				
+				menu_window(window wd, bool is_wd_parent_menu, const point& pos, renderer_interface * rdptr)
+					//add a is_wd_parent_menu to determine whether the menu wants the focus.
+					//if a submenu gets the focus, the program may cause a crash error when the submenu is being destroyed
 					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>()),
-						want_focus_(nullptr == wd || (API::focus_window() != wd)),
-						event_focus_(nullptr)
+						want_focus_{ (!wd) || ((!is_wd_parent_menu) && (API::focus_window() != wd)) },
+						event_focus_{ nullptr }
 				{
 					caption(STR("nana menu window"));
 					get_drawer_trigger().close_menu_tree([this]{ this->_m_close_all(); });
@@ -1012,7 +1015,7 @@ namespace nana
 							pos.x += sbm->gaps.x;
 							pos.y += sbm->gaps.y;
 
-							menu_window & mwnd = form_loader<menu_window, false>()(handle(), pos, mdtrigger.renderer);
+							menu_window & mwnd = form_loader<menu_window, false>()(handle(), true, pos, mdtrigger.renderer);
 							mwnd.state_.self_submenu = true;
 							submenu_.child = & mwnd;
 							submenu_.child->submenu_.parent = this;
@@ -1294,7 +1297,7 @@ namespace nana
 			{
 				close();
 
-				impl_->uiobj = &(form_loader<drawerbase::menu::menu_window, false>()(wd, point(x, y), &(*impl_->mbuilder.renderer())));
+				impl_->uiobj = &(form_loader<drawerbase::menu::menu_window, false>()(wd, false, point(x, y), &(*impl_->mbuilder.renderer())));
 				impl_->uiobj->events().destroy.connect_unignorable([this]{
 					impl_->uiobj = nullptr;
 					if (impl_->destroy_answer)
