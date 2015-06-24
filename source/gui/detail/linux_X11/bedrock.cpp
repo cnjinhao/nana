@@ -1032,7 +1032,6 @@ namespace detail
 								{
 									brock.wd_manager.set_focus(the_next, false);
 									brock.wd_manager.do_lazy_refresh(the_next, true);
-									root_runtime->condition.tabstop_focus_changed = true;
 								}
 							}
 							else if(keyboard::alt == keychar)
@@ -1081,6 +1080,7 @@ namespace detail
 								break;
 							}
 						case XLookupChars:
+							if (msgwnd->flags.enabled)
 							{
 								const ::nana::char_t* charbuf;
 #if defined(NANA_UNICODE)
@@ -1096,6 +1096,10 @@ namespace detail
 									arg_keyboard arg;
 									arg.ignore = false;
 									arg.key = charbuf[i];
+
+									// When tab is pressed, only tab-eating mode is allowed
+									if ((keyboard::tab == arg.key) && !(msgwnd->flags.tab & tab_type::eating))
+										continue;
 
 									if(context.is_alt_pressed)
 									{

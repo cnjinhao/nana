@@ -1408,7 +1408,6 @@ namespace detail
 								brock.wd_manager.set_focus(the_next, false);
 								brock.wd_manager.do_lazy_refresh(msgwnd, false);
 								brock.wd_manager.do_lazy_refresh(the_next, true);
-								root_runtime->condition.tabstop_focus_changed = true;
 							}
 						}
 						else
@@ -1437,9 +1436,10 @@ namespace detail
 				break;
 			case WM_CHAR:
 				msgwnd = brock.focus();
-				if(false == root_runtime->condition.tabstop_focus_changed)
+				if (msgwnd && msgwnd->flags.enabled)
 				{
-					if(msgwnd && msgwnd->flags.enabled)
+					// When tab is pressed, only tab-eating mode is allowed
+					if ((9 != wParam) || (msgwnd->flags.tab & tab_type::eating))
 					{
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_char;
@@ -1455,8 +1455,6 @@ namespace detail
 						brock.wd_manager.do_lazy_refresh(msgwnd, false);
 					}
 				}
-				else
-					root_runtime->condition.tabstop_focus_changed = false;
 				return 0;
 			case WM_KEYUP:
 				if(wParam != 18) //MUST NOT BE AN ALT
