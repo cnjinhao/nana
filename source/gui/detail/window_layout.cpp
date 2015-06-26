@@ -354,7 +354,7 @@ namespace nana
 				nana::rectangle r_of_sigwd(sigwd->pos_root, sigwd->dimension);
 				for (auto wd : data_sect.effects_bground_windows)
 				{
-					if (wd == sigwd || !wd->visible || !wd->visible_parents() ||
+					if (wd == sigwd || !wd->displayed() ||
 						(false == overlap(nana::rectangle{ wd->pos_root, wd->dimension }, r_of_sigwd)))
 						continue;
 

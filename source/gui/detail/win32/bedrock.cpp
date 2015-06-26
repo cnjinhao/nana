@@ -363,7 +363,7 @@ namespace detail
 	void bedrock::pump_event(window modal_window, bool is_modal)
 	{
 		const unsigned tid = ::GetCurrentThreadId();
-		thread_context * context = this->open_thread_context(tid);
+		auto context = this->open_thread_context(tid);
 		if(0 == context->window_count)
 		{
 			//test if there is not a window

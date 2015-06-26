@@ -63,15 +63,16 @@ namespace nana
 			arg.window_handle = reinterpret_cast<window>(wd);
 			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
 			{
-				if (wd->together.caret)
+				const core_window_t * caret_wd = (wd->together.caret ? wd : wd->child_caret());
+				if (caret_wd)
 				{
 					if (exposed)
 					{
-						if (wd->root_widget->other.attribute.root->focus == wd)
-							wd->together.caret->visible(true);
+						if (wd->root_widget->other.attribute.root->focus == caret_wd)
+							caret_wd->together.caret->visible(true);
 					}
 					else
-						wd->together.caret->visible(false);
+						caret_wd->together.caret->visible(false);
 				}
 
 				if (!exposed)

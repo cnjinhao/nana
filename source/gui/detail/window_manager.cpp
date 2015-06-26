@@ -698,7 +698,7 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false) return false;
 
-			if (wd->visible && wd->visible_parents())
+			if (wd->displayed())
 			{
 				if(forced || (false == wd->belong_to_lazy()))
 				{
@@ -722,7 +722,7 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
 			//It's not worthy to redraw if visible is false
-			if (impl_->wd_register.available(wd) && wd->visible && wd->visible_parents())
+			if (impl_->wd_register.available(wd) && wd->displayed())
 				window_layer::paint(wd, true, true);
 		}
 
@@ -1060,7 +1060,7 @@ namespace detail
 			bool precondition = false;
 			for (auto & tab_wd : tabs)
 			{
-				if (tab_wd->visible)
+				if (tab_wd->displayed())
 				{
 					precondition = true;
 					break;
