@@ -1474,7 +1474,10 @@ namespace detail
 				else
 					brock.set_keyboard_shortkey(false);
 
-				brock.delay_restore(2);	//Restores while key release
+				//Do delay restore if key is not arrow_left/right/up/down, otherwise
+				//A menubar will be restored if the item is empty(not have a menu item)
+				if (wParam < 37 || 40 < wParam)
+					brock.delay_restore(2);	//Restores while key release
 				break;
 			case WM_CLOSE:
 			{

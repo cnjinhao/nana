@@ -1149,7 +1149,9 @@ namespace detail
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 					}
-					brock.delay_restore(2);	//Restores while key release
+
+					if (context.platform.keychar < keyboard::os_arrow_left || keyboard::os_arrow_down < wParam)
+						brock.delay_restore(2);	//Restores while key release
 				}
 				else
 				{
