@@ -99,7 +99,7 @@ namespace nana
 			//			The result is a rectangle that is a visible area for its ancesters.
 			bool window_layout::read_visual_rectangle(core_window_t* wd, nana::rectangle& visual)
 			{
-				if (false == wd->visible)	return false;
+				if (! wd->displayed())	return false;
 
 				visual = rectangle{ wd->pos_root, wd->dimension };
 
