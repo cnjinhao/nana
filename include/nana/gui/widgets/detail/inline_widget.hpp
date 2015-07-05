@@ -32,6 +32,9 @@ namespace nana
 			/// The destructor
 			virtual ~inline_widget_indicator() = default;
 
+			/// Returns the host widget of the indicator
+			virtual ::nana::widget& host() const = 0;
+
 			/// Modifies the value of a item specified by pos
 			virtual void modify(index_type pos, const value_type&) const = 0;
 

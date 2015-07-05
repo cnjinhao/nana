@@ -1740,74 +1740,45 @@ namespace nana
 				{
                     return {pos.cat, relative( pos )};
 				}
-
-                /// all arg are relative to display order, or all are absolute, but not mixed
+				
+				/// all arg are relative to display order, or all are absolute, but not mixed
 				bool forward(index_pair from, size_type offs, index_pair& item) const
 				{
-					if(!good_item(from, from))
+					if (!good_item(from, from))
 						return false;
 
-					if(offs == 0)
+					auto cat = _m_at(from.cat);
+					auto cat_end = list_.end();
+
+					auto items_left = (cat->expand ? cat->items.size() : 0);
+
+					if (from.is_category())
+						items_left += 1;				//add 1 category bar
+					else if (items_left >= from.item)
+						items_left -= from.item;
+					else
+						return false;					//invalid argument
+
+					while (offs)
 					{
-						item = from;
-						return true;
-					}
-
-					if(list_.size() <= from.cat) return false;
-
-					if(from.is_category())
-					{
-					    // this is a category, so...
-						// and offs is not 0, this category would not be candidated.
-						// the algorithm above to calc the offset item is always starting with a item.
-						--offs;
-						from.item = 0;
-					}
-
-					auto icat = _m_at(from.cat); // an iterator to category from.cat
-
-					if(icat->expand)
-					{
-						std::size_t item_left_in_this_cat = icat->items.size() -1- from.item;
-						if(offs <= item_left_in_this_cat )
+						if (items_left > offs)
 						{
-							item = from;
-							item.item += offs;  // use absolute to know the real item
-							return true;       // allways return here when we have only one cat. 
-						}
-						else
-                        {
-							offs -= item_left_in_this_cat ;
-							item = from;
-							item.item += item_left_in_this_cat ;
-                        }
-					}
-
-					++from.cat;
-					++icat;
-					for(; icat != list_.end(); ++icat, ++from.cat)
-					{
-						item.cat = from.cat;
-						item.item = npos;
-
-						if(offs-- == 0)
-						{
+							item.cat = from.cat;
+							item.item = (npos == from.item ? offs - 1 : from.item + offs);
 							return true;
 						}
 
-						if(icat->expand)
-						{
-							if(offs < icat->items.size())
-							{
-								//item.cat = from.cat;
-								item.item = offs;
-								return true;
-							}
-							else
-								offs -= icat->items.size();
-						}
+						offs -= items_left;
+						if (++cat == cat_end)
+							return false;
+
+						++from.cat;
+						from.item = npos;
+						items_left = (cat->expand ? cat->items.size() + 1 : 1);
 					}
-					return false;
+
+					item = from;
+					return true;
 				}
 
                 /// all arg are relative to display order, or all are absolute, but not mixed
@@ -2394,6 +2365,11 @@ namespace nana
 				{
 				}
 
+				::nana::widget& host() const override
+				{
+					return *ess_->lister.wd_ptr();
+				}
+
 				void modify(index_type pos, const value_type& value) const override
 				{
 					auto & cells = ess_->lister.at(pos).cells;
@@ -2955,7 +2931,6 @@ namespace nana
 
 					int item_xpos         = x;
 					unsigned extreme_text = x;
-					//bool first = true;	//deprecated
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
@@ -3017,6 +2992,8 @@ namespace nana
 									rectangle pane_r;
 									auto wdg_x = item_xpos + content_pos;
 									auto wdg_w = header.pixels - static_cast<unsigned>(content_pos);
+
+									bool visible_state = true;
 									if (::nana::overlap(content_r, { wdg_x, y, wdg_w, essence_->item_size }, pane_r))
 									{
 										::nana::point pane_pos;
@@ -3030,7 +3007,7 @@ namespace nana
 										inline_wdg->pane_bottom.move(pane_r);
 									}
 									else
-										inline_wdg->pane_bottom.hide();
+										visible_state = false;
 
 									::nana::size sz{ wdg_w, essence_->item_size };
 									inline_wdg->pane_widget.size(sz);
@@ -3046,6 +3023,8 @@ namespace nana
 										inline_wdg->inline_ptr->set(item.cells[column_pos].text);
 									else
 										inline_wdg->inline_ptr->set({});
+
+									API::show_window(inline_wdg->pane_bottom, visible_state);
 								}
 							}
 
@@ -3069,45 +3048,6 @@ namespace nana
 
 									cell_txtcolor = m_cell.custom_format->fgcolor;
 								}
-
-								/*	//deprecated
-								if ((0 == display_order) && essence_->checkable)          //  draw the checkbox if need, only before the first column (display_order=0 ?)
-								{
-									content_pos += 18;
-
-									element_state estate = element_state::normal;
-									if (essence_->pointer_where.first == parts::checker)
-									{
-										switch (state)
-										{
-										case item_state::highlighted:
-											estate = element_state::hovered;	break;
-										case item_state::grabbed:
-											estate = element_state::pressed;	break;
-										default:	break;
-										}
-									}
-
-									using state = facade<element::crook>::state;
-									crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
-									crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
-								}
-								*/
-
-								/*
-								if ((0 == display_order) && essence_->if_image)	//deprecated
-								{
-									//Draw the image in the 1st column in display order
-									if (item.img)
-									{
-										nana::rectangle img_r(item.img_show_size);
-										img_r.x = content_pos + item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
-										img_r.y = y + static_cast<int>(essence_->item_size - item.img_show_size.height) / 2;
-										item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
-									}
-									content_pos += 18;
-								}
-								*/
 
 								if (draw_column)
 								{
@@ -3137,46 +3077,6 @@ namespace nana
 
 							graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->item_size) - 1 }, static_cast<color_rgb>(0xEBF4F9));
 
-							/*
-							if (static_cast<unsigned>(content_pos) < header.pixels)	//deprecated
-							{
-								auto inline_wdg = _m_get_inline_pane(cat, column_pos);
-								if (inline_wdg)
-								{
-									//Make sure the user-define inline widgets in right visible rectangle.
-									rectangle pane_r;
-									auto wdg_x = item_xpos + content_pos;
-									auto wdg_w = header.pixels - static_cast<unsigned>(content_pos);
-									if (::nana::overlap(content_r, { wdg_x, y, wdg_w, essence_->item_size }, pane_r))
-									{
-										::nana::point pane_pos;
-										if (wdg_x < content_r.x)
-											pane_pos.x = wdg_x - content_r.x;
-
-										if (y < content_r.y)
-											pane_pos.y = y - content_r.y;
-
-										inline_wdg->pane_widget.move(pane_pos);
-										inline_wdg->pane_bottom.move(pane_r);
-									}
-									else
-										inline_wdg->pane_bottom.hide();
-
-									::nana::size sz{ wdg_w, essence_->item_size };
-									inline_wdg->pane_widget.size(sz);
-									inline_wdg->inline_ptr->resize(sz);
-									inline_wdg->item_pos = item_pos;
-									inline_wdg->column_pos = column_pos;
-									inline_wdg->inline_ptr->activate(essence_->indicator, item_pos);
-
-									//To reduce the memory usage, the cells may not be allocated
-									if (item.cells.size() > column_pos)
-										inline_wdg->inline_ptr->set(item.cells[column_pos].text);
-									else
-										inline_wdg->inline_ptr->set({});
-								}
-							}
-							*/
 						}
 
 						item_xpos += static_cast<int>(header.pixels);
@@ -3185,7 +3085,6 @@ namespace nana
                             graph->set_color(item.bgcolor);
 							graph->rectangle(rectangle{item_xpos , y + 2, extreme_text - item_xpos, essence_->item_size - 4}, true);
                         }
-						//first = false;	//deprecated
 					}
 
 					//Draw selecting inner rectangle
@@ -3393,19 +3292,6 @@ namespace nana
 
 						API::lazy_refresh();
 					}
-
-					/*
-					switch(update)	//deprecated
-					{
-					case 1:
-						API::update_window(essence_->lister.wd_ptr()->handle());
-						break;
-					case 2:
-						draw();
-						API::lazy_refresh();
-						break;
-					}
-					*/
 				}
 
 				void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
