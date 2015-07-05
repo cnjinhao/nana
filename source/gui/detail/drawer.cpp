@@ -244,8 +244,8 @@ namespace nana
 		{
 			if(wd)
 			{
-				bedrock_type::core_window_t* iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
-				bedrock_type::core_window_t * caret_wd = iwd->root_widget->other.attribute.root->focus;
+				auto iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
+				auto caret_wd = iwd->root_widget->other.attribute.root->focus;
 
 				bool owns_caret = (caret_wd && (caret_wd->together.caret) && (caret_wd->together.caret->visible()));
 
@@ -262,16 +262,7 @@ namespace nana
 #endif
 				}
 
-				if (false == edge_nimbus_renderer_t::instance().render(iwd, forced, update_area))
-				{
-					rectangle vr;
-					if (bedrock_type::window_manager_t::window_layer::read_visual_rectangle(iwd, vr))
-					{
-						if (update_area)
-							::nana::overlap(*update_area, rectangle(vr), vr);
-						iwd->root_graph->paste(iwd->root, vr, vr.x, vr.y);
-					}
-				}
+				edge_nimbus_renderer_t::instance().render(iwd, forced, update_area);
 
 				if(owns_caret)
 				{

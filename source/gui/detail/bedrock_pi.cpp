@@ -103,7 +103,7 @@ namespace nana
 				arg.x = x;
 				arg.y = y;
 				if (emit(event_code::move, wd, arg, false, get_thread_context()))
-					wd_manager.update(wd, true, true);
+					wd_manager.update(wd, false, true);
 			}
 		}
 

@@ -937,11 +937,10 @@ namespace detail
 				if(msgwnd->visible && (msgwnd->root_graph->empty() == false))
 				{
 					nana::detail::platform_scope_guard psg;
-					nana::detail::drawable_impl_type* drawer_impl = msgwnd->root_graph->handle();
-					::XCopyArea(display, drawer_impl->pixmap, reinterpret_cast<Window>(native_window), drawer_impl->context,
-							xevent.xexpose.x, xevent.xexpose.y,
-							xevent.xexpose.width, xevent.xexpose.height,
-							xevent.xexpose.x, xevent.xexpose.y);
+					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+					::nana::rectangle update_area(xevent.xexpose.x, xevent.xexpose.y, xevent.xexpose.width, xevent.xexpose.height);
+					if (!update_area.empty())
+						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
 				}
 				break;
 			case KeyPress:

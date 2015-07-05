@@ -59,7 +59,6 @@ namespace nana
 					if (wd->parent)
 					{
 						std::vector<wd_rectangle>	blocks;
-						blocks.reserve(10);
 						if (read_overlaps(wd, vr, blocks))
 						{
 							nana::point p_src;

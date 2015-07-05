@@ -1310,13 +1310,11 @@ namespace detail
 					::PAINTSTRUCT ps;
 					::HDC dc = ::BeginPaint(root_window, &ps);
 
-					if((ps.rcPaint.left != ps.rcPaint.right) && (ps.rcPaint.bottom != ps.rcPaint.top))
-					{
-						::BitBlt(dc,
-								ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top,
-								reinterpret_cast<HDC>(msgwnd->root_graph->handle()->context),
-								ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
-					}
+					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+					::nana::rectangle update_area(ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top);
+					if (!update_area.empty())
+						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+
 					::EndPaint(root_window, &ps);
 				}
 				break;
