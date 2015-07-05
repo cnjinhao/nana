@@ -109,7 +109,7 @@ namespace nana
 				if(real_visible_state_ != isshow)
 				{
 					real_visible_state_ = isshow;
-					native_interface::caret_visible(wd_->root, isshow);
+					native_interface::caret_visible(wd_->root, isshow && wd_->displayed());
 				}
 			}
 
