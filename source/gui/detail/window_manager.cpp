@@ -1073,7 +1073,7 @@ namespace detail
 
 				while (new_stop && (wd != new_stop))
 				{
-					if (new_stop->flags.enabled && new_stop->visible)
+					if (new_stop->flags.enabled && new_stop->displayed())
 						return new_stop;
 
 					new_stop = get_tabstop(new_stop, forward);

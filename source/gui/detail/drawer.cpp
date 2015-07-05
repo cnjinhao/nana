@@ -34,99 +34,99 @@ namespace nana
 
 		void drawer_trigger::resizing(graph_reference, const arg_resizing&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::resizing));
 		}
 
 		void drawer_trigger::resized(graph_reference graph, const arg_resized&)
 		{
-			overrided_ = true;
+			overrided_ |= (1 << static_cast<int>(event_code::resized));
 			this->refresh(graph);
 			detail::bedrock::instance().thread_context_lazy_refresh();
 		}
 
 		void drawer_trigger::move(graph_reference, const arg_move&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::move));
 		}
 
 		void drawer_trigger::click(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::click));
 		}
 
 		void drawer_trigger::dbl_click(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::dbl_click));
 		}
 
 		void drawer_trigger::mouse_enter(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_enter));
 		}
 
 		void drawer_trigger::mouse_move(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_move));
 		}
 
 		void drawer_trigger::mouse_leave(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_leave));
 		}
 
 		void drawer_trigger::mouse_down(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_down));
 		}
 
 		void drawer_trigger::mouse_up(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_up));
 		}
 
 		void drawer_trigger::mouse_wheel(graph_reference, const arg_wheel&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_wheel));
 		}
 
 		void drawer_trigger::mouse_dropfiles(graph_reference, const arg_dropfiles&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_drop));
 		}
 
 		void drawer_trigger::focus(graph_reference, const arg_focus&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::focus));
 		}
 
 		void drawer_trigger::key_press(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::key_press));
 		}
 
 		void drawer_trigger::key_char(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::key_char));
 		}
 
 		void drawer_trigger::key_release(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::key_release));
 		}
 
 		void drawer_trigger::shortkey(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::shortkey));
 		}
 
 		void drawer_trigger::_m_reset_overrided()
 		{
-			overrided_ = true;
+			overrided_ = 0xFFFFFFFF;
 		}
 
-		bool drawer_trigger::_m_overrided() const
+		bool drawer_trigger::_m_overrided(event_code evt_code) const
 		{
-			return overrided_;
+			return 0 != (overrided_ & (1 << static_cast<int>(evt_code)));
 		}
 
 	//end class drawer_trigger
@@ -306,9 +306,10 @@ namespace nana
 		void drawer::attached(widget& wd, drawer_trigger& realizer)
 		{
 			for (auto i = std::begin(mth_state_), end = std::end(mth_state_); i != end; ++i)
-				*i = method_state::unknown;
+				*i = method_state::pending;
 
 			realizer_ = &realizer;
+			realizer._m_reset_overrided();
 			realizer.attached(wd, graphics);
 		}
 
