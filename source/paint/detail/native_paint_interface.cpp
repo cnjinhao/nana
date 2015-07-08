@@ -98,13 +98,13 @@ namespace detail
 		return bgcolor;
 	}
 
-	void blend(drawable_type dw, const nana::rectangle& area, pixel_color_t color, double fade_rate)
+	void blend(drawable_type dw, const rectangle& area, pixel_color_t color, double fade_rate)
 	{
 		if(fade_rate <= 0) return;
 		if(fade_rate > 1) fade_rate = 1;
 
-		nana::rectangle r;
-		if(false == nana::overlap(drawable_size(dw), area, r))
+		rectangle r;
+		if (false == ::nana::overlap(rectangle{ drawable_size(dw) }, area, r))
 			return;
 
 		unsigned red = static_cast<unsigned>((color.value & 0xFF0000) * fade_rate);

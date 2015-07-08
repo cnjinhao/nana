@@ -173,6 +173,11 @@ namespace nana
 			_m_move(x, y);
 		}
 
+		void widget::move(const point& pos)
+		{
+			_m_move(pos.x, pos.y);
+		}
+
 		void widget::move(const rectangle& r)
 		{
 			_m_move(r);

@@ -116,6 +116,7 @@ namespace API
 	void window_icon(window, const paint::image&);
 	bool empty_window(window);		///< Determines whether a window is existing.
 	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
+	bool is_destroying(window);		///< Determines whether a window is destroying
 	void enable_dropfiles(window, bool);
 
     /// \brief Retrieves the native window of a Nana.GUI window.

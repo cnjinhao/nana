@@ -406,10 +406,10 @@ namespace nana
 
 	struct rectangle
 	{
-		rectangle();									 ///< a zero-size rectangle at (0, 0).
+		rectangle();										 ///< a zero-size rectangle at (0, 0).
 		rectangle(int x, int y, unsigned width, unsigned height);
-		rectangle(const size &);						 ///< a rectangle with specified size at coordinate (0, 0).
-		rectangle(const point&, const size& = size());
+		explicit rectangle(const size &);					///< a rectangle with specified size at coordinate (0, 0).
+		explicit rectangle(const point&, const size& = size());
 
 		bool operator==(const rectangle& rhs) const;
 		bool operator!=(const rectangle& rhs) const;

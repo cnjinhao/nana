@@ -1473,9 +1473,7 @@ namespace detail
 					brock.erase_menu(false);
 					brock.delay_restore(3);	//Restores if delay_restore not decleared
 				}
-
 				brock.wd_manager.destroy(msgwnd);
-
 				nana::detail::platform_spec::instance().release_window_icon(msgwnd->root);
 				break;
 			case WM_NCDESTROY:

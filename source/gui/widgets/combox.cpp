@@ -521,7 +521,7 @@ namespace nana
 					}
 
 					nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (vpix - imgsz.height) / 2 + 2);
-					img.stretch(img.size(), *graph_, nana::rectangle(pos, imgsz));
+					img.stretch(::nana::rectangle{ img.size() }, *graph_, nana::rectangle(pos, imgsz));
 				}
 			private:
 				std::vector<std::shared_ptr<item>> items_;

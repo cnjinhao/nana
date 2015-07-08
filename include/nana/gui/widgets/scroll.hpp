@@ -19,16 +19,15 @@
 
 namespace nana
 {
-	template<bool Vert> class scroll;
+	template<bool Vert> class scroll;	//forward declaration
 
-	template<bool Vert>
 	struct arg_scroll
 		: public event_arg
 	{
-		scroll<Vert> & widget;
+		window window_handle;
 
-		arg_scroll(scroll<Vert> & wdg)
-			: widget(wdg)
+		arg_scroll(window wd)
+			: window_handle{ wd }
 		{}
 	};
 
@@ -36,11 +35,10 @@ namespace nana
 	{
 		namespace scroll
 		{
-			template<bool Vert>
 			struct scroll_events
 				: public general_events
 			{
-				basic_event<arg_scroll<Vert>> value_changed;
+				basic_event<arg_scroll> value_changed;
 			};
 
 			enum class buttons
@@ -313,7 +311,7 @@ namespace nana
 			private:
 				void _m_emit_value_changed()
 				{
-					widget_->events().value_changed.emit(::nana::arg_scroll<Vertical>(*widget_));
+					widget_->events().value_changed.emit({ widget_->handle() });
 				}
 
 				void _m_tick()
@@ -335,7 +333,7 @@ namespace nana
 	/// Provides a way to display an object which is larger than the window's client area.
 	template<bool Vertical>
 	class scroll    // add a widget scheme?
-		: public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events<Vertical>>
+		: public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events>
 	{
 		typedef widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical> > base_type;
 	public:
@@ -448,7 +446,6 @@ namespace nana
 		{
 			return this->make_step(forward, range() - 1);
 		}
-
 	};//end class scroll
 }//end namespace nana
 #endif

@@ -1285,7 +1285,7 @@ namespace nana{	namespace widgets
 				if (!API::widget_borderless(this->window_))
 				{
 					::nana::facade<element::border> facade;
-					facade.draw(graph, bgcolor, API::fgcolor(this->window_), API::window_size(this->window_), API::element_state(this->window_));
+					facade.draw(graph, bgcolor, API::fgcolor(this->window_), ::nana::rectangle{ API::window_size(this->window_) }, API::element_state(this->window_));
 				}
 			};
 		}
@@ -2775,12 +2775,12 @@ namespace nana{	namespace widgets
 						{
 							//draw the whole text if it is a RTL text, because Arbic language is transformable.
 							canvas.string({}, str, len);
-							graph_.bitblt({ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
+							graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
 						}
 						else
 						{
 							canvas.string({}, ent_begin, ent_end - ent_begin);
-							graph_.bitblt({ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
+							graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
 						}
 					}
 				}
@@ -2830,7 +2830,7 @@ namespace nana{	namespace widgets
 						if (selected)
 						{
 							graph_.set_text_color(scheme_->selection_text.get_color());
-							graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+							graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true);
 							graph_.string(text_pos, ent.begin, len);
 						}
 						else
@@ -2839,7 +2839,7 @@ namespace nana{	namespace widgets
 					text_pos.x += static_cast<int>(str_w);
 				}
 				if (selected)
-					graph_.rectangle({ text_pos, { whitespace_w, line_h_pixels } }, true);
+					graph_.rectangle(::nana::rectangle{ text_pos, { whitespace_w, line_h_pixels } }, true);
 			}
 			else
 			{
@@ -2876,7 +2876,7 @@ namespace nana{	namespace widgets
 								//selected all
 								if (a.x <= pos && str_end <= b.x)
 								{
-									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, len);
 								}
@@ -2906,7 +2906,7 @@ namespace nana{	namespace widgets
 										part_pos.x += static_cast<int>(head_w);
 
 										//Draw selected part
-										graph_.rectangle({ part_pos, { sel_w, line_h_pixels } }, true);
+										graph_.rectangle(::nana::rectangle{ part_pos, { sel_w, line_h_pixels } }, true);
 										graph_.set_text_color(scheme_->selection_text.get_color());
 										graph_.string(part_pos, ent.begin + (a.x - pos), endpos - a.x);
 
@@ -2931,7 +2931,7 @@ namespace nana{	namespace widgets
 								else
 								{	//LTR
 									//Draw selected part
-									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ text_pos, { sel_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, endpos - pos);
 
@@ -2957,7 +2957,7 @@ namespace nana{	namespace widgets
 								if (a.x < pos)
 								{
 									//Draw selected all
-									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true, { 0x33, 0x99, 0xFF });
+									graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true, static_cast<color_rgb>(0x3399FF));
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, len);
 								}
@@ -2978,7 +2978,7 @@ namespace nana{	namespace widgets
 									::nana::point part_pos{ text_pos.x + static_cast<int>(head_w), text_pos.y };
 
 									//Draw selected part
-									graph_.rectangle({ part_pos, {str_w - head_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ part_pos, {str_w - head_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(part_pos, ent.begin + a.x - pos, len - (a.x - pos));
 								}
@@ -2991,7 +2991,7 @@ namespace nana{	namespace widgets
 					if (str_pos.y < b.y)
 					{
 						if (a.y < str_pos.y || ((a.y == str_pos.y) && (a.x <= str_pos.x )))
-							graph_.rectangle({ text_pos, { whitespace_w, line_h_pixels } }, true);
+							graph_.rectangle(::nana::rectangle{ text_pos, { whitespace_w, line_h_pixels } }, true);
 					}
 				}
 				else if (b.y == str_pos.y)
@@ -3007,7 +3007,7 @@ namespace nana{	namespace widgets
 							if (pos + len <= b.x)
 							{
 								//Draw selected part
-								graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+								graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true);
 								graph_.set_text_color(scheme_->selection_text.get_color());
 								graph_.string(text_pos, ent.begin, len);
 							}
@@ -3021,7 +3021,7 @@ namespace nana{	namespace widgets
 								else
 								{
 									//draw selected part
-									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ text_pos, { sel_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, b.x - pos);
 

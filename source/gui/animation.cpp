@@ -208,7 +208,7 @@ namespace nana
 					good_frame_by_frmbuilder = frmobj.u.frbuilder->frbuilder(pos_in_this_frame, framegraph, framegraph_dimension);
 					if(good_frame_by_frmbuilder)
 					{
-						nana::rectangle r = framegraph_dimension;
+						nana::rectangle r(framegraph_dimension);
 						_m_render(outs, [&r, &framegraph](paint::graphics& tar, const nana::point& pos) mutable
 						{
 							r.x = pos.x;

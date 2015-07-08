@@ -1,7 +1,7 @@
 /*
 *	Window Layout Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,12 +24,13 @@ namespace nana
 		//class window_layout
 			void window_layout::paint(core_window_t* wd, bool is_redraw, bool is_child_refreshed)
 			{
+				if (wd->flags.refreshing)
+					return;
+
 				if (nullptr == wd->effect.bground)
 				{
 					if (is_redraw)
 					{
-						if (wd->flags.refreshing)	return;
-
 						wd->flags.refreshing = true;
 						wd->drawer.refresh();
 						wd->flags.refreshing = false;
@@ -42,6 +43,10 @@ namespace nana
 
 			bool window_layout::maproot(core_window_t* wd, bool have_refreshed, bool is_child_refreshed)
 			{
+				auto check_opaque = wd->seek_non_lite_widget_ancestor();
+				if (check_opaque && check_opaque->flags.refreshing)
+					return true;
+
 				nana::rectangle vr;
 				if (read_visual_rectangle(wd, vr))
 				{
@@ -205,7 +210,7 @@ namespace nana
 						beg = beg->parent;
 					}
 
-					glass_buffer.bitblt(wd->dimension, beg->drawer.graphics, wd->pos_root - beg->pos_root);
+					glass_buffer.bitblt(::nana::rectangle{ wd->dimension }, beg->drawer.graphics, wd->pos_root - beg->pos_root);
 					
 					nana::rectangle r(wd->pos_owner, wd->dimension);
 					for (auto i = layers.rbegin(), layers_rend = layers.rend(); i != layers_rend; ++i)
@@ -235,7 +240,7 @@ namespace nana
 					}
 				}
 				else
-					glass_buffer.bitblt(wd->dimension, wd->parent->drawer.graphics, wd->pos_owner);
+					glass_buffer.bitblt(::nana::rectangle{ wd->dimension }, wd->parent->drawer.graphics, wd->pos_owner);
 
 				const rectangle r_of_wd{ wd->pos_owner, wd->dimension };
 				for (auto child : wd->parent->children)

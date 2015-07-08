@@ -39,8 +39,6 @@ namespace nana
 	//end class internal_scope_guard
 
 	//class event_arg
-	event_arg::~event_arg(){}
-
 	void event_arg::stop_propagation() const
 	{
 		stop_propagation_ = true;
@@ -64,6 +62,26 @@ namespace nana
 			bedrock::instance().evt_operation.cancel(evt);
 		}
 
+		class bedrock::flag_guard
+		{
+		public:
+			flag_guard(bedrock* brock, core_window_t * wd)
+				: brock_{ brock }, wd_(wd)
+			{
+				wd_->flags.refreshing = true;
+			}
+
+			~flag_guard()
+			{
+				if (brock_->wd_manager.available((wd_)))
+					wd_->flags.refreshing = false;
+			}
+		private:
+			bedrock			*const brock_;
+			core_window_t	*const wd_;
+
+		};
+
 		void bedrock::event_expose(core_window_t * wd, bool exposed)
 		{
 			if (nullptr == wd) return;
@@ -79,11 +97,8 @@ namespace nana
 				{
 					if (category::flags::root != wd->other.category)
 					{
-						//If the wd->parent is a lite_widget then find a parent until it is not a lite_widget
-						wd = wd->parent;
-
-						while (category::flags::lite_widget == wd->other.category)
-							wd = wd->parent;
+						//find an ancestor until it is not a lite_widget
+						wd = wd->seek_non_lite_widget_ancestor();
 					}
 					else if (category::flags::frame == wd->other.category)
 						wd = wd_manager.find_window(wd->root, wd->pos_root.x, wd->pos_root.y);
@@ -162,6 +177,9 @@ namespace nana
 			auto retain = wd->together.events_ptr;
 			auto evts_ptr = retain.get();
 
+			//enable refreshing flag, this is a RAII class for exception-safe
+			flag_guard fguard(this, wd);
+
 			switch (evt_code)
 			{
 			case event_code::click:
@@ -214,9 +232,9 @@ namespace nana
 				}
 
 				(wd->drawer.*drawer_event_fn)(*arg);
+				
 				if (!draw_only)
 					evt_addr->emit(*arg);
-
 				break;
 			}
 			case event_code::mouse_wheel:

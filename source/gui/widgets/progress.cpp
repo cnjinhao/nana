@@ -106,7 +106,7 @@ namespace nana
 
 			void trigger::_m_draw_box(graph_reference graph)
 			{
-				rectangle r = graph.size();
+				rectangle r{ graph.size() };
 				graph.gradual_rectangle(r, colors::button_face_shadow_end, colors::button_face_shadow_start, true);
 				::nana::color lt{ colors::gray }, rb{colors::white};
 				graph.frame_rectangle(r, lt, lt, rb, rb);

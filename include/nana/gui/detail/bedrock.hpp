@@ -40,6 +40,8 @@ namespace detail
 
 		struct thread_context;
 
+		class flag_guard;
+
 		~bedrock();
 		void pump_event(window, bool is_modal);
 		void map_thread_root_buffer(core_window_t*, bool forced);

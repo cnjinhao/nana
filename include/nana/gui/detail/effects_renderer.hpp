@@ -98,10 +98,10 @@ namespace nana{
 
 			void _m_render_edge_nimbus(core_window_t* wd, const nana::rectangle & visual)
 			{
-				nana::rectangle r(visual);
+				auto r = visual;
 				r.pare_off(-static_cast<int>(weight()));
-				nana::rectangle good_r;
-				if(overlap(r, wd->root_graph->size(), good_r))
+				rectangle good_r;
+				if (overlap(r, rectangle{ wd->root_graph->size() }, good_r))
 				{
 					if(	(good_r.x < wd->pos_root.x) || (good_r.y < wd->pos_root.y) ||
 						(good_r.x + good_r.width > visual.x + visual.width) || (good_r.y + good_r.height > visual.y + visual.height))
