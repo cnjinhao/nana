@@ -109,7 +109,7 @@ namespace nana
 				if(real_visible_state_ != isshow)
 				{
 					real_visible_state_ = isshow;
-					native_interface::caret_visible(wd_->root, isshow);
+					native_interface::caret_visible(wd_->root, isshow && wd_->displayed());
 				}
 			}
 
@@ -282,6 +282,11 @@ namespace nana
 				return true;
 			}
 
+			bool basic_window::displayed() const
+			{
+				return (visible && visible_parents());
+			}
+
 			bool basic_window::belong_to_lazy() const
 			{
 				for (auto wd = this; wd; wd = wd->parent)
@@ -290,6 +295,26 @@ namespace nana
 						return true;
 				}
 				return false;
+			}
+
+			const basic_window* get_child_caret(const basic_window* wd, bool this_is_a_child)
+			{
+				if (this_is_a_child && wd->together.caret)
+					return wd;
+
+				for (auto child : wd->children)
+				{
+					auto caret_wd = get_child_caret(child, true);
+					if (caret_wd)
+						return caret_wd;
+				}
+
+				return nullptr;
+			}
+
+			const basic_window * basic_window::child_caret() const
+			{
+				return get_child_caret(this, false);
 			}
 
 			bool basic_window::is_draw_through() const

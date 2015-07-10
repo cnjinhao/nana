@@ -118,9 +118,11 @@ namespace detail
 
 		bool is_ancestor_of(const basic_window* wd) const;
 		bool visible_parents() const;
+		bool displayed() const;
 		bool belong_to_lazy() const;
+		const basic_window * child_caret() const; //Returns a child which owns a caret
 
-		bool is_draw_through() const;	///< Determines whether it is a draw-through window.
+		bool is_draw_through() const;	// Determines whether it is a draw-through window.
 	public:
 		//Override event_holder
 		bool set_events(const std::shared_ptr<general_events>&) override;

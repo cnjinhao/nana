@@ -151,7 +151,7 @@ namespace nana{	namespace drawerbase
 
 		void trigger::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if(arg.key == static_cast<char_t>(keyboard::enter))
+			if (static_cast<char_t>(keyboard::enter) == arg.key || static_cast<char_t>(keyboard::space) == arg.key)
 				emit_click();
 		}
 
