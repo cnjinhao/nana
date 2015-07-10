@@ -3512,6 +3512,7 @@ namespace nana
 						m.flags.checked = ck;
 						arg_listbox arg{*this, ck};
 						ess_->lister.wd_ptr()->events().checked.emit(arg);
+						ess_->update();
 					}
 					return *this;
 				}
@@ -3539,6 +3540,7 @@ namespace nana
 					else if (ess_->lister.last_selected_abs == pos_)
 							ess_->lister.last_selected_abs.set_both(npos);
 					
+					ess_->update();
 					return *this;
 				}
 

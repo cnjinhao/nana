@@ -59,7 +59,6 @@ namespace nana
 					if (wd->parent)
 					{
 						std::vector<wd_rectangle>	blocks;
-						blocks.reserve(10);
 						if (read_overlaps(wd, vr, blocks))
 						{
 							nana::point p_src;
@@ -99,7 +98,7 @@ namespace nana
 			//			The result is a rectangle that is a visible area for its ancesters.
 			bool window_layout::read_visual_rectangle(core_window_t* wd, nana::rectangle& visual)
 			{
-				if (false == wd->visible)	return false;
+				if (! wd->displayed())	return false;
 
 				visual = rectangle{ wd->pos_root, wd->dimension };
 
@@ -354,7 +353,7 @@ namespace nana
 				nana::rectangle r_of_sigwd(sigwd->pos_root, sigwd->dimension);
 				for (auto wd : data_sect.effects_bground_windows)
 				{
-					if (wd == sigwd || !wd->visible || !wd->visible_parents() ||
+					if (wd == sigwd || !wd->displayed() ||
 						(false == overlap(nana::rectangle{ wd->pos_root, wd->dimension }, r_of_sigwd)))
 						continue;
 

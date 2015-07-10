@@ -363,7 +363,7 @@ namespace detail
 	void bedrock::pump_event(window modal_window, bool is_modal)
 	{
 		const unsigned tid = ::GetCurrentThreadId();
-		thread_context * context = this->open_thread_context(tid);
+		auto context = this->open_thread_context(tid);
 		if(0 == context->window_count)
 		{
 			//test if there is not a window
@@ -1310,13 +1310,11 @@ namespace detail
 					::PAINTSTRUCT ps;
 					::HDC dc = ::BeginPaint(root_window, &ps);
 
-					if((ps.rcPaint.left != ps.rcPaint.right) && (ps.rcPaint.bottom != ps.rcPaint.top))
-					{
-						::BitBlt(dc,
-								ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top,
-								reinterpret_cast<HDC>(msgwnd->root_graph->handle()->context),
-								ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
-					}
+					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+					::nana::rectangle update_area(ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top);
+					if (!update_area.empty())
+						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+
 					::EndPaint(root_window, &ps);
 				}
 				break;
@@ -1474,7 +1472,10 @@ namespace detail
 				else
 					brock.set_keyboard_shortkey(false);
 
-				brock.delay_restore(2);	//Restores while key release
+				//Do delay restore if key is not arrow_left/right/up/down, otherwise
+				//A menubar will be restored if the item is empty(not have a menu item)
+				if (wParam < 37 || 40 < wParam)
+					brock.delay_restore(2);	//Restores while key release
 				break;
 			case WM_CLOSE:
 			{
