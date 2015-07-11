@@ -93,6 +93,18 @@ namespace nana
 			arg.window_handle = reinterpret_cast<window>(wd);
 			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
 			{
+				const core_window_t * caret_wd = (wd->together.caret ? wd : wd->child_caret());
+				if (caret_wd)
+				{
+					if (exposed)
+					{
+						if (wd->root_widget->other.attribute.root->focus == caret_wd)
+							caret_wd->together.caret->visible(true);
+					}
+					else
+						caret_wd->together.caret->visible(false);
+				}
+
 				if (!exposed)
 				{
 					if (category::flags::root != wd->other.category)
@@ -118,7 +130,7 @@ namespace nana
 				arg.x = x;
 				arg.y = y;
 				if (emit(event_code::move, wd, arg, false, get_thread_context()))
-					wd_manager.update(wd, true, true);
+					wd_manager.update(wd, false, true);
 			}
 		}
 

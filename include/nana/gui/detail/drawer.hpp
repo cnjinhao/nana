@@ -23,12 +23,18 @@ namespace nana
 {
 	class widget;
 
+	namespace detail
+	{
+		class drawer;
+	}
+
 	class drawer_trigger
 		: ::nana::noncopyable, ::nana::nonmovable
 	{
+		friend class detail::drawer;
 	public:
-		typedef widget&		widget_reference;
-		typedef paint::graphics&	graph_reference;
+		using widget_reference = widget&;
+		using graph_reference = paint::graphics&;
 
 		virtual ~drawer_trigger();
 		virtual void attached(widget_reference, graph_reference);	//none-const
@@ -56,10 +62,11 @@ namespace nana
 		virtual void key_release(graph_reference, const arg_keyboard&);
 		virtual void shortkey(graph_reference, const arg_keyboard&);
 
-		void _m_reset_overrided();
-		bool _m_overrided() const;
 	private:
-		bool overrided_{false};
+		void _m_reset_overrided();
+		bool _m_overrided(event_code) const;
+	private:
+		unsigned overrided_{ 0xFFFFFFFF };
 	};
 
 	namespace detail
@@ -83,7 +90,7 @@ namespace nana
 
 			enum class method_state
 			{
-				unknown,
+				pending,
 				overrided,
 				not_overrided
 			};
@@ -110,7 +117,7 @@ namespace nana
 			void key_char(const arg_keyboard&);
 			void key_release(const arg_keyboard&);
 			void shortkey(const arg_keyboard&);
-			void map(window, bool forced);	//Copy the root buffer to screen
+			void map(window, bool forced, const rectangle* update_area = nullptr);	//Copy the root buffer to screen
 			void refresh();
 			drawer_trigger* realizer() const;
 			void attached(widget&, drawer_trigger&);
@@ -128,31 +135,27 @@ namespace nana
 			template<typename Arg, typename Mfptr>
 			void _m_emit(event_code evt_code, const Arg& arg, Mfptr mfptr)
 			{
-				if (realizer_)
+				const int pos = static_cast<int>(evt_code);
+				if (realizer_ && (method_state::not_overrided != mth_state_[pos]))
 				{
-					const int pos = static_cast<int>(evt_code);
-					if (method_state::not_overrided != mth_state_[pos])
+					_m_bground_pre();
+
+					if (method_state::pending == mth_state_[pos])
 					{
-						_m_bground_pre();
+						(realizer_->*mfptr)(graphics, arg);
+						
+						//Check realizer, when the window is closed in that event handler, the drawer will be
+						//detached and realizer will be a nullptr
+						if(realizer_)
+							mth_state_[pos] = (realizer_->_m_overrided(evt_code) ? method_state::overrided : method_state::not_overrided);
+					}
+					else
+						(realizer_->*mfptr)(graphics, arg);
 
-						if (method_state::unknown == mth_state_[pos])
-						{
-							realizer_->_m_reset_overrided();
-							(realizer_->*mfptr)(graphics, arg);
-							
-							//Check realizer, when the window is closed in that event handler, the drawer will be
-							//detached and realizer will be a nullptr
-							if(realizer_)
-								mth_state_[pos] = (realizer_->_m_overrided() ? method_state::overrided : method_state::not_overrided);
-						}
-						else
-							(realizer_->*mfptr)(graphics, arg);
-
-						if (_m_lazy_decleared())
-						{
-							_m_draw_dynamic_drawing_object();
-							_m_bground_end();
-						}
+					if (_m_lazy_decleared())
+					{
+						_m_draw_dynamic_drawing_object();
+						_m_bground_end();
 					}
 				}
 			}

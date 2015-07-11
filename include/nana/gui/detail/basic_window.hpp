@@ -25,6 +25,11 @@ namespace detail
 {
 	struct basic_window;
 
+	enum class visible_state
+	{
+		invisible, visible, displayed
+	};
+
 	class caret_descriptor
 	{
 	public:
@@ -43,15 +48,16 @@ namespace detail
 		void size(const ::nana::size&);
 
 		void update();
-	private:
-		void _m_visible(bool isshow);
+	//private:
+		//void _m_visible(bool isshow);	//deprecated
 	private:
 		core_window_t*	wd_;
 		::nana::point point_;
 		::nana::size	size_;
 		::nana::size	paint_size_;
-		bool		visible_;
-		bool		real_visible_state_;
+		visible_state	visible_state_;
+		//bool		visible_;
+		//bool		real_visible_state_;	//deprecated
 		bool		out_of_range_;
 		::nana::rectangle effective_range_;
 	};//end class caret_descriptor
@@ -112,7 +118,9 @@ namespace detail
 
 		bool is_ancestor_of(const basic_window* wd) const;
 		bool visible_parents() const;
+		bool displayed() const;
 		bool belong_to_lazy() const;
+		const basic_window * child_caret() const; //Returns a child which owns a caret
 
 		bool is_draw_through() const;	///< Determines whether it is a draw-through window.
 

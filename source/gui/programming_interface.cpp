@@ -722,7 +722,7 @@ namespace API
 		if(restrict::window_manager.available(iwd) && (iwd->flags.enabled != enabled))
 		{
 			iwd->flags.enabled = enabled;
-			restrict::window_manager.update(iwd, true, false);
+			restrict::window_manager.update(iwd, true, true);
 			if(category::flags::root == iwd->other.category)
 				restrict::interface_type::enable_window(iwd->root, enabled);
 		}

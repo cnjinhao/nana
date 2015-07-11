@@ -89,6 +89,15 @@ namespace nana
 			{
 				return unknown_;
 			}
+			bool trigger::stoped() const
+			{
+				return stop_;
+			}
+			bool trigger::stop(bool s)
+			{
+				std::swap(s,stop_);
+				return s;
+			}
 
 			void trigger::refresh(graph_reference)
 			{
@@ -196,6 +205,14 @@ namespace nana
 		bool progress::unknown() const
 		{
 			return get_drawer_trigger().unknown();
+		}
+		bool progress::stop(bool s)  
+		{
+			return get_drawer_trigger().stop(s);
+		}
+		bool progress::stoped() const
+		{
+			return get_drawer_trigger().stoped();
 		}
 	//end class progress
 }//end namespace nana

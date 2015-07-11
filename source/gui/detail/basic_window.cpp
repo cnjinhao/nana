@@ -7,7 +7,7 @@ namespace nana
 	{
 		//class caret_descriptor
 			caret_descriptor::caret_descriptor(core_window_t* wd, unsigned width, unsigned height)
-				:wd_(wd), size_(width, height), visible_(false), real_visible_state_(false), out_of_range_(false)
+				:wd_(wd), size_(width, height), visible_state_(visible_state::invisible), out_of_range_(false)
 			{}
 
 			caret_descriptor::~caret_descriptor()
@@ -22,8 +22,9 @@ namespace nana
 					if(active)
 					{
 						native_interface::caret_create(wd_->root, size_);
-						real_visible_state_ = false;
-						visible_ = false;
+						//real_visible_state_ = false;
+						//visible_ = false;
+						visible_state_ = visible_state::invisible;
 						this->position(point_.x, point_.y);
 					}
 					else
@@ -76,19 +77,36 @@ namespace nana
 				return point_;
 			}
 
-			void caret_descriptor::visible(bool isshow)
+			void caret_descriptor::visible(bool is_show)
 			{
-				if(visible_ != isshow)
+				/*
+				if(visible_ != isshow)	//deprecated
 				{
 					visible_ = isshow;
 					if(visible_ == false || false == out_of_range_)
 						_m_visible(isshow);
 				}
+				*/
+
+				auto pre_displayed = (visible_state::displayed == visible_state_);
+
+				if (is_show)
+				{
+					visible_state_ = visible_state::visible;
+					if (wd_->displayed() && (! out_of_range_))
+						visible_state_ = visible_state::displayed;
+				}
+				else
+					visible_state_ = visible_state::invisible;
+
+				if (pre_displayed != (visible_state::displayed == visible_state_))
+					native_interface::caret_visible(wd_->root, !pre_displayed);
 			}
 
 			bool caret_descriptor::visible() const
 			{
-				return visible_;
+				//return visible_;	//deprecated
+				return (visible_state::invisible != visible_state_);
 			}
 
 			nana::size caret_descriptor::size() const
@@ -101,17 +119,21 @@ namespace nana
 				size_ = s;
 				update();
 
-				if(visible_)	this->visible(true);
+				//if(visible_)	this->visible(true);	//deprecated
+				if (visible_state::invisible != visible_state_)
+					visible(true);
 			}
 
+			/*
 			void caret_descriptor::_m_visible(bool isshow)
 			{
-				if(real_visible_state_ != isshow)
+				if(real_visible_state_ != isshow)	//deprecated
 				{
 					real_visible_state_ = isshow;
-					native_interface::caret_visible(wd_->root, isshow);
+					native_interface::caret_visible(wd_->root, isshow && wd_->displayed());
 				}
 			}
+			*/
 
 			void caret_descriptor::update()
 			{
@@ -138,8 +160,10 @@ namespace nana
 					{
 						out_of_range_ = true;
 
-						if(visible_)
-							_m_visible(false);
+						//if(visible_)
+						//	_m_visible(false);	//deprecated
+						if (visible_state::invisible != visible_state_)
+							visible(false);
 					}
 				}
 				else
@@ -164,19 +188,27 @@ namespace nana
 
 					if(out_of_range_)
 					{
-						if(paint_size_ == size)
-							_m_visible(true);
+						//if(paint_size_ == size)	//deprecated
+						//	_m_visible(true);
+						if (paint_size_ == size)
+							visible(true);
 
 						out_of_range_ = false;
 					}
 
 					if(paint_size_ != size)
 					{
+						bool vs = (visible_state::invisible != visible_state_);
 						native_interface::caret_destroy(wd_->root);
 						native_interface::caret_create(wd_->root, size);
-						real_visible_state_ = false;
-						if(visible_)
-							_m_visible(true);
+						//real_visible_state_ = false;	//deprecated
+						//if(visible_)
+						//	_m_visible(true);
+
+						visible_state_ = visible_state::invisible;
+						if (vs)
+							visible(true);
+
 
 						paint_size_ = size;
 					}
@@ -281,6 +313,11 @@ namespace nana
 				return true;
 			}
 
+			bool basic_window::displayed() const
+			{
+				return (visible && visible_parents());
+			}
+
 			bool basic_window::belong_to_lazy() const
 			{
 				for (auto wd = this; wd; wd = wd->parent)
@@ -289,6 +326,26 @@ namespace nana
 						return true;
 				}
 				return false;
+			}
+
+			const basic_window* get_child_caret(const basic_window* wd, bool this_is_a_child)
+			{
+				if (this_is_a_child && wd->together.caret)
+					return wd;
+
+				for (auto child : wd->children)
+				{
+					auto caret_wd = get_child_caret(child, true);
+					if (caret_wd)
+						return caret_wd;
+				}
+
+				return nullptr;
+			}
+
+			const basic_window * basic_window::child_caret() const
+			{
+				return get_child_caret(this, false);
 			}
 
 			bool basic_window::is_draw_through() const

@@ -152,7 +152,7 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t*, bool forced)
+	void bedrock::map_thread_root_buffer(core_window_t*, bool forced, const rectangle*)
 	{
 		//GUI in X11 is thread-independent, so no implementation.
 	}
@@ -921,11 +921,10 @@ namespace detail
 				if(msgwnd->visible && (msgwnd->root_graph->empty() == false))
 				{
 					nana::detail::platform_scope_guard psg;
-					nana::detail::drawable_impl_type* drawer_impl = msgwnd->root_graph->handle();
-					::XCopyArea(display, drawer_impl->pixmap, reinterpret_cast<Window>(native_window), drawer_impl->context,
-							xevent.xexpose.x, xevent.xexpose.y,
-							xevent.xexpose.width, xevent.xexpose.height,
-							xevent.xexpose.x, xevent.xexpose.y);
+					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+					::nana::rectangle update_area(xevent.xexpose.x, xevent.xexpose.y, xevent.xexpose.width, xevent.xexpose.height);
+					if (!update_area.empty())
+						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
 				}
 				break;
 			case KeyPress:
@@ -1011,13 +1010,11 @@ namespace detail
 							{
 								arg_keyboard argkey;
 								brock.get_key_state(argkey);
-								auto tstop_wd = brock.wd_manager.tabstop(msgwnd, argkey.shift);
+								auto tstop_wd = brock.wd_manager.tabstop(msgwnd, !argkey.shift);
 								if (tstop_wd)
 								{
 									brock.wd_manager.set_focus(tstop_wd, false);
-									brock.wd_manager.do_lazy_refresh(msgwnd, false);
 									brock.wd_manager.do_lazy_refresh(tstop_wd, true);
-									root_runtime->condition.tabstop_focus_changed = true;
 								}
 							}
 							else if(keyboard::alt == keychar)
@@ -1066,6 +1063,7 @@ namespace detail
 								break;
 							}
 						case XLookupChars:
+							if (msgwnd->flags.enabled)
 							{
 								const ::nana::char_t* charbuf;
 #if defined(NANA_UNICODE)
@@ -1081,6 +1079,10 @@ namespace detail
 									arg_keyboard arg;
 									arg.ignore = false;
 									arg.key = charbuf[i];
+
+									// When tab is pressed, only tab-eating mode is allowed
+									if ((keyboard::tab == arg.key) && !(msgwnd->flags.tab & tab_type::eating))
+										continue;
 
 									if(context.is_alt_pressed)
 									{
@@ -1130,7 +1132,9 @@ namespace detail
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 					}
-					brock.delay_restore(2);	//Restores while key release
+
+					if (context.platform.keychar < keyboard::os_arrow_left || keyboard::os_arrow_down < wParam)
+						brock.delay_restore(2);	//Restores while key release
 				}
 				else
 				{

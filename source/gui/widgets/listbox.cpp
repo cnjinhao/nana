@@ -402,18 +402,20 @@ namespace nana
 					return{};
 				}
 
-				void create(nana::string&& text, unsigned pixels)
+				size_type create(nana::string&& text, unsigned pixels)
 				{
 					cont_.emplace_back(std::move(text), pixels, static_cast<size_type>(cont_.size()));
+                    return cont_.back().index;
 				}
 
 				void item_width(size_type pos, unsigned width)
 				{
 					for(auto & m : cont_)
-					{
 						if(m.index == pos)
+					    {
 							m.pixels = width;
-					}
+                            return;
+					    }
 				}
 
 				unsigned item_width(size_type pos) const
@@ -1606,31 +1608,7 @@ namespace nana
 				}
 
                 /// set all items in cat to selection sel, emiting events, actualizing last_selected_abs, but not check for single_selection_
-                bool categ_selected(size_type cat, bool sel)
-				{
-					bool changed = false;
-					auto & items = _m_at(cat)->items;
-
-					index_pair pos(cat, 0);
-					for(auto & m : items)
-					{
-						if(m.flags.selected != sel)
-						{
-							m.flags.selected = sel;
-
-							arg_listbox arg{ item_proxy(ess_, pos), sel };
-							wd_ptr()->events().selected.emit(arg);
-							changed = true;
-
-							if (sel)                         // not check for single_selection_
-								last_selected_abs = pos;
-							else if (last_selected_abs == pos)
-								last_selected_abs.set_both(npos);
-						}
-						++pos.item;
-					}
-					return changed;
-				}
+                void categ_selected(size_type cat, bool sel);
 
 				void reverse_categ_selected(size_type categ)
 				{
@@ -1658,8 +1636,21 @@ namespace nana
                 /// absolute position of the last displayed item
                 index_pair last_displ() const
 				{
-					return absolute ( last_displ() );
+					return absolute ( last() );
 				}
+
+                /// can be used as the absolute position of the first absolute item, or as the display pos of the first displayed item
+                index_pair first() const
+                {
+                    index_pair fst{0,npos};
+                    good_item(fst,fst);
+                    return fst;
+                }
+                /// absolute position of the first displayed item
+                index_pair first_displ() const
+                {
+					return absolute ( first() );
+                }
 
 				bool good(size_type cat) const
 				{
@@ -1670,32 +1661,32 @@ namespace nana
 				{
 					return ((pos.cat < list_.size()) && (pos.item < size_item(pos.cat)));
 				}
-
+                /// if good return the same item (in arg item), or just the next cat and true, but If fail return false
 				bool good_item(index_pair pos, index_pair& item) const
 				{
 					if (!good(pos.cat))
-						return false;
+						return false;       // cat out of range
 
 					if (pos.is_category())
 					{
-						item = pos;
-						if (0 == pos.cat)
-							item.item = 0;
-
-						return true;
+						item = pos;          // return the cat self
+						if (0 == pos.cat)    // but for cat 0 return first item
+							item.item = 0;   // let check this is good
+                        else
+						    return true;
 					}
 
-					auto i = _m_at(pos.cat);
+					auto i = _m_at(pos.cat);         // pos is not a cat and i point to it cat
 					if (pos.item < i->items.size())
 					{
-						item = pos;
+						item = pos;                // good item, return it
 						return true;
 					}
 
-					if (++i == list_.end())
+					if (++i == list_.end())          // item out of range and no more cat
 						return false;
 
-					item.cat = pos.cat + 1;
+					item.cat = pos.cat + 1;         // select the next cat
 					item.item = npos;
 					return true;
 				}
@@ -1703,7 +1694,7 @@ namespace nana
 				///Translate relative position (position in display) into absolute position (original data order)
 				size_type absolute(const index_pair& display_pos) const
 				{
-					if(sorted_index_ == npos) 
+					if(sorted_index_ == npos || display_pos.item == npos) 
 						return display_pos.item ;
 
 					auto & catobj = *_m_at(display_pos.cat);
@@ -2202,7 +2193,7 @@ namespace nana
 						}
 						else
 						{
-							new_where.second = (y - header_visible_px() + 1) / item_size;
+							new_where.second = ((y + 1) - header_visible_px()) / item_size; // y>1 !
 							new_where.first = parts::lister;
 							if(checkable)
 							{
@@ -2322,6 +2313,27 @@ namespace nana
 						if(x >= static_cast<int>(lister_w))
 							break;
 					}
+				}
+
+				unsigned auto_width(size_type pos, unsigned max = 3000) /// \todo introduce parametr max_header_width
+				{
+					unsigned max_w{ 0 };
+					for (const auto &cat : lister.cat_container())
+						for (const auto &it : cat.items)
+						{
+							if (pos >= it.cells.size()) continue;
+							// precalcule text geometry
+							unsigned ts = static_cast<unsigned> (graph->text_extent_size(it.cells[pos].text).width);
+							if (max_w < ts)
+								max_w = ts;
+						}
+					if (!max_w) return 0;
+
+					unsigned ext_w = scheme_ptr->ext_w;
+					if (pos == 0 && checkable)    //   only before the first column (display_order=0 ?)
+						ext_w += 18;
+					header.item_width(pos, max_w + ext_w + 1 < max ? max_w + ext_w + 1 : max);
+					return max_w;
 				}
 
 				inline_pane * open_inline(pat::abstract_factory<inline_notifier_interface>* factory, inline_indicator* indicator)
@@ -2494,7 +2506,7 @@ namespace nana
 					}
 				}
 
-				nana::string es_lister::to_string(const export_options& exp_opt) const
+			nana::string es_lister::to_string(const export_options& exp_opt) const
 				{
 					nana::string list_str; 
 					bool first{true};
@@ -2515,6 +2527,17 @@ namespace nana
 					return list_str ;
 				}
 
+            void es_lister::categ_selected(size_type cat, bool sel)
+			{
+                cat_proxy cpx{ess_,cat};
+                for (item_proxy &it : cpx )
+                {
+                    if (it.selected() != sel)
+						it.select(sel);
+                }
+
+                last_selected_abs = last_selected_dpl =  index_pair {cat, npos};
+			}
 
 			class drawer_header_impl
 			{
@@ -3450,6 +3473,14 @@ namespace nana
 
 				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
 				{
+					if (essence_->pointer_where.first == essence_t::parts::header)
+						if (cursor::size_we == essence_->lister.wd_ptr()->cursor())	
+                        {
+ 			               if (essence(). auto_width(drawer_header_->item_spliter() )) // ? in order
+			                   essence().update();
+                           return;
+                       }
+
 					if (essence_->pointer_where.first != essence_t::parts::lister)
 						return;
 
@@ -3518,21 +3549,35 @@ namespace nana
                         if (! scrl.make_page_scroll(!up)) 
                             return;
                         essence_->lister.select_for_all(false);
-                        if (up)
-                            item_proxy {essence_, essence_->scroll_y_abs()}.select(true); 
-                        else 
-                        {
-                            index_pair idx{essence_->scroll_y_dpl()};
+
+                        index_pair idx{essence_->scroll_y_dpl()};
+                        if (!up)
                             essence_->lister.forward(idx, scrl.range()-1, idx);
-                            item_proxy::from_display(essence_,idx).select(true);
-                        }
+
+                        if (idx.is_item())
+                           item_proxy::from_display(essence_, idx).select(true);
+                        else 
+                            if(!essence_->lister.single_selection())
+								essence_->lister.categ_selected(idx.cat, true);
+
+                        essence_->trace_last_selected_item ();
+
                         break;
                     }
                     case keyboard::os_home:
+                    {
                         essence_->lister.select_for_all(false);
-                        item_proxy::from_display(essence_, {0,0}).select(true);
+
+                        index_pair frst{essence_->lister.first()};
+                        if (frst.is_item())
+                           item_proxy::from_display(essence_, frst).select(true);
+                        else 
+                            if(!essence_->lister.single_selection())
+								essence_->lister.categ_selected(frst.cat, true);
+
                         essence_->trace_last_selected_item ();
                         break;
+                    }
                     case keyboard::os_end:
                         essence_->lister.select_for_all(false);
                         item_proxy::from_display(essence_, essence_->lister.last()).select(true);
@@ -3584,7 +3629,7 @@ namespace nana
 					{
 						auto i = ess_->lister.cat_container().begin();
 						std::advance(i, pos.cat);
-						cat_ = &(*i);
+						cat_ = &(*i);       // what is pos is a cat?
 					}
 				}
 
@@ -3617,6 +3662,7 @@ namespace nana
 						m.flags.checked = ck;
 						arg_listbox arg{*this, ck};
 						ess_->lister.wd_ptr()->events().checked.emit(arg);
+						ess_->update();
 					}
 					return *this;
 				}
@@ -3629,7 +3675,7 @@ namespace nana
                 /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
                 item_proxy & item_proxy::select(bool s)
 				{
-					auto & m = cat_->items.at(pos_.item);       // a ref to the real item
+					auto & m = cat_->items.at(pos_.item);       // a ref to the real item     // what is pos is a cat?
 					if(m.flags.selected == s) return *this;     // ignore if no change
 					m.flags.selected = s;                       // actually change selection
 
@@ -3646,6 +3692,7 @@ namespace nana
 
 					ess_->update();
 					
+					ess_->update();
 					return *this;
 				}
 
@@ -3865,6 +3912,24 @@ namespace nana
 					}
 				}
 
+				cat_proxy & cat_proxy::select(bool sel)
+                {
+                    for (item_proxy &it : *this )
+                        it.select(sel);
+
+                    ess_->lister.last_selected_abs = 
+                    ess_->lister.last_selected_dpl =  index_pair {this->pos_, npos};
+
+                    return *this;
+                }
+				bool cat_proxy::selected() const
+                {
+                    for (item_proxy &it : *this )
+                        if (!it.selected())
+                            return false;
+                    return true;
+                }
+
 				auto cat_proxy::columns() const -> size_type
 				{
 					return ess_->header.cont().size();
@@ -3907,6 +3972,11 @@ namespace nana
 				//Behavior of a container
 				item_proxy cat_proxy::begin() const
 				{
+					auto i = ess_->lister.cat_container().begin();
+					std::advance(i, pos_);
+					if (i->items.empty())
+						return end();
+
 					return item_proxy(ess_, index_pair(pos_, 0));
 				}
 
@@ -4121,11 +4191,12 @@ namespace nana
 			_m_ess().set_auto_draw(ad);
 		}
 
-		void listbox::append_header(nana::string text, unsigned width)
+		listbox::size_type listbox::append_header(nana::string text, unsigned width)
 		{
 			auto & ess = _m_ess();
-			ess.header.create(std::move(text), width);
+			listbox::size_type index = ess.header.create(std::move(text), width);
 			ess.update();
+            return index;
 		}
 
 		listbox& listbox::header_width(size_type pos, unsigned pixels)
@@ -4134,6 +4205,13 @@ namespace nana
 			ess.header.item_width(pos, pixels);
 			ess.update();
 			return *this;
+		}
+		unsigned listbox::auto_width(size_type pos, unsigned max)
+		{
+            auto & ess = _m_ess();
+			unsigned max_w = ess.auto_width(pos, max);
+			ess.update();
+			return max_w;
 		}
 
 		unsigned listbox::header_width(size_type pos) const

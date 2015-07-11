@@ -328,9 +328,14 @@ namespace detail
 		return bedrock_object;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t* wd, bool forced)
+	void bedrock::map_thread_root_buffer(core_window_t* wd, bool forced, const rectangle* update_area)
 	{
-		::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), static_cast<LPARAM>(forced ? TRUE : FALSE));
+		auto stru = reinterpret_cast<detail::messages::map_thread*>(::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
+		if (stru)
+		{
+			if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), reinterpret_cast<LPARAM>(stru)))
+				::HeapFree(::GetProcessHeap(), 0, stru);
+		}
 	}
 
 	void interior_helper_for_menu(MSG& msg, native_window_type menu_window)
@@ -348,7 +353,7 @@ namespace detail
 	void bedrock::pump_event(window modal_window, bool is_modal)
 	{
 		const unsigned tid = ::GetCurrentThreadId();
-		thread_context * context = this->open_thread_context(tid);
+		auto context = this->open_thread_context(tid);
 		if(0 == context->window_count)
 		{
 			//test if there is not a window
@@ -581,8 +586,12 @@ namespace detail
 			}
 			return true;
 		case nana::detail::messages::map_thread_root_buffer:
-			bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam), (TRUE == lParam));
-			::UpdateWindow(wd);
+			{
+				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);
+				bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
+				::UpdateWindow(wd);
+				::HeapFree(::GetProcessHeap(), 0, stru);
+			}
 			return true;
 		case nana::detail::messages::remote_thread_move_window:
 			{
@@ -1282,13 +1291,11 @@ namespace detail
 					::PAINTSTRUCT ps;
 					::HDC dc = ::BeginPaint(root_window, &ps);
 
-					if((ps.rcPaint.left != ps.rcPaint.right) && (ps.rcPaint.bottom != ps.rcPaint.top))
-					{
-						::BitBlt(dc,
-								ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top,
-								reinterpret_cast<HDC>(msgwnd->root_graph->handle()->context),
-								ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
-					}
+					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+					::nana::rectangle update_area(ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top);
+					if (!update_area.empty())
+						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+
 					::EndPaint(root_window, &ps);
 				}
 				break;
@@ -1372,7 +1379,7 @@ namespace detail
 
 					if(msgwnd)
 					{
-						if((wParam == 9) && (false == (msgwnd->flags.tab & tab_type::eating))) //Tab
+						if((wParam == 9) && (!msgwnd->visible || (false == (msgwnd->flags.tab & tab_type::eating)))) //Tab
 						{
 							bool is_forward = (::GetKeyState(VK_SHIFT) >= 0);
 
@@ -1382,7 +1389,6 @@ namespace detail
 								brock.wd_manager.set_focus(tstop_wd, false);
 								brock.wd_manager.do_lazy_refresh(msgwnd, false);
 								brock.wd_manager.do_lazy_refresh(tstop_wd, true);
-								root_runtime->condition.tabstop_focus_changed = true;
 							}
 						}
 						else
@@ -1411,9 +1417,10 @@ namespace detail
 				break;
 			case WM_CHAR:
 				msgwnd = brock.focus();
-				if(false == root_runtime->condition.tabstop_focus_changed)
+				if (msgwnd && msgwnd->flags.enabled)
 				{
-					if(msgwnd && msgwnd->flags.enabled)
+					// When tab is pressed, only tab-eating mode is allowed
+					if ((9 != wParam) || (msgwnd->flags.tab & tab_type::eating))
 					{
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_char;
@@ -1429,8 +1436,6 @@ namespace detail
 						brock.wd_manager.do_lazy_refresh(msgwnd, false);
 					}
 				}
-				else
-					root_runtime->condition.tabstop_focus_changed = false;
 				return 0;
 			case WM_KEYUP:
 				if(wParam != 18) //MUST NOT BE AN ALT
@@ -1450,7 +1455,10 @@ namespace detail
 				else
 					brock.set_keyboard_shortkey(false);
 
-				brock.delay_restore(2);	//Restores while key release
+				//Do delay restore if key is not arrow_left/right/up/down, otherwise
+				//A menubar will be restored if the item is empty(not have a menu item)
+				if (wParam < 37 || 40 < wParam)
+					brock.delay_restore(2);	//Restores while key release
 				break;
 			case WM_CLOSE:
 			{

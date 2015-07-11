@@ -70,13 +70,11 @@ namespace detail
 			std::vector<thr_refcnt> stack_;
 		};
 	public:
-		typedef native_window_type	native_window;
-		typedef revertible_mutex mutex_type;
+		using native_window = native_window_type;
+		using mutex_type = revertible_mutex;
 
-		typedef basic_window core_window_t;
-		typedef std::vector<core_window_t*> cont_type;
-
-		typedef window_layout	wndlayout_type;
+		using core_window_t = basic_window;
+		using window_layer = window_layout;
 
 		window_manager();
 		~window_manager();
@@ -126,9 +124,9 @@ namespace detail
 		core_window_t* root(native_window_type) const;
 
 		//Copy the root buffer that wnd specified into DeviceContext
-		void map(core_window_t*, bool forced);
+		void map(core_window_t*, bool forced, const rectangle* update_area = nullptr);
 
-		bool update(core_window_t*, bool redraw, bool force);
+		bool update(core_window_t*, bool redraw, bool force, const rectangle* update_area = nullptr);
 		void refresh_tree(core_window_t*);
 
 		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen);

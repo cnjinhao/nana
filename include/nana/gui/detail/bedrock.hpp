@@ -44,7 +44,7 @@ namespace detail
 
 		~bedrock();
 		void pump_event(window, bool is_modal);
-		void map_thread_root_buffer(core_window_t*, bool forced);
+		void map_thread_root_buffer(core_window_t*, bool forced, const rectangle* update_area = nullptr);
 		static int inc_window(unsigned tid = 0);
 		thread_context* open_thread_context(unsigned tid = 0);
 		thread_context* get_thread_context(unsigned tid = 0);
