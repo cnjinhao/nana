@@ -223,6 +223,7 @@
     <ClCompile Include="..\..\source\gui\widgets\float_listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\form.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\frame.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\group.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\label.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\menu.cpp" />
@@ -256,9 +257,6 @@
     <ClCompile Include="..\..\source\threads\pool.cpp" />
     <ClCompile Include="..\..\source\traits.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
