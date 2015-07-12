@@ -18,10 +18,7 @@
 #define NANA_GUI_WIDGETS_GROUP_HPP
 
 #include <nana/gui/place.hpp>
-#include <nana/gui/widgets/button.hpp>
 #include <nana/gui/widgets/panel.hpp>
-#include <nana/gui/widgets/label.hpp>
-#include <nana/gui/drawing.hpp>
 
 namespace nana{
     class group
@@ -29,19 +26,26 @@ namespace nana{
     {
 	    place        plc_outer{*this};
         panel<false> content  {*this};
-        label        titel/*  {*this}*/;
         place        plc_inner{content};
-	    unsigned int gap;
+
+		struct implement;
     public:
         group( window    parent,         ///< 
-               string    titel_ ={STR("")},     ///< 
+               std::wstring    titel_ ={STR("")},     ///< 
                bool      format =false,  ///< Use a formated label?
                unsigned  gap =2,         ///< betwen the content  and the external limit
                rectangle r ={}           ///<
               );
+
+		~group();
+
         place& plc  (){ return plc_inner; }
         window inner(){ return content; }
-        label& lbl  (){ return titel; }
+	private:
+		::nana::string _m_caption() const override;
+		void _m_caption(::nana::string&&) override;
+	private:
+		std::unique_ptr<implement> impl_;
     };
 
 }//end namespace nana
