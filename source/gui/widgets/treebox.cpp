@@ -1263,7 +1263,7 @@ namespace nana
 								img->stretch(::nana::rectangle{ size }, graph, attr.area);
 							}
 							else
-								img->paste(graph, attr.area.x + static_cast<int>(attr.area.width - size.width) / 2, attr.area.y + static_cast<int>(attr.area.height - size.height) / 2);
+								img->paste(graph, point{ attr.area.x + static_cast<int>(attr.area.width - size.width) / 2, attr.area.y + static_cast<int>(attr.area.height - size.height) / 2 });
 						}
 					}
 				}

@@ -576,7 +576,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			if(size_ != image_.size())
 				image_.stretch(::nana::rectangle{ image_.size() }, graph, nana::rectangle(x, y, size_.width, size_.height));
 			else
-				image_.paste(graph, x, y);
+				image_.paste(graph, point{ x, y });
 		}
 
 		virtual const nana::size & size() const override

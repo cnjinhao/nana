@@ -170,7 +170,7 @@ namespace nana{
 						pixbuf.pixel(0, r.height - 1, px2);
 						pixbuf.pixel(r.width - 1, r.height - 1, px3);
 
-						pixbuf.paste(wd->root, r.x, r.y);
+						pixbuf.paste(wd->root, { r.x, r.y });
 
 						std::vector<typename window_layer::wd_rectangle> overlaps;
 						if(window_layer::read_overlaps(wd, visual, overlaps))

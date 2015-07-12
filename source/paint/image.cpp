@@ -16,14 +16,15 @@
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <stdexcept>
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #if defined(NANA_ENABLE_PNG)
-	#include <nana/paint/detail/image_png.hpp>
+	#include "detail/image_png.hpp"
 #endif
-#include <nana/paint/detail/image_bmp.hpp>
-#include <nana/paint/detail/image_ico.hpp>
+#include "detail/image_bmp.hpp"
+#include "detail/image_ico.hpp"
 
 namespace nana
 {
@@ -89,12 +90,12 @@ namespace paint
 				return size_;
 			}
 
-			void image_ico::paste(const nana::rectangle& src_r, graph_reference graph, int x, int y) const
+			void image_ico::paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const
 			{
 				if(ptr_ && (graph.empty() == false))
 				{
 #if defined(NANA_WINDOWS)
-					::DrawIconEx(graph.handle()->context, x, y, *ptr_, src_r.width, src_r.height, 0, 0, DI_NORMAL);
+					::DrawIconEx(graph.handle()->context, p_dst.x, p_dst.y, *ptr_, src_r.width, src_r.height, 0, 0, DI_NORMAL);
 #endif
 				}
 			}
@@ -260,22 +261,40 @@ namespace paint
 			return (image_ptr_ ? image_ptr_->size() : nana::size());
 		}
 
-		void image::paste(graphics& dst, int x, int y) const
+		void image::paste(graphics& dst, const point& p_dst) const
 		{
-			if(image_ptr_)
-				image_ptr_->paste(::nana::rectangle{ image_ptr_->size() }, dst, x, y);
+			if(image_ptr_ && !dst.empty())
+				image_ptr_->paste(::nana::rectangle{ image_ptr_->size() }, dst, p_dst);
+
+			if (!image_ptr_)
+				throw std::runtime_error("image is empty");
+
+			if (dst.empty())
+				throw std::invalid_argument("graphics is empty");
 		}
 
 		void image::paste(const nana::rectangle& r_src, graphics & dst, const nana::point& p_dst) const
 		{
-			if(image_ptr_)
-				image_ptr_->paste(r_src, dst, p_dst.x, p_dst.y);		
+			if(image_ptr_ && !dst.empty())
+				image_ptr_->paste(r_src, dst, p_dst);
+
+			if (!image_ptr_)
+				throw std::runtime_error("image is empty");
+
+			if (dst.empty())
+				throw std::invalid_argument("graphics is empty");
 		}
 
 		void image::stretch(const nana::rectangle& r_src, graphics& dst, const nana::rectangle & r_dst) const
 		{
-			if(image_ptr_)
-				image_ptr_->stretch(r_src, dst, r_dst);			
+			if(image_ptr_ && !dst.empty())
+				image_ptr_->stretch(r_src, dst, r_dst);
+
+			if (!image_ptr_)
+				throw std::runtime_error("image is empty");
+
+			if (dst.empty())
+				throw std::invalid_argument("graphics is empty");
 		}
 	//end class image
 

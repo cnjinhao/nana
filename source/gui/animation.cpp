@@ -201,7 +201,7 @@ namespace nana
 				case frame::kind::oneshot:
 					_m_render(outs, [&frmobj](paint::graphics& tar, const nana::point& pos)
 					{
-						frmobj.u.oneshot->paste(tar, pos.x, pos.y);
+						frmobj.u.oneshot->paste(tar, pos);
 					});
 					break;
 				case frame::kind::framebuilder:
@@ -230,7 +230,7 @@ namespace nana
 				switch(frmobj.type)
 				{
 				case frame::kind::oneshot:
-					frmobj.u.oneshot->paste(graph, pos.x, pos.y);
+					frmobj.u.oneshot->paste(graph, pos);
 					break;
 				case frame::kind::framebuilder:
 					if(rebuild_frame)
