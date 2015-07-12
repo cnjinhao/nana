@@ -2534,8 +2534,34 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
+		std::size_t eat_endl(const wchar_t* str, std::size_t pos)
+		{
+			auto ch = str[pos];
+			if (0 == ch)
+				return pos;
+
+			const wchar_t * endlstr;
+			switch (ch)
+			{
+			case L'\n':
+				endlstr = L"\n\r";
+				break;
+			case L'\r':
+				endlstr = L"\r\n";
+				break;
+			default:
+				return pos;
+			}
+
+			if (std::memcmp(str + pos, endlstr, sizeof(wchar_t) * 2) == 0)
+				return pos + 2;
+
+			return pos + 1;
+		}
+
 		bool text_editor::_m_resolve_text(const nana::string& text, std::vector<std::pair<std::size_t, std::size_t>> & lines)
 		{
+			auto const text_str = text.data();
 			std::size_t begin = 0;
 			while (true)
 			{
@@ -2548,13 +2574,23 @@ namespace nana{	namespace widgets
 				}
 
 				lines.emplace_back(begin, pos);
-				begin = text.find_first_not_of(STR("\r\n"), pos + 1);
+
+				pos = eat_endl(text_str, pos);
+
+				begin = text.find_first_not_of(STR("\r\n"), pos);
 
 				//The number of new lines minus one
-				const auto chp_end = text.data() + (begin == text.npos ? text.size() : begin);
-				for (auto chp = text.data() + (pos + 1); chp != chp_end; ++chp)
-					if (*chp == '\n')
+				const auto chp_end = text_str + (begin == text.npos ? text.size() : begin);
+
+				for (auto chp = text_str + pos; chp != chp_end; ++chp)
+				{
+					auto eats = eat_endl(chp, 0);
+					if (eats)
+					{
 						lines.emplace_back(0, 0);
+						chp += (eats - 1);
+					}
+				}
 
 				if (text.npos == begin)
 				{
@@ -2742,50 +2778,43 @@ namespace nana{	namespace widgets
 			const auto str_end = str + len;
 			auto & entities = parser.entities();
 
-				for (auto & ent : entities)
+			for (auto & ent : entities)
+			{
+				const ::nana::char_t* ent_begin = nullptr;
+
+				int ent_off = 0;
+				if (str <= ent.begin && ent.begin < str_end)
 				{
-					const ::nana::char_t* ent_begin = nullptr;
+					ent_begin = ent.begin;
+					ent_off = std::accumulate(glyphs, glyphs + (ent.begin - str), 0);
+				}
+				else if (ent.begin <= str && str < ent.end)
+					ent_begin = str;
 
-					int ent_off = 0;
-					if (str <= ent.begin && ent.begin < str_end)
+				if (ent_begin)
+				{
+					auto ent_end = (ent.end < str_end ? ent.end : str_end);
+					auto ent_pixels = std::accumulate(glyphs + (ent_begin - str), glyphs + (ent_end - str), unsigned{});
+
+					canvas.set_color(ent.scheme->bgcolor.invisible() ? _m_bgcolor() : ent.scheme->bgcolor);
+					canvas.set_text_color(ent.scheme->fgcolor.invisible() ? fgcolor : ent.scheme->fgcolor);
+
+					canvas.rectangle(true);
+
+					ent_pos.x += ent_off;
+					if (rtl)
 					{
-						ent_begin = ent.begin;
-						ent_off = std::accumulate(glyphs, glyphs + (ent.begin - str), 0);
+						//draw the whole text if it is a RTL text, because Arbic language is transformable.
+						canvas.string({}, str, len);
+						graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
 					}
-					else if (ent.begin <= str && str < ent.end)
-						ent_begin = str;
-
-					if (ent_begin)
+					else
 					{
-						auto ent_end = (ent.end < str_end ? ent.end : str_end);
-						auto ent_pixels = std::accumulate(glyphs + (ent_begin - str), glyphs + (ent_end - str), unsigned{});
-
-						if (ent.scheme->bgcolor.invisible())
-							canvas.set_color(_m_bgcolor());
-						else
-							canvas.set_color(ent.scheme->bgcolor);
-						canvas.rectangle(true);
-
-						if (ent.scheme->fgcolor.invisible())
-							canvas.set_text_color(fgcolor);
-						else
-							canvas.set_text_color(ent.scheme->fgcolor);
-
-						ent_pos.x += ent_off;
-
-						if (rtl)
-						{
-							//draw the whole text if it is a RTL text, because Arbic language is transformable.
-							canvas.string({}, str, len);
-							graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
-						}
-						else
-						{
-							canvas.string({}, ent_begin, ent_end - ent_begin);
-							graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
-						}
+						canvas.string({}, ent_begin, ent_end - ent_begin);
+						graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
 					}
 				}
+			}
 		}
 
 		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& str, bool if_mask) const
@@ -2796,7 +2825,6 @@ namespace nana{	namespace widgets
 			std::unique_ptr<nana::string> mask_str;
 			if (if_mask && mask_char_)
 				mask_str.reset(new nana::string(str.size(), mask_char_));
-
 
 			auto & linestr = (if_mask && mask_char_ ? *mask_str : str);
 
