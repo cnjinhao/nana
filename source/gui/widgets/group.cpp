@@ -23,7 +23,17 @@ namespace nana{
 
 	struct group::implement
 	{
-		label caption;
+		label			caption;
+		panel<false>	content;
+		place place_outter;
+		place place_content;
+
+		implement(group* host):
+			caption(*host),
+			content(*host),
+			place_outter(*host),
+			place_content(content)
+		{}
 	};
 
 	group::group(	window    parent,              ///<
@@ -33,28 +43,30 @@ namespace nana{
 					rectangle r /*={} */          ///<
               )
 			  :	panel (parent, r),
-				impl_(new implement)
+				impl_(new implement(this))
 	{
-		impl_->caption.create(*this);
 		impl_->caption.format(format);
 		::nana::size sz = impl_->caption.measure(1000);
 		std::stringstream ft;
 		
-		ft << "vert margin=[0," << gap << "," << gap << "," << gap << "]"
+		ft << "vert margin=[0," << gap << ","<<gap<<","<<gap<<"]"
 		   << " <weight=" << sz.height << " <weight=5> <titel weight=" << sz.width+1 << "> >"
 		   << " <content>";
-		plc_outer.div(ft.str().c_str());
+
+		auto & outter = impl_->place_outter;
+
+		outter.div(ft.str().c_str());
 		
-		plc_outer["titel"  ] << impl_->caption;
-		plc_outer["content"] << content;
-		plc_outer.collocate();
+		outter["titel"] << impl_->caption;
+		outter["content"] << impl_->content;
+		outter.collocate();
 		
 		color pbg =  API::bgcolor( parent);
 		impl_->caption.bgcolor(pbg.blend(colors::black, 0.975) );
 		color bg=pbg.blend(colors::black, 0.950 );
 		
 		bgcolor(pbg);
-		content.bgcolor(bg);
+		impl_->content.bgcolor(bg);
 		
 		drawing dw(*this);
 		
@@ -71,6 +83,21 @@ namespace nana{
 
 	group::~group()
 	{
+	}
+
+	place& group::get_place()
+	{
+		return impl_->place_content;
+	}
+
+	window group::inner()
+	{
+		return impl_->content;
+	}
+
+	void group::_m_add_child(const char* field, widget* wdg)
+	{
+		impl_->place_content[field] << wdg->handle();
 	}
 
 	::nana::string group::_m_caption() const
