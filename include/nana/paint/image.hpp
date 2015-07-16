@@ -43,7 +43,7 @@ namespace paint
 
 		bool alpha() const;
 		nana::size size() const;
-		void paste(graphics& dst, int x, int y) const;
+		void paste(graphics& dst, const point& p_dst) const;
 		void paste(const nana::rectangle& r_src, graphics& dst, const point& p_dst) const;///< Paste the area of picture specified by r_src into the destination graphics specified by dst at position p_dst.
 		void stretch(const nana::rectangle& r_src, graphics& dst, const nana::rectangle& r_dst) const;///<Paste the picture into the dst, stretching or compressing the picture to fit the given area.
 	private:

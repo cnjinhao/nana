@@ -1,7 +1,7 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_ICO_HPP
 #define NANA_PAINT_DETAIL_IMAGE_ICO_HPP
 
-#include "image_impl_interface.hpp"
+#include <nana/paint/detail/image_impl_interface.hpp>
 
 namespace nana{	namespace paint
 {
@@ -22,13 +22,13 @@ namespace nana{	namespace paint
 		public:
 			image_ico(bool is_ico);
 
-			bool open(const nana::char_t* filename);
-			bool alpha_channel() const;
-			bool empty() const;
-			void close();
-			nana::size size() const;
-			virtual void paste(const nana::rectangle& src_r, graph_reference graph, int x, int y) const;
-			virtual void stretch(const nana::rectangle&, graph_reference graph, const nana::rectangle& r) const;
+			bool open(const nana::char_t* filename) override;
+			bool alpha_channel() const override;
+			bool empty() const override;
+			void close() override;
+			nana::size size() const override;
+			virtual void paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const override;
+			virtual void stretch(const nana::rectangle&, graph_reference graph, const nana::rectangle& r) const override;
 
 			const ptr_t & ptr() const;
 		private:

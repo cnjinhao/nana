@@ -76,9 +76,9 @@ namespace nana{	namespace paint
 		pixel_color_t pixel(int x, int y) const;
 		void pixel(int x, int y, pixel_color_t);
 
-		void paste(drawable_type, int x, int y) const;
-		void paste(const nana::rectangle& s_r, drawable_type, int x, int y) const;
-		void paste(native_window_type, int x, int y) const;
+		void paste(drawable_type, const point& p_dst) const;
+		void paste(const nana::rectangle& s_r, drawable_type, const point& p_dst) const;
+		void paste(native_window_type, const point& p_dst) const;
 		void stretch(const std::string& name);
 		void stretch(const nana::rectangle& s_r, drawable_type, const nana::rectangle& r) const;
 		void blend(const std::string& name);

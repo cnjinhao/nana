@@ -13,7 +13,7 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 
-#include "image_impl_interface.hpp"
+#include <nana/paint/detail/image_impl_interface.hpp>
 #include <memory>
 
 namespace nana{	namespace paint
@@ -75,7 +75,7 @@ namespace nana{	namespace paint
 				this->close();
 			}
 
-			bool open(const nana::char_t* filename)
+			bool open(const nana::char_t* filename) override
 			{
 				if(nullptr == filename) return false;
 				std::ifstream ifs;
@@ -330,33 +330,33 @@ namespace nana{	namespace paint
 				return (false == pixbuf_.empty());
 			}
 
-			bool alpha_channel() const
+			bool alpha_channel() const override
 			{
 				return false;
 			}
 
-			bool empty() const
+			bool empty() const override
 			{
 				return pixbuf_.empty();
 			}
 
-			void close()
+			void close() override
 			{
 				pixbuf_.close();
 			}
 
-			nana::size size() const
+			nana::size size() const override
 			{
 				return pixbuf_.size();
 			}
 
-			void paste(const nana::rectangle& src_r, graph_reference graph, int x, int y) const
+			void paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const override
 			{
 				if(graph && pixbuf_)
-					pixbuf_.paste(src_r, graph.handle(), x, y);
+					pixbuf_.paste(src_r, graph.handle(), p_dst);
 			}
 
-			void stretch(const nana::rectangle& src_r, graph_reference graph, const nana::rectangle& r) const
+			void stretch(const nana::rectangle& src_r, graph_reference graph, const nana::rectangle& r) const override
 			{
 				if(graph && pixbuf_)
 					pixbuf_.stretch(src_r, graph.handle(), r);

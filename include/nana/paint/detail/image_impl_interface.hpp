@@ -20,7 +20,7 @@ namespace nana{	namespace paint{
 		virtual bool empty() const = 0;
 		virtual void close() = 0;
 		virtual nana::size size() const = 0;
-		virtual void paste(const nana::rectangle& src_r, graph_reference dst, int x, int y) const = 0;
+		virtual void paste(const nana::rectangle& src_r, graph_reference dst, const point& p_dst) const = 0;
 		virtual void stretch(const nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const = 0;
 	};//end class image::image_impl_interface
 }//end namespace paint

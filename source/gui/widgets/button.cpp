@@ -258,7 +258,7 @@ namespace nana{	namespace drawerbase
 			}
 
 			if(attr_.icon)
-				attr_.icon->paste(graph, 3, (gsize.height - icon_sz.height) / 2);
+				attr_.icon->paste(graph, point{ 3, static_cast<int>(gsize.height - icon_sz.height) / 2 });
 		}
 
 		void trigger::_m_draw(graph_reference graph)

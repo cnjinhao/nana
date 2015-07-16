@@ -618,7 +618,7 @@ namespace paint
 			{
 				pixel_buffer pixbuf(handle_, 0, 0);
 				pixbuf.blur(r, radius);
-				pixbuf.paste(handle_, 0, 0);
+				pixbuf.paste(handle_, point{});
 			}
 		}
 
@@ -677,7 +677,7 @@ namespace paint
 				}
 				delete [] tablebuf;
 
-				pixbuf.paste(handle_, 0, 0);
+				pixbuf.paste(handle_, point{});
 				if(changed_ == false) changed_ = true;
 			}
 		}
@@ -1074,7 +1074,7 @@ namespace paint
 			if (pxbuf_.open(handle_))
 			{
 				pxbuf_.gradual_rectangle(rct, from, to, 0.0, vertical);
-				pxbuf_.paste(handle_, 0, 0);
+				pxbuf_.paste(handle_, point{});
 			}
 #elif defined(NANA_X11)
 			if (nullptr == handle_) return;
