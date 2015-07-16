@@ -514,27 +514,27 @@ namespace nana
 	struct general_events
 	{
 		virtual ~general_events(){}
-		basic_event<arg_mouse> mouse_enter; ///< the cursor enters the window
-		basic_event<arg_mouse> mouse_move;  ///< the cursor moves on the window
-		basic_event<arg_mouse> mouse_leave; ///< the cursor leaves the window
-		basic_event<arg_mouse> mouse_down;  ///< the user presses the mouse button
-		basic_event<arg_mouse> mouse_up;    ///< the user presses the mouse button
-		basic_event<arg_mouse> click;       ///< the window is clicked, but occurs after mouse_down and before mouse_up
-		basic_event<arg_mouse> dbl_click;   ///< the window is double clicked
-		basic_event<arg_wheel> mouse_wheel; ///< the mouse wheel rotates while the window has focus
+		basic_event<arg_mouse> mouse_enter;	///< the cursor enters the window
+		basic_event<arg_mouse> mouse_move;	///< the cursor moves on the window
+		basic_event<arg_mouse> mouse_leave;	///< the cursor leaves the window
+		basic_event<arg_mouse> mouse_down;	///< the user presses the mouse button
+		basic_event<arg_mouse> mouse_up;	///< the user presses the mouse button
+		basic_event<arg_mouse> click;		///< the window is clicked, but occurs after mouse_down and before mouse_up
+		basic_event<arg_mouse> dbl_click;	///< the window is double clicked
+		basic_event<arg_wheel> mouse_wheel;	///< the mouse wheel rotates while the window has focus
 		basic_event<arg_dropfiles>	mouse_dropfiles; ///< the mouse drops some external data while the window enable accepting files
-		basic_event<arg_expose>	expose;     ///< the visibility changes
-		basic_event<arg_focus>	focus;      ///< the window receives or loses keyboard focus
+		basic_event<arg_expose>	expose;		///< the visibility changes
+		basic_event<arg_focus>	focus;		///< the window receives or loses keyboard focus
 		basic_event<arg_keyboard>	key_press;   ///< a key is pressed while the window has focus. event code is event_code::key_press
 		basic_event<arg_keyboard>	key_release; ///< a key is released while the window has focus. event code is event_code::key_release
-		basic_event<arg_keyboard>	key_char;    ///< a character, whitespace or backspace is pressed. event code is event_code::key_char
-		basic_event<arg_keyboard>	shortkey;    ///< a defined short key is pressed. event code is event_code::shortkey
+		basic_event<arg_keyboard>	key_char;	///< a character, whitespace or backspace is pressed. event code is event_code::key_char
+		basic_event<arg_keyboard>	shortkey;	///< a defined short key is pressed. event code is event_code::shortkey
 
-		basic_event<arg_move>		move;     ///< the window changes position
-		basic_event<arg_resizing>	resizing; ///< the window is changing its size
-		basic_event<arg_resized>	resized;  ///< the window is changing its size
+		basic_event<arg_move>		move;		///< the window changes position
+		basic_event<arg_resizing>	resizing;	///< the window is changing its size
+		basic_event<arg_resized>	resized;	///< the window is changing its size
 
-		basic_event<arg_destroy>	destroy;  ///< the window is destroyed, but occurs when all children have been destroyed
+		basic_event<arg_destroy>	destroy;	///< the window is destroyed, but occurs when all children have been destroyed
 	};
 
 	namespace detail

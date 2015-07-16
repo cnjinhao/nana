@@ -23,66 +23,38 @@ namespace nana{
 
 	struct group::implement
 	{
-		label			caption;
-		panel<false>	content;
-		place place_outter;
-		place place_content;
+		label	caption;
+		place	place_content;
 
-		implement(group* host):
-			caption(*host),
-			content(*host),
-			place_outter(*host),
-			place_content(content)
-		{}
+		unsigned gap{2};
+
+		void create(window pnl)
+		{
+			caption.create(pnl);
+			place_content.bind(pnl);
+		}
 	};
 
-	group::group(	window    parent,              ///<
-					std::wstring    titel_ /*={}*/,     ///<
-					bool      format /*=false*/,  ///<
-					unsigned  gap /*=2*/,         ///<
-					rectangle r /*={} */          ///<
-              )
-			  :	panel (parent, r),
-				impl_(new implement(this))
+	group::group()
+		: impl_(new implement)
 	{
-		impl_->caption.format(format);
-		::nana::size sz = impl_->caption.measure(1000);
-		std::stringstream ft;
-		
-		ft << "vert margin=[0," << gap << ","<<gap<<","<<gap<<"]"
-		   << " <weight=" << sz.height << " <weight=5> <titel weight=" << sz.width+1 << "> >"
-		   << " <content>";
-
-		auto & outter = impl_->place_outter;
-
-		outter.div(ft.str().c_str());
-		
-		outter["titel"] << impl_->caption;
-		outter["content"] << impl_->content;
-		outter.collocate();
-		
-		color pbg =  API::bgcolor( parent);
-		impl_->caption.bgcolor(pbg.blend(colors::black, 0.975) );
-		color bg=pbg.blend(colors::black, 0.950 );
-		
-		bgcolor(pbg);
-		impl_->content.bgcolor(bg);
-		
-		drawing dw(*this);
-		
-		// This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
-		dw.draw([gap, sz, bg, pbg](paint::graphics& graph)
-		{
-			graph.rectangle(true, pbg);
-			graph.round_rectangle(rectangle(point(gap - 1, sz.height / 2),
-				nana::size(graph.width() - 2 * (gap - 1), graph.height() - sz.height / 2 - (gap - 1))
-				),
-				3, 3, colors::gray_border, true, bg);
-		});
 	}
+
+	group::group(window parent, const rectangle& r, bool vsb)
+		: group()
+	{
+		create(parent, r, vsb);
+	}
+
 
 	group::~group()
 	{
+	}
+
+	group& group::enable_format_caption(bool format)
+	{
+		impl_->caption.format(format);
+		return *this;
 	}
 
 	place& group::get_place()
@@ -90,14 +62,69 @@ namespace nana{
 		return impl_->place_content;
 	}
 
-	window group::inner()
+
+	void group::collocate()
 	{
-		return impl_->content;
+		impl_->place_content.collocate();
+	}
+
+	void group::div(const char* div_str)
+	{
+		::nana::size sz = impl_->caption.measure(1000);
+
+		std::stringstream ss;
+		ss << "vert margin=[0," << impl_->gap << "," << impl_->gap << "," << impl_->gap << "]"
+			<< " <weight=" << sz.height << " <weight=5> <nanaGroupTitle2015 weight=" << sz.width + 1 << "> >"
+			<< " <"<<(div_str ? div_str : "")<<">";
+
+		impl_->place_content.div(ss.str().c_str());
+
+	}
+
+	group::field_reference group::operator[](const char* field)
+	{
+		return impl_->place_content.field(field);
 	}
 
 	void group::_m_add_child(const char* field, widget* wdg)
 	{
 		impl_->place_content[field] << wdg->handle();
+	}
+
+	void group::_m_complete_creation()
+	{
+		panel::_m_complete_creation();
+
+		impl_->create(handle());
+
+		this->div(nullptr);
+
+		auto & outter = impl_->place_content;
+
+		outter["nanaGroupTitle2015"] << impl_->caption;
+		outter.collocate();
+
+		color pbg = API::bgcolor(this->parent());
+		impl_->caption.bgcolor(pbg.blend(colors::black, 0.975));
+		color bg = pbg.blend(colors::black, 0.950);
+
+		bgcolor(pbg);
+
+		drawing dw(*this);
+
+		::nana::size sz = impl_->caption.measure(1000);
+
+		// This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
+		dw.draw([this, sz, bg, pbg](paint::graphics& graph)
+		{
+			auto gap_px = impl_->gap - 1;
+
+			graph.rectangle(true, pbg);
+			graph.round_rectangle(rectangle(point(gap_px, sz.height / 2),
+				nana::size(graph.width() - 2 * gap_px, graph.height() - sz.height / 2 - gap_px)
+				),
+				3, 3, colors::gray_border, true, bg);
+		});
 	}
 
 	::nana::string group::_m_caption() const
