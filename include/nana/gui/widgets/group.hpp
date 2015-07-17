@@ -26,29 +26,38 @@ namespace nana{
 	{
 		struct implement;
 	public:
-		group(	window    parent,         ///< 
-				std::wstring    titel_ ={STR("")},     ///< 
-				bool      format =false,  ///< Use a formated label?
-				unsigned  gap =2,         ///< betwen the content  and the external limit
-				rectangle r ={}           ///<
-			);
+		using field_reference = place::field_reference;
 
+		/// The default construction
+		group();
+
+		/// The construction that creates the widget
+		group(window parent, const rectangle& = {}, bool visible = true);
+
+		/// The destruction
 		~group();
 
+		group& enable_format_caption(bool format);
+
+
 		place& get_place();
+
+		void collocate();
+		void div(const char* div_str);
+		field_reference operator[](const char* field);
+
 		
 		template<typename Widget, typename ...Args>
 		Widget* create_child(const char* field, Args && ... args)
 		{
-			auto wdg = new Widget(inner(), std::forward<Args>(args)...);
+			auto wdg = new Widget(handle(), std::forward<Args>(args)...);
 			_m_add_child(field, wdg);
 			return wdg;
 		}
-
-		window inner();
 	private:
 		void _m_add_child(const char* field, widget*);
 
+		void _m_complete_creation() override;
 		::nana::string _m_caption() const override;
 		void _m_caption(::nana::string&&) override;
 	private:

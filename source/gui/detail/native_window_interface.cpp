@@ -21,7 +21,7 @@
         #include <mutex>
 	#endif
 	#include <map>
-	#include <nana/paint/detail/image_ico.hpp>
+	#include "../../paint/detail/image_ico.hpp"
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
 	#include <nana/gui/detail/bedrock.hpp>
