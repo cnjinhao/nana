@@ -31,6 +31,7 @@ namespace nana{
 		void create(window pnl)
 		{
 			caption.create(pnl);
+			caption.caption(STR(""));
 			place_content.bind(pnl);
 		}
 
