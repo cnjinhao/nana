@@ -33,6 +33,14 @@ namespace nana{
 			caption.create(pnl);
 			place_content.bind(pnl);
 		}
+
+		implement() = default;
+		implement(window grp_panel, string titel, bool format, unsigned gap=2)
+			: caption (grp_panel, std::move(titel), format),
+			  place_content{grp_panel},
+			  gap{gap}
+		{
+		}
 	};
 
 	group::group()
@@ -44,6 +52,20 @@ namespace nana{
 		: group()
 	{
 		create(parent, r, vsb);
+	}
+
+	group::group(	window    parent,              ///<
+					string    titel_   /*={}*/,     ///<
+					bool      format /*=false*/,  ///<
+					unsigned  gap /*=2*/,         ///<
+					rectangle r /*={} */,          ///<
+		            bool      vsb /*= true */        ///<
+					)
+		: panel(parent, r, vsb),
+		  impl_(new implement(*this, std::move(titel_), vsb))
+	{
+		impl_->caption.format(format);
+		init();
 	}
 
 
@@ -91,12 +113,8 @@ namespace nana{
 		impl_->place_content[field] << wdg->handle();
 	}
 
-	void group::_m_complete_creation()
+	void group::init()
 	{
-		panel::_m_complete_creation();
-
-		impl_->create(handle());
-
 		this->div(nullptr);
 
 		auto & outter = impl_->place_content;
@@ -125,6 +143,16 @@ namespace nana{
 				),
 				3, 3, colors::gray_border, true, bg);
 		});
+	}
+
+	void group::_m_complete_creation()
+	{
+		panel::_m_complete_creation();
+
+		impl_->create(handle());
+
+
+		init();
 	}
 
 	::nana::string group::_m_caption() const
