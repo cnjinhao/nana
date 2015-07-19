@@ -126,7 +126,7 @@ namespace nana{
 		impl_->caption.bgcolor(pbg.blend(colors::black, 0.975));
 		color bg = pbg.blend(colors::black, 0.950);
 
-		bgcolor(pbg);
+		bgcolor(bg);
 
 		drawing dw(*this);
 
