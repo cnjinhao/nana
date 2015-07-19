@@ -34,6 +34,17 @@ namespace nana{
 		/// The construction that creates the widget
 		group(window parent, const rectangle& = {}, bool visible = true);
 
+		///  The construction that creates the widget and set the titel or caption
+
+		group(window    parent,          ///< 
+			  string    titel_ /*= { STR("") }*/,     ///< 
+			  bool      format = false,  ///< Use a formated label?
+			  unsigned  gap = 2,         ///< betwen the content  and the external limit
+			  rectangle r = {} ,          ///<
+			  bool visible = true
+		     );
+
+
 		/// The destruction
 		~group();
 
@@ -60,6 +71,7 @@ namespace nana{
 		void _m_complete_creation() override;
 		::nana::string _m_caption() const override;
 		void _m_caption(::nana::string&&) override;
+		void init();
 	private:
 		std::unique_ptr<implement> impl_;
     };

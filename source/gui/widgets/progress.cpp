@@ -89,7 +89,7 @@ namespace nana
 			{
 				return unknown_;
 			}
-			bool trigger::stoped() const
+			bool trigger::stopped() const
 			{
 				return stop_;
 			}
@@ -210,9 +210,9 @@ namespace nana
 		{
 			return get_drawer_trigger().stop(s);
 		}
-		bool progress::stoped() const
+		bool progress::stopped() const
 		{
-			return get_drawer_trigger().stoped();
+			return get_drawer_trigger().stopped();
 		}
 	//end class progress
 }//end namespace nana
