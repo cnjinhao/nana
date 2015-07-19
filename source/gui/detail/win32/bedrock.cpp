@@ -485,46 +485,63 @@ namespace detail
 	void assign_arg(nana::arg_mouse& arg, basic_window* wd, unsigned msg, const parameter_decoder& pmdec)
 	{
 		arg.window_handle = reinterpret_cast<window>(wd);
-		//event code
+
+		bool set_key_state = true;
 		switch (msg)
 		{
-		case WM_LBUTTONUP: case WM_RBUTTONUP: case WM_MBUTTONUP:
+		case WM_LBUTTONDOWN:
+			arg.button = ::nana::mouse::left_button;
+			arg.evt_code = event_code::mouse_down;
+			break;
+		case WM_RBUTTONDOWN:
+			arg.button = ::nana::mouse::right_button;
+			arg.evt_code = event_code::mouse_down;
+			break;
+		case WM_MBUTTONDOWN:
+			arg.button = ::nana::mouse::middle_button;
+			arg.evt_code = event_code::mouse_down;
+			break;
+		case WM_LBUTTONUP:
+			arg.button = ::nana::mouse::left_button;
 			arg.evt_code = event_code::mouse_up;
 			break;
-		case WM_LBUTTONDBLCLK: case WM_MBUTTONDBLCLK: case WM_RBUTTONDBLCLK:
+		case WM_RBUTTONUP:
+			arg.button = ::nana::mouse::right_button;
+			arg.evt_code = event_code::mouse_up;
+			break;
+		case WM_MBUTTONUP:
+			arg.button = ::nana::mouse::middle_button;
+			arg.evt_code = event_code::mouse_up;
+			break;
+		case WM_LBUTTONDBLCLK:
+			arg.button = ::nana::mouse::left_button;
+			arg.evt_code = (wd->flags.dbl_click ? event_code::dbl_click : event_code::mouse_down);
+			break;
+		case WM_MBUTTONDBLCLK:
+			arg.button = ::nana::mouse::middle_button;
+			arg.evt_code = (wd->flags.dbl_click ? event_code::dbl_click : event_code::mouse_down);
+			break;
+		case WM_RBUTTONDBLCLK:
+			arg.button = ::nana::mouse::right_button;
 			arg.evt_code = (wd->flags.dbl_click ? event_code::dbl_click : event_code::mouse_down);
 			break;
 		case WM_MOUSEMOVE:
+			arg.button = ::nana::mouse::any_button;
 			arg.evt_code = event_code::mouse_move;
 			break;
+		default:
+			set_key_state = false;
 		}
 
-		//event arguments
-		switch (msg)
+		if (set_key_state)
 		{
-		case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: case WM_MBUTTONDOWN:
-			arg.evt_code = event_code::mouse_down;
-		case WM_LBUTTONUP: case WM_RBUTTONUP: case WM_MBUTTONUP:
-		case WM_LBUTTONDBLCLK: case WM_MBUTTONDBLCLK: case WM_RBUTTONDBLCLK:
-		case WM_MOUSEMOVE:
 			arg.pos.x = pmdec.mouse.x - wd->pos_root.x;
 			arg.pos.y = pmdec.mouse.y - wd->pos_root.y;
 			arg.shift = pmdec.mouse.button.shift;
 			arg.ctrl = pmdec.mouse.button.ctrl;
-
-			switch (msg)
-			{
-			case WM_LBUTTONUP: case WM_RBUTTONUP: case WM_MBUTTONUP:
-				arg.left_button = (WM_LBUTTONUP == msg);
-				arg.right_button = (WM_RBUTTONUP == msg);
-				arg.mid_button = (WM_MBUTTONUP == msg);
-				break;
-			default:
-				arg.left_button = pmdec.mouse.button.left;
-				arg.mid_button = pmdec.mouse.button.middle;
-				arg.right_button = pmdec.mouse.button.right;
-			}
-			break;
+			arg.left_button = pmdec.mouse.button.left;
+			arg.mid_button = pmdec.mouse.button.middle;
+			arg.right_button = pmdec.mouse.button.right;
 		}
 	}
 
@@ -988,7 +1005,7 @@ namespace detail
 					if (msgwnd->dimension.is_hit(arg.pos))
 					{
 						msgwnd->flags.action = mouse_action::over;
-						if ((msgwnd == pressed_wd) && msgwnd->flags.enabled)
+						if (::nana::mouse::left_button == arg.button)
 						{
 							arg.evt_code = event_code::click;
 							emit_drawer(&drawer::click, msgwnd, arg, &context);

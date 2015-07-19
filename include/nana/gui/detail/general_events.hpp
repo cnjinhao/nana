@@ -425,6 +425,8 @@ namespace nana
 		event_code evt_code; ///< 
 		::nana::window window_handle;  ///< A handle to the event window
 		::nana::point pos;   ///< cursor position in the event window
+		::nana::mouse button;	///< indicates a button which triggers the event
+
 		bool left_button;    ///< mouse left button is pressed?
 		bool mid_button;     ///< mouse middle button is pressed?
 		bool right_button;   ///< mouse right button is pressed?

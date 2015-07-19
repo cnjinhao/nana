@@ -17,6 +17,7 @@ namespace nana{	namespace drawerbase
 {
 	namespace button
 	{
+
 		//trigger
 		//@brief: draw the button
 		trigger::trigger()
@@ -118,8 +119,11 @@ namespace nana{	namespace drawerbase
 			API::lazy_refresh();
 		}
 
-		void trigger::mouse_down(graph_reference graph, const arg_mouse&)
+		void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 		{
+			if (::nana::mouse::left_button != arg.button)
+				return;
+
 			attr_.e_state = element_state::pressed;
 			attr_.keep_pressed = true;
 
@@ -128,8 +132,11 @@ namespace nana{	namespace drawerbase
 			API::lazy_refresh();
 		}
 
-		void trigger::mouse_up(graph_reference graph, const arg_mouse&)
+		void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 		{
+			if (::nana::mouse::left_button != arg.button)
+				return;
+
 			API::capture_window(*wdg_, false);
 			attr_.keep_pressed = false;
 			if(attr_.enable_pushed && (false == attr_.pushed))
@@ -340,6 +347,7 @@ namespace nana{	namespace drawerbase
 			arg.evt_code = event_code::click;
 			arg.window_handle = wdg_->handle();
 			arg.ctrl = arg.shift = false;
+			arg.button = ::nana::mouse::left_button;
 			arg.mid_button = arg.right_button = false;
 			arg.left_button = true;
 			arg.pos.x = arg.pos.y = 1;

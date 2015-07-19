@@ -15,7 +15,6 @@
 #include "widget.hpp"
 #include <nana/gui/element.hpp>
 
-
 namespace nana{
 	namespace drawerbase
 	{

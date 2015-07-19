@@ -442,62 +442,53 @@ namespace detail
 	void assign_arg(arg_mouse& arg, basic_window* wd, unsigned msg, const XEvent& evt)
 	{
 		arg.window_handle = reinterpret_cast<window>(wd);
+		arg.button = ::nana::mouse::any_button;
+
+		int mask_state == 0;
 		if (ButtonPress == msg || ButtonRelease == msg)
 		{
+			mask_state = evt.xbutton.state;
 			if (evt.xbutton.button != Button4 && evt.xbutton.button != Button5)
 			{
 				arg.evt_code = (ButtonPress == msg ? event_code::mouse_down : event_code::mouse_up);
 				arg.pos.x = evt.xbutton.x - wd->pos_root.x;
 				arg.pos.y = evt.xbutton.y - wd->pos_root.y;
 
-				arg.left_button = arg.mid_button = arg.right_button = false;
-				arg.shift = arg.ctrl = false;
 				switch (evt.xbutton.button)
 				{
 				case Button1:
-					arg.left_button = true;
+					arg.button = ::nana::mouse::left_button;
 					break;
 				case Button2:
-					arg.mid_button = true;
+					arg.button = ::nana::mouse::middle_button;
 					break;
 				case Button3:
-					arg.right_button = true;
+					arg.button = ::nana::mouse::right_button;
 					break;
 				}
 			}
 		}
 		else if (msg == MotionNotify)
 		{
+			mask_state = evt.xmotion.state;
 			arg.evt_code = event_code::mouse_move;
 			arg.pos.x = evt.xmotion.x - wd->pos_root.x;
 			arg.pos.y = evt.xmotion.y - wd->pos_root.y;
-			arg.left_button = arg.mid_button = arg.right_button = false;
-
-			arg.shift = evt.xmotion.state & ShiftMask;
-			arg.ctrl = evt.xmotion.state & ControlMask;
-			if (evt.xmotion.state & Button1Mask)
-				arg.left_button = true;
-			else if (evt.xmotion.state & Button2Mask)
-				arg.right_button = true;
-			else if (evt.xmotion.state & Button3Mask)
-				arg.mid_button = true;
 		}
 		else if (EnterNotify == msg)
 		{
+			mask_state = evt.xcrossing.state;
 			arg.evt_code = event_code::mouse_enter;
 			arg.pos.x = evt.xcrossing.x - wd->pos_root.x;
 			arg.pos.y = evt.xcrossing.y - wd->pos_root.y;
-			arg.left_button = arg.mid_button = arg.right_button = false;
-
-			arg.shift = evt.xcrossing.state & ShiftMask;
-			arg.ctrl = evt.xcrossing.state & ControlMask;
-			if (evt.xcrossing.state & Button1Mask)
-				arg.left_button = true;
-			else if (evt.xcrossing.state & Button2Mask)
-				arg.right_button = true;
-			else if (evt.xcrossing.state & Button3Mask)
-				arg.mid_button = true;
 		}
+
+		arg.left_button		= (Button1Mask & state);
+		arg.right_button	= (Button2Mask & state);
+		arg.mid_button		= (Button3Mask & state);
+		arg.shift	= (ShiftMask & state);
+		arg.ctrl	= (ControlMask & state);
+
 	}
 
 	void assign_arg(arg_focus& arg, basic_window* wd, native_window_type recv, bool getting)
@@ -780,7 +771,7 @@ namespace detail
 						bool fire_click = false;
 						if(msgwnd == pressed_wd)
 						{
-							if(msgwnd->flags.enabled && hit)
+							if((arg.button == ::nana::mouse::left_button) && hit)
 							{
 								msgwnd->flags.action = mouse_action::over;
 								arg.evt_code = event_code::click;
