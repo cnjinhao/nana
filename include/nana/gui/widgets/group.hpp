@@ -37,7 +37,7 @@ namespace nana{
 		///  The construction that creates the widget and set the titel or caption
 
 		group(window    parent,          ///< 
-			  string    titel_ /*= { STR("") }*/,     ///< 
+			  ::nana::string    titel,     ///< 
 			  bool      format = false,  ///< Use a formated label?
 			  unsigned  gap = 2,         ///< betwen the content  and the external limit
 			  rectangle r = {} ,          ///<
@@ -67,11 +67,10 @@ namespace nana{
 		}
 	private:
 		void _m_add_child(const char* field, widget*);
-
+		void _m_init();
 		void _m_complete_creation() override;
 		::nana::string _m_caption() const override;
 		void _m_caption(::nana::string&&) override;
-		void init();
 	private:
 		std::unique_ptr<implement> impl_;
     };

@@ -263,38 +263,33 @@ namespace paint
 
 		void image::paste(graphics& dst, const point& p_dst) const
 		{
-			if(image_ptr_ && !dst.empty())
-				image_ptr_->paste(::nana::rectangle{ image_ptr_->size() }, dst, p_dst);
-
-			if (!image_ptr_)
-				throw std::runtime_error("image is empty");
-
-			if (dst.empty())
-				throw std::invalid_argument("graphics is empty");
+			this->paste(rectangle{ this->size() }, dst, p_dst);
 		}
 
-		void image::paste(const nana::rectangle& r_src, graphics & dst, const nana::point& p_dst) const
+		void image::paste(const rectangle& r_src, graphics & dst, const point& p_dst) const
 		{
-			if(image_ptr_ && !dst.empty())
+			if (image_ptr_)
+			{
+				if (dst.empty())
+					dst.make({ r_src.width, r_src.height });	//throws if failed to create
+
 				image_ptr_->paste(r_src, dst, p_dst);
-
-			if (!image_ptr_)
+			}
+			else
 				throw std::runtime_error("image is empty");
-
-			if (dst.empty())
-				throw std::invalid_argument("graphics is empty");
 		}
 
 		void image::stretch(const nana::rectangle& r_src, graphics& dst, const nana::rectangle & r_dst) const
 		{
-			if(image_ptr_ && !dst.empty())
+			if (image_ptr_)
+			{
+				if (dst.empty())
+					dst.make({ r_src.width, r_src.height });	//throws if failed to create
+
 				image_ptr_->stretch(r_src, dst, r_dst);
-
-			if (!image_ptr_)
+			}
+			else
 				throw std::runtime_error("image is empty");
-
-			if (dst.empty())
-				throw std::invalid_argument("graphics is empty");
 		}
 	//end class image
 
