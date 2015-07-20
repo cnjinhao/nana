@@ -22,8 +22,7 @@ namespace nana
 					if(active)
 					{
 						native_interface::caret_create(wd_->root, size_);
-						//real_visible_state_ = false;
-						//visible_ = false;
+
 						visible_state_ = visible_state::invisible;
 						this->position(point_.x, point_.y);
 					}
@@ -79,15 +78,6 @@ namespace nana
 
 			void caret_descriptor::visible(bool is_show)
 			{
-				/*
-				if(visible_ != isshow)	//deprecated
-				{
-					visible_ = isshow;
-					if(visible_ == false || false == out_of_range_)
-						_m_visible(isshow);
-				}
-				*/
-
 				auto pre_displayed = (visible_state::displayed == visible_state_);
 
 				if (is_show)
@@ -105,7 +95,6 @@ namespace nana
 
 			bool caret_descriptor::visible() const
 			{
-				//return visible_;	//deprecated
 				return (visible_state::invisible != visible_state_);
 			}
 
@@ -119,21 +108,9 @@ namespace nana
 				size_ = s;
 				update();
 
-				//if(visible_)	this->visible(true);	//deprecated
 				if (visible_state::invisible != visible_state_)
 					visible(true);
 			}
-
-			/*
-			void caret_descriptor::_m_visible(bool isshow)
-			{
-				if(real_visible_state_ != isshow)	//deprecated
-				{
-					real_visible_state_ = isshow;
-					native_interface::caret_visible(wd_->root, isshow && wd_->displayed());
-				}
-			}
-			*/
 
 			void caret_descriptor::update()
 			{
@@ -160,8 +137,6 @@ namespace nana
 					{
 						out_of_range_ = true;
 
-						//if(visible_)
-						//	_m_visible(false);	//deprecated
 						if (visible_state::invisible != visible_state_)
 							visible(false);
 					}
@@ -188,8 +163,6 @@ namespace nana
 
 					if(out_of_range_)
 					{
-						//if(paint_size_ == size)	//deprecated
-						//	_m_visible(true);
 						if (paint_size_ == size)
 							visible(true);
 
@@ -201,9 +174,6 @@ namespace nana
 						bool vs = (visible_state::invisible != visible_state_);
 						native_interface::caret_destroy(wd_->root);
 						native_interface::caret_create(wd_->root, size);
-						//real_visible_state_ = false;	//deprecated
-						//if(visible_)
-						//	_m_visible(true);
 
 						visible_state_ = visible_state::invisible;
 						if (vs)

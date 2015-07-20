@@ -736,9 +736,6 @@ namespace detail
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
-						//Update the nimbus effect
-						//using nimbus_renderer = detail::edge_nimbus_renderer<core_window_t>;	//deprecated
-						//nimbus_renderer::instance().render(wd, true);
 						this->map(wd, true);
 					}
 				}

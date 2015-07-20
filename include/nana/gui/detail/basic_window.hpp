@@ -46,18 +46,13 @@ namespace detail
 		bool visible() const;
 		::nana::size size() const;
 		void size(const ::nana::size&);
-
 		void update();
-	//private:
-		//void _m_visible(bool isshow);	//deprecated
 	private:
 		core_window_t*	wd_;
 		::nana::point point_;
 		::nana::size	size_;
 		::nana::size	paint_size_;
 		visible_state	visible_state_;
-		//bool		visible_;
-		//bool		real_visible_state_;	//deprecated
 		bool		out_of_range_;
 		::nana::rectangle effective_range_;
 	};//end class caret_descriptor

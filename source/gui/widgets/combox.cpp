@@ -206,15 +206,11 @@ namespace nana
 					return true;
 				}
 
-				void set_mouse_over(bool mo)
+				void set_button_state(element_state state, bool reset_where)
 				{
-					state_.button_state = (mo ? element_state::hovered : element_state::normal);
-					state_.pointer_where = parts::none;
-				}
-
-				void set_mouse_press(bool mp)
-				{
-					state_.button_state = (mp ? element_state::pressed : element_state::hovered);
+					state_.button_state = state;
+					if (reset_where)
+						state_.pointer_where = parts::none;
 				}
 
 				void set_focused(bool f)
@@ -600,7 +596,7 @@ namespace nana
 
 				void trigger::mouse_enter(graph_reference, const arg_mouse&)
 				{
-					drawer_->set_mouse_over(true);
+					drawer_->set_button_state(element_state::hovered, true);
 					if(drawer_->widget_ptr()->enabled())
 					{
 						drawer_->draw();
@@ -610,7 +606,7 @@ namespace nana
 
 				void trigger::mouse_leave(graph_reference, const arg_mouse&)
 				{
-					drawer_->set_mouse_over(false);
+					drawer_->set_button_state(element_state::normal, true);
 					drawer_->editor()->mouse_enter(false);
 					if(drawer_->widget_ptr()->enabled())
 					{
@@ -621,7 +617,8 @@ namespace nana
 
 				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 				{
-					drawer_->set_mouse_press(true);
+					//drawer_->set_mouse_press(true);
+					drawer_->set_button_state(element_state::pressed, false);
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
@@ -641,7 +638,7 @@ namespace nana
 					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
 					{
 						drawer_->editor()->mouse_up(arg.left_button, arg.pos);
-						drawer_->set_mouse_press(false);
+						drawer_->set_button_state(element_state::hovered, false);
 						drawer_->draw();
 						API::lazy_refresh();
 					}
