@@ -512,6 +512,12 @@ namespace nana
 		::nana::window window_handle;	///< A handle to the event window
 	};
 
+	struct arg_click : public event_arg
+	{
+		::nana::window window_handle;	///< A handle to the event window
+		bool by_mouse;					///< Determines whether the event is emitted by clicking mouse button
+	};
+
     /// provides some fundamental events that every widget owns.
 	struct general_events
 	{
@@ -521,7 +527,7 @@ namespace nana
 		basic_event<arg_mouse> mouse_leave;	///< the cursor leaves the window
 		basic_event<arg_mouse> mouse_down;	///< the user presses the mouse button
 		basic_event<arg_mouse> mouse_up;	///< the user presses the mouse button
-		basic_event<arg_mouse> click;		///< the window is clicked, but occurs after mouse_down and before mouse_up
+		basic_event<arg_click> click;		///< the window is clicked, but occurs after mouse_down and before mouse_up
 		basic_event<arg_mouse> dbl_click;	///< the window is double clicked
 		basic_event<arg_wheel> mouse_wheel;	///< the mouse wheel rotates while the window has focus
 		basic_event<arg_dropfiles>	mouse_dropfiles; ///< the mouse drops some external data while the window enable accepting files

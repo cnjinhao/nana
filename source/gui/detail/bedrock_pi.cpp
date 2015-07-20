@@ -195,6 +195,16 @@ namespace nana
 			switch (evt_code)
 			{
 			case event_code::click:
+				{
+					auto arg = dynamic_cast<const arg_click*>(&event_arg);
+					if (nullptr == arg)
+						return;
+
+					wd->drawer.click(*arg);
+					if (!draw_only)
+						evts_ptr->click.emit(*arg);
+				}
+				break;
 			case event_code::dbl_click:
 			case event_code::mouse_enter:
 			case event_code::mouse_move:
@@ -211,10 +221,6 @@ namespace nana
 
 				switch (evt_code)
 				{
-				case event_code::click:
-					drawer_event_fn = &drawer::click;
-					evt_addr = &evts_ptr->click;
-					break;
 				case event_code::dbl_click:
 					drawer_event_fn = &drawer::dbl_click;
 					evt_addr = &evts_ptr->dbl_click;

@@ -949,12 +949,16 @@ namespace detail
 				if(msgwnd->flags.enabled)
 				{
 					pressed_wd = msgwnd;
-					auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
-					if(new_focus && (!new_focus->flags.ignore_mouse_focus))
+
+					if (WM_LBUTTONDOWN == message)	//Sets focus only if left button is pressed
 					{
-						auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
-						if(kill_focus != new_focus)
-							brock.wd_manager.do_lazy_refresh(kill_focus, false);
+						auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
+						if (new_focus && (!new_focus->flags.ignore_mouse_focus))
+						{
+							auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
+							if (kill_focus != new_focus)
+								brock.wd_manager.do_lazy_refresh(kill_focus, false);
+						}
 					}
 
 					arg_mouse arg;
@@ -1007,7 +1011,9 @@ namespace detail
 						msgwnd->flags.action = mouse_action::over;
 						if (::nana::mouse::left_button == arg.button)
 						{
-							arg.evt_code = event_code::click;
+							arg_click arg;
+							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.by_mouse = true;
 							emit_drawer(&drawer::click, msgwnd, arg, &context);
 							fire_click = true;
 						}
@@ -1021,7 +1027,9 @@ namespace detail
 
 						if (fire_click)
 						{
-							arg.evt_code = event_code::click;
+							arg_click arg;
+							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.by_mouse = true;
 							retain->click.emit(arg);
 						}
 
@@ -1033,7 +1041,9 @@ namespace detail
 					}
 					else if (fire_click)
 					{
-						arg.evt_code = event_code::click;
+						arg_click arg;
+						arg.window_handle = reinterpret_cast<window>(msgwnd);
+						arg.by_mouse = true;
 						retain->click.emit(arg);
 					}
 					brock.wd_manager.do_lazy_refresh(msgwnd, false);

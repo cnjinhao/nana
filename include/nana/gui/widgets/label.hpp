@@ -40,7 +40,7 @@ namespace nana
 				void refresh(graph_reference)	override;
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
-				void click(graph_reference, const arg_mouse&)	override;
+				void click(graph_reference, const arg_click&)	override;
 			private:
 				impl_t * impl_;
 			};

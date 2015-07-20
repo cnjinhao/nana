@@ -371,12 +371,11 @@ namespace nana
 
 				bool visible(bool v)
 				{
-					if(visible_ != v)
-					{
-						visible_ = v;
-						return true;
-					}
-					return false;
+					if (visible_ == v)
+						return false;
+
+					visible_ = v;
+					return true;
 				}
 
 				bool sortable() const
@@ -632,21 +631,23 @@ namespace nana
 					return *this;
 				}
 
-                nana::string to_string(const export_options& exp_opt) const
-                {
-                    nana::string item_str; 
-                    bool first{true};
-                    for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
-					{
-                            if(first)
-                                first=false;
-                            else 
-                                item_str += exp_opt.sep;
+				nana::string to_string(const export_options& exp_opt) const
+				{
+					nana::string item_str;
 
-							item_str += cells[exp_opt.columns_order[idx]].text;
+					bool ignore_first = true;
+					for (size_type idx{}; idx < exp_opt.columns_order.size(); ++idx)
+					{
+						if (ignore_first)
+							ignore_first = false;
+						else
+							item_str += exp_opt.sep;
+
+						item_str += cells[exp_opt.columns_order[idx]].text;
 					}
+
                     return item_str;
-                }
+				}
 			};
 
 			class inline_indicator;
@@ -2416,116 +2417,115 @@ namespace nana
 				const std::size_t column_pos_;
 			};
 
+			void es_lister::scroll_refresh()
+			{
+				ess_->scroll_y_dpl_refresh();
+			}
 
-            void es_lister::scroll_refresh()
-            {
-                    ess_->scroll_y_dpl_refresh();
-            }
-
-            void es_lister::move_select(bool upwards, bool unselect_previous, bool trace_selected)
+			void es_lister::move_select(bool upwards, bool unselect_previous, bool trace_selected)
+			{
+				auto next_selected_dpl = relative_pair ( last_selected_abs); // last_selected_dpl; // ??
+				if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
 				{
-					auto next_selected_dpl = relative_pair ( last_selected_abs); // last_selected_dpl; // ??
-					if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
+					bool good = false;
+					for(size_type i = 0, size = list_.size(); i < size; ++i) // run all cat
 					{
-						bool good = false;
-						for(size_type i = 0, size = list_.size(); i < size; ++i) // run all cat
+						if(size_item(i))
 						{
-							if(size_item(i))
-							{
-								//The first category which contains at least one item.
-								next_selected_dpl.cat = i;
-								next_selected_dpl.item = 0;
-								good = true;
-								break;
-							}
-						}
-						if(! good ) return;   // items in listbox : nothing to select (and an empty but visible cat?)
-					}
-
-					//start moving
-					while(true)
-					{
-						if(upwards == false)
-						{
-							if(good(next_selected_dpl.cat))
-							{
-								if (size_item(next_selected_dpl.cat) > next_selected_dpl.item + 1)
-								{
-									++next_selected_dpl.item;
-								}
-								else
-								{
-									next_selected_dpl.item = 0;
-									if (size_categ() > next_selected_dpl.cat + 1)
-										++next_selected_dpl.cat;
-									else
-										next_selected_dpl.cat = 0;
-								}
-							}
-							else
-								next_selected_dpl.set_both(0);
-						}
-						else
-						{
-							if (0 == next_selected_dpl.item)
-							{
-								//there is an item at least definitely, because the start pos is an available item.
-								do
-								{
-									if (0 == next_selected_dpl.cat)
-										next_selected_dpl.cat = size_categ() - 1;
-									else
-										--next_selected_dpl.cat;
-
-								}while (0 == size_item(next_selected_dpl.cat));
-
-								next_selected_dpl.item = size_item(next_selected_dpl.cat) - 1;
-							}
-							else
-								--next_selected_dpl.item;
-						}
-
-						if (good(next_selected_dpl.cat))
-						{
-							expand(next_selected_dpl.cat, true); // revise expand
-
-							if (good(next_selected_dpl))
-							{
-								if (unselect_previous && !single_selection_ ) 
-                                    select_for_all(false);
-
-                                /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
-                                item_proxy::from_display(ess_, next_selected_dpl).select(true);
-
-                                if (trace_selected)
-                                    ess_->trace_item_dpl(next_selected_dpl);
-							}
+							//The first category which contains at least one item.
+							next_selected_dpl.cat = i;
+							next_selected_dpl.item = 0;
+							good = true;
 							break;
 						}
-						else break;
 					}
+					if(! good ) return;   // items in listbox : nothing to select (and an empty but visible cat?)
 				}
+
+				//start moving
+				while(true)
+				{
+					if(upwards == false)
+					{
+						if(good(next_selected_dpl.cat))
+						{
+							if (size_item(next_selected_dpl.cat) > next_selected_dpl.item + 1)
+							{
+								++next_selected_dpl.item;
+							}
+							else
+							{
+								next_selected_dpl.item = 0;
+								if (size_categ() > next_selected_dpl.cat + 1)
+									++next_selected_dpl.cat;
+								else
+									next_selected_dpl.cat = 0;
+							}
+						}
+						else
+							next_selected_dpl.set_both(0);
+					}
+					else
+					{
+						if (0 == next_selected_dpl.item)
+						{
+							//there is an item at least definitely, because the start pos is an available item.
+							do
+							{
+								if (0 == next_selected_dpl.cat)
+									next_selected_dpl.cat = size_categ() - 1;
+								else
+									--next_selected_dpl.cat;
+
+							}while (0 == size_item(next_selected_dpl.cat));
+
+							next_selected_dpl.item = size_item(next_selected_dpl.cat) - 1;
+						}
+						else
+							--next_selected_dpl.item;
+					}
+
+					if (good(next_selected_dpl.cat))
+					{
+						expand(next_selected_dpl.cat, true); // revise expand
+
+						if (good(next_selected_dpl))
+						{
+							if (unselect_previous && !single_selection_ ) 
+                                select_for_all(false);
+
+                            /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
+                            item_proxy::from_display(ess_, next_selected_dpl).select(true);
+
+                            if (trace_selected)
+                                ess_->trace_item_dpl(next_selected_dpl);
+						}
+						break;
+					}
+					else break;
+				}
+			}
 
 			nana::string es_lister::to_string(const export_options& exp_opt) const
+			{
+				nana::string list_str; 
+				bool first{true};
+				for(auto & cat: cat_container())
 				{
-					nana::string list_str; 
-					bool first{true};
-					for(auto & cat: cat_container())
-					{
-						if(first)
-							first=false;
-						else
- 							list_str += (cat.text + exp_opt.endl);
+					if(first)
+						first=false;
+					else
+ 						list_str += (cat.text + exp_opt.endl);
 
-						for (auto i : cat.sorted)
-						{
-							auto& it= cat.items[i] ;
-							if(it.flags.selected || !exp_opt.only_selected_items)
-								list_str += (it.to_string(exp_opt) + exp_opt.endl);
-						}
+					for (auto i : cat.sorted)
+					{
+						auto& it= cat.items[i] ;
+						if(it.flags.selected || !exp_opt.only_selected_items)
+							list_str += (it.to_string(exp_opt) + exp_opt.endl);
 					}
-					return list_str ;
 				}
+				return list_str ;
+			}
 
             void es_lister::categ_selected(size_type cat, bool sel)
 			{
@@ -2567,7 +2567,7 @@ namespace nana
 						{
 							if(hd.visible)
 							{
-								if((static_cast<int>(hd.pixels)  - 2 < x) && (x < static_cast<int>(hd.pixels) + 3))
+								if((static_cast<int>(hd.pixels) < x + 2) && (x < static_cast<int>(hd.pixels) + 3))
 								{
 									item_spliter_ = hd.index; // original index
 									return true;
@@ -2617,9 +2617,8 @@ namespace nana
 							essence_->header.item_width(item_spliter_, (new_w < static_cast<int>(essence_->suspension_width + 20) ? essence_->suspension_width + 20 : new_w));
 							auto new_w = essence_->header.pixels();
 							if(new_w < (rect.width + essence_->scroll.offset_x))
-							{
 								essence_->scroll.offset_x = (new_w > rect.width ? new_w - rect.width : 0);
-							}
+
 							essence_->adjust_scroll_life();
 							return 2;
 						}

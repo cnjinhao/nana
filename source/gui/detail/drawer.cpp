@@ -49,7 +49,7 @@ namespace nana
 			overrided_ &= ~(1 << static_cast<int>(event_code::move));
 		}
 
-		void drawer_trigger::click(graph_reference, const arg_mouse&)
+		void drawer_trigger::click(graph_reference, const arg_click&)
 		{
 			overrided_ &= ~(1 << static_cast<int>(event_code::click));
 		}
@@ -155,7 +155,7 @@ namespace nana
 				realizer_->typeface_changed(graphics);
 		}
 
-		void drawer::click(const arg_mouse& arg)
+		void drawer::click(const arg_click& arg)
 		{
 			_m_emit(event_code::click, arg, &drawer_trigger::click);
 		}

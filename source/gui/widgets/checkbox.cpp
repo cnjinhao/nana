@@ -231,7 +231,7 @@ namespace checkbox
 			return ui_container_.size();
 		}
 
-		void radio_group::_m_checked(const arg_mouse& arg)
+		void radio_group::_m_checked(const arg_click& arg)
 		{
 			for (auto & i : ui_container_)
 				i.uiobj->check(arg.window_handle == i.uiobj->handle());

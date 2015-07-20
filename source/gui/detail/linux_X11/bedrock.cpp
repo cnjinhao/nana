@@ -699,14 +699,17 @@ namespace detail
 					bool dbl_click = (last_mouse_down_window == msgwnd) && (xevent.xbutton.time - last_mouse_down_time <= 400);
 					last_mouse_down_time = xevent.xbutton.time;
 					last_mouse_down_window = msgwnd;
-					auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
 
-					if(new_focus && !new_focus->flags.ignore_mouse_focus)
+					if (Button1 == xevent.xbutton.button)	//Sets the focus only if left button is pressed
 					{
-						context.event_window = new_focus;
-						auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
-						if(kill_focus != new_focus)
-							brock.wd_manager.do_lazy_refresh(kill_focus, false);
+						auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
+						if (new_focus && !new_focus->flags.ignore_mouse_focus)
+						{
+							context.event_window = new_focus;
+							auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
+							if (kill_focus != new_focus)
+								brock.wd_manager.do_lazy_refresh(kill_focus, false);
+						}
 					}
 
 					auto retain = msgwnd->together.events_ptr;
@@ -774,7 +777,9 @@ namespace detail
 							if((arg.button == ::nana::mouse::left_button) && hit)
 							{
 								msgwnd->flags.action = mouse_action::over;
-								arg.evt_code = event_code::click;
+								arg_click arg;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.by_mouse = true;
 								emit_drawer(&drawer::click, msgwnd, arg, &context);
 								fire_click = true;
 							}
@@ -794,7 +799,9 @@ namespace detail
 
 							if(fire_click)
 							{
-								arg.evt_code = event_code::click;
+								arg_click arg;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.by_mouse = true;
 								evt_ptr->click.emit(arg);
 							}
 
@@ -806,7 +813,9 @@ namespace detail
 						}
 						else if(fire_click)
 						{
-							arg.evt_code = event_code::click;
+							arg_click arg;
+							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.by_mouse = true;
 							msgwnd->together.events_ptr->click.emit(arg);
 						}
 						brock.wd_manager.do_lazy_refresh(msgwnd, false);

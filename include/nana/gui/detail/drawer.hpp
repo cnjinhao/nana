@@ -46,7 +46,7 @@ namespace nana
 		virtual void resizing(graph_reference, const arg_resizing&);
 		virtual void resized(graph_reference, const arg_resized&);
 		virtual void move(graph_reference, const arg_move&);
-		virtual void click(graph_reference, const arg_mouse&);
+		virtual void click(graph_reference, const arg_click&);
 		virtual void dbl_click(graph_reference, const arg_mouse&);
 		virtual void mouse_enter(graph_reference, const arg_mouse&);
 		virtual void mouse_move(graph_reference, const arg_mouse&);
@@ -100,7 +100,7 @@ namespace nana
 			void bind(basic_window*);
 
 			void typeface_changed();
-			void click(const arg_mouse&);
+			void click(const arg_click&);
 			void dbl_click(const arg_mouse&);
 			void mouse_enter(const arg_mouse&);
 			void mouse_move(const arg_mouse&);

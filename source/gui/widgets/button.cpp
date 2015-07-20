@@ -126,7 +126,6 @@ namespace nana{	namespace drawerbase
 
 			attr_.e_state = element_state::pressed;
 			attr_.keep_pressed = true;
-
 			_m_draw(graph);
 			API::capture_window(*wdg_, true);
 			API::lazy_refresh();
@@ -158,12 +157,20 @@ namespace nana{	namespace drawerbase
 
 		void trigger::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if (static_cast<char_t>(keyboard::enter) == arg.key || static_cast<char_t>(keyboard::space) == arg.key)
+			if (static_cast<char_t>(keyboard::enter) == arg.key)
 				emit_click();
 		}
 
-		void trigger::key_press(graph_reference, const arg_keyboard& arg)
+		void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 		{
+			if (keyboard::space == static_cast<char_t>(arg.key))
+			{
+				attr_.e_state = element_state::pressed;
+				attr_.keep_pressed = true;
+				_m_draw(graph);
+				API::lazy_refresh();
+				return;
+			}
 			bool ch_tabstop_next;
 			switch(arg.key)
 			{
@@ -177,6 +184,25 @@ namespace nana{	namespace drawerbase
 				return;
 			}
 			API::move_tabstop(*wdg_, ch_tabstop_next);
+		}
+
+		void trigger::key_release(graph_reference graph, const arg_keyboard& arg)
+		{
+			if (arg.key != static_cast<char_t>(keyboard::space))
+				return;
+
+			emit_click();
+
+			attr_.keep_pressed = false;
+
+			if (element_state::pressed == attr_.e_state)
+				attr_.e_state = element_state::hovered;
+			else
+				attr_.e_state = element_state::normal;
+
+			attr_.pushed = false;
+			_m_draw(graph);
+			API::lazy_refresh();
 		}
 
 		void trigger::focus(graph_reference graph, const arg_focus& arg)
@@ -343,14 +369,20 @@ namespace nana{	namespace drawerbase
 
 		void trigger::emit_click()
 		{
+			/*
 			arg_mouse arg;
 			arg.evt_code = event_code::click;
-			arg.window_handle = wdg_->handle();
+			arg.window_handle = wdg_->handle();	//deprecated
 			arg.ctrl = arg.shift = false;
 			arg.button = ::nana::mouse::left_button;
 			arg.mid_button = arg.right_button = false;
 			arg.left_button = true;
 			arg.pos.x = arg.pos.y = 1;
+			*/
+
+			arg_click arg;
+			arg.window_handle = wdg_->handle();
+			arg.by_mouse = false;
 			API::emit_event(event_code::click, arg.window_handle, arg);
 		}
 

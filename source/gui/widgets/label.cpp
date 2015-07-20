@@ -730,7 +730,7 @@ namespace nana
 					}
 				}
 
-				void trigger::click(graph_reference, const arg_mouse&)
+				void trigger::click(graph_reference, const arg_click&)
 				{
 					//make a copy, because the listener may popup a window, and then
 					//user moves the mouse. it will reset the url when the mouse is moving out from the element.
