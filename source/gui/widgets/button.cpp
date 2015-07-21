@@ -501,16 +501,11 @@ namespace nana{	namespace drawerbase
 				return *this;
 			}
 
-			void button::_m_shortkey()
-			{
-				get_drawer_trigger().emit_click();
-			}
-
 			void button::_m_complete_creation()
 			{
 				events().shortkey.connect_unignorable([this]
 				{
-					_m_shortkey();
+					get_drawer_trigger().emit_click();
 				});
 			}
 
