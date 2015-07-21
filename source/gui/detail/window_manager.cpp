@@ -916,6 +916,9 @@ namespace detail
 		//			the return value is NULL
 		window_manager::core_window_t* window_manager::capture_window(core_window_t* wd, bool value)
 		{
+			if (!this->available(wd))
+				return nullptr;
+
 			nana::point pos = native_interface::cursor_position();
 			auto & attr_cap = attr_.capture.history;
 

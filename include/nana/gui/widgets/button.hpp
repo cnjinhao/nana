@@ -48,10 +48,10 @@ namespace nana{
 				void key_release(graph_reference, const arg_keyboard&) override;
 				void focus(graph_reference, const arg_focus&) override;
 			private:
-				void _m_draw(graph_reference);
 				void _m_draw_title(graph_reference, bool enabled);
 				void _m_draw_background(graph_reference);
 				void _m_draw_border(graph_reference);
+				void _m_press(graph_reference, bool);
 			private:
 				widget* wdg_{nullptr};
 				paint::graphics* graph_{nullptr};
