@@ -48,29 +48,35 @@ namespace checkbox
 
 			void drawer::refresh(graph_reference graph)
 			{
-				_m_draw(graph);
+				_m_draw_background(graph);
+				_m_draw_title(graph);
+				_m_draw_checkbox(graph, graph.text_extent_size(STR("jN"), 2).height + 2);
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
 			{
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			void drawer::mouse_up(graph_reference graph, const arg_mouse&)
 			{
 				if(impl_->react)
 					impl_->crook.reverse();
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			void drawer::mouse_enter(graph_reference graph, const arg_mouse&)
 			{
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			void drawer::mouse_leave(graph_reference graph, const arg_mouse&)
 			{
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			drawer::implement * drawer::impl() const
@@ -78,6 +84,7 @@ namespace checkbox
 				return impl_;
 			}
 
+			/*
 			void drawer::_m_draw(graph_reference graph)
 			{
 				_m_draw_background(graph);
@@ -85,6 +92,7 @@ namespace checkbox
 				_m_draw_checkbox(graph, graph.text_extent_size(STR("jN"), 2).height + 2);
 				API::lazy_refresh();
 			}
+			*/
 
 			void drawer::_m_draw_background(graph_reference graph)
 			{

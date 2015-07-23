@@ -36,7 +36,6 @@ namespace nana
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
 			private:
-				void _m_draw();
 				void _m_draw_box(graph_reference);
 				void _m_draw_progress(graph_reference);
 				bool _m_check_changing(unsigned) const;

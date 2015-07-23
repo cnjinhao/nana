@@ -27,7 +27,7 @@ namespace nana
 		//Here defines some function objects
 		namespace treebox
 		{
-			typedef trigger::node_type node_type;
+			using node_type = trigger::node_type;
 
 			bool no_sensitive_compare(const nana::string& text, const nana::char_t *pattern, std::size_t len)
 			{
@@ -56,7 +56,7 @@ namespace nana
 					node = node->child;
 					while(node)
 					{
-					if(no_sensitive_compare(node->value.second.text, pattern, len)) return node;
+						if(no_sensitive_compare(node->value.second.text, pattern, len)) return node;
 
 						if(node == end) break;
 
@@ -78,7 +78,7 @@ namespace nana
 				: public drawer_trigger, public compset_interface
 			{
 			public:
-				typedef drawer_trigger::graph_reference graph_reference;
+				using graph_reference = drawer_trigger::graph_reference;
 
 				void assign(const item_attribute_t & item_attr, const pat::cloneable<renderer_interface>* renderer, const pat::cloneable<compset_placer_interface> * compset_placer)
 				{

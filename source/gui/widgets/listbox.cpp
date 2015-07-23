@@ -858,13 +858,6 @@ namespace nana
 					return &list_.back();
 				}
 
-                /// just append a list of new cat.
-				void create_cat(const std::initializer_list<nana::string>& args)
-				{
-					for (auto & arg : args)
-						list_.emplace_back(arg);
-				}
-
 		        /// will use the key to insert new cat before the first cat with compare less than the key, or at the end of the list of cat and return a ref to that new cat.  ?
                 category_t* create_cat(std::shared_ptr<nana::detail::key_interface> ptr)
 				{
@@ -1080,17 +1073,10 @@ namespace nana
 
 				std::vector<cell>& get_cells(category_t * cat, size_type pos) const
 				{
-					if (!cat || pos >= cat->items.size())
-						throw std::out_of_range("nana::listbox: bad item position");
+					if (!cat)
+						throw std::out_of_range("nana::listbox: category is null");
 
-					return cat->items[pos].cells;
-				}
-
-				nana::string text(category_t* cat, size_type pos, size_type col) const
-				{
-					if (pos < cat->items.size() && (col < cat->items[pos].cells.size()))
-						return cat->items[pos].cells[col].text;
-					return{};
+					return cat->items.at(pos).cells;
 				}
 
 				void text(category_t* cat, size_type pos, size_type col, cell&& cl, size_type columns)
@@ -3745,7 +3731,7 @@ namespace nana
 
 				nana::string item_proxy::text(size_type col) const
 				{
-					return ess_->lister.text(cat_, pos_.item, col);
+					return ess_->lister.get_cells(cat_, pos_.item).at(col).text;
 				}
 
 				void item_proxy::icon(const nana::paint::image& img)
@@ -3765,17 +3751,18 @@ namespace nana
 				//Behavior of Iterator's value_type
 				bool item_proxy::operator==(const nana::string& s) const
 				{
-					return (ess_->lister.text(cat_, pos_.item, 0) == s);
+					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == s);
 				}
 
 				bool item_proxy::operator==(const char * s) const
 				{
-					return (ess_->lister.text(cat_, pos_.item, 0) == nana::string(nana::charset(s)));
+					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == nana::string(nana::charset(s)));
+					
 				}
 
 				bool item_proxy::operator==(const wchar_t * s) const
 				{
-					return (ess_->lister.text(cat_, pos_.item, 0) == nana::string(nana::charset(s)));
+					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == nana::string(nana::charset(s)));
 				}
 
 				item_proxy & item_proxy::operator=(const item_proxy& rhs)
@@ -3792,10 +3779,9 @@ namespace nana
 				// Behavior of Iterator
 				item_proxy & item_proxy::operator++()
 				{
-					if (++pos_.item < cat_->items.size())
-						return *this;
+					if (++pos_.item >= cat_->items.size())
+						cat_ = nullptr;
 
-					cat_ = nullptr;
 					return *this;
 				}
 
@@ -3916,8 +3902,7 @@ namespace nana
                     for (item_proxy &it : *this )
                         it.select(sel);
 
-                    ess_->lister.last_selected_abs = 
-                    ess_->lister.last_selected_dpl =  index_pair {this->pos_, npos};
+                    ess_->lister.last_selected_abs = ess_->lister.last_selected_dpl =  index_pair {this->pos_, npos};
 
                     return *this;
                 }
@@ -4232,7 +4217,9 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
-			ess.lister.create_cat(args);
+
+			for (auto & arg : args)
+				ess.lister.create_cat(nana::string{ arg });
 			ess.update();
 		}
 
