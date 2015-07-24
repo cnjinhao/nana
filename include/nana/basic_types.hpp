@@ -306,7 +306,7 @@ namespace nana
 		color(unsigned red, unsigned green, unsigned blue, double alpha);
 
 		/// Initializes the color with a CSS-like rgb string.
-		color(std::string css_rgb);
+		explicit color(std::string css_rgb);
 
 		color& alpha(double);	///< Sets alpha channel
 		color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
