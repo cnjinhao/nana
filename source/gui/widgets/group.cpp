@@ -243,6 +243,7 @@ namespace nana{
 	{
 		impl_->caption.caption(std::move(str));
 		impl_->update_div();
+		impl_->place_content.collocate();
 	}
 }//end namespace nana
 
