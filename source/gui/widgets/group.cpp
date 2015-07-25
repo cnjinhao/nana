@@ -53,6 +53,9 @@ namespace nana{
 			caption.create(pnl);
 			caption.caption(STR(""));
 			place_content.bind(pnl);
+
+			if (!radio_logic)
+				radio_logic = new radio_group;
 		}
 
 		void update_div()
@@ -100,7 +103,7 @@ namespace nana{
 		delete impl_->radio_logic;
 	}
 
-	void group::add_option(::nana::string text)
+	group& group::add_option(::nana::string text)
 	{
 		_THROW_IF_EMPTY()
 
@@ -112,9 +115,13 @@ namespace nana{
 		impl_->place_content.field_display(field_options, true);
 		impl_->place_content.collocate();
 
+		if (impl_->radio_logic)
+			impl_->radio_logic->add(*opt);
+
+		return *this;
 	}
 
-	void group::radio_mode(bool enable)
+	group& group::radio_mode(bool enable)
 	{
 		_THROW_IF_EMPTY()
 
@@ -133,6 +140,7 @@ namespace nana{
 			delete impl_->radio_logic;
 			impl_->radio_logic = nullptr;
 		}
+		return *this;
 	}
 
 	std::size_t group::option() const
@@ -157,26 +165,21 @@ namespace nana{
 		return *this;
 	}
 
-	place& group::get_place()
-	{
-		return impl_->place_content;
-	}
-
-	void group::collocate()
+	group& group::collocate()
 	{
 		impl_->place_content.collocate();
+		return *this;
 	}
 
-	void group::div(const char* div_str)
+	group& group::div(const char* div_str)
 	{
-		::nana::size sz = impl_->caption.measure(1000);
-
 		if (div_str)
 			impl_->usr_div_str = div_str;
 		else
 			impl_->usr_div_str.clear();
 
 		impl_->update_div();
+		return *this;
 	}
 
 	group::field_reference group::operator[](const char* field)

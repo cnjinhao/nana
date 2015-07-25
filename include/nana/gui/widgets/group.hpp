@@ -49,24 +49,21 @@ namespace nana{
 		~group();
 
 		/// Adds an option for user selection
-		void add_option(::nana::string);
+		group& add_option(::nana::string);
 
 		/// Enables/disables the radio mode which is single selection
-		void radio_mode(bool);
+		group& radio_mode(bool);
 
 		/// Returns the index of option in radio_mode, it throws a logic_error if radio_mode is false.
 		std::size_t option() const;
 
-		/// Determines a specified option is checked, it throws an out_of_range if !(pos < number of options)
+		/// Determines whether a specified option is checked, it throws an out_of_range if !(pos < number of options)
 		bool option_checked(std::size_t pos) const;
 
 		group& enable_format_caption(bool format);
 
-
-		place& get_place();
-
-		void collocate();
-		void div(const char* div_str);
+		group& collocate() throw();
+		group& div(const char* div_str) throw();
 		field_reference operator[](const char* field);
 		
 		template<typename Widget, typename ...Args>
