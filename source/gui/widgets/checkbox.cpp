@@ -185,6 +185,7 @@ namespace checkbox
 		void checkbox::radio(bool is_radio)
 		{
 			get_drawer_trigger().impl()->crook.radio(is_radio);
+			API::refresh_window(handle());
 		}
 
 		void checkbox::transparent(bool enabled)
@@ -193,6 +194,7 @@ namespace checkbox
 				API::effects_bground(*this, effects::bground_transparent(0), 0.0);
 			else
 				API::effects_bground_remove(*this);
+			API::refresh_window(handle());
 		}
 
 		bool checkbox::transparent() const
@@ -204,10 +206,12 @@ namespace checkbox
 	//class radio_group
 		radio_group::~radio_group()
 		{
-			for(auto & i : ui_container_)
+			for(auto & e : ui_container_)
 			{
-				API::umake_event(i.eh_checked);
-				API::umake_event(i.eh_destroy);
+				e.uiobj->radio(false);
+				e.uiobj->react(true);
+				API::umake_event(e.eh_checked);
+				API::umake_event(e.eh_destroy);
 			}
 		}
 

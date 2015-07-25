@@ -18,18 +18,29 @@
 #include <nana/gui/widgets/group.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/drawing.hpp>
+#include <nana/gui/widgets/checkbox.hpp>
+
+#define _THROW_IF_EMPTY()\
+	if(empty())	\
+		throw std::logic_error("the group is invalid");
 
 namespace nana{
+
+	static const char* field_title = "__nana_group_title__";
+	static const char* field_options = "__nana_group_options__";
 
 	struct group::implement
 	{
 		label	caption;
 		place	place_content;
-
 		unsigned gap{2};
+		std::string usr_div_str;
 
+		std::vector<std::unique_ptr<checkbox>> options;
+		radio_group * radio_logic{nullptr};
 
 		implement() = default;
+
 		implement(window grp_panel, ::nana::string titel, bool vsb, unsigned gap=2)
 			: caption (grp_panel, std::move(titel), vsb),
 			  place_content{grp_panel},
@@ -42,6 +53,26 @@ namespace nana{
 			caption.create(pnl);
 			caption.caption(STR(""));
 			place_content.bind(pnl);
+		}
+
+		void update_div()
+		{
+			::nana::size sz = caption.measure(1000);
+
+			std::stringstream ss;
+			ss << "vert margin=[0," << gap << "," << gap + 5 << "," << gap << "]"
+				<< " <weight=" << sz.height << " <weight=5> <" << field_title << " weight=" << sz.width + 1 << "> >"
+				<< "<<vert margin=5 " << field_options << ">";
+
+			if (!usr_div_str.empty())
+				ss << "<" << usr_div_str << ">>";
+			else
+				ss << ">";
+
+			place_content.div(ss.str().c_str());
+
+			if (options.empty())
+				place_content.field_display(field_options, false);
 		}
 	};
 
@@ -56,23 +87,68 @@ namespace nana{
 		create(parent, r, vsb);
 	}
 
-	group::group(	window    parent,              ///<
-					::nana::string    titel   /*={}*/,     ///<
-					bool      format /*=false*/,  ///<
-					unsigned  gap /*=2*/,         ///<
-					rectangle r /*={} */,          ///<
-		            bool      vsb /*= true */        ///<
-					)
+	group::group(window parent, ::nana::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
 		: panel(parent, r, vsb),
 		  impl_(new implement(*this, std::move(titel), vsb, gap))
 	{
-		impl_->caption.format(format);
+		impl_->caption.format(formatted);
 		_m_init();
 	}
 
-
 	group::~group()
 	{
+		delete impl_->radio_logic;
+	}
+
+	void group::add_option(::nana::string text)
+	{
+		_THROW_IF_EMPTY()
+
+		impl_->options.emplace_back(new checkbox(handle()));
+		auto & opt = impl_->options.back();
+		opt->transparent(true);
+		opt->caption(std::move(text));
+		impl_->place_content[field_options] << *opt;
+		impl_->place_content.field_display(field_options, true);
+		impl_->place_content.collocate();
+
+	}
+
+	void group::radio_mode(bool enable)
+	{
+		_THROW_IF_EMPTY()
+
+		if (enable)
+		{
+			//Create radio_group if it is null
+			if (!impl_->radio_logic)
+				impl_->radio_logic = new ::nana::radio_group;
+
+			//add all options into the radio_group
+			for (auto & opt : impl_->options)
+				impl_->radio_logic->add(*opt);
+		}
+		else
+		{
+			delete impl_->radio_logic;
+			impl_->radio_logic = nullptr;
+		}
+	}
+
+	std::size_t group::option() const
+	{
+		_THROW_IF_EMPTY();
+
+		if (impl_->radio_logic)
+			return impl_->radio_logic->checked();
+
+		throw std::logic_error("the radio_mode of the group is disabled");
+	}
+
+	bool group::option_checked(std::size_t pos) const
+	{
+		_THROW_IF_EMPTY();
+		return impl_->options.at(pos)->checked();
 	}
 
 	group& group::enable_format_caption(bool format)
@@ -86,7 +162,6 @@ namespace nana{
 		return impl_->place_content;
 	}
 
-
 	void group::collocate()
 	{
 		impl_->place_content.collocate();
@@ -96,13 +171,12 @@ namespace nana{
 	{
 		::nana::size sz = impl_->caption.measure(1000);
 
-		std::stringstream ss;
-		ss << "vert margin=[0," << impl_->gap << "," << impl_->gap << "," << impl_->gap << "]"
-			<< " <weight=" << sz.height << " <weight=5> <nanaGroupTitle2015 weight=" << sz.width + 1 << "> >"
-			<< " <"<<(div_str ? div_str : "")<<">";
+		if (div_str)
+			impl_->usr_div_str = div_str;
+		else
+			impl_->usr_div_str.clear();
 
-		impl_->place_content.div(ss.str().c_str());
-
+		impl_->update_div();
 	}
 
 	group::field_reference group::operator[](const char* field)
@@ -121,7 +195,7 @@ namespace nana{
 
 		auto & outter = impl_->place_content;
 
-		outter["nanaGroupTitle2015"] << impl_->caption;
+		outter[field_title] << impl_->caption;
 		outter.collocate();
 
 		color pbg = API::bgcolor(this->parent());
@@ -164,7 +238,8 @@ namespace nana{
 
 	void group::_m_caption(::nana::string&& str)
 	{
-		return impl_->caption.caption(std::move(str));
+		impl_->caption.caption(std::move(str));
+		impl_->update_div();
 	}
 }//end namespace nana
 

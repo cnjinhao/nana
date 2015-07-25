@@ -36,17 +36,29 @@ namespace nana{
 
 		///  The construction that creates the widget and set the titel or caption
 
-		group(window    parent,          ///< 
-			  ::nana::string    titel,     ///< 
-			  bool      format = false,  ///< Use a formated label?
-			  unsigned  gap = 2,         ///< betwen the content  and the external limit
-			  rectangle r = {} ,          ///<
-			  bool visible = true
+		group(window			parent,		///< a handle to the parent
+			  ::nana::string	titel,		///< caption of the group
+			  bool				formatted = false,  ///< Enable/disable the formatted text for the title
+			  unsigned			gap = 2,			///< betwen the content  and the external limit
+			  const rectangle&	r = {} ,
+			  bool				visible = true
 		     );
 
 
 		/// The destruction
 		~group();
+
+		/// Adds an option for user selection
+		void add_option(::nana::string);
+
+		/// Enables/disables the radio mode which is single selection
+		void radio_mode(bool);
+
+		/// Returns the index of option in radio_mode, it throws a logic_error if radio_mode is false.
+		std::size_t option() const;
+
+		/// Determines a specified option is checked, it throws an out_of_range if !(pos < number of options)
+		bool option_checked(std::size_t pos) const;
 
 		group& enable_format_caption(bool format);
 
@@ -56,7 +68,6 @@ namespace nana{
 		void collocate();
 		void div(const char* div_str);
 		field_reference operator[](const char* field);
-
 		
 		template<typename Widget, typename ...Args>
 		Widget* create_child(const char* field, Args && ... args)
