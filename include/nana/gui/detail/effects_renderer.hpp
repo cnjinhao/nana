@@ -36,7 +36,7 @@ namespace nana{
 				core_window_t * root_wd = wd->root_widget;
 				auto & nimbus = root_wd->other.attribute.root->effects_edge_nimbus;
 
-				for (auto i = nimbus.cbegin(); i != nimbus.cend(); ++i)
+				for (auto i = nimbus.begin(); i != nimbus.end(); ++i)
 				{
 					if (i->window == wd)
 					{

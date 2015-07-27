@@ -17,6 +17,7 @@
 #include <nana/unicode_bidi.hpp>
 #include <numeric>
 #include <cwctype>
+#include <cstring>
 #include <set>
 #include <algorithm>
 

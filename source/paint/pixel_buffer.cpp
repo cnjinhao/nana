@@ -417,7 +417,7 @@ namespace nana{	namespace paint
 #elif defined(NANA_X11)
 		try
 		{
-			storage_ = std::make_shared<pixel_buffer_storage>(drawable, sz);
+			storage_ = std::make_shared<pixel_buffer_storage>(drawable, nana::rectangle{sz});
 			storage_->detach();
 			return true;
 		}

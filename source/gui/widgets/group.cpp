@@ -165,13 +165,13 @@ namespace nana{
 		return *this;
 	}
 
-	group& group::collocate()
+	group& group::collocate() throw ()
 	{
 		impl_->place_content.collocate();
 		return *this;
 	}
 
-	group& group::div(const char* div_str)
+	group& group::div(const char* div_str) throw ()
 	{
 		if (div_str)
 			impl_->usr_div_str = div_str;

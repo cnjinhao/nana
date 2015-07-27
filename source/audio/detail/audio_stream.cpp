@@ -8,8 +8,8 @@ namespace nana{	namespace audio
 		//class audio_stream
 			bool audio_stream::open(const nana::string& file)
 			{
-				std::string fname{nana::charset(file)};//static_cast<std::string>()
-                fs_.open(fname, std::ios::binary);
+				std::string fname = nana::charset(file);
+				fs_.open(fname, std::ios::binary);
 				if(fs_)
 				{
 					wave_spec::master_riff_chunk riff;

@@ -1,5 +1,5 @@
 /*
- *	A filesystem Implementation
+ *	A ISO C++ filesystem Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
@@ -195,7 +195,7 @@ namespace filesystem
 		directory_iterator():end_(true), handle_(nullptr){}
 
 		directory_iterator(const nana::string& file_path) {	_m_prepare(file_path);	}
-		//directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
+		directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
 
 		const value_type&
 		operator*() const { return value_; }
@@ -320,9 +320,9 @@ namespace filesystem
 							return;
 						}
 					}
-			        value_ = value_type(wfd_.cFileName, 
-                               (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
-                                wfd_.nFileSizeLow);
+					value_ = value_type(wfd_.cFileName, 
+								(FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
+								wfd_.nFileSizeLow);
 				}
 				else
 					end_ = true;
@@ -339,13 +339,13 @@ namespace filesystem
 							return;
 						}
 					}
+
+					nana::string d_name = nana::charset(dnt->d_name);
 					struct stat fst;
 					if(stat((path_ + "/" + dnt->d_name).c_str(), &fst) == 0)
-			            value_ = value_type(static_cast<nana::string>(nana::charset(wfd_.cFileName)), 
-                               (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
-                                wfd_.nFileSizeLow);
+						value_ = value_type(std::move(d_name), (0 != S_ISDIR(fst.st_mode)), fst.st_size);
 					else
-						value_.m_path = nana::charset(dnt->d_name);
+						value_.m_path = path(std::move(d_name));
 				}
 				else
 					end_ = true;
@@ -361,7 +361,7 @@ namespace filesystem
 				{
   				#if defined(NANA_WINDOWS)
 					::FindClose(*handle);
-            	#elif defined(NANA_LINUX)
+				#elif defined(NANA_LINUX)
 					::closedir(*handle);
 				#endif
 				}
@@ -369,7 +369,7 @@ namespace filesystem
 			}
 		};
 	private:
-        bool	end_{false};
+		bool	end_{false};
 
 #if defined(NANA_WINDOWS)
 		WIN32_FIND_DATA		wfd_;
@@ -378,8 +378,7 @@ namespace filesystem
 		std::string	path_;
 #endif
 		std::shared_ptr<find_handle_t> find_ptr_;
-
-        find_handle_t	handle_{nullptr};
+		find_handle_t	handle_{nullptr};
 		value_type	value_;
 	};
 
@@ -406,7 +405,7 @@ namespace filesystem
 	bool file_attrib(const nana::string& file, attribute&);
 
 	inline bool is_directory(file_status s) { return s.type() == file_type::directory ;}
-	inline bool is_directory(const path& p) { return directory_iterator{ p }->attr.directory; }//works??
+	inline bool is_directory(const path& p) { return directory_iterator(p)->attr.directory; }//works??
 	inline bool is_directory(const directory_entry& d) { return d.attr.directory; }
     //bool is_directory(const path& p, error_code& ec) noexcept;
 

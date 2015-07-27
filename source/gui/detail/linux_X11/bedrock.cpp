@@ -444,7 +444,7 @@ namespace detail
 		arg.window_handle = reinterpret_cast<window>(wd);
 		arg.button = ::nana::mouse::any_button;
 
-		int mask_state == 0;
+		int mask_state = 0;
 		if (ButtonPress == msg || ButtonRelease == msg)
 		{
 			mask_state = evt.xbutton.state;
@@ -483,11 +483,11 @@ namespace detail
 			arg.pos.y = evt.xcrossing.y - wd->pos_root.y;
 		}
 
-		arg.left_button		= (Button1Mask & state);
-		arg.right_button	= (Button2Mask & state);
-		arg.mid_button		= (Button3Mask & state);
-		arg.shift	= (ShiftMask & state);
-		arg.ctrl	= (ControlMask & state);
+		arg.left_button		= (Button1Mask & mask_state);
+		arg.right_button	= (Button2Mask & mask_state);
+		arg.mid_button		= (Button3Mask & mask_state);
+		arg.shift	= (ShiftMask & mask_state);
+		arg.ctrl	= (ControlMask & mask_state);
 
 	}
 
@@ -1133,7 +1133,7 @@ namespace detail
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 					}
 
-					if (context.platform.keychar < keyboard::os_arrow_left || keyboard::os_arrow_down < wParam)
+					if (context.platform.keychar < keyboard::os_arrow_left || keyboard::os_arrow_down < context.platform.keychar)
 						brock.delay_restore(2);	//Restores while key release
 				}
 				else
