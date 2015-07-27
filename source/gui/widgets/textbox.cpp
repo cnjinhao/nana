@@ -97,7 +97,7 @@ namespace drawerbase {
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 		{
-			if(editor_->mouse_down(arg.left_button, arg.pos))
+			if(editor_->mouse_down(arg.button, arg.pos))
 				API::lazy_refresh();
 		}
 
@@ -109,7 +109,7 @@ namespace drawerbase {
 
 		void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
 		{
-			if(editor_->mouse_up(arg.left_button, arg.pos))
+			if(editor_->mouse_up(arg.button, arg.pos))
 				API::lazy_refresh();
 		}
 

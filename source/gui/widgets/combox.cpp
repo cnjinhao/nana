@@ -622,7 +622,7 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
-						if(false == editor->mouse_down(arg.left_button, arg.pos))
+						if(false == editor->mouse_down(arg.button, arg.pos))
 							drawer_->open_lister_if_push_button_positioned();
 
 						drawer_->draw();
@@ -637,7 +637,7 @@ namespace nana
 				{
 					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
 					{
-						drawer_->editor()->mouse_up(arg.left_button, arg.pos);
+						drawer_->editor()->mouse_up(arg.button, arg.pos);
 						drawer_->set_button_state(element_state::hovered, false);
 						drawer_->draw();
 						API::lazy_refresh();

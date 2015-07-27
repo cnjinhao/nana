@@ -583,7 +583,7 @@ namespace nana
 
 				void event_scrollbar(const arg_mouse& arg)
 				{
-					if((event_code::mouse_wheel == arg.evt_code) || arg.left_button)
+					if((event_code::mouse_wheel == arg.evt_code) || arg.is_left_button())
 					{
 						if(shape.prev_first_value != shape.scroll.value())
 						{
@@ -719,17 +719,29 @@ namespace nana
 						node_state.tooltip->impl().assign(node_attr, &data.renderer, &data.comp_placer);
 						node_state.tooltip->show();
 
-						auto & events = node_state.tooltip->events();
-						events.mouse_leave.connect([this](const arg_mouse&){
-							this->close_tooltip_window();
-						});
-						events.mouse_move.connect([this](const arg_mouse&){
-							this->mouse_move_tooltip_window();
-						});
-
-						auto fn = [this](const arg_mouse& arg){
-							this->click_tooltip_window(arg);
+						auto fn = [this](const arg_mouse& arg)
+						{
+							switch (arg.evt_code)
+							{
+							case event_code::mouse_leave:
+								close_tooltip_window();
+								break;
+							case event_code::mouse_move:
+								mouse_move_tooltip_window();
+								break;
+							case event_code::mouse_down:
+							case event_code::mouse_up:
+							case event_code::dbl_click:
+								click_tooltip_window(arg);
+								break;
+							default:	//ignore other events
+								break;
+							}
 						};
+
+						auto & events = node_state.tooltip->events();
+						events.mouse_leave(fn);
+						events.mouse_move(fn);
 						events.mouse_down.connect(fn);
 						events.mouse_up.connect(fn);
 						events.dbl_click.connect(fn);

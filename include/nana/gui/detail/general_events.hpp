@@ -432,6 +432,12 @@ namespace nana
 		bool right_button;   ///< mouse right button is pressed?
 		bool shift;          ///< keyboard Shift is pressed?
 		bool ctrl;           ///< keyboard Ctrl is pressed?
+
+		/// Checks if left button is operated,
+		bool is_left_button() const
+		{
+			return (event_code::mouse_move == evt_code ? left_button : (mouse::left_button == button));
+		}
 	};
 
     /// in arg_wheel event_code is event_code::mouse_wheel 

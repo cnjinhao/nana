@@ -922,7 +922,7 @@ namespace detail
 	{
 		if(crt.visible && (false == caret_reinstate(crt)))
 		{
-			crt.rev_graph.bitblt(crt.size, crt.window, crt.pos);
+			crt.rev_graph.bitblt(rectangle{crt.size}, crt.window, crt.pos);
 			crt.rev.width = crt.size.width;
 			crt.rev.height = crt.size.height;
 			crt.rev.x = crt.pos.x;
@@ -948,7 +948,7 @@ namespace detail
 				nana::paint::graphics * crt_graph;
 				if(crt.rev.width && crt.rev.height)
 				{
-					crt.rev_graph.bitblt(crt.size, root_graph, crt.pos);
+					crt.rev_graph.bitblt(rectangle{crt.size}, root_graph, crt.pos);
 					crt_graph = &crt.graph;
 					owns_caret = true;
 				}
@@ -1132,7 +1132,7 @@ namespace detail
 	{
 		nana::paint::graphics & graph = iconbase_[wd];
 		graph.make(img.size());
-		img.paste(graph, 0, 0);
+		img.paste(graph, {});
 		return graph;
 	}
 

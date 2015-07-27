@@ -277,7 +277,7 @@ namespace nana
 						impl_->which = which;
 						if (which == npos || container.at(which)->enable)
 						{
-							impl_->state = (arg.left_button ? item_renderer::state_t::selected : item_renderer::state_t::highlighted);
+							impl_->state = item_renderer::state_t::highlighted;
 
 							refresh(graph);
 							API::lazy_refresh();

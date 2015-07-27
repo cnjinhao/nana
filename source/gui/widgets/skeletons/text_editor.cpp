@@ -1593,12 +1593,12 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		bool text_editor::mouse_down(bool left_button, const point& scrpos)
+		bool text_editor::mouse_down(::nana::mouse button, const point& scrpos)
 		{
 			if (!hit_text_area(scrpos))
 				return false;
 
-			if(left_button)
+			if(::nana::mouse::left_button == button)
 			{
 				API::capture_window(window_, true);
 				text_area_.captured = true;
@@ -1646,7 +1646,7 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		bool text_editor::mouse_up(bool left_button, const point& scrpos)
+		bool text_editor::mouse_up(::nana::mouse button, const point& scrpos)
 		{
 			auto is_prev_no_selected = (select_.mode_selection == selection::mode_no_selected);
 

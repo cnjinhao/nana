@@ -235,9 +235,9 @@ namespace nana{	namespace widgets
 			nana::upoint caret() const;
 			bool scroll(bool upwards, bool vertical);
 			bool mouse_enter(bool);
-			bool mouse_down(bool left_button, const point& screen_pos);
+			bool mouse_down(::nana::mouse, const point& screen_pos);
 			bool mouse_move(bool left_button, const point& screen_pos);
-			bool mouse_up(bool left_button, const point& screen_pos);
+			bool mouse_up(::nana::mouse, const point& screen_pos);
 
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;

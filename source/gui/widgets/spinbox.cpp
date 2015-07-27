@@ -371,9 +371,9 @@ namespace nana
 
 					bool refreshed = false;
 					if (pressed)
-						refreshed = editor_->mouse_down(arg.left_button, arg.pos);
+						refreshed = editor_->mouse_down(arg.button, arg.pos);
 					else
-						refreshed = editor_->mouse_up(arg.left_button, arg.pos);
+						refreshed = editor_->mouse_up(arg.button, arg.pos);
 
 					if (refreshed)
 						_m_draw_spins(buttons::none);

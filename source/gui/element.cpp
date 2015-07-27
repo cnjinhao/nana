@@ -580,9 +580,6 @@ namespace nana
 	class element_manager
 		: nana::noncopyable, nana::nonmovable
 	{
-		//VC2012 does not support alias declaration.
-		//template<typename E> using factory_interface = element::provider::factory_interface<E>;
-
 		template<typename ElementInterface>
 		struct item
 		{
