@@ -260,7 +260,7 @@ namespace filesystem
 				}
 			}
 
-			value_ = value_type(wfd_.cFileName, 
+			value_ = value_type(path(wfd_.cFileName), 
                                (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
                                 wfd_.nFileSizeLow);
 
@@ -320,7 +320,7 @@ namespace filesystem
 							return;
 						}
 					}
-					value_ = value_type(wfd_.cFileName, 
+					value_ = value_type(path(wfd_.cFileName), 
 								(FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
 								wfd_.nFileSizeLow);
 				}
