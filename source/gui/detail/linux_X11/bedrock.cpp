@@ -483,9 +483,9 @@ namespace detail
 			arg.pos.y = evt.xcrossing.y - wd->pos_root.y;
 		}
 
-		arg.left_button		= (Button1Mask & mask_state);
-		arg.right_button	= (Button2Mask & mask_state);
-		arg.mid_button		= (Button3Mask & mask_state);
+		arg.left_button		= ((Button1Mask & mask_state) != 0) || (::nana::mouse::left_button == arg.button) ;
+		arg.right_button	= ((Button2Mask & mask_state) != 0) || (::nana::mouse::right_button == arg.button);
+		arg.mid_button		= ((Button3Mask & mask_state) != 0) || (::nana::mouse::middle_button == arg.button);
 		arg.shift	= (ShiftMask & mask_state);
 		arg.ctrl	= (ControlMask & mask_state);
 
