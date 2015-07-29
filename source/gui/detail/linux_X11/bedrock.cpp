@@ -1050,6 +1050,16 @@ namespace detail
 								arg.window_handle = reinterpret_cast<window>(msgwnd);
 								brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
+								if((XLookupKeySym == status) && (brock.wd_manager.available(msgwnd)))
+								{
+									//call key_char event if status is XLookupKeySym to avaid calling key_char
+									//twice, because the status would be equal to XLookupChars if the input method is
+									//enabled for the window.
+									arg.ignore = false;
+									arg.evt_code = event_code::key_char;
+									brock.emit(event_code::key_char, msgwnd, arg, true, & context);
+								}
+
 								if(msgwnd->root_widget->other.attribute.root->menubar == msgwnd)
 								{
 									int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(arg.key)) ? 1 : 0 );
