@@ -8,18 +8,20 @@ namespace nana{	namespace audio
 		//class audio_stream
 			bool audio_stream::open(const nana::string& file)
 			{
-				std::string fname = nana::charset(file);
-				fs_.open(fname, std::ios::binary);
+				fs_.open(static_cast<std::string>(charset(file)), std::ios::binary);
 				if(fs_)
 				{
 					wave_spec::master_riff_chunk riff;
 					fs_.read(reinterpret_cast<char*>(&riff), sizeof(riff));
-					if(riff.ckID == *reinterpret_cast<const unsigned long*>("RIFF") && riff.waveID == *reinterpret_cast<const unsigned long*>("WAVE"))
+					if(riff.ckID == *reinterpret_cast<const unsigned*>("RIFF") && riff.waveID == *reinterpret_cast<const unsigned*>("WAVE"))
 					{
 						fs_.read(reinterpret_cast<char*>(&ck_format_), sizeof(ck_format_));
-						if(ck_format_.ckID == *reinterpret_cast<const unsigned long*>("fmt ") && ck_format_.wFormatTag == 1)	//Only support PCM format
+						if(ck_format_.ckID == *reinterpret_cast<const unsigned*>("fmt ") && ck_format_.wFormatTag == 1)	//Only support PCM format
 						{
-							std::size_t cksize = _m_locate_chunck(*reinterpret_cast<const unsigned long*>("data"));
+							if (ck_format_.cksize > 16)
+								fs_.seekg(ck_format_.cksize - 16, std::ios::cur);
+
+							std::size_t cksize = _m_locate_chunck(*reinterpret_cast<const unsigned*>("data"));
 							if(cksize)
 							{
 								pcm_data_pos_ = static_cast<std::size_t>(fs_.tellg());
@@ -78,7 +80,7 @@ namespace nana{	namespace audio
 
 					if(ck.ckID == ckID)
 						return ck.cksize;
-					if(ck.ckID == *reinterpret_cast<const unsigned long*>("data"))
+					if(ck.ckID == *reinterpret_cast<const unsigned*>("data"))
 						fs_.seekg(ck.cksize + (ck.cksize & 1 ? 1 : 0), std::ios::cur);
 					else
 						fs_.seekg(ck.cksize, std::ios::cur);

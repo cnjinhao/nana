@@ -12,19 +12,19 @@ namespace nana{	namespace audio{
 			#pragma pack(1)
 				struct master_riff_chunk
 				{
-					unsigned long	ckID;	//"RIFF"
-					unsigned long	cksize;
-					unsigned long	waveID;	//"WAVE"
+					unsigned	ckID;	//"RIFF"
+					unsigned	cksize;
+					unsigned	waveID;	//"WAVE"
 				};
 
 				struct format_chunck
 				{
-					unsigned long	ckID;	//"fmt "
-					unsigned long	cksize;
+					unsigned		ckID;	//"fmt "
+					unsigned		cksize;
 					unsigned short	wFormatTag;
 					unsigned short	nChannels;
-					unsigned long	nSamplePerSec;
-					unsigned long	nAvgBytesPerSec;
+					unsigned		nSamplePerSec;
+					unsigned		nAvgBytesPerSec;
 					unsigned short	nBlockAlign;
 					unsigned short	wBitsPerSample;
 				};
@@ -32,19 +32,19 @@ namespace nana{	namespace audio{
 		#elif defined(NANA_LINUX)
 			struct master_riff_chunk
 			{
-				unsigned long	ckID;	//"RIFF"
-				unsigned long	cksize;
-				unsigned long	waveID;	//"WAVE"
+				unsigned	ckID;	//"RIFF"
+				unsigned	cksize;
+				unsigned	waveID;	//"WAVE"
 			}__attribute__((packed));
 
 			struct format_chunck
 			{
-				unsigned long	ckID;	//"fmt "
-				unsigned long	cksize;
+				unsigned		ckID;	//"fmt "
+				unsigned		cksize;
 				unsigned short	wFormatTag;
 				unsigned short	nChannels;
-				unsigned long	nSamplePerSec;
-				unsigned long	nAvgBytesPerSec;
+				unsigned		nSamplePerSec;
+				unsigned		nAvgBytesPerSec;
 				unsigned short	nBlockAlign;
 				unsigned short	wBitsPerSample;
 			}__attribute__((packed));
@@ -55,8 +55,8 @@ namespace nana{	namespace audio{
 		{
 			struct chunck
 			{
-				unsigned long ckID;
-				unsigned long cksize;
+				unsigned ckID;
+				unsigned cksize;
 			};
 		public:
 			bool open(const nana::string& file);
