@@ -359,9 +359,19 @@ namespace API
 		restrict::window_manager.default_icon(img);
 	}
 
+	void window_icon_default(const paint::image& big_icon, const paint::image& small_icon)
+	{
+		restrict::window_manager.default_icon(big_icon, small_icon);
+	}
+
 	void window_icon(window wd, const paint::image& img)
 	{
 		restrict::window_manager.icon(reinterpret_cast<restrict::core_window_t*>(wd), img);
+	}
+
+	void window_icon(window wd, const paint::image& big_icon, const paint::image& small_icon)
+	{
+		restrict::window_manager.icon(reinterpret_cast<restrict::core_window_t*>(wd), big_icon, small_icon);
 	}
 
 	bool empty_window(window wd)

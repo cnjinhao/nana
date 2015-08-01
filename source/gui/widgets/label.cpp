@@ -628,6 +628,8 @@ namespace nana
 					nana::string target;	//It indicates which target is tracing.
 					nana::string url;
 
+					widget * buddy {nullptr};
+
 					void add_listener(std::function<void(command, const nana::string&)>&& fn)
 					{
 						listener_.emplace_back(std::move(fn));
@@ -740,6 +742,10 @@ namespace nana
 						impl_->call_listener(command::click, impl_->target);
 
 					system::open_url(url);
+
+					if (impl_->buddy) {
+						impl_->buddy->focus();
+					}
 				}
 
 				void trigger::refresh(graph_reference graph)
@@ -819,6 +825,11 @@ namespace nana
 		{
 			get_drawer_trigger().impl()->add_listener(std::move(f));
 			return *this;
+		}
+
+		void label::relate(widget& w)
+		{
+			get_drawer_trigger().impl()->buddy = &w;
 		}
 
 		nana::size label::measure(unsigned limited) const

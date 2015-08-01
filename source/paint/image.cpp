@@ -70,6 +70,31 @@ namespace paint
 				return false;
 			}
 
+			bool image_ico::open(void* buff, size_t sz)
+			{
+				close();
+#if defined(NANA_WINDOWS)
+				HICON handle = CreateIconFromResource((PBYTE)buff, sz, TRUE, 0x00030000);
+				if(handle)
+				{
+					ICONINFO info;
+					if (::GetIconInfo(handle, &info) != 0)
+					{
+						HICON * p = new HICON(handle);
+						ptr_ = std::shared_ptr<HICON>(p, handle_deleter());
+						size_.width = (info.xHotspot << 1);
+						size_.height = (info.yHotspot << 1);
+						::DeleteObject(info.hbmColor);
+						::DeleteObject(info.hbmMask);
+						return true;
+					}
+				}
+#else
+				if(is_ico_){}	//kill the unused compiler warning in Linux.
+#endif
+				return false;
+			}
+
 			bool image_ico::alpha_channel() const
 			{
 				return false;
@@ -234,6 +259,13 @@ namespace paint
 				}
 			}
 			return false;
+		}
+
+		bool image::open_icon(void* buff, size_t sz)
+		{
+			image::image_impl_interface * helper = new detail::image_ico(true);
+			image_ptr_ = std::shared_ptr<image_impl_interface>(helper);
+			return helper->open(buff, sz);
 		}
 
 		bool image::empty() const

@@ -16,6 +16,7 @@ namespace nana{	namespace paint{
 		typedef nana::paint::graphics& graph_reference;
 		virtual ~image_impl_interface() = 0;	//The destructor is defined in ../image.cpp
 		virtual bool open(const nana::char_t* filename) = 0;
+		virtual bool open(void* buff, size_t sz) = 0; // reads image from memory
 		virtual bool alpha_channel() const = 0;
 		virtual bool empty() const = 0;
 		virtual void close() = 0;

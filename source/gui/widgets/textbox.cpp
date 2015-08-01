@@ -15,6 +15,9 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/inner_fwd_implement.hpp>
+
 namespace nana
 {
 	arg_textbox::arg_textbox(textbox& wdg)
@@ -89,7 +92,17 @@ namespace drawerbase {
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
 			refresh(graph);
-
+			if (!editor_->attr().multi_lines && arg.getting)
+			{
+				static auto& brock = detail::bedrock::instance();
+				auto native_window = reinterpret_cast<native_window_type>(arg.receiver);
+				auto* root_runtime = brock.wd_manager.root_runtime(native_window);
+				if (root_runtime && root_runtime->condition.tabstop_focus_changed)
+				{
+					editor_->select(true);
+					editor_->move_caret_end();
+				}
+			}
 			editor_->show_caret(arg.getting);
 			editor_->reset_caret();
 			API::lazy_refresh();
@@ -136,7 +149,7 @@ namespace drawerbase {
 
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
 		{
-			if(editor_->respond_key(arg.key))
+			if(editor_->respond_key(arg))
 			{
 				editor_->reset_caret();
 				API::lazy_refresh();
@@ -145,7 +158,7 @@ namespace drawerbase {
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if (editor_->respond_char(arg.key))
+			if (editor_->respond_char(arg))
 				API::lazy_refresh();
 		}
 

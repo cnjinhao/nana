@@ -65,6 +65,8 @@ namespace nana
 		label& format(bool);		///< Switches the format mode of the widget.
 		label& add_format_listener(std::function<void(command, const nana::string&)>);
 
+		void relate(widget& w);	// as same as the "for" attribute of a label
+
 		/// \briefReturn the size of the text. If *allowed_width_in_pixel* is not zero, returns a 
 		/// "corrected" size that changes lines to fit the text into the specified width
 		nana::size measure(unsigned allowed_width_in_pixel) const;

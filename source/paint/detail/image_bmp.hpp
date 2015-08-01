@@ -25,24 +25,24 @@ namespace nana{	namespace paint
 		struct bitmap_file_header
 		{
 			unsigned short bfType;
-			unsigned long bfSize;
+			unsigned bfSize;
 			unsigned short bfReserved1;
 			unsigned short bfReserved2;
-			unsigned long bfOffBits;
+			unsigned bfOffBits;
 		} __attribute__((packed));
 
 		struct bitmap_info_header {
-			unsigned long biSize;
-			long  biWidth;
-			long  biHeight;
+			unsigned biSize;
+			int  biWidth;
+			int  biHeight;
 			unsigned short  biPlanes;
 			unsigned short  biBitCount;
-			unsigned long biCompression;
-			unsigned long biSizeImage;
-			long  biXPelsPerMeter;
-			long  biYPelsPerMeter;
-			unsigned long biClrUsed;
-			unsigned long biClrImportant;
+			unsigned		biCompression;
+			unsigned		biSizeImage;
+			int  biXPelsPerMeter;
+			int  biYPelsPerMeter;
+			unsigned	biClrUsed;
+			unsigned	biClrImportant;
 		}__attribute__((packed));
 
 		struct rgb_quad
@@ -73,6 +73,12 @@ namespace nana{	namespace paint
 			~image_bmp()
 			{
 				this->close();
+			}
+
+			bool open(const void* data, std::size_t bytes)
+			{
+				// TODO: read a BMP file from memory
+				return false;
 			}
 
 			bool open(const nana::char_t* filename) override
