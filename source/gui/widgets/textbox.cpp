@@ -94,14 +94,8 @@ namespace drawerbase {
 			refresh(graph);
 			if (!editor_->attr().multi_lines && arg.getting)
 			{
-				static auto& brock = detail::bedrock::instance();
-				auto native_window = reinterpret_cast<native_window_type>(arg.receiver);
-				auto* root_runtime = brock.wd_manager.root_runtime(native_window);
-				if (root_runtime && root_runtime->condition.tabstop_focus_changed)
-				{
-					editor_->select(true);
-					editor_->move_caret_end();
-				}
+				editor_->select(true);
+				editor_->move_caret_end();
 			}
 			editor_->show_caret(arg.getting);
 			editor_->reset_caret();

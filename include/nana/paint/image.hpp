@@ -37,7 +37,9 @@ namespace paint
 		image& operator=(const image& rhs);
 		image& operator=(image&&);
 		bool open(const nana::string& filename);
-		bool open_icon(void* buff, size_t sz);	// opens a icon from memory
+		
+		/// Opens an icon from a specified buffer
+		bool open_icon(const void* data, std::size_t bytes);
 		bool empty() const;
 		operator unspecified_bool_t() const;
 		void close();

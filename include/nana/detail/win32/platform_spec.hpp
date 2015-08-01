@@ -172,6 +172,12 @@ namespace detail
 			HMODULE ole32_;
 		};
 
+		struct window_icons
+		{
+			::nana::paint::image sml_icon;
+			::nana::paint::image big_icon;
+		};
+
 		platform_spec();
 
 		const font_ptr_t& default_native_font() const;
@@ -182,11 +188,11 @@ namespace detail
 
 		static platform_spec& instance();
 
-		void keep_window_icon(native_window_type, const nana::paint::image&);
+		void keep_window_icon(native_window_type, const paint::image&sml_icon, const paint::image& big_icon);
 		void release_window_icon(native_window_type);
 	private:
 		font_ptr_t	def_font_ptr_;
-		std::map<native_window_type, nana::paint::image> iconbase_;
+		std::map<native_window_type, window_icons> iconbase_;
 	};
 
 }//end namespace detail

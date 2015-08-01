@@ -1413,7 +1413,6 @@ namespace detail
 							auto tstop_wd = brock.wd_manager.tabstop(msgwnd, is_forward);
 							if (tstop_wd)
 							{
-								root_runtime->condition.tabstop_focus_changed = true;
 								brock.wd_manager.set_focus(tstop_wd, false);
 								brock.wd_manager.do_lazy_refresh(msgwnd, false);
 								brock.wd_manager.do_lazy_refresh(tstop_wd, true);

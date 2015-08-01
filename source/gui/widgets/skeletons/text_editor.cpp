@@ -55,7 +55,6 @@ namespace nana{	namespace widgets
 
 			virtual bool merge(const undoable_command_interface<EnumCommand>& rhs) override
 			{
-				//Implement later
 				return false;
 			}
 		protected:
@@ -1620,7 +1619,7 @@ namespace nana{	namespace widgets
 				text_area_.captured = true;
 
 				//Set caret pos by screen point and get the caret pos.
-				auto pos = mouse_caret(scrpos);
+				mouse_caret(scrpos);
 				if(!select(false))
 				{
 					select_.a = points_.caret;	//Set begin caret
@@ -2315,7 +2314,7 @@ namespace nana{	namespace widgets
 				}
 				break;
 			case keyboard::os_pageup:
-				if (caret.y >= (int)screen_lines() && points_.offset.y >= (int)screen_lines()) {
+				if (caret.y >= screen_lines() && points_.offset.y >= static_cast<int>(screen_lines())) {
 					points_.offset.y -= screen_lines();
 					caret.y -= screen_lines();
 					changed = true;
@@ -2967,7 +2966,7 @@ namespace nana{	namespace widgets
 			if (if_mask && mask_char_)
 				mask_str.reset(new nana::string(str.size(), mask_char_));
 
-			bool focused = API::is_focus_ready(window_); // do this many times is not efficient...
+			bool focused = API::is_focus_ready(window_);
 
 			auto & linestr = (if_mask && mask_char_ ? *mask_str : str);
 

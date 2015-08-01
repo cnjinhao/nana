@@ -112,10 +112,8 @@ namespace API
 		}
 	}
 
-	void window_icon_default(const paint::image&);
-	void window_icon_default(const paint::image& big_icon, const paint::image& small_icon);
-	void window_icon(window, const paint::image&);
-	void window_icon(window, const paint::image& big_icon, const paint::image& small_icon);
+	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon = {});
+	void window_icon(window, const paint::image& small_icon, const paint::image& big_icon = {});
 	
 	bool empty_window(window);		///< Determines whether a window is existing.
 	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.

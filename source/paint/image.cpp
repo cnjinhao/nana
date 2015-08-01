@@ -70,11 +70,11 @@ namespace paint
 				return false;
 			}
 
-			bool image_ico::open(void* buff, size_t sz)
+			bool image_ico::open(const void* data, std::size_t bytes)
 			{
 				close();
 #if defined(NANA_WINDOWS)
-				HICON handle = CreateIconFromResource((PBYTE)buff, sz, TRUE, 0x00030000);
+				HICON handle = ::CreateIconFromResource((PBYTE)data, static_cast<DWORD>(bytes), TRUE, 0x00030000);
 				if(handle)
 				{
 					ICONINFO info;
@@ -261,11 +261,11 @@ namespace paint
 			return false;
 		}
 
-		bool image::open_icon(void* buff, size_t sz)
+		bool image::open_icon(const void* data, std::size_t bytes)
 		{
 			image::image_impl_interface * helper = new detail::image_ico(true);
 			image_ptr_ = std::shared_ptr<image_impl_interface>(helper);
-			return helper->open(buff, sz);
+			return helper->open(data, bytes);
 		}
 
 		bool image::empty() const

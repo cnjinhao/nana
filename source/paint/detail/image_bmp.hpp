@@ -75,7 +75,7 @@ namespace nana{	namespace paint
 				this->close();
 			}
 
-			bool open(const void* data, std::size_t bytes)
+			bool open(const void* data, std::size_t bytes) override
 			{
 				// TODO: read a BMP file from memory
 				return false;

@@ -24,7 +24,7 @@ namespace nana{	namespace paint
 
 
 			bool open(const nana::char_t* filename) override;
-			bool open(const void* data, std::size_t bytes);
+			bool open(const void* data, std::size_t bytes) override;
 			bool alpha_channel() const override;
 			bool empty() const override;
 			void close() override;
