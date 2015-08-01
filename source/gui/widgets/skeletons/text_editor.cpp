@@ -461,6 +461,7 @@ namespace nana{	namespace widgets
 				editor_._m_scrollbar();
 				return (adjusted_cond || adjusted_cond2);
 			}
+
 		private:
 			std::size_t	_m_textline_from_screen(int y) const
 			{
@@ -1349,8 +1350,9 @@ namespace nana{	namespace widgets
 			attributes_.acceptive = acceptive;
 		}
 
-		bool text_editor::respond_char(char_type key)	//key is a character of ASCII code
+		bool text_editor::respond_char(const arg_keyboard& arg)	//key is a character of ASCII code
 		{
+			char_type key = arg.key;
 			switch (key)
 			{
 			case keyboard::end_of_text:
@@ -1400,14 +1402,28 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		bool text_editor::respond_key(char_type key)
+		bool text_editor::respond_key(const arg_keyboard& arg)
 		{
+			char_type key = arg.key;
 			switch (key)
 			{
+#if 0
 			case keyboard::os_arrow_left:	move_left();	break;
 			case keyboard::os_arrow_right:	move_right();	break;
 			case keyboard::os_arrow_up:		move_ns(true);	break;
 			case keyboard::os_arrow_down:	move_ns(false);	break;
+#else
+			case keyboard::os_arrow_left:
+			case keyboard::os_arrow_right:
+			case keyboard::os_arrow_up:
+			case keyboard::os_arrow_down:
+			case keyboard::os_home:
+			case keyboard::os_end:
+			case keyboard::os_pageup:
+			case keyboard::os_pagedown:
+				_handle_move_key(arg);
+				break;
+#endif
 			case keyboard::os_del:
 				if (this->attr().editable)
 					del();
@@ -1605,17 +1621,12 @@ namespace nana{	namespace widgets
 
 				//Set caret pos by screen point and get the caret pos.
 				auto pos = mouse_caret(scrpos);
-				if(!hit_select_area(pos))
+				if(!select(false))
 				{
-					if(!select(false))
-					{
-						select_.a = points_.caret;	//Set begin caret
-						set_end_caret();
-					}
-					select_.mode_selection = selection::mode_mouse_selected;
+					select_.a = points_.caret;	//Set begin caret
+					set_end_caret();
 				}
-				else
-					select_.mode_selection = selection::mode_no_selected;
+				select_.mode_selection = selection::mode_mouse_selected;
 			}
 
 			text_area_.border_renderer(graph_, _m_bgcolor());
@@ -2217,6 +2228,136 @@ namespace nana{	namespace widgets
 
 			_m_scrollbar();
 			points_.xpos = points_.caret.x;
+		}
+
+		void text_editor::_handle_move_key(const arg_keyboard& arg)
+		{
+			bool changed = false;
+			nana::upoint caret = points_.caret;
+			char_t key = arg.key;
+			size_t nlines = textbase_.lines();
+			if (arg.ctrl) {
+				switch (key) {
+				case keyboard::os_arrow_left:
+				case keyboard::os_arrow_right:
+					// TODO: move the caret word by word
+					break;
+				case keyboard::os_home:
+					if (caret.y != 0) {
+						caret.y = 0;
+						points_.offset.y = 0;
+						changed = true;
+					}
+					break;
+				case keyboard::os_end:
+					if (caret.y != nlines - 1) {
+						caret.y = nlines - 1;
+						changed = true;
+					}
+					break;
+				}
+			}
+			size_t lnsz = textbase_.getline(caret.y).size();
+			switch (key) {
+			case keyboard::os_arrow_left:
+				if (caret.x != 0) {
+					--caret.x;
+					changed = true;
+				}else {
+					if (caret.y != 0) {
+						--caret.y;
+						caret.x = textbase_.getline(caret.y).size();
+						changed = true;
+					}
+				}
+				break;
+			case keyboard::os_arrow_right:
+				if (caret.x < lnsz) {
+					++caret.x;
+					changed = true;
+				}else {
+					if (caret.y != nlines - 1) {
+						++caret.y;
+						caret.x = 0;
+						changed = true;
+					}
+				}
+				break;
+			case keyboard::os_arrow_up:
+			case keyboard::os_arrow_down:
+				{
+					auto screen_pt = behavior_->caret_to_screen(caret);
+					int offset = line_height();
+					if (key == keyboard::os_arrow_up) {
+						offset = -offset;
+					}
+					screen_pt.y += offset;
+					auto new_caret = behavior_->screen_to_caret(screen_pt);
+					if (new_caret != caret) {
+						caret = new_caret;
+						if (screen_pt.y < 0) {
+							scroll(true, true);
+						}
+						changed = true;
+					}
+				}
+				break;
+			case keyboard::os_home:
+				if (caret.x != 0) {
+					caret.x = 0;
+					changed = true;
+				}
+				break;
+			case keyboard::os_end:
+				if (caret.x < lnsz) {
+					caret.x = lnsz;
+					changed = true;
+				}
+				break;
+			case keyboard::os_pageup:
+				if (caret.y >= (int)screen_lines() && points_.offset.y >= (int)screen_lines()) {
+					points_.offset.y -= screen_lines();
+					caret.y -= screen_lines();
+					changed = true;
+				}
+				break;
+			case keyboard::os_pagedown:
+				if (caret.y + screen_lines() <= behavior_->take_lines()) {
+					points_.offset.y += screen_lines();
+					caret.y += screen_lines();
+					changed = true;
+				}
+				break;
+			}
+			if (select_.a != caret || select_.b != caret) {
+				changed = true;
+			}
+			if (changed) {
+				if (arg.shift) {
+					switch (key) {
+					case keyboard::os_arrow_left:
+					case keyboard::os_arrow_up:
+					case keyboard::os_home:
+					case keyboard::os_pageup:
+						select_.b = caret;
+						break;
+					case keyboard::os_arrow_right:
+					case keyboard::os_arrow_down:
+					case keyboard::os_end:
+					case keyboard::os_pagedown:
+						select_.b = caret;
+						break;
+					}
+				}else {
+					select_.b = caret;
+					select_.a = caret;
+				}
+				points_.caret = caret;
+				behavior_->adjust_caret_into_screen();
+				render(true);
+				_m_scrollbar();
+				points_.xpos = points_.caret.x;
+			}
 		}
 
 		nana::upoint text_editor::mouse_caret(const point& scrpos)	//From screen position
@@ -2826,6 +2967,8 @@ namespace nana{	namespace widgets
 			if (if_mask && mask_char_)
 				mask_str.reset(new nana::string(str.size(), mask_char_));
 
+			bool focused = API::is_focus_ready(window_); // do this many times is not efficient...
+
 			auto & linestr = (if_mask && mask_char_ ? *mask_str : str);
 
 			unicode_bidi bidi;
@@ -2847,7 +2990,7 @@ namespace nana{	namespace widgets
 			graph_.set_color(scheme_->selection.get_color());
 
 			//The text is not selected or the whole line text is selected
-			if ((!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
+			if (!focused || (!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
 			{
 				bool selected = (a.y < str_pos.y && str_pos.y < b.y);
 				for (auto & ent : reordered)
@@ -2857,7 +3000,7 @@ namespace nana{	namespace widgets
 
 					if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 					{
-						if (selected)
+						if (selected && focused)
 						{
 							graph_.set_text_color(scheme_->selection_text.get_color());
 							graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true);

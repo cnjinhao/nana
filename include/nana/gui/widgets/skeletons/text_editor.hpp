@@ -157,8 +157,8 @@ namespace nana{	namespace widgets
 
 			void set_accept(std::function<bool(char_type)>);
 			void set_accept(accepts);
-			bool respond_char(char_type);
-			bool respond_key(char_type);
+			bool respond_char(const arg_keyboard& arg);
+			bool respond_key(const arg_keyboard& arg);
 
 			void typeface_changed();
 
@@ -286,6 +286,8 @@ namespace nana{	namespace widgets
 			unsigned _m_char_by_pixels(const nana::char_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
 			unsigned _m_pixels_by_char(const nana::string&, std::size_t pos) const;
 			static bool _m_is_right_text(const unicode_bidi::entity&);
+			void _handle_move_key(const arg_keyboard& arg);
+
 		private:
 			std::unique_ptr<editor_behavior_interface> behavior_;
 			undoable<command>	undo_;

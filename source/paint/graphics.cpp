@@ -812,7 +812,7 @@ namespace paint
 			size_.width = size_.height = 0;
 		}
 
-		void graphics::save_as_file(const char* file)
+		void graphics::save_as_file(const char* file) const
 		{
 			if(handle_)
 			{

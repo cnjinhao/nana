@@ -22,14 +22,15 @@ namespace nana{	namespace paint
 		public:
 			image_ico(bool is_ico);
 
+
 			bool open(const nana::char_t* filename) override;
+			bool open(const void* data, std::size_t bytes);
 			bool alpha_channel() const override;
 			bool empty() const override;
 			void close() override;
 			nana::size size() const override;
 			virtual void paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const override;
 			virtual void stretch(const nana::rectangle&, graph_reference graph, const nana::rectangle& r) const override;
-
 			const ptr_t & ptr() const;
 		private:
 			const bool	is_ico_;
