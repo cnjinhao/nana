@@ -325,9 +325,8 @@ namespace nana{	namespace widgets
 				pos.x = editor_._m_pixels_by_char(lnstr, pos.x) + editor_.text_area_.area.x;
 
 				int pos_y = static_cast<int>((pos.y - editor_.points_.offset.y) * editor_.line_height() + editor_._m_text_top_base());
-				int pos_x = static_cast<int>(pos.x - editor_.points_.offset.x);
 
-				return{ pos_x, pos_y };
+				return{ static_cast<int>(pos.x - editor_.points_.offset.x), pos_y };
 			}
 
 			nana::upoint screen_to_caret(point scrpos) override

@@ -66,7 +66,7 @@ namespace nana
 						r.y = s.pos;
 						r.height = s.scale;
 					}
-					graph.round_rectangle(r, 3, 3, colors::black, true, {0xf0,0xf0,0xf0});
+					graph.round_rectangle(r, 3, 3, colors::black, true, static_cast<color_rgb>(0xf0f0f0));
 				}
 			};
 

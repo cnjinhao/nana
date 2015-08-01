@@ -84,16 +84,6 @@ namespace checkbox
 				return impl_;
 			}
 
-			/*
-			void drawer::_m_draw(graph_reference graph)
-			{
-				_m_draw_background(graph);
-				_m_draw_title(graph);
-				_m_draw_checkbox(graph, graph.text_extent_size(STR("jN"), 2).height + 2);
-				API::lazy_refresh();
-			}
-			*/
-
 			void drawer::_m_draw_background(graph_reference graph)
 			{
 				if(bground_mode::basic != API::effects_bground_mode(*widget_))

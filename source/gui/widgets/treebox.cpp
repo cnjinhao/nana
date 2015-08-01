@@ -1253,13 +1253,14 @@ namespace nana
 					if(compset->comp_attribute(component::icon, attr))
 					{
 						const nana::paint::image * img = nullptr;
-						if(compset->item_attribute().mouse_pointed)
-							img = &(compset->item_attribute().icon_hover);
-						else if(compset->item_attribute().expended)
-							img = &(compset->item_attribute().icon_expanded);
+						auto & item_attr = compset->item_attribute();
+						if (item_attr.mouse_pointed)
+							img = &(item_attr.icon_hover);
+						else if (item_attr.expended)
+							img = &(item_attr.icon_expanded);
 
 						if((nullptr == img) || img->empty())
-							img = &(compset->item_attribute().icon_normal);
+							img = &(item_attr.icon_normal);
 
 						if(! img->empty())
 						{
@@ -1284,12 +1285,8 @@ namespace nana
 				{
 					comp_attribute_t attr;
 					if (compset->comp_attribute(component::text, attr))
-					{
-						graph.set_text_color(fgcolor_);
-						graph.string(point{ attr.area.x, attr.area.y + 3 }, compset->item_attribute().text);
-					}
+						graph.string(point{ attr.area.x, attr.area.y + 3 }, compset->item_attribute().text, fgcolor_);
 				}
-
 			private:
 				mutable facade<element::crook> crook_;
 			};
