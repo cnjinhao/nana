@@ -515,7 +515,7 @@ namespace drawerbase {
 		}
 
 		//Override _m_caption for caption()
-		nana::string textbox::_m_caption() const
+		nana::string textbox::_m_caption() const throw()
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();

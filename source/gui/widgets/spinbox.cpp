@@ -86,7 +86,7 @@ namespace nana
 					ss >> v;
 					if (v < begin_ || last_ < v)
 						return false;
-	
+
 					diff = (value_ != v);
 					value_ = v;
 					return true;
@@ -297,7 +297,7 @@ namespace nana
 					bool diff;
 					if (!range_->value(value_str, diff))
 						return false;
-					
+
 					if (diff)
 						reset_text();
 					return true;
@@ -403,7 +403,7 @@ namespace nana
 						_m_draw_spins(buttons::none);
 						return true;
 					}
-					
+
 					return false;
 				}
 
@@ -435,7 +435,7 @@ namespace nana
 					auto size = API::window_size(editor_->window_handle());
 					if (size.width > 18)
 						return{ static_cast<int>(size.width - 16), 0, 16, size.height };
-					
+
 					return{ 0, 0, size.width, size.height };
 				}
 
@@ -513,7 +513,7 @@ namespace nana
 			{
 				impl_->attach(wdg, graph);
 			}
-			
+
 			void drawer::refresh(graph_reference)
 			{
 				impl_->render();
@@ -526,7 +526,7 @@ namespace nana
 				impl_->editor()->reset_caret();
 				API::lazy_refresh();
 			}
-			
+
 			void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
 			{
 				impl_->mouse_wheel(arg.upwards);
@@ -557,7 +557,7 @@ namespace nana
 				impl_->render();
 				API::lazy_refresh();
 			}
-			
+
 			void drawer::key_press(graph_reference, const arg_keyboard& arg)
 			{
 				if (impl_->editor()->respond_key(arg))
@@ -682,7 +682,7 @@ namespace nana
 		modifier(static_cast<std::wstring>(::nana::charset(prefix_utf8, ::nana::unicode::utf8)), static_cast<std::wstring>(::nana::charset(suffix_utf8, ::nana::unicode::utf8)));
 	}
 
-	::nana::string spinbox::_m_caption() const
+	::nana::string spinbox::_m_caption() const throw()
 	{
 		internal_scope_guard lock;
 		auto editor = get_drawer_trigger().impl()->editor();

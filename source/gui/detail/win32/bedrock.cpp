@@ -1305,26 +1305,22 @@ namespace detail
 				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));
 				break;
 			case WM_PAINT:
-				if (msgwnd->is_draw_through())
 				{
-					msgwnd->other.attribute.root->draw_through();
-
 					::PAINTSTRUCT ps;
 					::BeginPaint(root_window, &ps);
+					if (msgwnd->is_draw_through())
+					{
+						msgwnd->other.attribute.root->draw_through();
+					}
+					else
+					{
+						//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+						::nana::rectangle update_area(ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top);
+						if (!update_area.empty())
+							msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+					}
 					::EndPaint(root_window, &ps);
-				}
-				else
-				{
-					::PAINTSTRUCT ps;
-					::HDC dc = ::BeginPaint(root_window, &ps);
-
-					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
-					::nana::rectangle update_area(ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top);
-					if (!update_area.empty())
-						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
-
-					::EndPaint(root_window, &ps);
-				}
+			    }
 				break;
 			case WM_SYSCHAR:
 				def_window_proc = true;

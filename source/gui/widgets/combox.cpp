@@ -201,7 +201,7 @@ namespace nana
 
 					if (new_where == state_.pointer_where)
 						return false;
-					
+
 					state_.pointer_where = new_where;
 					return true;
 				}
@@ -261,7 +261,7 @@ namespace nana
 						state_.lister->move_items(upwards, circle);
 						return;
 					}
-					
+
 					auto pos = module_.index;
 					if (upwards)
 					{
@@ -412,7 +412,7 @@ namespace nana
 				{
 					if (image_pixels_ == px)
 						return false;
-					
+
 					image_pixels_ = px;
 					return true;
 				}
@@ -988,7 +988,7 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		nana::string combox::_m_caption() const
+		nana::string combox::_m_caption() const throw()
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();

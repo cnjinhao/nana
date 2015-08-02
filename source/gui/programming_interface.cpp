@@ -112,7 +112,7 @@ namespace API
 			iwd->effect.bground = new_effect_ptr;
 			iwd->effect.bground_fade_rate = fade_rate;
 			restrict::window_manager.enable_effects_bground(iwd, true);
-			
+
 			if (fade_rate < 0.01)
 				iwd->flags.make_bground_declared = true;
 
@@ -184,7 +184,7 @@ namespace API
 			}
 		}
 
-		nana::string window_caption(window wd)
+		nana::string window_caption(window wd) throw()
 		{
 			auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard isg;
@@ -559,7 +559,7 @@ namespace API
 		{
 			if (category::flags::root != iwd->other.category)
 				iwd = iwd->seek_non_lite_widget_ancestor();
-			
+
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
@@ -640,7 +640,7 @@ namespace API
 		internal_scope_guard lock;
 		if (!restrict::window_manager.available(iwd))
 			return{};
-		
+
 		auto sz = window_size(wd);
 		sz.width += iwd->extra_width;
 		sz.height += iwd->extra_height;
@@ -774,7 +774,7 @@ namespace API
 		if (restrict::window_manager.available(iwd))
 			iwd->widget_notifier->caption(title);
 	}
-	
+
 	nana::string window_caption(window wd)
 	{
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
@@ -931,7 +931,7 @@ namespace API
 			if (prev != clr)
 			{
 				iwd->scheme->background = clr;
-				
+
 				//If the bground mode of this window is basic, it should remake the background
 				if (iwd->effect.bground && iwd->effect.bground_fade_rate < 0.01) // fade rate < 0.01 means it is basic mode
 					iwd->flags.make_bground_declared = true;

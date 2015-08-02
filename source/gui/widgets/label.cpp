@@ -779,13 +779,6 @@ namespace nana
 			caption(text);
 		}
 
-		label::label(window wd, const nana::char_t* text, bool visible)
-		{
-			create(wd, rectangle(), visible);
-			bgcolor(API::bgcolor(wd));
-			caption(text);
-		}
-
 		label::label(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
@@ -801,7 +794,7 @@ namespace nana
 			return *this;
 		}
 
-		bool label::transparent() const
+		bool label::transparent() const throw()
 		{
 			return (bground_mode::basic == API::effects_bground_mode(*this));
 		}
@@ -825,9 +818,10 @@ namespace nana
 			return *this;
 		}
 
-		void label::click_for(window associated_window)
+		label& label::click_for(window associated_window) throw()
 		{
 			get_drawer_trigger().impl()->for_associated_wd = associated_window;
+			return *this;
 		}
 
 		nana::size label::measure(unsigned limited) const

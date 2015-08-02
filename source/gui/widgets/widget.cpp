@@ -2,8 +2,8 @@
  *	The fundamental widget class implementation
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/widget.cpp
@@ -54,7 +54,7 @@ namespace nana
 			widget& wdg_;
 		};
 
-		nana::string widget::caption() const
+		nana::string widget::caption() const throw()
 		{
 			return this->_m_caption();
 		}
@@ -64,7 +64,7 @@ namespace nana
 			_m_caption(std::wstring(::nana::charset(utf8, ::nana::unicode::utf8)));
 		}
 
-		void widget::caption(nana::string str)
+		void widget::caption(std::wstring str)
 		{
 			_m_caption(std::move(str));
 		}
@@ -125,7 +125,7 @@ namespace nana
 
 		bool widget::empty() const
 		{
-			return (nullptr == handle());	
+			return (nullptr == handle());
 		}
 
 		void widget::focus()
@@ -252,7 +252,7 @@ namespace nana
 		void widget::_m_complete_creation()
 		{}
 
-		nana::string widget::_m_caption() const
+		nana::string widget::_m_caption() const throw()
 		{
 			return API::dev::window_caption(handle());
 		}

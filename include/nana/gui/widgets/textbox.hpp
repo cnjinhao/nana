@@ -149,7 +149,7 @@ namespace nana
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
 		textbox& append(const nana::string& text, bool at_caret);
 
-		/// Determine wheter the text is line wrapped. 
+		/// Determine wheter the text is line wrapped.
 		bool line_wrapped() const;
 		textbox& line_wrapped(bool);
 
@@ -187,7 +187,7 @@ namespace nana
 		void erase_keyword(const nana::string& kw);
 	protected:
 		//Overrides widget's virtual functions
-		::nana::string _m_caption() const override;
+		::nana::string _m_caption() const throw() override;
 		void _m_caption(::nana::string&&) override;
 		void _m_typeface(const paint::font&) override;
 	};

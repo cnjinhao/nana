@@ -234,7 +234,7 @@ namespace nana{
 		_m_init();
 	}
 
-	::nana::string group::_m_caption() const
+	::nana::string group::_m_caption() const throw()
 	{
 		return impl_->caption.caption();
 	}

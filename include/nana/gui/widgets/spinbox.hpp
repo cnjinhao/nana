@@ -106,7 +106,7 @@ namespace nana
 		void modifier(std::wstring prefix, std::wstring suffix);
 		void modifier(const std::string & prefix_utf8, const std::string& suffix_utf8);
 	private:
-		::nana::string _m_caption() const;
+		::nana::string _m_caption() const throw();
 		void _m_caption(::nana::string&&);
 	}; //end class spinbox
 

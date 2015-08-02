@@ -41,9 +41,9 @@ namespace nana
 
 		window parent() const;
 
-		nana::string caption() const;
+		nana::string caption() const throw();
 		void caption(std::string utf8);
-		void caption(nana::string);
+		void caption(std::wstring);
 
 		template<typename ...Args>
 		void i18n(std::string msgid, Args&&... args)
@@ -105,7 +105,7 @@ namespace nana
 		virtual void _m_complete_creation();
 
 		virtual general_events& _m_get_general_events() const = 0;
-		virtual nana::string _m_caption() const;
+		virtual nana::string _m_caption() const throw();
 		virtual void _m_caption(nana::string&&);
 		virtual nana::cursor _m_cursor() const;
 		virtual void _m_cursor(nana::cursor);

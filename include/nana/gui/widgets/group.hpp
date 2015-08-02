@@ -77,7 +77,7 @@ namespace nana{
 		void _m_add_child(const char* field, widget*);
 		void _m_init();
 		void _m_complete_creation() override;
-		::nana::string _m_caption() const override;
+		::nana::string _m_caption() const throw() override;
 		void _m_caption(::nana::string&&) override;
 	private:
 		std::unique_ptr<implement> impl_;
