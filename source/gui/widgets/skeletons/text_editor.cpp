@@ -2359,7 +2359,7 @@ namespace nana{	namespace widgets
 			}
 		}
 
-		nana::upoint text_editor::mouse_caret(const point& scrpos)	//From screen position
+		upoint text_editor::mouse_caret(const point& scrpos)	//From screen position
 		{
 			points_.caret = behavior_->screen_to_caret(scrpos);
 
@@ -2370,9 +2370,14 @@ namespace nana{	namespace widgets
 			return points_.caret;
 		}
 
-		nana::upoint text_editor::caret() const
+		upoint text_editor::caret() const
 		{
 			return points_.caret;
+		}
+
+		point text_editor::caret_screen_pos() const
+		{
+			return behavior_->caret_to_screen(points_.caret);
 		}
 
 		bool text_editor::scroll(bool upwards, bool vert)

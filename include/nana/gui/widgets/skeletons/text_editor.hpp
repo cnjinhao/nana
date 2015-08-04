@@ -231,8 +231,9 @@ namespace nana{	namespace widgets
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
-			nana::upoint mouse_caret(const point& screen_pos);
-			nana::upoint caret() const;
+			upoint mouse_caret(const point& screen_pos);
+			upoint caret() const;
+			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
 			bool mouse_enter(bool);
 			bool mouse_down(::nana::mouse, const point& screen_pos);

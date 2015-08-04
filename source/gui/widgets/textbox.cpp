@@ -294,6 +294,26 @@ namespace drawerbase {
 			return (editor ? editor->getline(line_index, text) : false);
 		}
 
+		/// Gets the caret position
+		bool textbox::caret_pos(point& pos, bool text_coordinate) const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+
+			auto scr_pos = editor->caret_screen_pos();
+
+			if (text_coordinate)
+			{
+				auto upos = editor->caret();
+				pos.x = static_cast<int>(upos.x);
+				pos.y = static_cast<int>(upos.y);
+			}
+			else
+				pos = scr_pos;
+
+			return editor->hit_text_area(scr_pos);
+		}
+
 		textbox& textbox::append(const nana::string& text, bool at_caret)
 		{
 			internal_scope_guard lock;
