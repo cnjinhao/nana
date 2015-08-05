@@ -21,7 +21,7 @@
         #include <mutex>
 	#endif
 	#include <map>
-	#include <nana/paint/detail/image_ico.hpp>
+	#include "../../paint/detail/image_ico.hpp"
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
 	#include <nana/gui/detail/bedrock.hpp>
@@ -174,7 +174,7 @@ namespace nana{
 				}
 			}
 #endif
-			return primary_monitor_size();
+			return rectangle{ primary_monitor_size() };
 		}
 
 		//platform-dependent
@@ -509,20 +509,25 @@ namespace nana{
 #endif		
 		}
 
-		bool native_interface::window_icon(native_window_type wd, const nana::paint::image& img)
+		bool native_interface::window_icon(native_window_type wd, const nana::paint::image& sml_icon, const ::nana::paint::image& big_icon)
 		{
 #if defined(NANA_WINDOWS)
-			HICON ico = paint::image_accessor::icon(img);
-			if(ico)
+			HICON sml_handle = paint::image_accessor::icon(sml_icon);
+			HICON big_handle = paint::image_accessor::icon(big_icon);
+			if(sml_handle || big_handle)
 			{
-				nana::detail::platform_spec::instance().keep_window_icon(wd, img);
-				::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(ico));
-				::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_SMALL, reinterpret_cast<WPARAM>(ico));
+				nana::detail::platform_spec::instance().keep_window_icon(wd, sml_icon, big_icon);
+				if (sml_handle)
+					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_SMALL, reinterpret_cast<WPARAM>(sml_handle));
+
+				if (big_handle)
+					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(big_handle));
 				return true;
 			}
 #elif defined(NANA_X11)
-			if(wd && (false == img.empty()))
+			if(wd && (!sml_icon.empty() || !big_icon.empty()))
 			{
+				auto & img = (sml_icon.empty() ? big_icon : sml_icon);
 
 				const nana::paint::graphics & graph = restrict::spec.keep_window_icon(wd, img);
 				XWMHints hints;
@@ -536,6 +541,32 @@ namespace nana{
 #endif
 			return false;
 		}
+
+		/*
+		bool native_interface::window_icon(native_window_type wd, const paint::image& big_icon, const paint::image& small_icon)	//deprecated
+		{
+#if defined(NANA_WINDOWS)
+			HICON h_big_icon = paint::image_accessor::icon(big_icon);
+			HICON h_small_icon = paint::image_accessor::icon(small_icon);
+			if (h_big_icon || h_small_icon)
+			{
+				nana::detail::platform_spec::instance().keep_window_icon(wd, (!big_icon.empty() ? big_icon : small_icon));
+				if (h_big_icon) {
+					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(h_big_icon));
+				}
+				if (h_small_icon) {
+					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_SMALL, reinterpret_cast<WPARAM>(h_small_icon));
+				}
+				return true;
+			}
+#elif defined(NANA_X11)
+			return window_icon(wd, big_icon);
+#endif
+			return false;
+		}
+		*/
+
+
 
 		void native_interface::activate_owner(native_window_type wd)
 		{

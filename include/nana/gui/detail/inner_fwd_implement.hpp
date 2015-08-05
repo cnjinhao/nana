@@ -121,7 +121,6 @@ namespace nana{
 			{
 				core_window_t*	pressed{nullptr};			//The handle to a window which is being pressed
 				core_window_t*	hovered{nullptr};	//the latest window that mouse moved
-				bool		tabstop_focus_changed{false};	//KeyDown may set it true, if it is true KeyChar will ignore the message
 			}condition;
 
 			root_misc(core_window_t * wd, unsigned width, unsigned height)
@@ -169,34 +168,6 @@ namespace nana{
 			mutable root_misc *			misc_ptr_{nullptr};
 
 			std::map<native_window_type, root_misc> table_;
-		};
-
-
-		class signal_manager
-		{
-			typedef basic_window core_window_t;
-		public:
-			void make(core_window_t* wd, signal_invoker_interface* si)
-			{
-				if (si)
-					table_[wd].reset(si);
-				else
-					table_.erase(wd);
-			}
-
-			void umake(core_window_t * wd)
-			{
-				table_.erase(wd);
-			}
-
-			void call_signal(core_window_t * wd, signals::code code, const signals& s)
-			{
-				auto i = table_.find(wd);
-				if (i != table_.end())
-					i->second->call_signal(code, s);
-			}
-		private:
-			std::map<core_window_t*, std::unique_ptr<signal_invoker_interface>> table_;
 		};
 	}
 }//end namespace nana

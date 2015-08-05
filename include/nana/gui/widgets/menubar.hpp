@@ -67,7 +67,6 @@ namespace nana
 				bool _m_close_menu();
 				std::size_t _m_item_by_pos(const ::nana::point&);
 				bool _m_track_mouse(const ::nana::point&);
-				void _m_draw();
 			private:
 				widget *widget_;
 				nana::paint::graphics	*graph_;

@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,8 +42,8 @@ namespace detail
 			{
 				root_register	misc_register;
 				handle_manager<core_window_t*, window_manager, window_handle_deleter>	wd_register;
-				signal_manager	signal;
-				paint::image default_icon;
+				paint::image default_icon_big;
+				paint::image default_icon_small;
 			};
 		//end struct wdm_private_impl
 
@@ -171,22 +171,6 @@ namespace detail
 			impl_->wd_register.all(v);
 		}
 
-		void window_manager::signal_fire_caption(core_window_t* wd, const nana::char_t* str)
-		{
-			detail::signals sig;
-			sig.info.caption = str;
-			impl_->signal.call_signal(wd, signals::code::caption, sig);
-		}
-
-		nana::string window_manager::signal_fire_caption(core_window_t* wd)
-		{
-			nana::string str;
-			detail::signals sig;
-			sig.info.str = &str;
-			impl_->signal.call_signal(wd, signals::code::read_caption, sig);
-			return str;
-		}
-
 		void window_manager::event_filter(core_window_t* wd, bool is_make, event_code evtid)
 		{
 			switch(evtid)
@@ -197,11 +181,6 @@ namespace detail
 			default:
 				break;
 			}
-		}
-
-		void window_manager::default_icon(const paint::image& img)
-		{
-			impl_->default_icon = img;
 		}
 
 		bool window_manager::available(core_window_t* wd)
@@ -224,10 +203,10 @@ namespace detail
 			return false;
 		}
 
-		window_manager::core_window_t* window_manager::create_root(core_window_t* owner, bool nested, rectangle r, const appearance& app, widget * wdg)
+		window_manager::core_window_t* window_manager::create_root(core_window_t* owner, bool nested, rectangle r, const appearance& app, widget* wdg)
 		{
 			native_window_type native = nullptr;
-			if(owner)
+			if (owner)
 			{
 				//Thread-Safe Required!
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -244,9 +223,9 @@ namespace detail
 			}
 
 			auto result = native_interface::create_window(native, nested, r, app);
-			if(result.native_handle)
+			if (result.native_handle)
 			{
-				core_window_t* wd = new core_window_t(owner, wdg, (category::root_tag**)nullptr);
+				core_window_t* wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
 				wd->flags.take_active = !app.no_activate;
 				wd->title = native_interface::window_caption(result.native_handle);
 
@@ -260,11 +239,11 @@ namespace detail
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd, wd->thread_id);
 
-				if(owner && owner->other.category == category::frame_tag::value)
+				if (owner && owner->other.category == category::frame_tag::value)
 					insert_frame(owner, wd);
 
 				bedrock::inc_window(wd->thread_id);
-				this->icon(wd, impl_->default_icon);
+				this->icon(wd, impl_->default_icon_small, impl_->default_icon_big);
 				return wd;
 			}
 			return nullptr;
@@ -277,7 +256,7 @@ namespace detail
 
 			if (impl_->wd_register.available(parent) == false)	return nullptr;
 
-			core_window_t * wd = new core_window_t(parent, r, wdg, (category::frame_tag**)nullptr);
+			core_window_t * wd = new core_window_t(parent, widget_notifier_interface::get_notifier(wdg), r, (category::frame_tag**)nullptr);
 			wd->frame_window(native_interface::create_child_window(parent->root, rectangle(wd->pos_root.x, wd->pos_root.y, r.width, r.height)));
 			impl_->wd_register.insert(wd, wd->thread_id);
 
@@ -324,11 +303,13 @@ namespace detail
 			if (impl_->wd_register.available(parent) == false)
 				throw std::invalid_argument("invalid parent/owner handle");
 
+			auto wdg_notifier = widget_notifier_interface::get_notifier(wdg);
+
 			core_window_t * wd;
-			if(is_lite)
-				wd = new core_window_t(parent, r, wdg, (category::lite_widget_tag**)nullptr);
+			if (is_lite)
+				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::lite_widget_tag**)nullptr);
 			else
-				wd = new core_window_t(parent, r, wdg, (category::widget_tag**)nullptr);
+				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::widget_tag**)nullptr);
 			impl_->wd_register.insert(wd, wd->thread_id);
 			return wd;
 		}
@@ -358,8 +339,8 @@ namespace detail
 					//before the window_manager destroyes the window, and then, window_manager detaches the
 					//non-existing drawer_trigger which is destroyed by destruction of widget. Crash!
 					wd->drawer.detached();
-					impl_->signal.call_signal(wd, signals::code::destroy, signals_);
-					impl_->signal.umake(wd);
+
+					wd->widget_notifier->destroy();
 
 					native_interface::close_window(wd->root);
 				}
@@ -372,21 +353,26 @@ namespace detail
 		//@brief:	Delete the window handle
 		void window_manager::destroy(core_window_t* wd)
 		{
-			core_window_t* parent = nullptr;
+			//Thread-Safe Required!
+			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			if (impl_->wd_register.available(wd) == false)	return;
+
+			rectangle update_area(wd->pos_owner, wd->dimension);
+
+			auto parent = wd->parent;
+			if (parent)
+				utl::erase(parent->children, wd);
+
+			_m_destroy(wd);
+
+			while (parent && (parent->other.category == ::nana::category::flags::lite_widget))
 			{
-				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				if (impl_->wd_register.available(wd) == false)	return;
-
-				if (wd->parent)
-				{
-					parent = wd->parent;
-					utl::erase(wd->parent->children, wd);
-				}
-
-				_m_destroy(wd);
+				update_area.x += parent->pos_owner.x;
+				update_area.y += parent->pos_owner.y;
+				parent = parent->parent;
 			}
-			update(parent, false, false);
+
+			update(parent, false, false, &update_area);
 		}
 
 		//destroy_handle
@@ -404,15 +390,21 @@ namespace detail
 			}
 		}
 
-		void window_manager::icon(core_window_t* wd, const paint::image& img)
+		void window_manager::default_icon(const nana::paint::image& small, const nana::paint::image& big)
 		{
-			if(false == img.empty())
+			impl_->default_icon_big = big;
+			impl_->default_icon_small = small;
+		}
+
+		void window_manager::icon(core_window_t* wd, const paint::image& small_icon, const paint::image& big_icon)
+		{
+			if(!big_icon.empty() || !small_icon.empty())
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 				if (impl_->wd_register.available(wd))
 				{
 					if(wd->other.category == category::root_tag::value)
-						native_interface::window_icon(wd->root, img);
+						native_interface::window_icon(wd->root, small_icon, big_icon);
 				}
 			}
 		}
@@ -423,35 +415,34 @@ namespace detail
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			if (impl_->wd_register.available(wd))
+			if (!impl_->wd_register.available(wd))
+				return false;
+
+			if(visible != wd->visible)
 			{
-				if(visible != wd->visible)
+				native_window_type nv = nullptr;
+				switch(wd->other.category)
 				{
-					native_window_type nv = nullptr;
-					switch(wd->other.category)
-					{
-					case category::root_tag::value:
-						nv = wd->root; break;
-					case category::frame_tag::value:
-						nv = wd->other.attribute.frame->container; break;
-					default:	//category::widget_tag, category::lite_widget_tag
-						break;
-					}
-
-					if(visible && wd->effect.bground)
-						wndlayout_type::make_bground(wd);
-
-					//Don't set the visible attr of a window if it is a root.
-					//The visible attr of a root will be set in the expose event.
-					if(category::root_tag::value != wd->other.category)
-						bedrock::instance().event_expose(wd, visible);
-
-					if(nv)
-						native_interface::show_window(nv, visible, wd->flags.take_active);
+				case category::root_tag::value:
+					nv = wd->root; break;
+				case category::frame_tag::value:
+					nv = wd->other.attribute.frame->container; break;
+				default:	//category::widget_tag, category::lite_widget_tag
+					break;
 				}
-				return true;
+
+				if(visible && wd->effect.bground)
+					window_layer::make_bground(wd);
+
+				//Don't set the visible attr of a window if it is a root.
+				//The visible attr of a root will be set in the expose event.
+				if(category::flags::root != wd->other.category)
+					bedrock::instance().event_expose(wd, visible);
+
+				if(nv)
+					native_interface::show_window(nv, visible, wd->flags.take_active);
 			}
-			return false;
+			return true;
 		}
 
 		window_manager::core_window_t* window_manager::find_window(native_window_type root, int x, int y)
@@ -489,9 +480,6 @@ namespace detail
 						wd->pos_owner.y = y;
 						_m_move_core(wd, delta);
 
-						if(wd->together.caret && wd->together.caret->visible())
-							wd->together.caret->update();
-
 						auto &brock = bedrock::instance();
 						arg_move arg;
 						arg.window_handle = reinterpret_cast<window>(wd);
@@ -518,7 +506,7 @@ namespace detail
 			auto & brock = bedrock::instance();
 			bool moved = false;
 			const bool size_changed = (r.width != wd->dimension.width || r.height != wd->dimension.height);
-			if(wd->other.category != category::root_tag::value)
+			if(category::flags::root != wd->other.category)
 			{
 				//Move child widgets
 				if(r.x != wd->pos_owner.x || r.y != wd->pos_owner.y)
@@ -528,9 +516,6 @@ namespace detail
 					wd->pos_owner.y = r.y;
 					_m_move_core(wd, delta);
 					moved = true;
-
-					if(wd->together.caret && wd->together.caret->visible())
-						wd->together.caret->update();
 
 					arg_move arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
@@ -640,7 +625,7 @@ namespace detail
 					if(wd->effect.bground && wd->parent)
 					{
 						wd->other.glass_buffer.make(sz);
-						wndlayout_type::make_bground(wd);
+						window_layer::make_bground(wd);
 					}
 				}
 			}
@@ -672,7 +657,7 @@ namespace detail
 		}
 
 		//Copy the root buffer that wnd specified into DeviceContext
-		void window_manager::map(core_window_t* wd, bool forced)
+		void window_manager::map(core_window_t* wd, bool forced, const rectangle* update_area)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -680,12 +665,12 @@ namespace detail
 			{
 				//Copy the root buffer that wd specified into DeviceContext
 #if defined(NANA_LINUX)
-				wd->drawer.map(reinterpret_cast<window>(wd), forced);
+				wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
 #elif defined(NANA_WINDOWS)
 				if(nana::system::this_thread_id() == wd->thread_id)
-					wd->drawer.map(reinterpret_cast<window>(wd), forced);
+					wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
 				else
-					bedrock::instance().map_thread_root_buffer(wd, forced);
+					bedrock::instance().map_thread_root_buffer(wd, forced, update_area);
 #endif
 			}
 		}
@@ -694,26 +679,28 @@ namespace detail
 		//@brief:	update is used for displaying the screen-off buffer.
 		//			Because of a good efficiency, if it is called in an event procedure and the event procedure window is the
 		//			same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
-		bool window_manager::update(core_window_t* wd, bool redraw, bool forced)
+		bool window_manager::update(core_window_t* wd, bool redraw, bool forced, const rectangle* update_area)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false) return false;
 
-			if (wd->visible && wd->visible_parents())
+			if (wd->displayed())
 			{
 				if(forced || (false == wd->belong_to_lazy()))
 				{
-					wndlayout_type::paint(wd, redraw, false);
-					this->map(wd, forced);
+					if (!wd->flags.refreshing)
+					{
+						window_layer::paint(wd, redraw, false);
+						this->map(wd, forced, update_area);
+						return true;
+					}
 				}
-				else
-				{
-					if(redraw)
-						wndlayout_type::paint(wd, true, false);
-					if(wd->other.upd_state == core_window_t::update_state::lazy)
-						wd->other.upd_state = core_window_t::update_state::refresh;
-				}
+				else if (redraw)
+					window_layer::paint(wd, true, false);
+
+				if (wd->other.upd_state == core_window_t::update_state::lazy)
+					wd->other.upd_state = core_window_t::update_state::refresh;
 			}
 			return true;
 		}
@@ -724,8 +711,8 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
 			//It's not worthy to redraw if visible is false
-			if (impl_->wd_register.available(wd) && wd->visible && wd->visible_parents())
-				wndlayout_type::paint(wd, true, true);
+			if (impl_->wd_register.available(wd) && wd->displayed())
+				window_layer::paint(wd, true, true);
 		}
 
 		//do_lazy_refresh
@@ -746,18 +733,16 @@ namespace detail
 				{
 					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
 					{
-						wndlayout_type::paint(wd, false, false);
+						window_layer::paint(wd, false, false);
 						this->map(wd, force_copy_to_screen);
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
-						//Update the nimbus effect
-						using nimbus_renderer = detail::edge_nimbus_renderer<core_window_t>;
-						nimbus_renderer::instance().render(wd, force_copy_to_screen);
+						this->map(wd, true);
 					}
 				}
 				else
-					wndlayout_type::paint(wd, true, false);	//only refreshing if it has an invisible parent
+					window_layer::paint(wd, true, false);	//only refreshing if it has an invisible parent
 			}
 			wd->other.upd_state = core_window_t::update_state::none;
 			return true;
@@ -777,7 +762,7 @@ namespace detail
 
 			result.make(wd->drawer.graphics.size());
 			result.bitblt(0, 0, wd->drawer.graphics);
-			wndlayout_type::paste_children_to_graphics(wd, result);
+			window_layer::paste_children_to_graphics(wd, result);
 			return true;
 		}
 
@@ -786,14 +771,14 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			return (impl_->wd_register.available(wd) ?
-				wndlayout_type::read_visual_rectangle(wd, r) :
+				window_layer::read_visual_rectangle(wd, r) :
 				false);
 		}
 
 		::nana::widget* window_manager::get_widget(core_window_t* wd) const
 		{
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			return (impl_->wd_register.available(wd) ? wd->widget_ptr : nullptr);
+			return (impl_->wd_register.available(wd) ? wd->widget_notifier->widget_ptr() : nullptr);
 		}
 
 		std::vector<window_manager::core_window_t*> window_manager::get_children(core_window_t* wd) const
@@ -933,6 +918,9 @@ namespace detail
 		//			the return value is NULL
 		window_manager::core_window_t* window_manager::capture_window(core_window_t* wd, bool value)
 		{
+			if (!this->available(wd))
+				return nullptr;
+
 			nana::point pos = native_interface::cursor_position();
 			auto & attr_cap = attr_.capture.history;
 
@@ -1015,6 +1003,39 @@ namespace detail
 			}
 		}
 
+
+		// preconditions of get_tabstop: tabstop is not empty and at least one window is visible
+		window_manager::core_window_t* get_tabstop(window_manager::core_window_t* wd, bool forward)
+		{
+			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
+
+			if (forward)
+			{
+				if (detail::tab_type::none == wd->flags.tab)
+					return (tabs.front());
+				else if (detail::tab_type::tabstop & wd->flags.tab)
+				{
+					auto end = tabs.cend();
+					auto i = std::find(tabs.cbegin(), end, wd);
+					if (i != end)
+					{
+						++i;
+						window_manager::core_window_t* ts = (i != end ? (*i) : tabs.front());
+						return (ts != wd ? ts : 0);
+					}
+					else
+						return tabs.front();
+				}
+			}
+			else if (tabs.size() > 1)	//at least 2 elments in tabs are required when moving backward. 
+			{
+				auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
+				if (i != tabs.cend())
+					return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
+			}
+			return nullptr;
+		}
+
 		auto window_manager::tabstop(core_window_t* wd, bool forward) const -> core_window_t*
 		{
 			//Thread-Safe Required!
@@ -1023,33 +1044,32 @@ namespace detail
 				return nullptr;
 
 			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
-			if (tabs.size())
+			if (tabs.empty())
+				return nullptr;
+
+			bool precondition = false;
+			for (auto & tab_wd : tabs)
 			{
-				if (forward)	//
+				if (tab_wd->displayed())
 				{
-					if (detail::tab_type::none == wd->flags.tab)
-						return (tabs.front());
-					else if (detail::tab_type::tabstop & wd->flags.tab)
-					{
-						auto end = tabs.cend();
-						auto i = std::find(tabs.cbegin(), end, wd);
-						if (i != end)
-						{
-							++i;
-							core_window_t* ts = (i != end ? (*i) : tabs.front());
-							return (ts != wd ? ts : 0);
-						}
-						else
-							return tabs.front();
-					}
-				}
-				else if (tabs.size() > 1)	//at least 2 elments in tabs is required when moving perviously. 
-				{
-					auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
-					if (i != tabs.cend())
-						return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
+					precondition = true;
+					break;
 				}
 			}
+
+			if (precondition)
+			{
+				auto new_stop = get_tabstop(wd, forward);
+
+				while (new_stop && (wd != new_stop))
+				{
+					if (new_stop->flags.enabled && new_stop->displayed())
+						return new_stop;
+
+					new_stop = get_tabstop(new_stop, forward);
+				}
+			}
+
 			return nullptr;
 		}
 
@@ -1063,7 +1083,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd))
-				return wndlayout_type::enable_effects_bground(wd, enabled);
+				return window_layer::enable_effects_bground(wd, enabled);
 
 			return false;
 		}
@@ -1161,11 +1181,6 @@ namespace detail
 			return nullptr;
 		}
 
-		void window_manager::_m_attach_signal(core_window_t* wd, signal_invoker_interface* si)
-		{
-			impl_->signal.make(wd, si);
-		}
-
 		bool check_tree(basic_window* wd, basic_window* const cond)
 		{
 			if (wd == cond)	return true;
@@ -1252,18 +1267,9 @@ namespace detail
 
 			if (!established)
 			{
-				if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
-				{
-					auto & cont = root_attr->effects_edge_nimbus;
-					for (auto i = cont.begin(); i != cont.end(); ++i)
-					{
-						if (i->window == wd)
-						{
-							cont.erase(i);
-							break;
-						}
-					}
-				}
+				//remove the window from edge nimbus effect when it is destroying
+				using edge_nimbus = detail::edge_nimbus_renderer<core_window_t>;
+				edge_nimbus::instance().erase(wd);
 			}
 			else if (pa_root_attr != root_attr)
 			{
@@ -1363,21 +1369,22 @@ namespace detail
 				delete wd->together.caret;
 				wd->together.caret = nullptr;
 			}
-			//Delete the children widgets.
-			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end; ++i)
-				_m_destroy(*i);
-			wd->children.clear();
 
 			arg_destroy arg;
 			arg.window_handle = reinterpret_cast<window>(wd);
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
+			//Delete the children widgets.
+			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end; ++i)
+				_m_destroy(*i);
+			wd->children.clear();
+
+
 			_m_disengage(wd, nullptr);
-			wndlayout_type::enable_effects_bground(wd, false);
+			window_layer::enable_effects_bground(wd, false);
 
 			wd->drawer.detached();
-			impl_->signal.call_signal(wd, signals::code::destroy, signals_);
-			impl_->signal.umake(wd);
+			wd->widget_notifier->destroy();
 
 			if(wd->other.category == category::frame_tag::value)
 			{
@@ -1398,8 +1405,16 @@ namespace detail
 			if(wd->other.category != category::root_tag::value)	//A root widget always starts at (0, 0) and its childs are not to be changed
 			{
 				wd->pos_root += delta;
-				if(wd->other.category == category::frame_tag::value)
+				if (category::flags::frame != wd->other.category)
+				{
+					if (wd->together.caret && wd->together.caret->visible())
+						wd->together.caret->update();
+				}
+				else
 					native_interface::move_window(wd->other.attribute.frame->container, wd->pos_root.x, wd->pos_root.y);
+
+				if (wd->displayed() && wd->effect.bground)
+					window_layer::make_bground(wd);
 
 				for (auto child : wd->children)
 					_m_move_core(child, delta);

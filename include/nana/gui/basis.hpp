@@ -84,6 +84,7 @@ namespace nana
 			end_of_medium = 0x19,	//Ctrl+Y
 			substitute = 0x1A,	//Ctrl+Z
 			escape = 0x1B,
+			space = 0x20,	//Space
 
 			//The following names are intuitive name of ASCII control codes
 			select_all = start_of_headline,

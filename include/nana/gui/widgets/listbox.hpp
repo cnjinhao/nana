@@ -15,9 +15,10 @@
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
 #define NANA_GUI_WIDGETS_LISTBOX_HPP
 #include "widget.hpp"
+#include "detail/inline_widget.hpp"
+#include <nana/pat/abstract_factory.hpp>
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
-//#include <nana/paint/graphics.hpp>
 #include <functional>
 #include <initializer_list>
 
@@ -29,7 +30,58 @@ namespace nana
 	{
 		namespace listbox
 		{
-			using size_type = std::size_t ;
+			using size_type = std::size_t;
+
+			/// usefull for both absolute and display (sorted) positions
+			struct index_pair
+			{
+				size_type cat;	//The pos of category
+				size_type item;	//the pos of item in a category.
+
+				index_pair(size_type cat_pos = 0, size_type item_pos = 0)
+					: cat(cat_pos),
+					item(item_pos)
+				{}
+
+				bool empty() const
+				{
+					return (npos == cat);
+				}
+
+				void set_both(size_type n)
+				{
+					cat = item = n;
+				}
+
+				bool is_category() const
+				{
+					return (npos != cat && npos == item);
+				}
+
+				bool is_item() const
+				{
+					return (npos != cat && npos != item);
+				}
+
+				bool operator==(const index_pair& r) const
+				{
+					return (r.cat == cat && r.item == item);
+				}
+
+				bool operator!=(const index_pair& r) const
+				{
+					return !this->operator==(r);
+				}
+
+				bool operator>(const index_pair& r) const
+				{
+					return (cat > r.cat) || (cat == r.cat && item > r.item);
+				}
+			};
+
+			using selection = std::vector<index_pair>;
+
+			using inline_notifier_interface = detail::inline_widget_notifier_interface<index_pair, std::wstring>;
 
 			struct cell
 			{
@@ -114,58 +166,13 @@ namespace nana
 				std::size_t pos_{0};
 			};
 
-            /// usefull for both absolute and display (sorted) positions
-            struct index_pair
-			{
-				size_type cat;	//The pos of category
-				size_type item;	//the pos of item in a category.
 
-				index_pair(size_type cat_pos = 0, size_type item_pos = 0)
-					:	cat(cat_pos),
-						item(item_pos)
-				{}
-
-				bool empty() const
-				{
-					return (npos == cat);
-				}
-
-				void set_both(size_type n)
-				{
-					cat = item = n;
-				}
-
-				bool is_category() const
-				{
-					return (npos != cat && npos == item);
-				}
-
-				bool is_item() const
-				{
-					return (npos != cat && npos != item);
-				}
-
-				bool operator==(const index_pair& r) const
-				{
-					return (r.cat == cat && r.item == item);
-				}
-
-				bool operator!=(const index_pair& r) const
-				{
-					return !this->operator==(r);
-				}
-
-				bool operator>(const index_pair& r) const
-				{
-					return (cat > r.cat) || (cat == r.cat && item > r.item);
-				}
-			};
 
 			typedef std::vector<index_pair> selection;
 
-			//struct essence_t
-			//@brief:	this struct gives many data for listbox,
-			//			the state of the struct does not effect on member funcions, therefore all data members are public.
+			/// struct essence_t
+			///@brief:	this struct gives many data for listbox,
+			///			the state of the struct does not effect on member funcions, therefore all data members are public.
 			struct essence_t;
 
 			struct category_t;
@@ -344,6 +351,8 @@ namespace nana
 				: public std::iterator < std::input_iterator_tag, cat_proxy >
 			{
 			public:
+				using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
+
 				cat_proxy() = default;
 				cat_proxy(essence_t*, size_type pos);
 				cat_proxy(essence_t*, category_t*);
@@ -366,12 +375,16 @@ namespace nana
 					return iter;
 				}
 
-				void append(std::initializer_list<nana::string>);
+				/// Appends one item at the end of this category with the specifies text in the column fields
+                void append(std::initializer_list<nana::string>);
 
 				size_type columns() const;
 
 				cat_proxy& text(nana::string);
 				nana::string text() const;
+
+				cat_proxy & select(bool);
+				bool selected() const;
 
 				/// Behavior of a container
 				void push_back(nana::string);
@@ -423,6 +436,8 @@ namespace nana
 
 				/// Behavior of Iterator
 				bool operator!=(const cat_proxy&) const;
+
+				void inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_notifier_interface>> factory);
 			private:
 				void _m_append(std::vector<cell> && cells);
 				void _m_cat_by_pos();
@@ -473,16 +488,54 @@ namespace nana
 				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
 				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
 				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
+
+                unsigned max_header_width{3000},     /// \todo how to implement some geometrical parameters ??
+                         ext_w = 5;
 			};
 		}
 	}//end namespace drawerbase
 
-/*! \brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain a list of \a items. 
+/*! \class listbox
+\brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain a list of \a items. 
 A category is a text with can be \a selected, \a checked and \a expanded to show the items.
 An item is formed by \a column-fields, each corresponding to one of the \a headers. 
 An item can be \a selected and \a checked.
-The user can \a drag the header to \a reisize it or to \a reorganize it. 
-By \a clicking on a header the list get \a reordered, first up, and then down alternatively.
+The user can \a drag the header to \a resize it or to \a reorganize it. 
+By \a clicking on one header the list get \a reordered, first up, and then down alternatively.
+
+1. The resolver is used to resolute an object of the specified type for a listbox item.
+3. nana::listbox creates the category 0 by default. The member functions without the categ parameter operate the items that belong to category 0.
+4. A sort compare is used for sorting the items. It is a strict weak ordering comparer that must meet the requirement:
+		Irreflexivity (comp(x, x) returns false) 
+	and 
+		antisymmetry(comp(a, b) != comp(b, a) returns true)
+	A simple example.
+		bool sort_compare( const nana::string& s1, nana::any*, 
+						   const nana::string& s2, nana::any*, bool reverse)
+		{
+			return (reverse ? s1 > s2 : s1 < s2);
+		}
+		listbox.set_sort_compare(0, sort_compare);
+	The listbox supports attaching a customer's object for each item, therefore the items can be 
+	sorted by comparing these customer's object.
+		bool sort_compare( const nana::string&, nana::any* o1, 
+						   const nana::string&, nana::any* o2, bool reverse)
+		{
+			if(o1 && o2) 	//some items may not attach a customer object.
+			{
+				int * i1 = o1->get<int>();
+				int * i2 = o2->get<int>();
+				return (i1 && i2 && (reverse ? *i1 > *i2 : *i1 < *i2));
+ 							;//some types may not be int.
+			}
+			return false;
+		}
+		listbox.anyobj(0, 0, 10); //the type of customer's object is int.
+		listbox.anyobj(0, 0, 20);
+\todo doc: actualize this example listbox.at(0)...
+\see nana::drawerbase::listbox::cat_proxy
+\see nana::drawerbase::listbox::item_proxy
+\example listbox_Resolver.cpp
 */
 	class listbox
 		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
@@ -499,19 +552,23 @@ By \a clicking on a header the list get \a reordered, first up, and then down al
 		using cell      = drawerbase::listbox::cell;
 		using export_options= drawerbase::listbox::export_options;
 		using columns_indexs= drawerbase::listbox::size_type;
+		using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
 	public:
 		listbox() = default;
 		listbox(window, bool visible);
 		listbox(window, const rectangle& = {}, bool visible = true);
 
-		void auto_draw(bool);                                ///<Set state: Redraw automatically after an operation?
+		void auto_draw(bool);                                ///< Set state: Redraw automatically after an operation?
 
-		void append_header(nana::string, unsigned width = 120);///<Appends a new column with a header text and the specified width at the end
-		listbox& header_width(size_type pos, unsigned pixels);
-		unsigned header_width(size_type pos) const;
+        /// Appends a new column with a header text and the specified width at the end, and return it position
+        size_type append_header(nana::string header_text, unsigned width = 120);		
+        listbox& header_width(size_type position, unsigned pixels);
+		unsigned header_width(size_type position) const;
+        unsigned auto_width(size_type position, unsigned max=3000);
 
-		cat_proxy append(nana::string);          ///<Appends a new category at the end
-		void append(std::initializer_list<nana::string>); ///<Appends categories at the end
+
+		cat_proxy append(nana::string);          ///< Appends a new category at the end
+		void append(std::initializer_list<nana::string>); ///< Appends categories at the end
 		cat_proxy insert(cat_proxy, nana::string);
 		cat_proxy at(size_type pos) const;
 

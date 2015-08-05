@@ -112,7 +112,7 @@ namespace API
 			iwd->effect.bground = new_effect_ptr;
 			iwd->effect.bground_fade_rate = fade_rate;
 			restrict::window_manager.enable_effects_bground(iwd, true);
-			
+
 			if (fade_rate < 0.01)
 				iwd->flags.make_bground_declared = true;
 
@@ -184,7 +184,7 @@ namespace API
 			}
 		}
 
-		nana::string window_caption(window wd)
+		nana::string window_caption(window wd) throw()
 		{
 			auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 			internal_scope_guard isg;
@@ -354,14 +354,14 @@ namespace API
 		return r;
 	}
 
-	void window_icon_default(const paint::image& img)
+	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon)
 	{
-		restrict::window_manager.default_icon(img);
+		restrict::window_manager.default_icon(small_icon, big_icon);
 	}
 
-	void window_icon(window wd, const paint::image& img)
+	void window_icon(window wd, const paint::image& small_icon, const paint::image& big_icon)
 	{
-		restrict::window_manager.icon(reinterpret_cast<restrict::core_window_t*>(wd), img);
+		restrict::window_manager.icon(reinterpret_cast<restrict::core_window_t*>(wd), small_icon, big_icon);
 	}
 
 	bool empty_window(window wd)
@@ -372,6 +372,16 @@ namespace API
 	bool is_window(window wd)
 	{
 		return restrict::window_manager.available(reinterpret_cast<restrict::core_window_t*>(wd));
+	}
+
+	bool is_destroying(window wd)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (!restrict::window_manager.available(iwd))
+			return false;
+
+		return iwd->flags.destroying;
 	}
 
 	void enable_dropfiles(window wd, bool enb)
@@ -534,13 +544,19 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::window_manager.move(iwd, x, y, false))
 		{
-			if(category::flags::root != iwd->other.category)
+			restrict::core_window_t* update_wd = nullptr;
+			if (iwd->displayed() && iwd->effect.bground)
 			{
-				do{
-					iwd = iwd->parent;
-				} while (category::flags::lite_widget == iwd->other.category);
+				update_wd = iwd;
+				restrict::window_manager.update(iwd, true, false);
 			}
-			restrict::window_manager.update(iwd, false, false);
+
+			restrict::core_window_t* anc = iwd;
+			if (category::flags::root != iwd->other.category)
+				anc = iwd->seek_non_lite_widget_ancestor();
+
+			if (anc != update_wd)
+				restrict::window_manager.update(anc, false, false);
 		}
 	}
 
@@ -551,11 +567,8 @@ namespace API
 		if(restrict::window_manager.move(iwd, r))
 		{
 			if (category::flags::root != iwd->other.category)
-			{
-				do{
-					iwd = iwd->parent;
-				} while (category::flags::lite_widget == iwd->other.category);
-			}
+				iwd = iwd->seek_non_lite_widget_ancestor();
+
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
@@ -624,11 +637,8 @@ namespace API
 		if(restrict::window_manager.size(iwd, sz, false, false))
 		{
 			if (category::flags::root != iwd->other.category)
-			{
-				do{
-					iwd = iwd->parent;
-				} while (category::flags::lite_widget == iwd->other.category);
-			}
+				iwd = iwd->seek_non_lite_widget_ancestor();
+
 			restrict::window_manager.update(iwd, false, false);
 		}
 	}
@@ -639,7 +649,7 @@ namespace API
 		internal_scope_guard lock;
 		if (!restrict::window_manager.available(iwd))
 			return{};
-		
+
 		auto sz = window_size(wd);
 		sz.width += iwd->extra_width;
 		sz.height += iwd->extra_height;
@@ -721,7 +731,7 @@ namespace API
 		if(restrict::window_manager.available(iwd) && (iwd->flags.enabled != enabled))
 		{
 			iwd->flags.enabled = enabled;
-			restrict::window_manager.update(iwd, true, false);
+			restrict::window_manager.update(iwd, true, true);
 			if(category::flags::root == iwd->other.category)
 				restrict::interface_type::enable_window(iwd->root, enabled);
 		}
@@ -770,16 +780,16 @@ namespace API
 	{
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(iwd))
-			restrict::window_manager.signal_fire_caption(iwd, title.c_str());
+		if (restrict::window_manager.available(iwd))
+			iwd->widget_notifier->caption(title);
 	}
-	
+
 	nana::string window_caption(window wd)
 	{
 		auto const iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.available(iwd))
-			return restrict::window_manager.signal_fire_caption(iwd);
+		if (restrict::window_manager.available(iwd))
+			return iwd->widget_notifier->caption();
 
 		return{};
 	}
@@ -930,7 +940,7 @@ namespace API
 			if (prev != clr)
 			{
 				iwd->scheme->background = clr;
-				
+
 				//If the bground mode of this window is basic, it should remake the background
 				if (iwd->effect.bground && iwd->effect.bground_fade_rate < 0.01) // fade rate < 0.01 means it is basic mode
 					iwd->flags.make_bground_declared = true;
@@ -1283,6 +1293,26 @@ namespace API
 			}
 		}
 		return nana::element_state::normal;
+	}
+
+	bool ignore_mouse_focus(window wd, bool ignore)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		if (restrict::window_manager.available(iwd))
+		{
+			auto state = iwd->flags.ignore_mouse_focus;
+			iwd->flags.ignore_mouse_focus = ignore;
+			return state;
+		}
+		return false;
+	}
+
+	bool ignore_mouse_focus(window wd)
+	{
+		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
+		internal_scope_guard lock;
+		return (restrict::window_manager.available(iwd) ? iwd->flags.ignore_mouse_focus : false);
 	}
 }//end namespace API
 }//end namespace nana

@@ -48,13 +48,6 @@ namespace API
 	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
 	namespace dev
 	{
-		template<typename Object, typename Concept>
-		void attach_signal(window wd, Object& object, void (Concept::*f)(::nana::detail::signals::code, const ::nana::detail::signals&))
-		{
-			using namespace ::nana::detail;
-			bedrock::instance().wd_manager.attach_signal(reinterpret_cast<bedrock::core_window_t*>(wd), object, f);
-		}
-
 		bool set_events(window, const std::shared_ptr<general_events>&);
 		
 		template<typename Scheme>
@@ -68,7 +61,7 @@ namespace API
 		widget_colors* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
-		nana::string window_caption(window);
+		nana::string window_caption(window) throw();
 		void window_caption(window, nana::string);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
@@ -119,10 +112,12 @@ namespace API
 		}
 	}
 
-	void window_icon_default(const paint::image&);
-	void window_icon(window, const paint::image&);
+	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon = {});
+	void window_icon(window, const paint::image& small_icon, const paint::image& big_icon = {});
+	
 	bool empty_window(window);		///< Determines whether a window is existing.
 	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
+	bool is_destroying(window);		///< Determines whether a window is destroying
 	void enable_dropfiles(window, bool);
 
     /// \brief Retrieves the native window of a Nana.GUI window.
@@ -300,6 +295,9 @@ namespace API
 
 	nana::mouse_action mouse_action(window);
 	nana::element_state element_state(window);
+
+	bool ignore_mouse_focus(window, bool ignore);	///< Enables/disables the mouse focus, it returns the previous state
+	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 }//end namespace API
 }//end namespace nana
 

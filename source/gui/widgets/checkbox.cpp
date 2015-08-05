@@ -48,42 +48,40 @@ namespace checkbox
 
 			void drawer::refresh(graph_reference graph)
 			{
-				_m_draw(graph);
+				_m_draw_background(graph);
+				_m_draw_title(graph);
+				_m_draw_checkbox(graph, graph.text_extent_size(STR("jN"), 2).height + 2);
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
 			{
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			void drawer::mouse_up(graph_reference graph, const arg_mouse&)
 			{
 				if(impl_->react)
 					impl_->crook.reverse();
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			void drawer::mouse_enter(graph_reference graph, const arg_mouse&)
 			{
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			void drawer::mouse_leave(graph_reference graph, const arg_mouse&)
 			{
-				_m_draw(graph);
+				refresh(graph);
+				API::lazy_refresh();
 			}
 
 			drawer::implement * drawer::impl() const
 			{
 				return impl_;
-			}
-
-			void drawer::_m_draw(graph_reference graph)
-			{
-				_m_draw_background(graph);
-				_m_draw_title(graph);
-				_m_draw_checkbox(graph, graph.text_extent_size(STR("jN"), 2).height + 2);
-				API::lazy_refresh();
 			}
 
 			void drawer::_m_draw_background(graph_reference graph)
@@ -177,6 +175,7 @@ namespace checkbox
 		void checkbox::radio(bool is_radio)
 		{
 			get_drawer_trigger().impl()->crook.radio(is_radio);
+			API::refresh_window(handle());
 		}
 
 		void checkbox::transparent(bool enabled)
@@ -185,6 +184,7 @@ namespace checkbox
 				API::effects_bground(*this, effects::bground_transparent(0), 0.0);
 			else
 				API::effects_bground_remove(*this);
+			API::refresh_window(handle());
 		}
 
 		bool checkbox::transparent() const
@@ -196,10 +196,12 @@ namespace checkbox
 	//class radio_group
 		radio_group::~radio_group()
 		{
-			for(auto & i : ui_container_)
+			for(auto & e : ui_container_)
 			{
-				API::umake_event(i.eh_checked);
-				API::umake_event(i.eh_destroy);
+				e.uiobj->radio(false);
+				e.uiobj->react(true);
+				API::umake_event(e.eh_checked);
+				API::umake_event(e.eh_destroy);
 			}
 		}
 
@@ -231,7 +233,7 @@ namespace checkbox
 			return ui_container_.size();
 		}
 
-		void radio_group::_m_checked(const arg_mouse& arg)
+		void radio_group::_m_checked(const arg_click& arg)
 		{
 			for (auto & i : ui_container_)
 				i.uiobj->check(arg.window_handle == i.uiobj->handle());

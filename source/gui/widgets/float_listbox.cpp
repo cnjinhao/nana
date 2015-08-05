@@ -34,7 +34,7 @@ namespace nana
 				{
 					if (state == StateHighlighted)
 					{
-						::nana::color clr{ 0xaf, 0xc7, 0xe3 };
+						::nana::color clr(static_cast<color_rgb>(0xafc7e3));
 						graph.rectangle(r, false, clr);
 
 						auto right = r.right() - 1;
@@ -99,7 +99,7 @@ namespace nana
 							nana::point to_pos(x, r.y + 2);
 							to_pos.x += (image_pixels_ - imgsz.width) / 2;
 							to_pos.y += (vpix - imgsz.height) / 2;
-							item->image().stretch(item->image().size(), graph, nana::rectangle(to_pos, imgsz));
+							item->image().stretch(::nana::rectangle{ item->image().size() }, graph, nana::rectangle(to_pos, imgsz));
 						}
 						x += (image_pixels_ + 2);
 					}
@@ -276,7 +276,7 @@ namespace nana
 					}
 				}
 
-				bool right_area(graph_reference graph, int x, int y) const
+				static bool right_area(graph_reference graph, int x, int y)
 				{
 					return ((1 < x && 1 < y) &&
 						x < static_cast<int>(graph.width()) - 2 &&
@@ -325,7 +325,7 @@ namespace nana
 						_m_open_scrollbar(*widget_, pages);
 					}
 					else
-						graph_->string({ 4, 4 }, STR("Empty Listbox, No Module!"), {0x80, 0x80, 0x80});
+						graph_->string({ 4, 4 }, STR("Empty Listbox, No Module!"), static_cast<color_rgb>(0x808080));
 
 					//Draw border
 					graph_->rectangle(false, colors::black);
@@ -361,7 +361,7 @@ namespace nana
 
 							auto fn = [this](const arg_mouse& arg)
 							{
-								if (arg.left_button && (scrollbar_.value() != state_.offset_y))
+								if (arg.is_left_button() && (scrollbar_.value() != state_.offset_y))
 								{
 									state_.offset_y = static_cast<unsigned>(scrollbar_.value());
 									draw();
@@ -449,12 +449,16 @@ namespace nana
 
 				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
-					if(drawer_->right_area(graph, arg.pos.x, arg.pos.y))
+					bool close_wdg = false;
+					if (drawer_->right_area(graph, arg.pos.x, arg.pos.y))
 					{
 						drawer_->set_result();
-						drawer_->widget_ptr()->close();
+						close_wdg = true;
 					}
-					else if(false == drawer_->ignore_emitting_mouseup())
+					else
+						close_wdg = (false == drawer_->ignore_emitting_mouseup());
+
+					if (close_wdg)
 						drawer_->widget_ptr()->close();
 				}
 			//end class trigger

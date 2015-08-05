@@ -42,7 +42,7 @@ namespace nana
 
 				if(_m_check_changing(value_))
 				{
-					_m_draw();
+					refresh(*graph_);
 					API::update_window(widget_->handle());
 				}
 				return v;
@@ -89,24 +89,28 @@ namespace nana
 			{
 				return unknown_;
 			}
-
-			void trigger::refresh(graph_reference)
+			bool trigger::stopped() const
 			{
-				_m_draw();
+				return stop_;
+			}
+			bool trigger::stop(bool s)
+			{
+				std::swap(s,stop_);
+				return s;
 			}
 
-			void trigger::_m_draw()
+			void trigger::refresh(graph_reference graph)
 			{
-				if(false == unknown_)
-					draw_width_ = static_cast<unsigned>((graph_->width() - border * 2) * (double(value_) / max_));
+				if (false == unknown_)
+					draw_width_ = static_cast<unsigned>((graph.width() - border * 2) * (double(value_) / max_));
 
-				_m_draw_box(*graph_);
-				_m_draw_progress(*graph_);
+				_m_draw_box(graph);
+				_m_draw_progress(graph);
 			}
 
 			void trigger::_m_draw_box(graph_reference graph)
 			{
-				rectangle r = graph.size();
+				rectangle r{ graph.size() };
 				graph.gradual_rectangle(r, colors::button_face_shadow_end, colors::button_face_shadow_start, true);
 				::nana::color lt{ colors::gray }, rb{colors::white};
 				graph.frame_rectangle(r, lt, lt, rb, rb);
@@ -196,6 +200,14 @@ namespace nana
 		bool progress::unknown() const
 		{
 			return get_drawer_trigger().unknown();
+		}
+		bool progress::stop(bool s)  
+		{
+			return get_drawer_trigger().stop(s);
+		}
+		bool progress::stopped() const
+		{
+			return get_drawer_trigger().stopped();
 		}
 	//end class progress
 }//end namespace nana

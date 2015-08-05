@@ -26,9 +26,19 @@
 
 namespace nana
 {
-	//class event_arg
-	event_arg::~event_arg(){}
+	//class internal_scope_guard
+		internal_scope_guard::internal_scope_guard()
+		{
+			detail::bedrock::instance().wd_manager.internal_lock().lock();
+		}
 
+		internal_scope_guard::~internal_scope_guard()
+		{
+			detail::bedrock::instance().wd_manager.internal_lock().unlock();
+		}
+	//end class internal_scope_guard
+
+	//class event_arg
 	void event_arg::stop_propagation() const
 	{
 		stop_propagation_ = true;
@@ -52,6 +62,26 @@ namespace nana
 			bedrock::instance().evt_operation.cancel(evt);
 		}
 
+		class bedrock::flag_guard
+		{
+		public:
+			flag_guard(bedrock* brock, core_window_t * wd)
+				: brock_{ brock }, wd_(wd)
+			{
+				wd_->flags.refreshing = true;
+			}
+
+			~flag_guard()
+			{
+				if (brock_->wd_manager.available((wd_)))
+					wd_->flags.refreshing = false;
+			}
+		private:
+			bedrock			*const brock_;
+			core_window_t	*const wd_;
+
+		};
+
 		void bedrock::event_expose(core_window_t * wd, bool exposed)
 		{
 			if (nullptr == wd) return;
@@ -63,15 +93,24 @@ namespace nana
 			arg.window_handle = reinterpret_cast<window>(wd);
 			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
 			{
+				const core_window_t * caret_wd = (wd->together.caret ? wd : wd->child_caret());
+				if (caret_wd)
+				{
+					if (exposed)
+					{
+						if (wd->root_widget->other.attribute.root->focus == caret_wd)
+							caret_wd->together.caret->visible(true);
+					}
+					else
+						caret_wd->together.caret->visible(false);
+				}
+
 				if (!exposed)
 				{
 					if (category::flags::root != wd->other.category)
 					{
-						//If the wd->parent is a lite_widget then find a parent until it is not a lite_widget
-						wd = wd->parent;
-
-						while (category::flags::lite_widget == wd->other.category)
-							wd = wd->parent;
+						//find an ancestor until it is not a lite_widget
+						wd = wd->seek_non_lite_widget_ancestor();
 					}
 					else if (category::flags::frame == wd->other.category)
 						wd = wd_manager.find_window(wd->root, wd->pos_root.x, wd->pos_root.y);
@@ -91,7 +130,7 @@ namespace nana
 				arg.x = x;
 				arg.y = y;
 				if (emit(event_code::move, wd, arg, false, get_thread_context()))
-					wd_manager.update(wd, true, true);
+					wd_manager.update(wd, false, true);
 			}
 		}
 
@@ -150,9 +189,22 @@ namespace nana
 			auto retain = wd->together.events_ptr;
 			auto evts_ptr = retain.get();
 
+			//enable refreshing flag, this is a RAII class for exception-safe
+			flag_guard fguard(this, wd);
+
 			switch (evt_code)
 			{
 			case event_code::click:
+				{
+					auto arg = dynamic_cast<const arg_click*>(&event_arg);
+					if (nullptr == arg)
+						return;
+
+					wd->drawer.click(*arg);
+					if (!draw_only)
+						evts_ptr->click.emit(*arg);
+				}
+				break;
 			case event_code::dbl_click:
 			case event_code::mouse_enter:
 			case event_code::mouse_move:
@@ -169,10 +221,6 @@ namespace nana
 
 				switch (evt_code)
 				{
-				case event_code::click:
-					drawer_event_fn = &drawer::click;
-					evt_addr = &evts_ptr->click;
-					break;
 				case event_code::dbl_click:
 					drawer_event_fn = &drawer::dbl_click;
 					evt_addr = &evts_ptr->dbl_click;
@@ -202,9 +250,9 @@ namespace nana
 				}
 
 				(wd->drawer.*drawer_event_fn)(*arg);
+				
 				if (!draw_only)
 					evt_addr->emit(*arg);
-
 				break;
 			}
 			case event_code::mouse_wheel:

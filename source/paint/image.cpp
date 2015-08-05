@@ -16,14 +16,15 @@
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <stdexcept>
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #if defined(NANA_ENABLE_PNG)
-	#include <nana/paint/detail/image_png.hpp>
+	#include "detail/image_png.hpp"
 #endif
-#include <nana/paint/detail/image_bmp.hpp>
-#include <nana/paint/detail/image_ico.hpp>
+#include "detail/image_bmp.hpp"
+#include "detail/image_ico.hpp"
 
 namespace nana
 {
@@ -69,6 +70,31 @@ namespace paint
 				return false;
 			}
 
+			bool image_ico::open(const void* data, std::size_t bytes)
+			{
+				close();
+#if defined(NANA_WINDOWS)
+				HICON handle = ::CreateIconFromResource((PBYTE)data, static_cast<DWORD>(bytes), TRUE, 0x00030000);
+				if(handle)
+				{
+					ICONINFO info;
+					if (::GetIconInfo(handle, &info) != 0)
+					{
+						HICON * p = new HICON(handle);
+						ptr_ = std::shared_ptr<HICON>(p, handle_deleter());
+						size_.width = (info.xHotspot << 1);
+						size_.height = (info.yHotspot << 1);
+						::DeleteObject(info.hbmColor);
+						::DeleteObject(info.hbmMask);
+						return true;
+					}
+				}
+#else
+				if(is_ico_){}	//kill the unused compiler warning in Linux.
+#endif
+				return false;
+			}
+
 			bool image_ico::alpha_channel() const
 			{
 				return false;
@@ -89,12 +115,12 @@ namespace paint
 				return size_;
 			}
 
-			void image_ico::paste(const nana::rectangle& src_r, graph_reference graph, int x, int y) const
+			void image_ico::paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const
 			{
 				if(ptr_ && (graph.empty() == false))
 				{
 #if defined(NANA_WINDOWS)
-					::DrawIconEx(graph.handle()->context, x, y, *ptr_, src_r.width, src_r.height, 0, 0, DI_NORMAL);
+					::DrawIconEx(graph.handle()->context, p_dst.x, p_dst.y, *ptr_, src_r.width, src_r.height, 0, 0, DI_NORMAL);
 #endif
 				}
 			}
@@ -235,6 +261,13 @@ namespace paint
 			return false;
 		}
 
+		bool image::open_icon(const void* data, std::size_t bytes)
+		{
+			image::image_impl_interface * helper = new detail::image_ico(true);
+			image_ptr_ = std::shared_ptr<image_impl_interface>(helper);
+			return helper->open(data, bytes);
+		}
+
 		bool image::empty() const
 		{
 			return ((nullptr == image_ptr_) || image_ptr_->empty());
@@ -260,22 +293,35 @@ namespace paint
 			return (image_ptr_ ? image_ptr_->size() : nana::size());
 		}
 
-		void image::paste(graphics& dst, int x, int y) const
+		void image::paste(graphics& dst, const point& p_dst) const
 		{
-			if(image_ptr_)
-				image_ptr_->paste(image_ptr_->size(), dst, x, y);
+			this->paste(rectangle{ this->size() }, dst, p_dst);
 		}
 
-		void image::paste(const nana::rectangle& r_src, graphics & dst, const nana::point& p_dst) const
+		void image::paste(const rectangle& r_src, graphics & dst, const point& p_dst) const
 		{
-			if(image_ptr_)
-				image_ptr_->paste(r_src, dst, p_dst.x, p_dst.y);		
+			if (image_ptr_)
+			{
+				if (dst.empty())
+					dst.make({ r_src.width, r_src.height });	//throws if failed to create
+
+				image_ptr_->paste(r_src, dst, p_dst);
+			}
+			else
+				throw std::runtime_error("image is empty");
 		}
 
 		void image::stretch(const nana::rectangle& r_src, graphics& dst, const nana::rectangle & r_dst) const
 		{
-			if(image_ptr_)
-				image_ptr_->stretch(r_src, dst, r_dst);			
+			if (image_ptr_)
+			{
+				if (dst.empty())
+					dst.make({ r_src.width, r_src.height });	//throws if failed to create
+
+				image_ptr_->stretch(r_src, dst, r_dst);
+			}
+			else
+				throw std::runtime_error("image is empty");
 		}
 	//end class image
 

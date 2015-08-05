@@ -55,7 +55,7 @@ namespace nana
 
 				virtual void slider(window, graph_reference graph, const slider_t& s)
 				{
-					nana::rectangle r = graph.size();
+					nana::rectangle r{ graph.size() };
 					if(s.horizontal)
 					{
 						r.x = s.pos;
@@ -66,7 +66,7 @@ namespace nana
 						r.y = s.pos;
 						r.height = s.scale;
 					}
-					graph.round_rectangle(r, 3, 3, colors::black, true, {0xf0,0xf0,0xf0});
+					graph.round_rectangle(r, 3, 3, colors::black, true, static_cast<color_rgb>(0xf0f0f0));
 				}
 			};
 
@@ -390,7 +390,7 @@ namespace nana
 				nana::rectangle _m_bar_area() const
 				{
 					auto sz = other_.graph->size();
-					nana::rectangle r = sz;
+					nana::rectangle r{ sz };
 					if(style::horizontal == attr_.dir)
 					{
 						r.x = attr_.slider_scale / 2 - attr_.border;

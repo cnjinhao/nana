@@ -42,24 +42,7 @@ namespace nana
 namespace nana{
 namespace detail
 {
-	template<typename T>
-	class signal_invoker_mf
-		: public signal_invoker_interface
-	{
-	public:
-		signal_invoker_mf(T& obj, void(T::*mf)(signals::code, const signals&))
-			:	obj_(obj),
-				mf_(mf)
-		{}
-
-		void call_signal(signals::code code, const signals& s) override
-		{
-			(obj_.*mf_)(code, s);
-		}
-	private:
-		T& obj_;
-		void(T::*mf_)(signals::code, const signals&);
-	};
+	class widget_notifier_interface;	//forward declaration
 
 	struct root_misc;
 
@@ -87,13 +70,11 @@ namespace detail
 			std::vector<thr_refcnt> stack_;
 		};
 	public:
-		typedef native_window_type	native_window;
-		typedef revertible_mutex mutex_type;
+		using native_window = native_window_type;
+		using mutex_type = revertible_mutex;
 
-		typedef basic_window core_window_t;
-		typedef std::vector<core_window_t*> cont_type;
-
-		typedef window_layout	wndlayout_type;
+		using core_window_t = basic_window;
+		using window_layer = window_layout;
 
 		window_manager();
 		~window_manager();
@@ -103,16 +84,7 @@ namespace detail
 		mutex_type & internal_lock() const;
 		void all_handles(std::vector<core_window_t*>&) const;
 
-		template<typename T, typename Concept>
-		void attach_signal(core_window_t* wd, T& obj, void(Concept::*mf)(signals::code, const signals&))
-		{
-			return _m_attach_signal(wd, new signal_invoker_mf<Concept>(obj, mf));
-		}
-
-		void signal_fire_caption(core_window_t*, const nana::char_t*);
-		nana::string signal_fire_caption(core_window_t*);
 		void event_filter(core_window_t*, bool is_make, event_code);
-		void default_icon(const nana::paint::image&);
 
 		bool available(core_window_t*);
 		bool available(core_window_t *, core_window_t*);
@@ -121,6 +93,7 @@ namespace detail
 		core_window_t* create_root(core_window_t*, bool nested, rectangle, const appearance&, widget*);
 		core_window_t* create_widget(core_window_t*, const rectangle&, bool is_lite, widget*);
 		core_window_t* create_frame(core_window_t*, const rectangle&, widget*);
+
 		bool insert_frame(core_window_t* frame, native_window);
 		bool insert_frame(core_window_t* frame, core_window_t*);
 		void close(core_window_t*);
@@ -133,7 +106,8 @@ namespace detail
 		//@brief:	Delete window handle, the handle type must be a root and a frame.
 		void destroy_handle(core_window_t*);
 
-		void icon(core_window_t*, const paint::image&);
+		void default_icon(const paint::image& small_icon, const paint::image& big_icon);
+		void icon(core_window_t*, const paint::image& small_icon, const paint::image& big_icon);
 
 		//show
 		//@brief: show or hide a window
@@ -150,9 +124,9 @@ namespace detail
 		core_window_t* root(native_window_type) const;
 
 		//Copy the root buffer that wnd specified into DeviceContext
-		void map(core_window_t*, bool forced);
+		void map(core_window_t*, bool forced, const rectangle* update_area = nullptr);
 
-		bool update(core_window_t*, bool redraw, bool force);
+		bool update(core_window_t*, bool redraw, bool force, const rectangle* update_area = nullptr);
 		void refresh_tree(core_window_t*);
 
 		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen);
@@ -188,7 +162,6 @@ namespace detail
 
 		core_window_t* find_shortkey(native_window_type, unsigned long key);
 	private:
-		void _m_attach_signal(core_window_t*, signal_invoker_interface*);
 		void _m_disengage(core_window_t*, core_window_t* for_new);
 		void _m_destroy(core_window_t*);
 		void _m_move_core(core_window_t*, const point& delta);
@@ -199,8 +172,6 @@ namespace detail
 
 		struct wdm_private_impl;
 		wdm_private_impl * const impl_;
-
-		signals	signals_;
 
 		struct attribute
 		{

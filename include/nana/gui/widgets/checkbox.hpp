@@ -37,7 +37,6 @@ namespace drawerbase
 		public:
 			implement * impl() const;
 		private:
-			void _m_draw(graph_reference);
 			void _m_draw_background(graph_reference);
 			void _m_draw_checkbox(graph_reference, unsigned first_line_height);
 			void _m_draw_title(graph_reference);
@@ -89,7 +88,7 @@ namespace drawerbase
 		std::size_t checked() const;       ///< Retrieves the index of the checkbox which is checked.
 		std::size_t size() const;
 	private:
-		void _m_checked(const arg_mouse&);
+		void _m_checked(const arg_click&);
 		void _m_destroy(const arg_destroy&);
 	private:
 		std::vector<element_tag> ui_container_;

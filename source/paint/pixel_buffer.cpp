@@ -22,10 +22,10 @@
 
 namespace nana{	namespace paint
 {
-	nana::rectangle valid_rectangle(const nana::size& s, const nana::rectangle& r)
+	nana::rectangle valid_rectangle(const size& s, const rectangle& r)
 	{
 		nana::rectangle good_r;
-		nana::overlap(s, r, good_r);
+		nana::overlap(rectangle{ s }, r, good_r);
 		return good_r;
 	}
 
@@ -384,13 +384,13 @@ namespace nana{	namespace paint
 		close();
 	}
 
-	void pixel_buffer::attach(drawable_type drawable, const nana::rectangle& want_r)
+	void pixel_buffer::attach(drawable_type drawable, const ::nana::rectangle& want_r)
 	{
 		storage_.reset();
 		if(drawable)
 		{
 			nana::rectangle r;
-			if(nana::overlap(nana::paint::detail::drawable_size(drawable), want_r, r))
+			if (::nana::overlap(::nana::rectangle{ nana::paint::detail::drawable_size(drawable) }, want_r, r))
 				storage_ = std::make_shared<pixel_buffer_storage>(drawable, r);
 		}
 	}
@@ -417,7 +417,7 @@ namespace nana{	namespace paint
 #elif defined(NANA_X11)
 		try
 		{
-			storage_ = std::make_shared<pixel_buffer_storage>(drawable, sz);
+			storage_ = std::make_shared<pixel_buffer_storage>(drawable, nana::rectangle{sz});
 			storage_->detach();
 			return true;
 		}
@@ -429,16 +429,16 @@ namespace nana{	namespace paint
 
 	bool pixel_buffer::open(drawable_type drawable, const nana::rectangle & want_rectangle)
 	{
-		nana::size sz = nana::paint::detail::drawable_size(drawable);
+		auto sz = nana::paint::detail::drawable_size(drawable);
 		if(want_rectangle.x >= static_cast<int>(sz.width) || want_rectangle.y >= static_cast<int>(sz.height))
 			return false;
 
-		nana::rectangle want_r = want_rectangle;
+		auto want_r = want_rectangle;
 		if(want_r.width == 0) want_r.width = sz.width - want_r.x;
 		if(want_r.height == 0) want_r.height = sz.height - want_r.y;
 
-		nana::rectangle r;
-		if(false == overlap(sz, want_r, r))
+		::nana::rectangle r;
+		if (false == overlap(::nana::rectangle{ sz }, want_r, r))
 			return false;
 #if defined(NANA_WINDOWS)
 		BITMAPINFO bmpinfo;
@@ -633,13 +633,13 @@ namespace nana{	namespace paint
 			*reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer + x) + y * sp->bytes_per_line) = px;
 	}
 
-	void pixel_buffer::paste(drawable_type drawable, int x, int y) const
+	void pixel_buffer::paste(drawable_type drawable, const point& p_dst) const
 	{
 		if(storage_)
-			paste(nana::rectangle(storage_->pixel_size), drawable, x, y);
+			paste(nana::rectangle(storage_->pixel_size), drawable, p_dst);
 	}
 
-	void pixel_buffer::paste(const nana::rectangle& src_r, drawable_type drawable, int x, int y) const
+	void pixel_buffer::paste(const nana::rectangle& src_r, drawable_type drawable, const point& p_dst) const
 	{
 		auto sp = storage_.get();
 		if(drawable && sp)
@@ -647,7 +647,7 @@ namespace nana{	namespace paint
 			if(sp->alpha_channel)
 			{
 				nana::rectangle s_good_r, d_good_r;
-				if(overlap(src_r, sp->pixel_size, nana::rectangle(x, y, src_r.width, src_r.height), paint::detail::drawable_size(drawable), s_good_r, d_good_r))
+				if(overlap(src_r, sp->pixel_size, nana::rectangle(p_dst.x, p_dst.y, src_r.width, src_r.height), paint::detail::drawable_size(drawable), s_good_r, d_good_r))
 				{
 					pixel_buffer d_pixbuf;
 					d_pixbuf.attach(drawable, d_good_r);
@@ -660,16 +660,16 @@ namespace nana{	namespace paint
 			assign_windows_bitmapinfo(sp->pixel_size, bi);
 
 			::SetDIBitsToDevice(drawable->context,
-				x, y, src_r.width, src_r.height,
+				p_dst.x, p_dst.y, src_r.width, src_r.height,
 				src_r.x, static_cast<int>(sp->pixel_size.height) - src_r.y - src_r.height, 0, sp->pixel_size.height,
 				sp->raw_pixel_buffer, &bi, DIB_RGB_COLORS);
 #elif defined(NANA_X11)
-			sp->put(drawable->pixmap, drawable->context, src_r.x, src_r.y, x, y, src_r.width, src_r.height);
+			sp->put(drawable->pixmap, drawable->context, src_r.x, src_r.y, p_dst.x, p_dst.y, src_r.width, src_r.height);
 #endif
 		}
 	}
 
-	void pixel_buffer::paste(native_window_type wd, int x, int y) const
+	void pixel_buffer::paste(native_window_type wd, const point& p_dst) const
 	{
 		auto sp = storage_.get();
 		if(nullptr == wd || nullptr == sp)	return;
@@ -681,7 +681,7 @@ namespace nana{	namespace paint
 			assign_windows_bitmapinfo(sp->pixel_size, bi);
 
 			::SetDIBitsToDevice(handle,
-				x, y, sp->pixel_size.width, sp->pixel_size.height,
+				p_dst.x, p_dst.y, sp->pixel_size.width, sp->pixel_size.height,
 				0, 0, 0, sp->pixel_size.height,
 				sp->raw_pixel_buffer, &bi, DIB_RGB_COLORS);
 
@@ -690,7 +690,7 @@ namespace nana{	namespace paint
 #elif defined(NANA_X11)
 		auto & spec = nana::detail::platform_spec::instance();
 		Display * disp = spec.open_display();
-		sp->put(reinterpret_cast<Window>(wd), XDefaultGC(disp, XDefaultScreen(disp)), 0, 0, x, y, sp->pixel_size.width, sp->pixel_size.height);
+		sp->put(reinterpret_cast<Window>(wd), XDefaultGC(disp, XDefaultScreen(disp)), 0, 0, p_dst.x, p_dst.y, sp->pixel_size.width, sp->pixel_size.height);
 #endif
 	}
 
@@ -1039,13 +1039,13 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::blur(const nana::rectangle& r, std::size_t radius)
+	void pixel_buffer::blur(const ::nana::rectangle& r, std::size_t radius)
 	{
 		auto sp = storage_.get();
 		if(nullptr == sp || radius < 1)	return;
 
-		nana::rectangle good_r;
-		if(overlap(r, this->size(), good_r))
+		::nana::rectangle good_r;
+		if (overlap(r, ::nana::rectangle{ this->size() }, good_r))
 			(*(sp->img_pro.blur))->process(*this, good_r, radius);
 	}
 }//end namespace paint

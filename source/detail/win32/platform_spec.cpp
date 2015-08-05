@@ -273,9 +273,11 @@ namespace detail
 		return object;
 	}
 
-	void platform_spec::keep_window_icon(native_window_type wd, const paint::image& img)
+	void platform_spec::keep_window_icon(native_window_type wd, const paint::image& sml_icon, const paint::image& big_icon)
 	{
-		iconbase_[wd] = img;
+		auto & icons = iconbase_[wd];
+		icons.sml_icon = sml_icon;
+		icons.big_icon = big_icon;
 	}
 
 	void platform_spec::release_window_icon(native_window_type wd)

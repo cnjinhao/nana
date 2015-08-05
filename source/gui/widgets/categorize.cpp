@@ -156,10 +156,10 @@ namespace nana
 				{
 					rectangle r{ graph.size() };
 
-					graph.rectangle(r, false, { 0xf0, 0xf0, 0xf0 });
+					graph.rectangle(r, false, static_cast<color_rgb>(0xf0f0f0));
 
-					color lb(0x9d, 0xab, 0xb9);
-					color tr(0x48, 0x4e, 0x55);
+					color lb(static_cast<color_rgb>(0x9dabb9));
+					color tr(static_cast<color_rgb>(0x484e55));
 					graph.frame_rectangle(r.pare_off(1), lb, tr, tr, lb);
 				}
 			private:
@@ -168,7 +168,7 @@ namespace nana
 					const unsigned half = (height - 2) / 2;
 					int left = x + 1;
 					int top = y + 1;
-					nana::color clr_top(0xea, 0xea, 0xea), clr_bottom(0xdc, 0xdc, 0xdc);
+					nana::color clr_top(static_cast<color_rgb>(0xEAEAEA)), clr_bottom(static_cast<color_rgb>(0xDCDCDC));
 					switch(state)
 					{
 					case mouse_action::over:
@@ -192,7 +192,7 @@ namespace nana
 						int bottom = y + height - 1;
 						int right = x + width - 1;
 
-						graph.set_color(color(0x6e, 0x8d, 0x9f));
+						graph.set_color(static_cast<color_rgb>(0x6E8D9F));
 						graph.line(point{ x, y }, point{right, y});
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
 						++x;
@@ -207,8 +207,6 @@ namespace nana
 				ui_element	ui_el_;
 				struct style_tag
 				{
-					//nana::color_t bgcolor;
-					//nana::color_t fgcolor;
 					color bgcolor;
 					color fgcolor;
 				}style_;
@@ -217,8 +215,8 @@ namespace nana
 			class tree_wrapper
 			{
 			public:
-				typedef widgets::detail::tree_cont<item_tag> container;
-				typedef container::node_type * node_handle;
+				using container = widgets::detail::tree_cont<item_tag>;
+				using node_handle = container::node_type*;
 
 				tree_wrapper()
 					:splitstr_(STR("\\")), cur_(nullptr)
@@ -495,12 +493,11 @@ namespace nana
 				bool erase_locate()
 				{
 					ui_el_.index = npos;
-					if(ui_el_.what != ui_el_.none)
-					{
-						ui_el_.what = ui_el_.none;
-						return true;
-					}
-					return false;
+					if(ui_el_.what == ui_el_.none)
+						return false;
+
+					ui_el_.what = ui_el_.none;
+					return true;
 				}
 
 				ui_element locate() const
@@ -528,13 +525,8 @@ namespace nana
 					if(style_.mode != mode::floatlist)
 					{
 						style_.state = mouse_action::normal;
-						switch(ui_el_.what)
-						{
-						case ui_element::item_name:
+						if (ui_element::item_name == ui_el_.what)
 							_m_selected(treebase_.tail(ui_el_.index));
-							break;
-						default:	break;
-						}
 					}
 				}
 
@@ -882,9 +874,8 @@ namespace nana
 
 				void trigger::_m_event_agent_ready() const
 				{
-					auto & evt = scheme_->evt_holder();
 					auto evt_agent = event_agent_.get();
-					evt.selected = [evt_agent](::nana::any& val){
+					scheme_->evt_holder().selected = [evt_agent](::nana::any& val){
 						evt_agent->selected(val);
 					};
 				}

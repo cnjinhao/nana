@@ -34,99 +34,99 @@ namespace nana
 
 		void drawer_trigger::resizing(graph_reference, const arg_resizing&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::resizing));
 		}
 
 		void drawer_trigger::resized(graph_reference graph, const arg_resized&)
 		{
-			overrided_ = true;
+			overrided_ |= (1 << static_cast<int>(event_code::resized));
 			this->refresh(graph);
 			detail::bedrock::instance().thread_context_lazy_refresh();
 		}
 
 		void drawer_trigger::move(graph_reference, const arg_move&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::move));
 		}
 
-		void drawer_trigger::click(graph_reference, const arg_mouse&)
+		void drawer_trigger::click(graph_reference, const arg_click&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::click));
 		}
 
 		void drawer_trigger::dbl_click(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::dbl_click));
 		}
 
 		void drawer_trigger::mouse_enter(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_enter));
 		}
 
 		void drawer_trigger::mouse_move(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_move));
 		}
 
 		void drawer_trigger::mouse_leave(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_leave));
 		}
 
 		void drawer_trigger::mouse_down(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_down));
 		}
 
 		void drawer_trigger::mouse_up(graph_reference, const arg_mouse&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_up));
 		}
 
 		void drawer_trigger::mouse_wheel(graph_reference, const arg_wheel&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_wheel));
 		}
 
 		void drawer_trigger::mouse_dropfiles(graph_reference, const arg_dropfiles&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::mouse_drop));
 		}
 
 		void drawer_trigger::focus(graph_reference, const arg_focus&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::focus));
 		}
 
 		void drawer_trigger::key_press(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::key_press));
 		}
 
 		void drawer_trigger::key_char(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::key_char));
 		}
 
 		void drawer_trigger::key_release(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::key_release));
 		}
 
 		void drawer_trigger::shortkey(graph_reference, const arg_keyboard&)
 		{
-			overrided_ = false;
+			overrided_ &= ~(1 << static_cast<int>(event_code::shortkey));
 		}
 
 		void drawer_trigger::_m_reset_overrided()
 		{
-			overrided_ = true;
+			overrided_ = 0xFFFFFFFF;
 		}
 
-		bool drawer_trigger::_m_overrided() const
+		bool drawer_trigger::_m_overrided(event_code evt_code) const
 		{
-			return overrided_;
+			return 0 != (overrided_ & (1 << static_cast<int>(evt_code)));
 		}
 
 	//end class drawer_trigger
@@ -155,7 +155,7 @@ namespace nana
 				realizer_->typeface_changed(graphics);
 		}
 
-		void drawer::click(const arg_mouse& arg)
+		void drawer::click(const arg_click& arg)
 		{
 			_m_emit(event_code::click, arg, &drawer_trigger::click);
 		}
@@ -240,12 +240,12 @@ namespace nana
 			_m_emit(event_code::shortkey, arg, &drawer_trigger::shortkey);
 		}
 
-		void drawer::map(window wd, bool forced)	//Copy the root buffer to screen
+		void drawer::map(window wd, bool forced, const rectangle* update_area)	//Copy the root buffer to screen
 		{
 			if(wd)
 			{
-				bedrock_type::core_window_t* iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
-				bedrock_type::core_window_t * caret_wd = iwd->root_widget->other.attribute.root->focus;
+				auto iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
+				auto caret_wd = iwd->root_widget->other.attribute.root->focus;
 
 				bool owns_caret = (caret_wd && (caret_wd->together.caret) && (caret_wd->together.caret->visible()));
 
@@ -262,12 +262,7 @@ namespace nana
 #endif
 				}
 
-				if (false == edge_nimbus_renderer_t::instance().render(iwd, forced))
-				{
-					nana::rectangle vr;
-					if(bedrock_type::window_manager_t::wndlayout_type::read_visual_rectangle(iwd, vr))
-						iwd->root_graph->paste(iwd->root, vr, vr.x, vr.y);
-				}
+				edge_nimbus_renderer_t::instance().render(iwd, forced, update_area);
 
 				if(owns_caret)
 				{
@@ -302,9 +297,10 @@ namespace nana
 		void drawer::attached(widget& wd, drawer_trigger& realizer)
 		{
 			for (auto i = std::begin(mth_state_), end = std::end(mth_state_); i != end; ++i)
-				*i = method_state::unknown;
+				*i = method_state::pending;
 
 			realizer_ = &realizer;
+			realizer._m_reset_overrided();
 			realizer.attached(wd, graphics);
 		}
 
@@ -368,7 +364,7 @@ namespace nana
 		void drawer::_m_bground_end()
 		{
 			if(core_window_->effect.bground && core_window_->effect.bground_fade_rate >= 0.01)
-				core_window_->other.glass_buffer.blend(core_window_->other.glass_buffer.size(), graphics, nana::point(), core_window_->effect.bground_fade_rate);
+				core_window_->other.glass_buffer.blend(::nana::rectangle{ core_window_->other.glass_buffer.size() }, graphics, nana::point(), core_window_->effect.bground_fade_rate);
 		}
 
 		void drawer::_m_draw_dynamic_drawing_object()

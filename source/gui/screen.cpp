@@ -114,7 +114,7 @@ namespace nana
 		void load_monitors()
 		{
 			displays.clear();
-			displays.emplace_back(0, primary_monitor_size());
+			displays.emplace_back(0, rectangle{primary_monitor_size()});
 		}
 #endif
 

@@ -11,9 +11,9 @@
  */
 
 #include <nana/gui/widgets/toolbar.hpp>
-#include <vector>
-#include <stdexcept>
 #include <nana/gui/tooltip.hpp>
+
+#include <vector>
 
 namespace nana
 {
@@ -25,13 +25,6 @@ namespace nana
 	{
 		namespace toolbar
 		{
-			struct listitem
-			{
-				nana::string text;
-				nana::paint::image image;
-				bool enable;
-			};
-
 			struct item_type
 			{
 				enum kind{ button, container};
@@ -43,28 +36,23 @@ namespace nana
 				unsigned	pixels{0};
 				nana::size	textsize;
 				bool		enable{true};
-				window other{nullptr};
 
 				kind type;
-				std::function<void(size_type, size_type)> answer;
-				std::vector<listitem> children;
 
 				item_type(const nana::string& text, const nana::paint::image& img, kind type)
 					:text(text), image(img), type(type)
 				{}
 			};
 
-			class container
-			{
-				container(const container&) = delete;
-				container& operator=(const container&) = delete;
-			public:
-				typedef std::vector<item_type*>::size_type size_type;
-				typedef std::vector<item_type*>::iterator iterator;
-				typedef std::vector<item_type*>::const_iterator const_iterator;
 
-				container() = default;
-				~container()
+
+			class item_container
+			{
+			public:
+				using container_type = std::vector<item_type*>;
+				using size_type = container_type::size_type;
+
+				~item_container()
 				{
 					for(auto ptr : cont_)
 						delete ptr;
@@ -98,7 +86,7 @@ namespace nana
 						cont_.push_back(nullptr);
 				}
 
-				void push_back()
+				void separate()
 				{
 					cont_.push_back(nullptr);
 				}
@@ -108,35 +96,17 @@ namespace nana
 					return cont_.size();
 				}
 
-				item_type* at(size_type n)
+				container_type& container()
 				{
-					if(n < cont_.size())
-						return cont_[n];
-
-					throw std::out_of_range("toolbar: bad index!");
+					return cont_;
 				}
 
-				iterator begin()
+				item_type * at(size_type pos)
 				{
-					return cont_.begin();
-				}
-
-				iterator end()
-				{
-					return cont_.end();
-				}
-
-				const_iterator begin() const
-				{
-					return cont_.cbegin();
-				}
-
-				const_iterator end() const
-				{
-					return cont_.cend();
+					return cont_.at(pos);
 				}
 			private:
-				std::vector<item_type*> cont_;
+				container_type cont_;
 			};
 
 			class item_renderer
@@ -152,38 +122,36 @@ namespace nana
 				void operator()(int x, int y, unsigned width, unsigned height, item_type& item, state_t state)
 				{
 					//draw background
-					if(state != state_t::normal)
-						graph.rectangle({ x, y, width, height }, false, { 0x33, 0x99, 0xFF });
-					switch(state)
+					if (state != state_t::normal)
 					{
-					case state_t::highlighted:
-						graph.gradual_rectangle({ x + 1, y + 1, width - 2, height - 2 }, bgcolor, { 0xC0, 0xDD, 0xFC }, true);
-						break;
-					case state_t::selected:
-						graph.gradual_rectangle({ x + 1, y + 1, width - 2, height - 2 }, bgcolor, { 0x99, 0xCC, 0xFF }, true);
-					default:	break;
+						nana::rectangle background_r(x, y, width, height);
+						graph.rectangle(background_r, false, static_cast<color_rgb>(0x3399FF));
+
+						if (state_t::highlighted == state || state_t::selected == state)
+							graph.gradual_rectangle(background_r.pare_off(1), bgcolor, static_cast<color_rgb>(state_t::selected == state ? 0x99CCFF : 0xC0DDFC), true);
 					}
 
-					if(item.image.empty() == false)
+					if(!item.image.empty())
 					{
-						nana::size size = item.image.size();
-						if(size.width > scale) size.width = scale;
-						if(size.height > scale) size.height = scale;
+						auto imgsize = item.image.size();
+
+						if (imgsize.width > scale) imgsize.width = scale;
+						if (imgsize.height > scale) imgsize.height = scale;
 
 						nana::point pos(x, y);
-						pos.x += static_cast<int>(scale + extra_size - size.width) / 2;
-						pos.y += static_cast<int>(height - size.height) / 2;
+						pos.x += static_cast<int>(scale + extra_size - imgsize.width) / 2;
+						pos.y += static_cast<int>(height - imgsize.height) / 2;
 
-						item.image.paste(size, graph, pos);
+						item.image.paste(::nana::rectangle{ imgsize }, graph, pos);
 						if(item.enable == false)
 						{
-							nana::paint::graphics gh(size);
-							gh.bitblt(size, graph, pos);
+							nana::paint::graphics gh(imgsize);
+							gh.bitblt(::nana::rectangle{ imgsize }, graph, pos);
 							gh.rgb_to_wb();
 							gh.paste(graph, pos.x, pos.y);
 						}
 						else if(state == state_t::normal)
-							graph.blend(nana::rectangle(pos, size), ::nana::color(0xc0, 0xdd, 0xfc).blend(bgcolor, 0.5), 0.25);
+							graph.blend(nana::rectangle(pos, imgsize), ::nana::color(0xc0, 0xdd, 0xfc).blend(bgcolor, 0.5), 0.25);
 
 						x += scale;
 						width -= scale;
@@ -204,13 +172,15 @@ namespace nana
 
 			struct drawer::drawer_impl_type
 			{
-				event_handle event_size{nullptr};
+				event_handle event_size{ nullptr };
+				paint::graphics* graph_ptr{ nullptr };
+
 				unsigned scale{16};
 				bool textout{false};
 				size_type which{npos};
 				item_renderer::state_t state{item_renderer::state_t::normal};
 
-				container cont;
+				item_container	items;
 				::nana::tooltip tooltip;
 			};
 
@@ -225,116 +195,118 @@ namespace nana
 					delete impl_;
 				}
 
-				void drawer::append(const nana::string& text, const nana::paint::image& img)
+				item_container& drawer::items() const
 				{
-					impl_->cont.push_back(text, img);
-				}
-
-				void drawer::append()
-				{
-					impl_->cont.push_back();
-				}
-
-				bool drawer::enable(drawer::size_type n) const
-				{
-					if(impl_->cont.size() > n)
-					{
-						auto item = impl_->cont.at(n);
-						return (item && item->enable);
-					}
-					return false;
-				}
-
-				bool drawer::enable(size_type n, bool eb)
-				{
-					if(impl_->cont.size() > n)
-					{
-						item_type * item = impl_->cont.at(n);
-						if(item && (item->enable != eb))
-						{
-							item->enable = eb;
-							return true;
-						}
-					}
-					return false;
+					return impl_->items;
 				}
 
 				void drawer::scale(unsigned s)
 				{
 					impl_->scale = s;
 
-					for(auto m : impl_->cont)
-						_m_fill_pixels(m, true);
+					for(auto m : impl_->items.container())
+						_m_calc_pixels(m, true);
 				}
 
-				void drawer::refresh(graph_reference)
+				void drawer::refresh(graph_reference graph)
 				{
-					_m_draw();
+					int x = 2, y = 2;
+
+					auto bgcolor = API::bgcolor(widget_->handle());
+					graph.set_text_color(bgcolor);
+					graph.gradual_rectangle(rectangle{ graph.size() }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.95), true);
+
+					item_renderer ir(graph, impl_->textout, impl_->scale, bgcolor);
+					size_type index = 0;
+
+					for (auto item : impl_->items.container())
+					{
+						if (item)
+						{
+							_m_calc_pixels(item, false);
+							ir(x, y, item->pixels, impl_->scale + ir.extra_size, *item, (index == impl_->which ? impl_->state : item_renderer::state_t::normal));
+							x += item->pixels;
+						}
+						else
+						{
+							x += 2;
+							graph.line({ x, y + 2 }, { x, y + static_cast<int>(impl_->scale + ir.extra_size) - 4 }, static_cast<color_rgb>(0x808080));
+							x += 4;
+						}
+						++index;
+					}
 				}
 
 				void drawer::attached(widget_reference widget, graph_reference graph)
 				{
-					graph_ = &graph;
+					impl_->graph_ptr = &graph;
 
 					widget_ = static_cast< ::nana::toolbar*>(&widget);
-					widget.caption(STR("Nana Toolbar"));
-					impl_->event_size = widget.events().resized.connect_unignorable(std::bind(&drawer::_m_owner_sized, this, std::placeholders::_1));
+					widget.caption(L"Nana Toolbar");
 
+					impl_->event_size = API::events(widget.parent()).resized.connect_unignorable([this](const arg_resized& arg)
+					{
+						auto wd = widget_->handle();
+						API::window_size(wd, nana::size(arg.width, widget_->size().height));
+						API::update_window(wd);
+					});
 				}
 
 				void drawer::detached()
 				{
 					API::umake_event(impl_->event_size);
 					impl_->event_size = nullptr;
+					impl_->graph_ptr = nullptr;
 				}
 
 				void drawer::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
-					if(arg.left_button == false)
+					if (arg.left_button)
+						return;
+
+					size_type which = _m_which(arg.pos, true);
+					if(impl_->which != which)
 					{
-						size_type which = _m_which(arg.pos.x, arg.pos.y, true);
-						if(impl_->which != which)
+						auto & container = impl_->items.container();
+						if (impl_->which != npos && container.at(impl_->which)->enable)
 						{
-							if (impl_->which != npos && impl_->cont.at(impl_->which)->enable)
-							{
-								::nana::arg_toolbar arg{ *widget_, impl_->which };
-								widget_->events().leave.emit(arg);
-							}
-
-							impl_->which = which;
-							if(which == npos || impl_->cont.at(which)->enable)
-							{
-								impl_->state = (arg.left_button ? item_renderer::state_t::selected : item_renderer::state_t::highlighted);
-
-								_m_draw();
-								API::lazy_refresh();
-
-								if (impl_->state == item_renderer::state_t::highlighted)
-								{
-									::nana::arg_toolbar arg{ *widget_, which };
-									widget_->events().enter.emit(arg);
-								}
-							}
-
-							if(which != npos)
-								impl_->tooltip.show(widget_->handle(), nana::point(arg.pos.x, arg.pos.y + 20), (*(impl_->cont.begin() + which))->text, 0);
-							else
-								impl_->tooltip.close();
+							::nana::arg_toolbar arg{ *widget_, impl_->which };
+							widget_->events().leave.emit(arg);
 						}
+
+						impl_->which = which;
+						if (which == npos || container.at(which)->enable)
+						{
+							impl_->state = item_renderer::state_t::highlighted;
+
+							refresh(graph);
+							API::lazy_refresh();
+
+							if (impl_->state == item_renderer::state_t::highlighted)
+							{
+								::nana::arg_toolbar arg{ *widget_, which };
+								widget_->events().enter.emit(arg);
+							}
+						}
+
+						if(which != npos)
+							impl_->tooltip.show(widget_->handle(), nana::point(arg.pos.x, arg.pos.y + 20), (*(container.begin() + which))->text, 0);
+						else
+							impl_->tooltip.close();
 					}
 				}
 
-				void drawer::mouse_leave(graph_reference, const arg_mouse&)
+				void drawer::mouse_leave(graph_reference graph, const arg_mouse&)
 				{
 					if(impl_->which != npos)
 					{
 						size_type which = impl_->which;
 
 						impl_->which = npos;
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 
-						if (which != npos && impl_->cont.at(which)->enable)
+						if (which != npos && impl_->items.at(which)->enable)
 						{
 							::nana::arg_toolbar arg{ *widget_, which };
 							widget_->events().leave.emit(arg);
@@ -343,22 +315,22 @@ namespace nana
 					impl_->tooltip.close();
 				}
 
-				void drawer::mouse_down(graph_reference, const arg_mouse&)
+				void drawer::mouse_down(graph_reference graph, const arg_mouse&)
 				{
 					impl_->tooltip.close();
-					if(impl_->which != npos && (impl_->cont.at(impl_->which)->enable))
+					if(impl_->which != npos && (impl_->items.at(impl_->which)->enable))
 					{
 						impl_->state = item_renderer::state_t::selected;
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 					}
 				}
 
-				void drawer::mouse_up(graph_reference, const arg_mouse& arg)
+				void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
 					if(impl_->which != npos)
 					{
-						size_type which = _m_which(arg.pos.x, arg.pos.y, false);
+						size_type which = _m_which(arg.pos, false);
 						if(impl_->which == which)
 						{
 							::nana::arg_toolbar arg{ *widget_, which };
@@ -372,89 +344,47 @@ namespace nana
 							impl_->state = (which == npos ? item_renderer::state_t::normal : item_renderer::state_t::highlighted);
 						}
 
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 					}
 				}
 
-				drawer::size_type drawer::_m_which(int x, int y, bool want_if_disabled) const
+				drawer::size_type drawer::_m_which(point pos, bool want_if_disabled) const
 				{
-					if(x < 2 || y < 2 || y >= static_cast<int>(impl_->scale + item_renderer::extra_size + 2)) return npos;
+					if (pos.x < 2 || pos.y < 2 || pos.y >= static_cast<int>(impl_->scale + item_renderer::extra_size + 2)) return npos;
 
-					x -= 2;
+					pos.x -= 2;
 
-					size_type pos = 0;
-					for(auto m: impl_->cont)
+					std::size_t index = 0;
+					for(auto m: impl_->items.container())
 					{
-						bool compart = (nullptr == m);
+						auto px = static_cast<const int>(m ? m->pixels : 3);
 
-						if(x < static_cast<int>(compart ? 3 : m->pixels))
-							return ((compart || (m->enable == false && want_if_disabled == false)) ? npos : pos);
+						if(pos.x < px)
+							return (((!m) || (!m->enable && !want_if_disabled)) ? npos : index);
 
-						x -= (compart ? 3 : m->pixels);
+						pos.x -= px;
 
-						++pos;
+						++index;
 					}
 					return npos;
 				}
 
-				void drawer::_m_draw_background(const ::nana::color& clr)
+				void drawer::_m_calc_pixels(item_type* item, bool force)
 				{
-					graph_->gradual_rectangle(graph_->size(), clr.blend(colors::white, 0.9), clr.blend(colors::black, 0.95), true);
-				}
-
-				void drawer::_m_draw()
-				{
-					int x = 2, y = 2;
-
-					auto bgcolor = API::bgcolor(widget_->handle());
-					graph_->set_text_color(bgcolor);
-					_m_draw_background(bgcolor);
-
-					item_renderer ir(*graph_, impl_->textout, impl_->scale, bgcolor);
-					size_type index = 0;
-
-					for(auto item : impl_->cont)
+					if (item && (force || (0 == item->pixels)))
 					{
-						if(item)
-						{
-							_m_fill_pixels(item, false);
-							ir(x, y, item->pixels, impl_->scale + ir.extra_size, *item, (index == impl_->which ? impl_->state : item_renderer::state_t::normal));
-							x += item->pixels;
-						}
-						else
-						{
-							graph_->line({ x + 2, y + 2 }, { x + 2, y + static_cast<int>(impl_->scale + ir.extra_size) - 4 }, { 0x80, 0x80, 0x80 });
-							x += 6;
-						}
-						++index;
-					}
-				}
+						if (item->text.size())
+							item->textsize = impl_->graph_ptr->text_extent_size(item->text);
 
-				void drawer::_m_owner_sized(const arg_resized& arg)
-				{
-					auto wd = widget_->handle();
-					API::window_size(wd, nana::size(arg.width, widget_->size().height));
-					_m_draw();
-					API::update_window(wd);
-				}
-
-				void drawer::_m_fill_pixels(item_type* item, bool force)
-				{
-					if(item && (force || (0 == item->pixels)))
-					{
-						if(item->text.size())
-							item->textsize = graph_->text_extent_size(item->text);
-
-						if(item->image.empty() == false)
+						if (item->image.empty() == false)
 							item->pixels = impl_->scale + item_renderer::extra_size;
 
-						if(item->textsize.width && impl_->textout)
+						if (item->textsize.width && impl_->textout)
 							item->pixels += item->textsize.width + 8;
 					}
 				}
-			//};//class drawer
-
+			//class drawer
 		}//end namespace toolbar
 	}//end namespace drawerbase
 
@@ -469,33 +399,48 @@ namespace nana
 			create(wd, r, visible);
 		}
 
-		void toolbar::append()
+		void toolbar::separate()
 		{
-			get_drawer_trigger().append();
+			get_drawer_trigger().items().separate();
 			API::refresh_window(handle());
 		}
 
 		void toolbar::append(const nana::string& text, const nana::paint::image& img)
 		{
-			get_drawer_trigger().append(text, img);
+			get_drawer_trigger().items().push_back(text, img);
 			API::refresh_window(handle());
 		}
 
 		void toolbar::append(const nana::string& text)
 		{
-			get_drawer_trigger().append(text, nana::paint::image());
+			get_drawer_trigger().items().push_back(text, {});
 			API::refresh_window(this->handle());
 		}
 
-		bool toolbar::enable(size_type n) const
+		bool toolbar::enable(size_type pos) const
 		{
-			return get_drawer_trigger().enable(n);
+			auto & items = get_drawer_trigger().items();
+
+			if (items.size() <= pos)
+				return false;
+
+			auto m = items.at(pos);
+			return (m && m->enable);
 		}
 
-		void toolbar::enable(size_type n, bool eb)
+		void toolbar::enable(size_type pos, bool eb)
 		{
-			if(get_drawer_trigger().enable(n, eb))
-				API::refresh_window(this->handle());
+			auto & items = get_drawer_trigger().items();
+
+			if (items.size() > pos)
+			{
+				auto m = items.at(pos);
+				if (m && (m->enable != eb))
+				{
+					m->enable = eb;
+					API::refresh_window(this->handle());
+				}
+			}
 		}
 
 		void toolbar::scale(unsigned s)
@@ -503,5 +448,5 @@ namespace nana
 			get_drawer_trigger().scale(s);
 			API::refresh_window(handle());
 		}
-	//}; class toolbar
+	//end class toolbar
 }//end namespace nana

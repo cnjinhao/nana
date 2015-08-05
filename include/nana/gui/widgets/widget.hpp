@@ -12,20 +12,26 @@
 
 #ifndef NANA_GUI_WIDGET_HPP
 #define NANA_GUI_WIDGET_HPP
-#include <nana/traits.hpp>
 #include "../basis.hpp"
 #include "../programming_interface.hpp"
 #include <nana/internationalization.hpp>
 #include <nana/gui/detail/drawer.hpp>
-#include <nana/gui/layout_utility.hpp>
 #include <functional>
 
 namespace nana
 {
+	namespace detail
+	{
+		//Forward declaration of widget_notifier_interface
+		class widget_notifier_interface;
+	}
+
 	/// Abstract class for defining the capacity interface.
 	class widget
 		: nana::noncopyable, nana::nonmovable
 	{
+		friend class detail::widget_notifier_interface;
+		class notifier;
 		typedef void(*dummy_bool_type)(widget* (*)(const widget&));
 	public:
 		virtual ~widget() = default;
@@ -35,9 +41,9 @@ namespace nana
 
 		window parent() const;
 
-		nana::string caption() const;
+		nana::string caption() const throw();
 		void caption(std::string utf8);
-		void caption(nana::string);
+		void caption(std::wstring);
 
 		template<typename ...Args>
 		void i18n(std::string msgid, Args&&... args)
@@ -70,6 +76,7 @@ namespace nana
 		
 		point pos() const;
 		void move(int x, int y);
+		void move(const point&);
 		void move(const rectangle&);
 
 		void fgcolor(const nana::color&);
@@ -89,11 +96,16 @@ namespace nana
 		operator dummy_bool_type() const;
 		operator window() const;
 	protected:
+		std::unique_ptr<::nana::detail::widget_notifier_interface> _m_wdg_notifier();
+	private:
+		virtual void _m_notify_destroy() = 0;
+
+	protected:
 		//protected members, a derived class must call this implementation if it overrides an implementation
 		virtual void _m_complete_creation();
 
 		virtual general_events& _m_get_general_events() const = 0;
-		virtual nana::string _m_caption() const;
+		virtual nana::string _m_caption() const throw();
 		virtual void _m_caption(nana::string&&);
 		virtual nana::cursor _m_cursor() const;
 		virtual void _m_cursor(nana::cursor);
@@ -152,7 +164,6 @@ namespace nana
 				handle_ = API::dev::create_widget(parent_wd, r, this);
 				API::dev::set_events(handle_, events_);
 				API::dev::set_scheme(handle_, scheme_.get());
-				API::dev::attach_signal(handle_, *this, &widget_object::signal);
 				API::dev::attach_drawer(*this, trigger_);
 				if(visible)
 					API::show_window(handle_, true);
@@ -193,28 +204,14 @@ namespace nana
 			return trigger_;
 		}
 	private:
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_{nullptr};
@@ -276,28 +273,14 @@ namespace nana
 			return *scheme_;
 		}
 	private:
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_{nullptr};
@@ -430,25 +413,6 @@ namespace nana
 			return trigger_;
 		}
 	private:
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		void _m_bind_and_attach()
 		{
 			events_ = std::make_shared<Events>();
@@ -456,13 +420,17 @@ namespace nana
 
 			scheme_ = API::dev::make_scheme<scheme_type>();
 			API::dev::set_scheme(handle_, scheme_.get());
-			API::dev::attach_signal(handle_, *this, &widget_object::signal);
 			API::dev::attach_drawer(*this, trigger_);
 		}
 
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_;
@@ -511,7 +479,6 @@ namespace nana
 				handle_ = API::dev::create_frame(parent_wd, r, this);
 				API::dev::set_events(handle_, events_);
 				API::dev::set_scheme(handle_, scheme_.get());
-				API::dev::attach_signal(handle_, *this, &widget_object::signal);
 				API::show_window(handle_, visible);
 				this->_m_complete_creation();
 			}
@@ -533,28 +500,14 @@ namespace nana
 			return nullptr;
 		}
 
-		void signal(detail::signals::code code, const detail::signals& sig)
-		{
-			typedef detail::signals::code codes;
-			switch(code)
-			{
-			case codes::caption:
-				this->_m_caption(sig.info.caption);
-				break;
-			case codes::read_caption:
-				*sig.info.str = this->_m_caption();
-				break;
-			case codes::destroy:
-				handle_ = nullptr;
-				break;
-			default:
-				break;
-			}
-		}
-
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			handle_ = nullptr;
 		}
 	private:
 		window handle_{nullptr};

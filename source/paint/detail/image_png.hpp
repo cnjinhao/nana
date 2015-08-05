@@ -1,7 +1,7 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_PNG_HPP
 #define NANA_PAINT_DETAIL_IMAGE_PNG_HPP
 
-#include "image_impl_interface.hpp"
+#include <nana/paint/detail/image_impl_interface.hpp>
 
 //Separate the libpng from the package that system provides.
 #if defined(NANA_LIBPNG)
@@ -11,7 +11,7 @@
 #endif
 
 #include <stdio.h>
-#include "../pixel_buffer.hpp"
+#include <nana/paint/pixel_buffer.hpp>
 
 namespace nana
 {
@@ -25,7 +25,7 @@ namespace nana
 			{
 			}
 
-			bool open(const nana::char_t* png_file)
+			bool open(const nana::char_t* png_file) override
 			{
 #ifdef NANA_UNICODE
 				FILE * fp = ::fopen(static_cast<std::string>(nana::charset(png_file)).c_str(), "rb");
@@ -148,32 +148,32 @@ namespace nana
 				return is_opened;
 			}
 
-			bool alpha_channel() const
+			bool alpha_channel() const override
 			{
 				return pixbuf_.alpha_channel();
 			}
 
-			virtual bool empty() const
+			virtual bool empty() const override
 			{
 				return pixbuf_.empty();
 			}
 
-			virtual void close()
+			virtual void close() override
 			{
 				pixbuf_.close();
 			}
 
-			virtual nana::size size() const
+			virtual nana::size size() const override
 			{
 				return pixbuf_.size();
 			}
 
-			void paste(const nana::rectangle& src_r, graph_reference graph, int x, int y) const
+			void paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const override
 			{
-				pixbuf_.paste(src_r, graph.handle(), x, y);
+				pixbuf_.paste(src_r, graph.handle(), p_dst);
 			}
 
-			void stretch(const nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const
+			void stretch(const nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const override
 			{
 				pixbuf_.stretch(src_r, dst.handle(), r);
 			}

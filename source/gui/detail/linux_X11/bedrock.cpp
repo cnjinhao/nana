@@ -23,16 +23,6 @@
 
 namespace nana
 {
-	//class internal_scope_guard
-		internal_scope_guard::internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager.internal_lock().lock();
-		}
-		internal_scope_guard::~internal_scope_guard()
-		{
-			detail::bedrock::instance().wd_manager.internal_lock().unlock();
-		}
-	//end class internal_scope_guard
 namespace detail
 {
 #pragma pack(1)
@@ -138,11 +128,6 @@ namespace detail
 	//here is the definition of this object
 	bedrock bedrock::bedrock_object;
 
-	inline window mycast(bedrock::core_window_t* wd)
-	{
-		return reinterpret_cast<window>(wd);
-	}
-
 	Window event_window(const XEvent& event)
 	{
 		switch(event.type)
@@ -167,7 +152,7 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t*, bool forced)
+	void bedrock::map_thread_root_buffer(core_window_t*, bool forced, const rectangle*)
 	{
 		//GUI in X11 is thread-independent, so no implementation.
 	}
@@ -457,62 +442,53 @@ namespace detail
 	void assign_arg(arg_mouse& arg, basic_window* wd, unsigned msg, const XEvent& evt)
 	{
 		arg.window_handle = reinterpret_cast<window>(wd);
+		arg.button = ::nana::mouse::any_button;
+
+		int mask_state = 0;
 		if (ButtonPress == msg || ButtonRelease == msg)
 		{
+			mask_state = evt.xbutton.state;
 			if (evt.xbutton.button != Button4 && evt.xbutton.button != Button5)
 			{
 				arg.evt_code = (ButtonPress == msg ? event_code::mouse_down : event_code::mouse_up);
 				arg.pos.x = evt.xbutton.x - wd->pos_root.x;
 				arg.pos.y = evt.xbutton.y - wd->pos_root.y;
 
-				arg.left_button = arg.mid_button = arg.right_button = false;
-				arg.shift = arg.ctrl = false;
 				switch (evt.xbutton.button)
 				{
 				case Button1:
-					arg.left_button = true;
+					arg.button = ::nana::mouse::left_button;
 					break;
 				case Button2:
-					arg.mid_button = true;
+					arg.button = ::nana::mouse::middle_button;
 					break;
 				case Button3:
-					arg.right_button = true;
+					arg.button = ::nana::mouse::right_button;
 					break;
 				}
 			}
 		}
 		else if (msg == MotionNotify)
 		{
+			mask_state = evt.xmotion.state;
 			arg.evt_code = event_code::mouse_move;
 			arg.pos.x = evt.xmotion.x - wd->pos_root.x;
 			arg.pos.y = evt.xmotion.y - wd->pos_root.y;
-			arg.left_button = arg.mid_button = arg.right_button = false;
-
-			arg.shift = evt.xmotion.state & ShiftMask;
-			arg.ctrl = evt.xmotion.state & ControlMask;
-			if (evt.xmotion.state & Button1Mask)
-				arg.left_button = true;
-			else if (evt.xmotion.state & Button2Mask)
-				arg.right_button = true;
-			else if (evt.xmotion.state & Button3Mask)
-				arg.mid_button = true;
 		}
 		else if (EnterNotify == msg)
 		{
+			mask_state = evt.xcrossing.state;
 			arg.evt_code = event_code::mouse_enter;
 			arg.pos.x = evt.xcrossing.x - wd->pos_root.x;
 			arg.pos.y = evt.xcrossing.y - wd->pos_root.y;
-			arg.left_button = arg.mid_button = arg.right_button = false;
-
-			arg.shift = evt.xcrossing.state & ShiftMask;
-			arg.ctrl = evt.xcrossing.state & ControlMask;
-			if (evt.xcrossing.state & Button1Mask)
-				arg.left_button = true;
-			else if (evt.xcrossing.state & Button2Mask)
-				arg.right_button = true;
-			else if (evt.xcrossing.state & Button3Mask)
-				arg.mid_button = true;
 		}
+
+		arg.left_button		= ((Button1Mask & mask_state) != 0) || (::nana::mouse::left_button == arg.button) ;
+		arg.right_button	= ((Button2Mask & mask_state) != 0) || (::nana::mouse::right_button == arg.button);
+		arg.mid_button		= ((Button3Mask & mask_state) != 0) || (::nana::mouse::middle_button == arg.button);
+		arg.shift	= (ShiftMask & mask_state);
+		arg.ctrl	= (ControlMask & mask_state);
+
 	}
 
 	void assign_arg(arg_focus& arg, basic_window* wd, native_window_type recv, bool getting)
@@ -664,7 +640,6 @@ namespace detail
 					auto focus = msgwnd->other.attribute.root->focus;
 					if(focus && focus->together.caret)
 						focus->together.caret->set_active(true);
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = true;
 
 					arg_focus arg;
 					arg.window_handle = reinterpret_cast<window>(focus);
@@ -724,17 +699,20 @@ namespace detail
 					bool dbl_click = (last_mouse_down_window == msgwnd) && (xevent.xbutton.time - last_mouse_down_time <= 400);
 					last_mouse_down_time = xevent.xbutton.time;
 					last_mouse_down_window = msgwnd;
-					auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
 
-					if(new_focus)
+					if (Button1 == xevent.xbutton.button)	//Sets the focus only if left button is pressed
 					{
-						context.event_window = new_focus;
-						auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
-						if(kill_focus != new_focus)
-							brock.wd_manager.do_lazy_refresh(kill_focus, false);
+						auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
+						if (new_focus && !new_focus->flags.ignore_mouse_focus)
+						{
+							context.event_window = new_focus;
+							auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
+							if (kill_focus != new_focus)
+								brock.wd_manager.do_lazy_refresh(kill_focus, false);
+						}
 					}
+
 					auto retain = msgwnd->together.events_ptr;
-					msgwnd->root_widget->other.attribute.root->context.focus_changed = false;
 					context.event_window = msgwnd;
 
 					pressed_wd = nullptr;
@@ -748,7 +726,7 @@ namespace detail
 						{
 							pressed_wd = msgwnd;
 							//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
-							if(msgwnd->root_widget->other.attribute.root->context.focus_changed)
+							if (msgwnd->root != native_interface::get_focus_window())
 							{
 								//call the drawer mouse up event for restoring the surface graphics
 								msgwnd->flags.action = mouse_action::normal;
@@ -796,10 +774,12 @@ namespace detail
 						bool fire_click = false;
 						if(msgwnd == pressed_wd)
 						{
-							if(msgwnd->flags.enabled && hit)
+							if((arg.button == ::nana::mouse::left_button) && hit)
 							{
 								msgwnd->flags.action = mouse_action::over;
-								arg.evt_code = event_code::click;
+								arg_click arg;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.by_mouse = true;
 								emit_drawer(&drawer::click, msgwnd, arg, &context);
 								fire_click = true;
 							}
@@ -819,7 +799,9 @@ namespace detail
 
 							if(fire_click)
 							{
-								arg.evt_code = event_code::click;
+								arg_click arg;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.by_mouse = true;
 								evt_ptr->click.emit(arg);
 							}
 
@@ -831,7 +813,9 @@ namespace detail
 						}
 						else if(fire_click)
 						{
-							arg.evt_code = event_code::click;
+							arg_click arg;
+							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.by_mouse = true;
 							msgwnd->together.events_ptr->click.emit(arg);
 						}
 						brock.wd_manager.do_lazy_refresh(msgwnd, false);
@@ -937,11 +921,10 @@ namespace detail
 				if(msgwnd->visible && (msgwnd->root_graph->empty() == false))
 				{
 					nana::detail::platform_scope_guard psg;
-					nana::detail::drawable_impl_type* drawer_impl = msgwnd->root_graph->handle();
-					::XCopyArea(display, drawer_impl->pixmap, reinterpret_cast<Window>(native_window), drawer_impl->context,
-							xevent.xexpose.x, xevent.xexpose.y,
-							xevent.xexpose.width, xevent.xexpose.height,
-							xevent.xexpose.x, xevent.xexpose.y);
+					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+					::nana::rectangle update_area(xevent.xexpose.x, xevent.xexpose.y, xevent.xexpose.width, xevent.xexpose.height);
+					if (!update_area.empty())
+						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
 				}
 				break;
 			case KeyPress:
@@ -1027,12 +1010,11 @@ namespace detail
 							{
 								arg_keyboard argkey;
 								brock.get_key_state(argkey);
-								auto the_next = brock.wd_manager.tabstop(msgwnd, !argkey.shift);
-								if(the_next)
+								auto tstop_wd = brock.wd_manager.tabstop(msgwnd, !argkey.shift);
+								if (tstop_wd)
 								{
-									brock.wd_manager.set_focus(the_next, false);
-									brock.wd_manager.do_lazy_refresh(the_next, true);
-									root_runtime->condition.tabstop_focus_changed = true;
+									brock.wd_manager.set_focus(tstop_wd, false);
+									brock.wd_manager.do_lazy_refresh(tstop_wd, true);
 								}
 							}
 							else if(keyboard::alt == keychar)
@@ -1068,6 +1050,16 @@ namespace detail
 								arg.window_handle = reinterpret_cast<window>(msgwnd);
 								brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
+								if((XLookupKeySym == status) && (brock.wd_manager.available(msgwnd)))
+								{
+									//call key_char event if status is XLookupKeySym to avaid calling key_char
+									//twice, because the status would be equal to XLookupChars if the input method is
+									//enabled for the window.
+									arg.ignore = false;
+									arg.evt_code = event_code::key_char;
+									brock.emit(event_code::key_char, msgwnd, arg, true, & context);
+								}
+
 								if(msgwnd->root_widget->other.attribute.root->menubar == msgwnd)
 								{
 									int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(arg.key)) ? 1 : 0 );
@@ -1081,6 +1073,7 @@ namespace detail
 								break;
 							}
 						case XLookupChars:
+							if (msgwnd->flags.enabled)
 							{
 								const ::nana::char_t* charbuf;
 #if defined(NANA_UNICODE)
@@ -1096,6 +1089,10 @@ namespace detail
 									arg_keyboard arg;
 									arg.ignore = false;
 									arg.key = charbuf[i];
+
+									// When tab is pressed, only tab-eating mode is allowed
+									if ((keyboard::tab == arg.key) && !(msgwnd->flags.tab & tab_type::eating))
+										continue;
 
 									if(context.is_alt_pressed)
 									{
@@ -1145,7 +1142,9 @@ namespace detail
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 					}
-					brock.delay_restore(2);	//Restores while key release
+
+					if (context.platform.keychar < keyboard::os_arrow_left || keyboard::os_arrow_down < context.platform.keychar)
+						brock.delay_restore(2);	//Restores while key release
 				}
 				else
 				{

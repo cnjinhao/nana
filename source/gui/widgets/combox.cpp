@@ -18,6 +18,8 @@
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
 
+#include <iterator>
+
 namespace nana
 {
 	arg_combox::arg_combox(combox& wdg): widget(wdg)
@@ -199,20 +201,16 @@ namespace nana
 
 					if (new_where == state_.pointer_where)
 						return false;
-					
+
 					state_.pointer_where = new_where;
 					return true;
 				}
 
-				void set_mouse_over(bool mo)
+				void set_button_state(element_state state, bool reset_where)
 				{
-					state_.button_state = (mo ? element_state::hovered : element_state::normal);
-					state_.pointer_where = parts::none;
-				}
-
-				void set_mouse_press(bool mp)
-				{
-					state_.button_state = (mp ? element_state::pressed : element_state::hovered);
+					state_.button_state = state;
+					if (reset_where)
+						state_.pointer_where = parts::none;
 				}
 
 				void set_focused(bool f)
@@ -263,7 +261,7 @@ namespace nana
 						state_.lister->move_items(upwards, circle);
 						return;
 					}
-					
+
 					auto pos = module_.index;
 					if (upwards)
 					{
@@ -414,7 +412,7 @@ namespace nana
 				{
 					if (image_pixels_ == px)
 						return false;
-					
+
 					image_pixels_ = px;
 					return true;
 				}
@@ -521,7 +519,7 @@ namespace nana
 					}
 
 					nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (vpix - imgsz.height) / 2 + 2);
-					img.stretch(img.size(), *graph_, nana::rectangle(pos, imgsz));
+					img.stretch(::nana::rectangle{ img.size() }, *graph_, nana::rectangle(pos, imgsz));
 				}
 			private:
 				std::vector<std::shared_ptr<item>> items_;
@@ -598,7 +596,7 @@ namespace nana
 
 				void trigger::mouse_enter(graph_reference, const arg_mouse&)
 				{
-					drawer_->set_mouse_over(true);
+					drawer_->set_button_state(element_state::hovered, true);
 					if(drawer_->widget_ptr()->enabled())
 					{
 						drawer_->draw();
@@ -608,7 +606,7 @@ namespace nana
 
 				void trigger::mouse_leave(graph_reference, const arg_mouse&)
 				{
-					drawer_->set_mouse_over(false);
+					drawer_->set_button_state(element_state::normal, true);
 					drawer_->editor()->mouse_enter(false);
 					if(drawer_->widget_ptr()->enabled())
 					{
@@ -619,11 +617,12 @@ namespace nana
 
 				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 				{
-					drawer_->set_mouse_press(true);
+					//drawer_->set_mouse_press(true);
+					drawer_->set_button_state(element_state::pressed, false);
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
-						if(false == editor->mouse_down(arg.left_button, arg.pos))
+						if(false == editor->mouse_down(arg.button, arg.pos))
 							drawer_->open_lister_if_push_button_positioned();
 
 						drawer_->draw();
@@ -638,8 +637,8 @@ namespace nana
 				{
 					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
 					{
-						drawer_->editor()->mouse_up(arg.left_button, arg.pos);
-						drawer_->set_mouse_press(false);
+						drawer_->editor()->mouse_up(arg.button, arg.pos);
+						drawer_->set_button_state(element_state::hovered, false);
 						drawer_->draw();
 						API::lazy_refresh();
 					}
@@ -685,7 +684,7 @@ namespace nana
 						{
 						case keyboard::os_arrow_left:
 						case keyboard::os_arrow_right:
-							drawer_->editor()->respond_key(arg.key);
+							drawer_->editor()->respond_key(arg);
 							drawer_->editor()->reset_caret();
 							break;
 						case keyboard::os_arrow_up:
@@ -714,14 +713,14 @@ namespace nana
 						}
 					}
 					if (call_other_keys)
-						drawer_->editor()->respond_key(arg.key);
+						drawer_->editor()->respond_key(arg);
 
 					API::lazy_refresh();
 				}
 
 				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
 				{
-					if (drawer_->editor()->respond_char(arg.key))
+					if (drawer_->editor()->respond_char(arg))
 						API::lazy_refresh();
 				}
 			//end class trigger
@@ -989,7 +988,7 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		nana::string combox::_m_caption() const
+		nana::string combox::_m_caption() const throw()
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();

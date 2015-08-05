@@ -148,7 +148,7 @@ namespace nana
 
 					auto pos = items_->cont().size();
 					items_->append(text, shkey);
-					_m_draw();
+					refresh(*graph_);
 					API::update_window(*widget_);
 
 					return at(pos);
@@ -173,13 +173,65 @@ namespace nana
 					widget_ = &widget;
 				}
 
-				void trigger::refresh(graph_reference)
+				void trigger::refresh(graph_reference graph)
 				{
-					_m_draw();
-					API::lazy_refresh();
+					auto bgcolor = API::bgcolor(*widget_);
+					graph_->rectangle(true, bgcolor);
+
+					item_renderer ird(*widget_, graph);
+
+					nana::point item_pos(2, 2);
+					nana::size item_s(0, 23);
+
+					unsigned long index = 0;
+					for (auto i : items_->cont())
+					{
+						//Transform the text if it contains the hotkey character
+						::nana::char_t hotkey;
+						::nana::string::size_type hotkey_pos;
+						auto text = API::transform_shortkey_text(i->text, hotkey, &hotkey_pos);
+
+						nana::size text_s = graph.text_extent_size(text);
+
+						item_s.width = text_s.width + 16;
+
+						i->pos = item_pos;
+						i->size = item_s;
+
+						using state = item_renderer::state;
+						state item_state = (index != state_.active ? state::normal : (state_.menu_active ? state::selected : state::highlighted));
+						ird.background(item_pos, item_s, item_state);
+
+						if (state::selected == item_state)
+						{
+							int x = item_pos.x + item_s.width;
+							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
+							graph.line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.4));
+							graph.line({ x + 1, y1 }, { x + 1, y2 }, bgcolor.blend(colors::button_face_shadow_end, 0.5));
+						}
+
+						//Draw text, the text is transformed from orignal for hotkey character
+						int text_top_off = (item_s.height - text_s.height) / 2;
+						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, text);
+
+						if (hotkey)
+						{
+							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
+							nana::size hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
+
+							unsigned ascent, descent, inleading;
+							graph.text_metrics(ascent, descent, inleading);
+							int x = item_pos.x + 8 + off_w;
+							int y = item_pos.y + text_top_off + ascent + 1;
+							graph.line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, ::nana::colors::black);
+						}
+
+						item_pos.x += i->size.width;
+						++index;
+					}
 				}
 
-				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
+				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
 					if (arg.pos != state_.mouse_pos)
 						state_.nullify_mouse = false;
@@ -200,7 +252,7 @@ namespace nana
 					if(popup)
 					{
 						_m_popup_menu();
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 					}
 
@@ -228,7 +280,7 @@ namespace nana
 					else
 						_m_total_close();
 
-					_m_draw();
+					refresh(graph);
 					API::lazy_refresh();
 				}
 
@@ -245,12 +297,12 @@ namespace nana
 					{
 						state_.behavior = state_.behavior_none;
 						_m_total_close();
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 					}
 				}
 
-				void trigger::focus(graph_reference, const arg_focus& arg)
+				void trigger::focus(graph_reference graph, const arg_focus& arg)
 				{
 					if((arg.getting == false) && (state_.active != npos))
 					{
@@ -259,12 +311,12 @@ namespace nana
 						state_.menu_active = false;
 						_m_close_menu();
 						state_.active = npos;
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 					}
 				}
 
-				void trigger::key_press(graph_reference, const arg_keyboard& arg)
+				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
 					state_.nullify_mouse = true;
 					if(state_.menu)
@@ -354,11 +406,11 @@ namespace nana
 						}
 					}
 
-					_m_draw();
+					refresh(graph);
 					API::lazy_refresh();
 				}
 
-				void trigger::key_release(graph_reference, const arg_keyboard& arg)
+				void trigger::key_release(graph_reference graph, const arg_keyboard& arg)
 				{
 					if(arg.key == 18)
 					{
@@ -376,7 +428,7 @@ namespace nana
 						}
 
 						state_.menu_active = false;
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 					}
 				}
@@ -396,7 +448,7 @@ namespace nana
 						if(_m_popup_menu())
 							state_.menu->goto_next(true);
 
-						_m_draw();
+						refresh(graph);
 						API::lazy_refresh();
 						state_.behavior = state_.behavior_menu;
 					}
@@ -424,7 +476,7 @@ namespace nana
 					if(index != state_.active)
 					{
 						state_.active = index;
-						_m_draw();
+						refresh(*graph_);
 						API::lazy_refresh();
 
 						if(_m_popup_menu())
@@ -456,7 +508,7 @@ namespace nana
 							{
 								_m_total_close();
 
-								_m_draw();
+								refresh(*graph_);
 								API::update_window(widget_->handle());
 							}
 						});
@@ -526,6 +578,7 @@ namespace nana
 					return false;
 				}
 
+				/*
 				void trigger::_m_draw()
 				{
 					auto bgcolor = API::bgcolor(*widget_);
@@ -583,6 +636,7 @@ namespace nana
 						++index;
 					}
 				}
+				*/
 
 				//struct state_type
 					trigger::state_type::state_type()

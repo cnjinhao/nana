@@ -52,11 +52,13 @@ namespace nana
 
 	bool overlap(const rectangle& ir, const size& valid_input_area, const rectangle & dr, const size& valid_dst_area, rectangle& op_ir, rectangle& op_dr)
 	{
-		if(overlap(ir, valid_input_area, op_ir) == false)
+		rectangle valid_r{ valid_input_area };
+		if (overlap(ir, valid_r, op_ir) == false)
 			return false;
 
+		valid_r = valid_dst_area;
 		rectangle good_dr;
-		if(overlap(dr, valid_dst_area, good_dr) == false)
+		if (overlap(dr, valid_r, good_dr) == false)
 			return false;
 
 		zoom(ir, op_ir, dr, op_dr);

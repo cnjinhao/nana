@@ -80,37 +80,6 @@ namespace nana
 					return where::none;
 				}
 
-				void trigger::_m_draw(graph_reference graph)
-				{
-					const unsigned width = graph.width() - 2;
-
-					graph.rectangle(false, {0xb0, 0xb0, 0xb0});
-					graph.rectangle({ 1, 1, width, static_cast<unsigned>(topbar_height) }, true, colors::white);
-
-					_m_draw_topbar(graph);
-
-					if(graph.height() > 2 + topbar_height)
-					{
-						nana::point refpos(1, static_cast<int>(topbar_height) + 1);
-
-						nana::paint::graphics gbuf({ width, graph.height() - 2 - topbar_height });
-						gbuf.rectangle(true, {0xf0, 0xf0, 0xf0});
-
-						switch(page_)
-						{
-						case page::date:
-							_m_draw_days(refpos, gbuf);
-							break;
-						case page::month:
-							_m_draw_months(refpos, gbuf);
-							break;
-						default:	break;
-						}
-
-						graph.bitblt(refpos.x, refpos.y, gbuf);
-					}
-				}
-
 				void trigger::_m_draw_topbar(graph_reference graph)
 				{
 					::nana::color arrow_bgcolor;
@@ -414,7 +383,7 @@ namespace nana
 							r.y = static_cast<int>(newbuf.height() - r.height) / 2;
 							newbuf.stretch(nzbuf, r);
 
-							nzbuf.blend(nzbuf.size(), dzbuf, nana::point(), fade * (count - i));
+							nzbuf.blend(::nana::rectangle{ nzbuf.size() }, dzbuf, nana::point(), fade * (count - i));
 							graph.bitblt(refpos.x, refpos.y, dzbuf);
 
 							API::update_window(*widget_);
@@ -442,7 +411,7 @@ namespace nana
 							nzbuf.rectangle(true, colors::white);
 							newbuf.stretch(nzbuf, r);
 
-							nzbuf.blend(nzbuf.size(), dzbuf, nana::point(), fade * (count - i));
+							nzbuf.blend(::nana::rectangle{ nzbuf.size() }, dzbuf, nana::point(), fade * (count - i));
 							graph.bitblt(refpos.x, refpos.y, dzbuf);
 
 							API::update_window(*widget_);
@@ -455,7 +424,33 @@ namespace nana
 
 				void trigger::refresh(graph_reference graph)
 				{
-					_m_draw(graph);
+					const unsigned width = graph.width() - 2;
+
+					graph.rectangle(false, { 0xb0, 0xb0, 0xb0 });
+					graph.rectangle({ 1, 1, width, static_cast<unsigned>(topbar_height) }, true, colors::white);
+
+					_m_draw_topbar(graph);
+
+					if (graph.height() > 2 + topbar_height)
+					{
+						nana::point refpos(1, static_cast<int>(topbar_height)+1);
+
+						nana::paint::graphics gbuf({ width, graph.height() - 2 - topbar_height });
+						gbuf.rectangle(true, { 0xf0, 0xf0, 0xf0 });
+
+						switch (page_)
+						{
+						case page::date:
+							_m_draw_days(refpos, gbuf);
+							break;
+						case page::month:
+							_m_draw_months(refpos, gbuf);
+							break;
+						default:	break;
+						}
+
+						graph.bitblt(refpos.x, refpos.y, gbuf);
+					}
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference)
@@ -468,7 +463,7 @@ namespace nana
 					where pos = _m_pos_where(graph, arg.pos);
 					if(pos == pos_ && pos_ != where::textarea) return;
 					pos_ = pos;
-					_m_draw(graph);
+					refresh(graph);
 					API::lazy_refresh();
 				}
 
@@ -476,7 +471,7 @@ namespace nana
 				{
 					if(where::none == pos_) return;
 					pos_ = where::none;
-					_m_draw(graph);
+					refresh(graph);
 					API::lazy_refresh();
 				}
 
@@ -595,7 +590,7 @@ namespace nana
 							nana::paint::graphics dirtybuf({ r.width, r.height });
 							dirtybuf.bitblt(r, graph, refpos);
 
-							_m_draw(graph);
+							refresh(graph);
 
 							nana::paint::graphics gbuf({ r.width, r.height });
 							gbuf.bitblt(r, graph, refpos);
@@ -603,7 +598,7 @@ namespace nana
 							_m_perf_transform(tfid, graph, dirtybuf, gbuf, refpos);
 						}
 						else
-							_m_draw(graph);
+							refresh(graph);
 
 						API::lazy_refresh();
 					}

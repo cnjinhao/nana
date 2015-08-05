@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *  @file: nana/gui/widgets/combox.hpp
@@ -43,7 +43,7 @@ namespace nana
 			};
 
 			class drawer_impl;
-			
+
 			class trigger
 				: public drawer_trigger
 			{
@@ -101,7 +101,7 @@ namespace nana
 						throw std::runtime_error("combox::item_proxy.value<T>() invalid type of value");
 					return *p;
 				}
-				
+
 				template<typename T>
 				item_proxy& value(const T& t)
 				{
@@ -169,7 +169,7 @@ namespace nana
 		combox(window, nana::string, bool visible = true);
 		combox(window, const nana::char_t*, bool visible = true);
 		combox(window, const rectangle& r = rectangle(), bool visible = true);
-		
+
 		void clear();
 		void editable(bool);
 		bool editable() const;
@@ -209,8 +209,8 @@ namespace nana
 			_m_erase(p.get());
 		}
 
-		/// \brief Set user-defined item renderer object. 
-		/// It is an address therefore the user should not destroy the renderer object 
+		/// \brief Set user-defined item renderer object.
+		/// It is an address therefore the user should not destroy the renderer object
 		/// after it is set to the combox. Passing null_ptr cancels the user-defined renderer object.
 		void renderer(item_renderer*);
 
@@ -224,7 +224,7 @@ namespace nana
 		const drawerbase::combox::drawer_impl& _m_impl() const;
 	private:
 		//Overrides widget's virtual functions
-		nana::string _m_caption() const override;
+		nana::string _m_caption() const throw() override;
 		void _m_caption(nana::string&&) override;
 		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};

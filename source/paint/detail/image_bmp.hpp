@@ -13,7 +13,7 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 
-#include "image_impl_interface.hpp"
+#include <nana/paint/detail/image_impl_interface.hpp>
 #include <memory>
 
 namespace nana{	namespace paint
@@ -25,24 +25,24 @@ namespace nana{	namespace paint
 		struct bitmap_file_header
 		{
 			unsigned short bfType;
-			unsigned long bfSize;
+			unsigned bfSize;
 			unsigned short bfReserved1;
 			unsigned short bfReserved2;
-			unsigned long bfOffBits;
+			unsigned bfOffBits;
 		} __attribute__((packed));
 
 		struct bitmap_info_header {
-			unsigned long biSize;
-			long  biWidth;
-			long  biHeight;
+			unsigned biSize;
+			int  biWidth;
+			int  biHeight;
 			unsigned short  biPlanes;
 			unsigned short  biBitCount;
-			unsigned long biCompression;
-			unsigned long biSizeImage;
-			long  biXPelsPerMeter;
-			long  biYPelsPerMeter;
-			unsigned long biClrUsed;
-			unsigned long biClrImportant;
+			unsigned		biCompression;
+			unsigned		biSizeImage;
+			int  biXPelsPerMeter;
+			int  biYPelsPerMeter;
+			unsigned	biClrUsed;
+			unsigned	biClrImportant;
 		}__attribute__((packed));
 
 		struct rgb_quad
@@ -75,7 +75,13 @@ namespace nana{	namespace paint
 				this->close();
 			}
 
-			bool open(const nana::char_t* filename)
+			bool open(const void* data, std::size_t bytes) override
+			{
+				// TODO: read a BMP file from memory
+				return false;
+			}
+
+			bool open(const nana::char_t* filename) override
 			{
 				if(nullptr == filename) return false;
 				std::ifstream ifs;
@@ -330,33 +336,33 @@ namespace nana{	namespace paint
 				return (false == pixbuf_.empty());
 			}
 
-			bool alpha_channel() const
+			bool alpha_channel() const override
 			{
 				return false;
 			}
 
-			bool empty() const
+			bool empty() const override
 			{
 				return pixbuf_.empty();
 			}
 
-			void close()
+			void close() override
 			{
 				pixbuf_.close();
 			}
 
-			nana::size size() const
+			nana::size size() const override
 			{
 				return pixbuf_.size();
 			}
 
-			void paste(const nana::rectangle& src_r, graph_reference graph, int x, int y) const
+			void paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const override
 			{
 				if(graph && pixbuf_)
-					pixbuf_.paste(src_r, graph.handle(), x, y);
+					pixbuf_.paste(src_r, graph.handle(), p_dst);
 			}
 
-			void stretch(const nana::rectangle& src_r, graph_reference graph, const nana::rectangle& r) const
+			void stretch(const nana::rectangle& src_r, graph_reference graph, const nana::rectangle& r) const override
 			{
 				if(graph && pixbuf_)
 					pixbuf_.stretch(src_r, graph.handle(), r);
