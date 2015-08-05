@@ -544,10 +544,19 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::window_manager.move(iwd, x, y, false))
 		{
-			if (category::flags::root != iwd->other.category)
-				iwd = iwd->seek_non_lite_widget_ancestor();
+			restrict::core_window_t* update_wd = nullptr;
+			if (iwd->displayed() && iwd->effect.bground)
+			{
+				update_wd = iwd;
+				restrict::window_manager.update(iwd, true, false);
+			}
 
-			restrict::window_manager.update(iwd, false, false);
+			restrict::core_window_t* anc = iwd;
+			if (category::flags::root != iwd->other.category)
+				anc = iwd->seek_non_lite_widget_ancestor();
+
+			if (anc != update_wd)
+				restrict::window_manager.update(anc, false, false);
 		}
 	}
 

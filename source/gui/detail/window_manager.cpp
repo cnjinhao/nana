@@ -1413,6 +1413,9 @@ namespace detail
 				else
 					native_interface::move_window(wd->other.attribute.frame->container, wd->pos_root.x, wd->pos_root.y);
 
+				if (wd->displayed() && wd->effect.bground)
+					window_layer::make_bground(wd);
+
 				for (auto child : wd->children)
 					_m_move_core(child, delta);
 			}
