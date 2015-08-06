@@ -58,6 +58,51 @@
     <Filter Include="Source Files\nana\threads">
       <UniqueIdentifier>{e95b4a72-643f-4416-af95-b0bbaf7f0c57}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\gui">
+      <UniqueIdentifier>{d421a05b-b868-4c3d-bdac-ff57d09f8d07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gui\widgets">
+      <UniqueIdentifier>{64c22f90-dce2-40dc-be98-edc9fe8951e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gui\detail">
+      <UniqueIdentifier>{91301ff5-79ac-40cc-a6db-bca2097ea763}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gui\widgets\detail">
+      <UniqueIdentifier>{81c62a28-ef5f-43f7-a6ce-e6c186cb411a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gui\widgets\skeletons">
+      <UniqueIdentifier>{4a1db6f0-a4ee-4514-8e89-54ef9d52e3b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\detail">
+      <UniqueIdentifier>{c92e890a-ffd5-4efd-8b37-78ed9bbea1e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\detail\win32">
+      <UniqueIdentifier>{63401f37-26a3-423e-87e6-6840344c3056}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\detail\linux_X11">
+      <UniqueIdentifier>{61385c08-f06b-4cf3-8e05-9b47d546164b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\extrlib">
+      <UniqueIdentifier>{e9eadc97-4a14-4a4e-bb52-52d3a20e2693}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\filesystem">
+      <UniqueIdentifier>{5667eac1-0887-4936-9502-eac4dd8c1c1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\paint">
+      <UniqueIdentifier>{e6c4a4d9-b4b5-4c56-bb2a-486f3f777ecb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\paint\detail">
+      <UniqueIdentifier>{ac132633-f80c-4983-8e47-fa7fc17f666e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pat">
+      <UniqueIdentifier>{ee3e9e63-7221-409e-9659-25864e576e16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\system">
+      <UniqueIdentifier>{ef87057b-dff2-40aa-a05e-9dcd0b335c30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\threads">
+      <UniqueIdentifier>{8ea232cf-bd7c-47e3-a694-6a8898b677d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp">

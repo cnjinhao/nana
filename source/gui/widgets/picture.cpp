@@ -143,7 +143,8 @@ namespace nana
 
 						_m_draw_background(valid_area.width, valid_area.height);
 
-						backimg.image.paste(valid_area, graph, pos);
+						if ( ! backimg.image.empty())
+							backimg.image.paste(valid_area, graph, pos);
 					}
 				}
 				else
@@ -163,7 +164,7 @@ namespace nana
 
 				if (graph && (bground_mode::basic != API::effects_bground_mode(*impl_->wdg_ptr)))
 				{
-					if (w < graph->size().width || h < graph->size().width || impl_->backimg.image.alpha())
+					if (w < graph->size().width || h < graph->size().height /*  .width   ???  */ || impl_->backimg.image.alpha())
 					{
 						auto & bground = impl_->gradual_bground;
 						if (bground.gradual_from.invisible() || bground.gradual_to.invisible())
