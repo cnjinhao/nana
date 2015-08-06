@@ -46,7 +46,7 @@ namespace nana
 	class event_arg
 	{
 	public:
-		virtual ~event_arg();
+		virtual ~event_arg() = default;
 
         /// ignorable handlers behind the current one in a chain of event handlers will not get called.
 		void stop_propagation() const;
@@ -425,11 +425,19 @@ namespace nana
 		event_code evt_code; ///< 
 		::nana::window window_handle;  ///< A handle to the event window
 		::nana::point pos;   ///< cursor position in the event window
+		::nana::mouse button;	///< indicates a button which triggers the event
+
 		bool left_button;    ///< mouse left button is pressed?
 		bool mid_button;     ///< mouse middle button is pressed?
 		bool right_button;   ///< mouse right button is pressed?
 		bool shift;          ///< keyboard Shift is pressed?
 		bool ctrl;           ///< keyboard Ctrl is pressed?
+
+		/// Checks if left button is operated,
+		bool is_left_button() const
+		{
+			return (event_code::mouse_move == evt_code ? left_button : (mouse::left_button == button));
+		}
 	};
 
     /// in arg_wheel event_code is event_code::mouse_wheel 
@@ -510,31 +518,37 @@ namespace nana
 		::nana::window window_handle;	///< A handle to the event window
 	};
 
+	struct arg_click : public event_arg
+	{
+		::nana::window window_handle;	///< A handle to the event window
+		bool by_mouse;					///< Determines whether the event is emitted by clicking mouse button
+	};
+
     /// provides some fundamental events that every widget owns.
 	struct general_events
 	{
 		virtual ~general_events(){}
-		basic_event<arg_mouse> mouse_enter; ///< the cursor enters the window
-		basic_event<arg_mouse> mouse_move;  ///< the cursor moves on the window
-		basic_event<arg_mouse> mouse_leave; ///< the cursor leaves the window
-		basic_event<arg_mouse> mouse_down;  ///< the user presses the mouse button
-		basic_event<arg_mouse> mouse_up;    ///< the user presses the mouse button
-		basic_event<arg_mouse> click;       ///< the window is clicked, but occurs after mouse_down and before mouse_up
-		basic_event<arg_mouse> dbl_click;   ///< the window is double clicked
-		basic_event<arg_wheel> mouse_wheel; ///< the mouse wheel rotates while the window has focus
+		basic_event<arg_mouse> mouse_enter;	///< the cursor enters the window
+		basic_event<arg_mouse> mouse_move;	///< the cursor moves on the window
+		basic_event<arg_mouse> mouse_leave;	///< the cursor leaves the window
+		basic_event<arg_mouse> mouse_down;	///< the user presses the mouse button
+		basic_event<arg_mouse> mouse_up;	///< the user presses the mouse button
+		basic_event<arg_click> click;		///< the window is clicked, but occurs after mouse_down and before mouse_up
+		basic_event<arg_mouse> dbl_click;	///< the window is double clicked
+		basic_event<arg_wheel> mouse_wheel;	///< the mouse wheel rotates while the window has focus
 		basic_event<arg_dropfiles>	mouse_dropfiles; ///< the mouse drops some external data while the window enable accepting files
-		basic_event<arg_expose>	expose;     ///< the visibility changes
-		basic_event<arg_focus>	focus;      ///< the window receives or loses keyboard focus
+		basic_event<arg_expose>	expose;		///< the visibility changes
+		basic_event<arg_focus>	focus;		///< the window receives or loses keyboard focus
 		basic_event<arg_keyboard>	key_press;   ///< a key is pressed while the window has focus. event code is event_code::key_press
 		basic_event<arg_keyboard>	key_release; ///< a key is released while the window has focus. event code is event_code::key_release
-		basic_event<arg_keyboard>	key_char;    ///< a character, whitespace or backspace is pressed. event code is event_code::key_char
-		basic_event<arg_keyboard>	shortkey;    ///< a defined short key is pressed. event code is event_code::shortkey
+		basic_event<arg_keyboard>	key_char;	///< a character, whitespace or backspace is pressed. event code is event_code::key_char
+		basic_event<arg_keyboard>	shortkey;	///< a defined short key is pressed. event code is event_code::shortkey
 
-		basic_event<arg_move>		move;     ///< the window changes position
-		basic_event<arg_resizing>	resizing; ///< the window is changing its size
-		basic_event<arg_resized>	resized;  ///< the window is changing its size
+		basic_event<arg_move>		move;		///< the window changes position
+		basic_event<arg_resizing>	resizing;	///< the window is changing its size
+		basic_event<arg_resized>	resized;	///< the window is changing its size
 
-		basic_event<arg_destroy>	destroy;  ///< the window is destroyed, but occurs when all children have been destroyed
+		basic_event<arg_destroy>	destroy;	///< the window is destroyed, but occurs when all children have been destroyed
 	};
 
 	namespace detail

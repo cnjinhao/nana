@@ -16,11 +16,12 @@ namespace nana{	namespace paint{
 		typedef nana::paint::graphics& graph_reference;
 		virtual ~image_impl_interface() = 0;	//The destructor is defined in ../image.cpp
 		virtual bool open(const nana::char_t* filename) = 0;
+		virtual bool open(const void* data, std::size_t bytes) = 0; // reads image from memory
 		virtual bool alpha_channel() const = 0;
 		virtual bool empty() const = 0;
 		virtual void close() = 0;
 		virtual nana::size size() const = 0;
-		virtual void paste(const nana::rectangle& src_r, graph_reference dst, int x, int y) const = 0;
+		virtual void paste(const nana::rectangle& src_r, graph_reference dst, const point& p_dst) const = 0;
 		virtual void stretch(const nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const = 0;
 	};//end class image::image_impl_interface
 }//end namespace paint

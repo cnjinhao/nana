@@ -7,7 +7,7 @@ namespace nana
 	{
 		//class caret_descriptor
 			caret_descriptor::caret_descriptor(core_window_t* wd, unsigned width, unsigned height)
-				:wd_(wd), size_(width, height), visible_(false), real_visible_state_(false), out_of_range_(false)
+				:wd_(wd), size_(width, height), visible_state_(visible_state::invisible), out_of_range_(false)
 			{}
 
 			caret_descriptor::~caret_descriptor()
@@ -22,8 +22,8 @@ namespace nana
 					if(active)
 					{
 						native_interface::caret_create(wd_->root, size_);
-						real_visible_state_ = false;
-						visible_ = false;
+
+						visible_state_ = visible_state::invisible;
 						this->position(point_.x, point_.y);
 					}
 					else
@@ -76,19 +76,26 @@ namespace nana
 				return point_;
 			}
 
-			void caret_descriptor::visible(bool isshow)
+			void caret_descriptor::visible(bool is_show)
 			{
-				if(visible_ != isshow)
+				auto pre_displayed = (visible_state::displayed == visible_state_);
+
+				if (is_show)
 				{
-					visible_ = isshow;
-					if(visible_ == false || false == out_of_range_)
-						_m_visible(isshow);
+					visible_state_ = visible_state::visible;
+					if (wd_->displayed() && (! out_of_range_))
+						visible_state_ = visible_state::displayed;
 				}
+				else
+					visible_state_ = visible_state::invisible;
+
+				if (pre_displayed != (visible_state::displayed == visible_state_))
+					native_interface::caret_visible(wd_->root, !pre_displayed);
 			}
 
 			bool caret_descriptor::visible() const
 			{
-				return visible_;
+				return (visible_state::invisible != visible_state_);
 			}
 
 			nana::size caret_descriptor::size() const
@@ -101,16 +108,8 @@ namespace nana
 				size_ = s;
 				update();
 
-				if(visible_)	this->visible(true);
-			}
-
-			void caret_descriptor::_m_visible(bool isshow)
-			{
-				if(real_visible_state_ != isshow)
-				{
-					real_visible_state_ = isshow;
-					native_interface::caret_visible(wd_->root, isshow && wd_->displayed());
-				}
+				if (visible_state::invisible != visible_state_)
+					visible(true);
 			}
 
 			void caret_descriptor::update()
@@ -138,8 +137,8 @@ namespace nana
 					{
 						out_of_range_ = true;
 
-						if(visible_)
-							_m_visible(false);
+						if (visible_state::invisible != visible_state_)
+							visible(false);
 					}
 				}
 				else
@@ -164,19 +163,22 @@ namespace nana
 
 					if(out_of_range_)
 					{
-						if(paint_size_ == size)
-							_m_visible(true);
+						if (paint_size_ == size)
+							visible(true);
 
 						out_of_range_ = false;
 					}
 
 					if(paint_size_ != size)
 					{
+						bool vs = (visible_state::invisible != visible_state_);
 						native_interface::caret_destroy(wd_->root);
 						native_interface::caret_create(wd_->root, size);
-						real_visible_state_ = false;
-						if(visible_)
-							_m_visible(true);
+
+						visible_state_ = visible_state::invisible;
+						if (vs)
+							visible(true);
+
 
 						paint_size_ = size;
 					}
@@ -195,7 +197,6 @@ namespace nana
 					{
 					case category::root_tag::value:
 						attribute.root = new attr_root_tag;
-						attribute.root->context.focus_changed = false;
 						break;
 					case category::frame_tag::value:
 						attribute.frame = new attr_frame_tag;
@@ -222,8 +223,8 @@ namespace nana
 
 			//basic_window
 			//@brief: constructor for the root window
-			basic_window::basic_window(basic_window* owner, widget* wdg, category::root_tag**)
-				: widget_ptr(wdg), other(category::root_tag::value)
+			basic_window::basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, category::root_tag**)
+				: widget_notifier(std::move(wdg_notifier)), other(category::root_tag::value)
 			{
 				drawer.bind(this);
 				_m_init_pos_and_size(nullptr, rectangle());
@@ -324,6 +325,15 @@ namespace nana
 				return false;
 			}
 
+			basic_window * basic_window::seek_non_lite_widget_ancestor() const
+			{
+				auto anc = this->parent;
+				while (anc && (category::flags::lite_widget == anc->other.category))
+					anc = anc->parent;
+				
+				return anc;
+			}
+
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
 				pos_owner = pos_root = r;
@@ -371,8 +381,9 @@ namespace nana
 				flags.refreshing = false;
 				flags.destroying = false;
 				flags.borderless = false;
-				flags.make_bground_declared = false;
-				flags.ignore_menubar_focus = false;
+				flags.make_bground_declared	= false;
+				flags.ignore_menubar_focus	= false;
+				flags.ignore_mouse_focus	= false;
 
 				visible = false;
 

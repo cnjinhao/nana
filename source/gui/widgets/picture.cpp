@@ -13,6 +13,7 @@
  */
 
 #include <nana/gui/widgets/picture.hpp>
+#include <nana/gui/layout_utility.hpp>
 #include <nana/paint/image.hpp>
 #include <nana/gui/element.hpp>
 
@@ -111,7 +112,7 @@ namespace nana
 
 						_m_draw_background(fit_size.width, fit_size.height);
 
-						backimg.image.stretch(valid_area, graph, { pos, fit_size });
+						backimg.image.stretch(valid_area, graph, ::nana::rectangle{ pos, fit_size });
 					}
 					else
 					{
@@ -150,7 +151,7 @@ namespace nana
 					_m_draw_background(graphsize.width, graphsize.height);
 
 					color invalid_clr_for_call;
-					backimg.bground->draw(graph, invalid_clr_for_call, invalid_clr_for_call, graphsize, element_state::normal);
+					backimg.bground->draw(graph, invalid_clr_for_call, invalid_clr_for_call, rectangle{ graphsize }, element_state::normal);
 				}
 
 				graph.setsta();
@@ -170,7 +171,7 @@ namespace nana
 						else if (bground.gradual_from == bground.gradual_to)
 							graph->rectangle(true, bground.gradual_from);
 						else
-							graph->gradual_rectangle(graph->size(), bground.gradual_from, bground.gradual_to, !bground.horizontal);
+							graph->gradual_rectangle(::nana::rectangle{ graph->size() }, bground.gradual_from, bground.gradual_to, !bground.horizontal);
 					}
 				}
 			}

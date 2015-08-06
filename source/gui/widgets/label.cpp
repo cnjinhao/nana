@@ -628,6 +628,8 @@ namespace nana
 					nana::string target;	//It indicates which target is tracing.
 					nana::string url;
 
+					window for_associated_wd{ nullptr };
+
 					void add_listener(std::function<void(command, const nana::string&)>&& fn)
 					{
 						listener_.emplace_back(std::move(fn));
@@ -730,7 +732,7 @@ namespace nana
 					}
 				}
 
-				void trigger::click(graph_reference, const arg_mouse&)
+				void trigger::click(graph_reference, const arg_click&)
 				{
 					//make a copy, because the listener may popup a window, and then
 					//user moves the mouse. it will reset the url when the mouse is moving out from the element.
@@ -740,6 +742,8 @@ namespace nana
 						impl_->call_listener(command::click, impl_->target);
 
 					system::open_url(url);
+
+					API::focus_window(impl_->for_associated_wd);
 				}
 
 				void trigger::refresh(graph_reference graph)
@@ -775,13 +779,6 @@ namespace nana
 			caption(text);
 		}
 
-		label::label(window wd, const nana::char_t* text, bool visible)
-		{
-			create(wd, rectangle(), visible);
-			bgcolor(API::bgcolor(wd));
-			caption(text);
-		}
-
 		label::label(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
@@ -797,7 +794,7 @@ namespace nana
 			return *this;
 		}
 
-		bool label::transparent() const
+		bool label::transparent() const throw()
 		{
 			return (bground_mode::basic == API::effects_bground_mode(*this));
 		}
@@ -818,6 +815,12 @@ namespace nana
 		label& label::add_format_listener(std::function<void(command, const nana::string&)> f)
 		{
 			get_drawer_trigger().impl()->add_listener(std::move(f));
+			return *this;
+		}
+
+		label& label::click_for(window associated_window) throw()
+		{
+			get_drawer_trigger().impl()->for_associated_wd = associated_window;
 			return *this;
 		}
 

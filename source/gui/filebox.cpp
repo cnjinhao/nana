@@ -163,7 +163,7 @@ namespace nana
 			btn_folder_.create(*this);
 			btn_folder_.caption(STR("&New Folder"));
 
-			btn_folder_.events().click.connect_unignorable([this](const arg_mouse&)
+			btn_folder_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				form fm(this->handle(), API::make_center(*this, 300, 35));
 				fm.caption(STR("Name the new folder"));
@@ -179,7 +179,7 @@ namespace nana
 				button btn_cancel(fm, nana::rectangle(235, 5, 60, 25));
 				btn_cancel.caption(STR("Cancel"));
 
-				btn_cancel.events().click.connect_unignorable([&fm](const arg_mouse&)
+				btn_cancel.events().click.connect_unignorable([&fm](const arg_click&)
 				{
 					fm.close();
 				});
@@ -288,14 +288,14 @@ namespace nana
 			btn_ok_.create(*this);
 			btn_ok_.caption(STR("&OK"));
 
-			btn_ok_.events().click.connect_unignorable([this](const arg_mouse&)
+			btn_ok_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				_m_ok();
 			});
 			btn_cancel_.create(*this);
 			btn_cancel_.caption(STR("&Cancel"));
 
-			btn_cancel_.events().click.connect_unignorable([this](const arg_mouse&)
+			btn_cancel_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				API::close_window(handle());
 			});
@@ -1021,6 +1021,7 @@ namespace nana
 			
 			if (!impl_->open_or_save)
 				ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
+			ofn.Flags |= OFN_NOCHANGEDIR;
 			
 			if(FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
 				return false;

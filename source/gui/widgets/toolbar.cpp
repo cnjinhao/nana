@@ -134,6 +134,7 @@ namespace nana
 					if(!item.image.empty())
 					{
 						auto imgsize = item.image.size();
+
 						if (imgsize.width > scale) imgsize.width = scale;
 						if (imgsize.height > scale) imgsize.height = scale;
 
@@ -141,11 +142,11 @@ namespace nana
 						pos.x += static_cast<int>(scale + extra_size - imgsize.width) / 2;
 						pos.y += static_cast<int>(height - imgsize.height) / 2;
 
-						item.image.paste(imgsize, graph, pos);
+						item.image.paste(::nana::rectangle{ imgsize }, graph, pos);
 						if(item.enable == false)
 						{
 							nana::paint::graphics gh(imgsize);
-							gh.bitblt(imgsize, graph, pos);
+							gh.bitblt(::nana::rectangle{ imgsize }, graph, pos);
 							gh.rgb_to_wb();
 							gh.paste(graph, pos.x, pos.y);
 						}
@@ -213,7 +214,7 @@ namespace nana
 
 					auto bgcolor = API::bgcolor(widget_->handle());
 					graph.set_text_color(bgcolor);
-					graph.gradual_rectangle(graph.size(), bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.95), true);
+					graph.gradual_rectangle(rectangle{ graph.size() }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.95), true);
 
 					item_renderer ir(graph, impl_->textout, impl_->scale, bgcolor);
 					size_type index = 0;
@@ -276,7 +277,7 @@ namespace nana
 						impl_->which = which;
 						if (which == npos || container.at(which)->enable)
 						{
-							impl_->state = (arg.left_button ? item_renderer::state_t::selected : item_renderer::state_t::highlighted);
+							impl_->state = item_renderer::state_t::highlighted;
 
 							refresh(graph);
 							API::lazy_refresh();

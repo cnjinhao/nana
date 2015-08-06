@@ -306,7 +306,7 @@ namespace nana
 		color(unsigned red, unsigned green, unsigned blue, double alpha);
 
 		/// Initializes the color with a CSS-like rgb string.
-		color(std::string css_rgb);
+		explicit color(std::string css_rgb);
 
 		color& alpha(double);	///< Sets alpha channel
 		color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
@@ -406,10 +406,10 @@ namespace nana
 
 	struct rectangle
 	{
-		rectangle();									 ///< a zero-size rectangle at (0, 0).
+		rectangle();										 ///< a zero-size rectangle at (0, 0).
 		rectangle(int x, int y, unsigned width, unsigned height);
-		rectangle(const size &);						 ///< a rectangle with specified size at coordinate (0, 0).
-		rectangle(const point&, const size& = size());
+		explicit rectangle(const size &);					///< a rectangle with specified size at coordinate (0, 0).
+		explicit rectangle(const point&, const size& = size());
 
 		bool operator==(const rectangle& rhs) const;
 		bool operator!=(const rectangle& rhs) const;

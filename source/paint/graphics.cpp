@@ -604,7 +604,7 @@ namespace paint
 			if(dst.handle_ && handle_ && (dst.handle_ != handle_))
 			{
 				pixel_buffer s_pixbuf;
-				s_pixbuf.attach(handle_, size());
+				s_pixbuf.attach(handle_, ::nana::rectangle{ size() });
 
 				s_pixbuf.blend(s_r, dst.handle_, d_pos, fade_rate);
 
@@ -618,7 +618,7 @@ namespace paint
 			{
 				pixel_buffer pixbuf(handle_, 0, 0);
 				pixbuf.blur(r, radius);
-				pixbuf.paste(handle_, 0, 0);
+				pixbuf.paste(handle_, point{});
 			}
 		}
 
@@ -677,7 +677,7 @@ namespace paint
 				}
 				delete [] tablebuf;
 
-				pixbuf.paste(handle_, 0, 0);
+				pixbuf.paste(handle_, point{});
 				if(changed_ == false) changed_ = true;
 			}
 		}
@@ -812,7 +812,7 @@ namespace paint
 			size_.width = size_.height = 0;
 		}
 
-		void graphics::save_as_file(const char* file)
+		void graphics::save_as_file(const char* file) const
 		{
 			if(handle_)
 			{
@@ -1022,13 +1022,13 @@ namespace paint
 
 		void graphics::rectangle(bool solid)
 		{
-			rectangle(size(), solid);
+			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
 		void graphics::rectangle(bool solid, const ::nana::color& clr)
 		{
 			set_color(clr);
-			rectangle(size(), solid);
+			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
 		void graphics::rectangle(const ::nana::rectangle& r, bool solid)
@@ -1074,7 +1074,7 @@ namespace paint
 			if (pxbuf_.open(handle_))
 			{
 				pxbuf_.gradual_rectangle(rct, from, to, 0.0, vertical);
-				pxbuf_.paste(handle_, 0, 0);
+				pxbuf_.paste(handle_, point{});
 			}
 #elif defined(NANA_X11)
 			if (nullptr == handle_) return;

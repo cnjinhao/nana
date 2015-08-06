@@ -146,7 +146,7 @@ namespace nana
 
 				void item_image(graph_reference graph, const nana::point& pos, unsigned image_px, const paint::image& img)
 				{
-					img.stretch(img.size(), graph, { pos, ::nana::size(image_px, image_px)});
+					img.stretch(rectangle{ img.size() }, graph, rectangle{ pos, ::nana::size(image_px, image_px) });
 				}
 
 				void item_text(graph_reference graph, const nana::point& pos, const nana::string& text, unsigned text_pixels, const attr& at)
@@ -754,23 +754,26 @@ namespace nana
 						API::register_menu_window(this->handle(), !owner_menubar);
 					}
 
-					events().destroy.connect_unignorable([this]{
+					auto & events = this->events();
+					events.destroy.connect_unignorable([this]{
 						_m_destroy();
 					});
 
-					events().key_press.connect_unignorable([this](const arg_keyboard& arg){
+					events.key_press.connect_unignorable([this](const arg_keyboard& arg){
 						_m_key_down(arg);
 					});
 
-					events().mouse_down.connect_unignorable([this](const arg_mouse& arg)
+					auto fn = [this](const arg_mouse& arg)
 					{
-						this->_m_open_sub(0);	//Try to open submenu immediately
-					});
+						if (event_code::mouse_down == arg.evt_code)
+							_m_open_sub(0);	//Try to open submenu immediately
+						else if (event_code::mouse_up == arg.evt_code)
+							if (arg.button == ::nana::mouse::left_button)
+								pick();
+					};
 
-					events().mouse_up.connect_unignorable([this](const arg_mouse& arg){
-						if (arg.left_button)
-							pick();
-					});
+					events.mouse_down.connect_unignorable(fn);
+					events.mouse_up.connect_unignorable(fn);
 
 					timer_.interval(100);
 					timer_.elapse([this]{
@@ -782,7 +785,7 @@ namespace nana
 					
 					if (want_focus_)
 					{
-						event_focus_ = events().focus.connect_unignorable([this](const arg_focus& arg)
+						event_focus_ = events.focus.connect_unignorable([this](const arg_focus& arg)
 						{
 							//when the focus of the menu window is losing, close the menu.
 							//But here is not every menu window may have focus event installed,

@@ -15,16 +15,20 @@
 #include "drawer.hpp"
 #include "events_holder.hpp"
 #include "widget_colors.hpp"
+#include "widget_notifier_interface.hpp"
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>
-#include <memory>
 
 namespace nana{
-	class widget;	//declaration ofr nana/widgets/widget.hpp
 namespace detail
 {
 	struct basic_window;
+
+	enum class visible_state
+	{
+		invisible, visible, displayed
+	};
 
 	class caret_descriptor
 	{
@@ -42,17 +46,13 @@ namespace detail
 		bool visible() const;
 		::nana::size size() const;
 		void size(const ::nana::size&);
-
 		void update();
-	private:
-		void _m_visible(bool isshow);
 	private:
 		core_window_t*	wd_;
 		::nana::point point_;
 		::nana::size	size_;
 		::nana::size	paint_size_;
-		bool		visible_;
-		bool		real_visible_state_;
+		visible_state	visible_state_;
 		bool		out_of_range_;
 		::nana::rectangle effective_range_;
 	};//end class caret_descriptor
@@ -76,11 +76,6 @@ namespace detail
 	{
 		using container = std::vector<basic_window*>;
 
-		struct root_context
-		{
-			bool focus_changed;
-		};
-
 		enum class update_state
 		{
 			none, lazy, refresh
@@ -94,11 +89,11 @@ namespace detail
 
 		//basic_window
 		//@brief: constructor for the root window
-		basic_window(basic_window* owner, widget*, category::root_tag**);
+		basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&&, category::root_tag**);
 
 		template<typename Category>
-		basic_window(basic_window* parent, const rectangle& r, widget* wdg, Category**)
-			: widget_ptr(wdg), other(Category::value)
+		basic_window(basic_window* parent, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, const rectangle& r, Category**)
+			: widget_notifier(std::move(wdg_notifier)), other(Category::value)
 		{
 			drawer.bind(this);
 			if(parent)
@@ -122,7 +117,9 @@ namespace detail
 		bool belong_to_lazy() const;
 		const basic_window * child_caret() const; //Returns a child which owns a caret
 
-		bool is_draw_through() const;	// Determines whether it is a draw-through window.
+		bool is_draw_through() const;	///< Determines whether it is a draw-through window.
+
+		basic_window * seek_non_lite_widget_ancestor() const;
 	public:
 		//Override event_holder
 		bool set_events(const std::shared_ptr<general_events>&) override;
@@ -153,7 +150,7 @@ namespace detail
 		basic_window*		root_widget;	//A pointer refers to the root basic window, if the window is a root, the pointer refers to itself.
 		paint::graphics*	root_graph;		//Refer to the root buffer graphics
 		cursor	predef_cursor;
-		widget* const		widget_ptr;
+		std::unique_ptr<widget_notifier_interface> widget_notifier;
 
 		struct flags_type
 		{
@@ -167,9 +164,10 @@ namespace detail
 			bool dropable	:1; //Whether the window has make mouse_drop event.
 			bool fullscreen	:1;	//When the window is maximizing whether it fit for fullscreen.
 			bool borderless :1;
-			bool make_bground_declared : 1;	//explicitly make bground for bground effects
-			bool ignore_menubar_focus : 1;	//A flag indicates whether the menubar sets the focus.
-			unsigned Reserved	:20;
+			bool make_bground_declared	: 1;	//explicitly make bground for bground effects
+			bool ignore_menubar_focus	: 1;	//A flag indicates whether the menubar sets the focus.
+			bool ignore_mouse_focus		: 1;	//A flag indicates whether the widget accepts focus when clicking on it
+			unsigned Reserved	:19;
 			unsigned char tab;		//indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 		}flags;
@@ -204,7 +202,6 @@ namespace detail
 				std::vector<edge_nimbus_action> effects_edge_nimbus;
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
-				root_context	context;
 				bool			ime_enabled{false};
 #if defined(NANA_WINDOWS)
 				cursor			running_cursor{ nana::cursor::arrow };
@@ -212,7 +209,7 @@ namespace detail
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 
-				std::function<void()> draw_through;	///< A draw through renderer for root widgets.
+				std::function<void()> draw_through;	// A draw through renderer for root widgets.
 			};
 
 			const category::flags category;

@@ -1,12 +1,13 @@
 /*
- *	A filesystem Implementation
- *	Copyright(C) 2003 Jinhao(cnjinhao@hotmail.com)
+ *	A ISO C++ filesystem Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: stdex/filesystem/filesystem.hpp
+ *	@file: nana/filesystem/filesystem.hpp
  *	@description:
  *		file_iterator is a toolkit for applying each file and directory in a
  *	    specified path.
@@ -34,6 +35,7 @@
 #include <iterator>
 #include <memory>
 #include <chrono>
+#include <cstddef>
 
 #include <nana/deploy.hpp>
 
@@ -159,24 +161,24 @@ namespace filesystem
 
 	struct directory_entry
 	{
-		path m_path;
+		using path_type = filesystem::path;
+		path_type m_path;
 
-        attribute attr{};
-        //file_status m_status;
+		attribute attr{};
+		//file_status m_status;
 
 		directory_entry(){}
-		directory_entry(const nana::string& filename_, bool is_directory, uintmax_t size)
-            :m_path{filename_}, attr{size, is_directory}
-        {}
+		directory_entry(const path_type& p, bool is_directory, uintmax_t size)
+			:m_path{p}, attr{size, is_directory}
+		{}
 
-        void assign          (const path& p){ m_path=p;}
-        void replace_filename(const path& p){ m_path=p;}
+		void assign          (const path_type& p){ m_path=p;}
+		void replace_filename(const path_type& p){ m_path=p;}
 
-        //file_status status() const;
+		//file_status status() const;
 
-        operator const path&() const {return m_path;};
-        const path& path() const {return m_path;}
-
+		operator const path_type&() const {return m_path;};
+		const path_type& path() const {return m_path;}
 	};
 
     /// an iterator for a sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
@@ -185,15 +187,15 @@ namespace filesystem
 	{
 	public:
 		using value_type = directory_entry ;
-        typedef ptrdiff_t                   difference_type;
-        typedef const directory_entry*      pointer;
-        typedef const directory_entry&      reference;
-        typedef std::input_iterator_tag     iterator_category;
+		typedef ptrdiff_t                   difference_type;
+		typedef const directory_entry*      pointer;
+		typedef const directory_entry&      reference;
+		typedef std::input_iterator_tag     iterator_category;
 
 		directory_iterator():end_(true), handle_(nullptr){}
 
 		directory_iterator(const nana::string& file_path) {	_m_prepare(file_path);	}
-		//directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
+		directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
 
 		const value_type&
 		operator*() const { return value_; }
@@ -219,8 +221,8 @@ namespace filesystem
     
 		
 		// enable directory_iterator range-based for statements
-	directory_iterator begin( )    { return *this;  }
-	directory_iterator end( )      { return {};     }
+		directory_iterator begin( )    { return *this;  }
+		directory_iterator end( )      { return {};     }
 	
 	private:
 		template<typename Char>
@@ -258,7 +260,7 @@ namespace filesystem
 				}
 			}
 
-			value_ = value_type(wfd_.cFileName, 
+			value_ = value_type(path(wfd_.cFileName), 
                                (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
                                 wfd_.nFileSizeLow);
 
@@ -284,16 +286,14 @@ namespace filesystem
 					}
 
 					struct stat fst;
+					bool is_directory = false;
+					unsigned size = 0;
 					if(stat((path_ + dnt->d_name).c_str(), &fst) == 0)
 					{
-						value_ = value_type(nana::charset(dnt->d_name), 0 != S_ISDIR(fst.st_mode), fst.st_size);
+						is_directory = (0 != S_ISDIR(fst.st_mode));
+						size = fst.st_size;
 					}
-					else
-					{
-						value_.m_path = nana::charset(dnt->d_name);
-						value_.size = 0;
-						value_.directory = false;
-					}
+					value_ = value_type(static_cast<nana::string>(nana::charset(dnt->d_name)), is_directory, size);
 					end_ = false;
 				}
 			}
@@ -320,9 +320,9 @@ namespace filesystem
 							return;
 						}
 					}
-			        value_ = value_type(wfd_.cFileName, 
-                               (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
-                                wfd_.nFileSizeLow);
+					value_ = value_type(path(wfd_.cFileName), 
+								(FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
+								wfd_.nFileSizeLow);
 				}
 				else
 					end_ = true;
@@ -339,13 +339,13 @@ namespace filesystem
 							return;
 						}
 					}
+
+					nana::string d_name = nana::charset(dnt->d_name);
 					struct stat fst;
 					if(stat((path_ + "/" + dnt->d_name).c_str(), &fst) == 0)
-			            value_ = value_type(wfd_.cFileName, 
-                               (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
-                                wfd_.nFileSizeLow);
+						value_ = value_type(std::move(d_name), (0 != S_ISDIR(fst.st_mode)), fst.st_size);
 					else
-						value_.m_path = nana::charset(dnt->d_name);
+						value_.m_path = path(std::move(d_name));
 				}
 				else
 					end_ = true;
@@ -361,7 +361,7 @@ namespace filesystem
 				{
   				#if defined(NANA_WINDOWS)
 					::FindClose(*handle);
-            	#elif defined(NANA_LINUX)
+				#elif defined(NANA_LINUX)
 					::closedir(*handle);
 				#endif
 				}
@@ -369,7 +369,7 @@ namespace filesystem
 			}
 		};
 	private:
-        bool	end_{false};
+		bool	end_{false};
 
 #if defined(NANA_WINDOWS)
 		WIN32_FIND_DATA		wfd_;
@@ -378,8 +378,7 @@ namespace filesystem
 		std::string	path_;
 #endif
 		std::shared_ptr<find_handle_t> find_ptr_;
-
-        find_handle_t	handle_{nullptr};
+		find_handle_t	handle_{nullptr};
 		value_type	value_;
 	};
 
@@ -406,7 +405,7 @@ namespace filesystem
 	bool file_attrib(const nana::string& file, attribute&);
 
 	inline bool is_directory(file_status s) { return s.type() == file_type::directory ;}
-	inline bool is_directory(const path& p) { return directory_iterator{ p }->attr.directory; }//works??
+	inline bool is_directory(const path& p) { return directory_iterator(p)->attr.directory; }//works??
 	inline bool is_directory(const directory_entry& d) { return d.attr.directory; }
     //bool is_directory(const path& p, error_code& ec) noexcept;
 

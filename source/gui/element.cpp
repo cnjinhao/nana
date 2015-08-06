@@ -141,7 +141,7 @@ namespace nana
 				}
 				else
 				{
-					::nana::color highlighted(0x5e, 0xb6, 0xf7);
+					::nana::color highlighted(static_cast<color_rgb>(0x5eb6f7));
 					auto bld_bgcolor = bgcolor;
 					auto bld_fgcolor = fgcolor;
 					switch(es)
@@ -156,7 +156,7 @@ namespace nana
 						bld_fgcolor = fgcolor.blend(highlighted, 0.4);
 						break;
 					case element_state::disabled:
-						bld_bgcolor = bld_fgcolor = nana::color(0xb2, 0xb7, 0xbc);
+						bld_bgcolor = bld_fgcolor.from_rgb(0xb2, 0xb7, 0xbc);
 						break;
 					default:
 						//Leave things as they are
@@ -264,7 +264,7 @@ namespace nana
 			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, unsigned weight)
 			{
 				graph.rectangle(r, false, static_cast<color_rgb>((element_state::focus_hovered == estate || element_state::focus_normal == estate) ? 0x0595E2 : 0x999A9E));
-				graph.rectangle(::nana::rectangle{r}.pare_off(1), false, bgcolor);
+				graph.rectangle(::nana::rectangle(r).pare_off(1), false, bgcolor);
 				return true;
 			}
 		};
@@ -580,9 +580,6 @@ namespace nana
 	class element_manager
 		: nana::noncopyable, nana::nonmovable
 	{
-		//VC2012 does not support alias declaration.
-		//template<typename E> using factory_interface = element::provider::factory_interface<E>;
-
 		template<typename ElementInterface>
 		struct item
 		{

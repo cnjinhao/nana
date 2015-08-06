@@ -42,7 +42,7 @@ namespace nana
 
 				if(_m_check_changing(value_))
 				{
-					_m_draw();
+					refresh(*graph_);
 					API::update_window(widget_->handle());
 				}
 				return v;
@@ -99,23 +99,18 @@ namespace nana
 				return s;
 			}
 
-			void trigger::refresh(graph_reference)
+			void trigger::refresh(graph_reference graph)
 			{
-				_m_draw();
-			}
+				if (false == unknown_)
+					draw_width_ = static_cast<unsigned>((graph.width() - border * 2) * (double(value_) / max_));
 
-			void trigger::_m_draw()
-			{
-				if(false == unknown_)
-					draw_width_ = static_cast<unsigned>((graph_->width() - border * 2) * (double(value_) / max_));
-
-				_m_draw_box(*graph_);
-				_m_draw_progress(*graph_);
+				_m_draw_box(graph);
+				_m_draw_progress(graph);
 			}
 
 			void trigger::_m_draw_box(graph_reference graph)
 			{
-				rectangle r = graph.size();
+				rectangle r{ graph.size() };
 				graph.gradual_rectangle(r, colors::button_face_shadow_end, colors::button_face_shadow_start, true);
 				::nana::color lt{ colors::gray }, rb{colors::white};
 				graph.frame_rectangle(r, lt, lt, rb, rb);

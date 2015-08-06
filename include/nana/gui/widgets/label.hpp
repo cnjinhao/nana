@@ -40,7 +40,7 @@ namespace nana
 				void refresh(graph_reference)	override;
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
-				void click(graph_reference, const arg_mouse&)	override;
+				void click(graph_reference, const arg_click&)	override;
 			private:
 				impl_t * impl_;
 			};
@@ -58,14 +58,16 @@ namespace nana
 		label();
 		label(window, bool visible);
 		label(window, const nana::string& text, bool visible = true);
-		label(window, const nana::char_t* text, bool visible = true);
+		label(window parent, const nana::char_t* text, bool visible = true) :label(parent, nana::string(text),visible) {};
 		label(window, const rectangle& = {}, bool visible = true);
 		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
-		bool transparent() const;
+		bool transparent() const throw();
 		label& format(bool);		///< Switches the format mode of the widget.
 		label& add_format_listener(std::function<void(command, const nana::string&)>);
 
-		/// \briefReturn the size of the text. If *allowed_width_in_pixel* is not zero, returns a 
+		label& click_for(window associated_window) throw();	// as same as the "for" attribute of a label
+
+		/// Returns the size of the text. If *allowed_width_in_pixel* is not zero, returns a 
 		/// "corrected" size that changes lines to fit the text into the specified width
 		nana::size measure(unsigned allowed_width_in_pixel) const;
 

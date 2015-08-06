@@ -17,6 +17,7 @@
 #include <nana/unicode_bidi.hpp>
 #include <numeric>
 #include <cwctype>
+#include <cstring>
 #include <set>
 #include <algorithm>
 
@@ -54,7 +55,6 @@ namespace nana{	namespace widgets
 
 			virtual bool merge(const undoable_command_interface<EnumCommand>& rhs) override
 			{
-				//Implement later
 				return false;
 			}
 		protected:
@@ -324,9 +324,8 @@ namespace nana{	namespace widgets
 				pos.x = editor_._m_pixels_by_char(lnstr, pos.x) + editor_.text_area_.area.x;
 
 				int pos_y = static_cast<int>((pos.y - editor_.points_.offset.y) * editor_.line_height() + editor_._m_text_top_base());
-				int pos_x = static_cast<int>(pos.x - editor_.points_.offset.x);
 
-				return{ pos_x, pos_y };
+				return{ static_cast<int>(pos.x - editor_.points_.offset.x), pos_y };
 			}
 
 			nana::upoint screen_to_caret(point scrpos) override
@@ -461,6 +460,7 @@ namespace nana{	namespace widgets
 				editor_._m_scrollbar();
 				return (adjusted_cond || adjusted_cond2);
 			}
+
 		private:
 			std::size_t	_m_textline_from_screen(int y) const
 			{
@@ -1285,7 +1285,7 @@ namespace nana{	namespace widgets
 				if (!API::widget_borderless(this->window_))
 				{
 					::nana::facade<element::border> facade;
-					facade.draw(graph, bgcolor, API::fgcolor(this->window_), API::window_size(this->window_), API::element_state(this->window_));
+					facade.draw(graph, bgcolor, API::fgcolor(this->window_), ::nana::rectangle{ API::window_size(this->window_) }, API::element_state(this->window_));
 				}
 			};
 		}
@@ -1349,8 +1349,9 @@ namespace nana{	namespace widgets
 			attributes_.acceptive = acceptive;
 		}
 
-		bool text_editor::respond_char(char_type key)	//key is a character of ASCII code
+		bool text_editor::respond_char(const arg_keyboard& arg)	//key is a character of ASCII code
 		{
+			char_type key = arg.key;
 			switch (key)
 			{
 			case keyboard::end_of_text:
@@ -1400,14 +1401,28 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		bool text_editor::respond_key(char_type key)
+		bool text_editor::respond_key(const arg_keyboard& arg)
 		{
+			char_type key = arg.key;
 			switch (key)
 			{
+#if 0
 			case keyboard::os_arrow_left:	move_left();	break;
 			case keyboard::os_arrow_right:	move_right();	break;
 			case keyboard::os_arrow_up:		move_ns(true);	break;
 			case keyboard::os_arrow_down:	move_ns(false);	break;
+#else
+			case keyboard::os_arrow_left:
+			case keyboard::os_arrow_right:
+			case keyboard::os_arrow_up:
+			case keyboard::os_arrow_down:
+			case keyboard::os_home:
+			case keyboard::os_end:
+			case keyboard::os_pageup:
+			case keyboard::os_pagedown:
+				_handle_move_key(arg);
+				break;
+#endif
 			case keyboard::os_del:
 				if (this->attr().editable)
 					del();
@@ -1593,29 +1608,24 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		bool text_editor::mouse_down(bool left_button, const point& scrpos)
+		bool text_editor::mouse_down(::nana::mouse button, const point& scrpos)
 		{
 			if (!hit_text_area(scrpos))
 				return false;
 
-			if(left_button)
+			if(::nana::mouse::left_button == button)
 			{
 				API::capture_window(window_, true);
 				text_area_.captured = true;
 
 				//Set caret pos by screen point and get the caret pos.
-				auto pos = mouse_caret(scrpos);
-				if(!hit_select_area(pos))
+				mouse_caret(scrpos);
+				if(!select(false))
 				{
-					if(!select(false))
-					{
-						select_.a = points_.caret;	//Set begin caret
-						set_end_caret();
-					}
-					select_.mode_selection = selection::mode_mouse_selected;
+					select_.a = points_.caret;	//Set begin caret
+					set_end_caret();
 				}
-				else
-					select_.mode_selection = selection::mode_no_selected;
+				select_.mode_selection = selection::mode_mouse_selected;
 			}
 
 			text_area_.border_renderer(graph_, _m_bgcolor());
@@ -1646,7 +1656,7 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		bool text_editor::mouse_up(bool left_button, const point& scrpos)
+		bool text_editor::mouse_up(::nana::mouse button, const point& scrpos)
 		{
 			auto is_prev_no_selected = (select_.mode_selection == selection::mode_no_selected);
 
@@ -2219,7 +2229,137 @@ namespace nana{	namespace widgets
 			points_.xpos = points_.caret.x;
 		}
 
-		nana::upoint text_editor::mouse_caret(const point& scrpos)	//From screen position
+		void text_editor::_handle_move_key(const arg_keyboard& arg)
+		{
+			bool changed = false;
+			nana::upoint caret = points_.caret;
+			char_t key = arg.key;
+			size_t nlines = textbase_.lines();
+			if (arg.ctrl) {
+				switch (key) {
+				case keyboard::os_arrow_left:
+				case keyboard::os_arrow_right:
+					// TODO: move the caret word by word
+					break;
+				case keyboard::os_home:
+					if (caret.y != 0) {
+						caret.y = 0;
+						points_.offset.y = 0;
+						changed = true;
+					}
+					break;
+				case keyboard::os_end:
+					if (caret.y != nlines - 1) {
+						caret.y = nlines - 1;
+						changed = true;
+					}
+					break;
+				}
+			}
+			size_t lnsz = textbase_.getline(caret.y).size();
+			switch (key) {
+			case keyboard::os_arrow_left:
+				if (caret.x != 0) {
+					--caret.x;
+					changed = true;
+				}else {
+					if (caret.y != 0) {
+						--caret.y;
+						caret.x = textbase_.getline(caret.y).size();
+						changed = true;
+					}
+				}
+				break;
+			case keyboard::os_arrow_right:
+				if (caret.x < lnsz) {
+					++caret.x;
+					changed = true;
+				}else {
+					if (caret.y != nlines - 1) {
+						++caret.y;
+						caret.x = 0;
+						changed = true;
+					}
+				}
+				break;
+			case keyboard::os_arrow_up:
+			case keyboard::os_arrow_down:
+				{
+					auto screen_pt = behavior_->caret_to_screen(caret);
+					int offset = line_height();
+					if (key == keyboard::os_arrow_up) {
+						offset = -offset;
+					}
+					screen_pt.y += offset;
+					auto new_caret = behavior_->screen_to_caret(screen_pt);
+					if (new_caret != caret) {
+						caret = new_caret;
+						if (screen_pt.y < 0) {
+							scroll(true, true);
+						}
+						changed = true;
+					}
+				}
+				break;
+			case keyboard::os_home:
+				if (caret.x != 0) {
+					caret.x = 0;
+					changed = true;
+				}
+				break;
+			case keyboard::os_end:
+				if (caret.x < lnsz) {
+					caret.x = lnsz;
+					changed = true;
+				}
+				break;
+			case keyboard::os_pageup:
+				if (caret.y >= screen_lines() && points_.offset.y >= static_cast<int>(screen_lines())) {
+					points_.offset.y -= screen_lines();
+					caret.y -= screen_lines();
+					changed = true;
+				}
+				break;
+			case keyboard::os_pagedown:
+				if (caret.y + screen_lines() <= behavior_->take_lines()) {
+					points_.offset.y += screen_lines();
+					caret.y += screen_lines();
+					changed = true;
+				}
+				break;
+			}
+			if (select_.a != caret || select_.b != caret) {
+				changed = true;
+			}
+			if (changed) {
+				if (arg.shift) {
+					switch (key) {
+					case keyboard::os_arrow_left:
+					case keyboard::os_arrow_up:
+					case keyboard::os_home:
+					case keyboard::os_pageup:
+						select_.b = caret;
+						break;
+					case keyboard::os_arrow_right:
+					case keyboard::os_arrow_down:
+					case keyboard::os_end:
+					case keyboard::os_pagedown:
+						select_.b = caret;
+						break;
+					}
+				}else {
+					select_.b = caret;
+					select_.a = caret;
+				}
+				points_.caret = caret;
+				behavior_->adjust_caret_into_screen();
+				render(true);
+				_m_scrollbar();
+				points_.xpos = points_.caret.x;
+			}
+		}
+
+		upoint text_editor::mouse_caret(const point& scrpos)	//From screen position
 		{
 			points_.caret = behavior_->screen_to_caret(scrpos);
 
@@ -2230,9 +2370,14 @@ namespace nana{	namespace widgets
 			return points_.caret;
 		}
 
-		nana::upoint text_editor::caret() const
+		upoint text_editor::caret() const
 		{
 			return points_.caret;
+		}
+
+		point text_editor::caret_screen_pos() const
+		{
+			return behavior_->caret_to_screen(points_.caret);
 		}
 
 		bool text_editor::scroll(bool upwards, bool vert)
@@ -2534,8 +2679,34 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
+		std::size_t eat_endl(const wchar_t* str, std::size_t pos)
+		{
+			auto ch = str[pos];
+			if (0 == ch)
+				return pos;
+
+			const wchar_t * endlstr;
+			switch (ch)
+			{
+			case L'\n':
+				endlstr = L"\n\r";
+				break;
+			case L'\r':
+				endlstr = L"\r\n";
+				break;
+			default:
+				return pos;
+			}
+
+			if (std::memcmp(str + pos, endlstr, sizeof(wchar_t) * 2) == 0)
+				return pos + 2;
+
+			return pos + 1;
+		}
+
 		bool text_editor::_m_resolve_text(const nana::string& text, std::vector<std::pair<std::size_t, std::size_t>> & lines)
 		{
+			auto const text_str = text.data();
 			std::size_t begin = 0;
 			while (true)
 			{
@@ -2548,13 +2719,23 @@ namespace nana{	namespace widgets
 				}
 
 				lines.emplace_back(begin, pos);
-				begin = text.find_first_not_of(STR("\r\n"), pos + 1);
+
+				pos = eat_endl(text_str, pos);
+
+				begin = text.find_first_not_of(STR("\r\n"), pos);
 
 				//The number of new lines minus one
-				const auto chp_end = text.data() + (begin == text.npos ? text.size() : begin);
-				for (auto chp = text.data() + (pos + 1); chp != chp_end; ++chp)
-					if (*chp == '\n')
+				const auto chp_end = text_str + (begin == text.npos ? text.size() : begin);
+
+				for (auto chp = text_str + pos; chp != chp_end; ++chp)
+				{
+					auto eats = eat_endl(chp, 0);
+					if (eats)
+					{
 						lines.emplace_back(0, 0);
+						chp += (eats - 1);
+					}
+				}
 
 				if (text.npos == begin)
 				{
@@ -2742,50 +2923,43 @@ namespace nana{	namespace widgets
 			const auto str_end = str + len;
 			auto & entities = parser.entities();
 
-				for (auto & ent : entities)
+			for (auto & ent : entities)
+			{
+				const ::nana::char_t* ent_begin = nullptr;
+
+				int ent_off = 0;
+				if (str <= ent.begin && ent.begin < str_end)
 				{
-					const ::nana::char_t* ent_begin = nullptr;
+					ent_begin = ent.begin;
+					ent_off = std::accumulate(glyphs, glyphs + (ent.begin - str), 0);
+				}
+				else if (ent.begin <= str && str < ent.end)
+					ent_begin = str;
 
-					int ent_off = 0;
-					if (str <= ent.begin && ent.begin < str_end)
+				if (ent_begin)
+				{
+					auto ent_end = (ent.end < str_end ? ent.end : str_end);
+					auto ent_pixels = std::accumulate(glyphs + (ent_begin - str), glyphs + (ent_end - str), unsigned{});
+
+					canvas.set_color(ent.scheme->bgcolor.invisible() ? _m_bgcolor() : ent.scheme->bgcolor);
+					canvas.set_text_color(ent.scheme->fgcolor.invisible() ? fgcolor : ent.scheme->fgcolor);
+
+					canvas.rectangle(true);
+
+					ent_pos.x += ent_off;
+					if (rtl)
 					{
-						ent_begin = ent.begin;
-						ent_off = std::accumulate(glyphs, glyphs + (ent.begin - str), 0);
+						//draw the whole text if it is a RTL text, because Arbic language is transformable.
+						canvas.string({}, str, len);
+						graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
 					}
-					else if (ent.begin <= str && str < ent.end)
-						ent_begin = str;
-
-					if (ent_begin)
+					else
 					{
-						auto ent_end = (ent.end < str_end ? ent.end : str_end);
-						auto ent_pixels = std::accumulate(glyphs + (ent_begin - str), glyphs + (ent_end - str), unsigned{});
-
-						if (ent.scheme->bgcolor.invisible())
-							canvas.set_color(_m_bgcolor());
-						else
-							canvas.set_color(ent.scheme->bgcolor);
-						canvas.rectangle(true);
-
-						if (ent.scheme->fgcolor.invisible())
-							canvas.set_text_color(fgcolor);
-						else
-							canvas.set_text_color(ent.scheme->fgcolor);
-
-						ent_pos.x += ent_off;
-
-						if (rtl)
-						{
-							//draw the whole text if it is a RTL text, because Arbic language is transformable.
-							canvas.string({}, str, len);
-							graph_.bitblt({ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
-						}
-						else
-						{
-							canvas.string({}, ent_begin, ent_end - ent_begin);
-							graph_.bitblt({ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
-						}
+						canvas.string({}, ent_begin, ent_end - ent_begin);
+						graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
 					}
 				}
+			}
 		}
 
 		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& str, bool if_mask) const
@@ -2797,6 +2971,7 @@ namespace nana{	namespace widgets
 			if (if_mask && mask_char_)
 				mask_str.reset(new nana::string(str.size(), mask_char_));
 
+			bool focused = API::is_focus_ready(window_);
 
 			auto & linestr = (if_mask && mask_char_ ? *mask_str : str);
 
@@ -2819,7 +2994,7 @@ namespace nana{	namespace widgets
 			graph_.set_color(scheme_->selection.get_color());
 
 			//The text is not selected or the whole line text is selected
-			if ((!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
+			if (!focused || (!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
 			{
 				bool selected = (a.y < str_pos.y && str_pos.y < b.y);
 				for (auto & ent : reordered)
@@ -2829,10 +3004,10 @@ namespace nana{	namespace widgets
 
 					if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
 					{
-						if (selected)
+						if (selected && focused)
 						{
 							graph_.set_text_color(scheme_->selection_text.get_color());
-							graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+							graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true);
 							graph_.string(text_pos, ent.begin, len);
 						}
 						else
@@ -2841,7 +3016,7 @@ namespace nana{	namespace widgets
 					text_pos.x += static_cast<int>(str_w);
 				}
 				if (selected)
-					graph_.rectangle({ text_pos, { whitespace_w, line_h_pixels } }, true);
+					graph_.rectangle(::nana::rectangle{ text_pos, { whitespace_w, line_h_pixels } }, true);
 			}
 			else
 			{
@@ -2878,7 +3053,7 @@ namespace nana{	namespace widgets
 								//selected all
 								if (a.x <= pos && str_end <= b.x)
 								{
-									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, len);
 								}
@@ -2908,7 +3083,7 @@ namespace nana{	namespace widgets
 										part_pos.x += static_cast<int>(head_w);
 
 										//Draw selected part
-										graph_.rectangle({ part_pos, { sel_w, line_h_pixels } }, true);
+										graph_.rectangle(::nana::rectangle{ part_pos, { sel_w, line_h_pixels } }, true);
 										graph_.set_text_color(scheme_->selection_text.get_color());
 										graph_.string(part_pos, ent.begin + (a.x - pos), endpos - a.x);
 
@@ -2933,7 +3108,7 @@ namespace nana{	namespace widgets
 								else
 								{	//LTR
 									//Draw selected part
-									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ text_pos, { sel_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, endpos - pos);
 
@@ -2959,7 +3134,7 @@ namespace nana{	namespace widgets
 								if (a.x < pos)
 								{
 									//Draw selected all
-									graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true, { 0x33, 0x99, 0xFF });
+									graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true, static_cast<color_rgb>(0x3399FF));
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, len);
 								}
@@ -2980,7 +3155,7 @@ namespace nana{	namespace widgets
 									::nana::point part_pos{ text_pos.x + static_cast<int>(head_w), text_pos.y };
 
 									//Draw selected part
-									graph_.rectangle({ part_pos, {str_w - head_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ part_pos, {str_w - head_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(part_pos, ent.begin + a.x - pos, len - (a.x - pos));
 								}
@@ -2993,7 +3168,7 @@ namespace nana{	namespace widgets
 					if (str_pos.y < b.y)
 					{
 						if (a.y < str_pos.y || ((a.y == str_pos.y) && (a.x <= str_pos.x )))
-							graph_.rectangle({ text_pos, { whitespace_w, line_h_pixels } }, true);
+							graph_.rectangle(::nana::rectangle{ text_pos, { whitespace_w, line_h_pixels } }, true);
 					}
 				}
 				else if (b.y == str_pos.y)
@@ -3009,7 +3184,7 @@ namespace nana{	namespace widgets
 							if (pos + len <= b.x)
 							{
 								//Draw selected part
-								graph_.rectangle({ text_pos, { str_w, line_h_pixels } }, true);
+								graph_.rectangle(::nana::rectangle{ text_pos, { str_w, line_h_pixels } }, true);
 								graph_.set_text_color(scheme_->selection_text.get_color());
 								graph_.string(text_pos, ent.begin, len);
 							}
@@ -3023,7 +3198,7 @@ namespace nana{	namespace widgets
 								else
 								{
 									//draw selected part
-									graph_.rectangle({ text_pos, { sel_w, line_h_pixels } }, true);
+									graph_.rectangle(::nana::rectangle{ text_pos, { sel_w, line_h_pixels } }, true);
 									graph_.set_text_color(scheme_->selection_text.get_color());
 									graph_.string(text_pos, ent.begin, b.x - pos);
 

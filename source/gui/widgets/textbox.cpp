@@ -15,6 +15,9 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/inner_fwd_implement.hpp>
+
 namespace nana
 {
 	arg_textbox::arg_textbox(textbox& wdg)
@@ -89,7 +92,11 @@ namespace drawerbase {
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
 			refresh(graph);
-
+			if (!editor_->attr().multi_lines && arg.getting)
+			{
+				editor_->select(true);
+				editor_->move_caret_end();
+			}
 			editor_->show_caret(arg.getting);
 			editor_->reset_caret();
 			API::lazy_refresh();
@@ -97,7 +104,7 @@ namespace drawerbase {
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 		{
-			if(editor_->mouse_down(arg.left_button, arg.pos))
+			if(editor_->mouse_down(arg.button, arg.pos))
 				API::lazy_refresh();
 		}
 
@@ -109,7 +116,7 @@ namespace drawerbase {
 
 		void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
 		{
-			if(editor_->mouse_up(arg.left_button, arg.pos))
+			if(editor_->mouse_up(arg.button, arg.pos))
 				API::lazy_refresh();
 		}
 
@@ -136,7 +143,7 @@ namespace drawerbase {
 
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
 		{
-			if(editor_->respond_key(arg.key))
+			if(editor_->respond_key(arg))
 			{
 				editor_->reset_caret();
 				API::lazy_refresh();
@@ -145,7 +152,7 @@ namespace drawerbase {
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if (editor_->respond_char(arg.key))
+			if (editor_->respond_char(arg))
 				API::lazy_refresh();
 		}
 
@@ -285,6 +292,26 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			return (editor ? editor->getline(line_index, text) : false);
+		}
+
+		/// Gets the caret position
+		bool textbox::caret_pos(point& pos, bool text_coordinate) const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+
+			auto scr_pos = editor->caret_screen_pos();
+
+			if (text_coordinate)
+			{
+				auto upos = editor->caret();
+				pos.x = static_cast<int>(upos.x);
+				pos.y = static_cast<int>(upos.y);
+			}
+			else
+				pos = scr_pos;
+
+			return editor->hit_text_area(scr_pos);
 		}
 
 		textbox& textbox::append(const nana::string& text, bool at_caret)
@@ -508,7 +535,7 @@ namespace drawerbase {
 		}
 
 		//Override _m_caption for caption()
-		nana::string textbox::_m_caption() const
+		nana::string textbox::_m_caption() const throw()
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();

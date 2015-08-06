@@ -48,7 +48,7 @@ namespace nana
 				{
 					graph.rectangle(rectangle{0, 0, graph.width(), graph.height() - 50}, true, colors::white);
 					if(ico_.empty() == false)
-						ico_.stretch(ico_.size(), graph, rectangle{12, 25, 32, 32});
+						ico_.stretch(rectangle{ico_.size()}, graph, rectangle{12, 25, 32, 32});
 				});
 
 				unsigned width_pixel = 45;
@@ -57,7 +57,7 @@ namespace nana
 				place_.bind(*this);
 
 				yes_.create(*this);
-				yes_.events().click.connect_unignorable([this](const arg_mouse& arg)
+				yes_.events().click.connect_unignorable([this](const arg_click& arg)
 				{
 					_m_click(arg);
 				});
@@ -69,7 +69,7 @@ namespace nana
 					yes_.caption(STR("Yes"));
 					no_.create(*this);
 					no_.caption(STR("No"));
-					no_.events().click.connect_unignorable([this](const arg_mouse& arg)
+					no_.events().click.connect_unignorable([this](const arg_click& arg)
 					{
 						_m_click(arg);
 					});
@@ -80,7 +80,7 @@ namespace nana
 					{
 						cancel_.create(*this);
 						cancel_.caption(STR("Cancel"));
-						cancel_.events().click.connect_unignorable([this](const arg_mouse& arg)
+						cancel_.events().click.connect_unignorable([this](const arg_click& arg)
 						{
 							_m_click(arg);
 						});
@@ -303,11 +303,11 @@ namespace nana
 						nana::paint::pixel_buffer pxbuf(32, 32);
 						pxbuf.put(reinterpret_cast<const unsigned char*>(rawpx), 32, 32, 32, 4*32, true);
 						ico_.make({32, 32});
-						pxbuf.paste(ico_.handle(), 0, 0);
+						pxbuf.paste(ico_.handle(), {});
 					}
 			}
 
-			void _m_click(const arg_mouse& arg)
+			void _m_click(const arg_click& arg)
 			{
 				if(arg.window_handle == yes_)
 					pick_ = (no_.empty() ? msgbox::pick_ok : msgbox::pick_yes);

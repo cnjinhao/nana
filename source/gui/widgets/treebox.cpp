@@ -27,7 +27,7 @@ namespace nana
 		//Here defines some function objects
 		namespace treebox
 		{
-			typedef trigger::node_type node_type;
+			using node_type = trigger::node_type;
 
 			bool no_sensitive_compare(const nana::string& text, const nana::char_t *pattern, std::size_t len)
 			{
@@ -56,7 +56,7 @@ namespace nana
 					node = node->child;
 					while(node)
 					{
-					if(no_sensitive_compare(node->value.second.text, pattern, len)) return node;
+						if(no_sensitive_compare(node->value.second.text, pattern, len)) return node;
 
 						if(node == end) break;
 
@@ -78,7 +78,7 @@ namespace nana
 				: public drawer_trigger, public compset_interface
 			{
 			public:
-				typedef drawer_trigger::graph_reference graph_reference;
+				using graph_reference = drawer_trigger::graph_reference;
 
 				void assign(const item_attribute_t & item_attr, const pat::cloneable<renderer_interface>* renderer, const pat::cloneable<compset_placer_interface> * compset_placer)
 				{
@@ -583,7 +583,7 @@ namespace nana
 
 				void event_scrollbar(const arg_mouse& arg)
 				{
-					if((event_code::mouse_wheel == arg.evt_code) || arg.left_button)
+					if((event_code::mouse_wheel == arg.evt_code) || arg.is_left_button())
 					{
 						if(shape.prev_first_value != shape.scroll.value())
 						{
@@ -719,17 +719,29 @@ namespace nana
 						node_state.tooltip->impl().assign(node_attr, &data.renderer, &data.comp_placer);
 						node_state.tooltip->show();
 
-						auto & events = node_state.tooltip->events();
-						events.mouse_leave.connect([this](const arg_mouse&){
-							this->close_tooltip_window();
-						});
-						events.mouse_move.connect([this](const arg_mouse&){
-							this->mouse_move_tooltip_window();
-						});
-
-						auto fn = [this](const arg_mouse& arg){
-							this->click_tooltip_window(arg);
+						auto fn = [this](const arg_mouse& arg)
+						{
+							switch (arg.evt_code)
+							{
+							case event_code::mouse_leave:
+								close_tooltip_window();
+								break;
+							case event_code::mouse_move:
+								mouse_move_tooltip_window();
+								break;
+							case event_code::mouse_down:
+							case event_code::mouse_up:
+							case event_code::dbl_click:
+								click_tooltip_window(arg);
+								break;
+							default:	//ignore other events
+								break;
+							}
 						};
+
+						auto & events = node_state.tooltip->events();
+						events.mouse_leave(fn);
+						events.mouse_move(fn);
 						events.mouse_down.connect(fn);
 						events.mouse_up.connect(fn);
 						events.dbl_click.connect(fn);
@@ -1241,13 +1253,14 @@ namespace nana
 					if(compset->comp_attribute(component::icon, attr))
 					{
 						const nana::paint::image * img = nullptr;
-						if(compset->item_attribute().mouse_pointed)
-							img = &(compset->item_attribute().icon_hover);
-						else if(compset->item_attribute().expended)
-							img = &(compset->item_attribute().icon_expanded);
+						auto & item_attr = compset->item_attribute();
+						if (item_attr.mouse_pointed)
+							img = &(item_attr.icon_hover);
+						else if (item_attr.expended)
+							img = &(item_attr.icon_expanded);
 
 						if((nullptr == img) || img->empty())
-							img = &(compset->item_attribute().icon_normal);
+							img = &(item_attr.icon_normal);
 
 						if(! img->empty())
 						{
@@ -1260,10 +1273,10 @@ namespace nana
 								attr.area.x += (attr.area.width - fit_size.width) / 2;
 								attr.area.y += (attr.area.height - fit_size.height) / 2;
 								attr.area = fit_size;
-								img->stretch(size, graph, attr.area);
+								img->stretch(::nana::rectangle{ size }, graph, attr.area);
 							}
 							else
-								img->paste(graph, attr.area.x + static_cast<int>(attr.area.width - size.width) / 2, attr.area.y + static_cast<int>(attr.area.height - size.height) / 2);
+								img->paste(graph, point{ attr.area.x + static_cast<int>(attr.area.width - size.width) / 2, attr.area.y + static_cast<int>(attr.area.height - size.height) / 2 });
 						}
 					}
 				}
@@ -1272,12 +1285,8 @@ namespace nana
 				{
 					comp_attribute_t attr;
 					if (compset->comp_attribute(component::text, attr))
-					{
-						graph.set_text_color(fgcolor_);
-						graph.string(point{ attr.area.x, attr.area.y + 3 }, compset->item_attribute().text);
-					}
+						graph.string(point{ attr.area.x, attr.area.y + 3 }, compset->item_attribute().text, fgcolor_);
 				}
-
 			private:
 				mutable facade<element::crook> crook_;
 			};

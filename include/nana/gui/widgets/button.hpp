@@ -15,7 +15,6 @@
 #include "widget.hpp"
 #include <nana/gui/element.hpp>
 
-
 namespace nana{
 	namespace drawerbase
 	{
@@ -46,12 +45,13 @@ namespace nana{
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 				void key_press(graph_reference, const arg_keyboard&) override;
+				void key_release(graph_reference, const arg_keyboard&) override;
 				void focus(graph_reference, const arg_focus&) override;
 			private:
-				void _m_draw(graph_reference);
 				void _m_draw_title(graph_reference, bool enabled);
 				void _m_draw_background(graph_reference);
 				void _m_draw_border(graph_reference);
+				void _m_press(graph_reference, bool);
 			private:
 				widget* wdg_{nullptr};
 				paint::graphics* graph_{nullptr};
@@ -101,8 +101,6 @@ namespace nana{
 			bool transparent() const;
 
 			button& edge_effects(bool enable);
-		private:
-			void _m_shortkey();
 		private:
 			//Overrides widget virtual functions
 			void _m_complete_creation() override;

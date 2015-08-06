@@ -1,6 +1,6 @@
 /*
- *	A FileSystem Utility Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	A ISO C++ FileSystem Implementation
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -206,8 +206,8 @@ namespace nana {
 				struct stat fst;
 				if (0 == ::stat(static_cast<std::string>(nana::charset(file)).c_str(), &fst))
 				{
-					attr.bytes = fst.st_size;
-					attr.is_directory = (0 != (040000 & fst.st_mode));
+					attr.size = fst.st_size;
+					attr.directory = (0 != (040000 & fst.st_mode));
 					attr.modified = *(::localtime(&fst.st_ctime));
 					return true;
 				}
@@ -435,7 +435,7 @@ namespace nana {
 #elif defined(NANA_LINUX)
 				const char * s = ::getenv("PWD");
 				if (s)
-					return nana::charset(std::string(s, std::strlen(s)), nana::unicode::utf8);
+					return static_cast<nana::string>(nana::charset(std::string(s, std::strlen(s)), nana::unicode::utf8));
 #endif
 				return nana::string();
 			}

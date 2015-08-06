@@ -98,13 +98,13 @@ namespace detail
 		return bgcolor;
 	}
 
-	void blend(drawable_type dw, const nana::rectangle& area, pixel_color_t color, double fade_rate)
+	void blend(drawable_type dw, const rectangle& area, pixel_color_t color, double fade_rate)
 	{
-		if(fade_rate <= 0) return;
-		if(fade_rate > 1) fade_rate = 1;
+		if (fade_rate <= 0) return;
+		if (fade_rate > 1) fade_rate = 1;
 
-		nana::rectangle r;
-		if(false == nana::overlap(drawable_size(dw), area, r))
+		rectangle r;
+		if (false == ::nana::overlap(rectangle{ drawable_size(dw) }, area, r))
 			return;
 
 		unsigned red = static_cast<unsigned>((color.value & 0xFF0000) * fade_rate);
@@ -114,11 +114,11 @@ namespace detail
 		double lrate = 1 - fade_rate;
 		pixel_buffer pixbuf(dw, r.y, r.height);
 
-		for(std::size_t row = 0; row < r.height; ++row)
+		for (std::size_t row = 0; row < r.height; ++row)
 		{
 			auto i = pixbuf.raw_ptr(row) + r.x;
 			const auto end = i + r.width;
-			for(; i < end; ++i)
+			for (; i < end; ++i)
 			{
 				unsigned px_r = ((static_cast<unsigned>((i->value & 0xFF0000) * lrate) + red) & 0xFF0000);
 				unsigned px_g = ((static_cast<unsigned>((i->value & 0xFF00) * lrate) + green) & 0xFF00);
@@ -126,7 +126,7 @@ namespace detail
 				i->value = (px_r | px_g | px_b);
 			}
 		}
-		pixbuf.paste(nana::rectangle(r.x, 0, r.width, r.height), dw, r.x, r.y);
+		pixbuf.paste(nana::rectangle(r.x, 0, r.width, r.height), dw, point{r.x, r.y});
 	}
 
 	nana::size raw_text_extent_size(drawable_type dw, const nana::char_t* text, std::size_t len)

@@ -49,7 +49,7 @@ namespace nana
 			overrided_ &= ~(1 << static_cast<int>(event_code::move));
 		}
 
-		void drawer_trigger::click(graph_reference, const arg_mouse&)
+		void drawer_trigger::click(graph_reference, const arg_click&)
 		{
 			overrided_ &= ~(1 << static_cast<int>(event_code::click));
 		}
@@ -155,7 +155,7 @@ namespace nana
 				realizer_->typeface_changed(graphics);
 		}
 
-		void drawer::click(const arg_mouse& arg)
+		void drawer::click(const arg_click& arg)
 		{
 			_m_emit(event_code::click, arg, &drawer_trigger::click);
 		}
@@ -364,7 +364,7 @@ namespace nana
 		void drawer::_m_bground_end()
 		{
 			if(core_window_->effect.bground && core_window_->effect.bground_fade_rate >= 0.01)
-				core_window_->other.glass_buffer.blend(core_window_->other.glass_buffer.size(), graphics, nana::point(), core_window_->effect.bground_fade_rate);
+				core_window_->other.glass_buffer.blend(::nana::rectangle{ core_window_->other.glass_buffer.size() }, graphics, nana::point(), core_window_->effect.bground_fade_rate);
 		}
 
 		void drawer::_m_draw_dynamic_drawing_object()

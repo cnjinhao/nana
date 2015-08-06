@@ -201,14 +201,14 @@ namespace nana
 				case frame::kind::oneshot:
 					_m_render(outs, [&frmobj](paint::graphics& tar, const nana::point& pos)
 					{
-						frmobj.u.oneshot->paste(tar, pos.x, pos.y);
+						frmobj.u.oneshot->paste(tar, pos);
 					});
 					break;
 				case frame::kind::framebuilder:
 					good_frame_by_frmbuilder = frmobj.u.frbuilder->frbuilder(pos_in_this_frame, framegraph, framegraph_dimension);
 					if(good_frame_by_frmbuilder)
 					{
-						nana::rectangle r = framegraph_dimension;
+						nana::rectangle r(framegraph_dimension);
 						_m_render(outs, [&r, &framegraph](paint::graphics& tar, const nana::point& pos) mutable
 						{
 							r.x = pos.x;
@@ -230,7 +230,7 @@ namespace nana
 				switch(frmobj.type)
 				{
 				case frame::kind::oneshot:
-					frmobj.u.oneshot->paste(graph, pos.x, pos.y);
+					frmobj.u.oneshot->paste(graph, pos);
 					break;
 				case frame::kind::framebuilder:
 					if(rebuild_frame)
