@@ -58,6 +58,7 @@ namespace nana
 		label();
 		label(window, bool visible);
 		label(window, const nana::string& text, bool visible = true);
+		label(window parent, const nana::char_t* text, bool visible = true) :label(parent, nana::string(text),visible) {};
 		label(window, const rectangle& = {}, bool visible = true);
 		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
 		bool transparent() const throw();
