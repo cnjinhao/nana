@@ -213,6 +213,9 @@ namespace detail
 
 				if (impl_->wd_register.available(owner))
 				{
+					if (owner->flags.destroying)
+						throw std::logic_error("the specified owner is destory");
+
 					native = (owner->other.category == category::frame_tag::value ?
 										owner->other.attribute.frame->container : owner->root_widget->root);
 					r.x += owner->pos_root.x;
@@ -302,6 +305,9 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(parent) == false)
 				throw std::invalid_argument("invalid parent/owner handle");
+
+			if (parent->flags.destroying)
+				throw std::logic_error("the specified parent is destory");
 
 			auto wdg_notifier = widget_notifier_interface::get_notifier(wdg);
 
