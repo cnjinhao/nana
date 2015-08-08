@@ -776,10 +776,13 @@ namespace nana
 		//It will delete the element and recollocate when the window destroyed.
 		event_handle _m_make_destroy(window wd)
 		{
-			return API::events(wd).destroy.connect([this](const arg_destroy& arg)
+			return API::events(wd).destroy.connect([this, wd](const arg_destroy& arg)
 			{
 				if (erase_element(elements, arg.window_handle))
-					place_ptr_->collocate();
+				{
+					if (!API::is_destroying(API::get_parent_window(wd)))
+						place_ptr_->collocate();
+				}
 			});
 		}
 
@@ -1524,6 +1527,9 @@ namespace nana
 	private:
 		void collocate(window wd) override
 		{
+			if (API::is_destroying(wd))
+				return;
+
 			if (splitter_.empty())
 			{
 				splitter_.create(wd);
