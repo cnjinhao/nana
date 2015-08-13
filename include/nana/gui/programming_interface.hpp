@@ -191,7 +191,7 @@ namespace API
 	}
 
 	point window_position(window);
-	void move_window(window, int x, int y);
+	void move_window(window, const point&);
 	void move_window(window wd, const rectangle&);
 
 	void bring_top(window, bool activated);

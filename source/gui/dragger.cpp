@@ -164,7 +164,7 @@ namespace nana
 							if (!t.restrict_area.empty())
 								_m_check_restrict_area(wdps, API::window_size(t.wd), t.restrict_area);
 
-							API::move_window(t.wd, wdps.x, wdps.y);
+							API::move_window(t.wd, wdps);
 						}
 					}
 				}

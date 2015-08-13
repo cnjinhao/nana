@@ -538,11 +538,11 @@ namespace API
 		return nana::point{};
 	}
 
-	void move_window(window wd, int x, int y)
+	void move_window(window wd, const point& pos)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.move(iwd, x, y, false))
+		if(restrict::window_manager.move(iwd, pos.x, pos.y, false))
 		{
 			restrict::core_window_t* update_wd = nullptr;
 			if (iwd->displayed() && iwd->effect.bground)

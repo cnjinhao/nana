@@ -109,9 +109,11 @@ namespace nana
 		window window_handle() const;
         
 		void div(const char* s);              ///< Divides the attached widget into fields.
+		void modify(const char* field_name, const char* div_text);	///< Modifies a specified field.
+
 		field_reference field(const char* name);///< Returns a field with the specified name.
 
-		void field_visible(const char* filed_name, bool visible); ///<<Shows/Hides an existing field.
+		void field_visible(const char* field_name, bool visible); ///<<Shows/Hides an existing field.
 		bool field_visible(const char* field_name) const;	///<Determines whether the specified field is visible.
 
 		void field_display(const char* field_name, bool display); ///<Displays/Discards an existing field.
@@ -122,6 +124,18 @@ namespace nana
  		void erase(window handle);				///< Erases a window from field.
 
 		field_reference operator[](const char* name); ///< Returns a field with the specified name. Equal to field();
+
+		/// Add a panel factory
+		template<typename Panel, typename ...Args>
+		void dock(const std::string& dockname, Args&& ... args)
+		{
+			dock(dockname, std::bind([](window parent, Args && ... args)
+			{
+				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(args)...));
+			}, std::placeholders::_1, std::forward<Args>(args)...));
+		}
+
+		void dock(const std::string& dockname, std::function<std::unique_ptr<widget>(window)> factory);
 	private:
 		implement * impl_;
 	};
