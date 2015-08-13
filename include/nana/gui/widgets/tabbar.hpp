@@ -334,4 +334,51 @@ namespace nana
 		std::unique_ptr<drawerbase::tabbar::event_agent<value_type, drawerbase::tabbar::trigger> > evt_agent_;
 	};
 }//end namespace nana
+
+
+namespace nana
+{
+	namespace ng
+	{
+		namespace drawerbase
+		{
+			namespace tabbar_lite
+			{
+				class model;
+
+				class driver
+					: public drawer_trigger
+				{
+				public:
+					driver();
+					~driver();
+
+					model* get_model();
+				private:
+					//Overrides drawer_trigger's method
+					void attached(widget_reference, graph_reference)	override;
+					void refresh(graph_reference) override;
+					void mouse_move(graph_reference, const arg_mouse&) override;
+					void mouse_leave(graph_reference, const arg_mouse&) override;
+					void mouse_down(graph_reference, const arg_mouse&) override;
+				private:
+					model* const model_;
+				};
+			}
+		}//end namespace drawerbase
+
+		class tabbar_lite
+			: public widget_object<category::widget_tag, drawerbase::tabbar_lite::driver>
+		{
+		public:
+			tabbar_lite() = default;
+			tabbar_lite(window, bool visible = true, const::nana::rectangle& = {});
+
+
+			void push_back(std::string text, ::nana::any par = {});
+			void push_front(std::string text, ::nana::any par = {});
+		};
+	}
+}
+
 #endif
