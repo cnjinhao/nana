@@ -129,10 +129,10 @@ namespace nana
 		template<typename Panel, typename ...Args>
 		void dock(const std::string& dockname, Args&& ... args)
 		{
-			dock(dockname, std::bind([](window parent, Args && ... args)
+			dock(dockname, std::bind([](window parent, Args & ... args)
 			{
 				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(args)...));
-			}, std::placeholders::_1, std::forward<Args>(args)...));
+			}, std::placeholders::_1, args...));
 		}
 
 		void dock(const std::string& dockname, std::function<std::unique_ptr<widget>(window)> factory);
