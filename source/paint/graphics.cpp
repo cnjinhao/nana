@@ -817,7 +817,7 @@ namespace paint
 			size_.width = size_.height = 0;
 		}
 
-		void graphics::save_as_file(const char* file) const
+		void graphics::save_as_file(const char* file_utf8) const throw()
 		{
 			if(handle_)
 			{
@@ -831,25 +831,28 @@ namespace paint
 				bmpInfo.bmiHeader.biPlanes = 1;
 				bmpInfo.bmiHeader.biBitCount = 24;
 
+				const size_t lineBytes = ((bmpInfo.bmiHeader.biWidth * 3) + 3) & (~3);
+				const size_t imageBytes = iHeight * lineBytes;
+
 				HDC hdcMem = ::CreateCompatibleDC(handle_->context);
 				BYTE *pData = nullptr;
-				HBITMAP hBmp = CreateDIBSection(hdcMem, &bmpInfo, DIB_RGB_COLORS, reinterpret_cast<void**>(&pData), 0, 0);
+				HBITMAP hBmp = ::CreateDIBSection(hdcMem, &bmpInfo, DIB_RGB_COLORS, reinterpret_cast<void**>(&pData), 0, 0);
 
 				::SelectObject(hdcMem, hBmp);
 
 				BitBlt(hdcMem, 0, 0, iWidth, iHeight, handle_->context, 0, 0, SRCCOPY);
 
-				BITMAPFILEHEADER bmFileHeader = {0};
+				BITMAPFILEHEADER bmFileHeader = { 0 };
 				bmFileHeader.bfType = 0x4d42;  //bmp
 				bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-				bmFileHeader.bfSize = bmFileHeader.bfOffBits + ((bmpInfo.bmiHeader.biWidth * bmpInfo.bmiHeader.biHeight) * 3); ///3=(24 / 8)
+				bmFileHeader.bfSize = bmFileHeader.bfOffBits + imageBytes;
 
-				HANDLE hFile = CreateFileA(file,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
+				HANDLE hFile = ::CreateFileW(static_cast<std::wstring>(::nana::charset(file_utf8, ::nana::unicode::utf8)).data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 				DWORD dwWrite = 0;
-				WriteFile(hFile,&bmFileHeader,sizeof(BITMAPFILEHEADER),&dwWrite,NULL);
-				WriteFile(hFile,&bmpInfo.bmiHeader, sizeof(BITMAPINFOHEADER),&dwWrite,NULL);
-				WriteFile(hFile,pData, iWidth * iHeight * 3,&dwWrite,NULL);
-				CloseHandle(hFile);
+				::WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwWrite, nullptr);
+				::WriteFile(hFile, &bmpInfo.bmiHeader, sizeof(BITMAPINFOHEADER), &dwWrite, nullptr);
+				::WriteFile(hFile, pData, imageBytes, &dwWrite, nullptr);
+				::CloseHandle(hFile);
 
 				::DeleteObject(hBmp);
 				::DeleteDC(hdcMem);

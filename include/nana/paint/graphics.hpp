@@ -131,7 +131,10 @@ namespace nana
 			void setsta();      ///<  	Clears the status if the graphics object had been changed
 			void set_changed();
 			void release();
-			void save_as_file(const char*) const;	// saves image as a bitmap file
+
+			/// Saves images as a windows bitmap file
+			/// @param file_utf8 A UTF-8 string to a filename
+			void save_as_file(const char* file_utf8) const throw();
 
 			void set_color(const ::nana::color&);
 			void set_text_color(const ::nana::color&);
