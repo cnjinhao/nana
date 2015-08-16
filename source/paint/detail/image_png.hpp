@@ -21,10 +21,6 @@ namespace nana
 			: public image::image_impl_interface
 		{
 		public:
-			image_png()
-			{
-			}
-
 			bool open(const nana::char_t* png_file) override
 			{
 #ifdef NANA_UNICODE
@@ -146,6 +142,12 @@ namespace nana
 
 				::fclose(fp);
 				return is_opened;
+			}
+
+			bool open(const void* data, std::size_t bytes) override
+			{
+				throw std::logic_error("PNG is not supported for raw data buffer");
+				return false;
 			}
 
 			bool alpha_channel() const override
