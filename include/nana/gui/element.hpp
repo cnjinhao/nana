@@ -27,19 +27,35 @@ namespace nana
 
 	namespace element
 	{
+		namespace detail
+		{
+			class element_abstract
+			{
+			public:
+				using graph_reference = ::nana::paint::graphics&;
+				virtual ~element_abstract() = default;
+			};
+
+			class factory_abstract
+			{
+			public:
+				virtual ~factory_abstract() = default;
+
+				virtual void destroy(element_abstract *);
+			};
+		}
+
 		class element_interface
+			: public detail::element_abstract
 		{
 		public:
-			using graph_reference = paint::graphics&;
-
-			virtual ~element_interface() = default;
 			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state) = 0;
 		};
 
 		class crook_interface
+			: public detail::element_abstract
 		{
 		public:
-			using graph_reference = paint::graphics&;
 			using state = checkstate;
 
 			struct data
@@ -47,25 +63,21 @@ namespace nana
 				state	check_state;
 				bool	radio;
 			};
-				
-			virtual ~crook_interface() = default;
+
 			virtual bool draw(graph_reference, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle&, element_state, const data&) = 0;
 		};
 
 		class border_interface
+			: public detail::element_abstract
 		{
 		public:
-			using graph_reference = paint::graphics&;
-			
-			virtual ~border_interface() = default;
 			virtual bool draw(graph_reference, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle&, element_state, unsigned weight) = 0;
 		};
 
 		class arrow_interface
+			: public detail::element_abstract
 		{
 		public:
-			using graph_reference = paint::graphics&;
-			virtual ~arrow_interface() = default;
 			virtual bool draw(graph_reference, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle&, element_state, direction) = 0;
 		};
 
@@ -74,10 +86,10 @@ namespace nana
 		public:
 			template<typename ElementInterface>
 			struct factory_interface
+				: public detail::factory_abstract
 			{
 				virtual ~factory_interface(){}
 				virtual ElementInterface* create() const = 0;
-				virtual void destroy(ElementInterface*) const = 0;
 			};
 
 			template<typename Element, typename ElementInterface>
@@ -85,16 +97,11 @@ namespace nana
 				: public factory_interface<ElementInterface>
 			{
 			public:
-				typedef factory_interface<ElementInterface> interface_type;
+				using interface_type = factory_interface<ElementInterface>;
 
 				ElementInterface * create() const override
 				{
 					return (new Element);
-				}
-
-				void destroy(ElementInterface * p) const override
-				{
-					delete p;
 				}
 			};
 

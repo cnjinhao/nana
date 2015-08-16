@@ -11,7 +11,7 @@
  */
 
 #include <nana/gui/widgets/checkbox.hpp>
-#include <nana/paint/gadget.hpp>
+//#include <nana/paint/gadget.hpp>	//deprecated
 #include <nana/paint/text_renderer.hpp>
 #include <nana/gui/element.hpp>
 #include <algorithm>

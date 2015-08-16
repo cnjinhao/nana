@@ -14,7 +14,7 @@
 #include <nana/gui/widgets/categorize.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/element.hpp>
-#include <nana/paint/gadget.hpp>
+//#include <nana/paint/gadget.hpp>	//deprecated
 #include <nana/gui/widgets/detail/tree_cont.hpp>
 #include <stdexcept>
 

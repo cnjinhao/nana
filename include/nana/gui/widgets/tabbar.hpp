@@ -14,7 +14,7 @@
 #ifndef NANA_GUI_WIDGET_TABBAR_HPP
 #define NANA_GUI_WIDGET_TABBAR_HPP
 #include "widget.hpp"
-#include "../../paint/gadget.hpp"
+//#include "../../paint/gadget.hpp"	//deprecated
 #include <nana/pat/cloneable.hpp>
 #include <nana/any.hpp>
 

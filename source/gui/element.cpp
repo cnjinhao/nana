@@ -28,6 +28,14 @@ namespace nana
 	//Element definitions
 	namespace element
 	{
+		namespace detail
+		{
+			void factory_abstract::destroy(element_abstract* ptr)
+			{
+				delete ptr;
+			}
+		}
+
 		class crook
 			: public crook_interface
 		{
@@ -592,8 +600,9 @@ namespace nana
 	class element_object
 		: nana::noncopyable, nana::nonmovable
 	{
-		typedef ElementInterface element_t;
-		typedef pat::cloneable<element::provider::factory_interface<element_t>> factory_interface;
+		using element_type		= ElementInterface;
+		using factory_interface = pat::cloneable<element::provider::factory_interface<element_type>>;	//deprecated
+		//using factory_interface = pat::cloneable<element::detail::factory_abstract>;
 
 	public:
 		~element_object()
@@ -608,7 +617,8 @@ namespace nana
 			auto keep_e = element_ptr_;
 
 			factory_ = rhs;
-			element_ptr_ = factory_->create();
+			element_ptr_ = factory_->create();	//deprecated
+			//element_ptr_ = static_cast<element_type*>(static_cast<element::provider::factory_interface<element_type>&>(*factory_).create());
 
 			if(nullptr == factory_ || nullptr == element_ptr_)
 			{
@@ -624,22 +634,27 @@ namespace nana
 				spare_.emplace_back(keep_e, keep_f);
 		}
 
-		element_t * const * cite() const
+		element_type * const * cite() const
 		{
 			return &element_ptr_;
 		}
 	private:
 		factory_interface factory_;	//Keep the factory for destroying the element
-		element_t * element_ptr_{nullptr};
-		std::vector<std::pair<element_t*, factory_interface>> spare_;
+		element_type * element_ptr_{nullptr};
+		std::vector<std::pair<element_type*, factory_interface>> spare_;
 	};
 
 	class element_manager
 		: nana::noncopyable, nana::nonmovable
 	{
-		//VC2012 does not support alias declaration.
-		//template<typename E> using factory_interface = element::provider::factory_interface<E>;
-
+		/*
+		template<typename ElementInterface>	//deprecated
+		struct item
+		{
+			element_object<ElementInterface> * employee;
+			std::map<std::string, std::shared_ptr<element_object<ElementInterface>>> table;
+		};
+		*/
 		template<typename ElementInterface>
 		struct item
 		{
@@ -1047,19 +1062,21 @@ namespace nana
 
 	namespace element
 	{
+		using brock = ::nana::detail::bedrock;
+
 		void set_bground(const char* name, const pat::cloneable<element_interface>& obj)
 		{
-			detail::bedrock::instance().get_element_store().bground(name, obj);
+			brock::instance().get_element_store().bground(name, obj);
 		}
 
 		void set_bground(const char* name, pat::cloneable<element_interface> && obj)
 		{
-			detail::bedrock::instance().get_element_store().bground(name, std::move(obj));
+			brock::instance().get_element_store().bground(name, std::move(obj));
 		}
 
 		//class cite
 		cite_bground::cite_bground(const char* name)
-			: ref_ptr_(detail::bedrock::instance().get_element_store().bground(name))
+			: ref_ptr_(brock::instance().get_element_store().bground(name))
 		{
 		}
 
@@ -1073,7 +1090,7 @@ namespace nana
 		void cite_bground::set(const char* name)
 		{
 			holder_.reset();
-			ref_ptr_ = detail::bedrock::instance().get_element_store().bground(name);
+			ref_ptr_ = brock::instance().get_element_store().bground(name);
 		}
 
 		bool cite_bground::draw(graph_reference dst, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const nana::rectangle& r, element_state state)

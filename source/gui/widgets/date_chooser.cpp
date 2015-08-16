@@ -12,7 +12,7 @@
 
 #include <nana/gui/widgets/date_chooser.hpp>
 #include <nana/gui/element.hpp>
-#include <nana/paint/gadget.hpp>
+//#include <nana/paint/gadget.hpp>	//deprecated
 #include <nana/system/platform.hpp>
 #include <sstream>
 
