@@ -21,75 +21,6 @@ namespace nana{ namespace pat{
 
 	namespace detail
 	{
-		/*
-		template<typename T>
-		class cloneable_interface	//deprecated
-		{
-		public:
-			using interface_t = T;
-			typedef cloneable_interface cloneable_t;
-
-			virtual ~cloneable_interface() = default;
-			virtual interface_t& refer() = 0;
-			virtual const interface_t& refer() const = 0;
-			virtual cloneable_t* clone() const = 0;
-			virtual void self_delete() const = 0;
-		};
-		*/
-
-		/*
-		template<typename T, typename SuperOfT>
-		class cloneable_wrapper
-			: public cloneable_interface<SuperOfT>	//deprecated
-		{
-		public:
-			using value_type = T;
-			using interface_t = typename cloneable_interface<SuperOfT>::interface_t;
-
-			cloneable_wrapper() = default;
-
-			cloneable_wrapper(const value_type& obj)
-				:object_(obj)
-			{}
-
-			cloneable_wrapper(value_type&& rv)
-				:object_(std::move(rv))
-			{}
-
-			template<typename U>
-			cloneable_wrapper(const U& u)
-				: object_(u)
-			{}
-
-			template<typename U>
-			cloneable_wrapper(U& u)
-				:object_(u)
-			{}
-
-			virtual interface_t& refer() override
-			{
-				return value_obj_;
-			}
-
-			virtual const interface_t& refer() const override
-			{
-				return value_obj_;
-			}
-
-			virtual cloneable_interface<interface_t>* clone() const override
-			{
-				return (new cloneable_wrapper{ value_obj_ });
-			}
-
-			virtual void self_delete() const override
-			{
-				(delete this);
-			}
-		private:
-			value_type value_obj_;
-		};
-		*/
-
 		class cloneable_interface
 		{
 		public:
@@ -124,18 +55,6 @@ namespace nana{ namespace pat{
 			cloneable_wrapper(value_type&& rv)
 				:value_obj_(std::move(rv))
 			{}
-
-			/*
-			template<typename U>
-			cloneable_wrapper(const U& u)	//deprecated
-				: object_(u)
-			{}
-
-			template<typename U>
-			cloneable_wrapper(U&& u)
-				: object_(std::move(u))
-			{}
-			*/
 		private:
 			//Implement cloneable_interface
 			virtual void* get() override

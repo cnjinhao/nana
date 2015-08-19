@@ -19,7 +19,6 @@
 #define NANA_GUI_WIDGETS_TREEBOX_HPP
 #include "widget.hpp"
 #include "detail/compset.hpp"
-//#include <nana/paint/gadget.hpp>	//deprecated
 #include "detail/tree_cont.hpp"
 #include <nana/gui/timer.hpp>
 #include <nana/any.hpp>

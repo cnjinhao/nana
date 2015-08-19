@@ -119,7 +119,7 @@
     </ClCompile>
     <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp">
       <Filter>Source Files\nana\detail\win32</Filter>
-	</ClCompile>
+    </ClCompile>
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp">
       <Filter>Source Files\nana\filesystem</Filter>
     </ClCompile>
@@ -260,9 +260,6 @@
     </ClCompile>
     <ClCompile Include="..\..\source\paint\detail\native_paint_interface.cpp">
       <Filter>Source Files\nana\paint\detail</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\paint\gadget.cpp">
-      <Filter>Source Files\nana\paint</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\paint\graphics.cpp">
       <Filter>Source Files\nana\paint</Filter>
@@ -645,7 +642,7 @@
     </ClInclude>
     <ClInclude Include="..\..\include\nana\extrlib\zlib.h">
       <Filter>Header Files\extrlib</Filter>
-	</ClInclude>
+    </ClInclude>
     <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp">
       <Filter>Header Files\filesystem</Filter>
     </ClInclude>

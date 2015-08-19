@@ -272,7 +272,7 @@ namespace nana
 			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, unsigned weight)
 			{
 				graph.rectangle(r, false, static_cast<color_rgb>((element_state::focus_hovered == estate || element_state::focus_normal == estate) ? 0x0595E2 : 0x999A9E));
-				graph.rectangle(::nana::rectangle{r}.pare_off(1), false, bgcolor);
+				graph.rectangle(::nana::rectangle(r).pare_off(1), false, bgcolor);
 				return true;
 			}
 		};
@@ -601,8 +601,7 @@ namespace nana
 		: nana::noncopyable, nana::nonmovable
 	{
 		using element_type		= ElementInterface;
-		using factory_interface = pat::cloneable<element::provider::factory_interface<element_type>>;	//deprecated
-		//using factory_interface = pat::cloneable<element::detail::factory_abstract>;
+		using factory_interface = pat::cloneable<element::detail::factory_abstract>;
 
 	public:
 		~element_object()
@@ -617,8 +616,7 @@ namespace nana
 			auto keep_e = element_ptr_;
 
 			factory_ = rhs;
-			element_ptr_ = factory_->create();	//deprecated
-			//element_ptr_ = static_cast<element_type*>(static_cast<element::provider::factory_interface<element_type>&>(*factory_).create());
+			element_ptr_ = static_cast<element_type*>(static_cast<element::provider::factory_interface<element_type>&>(*factory_).create());
 
 			if(nullptr == factory_ || nullptr == element_ptr_)
 			{
@@ -647,14 +645,6 @@ namespace nana
 	class element_manager
 		: nana::noncopyable, nana::nonmovable
 	{
-		/*
-		template<typename ElementInterface>	//deprecated
-		struct item
-		{
-			element_object<ElementInterface> * employee;
-			std::map<std::string, std::shared_ptr<element_object<ElementInterface>>> table;
-		};
-		*/
 		template<typename ElementInterface>
 		struct item
 		{

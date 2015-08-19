@@ -14,7 +14,6 @@
 #ifndef NANA_GUI_WIDGET_TABBAR_HPP
 #define NANA_GUI_WIDGET_TABBAR_HPP
 #include "widget.hpp"
-//#include "../../paint/gadget.hpp"	//deprecated
 #include <nana/pat/cloneable.hpp>
 #include <nana/any.hpp>
 
@@ -30,7 +29,7 @@ namespace nana
 		T & value;
 
 		arg_tabbar(tabbar<T>& wdg, T& v)
-			: widget{ wdg }, value{ v }
+			: widget(wdg), value{ v }
 		{}
 	};
 

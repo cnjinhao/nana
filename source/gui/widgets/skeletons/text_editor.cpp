@@ -2250,7 +2250,7 @@ namespace nana{	namespace widgets
 					break;
 				case keyboard::os_end:
 					if (caret.y != nlines - 1) {
-						caret.y = nlines - 1;
+						caret.y = static_cast<decltype(caret.y)>(nlines - 1);
 						changed = true;
 					}
 					break;
@@ -2265,7 +2265,7 @@ namespace nana{	namespace widgets
 				}else {
 					if (caret.y != 0) {
 						--caret.y;
-						caret.x = textbase_.getline(caret.y).size();
+						caret.x = static_cast<decltype(caret.x)>(textbase_.getline(caret.y).size());
 						changed = true;
 					}
 				}
@@ -2309,7 +2309,7 @@ namespace nana{	namespace widgets
 				break;
 			case keyboard::os_end:
 				if (caret.x < lnsz) {
-					caret.x = lnsz;
+					caret.x = static_cast<decltype(caret.x)>(lnsz);
 					changed = true;
 				}
 				break;

@@ -537,3 +537,633 @@
 1399002439 source:d:\privates\nana\release\nana.cpp11\source\gui\detail\element_store.cpp
 	<nana/gui/detail/element_store.hpp>
 
+1363362719 source:d:\git.repo\nana\source\any.cpp
+	<nana/any.hpp>
+
+1362509572 source:d:\git.repo\nana\source\audio\detail\audio_device.cpp
+	<nana/audio/detail/audio_device.hpp>
+	<nana/system/platform.hpp>
+	<pthread.h>
+	<unistd.h>
+	<sys/time.h>
+	<errno.h>
+
+1439496157 source:d:\git.repo\nana\source\audio\detail\audio_stream.cpp
+	<nana/audio/detail/audio_stream.hpp>
+	<nana/charset.hpp>
+
+1362509721 source:d:\git.repo\nana\source\audio\detail\buffer_preparation.cpp
+	<nana/audio/detail/buffer_preparation.hpp>
+	<cstring>
+
+1353253406 source:d:\git.repo\nana\source\audio\player.cpp
+	<nana/audio/player.hpp>
+	<nana/audio/detail/audio_stream.hpp>
+	<nana/audio/detail/audio_device.hpp>
+	<nana/audio/detail/buffer_preparation.hpp>
+	<nana/system/platform.hpp>
+
+1439496157 source:d:\git.repo\nana\source\basic_types.cpp
+	<nana/basic_types.hpp>
+	<regex>
+	<vector>
+	<algorithm>
+	<stdexcept>
+
+1439496157 source:d:\git.repo\nana\source\charset.cpp
+	<nana/charset.hpp>
+	<utility>
+	<nana/deploy.hpp>
+	<cwchar>
+	<clocale>
+	<codecvt>
+	<windows.h>
+
+1439496157 source:d:\git.repo\nana\source\datetime.cpp
+	<nana/config.hpp>
+	<nana/datetime.hpp>
+	<windows.h>
+	<cassert>
+
+1439496157 source:d:\git.repo\nana\source\deploy.cpp
+	<nana/deploy.hpp>
+	<cstdlib>
+	<stdexcept>
+	<windows.h>
+	<string.h>
+	<sstream>
+
+1439496157 source:d:\git.repo\nana\source\detail\platform_spec_selector.cpp
+	<nana/config.hpp>
+	"win32/platform_spec.cpp"
+	"linux_X11/platform_spec.cpp"
+
+1439496157 d:\git.repo\nana\source\detail\win32\platform_spec.cpp
+	<nana/config.hpp>
+	<shellapi.h>
+	<stdexcept>
+	<VersionHelpers.h>
+
+1439496157 d:\git.repo\nana\source\detail\linux_x11\platform_spec.cpp
+	<nana/config.hpp>
+	<X11/Xlocale.h>
+	<locale>
+	<map>
+	<set>
+	<algorithm>
+	<nana/paint/graphics.hpp>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/basic_window.hpp>
+	<nana/system/platform.hpp>
+	<errno.h>
+	<sstream>
+	"msg_dispatcher.hpp"
+
+1439496157 d:\git.repo\nana\source\detail\linux_x11\msg_dispatcher.hpp
+	<nana/detail/linux_X11/msg_packet.hpp>
+	<nana/system/platform.hpp>
+	<list>
+	<set>
+	<map>
+	<mutex>
+	<condition_variable>
+	<memory>
+	<thread>
+
+1365203880 source:d:\git.repo\nana\source\exceptions.cpp
+	<nana/exceptions.hpp>
+
+1365203878 source:d:\git.repo\nana\source\filesystem\file_iterator.cpp
+	<nana/filesystem/file_iterator.hpp>
+
+1365203878 source:d:\git.repo\nana\source\filesystem\fs_utility.cpp
+	<nana/filesystem/fs_utility.hpp>
+	<nana/filesystem/file_iterator.hpp>
+	<vector>
+	<windows.h>
+	<shlobj.h>
+	<nana/datetime.hpp>
+	<nana/charset.hpp>
+	<sys/stat.h>
+	<sys/types.h>
+	<dirent.h>
+	<cstdio>
+	<cstring>
+	<errno.h>
+	<unistd.h>
+	<stdlib.h>
+
+1439496157 source:d:\git.repo\nana\source\gui\animation.cpp
+	<nana/gui/animation.hpp>
+	<nana/gui/drawing.hpp>
+	<nana/system/timepiece.hpp>
+	<nana/system/platform.hpp>
+	<vector>
+	<list>
+	<algorithm>
+	<nana/std_thread.hpp>
+	<nana/std_mutex.hpp>
+	<nana/std_condition_variable.hpp>
+	<mutex>
+	<condition_variable>
+	<thread>
+
+1423350892 source:d:\git.repo\nana\source\gui\basis.cpp
+	<nana/gui/basis.hpp>
+
+1439496157 source:d:\git.repo\nana\source\gui\detail\basic_window.cpp
+	<nana/gui/detail/basic_window.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+
+1439496157 source:d:\git.repo\nana\source\gui\detail\bedrock_pi.cpp
+	<nana/config.hpp>
+	<nana/gui/detail/bedrock_pi_data.hpp>
+	<nana/gui/detail/event_code.hpp>
+	<nana/system/platform.hpp>
+	<sstream>
+	<nana/system/timepiece.hpp>
+	<nana/gui/wvl.hpp>
+	<nana/gui/detail/inner_fwd_implement.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/gui/detail/element_store.hpp>
+	<algorithm>
+
+1439496157 source:d:\git.repo\nana\source\gui\detail\bedrock_selector.cpp
+	<nana/config.hpp>
+	"win32/bedrock.cpp"
+	"linux_X11/bedrock.cpp"
+
+1439496157 d:\git.repo\nana\source\gui\detail\win32\bedrock.cpp
+	<nana/config.hpp>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/bedrock_pi_data.hpp>
+	<nana/gui/detail/event_code.hpp>
+	<nana/system/platform.hpp>
+	<sstream>
+	<nana/system/timepiece.hpp>
+	<nana/gui.hpp>
+	<nana/gui/detail/inner_fwd_implement.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/gui/detail/element_store.hpp>
+	<nana/gui/detail/color_schemes.hpp>
+
+1439496157 d:\git.repo\nana\source\gui\detail\linux_x11\bedrock.cpp
+	<nana/config.hpp>
+	<nana/gui/detail/bedrock_pi_data.hpp>
+	<nana/gui/detail/event_code.hpp>
+	<nana/system/platform.hpp>
+	<nana/gui/detail/inner_fwd_implement.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/gui/detail/element_store.hpp>
+	<errno.h>
+
+1423350892 source:d:\git.repo\nana\source\gui\detail\color_schemes.cpp
+	<nana/gui/detail/color_schemes.hpp>
+	<map>
+
+1439496157 source:d:\git.repo\nana\source\gui\detail\drawer.cpp
+	<nana/config.hpp>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/drawer.hpp>
+	<nana/gui/detail/dynamic_drawing_object.hpp>
+	<nana/gui/detail/effects_renderer.hpp>
+	<nana/gui/detail/basic_window.hpp>
+	<nana/detail/linux_X11/platform_spec.hpp>
+
+1408986718 source:d:\git.repo\nana\source\gui\detail\element_store.cpp
+	<nana/gui/detail/element_store.hpp>
+
+1439496157 source:d:\git.repo\nana\source\gui\detail\events_operation.cpp
+	<nana/gui/detail/events_operation.hpp>
+
+1439828940 source:d:\git.repo\nana\source\gui\detail\native_window_interface.cpp
+	<nana/config.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/screen.hpp>
+	<nana/std_mutex.hpp>
+	<mutex>
+	<map>
+	"../../paint/detail/image_ico.hpp"
+	<nana/system/platform.hpp>
+	<nana/gui/detail/bedrock.hpp>
+
+1439496158 d:\git.repo\nana\source\paint\detail\image_ico.hpp
+	<nana/paint/detail/image_impl_interface.hpp>
+
+1439496157 source:d:\git.repo\nana\source\gui\detail\window_layout.cpp
+	<nana/gui/detail/window_layout.hpp>
+	<nana/gui/detail/basic_window.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/layout_utility.hpp>
+	<algorithm>
+
+1439496157 source:d:\git.repo\nana\source\gui\detail\window_manager.cpp
+	<nana/config.hpp>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/handle_manager.hpp>
+	<nana/gui/detail/window_manager.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/detail/inner_fwd_implement.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/gui/detail/effects_renderer.hpp>
+	<stdexcept>
+	<algorithm>
+
+1439746409 source:d:\git.repo\nana\source\gui\dragger.cpp
+	<nana/gui/dragger.hpp>
+
+1423350892 source:d:\git.repo\nana\source\gui\drawing.cpp
+	<nana/gui/drawing.hpp>
+	<nana/gui/programming_interface.hpp>
+	<nana/gui/detail/basic_window.hpp>
+
+1439496157 source:d:\git.repo\nana\source\gui\effects.cpp
+	<nana/gui/effects.hpp>
+	<nana/gui/programming_interface.hpp>
+
+1439829040 source:d:\git.repo\nana\source\gui\element.cpp
+	<nana/gui/element.hpp>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/element_store.hpp>
+	<nana/paint/image.hpp>
+	<map>
+	<string>
+	<nana/std_mutex.hpp>
+	<mutex>
+
+1439496157 source:d:\git.repo\nana\source\gui\filebox.cpp
+	<nana/gui.hpp>
+	<nana/gui/filebox.hpp>
+	<nana/filesystem/fs_utility.hpp>
+	<windows.h>
+	<nana/gui/widgets/label.hpp>
+	<nana/gui/widgets/button.hpp>
+	<nana/gui/widgets/listbox.hpp>
+	<nana/gui/widgets/categorize.hpp>
+	<nana/gui/widgets/textbox.hpp>
+	<nana/gui/widgets/treebox.hpp>
+	<nana/gui/widgets/combox.hpp>
+	<nana/filesystem/file_iterator.hpp>
+	<nana/gui/place.hpp>
+	<stdexcept>
+	<algorithm>
+
+1439496157 source:d:\git.repo\nana\source\gui\layout_utility.cpp
+	<nana/gui/layout_utility.hpp>
+
+1439496157 source:d:\git.repo\nana\source\gui\msgbox.cpp
+	<nana/gui.hpp>
+	<nana/gui/widgets/label.hpp>
+	<nana/gui/widgets/button.hpp>
+	<nana/gui/widgets/spinbox.hpp>
+	<nana/gui/widgets/combox.hpp>
+	<nana/gui/widgets/textbox.hpp>
+	<nana/gui/widgets/panel.hpp>
+	<nana/gui/widgets/picture.hpp>
+	<nana/gui/place.hpp>
+	<nana/datetime.hpp>
+	<nana/internationalization.hpp>
+	<nana/gui/filebox.hpp>
+	<functional>
+	<cstdlib>
+	<windows.h>
+	<nana/gui/widgets/picture.hpp>
+	<nana/paint/pixel_buffer.hpp>
+
+1439496157 source:d:\git.repo\nana\source\gui\notifier.cpp
+	<nana/deploy.hpp>
+	<nana/gui/programming_interface.hpp>
+	<nana/gui/notifier.hpp>
+	<nana/gui/timer.hpp>
+	<unordered_map>
+	<unordered_set>
+	<nana/std_mutex.hpp>
+	<mutex>
+	<nana/detail/win32/platform_spec.hpp>
+	<nana/system/platform.hpp>
+	<iostream>
+
+1439746410 source:d:\git.repo\nana\source\gui\programming_interface.cpp
+	<nana/gui/programming_interface.hpp>
+	<nana/gui/detail/basic_window.hpp>
+	<nana/system/platform.hpp>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/widgets/widget.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\screen.cpp
+	<nana/gui/screen.hpp>
+	<vector>
+	<memory>
+	<nana/gui/detail/native_window_interface.hpp>
+	<nana/gui/programming_interface.hpp>
+	<windows.h>
+
+1415011766 source:d:\git.repo\nana\source\gui\state_cursor.cpp
+	<nana/gui/state_cursor.hpp>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/basic_window.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\timer.cpp
+	<nana/deploy.hpp>
+	<nana/gui/timer.hpp>
+	<map>
+	<memory>
+	<nana/std_mutex.hpp>
+	<mutex>
+	<windows.h>
+	<nana/system/platform.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\tooltip.cpp
+	<nana/gui/tooltip.hpp>
+	<nana/gui/widgets/label.hpp>
+	<nana/gui/timer.hpp>
+	<nana/gui/screen.hpp>
+	<memory>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\button.cpp
+	<nana/gui/widgets/button.hpp>
+	<nana/paint/text_renderer.hpp>
+
+1439829040 source:d:\git.repo\nana\source\gui\widgets\categorize.cpp
+	<nana/gui/wvl.hpp>
+	<nana/gui/widgets/categorize.hpp>
+	<nana/gui/widgets/float_listbox.hpp>
+	<nana/gui/element.hpp>
+	<nana/gui/widgets/detail/tree_cont.hpp>
+	<stdexcept>
+
+1439829040 source:d:\git.repo\nana\source\gui\widgets\checkbox.cpp
+	<nana/gui/widgets/checkbox.hpp>
+	<nana/paint/text_renderer.hpp>
+	<nana/gui/element.hpp>
+	<algorithm>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\combox.cpp
+	<nana/gui.hpp>
+	<nana/gui/widgets/combox.hpp>
+	<nana/gui/element.hpp>
+	<nana/system/dataexch.hpp>
+	<nana/gui/widgets/float_listbox.hpp>
+	<nana/gui/widgets/skeletons/text_editor.hpp>
+	<nana/gui/widgets/skeletons/textbase_export_interface.hpp>
+	<iterator>
+
+1439829040 source:d:\git.repo\nana\source\gui\widgets\date_chooser.cpp
+	<nana/gui/widgets/date_chooser.hpp>
+	<nana/gui/element.hpp>
+	<nana/system/platform.hpp>
+	<sstream>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\float_listbox.cpp
+	<nana/gui/widgets/float_listbox.hpp>
+	<nana/gui/widgets/scroll.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\form.cpp
+	<nana/gui/widgets/form.hpp>
+
+1408985395 source:d:\git.repo\nana\source\gui\widgets\frame.cpp
+	<nana/gui/widgets/frame.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\group.cpp
+	<nana/gui/widgets/group.hpp>
+	<nana/gui/widgets/label.hpp>
+	<nana/gui/drawing.hpp>
+	<nana/gui/widgets/checkbox.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\label.cpp
+	<nana/gui/widgets/label.hpp>
+	<nana/unicode_bidi.hpp>
+	<nana/gui/widgets/skeletons/text_token_stream.hpp>
+	<nana/system/platform.hpp>
+	<stdexcept>
+	<sstream>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\listbox.cpp
+	<nana/gui/widgets/listbox.hpp>
+	<nana/gui/widgets/scroll.hpp>
+	<nana/gui/widgets/panel.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/gui/element.hpp>
+	<list>
+	<deque>
+	<stdexcept>
+	<algorithm>
+	<nana/system/dataexch.hpp>
+	<cassert>
+
+1439828820 source:d:\git.repo\nana\source\gui\widgets\menu.cpp
+	<nana/gui/widgets/menu.hpp>
+	<nana/system/platform.hpp>
+	<nana/gui/element.hpp>
+	<nana/gui/wvl.hpp>
+	<nana/paint/text_renderer.hpp>
+	<cctype>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\menubar.cpp
+	<nana/gui/widgets/menubar.hpp>
+	<stdexcept>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\panel.cpp
+	<nana/gui/widgets/panel.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\picture.cpp
+	<nana/gui/widgets/picture.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/paint/image.hpp>
+	<nana/gui/element.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\progress.cpp
+	<nana/gui/widgets/progress.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\scroll.cpp
+	<nana/gui/widgets/scroll.hpp>
+	<nana/gui/element.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\skeletons\text_editor.cpp
+	<nana/gui/widgets/skeletons/text_editor.hpp>
+	<nana/gui/widgets/skeletons/textbase_export_interface.hpp>
+	<nana/gui/element.hpp>
+	<nana/system/dataexch.hpp>
+	<nana/unicode_bidi.hpp>
+	<numeric>
+	<cwctype>
+	<cstring>
+	<set>
+	<algorithm>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\slider.cpp
+	<nana/gui/widgets/slider.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\spinbox.cpp
+	<nana/gui/widgets/spinbox.hpp>
+	<nana/gui/widgets/skeletons/text_editor.hpp>
+	<nana/gui/element.hpp>
+	<nana/gui/timer.hpp>
+	<algorithm>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\textbox.cpp
+	<nana/gui/widgets/textbox.hpp>
+	<nana/gui/widgets/skeletons/text_editor.hpp>
+	<stdexcept>
+	<sstream>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/inner_fwd_implement.hpp>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\toolbar.cpp
+	<nana/gui/widgets/toolbar.hpp>
+	<nana/gui/tooltip.hpp>
+	<vector>
+
+1439496158 source:d:\git.repo\nana\source\gui\widgets\treebox.cpp
+	<nana/gui/widgets/treebox.hpp>
+	<nana/gui/widgets/scroll.hpp>
+	<nana/gui/element.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/system/platform.hpp>
+	<stdexcept>
+
+1439746410 source:d:\git.repo\nana\source\gui\widgets\widget.cpp
+	<nana/gui/widgets/widget.hpp>
+	<nana/gui/tooltip.hpp>
+	<nana/gui/detail/widget_notifier_interface.hpp>
+
+1408984042 source:d:\git.repo\nana\source\gui\wvl.cpp
+	<nana/gui/wvl.hpp>
+
+1425221155 source:d:\git.repo\nana\source\internationalization.cpp
+	<nana/internationalization.hpp>
+	<nana/gui/widgets/widget.hpp>
+	<unordered_map>
+	<fstream>
+	<sstream>
+	<memory>
+
+1423350893 source:d:\git.repo\nana\source\paint\detail\image_process_provider.cpp
+	<nana/paint/detail/image_process_provider.hpp>
+	<nana/paint/detail/image_processor.hpp>
+
+1439496158 source:d:\git.repo\nana\source\paint\detail\native_paint_interface.cpp
+	<nana/config.hpp>
+	<nana/paint/detail/native_paint_interface.hpp>
+	<nana/paint/pixel_buffer.hpp>
+	<nana/gui/layout_utility.hpp>
+	<windows.h>
+	<X11/Xlib.h>
+
+1439746289 source:d:\git.repo\nana\source\paint\graphics.cpp
+	<nana/config.hpp>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/paint/graphics.hpp>
+	<nana/paint/detail/native_paint_interface.hpp>
+	<nana/paint/pixel_buffer.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/unicode_bidi.hpp>
+	<algorithm>
+	<windows.h>
+	<X11/Xlib.h>
+
+1439496158 source:d:\git.repo\nana\source\paint\image.cpp
+	<nana/config.hpp>
+	<nana/paint/image.hpp>
+	<algorithm>
+	<fstream>
+	<iterator>
+	<stdexcept>
+	<nana/paint/detail/image_impl_interface.hpp>
+	<nana/paint/pixel_buffer.hpp>
+	"detail/image_png.hpp"
+	"detail/image_bmp.hpp"
+	"detail/image_ico.hpp"
+
+1439687843 d:\git.repo\nana\source\paint\detail\image_png.hpp
+	<nana/paint/detail/image_impl_interface.hpp>
+	<nana/extrlib/png.h>
+	<png.h>
+	<stdio.h>
+	<nana/paint/pixel_buffer.hpp>
+
+1439496158 d:\git.repo\nana\source\paint\detail\image_bmp.hpp
+	<nana/paint/detail/image_impl_interface.hpp>
+	<memory>
+
+1376313789 source:d:\git.repo\nana\source\paint\image_process_selector.cpp
+	<nana/paint/image_process_selector.hpp>
+
+1439496158 source:d:\git.repo\nana\source\paint\pixel_buffer.cpp
+	<nana/config.hpp>
+	<nana/paint/pixel_buffer.hpp>
+	<nana/gui/layout_utility.hpp>
+	<nana/paint/detail/native_paint_interface.hpp>
+	<nana/paint/detail/image_process_provider.hpp>
+	<stdexcept>
+
+1423350893 source:d:\git.repo\nana\source\paint\text_renderer.cpp
+	<nana/config.hpp>
+	<nana/paint/text_renderer.hpp>
+	<nana/unicode_bidi.hpp>
+	<nana/paint/detail/native_paint_interface.hpp>
+
+1439496158 source:d:\git.repo\nana\source\system\dataexch.cpp
+	<nana/system/dataexch.hpp>
+	<nana/traits.hpp>
+	<nana/paint/graphics.hpp>
+	<vector>
+	<cassert>
+	<windows.h>
+	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/basic_window.hpp>
+
+1387007333 source:d:\git.repo\nana\source\system\platform.cpp
+	<nana/deploy.hpp>
+	<windows.h>
+	<time.h>
+	<errno.h>
+	<unistd.h>
+	<sys/time.h>
+	<sys/syscall.h>
+
+1365203879 source:d:\git.repo\nana\source\system\shared_wrapper.cpp
+	<nana/system/shared_wrapper.hpp>
+	<algorithm>
+	<iterator>
+	<dlfcn.h>
+	<windows.h>
+
+1342280997 source:d:\git.repo\nana\source\system\timepiece.cpp
+	<nana/system/timepiece.hpp>
+	<nana/config.hpp>
+	<windows.h>
+	<sys/time.h>
+
+1386165989 source:d:\git.repo\nana\source\threads\pool.cpp
+	<nana/threads/pool.hpp>
+	<nana/system/platform.hpp>
+	<time.h>
+	<deque>
+	<vector>
+	<nana/std_condition_variable.hpp>
+	<nana/std_mutex.hpp>
+	<condition_variable>
+	<mutex>
+	<windows.h>
+	<process.h>
+	<pthread.h>
+
+1365203748 source:d:\git.repo\nana\source\traits.cpp
+	<nana/traits.hpp>
+
+1439496158 source:d:\git.repo\nana\source\unicode_bidi.cpp
+	<nana/unicode_bidi.hpp>
+
+1439830958 source:d:\git.repo\nana\source\gui\widgets\tabbar.cpp
+	<nana/gui/widgets/tabbar.hpp>
+	<nana/gui/widgets/menu.hpp>
+	<nana/paint/text_renderer.hpp>
+	<nana/gui/element.hpp>
+	<stdexcept>
+	<list>
+	<forward_list>
+

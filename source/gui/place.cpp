@@ -24,6 +24,8 @@
 
 #include <memory>
 #include <limits>	//numeric_limits
+#include <cstdlib>	//std::abs
+#include <cstring>	//std::memset
 
 #include "place_parts.hpp"
 
@@ -93,7 +95,13 @@ namespace nana
 
 			std::string pos_str() const
 			{
+#ifdef NANA_MINGW
+				std::stringstream ss;
+				ss<<pos();
+				return ss.str();
+#else
 				return std::to_string(pos());
+#endif // NANA_MINGW
 			}
 
 			token read()
@@ -731,7 +739,7 @@ namespace nana
 						return child.get();
 			}
 			return nullptr;
-		
+
 		}
 	public:
 		void _m_visible_for_child(division * div, bool vsb)
@@ -1397,7 +1405,6 @@ namespace nana
 					else if (left_px < 0)
 						left_px = 0;
 
-					auto leaf_left = _m_leaf_left();
 					double imd_rate = 100.0 / area_px;
 					left_px = static_cast<int>(limit_px(_m_leaf_left(), left_px, area_px));
 					_m_leaf_left()->weight.assign_percent(imd_rate * left_px);
@@ -1692,7 +1699,6 @@ namespace nana
 
 					});
 
-					//indicator_.dock_area->z_order(nullptr, ::nana::z_order_action::top);	//deprecated
 					API::bring_top(indicator_.dock_area->handle(), false);
 					indicator_.dock_area->show();
 				}
@@ -2112,7 +2118,6 @@ namespace nana
 		}
 
 		field_gather * attached_field = nullptr;
-		field_dock*		attached_dock = nullptr;
 		if (name.size())
 		{
 			//find the field with specified name.
@@ -2154,11 +2159,6 @@ namespace nana
 		}
 			break;
 		case token::dock:
-			//deprecated
-			//
-			//if (name.empty())
-			//	throw std::invalid_argument("nana.place: dock must have a name.");
-
 			div.reset(new div_dock(std::move(name), this));
 			break;
 		default:
@@ -2258,7 +2258,7 @@ namespace nana
 			check_fn(div);
 	}
 
-	//connect the field/dock with div object, 
+	//connect the field/dock with div object,
 	void place::implement::connect(division* start)
 	{
 		if (!start)
@@ -2307,7 +2307,7 @@ namespace nana
 						div->field->attached = div;
 					}
 				}
-				
+
 			}
 
 			for (auto & child : div->children)
@@ -2392,33 +2392,6 @@ namespace nana
 		//if name violate the naming convention.
 		place_parts::check_field_name(name);
 
-		/*	//deprecated
-		implement::division * div_ptr = nullptr;
-		implement::field_gather * field_ptr = nullptr;
-		{
-			auto i = impl_->fields.find(name);
-			if (i != impl_->fields.end())
-				field_ptr = i->second;
-		}
-
-		if (field_ptr)
-		{
-			//remove the existing div object
-			div_ptr = field_ptr->attached;
-		}
-		else
-			div_ptr = impl_->search_div_name(impl_->root_division.get(), name);
-
-		if (nullptr == div_ptr)
-		{
-			std::string what = "nana::place: field '";
-			what += name;
-			what += "' is not found.";
-
-			throw std::invalid_argument(what);
-		}
-		*/
-
 		auto div_ptr = impl_->search_div_name(impl_->root_division.get(), name);
 		if (!div_ptr)
 		{
@@ -2434,7 +2407,6 @@ namespace nana
 
 		implement::division * div_owner = div_ptr->div_owner;
 		implement::division * div_next = div_ptr->div_next;
-		implement::division * div_bro = nullptr;
 		if (div_owner)
 		{
 			for (auto i = div_owner->children.begin(); i != div_owner->children.end(); ++i)
@@ -2444,7 +2416,6 @@ namespace nana
 					replaced = &(*i);
 					break;
 				}
-				div_bro = i->get();
 			}
 		}
 		else
@@ -2458,7 +2429,6 @@ namespace nana
 			auto modified = impl_->scan_div(tknizer);
 			auto modified_ptr = modified.get();
 			modified_ptr->name = name;
-			//modified_ptr->field = field_ptr;
 
 			replaced->swap(modified);
 
@@ -2468,33 +2438,6 @@ namespace nana
 
 			modified_ptr->div_owner = div_owner;
 			modified_ptr->div_next = div_next;
-			//if (field_ptr)
-			//	field_ptr->attached = modified_ptr;
-			/*
-			std::function<void(implement::division*)> attach;
-			attach = [this, &attach](implement::division* div)
-			{
-				if (!div->name.empty())
-				{
-					auto i = impl_->fields.find(div->name);
-					if (impl_->fields.end() != i)
-					{
-						if (i->second->attached != div)
-						{
-							i->second->attached = div;
-							div->field = i->second;
-						}
-					}
-				}
-
-				for (auto& child : div->children)
-				{
-					attach(child.get());
-				}
-			};
-
-			attach(impl_->root_division.get());
-			*/
 		}
 		catch (...)
 		{
@@ -2538,7 +2481,7 @@ namespace nana
 	void place::field_visible(const char* name, bool vsb)
 	{
 		if (!name)	name = "";
-		
+
 		//May throw std::invalid_argument
 		place_parts::check_field_name(name);
 

@@ -97,7 +97,7 @@ namespace nana
 				{
 					int x = r.x + (static_cast<int>(r.width) - 14) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 14) / 2;
-					
+
 					::nana::color clr;
 
 					switch(sta)
@@ -114,12 +114,10 @@ namespace nana
 					graph.rectangle(r, true, bgcolor_);
 					facade<element::cross> cross;
 					cross.draw(graph, {}, clr, { x, y, 14, 6 }, element_state::normal);
-					//nana::paint::gadget::cross(graph, x, y, 14, 6, clr);	//deprecated
 				}
 
 				virtual void close(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					//nana::paint::gadget::close_16_pixels(graph, r.x + (r.width - 16) / 2, r.y + (r.height - 16) / 2, 1, colors::black);	//deprecated
 					facade<element::x_icon> x_icon;
 					x_icon.draw(graph, {}, colors::black, { r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
 					if(item_renderer::highlight == sta)
@@ -144,8 +142,6 @@ namespace nana
 					else if (!active)
 						clr = ::nana::color{ 0x92, 0x99, 0xA4 };
 
-
-					//gadget::close_16_pixels(graph, r.x - (16 - r.width) / 2, r.y - (16 - r.height) / 2, 1, clr); //deprecated
 					facade<element::x_icon> x_icon;
 					x_icon.draw(graph, {}, colors::black, { r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
 
@@ -153,19 +149,16 @@ namespace nana
 
 				virtual void back(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					//using namespace nana::paint::gadget;	//deprecated
 					_m_draw_arrow(graph, r, sta, direction::west);
 				}
 
 				virtual void next(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					//using namespace nana::paint::gadget;	//deprecated
 					_m_draw_arrow(graph, r, sta, direction::east);
 				}
 
 				virtual void list(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					//using namespace nana::paint::gadget;	//deprecated
 					_m_draw_arrow(graph, r, sta, direction::south);
 				}
 			private:
@@ -1448,7 +1441,6 @@ namespace nana
 				private:
 					void _m_calc_metrics(graph_reference graph, std::forward_list<item>& items)
 					{
-						const auto height_px = graph.height();
 						std::vector<unsigned> pxs;
 
 						unsigned pixels = 0;
