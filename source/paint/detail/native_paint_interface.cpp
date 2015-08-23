@@ -187,7 +187,7 @@ namespace detail
 							reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size());
 		*/
 		auto fs = reinterpret_cast<XftFont*>(dw->font->handle);
-		std::unique_ptr<FT_UInt> glyphs_ptr(new FT_UInt[len]);
+		std::unique_ptr<FT_UInt[]> glyphs_ptr(new FT_UInt[len]);
 		auto glyphs = glyphs_ptr.get();
 		const auto endstr = str + len;
 		for(auto chr = str; chr != endstr; ++chr)
