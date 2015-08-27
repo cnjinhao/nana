@@ -31,7 +31,7 @@ namespace nana
 		: nana::noncopyable, nana::nonmovable
 	{
 		friend class detail::widget_notifier_interface;
-		class notifier;
+		class inner_widget_notifier;
 		typedef void(*dummy_bool_type)(widget* (*)(const widget&));
 	public:
 		virtual ~widget() = default;
