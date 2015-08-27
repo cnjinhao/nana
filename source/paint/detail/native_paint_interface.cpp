@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/paint/detail/native_paint_interface.cpp
+ *	@contributors:	dareg
  */
 
 #include <nana/config.hpp>
@@ -187,7 +188,9 @@ namespace detail
 							reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size());
 		*/
 		auto fs = reinterpret_cast<XftFont*>(dw->font->handle);
-		std::unique_ptr<FT_UInt> glyphs_ptr(new FT_UInt[len]);
+
+		//Fixed missing array declaration by dareg
+		std::unique_ptr<FT_UInt[]> glyphs_ptr(new FT_UInt[len]);
 		auto glyphs = glyphs_ptr.get();
 		const auto endstr = str + len;
 		for(auto chr = str; chr != endstr; ++chr)

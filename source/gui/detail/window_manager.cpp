@@ -326,6 +326,9 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
+			if (wd->flags.destroying)
+				return;
+
 			if(wd->other.category == category::root_tag::value)
 			{
 				auto &brock = bedrock::instance();
@@ -340,13 +343,15 @@ namespace detail
 					if(wd->flags.modal || (wd->owner == nullptr) || wd->owner->flags.take_active)
 						native_interface::activate_owner(wd->root);
 
-					//Close should detach the drawer and send destroy signal to widget object.
-					//Otherwise, when a widget object is been deleting in other thread by delete operator, the object will be destroyed
-					//before the window_manager destroyes the window, and then, window_manager detaches the
-					//non-existing drawer_trigger which is destroyed by destruction of widget. Crash!
-					wd->drawer.detached();
-
-					wd->widget_notifier->destroy();
+					if (!wd->flags.destroying)
+					{
+						//Close should detach the drawer and send destroy signal to widget object.
+						//Otherwise, when a widget object is been deleting in other thread by delete operator, the object will be destroyed
+						//before the window_manager destroyes the window, and then, window_manager detaches the
+						//non-existing drawer_trigger which is destroyed by destruction of widget. Crash!
+						wd->drawer.detached();
+						wd->widget_notifier->destroy();
+					}
 
 					native_interface::close_window(wd->root);
 				}

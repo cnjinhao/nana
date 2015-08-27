@@ -451,7 +451,7 @@ namespace paint
 			return true;
 		}
 
-		nana::size	graphics::bidi_extent_size(const nana::string& str) const
+		nana::size	graphics::bidi_extent_size(const std::wstring& str) const
 		{
 			nana::size sz;
 #if defined NANA_UNICODE
@@ -470,6 +470,11 @@ namespace paint
 			}
 #endif
 			return sz;
+		}
+
+		::nana::size graphics::bidi_extent_size(const std::string& str) const
+		{
+			return bidi_extent_size(std::wstring{ ::nana::charset(str, ::nana::unicode::utf8) });
 		}
 
 		bool graphics::text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const
@@ -881,6 +886,12 @@ namespace paint
 				moved_pos.x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
 			}
 			return static_cast<unsigned>(moved_pos.x - pos.x);
+		}
+
+		unsigned graphics::bidi_string(const point& pos, const char* str, std::size_t len)
+		{
+			std::wstring wstr = ::nana::charset(std::string(str, str + len), ::nana::unicode::utf8);
+			return bidi_string(pos, wstr.data(), wstr.size());
 		}
 
 		void graphics::blend(const nana::rectangle& r, const ::nana::color& clr, double fade_rate)

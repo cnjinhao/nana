@@ -22,10 +22,10 @@ namespace nana
 
 	//class widget
 	//@brief:The definition of class widget
-		class widget::notifier: public detail::widget_notifier_interface
+		class widget::inner_widget_notifier : public detail::widget_notifier_interface
 		{
 		public:
-			notifier(widget& wdg)
+			inner_widget_notifier(widget& wdg)
 				: wdg_(wdg)
 			{}
 
@@ -246,7 +246,7 @@ namespace nana
 
 		std::unique_ptr<::nana::detail::widget_notifier_interface> widget::_m_wdg_notifier()
 		{
-			return std::unique_ptr<::nana::detail::widget_notifier_interface>(new notifier(*this));
+			return std::unique_ptr<::nana::detail::widget_notifier_interface>(new inner_widget_notifier(*this));
 		}
 
 		void widget::_m_complete_creation()
@@ -348,7 +348,7 @@ namespace nana
 	{
 		std::unique_ptr<widget_notifier_interface> widget_notifier_interface::get_notifier(widget* wdg)
 		{
-			return std::unique_ptr<widget_notifier_interface>(new widget::notifier(*wdg));
+			return std::unique_ptr<widget_notifier_interface>(new widget::inner_widget_notifier(*wdg));
 		}
 	}
 }//end namespace nana
