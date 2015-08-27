@@ -55,6 +55,21 @@ namespace nana
 								const int png_width = ::png_get_image_width(png_ptr, info_ptr);
 								const int png_height = ::png_get_image_height(png_ptr, info_ptr);
 								png_byte color_type = ::png_get_color_type(png_ptr, info_ptr);
+								const auto bit_depth = ::png_get_bit_depth(png_ptr, info_ptr);
+
+								//do some extra work for palette/gray color type
+								if (PNG_COLOR_TYPE_PALETTE == color_type)
+									::png_set_palette_to_rgb(png_ptr);
+								else if ((PNG_COLOR_TYPE_GRAY == color_type) && (bit_depth < 8))
+									::png_set_gray_to_rgb(png_ptr);
+
+								bool is_alpha_enabled = (::png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) != 0);
+								if (is_alpha_enabled)
+									::png_set_tRNS_to_alpha(png_ptr);
+
+								//make sure 8-bit per channel
+								if (16 == bit_depth)
+									::png_set_strip_16(png_ptr);
 
 								::png_set_interlace_handling(png_ptr);
 								::png_read_update_info(png_ptr, info_ptr);
@@ -65,7 +80,7 @@ namespace nana
 
 								pixbuf_.open(png_width, png_height);
 
-								const bool is_alpha_enabled = ((PNG_COLOR_MASK_ALPHA & color_type) != 0);
+								is_alpha_enabled |= ((PNG_COLOR_MASK_ALPHA & color_type) != 0);
 								pixbuf_.alpha_channel(is_alpha_enabled);
 
 								if(is_alpha_enabled && (png_rowbytes == png_width * sizeof(pixel_argb_t)))
