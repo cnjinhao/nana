@@ -1275,8 +1275,6 @@ namespace nana
 #include <forward_list>
 namespace nana
 {
-	namespace ng
-	{
 		namespace drawerbase
 		{
 			namespace tabbar_lite
@@ -1286,6 +1284,7 @@ namespace nana
 					::std::string text;
 					::nana::any	value;
 					::std::pair<int, int> pos_ends;
+					::nana::window attached_window{ nullptr };
 
 					item(std::string t, ::nana::any v)
 						: text(std::move(t)), value(std::move(v))
@@ -1359,6 +1358,23 @@ namespace nana
 					std::forward_list<item>& items()
 					{
 						return items_;
+					}
+
+					void show_attached_window()
+					{
+						if (indexes_.active_pos != npos)
+						{
+							auto i = items_.cbegin();
+							std::advance(i, indexes_.active_pos);
+							API::show_window(i->attached_window, true);
+
+							std::size_t pos = 0;
+							for (auto & m : items_)
+							{
+								if (pos++ != indexes_.active_pos)
+									API::show_window(m.attached_window, false);
+							}
+						}
 					}
 
 					bool track_pointer(const point& pos)
@@ -1476,7 +1492,7 @@ namespace nana
 						delete model_;
 					}
 
-					model* driver::get_model()
+					model* driver::get_model() const throw()
 					{
 						return model_;
 					}
@@ -1514,10 +1530,12 @@ namespace nana
 					void driver::mouse_down(graph_reference graph, const arg_mouse&)
 					{
 						auto & indexes = model_->get_indexes();
-						if (indexes.hovered_pos == model_->npos)
+						if ((indexes.hovered_pos == model_->npos) || (indexes.active_pos == indexes.hovered_pos))
 							return;
 
 						indexes.active_pos = indexes.hovered_pos;
+						model_->show_attached_window();
+
 						refresh(graph);
 						API::lazy_refresh();
 					}
@@ -1530,6 +1548,41 @@ namespace nana
 		tabbar_lite::tabbar_lite(window parent_wd, bool visible, const ::nana::rectangle& r)
 		{
 			this->create(parent_wd, r, visible);
+		}
+
+		//capacity
+		std::size_t tabbar_lite::length() const
+		{
+			auto& items = get_drawer_trigger().get_model()->items();
+			internal_scope_guard lock;
+
+			std::size_t off = 0;
+			auto i = items.cbegin(), end = items.cend();
+			while (i != end)
+			{
+				++i;
+				++off;
+			}
+			return off;
+		}
+
+		//modifiers
+		void tabbar_lite::attach(std::size_t pos_set, window wd)
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			for (auto & m : model->items())
+			{
+				if (0 == pos_set--)
+				{
+					m.attached_window = wd;
+					model->show_attached_window();
+					return;
+				}
+			}
+
+			throw std::out_of_range("invalid position of tabbar_lite");
 		}
 
 		void tabbar_lite::push_back(std::string text, ::nana::any any)
@@ -1561,5 +1614,4 @@ namespace nana
 			API::refresh_window(handle());
 		}
 		//end class tabbar
-	}
 }//end namespace nana

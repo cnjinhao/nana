@@ -337,8 +337,6 @@ namespace nana
 
 namespace nana
 {
-	namespace ng
-	{
 		namespace drawerbase
 		{
 			namespace tabbar_lite
@@ -352,7 +350,7 @@ namespace nana
 					driver();
 					~driver();
 
-					model* get_model();
+					model* get_model() const throw();
 				private:
 					//Overrides drawer_trigger's method
 					void attached(widget_reference, graph_reference)	override;
@@ -373,11 +371,15 @@ namespace nana
 			tabbar_lite() = default;
 			tabbar_lite(window, bool visible = true, const::nana::rectangle& = {});
 
+		public: //capacity
+			std::size_t length() const;
+
+		public: //modifiers
+			void attach(std::size_t pos, window);
 
 			void push_back(std::string text, ::nana::any par = {});
 			void push_front(std::string text, ::nana::any par = {});
 		};
-	}
 }
 
 #endif

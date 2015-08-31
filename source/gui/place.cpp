@@ -1602,16 +1602,83 @@ namespace nana
 		}
 	private:
 		//Implement dock_notifier_interface
+		/*
+		static div_dockpane* _m_left(div_dockpane* dockpn)
+		{
+			for (auto & dv : dockpn->div_owner->children)
+			{
+				if (dv->div_next == dockpn)
+					return static_cast<div_dockpane*>(dv.get());
+			}
+			return nullptr;
+		}
+
+		::nana::size _m_calc_space_if_remove(div_dockpane* dockpn)
+		{
+			div_owner->field_area;
+
+			auto left = _m_left(dockpn);
+			while (left && !left->display)
+				left = _m_left(left);
+
+			auto right = dockpn->div_next;
+			while (right && !right->display)
+				right = right->div_next;
+
+		}
+		*/
 		void notify_float() override
 		{
 			set_display(false);
 
+			/*
+			this->width_percent = field_area.width / div_owner->field_area.width * 100.0;
+			this->height_percent = field_area.height / div_owner->field_area.height * 100.0;
+
+
+			//Re-layout the siblings
+			double other_px = this->div_owner->field_area.height - this->field_area.height;
+			for (auto& div : this->div_owner->children)
+			{
+				if (!div->display)
+					continue;
+
+				//deprecated
+				//auto wgt_percent = div->field_area.height / other_px;
+				//div->weight.assign_percent(wgt_percent * 100.0);
+
+				//???? other_px issue, have
+				auto dockpn = dynamic_cast<div_dockpane*>(div.get());
+				dockpn->width_percent = div->field_area.width / other_px * 100.0;
+				dockpn->height_percent = div->field_area.height / other_px * 100.0;
+			}
+
+			this->weight.assign_percent((double(field_area.height) / this->div_owner->field_area.height) * 100.0);
+			*/
 			impl_ptr_->collocate();
 		}
 
 		void notify_dock() override
 		{
 			indicator_.docker.reset();
+
+			/*
+			//Re-layout the siblings
+			auto px = this->weight.get_value(div_owner->field_area.height);
+
+			double other_px = this->div_owner->field_area.height - px;
+
+			this->weight.assign_percent(px / div_owner->field_area.height * 100);
+			for (auto& div : this->div_owner->children)
+			{
+				if (!div->display)
+					continue;
+
+				auto px = div->weight.get_value(static_cast<int>(other_px));
+				div->weight.assign_percent(px / div_owner->field_area.height * 100);
+			}
+			*/
+
 			set_display(true);
 			impl_ptr_->collocate();
 		}
@@ -1744,6 +1811,8 @@ namespace nana
 		}
 	public:
 		field_dock * dockable_field{ nullptr };
+		double	width_percent{ -1 };	//[-1, 100] it's invalid if it is less than zero
+		double	height_percent{ -1 };	//[-1, 100]
 	private:
 		implement * impl_ptr_;
 		bool created_{ false };
@@ -1751,7 +1820,7 @@ namespace nana
 		struct indicator_tag
 		{
 			paint::graphics graph;
-			//panel<true> widget;
+			//panel<true> widget;	//deprecated
 			rectangle	r;
 			std::unique_ptr<panel<true>> dock_area;
 			std::unique_ptr<form> docker;
@@ -1766,6 +1835,19 @@ namespace nana
 			:	division(kind::dock, std::move(name))
 		{}
 
+		division* front() const
+		{
+			auto i = children.cbegin();
+			
+			for (auto i = children.cbegin(); i != children.cend(); ++i)
+			{
+				if (i->get()->display)
+					return i->get();
+			}
+
+			return nullptr;
+		}
+
 		void collocate(window wd) override
 		{
 			auto area = this->margin_area();
@@ -1773,20 +1855,30 @@ namespace nana
 			unsigned vert_count = 0, horz_count = 0;
 			unsigned vert_weight = 0, horz_weight = 0;
 
-			bool prev_attr = _m_is_vert(children.front()->dir);
+			bool prev_attr = _m_is_vert(front()->dir);
 			(prev_attr ? horz_count : vert_count) = 1;
 
 			for (auto & child : children)
 			{
-				auto is_vert = _m_is_vert(child->dir);
+				if (!child->display)
+					continue;
 
-				if (child->weight.is_not_none())
+				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
+
+				const auto is_vert = _m_is_vert(child->dir);
+
+				/*
+				if (is_vert)
 				{
-					if (is_vert)
-						vert_weight += static_cast<unsigned>(child->weight.get_value(area.height));
-					else
-						horz_weight += static_cast<unsigned>(child->weight.get_value(area.width));
+					if (child_dv->height_percent >= 0)
+						vert_weight += static_cast<unsigned>(child_dv->height_percent * area.height);
 				}
+				else
+				{
+					if (child_dv->width_percent >= 0)
+						horz_weight += static_cast<unsigned>(child_dv->width_percent * area.width);
+				}
+				*/
 
 				if (is_vert == prev_attr)
 				{
@@ -1819,11 +1911,35 @@ namespace nana
 
 			for (auto & child : children)
 			{
+				if (!child->display)
+					continue;
+
+				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 				double weight;
+
+				/*	//deprecated
 				if (child->weight.is_not_none())
 					weight = child->weight.get_value(_m_is_vert(child->dir) ? area.height : area.height);
 				else
 					weight = (_m_is_vert(child->dir) ? auto_vert_w : auto_horz_w);
+
+				if (_m_is_vert(child->dir))
+				{
+					if (child_dv->height_percent >= 0)
+						weight = child_dv->height_percent * area.height;
+					else
+						weight = auto_vert_w;
+				}
+				else
+				{
+					if (child_dv->width_percent >= 0)
+						weight = child_dv->width_percent * area.width;
+					else
+						weight = auto_horz_w;
+				}
+				*/
+
+				weight = (_m_is_vert(child->dir) ? auto_vert_w : auto_horz_w);
 
 				::nana::rectangle child_r;
 				switch (child->dir)
@@ -2216,7 +2332,12 @@ namespace nana
 				std::vector<std::unique_ptr<division>> adjusted_children;
 				for (auto & child : children)
 				{
-					adjusted_children.emplace_back(new div_dockpane(std::move(child->name), this, child->dir));
+					//ignores weight if it is a dockpane
+					//internally, width_percent/height_percent are employed for weight
+					auto dockpn = new div_dockpane(std::move(child->name), this, child->dir);
+					dockpn->div_next = child->div_next;
+					dockpn->div_owner = child->div_owner;
+					adjusted_children.emplace_back(dockpn);
 				}
 
 				children.swap(adjusted_children);

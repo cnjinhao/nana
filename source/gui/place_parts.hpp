@@ -198,7 +198,7 @@ namespace nana
 				});
 
 				if (panels_.size() > 1)
-					tabbar_.reset(new tabbar<int>(*this));
+					tabbar_.reset(new tabbar_lite(*this));
 
 				std::size_t pos = 0;
 				for (auto & pn : panels_)
@@ -208,8 +208,10 @@ namespace nana
 						pn.widget_ptr = pn.factory_fn(*this);
 						if (tabbar_)
 						{
-							tabbar_->push_back(pn.widget_ptr->caption());
-							tabbar_->relate(pos++, pn.widget_ptr->handle());
+							tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
+							tabbar_->attach(pos++, pn.widget_ptr->handle());
+							//tabbar_->push_back(pn.widget_ptr->caption());
+							//tabbar_->relate(pos++, pn.widget_ptr->handle());
 						}
 					}
 				}
@@ -262,7 +264,7 @@ namespace nana
 			std::unique_ptr<form>	container_;
 			dockarea_caption	caption_;
 			std::deque<panel>	panels_;
-			std::unique_ptr<tabbar<int>> tabbar_;
+			std::unique_ptr<tabbar_lite> tabbar_;
 
 			struct moves
 			{
