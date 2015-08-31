@@ -1440,7 +1440,6 @@ namespace nana
 				private:
 					void _m_calc_metrics(graph_reference graph, std::forward_list<item>& items)
 					{
-						const auto height_px = graph.height();
 						std::vector<unsigned> pxs;
 
 						unsigned pixels = 0;

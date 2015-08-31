@@ -185,7 +185,7 @@ namespace nana
 			public:
 				trigger();
 				~trigger();
-				essence_t& essence();
+				//essence_t& essence();	//deprecated
 				essence_t& essence() const;
 				void draw();
 			private:
@@ -618,7 +618,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		{
 			typedef typename nana::detail::type_escape<Key>::type key_t;
 			nana::key<key_t, std::less<key_t> > key(kv);
-			_m_ease_key(&key);
+			_m_erase_key(&key);
 		}
 
 		template<typename Key>
@@ -626,7 +626,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		{
 			typedef typename nana::detail::type_escape<Key>::type key_t;
 			nana::key<key_t, std::less<key_t> > key(std::move(kv));
-			_m_ease_key(&key);
+			_m_erase_key(&key);
 		}
 
 		bool sortable() const;
@@ -661,7 +661,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
 		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
-		void _m_ease_key(nana::detail::key_interface*);
+		void _m_erase_key(nana::detail::key_interface*);
 	};
 
 	namespace dev

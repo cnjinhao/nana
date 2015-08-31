@@ -189,8 +189,6 @@ namespace nana
 			auto retain = wd->together.events_ptr;
 			auto evts_ptr = retain.get();
 
-			//enable refreshing flag, this is a RAII class for exception-safe
-			flag_guard fguard(this, wd);
 
 			switch (evt_code)
 			{
@@ -199,8 +197,11 @@ namespace nana
 					auto arg = dynamic_cast<const arg_click*>(&event_arg);
 					if (nullptr == arg)
 						return;
-
-					wd->drawer.click(*arg);
+					{
+						//enable refreshing flag, this is a RAII class for exception-safe
+						flag_guard fguard(this, wd);
+						wd->drawer.click(*arg);
+					}
 					if (!draw_only)
 						evts_ptr->click.emit(*arg);
 				}
@@ -249,7 +250,11 @@ namespace nana
 					throw std::runtime_error("Invalid mouse event code");
 				}
 
-				(wd->drawer.*drawer_event_fn)(*arg);
+				{
+					//enable refreshing flag, this is a RAII class for exception-safe
+					flag_guard fguard(this, wd);
+					(wd->drawer.*drawer_event_fn)(*arg);
+				}
 				
 				if (!draw_only)
 					evt_addr->emit(*arg);
@@ -260,7 +265,12 @@ namespace nana
 				auto arg = dynamic_cast<const arg_wheel*>(&event_arg);
 				if (arg)
 				{
-					wd->drawer.mouse_wheel(*arg);
+					{
+						//enable refreshing flag, this is a RAII class for exception-safe
+						flag_guard fguard(this, wd);
+						wd->drawer.mouse_wheel(*arg);
+					}
+
 					if (!draw_only)
 						evts_ptr->mouse_wheel.emit(*arg);
 				}
@@ -299,7 +309,12 @@ namespace nana
 				default:
 					throw std::runtime_error("Invalid keyboard event code");
 				}
-				(wd->drawer.*drawer_event_fn)(*arg);
+				{
+					//enable refreshing flag, this is a RAII class for exception-safe
+					flag_guard fguard(this, wd);
+					(wd->drawer.*drawer_event_fn)(*arg);
+				}
+
 				if (!draw_only)
 					evt_addr->emit(*arg);
 				break;
@@ -317,7 +332,11 @@ namespace nana
 				auto arg = dynamic_cast<const arg_focus*>(&event_arg);
 				if (arg)
 				{
-					wd->drawer.focus(*arg);
+					{
+						//enable refreshing flag, this is a RAII class for exception-safe
+						flag_guard fguard(this, wd);
+						wd->drawer.focus(*arg);
+					}
 					if (!draw_only)
 						evts_ptr->focus.emit(*arg);
 				}
@@ -328,7 +347,11 @@ namespace nana
 				auto arg = dynamic_cast<const arg_move*>(&event_arg);
 				if (arg)
 				{
-					wd->drawer.move(*arg);
+					{
+						//enable refreshing flag, this is a RAII class for exception-safe
+						flag_guard fguard(this, wd);
+						wd->drawer.move(*arg);
+					}
 					if (!draw_only)
 						evts_ptr->move.emit(*arg);
 				}
@@ -339,7 +362,11 @@ namespace nana
 				auto arg = dynamic_cast<const arg_resizing*>(&event_arg);
 				if (arg)
 				{
-					wd->drawer.resizing(*arg);
+					{
+						//enable refreshing flag, this is a RAII class for exception-safe
+						flag_guard fguard(this, wd);
+						wd->drawer.resizing(*arg);
+					}
 					if (!draw_only)
 						evts_ptr->resizing.emit(*arg);
 				}
@@ -350,7 +377,11 @@ namespace nana
 				auto arg = dynamic_cast<const arg_resized*>(&event_arg);
 				if (arg)
 				{
-					wd->drawer.resized(*arg);
+					{
+						//enable refreshing flag, this is a RAII class for exception-safe
+						flag_guard fguard(this, wd);
+						wd->drawer.resized(*arg);
+					}
 					if (!draw_only)
 						evts_ptr->resized.emit(*arg);
 				}
