@@ -1574,7 +1574,6 @@ namespace nana
 		{
 			if (!dockable_field)
 			{
-				//
 				if (name.empty())
 					return;
 
@@ -1597,87 +1596,20 @@ namespace nana
 			if (!dockarea.empty() && !dockarea.floating())
 			{
 				dockarea.move(this->field_area);
-				indicator_.r = this->field_area;
+				//indicator_.r = this->field_area;	//deprecated
 			}
 		}
 	private:
 		//Implement dock_notifier_interface
-		/*
-		static div_dockpane* _m_left(div_dockpane* dockpn)
-		{
-			for (auto & dv : dockpn->div_owner->children)
-			{
-				if (dv->div_next == dockpn)
-					return static_cast<div_dockpane*>(dv.get());
-			}
-			return nullptr;
-		}
-
-		::nana::size _m_calc_space_if_remove(div_dockpane* dockpn)
-		{
-			div_owner->field_area;
-
-			auto left = _m_left(dockpn);
-			while (left && !left->display)
-				left = _m_left(left);
-
-			auto right = dockpn->div_next;
-			while (right && !right->display)
-				right = right->div_next;
-
-		}
-		*/
 		void notify_float() override
 		{
 			set_display(false);
-
-			/*
-			this->width_percent = field_area.width / div_owner->field_area.width * 100.0;
-			this->height_percent = field_area.height / div_owner->field_area.height * 100.0;
-
-
-			//Re-layout the siblings
-			double other_px = this->div_owner->field_area.height - this->field_area.height;
-			for (auto& div : this->div_owner->children)
-			{
-				if (!div->display)
-					continue;
-
-				//deprecated
-				//auto wgt_percent = div->field_area.height / other_px;
-				//div->weight.assign_percent(wgt_percent * 100.0);
-
-				//???? other_px issue, have
-				auto dockpn = dynamic_cast<div_dockpane*>(div.get());
-				dockpn->width_percent = div->field_area.width / other_px * 100.0;
-				dockpn->height_percent = div->field_area.height / other_px * 100.0;
-			}
-
-			this->weight.assign_percent((double(field_area.height) / this->div_owner->field_area.height) * 100.0);
-			*/
 			impl_ptr_->collocate();
 		}
 
 		void notify_dock() override
 		{
 			indicator_.docker.reset();
-
-			/*
-			//Re-layout the siblings
-			auto px = this->weight.get_value(div_owner->field_area.height);
-
-			double other_px = this->div_owner->field_area.height - px;
-
-			this->weight.assign_percent(px / div_owner->field_area.height * 100);
-			for (auto& div : this->div_owner->children)
-			{
-				if (!div->display)
-					continue;
-
-				auto px = div->weight.get_value(static_cast<int>(other_px));
-				div->weight.assign_percent(px / div_owner->field_area.height * 100);
-			}
-			*/
 
 			set_display(true);
 			impl_ptr_->collocate();
@@ -1705,14 +1637,8 @@ namespace nana
 					arrow.direction(::nana::direction::south);
 					arrow.draw(graph, colors::light_sky_blue, colors::midnight_blue, { 12, 0, 16, 16 }, element_state::normal);
 
-					rectangle r{ 4, 16, 24, 11 };
-					graph.rectangle(r, true, colors::midnight_blue);
-
-					r.x = 5;
-					r.y = 19;
-					r.width = 22;
-					r.height = 7;
-					graph.rectangle(r, true, colors::button_face);
+					graph.rectangle({ 4, 16, 24, 11 }, true, colors::midnight_blue);
+					graph.rectangle({ 5, 19, 22, 7 }, true, colors::button_face);
 				});
 
 				indicator_.docker->z_order(nullptr, ::nana::z_order_action::topmost);
@@ -1732,16 +1658,19 @@ namespace nana
 			{
 				if (!indicator_.dock_area)
 				{
+					set_display(true);
+					impl_ptr_->collocate();
+
 					indicator_.graph.make(API::window_size(impl_ptr_->window_handle));
 					API::window_graphics(impl_ptr_->window_handle, indicator_.graph);
 
 					indicator_.dock_area.reset(new panel<true>(impl_ptr_->window_handle, false));
-					indicator_.dock_area->move(indicator_.r);
+					indicator_.dock_area->move(this->field_area);
 
 					::nana::drawing dw(indicator_.dock_area->handle());
 					dw.draw([this](paint::graphics& graph)
 					{
-						indicator_.graph.paste(indicator_.r, graph, 0, 0);
+						indicator_.graph.paste(this->field_area, graph, 0, 0);
 
 						const int border_px = 4;
 						rectangle r{ graph.size() };
@@ -1772,6 +1701,8 @@ namespace nana
 			}
 			else
 			{
+				set_display(false);
+				impl_ptr_->collocate();
 				if (indicator_.dock_area)
 				{
 					indicator_.dock_area.reset();
@@ -1811,8 +1742,6 @@ namespace nana
 		}
 	public:
 		field_dock * dockable_field{ nullptr };
-		double	width_percent{ -1 };	//[-1, 100] it's invalid if it is less than zero
-		double	height_percent{ -1 };	//[-1, 100]
 	private:
 		implement * impl_ptr_;
 		bool created_{ false };
@@ -1820,8 +1749,7 @@ namespace nana
 		struct indicator_tag
 		{
 			paint::graphics graph;
-			//panel<true> widget;	//deprecated
-			rectangle	r;
+			//rectangle	r;	//deprecated
 			std::unique_ptr<panel<true>> dock_area;
 			std::unique_ptr<form> docker;
 		}indicator_;
@@ -1867,19 +1795,6 @@ namespace nana
 
 				const auto is_vert = _m_is_vert(child->dir);
 
-				/*
-				if (is_vert)
-				{
-					if (child_dv->height_percent >= 0)
-						vert_weight += static_cast<unsigned>(child_dv->height_percent * area.height);
-				}
-				else
-				{
-					if (child_dv->width_percent >= 0)
-						horz_weight += static_cast<unsigned>(child_dv->width_percent * area.width);
-				}
-				*/
-
 				if (is_vert == prev_attr)
 				{
 					if (is_vert)
@@ -1916,28 +1831,6 @@ namespace nana
 
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 				double weight;
-
-				/*	//deprecated
-				if (child->weight.is_not_none())
-					weight = child->weight.get_value(_m_is_vert(child->dir) ? area.height : area.height);
-				else
-					weight = (_m_is_vert(child->dir) ? auto_vert_w : auto_horz_w);
-
-				if (_m_is_vert(child->dir))
-				{
-					if (child_dv->height_percent >= 0)
-						weight = child_dv->height_percent * area.height;
-					else
-						weight = auto_vert_w;
-				}
-				else
-				{
-					if (child_dv->width_percent >= 0)
-						weight = child_dv->width_percent * area.width;
-					else
-						weight = auto_horz_w;
-				}
-				*/
 
 				weight = (_m_is_vert(child->dir) ? auto_vert_w : auto_horz_w);
 
@@ -2333,7 +2226,6 @@ namespace nana
 				for (auto & child : children)
 				{
 					//ignores weight if it is a dockpane
-					//internally, width_percent/height_percent are employed for weight
 					auto dockpn = new div_dockpane(std::move(child->name), this, child->dir);
 					dockpn->div_next = child->div_next;
 					dockpn->div_owner = child->div_owner;
