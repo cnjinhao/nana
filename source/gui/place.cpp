@@ -1759,11 +1759,11 @@ namespace nana
 		class splitter : public panel<true>
 		{
 		public:
-			splitter(window wd, bool vert)
-				: panel<true>(wd, true), vert_(vert)
+			splitter(window wd, ::nana::direction dir, division* dock_dv, division* pane_dv)
+				: panel<true>(wd, true), dir_(dir), dock_dv_(dock_dv), pane_dv_(pane_dv)
 			{
 				this->bgcolor(colors::alice_blue);
-				this->cursor(vert ? ::nana::cursor::size_ns : ::nana::cursor::size_we);
+				this->cursor(_m_is_vert(dir_) ? ::nana::cursor::size_ns : ::nana::cursor::size_we);
 
 				this->events().mouse_down([this](const arg_mouse& arg)
 				{
@@ -1772,10 +1772,10 @@ namespace nana
 
 					API::capture_window(this->handle(), true);
 					auto basepos = API::cursor_position();
-					base_pos_.x = (vert_ ? basepos.y : basepos.x);
+					base_pos_.x = (_m_is_vert(dir_) ? basepos.y : basepos.x);
 
 					basepos = this->pos();
-					base_pos_.y = (vert_ ? basepos.y : basepos.x);
+					base_pos_.y = (_m_is_vert(dir_) ? basepos.y : basepos.x);
 				});
 
 				this->events().mouse_up([this]
@@ -1783,13 +1783,13 @@ namespace nana
 					API::capture_window(this->handle(), false);
 				});
 
-				this->events().mouse_move([this](const arg_mouse& arg)
+				this->events().mouse_move([this, wd](const arg_mouse& arg)
 				{
 					if (!arg.is_left_button())
 						return;
 
 					auto now_pos = API::cursor_position();
-					int delta = (vert_ ? now_pos.y : now_pos.x) - base_pos_.x;
+					int delta = (_m_is_vert(dir_) ? now_pos.y : now_pos.x) - base_pos_.x;
 					int new_pos = base_pos_.y + delta;
 					if (new_pos < range_.x)
 						new_pos = range_.x;
@@ -1797,11 +1797,36 @@ namespace nana
 						new_pos = range_.y - 1;
 
 					now_pos = this->pos();
-					if (vert_)
+					if (_m_is_vert(dir_))
 						now_pos.y = new_pos;
 					else
 						now_pos.x = new_pos;
 					this->move(now_pos);
+
+					auto & px = (_m_is_vert(dir_) ? pane_dv_->field_area.height : pane_dv_->field_area.width);
+					switch (dir_)
+					{
+					case ::nana::direction::west:
+					case ::nana::direction::north:
+						if (delta < 0)
+							px -= static_cast<unsigned>(-delta);
+						else
+							px += static_cast<unsigned>(delta);
+						break;
+					case ::nana::direction::east:
+					case ::nana::direction::south:
+						if (delta < 0)
+							px += static_cast<unsigned>(-delta);
+						else
+							px -= static_cast<unsigned>(delta);
+						break;
+					}
+
+					auto dock_px = (_m_is_vert(dir_) ? dock_dv_->field_area.height : dock_dv_->field_area.width);
+
+					pane_dv_->weight.assign_percent(px / dock_px * 100);
+
+					dock_dv_->collocate(wd);
 				});
 			}
 
@@ -1811,11 +1836,11 @@ namespace nana
 				range_.y = end;
 			}
 		private:
-			const bool		vert_;
+			const ::nana::direction	dir_;
+			division* const dock_dv_;
+			division* const	pane_dv_;
 			::nana::point	range_;
 			::nana::point	base_pos_;	//x = mouse pos, y = splitter pos
-			division * left_;
-			division * right_;
 
 		};
 	public:
@@ -1873,8 +1898,11 @@ namespace nana
 			if (0 == horz_count)
 				++horz_count;
 
-			double auto_horz_w = double(area.width - splitter_px * (horz_count - 1))/ horz_count;
-			double auto_vert_w = double(area.height - splitter_px * (vert_count - 1)) / vert_count;
+			//room indicates the size without splitters
+			::nana::size room(area.width - splitter_px * (horz_count - 1), area.height - splitter_px * (vert_count - 1));
+
+			//double auto_horz_w = double(area.width - splitter_px * (horz_count - 1))/ horz_count;
+			//double auto_vert_w = double(area.height - splitter_px * (vert_count - 1)) / vert_count;
 
 			double left = area.x;
 			double right = area.right();
@@ -1891,7 +1919,11 @@ namespace nana
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 				const bool is_vert = _m_is_vert(child->dir);
 
-				double weight = (is_vert ? auto_vert_w : auto_horz_w);
+				double weight;
+				if (child->weight.is_none())
+					weight = (is_vert ? (room.height / double(vert_count)) : (room.width / double(horz_count)));
+				else
+					weight = child->weight.get_value(is_vert ? area.height : area.width);
 
 				auto div_next = _m_right(child_dv);
 
@@ -1900,7 +1932,7 @@ namespace nana
 				auto si = splitters_.find(child_dv);
 				if (si == splitters_.end())
 				{
-					splitter_ptr.reset(new splitter(impl_->window_handle, is_vert));
+					splitter_ptr.reset(new splitter(impl_->window_handle, child->dir, this, child_dv));
 				}
 				else
 				{
@@ -1965,7 +1997,16 @@ namespace nana
 					break;
 				}
 
-
+				if (is_vert)
+				{
+					room.height -= child_r.height;
+					--vert_count;
+				}
+				else
+				{
+					room.width -= child_r.width;
+					--horz_count;
+				}
 
 				child->field_area = child_r;
 				child->collocate(wd);
