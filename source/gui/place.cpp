@@ -1592,12 +1592,8 @@ namespace nana
 				dockarea.create(wd, this);
 			}
 
-
 			if (!dockarea.empty() && !dockarea.floating())
-			{
 				dockarea.move(this->field_area);
-				//indicator_.r = this->field_area;	//deprecated
-			}
 		}
 	private:
 		//Implement dock_notifier_interface
@@ -1746,10 +1742,10 @@ namespace nana
 		implement * impl_ptr_;
 		bool created_{ false };
 
-		struct indicator_tag
+		//
+		struct indicator_rep
 		{
 			paint::graphics graph;
-			//rectangle	r;	//deprecated
 			std::unique_ptr<panel<true>> dock_area;
 			std::unique_ptr<form> docker;
 		}indicator_;
@@ -1758,9 +1754,74 @@ namespace nana
 	class place::implement::div_dock
 		: public division
 	{
+		static const unsigned splitter_px = 5;
+
+		class splitter : public panel<true>
+		{
+		public:
+			splitter(window wd, bool vert)
+				: panel<true>(wd, true), vert_(vert)
+			{
+				this->bgcolor(colors::alice_blue);
+				this->cursor(vert ? ::nana::cursor::size_ns : ::nana::cursor::size_we);
+
+				this->events().mouse_down([this](const arg_mouse& arg)
+				{
+					if (arg.button != ::nana::mouse::left_button)
+						return;
+
+					API::capture_window(this->handle(), true);
+					auto basepos = API::cursor_position();
+					base_pos_.x = (vert_ ? basepos.y : basepos.x);
+
+					basepos = this->pos();
+					base_pos_.y = (vert_ ? basepos.y : basepos.x);
+				});
+
+				this->events().mouse_up([this]
+				{
+					API::capture_window(this->handle(), false);
+				});
+
+				this->events().mouse_move([this](const arg_mouse& arg)
+				{
+					if (!arg.is_left_button())
+						return;
+
+					auto now_pos = API::cursor_position();
+					int delta = (vert_ ? now_pos.y : now_pos.x) - base_pos_.x;
+					int new_pos = base_pos_.y + delta;
+					if (new_pos < range_.x)
+						new_pos = range_.x;
+					else if (new_pos >= range_.y)
+						new_pos = range_.y - 1;
+
+					now_pos = this->pos();
+					if (vert_)
+						now_pos.y = new_pos;
+					else
+						now_pos.x = new_pos;
+					this->move(now_pos);
+				});
+			}
+
+			void range(int begin, int end)
+			{
+				range_.x = begin;
+				range_.y = end;
+			}
+		private:
+			const bool		vert_;
+			::nana::point	range_;
+			::nana::point	base_pos_;	//x = mouse pos, y = splitter pos
+			division * left_;
+			division * right_;
+
+		};
 	public:
+
 		div_dock(std::string && name, implement* impl)
-			:	division(kind::dock, std::move(name))
+			: division(kind::dock, std::move(name)), impl_(impl)
 		{}
 
 		division* front() const
@@ -1781,10 +1842,9 @@ namespace nana
 			auto area = this->margin_area();
 
 			unsigned vert_count = 0, horz_count = 0;
-			unsigned vert_weight = 0, horz_weight = 0;
 
-			bool prev_attr = _m_is_vert(front()->dir);
-			(prev_attr ? horz_count : vert_count) = 1;
+			bool is_first = true;
+			bool prev_attr;
 
 			for (auto & child : children)
 			{
@@ -1794,21 +1854,18 @@ namespace nana
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 
 				const auto is_vert = _m_is_vert(child->dir);
+				if (is_first)
+				{
+					is_first = false;
+					(is_vert ? horz_count : vert_count) = 1;
+					prev_attr = is_vert;
+				}
 
-				if (is_vert == prev_attr)
-				{
-					if (is_vert)
-						++vert_count;
-					else
-						++horz_count;
-				}
+				if ((is_vert == prev_attr) == is_vert)
+					++vert_count;
 				else
-				{
-					if (is_vert)
-						++horz_count;
-					else
-						++vert_count;
-				}
+					++horz_count;
+
 				prev_attr = is_vert;
 			}
 			if (0 == vert_count)
@@ -1816,13 +1873,15 @@ namespace nana
 			if (0 == horz_count)
 				++horz_count;
 
-			double auto_horz_w = double(area.width - horz_weight) / horz_count;
-			double auto_vert_w = double(area.height - vert_weight) / vert_count;
+			double auto_horz_w = double(area.width - splitter_px * (horz_count - 1))/ horz_count;
+			double auto_vert_w = double(area.height - splitter_px * (vert_count - 1)) / vert_count;
 
 			double left = area.x;
 			double right = area.right();
 			double top = area.y;
 			double bottom = area.bottom();
+
+			std::map<division*, std::unique_ptr<splitter>> swp_splitters;
 
 			for (auto & child : children)
 			{
@@ -1830,9 +1889,23 @@ namespace nana
 					continue;
 
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
-				double weight;
+				const bool is_vert = _m_is_vert(child->dir);
 
-				weight = (_m_is_vert(child->dir) ? auto_vert_w : auto_horz_w);
+				double weight = (is_vert ? auto_vert_w : auto_horz_w);
+
+				auto div_next = _m_right(child_dv);
+
+				auto & splitter_ptr = swp_splitters[child_dv];
+
+				auto si = splitters_.find(child_dv);
+				if (si == splitters_.end())
+				{
+					splitter_ptr.reset(new splitter(impl_->window_handle, is_vert));
+				}
+				else
+				{
+					splitter_ptr.swap(si->second);
+				}
 
 				::nana::rectangle child_r;
 				switch (child->dir)
@@ -1844,6 +1917,12 @@ namespace nana
 					child_r.width = static_cast<unsigned>(weight);
 					child_r.height = static_cast<unsigned>(bottom - top);
 					left += weight;
+					if (div_next)
+					{
+						splitter_ptr->move(rectangle{child_r.right(), child_r.y, splitter_px, child_r.height});
+						splitter_ptr->range(left - weight, right - static_cast<int>(splitter_px));
+						left += splitter_px;
+					}
 					break;
 				case ::nana::direction::east:
 					right -= weight;
@@ -1851,6 +1930,12 @@ namespace nana
 					child_r.y = static_cast<int>(top);
 					child_r.width = static_cast<unsigned>(weight);
 					child_r.height = static_cast<unsigned>(bottom - top);
+					if (div_next)
+					{
+						splitter_ptr->move(rectangle{ child_r.x - static_cast<int>(splitter_px), child_r.y, splitter_px, child_r.height });
+						splitter_ptr->range(left, right - static_cast<int>(splitter_px) + weight);
+						right -= splitter_px;
+					}
 					break;
 				case ::nana::direction::north:
 					child_r.x = static_cast<int>(left);
@@ -1858,6 +1943,12 @@ namespace nana
 					child_r.width = static_cast<unsigned>(right - left);
 					child_r.height = static_cast<unsigned>(weight);
 					top += weight;
+					if (div_next)
+					{
+						splitter_ptr->move(rectangle{ child_r.x, child_r.bottom(), child_r.width, splitter_px });
+						splitter_ptr->range(top - weight, bottom - static_cast<int>(splitter_px));
+						top += splitter_px;
+					}
 					break;
 				case ::nana::direction::south:
 					child_r.x = static_cast<int>(left);
@@ -1865,18 +1956,44 @@ namespace nana
 					child_r.y = static_cast<int>(bottom);
 					child_r.width = static_cast<unsigned>(right - left);
 					child_r.height = static_cast<unsigned>(weight);
+					if (div_next)
+					{
+						bottom -= splitter_px;
+						splitter_ptr->move(rectangle{ child_r.x, child_r.y - static_cast<int>(splitter_px), child_r.width, splitter_px });
+						splitter_ptr->range(top, bottom + weight);
+					}
 					break;
 				}
+
+
 
 				child->field_area = child_r;
 				child->collocate(wd);
 			}
+
+			splitters_.swap(swp_splitters);
 		}
 	private:
 		static bool _m_is_vert(::nana::direction dir)
 		{
 			return (dir == ::nana::direction::north || dir == ::nana::direction::south);
 		}
+
+		static div_dockpane* _m_right(division* dv)
+		{
+			dv = dv->div_next;
+			while (dv)
+			{
+				if (dv->display)
+					return dynamic_cast<div_dockpane*>(dv);
+
+				dv = dv->div_next;
+			}
+			return nullptr;
+		}
+	private:
+		implement * const impl_;
+		std::map<division*, std::unique_ptr<splitter>> splitters_;
 	};
 
 	place::implement::~implement()
@@ -2227,9 +2344,15 @@ namespace nana
 				{
 					//ignores weight if it is a dockpane
 					auto dockpn = new div_dockpane(std::move(child->name), this, child->dir);
-					dockpn->div_next = child->div_next;
 					dockpn->div_owner = child->div_owner;
 					adjusted_children.emplace_back(dockpn);
+				}
+
+				division * next = nullptr;
+				for (auto i = adjusted_children.rbegin(); i != adjusted_children.rend(); ++i)
+				{
+					i->get()->div_next = next;
+					next = i->get();
 				}
 
 				children.swap(adjusted_children);
