@@ -1776,6 +1776,8 @@ namespace nana
 
 					basepos = this->pos();
 					base_pos_.y = (_m_is_vert(dir_) ? basepos.y : basepos.x);
+
+					base_px_ = (_m_is_vert(dir_) ? pane_dv_->field_area.height : pane_dv_->field_area.width);
 				});
 
 				this->events().mouse_up([this]
@@ -1803,7 +1805,7 @@ namespace nana
 						now_pos.x = new_pos;
 					this->move(now_pos);
 
-					auto & px = (_m_is_vert(dir_) ? pane_dv_->field_area.height : pane_dv_->field_area.width);
+					auto px = base_px_;
 					switch (dir_)
 					{
 					case ::nana::direction::west:
@@ -1824,7 +1826,7 @@ namespace nana
 
 					auto dock_px = (_m_is_vert(dir_) ? dock_dv_->field_area.height : dock_dv_->field_area.width);
 
-					pane_dv_->weight.assign_percent(px / dock_px * 100);
+					pane_dv_->weight.assign_percent(double(px) / double(dock_px) * 100);
 
 					dock_dv_->collocate(wd);
 				});
@@ -1841,6 +1843,7 @@ namespace nana
 			division* const	pane_dv_;
 			::nana::point	range_;
 			::nana::point	base_pos_;	//x = mouse pos, y = splitter pos
+			unsigned		base_px_;	//weight of div_dockpane when mouse button is been pressing;
 
 		};
 	public:
