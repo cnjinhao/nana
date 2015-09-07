@@ -1794,9 +1794,15 @@ namespace nana
 					int delta = (_m_is_vert(dir_) ? now_pos.y : now_pos.x) - base_pos_.x;
 					int new_pos = base_pos_.y + delta;
 					if (new_pos < range_.x)
+					{
 						new_pos = range_.x;
+						delta = new_pos - base_pos_.y;
+					}
 					else if (new_pos >= range_.y)
+					{
 						new_pos = range_.y - 1;
+						delta = new_pos - base_pos_.y;
+					}
 
 					now_pos = this->pos();
 					if (_m_is_vert(dir_))
@@ -1922,24 +1928,32 @@ namespace nana
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 				const bool is_vert = _m_is_vert(child->dir);
 
+				auto room_px = (is_vert ? room.height : room.width);
+
 				double weight;
-				if (child->weight.is_none())
-					weight = (is_vert ? (room.height / double(vert_count)) : (room.width / double(horz_count)));
-				else
-					weight = child->weight.get_value(is_vert ? area.height : area.width);
-
-				auto div_next = _m_right(child_dv);
-
-				auto & splitter_ptr = swp_splitters[child_dv];
-
-				auto si = splitters_.find(child_dv);
-				if (si == splitters_.end())
+				if (child->weight.is_not_none())
 				{
-					splitter_ptr.reset(new splitter(impl_->window_handle, child->dir, this, child_dv));
+					weight = child->weight.get_value(is_vert ? area.height : area.width);
+					if (weight > room_px)
+						weight = room_px;
 				}
 				else
+					weight = room_px / double(is_vert ? vert_count : horz_count);
+
+				splitter* split = nullptr;
+				if (_m_right(child_dv))
 				{
-					splitter_ptr.swap(si->second);
+					//Creates a splitbar if the 'right' leaf is not empty
+
+					auto & splitter_ptr = swp_splitters[child_dv];
+
+					auto si = splitters_.find(child_dv);
+					if (si == splitters_.end())
+						splitter_ptr.reset(new splitter(impl_->window_handle, child->dir, this, child_dv));
+					else
+						splitter_ptr.swap(si->second);
+
+					split = splitter_ptr.get();
 				}
 
 				::nana::rectangle child_r;
@@ -1952,10 +1966,10 @@ namespace nana
 					child_r.width = static_cast<unsigned>(weight);
 					child_r.height = static_cast<unsigned>(bottom - top);
 					left += weight;
-					if (div_next)
+					if (split)
 					{
-						splitter_ptr->move(rectangle{child_r.right(), child_r.y, splitter_px, child_r.height});
-						splitter_ptr->range(left - weight, right - static_cast<int>(splitter_px));
+						split->move(rectangle{ child_r.right(), child_r.y, splitter_px, child_r.height });
+						split->range(left - weight, right - static_cast<int>(splitter_px));
 						left += splitter_px;
 					}
 					break;
@@ -1965,10 +1979,10 @@ namespace nana
 					child_r.y = static_cast<int>(top);
 					child_r.width = static_cast<unsigned>(weight);
 					child_r.height = static_cast<unsigned>(bottom - top);
-					if (div_next)
+					if (split)
 					{
-						splitter_ptr->move(rectangle{ child_r.x - static_cast<int>(splitter_px), child_r.y, splitter_px, child_r.height });
-						splitter_ptr->range(left, right - static_cast<int>(splitter_px) + weight);
+						split->move(rectangle{ child_r.x - static_cast<int>(splitter_px), child_r.y, splitter_px, child_r.height });
+						split->range(left, right - static_cast<int>(splitter_px)+weight);
 						right -= splitter_px;
 					}
 					break;
@@ -1978,10 +1992,10 @@ namespace nana
 					child_r.width = static_cast<unsigned>(right - left);
 					child_r.height = static_cast<unsigned>(weight);
 					top += weight;
-					if (div_next)
+					if (split)
 					{
-						splitter_ptr->move(rectangle{ child_r.x, child_r.bottom(), child_r.width, splitter_px });
-						splitter_ptr->range(top - weight, bottom - static_cast<int>(splitter_px));
+						split->move(rectangle{ child_r.x, child_r.bottom(), child_r.width, splitter_px });
+						split->range(top - weight, bottom - static_cast<int>(splitter_px));
 						top += splitter_px;
 					}
 					break;
@@ -1991,11 +2005,11 @@ namespace nana
 					child_r.y = static_cast<int>(bottom);
 					child_r.width = static_cast<unsigned>(right - left);
 					child_r.height = static_cast<unsigned>(weight);
-					if (div_next)
+					if (split)
 					{
 						bottom -= splitter_px;
-						splitter_ptr->move(rectangle{ child_r.x, child_r.y - static_cast<int>(splitter_px), child_r.width, splitter_px });
-						splitter_ptr->range(top, bottom + weight);
+						split->move(rectangle{ child_r.x, child_r.y - static_cast<int>(splitter_px), child_r.width, splitter_px });
+						split->range(top, bottom + weight);
 					}
 					break;
 				}
