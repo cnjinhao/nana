@@ -13,7 +13,7 @@
 
 #include <nana/gui/widgets/listbox.hpp>
 #include <nana/gui/widgets/scroll.hpp>
-#include <nana/gui/widgets/panel.hpp>
+#include <nana/gui/widgets/panel.hpp>	//for inline widget
 
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/element.hpp>
@@ -438,11 +438,13 @@ namespace nana
 					return pixels;
 				}
 
+				/*
                 /// return the original order or index previous to any list reorganization of the current column "n".
-				size_type index(size_type n) const
+				size_type index(size_type n) const	//deprecated
 				{
 					return (n < cont_.size() ? cont_[n].index : npos);
 				}
+				*/
 
 				const container& cont() const
 				{
@@ -539,23 +541,43 @@ namespace nana
 					return npos;
 				}
                 /// move the col originaly at index to the position currently in front (or after) the col originaly at index "to" invalidating some current index
-				void move(size_type index, size_type to, bool front)
+				void move(size_type index, size_type to, bool front) throw()
 				{
 					if(index == to)           return;
 					if(index >= cont_.size()) return;
                     if(to    >= cont_.size()) return;
 
-					auto i = std::find_if(cont_.begin(), cont_.end(), [index](container::value_type& m){return (index == m.index);});
+					for (auto i = cont_.begin(); i != cont_.end(); ++i)
+					{
+						if (index == i->index)
+						{
+							column_t from = std::move(*i);
+							cont_.erase(i);
+
+							for (auto u = cont_.begin(); u != cont_.end(); ++u)
+							{
+								if (to == u->index)
+								{
+									cont_.insert(front ? u : ++u, from);
+									return;
+								}
+							}
+							return;
+						}
+					}
+					/*
+					auto i = std::find_if(cont_.begin(), cont_.end(), [index](container::value_type& m){return (index == m.index);});	//deprecated
 
 					if (i == cont_.end())
 						return;
 
-					auto from = *i; // a temp copy 
+					column_t from = std::move(*i); //move
 					cont_.erase(i);
 
 					i = std::find_if(cont_.begin(), cont_.end(), [to](const container::value_type& m)->bool{ return (to == m.index); } );
 					if(i != cont_.end())
 						cont_.insert((front ? i : ++i), from);
+					*/
 				}
 			private:
 				bool visible_{true};
@@ -842,8 +864,9 @@ namespace nana
 
 				bool active_sort(bool resort)
 				{
-					std::swap(resort, resort_);
-					return resort;
+					bool prstatus = resort;
+					resort_ = resort;
+					return prstatus;
 				}
 
 				bool sort_reverse() const
@@ -2015,12 +2038,14 @@ namespace nana
                     trace_item_abs(lister.last_selected_abs);
                 }
 
-                void trace_first_selected_item()
+				/*
+                void trace_first_selected_item()	//deprecated
 				{
 					auto fs=lister.find_first_selected();
 					if( ! fs.empty() ) 
                        trace_item_abs( fs );
 				}
+				*/
 
 				void update()
 				{
@@ -2597,11 +2622,11 @@ namespace nana
 					{
 						const auto& item = essence_->header.column(item_spliter_);
 						//Resize the item specified by item_spliter_.
-						int new_w = orig_item_width_ - (ref_xpos_ - pos.x);
+						auto new_w = orig_item_width_ - (ref_xpos_ - pos.x);
 						if(static_cast<int>(item.pixels) != new_w)
 						{
 							essence_->header.item_width(item_spliter_, (new_w < static_cast<int>(essence_->suspension_width + 20) ? essence_->suspension_width + 20 : new_w));
-							auto new_w = essence_->header.pixels();
+							new_w = essence_->header.pixels();
 							if(new_w < (rect.width + essence_->scroll.offset_x))
 								essence_->scroll.offset_x = (new_w > rect.width ? new_w - rect.width : 0);
 
@@ -2614,7 +2639,41 @@ namespace nana
 
 				void draw(const nana::rectangle& r)
 				{
-					_m_draw(essence_->header.cont(), r);
+					//_m_draw(essence_->header.cont(), r);	//deprecated
+
+					graph_reference graph = *(essence_->graph);
+
+					int text_top = (r.height - essence_->text_height) / 2 + r.y;
+					auto text_color = essence_->lister.wd_ptr()->fgcolor();
+
+					auto state = item_state::normal;
+					//check whether grabing an item, if item_spliter_ != npos, that indicates the grab item is a spliter.
+					if (essence_->pointer_where.first == parts::header && (item_spliter_ == npos))
+						state = essence_->ptr_state;
+
+					const unsigned height = r.height - 1;
+					const int bottom_y = r.bottom() - 2;
+					int x = r.x - essence_->scroll.offset_x;
+
+					for (auto & i : essence_->header.cont())
+					{
+						if (i.visible)
+						{
+							int next_x = x + static_cast<int>(i.pixels);
+							if (next_x > r.x)
+							{
+								_m_draw_header_item(graph, x, r.y, height, text_top, text_color, i, (i.index == essence_->pointer_where.second ? state : item_state::normal));
+								graph.line({ next_x - 1, r.y }, { next_x - 1, bottom_y }, _m_border_color());
+							}
+
+							x = next_x;
+							if (x > r.right())
+								break;
+						}
+					}
+
+					if (x < r.right())
+						graph.rectangle({ x, r.y, static_cast<unsigned>(r.right() - x), height }, true, essence_->scheme_ptr->header_bgcolor);
 
 					const int y = r.y + r.height - 1;
 					essence_->graph->line({ r.x, y }, { r.x + static_cast<int>(r.width), y }, _m_border_color());
@@ -2657,9 +2716,9 @@ namespace nana
 					}
 					return npos;
 				}
-
+				/*
 				template<typename Container>
-				void _m_draw(const Container& cont, const nana::rectangle& rect)
+				void _m_draw(const Container& cont, const nana::rectangle& rect)	//deprecated
 				{
 					graph_reference graph = *(essence_->graph);
 
@@ -2694,6 +2753,7 @@ namespace nana
 					if (x < rect.right())
 						graph.rectangle({ x, rect.y, static_cast<unsigned>(rect.right() - x), height }, true, essence_->scheme_ptr->header_bgcolor);
 				}
+				*/
 
 				template<typename Item>
 				void _m_draw_header_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::color& fgcolor, const Item& item, item_state state)
@@ -3166,10 +3226,12 @@ namespace nana
 					delete essence_;
 				}
 
-				essence_t& trigger::essence()
+				/*
+				essence_t& trigger::essence()	//deprecated
 				{
 					return *essence_;
 				}
+				*/
 
 				essence_t& trigger::essence() const
 				{
@@ -3513,10 +3575,8 @@ namespace nana
 					case keyboard::os_arrow_up:
 						up = true;
 					case keyboard::os_arrow_down:
-                                       // move_select(bool upwards=true, bool unselect_previous=true, bool trace_selected=false)
 						essence_->lister.move_select(up, !arg.shift, true);
 						break;
-
 					case STR(' ') :
 						{
 							selection s;
@@ -4501,7 +4561,7 @@ namespace nana
 			return cat;
 		}
 
-		void listbox::_m_ease_key(nana::detail::key_interface* p)
+		void listbox::_m_erase_key(nana::detail::key_interface* p)
 		{
 			auto & cont = _m_ess().lister.cat_container();
 
