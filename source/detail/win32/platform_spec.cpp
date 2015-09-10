@@ -65,12 +65,12 @@ namespace detail
 
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
-		color_ = clr.px_color().value;
+		color_ = (clr.px_color().value & 0xFFFFFF);
 	}
 
 	void drawable_impl_type::set_text_color(const ::nana::color& clr)
 	{
-		auto rgb = clr.px_color().value;
+		auto rgb = (clr.px_color().value & 0xFFFFFF);
 		if (text_color_ != rgb)
 		{
 			::SetTextColor(context, NANA_RGB(rgb));
