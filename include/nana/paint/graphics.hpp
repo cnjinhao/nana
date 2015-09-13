@@ -136,8 +136,11 @@ namespace nana
 			/// @param file_utf8 A UTF-8 string to a filename
 			void save_as_file(const char* file_utf8) const throw();
 
-			void set_color(const ::nana::color&);
-			void set_text_color(const ::nana::color&);
+			void set_color(const ::nana::color&);		//deprecated, graphics::palette() instead
+			void set_text_color(const ::nana::color&);	//deprecated, graphics::palette() instead
+
+			::nana::color	palette(bool for_text) const;
+			graphics&		palette(bool for_text, const ::nana::color&);
 
 			unsigned bidi_string(const nana::point&, const char_t *, std::size_t len);
 			unsigned bidi_string(const point& pos, const char*, std::size_t len);
