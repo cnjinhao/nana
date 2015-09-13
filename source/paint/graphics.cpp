@@ -874,6 +874,27 @@ namespace paint
 				handle_->set_text_color(col);
 		}
 
+		::nana::color graphics::palette(bool for_text) const
+		{
+			if (handle_)
+				return static_cast<color_rgb>(for_text ? handle_->get_text_color() : handle_->get_color());
+
+			return{};
+		}
+
+		graphics& graphics::palette(bool for_text, const ::nana::color& clr)
+		{
+			if (handle_)
+			{
+				if (for_text)
+					handle_->set_text_color(clr);
+				else
+					handle_->set_color(clr);
+			}
+
+			return *this;
+		}
+
 		unsigned graphics::bidi_string(const nana::point& pos, const char_t * str, std::size_t len)
 		{
 			auto moved_pos = pos;

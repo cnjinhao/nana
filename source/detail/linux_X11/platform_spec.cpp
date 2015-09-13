@@ -302,6 +302,16 @@ namespace detail
 #endif
 	}
 
+	unsigned drawable_impl_type::get_color() const
+	{
+		return color_;
+	}
+
+	unsigned drawable_impl_type::get_text_color() const
+	{
+		return text_color_;
+	}
+
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
 		color_ = (clr.px_color().value & 0xFFFFFF);
