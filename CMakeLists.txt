@@ -55,7 +55,12 @@ cmake_minimum_required(VERSION 2.8)
 if(WIN32)
 	add_definitions(-DNANA_WINDOWS)
 	add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/win32/platform_spec.hpp>)
-
+	if(MSVC14)
+		add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
+	else()
+		add_definitions(-DNOT_IMPLEMENTED_KEYWORD_noexcept)
+	endif()
+	
 	#Test if it is MINGW
 	if(MINGW)
 		add_definitions(-DNANA_MINGW)
