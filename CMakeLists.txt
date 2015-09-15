@@ -34,8 +34,13 @@ if(BIICODE)
     # we'll use the default config file so we can iliminate the following macro definitions
     if(MSVC)
         # More MSVC specific compilation flags
-		add_definitions(-D_SCL_SECURE_NO_WARNINGS)
-		add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+	add_definitions(-D_SCL_SECURE_NO_WARNINGS)
+	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+	if(MSVC14)
+		add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
+	else()
+		add_definitions(-DNOT_IMPLEMENTED_KEYWORD_noexcept)
+	endif()
     endif()
     
     add_biicode_targets()
