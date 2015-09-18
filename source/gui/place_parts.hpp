@@ -148,12 +148,7 @@ namespace nana
 
 			struct panel
 			{
-				factory factory_fn;
 				std::unique_ptr<widget> widget_ptr;
-
-				panel(factory && fn)
-					: factory_fn(std::move(fn))
-				{}
 			};
 		public:
 			void create(window parent, place_parts::dock_notifier_interface* notifier)
@@ -229,29 +224,49 @@ namespace nana
 					}
 				});
 
-				if (panels_.size() > 1)
-					tabbar_.reset(new tabbar_lite(*this));
-
-				std::size_t pos = 0;
-				for (auto & pn : panels_)
-				{
-					if (!pn.widget_ptr)
-					{
-						pn.widget_ptr = pn.factory_fn(*this);
-						if (tabbar_)
-						{
-							tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
-							tabbar_->attach(pos++, pn.widget_ptr->handle());
-							//tabbar_->push_back(pn.widget_ptr->caption());
-							//tabbar_->relate(pos++, pn.widget_ptr->handle());
-						}
-					}
-				}
 			}
 
-			void add_factory(factory && fn)
+			void add_pane(factory & fn)
 			{
-				panels_.emplace_back(std::move(fn));
+				rectangle r{ point(), this->size()};
+
+				//get a rectangle excluding caption
+				r.y = 20;
+				if (r.height > 20)
+					r.height -= 20;
+				else
+					r.height = 0;
+
+				if (!tabbar_ && panels_.size() > 0)
+				{
+					tabbar_.reset(new tabbar_lite(*this));
+					tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });
+					r.height -= 20;
+
+					std::size_t pos = 0;
+					for (auto & pn : panels_)
+					{
+						tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
+						tabbar_->attach(pos++, *pn.widget_ptr);
+					}
+				}
+
+				auto wdg = fn(*this);
+
+				if (tabbar_)
+				{
+					tabbar_->push_back(::nana::charset(wdg->caption()));
+					tabbar_->attach(panels_.size(), *wdg);
+				}
+
+				panels_.emplace_back();
+				panels_.back().widget_ptr.swap(wdg);
+
+				for (auto & pn : panels_)
+				{
+					if (pn.widget_ptr)
+						pn.widget_ptr->move(r);
+				}
 			}
 
 			void float_away(const ::nana::point& move_pos)

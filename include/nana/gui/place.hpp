@@ -127,15 +127,16 @@ namespace nana
 
 		/// Add a panel factory
 		template<typename Panel, typename ...Args>
-		void dock(const std::string& dockname, Args&& ... args)
+		place& dock(const std::string& dockname, const std::string& factory_name, Args&& ... args)
 		{
-			dock(dockname, std::bind([](window parent, Args & ... args)
+			return dock(dockname, factory_name, std::bind([](window parent, Args & ... args)
 			{
 				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(args)...));
 			}, std::placeholders::_1, args...));
 		}
 
-		void dock(const std::string& dockname, std::function<std::unique_ptr<widget>(window)> factory);
+		place& dock(const std::string& dockname, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory);
+		place& dock_create(const std::string& factory);
 	private:
 		implement * impl_;
 	};

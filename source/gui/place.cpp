@@ -450,6 +450,7 @@ namespace nana
 		std::unique_ptr<division> root_division;
 		std::map<std::string, field_gather*> fields;
 		std::map<std::string, field_dock*> docks;
+		std::map<std::string, field_dock*> dock_factoris;
 
 		//A temporary pointer used to refer to a specified div object which
 		//will be deleted in modification process.
@@ -597,8 +598,9 @@ namespace nana
 	{
 
 	public:
-		div_dockpane * attached{ nullptr };	//attached div object
-		place_parts::dockarea dockarea;	//the dockable widget
+		div_dockpane * attached{ nullptr };					//attached div object
+		std::unique_ptr<place_parts::dockarea> dockarea;	//the dockable widget
+		std::map<std::string, std::function<std::unique_ptr<widget>(window)>> factories;	//factories for dockpane
 	};//end class field_dock
 
 
@@ -1559,13 +1561,14 @@ namespace nana
 				impl_ptr_{impl}
 		{
 			dir = pane_dir;
+			this->display = false;
 		}
 
 		~div_dockpane()
 		{
 			if (dockable_field)
 			{
-				dockable_field->dockarea.close();
+				dockable_field->dockarea.reset();
 				dockable_field->attached = nullptr;
 			}
 		}
@@ -1586,6 +1589,8 @@ namespace nana
 			}
 
 			auto & dockarea = dockable_field->dockarea;
+
+			/*
 			if (!created_)
 			{
 				created_ = true;
@@ -1594,6 +1599,10 @@ namespace nana
 
 			if (!dockarea.empty() && !dockarea.floating())
 				dockarea.move(this->field_area);
+			*/
+
+			if (dockarea && !dockarea->floating())
+				dockarea->move(this->field_area);
 		}
 	private:
 		//Implement dock_notifier_interface
@@ -1710,8 +1719,8 @@ namespace nana
 
 		void notify_move_stopped()
 		{
-			if (_m_dockable() && dockable_field)
-				dockable_field->dockarea.dock();
+			if (_m_dockable() && dockable_field && dockable_field->dockarea)
+				dockable_field->dockarea->dock();
 
 			indicator_.docker.reset();
 		}
@@ -2514,7 +2523,7 @@ namespace nana
 
 		for (auto& e : docks_to_be_closed)
 		{
-			e.second->dockarea.close();
+			e.second->dockarea.reset();
 			e.second->attached->dockable_field = nullptr;
 			e.second->attached = nullptr;
 		}
@@ -2747,7 +2756,7 @@ namespace nana
 		return field(name);
 	}
 
-	void place::dock(const std::string& name, std::function<std::unique_ptr<widget>(window)> factory)
+	place& place::dock(const std::string& name, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory)
 	{
 		//check the name, it throws std::invalid_argument
 		//if name violate the naming convention.
@@ -2757,7 +2766,16 @@ namespace nana
 		if (!dock_ptr)
 			dock_ptr = new implement::field_dock;
 
-		dock_ptr->dockarea.add_factory(std::move(factory));
+		//Register the factory if it has a name
+		if (!factory_name.empty())
+		{
+			auto i = impl_->dock_factoris.find(factory_name);
+			if (i != impl_->dock_factoris.end())
+				throw std::invalid_argument("nana::place - the specified factory name(" + factory_name + ") already exists");
+
+			impl_->dock_factoris[factory_name] = dock_ptr;
+			dock_ptr->factories[factory_name].swap(factory);
+		}
 
 		auto div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), name));
 		if (div)
@@ -2765,6 +2783,45 @@ namespace nana
 			dock_ptr->attached = div;
 			div->dockable_field = dock_ptr;
 		}
+
+		//Create the pane if it has not a name
+		if (factory_name.empty())
+		{
+			dock_ptr->attached->set_display(true);
+			impl_->collocate();
+
+			if (!dock_ptr->dockarea)
+			{
+				dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
+				dock_ptr->dockarea->create(impl_->window_handle, dock_ptr->attached);
+				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
+			}
+			dock_ptr->dockarea->add_pane(factory);
+		}
+
+		return *this;
+	}
+
+	place& place::dock_create(const std::string& factory)
+	{
+		auto i = impl_->dock_factoris.find(factory);
+		if (i == impl_->dock_factoris.end())
+			throw std::invalid_argument("nana::place - invalid factory name(" + factory + ")");
+
+		auto dock_ptr = i->second;
+		dock_ptr->attached->set_display(true);
+		impl_->collocate();
+
+		if (!dock_ptr->dockarea)
+		{
+			dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
+			dock_ptr->dockarea->create(impl_->window_handle, dock_ptr->attached);
+			dock_ptr->dockarea->move(dock_ptr->attached->field_area);
+		}
+
+		dock_ptr->dockarea->add_pane(i->second->factories[factory]);
+
+		return *this;
 	}
 	//end class place
 }//end namespace nana
