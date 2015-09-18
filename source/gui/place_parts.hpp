@@ -15,6 +15,7 @@
 #include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/tabbar.hpp>
 #include <nana/gui/element.hpp>
+#include <nana/paint/text_renderer.hpp>
 #include <stdexcept>
 #include <deque>
 
@@ -63,28 +64,60 @@ namespace nana
 		{
 		public:
 		private:
-			virtual void attached(widget_reference, graph_reference graph) override
+			virtual void attached(widget_reference wdg, graph_reference graph) override
 			{
-				graph.set_color(colors::slate_blue);
-				graph.set_text_color(colors::white);
+				window_handle_ = wdg;
+				text_rd_.reset(new paint::text_renderer(graph));
 			}
 
 			void refresh(graph_reference& graph) override
 			{
-				graph.rectangle(true, colors::red);
+				graph.set_color(static_cast<color_rgb>(0x83EB));
+				graph.set_text_color(colors::white);
+				graph.rectangle(true);
+
+				//draw caption
+				auto text = API::window_caption(window_handle_);
+				text = L"dockarea-caption";
+				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, true);
+
+				//draw x button
+				auto r = _m_button_area();
+				if (x_pointed_)
+					graph.rectangle(r, true, colors::red);
 				
-				::nana::rectangle r{ graph.size() };
-
-				r.x = r.right() - 20;
+				r.x += (r.width - 16) / 2;
 				r.y = (r.height - 16) / 2;
-				r.width = r.height = 16;
-
-				button_.draw(graph, colors::red, colors::white, r, element_state::normal);
 				x_icon_.draw(graph, colors::red, colors::white, r, element_state::normal);
 			}
+
+			void mouse_move(graph_reference graph, const arg_mouse& arg) override
+			{
+				x_pointed_ = _m_button_area().is_hit(arg.pos);
+
+				refresh(graph);
+				API::lazy_refresh();
+			}
+
+			void mouse_leave(graph_reference graph, const arg_mouse&) override
+			{
+				x_pointed_ = false;
+				refresh(graph);
+				API::lazy_refresh();
+			}
+		private:
+			::nana::rectangle _m_button_area() const
+			{
+				::nana::rectangle r{API::window_size(window_handle_)};
+
+				r.x = r.right() - 20;
+				r.width = 20;
+				return r;
+			}
 		public:
-			::nana::string caption;
-			facade<element::button> button_;
+			window window_handle_;
+			std::unique_ptr<paint::text_renderer> text_rd_;
+			bool x_pointed_{ false };
 			facade<element::x_icon>	x_icon_;
 		};
 
@@ -130,7 +163,6 @@ namespace nana
 				base_type::create(parent, true);
 				this->caption("dockarea");
 				caption_.create(*this, true);
-				caption_.caption("dockarea-caption");
 
 				this->events().resized([this](const arg_resized& arg)
 				{
@@ -175,7 +207,7 @@ namespace nana
 						auto move_pos = API::cursor_position() - moves_.start_pos;
 						if (!floating())
 						{
-							if (std::abs(move_pos.x) > 4 || abs(move_pos.y) > 4)
+							if (std::abs(move_pos.x) > 4 || std::abs(move_pos.y) > 4)
 								float_away(move_pos);
 						}
 						else
