@@ -430,7 +430,8 @@ namespace nana {
 						delete[] p;
 						return s;
 					}
-					return buf;
+					nana::string s = buf;
+					return s;
 				}
 #elif defined(NANA_LINUX)
 				const char * s = ::getenv("PWD");
