@@ -1980,6 +1980,7 @@ namespace nana
 				}
 
 				::nana::rectangle child_r;
+				double split_range_begin = -1, split_range_end;
 				switch (child->dir)
 				{
 				default:
@@ -1992,7 +1993,8 @@ namespace nana
 					if (split)
 					{
 						split->move(rectangle{ child_r.right(), child_r.y, splitter_px, child_r.height });
-						split->range(left - weight, right - static_cast<int>(splitter_px));
+						split_range_begin = left - weight;
+						split_range_end = right - static_cast<int>(splitter_px);
 						left += splitter_px;
 					}
 					break;
@@ -2005,7 +2007,8 @@ namespace nana
 					if (split)
 					{
 						split->move(rectangle{ child_r.x - static_cast<int>(splitter_px), child_r.y, splitter_px, child_r.height });
-						split->range(left, right - static_cast<int>(splitter_px)+weight);
+						split_range_begin = left;
+						split_range_end = right - static_cast<int>(splitter_px)+weight;
 						right -= splitter_px;
 					}
 					break;
@@ -2018,7 +2021,8 @@ namespace nana
 					if (split)
 					{
 						split->move(rectangle{ child_r.x, child_r.bottom(), child_r.width, splitter_px });
-						split->range(top - weight, bottom - static_cast<int>(splitter_px));
+						split_range_begin = top - weight;
+						split_range_end = bottom - static_cast<int>(splitter_px);
 						top += splitter_px;
 					}
 					break;
@@ -2032,10 +2036,15 @@ namespace nana
 					{
 						bottom -= splitter_px;
 						split->move(rectangle{ child_r.x, child_r.y - static_cast<int>(splitter_px), child_r.width, splitter_px });
-						split->range(top, bottom + weight);
+						split_range_begin = top;
+						split_range_end = bottom + weight;
 					}
 					break;
 				}
+
+				if (split_range_begin > -0.5)
+					split->range(static_cast<int>(split_range_begin), static_cast<int>(split_range_end));
+
 
 				if (is_vert)
 				{
