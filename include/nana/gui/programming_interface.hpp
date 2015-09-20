@@ -298,6 +298,8 @@ namespace API
 
 	bool ignore_mouse_focus(window, bool ignore);	///< Enables/disables the mouse focus, it returns the previous state
 	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
+
+	void at_safe_place(window, std::function<void()>);
 }//end namespace API
 }//end namespace nana
 

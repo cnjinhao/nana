@@ -379,6 +379,9 @@ namespace nana
 
 			void push_back(std::string text, ::nana::any par = {});
 			void push_front(std::string text, ::nana::any par = {});
+
+			std::size_t selected() const;
+			void erase(std::size_t pos, bool close_attached = true);
 		};
 }
 

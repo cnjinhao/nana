@@ -1207,8 +1207,11 @@ namespace detail
 				if(context) context->event_window = pre_event_window;
 			}
 
+			auto thread_id = ::nana::system::this_thread_id()
+			brock.wd_manager.call_safe_place(thread_id);
+
 			if(msgwnd)
-				brock.wd_manager.remove_trash_handle(::nana::system::this_thread_id());
+				brock.wd_manager.remove_trash_handle(thread_id);
 		}
 	}
 

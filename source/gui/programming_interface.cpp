@@ -1314,5 +1314,10 @@ namespace API
 		internal_scope_guard lock;
 		return (restrict::window_manager.available(iwd) ? iwd->flags.ignore_mouse_focus : false);
 	}
+
+	void at_safe_place(window wd, std::function<void()> fn)
+	{
+		restrict::window_manager.set_safe_place(reinterpret_cast<restrict::core_window_t*>(wd), std::move(fn));
+	}
 }//end namespace API
 }//end namespace nana

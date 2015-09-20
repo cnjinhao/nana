@@ -1717,12 +1717,26 @@ namespace nana
 
 		}
 
-		void notify_move_stopped()
+		void notify_move_stopped() override
 		{
 			if (_m_dockable() && dockable_field && dockable_field->dockarea)
 				dockable_field->dockarea->dock();
 
 			indicator_.docker.reset();
+		}
+
+		void request_close() override
+		{
+			auto window_handle = dockable_field->dockarea->handle();
+
+			//a workaround for capture
+			auto ptr = dockable_field->dockarea.release();
+			API::at_safe_place(window_handle, [this, ptr]
+			{
+				decltype(dockable_field->dockarea) del(ptr);
+			});
+
+			API::close_window(window_handle);
 		}
 	private:
 		bool _m_indicator() const

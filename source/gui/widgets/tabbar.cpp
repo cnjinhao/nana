@@ -1555,15 +1555,7 @@ namespace nana
 		{
 			auto& items = get_drawer_trigger().get_model()->items();
 			internal_scope_guard lock;
-
-			std::size_t off = 0;
-			auto i = items.cbegin(), end = items.cend();
-			while (i != end)
-			{
-				++i;
-				++off;
-			}
-			return off;
+			return static_cast<std::size_t>(std::distance(items.cbegin(), items.cend()));
 		}
 
 		//modifiers
@@ -1612,6 +1604,55 @@ namespace nana
 
 			items.emplace_front(std::move(text), std::move(any));
 			API::refresh_window(handle());
+		}
+
+		std::size_t tabbar_lite::selected() const
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			return model->get_indexes().active_pos;
+		}
+
+		void tabbar_lite::erase(std::size_t pos, bool close_attached)
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			const auto len = length();
+
+			if (len <= pos)
+				throw std::out_of_range("tabbar_lite: out of range");
+
+			auto active_pos = model->get_indexes().active_pos;
+
+			if (pos == active_pos)
+			{
+				if (active_pos + 1 == len)
+				{
+					if (active_pos)
+						--active_pos;
+					else
+						active_pos = npos;
+				}
+			}
+			else if (pos < active_pos)
+				--active_pos;
+
+			model->get_indexes().active_pos = active_pos;
+
+			auto i = model->items().cbefore_begin();
+			std::advance(i, pos);
+
+			auto attached_wd = std::next(i)->attached_window;
+
+			model->items().erase_after(i);
+
+			model->show_attached_window();
+			API::refresh_window(handle());
+
+			if (close_attached && attached_wd)
+				API::close_window(attached_wd);
 		}
 		//end class tabbar
 }//end namespace nana

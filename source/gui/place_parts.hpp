@@ -57,12 +57,19 @@ namespace nana
 			virtual void notify_dock() = 0;
 			virtual void notify_move() = 0;
 			virtual void notify_move_stopped() = 0;
+
+			//a dockarea requests to close the dockpane
+			virtual void request_close() = 0;
 		};
 
 		class dockcaption_dtrigger
 			: public drawer_trigger
 		{
 		public:
+			void on_close(std::function<void()>&& fn)
+			{
+				close_fn_ = std::move(fn);
+			}
 		private:
 			virtual void attached(widget_reference wdg, graph_reference graph) override
 			{
@@ -84,10 +91,18 @@ namespace nana
 				//draw x button
 				auto r = _m_button_area();
 				if (x_pointed_)
-					graph.rectangle(r, true, colors::red);
+				{
+					color xclr = colors::red;
+
+					if(x_state_ ==  ::nana::mouse_action::pressed)
+						xclr = xclr.blend(colors::white, 0.8);
+
+					graph.rectangle(r, true, xclr);
+				}
 				
 				r.x += (r.width - 16) / 2;
 				r.y = (r.height - 16) / 2;
+
 				x_icon_.draw(graph, colors::red, colors::white, r, element_state::normal);
 			}
 
@@ -105,6 +120,29 @@ namespace nana
 				refresh(graph);
 				API::lazy_refresh();
 			}
+
+			void mouse_down(graph_reference graph, const arg_mouse&) override
+			{
+				if (!x_pointed_)
+					return;
+
+				x_state_ = ::nana::mouse_action::pressed;
+
+				refresh(graph);
+				API::lazy_refresh();
+			}
+
+			void mouse_up(graph_reference graph, const arg_mouse&) override
+			{
+				if (!x_pointed_)
+					return;
+
+				x_state_ = ::nana::mouse_action::over;
+				refresh(graph);
+				API::lazy_refresh();
+
+				close_fn_();
+			}
 		private:
 			::nana::rectangle _m_button_area() const
 			{
@@ -118,12 +156,21 @@ namespace nana
 			window window_handle_;
 			std::unique_ptr<paint::text_renderer> text_rd_;
 			bool x_pointed_{ false };
+			::nana::mouse_action x_state_{ ::nana::mouse_action::normal };
 			facade<element::x_icon>	x_icon_;
+
+			std::function<void()>	close_fn_;
 		};
 
 		class dockarea_caption
 			: public widget_object < category::widget_tag, dockcaption_dtrigger >
-		{};
+		{
+		public:
+			void on_close(std::function<void()> fn)
+			{
+				get_drawer_trigger().on_close(std::move(fn));
+			}
+		};
 
 		class dock_page
 			: public form
@@ -158,6 +205,22 @@ namespace nana
 				base_type::create(parent, true);
 				this->caption("dockarea");
 				caption_.create(*this, true);
+				caption_.on_close([this]
+				{
+					bool destroy_dockarea = false;
+					try
+					{
+						tabbar_->erase(tabbar_->selected());
+						destroy_dockarea = (0 == tabbar_->length());
+					}
+					catch (std::out_of_range&)
+					{
+						destroy_dockarea = true;
+					}
+
+					if (destroy_dockarea)
+						notifier_->request_close();
+				});
 
 				this->events().resized([this](const arg_resized& arg)
 				{
