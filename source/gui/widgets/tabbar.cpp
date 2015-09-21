@@ -344,7 +344,7 @@ namespace nana
 				{
 					if(i < list_.size())
 						return at_no_bound_check(i);
-					throw std::out_of_range("Nana.GUI.tabbar::at() is out of range");
+					throw std::out_of_range("invalid position of tabbar");
 				}
 
 				iterator iterator_at(std::size_t pos)
@@ -370,7 +370,7 @@ namespace nana
 				{
 					if(pos < list_.size())
 						return at_no_bound_check(pos);
-					throw std::out_of_range("Nana.GUI.tabbar::at() const is out of range");
+					throw std::out_of_range("invalid position of tabbar");
 				}
 
 				const nana::any& at_no_bound_check(std::size_t pos) const
@@ -1345,15 +1345,21 @@ namespace nana
 					using graph_reference = ::nana::paint::graphics&;
 					static const std::size_t npos = static_cast<std::size_t>(-1);
 
-					void set_widget(widget& wdg)
+					void set_widget(::nana::tabbar_lite& wdg)
 					{
 						widget_ = &wdg;
 					}
 
-					::nana::dev::widget_traits<widget>::scheme_type & scheme()
+					::nana::tabbar_lite* widget_ptr() const
+					{
+						return widget_;
+					}
+					/*
+					::nana::dev::widget_traits<widget>::scheme_type & scheme()	//deprecated
 					{
 						return API::scheme(*widget_);
 					}
+					*/
 
 					std::forward_list<item>& items()
 					{
@@ -1407,7 +1413,7 @@ namespace nana
 						return indexes_;
 					}
 				private:
-					widget * widget_{ nullptr };
+					::nana::tabbar_lite * widget_{ nullptr };
 					std::forward_list<item> items_;
 					indexes indexes_;
 				};
@@ -1421,7 +1427,7 @@ namespace nana
 					{
 						_m_calc_metrics(graph, model.items());
 
-						auto & scheme = model.scheme();
+						auto & scheme = model.widget_ptr()->scheme();
 
 						//draw background
 						graph.rectangle(true, scheme.background);
@@ -1499,7 +1505,7 @@ namespace nana
 
 					void driver::attached(widget_reference wdg, graph_reference)
 					{
-						model_->set_widget(wdg);
+						model_->set_widget(dynamic_cast<nana::tabbar_lite&>(wdg));
 					}
 
 					//Overrides drawer_trigger's method
@@ -1533,11 +1539,17 @@ namespace nana
 						if ((indexes.hovered_pos == model_->npos) || (indexes.active_pos == indexes.hovered_pos))
 							return;
 
-						indexes.active_pos = indexes.hovered_pos;
-						model_->show_attached_window();
+						if (indexes.active_pos != indexes.hovered_pos)
+						{
+							indexes.active_pos = indexes.hovered_pos;
+							model_->show_attached_window();
 
-						refresh(graph);
-						API::lazy_refresh();
+							refresh(graph);
+							API::lazy_refresh();
+
+							event_arg arg;
+							model_->widget_ptr()->events().selected.emit(arg);
+						}
 					}
 				//end class driver
 			}
@@ -1572,6 +1584,20 @@ namespace nana
 					model->show_attached_window();
 					return;
 				}
+			}
+
+			throw std::out_of_range("invalid position of tabbar_lite");
+		}
+
+		window tabbar_lite::attach(std::size_t pos_set) const
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			for (auto & m : model->items())
+			{
+				if (0 == pos_set--)
+					return m.attached_window;
 			}
 
 			throw std::out_of_range("invalid position of tabbar_lite");
@@ -1622,10 +1648,12 @@ namespace nana
 			const auto len = length();
 
 			if (len <= pos)
-				throw std::out_of_range("tabbar_lite: out of range");
+				throw std::out_of_range("invalid position of tabbar_lite");
 
 			auto active_pos = model->get_indexes().active_pos;
 
+			//selection_changed is used to determine whether the title will be updated
+			bool selection_changed = true;
 			if (pos == active_pos)
 			{
 				if (active_pos + 1 == len)
@@ -1638,6 +1666,8 @@ namespace nana
 			}
 			else if (pos < active_pos)
 				--active_pos;
+			else
+				selection_changed = false;
 
 			model->get_indexes().active_pos = active_pos;
 
@@ -1653,6 +1683,12 @@ namespace nana
 
 			if (close_attached && attached_wd)
 				API::close_window(attached_wd);
+
+			if (selection_changed)
+			{
+				event_arg arg;
+				events().selected.emit(arg);
+			}
 		}
 		//end class tabbar
 }//end namespace nana

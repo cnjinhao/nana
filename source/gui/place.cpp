@@ -2829,7 +2829,7 @@ namespace nana
 	{
 		auto i = impl_->dock_factoris.find(factory);
 		if (i == impl_->dock_factoris.end())
-			throw std::invalid_argument("nana::place - invalid factory name(" + factory + ")");
+			throw std::invalid_argument("invalid factory name(" + factory + ") of dockpane");
 
 		auto dock_ptr = i->second;
 		dock_ptr->attached->set_display(true);

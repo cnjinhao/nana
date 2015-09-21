@@ -85,7 +85,6 @@ namespace nana
 
 				//draw caption
 				auto text = API::window_caption(window_handle_);
-				text = L"dockarea-caption";
 				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, true);
 
 				//draw x button
@@ -303,6 +302,17 @@ namespace nana
 				if (!tabbar_ && panels_.size() > 0)
 				{
 					tabbar_.reset(new tabbar_lite(*this));
+
+					tabbar_->events().selected.clear();
+					tabbar_->events().selected([this]
+					{
+						auto handle = tabbar_->attach(tabbar_->selected());
+						if (handle)
+							caption_.caption(API::window_caption(handle));
+						else
+							caption_.caption(::nana::string());
+					});
+
 					tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });
 					r.height -= 20;
 
@@ -319,7 +329,12 @@ namespace nana
 				if (tabbar_)
 				{
 					tabbar_->push_back(::nana::charset(wdg->caption()));
-					tabbar_->attach(panels_.size(), *wdg);
+					tabbar_->attach(panels_.size(), wdg->handle());
+				}
+
+				if (panels_.empty())
+				{
+					caption_.caption(wdg->caption());
 				}
 
 				panels_.emplace_back();

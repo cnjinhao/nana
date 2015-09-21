@@ -30,6 +30,13 @@ namespace nana
 		template<typename Widget>
 		struct widget_traits
 		{
+			using event_type = typename Widget::event_type;
+			using scheme_type = typename Widget::scheme_type;
+		};
+
+		template<>
+		struct widget_traits<widget>
+		{
 			using event_type = ::nana::general_events;
 			using scheme_type = ::nana::widget_colors;
 		};
