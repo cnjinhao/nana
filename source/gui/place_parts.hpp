@@ -197,9 +197,12 @@ namespace nana
 				std::unique_ptr<widget> widget_ptr;
 			};
 		public:
-			void create(window parent, place_parts::dock_notifier_interface* notifier)
+			void set_notifier(place_parts::dock_notifier_interface* notifier)
 			{
 				notifier_ = notifier;
+			}
+			void create(window parent)
+			{
 				host_window_ = parent;
 				base_type::create(parent, true);
 				this->caption("dockarea");

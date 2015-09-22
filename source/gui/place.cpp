@@ -468,6 +468,7 @@ namespace nana
 
 		//connect the field/dock with div object
 		void connect(division* start);
+		void disconnect();
 	};	//end struct implement
 
 	class place::implement::field_gather
@@ -2490,15 +2491,7 @@ namespace nana
 		if (!start)
 			return;
 
-		//disconnect
-		for (auto & fd : fields)
-		{
-			if (fd.second->attached)
-			{
-				fd.second->attached->field = nullptr;
-				fd.second->attached = nullptr;
-			}
-		}
+		this->disconnect();
 
 		std::map<std::string, field_dock*> docks_to_be_closed;
 		//disconnect
@@ -2508,12 +2501,12 @@ namespace nana
 				docks_to_be_closed[dk.first] = dk.second;
 		}
 
-		std::function<void(division* div)> check_fn;
-		check_fn = [&check_fn, this, &docks_to_be_closed](division* div)
+		std::function<void(division* div)> connect_fn;
+		connect_fn = [&connect_fn, this, &docks_to_be_closed](division* div)
 		{
 			if (div->name.size())
 			{
-				if (division::kind::dock == div->kind_of_division)
+				if (division::kind::dock == div->kind_of_division || division::kind::dockpane == div->kind_of_division)
 				{
 					auto i = docks.find(div->name);
 					if (i != docks.end())
@@ -2521,7 +2514,18 @@ namespace nana
 						docks_to_be_closed.erase(div->name);
 						auto pane = dynamic_cast<div_dockpane*>(div);
 						pane->dockable_field = i->second;
+
+						auto old_pane = pane->dockable_field->attached;
+						if (old_pane)
+						{
+							//old div_dockpane will be deleted
+							old_pane->dockable_field = nullptr;
+							div->display = old_pane->display;
+						}
 						pane->dockable_field->attached = pane;
+
+						if (pane->dockable_field->dockarea)
+							pane->dockable_field->dockarea->set_notifier(pane);
 					}
 				}
 				else
@@ -2538,17 +2542,29 @@ namespace nana
 
 			for (auto & child : div->children)
 			{
-				check_fn(child.get());
+				connect_fn(child.get());
 			}
 		};
 
-		check_fn(start);
+		connect_fn(start);
 
 		for (auto& e : docks_to_be_closed)
 		{
 			e.second->dockarea.reset();
 			e.second->attached->dockable_field = nullptr;
 			e.second->attached = nullptr;
+		}
+	}
+
+	void place::implement::disconnect()
+	{
+		for (auto & fd : fields)
+		{
+			if (fd.second->attached)
+			{
+				fd.second->attached->field = nullptr;
+				fd.second->attached = nullptr;
+			}
 		}
 	}
 
@@ -2592,6 +2608,7 @@ namespace nana
 	void place::div(const char* s)
 	{
 		place_parts::tokenizer tknizer(s);
+		impl_->disconnect();
 		auto div = impl_->scan_div(tknizer);
 		try
 		{
@@ -2816,7 +2833,8 @@ namespace nana
 			if (!dock_ptr->dockarea)
 			{
 				dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
-				dock_ptr->dockarea->create(impl_->window_handle, dock_ptr->attached);
+				dock_ptr->dockarea->create(impl_->window_handle);
+				dock_ptr->dockarea->set_notifier(dock_ptr->attached);
 				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
 			}
 			dock_ptr->dockarea->add_pane(factory);
@@ -2838,7 +2856,8 @@ namespace nana
 		if (!dock_ptr->dockarea)
 		{
 			dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
-			dock_ptr->dockarea->create(impl_->window_handle, dock_ptr->attached);
+			dock_ptr->dockarea->create(impl_->window_handle);
+			dock_ptr->dockarea->set_notifier(dock_ptr->attached);
 			dock_ptr->dockarea->move(dock_ptr->attached->field_area);
 		}
 
