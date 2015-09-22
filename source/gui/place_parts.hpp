@@ -206,16 +206,15 @@ namespace nana
 				caption_.create(*this, true);
 				caption_.on_close([this]
 				{
-					bool destroy_dockarea = false;
-					try
+					bool destroy_dockarea = true;
+
+					if (tabbar_)
 					{
 						tabbar_->erase(tabbar_->selected());
+
 						destroy_dockarea = (0 == tabbar_->length());
 					}
-					catch (std::out_of_range&)
-					{
-						destroy_dockarea = true;
-					}
+
 
 					if (destroy_dockarea)
 						notifier_->request_close();

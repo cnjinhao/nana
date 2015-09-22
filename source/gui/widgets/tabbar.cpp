@@ -1684,7 +1684,7 @@ namespace nana
 			if (close_attached && attached_wd)
 				API::close_window(attached_wd);
 
-			if (selection_changed)
+			if (selection_changed && (active_pos != npos))
 			{
 				event_arg arg;
 				events().selected.emit(arg);
