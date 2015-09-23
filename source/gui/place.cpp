@@ -1737,6 +1737,9 @@ namespace nana
 				decltype(dockable_field->dockarea) del(ptr);
 			});
 
+			this->set_display(false);
+			impl_ptr_->collocate();
+
 			API::close_window(window_handle);
 		}
 	private:

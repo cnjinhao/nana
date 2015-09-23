@@ -301,30 +301,35 @@ namespace nana
 				else
 					r.height = 0;
 
-				if (!tabbar_ && panels_.size() > 0)
+				if (!tabbar_)
 				{
-					tabbar_.reset(new tabbar_lite(*this));
-
-					tabbar_->events().selected.clear();
-					tabbar_->events().selected([this]
+					if (panels_.size() > 0)
 					{
-						auto handle = tabbar_->attach(tabbar_->selected());
-						if (handle)
-							caption_.caption(API::window_caption(handle));
-						else
-							caption_.caption(::nana::string());
-					});
+						tabbar_.reset(new tabbar_lite(*this));
 
-					tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });
-					r.height -= 20;
+						tabbar_->events().selected.clear();
+						tabbar_->events().selected([this]
+						{
+							auto handle = tabbar_->attach(tabbar_->selected());
+							if (handle)
+								caption_.caption(API::window_caption(handle));
+							else
+								caption_.caption(::nana::string());
+						});
 
-					std::size_t pos = 0;
-					for (auto & pn : panels_)
-					{
-						tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
-						tabbar_->attach(pos++, *pn.widget_ptr);
+						tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });
+						r.height -= 20;
+
+						std::size_t pos = 0;
+						for (auto & pn : panels_)
+						{
+							tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
+							tabbar_->attach(pos++, *pn.widget_ptr);
+						}
 					}
 				}
+				else
+					r.height -= 20;
 
 				auto wdg = fn(*this);
 
