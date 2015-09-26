@@ -134,7 +134,8 @@ namespace nana
 	protected:
 		typedef DrawerTrigger drawer_trigger_t;
 	public:
-		using scheme_type = Scheme;
+		using scheme_type	= Scheme;
+		using event_type	= Events;
 
 		widget_object()
 			:	events_{ std::make_shared<Events>() },
@@ -147,7 +148,7 @@ namespace nana
 				API::close_window(handle_);
 		}
 
-		Events& events() const
+		event_type& events() const
 		{
 			return *events_;
 		}
@@ -228,6 +229,7 @@ namespace nana
 		typedef DrawerTrigger drawer_trigger_t;
 	public:
 		using scheme_type = Scheme;
+		using event_type = Events;
 
 		widget_object()
 			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
@@ -239,7 +241,7 @@ namespace nana
 				API::close_window(handle_);
 		}
 
-		Events& events() const
+		event_type& events() const
 		{
 			return *events_;
 		}
@@ -297,6 +299,7 @@ namespace nana
 		typedef DrawerTrigger drawer_trigger_t;
 	public:
 		using scheme_type = Scheme;
+		using event_type = Events;
 
 		widget_object()
 		{
@@ -322,7 +325,7 @@ namespace nana
 				API::close_window(handle_);
 		}
 
-		Events& events() const
+		event_type& events() const
 		{
 			return *events_;
 		}
@@ -451,6 +454,7 @@ namespace nana
 		typedef int drawer_trigger_t;
 	public:
 		using scheme_type = Scheme;
+		using event_type = Events;
 
 		widget_object()
 			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
@@ -462,7 +466,7 @@ namespace nana
 				API::close_window(handle_);
 		}
 
-		Events& events() const
+		event_type& events() const
 		{
 			return *events_;
 		}

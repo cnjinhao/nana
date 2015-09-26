@@ -195,15 +195,17 @@ namespace nana
 		void _m_typeface(const paint::font&) override;
 	};
 
+	/*
 	namespace dev
 	{
 		/// Traits for widget classes
 		template<>
-		struct widget_traits<textbox>
+		struct widget_traits<textbox>	//deprecated
 		{
 			using event_type = drawerbase::textbox::textbox_events;
 			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
 		};
 	}
+	*/
 }//end namespace nana
 #endif

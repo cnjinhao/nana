@@ -538,11 +538,11 @@ namespace API
 		return nana::point{};
 	}
 
-	void move_window(window wd, int x, int y)
+	void move_window(window wd, const point& pos)
 	{
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
-		if(restrict::window_manager.move(iwd, x, y, false))
+		if(restrict::window_manager.move(iwd, pos.x, pos.y, false))
 		{
 			restrict::core_window_t* update_wd = nullptr;
 			if (iwd->displayed() && iwd->effect.bground)
@@ -1313,6 +1313,11 @@ namespace API
 		auto iwd = reinterpret_cast<restrict::core_window_t*>(wd);
 		internal_scope_guard lock;
 		return (restrict::window_manager.available(iwd) ? iwd->flags.ignore_mouse_focus : false);
+	}
+
+	void at_safe_place(window wd, std::function<void()> fn)
+	{
+		restrict::window_manager.set_safe_place(reinterpret_cast<restrict::core_window_t*>(wd), std::move(fn));
 	}
 }//end namespace API
 }//end namespace nana

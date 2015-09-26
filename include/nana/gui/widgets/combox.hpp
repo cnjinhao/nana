@@ -229,7 +229,8 @@ namespace nana
 		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
 
-	namespace dev
+	/*
+	namespace dev	//deprecated
 	{
 		template<>
 		struct widget_traits<combox>
@@ -238,5 +239,6 @@ namespace nana
 			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
 		};
 	}
+	*/
 }
 #endif

@@ -845,13 +845,13 @@ namespace paint
 				BITMAPFILEHEADER bmFileHeader = { 0 };
 				bmFileHeader.bfType = 0x4d42;  //bmp
 				bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-				bmFileHeader.bfSize = bmFileHeader.bfOffBits + imageBytes;
+				bmFileHeader.bfSize = bmFileHeader.bfOffBits + static_cast<DWORD>(imageBytes);
 
 				HANDLE hFile = ::CreateFileW(static_cast<std::wstring>(::nana::charset(file_utf8, ::nana::unicode::utf8)).data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 				DWORD dwWrite = 0;
 				::WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwWrite, nullptr);
 				::WriteFile(hFile, &bmpInfo.bmiHeader, sizeof(BITMAPINFOHEADER), &dwWrite, nullptr);
-				::WriteFile(hFile, pData, imageBytes, &dwWrite, nullptr);
+				::WriteFile(hFile, pData, static_cast<DWORD>(imageBytes), &dwWrite, nullptr);
 				::CloseHandle(hFile);
 
 				::DeleteObject(hBmp);
@@ -872,6 +872,27 @@ namespace paint
 		{
 			if (handle_)
 				handle_->set_text_color(col);
+		}
+
+		::nana::color graphics::palette(bool for_text) const
+		{
+			if (handle_)
+				return static_cast<color_rgb>(for_text ? handle_->get_text_color() : handle_->get_color());
+
+			return{};
+		}
+
+		graphics& graphics::palette(bool for_text, const ::nana::color& clr)
+		{
+			if (handle_)
+			{
+				if (for_text)
+					handle_->set_text_color(clr);
+				else
+					handle_->set_color(clr);
+			}
+
+			return *this;
 		}
 
 		unsigned graphics::bidi_string(const nana::point& pos, const char_t * str, std::size_t len)

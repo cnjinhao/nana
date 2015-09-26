@@ -146,6 +146,7 @@ namespace detail
 
 		void fgcolor(const ::nana::color&);	//deprecated
 		unsigned get_color() const;
+		unsigned get_text_color() const;
 		void set_color(const ::nana::color&);
 		void set_text_color(const ::nana::color&);
 

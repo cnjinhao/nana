@@ -14,7 +14,6 @@
 #define NANA_GUI_WIDGET_SCROLL_HPP
 
 #include "widget.hpp"
-#include <nana/paint/gadget.hpp>
 #include <nana/gui/timer.hpp>
 
 namespace nana
@@ -444,7 +443,7 @@ namespace nana
 		/// @return true if the vlaue is changed.
 		bool make_page_scroll(bool forward)
 		{
-			return this->make_step(forward, range() - 1);
+			return this->make_step(forward, static_cast<unsigned>(range() - 1));
 		}
 	};//end class scroll
 }//end namespace nana

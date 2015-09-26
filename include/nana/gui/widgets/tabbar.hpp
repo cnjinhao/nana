@@ -14,7 +14,6 @@
 #ifndef NANA_GUI_WIDGET_TABBAR_HPP
 #define NANA_GUI_WIDGET_TABBAR_HPP
 #include "widget.hpp"
-#include "../../paint/gadget.hpp"
 #include <nana/pat/cloneable.hpp>
 #include <nana/any.hpp>
 
@@ -30,7 +29,7 @@ namespace nana
 		T & value;
 
 		arg_tabbar(tabbar<T>& wdg, T& v)
-			: widget{ wdg }, value{ v }
+			: widget(wdg), value{ v }
 		{}
 	};
 
@@ -337,14 +336,18 @@ namespace nana
 
 
 namespace nana
-{
-	namespace ng
-	{
+{	
 		namespace drawerbase
 		{
 			namespace tabbar_lite
 			{
 				class model;
+
+				struct events
+					: public general_events
+				{
+					basic_event<event_arg> selected;
+				};
 
 				class driver
 					: public drawer_trigger
@@ -353,7 +356,7 @@ namespace nana
 					driver();
 					~driver();
 
-					model* get_model();
+					model* get_model() const throw();
 				private:
 					//Overrides drawer_trigger's method
 					void attached(widget_reference, graph_reference)	override;
@@ -367,18 +370,39 @@ namespace nana
 			}
 		}//end namespace drawerbase
 
-		class tabbar_lite
-			: public widget_object<category::widget_tag, drawerbase::tabbar_lite::driver>
+	class tabbar_lite
+		: public widget_object<category::widget_tag, drawerbase::tabbar_lite::driver, drawerbase::tabbar_lite::events>
+	{
+	public:
+		tabbar_lite() = default;
+		tabbar_lite(window, bool visible = true, const::nana::rectangle& = {});
+
+	public: //capacity
+		std::size_t length() const;
+
+	public: //modifiers
+		void attach(std::size_t pos, window);
+		window attach(std::size_t pos) const;
+
+		void push_back(std::string text, ::nana::any par = {});
+		void push_front(std::string text, ::nana::any par = {});
+
+		std::size_t selected() const;
+		void erase(std::size_t pos, bool close_attached = true);
+	};
+
+	/*
+	namespace dev
+	{
+		/// Traits for widget classes
+		template<>
+		struct widget_traits<tabbar_lite>	//deprecated
 		{
-		public:
-			tabbar_lite() = default;
-			tabbar_lite(window, bool visible = true, const::nana::rectangle& = {});
-
-
-			void push_back(std::string text, ::nana::any par = {});
-			void push_front(std::string text, ::nana::any par = {});
+			using event_type = drawerbase::tabbar_lite::events;
+			using scheme_type = ::nana::widget_colors;
 		};
 	}
+	*/
 }
 
 #endif

@@ -243,7 +243,6 @@
     <ClCompile Include="..\..\source\internationalization.cpp" />
     <ClCompile Include="..\..\source\paint\detail\image_process_provider.cpp" />
     <ClCompile Include="..\..\source\paint\detail\native_paint_interface.cpp" />
-    <ClCompile Include="..\..\source\paint\gadget.cpp" />
     <ClCompile Include="..\..\source\paint\graphics.cpp" />
     <ClCompile Include="..\..\source\paint\image.cpp" />
     <ClCompile Include="..\..\source\paint\image_process_selector.cpp" />
@@ -277,8 +276,8 @@
     <ClInclude Include="..\..\include\nana\extrlib\png.h" />
     <ClInclude Include="..\..\include\nana\extrlib\pngconf.h" />
     <ClInclude Include="..\..\include\nana\extrlib\pnglibconf.h" />
-	<ClInclude Include="..\..\include\nana\extrlib\zlib.h" />
-	<ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp" />
+    <ClInclude Include="..\..\include\nana\extrlib\zlib.h" />
+    <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp" />
     <ClInclude Include="..\..\include\nana\filesystem\file_iterator.hpp" />
     <ClInclude Include="..\..\include\nana\filesystem\fs_utility.hpp" />
     <ClInclude Include="..\..\include\nana\fwd.hpp" />

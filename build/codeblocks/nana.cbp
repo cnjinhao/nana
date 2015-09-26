@@ -102,7 +102,6 @@
 		<Unit filename="../../source/internationalization.cpp" />
 		<Unit filename="../../source/paint/detail/image_process_provider.cpp" />
 		<Unit filename="../../source/paint/detail/native_paint_interface.cpp" />
-		<Unit filename="../../source/paint/gadget.cpp" />
 		<Unit filename="../../source/paint/graphics.cpp" />
 		<Unit filename="../../source/paint/image.cpp" />
 		<Unit filename="../../source/paint/image_process_selector.cpp" />

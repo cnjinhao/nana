@@ -664,14 +664,16 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void _m_erase_key(nana::detail::key_interface*);
 	};
 
+	/*
 	namespace dev
 	{
 		template<>
-		struct widget_traits<listbox>
+		struct widget_traits<listbox>	//deprecated
 		{
 			using event_type = drawerbase::listbox::listbox_events;
 			using scheme_type = drawerbase::listbox::scheme;
 		};
 	}
+	*/
 }//end namespace nana
 #endif

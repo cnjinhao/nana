@@ -542,32 +542,6 @@ namespace nana{
 			return false;
 		}
 
-		/*
-		bool native_interface::window_icon(native_window_type wd, const paint::image& big_icon, const paint::image& small_icon)	//deprecated
-		{
-#if defined(NANA_WINDOWS)
-			HICON h_big_icon = paint::image_accessor::icon(big_icon);
-			HICON h_small_icon = paint::image_accessor::icon(small_icon);
-			if (h_big_icon || h_small_icon)
-			{
-				nana::detail::platform_spec::instance().keep_window_icon(wd, (!big_icon.empty() ? big_icon : small_icon));
-				if (h_big_icon) {
-					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(h_big_icon));
-				}
-				if (h_small_icon) {
-					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_SMALL, reinterpret_cast<WPARAM>(h_small_icon));
-				}
-				return true;
-			}
-#elif defined(NANA_X11)
-			return window_icon(wd, big_icon);
-#endif
-			return false;
-		}
-		*/
-
-
-
 		void native_interface::activate_owner(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)

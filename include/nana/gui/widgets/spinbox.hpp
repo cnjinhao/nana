@@ -110,15 +110,17 @@ namespace nana
 		void _m_caption(::nana::string&&);
 	}; //end class spinbox
 
+	/*
 	namespace dev
 	{
 		template<>
-		struct widget_traits<spinbox>
+		struct widget_traits<spinbox>	//deprecated
 		{
 			using event_type = drawerbase::spinbox::spinbox_events;
 			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
 		};
 	}
+	*/
 }//end namespace nana
 
 #endif //NANA_GUI_WIDGET_SPINBOX_HPP

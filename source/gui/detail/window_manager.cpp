@@ -44,6 +44,8 @@ namespace detail
 				handle_manager<core_window_t*, window_manager, window_handle_deleter>	wd_register;
 				paint::image default_icon_big;
 				paint::image default_icon_small;
+
+				std::map<core_window_t*, std::vector<std::function<void()>>> safe_place;
 			};
 		//end struct wdm_private_impl
 
@@ -1190,6 +1192,36 @@ namespace detail
 					return reinterpret_cast<core_window_t*>(object->shortkeys.find(key));
 			}
 			return nullptr;
+		}
+
+		void window_manager::set_safe_place(core_window_t* wd, std::function<void()>&& fn)
+		{
+			if (fn)
+			{
+				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				if (!available(wd))
+					return;
+
+				impl_->safe_place[wd].emplace_back(std::move(fn));
+			}
+		}
+
+		void window_manager::call_safe_place(unsigned thread_id)
+		{
+			std::lock_guard<decltype(mutex_)> lock(mutex_);
+
+			for (auto i = impl_->safe_place.begin(); i != impl_->safe_place.end();)
+			{
+				if (i->first->thread_id == thread_id)
+				{
+					for (auto & fn : i->second)
+						fn();
+
+					i = impl_->safe_place.erase(i);
+				}
+				else
+					++i;
+			}
 		}
 
 		bool check_tree(basic_window* wd, basic_window* const cond)

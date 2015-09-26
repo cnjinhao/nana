@@ -413,6 +413,7 @@ namespace detail
 							::DispatchMessage(&msg);
 						}
 
+						wd_manager.call_safe_place(tid);
 						wd_manager.remove_trash_handle(tid);
 						if (msg.message == WM_DESTROY  && msg.hwnd == native_handle)
 							break;
@@ -432,6 +433,7 @@ namespace detail
 						::DispatchMessage(&msg);
 					}
 
+					wd_manager.call_safe_place(tid);
 					wd_manager.remove_trash_handle(tid);
 				}//end while
 
