@@ -1491,7 +1491,60 @@ namespace nana
 					impl_->data.trigger_ptr = this;
 					impl_->data.renderer = nana::pat::cloneable<renderer_interface>(internal_renderer());
 					impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer());
-					impl_->adjust.timer.elapse(std::bind(&trigger::_m_deal_adjust, this));
+					//impl_->adjust.timer.elapse(std::bind(&trigger::_m_deal_adjust, this));	//deprecated
+					impl_->adjust.timer.elapse([this]
+					{
+						auto & adjust = impl_->adjust;
+						if (adjust.scroll_timestamp && (nana::system::timestamp() - adjust.scroll_timestamp >= 500))
+						{
+							if (0 == adjust.offset_x_adjust)
+							{
+								if (!impl_->make_adjust(adjust.node ? adjust.node : impl_->shape.first, 1))
+								{
+									adjust.offset_x_adjust = 0;
+									adjust.node = nullptr;
+									adjust.scroll_timestamp = 0;
+									adjust.timer.stop();
+									return;
+								}
+							}
+
+							auto & shape = impl_->shape;
+							const int delta = 5;
+							int old = shape.offset_x;
+
+							if (shape.offset_x < adjust.offset_x_adjust)
+							{
+								shape.offset_x += delta;
+								if (shape.offset_x > adjust.offset_x_adjust)
+									shape.offset_x = adjust.offset_x_adjust;
+							}
+							else if (shape.offset_x > adjust.offset_x_adjust)
+							{
+								shape.offset_x -= delta;
+								if (shape.offset_x < adjust.offset_x_adjust)
+									shape.offset_x = adjust.offset_x_adjust;
+							}
+
+							impl_->draw(false);
+							API::update_window(impl_->data.widget_ptr->handle());
+
+							if (impl_->node_state.tooltip)
+							{
+								nana::point pos = impl_->node_state.tooltip->pos();
+								impl_->node_state.tooltip->move(pos.x - shape.offset_x + old, pos.y);
+							}
+
+							if (shape.offset_x == adjust.offset_x_adjust)
+							{
+								adjust.offset_x_adjust = 0;
+								adjust.node = nullptr;
+								adjust.scroll_timestamp = 0;
+								adjust.timer.stop();
+							}
+						}
+					});
+
 					impl_->adjust.timer.interval(16);
 					impl_->adjust.timer.start();
 				}
@@ -2099,7 +2152,8 @@ namespace nana
 					}
 				}
 
-				void trigger::_m_deal_adjust()
+				/*
+				void trigger::_m_deal_adjust()	//deprecated
 				{
 					auto & adjust = impl_->adjust;
 					if(adjust.scroll_timestamp && (nana::system::timestamp() - adjust.scroll_timestamp >= 500))
@@ -2151,6 +2205,7 @@ namespace nana
 						}
 					}
 				}
+				//*/
 			//end class trigger
 		}//end namespace treebox
 	}//end namespace drawerbase

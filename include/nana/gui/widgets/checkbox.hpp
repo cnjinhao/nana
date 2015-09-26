@@ -88,8 +88,8 @@ namespace drawerbase
 		std::size_t checked() const;       ///< Retrieves the index of the checkbox which is checked.
 		std::size_t size() const;
 	private:
-		void _m_checked(const arg_click&);
-		void _m_destroy(const arg_destroy&);
+		//void _m_checked(const arg_click&);	//deprecated
+		//void _m_destroy(const arg_destroy&);	//deprecated
 	private:
 		std::vector<element_tag> ui_container_;
 	};

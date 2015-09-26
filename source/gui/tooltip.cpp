@@ -147,7 +147,6 @@ namespace nana
 					timer_.reset();
 					this->close();
 				}
-
 			private:
 				timer timer_;
 				nana::label label_;
@@ -256,7 +255,8 @@ namespace nana
 						instance(true);
 				}
 			private:
-				void _m_enter(const arg_mouse& arg)
+				/*
+				void _m_enter(const arg_mouse& arg)	//deprecated
 				{
 					pair_t & pr = _m_get(arg.window_handle);
 					if(pr.second.size())
@@ -264,16 +264,21 @@ namespace nana
 						this->show(pr.second);
 					}
 				}
+				*/
 
-				void _m_leave(const arg_mouse&)
+				/*
+				void _m_leave(const arg_mouse&)	//deprecated
 				{
 					close();
 				}
+				*/
 
-				void _m_destroy(const arg_destroy& arg)
+				/*
+				void _m_destroy(const arg_destroy& arg)	//deprecated
 				{
 					_m_untip(arg.window_handle);
 				}
+				*/
 
 				void _m_untip(window wd)
 				{
@@ -303,15 +308,21 @@ namespace nana
 
 					auto & events = API::events(wd);
 					events.mouse_enter.connect([this](const arg_mouse& arg){
-						_m_enter(arg);
+						auto & pr = _m_get(arg.window_handle);
+						if (pr.second.size())
+							this->show(pr.second);
 					});
 
-					auto leave_fn = std::bind(&controller::_m_leave, this, std::placeholders::_1);
+					//auto leave_fn = std::bind(&controller::_m_leave, this, std::placeholders::_1);	//deprecated
+
+					auto leave_fn = [this]{
+						this->close();
+					};
 					events.mouse_leave.connect(leave_fn);
 					events.mouse_down.connect(leave_fn);
 
 					events.destroy.connect([this](const arg_destroy& arg){
-						_m_destroy(arg);
+						_m_untip(arg.window_handle);
 					});
 
 					cont_.emplace_back(wd, nana::string());

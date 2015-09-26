@@ -213,8 +213,35 @@ namespace checkbox
 			element_tag el;
 
 			el.uiobj = &uiobj;
-			el.eh_checked = uiobj.events().click.connect_unignorable(std::bind(&radio_group::_m_checked, this, std::placeholders::_1), true);
-			el.eh_destroy = uiobj.events().destroy.connect_unignorable(std::bind(&radio_group::_m_destroy, this, std::placeholders::_1));
+			//el.eh_checked = uiobj.events().click.connect_unignorable(std::bind(&radio_group::_m_checked, this, std::placeholders::_1), true);	//deprecated
+			el.eh_checked = uiobj.events().click.connect_unignorable([this](const arg_click& arg)
+			{
+				for (auto & i : ui_container_)
+					i.uiobj->check(arg.window_handle == i.uiobj->handle());
+			}, true);
+
+			//el.eh_destroy = uiobj.events().destroy.connect_unignorable(std::bind(&radio_group::_m_destroy, this, std::placeholders::_1));	//deprecated
+			el.eh_destroy = uiobj.events().destroy.connect_unignorable([this](const arg_destroy& arg)
+			{
+				/*
+				auto i = std::find_if(ui_container_.begin(), ui_container_.end(), [&arg](decltype(*ui_container_.begin()) & x)
+				{
+					return (arg.window_handle == x.uiobj->handle());
+				});
+				if (i != ui_container_.end())
+					ui_container_.erase(i);
+				*/
+
+				for (auto i = ui_container_.begin(); i != ui_container_.end(); ++i)
+				{
+					if (arg.window_handle == i->uiobj->handle())
+					{
+						ui_container_.erase(i);
+						return;
+					}
+				}
+			});
+
 			ui_container_.push_back(el);
 		}
 
@@ -231,14 +258,16 @@ namespace checkbox
 		{
 			return ui_container_.size();
 		}
-
-		void radio_group::_m_checked(const arg_click& arg)
+		/*
+		void radio_group::_m_checked(const arg_click& arg)	//deprecated
 		{
 			for (auto & i : ui_container_)
 				i.uiobj->check(arg.window_handle == i.uiobj->handle());
 		}
+		*/
 
-		void radio_group::_m_destroy(const arg_destroy& arg)
+		/*
+		void radio_group::_m_destroy(const arg_destroy& arg)	//deprecated
 		{
 			auto i = std::find_if(ui_container_.begin(), ui_container_.end(), [&arg](decltype(*ui_container_.begin()) & x)
 					{
@@ -247,5 +276,6 @@ namespace checkbox
 			if(i != ui_container_.end())
 				ui_container_.erase(i);
 		}
+		*/
 	//end class radio_group
 }//end namespace nana

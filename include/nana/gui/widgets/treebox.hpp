@@ -167,7 +167,7 @@ namespace nana
 				void key_press(graph_reference, const arg_keyboard&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
-				void _m_deal_adjust();
+				//void _m_deal_adjust();	//deprecated
 			private:
 				implement * const impl_;
 			}; //end class trigger

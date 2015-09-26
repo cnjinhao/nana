@@ -767,20 +767,28 @@ namespace nana
 				{
 					menulister_.clear();
 
-					auto f = std::bind(&layouter::_m_click_menulister, this, std::placeholders::_1);
+					//auto f = std::bind(&layouter::_m_click_menulister, this, std::placeholders::_1);	//deprecated
+					auto fn = [this](::nana::menu::item_proxy& ipx)
+					{
+						if (this->activate(ipx.index()))
+							API::refresh_window(basis_.wd);
+					};
+
 					for(auto & m : list_)
-						menulister_.append(m.text, f);
+						menulister_.append(m.text, fn);
 
 					auto r = toolbox_.area(toolbox_.ButtonList, basis_.graph->height());
 					r.x += _m_toolbox_pos();
 					menulister_.popup(basis_.wd, r.x, r.bottom());
 				}
 
-				void _m_click_menulister(nana::menu::item_proxy& ip)
+				/*
+				void _m_click_menulister(nana::menu::item_proxy& ip)	//deprecated
 				{
 					if(this->activate(ip.index()))
 						API::refresh_window(basis_.wd);
 				}
+				*/
 
 				//the begin pos of toolbox
 				int _m_toolbox_pos() const
