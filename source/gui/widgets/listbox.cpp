@@ -1945,10 +1945,7 @@ namespace nana
 					}
 					scroll_y_dpl_refresh() ;
 				}
-				void scroll_y_rel(const index_pair& pos_rel)
-				{
-					scroll_y_abs(lister.relative_pair(pos_rel) );
-				}
+
 				/// directly set a tested relative display pos 
 				void set_scroll_y_dpl(const index_pair& pos_dpl)
 				{
@@ -2037,7 +2034,7 @@ namespace nana
 					if(scroll.v.empty() == false)
 					{
 						unsigned height = 2 + (scroll.h.empty() ? 0 : scroll.scale);
-						if(height >= graph->width()) return;
+						if(height >= graph->height()) return;
 						scroll.v.amount(lister.the_number_of_expanded());
 						scroll.v.range(number_of_lister_items(false));
                         size_type off = lister.distance({0,0}, scroll.offset_y_dpl );
