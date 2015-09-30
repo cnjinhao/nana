@@ -2668,12 +2668,10 @@ namespace nana
 					{
 						unsigned item_pixels = 0;
 						auto item_x = essence_->header.item_pos(i, &item_pixels);
-						
-						int midpos = item_x + static_cast<int>(item_pixels / 2);
 
 						//Get the item pos
 						//if mouse pos is at left of an item middle, the pos of itself otherwise the pos of the next.
-						place_front = (x <= midpos);
+						place_front = (x <= (item_x + static_cast<int>(item_pixels / 2)));
 						x = (place_front ? item_x : essence_->header.item_pos(essence_->header.neighbor(i, false), nullptr));
 
 						if(i != npos)
@@ -2687,7 +2685,6 @@ namespace nana
 				template<typename Item>
 				void _m_draw_header_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::color& fgcolor, const Item& item, item_state state)
 				{
-					essence_->scheme_ptr->header_bgcolor.get_color();
 					::nana::color bgcolor;
 					switch(state)
 					{
@@ -2866,8 +2863,9 @@ namespace nana
 
 					facade<element::arrow> arrow("double");
 					arrow.direction(categ.expand ? ::nana::direction::north : ::nana::direction::south);
-					::nana::rectangle arrow_r{ x + 5, y + static_cast<int>(essence_->item_size - 16) / 2, 16, 16 };
-					arrow.draw(*graph, {}, txt_color, arrow_r, element_state::normal);
+					arrow.draw(	*graph, {}, txt_color, 
+								{ x + 5, y + static_cast<int>(essence_->item_size - 16) / 2, 16, 16 },
+								element_state::normal);
 
 					graph->string({ x + 20, y + txtoff }, categ.text, txt_color);
 
@@ -3583,8 +3581,6 @@ namespace nana
 				{
 					if (ess)
 					{
-						//auto i = ess_->lister.cat_container().begin();
-						//std::advance(i, pos.cat);
 						auto i = ess_->lister.get(pos.cat);
 						cat_ = &(*i);       // what is pos is a cat?
 					}
