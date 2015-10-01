@@ -185,9 +185,7 @@ namespace nana
 			public:
 				trigger();
 				~trigger();
-				//essence_t& essence();	//deprecated
 				essence_t& essence() const;
-				void draw();
 			private:
 				void _m_draw_border();
 			private:
