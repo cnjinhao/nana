@@ -90,7 +90,11 @@ namespace nana
 
 					metrics_.scroll_pos = pos;
 					auto value_max = metrics_.peak - metrics_.range;
-					metrics_.value = pos * value_max / scroll_area;
+
+					//Check scroll_area to avoiding division by zero.
+					if (scroll_area)
+						metrics_.value = pos * value_max / scroll_area;
+
 					if(metrics_.value < value_max)
 					{
 						int selfpos = static_cast<int>(metrics_.value * scroll_area / value_max);
