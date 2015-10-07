@@ -65,7 +65,6 @@ namespace nana
 		{
 			trigger_t tg;
 			tg.wd = wd;
-			//auto fn = std::bind(&dragger_impl_t::_m_trace, this, std::placeholders::_1);	//deprecated
 			auto fn = [this](const arg_mouse& arg)
 			{
 				switch (arg.evt_code)
@@ -176,67 +175,6 @@ namespace nana
 			if (pos.y < restr_area.y)
 				pos.y = restr_area.y;
 		}
-		/*
-		void _m_trace(const arg_mouse& arg)	//deprecated
-		{
-			switch(arg.evt_code)
-			{
-			case event_code::mouse_down:
-				dragging_ = true;
-				API::capture_window(arg.window_handle, true);
-				origin_ = API::cursor_position();
-				for(auto & t : targets_)
-				{
-					t.origin = API::window_position(t.wd);
-					window owner = API::get_owner_window(t.wd);
-					if(owner)
-						API::calc_screen_point(owner, t.origin);
-				}
-				break;
-			case event_code::mouse_move:
-				if(dragging_ && arg.left_button)
-				{
-					auto pos = API::cursor_position();
-					pos -= origin_;
-
-					for(auto & t : targets_)
-					{
-						if(API::is_window_zoomed(t.wd, true) == false)
-						{
-							auto owner = API::get_owner_window(t.wd);
-							auto wdps = t.origin;
-							if (owner)
-								API::calc_window_point(owner, wdps);
-
-							switch (t.move_direction)
-							{
-							case nana::arrange::horizontal:
-								wdps.x += pos.x;
-								break;
-							case nana::arrange::vertical:
-								wdps.y += pos.y;
-								break;
-							default:
-								wdps += pos;
-							}
-
-							if (!t.restrict_area.empty())
-								_m_check_restrict_area(wdps, API::window_size(t.wd), t.restrict_area);
-
-							API::move_window(t.wd, wdps);
-						}
-					}
-				}
-				break;
-			case event_code::mouse_up:
-				API::capture_window(arg.window_handle, false);
-				dragging_ = false;
-				break;
-			default:
-				break;
-			}
-		}
-		*/
 	private:
 		bool dragging_;
 		nana::point origin_;

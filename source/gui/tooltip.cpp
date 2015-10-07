@@ -255,31 +255,6 @@ namespace nana
 						instance(true);
 				}
 			private:
-				/*
-				void _m_enter(const arg_mouse& arg)	//deprecated
-				{
-					pair_t & pr = _m_get(arg.window_handle);
-					if(pr.second.size())
-					{
-						this->show(pr.second);
-					}
-				}
-				*/
-
-				/*
-				void _m_leave(const arg_mouse&)	//deprecated
-				{
-					close();
-				}
-				*/
-
-				/*
-				void _m_destroy(const arg_destroy& arg)	//deprecated
-				{
-					_m_untip(arg.window_handle);
-				}
-				*/
-
 				void _m_untip(window wd)
 				{
 					for (auto i = cont_.begin(); i != cont_.end(); ++i)
@@ -312,8 +287,6 @@ namespace nana
 						if (pr.second.size())
 							this->show(pr.second);
 					});
-
-					//auto leave_fn = std::bind(&controller::_m_leave, this, std::placeholders::_1);	//deprecated
 
 					auto leave_fn = [this]{
 						this->close();

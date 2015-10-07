@@ -103,13 +103,13 @@ namespace nana
 					switch(sta)
 					{
 					case item_renderer::highlight:
-						clr = { colors::white }; break;
+						clr = colors::white; break;
 					case item_renderer::press:
-						clr = { 0xA0, 0xA0, 0xA0 }; break;
+						clr = static_cast<color_rgb>(0xA0A0A0); break;
 					case item_renderer::disable:
-						clr = { 0x80, 0x80, 0x80 }; break;
+						clr = static_cast<color_rgb>(0x808080); break;
 					default:
-						clr = { 0xF0, 0xF0, 0xF0 };
+						clr = static_cast<color_rgb>(0xF0F0F0);
 					}
 					graph.rectangle(r, true, bgcolor_);
 					facade<element::cross> cross;
@@ -121,7 +121,7 @@ namespace nana
 					facade<element::x_icon> x_icon;
 					x_icon.draw(graph, {}, colors::black, { r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
 					if(item_renderer::highlight == sta)
-						graph.rectangle(r, false, {0xa0, 0xa0, 0xa0});
+						graph.rectangle(r, false, static_cast<color_rgb>(0xa0a0a0));
 				}
 
 				virtual void close_fly(graph_reference graph, const nana::rectangle& r, bool active, state_t sta)
@@ -131,8 +131,8 @@ namespace nana
 
 					if (sta == item_renderer::highlight)
 					{
-						::nana::color bgcolor{ 0xCC, 0xD2, 0xDD };
-						::nana::color rect_clr{0x9d, 0xa3, 0xab};
+						::nana::color bgcolor{ static_cast<color_rgb>(0xCCD2DD) };
+						::nana::color rect_clr{ static_cast<color_rgb>(0x9da3ab) };
 						graph.round_rectangle(r, 1, 1, rect_clr, false, {});
 						nana::rectangle draw_r(r);
 						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.8));
@@ -140,7 +140,7 @@ namespace nana
 						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.2));
 					}
 					else if (!active)
-						clr = ::nana::color{ 0x92, 0x99, 0xA4 };
+						clr = static_cast<color_rgb>(0x9299a4);
 
 					facade<element::x_icon> x_icon;
 					x_icon.draw(graph, {}, colors::black, { r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
@@ -766,8 +766,6 @@ namespace nana
 				void _m_open_menulister()
 				{
 					menulister_.clear();
-
-					//auto f = std::bind(&layouter::_m_click_menulister, this, std::placeholders::_1);	//deprecated
 					auto fn = [this](::nana::menu::item_proxy& ipx)
 					{
 						if (this->activate(ipx.index()))
@@ -781,14 +779,6 @@ namespace nana
 					r.x += _m_toolbox_pos();
 					menulister_.popup(basis_.wd, r.x, r.bottom());
 				}
-
-				/*
-				void _m_click_menulister(nana::menu::item_proxy& ip)	//deprecated
-				{
-					if(this->activate(ip.index()))
-						API::refresh_window(basis_.wd);
-				}
-				*/
 
 				//the begin pos of toolbox
 				int _m_toolbox_pos() const
@@ -1018,12 +1008,12 @@ namespace nana
 						int x = _m_itembar_right();
 						if (x > 0)
 						{
-							basis_.graph->line({ x - 2, 0 }, { x - 2, bottom }, { 0x80, 0x80, 0x80 });
-							basis_.graph->line({ x - 1, 0 }, { x - 1, bottom }, {0xf0, 0xf0, 0xf0});
+							basis_.graph->line({ x - 2, 0 }, { x - 2, bottom }, static_cast<color_rgb>(0x808080));
+							basis_.graph->line({ x - 1, 0 }, { x - 1, bottom }, static_cast<color_rgb>(0xf0f0f0));
 						}
 					}
 
-					basis_.graph->set_color({ 0x80, 0x80, 0x80 });
+					basis_.graph->set_color(static_cast<color_rgb>(0x808080));
 
 					int right = static_cast<int>(basis_.graph->width());
 					int end = active_m.r.x + static_cast<int>(active_m.r.width);
@@ -1362,12 +1352,6 @@ namespace nana
 					{
 						return widget_;
 					}
-					/*
-					::nana::dev::widget_traits<widget>::scheme_type & scheme()	//deprecated
-					{
-						return API::scheme(*widget_);
-					}
-					*/
 
 					std::forward_list<item>& items()
 					{

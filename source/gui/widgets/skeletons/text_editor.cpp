@@ -217,13 +217,13 @@ namespace nana{	namespace widgets
 					editor_.select_.a = sel_a_;
 					editor_.select_.b = sel_b_;
 					editor_.points_.caret = pos_;
-					editor_._m_move_select(false);
-					return;
 				}
-
-				editor_.select_.a = dest_a_;
-				editor_.select_.b = dest_b_;
-				editor_.points_.caret = sel_a_;
+				else
+				{
+					editor_.select_.a = dest_a_;
+					editor_.select_.b = dest_b_;
+					editor_.points_.caret = sel_a_;
+				}
 				editor_._m_move_select(false);
 			}
 
@@ -1331,12 +1331,12 @@ namespace nana{	namespace widgets
 
 		void text_editor::erase_keyword(const ::nana::string& kw)
 		{
-			auto i = std::find_if(keywords_->kwbase.begin(), keywords_->kwbase.end(), [&kw](keyword_desc& kd){
-				return (kd.text == kw);
-			});
-
-			if (i != keywords_->kwbase.end())
-				keywords_->kwbase.erase(i);
+			for (auto i = keywords_->kwbase.begin(); i != keywords_->kwbase.end(); ++i)
+				if (i->text == kw)
+				{
+					keywords_->kwbase.erase(i);
+					return;
+				}
 		}
 
 		void text_editor::set_accept(std::function<bool(char_type)> pred)

@@ -16,7 +16,6 @@
 #include <vector>
 #include "general_events.hpp"
 #include <nana/paint/graphics.hpp>
-//#include <nana/paint/image.hpp>	//deprecated
 #include <functional>
 
 namespace nana

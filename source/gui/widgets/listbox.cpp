@@ -920,12 +920,6 @@ namespace nana
 					 
 					return   npos ;
 				}
-				/*
-				category_t& at(std::size_t cat_pos)
-				{
-					return *(_m_at(cat_pos));
-				}
-				*/
 
 				category_t::container::value_type& at_abs(const index_pair& pos)
 				{

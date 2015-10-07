@@ -390,19 +390,6 @@ namespace nana
 		std::size_t selected() const;
 		void erase(std::size_t pos, bool close_attached = true);
 	};
-
-	/*
-	namespace dev
-	{
-		/// Traits for widget classes
-		template<>
-		struct widget_traits<tabbar_lite>	//deprecated
-		{
-			using event_type = drawerbase::tabbar_lite::events;
-			using scheme_type = ::nana::widget_colors;
-		};
-	}
-	*/
 }
 
 #endif

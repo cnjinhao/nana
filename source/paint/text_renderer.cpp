@@ -118,22 +118,9 @@ namespace nana
 			{
 				graphics & graph;
 				int x, endpos;
-				//::nana::color fgcolor;	//deprecated
 				unsigned omitted_pixels;
 				nana::unicode_bidi bidi;
 				std::vector<nana::unicode_bidi::entity> reordered;
-
-				/*	//deprecated
-				draw_string_omitted(graphics& graph, int x, int endpos, const ::nana::color& fgcolor, bool omitted)
-					: graph(graph), x(x), endpos(endpos), fgcolor(fgcolor)
-				{
-					omitted_pixels = (omitted ? graph.text_extent_size(STR("..."), 3).width : 0);
-					if(endpos - x > static_cast<int>(omitted_pixels))
-						this->endpos -= omitted_pixels;
-					else
-						this->endpos = x;
-				}
-				*/
 
 				draw_string_omitted(graphics& graph, int x, int endpos, bool omitted)
 					: graph(graph), x(x), endpos(endpos)
@@ -171,7 +158,7 @@ namespace nana
 							nana::paint::graphics dum_graph({ r.width, r.height });
 
 							dum_graph.bitblt(r, graph, pos);
-							//dum_graph.set_text_color(fgcolor);	//deprecated
+
 							dum_graph.set_text_color(graph.palette(true));
 							dum_graph.string({}, i.begin, len);
 

@@ -193,12 +193,11 @@ namespace nana
 					if (str.empty())
 						return true;
 
-					auto i = std::find_if(texts_.cbegin(), texts_.cend(), [&str](const std::wstring& value)
-					{
-						return (value.find(str) != value.npos);
-					});
+					for (auto i = texts_.cbegin(); i != texts_.cend(); ++i)
+						if (i->find(str) != str.npos)
+							return false;
 
-					return (i != texts_.cend());
+					return true;
 				}
 
 				void spin(bool increase) override
