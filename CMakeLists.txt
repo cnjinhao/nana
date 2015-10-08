@@ -27,9 +27,9 @@ if(BIICODE)
     endif()
 
     # set compile  flags
-    if(CMAKE_COMPILER_IS_GNUCXX)
+    if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-    endif(CMAKE_COMPILER_IS_GNUCXX)
+    endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
     # we'll use the default config file so we can iliminate the following macro definitions
     if(MSVC)
@@ -123,7 +123,7 @@ execute_process(COMMAND ${CMAKE_COMMAND}
     ${CMAKE_CURRENT_SOURCE_DIR}/include/nana/)
     
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 set(NANA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
