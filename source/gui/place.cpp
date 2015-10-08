@@ -2436,9 +2436,9 @@ namespace nana
 				std::vector<std::unique_ptr<division>> adjusted_children;
 				for (auto & child : children)
 				{
-					//ignores weight if it is a dockpane
 					auto dockpn = new div_dockpane(std::move(child->name), this, child->dir);
 					dockpn->div_owner = child->div_owner;
+					dockpn->weight = child->weight;
 					adjusted_children.emplace_back(dockpn);
 				}
 
