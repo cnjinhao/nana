@@ -33,3 +33,4 @@ _ReSharper*/
 *.suo
 *.sdf
 lib/
+*.DS_Store

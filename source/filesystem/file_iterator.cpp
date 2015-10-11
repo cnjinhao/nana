@@ -28,7 +28,7 @@ namespace filesystem
                 directory((FILE_ATTRIBUTE_DIRECTORY & wfd.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY)
 		{
         }
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		fileinfo::fileinfo(const nana::string& name, const struct stat& fst)
 			:name(name), size(fst.st_size), directory(0 != S_ISDIR(fst.st_mode))
 		{

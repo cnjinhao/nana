@@ -15,7 +15,7 @@
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 	#include PLATFORM_SPEC_HPP
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include <time.h>
 	#include <errno.h>
 	#include <unistd.h>
@@ -34,7 +34,7 @@ namespace system
 	{
 #if defined(NANA_WINDOWS)
 		::Sleep(milliseconds);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		struct timespec timeOut, remains;
 		timeOut.tv_sec = milliseconds / 1000;
 		timeOut.tv_nsec = (milliseconds % 1000) * 1000000;
@@ -56,6 +56,8 @@ namespace system
 		return ::GetCurrentThreadId();
 #elif defined(NANA_LINUX)
 		return ::syscall(__NR_gettid);
+#elif defined(NANA_MACOS)
+		return ::syscall(SYS_thread_selfid);
 #endif
 	}
 
@@ -63,7 +65,7 @@ namespace system
 	{
 #if defined(NANA_WINDOWS)
 		return ::GetTickCount();
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		struct timeval tv;
 		::gettimeofday(&tv, 0);
 		return (tv.tv_sec * 1000 + tv.tv_usec / 1000);
@@ -88,7 +90,7 @@ namespace system
 		}
 
 		return (::GetAsyncKeyState(button) != 0);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		return false;
 #endif
 	}
@@ -109,7 +111,7 @@ namespace system
 			nana::detail::platform_spec::co_initializer co_init;
 			::ShellExecute(0, STR("open"), url.c_str(), 0, 0, SW_SHOWNORMAL);
 		}
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 #endif
 	}
 }//end namespace system

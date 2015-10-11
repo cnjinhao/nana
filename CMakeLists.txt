@@ -19,11 +19,14 @@ if(BIICODE)
     if(WIN32)
         file(GLOB_RECURSE platform_files "*/detail/win32/*")
         list(APPEND BII_LIB_SRC ${platform_files})
+    elseif(APPLE)
+	file(GLOB_RECURSE platform_files "*/detail/macos_X11/*")
+        list(APPEND BII_LIB_SRC ${platform_files})
     elseif(UNIX)
         file(GLOB_RECURSE platform_files "*/detail/linux_X11/*")
         list(APPEND BII_LIB_SRC ${platform_files})
     else()
-        message(FATAL_ERROR "Only Windows and Unix are supported for the moment")
+        message(FATAL_ERROR "Only Windows and Unix are supported for the moment (Mac OS is experimental)")
     endif()
 
     # set compile  flags
@@ -61,7 +64,13 @@ if(WIN32)
 		endif()
 	endif()
 endif()
-if(UNIX)
+if(APPLE)
+	add_definitions(-DNANA_MACOS)
+	add_definitions(-DNANA_X11)
+	add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/macos_X11/platform_spec.hpp>)
+	add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
+	include_directories(/opt/X11/include/)
+elseif(UNIX)
 	add_definitions(-DNANA_LINUX)
 	add_definitions(-DNANA_X11)
 	add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/linux_X11/platform_spec.hpp>)
@@ -133,8 +142,10 @@ include_directories(${NANA_INCLUDE_DIR})
 aux_source_directory(${NANA_SOURCE_DIR} NANA_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/detail NANA_DETAIL_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/filesystem NANA_FILESYSTEM_SOURCE)
+if(NOT APPLE)
 aux_source_directory(${NANA_SOURCE_DIR}/audio NANA_AUDIO_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/audio/detail NANA_AUDIO_DETAIL_SOURCE)
+endif()
 aux_source_directory(${NANA_SOURCE_DIR}/gui NANA_GUI_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/gui/detail NANA_GUI_DETAIL_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/gui/widgets NANA_GUI_WIDGETS_SOURCE)
@@ -147,8 +158,10 @@ aux_source_directory(${NANA_SOURCE_DIR}/threads NANA_THREADS_SOURCE)
 add_library(${PROJECT_NAME} ${NANA_SOURCE}
                             ${NANA_DETAIL_SOURCE}
                             ${NANA_FILESYSTEM_SOURCE}
+#if(NOT APPLE)
                             ${NANA_AUDIO_SOURCE}
                             ${NANA_AUDIO_DETAIL_SOURCE}
+#endif
                             ${NANA_GUI_SOURCE}
                             ${NANA_GUI_DETAIL_SOURCE}
                             ${NANA_GUI_WIDGETS_SOURCE}
@@ -156,10 +169,19 @@ add_library(${PROJECT_NAME} ${NANA_SOURCE}
                             ${NANA_PAINT_SOURCE}
                             ${NANA_PAINT_DETAIL_SOURCE}
                             ${NANA_SYSTEM_SOURCE}
-                            ${NANA_THREADS_SOURCE})                        
+                            ${NANA_THREADS_SOURCE})       
+
+#if(APPLE)
+target_link_libraries(${PROJECT_NAME} -L/opt/X11/lib/ -lX11 -lXft -lpng -liconv)
+#endif()
+                 
 install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib)
 install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
+
+add_executable(nana_test test.cpp)
+set_property( TARGET nana_test PROPERTY CXX_STANDARD 14 )
+target_link_libraries(nana_test ${PROJECT_NAME})

@@ -675,7 +675,7 @@ namespace detail
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
 			{
 				//Copy the root buffer that wd specified into DeviceContext
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 				wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
 #elif defined(NANA_WINDOWS)
 				if(nana::system::this_thread_id() == wd->thread_id)

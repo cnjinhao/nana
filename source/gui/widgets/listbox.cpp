@@ -901,7 +901,7 @@ namespace nana
                 /// add a new cat created at "pos" and return a ref to it 
 				category_t* create_cat(std::size_t pos, nana::string&& text)
 				{
-#if defined(NANA_LINUX) || defined(NANA_MINGW)
+#if defined(NANA_LINUX) || defined(NANA_MACOS) || defined(NANA_MINGW)
 					//Call begin instead of cbegin, because the first parameter
 					//of emplace is not const_iterator in GCC's C++ standard
 					//library implementation.

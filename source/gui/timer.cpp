@@ -26,7 +26,7 @@
 
 #if defined(NANA_WINDOWS)
 #include <windows.h>
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 #include PLATFORM_SPEC_HPP
 #include <nana/system/platform.hpp>
 #endif
