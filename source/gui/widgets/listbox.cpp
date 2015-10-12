@@ -297,7 +297,7 @@ namespace nana
 
 				return *this;
 			}
-			
+
 			iresolver::iresolver(const std::vector<cell>& cl)
 				: cells_(cl)
 			{}
@@ -317,7 +317,7 @@ namespace nana
 			//end class iresolver/oresolver
 
             /// Essence of the columns Header
-			class es_header   
+			class es_header
 			{
 			public:
 
@@ -339,10 +339,10 @@ namespace nana
 
                 export_options::columns_indexs all_headers(bool only_visibles) const
                 {
-                    export_options::columns_indexs	idx;				
+                    export_options::columns_indexs	idx;
 					for(const auto &header : cont())
 					{
-						if(header.visible || !only_visibles)  
+						if(header.visible || !only_visibles)
 							idx.push_back(header.index);
 					}
                     return idx;
@@ -350,13 +350,13 @@ namespace nana
 
                 nana::string to_string(const export_options& exp_opt) const
                 {
-                    nana::string head_str; 
+                    nana::string head_str;
                     bool first{true};
                     for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
 					{
                         if(first)
                             first=false;
-                        else 
+                        else
                             head_str += exp_opt.sep;
 
 	        			head_str += column_ref(exp_opt.columns_order[idx]).text;
@@ -668,7 +668,7 @@ namespace nana
 				category_t(nana::string str)
 					:text(std::move(str))
 				{}
-				
+
 				bool selected() const
 				{
 					for (auto & m : items)
@@ -723,7 +723,7 @@ namespace nana
 					return nullptr;
 				}
                 nana::string to_string(const export_options& exp_opt) const;
-                
+
                 /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
                 void sort()
 				{
@@ -872,7 +872,7 @@ namespace nana
 					list_.back().key_ptr = ptr;
 					return &list_.back();
 				}
-                /// add a new cat created at "pos" and return a ref to it 
+                /// add a new cat created at "pos" and return a ref to it
 				category_t* create_cat(std::size_t pos, nana::string&& text)
 				{
 					return &(*list_.emplace(this->get(pos), std::move(text)));
@@ -917,7 +917,7 @@ namespace nana
                     for (size_type i=0; i<catobj.sorted.size();++i)
                         if (pos==catobj.sorted[i])
                             return i;
-					 
+
 					return   npos ;
 				}
 
@@ -966,7 +966,7 @@ namespace nana
 				index_pair advance(index_pair from, size_type offset)   //    <------------- index
 				{
                     index_pair dpos{npos, npos};
-					if(from.cat >= size_categ() || (from.item != npos && from.item >= size_item(from.cat))) 
+					if(from.cat >= size_categ() || (from.item != npos && from.item >= size_item(from.cat)))
                         return dpos;
 
 					dpos  = from;
@@ -1293,7 +1293,7 @@ namespace nana
 					for(auto & cat : list_)
 					{
 						id.item = 0;
-						for(auto & m : cat.items)  
+						for(auto & m : cat.items)
 						{
 							if(m.flags.selected)
 								vec.push_back(id);  // absolute positions, no relative to display
@@ -1302,14 +1302,14 @@ namespace nana
 						++id.cat;
 					}
 				}
-                
+
                 index_pair find_first_selected()
                 {
 					index_pair id;
 					for(auto & cat : list_)
 					{
 						id.item = 0;
-						for(auto & m : cat.items)  
+						for(auto & m : cat.items)
 						{
 							if(m.flags.selected)
 								return id;  // absolute positions, no relative to display
@@ -1659,7 +1659,7 @@ namespace nana
 				///Translate relative position (position in display) into absolute position (original data order)
 				size_type absolute(const index_pair& display_pos) const
 				{
-					if(sorted_index_ == npos || display_pos.item == npos) 
+					if(sorted_index_ == npos || display_pos.item == npos)
 						return display_pos.item ;
 
 					auto & catobj = *get(display_pos.cat);
@@ -1674,11 +1674,11 @@ namespace nana
 					auto item_pos = absolute(display_pos);
 					return {item_pos != npos ? display_pos.cat : npos, item_pos};
 				}
-				
+
                 ///Translate absolute position (original data order) into relative position (position in display)
                 size_type relative(const index_pair& pos) const
 				{
-					if (sorted_index_ == npos) 
+					if (sorted_index_ == npos)
 						return pos.item ;
 
 					auto& catobj = *get(pos.cat);
@@ -1686,7 +1686,7 @@ namespace nana
 					for (size_type i=0; i<catobj.sorted.size();++i)
 						if (pos.item == catobj.sorted[i])
 							return i;
-					 
+
 					if (catobj.items.empty() && (pos == index_pair{ 0, 0 }))
 						return 0;
 
@@ -1698,7 +1698,7 @@ namespace nana
 					auto item_pos = relative(pos);
 					return {(item_pos != npos ? pos.cat : npos), item_pos};
 				}
-				
+
 				/// all arg are relative to display order, or all are absolute, but not mixed
 				bool forward(index_pair from, size_type offs, index_pair& item) const
 				{
@@ -1781,7 +1781,7 @@ namespace nana
 					}
 					return false;
 				}
-				
+
 				/// categories iterator
 				container::iterator get(size_type pos)
 				{
@@ -1792,7 +1792,7 @@ namespace nana
 					std::advance(i, pos);
 					return i;
 				}
-				
+
 				container::const_iterator get(size_type pos) const
 				{
 					if (pos >= list_.size())
@@ -1840,12 +1840,6 @@ namespace nana
 				unsigned suspension_width{0};
 
                 ::nana::listbox::export_options def_exp_options;
-
-                ::nana::listbox::export_options& def_export_options()
-                {
-			        return def_exp_options;
-                }
-
 
 				es_header header;
 				es_lister lister;  // we have at least one emty cat. the #0
@@ -1925,7 +1919,7 @@ namespace nana
 					scroll_y_dpl_refresh() ;
 				}
 
-				/// directly set a tested relative display pos 
+				/// directly set a tested relative display pos
 				void set_scroll_y_dpl(const index_pair& pos_dpl)
 				{
 					scroll.offset_y_dpl = pos_dpl;
@@ -1950,7 +1944,7 @@ namespace nana
                 {
                     if(      dpl_pos.cat <  scroll.offset_y_dpl.cat    // in prevoious cat    ---------------- up ----> we need to move
                         || ((dpl_pos.cat == scroll.offset_y_dpl.cat) && ( scroll.offset_y_dpl.item != npos)  // is our cat, where we are an item
-                                                                     && (dpl_pos.item == npos || dpl_pos.item <  scroll.offset_y_dpl.item))) 
+                                                                     && (dpl_pos.item == npos || dpl_pos.item <  scroll.offset_y_dpl.item)))
 					                                                                                    // problem!!!!!!
                     {
 						if(lister.expand(dpl_pos.cat) == false)
@@ -1960,7 +1954,7 @@ namespace nana
 							else
 								lister.expand(dpl_pos.cat, true);
 						}
-                        set_scroll_y_dpl(dpl_pos);     //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs 
+                        set_scroll_y_dpl(dpl_pos);     //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs
 					}
 					else
 					{
@@ -1969,7 +1963,7 @@ namespace nana
 						if(numbers > off) return;
 						index_pair n_off = lister.advance(scroll.offset_y_dpl, (off - numbers) + 1);
 
-						if(n_off.cat != npos)       //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs 
+						if(n_off.cat != npos)       //  <------------------------- set       scroll.offset_y_dpl   &     scroll.offset_y_abs
                             set_scroll_y_dpl(n_off);
 					}
 
@@ -1978,7 +1972,7 @@ namespace nana
 
                 void trace_item_abs( index_pair abs_pos )
                 {
-					if(abs_pos.item == npos && abs_pos.cat              == scroll.offset_y_abs.cat 
+					if(abs_pos.item == npos && abs_pos.cat              == scroll.offset_y_abs.cat
                                             && scroll.offset_y_abs.item == npos                      ) // if item==off y and is a cat
 						return;
 
@@ -2020,7 +2014,7 @@ namespace nana
 						scroll.v.value(off);
 					}
 				}
-                 
+
 				void adjust_scroll_life()  // at end call adjust_scroll_value();
 				{
 					internal_scope_guard lock;
@@ -2252,7 +2246,7 @@ namespace nana
 
 					if (target == scroll.offset_y_dpl)
 						return false;
-					
+
 					set_scroll_y_dpl ( target );
 					return true;
 				}
@@ -2465,10 +2459,10 @@ namespace nana
 
 						if (good(next_selected_dpl))
 						{
-							if (unselect_previous && !single_selection_ ) 
+							if (unselect_previous && !single_selection_ )
                                 select_for_all(false);
 
-                            /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
+                            /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected
                             item_proxy::from_display(ess_, next_selected_dpl).select(true);
 
                             if (trace_selected)
@@ -2482,7 +2476,7 @@ namespace nana
 
 			nana::string es_lister::to_string(const export_options& exp_opt) const
 			{
-				nana::string list_str; 
+				nana::string list_str;
 				bool first{true};
 				for(auto & cat: cat_container())
 				{
@@ -2509,8 +2503,7 @@ namespace nana
                     if (it.selected() != sel)
 						it.select(sel);
                 }
-
-                last_selected_abs = last_selected_dpl =  index_pair {cat, npos};
+                last_selected_abs = last_selected_dpl = index_pair{cat, npos};
 			}
 
 			class drawer_header_impl
@@ -2586,9 +2579,9 @@ namespace nana
 						const auto& item = essence_->header.column(item_spliter_);
 						//Resize the item specified by item_spliter_.
 						auto new_w = orig_item_width_ - (ref_xpos_ - pos.x);
-						if(static_cast<int>(item.pixels) != new_w)
+						if(item.pixels != new_w)
 						{
-							essence_->header.item_width(item_spliter_, (new_w < static_cast<int>(essence_->suspension_width + 20) ? essence_->suspension_width + 20 : new_w));
+							essence_->header.item_width(item_spliter_, (new_w < (essence_->suspension_width + 20) ? essence_->suspension_width + 20 : new_w));
 							new_w = essence_->header.pixels();
 							if(new_w < (rect.width + essence_->scroll.offset_x))
 								essence_->scroll.offset_x = (new_w > rect.width ? new_w - rect.width : 0);
@@ -2749,8 +2742,8 @@ namespace nana
 					unsigned header_w = essence_->header.pixels();
 					essence_->graph->set_color(bgcolor);
 					if(header_w - essence_->scroll.offset_x < rect.width)
-						essence_->graph->rectangle(rectangle{ point(rect.x + static_cast<int>(header_w)-essence_->scroll.offset_x,  rect.y), 
-                                                              size(static_cast<int>(rect.width)  + essence_->scroll.offset_x - static_cast<int>(header_w),  rect.height) }, 
+						essence_->graph->rectangle(rectangle{ point(rect.x + static_cast<int>(header_w)-essence_->scroll.offset_x,  rect.y),
+                                                              size(static_cast<int>(rect.width)  + essence_->scroll.offset_x - static_cast<int>(header_w),  rect.height) },
                                                     true);
 
 					es_lister & lister = essence_->lister;
@@ -2801,7 +2794,7 @@ namespace nana
 							_m_draw_item(*i_categ, item_index, x, y, txtoff, header_w, rect, subitems, bgcolor,fgcolor, state);
 							y += essence_->item_size;
 						}
-	
+
 						++i_categ;
 						++idx.cat;
 					}
@@ -2857,7 +2850,7 @@ namespace nana
 
 					facade<element::arrow> arrow("double");
 					arrow.direction(categ.expand ? ::nana::direction::north : ::nana::direction::south);
-					arrow.draw(	*graph, {}, txt_color, 
+					arrow.draw(	*graph, {}, txt_color,
 								{ x + 5, y + static_cast<int>(essence_->item_size - 16) / 2, 16, 16 },
 								element_state::normal);
 
@@ -2890,7 +2883,7 @@ namespace nana
 				{
 					auto & item = cat.items[item_pos.item];
 
-					if (item.flags.selected)                                    // fetch the "def" colors 
+					if (item.flags.selected)                                    // fetch the "def" colors
 						bgcolor = essence_->scheme_ptr->item_selected;
 					else if (!item.bgcolor.invisible())
 						bgcolor = item.bgcolor;
@@ -3043,7 +3036,7 @@ namespace nana
 										//The text is painted over the next subitem                // here beging the ...
 										int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);
 
-										graph->set_color(it_bgcolor);                                   // litter rect with the  item bg end ... 
+										graph->set_color(it_bgcolor);                                   // litter rect with the  item bg end ...
 										graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
 										graph->string(point{ xpos, y + 2 }, STR("..."));
 
@@ -3315,7 +3308,7 @@ namespace nana
 									if (arg.shift)
 										lister.select_display_range(lister.last_selected_abs , item_pos, sel);
 									else if (arg.ctrl)
-										sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();  
+										sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();
 									else
 										lister.select_for_all(false);	//cancel all selections
 								}
@@ -3325,7 +3318,7 @@ namespace nana
 								if(item_ptr)
 								{
 									item_ptr->flags.selected = sel;
-									index_pair last_selected(item_pos.cat, lister.absolute(item_pos)); 
+									index_pair last_selected(item_pos.cat, lister.absolute(item_pos));
 
 									arg_listbox arg{item_proxy{essence_, last_selected}, sel};
 									lister.wd_ptr()->events().selected.emit(arg);
@@ -3334,7 +3327,7 @@ namespace nana
 									{
 										lister.cancel_others_if_single_enabled(true, last_selected);
 										essence_->lister.last_selected_abs = last_selected;
-										
+
 									}
 									else if (essence_->lister.last_selected_abs == last_selected)
 										essence_->lister.last_selected_abs.set_both(npos);
@@ -3424,7 +3417,7 @@ namespace nana
 				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
 				{
 					if (essence_->pointer_where.first == essence_t::parts::header)
-						if (cursor::size_we == essence_->lister.wd_ptr()->cursor())	
+						if (cursor::size_we == essence_->lister.wd_ptr()->cursor())
                         {
  			               if (essence(). auto_width(drawer_header_->item_spliter() )) // ? in order
 			                   essence().update();
@@ -3471,7 +3464,7 @@ namespace nana
 					bool up = false;
 
                     if (essence_->lister.size_categ()==1 && essence_->lister.size_item(0)==0)
-                       return ; 
+                       return ;
 
 					switch(arg.key)
 					{
@@ -3494,7 +3487,7 @@ namespace nana
                     case keyboard::os_pagedown:
                     {
 					    auto& scrl = essence_->scroll.v;
-                        if (! scrl.make_page_scroll(!up)) 
+                        if (! scrl.make_page_scroll(!up))
                             return;
                         essence_->lister.select_for_all(false);
 
@@ -3504,7 +3497,7 @@ namespace nana
 
                         if (idx.is_item())
                            item_proxy::from_display(essence_, idx).select(true);
-                        else 
+                        else
                             if(!essence_->lister.single_selection())
 								essence_->lister.categ_selected(idx.cat, true);
 
@@ -3519,7 +3512,7 @@ namespace nana
                         index_pair frst{essence_->lister.first()};
                         if (frst.is_item())
                            item_proxy::from_display(essence_, frst).select(true);
-                        else 
+                        else
                             if(!essence_->lister.single_selection())
 								essence_->lister.categ_selected(frst.cat, true);
 
@@ -3545,13 +3538,13 @@ namespace nana
 					{
                     case keyboard::copy:
                     {
-                        export_options exp_opt {essence_->def_export_options()};  
+                        export_options exp_opt {essence_->def_exp_options};
                         exp_opt.columns_order = essence_->header.all_headers(true);
                         exp_opt.only_selected_items = true;
                         ::nana::system::dataexch().set(essence_->to_string(exp_opt));
                         return;
                     }
-                    case keyboard::select_all :  
+                    case keyboard::select_all :
                         essence_->lister.select_for_all(true);
 						refresh(graph);
 					    API::lazy_refresh();
@@ -3581,7 +3574,7 @@ namespace nana
 				}
 
                 /// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
-                item_proxy item_proxy::from_display(essence_t *ess, const index_pair &relative) 
+                item_proxy item_proxy::from_display(essence_t *ess, const index_pair &relative)
                 {
                     return item_proxy{ess, ess->lister.absolute_pair(relative)};
                 }
@@ -3619,7 +3612,7 @@ namespace nana
 					return cat_->items.at(pos_.item).flags.checked;
 				}
 
-                /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected 
+                /// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected
                 item_proxy & item_proxy::select(bool s)
 				{
 					auto & m = cat_->items.at(pos_.item);       // a ref to the real item     // what is pos is a cat?
@@ -3638,7 +3631,7 @@ namespace nana
 							ess_->lister.last_selected_abs.set_both(npos);
 
 					ess_->update();
-					
+
 					ess_->update();
 					return *this;
 				}
@@ -3719,7 +3712,7 @@ namespace nana
 				bool item_proxy::operator==(const char * s) const
 				{
 					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == nana::string(nana::charset(s)));
-					
+
 				}
 
 				bool item_proxy::operator==(const wchar_t * s) const
@@ -4257,8 +4250,8 @@ namespace nana
 			  // from current display position
 			  // move to the cat self if not in first cat
               // move to first item ?? if in first cat
-            ess.scroll_y_abs(ess.scroll_y_abs()); 
- 
+            ess.scroll_y_abs(ess.scroll_y_abs());
+
 			ess.update();
 		}
 
@@ -4271,8 +4264,8 @@ namespace nana
 			  // from current display position
 			  // move to the cat self if not in first cat
               // move to first item ?? if in first cat
-            ess.scroll_y_abs(ess.scroll_y_abs()); 
- 
+            ess.scroll_y_abs(ess.scroll_y_abs());
+
 			ess.update();
 		}
 
@@ -4300,7 +4293,7 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 			ess.lister.erase();
-			ess.scroll_y_abs(index_pair());  
+			ess.scroll_y_abs(index_pair());
 			ess.update();
 		}
 
@@ -4432,7 +4425,7 @@ namespace nana
 
         listbox::export_options& listbox::def_export_options()
         {
-			return _m_ess().def_export_options();
+			return _m_ess().def_exp_options;
         }
 
 		drawerbase::listbox::essence_t & listbox::_m_ess() const

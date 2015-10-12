@@ -598,13 +598,13 @@
 	"win32/platform_spec.cpp"
 	"linux_X11/platform_spec.cpp"
 
-1439496157 d:\git.repo\nana\source\detail\win32\platform_spec.cpp
+1443581342 d:\git.repo\nana\source\detail\win32\platform_spec.cpp
 	<nana/config.hpp>
 	<shellapi.h>
 	<stdexcept>
 	<VersionHelpers.h>
 
-1439496157 d:\git.repo\nana\source\detail\linux_x11\platform_spec.cpp
+1443581342 d:\git.repo\nana\source\detail\linux_x11\platform_spec.cpp
 	<nana/config.hpp>
 	<X11/Xlocale.h>
 	<locale>
@@ -653,13 +653,14 @@
 	<unistd.h>
 	<stdlib.h>
 
-1439496157 source:d:\git.repo\nana\source\gui\animation.cpp
+1444647306 source:d:\git.repo\nana\source\gui\animation.cpp
 	<nana/gui/animation.hpp>
 	<nana/gui/drawing.hpp>
 	<nana/system/timepiece.hpp>
 	<nana/system/platform.hpp>
 	<vector>
 	<list>
+	<map>
 	<algorithm>
 	<nana/std_thread.hpp>
 	<nana/std_mutex.hpp>
@@ -675,7 +676,7 @@
 	<nana/gui/detail/basic_window.hpp>
 	<nana/gui/detail/native_window_interface.hpp>
 
-1439496157 source:d:\git.repo\nana\source\gui\detail\bedrock_pi.cpp
+1444585389 source:d:\git.repo\nana\source\gui\detail\bedrock_pi.cpp
 	<nana/config.hpp>
 	<nana/gui/detail/bedrock_pi_data.hpp>
 	<nana/gui/detail/event_code.hpp>
@@ -694,7 +695,7 @@
 	"win32/bedrock.cpp"
 	"linux_X11/bedrock.cpp"
 
-1439496157 d:\git.repo\nana\source\gui\detail\win32\bedrock.cpp
+1444657608 d:\git.repo\nana\source\gui\detail\win32\bedrock.cpp
 	<nana/config.hpp>
 	<nana/gui/detail/bedrock.hpp>
 	<nana/gui/detail/bedrock_pi_data.hpp>
@@ -709,7 +710,7 @@
 	<nana/gui/detail/element_store.hpp>
 	<nana/gui/detail/color_schemes.hpp>
 
-1439496157 d:\git.repo\nana\source\gui\detail\linux_x11\bedrock.cpp
+1444647171 d:\git.repo\nana\source\gui\detail\linux_x11\bedrock.cpp
 	<nana/config.hpp>
 	<nana/gui/detail/bedrock_pi_data.hpp>
 	<nana/gui/detail/event_code.hpp>
@@ -720,7 +721,7 @@
 	<nana/gui/detail/element_store.hpp>
 	<errno.h>
 
-1423350892 source:d:\git.repo\nana\source\gui\detail\color_schemes.cpp
+1444567878 source:d:\git.repo\nana\source\gui\detail\color_schemes.cpp
 	<nana/gui/detail/color_schemes.hpp>
 	<map>
 
@@ -736,10 +737,10 @@
 1408986718 source:d:\git.repo\nana\source\gui\detail\element_store.cpp
 	<nana/gui/detail/element_store.hpp>
 
-1439496157 source:d:\git.repo\nana\source\gui\detail\events_operation.cpp
+1444470665 source:d:\git.repo\nana\source\gui\detail\events_operation.cpp
 	<nana/gui/detail/events_operation.hpp>
 
-1439828940 source:d:\git.repo\nana\source\gui\detail\native_window_interface.cpp
+1444647213 source:d:\git.repo\nana\source\gui\detail\native_window_interface.cpp
 	<nana/config.hpp>
 	<nana/gui/detail/native_window_interface.hpp>
 	<nana/gui/screen.hpp>
@@ -760,9 +761,10 @@
 	<nana/gui/layout_utility.hpp>
 	<algorithm>
 
-1439496157 source:d:\git.repo\nana\source\gui\detail\window_manager.cpp
+1444657627 source:d:\git.repo\nana\source\gui\detail\window_manager.cpp
 	<nana/config.hpp>
 	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/events_operation.hpp>
 	<nana/gui/detail/handle_manager.hpp>
 	<nana/gui/detail/window_manager.hpp>
 	<nana/gui/detail/native_window_interface.hpp>
@@ -772,10 +774,10 @@
 	<stdexcept>
 	<algorithm>
 
-1439746409 source:d:\git.repo\nana\source\gui\dragger.cpp
+1444585885 source:d:\git.repo\nana\source\gui\dragger.cpp
 	<nana/gui/dragger.hpp>
 
-1423350892 source:d:\git.repo\nana\source\gui\drawing.cpp
+1444647322 source:d:\git.repo\nana\source\gui\drawing.cpp
 	<nana/gui/drawing.hpp>
 	<nana/gui/programming_interface.hpp>
 	<nana/gui/detail/basic_window.hpp>
@@ -784,7 +786,7 @@
 	<nana/gui/effects.hpp>
 	<nana/gui/programming_interface.hpp>
 
-1439829040 source:d:\git.repo\nana\source\gui\element.cpp
+1444585885 source:d:\git.repo\nana\source\gui\element.cpp
 	<nana/gui/element.hpp>
 	<nana/gui/detail/bedrock.hpp>
 	<nana/gui/detail/element_store.hpp>
@@ -814,7 +816,7 @@
 1439496157 source:d:\git.repo\nana\source\gui\layout_utility.cpp
 	<nana/gui/layout_utility.hpp>
 
-1439496157 source:d:\git.repo\nana\source\gui\msgbox.cpp
+1444585885 source:d:\git.repo\nana\source\gui\msgbox.cpp
 	<nana/gui.hpp>
 	<nana/gui/widgets/label.hpp>
 	<nana/gui/widgets/button.hpp>
@@ -833,7 +835,7 @@
 	<nana/gui/widgets/picture.hpp>
 	<nana/paint/pixel_buffer.hpp>
 
-1439496157 source:d:\git.repo\nana\source\gui\notifier.cpp
+1444647352 source:d:\git.repo\nana\source\gui\notifier.cpp
 	<nana/deploy.hpp>
 	<nana/gui/programming_interface.hpp>
 	<nana/gui/notifier.hpp>
@@ -846,12 +848,15 @@
 	<nana/system/platform.hpp>
 	<iostream>
 
-1439746410 source:d:\git.repo\nana\source\gui\programming_interface.cpp
+1444657299 source:d:\git.repo\nana\source\gui\programming_interface.cpp
 	<nana/gui/programming_interface.hpp>
+	<nana/gui/detail/bedrock.hpp>
 	<nana/gui/detail/basic_window.hpp>
+	<nana/gui/detail/window_manager.hpp>
 	<nana/system/platform.hpp>
 	<nana/gui/detail/native_window_interface.hpp>
 	<nana/gui/widgets/widget.hpp>
+	<nana/gui/detail/events_operation.hpp>
 
 1439496158 source:d:\git.repo\nana\source\gui\screen.cpp
 	<nana/gui/screen.hpp>
@@ -861,10 +866,11 @@
 	<nana/gui/programming_interface.hpp>
 	<windows.h>
 
-1415011766 source:d:\git.repo\nana\source\gui\state_cursor.cpp
+1444647437 source:d:\git.repo\nana\source\gui\state_cursor.cpp
 	<nana/gui/state_cursor.hpp>
 	<nana/gui/detail/bedrock.hpp>
 	<nana/gui/detail/basic_window.hpp>
+	<nana/gui/detail/window_manager.hpp>
 
 1439496158 source:d:\git.repo\nana\source\gui\timer.cpp
 	<nana/deploy.hpp>
@@ -876,7 +882,7 @@
 	<windows.h>
 	<nana/system/platform.hpp>
 
-1439496158 source:d:\git.repo\nana\source\gui\tooltip.cpp
+1444585886 source:d:\git.repo\nana\source\gui\tooltip.cpp
 	<nana/gui/tooltip.hpp>
 	<nana/gui/widgets/label.hpp>
 	<nana/gui/timer.hpp>
@@ -1166,4 +1172,29 @@
 	<stdexcept>
 	<list>
 	<forward_list>
+
+1444658359 source:d:\git.repo\nana\source\gui\place.cpp
+	<cfloat>
+	<cmath>
+	<map>
+	<deque>
+	<nana/gui/place.hpp>
+	<nana/gui/programming_interface.hpp>
+	<nana/gui/widgets/label.hpp>
+	<nana/gui/widgets/panel.hpp>
+	<nana/gui/dragger.hpp>
+	<nana/gui/drawing.hpp>
+	<memory>
+	<limits>
+	<cstdlib>
+	<cstring>
+	"place_parts.hpp"
+
+1444585885 d:\git.repo\nana\source\gui\place_parts.hpp
+	<nana/gui/widgets/form.hpp>
+	<nana/gui/widgets/tabbar.hpp>
+	<nana/gui/element.hpp>
+	<nana/paint/text_renderer.hpp>
+	<stdexcept>
+	<deque>
 

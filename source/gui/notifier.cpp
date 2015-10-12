@@ -241,11 +241,15 @@ namespace nana
 	}
 #endif
 
-	typedef ::nana::detail::bedrock bedrock;
 	//class notifier
 	notifier::notifier(window wd)
 		: impl_(new implement)
 	{
+		impl_->handle = wd;
+		impl_->native_handle = API::root(wd);
+		if (!impl_->native_handle)
+			throw std::invalid_argument("Invalid window handle");
+
 		impl_->ani_timer.elapse([this]
 		{
 #if defined(NANA_WINDOWS)
@@ -257,9 +261,6 @@ namespace nana
 #endif
 		});
 
-		auto & brock = bedrock::instance();
-		impl_->handle = wd;
-		impl_->native_handle = brock.root(reinterpret_cast<bedrock::core_window_t*>(wd));
 		impl_->evt_destroy = API::events(wd).destroy([this]
 		{
 			close();

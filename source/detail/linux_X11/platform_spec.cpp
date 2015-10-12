@@ -24,6 +24,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
+#include <nana/gui/detail/window_manager.hpp>
 #include <nana/system/platform.hpp>
 #include <errno.h>
 #include <sstream>
@@ -696,7 +697,7 @@ namespace detail
 		if(vec)
 		{
 			set_error_handler();
-			auto & wd_manager = detail::bedrock::instance().wd_manager;
+			auto & wd_manager = detail::bedrock::instance().wd_manager();
 			for(auto u = vec->rbegin(); u != vec->rend(); ++u)
 				wd_manager.close(wd_manager.root(*u));
 
@@ -1362,7 +1363,7 @@ namespace detail
 					::XTranslateCoordinates(self.display_, self.root_window(), evt.xclient.window, x, y, &self.xdnd_.pos.x, &self.xdnd_.pos.y, &child);
 					typedef detail::bedrock bedrock;
 
-					auto wd = bedrock::instance().wd_manager.find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
+					auto wd = bedrock::instance().wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
 					if(wd && wd->flags.dropable)
 					{
 						accepted = true;

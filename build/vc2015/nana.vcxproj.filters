@@ -72,9 +72,6 @@
     <ClCompile Include="..\..\source\deploy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\exceptions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\internationalization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

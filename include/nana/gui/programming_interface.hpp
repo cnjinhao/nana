@@ -13,9 +13,9 @@
 #ifndef NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #define NANA_GUI_PROGRAMMING_INTERFACE_HPP
 #include <nana/config.hpp>
-#include "detail/bedrock.hpp"
 #include "effects.hpp"
 #include "detail/general_events.hpp"
+#include "detail/color_schemes.hpp"
 #include <nana/paint/image.hpp>
 #include <memory>
 
@@ -44,6 +44,11 @@ namespace nana
 
 namespace API
 {
+	namespace detail
+	{
+		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_base&&);
+	}
+
 	void effects_edge_nimbus(window, effects::edge_nimbus);
 	effects::edge_nimbus effects_edge_nimbus(window);
 
@@ -60,8 +65,7 @@ namespace API
 		template<typename Scheme>
 		std::unique_ptr<Scheme> make_scheme()
 		{
-			return std::unique_ptr<Scheme>(
-				static_cast<Scheme*>(::nana::detail::bedrock::instance().make_scheme(::nana::detail::scheme_factory<Scheme>()).release()));
+			return std::unique_ptr<Scheme>{static_cast<Scheme*>(API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>()))};
 		}
 
 		void set_scheme(window, widget_colors*);
@@ -82,9 +86,56 @@ namespace API
 	}//end namespace dev
 
 
+	widget* get_widget(window);
+
 	namespace detail
 	{
 		general_events* get_general_events(window);
+		bool emit_event(event_code, window, const ::nana::event_arg&);
+
+		class enum_widgets_function_base
+		{
+		public:
+			virtual ~enum_widgets_function_base() = default;
+			void enum_widgets(window, bool recursive);
+		private:
+			virtual bool _m_enum_fn(::nana::widget*) = 0;
+		};
+
+		template<typename Widget, typename EnumFunction>
+		class enum_widgets_function
+			: public enum_widgets_function_base
+		{
+		public:
+			enum_widgets_function(EnumFunction && enum_fn)
+				: enum_fn_(static_cast<EnumFunction&&>(enum_fn))
+			{}
+		private:
+			bool _m_enum_fn(::nana::widget* wd) override
+			{
+				return _m_enum_call<Widget>(wd, nullptr);
+			}
+
+			template<typename T, typename std::enable_if<std::is_same<::nana::widget, T>::value>::type* = nullptr>
+			bool _m_enum_call(::nana::widget* wd)
+			{
+				enum_fn_(*wd);
+				return true;
+			}
+
+			template<typename T, typename std::enable_if<!std::is_same<::nana::widget, T>::value>::type* = nullptr>
+			bool _m_enum_call(::nana::widget* wd)
+			{
+				auto ptr = dynamic_cast<Widget*>(wd);
+				if (nullptr == ptr)
+					return false;
+
+				enum_fn_(*ptr);
+				return true;
+			}
+		private:
+			EnumFunction && enum_fn_;
+		};
 	}//end namespace detail
 
 	void exit();
@@ -98,25 +149,12 @@ namespace API
 	rectangle make_center(window, unsigned width, unsigned height);   ///< Retrieves a rectangle which is in the center of the window
 
 	template<typename Widget=::nana::widget, typename EnumFunction>
-	void enum_widgets(window wd, bool recursive, EnumFunction && ef)
+	void enum_widgets(window wd, bool recursive, EnumFunction && fn)
 	{
 		static_assert(std::is_convertible<Widget, ::nana::widget>::value, "enum_widgets<Widget>: The specified Widget is not a widget type.");
 
-		typedef ::nana::detail::basic_window core_window_t;
-		auto & brock = ::nana::detail::bedrock::instance();
-		internal_scope_guard lock;
-
-		auto children = brock.wd_manager.get_children(reinterpret_cast<core_window_t*>(wd));
-		for (auto child : children)
-		{
-			auto wgt = dynamic_cast<Widget*>(brock.wd_manager.get_widget(child));
-			if (nullptr == wgt)
-				continue;
-
-			ef(*wgt);
-			if (recursive)
-				enum_widgets<Widget>(wd, recursive, std::forward<EnumFunction>(ef));
-		}
+		detail::enum_widgets_function<Widget, EnumFunction> enum_fn(static_cast<EnumFunction&&>(fn));
+		enum_fn.enum_widgets(wd, recursive);
 	}
 
 	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon = {});
@@ -172,8 +210,7 @@ namespace API
 	template<typename EventArg, typename std::enable_if<std::is_base_of< ::nana::event_arg, EventArg>::value>::type* = nullptr>
 	bool emit_event(event_code evt_code, window wd, const EventArg& arg)
 	{
-		auto & brock = ::nana::detail::bedrock::instance();
-		return brock.emit(evt_code, reinterpret_cast< ::nana::detail::bedrock::core_window_t*>(wd), arg, true, brock.get_thread_context());
+		return detail::emit_event(evt_code, wd, arg);
 	}
 
 	void umake_event(event_handle);

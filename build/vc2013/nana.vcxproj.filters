@@ -306,9 +306,6 @@
     <ClCompile Include="..\..\source\deploy.cpp">
       <Filter>Source Files\nana</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\exceptions.cpp">
-      <Filter>Source Files\nana</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\traits.cpp">
       <Filter>Source Files\nana</Filter>
     </ClCompile>
@@ -575,9 +572,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\deploy.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\exceptions.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\fwd.hpp">

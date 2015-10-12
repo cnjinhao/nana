@@ -44,7 +44,6 @@
 		<Unit filename="../../source/datetime.cpp" />
 		<Unit filename="../../source/deploy.cpp" />
 		<Unit filename="../../source/detail/platform_spec_selector.cpp" />
-		<Unit filename="../../source/exceptions.cpp" />
 		<Unit filename="../../source/filesystem/file_iterator.cpp" />
 		<Unit filename="../../source/filesystem/fs_utility.cpp" />
 		<Unit filename="../../source/gui/animation.cpp" />

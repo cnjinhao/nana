@@ -14,7 +14,7 @@
 
 #include <nana/deploy.hpp>
 #include <nana/traits.hpp>
-#include <nana/exceptions.hpp>
+#include <stdexcept>
 
 
 namespace nana
@@ -70,19 +70,19 @@ namespace system
 			typedef typename function_ptr<Function>::type fptr_type;
 
 			if(nana::traits::is_function_pointer<fptr_type>::value == false)
-				throw nana::bad_error("shared_wrapper::symbols, template<_Function> is not a function type or a function pointer type");
+				throw std::invalid_argument("shared_wrapper::symbols, template<_Function> is not a function type or a function pointer type");
 
 			if(symbol == 0)
-				throw nana::bad_handle("shared_wrapper::symbols, symbol is null string");
+				throw std::invalid_argument("shared_wrapper::symbols, symbol is null string");
 
 			if(impl_.handle == 0)
-				throw nana::bad_handle("shared_wrapper::symbols, empty handle");
+				throw std::logic_error("shared_wrapper::symbols, empty handle");
 
 			if(impl_.symbol != symbol)
 			{
 				void *result = detail::shared_helper::symbols(impl_.handle, symbol);
 				if(result == 0)
-					throw nana::bad_handle("shared_wrapper::symbols, empty proc address");
+					throw std::logic_error("shared_wrapper::symbols, empty proc address");
 			
 				impl_.proc_address = result;
 				impl_.symbol = symbol;

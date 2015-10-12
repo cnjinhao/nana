@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -25,6 +25,7 @@
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
 	#include <nana/gui/detail/bedrock.hpp>
+	#include <nana/gui/detail/window_manager.hpp>
 #endif
 
 namespace nana{
@@ -595,7 +596,7 @@ namespace nana{
 
 			Display* disp = restrict::spec.open_display();
 			restrict::spec.remove(wd);
-			auto iwd = brock.wd_manager.root(wd);
+			auto iwd = brock.wd_manager().root(wd);
 			if(iwd)
 			{
 				{
@@ -607,9 +608,9 @@ namespace nana{
 					::XFlush(disp);
 					restrict::spec.rev_error_handler();
 				}
-				brock.wd_manager.destroy(iwd);
-				brock.rt_manager.remove_if_exists(iwd);
-				brock.wd_manager.destroy_handle(iwd);
+				brock.wd_manager().destroy(iwd);
+				brock.manage_form_loader(iwd, false);
+				brock.wd_manager().destroy_handle(iwd);
 			}
 
 			nana::detail::platform_scope_guard psg;

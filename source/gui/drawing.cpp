@@ -22,7 +22,7 @@ namespace nana
 	{
 		namespace
 		{
-			using core_window_t = detail::bedrock::core_window_t;
+			using core_window_t = detail::basic_window;
 
 			inline detail::drawer& get_drawer(window wd)
 			{

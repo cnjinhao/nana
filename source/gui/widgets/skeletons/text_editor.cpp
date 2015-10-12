@@ -1222,12 +1222,11 @@ namespace nana{	namespace widgets
 					    auto ki = kwptr->schemes.find(ds.scheme);
 					    if (ki != kwptr->schemes.end() && ki->second)
 					    {
-						    schemes_.emplace(ds.scheme, ki->second);
-						    entities.emplace_back();
-						    auto & last = entities.back();
-						    last.begin = text.data() + pos;
-						    last.end = last.begin + ds.text.size();
-						    last.scheme = ki->second.get();
+							entities.emplace_back();
+							auto & last = entities.back();
+							last.begin = text.data() + pos;
+							last.end = last.begin + ds.text.size();
+							last.scheme = ki->second.get();
 					    }
                     }
 				}
@@ -1259,7 +1258,6 @@ namespace nana{	namespace widgets
 			}
 		private:
 			std::vector<entity> entities_;
-			std::map<std::string, std::shared_ptr<keyword_scheme>> schemes_;
 		};
 
 		//class text_editor

@@ -166,9 +166,7 @@ namespace nana
 				std::size_t pos_{0};
 			};
 
-
-
-			typedef std::vector<index_pair> selection;
+			using selection = std::vector<index_pair>;
 
 			/// struct essence_t
 			///@brief:	this struct gives many data for listbox,
@@ -180,7 +178,7 @@ namespace nana
 			class drawer_lister_impl;
 
 			/// mostly works on display positions
-            class trigger: public drawer_trigger
+			class trigger: public drawer_trigger
 			{
 			public:
 				trigger();
@@ -208,9 +206,9 @@ namespace nana
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
-            /// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
+			/// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
 			/// item_proxy self, it references and iterators are not invalidated by sort()
-            class item_proxy
+			class item_proxy
 				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
@@ -445,18 +443,18 @@ namespace nana
 				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
 			};
 		
-            struct export_options
-            {
-               nana::string sep = nana::string {STR("\t" )}, 
-                            endl= nana::string {STR("\n")} ; 
-               bool only_selected_items{true}, 
-                    only_checked_items {false},
-                    only_visible_columns{true};
+			struct export_options
+			{
+				nana::string sep = nana::string {STR("\t" )}, 
+							 endl= nana::string {STR("\n")};
+				bool only_selected_items{true}, 
+					 only_checked_items {false},
+					 only_visible_columns{true};
 
-               using columns_indexs = std::vector<size_type>;
-               columns_indexs columns_order;
-            };
-        }
+				using columns_indexs = std::vector<size_type>;
+				columns_indexs columns_order;
+			};
+		}
 	}//end namespace drawerbase
 
 	struct arg_listbox

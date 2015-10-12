@@ -1074,7 +1074,6 @@ namespace nana
 				}
 
 				block_px = lowest;
-
 				if (blocks > min_count)
 					rest_px -= (lowest-level_px) * (blocks - min_count);
 
@@ -1141,7 +1140,6 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-
 			if (!field || !(visible && display))
 				return;
 
@@ -1797,14 +1795,16 @@ namespace nana
 					if (arg.button != ::nana::mouse::left_button)
 						return;
 
+					bool is_vert = _m_is_vert(dir_);
+
 					API::capture_window(this->handle(), true);
 					auto basepos = API::cursor_position();
-					base_pos_.x = (_m_is_vert(dir_) ? basepos.y : basepos.x);
+					base_pos_.x = (is_vert ? basepos.y : basepos.x);
 
 					basepos = this->pos();
-					base_pos_.y = (_m_is_vert(dir_) ? basepos.y : basepos.x);
+					base_pos_.y = (is_vert ? basepos.y : basepos.x);
 
-					base_px_ = (_m_is_vert(dir_) ? pane_dv_->field_area.height : pane_dv_->field_area.width);
+					base_px_ = (is_vert ? pane_dv_->field_area.height : pane_dv_->field_area.width);
 				});
 
 				this->events().mouse_up([this]
@@ -1855,6 +1855,8 @@ namespace nana
 						else
 							px -= static_cast<unsigned>(delta);
 						break;
+                    default:
+                        break;
 					}
 
 					auto dock_px = (_m_is_vert(dir_) ? dock_dv_->field_area.height : dock_dv_->field_area.width);
@@ -1880,21 +1882,17 @@ namespace nana
 
 		};
 	public:
-
 		div_dock(std::string && name, implement* impl)
 			: division(kind::dock, std::move(name)), impl_(impl)
 		{}
 
 		division* front() const
 		{
-			auto i = children.cbegin();
-			
 			for (auto i = children.cbegin(); i != children.cend(); ++i)
 			{
 				if (i->get()->display)
 					return i->get();
 			}
-
 			return nullptr;
 		}
 
@@ -1912,8 +1910,6 @@ namespace nana
 				if (!child->display)
 					continue;
 
-				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
-
 				const auto is_vert = _m_is_vert(child->dir);
 				if (is_first)
 				{
@@ -1930,15 +1926,12 @@ namespace nana
 				prev_attr = is_vert;
 			}
 			if (0 == vert_count)
-				++vert_count;
+				vert_count = 1;
 			if (0 == horz_count)
-				++horz_count;
+				horz_count = 1;
 
 			//room indicates the size without splitters
 			::nana::size room(area.width - splitter_px * (horz_count - 1), area.height - splitter_px * (vert_count - 1));
-
-			//double auto_horz_w = double(area.width - splitter_px * (horz_count - 1))/ horz_count;
-			//double auto_vert_w = double(area.height - splitter_px * (vert_count - 1)) / vert_count;
 
 			double left = area.x;
 			double right = area.right();
@@ -2048,7 +2041,6 @@ namespace nana
 
 				if (split_range_begin > -0.5)
 					split->range(static_cast<int>(split_range_begin), static_cast<int>(split_range_end));
-
 
 				if (is_vert)
 				{

@@ -184,7 +184,6 @@
     <ClCompile Include="..\..\source\datetime.cpp" />
     <ClCompile Include="..\..\source\deploy.cpp" />
     <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp" />
-    <ClCompile Include="..\..\source\exceptions.cpp" />
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp" />
     <ClCompile Include="..\..\source\filesystem\file_iterator.cpp" />
     <ClCompile Include="..\..\source\filesystem\fs_utility.cpp" />
@@ -272,7 +271,6 @@
     <ClInclude Include="..\..\include\nana\detail\linux_X11\msg_packet.hpp" />
     <ClInclude Include="..\..\include\nana\detail\linux_X11\platform_spec.hpp" />
     <ClInclude Include="..\..\include\nana\detail\win32\platform_spec.hpp" />
-    <ClInclude Include="..\..\include\nana\exceptions.hpp" />
     <ClInclude Include="..\..\include\nana\extrlib\png.h" />
     <ClInclude Include="..\..\include\nana\extrlib\pngconf.h" />
     <ClInclude Include="..\..\include\nana\extrlib\pnglibconf.h" />

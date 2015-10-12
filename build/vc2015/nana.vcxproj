@@ -156,7 +156,6 @@
     <ClCompile Include="..\..\source\datetime.cpp" />
     <ClCompile Include="..\..\source\deploy.cpp" />
     <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp" />
-    <ClCompile Include="..\..\source\exceptions.cpp" />
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp" />
     <ClCompile Include="..\..\source\filesystem\file_iterator.cpp" />
     <ClCompile Include="..\..\source\filesystem\fs_utility.cpp" />

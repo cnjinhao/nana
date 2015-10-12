@@ -8,12 +8,12 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/window_manager.cpp
- *	@author: Jinhao
  *	@contributors:	Katsuhisa Yuasa
  */
 
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/events_operation.hpp>
 #include <nana/gui/detail/handle_manager.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
@@ -33,7 +33,7 @@ namespace detail
 			{
 				void operator()(basic_window* wd) const
 				{
-					bedrock::instance().evt_operation.umake(reinterpret_cast<window>(wd));
+					bedrock::instance().evt_operation().umake(reinterpret_cast<window>(wd));
 					delete wd;
 				}
 			};
@@ -786,12 +786,6 @@ namespace detail
 			return (impl_->wd_register.available(wd) ?
 				window_layer::read_visual_rectangle(wd, r) :
 				false);
-		}
-
-		::nana::widget* window_manager::get_widget(core_window_t* wd) const
-		{
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			return (impl_->wd_register.available(wd) ? wd->widget_notifier->widget_ptr() : nullptr);
 		}
 
 		std::vector<window_manager::core_window_t*> window_manager::get_children(core_window_t* wd) const

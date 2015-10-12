@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <list>
+#include <map>
 #include <algorithm>
 
 #if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
