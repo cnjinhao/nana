@@ -676,6 +676,14 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
 			{
+				auto parent = wd->parent;
+				while (parent)
+				{
+					if (parent->flags.refreshing)
+						return;
+					parent = parent->parent;
+				}
+
 				//Copy the root buffer that wd specified into DeviceContext
 #if defined(NANA_LINUX)
 				wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
