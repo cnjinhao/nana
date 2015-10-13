@@ -474,7 +474,7 @@ namespace paint
 
 		::nana::size graphics::bidi_extent_size(const std::string& str) const
 		{
-			return bidi_extent_size(std::wstring{ ::nana::charset(str, ::nana::unicode::utf8) });
+			return bidi_extent_size(static_cast<std::wstring>(::nana::charset(str, ::nana::unicode::utf8)));
 		}
 
 		bool graphics::text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const

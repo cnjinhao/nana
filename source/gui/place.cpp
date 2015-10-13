@@ -1541,7 +1541,6 @@ namespace nana
 		}
 	private:
 		nana::cursor	splitter_cursor_;
-		bool			created_{ false };
 		place_parts::splitter<true>	splitter_;
 		nana::point	begin_point_;
 		int			left_pos_, right_pos_;
@@ -1588,18 +1587,6 @@ namespace nana
 			}
 
 			auto & dockarea = dockable_field->dockarea;
-
-			/*
-			if (!created_)
-			{
-				created_ = true;
-				dockarea.create(wd, this);
-			}
-
-			if (!dockarea.empty() && !dockarea.floating())
-				dockarea.move(this->field_area);
-			*/
-
 			if (dockarea && !dockarea->floating())
 				dockarea->move(this->field_area);
 		}
@@ -1763,9 +1750,10 @@ namespace nana
 		}
 	public:
 		field_dock * dockable_field{ nullptr };
+
+		std::unique_ptr<widget>	splitter;
 	private:
 		implement * impl_ptr_;
-		bool created_{ false };
 
 		//
 		struct indicator_rep
@@ -1938,8 +1926,6 @@ namespace nana
 			double top = area.y;
 			double bottom = area.bottom();
 
-			std::map<division*, std::unique_ptr<splitter>> swp_splitters;
-
 			for (auto & child : children)
 			{
 				if (!child->display)
@@ -1964,16 +1950,13 @@ namespace nana
 				if (_m_right(child_dv))
 				{
 					//Creates a splitbar if the 'right' leaf is not empty
-
-					auto & splitter_ptr = swp_splitters[child_dv];
-
-					auto si = splitters_.find(child_dv);
-					if (si == splitters_.end())
-						splitter_ptr.reset(new splitter(impl_->window_handle, child->dir, this, child_dv));
+					if (!child_dv->splitter)
+					{
+						split = new splitter(impl_->window_handle, child->dir, this, child_dv);
+						child_dv->splitter.reset(split);
+					}
 					else
-						splitter_ptr.swap(si->second);
-
-					split = splitter_ptr.get();
+						split = dynamic_cast<splitter*>(child_dv->splitter.get());
 				}
 
 				::nana::rectangle child_r;
@@ -2056,8 +2039,6 @@ namespace nana
 				child->field_area = child_r;
 				child->collocate(wd);
 			}
-
-			splitters_.swap(swp_splitters);
 		}
 	private:
 		static bool _m_is_vert(::nana::direction dir)
@@ -2079,7 +2060,6 @@ namespace nana
 		}
 	private:
 		implement * const impl_;
-		std::map<division*, std::unique_ptr<splitter>> splitters_;
 	};
 
 	place::implement::~implement()
