@@ -442,7 +442,9 @@ namespace API
 	native_window_type root(window wd)
 	{
 		internal_scope_guard lock;
-		return reinterpret_cast<basic_window*>(wd)->root;
+		if(is_window(wd))
+			return reinterpret_cast<basic_window*>(wd)->root;
+		return nullptr;
 	}
 
 	window root(native_window_type wd)
