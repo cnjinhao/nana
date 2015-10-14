@@ -5,7 +5,7 @@
 
 //Separate the libpng from the package that system provides.
 #if defined(NANA_LIBPNG)
-	#include <nana/extrlib/png.h>
+	#include <nana_extrlib/png.h>
 #else
 	#include <png.h>
 #endif

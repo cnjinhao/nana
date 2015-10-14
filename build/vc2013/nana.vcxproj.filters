@@ -82,9 +82,6 @@
     <Filter Include="Header Files\detail\linux_X11">
       <UniqueIdentifier>{61385c08-f06b-4cf3-8e05-9b47d546164b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\extrlib">
-      <UniqueIdentifier>{e9eadc97-4a14-4a4e-bb52-52d3a20e2693}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\filesystem">
       <UniqueIdentifier>{5667eac1-0887-4936-9502-eac4dd8c1c1d}</UniqueIdentifier>
     </Filter>
@@ -624,18 +621,6 @@
     </ClInclude>
     <ClInclude Include="..\..\include\nana\detail\win32\platform_spec.hpp">
       <Filter>Header Files\detail\win32</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\png.h">
-      <Filter>Header Files\extrlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\pngconf.h">
-      <Filter>Header Files\extrlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\pnglibconf.h">
-      <Filter>Header Files\extrlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\zlib.h">
-      <Filter>Header Files\extrlib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp">
       <Filter>Header Files\filesystem</Filter>

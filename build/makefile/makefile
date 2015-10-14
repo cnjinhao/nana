@@ -5,9 +5,10 @@
 GCC	= g++
 INCROOT	= ../../include
 SRCROOT	= ../../source
+EXTRLIB = ../../extrlib
 NANA_INC= $(INCROOT)/nana
 
-INCS	= -I$(INCROOT) -I/usr/include/freetype2
+INCS	= -I$(INCROOT) -I/usr/include/freetype2 -I$(EXTRLIB)
 
 BIN	= libnana.a
 

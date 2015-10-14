@@ -75,7 +75,7 @@
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>../../include;$(IncludePath)</IncludePath>
+    <IncludePath>../../include;../../extrlib;$(IncludePath)</IncludePath>
     <OutDir>..\bin\vc2015\</OutDir>
     <TargetName>lib$(ProjectName)d</TargetName>
   </PropertyGroup>

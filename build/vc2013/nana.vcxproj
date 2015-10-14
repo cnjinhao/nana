@@ -68,7 +68,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>../bin/</OutDir>
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
@@ -271,10 +271,6 @@
     <ClInclude Include="..\..\include\nana\detail\linux_X11\msg_packet.hpp" />
     <ClInclude Include="..\..\include\nana\detail\linux_X11\platform_spec.hpp" />
     <ClInclude Include="..\..\include\nana\detail\win32\platform_spec.hpp" />
-    <ClInclude Include="..\..\include\nana\extrlib\png.h" />
-    <ClInclude Include="..\..\include\nana\extrlib\pngconf.h" />
-    <ClInclude Include="..\..\include\nana\extrlib\pnglibconf.h" />
-    <ClInclude Include="..\..\include\nana\extrlib\zlib.h" />
     <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp" />
     <ClInclude Include="..\..\include\nana\filesystem\file_iterator.hpp" />
     <ClInclude Include="..\..\include\nana\filesystem\fs_utility.hpp" />
