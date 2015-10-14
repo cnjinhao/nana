@@ -243,6 +243,11 @@ namespace nana
 					}
 				}
 
+				void dbl_click(graph_reference graph, const arg_mouse& arg) override
+				{
+					mouse_down(graph, arg);
+				}
+
 				void mouse_down(graph_reference graph, const arg_mouse& arg) override
 				{
 					if (arg.left_button)
