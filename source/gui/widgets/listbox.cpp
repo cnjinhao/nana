@@ -1869,6 +1869,7 @@ namespace nana
 					inline_indicator * indicator;
 					index_pair	item_pos;				//The item index of the inline widget
 					std::size_t	column_pos;
+					::nana::string text;
 				};
 
 				std::map<pat::detail::abstract_factory_base*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
@@ -1923,7 +1924,10 @@ namespace nana
 				void set_scroll_y_dpl(const index_pair& pos_dpl)
 				{
 					scroll.offset_y_dpl = pos_dpl;
-					scroll.offset_y_abs = lister.absolute_pair(pos_dpl);
+					if (pos_dpl.is_category())
+						scroll.offset_y_abs = pos_dpl;
+					else
+						scroll.offset_y_abs = lister.absolute_pair(pos_dpl);
 
 					if (scroll.offset_y_abs.empty())
 						throw std::invalid_argument("nana.listbox.set_scroll_y_dpl's exception is due to invalid item, please report a bug");
@@ -2315,7 +2319,6 @@ namespace nana
 
 					auto ptr = pane_ptr.get();
 					inline_table[factory].emplace_back(std::move(pane_ptr));
-					ptr->inline_ptr->whether_to_draw();
 					return ptr;
 				}
 			};
@@ -2330,7 +2333,26 @@ namespace nana
 					: ess_{ ess }, column_pos_{column_pos}
 				{
 				}
+				
+				void attach(index_type pos, essence_t::inline_pane* pane)
+				{
+					for (auto & pn : panes_)
+					{
+						if (pn.first == pos)
+						{
+							pn.second = pane;
+							return;
+						}
+					}
+					panes_.emplace_back(std::make_pair(pos, pane));
+				}
 
+				void detach()
+				{
+					panes_.clear();
+				}
+			public:
+				//Implement inline_widget_indicator
 				::nana::widget& host() const override
 				{
 					return *ess_->lister.wd_ptr();
@@ -2344,6 +2366,15 @@ namespace nana
 
 					if (cells[column_pos_].text != value)
 					{
+						for (auto & pn : panes_)
+						{
+							if (pn.first == pos)
+							{
+								pn.second->text = value;
+								break;
+							}
+						}
+
 						cells[column_pos_].text = value;
 						ess_->update();
 					}
@@ -2371,6 +2402,7 @@ namespace nana
 			private:
 				essence_t * const ess_;
 				const std::size_t column_pos_;
+				std::vector<std::pair<index_type, essence_t::inline_pane*>> panes_;
 			};
 
 			void es_lister::erase(const index_pair& pos)
@@ -2772,6 +2804,13 @@ namespace nana
 
 					essence_->inline_buffered_table.swap(essence_->inline_table);
 
+					for(auto & cat : lister.cat_container())
+						for (auto & ind : cat.indicators)
+						{
+							if (ind)
+								ind->detach();
+						}
+
 					//Here we draw the root categ (0) or a first item if the first drawing is not a categ.(item!=npos))
 					if(idx.cat == 0 || !idx.is_category())
 					{
@@ -2989,17 +3028,30 @@ namespace nana
 									::nana::size sz{ wdg_w, essence_->item_size };
 									inline_wdg->pane_widget.size(sz);
 									inline_wdg->inline_ptr->resize(sz);
-									inline_wdg->item_pos = item_pos;
-									inline_wdg->column_pos = column_pos;
-									inline_wdg->inline_ptr->activate(*inline_wdg->indicator, item_pos);
 
 									draw_column = inline_wdg->inline_ptr->whether_to_draw();
 
+									inline_wdg->item_pos = item_pos;
+									inline_wdg->column_pos = column_pos;
+									inline_wdg->inline_ptr->activate(*inline_wdg->indicator, item_pos);
+									
+									inline_wdg->indicator->attach(item_pos, inline_wdg);
+
 									//To reduce the memory usage, the cells may not be allocated
 									if (item.cells.size() > column_pos)
-										inline_wdg->inline_ptr->set(item.cells[column_pos].text);
+									{
+										auto & text = item.cells[column_pos].text;
+										if (text != inline_wdg->text)
+										{
+											inline_wdg->text = text;
+											inline_wdg->inline_ptr->set(text);
+										}
+									}
 									else
+									{
+										inline_wdg->text.clear();
 										inline_wdg->inline_ptr->set({});
+									}
 
 									API::show_window(inline_wdg->pane_bottom, visible_state);
 								}
