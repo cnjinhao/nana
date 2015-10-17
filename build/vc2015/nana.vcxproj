@@ -70,14 +70,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>../../include;$(IncludePath)</IncludePath>
+    <IncludePath>../../include;../../extrlib/vc2015;$(IncludePath)</IncludePath>
     <OutDir>..\bin\vc2015\</OutDir>
     <TargetName>lib$(ProjectName)</TargetName>
+    <LibraryPath>../../extrlib/vc2015;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>../../include;../../extrlib;$(IncludePath)</IncludePath>
+    <IncludePath>../../include;../../extrlib/vc2015;$(IncludePath)</IncludePath>
     <OutDir>..\bin\vc2015\</OutDir>
     <TargetName>lib$(ProjectName)d</TargetName>
+    <LibraryPath>../../extrlib/vc2015;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>../../include;../../extrlib/vc2015;$(IncludePath)</IncludePath>
+    <LibraryPath>../../extrlib/vc2015;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>../../include;../../extrlib/vc2015;$(IncludePath)</IncludePath>
+    <LibraryPath>../../extrlib/vc2015;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

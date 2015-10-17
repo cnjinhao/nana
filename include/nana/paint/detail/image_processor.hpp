@@ -28,6 +28,18 @@ namespace detail
 {
 	namespace algorithms
 	{
+		///@brief	Seek a pixel address by using offset bytes
+		///@return	the specified pixel address
+		inline pixel_color_t * pixel_at(pixel_color_t * p, std::size_t bytes)	//deprecated
+		{
+			return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(p) + bytes);
+		}
+
+		inline const pixel_color_t * pixel_at(const pixel_color_t * p, std::size_t bytes)
+		{
+			return reinterpret_cast<const pixel_color_t*>(reinterpret_cast<const char*>(p) + bytes);
+		}
+
 		class proximal_interoplation
 			: public image_process::stretch_interface
 		{

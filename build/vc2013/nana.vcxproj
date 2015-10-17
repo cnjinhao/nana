@@ -68,31 +68,35 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>../bin/</OutDir>
-    <IncludePath>..\..\include;..\..\extrlib;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2013;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <LibraryPath>..\..\extrlib\vc2013;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2013;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <OutDir>../bin/</OutDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <LibraryPath>..\..\extrlib\vc2013;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>../bin/</OutDir>
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
-    <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2013;$(IncludePath)</IncludePath>
+    <SourcePath>..\..\source;$(VC_SourcePath)</SourcePath>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <LibraryPath>..\..\extrlib\vc2013;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2013;$(IncludePath)</IncludePath>
     <SourcePath>..\..\source;$(VC_SourcePath);</SourcePath>
     <OutDir>../bin/</OutDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <LibraryPath>..\..\extrlib\vc2013;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

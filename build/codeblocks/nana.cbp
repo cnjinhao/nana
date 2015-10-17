@@ -14,8 +14,11 @@
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Compiler>
+					<Add option="-std=c++11" />
 					<Add option="-Wall" />
 					<Add option="-g" />
+					<Add directory="../../include" />
+					<Add directory="../../extrlib/mingw" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -26,8 +29,11 @@
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="-Wall" />
 					<Add option="-O2" />
+					<Add option="-std=c++11" />
+					<Add option="-Wall" />
+					<Add directory="../../include" />
+					<Add directory="../../extrlib/mingw" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
