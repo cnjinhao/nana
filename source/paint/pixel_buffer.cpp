@@ -19,6 +19,7 @@
 #include <nana/paint/detail/image_process_provider.hpp>
 
 #include <stdexcept>
+#include <cstring>
 
 namespace nana{	namespace paint
 {
@@ -657,7 +658,7 @@ namespace nana{	namespace paint
 				//16-bits RGB format under X is 565, under Windows is 555
 #if defined(NANA_X11)
 				p->element.green = palette_6bits[(*px >> 5) & 0x3F];
-				p->element.blue = palette_[*px & 0x1F];
+				p->element.blue = palette[*px & 0x1F];
 #else
 				p->element.green = palette[(*px >> 6) & 0x1F];
 				p->element.blue = palette[(*px >> 1) & 0x1F];

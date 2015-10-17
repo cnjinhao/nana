@@ -11,6 +11,7 @@
 #endif
 
 #include <stdio.h>
+#include <csetjmp>
 
 namespace nana
 {
@@ -22,7 +23,7 @@ namespace nana
 			struct error_mgr
 			{
 				struct ::jpeg_error_mgr pub;
-				jmp_buf	setjmp_buf;
+				std::jmp_buf	setjmp_buf;
 			};
 		public:
 			bool open(const nana::char_t* jpeg_file) override
