@@ -87,6 +87,14 @@
 	#define NANA_LIBPNG	//Comment it to use libpng from operating system.
 #endif
 
+///////////////////
+//Support for JPEG
+//	Define the NANA_ENABLE_JPEG to enable the support of JPEG.
+//
+//#define NANA_ENABLE_JPEG	//!
+#if defined(NANA_ENABLE_JPEG)
+	#define NANA_LIBJPEG	//Comment this whole line to use libjpeg from operating system.
+#endif
 
 
 #endif	//NANA_CONFIG_HPP

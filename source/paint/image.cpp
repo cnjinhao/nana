@@ -21,6 +21,9 @@
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 
+#if defined(NANA_ENABLE_JPEG)
+#include "detail/image_jpeg.hpp"
+#endif
 
 #if defined(NANA_ENABLE_PNG)
 	#include "detail/image_png.hpp"
