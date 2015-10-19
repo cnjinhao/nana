@@ -820,10 +820,10 @@ namespace nana
 				child_area.y_ref() = area.y();
 				child_area.h_ref() = area.h();
 
-				double child_px;							/// and calculate this div.
-				if (!child->is_fixed())					/// with is fixed for fixed div
+				double child_px;				// and calculate this div.
+				if (!child->is_fixed())			// with is fixed for fixed div
 				{
-					if (child->is_percent())			/// and calculated for others: if the child div is percent - simple take it full
+					if (child->is_percent())			// and calculated for others: if the child div is percent - simple take it full
 						child_px = area_px * child->weight.real() + precise_px;
 					else
 						child_px = adjustable_px;
@@ -1148,10 +1148,7 @@ namespace nana
 			unsigned gap_size = 0;
 			auto gap_number = gap.at(0);
 			if (gap_number.is_not_none())
-			{
-				gap_size = (gap_number.kind_of() == number_t::kind::percent ?
-					static_cast<unsigned>(area.width * gap_number.real()) : static_cast<unsigned>(gap_number.integer()));
-			}
+				gap_size = static_cast<unsigned>(gap_number.get_value(area.width));
 
 			//When the amount pixels of gaps is out of the area bound.
 			if ((gap_size * dimension.first >= area.width) || (gap_size * dimension.second >= area.height))
@@ -1717,9 +1714,9 @@ namespace nana
 
 			//a workaround for capture
 			auto ptr = dockable_field->dockarea.release();
-			API::at_safe_place(window_handle, [this, ptr]
+			API::at_safe_place(window_handle, [ptr]
 			{
-				decltype(dockable_field->dockarea) del(ptr);
+				std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
 			});
 
 			this->set_display(false);
@@ -2197,8 +2194,10 @@ namespace nana
 				}
 				break;
 			case token::collapse:
-				if (tknizer.parameters().size() == 4)
 				{
+					if (tknizer.parameters().size() != 4)
+						throw std::invalid_argument("nana.place: collapse requires 4 parameters.");
+
 					auto get_number = [](const number_t & arg, const std::string& nth)
 					{
 						if (arg.kind_of() == number_t::kind::integer)
@@ -2241,8 +2240,6 @@ namespace nana
 							collapses.emplace_back(col);
 					}
 				}
-				else
-					throw std::invalid_argument("nana.place: collapse requires 4 parameters.");
 				break;
 			case token::weight: case token::min_px: case token::max_px:
 				{
