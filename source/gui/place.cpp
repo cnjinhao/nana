@@ -1939,7 +1939,7 @@ namespace nana
 				double weight;
 				if (child->weight.is_not_none())
 				{
-					weight = child->weight.get_value(is_vert ? area.height : area.width);
+					weight = child->weight.get_value(is_vert ? room.height : room.width);
 					if (weight > room_px)
 						weight = room_px;
 				}
@@ -2800,7 +2800,7 @@ namespace nana
 		}
 
 		//Create the pane if it has not a name
-		if (factory_name.empty())
+		if (factory_name.empty() && dock_ptr->attached)
 		{
 			dock_ptr->attached->set_display(true);
 			impl_->collocate();
@@ -2825,18 +2825,21 @@ namespace nana
 			throw std::invalid_argument("invalid factory name(" + factory + ") of dockpane");
 
 		auto dock_ptr = i->second;
-		dock_ptr->attached->set_display(true);
-		impl_->collocate();
-
-		if (!dock_ptr->dockarea)
+		if (dock_ptr->attached)
 		{
-			dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
-			dock_ptr->dockarea->create(impl_->window_handle);
-			dock_ptr->dockarea->set_notifier(dock_ptr->attached);
-			dock_ptr->dockarea->move(dock_ptr->attached->field_area);
-		}
+			dock_ptr->attached->set_display(true);
+			impl_->collocate();
 
-		dock_ptr->dockarea->add_pane(i->second->factories[factory]);
+			if (!dock_ptr->dockarea)
+			{
+				dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
+				dock_ptr->dockarea->create(impl_->window_handle);
+				dock_ptr->dockarea->set_notifier(dock_ptr->attached);
+				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
+			}
+
+			dock_ptr->dockarea->add_pane(i->second->factories[factory]);
+		}
 
 		return *this;
 	}
