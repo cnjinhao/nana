@@ -441,14 +441,9 @@ namespace nana
 				return false;
 			}
 
-			bool is_none() const
+			bool empty() const throw()
 			{
 				return (kind::none == kind_);
-			}
-
-			bool is_not_none() const
-			{
-				return (kind::none != kind_);
 			}
 
 			kind kind_of() const

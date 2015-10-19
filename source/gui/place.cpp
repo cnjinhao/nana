@@ -703,13 +703,13 @@ namespace nana
 
 		static double limit_px(const division* div, double px, unsigned area_px)
 		{
-			if (div->min_px.is_not_none())
+			if (!div->min_px.empty())
 			{
 				auto v = div->min_px.get_value(static_cast<int>(area_px));
 				if (px < v)
 					return v;
 			}
-			if (div->max_px.is_not_none())
+			if (!div->max_px.empty())
 			{
 				auto v = div->max_px.get_value(static_cast<int>(area_px));
 				if (px > v)
@@ -838,7 +838,7 @@ namespace nana
 
 				//Use 'endpos' to calc width is to avoid deviation
 				int endpos = static_cast<int>(position + child_px);
-				if ((!child->is_fixed()) && child->max_px.is_none() && is_back(child) && (endpos != area.right()))
+				if ((!child->is_fixed()) && child->max_px.empty() && is_back(child) && (endpos != area.right()))
 					endpos = area.right();
 
 				child_area.w_ref() = static_cast<unsigned>(endpos - child_area.x());
@@ -870,10 +870,8 @@ namespace nana
 					API::move_window(el.handle, element_r.result());
 
 					if (index + 1 < field->elements.size())
-					{
-						position += px;
-						position += _m_calc_number(gap.at(index), area_px, 0, precise_px);
-					}
+						position += (px + _m_calc_number(gap.at(index), area_px, 0, precise_px));
+
 					++index;
 				}
 
@@ -882,7 +880,7 @@ namespace nana
 			}
 		}
 	private:
-		unsigned _m_calc_number(const place_parts::number_t& number, unsigned area_px, double adjustable_px, double& precise_px)
+		static unsigned _m_calc_number(const place_parts::number_t& number, unsigned area_px, double adjustable_px, double& precise_px)
 		{
 			switch (number.kind_of())
 			{
@@ -904,7 +902,7 @@ namespace nana
 			return 0; //Useless
 		}
 
-		std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px) const
+		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px)
 		{
 			std::pair<unsigned, std::size_t> result;
 			switch (number.kind_of())
@@ -960,7 +958,7 @@ namespace nana
 				if (!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
 
-				if (child->weight.is_not_none())
+				if (!child->weight.empty())
 					children_fixed_px += child->weight.get_value(area_px);
 				else
 					++result.second;
@@ -988,19 +986,19 @@ namespace nana
 			std::vector<revise_t> revises;
 			for (auto& child : children)
 			{
-				if (child->weight.is_not_none() || !child->display)
+				if ((!child->weight.empty()) || !child->display)
 					continue;
 
 				double min_px = std::numeric_limits<double>::lowest(), max_px = std::numeric_limits<double>::lowest();
 
-				if (child->min_px.is_not_none())
+				if (!child->min_px.empty())
 				{
 					min_px = child->min_px.get_value(static_cast<int>(area_px));
 					sum_min_px += min_px;
 					++min_count;
 				}
 
-				if (child->max_px.is_not_none())
+				if (!child->max_px.empty())
 					max_px = child->max_px.get_value(static_cast<int>(area_px));
 
 				if (min_px >= 0 && max_px >= 0 && min_px > max_px)
@@ -1147,7 +1145,7 @@ namespace nana
 
 			unsigned gap_size = 0;
 			auto gap_number = gap.at(0);
-			if (gap_number.is_not_none())
+			if (!gap_number.empty())
 				gap_size = static_cast<unsigned>(gap_number.get_value(area.width));
 
 			//When the amount pixels of gaps is out of the area bound.
@@ -1198,7 +1196,7 @@ namespace nana
 						unsigned value = 0;
 						auto arr = arrange_.at(arr_pos++);
 
-						if (arr.is_none())
+						if (arr.empty())
 							value = static_cast<decltype(value)>(block_w);
 						else
 							value = static_cast<decltype(value)>(arr.get_value(static_cast<int>(area.width)));
@@ -1429,7 +1427,7 @@ namespace nana
 
 			auto limited_range = _m_update_splitter_range();
 
-			if (init_weight_.is_not_none())
+			if (!init_weight_.empty())
 			{
 				const bool vert = (::nana::cursor::size_we != splitter_cursor_);
 
@@ -1503,25 +1501,25 @@ namespace nana
 			int pos = left_base;
 			int endpos = right_base;
 
-			if (leaf_left->min_px.is_not_none())
+			if (!leaf_left->min_px.empty())
 			{
 				auto v = leaf_left->min_px.get_value(area.w());
 				pos += static_cast<int>(v);
 			}
-			if (leaf_left->max_px.is_not_none())
+			if (!leaf_left->max_px.empty())
 			{
 				auto v = leaf_left->max_px.get_value(area.w());
 				endpos = left_base + static_cast<int>(v);
 			}
 
-			if (leaf_right->min_px.is_not_none())
+			if (!leaf_right->min_px.empty())
 			{
 				auto v = leaf_right->min_px.get_value(area.w());
 				auto x = right_base - static_cast<int>(v);
 				if (x < endpos)
 					endpos = x;
 			}
-			if (leaf_right->max_px.is_not_none())
+			if (!leaf_right->max_px.empty())
 			{
 				auto v = leaf_right->max_px.get_value(area.w());
 				auto x = right_base - static_cast<int>(v);
@@ -1934,7 +1932,7 @@ namespace nana
 				auto room_px = (is_vert ? room.height : room.width);
 
 				double weight;
-				if (child->weight.is_not_none())
+				if (!child->weight.empty())
 				{
 					weight = child->weight.get_value(is_vert ? room.height : room.width);
 					if (weight > room_px)
@@ -2278,7 +2276,7 @@ namespace nana
 					for (std::size_t i = 0; i < 4; ++i)
 					{
 						auto n = tknizer.reparray().at(i);
-						if (n.is_none()) n.assign(0);
+						if (n.empty()) n.assign(0);
 						margin.push(n);
 					}
 					break;
@@ -2359,14 +2357,14 @@ namespace nana
 		//2, max >= min
 		if (min_px.is_negative()) min_px.reset();
 		if (max_px.is_negative()) max_px.reset();
-		if (min_px.is_not_none() && max_px.is_not_none() && (min_px.get_value(100) > max_px.get_value(100)))
+		if ((!min_px.empty()) && (!max_px.empty()) && (min_px.get_value(100) > max_px.get_value(100)))
 		{
 			min_px.reset();
 			max_px.reset();
 		}
 
 		//The weight will be ignored if one of min and max is specified.
-		if (min_px.is_none() && max_px.is_none())
+		if (min_px.empty() && max_px.empty())
 		{
 			div->weight = weight;
 		}
