@@ -13,7 +13,7 @@
 #ifndef NANA_GUI_WIDGET_SPINBOX_HPP
 #define NANA_GUI_WIDGET_SPINBOX_HPP
 #include "widget.hpp"
-#include "skeletons/text_editor_scheme.hpp"
+#include "skeletons/text_editor_part.hpp"
 
 namespace nana
 {

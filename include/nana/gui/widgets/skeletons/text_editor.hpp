@@ -14,7 +14,7 @@
 #ifndef NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #define NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #include "textbase.hpp"
-#include "text_editor_scheme.hpp"
+#include "text_editor_part.hpp"
 #include <nana/gui/widgets/scroll.hpp>
 #include <nana/unicode_bidi.hpp>
 
@@ -135,6 +135,8 @@ namespace nana{	namespace widgets
 			using size_type = textbase<char_type>::size_type;
 			using string_type = textbase<char_type>::string_type;
 
+			using event_interface = text_editor_event_interface;
+
 			using graph_reference = ::nana::paint::graphics&;
 
 			struct ext_renderer_tag
@@ -162,6 +164,9 @@ namespace nana{	namespace widgets
 
 			void typeface_changed();
 
+			void indent(bool, std::function<nana::string()> generator);
+			void set_event(event_interface*);
+
 			/// Determine whether the text_editor is line wrapped.
 			bool line_wrapped() const;
 			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
@@ -174,6 +179,10 @@ namespace nana{	namespace widgets
 			/// Sets the text area.
 			/// @return true if the area is changed with the new value.
 			bool text_area(const nana::rectangle&);
+
+			/// Returns the text area
+			rectangle text_area(bool including_scroll) const;
+
 			bool tip_string(nana::string&&);
 
 			const attributes & attr() const;
@@ -215,8 +224,13 @@ namespace nana{	namespace widgets
 			/// Returns width of text area excluding the vscroll size.
 			unsigned width_pixels() const;
 			window window_handle() const;
+
+			/// Returns text position of each line that currently displays on screen
+			const std::vector<upoint>& text_position() const;
+
+			void set_text_position_changed(std::function<void(const std::vector<upoint>&)>);
 		public:
-			void draw_scroll_rectangle();
+			void draw_corner();
 			void render(bool focused);
 		public:
 			void put(nana::string);
@@ -242,6 +256,8 @@ namespace nana{	namespace widgets
 
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
+
+			std::vector<unsigned> get_lines() const;
 		private:
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
@@ -294,13 +310,23 @@ namespace nana{	namespace widgets
 			undoable<command>	undo_;
 			nana::window window_;
 			graph_reference graph_;
-			const text_editor_scheme* scheme_;
+			const text_editor_scheme*	scheme_;
+			event_interface *			event_handler_{ nullptr };
 			std::unique_ptr<keywords> keywords_;
 
 			skeletons::textbase<nana::char_t> textbase_;
 			nana::char_t mask_char_{0};
 
 			mutable ext_renderer_tag ext_renderer_;
+
+			std::vector<upoint> text_position_;	//position of text from last rendering.
+			std::function<void(const std::vector<upoint>&)> text_position_function_;
+
+			struct indent_rep
+			{
+				bool enabled{ false };
+				std::function<nana::string()> generator;
+			}indent_;
 
 			struct attributes
 			{

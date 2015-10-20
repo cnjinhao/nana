@@ -14,7 +14,7 @@
 #define NANA_GUI_WIDGETS_COMBOX_HPP
 #include "widget.hpp"
 #include "float_listbox.hpp"
-#include "skeletons/text_editor_scheme.hpp"
+#include "skeletons/text_editor_part.hpp"
 #include <nana/key_type.hpp>
 #include <nana/concepts.hpp>
 #include <functional>

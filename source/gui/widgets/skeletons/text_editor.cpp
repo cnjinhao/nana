@@ -252,7 +252,7 @@ namespace nana{	namespace widgets
 			virtual std::size_t take_lines(std::size_t pos) const = 0;
 
 			virtual void update_line(std::size_t textline, std::size_t secondary_before) = 0;
-			virtual void render(const ::nana::color& fgcolor) = 0;
+			virtual std::vector<::nana::upoint> render(const ::nana::color& fgcolor) = 0;
 			virtual	nana::point		caret_to_screen(upoint) = 0;
 			virtual nana::upoint	screen_to_caret(point scrpos) = 0;
 			virtual bool move_caret_ns(bool to_north) = 0;
@@ -290,8 +290,10 @@ namespace nana{	namespace widgets
 				editor_._m_draw_string(top, API::fgcolor(editor_.window_), nana::upoint(0, editor_.points_.caret.y), editor_.textbase_.getline(textline), true);
 			}
 
-			void render(const ::nana::color& fgcolor) override
+			std::vector<upoint> render(const ::nana::color& fgcolor) override
 			{
+				std::vector<upoint> line_index;
+
 				::nana::upoint str_pos(0, static_cast<unsigned>(editor_.points_.offset.y));
 
 				std::size_t scrlines = editor_.screen_lines() + str_pos.y;
@@ -304,9 +306,12 @@ namespace nana{	namespace widgets
 				while( str_pos.y < scrlines)
 				{
 					editor_._m_draw_string(top, fgcolor, str_pos, editor_.textbase_.getline(str_pos.y), true);
+					line_index.push_back(str_pos);
 					++str_pos.y;
 					top += pixels;
 				}
+
+				return line_index;
 			}
 
 			nana::point	caret_to_screen(nana::upoint pos) override
@@ -692,12 +697,14 @@ namespace nana{	namespace widgets
 					editor_.render(API::is_focus_ready(editor_.window_));
 			}
 
-			void render(const ::nana::color& fgcolor) override
+			std::vector<upoint> render(const ::nana::color& fgcolor) override
 			{
+				std::vector<upoint> line_index;
+
 				std::size_t secondary;
 				auto primary = _m_textline_from_screen(0, secondary);
 				if (primary >= linemtr_.size() || secondary >= linemtr_[primary].line_sections.size())
-					return;
+					return line_index;
 
 				nana::upoint str_pos(0, static_cast<unsigned>(primary));
 				str_pos.x = static_cast<unsigned>(linemtr_[primary].line_sections[secondary].begin - editor_.textbase_.getline(primary).data());
@@ -715,6 +722,7 @@ namespace nana{	namespace widgets
 
 						nana::string text(section.begin, section.end);
 						editor_._m_draw_string(top, fgcolor, str_pos, text, true);
+						line_index.push_back(str_pos);
 						++secondary;
 						if (secondary >= mtr.line_sections.size())
 						{
@@ -729,6 +737,8 @@ namespace nana{	namespace widgets
 					else
 						break;
 				}
+
+				return line_index;
 			}
 
 			nana::point	caret_to_screen(upoint pos) override
@@ -1436,6 +1446,17 @@ namespace nana{	namespace widgets
 			behavior_->pre_calc_lines(width_pixels());
 		}
 
+		void text_editor::indent(bool enb, std::function<nana::string()> generator)
+		{
+			indent_.enabled = enb;
+			indent_.generator.swap(generator);
+		}
+
+		void text_editor::set_event(event_interface* ptr)
+		{
+			event_handler_ = ptr;
+		}
+
 		bool text_editor::line_wrapped() const
 		{
 			return attributes_.line_wrapped;
@@ -1498,6 +1519,18 @@ namespace nana{	namespace widgets
 
 			move_caret(points_.caret);
 			return true;
+		}
+
+		rectangle text_editor::text_area(bool including_scroll) const
+		{
+			if (including_scroll)
+				return text_area_.area;
+
+			auto r = text_area_.area;
+
+			r.width = text_area_.area.width > text_area_.vscroll ? text_area_.area.width - text_area_.vscroll : 0;
+			r.height = text_area_.area.height > text_area_.hscroll ? text_area_.area.height - text_area_.hscroll : 0;
+			return r;
 		}
 
 		bool text_editor::tip_string(nana::string&& str)
@@ -1873,7 +1906,17 @@ namespace nana{	namespace widgets
 			return window_;
 		}
 
-		void text_editor::draw_scroll_rectangle()
+		const std::vector<upoint>& text_editor::text_position() const
+		{
+			return text_position_;
+		}
+
+		void text_editor::set_text_position_changed(std::function<void(const std::vector<upoint>&)> fn)
+		{
+			text_position_function_.swap(fn);
+		}
+
+		void text_editor::draw_corner()
 		{
 			if(text_area_.vscroll && text_area_.hscroll)
 			{
@@ -1906,11 +1949,27 @@ namespace nana{	namespace widgets
 			//Render the content when the text isn't empty or the window has got focus,
 			//otherwise draw the tip string.
 			if ((false == textbase_.empty()) || has_focus)
-				behavior_->render(fgcolor);
-			else //Draw tip string
-				graph_.string({ text_area_.area.x - points_.offset.x, text_area_.area.y }, attributes_.tip_string, { 0x78, 0x78, 0x78 });
+			{
+				auto && text_pos = behavior_->render(fgcolor);
+				
 
-			draw_scroll_rectangle();
+				if (text_pos.empty())
+					text_pos.push_back({ 0, 0 });
+				
+				if (text_pos != text_position_)
+				{
+					text_position_.swap(text_pos);
+					if (event_handler_)
+						event_handler_->text_position_changed(text_position_);
+				}
+			}
+			else //Draw tip string
+				graph_.string({ text_area_.area.x - points_.offset.x, text_area_.area.y }, attributes_.tip_string, static_cast<color_rgb>(0x787878));
+
+			if (text_position_.empty())
+				text_position_.push_back({ 0, 0 });
+
+			draw_corner();
 
 			text_area_.border_renderer(graph_, bgcolor);
 		}
@@ -1961,7 +2020,7 @@ namespace nana{	namespace widgets
 			if (refresh || _m_update_caret_line(secondary_before))
 				render(true);
 			else
-				draw_scroll_rectangle();
+				draw_corner();
 
 			_m_scrollbar();
 
@@ -2049,6 +2108,29 @@ namespace nana{	namespace widgets
 				need_refresh = true;
 			}
 
+			if (indent_.enabled)
+			{
+				nana::string indent_text;
+				if (indent_.generator)
+				{
+					indent_text = indent_.generator();
+				}
+				else
+				{
+					auto & text = textbase_.getline(points_.caret.y - 1);
+					auto indent_pos = text.find_first_not_of(L"\t ");
+					if (indent_pos != std::wstring::npos)
+						indent_text = text.substr(0, indent_pos);
+					else
+						indent_text = text;
+				}
+
+				if (indent_text.size())
+					put(indent_text);
+				
+			}
+
+
 			if (behavior_->adjust_caret_into_screen() || need_refresh)
 				render(true);
 
@@ -2108,7 +2190,7 @@ namespace nana{	namespace widgets
 					if(_m_move_offset_x_while_over_border(-2) == false)
 					{
 						behavior_->update_line(points_.caret.y, secondary);
-						draw_scroll_rectangle();
+						draw_corner();
 						has_to_redraw = false;
 					}
 				}

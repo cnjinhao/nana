@@ -13,7 +13,7 @@
 #define NANA_GUI_WIDGET_TEXTBOX_HPP
 #include <nana/gui/widgets/widget.hpp>
 #include "skeletons/textbase_export_interface.hpp"
-#include "skeletons/text_editor_scheme.hpp"
+#include "skeletons/text_editor_part.hpp"
 
 namespace nana
 {
@@ -23,8 +23,18 @@ namespace nana
 		: public event_arg
 	{
 		textbox& widget;
+		const std::vector<upoint>* text_position;
 
 		arg_textbox(textbox&);
+	};
+
+	struct arg_textbox_text_position
+		: public event_arg
+	{
+		textbox& widget;
+		const std::vector<upoint>& text_position;
+
+		arg_textbox_text_position(textbox&, const std::vector<upoint>&);
 	};
 
 	namespace widgets
@@ -44,15 +54,30 @@ namespace nana
 			{
 				basic_event<arg_textbox> first_change;
 				basic_event<arg_textbox> text_changed;
+				basic_event<arg_textbox_text_position> text_position_changed;
+			};
+
+			class event_interface
+			{
+			public:
+				virtual ~event_interface() = default;
+
+				virtual void text_position_changed(const std::vector<upoint>&) = 0;
 			};
 
 			class event_agent
-				: public widgets::skeletons::textbase_event_agent_interface
+				:	public	widgets::skeletons::textbase_event_agent_interface,
+					public	widgets::skeletons::text_editor_event_interface 
 			{
 			public:
 				event_agent(::nana::textbox&);
+			private:
+				//Overrides textbase_event_agent_interface
 				void first_change() override;
 				void text_changed() override;
+			private:
+				//Overrides text_editor_event_interface
+				void text_position_changed(const std::vector<upoint>&) override;
 			private:
 				::nana::textbox & widget_;
 			};
@@ -128,8 +153,12 @@ namespace nana
 		void store(nana::string file);
 		void store(nana::string file, nana::unicode encoding);
 
+		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
+		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
+		void enable_indent(bool, std::function<nana::string()> generator = {});
+
 		//A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
-		textbox& reset(nana::string = nana::string());      ///< discard the old text and set a newtext
+		textbox& reset(nana::string = nana::string());      ///< discard the old text and set a new text
 
 		/// The file of last store operation.
 		nana::string filename() const;
@@ -188,6 +217,16 @@ namespace nana
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
 		void erase_keyword(const nana::string& kw);
+
+
+		/// Returns the text position of each line that currently displays on screen.
+		std::vector<upoint> text_position() const;
+
+		/// Returns the rectangle of text area
+		rectangle text_area() const;
+
+		/// Returns the height of line in pixels
+		unsigned line_pixels() const;
 	protected:
 		//Overrides widget's virtual functions
 		::nana::string _m_caption() const throw() override;

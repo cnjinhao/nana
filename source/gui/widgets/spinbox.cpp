@@ -410,7 +410,7 @@ namespace nana
 				{
 					auto spins_r = _m_spins_area();
 					if (spins_r.x == 0)
-						editor_->text_area({});
+						editor_->text_area(rectangle{});
 					else
 						editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
 				}

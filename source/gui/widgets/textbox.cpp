@@ -24,6 +24,12 @@ namespace nana
 		: widget(wdg)
 	{}
 
+	arg_textbox_text_position::arg_textbox_text_position(textbox& wdg, const std::vector<upoint>& text_pos)
+		:	widget(wdg),
+			text_position(text_pos)
+	{
+	}
+
 namespace drawerbase {
 	namespace textbox
 	{
@@ -40,6 +46,12 @@ namespace drawerbase {
 			void event_agent::text_changed()
 			{
 				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_ });
+			}
+
+			void event_agent::text_position_changed(const std::vector<upoint>& text_pos)
+			{
+				::nana::arg_textbox_text_position arg(widget_, text_pos);
+				widget_.events().text_position_changed.emit(arg);
 			}
 		//end class event_agent
 
@@ -69,6 +81,7 @@ namespace drawerbase {
 
 			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
 			editor_->textbase().set_event_agent(evt_agent_.get());
+			editor_->set_event(evt_agent_.get());
 
 			_m_text_area(graph.width(), graph.height());
 
@@ -238,6 +251,16 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->textbase().store(std::move(file), encoding);
+		}
+
+		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
+		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
+		void textbox::enable_indent(bool enb, std::function<nana::string()> generator)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->indent(enb, generator);
 		}
 
 		textbox& textbox::reset(nana::string str)
@@ -495,6 +518,7 @@ namespace drawerbase {
 
 		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->set_highlight(name, fgcolor, bgcolor);
@@ -502,6 +526,7 @@ namespace drawerbase {
 
 		void textbox::erase_highlight(const std::string& name)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->erase_highlight(name);
@@ -509,6 +534,7 @@ namespace drawerbase {
 
 		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
@@ -519,6 +545,7 @@ namespace drawerbase {
 
 		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
@@ -529,9 +556,37 @@ namespace drawerbase {
 
 		void textbox::erase_keyword(const nana::string& kw)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->erase_keyword(kw);
+		}
+
+		std::vector<upoint> textbox::text_position() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->text_position();
+			
+			return{};
+		}
+
+		rectangle textbox::text_area() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->text_area(false);
+
+			return{};
+		}
+
+		unsigned textbox::line_pixels() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			return (editor ? editor->line_height() : 0);
 		}
 
 		//Override _m_caption for caption()
