@@ -208,7 +208,7 @@ namespace nana{	namespace widgets
 			/// Sets caret position through text coordinate.
 			void move_caret(const upoint&);
 			void move_caret_end();
-			void reset_caret_height() const;
+			void reset_caret_pixels() const;
 			void reset_caret();
 			void show_caret(bool isshow);
 
@@ -216,8 +216,10 @@ namespace nana{	namespace widgets
 			bool select(bool);
 			/// Sets the end position of a selected string.
 			void set_end_caret();
+			
 			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos) const;
+
 			bool move_select();
 			bool mask(char_t);
 
@@ -245,8 +247,8 @@ namespace nana{	namespace widgets
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
-			upoint mouse_caret(const point& screen_pos);
-			upoint caret() const;
+			const upoint& mouse_caret(const point& screen_pos);
+			const upoint& caret() const;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
 			bool mouse_enter(bool);
@@ -256,8 +258,6 @@ namespace nana{	namespace widgets
 
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
-
-			std::vector<unsigned> get_lines() const;
 		private:
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
@@ -283,10 +283,8 @@ namespace nana{	namespace widgets
 
 			int _m_text_top_base() const;
 
-			/// Returns the right point of text area.
-			int _m_endx() const;
-			/// Returns the bottom point of text area.
-			int _m_endy() const;
+			/// Returns the right/bottom point of text area.
+			int _m_end_pos(bool right) const;	
 
 			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t*, std::size_t len) const;
 			//_m_draw_string
@@ -302,7 +300,6 @@ namespace nana{	namespace widgets
 
 			unsigned _m_char_by_pixels(const nana::char_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
 			unsigned _m_pixels_by_char(const nana::string&, std::size_t pos) const;
-			static bool _m_is_right_text(const unicode_bidi::entity&);
 			void _handle_move_key(const arg_keyboard& arg);
 
 		private:

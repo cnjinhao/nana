@@ -28,7 +28,66 @@ namespace nana
 
 namespace detail
 {
+	template<typename Key, typename Value>
+	class lite_map
+	{
+		struct key_value_rep
+		{
+			Key first;
+			Value second;
+
+			key_value_rep()
+				: first{}, second{}
+			{}
+
+			key_value_rep(const Key& k)
+				: first(k), second{}
+			{
+			}
+		};
+	public:
+		using iterator = typename std::vector<key_value_rep>::iterator;
+
+		Value& operator[](const Key& key)
+		{
+			for (auto& kv : table_)
+			{
+				if (kv.first == key)
+					return kv.second;
+			}
+
+			table_.emplace_back(key);
+			return table_.back().second;
+		}
+
+		iterator find(const Key& key)
+		{
+			for (auto i = table_.begin(); i != table_.end(); ++i)
+				if (i->first == key)
+					return i;
+
+			return table_.end();
+		}
+
+		iterator erase(iterator pos)
+		{
+			return table_.erase(pos);
+		}
+
+		iterator begin()
+		{
+			return table_.begin();
+		}
+
+		iterator end()
+		{
+			return table_.end();
+		}
+	private:
+		std::vector<key_value_rep> table_;
+	};
 	//class window_manager
+
 			struct window_handle_deleter
 			{
 				void operator()(basic_window* wd) const
@@ -37,6 +96,7 @@ namespace detail
 					delete wd;
 				}
 			};
+			
 			//struct wdm_private_impl
 			struct window_manager::wdm_private_impl
 			{
@@ -45,7 +105,7 @@ namespace detail
 				paint::image default_icon_big;
 				paint::image default_icon_small;
 
-				std::map<core_window_t*, std::vector<std::function<void()>>> safe_place;
+				lite_map<core_window_t*, std::vector<std::function<void()>>> safe_place;
 			};
 		//end struct wdm_private_impl
 
@@ -155,7 +215,7 @@ namespace detail
 
 		bool window_manager::is_queue(core_window_t* wd)
 		{
-			return (wd && (wd->other.category == category::root_tag::value));
+			return (wd && (category::flags::root == wd->other.category));
 		}
 
 		std::size_t window_manager::number_of_core_window() const
@@ -218,7 +278,7 @@ namespace detail
 					if (owner->flags.destroying)
 						throw std::logic_error("the specified owner is destory");
 
-					native = (owner->other.category == category::frame_tag::value ?
+					native = (category::flags::frame == owner->other.category ?
 										owner->other.attribute.frame->container : owner->root_widget->root);
 					r.x += owner->pos_root.x;
 					r.y += owner->pos_root.y;
@@ -1224,6 +1284,7 @@ namespace detail
 				else
 					++i;
 			}
+
 		}
 
 		bool check_tree(basic_window* wd, basic_window* const cond)

@@ -249,60 +249,58 @@ namespace skeletons
 			return true;
 		}
 
-		void store(nana::string fs) const
+		void store(nana::string fs, bool is_unicode, ::nana::unicode encoding) const
 		{
 			std::string fs_mbs = nana::charset(fs);
 			std::ofstream ofs(fs_mbs.data(), std::ios::binary);
 			if(ofs && text_cont_.size())
 			{
-				if(text_cont_.size() > 1)
+				std::string last_mbs;
+
+				if (is_unicode)
 				{
-					for(auto i = text_cont_.cbegin(), end = text_cont_.cend() - 1; i != end; ++i)
+					const char * le_boms[] = { "\xEF\xBB\xBF", "\xFF\xFE", "\xFF\xFE\x0\x0" };	//BOM for little-endian
+					int bytes = 0;
+					switch (encoding)
 					{
-						std::string mbs = nana::charset(*i);
-						ofs.write(mbs.c_str(), mbs.size());
-						ofs.write("\r\n", 2);
+					case nana::unicode::utf8:
+						bytes = 3;	break;
+					case nana::unicode::utf16:
+						bytes = 2;	break;
+					case nana::unicode::utf32:
+						bytes = 4;	break;
 					}
-				}
-				std::string mbs = nana::charset(text_cont_.back());
-				ofs.write(mbs.c_str(), mbs.size());
-				_m_saved(std::move(fs));
-			}
-		}
 
-		void store(nana::string fs, nana::unicode encoding) const
-		{
-			std::string fs_mbs = nana::charset(fs);
-			std::ofstream ofs(fs_mbs.data(), std::ios::binary);
-			if(ofs && text_cont_.size())
-			{
-				const char * le_boms[] = {"\xEF\xBB\xBF", "\xFF\xFE", "\xFF\xFE\x0\x0"};	//BOM for little-endian
-				int bytes = 0;
-				switch(encoding)
-				{
-				case nana::unicode::utf8:
-					bytes = 3;	break;
-				case nana::unicode::utf16:
-					bytes = 2;	break;
-				case nana::unicode::utf32:
-					bytes = 4;	break;
-				}
+					if (bytes)
+						ofs.write(le_boms[static_cast<int>(encoding)], bytes);
 
-				if(bytes)
-					ofs.write(le_boms[static_cast<int>(encoding)], bytes);
-
-				if(text_cont_.size() > 1)
-				{
-					std::string mbs;
-					for(auto i = text_cont_.cbegin(), end = text_cont_.cend() - 1; i != end; ++i)
+					if (text_cont_.size() > 1)
 					{
-						mbs = nana::charset(*i).to_bytes(encoding);
-						mbs += "\r\n";
-						ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
+						std::string mbs;
+						for (auto i = text_cont_.cbegin(), end = text_cont_.cend() - 1; i != end; ++i)
+						{
+							std::string(nana::charset(*i).to_bytes(encoding)).swap(mbs);
+							mbs += "\r\n";
+							ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
+						}
 					}
+
+					last_mbs = nana::charset(text_cont_.back()).to_bytes(encoding);
 				}
-				std::string mbs = nana::charset(text_cont_.back()).to_bytes(encoding);
-				ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
+				else
+				{
+					if (text_cont_.size() > 1)
+					{
+						for (auto i = text_cont_.cbegin(), end = text_cont_.cend() - 1; i != end; ++i)
+						{
+							std::string mbs = nana::charset(*i);
+							ofs.write(mbs.c_str(), mbs.size());
+							ofs.write("\r\n", 2);
+						}
+					}
+					last_mbs = nana::charset(text_cont_.back());
+				}
+				ofs.write(last_mbs.c_str(), static_cast<std::streamsize>(last_mbs.size()));
 				_m_saved(std::move(fs));
 			}
 		}

@@ -242,7 +242,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->textbase().store(std::move(file));
+				editor->textbase().store(std::move(file), false, nana::unicode::utf8);	//3rd parameter is just for syntax, it will be ignored
 		}
 
 		void textbox::store(nana::string file, nana::unicode encoding)
@@ -250,7 +250,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->textbase().store(std::move(file), encoding);
+				editor->textbase().store(std::move(file), true, encoding);
 		}
 
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
@@ -614,7 +614,7 @@ namespace drawerbase {
 			widget::_m_typeface(font);
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->reset_caret_height();
+				editor->reset_caret_pixels();
 		}
 	//end class textbox
 }//end namespace nana

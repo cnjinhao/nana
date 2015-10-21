@@ -637,11 +637,7 @@ namespace nana
 
 		void set_display(bool dsp)
 		{
-			if (field)
-				field->visible(dsp);
-
-			_m_visible_for_child(this, dsp);
-			visible = dsp;
+			set_visible(dsp);
 			display = dsp;
 
 			if (kind::splitter != kind_of_division)

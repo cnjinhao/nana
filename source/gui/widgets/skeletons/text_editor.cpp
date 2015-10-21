@@ -259,6 +259,11 @@ namespace nana{	namespace widgets
 			virtual bool adjust_caret_into_screen() = 0;
 		};
 
+		inline bool is_right_text(const unicode_bidi::entity& e)
+		{
+			return ((e.bidi_char_type != unicode_bidi::bidi_char::L) && (e.level & 1));
+		}
+
 
 		class text_editor::behavior_normal
 			: public editor_behavior_interface
@@ -362,7 +367,7 @@ namespace nana{	namespace widgets
 							{
 								std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 
-								res.x = editor_._m_char_by_pixels(ent.begin, len, pxbuf.get(), str_px, scrpos.x, _m_is_right_text(ent));
+								res.x = editor_._m_char_by_pixels(ent.begin, len, pxbuf.get(), str_px, scrpos.x, is_right_text(ent));
 								res.x += static_cast<unsigned>(ent.begin - lnstr.data());
 								return res;
 							}
@@ -425,9 +430,8 @@ namespace nana{	namespace widgets
 
 				editor_._m_get_scrollbar_size();
 
-				const auto delta_pixels = editor_._m_text_extent_size(STR("    "), 4).width;
-				auto x = points.caret.x;
-				const string_type& lnstr = textbase.getline(points.caret.y);
+				auto	x = points.caret.x;
+				auto&	lnstr = textbase.getline(points.caret.y);
 
 				if (x > lnstr.size()) x = static_cast<unsigned>(lnstr.size());
 
@@ -437,7 +441,10 @@ namespace nana{	namespace widgets
 
 				bool adjusted_cond = true;
 				if (static_cast<int>(text_w) < points.offset.x)
+				{
+					auto delta_pixels = editor_._m_text_extent_size(STR("    "), 4).width;
 					points.offset.x = (text_w > delta_pixels ? text_w - delta_pixels : 0);
+				}
 				else if (area_w && (text_w >= points.offset.x + area_w))
 					points.offset.x = text_w - area_w + 2;
 				else
@@ -828,7 +835,7 @@ namespace nana{	namespace widgets
 					{
 						std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 
-						res.x += editor_._m_char_by_pixels(ent.begin, len, pxbuf.get(), str_px, scrpos.x, _m_is_right_text(ent));
+						res.x += editor_._m_char_by_pixels(ent.begin, len, pxbuf.get(), str_px, scrpos.x, is_right_text(ent));
 						res.x += static_cast<unsigned>(ent.begin - str);
 						return res;
 					}
@@ -1765,16 +1772,16 @@ namespace nana{	namespace widgets
 			
 			const unsigned line_pixels = line_height();
 			auto pos = this->behavior_->caret_to_screen(crtpos);
-			const int end_y = pos.y + static_cast<int>(line_pixels);
+			const int line_bottom = pos.y + static_cast<int>(line_pixels);
 
 			bool visible = false;
-			if (hit_text_area(pos) && (end_y > text_area_.area.y))
+			if (hit_text_area(pos) && (line_bottom > text_area_.area.y))
 			{
 				visible = true;
-				if (end_y > _m_endy())
-					API::caret_size(window_, nana::size(1, line_pixels - (end_y - _m_endy())));
+				if (line_bottom > _m_end_pos(false))
+					API::caret_size(window_, nana::size(1, line_pixels - (line_bottom - _m_end_pos(false))));
 				else if (API::caret_size(window_).height != line_pixels)
-					reset_caret_height();
+					reset_caret_pixels();
 			}
 
 			API::caret_visible(window_, visible);
@@ -1790,7 +1797,7 @@ namespace nana{	namespace widgets
 			points_.caret.x = static_cast<unsigned>(textbase_.getline(points_.caret.y).size());
 		}
 
-		void text_editor::reset_caret_height() const
+		void text_editor::reset_caret_pixels() const
 		{
 			API::caret_size(window_, nana::size(1, line_height()));
 		}
@@ -1845,7 +1852,7 @@ namespace nana{	namespace widgets
 
 		bool text_editor::hit_text_area(const point& pos) const
 		{
-			return ((text_area_.area.x <= pos.x && pos.x < _m_endx()) && (text_area_.area.y <= pos.y && pos.y < _m_endy()));
+			return ((text_area_.area.x <= pos.x && pos.x < _m_end_pos(true)) && (text_area_.area.y <= pos.y && pos.y < _m_end_pos(false)));
 		}
 
 		bool text_editor::hit_select_area(nana::upoint pos) const
@@ -2439,7 +2446,7 @@ namespace nana{	namespace widgets
 			}
 		}
 
-		upoint text_editor::mouse_caret(const point& scrpos)	//From screen position
+		const upoint& text_editor::mouse_caret(const point& scrpos)	//From screen position
 		{
 			points_.caret = behavior_->screen_to_caret(scrpos);
 
@@ -2450,7 +2457,7 @@ namespace nana{	namespace widgets
 			return points_.caret;
 		}
 
-		upoint text_editor::caret() const
+		const upoint& text_editor::caret() const
 		{
 			return points_.caret;
 		}
@@ -2493,7 +2500,7 @@ namespace nana{	namespace widgets
 
 		::nana::color text_editor::_m_bgcolor() const
 		{
-			return (!API::window_enabled(window_) ? color{ 0xE0, 0xE0, 0xE0 } : API::bgcolor(window_));
+			return (!API::window_enabled(window_) ? static_cast<color_rgb>(0xE0E0E0) : API::bgcolor(window_));
 		}
 
 		bool text_editor::_m_scroll_text(bool vert)
@@ -2539,8 +2546,12 @@ namespace nana{	namespace widgets
 		void text_editor::_m_scrollbar()
 		{
 			_m_get_scrollbar_size();
-
 			nana::size tx_area = _m_text_area();
+
+			auto scroll_fn = [this](const arg_mouse& arg) {
+				_m_on_scroll(arg);
+			};
+
 			if (text_area_.vscroll)
 			{
 				const int x = text_area_.area.x + static_cast<int>(tx_area.width);
@@ -2552,15 +2563,10 @@ namespace nana{	namespace widgets
 					wdptr->create(window_, nana::rectangle(x, text_area_.area.y, text_area_.vscroll, tx_area.height));
 
 					auto & evts = wdptr->events();
-					auto fn = [this](const arg_mouse& arg){
-						_m_on_scroll(arg);
-					};
-					evts.mouse_down(fn);
-					evts.mouse_move(fn);
-					evts.mouse_wheel([this](const arg_wheel& arg)
-					{
-						_m_on_scroll(arg);
-					});
+					evts.mouse_down(scroll_fn);
+					evts.mouse_move(scroll_fn);
+					evts.mouse_wheel(scroll_fn);
+
 					API::take_active(wdptr->handle(), false, window_);
 				}
 
@@ -2590,13 +2596,10 @@ namespace nana{	namespace widgets
 					wdptr->create(window_, nana::rectangle(text_area_.area.x, y, tx_area.width, text_area_.hscroll));
 
 					auto & evts = wdptr->events();
-					auto fn = [this](const arg_mouse& arg)
-					{
-						_m_on_scroll(arg);
-					};
-					evts.mouse_down(fn);
-					evts.mouse_move(fn);
-					evts.mouse_wheel(fn);
+					evts.mouse_down(scroll_fn);
+					evts.mouse_move(scroll_fn);
+					evts.mouse_wheel(scroll_fn);
+
 					wdptr->step(20);
 					API::take_active(wdptr->handle(), false, window_);
 				}
@@ -2633,24 +2636,25 @@ namespace nana{	namespace widgets
 				return;
 			}
 
-			//Only the textbox is multi_lines, it enables the scrollbars
-			if(attributes_.multi_lines)
+			//No scrollbar if it is not multi-line
+			if (!attributes_.multi_lines)
 			{
-				text_area_.vscroll = (textbase_.lines() > screen_lines() ? text_area_.scroll_pixels : 0);
+				text_area_.vscroll = 0;
+				return;
+			}
 
-				std::pair<size_t, size_t> max_line = textbase_.max_line();
-				if(max_line.second)
+			text_area_.vscroll = (textbase_.lines() > screen_lines() ? text_area_.scroll_pixels : 0);
+
+			auto max_line = textbase_.max_line();
+			if(max_line.second)
+			{
+				if(points_.offset.x || _m_text_extent_size(textbase_.getline(max_line.first).c_str(), max_line.second).width > _m_text_area().width)
 				{
-					if(points_.offset.x || _m_text_extent_size(textbase_.getline(max_line.first).c_str(), max_line.second).width > _m_text_area().width)
-					{
-						text_area_.hscroll = text_area_.scroll_pixels;
-						if((text_area_.vscroll == 0) && (textbase_.lines() > screen_lines()))
-							text_area_.vscroll = text_area_.scroll_pixels;
-					}
+					text_area_.hscroll = text_area_.scroll_pixels;
+					if((text_area_.vscroll == 0) && (textbase_.lines() > screen_lines()))
+						text_area_.vscroll = text_area_.scroll_pixels;
 				}
 			}
-			else
-				text_area_.vscroll = 0;
 		}
 
 		void text_editor::_m_reset()
@@ -2898,9 +2902,9 @@ namespace nana{	namespace widgets
 			else
 			{
 				width += text_area_.area.x;
-				if(static_cast<int>(width) - points_.offset.x >= _m_endx())
+				if(static_cast<int>(width) - points_.offset.x >= _m_end_pos(true))
 				{	//Out of screen text area
-					points_.offset.x = static_cast<int>(width) -_m_endx() + 1;
+					points_.offset.x = static_cast<int>(width) -_m_end_pos(false) + 1;
 					auto rest_size = lnstr.size() - points_.caret.x;
 					points_.offset.x += static_cast<int>(_m_text_extent_size(lnstr.c_str() + points_.caret.x, (rest_size >= static_cast<unsigned>(many) ? static_cast<unsigned>(many) : rest_size)).width);
 					return true;
@@ -2966,17 +2970,11 @@ namespace nana{	namespace widgets
 			return text_area_.area.y;
 		}
 
-		//_m_endx
-		//@brief: Get the right point of text area
-		int text_editor::_m_endx() const
+		int text_editor::_m_end_pos(bool right) const
 		{
-			return static_cast<int>(text_area_.area.x + text_area_.area.width - text_area_.vscroll);
-		}
+			if(right)
+				return static_cast<int>(text_area_.area.x + text_area_.area.width - text_area_.vscroll);
 
-		//_m_endy
-		//@brief: Get the bottom point of text area
-		int text_editor::_m_endy() const
-		{
 			return static_cast<int>(text_area_.area.y + text_area_.area.height - text_area_.hscroll);
 		}
 
@@ -3045,7 +3043,7 @@ namespace nana{	namespace widgets
 		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& str, bool if_mask) const
 		{
 			::nana::point text_pos{ text_area_.area.x - points_.offset.x, top };
-			const int xend = text_area_.area.x + static_cast<int>(text_area_.area.width);
+			const int text_right = text_area_.area.right();
 
 			std::unique_ptr<nana::string> mask_str;
 			if (if_mask && mask_char_)
@@ -3082,7 +3080,7 @@ namespace nana{	namespace widgets
 					std::size_t len = ent.end - ent.begin;
 					unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
 
-					if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
+					if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < text_right))
 					{
 						if (selected && focused)
 						{
@@ -3091,7 +3089,7 @@ namespace nana{	namespace widgets
 							graph_.string(text_pos, ent.begin, len);
 						}
 						else
-							_m_draw_parse_string(parser, _m_is_right_text(ent), text_pos, clr, ent.begin, len);
+							_m_draw_parse_string(parser, is_right_text(ent), text_pos, clr, ent.begin, len);
 					}
 					text_pos.x += static_cast<int>(str_w);
 				}
@@ -3122,7 +3120,7 @@ namespace nana{	namespace widgets
 					{
 						std::size_t len = ent.end - ent.begin;
 						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
-						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
+						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < text_right))
 						{
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
 							const auto str_end = pos + len;
@@ -3151,7 +3149,7 @@ namespace nana{	namespace widgets
 									auto sel_w = std::accumulate(pxbuf + (a.x - pos), pxbuf + (endpos - pos), unsigned());
 
 									graph_.set_text_color(clr);
-									if (_m_is_right_text(ent))
+									if (is_right_text(ent))
 									{	//RTL
 										rtl_string(text_pos, ent.begin, len, str_w, head_w, sel_w);
 									}
@@ -3180,7 +3178,7 @@ namespace nana{	namespace widgets
 								int endpos = b.x;
 								unsigned sel_w = graph_.glyph_extent_size(ent.begin, len, 0, endpos - pos).width;
 
-								if (_m_is_right_text(ent))
+								if (is_right_text(ent))
 								{	//RTL
 									graph_.set_text_color(clr);
 									rtl_string(text_pos, ent.begin, len, str_w, 0, sel_w);
@@ -3205,7 +3203,7 @@ namespace nana{	namespace widgets
 					{
 						std::size_t len = ent.end - ent.begin;
 						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
-						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
+						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < text_right))
 						{
 							graph_.set_text_color(clr);
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
@@ -3224,7 +3222,7 @@ namespace nana{	namespace widgets
 							else
 							{
 								unsigned head_w = graph_.glyph_extent_size(ent.begin, len, 0, a.x - pos).width;
-								if (_m_is_right_text(ent))
+								if (is_right_text(ent))
 								{	//RTL
 									rtl_string(text_pos, ent.begin, len, str_w, head_w, str_w - head_w);
 								}
@@ -3257,7 +3255,7 @@ namespace nana{	namespace widgets
 					{
 						std::size_t len = ent.end - ent.begin;
 						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
-						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < xend))
+						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < text_right))
 						{
 							std::size_t pos = ent.begin - strbeg + str_pos.x;
 							graph_.set_text_color(clr);
@@ -3271,7 +3269,7 @@ namespace nana{	namespace widgets
 							else if (pos <= b.x && b.x < pos + len)
 							{
 								unsigned sel_w = graph_.glyph_extent_size(ent.begin, len, 0, b.x - pos).width;
-								if (_m_is_right_text(ent))
+								if (is_right_text(ent))
 								{	//RTL
 									rtl_string(text_pos, ent.begin, len, str_w, 0, sel_w);
 								}
@@ -3298,7 +3296,7 @@ namespace nana{	namespace widgets
 		{
 			if (false == behavior_->adjust_caret_into_screen())
 			{
-				if (behavior_->caret_to_screen(points_.caret).x < _m_endx())
+				if (behavior_->caret_to_screen(points_.caret).x < _m_end_pos(true))
 				{
 					behavior_->update_line(points_.caret.y, secondary_before);
 					return false;
@@ -3386,7 +3384,7 @@ namespace nana{	namespace widgets
 				std::size_t len = ent.end - ent.begin;
 				if (ent.begin <= ch && ch <= ent.end)
 				{
-					if (_m_is_right_text(ent))
+					if (is_right_text(ent))
 					{
 						//Characters of some bidi languages may transform in a word.
 						//RTL
@@ -3401,11 +3399,6 @@ namespace nana{	namespace widgets
 					text_w += _m_text_extent_size(ent.begin, len).width;
 			}
 			return text_w;
-		}
-
-		bool text_editor::_m_is_right_text(const unicode_bidi::entity& e)
-		{
-			return ((e.bidi_char_type != unicode_bidi::bidi_char::L) && (e.level & 1));
 		}
 
 		//end class text_editor
