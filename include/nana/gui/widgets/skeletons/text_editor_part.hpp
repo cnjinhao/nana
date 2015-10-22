@@ -11,6 +11,9 @@ namespace nana
 	{
 		namespace skeletons
 		{
+			//forward declaration
+			class text_editor;
+
 			struct text_editor_scheme
 				: public ::nana::widget_colors
 			{
@@ -23,7 +26,7 @@ namespace nana
 			public:
 				virtual ~text_editor_event_interface() = default;
 
-				virtual void text_position_changed(const std::vector<upoint>&) = 0;
+				virtual void text_exposed(const std::vector<upoint>&) = 0;
 			};
 		}
 	}

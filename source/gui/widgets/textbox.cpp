@@ -20,38 +20,32 @@
 
 namespace nana
 {
-	arg_textbox::arg_textbox(textbox& wdg)
-		: widget(wdg)
+	arg_textbox::arg_textbox(textbox& wdg, const std::vector<upoint>& text_pos)
+		: widget(wdg), text_position(text_pos)
 	{}
-
-	arg_textbox_text_position::arg_textbox_text_position(textbox& wdg, const std::vector<upoint>& text_pos)
-		:	widget(wdg),
-			text_position(text_pos)
-	{
-	}
 
 namespace drawerbase {
 	namespace textbox
 	{
 		//class event_agent
-			event_agent::event_agent(::nana::textbox& wdg)
-				:widget_(wdg)
+			event_agent::event_agent(::nana::textbox& wdg, const std::vector<upoint>& text_pos)
+				:widget_(wdg), text_position_(text_pos)
 			{}
 
 			void event_agent::first_change()
 			{
-				widget_.events().first_change.emit(::nana::arg_textbox{ widget_ });
+				widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ });
 			}
 
 			void event_agent::text_changed()
 			{
-				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_ });
+				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ });
 			}
 
-			void event_agent::text_position_changed(const std::vector<upoint>& text_pos)
+			void event_agent::text_exposed(const std::vector<upoint>& text_pos)
 			{
-				::nana::arg_textbox_text_position arg(widget_, text_pos);
-				widget_.events().text_position_changed.emit(arg);
+				::nana::arg_textbox arg(widget_, text_pos);
+				widget_.events().text_exposed.emit(arg);
 			}
 		//end class event_agent
 
@@ -75,7 +69,7 @@ namespace drawerbase {
 		{
 			auto wd = wdg.handle();
 			widget_ = &wdg;
-			evt_agent_.reset(new event_agent(static_cast< ::nana::textbox&>(wdg)));
+			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
 
 			auto scheme = API::dev::get_scheme(wdg);
 

@@ -435,7 +435,7 @@ namespace nana{	namespace widgets
 
 				if (x > lnstr.size()) x = static_cast<unsigned>(lnstr.size());
 
-				unsigned text_w = editor_._m_pixels_by_char(lnstr, x);
+				auto const text_w = editor_._m_pixels_by_char(lnstr, x);
 
 				unsigned area_w = editor_._m_text_area().width;
 
@@ -1918,11 +1918,6 @@ namespace nana{	namespace widgets
 			return text_position_;
 		}
 
-		void text_editor::set_text_position_changed(std::function<void(const std::vector<upoint>&)> fn)
-		{
-			text_position_function_.swap(fn);
-		}
-
 		void text_editor::draw_corner()
 		{
 			if(text_area_.vscroll && text_area_.hscroll)
@@ -1967,7 +1962,7 @@ namespace nana{	namespace widgets
 				{
 					text_position_.swap(text_pos);
 					if (event_handler_)
-						event_handler_->text_position_changed(text_position_);
+						event_handler_->text_exposed(text_position_);
 				}
 			}
 			else //Draw tip string

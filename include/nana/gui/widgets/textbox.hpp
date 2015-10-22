@@ -23,27 +23,10 @@ namespace nana
 		: public event_arg
 	{
 		textbox& widget;
-		const std::vector<upoint>* text_position;
+		const std::vector<upoint>& text_position;	///< position of characters that the first character of line which are displayed
 
-		arg_textbox(textbox&);
+		arg_textbox(textbox&, const std::vector<upoint>&);
 	};
-
-	struct arg_textbox_text_position
-		: public event_arg
-	{
-		textbox& widget;
-		const std::vector<upoint>& text_position;
-
-		arg_textbox_text_position(textbox&, const std::vector<upoint>&);
-	};
-
-	namespace widgets
-	{
-		namespace skeletons
-		{
-			class text_editor;
-		}
-	}
 
 	namespace drawerbase
 	{
@@ -54,15 +37,7 @@ namespace nana
 			{
 				basic_event<arg_textbox> first_change;
 				basic_event<arg_textbox> text_changed;
-				basic_event<arg_textbox_text_position> text_position_changed;
-			};
-
-			class event_interface
-			{
-			public:
-				virtual ~event_interface() = default;
-
-				virtual void text_position_changed(const std::vector<upoint>&) = 0;
+				basic_event<arg_textbox> text_exposed;
 			};
 
 			class event_agent
@@ -70,16 +45,17 @@ namespace nana
 					public	widgets::skeletons::text_editor_event_interface 
 			{
 			public:
-				event_agent(::nana::textbox&);
+				event_agent(::nana::textbox&, const std::vector<upoint>&);
 			private:
 				//Overrides textbase_event_agent_interface
 				void first_change() override;
 				void text_changed() override;
 			private:
 				//Overrides text_editor_event_interface
-				void text_position_changed(const std::vector<upoint>&) override;
+				void text_exposed(const std::vector<upoint>&) override;
 			private:
 				::nana::textbox & widget_;
+				const std::vector<upoint>& text_position_;
 			};
 
 			//class drawer
@@ -122,6 +98,7 @@ namespace nana
 		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
+		using text_positions = std::vector<upoint>;
 		/// The default constructor without creating the widget.
 		textbox();
 
@@ -220,7 +197,7 @@ namespace nana
 
 
 		/// Returns the text position of each line that currently displays on screen.
-		std::vector<upoint> text_position() const;
+		text_positions text_position() const;
 
 		/// Returns the rectangle of text area
 		rectangle text_area() const;

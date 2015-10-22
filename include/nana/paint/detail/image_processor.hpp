@@ -30,7 +30,7 @@ namespace detail
 	{
 		///@brief	Seek a pixel address by using offset bytes
 		///@return	the specified pixel address
-		inline pixel_color_t * pixel_at(pixel_color_t * p, std::size_t bytes)	//deprecated
+		inline pixel_color_t * pixel_at(pixel_color_t * p, std::size_t bytes)
 		{
 			return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(p) + bytes);
 		}

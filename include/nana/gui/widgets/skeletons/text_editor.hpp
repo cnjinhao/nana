@@ -229,8 +229,6 @@ namespace nana{	namespace widgets
 
 			/// Returns text position of each line that currently displays on screen
 			const std::vector<upoint>& text_position() const;
-
-			void set_text_position_changed(std::function<void(const std::vector<upoint>&)>);
 		public:
 			void draw_corner();
 			void render(bool focused);
@@ -317,7 +315,6 @@ namespace nana{	namespace widgets
 			mutable ext_renderer_tag ext_renderer_;
 
 			std::vector<upoint> text_position_;	//position of text from last rendering.
-			std::function<void(const std::vector<upoint>&)> text_position_function_;
 
 			struct indent_rep
 			{

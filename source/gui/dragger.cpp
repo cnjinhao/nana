@@ -26,13 +26,17 @@ namespace nana
 			event_handle destroy;
 		};
 	public:
-		dragger_impl_t()
-			: dragging_(false)
-		{}
-
 		~dragger_impl_t()
 		{
-			_m_clear_triggers();
+			//Clear triggers
+			for (auto & t : triggers_)
+			{
+				API::umake_event(t.press);
+				API::umake_event(t.over);
+				API::umake_event(t.release);
+				API::umake_event(t.destroy);
+				API::capture_window(t.wd, false);
+			}
 		}
 
 		void drag_target(window wd, const rectangle& restrict_area, arrange arg)
@@ -128,40 +132,23 @@ namespace nana
 			tg.press	= events.mouse_down.connect(fn);
 			tg.over		= events.mouse_move.connect(fn);
 			tg.release	= events.mouse_up.connect(fn);
-			tg.destroy = events.destroy.connect([this](const arg_destroy& arg){
-				_m_destroy(arg.window_handle);
+			tg.destroy = events.destroy.connect([this](const arg_destroy& arg)
+			{
+				for (auto i = triggers_.begin(), end = triggers_.end(); i != end; ++i)
+				{
+					if (i->wd == arg.window_handle)
+					{
+						triggers_.erase(i);
+						API::capture_window(arg.window_handle, false);
+						return;
+					}
+				}
 			});
 
 			triggers_.push_back(tg);
 		}
 	private:
-		void _m_clear_triggers()
-		{
-			for(auto & t : triggers_)
-			{
-				API::umake_event(t.press);
-				API::umake_event(t.over);
-				API::umake_event(t.release);
-				API::umake_event(t.destroy);
-				API::capture_window(t.wd, false);
-			}
-			triggers_.clear();
-		}
-
-		void _m_destroy(::nana::window wd)
-		{
-			for(auto i = triggers_.begin(), end = triggers_.end(); i != end; ++i)
-			{
-				if(i->wd == wd)
-				{
-					triggers_.erase(i);
-					API::capture_window(wd, false);
-					return;
-				}
-			}
-		}
-
-		void _m_check_restrict_area(nana::point & pos, const nana::size & size, const nana::rectangle& restr_area)
+		static void _m_check_restrict_area(nana::point & pos, const nana::size & size, const nana::rectangle& restr_area)
 		{
 			if ((pos.x > 0) && (static_cast<int>(size.width) + pos.x > restr_area.right()))
 				pos.x = restr_area.right() - static_cast<int>(size.width);
@@ -176,7 +163,7 @@ namespace nana
 				pos.y = restr_area.y;
 		}
 	private:
-		bool dragging_;
+		bool dragging_{ false };
 		nana::point origin_;
 		std::vector<drag_target_t> targets_;
 		std::vector<trigger_t> triggers_;
