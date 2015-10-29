@@ -149,36 +149,35 @@ namespace nana
 
 				bool make_step(bool forward, unsigned multiple)
 				{
-					if (graph_)
-					{
-						size_type step = (multiple > 1 ? metrics_.step * multiple : metrics_.step);
-						size_type value = metrics_.value;
-						if (forward)
-						{
-							size_type maxv = metrics_.peak - metrics_.range;
-							if (metrics_.peak > metrics_.range && value < maxv)
-							{
-								if (maxv - value >= step)
-									value += step;
-								else
-									value = maxv;
-							}
-						}
-						else if (value)
-						{
-							if (value > step)
-								value -= step;
-							else
-								value = 0;
-						}
-						size_type cmpvalue = metrics_.value;
-						metrics_.value = value;
-						if (value != cmpvalue)
-						{
-							_m_emit_value_changed();
-							return true;
-						}
+					if (!graph_)
 						return false;
+					
+					size_type step = (multiple > 1 ? metrics_.step * multiple : metrics_.step);
+					size_type value = metrics_.value;
+					if (forward)
+					{
+						size_type maxv = metrics_.peak - metrics_.range;
+						if (metrics_.peak > metrics_.range && value < maxv)
+						{
+							if (maxv - value >= step)
+								value += step;
+							else
+								value = maxv;
+						}
+					}
+					else if (value)
+					{
+						if (value > step)
+							value -= step;
+						else
+							value = 0;
+					}
+					size_type cmpvalue = metrics_.value;
+					metrics_.value = value;
+					if (value != cmpvalue)
+					{
+						_m_emit_value_changed();
+						return true;
 					}
 					return false;
 				}
@@ -334,14 +333,61 @@ namespace nana
 		}//end namespace scroll
 	}//end namespace drawerbase
 
+	class scroll_interface
+	{
+	public:
+		using size_type = std::size_t;
+
+		virtual ~scroll_interface() = default;
+
+		///  \brief Determines whether it is scrollable.
+		/// @param for_less  whether it can be scrolled for a less value (backward or "up" if true, forward or "down" if false).
+		virtual bool scrollable(bool for_less) const = 0;
+		
+		///  the whole total (peak)
+		virtual size_type amount() const = 0;
+
+		virtual void amount(size_type peak) = 0;
+
+		/// Get the range of the widget (how many is shonw on a page, that is, How many to scroll after click on first or second)
+		virtual size_type range() const = 0;
+
+		/// Set the range of the widget.
+		virtual void range(size_type r) = 0;
+
+		///  \brief Get the value (current offset calculated from the very beginnig)
+		/// @return the value.
+		virtual size_type value() const = 0;
+
+		///  \brief Set the value.
+		/// @param s  a new value.
+		virtual void value(size_type s) = 0;
+
+
+		///  \brief Get the step of the sroll widget. The step indicates a variation of the value.
+		/// @return the step.
+		virtual size_type step() const = 0;
+
+		///  \brief Set the step.
+		/// @param s  a value for step.
+		virtual void step(size_type s) = 0;
+
+		///  \brief Increase/decrease values by a step (alternativelly by some number of steps).
+		/// @param forward  it determines whether increase or decrease.
+		/// @return true if the value is changed.
+		virtual bool make_step(bool forward, unsigned steps = 1) = 0;
+
+		virtual window window_handle() const = 0;
+	};
+
 	/// Provides a way to display an object which is larger than the window's client area.
 	template<bool Vertical>
 	class scroll    // add a widget scheme?
-		: public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events>
+		:	public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events>,
+			public scroll_interface
 	{
 		typedef widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical> > base_type;
 	public:
-		typedef std::size_t size_type;
 
 		///  \brief The default constructor without creating the widget.
 		scroll(){}
@@ -365,59 +411,58 @@ namespace nana
 
 		///  \brief Determines whether it is scrollable.
 		/// @param for_less  whether it can be scrolled for a less value (backward or "up" if true, forward or "down" if false).
-		bool scrollable(bool for_less) const
+		bool scrollable(bool for_less) const override
 		{
 			auto & m = this->get_drawer_trigger().metrics();
 			return (for_less ? (0 != m.value) : (m.value < m.peak - m.range));
 		}
 		///  the whole total (peak)
-		size_type amount() const
+		size_type amount() const override
 		{
 			return this->get_drawer_trigger().metrics().peak;
 		}
 
-		void amount(size_type Max)
+		void amount(size_type peak) override
 		{
-			return this->get_drawer_trigger().peak(Max);
+			return this->get_drawer_trigger().peak(peak);
 		}
 
 		/// Get the range of the widget (how many is shonw on a page, that is, How many to scroll after click on first or second)
-		size_type range() const
+		size_type range() const override
 		{
 			return this->get_drawer_trigger().metrics().range;
 		}
 
 		/// Set the range of the widget.
-		void range(size_type r)
+		void range(size_type r) override
 		{
 			return this->get_drawer_trigger().range(r);
 		}
 
 		///  \brief Get the value (current offset calculated from the very beginnig)
 		/// @return the value.
-		size_type value() const
+		size_type value() const override
 		{
 			return this->get_drawer_trigger().metrics().value;
 		}
 
 		///  \brief Set the value.
 		/// @param s  a new value.
-		void value(size_type s)
+		void value(size_type s) override
 		{
 			return this->get_drawer_trigger().value(s);
 		}
 
-
 		///  \brief Get the step of the sroll widget. The step indicates a variation of the value.
 		/// @return the step.
-		size_type step() const
+		size_type step() const override
 		{
 			return this->get_drawer_trigger().metrics().step;
 		}
 
 		///  \brief Set the step.
 		/// @param s  a value for step.
-		void step(size_type s)
+		void step(size_type s) override
 		{
 			return this->get_drawer_trigger().step(s);
 		}
@@ -425,7 +470,7 @@ namespace nana
 		///  \brief Increase/decrease values by a step (alternativelly by some number of steps).
 		/// @param forward  it determines whether increase or decrease.
 		/// @return true if the value is changed.
-		bool make_step(bool forward, unsigned steps = 1)
+		bool make_step(bool forward, unsigned steps = 1) override
 		{
 			if (this->get_drawer_trigger().make_step(forward, steps))
 			{
@@ -433,6 +478,11 @@ namespace nana
 				return true;
 			}
 			return false;
+		}
+
+		window window_handle() const override
+		{
+			return this->handle();
 		}
 
 		///  \brief Increase/decrease values by steps as if it is scrolled through mouse wheel.

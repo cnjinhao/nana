@@ -249,12 +249,13 @@ namespace drawerbase {
 
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
-		void textbox::enable_indent(bool enb, std::function<nana::string()> generator)
+		textbox& textbox::indention(bool enb, std::function<nana::string()> generator)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->indent(enb, generator);
+			return *this;
 		}
 
 		textbox& textbox::reset(nana::string str)
@@ -314,8 +315,10 @@ namespace drawerbase {
 		/// Gets the caret position
 		bool textbox::caret_pos(point& pos, bool text_coordinate) const
 		{
-			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (!editor)
+				return false;
 
 			auto scr_pos = editor->caret_screen_pos();
 
@@ -329,6 +332,16 @@ namespace drawerbase {
 				pos = scr_pos;
 
 			return editor->hit_text_area(scr_pos);
+		}
+
+		textbox& textbox::caret_pos(const upoint& pos)
+		{
+			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (editor)
+				editor->move_caret(pos);
+			
+			return *this;
 		}
 
 		textbox& textbox::append(const nana::string& text, bool at_caret)

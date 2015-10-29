@@ -132,7 +132,7 @@ namespace nana
 
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
-		void enable_indent(bool, std::function<nana::string()> generator = {});
+		textbox& indention(bool, std::function<nana::string()> generator = {});
 
 		//A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
 		textbox& reset(nana::string = nana::string());      ///< discard the old text and set a new text
@@ -153,7 +153,11 @@ namespace nana
 		bool getline(std::size_t pos, nana::string&) const;
 
 		/// Gets the caret position
+		/// Returns true if the caret is in the area of display, false otherwise.
 		bool caret_pos(point& pos, bool text_coordinate) const;
+
+		/// Sets the caret position with a text position
+		textbox& caret_pos(const upoint&);
 
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
 		textbox& append(const nana::string& text, bool at_caret);
