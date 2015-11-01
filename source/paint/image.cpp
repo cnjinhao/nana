@@ -161,17 +161,6 @@ namespace paint
 
 	image::image_impl_interface::~image_impl_interface()
 	{}
-	/*
-	namespace detail	
-	{
-		int toupper(int c)	//deprecated
-		{
-			return (('a' <= c && c <= 'z') ? 
-					c - ('a' - 'A')
-					: c);
-		}
-	}//end namespace detail
-	//*/
 
 	//class image
 		image::image()

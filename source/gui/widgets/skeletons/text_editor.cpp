@@ -1646,30 +1646,6 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		bool text_editor::mouse_down(::nana::mouse button, const point& scrpos)
-		{
-			if (!hit_text_area(scrpos))
-				return false;
-
-			if(::nana::mouse::left_button == button)
-			{
-				API::capture_window(window_, true);
-				text_area_.captured = true;
-
-				//Set caret pos by screen point and get the caret pos.
-				mouse_caret(scrpos);
-				if(!select(false))
-				{
-					select_.a = points_.caret;	//Set begin caret
-					set_end_caret();
-				}
-				select_.mode_selection = selection::mode_mouse_selected;
-			}
-
-			text_area_.border_renderer(graph_, _m_bgcolor());
-			return true;
-		}
-
 		bool text_editor::mouse_move(bool left_button, const point& scrpos)
 		{
 			cursor cur = cursor::iterm;
@@ -1694,31 +1670,70 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		bool text_editor::mouse_up(::nana::mouse button, const point& scrpos)
+		bool text_editor::mouse_pressed(const arg_mouse& arg)
 		{
-			auto is_prev_no_selected = (select_.mode_selection == selection::mode_no_selected);
-
-			if(select_.mode_selection == selection::mode_mouse_selected)
+			if (event_code::mouse_down == arg.evt_code)
 			{
-				select_.mode_selection = selection::mode_no_selected;
-				set_end_caret();
+				if (!hit_text_area(arg.pos))
+					return false;
+
+				if (::nana::mouse::left_button == arg.button)
+				{
+					API::capture_window(window_, true);
+					text_area_.captured = true;
+
+					//Set caret pos by screen point and get the caret pos.
+					mouse_caret(arg.pos);
+					if (arg.shift)
+					{
+						if (points_.shift_begin_caret != points_.caret)
+						{
+							select_.a = points_.shift_begin_caret;
+							select_.b = points_.caret;
+						}
+					}
+					else
+					{
+						if (!select(false))
+						{
+							select_.a = points_.caret;	//Set begin caret
+							set_end_caret();
+						}
+						points_.shift_begin_caret = points_.caret;
+					}
+					select_.mode_selection = selection::mode_mouse_selected;
+				}
+
+				text_area_.border_renderer(graph_, _m_bgcolor());
+				return true;
 			}
-			else if (is_prev_no_selected)
+			else if (event_code::mouse_up == arg.evt_code)
 			{
-				if((!select_.dragged) || (!move_select()))
-					select(false);
+				auto is_prev_no_selected = (select_.mode_selection == selection::mode_no_selected);
+
+				if (select_.mode_selection == selection::mode_mouse_selected)
+				{
+					select_.mode_selection = selection::mode_no_selected;
+					set_end_caret();
+				}
+				else if (is_prev_no_selected)
+				{
+					if ((!select_.dragged) || (!move_select()))
+						select(false);
+				}
+				select_.dragged = false;
+
+				API::capture_window(window_, false);
+				text_area_.captured = false;
+				if (hit_text_area(arg.pos) == false)
+					API::window_cursor(window_, nana::cursor::arrow);
+
+				text_area_.border_renderer(graph_, _m_bgcolor());
+
+				//Redraw if is_prev_no_selected is true
+				return is_prev_no_selected;
 			}
-			select_.dragged = false;
-
-			API::capture_window(window_, false);
-			text_area_.captured = false;
-			if (hit_text_area(scrpos) == false)
-				API::window_cursor(window_, nana::cursor::arrow);
-
-			text_area_.border_renderer(graph_, _m_bgcolor());
-
-			//Redraw if is_prev_no_selected is true
-			return is_prev_no_selected;
+			return false;
 		}
 
 		textbase<nana::char_t> & text_editor::textbase()

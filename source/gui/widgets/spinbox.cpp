@@ -367,17 +367,13 @@ namespace nana
 						return true;
 					}
 
-
-					bool refreshed = false;
-					if (pressed)
-						refreshed = editor_->mouse_down(arg.button, arg.pos);
-					else
-						refreshed = editor_->mouse_up(arg.button, arg.pos);
-
-					if (refreshed)
+					if (editor_->mouse_pressed(arg))
+					{
 						_m_draw_spins(buttons::none);
+						return true;
+					}
 
-					return refreshed;
+					return false;
 				}
 
 				bool mouse_move(bool left_button, const ::nana::point& pos)

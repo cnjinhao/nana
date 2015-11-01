@@ -250,9 +250,8 @@ namespace nana{	namespace widgets
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
 			bool mouse_enter(bool);
-			bool mouse_down(::nana::mouse, const point& screen_pos);
 			bool mouse_move(bool left_button, const point& screen_pos);
-			bool mouse_up(::nana::mouse, const point& screen_pos);
+			bool mouse_pressed(const arg_mouse& arg);
 
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
@@ -365,6 +364,7 @@ namespace nana{	namespace widgets
 			{
 				nana::point		offset;	//x stands for pixels, y for lines
 				nana::upoint	caret;	//position of caret by text, it specifies the position of a new character
+				nana::upoint	shift_begin_caret;
 				unsigned		xpos{0};	//This data is used for move up/down
 			}points_;
 		};
