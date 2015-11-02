@@ -435,6 +435,7 @@ namespace nana
 					{
 						if ((nullptr == evt_agent_) || evt_agent_->removed(pos))
 						{
+							API::show_window(iterator_at(pos)->relative, false);
 							list_.erase(iterator_at(pos));
 							_m_adjust();
 
@@ -459,6 +460,8 @@ namespace nana
 									basis_.scroll_pixels = 0;
 							}
 
+							if (basis_.active != ::nana::npos)
+								API::show_window(iterator_at(basis_.active)->relative, true);
 							if(evt_agent_)
 								evt_agent_->activated(basis_.active);
 							return true;
@@ -1192,23 +1195,23 @@ namespace nana
 					return layouter_->text(i);
 				}
 
-				bool trigger::toolbox_button(toolbox_button_t btn, bool enable)
+				bool trigger::toolbox(kits btn, bool enable)
 				{
-					toolbox::button_t tb = toolbox::ButtonSize;
-					toolbox & tbobj = layouter_->toolbox_object();
+					auto tb = toolbox::ButtonSize;
+					auto& tbox = layouter_->toolbox_object();
 					switch(btn)
 					{
-					case trigger::ButtonAdd:
+					case kits::add:
 						tb = toolbox::ButtonAdd; break;
-					case trigger::ButtonList:
+					case kits::list:
 						tb = toolbox::ButtonList; break;
-					case trigger::ButtonClose:
+					case kits::close:
 						tb = toolbox::ButtonClose; break;
-					case trigger::ButtonScroll:
-						tbobj.enable(toolbox::ButtonScrollBack, enable);
-						return tbobj.enable(tbobj.ButtonScrollNext, enable);
+					case kits::scroll:
+						tbox.enable(toolbox::ButtonScrollBack, enable);
+						return tbox.enable(tbox.ButtonScrollNext, enable);
 					}
-					return (tb != toolbox::ButtonSize ? tbobj.enable(tb, enable) : false);
+					return (tb != toolbox::ButtonSize ? tbox.enable(tb, enable) : false);
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
