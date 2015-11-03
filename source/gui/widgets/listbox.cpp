@@ -848,6 +848,8 @@ namespace nana
 					return sorted_reverse_;
 				}
 
+				void scroll(const index_pair& pos, bool to_bottom);
+
 				///Append a new category with a specified name and return a pointer to it.
 				category_t* create_cat(nana::string&& text)
 				{
@@ -2404,6 +2406,54 @@ namespace nana
 				const std::size_t column_pos_;
 				std::vector<std::pair<index_type, essence_t::inline_pane*>> panes_;
 			};
+
+			void es_lister::scroll(const index_pair& pos, bool to_bottom)
+			{
+				auto& cat = *get(pos.cat);
+
+				if ((pos.item != ::nana::npos) && (pos.item >= cat.items.size()))
+					throw std::invalid_argument("listbox: invalid pos to scroll");
+
+				if (!cat.expand)
+				{
+					this->expand(pos.cat, true);
+					ess_->adjust_scroll_life();
+				}
+
+				//The number of items can be displayed on screen
+				auto view_items = ess_->number_of_lister_items(false) - 1;
+
+				index_pair start_pos;
+				if (to_bottom)
+				{
+					//start_pos will be (0,0) if backward fails
+					backward(pos, view_items, start_pos);
+				}
+				else
+				{
+					if (forward(pos, view_items, start_pos))
+						start_pos = pos;
+					else
+					{
+						index_pair last(list_.size() - 1);
+
+						if (list_.back().expand)
+						{
+							if (list_.back().items.empty())
+								last.item = npos;
+							else
+								last.item = list_.back().items.size() - 1;
+						}
+						else
+							last.item = ::nana::npos;
+
+						backward(last, view_items, start_pos);
+					}
+				}
+
+				ess_->set_scroll_y_dpl(start_pos);
+				ess_->adjust_scroll_value();
+			}
 
 			void es_lister::erase(const index_pair& pos)
 			{
@@ -4180,12 +4230,41 @@ namespace nana
 			_m_ess().set_auto_draw(ad);
 		}
 
+		void listbox::scroll(size_type cat_pos, bool to_bottom)
+		{
+			auto & ess = _m_ess();
+			auto cats = ess.lister.size_categ();
+
+			if (::nana::npos != cat_pos)
+			{
+				if (cat_pos >= cats)
+					throw std::invalid_argument("listbox: invalid category");
+			}
+			else
+				cat_pos = cats - 1;
+			
+			index_pair pos(cat_pos);
+			if (to_bottom)
+			{
+				auto items = ess.lister.size_item(cat_pos);
+				if (0 == items)
+					pos.item = ::nana::npos;
+				else
+					pos.item = items - 1;
+			}
+			else
+				pos.item = ess.lister.size_item(cat_pos) ? 0 : ::nana::npos;
+
+			ess.lister.scroll(pos, to_bottom);
+			ess.update();
+		}
+
 		listbox::size_type listbox::append_header(nana::string text, unsigned width)
 		{
 			auto & ess = _m_ess();
-			listbox::size_type index = ess.header.create(std::move(text), width);
+			auto pos = ess.header.create(std::move(text), width);
 			ess.update();
-            return index;
+            return pos;
 		}
 
 		listbox& listbox::header_width(size_type pos, unsigned pixels)
