@@ -4230,7 +4230,7 @@ namespace nana
 			_m_ess().set_auto_draw(ad);
 		}
 
-		void listbox::scroll(size_type cat_pos, bool to_bottom)
+		void listbox::scroll(bool to_bottom, size_type cat_pos)
 		{
 			auto & ess = _m_ess();
 			auto cats = ess.lister.size_categ();

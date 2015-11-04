@@ -557,7 +557,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void auto_draw(bool);                                ///< Set state: Redraw automatically after an operation
 
 		/// Scrolls the view to the first or last item of a specified category
-		void scroll(size_type cat_pos, bool to_bottom);
+		void scroll(bool to_bottom, size_type cat_pos = ::nana::npos);
 
         /// Appends a new column with a header text and the specified width at the end, and return it position
         size_type append_header(nana::string header_text, unsigned width = 120);		
