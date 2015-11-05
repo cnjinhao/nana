@@ -2008,6 +2008,7 @@ namespace nana
 						scroll.h.amount(header.pixels());
 						scroll.h.range(graph->width() - width);
 						scroll.h.value(scroll.offset_x);
+						scroll.h.step(graph->text_extent_size(L"W").width);
 					}
 
 					if(scroll.v.empty() == false)
@@ -4255,6 +4256,13 @@ namespace nana
 			else
 				pos.item = ess.lister.size_item(cat_pos) ? 0 : ::nana::npos;
 
+			ess.lister.scroll(pos, to_bottom);
+			ess.update();
+		}
+
+		void listbox::scroll(bool to_bottom, const index_pair& pos)
+		{
+			auto & ess = _m_ess();
 			ess.lister.scroll(pos, to_bottom);
 			ess.update();
 		}
