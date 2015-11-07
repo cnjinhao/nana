@@ -369,7 +369,7 @@ namespace nana
 					if (set_value)
 						iter.value(std::forward<T>(t));
 
-					update();
+					_m_update();
 
 					return iter;
 				}
@@ -440,11 +440,11 @@ namespace nana
 			private:
 				void _m_append(std::vector<cell> && cells);
 				void _m_cat_by_pos();
+				void _m_update();
 			private:
 				essence_t*	ess_{nullptr};
 				category_t*	cat_{nullptr};
 				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
-				void update();
 			};
 		
 			struct export_options

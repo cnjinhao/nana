@@ -4204,7 +4204,7 @@ namespace nana
 					cat_ = &(*i);
 				}
 
-				void cat_proxy::update() {
+				void cat_proxy::_m_update() {
 					ess_->update();
 				}
 
