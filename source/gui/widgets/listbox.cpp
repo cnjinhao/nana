@@ -4188,7 +4188,6 @@ namespace nana
 						auto & m = cat_->items.back();
 						m.bgcolor = wd->bgcolor();
 						m.fgcolor = wd->fgcolor();
-						ess_->update();
 					}
 				}
 
@@ -4204,6 +4203,11 @@ namespace nana
 					auto i = ess_->lister.get(pos_);
 					cat_ = &(*i);
 				}
+
+				void cat_proxy::update() {
+					ess_->update();
+				}
+
 			//class cat_proxy
 
 			//end class cat_proxy

@@ -368,6 +368,9 @@ namespace nana
 					item_proxy iter{ ess_, index_pair(pos_, size() - 1) };
 					if (set_value)
 						iter.value(std::forward<T>(t));
+
+					update();
+
 					return iter;
 				}
 
@@ -441,6 +444,7 @@ namespace nana
 				essence_t*	ess_{nullptr};
 				category_t*	cat_{nullptr};
 				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
+				void update();
 			};
 		
 			struct export_options
