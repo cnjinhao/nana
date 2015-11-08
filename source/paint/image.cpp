@@ -10,8 +10,7 @@
  *	@file: nana/paint/image.cpp
  */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/paint/image.hpp>
 #include <algorithm>
 #include <fstream>

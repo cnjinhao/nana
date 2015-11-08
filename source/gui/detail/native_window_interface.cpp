@@ -10,8 +10,7 @@
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/screen.hpp>
 #if defined(NANA_WINDOWS)

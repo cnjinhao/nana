@@ -13,9 +13,7 @@
  *
  *	http://standards.freedesktop.org/clipboards-spec/clipboards-0.1.txt
  */
-#include <nana/config.hpp>
-
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <X11/Xlocale.h>
 #include <locale>
 #include <map>

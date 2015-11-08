@@ -11,9 +11,7 @@
  *	@contributors: Ariel Vina-Rodriguez
  */
 
-#include <nana/config.hpp>
-
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>

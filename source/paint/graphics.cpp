@@ -10,8 +10,7 @@
  *	@file: nana/paint/graphics.cpp
  */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>

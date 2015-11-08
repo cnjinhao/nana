@@ -24,10 +24,9 @@
 #include <mutex>
 #endif
 
-#if defined(NANA_WINDOWS)
-#include <nana/detail/win32/platform_spec.hpp>
-#elif defined(NANA_LINUX)
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
+
+#if defined(NANA_LINUX)
 #include <nana/system/platform.hpp>
 #include <iostream>
 #endif

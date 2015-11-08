@@ -10,8 +10,7 @@
 *	@file: nana/gui/detail/bedrock_pi.cpp
 */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>

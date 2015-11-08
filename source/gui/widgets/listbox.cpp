@@ -9,6 +9,7 @@
  *
  *	@file: nana/gui/widgets/listbox.cpp
  *	@contributors:	Hiroshi Seki, Ariel Vina-Rodriguez
+ *					leobackes(pr #86)
  */
 
 #include <nana/gui/widgets/listbox.hpp>
