@@ -1,7 +1,7 @@
 /*
  *	Nana Configuration
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,6 @@
 
 #ifndef NANA_CONFIG_HPP
 #define NANA_CONFIG_HPP
-
 
 #if defined(_MSC_VER)
 	#define _SCL_SECURE_NO_WARNINGS
@@ -53,7 +52,7 @@
 	#define NANA_X11	1
 	#define STD_CODECVT_NOT_SUPPORTED
 #else
-#	static_assert(false, "Only Windows and Unix are supported now");
+#	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
 #endif
 
 #if defined(NANA_MINGW) || defined(NANA_LINUX)

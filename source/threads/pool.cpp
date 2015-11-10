@@ -27,7 +27,7 @@
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 	#include <process.h>
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include <pthread.h>
 #endif
 
@@ -61,7 +61,7 @@ namespace threads
 			{
 #if defined(NANA_WINDOWS)
 				typedef HANDLE thread_t;
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				typedef pthread_t thread_t;
 #endif
 				impl * pool_ptr;
@@ -69,7 +69,7 @@ namespace threads
 				thread_t	handle;
 				volatile state	thr_state;
 				time_t	timestamp;
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 				std::mutex wait_mutex;
 				std::condition_variable wait_cond;
 				volatile bool suspended;
@@ -89,7 +89,7 @@ namespace threads
 					pto->task_ptr = nullptr;
 #if defined(NANA_WINDOWS)
 					pto->handle = (HANDLE)::_beginthreadex(0, 0, reinterpret_cast<unsigned(__stdcall*)(void*)>(&impl::_m_thr_starter), pto, 0, 0);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 					pto->suspended = false;
 					::pthread_create(&(pto->handle), 0, reinterpret_cast<void*(*)(void*)>(&impl::_m_thr_starter), pto);
 #endif
@@ -136,7 +136,7 @@ namespace threads
 #if defined(NANA_WINDOWS)
 					::WaitForSingleObject(thr->handle, INFINITE);
 					::CloseHandle(thr->handle);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 					::pthread_join(thr->handle, 0);
 					::pthread_detach(thr->handle);
 #endif
@@ -222,7 +222,7 @@ namespace threads
 				pto->thr_state = state::idle;
 #if defined(NANA_WINDOWS)
 				::SuspendThread(pto->handle);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
 				pto->suspended = true;
 				pto->wait_cond.wait(lock);
@@ -239,7 +239,7 @@ namespace threads
 					if(n == 1 || n == static_cast<DWORD>(-1))
 						break;
 				}
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				while(false == pto->suspended)
 					;
 				std::unique_lock<std::mutex> lock(pto->wait_mutex);
@@ -326,7 +326,7 @@ namespace threads
 				::_endthreadex(0);
 				return 0;
 			}
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			static void * _m_thr_starter(pool_throbj * pto)
 			{
 				pto->pool_ptr->_m_thr_runner(pto);

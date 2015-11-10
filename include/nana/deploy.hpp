@@ -19,7 +19,7 @@
 
 #include <nana/config.hpp>
 #include <nana/charset.hpp>
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 #undef NANA_WINDOWS
 #endif
 
@@ -111,7 +111,7 @@ namespace nana
 
 #if defined(NANA_WINDOWS)
 	#define NANA_SHARED_EXPORT	extern "C" _declspec(dllexport)
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#define NANA_SHARED_EXPORT	extern "C"
 #endif
 

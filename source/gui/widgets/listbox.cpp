@@ -8,8 +8,12 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.cpp
- *	@contributors:	Hiroshi Seki, Ariel Vina-Rodriguez
- *					leobackes(pr #86)
+ *	@contributors:
+ *		Hiroshi Seki
+ *		Ariel Vina-Rodriguez
+ *		leobackes(pr#86)
+ *		Benjamin Navarro(pr#81)
+ *		
  */
 
 #include <nana/gui/widgets/listbox.hpp>
