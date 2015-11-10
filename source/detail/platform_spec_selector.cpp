@@ -17,8 +17,6 @@
 
 #if defined(NANA_WINDOWS)
 	#include "win32/platform_spec.cpp"
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include "linux_X11/platform_spec.cpp"
-#elif defined(NANA_MACOS)
-	#include "macos_X11/platform_spec.cpp"
 #endif

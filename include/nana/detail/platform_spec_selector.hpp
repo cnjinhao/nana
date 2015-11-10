@@ -16,6 +16,6 @@
 
 #if defined(NANA_WINDOWS)
 #include <nana/detail/win32/platform_spec.hpp>
-#else
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 #include <nana/detail/linux_X11/platform_spec.hpp>
 #endif
