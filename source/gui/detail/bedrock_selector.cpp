@@ -17,7 +17,7 @@
 
 #if defined(NANA_WINDOWS)
 	#include "win32/bedrock.cpp"
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include "linux_X11/bedrock.cpp"
 #endif
 

@@ -8,7 +8,9 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/notifier.cpp
- *	@contributors: Jan
+ *	@contributors:
+ *		Jan
+ *		Benjamin Navarro(pr#81)
  */
 #include <nana/deploy.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -26,7 +28,7 @@
 
 #include <nana/detail/platform_spec_selector.hpp>
 
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 #include <nana/system/platform.hpp>
 #include <iostream>
 #endif

@@ -19,4 +19,6 @@
 	#include "win32/platform_spec.cpp"
 #elif defined(NANA_LINUX)
 	#include "linux_X11/platform_spec.cpp"
+#elif defined(NANA_MACOS)
+	#include "macos_X11/platform_spec.cpp"
 #endif

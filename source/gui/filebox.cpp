@@ -16,7 +16,7 @@
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include <nana/gui/widgets/label.hpp>
 	#include <nana/gui/widgets/button.hpp>
 	#include <nana/gui/widgets/listbox.hpp>
@@ -32,7 +32,7 @@
 
 namespace nana
 {
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 	class filebox_implement
 		: public form
 	{
@@ -1027,7 +1027,7 @@ namespace nana
 				return false;
 			
 			impl_->file.resize(nana::strlen(impl_->file.data()));
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			filebox_implement fb(impl_->owner, impl_->open_or_save, impl_->title);
 			
 			if(impl_->filters.size())

@@ -953,7 +953,7 @@ namespace paint
 			{
 				const nana::char_t * end = str + len;
 				const nana::char_t * i = std::find(str, end, '\t');
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 				handle_->update_text_color();
 #endif
 				if (i != end)
