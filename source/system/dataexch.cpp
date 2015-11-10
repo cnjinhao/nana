@@ -1,6 +1,6 @@
 /*
  *	Data Exchanger Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,7 +19,7 @@
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
-	#include PLATFORM_SPEC_HPP
+	#include <nana/detail/platform_spec_selector.hpp>
 	#include <nana/gui/detail/bedrock.hpp>
 	#include <nana/gui/detail/basic_window.hpp>
 #endif

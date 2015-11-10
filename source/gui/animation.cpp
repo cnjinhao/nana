@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <list>
+#include <map>
 #include <algorithm>
 
 #if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
@@ -181,12 +182,11 @@ namespace nana
 			//Only list whos iterator would not invalided after a insertion.
 			std::list<frame> frames;
 			std::list<frame>::iterator this_frame;
-			std::size_t pos_in_this_frame;
-			mutable bool good_frame_by_frmbuilder;	//It indicates the state of frame whether is valid.
+			std::size_t pos_in_this_frame{ 0 };
+			mutable bool good_frame_by_frmbuilder{ false };	//It indicates the state of frame whether is valid.
 
 			impl()
-				:	this_frame(frames.end()), pos_in_this_frame(0),
-					good_frame_by_frmbuilder(false)
+				:	this_frame(frames.end())
 			{}
 
 			//Render A frame on the set of windows.
@@ -343,8 +343,6 @@ namespace nana
 			void close(impl* p);
 			bool empty() const;
 		private:
-			void _m_perf_thread(thread_variable* thrvar);
-		private:
 			mutable std::recursive_mutex mutex_;
 			std::vector<thread_variable*> threads_;
 		};	//end class animation::performance_manager
@@ -457,7 +455,48 @@ namespace nana
 				thr->interval = 1000.0 / double(p->fps);
 				thr->thread = std::make_shared<std::thread>([this, thr]()
 				{
-					_m_perf_thread(thr);
+					nana::system::timepiece tmpiece;
+					while (true)
+					{
+						thr->active = 0;
+						tmpiece.start();
+
+						{
+							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
+							for (auto ani : thr->animations)
+							{
+								if (ani->paused)
+									continue;
+
+								ani->render_this_frame();
+								if (false == ani->move_to_next())
+								{
+									if (ani->looped)
+									{
+										ani->reset();
+										++thr->active;
+									}
+								}
+								else
+									++thr->active;
+							}
+						}
+
+						if (thr->active)
+						{
+							thr->performance_parameter = tmpiece.calc();
+							if (thr->performance_parameter < thr->interval)
+								nana::system::sleep(static_cast<unsigned>(thr->interval - thr->performance_parameter));
+						}
+						else
+						{
+							//There isn't an active frame, then let the thread
+							//wait for a signal for an active animation
+							std::unique_lock<std::mutex> lock(thr->mutex);
+							if (0 == thr->active)
+								thr->condvar.wait(lock);
+						}
+					}
 				});
 
 				threads_.push_back(thr);
@@ -519,58 +558,16 @@ namespace nana
 				}
 				return true;
 			}
-
-			void animation::performance_manager::_m_perf_thread(thread_variable* thrvar)
-			{
-				nana::system::timepiece tmpiece;
-				while(true)
-				{
-					thrvar->active = 0;
-					tmpiece.start();
-
-					{
-						std::lock_guard<decltype(thrvar->mutex)> lock(thrvar->mutex);
-						for(auto ani : thrvar->animations)
-						{
-							if(ani->paused)
-								continue;
-
-							ani->render_this_frame();
-							if(false == ani->move_to_next())
-							{
-								if(ani->looped)
-								{
-									ani->reset();
-									++thrvar->active;
-								}
-							}
-							else
-								++thrvar->active;
-						}
-					}
-
-					if(thrvar->active)
-					{
-						thrvar->performance_parameter = tmpiece.calc();
-						if(thrvar->performance_parameter < thrvar->interval)
-							nana::system::sleep(static_cast<unsigned>(thrvar->interval - thrvar->performance_parameter));
-					}
-					else
-					{
-						//There isn't an active frame, then let the thread
-						//wait for a signal for an active animation
-						std::unique_lock<std::mutex> lock(thrvar->mutex);
-						if(0 == thrvar->active)
-							thrvar->condvar.wait(lock);
-					}
-				}
-			}
 		//end class animation::performance_manager
 
 		animation::animation(std::size_t fps)
 			: impl_(new impl(fps))
 		{
+		}
 
+		animation::~animation()
+		{
+			delete impl_;
 		}
 
 		void animation::push_back(frameset frms)

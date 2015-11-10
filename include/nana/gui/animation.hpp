@@ -51,6 +51,7 @@ namespace nana
 		class performance_manager;
 	public:
 		animation(std::size_t fps = 23);
+		~animation();
 
 		void push_back(frameset frms);
 		/*

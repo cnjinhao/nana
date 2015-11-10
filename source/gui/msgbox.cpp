@@ -959,7 +959,7 @@ namespace nana
 	int inputbox::date::month() const
 	{
 		if (!impl_->wdg_month.empty())
-			return impl_->wdg_month.option() + 1;
+			return static_cast<int>(impl_->wdg_month.option()) + 1;
 		return impl_->month;
 	}
 
@@ -1028,7 +1028,7 @@ namespace nana
 		impl->wdg_day.events().destroy.connect_unignorable([impl]
 		{
 			impl->day = impl->wdg_day.to_int();
-			impl->month = impl->wdg_month.option() + 1;
+			impl->month = static_cast<int>(impl->wdg_month.option()) + 1;
 		});
 
 		impl->wdg_year.events().destroy.connect_unignorable([impl]
@@ -1040,7 +1040,7 @@ namespace nana
 		{
 			auto month = impl->wdg_month.option() + 1;
 			auto year = impl->wdg_year.to_int();
-			int days = ::nana::date::month_days(year, month);
+			int days = ::nana::date::month_days(year, static_cast<unsigned>(month));
 
 			auto day = impl->wdg_day.to_int();
 			impl->wdg_day.range(1, days, 1); //It resets the current value of wdg_day

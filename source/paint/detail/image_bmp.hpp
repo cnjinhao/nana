@@ -13,7 +13,8 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 
-#include <nana/paint/detail/image_impl_interface.hpp>
+#include "image_pixbuf.hpp"
+
 #include <memory>
 
 namespace nana{	namespace paint
@@ -65,7 +66,7 @@ namespace nana{	namespace paint
 #endif
 
 		class image_bmp
-			:public image::image_impl_interface
+			:public basic_image_pixbuf
 		{
 		public:
 			image_bmp(){}
@@ -340,35 +341,6 @@ namespace nana{	namespace paint
 			{
 				return false;
 			}
-
-			bool empty() const override
-			{
-				return pixbuf_.empty();
-			}
-
-			void close() override
-			{
-				pixbuf_.close();
-			}
-
-			nana::size size() const override
-			{
-				return pixbuf_.size();
-			}
-
-			void paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const override
-			{
-				if(graph && pixbuf_)
-					pixbuf_.paste(src_r, graph.handle(), p_dst);
-			}
-
-			void stretch(const nana::rectangle& src_r, graph_reference graph, const nana::rectangle& r) const override
-			{
-				if(graph && pixbuf_)
-					pixbuf_.stretch(src_r, graph.handle(), r);
-			}
-		private:
-			nana::paint::pixel_buffer pixbuf_;
 		};//end class bmpfile
 	}//end namespace detail
 }//end namespace paint

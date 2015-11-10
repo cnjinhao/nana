@@ -172,10 +172,25 @@ namespace nana
 					{
 						editor_->editable(enb);
 
-						if(enb)
-							editor_->ext_renderer().background = nullptr;
+						if (!enb)
+						{
+							editor_->ext_renderer().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
+							{
+								auto clr_from = colors::button_face_shadow_start;
+								auto clr_to = colors::button_face_shadow_end;
+
+								int pare_off_px = 1;
+								if (element_state::pressed == state_.button_state)
+								{
+									pare_off_px = 2;
+									std::swap(clr_from, clr_to);
+								}
+
+								graph.gradual_rectangle(::nana::rectangle(graph.size()).pare_off(pare_off_px), clr_from, clr_to, true);
+							};
+						}
 						else
-							editor_->ext_renderer().background = std::bind(&drawer_impl::_m_draw_background, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+							editor_->ext_renderer().background = nullptr;
 
 						editor_->enable_background(enb);
 						editor_->enable_background_counterpart(!enb);
@@ -434,21 +449,6 @@ namespace nana
 					}
 				}
 
-				void _m_draw_background(graph_reference graph, const rectangle&, const ::nana::color&)
-				{
-					auto clr_from = colors::button_face_shadow_start;
-					auto clr_to = colors::button_face_shadow_end;
-
-					int pare_off_px = 1;
-					if (element_state::pressed == state_.button_state)
-					{
-						pare_off_px = 2;
-						std::swap(clr_from, clr_to);
-					}
-
-					graph.gradual_rectangle(::nana::rectangle(graph.size()).pare_off(pare_off_px), clr_from, clr_to, true);
-				}
-
 				void _m_draw_push_button(bool enabled)
 				{
 					::nana::rectangle r{graph_->size()};
@@ -622,7 +622,7 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
-						if(false == editor->mouse_down(arg.button, arg.pos))
+						if (!editor->mouse_pressed(arg))
 							drawer_->open_lister_if_push_button_positioned();
 
 						drawer_->draw();
@@ -637,7 +637,7 @@ namespace nana
 				{
 					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
 					{
-						drawer_->editor()->mouse_up(arg.button, arg.pos);
+						drawer_->editor()->mouse_pressed(arg);
 						drawer_->set_button_state(element_state::hovered, false);
 						drawer_->draw();
 						API::lazy_refresh();

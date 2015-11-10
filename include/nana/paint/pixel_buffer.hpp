@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -18,18 +18,6 @@
 
 namespace nana{	namespace paint
 {
-	///@brief	Seek a pixel address by using offset bytes
-	///@return	the specified pixel address
-	inline pixel_color_t * pixel_at(pixel_color_t * p, std::size_t bytes)
-	{
-		return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(p)+bytes);
-	}
-
-	inline const pixel_color_t * pixel_at(const pixel_color_t * p, std::size_t bytes)
-	{
-		return reinterpret_cast<const pixel_color_t*>(reinterpret_cast<const char*>(p)+bytes);
-	}
-
 	class pixel_buffer
 	{
 		struct pixel_buffer_storage;
@@ -64,6 +52,8 @@ namespace nana{	namespace paint
 		pixel_color_t * at(const point& pos) const;
 		pixel_color_t * raw_ptr(std::size_t row) const;
 		pixel_color_t * operator[](std::size_t row) const;
+
+		void fill_row(std::size_t row, const unsigned char* buffer, std::size_t bytes, unsigned bits_per_pixel);
 
 		void put(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bits_per_pixel, std::size_t bytes_per_line, bool is_negative);
 		

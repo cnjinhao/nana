@@ -12,9 +12,6 @@
 
 #ifndef NANA_GUI_DETAIL_BEDROCK_HPP
 #define NANA_GUI_DETAIL_BEDROCK_HPP
-#include "window_manager.hpp"
-#include "events_operation.hpp"
-#include "runtime_manager.hpp"
 #include "general_events.hpp"
 #include "color_schemes.hpp"
 #include "internal_scope_guard.hpp"
@@ -23,9 +20,11 @@ namespace nana
 {
 namespace detail
 {
-	struct native_interface;
+	class	element_store;
 
-	class element_store;
+	class	events_operation;
+	struct	basic_window;
+	class	window_manager;
 
 	//class bedrock
 	//@brief:	bedrock is a fundamental core component, it provides a abstract to the OS platform
@@ -34,9 +33,7 @@ namespace detail
 	{
 		bedrock();
 	public:
-		typedef native_interface	interface_type;
-		typedef window_manager window_manager_t;
-		typedef window_manager_t::core_window_t core_window_t;
+		using core_window_t = basic_window;
 
 		struct thread_context;
 
@@ -53,7 +50,6 @@ namespace detail
 
 		::nana::category::flags category(core_window_t*);
 		core_window_t* focus();
-		native_window_type root(core_window_t*);
 
 		void set_menubar_taken(core_window_t*);
 
@@ -83,14 +79,13 @@ namespace detail
 		void undefine_state_cursor(core_window_t*, thread_context*);
 
 		widget_colors& get_scheme_template(scheme_factory_base&&);
-		std::unique_ptr<widget_colors> make_scheme(scheme_factory_base&&);
+		widget_colors* make_scheme(scheme_factory_base&&);
+
+		events_operation&	evt_operation();
+		window_manager&		wd_manager();
+
+		void manage_form_loader(core_window_t*, bool insert_or_remove);
 	public:
-		events_operation	evt_operation;
-		window_manager_t	wd_manager;
-
-		runtime_manager<core_window_t*, bedrock>	rt_manager;
-
-		bool emit(event_code, core_window_t*, const arg_mouse&, bool ask_update, thread_context*);
 		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*);
 		bool emit_drawer(event_code, core_window_t*, const event_arg&, thread_context*);
 	private:

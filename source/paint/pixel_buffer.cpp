@@ -11,14 +11,14 @@
  *	@note: The format of Xorg 16bits depth is 565
  */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <nana/paint/detail/image_process_provider.hpp>
 
 #include <stdexcept>
+#include <cstring>
 
 namespace nana{	namespace paint
 {
@@ -609,6 +609,63 @@ namespace nana{	namespace paint
 	{
 		auto sp = storage_.get();
 		return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * row);
+	}
+
+	void pixel_buffer::fill_row(std::size_t row, const unsigned char* buffer, std::size_t bytes, unsigned bits_per_pixel)
+	{
+		auto sp = storage_.get();
+		if (!sp)
+			return;
+
+		auto row_ptr = sp->raw_pixel_buffer + sp->pixel_size.width * row;
+
+		//the number of pixels will be copied
+		auto const px_count = (sp->pixel_size.width <= (bytes / (bits_per_pixel / 8)) ? sp->pixel_size.width : (bytes / (bits_per_pixel / 8)));
+		if (32 == bits_per_pixel)
+		{
+			std::memcpy(row_ptr, buffer, px_count * 4);
+		}
+		else if (24 == bits_per_pixel)
+		{
+			for (auto p = row_ptr, end = row_ptr + px_count; p != end; ++p)
+			{
+				p->element.red = buffer[0];
+				p->element.green = buffer[1];
+				p->element.blue = buffer[2];
+
+				buffer += 3;
+			}
+		}
+		else if (16 == bits_per_pixel)
+		{
+			unsigned char palette[32];
+			for (std::size_t i = 0; i < 32; ++i)
+				palette[i] = static_cast<unsigned char>(i * 255 / 31);
+
+#if defined(NANA_X11)
+			unsigned char palette_6bits[64];
+			for (std::size_t i = 0; i < 64; ++i)
+				palette_6bits[i] = static_cast<unsigned char>(i * 255 / 63);
+#endif
+
+			auto px = reinterpret_cast<const unsigned short*>(buffer);
+
+			for (auto p = row_ptr, end = row_ptr + px_count; p != end; ++p)
+			{
+				p->element.red = palette[(*px >> 11) & 0x1F];
+
+				//16-bits RGB format under X is 565, under Windows is 555
+#if defined(NANA_X11)
+				p->element.green = palette_6bits[(*px >> 5) & 0x3F];
+				p->element.blue = palette[*px & 0x1F];
+#else
+				p->element.green = palette[(*px >> 6) & 0x1F];
+				p->element.blue = palette[(*px >> 1) & 0x1F];
+#endif
+				++px;
+			}
+		}
+
 	}
 
 	void pixel_buffer::put(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bits_per_pixel, std::size_t bytes_per_line, bool is_negative)

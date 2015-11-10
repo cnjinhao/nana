@@ -151,6 +151,7 @@ namespace nana
 					if(dir != attr_.dir)
 					{
 						attr_.dir = dir;
+						_m_mk_slider_pos_by_value();
 						this->draw();
 					}
 				}
@@ -425,7 +426,7 @@ namespace nana
 					default:
 						break;
 					}
-					return pos;
+					return (pos < 0 ? 0 : pos);
 				}
 
 				int _m_slider_refpos() const
@@ -443,7 +444,13 @@ namespace nana
 					if(_m_scale())
 					{
 						auto cmpvalue = static_cast<int>(attr_.vcur);
-						attr_.vcur = (attr_.pos * attr_.vmax / _m_scale());
+						if (style::vertical == attr_.dir)
+						{
+							double scl = _m_scale();
+							attr_.vcur = (scl - attr_.pos) * attr_.vmax / scl;
+						}
+						else
+							attr_.vcur = (attr_.pos * attr_.vmax / _m_scale());
 						if (cmpvalue != static_cast<int>(attr_.vcur))
 							_m_emit_value_changed();
 					}
@@ -452,6 +459,9 @@ namespace nana
 				void _m_mk_slider_pos_by_value()
 				{
 					attr_.pos = double(_m_scale()) * attr_.vcur / attr_.vmax;
+
+					if (style::vertical == attr_.dir)
+						attr_.pos = _m_scale() - attr_.pos;
 
 					if(slider_state_.trace == slider_state_.TraceNone)
 						attr_.adorn_pos = attr_.pos;
@@ -480,8 +490,16 @@ namespace nana
 					//adorn
 					renderer::adorn_t adorn;
 					adorn.horizontal = bar.horizontal;
-					adorn.bound.x = (bar.horizontal ? bar.r.x : bar.r.y) + attr_.border;
-					adorn.bound.y = adorn.bound.x + static_cast<int>(attr_.adorn_pos);
+					if (adorn.horizontal)
+					{
+						adorn.bound.x = bar.r.x + attr_.border;
+						adorn.bound.y = adorn.bound.x + static_cast<int>(attr_.adorn_pos);
+					}
+					else
+					{
+						adorn.bound.y = static_cast<int>(other_.graph->height()) - static_cast<int>(attr_.border + bar.r.y);
+						adorn.bound.x = static_cast<int>(attr_.adorn_pos + attr_.border + bar.r.y);
+					}
 					adorn.vcur_scale = static_cast<unsigned>(attr_.pos);
 					adorn.block = (bar.horizontal ? bar.r.height : bar.r.width) - attr_.border * 2;
 					adorn.fixedpos = static_cast<int>((bar.horizontal ? bar.r.y : bar.r.x) + attr_.border);

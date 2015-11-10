@@ -578,66 +578,6 @@ namespace nana
 					return false;
 				}
 
-				/*
-				void trigger::_m_draw()
-				{
-					auto bgcolor = API::bgcolor(*widget_);
-					graph_->rectangle(true, bgcolor);
-
-					item_renderer ird(*widget_, *graph_);
-
-					nana::point item_pos(2, 2);
-					nana::size item_s(0, 23);
-
-					unsigned long index = 0;
-					for(auto i : items_->cont())
-					{
-						//Transform the text if it contains the hotkey character
-						::nana::char_t hotkey;
-						::nana::string::size_type hotkey_pos;
-						auto text = API::transform_shortkey_text(i->text, hotkey, &hotkey_pos);
-
-						nana::size text_s = graph_->text_extent_size(text);
-
-						item_s.width = text_s.width + 16;
-
-						i->pos = item_pos;
-						i->size = item_s;
-
-						using state = item_renderer::state;
-						state item_state = (index != state_.active ? state::normal : (state_.menu_active ? state::selected : state::highlighted));
-						ird.background(item_pos, item_s, item_state);
-
-						if (state::selected == item_state)
-						{
-							int x = item_pos.x + item_s.width;
-							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
-							graph_->line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.4));
-							graph_->line({ x + 1, y1 }, { x + 1, y2 }, bgcolor.blend(colors::button_face_shadow_end, 0.5));
-						}
-
-						//Draw text, the text is transformed from orignal for hotkey character
-						int text_top_off = (item_s.height - text_s.height) / 2;
-						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, text);
-
-						if(hotkey)
-						{
-							unsigned off_w = (hotkey_pos ? graph_->text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
-							nana::size hotkey_size = graph_->text_extent_size(text.c_str() + hotkey_pos, 1);
-
-							unsigned ascent, descent, inleading;
-							graph_->text_metrics(ascent, descent, inleading);
-							int x = item_pos.x + 8 + off_w;
-							int y = item_pos.y + text_top_off + ascent + 1;
-							graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, ::nana::colors::black);
-						}
-
-						item_pos.x += i->size.width;
-						++index;
-					}
-				}
-				*/
-
 				//struct state_type
 					trigger::state_type::state_type()
 						:	active(npos),

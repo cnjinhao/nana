@@ -13,9 +13,7 @@
  *
  *	http://standards.freedesktop.org/clipboards-spec/clipboards-0.1.txt
  */
-#include <nana/config.hpp>
-
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <X11/Xlocale.h>
 #include <locale>
 #include <map>
@@ -24,6 +22,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
+#include <nana/gui/detail/window_manager.hpp>
 #include <nana/system/platform.hpp>
 #include <errno.h>
 #include <sstream>
@@ -302,14 +301,24 @@ namespace detail
 #endif
 	}
 
+	unsigned drawable_impl_type::get_color() const
+	{
+		return color_;
+	}
+
+	unsigned drawable_impl_type::get_text_color() const
+	{
+		return text_color_;
+	}
+
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
-		color_ = clr.px_color().value;
+		color_ = (clr.px_color().value & 0xFFFFFF);
 	}
 
 	void drawable_impl_type::set_text_color(const ::nana::color& clr)
 	{
-		text_color_ = clr.px_color().value;
+		text_color_ = (clr.px_color().value & 0xFFFFFF);
 		update_text_color();
 	}
 
@@ -686,7 +695,7 @@ namespace detail
 		if(vec)
 		{
 			set_error_handler();
-			auto & wd_manager = detail::bedrock::instance().wd_manager;
+			auto & wd_manager = detail::bedrock::instance().wd_manager();
 			for(auto u = vec->rbegin(); u != vec->rend(); ++u)
 				wd_manager.close(wd_manager.root(*u));
 
@@ -1352,7 +1361,7 @@ namespace detail
 					::XTranslateCoordinates(self.display_, self.root_window(), evt.xclient.window, x, y, &self.xdnd_.pos.x, &self.xdnd_.pos.y, &child);
 					typedef detail::bedrock bedrock;
 
-					auto wd = bedrock::instance().wd_manager.find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
+					auto wd = bedrock::instance().wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
 					if(wd && wd->flags.dropable)
 					{
 						accepted = true;

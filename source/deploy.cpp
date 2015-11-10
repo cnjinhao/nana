@@ -20,7 +20,7 @@
 	#include <windows.h>
 #elif defined(NANA_LINUX)
 	#include <string.h>
-	#include PLATFORM_SPEC_HPP
+	#include <nana/detail/platform_spec_selector.hpp>
 #endif
 
 //Implement workarounds for GCC/MinGW which version is below 4.8.2

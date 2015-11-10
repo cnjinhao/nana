@@ -97,29 +97,31 @@ namespace nana
 				{
 					int x = r.x + (static_cast<int>(r.width) - 14) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 14) / 2;
-					
+
 					::nana::color clr;
 
 					switch(sta)
 					{
 					case item_renderer::highlight:
-						clr = { colors::white }; break;
+						clr = colors::white; break;
 					case item_renderer::press:
-						clr = { 0xA0, 0xA0, 0xA0 }; break;
+						clr = static_cast<color_rgb>(0xA0A0A0); break;
 					case item_renderer::disable:
-						clr = { 0x80, 0x80, 0x80 }; break;
+						clr = static_cast<color_rgb>(0x808080); break;
 					default:
-						clr = { 0xF0, 0xF0, 0xF0 };
+						clr = static_cast<color_rgb>(0xF0F0F0);
 					}
 					graph.rectangle(r, true, bgcolor_);
-					nana::paint::gadget::cross(graph, x, y, 14, 6, clr);
+					facade<element::cross> cross;
+					cross.draw(graph, {}, clr, { x, y, 14, 6 }, element_state::normal);
 				}
 
 				virtual void close(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					nana::paint::gadget::close_16_pixels(graph, r.x + (r.width - 16) / 2, r.y + (r.height - 16) / 2, 1, colors::black);
+					facade<element::x_icon> x_icon;
+					x_icon.draw(graph, {}, colors::black, { r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
 					if(item_renderer::highlight == sta)
-						graph.rectangle(r, false, {0xa0, 0xa0, 0xa0});
+						graph.rectangle(r, false, static_cast<color_rgb>(0xa0a0a0));
 				}
 
 				virtual void close_fly(graph_reference graph, const nana::rectangle& r, bool active, state_t sta)
@@ -129,8 +131,8 @@ namespace nana
 
 					if (sta == item_renderer::highlight)
 					{
-						::nana::color bgcolor{ 0xCC, 0xD2, 0xDD };
-						::nana::color rect_clr{0x9d, 0xa3, 0xab};
+						::nana::color bgcolor{ static_cast<color_rgb>(0xCCD2DD) };
+						::nana::color rect_clr{ static_cast<color_rgb>(0x9da3ab) };
 						graph.round_rectangle(r, 1, 1, rect_clr, false, {});
 						nana::rectangle draw_r(r);
 						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.8));
@@ -138,26 +140,25 @@ namespace nana
 						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.2));
 					}
 					else if (!active)
-						clr = ::nana::color{ 0x92, 0x99, 0xA4 };
+						clr = static_cast<color_rgb>(0x9299a4);
 
-					gadget::close_16_pixels(graph, r.x - (16 - r.width) / 2, r.y - (16 - r.height) / 2, 1, clr);
+					facade<element::x_icon> x_icon;
+					x_icon.draw(graph, {}, colors::black, { r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);
+
 				}
 
 				virtual void back(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					using namespace nana::paint::gadget;
 					_m_draw_arrow(graph, r, sta, direction::west);
 				}
 
 				virtual void next(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					using namespace nana::paint::gadget;
 					_m_draw_arrow(graph, r, sta, direction::east);
 				}
 
 				virtual void list(graph_reference graph, const nana::rectangle& r, state_t sta)
 				{
-					using namespace nana::paint::gadget;
 					_m_draw_arrow(graph, r, sta, direction::south);
 				}
 			private:
@@ -343,7 +344,7 @@ namespace nana
 				{
 					if(i < list_.size())
 						return at_no_bound_check(i);
-					throw std::out_of_range("Nana.GUI.tabbar::at() is out of range");
+					throw std::out_of_range("invalid position of tabbar");
 				}
 
 				iterator iterator_at(std::size_t pos)
@@ -369,7 +370,7 @@ namespace nana
 				{
 					if(pos < list_.size())
 						return at_no_bound_check(pos);
-					throw std::out_of_range("Nana.GUI.tabbar::at() const is out of range");
+					throw std::out_of_range("invalid position of tabbar");
 				}
 
 				const nana::any& at_no_bound_check(std::size_t pos) const
@@ -434,6 +435,7 @@ namespace nana
 					{
 						if ((nullptr == evt_agent_) || evt_agent_->removed(pos))
 						{
+							API::show_window(iterator_at(pos)->relative, false);
 							list_.erase(iterator_at(pos));
 							_m_adjust();
 
@@ -458,6 +460,8 @@ namespace nana
 									basis_.scroll_pixels = 0;
 							}
 
+							if (basis_.active != ::nana::npos)
+								API::show_window(iterator_at(basis_.active)->relative, true);
 							if(evt_agent_)
 								evt_agent_->activated(basis_.active);
 							return true;
@@ -765,20 +769,18 @@ namespace nana
 				void _m_open_menulister()
 				{
 					menulister_.clear();
+					auto fn = [this](::nana::menu::item_proxy& ipx)
+					{
+						if (this->activate(ipx.index()))
+							API::refresh_window(basis_.wd);
+					};
 
-					auto f = std::bind(&layouter::_m_click_menulister, this, std::placeholders::_1);
 					for(auto & m : list_)
-						menulister_.append(m.text, f);
+						menulister_.append(m.text, fn);
 
 					auto r = toolbox_.area(toolbox_.ButtonList, basis_.graph->height());
 					r.x += _m_toolbox_pos();
 					menulister_.popup(basis_.wd, r.x, r.bottom());
-				}
-
-				void _m_click_menulister(nana::menu::item_proxy& ip)
-				{
-					if(this->activate(ip.index()))
-						API::refresh_window(basis_.wd);
 				}
 
 				//the begin pos of toolbox
@@ -1009,12 +1011,12 @@ namespace nana
 						int x = _m_itembar_right();
 						if (x > 0)
 						{
-							basis_.graph->line({ x - 2, 0 }, { x - 2, bottom }, { 0x80, 0x80, 0x80 });
-							basis_.graph->line({ x - 1, 0 }, { x - 1, bottom }, {0xf0, 0xf0, 0xf0});
+							basis_.graph->line({ x - 2, 0 }, { x - 2, bottom }, static_cast<color_rgb>(0x808080));
+							basis_.graph->line({ x - 1, 0 }, { x - 1, bottom }, static_cast<color_rgb>(0xf0f0f0));
 						}
 					}
 
-					basis_.graph->set_color({ 0x80, 0x80, 0x80 });
+					basis_.graph->set_color(static_cast<color_rgb>(0x808080));
 
 					int right = static_cast<int>(basis_.graph->width());
 					int end = active_m.r.x + static_cast<int>(active_m.r.width);
@@ -1193,23 +1195,23 @@ namespace nana
 					return layouter_->text(i);
 				}
 
-				bool trigger::toolbox_button(toolbox_button_t btn, bool enable)
+				bool trigger::toolbox(kits btn, bool enable)
 				{
-					toolbox::button_t tb = toolbox::ButtonSize;
-					toolbox & tbobj = layouter_->toolbox_object();
+					auto tb = toolbox::ButtonSize;
+					auto& tbox = layouter_->toolbox_object();
 					switch(btn)
 					{
-					case trigger::ButtonAdd:
+					case kits::add:
 						tb = toolbox::ButtonAdd; break;
-					case trigger::ButtonList:
+					case kits::list:
 						tb = toolbox::ButtonList; break;
-					case trigger::ButtonClose:
+					case kits::close:
 						tb = toolbox::ButtonClose; break;
-					case trigger::ButtonScroll:
-						tbobj.enable(toolbox::ButtonScrollBack, enable);
-						return tbobj.enable(tbobj.ButtonScrollNext, enable);
+					case kits::scroll:
+						tbox.enable(toolbox::ButtonScrollBack, enable);
+						return tbox.enable(tbox.ButtonScrollNext, enable);
 					}
-					return (tb != toolbox::ButtonSize ? tbobj.enable(tb, enable) : false);
+					return (tb != toolbox::ButtonSize ? tbox.enable(tb, enable) : false);
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
@@ -1274,8 +1276,6 @@ namespace nana
 #include <forward_list>
 namespace nana
 {
-	namespace ng
-	{
 		namespace drawerbase
 		{
 			namespace tabbar_lite
@@ -1285,6 +1285,7 @@ namespace nana
 					::std::string text;
 					::nana::any	value;
 					::std::pair<int, int> pos_ends;
+					::nana::window attached_window{ nullptr };
 
 					item(std::string t, ::nana::any v)
 						: text(std::move(t)), value(std::move(v))
@@ -1345,19 +1346,36 @@ namespace nana
 					using graph_reference = ::nana::paint::graphics&;
 					static const std::size_t npos = static_cast<std::size_t>(-1);
 
-					void set_widget(widget& wdg)
+					void set_widget(::nana::tabbar_lite& wdg)
 					{
 						widget_ = &wdg;
 					}
 
-					::nana::dev::widget_traits<widget>::scheme_type & scheme()
+					::nana::tabbar_lite* widget_ptr() const
 					{
-						return API::scheme(*widget_);
+						return widget_;
 					}
 
 					std::forward_list<item>& items()
 					{
 						return items_;
+					}
+
+					void show_attached_window()
+					{
+						if (indexes_.active_pos != npos)
+						{
+							auto i = items_.cbegin();
+							std::advance(i, indexes_.active_pos);
+							API::show_window(i->attached_window, true);
+
+							std::size_t pos = 0;
+							for (auto & m : items_)
+							{
+								if (pos++ != indexes_.active_pos)
+									API::show_window(m.attached_window, false);
+							}
+						}
 					}
 
 					bool track_pointer(const point& pos)
@@ -1390,7 +1408,7 @@ namespace nana
 						return indexes_;
 					}
 				private:
-					widget * widget_{ nullptr };
+					::nana::tabbar_lite * widget_{ nullptr };
 					std::forward_list<item> items_;
 					indexes indexes_;
 				};
@@ -1404,7 +1422,7 @@ namespace nana
 					{
 						_m_calc_metrics(graph, model.items());
 
-						auto & scheme = model.scheme();
+						auto & scheme = model.widget_ptr()->scheme();
 
 						//draw background
 						graph.rectangle(true, scheme.background);
@@ -1475,14 +1493,14 @@ namespace nana
 						delete model_;
 					}
 
-					model* driver::get_model()
+					model* driver::get_model() const throw()
 					{
 						return model_;
 					}
 
 					void driver::attached(widget_reference wdg, graph_reference)
 					{
-						model_->set_widget(wdg);
+						model_->set_widget(dynamic_cast<nana::tabbar_lite&>(wdg));
 					}
 
 					//Overrides drawer_trigger's method
@@ -1513,12 +1531,20 @@ namespace nana
 					void driver::mouse_down(graph_reference graph, const arg_mouse&)
 					{
 						auto & indexes = model_->get_indexes();
-						if (indexes.hovered_pos == model_->npos)
+						if ((indexes.hovered_pos == model_->npos) || (indexes.active_pos == indexes.hovered_pos))
 							return;
 
-						indexes.active_pos = indexes.hovered_pos;
-						refresh(graph);
-						API::lazy_refresh();
+						if (indexes.active_pos != indexes.hovered_pos)
+						{
+							indexes.active_pos = indexes.hovered_pos;
+							model_->show_attached_window();
+
+							refresh(graph);
+							API::lazy_refresh();
+
+							event_arg arg;
+							model_->widget_ptr()->events().selected.emit(arg);
+						}
 					}
 				//end class driver
 			}
@@ -1529,6 +1555,47 @@ namespace nana
 		tabbar_lite::tabbar_lite(window parent_wd, bool visible, const ::nana::rectangle& r)
 		{
 			this->create(parent_wd, r, visible);
+		}
+
+		//capacity
+		std::size_t tabbar_lite::length() const
+		{
+			auto& items = get_drawer_trigger().get_model()->items();
+			internal_scope_guard lock;
+			return static_cast<std::size_t>(std::distance(items.cbegin(), items.cend()));
+		}
+
+		//modifiers
+		void tabbar_lite::attach(std::size_t pos_set, window wd)
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			for (auto & m : model->items())
+			{
+				if (0 == pos_set--)
+				{
+					m.attached_window = wd;
+					model->show_attached_window();
+					return;
+				}
+			}
+
+			throw std::out_of_range("invalid position of tabbar_lite");
+		}
+
+		window tabbar_lite::attach(std::size_t pos_set) const
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			for (auto & m : model->items())
+			{
+				if (0 == pos_set--)
+					return m.attached_window;
+			}
+
+			throw std::out_of_range("invalid position of tabbar_lite");
 		}
 
 		void tabbar_lite::push_back(std::string text, ::nana::any any)
@@ -1559,6 +1626,64 @@ namespace nana
 			items.emplace_front(std::move(text), std::move(any));
 			API::refresh_window(handle());
 		}
+
+		std::size_t tabbar_lite::selected() const
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			return model->get_indexes().active_pos;
+		}
+
+		void tabbar_lite::erase(std::size_t pos, bool close_attached)
+		{
+			auto model = get_drawer_trigger().get_model();
+			internal_scope_guard lock;
+
+			const auto len = length();
+
+			if (len <= pos)
+				throw std::out_of_range("invalid position of tabbar_lite");
+
+			auto active_pos = model->get_indexes().active_pos;
+
+			//selection_changed is used to determine whether the title will be updated
+			bool selection_changed = true;
+			if (pos == active_pos)
+			{
+				if (active_pos + 1 == len)
+				{
+					if (active_pos)
+						--active_pos;
+					else
+						active_pos = npos;
+				}
+			}
+			else if (pos < active_pos)
+				--active_pos;
+			else
+				selection_changed = false;
+
+			model->get_indexes().active_pos = active_pos;
+
+			auto i = model->items().cbefore_begin();
+			std::advance(i, pos);
+
+			auto attached_wd = std::next(i)->attached_window;
+
+			model->items().erase_after(i);
+
+			model->show_attached_window();
+			API::refresh_window(handle());
+
+			if (close_attached && attached_wd)
+				API::close_window(attached_wd);
+
+			if (selection_changed && (active_pos != npos))
+			{
+				event_arg arg;
+				events().selected.emit(arg);
+			}
+		}
 		//end class tabbar
-	}
 }//end namespace nana

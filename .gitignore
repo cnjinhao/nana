@@ -33,3 +33,7 @@ _ReSharper*/
 *.suo
 *.sdf
 lib/
+*.ninja*
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake

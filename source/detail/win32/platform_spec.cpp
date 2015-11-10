@@ -11,9 +11,7 @@
  *
  *	This file provides basis class and data structrue that required by nana
  */
-#include <nana/config.hpp>
-
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <shellapi.h>
 #include <stdexcept>
 
@@ -63,14 +61,19 @@ namespace detail
 		return color_;
 	}
 
+	unsigned drawable_impl_type::get_text_color() const
+	{
+		return text_color_;
+	}
+
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
-		color_ = clr.px_color().value;
+		color_ = (clr.px_color().value & 0xFFFFFF);
 	}
 
 	void drawable_impl_type::set_text_color(const ::nana::color& clr)
 	{
-		auto rgb = clr.px_color().value;
+		auto rgb = (clr.px_color().value & 0xFFFFFF);
 		if (text_color_ != rgb)
 		{
 			::SetTextColor(context, NANA_RGB(rgb));

@@ -8,12 +8,12 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/window_manager.cpp
- *	@author: Jinhao
  *	@contributors:	Katsuhisa Yuasa
  */
 
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/events_operation.hpp>
 #include <nana/gui/detail/handle_manager.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
@@ -28,15 +28,75 @@ namespace nana
 
 namespace detail
 {
+	template<typename Key, typename Value>
+	class lite_map
+	{
+		struct key_value_rep
+		{
+			Key first;
+			Value second;
+
+			key_value_rep()
+				: first{}, second{}
+			{}
+
+			key_value_rep(const Key& k)
+				: first(k), second{}
+			{
+			}
+		};
+	public:
+		using iterator = typename std::vector<key_value_rep>::iterator;
+
+		Value& operator[](const Key& key)
+		{
+			for (auto& kv : table_)
+			{
+				if (kv.first == key)
+					return kv.second;
+			}
+
+			table_.emplace_back(key);
+			return table_.back().second;
+		}
+
+		iterator find(const Key& key)
+		{
+			for (auto i = table_.begin(); i != table_.end(); ++i)
+				if (i->first == key)
+					return i;
+
+			return table_.end();
+		}
+
+		iterator erase(iterator pos)
+		{
+			return table_.erase(pos);
+		}
+
+		iterator begin()
+		{
+			return table_.begin();
+		}
+
+		iterator end()
+		{
+			return table_.end();
+		}
+	private:
+		std::vector<key_value_rep> table_;
+	};
 	//class window_manager
+
 			struct window_handle_deleter
 			{
 				void operator()(basic_window* wd) const
 				{
-					bedrock::instance().evt_operation.umake(reinterpret_cast<window>(wd));
+					bedrock::instance().evt_operation().umake(reinterpret_cast<window>(wd));
 					delete wd;
 				}
 			};
+			
 			//struct wdm_private_impl
 			struct window_manager::wdm_private_impl
 			{
@@ -44,6 +104,8 @@ namespace detail
 				handle_manager<core_window_t*, window_manager, window_handle_deleter>	wd_register;
 				paint::image default_icon_big;
 				paint::image default_icon_small;
+
+				lite_map<core_window_t*, std::vector<std::function<void()>>> safe_place;
 			};
 		//end struct wdm_private_impl
 
@@ -153,7 +215,7 @@ namespace detail
 
 		bool window_manager::is_queue(core_window_t* wd)
 		{
-			return (wd && (wd->other.category == category::root_tag::value));
+			return (wd && (category::flags::root == wd->other.category));
 		}
 
 		std::size_t window_manager::number_of_core_window() const
@@ -216,7 +278,7 @@ namespace detail
 					if (owner->flags.destroying)
 						throw std::logic_error("the specified owner is destory");
 
-					native = (owner->other.category == category::frame_tag::value ?
+					native = (category::flags::frame == owner->other.category ?
 										owner->other.attribute.frame->container : owner->root_widget->root);
 					r.x += owner->pos_root.x;
 					r.y += owner->pos_root.y;
@@ -674,6 +736,14 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
 			{
+				auto parent = wd->parent;
+				while (parent)
+				{
+					if (parent->flags.refreshing)
+						return;
+					parent = parent->parent;
+				}
+
 				//Copy the root buffer that wd specified into DeviceContext
 #if defined(NANA_LINUX)
 				wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
@@ -784,12 +854,6 @@ namespace detail
 			return (impl_->wd_register.available(wd) ?
 				window_layer::read_visual_rectangle(wd, r) :
 				false);
-		}
-
-		::nana::widget* window_manager::get_widget(core_window_t* wd) const
-		{
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
-			return (impl_->wd_register.available(wd) ? wd->widget_notifier->widget_ptr() : nullptr);
 		}
 
 		std::vector<window_manager::core_window_t*> window_manager::get_children(core_window_t* wd) const
@@ -1190,6 +1254,37 @@ namespace detail
 					return reinterpret_cast<core_window_t*>(object->shortkeys.find(key));
 			}
 			return nullptr;
+		}
+
+		void window_manager::set_safe_place(core_window_t* wd, std::function<void()>&& fn)
+		{
+			if (fn)
+			{
+				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				if (!available(wd))
+					return;
+
+				impl_->safe_place[wd].emplace_back(std::move(fn));
+			}
+		}
+
+		void window_manager::call_safe_place(unsigned thread_id)
+		{
+			std::lock_guard<decltype(mutex_)> lock(mutex_);
+
+			for (auto i = impl_->safe_place.begin(); i != impl_->safe_place.end();)
+			{
+				if (i->first->thread_id == thread_id)
+				{
+					for (auto & fn : i->second)
+						fn();
+
+					i = impl_->safe_place.erase(i);
+				}
+				else
+					++i;
+			}
+
 		}
 
 		bool check_tree(basic_window* wd, basic_window* const cond)

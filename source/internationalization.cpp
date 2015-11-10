@@ -16,6 +16,8 @@
 #include <fstream>
 #include <sstream>
 #include <memory>
+#include <mutex>
+#include <map>
 
 namespace nana
 {

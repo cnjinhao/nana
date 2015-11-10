@@ -13,7 +13,7 @@
 #ifndef NANA_GUI_WIDGET_SPINBOX_HPP
 #define NANA_GUI_WIDGET_SPINBOX_HPP
 #include "widget.hpp"
-#include "skeletons/text_editor_scheme.hpp"
+#include "skeletons/text_editor_part.hpp"
 
 namespace nana
 {
@@ -109,16 +109,6 @@ namespace nana
 		::nana::string _m_caption() const throw();
 		void _m_caption(::nana::string&&);
 	}; //end class spinbox
-
-	namespace dev
-	{
-		template<>
-		struct widget_traits<spinbox>
-		{
-			using event_type = drawerbase::spinbox::spinbox_events;
-			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
-		};
-	}
 }//end namespace nana
 
 #endif //NANA_GUI_WIDGET_SPINBOX_HPP

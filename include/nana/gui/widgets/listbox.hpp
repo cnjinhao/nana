@@ -166,9 +166,7 @@ namespace nana
 				std::size_t pos_{0};
 			};
 
-
-
-			typedef std::vector<index_pair> selection;
+			using selection = std::vector<index_pair>;
 
 			/// struct essence_t
 			///@brief:	this struct gives many data for listbox,
@@ -180,14 +178,12 @@ namespace nana
 			class drawer_lister_impl;
 
 			/// mostly works on display positions
-            class trigger: public drawer_trigger
+			class trigger: public drawer_trigger
 			{
 			public:
 				trigger();
 				~trigger();
-				//essence_t& essence();	//deprecated
 				essence_t& essence() const;
-				void draw();
 			private:
 				void _m_draw_border();
 			private:
@@ -210,9 +206,9 @@ namespace nana
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
-            /// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
+			/// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
 			/// item_proxy self, it references and iterators are not invalidated by sort()
-            class item_proxy
+			class item_proxy
 				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
@@ -372,6 +368,9 @@ namespace nana
 					item_proxy iter{ ess_, index_pair(pos_, size() - 1) };
 					if (set_value)
 						iter.value(std::forward<T>(t));
+
+					_m_update();
+
 					return iter;
 				}
 
@@ -441,24 +440,25 @@ namespace nana
 			private:
 				void _m_append(std::vector<cell> && cells);
 				void _m_cat_by_pos();
+				void _m_update();
 			private:
 				essence_t*	ess_{nullptr};
 				category_t*	cat_{nullptr};
 				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
 			};
 		
-            struct export_options
-            {
-               nana::string sep = nana::string {STR("\t" )}, 
-                            endl= nana::string {STR("\n")} ; 
-               bool only_selected_items{true}, 
-                    only_checked_items {false},
-                    only_visible_columns{true};
+			struct export_options
+			{
+				nana::string sep = nana::string {STR("\t" )}, 
+							 endl= nana::string {STR("\n")};
+				bool only_selected_items{true}, 
+					 only_checked_items {false},
+					 only_visible_columns{true};
 
-               using columns_indexs = std::vector<size_type>;
-               columns_indexs columns_order;
-            };
-        }
+				using columns_indexs = std::vector<size_type>;
+				columns_indexs columns_order;
+			};
+		}
 	}//end namespace drawerbase
 
 	struct arg_listbox
@@ -558,7 +558,11 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		listbox(window, bool visible);
 		listbox(window, const rectangle& = {}, bool visible = true);
 
-		void auto_draw(bool);                                ///< Set state: Redraw automatically after an operation?
+		void auto_draw(bool);                                ///< Set state: Redraw automatically after an operation
+
+		/// Scrolls the view to the first or last item of a specified category
+		void scroll(bool to_bottom, size_type cat_pos = ::nana::npos);
+		void scroll(bool to_bottom, const index_pair& pos);
 
         /// Appends a new column with a header text and the specified width at the end, and return it position
         size_type append_header(nana::string header_text, unsigned width = 120);		
@@ -663,15 +667,5 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
 		void _m_erase_key(nana::detail::key_interface*);
 	};
-
-	namespace dev
-	{
-		template<>
-		struct widget_traits<listbox>
-		{
-			using event_type = drawerbase::listbox::listbox_events;
-			using scheme_type = drawerbase::listbox::scheme;
-		};
-	}
 }//end namespace nana
 #endif

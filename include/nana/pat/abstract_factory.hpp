@@ -13,6 +13,7 @@
 
 #ifndef NANA_PAT_ABSFACTORY_HPP
 #define NANA_PAT_ABSFACTORY_HPP
+#include "cloneable.hpp"
 #include <memory>
 
 namespace nana

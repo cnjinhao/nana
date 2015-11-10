@@ -4,6 +4,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
+#include <nana/gui/detail/window_layout.hpp>
 
 namespace nana{
 	namespace detail
@@ -14,7 +15,7 @@ namespace nana{
 			edge_nimbus_renderer() = default;
 		public:
 			using core_window_t = CoreWindow;
-			using window_layer = window_layout;
+			using window_layer = ::nana::detail::window_layout;
 			using graph_reference = ::nana::paint::graphics&;
 
 			static edge_nimbus_renderer& instance()

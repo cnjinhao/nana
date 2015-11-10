@@ -5,9 +5,10 @@
 GCC	= g++
 INCROOT	= ../../include
 SRCROOT	= ../../source
+EXTRLIB = ../../extrlib
 NANA_INC= $(INCROOT)/nana
 
-INCS	= -I$(INCROOT) -I/usr/include/freetype2
+INCS	= -I$(INCROOT) -I/usr/include/freetype2 -I$(EXTRLIB)
 
 BIN	= libnana.a
 
@@ -34,7 +35,7 @@ $(BIN): $(LINKOBJ)
 	ranlib ../bin/$(BIN)
 
 .cpp.o:
-	$(GCC) -g -c $< -o $@ $(INCS) -std=c++0x -Wall
+	$(GCC) -g -c $< -o $@ $(INCS) -std=c++11 -Wall
 
 clean:
 	rm -f $(LINKOBJ)
