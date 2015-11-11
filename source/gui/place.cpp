@@ -1920,7 +1920,13 @@ namespace nana
 			for (auto & child : children)
 			{
 				if (!child->display)
+				{
+					auto child_dv = dynamic_cast<div_dockpane*>(child.get());
+					if (child_dv)
+						child_dv->splitter.reset();
+
 					continue;
+				}
 
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 				const bool is_vert = _m_is_vert(child->dir);
@@ -1949,6 +1955,8 @@ namespace nana
 					else
 						split = dynamic_cast<splitter*>(child_dv->splitter.get());
 				}
+				else
+					child_dv->splitter.reset();
 
 				::nana::rectangle child_r;
 				double split_range_begin = -1, split_range_end;
