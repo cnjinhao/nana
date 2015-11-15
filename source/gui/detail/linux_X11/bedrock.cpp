@@ -596,9 +596,9 @@ namespace detail
 		case XK_Delete:
 			keysym = keyboard::os_del; break;
 		case XK_Shift_L: case XK_Shift_R:	//shift
-			keysym = 0x10; break;
+			keysym = keyboard::os_shift; break;
 		case XK_Control_L: case XK_Control_R: //ctrl
-			keysym = 0x11;	break;
+			keysym = keyboard::os_ctrl;	break;
 		default:
 			do
 			{
@@ -1064,7 +1064,7 @@ namespace detail
 							}
 							else
 							{
-								if(0x11 == os_code)
+								if(keyboard::os_ctrl == os_code)
 									context.is_ctrl_pressed = true;
 
 								arg_keyboard arg;

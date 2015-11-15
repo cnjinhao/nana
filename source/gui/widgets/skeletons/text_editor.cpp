@@ -1421,12 +1421,6 @@ namespace nana{	namespace widgets
 			char_type key = arg.key;
 			switch (key)
 			{
-#if 0
-			case keyboard::os_arrow_left:	move_left();	break;
-			case keyboard::os_arrow_right:	move_right();	break;
-			case keyboard::os_arrow_up:		move_ns(true);	break;
-			case keyboard::os_arrow_down:	move_ns(false);	break;
-#else
 			case keyboard::os_arrow_left:
 			case keyboard::os_arrow_right:
 			case keyboard::os_arrow_up:
@@ -1437,7 +1431,6 @@ namespace nana{	namespace widgets
 			case keyboard::os_pagedown:
 				_handle_move_key(arg);
 				break;
-#endif
 			case keyboard::os_del:
 				if (this->attr().editable)
 					del();
@@ -2328,6 +2321,9 @@ namespace nana{	namespace widgets
 
 		void text_editor::_handle_move_key(const arg_keyboard& arg)
 		{
+			if (arg.shift && (select_.a == select_.b))
+				select_.a = select_.b = points_.caret;
+
 			bool changed = false;
 			nana::upoint caret = points_.caret;
 			char_t key = arg.key;
