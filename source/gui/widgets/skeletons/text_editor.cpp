@@ -2716,6 +2716,7 @@ namespace nana{	namespace widgets
 
 				auto length = text.size();
 				textbase_.insert(crtpos, std::move(text));
+
 				crtpos.x += static_cast<unsigned>(length);
 				behavior_->pre_calc_line(crtpos.y, width_pixels());
 			}

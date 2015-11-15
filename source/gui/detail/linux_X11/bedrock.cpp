@@ -19,6 +19,7 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
 #include <errno.h>
+#include <algorithm>
 
 namespace nana
 {
@@ -54,10 +55,10 @@ namespace detail
 		int		window_count{0};	//The number of windows
 		core_window_t* event_window{nullptr};
 		bool	is_alt_pressed{false};
+		bool	is_ctrl_pressed{false};
 
 		struct platform_detail_tag
 		{
-			nana::char_t keychar;
 			native_window_type	motion_window;
 			nana::point		motion_pointer_pos;
 		}platform;
@@ -568,6 +569,73 @@ namespace detail
 		if(thrd) thrd->event_window = pre_wd;
 	}
 
+	wchar_t os_code_from_keysym(KeySym keysym)
+	{
+		switch(keysym)
+		{
+		case XK_Alt_L: case XK_Alt_R:
+			keysym = keyboard::alt;	break;
+		case XK_BackSpace:
+			keysym = keyboard::backspace;	break;
+		case XK_Tab:
+			keysym = keyboard::tab;		break;
+		case XK_Escape:
+			keysym = keyboard::escape;	break;
+		case XK_Return:
+			keysym = keyboard::enter;	break;
+		case XK_Cancel:
+			keysym = keyboard::end_of_text;	break;	//Ctrl+C
+		case XK_Page_Up:
+			keysym = keyboard::os_pageup;	break;
+		case XK_Page_Down:
+			keysym = keyboard::os_pagedown; break;
+		case XK_Left: case XK_Up: case XK_Right: case XK_Down:
+			keysym = keyboard::os_arrow_left + (keysym - XK_Left); break;
+		case XK_Insert:
+			keysym = keyboard::os_insert; break;
+		case XK_Delete:
+			keysym = keyboard::os_del; break;
+		case XK_Shift_L: case XK_Shift_R:	//shift
+			keysym = 0x10; break;
+		case XK_Control_L: case XK_Control_R: //ctrl
+			keysym = 0x11;	break;
+		default:
+			do
+			{
+				//Transfer the keysym for key_press and key_release event to the same behavior with Windows
+				if('a' <= keysym && keysym <= 'z')
+				{
+					keysym = keysym - 'a' + 'A';
+					break;
+				}
+				//reverts the key
+				static const char shift_num[]=")!@#$%^&*(";
+				auto p = std::find(shift_num, shift_num + sizeof shift_num, char(keysym));
+				if(p != shift_num + sizeof shift_num)
+				{
+					keysym = (p - shift_num + '0');
+					break;
+				}
+
+				switch(keysym)
+				{
+				case '~': keysym = '`'; break;
+				case '_': keysym = '-'; break;
+				case '+': keysym = '='; break;
+				case '{': keysym = '['; break;
+				case '}': keysym = ']'; break;
+				case '|': keysym = '\\'; break;
+				case ':': keysym = ';'; break;
+				case '"': keysym = '\''; break;
+				case '<': keysym = ','; break;
+				case '>': keysym = '.'; break;
+				case '?': keysym = '/'; break;
+				}
+			}while(false);
+		}
+		return wchar_t(keysym);
+	}
+
 	void window_proc_for_xevent(Display* display, XEvent& xevent)
 	{
 		typedef detail::bedrock::core_window_t core_window_t;
@@ -953,40 +1021,13 @@ namespace detail
 						}
 
 						keybuf[len] = 0;
-						nana::char_t keychar = 0;
+						::nana::char_t os_code = 0;
 						switch(status)
 						{
 						case XLookupKeySym:
 						case XLookupBoth:
-							switch(keysym)
-							{
-							case XK_Alt_L: case XK_Alt_R:
-								keychar = keyboard::alt;		break;
-							case XK_BackSpace:
-								keychar = keyboard::backspace;	break;
-							case XK_Tab:
-								keychar = keyboard::tab;		break;
-							case XK_Escape:
-								keychar = keyboard::escape;		break;
-							case XK_Return:
-								keychar = keyboard::enter;		break;
-							case XK_Cancel:
-								keychar = keyboard::end_of_text;break;	//Ctrl+C
-							case XK_Page_Up:
-								keychar = keyboard::os_pageup;	break;
-							case XK_Page_Down:
-								keychar = keyboard::os_pagedown; break;
-							case XK_Left: case XK_Up: case XK_Right: case XK_Down:
-								keychar = keyboard::os_arrow_left + (keysym - XK_Left); break;
-							case XK_Insert:
-								keychar = keyboard::os_insert; break;
-							case XK_Delete:
-								keychar = keyboard::os_del; break;
-							default:
-								keychar = keysym;
-							}
-							context.platform.keychar = keychar;
-							if(keychar == keyboard::tab && (false == (msgwnd->flags.tab & detail::tab_type::eating))) //Tab
+							os_code = os_code_from_keysym(keysym);
+							if(os_code == keyboard::tab && (false == (msgwnd->flags.tab & detail::tab_type::eating))) //Tab
 							{
 								arg_keyboard argkey;
 								brock.get_key_state(argkey);
@@ -997,7 +1038,7 @@ namespace detail
 									brock.wd_manager().do_lazy_refresh(tstop_wd, true);
 								}
 							}
-							else if(keyboard::alt == keychar)
+							else if(keyboard::alt == os_code)
 							{
 								context.is_alt_pressed = true;
 								if (brock.whether_keyboard_shortkey() == false)
@@ -1010,8 +1051,9 @@ namespace detail
 										arg.evt_code = event_code::key_press;
 										arg.window_handle = reinterpret_cast<window>(msgwnd);
 										arg.ignore = false;
-										arg.key = static_cast<nana::char_t>(keychar);
+										arg.key = os_code;
 										brock.get_key_state(arg);
+
 										brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
 										msgwnd->root_widget->flags.ignore_menubar_focus = (focused && (brock.focus() != msgwnd));
@@ -1022,25 +1064,19 @@ namespace detail
 							}
 							else
 							{
+								if(0x11 == os_code)
+									context.is_ctrl_pressed = true;
+
 								arg_keyboard arg;
 								arg.ignore = false;
-								arg.key = keychar ? keychar : xevent.xkey.keycode;
+								arg.key = os_code;
 								arg.evt_code = event_code::key_press;
 								brock.get_key_state(arg);
 								arg.window_handle = reinterpret_cast<window>(msgwnd);
+
 								brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
-								if((XLookupKeySym == status) && (brock.wd_manager().available(msgwnd)))
-								{
-									//call key_char event if status is XLookupKeySym to avaid calling key_char
-									//twice, because the status would be equal to XLookupChars if the input method is
-									//enabled for the window.
-									arg.ignore = false;
-									arg.evt_code = event_code::key_char;
-									brock.emit(event_code::key_char, msgwnd, arg, true, & context);
-								}
-
-								if(msgwnd->root_widget->other.attribute.root->menubar == msgwnd)
+								if(brock.wd_manager().available(msgwnd) && (msgwnd->root_widget->other.attribute.root->menubar == msgwnd))
 								{
 									int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(arg.key)) ? 1 : 0 );
 									brock.delay_restore(cmd);
@@ -1090,7 +1126,6 @@ namespace detail
 									arg.evt_code = event_code::key_char;
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 									brock.get_key_state(arg);
-
 									msgwnd->together.events_ptr->key_char.emit(arg);
 									if(arg.ignore == false && brock.wd_manager().available(msgwnd))
 										brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
@@ -1101,6 +1136,7 @@ namespace detail
 							}
 							break;
 						}
+
 						brock.wd_manager().do_lazy_refresh(msgwnd, false);
 						if(keybuf != fixbuf)
 							delete [] keybuf;
@@ -1109,47 +1145,53 @@ namespace detail
 				break;
 			case KeyRelease:
 				nana::detail::platform_spec::instance().write_keystate(xevent.xkey);
-				if(context.platform.keychar != keyboard::alt) //Must NOT be an ALT
 				{
-					msgwnd = brock.focus();
-					if(msgwnd)
+					auto os_code = os_code_from_keysym(::XLookupKeysym(&xevent.xkey, 0));
+					if(keyboard::alt != os_code)
 					{
-						arg_keyboard arg;
-						arg.evt_code = event_code::key_release;
-						arg.window_handle = reinterpret_cast<window>(msgwnd);
-						arg.ignore = false;
-						arg.key = static_cast<nana::char_t>(context.platform.keychar);
-						brock.get_key_state(arg);
-						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
-					}
+						if(0x11 == os_code)
+							context.is_ctrl_pressed = false;
 
-					if (context.platform.keychar < keyboard::os_arrow_left || keyboard::os_arrow_down < context.platform.keychar)
-						brock.delay_restore(2);	//Restores while key release
-				}
-				else
-				{
-					context.is_alt_pressed = false;
-					if (brock.set_keyboard_shortkey(false) == false)
-					{
-						msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
-						if (msgwnd)
+						msgwnd = brock.focus();
+						if(msgwnd)
 						{
-							bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
-							if (set_focus)
-								brock.wd_manager().set_focus(msgwnd, false);
-
 							arg_keyboard arg;
 							arg.evt_code = event_code::key_release;
 							arg.window_handle = reinterpret_cast<window>(msgwnd);
 							arg.ignore = false;
-							arg.key = static_cast<nana::char_t>(context.platform.keychar);
+							arg.key = os_code;
 							brock.get_key_state(arg);
 							brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+						}
 
-							if (!set_focus)
+						if(os_code < keyboard::os_arrow_left || keyboard::os_arrow_down < os_code)
+							brock.delay_restore(2);	//Restores while key release
+					}
+					else
+					{
+						context.is_alt_pressed = false;
+						if (brock.set_keyboard_shortkey(false) == false)
+						{
+							msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
+							if (msgwnd)
 							{
-								brock.set_menubar_taken(nullptr);
-								msgwnd->root_widget->flags.ignore_menubar_focus = false;
+								bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
+								if (set_focus)
+									brock.wd_manager().set_focus(msgwnd, false);
+
+								arg_keyboard arg;
+								arg.evt_code = event_code::key_release;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.ignore = false;
+								arg.key = os_code;
+								brock.get_key_state(arg);
+								brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+
+								if (!set_focus)
+								{
+									brock.set_menubar_taken(nullptr);
+									msgwnd->root_widget->flags.ignore_menubar_focus = false;
+								}
 							}
 						}
 					}
