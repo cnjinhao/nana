@@ -115,10 +115,10 @@ namespace nana{ namespace system{
 #else
 				str.reserve(size / sizeof(nana::char_t));
 				str.append(reinterpret_cast<nana::char_t*>(res), reinterpret_cast<nana::char_t*>(res) + size / sizeof(nana::char_t));
-				nana::string::size_type pos = str.find_last_not_of(nana::char_t(0));
+#endif
+				auto pos = str.find_last_not_of(nana::char_t(0));
 				if(pos != str.npos)
 					str.erase(pos + 1);
-#endif
 
 #if defined(NANA_X11)
 				::XFree(res);

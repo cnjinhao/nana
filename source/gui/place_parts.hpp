@@ -171,20 +171,6 @@ namespace nana
 			}
 		};
 
-		class dock_page
-			: public form
-		{
-		public:
-			dock_page(window host, const rectangle& r, const rectangle & tab_r)
-				: form(host, r, form::appear::bald<>())
-			{
-				tab_form_.reset(new form(handle(), tab_r, form::appear::bald<>()));
-
-			}
-		private:
-			std::unique_ptr<form> tab_form_;
-		};
-
 		class dockarea
 			: public widget_object <category::lite_widget_tag, drawer_trigger>
 		{
@@ -362,15 +348,22 @@ namespace nana
 				API::capture_window(caption_, false);
 
 				rectangle r{ pos() + move_pos, size() };
-				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<>()));
+				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
 				drawing dw(container_->handle());
 				dw.draw([](paint::graphics& graph)
 				{
 					graph.rectangle(false, colors::coral);
 				});
 
+
+
 				API::set_parent_window(handle(), container_->handle());
 				this->move({ 1, 1 });
+
+				container_->events().resized([this](const arg_resized& arg)
+				{
+					this->size({arg.width - 2, arg.height - 2});
+				});
 
 				container_->show();
 				API::capture_window(caption_, true);
