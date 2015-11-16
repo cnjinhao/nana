@@ -140,8 +140,11 @@ namespace nana
 			: public abstract_content
 		{
 			struct implement;
+
+			text(const text&) = delete;
+			text& operator=(const text&) = delete;
 		public:
-			text(::nana::string label);
+			text(::nana::string label, ::nana::string init_text = ::nana::string());
 			text(::nana::string label, std::vector<::nana::string>);
 
 			~text();
