@@ -819,7 +819,7 @@ namespace nana
 	inputbox::text::text(::nana::string label, ::nana::string init_text)
 		: impl_(new implement)
 	{
-		impl_->label_text.swap(std::move(label));
+		impl_->label_text.swap(label);
 		impl_->init_text.swap(init_text);
 	}
 
