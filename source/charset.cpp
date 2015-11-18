@@ -284,7 +284,7 @@ namespace nana
 							std::u32string utf32str = std::wstring_convert<std::codecvt_utf16<char32_t>, char32_t>().from_bytes(bytes, bytes + sizeof(wchar_t) * wcstr.size());
 							return std::string(reinterpret_cast<const char*>(utf32str.c_str()), sizeof(char32_t) * utf32str.size());
 						}
-	#elif defined(NANA_LINUX)
+	#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 						return std::string(reinterpret_cast<const char*>(wcstr.c_str()), sizeof(wchar_t) * wcstr.size());
 	#else
 						throw std::runtime_error("Bad charset");
@@ -376,7 +376,7 @@ namespace nana
 						std::u32string utf32str = std::wstring_convert<std::codecvt_utf16<char32_t>, char32_t>().from_bytes(bytes, bytes + sizeof(wchar_t) * data_.size());
 						return std::string(reinterpret_cast<const char*>(utf32str.c_str()), sizeof(char32_t) * utf32str.size());
 					}
-	#elif defined(NANA_LINUX)
+	#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 					return std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t));
 	#else
 					throw std::runtime_error("Bad charset");

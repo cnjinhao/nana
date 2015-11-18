@@ -6,9 +6,9 @@
 #include <unordered_map>
 
 #if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
-    #include <nana/std_mutex.hpp>
+#include <nana/std_mutex.hpp>
 #else
-    #include <mutex>
+#include <mutex>
 #endif
 
 namespace nana
@@ -24,8 +24,8 @@ namespace nana
 			void cancel(event_handle);
 			void erase(event_handle);
 		private:
-			mutable std::recursive_mutex mutex_;
-			std::unordered_set<event_handle>	register_;
+			std::recursive_mutex mutex_;
+			std::unordered_set<event_handle>	handles_;
 			std::unordered_map<window, std::shared_ptr<general_events>> evt_table_;
 		};
 	}//end namespace detail

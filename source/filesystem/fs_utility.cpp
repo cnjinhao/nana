@@ -25,7 +25,7 @@
 
 	#include <shlobj.h>
 	#include <nana/datetime.hpp>
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include <nana/charset.hpp>
 	#include <sys/stat.h>
 	#include <sys/types.h>
@@ -42,7 +42,7 @@ namespace nana
 namespace filesystem
 {
 //Because of No wide character version of POSIX
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 	typedef std::string string_t;
 	const char* splstr = "/\\";
 #else
@@ -69,7 +69,7 @@ namespace filesystem
 		{
 #if defined(NANA_WINDOWS)
 			return (::GetFileAttributes(text_.c_str()) == INVALID_FILE_ATTRIBUTES);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			struct stat sta;
 			return (::stat(text_.c_str(), &sta) == -1);
 #endif
@@ -79,7 +79,7 @@ namespace filesystem
 		{
 		#if defined(NANA_WINDOWS)
 			return path(filesystem::root(text_));
-		#elif defined(NANA_LINUX)
+		#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			return path(filesystem::root(nana::charset(text_)));
 		#endif
 		}
@@ -95,7 +95,7 @@ namespace filesystem
 				return type::directory;
 
 			return type::file;
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			struct stat sta;
 			if(-1 == ::stat(text_.c_str(), &sta))
 				return type::not_exist;
@@ -154,7 +154,7 @@ namespace filesystem
 			}
 
 			if_exist = (::GetLastError() == ERROR_ALREADY_EXISTS);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			if(0 == ::mkdir(static_cast<std::string>(nana::charset(dir)).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
 			{
 				if_exist = false;
@@ -202,7 +202,7 @@ namespace filesystem
 			detail::filetime_to_c_tm(fad.ftLastWriteTime, attr.modified);
 			return true;
 		}
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		struct stat fst;
 		if(0 == ::stat(static_cast<std::string>(nana::charset(file)).c_str(), &fst))
 		{
@@ -245,6 +245,16 @@ namespace filesystem
 			fclose(stream);
 		}
 		return size;
+#elif defined(NANA_MACOS)
+		FILE * stream = ::fopen(static_cast<std::string>(nana::charset(file)).c_str(), "rb");
+		long long size = 0;
+		if (stream)
+		{
+			fseeko(stream, 0, SEEK_END);
+			size = ftello(stream);
+			fclose(stream);
+		}
+		return size;
 #endif
 	}
 
@@ -271,7 +281,7 @@ namespace filesystem
 				return true;
 			}
 		}
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		struct stat attr;
 		if(0 == ::stat(static_cast<std::string>(nana::charset(file)).c_str(), &attr))
 		{
@@ -291,7 +301,7 @@ namespace filesystem
 #if defined(NANA_WINDOWS)
 		if(path.size() > 3 && path[1] == STR(':'))
 			root = path.substr(0, 3);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		if(path[0] == STR('/'))
 			root = '/';
 #endif
@@ -315,7 +325,7 @@ namespace filesystem
 
 #if defined(NANA_WINDOWS)
 				root += STR('\\');
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				root += STR('/');
 #endif
 			}
@@ -345,7 +355,7 @@ namespace filesystem
 		}
 
 		return ret;
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		if(std::remove(static_cast<std::string>(nana::charset(file)).c_str()))
 			return (errno == ENOENT);
 		return true;
@@ -361,7 +371,7 @@ namespace filesystem
 			ret = (::RemoveDirectory(dir) == TRUE);
 			if(!fails_if_not_empty && (::GetLastError() == ERROR_DIR_NOT_EMPTY))
 				ret = detail::rm_dir_recursive(dir);
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			std::string mbstr = nana::charset(dir);
 			if(::rmdir(mbstr.c_str()))
 			{
@@ -407,7 +417,7 @@ namespace filesystem
 		nana::char_t path[MAX_PATH];
 		if(SUCCEEDED(SHGetFolderPath(0, CSIDL_PROFILE, 0, SHGFP_TYPE_CURRENT, path)))
 			return path;
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		const char * s = ::getenv("HOME");
 		if(s)
 			return nana::charset(std::string(s, std::strlen(s)), nana::unicode::utf8);
@@ -432,7 +442,7 @@ namespace filesystem
 			}
 			return buf;
 		}
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		const char * s = ::getenv("PWD");
 		if(s)
 			return nana::charset(std::string(s, std::strlen(s)), nana::unicode::utf8);

@@ -12,7 +12,7 @@
 #include <nana/system/shared_wrapper.hpp>
 #include <algorithm>
 #include <iterator>
-#ifdef NANA_LINUX
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 #include <dlfcn.h>
 #else
 #include <windows.h>
@@ -30,7 +30,7 @@ namespace system
 
 			module_t open(const char* filename)
 			{
-#ifdef NANA_LINUX
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 				return ::dlopen(filename, RTLD_LAZY);
 #else
 				return ::LoadLibraryA(filename);
@@ -39,7 +39,7 @@ namespace system
 
 			void* symbols(module_t handle, const char* symbol)
 			{
-#ifdef NANA_LINUX
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 				return ::dlsym(handle, const_cast<char*>(symbol));
 #else
 				return (void*)(::GetProcAddress(reinterpret_cast<HMODULE>(handle), symbol));
@@ -48,7 +48,7 @@ namespace system
 
 			void close(module_t handle)
 			{
-#ifdef NANA_LINUX
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 				::dlclose(handle);
 #else
 				::FreeLibrary(reinterpret_cast<HMODULE>(handle));
@@ -90,7 +90,7 @@ namespace system
 					std::transform(filename + length - 13, filename + length , std::back_inserter(file), tolower);
 					if(file == ".nana_shared")
 					{
-#ifdef NANA_LINUX
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 						ofn.replace(length - 13, 13, ".so");
 #else
 						ofn.replace(length - 13, 13, ".DLL");

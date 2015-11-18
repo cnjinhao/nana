@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Library Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -20,27 +20,43 @@
 #include "widgets/form.hpp"
 #include "drawing.hpp"
 #include "msgbox.hpp"
-#include "../exceptions.hpp"
+#include "place.hpp"
 
 namespace nana
 {
-	template<typename Form, bool IsMakeVisible = true>
-	class form_loader
+	namespace detail
 	{
-	public:
-		template<typename... Args>
-		Form & operator()(Args &&... args) const
+		struct form_loader_private
 		{
-			Form* res = detail::bedrock::instance().rt_manager.create_form<Form>(std::forward<Args>(args)...);
-			if (nullptr == res)
-				throw nana::bad_window("form_loader.operator(): failed to create a window");
+			template<typename, bool> friend class form_loader;
+		private:
+			static void insert_form(::nana::widget*);
+		};
 
-			if (IsMakeVisible) res->show();
+		template<typename Form, bool IsVisible>
+		class form_loader
+		{
+        public:
+            template<typename... Args>
+            Form & operator()(Args &&... args) const
+            {
+                auto p = new Form(std::forward<Args>(args)...);
 
-			return *res;
-		}
+                if (p->empty())
+                    throw std::logic_error("form_loader failed to create the form");
 
-	};
+                detail::form_loader_private::insert_form(p);
+                if (IsVisible)
+                    p->show();
+
+                return *p;
+            }
+
+        };
+	}
+
+    template<typename Form, bool IsVisible = true>
+    using form_loader = detail::form_loader<Form, IsVisible>;
 
 	void exec();
 }//end namespace nana

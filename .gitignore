@@ -1,4 +1,4 @@
-#This .gitignore created by qPCR4vir
+#This .gitignore created by Ariel Vina-Rodriguez
 #ignore thumbnails created by windows
 Thumbs.db
 #Ignore files build by Visual Studio
@@ -37,3 +37,4 @@ lib/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
+*.DS_Store

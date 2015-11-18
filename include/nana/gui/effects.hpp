@@ -47,7 +47,7 @@ namespace nana
 		public:
 			bground_transparent(std::size_t percent);
 		private:
-			virtual bground_interface* create() const;
+			bground_interface* create() const override;
 		private:
 			std::size_t percent_;
 		};
@@ -58,7 +58,7 @@ namespace nana
 		public:
 			bground_blur(std::size_t radius);
 		private:
-			virtual bground_interface * create() const;
+			bground_interface * create() const override;
 		private:
 			std::size_t radius_;
 		};

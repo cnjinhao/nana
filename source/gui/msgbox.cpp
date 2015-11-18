@@ -809,23 +809,25 @@ namespace nana
 		std::vector< ::nana::string> options;
 
 		::nana::string label_text;
+		::nana::string init_text;
 		::nana::panel<false> dock;
 		::nana::label label;
 		::nana::combox combox;
 		::nana::textbox textbox;
 	};
 
-	inputbox::text::text(::nana::string label)
+	inputbox::text::text(::nana::string label, ::nana::string init_text)
 		: impl_(new implement)
 	{
-		impl_->label_text = std::move(label);
+		impl_->label_text.swap(label);
+		impl_->init_text.swap(init_text);
 	}
 
 	inputbox::text::text(::nana::string label, std::vector<::nana::string> options)
 		: impl_(new implement)
 	{
 		impl_->options.swap(options);
-		impl_->label_text = std::move(label);
+		impl_->label_text.swap(label);
 	}
 
 	//Instance for impl_ because implmenet is incomplete type at the point of declaration
@@ -833,7 +835,7 @@ namespace nana
 
 	void inputbox::text::tip_string(std::wstring tip)
 	{
-		impl_->tip = std::move(tip);
+		impl_->tip.swap(tip);
 	}
 
 	void inputbox::text::tip_string(std::string tip_utf8)
@@ -877,6 +879,7 @@ namespace nana
 		{
 			impl->textbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, 0, 0 });
 			impl->textbox.tip_string(impl->tip);
+			impl->textbox.caption(impl->init_text);
 			impl->textbox.mask(impl->mask_character);
 			impl->textbox.multi_lines(false);
 		}
@@ -959,7 +962,7 @@ namespace nana
 	int inputbox::date::month() const
 	{
 		if (!impl_->wdg_month.empty())
-			return impl_->wdg_month.option() + 1;
+			return static_cast<int>(impl_->wdg_month.option()) + 1;
 		return impl_->month;
 	}
 
@@ -1028,7 +1031,7 @@ namespace nana
 		impl->wdg_day.events().destroy.connect_unignorable([impl]
 		{
 			impl->day = impl->wdg_day.to_int();
-			impl->month = impl->wdg_month.option() + 1;
+			impl->month = static_cast<int>(impl->wdg_month.option()) + 1;
 		});
 
 		impl->wdg_year.events().destroy.connect_unignorable([impl]
@@ -1040,7 +1043,7 @@ namespace nana
 		{
 			auto month = impl->wdg_month.option() + 1;
 			auto year = impl->wdg_year.to_int();
-			int days = ::nana::date::month_days(year, month);
+			int days = ::nana::date::month_days(year, static_cast<unsigned>(month));
 
 			auto day = impl->wdg_day.to_int();
 			impl->wdg_day.range(1, days, 1); //It resets the current value of wdg_day

@@ -10,8 +10,7 @@
  *	@file: nana/paint/graphics.cpp
  */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
@@ -474,7 +473,7 @@ namespace paint
 
 		::nana::size graphics::bidi_extent_size(const std::string& str) const
 		{
-			return bidi_extent_size(std::wstring{ ::nana::charset(str, ::nana::unicode::utf8) });
+			return bidi_extent_size(static_cast<std::wstring>(::nana::charset(str, ::nana::unicode::utf8)));
 		}
 
 		bool graphics::text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const
@@ -845,13 +844,13 @@ namespace paint
 				BITMAPFILEHEADER bmFileHeader = { 0 };
 				bmFileHeader.bfType = 0x4d42;  //bmp
 				bmFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-				bmFileHeader.bfSize = bmFileHeader.bfOffBits + imageBytes;
+				bmFileHeader.bfSize = bmFileHeader.bfOffBits + static_cast<DWORD>(imageBytes);
 
 				HANDLE hFile = ::CreateFileW(static_cast<std::wstring>(::nana::charset(file_utf8, ::nana::unicode::utf8)).data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 				DWORD dwWrite = 0;
 				::WriteFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwWrite, nullptr);
 				::WriteFile(hFile, &bmpInfo.bmiHeader, sizeof(BITMAPINFOHEADER), &dwWrite, nullptr);
-				::WriteFile(hFile, pData, imageBytes, &dwWrite, nullptr);
+				::WriteFile(hFile, pData, static_cast<DWORD>(imageBytes), &dwWrite, nullptr);
 				::CloseHandle(hFile);
 
 				::DeleteObject(hBmp);
@@ -954,7 +953,7 @@ namespace paint
 			{
 				const nana::char_t * end = str + len;
 				const nana::char_t * i = std::find(str, end, '\t');
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 				handle_->update_text_color();
 #endif
 				if (i != end)

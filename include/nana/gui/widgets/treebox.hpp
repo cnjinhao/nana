@@ -19,7 +19,6 @@
 #define NANA_GUI_WIDGETS_TREEBOX_HPP
 #include "widget.hpp"
 #include "detail/compset.hpp"
-#include <nana/paint/gadget.hpp>
 #include "detail/tree_cont.hpp"
 #include <nana/gui/timer.hpp>
 #include <nana/any.hpp>
@@ -167,8 +166,6 @@ namespace nana
 				void resized(graph_reference, const arg_resized&)		override;
 				void key_press(graph_reference, const arg_keyboard&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
-			private:
-				void _m_deal_adjust();
 			private:
 				implement * const impl_;
 			}; //end class trigger

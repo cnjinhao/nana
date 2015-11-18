@@ -82,9 +82,6 @@
     <Filter Include="Header Files\detail\linux_X11">
       <UniqueIdentifier>{61385c08-f06b-4cf3-8e05-9b47d546164b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\extrlib">
-      <UniqueIdentifier>{e9eadc97-4a14-4a4e-bb52-52d3a20e2693}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\filesystem">
       <UniqueIdentifier>{5667eac1-0887-4936-9502-eac4dd8c1c1d}</UniqueIdentifier>
     </Filter>
@@ -119,7 +116,7 @@
     </ClCompile>
     <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp">
       <Filter>Source Files\nana\detail\win32</Filter>
-	</ClCompile>
+    </ClCompile>
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp">
       <Filter>Source Files\nana\filesystem</Filter>
     </ClCompile>
@@ -261,9 +258,6 @@
     <ClCompile Include="..\..\source\paint\detail\native_paint_interface.cpp">
       <Filter>Source Files\nana\paint\detail</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\paint\gadget.cpp">
-      <Filter>Source Files\nana\paint</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\paint\graphics.cpp">
       <Filter>Source Files\nana\paint</Filter>
     </ClCompile>
@@ -307,9 +301,6 @@
       <Filter>Source Files\nana</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\deploy.cpp">
-      <Filter>Source Files\nana</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\exceptions.cpp">
       <Filter>Source Files\nana</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\traits.cpp">
@@ -580,9 +571,6 @@
     <ClInclude Include="..\..\include\nana\deploy.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\nana\exceptions.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\nana\fwd.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -634,18 +622,6 @@
     <ClInclude Include="..\..\include\nana\detail\win32\platform_spec.hpp">
       <Filter>Header Files\detail\win32</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\png.h">
-      <Filter>Header Files\extrlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\pngconf.h">
-      <Filter>Header Files\extrlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\pnglibconf.h">
-      <Filter>Header Files\extrlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\extrlib\zlib.h">
-      <Filter>Header Files\extrlib</Filter>
-	</ClInclude>
     <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp">
       <Filter>Header Files\filesystem</Filter>
     </ClInclude>

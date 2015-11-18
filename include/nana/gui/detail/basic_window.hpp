@@ -128,7 +128,7 @@ namespace detail
 		void _m_init_pos_and_size(basic_window* parent, const rectangle&);
 		void _m_initialize(basic_window* parent);
 	public:
-#if defined(NANA_LINUX)
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 		point	pos_native;
 #endif
 		point	pos_root;	//coordinate for root window

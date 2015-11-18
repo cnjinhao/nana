@@ -12,6 +12,7 @@
 #include <nana/gui/state_cursor.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
+#include <nana/gui/detail/window_manager.hpp>
 
 namespace nana
 {
@@ -20,7 +21,7 @@ namespace nana
 	{
 		auto & brock = detail::bedrock::instance();
 		auto wd = reinterpret_cast<detail::basic_window*>(handle);
-		if (brock.wd_manager.available(wd))
+		if (brock.wd_manager().available(wd))
 			brock.define_state_cursor(wd, cur, nullptr);
 		else
 			handle_ = nullptr;
@@ -40,7 +41,7 @@ namespace nana
 			{
 				auto & brock = detail::bedrock::instance();
 				auto wd = reinterpret_cast<detail::basic_window*>(handle_);
-				if (brock.wd_manager.available(wd))
+				if (brock.wd_manager().available(wd))
 					brock.undefine_state_cursor(wd, nullptr);
 			}
 			handle_ = rhs.handle_;
@@ -55,7 +56,7 @@ namespace nana
 		{
 			auto & brock = detail::bedrock::instance();
 			auto wd = reinterpret_cast<detail::basic_window*>(handle_);
-			if (brock.wd_manager.available(wd))
+			if (brock.wd_manager().available(wd))
 				brock.undefine_state_cursor(wd, nullptr);
 		}
 	}

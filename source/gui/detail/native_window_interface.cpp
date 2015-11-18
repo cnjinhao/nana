@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,8 +10,7 @@
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/screen.hpp>
 #if defined(NANA_WINDOWS)
@@ -25,6 +24,7 @@
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
 	#include <nana/gui/detail/bedrock.hpp>
+	#include <nana/gui/detail/window_manager.hpp>
 #endif
 
 namespace nana{
@@ -542,32 +542,6 @@ namespace nana{
 			return false;
 		}
 
-		/*
-		bool native_interface::window_icon(native_window_type wd, const paint::image& big_icon, const paint::image& small_icon)	//deprecated
-		{
-#if defined(NANA_WINDOWS)
-			HICON h_big_icon = paint::image_accessor::icon(big_icon);
-			HICON h_small_icon = paint::image_accessor::icon(small_icon);
-			if (h_big_icon || h_small_icon)
-			{
-				nana::detail::platform_spec::instance().keep_window_icon(wd, (!big_icon.empty() ? big_icon : small_icon));
-				if (h_big_icon) {
-					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(h_big_icon));
-				}
-				if (h_small_icon) {
-					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_SMALL, reinterpret_cast<WPARAM>(h_small_icon));
-				}
-				return true;
-			}
-#elif defined(NANA_X11)
-			return window_icon(wd, big_icon);
-#endif
-			return false;
-		}
-		*/
-
-
-
 		void native_interface::activate_owner(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
@@ -621,7 +595,7 @@ namespace nana{
 
 			Display* disp = restrict::spec.open_display();
 			restrict::spec.remove(wd);
-			auto iwd = brock.wd_manager.root(wd);
+			auto iwd = brock.wd_manager().root(wd);
 			if(iwd)
 			{
 				{
@@ -633,9 +607,9 @@ namespace nana{
 					::XFlush(disp);
 					restrict::spec.rev_error_handler();
 				}
-				brock.wd_manager.destroy(iwd);
-				brock.rt_manager.remove_if_exists(iwd);
-				brock.wd_manager.destroy_handle(iwd);
+				brock.wd_manager().destroy(iwd);
+				brock.manage_form_loader(iwd, false);
+				brock.wd_manager().destroy_handle(iwd);
 			}
 
 			nana::detail::platform_scope_guard psg;

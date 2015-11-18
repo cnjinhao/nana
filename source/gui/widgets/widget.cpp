@@ -305,7 +305,7 @@ namespace nana
 
 		void widget::_m_move(int x, int y)
 		{
-			API::move_window(handle(), x, y);
+			API::move_window(handle(), { x, y });
 		}
 
 		void widget::_m_move(const rectangle& r)

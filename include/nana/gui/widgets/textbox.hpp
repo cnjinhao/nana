@@ -13,7 +13,7 @@
 #define NANA_GUI_WIDGET_TEXTBOX_HPP
 #include <nana/gui/widgets/widget.hpp>
 #include "skeletons/textbase_export_interface.hpp"
-#include "skeletons/text_editor_scheme.hpp"
+#include "skeletons/text_editor_part.hpp"
 
 namespace nana
 {
@@ -23,17 +23,10 @@ namespace nana
 		: public event_arg
 	{
 		textbox& widget;
+		const std::vector<upoint>& text_position;	///< position of characters that the first character of line which are displayed
 
-		arg_textbox(textbox&);
+		arg_textbox(textbox&, const std::vector<upoint>&);
 	};
-
-	namespace widgets
-	{
-		namespace skeletons
-		{
-			class text_editor;
-		}
-	}
 
 	namespace drawerbase
 	{
@@ -44,17 +37,25 @@ namespace nana
 			{
 				basic_event<arg_textbox> first_change;
 				basic_event<arg_textbox> text_changed;
+				basic_event<arg_textbox> text_exposed;
 			};
 
 			class event_agent
-				: public widgets::skeletons::textbase_event_agent_interface
+				:	public	widgets::skeletons::textbase_event_agent_interface,
+					public	widgets::skeletons::text_editor_event_interface 
 			{
 			public:
-				event_agent(::nana::textbox&);
+				event_agent(::nana::textbox&, const std::vector<upoint>&);
+			private:
+				//Overrides textbase_event_agent_interface
 				void first_change() override;
 				void text_changed() override;
 			private:
+				//Overrides text_editor_event_interface
+				void text_exposed(const std::vector<upoint>&) override;
+			private:
 				::nana::textbox & widget_;
+				const std::vector<upoint>& text_position_;
 			};
 
 			//class drawer
@@ -97,6 +98,7 @@ namespace nana
 		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
+		using text_positions = std::vector<upoint>;
 		/// The default constructor without creating the widget.
 		textbox();
 
@@ -128,8 +130,12 @@ namespace nana
 		void store(nana::string file);
 		void store(nana::string file, nana::unicode encoding);
 
+		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
+		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
+		textbox& indention(bool, std::function<nana::string()> generator = {});
+
 		//A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
-		textbox& reset(nana::string = nana::string());      ///< discard the old text and set a newtext
+		textbox& reset(nana::string = nana::string());      ///< discard the old text and set a new text
 
 		/// The file of last store operation.
 		nana::string filename() const;
@@ -147,7 +153,11 @@ namespace nana
 		bool getline(std::size_t pos, nana::string&) const;
 
 		/// Gets the caret position
+		/// Returns true if the caret is in the area of display, false otherwise.
 		bool caret_pos(point& pos, bool text_coordinate) const;
+
+		/// Sets the caret position with a text position
+		textbox& caret_pos(const upoint&);
 
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
 		textbox& append(const nana::string& text, bool at_caret);
@@ -188,22 +198,21 @@ namespace nana
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
 		void erase_keyword(const nana::string& kw);
+
+
+		/// Returns the text position of each line that currently displays on screen.
+		text_positions text_position() const;
+
+		/// Returns the rectangle of text area
+		rectangle text_area() const;
+
+		/// Returns the height of line in pixels
+		unsigned line_pixels() const;
 	protected:
 		//Overrides widget's virtual functions
 		::nana::string _m_caption() const throw() override;
 		void _m_caption(::nana::string&&) override;
 		void _m_typeface(const paint::font&) override;
 	};
-
-	namespace dev
-	{
-		/// Traits for widget classes
-		template<>
-		struct widget_traits<textbox>
-		{
-			using event_type = drawerbase::textbox::textbox_events;
-			using scheme_type = ::nana::widgets::skeletons::text_editor_scheme;
-		};
-	}
 }//end namespace nana
 #endif

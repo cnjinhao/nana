@@ -13,9 +13,7 @@
  *
  *	http://standards.freedesktop.org/clipboards-spec/clipboards-0.1.txt
  */
-#include <nana/config.hpp>
-
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <X11/Xlocale.h>
 #include <locale>
 #include <map>
@@ -24,6 +22,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
+#include <nana/gui/detail/window_manager.hpp>
 #include <nana/system/platform.hpp>
 #include <errno.h>
 #include <sstream>
@@ -696,7 +695,7 @@ namespace detail
 		if(vec)
 		{
 			set_error_handler();
-			auto & wd_manager = detail::bedrock::instance().wd_manager;
+			auto & wd_manager = detail::bedrock::instance().wd_manager();
 			for(auto u = vec->rbegin(); u != vec->rend(); ++u)
 				wd_manager.close(wd_manager.root(*u));
 
@@ -734,6 +733,8 @@ namespace detail
 		caret_tag * & addr = caret_holder_.carets[wd];
 		if(0 == addr)
 		{
+			::XSetLocaleModifiers("");
+
 			addr = new caret_tag(wd);
 			is_start_routine = (caret_holder_.carets.size() == 1);
 			addr->input_method = ::XOpenIM(display_, 0, 0, 0);
@@ -784,8 +785,10 @@ namespace detail
 							::XFree(attr);
 						}
 						else
-							addr->input_context = ::XCreateIC(addr->input_method, XNInputStyle, (XIMPreeditNothing | XIMStatusNothing),
-															XNClientWindow, reinterpret_cast<Window>(wd), nullptr);
+							addr->input_context = ::XCreateIC(addr->input_method, 
+											XNInputStyle, (XIMPreeditNothing | XIMStatusNothing),
+											XNClientWindow, reinterpret_cast<Window>(wd),
+											XNFocusWindow, reinterpret_cast<Window>(wd), nullptr);
 
 						if(addr->input_context)
 						{
@@ -796,6 +799,8 @@ namespace detail
 							XSetWindowAttributes new_attr;
 							new_attr.event_mask = (attr.your_event_mask | addr->input_context_event_mask);
 							::XChangeWindowAttributes(display_, reinterpret_cast<Window>(wd), CWEventMask, &new_attr);
+
+							::XSetICValues(addr->input_context, XNResetState, XIMPreserveState, nullptr);
 						}
 						::XFree(preedit_attr);
 						::XFree(status_attr);
@@ -1255,11 +1260,13 @@ namespace detail
 						respond.xclient.data.l[2] = self.atombase_.xdnd_action_copy;
 					}
 					::XSendEvent(self.display_, self.xdnd_.wd_src, False, NoEventMask, &respond);
+					::XFlush(self.display_);
 
 					if(msg.u.mouse_drop.window)
 						return 1;	//Use the packet directly.
 				}
 			}
+			::XFlush(self.display_);
 			return 2;
 		}
 		else if(SelectionRequest == evt.type)
@@ -1278,7 +1285,7 @@ namespace detail
 				}
 
 				::XChangeProperty(self.display_, evt.xselectionrequest.requestor,
-						evt.xselectionrequest.property, XA_ATOM, sizeof(Atom) * 8, 0,
+						evt.xselectionrequest.property, XA_ATOM, 32, 0,
 						reinterpret_cast<unsigned char*>(atoms.size() ? &atoms[0] : 0), static_cast<int>(atoms.size()));
 			}
 			else if(XA_STRING == evt.xselectionrequest.target || self.atombase_.utf8_string == evt.xselectionrequest.target)
@@ -1362,7 +1369,7 @@ namespace detail
 					::XTranslateCoordinates(self.display_, self.root_window(), evt.xclient.window, x, y, &self.xdnd_.pos.x, &self.xdnd_.pos.y, &child);
 					typedef detail::bedrock bedrock;
 
-					auto wd = bedrock::instance().wd_manager.find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
+					auto wd = bedrock::instance().wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
 					if(wd && wd->flags.dropable)
 					{
 						accepted = true;

@@ -193,12 +193,11 @@ namespace nana
 					if (str.empty())
 						return true;
 
-					auto i = std::find_if(texts_.cbegin(), texts_.cend(), [&str](const std::wstring& value)
-					{
-						return (value.find(str) != value.npos);
-					});
+					for (auto i = texts_.cbegin(); i != texts_.cend(); ++i)
+						if (i->find(str) != str.npos)
+							return false;
 
-					return (i != texts_.cend());
+					return true;
 				}
 
 				void spin(bool increase) override
@@ -368,17 +367,13 @@ namespace nana
 						return true;
 					}
 
-
-					bool refreshed = false;
-					if (pressed)
-						refreshed = editor_->mouse_down(arg.button, arg.pos);
-					else
-						refreshed = editor_->mouse_up(arg.button, arg.pos);
-
-					if (refreshed)
+					if (editor_->mouse_pressed(arg))
+					{
 						_m_draw_spins(buttons::none);
+						return true;
+					}
 
-					return refreshed;
+					return false;
 				}
 
 				bool mouse_move(bool left_button, const ::nana::point& pos)
@@ -411,7 +406,7 @@ namespace nana
 				{
 					auto spins_r = _m_spins_area();
 					if (spins_r.x == 0)
-						editor_->text_area({});
+						editor_->text_area(rectangle{});
 					else
 						editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
 				}

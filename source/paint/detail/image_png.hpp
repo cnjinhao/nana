@@ -1,24 +1,23 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_PNG_HPP
 #define NANA_PAINT_DETAIL_IMAGE_PNG_HPP
 
-#include <nana/paint/detail/image_impl_interface.hpp>
+#include "image_pixbuf.hpp"
 
 //Separate the libpng from the package that system provides.
 #if defined(NANA_LIBPNG)
-	#include <nana/extrlib/png.h>
+	#include <nana_extrlib/png.h>
 #else
 	#include <png.h>
 #endif
 
 #include <stdio.h>
-#include <nana/paint/pixel_buffer.hpp>
 
 namespace nana
 {
 	namespace paint{	namespace detail{
 
 		class image_png
-			: public image::image_impl_interface
+			: public basic_image_pixbuf
 		{
 		public:
 			bool open(const nana::char_t* png_file) override
@@ -164,39 +163,6 @@ namespace nana
 				throw std::logic_error("PNG is not supported for raw data buffer");
 				return false;
 			}
-
-			bool alpha_channel() const override
-			{
-				return pixbuf_.alpha_channel();
-			}
-
-			virtual bool empty() const override
-			{
-				return pixbuf_.empty();
-			}
-
-			virtual void close() override
-			{
-				pixbuf_.close();
-			}
-
-			virtual nana::size size() const override
-			{
-				return pixbuf_.size();
-			}
-
-			void paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const override
-			{
-				pixbuf_.paste(src_r, graph.handle(), p_dst);
-			}
-
-			void stretch(const nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const override
-			{
-				pixbuf_.stretch(src_r, dst.handle(), r);
-			}
-		private:
-			nana::paint::pixel_buffer pixbuf_;
-
 		};
 	}//end namespace detail
 	}//end namespace paint

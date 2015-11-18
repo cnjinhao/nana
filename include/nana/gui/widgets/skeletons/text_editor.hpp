@@ -14,7 +14,7 @@
 #ifndef NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #define NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #include "textbase.hpp"
-#include "text_editor_scheme.hpp"
+#include "text_editor_part.hpp"
 #include <nana/gui/widgets/scroll.hpp>
 #include <nana/unicode_bidi.hpp>
 
@@ -135,6 +135,8 @@ namespace nana{	namespace widgets
 			using size_type = textbase<char_type>::size_type;
 			using string_type = textbase<char_type>::string_type;
 
+			using event_interface = text_editor_event_interface;
+
 			using graph_reference = ::nana::paint::graphics&;
 
 			struct ext_renderer_tag
@@ -162,6 +164,9 @@ namespace nana{	namespace widgets
 
 			void typeface_changed();
 
+			void indent(bool, std::function<nana::string()> generator);
+			void set_event(event_interface*);
+
 			/// Determine whether the text_editor is line wrapped.
 			bool line_wrapped() const;
 			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
@@ -174,6 +179,10 @@ namespace nana{	namespace widgets
 			/// Sets the text area.
 			/// @return true if the area is changed with the new value.
 			bool text_area(const nana::rectangle&);
+
+			/// Returns the text area
+			rectangle text_area(bool including_scroll) const;
+
 			bool tip_string(nana::string&&);
 
 			const attributes & attr() const;
@@ -199,7 +208,7 @@ namespace nana{	namespace widgets
 			/// Sets caret position through text coordinate.
 			void move_caret(const upoint&);
 			void move_caret_end();
-			void reset_caret_height() const;
+			void reset_caret_pixels() const;
 			void reset_caret();
 			void show_caret(bool isshow);
 
@@ -207,16 +216,21 @@ namespace nana{	namespace widgets
 			bool select(bool);
 			/// Sets the end position of a selected string.
 			void set_end_caret();
+			
 			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos) const;
+
 			bool move_select();
 			bool mask(char_t);
 
 			/// Returns width of text area excluding the vscroll size.
 			unsigned width_pixels() const;
 			window window_handle() const;
+
+			/// Returns text position of each line that currently displays on screen
+			const std::vector<upoint>& text_position() const;
 		public:
-			void draw_scroll_rectangle();
+			void draw_corner();
 			void render(bool focused);
 		public:
 			void put(nana::string);
@@ -231,14 +245,13 @@ namespace nana{	namespace widgets
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
-			upoint mouse_caret(const point& screen_pos);
-			upoint caret() const;
+			const upoint& mouse_caret(const point& screen_pos);
+			const upoint& caret() const;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
 			bool mouse_enter(bool);
-			bool mouse_down(::nana::mouse, const point& screen_pos);
 			bool mouse_move(bool left_button, const point& screen_pos);
-			bool mouse_up(::nana::mouse, const point& screen_pos);
+			bool mouse_pressed(const arg_mouse& arg);
 
 			skeletons::textbase<nana::char_t>& textbase();
 			const skeletons::textbase<nana::char_t>& textbase() const;
@@ -267,10 +280,8 @@ namespace nana{	namespace widgets
 
 			int _m_text_top_base() const;
 
-			/// Returns the right point of text area.
-			int _m_endx() const;
-			/// Returns the bottom point of text area.
-			int _m_endy() const;
+			/// Returns the right/bottom point of text area.
+			int _m_end_pos(bool right) const;	
 
 			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t*, std::size_t len) const;
 			//_m_draw_string
@@ -286,7 +297,6 @@ namespace nana{	namespace widgets
 
 			unsigned _m_char_by_pixels(const nana::char_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
 			unsigned _m_pixels_by_char(const nana::string&, std::size_t pos) const;
-			static bool _m_is_right_text(const unicode_bidi::entity&);
 			void _handle_move_key(const arg_keyboard& arg);
 
 		private:
@@ -294,13 +304,22 @@ namespace nana{	namespace widgets
 			undoable<command>	undo_;
 			nana::window window_;
 			graph_reference graph_;
-			const text_editor_scheme* scheme_;
+			const text_editor_scheme*	scheme_;
+			event_interface *			event_handler_{ nullptr };
 			std::unique_ptr<keywords> keywords_;
 
 			skeletons::textbase<nana::char_t> textbase_;
 			nana::char_t mask_char_{0};
 
 			mutable ext_renderer_tag ext_renderer_;
+
+			std::vector<upoint> text_position_;	//position of text from last rendering.
+
+			struct indent_rep
+			{
+				bool enabled{ false };
+				std::function<nana::string()> generator;
+			}indent_;
 
 			struct attributes
 			{
@@ -345,6 +364,7 @@ namespace nana{	namespace widgets
 			{
 				nana::point		offset;	//x stands for pixels, y for lines
 				nana::upoint	caret;	//position of caret by text, it specifies the position of a new character
+				nana::upoint	shift_begin_caret;
 				unsigned		xpos{0};	//This data is used for move up/down
 			}points_;
 		};
