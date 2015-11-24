@@ -427,11 +427,12 @@ namespace nana
 		::nana::point pos;   ///< cursor position in the event window
 		::nana::mouse button;	///< indicates a button which triggers the event
 
-		bool left_button;    ///< mouse left button is pressed?
-		bool mid_button;     ///< mouse middle button is pressed?
-		bool right_button;   ///< mouse right button is pressed?
-		bool shift;          ///< keyboard Shift is pressed?
-		bool ctrl;           ///< keyboard Ctrl is pressed?
+		bool left_button;	///< mouse left button is pressed?
+		bool mid_button;	///< mouse middle button is pressed?
+		bool right_button;	///< mouse right button is pressed?
+		bool alt;			///< keyboard alt is pressed?
+		bool shift;			///< keyboard Shift is pressed?
+		bool ctrl;			///< keyboard Ctrl is pressed?
 
 		/// Checks if left button is operated,
 		bool is_left_button() const
@@ -521,7 +522,7 @@ namespace nana
 	struct arg_click : public event_arg
 	{
 		::nana::window window_handle;	///< A handle to the event window
-		bool by_mouse;					///< Determines whether the event is emitted by clicking mouse button
+		const arg_mouse* mouse_args;	///< If it is not null, it refers to the mouse arguments for click event emitted by mouse, nullptr otherwise.
 	};
 
     /// provides some fundamental events that every widget owns.
