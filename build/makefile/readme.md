@@ -4,6 +4,7 @@ X11, pthread, Xpm, rt, dl, freetype2, Xft, fontconfig, ALSA
 
 Writing a makefile for creating applications with Nana C++ Library
 -------------------
+'''
 GCC	= g++
 NANAPATH = [The folder of Nana C++ Library]
 BIN	= [The bin file what you want to create.]
@@ -28,4 +29,5 @@ $(NANALIB):
 
 clean:
 	rm -f $(LINKOBJ)
+'''
 -------------------
