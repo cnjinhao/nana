@@ -30,6 +30,36 @@
 
 namespace nana
 {
+	bool is_utf8(const char* str, unsigned len)
+	{
+		auto ustr = reinterpret_cast<const unsigned char*>(str);
+		auto end = ustr + len;
+
+		while (ustr < end)
+		{
+			const auto uv = *ustr;
+			if (uv < 0x80)
+			{
+				++ustr;
+				continue;
+			}
+
+			if (uv < 0xC0)
+				return false;
+
+			if ((uv < 0xE0) && (ustr + 1 < end))
+				ustr += 2;
+			else if (uv < 0xF0 && (ustr + 2 <= end))
+				ustr += 3;
+			else if (uv < 0x1F && (ustr + 3 <= end))
+				ustr += 4;
+			else
+				return false;
+		}
+
+		return true;
+	}
+
 	namespace detail
 	{
 		class locale_initializer
