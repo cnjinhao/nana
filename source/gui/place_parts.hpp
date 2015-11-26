@@ -84,7 +84,7 @@ namespace nana
 				graph.rectangle(true);
 
 				//draw caption
-				auto text = API::window_caption(window_handle_);
+				auto text = utf8_cast(API::window_caption(window_handle_));
 				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, true);
 
 				//draw x button
@@ -300,7 +300,7 @@ namespace nana
 							if (handle)
 								caption_.caption(API::window_caption(handle));
 							else
-								caption_.caption(::nana::string());
+								caption_.caption(::std::string());
 						});
 
 						tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });

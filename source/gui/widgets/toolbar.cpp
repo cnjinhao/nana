@@ -31,7 +31,7 @@ namespace nana
 
 				typedef std::size_t size_type;
 
-				nana::string text;
+				std::string text;
 				nana::paint::image image;
 				unsigned	pixels{0};
 				nana::size	textsize;
@@ -39,7 +39,7 @@ namespace nana
 
 				kind type;
 
-				item_type(const nana::string& text, const nana::paint::image& img, kind type)
+				item_type(const std::string& text, const nana::paint::image& img, kind type)
 					:text(text), image(img), type(type)
 				{}
 			};
@@ -58,9 +58,9 @@ namespace nana
 						delete ptr;
 				}
 
-				void insert(size_type pos, const nana::string& text, const nana::paint::image& img, item_type::kind type)
+				void insert(size_type pos, std::string text, const nana::paint::image& img, item_type::kind type)
 				{
-					item_type* m = new item_type(text, img, type);
+					item_type* m = new item_type(std::move(text), img, type);
 
 					if(pos < cont_.size())
 						cont_.insert(cont_.begin() + pos, m);
@@ -68,12 +68,12 @@ namespace nana
 						cont_.push_back(m);
 				}
 
-				void push_back(const nana::string& text, const nana::paint::image& img)
+				void push_back(const std::string& text, const nana::paint::image& img)
 				{
 					insert(cont_.size(), text, img, item_type::kind::button);
 				}
 
-				void push_back(const nana::string& text)
+				void push_back(const std::string& text)
 				{
 					insert(cont_.size(), text, nana::paint::image(), item_type::kind::button);
 				}
@@ -242,7 +242,7 @@ namespace nana
 					impl_->graph_ptr = &graph;
 
 					widget_ = static_cast< ::nana::toolbar*>(&widget);
-					widget.caption(L"Nana Toolbar");
+					widget.caption("nana toolbar");
 
 					impl_->event_size = API::events(widget.parent()).resized.connect_unignorable([this](const arg_resized& arg)
 					{
@@ -405,13 +405,13 @@ namespace nana
 			API::refresh_window(handle());
 		}
 
-		void toolbar::append(const nana::string& text, const nana::paint::image& img)
+		void toolbar::append(const std::string& text, const nana::paint::image& img)
 		{
 			get_drawer_trigger().items().push_back(text, img);
 			API::refresh_window(handle());
 		}
 
-		void toolbar::append(const nana::string& text)
+		void toolbar::append(const std::string& text)
 		{
 			get_drawer_trigger().items().push_back(text, {});
 			API::refresh_window(this->handle());

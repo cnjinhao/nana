@@ -209,14 +209,16 @@ namespace drawerbase {
 			create(wd, rectangle(), visible);
 		}
 
-		textbox::textbox(window wd, const nana::string& text, bool visible)
+		textbox::textbox(window wd, const std::string& text, bool visible)
 		{
+			throw_not_utf8(text);
 			create(wd, rectangle(), visible);
 			caption(text);
 		}
 
-		textbox::textbox(window wd, const nana::char_t* text, bool visible)
+		textbox::textbox(window wd, const char* text, bool visible)
 		{
+			throw_not_utf8(text, std::strlen(text));
 			create(wd, rectangle(), visible);
 			caption(text);
 		}
@@ -419,11 +421,12 @@ namespace drawerbase {
 				editor->set_accept(std::move(fn));
 		}
 
-		textbox& textbox::tip_string(nana::string str)
+		textbox& textbox::tip_string(std::string str)
 		{
+			throw_not_utf8(str);
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->tip_string(std::move(str)))
+			if(editor && editor->tip_string(utf8_cast(str)))
 				API::refresh_window(handle());
 			return *this;
 		}
@@ -484,14 +487,10 @@ namespace drawerbase {
 
 		int textbox::to_int() const
 		{
-			nana::string s = _m_caption();
+			auto s = _m_caption();
 			if (s.empty()) return 0;
 
-#ifdef NANA_UNICODE
-			std::wstringstream ss;
-#else
 			std::stringstream ss;
-#endif
 			int value;
 			ss << s;
 			ss >> value;
@@ -500,14 +499,10 @@ namespace drawerbase {
 
 		double textbox::to_double() const
 		{
-			nana::string s = _m_caption();
+			auto s = _m_caption();
 			if (s.empty()) return 0;
 
-#ifdef NANA_UNICODE
-			std::wstringstream ss;
-#else
 			std::stringstream ss;
-#endif
 			double value;
 			ss << s;
 			ss >> value;
@@ -516,13 +511,13 @@ namespace drawerbase {
 
 		textbox& textbox::from(int n)
 		{
-			_m_caption(std::to_wstring(n));
+			_m_caption(std::to_string(n));
 			return *this;
 		}
 
 		textbox& textbox::from(double d)
 		{
-			_m_caption(std::to_wstring(d));
+			_m_caption(std::to_string(d));
 			return *this;
 		}
 
@@ -542,7 +537,7 @@ namespace drawerbase {
 				editor->erase_highlight(name);
 		}
 
-		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list)
+		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::wstring> kw_list)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -600,20 +595,23 @@ namespace drawerbase {
 		}
 
 		//Override _m_caption for caption()
-		nana::string textbox::_m_caption() const throw()
+		::std::string textbox::_m_caption() const throw()
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			return (editor ? editor->text() : nana::string());
+			if (editor)
+				return ::nana::charset(editor->text());
+
+			return std::string();
 		}
 
-		void textbox::_m_caption(nana::string&& str)
+		void textbox::_m_caption(std::string&& str)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
-				editor->text(std::move(str));
+				editor->text(::nana::charset(str, ::nana::unicode::utf8));
 				API::update_window(this->handle());
 			}
 		}

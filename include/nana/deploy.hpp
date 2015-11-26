@@ -72,6 +72,16 @@ namespace std
 }
 #endif
 
+namespace nana
+{
+	/// Checks whether a specified text is utf8 encoding
+	bool is_utf8(const char* str, unsigned len);
+	void throw_not_utf8(const std::string& text);
+	void throw_not_utf8(const char*, unsigned len);
+
+	std::wstring utf8_cast(const std::string&);
+	std::string utf8_cast(const std::wstring&);
+}
 
 #ifndef NANA_UNICODE
 	namespace nana

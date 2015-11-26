@@ -111,13 +111,13 @@ namespace nana
 		/// @param window  A handle to the parent window of the widget being created.
 		/// @param text  the text that will be displayed.
 		/// @param visible  specifying the visible after creating.
-		textbox(window, const nana::string& text, bool visible = true);
+		textbox(window, const std::string& text, bool visible = true);
 
 		/// \brief The construct that creates a widget with a specified text.
 		/// @param window  A handle to the parent window of the widget being created.
 		/// @param text  the text that will be displayed.
 		/// @param visible  specifying the visible after creating.
-		textbox(window, const nana::char_t* text, bool visible = true);
+		textbox(window, const char* text, bool visible = true);
 
 		/// \brief The construct that creates a widget.
 		/// @param window  A handle to the parent window of the widget being created.
@@ -173,7 +173,7 @@ namespace nana
 		textbox& editable(bool);
 		void set_accept(std::function<bool(nana::char_t)>);
 
-		textbox& tip_string(nana::string);
+		textbox& tip_string(::std::string);
 
         /// Set a mask character. Text is displayed as mask character if a mask character is set. This is used for hiding some special text, such as password.
 		textbox& mask(nana::char_t);
@@ -195,10 +195,9 @@ namespace nana
 
 		void set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor);
 		void erase_highlight(const std::string& name);
-		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list);
+		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::wstring> kw_list);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
 		void erase_keyword(const nana::string& kw);
-
 
 		/// Returns the text position of each line that currently displays on screen.
 		text_positions text_position() const;
@@ -210,8 +209,8 @@ namespace nana
 		unsigned line_pixels() const;
 	protected:
 		//Overrides widget's virtual functions
-		::nana::string _m_caption() const throw() override;
-		void _m_caption(::nana::string&&) override;
+		::std::string _m_caption() const throw() override;
+		void _m_caption(::std::string&&) override;
 		void _m_typeface(const paint::font&) override;
 	};
 }//end namespace nana

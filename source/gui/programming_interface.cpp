@@ -220,7 +220,7 @@ namespace API
 			}
 		}
 
-		nana::string window_caption(window wd) throw()
+		std::string window_caption(window wd) throw()
 		{
 			auto const iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard isg;
@@ -234,7 +234,7 @@ namespace API
 			return {};
 		}
 
-		void window_caption(window wd, nana::string title)
+		void window_caption(window wd, std::string title)
 		{
 			auto const iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;
@@ -819,18 +819,19 @@ namespace API
 
 	void window_caption(window wd, const std::string& title_utf8)
 	{
-		window_caption(wd, std::wstring(::nana::charset(title_utf8, ::nana::unicode::utf8)));
+		throw_not_utf8(title_utf8);
+		auto const iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::wd_manager().available(iwd))
+			iwd->widget_notifier->caption(title_utf8);
 	}
 
 	void window_caption(window wd, const nana::string& title)
 	{
-		auto const iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard lock;
-		if (restrict::wd_manager().available(iwd))
-			iwd->widget_notifier->caption(title);
+		window_caption(wd, static_cast<std::string>(::nana::charset(title).to_bytes(::nana::unicode::utf8)));
 	}
 
-	nana::string window_caption(window wd)
+	std::string window_caption(window wd)
 	{
 		auto const iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;

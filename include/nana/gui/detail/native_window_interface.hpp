@@ -65,8 +65,8 @@ namespace detail
 
 		static void	window_size(native_window_type, const size&);
 		static void	get_window_rect(native_window_type, rectangle&);
-		static void	window_caption(native_window_type, const nana::string&);
-		static nana::string	window_caption(native_window_type);
+		static void	window_caption(native_window_type, const std::string&);
+		static std::string	window_caption(native_window_type);
 		static void	capture_window(native_window_type, bool);
 		static nana::point	cursor_position();
 		static native_window_type get_owner_window(native_window_type);

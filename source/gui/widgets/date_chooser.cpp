@@ -26,7 +26,7 @@ namespace nana
 				trigger::trigger()
 					: widget_(nullptr), chose_(false), page_(page::date), pos_(where::none)
 				{
-					const nana::string ws[] = {STR("S"), STR("M"), STR("T"), STR("W"), STR("T"), STR("F"), STR("S")};
+					const std::string ws[] = {"S", "M", "T", "W", "T", "F", "S"};
 					for(int i = 0; i < 7; ++i)	weekstr_[i] = ws[i];
 
 					nana::date d;
@@ -50,8 +50,9 @@ namespace nana
 					return nana::date(chdate_.year, chdate_.month, chdate_.day);
 				}
 
-				void trigger::week_name(unsigned index, const nana::string& str)
+				void trigger::week_name(unsigned index, const std::string& str)
 				{
+					throw_not_utf8(str);
 					if(index < 7)
 						this->weekstr_[index] = str;
 				}
@@ -95,13 +96,13 @@ namespace nana
 
 					if(graph.width() > 32 + border_size * 2)
 					{
-						nana::string str;
+						std::string str;
 						if(page_ == page::date)
 						{
 							str = ::nana::internationalization()(monthstr[chmonth_.month - 1]);
-							str += STR("  ");
+							str += "  ";
 						}
-						str += std::to_wstring(chmonth_.year);
+						str += std::to_string(chmonth_.year);
 
 						nana::size txt_s = graph.text_extent_size(str);
 
@@ -110,7 +111,8 @@ namespace nana
 						int xpos = static_cast<int>(graph.width() - txt_s.width) / 2;
 						if(xpos < border_size + 16) xpos = 16 + border_size + 1;
 
-						graph.string({ xpos, top }, str, (pos_ == where::topbar ? color_.highlight : color_.normal));
+						graph.set_text_color(pos_ == where::topbar ? color_.highlight : color_.normal);
+						graph.string({ xpos, top }, str);
 					}
 				}
 
@@ -134,7 +136,7 @@ namespace nana
 					dbasis_ = dbasis;
 				}
 
-				void trigger::_m_draw_pos(drawing_basis & dbasis, graph_reference graph, int x, int y, const nana::string& str, bool primary, bool sel)
+				void trigger::_m_draw_pos(drawing_basis & dbasis, graph_reference graph, int x, int y, const std::string& str_utf8, bool primary, bool sel)
 				{
 					nana::rectangle r(static_cast<int>(x * dbasis.row_s), static_cast<int>(y * dbasis.line_s),
 						static_cast<int>(dbasis.row_s), static_cast<int>(dbasis.line_s));
@@ -165,13 +167,14 @@ namespace nana
 					if(false == primary)
 						color = { 0xB0, 0xB0, 0xB0 };
 
-					nana::size txt_s = graph.text_extent_size(str);
-					graph.string({ r.x + static_cast<int>(r.width - txt_s.width) / 2, r.y + static_cast<int>(r.height - txt_s.height) / 2 }, str, color);
+					nana::size txt_s = graph.text_extent_size(str_utf8);
+					graph.set_text_color(color);
+					graph.string({ r.x + static_cast<int>(r.width - txt_s.width) / 2, r.y + static_cast<int>(r.height - txt_s.height) / 2 }, str_utf8);
 				}
 
 				void trigger::_m_draw_pos(drawing_basis & dbasis, graph_reference graph, int x, int y, int number, bool primary, bool sel)
 				{
-					_m_draw_pos(dbasis, graph, x, y, std::to_wstring(number), primary, sel);
+					_m_draw_pos(dbasis, graph, x, y, std::to_string(number), primary, sel);
 				}
 
 				void trigger::_m_draw_ex_days(drawing_basis & dbasis, graph_reference graph, int begx, int begy, bool before)
@@ -615,16 +618,16 @@ namespace nana
 			create(wd, rectangle(), visible);
 		}
 
-		date_chooser::date_chooser(window wd, const nana::string& text, bool visible)
+		date_chooser::date_chooser(window wd, const std::string& text, bool visible)
 		{
+			throw_not_utf8(text);
 			create(wd, rectangle(), visible);
 			caption(text);
 		}
 
-		date_chooser::date_chooser(window wd, const nana::char_t* text, bool visible)
+		date_chooser::date_chooser(window wd, const char* text, bool visible)
+			: date_chooser(wd, std::string(text), visible)
 		{
-			create(wd, rectangle(), visible);
-			caption(text);		
 		}
 
 		date_chooser::date_chooser(window wd, const rectangle& r, bool visible)
@@ -642,7 +645,7 @@ namespace nana
 			return get_drawer_trigger().read();
 		}
 
-		void date_chooser::weekstr(unsigned index, const nana::string& str)
+		void date_chooser::weekstr(unsigned index, const ::std::string& str)
 		{
 			get_drawer_trigger().week_name(index, str);
 			API::refresh_window(*this);

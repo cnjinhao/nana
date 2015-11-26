@@ -713,7 +713,7 @@ namespace nana
 						want_focus_{ (!wd) || ((!is_wd_parent_menu) && (API::focus_window() != wd)) },
 						event_focus_{ nullptr }
 				{
-					caption(STR("nana menu window"));
+					caption("nana menu window");
 					get_drawer_trigger().close_menu_tree([this]{ this->_m_close_all(); });
 					get_drawer_trigger().renderer = rdptr;
 					state_.owner_menubar = state_.self_submenu = false;

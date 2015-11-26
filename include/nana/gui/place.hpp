@@ -42,13 +42,17 @@ namespace nana
 			: init_(std::move(initializer))
 		{}
 
-		agent(const nana::char_t* text)
+		agent(const char* text)
 			: text_(text)
-		{}
+		{
+			throw_not_utf8(text);
+		}
 
-		agent(nana::string text, std::function<void(Widget&)> initializer = {})
+		agent(std::string text, std::function<void(Widget&)> initializer = {})
 			: text_(std::move(text)), init_(std::move(initializer))
-		{}
+		{
+			throw_not_utf8(text_);
+		}
 
 	private:
 		std::unique_ptr<nana::widget> create(nana::window handle) const override
@@ -60,7 +64,7 @@ namespace nana
 			return std::move(ptr);
 		}
 	private:
-		nana::string text_;
+		std::string text_;
 		std::function<void(Widget&)> init_;
 	};
 
@@ -79,8 +83,8 @@ namespace nana
 		public:
 			field_interface() = default;
 			virtual ~field_interface() = default;
-			virtual field_interface& operator<<(const nana::char_t* label) = 0;
-			virtual field_interface& operator<<(nana::string label) = 0;
+			virtual field_interface& operator<<(const char* label) = 0;
+			virtual field_interface& operator<<(std::string label) = 0;
 			virtual field_interface& operator<<(window) = 0;
 			virtual field_interface& fasten(window) = 0;
 			

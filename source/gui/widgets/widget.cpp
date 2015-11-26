@@ -41,12 +41,12 @@ namespace nana
 				wdg_._m_notify_destroy();
 			}
 
-			std::wstring caption() override
+			std::string caption() override
 			{
 				return wdg_._m_caption();
 			}
 
-			virtual void caption(std::wstring text)
+			virtual void caption(std::string text)
 			{
 				wdg_._m_caption(std::move(text));
 			}
@@ -54,19 +54,15 @@ namespace nana
 			widget& wdg_;
 		};
 
-		nana::string widget::caption() const throw()
+		std::string widget::caption() const throw()
 		{
 			return this->_m_caption();
 		}
 
 		void widget::caption(std::string utf8)
 		{
-			_m_caption(std::wstring(::nana::charset(utf8, ::nana::unicode::utf8)));
-		}
-
-		void widget::caption(std::wstring str)
-		{
-			_m_caption(std::move(str));
+			::nana::throw_not_utf8(utf8);
+			_m_caption(std::move(utf8));
 		}
 
 		void widget::i18n(i18n_eval eval)
@@ -228,7 +224,7 @@ namespace nana
 			return *this;
 		}
 
-		widget& widget::tooltip(const nana::string& text)
+		widget& widget::tooltip(const ::std::string& text)
 		{
 			nana::tooltip::set(*this, text);
 			return *this;
@@ -252,12 +248,12 @@ namespace nana
 		void widget::_m_complete_creation()
 		{}
 
-		nana::string widget::_m_caption() const throw()
+		std::string widget::_m_caption() const throw()
 		{
 			return API::dev::window_caption(handle());
 		}
 
-		void widget::_m_caption(nana::string&& str)
+		void widget::_m_caption(std::string&& str)
 		{
 			API::dev::window_caption(handle(), std::move(str));
 		}

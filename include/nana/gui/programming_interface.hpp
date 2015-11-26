@@ -72,8 +72,8 @@ namespace API
 		widget_colors* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
-		nana::string window_caption(window) throw();
-		void window_caption(window, nana::string);
+		std::string window_caption(window) throw();
+		void window_caption(window, std::string);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);
@@ -272,7 +272,7 @@ namespace API
 
 	void window_caption(window, const std::string& title_utf8);
 	void window_caption(window, const nana::string& title);
-	nana::string window_caption(window);
+	::std::string window_caption(window);
 
 	void window_cursor(window, cursor);
 	cursor window_cursor(window);

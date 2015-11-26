@@ -24,7 +24,7 @@ namespace nana
 
 		virtual bool tooltip_empty() const = 0;
 		virtual nana::size tooltip_size() const = 0;
-		virtual void tooltip_text(const nana::string&)	= 0;
+		virtual void tooltip_text(const ::std::string&)	= 0;
 		virtual void tooltip_move(const nana::point& screen_pos, bool ignore_pos)	= 0;
 		virtual void duration(std::size_t) = 0;
 	};
@@ -63,11 +63,11 @@ namespace nana
 		}
 
 		tooltip(){}
-		tooltip(window w, const nana::string &tip){set(w,tip);}
+		tooltip(window w, const ::std::string &tip){set(w,tip);}
 
 
-		static void set(window, const nana::string&);
-		static void show(window, point pos, const nana::string&, std::size_t duration);
+		static void set(window, const ::std::string&);
+		static void show(window, point pos, const ::std::string&, std::size_t duration);
 		static void close();
 	private:
 		static void _m_hold_factory(factory_interface*);

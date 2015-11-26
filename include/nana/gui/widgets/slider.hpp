@@ -45,7 +45,7 @@ namespace nana
 			{
 			public:
 				virtual ~provider() = default;
-				virtual nana::string adorn_trace(unsigned vmax, unsigned vadorn) const = 0;
+				virtual std::string adorn_trace(unsigned vmax, unsigned vadorn) const = 0;
 			};
 
 			class renderer
@@ -81,7 +81,7 @@ namespace nana
 
 				virtual void background(window, graph_reference, bool isglass) = 0;
 				virtual void adorn(window, graph_reference, const adorn_t&) = 0;
-				virtual void adorn_textbox(window, graph_reference, const nana::string&, const nana::rectangle&) = 0;
+				virtual void adorn_textbox(window, graph_reference, const ::std::string&, const nana::rectangle&) = 0;
 				virtual void bar(window, graph_reference, const bar_t&) = 0;
 				virtual void slider(window, graph_reference, const slider_t&) = 0;
 			};

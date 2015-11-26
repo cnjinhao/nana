@@ -355,6 +355,59 @@ namespace std
 
 namespace nana
 {
+	bool is_utf8(const char* str, unsigned len)
+	{
+		auto ustr = reinterpret_cast<const unsigned char*>(str);
+		auto end = ustr + len;
+
+		while (ustr < end)
+		{
+			const auto uv = *ustr;
+			if (uv < 0x80)
+			{
+				++ustr;
+				continue;
+			}
+
+			if (uv < 0xC0)
+				return false;
+
+			if ((uv < 0xE0) && (ustr + 1 < end))
+				ustr += 2;
+			else if (uv < 0xF0 && (ustr + 2 <= end))
+				ustr += 3;
+			else if (uv < 0x1F && (ustr + 3 <= end))
+				ustr += 4;
+			else
+				return false;
+		}
+
+		return true;
+	}
+
+	void throw_not_utf8(const std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+			throw std::invalid_argument("The text is not encoded in UTF8");
+	}
+
+	void throw_not_utf8(const char* text, unsigned len)
+	{
+		if (!is_utf8(text, len))
+			throw std::invalid_argument("The text is not encoded in UTF8");
+	}
+
+	std::wstring utf8_cast(const std::string& text)
+	{
+		return ::nana::charset(text, ::nana::unicode::utf8);
+	}
+
+	std::string utf8_cast(const std::wstring& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+
 	std::size_t strlen(const char_t* str)
 	{
 #if defined(NANA_UNICODE)

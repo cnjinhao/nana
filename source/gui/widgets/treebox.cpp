@@ -1856,7 +1856,7 @@ namespace nana
 
 					widget.bgcolor(colors::white);
 					impl_->data.widget_ptr = static_cast< ::nana::treebox*>(&widget);
-					widget.caption(STR("Nana Treebox"));
+					widget.caption("nana treebox");
 				}
 
 				void trigger::refresh(graph_reference)

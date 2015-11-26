@@ -41,9 +41,8 @@ namespace nana
 
 		window parent() const;
 
-		nana::string caption() const throw();
+		::std::string caption() const throw();
 		void caption(std::string utf8);
-		void caption(std::wstring);
 
 		template<typename ...Args>
 		void i18n(std::string msgid, Args&&... args)
@@ -91,7 +90,7 @@ namespace nana
 		widget& register_shortkey(char_t);	///< Registers a shortkey. To remove a registered key, pass 0.
 
 		widget& take_active(bool activated, window take_if_not_activated);
-		widget& tooltip(const nana::string&);
+		widget& tooltip(const ::std::string&);
 
 		operator dummy_bool_type() const;
 		operator window() const;
@@ -105,8 +104,8 @@ namespace nana
 		virtual void _m_complete_creation();
 
 		virtual general_events& _m_get_general_events() const = 0;
-		virtual nana::string _m_caption() const throw();
-		virtual void _m_caption(nana::string&&);
+		virtual ::std::string _m_caption() const throw();
+		virtual void _m_caption(::std::string&&);
 		virtual nana::cursor _m_cursor() const;
 		virtual void _m_cursor(nana::cursor);
 		virtual void _m_close();

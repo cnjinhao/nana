@@ -772,8 +772,9 @@ namespace nana
             bgcolor(API::bgcolor(wd));
 		}
 
-		label::label(window wd, const nana::string& text, bool visible)
+		label::label(window wd, const std::string& text, bool visible)
 		{
+			throw_not_utf8(text);
 			create(wd, rectangle(), visible);
 			bgcolor(API::bgcolor(wd));
 			caption(text);
@@ -806,7 +807,7 @@ namespace nana
 			if(impl->renderer.format(f))
 			{
 				window wd = *this;
-				impl->renderer.parse(API::dev::window_caption(wd));
+				impl->renderer.parse(::nana::charset(API::dev::window_caption(wd), ::nana::unicode::utf8));
 				API::refresh_window(wd);
 			}
 			return *this;
@@ -844,11 +845,12 @@ namespace nana
 			return impl->renderer.measure(*graph_ptr, limited, impl->text_align, impl->text_align_v);
 		}
 
-		::nana::size label::measure(paint::graphics& graph, const ::nana::string& str, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align)
+		::nana::size label::measure(paint::graphics& graph, const ::std::string& str, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align)
 		{
+			throw_not_utf8(str);
 			drawerbase::label::renderer rd;
 			rd.format(format_enabled);
-			rd.parse(str);
+			rd.parse(utf8_cast(str));
 			return rd.measure(graph, allowed_width_in_pixel, h_align, v_align);
 		}
 
@@ -867,11 +869,11 @@ namespace nana
 			return *this;
 		}
 
-		void label::_m_caption(nana::string&& str)
+		void label::_m_caption(std::string&& str)
 		{
 			internal_scope_guard lock;
 			window wd = *this;
-			get_drawer_trigger().impl()->renderer.parse(str);
+			get_drawer_trigger().impl()->renderer.parse(::nana::charset(str, nana::unicode::utf8));
 			API::dev::window_caption(wd, std::move(str));
 			API::refresh_window(wd);
 		}

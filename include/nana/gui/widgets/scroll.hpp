@@ -186,7 +186,7 @@ namespace nana
 				{
 					graph_ = &graph;
 					widget_ = static_cast< ::nana::scroll<Vertical>*>(&widget);
-					widget.caption(STR("Nana Scroll"));
+					widget.caption("nana scroll");
 
 					timer_.stop();
 					timer_.elapse(std::bind(&trigger::_m_tick, this));

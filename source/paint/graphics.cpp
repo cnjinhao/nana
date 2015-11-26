@@ -361,6 +361,12 @@ namespace paint
 			return (handle_ ? font(handle_) : font_shadow_);
 		}
 
+		::nana::size graphics::text_extent_size(const ::std::string& text) const
+		{
+			throw_not_utf8(text);
+			return text_extent_size(static_cast<std::wstring>(::nana::charset(text, ::nana::unicode::utf8)));
+		}
+
 		nana::size	graphics::text_extent_size(const nana::char_t* text)	const
 		{
 			return text_extent_size(text, nana::strlen(text));
@@ -945,6 +951,12 @@ namespace paint
 #endif
 				if (changed_ == false) changed_ = true;
 			}
+		}
+
+		void graphics::string(const point& pos, const std::string& text)
+		{
+			throw_not_utf8(text);
+			string(pos, static_cast<std::wstring>(::nana::charset(text, ::nana::unicode::utf8)));
 		}
 
 		void graphics::string(nana::point pos, const char_t* str, std::size_t len)

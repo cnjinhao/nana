@@ -1076,32 +1076,22 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::window_caption(native_window_type wd, const nana::string& title)
+		void native_interface::window_caption(native_window_type wd, const std::string& title)
 		{
 #if defined(NANA_WINDOWS)
+			std::wstring wtext = ::nana::charset(title, ::nana::unicode::utf8);
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
-				wchar_t * wstr;
-#if defined(NANA_UNICODE)
-				wstr = new wchar_t[title.length() + 1];
-				wcscpy(wstr, title.c_str());
-#else
-				std::wstring str = nana::charset(title);
-				wstr = new wchar_t[str.length() + 1];
-				wcscpy(wstr, str.c_str());
-#endif
+				wchar_t * wstr = new wchar_t[wtext.length() + 1];
+				std::wcscpy(wstr, wtext.c_str());
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_set_window_text, reinterpret_cast<WPARAM>(wstr), 0);
 			}
 			else
-				::SetWindowText(reinterpret_cast<HWND>(wd), title.c_str());
+				::SetWindowText(reinterpret_cast<HWND>(wd), wtext.c_str());
 #elif defined(NANA_X11)
 			::XTextProperty name;
-	#if defined(NANA_UNICODE)
-			std::string mbstr = nana::charset(title);
-			char* text = const_cast<char*>(mbstr.c_str());
-	#else
-			char* text = const_cast<char*>(title.c_str());
-	#endif
+			char * text = const_cast<char*>(title.c_str());
+
 			nana::detail::platform_scope_guard psg;
 			::XStringListToTextProperty(&text, 1, &name);
 			::XSetWMName(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &name);
@@ -1111,7 +1101,7 @@ namespace nana{
 #endif
 		}
 
-		nana::string native_interface::window_caption(native_window_type wd)
+		std::string native_interface::window_caption(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
 			int length = ::GetWindowTextLength(reinterpret_cast<HWND>(wd));
@@ -1126,9 +1116,8 @@ namespace nana{
 				//Remove the null terminator writtien by GetWindowText
 				str.resize(length);
 
-				return str;
+				return ::nana::charset(str);
 			}
-			return nana::string();
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 			::XTextProperty txtpro;
@@ -1140,14 +1129,14 @@ namespace nana{
 				{
 					if(size > 1)
 					{
-						nana::string str = nana::charset(*strlist);
+						std::string text = *strlist;
 						::XFreeStringList(strlist);
-						return str;
+						return text;
 					}
 				}
 			}
-			return nana::string();
 #endif
+			return std::string();
 		}
 
 		void native_interface::capture_window(native_window_type wd, bool cap)

@@ -30,8 +30,8 @@ namespace nana
 
 			virtual widget* widget_ptr() const = 0;
 			virtual void destroy() = 0;
-			virtual std::wstring caption() = 0;
-			virtual void caption(std::wstring) = 0;
+			virtual std::string caption() = 0;
+			virtual void caption(std::string) = 0;
 		};
 	}
 }

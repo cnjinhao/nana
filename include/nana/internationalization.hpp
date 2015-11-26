@@ -28,34 +28,34 @@ namespace nana
 		void load_utf8(const std::string& file);
 
 		template<typename ...Args>
-		nana::string get(std::string msgid_utf8, Args&&... args) const
+		::std::string get(std::string msgid_utf8, Args&&... args) const
 		{
-			std::vector<nana::string> arg_strs;
+			std::vector<std::string> arg_strs;
 			_m_fetch_args(arg_strs, std::forward<Args>(args)...);
 			
-			nana::string msgstr;
+			::std::string msgstr;
 			if (_m_get(msgid_utf8, msgstr))
 				_m_replace_args(msgstr, &arg_strs);
 			return msgstr;
 		}
 
-		nana::string get(std::string msgid_utf8) const;
-		void set(std::string msgid_utf8, nana::string msgstr);
+		::std::string get(std::string msgid_utf8) const;
+		void set(std::string msgid_utf8, ::std::string msgstr);
 
 		template<typename ...Args>
-		nana::string operator()(std::string msgid_utf8, Args&&... args) const
+		::std::string operator()(std::string msgid_utf8, Args&&... args) const
 		{
 			return get(msgid_utf8, std::forward<Args>(args)...);
 		}
 	private:
-		bool _m_get(std::string& msgid, nana::string& msgstr) const;
-		void _m_replace_args(nana::string& str, std::vector<nana::string> * arg_strs) const;
+		bool _m_get(std::string& msgid, ::std::string& msgstr) const;
+		void _m_replace_args(::std::string& str, std::vector<::std::string> * arg_strs) const;
 
-		void _m_fetch_args(std::vector<nana::string>&) const //Termination of _m_fetch_args
+		void _m_fetch_args(std::vector<std::string>&) const //Termination of _m_fetch_args
 		{}
 
 		template<typename Arg>
-		void _m_fetch_args(std::vector<nana::string>& v, Arg&& arg) const
+		void _m_fetch_args(std::vector<std::string>& v, Arg&& arg) const
 		{
 			std::wstringstream ss;
 			ss << arg;
@@ -63,52 +63,39 @@ namespace nana
 		}
 
 		template<typename ...Args>
-		void _m_fetch_args(std::vector<nana::string>& v, const char* arg, Args&&... args) const
+		void _m_fetch_args(std::vector<std::string>& v, const char* arg, Args&&... args) const
 		{
-			std::wstringstream ss;
-			ss << nana::string(nana::charset(arg));
-			v.emplace_back(ss.str());
-
+			v.emplace_back(arg);
 			_m_fetch_args(v, std::forward<Args>(args)...);
 		}
 
 		template<typename ...Args>
-		void _m_fetch_args(std::vector<nana::string>& v, const std::string& arg, Args&&... args) const
+		void _m_fetch_args(std::vector<std::string>& v, const std::string& arg, Args&&... args) const
 		{
-			std::wstringstream ss;
-			ss << nana::string(nana::charset(arg));
-			v.emplace_back(ss.str());
-
+			v.emplace_back(arg);
 			_m_fetch_args(v, std::forward<Args>(args)...);
 		}
 
 		template<typename ...Args>
-		void _m_fetch_args(std::vector<nana::string>& v, std::string& arg, Args&&... args) const
+		void _m_fetch_args(std::vector<std::string>& v, std::string& arg, Args&&... args) const
 		{
-			std::wstringstream ss;
-			ss << nana::string(nana::charset(arg));
-			v.emplace_back(ss.str());
-
+			v.emplace_back(arg);
 			_m_fetch_args(v, std::forward<Args>(args)...);
 		}
 
 		template<typename ...Args>
-		void _m_fetch_args(std::vector<nana::string>& v, std::string&& arg, Args&&... args) const
+		void _m_fetch_args(std::vector<std::string>& v, std::string&& arg, Args&&... args) const
 		{
-			std::wstringstream ss;
-			ss << nana::string(nana::charset(arg));
-			v.emplace_back(ss.str());
-
+			v.emplace_back(std::move(arg));
 			_m_fetch_args(v, std::forward<Args>(args)...);
 		}
 
 		template<typename Arg, typename ...Args>
-		void _m_fetch_args(std::vector<nana::string>& v, Arg&& arg, Args&&... args) const
+		void _m_fetch_args(std::vector<std::string>& v, Arg&& arg, Args&&... args) const
 		{
-			std::wstringstream ss;
+			std::stringstream ss;
 			ss << arg;
 			v.emplace_back(ss.str());
-
 			_m_fetch_args(v, std::forward<Args>(args)...);
 		}
 	};//end class internationalization
@@ -119,7 +106,7 @@ namespace nana
 		{
 		public:
 			virtual ~eval_arg() = default;
-			virtual nana::string eval() const = 0;
+			virtual std::string eval() const = 0;
 			virtual std::unique_ptr<eval_arg> clone() const = 0;
 		};
 
@@ -134,7 +121,7 @@ namespace nana
 				: fn_(fn)
 			{}
 
-			nana::string eval() const override
+			std::string eval() const override
 			{
 				std::wstringstream ss;
 				ss << fn_();
@@ -166,7 +153,7 @@ namespace nana
 		i18n_eval& operator=(const i18n_eval&);
 		i18n_eval& operator=(i18n_eval&& rhs);
 
-		nana::string operator()() const;
+		std::string operator()() const;
 	private:
 		void _m_fetch_args(){}	//Termination of _m_fetch_args
 
@@ -180,7 +167,7 @@ namespace nana
 		template<typename Arg>
 		void _m_add_args(Arg&& arg)
 		{
-			std::wstringstream ss;
+			std::stringstream ss;
 			ss << arg;
 			_m_add_args(ss.str());
 		}

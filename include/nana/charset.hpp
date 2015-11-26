@@ -9,9 +9,6 @@ namespace nana
 		utf8, utf16, utf32
 	};
 
-	/// Checks whether a specified text is utf8 encoding
-	bool is_utf8(const char* str, unsigned len);
-
 	namespace detail
 	{
 		class charset_encoding_interface;

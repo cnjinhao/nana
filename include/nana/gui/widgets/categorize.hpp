@@ -108,9 +108,9 @@ namespace nana
 				trigger();
 				~trigger();
 
-				void insert(const nana::string&, nana::any);
-				bool childset(const nana::string&, nana::any);
-				bool childset_erase(const nana::string&);
+				void insert(const ::std::string&, nana::any);
+				bool childset(const ::std::string&, nana::any);
+				bool childset_erase(const ::std::string&);
 				bool clear();
 
 				//splitstr
@@ -118,8 +118,8 @@ namespace nana
 				void splitstr(const nana::string&);
 				const nana::string& splitstr() const;
 				
-				void path(const nana::string&);
-				nana::string path() const;
+				void path(const ::std::string&);
+				::std::string path() const;
 
 				template<typename T>
 				void create_event_agent(::nana::categorize<T>& wdg)
@@ -189,7 +189,7 @@ namespace nana
 		/// Insert a new category with a specified name and the object of value type. 
 		/// The new category would be inserted as a child in current category, 
 		/// and after inserting, the new category is replaced of the current category as a new current one.
-		categorize& insert(const nana::string& name, const value_type& value)
+		categorize& insert(const std::string& name, const value_type& value)
 		{
 			this->get_drawer_trigger().insert(name, value);
 			API::update_window(*this);
@@ -197,8 +197,9 @@ namespace nana
 		}
 
 		/// Inserts a child category into current category.
-		categorize& childset(const nana::string& name, const value_type& value)
+		categorize& childset(const std::string& name, const value_type& value)
 		{
+			throw_not_utf8(name);
 			if(this->get_drawer_trigger().childset(name, value))
 				API::update_window(*this);
 			return *this;
@@ -237,7 +238,7 @@ namespace nana
 		}
 	private:
 		//Overrides widget's virtual functions
-		void _m_caption(nana::string&& str) override
+		void _m_caption(std::string&& str) override
 		{
 			this->get_drawer_trigger().path(str);
 			API::dev::window_caption(*this, this->get_drawer_trigger().path());

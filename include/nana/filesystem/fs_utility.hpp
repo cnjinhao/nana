@@ -24,7 +24,7 @@ namespace filesystem
 		tm modified;
 	};
 
-	bool file_attrib(const nana::string& file, attribute&);
+	bool file_attrib(const ::std::string& file, attribute&);
 	long long filesize(const nana::string& file);
 
 	bool mkdir(const nana::string& dir, bool & if_exist);

@@ -188,11 +188,12 @@ namespace filesystem
 #endif
 	}//end namespace detail
 
-	bool file_attrib(const nana::string& file, attribute& attr)
+	bool file_attrib(const std::string& file, attribute& attr)
 	{
+		throw_not_utf8(file);
 #if defined(NANA_WINDOWS)
 		WIN32_FILE_ATTRIBUTE_DATA fad;
-		if(::GetFileAttributesEx(file.c_str(), GetFileExInfoStandard, &fad))
+		if(::GetFileAttributesEx(utf8_cast(file).c_str(), GetFileExInfoStandard, &fad))
 		{
 			LARGE_INTEGER li;
 			li.u.LowPart = fad.nFileSizeLow;
@@ -204,7 +205,7 @@ namespace filesystem
 		}
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		struct stat fst;
-		if(0 == ::stat(static_cast<std::string>(nana::charset(file)).c_str(), &fst))
+		if(0 == ::stat(file.c_str(), &fst))
 		{
 			attr.bytes = fst.st_size;
 			attr.is_directory = (0 != (040000 & fst.st_mode));
@@ -215,7 +216,7 @@ namespace filesystem
 		return false;
 	}
 
-	long long filesize(const nana::string& file)
+	long long filesize(const std::string& file)
 	{
 #if defined(NANA_WINDOWS)
 		//Some compilation environment may fail to link to GetFileSizeEx
@@ -223,7 +224,7 @@ namespace filesystem
 		GetFileSizeEx_fptr_t get_file_size_ex = reinterpret_cast<GetFileSizeEx_fptr_t>(::GetProcAddress(::GetModuleHandleA("Kernel32.DLL"), "GetFileSizeEx"));
 		if(get_file_size_ex)
 		{
-			HANDLE handle = ::CreateFile(file.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+			HANDLE handle = ::CreateFile(utf8_cast(file).c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			if(INVALID_HANDLE_VALUE != handle)
 			{
 				LARGE_INTEGER li;
@@ -235,23 +236,18 @@ namespace filesystem
 			}
 		}
 		return 0;
-#elif defined(NANA_LINUX)
-		FILE * stream = ::fopen(static_cast<std::string>(nana::charset(file)).c_str(), "rb");
+#else
+		auto stream = ::fopen(file.c_str(), "rb");
 		long long size = 0;
 		if(stream)
 		{
+		#if defined(NANA_LINUX)
 			fseeko64(stream, 0, SEEK_END);
 			size = ftello64(stream);
-			fclose(stream);
-		}
-		return size;
-#elif defined(NANA_MACOS)
-		FILE * stream = ::fopen(static_cast<std::string>(nana::charset(file)).c_str(), "rb");
-		long long size = 0;
-		if (stream)
-		{
+		#elif defined(NANA_MACOS)
 			fseeko(stream, 0, SEEK_END);
 			size = ftello(stream);
+		#endif
 			fclose(stream);
 		}
 		return size;

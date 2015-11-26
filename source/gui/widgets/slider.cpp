@@ -47,10 +47,11 @@ namespace nana
 					}
 				}
 
-				virtual void adorn_textbox(window, graph_reference graph, const nana::string& str, const nana::rectangle & r)
+				virtual void adorn_textbox(window, graph_reference graph, const std::string& str, const nana::rectangle & r)
 				{
 					graph.rectangle(r, false, colors::white);
-					graph.string({ r.x + 2, r.y + 1 }, str, colors::white);
+					graph.set_text_color(colors::white);
+					graph.string({ r.x + 2, r.y + 1 }, str);
 				}
 
 				virtual void slider(window, graph_reference graph, const slider_t& s)
@@ -512,7 +513,7 @@ namespace nana
 					if(proto_.provider && attr_.is_draw_adorn)
 					{
 						unsigned vadorn = _m_value_by_pos(attr_.adorn_pos);
-						nana::string str = proto_.provider->adorn_trace(attr_.vmax, vadorn);
+						auto str = proto_.provider->adorn_trace(attr_.vmax, vadorn);
 						if(str.size())
 						{
 							nana::size ts = other_.graph->text_extent_size(str);

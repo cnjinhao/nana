@@ -440,9 +440,9 @@ namespace detail
 		}
         catch(std::exception& e)
         {
-             (msgbox(modal_window, STR("An uncaptured std::exception during message pumping: ")).icon(msgbox::icon_information)
-                                 <<STR("\n   in form: ") << API::window_caption(modal_window)
-                                 <<STR("\n   exception : ") << e.what()
+             (msgbox(modal_window, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
+                                 <<"\n   in form: "<< API::window_caption(modal_window)
+                                 <<"\n   exception : "<< e.what()
              ).show();
 
 			 internal_scope_guard lock;
@@ -458,8 +458,8 @@ namespace detail
         }
 		catch(...)
 		{
-			(msgbox(modal_window, STR("An exception during message pumping!")).icon(msgbox::icon_information)
-				<< STR("An uncaptured non-std exception during message pumping!")
+			(msgbox(modal_window, "An exception during message pumping!").icon(msgbox::icon_information)
+				<<"An uncaptured non-std exception during message pumping!"
 				).show();
 			internal_scope_guard lock;
 			_m_except_handler();

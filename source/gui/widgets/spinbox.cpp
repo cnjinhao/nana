@@ -677,20 +677,22 @@ namespace nana
 		modifier(static_cast<std::wstring>(::nana::charset(prefix_utf8, ::nana::unicode::utf8)), static_cast<std::wstring>(::nana::charset(suffix_utf8, ::nana::unicode::utf8)));
 	}
 
-	::nana::string spinbox::_m_caption() const throw()
+	::std::string spinbox::_m_caption() const throw()
 	{
 		internal_scope_guard lock;
 		auto editor = get_drawer_trigger().impl()->editor();
-		return (editor ? editor->text() : nana::string());
+		if (editor)
+			return ::nana::charset(editor->text());
+		return std::string();
 	}
 
-	void spinbox::_m_caption(::nana::string&& text)
+	void spinbox::_m_caption(::std::string&& text)
 	{
 		internal_scope_guard lock;
 		auto editor = get_drawer_trigger().impl()->editor();
 		if (editor)
 		{
-			editor->text(std::move(text));
+			editor->text(::nana::charset(text, ::nana::unicode::utf8));
 			API::refresh_window(*this);
 		}
 	}

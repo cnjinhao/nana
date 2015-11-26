@@ -539,12 +539,12 @@ namespace nana
 			});
 		}
 
-		field_interface& operator<<(const nana::char_t* label_text) override
+		field_interface& operator<<(const char* label_text) override
 		{
-			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text ? label_text : L""));
+			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text ? label_text : ""));
 		}
 
-		virtual field_interface& operator<<(nana::string label_text) override
+		field_interface& operator<<(std::string label_text) override
 		{
 			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text));
 		}

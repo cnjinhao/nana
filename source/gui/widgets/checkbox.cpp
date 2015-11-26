@@ -98,7 +98,7 @@ namespace checkbox
 			{
 				if (graph.width() > 16 + interval)
 				{
-					nana::string title = widget_->caption();
+					std::wstring title = ::nana::charset(widget_->caption(), ::nana::unicode::utf8);
 
 					unsigned pixels = graph.width() - (16 + interval);
 
@@ -129,18 +129,16 @@ namespace checkbox
             bgcolor(API::bgcolor(wd));
 		}
 
-		checkbox::checkbox(window wd, const nana::string& text, bool visible)
+		checkbox::checkbox(window wd, const std::string& text, bool visible)
 		{
 			create(wd, rectangle(), visible);
             bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
-		checkbox::checkbox(window wd, const nana::char_t* text, bool visible)
+		checkbox::checkbox(window wd, const char* text, bool visible)
+			: checkbox(wd, std::string(text), visible)
 		{
-			create(wd, rectangle(), visible);
-            bgcolor(API::bgcolor(wd));
-			caption(text);
 		}
 
 		checkbox::checkbox(window wd, const nana::rectangle& r, bool visible)

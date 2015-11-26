@@ -858,16 +858,16 @@ namespace nana
 		{
 			struct filter
 			{
-				nana::string des;
-				nana::string type;
+				std::string des;
+				std::string type;
 			};
 
 			window owner;
 			bool open_or_save;
 
-			nana::string file;
-			nana::string title;
-			nana::string path;
+			std::string file;
+			std::string title;
+			std::string path;
 			std::vector<filter> filters;
 		};
 
@@ -885,9 +885,12 @@ namespace nana
 			auto len = ::GetCurrentDirectory(0, nullptr);
 			if(len)
 			{
-				impl_->path.resize(len + 1);
-				::GetCurrentDirectory(len, &(impl_->path[0]));
-				impl_->path.resize(len);
+				std::wstring path;
+				path.resize(len + 1);
+				::GetCurrentDirectory(len, &(path[0]));
+				path.resize(len);
+
+				impl_->path = utf8_cast(path);
 			}
 #endif
 		}
@@ -913,13 +916,13 @@ namespace nana
 			impl_->owner = wd;
 		}
 
-		nana::string filebox::title(nana::string s)
+		std::string filebox::title(std::string s)
 		{
 			impl_->title.swap(s);
 			return s;
 		}
 
-		filebox& filebox::init_path(const nana::string& ipstr)
+		filebox& filebox::init_path(const std::string& ipstr)
 		{
 			if(ipstr.empty())
 			{
@@ -935,25 +938,25 @@ namespace nana
 			return *this;
 		}
 
-		filebox& filebox::init_file(const nana::string& ifstr)
+		filebox& filebox::init_file(const std::string& ifstr)
 		{
 			impl_->file = ifstr;
 			return *this;
 		}
 
-		filebox& filebox::add_filter(const nana::string& description, const nana::string& filetype)
+		filebox& filebox::add_filter(const std::string& description, const std::string& filetype)
 		{
 			implement::filter flt = {description, filetype};
 			impl_->filters.push_back(flt);
 			return *this;
 		}
 
-		nana::string filebox::path() const
+		std::string filebox::path() const
 		{
 			return impl_->path;
 		}
 		
-		nana::string filebox::file() const
+		std::string filebox::file() const
 		{
 			return impl_->file;
 		}
@@ -961,36 +964,36 @@ namespace nana
 		bool filebox::show() const
 		{
 #if defined(NANA_WINDOWS)
-			if(impl_->file.size() < 520)
-				impl_->file.resize(520);
+			std::wstring wfile;
+			wfile.resize(520);
 
 			OPENFILENAME ofn;
 			memset(&ofn, 0, sizeof ofn);
 			ofn.lStructSize = sizeof(ofn);
 			ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
-			ofn.lpstrFile = &(impl_->file[0]);
-			ofn.nMaxFile = static_cast<DWORD>(impl_->file.size() - 1);
+			ofn.lpstrFile = &(wfile[0]);
+			ofn.nMaxFile = static_cast<DWORD>(wfile.size() - 1);
 
-			const nana::char_t * filter;
-			nana::string filter_holder;
-			nana::string default_extension;
+			const wchar_t * filter;
+			std::wstring filter_holder;
+			std::wstring default_extension;
 			if(impl_->filters.size())
 			{
 				for(auto & f : impl_->filters)
 				{
-					filter_holder += f.des;
-					filter_holder += static_cast<nana::string::value_type>('\0');
-					nana::string fs = f.type;
+					filter_holder += utf8_cast(f.des);
+					filter_holder += static_cast<std::wstring::value_type>('\0');
+					std::wstring fs = utf8_cast(f.type);
 					std::size_t pos = 0;
 					while(true)
 					{
-						pos = fs.find(STR(" "), pos);
+						pos = fs.find(L" ", pos);
 						if(pos == fs.npos)
 							break;
 						fs.erase(pos);
 					}
 					filter_holder += fs;
-					filter_holder += static_cast<nana::string::value_type>('\0');
+					filter_holder += static_cast<std::wstring::value_type>('\0');
 
 					//Get the default file extentsion
 					if (default_extension.empty())
@@ -1010,14 +1013,16 @@ namespace nana
 				filter = filter_holder.data();
 			}
 			else
-				filter = STR("All Files\0*.*\0");
+				filter = L"All Files\0*.*\0";
 
+			auto wtitle = utf8_cast(impl_->title);
+			auto wpath = utf8_cast(impl_->path);
 			ofn.lpstrFilter = filter;
-			ofn.lpstrTitle = (impl_->title.size() ? impl_->title.c_str() : nullptr);
+			ofn.lpstrTitle = (wtitle.empty() ? nullptr : wtitle.c_str());
 			ofn.nFilterIndex = 0;
 			ofn.lpstrFileTitle = nullptr;
 			ofn.nMaxFileTitle = 0;
-			ofn.lpstrInitialDir = (impl_->path.size() ? impl_->path.c_str() : nullptr);
+			ofn.lpstrInitialDir = (wpath.empty() ? nullptr : wpath.c_str());
 			
 			if (!impl_->open_or_save)
 				ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
@@ -1026,7 +1031,8 @@ namespace nana
 			if(FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
 				return false;
 			
-			impl_->file.resize(nana::strlen(impl_->file.data()));
+			wfile.resize(std::wcslen(wfile.data()));
+			impl_->file = utf8_cast(wfile);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			filebox_implement fb(impl_->owner, impl_->open_or_save, impl_->title);
 			
@@ -1055,7 +1061,7 @@ namespace nana
 			if(false == fb.file(impl_->file))
 				return false;
 #endif
-			auto tpos = impl_->file.find_last_of(STR("\\/"));
+			auto tpos = impl_->file.find_last_of("\\/");
 			if(tpos != impl_->file.npos)
 				impl_->path = impl_->file.substr(0, tpos);
 			else
