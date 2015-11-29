@@ -146,12 +146,18 @@ namespace filesystem
 		using string_type = std::basic_string<value_type>;
 
 		path();
-		path(const value_type* source);
-		path(const string_type& source);
+
+		template<typename Source>
+		path(const Source& source)
+		{
+			_m_assign(source);
+		}
 
 		int compare(const path& other) const;
 
 		bool empty() const;
+		path extension() const;
+
 		path parent_path() const;
 		file_type what() const;
 
@@ -160,6 +166,9 @@ namespace filesystem
 		const value_type*c_str() const;
 		const string_type& native() const;
 		operator string_type() const;
+	private:
+		void _m_assign(const std::string& source_utf8);
+		void _m_assign(const std::wstring& source);
 	private:
 		string_type pathstr_;
 	};

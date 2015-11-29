@@ -51,18 +51,6 @@ namespace nana {
 			//class path
 			path::path() {}
 
-			path::path(const value_type* source)
-				: path(string_type{ source })
-			{}
-
-			path::path(const string_type& source)
-				: pathstr_(source)
-			{
-				auto pos = pathstr_.find_last_of(splstr);
-				for (; (pos != string_type::npos) && (pos + 1 == pathstr_.size()); pos = pathstr_.find_last_of(splstr))
-					pathstr_.erase(pos);
-			}
-
 			int path::compare(const path& p) const
 			{
 				return pathstr_.compare(p.pathstr_);
@@ -76,6 +64,23 @@ namespace nana {
 				struct stat sta;
 				return (::stat(pathstr_.c_str(), &sta) == -1);
 #endif
+			}
+
+			path path::extension() const
+			{
+#if defined(NANA_WINDOWS)
+				auto pos = pathstr_.find_last_of(L"\\/.");
+#else
+				auto pos = pathstr_.find_last_of("\\/.");
+#endif
+				if ((pos == pathstr_.npos) || (pathstr_[pos] != '.'))
+					return path();
+
+				
+				if (pos + 1 == pathstr_.size())
+					return path();
+
+				return path(pathstr_.substr(pos));
 			}
 
 			path path::parent_path() const
@@ -142,6 +147,24 @@ namespace nana {
 			path::operator string_type() const
 			{
 				return native();
+			}
+
+			void path::_m_assign(const std::string& source_utf8)
+			{
+#if defined(NANA_WINDOWS)
+				pathstr_ = utf8_cast(source_utf8);
+#else
+				pathstr_ = source_utf8;
+#endif
+			}
+
+			void path::_m_assign(const std::wstring& source)
+			{
+#if defined(NANA_WINDOWS)
+				pathstr_ = source;
+#else
+				pathstr_ = utf8_cast(source);
+#endif			
 			}
 			//end class path
 

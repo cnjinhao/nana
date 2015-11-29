@@ -1014,7 +1014,7 @@ namespace nana
 
 			auto find_lowest = [&revises](double level_px)
 			{
-				double v = std::numeric_limits<double>::max();
+				double v = (std::numeric_limits<double>::max)();
 				for (auto i = revises.begin(); i != revises.end(); ++i)
 				{
 					if (i->min_px >= 0 && i->min_px < v && i->min_px > level_px)

@@ -3155,7 +3155,7 @@ namespace nana
 											graph->rectangle(rectangle{ item_xpos + static_cast<int>(header.pixels), y + 2,
 												ts.width + static_cast<unsigned>(content_pos)-header.pixels, essence_->item_size - 4 }, true);
 										}
-										extreme_text = std::max(extreme_text, item_xpos + content_pos + ts.width);
+										extreme_text = (std::max)(extreme_text, item_xpos + content_pos + ts.width);
 									}
 								}
 							}

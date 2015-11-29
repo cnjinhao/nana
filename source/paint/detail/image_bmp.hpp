@@ -82,15 +82,9 @@ namespace nana{	namespace paint
 				return false;
 			}
 
-			bool open(const nana::char_t* filename) override
+			bool open(const nana::experimental::filesystem::path& filename) override
 			{
-				if(nullptr == filename) return false;
-				std::ifstream ifs;
-#if defined(NANA_UNICODE)
-				ifs.open(static_cast<std::string>(nana::charset(filename)).c_str(), std::ios::binary);
-#else
-				ifs.open(filename, std::ios::binary);
-#endif
+				std::ifstream ifs(filename.c_str(), std::ios::binary);
 				if(ifs)
 				{
 					ifs.seekg(0, std::ios::end);
