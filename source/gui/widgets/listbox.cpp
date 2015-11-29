@@ -3146,7 +3146,7 @@ namespace nana
 
 										graph->set_color(it_bgcolor);                                   // litter rect with the  item bg end ...
 										graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
-										graph->string(point{ xpos, y + 2 }, STR("..."));
+										graph->string(point{ xpos, y + 2 }, L"...");
 
 										//Erase the part that over the next subitem.
 										if (display_order + 1 < seqs.size())      // this is not the last column
@@ -3284,9 +3284,9 @@ namespace nana
 
 				void trigger::typeface_changed(graph_reference graph)
 				{
-					essence_->text_height = graph.text_extent_size(STR("jHWn0123456789/<?'{[|\\_")).height;
+					essence_->text_height = graph.text_extent_size(L"jHWn0123456789/<?'{[|\\_").height;
 					essence_->item_size = essence_->text_height + 6;
-					essence_->suspension_width = graph.text_extent_size(STR("...")).width;
+					essence_->suspension_width = graph.text_extent_size(L"...").width;
 				}
 
 				void trigger::refresh(graph_reference)
@@ -3581,7 +3581,7 @@ namespace nana
 					case keyboard::os_arrow_down:
 						essence_->lister.move_select(up, !arg.shift, true);
 						break;
-					case STR(' ') :
+					case L' ':
 						{
 							selection s;
 							bool ck = ! essence_->lister.item_selected_all_checked(s);

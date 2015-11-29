@@ -140,8 +140,6 @@ namespace nana
 				: public drawer_trigger
 			{
 			public:
-				//enum toolbox_button_t{ButtonAdd, ButtonScroll, ButtonList, ButtonClose};	//deprecated
-
 				enum class kits
 				{
 					add,

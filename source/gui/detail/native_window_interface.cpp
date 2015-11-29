@@ -202,7 +202,7 @@ namespace nana{
 			if(owner && (nested == false))
 				::ClientToScreen(reinterpret_cast<HWND>(owner), &pt);
 
-			HWND native_wd = ::CreateWindowEx(style_ex, STR("NanaWindowInternal"), STR("Nana Window"),
+			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
 											reinterpret_cast<HWND>(owner), 0, ::GetModuleHandle(0), 0);
@@ -377,8 +377,8 @@ namespace nana{
 			if(nullptr == parent) return nullptr;
 #if defined(NANA_WINDOWS)
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilites for variation
-										STR("NanaWindowInternal"),
-										STR("Nana Child Window"),	// Title Text
+										L"NanaWindowInternal",
+										L"Nana Child Window",	// Title Text
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
 										r.x, r.y, r.width, r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop

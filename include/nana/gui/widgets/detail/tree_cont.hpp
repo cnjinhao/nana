@@ -22,7 +22,7 @@ namespace detail
 		template<typename T>
 		struct tree_node
 		{
-			typedef std::pair<nana::string, T>	value_type;
+			typedef std::pair<std::string, T>	value_type;
 
 			value_type	value;
 
@@ -108,7 +108,7 @@ namespace detail
 				return (verify(node) && (node->owner != &root_) ? node->owner : nullptr);
 			}
 
-			node_type * node(node_type* node, const nana::string& key)
+			node_type * node(node_type* node, const std::string& key)
 			{
 				if(node)
 				{
@@ -121,7 +121,7 @@ namespace detail
 				return nullptr;
 			}
 
-			node_type* insert(node_type* node, const nana::string& key, const element_type& elem)
+			node_type* insert(node_type* node, const std::string& key, const element_type& elem)
 			{
 				if(nullptr == node)
 					return insert(key, elem);
@@ -159,7 +159,7 @@ namespace detail
 				return nullptr;
 			}
 
-			node_type* insert(const nana::string& key, const element_type& elem)
+			node_type* insert(const std::string& key, const element_type& elem)
 			{
 				auto node = _m_locate<true>(key);
 				if(node)
@@ -173,12 +173,12 @@ namespace detail
 					delete node;
 			}
 
-			node_type* find(const nana::string& path) const
+			node_type* find(const std::string& path) const
 			{
 				return _m_locate(path);
 			}
 
-			node_type* ref(const nana::string& path)
+			node_type* ref(const std::string& path)
 			{
 				return _m_locate<true>(path);
 			}
@@ -303,7 +303,7 @@ namespace detail
 			}
 
 			template<typename PredAllowChild>
-			unsigned child_size_if(const nana::string& key, PredAllowChild pac) const
+			unsigned child_size_if(const ::std::string& key, PredAllowChild pac) const
 			{
 				auto node = _m_locate(key);
 				return (node ? child_size_if<PredAllowChild>(*node, pac) : 0);
@@ -392,7 +392,7 @@ namespace detail
 					:node(&(self.root_))
 				{}
 
-				bool operator()(const nana::string& key_node)
+				bool operator()(const ::std::string& key_node)
 				{
 					node_type *child = node->child;
 					node_type *tail = nullptr;
@@ -428,7 +428,7 @@ namespace detail
 					:node(&self.root_)
 				{}
 
-				bool operator()(const nana::string& key_node)
+				bool operator()(const ::std::string& key_node)
 				{
 					return ((node = _m_find(node->child, key_node)) != nullptr);
 				}
@@ -436,7 +436,7 @@ namespace detail
 				node_type *node;
 			};
 		private:
-			static node_type* _m_find(node_type* node, const nana::string& key_node)
+			static node_type* _m_find(node_type* node, const ::std::string& key_node)
 			{
 				while(node)
 				{
@@ -449,14 +449,14 @@ namespace detail
 			}
 
 			template<typename Function>
-			void _m_for_each(const nana::string& key, Function function) const
+			void _m_for_each(const ::std::string& key, Function function) const
 			{
 				if(key.size())
 				{
-					nana::string::size_type beg = 0;
-					auto end = key.find_first_of(STR("\\/"));
+					::std::string::size_type beg = 0;
+					auto end = key.find_first_of("\\/");
 
-					while(end != nana::string::npos)
+					while(end != ::std::string::npos)
 					{
 						if(beg != end)
 						{
@@ -464,11 +464,11 @@ namespace detail
 								return;
 						}
 
-						auto next = key.find_first_not_of(STR("\\/"), end);
-						if(next != nana::string::npos)
+						auto next = key.find_first_not_of("\\/", end);
+						if(next != ::std::string::npos)
 						{
 							beg = next;
-							end = key.find_first_of(STR("\\/"), beg);
+							end = key.find_first_of("\\/", beg);
 						}
 						else
 							return;
@@ -479,7 +479,7 @@ namespace detail
 			}
 
 			template<bool CreateIfNotExists>
-			node_type* _m_locate(const nana::string& key)
+			node_type* _m_locate(const ::std::string& key)
 			{
 				if(key.size())
 				{
@@ -499,7 +499,7 @@ namespace detail
 				return &root_;
 			}
 
-			node_type* _m_locate(const nana::string& key) const
+			node_type* _m_locate(const std::string& key) const
 			{
 				if(key.size())
 				{

@@ -136,28 +136,40 @@ namespace filesystem
 	class path
 	{
 	public:
+#if defined(NANA_WINDOWS)
+		using value_type = wchar_t;
+		const static value_type preferred_separator = '\\';
+#else
+		using value_type = char;
+		const static value_type preferred_separator = '/';
+#endif
+		using string_type = std::basic_string<value_type>;
+
 		path();
-		path(const nana::string&);
+		path(const value_type* source);
+		path(const string_type& source);
+
+		int compare(const path& other) const;
 
 		bool empty() const;
-		path root() const;
+		path parent_path() const;
 		file_type what() const;
 
-		nana::string filename() const;
-#if defined(NANA_WINDOWS)
-	public:
-		nana::string to_string() const { return text_; }
-		operator nana::string() const { return text_; }
+		path filename() const;
+
+		const value_type*c_str() const;
+		const string_type& native() const;
+		operator string_type() const;
 	private:
-		nana::string text_;
-#else
-	public:
-		std::string to_string() const { return text_; }
-		operator std::string() const { return text_; }
-	private:
-		std::string text_;
-#endif
+		string_type pathstr_;
 	};
+
+	bool operator==(const path& lhs, const path& rhs);
+	bool operator!=(const path& lhs, const path& rhs);
+	bool operator<(const path& lhs, const path& rhs);
+	bool operator>(const path& lhs, const path& rhs);
+
+
 
 	struct directory_entry
 	{
@@ -193,9 +205,7 @@ namespace filesystem
 		typedef std::input_iterator_tag     iterator_category;
 
 		directory_iterator():end_(true), handle_(nullptr){}
-
-		directory_iterator(const nana::string& file_path) {	_m_prepare(file_path);	}
-		directory_iterator(const path& file_path) {	_m_prepare(file_path.filename());	}
+		directory_iterator(const path& file_path) {	_m_prepare(file_path);	}
 
 		const value_type&
 		operator*() const { return value_; }
@@ -233,14 +243,14 @@ namespace filesystem
 			return (*p == 0);
 		}
 
-		void _m_prepare(const nana::string& file_path)
+		void _m_prepare(const path& file_path)
 		{
+			auto path_ = file_path.native();
 		#if defined(NANA_WINDOWS)
-			path_ = file_path;
-			auto pat = file_path;
+			auto pat = path_;
 			DWORD attr = ::GetFileAttributes(pat.data());
 			if((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY))
-				pat += STR("\\*");
+				pat += L"\\*";
 
 			::HANDLE handle = ::FindFirstFile(pat.data(), &wfd_);
 
@@ -265,7 +275,6 @@ namespace filesystem
                                 wfd_.nFileSizeLow);
 
 		#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			path_ = nana::charset(file_path);
 			if(path_.size() && (path_[path_.size() - 1] != '/'))
 				path_ += '/';
 			find_handle_t handle = opendir(path_.c_str());
@@ -373,10 +382,9 @@ namespace filesystem
 
 #if defined(NANA_WINDOWS)
 		WIN32_FIND_DATA		wfd_;
-		nana::string	path_;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-		std::string	path_;
 #endif
+		path::string_type path_;
+
 		std::shared_ptr<find_handle_t> find_ptr_;
 		find_handle_t	handle_{nullptr};
 		value_type	value_;
@@ -453,12 +461,39 @@ namespace filesystem
 
     //bool remove(const path& p);
     //bool remove(const path& p, error_code& ec) noexcept;
-	bool rmfile(const nana::char_t* file);
+	bool rmfile(const char* file);
 
     //uintmax_t remove_all(const path& p);
     //uintmax_t remove_all(const path& p, error_code& ec) noexcept;
-	bool rmdir(const nana::char_t* dir, bool fails_if_not_empty);
-	nana::string root(const nana::string& path);
+	bool rmdir(const char* dir, bool fails_if_not_empty);
+	bool rmdir(const wchar_t* dir, bool fails_if_not_empty);
+
+	template<typename CharType>
+	std::basic_string<CharType> parent_path(const std::basic_string<CharType>& path)
+	{	
+		auto index = path.size();
+
+		if (index)
+		{
+			auto str = path.c_str();
+
+			for (--index; index > 0; --index)
+			{
+				auto c = str[index];
+				if (c != '\\' && c != '/')
+					break;
+			}
+
+			for (--index; index > 0; --index)
+			{
+				auto c = str[index];
+				if (c == '\\' || c == '/')
+					break;
+			}
+		}
+
+		return index ? path.substr(0, index + 1) : std::basic_string<CharType>();
+	}
 
 
 }//end namespace filesystem

@@ -43,51 +43,50 @@ namespace nana {
 		{
 			//Because of No wide character version of POSIX
 #if defined(NANA_LINUX) || defined(NANA_MACOS)
-			typedef std::string string_t;
-			const char* splstr = "/\\";
+			const char* splstr = "/";
 #else
-			typedef nana::string string_t;
-			const nana::char_t* splstr = STR("/\\");
+			const wchar_t* splstr = L"/\\";
 #endif
+
 			//class path
 			path::path() {}
 
-			path::path(const nana::string& text)
-#if defined(NANA_WINDOWS)
-				: text_(text)
+			path::path(const value_type* source)
+				: path(string_type{ source })
+			{}
+
+			path::path(const string_type& source)
+				: pathstr_(source)
 			{
-#else
-				:text_(nana::charset(text))
+				auto pos = pathstr_.find_last_of(splstr);
+				for (; (pos != string_type::npos) && (pos + 1 == pathstr_.size()); pos = pathstr_.find_last_of(splstr))
+					pathstr_.erase(pos);
+			}
+
+			int path::compare(const path& p) const
 			{
-#endif
-				auto pos = text_.find_last_of(splstr);
-				for (; (pos != string_t::npos) && (pos + 1 == text_.size()); pos = text_.find_last_of(splstr))
-					text_.erase(pos);
+				return pathstr_.compare(p.pathstr_);
 			}
 
 			bool path::empty() const
 			{
 #if defined(NANA_WINDOWS)
-				return (::GetFileAttributes(text_.c_str()) == INVALID_FILE_ATTRIBUTES);
+				return (::GetFileAttributes(pathstr_.c_str()) == INVALID_FILE_ATTRIBUTES);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				struct stat sta;
-				return (::stat(text_.c_str(), &sta) == -1);
+				return (::stat(pathstr_.c_str(), &sta) == -1);
 #endif
 			}
 
-			path path::root() const
+			path path::parent_path() const
 			{
-#if defined(NANA_WINDOWS)
-				return path(filesystem::root(text_));
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				return path(filesystem::root(nana::charset(text_)));
-#endif
+				return{filesystem::parent_path(pathstr_)};
 			}
 
 			file_type path::what() const
 			{
 #if defined(NANA_WINDOWS)
-				unsigned long attr = ::GetFileAttributes(text_.c_str());
+				unsigned long attr = ::GetFileAttributes(pathstr_.c_str());
 				if (INVALID_FILE_ATTRIBUTES == attr)
 					return file_type::not_found; //??
 
@@ -97,7 +96,7 @@ namespace nana {
 				return file_type::regular;
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				struct stat sta;
-				if (-1 == ::stat(text_.c_str(), &sta))
+				if (-1 == ::stat(pathstr_.c_str(), &sta))
 					return file_type::not_found; //??
 
 				if ((S_IFDIR & sta.st_mode) == S_IFDIR)
@@ -110,38 +109,85 @@ namespace nana {
 #endif
 			}
 
-			nana::string path::filename() const
+			path path::filename() const
 			{
-				string_t::size_type pos = text_.find_last_of(splstr);
-#if defined(NANA_WINDOWS)
-				return text_.substr(pos + 1);
-#else
-				return nana::charset(text_.substr(pos + 1));
-#endif
+				auto pos = pathstr_.find_last_of(splstr);
+				if (pos != pathstr_.npos)
+				{
+					if (pos + 1 == pathstr_.size())
+					{
+						value_type tmp[2] = {preferred_separator, 0};
+
+						if (pathstr_.npos != pathstr_.find_last_not_of(splstr, pos))
+							tmp[0] = '.';
+
+						return{ tmp };
+					}
+					return{ pathstr_.substr(pos + 1) };
+				}
+
+				return{ pathstr_ };
+			}
+
+			const path::value_type* path::c_str() const
+			{
+				return native().c_str();
+			}
+
+			const path::string_type& path::native() const
+			{
+				return pathstr_;
+			}
+			
+			path::operator string_type() const
+			{
+				return native();
 			}
 			//end class path
+
+			bool operator==(const path& lhs, const path& rhs)
+			{
+				return (lhs.compare(rhs) == 0);
+			}
+
+			bool operator!=(const path& lhs, const path& rhs)
+			{
+				return (lhs.native() != rhs.native());
+			}
+
+			bool operator<(const path& lhs, const path& rhs)
+			{
+				return (lhs.compare(rhs) < 0);
+			}
+
+			bool operator>(const path& lhs, const path& rhs)
+			{
+				return (rhs.compare(lhs) < 0);
+			}
 
 			namespace detail
 			{
 				//rm_dir_recursive
 				//@brief: remove a directory, if it is not empty, recursively remove it's subfiles and sub directories
-				bool rm_dir_recursive(nana::string&& dir)
+				template<typename CharT>
+				bool rm_dir_recursive(const CharT* dir)
 				{
 					std::vector<directory_iterator::value_type> files;
-					nana::string path = dir;
+					std::basic_string<CharT> path = dir;
 					path += '\\';
 
 					std::copy(directory_iterator(dir), directory_iterator(), std::back_inserter(files));
 
 					for (auto & f : files)
 					{
+						auto subpath = path + f.path().filename().native();
 						if (f.attr.directory)
-							rm_dir_recursive(path + f.path().filename());
+							rm_dir_recursive(subpath.c_str());
 						else
-							rmfile((path + f.path().filename()).c_str());
+							rmfile(subpath.c_str());
 					}
 
-					return rmdir(dir.c_str(), true);
+					return rmdir(dir, true);
 				}
 
 				bool mkdir_helper(const nana::string& dir, bool & if_exist)
@@ -299,7 +345,7 @@ namespace nana {
 
 				nana::string root;
 #if defined(NANA_WINDOWS)
-				if (path.size() > 3 && path[1] == STR(':'))
+				if (path.size() > 3 && path[1] == L':')
 					root = path.substr(0, 3);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				if (path[0] == STR('/'))
@@ -310,11 +356,11 @@ namespace nana {
 
 				while (true)
 				{
-					beg = path.find_first_not_of(STR("/\\"), beg);
+					beg = path.find_first_not_of(L"/\\", beg);
 					if (beg == path.npos)
 						break;
 
-					std::size_t pos = path.find_first_of(STR("/\\"), beg + 1);
+					std::size_t pos = path.find_first_of(L"/\\", beg + 1);
 					if (pos != path.npos)
 					{
 						root += path.substr(beg, pos - beg);
@@ -324,9 +370,9 @@ namespace nana {
 							return false;
 
 #if defined(NANA_WINDOWS)
-						root += STR('\\');
+						root += L'\\';
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-						root += STR('/');
+						root += L'/';
 #endif
 					}
 					else
@@ -362,18 +408,18 @@ namespace nana {
 #endif
 			}
 
-			bool rmdir(const nana::char_t* dir, bool fails_if_not_empty)
+			bool rmdir(const char* dir_utf8, bool fails_if_not_empty)
 			{
 				bool ret = false;
-				if (dir)
+				if (dir_utf8)
 				{
 #if defined(NANA_WINDOWS)
-					ret = (::RemoveDirectory(dir) == TRUE);
+					auto dir = utf8_cast(dir_utf8);
+					ret = (::RemoveDirectory(dir.c_str()) == TRUE);
 					if (!fails_if_not_empty && (::GetLastError() == ERROR_DIR_NOT_EMPTY))
-						ret = detail::rm_dir_recursive(dir);
+						ret = detail::rm_dir_recursive(dir.c_str());
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-					std::string mbstr = nana::charset(dir);
-					if (::rmdir(mbstr.c_str()))
+					if (::rmdir(dir_utf8))
 					{
 						if (!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
 							ret = detail::rm_dir_recursive(dir);
@@ -385,30 +431,26 @@ namespace nana {
 				return ret;
 			}
 
-			nana::string root(const nana::string& path)
+			bool rmdir(const wchar_t* dir, bool fails_if_not_empty)
 			{
-				std::size_t index = path.size();
-
-				if (index)
+				bool ret = false;
+				if (dir)
 				{
-					const nana::char_t * str = path.c_str();
-
-					for (--index; index > 0; --index)
+#if defined(NANA_WINDOWS)
+					ret = (::RemoveDirectory(dir) == TRUE);
+					if (!fails_if_not_empty && (::GetLastError() == ERROR_DIR_NOT_EMPTY))
+						ret = detail::rm_dir_recursive(dir);
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+					if (::rmdir(utf8_cast(dir).c_str()))
 					{
-						nana::char_t c = str[index];
-						if (c != '\\' && c != '/')
-							break;
+						if (!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
+							ret = detail::rm_dir_recursive(dir);
 					}
-
-					for (--index; index > 0; --index)
-					{
-						nana::char_t c = str[index];
-						if (c == '\\' || c == '/')
-							break;
-					}
+					else
+						ret = true;
+#endif
 				}
-
-				return index ? path.substr(0, index + 1) : nana::string();
+				return ret;
 			}
 
 			nana::string path_user()

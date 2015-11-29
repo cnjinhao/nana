@@ -363,7 +363,7 @@ namespace nana
 
 					unsigned strpixels = item_r.width - 60;
 
-					int text_top_off = (item_h_px - graph.text_extent_size(STR("jh({[")).height) / 2;
+					int text_top_off = (item_h_px - graph.text_extent_size(L"jh({[").height) / 2;
 
 					std::size_t pos = 0;
 					for (auto & m : menu_->items)

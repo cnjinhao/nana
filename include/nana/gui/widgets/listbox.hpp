@@ -449,8 +449,8 @@ namespace nana
 		
 			struct export_options
 			{
-				nana::string sep = nana::string {STR("\t" )}, 
-							 endl= nana::string {STR("\n")};
+				nana::string sep = nana::string {L"\t"}, 
+							 endl= nana::string {L"\n"};
 				bool only_selected_items{true}, 
 					 only_checked_items {false},
 					 only_visible_columns{true};

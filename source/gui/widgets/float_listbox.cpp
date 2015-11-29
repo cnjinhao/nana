@@ -109,7 +109,7 @@ namespace nana
 
 				unsigned item_pixels(graph_reference graph) const
 				{
-					return graph.text_extent_size(STR("jHWn/?\\{[(0569")).height + 4;
+					return graph.text_extent_size(L"jHWn/?\\{[(0569").height + 4;
 				}
 			};//end class item_renderer
 
@@ -325,7 +325,7 @@ namespace nana
 						_m_open_scrollbar(*widget_, pages);
 					}
 					else
-						graph_->string({ 4, 4 }, STR("Empty Listbox, No Module!"), static_cast<color_rgb>(0x808080));
+						graph_->string({ 4, 4 }, L"Empty Listbox, No Module!", static_cast<color_rgb>(0x808080));
 
 					//Draw border
 					graph_->rectangle(false, colors::black);

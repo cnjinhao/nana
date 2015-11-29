@@ -55,7 +55,7 @@ namespace nana
 				nana::paint::image icon_normal;
 				nana::paint::image icon_hover;
 				nana::paint::image icon_expanded;
-				nana::string text;
+				::std::string text;
 			};
 
 			typedef widgets::detail::compset<component, node_attribute> compset_interface;
@@ -98,14 +98,14 @@ namespace nana
 				struct treebox_node_type
 				{
 					treebox_node_type();
-					treebox_node_type(nana::string);
+					treebox_node_type(std::string);
 					treebox_node_type& operator=(const treebox_node_type&);
 
-					nana::string text;
+					::std::string text;
 					nana::any value;
 					bool expanded;
 					checkstate checked;
-					nana::string img_idstr;
+					::std::string img_idstr;
 				};
 
 				struct pseudo_node_type{};
@@ -133,8 +133,8 @@ namespace nana
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
 				nana::any & value(node_type*) const;
-				node_type* insert(node_type*, const nana::string& key, nana::string&&);
-				node_type* insert(const nana::string& path, nana::string&&);
+				node_type* insert(node_type*, const std::string& key, std::string&&);
+				node_type* insert(const std::string& path, std::string&&);
 
 				bool verify(const void*) const;
 				bool verify_kinship(node_type* parent, node_type* child) const;
@@ -143,16 +143,15 @@ namespace nana
 				node_type * selected() const;
 				void selected(node_type*);
 				void set_expand(node_type*, bool);
-				void set_expand(const nana::string& path, bool);
+				void set_expand(const ::std::string& path, bool);
 
-				//void image(const nana::string& id, const node_image_tag&);
-				node_image_tag& icon(const nana::string&) const;
-				void icon_erase(const nana::string&);
-				void node_icon(node_type*, const nana::string& id);
+				node_image_tag& icon(const ::std::string&) const;
+				void icon_erase(const ::std::string&);
+				void node_icon(node_type*, const ::std::string& id);
 
 				unsigned node_width(const node_type*) const;
 
-				bool rename(node_type*, const nana::char_t* key, const nana::char_t* name);
+				bool rename(node_type*, const char* key, const char* name);
 			private:
 				//Overrides drawer_trigger methods
 				void attached(widget_reference, graph_reference)		override;
@@ -182,11 +181,11 @@ namespace nana
 				item_proxy(trigger*, trigger::node_type*);
 
 				/// Append a child.
-				item_proxy append(const nana::string& key, nana::string name);
+				item_proxy append(const ::std::string& key, ::std::string name);
 
 				/// Append a child with a specified value (user object.).
 				template<typename T>
-				item_proxy append(const nana::string& key, nana::string name, const T&t)
+				item_proxy append(const ::std::string& key, ::std::string name, const T&t)
 				{
 					item_proxy ip = append(key, std::move(name));
 					if(false == ip.empty())
@@ -220,22 +219,22 @@ namespace nana
 				item_proxy& select(bool);
 
 				/// Return the icon.
-				const nana::string& icon() const;
+				const ::std::string& icon() const;
 
 				/// Set the icon, and returns itself..
-				item_proxy& icon(const nana::string& id);
+				item_proxy& icon(const ::std::string& id);
 
 				/// Return the text.
-				const nana::string& text() const;
-
-				/// Set a new key, and returns itself..
-				item_proxy& key(const nana::string& s);
-
-				/// Return the key.
-				const nana::string& key() const;
+				const ::std::string& text() const;
 
 				/// Set the text, and returns itself.
-				item_proxy& text(const nana::string&);
+				item_proxy& text(const ::std::string&);
+
+				/// Set a new key, and returns itself..
+				item_proxy& key(const ::std::string& s);
+
+				/// Return the key.
+				const ::std::string& key() const;
 
 				std::size_t size() const; ///< Returns the number of child nodes.
 
@@ -257,7 +256,7 @@ namespace nana
 				/// Makes an action for each sub item recursively, returns the item that stops the action where action returns false.
 				item_proxy visit_recursively(std::function<bool(item_proxy)> action);
 
-				bool operator==(const nana::string& s) const; ///< Compare the text of node with s.
+				bool operator==(const ::std::string& s) const; ///< Compare the text of node with s.
 				bool operator==(const char* s ) const;        ///< Compare the text of node with s.
 				bool operator==(const wchar_t* s ) const;     ///< Compare the text of node with s.
 
@@ -428,28 +427,28 @@ namespace nana
         /// These states are 'normal', 'hovered' and 'expanded'. 
         /// If 'hovered' or 'expanded' are not set, it uses 'normal' state image for these 2 states.
         /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
-		node_image_type& icon(const nana::string& id ///< the name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
+		node_image_type& icon(const ::std::string& id ///< the name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
                                ) const;
 
-		void icon_erase(const nana::string& id);
+		void icon_erase(const ::std::string& id);
 
-		item_proxy find(const nana::string& keypath);  ///< Find an item though a specified keypath.
+		item_proxy find(const ::std::string& keypath);  ///< Find an item though a specified keypath.
 
         /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
-		item_proxy insert(const nana::string& path_key,   ///< specifies the node hierarchy
-                           nana::string title      ///< used for displaying
+		item_proxy insert(const ::std::string& path_key,   ///< specifies the node hierarchy
+                           ::std::string title      ///< used for displaying
                            ); 
 
         /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
 		item_proxy insert( item_proxy pos,             ///< the parent item node
-                           const nana::string& key,    ///< specifies the new node
-                           nana::string title   ///< title used for displaying in the new node.
+                           const ::std::string& key,    ///< specifies the new node
+                           ::std::string title   ///< title used for displaying in the new node.
                            );
 		item_proxy erase(item_proxy i); ///< Removes the node at pos and return the Item proxy following the removed node
 
-		void erase(const nana::string& keypath); ///< Removes the node by the key path. 
+		void erase(const ::std::string& keypath); ///< Removes the node by the key path. 
 
-		nana::string make_key_path(item_proxy i, const nana::string& splitter) const;///<returns the key path
+		::std::string make_key_path(item_proxy i, const ::std::string& splitter) const;///<returns the key path
 		item_proxy selected() const; ///< returns the selected node
 	};//end class treebox
 }//end namespace nana

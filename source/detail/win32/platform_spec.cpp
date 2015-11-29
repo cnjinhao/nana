@@ -154,7 +154,7 @@ namespace detail
 
 	//class platform_spec
 	platform_spec::co_initializer::co_initializer()
-		: ole32_(::LoadLibrary(STR("OLE32.DLL")))
+		: ole32_(::LoadLibrary(L"OLE32.DLL"))
 	{
 		if(ole32_)
 		{

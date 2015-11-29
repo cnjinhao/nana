@@ -94,7 +94,7 @@ namespace nana
 				virtual ~renderer() = 0;
 				virtual void background(graph_reference, window wd, const nana::rectangle&, const ui_element&) = 0;
 				virtual void root_arrow(graph_reference, const nana::rectangle&, mouse_action) = 0;
-				virtual void item(graph_reference, const nana::rectangle&, std::size_t index, const nana::string& name, unsigned textheight, bool has_child, mouse_action) = 0;
+				virtual void item(graph_reference, const nana::rectangle&, std::size_t index, const ::std::string& name, unsigned textheight, bool has_child, mouse_action) = 0;
 				virtual void border(graph_reference) = 0;
 			};
 
@@ -115,8 +115,8 @@ namespace nana
 
 				//splitstr
 				//@brief: Sets the splitstr. If the parameter will be ingored if it is an empty string.
-				void splitstr(const nana::string&);
-				const nana::string& splitstr() const;
+				void splitstr(const ::std::string&);
+				const ::std::string& splitstr() const;
 				
 				void path(const ::std::string&);
 				::std::string path() const;

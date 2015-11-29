@@ -214,7 +214,7 @@ namespace detail
 
 		WNDCLASSEX wincl;
 		wincl.hInstance = ::GetModuleHandle(0);
-		wincl.lpszClassName = STR("NanaWindowInternal");
+		wincl.lpszClassName = L"NanaWindowInternal";
 		wincl.lpfnWndProc = &Bedrock_WIN32_WindowProc;
 		wincl.style = CS_DBLCLKS | CS_OWNDC;
 		wincl.cbSize = sizeof(wincl);
@@ -1175,7 +1175,7 @@ namespace detail
 					{
 						arg_dropfiles dropfiles;
 
-						std::unique_ptr<nana::char_t[]> varbuf;
+						std::unique_ptr<wchar_t[]> varbuf;
 						std::size_t bufsize = 0;
 
 						unsigned size = ::DragQueryFile(drop, 0xFFFFFFFF, 0, 0);
@@ -1189,7 +1189,8 @@ namespace detail
 							}
 
 							::DragQueryFile(drop, i, varbuf.get(), reqlen);
-							dropfiles.files.emplace_back(varbuf.get());
+
+							dropfiles.files.emplace_back(utf8_cast(varbuf.get()));
 						}
 
 						while(msgwnd && (msgwnd->flags.dropable == false))

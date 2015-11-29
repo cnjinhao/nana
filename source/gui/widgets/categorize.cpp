@@ -105,7 +105,7 @@ namespace nana
 					arrow.draw(graph, {}, style_.fgcolor, arrow_r, element_state::normal);
 				}
 
-				void item(graph_reference graph, const nana::rectangle& r, std::size_t index, const nana::string& name, unsigned txtheight, bool has_child, mouse_action state)
+				void item(graph_reference graph, const nana::rectangle& r, std::size_t index, const std::string& name_utf8, unsigned txtheight, bool has_child, mouse_action state)
 				{
 					nana::point strpos(r.x + 5, r.y + static_cast<int>(r.height - txtheight) / 2);
 
@@ -141,7 +141,7 @@ namespace nana
 						_m_item_bground(graph, r.x + 1, top, width, height, state_name);
 						graph.rectangle(r, false, clr);
 					}
-					graph.string(strpos, name, style_.fgcolor);
+					graph.string(strpos, name_utf8, style_.fgcolor);
 
 					if(has_child)
 					{
@@ -218,7 +218,7 @@ namespace nana
 				using node_handle = container::node_type*;
 
 				tree_wrapper()
-					:splitstr_(STR("\\")), cur_(nullptr)
+					: splitstr_("\\")
 				{}
 
 				bool seq(std::size_t index, std::vector<node_handle> & seqv) const
@@ -234,23 +234,23 @@ namespace nana
 					return false;
 				}
 
-				void splitstr(const nana::string& ss)
+				void splitstr(const std::string& ss)
 				{
 					if(ss.size())
 						splitstr_ = ss;
 				}
 
-				const nana::string& splitstr() const
+				const std::string& splitstr() const
 				{
 					return splitstr_;
 				}
 
-				nana::string path() const
+				std::string path() const
 				{
 					std::vector<node_handle> v;
 					_m_read_node_path(v);
 
-					nana::string str;
+					std::string str;
 					bool not_head = false;
 					for(auto i : v)
 					{
@@ -263,7 +263,7 @@ namespace nana
 					return str;
 				}
 
-				void path(const nana::string& key)
+				void path(const std::string& key)
 				{
 					cur_ = tree_.ref(key);
 				}
@@ -292,7 +292,7 @@ namespace nana
 					cur_ = i;
 				}
 
-				void insert(const nana::string& name, const nana::any& value)
+				void insert(const std::string& name, const nana::any& value)
 				{
 					item_tag m;
 					m.pixels = 0;
@@ -300,7 +300,7 @@ namespace nana
 					cur_ = tree_.insert(cur_, name, m);
 				}
 
-				bool childset(const nana::string& name, const nana::any& value)
+				bool childset(const std::string& name, const nana::any& value)
 				{
 					if(cur_)
 					{
@@ -313,7 +313,7 @@ namespace nana
 					return false;
 				}
 
-				bool childset_erase(const nana::string& name)
+				bool childset_erase(const std::string& name)
 				{
 					if(cur_)
 					{
@@ -329,7 +329,7 @@ namespace nana
 					return false;
 				}
 
-				node_handle find_child(const nana::string& name) const
+				node_handle find_child(const std::string& name) const
 				{
 					if(cur_)
 					{
@@ -360,8 +360,8 @@ namespace nana
 				}
 			private:
 				container tree_;
-				nana::string splitstr_;
-				node_handle cur_;
+				std::string splitstr_ ;
+				node_handle cur_{ nullptr };
 			};
 
 			//class scheme
@@ -543,7 +543,7 @@ namespace nana
 				{
 					if(node)
 					{
-						API::dev::window_caption(window_handle(), utf8_cast(tree().path()));
+						API::dev::window_caption(window_handle(), tree().path());
 						if(evt_holder_.selected)
 							evt_holder_.selected(node->value.second.value);
 					}
@@ -565,7 +565,7 @@ namespace nana
 						if(i)
 						{
 							for(node_handle child = i->child; child; child = child->next)
-								style_.module.items.emplace_back(std::make_shared<item>(utf8_cast(child->value.first)));
+								style_.module.items.emplace_back(std::make_shared<item>(child->value.first));
 						}
 						r = style_.active_item_rectangle;
 					}
@@ -576,7 +576,7 @@ namespace nana
 						{
 							auto end = v.cbegin() + head_;
 							for(auto i = v.cbegin(); i != end; ++i)
-								style_.module.items.emplace_back(std::make_shared<item>(utf8_cast((*i)->value.first)));
+								style_.module.items.emplace_back(std::make_shared<item>((*i)->value.first));
 						}
 						r = style_.active_item_rectangle;
 					}
@@ -603,8 +603,7 @@ namespace nana
 						case ui_element::item_arrow:
 							{
 								treebase_.tail(style_.active);
-								nana::string name = utf8_cast(style_.module.items[style_.module.index]->text());
-								node_handle node = treebase_.find_child(name);
+								node_handle node = treebase_.find_child(style_.module.items[style_.module.index]->text());
 								if(node)
 								{
 									treebase_.cur(node);
@@ -769,7 +768,6 @@ namespace nana
 			private:
 				window	window_{nullptr};
 				nana::paint::graphics * graph_{nullptr};
-				nana::string splitstr_;
 				std::size_t	head_;
 				unsigned	item_height_;
 				std::size_t	item_lines_;
@@ -808,14 +806,14 @@ namespace nana
 				void trigger::insert(const std::string& str, nana::any value)
 				{
 					throw_not_utf8(str);
-					scheme_->tree().insert(utf8_cast(str), value);
-					API::dev::window_caption(scheme_->window_handle(), utf8_cast(scheme_->tree().path()));
+					scheme_->tree().insert(str, value);
+					API::dev::window_caption(scheme_->window_handle(), scheme_->tree().path());
 					scheme_->draw();
 				}
 
 				bool trigger::childset(const std::string& str, nana::any value)
 				{
-					if(scheme_->tree().childset(utf8_cast(str), value))
+					if(scheme_->tree().childset(str, value))
 					{
 						scheme_->draw();
 						return true;
@@ -825,7 +823,7 @@ namespace nana
 
 				bool trigger::childset_erase(const std::string& str)
 				{
-					if(scheme_->tree().childset_erase(utf8_cast(str)))
+					if(scheme_->tree().childset_erase(str))
 					{
 						scheme_->draw();
 						return true;
@@ -843,24 +841,24 @@ namespace nana
 					return false;
 				}
 
-				void trigger::splitstr(const nana::string& sstr)
+				void trigger::splitstr(const std::string& sstr)
 				{
 					scheme_->tree().splitstr(sstr);
 				}
 
-				const nana::string& trigger::splitstr() const
+				const std::string& trigger::splitstr() const
 				{
 					return scheme_->tree().splitstr();
 				}
 
 				void trigger::path(const std::string& str)
 				{
-					scheme_->tree().path(utf8_cast(str));
+					scheme_->tree().path(str);
 				}
 
 				std::string trigger::path() const
 				{
-					return utf8_cast(scheme_->tree().path());
+					return scheme_->tree().path();
 				}
 
 				nana::any& trigger::value() const

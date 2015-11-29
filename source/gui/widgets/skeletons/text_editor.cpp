@@ -442,7 +442,7 @@ namespace nana{	namespace widgets
 				bool adjusted_cond = true;
 				if (static_cast<int>(text_w) < points.offset.x)
 				{
-					auto delta_pixels = editor_._m_text_extent_size(STR("    "), 4).width;
+					auto delta_pixels = editor_._m_text_extent_size(L"    ", 4).width;
 					points.offset.x = (text_w > delta_pixels ? text_w - delta_pixels : 0);
 				}
 				else if (area_w && (text_w >= points.offset.x + area_w))
@@ -1614,7 +1614,7 @@ namespace nana{	namespace widgets
 
 		unsigned text_editor::line_height() const
 		{
-			return (graph_ ? (graph_.text_extent_size(STR("jH{")).height) : 0);
+			return (graph_ ? (graph_.text_extent_size(L"jH{").height) : 0);
 		}
 
 		unsigned text_editor::screen_lines() const
@@ -1764,7 +1764,7 @@ namespace nana{	namespace widgets
 				str = textbase_.getline(0);
 				for(std::size_t i = 1; i < lines; ++i)
 				{
-					str += STR("\n\r");
+					str += L"\n\r";
 					str += textbase_.getline(i);
 				}
 			}
@@ -2756,11 +2756,11 @@ namespace nana{	namespace widgets
 			if(a.y != b.y)
 			{
 				text = textbase_.getline(a.y).substr(a.x);
-				text += STR("\r\n");
+				text += L"\r\n";
 				for(unsigned i = a.y + 1; i < b.y; ++i)
 				{
 					text += textbase_.getline(i);
-					text += STR("\r\n");
+					text += L"\r\n";
 				}
 				text += textbase_.getline(b.y).substr(0, b.x);
 			}
@@ -2801,7 +2801,7 @@ namespace nana{	namespace widgets
 			std::size_t begin = 0;
 			while (true)
 			{
-				auto pos = text.find_first_of(STR("\r\n"), begin);
+				auto pos = text.find_first_of(L"\r\n", begin);
 				if (text.npos == pos)
 				{
 					if (!lines.empty())
@@ -2813,7 +2813,7 @@ namespace nana{	namespace widgets
 
 				pos = eat_endl(text_str, pos);
 
-				begin = text.find_first_not_of(STR("\r\n"), pos);
+				begin = text.find_first_not_of(L"\r\n", pos);
 
 				//The number of new lines minus one
 				const auto chp_end = text_str + (begin == text.npos ? text.size() : begin);
@@ -3068,7 +3068,7 @@ namespace nana{	namespace widgets
 			keyword_parser parser;
 			parser.parse(linestr, keywords_.get());
 
-			auto whitespace_w = graph_.text_extent_size(STR(" "), 1).width;
+			auto whitespace_w = graph_.text_extent_size(L" ", 1).width;
 
 			const auto line_h_pixels = line_height();
 

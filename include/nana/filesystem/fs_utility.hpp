@@ -27,14 +27,14 @@ namespace filesystem
 	bool file_attrib(const ::std::string& file, attribute&);
 	long long filesize(const nana::string& file);
 
-	bool mkdir(const nana::string& dir, bool & if_exist);
+	bool mkdir(const ::std::string& dir, bool & if_exist);
 	bool modified_file_time(const nana::string& file, struct tm&);
 
 	nana::string path_user();
 	nana::string path_current();
 
-	bool rmfile(const nana::char_t* file);
-	bool rmdir(const nana::char_t* dir, bool fails_if_not_empty);
+	bool rmfile(const char* file_utf8);
+	bool rmdir(const char* dir, bool fails_if_not_empty);
 	nana::string root(const nana::string& path);
 
 	class path

@@ -151,7 +151,9 @@ namespace nana
 			void set_pixel(int x, int y, const ::nana::color&);
 			void set_pixel(int x, int y);
 
-			void string(const point&, const std::string&);
+			void string(const point&, const std::string& text_utf8);
+			void string(const point&, const std::string& text_utf8, const color&);
+
 			void string(point, const char_t*, std::size_t len);
 			void string(const point&, const char_t*);
 			void string(const point&, const ::nana::string&);

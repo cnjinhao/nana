@@ -124,7 +124,7 @@ namespace nana
 				draw_string_omitted(graphics& graph, int x, int endpos, bool omitted)
 					: graph(graph), x(x), endpos(endpos)
 				{
-					omitted_pixels = (omitted ? graph.text_extent_size(STR("..."), 3).width : 0);
+					omitted_pixels = (omitted ? graph.text_extent_size(L"...", 3).width : 0);
 					if (endpos - x > static_cast<int>(omitted_pixels))
 						this->endpos -= omitted_pixels;
 					else
@@ -165,7 +165,7 @@ namespace nana
 							r.y = top;
 							graph.bitblt(r, dum_graph);
 							if(omitted_pixels)
-								detail::draw_string(dw, point{ endpos, top }, STR("..."), 3);
+								detail::draw_string(dw, point{ endpos, top }, L"...", 3);
 							break;
 						}
 					}

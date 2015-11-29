@@ -82,7 +82,7 @@ namespace nana
 
 					nana::paint::font ft = graph.typeface();	//used for restoring the font
 
-					const unsigned def_line_pixels = graph.text_extent_size(STR(" "), 1).height;
+					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
 
 					font_ = ft;
 					fblock_ = nullptr;
@@ -169,7 +169,7 @@ namespace nana
 
 					auto ft = graph.typeface();	//used for restoring the font
 
-					const unsigned def_line_pixels = graph.text_extent_size(STR(" "), 1).height;
+					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
 
 					font_ = ft;
 					fblock_ = nullptr;

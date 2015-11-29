@@ -49,7 +49,7 @@ namespace checkbox
 			{
 				_m_draw_background(graph);
 				_m_draw_title(graph);
-				_m_draw_checkbox(graph, graph.text_extent_size(STR("jN"), 2).height + 2);
+				_m_draw_checkbox(graph, graph.text_extent_size(L"jN", 2).height + 2);
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)

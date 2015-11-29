@@ -322,8 +322,8 @@ namespace paint
 					handle_ = dw;
 					size_ = sz;
 
-					handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, STR("\t"), 1).width;
-					handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, STR(" "), 1).width;
+					handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, L"\t", 1).width;
+					handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, L" ", 1).width;
 				}
 			}
 
@@ -348,8 +348,8 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				::SelectObject(handle_->context, reinterpret_cast<HFONT>(f.impl_->font_ptr->handle));
 #endif
-				handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, STR("\t"), 1).width;
-				handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, STR(" "), 1).width;
+				handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, L"\t", 1).width;
+				handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, L" ", 1).width;
 				if(changed_ == false) changed_ = true;
 			}
 		}
@@ -953,10 +953,16 @@ namespace paint
 			}
 		}
 
-		void graphics::string(const point& pos, const std::string& text)
+		void graphics::string(const point& pos, const std::string& text_utf8)
 		{
-			throw_not_utf8(text);
-			string(pos, static_cast<std::wstring>(::nana::charset(text, ::nana::unicode::utf8)));
+			throw_not_utf8(text_utf8);
+			string(pos, utf8_cast(text_utf8));
+		}
+
+		void graphics::string(const point& pos, const std::string& text_utf8, const color& clr)
+		{
+			set_text_color(clr);
+			string(pos, text_utf8);
 		}
 
 		void graphics::string(nana::point pos, const char_t* str, std::size_t len)

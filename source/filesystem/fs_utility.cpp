@@ -13,6 +13,7 @@
 
 #include <nana/filesystem/fs_utility.hpp>
 #include <nana/filesystem/file_iterator.hpp>
+#include <nana/deploy.hpp>
 #include <vector>
 #if defined(NANA_WINDOWS)
     #include <windows.h>
@@ -47,7 +48,7 @@ namespace filesystem
 	const char* splstr = "/\\";
 #else
 	typedef nana::string string_t;
-	const nana::char_t* splstr = STR("/\\");
+	const nana::char_t* splstr = L"/\\";
 #endif
 	//class path
 		path::path(){}
@@ -125,10 +126,10 @@ namespace filesystem
 	{
 		//rm_dir_recursive
 		//@brief: remove a directory, if it is not empty, recursively remove it's subfiles and sub directories
-		bool rm_dir_recursive(nana::string&& dir)
+		bool rm_dir_recursive(std::string&& dir)
 		{
 			std::vector<file_iterator::value_type> files;
-			nana::string path = dir;
+			auto path = dir;
 			path += '\\';
 
 			std::copy(file_iterator(dir), file_iterator(), std::back_inserter(files));
@@ -144,10 +145,10 @@ namespace filesystem
 			return rmdir(dir.c_str(), true);
 		}
 
-		bool mkdir_helper(const nana::string& dir, bool & if_exist)
+		bool mkdir_helper(const std::string& dir, bool & if_exist)
 		{
 #if defined(NANA_WINDOWS)
-			if(::CreateDirectory(dir.c_str(), 0))
+			if(::CreateDirectory(utf8_cast(dir).c_str(), 0))
 			{
 				if_exist = false;
 				return true;
@@ -155,7 +156,7 @@ namespace filesystem
 
 			if_exist = (::GetLastError() == ERROR_ALREADY_EXISTS);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			if(0 == ::mkdir(static_cast<std::string>(nana::charset(dir)).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
+			if(0 == ::mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
 			{
 				if_exist = false;
 				return true;
@@ -288,14 +289,14 @@ namespace filesystem
 		return false;
 	}
 
-	bool mkdir(const nana::string& path, bool & if_exist)
+	bool mkdir(const std::string& path, bool & if_exist)
 	{
 		if_exist = false;
 		if(path.size() == 0) return false;
 
-		nana::string root;
+		std::string root;
 #if defined(NANA_WINDOWS)
-		if(path.size() > 3 && path[1] == STR(':'))
+		if(path.size() > 3 && path[1] == ':')
 			root = path.substr(0, 3);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		if(path[0] == STR('/'))
@@ -306,11 +307,11 @@ namespace filesystem
 
 		while(true)
 		{
-			beg = path.find_first_not_of(STR("/\\"), beg);
+			beg = path.find_first_not_of("/\\", beg);
 			if(beg == path.npos)
 				break;
 
-			std::size_t pos = path.find_first_of(STR("/\\"), beg + 1);
+			std::size_t pos = path.find_first_of("/\\", beg + 1);
 			if(pos != path.npos)
 			{
 				root += path.substr(beg, pos - beg);
@@ -320,9 +321,9 @@ namespace filesystem
 					return false;
 
 #if defined(NANA_WINDOWS)
-				root += STR('\\');
+				root += L'\\';
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				root += STR('/');
+				root += L'/';
 #endif
 			}
 			else
@@ -339,32 +340,32 @@ namespace filesystem
 		return mkstat;
 	}
 
-	bool rmfile(const nana::char_t* file)
+	bool rmfile(const char* file)
 	{
 #if defined(NANA_WINDOWS)
 		bool ret = false;
 		if(file)
 		{
-			ret = (::DeleteFile(file) == TRUE);
+			ret = (::DeleteFile(utf8_cast(file).c_str()) == TRUE);
 			if(!ret)
 				ret = (ERROR_FILE_NOT_FOUND == ::GetLastError());
 		}
 
 		return ret;
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-		if(std::remove(static_cast<std::string>(nana::charset(file)).c_str()))
+		if(std::remove(file))
 			return (errno == ENOENT);
 		return true;
 #endif
 	}
 
-	bool rmdir(const nana::char_t* dir, bool fails_if_not_empty)
+	bool rmdir(const char* dir, bool fails_if_not_empty)
 	{
 		bool ret = false;
 		if(dir)
 		{
 #if defined(NANA_WINDOWS)
-			ret = (::RemoveDirectory(dir) == TRUE);
+			ret = (::RemoveDirectory(utf8_cast(dir).c_str()) == TRUE);
 			if(!fails_if_not_empty && (::GetLastError() == ERROR_DIR_NOT_EMPTY))
 				ret = detail::rm_dir_recursive(dir);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)

@@ -281,45 +281,45 @@ namespace nana{ namespace widgets{	namespace skeletons
 				//Here is a identifier
 				_m_read_idstr();
 
-				if(STR("font") == idstr_)
+				if(L"font" == idstr_)
 					return token::font;
-				else if(STR("bold") == idstr_)
+				else if(L"bold" == idstr_)
 					return token::bold;
-				else if(STR("size") == idstr_)
+				else if(L"size" == idstr_)
 					return token::size;
-				else if(STR("baseline") == idstr_)
+				else if(L"baseline" == idstr_)
 					return token::baseline;
-				else if(STR("top") == idstr_)
+				else if(L"top" == idstr_)
 					return token::top;
-				else if(STR("center") == idstr_)
+				else if(L"center" == idstr_)
 					return token::center;
-				else if(STR("bottom") == idstr_)
+				else if(L"bottom" == idstr_)
 					return token::bottom;
-				else if(STR("color") == idstr_)
+				else if(L"color" == idstr_)
 					return token::color;
-				else if(STR("image") == idstr_)
+				else if(L"image" == idstr_)
 					return token::image;
-				else if(STR("true") == idstr_)
+				else if(L"true" == idstr_)
 					return token::_true;
-				else if(STR("url") == idstr_)
+				else if(L"url" == idstr_)
 					return token::url;
-				else if(STR("target") == idstr_)
+				else if(L"target" == idstr_)
 					return token::target;
-				else if(STR("false") == idstr_)
+				else if(L"false" == idstr_)
 					return token::_false;
-				else if(STR("red") == idstr_)
+				else if(L"red" == idstr_)
 					return token::red;
-				else if(STR("green") == idstr_)
+				else if(L"green" == idstr_)
 					return token::green;
-				else if(STR("blue") == idstr_)
+				else if(L"blue" == idstr_)
 					return token::blue;
-				else if(STR("white") == idstr_)
+				else if(L"white" == idstr_)
 					return token::white;
-				else if(STR("black") == idstr_)
+				else if(L"black" == idstr_)
 					return token::black;
-				else if(STR("min_limited") == idstr_)
+				else if(L"min_limited" == idstr_)
 					return token::min_limited;
-				else if(STR("max_limited") == idstr_)
+				else if(L"max_limited" == idstr_)
 					return token::max_limited;
 
 				return token::string;

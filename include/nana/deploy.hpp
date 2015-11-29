@@ -89,14 +89,12 @@ namespace nana
 		typedef char		char_t;
 		typedef std::string string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
 	}
-	#define STR(string) string
 #else
 	namespace nana
 	{
 		typedef wchar_t			char_t;
 		typedef std::wstring	string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
 	}
-	#define STR(string) L##string
 #endif
 
 namespace nana

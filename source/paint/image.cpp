@@ -218,7 +218,7 @@ namespace paint
 
 					do
 					{
-						if (STR("ICO") == type_str)
+						if (L"ICO" == type_str)
 						{
 #if defined(NANA_WINDOWS)
 							helper = new detail::image_ico(true);
@@ -228,7 +228,7 @@ namespace paint
 							break;
 						}
 
-						if (STR("PNG") == type_str)
+						if (L"PNG" == type_str)
 						{
 #if defined(NANA_ENABLE_PNG)
 							helper = new detail::image_png;
@@ -238,7 +238,7 @@ namespace paint
 							break;
 						}
 
-						if (STR("JPG") == type_str || STR("JPEG") == type_str)
+						if (L"JPG" == type_str || L"JPEG" == type_str)
 						{
 #if defined(NANA_ENABLE_JPEG)
 							helper = new detail::image_jpeg;
