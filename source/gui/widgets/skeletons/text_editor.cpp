@@ -2183,15 +2183,8 @@ namespace nana{	namespace widgets
 					unsigned erase_number = 1;
 					--points_.caret.x;
 
-					const string_type& lnstr = textbase_.getline(points_.caret.y);
-#ifndef NANA_UNICODE
-					if(is_incomplete(lnstr, points_.caret.x) && (points_.caret.x))
-					{
-						textbase_.erase(points_.caret.y, points_.caret.x, 1);
-						--points_.caret.x;
-						erase_number = 2;
-					}
-#endif
+					auto& lnstr = textbase_.getline(points_.caret.y);
+
 					undo_ptr->set_caret_pos();
 					undo_ptr->set_removed(lnstr.substr(points_.caret.x, erase_number));
 					auto secondary = behavior_->take_lines(points_.caret.y);
@@ -2264,10 +2257,7 @@ namespace nana{	namespace widgets
 				if(points_.caret.x)
 				{
 					--points_.caret.x;
-#ifndef NANA_UNICODE
-					if(is_incomplete(textbase_.getline(points_.caret.y), points_.caret.x))
-						--points_.caret.x;
-#endif
+
 					pending = false;
 					bool adjust_y = (attributes_.line_wrapped && behavior_->adjust_caret_into_screen());
 					if (_m_move_offset_x_while_over_border(-2) || adjust_y)
@@ -2291,14 +2281,11 @@ namespace nana{	namespace widgets
 			bool do_render = false;
 			if(_m_cancel_select(2) == false)
 			{
-				nana::string lnstr = textbase_.getline(points_.caret.y);
+				auto lnstr = textbase_.getline(points_.caret.y);
 				if(lnstr.size() > points_.caret.x)
 				{
 					++points_.caret.x;
-#ifndef NANA_UNICODE
-					if(is_incomplete(lnstr, points_.caret.x))
-						++points_.caret.x;
-#endif
+
 					bool adjust_y = (attributes_.line_wrapped && behavior_->adjust_caret_into_screen());
 					do_render = (_m_move_offset_x_while_over_border(2) || adjust_y);
 				}

@@ -125,8 +125,6 @@ namespace nana
 
 namespace nana
 {
-	bool is_incomplete(const nana::string& str, unsigned pos);
-
 	inline unsigned make_rgb(unsigned char red, unsigned char green, unsigned char blue)
 	{
 

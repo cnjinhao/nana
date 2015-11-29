@@ -427,27 +427,3 @@ namespace nana
 	}
 }
 
-namespace nana
-{
-	bool is_incomplete(const nana::string& str, unsigned pos)
-	{
-#ifndef NANA_UNICODE
-		if(pos > str.size())
-			pos = static_cast<unsigned>(str.size());
-		const nana::char_t * pstr = str.c_str();
-		if(pstr[pos] < 0)
-		{
-			bool incomp = false;
-			for(unsigned i = 0; i < pos; ++i)
-			{
-				if(pstr[i] < 0)
-					incomp = !incomp;
-				else
-					incomp = false;
-			}
-			return incomp;
-		}
-#endif
-		return false;
-	}
-}
