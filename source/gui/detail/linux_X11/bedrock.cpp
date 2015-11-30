@@ -467,8 +467,9 @@ namespace detail
 		arg.left_button		= ((Button1Mask & mask_state) != 0) || (::nana::mouse::left_button == arg.button) ;
 		arg.right_button	= ((Button2Mask & mask_state) != 0) || (::nana::mouse::right_button == arg.button);
 		arg.mid_button		= ((Button3Mask & mask_state) != 0) || (::nana::mouse::middle_button == arg.button);
-		arg.shift	= (ShiftMask & mask_state);
-		arg.ctrl	= (ControlMask & mask_state);
+		arg.alt		= ((Mod1Mask & mask_state) != 0);
+		arg.shift	= ги(ShiftMask & mask_state) != 0);
+		arg.ctrl	= ги(ControlMask & mask_state) != 0);
 
 	}
 
@@ -815,21 +816,24 @@ namespace detail
 					{
 						auto retain = msgwnd->together.events_ptr;
 
-						arg_mouse arg;
+						::nana::arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
 
+						::nana::arg_click click_arg;
+
+						//the window_handle of click_arg is used as a flag to determinate whether to emit click event.
+						click_arg.window_handle = nullptr;
+						click_arg.mouse_args = &arg;
+
 						const bool hit = msgwnd->dimension.is_hit(arg.pos);
-						bool fire_click = false;
 						if(msgwnd == pressed_wd)
 						{
 							if((arg.button == ::nana::mouse::left_button) && hit)
 							{
 								msgwnd->flags.action = mouse_action::over;
-								arg_click arg;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
-								arg.by_mouse = true;
+
+								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 								emit_drawer(&drawer::click, msgwnd, arg, &context);
-								fire_click = true;
 							}
 						}
 					
@@ -845,13 +849,8 @@ namespace detail
 							arg.evt_code = event_code::mouse_up;
 							emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
-							if(fire_click)
-							{
-								arg_click arg;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
-								arg.by_mouse = true;
-								evt_ptr->click.emit(arg);
-							}
+							if(click_arg.window_handle)
+								evt_ptr->click.emit(click_arg);
 
 							if (brock.wd_manager().available(msgwnd))
 							{
@@ -859,13 +858,9 @@ namespace detail
 								evt_ptr->mouse_up.emit(arg);
 							}
 						}
-						else if(fire_click)
-						{
-							arg_click arg;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
-							arg.by_mouse = true;
-							msgwnd->together.events_ptr->click.emit(arg);
-						}
+						else if(click_arg.window_handle)
+							msgwnd->together.events_ptr->click.emit(click_arg);
+
 						brock.wd_manager().do_lazy_refresh(msgwnd, false);
 					}
 					pressed_wd = nullptr;
