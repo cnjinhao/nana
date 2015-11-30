@@ -4324,7 +4324,7 @@ namespace nana
 			ess.update();
 		}
 
-		auto listbox::insert(cat_proxy cat, nana::string str) -> cat_proxy
+		auto listbox::insert(cat_proxy cat, std::wstring str) -> cat_proxy
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
@@ -4358,7 +4358,12 @@ namespace nana
 			return at(pos_abs.cat).at(pos_abs.item);
 		}
 
-		void listbox::insert(const index_pair& pos, nana::string text)
+		void listbox::insert(const index_pair& pos, std::string text)
+		{
+			insert(pos, utf8_cast(text));
+		}
+
+		void listbox::insert(const index_pair& pos, std::wstring text)
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();

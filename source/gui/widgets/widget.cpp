@@ -59,10 +59,31 @@ namespace nana
 			return this->_m_caption();
 		}
 
-		void widget::caption(std::string utf8)
+		std::wstring widget::caption_wstring() const throw()
+		{
+			return utf8_cast(_m_caption());
+		}
+
+		auto widget::caption_native() const throw() -> native_string_type
+		{
+#if defined(NANA_WINDOWS)
+			return caption_wstring();
+#else
+			return caption();
+#endif
+		}
+
+		widget& widget::caption(std::string utf8)
 		{
 			::nana::throw_not_utf8(utf8);
 			_m_caption(std::move(utf8));
+			return *this;
+		}
+
+		widget& widget::caption(std::wstring text)
+		{
+			_m_caption(utf8_cast(text));
+			return *this;
 		}
 
 		void widget::i18n(i18n_eval eval)

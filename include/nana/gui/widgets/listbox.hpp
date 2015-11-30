@@ -573,7 +573,8 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 
 		cat_proxy append(nana::string);          ///< Appends a new category at the end
 		void append(std::initializer_list<nana::string>); ///< Appends categories at the end
-		cat_proxy insert(cat_proxy, nana::string);
+
+		cat_proxy insert(cat_proxy, ::std::wstring);
 		cat_proxy at(size_type pos) const;
 
         /// add categories in order when use a key?
@@ -606,7 +607,8 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 
 		item_proxy at(const index_pair &abs_pos) const;
 
-		void insert(const index_pair&, nana::string);         ///<Insert a new item with a text in the first column.
+		void insert(const index_pair&, ::std::string);		///<Insert a new item with a text in the first column.
+		void insert(const index_pair&, ::std::wstring);		///<Insert a new item with a text in the first column.
 
 		void checkable(bool);
 		selection checked() const;                         ///<Returns the items which are checked.                       

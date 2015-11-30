@@ -34,6 +34,11 @@ namespace nana
 		class inner_widget_notifier;
 		typedef void(*dummy_bool_type)(widget* (*)(const widget&));
 	public:
+#if defined(NANA_WINDOWS)
+		using native_string_type = std::wstring;
+#else	//POSIX
+		using native_string_type = std::string;
+#endif
 		virtual ~widget() = default;
 		virtual window handle() const = 0;			///< Returns the handle of window, returns 0 if window is not created.
 		bool empty() const;							///< Determines whether the manipulator is handling a window.
@@ -42,7 +47,11 @@ namespace nana
 		window parent() const;
 
 		::std::string caption() const throw();
-		void caption(std::string utf8);
+		::std::wstring caption_wstring() const throw();
+		native_string_type caption_native() const throw();
+
+		widget& caption(std::string utf8);
+		widget& caption(std::wstring);
 
 		template<typename ...Args>
 		void i18n(std::string msgid, Args&&... args)

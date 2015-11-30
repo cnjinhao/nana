@@ -42,7 +42,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 	class tokenizer
 	{
 	public:
-		tokenizer(const nana::string& s, bool format_enabled)
+		tokenizer(const std::wstring& s, bool format_enabled)
 			:	iptr_(s.data()),
 				endptr_(s.data() + s.size()),
 				format_enabled_(format_enabled)
@@ -74,7 +74,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return _m_token();
 		}
 
-		const nana::string& idstr() const
+		const ::std::wstring& idstr() const
 		{
 			return idstr_;
 		}
@@ -434,7 +434,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			};
 		};
 
-		::nana::string	font;
+		::std::wstring	font;
 		std::size_t		font_size;
 		bool	bold;
 		bool	bold_empty;	//bold should be ignored if bold_empty is true
@@ -442,8 +442,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 		::nana::color	bgcolor;	//If the color is not specified, it will be ignored, and the system will search for its parent.
 		::nana::color	fgcolor;	//ditto
 
-		::nana::string	target;
-		::nana::string	url;
+		::std::wstring	target;
+		::std::wstring	url;
 
 		fblock * parent;
 	};

@@ -52,8 +52,8 @@ namespace nana
 				struct traceable
 				{
 					nana::rectangle r;
-					nana::string target;
-					nana::string url;
+					std::wstring target;
+					std::wstring url;
 				};
 
 			public:
@@ -148,7 +148,7 @@ namespace nana
 					graph.typeface(ft);
 				}
 
-				bool find(int x, int y, nana::string& target, nana::string& url) const
+				bool find(int x, int y, std::wstring& target, std::wstring& url) const
 				{
 					for (auto & t : traceable_)
 					{
