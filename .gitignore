@@ -40,3 +40,4 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 *.DS_Store
+.idea/
