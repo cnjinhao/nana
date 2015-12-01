@@ -76,12 +76,12 @@ namespace nana
 
 				//Creates a scheme template if no template
 				if (!tmpl_scheme)
-					factory.create().swap(tmpl_scheme);
+					tmpl_scheme.reset(factory.create());
 
 				return *tmpl_scheme.get();
 			}
 
-			std::unique_ptr<widget_colors> color_schemes::create(scheme_factory_base&& factory)
+			widget_colors* color_schemes::create(scheme_factory_base&& factory)
 			{
 				return factory.create(scheme_template(std::move(factory)));
 			}

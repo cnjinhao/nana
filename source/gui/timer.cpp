@@ -12,6 +12,7 @@
  *		A timer can repeatedly call a piece of code. The duration between
  *	calls is specified in milliseconds. Timer is defferent from other graphics
  *	controls, it has no graphics interface.
+ *	@contributors: Benjamin Navarro(pr#81)
  */
 #include <nana/deploy.hpp>
 #include <nana/gui/timer.hpp>
@@ -26,8 +27,8 @@
 
 #if defined(NANA_WINDOWS)
 #include <windows.h>
-#elif defined(NANA_LINUX)
-#include PLATFORM_SPEC_HPP
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/system/platform.hpp>
 #endif
 

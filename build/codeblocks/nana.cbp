@@ -14,8 +14,11 @@
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Compiler>
+					<Add option="-std=c++11" />
 					<Add option="-Wall" />
 					<Add option="-g" />
+					<Add directory="../../include" />
+					<Add directory="../../extrlib/mingw" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -26,8 +29,11 @@
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="-Wall" />
 					<Add option="-O2" />
+					<Add option="-std=c++11" />
+					<Add option="-Wall" />
+					<Add directory="../../include" />
+					<Add directory="../../extrlib/mingw" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -44,7 +50,6 @@
 		<Unit filename="../../source/datetime.cpp" />
 		<Unit filename="../../source/deploy.cpp" />
 		<Unit filename="../../source/detail/platform_spec_selector.cpp" />
-		<Unit filename="../../source/exceptions.cpp" />
 		<Unit filename="../../source/filesystem/file_iterator.cpp" />
 		<Unit filename="../../source/filesystem/fs_utility.cpp" />
 		<Unit filename="../../source/gui/animation.cpp" />
@@ -102,7 +107,6 @@
 		<Unit filename="../../source/internationalization.cpp" />
 		<Unit filename="../../source/paint/detail/image_process_provider.cpp" />
 		<Unit filename="../../source/paint/detail/native_paint_interface.cpp" />
-		<Unit filename="../../source/paint/gadget.cpp" />
 		<Unit filename="../../source/paint/graphics.cpp" />
 		<Unit filename="../../source/paint/image.cpp" />
 		<Unit filename="../../source/paint/image_process_selector.cpp" />

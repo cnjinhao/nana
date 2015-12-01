@@ -10,8 +10,7 @@
  *	@file: nana/paint/image.cpp
  */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/paint/image.hpp>
 #include <algorithm>
 #include <fstream>
@@ -20,9 +19,15 @@
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
+
+#if defined(NANA_ENABLE_JPEG)
+#include "detail/image_jpeg.hpp"
+#endif
+
 #if defined(NANA_ENABLE_PNG)
 	#include "detail/image_png.hpp"
 #endif
+
 #include "detail/image_bmp.hpp"
 #include "detail/image_ico.hpp"
 
@@ -156,16 +161,6 @@ namespace paint
 	image::image_impl_interface::~image_impl_interface()
 	{}
 
-	namespace detail
-	{
-		int toupper(int c)
-		{
-			return (('a' <= c && c <= 'z') ? 
-					c - ('a' - 'A')
-					: c);
-		}
-	}//end namespace detail
-
 	//class image
 		image::image()
 		{}
@@ -216,25 +211,48 @@ namespace paint
 
 			if(filename.size())
 			{
-				nana::string fn;
-				std::transform(filename.cbegin(), filename.cend(), std::back_inserter(fn), detail::toupper);
-
-				if(filename.size() >= 4)
+				auto dotpos = filename.find_last_of('.');
+				if (dotpos != filename.npos)
 				{
-					nana::string suffix = fn.substr(fn.size() - 4);
-					if(STR(".ICO") == suffix)
+					auto type_str = ::nana::cistring(filename.substr(dotpos + 1).data());
+
+					do
 					{
+						if (STR("ICO") == type_str)
+						{
 #if defined(NANA_WINDOWS)
-						helper = new detail::image_ico(true);
+							helper = new detail::image_ico(true);
+#else
+							return false;
 #endif
-					}
+							break;
+						}
+
+						if (STR("PNG") == type_str)
+						{
 #if defined(NANA_ENABLE_PNG)
-					else if(STR(".PNG") == suffix)
-						helper = new detail::image_png;
+							helper = new detail::image_png;
+#else
+							return false;
 #endif
+							break;
+						}
+
+						if (STR("JPG") == type_str || STR("JPEG") == type_str)
+						{
+#if defined(NANA_ENABLE_JPEG)
+							helper = new detail::image_jpeg;
+#else
+							return false;
+#endif
+							break;
+						}
+					} while (false);
+					
 				}
 				
-				if(0 == helper)
+				//Check for BMP
+				if(!helper)
 				{
 #if defined(NANA_UNICODE)
 					std::ifstream ifs(std::string(nana::charset(filename)).c_str(), std::ios::binary);

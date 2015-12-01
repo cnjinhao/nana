@@ -14,7 +14,6 @@
 #define NANA_DETAIL_COLOR_SCHEMES_HPP
 
 #include "widget_colors.hpp"
-#include <nana/pat/cloneable.hpp>
 
 namespace nana
 {
@@ -27,8 +26,8 @@ namespace nana
 			virtual ~scheme_factory_base() = default;
 
 			virtual factory_identifier* get_id() const = 0;
-			virtual std::unique_ptr<widget_colors> create() = 0;
-			virtual std::unique_ptr<widget_colors> create(widget_colors&) = 0;
+			virtual	widget_colors* create() = 0;
+			virtual widget_colors* create(widget_colors&) = 0;
 		};
 
 		template<typename Scheme>
@@ -41,14 +40,14 @@ namespace nana
 				return &fid_;
 			}
 
-			std::unique_ptr<widget_colors> create() override
+			widget_colors* create() override
 			{
-				return std::unique_ptr<widget_colors>(new Scheme);
+				return (new Scheme);
 			}
 
-			std::unique_ptr<widget_colors> create(widget_colors& other) override
+			widget_colors* create(widget_colors& other) override
 			{
-				return std::unique_ptr<widget_colors>{new Scheme(static_cast<Scheme&>(other))};
+				return (new Scheme(static_cast<Scheme&>(other)));
 			}
 		private:
 			static factory_identifier fid_;
@@ -71,7 +70,7 @@ namespace nana
 			~color_schemes();
 
 			scheme&	scheme_template(scheme_factory_base&&);
-			std::unique_ptr<scheme> create(scheme_factory_base&&);
+			scheme* create(scheme_factory_base&&);
 		private:
 			implement * impl_;
 		};

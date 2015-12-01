@@ -12,7 +12,6 @@
 
 #include <nana/gui/widgets/menu.hpp>
 #include <nana/system/platform.hpp>
-#include <nana/paint/gadget.hpp>
 #include <nana/gui/element.hpp>
 #include <nana/gui/wvl.hpp>
 #include <nana/paint/text_renderer.hpp>

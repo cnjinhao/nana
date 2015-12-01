@@ -10,8 +10,7 @@
 *	@file: nana/gui/detail/bedrock_pi.cpp
 */
 
-#include <nana/config.hpp>
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
@@ -29,12 +28,12 @@ namespace nana
 	//class internal_scope_guard
 		internal_scope_guard::internal_scope_guard()
 		{
-			detail::bedrock::instance().wd_manager.internal_lock().lock();
+			detail::bedrock::instance().wd_manager().internal_lock().lock();
 		}
 
 		internal_scope_guard::~internal_scope_guard()
 		{
-			detail::bedrock::instance().wd_manager.internal_lock().unlock();
+			detail::bedrock::instance().wd_manager().internal_lock().unlock();
 		}
 	//end class internal_scope_guard
 
@@ -54,12 +53,12 @@ namespace nana
 	{
 		void events_operation_register(event_handle evt)
 		{
-			bedrock::instance().evt_operation.register_evt(evt);
+			bedrock::instance().evt_operation().register_evt(evt);
 		}
 
 		void events_operation_cancel(event_handle evt)
 		{
-			bedrock::instance().evt_operation.cancel(evt);
+			bedrock::instance().evt_operation().cancel(evt);
 		}
 
 		class bedrock::flag_guard
@@ -73,7 +72,7 @@ namespace nana
 
 			~flag_guard()
 			{
-				if (brock_->wd_manager.available((wd_)))
+				if (brock_->wd_manager().available((wd_)))
 					wd_->flags.refreshing = false;
 			}
 		private:
@@ -81,6 +80,31 @@ namespace nana
 			core_window_t	*const wd_;
 
 		};
+
+		events_operation& bedrock::evt_operation()
+		{
+			return pi_data_->evt_operation;
+		}
+
+		window_manager& bedrock::wd_manager()
+		{
+			return pi_data_->wd_manager;
+		}
+
+		void bedrock::manage_form_loader(core_window_t* wd, bool insert_or_remove)
+		{
+			if (insert_or_remove)
+			{
+				pi_data_->auto_form_set.insert(wd);
+				return;
+			}
+			
+			if (pi_data_->auto_form_set.erase(wd))
+			{
+				auto p = wd->widget_notifier->widget_ptr();
+				delete p;
+			}
+		}
 
 		void bedrock::event_expose(core_window_t * wd, bool exposed)
 		{
@@ -113,11 +137,11 @@ namespace nana
 						wd = wd->seek_non_lite_widget_ancestor();
 					}
 					else if (category::flags::frame == wd->other.category)
-						wd = wd_manager.find_window(wd->root, wd->pos_root.x, wd->pos_root.y);
+						wd = wd_manager().find_window(wd->root, wd->pos_root.x, wd->pos_root.y);
 				}
 
-				wd_manager.refresh_tree(wd);
-				wd_manager.map(wd, false);
+				wd_manager().refresh_tree(wd);
+				wd_manager().map(wd, false);
 			}
 		}
 
@@ -130,13 +154,13 @@ namespace nana
 				arg.x = x;
 				arg.y = y;
 				if (emit(event_code::move, wd, arg, false, get_thread_context()))
-					wd_manager.update(wd, false, true);
+					wd_manager().update(wd, false, true);
 			}
 		}
 
 		bool bedrock::event_msleave(core_window_t* hovered)
 		{
-			if (wd_manager.available(hovered) && hovered->flags.enabled)
+			if (wd_manager().available(hovered) && hovered->flags.enabled)
 			{
 				hovered->flags.action = mouse_action::normal;
 
@@ -155,7 +179,7 @@ namespace nana
 		void bedrock::update_cursor(core_window_t * wd)
 		{
 			internal_scope_guard isg;
-			if (wd_manager.available(wd))
+			if (wd_manager().available(wd))
 			{
 				auto * thrd = get_thread_context(wd->thread_id);
 				if (nullptr == thrd)
@@ -167,7 +191,7 @@ namespace nana
 					return;
 
 				native_interface::calc_window_point(native_handle, pos);
-				if (wd != wd_manager.find_window(native_handle, pos.x, pos.y))
+				if (wd != wd_manager().find_window(native_handle, pos.x, pos.y))
 					return;
 
 				set_cursor(wd, wd->predef_cursor, thrd);
@@ -179,7 +203,7 @@ namespace nana
 			return pi_data_->scheme.scheme_template(std::move(factory));
 		}
 
-		std::unique_ptr<widget_colors> bedrock::make_scheme(scheme_factory_base&& factory)
+		widget_colors* bedrock::make_scheme(scheme_factory_base&& factory)
 		{
 			return pi_data_->scheme.create(std::move(factory));
 		}
@@ -415,7 +439,7 @@ namespace nana
 		void bedrock::_m_except_handler()
 		{
 			std::vector<core_window_t*> v;
-			wd_manager.all_handles(v);
+			wd_manager().all_handles(v);
 			if (v.size())
 			{
 				std::vector<native_window_type> roots;
@@ -432,7 +456,7 @@ namespace nana
 				}
 
 				for (auto i : roots)
-					interface_type::close_window(i);
+					native_interface::close_window(i);
 			}
 		}
 	}//end namespace detail

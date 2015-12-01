@@ -22,7 +22,7 @@
 #ifdef NANA_WINDOWS
 	#include <windows.h>
 	typedef HANDLE find_handle_t;
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include <sys/stat.h>
 	#include <sys/types.h>
 	#include <dirent.h>
@@ -38,7 +38,7 @@ namespace filesystem
 		fileinfo();
 #ifdef NANA_WINDOWS
 		fileinfo(const WIN32_FIND_DATA& wfd);
-#elif NANA_LINUX
+#elif NANA_LINUX or NANA_MACOS
 		fileinfo(const nana::string& filename, const struct stat &);
 #endif
 		nana::string name;
@@ -119,7 +119,7 @@ namespace filesystem
 				}
 			}
 			value_ = value_type(wfd_);
-		#elif defined(NANA_LINUX)
+		#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 			path_ = nana::charset(file_path);
 			if(path_.size() && (path_[path_.size() - 1] != '/'))
 				path_ += '/';
@@ -181,7 +181,7 @@ namespace filesystem
 				}
 				else
 					end_ = true;
-			#elif defined(NANA_LINUX)
+			#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 				struct dirent * dnt = readdir(handle_);
 				if(dnt)
 				{
@@ -214,7 +214,7 @@ namespace filesystem
 				{
   				#if defined(NANA_WINDOWS)
 					::FindClose(*handle);
-            	#elif defined(NANA_LINUX)
+            	#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 					::closedir(*handle);
 				#endif
 				}
@@ -227,7 +227,7 @@ namespace filesystem
 #if defined(NANA_WINDOWS)
 		WIN32_FIND_DATA		wfd_;
 		nana::string	path_;
-#elif defined(NANA_LINUX)
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		std::string	path_;
 #endif
 		std::shared_ptr<find_handle_t> find_ptr_;

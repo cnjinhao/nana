@@ -20,26 +20,32 @@
 
 namespace nana
 {
-	arg_textbox::arg_textbox(textbox& wdg)
-		: widget(wdg)
+	arg_textbox::arg_textbox(textbox& wdg, const std::vector<upoint>& text_pos)
+		: widget(wdg), text_position(text_pos)
 	{}
 
 namespace drawerbase {
 	namespace textbox
 	{
 		//class event_agent
-			event_agent::event_agent(::nana::textbox& wdg)
-				:widget_(wdg)
+			event_agent::event_agent(::nana::textbox& wdg, const std::vector<upoint>& text_pos)
+				:widget_(wdg), text_position_(text_pos)
 			{}
 
 			void event_agent::first_change()
 			{
-				widget_.events().first_change.emit(::nana::arg_textbox{ widget_ });
+				widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ });
 			}
 
 			void event_agent::text_changed()
 			{
-				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_ });
+				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ });
+			}
+
+			void event_agent::text_exposed(const std::vector<upoint>& text_pos)
+			{
+				::nana::arg_textbox arg(widget_, text_pos);
+				widget_.events().text_exposed.emit(arg);
 			}
 		//end class event_agent
 
@@ -63,12 +69,13 @@ namespace drawerbase {
 		{
 			auto wd = wdg.handle();
 			widget_ = &wdg;
-			evt_agent_.reset(new event_agent(static_cast< ::nana::textbox&>(wdg)));
+			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
 
 			auto scheme = API::dev::get_scheme(wdg);
 
 			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
 			editor_->textbase().set_event_agent(evt_agent_.get());
+			editor_->set_event(evt_agent_.get());
 
 			_m_text_area(graph.width(), graph.height());
 
@@ -104,8 +111,11 @@ namespace drawerbase {
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 		{
-			if(editor_->mouse_down(arg.button, arg.pos))
+			if (editor_->mouse_pressed(arg))
+			{
+				editor_->render(true);
 				API::lazy_refresh();
+			}
 		}
 
 		void drawer::mouse_move(graph_reference, const arg_mouse& arg)
@@ -116,7 +126,7 @@ namespace drawerbase {
 
 		void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
 		{
-			if(editor_->mouse_up(arg.button, arg.pos))
+			if(editor_->mouse_pressed(arg))
 				API::lazy_refresh();
 		}
 
@@ -229,7 +239,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->textbase().store(std::move(file));
+				editor->textbase().store(std::move(file), false, nana::unicode::utf8);	//3rd parameter is just for syntax, it will be ignored
 		}
 
 		void textbox::store(nana::string file, nana::unicode encoding)
@@ -237,7 +247,18 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->textbase().store(std::move(file), encoding);
+				editor->textbase().store(std::move(file), true, encoding);
+		}
+
+		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
+		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
+		textbox& textbox::indention(bool enb, std::function<nana::string()> generator)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->indent(enb, generator);
+			return *this;
 		}
 
 		textbox& textbox::reset(nana::string str)
@@ -297,8 +318,10 @@ namespace drawerbase {
 		/// Gets the caret position
 		bool textbox::caret_pos(point& pos, bool text_coordinate) const
 		{
-			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (!editor)
+				return false;
 
 			auto scr_pos = editor->caret_screen_pos();
 
@@ -312,6 +335,16 @@ namespace drawerbase {
 				pos = scr_pos;
 
 			return editor->hit_text_area(scr_pos);
+		}
+
+		textbox& textbox::caret_pos(const upoint& pos)
+		{
+			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (editor)
+				editor->move_caret(pos);
+			
+			return *this;
 		}
 
 		textbox& textbox::append(const nana::string& text, bool at_caret)
@@ -495,6 +528,7 @@ namespace drawerbase {
 
 		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->set_highlight(name, fgcolor, bgcolor);
@@ -502,6 +536,7 @@ namespace drawerbase {
 
 		void textbox::erase_highlight(const std::string& name)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->erase_highlight(name);
@@ -509,6 +544,7 @@ namespace drawerbase {
 
 		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
@@ -519,6 +555,7 @@ namespace drawerbase {
 
 		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
@@ -529,9 +566,37 @@ namespace drawerbase {
 
 		void textbox::erase_keyword(const nana::string& kw)
 		{
+			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->erase_keyword(kw);
+		}
+
+		std::vector<upoint> textbox::text_position() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->text_position();
+			
+			return{};
+		}
+
+		rectangle textbox::text_area() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->text_area(false);
+
+			return{};
+		}
+
+		unsigned textbox::line_pixels() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			return (editor ? editor->line_height() : 0);
 		}
 
 		//Override _m_caption for caption()
@@ -559,7 +624,7 @@ namespace drawerbase {
 			widget::_m_typeface(font);
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->reset_caret_height();
+				editor->reset_caret_pixels();
 		}
 	//end class textbox
 }//end namespace nana

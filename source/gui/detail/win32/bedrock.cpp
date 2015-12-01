@@ -11,9 +11,7 @@
  *	@contributors: Ariel Vina-Rodriguez
  */
 
-#include <nana/config.hpp>
-
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
@@ -251,10 +249,10 @@ namespace detail
 
 	bedrock::~bedrock()
 	{
-		if(wd_manager.number_of_core_window())
+		if(wd_manager().number_of_core_window())
 		{
 			std::stringstream ss;
-			ss<<"Nana.GUI detects a memory leaks in window_manager, "<<static_cast<unsigned>(wd_manager.number_of_core_window())<<" window(s) are not uninstalled.";
+			ss<<"Nana.GUI detects a memory leaks in window_manager, "<<static_cast<unsigned>(wd_manager().number_of_core_window())<<" window(s) are not uninstalled.";
 			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
 		}
 
@@ -364,7 +362,7 @@ namespace detail
 
 		++(context->event_pump_ref_count);
 
-		auto & intr_locker = wd_manager.internal_lock();
+		auto & intr_locker = wd_manager().internal_lock();
 		intr_locker.revert();
 
 		try
@@ -372,8 +370,7 @@ namespace detail
 			MSG msg;
 			if(modal_window)
 			{
-				HWND native_handle = reinterpret_cast<HWND>(
-									root(reinterpret_cast<core_window_t*>(modal_window)));
+				HWND native_handle = reinterpret_cast<HWND>(reinterpret_cast<core_window_t*>(modal_window)->root);
 				if (is_modal)
 				{
 					HWND owner = ::GetWindow(native_handle, GW_OWNER);
@@ -395,7 +392,7 @@ namespace detail
 								::TranslateMessage(&msg);
 								::DispatchMessage(&msg);
 
-								wd_manager.remove_trash_handle(tid);
+								wd_manager().remove_trash_handle(tid);
 							}
 						}
 					}
@@ -413,7 +410,8 @@ namespace detail
 							::DispatchMessage(&msg);
 						}
 
-						wd_manager.remove_trash_handle(tid);
+						wd_manager().call_safe_place(tid);
+						wd_manager().remove_trash_handle(tid);
 						if (msg.message == WM_DESTROY  && msg.hwnd == native_handle)
 							break;
 					}//end while
@@ -432,7 +430,8 @@ namespace detail
 						::DispatchMessage(&msg);
 					}
 
-					wd_manager.remove_trash_handle(tid);
+					wd_manager().call_safe_place(tid);
+					wd_manager().remove_trash_handle(tid);
 				}//end while
 
 				//Empty these rest messages, there is not a window to process these messages.
@@ -537,6 +536,7 @@ namespace detail
 		{
 			arg.pos.x = pmdec.mouse.x - wd->pos_root.x;
 			arg.pos.y = pmdec.mouse.y - wd->pos_root.y;
+			arg.alt = (::GetKeyState(VK_MENU) < 0);
 			arg.shift = pmdec.mouse.button.shift;
 			arg.ctrl = pmdec.mouse.button.ctrl;
 			arg.left_button = pmdec.mouse.button.left;
@@ -605,7 +605,7 @@ namespace detail
 		case nana::detail::messages::map_thread_root_buffer:
 			{
 				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);
-				bedrock.wd_manager.map(reinterpret_cast<bedrock::core_window_t*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
+				bedrock.wd_manager().map(reinterpret_cast<bedrock::core_window_t*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
 				::UpdateWindow(wd);
 				::HeapFree(::GetProcessHeap(), 0, stru);
 			}
@@ -758,7 +758,7 @@ namespace detail
 	template<typename Arg>
 	void emit_drawer(void (::nana::detail::drawer::*event_ptr)(const Arg&), basic_window* wd, const Arg& arg, bedrock::thread_context* thrd)
 	{
-		if (bedrock::instance().wd_manager.available(wd) == false)
+		if (bedrock::instance().wd_manager().available(wd) == false)
 			return;
 
 		basic_window* prev_event_wd;
@@ -786,7 +786,7 @@ namespace detail
 		static restrict::TRACKMOUSEEVENT track = {sizeof track, 0x00000002};
 
 		auto native_window = reinterpret_cast<native_window_type>(root_window);
-		auto* root_runtime = brock.wd_manager.root_runtime(native_window);
+		auto* root_runtime = brock.wd_manager().root_runtime(native_window);
 
 		if(root_runtime)
 		{
@@ -882,7 +882,7 @@ namespace detail
 					arg_focus arg;
 					assign_arg(arg, focus, native_window, true);
 					if (!brock.emit(event_code::focus, focus, arg, true, &context))
-						brock.wd_manager.set_focus(msgwnd, true);
+						brock.wd_manager().set_focus(msgwnd, true);
 				}
 				def_window_proc = true;
 				break;
@@ -913,21 +913,21 @@ namespace detail
 				break;
 			case WM_LBUTTONDBLCLK: case WM_MBUTTONDBLCLK: case WM_RBUTTONDBLCLK:
 				pressed_wd = nullptr;
-				msgwnd = brock.wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
+				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if(msgwnd && msgwnd->flags.enabled)
 				{
 					if (msgwnd->flags.take_active && !msgwnd->flags.ignore_mouse_focus)
 					{
-						auto killed = brock.wd_manager.set_focus(msgwnd, false);
+						auto killed = brock.wd_manager().set_focus(msgwnd, false);
 						if (killed != msgwnd)
-							brock.wd_manager.do_lazy_refresh(killed, false);
+							brock.wd_manager().do_lazy_refresh(killed, false);
 					}
 
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 					if (brock.emit(arg.evt_code, msgwnd, arg, true, &context))
 					{
-						if (brock.wd_manager.available(msgwnd))
+						if (brock.wd_manager().available(msgwnd))
 							pressed_wd = msgwnd;
 					}
 				}
@@ -937,7 +937,7 @@ namespace detail
 				def_window_proc = true;
 				break;
 			case WM_LBUTTONDOWN: case WM_MBUTTONDOWN: case WM_RBUTTONDOWN:
-				msgwnd = brock.wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
+				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if(nullptr == msgwnd)	break;
 
 				//if event on the menubar, just remove the menu if it is not associating with the menubar
@@ -955,9 +955,9 @@ namespace detail
 						auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
 						if (new_focus && (!new_focus->flags.ignore_mouse_focus))
 						{
-							auto kill_focus = brock.wd_manager.set_focus(new_focus, false);
+							auto kill_focus = brock.wd_manager().set_focus(new_focus, false);
 							if (kill_focus != new_focus)
-								brock.wd_manager.do_lazy_refresh(kill_focus, false);
+								brock.wd_manager().do_lazy_refresh(kill_focus, false);
 						}
 					}
 
@@ -974,14 +974,14 @@ namespace detail
 							auto pos = native_interface::cursor_position();
 							auto rootwd = native_interface::find_window(pos.x, pos.y);
 							native_interface::calc_window_point(rootwd, pos);
-							if(msgwnd != brock.wd_manager.find_window(rootwd, pos.x, pos.y))
+							if(msgwnd != brock.wd_manager().find_window(rootwd, pos.x, pos.y))
 							{
 								//call the drawer mouse up event for restoring the surface graphics
 								msgwnd->flags.action = mouse_action::normal;
 
 								arg.evt_code = event_code::mouse_up;
 								emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
-								brock.wd_manager.do_lazy_refresh(msgwnd, false);
+								brock.wd_manager().do_lazy_refresh(msgwnd, false);
 							}
 						}
 					}
@@ -993,7 +993,7 @@ namespace detail
 			case WM_LBUTTONUP:
 			case WM_MBUTTONUP:
 			case WM_RBUTTONUP:
-				msgwnd = brock.wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
+				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if(nullptr == msgwnd)
 					break;
 
@@ -1002,57 +1002,50 @@ namespace detail
 				{
 					auto retain = msgwnd->together.events_ptr;
 
-					nana::arg_mouse arg;
+					::nana::arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 
-					bool fire_click = false;
+					::nana::arg_click click_arg;
+
+					//the window_handle of click_arg is used as a flag to determinate whether to emit click event
+					click_arg.window_handle = nullptr;
+					click_arg.mouse_args = &arg;
+
 					if (msgwnd->dimension.is_hit(arg.pos))
 					{
 						msgwnd->flags.action = mouse_action::over;
 						if (::nana::mouse::left_button == arg.button)
 						{
-							arg_click arg;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
-							arg.by_mouse = true;
-							emit_drawer(&drawer::click, msgwnd, arg, &context);
-							fire_click = true;
+							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+							emit_drawer(&drawer::click, msgwnd, click_arg, &context);
 						}
 					}
 
 					//Do mouse_up, this handle may be closed by click handler.
-					if(brock.wd_manager.available(msgwnd) && msgwnd->flags.enabled)
+					if(brock.wd_manager().available(msgwnd) && msgwnd->flags.enabled)
 					{
 						arg.evt_code = event_code::mouse_up;
 						emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
-						if (fire_click)
-						{
-							arg_click arg;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
-							arg.by_mouse = true;
-							retain->click.emit(arg);
-						}
+						if (click_arg.window_handle)
+							retain->click.emit(click_arg);
 
-						if (brock.wd_manager.available(msgwnd))
+						if (brock.wd_manager().available(msgwnd))
 						{
 							arg.evt_code = event_code::mouse_up;
 							retain->mouse_up.emit(arg);
 						}
 					}
-					else if (fire_click)
-					{
-						arg_click arg;
-						arg.window_handle = reinterpret_cast<window>(msgwnd);
-						arg.by_mouse = true;
-						retain->click.emit(arg);
-					}
-					brock.wd_manager.do_lazy_refresh(msgwnd, false);
+					else if (click_arg.window_handle)
+						retain->click.emit(click_arg);
+
+					brock.wd_manager().do_lazy_refresh(msgwnd, false);
 				}
 				pressed_wd = nullptr;
 				break;
 			case WM_MOUSEMOVE:
-				msgwnd = brock.wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
-				if (brock.wd_manager.available(hovered_wd) && (msgwnd != hovered_wd))
+				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
+				if (brock.wd_manager().available(hovered_wd) && (msgwnd != hovered_wd))
 				{
 					brock.event_msleave(hovered_wd);
 					hovered_wd->flags.action = mouse_action::normal;
@@ -1060,7 +1053,7 @@ namespace detail
 
 					//if msgwnd is neither captured window nor the child of captured window,
 					//redirect the msgwnd to the captured window.
-					auto wd = brock.wd_manager.capture_redirect(msgwnd);
+					auto wd = brock.wd_manager().capture_redirect(msgwnd);
 					if(wd)
 						msgwnd = wd;
 				}
@@ -1068,7 +1061,7 @@ namespace detail
 				else if(msgwnd)
 				{
 					bool prev_captured_inside;
-					if(brock.wd_manager.capture_window_entered(pmdec.mouse.x, pmdec.mouse.y, prev_captured_inside))
+					if(brock.wd_manager().capture_window_entered(pmdec.mouse.x, pmdec.mouse.y, prev_captured_inside))
 					{
 						event_code evt_code;
 						if(prev_captured_inside)
@@ -1113,7 +1106,7 @@ namespace detail
 					track.hwndTrack = native_window;
 					restrict::track_mouse_event(&track);
 				}
-				if (!brock.wd_manager.available(hovered_wd))
+				if (!brock.wd_manager().available(hovered_wd))
 					hovered_wd = nullptr;
 				break;
 			case WM_MOUSELEAVE:
@@ -1129,7 +1122,7 @@ namespace detail
 					if (pointer_wd == root_window)
 					{
 						::ScreenToClient(pointer_wd, &scr_pos);
-						auto scrolled_wd = brock.wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), scr_pos.x, scr_pos.y);
+						auto scrolled_wd = brock.wd_manager().find_window(reinterpret_cast<native_window_type>(pointer_wd), scr_pos.x, scr_pos.y);
 
 						def_window_proc = true;
 						auto evt_wd = scrolled_wd;
@@ -1139,7 +1132,7 @@ namespace detail
 							{
 								def_window_proc = false;
 								nana::point mspos{ scr_pos.x, scr_pos.y };
-								brock.wd_manager.calc_window_point(evt_wd, mspos);
+								brock.wd_manager().calc_window_point(evt_wd, mspos);
 
 								arg_wheel arg;
 								arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
@@ -1153,13 +1146,13 @@ namespace detail
 						if (scrolled_wd && (nullptr == evt_wd))
 						{
 							nana::point mspos{ scr_pos.x, scr_pos.y };
-							brock.wd_manager.calc_window_point(scrolled_wd, mspos);
+							brock.wd_manager().calc_window_point(scrolled_wd, mspos);
 
 							arg_wheel arg;
 							arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
 							assign_arg(arg, scrolled_wd, pmdec);
 							brock.emit_drawer(event_code::mouse_wheel, scrolled_wd, arg, &context);
-							brock.wd_manager.do_lazy_refresh(scrolled_wd, false);
+							brock.wd_manager().do_lazy_refresh(scrolled_wd, false);
 						}
 					}
 					else
@@ -1177,7 +1170,7 @@ namespace detail
 					POINT pos;
 					::DragQueryPoint(drop, &pos);
 
-					msgwnd = brock.wd_manager.find_window(native_window, pos.x, pos.y);
+					msgwnd = brock.wd_manager().find_window(native_window, pos.x, pos.y);
 					if(msgwnd)
 					{
 						arg_dropfiles dropfiles;
@@ -1207,11 +1200,11 @@ namespace detail
 							dropfiles.pos.x = pos.x;
 							dropfiles.pos.y = pos.y;
 
-							brock.wd_manager.calc_window_point(msgwnd, dropfiles.pos);
+							brock.wd_manager().calc_window_point(msgwnd, dropfiles.pos);
 							dropfiles.window_handle = reinterpret_cast<window>(msgwnd);
 
 							msgwnd->together.events_ptr->mouse_dropfiles.emit(dropfiles);
-							brock.wd_manager.do_lazy_refresh(msgwnd, false);
+							brock.wd_manager().do_lazy_refresh(msgwnd, false);
 						}
 					}
 
@@ -1299,7 +1292,7 @@ namespace detail
 				break;
 			case WM_SIZE:
 				if(wParam != SIZE_MINIMIZED)
-					brock.wd_manager.size(msgwnd, size(pmdec.size.width, pmdec.size.height), true, true);
+					brock.wd_manager().size(msgwnd, size(pmdec.size.width, pmdec.size.height), true, true);
 				break;
 			case WM_MOVE:
 				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));
@@ -1325,7 +1318,7 @@ namespace detail
 			case WM_SYSCHAR:
 				def_window_proc = true;
 				brock.set_keyboard_shortkey(true);
-				msgwnd = brock.wd_manager.find_shortkey(native_window, static_cast<unsigned long>(wParam));
+				msgwnd = brock.wd_manager().find_shortkey(native_window, static_cast<unsigned long>(wParam));
 				if(msgwnd)
 				{
 					arg_keyboard arg;
@@ -1372,7 +1365,7 @@ namespace detail
 
 						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
 						if (set_focus)
-							brock.wd_manager.set_focus(msgwnd, false);
+							brock.wd_manager().set_focus(msgwnd, false);
 
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_release;
@@ -1406,12 +1399,12 @@ namespace detail
 						{
 							bool is_forward = (::GetKeyState(VK_SHIFT) >= 0);
 
-							auto tstop_wd = brock.wd_manager.tabstop(msgwnd, is_forward);
+							auto tstop_wd = brock.wd_manager().tabstop(msgwnd, is_forward);
 							if (tstop_wd)
 							{
-								brock.wd_manager.set_focus(tstop_wd, false);
-								brock.wd_manager.do_lazy_refresh(msgwnd, false);
-								brock.wd_manager.do_lazy_refresh(tstop_wd, true);
+								brock.wd_manager().set_focus(tstop_wd, false);
+								brock.wd_manager().do_lazy_refresh(msgwnd, false);
+								brock.wd_manager().do_lazy_refresh(tstop_wd, true);
 							}
 						}
 						else
@@ -1453,10 +1446,10 @@ namespace detail
 						arg.ignore = false;
 
 						msgwnd->together.events_ptr->key_char.emit(arg);
-						if ((false == arg.ignore) && brock.wd_manager.available(msgwnd))
+						if ((false == arg.ignore) && brock.wd_manager().available(msgwnd))
 							brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
 
-						brock.wd_manager.do_lazy_refresh(msgwnd, false);
+						brock.wd_manager().do_lazy_refresh(msgwnd, false);
 					}
 				}
 				return 0;
@@ -1504,12 +1497,12 @@ namespace detail
 					brock.erase_menu(false);
 					brock.delay_restore(3);	//Restores if delay_restore not decleared
 				}
-				brock.wd_manager.destroy(msgwnd);
+				brock.wd_manager().destroy(msgwnd);
 				nana::detail::platform_spec::instance().release_window_icon(msgwnd->root);
 				break;
 			case WM_NCDESTROY:
-				brock.rt_manager.remove_if_exists(msgwnd);
-				brock.wd_manager.destroy_handle(msgwnd);
+				brock.manage_form_loader(msgwnd, false);
+				brock.wd_manager().destroy_handle(msgwnd);
 
 				if(--context.window_count <= 0)
 				{
@@ -1521,7 +1514,7 @@ namespace detail
 				def_window_proc = true;
 			}
 
-			root_runtime = brock.wd_manager.root_runtime(native_window);
+			root_runtime = brock.wd_manager().root_runtime(native_window);
 			if(root_runtime)
 			{
 				root_runtime->condition.pressed = pressed_wd;
@@ -1538,19 +1531,13 @@ namespace detail
 	::nana::category::flags bedrock::category(core_window_t* wd)
 	{
 		internal_scope_guard lock;
-		return (wd_manager.available(wd) ? wd->other.category : ::nana::category::flags::super);
+		return (wd_manager().available(wd) ? wd->other.category : ::nana::category::flags::super);
 	}
 
 	auto bedrock::focus() ->core_window_t*
 	{
-		core_window_t* wd = wd_manager.root(native_interface::get_focus_window());
+		core_window_t* wd = wd_manager().root(native_interface::get_focus_window());
 		return (wd ? wd->other.attribute.root->focus : nullptr);
-	}
-
-	native_window_type bedrock::root(core_window_t* wd)
-	{
-		internal_scope_guard lock;
-		return (wd_manager.available(wd) ? wd->root : nullptr);
 	}
 
 	void bedrock::set_menubar_taken(core_window_t* wd)
@@ -1563,8 +1550,8 @@ namespace detail
 		if ((!wd) && pre && (pre->root != get_menu()))
 		{
 			internal_scope_guard lock;
-			wd_manager.set_focus(pre, false);
-			wd_manager.update(pre, true, false);
+			wd_manager().set_focus(pre, false);
+			wd_manager().update(pre, true, false);
 		}
 	}
 
@@ -1692,17 +1679,9 @@ namespace detail
 #endif
 	}
 
-	bool bedrock::emit(event_code evt_code, core_window_t* wd, const arg_mouse& arg, bool ask_update, thread_context* thrd)
-	{
-		if (evt_code != arg.evt_code)
-			throw std::runtime_error("Nana.bedrock: invalid event arg.");
-
-		return emit(evt_code, wd, static_cast<const ::nana::event_arg&>(arg), ask_update, thrd);
-	}
-
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd)
 	{
-		if (wd_manager.available(wd) == false)
+		if (wd_manager().available(wd) == false)
 			return false;
 
 		basic_window* prev_event_wd;
@@ -1719,8 +1698,8 @@ namespace detail
 		_m_emit_core(evt_code, wd, false, arg);
 
 		if (ask_update)
-			wd_manager.do_lazy_refresh(wd, false);
-		else if (wd_manager.available(wd))
+			wd_manager().do_lazy_refresh(wd, false);
+		else if (wd_manager().available(wd))
 			wd->other.upd_state = basic_window::update_state::none;
 
 		if (thrd)	thrd->event_window = prev_event_wd;
@@ -1729,7 +1708,7 @@ namespace detail
 
 	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, thread_context* thrd)
 	{
-		if (bedrock_object.wd_manager.available(wd) == false)
+		if (bedrock_object.wd_manager().available(wd) == false)
 			return false;
 
 		core_window_t* prev_event_wd;
@@ -1854,7 +1833,7 @@ namespace detail
 			thrd = get_thread_context(wd->thread_id);
 
 		HCURSOR rev_handle = ::LoadCursor(nullptr, IDC_ARROW);
-		if (!wd_manager.available(wd))
+		if (!wd_manager().available(wd))
 		{
 			::ShowCursor(FALSE);
 			::SetCursor(rev_handle);
@@ -1875,7 +1854,7 @@ namespace detail
 		}
 
 		native_interface::calc_window_point(native_handle, pos);
-		auto rev_wd = wd_manager.find_window(native_handle, pos.x, pos.y);
+		auto rev_wd = wd_manager().find_window(native_handle, pos.x, pos.y);
 		if (rev_wd)
 		{
 			set_cursor(rev_wd, rev_wd->predef_cursor, thrd);

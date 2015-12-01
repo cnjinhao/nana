@@ -14,7 +14,6 @@
 #ifndef NANA_GUI_WIDGET_TABBAR_HPP
 #define NANA_GUI_WIDGET_TABBAR_HPP
 #include "widget.hpp"
-#include "../../paint/gadget.hpp"
 #include <nana/pat/cloneable.hpp>
 #include <nana/any.hpp>
 
@@ -30,7 +29,7 @@ namespace nana
 		T & value;
 
 		arg_tabbar(tabbar<T>& wdg, T& v)
-			: widget{ wdg }, value{ v }
+			: widget(wdg), value{ v }
 		{}
 	};
 
@@ -141,7 +140,16 @@ namespace nana
 				: public drawer_trigger
 			{
 			public:
-				enum toolbox_button_t{ButtonAdd, ButtonScroll, ButtonList, ButtonClose};
+				//enum toolbox_button_t{ButtonAdd, ButtonScroll, ButtonList, ButtonClose};	//deprecated
+
+				enum class kits
+				{
+					add,
+					scroll,
+					list,
+					close
+				};
+
 				trigger();
 				~trigger();
 				void activate(std::size_t);
@@ -159,7 +167,7 @@ namespace nana
 				void tab_image(size_t, const nana::paint::image&);
 				void text(std::size_t, const nana::string&);
 				nana::string text(std::size_t) const;
-				bool toolbox_button(toolbox_button_t, bool);
+				bool toolbox(kits, bool);
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
@@ -183,16 +191,26 @@ namespace nana
 		typedef Type value_type;            ///< The type of element data which is stored in the tabbar.
 		typedef drawerbase::tabbar::item_renderer item_renderer; ///< A user-defined item renderer should be derived from this interface.
 
+		//These member types is deprecated, they will be removed in Nana 1.3
 		struct button_add{};    ///< The type identifies the add button of the tabbar's toolbox.
 		struct button_scroll{}; ///< The type identifies the scroll button of the tabbar's toolbox.
 		struct button_list{};   ///< The type identifies the list button of the tabbar's toolbox.
 		struct button_close{};  ///< The type identifies the close button of the tabbar's toolbox.
 
-        /// A template class identifies the buttons of the tabbar’s toolbox. Refer to notes for more details.
+		//This template class is deprecated, it will be removed in 1.3
+        /// A template class identifies the buttons of the tabbar's toolbox. Refer to notes for more details.
 		template<typename ButtonAdd = nana::null_type, typename ButtonScroll = nana::null_type, typename ButtonList = nana::null_type, typename ButtonClose = nana::null_type>
 		struct button_container
 		{
 			typedef meta::fixed_type_set<ButtonAdd, ButtonScroll, ButtonList, ButtonClose> type_set;
+		};
+
+		enum class kits
+		{
+			add,	///< The type identifies the add button of the tabbar's toolbox.
+			scroll,	///< The type identifies the scroll button of the tabbar's toolbox
+			list,	///< The type identifies the list button of the tabbar's toolbox
+			close	///< The type identifies the close button of the tabbar's toolbox
 		};
 
 		tabbar()
@@ -305,19 +323,27 @@ namespace nana
 			auto & tg = this->get_drawer_trigger();
 			bool redraw = false;
 
+			using inner_kits = drawerbase::tabbar::trigger::kits;
+
 			if(type_set::template count<button_add>::value)
-				redraw |= tg.toolbox_button(tg.ButtonAdd, enable);
+				redraw |= tg.toolbox(inner_kits::add, enable);
 
 			if(type_set::template count<button_scroll>::value)
-				redraw |= tg.toolbox_button(tg.ButtonScroll, enable);
+				redraw |= tg.toolbox(inner_kits::scroll, enable);
 
 			if(type_set::template count<button_list>::value)
-				redraw |= tg.toolbox_button(tg.ButtonList, enable);
+				redraw |= tg.toolbox(inner_kits::add, enable);
 
 			if(type_set::template count<button_close>::value)
-				redraw |= tg.toolbox_button(tg.ButtonClose, enable);
+				redraw |= tg.toolbox(inner_kits::close, enable);
 
 			if(redraw)
+				API::refresh_window(this->handle());
+		}
+
+		void toolbox(kits kit, bool enable)
+		{
+			if (this->get_drawer_trigger().toolbox(kit, enable))
 				API::refresh_window(this->handle());
 		}
 
@@ -337,14 +363,18 @@ namespace nana
 
 
 namespace nana
-{
-	namespace ng
-	{
+{	
 		namespace drawerbase
 		{
 			namespace tabbar_lite
 			{
 				class model;
+
+				struct events
+					: public general_events
+				{
+					basic_event<event_arg> selected;
+				};
 
 				class driver
 					: public drawer_trigger
@@ -353,7 +383,7 @@ namespace nana
 					driver();
 					~driver();
 
-					model* get_model();
+					model* get_model() const throw();
 				private:
 					//Overrides drawer_trigger's method
 					void attached(widget_reference, graph_reference)	override;
@@ -367,18 +397,26 @@ namespace nana
 			}
 		}//end namespace drawerbase
 
-		class tabbar_lite
-			: public widget_object<category::widget_tag, drawerbase::tabbar_lite::driver>
-		{
-		public:
-			tabbar_lite() = default;
-			tabbar_lite(window, bool visible = true, const::nana::rectangle& = {});
+	class tabbar_lite
+		: public widget_object<category::widget_tag, drawerbase::tabbar_lite::driver, drawerbase::tabbar_lite::events>
+	{
+	public:
+		tabbar_lite() = default;
+		tabbar_lite(window, bool visible = true, const::nana::rectangle& = {});
 
+	public: //capacity
+		std::size_t length() const;
 
-			void push_back(std::string text, ::nana::any par = {});
-			void push_front(std::string text, ::nana::any par = {});
-		};
-	}
+	public: //modifiers
+		void attach(std::size_t pos, window);
+		window attach(std::size_t pos) const;
+
+		void push_back(std::string text, ::nana::any par = {});
+		void push_front(std::string text, ::nana::any par = {});
+
+		std::size_t selected() const;
+		void erase(std::size_t pos, bool close_attached = true);
+	};
 }
 
 #endif

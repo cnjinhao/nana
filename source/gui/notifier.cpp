@@ -8,7 +8,9 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/notifier.cpp
- *	@contributors: Jan
+ *	@contributors:
+ *		Jan
+ *		Benjamin Navarro(pr#81)
  */
 #include <nana/deploy.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -24,10 +26,9 @@
 #include <mutex>
 #endif
 
-#if defined(NANA_WINDOWS)
-#include <nana/detail/win32/platform_spec.hpp>
-#elif defined(NANA_LINUX)
-#include PLATFORM_SPEC_HPP
+#include <nana/detail/platform_spec_selector.hpp>
+
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
 #include <nana/system/platform.hpp>
 #include <iostream>
 #endif
@@ -241,11 +242,15 @@ namespace nana
 	}
 #endif
 
-	typedef ::nana::detail::bedrock bedrock;
 	//class notifier
 	notifier::notifier(window wd)
 		: impl_(new implement)
 	{
+		impl_->handle = wd;
+		impl_->native_handle = API::root(wd);
+		if (!impl_->native_handle)
+			throw std::invalid_argument("Invalid window handle");
+
 		impl_->ani_timer.elapse([this]
 		{
 #if defined(NANA_WINDOWS)
@@ -257,9 +262,6 @@ namespace nana
 #endif
 		});
 
-		auto & brock = bedrock::instance();
-		impl_->handle = wd;
-		impl_->native_handle = brock.root(reinterpret_cast<bedrock::core_window_t*>(wd));
 		impl_->evt_destroy = API::events(wd).destroy([this]
 		{
 			close();

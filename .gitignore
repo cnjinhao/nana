@@ -1,10 +1,12 @@
-#This .gitignore created by qPCR4vir
+#This .gitignore created by Ariel Vina-Rodriguez
 #ignore thumbnails created by windows
 Thumbs.db
 #Ignore files build by Visual Studio
 bii/build/*
 bii/cmake/*
 bii/deps/*
+build/vc2013-bkl/*
+build/makefile-bkl/*
 *.obj
 *.exe
 *.pdb
@@ -36,5 +38,6 @@ lib/
 *.ninja*
 CMakeCache.txt
 CMakeFiles/
-cmake_install.cmake
 .idea/
+cmake_install.cmake
+*.DS_Store
