@@ -14,9 +14,16 @@
 #include <nana/gui/widgets/widget.hpp>
 #include <unordered_map>
 #include <fstream>
-#include <sstream>
-#include <memory>
+#include <sstream>   // Warning:(17, 1) [unused] Unused import statement
+#include <memory>    // Warning:(17, 1) [unused] Unused import statement
+
+#if defined(STD_THREAD_NOT_SUPPORTED)
+#include <nana/std_mutex.hpp>
+#else
 #include <mutex>
+#endif
+
+
 #include <map>
 
 namespace nana
@@ -68,7 +75,7 @@ namespace nana
 						bool escape = false;
 						for (auto i = read_ptr_ + 1; i != end_ptr_; ++i)
 						{
-							if (escape)
+							if (escape)  // Warning:(78, 12) Condition is always false
 							{
 								escape = false;
 								continue;
@@ -261,8 +268,9 @@ namespace nana
 			{
 				auto result = mgr.table.emplace(wd, std::move(eval));
 				result.first->second.destroy = nana::API::events(wd).destroy([wd]{
-					auto & mgr = get_eval_manager();
-					std::lock_guard<std::recursive_mutex> lock(mgr.mutex);
+					auto & mgr = get_eval_manager();  // Warning:(271, 13) Local 'mgr' hides previous declaration
+					std::lock_guard<std::recursive_mutex> lock(mgr.mutex); // Local 'lock' hides previous
+
 					mgr.table.erase(wd);
 				});
 			}
