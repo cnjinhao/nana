@@ -543,7 +543,7 @@ namespace nana
 				{
 					if(node)
 					{
-						API::dev::window_caption(window_handle(), tree().path());
+						API::dev::window_caption(window_handle(), to_native_string(tree().path()));
 						if(evt_holder_.selected)
 							evt_holder_.selected(node->value.second.value);
 					}
@@ -807,7 +807,7 @@ namespace nana
 				{
 					throw_not_utf8(str);
 					scheme_->tree().insert(str, value);
-					API::dev::window_caption(scheme_->window_handle(), scheme_->tree().path());
+					API::dev::window_caption(scheme_->window_handle(), to_native_string(scheme_->tree().path()));
 					scheme_->draw();
 				}
 

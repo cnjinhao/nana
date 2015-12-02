@@ -982,22 +982,22 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		std::string combox::_m_caption() const throw()
+		auto combox::_m_caption() const throw() -> native_string_type
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();
 			if (editor)
-				return ::nana::charset(editor->text());
-			return std::string();
+				return to_native_string(editor->text());
+			return native_string_type();
 		}
 
-		void combox::_m_caption(std::string&& str)
+		void combox::_m_caption(native_string_type&& str)
 		{
 			internal_scope_guard lock;
 
 			auto editor = _m_impl().editor();
 			if (editor)
-				editor->text(::nana::charset(str, nana::unicode::utf8));
+				editor->text(to_native_string(str));
 
 			API::refresh_window(*this);
 		}

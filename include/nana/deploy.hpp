@@ -81,6 +81,35 @@ namespace nana
 
 	std::wstring utf8_cast(const std::string&);
 	std::string utf8_cast(const std::wstring&);
+
+	const std::string& to_utf8(const std::string&);
+	std::string to_utf8(const std::wstring&);
+
+	std::wstring to_wstring(const std::string& utf8_str);
+	const std::wstring& to_wstring(const std::wstring& wstr);
+	std::wstring&& to_wstring(std::wstring&& wstr);
+
+
+	namespace detail
+	{
+#if defined(NANA_WINDOWS)
+		using native_string_type = std::wstring;
+#else	//POSIX
+		using native_string_type = std::string;
+#endif
+	}
+
+#if defined(NANA_WINDOWS)
+	const detail::native_string_type to_native_string(const std::string&);
+	const detail::native_string_type& to_native_string(const std::wstring&);
+	detail::native_string_type to_native_string(int);
+	detail::native_string_type to_native_string(double);
+#else	//POSIX
+	const detail::native_string_type& to_native_string(const std::string&);
+	const detail::native_string_type to_native_string(const std::wstring&);
+	detail::native_string_type to_native_string(int);
+	detail::native_string_type to_native_string(double);
+#endif
 }
 
 #ifndef NANA_UNICODE

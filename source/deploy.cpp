@@ -407,6 +407,73 @@ namespace nana
 		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
 	}
 
+	const std::string& to_utf8(const std::string& str)
+	{
+		return str;
+	}
+
+	std::string to_utf8(const std::wstring& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+	std::wstring to_wstring(const std::string& utf8_str)
+	{
+		return ::nana::charset(utf8_str, ::nana::unicode::utf8);
+	}
+
+	const std::wstring& to_wstring(const std::wstring& wstr)
+	{
+		return wstr;
+	}
+
+	std::wstring&& to_wstring(std::wstring&& wstr)
+	{
+		return static_cast<std::wstring&&>(wstr);
+	}
+
+#if defined(NANA_WINDOWS)
+	const detail::native_string_type to_native_string(const std::string& text)
+	{
+		return ::nana::charset(text, ::nana::unicode::utf8);
+	}
+
+	const detail::native_string_type& to_native_string(const std::wstring& text)
+	{
+		return text;
+	}
+
+	detail::native_string_type to_native_string(int n)
+	{
+		return std::to_wstring(n);
+	}
+
+	detail::native_string_type to_native_string(double d)
+	{
+		return std::to_wstring(d);
+	}
+#else	//POSIX
+	const detail::native_string_type& to_native_string(const std::string& text)
+	{
+		return text;
+	}
+
+	const detail::native_string_type to_native_string(const std::wstring& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+	detail::native_string_type to_native_string(int n)
+	{
+		return std::to_string(n);
+	}
+
+	detail::native_string_type to_native_string(double d)
+	{
+		return std::to_string(d);
+	}
+#endif
+
 
 	std::size_t strlen(const char_t* str)
 	{

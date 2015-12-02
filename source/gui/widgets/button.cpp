@@ -511,11 +511,11 @@ namespace nana{	namespace drawerbase
 				});
 			}
 
-			void button::_m_caption(std::string&& text)
+			void button::_m_caption(native_string_type&& text)
 			{
 				API::unregister_shortkey(handle());
 
-				std::wstring wtext = ::nana::charset(text, ::nana::unicode::utf8);
+				std::wstring wtext = ::nana::to_wstring(text);
 
 				wchar_t shortkey;
 				API::transform_shortkey_text(wtext, shortkey, 0);

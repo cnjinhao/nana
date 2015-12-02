@@ -209,8 +209,8 @@ namespace nana
 		unsigned line_pixels() const;
 	protected:
 		//Overrides widget's virtual functions
-		::std::string _m_caption() const throw() override;
-		void _m_caption(::std::string&&) override;
+		native_string_type _m_caption() const throw() override;
+		void _m_caption(native_string_type&&) override;
 		void _m_typeface(const paint::font&) override;
 	};
 }//end namespace nana

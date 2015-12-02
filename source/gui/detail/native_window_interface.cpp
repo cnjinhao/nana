@@ -1076,18 +1076,17 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::window_caption(native_window_type wd, const std::string& title)
+		void native_interface::window_caption(native_window_type wd, const native_string_type& title)
 		{
 #if defined(NANA_WINDOWS)
-			std::wstring wtext = ::nana::charset(title, ::nana::unicode::utf8);
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
-				wchar_t * wstr = new wchar_t[wtext.length() + 1];
-				std::wcscpy(wstr, wtext.c_str());
+				wchar_t * wstr = new wchar_t[title.length() + 1];
+				std::wcscpy(wstr, title.c_str());
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_set_window_text, reinterpret_cast<WPARAM>(wstr), 0);
 			}
 			else
-				::SetWindowText(reinterpret_cast<HWND>(wd), wtext.c_str());
+				::SetWindowText(reinterpret_cast<HWND>(wd), title.c_str());
 #elif defined(NANA_X11)
 			::XTextProperty name;
 			char * text = const_cast<char*>(title.c_str());
@@ -1101,13 +1100,13 @@ namespace nana{
 #endif
 		}
 
-		std::string native_interface::window_caption(native_window_type wd)
+		auto native_interface::window_caption(native_window_type wd) -> native_string_type
 		{
 #if defined(NANA_WINDOWS)
 			int length = ::GetWindowTextLength(reinterpret_cast<HWND>(wd));
 			if(length > 0)
 			{
-				nana::string str;
+				native_string_type str;
                 //One for NULL terminator which GetWindowText will write.
 				str.resize(length+1);
 				
@@ -1116,7 +1115,7 @@ namespace nana{
 				//Remove the null terminator writtien by GetWindowText
 				str.resize(length);
 
-				return ::nana::charset(str);
+				return str;
 			}
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
@@ -1136,7 +1135,7 @@ namespace nana{
 				}
 			}
 #endif
-			return std::string();
+			return native_string_type();
 		}
 
 		void native_interface::capture_window(native_window_type wd, bool cap)

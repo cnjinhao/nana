@@ -76,7 +76,7 @@ namespace nana
 		label& text_align(align horizontal_align, align_v vertical_align= align_v::top);
 	private:
 		//Overrides widget's virtual function
-		void _m_caption(std::string&&) override;
+		void _m_caption(native_string_type&&) override;
 	};
 }//end namespace nana
 #endif

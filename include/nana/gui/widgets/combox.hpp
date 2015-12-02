@@ -223,8 +223,8 @@ namespace nana
 		const drawerbase::combox::drawer_impl& _m_impl() const;
 	private:
 		//Overrides widget's virtual functions
-		::std::string _m_caption() const throw() override;
-		void _m_caption(::std::string&&) override;
+		native_string_type _m_caption() const throw() override;
+		void _m_caption(native_string_type&&) override;
 		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
 }

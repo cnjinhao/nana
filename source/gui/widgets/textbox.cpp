@@ -492,7 +492,7 @@ namespace drawerbase {
 
 			std::stringstream ss;
 			int value;
-			ss << s;
+			ss << to_utf8(s);
 			ss >> value;
 			return value;
 		}
@@ -504,20 +504,20 @@ namespace drawerbase {
 
 			std::stringstream ss;
 			double value;
-			ss << s;
+			ss << to_utf8(s);
 			ss >> value;
 			return value;
 		}
 
 		textbox& textbox::from(int n)
 		{
-			_m_caption(std::to_string(n));
+			_m_caption(to_native_string(n));
 			return *this;
 		}
 
 		textbox& textbox::from(double d)
 		{
-			_m_caption(std::to_string(d));
+			_m_caption(to_native_string(d));
 			return *this;
 		}
 
@@ -595,23 +595,23 @@ namespace drawerbase {
 		}
 
 		//Override _m_caption for caption()
-		::std::string textbox::_m_caption() const throw()
+		auto textbox::_m_caption() const throw() -> native_string_type
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				return ::nana::charset(editor->text());
+				return to_native_string(editor->text());
 
-			return std::string();
+			return native_string_type();
 		}
 
-		void textbox::_m_caption(std::string&& str)
+		void textbox::_m_caption(native_string_type&& str)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
-				editor->text(::nana::charset(str, ::nana::unicode::utf8));
+				editor->text(to_wstring(str));
 				API::update_window(this->handle());
 			}
 		}

@@ -104,7 +104,7 @@ namespace nana{
 		private:
 			//Overrides widget virtual functions
 			void _m_complete_creation() override;
-			void _m_caption(std::string&&) override;
+			void _m_caption(native_string_type&&) override;
 		};
 }//end namespace nana
 #endif

@@ -807,7 +807,7 @@ namespace nana
 			if(impl->renderer.format(f))
 			{
 				window wd = *this;
-				impl->renderer.parse(::nana::charset(API::dev::window_caption(wd), ::nana::unicode::utf8));
+				impl->renderer.parse(::nana::to_wstring(API::dev::window_caption(wd)));
 				API::refresh_window(wd);
 			}
 			return *this;
@@ -869,11 +869,11 @@ namespace nana
 			return *this;
 		}
 
-		void label::_m_caption(std::string&& str)
+		void label::_m_caption(native_string_type&& str)
 		{
 			internal_scope_guard lock;
 			window wd = *this;
-			get_drawer_trigger().impl()->renderer.parse(::nana::charset(str, nana::unicode::utf8));
+			get_drawer_trigger().impl()->renderer.parse(to_wstring(str));
 			API::dev::window_caption(wd, std::move(str));
 			API::refresh_window(wd);
 		}

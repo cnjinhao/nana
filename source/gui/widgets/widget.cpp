@@ -41,12 +41,12 @@ namespace nana
 				wdg_._m_notify_destroy();
 			}
 
-			std::string caption() override
+			native_string_type caption() override
 			{
 				return wdg_._m_caption();
 			}
 
-			virtual void caption(std::string text)
+			void caption(native_string_type text) override
 			{
 				wdg_._m_caption(std::move(text));
 			}
@@ -56,33 +56,35 @@ namespace nana
 
 		std::string widget::caption() const throw()
 		{
-			return this->_m_caption();
+			return utf8_cast(_m_caption());
 		}
 
 		std::wstring widget::caption_wstring() const throw()
 		{
+#if defined(NANA_WINDOWS)
+			return _m_caption();
+#else
 			return utf8_cast(_m_caption());
+#endif
 		}
 
 		auto widget::caption_native() const throw() -> native_string_type
 		{
-#if defined(NANA_WINDOWS)
-			return caption_wstring();
-#else
-			return caption();
-#endif
+			return _m_caption();
 		}
 
 		widget& widget::caption(std::string utf8)
 		{
 			::nana::throw_not_utf8(utf8);
-			_m_caption(std::move(utf8));
+			native_string_type str = to_native_string(utf8);
+			_m_caption(std::move(str));
 			return *this;
 		}
 
 		widget& widget::caption(std::wstring text)
 		{
-			_m_caption(utf8_cast(text));
+			native_string_type str = to_native_string(text);
+			_m_caption(std::move(str));
 			return *this;
 		}
 
@@ -90,7 +92,8 @@ namespace nana
 		{
 			if (handle())
 			{
-				_m_caption(eval());
+				native_string_type str = to_native_string(eval());
+				_m_caption(std::move(str));
 				internationalization_parts::set_eval(handle(), std::move(eval));
 			}
 		}
@@ -269,12 +272,12 @@ namespace nana
 		void widget::_m_complete_creation()
 		{}
 
-		std::string widget::_m_caption() const throw()
+		auto widget::_m_caption() const throw() -> native_string_type
 		{
 			return API::dev::window_caption(handle());
 		}
 
-		void widget::_m_caption(std::string&& str)
+		void widget::_m_caption(native_string_type&& str)
 		{
 			API::dev::window_caption(handle(), std::move(str));
 		}

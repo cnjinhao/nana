@@ -234,12 +234,12 @@ namespace nana{
 		_m_init();
 	}
 
-	::std::string group::_m_caption() const throw()
+	auto group::_m_caption() const throw() -> native_string_type
 	{
-		return impl_->caption.caption();
+		return impl_->caption.caption_native();
 	}
 
-	void group::_m_caption(::std::string&& str)
+	void group::_m_caption(native_string_type&& str)
 	{
 		impl_->caption.caption(std::move(str));
 		impl_->update_div();

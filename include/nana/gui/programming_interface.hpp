@@ -72,8 +72,8 @@ namespace API
 		widget_colors* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
-		std::string window_caption(window) throw();
-		void window_caption(window, std::string);
+		::nana::detail::native_string_type window_caption(window) throw();
+		void window_caption(window, ::nana::detail::native_string_type);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);
@@ -271,7 +271,7 @@ namespace API
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
-	void window_caption(window, const nana::string& title);
+	void window_caption(window, const std::wstring& title);
 	::std::string window_caption(window);
 
 	void window_cursor(window, cursor);
