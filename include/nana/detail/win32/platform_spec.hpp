@@ -12,6 +12,7 @@
  *	This file provides basis class and data structrue that required by nana
  *	This file should not be included by any header files.
  */
+#if defined(NANA_WINDOWS)
 
 #ifndef NANA_DETAIL_PLATFORM_SPEC_HPP
 #define NANA_DETAIL_PLATFORM_SPEC_HPP
@@ -198,4 +199,9 @@ namespace detail
 
 }//end namespace detail
 }//end namespace nana
+
+// .h ward
+#endif
+
+//#if defined(NANA_WINDOWS)
 #endif
