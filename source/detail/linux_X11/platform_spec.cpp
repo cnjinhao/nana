@@ -13,6 +13,9 @@
  *
  *	http://standards.freedesktop.org/clipboards-spec/clipboards-0.1.txt
  */
+
+#if defined(NANA_LINUX) || defined(NANA_MACOS)
+
 #include <nana/detail/platform_spec_selector.hpp>
 #include <X11/Xlocale.h>
 #include <locale>
@@ -1411,3 +1414,7 @@ namespace detail
 	}
 }//end namespace detail
 }//end namespace nana
+
+
+//#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#endif
