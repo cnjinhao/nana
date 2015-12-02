@@ -23,19 +23,6 @@ endif()
 project(nana)
 cmake_minimum_required(VERSION 2.8)
 
-if(APPLE)
-	add_definitions(-DNANA_MACOS)
-	add_definitions(-DNANA_X11)
-	#add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/macos_X11/platform_spec.hpp>)
-	add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
-	include_directories(/opt/X11/include/)
-elseif(UNIX)
-	add_definitions(-DNANA_LINUX)
-	add_definitions(-DNANA_X11)
-	#add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/linux_X11/platform_spec.hpp>)
-	add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
-endif()
-
 
 #Global MSVC definitions
 if(WIN32)
