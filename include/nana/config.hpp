@@ -41,9 +41,15 @@
 	#if defined(__MINGW32__) || defined(__MINGW64__)
 		#define NANA_MINGW
 		#define STD_CODECVT_NOT_SUPPORTED
-		#if (__GNUC__ == 4) && ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
+		// https://github.com/meganz/mingw-std-threads
+        //#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
+        //#define _GLIBCXX_HAS_GTHREADS
+        //#define _GTHREAD_USE_MUTEX_TIMEDLOCK 1
+        //#define STD_THREAD_NOT_SUPPORTED
+		#if ((__GNUC__ == 4) && ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 2)))
 			//Use this flag if MinGW version is older than 4.8.1
 			#define STD_THREAD_NOT_SUPPORTED
+        	#define USE_github_com_meganz_mingw_std_threads
 		#endif
 	#endif
 #elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
@@ -63,6 +69,7 @@
 #endif
 
 //Here defines some flags that tell Nana what features will be supported.
+//#ifndef NANA_UNICODE
 #define NANA_UNICODE
 
 #if defined(NANA_UNICODE) && defined(NANA_WINDOWS)
