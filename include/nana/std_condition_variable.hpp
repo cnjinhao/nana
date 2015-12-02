@@ -3,10 +3,14 @@
 #include <nana/config.hpp>
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
+#if defined(USE_github_com_meganz_mingw_std_threads)
+    #include <mingw.condition_variable.h>
+#else
 #include <boost/thread/condition_variable.hpp>
 namespace std
 {
     typedef boost::condition_variable condition_variable;
 }
-#endif
+#endif  // (USE_github_com_meganz_mingw_std_threads)
+#endif // (STD_THREAD_NOT_SUPPORTED)
 #endif // NANA_STD_CONDITION_VARIABLE_HPP
