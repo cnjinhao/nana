@@ -3,7 +3,7 @@
 #include <nana/deploy.hpp>
 #include <nana/audio/detail/audio_stream.hpp>
 
-#if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
+#if defined(STD_THREAD_NOT_SUPPORTED)
     #include <nana/std_thread.hpp>
     #include <nana/std_mutex.hpp>
     #include <nana/std_condition_variable.hpp>
