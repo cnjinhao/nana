@@ -4,13 +4,13 @@
 #	Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 
-
 # set compile  flags
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 
+# move this to the end ??
 if(BIICODE)
     # prepare BII_LIB_SRC
     set(LIB_SRC ${BII_LIB_SRC})
@@ -33,23 +33,25 @@ if(WIN32)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 		endif()
 		
-		# More MSVC specific compilation flags
-		#add_definitions(-D_SCL_SECURE_NO_WARNINGS)
-		#add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 	endif(MSVC)
 endif(WIN32)
 
 
 #Unicode
 option(NANA_UNICODE "Use Unicode Character Set" ON)
-#if(NANA_UNICODE)
-#	add_definitions(-DNANA_UNICODE)
-#	if(WIN32)
-#		add_definitions(-DUNICODE -D_UNICODE)
-#	endif()
-#endif()
+if(NANA_UNICODE)
+    add_definitions(-DNANA_UNICODE)
+endif()
 
-#Find PNG
+if(APPLE)
+    add_definitions(-DAPPLE)
+    include_directories(/opt/X11/include/)
+elseif(UNIX)
+    add_definitions(-Dlinux)
+endif()
+
+
+
 if(UNIX)
     find_package(Freetype)
     if (FREETYPE_FOUND)
@@ -57,20 +59,35 @@ if(UNIX)
     endif()
 endif()
 
-option(NANA_ENABLE_PNG "Enable the use of PNG" ON)
+
+#Find PNG
+option(NANA_ENABLE_PNG "Enable the use of PNG" OFF)
+option(USE_LIBPNG_FROM_OS "Use libpng from operating system." OFF)
 if(NANA_ENABLE_PNG)
     add_definitions(-DNANA_ENABLE_PNG)
-
-    option(NANA_LIBPNG "Use the included libpng" ON)
-    if(NANA_LIBPNG)
-        add_definitions(-DNANA_LIBPNG)
-    else()
+    if(USE_LIBPNG_FROM_OS)
         find_package(PNG)
         if (PNG_FOUND)
             include_directories( ${PNG_INCLUDE_DIRS})
+            add_definitions(-DUSE_LIBPNG_FROM_OS)
         endif()
     endif()
 endif()
+
+#Find JPEG
+option(NANA_ENABLE_JPEG "Enable the use of JPEG" OFF)
+option(USE_LIBJPEG_FROM_OS "Use libjpeg from operating system." OFF)
+if(NANA_ENABLE_JPEG)
+    add_definitions(-DNANA_ENABLE_JPEG)
+    if(USE_LIBJPEG_FROM_OS)
+        find_package(JPEG)
+        if (JPEG_FOUND)
+            include_directories( ${JPEG_INCLUDE_DIRS})
+            add_definitions(-DUSE_LIBJPEG_FROM_OS)
+        endif()
+    endif()
+endif()
+
 
 
 set(NANA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
