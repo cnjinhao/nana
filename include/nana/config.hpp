@@ -39,11 +39,12 @@
 		#endif // _MSVC
 
 		// MINGW ...
-		#if defined(__MINGW32__) || defined(__MINGW64__)
+		#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
 			#define NANA_MINGW
+        	//#define STD_THREAD_NOT_SUPPORTED // don't works? why? where __GNUC__, etc. are set? by CLion ??
 			//Use this flag if MinGW version is older than 4.8.1
 			#if ((__GNUC__ == 4) && ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 2)))
-
+			// don't works? why? where __GNUC__, etc. are set? by CLion ??
 				// ??
 				#define UNDEFINED_to_string
 
@@ -69,8 +70,8 @@
 	 // Linux:
 	#elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
 
-		#define NANA_LINUX	1
-		#define NANA_X11	1
+		//#define NANA_LINUX	1
+		//#define NANA_X11	1
 
 	// end Linux
 
@@ -86,9 +87,14 @@
 
 // compilers ...
 
+// temp
+//#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED // don't works?
+//#define STD_CODECVT_NOT_SUPPORTED
+
 	// GCC ...
 	#if defined(__GNU__)
 		#if (__GNUC__ == 4) && (__GNUC_MINOR__ == 8) && (__GNUC_PATCHLEVEL__ <= 1)
+			// don't works?
 
 			//GCC 4.7.0 does not implement the <codecvt> and codecvt_utfx classes  ??
 			#define STD_CODECVT_NOT_SUPPORTED
@@ -123,15 +129,17 @@
 //#define NANA_ENABLE_JPEG	//!
 //#define USE_LIBJPEG_FROM_OS // Un-Comment it to use libjpeg from operating system.
 #if defined(NANA_ENABLE_JPEG)
-#if not defined(USE_LIBJPEG_FROM_OS)
+	#if not defined(USE_LIBJPEG_FROM_OS)
 		#define NANA_LIBJPEG
 	#endif
 #endif
 
 
-//#ifndef NANA_UNICODE
+
 // always define NANA_UNICODE ?? it will be deprecated ?.
-#define NANA_UNICODE
+#ifndef NANA_UNICODE
+	#define NANA_UNICODE
+#endif
 
 #if defined(NANA_UNICODE) && defined(NANA_WINDOWS)
 	#ifndef _UNICODE
