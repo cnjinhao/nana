@@ -40,7 +40,9 @@ namespace nana
 			: arg_tabbar<T>({wdg, v})
 		{}
 
-		bool remove = true;
+		bool remove = true;					///< determines whether to remove the item
+		bool close_attach_window = true;	///< determines whether to close the attached window. It is ignored if remove is false
+
 	};
 
 	namespace drawerbase
@@ -51,11 +53,11 @@ namespace nana
 			struct tabbar_events
 				: public general_events
 			{
-				typedef T value_type;
+				using value_type = T;
 
 				basic_event<arg_tabbar<value_type>> added;
 				basic_event<arg_tabbar<value_type>> activated;
-				basic_event<arg_tabbar<value_type>> removed;
+				basic_event<arg_tabbar_removed<value_type>> removed;
 			};
 
 			class event_agent_interface
@@ -64,7 +66,7 @@ namespace nana
 				virtual ~event_agent_interface() = default;
 				virtual void added(std::size_t) = 0;
 				virtual void activated(std::size_t) = 0;
-				virtual bool removed(std::size_t) = 0;
+				virtual bool removed(std::size_t, bool & close_attached) = 0;
 			};
 
 			class item_renderer
@@ -98,7 +100,7 @@ namespace nana
 				: public event_agent_interface
 			{
 			public:
-				typedef ::nana::arg_tabbar<T>	arg_tabbar;
+				using arg_tabbar = ::nana::arg_tabbar<T>;
 
 				event_agent(::nana::tabbar<T>& tb, DrawerTrigger & dtr)
 					: tabbar_(tb), drawer_trigger_(dtr)
@@ -119,14 +121,16 @@ namespace nana
 						tabbar_.events().activated.emit(arg_tabbar({ tabbar_, tabbar_[pos]}));
 				}
 
-				bool removed(std::size_t pos) override
+				bool removed(std::size_t pos, bool & close_attach) override
 				{
 					if (pos != npos)
 					{
 						::nana::arg_tabbar_removed<T> arg(tabbar_, tabbar_[pos]);
 						tabbar_.events().removed.emit(arg);
+						close_attach = arg.close_attach_window;
 						return arg.remove;
 					}
+					close_attach = true;
 					return true;
 				}
 			private:
@@ -140,8 +144,6 @@ namespace nana
 				: public drawer_trigger
 			{
 			public:
-				//enum toolbox_button_t{ButtonAdd, ButtonScroll, ButtonList, ButtonClose};	//deprecated
-
 				enum class kits
 				{
 					add,
@@ -159,10 +161,11 @@ namespace nana
 				const pat::cloneable<item_renderer> & ext_renderer() const;
 				void ext_renderer(const pat::cloneable<item_renderer>&);
 				void set_event_agent(event_agent_interface*);
-				void push_back(const nana::string&, const nana::any&);
+				void insert(std::size_t, nana::string&&, nana::any&&);
 				std::size_t length() const;
 				bool close_fly(bool);
-				void relate(size_t, window);
+				void attach(std::size_t, window);
+				void erase(std::size_t);
 				void tab_color(std::size_t, bool is_bgcolor, const ::nana::color&);
 				void tab_image(size_t, const nana::paint::image&);
 				void text(std::size_t, const nana::string&);
@@ -198,7 +201,7 @@ namespace nana
 		struct button_close{};  ///< The type identifies the close button of the tabbar's toolbox.
 
 		//This template class is deprecated, it will be removed in 1.3
-        /// A template class identifies the buttons of the tabbar's toolbox. Refer to notes for more details.
+		/// A template class identifies the buttons of the tabbar's toolbox. Refer to notes for more details.
 		template<typename ButtonAdd = nana::null_type, typename ButtonScroll = nana::null_type, typename ButtonList = nana::null_type, typename ButtonClose = nana::null_type>
 		struct button_container
 		{
@@ -270,7 +273,7 @@ namespace nana
 
 		void close_fly(bool fly)                    /// Draw or not a close button in each tab.
 		{
-			if(this->get_drawer_trigger().close_fly(fly))
+			if (this->get_drawer_trigger().close_fly(fly))
 				API::refresh_window(this->handle());
 		}
 
@@ -289,16 +292,57 @@ namespace nana
 			return this->get_drawer_trigger().length();
 		}
 
-		void push_back(const nana::string& text)  /// Append a new item.
+		void append(const std::string& text, window attach_wd, value_type value = {})
 		{
-			auto & t = this->get_drawer_trigger();
-			t.push_back(text, value_type());
+			this->append(static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), attach_wd);
+		}
+
+		void append(const std::wstring& text, window attach_wd, value_type value = {})
+		{
+			this->get_drawer_trigger().insert(::nana::npos, std::wstring(text), std::move(value));
+			if (attach_wd)
+			{
+				auto pos = this->get_drawer_trigger().length();
+				relate(pos, attach_wd);
+			}
+			
 			API::update_window(*this);
 		}
 
+		void push_back(nana::string text)  /// Append a new item.
+		{
+			this->get_drawer_trigger().insert(::nana::npos, std::move(text), value_type());
+			API::update_window(*this);
+		}
+
+		void insert(std::size_t pos, const std::string& text, const value_type& value = {})
+		{
+			this->insert(pos, static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), value);
+		}
+
+		void insert(std::size_t pos, const std::wstring& text, const value_type& value = {})
+		{
+			if (pos > length())
+				throw std::out_of_range("tabbar::insert invalid position");
+
+			this->get_drawer_trigger().insert(pos, std::wstring(text), value_type(value));
+			API::update_window(*this);
+		}
+
+		//deprecated from 1.2.1, removed from 1.3
 		void relate(std::size_t pos, window wd)  /// Binds a window to an item specified by pos, if the item is selected, shows the window, otherwise, hides it.
 		{
-			this->get_drawer_trigger().relate(pos, wd);
+			this->get_drawer_trigger().attach(pos, wd);
+		}
+
+		void attach(std::size_t pos, window wd)
+		{
+			this->get_drawer_trigger().attach(pos, wd);
+		}
+
+		void erase(std::size_t pos)
+		{
+			this->get_drawer_trigger().erase(pos);
 		}
 
 		void tab_bgcolor(std::size_t i, const ::nana::color& clr)
