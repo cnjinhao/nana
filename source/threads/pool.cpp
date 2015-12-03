@@ -17,8 +17,9 @@
 #include <vector>
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
-    #include <nana/std_condition_variable.hpp>
     #include <nana/std_mutex.hpp>
+    #include <nana/std_condition_variable.hpp>
+
 #else
     #include <condition_variable>
     #include <mutex>

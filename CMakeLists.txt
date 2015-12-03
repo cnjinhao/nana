@@ -4,48 +4,17 @@
 #	Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 
+# set compile  flags
+if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+
+
+# move this to the end ??
 if(BIICODE)
     # prepare BII_LIB_SRC
     set(LIB_SRC ${BII_LIB_SRC})
 
-    foreach(cpp ${BII_LIB_SRC})
-        if(${cpp} MATCHES "/detail/(win32|linux_X11)/.+$")
-            list(APPEND trash_files ${cpp})
-        endif()
-    endforeach()
-
-    list(REMOVE_ITEM BII_LIB_SRC ${trash_files})
-    
-    if(WIN32)
-        file(GLOB_RECURSE platform_files "*/detail/win32/*")
-        list(APPEND BII_LIB_SRC ${platform_files})
-    elseif(APPLE)
-	file(GLOB_RECURSE platform_files "*/detail/macos_X11/*")
-        list(APPEND BII_LIB_SRC ${platform_files})
-    elseif(UNIX)
-        file(GLOB_RECURSE platform_files "*/detail/linux_X11/*")
-        list(APPEND BII_LIB_SRC ${platform_files})
-    else()
-        message(FATAL_ERROR "Only Windows and Unix are supported for the moment (Mac OS is experimental)")
-    endif()
-
-    # set compile  flags
-    if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-    endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-
-    # we'll use the default config file so we can iliminate the following macro definitions
-    if(MSVC)
-        # More MSVC specific compilation flags
-	add_definitions(-D_SCL_SECURE_NO_WARNINGS)
-	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
-	if(MSVC14)
-		add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
-	else()
-		add_definitions(-DNOT_IMPLEMENTED_KEYWORD_noexcept)
-	endif()
-    endif()
-    
     add_biicode_targets()
     
     return()
@@ -54,69 +23,35 @@ endif()
 project(nana)
 cmake_minimum_required(VERSION 2.8)
 
-#Select platform automatically
-if(WIN32)
-	add_definitions(-DNANA_WINDOWS)
-	add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/win32/platform_spec.hpp>)
-	if(MSVC14)
-		add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
-	else()
-		add_definitions(-DNOT_IMPLEMENTED_KEYWORD_noexcept)
-	endif()
-	
-	#Test if it is MINGW
-	if(MINGW)
-		add_definitions(-DNANA_MINGW)
-		add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
-		if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-			if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.1")
-				option(NANA_THREAD_NOT_SUPPORTED "Use this flag if MinGW version is older than 4.8.1" ON)
-			endif()
-		endif()
-		if(NANA_THREAD_NOT_SUPPORTED)
-			add_definitions(-DSTD_THREAD_NOT_SUPPORTED)
-		endif()
-	endif()
-endif()
-if(APPLE)
-	add_definitions(-DNANA_MACOS)
-	add_definitions(-DNANA_X11)
-	add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/macos_X11/platform_spec.hpp>)
-	add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
-	include_directories(/opt/X11/include/)
-elseif(UNIX)
-	add_definitions(-DNANA_LINUX)
-	add_definitions(-DNANA_X11)
-	add_definitions(-DPLATFORM_SPEC_HPP=<nana/detail/linux_X11/platform_spec.hpp>)
-	add_definitions(-DSTD_CODECVT_NOT_SUPPORTED)
-endif()
-
 
 #Global MSVC definitions
 if(WIN32)
 	if(MSVC)
 		option(WIN32_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
+		# ??
 		if(WIN32_USE_MP)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 		endif()
 		
-		# More MSVC specific compilation flags
-		add_definitions(-D_SCL_SECURE_NO_WARNINGS)
-		add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 	endif(MSVC)
 endif(WIN32)
 
 
 #Unicode
-option(NANA_UNICODE "Use Unicode Character Set" ON)
-if(NANA_UNICODE)
-	add_definitions(-DNANA_UNICODE)
-	if(WIN32)
-		add_definitions(-DUNICODE -D_UNICODE)
-	endif()
+option(USE_UNICODE "Use Unicode Character Set")
+if(USE_UNICODE)
+    add_definitions(-DNANA_UNICODE)
 endif()
 
-#Find PNG
+if(APPLE)
+    add_definitions(-DAPPLE)
+    include_directories(/opt/X11/include/)
+elseif(UNIX)
+    add_definitions(-Dlinux)
+endif()
+
+
+
 if(UNIX)
     find_package(Freetype)
     if (FREETYPE_FOUND)
@@ -124,30 +59,42 @@ if(UNIX)
     endif()
 endif()
 
-option(NANA_ENABLE_PNG "Enable the use of PNG" ON)
-if(NANA_ENABLE_PNG)
-    add_definitions(-DNANA_ENABLE_PNG)
+if(WIN32)
+    add_definitions(-DWIN32)
+    if(MINGW)
+        add_definitions(-DMINGW)
+    endif()
+endif()
 
-    option(NANA_LIBPNG "Use the included libpng" ON)
-    if(NANA_LIBPNG)
-        add_definitions(-DNANA_LIBPNG)
-    else()
+#Find PNG
+option(ENABLE_PNG "Enable the use of PNG")
+option(LIBPNG_FROM_OS "Use libpng from operating system.")
+if(ENABLE_PNG)
+    add_definitions(-DNANA_ENABLE_PNG)
+    if(LIBPNG_FROM_OS)
         find_package(PNG)
         if (PNG_FOUND)
             include_directories( ${PNG_INCLUDE_DIRS})
+            add_definitions(-DUSE_LIBPNG_FROM_OS)
         endif()
     endif()
 endif()
 
-#Copy our new config.hpp (with removed defines)
-execute_process(COMMAND ${CMAKE_COMMAND} 
-    -E copy_if_different 
-    ${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/config.hpp 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/nana/)
-    
-if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+#Find JPEG
+option(ENABLE_JPEG "Enable the use of JPEG")
+option(LIBJPEG_FROM_OS "Use libjpeg from operating system.")
+if(ENABLE_JPEG)
+    add_definitions(-DNANA_ENABLE_JPEG)
+    if(LIBJPEG_FROM_OS)
+        find_package(JPEG)
+        if (JPEG_FOUND)
+            include_directories( ${JPEG_INCLUDE_DIRS})
+            add_definitions(-DUSE_LIBJPEG_FROM_OS)
+        endif()
+    endif()
+endif()
+
+
 
 set(NANA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
 set(NANA_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)

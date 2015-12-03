@@ -3667,7 +3667,7 @@ namespace nana
 
 			//class item_proxy
 				item_proxy::item_proxy(essence_t * ess)
-					:	ess_(ess)
+					:	ess_(ess)  // cat_ is nullptr, pos_ is 0,0
 				{}
 
 				item_proxy::item_proxy(essence_t * ess, const index_pair& pos)
@@ -4029,7 +4029,7 @@ namespace nana
 				//Behavior of a container
 				item_proxy cat_proxy::end() const
 				{
-					return item_proxy(ess_);
+					return item_proxy(ess_); // cat_ is nullptr, pos_ is 0,0
 				}
 
 				//Behavior of a container
