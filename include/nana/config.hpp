@@ -36,7 +36,8 @@
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 //Windows:
 	#define NANA_WINDOWS	1
-
+	#define PLATFORM_SPEC_HPP <nana/detail/win32/platform_spec.hpp>
+	
 	//Test if it is MINGW
 	#if defined(__MINGW32__) || defined(__MINGW64__)
 		#define NANA_MINGW
@@ -51,6 +52,7 @@
 	#define NANA_LINUX	1
 	#define NANA_X11	1
 	#define STD_CODECVT_NOT_SUPPORTED
+	#define PLATFORM_SPEC_HPP <nana/detail/linux_X11/platform_spec.hpp>
 #else
 #	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
 #endif
