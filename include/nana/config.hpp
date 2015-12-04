@@ -65,14 +65,12 @@
 		#define NANA_MACOS  1
 		#define NANA_X11	1
 		// how to add this:  include_directories(/opt/X11/include/)
-	// MacOS
+	// end MacOS
 
-	 // Linux:
+	 // Linux:    (not sure about __GNU__ ??)
 	#elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
-
-		//#define NANA_LINUX	1
-		//#define NANA_X11	1
-
+		#define NANA_LINUX	1
+		#define NANA_X11	1
 	// end Linux
 
 
