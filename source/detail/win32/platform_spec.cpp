@@ -11,6 +11,7 @@
  *
  *	This file provides basis class and data structrue that required by nana
  */
+
 #include <nana/detail/platform_spec_selector.hpp>
 #include <shellapi.h>
 #include <stdexcept>

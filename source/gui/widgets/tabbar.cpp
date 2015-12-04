@@ -30,6 +30,12 @@ namespace nana
 
 				::nana::color bgcolor;
 				::nana::color fgcolor;
+
+				item_t() = default;
+				
+				item_t(nana::string&& text, any && value)
+					: text(std::move(text)), value(std::move(value))
+				{}
 			};
 
 			class def_renderer
@@ -414,13 +420,13 @@ namespace nana
 					evt_agent_ = evt;
 				}
 
-				void push_back(const nana::string& text, const nana::any & value)
+				void insert(std::size_t pos, nana::string&& text, nana::any&& value)
 				{
-					item_t m;
-					m.text = text;
-					m.value = value;
-					list_.push_back(m);
-					activate(static_cast<size_t>(list_.size() - 1));
+					if (pos >= list_.size())
+						pos = list_.size();
+
+					list_.emplace(iterator_at(pos), std::move(text), std::move(value));
+					this->activate(pos);
 					render();
 				}
 
@@ -433,9 +439,13 @@ namespace nana
 				{
 					if(pos < list_.size())
 					{
-						if ((nullptr == evt_agent_) || evt_agent_->removed(pos))
+						bool close_attach = true;
+						if ((nullptr == evt_agent_) || evt_agent_->removed(pos, close_attach))
 						{
-							API::show_window(iterator_at(pos)->relative, false);
+							if (close_attach)
+								API::close_window(iterator_at(pos)->relative);
+							else
+								API::show_window(iterator_at(pos)->relative, false);
 							list_.erase(iterator_at(pos));
 							_m_adjust();
 
@@ -593,7 +603,7 @@ namespace nana
 					return basis_.active;
 				}
 
-				void relate(std::size_t pos, window wd)
+				void attach(std::size_t pos, window wd)
 				{
 					if(pos < list_.size())
 					{
@@ -1152,9 +1162,9 @@ namespace nana
 					layouter_->event_agent(evt);
 				}
 
-				void trigger::push_back(const nana::string& text, const nana::any& value)
+				void trigger::insert(std::size_t pos, nana::string&& text, nana::any&& value)
 				{
-					layouter_->push_back(text, value);
+					layouter_->insert(pos, std::move(text), std::move(value));
 				}
 
 				std::size_t trigger::length() const
@@ -1167,9 +1177,14 @@ namespace nana
 					return layouter_->toolbox_object().close_fly(fly);
 				}
 
-				void trigger::relate(std::size_t i, window wd)
+				void trigger::attach(std::size_t pos, window wd)
 				{
-					layouter_->relate(i, wd);
+					layouter_->attach(pos, wd);
+				}
+
+				void trigger::erase(std::size_t pos)
+				{
+					layouter_->erase(pos);
 				}
 
 				void trigger::tab_color(std::size_t i, bool is_bgcolor, const ::nana::color& clr)

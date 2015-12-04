@@ -95,13 +95,13 @@ namespace nana
 
 			std::string pos_str() const
 			{
-#ifdef NANA_MINGW
+#ifdef UNDEFINED_to_string
 				std::stringstream ss;
 				ss<<pos();
 				return ss.str();
 #else
 				return std::to_string(pos());
-#endif // NANA_MINGW
+#endif // UNDEFINED_to_string
 			}
 
 			token read()

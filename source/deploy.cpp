@@ -61,6 +61,13 @@ namespace std
 			*pos = (std::size_t)(end - sptr);
 		return ((int)result);
 	}
+	using ::strtof;
+	using ::strtold;
+	using ::wcstold;
+	using ::strtoll;
+	using ::wcstoll;
+	using ::strtoull;
+	using ::wcstoull;
 
 	float stof(const std::string& str, std::size_t * pos)
 	{
