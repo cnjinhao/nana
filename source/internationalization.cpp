@@ -76,17 +76,19 @@ namespace nana
 							if (escape)
 							{
 								escape = false;
+								str_ += *i;
 								continue;
 							}
 
 							if ('"' == *i)
 							{
-								str_.append(read_ptr_ + 1, i - read_ptr_ - 1);
 								read_ptr_ = i + 1;
 								reach_right_quota = true;
 								break;
 							}
-							else if ('\\' == *i)
+							else if ('\\' != *i)
+								str_ += *i;
+							else
 								escape = true;
 						}
 						_m_eat_ws();
