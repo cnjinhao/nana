@@ -12,8 +12,6 @@
  *	This file provides basis class and data structrue that required by nana
  */
 
-#if defined(NANA_WINDOWS)
-
 #include <nana/detail/platform_spec_selector.hpp>
 #include <shellapi.h>
 #include <stdexcept>
@@ -292,6 +290,3 @@ namespace detail
 	}
 }//end namespace detail
 }//end namespace nana
-
-//#if defined(NANA_WINDOWS)
-#endif
