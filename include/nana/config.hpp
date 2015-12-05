@@ -20,40 +20,9 @@
 
 		#define NANA_WINDOWS	1
 
-		// compilers in Windows...
-
-		// MSVC++ versions
-		#if defined(_MSC_VER)
-			#define _SCL_SECURE_NO_WARNNGS
-			#define _CRT_SECURE_NO_DEPRECATE
-			#pragma warning(disable : 4996)
-
-			#if (_MSC_VER == 1900)
-					 // google: break any code that tries to use codecvt<char16_t> or codecvt<char32_t>.
-					 // google: It appears the C++ libs haven't been compiled with native char16_t/char32_t support.
-					 // google: Those definitions are for codecvt<wchar_t>::id, codecvt<unsigned short>::id and codecvt<char>::id respectively.
-					 // However, the codecvt<char16_t>::id and codecvt<char32_t>::id definitions aren't there, and indeed, if you look at locale0.cpp in the CRT source code you'll see they're not defined at all.
-					 // google: That's a known issue, tracked by an active bug (DevDiv#1060849). We were able to update the STL's headers in response to char16_t/char32_t, but we still need to update the separately compiled sources.
-				#define STD_CODECVT_NOT_SUPPORTED
-			#endif // _MSC_VER == 1900
-		#endif // _MSVC
-
 		// MINGW ...
 		#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
 			#define NANA_MINGW
-        	//#define STD_THREAD_NOT_SUPPORTED // don't works? why? where __GNUC__, etc. are set? by CLion ??
-			//Use this flag if MinGW version is older than 4.8.1
-			#if ((__GNUC__ == 4) && ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 2)))
-			// don't works? why? where __GNUC__, etc. are set? by CLion ??
-				// ??
-				#define UNDEFINED_to_string
-
-				// https://github.com/meganz/mingw-std-threads
-				#define STD_THREAD_NOT_SUPPORTED
-				#define USE_github_com_meganz_mingw_std_threads
-
-			#endif
-
 		#endif // MINGW
 
 	// end Windows
@@ -85,24 +54,52 @@
 
 // compilers ...
 
-// temp
-//#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED // don't works?
-//#define STD_CODECVT_NOT_SUPPORTED
+// MSVC++ versions
+#if defined(_MSC_VER)
+	#define _SCL_SECURE_NO_WARNNGS
+	#define _CRT_SECURE_NO_DEPRECATE
+	#pragma warning(disable : 4996)
 
-	// GCC ...
-	#if defined(__GNU__)
-		#if (__GNUC__ == 4) && (__GNUC_MINOR__ == 8) && (__GNUC_PATCHLEVEL__ <= 1)
-			// don't works?
+	#if (_MSC_VER == 1900)
+		// google: break any code that tries to use codecvt<char16_t> or codecvt<char32_t>.
+		// google: It appears the C++ libs haven't been compiled with native char16_t/char32_t support.
+		// google: Those definitions are for codecvt<wchar_t>::id, codecvt<unsigned short>::id and codecvt<char>::id respectively.
+		// However, the codecvt<char16_t>::id and codecvt<char32_t>::id definitions aren't there, and indeed, if you look at locale0.cpp in the CRT source code you'll see they're not defined at all.
+		// google: That's a known issue, tracked by an active bug (DevDiv#1060849). We were able to update the STL's headers in response to char16_t/char32_t, but we still need to update the separately compiled sources.
+		#define STD_CODECVT_NOT_SUPPORTED
+	#endif // _MSC_VER == 1900
+#endif // _MSVC
 
-			//GCC 4.7.0 does not implement the <codecvt> and codecvt_utfx classes  ??
-			#define STD_CODECVT_NOT_SUPPORTED
+//GCC
+#if defined(__GNUC__)
+	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
+		//<codecvt> is a known issue on libstdc++, it works on libc++
+		#define STD_CODECVT_NOT_SUPPORTED
+	#endif
 
-			//Some functions which are specified in 21.5 Numeric conversions in Strings library have not yet implemented
+	#if (__GNUC__ == 4)
+		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
+			#define STD_THREAD_NOT_SUPPORTED
 
-			//Implement workarounds for GCC/MinGW which version is below 4.8.2
+			//boost.thread is preferred
+			//but if USE_github_com_meganz_mingw_std_threads is enabled,
+			//boost.thread will be replaced with meganz's mingw-std-threads.
+			// https://github.com/meganz/mingw-std-threads
+			//#define USE_github_com_meganz_mingw_std_threads
+		#endif
+
+		#if defined(NANA_MINGW)
+			//It's a known issue under MinGW
 			#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 		#endif
-	#endif // GCC
+
+		#if ((__GNUC_MINOR__ < 8) || defined(NANA_MINGW))
+			#define STD_TO_STRING_NOT_SUPPORTED
+		#endif
+	#endif
+#endif
+
+
 // End compilers ...
 
 
