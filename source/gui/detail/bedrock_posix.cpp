@@ -11,6 +11,7 @@
  */
 
 #include <nana/detail/platform_spec_selector.hpp>
+#if defined(NANA_POSIX) && defined(NANA_X11)
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
@@ -1399,3 +1400,4 @@ namespace detail
 	}
 }//end namespace detail
 }//end namespace nana
+#endif //NANA_POSIX && NANA_X11
