@@ -605,60 +605,60 @@ namespace nana
 
 				void attach(std::size_t pos, window wd)
 				{
-					if(pos < list_.size())
-					{
-						iterator_at(pos)->relative = wd;
-						API::show_window(wd, basis_.active == pos);
-					}
+					if (pos >= list_.size())
+						throw std::out_of_range("tabbar: invalid position");
+
+					API::show_window(wd, basis_.active == pos);
 				}
 
 				bool tab_color(std::size_t pos, bool is_bgcolor, const ::nana::color& clr)
 				{
-					if(pos < list_.size())
+					if (pos >= list_.size())
+						throw std::out_of_range("tabbar: invalid position");
+
+					auto & m = *iterator_at(pos);
+					auto & m_clr = (is_bgcolor ? m.bgcolor : m.fgcolor);
+					if (m_clr != clr)
 					{
-						auto & m = *iterator_at(pos);
-						auto & m_clr = (is_bgcolor ? m.bgcolor : m.fgcolor);
-						if (m_clr != clr)
-						{
-							m_clr = clr;
-							return true;
-						}
+						m_clr = clr;
+						return true;
 					}
 					return false;
 				}
 
-				bool tab_image(std::size_t pos, const nana::paint::image& img)
+				void tab_image(std::size_t pos, const nana::paint::image& img)
 				{
-					if(pos > list_.size()) return false;
+					if (pos >= list_.size())
+						throw std::out_of_range("tabbar: invalid position");
 
 					auto & m = *iterator_at(pos);
 					if(img)
 						m.img = img;
 					else
 						m.img.close();
-					return true;
 				}
 
 				bool text(std::size_t pos, const nana::string& str)
 				{
-					if(pos < list_.size())
+					if (pos >= list_.size())
+						throw std::out_of_range("tabbar: invalid position");
+
+					auto & m = *iterator_at(pos);
+					if(m.text != str)
 					{
-						auto & m = *iterator_at(pos);
-						if(m.text != str)
-						{
-							m.text = str;
-							return true;
-						}
+						m.text = str;
+						return true;
 					}
+
 					return false;
 				}
 
 				nana::string text(std::size_t pos) const
 				{
-					if(pos < list_.size())
-						return iterator_at(pos)->text;
+					if (pos >= list_.size())
+						throw std::out_of_range("tabbar: invalid position");
 
-					return nana::string();
+					return iterator_at(pos)->text;
 				}
 
 				bool toolbox_answer(const arg_mouse& arg)
@@ -1195,8 +1195,8 @@ namespace nana
 
 				void trigger::tab_image(std::size_t i, const nana::paint::image& img)
 				{
-					if(layouter_->tab_image(i, img))
-						API::refresh_window(layouter_->widget_handle());
+					layouter_->tab_image(i, img);
+					API::refresh_window(layouter_->widget_handle());
 				}
 
 				void trigger::text(std::size_t i, const nana::string& str)

@@ -69,8 +69,13 @@
 	#endif // _MSC_VER == 1900
 #endif // _MSVC
 
-//GCC
-#if defined(__GNUC__)
+#if defined(__clang__)
+	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
+		//<codecvt> is a known issue on libstdc++, it works on libc++
+		#define STD_CODECVT_NOT_SUPPORTED
+	#endif
+
+#elif defined(__GNUC__) //GCC
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
@@ -97,6 +102,7 @@
 		#endif
 	#endif
 #endif
+
 
 
 // End compilers ...

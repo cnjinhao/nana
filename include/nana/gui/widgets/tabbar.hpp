@@ -228,18 +228,6 @@ namespace nana
 			this->create(wd, rectangle(), visible);
 		}
 
-		tabbar(window wd, const nana::char_t* text, bool visible)
-			: tabbar(wd, ::nana::string(text), visible)
-		{
-		}
-
-		tabbar(window wd, const nana::string& text, bool visible)
-			: tabbar()
-		{
-			this->create(wd, rectangle(), visible);
-			this->caption(text);
-		}
-
 		tabbar(window wd, const rectangle& r = rectangle(), bool visible = true)
 			: tabbar()
 		{
@@ -256,7 +244,7 @@ namespace nana
 			return static_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
 		}
 
-		void activate(std::size_t pos)                  /// Activates a tab specified by i.
+		void activated(std::size_t pos)                  /// Activates a tab specified by pos.
 		{
 			this->get_drawer_trigger().activate(pos);
 		}
@@ -266,9 +254,9 @@ namespace nana
 			return this->get_drawer_trigger().activated();
 		}
 
-		value_type & at(std::size_t i) const        /// Returns i'th element
+		value_type & at(std::size_t pos) const        /// Returns pos'th element
 		{
-			return static_cast<value_type&>(this->get_drawer_trigger().at(i));
+			return static_cast<value_type&>(this->get_drawer_trigger().at(pos));
 		}
 
 		void close_fly(bool fly)                    /// Draw or not a close button in each tab.
@@ -277,12 +265,12 @@ namespace nana
 				API::refresh_window(this->handle());
 		}
 
-		pat::cloneable<item_renderer>& ext_renderer() const
+		pat::cloneable<item_renderer>& renderer() const
 		{
 			return this->get_drawer_trigger().ext_renderer();
 		}
 
-		void ext_renderer(const pat::cloneable<item_renderer>& ir)
+		void renderer(const pat::cloneable<item_renderer>& ir)
 		{
 			this->get_drawer_trigger().ext_renderer(ir);
 		}
@@ -292,14 +280,14 @@ namespace nana
 			return this->get_drawer_trigger().length();
 		}
 
-		void append(const std::string& text, window attach_wd, value_type value = {})
+		tabbar& append(std::string text, window attach_wd, value_type value = {})
 		{
-			this->append(static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), attach_wd);
+			return this->append(static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), attach_wd);
 		}
 
-		void append(const std::wstring& text, window attach_wd, value_type value = {})
+		tabbar& append(std::wstring text, window attach_wd, value_type value = {})
 		{
-			this->get_drawer_trigger().insert(::nana::npos, std::wstring(text), std::move(value));
+			this->get_drawer_trigger().insert(::nana::npos, std::move(text), std::move(value));
 			if (attach_wd)
 			{
 				auto pos = this->get_drawer_trigger().length();
@@ -307,6 +295,7 @@ namespace nana
 			}
 			
 			API::update_window(*this);
+			return *this;
 		}
 
 		void push_back(nana::string text)  /// Append a new item.
@@ -315,17 +304,17 @@ namespace nana
 			API::update_window(*this);
 		}
 
-		void insert(std::size_t pos, const std::string& text, const value_type& value = {})
+		void insert(std::size_t pos, std::string text, value_type value = {})
 		{
-			this->insert(pos, static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), value);
+			return this->insert(pos, static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), std::move(value));
 		}
 
-		void insert(std::size_t pos, const std::wstring& text, const value_type& value = {})
+		void insert(std::size_t pos, std::wstring text, value_type value = {})
 		{
 			if (pos > length())
 				throw std::out_of_range("tabbar::insert invalid position");
 
-			this->get_drawer_trigger().insert(pos, std::wstring(text), value_type(value));
+			this->get_drawer_trigger().insert(pos, std::move(text), std::move(value));
 			API::update_window(*this);
 		}
 
@@ -345,19 +334,19 @@ namespace nana
 			this->get_drawer_trigger().erase(pos);
 		}
 
-		void tab_bgcolor(std::size_t i, const ::nana::color& clr)
+		void tab_bgcolor(std::size_t pos, const ::nana::color& clr)
 		{
-			this->get_drawer_trigger().tab_color(i, true, clr);
+			this->get_drawer_trigger().tab_color(pos, true, clr);
 		}
 
-		void tab_fgcolor(std::size_t i, const ::nana::color& clr)
+		void tab_fgcolor(std::size_t pos, const ::nana::color& clr)
 		{
-			this->get_drawer_trigger().tab_color(i, false, clr);
+			this->get_drawer_trigger().tab_color(pos, false, clr);
 		}
 
-		void tab_image(std::size_t i, const nana::paint::image& img)
+		void tab_image(std::size_t pos, const nana::paint::image& img)
 		{
-			this->get_drawer_trigger().tab_image(i, img);
+			this->get_drawer_trigger().tab_image(pos, img);
 		}
         /// Sets buttons of the tabbar's toolbox, refer to notes for more details.
 		template<typename Add, typename Scroll, typename List, typename Close>
