@@ -19,7 +19,7 @@
 #include <map>
 #include <memory>
 
-#if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
+#if defined(STD_THREAD_NOT_SUPPORTED)
     #include <nana/std_mutex.hpp>
 #else
     #include <mutex>

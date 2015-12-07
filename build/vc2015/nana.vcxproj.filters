@@ -37,17 +37,11 @@
     <Filter Include="Source Files\audio\detail">
       <UniqueIdentifier>{b3023f5e-2759-409d-b6e8-5ef2fe6601ae}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\detail\win32">
-      <UniqueIdentifier>{2ce139f3-ef8e-48b7-a82a-68003eac75da}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\gui\detail">
       <UniqueIdentifier>{b9f9a5a8-fd1a-4b99-b530-d8a4c45e62ec}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\gui\widgets">
       <UniqueIdentifier>{4b04c197-4a1e-41f9-bfa3-d82c18bcad51}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\gui\detail\win32">
-      <UniqueIdentifier>{cd6e7f3f-fe5b-44c6-ae8d-15554f926055}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\gui\widgets\skeletons">
       <UniqueIdentifier>{60f588f2-bdb9-4b1d-9e23-40a73f327283}</UniqueIdentifier>
@@ -93,9 +87,6 @@
     <ClCompile Include="..\..\source\audio\player.cpp">
       <Filter>Source Files\audio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp">
-      <Filter>Source Files\detail\win32</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\filesystem\file_iterator.cpp">
       <Filter>Source Files\filesystem</Filter>
     </ClCompile>
@@ -131,9 +122,6 @@
     </ClCompile>
     <ClCompile Include="..\..\source\gui\detail\window_manager.cpp">
       <Filter>Source Files\gui\detail</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\gui\detail\win32\bedrock.cpp">
-      <Filter>Source Files\gui\detail\win32</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\gui\widgets\skeletons\text_editor.cpp">
       <Filter>Source Files\gui\widgets\skeletons</Filter>
@@ -293,6 +281,12 @@
     </ClCompile>
     <ClCompile Include="..\..\source\paint\text_renderer.cpp">
       <Filter>Source Files\paint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\detail\platform_spec_windows.cpp">
+      <Filter>Source Files\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp">
+      <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

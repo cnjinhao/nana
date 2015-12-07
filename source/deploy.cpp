@@ -61,6 +61,13 @@ namespace std
 			*pos = (std::size_t)(end - sptr);
 		return ((int)result);
 	}
+	using ::strtof;
+	using ::strtold;
+	using ::wcstold;
+	using ::strtoll;
+	using ::wcstoll;
+	using ::strtoull;
+	using ::wcstoull;
 
 	float stof(const std::string& str, std::size_t * pos)
 	{
@@ -286,6 +293,74 @@ namespace std
 		if (pos)
 			*pos = (std::size_t)(end - ptr);
 		return result;
+	}
+}//end namespace std
+#endif //STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
+
+#ifdef STD_TO_STRING_NOT_SUPPORTED
+namespace std
+{
+	std::string to_string(double v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(long double v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(unsigned v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(int v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(long v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(unsigned long v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(long long v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(unsigned long long v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
+	}
+
+	std::string to_string(float v)
+	{
+		std::stringstream ss;
+		ss << v;
+		return ss.str();
 	}
 
 	std::wstring to_wstring(double v)

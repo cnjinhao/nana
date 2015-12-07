@@ -373,7 +373,7 @@ namespace nana{	namespace drawerbase
 		{
 			arg_click arg;
 			arg.window_handle = wdg_->handle();
-			arg.by_mouse = false;
+			arg.mouse_args = nullptr;
 			API::emit_event(event_code::click, arg.window_handle, arg);
 		}
 

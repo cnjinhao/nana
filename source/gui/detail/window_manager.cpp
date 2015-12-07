@@ -463,10 +463,10 @@ namespace detail
 			}
 		}
 
-		void window_manager::default_icon(const nana::paint::image& small, const nana::paint::image& big)
+		void window_manager::default_icon(const nana::paint::image& _small, const nana::paint::image& big)
 		{
 			impl_->default_icon_big = big;
-			impl_->default_icon_small = small;
+			impl_->default_icon_small = _small;
 		}
 
 		void window_manager::icon(core_window_t* wd, const paint::image& small_icon, const paint::image& big_icon)

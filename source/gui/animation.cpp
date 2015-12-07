@@ -21,7 +21,7 @@
 #include <map>
 #include <algorithm>
 
-#if defined(NANA_MINGW) && defined(STD_THREAD_NOT_SUPPORTED)
+#if defined(STD_THREAD_NOT_SUPPORTED)
     #include <nana/std_thread.hpp>
     #include <nana/std_mutex.hpp>
     #include <nana/std_condition_variable.hpp>
@@ -29,7 +29,7 @@
     #include <mutex>
     #include <condition_variable>
     #include <thread>
-#endif //NANA_MINGW
+#endif // STD_THREAD_NOT_SUPPORTED
 
 namespace nana
 {

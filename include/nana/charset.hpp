@@ -1,3 +1,17 @@
+/**
+ *	The charset Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file: nana/charset.hpp
+ *
+ *
+ */
+
 #ifndef NANA_CHARSET_HPP
 #define NANA_CHARSET_HPP
 #include <string>
@@ -13,6 +27,7 @@ namespace nana
 	{
 		class charset_encoding_interface;
 	}
+
 	/// An intelligent charset class for character code conversion.
 	class charset
 	{

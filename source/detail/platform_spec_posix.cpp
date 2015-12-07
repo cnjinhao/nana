@@ -13,7 +13,9 @@
  *
  *	http://standards.freedesktop.org/clipboards-spec/clipboards-0.1.txt
  */
+
 #include <nana/detail/platform_spec_selector.hpp>
+#if defined(NANA_POSIX) && defined(NANA_X11)
 #include <X11/Xlocale.h>
 #include <locale>
 #include <map>
@@ -27,7 +29,7 @@
 #include <errno.h>
 #include <sstream>
 
-#include "msg_dispatcher.hpp"
+#include "x11/msg_dispatcher.hpp"
 
 namespace nana
 {
@@ -1411,3 +1413,4 @@ namespace detail
 	}
 }//end namespace detail
 }//end namespace nana
+#endif //NANA_POSIX && NANA_X11
