@@ -38,8 +38,8 @@ namespace filesystem
 		fileinfo();
 #ifdef NANA_WINDOWS
 		fileinfo(const WIN32_FIND_DATA& wfd);
-#elif NANA_LINUX or NANA_MACOS
-		fileinfo(const ::std::string& filename, const struct stat &);
+#elif defined(NANA_POSIX)
+		fileinfo(const nana::string& filename, const struct stat &);
 #endif
 		::std::string name;
 

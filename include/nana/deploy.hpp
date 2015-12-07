@@ -56,8 +56,23 @@ namespace std
 	//Workaround for no implemenation of std::stoull in MinGW.
 	unsigned long long stoull(const std::string&, std::size_t* pos = nullptr, int base = 10);
 	unsigned long long stoull(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
+}
+#endif //STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 
-	//Workaround for no implemenation of std::to_wstring in MinGW.
+#ifdef STD_TO_STRING_NOT_SUPPORTED
+namespace std
+{
+	//Workaround for no implemenation of std::to_string/std::to_wstring in MinGW.
+	std::string to_string(long double);
+	std::string to_string(double);
+	std::string to_string(unsigned);
+	std::string to_string(int);
+	std::string to_string(long);
+	std::string to_string(unsigned long);
+	std::string to_string(long long);
+	std::string to_string(unsigned long long);
+	std::string to_string(float);
+	
 	std::wstring to_wstring(long double);
 	std::wstring to_wstring(double);
 	std::wstring to_wstring(unsigned);

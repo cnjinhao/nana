@@ -11,6 +11,7 @@
  */
 
 #include <nana/detail/platform_spec_selector.hpp>
+#if defined(NANA_POSIX) && defined(NANA_X11)
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
@@ -468,8 +469,8 @@ namespace detail
 		arg.right_button	= ((Button2Mask & mask_state) != 0) || (::nana::mouse::right_button == arg.button);
 		arg.mid_button		= ((Button3Mask & mask_state) != 0) || (::nana::mouse::middle_button == arg.button);
 		arg.alt		= ((Mod1Mask & mask_state) != 0);
-		arg.shift	= ги(ShiftMask & mask_state) != 0);
-		arg.ctrl	= ги(ControlMask & mask_state) != 0);
+		arg.shift	= ((ShiftMask & mask_state) != 0);
+		arg.ctrl	= ((ControlMask & mask_state) != 0);
 
 	}
 
@@ -833,7 +834,7 @@ namespace detail
 								msgwnd->flags.action = mouse_action::over;
 
 								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
-								emit_drawer(&drawer::click, msgwnd, arg, &context);
+								emit_drawer(&drawer::click, msgwnd, click_arg, &context);
 							}
 						}
 					
@@ -1399,3 +1400,4 @@ namespace detail
 	}
 }//end namespace detail
 }//end namespace nana
+#endif //NANA_POSIX && NANA_X11

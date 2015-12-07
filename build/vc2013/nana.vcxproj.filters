@@ -25,9 +25,6 @@
     <Filter Include="Source Files\nana\detail">
       <UniqueIdentifier>{e2569be2-9e68-477d-8b59-e248595de6c7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\nana\detail\win32">
-      <UniqueIdentifier>{52ed7f8e-fa48-495e-af1f-4df013205a35}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\nana\filesystem">
       <UniqueIdentifier>{87d14798-9015-4162-b9ab-72c741cff063}</UniqueIdentifier>
     </Filter>
@@ -36,9 +33,6 @@
     </Filter>
     <Filter Include="Source Files\nana\gui\detail">
       <UniqueIdentifier>{85c9c1bb-d87b-4481-bf3c-7425f680a12d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\nana\gui\detail\win32">
-      <UniqueIdentifier>{8058b530-86ec-4d72-890d-345aa30db056}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\nana\gui\widgets">
       <UniqueIdentifier>{87b124cb-408d-460b-a81b-8a788bbae0d9}</UniqueIdentifier>
@@ -114,9 +108,6 @@
     <ClCompile Include="..\..\source\audio\player.cpp">
       <Filter>Source Files\nana\audio</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\detail\win32\platform_spec.cpp">
-      <Filter>Source Files\nana\detail\win32</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp">
       <Filter>Source Files\nana\filesystem</Filter>
     </ClCompile>
@@ -125,9 +116,6 @@
     </ClCompile>
     <ClCompile Include="..\..\source\filesystem\fs_utility.cpp">
       <Filter>Source Files\nana\filesystem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\gui\detail\win32\bedrock.cpp">
-      <Filter>Source Files\nana\gui\detail\win32</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\gui\detail\basic_window.cpp">
       <Filter>Source Files\nana\gui\detail</Filter>
@@ -338,6 +326,12 @@
     </ClCompile>
     <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp">
       <Filter>Source Files\nana\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\detail\platform_spec_windows.cpp">
+      <Filter>Source Files\nana\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp">
+      <Filter>Source Files\nana\gui\detail</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
