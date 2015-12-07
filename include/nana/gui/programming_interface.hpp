@@ -113,7 +113,7 @@ namespace API
 		private:
 			bool _m_enum_fn(::nana::widget* wd) override
 			{
-				return _m_enum_call<Widget>(wd, nullptr);
+				return _m_enum_call<Widget>(wd);
 			}
 
 			template<typename T, typename std::enable_if<std::is_same<::nana::widget, T>::value>::type* = nullptr>

@@ -5,6 +5,8 @@ Thumbs.db
 bii/build/*
 bii/cmake/*
 bii/deps/*
+build/vc2013-bkl/*
+build/makefile-bkl/*
 *.obj
 *.exe
 *.pdb
@@ -38,3 +40,4 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 *.DS_Store
+.idea/

@@ -15,6 +15,7 @@
 #include <cmath>
 #include <map>
 #include <deque>
+#include <nana/deploy.hpp>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
 #include <nana/gui/widgets/label.hpp>
@@ -95,13 +96,7 @@ namespace nana
 
 			std::string pos_str() const
 			{
-#ifdef NANA_MINGW
-				std::stringstream ss;
-				ss<<pos();
-				return ss.str();
-#else
 				return std::to_string(pos());
-#endif // NANA_MINGW
 			}
 
 			token read()

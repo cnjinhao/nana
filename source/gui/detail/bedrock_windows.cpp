@@ -12,6 +12,7 @@
  */
 
 #include <nana/detail/platform_spec_selector.hpp>
+#if defined(NANA_WINDOWS)
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
@@ -536,6 +537,7 @@ namespace detail
 		{
 			arg.pos.x = pmdec.mouse.x - wd->pos_root.x;
 			arg.pos.y = pmdec.mouse.y - wd->pos_root.y;
+			arg.alt = (::GetKeyState(VK_MENU) < 0);
 			arg.shift = pmdec.mouse.button.shift;
 			arg.ctrl = pmdec.mouse.button.ctrl;
 			arg.left_button = pmdec.mouse.button.left;
@@ -1001,20 +1003,22 @@ namespace detail
 				{
 					auto retain = msgwnd->together.events_ptr;
 
-					nana::arg_mouse arg;
+					::nana::arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 
-					bool fire_click = false;
+					::nana::arg_click click_arg;
+
+					//the window_handle of click_arg is used as a flag to determinate whether to emit click event
+					click_arg.window_handle = nullptr;
+					click_arg.mouse_args = &arg;
+
 					if (msgwnd->dimension.is_hit(arg.pos))
 					{
 						msgwnd->flags.action = mouse_action::over;
 						if (::nana::mouse::left_button == arg.button)
 						{
-							arg_click arg;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
-							arg.by_mouse = true;
-							emit_drawer(&drawer::click, msgwnd, arg, &context);
-							fire_click = true;
+							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+							emit_drawer(&drawer::click, msgwnd, click_arg, &context);
 						}
 					}
 
@@ -1024,13 +1028,8 @@ namespace detail
 						arg.evt_code = event_code::mouse_up;
 						emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
 
-						if (fire_click)
-						{
-							arg_click arg;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
-							arg.by_mouse = true;
-							retain->click.emit(arg);
-						}
+						if (click_arg.window_handle)
+							retain->click.emit(click_arg);
 
 						if (brock.wd_manager().available(msgwnd))
 						{
@@ -1038,13 +1037,9 @@ namespace detail
 							retain->mouse_up.emit(arg);
 						}
 					}
-					else if (fire_click)
-					{
-						arg_click arg;
-						arg.window_handle = reinterpret_cast<window>(msgwnd);
-						arg.by_mouse = true;
-						retain->click.emit(arg);
-					}
+					else if (click_arg.window_handle)
+						retain->click.emit(click_arg);
+
 					brock.wd_manager().do_lazy_refresh(msgwnd, false);
 				}
 				pressed_wd = nullptr;
@@ -1900,3 +1895,4 @@ namespace detail
 	}
 }//end namespace detail
 }//end namespace nana
+#endif //NANA_WINDOWS

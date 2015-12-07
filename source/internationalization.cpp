@@ -14,9 +14,14 @@
 #include <nana/gui/widgets/widget.hpp>
 #include <unordered_map>
 #include <fstream>
-#include <sstream>
-#include <memory>
+
+#if defined(STD_THREAD_NOT_SUPPORTED)
+#include <nana/std_mutex.hpp>
+#else
 #include <mutex>
+#endif
+
+
 #include <map>
 
 namespace nana
@@ -71,16 +76,20 @@ namespace nana
 							if (escape)
 							{
 								escape = false;
+								str_ += *i;
 								continue;
 							}
 
 							if ('"' == *i)
 							{
-								str_.append(read_ptr_ + 1, i - read_ptr_ - 1);
 								read_ptr_ = i + 1;
 								reach_right_quota = true;
 								break;
 							}
+							else if ('\\' != *i)
+								str_ += *i;
+							else
+								escape = true;
 						}
 						_m_eat_ws();
 						if (read_ptr_ == end_ptr_ || '"' != *read_ptr_)
@@ -261,9 +270,10 @@ namespace nana
 			{
 				auto result = mgr.table.emplace(wd, std::move(eval));
 				result.first->second.destroy = nana::API::events(wd).destroy([wd]{
-					auto & mgr = get_eval_manager();
-					std::lock_guard<std::recursive_mutex> lock(mgr.mutex);
-					mgr.table.erase(wd);
+					auto & eval_mgr = get_eval_manager();
+					std::lock_guard<std::recursive_mutex> lockgd(eval_mgr.mutex);
+
+					eval_mgr.table.erase(wd);
 				});
 			}
 			else

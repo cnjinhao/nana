@@ -106,7 +106,7 @@ namespace detail
 		//@brief:	Delete window handle, the handle type must be a root and a frame.
 		void destroy_handle(core_window_t*);
 
-		void default_icon(const paint::image& small_icon, const paint::image& big_icon);
+		void default_icon(const paint::image& _small_icon, const paint::image& big_icon);
 		void icon(core_window_t*, const paint::image& small_icon, const paint::image& big_icon);
 
 		//show
