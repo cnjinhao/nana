@@ -3139,7 +3139,7 @@ namespace nana
 									graph->set_text_color(cell_txtcolor);
 									graph->string(point{ item_xpos + content_pos, y + txtoff }, m_cell.text); // draw full text of the cell index (column)
 
-									if (ts.width + static_cast<unsigned>(content_pos) > header.pixels)             // it was an excess
+									if (static_cast<int>(ts.width) > static_cast<int>(header.pixels) - (content_pos + item_xpos))	// it was an excess
 									{
 										//The text is painted over the next subitem                // here beging the ...
 										int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);
@@ -3148,8 +3148,8 @@ namespace nana
 										graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
 										graph->string(point{ xpos, y + 2 }, STR("..."));
 
-										//Erase the part that over the next subitem.
-										if (display_order + 1 < seqs.size())      // this is not the last column
+										//Erase the part that over the next subitem only if the right of column is less than right of listbox
+										if (item_xpos + content_pos < content_r.right() - static_cast<int>(header.pixels))
 										{
 											graph->set_color(bgcolor);       // we need to erase the excess, because some cell may not draw text over
 											graph->rectangle(rectangle{ item_xpos + static_cast<int>(header.pixels), y + 2,
