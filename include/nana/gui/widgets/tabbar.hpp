@@ -287,12 +287,12 @@ namespace nana
 
 		tabbar& append(std::wstring text, window attach_wd, value_type value = {})
 		{
+			if (attach_wd && API::empty_window(attach_wd))
+				throw std::invalid_argument("tabbar.attach: invalid window handle");
+
 			this->get_drawer_trigger().insert(::nana::npos, std::move(text), std::move(value));
 			if (attach_wd)
-			{
-				auto pos = this->get_drawer_trigger().length();
-				relate(pos, attach_wd);
-			}
+				this->attach(this->get_drawer_trigger().length() - 1, attach_wd);
 			
 			API::update_window(*this);
 			return *this;
@@ -324,9 +324,12 @@ namespace nana
 			this->get_drawer_trigger().attach(pos, wd);
 		}
 
-		void attach(std::size_t pos, window wd)
+		void attach(std::size_t pos, window attach_wd)
 		{
-			this->get_drawer_trigger().attach(pos, wd);
+			if (attach_wd && API::empty_window(attach_wd))
+				throw std::invalid_argument("tabbar.attach: invalid window handle");
+
+			this->get_drawer_trigger().attach(pos, attach_wd);
 		}
 
 		void erase(std::size_t pos)

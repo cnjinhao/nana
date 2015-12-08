@@ -608,6 +608,7 @@ namespace nana
 					if (pos >= list_.size())
 						throw std::out_of_range("tabbar: invalid position");
 
+					iterator_at(pos)->relative = wd;
 					API::show_window(wd, basis_.active == pos);
 				}
 
