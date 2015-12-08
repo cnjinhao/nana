@@ -24,12 +24,12 @@ namespace nana
 		//class window_layout
 			void window_layout::paint(core_window_t* wd, bool is_redraw, bool is_child_refreshed)
 			{
-				if (wd->flags.refreshing || wd->drawer.graphics.empty())
+				if (wd->flags.refreshing)
 					return;
 
 				if (nullptr == wd->effect.bground)
 				{
-					if (is_redraw)
+					if (is_redraw && (!wd->drawer.graphics.empty()))
 					{
 						wd->flags.refreshing = true;
 						wd->drawer.refresh();
@@ -305,7 +305,10 @@ namespace nana
 
 			void window_layout::_m_paint_glass_window(core_window_t* wd, bool is_redraw, bool is_child_refreshed, bool called_by_notify, bool notify_other)
 			{
-				if (wd->flags.refreshing && is_redraw) return;
+				//A window which has an empty graphics(and lite-widget) does not notify
+				//glass windows for updating their background.
+				if ((wd->flags.refreshing && is_redraw) || wd->drawer.graphics.empty())
+					return;
 
 				nana::rectangle vr;
 				if (read_visual_rectangle(wd, vr))

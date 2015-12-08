@@ -2006,23 +2006,50 @@ namespace nana
 
 				void adjust_scroll_value()
 				{
+					const auto graph_size = graph->size();
 					if(scroll.h.empty() == false)
 					{
-						unsigned width = 4 + (scroll.v.empty() ? 0 : scroll.scale - 1);
-						if(width >= graph->width()) return;
-						scroll.h.amount(header.pixels());
-						scroll.h.range(graph->width() - width);
+						const auto ext_px = (4 + (scroll.v.empty() ? 0 : scroll.scale - 1));
+						if (ext_px > graph_size.width)
+							return;
+
+						const auto header_px = header.pixels();
+						const unsigned window_px = graph_size.width - (4 + (scroll.v.empty() ? 0 : scroll.scale - 1));
+						
+						if (header_px < window_px + scroll.offset_x)
+						{
+							scroll.offset_x = header_px - window_px;
+						}
+
+						scroll.h.amount(header_px);
+						scroll.h.range(window_px);
 						scroll.h.value(scroll.offset_x);
 						scroll.h.step(graph->text_extent_size(L"W").width);
 					}
 
 					if(scroll.v.empty() == false)
 					{
-						unsigned height = 2 + (scroll.h.empty() ? 0 : scroll.scale);
-						if(height >= graph->height()) return;
+						const auto ext_px = 2 + (scroll.h.empty() ? 0 : scroll.scale);
+						if (ext_px >= graph_size.height)
+							return;
+
+						const auto items = lister.the_number_of_expanded();
+						const auto disp_items = number_of_lister_items(false);
+
+						size_type off = lister.distance({ 0, 0 }, scroll.offset_y_dpl);
+
+						if (items < disp_items + off)
+						{
+							index_pair pos;
+							if (lister.forward({ 0, 0 }, items - disp_items, pos))
+							{
+								off = items - disp_items;
+								set_scroll_y_dpl(pos);
+							}
+						}
+
 						scroll.v.amount(lister.the_number_of_expanded());
 						scroll.v.range(number_of_lister_items(false));
-                        size_type off = lister.distance({0,0}, scroll.offset_y_dpl );
 						scroll.v.value(off);
 					}
 				}
@@ -3139,7 +3166,7 @@ namespace nana
 									graph->set_text_color(cell_txtcolor);
 									graph->string(point{ item_xpos + content_pos, y + txtoff }, m_cell.text); // draw full text of the cell index (column)
 
-									if (ts.width + static_cast<unsigned>(content_pos) > header.pixels)             // it was an excess
+									if (static_cast<int>(ts.width) > static_cast<int>(header.pixels) - (content_pos + item_xpos))	// it was an excess
 									{
 										//The text is painted over the next subitem                // here beging the ...
 										int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->suspension_width);
@@ -3148,8 +3175,8 @@ namespace nana
 										graph->rectangle(rectangle{ xpos, y + 2, essence_->suspension_width, essence_->item_size - 4 }, true);
 										graph->string(point{ xpos, y + 2 }, STR("..."));
 
-										//Erase the part that over the next subitem.
-										if (display_order + 1 < seqs.size())      // this is not the last column
+										//Erase the part that over the next subitem only if the right of column is less than right of listbox
+										if (item_xpos + content_pos < content_r.right() - static_cast<int>(header.pixels))
 										{
 											graph->set_color(bgcolor);       // we need to erase the excess, because some cell may not draw text over
 											graph->rectangle(rectangle{ item_xpos + static_cast<int>(header.pixels), y + 2,
