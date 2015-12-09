@@ -241,7 +241,7 @@ namespace nana
 		void _m_caption(native_string_type&& str) override
 		{
 			this->get_drawer_trigger().path(to_utf8(str));
-			API::dev::window_caption(*this, to_native_string(this->get_drawer_trigger().path()) );
+			API::dev::window_caption(*this, to_nstring(this->get_drawer_trigger().path()) );
 		}
 	};
 }//end namespace nana
