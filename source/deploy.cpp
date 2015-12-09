@@ -508,42 +508,84 @@ namespace nana
 	}
 
 #if defined(NANA_WINDOWS)
-	const detail::native_string_type to_native_string(const std::string& text)
+	std::string to_osmbstr(const std::string& text_utf8)
+	{
+		return ::nana::charset(text_utf8, ::nana::unicode::utf8);
+	}
+#else
+	std::string to_osmbstr(std::string text_utf8)
+	{
+		return text_utf8;
+	}
+#endif
+
+#if defined(NANA_WINDOWS)
+	const detail::native_string_type to_nstring(const std::string& text)
 	{
 		return ::nana::charset(text, ::nana::unicode::utf8);
 	}
 
-	const detail::native_string_type& to_native_string(const std::wstring& text)
+	const detail::native_string_type& to_nstring(const std::wstring& text)
 	{
 		return text;
 	}
 
-	detail::native_string_type to_native_string(int n)
+	detail::native_string_type to_nstring(std::string&& text)
+	{
+		return ::nana::charset(text, ::nana::unicode::utf8);
+	}
+
+	detail::native_string_type&& to_nstring(std::wstring&& text)
+	{
+		return std::move(text);
+	}
+
+	detail::native_string_type to_nstring(int n)
 	{
 		return std::to_wstring(n);
 	}
 
-	detail::native_string_type to_native_string(double d)
+	detail::native_string_type to_nstring(double d)
+	{
+		return std::to_wstring(d);
+	}
+
+	detail::native_string_type to_nstring(std::size_t d)
 	{
 		return std::to_wstring(d);
 	}
 #else	//POSIX
-	const detail::native_string_type& to_native_string(const std::string& text)
+	const detail::native_string_type& to_nstring(const std::string& text)
 	{
 		return text;
 	}
 
-	const detail::native_string_type to_native_string(const std::wstring& text)
+	const detail::native_string_type to_nstring(const std::wstring& text)
 	{
 		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
 	}
 
-	detail::native_string_type to_native_string(int n)
+	detail::native_string_type&& to_nstring(std::string&& text)
+	{
+		return std::move(text);
+	}
+
+	detail::native_string_type to_nstring(std::wstring&& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+	detail::native_string_type to_nstring(int n)
 	{
 		return std::to_string(n);
 	}
 
-	detail::native_string_type to_native_string(double d)
+	detail::native_string_type to_nstring(double d)
+	{
+		return std::to_string(d);
+	}
+
+	detail::native_string_type to_nstring(std::size_t d)
 	{
 		return std::to_string(d);
 	}

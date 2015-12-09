@@ -682,7 +682,7 @@ namespace nana
 		internal_scope_guard lock;
 		auto editor = get_drawer_trigger().impl()->editor();
 		if (editor)
-			return to_native_string(editor->text());
+			return to_nstring(editor->text());
 		return native_string_type();
 	}
 

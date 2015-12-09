@@ -511,13 +511,13 @@ namespace drawerbase {
 
 		textbox& textbox::from(int n)
 		{
-			_m_caption(to_native_string(n));
+			_m_caption(to_nstring(n));
 			return *this;
 		}
 
 		textbox& textbox::from(double d)
 		{
-			_m_caption(to_native_string(d));
+			_m_caption(to_nstring(d));
 			return *this;
 		}
 
@@ -600,7 +600,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				return to_native_string(editor->text());
+				return to_nstring(editor->text());
 
 			return native_string_type();
 		}

@@ -76,14 +76,14 @@ namespace nana
 		widget& widget::caption(std::string utf8)
 		{
 			::nana::throw_not_utf8(utf8);
-			native_string_type str = to_native_string(utf8);
+			native_string_type str = to_nstring(utf8);
 			_m_caption(std::move(str));
 			return *this;
 		}
 
 		widget& widget::caption(std::wstring text)
 		{
-			native_string_type str = to_native_string(text);
+			native_string_type str = to_nstring(text);
 			_m_caption(std::move(str));
 			return *this;
 		}
@@ -92,7 +92,7 @@ namespace nana
 		{
 			if (handle())
 			{
-				native_string_type str = to_native_string(eval());
+				native_string_type str = to_nstring(eval());
 				_m_caption(std::move(str));
 				internationalization_parts::set_eval(handle(), std::move(eval));
 			}

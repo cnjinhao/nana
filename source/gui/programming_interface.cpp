@@ -823,7 +823,7 @@ namespace API
 		auto const iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
-			iwd->widget_notifier->caption(to_native_string(title_utf8));
+			iwd->widget_notifier->caption(to_nstring(title_utf8));
 	}
 
 	void window_caption(window wd, const std::wstring& title)
@@ -831,7 +831,7 @@ namespace API
 		auto const iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
-			iwd->widget_notifier->caption(to_native_string(title));
+			iwd->widget_notifier->caption(to_nstring(title));
 	}
 
 	std::string window_caption(window wd)

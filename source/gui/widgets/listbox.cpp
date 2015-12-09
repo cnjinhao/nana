@@ -52,16 +52,16 @@ namespace nana
 				{
 				}
 
-				cell::cell(nana::string text)
+				cell::cell(std::string text)
 					: text(std::move(text))
 				{}
 
-				cell::cell(nana::string text, const format& fmt)
+				cell::cell(std::string text, const format& fmt)
 					:	text(std::move(text)),
 						custom_format(new format{ fmt })	//make_unique
 				{}
 
-				cell::cell(nana::string text, const ::nana::color& bgcolor, const ::nana::color& fgcolor)
+				cell::cell(std::string text, const ::nana::color& bgcolor, const ::nana::color& fgcolor)
 					:	text(std::move(text)),
 						custom_format{ new format{ bgcolor, fgcolor } }	//make_unique
 				{}
@@ -90,101 +90,101 @@ namespace nana
 			//definition of iresolver/oresolver
 			oresolver& oresolver::operator<<(bool n)
 			{
-				cells_.emplace_back(n ? L"true" : L"false");
+				cells_.emplace_back(n ? "true" : "false");
 				return *this;
 			}
 			oresolver& oresolver::operator<<(short n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned short n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(int n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned int n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 			oresolver& oresolver::operator<<(long long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(unsigned long long n)
 			{
-				cells_.emplace_back(std::to_wstring(n));
+				cells_.emplace_back(std::to_string(n));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(float f)
 			{
-				cells_.emplace_back(std::to_wstring(f));
+				cells_.emplace_back(std::to_string(f));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(double f)
 			{
-				cells_.emplace_back(std::to_wstring(f));
+				cells_.emplace_back(std::to_string(f));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(long double f)
 			{
-				cells_.emplace_back(std::to_wstring(f));
+				cells_.emplace_back(std::to_string(f));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(const char* text)
 			{
-				cells_.emplace_back(std::wstring(charset(text)));
+				cells_.emplace_back(text);
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(const wchar_t* text)
 			{
-				cells_.emplace_back(text);
+				cells_.emplace_back(utf8_cast(text));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(const std::string& text)
 			{
-				cells_.emplace_back(std::wstring(charset(text)));
+				cells_.emplace_back(text);
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(const std::wstring& text)
 			{
-				cells_.emplace_back(text);
+				cells_.emplace_back(utf8_cast(text));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(std::wstring&& text)
 			{
-				cells_.emplace_back(std::move(text));
+				cells_.emplace_back(utf8_cast(text));
 				return *this;
 			}
 
@@ -291,14 +291,14 @@ namespace nana
 			iresolver& iresolver::operator>>(std::string& text)
 			{
 				if (pos_ < cells_.size())
-					text = charset(cells_[pos_++].text);
+					text = cells_[pos_++].text;
 				return *this;
 			}
 
 			iresolver& iresolver::operator>>(std::wstring& text)
 			{
 				if (pos_ < cells_.size())
-					text = cells_[pos_++].text;
+					text = utf8_cast(cells_[pos_++].text);
 
 				return *this;
 			}
@@ -328,14 +328,14 @@ namespace nana
 
 				struct column_t
 				{
-					nana::string text;  ///< "text" header of the column number "index" with weigth "pixels"
+					native_string_type text;  ///< "text" header of the column number "index" with weigth "pixels"
 					unsigned pixels;
 					bool visible{true};
 					size_type index;
-					std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)> weak_ordering;
+					std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> weak_ordering;
 
 					column_t() = default;
-					column_t(nana::string&& txt, unsigned px, size_type pos)
+					column_t(native_string_type&& txt, unsigned px, size_type pos)
 						: text(std::move(txt)), pixels(px), index(pos)
 					{}
 				};
@@ -353,9 +353,9 @@ namespace nana
                     return idx;
                 }
 
-                nana::string to_string(const export_options& exp_opt) const
+                std::string to_string(const export_options& exp_opt) const
                 {
-                    nana::string head_str;
+                    std::string head_str;
                     bool first{true};
                     for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
 					{
@@ -364,7 +364,7 @@ namespace nana
                         else
                             head_str += exp_opt.sep;
 
-	        			head_str += column_ref(exp_opt.columns_order[idx]).text;
+	        			head_str += utf8_cast(column_ref(exp_opt.columns_order[idx]).text);
 					}
                     return head_str;
                 }
@@ -393,7 +393,7 @@ namespace nana
 					sortable_ = enable;
 				}
 
-				std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)> fetch_comp(std::size_t pos) const
+				std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> fetch_comp(std::size_t pos) const
 				{
 					try
 					{
@@ -405,7 +405,7 @@ namespace nana
 					return{};
 				}
 
-				size_type create(nana::string&& text, unsigned pixels)
+				size_type create(native_string_type&& text, unsigned pixels)
 				{
 					cont_.emplace_back(std::move(text), pixels, static_cast<size_type>(cont_.size()));
                     return cont_.back().index;
@@ -604,13 +604,13 @@ namespace nana
 					flags.selected = flags.checked = false;
 				}
 
-				item_t(nana::string&& s)
+				item_t(std::string&& s)
 				{
 					flags.selected = flags.checked = false;
 					cells.emplace_back(std::move(s));
 				}
 
-				item_t(nana::string&& s, const nana::color& bg, const nana::color& fg)
+				item_t(std::string&& s, const nana::color& bg, const nana::color& fg)
 					:	bgcolor(bg),
 						fgcolor(fg)
 				{
@@ -632,9 +632,9 @@ namespace nana
 					return *this;
 				}
 
-				nana::string to_string(const export_options& exp_opt) const
+				std::string to_string(const export_options& exp_opt) const
 				{
-					nana::string item_str;
+					std::string item_str;
 
 					bool ignore_first = true;
 					for (size_type idx{}; idx < exp_opt.columns_order.size(); ++idx)
@@ -657,7 +657,7 @@ namespace nana
 			{
 				using container = std::deque<item_t>;
 
-				::nana::string text;
+				native_string_type text;
 				std::vector<std::size_t> sorted;
 				container items;
 				bool expand{true};
@@ -670,7 +670,7 @@ namespace nana
 
 				category_t() = default;
 
-				category_t(nana::string str)
+				category_t(native_string_type str)
 					:text(std::move(str))
 				{}
 
@@ -689,8 +689,8 @@ namespace nana
 			public:
 				using container = std::list<category_t>;
 
-				std::function<std::function<bool(const ::nana::string&, ::nana::any*,
-								const ::nana::string&, ::nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
+				std::function<std::function<bool(const ::std::string&, ::nana::any*,
+								const ::std::string&, ::nana::any*, bool reverse)>(std::size_t) > fetch_ordering_comparer;
 
 				es_lister()
 				{
@@ -727,7 +727,8 @@ namespace nana
 					}
 					return nullptr;
 				}
-                nana::string to_string(const export_options& exp_opt) const;
+
+                std::string to_string(const export_options& exp_opt) const;
 
                 /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
                 void sort()
@@ -749,11 +750,11 @@ namespace nana
 									auto & my = cat.items[y];
 									if (mx.cells.size() <= sorted_index_ || my.cells.size() <= sorted_index_)
 									{
-										nana::string a;
+										std::string a;
 										if (mx.cells.size() > sorted_index_)
 											a = mx.cells[sorted_index_].text;
 
-										nana::string b;
+										std::string b;
 										if (my.cells.size() > sorted_index_)
 											b = my.cells[sorted_index_].text;
 
@@ -774,11 +775,11 @@ namespace nana
 
 									if (item_x.cells.size() <= sorted_index_ || item_y.cells.size() <= sorted_index_)
 									{
-										nana::string a;
+										std::string a;
 										if (item_x.cells.size() > sorted_index_)
 											a = item_x.cells[sorted_index_].text;
 
-										nana::string b;
+										std::string b;
 										if (item_y.cells.size() > sorted_index_)
 											b = item_y.cells[sorted_index_].text;
 
@@ -856,7 +857,7 @@ namespace nana
 				void scroll(const index_pair& pos, bool to_bottom);
 
 				///Append a new category with a specified name and return a pointer to it.
-				category_t* create_cat(nana::string&& text)
+				category_t* create_cat(native_string_type&& text)
 				{
 					list_.emplace_back(std::move(text));
 					return &list_.back();
@@ -880,13 +881,13 @@ namespace nana
 					return &list_.back();
 				}
                 /// add a new cat created at "pos" and return a ref to it
-				category_t* create_cat(std::size_t pos, nana::string&& text)
+				category_t* create_cat(std::size_t pos, native_string_type&& text)
 				{
 					return &(*list_.emplace(this->get(pos), std::move(text)));
 				}
 
 				/// Insert  before item in absolute "pos" a new item with "text" in column 0, and place it in last display position of this cat
-				bool insert(const index_pair& pos, nana::string&& text)
+				bool insert(const index_pair& pos, std::string&& text)
 				{
 					auto & catobj = *get(pos.cat);
 
@@ -1094,7 +1095,7 @@ namespace nana
 					}
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, nana::string&& str, size_type columns)
+				void text(category_t* cat, size_type pos, size_type col, std::string&& str, size_type columns)
 				{
 					if ((col < columns) && (pos < cat->items.size()))
 					{
@@ -1876,7 +1877,7 @@ namespace nana
 					inline_indicator * indicator;
 					index_pair	item_pos;				//The item index of the inline widget
 					std::size_t	column_pos;
-					::nana::string text;
+					::std::string text;					//text in UTF-8 encoded
 				};
 
 				std::map<pat::detail::abstract_factory_base*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
@@ -1888,7 +1889,7 @@ namespace nana
 					lister.fetch_ordering_comparer = std::bind(&es_header::fetch_comp, &header, std::placeholders::_1);
 				}
 
-                nana::string to_string(const export_options& exp_opt) const
+                std::string to_string(const export_options& exp_opt) const
                 {
                     return header.to_string(exp_opt) + exp_opt.endl + lister.to_string(exp_opt) ;
                 }
@@ -2359,7 +2360,7 @@ namespace nana
 			};
 
 			class inline_indicator
-				: public ::nana::detail::inline_widget_indicator<index_pair, std::wstring>
+				: public ::nana::detail::inline_widget_indicator<index_pair, std::string>
 			{
 			public:
 				using parts = essence_t::parts;
@@ -2589,16 +2590,16 @@ namespace nana
 				}
 			}
 
-			nana::string es_lister::to_string(const export_options& exp_opt) const
+			std::string es_lister::to_string(const export_options& exp_opt) const
 			{
-				nana::string list_str;
+				std::string list_str;
 				bool first{true};
 				for(auto & cat: cat_container())
 				{
 					if(first)
 						first=false;
 					else
- 						list_str += (cat.text + exp_opt.endl);
+ 						list_str += (utf8_cast(cat.text) + exp_opt.endl);
 
 					for (auto i : cat.sorted)
 					{
@@ -2978,7 +2979,7 @@ namespace nana
 
 					graph->string({ x + 20, y + txtoff }, categ.text, txt_color);
 
-					::nana::string str = L'(' + std::to_wstring(categ.items.size()) + L')';
+					native_string_type str = L'(' + to_nstring(categ.items.size()) + L')';
 
 					auto text_s = graph->text_extent_size(categ.text).width;
 					auto extend_text_w = text_s + graph->text_extent_size(str).width;
@@ -3812,14 +3813,21 @@ namespace nana
 					return *this;
 				}
 
-				item_proxy& item_proxy::text(size_type col, nana::string str)
+				item_proxy& item_proxy::text(size_type col, std::string str)
 				{
 					ess_->lister.text(cat_, pos_.item, col, std::move(str), columns());
 					ess_->update();
 					return *this;
 				}
 
-				nana::string item_proxy::text(size_type col) const
+				item_proxy& item_proxy::text(size_type col, std::wstring str)
+				{
+					ess_->lister.text(cat_, pos_.item, col, utf8_cast(str), columns());
+					ess_->update();
+					return *this;
+				}
+
+				std::string item_proxy::text(size_type col) const
 				{
 					return ess_->lister.get_cells(cat_, pos_.item).at(col).text;
 				}
@@ -3839,20 +3847,24 @@ namespace nana
 
 
 				//Behavior of Iterator's value_type
-				bool item_proxy::operator==(const nana::string& s) const
-				{
-					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == s);
-				}
-
 				bool item_proxy::operator==(const char * s) const
 				{
-					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == nana::string(nana::charset(s)));
-
+					return this->operator==(std::string(s));
 				}
 
 				bool item_proxy::operator==(const wchar_t * s) const
 				{
-					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == nana::string(nana::charset(s)));
+					return this->operator==(std::wstring(s));
+				}
+
+				bool item_proxy::operator==(const std::string& s) const
+				{
+					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == s);
+				}
+
+				bool item_proxy::operator==(const std::wstring& s) const
+				{
+					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == utf8_cast(s));
 				}
 
 				item_proxy & item_proxy::operator=(const item_proxy& rhs)
@@ -3973,15 +3985,29 @@ namespace nana
 					}
 				}
 
-				void cat_proxy::append(std::initializer_list<nana::string> arg)
+				void cat_proxy::append(std::initializer_list<std::string> arg)
 				{
 					const auto items = columns();
-					push_back(nana::string{});
+					push_back(std::string{});
 					item_proxy ip{ ess_, index_pair(pos_, size() - 1) };
 					size_type pos = 0;
 					for (auto & txt : arg)
 					{
 						ip.text(pos++, txt);
+						if (pos >= items)
+							break;
+					}
+				}
+
+				void cat_proxy::append(std::initializer_list<std::wstring> arg)
+				{
+					const auto items = columns();
+					push_back(std::string{});
+					item_proxy ip{ ess_, index_pair(pos_, size() - 1) };
+					size_type pos = 0;
+					for (auto & txt : arg)
+					{
+						ip.text(pos++, utf8_cast(txt));
 						if (pos >= items)
 							break;
 					}
@@ -4009,24 +4035,37 @@ namespace nana
 					return ess_->header.cont().size();
 				}
 
-				cat_proxy& cat_proxy::text(nana::string s)
+				cat_proxy& cat_proxy::text(std::string s)
 				{
+					auto text = to_nstring(s);
 					internal_scope_guard lock;
-					if (s != cat_->text)
+					if (text != cat_->text)
 					{
-						cat_->text.swap(s);
+						cat_->text.swap(text);
 						ess_->update();
 					}
 					return *this;
 				}
 
-				nana::string cat_proxy::text() const
+				cat_proxy& cat_proxy::text(std::wstring s)
 				{
+					auto text = to_nstring(s);
 					internal_scope_guard lock;
-					return cat_->text;
+					if (text != cat_->text)
+					{
+						cat_->text.swap(text);
+						ess_->update();
+					}
+					return *this;
 				}
 
-				void cat_proxy::push_back(nana::string s)
+				std::string cat_proxy::text() const
+				{
+					internal_scope_guard lock;
+					return utf8_cast(cat_->text);
+				}
+
+				void cat_proxy::push_back(std::string s)
 				{
 					internal_scope_guard lock;
 
@@ -4303,12 +4342,22 @@ namespace nana
 			ess.update();
 		}
 
-		listbox::size_type listbox::append_header(nana::string text, unsigned width)
+		listbox::size_type listbox::append_header(std::string s, unsigned width)
 		{
+			internal_scope_guard lock;
 			auto & ess = _m_ess();
-			auto pos = ess.header.create(std::move(text), width);
+			auto pos = ess.header.create(to_nstring(std::move(s)), width);
 			ess.update();
             return pos;
+		}
+
+		listbox::size_type listbox::append_header(std::wstring s, unsigned width)
+		{
+			internal_scope_guard lock;
+			auto & ess = _m_ess();
+			auto pos = ess.header.create(to_nstring(std::move(s)), width);
+			ess.update();
+			return pos;
 		}
 
 		listbox& listbox::header_width(size_type pos, unsigned pixels)
@@ -4331,31 +4380,58 @@ namespace nana
 			return _m_ess().header.item_width(pos);
 		}
 
-		listbox::cat_proxy listbox::append(nana::string s)
+		listbox::cat_proxy listbox::append(std::string s)
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
-			auto new_cat_ptr = ess.lister.create_cat(std::move(s));
+			auto new_cat_ptr = ess.lister.create_cat(to_nstring(std::move(s)));
 			ess.update();
 
 			return cat_proxy{ &ess, new_cat_ptr };
 		}
 
-		void listbox::append(std::initializer_list<nana::string> args)
+		listbox::cat_proxy listbox::append(std::wstring s)
+		{
+			internal_scope_guard lock;
+			auto & ess = _m_ess();
+			auto new_cat_ptr = ess.lister.create_cat(to_nstring(std::move(s)));
+			ess.update();
+			return cat_proxy{ &ess, new_cat_ptr };
+		}
+
+		void listbox::append(std::initializer_list<std::string> args)
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
 
 			for (auto & arg : args)
-				ess.lister.create_cat(nana::string{ arg });
+				ess.lister.create_cat(native_string_type(to_nstring(arg)));
 			ess.update();
+		}
+
+		void listbox::append(std::initializer_list<std::wstring> args)
+		{
+			internal_scope_guard lock;
+			auto & ess = _m_ess();
+
+			for (auto & arg : args)
+				ess.lister.create_cat(native_string_type(to_nstring(arg)));
+			ess.update();
+		}
+
+		auto listbox::insert(cat_proxy cat, std::string str) -> cat_proxy
+		{
+			internal_scope_guard lock;
+			auto & ess = _m_ess();
+			auto new_cat_ptr = ess.lister.create_cat(cat.position(), to_nstring(std::move(str)));
+			return cat_proxy{ &ess, new_cat_ptr };
 		}
 
 		auto listbox::insert(cat_proxy cat, std::wstring str) -> cat_proxy
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
-			auto new_cat_ptr = ess.lister.create_cat(cat.position(), std::move(str));
+			auto new_cat_ptr = ess.lister.create_cat(cat.position(), to_nstring(std::move(str)));
 			return cat_proxy{ &ess, new_cat_ptr };
 		}
 
@@ -4387,16 +4463,11 @@ namespace nana
 
 		void listbox::insert(const index_pair& pos, std::string text)
 		{
-			insert(pos, utf8_cast(text));
-		}
-
-		void listbox::insert(const index_pair& pos, std::wstring text)
-		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
 			if (ess.lister.insert(pos, std::move(text)))
 			{
-				if (! empty())
+				if (!empty())
 				{
 					auto & item = ess.lister.at(pos);
 					item.bgcolor = bgcolor();
@@ -4404,6 +4475,11 @@ namespace nana
 					ess.update();
 				}
 			}
+		}
+
+		void listbox::insert(const index_pair& pos, std::wstring text)
+		{
+			insert(pos, utf8_cast(text));
 		}
 
 		void listbox::checkable(bool chkable)
@@ -4524,7 +4600,7 @@ namespace nana
 			_m_ess().header.sortable(enable);
 		}
 
-		void listbox::set_sort_compare(size_type col, std::function<bool(const nana::string&, nana::any*, const nana::string&, nana::any*, bool reverse)> strick_ordering)
+		void listbox::set_sort_compare(size_type col, std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> strick_ordering)
 		{
 			_m_ess().header.column(col).weak_ordering = std::move(strick_ordering);
 		}
@@ -4638,7 +4714,7 @@ namespace nana
 			}
 			else
 			{
-				cat = ess.lister.create_cat(nana::string{});
+				cat = ess.lister.create_cat(native_string_type{});
 				cat->key_ptr = ptr;
 			}
 			ess.update();

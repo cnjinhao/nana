@@ -102,6 +102,12 @@ namespace nana
 	const std::wstring& to_wstring(const std::wstring& wstr);
 	std::wstring&& to_wstring(std::wstring&& wstr);
 
+#if defined(NANA_WINDOWS)
+	std::string to_osmbstr(const std::string& text_utf8);
+#else
+	std::string to_osmbstr(std::string text_utf8)
+#endif
+
 
 	namespace detail
 	{
@@ -113,16 +119,19 @@ namespace nana
 	}
 
 #if defined(NANA_WINDOWS)
-	const detail::native_string_type to_native_string(const std::string&);
-	const detail::native_string_type& to_native_string(const std::wstring&);
-	detail::native_string_type to_native_string(int);
-	detail::native_string_type to_native_string(double);
+	const detail::native_string_type to_nstring(const std::string&);
+	const detail::native_string_type& to_nstring(const std::wstring&);
+	detail::native_string_type to_nstring(std::string&&);
+	detail::native_string_type&& to_nstring(std::wstring&&);
 #else	//POSIX
-	const detail::native_string_type& to_native_string(const std::string&);
-	const detail::native_string_type to_native_string(const std::wstring&);
-	detail::native_string_type to_native_string(int);
-	detail::native_string_type to_native_string(double);
+	const detail::native_string_type& to_nstring(const std::string&);
+	const detail::native_string_type to_nstring(const std::wstring&);
+	detail::native_string_type&& to_nstring(std::string&&);
+	detail::native_string_type to_nstring(std::wstring&&);
 #endif
+	detail::native_string_type to_nstring(int);
+	detail::native_string_type to_nstring(double);
+	detail::native_string_type to_nstring(std::size_t);
 }
 
 #ifndef NANA_UNICODE
