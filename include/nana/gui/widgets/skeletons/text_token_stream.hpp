@@ -434,7 +434,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			};
 		};
 
-		::std::wstring	font;
+		::std::string	font;
 		std::size_t		font_size;
 		bool	bold;
 		bool	bold_empty;	//bold should be ignored if bold_empty is true
@@ -706,7 +706,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 					if(token::string != tknizer.read())
 						throw std::runtime_error("");
 
-					fp->font = tknizer.idstr();
+					fp->font = to_utf8(tknizer.idstr());
 					break;
 				case token::size:
 					if(token::equal != tknizer.read())

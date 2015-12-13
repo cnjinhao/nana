@@ -79,7 +79,7 @@ namespace paint
 				impl_->font_ptr = rhs.impl_->font_ptr;
 		}
 
-		font::font(const nana::char_t* name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
+		font::font(const std::string& name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
 			: impl_(new impl_type)
 		{
 			make(name, size, bold, italic, underline, strike_out);
@@ -95,17 +95,17 @@ namespace paint
 			return ((nullptr == impl_) || (nullptr == impl_->font_ptr));
 		}
 
-		void font::make(const nana::char_t* name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
+		void font::make(const std::string& name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
 		{
 			size = nana::detail::platform_spec::instance().font_size_to_height(size);
 			make_raw(name, size, bold ? 700 : 400, italic, underline, strike_out);
 		}
 
-		void font::make_raw(const nana::char_t*name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
+		void font::make_raw(const std::string& name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
 		{
 			if(impl_)
 			{
-				auto t = nana::detail::platform_spec::instance().make_native_font(name, height, weight, italic, underline, strike_out);
+				auto t = nana::detail::platform_spec::instance().make_native_font(name.c_str(), height, weight, italic, underline, strike_out);
 				if(t)
 					impl_->font_ptr = t;
 			}
@@ -119,10 +119,11 @@ namespace paint
 			nana::detail::platform_spec::instance().default_native_font(impl_->font_ptr);
 		}
 
-		nana::string font::name() const
+		std::string font::name() const
 		{
-			if(empty()) return nana::string();
-			return impl_->font_ptr->name;
+			if(empty()) return std::string();
+
+			return to_utf8(impl_->font_ptr->name);
 		}
 
 		unsigned font::size() const

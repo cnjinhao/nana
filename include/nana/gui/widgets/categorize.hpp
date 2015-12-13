@@ -174,13 +174,25 @@ namespace nana
 		{
 		}
 
-		categorize(window wd, const nana::string& text, bool visible = true)
+		categorize(window wd, const std::string& text_utf8, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
 			this->caption(text);
 		}
 
-		categorize(window wd, const nana::char_t* text, bool visible = true)
+		categorize(window wd, const char* text_utf8, bool visible = true)
+			: categorize(wd, ::nana::rectangle(), visible)
+		{
+			this->caption(text);
+		}
+
+		categorize(window wd, const std::wstring& text, bool visible = true)
+			: categorize(wd, ::nana::rectangle(), visible)
+		{
+			this->caption(text);
+		}
+
+		categorize(window wd, const wchar_t* text, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
 			this->caption(text);
@@ -206,7 +218,7 @@ namespace nana
 		}
 
 		/// Erases a child category with a specified name from current category.
-		categorize& childset_erase(const nana::string& name)
+		categorize& childset_erase(const std::string& name)
 		{
 			if(this->get_drawer_trigger().childset_erase(name))
 				API::update_window(*this);
@@ -220,13 +232,13 @@ namespace nana
 		}
 
 		/// Sets the splitter string
-		categorize& splitstr(const nana::string& sstr)
+		categorize& splitstr(const std::string& sstr)
 		{
 			this->get_drawer_trigger().splitstr(sstr);
 			return *this;
 		}
 
-		nana::string splitstr() const
+		std::string splitstr() const
 		{
 			return this->get_drawer_trigger().splitstr();
 		}

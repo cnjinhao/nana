@@ -259,7 +259,7 @@ namespace nana
 					return fp->bold;
 				}
 
-				const nana::string& _m_fontname(nana::widgets::skeletons::fblock* fp)
+				const std::string& _m_fontname(nana::widgets::skeletons::fblock* fp)
 				{
 					while(fp->font.empty())
 					{
@@ -274,13 +274,13 @@ namespace nana
 				{
 					if(fp != fblock_)
 					{
-						const nana::string& name = _m_fontname(fp);
+						auto& name = _m_fontname(fp);
 						auto fontsize = static_cast<unsigned>(_m_font_size(fp));
 						bool bold = _m_bold(fp);
 
 						if((fontsize != font_.size()) || bold != font_.bold() || name != font_.name())
 						{
-							font_.make(name.data(), fontsize, bold);
+							font_.make(name, fontsize, bold);
 							graph.typeface(font_);
 						}
 						fblock_ = fp;
@@ -606,7 +606,7 @@ namespace nana
 				::nana::paint::font font_;
 				struct def_font_tag
 				{
-					::nana::string font_name;
+					::std::string font_name;
 					std::size_t font_size;
 					bool	font_bold;
 					::nana::color fgcolor;

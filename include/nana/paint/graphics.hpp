@@ -36,14 +36,14 @@ namespace nana
 			font();
 			font(drawable_type);
 			font(const font&);
-			font(const char_t* name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
+			font(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
 			~font();
 			bool empty() const;
-			void make(const char_t* name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
-			void make_raw(const char_t*, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
+			void make(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
+			void make_raw(const ::std::string& name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
 
 			void set_default() const;
-			::nana::string name() const;
+			::std::string name() const;
 			unsigned size() const;
 			bool bold() const;
 			unsigned height() const;

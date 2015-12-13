@@ -32,8 +32,6 @@ namespace paint
 		image();
 		image(const image&);
 		image(image&&);
-		//image(const nana::char_t* file);
-		//image(const nana::string& filename);	//deprecated
 		image(const ::nana::experimental::filesystem::path& file);
 
 		template<typename Source>
@@ -45,7 +43,6 @@ namespace paint
 		~image();
 		image& operator=(const image& rhs);
 		image& operator=(image&&);
-		//bool open(const nana::string& filename);	//deprecated
 		bool open(const ::nana::experimental::filesystem::path& file);
 		
 		/// Opens an icon from a specified buffer

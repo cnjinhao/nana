@@ -515,7 +515,7 @@ namespace detail
 		atombase_.xdnd_finished = ::XInternAtom(display_, "XdndFinished", False);
 
 		//Create default font object.
-		def_font_ptr_ = make_native_font(0, font_size_to_height(10), 400, false, false, false);
+		def_font_ptr_ = make_native_font(nullptr, font_size_to_height(10), 400, false, false, false);
 		msg_dispatcher_ = new msg_dispatcher(display_);
 	}
 
@@ -550,10 +550,10 @@ namespace detail
 		return height;
 	}
 
-	platform_spec::font_ptr_t platform_spec::make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
+	platform_spec::font_ptr_t platform_spec::make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
 	{
 		font_ptr_t ref;
-#if defined(NANA_UNICODE)
+#if 1 //Xft
 		if(0 == name || *name == 0)
 			name = STR("*");
 
