@@ -7,7 +7,38 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/config.hpp
+ *	@file  nana/config.hpp
+ *
+ *	@brief Provide switches to adapt to the target OS, use of external libraries or workarounds compiler errors or lack of std C++ support.
+ *
+ *	To control target OS/compiler:
+ *	- NANA_WINDOWS
+ *	- NANA_MINGW
+ *	- NANA_POSIX
+ *	- NANA_LINUX
+ *	- NANA_MACOS
+ *	- NANA_X11
+ *	- NANA_UNICODE
+ *
+ *	External libraries:
+ *	- NANA_LIBPNG, USE_LIBPNG_FROM_OS
+ *	- NANA_LIBJPEG, USE_LIBJPEG_FROM_OS
+ *
+ * (see: Feature-testing recommendations for C++
+ *       in http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0096r0.html
+ *       for example: __cpp_lib_experimental_filesystem  = 201406 in <experimental/filesystem)
+ *
+ *	Workaround to known compiler errors, unnecessary warnings or lack of C++11/14/17 support:
+ *	- _SCL_SECURE_NO_WARNNGS, _CRT_SECURE_NO_DEPRECATE (VC)
+ *	- STD_CODECVT_NOT_SUPPORTED (VC RC, <codecvt> is a known issue on libstdc++, it works on libc++)
+ *	- STD_THREAD_NOT_SUPPORTED (GCC < 4.8.1)
+ *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
+ *	- USE_github_com_meganz_mingw_std_threads  (MinGW with GCC < 4.8.1)
+ *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED (MinGW with GCC < 4.8.1)
+ *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
+ *	- STD_make_unique_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
+ *	  or __cpp_lib_make_unique
+ *	http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0096r0.html#detail.cpp14.n3656
  */
 
 #ifndef NANA_CONFIG_HPP
@@ -18,31 +49,31 @@
 	 // Windows:
 	#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 
-		#define NANA_WINDOWS
+			#define NANA_WINDOWS
 
-		// MINGW ...
-		#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
-			#define NANA_MINGW
-		#endif // MINGW
+			// MINGW ...
+			#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
+				#define NANA_MINGW
+			#endif // MINGW
+		// end Windows
 
-	// end Windows
 
-
-	 // MacOS:     who define APPLE ??
-      //#define APPLE
-    #elif defined(APPLE)
-		#define NANA_MACOS
-		#define NANA_X11
+		 // MacOS:     who define APPLE ??
+		  //#define APPLE
+		#elif defined(APPLE)
+			#define NANA_MACOS
+			#define NANA_X11
 		// how to add this:  include_directories(/opt/X11/include/)
-	// end MacOS
+		// end MacOS
 
-	 // Linux:    (not sure about __GNU__ ??)
-	#elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
-		#define NANA_LINUX
-		#define NANA_X11
-	// end Linux
-	#else
-	#	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
+		 // Linux:    (not sure about __GNU__ ??)
+		#elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
+			#define NANA_LINUX
+			#define NANA_X11
+		// end Linux
+
+		#else
+		#error( "Only Windows and Unix are supported now (Mac OS is experimental)");
 	#endif // Select platform
 
 	#if defined(NANA_LINUX) || defined(NANA_MACOS)
@@ -76,7 +107,7 @@
 	#endif
 
 #elif defined(__GNUC__) //GCC
-	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
+	#if defined(__GLIBCPP__) || defined( __GLIBCXX__ )
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif
@@ -89,7 +120,9 @@
 			//but if USE_github_com_meganz_mingw_std_threads is enabled,
 			//boost.thread will be replaced with meganz's mingw-std-threads.
 			// https://github.com/meganz/mingw-std-threads
-			//#define USE_github_com_meganz_mingw_std_threads
+        	#if !defined( USE_github_com_meganz_mingw_std_threads )
+			    //#define USE_github_com_meganz_mingw_std_threads
+            #endif
 			#if !defined(STD_make_unique_NOT_SUPPORTED)
 				#define STD_make_unique_NOT_SUPPORTED
 			#endif	//STD_make_unique_NOT_SUPPORTED
@@ -156,4 +189,4 @@
 #endif
 
 
-#endif	//NANA_CONFIG_HPP
+#endif  // NANA_CONFIG_HPP
