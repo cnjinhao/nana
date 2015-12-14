@@ -58,12 +58,12 @@ namespace nana
 
 				cell::cell(nana::string text, const format& fmt)
 					:	text(std::move(text)),
-						custom_format(new format{ fmt })	//make_unique
+						custom_format(std::make_unique<format>( fmt ))	// or  custom_format(new format{ fmt })
 				{}
 
 				cell::cell(nana::string text, const ::nana::color& bgcolor, const ::nana::color& fgcolor)
 					:	text(std::move(text)),
-						custom_format{ new format{ bgcolor, fgcolor } }	//make_unique
+						custom_format{std::make_unique<format>( bgcolor, fgcolor ) }	//custom_format{ new format{ bgcolor, fgcolor } }
 				{}
 
 				cell& cell::operator=(const cell& rhs)

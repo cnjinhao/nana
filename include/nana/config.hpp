@@ -82,7 +82,7 @@
 	#endif
 
 	#if (__GNUC__ == 4)
-		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
+		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ <= 1))
 			#define STD_THREAD_NOT_SUPPORTED
 
 			//boost.thread is preferred
@@ -90,6 +90,10 @@
 			//boost.thread will be replaced with meganz's mingw-std-threads.
 			// https://github.com/meganz/mingw-std-threads
 			//#define USE_github_com_meganz_mingw_std_threads
+			#if !defined(STD_make_unique_NOT_SUPPORTED)
+				#define STD_make_unique_NOT_SUPPORTED
+			#endif	//STD_make_unique_NOT_SUPPORTED
+
 		#endif
 
 		#if defined(NANA_MINGW)

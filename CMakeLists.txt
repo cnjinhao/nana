@@ -4,6 +4,9 @@
 #	Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 
+option(CMAKE_STD_make_unique_NOT_SUPPORTED "Add support for make_unique<>().")
+#set(CMAKE_STD_make_unique_NOT_SUPPORTED OFF)
+
 # set compile  flags
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
@@ -94,6 +97,12 @@ if(ENABLE_JPEG)
     endif()
 endif()
 
+
+
+# STD_make_unique_NOT_SUPPORTED
+if(CMAKE_STD_make_unique_NOT_SUPPORTED)
+    add_definitions(-DSTD_make_unique_NOT_SUPPORTED)
+endif(CMAKE_STD_make_unique_NOT_SUPPORTED)
 
 
 set(NANA_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source)
