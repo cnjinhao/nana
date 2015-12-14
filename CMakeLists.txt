@@ -4,6 +4,7 @@
 #	Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 
+option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." ON)
 option(CMAKE_STD_make_unique_NOT_SUPPORTED "Add support for make_unique<>().")
 #set(CMAKE_STD_make_unique_NOT_SUPPORTED OFF)
 
@@ -148,10 +149,72 @@ target_link_libraries(${PROJECT_NAME} -L/opt/X11/lib/ -lX11 -lXft -lpng -liconv)
 install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib)
+# ??
 install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
-add_executable(nana_test test.cpp)
-set_property( TARGET nana_test PROPERTY CXX_STANDARD 14 )
-target_link_libraries(nana_test ${PROJECT_NAME})
+if (BUILD_NANA_DEMOS)
+    set (CMAKE_INSTALL_PREFIX ${DEMO_BIN})
+    set(DEMO_BIN ${NANA_SOURCE_DIR}../nana-demo/bin)
+    set(CMAKE_INSTALL_PREFIX )
+    add_executable(file_explorer ../nana-demo/file_explorer.cpp)
+    set_property( TARGET file_explorer PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(file_explorer ${PROJECT_NAME})
+    install(TARGETS file_explorer RUNTIME DESTINATION &{DEMO_BIN})
+
+    add_executable(calculator ../nana-demo/calculator.cpp)
+    set_property( TARGET calculator PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(calculator ${PROJECT_NAME})
+    install(TARGETS calculator RUNTIME DESTINATION &{DEMO_BIN})
+
+    add_executable(FreeMe ../nana-demo/FreeMe.cpp)
+    set_property( TARGET FreeMe PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(FreeMe ${PROJECT_NAME})
+    install(TARGETS FreeMe RUNTIME DESTINATION &{DEMO_BIN})
+
+    add_executable(notepad ../nana-demo/notepad.cpp)
+    set_property( TARGET notepad PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(notepad ${PROJECT_NAME})
+    install(TARGETS notepad RUNTIME DESTINATION &{DEMO_BIN})
+
+    add_executable(widget_show ../nana-demo/widget_show.cpp)
+    set_property( TARGET widget_show PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(widget_show ${PROJECT_NAME})
+    install(TARGETS widget_show RUNTIME DESTINATION &{DEMO_BIN})
+
+    add_executable(widget_show2 ../nana-demo/widget_show2.cpp)
+    set_property( TARGET widget_show2 PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(widget_show2 ${PROJECT_NAME})
+    install(TARGETS widget_show2 RUNTIME DESTINATION &{DEMO_BIN})
+
+    add_executable(a_group_impl ../nana-demo/Examples/a_group_impl.cpp)
+    set_property( TARGET a_group_impl PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(a_group_impl ${PROJECT_NAME})
+
+    add_executable(animate-bmp ../nana-demo/Examples/animate-bmp.cpp)
+    set_property( TARGET animate-bmp PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(animate-bmp ${PROJECT_NAME})
+
+    add_executable(audio_player ../nana-demo/Examples/audio_player.cpp)
+    set_property( TARGET audio_player PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(audio_player ${PROJECT_NAME})
+
+
+    #add_executable(nana_test test.cpp)
+    #set_property( TARGET nana_test PROPERTY CXX_STANDARD 14 )
+    #target_link_libraries(nana_test ${PROJECT_NAME})
+
+   #set(NANA_DEMOS_DIR ${CMAKE_SOURCE_DIR}/../nana-demo)
+   #set(NANA_EXAMPLES_DIR ${CMAKE_SOURCE_DIR}/../Examples/nana-demo/)
+    # https://cmake.org/cmake/help/v3.3/command/file.html?highlight=glob#file
+   #file( GLOB_RECURSE DEMO_SOURCES RELATIVE ../nana-demo *.cpp )
+
+   #foreach( demofile ${DEMO_SOURCES} )
+   #    string( REPLACE ".cpp" "" demoname ${demofile} )
+   #    add_executable( ${demoname} ${demofile} )
+   #    set_property( TARGET ${demoname} PROPERTY CXX_STANDARD 14 )
+   #    target_link_libraries(${demoname} ${PROJECT_NAME})
+   #endforeach( demofile ${DEMO_SOURCES} )
+endif(BUILD_NANA_DEMOS)
+
