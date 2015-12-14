@@ -52,10 +52,6 @@
 
 			#define NANA_WINDOWS
 
-			// MINGW ...
-			#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
-				#define NANA_MINGW
-			#endif // MINGW
 		// end Windows
 
 
@@ -101,18 +97,15 @@
 	#endif // _MSC_VER == 1900
 #endif // _MSVC
 
-#if defined(__clang__)
-	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
-		//<codecvt> is a known issue on libstdc++, it works on libc++
-		#define STD_CODECVT_NOT_SUPPORTED
-	#endif
-
+#if   defined(__clang__)
 #elif defined(__GNUC__) //GCC
-	#if defined(__GLIBCPP__) || defined( __GLIBCXX__ )
-		//<codecvt> is a known issue on libstdc++, it works on libc++
-		#define STD_CODECVT_NOT_SUPPORTED
-	#endif
 
+	// MINGW ...
+	#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
+		#define NANA_MINGW
+	#endif // MINGW
+
+	// support for GCC 4.8.1 will be discontinued. Please use v5 or newer.
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ <= 1))
 			#define STD_THREAD_NOT_SUPPORTED
@@ -141,6 +134,10 @@
 	#endif
 #endif
 
+//<codecvt> is a known issue on libstdc++, it works on libc++
+#if defined(__GLIBCPP__) || defined( __GLIBCXX__ )
+	#define STD_CODECVT_NOT_SUPPORTED
+#endif // __GLIBCPP__ or __GLIBCXX__
 
 
 // End compilers ...

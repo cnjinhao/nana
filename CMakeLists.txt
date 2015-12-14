@@ -3,11 +3,12 @@
 # Contributor:
 #	Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
-
+#   Ariel Vina-Rodriguez (qPCR4vir) 
 
 #https://cmake.org/cmake-tutorial/
 #https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
-# use CACHE FORCE?  or set(USE_meganz_mingw_std_threads ON) or delete CMakecache.txt or the entery build dir
+# use CACHE FORCE  or set(USE_meganz_mingw_std_threads ON) or delete CMakecache.txt or the entirely build dir
+# if your changes don't execute
 option(USE_meganz_mingw_std_threads "replaced boost.thread with meganz's mingw-std-threads." OFF)
 option(USE_UNICODE "Use Unicode Character Set" ON)
 option(ENABLE_PNG "Enable the use of PNG" OFF)
@@ -16,8 +17,8 @@ option(ENABLE_JPEG "Enable the use of JPEG" OFF)
 option(LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
 option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
-option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." ON)
-option(CMAKE_STD_make_unique_NOT_SUPPORTED "Add support for make_unique<>().")
+option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
+option(CMAKE_STD_make_unique_NOT_SUPPORTED "Add support for make_unique<>()." OFF)
 #set(CMAKE_STD_make_unique_NOT_SUPPORTED OFF)
 
 # set compile  flags
