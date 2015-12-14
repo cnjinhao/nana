@@ -4,6 +4,16 @@
 #	Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 
+
+#https://cmake.org/cmake-tutorial/
+#https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
+# use CACHE FORCE?  or set(USE_meganz_mingw_std_threads ON) or delete CMakecache.txt or the entery build dir
+option(USE_meganz_mingw_std_threads "replaced boost.thread with meganz's mingw-std-threads." OFF)
+option(USE_UNICODE "Use Unicode Character Set" ON)
+option(ENABLE_PNG "Enable the use of PNG" OFF)
+option(LIBPNG_FROM_OS "Use libpng from operating system." ON)
+option(ENABLE_JPEG "Enable the use of JPEG" OFF)
+option(LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
 option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." ON)
@@ -24,37 +34,47 @@ if(BIICODE)
     add_biicode_targets()
     
     return()
-endif()
+endif(BIICODE)
 
 project(nana)
 cmake_minimum_required(VERSION 2.8)
 
 
-#Global MSVC definitions
 if(WIN32)
-	if(MSVC)
+    add_definitions(-DWIN32)
+
+    #Global MSVC definitions
+    if(MSVC)
 		option(WIN32_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
 		# ??
 		if(WIN32_USE_MP)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-		endif()
-		
+		endif(WIN32_USE_MP)
 	endif(MSVC)
+
+    if(MINGW)
+        add_definitions(-DMINGW)
+        #Find PNG
+        if(USE_meganz_mingw_std_threads)
+            add_definitions(-DUSE_github_com_meganz_mingw_std_threads)
+            # remove_definitions()
+        endif(USE_meganz_mingw_std_threads)
+    endif(MINGW)
+
 endif(WIN32)
 
 
 #Unicode
-option(USE_UNICODE "Use Unicode Character Set")
 if(USE_UNICODE)
     add_definitions(-DNANA_UNICODE)
-endif()
+endif(USE_UNICODE)
 
 if(APPLE)
     add_definitions(-DAPPLE)
     include_directories(/opt/X11/include/)
 elseif(UNIX)
     add_definitions(-Dlinux)
-endif()
+endif(APPLE)
 
 
 
@@ -62,19 +82,10 @@ if(UNIX)
     find_package(Freetype)
     if (FREETYPE_FOUND)
         include_directories( ${FREETYPE_INCLUDE_DIRS})
-    endif()
-endif()
-
-if(WIN32)
-    add_definitions(-DWIN32)
-    if(MINGW)
-        add_definitions(-DMINGW)
-    endif()
-endif()
+    endif(FREETYPE_FOUND)
+endif(UNIX)
 
 #Find PNG
-option(ENABLE_PNG "Enable the use of PNG")
-option(LIBPNG_FROM_OS "Use libpng from operating system.")
 if(ENABLE_PNG)
     add_definitions(-DNANA_ENABLE_PNG)
     if(LIBPNG_FROM_OS)
@@ -82,13 +93,11 @@ if(ENABLE_PNG)
         if (PNG_FOUND)
             include_directories( ${PNG_INCLUDE_DIRS})
             add_definitions(-DUSE_LIBPNG_FROM_OS)
-        endif()
-    endif()
-endif()
+        endif(PNG_FOUND)
+    endif(LIBPNG_FROM_OS)
+endif(ENABLE_PNG)
 
 #Find JPEG
-option(ENABLE_JPEG "Enable the use of JPEG")
-option(LIBJPEG_FROM_OS "Use libjpeg from operating system.")
 if(ENABLE_JPEG)
     add_definitions(-DNANA_ENABLE_JPEG)
     if(LIBJPEG_FROM_OS)
@@ -96,11 +105,13 @@ if(ENABLE_JPEG)
         if (JPEG_FOUND)
             include_directories( ${JPEG_INCLUDE_DIRS})
             add_definitions(-DUSE_LIBJPEG_FROM_OS)
-        endif()
-    endif()
-endif()
+        endif(JPEG_FOUND)
+    endif(LIBJPEG_FROM_OS)
+endif(ENABLE_JPEG)
 
 
+
+#Unicode
 if(CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(CMAKE_VERBOSE_PREPROCESSOR)
@@ -131,13 +142,16 @@ aux_source_directory(${NANA_SOURCE_DIR}/paint/detail NANA_PAINT_DETAIL_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/system NANA_SYSTEM_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/threads NANA_THREADS_SOURCE)
 
+#To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
+#and Use SOURCE_GROUP if all your sources are in the same directory
+
 add_library(${PROJECT_NAME} ${NANA_SOURCE}
                             ${NANA_DETAIL_SOURCE}
                             ${NANA_FILESYSTEM_SOURCE}
-#if(NOT APPLE)
+if(NOT APPLE)
                             ${NANA_AUDIO_SOURCE}
                             ${NANA_AUDIO_DETAIL_SOURCE}
-#endif
+endif (NOT APPLE)
                             ${NANA_GUI_SOURCE}
                             ${NANA_GUI_DETAIL_SOURCE}
                             ${NANA_GUI_WIDGETS_SOURCE}
@@ -147,9 +161,12 @@ add_library(${PROJECT_NAME} ${NANA_SOURCE}
                             ${NANA_SYSTEM_SOURCE}
                             ${NANA_THREADS_SOURCE})       
 
-#if(APPLE)
-target_link_libraries(${PROJECT_NAME} -L/opt/X11/lib/ -lX11 -lXft -lpng -liconv)
-#endif()
+if(APPLE)
+    #Headers: use INCLUDE_DIRECTORIES
+    #   Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES
+    target_link_libraries(${PROJECT_NAME} -L/opt/X11/lib/ -lX11 -lXft -lpng -liconv)
+
+endif(APPLE)
                  
 install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
