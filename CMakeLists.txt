@@ -4,6 +4,8 @@
 #	Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 
+option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
+option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." ON)
 option(CMAKE_STD_make_unique_NOT_SUPPORTED "Add support for make_unique<>().")
 #set(CMAKE_STD_make_unique_NOT_SUPPORTED OFF)
@@ -99,6 +101,9 @@ if(ENABLE_JPEG)
 endif()
 
 
+if(CMAKE_VERBOSE_PREPROCESSOR)
+    add_definitions(-DVERBOSE_PREPROCESSOR)
+endif(CMAKE_VERBOSE_PREPROCESSOR)
 
 # STD_make_unique_NOT_SUPPORTED
 if(CMAKE_STD_make_unique_NOT_SUPPORTED)

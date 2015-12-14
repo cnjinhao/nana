@@ -15,9 +15,12 @@
 #ifndef NANA_DEPLOY_HPP
 #define NANA_DEPLOY_HPP
 
-#include <stdexcept>
-
 #include <nana/config.hpp>
+#if defined(VERBOSE_PREPROCESSOR)
+	#include <nana/verbose_preprocessor.hpp>
+#endif
+
+#include <stdexcept>
 #include <nana/charset.hpp>
 
 
