@@ -70,7 +70,7 @@ namespace detail
 
 	struct font_tag
 	{
-		nana::string name;
+		std::string name;
 		unsigned height;
 		unsigned weight;
 		bool italic;

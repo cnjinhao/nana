@@ -50,6 +50,7 @@ namespace filesystem
 	typedef nana::string string_t;
 	const nana::char_t* splstr = L"/\\";
 #endif
+
 	//class path
 		path::path(){}
 
@@ -121,6 +122,7 @@ namespace filesystem
 #endif
 		}
 	//end class path
+
 
 	namespace detail
 	{

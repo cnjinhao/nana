@@ -57,13 +57,12 @@ namespace skeletons
 					((text_cont_.size() == 1) && (text_cont_[0].empty())));
 		}
 
-		bool load(const nana::char_t* fs)
+		bool load(const char* file_utf8)
 		{
-			if (nullptr == fs)
+			if (!file_utf8)
 				return false;
 
-			std::string fs_mbs = nana::charset(fs);
-			std::ifstream ifs(fs_mbs.data());
+			std::ifstream ifs(to_osmbstr(file_utf8));
 			if (!ifs)
 				return false;
 
@@ -81,7 +80,7 @@ namespace skeletons
 					if(0xBB == ch && 0xBF == ifs.get())
 					{
 						ifs.close();
-						return load(fs, nana::unicode::utf8);
+						return load(file_utf8, nana::unicode::utf8);
 					}
 				}
 				else if(0xFF == ch)
@@ -94,11 +93,11 @@ namespace skeletons
 							if(ifs.get() == 0 && ifs.get() == 0)
 							{
 								ifs.close();
-								return load(fs, nana::unicode::utf32);
+								return load(file_utf8, nana::unicode::utf32);
 							}
 						}
 						ifs.close();
-						return load(fs, nana::unicode::utf16);
+						return load(file_utf8, nana::unicode::utf16);
 					}
 				}
 				else if(0xFE == ch)
@@ -107,7 +106,7 @@ namespace skeletons
 					{
 						//UTF16(big-endian)
 						ifs.close();
-						return load(fs, nana::unicode::utf16);
+						return load(file_utf8, nana::unicode::utf16);
 					}
 				}
 				else if(0 == ch)
@@ -119,7 +118,7 @@ namespace skeletons
 						{
 							//UTF32(big_endian)
 							ifs.close();
-							return load(fs, nana::unicode::utf32);
+							return load(file_utf8, nana::unicode::utf32);
 						}
 					}
 				}
@@ -143,7 +142,7 @@ namespace skeletons
 				}
 			}
 
-			_m_saved(fs);
+			_m_saved(file_utf8);
 			return true;
 		}
 
@@ -175,13 +174,12 @@ namespace skeletons
 			}
 		}
 
-		bool load(const nana::char_t * fs, nana::unicode encoding)
+		bool load(const char* file_utf8, nana::unicode encoding)
 		{
-			if (nullptr == fs)
+			if (!file_utf8)
 				return false;
 
-			std::string fs_mbs = nana::charset(fs);
-			std::ifstream ifs(fs_mbs.data());
+			std::ifstream ifs(to_osmbstr(file_utf8));
 
 			if (!ifs)
 				return false;
@@ -245,14 +243,13 @@ namespace skeletons
 				}
 			}
 
-			_m_saved(fs);
+			_m_saved(file_utf8);
 			return true;
 		}
 
-		void store(nana::string fs, bool is_unicode, ::nana::unicode encoding) const
+		void store(std::string fs, bool is_unicode, ::nana::unicode encoding) const
 		{
-			std::string fs_mbs = nana::charset(fs);
-			std::ofstream ofs(fs_mbs.data(), std::ios::binary);
+			std::ofstream ofs(to_osmbstr(fs), std::ios::binary);
 			if(ofs && text_cont_.size())
 			{
 				std::string last_mbs;
@@ -410,7 +407,7 @@ namespace skeletons
 		{
 			std::deque<string_type>().swap(text_cont_);
 			attr_max_.reset();
-			_m_saved(nana::string());
+			_m_saved(std::string());
 		}
 
 		void merge(size_type pos)
@@ -427,7 +424,7 @@ namespace skeletons
 			}
 		}
 
-		const nana::string& filename() const
+		const std::string& filename() const
 		{
 			return filename_;
 		}
@@ -489,7 +486,7 @@ namespace skeletons
 				evt_agent_->first_change();
 		}
 
-		void _m_saved(nana::string && filename) const
+		void _m_saved(std::string && filename) const
 		{
 			if(filename_ != filename)
 			{
@@ -518,7 +515,7 @@ namespace skeletons
 		textbase_event_agent_interface* evt_agent_{ nullptr };
 
 		mutable bool			changed_{ false };
-		mutable nana::string	filename_;	//A string for the saved filename.
+		mutable std::string	filename_;	//A string for the saved filename.
 		const string_type nullstr_;
 
 		struct attr_max

@@ -708,7 +708,7 @@ namespace nana
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
 
-		impl->spinbox.value(std::to_wstring(impl->value));
+		impl->spinbox.value(std::to_string(impl->value));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
@@ -786,7 +786,7 @@ namespace nana
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
 
-		impl->spinbox.value(std::to_wstring(impl->value));
+		impl->spinbox.value(std::to_string(impl->value));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
@@ -1017,8 +1017,8 @@ namespace nana
 
 		impl->wdg_month.option(today.month - 1);
 
-		impl->wdg_day.value(std::to_wstring(today.day));
-		impl->wdg_year.value(std::to_wstring(today.year));
+		impl->wdg_day.value(std::to_string(today.day));
+		impl->wdg_year.value(std::to_string(today.year));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
 		{
@@ -1059,7 +1059,7 @@ namespace nana
 			if (day > days)
 				day = days;
 
-			impl->wdg_day.value(std::to_wstring(day));
+			impl->wdg_day.value(std::to_string(day));
 		};
 
 		impl->wdg_year.events().text_changed.connect_unignorable(make_days);

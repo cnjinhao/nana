@@ -61,7 +61,7 @@ namespace nana{	namespace widgets
 			text_editor & editor_;
 			upoint			pos_;
 			upoint			sel_a_, sel_b_;
-			nana::string	selected_text_;
+			std::wstring	selected_text_;
 		private:
 			const EnumCommand cmd_;
 		};
@@ -75,7 +75,7 @@ namespace nana{	namespace widgets
 			{
 			}
 
-			void set_removed(nana::string str)
+			void set_removed(std::wstring str)
 			{
 				//use selected_text_ as removed text
 				selected_text_ = str;
@@ -136,7 +136,7 @@ namespace nana{	namespace widgets
 			: public basic_undoable <command>
 		{
 		public:
-			undo_input_text(text_editor & editor, const nana::string& text)
+			undo_input_text(text_editor & editor, const std::wstring& text)
 				:	basic_undoable<command>(editor, command::input_text),
 					text_(text)
 			{
@@ -199,7 +199,7 @@ namespace nana{	namespace widgets
 				editor_.move_caret(editor_.points_.caret);
 			}
 		private:
-			nana::string text_;
+			std::wstring text_;
 		};
 
 		class text_editor::undo_move_text
@@ -325,9 +325,9 @@ namespace nana{	namespace widgets
 				if (pos.y > static_cast<unsigned>(textbase.lines()))
 					pos.y = static_cast<unsigned>(textbase.lines());
 
-				std::unique_ptr<nana::string> mask_str;
+				std::unique_ptr<std::wstring> mask_str;
 				if (editor_.mask_char_)
-					mask_str.reset(new nana::string(textbase.getline(pos.y).size(), editor_.mask_char_));
+					mask_str.reset(new std::wstring(textbase.getline(pos.y).size(), editor_.mask_char_));
 				
 				auto & lnstr = editor_.mask_char_ ? *mask_str : textbase.getline(pos.y);
 
@@ -345,9 +345,9 @@ namespace nana{	namespace widgets
 				//Convert the screen point to text caret point
 				const string_type& real_str = editor_.textbase_.getline(res.y);
 
-				std::unique_ptr<nana::string> mask_str;
+				std::unique_ptr<std::wstring> mask_str;
 				if (editor_.mask_char_)
-					mask_str.reset(new nana::string(real_str.size(), editor_.mask_char_));
+					mask_str.reset(new std::wstring(real_str.size(), editor_.mask_char_));
 				
 				auto & lnstr = (editor_.mask_char_ ? *mask_str : real_str);
 				if (lnstr.size() > 0)
@@ -539,8 +539,8 @@ namespace nana{	namespace widgets
 				std::size_t line = 0;
 				for (auto & mtr: linemtr_)
 				{
-					const nana::string& linestr = editor_.textbase_.getline(line);
-					const nana::char_t * p = mtr.line_sections.front().begin;
+					auto& linestr = editor_.textbase_.getline(line);
+					auto p = mtr.line_sections.front().begin;
 					if (p < linestr.data() || (linestr.data() + linestr.size() < p))
 						pre_calc_line(line, editor_.width_pixels());
 
@@ -562,8 +562,8 @@ namespace nana{	namespace widgets
 					{
 						if (line < pos || (pos + lines) <= line)
 						{
-							const nana::string& linestr = editor_.textbase_.getline(line);
-							const nana::char_t * p = mtr.line_sections.front().begin;
+							auto & linestr = editor_.textbase_.getline(line);
+							auto p = mtr.line_sections.front().begin;
 							if (p < linestr.data() || (linestr.data() + linestr.size() < p))
 								pre_calc_line(line, editor_.width_pixels());
 						}
@@ -697,7 +697,7 @@ namespace nana{	namespace widgets
 					for (std::size_t pos = 0; pos < secondary_before; ++pos, top+=pixels)
 					{
 						auto & sct = linemtr_[textline].line_sections[pos];
-						editor_._m_draw_string(top, fgcolor, nana::upoint(static_cast<unsigned>(sct.begin - text_ptr), editor_.points_.caret.y), nana::string(sct.begin, sct.end), true);
+						editor_._m_draw_string(top, fgcolor, nana::upoint(static_cast<unsigned>(sct.begin - text_ptr), editor_.points_.caret.y), std::wstring(sct.begin, sct.end), true);
 					}
 				}
 				else
@@ -727,7 +727,7 @@ namespace nana{	namespace widgets
 						auto & mtr = linemtr_[primary];
 						auto & section = mtr.line_sections[secondary];
 
-						nana::string text(section.begin, section.end);
+						std::wstring text(section.begin, section.end);
 						editor_._m_draw_string(top, fgcolor, str_pos, text, true);
 						line_index.push_back(str_pos);
 						++secondary;
@@ -767,7 +767,7 @@ namespace nana{	namespace widgets
 				nana::point scrpos;
 				if (0 != pos.x)
 				{
-					nana::string str;
+					std::wstring str;
 					for (auto & sec : mtr.line_sections)
 					{
 						std::size_t chsize = sec.end - sec.begin;
@@ -812,9 +812,9 @@ namespace nana{	namespace widgets
 				//First of all, find the text of secondary.
 				auto real_str = mtr.line_sections[secondary];
 
-				std::unique_ptr<nana::string> mask_str;
+				std::unique_ptr<std::wstring> mask_str;
 				if (editor_.mask_char_)
-					mask_str.reset(new nana::string(real_str.end - real_str.begin, editor_.mask_char_));
+					mask_str.reset(new std::wstring(real_str.end - real_str.begin, editor_.mask_char_));
 
 				const ::nana::char_t * str = (editor_.mask_char_ ? mask_str->data() : real_str.begin);
 
@@ -925,7 +925,7 @@ namespace nana{	namespace widgets
 				return true;
 			}
 		private:
-			void _m_text_section(const nana::string& str, std::vector<text_section>& tsec)
+			void _m_text_section(const std::wstring& str, std::vector<text_section>& tsec)
 			{
 				if (str.empty())
 				{
@@ -1148,12 +1148,12 @@ namespace nana{	namespace widgets
 
 		struct keyword_desc
 		{
-			::nana::string text;
+			std::wstring text;
 			std::string scheme;
 			bool case_sensitive;
 			bool whole_word_matched;
 
-			keyword_desc(const ::nana::string& txt, const std::string& schm, bool cs, bool wwm)
+			keyword_desc(const std::wstring& txt, const std::string& schm, bool cs, bool wwm)
 				: text(txt), scheme(schm), case_sensitive(cs), whole_word_matched(wwm)
 			{}
 		};
@@ -1174,12 +1174,12 @@ namespace nana{	namespace widgets
 		class text_editor::keyword_parser
 		{
 		public:
-			void parse(const ::nana::string& text, const keywords* kwptr)
+			void parse(const std::wstring& text, const keywords* kwptr)
 			{
 				if ( kwptr->kwbase.empty() || text.empty() )
 					return;
 
-                using index = ::nana::string::size_type;
+                using index = std::wstring::size_type;
 
 				std::vector<entity> entities;
 
@@ -1329,7 +1329,7 @@ namespace nana{	namespace widgets
 			keywords_->schemes.erase(name);
 		}
 
-		void text_editor::set_keyword(const ::nana::string& kw, const std::string& name, bool case_sensitive, bool whole_word_matched)
+		void text_editor::set_keyword(const ::std::wstring& kw, const std::string& name, bool case_sensitive, bool whole_word_matched)
 		{
 			for (auto & ds : keywords_->kwbase)
 			{
@@ -1344,7 +1344,7 @@ namespace nana{	namespace widgets
 			keywords_->kwbase.emplace_back(kw, name, case_sensitive, whole_word_matched);
 		}
 
-		void text_editor::erase_keyword(const ::nana::string& kw)
+		void text_editor::erase_keyword(const ::std::wstring& kw)
 		{
 			for (auto i = keywords_->kwbase.begin(); i != keywords_->kwbase.end(); ++i)
 				if (i->text == kw)
@@ -1446,7 +1446,7 @@ namespace nana{	namespace widgets
 			behavior_->pre_calc_lines(width_pixels());
 		}
 
-		void text_editor::indent(bool enb, std::function<nana::string()> generator)
+		void text_editor::indent(bool enb, std::function<std::string()> generator)
 		{
 			indent_.enabled = enb;
 			indent_.generator.swap(generator);
@@ -1493,7 +1493,7 @@ namespace nana{	namespace widgets
 			text_area_.border_renderer = f;
 		}
 
-		bool text_editor::load(const nana::char_t* fs)
+		bool text_editor::load(const char* fs)
 		{
 			if (!textbase_.load(fs))
 				return false;
@@ -1533,7 +1533,7 @@ namespace nana{	namespace widgets
 			return r;
 		}
 
-		bool text_editor::tip_string(nana::string&& str)
+		bool text_editor::tip_string(::std::string&& str)
 		{
 			if(attributes_.tip_string == str)
 				return false;
@@ -1739,7 +1739,7 @@ namespace nana{	namespace widgets
 			return textbase_;
 		}
 
-		bool text_editor::getline(std::size_t pos, nana::string& text) const
+		bool text_editor::getline(std::size_t pos, std::wstring& text) const
 		{
 			if (textbase_.lines() <= pos)
 				return false;
@@ -1748,16 +1748,16 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		void text_editor::text(nana::string str)
+		void text_editor::text(std::wstring str)
 		{
 			textbase_.erase_all();
 			_m_reset();
 			put(std::move(str));
 		}
 
-		nana::string text_editor::text() const
+		std::wstring text_editor::text() const
 		{
-			nana::string str;
+			std::wstring str;
 			std::size_t lines = textbase_.lines();
 			if(lines > 0)
 			{
@@ -1984,7 +1984,7 @@ namespace nana{	namespace widgets
 			text_area_.border_renderer(graph_, bgcolor);
 		}
 	//public:
-		void text_editor::put(nana::string text)
+		void text_editor::put(std::wstring text)
 		{
 			auto undo_ptr = std::unique_ptr<undo_input_text>{ new undo_input_text(*this, text) };
 
@@ -2010,9 +2010,11 @@ namespace nana{	namespace widgets
 			}
 		}
 
-		void text_editor::put(nana::char_t c)
+		void text_editor::put(wchar_t ch)
 		{
-			auto undo_ptr = std::unique_ptr < undo_input_text > {new undo_input_text(*this, nana::string(1, c))};
+			std::wstring ch_str(1, ch);
+
+			auto undo_ptr = std::unique_ptr < undo_input_text > {new undo_input_text(*this, ch_str)};
 			bool refresh = (select_.a != select_.b);
 
 			undo_ptr->set_selected_text();
@@ -2023,7 +2025,7 @@ namespace nana{	namespace widgets
 			undo_.push(std::move(undo_ptr));
 
 			auto secondary_before = behavior_->take_lines(points_.caret.y);
-			textbase_.insert(points_.caret, nana::string(1, c));
+			textbase_.insert(points_.caret, std::move(ch_str));
 			behavior_->pre_calc_line(points_.caret.y, width_pixels());
 			points_.caret.x ++;
 
@@ -2039,7 +2041,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::copy() const
 		{
-			nana::string str;
+			std::wstring str;
 			if(_m_make_select_string(str))
 				nana::system::dataexch().set(str);
 		}
@@ -2052,7 +2054,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::paste()
 		{
-			nana::string text;
+			std::wstring text;
 			nana::system::dataexch().get(text);
 
 			//If it is required check the acceptable
@@ -2077,7 +2079,7 @@ namespace nana{	namespace widgets
 			if(false == attributes_.multi_lines)
 				return;
 
-			auto undo_ptr = std::unique_ptr<undo_input_text>(new undo_input_text(*this, nana::string(1, '\n')));
+			auto undo_ptr = std::unique_ptr<undo_input_text>(new undo_input_text(*this, std::wstring(1, '\n')));
 			bool need_refresh = (select_.a != select_.b);
 
 			undo_ptr->set_selected_text();
@@ -2098,8 +2100,8 @@ namespace nana{	namespace widgets
 			else
 			{
 				if (textbase_.lines() == 0)
-					textbase_.insertln(0, nana::string{});
-				textbase_.insertln(points_.caret.y, nana::string{});
+					textbase_.insertln(0, std::wstring{});
+				textbase_.insertln(points_.caret.y, std::wstring{});
 			}
 
 			if (record_undo)
@@ -2120,10 +2122,10 @@ namespace nana{	namespace widgets
 
 			if (indent_.enabled)
 			{
-				nana::string indent_text;
+				std::wstring indent_text;
 				if (indent_.generator)
 				{
-					indent_text = indent_.generator();
+					indent_text = to_wstring(indent_.generator());
 				}
 				else
 				{
@@ -2203,7 +2205,7 @@ namespace nana{	namespace widgets
 					textbase_.merge(points_.caret.y);
 					behavior_->merge_lines(points_.caret.y, points_.caret.y + 1);
 					undo_ptr->set_caret_pos();
-					undo_ptr->set_removed(nana::string(1, '\n'));
+					undo_ptr->set_removed(std::wstring(1, '\n'));
 				}
 				else
 					undo_ptr.reset();
@@ -2658,13 +2660,13 @@ namespace nana{	namespace widgets
 			select_.a = select_.b;
 		}
 
-		nana::upoint text_editor::_m_put(nana::string text)
+		nana::upoint text_editor::_m_put(std::wstring text)
 		{
 			auto crtpos = points_.caret;
 			std::vector<std::pair<std::size_t, std::size_t>> lines;
 			if (_m_resolve_text(text, lines) && attributes_.multi_lines)
 			{
-				nana::string str_orig = textbase_.getline(crtpos.y);
+				auto str_orig = textbase_.getline(crtpos.y);
 				auto x_orig = crtpos.x;
 
 				auto subpos = lines.front();
@@ -2713,7 +2715,7 @@ namespace nana{	namespace widgets
 			{
 				if(a.y != b.y)
 				{
-					textbase_.erase(a.y, a.x, nana::string::npos);
+					textbase_.erase(a.y, a.x, std::wstring::npos);
 					textbase_.erase(a.y + 1, b.y - a.y - 1);
 
 					textbase_.erase(a.y + 1, 0, b.x);
@@ -2734,7 +2736,7 @@ namespace nana{	namespace widgets
 			return points_.caret;
 		}
 
-		bool text_editor::_m_make_select_string(nana::string& text) const
+		bool text_editor::_m_make_select_string(std::wstring& text) const
 		{
 			nana::upoint a, b;
 			if (!_m_get_sort_select_points(a, b))
@@ -2782,7 +2784,7 @@ namespace nana{	namespace widgets
 			return pos + 1;
 		}
 
-		bool text_editor::_m_resolve_text(const nana::string& text, std::vector<std::pair<std::size_t, std::size_t>> & lines)
+		bool text_editor::_m_resolve_text(const std::wstring& text, std::vector<std::pair<std::size_t, std::size_t>> & lines)
 		{
 			auto const text_str = text.data();
 			std::size_t begin = 0;
@@ -2863,7 +2865,7 @@ namespace nana{	namespace widgets
 
 			if(mask_char_)
 			{
-				nana::string maskstr;
+				std::wstring maskstr;
 				maskstr.append(n, mask_char_);
 				return graph_.text_extent_size(maskstr);
 			}
@@ -2910,7 +2912,7 @@ namespace nana{	namespace widgets
 		bool text_editor::_m_move_select(bool record_undo)
 		{
 			nana::upoint caret = points_.caret;
-			nana::string text;
+			std::wstring text;
 			if (_m_make_select_string(text))
 			{
 				auto undo_ptr = std::unique_ptr<undo_move_text>(new undo_move_text(*this));
@@ -2972,7 +2974,7 @@ namespace nana{	namespace widgets
 			return static_cast<int>(text_area_.area.y + text_area_.area.height - text_area_.hscroll);
 		}
 
-		void text_editor::_m_draw_parse_string(const keyword_parser& parser, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t* str, std::size_t len) const
+		void text_editor::_m_draw_parse_string(const keyword_parser& parser, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const wchar_t* str, std::size_t len) const
 		{
 			graph_.set_text_color(fgcolor);
 			graph_.string(pos, str, len);
@@ -3034,14 +3036,14 @@ namespace nana{	namespace widgets
 			}
 		}
 
-		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const nana::string& str, bool if_mask) const
+		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const std::wstring& str, bool if_mask) const
 		{
 			::nana::point text_pos{ text_area_.area.x - points_.offset.x, top };
 			const int text_right = text_area_.area.right();
 
-			std::unique_ptr<nana::string> mask_str;
+			std::unique_ptr<std::wstring> mask_str;
 			if (if_mask && mask_char_)
-				mask_str.reset(new nana::string(str.size(), mask_char_));
+				mask_str.reset(new std::wstring(str.size(), mask_char_));
 
 			bool focused = API::is_focus_ready(window_);
 
@@ -3322,7 +3324,7 @@ namespace nana{	namespace widgets
 			points_.offset.y = y;
 		}
 
-		unsigned text_editor::_m_char_by_pixels(const nana::char_t* str, std::size_t len, unsigned * pxbuf, int str_px, int pixels, bool is_rtl)
+		unsigned text_editor::_m_char_by_pixels(const wchar_t* str, std::size_t len, unsigned * pxbuf, int str_px, int pixels, bool is_rtl)
 		{
 			if (graph_.glyph_pixels(str, len, pxbuf))
 			{
@@ -3361,7 +3363,7 @@ namespace nana{	namespace widgets
 			return 0;
 		}
 
-		unsigned text_editor::_m_pixels_by_char(const nana::string& lnstr, std::size_t pos) const
+		unsigned text_editor::_m_pixels_by_char(const std::wstring& lnstr, std::size_t pos) const
 		{
 			if (pos > lnstr.size())
 				return 0;

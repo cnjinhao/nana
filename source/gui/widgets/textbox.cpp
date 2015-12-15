@@ -228,7 +228,7 @@ namespace drawerbase {
 			create(wd, r, visible);
 		}
 
-		void textbox::load(nana::string file)
+		void textbox::load(std::string file)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -236,7 +236,7 @@ namespace drawerbase {
 				API::update_window(handle());
 		}
 
-		void textbox::store(nana::string file)
+		void textbox::store(std::string file)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -244,7 +244,7 @@ namespace drawerbase {
 				editor->textbase().store(std::move(file), false, nana::unicode::utf8);	//3rd parameter is just for syntax, it will be ignored
 		}
 
-		void textbox::store(nana::string file, nana::unicode encoding)
+		void textbox::store(std::string file, nana::unicode encoding)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -254,7 +254,7 @@ namespace drawerbase {
 
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
-		textbox& textbox::indention(bool enb, std::function<nana::string()> generator)
+		textbox& textbox::indention(bool enb, std::function<std::string()> generator)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -263,20 +263,20 @@ namespace drawerbase {
 			return *this;
 		}
 
-		textbox& textbox::reset(nana::string str)
+		textbox& textbox::reset(const std::string& str)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
-				editor->text(std::move(str));
+				editor->text(to_wstring(str));
 				editor->textbase().reset();
 				API::update_window(this->handle());
 			}
 			return *this;
 		}
 
-		nana::string textbox::filename() const
+		std::string textbox::filename() const
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -310,11 +310,20 @@ namespace drawerbase {
 			return (editor ? editor->textbase().saved() : false);
 		}
 
-		bool textbox::getline(std::size_t line_index, nana::string& text) const
+		bool textbox::getline(std::size_t line_index, std::string& text) const
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			return (editor ? editor->getline(line_index, text) : false);
+			if (editor)
+			{
+				std::wstring line_text;
+				if (editor->getline(line_index, line_text))
+				{
+					text = utf8_cast(line_text);
+					return true;
+				}
+			}
+			return false;
 		}
 
 		/// Gets the caret position
@@ -349,7 +358,7 @@ namespace drawerbase {
 			return *this;
 		}
 
-		textbox& textbox::append(const nana::string& text, bool at_caret)
+		textbox& textbox::append(const std::string& text, bool at_caret)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -358,7 +367,7 @@ namespace drawerbase {
 				if(at_caret == false)
 					editor->move_caret_end();
 
-				editor->put(text);
+				editor->put(to_wstring(text));
 				API::update_window(this->handle());
 			}
 			return *this;
@@ -423,10 +432,9 @@ namespace drawerbase {
 
 		textbox& textbox::tip_string(std::string str)
 		{
-			throw_not_utf8(str);
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->tip_string(utf8_cast(str)))
+			if(editor && editor->tip_string(std::move(str)))
 				API::refresh_window(handle());
 			return *this;
 		}
@@ -559,12 +567,12 @@ namespace drawerbase {
 			}
 		}
 
-		void textbox::erase_keyword(const nana::string& kw)
+		void textbox::erase_keyword(const std::string& kw)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->erase_keyword(kw);
+				editor->erase_keyword(to_wstring(kw));
 		}
 
 		std::vector<upoint> textbox::text_position() const
