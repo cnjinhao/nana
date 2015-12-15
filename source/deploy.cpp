@@ -14,6 +14,7 @@
 
 #include <nana/deploy.hpp>
 #include <cstdlib>
+#include <cstring> //std::strlen
 #include <stdexcept>
 
 #if defined(NANA_WINDOWS)
@@ -470,6 +471,13 @@ namespace nana
 	{
 		if (!is_utf8(text, len))
 			throw std::invalid_argument("The text is not encoded in UTF8");
+	}
+
+	void throw_not_utf8(const char* text)
+	{
+		if (!is_utf8(text, std::strlen(text)))
+			throw std::invalid_argument("The text is not encoded in UTF8");
+		
 	}
 
 	std::wstring utf8_cast(const std::string& text)

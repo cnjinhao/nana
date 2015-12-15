@@ -448,17 +448,16 @@ namespace filesystem
     //bool create_directory(const path& p, error_code& ec) noexcept;
     bool create_directory(const path& p, const path& attributes);
     //bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
-	bool create_directory(const nana::string& dir, bool & if_exist);
+	bool create_directory(const std::wstring& p, bool & if_exist);
 	inline bool create_directory(const path& p, bool & if_exist)
-    {
-        return create_directory(p.filename(), if_exist);
-    };
+	{
+		return create_directory(p.filename(), if_exist);
+	};
 
-    
-    bool modified_file_time(const nana::string& file, struct tm&);
+    	bool modified_file_time(const std::wstring& file, struct tm&);
 
 
-	nana::string path_user();
+	path path_user();
 	
     
     path current_path();
@@ -468,14 +467,14 @@ namespace filesystem
     //nana::string path_current();
 
 
-    //bool remove(const path& p);
-    //bool remove(const path& p, error_code& ec) noexcept;
-	bool rmfile(const char* file);
+	//bool remove(const path& p);
+	//bool remove(const path& p, error_code& ec) noexcept;
+	bool rmfile(const path& p);
 
-    //uintmax_t remove_all(const path& p);
-    //uintmax_t remove_all(const path& p, error_code& ec) noexcept;
-	bool rmdir(const char* dir, bool fails_if_not_empty);
-	bool rmdir(const wchar_t* dir, bool fails_if_not_empty);
+	//uintmax_t remove_all(const path& p);
+	//uintmax_t remove_all(const path& p, error_code& ec) noexcept;
+
+	bool rmdir(const path& p, bool fails_if_not_empty);
 
 	template<typename CharType>
 	std::basic_string<CharType> parent_path(const std::basic_string<CharType>& path)

@@ -400,14 +400,12 @@ namespace nana{	namespace drawerbase
 
 			button::button(window wd, const std::string& text, bool visible)
 			{
-				throw_not_utf8(text);
 				create(wd, rectangle(), visible);
 				caption(text);
 			}
 
 			button::button(window wd, const char* text, bool visible)
 			{
-				throw_not_utf8(text, std::strlen(text));
 				create(wd, rectangle(), visible);
 				caption(text);
 			}

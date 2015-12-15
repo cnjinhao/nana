@@ -997,7 +997,7 @@ namespace nana
 
 			auto editor = _m_impl().editor();
 			if (editor)
-				editor->text(to_nstring(str));
+				editor->text(to_wstring(str));
 
 			API::refresh_window(*this);
 		}

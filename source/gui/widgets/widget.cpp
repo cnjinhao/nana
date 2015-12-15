@@ -56,7 +56,7 @@ namespace nana
 
 		std::string widget::caption() const throw()
 		{
-			return utf8_cast(_m_caption());
+			return to_utf8(_m_caption());
 		}
 
 		std::wstring widget::caption_wstring() const throw()
@@ -64,7 +64,7 @@ namespace nana
 #if defined(NANA_WINDOWS)
 			return _m_caption();
 #else
-			return utf8_cast(_m_caption());
+			return to_wstring(_m_caption());
 #endif
 		}
 

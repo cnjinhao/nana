@@ -20,7 +20,6 @@
 #include <nana/config.hpp>
 #include <nana/charset.hpp>
 
-
 //Implement workarounds for GCC/MinGW which version is below 4.8.2
 #if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
 namespace std
@@ -91,6 +90,7 @@ namespace nana
 	bool is_utf8(const char* str, unsigned len);
 	void throw_not_utf8(const std::string& text);
 	void throw_not_utf8(const char*, unsigned len);
+	void throw_not_utf8(const char*);
 
 	std::wstring utf8_cast(const std::string&);
 	std::string utf8_cast(const std::wstring&);
@@ -105,7 +105,7 @@ namespace nana
 #if defined(NANA_WINDOWS)
 	std::string to_osmbstr(const std::string& text_utf8);
 #else
-	std::string to_osmbstr(std::string text_utf8)
+	std::string to_osmbstr(std::string text_utf8);
 #endif
 
 

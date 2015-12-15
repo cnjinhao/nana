@@ -155,8 +155,9 @@ namespace nana
 		: public widget_object<category::widget_tag, drawerbase::categorize::trigger, drawerbase::categorize::categorize_events<T>>
 	{
 	public:
-		typedef T value_type;		///< The type of objects stored
-		typedef drawerbase::categorize::renderer renderer;		///< The interface for user-defined renderer.
+		using native_string_type = widget::native_string_type;
+		using value_type = T;		///< The type of objects stored
+		using renderer = drawerbase::categorize::renderer;		///< The interface for user-defined renderer.
 
 		categorize()
 		{
@@ -177,13 +178,13 @@ namespace nana
 		categorize(window wd, const std::string& text_utf8, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
-			this->caption(text);
+			this->caption(text_utf8);
 		}
 
 		categorize(window wd, const char* text_utf8, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
-			this->caption(text);
+			this->caption(text_utf8);
 		}
 
 		categorize(window wd, const std::wstring& text, bool visible = true)

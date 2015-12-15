@@ -38,16 +38,16 @@ namespace nana
 	{
 		struct item_fs
 		{
-			nana::string name;
+			std::string name;
 			::tm modified_time;
 			bool directory;
 			nana::long_long_t bytes;
 
 			friend listbox::iresolver& operator>>(listbox::iresolver& ires, item_fs& m)
 			{
-				nana::string type;
+				std::wstring type;
 				ires>>m.name>>type>>type;
-				m.directory = (type == STR("Directory"));
+				m.directory = (type == L"Directory");
 				return ires;
 			}
 
@@ -65,16 +65,16 @@ namespace nana
 				ores<<item.name<<tm.str();
 				if(!item.directory)
 				{
-					auto pos = item.name.find_last_of(STR('.'));
+					auto pos = item.name.find_last_of('.');
 					if(pos != item.name.npos && (pos + 1 < item.name.size()))
 						ores<<item.name.substr(pos + 1);
 					else
-						ores<<STR("File");
+						ores<<L"File";
 
 					ores<<_m_trans(item.bytes);
 				}
 				else
-					ores<<STR("Directory");
+					ores<<L"Directory";
 				return ores;
 			}
 
@@ -87,9 +87,9 @@ namespace nana
 				return ss;
 			}
 
-			static nana::string _m_trans(std::size_t bytes)
+			static std::string _m_trans(std::size_t bytes)
 			{
-				const nana::char_t * ustr[] = {STR(" KB"), STR(" MB"), STR(" GB"), STR(" TB")};
+				const char * ustr[] = {" KB", " MB", " GB", " TB"};
 				std::stringstream ss;
 				if(bytes >= 1024)
 				{
@@ -108,10 +108,11 @@ namespace nana
 						if(pos + 2 < s.size())
 							s.erase(pos + 2);
 					}
-					return static_cast<nana::string>(nana::charset(s)) + ustr[uid];
+
+					return s + ustr[uid];
 				}
 				ss<<bytes<<" Bytes";
-				return nana::charset(ss.str());
+				return ss.str();
 			}
 		};
 
@@ -131,29 +132,29 @@ namespace nana
 		typedef treebox::item_proxy item_proxy;
 	public:
 
-		filebox_implement(window owner, bool io_read, const nana::string& title)
+		filebox_implement(window owner, bool io_read, const std::string& title)
 			: form(owner, API::make_center(owner, 630, 440)), io_read_(io_read)
 		{
 			path_.create(*this);
-			path_.splitstr(STR("/"));
+			path_.splitstr("/");
 			path_.events().selected.connect_unignorable([this](const arg_categorize<int>&)
 			{
 				auto path = path_.caption();
-				auto root = path.substr(0, path.find(STR('/')));
-				if(root == STR("HOME"))
-					path.replace(0, 4, nana::filesystem::path_user());
-				else if(root == STR("FILESYSTEM"))
+				auto root = path.substr(0, path.find('/'));
+				if(root == "HOME")
+					path.replace(0, 4, to_nstring(nana::filesystem::path_user()));
+				else if(root == "FILESYSTEM")
 					path.erase(0, 10);
 				else
 					throw std::runtime_error("Nana.GUI.Filebox: Wrong categorize path");
 
-				if(path.size() == 0) path = STR("/");
+				if(path.size() == 0) path = "/";
 				_m_load_cat_path(path);
 			});
 
 			filter_.create(*this);
 			filter_.multi_lines(false);
-			filter_.tip_string(STR("Filter"));
+			filter_.tip_string("Filter");
 
 			filter_.events().key_release.connect_unignorable([this](const arg_keyboard&)
 			{
@@ -161,23 +162,23 @@ namespace nana
 			});
 
 			btn_folder_.create(*this);
-			btn_folder_.caption(STR("&New Folder"));
+			btn_folder_.caption("&New Folder");
 
 			btn_folder_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				form fm(this->handle(), API::make_center(*this, 300, 35));
-				fm.caption(STR("Name the new folder"));
+				fm.caption("Name the new folder");
 
 				textbox folder(fm, nana::rectangle(5, 5, 160, 25));
 				folder.multi_lines(false);
 
 				button btn(fm, nana::rectangle(170, 5, 60, 25));
-				btn.caption(STR("Create"));
+				btn.caption("Create");
 
 				btn.events().click.connect_unignorable(folder_creator(*this, fm, folder));
 
 				button btn_cancel(fm, nana::rectangle(235, 5, 60, 25));
-				btn_cancel.caption(STR("Cancel"));
+				btn_cancel.caption("Cancel");
 
 				btn_cancel.events().click.connect_unignorable([&fm](const arg_click&)
 				{
@@ -189,17 +190,17 @@ namespace nana
 			tree_.create(*this);
 
 			ls_file_.create(*this);
-			ls_file_.append_header(STR("Name"), 190);
-			ls_file_.append_header(STR("Modified"), 145);
-			ls_file_.append_header(STR("Type"), 80);
-			ls_file_.append_header(STR("Size"), 70);
+			ls_file_.append_header("Name", 190);
+			ls_file_.append_header("Modified", 145);
+			ls_file_.append_header("Type", 80);
+			ls_file_.append_header("Size", 70);
 
 			auto fn_sel_file = [this](const arg_mouse& arg){
 				_m_sel_file(arg);
 			};
 			ls_file_.events().dbl_click.connect_unignorable(fn_sel_file);
 			ls_file_.events().mouse_down.connect_unignorable(fn_sel_file);
-			ls_file_.set_sort_compare(0, [](const nana::string& a, nana::any* fs_a, const nana::string& b, nana::any* fs_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(0, [](const std::string& a, nana::any* fs_a, const std::string& b, nana::any* fs_b, bool reverse) -> bool
 				{
 					int dira = fs_a->get<item_fs>()->directory ? 1 : 0;
 					int dirb = fs_b->get<item_fs>()->directory ? 1 : 0;
@@ -211,8 +212,8 @@ namespace nana
 
 					while(true)
 					{
-						std::size_t pos_a = a.find_first_of(STR("0123456789"), seek_a);
-						std::size_t pos_b = b.find_first_of(STR("0123456789"), seek_b);
+						std::size_t pos_a = a.find_first_of("0123456789", seek_a);
+						std::size_t pos_b = b.find_first_of("0123456789", seek_b);
 
 						if((pos_a != a.npos) && (pos_a == pos_b))
 						{
@@ -222,11 +223,11 @@ namespace nana
 							if(text_a != text_b)
 								return (reverse ? text_a > text_b : text_a < text_b);
 
-							std::size_t end_a = a.find_first_not_of(STR("0123456789"), pos_a + 1);
-							std::size_t end_b = b.find_first_not_of(STR("0123456789"), pos_b + 1);
+							std::size_t end_a = a.find_first_not_of("0123456789", pos_a + 1);
+							std::size_t end_b = b.find_first_not_of("0123456789", pos_b + 1);
 			
-							nana::string num_a = a.substr(pos_a, end_a != a.npos ? end_a - pos_a : a.npos);
-							nana::string num_b = b.substr(pos_b, end_b != b.npos ? end_b - pos_b : b.npos);
+							auto num_a = a.substr(pos_a, end_a != a.npos ? end_a - pos_a : a.npos);
+							auto num_b = b.substr(pos_b, end_b != b.npos ? end_b - pos_b : b.npos);
 			
 							if(num_a != num_b)
 							{
@@ -253,7 +254,7 @@ namespace nana
 						return (reverse ? cia > cib : cia < cib);
 					return (reverse ? cia.substr(seek_a) > cib.substr(seek_b) : cia.substr(seek_a) < cib.substr(seek_b));
 				});
-			ls_file_.set_sort_compare(2, [](const nana::string& a, nana::any* anyptr_a, const nana::string& b, nana::any* anyptr_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(2, [](const std::string& a, nana::any* anyptr_a, const std::string& b, nana::any* anyptr_b, bool reverse) -> bool
 				{
 					int dir1 = anyptr_a->get<item_fs>()->directory ? 1 : 0;
 					int dir2 = anyptr_b->get<item_fs>()->directory ? 1 : 0;
@@ -262,7 +263,7 @@ namespace nana
 
 					return (reverse ? a > b : a < b);
 				});
-			ls_file_.set_sort_compare(3, [this](const nana::string&, nana::any* anyptr_a, const nana::string&, nana::any* anyptr_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(3, [this](const std::string&, nana::any* anyptr_a, const std::string&, nana::any* anyptr_b, bool reverse) -> bool
 				{
 					item_fs * fsa = anyptr_a->get<item_fs>();
 					item_fs * fsb = anyptr_b->get<item_fs>();
@@ -270,7 +271,7 @@ namespace nana
 				});
 
 			lb_file_.create(*this);
-			lb_file_.caption(STR("File:"));
+			lb_file_.caption("File:");
 			
 			tb_file_.create(*this);
 			tb_file_.multi_lines(false);
@@ -286,14 +287,14 @@ namespace nana
 			cb_types_.events().selected.connect_unignorable([this](const arg_combox&){ _m_list_fs(); });
 
 			btn_ok_.create(*this);
-			btn_ok_.caption(STR("&OK"));
+			btn_ok_.caption("&OK");
 
 			btn_ok_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				_m_ok();
 			});
 			btn_cancel_.create(*this);
-			btn_cancel_.caption(STR("&Cancel"));
+			btn_cancel_.caption("&Cancel");
 
 			btn_cancel_.events().click.connect_unignorable([this](const arg_click&)
 			{
@@ -305,25 +306,25 @@ namespace nana
 			_m_init_tree();
 
 			if(0 == title.size())
-				caption(io_read ? STR("Open") : STR("Save As"));
+				caption(io_read ? "Open" : "Save As");
 			else
 				caption(title);
 		}
 
-		void def_extension(const nana::string& ext)
+		void def_extension(const std::string& ext)
 		{
 			def_ext_ = ext;
 		}
 
-		void load_fs(const nana::string& init_path, const nana::string& init_file)
+		void load_fs(const std::string& init_path, const std::string& init_file)
 		{
 			//Simulate the behavior like Windows7's lpstrInitialDir(http://msdn.microsoft.com/en-us/library/windows/desktop/ms646839%28v=vs.85%29.aspx)
 
 			//Phase 1
-			nana::string dir;
+			std::string dir;
 
-			auto pos = init_file.find_last_of(STR("\\/"));
-			nana::string file_with_path_removed = (pos != init_file.npos ? init_file.substr(pos + 1) : init_file);
+			auto pos = init_file.find_last_of("\\/");
+			auto file_with_path_removed = (pos != init_file.npos ? init_file.substr(pos + 1) : init_file);
 
 			if(saved_init_path != init_path)
 			{
@@ -343,29 +344,29 @@ namespace nana
 			else
 				dir = saved_selected_path;
 
-			_m_load_cat_path(dir.size() ? dir : nana::filesystem::path_user());
+			_m_load_cat_path(dir.size() ? dir : to_nstring(nana::filesystem::path_user()));
 
 			tb_file_.caption(file_with_path_removed);					
 		}
 		
-		void add_filter(const nana::string& desc, const nana::string& type)
+		void add_filter(const std::string& desc, const std::string& type)
 		{
 			std::size_t i = cb_types_.the_number_of_options();
 			cb_types_.push_back(desc);
 			if(0 == i)
 				cb_types_.option(0);
 
-			std::vector<nana::string> v;
+			std::vector<std::string> v;
 			std::size_t beg = 0;
 			while(true)
 			{
-				auto pos = type.find(STR(';'), beg);
+				auto pos = type.find(';', beg);
 				auto ext = type.substr(beg, pos == type.npos ? type.npos : pos - beg);
-				auto dot = ext.find(STR('.'));
+				auto dot = ext.find('.');
 				if((dot != ext.npos) && (dot + 1 < ext.size()))
 				{
 					ext.erase(0, dot + 1);
-					if(ext == STR("*"))
+					if(ext == "*")
 					{
 						v.clear();
 						break;
@@ -381,12 +382,12 @@ namespace nana
 				cb_types_.anyobj(i, v);
 		}
 
-		bool file(nana::string& fs) const
+		bool file(std::string& fs) const
 		{
 			if(selection_.type == kind::none)
 				return false;
 
-			auto pos = selection_.target.find_last_of(STR("\\/"));
+			auto pos = selection_.target.find_last_of("\\/");
 			if(pos != selection_.target.npos)
 				saved_selected_path = selection_.target.substr(0, pos);
 			else
@@ -423,13 +424,13 @@ namespace nana
 
 			//The path in linux is starting with the character '/', the name of root key should be
 			//"FS.HOME", "FS.ROOT". Because a key of the tree widget should not be '/'
-			nodes_.home = tree_.insert(STR("FS.HOME"), STR("Home"));
+			nodes_.home = tree_.insert("FS.HOME", "Home");
 			nodes_.home.value(kind::filesystem);
-			nodes_.filesystem = tree_.insert(STR("FS.ROOT"), STR("Filesystem"));
+			nodes_.filesystem = tree_.insert("FS.ROOT", "Filesystem");
 			nodes_.filesystem.value(kind::filesystem);
 
 			file_iterator end;
-			for(file_iterator i(path_user()); i != end; ++i)
+			for(file_iterator i(to_nstring(path_user())); i != end; ++i)
 			{
 				if((false == i->directory) || (i->name.size() && i->name[0] == '.')) continue;
 
@@ -441,7 +442,7 @@ namespace nana
 				}
 			}
 
-			for(file_iterator i(STR("/")); i != end; ++i)
+			for(file_iterator i("/"); i != end; ++i)
 			{
 				if((false == i->directory) || (i->name.size() && i->name[0] == '.')) continue;
 
@@ -462,33 +463,33 @@ namespace nana
 			{
 				if(arg.operated && (arg.item.value<kind::t>() == kind::filesystem))
 				{
-					auto path = tree_.make_key_path(arg.item, STR("/")) + STR("/");
+					auto path = tree_.make_key_path(arg.item, "/") + "/";
 					_m_resolute_path(path);
 					_m_load_cat_path(path);
 				}
 			});
 		}
 
-		nana::string _m_resolute_path(nana::string& path)
+		std::string _m_resolute_path(std::string& path)
 		{
-			auto pos = path.find(STR('/'));
+			auto pos = path.find('/');
 			if(pos != path.npos)
 			{
 				auto begstr = path.substr(0, pos);
-				if(begstr == STR("FS.HOME"))
-					path.replace(0, 7, nana::filesystem::path_user());
+				if(begstr == "FS.HOME")
+					path.replace(0, 7, to_nstring(nana::filesystem::path_user()));
 				else
 					path.erase(0, pos);
 				return begstr;
 			}
-			return nana::string();
+			return std::string();
 		}
 
-		void _m_load_path(const nana::string& path)
+		void _m_load_path(const std::string& path)
 		{
 			addr_.filesystem = path;
-			if(addr_.filesystem.size() && addr_.filesystem[addr_.filesystem.size() - 1] != STR('/'))
-				addr_.filesystem += STR('/');
+			if(addr_.filesystem.size() && addr_.filesystem[addr_.filesystem.size() - 1] != '/')
+				addr_.filesystem += '/';
 
 			file_container_.clear();
 
@@ -497,7 +498,7 @@ namespace nana
 			file_iterator end;
 			for(file_iterator i(path); i != end; ++i)
 			{
-				if((i->name.size() == 0) || (i->name[0] == STR('.')))
+				if((i->name.size() == 0) || (i->name[0] == '.'))
 					continue;
 				item_fs m;
 				m.name = i->name;
@@ -522,32 +523,32 @@ namespace nana
 			std::sort(file_container_.begin(), file_container_.end(), pred_sort_fs());
 		}
 
-		void _m_load_cat_path(nana::string path)
+		void _m_load_cat_path(std::string path)
 		{
-			if((path.size() == 0) || (path[path.size() - 1] != STR('/')))
-				path += STR('/');
+			if((path.size() == 0) || (path[path.size() - 1] != '/'))
+				path += '/';
 
 			auto beg_node = tree_.selected();
 			while(!beg_node.empty() && (beg_node != nodes_.home) && (beg_node != nodes_.filesystem))
 				beg_node = beg_node.owner();
 			
-			auto head = nana::filesystem::path_user();
+			auto head = to_nstring(nana::filesystem::path_user());
 			if(path.size() >= head.size() && (path.substr(0, head.size()) == head))
 			{//This is HOME
-				path_.caption(STR("HOME"));
+				path_.caption("HOME");
 				if(beg_node != nodes_.home)
 					nodes_.home->select(true);
 			}
 			else
 			{	//Redirect to '/'
-				path_.caption(STR("FILESYSTEM"));
+				path_.caption("FILESYSTEM");
 				if(beg_node != nodes_.filesystem)
 					nodes_.filesystem->select(true);
 				head.clear();
 			}
 
-			if(head.size() == 0 || head[head.size() - 1] != STR('/'))
-				head += STR('/');
+			if(head.size() == 0 || head[head.size() - 1] != '/')
+				head += '/';
 
 			nana::filesystem::file_iterator end;
 			for(nana::filesystem::file_iterator i(head); i != end; ++i)
@@ -556,17 +557,17 @@ namespace nana
 					path_.childset(i->name, 0);
 			}
 			auto cat_path = path_.caption();
-			if(cat_path.size() && cat_path[cat_path.size() - 1] != STR('/'))
-				cat_path += STR('/');
+			if(cat_path.size() && cat_path[cat_path.size() - 1] != '/')
+				cat_path += '/';
 
 			auto beg = head.size();
 			while(true)
 			{
-				auto pos = path.find(STR('/'), beg);
+				auto pos = path.find('/', beg);
 				auto folder = path.substr(beg, pos != path.npos ? pos - beg: path.npos);
 				if(folder.size() == 0) break;
-				(cat_path += folder) += STR('/');
-				(head += folder) += STR('/');
+				(cat_path += folder) += '/';
+				(head += folder) += '/';
 				path_.caption(cat_path);
 				
 				for(nana::filesystem::file_iterator i(head); i != end; ++i)
@@ -583,7 +584,7 @@ namespace nana
 			_m_list_fs();
 		}
 
-		bool _m_filter_allowed(const nana::string& name, bool is_dir, const nana::string& filter, const std::vector<nana::string>* extension) const
+		bool _m_filter_allowed(const std::string& name, bool is_dir, const std::string& filter, const std::vector<std::string>* extension) const
 		{
 			if(filter.size() && (name.find(filter) == filter.npos))
 				return false;
@@ -601,12 +602,12 @@ namespace nana
 
 		void _m_list_fs()
 		{
-			nana::string filter = filter_.caption();
+			auto filter = filter_.caption();
 			ls_file_.auto_draw(false);
 
 			ls_file_.clear();
 
-			std::vector<nana::string>* ext_types = cb_types_.anyobj<std::vector<nana::string> >(cb_types_.option());
+			auto ext_types = cb_types_.anyobj<std::vector<std::string> >(cb_types_.option());
 			auto cat = ls_file_.at(0);
 			for(auto & fs: file_container_)
 			{
@@ -618,7 +619,7 @@ namespace nana
 			ls_file_.auto_draw(true);
 		}
 
-		void _m_finish(kind::t type, const nana::string& tar)
+		void _m_finish(kind::t type, const std::string& tar)
 		{
 			selection_.target = tar;
 			selection_.type = type;
@@ -635,11 +636,11 @@ namespace nana
 			{
 				auto path = tx_path_.caption();
 
-				msgbox mb(fm_, STR("Create Folder"));
+				msgbox mb(fm_, "Create Folder");
 				mb.icon(msgbox::icon_warning);
-				if(0 == path.size() || path[0] == STR('.') || path[0] == STR('/'))
+				if(0 == path.size() || path[0] == '.' || path[0] == '/')
 				{
-					mb<<STR("Please input a valid name for the new folder.");
+					mb<<L"Please input a valid name for the new folder.";
 					mb();
 					return;
 				}
@@ -648,9 +649,9 @@ namespace nana
 				if(false == nana::filesystem::mkdir(fb_.addr_.filesystem + path, if_exist))
 				{
 					if(if_exist)
-						mb<<STR("The folder is existing, please rename it.");
+						mb<<L"The folder is existing, please rename it.";
 					else
-						mb<<STR("Failed to create the folder, please rename it.");
+						mb<<L"Failed to create the folder, please rename it.";
 					mb();
 					return;
 				}
@@ -663,29 +664,29 @@ namespace nana
 			textbox & tx_path_;
 		};
 
-		bool _m_append_def_extension(nana::string& tar) const
+		bool _m_append_def_extension(std::string& tar) const
 		{
-			auto dotpos = tar.find_last_of(STR('.'));
+			auto dotpos = tar.find_last_of('.');
 			if(dotpos != tar.npos)
 			{
-				auto pos = tar.find_last_of(STR("/\\"));
+				auto pos = tar.find_last_of("/\\");
 				if(pos == tar.npos || pos < dotpos)
 					return false;
 			}
 
 			if(def_ext_.size())
 			{
-				if(def_ext_[0] != STR('.'))
-					tar += STR('.');
+				if(def_ext_[0] != '.')
+					tar += '.';
 				tar += def_ext_;
 			}
 
-			std::vector<nana::string> * exts = cb_types_.anyobj<std::vector<nana::string> >(cb_types_.option());
+			auto exts = cb_types_.anyobj<std::vector<std::string> >(cb_types_.option());
 			if(0 == exts || exts->size() == 0)	return false;
 			
 			auto & ext = exts->at(0);
-			if(def_ext_[0] != STR('.'))
-				tar += STR('.');
+			if(def_ext_[0] != '.')
+				tar += '.';
 			tar += ext;
 			return true;
 		}
@@ -703,7 +704,7 @@ namespace nana
 			if(event_code::dbl_click == arg.evt_code)
 			{
 				if(m.directory)
-					_m_load_cat_path(addr_.filesystem + m.name + STR("/"));
+					_m_load_cat_path(addr_.filesystem + m.name + "/");
 				else
 					_m_finish(kind::filesystem, addr_.filesystem + m.name);
 			}
@@ -724,16 +725,16 @@ namespace nana
 				auto file = tb_file_.caption();
 				if(file.size())
 				{
-					if(file[0] == STR('.'))
+					if(file[0] == L'.')
 					{
 						msgbox mb(*this, caption());
 						mb.icon(msgbox::icon_warning);
-						mb<<file<<std::endl<<STR("The filename is invalid.");
+						mb<<file<<std::endl<<L"The filename is invalid.";
 						mb();
 						return;
 					}
-					nana::string tar;
-					if(file[0] == STR('/'))
+					std::string tar;
+					if(file[0] == '/')
 						tar = file;
 					else
 						tar = addr_.filesystem + file;
@@ -751,7 +752,7 @@ namespace nana
 					if(good && attr.is_directory)
 					{
 						_m_load_cat_path(tar);
-						tb_file_.caption(STR(""));
+						tb_file_.caption("");
 						return;
 					}
 					
@@ -761,7 +762,7 @@ namespace nana
 						{
 							msgbox mb(*this, caption());
 							mb.icon(msgbox::icon_information);
-							mb<<STR("The file \"")<<tar<<STR("\"\n is not existing. Please check and retry.");
+							mb<<L"The file \""<<nana::charset(tar, nana::unicode::utf8)<<L"\"\n is not existing. Please check and retry.";
 							mb();
 						}
 						else
@@ -773,7 +774,7 @@ namespace nana
 						{
 							msgbox mb(*this, caption(), msgbox::yes_no);
 							mb.icon(msgbox::icon_question);
-							mb<<STR("The input file is existing, do you want to overwrite it?");
+							mb<<L"The input file is existing, do you want to overwrite it?";
 							if(msgbox::pick_no == mb())
 								return;
 						}
@@ -791,7 +792,7 @@ namespace nana
 
 			if(kind::filesystem == node.value<kind::t>())
 			{
-				nana::string path = tree_.make_key_path(node, STR("/")) + STR("/");
+				auto path = tree_.make_key_path(node, "/") + "/";
 				_m_resolute_path(path);
 
 				nana::filesystem::file_iterator end;
@@ -814,7 +815,7 @@ namespace nana
 		}
 	private:
 		bool io_read_;
-		nana::string def_ext_;
+		std::string def_ext_;
 
 		place	place_;
 		categorize<int> path_;
@@ -835,22 +836,22 @@ namespace nana
 		}nodes_;
 
 		std::vector<item_fs> file_container_;
-		struct path_tag
+		struct path_rep
 		{
-			nana::string filesystem;
+			std::string filesystem;
 		}addr_;
 
-		struct selection_tag
+		struct selection_rep
 		{
 			kind::t type;
-			nana::string target;
+			std::string target;
 		}selection_;
 
-		static nana::string saved_init_path;
-		static nana::string saved_selected_path;
+		static std::string saved_init_path;
+		static std::string saved_selected_path;
 	};//end class filebox_implement
-	nana::string filebox_implement::saved_init_path;
-	nana::string filebox_implement::saved_selected_path;
+	std::string filebox_implement::saved_init_path;
+	std::string filebox_implement::saved_selected_path;
 
 #endif
 	//class filebox
@@ -1040,11 +1041,11 @@ namespace nana
 			{
 				for(auto & f: impl_->filters)
 				{
-					nana::string fs = f.type;
+					std::string fs = f.type;
 					std::size_t pos = 0;
 					while(true)
 					{
-						pos = fs.find(STR(" "), pos);
+						pos = fs.find(" ", pos);
 						if(pos == fs.npos)
 							break;
 						fs.erase(pos);
@@ -1053,7 +1054,7 @@ namespace nana
 				}
 			}
 			else
-				fb.add_filter(STR("All Files"), STR("*.*"));
+				fb.add_filter("All Files", "*.*");
 
 			fb.load_fs(impl_->path, impl_->file);
 

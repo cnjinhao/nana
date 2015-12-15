@@ -38,7 +38,7 @@ namespace nana
 			: public form
 		{
 		public:
-			msgbox_window(window wd, const ::nana::string& title, msgbox::button_t btn, msgbox::icon_t ico)
+			msgbox_window(window wd, const std::string& title, msgbox::button_t btn, msgbox::icon_t ico)
 				:	form(wd, rectangle(1, 1, 1, 1), appear::decorate<>()),
 					owner_(wd), pick_(msgbox::pick_yes)
 			{
@@ -61,14 +61,14 @@ namespace nana
 				{
 					_m_click(arg);
 				});
-				yes_.caption(STR("OK"));
+				yes_.caption("OK");
 				width_pixel += 77;
 
 				if(msgbox::yes_no == btn || msgbox::yes_no_cancel == btn)
 				{
-					yes_.caption(STR("Yes"));
+					yes_.caption("Yes");
 					no_.create(*this);
-					no_.caption(STR("No"));
+					no_.caption("No");
 					no_.events().click.connect_unignorable([this](const arg_click& arg)
 					{
 						_m_click(arg);
@@ -79,7 +79,7 @@ namespace nana
 					if(msgbox::yes_no_cancel == btn)
 					{
 						cancel_.create(*this);
-						cancel_.caption(STR("Cancel"));
+						cancel_.caption("Cancel");
 						cancel_.events().click.connect_unignorable([this](const arg_click& arg)
 						{
 							_m_click(arg);
@@ -843,7 +843,7 @@ namespace nana
 
 	void inputbox::text::tip_string(std::wstring tip)
 	{
-		impl_->tip.swap(utf8_cast(tip));
+		impl_->tip = utf8_cast(tip);
 	}
 
 	void inputbox::text::tip_string(std::string tip_utf8)

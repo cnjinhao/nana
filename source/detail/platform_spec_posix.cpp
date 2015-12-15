@@ -555,12 +555,11 @@ namespace detail
 		font_ptr_t ref;
 #if 1 //Xft
 		if(0 == name || *name == 0)
-			name = STR("*");
+			name = "*";
 
-		std::string nmstr = nana::charset(name);
 		XftFont* handle = 0;
 		std::stringstream ss;
-		ss<<nmstr<<"-"<<(height ? height : 10);
+		ss<<name<<"-"<<(height ? height : 10);
 		XftPattern * pat = ::XftNameParse(ss.str().c_str());
 		XftResult res;
 		XftPattern * match_pat = ::XftFontMatch(display_, ::XDefaultScreen(display_), pat, &res);
@@ -1216,7 +1215,7 @@ namespace detail
 															0, AnyPropertyType, &type, &format, &len,
 															&dummy_bytes_left, &data))
 						{
-							std::vector<nana::string> * files = new std::vector<nana::string>;
+							auto files = new std::vector<std::string>;
 							std::stringstream ss(reinterpret_cast<char*>(data));
 							while(true)
 							{
@@ -1235,7 +1234,7 @@ namespace detail
 										break;
 								}
 
-								files->push_back(nana::charset(file));
+								files->push_back(file);
 							}
 							if(files->size())
 							{
@@ -1244,6 +1243,8 @@ namespace detail
 								msg.u.mouse_drop.y = self.xdnd_.pos.y;
 								msg.u.mouse_drop.files = files;
 							}
+							else
+								delete files;
 
 							accepted = true;
 							::XFree(data);

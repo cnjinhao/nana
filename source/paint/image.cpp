@@ -209,7 +209,12 @@ namespace paint
 			image::image_impl_interface * helper = nullptr;
 
 			{
-					std::transform(extension.begin(), extension.end(), extension.begin(), std::tolower);
+					std::transform(extension.begin(), extension.end(), extension.begin(), [](int ch)
+					{
+						if('A' <= ch && ch <= 'Z')
+							ch  -= ('A' - 'a');
+						return ch;
+					});
 
 #if defined(NANA_WINDOWS)
 					const wchar_t* ext_ico = L".ico";

@@ -28,10 +28,10 @@ namespace filesystem
 	long long filesize(const nana::string& file);
 
 	bool mkdir(const ::std::string& dir, bool & if_exist);
-	bool modified_file_time(const nana::string& file, struct tm&);
+	bool modified_file_time(const ::std::string& file, struct tm&);
 
-	nana::string path_user();
-	nana::string path_current();
+	std::wstring path_user();
+	std::wstring path_current();
 
 	bool rmfile(const char* file_utf8);
 	bool rmdir(const char* dir, bool fails_if_not_empty);
@@ -59,6 +59,7 @@ namespace filesystem
 		std::string text_;
 #endif
 	};
+	
 }//end namespace filesystem
 }//end namespace nana
 

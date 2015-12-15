@@ -32,8 +32,8 @@ namespace nana{ namespace system{
 #ifdef NANA_WINDOWS
 			std::wstring wstr = ::nana::charset(text, nana::unicode::utf8);
 			_m_set(format::text, wstr.c_str(), (wstr.length() + 1) * sizeof(wchar_t));
-#else
-			_m_set(format::text, text, std::strlen(text) + 1);
+#elif defined(NANA_X11)
+			_m_set(format::text, text.c_str(), text.length() + 1);
 #endif
 		}
 
@@ -212,14 +212,14 @@ namespace nana{ namespace system{
 			if(owner)
 			{
 				Atom atom_type;
-				switch(type)
+				switch(fmt)
 				{
 				case format::text:	atom_type = spec.atombase().utf8_string;	break;
 				default:
 					return false;
 				}
 
-				spec.write_selection(owner, spec.atombase().utf8_string, buf, size);
+				spec.write_selection(owner, atom_type, buf, size);
 				return true;
 			}
 #endif
@@ -265,7 +265,7 @@ namespace nana{ namespace system{
 			{
 				Atom atom;
 
-				switch(type)
+				switch(fmt)
 				{
 				case format::text:	atom = spec.atombase().utf8_string;	break;
 				default:

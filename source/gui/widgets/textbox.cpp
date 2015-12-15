@@ -218,7 +218,7 @@ namespace drawerbase {
 
 		textbox::textbox(window wd, const char* text, bool visible)
 		{
-			throw_not_utf8(text, std::strlen(text));
+			throw_not_utf8(text);
 			create(wd, rectangle(), visible);
 			caption(text);
 		}

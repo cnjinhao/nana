@@ -257,11 +257,11 @@ namespace filesystem
 #endif
 	}
 
-	bool modified_file_time(const nana::string& file, struct tm& t)
+	bool modified_file_time(const ::std::string& file, struct tm& t)
 	{
 #if defined(NANA_WINDOWS)
 		WIN32_FILE_ATTRIBUTE_DATA attr;
-		if(::GetFileAttributesEx(file.c_str(), GetFileExInfoStandard, &attr))
+		if(::GetFileAttributesExW(to_nstring(file).c_str(), GetFileExInfoStandard, &attr))
 		{
 			FILETIME local_file_time;
 			if(::FileTimeToLocalFileTime(&attr.ftLastWriteTime, &local_file_time))
@@ -282,7 +282,7 @@ namespace filesystem
 		}
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		struct stat attr;
-		if(0 == ::stat(static_cast<std::string>(nana::charset(file)).c_str(), &attr))
+		if(0 == ::stat(file.c_str(), &attr))
 		{
 			t = *(::localtime(&attr.st_ctime));
 			return true;
@@ -301,7 +301,7 @@ namespace filesystem
 		if(path.size() > 3 && path[1] == ':')
 			root = path.substr(0, 3);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-		if(path[0] == STR('/'))
+		if(path[0] == '/')
 			root = '/';
 #endif
 		bool mkstat = false;

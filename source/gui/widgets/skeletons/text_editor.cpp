@@ -1179,7 +1179,7 @@ namespace nana{	namespace widgets
 				if ( kwptr->kwbase.empty() || text.empty() )
 					return;
 
-                using index = std::wstring::size_type;
+				using index = std::wstring::size_type;
 
 				std::vector<entity> entities;
 
@@ -1202,7 +1202,7 @@ namespace nana{	namespace widgets
 					return true;
 				};
 
-				::nana::cistring cistr;
+				::nana::ciwstring cistr;
 				for (auto & ds : kwptr->kwbase)
 				{
                     index pos{0} ;

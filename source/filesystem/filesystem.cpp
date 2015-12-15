@@ -327,7 +327,7 @@ namespace nana {
 #endif
 			}
 
-			bool modified_file_time(const nana::string& file, struct tm& t)
+			bool modified_file_time(const std::wstring& file, struct tm& t)
 			{
 #if defined(NANA_WINDOWS)
 				WIN32_FILE_ATTRIBUTE_DATA attr;
@@ -361,17 +361,17 @@ namespace nana {
 				return false;
 			}
 
-			bool create_directory(const nana::string& path, bool & if_exist)
+			bool create_directory(const std::wstring& path, bool & if_exist)
 			{
 				if_exist = false;
 				if (path.size() == 0) return false;
 
-				nana::string root;
+				std::wstring root;
 #if defined(NANA_WINDOWS)
 				if (path.size() > 3 && path[1] == L':')
 					root = path.substr(0, 3);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				if (path[0] == STR('/'))
+				if (path[0] == L'/')
 					root = '/';
 #endif
 				bool mkstat = false;
@@ -412,107 +412,86 @@ namespace nana {
 				return mkstat;
 			}
 
-			bool rmfile(const nana::char_t* file)
-			{
-#if defined(NANA_WINDOWS)
-				bool ret = false;
-				if (file)
-				{
-					ret = (::DeleteFile(file) == TRUE);
-					if (!ret)
-						ret = (ERROR_FILE_NOT_FOUND == ::GetLastError());
-				}
 
-				return ret;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				if (std::remove(static_cast<std::string>(nana::charset(file)).c_str()))
+			bool rmfile(const path& p)
+			{
+				if(p.empty())
+					return false;
+#if defined(NANA_WINDOWS)	
+				if (FALSE == ::DeleteFileW(p.c_str()))
+					return (ERROR_FILE_NOT_FOUND == ::GetLastError());
+
+				return true;
+#elif defined(NANA_POSIX)
+				if (std::remove(p.c_str()))
 					return (errno == ENOENT);
 				return true;
 #endif
 			}
 
-			bool rmdir(const char* dir_utf8, bool fails_if_not_empty)
+
+			bool rmdir(const path& p, bool fails_if_not_empty)
 			{
-				bool ret = false;
-				if (dir_utf8)
-				{
+				if(p.empty())
+					return false;
+
 #if defined(NANA_WINDOWS)
-					auto dir = utf8_cast(dir_utf8);
-					ret = (::RemoveDirectory(dir.c_str()) == TRUE);
-					if (!fails_if_not_empty && (::GetLastError() == ERROR_DIR_NOT_EMPTY))
-						ret = detail::rm_dir_recursive(dir.c_str());
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-					if (::rmdir(dir_utf8))
-					{
-						if (!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
-							ret = detail::rm_dir_recursive(dir);
-					}
-					else
-						ret = true;
-#endif
+				if(FALSE != ::RemoveDirectoryW(p.c_str()))
+					return true;
+
+				if(!fails_if_not_empty && (ERROR_DIR_NOT_EMPTY == ::GetLastError()))
+					return detail::rm_dir_recursive(p.c_str());
+
+				return false;
+#elif defined(NANA_POSIX)
+				if(::rmdir(p.c_str()))
+				{
+					if (!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
+						return detail::rm_dir_recursive(p.c_str());
+				
+					return false;
 				}
-				return ret;
+				return true;	
+#endif
 			}
 
-			bool rmdir(const wchar_t* dir, bool fails_if_not_empty)
-			{
-				bool ret = false;
-				if (dir)
-				{
-#if defined(NANA_WINDOWS)
-					ret = (::RemoveDirectory(dir) == TRUE);
-					if (!fails_if_not_empty && (::GetLastError() == ERROR_DIR_NOT_EMPTY))
-						ret = detail::rm_dir_recursive(dir);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-					if (::rmdir(utf8_cast(dir).c_str()))
-					{
-						if (!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
-							ret = detail::rm_dir_recursive(dir);
-					}
-					else
-						ret = true;
-#endif
-				}
-				return ret;
-			}
-
-			nana::string path_user()
+			path path_user()
 			{
 #if defined(NANA_WINDOWS)
-				nana::char_t path[MAX_PATH];
-				if (SUCCEEDED(SHGetFolderPath(0, CSIDL_PROFILE, 0, SHGFP_TYPE_CURRENT, path)))
-					return path;
+				wchar_t pstr[MAX_PATH];
+				if (SUCCEEDED(SHGetFolderPath(0, CSIDL_PROFILE, 0, SHGFP_TYPE_CURRENT, pstr)))
+					return pstr;
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				const char * s = ::getenv("HOME");
-				if (s)
-					return nana::charset(std::string(s, std::strlen(s)), nana::unicode::utf8);
+				const char * pstr = ::getenv("HOME");
+				if (pstr)
+					return pstr;
 #endif
-				return nana::string();
+				return path();
 			}
 
 			path current_path()
 			{
 #if defined(NANA_WINDOWS)
-				nana::char_t buf[MAX_PATH];
-				DWORD len = ::GetCurrentDirectory(MAX_PATH, buf);
+				wchar_t buf[MAX_PATH];
+				DWORD len = ::GetCurrentDirectoryW(MAX_PATH, buf);
 				if (len)
 				{
 					if (len > MAX_PATH)
 					{
-						nana::char_t * p = new nana::char_t[len + 1];
-						::GetCurrentDirectory(len + 1, p);
-						nana::string s = p;
+						wchar_t * p = new wchar_t[len + 1];
+						::GetCurrentDirectoryW(len + 1, p);
+						std::wstring s = p;
 						delete[] p;
 						return s;
 					}
-					return nana::string(buf);
+					return buf;
 				}
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				const char * s = ::getenv("PWD");
-				if (s)
-					return static_cast<nana::string>(nana::charset(std::string(s, std::strlen(s)), nana::unicode::utf8));
+				auto pstr = ::getenv("PWD");
+				if (pstr)
+					return pstr;
 #endif
-				return nana::string();
+				return path();
 			}
 		}//end namespace filesystem
 	} //end namespace experimental

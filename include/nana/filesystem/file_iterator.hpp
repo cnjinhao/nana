@@ -1,12 +1,12 @@
 /*
  *	A File Iterator Implementation
- *	Copyright(C) 2003 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: stdex/filesystem/file_iterator.hpp
+ *	@file: filesystem/file_iterator.hpp
  *	@description:
  *		file_iterator is a toolkit for applying each file and directory in a
  *	specified path.
@@ -39,7 +39,7 @@ namespace filesystem
 #ifdef NANA_WINDOWS
 		fileinfo(const WIN32_FIND_DATA& wfd);
 #elif defined(NANA_POSIX)
-		fileinfo(const nana::string& filename, const struct stat &);
+		fileinfo(const std::string& filename, const struct stat &);
 #endif
 		::std::string name;
 
@@ -119,10 +119,10 @@ namespace filesystem
 			}
 			value_ = value_type(wfd_);
 		#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			auto path = file_path;
-			if(path.size() && path.back() != '/')
-				path += '/';
-			auto handle = opendir(path.c_str());
+			path_ = file_path;
+			if(path_.size() && path_.back() != '/')
+				path_ += '/';
+			auto handle = opendir(path_.c_str());
 
 			end_ = true;
 			if(handle)
@@ -141,9 +141,9 @@ namespace filesystem
 					}
 
 					struct stat fst;
-					if(stat((path + dnt->d_name).c_str(), &fst) == 0)
+					if(stat((path_ + dnt->d_name).c_str(), &fst) == 0)
 					{
-						value_ = value_type(nana::charset(dnt->d_name), fst);
+						value_ = value_type(dnt->d_name, fst);
 					}
 					else
 					{
@@ -226,6 +226,8 @@ namespace filesystem
 
 #if defined(NANA_WINDOWS)
 		WIN32_FIND_DATA		wfd_;
+#else
+		std::string path_;
 #endif
 		std::shared_ptr<find_handle_t> find_ptr_;
 

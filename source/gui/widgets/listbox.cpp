@@ -166,7 +166,7 @@ namespace nana
 
 			oresolver& oresolver::operator<<(const wchar_t* text)
 			{
-				cells_.emplace_back(utf8_cast(text));
+				cells_.emplace_back(to_utf8(text));
 				return *this;
 			}
 
@@ -178,13 +178,13 @@ namespace nana
 
 			oresolver& oresolver::operator<<(const std::wstring& text)
 			{
-				cells_.emplace_back(utf8_cast(text));
+				cells_.emplace_back(to_utf8(text));
 				return *this;
 			}
 
 			oresolver& oresolver::operator<<(std::wstring&& text)
 			{
-				cells_.emplace_back(utf8_cast(text));
+				cells_.emplace_back(to_utf8(text));
 				return *this;
 			}
 
@@ -298,7 +298,7 @@ namespace nana
 			iresolver& iresolver::operator>>(std::wstring& text)
 			{
 				if (pos_ < cells_.size())
-					text = utf8_cast(cells_[pos_++].text);
+					text = to_wstring(cells_[pos_++].text);
 
 				return *this;
 			}
@@ -353,21 +353,20 @@ namespace nana
                     return idx;
                 }
 
-                std::string to_string(const export_options& exp_opt) const
-                {
-                    std::string head_str;
-                    bool first{true};
-                    for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
+				std::string to_string(const export_options& exp_opt) const
+				{
+					std::string head_str;
+					bool first{true};
+					for( size_type idx{}; idx<exp_opt.columns_order.size(); ++idx)
 					{
-                        if(first)
-                            first=false;
-                        else
-                            head_str += exp_opt.sep;
-
-	        			head_str += utf8_cast(column_ref(exp_opt.columns_order[idx]).text);
+						if(first)
+							first=false;
+						else
+							head_str += exp_opt.sep;
+						head_str += to_utf8(column_ref(exp_opt.columns_order[idx]).text);
 					}
-                    return head_str;
-                }
+					return head_str;
+				}
 
 				bool visible() const
 				{
@@ -2599,7 +2598,7 @@ namespace nana
 					if(first)
 						first=false;
 					else
- 						list_str += (utf8_cast(cat.text) + exp_opt.endl);
+ 						list_str += (to_utf8(cat.text) + exp_opt.endl);
 
 					for (auto i : cat.sorted)
 					{
@@ -2979,7 +2978,7 @@ namespace nana
 
 					graph->string({ x + 20, y + txtoff }, categ.text, txt_color);
 
-					native_string_type str = L'(' + to_nstring(categ.items.size()) + L')';
+					native_string_type str = to_nstring('(' + std::to_string(categ.items.size()) + ')');
 
 					auto text_s = graph->text_extent_size(categ.text).width;
 					auto extend_text_w = text_s + graph->text_extent_size(str).width;
@@ -3822,7 +3821,7 @@ namespace nana
 
 				item_proxy& item_proxy::text(size_type col, std::wstring str)
 				{
-					ess_->lister.text(cat_, pos_.item, col, utf8_cast(str), columns());
+					ess_->lister.text(cat_, pos_.item, col, to_utf8(str), columns());
 					ess_->update();
 					return *this;
 				}
@@ -3864,7 +3863,7 @@ namespace nana
 
 				bool item_proxy::operator==(const std::wstring& s) const
 				{
-					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == utf8_cast(s));
+					return (ess_->lister.get_cells(cat_, pos_.item).at(0).text == to_utf8(s));
 				}
 
 				item_proxy & item_proxy::operator=(const item_proxy& rhs)
@@ -4007,7 +4006,7 @@ namespace nana
 					size_type pos = 0;
 					for (auto & txt : arg)
 					{
-						ip.text(pos++, utf8_cast(txt));
+						ip.text(pos++, to_utf8(txt));
 						if (pos >= items)
 							break;
 					}
@@ -4062,7 +4061,7 @@ namespace nana
 				std::string cat_proxy::text() const
 				{
 					internal_scope_guard lock;
-					return utf8_cast(cat_->text);
+					return to_utf8(cat_->text);
 				}
 
 				void cat_proxy::push_back(std::string s)
@@ -4479,7 +4478,7 @@ namespace nana
 
 		void listbox::insert(const index_pair& pos, std::wstring text)
 		{
-			insert(pos, utf8_cast(text));
+			insert(pos, to_utf8(text));
 		}
 
 		void listbox::checkable(bool chkable)
