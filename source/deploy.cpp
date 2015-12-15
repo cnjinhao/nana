@@ -298,6 +298,7 @@ namespace std
 #endif //STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 
 #ifdef STD_TO_STRING_NOT_SUPPORTED
+#include <sstream>
 namespace std
 {
 	std::string to_string(double v)
@@ -362,7 +363,13 @@ namespace std
 		ss << v;
 		return ss.str();
 	}
+}
+#endif // STD_TO_STRING_NOT_SUPPORTED
 
+#ifdef STD_TO_WSTRING_NOT_SUPPORTED
+#include <sstream>
+namespace std
+{
 	std::wstring to_wstring(double v)
 	{
 		std::wstringstream ss;

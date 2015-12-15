@@ -81,24 +81,36 @@
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif
 
+
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
 			#define STD_THREAD_NOT_SUPPORTED
-
+			
 			//boost.thread is preferred
 			//but if USE_github_com_meganz_mingw_std_threads is enabled,
 			//boost.thread will be replaced with meganz's mingw-std-threads.
 			// https://github.com/meganz/mingw-std-threads
 			//#define USE_github_com_meganz_mingw_std_threads
+			
+			#define STD_TO_STRING_NOT_SUPPORTED
 		#endif
-
+		
+		//_GLIBCXX_HAVE_BROKEN_VSWPRINTF is enabled to turn off all numeric conversions on MinGW(GCC 4)
+		
 		#if defined(NANA_MINGW)
-			//It's a known issue under MinGW
+			//It's a knonwn issue under MinGW
 			#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 		#endif
 
 		#if ((__GNUC_MINOR__ < 8) || defined(NANA_MINGW))
 			#define STD_TO_STRING_NOT_SUPPORTED
+			#define STD_TO_WSTRING_NOT_SUPPORTED
+		#endif
+	#elif (__GNUC__ == 5)
+		#if defined(NANA_MINGW)
+			//The _GLIBCXX_HAVE_BROKEN_VSWPRINTF only applies to wide string
+			//It's a knonwn issue under MinGW
+			#define STD_TO_WSTRING_NOT_SUPPORTED	
 		#endif
 	#endif
 #endif
