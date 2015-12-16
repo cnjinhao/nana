@@ -67,50 +67,58 @@
 		// google: That's a known issue, tracked by an active bug (DevDiv#1060849). We were able to update the STL's headers in response to char16_t/char32_t, but we still need to update the separately compiled sources.
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif // _MSC_VER == 1900
-#endif // _MSVC
 
-#if defined(__clang__)
+#elif defined(__clang__)	//Clang
+
+	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif
 
 #elif defined(__GNUC__) //GCC
+
+	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
-	#endif
 
+		//It's a known issue of libstdc++ on MinGW
+		//introduce to_string/to_wstring workarounds for disabled capacity of stdlib
+		#ifdef _GLIBCXX_HAVE_BROKEN_VSWPRINTF
+			#if (__GNUC__ < 5)
+			#	define STD_TO_STRING_NOT_SUPPORTED
+			#endif
+
+			#define STD_TO_WSTRING_NOT_SUPPORTED
+		#endif
+	#endif
 
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
 			#define STD_THREAD_NOT_SUPPORTED
-			
+
 			//boost.thread is preferred
 			//but if USE_github_com_meganz_mingw_std_threads is enabled,
 			//boost.thread will be replaced with meganz's mingw-std-threads.
 			// https://github.com/meganz/mingw-std-threads
 			//#define USE_github_com_meganz_mingw_std_threads
-			
-			#define STD_TO_STRING_NOT_SUPPORTED
 		#endif
-		
-		//_GLIBCXX_HAVE_BROKEN_VSWPRINTF is enabled to turn off all numeric conversions on MinGW(GCC 4)
-		
+
 		#if defined(NANA_MINGW)
 			//It's a knonwn issue under MinGW
 			#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 		#endif
 
-		#if ((__GNUC_MINOR__ < 8) || defined(NANA_MINGW))
-			#define STD_TO_STRING_NOT_SUPPORTED
-			#define STD_TO_WSTRING_NOT_SUPPORTED
-		#endif
-	#elif (__GNUC__ == 5)
-		#if defined(NANA_MINGW)
-			//The _GLIBCXX_HAVE_BROKEN_VSWPRINTF only applies to wide string
-			//It's a knonwn issue under MinGW
-			#define STD_TO_WSTRING_NOT_SUPPORTED	
+		#if (__GNUC_MINOR__ < 8)
+			//introduce to_string/to_wstring workaround for lack of stdlib definitions
+			#ifndef STD_TO_STRING_NOT_SUPPORTED
+			#	define STD_TO_STRING_NOT_SUPPORTED
+			#endif
+
+			#ifndef STD_TO_WSTRING_NOT_SUPPORTED
+			#	define STD_TO_WSTRING_NOT_SUPPORTED
+			#endif
 		#endif
 	#endif
 #endif
