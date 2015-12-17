@@ -291,6 +291,14 @@ namespace detail
 			if (result.native_handle)
 			{
 				core_window_t* wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
+				if (nested)
+				{
+					wd->owner = nullptr;
+					wd->parent = owner;
+					wd->index = static_cast<unsigned>(owner->children.size());
+					owner->children.push_back(wd);
+				}
+
 				wd->flags.take_active = !app.no_activate;
 				wd->title = native_interface::window_caption(result.native_handle);
 
@@ -1301,7 +1309,9 @@ namespace detail
 		void window_manager::_m_disengage(core_window_t* wd, core_window_t* for_new)
 		{
 			auto * const wdpa = wd->parent;
-			bool established = (for_new && wdpa != for_new);
+
+
+			bool established = (for_new && (wdpa != for_new));
 			decltype(for_new->root_widget->other.attribute.root) pa_root_attr = nullptr;
 			
 			if (established)
@@ -1446,10 +1456,17 @@ namespace detail
 					wd->pos_root -= delta_pos;
 					for (auto child : wd->children)
 					{
-						child->root = wd->root;
-						child->root_graph = wd->root_graph;
-						child->root_widget = wd->root_widget;
-						set_pos_root(child, delta_pos);
+						if (category::flags::root == child->other.category)
+						{
+							native_interface::set_parent(child->root, wd->root);
+						}
+						else
+						{
+							child->root = wd->root;
+							child->root_graph = wd->root_graph;
+							child->root_widget = wd->root_widget;
+							set_pos_root(child, delta_pos);
+						}
 					}
 				};
 
@@ -1481,8 +1498,30 @@ namespace detail
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
 			//Delete the children widgets.
-			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end; ++i)
-				_m_destroy(*i);
+			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end;)
+			{
+				auto child = *i;
+
+				if (category::flags::root == child->other.category)
+				{
+					//closing a child root window erases itself from wd->children,
+					//to make sure the iterator is valid, it must be reloaded.
+
+					auto offset = std::distance(wd->children.rbegin(), i);
+
+					//!!!
+					//a potential issue is that if the calling thread is not same with child's thread,
+					//the child root window may not be erased from wd->children now.
+					native_interface::close_window(child->root);
+
+					i = wd->children.rbegin();
+					std::advance(i, offset);
+					end = wd->children.rend();
+					continue;
+				}
+				_m_destroy(child);
+				++i;
+			}
 			wd->children.clear();
 
 
