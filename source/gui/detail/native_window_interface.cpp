@@ -1202,6 +1202,17 @@ namespace nana{
 #endif
 		}
 
+		native_window_type native_interface::set_parent(native_window_type child, native_window_type new_parent)
+		{
+#ifdef NANA_WINDOWS
+			return reinterpret_cast<native_window_type>(
+					::SetParent(reinterpret_cast<HWND>(child), reinterpret_cast<HWND>(new_parent))
+				);
+#elif defined(NANA_X11)
+
+#endif
+		}
+
 		void native_interface::caret_create(native_window_type wd, const ::nana::size& caret_sz)
 		{
 #if defined(NANA_WINDOWS)
