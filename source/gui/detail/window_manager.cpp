@@ -927,34 +927,37 @@ namespace detail
 					arg.receiver = wd->root;
 					brock.emit(event_code::focus, prev_focus, arg, true, brock.get_thread_context());
 				}
+
+				//Check the prev_focus again, because it may be closed in focus event
+				if (!impl_->wd_register.available(prev_focus))
+					prev_focus = nullptr;
 			}
 			else if(wd->root == native_interface::get_focus_window())
-				wd = nullptr; //no new focus_window
+				return prev_focus; //no new focus_window
 
-			if(wd)
-			{
-				if(wd->together.caret)
-					wd->together.caret->set_active(true);
 
-				arg.window_handle = reinterpret_cast<window>(wd);
-				arg.getting = true;
-				arg.receiver = wd->root;
-				brock.emit(event_code::focus, wd, arg, true, brock.get_thread_context());
+			if(wd->together.caret)
+				wd->together.caret->set_active(true);
 
-				if (!root_has_been_focused)
-					native_interface::set_focus(root_wd->root);
+			arg.window_handle = reinterpret_cast<window>(wd);
+			arg.getting = true;
+			arg.receiver = wd->root;
+			brock.emit(event_code::focus, wd, arg, true, brock.get_thread_context());
 
-				//A fix by Katsuhisa Yuasa
-				//The menubar token window will be redirected to the prev focus window when the new
-				//focus window is a menubar.
-				//The focus window will be restore to the prev focus which losts the focus becuase of
-				//memberbar. 
-				if (wd == wd->root_widget->other.attribute.root->menubar)
-					wd = prev_focus;
+			if (!root_has_been_focused)
+				native_interface::set_focus(root_wd->root);
 
-				if (wd != wd->root_widget->other.attribute.root->menubar)
-					brock.set_menubar_taken(wd);
-			}
+			//A fix by Katsuhisa Yuasa
+			//The menubar token window will be redirected to the prev focus window when the new
+			//focus window is a menubar.
+			//The focus window will be restore to the prev focus which losts the focus becuase of
+			//memberbar. 
+			if (prev_focus && (wd == wd->root_widget->other.attribute.root->menubar))
+				wd = prev_focus;
+
+			if (wd != wd->root_widget->other.attribute.root->menubar)
+				brock.set_menubar_taken(wd);
+
 			return prev_focus;
 		}
 
