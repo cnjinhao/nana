@@ -550,10 +550,10 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 			{
-				if(wd->other.category != category::root_tag::value)
+				if (category::flags::root != wd->other.category)
 				{
 					//Move child widgets
-					if(x != wd->pos_owner.x || y != wd->pos_owner.y)
+					if (x != wd->pos_owner.x || y != wd->pos_owner.y)
 					{
 						point delta{ x - wd->pos_owner.x, y - wd->pos_owner.y };
 
@@ -570,8 +570,20 @@ namespace detail
 						return true;
 					}
 				}
-				else if(false == passive)
+				else if (!passive)
+				{
+					//Check if this root is a nested
+					if (wd->parent && (category::flags::root != wd->parent->other.category))
+					{
+						//The parent of the window is not a root, the position should
+						//be transformed to a position based on its parent.
+
+						x += wd->parent->pos_root.x;
+						y += wd->parent->pos_root.y;
+					}
+
 					native_interface::move_window(wd->root, x, y);
+				}
 			}
 
 			return false;
@@ -610,22 +622,36 @@ namespace detail
 			}
 			else
 			{
+				::nana::rectangle root_r = r;
+				//Move event should not get called here,
+				//because the window is a root, the event will get called by system event handler.
+
+				//Check if this root is a nested
+				if (wd->parent && (category::flags::root != wd->parent->other.category))
+				{
+					//The parent of the window is not a root, the position should
+					//be transformed to a position based on its parent.
+
+					root_r.x += wd->parent->pos_root.x;
+					root_r.y += wd->parent->pos_root.y;
+				}
+
 				if(size_changed)
 				{
-					wd->dimension.width = r.width;
-					wd->dimension.height = r.height;
+					wd->dimension.width = root_r.width;
+					wd->dimension.height = root_r.height;
 					wd->drawer.graphics.make(wd->dimension);
 					wd->root_graph->make(wd->dimension);
-					native_interface::move_window(wd->root, r);
+					native_interface::move_window(wd->root, root_r);
 
 					arg_resized arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
-					arg.width = r.width;
-					arg.height = r.height;
+					arg.width = root_r.width;
+					arg.height = root_r.height;
 					brock.emit(event_code::resized, wd, arg, true, brock.get_thread_context());
 				}
 				else
-					native_interface::move_window(wd->root, r.x, r.y);
+					native_interface::move_window(wd->root, root_r.x, root_r.y);
 			}
 
 			return (moved || size_changed);
@@ -1456,12 +1482,15 @@ namespace detail
 				std::function<void(core_window_t*, const nana::point&)> set_pos_root;
 				set_pos_root = [&set_pos_root](core_window_t* wd, const nana::point& delta_pos)
 				{
-					wd->pos_root -= delta_pos;
 					for (auto child : wd->children)
 					{
 						if (category::flags::root == child->other.category)
 						{
-							native_interface::set_parent(child->root, wd->root);
+							auto pos = native_interface::window_position(child->root);
+							native_interface::parent_window(child->root, wd->root, false);
+
+							pos -= delta_pos;
+							native_interface::move_window(child->root, pos.x, pos.y);
 						}
 						else
 						{
@@ -1471,6 +1500,8 @@ namespace detail
 							set_pos_root(child, delta_pos);
 						}
 					}
+
+					wd->pos_root -= delta_pos;
 				};
 
 				set_pos_root(wd, delta_pos);
@@ -1550,7 +1581,7 @@ namespace detail
 
 		void window_manager::_m_move_core(core_window_t* wd, const point& delta)
 		{
-			if(wd->other.category != category::root_tag::value)	//A root widget always starts at (0, 0) and its childs are not to be changed
+			if(category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its childs are not to be changed
 			{
 				wd->pos_root += delta;
 				if (category::flags::frame != wd->other.category)
@@ -1566,6 +1597,11 @@ namespace detail
 
 				for (auto child : wd->children)
 					_m_move_core(child, delta);
+			}
+			else
+			{
+				auto pos = native_interface::window_position(wd->root) + delta;
+				native_interface::move_window(wd->root, pos.x, pos.y);
 			}
 		}
 
