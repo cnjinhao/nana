@@ -1235,13 +1235,14 @@ namespace nana{
 		native_window_type native_interface::parent_window(native_window_type child, native_window_type new_parent, bool returns_previous)
 		{
 #ifdef NANA_WINDOWS
-			auto prev = reinterpret_cast<native_window_type>(
-						::SetParent(reinterpret_cast<HWND>(child), reinterpret_cast<HWND>(new_parent))
-					);
+			auto prev = ::SetParent(reinterpret_cast<HWND>(child), reinterpret_cast<HWND>(new_parent));
+
+			if (prev)
+				::PostMessage(prev, WM_CHANGEUISTATE, UIS_INITIALIZE, NULL);
 
 			::SetWindowPos(reinterpret_cast<HWND>(child), NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
-			return (returns_previous ? prev : nullptr);
+			return reinterpret_cast<native_window_type>(returns_previous ? prev : nullptr);
 #elif defined(NANA_X11)
 			native_window_type prev = nullptr;
 
