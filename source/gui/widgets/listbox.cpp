@@ -3545,7 +3545,7 @@ namespace nana
 					}
 				}
 
-				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
+				void trigger::dbl_click(graph_reference graph, const arg_mouse& arg)
 				{
 					if (essence_->pointer_where.first == essence_t::parts::header)
 						if (cursor::size_we == essence_->lister.wd_ptr()->cursor())
@@ -3564,22 +3564,28 @@ namespace nana
 					//Get the item which the mouse is placed.
 					if (lister.forward(offset_y, essence_->pointer_where.second, item_pos))
 					{
+                        drawerbase::listbox::size_type col=essence_->header.item_by_x(arg.pos.x - 2 - essence_->scroll.offset_x);
+                        arg_item ai(item_pos, col==npos?-1:col);
+                        lister.wd_ptr()->events().item_dbl_click.emit(ai);
+
 						if (!item_pos.is_category())	//being the npos of item.second is a category
 							return;
 
-						bool do_expand = (lister.expand(item_pos.cat) == false);
-						lister.expand(item_pos.cat, do_expand);
+                        if(!ai.category_change_blocked()){
+                            bool do_expand = (lister.expand(item_pos.cat) == false);
+                            lister.expand(item_pos.cat, do_expand);
 
-						if(false == do_expand)
-						{
-							auto last = lister.last();
-							size_type n = essence_->number_of_lister_items(false);
-							if (lister.backward(last, n, last))
-								offset_y = last;
-						}
-						essence_->adjust_scroll_life();
-						refresh(graph);
-						API::lazy_refresh();
+                            if(false == do_expand)
+                            {
+                                auto last = lister.last();
+                                size_type n = essence_->number_of_lister_items(false);
+                                if (lister.backward(last, n, last))
+                                    offset_y = last;
+                            }
+                            essence_->adjust_scroll_life();
+                            refresh(graph);
+                            API::lazy_refresh();
+                        }
 					}
 				}
 
@@ -4284,6 +4290,22 @@ namespace nana
 		: item(m), selected(selected)
 	{
 	}
+
+	arg_item::arg_item ( const nana::drawerbase::listbox::index_pair& itm, nana::drawerbase::listbox::size_type column )
+        : item(itm), column(column), _m_block_change(false)
+    {
+    }
+
+    void arg_item::block_category_change() const {
+        _m_block_change=true;
+    }
+
+    bool arg_item::category_change_blocked() const {
+        return _m_block_change;
+    }
+
+
+
 
 	//class listbox
 		listbox::listbox(window wd, bool visible)

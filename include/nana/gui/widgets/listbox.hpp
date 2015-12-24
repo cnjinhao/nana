@@ -466,13 +466,25 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-	struct arg_listbox
+    struct arg_listbox
+        : public event_arg
+    {
+        mutable drawerbase::listbox::item_proxy item;
+        bool    selected;
+
+        arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
+    };
+	struct arg_item
 		: public event_arg
 	{
-		mutable drawerbase::listbox::item_proxy item;
-		bool	selected;
+        drawerbase::listbox::index_pair item;
+        drawerbase::listbox::size_type column;
+        void block_category_change() const;
+        bool category_change_blocked() const;
 
-		arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
+        arg_item(const drawerbase::listbox::index_pair&, drawerbase::listbox::size_type column);
+    private:
+        mutable bool _m_block_change;
 	};
 
 	namespace drawerbase
@@ -484,6 +496,7 @@ namespace nana
 			{
 				basic_event<arg_listbox> checked;
 				basic_event<arg_listbox> selected;
+                basic_event<arg_item> item_dbl_click;
 			};
 
 			struct scheme
