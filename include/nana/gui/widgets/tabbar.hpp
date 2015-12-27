@@ -144,6 +144,8 @@ namespace nana
 				: public drawer_trigger
 			{
 			public:
+				using native_string_type = ::nana::detail::native_string_type;
+
 				enum class kits
 				{
 					add,
@@ -161,15 +163,15 @@ namespace nana
 				const pat::cloneable<item_renderer> & ext_renderer() const;
 				void ext_renderer(const pat::cloneable<item_renderer>&);
 				void set_event_agent(event_agent_interface*);
-				void insert(std::size_t, nana::string&&, nana::any&&);
+				void insert(std::size_t, native_string_type&&, nana::any&&);
 				std::size_t length() const;
 				bool close_fly(bool);
 				void attach(std::size_t, window);
 				void erase(std::size_t);
 				void tab_color(std::size_t, bool is_bgcolor, const ::nana::color&);
 				void tab_image(size_t, const nana::paint::image&);
-				void text(std::size_t, const nana::string&);
-				nana::string text(std::size_t) const;
+				void text(std::size_t, const native_string_type&);
+				native_string_type text(std::size_t) const;
 				bool toolbox(kits, bool);
 			private:
 				void attached(widget_reference, graph_reference)	override;
@@ -298,15 +300,19 @@ namespace nana
 			return *this;
 		}
 
-		void push_back(nana::string text)  /// Append a new item.
+		void push_back(std::string text)  /// Append a new item.
 		{
-			this->get_drawer_trigger().insert(::nana::npos, std::move(text), value_type());
+			this->get_drawer_trigger().insert(::nana::npos, to_nstring(std::move(text)), value_type());
 			API::update_window(*this);
 		}
 
 		void insert(std::size_t pos, std::string text, value_type value = {})
 		{
-			return this->insert(pos, static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), std::move(value));
+			if (pos > length())
+				throw std::out_of_range("tabbar::insert invalid position");
+
+			this->get_drawer_trigger().insert(pos, to_nstring(text), std::move(value));
+			API::update_window(*this);
 		}
 
 		void insert(std::size_t pos, std::wstring text, value_type value = {})
@@ -314,7 +320,7 @@ namespace nana
 			if (pos > length())
 				throw std::out_of_range("tabbar::insert invalid position");
 
-			this->get_drawer_trigger().insert(pos, std::move(text), std::move(value));
+			this->get_drawer_trigger().insert(pos, to_nstring(text), std::move(value));
 			API::update_window(*this);
 		}
 
@@ -383,14 +389,14 @@ namespace nana
 				API::refresh_window(this->handle());
 		}
 
-		void text(std::size_t pos, const nana::string& str) /// Sets the title of the specified item, If pos is invalid, the method throws an std::out_of_range object.
+		void text(std::size_t pos, const std::string& str) /// Sets the title of the specified item, If pos is invalid, the method throws an std::out_of_range object.
 		{
-			this->get_drawer_trigger().text(pos, str);
+			this->get_drawer_trigger().text(pos, to_nstring(str));
 		}
 
-		nana::string text(std::size_t pos) const /// Returns a title of a specified item, If pos is invalid, the method trhows a std::out_of_range object.
+		std::string text(std::size_t pos) const /// Returns a title of a specified item, If pos is invalid, the method trhows a std::out_of_range object.
 		{
-			return this->get_drawer_trigger().text(pos);
+			return to_utf8(this->get_drawer_trigger().text(pos));
 		}
 	private:
 		std::unique_ptr<drawerbase::tabbar::event_agent<value_type, drawerbase::tabbar::trigger> > evt_agent_;
