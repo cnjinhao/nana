@@ -90,13 +90,14 @@ namespace nana
 			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;
 			::nana::size	text_extent_size(const ::std::string&) const;
-			::nana::size	text_extent_size(const char_t*) const;    ///< Computes the width and height of the specified string of text.
+			::nana::size	text_extent_size(const char*, std::size_t len) const;
+			::nana::size	text_extent_size(const wchar_t*) const;    ///< Computes the width and height of the specified string of text.
 			::nana::size	text_extent_size(const ::std::wstring&) const;    ///< Computes the width and height of the specified string of text.
-			::nana::size	text_extent_size(const char_t*, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
+			::nana::size	text_extent_size(const wchar_t*, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
 			::nana::size	text_extent_size(const ::std::wstring&, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-			::nana::size	glyph_extent_size(const char_t*, std::size_t length, std::size_t begin, std::size_t end) const;
+			::nana::size	glyph_extent_size(const wchar_t*, std::size_t length, std::size_t begin, std::size_t end) const;
 			::nana::size	glyph_extent_size(const ::std::wstring&, std::size_t length, std::size_t begin, std::size_t end) const;
-			bool glyph_pixels(const char_t *, std::size_t length, unsigned* pxbuf) const;
+			bool glyph_pixels(const wchar_t *, std::size_t length, unsigned* pxbuf) const;
 			::nana::size	bidi_extent_size(const std::wstring&) const;
 			::nana::size	bidi_extent_size(const std::string&) const;
 
@@ -154,10 +155,10 @@ namespace nana
 			void string(const point&, const std::string& text_utf8);
 			void string(const point&, const std::string& text_utf8, const color&);
 
-			void string(point, const char_t*, std::size_t len);
-			void string(const point&, const char_t*);
-			void string(const point&, const ::nana::string&);
-			void string(const point&, const ::nana::string&, const color&);
+			void string(point, const wchar_t*, std::size_t len);
+			void string(const point&, const wchar_t*);
+			void string(const point&, const ::std::wstring&);
+			void string(const point&, const ::std::wstring&, const color&);
 
 			void line(const point&, const point&);
 			void line(const point&, const point&, const color&);

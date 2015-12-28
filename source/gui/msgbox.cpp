@@ -108,7 +108,7 @@ namespace nana
 				_m_icon(ico);
 			}
 
-			void prompt(const nana::string& text)
+			void prompt(const std::string& text)
 			{
 				if(text.size())
 				{
@@ -376,23 +376,15 @@ namespace nana
 		sstream_.clear();
 	}
 
-	msgbox & msgbox::operator<<(const nana::string& str)
+	msgbox & msgbox::operator<<(const std::wstring& str)
 	{
-#if defined(NANA_UNICODE)
-		sstream_<<static_cast<std::string>(nana::charset(str));
-#else
-		sstream_<<str;
-#endif
+		sstream_ << to_osmbstr(to_utf8(str));
 		return *this;
 	}
 
-	msgbox & msgbox::operator<<(const nana::char_t* str)
+	msgbox & msgbox::operator<<(const wchar_t* str)
 	{
-#if defined(NANA_UNICODE)
-		sstream_<<static_cast<std::string>(nana::charset(str));;
-#else
-		sstream_<<str;
-#endif
+		sstream_ << to_osmbstr(to_utf8(str));
 		return *this;
 	}
 

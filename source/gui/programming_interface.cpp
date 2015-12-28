@@ -336,14 +336,14 @@ namespace API
 	//@param, text: the text is transformed.
 	//@param, shortkey: the character which indicates a short key.
 	//@param, skpos: retrives the shortkey position if it is not a null_ptr;
-	nana::string transform_shortkey_text(nana::string text, nana::string::value_type &shortkey, nana::string::size_type *skpos)
+	std::string transform_shortkey_text(std::string text, wchar_t &shortkey, std::string::size_type *skpos)
 	{
 		shortkey = 0;
-		nana::string::size_type off = 0;
+		std::string::size_type off = 0;
 		while(true)
 		{
-			nana::string::size_type pos = text.find_first_of('&', off);
-			if(pos != nana::string::npos)
+			auto pos = text.find_first_of('&', off);
+			if(pos != std::wstring::npos)
 			{
 				text.erase(pos, 1);
 				if(shortkey == 0 && pos < text.length())

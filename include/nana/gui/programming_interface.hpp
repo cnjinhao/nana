@@ -140,7 +140,7 @@ namespace API
 
 	void exit();
 
-	nana::string transform_shortkey_text(nana::string text, nana::string::value_type &shortkey, nana::string::size_type *skpos);
+	std::string transform_shortkey_text(std::string text, wchar_t &shortkey, std::string::size_type *skpos);
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 

@@ -79,7 +79,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return idstr_;
 		}
 
-		const std::pair<nana::string, nana::string>& binary() const
+		const std::pair<std::wstring, std::wstring>& binary() const
 		{
 			return binary_;
 		}
@@ -412,13 +412,13 @@ namespace nana{ namespace widgets{	namespace skeletons
 			}
 		}
 	private:
-		const ::nana::char_t * iptr_;
-		const ::nana::char_t * endptr_;
+		const wchar_t * iptr_;
+		const wchar_t * endptr_;
 		const bool	format_enabled_;
 		bool	format_state_{false};
 
-		::nana::string idstr_;
-		std::pair<nana::string, nana::string> binary_;
+		std::wstring idstr_;
+		std::pair<std::wstring, std::wstring> binary_;
 		token revert_token_{token::eof};
 	};
 
@@ -458,7 +458,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 		virtual bool	is_text() const = 0;
 		virtual bool	is_whitespace() const = 0;
-		virtual const nana::string& text() const = 0;
+		virtual const std::wstring& text() const = 0;
 		virtual void measure(graph_reference) = 0;
 		virtual void nontext_render(graph_reference, int x, int y) = 0;
 		virtual const nana::size & size() const = 0;
@@ -470,7 +470,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		: public data
 	{
 	public:
-		data_text(const nana::string& s)
+		data_text(const std::wstring& s)
 			: str_(s)
 		{}
 	private:
@@ -484,7 +484,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return false;
 		}
 
-		virtual const nana::string& text() const override
+		virtual const std::wstring& text() const override
 		{
 			return str_;
 		}
@@ -513,7 +513,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return ascent_;
 		}
 	private:
-		nana::string str_;
+		std::wstring str_;
 		nana::size	size_;
 		std::size_t ascent_;
 	};
@@ -522,7 +522,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		: public data
 	{
 	public:
-		data_image(const nana::string& imgpath, const nana::size & sz, std::size_t limited)
+		data_image(const std::wstring& imgpath, const nana::size & sz, std::size_t limited)
 			: image_(imgpath)//, limited_(limited)
 		{
 			size_ = image_.size();
@@ -562,7 +562,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return false;
 		}
 
-		virtual const nana::string& text() const override
+		virtual const std::wstring& text() const override
 		{
 			return str_;
 		}
@@ -589,7 +589,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return size_.height;
 		}
 	private:
-		nana::string str_;
+		std::wstring str_;
 		nana::paint::image image_;
 		nana::size size_;
 	};
@@ -626,7 +626,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			fblocks_.clear();
 		}
 
-		void parse(const nana::string& s, bool format_enabled)
+		void parse(const std::wstring& s, bool format_enabled)
 		{
 			close();
 
@@ -893,7 +893,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return fbp;
 		}
 
-		void _m_data_factory(token tk, const nana::string& idstr, fblock* fp, std::deque<value>& line)
+		void _m_data_factory(token tk, const std::wstring& idstr, fblock* fp, std::deque<value>& line)
 		{
 			value v;
 			v.fblock_ptr = fp;
@@ -926,7 +926,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 		struct attr_image_tag
 		{
-			nana::string	path;
+			std::wstring	path;
 			nana::size		size;
 			std::size_t		limited;
 

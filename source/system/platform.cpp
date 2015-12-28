@@ -98,7 +98,7 @@ namespace system
 	}
 
 	//open an url through a default browser
-	void open_url(const nana::string& url)
+	void open_url(const std::wstring& url)
 	{
 		if(url.empty())
 			return;

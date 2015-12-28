@@ -1,6 +1,6 @@
 /*
  *	A Tabbar Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -788,7 +788,7 @@ namespace nana
 					};
 
 					for(auto & m : list_)
-						menulister_.append(m.text, fn);
+						menulister_.append(to_utf8(m.text), fn);
 
 					auto r = toolbox_.area(toolbox_.ButtonList, basis_.graph->height());
 					r.x += _m_toolbox_pos();
@@ -1006,8 +1006,10 @@ namespace nana
 								nana::size ts = basis_.graph->text_extent_size(item.text);
 								basis_.graph->set_text_color(m.fgcolor.invisible() ? fgcolor : m.fgcolor);
 								nana::paint::text_renderer tr(*basis_.graph);
+
+								std::wstring wtext = to_wstring(item.text);
 								tr.render({ m.r.x + 24, m.r.y + static_cast<int>(m.r.height - ts.height) / 2 },
-											item.text.c_str(), item.text.length(), basis_.item_pixels - 24 - 18, true);
+											wtext.c_str(), wtext.length(), basis_.item_pixels - 24 - 18, true);
 							}
 						}
 

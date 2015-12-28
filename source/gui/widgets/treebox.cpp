@@ -639,7 +639,7 @@ namespace nana
 
 				nana::paint::image* image(const node_type* node)
 				{
-					const nana::string& idstr = node->value.second.img_idstr;
+					const std::string& idstr = node->value.second.img_idstr;
 					if(idstr.size())
 					{
 						auto i = shape.image_table.find(idstr);

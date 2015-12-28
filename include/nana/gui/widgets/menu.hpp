@@ -56,7 +56,7 @@ namespace nana
 
 				//Default constructor initializes the item as a splitter
 				menu_item_type();
-				menu_item_type(nana::string, const event_fn_t&);
+				menu_item_type(std::string, const event_fn_t&);
 
 				struct
 				{
@@ -66,7 +66,7 @@ namespace nana
 				}flags;
 
 				menu_type		*sub_menu{nullptr};
-				nana::string	text;
+				std::string	text;
 				event_fn_t	functor;
 				checks			style{checks::none};
 				paint::image	image;
@@ -134,7 +134,7 @@ namespace nana
 		~menu();
 
 			/// Appends an item to the menu.
-		item_proxy	append(const nana::string& text, const event_fn_t& callback= event_fn_t());
+		item_proxy	append(const std::string& text, const event_fn_t& callback= event_fn_t());
 		void		append_splitter();
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.

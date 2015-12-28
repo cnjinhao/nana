@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -129,7 +129,7 @@ namespace detail
 		pixbuf.paste(nana::rectangle(r.x, 0, r.width, r.height), dw, point{r.x, r.y});
 	}
 
-	nana::size raw_text_extent_size(drawable_type dw, const nana::char_t* text, std::size_t len)
+	nana::size raw_text_extent_size(drawable_type dw, const wchar_t* text, std::size_t len)
 	{
 		if(nullptr == dw || nullptr == text || 0 == len) return nana::size();
 #if defined(NANA_WINDOWS)
@@ -138,7 +138,7 @@ namespace detail
 			return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
 	#if defined(NANA_UNICODE)
-		std::string utf8str = nana::charset(nana::string(text, len));
+		std::string utf8str = to_utf8(text);
 		XGlyphInfo ext;
 		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
 		::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
@@ -180,12 +180,6 @@ namespace detail
 #elif defined(NANA_X11)
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
 	#if defined(NANA_UNICODE)
-		/*
-		std::string utf8str = nana::charset(nana::string(str, len));
-		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
-		::XftDrawStringUtf8(dw->xftdraw, &(dw->xft_fgcolor), fs, pos.x, pos.y + fs->ascent,
-							reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size());
-		*/
 		auto fs = reinterpret_cast<XftFont*>(dw->font->handle);
 
 		//Fixed missing array declaration by dareg

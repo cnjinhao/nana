@@ -108,7 +108,7 @@ namespace nana
 		menubar(window);						///< Create a menubar at the top of the specified window.
 		~menubar();
 		void create(window);					///< Create a menubar at the top of the specified window.
-		menu& push_back(const nana::string&);	///< Appends a new (empty) menu.
+		menu& push_back(const std::string&);	///< Appends a new (empty) menu.
 		menu& at(size_t index) const;		    ///< Gets the menu specified by index.
 		std::size_t length() const;		        ///< Number of menus.
 	private:

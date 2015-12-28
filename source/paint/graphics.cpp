@@ -365,30 +365,35 @@ namespace paint
 		::nana::size graphics::text_extent_size(const ::std::string& text) const
 		{
 			throw_not_utf8(text);
-			return text_extent_size(static_cast<std::wstring>(::nana::charset(text, ::nana::unicode::utf8)));
+			return text_extent_size(to_wstring(text));
 		}
 
-		nana::size	graphics::text_extent_size(const nana::char_t* text)	const
+		::nana::size graphics::text_extent_size(const char* text, std::size_t len) const
 		{
-			return text_extent_size(text, nana::strlen(text));
+			return text_extent_size(std::string(text, text + len));
 		}
 
-		nana::size	graphics::text_extent_size(const nana::string& text)	const
+		nana::size	graphics::text_extent_size(const wchar_t* text)	const
+		{
+			return text_extent_size(text, std::wcslen(text));
+		}
+
+		nana::size	graphics::text_extent_size(const std::wstring& text)	const
 		{
 			return text_extent_size(text.c_str(), static_cast<unsigned>(text.length()));
 		}
 
-		nana::size	graphics::text_extent_size(const nana::char_t* str, std::size_t len)	const
+		nana::size	graphics::text_extent_size(const wchar_t* str, std::size_t len)	const
 		{
 			return detail::text_extent_size(handle_, str, len);
 		}
 
-		nana::size	graphics::text_extent_size(const nana::string& str, std::size_t len)	const
+		nana::size	graphics::text_extent_size(const std::wstring& str, std::size_t len)	const
 		{
 			return detail::text_extent_size(handle_, str.c_str(), len);
 		}
 
-		nana::size graphics::glyph_extent_size(const nana::char_t * str, std::size_t len, std::size_t begin, std::size_t end) const
+		nana::size graphics::glyph_extent_size(const wchar_t * str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
 			if(len < end) end = len;
 			if (nullptr == handle_ || nullptr == str || 0 == len || begin >= end) return{};
@@ -414,12 +419,12 @@ namespace paint
 			return sz;
 		}
 
-		nana::size graphics::glyph_extent_size(const nana::string& str, std::size_t len, std::size_t begin, std::size_t end) const
+		nana::size graphics::glyph_extent_size(const std::wstring& str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
 			return glyph_extent_size(str.c_str(), len, begin, end);
 		}
 
-		bool graphics::glyph_pixels(const nana::char_t * str, std::size_t len, unsigned* pxbuf) const
+		bool graphics::glyph_pixels(const wchar_t * str, std::size_t len, unsigned* pxbuf) const
 		{
 			if(nullptr == handle_ || nullptr == handle_->context || nullptr == str || nullptr == pxbuf) return false;
 			if(len == 0) return true;
@@ -966,12 +971,12 @@ namespace paint
 			string(pos, text_utf8);
 		}
 
-		void graphics::string(nana::point pos, const char_t* str, std::size_t len)
+		void graphics::string(nana::point pos, const wchar_t* str, std::size_t len)
 		{
 			if (handle_ && str && len)
 			{
-				const nana::char_t * end = str + len;
-				const nana::char_t * i = std::find(str, end, '\t');
+				auto const end = str + len;
+				auto i = std::find(str, end, '\t');
 #if defined(NANA_LINUX) || defined(NANA_MACOS)
 				handle_->update_text_color();
 #endif
@@ -1008,17 +1013,17 @@ namespace paint
 			}
 		}
 
-		void graphics::string(const nana::point& pos, const char_t* str)
+		void graphics::string(const nana::point& pos, const wchar_t* str)
 		{
-			string(pos, str, nana::strlen(str));
+			string(pos, str, std::wcslen(str));
 		}
 
-		void graphics::string(const nana::point& pos, const nana::string& str)
+		void graphics::string(const nana::point& pos, const std::wstring& str)
 		{
 			string(pos, str.data(), str.size());
 		}
 
-		void graphics::string(const point& pos, const ::nana::string& text, const color& clr)
+		void graphics::string(const point& pos, const ::std::wstring& text, const color& clr)
 		{
 			set_text_color(clr);
 			string(pos, text.data(), text.size());

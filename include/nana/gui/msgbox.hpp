@@ -55,10 +55,10 @@ namespace nana
 		void clear();
 
 		/// Writes a string to the buffer.
-		msgbox & operator<<(const nana::string&);
+		msgbox & operator<<(const std::wstring&);
 
 		/// Writes a string to the buffer.
-		msgbox & operator<<(const nana::char_t*);
+		msgbox & operator<<(const wchar_t*);
 
 		/// Writes a string to the buffer.
 		msgbox & operator<<(const nana::charset&);

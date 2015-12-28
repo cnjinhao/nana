@@ -14,10 +14,10 @@ namespace nana{	namespace audio
 		struct implementation;
 	public:
 		player();
-		player(const nana::string& file);
+		player(const std::string& file);
 		~player();
 
-		bool open(const nana::string& file);
+		bool open(const std::string& file);
 		void play();
 		void close();
 	private:

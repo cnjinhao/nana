@@ -79,7 +79,7 @@ namespace nana
 					flags.checked = false;
 				}
 
-				menu_item_type::menu_item_type(nana::string text, const event_fn_t& f)
+				menu_item_type::menu_item_type(std::string text, const event_fn_t& f)
 					: text(std::move(text)), functor(f)
 				{
 					flags.enabled = true;
@@ -148,7 +148,7 @@ namespace nana
 					img.stretch(rectangle{ img.size() }, graph, rectangle{ pos, ::nana::size(image_px, image_px) });
 				}
 
-				void item_text(graph_reference graph, const nana::point& pos, const nana::string& text, unsigned text_pixels, const attr& at)
+				void item_text(graph_reference graph, const nana::point& pos, const std::wstring& text, unsigned text_pixels, const attr& at)
 				{
 					graph.set_text_color(at.enabled ? colors::black : colors::gray_border);
 					nana::paint::text_renderer tr(graph);
@@ -240,7 +240,7 @@ namespace nana
 					return root_;
 				}
 
-				void insert(std::size_t pos, nana::string&& text, const event_fn_t& fn)
+				void insert(std::size_t pos, std::string&& text, const event_fn_t& fn)
 				{
 					if(pos < root_.items.size())
 						root_.items.emplace(root_.items.begin() + pos, std::move(text), std::ref(fn));
@@ -382,9 +382,9 @@ namespace nana
 						renderer->item(*graph_, item_r, attr);
 
 						//Draw text, the text is transformed from orignal for hotkey character
-						nana::char_t hotkey;
-						nana::string::size_type hotkey_pos;
-						nana::string text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
+						wchar_t hotkey;
+						std::string::size_type hotkey_pos;
+						auto text = to_wstring(API::transform_shortkey_text(m.text, hotkey, &hotkey_pos));
 
 						if (m.image.empty() == false)
 							renderer->item_image(graph, nana::point(item_r.x + 5, item_r.y + static_cast<int>(item_h_px - image_px) / 2 - 1), image_px, m.image);
@@ -1108,7 +1108,7 @@ namespace nana
 			delete impl_;
 		}
 
-		auto menu::append(const nana::string& text, const menu::event_fn_t& f) -> item_proxy
+		auto menu::append(const std::string& text, const menu::event_fn_t& f) -> item_proxy
 		{
 			impl_->mbuilder.data().items.emplace_back(text, f);
 			return item_proxy(size() - 1, impl_->mbuilder.data().items.back());

@@ -212,11 +212,9 @@ namespace nana{	namespace drawerbase
 
 		void trigger::_m_draw_title(graph_reference graph, bool enabled)
 		{
-			std::wstring text = ::nana::charset(wdg_->caption(), ::nana::unicode::utf8);
-
-			std::wstring::value_type shortkey;
-			std::wstring::size_type shortkey_pos;
-			std::wstring str = API::transform_shortkey_text(text, shortkey, &shortkey_pos);
+			wchar_t shortkey;
+			std::string::size_type shortkey_pos;
+			std::wstring str = to_wstring(API::transform_shortkey_text(wdg_->caption(), shortkey, &shortkey_pos));
 
 			nana::size ts = graph.text_extent_size(str);
 			nana::size gsize = graph.size();
@@ -237,7 +235,7 @@ namespace nana{	namespace drawerbase
 
 			unsigned omitted_pixels = gsize.width - icon_sz.width;
 			std::size_t txtlen = str.size();
-			const nana::char_t* txtptr = str.c_str();
+			const auto txtptr = str.c_str();
 			if(ts.width)
 			{
 				nana::paint::text_renderer tr(graph);
@@ -513,14 +511,14 @@ namespace nana{	namespace drawerbase
 			{
 				API::unregister_shortkey(handle());
 
-				std::wstring wtext = ::nana::to_wstring(text);
+				native_string_type ntext = std::move(text);
 
 				wchar_t shortkey;
-				API::transform_shortkey_text(wtext, shortkey, 0);
+				API::transform_shortkey_text(to_utf8(ntext), shortkey, nullptr);
 				if (shortkey)
 					API::register_shortkey(handle(), shortkey);
 
-				base_type::_m_caption(std::move(text));
+				base_type::_m_caption(std::move(ntext));
 			}
 		//end class button
 }//end namespace nana
