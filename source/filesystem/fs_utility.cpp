@@ -47,10 +47,11 @@ namespace filesystem
 	typedef std::string string_t;
 	const char* splstr = "/\\";
 #else
-	typedef nana::string string_t;
-	const nana::char_t* splstr = L"/\\";
+	typedef std::wstring string_t;
+	const wchar_t* splstr = L"/\\";
 #endif
 
+	/*
 	//class path
 		path::path(){}
 
@@ -122,7 +123,7 @@ namespace filesystem
 #endif
 		}
 	//end class path
-
+	*/
 
 	namespace detail
 	{
@@ -219,7 +220,8 @@ namespace filesystem
 		return false;
 	}
 
-	long long filesize(const std::string& file)
+	/*
+	long long filesize(const std::string& file)	//deprecated
 	{
 #if defined(NANA_WINDOWS)
 		//Some compilation environment may fail to link to GetFileSizeEx
@@ -256,6 +258,7 @@ namespace filesystem
 		return size;
 #endif
 	}
+	*/
 
 	bool modified_file_time(const ::std::string& file, struct tm& t)
 	{
@@ -291,7 +294,8 @@ namespace filesystem
 		return false;
 	}
 
-	bool mkdir(const std::string& path, bool & if_exist)
+	/*
+	bool mkdir(const std::string& path, bool & if_exist)	//deprecated
 	{
 		if_exist = false;
 		if(path.size() == 0) return false;
@@ -341,6 +345,7 @@ namespace filesystem
 		}
 		return mkstat;
 	}
+	*/
 
 	bool rmfile(const char* file)
 	{

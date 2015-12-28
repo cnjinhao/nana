@@ -25,9 +25,9 @@ namespace filesystem
 	};
 
 	bool file_attrib(const ::std::string& file, attribute&);
-	long long filesize(const nana::string& file);
+	//long long filesize(const nana::string& file);	//deprecated
 
-	bool mkdir(const ::std::string& dir, bool & if_exist);
+	//bool mkdir(const ::std::string& dir, bool & if_exist);	//deprecated
 	bool modified_file_time(const ::std::string& file, struct tm&);
 
 	std::wstring path_user();
@@ -37,6 +37,7 @@ namespace filesystem
 	bool rmdir(const char* dir, bool fails_if_not_empty);
 	nana::string root(const nana::string& path);
 
+	/*
 	class path
 	{
 	public:
@@ -59,6 +60,7 @@ namespace filesystem
 		std::string text_;
 #endif
 	};
+	*/
 	
 }//end namespace filesystem
 }//end namespace nana

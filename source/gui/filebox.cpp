@@ -13,6 +13,7 @@
 #include <nana/gui.hpp>
 #include <nana/gui/filebox.hpp>
 #include <nana/filesystem/fs_utility.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -644,9 +645,30 @@ namespace nana
 					mb();
 					return;
 				}
-				
+
+				using file_type = nana::experimental::filesystem::file_type;
+
+				experimental::filesystem::path fspath(fb_.addr_.filesystem + path);
+
+				auto fs = experimental::filesystem::status(fspath);
+
+				if(fs.type() != file_type::not_found && fs.type() != file_type::none)
+				{
+					mb<<L"The folder is existing, please rename it.";
+					mb();
+					return;
+				}
+
+				if(false == experimental::filesystem::create_directory(fspath))
+				{
+					mb<<L"Failed to create the folder, please rename it.";
+					mb();
+					return;
+				}			
+
+/*
 				bool if_exist;
-				if(false == nana::filesystem::mkdir(fb_.addr_.filesystem + path, if_exist))
+				if(false == nana::filesystem::mkdir(fb_.addr_.filesystem + path, if_exist))	//deprecated
 				{
 					if(if_exist)
 						mb<<L"The folder is existing, please rename it.";
@@ -655,6 +677,7 @@ namespace nana
 					mb();
 					return;
 				}
+*/
 				fb_._m_load_cat_path(fb_.addr_.filesystem);
 				fm_.close();
 			}

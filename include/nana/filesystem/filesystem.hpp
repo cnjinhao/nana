@@ -36,6 +36,7 @@
 #include <memory>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 
 #include <nana/deploy.hpp>
 
@@ -55,25 +56,27 @@ namespace nana  { namespace experimental
 {
 namespace filesystem
 {
-    enum class file_type 
-    { 
-        none = 0,   ///< has not been determined or an error occurred while trying to determine
-        not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error
-        regular = 1,
-        directory = 2  ,
-        symlink =3, ///< Symbolic link file
-        block =4,  ///< Block special file
-        character= 5 ,  ///< Character special file
-        fifo = 6 ,  ///< FIFO or pipe file
-        socket =7,
-        unknown= 8  ///< The file does exist, but is of an operating system dependent type not covered by any of the other
-    };
+	enum class file_type 
+	{ 
+		none = 0,   ///< has not been determined or an error occurred while trying to determine
+		not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error
+		regular = 1,
+		directory = 2  ,
+		symlink =3, ///< Symbolic link file
+		block =4,  ///< Block special file
+		character= 5 ,  ///< Character special file
+		fifo = 6 ,  ///< FIFO or pipe file
+		socket =7,
+		unknown= 8  ///< The file does exist, but is of an operating system dependent type not covered by any of the other
+	};
     
-    enum class perms 
-    {
-        none =0, ///< There are no permissions set for the file.
-        unknown = 0xFFFF  ///<  not known, such as when a file_status object is created without specifying the permissions
-    };
+	enum class perms 
+	{
+		none = 0,		///< There are no permissions set for the file.
+		all = 0x1FF,		///< owner_all | group_all | others_all 
+		mask = 0xFFF,		///< all | set_uid | set_gid | sticky_bit.
+		unknown = 0xFFFF	///<  not known, such as when a file_status object is created without specifying the permissions
+	};
     //enum class copy_options;
     //enum class directory_options;
 
@@ -96,35 +99,28 @@ namespace filesystem
         uintmax_t free;
         uintmax_t available;
     };
-    using file_time_type = std::chrono::time_point< std::chrono::system_clock>;// trivial-clock> ;
 
-    class file_status
-    {
-        file_type m_ft = file_type::none;
-        perms     m_prms = perms::unknown;
+	using file_time_type = std::chrono::time_point< std::chrono::system_clock>;// trivial-clock> ;
 
-       public:
-        explicit file_status(file_type ft = file_type::none, perms prms = perms::unknown) 
-            :m_ft{ft}, m_prms{prms}
-        {}
+	class file_status
+	{
+		file_type m_ft = file_type::none;
+		perms     m_prms = perms::unknown;
 
-        file_status(const file_status& fs) : m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default;  
-        file_status(file_status&& fs) : m_ft{fs.m_ft}, m_prms{fs.m_prms}{} // = default; 
+	public:
+		explicit file_status(file_type ft = file_type::none, perms prms = perms::unknown);
 
-        ~file_status(){};
-        file_status& operator=(const file_status&)  = default;
-        file_status& operator=(file_status&&fs)   // = default; 
-        { 
-            m_ft=fs.m_ft;  m_prms = fs.m_prms; 
-            return *this;
-        } 
-        // observers
-        file_type type() const { return m_ft;}
-        perms permissions() const { return m_prms;}
-        // modifiers
-        void type       (file_type ft)  { m_ft=ft ;}
-        void permissions(perms prms)    { m_prms = prms; }
-    };
+		// observers
+		file_type type() const;
+		perms permissions() const;
+
+		// modifiers
+		void type(file_type ft);
+		void permissions(perms prms);
+	private:
+		file_type	value_;
+		perms		perms_;
+	};
     
     /// concerned only with lexical and syntactic aspects and does not necessarily exist in
     /// external storage, and the pathname is not necessarily valid for the current operating system 
@@ -418,11 +414,11 @@ namespace filesystem
 	}
 
 
-    // file_status status(const path& p);
+	file_status status(const path& p);
 	bool file_attrib(const nana::string& file, attribute&);
 
 	inline bool is_directory(file_status s) { return s.type() == file_type::directory ;}
-	inline bool is_directory(const path& p) { return directory_iterator(p)->attr.directory; }//works??
+	bool is_directory(const path& p);
 	inline bool is_directory(const directory_entry& d) { return d.attr.directory; }
     //bool is_directory(const path& p, error_code& ec) noexcept;
 
@@ -436,35 +432,34 @@ namespace filesystem
     }
     //bool is_empty(const path& p, error_code& ec) noexcept;
 
-           uintmax_t file_size(const nana::string& file);  // deprecate?
-	inline uintmax_t file_size(const path& p){return file_size(p.filename());}
-    //uintmax_t file_size(const path& p, error_code& ec) noexcept;
+	std::uintmax_t file_size(const path& p);
+	//uintmax_t file_size(const path& p, error_code& ec) noexcept;
 	//long long filesize(const nana::string& file);
 
 
-    bool create_directories(const path& p);
-    //bool create_directories(const path& p, error_code& ec) noexcept;
-    bool create_directory(const path& p);
-    //bool create_directory(const path& p, error_code& ec) noexcept;
-    bool create_directory(const path& p, const path& attributes);
-    //bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
-	bool create_directory(const std::wstring& p, bool & if_exist);
+	bool create_directories(const path& p);
+	//bool create_directories(const path& p, error_code& ec) noexcept;
+	bool create_directory(const path& p);
+	//bool create_directory(const path& p, error_code& ec) noexcept;
+	bool create_directory(const path& p, const path& attributes);
+	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
+
+	/*
+	bool create_directory(const std::wstring& p, bool & if_exist);	//deprecated
 	inline bool create_directory(const path& p, bool & if_exist)
 	{
 		return create_directory(p.filename(), if_exist);
-	};
-
-    	bool modified_file_time(const std::wstring& file, struct tm&);
-
-
+	}
+	*/
+	
+	bool modified_file_time(const std::wstring& file, struct tm&);
 	path path_user();
 	
-    
-    path current_path();
-    //path current_path(error_code& ec);
-    void current_path(const path& p);
-    //void current_path(const path& p, error_code& ec) noexcept;    
-    //nana::string path_current();
+	path current_path();
+	//path current_path(error_code& ec);
+	void current_path(const path& p);
+	//void current_path(const path& p, error_code& ec) noexcept;    
+	//nana::string path_current();
 
 
 	//bool remove(const path& p);
