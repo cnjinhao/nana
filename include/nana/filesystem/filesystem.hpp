@@ -100,7 +100,7 @@ namespace filesystem
         uintmax_t available;
     };
 
-	using file_time_type = std::chrono::time_point< std::chrono::system_clock>;// trivial-clock> ;
+	using file_time_type = std::chrono::time_point<std::chrono::system_clock>;// trivial-clock> ;
 
 	class file_status
 	{
@@ -415,7 +415,6 @@ namespace filesystem
 
 
 	file_status status(const path& p);
-	bool file_attrib(const nana::string& file, attribute&);
 
 	inline bool is_directory(file_status s) { return s.type() == file_type::directory ;}
 	bool is_directory(const path& p);

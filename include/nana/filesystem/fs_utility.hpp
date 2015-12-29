@@ -24,10 +24,6 @@ namespace filesystem
 		tm modified;
 	};
 
-	bool file_attrib(const ::std::string& file, attribute&);
-	//long long filesize(const nana::string& file);	//deprecated
-
-	//bool mkdir(const ::std::string& dir, bool & if_exist);	//deprecated
 	bool modified_file_time(const ::std::string& file, struct tm&);
 
 	std::wstring path_user();

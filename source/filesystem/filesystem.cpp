@@ -281,13 +281,39 @@ namespace nana {	namespace experimental {
 #endif
 			}//end namespace detail
 
+		bool not_found_error(int errval)
+		{
+#if defined(NANA_WINDOWS)
+			switch (errval)
+			{
+			case ERROR_FILE_NOT_FOUND:
+			case ERROR_PATH_NOT_FOUND:
+			case ERROR_INVALID_NAME:
+			case ERROR_INVALID_DRIVE:
+			case ERROR_NOT_READY:
+			case ERROR_INVALID_PARAMETER:
+			case ERROR_BAD_PATHNAME:
+			case ERROR_BAD_NETPATH:
+				return true;
+			}
+			return false;
+#elif defined(NANA_POSIX)
+			return (errval == ENOENT || errval == ENOTDIR);
+#else
+			static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
+#endif
+		}
+
 		file_status status(const path& p)
 		{
 #if defined(NANA_WINDOWS)
 			auto attr = ::GetFileAttributesW(p.c_str());
-			if(INVALID_FILE_ATTRIBUTES == attr)
-				return file_status{file_type::unknown};
-
+			if (INVALID_FILE_ATTRIBUTES == attr)
+			{
+				if (not_found_error(static_cast<int>(::GetLastError())))
+					return file_status{file_type::not_found};
+				return file_status{ file_type::unknown };
+			}
 			return file_status{(FILE_ATTRIBUTE_DIRECTORY & attr) ? file_type::directory : file_type::regular, perms::all};	
 #elif defined(NANA_POSIX)
 			struct stat path_stat;
@@ -325,33 +351,6 @@ namespace nana {	namespace experimental {
 			return file_status{file_type::unknown};
 #endif
 		}
-
-			bool file_attrib(const nana::string& file, attribute& attr)
-			{
-#if defined(NANA_WINDOWS)
-				WIN32_FILE_ATTRIBUTE_DATA fad;
-				if (::GetFileAttributesEx(file.c_str(), GetFileExInfoStandard, &fad))
-				{
-					LARGE_INTEGER li;
-					li.u.LowPart = fad.nFileSizeLow;
-					li.u.HighPart = fad.nFileSizeHigh;
-					attr.size = li.QuadPart;
-					attr.directory = (0 != (fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
-					detail::filetime_to_c_tm(fad.ftLastWriteTime, attr.modified);
-					return true;
-				}
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				struct stat fst;
-				if (0 == ::stat(static_cast<std::string>(nana::charset(file)).c_str(), &fst))
-				{
-					attr.size = fst.st_size;
-					attr.directory = (0 != (040000 & fst.st_mode));
-					attr.modified = *(::localtime(&fst.st_ctime));
-					return true;
-				}
-#endif
-				return false;
-			}
 
 			bool is_directory(const path& p)
 			{
@@ -396,6 +395,7 @@ namespace nana {	namespace experimental {
 #endif
 			}
 
+
 			bool modified_file_time(const std::wstring& file, struct tm& t)
 			{
 #if defined(NANA_WINDOWS)
@@ -439,59 +439,6 @@ namespace nana {	namespace experimental {
 				return (0 == ::mkdir(p.c_str(), static_cast<int>(perms::all)));
 #endif
 			}
-
-			/*
-			bool create_directory(const std::wstring& path, bool & if_exist)	//deprecated
-			{
-				if_exist = false;
-				if (path.size() == 0) return false;
-
-				std::wstring root;
-#if defined(NANA_WINDOWS)
-				if (path.size() > 3 && path[1] == L':')
-					root = path.substr(0, 3);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				if (path[0] == L'/')
-					root = '/';
-#endif
-				bool mkstat = false;
-				std::size_t beg = root.size();
-
-				while (true)
-				{
-					beg = path.find_first_not_of(L"/\\", beg);
-					if (beg == path.npos)
-						break;
-
-					std::size_t pos = path.find_first_of(L"/\\", beg + 1);
-					if (pos != path.npos)
-					{
-						root += path.substr(beg, pos - beg);
-
-						mkstat = detail::mkdir_helper(root, if_exist);
-						if (mkstat == false && if_exist == false)
-							return false;
-
-#if defined(NANA_WINDOWS)
-						root += L'\\';
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-						root += L'/';
-#endif
-					}
-					else
-					{
-						if (beg + 1 < path.size())
-						{
-							root += path.substr(beg);
-							mkstat = detail::mkdir_helper(root, if_exist);
-						}
-						break;
-					}
-					beg = pos + 1;
-				}
-				return mkstat;
-			}
-			*/
 
 			bool rmfile(const path& p)
 			{

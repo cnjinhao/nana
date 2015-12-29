@@ -192,73 +192,6 @@ namespace filesystem
 #endif
 	}//end namespace detail
 
-	bool file_attrib(const std::string& file, attribute& attr)
-	{
-		throw_not_utf8(file);
-#if defined(NANA_WINDOWS)
-		WIN32_FILE_ATTRIBUTE_DATA fad;
-		if(::GetFileAttributesEx(utf8_cast(file).c_str(), GetFileExInfoStandard, &fad))
-		{
-			LARGE_INTEGER li;
-			li.u.LowPart = fad.nFileSizeLow;
-			li.u.HighPart = fad.nFileSizeHigh;
-			attr.bytes = li.QuadPart;
-			attr.is_directory = (0 != (fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
-			detail::filetime_to_c_tm(fad.ftLastWriteTime, attr.modified);
-			return true;
-		}
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-		struct stat fst;
-		if(0 == ::stat(file.c_str(), &fst))
-		{
-			attr.bytes = fst.st_size;
-			attr.is_directory = (0 != (040000 & fst.st_mode));
-			attr.modified = *(::localtime(&fst.st_ctime));
-			return true;
-		}
-#endif
-		return false;
-	}
-
-	/*
-	long long filesize(const std::string& file)	//deprecated
-	{
-#if defined(NANA_WINDOWS)
-		//Some compilation environment may fail to link to GetFileSizeEx
-		typedef BOOL (__stdcall *GetFileSizeEx_fptr_t)(HANDLE, PLARGE_INTEGER);
-		GetFileSizeEx_fptr_t get_file_size_ex = reinterpret_cast<GetFileSizeEx_fptr_t>(::GetProcAddress(::GetModuleHandleA("Kernel32.DLL"), "GetFileSizeEx"));
-		if(get_file_size_ex)
-		{
-			HANDLE handle = ::CreateFile(utf8_cast(file).c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-			if(INVALID_HANDLE_VALUE != handle)
-			{
-				LARGE_INTEGER li;
-				if(!get_file_size_ex(handle, &li))
-					li.QuadPart = 0;
-
-				::CloseHandle(handle);
-				return li.QuadPart;
-			}
-		}
-		return 0;
-#else
-		auto stream = ::fopen(file.c_str(), "rb");
-		long long size = 0;
-		if(stream)
-		{
-		#if defined(NANA_LINUX)
-			fseeko64(stream, 0, SEEK_END);
-			size = ftello64(stream);
-		#elif defined(NANA_MACOS)
-			fseeko(stream, 0, SEEK_END);
-			size = ftello(stream);
-		#endif
-			fclose(stream);
-		}
-		return size;
-#endif
-	}
-	*/
 
 	bool modified_file_time(const ::std::string& file, struct tm& t)
 	{
@@ -293,59 +226,6 @@ namespace filesystem
 #endif
 		return false;
 	}
-
-	/*
-	bool mkdir(const std::string& path, bool & if_exist)	//deprecated
-	{
-		if_exist = false;
-		if(path.size() == 0) return false;
-
-		std::string root;
-#if defined(NANA_WINDOWS)
-		if(path.size() > 3 && path[1] == ':')
-			root = path.substr(0, 3);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-		if(path[0] == '/')
-			root = '/';
-#endif
-		bool mkstat = false;
-		std::size_t beg = root.size();
-
-		while(true)
-		{
-			beg = path.find_first_not_of("/\\", beg);
-			if(beg == path.npos)
-				break;
-
-			std::size_t pos = path.find_first_of("/\\", beg + 1);
-			if(pos != path.npos)
-			{
-				root += path.substr(beg, pos - beg);
-
-				mkstat = detail::mkdir_helper(root, if_exist);
-				if(mkstat == false && if_exist == false)
-					return false;
-
-#if defined(NANA_WINDOWS)
-				root += L'\\';
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				root += L'/';
-#endif
-			}
-			else
-			{
-				if(beg + 1 < path.size())
-				{
-					root += path.substr(beg);
-					mkstat = detail::mkdir_helper(root, if_exist);
-				}
-				break;
-			}
-			beg = pos + 1;
-		}
-		return mkstat;
-	}
-	*/
 
 	bool rmfile(const char* file)
 	{

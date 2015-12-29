@@ -138,7 +138,7 @@ namespace detail
 			return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
 	#if defined(NANA_UNICODE)
-		std::string utf8str = to_utf8(text);
+		std::string utf8str = to_utf8(std::wstring(text, len));
 		XGlyphInfo ext;
 		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
 		::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,

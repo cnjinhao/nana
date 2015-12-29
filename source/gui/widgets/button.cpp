@@ -214,7 +214,8 @@ namespace nana{	namespace drawerbase
 		{
 			wchar_t shortkey;
 			std::string::size_type shortkey_pos;
-			std::wstring str = to_wstring(API::transform_shortkey_text(wdg_->caption(), shortkey, &shortkey_pos));
+			std::string mbstr = API::transform_shortkey_text(wdg_->caption(), shortkey, &shortkey_pos);
+			std::wstring str = to_wstring(mbstr);
 
 			nana::size ts = graph.text_extent_size(str);
 			nana::size gsize = graph.size();
@@ -256,8 +257,8 @@ namespace nana{	namespace drawerbase
 
 					if(shortkey)
 					{
-						unsigned off_w = (shortkey_pos ? graph.text_extent_size(str, static_cast<unsigned>(shortkey_pos)).width : 0);
-						nana::size shortkey_size = graph.text_extent_size(txtptr + shortkey_pos, 1);
+						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), static_cast<unsigned>(shortkey_pos)).width : 0);
+						nana::size shortkey_size = graph.text_extent_size(to_wstring(mbstr.c_str() + shortkey_pos), 1);
 						pos.x += off_w;
 						pos.y += static_cast<int>(shortkey_size.height);
 						graph.set_color(colors::black);

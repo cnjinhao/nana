@@ -495,7 +495,6 @@ namespace nana
 			file_container_.clear();
 
 			using namespace nana::filesystem;
-			attribute fattr;
 			file_iterator end;
 			for(file_iterator i(path); i != end; ++i)
 			{
@@ -503,17 +502,21 @@ namespace nana
 					continue;
 				item_fs m;
 				m.name = i->name;
-				if(file_attrib(path + m.name, fattr))
+
+				namespace fs = ::nana::experimental::filesystem;
+				auto fattr = fs::status(path + m.name);
+
+				if(fattr.type() != fs::file_type::not_found && fattr.type() != fs::file_type::unknown)
 				{
-					m.bytes = fattr.bytes;
-					m.directory = fattr.is_directory;
-					m.modified_time = fattr.modified;
+					m.bytes = fs::file_size(path + m.name);
+					m.directory = fs::is_directory(fattr);
+					modified_file_time(path + m.name, m.modified_time);
 				}
 				else
 				{
 					m.bytes = 0;
 					m.directory = i->directory;
-					modified_file_time(path + i->name, m.modified_time);
+					modified_file_time(path + i->name, m.modified_time);				
 				}
 
 				file_container_.push_back(m);
@@ -666,18 +669,6 @@ namespace nana
 					return;
 				}			
 
-/*
-				bool if_exist;
-				if(false == nana::filesystem::mkdir(fb_.addr_.filesystem + path, if_exist))	//deprecated
-				{
-					if(if_exist)
-						mb<<L"The folder is existing, please rename it.";
-					else
-						mb<<L"Failed to create the folder, please rename it.";
-					mb();
-					return;
-				}
-*/
 				fb_._m_load_cat_path(fb_.addr_.filesystem);
 				fm_.close();
 			}
@@ -762,17 +753,17 @@ namespace nana
 					else
 						tar = addr_.filesystem + file;
 
+
 					bool good = true;
-					nana::filesystem::attribute attr;
-					if(nana::filesystem::file_attrib(tar, attr) == false)
+
+					namespace fs = ::nana::experimental::filesystem;
+					auto fattr = fs::status(tar);
+					if(fattr.type() == fs::file_type::not_found)
 					{
-						if(_m_append_def_extension(tar))
-							good = nana::filesystem::file_attrib(tar, attr);
-						else
-							good = false;
+						good = (_m_append_def_extension(tar) && (fs::status(tar).type() == fs::file_type::not_found));					
 					}
-					
-					if(good && attr.is_directory)
+
+					if(good && fs::is_directory(fattr))
 					{
 						_m_load_cat_path(tar);
 						tb_file_.caption("");
@@ -954,9 +945,8 @@ namespace nana
 			}
 			else
 			{
-				nana::filesystem::attribute attr;
-				if (nana::filesystem::file_attrib(ipstr, attr))
-				if (attr.is_directory)
+				namespace fs = ::nana::experimental::filesystem;
+				if (fs::is_directory(ipstr))
 					impl_->path = ipstr;
 			}
 			return *this;
