@@ -63,7 +63,7 @@ namespace nana
 		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
 		bool transparent() const throw();
 		label& format(bool);		///< Switches the format mode of the widget.
-		label& add_format_listener(std::function<void(command, const nana::string&)>);
+		label& add_format_listener(std::function<void(command, const std::string&)>);
 
 		label& click_for(window associated_window) throw();	// as same as the "for" attribute of a label
 

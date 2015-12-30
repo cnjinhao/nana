@@ -237,28 +237,6 @@ namespace nana {	namespace experimental {
 					return rmdir(dir, true);
 				}
 
-				bool mkdir_helper(const nana::string& dir, bool & if_exist)
-				{
-#if defined(NANA_WINDOWS)
-					if (::CreateDirectory(dir.c_str(), 0))
-					{
-						if_exist = false;
-						return true;
-					}
-
-					if_exist = (::GetLastError() == ERROR_ALREADY_EXISTS);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-					if (0 == ::mkdir(static_cast<std::string>(nana::charset(dir)).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
-					{
-						if_exist = false;
-						return true;
-					}
-
-					if_exist = (errno == EEXIST);
-#endif
-					return false;
-				}
-
 #if defined(NANA_WINDOWS)
 				void filetime_to_c_tm(FILETIME& ft, struct tm& t)
 				{
@@ -513,12 +491,33 @@ namespace nana {	namespace experimental {
 					}
 					return buf;
 				}
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				auto pstr = ::getenv("PWD");
+#elif defined(NANA_POSIX)
+				char buf[260];
+				auto pstr = ::getcwd(buf, 260);
 				if (pstr)
 					return pstr;
+				
+				int bytes = 260 + 260;
+				while (ERANGE == errno)
+				{
+					std::unique_ptr<char[]> buf(new char[bytes]);
+					auto pstr = ::getcwd(buf.get(), bytes);
+					if (pstr)
+						return path(pstr);
+
+					bytes += 260;
+				}
 #endif
 				return path();
+			}
+
+			void current_path(const path& p)
+			{
+#if defined(NANA_WINDOWS)
+				::SetCurrentDirectoryW(p.c_str());
+#elif defined(NANA_POSIX)
+				::chdir(p.c_str());
+#endif
 			}
 		}//end namespace filesystem
 	} //end namespace experimental

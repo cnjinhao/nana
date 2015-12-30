@@ -172,7 +172,7 @@ namespace nana
 		void clear();
 		void editable(bool);
 		bool editable() const;
-		void set_accept(std::function<bool(nana::char_t)>);
+		void set_accept(std::function<bool(wchar_t)>);
 		combox& push_back(std::string);
 		std::size_t the_number_of_options() const;
 		std::size_t option() const;   ///< Index of the last selected, from drop-down list, item.

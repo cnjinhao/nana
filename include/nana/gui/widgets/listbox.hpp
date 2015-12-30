@@ -259,7 +259,7 @@ namespace nana
 					for (auto pos = 0u; pos < cols; ++pos)
 					{
 						auto & el = cells[pos];
-						if (el.text.size() == 1 && el.text[0] == nana::char_t(0))
+						if (el.text.size() == 1 && el.text[0] == '\0')
 							continue;
 						text(pos, std::move(el));
 					}

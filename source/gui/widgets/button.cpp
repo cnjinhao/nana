@@ -164,13 +164,13 @@ namespace nana{	namespace drawerbase
 
 		void trigger::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if (static_cast<char_t>(keyboard::enter) == arg.key)
+			if (static_cast<wchar_t>(keyboard::enter) == arg.key)
 				emit_click();
 		}
 
 		void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 		{
-			if (keyboard::space == static_cast<char_t>(arg.key))
+			if (keyboard::space == static_cast<wchar_t>(arg.key))
 			{
 				_m_press(graph, true);
 				return;
@@ -193,7 +193,7 @@ namespace nana{	namespace drawerbase
 
 		void trigger::key_release(graph_reference graph, const arg_keyboard& arg)
 		{
-			if (arg.key != static_cast<char_t>(keyboard::space))
+			if (arg.key != static_cast<wchar_t>(keyboard::space))
 				return;
 
 			emit_click();
@@ -259,8 +259,13 @@ namespace nana{	namespace drawerbase
 					{
 						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), static_cast<unsigned>(shortkey_pos)).width : 0);
 						nana::size shortkey_size = graph.text_extent_size(to_wstring(mbstr.c_str() + shortkey_pos), 1);
+
+						unsigned ascent, descent, inleading;
+						graph.text_metrics(ascent, descent, inleading);
+
 						pos.x += off_w;
-						pos.y += static_cast<int>(shortkey_size.height);
+						pos.y += static_cast<int>(ascent + 2);
+
 						graph.set_color(colors::black);
 						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y });
 					}

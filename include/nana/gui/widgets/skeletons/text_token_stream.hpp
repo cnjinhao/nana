@@ -1,7 +1,7 @@
 /*
  *	Text Token Stream
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -108,7 +108,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return n;
 		}
 	private:
-		static bool _m_unicode_word_breakable(nana::char_t ch)
+		static bool _m_unicode_word_breakable(wchar_t ch)
 		{
 			return ((0x4E00 <= ch) && (ch <= 0x9FFF));
 		}
@@ -116,7 +116,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the data token
 		token _m_token()
 		{
-			nana::char_t ch = *iptr_;
+			wchar_t ch = *iptr_;
 
 			if(ch > 0xFF)
 			{
@@ -150,7 +150,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 			if(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'))
 			{
-				const nana::char_t * idstr = iptr_;
+				auto idstr = iptr_;
 				do
 				{
 					ch = *(++iptr_);
@@ -172,7 +172,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			{
 				//pos keeps the current position, and it used for restring
 				//iptr_ when the search is failed.
-				const nana::char_t * pos = ++iptr_;
+				auto pos = ++iptr_;
 				_m_eat_whitespace();
 				if(*iptr_ == '/')
 				{
@@ -219,7 +219,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			_m_eat_whitespace();
 
-			nana::char_t ch = *iptr_++;
+			auto ch = *iptr_++;
 
 			switch(ch)
 			{
@@ -232,7 +232,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			case '"':
 				//Here is a string and all the meta characters will be ignored except "
 				{
-					const nana::char_t * str = iptr_;
+					auto str = iptr_;
 
 					while((iptr_ != endptr_) && (*iptr_ != '"'))
 						++iptr_;
@@ -244,7 +244,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				_m_eat_whitespace();
 				if((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 				{
-					const nana::char_t * pbegin = iptr_;
+					auto pbegin = iptr_;
 					while((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 						++iptr_;
 
@@ -335,7 +335,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return token::eof;
 		}
 
-		static bool _m_is_idstr_element(nana::char_t ch)
+		static bool _m_is_idstr_element(wchar_t ch)
 		{
 			return (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('_' == ch) || ('0' <= ch && ch <= '9'));
 		}
@@ -343,9 +343,9 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the identifier.
 		void _m_read_idstr()
 		{
-			const nana::char_t * idstr = iptr_;
+			auto idstr = iptr_;
 
-			nana::char_t ch;
+			wchar_t ch;
 			do
 			{
 				ch = *(++iptr_);
@@ -360,7 +360,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			idstr_.clear();
 
-			nana::char_t ch = *iptr_;
+			wchar_t ch = *iptr_;
 
 			idstr_ += ch;
 

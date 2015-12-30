@@ -154,14 +154,14 @@ namespace detail
 		return nana::size();
 	}
 
-	nana::size text_extent_size(drawable_type dw, const nana::char_t * text, std::size_t len)
+	nana::size text_extent_size(drawable_type dw, const wchar_t * text, std::size_t len)
 	{
 		if (nullptr == dw || nullptr == text || 0 == len)
 			return{};
 
 		nana::size extents = raw_text_extent_size(dw, text, len);
 
-		const nana::char_t* const end = text + len;
+		const wchar_t* const end = text + len;
 		int tabs = 0;
 		for(; text != end; ++text)
 		{
@@ -173,7 +173,7 @@ namespace detail
 		return extents;
 	}
 
-	void draw_string(drawable_type dw, const nana::point& pos, const nana::char_t * str, std::size_t len)
+	void draw_string(drawable_type dw, const nana::point& pos, const wchar_t * str, std::size_t len)
 	{
 #if defined(NANA_WINDOWS)
 		::TextOut(dw->context, pos.x, pos.y, str, static_cast<int>(len));

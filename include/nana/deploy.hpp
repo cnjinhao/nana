@@ -1,7 +1,7 @@
 /*
  *	The Deploy Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -134,51 +134,11 @@ namespace nana
 	detail::native_string_type to_nstring(std::size_t);
 }
 
-#ifndef NANA_UNICODE
-	namespace nana
-	{
-		typedef char		char_t;
-		typedef std::string string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
-	}
-#else
-	namespace nana
-	{
-		typedef wchar_t			char_t;
-		typedef std::wstring	string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
-	}
-#endif
-
-namespace nana
-{
-	std::size_t strlen(const char_t* str);
-	char_t* strcpy(char_t* dest, const char_t* source);
-#ifdef _MSC_VER
-	template <size_t N>
-	inline char* strcpy(char (&dest)[N], const char* source)
-	{
-		::strncpy_s(dest, source, _TRUNCATE);
-		return dest;
-	}
-	template <size_t N>
-	inline wchar_t* strcpy(wchar_t (&dest)[N], const wchar_t* source)
-	{
-		::wcsncpy_s(dest, source, _TRUNCATE);
-		return dest;
-	}
-#endif // #ifdef _MSC_VER
-}
-
-#if defined(NANA_WINDOWS)
-	#define NANA_SHARED_EXPORT	extern "C" _declspec(dllexport)
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-	#define NANA_SHARED_EXPORT	extern "C"
-#endif
 
 namespace nana
 {
 	inline unsigned make_rgb(unsigned char red, unsigned char green, unsigned char blue)
 	{
-
 		return ((unsigned(red) << 16)|((unsigned(green)<<8))|blue);
 	}
 }

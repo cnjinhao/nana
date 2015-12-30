@@ -600,22 +600,5 @@ namespace nana
 #endif
 
 
-	std::size_t strlen(const char_t* str)
-	{
-#if defined(NANA_UNICODE)
-		return ::wcslen(str);
-#else
-		return ::strlen(str);
-#endif
-	}
-
-	char_t* strcpy(char_t* dest, const char_t* source)
-	{
-#if defined(NANA_UNICODE)
-		return ::wcscpy(dest, source);
-#else
-		return ::strcpy(dest, source);
-#endif
-	}
 }
 

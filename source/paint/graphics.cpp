@@ -405,8 +405,8 @@ namespace paint
 			::GetTextExtentExPoint(handle_->context, str, static_cast<int>(len), 0, 0, dx, &extents);
 			sz.width = dx[end - 1] - (begin ? dx[begin - 1] : 0);
 			unsigned tab_pixels = handle_->string.tab_length * handle_->string.whitespace_pixels;
-			const nana::char_t * pend = str + end;
-			for(const nana::char_t * p = str + begin; p != pend; ++p)
+			const wchar_t * pend = str + end;
+			for(const wchar_t * p = str + begin; p != pend; ++p)
 			{
 				if(*p == '\t')
 					sz.width += tab_pixels;
@@ -906,7 +906,7 @@ namespace paint
 			return *this;
 		}
 
-		unsigned graphics::bidi_string(const nana::point& pos, const char_t * str, std::size_t len)
+		unsigned graphics::bidi_string(const nana::point& pos, const wchar_t * str, std::size_t len)
 		{
 			auto moved_pos = pos;
 			unicode_bidi bidi;

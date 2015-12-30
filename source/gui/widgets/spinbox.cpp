@@ -254,7 +254,7 @@ namespace nana
 					auto scheme = static_cast<::nana::widgets::skeletons::text_editor_scheme*>(API::dev::get_scheme(wd));
 					editor_ = new ::nana::widgets::skeletons::text_editor(wd, graph, scheme);
 					editor_->multi_lines(false);
-					editor_->set_accept([this](::nana::char_t ch)
+					editor_->set_accept([this](wchar_t ch)
 					{
 						auto str = editor_->text();
 						auto pos = editor_->caret().x;

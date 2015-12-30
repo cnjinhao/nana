@@ -144,7 +144,7 @@ namespace nana
 			::nana::color	palette(bool for_text) const;
 			graphics&		palette(bool for_text, const ::nana::color&);
 
-			unsigned bidi_string(const nana::point&, const char_t *, std::size_t len);
+			unsigned bidi_string(const nana::point&, const wchar_t *, std::size_t len);
 			unsigned bidi_string(const point& pos, const char*, std::size_t len);
 
 			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);

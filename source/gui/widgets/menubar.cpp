@@ -30,11 +30,11 @@ namespace nana
 		{
 			struct item_type
 			{
-				item_type(const ::std::wstring& text, unsigned long shortkey)
+				item_type(const native_string_type text, unsigned long shortkey)
 					: text(text), shortkey(shortkey)
 				{}
 
-				::std::wstring	text;
+				native_string_type	text;
 				unsigned long	shortkey;
 				::nana::menu	menu_obj;
 				::nana::point	pos;
@@ -52,7 +52,7 @@ namespace nana
 						delete i;
 				}
 
-				void append(const ::std::wstring& text, unsigned long shortkey)
+				void append(const native_string_type& text, unsigned long shortkey)
 				{
 					if(shortkey && shortkey < 0x61) shortkey += (0x61 - 0x41);
 					cont_.push_back(new item_type(text, shortkey));
@@ -122,7 +122,7 @@ namespace nana
 					graph_.rectangle(r.pare_off(1), true, body);
 				}
 
-				void item_renderer::caption(const point& pos, const std::wstring& text)
+				void item_renderer::caption(const point& pos, const native_string_type& text)
 				{
 					graph_.string(pos, text, colors::black);
 				}
@@ -138,16 +138,16 @@ namespace nana
 					delete items_;
 				}
 
-				nana::menu* trigger::push_back(const ::std::wstring& text)
+				nana::menu* trigger::push_back(const std::string& text)
 				{
 					wchar_t shkey;
-					API::transform_shortkey_text(to_utf8(text), shkey, nullptr);
+					API::transform_shortkey_text(text, shkey, nullptr);
 
 					if(shkey)
 						API::register_shortkey(widget_->handle(), shkey);
 
 					auto pos = items_->cont().size();
-					items_->append(text, shkey);
+					items_->append(to_nstring(text), shkey);
 					refresh(*graph_);
 					API::update_window(*widget_);
 
@@ -212,7 +212,7 @@ namespace nana
 
 						//Draw text, the text is transformed from orignal for hotkey character
 						int text_top_off = (item_s.height - text_s.height) / 2;
-						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, to_wstring(text));
+						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, to_nstring(text));
 
 						if (hotkey)
 						{
@@ -619,7 +619,7 @@ namespace nana
 
 		menu& menubar::push_back(const std::string& text)
 		{
-			return *(get_drawer_trigger().push_back(to_wstring(text)));
+			return *(get_drawer_trigger().push_back(text));
 		}
 
 		menu& menubar::at(std::size_t index) const

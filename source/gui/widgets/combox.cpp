@@ -906,7 +906,7 @@ namespace nana
 			return _m_impl().editable();
 		}
 
-		void combox::set_accept(std::function<bool(nana::char_t)> pred)
+		void combox::set_accept(std::function<bool(wchar_t)> pred)
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();

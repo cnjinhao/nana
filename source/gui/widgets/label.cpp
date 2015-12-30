@@ -62,7 +62,7 @@ namespace nana
 				typedef widgets::skeletons::fblock fblock;
 				typedef widgets::skeletons::data data;
 
-				void parse(const nana::string& s)
+				void parse(const std::wstring& s)
 				{
 					dstream_.parse(s, format_enabled_);
 				}
@@ -439,7 +439,7 @@ namespace nana
 
 				bool _m_each_line(graph_reference graph, dstream::linecontainer& line, render_status& rs)
 				{
-					nana::string text;
+					std::wstring text;
 					iterator block_start;
 
 					const int lastpos = static_cast<int>(graph.height()) - 1;
@@ -521,7 +521,7 @@ namespace nana
 					return 0;
 				}
 
-				void _m_draw_block(graph_reference graph, const nana::string& s, dstream::linecontainer::iterator block_start, render_status& rs)
+				void _m_draw_block(graph_reference graph, const std::wstring& s, dstream::linecontainer::iterator block_start, render_status& rs)
 				{
 					nana::unicode_bidi bidi;
 					std::vector<nana::unicode_bidi::entity> reordered;
@@ -568,7 +568,7 @@ namespace nana
 							}
 							else
 							{
-								nana::string str = data_ptr->text().substr(text_range.first, text_range.second);
+								auto str = data_ptr->text().substr(text_range.first, text_range.second);
 								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 								sz = graph.text_extent_size(str);
 							}
@@ -625,23 +625,24 @@ namespace nana
 
 					class renderer renderer;
 
-					nana::string target;	//It indicates which target is tracing.
-					nana::string url;
+					std::wstring target;	//It indicates which target is tracing.
+					std::wstring url;
 
 					window for_associated_wd{ nullptr };
 
-					void add_listener(std::function<void(command, const nana::string&)>&& fn)
+					void add_listener(std::function<void(command, const std::string&)>&& fn)
 					{
 						listener_.emplace_back(std::move(fn));
 					}
 
-					void call_listener(command cmd, const nana::string& tar)
+					void call_listener(command cmd, const std::wstring& tar)
 					{
+						auto str = to_utf8(tar);
 						for (auto & fn : listener_)
-							fn(cmd, tar);
+							fn(cmd, str);
 					}
 				private:
-					std::vector<std::function<void(command, const nana::string&)>> listener_;
+					std::vector<std::function<void(command, const std::string&)>> listener_;
 				};
 
 				trigger::trigger()
@@ -666,7 +667,7 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
 				{
-					nana::string target, url;
+					std::wstring target, url;
 
 					if(impl_->renderer.find(arg.pos.x, arg.pos.y, target, url))
 					{
@@ -741,7 +742,7 @@ namespace nana
 					if(impl_->target.size())
 						impl_->call_listener(command::click, impl_->target);
 
-					system::open_url(url);
+					system::open_url(to_utf8(url));
 
 					API::focus_window(impl_->for_associated_wd);
 				}
@@ -813,7 +814,7 @@ namespace nana
 			return *this;
 		}
 
-		label& label::add_format_listener(std::function<void(command, const nana::string&)> f)
+		label& label::add_format_listener(std::function<void(command, const std::string&)> f)
 		{
 			get_drawer_trigger().impl()->add_listener(std::move(f));
 			return *this;

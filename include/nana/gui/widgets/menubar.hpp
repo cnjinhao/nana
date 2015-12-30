@@ -21,6 +21,8 @@ namespace nana
 	{
 		namespace menubar
 		{
+			using native_string_type = ::nana::detail::native_string_type;
+
 			class item_renderer
 			{
 			public:
@@ -33,7 +35,7 @@ namespace nana
 
 				item_renderer(window, graph_reference);
 				virtual void background(const point&, const ::nana::size&, state);
-				virtual void caption(const point&, const ::nana::string&);
+				virtual void caption(const point&, const native_string_type&);
 			private:
 				window	handle_;
 				graph_reference graph_;
@@ -46,7 +48,7 @@ namespace nana
 			public:
 				trigger();
 				~trigger();
-				nana::menu* push_back(const nana::string&);
+				nana::menu* push_back(const std::string&);
 				nana::menu* at(size_t) const;
 				std::size_t size() const;
 			private:

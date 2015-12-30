@@ -221,7 +221,7 @@ namespace nana{	namespace widgets
 			bool hit_select_area(nana::upoint pos) const;
 
 			bool move_select();
-			bool mask(char_t);
+			bool mask(wchar_t);
 
 			/// Returns width of text area excluding the vscroll size.
 			unsigned width_pixels() const;
@@ -253,8 +253,8 @@ namespace nana{	namespace widgets
 			bool mouse_move(bool left_button, const point& screen_pos);
 			bool mouse_pressed(const arg_mouse& arg);
 
-			skeletons::textbase<nana::char_t>& textbase();
-			const skeletons::textbase<nana::char_t>& textbase() const;
+			skeletons::textbase<wchar_t>& textbase();
+			const skeletons::textbase<wchar_t>& textbase() const;
 		private:
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;

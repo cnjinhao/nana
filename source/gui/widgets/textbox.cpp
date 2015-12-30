@@ -422,7 +422,7 @@ namespace drawerbase {
 			return *this;
 		}
 
-		void textbox::set_accept(std::function<bool(nana::char_t)> fn)
+		void textbox::set_accept(std::function<bool(wchar_t)> fn)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -439,7 +439,7 @@ namespace drawerbase {
 			return *this;
 		}
 
-		textbox& textbox::mask(nana::char_t ch)
+		textbox& textbox::mask(wchar_t ch)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();

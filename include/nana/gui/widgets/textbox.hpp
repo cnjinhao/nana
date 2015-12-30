@@ -171,12 +171,12 @@ namespace nana
 		textbox& multi_lines(bool);
 		bool editable() const;
 		textbox& editable(bool);
-		void set_accept(std::function<bool(nana::char_t)>);
+		void set_accept(std::function<bool(wchar_t)>);
 
 		textbox& tip_string(::std::string);
 
         /// Set a mask character. Text is displayed as mask character if a mask character is set. This is used for hiding some special text, such as password.
-		textbox& mask(nana::char_t);
+		textbox& mask(wchar_t);
 
         /// Returns true if some text is selected.
 		bool selected() const;

@@ -98,12 +98,13 @@ namespace system
 	}
 
 	//open an url through a default browser
-	void open_url(const std::wstring& url)
+	void open_url(const std::string& url_utf8)
 	{
-		if(url.empty())
+		if(url_utf8.empty())
 			return;
 
 #if defined(NANA_WINDOWS)
+		std::wstring url = to_wstring(url_utf8);
 		if(::ShellExecute(0, L"open", url.c_str(), 0, 0, SW_SHOWNORMAL) < reinterpret_cast<HINSTANCE>(32))
 		{
 			//Because ShellExecute can delegate execution to Shell extensions (data sources, context menu handlers,

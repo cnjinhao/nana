@@ -244,9 +244,9 @@ namespace detail
 		memset(&logfont, 0, sizeof logfont);
 
 		if (name && *name)
-			strcpy(logfont.lfFaceName, utf8_cast(name).c_str());
+			std::wcscpy(logfont.lfFaceName, utf8_cast(name).c_str());
 		else
-			strcpy(logfont.lfFaceName, def_font_ptr_->name.c_str());
+			std::wcscpy(logfont.lfFaceName, def_font_ptr_->name.c_str());
 
 		logfont.lfCharSet = DEFAULT_CHARSET;
 		HDC hdc = ::GetDC(0);

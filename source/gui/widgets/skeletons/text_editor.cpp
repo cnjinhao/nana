@@ -500,8 +500,8 @@ namespace nana{	namespace widgets
 		{
 			struct text_section
 			{
-				const nana::char_t* begin;
-				const nana::char_t* end;
+				const wchar_t* begin;
+				const wchar_t* end;
 				unsigned pixels;
 
 				text_section()
@@ -509,7 +509,7 @@ namespace nana{	namespace widgets
 					throw std::runtime_error("text_section default construction is forbidden.");
 				}
 
-				text_section(const nana::char_t* ptr, const nana::char_t* endptr)
+				text_section(const wchar_t* ptr, const wchar_t* endptr)
 					: begin(ptr), end(endptr)
 				{}
 			};
@@ -591,7 +591,7 @@ namespace nana{	namespace widgets
 				std::vector<text_section> line_sections;
 
 				unsigned text_px = 0;
-				const nana::char_t * secondary_begin = nullptr;
+				const wchar_t * secondary_begin = nullptr;
 				for (auto & ts : sections)
 				{
 					if (!secondary_begin)
@@ -627,7 +627,7 @@ namespace nana{	namespace widgets
 								if (text_px < pixels)
 									continue;
 
-								const nana::char_t * endptr = ts.begin + (pxi - pxptr) + (text_px == pixels ? 1 : 0);
+								const wchar_t * endptr = ts.begin + (pxi - pxptr) + (text_px == pixels ? 1 : 0);
 								line_sections.emplace_back(secondary_begin, endptr);
 								line_sections.back().pixels = text_px - (text_px == pixels ? 0 : *pxi);
 								secondary_begin = endptr;
@@ -816,7 +816,7 @@ namespace nana{	namespace widgets
 				if (editor_.mask_char_)
 					mask_str.reset(new std::wstring(real_str.end - real_str.begin, editor_.mask_char_));
 
-				const ::nana::char_t * str = (editor_.mask_char_ ? mask_str->data() : real_str.begin);
+				const wchar_t * str = (editor_.mask_char_ ? mask_str->data() : real_str.begin);
 
 				std::vector<unicode_bidi::entity> reordered;
 				unicode_bidi bidi;
@@ -934,10 +934,10 @@ namespace nana{	namespace widgets
 				}
 				const auto end = str.data() + str.size();
 
-				const nana::char_t * word = nullptr;
+				const wchar_t * word = nullptr;
 				for (auto i = str.data(); i != end; ++i)
 				{
-					nana::char_t const ch = *i;
+					wchar_t const ch = *i;
 
 					//CKJ characters and whitespace
 					if (' ' == ch || '\t' == ch || (0x4E00 <= ch && ch <= 0x9FCF))
@@ -1166,8 +1166,8 @@ namespace nana{	namespace widgets
 
 		struct entity
 		{
-			const ::nana::char_t* begin;
-			const ::nana::char_t* end;
+			const wchar_t* begin;
+			const wchar_t* end;
 			const keyword_scheme * scheme;
 		};
 
@@ -1388,7 +1388,7 @@ namespace nana{	namespace widgets
 				case keyboard::sync_idel:
 					paste();	break;
 				case keyboard::tab:
-					put(static_cast<char_t>(keyboard::tab)); break;
+					put(static_cast<wchar_t>(keyboard::tab)); break;
 				case keyboard::cancel:
 					cut();
 					break;
@@ -1404,11 +1404,6 @@ namespace nana{	namespace widgets
 
 					if (key > 0x7F || (32 <= key && key <= 126))
 						put(key);
-					else if (sizeof(nana::char_t) == sizeof(char))
-					{	//Non-Unicode Version for Non-English characters
-						if (key & (1 << (sizeof(nana::char_t) * 8 - 1)))
-							put(key);
-					}
 				}
 				reset_caret();
 				return true;
@@ -1729,12 +1724,12 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		textbase<nana::char_t> & text_editor::textbase()
+		textbase<wchar_t> & text_editor::textbase()
 		{
 			return textbase_;
 		}
 
-		const textbase<nana::char_t> & text_editor::textbase() const
+		const textbase<wchar_t> & text_editor::textbase() const
 		{
 			return textbase_;
 		}
@@ -1896,7 +1891,7 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		bool text_editor::mask(nana::char_t ch)
+		bool text_editor::mask(wchar_t ch)
 		{
 			if (mask_char_ == ch)
 				return false;
@@ -2315,7 +2310,7 @@ namespace nana{	namespace widgets
 
 			bool changed = false;
 			nana::upoint caret = points_.caret;
-			char_t key = arg.key;
+			wchar_t key = arg.key;
 			size_t nlines = textbase_.lines();
 			if (arg.ctrl) {
 				switch (key) {
@@ -2853,7 +2848,7 @@ namespace nana{	namespace widgets
 		{
 			if(0 == tabs) return 0;
 
-			nana::char_t ws[2] = {};
+			wchar_t ws[2] = {};
 			ws[0] = mask_char_ ? mask_char_ : ' ';
 			return static_cast<unsigned>(tabs * graph_.text_extent_size(ws).width * text_area_.tab_space);
 		}
@@ -2999,7 +2994,7 @@ namespace nana{	namespace widgets
 
 			for (auto & ent : entities)
 			{
-				const ::nana::char_t* ent_begin = nullptr;
+				const wchar_t* ent_begin = nullptr;
 
 				int ent_off = 0;
 				if (str <= ent.begin && ent.begin < str_end)
@@ -3094,7 +3089,7 @@ namespace nana{	namespace widgets
 			}
 			else
 			{
-				auto rtl_string = [this, line_h_pixels, &parser, &clr](point strpos, const nana::char_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected){
+				auto rtl_string = [this, line_h_pixels, &parser, &clr](point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected){
 					this->_m_draw_parse_string(parser, true, strpos, clr, str, len);
 
 					//Draw selected part
@@ -3109,7 +3104,7 @@ namespace nana{	namespace widgets
 					graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_h_pixels), graph);
 				};
 
-				const nana::char_t * strbeg = linestr.c_str();
+				const wchar_t * strbeg = linestr.c_str();
 				if (a.y == b.y)
 				{
 					for (auto & ent : reordered)

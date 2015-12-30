@@ -197,7 +197,7 @@ namespace nana
 			oresolver& oresolver::operator<<(std::nullptr_t)
 			{
 				cells_.emplace_back();
-				cells_.back().text.assign(1, nana::char_t(0));	//means invalid cell
+				cells_.back().text.assign(1, wchar_t(0));	//means invalid cell
 				return *this;
 			}
 
@@ -4239,7 +4239,7 @@ namespace nana
 					//check invalid cells
 					for (auto & cl : cells)
 					{
-						if (cl.text.size() == 1 && cl.text[0] == nana::char_t(0))
+						if (cl.text.size() == 1 && cl.text[0] == wchar_t(0))
 						{
 							cl.text.clear();
 							cl.custom_format.reset();

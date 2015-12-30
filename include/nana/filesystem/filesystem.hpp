@@ -279,7 +279,7 @@ namespace filesystem
                                (FILE_ATTRIBUTE_DIRECTORY & wfd_.dwFileAttributes) == FILE_ATTRIBUTE_DIRECTORY,
                                 wfd_.nFileSizeLow);
 
-		#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+		#elif defined(NANA_POSIX)
 			if(path_.size() && (path_[path_.size() - 1] != '/'))
 				path_ += '/';
 			find_handle_t handle = opendir(path_.c_str());
@@ -307,7 +307,7 @@ namespace filesystem
 						is_directory = (0 != S_ISDIR(fst.st_mode));
 						size = fst.st_size;
 					}
-					value_ = value_type(static_cast<nana::string>(nana::charset(dnt->d_name)), is_directory, size);
+					value_ = value_type(static_cast<std::wstring>(nana::charset(dnt->d_name)), is_directory, size);
 					end_ = false;
 				}
 			}
@@ -354,7 +354,7 @@ namespace filesystem
 						}
 					}
 
-					nana::string d_name = nana::charset(dnt->d_name);
+					std::wstring d_name = nana::charset(dnt->d_name, nana::unicode::utf8);
 					struct stat fst;
 					if(stat((path_ + "/" + dnt->d_name).c_str(), &fst) == 0)
 						value_ = value_type(std::move(d_name), (0 != S_ISDIR(fst.st_mode)), fst.st_size);
@@ -433,7 +433,6 @@ namespace filesystem
 
 	std::uintmax_t file_size(const path& p);
 	//uintmax_t file_size(const path& p, error_code& ec) noexcept;
-	//long long filesize(const nana::string& file);
 
 
 	bool create_directories(const path& p);
@@ -442,14 +441,6 @@ namespace filesystem
 	//bool create_directory(const path& p, error_code& ec) noexcept;
 	bool create_directory(const path& p, const path& attributes);
 	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
-
-	/*
-	bool create_directory(const std::wstring& p, bool & if_exist);	//deprecated
-	inline bool create_directory(const path& p, bool & if_exist)
-	{
-		return create_directory(p.filename(), if_exist);
-	}
-	*/
 	
 	bool modified_file_time(const std::wstring& file, struct tm&);
 	path path_user();
@@ -458,7 +449,6 @@ namespace filesystem
 	//path current_path(error_code& ec);
 	void current_path(const path& p);
 	//void current_path(const path& p, error_code& ec) noexcept;    
-	//nana::string path_current();
 
 
 	//bool remove(const path& p);

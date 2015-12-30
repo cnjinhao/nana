@@ -233,7 +233,7 @@ namespace nana
 			API::umake_event(eh);
 		}
 
-		widget& widget::register_shortkey(char_t key)
+		widget& widget::register_shortkey(wchar_t key)
 		{
 			if (key)
 				API::register_shortkey(handle(), static_cast<unsigned long>(key));

@@ -102,7 +102,7 @@ namespace detail
 #if defined(NANA_UNICODE)
 		XftDraw * xftdraw{nullptr};
 		XftColor	xft_fgcolor;
-		const std::string charset(const nana::string& str, const std::string& strcode);
+		const std::string charset(const std::wstring& str, const std::string& strcode);
 #endif
 		drawable_impl_type();
 		~drawable_impl_type();

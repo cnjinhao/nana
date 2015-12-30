@@ -93,7 +93,7 @@ namespace nana
 
 		void umake_event(event_handle eh) const;              ///< Deletes an event callback by a handle.
 
-		widget& register_shortkey(char_t);	///< Registers a shortkey. To remove a registered key, pass 0.
+		widget& register_shortkey(wchar_t);	///< Registers a shortkey. To remove a registered key, pass 0.
 
 		widget& take_active(bool activated, window take_if_not_activated);
 		widget& tooltip(const ::std::string&);

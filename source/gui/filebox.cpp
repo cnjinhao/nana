@@ -96,7 +96,7 @@ namespace nana
 				{
 					double cap = bytes / 1024.0;
 					std::size_t uid = 0;
-					while((cap >= 1024.0) && (uid < (sizeof(ustr) / sizeof(nana::char_t*))))
+					while((cap >= 1024.0) && (uid < (sizeof(ustr) / sizeof(char*))))
 					{
 						cap /= 1024.0;
 						++uid;
