@@ -30,6 +30,183 @@
 
 namespace nana
 {
+	namespace utf
+	{
+		const char* char_ptr(const char* text, unsigned pos)
+		{
+			auto ustr = reinterpret_cast<const unsigned char*>(text);
+			auto const end = ustr + std::strlen(text);
+			
+			for (unsigned i = 0; i != pos; ++i)
+			{
+				const auto uch = *ustr;
+				if (uch < 0x80)
+				{
+					++ustr;
+					continue;
+				}
+
+				if (uch < 0xC0)
+					return nullptr;
+
+				if ((uch < 0xE0) && (ustr + 1 < end))
+					ustr += 2;
+				else if (uch < 0xF0 && (ustr + 2 <= end))
+					ustr += 3;
+				else if (uch < 0x1F && (ustr + 3 <= end))
+					ustr += 4;
+				else
+					return nullptr;
+			}
+
+			return reinterpret_cast<const char*>(ustr);
+		}
+
+		const char* char_ptr(const std::string& text_utf8, unsigned pos)
+		{
+			auto ustr = reinterpret_cast<const unsigned char*>(text_utf8.c_str());
+			auto const end = ustr + text_utf8.size();
+
+			for (unsigned i = 0; i != pos; ++i)
+			{
+				const auto uch = *ustr;
+				if (uch < 0x80)
+				{
+					++ustr;
+					continue;
+				}
+
+				if (uch < 0xC0)
+					return nullptr;
+
+				if ((uch < 0xE0) && (ustr + 1 < end))
+					ustr += 2;
+				else if (uch < 0xF0 && (ustr + 2 <= end))
+					ustr += 3;
+				else if (uch < 0x1F && (ustr + 3 <= end))
+					ustr += 4;
+				else
+					return nullptr;
+			}
+
+			return reinterpret_cast<const char*>(ustr);
+		}
+
+		wchar_t char_at(const char* text_utf8, unsigned pos, unsigned * len)
+		{
+			if (!text_utf8)
+				return 0;
+
+			if (pos)
+			{
+				text_utf8 = char_ptr(text_utf8, pos);
+				if (!text_utf8)
+					return 0;
+			}
+
+			const wchar_t uch = *reinterpret_cast<const unsigned char*>(text_utf8);
+			if (uch < 0x80)
+			{
+				if (len)
+					*len = 1;
+
+				return *text_utf8;
+			}
+
+			if (uch < 0xC0)
+			{
+				if (len)
+					*len = 0;
+
+				return 0;
+			}
+
+			const auto end = text_utf8 + std::strlen(text_utf8);
+
+			if (uch < 0xE0 && (text_utf8 + 1 <= end))
+			{
+				if (len)
+					*len = 2;
+				return (wchar_t(uch & 0x1F) << 6) | (reinterpret_cast<const unsigned char*>(text_utf8)[1] & 0x3F);
+			}
+			else if (uch < 0xF0 && (text_utf8 + 2 <= end))
+			{
+				if (len)
+					*len = 3;
+
+				return ((((uch & 0xF) << 6) | (reinterpret_cast<const unsigned char*>(text_utf8)[1] & 0x3F)) << 6) | (reinterpret_cast<const unsigned char*>(text_utf8)[2] & 0x3F);
+			}
+			else if (uch < 0x1F && (text_utf8 + 3 <= end))
+			{
+				if (len)
+					*len = 4;
+				return ((((((uch & 0x7) << 6) | (reinterpret_cast<const unsigned char*>(text_utf8)[1] & 0x3F)) << 6) | (reinterpret_cast<const unsigned char*>(text_utf8)[2] & 0x3F)) << 6) | (reinterpret_cast<const unsigned char*>(text_utf8)[3] & 0x3F);
+			}
+
+			if (len)
+				*len = 0;
+
+			return 0;
+		}
+
+		wchar_t char_at(const ::std::string& text_utf8, unsigned pos, unsigned * len)
+		{
+			const char* ptr;
+			if (pos)
+			{
+				ptr = char_ptr(text_utf8, pos);
+				if (!ptr)
+					return 0;
+			}
+			else
+				ptr = text_utf8.c_str();
+
+			const wchar_t uch = *reinterpret_cast<const unsigned char*>(ptr);
+			if (uch < 0x80)
+			{
+				if (len)
+					*len = 1;
+
+				return *ptr;
+			}
+
+			if (uch < 0xC0)
+			{
+				if (len)
+					*len = 0;
+
+				return 0;
+			}
+
+			const auto end = text_utf8.c_str() + text_utf8.size();
+
+			if (uch < 0xE0 && (ptr + 1 <= end))
+			{
+				if (len)
+					*len = 2;
+				return (wchar_t(uch & 0x1F) << 6) | (reinterpret_cast<const unsigned char*>(ptr)[1] & 0x3F);
+			}
+			else if (uch < 0xF0 && (ptr + 2 <= end))
+			{
+				if (len)
+					*len = 3;
+
+				return ((((uch & 0xF) << 6) | (reinterpret_cast<const unsigned char*>(ptr)[1] & 0x3F)) << 6) | (reinterpret_cast<const unsigned char*>(ptr)[2] & 0x3F);
+			}
+			else if (uch < 0x1F && (ptr + 3 <= end))
+			{
+				if (len)
+					*len = 4;
+				return ((((((uch & 0x7) << 6) | (reinterpret_cast<const unsigned char*>(ptr)[1] & 0x3F)) << 6) | (reinterpret_cast<const unsigned char*>(ptr)[2] & 0x3F)) << 6) | (reinterpret_cast<const unsigned char*>(ptr)[3] & 0x3F);
+			}
+
+			if (len)
+				*len = 0;
+
+			return 0;
+		}
+	}
+
 	namespace detail
 	{
 		class locale_initializer

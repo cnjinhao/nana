@@ -348,7 +348,7 @@ namespace API
 				text.erase(pos, 1);
 				if(shortkey == 0 && pos < text.length())
 				{
-					shortkey = text.at(pos);
+					shortkey = utf::char_at(text.c_str() + pos, 0, nullptr);
 					if(shortkey == '&')	//This indicates the text contains "&&", it means the symbol have to be ignored.
 						shortkey = 0;
 					else if(skpos)
