@@ -50,27 +50,31 @@
 	 // Windows:
 	#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 
-			#define NANA_WINDOWS
+		#define NANA_WINDOWS
 
-		// end Windows
+		// MINGW ...
+		#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
+			#define NANA_MINGW
+		#endif // MINGW
+
+	// end Windows
 
 
-		 // MacOS:     who define APPLE ??
-		  //#define APPLE
-		#elif defined(APPLE)
-			#define NANA_MACOS
-			#define NANA_X11
+	 // MacOS:     who define APPLE ??
+      //#define APPLE
+    #elif defined(APPLE)
+		#define NANA_MACOS
+		#define NANA_X11
 		// how to add this:  include_directories(/opt/X11/include/)
-		// end MacOS
+	// end MacOS
 
-		 // Linux:    (not sure about __GNU__ ??)
-		#elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
-			#define NANA_LINUX
-			#define NANA_X11
-		// end Linux
-
-		#else
-		#error( "Only Windows and Unix are supported now (Mac OS is experimental)");
+	 // Linux:    (not sure about __GNU__ ??)
+	#elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
+		#define NANA_LINUX
+		#define NANA_X11
+	// end Linux
+	#else
+	#	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
 	#endif // Select platform
 
 	#if defined(NANA_LINUX) || defined(NANA_MACOS)
@@ -95,19 +99,35 @@
 		// google: That's a known issue, tracked by an active bug (DevDiv#1060849). We were able to update the STL's headers in response to char16_t/char32_t, but we still need to update the separately compiled sources.
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif // _MSC_VER == 1900
-#endif // _MSVC
 
-#if   defined(__clang__)
+#elif defined(__clang__)	//Clang
+
+	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
+	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
+		//<codecvt> is a known issue on libstdc++, it works on libc++
+		#define STD_CODECVT_NOT_SUPPORTED
+	#endif
+
 #elif defined(__GNUC__) //GCC
 
-	// MINGW ...
-	#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
-		#define NANA_MINGW
-	#endif // MINGW
+	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
+	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
+		//<codecvt> is a known issue on libstdc++, it works on libc++
+		#define STD_CODECVT_NOT_SUPPORTED
 
-	// support for GCC 4.8.1 will be discontinued. Please use v5 or newer.
+		//It's a known issue of libstdc++ on MinGW
+		//introduce to_string/to_wstring workarounds for disabled capacity of stdlib
+		#ifdef _GLIBCXX_HAVE_BROKEN_VSWPRINTF
+			#if (__GNUC__ < 5)
+			#	define STD_TO_STRING_NOT_SUPPORTED
+			#endif
+
+			#define STD_TO_WSTRING_NOT_SUPPORTED
+		#endif
+	#endif
+
 	#if (__GNUC__ == 4)
-		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ <= 1))
+		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
 			#define STD_THREAD_NOT_SUPPORTED
 
 			//boost.thread is preferred
@@ -124,20 +144,23 @@
 		#endif
 
 		#if defined(NANA_MINGW)
-			//It's a known issue under MinGW
+			//It's a knonwn issue under MinGW
 			#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 		#endif
 
-		#if ((__GNUC_MINOR__ < 8) || defined(NANA_MINGW))
-			#define STD_TO_STRING_NOT_SUPPORTED
+		#if (__GNUC_MINOR__ < 8)
+			//introduce to_string/to_wstring workaround for lack of stdlib definitions
+			#ifndef STD_TO_STRING_NOT_SUPPORTED
+			#	define STD_TO_STRING_NOT_SUPPORTED
+			#endif
+
+			#ifndef STD_TO_WSTRING_NOT_SUPPORTED
+			#	define STD_TO_WSTRING_NOT_SUPPORTED
+			#endif
 		#endif
 	#endif
 #endif
 
-//<codecvt> is a known issue on libstdc++, it works on libc++
-#if defined(__GLIBCPP__) || defined( __GLIBCXX__ )
-	#define STD_CODECVT_NOT_SUPPORTED
-#endif // __GLIBCPP__ or __GLIBCXX__
 
 
 // End compilers ...

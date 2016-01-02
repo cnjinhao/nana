@@ -70,10 +70,12 @@ namespace detail
 		static void	capture_window(native_window_type, bool);
 		static nana::point	cursor_position();
 		static native_window_type get_owner_window(native_window_type);
+		static native_window_type parent_window(native_window_type);
+		static native_window_type parent_window(native_window_type child, native_window_type new_parent, bool returns_previous);
 		//For Caret
-		static void	caret_create(native_window_type, const ::nana::size&);
+		static void caret_create(native_window_type, const ::nana::size&);
 		static void caret_destroy(native_window_type);
-		static void	caret_pos(native_window_type, const ::nana::point&);
+		static void caret_pos(native_window_type, const ::nana::point&);
 		static void caret_visible(native_window_type, bool);
 
 		static void	set_focus(native_window_type);

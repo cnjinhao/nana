@@ -1,10 +1,10 @@
 /*
  *	The Deploy Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/deploy.hpp
@@ -75,7 +75,12 @@ namespace std
 	std::string to_string(long long);
 	std::string to_string(unsigned long long);
 	std::string to_string(float);
-	
+}
+#endif
+
+#ifdef STD_TO_WSTRING_NOT_SUPPORTED
+namespace std
+{
 	std::wstring to_wstring(long double);
 	std::wstring to_wstring(double);
 	std::wstring to_wstring(unsigned);

@@ -140,7 +140,7 @@ namespace nana
 							for (++i; i < end; ++i)
 							{
 								core_window_t* cover = *i;
-								if (cover->visible && (nullptr == cover->effect.bground))
+								if ((category::flags::root != cover->other.category) && cover->visible && (nullptr == cover->effect.bground))
 								{
 									if (overlap(vis_rect, rectangle{ cover->pos_root, cover->dimension }, block.r))
 									{
@@ -271,8 +271,14 @@ namespace nana
 				for (auto child : wd->children)
 				{
 					//it will not past children if no drawer and visible is false.
-					if ((false == child->visible) || ((child->other.category != category::lite_widget_tag::value) && child->drawer.graphics.empty()))
+					if ((false == child->visible) || ((category::flags::lite_widget != child->other.category) && child->drawer.graphics.empty()))
 						continue;
+
+					if (category::flags::root == child->other.category)
+					{
+						paint(child, is_child_refreshed, is_child_refreshed);
+						continue;
+					}
 
 					if (nullptr == child->effect.bground)
 					{

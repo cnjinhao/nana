@@ -526,17 +526,16 @@ namespace nana
 						auto index = state_.active;
 						for (auto & m : menu_->items)
 						{
+							if (0 == index--)
+								break;
+
 							if (m.flags.splitter)
 							{
 								pos.y += 2;
 								continue;
 							}
 
-							if (0 == index)
-								break;
-
 							pos.y += _m_item_height() + 1;
-							--index;
 						}
 
 						tmstamp = state_.active_timestamp;

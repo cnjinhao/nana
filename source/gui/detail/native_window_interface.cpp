@@ -281,7 +281,8 @@ namespace nana{
 							attr_mask, &win_attr);
 			if(handle)
 			{
-				if(owner)
+				//make owner if it is a popup window
+				if((!nested) && owner)
 					restrict::spec.make_owner(owner, reinterpret_cast<native_window_type>(handle));
 
 				XTextProperty name;
@@ -417,8 +418,6 @@ namespace nana{
 
 			if(handle)
 			{
-				restrict::spec.make_owner(parent, reinterpret_cast<native_window_type>(handle));
-
 				XTextProperty name;
 				char text[] = "Nana Child Window";
 				char * str = text;
@@ -786,21 +785,30 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), & r);
-			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
-			if(owner)
+			HWND coord_wd = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
+
+			if (!coord_wd)
+				coord_wd = ::GetParent(reinterpret_cast<HWND>(wd));
+
+			if (coord_wd)
 			{
 				::POINT pos = {r.left, r.top};
-				::ScreenToClient(owner, &pos);
+				::ScreenToClient(coord_wd, &pos);
 				return nana::point(pos.x, pos.y);
 			}
 			return nana::point(r.left, r.top);
 #elif defined(NANA_X11)
 			int x, y;
 			nana::detail::platform_scope_guard psg;
-			Window root = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
-			if(root == 0) root = restrict::spec.root_window();
+			Window coord_wd = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
+			if(!coord_wd)
+			{
+				coord_wd = reinterpret_cast<Window>(parent_window(wd));
+				if(!coord_wd)
+					coord_wd = restrict::spec.root_window();
+			}
 			Window child;
-			if(True == ::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), root, 0, 0, &x, &y, &child))
+			if(True == ::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), coord_wd, 0, 0, &x, &y, &child))
 				return nana::point(x, y);
 			return nana::point(0, 0);
 #endif
@@ -1199,6 +1207,54 @@ namespace nana{
 			return reinterpret_cast<native_window_type>(::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER));
 #elif defined(NANA_X11)
 			return restrict::spec.get_owner(wd);
+#endif
+		}
+
+		native_window_type native_interface::parent_window(native_window_type wd)
+		{
+#ifdef NANA_WINDOWS
+			return reinterpret_cast<native_window_type>(::GetParent(reinterpret_cast<HWND>(wd)));
+#elif defined(NANA_X11)
+			Window root;
+			Window parent;
+			Window * children;
+			unsigned size;
+			
+			platform_scope_guard lock;
+			
+			if(0 != ::XQueryTree(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
+				&root, &parent, &children, &size))
+			{
+				::XFree(children);
+				return reinterpret_cast<native_window_type>(parent);
+			}
+			return nullptr;
+#endif
+		}
+
+		native_window_type native_interface::parent_window(native_window_type child, native_window_type new_parent, bool returns_previous)
+		{
+#ifdef NANA_WINDOWS
+			auto prev = ::SetParent(reinterpret_cast<HWND>(child), reinterpret_cast<HWND>(new_parent));
+
+			if (prev)
+				::PostMessage(prev, WM_CHANGEUISTATE, UIS_INITIALIZE, NULL);
+
+			::SetWindowPos(reinterpret_cast<HWND>(child), NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+			return reinterpret_cast<native_window_type>(returns_previous ? prev : nullptr);
+#elif defined(NANA_X11)
+			native_window_type prev = nullptr;
+
+			platform_scope_guard lock;
+
+			if(returns_previous)
+				prev = parent_window(child);
+
+			::XReparentWindow(restrict::spec.open_display(), 
+				reinterpret_cast<Window>(child), reinterpret_cast<Window>(new_parent),
+				0, 0);
+			return prev;
 #endif
 		}
 
