@@ -79,9 +79,8 @@ namespace nana
 
 			void refresh(graph_reference& graph) override
 			{
-				graph.set_color(static_cast<color_rgb>(0x83EB));
-				graph.set_text_color(colors::white);
-				graph.rectangle(true);
+				graph.palette(true, colors::white);
+				graph.rectangle(true, static_cast<color_rgb>(0x83EB));
 
 				//draw caption
 				auto text = utf8_cast(API::window_caption(window_handle_));

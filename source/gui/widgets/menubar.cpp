@@ -114,7 +114,7 @@ namespace nana
 
 					int right = pos.x + static_cast<int>(size.width) - 1;
 					int bottom = pos.y + static_cast<int>(size.height) - 1;
-					graph_.set_color(corner);
+					graph_.palette(false, corner);
 					graph_.set_pixel(pos.x, pos.y);
 					graph_.set_pixel(right, pos.y);
 					graph_.set_pixel(pos.x, bottom);
@@ -608,7 +608,8 @@ namespace nana
 		{
 			widget_object<category::widget_tag, drawerbase::menubar::trigger>
 				::create(wd, rectangle(nana::size(API::window_size(wd).width, 28)));
-			API::attach_menubar(handle());
+
+			API::dev::set_menubar(handle(), true);
 			evt_resized_ = API::events(wd).resized([this](const ::nana::arg_resized& arg)
 			{
 				auto sz = this->size();

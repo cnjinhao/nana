@@ -121,7 +121,7 @@ namespace nana
 							nana::point(r.x + r.width - 1, r.y + r.height - 1)
 						};
 
-						graph.set_color(static_cast<color_rgb>(0xc0ddfc));
+						graph.palette(false, static_cast<color_rgb>(0xc0ddfc));
 						for(int i = 0; i < 4; ++i)
 							graph.set_pixel(points[i].x, points[i].y);
 
@@ -150,7 +150,7 @@ namespace nana
 
 				void item_text(graph_reference graph, const nana::point& pos, const std::string& text, unsigned text_pixels, const attr& at)
 				{
-					graph.set_text_color(at.enabled ? colors::black : colors::gray_border);
+					graph.palette(true, at.enabled ? colors::black : colors::gray_border);
 					nana::paint::text_renderer tr(graph);
 
 					auto wstr = to_wstring(text);
@@ -372,8 +372,7 @@ namespace nana
 					{
 						if (m.flags.splitter)
 						{
-							graph_->set_color(colors::gray_border);
-							graph_->line({ item_r.x + 40, item_r.y }, { static_cast<int>(graph.width()) - 1, item_r.y });
+							graph_->line({ item_r.x + 40, item_r.y }, { static_cast<int>(graph.width()) - 1, item_r.y }, colors::gray_border);
 							item_r.y += 2;
 							++pos;
 							continue;
@@ -403,8 +402,7 @@ namespace nana
 								int x = item_r.x + 40 + off_w;
 								int y = item_r.y + text_top_off + hotkey_size.height;
 
-								graph_->set_color(colors::black);
-								graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y });
+								graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, colors::black);
 							}
 						}
 
@@ -751,7 +749,7 @@ namespace nana
 					if(submenu_.parent == nullptr)
 					{
 						state_.owner_menubar = owner_menubar;
-						API::register_menu_window(this->handle(), !owner_menubar);
+						API::dev::register_menu_window(this->handle(), !owner_menubar);
 					}
 
 					auto & events = this->events();

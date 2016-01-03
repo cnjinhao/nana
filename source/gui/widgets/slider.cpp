@@ -50,8 +50,7 @@ namespace nana
 				virtual void adorn_textbox(window, graph_reference graph, const std::string& str, const nana::rectangle & r)
 				{
 					graph.rectangle(r, false, colors::white);
-					graph.set_text_color(colors::white);
-					graph.string({ r.x + 2, r.y + 1 }, str);
+					graph.string({ r.x + 2, r.y + 1 }, str, colors::white);
 				}
 
 				virtual void slider(window, graph_reference graph, const slider_t& s)

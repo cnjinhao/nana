@@ -280,6 +280,33 @@ namespace API
 		{
 			restrict::bedrock.delay_restore(enable ? 0 : 1);
 		}
+
+		void register_menu_window(window wd, bool has_keyboard)
+		{
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
+				restrict::bedrock.set_menu(reinterpret_cast<basic_window*>(wd)->root, has_keyboard);
+		}
+
+		void set_menubar(window wd, bool attach)
+		{
+			auto iwd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(iwd))
+			{
+				auto root_attr = iwd->root_widget->other.attribute.root;
+				if (attach)
+				{
+					if (!root_attr->menubar)
+						root_attr->menubar = iwd;
+				}
+				else
+				{
+					if (iwd == root_attr->menubar)
+						root_attr->menubar = nullptr;
+				}
+			}
+		}
 	}//end namespace dev
 
 
@@ -1141,6 +1168,7 @@ namespace API
 		return reinterpret_cast<window>(ts_wd);
 	}
 
+	/*
 	//glass_window deprecated
 	//@brief: Test a window whether it is a glass attribute.
 	bool glass_window(window wd)
@@ -1156,6 +1184,7 @@ namespace API
 			effects_bground_remove(wd);
 		return true;
 	}
+	*/
 
 	void take_active(window wd, bool active, window take_if_active_false)
 	{
@@ -1245,36 +1274,6 @@ namespace API
 						restrict::wd_manager().find_window(wd, clipos.x, clipos.y));
 		}
 		return nullptr;
-	}
-
-	void register_menu_window(window wd, bool has_keyboard)
-	{
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
-			restrict::bedrock.set_menu(reinterpret_cast<basic_window*>(wd)->root, has_keyboard);
-	}
-
-	bool attach_menubar(window menubar)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(menubar);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && (nullptr == iwd->root_widget->other.attribute.root->menubar))
-		{
-			iwd->root_widget->other.attribute.root->menubar = iwd;
-			return true;
-		}
-		return false;
-	}
-
-	void detach_menubar(window menubar)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(menubar);
-		internal_scope_guard lock;
-		if (restrict::wd_manager().available(iwd))
-		{
-			if (iwd->root_widget->other.attribute.root->menubar == iwd)
-				iwd->root_widget->other.attribute.root->menubar = nullptr;
-		}
 	}
 
 	bool is_window_zoomed(window wd, bool ask_for_max)

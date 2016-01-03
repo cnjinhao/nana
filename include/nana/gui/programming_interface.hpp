@@ -83,6 +83,9 @@ namespace API
 		paint::graphics* window_graphics(window);
 
 		void delay_restore(bool);
+
+		void register_menu_window(window, bool has_keyboard);
+		void set_menubar(window wd, bool attach);
 	}//end namespace dev
 
 
@@ -310,8 +313,8 @@ namespace API
 	void eat_tabstop(window, bool);
 	window move_tabstop(window, bool next);     ///< Sets the focus to the window which tabstop is near to the specified window.
 
-	bool glass_window(window);			/// \deprecated
-	bool glass_window(window, bool);	/// \deprecated
+	//bool glass_window(window);			//deprecated
+	//bool glass_window(window, bool);	//deprecated
 
 	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
@@ -327,10 +330,6 @@ namespace API
 	bool calc_window_point(window, point&);   ///<Converts screen coordinates to window coordinates.
 
 	window find_window(const nana::point& mspos);
-
-	void register_menu_window(window, bool has_keyboard);
-	bool attach_menubar(window menubar);
-	void detach_menubar(window menubar);
 
 	bool is_window_zoomed(window, bool ask_for_max);  ///<Tests a window whether it is maximized or minimized.
 

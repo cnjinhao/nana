@@ -1004,7 +1004,7 @@ namespace nana
 							if(item.text.size())
 							{
 								nana::size ts = basis_.graph->text_extent_size(item.text);
-								basis_.graph->set_text_color(m.fgcolor.invisible() ? fgcolor : m.fgcolor);
+								basis_.graph->palette(true, m.fgcolor.invisible() ? fgcolor : m.fgcolor);
 								nana::paint::text_renderer tr(*basis_.graph);
 
 								std::wstring wtext = to_wstring(item.text);
@@ -1030,7 +1030,7 @@ namespace nana
 						}
 					}
 
-					basis_.graph->set_color(static_cast<color_rgb>(0x808080));
+					basis_.graph->palette(false, static_cast<color_rgb>(0x808080));
 
 					int right = static_cast<int>(basis_.graph->width());
 					int end = active_m.r.x + static_cast<int>(active_m.r.width);
@@ -1453,8 +1453,8 @@ namespace nana
 							rectangle r{ m.pos_ends.first, 0, static_cast<unsigned>(m.pos_ends.second - m.pos_ends.first), graph.height() };
 							if (indexes.active_pos == pos)
 							{
-								graph.set_color(colors::white);
-								graph.set_text_color(colors::black);
+								graph.palette(false, colors::white);
+								graph.palette(true, colors::black);
 							}
 							else
 							{
@@ -1463,8 +1463,8 @@ namespace nana
 								if (pos == indexes.hovered_pos)
 									bgcolor = bgcolor.blend(colors::white, 0.5);
 
-								graph.set_color(bgcolor);
-								graph.set_text_color(colors::white);
+								graph.palette(false, bgcolor);
+								graph.palette(true, colors::white);
 							}
 
 							graph.rectangle(r, true);

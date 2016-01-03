@@ -191,12 +191,12 @@ namespace nana
 						int bottom = y + height - 1;
 						int right = x + width - 1;
 
-						graph.set_color(static_cast<color_rgb>(0x6E8D9F));
+						graph.palette(false, static_cast<color_rgb>(0x6E8D9F));
 						graph.line(point{ x, y }, point{right, y});
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
 						++x;
 						++y;
-						graph.set_color(color(0xa6, 0xc7, 0xd9));
+						graph.palette(false, color(0xa6, 0xc7, 0xd9));
 						graph.line(point{ x, y }, point{ right, y });
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
 					}

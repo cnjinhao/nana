@@ -39,7 +39,7 @@ namespace nana
 
 						auto right = r.right() - 1;
 						auto bottom = r.bottom() - 1;
-						graph.set_color(colors::white);
+						graph.palette(false, colors::white);
 						graph.set_pixel(r.x, r.y);
 						graph.set_pixel(right, r.y);
 						graph.set_pixel(r.x, bottom);
@@ -47,7 +47,7 @@ namespace nana
 
 						--right;
 						--bottom;
-						graph.set_color(clr);
+						graph.palette(false, clr);
 						graph.set_pixel(r.x + 1, r.y + 1);
 						graph.set_pixel(right, r.y + 1);
 						graph.set_pixel(r.x + 1, bottom);
@@ -103,8 +103,8 @@ namespace nana
 						}
 						x += (image_pixels_ + 2);
 					}
-					graph.set_text_color(colors::black);
-					graph.string({ x, r.y + 2 }, item->text());
+
+					graph.string({ x, r.y + 2 }, item->text(), colors::black);
 				}
 
 				unsigned item_pixels(graph_reference graph) const

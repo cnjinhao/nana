@@ -173,11 +173,8 @@ namespace nana
 					const int x = r.x + 1;
 					const int y = r.y + 1;
 
-					graph.set_color(bld_bgcolor);
-					graph.rectangle(rectangle{ x + 1, y + 1, 11, 11 }, true);
-
-					graph.set_color(bld_fgcolor);
-					graph.rectangle(rectangle{ x, y, 13, 13 }, false);
+					graph.rectangle(rectangle{ x + 1, y + 1, 11, 11 }, true, bld_bgcolor);
+					graph.rectangle(rectangle{ x, y, 13, 13 }, false, bld_fgcolor);
 
 					switch(crook_data.check_state)
 					{
@@ -252,11 +249,11 @@ namespace nana
 					int x = r.x + (static_cast<int>(r.width) - 16) / 2;
 					int y = r.y + (static_cast<int>(r.height) - 16) / 2;
 
-					graph.set_color(fgcolor);
+					graph.palette(false, fgcolor);
 					graph.line(point{ x + 3, y + 7 }, point{ x + 6, y + 10 });
 					graph.line(point{ x + 7, y + 9 }, point{ x + 12, y + 4 });
 
-					graph.set_color(fgcolor.blend(colors::white, 0.5));
+					graph.palette(false, fgcolor.blend(colors::white, 0.5));
 					graph.line(point{ x + 3, y + 8 }, point{ x + 6, y + 11 });
 					graph.line(point{ x + 7, y + 10 }, point{ x + 12, y + 5 });
 					graph.line(point{ x + 4, y + 7 }, point{ x + 6, y + 9 });
@@ -515,16 +512,16 @@ namespace nana
 				::nana::point left_mid{ r.x + 1, r.y + 1 + static_cast<int>(part_px) }, right_mid{ right_top.x, left_mid.y };
 				::nana::point left_bottom{ r.x + 1, r.bottom() - 2 }, right_bottom{ r.right() - 2, r.bottom() - 2 };
 
-				graph.set_color(bgcolor.blend(colors::white, 0.9));
+				graph.palette(false, bgcolor.blend(colors::white, 0.9));
 				graph.line(left_top, left_mid);
 				graph.line(right_top, right_mid);
 
-				graph.set_color(bgcolor.blend(colors::white, 0.5));
+				graph.palette(false, bgcolor.blend(colors::white, 0.5));
 				graph.line(left_top, right_top);
 
 				left_mid.y++;
 				right_mid.y++;
-				graph.set_color(bgcolor.blend(colors::black, 0.8));
+				graph.palette(false, bgcolor.blend(colors::black, 0.8));
 				graph.line(left_mid, left_bottom);
 				graph.line(right_mid, right_bottom);
 
@@ -557,7 +554,7 @@ namespace nana
 					break;
 				}
 
-				graph.set_color(clr);
+				graph.palette(false, clr);
 
 				const int x = r.x + 4;
 				const int y = r.y + 4;
@@ -959,13 +956,13 @@ namespace nana
 				ps[11].x = r.x + gap;
 				ps[11].y = r.y + gap;
 
-				graph.set_color(fgcolor.blend(colors::black, true));
+				graph.palette(false, fgcolor.blend(colors::black, true));
 
 				for (int i = 0; i < 11; ++i)
 					graph.line(ps[i], ps[i + 1]);
 				graph.line(ps[11], ps[0]);
 
-				graph.set_color(fgcolor);
+				graph.palette(false, fgcolor);
 
 				unsigned thk_minus_2 = thickness_ - 2;
 				graph.rectangle(rectangle{ ps[10].x + 1, ps[10].y + 1, (gap << 1) + thk_minus_2, thk_minus_2 }, true);
@@ -1010,7 +1007,7 @@ namespace nana
 		//Implement element_interface
 		bool facade<element::arrow>::draw(graph_reference graph, const nana::color& bgcolor, const nana::color& fgcolor, const nana::rectangle& r, element_state estate)
 		{
-			graph.set_color(fgcolor);
+			graph.palette(false, fgcolor);
 			return (*cite_)->draw(graph, bgcolor, fgcolor, r, estate, dir_);
 		}
 	//end class facade<element::arrow>

@@ -111,8 +111,7 @@ namespace nana
 						int xpos = static_cast<int>(graph.width() - txt_s.width) / 2;
 						if(xpos < border_size + 16) xpos = 16 + border_size + 1;
 
-						graph.set_text_color(pos_ == where::topbar ? color_.highlight : color_.normal);
-						graph.string({ xpos, top }, str);
+						graph.string({ xpos, top }, str, (pos_ == where::topbar ? color_.highlight : color_.normal));
 					}
 				}
 
@@ -167,9 +166,8 @@ namespace nana
 					if(false == primary)
 						color = { 0xB0, 0xB0, 0xB0 };
 
-					nana::size txt_s = graph.text_extent_size(str_utf8);
-					graph.set_text_color(color);
-					graph.string({ r.x + static_cast<int>(r.width - txt_s.width) / 2, r.y + static_cast<int>(r.height - txt_s.height) / 2 }, str_utf8);
+					auto txt_s = graph.text_extent_size(str_utf8);
+					graph.string({ r.x + static_cast<int>(r.width - txt_s.width) / 2, r.y + static_cast<int>(r.height - txt_s.height) / 2 }, str_utf8, color);
 				}
 
 				void trigger::_m_draw_pos(drawing_basis & dbasis, graph_reference graph, int x, int y, int number, bool primary, bool sel)

@@ -148,10 +148,10 @@ namespace nana
 
 				enum class kits
 				{
-					add,
-					scroll,
-					list,
-					close
+					add,	///< The type identifies the add button of the tabbar's toolbox.
+					scroll,	///< The type identifies the scroll button of the tabbar's toolbox
+					list,	///< The type identifies the list button of the tabbar's toolbox
+					close	///< The type identifies the close button of the tabbar's toolbox
 				};
 
 				trigger();
@@ -193,30 +193,9 @@ namespace nana
 	{
 		typedef drawerbase::tabbar::trigger drawer_trigger_t;
 	public:
-		typedef Type value_type;            ///< The type of element data which is stored in the tabbar.
-		typedef drawerbase::tabbar::item_renderer item_renderer; ///< A user-defined item renderer should be derived from this interface.
-
-		//These member types is deprecated, they will be removed in Nana 1.3
-		struct button_add{};    ///< The type identifies the add button of the tabbar's toolbox.
-		struct button_scroll{}; ///< The type identifies the scroll button of the tabbar's toolbox.
-		struct button_list{};   ///< The type identifies the list button of the tabbar's toolbox.
-		struct button_close{};  ///< The type identifies the close button of the tabbar's toolbox.
-
-		//This template class is deprecated, it will be removed in 1.3
-		/// A template class identifies the buttons of the tabbar's toolbox. Refer to notes for more details.
-		template<typename ButtonAdd = nana::null_type, typename ButtonScroll = nana::null_type, typename ButtonList = nana::null_type, typename ButtonClose = nana::null_type>
-		struct button_container
-		{
-			typedef meta::fixed_type_set<ButtonAdd, ButtonScroll, ButtonList, ButtonClose> type_set;
-		};
-
-		enum class kits
-		{
-			add,	///< The type identifies the add button of the tabbar's toolbox.
-			scroll,	///< The type identifies the scroll button of the tabbar's toolbox
-			list,	///< The type identifies the list button of the tabbar's toolbox
-			close	///< The type identifies the close button of the tabbar's toolbox
-		};
+		using value_type = Type;            ///< The type of element data which is stored in the tabbar.
+		using item_renderer = drawerbase::tabbar::item_renderer; ///< A user-defined item renderer should be derived from this interface.
+		using kits = drawer_trigger_t::kits;
 
 		tabbar()
 		{
@@ -324,12 +303,6 @@ namespace nana
 			API::update_window(*this);
 		}
 
-		//deprecated from 1.2.1, removed from 1.3
-		void relate(std::size_t pos, window wd)  /// Binds a window to an item specified by pos, if the item is selected, shows the window, otherwise, hides it.
-		{
-			this->get_drawer_trigger().attach(pos, wd);
-		}
-
 		void attach(std::size_t pos, window attach_wd)
 		{
 			if (attach_wd && API::empty_window(attach_wd))
@@ -357,32 +330,8 @@ namespace nana
 		{
 			this->get_drawer_trigger().tab_image(pos, img);
 		}
+
         /// Sets buttons of the tabbar's toolbox, refer to notes for more details.
-		template<typename Add, typename Scroll, typename List, typename Close>
-		void toolbox(const button_container<Add, Scroll, List, Close>&, bool enable)
-		{
-			typedef typename button_container<Add, Scroll, List, Close>::type_set type_set;
-			auto & tg = this->get_drawer_trigger();
-			bool redraw = false;
-
-			using inner_kits = drawerbase::tabbar::trigger::kits;
-
-			if(type_set::template count<button_add>::value)
-				redraw |= tg.toolbox(inner_kits::add, enable);
-
-			if(type_set::template count<button_scroll>::value)
-				redraw |= tg.toolbox(inner_kits::scroll, enable);
-
-			if(type_set::template count<button_list>::value)
-				redraw |= tg.toolbox(inner_kits::add, enable);
-
-			if(type_set::template count<button_close>::value)
-				redraw |= tg.toolbox(inner_kits::close, enable);
-
-			if(redraw)
-				API::refresh_window(this->handle());
-		}
-
 		void toolbox(kits kit, bool enable)
 		{
 			if (this->get_drawer_trigger().toolbox(kit, enable))

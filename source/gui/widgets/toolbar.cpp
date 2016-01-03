@@ -138,9 +138,9 @@ namespace nana
 						if (imgsize.width > scale) imgsize.width = scale;
 						if (imgsize.height > scale) imgsize.height = scale;
 
-						nana::point pos(x, y);
-						pos.x += static_cast<int>(scale + extra_size - imgsize.width) / 2;
-						pos.y += static_cast<int>(height - imgsize.height) / 2;
+						nana::point pos(
+							x + static_cast<int>(scale + extra_size - imgsize.width) / 2, 
+							y + static_cast<int>(height - imgsize.height) / 2);
 
 						item.image.paste(::nana::rectangle{ imgsize }, graph, pos);
 						if(item.enable == false)
@@ -213,7 +213,7 @@ namespace nana
 					int x = 2, y = 2;
 
 					auto bgcolor = API::bgcolor(widget_->handle());
-					graph.set_text_color(bgcolor);
+					graph.palette(true, bgcolor);
 					graph.gradual_rectangle(rectangle{ graph.size() }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.95), true);
 
 					item_renderer ir(graph, impl_->textout, impl_->scale, bgcolor);

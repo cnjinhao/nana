@@ -873,18 +873,6 @@ namespace paint
 			}
 		}
 
-		void graphics::set_color(const ::nana::color& col)
-		{
-			if (handle_)
-				handle_->set_color(col);
-		}
-
-		void graphics::set_text_color(const ::nana::color& col)
-		{
-			if (handle_)
-				handle_->set_text_color(col);
-		}
-
 		::nana::color graphics::palette(bool for_text) const
 		{
 			if (handle_)
@@ -967,7 +955,7 @@ namespace paint
 
 		void graphics::string(const point& pos, const std::string& text_utf8, const color& clr)
 		{
-			set_text_color(clr);
+			palette(true, clr);
 			string(pos, text_utf8);
 		}
 
@@ -1025,7 +1013,7 @@ namespace paint
 
 		void graphics::string(const point& pos, const ::std::wstring& text, const color& clr)
 		{
-			set_text_color(clr);
+			palette(true, clr);
 			string(pos, text.data(), text.size());
 		}
 
@@ -1050,7 +1038,7 @@ namespace paint
 
 		void graphics::line(const point& pos_a, const point& pos_b, const color& clr)
 		{
-			set_color(clr);
+			palette(false, clr);
 			line(pos_a, pos_b);
 		}
 
@@ -1085,7 +1073,7 @@ namespace paint
 
 		void graphics::rectangle(bool solid, const ::nana::color& clr)
 		{
-			set_color(clr);
+			palette(false, clr);
 			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
@@ -1111,7 +1099,7 @@ namespace paint
 
 		void graphics::rectangle(const ::nana::rectangle& r, bool solid, const color& clr)
 		{
-			set_color(clr);
+			palette(false, clr);
 			rectangle(r, solid);
 		}
 

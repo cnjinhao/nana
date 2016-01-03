@@ -158,7 +158,7 @@ namespace nana
 
 							dum_graph.bitblt(r, graph, pos);
 
-							dum_graph.set_text_color(graph.palette(true));
+							dum_graph.palette(true, graph.palette(true));
 							dum_graph.string({}, i.begin, len);
 
 							r.x = pos.x;

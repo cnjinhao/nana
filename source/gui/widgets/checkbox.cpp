@@ -105,12 +105,12 @@ namespace checkbox
 					nana::paint::text_renderer tr(graph);
 					if (API::window_enabled(widget_->handle()) == false)
 					{
-						graph.set_text_color(colors::white);
+						graph.palette(true, colors::white);
 						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels);
-						graph.set_text_color({ 0x80, 0x80, 0x80 });
+						graph.palette(true, { 0x80, 0x80, 0x80 });
 					}
 					else
-						graph.set_text_color(widget_->fgcolor());
+						graph.palette(true, widget_->fgcolor());
 
 					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels);
 				}

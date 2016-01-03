@@ -248,7 +248,7 @@ namespace nana{	namespace drawerbase
 						++pos.y;
 					}
 
-					graph.set_text_color(attr_.focus_color && attr_.focused ? ::nana::color(colors::blue) : attr_.fgcolor);
+					graph.palette(true, attr_.focus_color && attr_.focused ? ::nana::color(colors::blue) : attr_.fgcolor);
 
 					if (attr_.omitted)
 						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
@@ -268,23 +268,22 @@ namespace nana{	namespace drawerbase
 						pos.x += off_w;
 						pos.y += static_cast<int>(ascent + 2);
 
-						graph.set_color(colors::black);
-						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y });
+						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y }, colors::black);
 					}
 				}
 				else
 				{
-					graph.set_text_color(::nana::color(colors::white));
+					graph.palette(true, ::nana::color(colors::white));
 					if(attr_.omitted)
 					{
 						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, true);
-						graph.set_text_color(::nana::color(colors::gray));
+						graph.palette(true, ::nana::color(colors::gray));
 						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
 					}
 					else
 					{
 						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen);
-						graph.set_text_color(::nana::color(colors::gray));
+						graph.palette(true, ::nana::color(colors::gray));
 						graph.bidi_string(pos, txtptr, txtlen);
 					}
 				}
@@ -325,10 +324,10 @@ namespace nana{	namespace drawerbase
 			::nana::color lt(static_cast<color_rgb>(0x7f7f7f)), rb(static_cast<color_rgb>(0x707070));
 			graph.frame_rectangle(r, lt, lt, rb, rb);
 
-			graph.set_color(colors::button_face);
+			graph.palette(false, colors::button_face);
 			draw_corner_point(graph, r);
 
-			graph.set_color(static_cast<color_rgb>(0x919191));
+			graph.palette(false, static_cast<color_rgb>(0x919191));
 			draw_corner_point(graph, r.pare_off(1));
 
 			if (element_state::pressed == attr_.e_state)
