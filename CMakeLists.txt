@@ -146,13 +146,12 @@ aux_source_directory(${NANA_SOURCE_DIR}/threads NANA_THREADS_SOURCE)
 #To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
 #and Use SOURCE_GROUP if all your sources are in the same directory
 
+if(NOT APPLE)
 add_library(${PROJECT_NAME} ${NANA_SOURCE}
                             ${NANA_DETAIL_SOURCE}
                             ${NANA_FILESYSTEM_SOURCE}
-if(NOT APPLE)
                             ${NANA_AUDIO_SOURCE}
                             ${NANA_AUDIO_DETAIL_SOURCE}
-endif (NOT APPLE)
                             ${NANA_GUI_SOURCE}
                             ${NANA_GUI_DETAIL_SOURCE}
                             ${NANA_GUI_WIDGETS_SOURCE}
@@ -160,9 +159,24 @@ endif (NOT APPLE)
                             ${NANA_PAINT_SOURCE}
                             ${NANA_PAINT_DETAIL_SOURCE}
                             ${NANA_SYSTEM_SOURCE}
-                            ${NANA_THREADS_SOURCE})       
+                            ${NANA_THREADS_SOURCE})    
+endif (NOT APPLE)   
+                            
 
 if(APPLE)
+add_library(${PROJECT_NAME} ${NANA_SOURCE}
+                            ${NANA_DETAIL_SOURCE}
+                            ${NANA_FILESYSTEM_SOURCE}
+                            ${NANA_AUDIO_SOURCE}
+                            ${NANA_AUDIO_DETAIL_SOURCE}
+                            ${NANA_GUI_SOURCE}
+                            ${NANA_GUI_DETAIL_SOURCE}
+                            ${NANA_GUI_WIDGETS_SOURCE}
+                            ${NANA_GUI_WIDGETS_SKELETONS_SOURCE}
+                            ${NANA_PAINT_SOURCE}
+                            ${NANA_PAINT_DETAIL_SOURCE}
+                            ${NANA_SYSTEM_SOURCE}
+                            ${NANA_THREADS_SOURCE})    
     #Headers: use INCLUDE_DIRECTORIES
     #   Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES
     target_link_libraries(${PROJECT_NAME} -L/opt/X11/lib/ -lX11 -lXft -lpng -liconv)
