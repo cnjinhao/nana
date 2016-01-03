@@ -542,8 +542,8 @@ namespace API
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd))
-			return reinterpret_cast<window>(iwd->other.category == category::flags::root ? iwd->owner : iwd->parent);
+		if (restrict::wd_manager().available(iwd))
+			return reinterpret_cast<window>(iwd->parent);
 
 		return nullptr;
 	}

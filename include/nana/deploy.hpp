@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/deploy.hpp
@@ -15,9 +15,12 @@
 #ifndef NANA_DEPLOY_HPP
 #define NANA_DEPLOY_HPP
 
-#include <stdexcept>
-
 #include <nana/config.hpp>
+#if defined(VERBOSE_PREPROCESSOR)
+	#include <nana/verbose_preprocessor.hpp>
+#endif
+
+#include <stdexcept>
 #include <nana/charset.hpp>
 
 //Implement workarounds for GCC/MinGW which version is below 4.8.2
@@ -71,7 +74,12 @@ namespace std
 	std::string to_string(long long);
 	std::string to_string(unsigned long long);
 	std::string to_string(float);
-	
+}
+#endif
+
+#ifdef STD_TO_WSTRING_NOT_SUPPORTED
+namespace std
+{
 	std::wstring to_wstring(long double);
 	std::wstring to_wstring(double);
 	std::wstring to_wstring(unsigned);
@@ -145,5 +153,45 @@ namespace nana
 
 #define NANA_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
 
+
+#if defined(STD_make_unique_NOT_SUPPORTED)
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3656.htm
+
+#include <cstddef>
+#include <memory>
+#include <type_traits>
+#include <utility>
+
+namespace std {
+	template<class T> struct _Unique_if {
+		typedef unique_ptr<T> _Single_object;
+	};
+
+	template<class T> struct _Unique_if<T[]> {
+		typedef unique_ptr<T[]> _Unknown_bound;
+	};
+
+	template<class T, size_t N> struct _Unique_if<T[N]> {
+		typedef void _Known_bound;
+	};
+
+	template<class T, class... Args>
+	typename _Unique_if<T>::_Single_object
+	make_unique(Args&&... args) {
+		return unique_ptr<T>(new T(std::forward<Args>(args)...));
+	}
+
+	template<class T>
+	typename _Unique_if<T>::_Unknown_bound
+	make_unique(size_t n) {
+		typedef typename remove_extent<T>::type U;
+		return unique_ptr<T>(new U[n]());
+	}
+
+	template<class T, class... Args>
+	typename _Unique_if<T>::_Known_bound
+			make_unique(Args&&...) = delete;
+}
+#endif //STD_make_unique_NOT_SUPPORTED
 
 #endif //NANA_MACROS_HPP

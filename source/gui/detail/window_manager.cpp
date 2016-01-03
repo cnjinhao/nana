@@ -291,6 +291,14 @@ namespace detail
 			if (result.native_handle)
 			{
 				core_window_t* wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
+				if (nested)
+				{
+					wd->owner = nullptr;
+					wd->parent = owner;
+					wd->index = static_cast<unsigned>(owner->children.size());
+					owner->children.push_back(wd);
+				}
+
 				wd->flags.take_active = !app.no_activate;
 				wd->title = native_interface::window_caption(result.native_handle);
 
@@ -542,10 +550,10 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 			{
-				if(wd->other.category != category::root_tag::value)
+				if (category::flags::root != wd->other.category)
 				{
 					//Move child widgets
-					if(x != wd->pos_owner.x || y != wd->pos_owner.y)
+					if (x != wd->pos_owner.x || y != wd->pos_owner.y)
 					{
 						point delta{ x - wd->pos_owner.x, y - wd->pos_owner.y };
 
@@ -562,8 +570,20 @@ namespace detail
 						return true;
 					}
 				}
-				else if(false == passive)
+				else if (!passive)
+				{
+					//Check if this root is a nested
+					if (wd->parent && (category::flags::root != wd->parent->other.category))
+					{
+						//The parent of the window is not a root, the position should
+						//be transformed to a position based on its parent.
+
+						x += wd->parent->pos_root.x;
+						y += wd->parent->pos_root.y;
+					}
+
 					native_interface::move_window(wd->root, x, y);
+				}
 			}
 
 			return false;
@@ -602,22 +622,36 @@ namespace detail
 			}
 			else
 			{
+				::nana::rectangle root_r = r;
+				//Move event should not get called here,
+				//because the window is a root, the event will get called by system event handler.
+
+				//Check if this root is a nested
+				if (wd->parent && (category::flags::root != wd->parent->other.category))
+				{
+					//The parent of the window is not a root, the position should
+					//be transformed to a position based on its parent.
+
+					root_r.x += wd->parent->pos_root.x;
+					root_r.y += wd->parent->pos_root.y;
+				}
+
 				if(size_changed)
 				{
-					wd->dimension.width = r.width;
-					wd->dimension.height = r.height;
+					wd->dimension.width = root_r.width;
+					wd->dimension.height = root_r.height;
 					wd->drawer.graphics.make(wd->dimension);
 					wd->root_graph->make(wd->dimension);
-					native_interface::move_window(wd->root, r);
+					native_interface::move_window(wd->root, root_r);
 
 					arg_resized arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
-					arg.width = r.width;
-					arg.height = r.height;
+					arg.width = root_r.width;
+					arg.height = root_r.height;
 					brock.emit(event_code::resized, wd, arg, true, brock.get_thread_context());
 				}
 				else
-					native_interface::move_window(wd->root, r.x, r.y);
+					native_interface::move_window(wd->root, root_r.x, root_r.y);
 			}
 
 			return (moved || size_changed);
@@ -919,34 +953,37 @@ namespace detail
 					arg.receiver = wd->root;
 					brock.emit(event_code::focus, prev_focus, arg, true, brock.get_thread_context());
 				}
+
+				//Check the prev_focus again, because it may be closed in focus event
+				if (!impl_->wd_register.available(prev_focus))
+					prev_focus = nullptr;
 			}
 			else if(wd->root == native_interface::get_focus_window())
-				wd = nullptr; //no new focus_window
+				return prev_focus; //no new focus_window
 
-			if(wd)
-			{
-				if(wd->together.caret)
-					wd->together.caret->set_active(true);
 
-				arg.window_handle = reinterpret_cast<window>(wd);
-				arg.getting = true;
-				arg.receiver = wd->root;
-				brock.emit(event_code::focus, wd, arg, true, brock.get_thread_context());
+			if(wd->together.caret)
+				wd->together.caret->set_active(true);
 
-				if (!root_has_been_focused)
-					native_interface::set_focus(root_wd->root);
+			arg.window_handle = reinterpret_cast<window>(wd);
+			arg.getting = true;
+			arg.receiver = wd->root;
+			brock.emit(event_code::focus, wd, arg, true, brock.get_thread_context());
 
-				//A fix by Katsuhisa Yuasa
-				//The menubar token window will be redirected to the prev focus window when the new
-				//focus window is a menubar.
-				//The focus window will be restore to the prev focus which losts the focus becuase of
-				//memberbar. 
-				if (wd == wd->root_widget->other.attribute.root->menubar)
-					wd = prev_focus;
+			if (!root_has_been_focused)
+				native_interface::set_focus(root_wd->root);
 
-				if (wd != wd->root_widget->other.attribute.root->menubar)
-					brock.set_menubar_taken(wd);
-			}
+			//A fix by Katsuhisa Yuasa
+			//The menubar token window will be redirected to the prev focus window when the new
+			//focus window is a menubar.
+			//The focus window will be restore to the prev focus which losts the focus becuase of
+			//memberbar. 
+			if (prev_focus && (wd == wd->root_widget->other.attribute.root->menubar))
+				wd = prev_focus;
+
+			if (wd != wd->root_widget->other.attribute.root->menubar)
+				brock.set_menubar_taken(wd);
+
 			return prev_focus;
 		}
 
@@ -1301,7 +1338,9 @@ namespace detail
 		void window_manager::_m_disengage(core_window_t* wd, core_window_t* for_new)
 		{
 			auto * const wdpa = wd->parent;
-			bool established = (for_new && wdpa != for_new);
+
+
+			bool established = (for_new && (wdpa != for_new));
 			decltype(for_new->root_widget->other.attribute.root) pa_root_attr = nullptr;
 			
 			if (established)
@@ -1443,14 +1482,26 @@ namespace detail
 				std::function<void(core_window_t*, const nana::point&)> set_pos_root;
 				set_pos_root = [&set_pos_root](core_window_t* wd, const nana::point& delta_pos)
 				{
-					wd->pos_root -= delta_pos;
 					for (auto child : wd->children)
 					{
-						child->root = wd->root;
-						child->root_graph = wd->root_graph;
-						child->root_widget = wd->root_widget;
-						set_pos_root(child, delta_pos);
+						if (category::flags::root == child->other.category)
+						{
+							auto pos = native_interface::window_position(child->root);
+							native_interface::parent_window(child->root, wd->root, false);
+
+							pos -= delta_pos;
+							native_interface::move_window(child->root, pos.x, pos.y);
+						}
+						else
+						{
+							child->root = wd->root;
+							child->root_graph = wd->root_graph;
+							child->root_widget = wd->root_widget;
+							set_pos_root(child, delta_pos);
+						}
 					}
+
+					wd->pos_root -= delta_pos;
 				};
 
 				set_pos_root(wd, delta_pos);
@@ -1481,8 +1532,30 @@ namespace detail
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
 			//Delete the children widgets.
-			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end; ++i)
-				_m_destroy(*i);
+			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end;)
+			{
+				auto child = *i;
+
+				if (category::flags::root == child->other.category)
+				{
+					//closing a child root window erases itself from wd->children,
+					//to make sure the iterator is valid, it must be reloaded.
+
+					auto offset = std::distance(wd->children.rbegin(), i);
+
+					//!!!
+					//a potential issue is that if the calling thread is not same with child's thread,
+					//the child root window may not be erased from wd->children now.
+					native_interface::close_window(child->root);
+
+					i = wd->children.rbegin();
+					std::advance(i, offset);
+					end = wd->children.rend();
+					continue;
+				}
+				_m_destroy(child);
+				++i;
+			}
 			wd->children.clear();
 
 
@@ -1508,7 +1581,7 @@ namespace detail
 
 		void window_manager::_m_move_core(core_window_t* wd, const point& delta)
 		{
-			if(wd->other.category != category::root_tag::value)	//A root widget always starts at (0, 0) and its childs are not to be changed
+			if(category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its childs are not to be changed
 			{
 				wd->pos_root += delta;
 				if (category::flags::frame != wd->other.category)
@@ -1524,6 +1597,11 @@ namespace detail
 
 				for (auto child : wd->children)
 					_m_move_core(child, delta);
+			}
+			else
+			{
+				auto pos = native_interface::window_position(wd->root) + delta;
+				native_interface::move_window(wd->root, pos.x, pos.y);
 			}
 		}
 

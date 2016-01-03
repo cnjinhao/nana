@@ -7,7 +7,39 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/config.hpp
+ *	@file  nana/config.hpp
+ *
+ *	@brief Provide switches to adapt to the target OS, use of external libraries or workarounds compiler errors or lack of std C++ support.
+ *
+ *	To control target OS/compiler:
+ *	- NANA_WINDOWS
+ *	- NANA_MINGW
+ *	- NANA_POSIX
+ *	- NANA_LINUX
+ *	- NANA_MACOS
+ *	- NANA_X11
+ *	- NANA_UNICODE
+ *
+ *	External libraries:
+ *	- NANA_LIBPNG, USE_LIBPNG_FROM_OS
+ *	- NANA_LIBJPEG, USE_LIBJPEG_FROM_OS
+ *
+ * (see: Feature-testing recommendations for C++
+ *       in http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0096r0.html
+ *       for example: __cpp_lib_experimental_filesystem  = 201406 in <experimental/filesystem)
+ *
+ *	Workaround to known compiler errors, unnecessary warnings or lack of C++11/14/17 support:
+ *	- _SCL_SECURE_NO_WARNNGS, _CRT_SECURE_NO_DEPRECATE (VC)
+ *	- STD_CODECVT_NOT_SUPPORTED (VC RC, <codecvt> is a known issue on libstdc++, it works on libc++)
+ *	- STD_THREAD_NOT_SUPPORTED (GCC < 4.8.1)
+ *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
+ *	- USE_github_com_meganz_mingw_std_threads  (MinGW with GCC < 4.8.1)
+ *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED (MinGW with GCC < 4.8.1)
+ *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
+ *	- VERBOSE_PREPROCESSOR, STOP_VERBOSE_PREPROCESSOR
+ *	- STD_make_unique_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
+ *	  or __cpp_lib_make_unique
+ *	http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0096r0.html#detail.cpp14.n3656
  */
 
 #ifndef NANA_CONFIG_HPP
@@ -67,18 +99,31 @@
 		// google: That's a known issue, tracked by an active bug (DevDiv#1060849). We were able to update the STL's headers in response to char16_t/char32_t, but we still need to update the separately compiled sources.
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif // _MSC_VER == 1900
-#endif // _MSVC
 
-#if defined(__clang__)
+#elif defined(__clang__)	//Clang
+
+	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif
 
 #elif defined(__GNUC__) //GCC
+
+	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
+
+		//It's a known issue of libstdc++ on MinGW
+		//introduce to_string/to_wstring workarounds for disabled capacity of stdlib
+		#ifdef _GLIBCXX_HAVE_BROKEN_VSWPRINTF
+			#if (__GNUC__ < 5)
+			#	define STD_TO_STRING_NOT_SUPPORTED
+			#endif
+
+			#define STD_TO_WSTRING_NOT_SUPPORTED
+		#endif
 	#endif
 
 	#if (__GNUC__ == 4)
@@ -89,16 +134,29 @@
 			//but if USE_github_com_meganz_mingw_std_threads is enabled,
 			//boost.thread will be replaced with meganz's mingw-std-threads.
 			// https://github.com/meganz/mingw-std-threads
-			//#define USE_github_com_meganz_mingw_std_threads
+        	#if !defined( USE_github_com_meganz_mingw_std_threads )
+			    //#define USE_github_com_meganz_mingw_std_threads
+            #endif
+			#if !defined(STD_make_unique_NOT_SUPPORTED)
+				#define STD_make_unique_NOT_SUPPORTED
+			#endif	//STD_make_unique_NOT_SUPPORTED
+
 		#endif
 
 		#if defined(NANA_MINGW)
-			//It's a known issue under MinGW
+			//It's a knonwn issue under MinGW
 			#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 		#endif
 
-		#if ((__GNUC_MINOR__ < 8) || defined(NANA_MINGW))
-			#define STD_TO_STRING_NOT_SUPPORTED
+		#if (__GNUC_MINOR__ < 8)
+			//introduce to_string/to_wstring workaround for lack of stdlib definitions
+			#ifndef STD_TO_STRING_NOT_SUPPORTED
+			#	define STD_TO_STRING_NOT_SUPPORTED
+			#endif
+
+			#ifndef STD_TO_WSTRING_NOT_SUPPORTED
+			#	define STD_TO_WSTRING_NOT_SUPPORTED
+			#endif
 		#endif
 	#endif
 #endif
@@ -151,5 +209,13 @@
 	#endif
 #endif
 
+#if !defined(VERBOSE_PREPROCESSOR)
+    //#define VERBOSE_PREPROCESSOR
+#endif
 
-#endif	//NANA_CONFIG_HPP
+#if !defined(STOP_VERBOSE_PREPROCESSOR)
+	#define STOP_VERBOSE_PREPROCESSOR
+#endif
+
+
+#endif  // NANA_CONFIG_HPP
