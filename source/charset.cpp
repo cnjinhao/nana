@@ -18,6 +18,7 @@
 #include <nana/deploy.hpp>
 #include <cwchar>
 #include <clocale>
+#include <cstring>
 
 //GCC 4.7.0 does not implement the <codecvt> and codecvt_utfx classes
 #ifndef STD_CODECVT_NOT_SUPPORTED
