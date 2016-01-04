@@ -263,7 +263,7 @@ namespace paint
 				//Check for BMP
 				if (!helper)
 				{
-					std::ifstream ifs(file.c_str(), std::ios::binary);
+					std::ifstream ifs(file.string(), std::ios::binary);
 					if (ifs)
 					{
 						unsigned short meta = 0;

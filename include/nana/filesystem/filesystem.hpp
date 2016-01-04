@@ -162,6 +162,10 @@ namespace filesystem
 		const value_type*c_str() const;
 		const string_type& native() const;
 		operator string_type() const;
+
+		std::string string() const;
+		std::wstring wstring() const;
+		std::string u8string() const;
 	private:
 		void _m_assign(const std::string& source_utf8);
 		void _m_assign(const std::wstring& source);

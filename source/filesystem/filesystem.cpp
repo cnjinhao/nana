@@ -173,6 +173,21 @@ namespace nana {	namespace experimental {
 			return native();
 		}
 
+		std::string path::string() const
+		{
+			return to_osmbstr(to_utf8(pathstr_));
+		}
+
+		std::wstring path::wstring() const
+		{
+			return to_wstring(pathstr_);
+		}
+
+		std::string path::u8string() const
+		{
+			return to_utf8(pathstr_);
+		}
+
 		void path::_m_assign(const std::string& source_utf8)
 		{
 #if defined(NANA_WINDOWS)

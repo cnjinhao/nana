@@ -84,7 +84,7 @@ namespace nana{	namespace paint
 
 			bool open(const nana::experimental::filesystem::path& filename) override
 			{
-				std::ifstream ifs(filename.c_str(), std::ios::binary);
+				std::ifstream ifs(filename.string(), std::ios::binary);
 				if(ifs)
 				{
 					ifs.seekg(0, std::ios::end);
