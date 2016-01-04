@@ -7,7 +7,7 @@
 
 #https://cmake.org/cmake-tutorial/
 #https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
-# use CACHE FORCE  or set(USE_meganz_mingw_std_threads ON) or delete CMakecache.txt or the entirely build dir
+# use CACHEÂ FORCE  or set(USE_meganz_mingw_std_threads ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
 option(USE_meganz_mingw_std_threads "replaced boost.thread with meganz's mingw-std-threads." OFF)
 option(USE_UNICODE "Use Unicode Character Set" ON)
@@ -143,16 +143,15 @@ aux_source_directory(${NANA_SOURCE_DIR}/paint/detail NANA_PAINT_DETAIL_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/system NANA_SYSTEM_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/threads NANA_THREADS_SOURCE)
 
-#To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
-#and Use SOURCE_GROUP if all your sources are in the same directory
+#ToÂ showÂ .hÂ filesÂ inÂ VisualÂ Studio,Â addÂ themÂ toÂ theÂ listÂ ofÂ sourcesÂ inÂ add_executableÂ /Â add_library
+#and UseÂ SOURCE_GROUPÂ ifÂ allÂ yourÂ sourcesÂ areÂ inÂ theÂ sameÂ directory
 
+if(NOT APPLE)
 add_library(${PROJECT_NAME} ${NANA_SOURCE}
                             ${NANA_DETAIL_SOURCE}
                             ${NANA_FILESYSTEM_SOURCE}
-if(NOT APPLE)
                             ${NANA_AUDIO_SOURCE}
                             ${NANA_AUDIO_DETAIL_SOURCE}
-endif (NOT APPLE)
                             ${NANA_GUI_SOURCE}
                             ${NANA_GUI_DETAIL_SOURCE}
                             ${NANA_GUI_WIDGETS_SOURCE}
@@ -160,11 +159,26 @@ endif (NOT APPLE)
                             ${NANA_PAINT_SOURCE}
                             ${NANA_PAINT_DETAIL_SOURCE}
                             ${NANA_SYSTEM_SOURCE}
-                            ${NANA_THREADS_SOURCE})       
+                            ${NANA_THREADS_SOURCE})    
+endif (NOT APPLE)   
+                            
 
 if(APPLE)
-    #Headers: use INCLUDE_DIRECTORIES
-    #   Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES
+add_library(${PROJECT_NAME} ${NANA_SOURCE}
+                            ${NANA_DETAIL_SOURCE}
+                            ${NANA_FILESYSTEM_SOURCE}
+                            ${NANA_AUDIO_SOURCE}
+                            ${NANA_AUDIO_DETAIL_SOURCE}
+                            ${NANA_GUI_SOURCE}
+                            ${NANA_GUI_DETAIL_SOURCE}
+                            ${NANA_GUI_WIDGETS_SOURCE}
+                            ${NANA_GUI_WIDGETS_SKELETONS_SOURCE}
+                            ${NANA_PAINT_SOURCE}
+                            ${NANA_PAINT_DETAIL_SOURCE}
+                            ${NANA_SYSTEM_SOURCE}
+                            ${NANA_THREADS_SOURCE})    
+    #Headers:Â useÂ INCLUDE_DIRECTORIES
+    #   Libraries:Â useÂ FIND_LIBRARYÂ andÂ linkÂ withÂ theÂ resultÂ ofÂ itÂ (tryÂ toÂ avoidÂ LINK_DIRECTORIES
     target_link_libraries(${PROJECT_NAME} -L/opt/X11/lib/ -lX11 -lXft -lpng -liconv)
 
 endif(APPLE)
