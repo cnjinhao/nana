@@ -119,7 +119,6 @@
 		<Unit filename="../../source/system/shared_wrapper.cpp" />
 		<Unit filename="../../source/system/timepiece.cpp" />
 		<Unit filename="../../source/threads/pool.cpp" />
-		<Unit filename="../../source/traits.cpp" />
 		<Unit filename="../../source/unicode_bidi.cpp" />
 		<Extensions>
 			<code_completion />
