@@ -249,7 +249,6 @@
     <ClCompile Include="..\..\source\system\platform.cpp" />
     <ClCompile Include="..\..\source\system\timepiece.cpp" />
     <ClCompile Include="..\..\source\threads\pool.cpp" />
-    <ClCompile Include="..\..\source\traits.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

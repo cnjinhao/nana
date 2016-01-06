@@ -41,7 +41,7 @@ namespace nana{
 
 		implement() = default;
 
-		implement(window grp_panel, ::nana::string titel, bool vsb, unsigned gap=2)
+		implement(window grp_panel, ::std::string titel, bool vsb, unsigned gap=2)
 			: caption (grp_panel, std::move(titel), vsb),
 			  place_content{grp_panel},
 			  gap{gap}
@@ -51,7 +51,7 @@ namespace nana{
 		void create(window pnl)
 		{
 			caption.create(pnl);
-			caption.caption(STR(""));
+			caption.caption("");
 			place_content.bind(pnl);
 
 			if (!radio_logic)
@@ -90,7 +90,7 @@ namespace nana{
 		create(parent, r, vsb);
 	}
 
-	group::group(window parent, ::nana::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
+	group::group(window parent, ::std::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
 		: panel(parent, r, vsb),
 		  impl_(new implement(*this, std::move(titel), vsb, gap))
 	{
@@ -103,7 +103,7 @@ namespace nana{
 		delete impl_->radio_logic;
 	}
 
-	group& group::add_option(::nana::string text)
+	group& group::add_option(std::string text)
 	{
 		_THROW_IF_EMPTY()
 
@@ -234,12 +234,12 @@ namespace nana{
 		_m_init();
 	}
 
-	::nana::string group::_m_caption() const throw()
+	auto group::_m_caption() const throw() -> native_string_type
 	{
-		return impl_->caption.caption();
+		return impl_->caption.caption_native();
 	}
 
-	void group::_m_caption(::nana::string&& str)
+	void group::_m_caption(native_string_type&& str)
 	{
 		impl_->caption.caption(std::move(str));
 		impl_->update_div();

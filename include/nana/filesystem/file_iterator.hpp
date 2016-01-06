@@ -1,12 +1,12 @@
 /*
  *	A File Iterator Implementation
- *	Copyright(C) 2003 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: stdex/filesystem/file_iterator.hpp
+ *	@file: filesystem/file_iterator.hpp
  *	@description:
  *		file_iterator is a toolkit for applying each file and directory in a
  *	specified path.
@@ -39,9 +39,9 @@ namespace filesystem
 #ifdef NANA_WINDOWS
 		fileinfo(const WIN32_FIND_DATA& wfd);
 #elif defined(NANA_POSIX)
-		fileinfo(const nana::string& filename, const struct stat &);
+		fileinfo(const std::string& filename, const struct stat &);
 #endif
-		nana::string name;
+		::std::string name;
 
 		unsigned long size;
 		bool directory;
@@ -56,7 +56,7 @@ namespace filesystem
 
 		basic_file_iterator():end_(true), handle_(nullptr){}
 
-		basic_file_iterator(const nana::string& file_path)
+		basic_file_iterator(const std::string& file_path)
 			:end_(false), handle_(nullptr)
 		{
 			_m_prepare(file_path);
@@ -92,14 +92,13 @@ namespace filesystem
 			return (*p == 0);
 		}
 
-		void _m_prepare(const nana::string& file_path)
+		void _m_prepare(const std::string& file_path)
 		{
 		#if defined(NANA_WINDOWS)
-			path_ = file_path;
-			auto pat = file_path;
+			auto pat = utf8_cast(file_path);
 			DWORD attr = ::GetFileAttributes(pat.data());
 			if((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY))
-				pat += STR("\\*");
+				pat += L"\\*";
 
 			::HANDLE handle = ::FindFirstFile(pat.data(), &wfd_);
 
@@ -120,10 +119,11 @@ namespace filesystem
 			}
 			value_ = value_type(wfd_);
 		#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			path_ = nana::charset(file_path);
-			if(path_.size() && (path_[path_.size() - 1] != '/'))
+			path_ = file_path;
+			if(path_.size() && path_.back() != '/')
 				path_ += '/';
-			find_handle_t handle = opendir(path_.c_str());
+			auto handle = opendir(path_.c_str());
+
 			end_ = true;
 			if(handle)
 			{
@@ -143,7 +143,7 @@ namespace filesystem
 					struct stat fst;
 					if(stat((path_ + dnt->d_name).c_str(), &fst) == 0)
 					{
-						value_ = value_type(nana::charset(dnt->d_name), fst);
+						value_ = value_type(dnt->d_name, fst);
 					}
 					else
 					{
@@ -226,9 +226,8 @@ namespace filesystem
 
 #if defined(NANA_WINDOWS)
 		WIN32_FIND_DATA		wfd_;
-		nana::string	path_;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-		std::string	path_;
+#else
+		std::string path_;
 #endif
 		std::shared_ptr<find_handle_t> find_ptr_;
 

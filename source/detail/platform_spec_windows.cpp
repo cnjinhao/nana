@@ -158,7 +158,7 @@ namespace detail
 
 	//class platform_spec
 	platform_spec::co_initializer::co_initializer()
-		: ole32_(::LoadLibrary(STR("OLE32.DLL")))
+		: ole32_(::LoadLibrary(L"OLE32.DLL"))
 	{
 		if(ole32_)
 		{
@@ -207,7 +207,7 @@ namespace detail
 #endif
 #endif
 		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
-		def_font_ptr_ = make_native_font(metrics.lfMessageFont.lfFaceName, font_size_to_height(9), 400, false, false, false);
+		def_font_ptr_ = make_native_font(utf8_cast(metrics.lfMessageFont.lfFaceName).c_str(), font_size_to_height(9), 400, false, false, false);
 	}
 
 	const platform_spec::font_ptr_t& platform_spec::default_native_font() const
@@ -238,12 +238,15 @@ namespace detail
 		return height;
 	}
 
-	platform_spec::font_ptr_t platform_spec::make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
+	platform_spec::font_ptr_t platform_spec::make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
 	{
 		::LOGFONT logfont;
 		memset(&logfont, 0, sizeof logfont);
 
-		strcpy(logfont.lfFaceName, (name && *name ? name : def_font_ptr_->name.c_str()));
+		if (name && *name)
+			std::wcscpy(logfont.lfFaceName, utf8_cast(name).c_str());
+		else
+			std::wcscpy(logfont.lfFaceName, def_font_ptr_->name.c_str());
 
 		logfont.lfCharSet = DEFAULT_CHARSET;
 		HDC hdc = ::GetDC(0);

@@ -14,6 +14,7 @@
 
 #include <nana/deploy.hpp>
 #include <cstdlib>
+#include <cstring> //std::strlen
 #include <stdexcept>
 
 #if defined(NANA_WINDOWS)
@@ -437,46 +438,174 @@ namespace std
 
 namespace nana
 {
-	std::size_t strlen(const char_t* str)
+	bool is_utf8(const char* str, unsigned len)
 	{
-#if defined(NANA_UNICODE)
-		return ::wcslen(str);
-#else
-		return ::strlen(str);
-#endif
-	}
+		auto ustr = reinterpret_cast<const unsigned char*>(str);
+		auto end = ustr + len;
 
-	char_t* strcpy(char_t* dest, const char_t* source)
-	{
-#if defined(NANA_UNICODE)
-		return ::wcscpy(dest, source);
-#else
-		return ::strcpy(dest, source);
-#endif
-	}
-}
-
-namespace nana
-{
-	bool is_incomplete(const nana::string& str, unsigned pos)
-	{
-#ifndef NANA_UNICODE
-		if(pos > str.size())
-			pos = static_cast<unsigned>(str.size());
-		const nana::char_t * pstr = str.c_str();
-		if(pstr[pos] < 0)
+		while (ustr < end)
 		{
-			bool incomp = false;
-			for(unsigned i = 0; i < pos; ++i)
+			const auto uv = *ustr;
+			if (uv < 0x80)
 			{
-				if(pstr[i] < 0)
-					incomp = !incomp;
-				else
-					incomp = false;
+				++ustr;
+				continue;
 			}
-			return incomp;
+
+			if (uv < 0xC0)
+				return false;
+
+			if ((uv < 0xE0) && (ustr + 1 < end))
+				ustr += 2;
+			else if (uv < 0xF0 && (ustr + 2 <= end))
+				ustr += 3;
+			else if (uv < 0x1F && (ustr + 3 <= end))
+				ustr += 4;
+			else
+				return false;
 		}
-#endif
-		return false;
+
+		return true;
 	}
+
+	void throw_not_utf8(const std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+			throw std::invalid_argument("The text is not encoded in UTF8");
+	}
+
+	void throw_not_utf8(const char* text, unsigned len)
+	{
+		if (!is_utf8(text, len))
+			throw std::invalid_argument("The text is not encoded in UTF8");
+	}
+
+	void throw_not_utf8(const char* text)
+	{
+		if (!is_utf8(text, std::strlen(text)))
+			throw std::invalid_argument("The text is not encoded in UTF8");
+		
+	}
+
+	std::wstring utf8_cast(const std::string& text)
+	{
+		return ::nana::charset(text, ::nana::unicode::utf8);
+	}
+
+	std::string utf8_cast(const std::wstring& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+	const std::string& to_utf8(const std::string& str)
+	{
+		return str;
+	}
+
+	std::string to_utf8(const std::wstring& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+	std::wstring to_wstring(const std::string& utf8_str)
+	{
+		return ::nana::charset(utf8_str, ::nana::unicode::utf8);
+	}
+
+	const std::wstring& to_wstring(const std::wstring& wstr)
+	{
+		return wstr;
+	}
+
+	std::wstring&& to_wstring(std::wstring&& wstr)
+	{
+		return static_cast<std::wstring&&>(wstr);
+	}
+
+#if defined(NANA_WINDOWS)
+	std::string to_osmbstr(const std::string& text_utf8)
+	{
+		return ::nana::charset(text_utf8, ::nana::unicode::utf8);
+	}
+#else
+	std::string to_osmbstr(std::string text_utf8)
+	{
+		return text_utf8;
+	}
+#endif
+
+#if defined(NANA_WINDOWS)
+	const detail::native_string_type to_nstring(const std::string& text)
+	{
+		return ::nana::charset(text, ::nana::unicode::utf8);
+	}
+
+	const detail::native_string_type& to_nstring(const std::wstring& text)
+	{
+		return text;
+	}
+
+	detail::native_string_type to_nstring(std::string&& text)
+	{
+		return ::nana::charset(text, ::nana::unicode::utf8);
+	}
+
+	detail::native_string_type&& to_nstring(std::wstring&& text)
+	{
+		return std::move(text);
+	}
+
+	detail::native_string_type to_nstring(int n)
+	{
+		return std::to_wstring(n);
+	}
+
+	detail::native_string_type to_nstring(double d)
+	{
+		return std::to_wstring(d);
+	}
+
+	detail::native_string_type to_nstring(std::size_t d)
+	{
+		return std::to_wstring(d);
+	}
+#else	//POSIX
+	const detail::native_string_type& to_nstring(const std::string& text)
+	{
+		return text;
+	}
+
+	const detail::native_string_type to_nstring(const std::wstring& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+	detail::native_string_type&& to_nstring(std::string&& text)
+	{
+		return std::move(text);
+	}
+
+	detail::native_string_type to_nstring(std::wstring&& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
+	detail::native_string_type to_nstring(int n)
+	{
+		return std::to_string(n);
+	}
+
+	detail::native_string_type to_nstring(double d)
+	{
+		return std::to_string(d);
+	}
+
+	detail::native_string_type to_nstring(std::size_t d)
+	{
+		return std::to_string(d);
+	}
+#endif
+
+
 }
+

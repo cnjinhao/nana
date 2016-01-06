@@ -79,7 +79,7 @@ namespace nana
 					flags.checked = false;
 				}
 
-				menu_item_type::menu_item_type(nana::string text, const event_fn_t& f)
+				menu_item_type::menu_item_type(std::string text, const event_fn_t& f)
 					: text(std::move(text)), functor(f)
 				{
 					flags.enabled = true;
@@ -121,7 +121,7 @@ namespace nana
 							nana::point(r.x + r.width - 1, r.y + r.height - 1)
 						};
 
-						graph.set_color(static_cast<color_rgb>(0xc0ddfc));
+						graph.palette(false, static_cast<color_rgb>(0xc0ddfc));
 						for(int i = 0; i < 4; ++i)
 							graph.set_pixel(points[i].x, points[i].y);
 
@@ -148,11 +148,13 @@ namespace nana
 					img.stretch(rectangle{ img.size() }, graph, rectangle{ pos, ::nana::size(image_px, image_px) });
 				}
 
-				void item_text(graph_reference graph, const nana::point& pos, const nana::string& text, unsigned text_pixels, const attr& at)
+				void item_text(graph_reference graph, const nana::point& pos, const std::string& text, unsigned text_pixels, const attr& at)
 				{
-					graph.set_text_color(at.enabled ? colors::black : colors::gray_border);
+					graph.palette(true, at.enabled ? colors::black : colors::gray_border);
 					nana::paint::text_renderer tr(graph);
-					tr.render(pos, text.c_str(), text.length(), text_pixels, true);
+
+					auto wstr = to_wstring(text);
+					tr.render(pos, wstr.c_str(), wstr.length(), text_pixels, true);
 				}
 
 				void sub_arrow(graph_reference graph, const nana::point& pos, unsigned pixels, const attr&)
@@ -240,7 +242,7 @@ namespace nana
 					return root_;
 				}
 
-				void insert(std::size_t pos, nana::string&& text, const event_fn_t& fn)
+				void insert(std::size_t pos, std::string&& text, const event_fn_t& fn)
 				{
 					if(pos < root_.items.size())
 						root_.items.emplace(root_.items.begin() + pos, std::move(text), std::ref(fn));
@@ -363,15 +365,14 @@ namespace nana
 
 					unsigned strpixels = item_r.width - 60;
 
-					int text_top_off = (item_h_px - graph.text_extent_size(STR("jh({[")).height) / 2;
+					int text_top_off = (item_h_px - graph.text_extent_size(L"jh({[").height) / 2;
 
 					std::size_t pos = 0;
 					for (auto & m : menu_->items)
 					{
 						if (m.flags.splitter)
 						{
-							graph_->set_color(colors::gray_border);
-							graph_->line({ item_r.x + 40, item_r.y }, { static_cast<int>(graph.width()) - 1, item_r.y });
+							graph_->line({ item_r.x + 40, item_r.y }, { static_cast<int>(graph.width()) - 1, item_r.y }, colors::gray_border);
 							item_r.y += 2;
 							++pos;
 							continue;
@@ -382,14 +383,14 @@ namespace nana
 						renderer->item(*graph_, item_r, attr);
 
 						//Draw text, the text is transformed from orignal for hotkey character
-						nana::char_t hotkey;
-						nana::string::size_type hotkey_pos;
-						nana::string text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
+						wchar_t hotkey;
+						std::string::size_type hotkey_pos;
+						auto text = to_wstring(API::transform_shortkey_text(m.text, hotkey, &hotkey_pos));
 
 						if (m.image.empty() == false)
 							renderer->item_image(graph, nana::point(item_r.x + 5, item_r.y + static_cast<int>(item_h_px - image_px) / 2 - 1), image_px, m.image);
 
-						renderer->item_text(graph, nana::point(item_r.x + 40, item_r.y + text_top_off), text, strpixels, attr);
+						renderer->item_text(graph, nana::point(item_r.x + 40, item_r.y + text_top_off), to_utf8(text), strpixels, attr);
 
 						if (hotkey)
 						{
@@ -401,8 +402,7 @@ namespace nana
 								int x = item_r.x + 40 + off_w;
 								int y = item_r.y + text_top_off + hotkey_size.height;
 
-								graph_->set_color(colors::black);
-								graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y });
+								graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, colors::black);
 							}
 						}
 
@@ -545,7 +545,7 @@ namespace nana
 				}
 
 				//send_shortkey has 3 states, 0 = UNKNOWN KEY, 1 = ITEM, 2 = GOTO SUBMENU
-				int send_shortkey(nana::char_t key)
+				int send_shortkey(wchar_t key)
 				{
 					key = std::tolower(key);
 					std::size_t index = 0;
@@ -712,7 +712,7 @@ namespace nana
 						want_focus_{ (!wd) || ((!is_wd_parent_menu) && (API::focus_window() != wd)) },
 						event_focus_{ nullptr }
 				{
-					caption(STR("nana menu window"));
+					caption("nana menu window");
 					get_drawer_trigger().close_menu_tree([this]{ this->_m_close_all(); });
 					get_drawer_trigger().renderer = rdptr;
 					state_.owner_menubar = state_.self_submenu = false;
@@ -749,7 +749,7 @@ namespace nana
 					if(submenu_.parent == nullptr)
 					{
 						state_.owner_menubar = owner_menubar;
-						API::register_menu_window(this->handle(), !owner_menubar);
+						API::dev::register_menu_window(this->handle(), !owner_menubar);
 					}
 
 					auto & events = this->events();
@@ -844,7 +844,7 @@ namespace nana
 					return menu_wd->_m_manipulate_sub(0, true);
 				}
 
-				int send_shortkey(nana::char_t key)
+				int send_shortkey(wchar_t key)
 				{
 					menu_window * object = this;
 					while(object->submenu_.child)
@@ -1107,7 +1107,7 @@ namespace nana
 			delete impl_;
 		}
 
-		auto menu::append(const nana::string& text, const menu::event_fn_t& f) -> item_proxy
+		auto menu::append(const std::string& text, const menu::event_fn_t& f) -> item_proxy
 		{
 			impl_->mbuilder.data().items.emplace_back(text, f);
 			return item_proxy(size() - 1, impl_->mbuilder.data().items.back());
@@ -1253,7 +1253,7 @@ namespace nana
 			return impl_->mbuilder.data().items.size();
 		}
 
-		int menu::send_shortkey(nana::char_t key)
+		int menu::send_shortkey(wchar_t key)
 		{
 			return (impl_->uiobj ? impl_->uiobj->send_shortkey(key) : 0);
 		}

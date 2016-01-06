@@ -83,8 +83,8 @@ namespace nana{
 		public:
 			button();
 			button(window, bool visible);
-			button(window, const nana::string& caption, bool visible = true);
-			button(window, const nana::char_t* caption, bool visible = true);
+			button(window, const ::std::string& caption, bool visible = true);
+			button(window, const char* caption, bool visible = true);
 			button(window, const nana::rectangle& = rectangle(), bool visible = true);
 
 			button& icon(const nana::paint::image&);
@@ -104,7 +104,7 @@ namespace nana{
 		private:
 			//Overrides widget virtual functions
 			void _m_complete_creation() override;
-			void _m_caption(nana::string&&) override;
+			void _m_caption(native_string_type&&) override;
 		};
 }//end namespace nana
 #endif

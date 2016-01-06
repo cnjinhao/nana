@@ -515,7 +515,7 @@ namespace detail
 		atombase_.xdnd_finished = ::XInternAtom(display_, "XdndFinished", False);
 
 		//Create default font object.
-		def_font_ptr_ = make_native_font(0, font_size_to_height(10), 400, false, false, false);
+		def_font_ptr_ = make_native_font(nullptr, font_size_to_height(10), 400, false, false, false);
 		msg_dispatcher_ = new msg_dispatcher(display_);
 	}
 
@@ -550,17 +550,16 @@ namespace detail
 		return height;
 	}
 
-	platform_spec::font_ptr_t platform_spec::make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
+	platform_spec::font_ptr_t platform_spec::make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
 	{
 		font_ptr_t ref;
-#if defined(NANA_UNICODE)
+#if 1 //Xft
 		if(0 == name || *name == 0)
-			name = STR("*");
+			name = "*";
 
-		std::string nmstr = nana::charset(name);
 		XftFont* handle = 0;
 		std::stringstream ss;
-		ss<<nmstr<<"-"<<(height ? height : 10);
+		ss<<name<<"-"<<(height ? height : 10);
 		XftPattern * pat = ::XftNameParse(ss.str().c_str());
 		XftResult res;
 		XftPattern * match_pat = ::XftFontMatch(display_, ::XDefaultScreen(display_), pat, &res);
@@ -1216,7 +1215,7 @@ namespace detail
 															0, AnyPropertyType, &type, &format, &len,
 															&dummy_bytes_left, &data))
 						{
-							std::vector<nana::string> * files = new std::vector<nana::string>;
+							auto files = new std::vector<std::string>;
 							std::stringstream ss(reinterpret_cast<char*>(data));
 							while(true)
 							{
@@ -1235,7 +1234,7 @@ namespace detail
 										break;
 								}
 
-								files->push_back(nana::charset(file));
+								files->push_back(file);
 							}
 							if(files->size())
 							{
@@ -1244,6 +1243,8 @@ namespace detail
 								msg.u.mouse_drop.y = self.xdnd_.pos.y;
 								msg.u.mouse_drop.files = files;
 							}
+							else
+								delete files;
 
 							accepted = true;
 							::XFree(data);

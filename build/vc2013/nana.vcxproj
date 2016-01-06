@@ -256,7 +256,6 @@
     <ClCompile Include="..\..\source\system\shared_wrapper.cpp" />
     <ClCompile Include="..\..\source\system\timepiece.cpp" />
     <ClCompile Include="..\..\source\threads\pool.cpp" />
-    <ClCompile Include="..\..\source\traits.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
   </ItemGroup>
   <ItemGroup>

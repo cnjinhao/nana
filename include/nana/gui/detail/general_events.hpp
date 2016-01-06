@@ -460,7 +460,7 @@ namespace nana
 	{
 		::nana::window	window_handle;	    ///<  A handle to the event window
 		::nana::point	pos;	            ///<  cursor position in the event window
-		std::vector<nana::string>	files;	///<  external filenames
+		std::vector<std::string>	files;	///<  external filenames
 	};
 
 	struct arg_expose : public event_arg
@@ -480,7 +480,7 @@ namespace nana
 	{
 		event_code evt_code;	    ///< it is event_code::key_press in current event
 		::nana::window window_handle;	///< A handle to the event window
-		mutable nana::char_t key;	///< the key corresponding to the key pressed
+		mutable wchar_t key;	///< the key corresponding to the key pressed
 		mutable bool ignore;	    ///< this member is not used
 		bool ctrl;	                ///< keyboard Ctrl is pressed?
 		bool shift;	                ///< keyboard Shift is pressed

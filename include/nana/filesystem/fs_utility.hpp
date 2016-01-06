@@ -24,41 +24,13 @@ namespace filesystem
 		tm modified;
 	};
 
-	bool file_attrib(const nana::string& file, attribute&);
-	long long filesize(const nana::string& file);
+	bool modified_file_time(const ::std::string& file, struct tm&);
 
-	bool mkdir(const nana::string& dir, bool & if_exist);
-	bool modified_file_time(const nana::string& file, struct tm&);
+	std::wstring path_user();
 
-	nana::string path_user();
-	nana::string path_current();
+	bool rmfile(const char* file_utf8);
+	bool rmdir(const char* dir, bool fails_if_not_empty);
 
-	bool rmfile(const nana::char_t* file);
-	bool rmdir(const nana::char_t* dir, bool fails_if_not_empty);
-	nana::string root(const nana::string& path);
-
-	class path
-	{
-	public:
-		struct type
-		{	enum{not_exist, file, directory};
-		};
-
-		path();
-		path(const nana::string&);
-
-		bool empty() const;
-		path root() const;
-		int what() const;
-
-		nana::string name() const;
-	private:
-#if defined(NANA_WINDOWS)
-		nana::string text_;
-#else
-		std::string text_;
-#endif
-	};
 }//end namespace filesystem
 }//end namespace nana
 

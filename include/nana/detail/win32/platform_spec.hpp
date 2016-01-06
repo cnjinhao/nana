@@ -80,7 +80,7 @@ namespace detail
 
 	struct font_tag
 	{
-		nana::string name;
+		native_string_type name;
 		unsigned height;
 		unsigned weight;
 		bool italic;
@@ -186,7 +186,7 @@ namespace detail
 		void default_native_font(const font_ptr_t&);
 		unsigned font_size_to_height(unsigned) const;
 		unsigned font_height_to_size(unsigned) const;
-		font_ptr_t make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
+		font_ptr_t make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
 
 		static platform_spec& instance();
 

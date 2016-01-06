@@ -41,12 +41,12 @@ namespace nana
 				wdg_._m_notify_destroy();
 			}
 
-			std::wstring caption() override
+			native_string_type caption() override
 			{
 				return wdg_._m_caption();
 			}
 
-			virtual void caption(std::wstring text)
+			void caption(native_string_type text) override
 			{
 				wdg_._m_caption(std::move(text));
 			}
@@ -54,26 +54,46 @@ namespace nana
 			widget& wdg_;
 		};
 
-		nana::string widget::caption() const throw()
+		std::string widget::caption() const throw()
 		{
-			return this->_m_caption();
+			return to_utf8(_m_caption());
 		}
 
-		void widget::caption(std::string utf8)
+		std::wstring widget::caption_wstring() const throw()
 		{
-			_m_caption(std::wstring(::nana::charset(utf8, ::nana::unicode::utf8)));
+#if defined(NANA_WINDOWS)
+			return _m_caption();
+#else
+			return to_wstring(_m_caption());
+#endif
 		}
 
-		void widget::caption(std::wstring str)
+		auto widget::caption_native() const throw() -> native_string_type
 		{
+			return _m_caption();
+		}
+
+		widget& widget::caption(std::string utf8)
+		{
+			::nana::throw_not_utf8(utf8);
+			native_string_type str = to_nstring(utf8);
 			_m_caption(std::move(str));
+			return *this;
+		}
+
+		widget& widget::caption(std::wstring text)
+		{
+			native_string_type str = to_nstring(text);
+			_m_caption(std::move(str));
+			return *this;
 		}
 
 		void widget::i18n(i18n_eval eval)
 		{
 			if (handle())
 			{
-				_m_caption(eval());
+				native_string_type str = to_nstring(eval());
+				_m_caption(std::move(str));
 				internationalization_parts::set_eval(handle(), std::move(eval));
 			}
 		}
@@ -213,7 +233,7 @@ namespace nana
 			API::umake_event(eh);
 		}
 
-		widget& widget::register_shortkey(char_t key)
+		widget& widget::register_shortkey(wchar_t key)
 		{
 			if (key)
 				API::register_shortkey(handle(), static_cast<unsigned long>(key));
@@ -228,7 +248,7 @@ namespace nana
 			return *this;
 		}
 
-		widget& widget::tooltip(const nana::string& text)
+		widget& widget::tooltip(const ::std::string& text)
 		{
 			nana::tooltip::set(*this, text);
 			return *this;
@@ -252,12 +272,12 @@ namespace nana
 		void widget::_m_complete_creation()
 		{}
 
-		nana::string widget::_m_caption() const throw()
+		auto widget::_m_caption() const throw() -> native_string_type
 		{
 			return API::dev::window_caption(handle());
 		}
 
-		void widget::_m_caption(nana::string&& str)
+		void widget::_m_caption(native_string_type&& str)
 		{
 			API::dev::window_caption(handle(), std::move(str));
 		}

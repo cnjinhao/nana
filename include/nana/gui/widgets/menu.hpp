@@ -25,6 +25,8 @@ namespace nana
 		{
 			struct menu_type; //declaration
 
+			using native_string_type = ::nana::detail::native_string_type;
+
 			enum class checks
 			{
 				none,
@@ -56,7 +58,7 @@ namespace nana
 
 				//Default constructor initializes the item as a splitter
 				menu_item_type();
-				menu_item_type(nana::string, const event_fn_t&);
+				menu_item_type(std::string, const event_fn_t&);
 
 				struct
 				{
@@ -66,11 +68,11 @@ namespace nana
 				}flags;
 
 				menu_type		*sub_menu{nullptr};
-				nana::string	text;
+				std::string	text;
 				event_fn_t	functor;
 				checks			style{checks::none};
 				paint::image	image;
-				mutable nana::char_t	hotkey{0};
+				mutable wchar_t	hotkey{0};
 			};
 
 			struct menu_type
@@ -89,7 +91,7 @@ namespace nana
 			class renderer_interface
 			{
 			public:
-				typedef nana::paint::graphics & graph_reference;
+				using graph_reference = nana::paint::graphics &;
 
 				enum class state
 				{
@@ -109,7 +111,7 @@ namespace nana
 				virtual void background(graph_reference, window) = 0;
 				virtual void item(graph_reference, const nana::rectangle&, const attr&) = 0;
 				virtual void item_image(graph_reference, const nana::point&, unsigned image_px, const paint::image&) = 0;
-				virtual void item_text(graph_reference, const nana::point&, const nana::string&, unsigned text_pixels, const attr&) = 0;
+				virtual void item_text(graph_reference, const nana::point&, const std::string&, unsigned text_pixels, const attr&) = 0;
 				virtual void sub_arrow(graph_reference, const nana::point&, unsigned item_pixels, const attr&) = 0;
 			};
 		}//end namespace menu
@@ -134,7 +136,7 @@ namespace nana
 		~menu();
 
 			/// Appends an item to the menu.
-		item_proxy	append(const nana::string& text, const event_fn_t& callback= event_fn_t());
+		item_proxy	append(const std::string& text, const event_fn_t& callback= event_fn_t());
 		void		append_splitter();
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
@@ -158,7 +160,7 @@ namespace nana
 		bool goto_submen();///< Popup the submenu of the current item if it has a sub menu. Returns true if succeeds.
 		bool exit_submenu();						///< Closes the current window of the sub menu.
 		std::size_t size() const;					///< Return the number of items.
-		int send_shortkey(nana::char_t key);
+		int send_shortkey(wchar_t key);
 		void pick();
 
 		menu& max_pixels(unsigned);				    ///< Sets the max width in pixels of the item.

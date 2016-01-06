@@ -87,8 +87,8 @@ namespace nana
 		toolbar(window, const rectangle& = rectangle(), bool visible = true);
 
 		void separate();                      ///< Adds a separator.
-		void append(const nana::string& text, const nana::paint::image& img);   ///< Adds a control button.
-		void append(const nana::string& text);   ///< Adds a control button.
+		void append(const ::std::string& text, const nana::paint::image& img);   ///< Adds a control button.
+		void append(const ::std::string& text);   ///< Adds a control button.
 		bool enable(size_type index) const;
 		void enable(size_type index, bool enable_state);
 		void scale(unsigned s);   ///< Sets the scale of control button.

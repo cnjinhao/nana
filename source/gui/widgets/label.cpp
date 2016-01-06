@@ -52,8 +52,8 @@ namespace nana
 				struct traceable
 				{
 					nana::rectangle r;
-					nana::string target;
-					nana::string url;
+					std::wstring target;
+					std::wstring url;
 				};
 
 			public:
@@ -62,7 +62,7 @@ namespace nana
 				typedef widgets::skeletons::fblock fblock;
 				typedef widgets::skeletons::data data;
 
-				void parse(const nana::string& s)
+				void parse(const std::wstring& s)
 				{
 					dstream_.parse(s, format_enabled_);
 				}
@@ -82,7 +82,7 @@ namespace nana
 
 					nana::paint::font ft = graph.typeface();	//used for restoring the font
 
-					const unsigned def_line_pixels = graph.text_extent_size(STR(" "), 1).height;
+					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
 
 					font_ = ft;
 					fblock_ = nullptr;
@@ -148,7 +148,7 @@ namespace nana
 					graph.typeface(ft);
 				}
 
-				bool find(int x, int y, nana::string& target, nana::string& url) const
+				bool find(int x, int y, std::wstring& target, std::wstring& url) const
 				{
 					for (auto & t : traceable_)
 					{
@@ -169,7 +169,7 @@ namespace nana
 
 					auto ft = graph.typeface();	//used for restoring the font
 
-					const unsigned def_line_pixels = graph.text_extent_size(STR(" "), 1).height;
+					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
 
 					font_ = ft;
 					fblock_ = nullptr;
@@ -259,7 +259,7 @@ namespace nana
 					return fp->bold;
 				}
 
-				const nana::string& _m_fontname(nana::widgets::skeletons::fblock* fp)
+				const std::string& _m_fontname(nana::widgets::skeletons::fblock* fp)
 				{
 					while(fp->font.empty())
 					{
@@ -274,13 +274,13 @@ namespace nana
 				{
 					if(fp != fblock_)
 					{
-						const nana::string& name = _m_fontname(fp);
+						auto& name = _m_fontname(fp);
 						auto fontsize = static_cast<unsigned>(_m_font_size(fp));
 						bool bold = _m_bold(fp);
 
 						if((fontsize != font_.size()) || bold != font_.bold() || name != font_.name())
 						{
-							font_.make(name.data(), fontsize, bold);
+							font_.make(name, fontsize, bold);
 							graph.typeface(font_);
 						}
 						fblock_ = fp;
@@ -439,7 +439,7 @@ namespace nana
 
 				bool _m_each_line(graph_reference graph, dstream::linecontainer& line, render_status& rs)
 				{
-					nana::string text;
+					std::wstring text;
 					iterator block_start;
 
 					const int lastpos = static_cast<int>(graph.height()) - 1;
@@ -521,7 +521,7 @@ namespace nana
 					return 0;
 				}
 
-				void _m_draw_block(graph_reference graph, const nana::string& s, dstream::linecontainer::iterator block_start, render_status& rs)
+				void _m_draw_block(graph_reference graph, const std::wstring& s, dstream::linecontainer::iterator block_start, render_status& rs)
 				{
 					nana::unicode_bidi bidi;
 					std::vector<nana::unicode_bidi::entity> reordered;
@@ -568,7 +568,7 @@ namespace nana
 							}
 							else
 							{
-								nana::string str = data_ptr->text().substr(text_range.first, text_range.second);
+								auto str = data_ptr->text().substr(text_range.first, text_range.second);
 								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 								sz = graph.text_extent_size(str);
 							}
@@ -606,7 +606,7 @@ namespace nana
 				::nana::paint::font font_;
 				struct def_font_tag
 				{
-					::nana::string font_name;
+					::std::string font_name;
 					std::size_t font_size;
 					bool	font_bold;
 					::nana::color fgcolor;
@@ -625,23 +625,24 @@ namespace nana
 
 					class renderer renderer;
 
-					nana::string target;	//It indicates which target is tracing.
-					nana::string url;
+					std::wstring target;	//It indicates which target is tracing.
+					std::wstring url;
 
 					window for_associated_wd{ nullptr };
 
-					void add_listener(std::function<void(command, const nana::string&)>&& fn)
+					void add_listener(std::function<void(command, const std::string&)>&& fn)
 					{
 						listener_.emplace_back(std::move(fn));
 					}
 
-					void call_listener(command cmd, const nana::string& tar)
+					void call_listener(command cmd, const std::wstring& tar)
 					{
+						auto str = to_utf8(tar);
 						for (auto & fn : listener_)
-							fn(cmd, tar);
+							fn(cmd, str);
 					}
 				private:
-					std::vector<std::function<void(command, const nana::string&)>> listener_;
+					std::vector<std::function<void(command, const std::string&)>> listener_;
 				};
 
 				trigger::trigger()
@@ -666,7 +667,7 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
 				{
-					nana::string target, url;
+					std::wstring target, url;
 
 					if(impl_->renderer.find(arg.pos.x, arg.pos.y, target, url))
 					{
@@ -741,7 +742,7 @@ namespace nana
 					if(impl_->target.size())
 						impl_->call_listener(command::click, impl_->target);
 
-					system::open_url(url);
+					system::open_url(to_utf8(url));
 
 					API::focus_window(impl_->for_associated_wd);
 				}
@@ -772,8 +773,9 @@ namespace nana
             bgcolor(API::bgcolor(wd));
 		}
 
-		label::label(window wd, const nana::string& text, bool visible)
+		label::label(window wd, const std::string& text, bool visible)
 		{
+			throw_not_utf8(text);
 			create(wd, rectangle(), visible);
 			bgcolor(API::bgcolor(wd));
 			caption(text);
@@ -806,13 +808,13 @@ namespace nana
 			if(impl->renderer.format(f))
 			{
 				window wd = *this;
-				impl->renderer.parse(API::dev::window_caption(wd));
+				impl->renderer.parse(::nana::to_wstring(API::dev::window_caption(wd)));
 				API::refresh_window(wd);
 			}
 			return *this;
 		}
 
-		label& label::add_format_listener(std::function<void(command, const nana::string&)> f)
+		label& label::add_format_listener(std::function<void(command, const std::string&)> f)
 		{
 			get_drawer_trigger().impl()->add_listener(std::move(f));
 			return *this;
@@ -844,11 +846,12 @@ namespace nana
 			return impl->renderer.measure(*graph_ptr, limited, impl->text_align, impl->text_align_v);
 		}
 
-		::nana::size label::measure(paint::graphics& graph, const ::nana::string& str, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align)
+		::nana::size label::measure(paint::graphics& graph, const ::std::string& str, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align)
 		{
+			throw_not_utf8(str);
 			drawerbase::label::renderer rd;
 			rd.format(format_enabled);
-			rd.parse(str);
+			rd.parse(utf8_cast(str));
 			return rd.measure(graph, allowed_width_in_pixel, h_align, v_align);
 		}
 
@@ -867,11 +870,11 @@ namespace nana
 			return *this;
 		}
 
-		void label::_m_caption(nana::string&& str)
+		void label::_m_caption(native_string_type&& str)
 		{
 			internal_scope_guard lock;
 			window wd = *this;
-			get_drawer_trigger().impl()->renderer.parse(str);
+			get_drawer_trigger().impl()->renderer.parse(to_wstring(str));
 			API::dev::window_caption(wd, std::move(str));
 			API::refresh_window(wd);
 		}

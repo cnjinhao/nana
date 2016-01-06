@@ -291,9 +291,6 @@
     <ClCompile Include="..\..\source\deploy.cpp">
       <Filter>Source Files\nana</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\traits.cpp">
-      <Filter>Source Files\nana</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\unicode_bidi.cpp">
       <Filter>Source Files\nana</Filter>
     </ClCompile>

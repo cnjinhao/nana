@@ -38,7 +38,7 @@ namespace system
 	bool get_async_mouse_state(int button);
 
 	//open an url through a default browser
-	void open_url(const nana::string& url);
+	void open_url(const std::string& url);
 
 }//end namespace system
 }//end namespace nana

@@ -57,13 +57,13 @@ namespace nana
 		typedef drawerbase::label::command command;
 		label();
 		label(window, bool visible);
-		label(window, const nana::string& text, bool visible = true);
-		label(window parent, const nana::char_t* text, bool visible = true) :label(parent, nana::string(text),visible) {};
+		label(window, const std::string& text, bool visible = true);
+		label(window parent, const char* text, bool visible = true) :label(parent, std::string(text),visible) {};
 		label(window, const rectangle& = {}, bool visible = true);
 		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
 		bool transparent() const throw();
 		label& format(bool);		///< Switches the format mode of the widget.
-		label& add_format_listener(std::function<void(command, const nana::string&)>);
+		label& add_format_listener(std::function<void(command, const std::string&)>);
 
 		label& click_for(window associated_window) throw();	// as same as the "for" attribute of a label
 
@@ -71,12 +71,12 @@ namespace nana
 		/// "corrected" size that changes lines to fit the text into the specified width
 		nana::size measure(unsigned allowed_width_in_pixel) const;
 
-		static ::nana::size measure(::nana::paint::graphics&, const ::nana::string&, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align);
+		static ::nana::size measure(::nana::paint::graphics&, const ::std::string&, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align);
 
 		label& text_align(align horizontal_align, align_v vertical_align= align_v::top);
 	private:
 		//Overrides widget's virtual function
-		void _m_caption(nana::string&&) override;
+		void _m_caption(native_string_type&&) override;
 	};
 }//end namespace nana
 #endif

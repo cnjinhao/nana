@@ -38,7 +38,7 @@ namespace nana
 			: public form
 		{
 		public:
-			msgbox_window(window wd, const ::nana::string& title, msgbox::button_t btn, msgbox::icon_t ico)
+			msgbox_window(window wd, const std::string& title, msgbox::button_t btn, msgbox::icon_t ico)
 				:	form(wd, rectangle(1, 1, 1, 1), appear::decorate<>()),
 					owner_(wd), pick_(msgbox::pick_yes)
 			{
@@ -61,14 +61,14 @@ namespace nana
 				{
 					_m_click(arg);
 				});
-				yes_.caption(STR("OK"));
+				yes_.caption("OK");
 				width_pixel += 77;
 
 				if(msgbox::yes_no == btn || msgbox::yes_no_cancel == btn)
 				{
-					yes_.caption(STR("Yes"));
+					yes_.caption("Yes");
 					no_.create(*this);
-					no_.caption(STR("No"));
+					no_.caption("No");
 					no_.events().click.connect_unignorable([this](const arg_click& arg)
 					{
 						_m_click(arg);
@@ -79,7 +79,7 @@ namespace nana
 					if(msgbox::yes_no_cancel == btn)
 					{
 						cancel_.create(*this);
-						cancel_.caption(STR("Cancel"));
+						cancel_.caption("Cancel");
 						cancel_.events().click.connect_unignorable([this](const arg_click& arg)
 						{
 							_m_click(arg);
@@ -108,7 +108,7 @@ namespace nana
 				_m_icon(ico);
 			}
 
-			void prompt(const nana::string& text)
+			void prompt(const std::string& text)
 			{
 				if(text.size())
 				{
@@ -352,13 +352,17 @@ namespace nana
 		return *this;
 	}
 
-	msgbox::msgbox(const nana::string& title)
+	msgbox::msgbox(const std::string& title)
 		: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
-	{}
+	{
+		throw_not_utf8(title_);
+	}
 
-	msgbox::msgbox(window wd, const nana::string& title, button_t b)
+	msgbox::msgbox(window wd, const std::string& title, button_t b)
 		: wd_(wd), title_(title), button_(b), icon_(icon_none)
-	{}
+	{
+		throw_not_utf8(title_);
+	}
 
 	msgbox& msgbox::icon(icon_t ic)
 	{
@@ -372,23 +376,15 @@ namespace nana
 		sstream_.clear();
 	}
 
-	msgbox & msgbox::operator<<(const nana::string& str)
+	msgbox & msgbox::operator<<(const std::wstring& str)
 	{
-#if defined(NANA_UNICODE)
-		sstream_<<static_cast<std::string>(nana::charset(str));
-#else
-		sstream_<<str;
-#endif
+		sstream_ << to_osmbstr(to_utf8(str));
 		return *this;
 	}
 
-	msgbox & msgbox::operator<<(const nana::char_t* str)
+	msgbox & msgbox::operator<<(const wchar_t* str)
 	{
-#if defined(NANA_UNICODE)
-		sstream_<<static_cast<std::string>(nana::charset(str));;
-#else
-		sstream_<<str;
-#endif
+		sstream_ << to_osmbstr(to_utf8(str));
 		return *this;
 	}
 
@@ -439,11 +435,8 @@ namespace nana
         default:    break;
 		}
 
-		#if defined(NANA_UNICODE)
-			int bt = ::MessageBoxW(reinterpret_cast<HWND>(API::root(wd_)), static_cast<std::wstring>(nana::charset(sstream_.str())).c_str(), title_.c_str(), type);
-		#else
-			int bt = ::MessageBoxA(reinterpret_cast<HWND>(API::root(wd_), sstream_.str().c_str(), title_.c_str(), type);
-		#endif
+		auto bt = ::MessageBoxW(reinterpret_cast<HWND>(API::root(wd_)), utf8_cast(sstream_.str()).c_str(), utf8_cast(title_).c_str(), type);
+
 		switch(bt)
 		{
 		case IDOK:
@@ -473,9 +466,12 @@ namespace nana
 		: public ::nana::form
 	{
 	public:
-		inputbox_window(window owner, paint::image (&imgs)[4], ::nana::rectangle (&valid_areas)[4], const ::nana::string & desc, const ::nana::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
+		inputbox_window(window owner, paint::image (&imgs)[4], ::nana::rectangle (&valid_areas)[4], const ::std::string & desc, const ::std::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
 			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
 		{
+			throw_not_utf8(desc);
+			throw_not_utf8(title);
+
 			desc_.create(*this);
 			desc_.format(true).caption(desc);
 			auto desc_extent = desc_.measure(470);
@@ -652,13 +648,13 @@ namespace nana
 		int last;
 		int step;
 
-		::nana::string label_text;
+		::std::string label_text;
 		::nana::panel<false> dock;
 		::nana::label label;
 		::nana::spinbox spinbox;
 	};
 
-	inputbox::integer::integer(::nana::string label, int init_value, int begin, int last, int step)
+	inputbox::integer::integer(::std::string label, int init_value, int begin, int last, int step)
 		: impl_(new implement)
 	{
 		auto impl = impl_.get();
@@ -681,7 +677,7 @@ namespace nana
 	}
 
 	//Implementation of abstract_content
-	const ::nana::string& inputbox::integer::label() const
+	const ::std::string& inputbox::integer::label() const
 	{
 		return impl_->label_text;
 	}
@@ -704,7 +700,7 @@ namespace nana
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
 
-		impl->spinbox.value(std::to_wstring(impl->value));
+		impl->spinbox.value(std::to_string(impl->value));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
@@ -730,13 +726,13 @@ namespace nana
 		double last;
 		double step;
 
-		::nana::string label_text;
+		::std::string label_text;
 		::nana::panel<false> dock;
 		::nana::label label;
 		::nana::spinbox spinbox;
 	};
 
-	inputbox::real::real(::nana::string label, double init_value, double begin, double last, double step)
+	inputbox::real::real(::std::string label, double init_value, double begin, double last, double step)
 		: impl_(new implement)
 	{
 		auto impl = impl_.get();
@@ -759,7 +755,7 @@ namespace nana
 	}
 
 	//Implementation of abstract_content
-	const ::nana::string& inputbox::real::label() const
+	const ::std::string& inputbox::real::label() const
 	{
 		return impl_->label_text;
 	}
@@ -782,7 +778,7 @@ namespace nana
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
 
-		impl->spinbox.value(std::to_wstring(impl->value));
+		impl->spinbox.value(std::to_string(impl->value));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
@@ -803,29 +799,33 @@ namespace nana
 	//class text
 	struct inputbox::text::implement
 	{
-		::nana::string	value;
-		::nana::string	tip;
+		::std::string	value;
+		::std::string	tip;
 		wchar_t			mask_character{0};
-		std::vector< ::nana::string> options;
+		std::vector< ::std::string> options;
 
-		::nana::string label_text;
-		::nana::string init_text;
+		::std::string label_text;
+		::std::string init_text;
 		::nana::panel<false> dock;
 		::nana::label label;
 		::nana::combox combox;
 		::nana::textbox textbox;
 	};
 
-	inputbox::text::text(::nana::string label, ::nana::string init_text)
+	inputbox::text::text(::std::string label, ::std::string init_text)
 		: impl_(new implement)
 	{
 		impl_->label_text.swap(label);
 		impl_->init_text.swap(init_text);
 	}
 
-	inputbox::text::text(::nana::string label, std::vector<::nana::string> options)
+	inputbox::text::text(::std::string label, std::vector<::std::string> options)
 		: impl_(new implement)
 	{
+		throw_not_utf8(label);
+		for (auto & text : options)
+			throw_not_utf8(text);
+
 		impl_->options.swap(options);
 		impl_->label_text.swap(label);
 	}
@@ -835,12 +835,12 @@ namespace nana
 
 	void inputbox::text::tip_string(std::wstring tip)
 	{
-		impl_->tip.swap(tip);
+		impl_->tip = utf8_cast(tip);
 	}
 
 	void inputbox::text::tip_string(std::string tip_utf8)
 	{
-		impl_->tip = ::nana::charset(tip_utf8, ::nana::unicode::utf8);
+		impl_->tip.swap(tip_utf8);
 	}
 
 	void inputbox::text::mask_character(wchar_t ch)
@@ -848,7 +848,7 @@ namespace nana
 		impl_->mask_character = ch;
 	}
 
-	::nana::string inputbox::text::value() const
+	::std::string inputbox::text::value() const
 	{
 		if (!impl_->textbox.empty())
 			return impl_->textbox.caption();
@@ -859,7 +859,7 @@ namespace nana
 	}
 
 	//Implementation of abstract_content
-	const ::nana::string& inputbox::text::label() const
+	const ::std::string& inputbox::text::label() const
 	{
 		return impl_->label_text;
 	}
@@ -929,7 +929,7 @@ namespace nana
 		int month;
 		int day;
 
-		::nana::string label_text;
+		::std::string label_text;
 		::nana::panel<false> dock;
 		::nana::label label;
 		::nana::combox wdg_month;
@@ -937,18 +937,18 @@ namespace nana
 		::nana::spinbox wdg_year;
 	};
 
-	inputbox::date::date(::nana::string label)
+	inputbox::date::date(::std::string label)
 		: impl_(new implement)
 	{
-		impl_->label_text = std::move(label);
+		impl_->label_text.swap(label);
 	}
 
 	//Instance for impl_ because implmenet is incomplete type at the point of declaration
 	inputbox::date::~date(){}
 
-	::nana::string inputbox::date::value() const
+	::std::string inputbox::date::value() const
 	{
-		return std::to_wstring(impl_->month) + L'-' + std::to_wstring(impl_->day) + L", " + std::to_wstring(impl_->year);
+		return std::to_string(impl_->month) + '-' + std::to_string(impl_->day) + ", " + std::to_string(impl_->year);
 	}
 
 	int inputbox::date::year() const
@@ -974,7 +974,7 @@ namespace nana
 	}
 
 	//Implementation of abstract_content
-	const ::nana::string& inputbox::date::label() const
+	const ::std::string& inputbox::date::label() const
 	{
 		return impl_->label_text;
 	}
@@ -1009,8 +1009,8 @@ namespace nana
 
 		impl->wdg_month.option(today.month - 1);
 
-		impl->wdg_day.value(std::to_wstring(today.day));
-		impl->wdg_year.value(std::to_wstring(today.year));
+		impl->wdg_day.value(std::to_string(today.day));
+		impl->wdg_year.value(std::to_string(today.year));
 
 		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
 		{
@@ -1051,7 +1051,7 @@ namespace nana
 			if (day > days)
 				day = days;
 
-			impl->wdg_day.value(std::to_wstring(day));
+			impl->wdg_day.value(std::to_string(day));
 		};
 
 		impl->wdg_year.events().text_changed.connect_unignorable(make_days);
@@ -1071,19 +1071,21 @@ namespace nana
 	{
 		filebox fbox;
 
-		::nana::string value;
-		::nana::string label_text;
+		::std::string value;
+		::std::string label_text;
 		::nana::panel<false> dock;
 		::nana::label label;
 		::nana::textbox path_edit;
 		::nana::button	browse;
 
-		implement(const filebox& fb, ::nana::string&& labelstr)
+		implement(const filebox& fb, ::std::string&& labelstr)
 			: fbox(fb), label_text(std::move(labelstr))
-		{}
+		{
+			throw_not_utf8(label_text);
+		}
 	};
 
-	inputbox::path::path(::nana::string label, const filebox& fb)
+	inputbox::path::path(::std::string label, const filebox& fb)
 		: impl_(new implement(fb, std::move(label)))
 	{
 	}
@@ -1091,7 +1093,7 @@ namespace nana
 	//Instance for impl_ because implmenet is incomplete type at the point of declaration
 	inputbox::path::~path(){}
 
-	::nana::string inputbox::path::value() const
+	::std::string inputbox::path::value() const
 	{
 		if (!impl_->path_edit.empty())
 			return impl_->path_edit.caption();
@@ -1100,7 +1102,7 @@ namespace nana
 	}
 
 	//Implementation of abstract_content
-	const ::nana::string& inputbox::path::label() const
+	const ::std::string& inputbox::path::label() const
 	{
 		return impl_->label_text;
 	}
@@ -1148,7 +1150,7 @@ namespace nana
 	//end class path
 
 
-	inputbox::inputbox(window owner, ::nana::string desc, ::nana::string title)
+	inputbox::inputbox(window owner, ::std::string desc, ::std::string title)
 		:	owner_{ owner },
 			description_(std::move(desc)),
 			title_(std::move(title))

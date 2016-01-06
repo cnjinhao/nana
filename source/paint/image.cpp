@@ -40,19 +40,19 @@ namespace paint
 		//class image_ico
 			image_ico::image_ico(bool is_ico): is_ico_(is_ico){}
 
-			bool image_ico::open(const nana::char_t* filename)
+			bool image_ico::open(const nana::experimental::filesystem::path& file)
 			{
 				close();
 #if defined(NANA_WINDOWS)
 				HICON handle = 0;
 				if(is_ico_)
 				{
-					handle = (HICON)::LoadImage(0, filename, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+					handle = (HICON)::LoadImage(0, file.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
 				}
 				else
 				{
 					SHFILEINFO    sfi;
-					::SHGetFileInfo(filename, 0, &sfi, sizeof(sfi), SHGFI_ICON);
+					::SHGetFileInfo(file.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON);
 					handle = sfi.hIcon;
 				}
 
@@ -173,15 +173,9 @@ namespace paint
 			:	image_ptr_(std::move(r.image_ptr_))
 		{}
 
-		image::image(const nana::char_t* file)
+		image::image(const ::nana::experimental::filesystem::path& file)
 		{
-			if(file)
-				open(file);
-		}
-
-		image::image(const nana::string& file)
-		{
-			this->open(file);
+			open(file);
 		}
 
 		image::~image()
@@ -204,21 +198,38 @@ namespace paint
 			return *this;
 		}
 
-		bool image::open(const nana::string& filename)
+		bool image::open(const ::nana::experimental::filesystem::path& file)
 		{
 			image_ptr_.reset();
+
+			auto extension = file.extension().native();
+			if (extension.empty())
+				return false;
+
 			image::image_impl_interface * helper = nullptr;
 
-			if(filename.size())
 			{
-				auto dotpos = filename.find_last_of('.');
-				if (dotpos != filename.npos)
-				{
-					auto type_str = ::nana::cistring(filename.substr(dotpos + 1).data());
+					std::transform(extension.begin(), extension.end(), extension.begin(), [](int ch)
+					{
+						if('A' <= ch && ch <= 'Z')
+							ch  -= ('A' - 'a');
+						return ch;
+					});
 
+#if defined(NANA_WINDOWS)
+					const wchar_t* ext_ico = L".ico";
+					const wchar_t* ext_png = L".png";
+					const wchar_t* ext_jpg = L".jpg";
+					const wchar_t* ext_jpeg = L".jpeg";
+#else
+					const char* ext_ico = ".ico";
+					const char* ext_png = ".png";
+					const char* ext_jpg = ".jpg";
+					const char* ext_jpeg = ".jpeg";
+#endif
 					do
 					{
-						if (STR("ICO") == type_str)
+						if (ext_ico == extension)
 						{
 #if defined(NANA_WINDOWS)
 							helper = new detail::image_ico(true);
@@ -228,7 +239,7 @@ namespace paint
 							break;
 						}
 
-						if (STR("PNG") == type_str)
+						if (ext_png == extension)
 						{
 #if defined(NANA_ENABLE_PNG)
 							helper = new detail::image_png;
@@ -238,7 +249,7 @@ namespace paint
 							break;
 						}
 
-						if (STR("JPG") == type_str || STR("JPEG") == type_str)
+						if (ext_jpg == extension || ext_jpeg == extension)
 						{
 #if defined(NANA_ENABLE_JPEG)
 							helper = new detail::image_jpeg;
@@ -248,32 +259,26 @@ namespace paint
 							break;
 						}
 					} while (false);
-					
-				}
-				
+
 				//Check for BMP
-				if(!helper)
+				if (!helper)
 				{
-#if defined(NANA_UNICODE)
-					std::ifstream ifs(std::string(nana::charset(filename)).c_str(), std::ios::binary);
-#else
-					std::ifstream ifs(filename.c_str(), std::ios::binary);
-#endif
-					if(ifs)
+					std::ifstream ifs(file.string(), std::ios::binary);
+					if (ifs)
 					{
 						unsigned short meta = 0;
 						ifs.read(reinterpret_cast<char*>(&meta), 2);
-						if(*reinterpret_cast<const short*>("BM") == meta)
+						if (*reinterpret_cast<const short*>("BM") == meta)
 							helper = new detail::image_bmp;
-						else if(*reinterpret_cast<const short*>("MZ") == meta)
+						else if (*reinterpret_cast<const short*>("MZ") == meta)
 							helper = new detail::image_ico(false);
 					}
 				}
 
-				if(helper)
+				if (helper)
 				{
 					image_ptr_ = std::shared_ptr<image_impl_interface>(helper);
-					return helper->open(filename.data());
+					return helper->open(file.c_str());
 				}
 			}
 			return false;

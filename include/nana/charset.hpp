@@ -18,6 +18,24 @@
 
 namespace nana
 {
+	namespace utf
+	{
+		/// Attempt to get a pointer to a character of UTF-8 string by a specifed character index.
+		/// @param text_utf8 A string encoded as UTF-8.
+		/// @param pos The unicode character index.
+		/// @returns A pointer to the unicode character. It returns a null if pos is out of range. 
+		const char* char_ptr(const char* text_utf8, unsigned pos);
+		const char* char_ptr(const ::std::string& text_utf8, unsigned pos);
+
+		/// Get the unicode character by a specified character index.
+		/// @param text_utf8 A string encoded as UTF-8.
+		/// @param pos The unicode character index.
+		/// @param len A unsigned pointer to receive the number of bytes it takes in UTF-8 encoded. If len is a nullptr, it is ignored.
+		/// @returns A unicode character. '\0' if pos is out of range.
+		wchar_t char_at(const char* text_utf8, unsigned pos, unsigned * len);
+		wchar_t char_at(const ::std::string& text_utf8, unsigned pos, unsigned * len);
+	}
+
 	enum class unicode
 	{
 		utf8, utf16, utf32

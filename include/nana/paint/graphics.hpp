@@ -36,14 +36,14 @@ namespace nana
 			font();
 			font(drawable_type);
 			font(const font&);
-			font(const char_t* name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
+			font(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
 			~font();
 			bool empty() const;
-			void make(const char_t* name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
-			void make_raw(const char_t*, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
+			void make(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
+			void make_raw(const ::std::string& name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
 
 			void set_default() const;
-			::nana::string name() const;
+			::std::string name() const;
 			unsigned size() const;
 			bool bold() const;
 			unsigned height() const;
@@ -89,13 +89,15 @@ namespace nana
 			void resize(const ::nana::size&);
 			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;
-			::nana::size	text_extent_size(const char_t*) const;    ///< Computes the width and height of the specified string of text.
-			::nana::size	text_extent_size(const string&) const;    ///< Computes the width and height of the specified string of text.
-			::nana::size	text_extent_size(const char_t*, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-			::nana::size	text_extent_size(const string&, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-			::nana::size	glyph_extent_size(const char_t*, std::size_t length, std::size_t begin, std::size_t end) const;
-			::nana::size	glyph_extent_size(const string&, std::size_t length, std::size_t begin, std::size_t end) const;
-			bool glyph_pixels(const char_t *, std::size_t length, unsigned* pxbuf) const;
+			::nana::size	text_extent_size(const ::std::string&) const;
+			::nana::size	text_extent_size(const char*, std::size_t len) const;
+			::nana::size	text_extent_size(const wchar_t*) const;    ///< Computes the width and height of the specified string of text.
+			::nana::size	text_extent_size(const ::std::wstring&) const;    ///< Computes the width and height of the specified string of text.
+			::nana::size	text_extent_size(const wchar_t*, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
+			::nana::size	text_extent_size(const ::std::wstring&, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
+			::nana::size	glyph_extent_size(const wchar_t*, std::size_t length, std::size_t begin, std::size_t end) const;
+			::nana::size	glyph_extent_size(const ::std::wstring&, std::size_t length, std::size_t begin, std::size_t end) const;
+			bool glyph_pixels(const wchar_t *, std::size_t length, unsigned* pxbuf) const;
 			::nana::size	bidi_extent_size(const std::wstring&) const;
 			::nana::size	bidi_extent_size(const std::string&) const;
 
@@ -136,13 +138,10 @@ namespace nana
 			/// @param file_utf8 A UTF-8 string to a filename
 			void save_as_file(const char* file_utf8) const throw();
 
-			void set_color(const ::nana::color&);		//deprecated, graphics::palette() instead
-			void set_text_color(const ::nana::color&);	//deprecated, graphics::palette() instead
-
 			::nana::color	palette(bool for_text) const;
 			graphics&		palette(bool for_text, const ::nana::color&);
 
-			unsigned bidi_string(const nana::point&, const char_t *, std::size_t len);
+			unsigned bidi_string(const nana::point&, const wchar_t *, std::size_t len);
 			unsigned bidi_string(const point& pos, const char*, std::size_t len);
 
 			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
@@ -150,10 +149,13 @@ namespace nana
 			void set_pixel(int x, int y, const ::nana::color&);
 			void set_pixel(int x, int y);
 
-			void string(point, const char_t*, std::size_t len);
-			void string(const point&, const char_t*);
-			void string(const point&, const ::nana::string&);
-			void string(const point&, const ::nana::string&, const color&);
+			void string(const point&, const std::string& text_utf8);
+			void string(const point&, const std::string& text_utf8, const color&);
+
+			void string(point, const wchar_t*, std::size_t len);
+			void string(const point&, const wchar_t*);
+			void string(const point&, const ::std::wstring&);
+			void string(const point&, const ::std::wstring&, const color&);
 
 			void line(const point&, const point&);
 			void line(const point&, const point&, const color&);

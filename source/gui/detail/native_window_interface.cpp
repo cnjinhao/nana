@@ -202,7 +202,7 @@ namespace nana{
 			if(owner && (nested == false))
 				::ClientToScreen(reinterpret_cast<HWND>(owner), &pt);
 
-			HWND native_wd = ::CreateWindowEx(style_ex, STR("NanaWindowInternal"), STR("Nana Window"),
+			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
 											reinterpret_cast<HWND>(owner), 0, ::GetModuleHandle(0), 0);
@@ -378,8 +378,8 @@ namespace nana{
 			if(nullptr == parent) return nullptr;
 #if defined(NANA_WINDOWS)
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilites for variation
-										STR("NanaWindowInternal"),
-										STR("Nana Child Window"),	// Title Text
+										L"NanaWindowInternal",
+										L"Nana Child Window",	// Title Text
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
 										r.x, r.y, r.width, r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
@@ -1084,48 +1084,37 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::window_caption(native_window_type wd, const nana::string& title)
+		void native_interface::window_caption(native_window_type wd, const native_string_type& title)
 		{
 #if defined(NANA_WINDOWS)
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
-				wchar_t * wstr;
-#if defined(NANA_UNICODE)
-				wstr = new wchar_t[title.length() + 1];
-				wcscpy(wstr, title.c_str());
-#else
-				std::wstring str = nana::charset(title);
-				wstr = new wchar_t[str.length() + 1];
-				wcscpy(wstr, str.c_str());
-#endif
+				wchar_t * wstr = new wchar_t[title.length() + 1];
+				std::wcscpy(wstr, title.c_str());
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_set_window_text, reinterpret_cast<WPARAM>(wstr), 0);
 			}
 			else
 				::SetWindowText(reinterpret_cast<HWND>(wd), title.c_str());
 #elif defined(NANA_X11)
 			::XTextProperty name;
-	#if defined(NANA_UNICODE)
-			std::string mbstr = nana::charset(title);
-			char* text = const_cast<char*>(mbstr.c_str());
-	#else
-			char* text = const_cast<char*>(title.c_str());
-	#endif
+			char * text = const_cast<char*>(title.c_str());
+
 			nana::detail::platform_scope_guard psg;
 			::XStringListToTextProperty(&text, 1, &name);
 			::XSetWMName(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &name);
 			::XChangeProperty(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
 					restrict::spec.atombase().net_wm_name, restrict::spec.atombase().utf8_string, 8,
-					PropModeReplace, reinterpret_cast<unsigned char*>(text), mbstr.size());
+					PropModeReplace, reinterpret_cast<unsigned char*>(text), title.size());
 #endif
 		}
 
-		nana::string native_interface::window_caption(native_window_type wd)
+		auto native_interface::window_caption(native_window_type wd) -> native_string_type
 		{
 #if defined(NANA_WINDOWS)
 			int length = ::GetWindowTextLength(reinterpret_cast<HWND>(wd));
 			if(length > 0)
 			{
-				nana::string str;
+				native_string_type str;
                 //One for NULL terminator which GetWindowText will write.
 				str.resize(length+1);
 				
@@ -1136,7 +1125,6 @@ namespace nana{
 
 				return str;
 			}
-			return nana::string();
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 			::XTextProperty txtpro;
@@ -1148,14 +1136,14 @@ namespace nana{
 				{
 					if(size > 1)
 					{
-						nana::string str = nana::charset(*strlist);
+						std::string text = *strlist;
 						::XFreeStringList(strlist);
-						return str;
+						return text;
 					}
 				}
 			}
-			return nana::string();
 #endif
+			return native_string_type();
 		}
 
 		void native_interface::capture_window(native_window_type wd, bool cap)

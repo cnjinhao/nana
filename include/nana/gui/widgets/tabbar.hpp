@@ -144,12 +144,14 @@ namespace nana
 				: public drawer_trigger
 			{
 			public:
+				using native_string_type = ::nana::detail::native_string_type;
+
 				enum class kits
 				{
-					add,
-					scroll,
-					list,
-					close
+					add,	///< The type identifies the add button of the tabbar's toolbox.
+					scroll,	///< The type identifies the scroll button of the tabbar's toolbox
+					list,	///< The type identifies the list button of the tabbar's toolbox
+					close	///< The type identifies the close button of the tabbar's toolbox
 				};
 
 				trigger();
@@ -161,15 +163,15 @@ namespace nana
 				const pat::cloneable<item_renderer> & ext_renderer() const;
 				void ext_renderer(const pat::cloneable<item_renderer>&);
 				void set_event_agent(event_agent_interface*);
-				void insert(std::size_t, nana::string&&, nana::any&&);
+				void insert(std::size_t, native_string_type&&, nana::any&&);
 				std::size_t length() const;
 				bool close_fly(bool);
 				void attach(std::size_t, window);
 				void erase(std::size_t);
 				void tab_color(std::size_t, bool is_bgcolor, const ::nana::color&);
 				void tab_image(size_t, const nana::paint::image&);
-				void text(std::size_t, const nana::string&);
-				nana::string text(std::size_t) const;
+				void text(std::size_t, const native_string_type&);
+				native_string_type text(std::size_t) const;
 				bool toolbox(kits, bool);
 			private:
 				void attached(widget_reference, graph_reference)	override;
@@ -191,30 +193,9 @@ namespace nana
 	{
 		typedef drawerbase::tabbar::trigger drawer_trigger_t;
 	public:
-		typedef Type value_type;            ///< The type of element data which is stored in the tabbar.
-		typedef drawerbase::tabbar::item_renderer item_renderer; ///< A user-defined item renderer should be derived from this interface.
-
-		//These member types is deprecated, they will be removed in Nana 1.3
-		struct button_add{};    ///< The type identifies the add button of the tabbar's toolbox.
-		struct button_scroll{}; ///< The type identifies the scroll button of the tabbar's toolbox.
-		struct button_list{};   ///< The type identifies the list button of the tabbar's toolbox.
-		struct button_close{};  ///< The type identifies the close button of the tabbar's toolbox.
-
-		//This template class is deprecated, it will be removed in 1.3
-		/// A template class identifies the buttons of the tabbar's toolbox. Refer to notes for more details.
-		template<typename ButtonAdd = nana::null_type, typename ButtonScroll = nana::null_type, typename ButtonList = nana::null_type, typename ButtonClose = nana::null_type>
-		struct button_container
-		{
-			typedef meta::fixed_type_set<ButtonAdd, ButtonScroll, ButtonList, ButtonClose> type_set;
-		};
-
-		enum class kits
-		{
-			add,	///< The type identifies the add button of the tabbar's toolbox.
-			scroll,	///< The type identifies the scroll button of the tabbar's toolbox
-			list,	///< The type identifies the list button of the tabbar's toolbox
-			close	///< The type identifies the close button of the tabbar's toolbox
-		};
+		using value_type = Type;            ///< The type of element data which is stored in the tabbar.
+		using item_renderer = drawerbase::tabbar::item_renderer; ///< A user-defined item renderer should be derived from this interface.
+		using kits = drawer_trigger_t::kits;
 
 		tabbar()
 		{
@@ -298,15 +279,19 @@ namespace nana
 			return *this;
 		}
 
-		void push_back(nana::string text)  /// Append a new item.
+		void push_back(std::string text)  /// Append a new item.
 		{
-			this->get_drawer_trigger().insert(::nana::npos, std::move(text), value_type());
+			this->get_drawer_trigger().insert(::nana::npos, to_nstring(std::move(text)), value_type());
 			API::update_window(*this);
 		}
 
 		void insert(std::size_t pos, std::string text, value_type value = {})
 		{
-			return this->insert(pos, static_cast<std::wstring>(nana::charset(text, nana::unicode::utf8)), std::move(value));
+			if (pos > length())
+				throw std::out_of_range("tabbar::insert invalid position");
+
+			this->get_drawer_trigger().insert(pos, to_nstring(text), std::move(value));
+			API::update_window(*this);
 		}
 
 		void insert(std::size_t pos, std::wstring text, value_type value = {})
@@ -314,14 +299,8 @@ namespace nana
 			if (pos > length())
 				throw std::out_of_range("tabbar::insert invalid position");
 
-			this->get_drawer_trigger().insert(pos, std::move(text), std::move(value));
+			this->get_drawer_trigger().insert(pos, to_nstring(text), std::move(value));
 			API::update_window(*this);
-		}
-
-		//deprecated from 1.2.1, removed from 1.3
-		void relate(std::size_t pos, window wd)  /// Binds a window to an item specified by pos, if the item is selected, shows the window, otherwise, hides it.
-		{
-			this->get_drawer_trigger().attach(pos, wd);
 		}
 
 		void attach(std::size_t pos, window attach_wd)
@@ -351,46 +330,22 @@ namespace nana
 		{
 			this->get_drawer_trigger().tab_image(pos, img);
 		}
+
         /// Sets buttons of the tabbar's toolbox, refer to notes for more details.
-		template<typename Add, typename Scroll, typename List, typename Close>
-		void toolbox(const button_container<Add, Scroll, List, Close>&, bool enable)
-		{
-			typedef typename button_container<Add, Scroll, List, Close>::type_set type_set;
-			auto & tg = this->get_drawer_trigger();
-			bool redraw = false;
-
-			using inner_kits = drawerbase::tabbar::trigger::kits;
-
-			if(type_set::template count<button_add>::value)
-				redraw |= tg.toolbox(inner_kits::add, enable);
-
-			if(type_set::template count<button_scroll>::value)
-				redraw |= tg.toolbox(inner_kits::scroll, enable);
-
-			if(type_set::template count<button_list>::value)
-				redraw |= tg.toolbox(inner_kits::add, enable);
-
-			if(type_set::template count<button_close>::value)
-				redraw |= tg.toolbox(inner_kits::close, enable);
-
-			if(redraw)
-				API::refresh_window(this->handle());
-		}
-
 		void toolbox(kits kit, bool enable)
 		{
 			if (this->get_drawer_trigger().toolbox(kit, enable))
 				API::refresh_window(this->handle());
 		}
 
-		void text(std::size_t pos, const nana::string& str) /// Sets the title of the specified item, If pos is invalid, the method throws an std::out_of_range object.
+		void text(std::size_t pos, const std::string& str) /// Sets the title of the specified item, If pos is invalid, the method throws an std::out_of_range object.
 		{
-			this->get_drawer_trigger().text(pos, str);
+			this->get_drawer_trigger().text(pos, to_nstring(str));
 		}
 
-		nana::string text(std::size_t pos) const /// Returns a title of a specified item, If pos is invalid, the method trhows a std::out_of_range object.
+		std::string text(std::size_t pos) const /// Returns a title of a specified item, If pos is invalid, the method trhows a std::out_of_range object.
 		{
-			return this->get_drawer_trigger().text(pos);
+			return to_utf8(this->get_drawer_trigger().text(pos));
 		}
 	private:
 		std::unique_ptr<drawerbase::tabbar::event_agent<value_type, drawerbase::tabbar::trigger> > evt_agent_;

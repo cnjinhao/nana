@@ -141,7 +141,7 @@ namespace detail
 
 		struct platform_detail_tag
 		{
-			nana::char_t keychar;
+			wchar_t keychar;
 		}platform;
 
 		struct cursor_tag
@@ -215,7 +215,7 @@ namespace detail
 
 		WNDCLASSEX wincl;
 		wincl.hInstance = ::GetModuleHandle(0);
-		wincl.lpszClassName = STR("NanaWindowInternal");
+		wincl.lpszClassName = L"NanaWindowInternal";
 		wincl.lpfnWndProc = &Bedrock_WIN32_WindowProc;
 		wincl.style = CS_DBLCLKS | CS_OWNDC;
 		wincl.cbSize = sizeof(wincl);
@@ -441,9 +441,9 @@ namespace detail
 		}
         catch(std::exception& e)
         {
-             (msgbox(modal_window, STR("An uncaptured std::exception during message pumping: ")).icon(msgbox::icon_information)
-                                 <<STR("\n   in form: ") << API::window_caption(modal_window)
-                                 <<STR("\n   exception : ") << e.what()
+             (msgbox(modal_window, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
+                                 <<"\n   in form: "<< API::window_caption(modal_window)
+                                 <<"\n   exception : "<< e.what()
              ).show();
 
 			 internal_scope_guard lock;
@@ -459,8 +459,8 @@ namespace detail
         }
 		catch(...)
 		{
-			(msgbox(modal_window, STR("An exception during message pumping!")).icon(msgbox::icon_information)
-				<< STR("An uncaptured non-std exception during message pumping!")
+			(msgbox(modal_window, "An exception during message pumping!").icon(msgbox::icon_information)
+				<<"An uncaptured non-std exception during message pumping!"
 				).show();
 			internal_scope_guard lock;
 			_m_except_handler();
@@ -1176,7 +1176,7 @@ namespace detail
 					{
 						arg_dropfiles dropfiles;
 
-						std::unique_ptr<nana::char_t[]> varbuf;
+						std::unique_ptr<wchar_t[]> varbuf;
 						std::size_t bufsize = 0;
 
 						unsigned size = ::DragQueryFile(drop, 0xFFFFFFFF, 0, 0);
@@ -1185,12 +1185,13 @@ namespace detail
 							unsigned reqlen = ::DragQueryFile(drop, i, 0, 0) + 1;
 							if(bufsize < reqlen)
 							{
-								varbuf.reset(new nana::char_t[reqlen]);
+								varbuf.reset(new wchar_t[reqlen]);
 								bufsize = reqlen;
 							}
 
 							::DragQueryFile(drop, i, varbuf.get(), reqlen);
-							dropfiles.files.emplace_back(varbuf.get());
+
+							dropfiles.files.emplace_back(utf8_cast(varbuf.get()));
 						}
 
 						while(msgwnd && (msgwnd->flags.dropable == false))
@@ -1344,7 +1345,7 @@ namespace detail
 						arg.evt_code = event_code::key_press;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
 						arg.ignore = false;
-						arg.key = static_cast<nana::char_t>(wParam);
+						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
@@ -1372,7 +1373,7 @@ namespace detail
 						arg.evt_code = event_code::key_release;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
 						arg.ignore = false;
-						arg.key = static_cast<nana::char_t>(wParam);
+						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 
@@ -1414,7 +1415,7 @@ namespace detail
 							arg.evt_code = event_code::key_press;
 							arg.window_handle = reinterpret_cast<window>(msgwnd);
 							arg.ignore = false;
-							arg.key = static_cast<nana::char_t>(wParam);
+							arg.key = static_cast<wchar_t>(wParam);
 							brock.get_key_state(arg);
 							brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
@@ -1425,7 +1426,7 @@ namespace detail
 								//If no menu popuped by the menubar, it should enable delay restore to
 								//restore the focus for taken window.
 
-								int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(wParam)) ? 1 : 0);
+								int cmd = (menu_wd && (keyboard::escape == static_cast<wchar_t>(wParam)) ? 1 : 0);
 								brock.delay_restore(cmd);
 							}
 						}
@@ -1442,7 +1443,7 @@ namespace detail
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_char;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
-						arg.key = static_cast<nana::char_t>(wParam);
+						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						arg.ignore = false;
 
@@ -1463,7 +1464,7 @@ namespace detail
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_release;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
-						arg.key = static_cast<nana::char_t>(wParam);
+						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						arg.ignore = false;
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
@@ -1728,9 +1729,9 @@ namespace detail
 		return true;
 	}
 
-	const nana::char_t* translate(cursor id)
+	const wchar_t* translate(cursor id)
 	{
-		const nana::char_t* name = IDC_ARROW;
+		const wchar_t* name = IDC_ARROW;
 
 		switch(id)
 		{

@@ -49,7 +49,7 @@ namespace checkbox
 			{
 				_m_draw_background(graph);
 				_m_draw_title(graph);
-				_m_draw_checkbox(graph, graph.text_extent_size(STR("jN"), 2).height + 2);
+				_m_draw_checkbox(graph, graph.text_extent_size(L"jN", 2).height + 2);
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
@@ -98,19 +98,19 @@ namespace checkbox
 			{
 				if (graph.width() > 16 + interval)
 				{
-					nana::string title = widget_->caption();
+					std::wstring title = ::nana::charset(widget_->caption(), ::nana::unicode::utf8);
 
 					unsigned pixels = graph.width() - (16 + interval);
 
 					nana::paint::text_renderer tr(graph);
 					if (API::window_enabled(widget_->handle()) == false)
 					{
-						graph.set_text_color(colors::white);
+						graph.palette(true, colors::white);
 						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels);
-						graph.set_text_color({ 0x80, 0x80, 0x80 });
+						graph.palette(true, { 0x80, 0x80, 0x80 });
 					}
 					else
-						graph.set_text_color(widget_->fgcolor());
+						graph.palette(true, widget_->fgcolor());
 
 					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels);
 				}
@@ -129,18 +129,16 @@ namespace checkbox
             bgcolor(API::bgcolor(wd));
 		}
 
-		checkbox::checkbox(window wd, const nana::string& text, bool visible)
+		checkbox::checkbox(window wd, const std::string& text, bool visible)
 		{
 			create(wd, rectangle(), visible);
             bgcolor(API::bgcolor(wd));
 			caption(text);
 		}
 
-		checkbox::checkbox(window wd, const nana::char_t* text, bool visible)
+		checkbox::checkbox(window wd, const char* text, bool visible)
+			: checkbox(wd, std::string(text), visible)
 		{
-			create(wd, rectangle(), visible);
-            bgcolor(API::bgcolor(wd));
-			caption(text);
 		}
 
 		checkbox::checkbox(window wd, const nana::rectangle& r, bool visible)

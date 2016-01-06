@@ -75,7 +75,7 @@ namespace nana
 					return this->empty();
 				}
 
-				void tooltip_text(const nana::string& text) override
+				void tooltip_text(const std::string& text) override
 				{
 					label_.caption(text);
 					auto text_s = label_.measure(screen().from_window(label_).workarea().width * 2 / 3);
@@ -157,7 +157,7 @@ namespace nana
 
 			class controller
 			{
-				typedef std::pair<window, nana::string> pair_t;
+				typedef std::pair<window, std::string> pair_t;
 
 				typedef std::function<void(tooltip_interface*)> deleter_type;
 
@@ -202,7 +202,7 @@ namespace nana
 					return ptr;
 				}
 
-				void set(window wd, const nana::string& str)
+				void set(window wd, const std::string& str)
 				{
 					if (str.empty())
 						_m_untip(wd);
@@ -210,7 +210,7 @@ namespace nana
 						_m_get(wd).second = str;
 				}
 
-				void show(const nana::string& text)
+				void show(const std::string& text)
 				{
 					if (nullptr == window_ || window_->tooltip_empty())
 					{
@@ -227,7 +227,7 @@ namespace nana
 					window_->tooltip_move(API::cursor_position(), true);
 				}
 
-				void show_duration(window wd, point pos, const nana::string& text, std::size_t duration)
+				void show_duration(window wd, point pos, const std::string& text, std::size_t duration)
 				{
 					if (nullptr == window_ || window_->tooltip_empty())
 					{
@@ -298,7 +298,7 @@ namespace nana
 						_m_untip(arg.window_handle);
 					});
 
-					cont_.emplace_back(wd, nana::string());
+					cont_.emplace_back(wd, std::string());
 					return cont_.back();
 				}
 			private:
@@ -311,7 +311,7 @@ namespace nana
 	//class tooltip
 		typedef drawerbase::tooltip::controller ctrl;
 
-		void tooltip::set(window wd, const nana::string& text)
+		void tooltip::set(window wd, const std::string& text)
 		{
 			if(false == API::empty_window(wd))
 			{
@@ -320,7 +320,7 @@ namespace nana
 			}
 		}
 
-		void tooltip::show(window wd, point pos, const nana::string& text, std::size_t duration)
+		void tooltip::show(window wd, point pos, const std::string& text, std::size_t duration)
 		{
 			internal_scope_guard lock;
 			API::calc_screen_point(wd, pos);

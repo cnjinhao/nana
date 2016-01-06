@@ -15,6 +15,7 @@
 #define NANA_PAINT_IMAGE_HPP
 
 #include "graphics.hpp"
+#include "../filesystem/filesystem.hpp"
 
 namespace nana
 {
@@ -31,12 +32,18 @@ namespace paint
 		image();
 		image(const image&);
 		image(image&&);
-		image(const nana::char_t* file);
-		image(const nana::string& filename);
+		image(const ::nana::experimental::filesystem::path& file);
+
+		template<typename Source>
+		image(const Source& source)
+		{
+			open(source);
+		}
+
 		~image();
 		image& operator=(const image& rhs);
 		image& operator=(image&&);
-		bool open(const nana::string& filename);
+		bool open(const ::nana::experimental::filesystem::path& file);
 		
 		/// Opens an icon from a specified buffer
 		bool open_icon(const void* data, std::size_t bytes);

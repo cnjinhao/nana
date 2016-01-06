@@ -23,7 +23,6 @@
 #include <stdexcept>
 #include <nana/charset.hpp>
 
-
 //Implement workarounds for GCC/MinGW which version is below 4.8.2
 #if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
 namespace std
@@ -93,56 +92,61 @@ namespace std
 }
 #endif
 
-
-#ifndef NANA_UNICODE
-	namespace nana
-	{
-		typedef char		char_t;
-		typedef std::string string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
-	}
-	#define STR(string) string
-#else
-	namespace nana
-	{
-		typedef wchar_t			char_t;
-		typedef std::wstring	string; ///< An alias of std::wstring or std::string, depending on the macro NANA_UNICODE
-	}
-	#define STR(string) L##string
-#endif
-
 namespace nana
 {
-	std::size_t strlen(const char_t* str);
-	char_t* strcpy(char_t* dest, const char_t* source);
-#ifdef _MSC_VER
-	template <size_t N>
-	inline char* strcpy(char (&dest)[N], const char* source)
-	{
-		::strncpy_s(dest, source, _TRUNCATE);
-		return dest;
-	}
-	template <size_t N>
-	inline wchar_t* strcpy(wchar_t (&dest)[N], const wchar_t* source)
-	{
-		::wcsncpy_s(dest, source, _TRUNCATE);
-		return dest;
-	}
-#endif // #ifdef _MSC_VER
-}
+	/// Checks whether a specified text is utf8 encoding
+	bool is_utf8(const char* str, unsigned len);
+	void throw_not_utf8(const std::string& text);
+	void throw_not_utf8(const char*, unsigned len);
+	void throw_not_utf8(const char*);
+
+	std::wstring utf8_cast(const std::string&);
+	std::string utf8_cast(const std::wstring&);
+
+	const std::string& to_utf8(const std::string&);
+	std::string to_utf8(const std::wstring&);
+
+	std::wstring to_wstring(const std::string& utf8_str);
+	const std::wstring& to_wstring(const std::wstring& wstr);
+	std::wstring&& to_wstring(std::wstring&& wstr);
 
 #if defined(NANA_WINDOWS)
-	#define NANA_SHARED_EXPORT	extern "C" _declspec(dllexport)
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-	#define NANA_SHARED_EXPORT	extern "C"
+	std::string to_osmbstr(const std::string& text_utf8);
+#else
+	std::string to_osmbstr(std::string text_utf8);
 #endif
+
+
+	namespace detail
+	{
+#if defined(NANA_WINDOWS)
+		using native_string_type = std::wstring;
+#else	//POSIX
+		using native_string_type = std::string;
+#endif
+	}
+
+#if defined(NANA_WINDOWS)
+	const detail::native_string_type to_nstring(const std::string&);
+	const detail::native_string_type& to_nstring(const std::wstring&);
+	detail::native_string_type to_nstring(std::string&&);
+	detail::native_string_type&& to_nstring(std::wstring&&);
+#else	//POSIX
+	const detail::native_string_type& to_nstring(const std::string&);
+	const detail::native_string_type to_nstring(const std::wstring&);
+	detail::native_string_type&& to_nstring(std::string&&);
+	detail::native_string_type to_nstring(std::wstring&&);
+#endif
+	detail::native_string_type to_nstring(int);
+	detail::native_string_type to_nstring(double);
+	detail::native_string_type to_nstring(std::size_t);
+}
+
 
 namespace nana
 {
-	bool is_incomplete(const nana::string& str, unsigned pos);
-
 	inline unsigned make_rgb(unsigned char red, unsigned char green, unsigned char blue)
 	{
-
 		return ((unsigned(red) << 16)|((unsigned(green)<<8))|blue);
 	}
 }

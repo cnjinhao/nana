@@ -220,7 +220,7 @@ namespace API
 			}
 		}
 
-		nana::string window_caption(window wd) throw()
+		::nana::detail::native_string_type window_caption(window wd) throw()
 		{
 			auto const iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard isg;
@@ -234,7 +234,7 @@ namespace API
 			return {};
 		}
 
-		void window_caption(window wd, nana::string title)
+		void window_caption(window wd, ::nana::detail::native_string_type title)
 		{
 			auto const iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;
@@ -279,6 +279,33 @@ namespace API
 		void delay_restore(bool enable)
 		{
 			restrict::bedrock.delay_restore(enable ? 0 : 1);
+		}
+
+		void register_menu_window(window wd, bool has_keyboard)
+		{
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
+				restrict::bedrock.set_menu(reinterpret_cast<basic_window*>(wd)->root, has_keyboard);
+		}
+
+		void set_menubar(window wd, bool attach)
+		{
+			auto iwd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(iwd))
+			{
+				auto root_attr = iwd->root_widget->other.attribute.root;
+				if (attach)
+				{
+					if (!root_attr->menubar)
+						root_attr->menubar = iwd;
+				}
+				else
+				{
+					if (iwd == root_attr->menubar)
+						root_attr->menubar = nullptr;
+				}
+			}
 		}
 	}//end namespace dev
 
@@ -336,19 +363,19 @@ namespace API
 	//@param, text: the text is transformed.
 	//@param, shortkey: the character which indicates a short key.
 	//@param, skpos: retrives the shortkey position if it is not a null_ptr;
-	nana::string transform_shortkey_text(nana::string text, nana::string::value_type &shortkey, nana::string::size_type *skpos)
+	std::string transform_shortkey_text(std::string text, wchar_t &shortkey, std::string::size_type *skpos)
 	{
 		shortkey = 0;
-		nana::string::size_type off = 0;
+		std::string::size_type off = 0;
 		while(true)
 		{
-			nana::string::size_type pos = text.find_first_of('&', off);
-			if(pos != nana::string::npos)
+			auto pos = text.find_first_of('&', off);
+			if(pos != std::wstring::npos)
 			{
 				text.erase(pos, 1);
 				if(shortkey == 0 && pos < text.length())
 				{
-					shortkey = text.at(pos);
+					shortkey = utf::char_at(text.c_str() + pos, 0, nullptr);
 					if(shortkey == '&')	//This indicates the text contains "&&", it means the symbol have to be ignored.
 						shortkey = 0;
 					else if(skpos)
@@ -819,23 +846,27 @@ namespace API
 
 	void window_caption(window wd, const std::string& title_utf8)
 	{
-		window_caption(wd, std::wstring(::nana::charset(title_utf8, ::nana::unicode::utf8)));
+		throw_not_utf8(title_utf8);
+		auto const iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::wd_manager().available(iwd))
+			iwd->widget_notifier->caption(to_nstring(title_utf8));
 	}
 
-	void window_caption(window wd, const nana::string& title)
+	void window_caption(window wd, const std::wstring& title)
 	{
 		auto const iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
-			iwd->widget_notifier->caption(title);
+			iwd->widget_notifier->caption(to_nstring(title));
 	}
 
-	nana::string window_caption(window wd)
+	std::string window_caption(window wd)
 	{
 		auto const iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
-			return iwd->widget_notifier->caption();
+			return to_utf8(iwd->widget_notifier->caption());
 
 		return{};
 	}
@@ -1137,6 +1168,7 @@ namespace API
 		return reinterpret_cast<window>(ts_wd);
 	}
 
+	/*
 	//glass_window deprecated
 	//@brief: Test a window whether it is a glass attribute.
 	bool glass_window(window wd)
@@ -1152,6 +1184,7 @@ namespace API
 			effects_bground_remove(wd);
 		return true;
 	}
+	*/
 
 	void take_active(window wd, bool active, window take_if_active_false)
 	{
@@ -1241,36 +1274,6 @@ namespace API
 						restrict::wd_manager().find_window(wd, clipos.x, clipos.y));
 		}
 		return nullptr;
-	}
-
-	void register_menu_window(window wd, bool has_keyboard)
-	{
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
-			restrict::bedrock.set_menu(reinterpret_cast<basic_window*>(wd)->root, has_keyboard);
-	}
-
-	bool attach_menubar(window menubar)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(menubar);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && (nullptr == iwd->root_widget->other.attribute.root->menubar))
-		{
-			iwd->root_widget->other.attribute.root->menubar = iwd;
-			return true;
-		}
-		return false;
-	}
-
-	void detach_menubar(window menubar)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(menubar);
-		internal_scope_guard lock;
-		if (restrict::wd_manager().available(iwd))
-		{
-			if (iwd->root_widget->other.attribute.root->menubar == iwd)
-				iwd->root_widget->other.attribute.root->menubar = nullptr;
-		}
 	}
 
 	bool is_window_zoomed(window wd, bool ask_for_max)

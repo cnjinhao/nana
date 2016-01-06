@@ -1,7 +1,7 @@
 /*
  *	Text Token Stream
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,7 +42,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 	class tokenizer
 	{
 	public:
-		tokenizer(const nana::string& s, bool format_enabled)
+		tokenizer(const std::wstring& s, bool format_enabled)
 			:	iptr_(s.data()),
 				endptr_(s.data() + s.size()),
 				format_enabled_(format_enabled)
@@ -74,12 +74,12 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return _m_token();
 		}
 
-		const nana::string& idstr() const
+		const ::std::wstring& idstr() const
 		{
 			return idstr_;
 		}
 
-		const std::pair<nana::string, nana::string>& binary() const
+		const std::pair<std::wstring, std::wstring>& binary() const
 		{
 			return binary_;
 		}
@@ -108,7 +108,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return n;
 		}
 	private:
-		static bool _m_unicode_word_breakable(nana::char_t ch)
+		static bool _m_unicode_word_breakable(wchar_t ch)
 		{
 			return ((0x4E00 <= ch) && (ch <= 0x9FFF));
 		}
@@ -116,7 +116,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the data token
 		token _m_token()
 		{
-			nana::char_t ch = *iptr_;
+			wchar_t ch = *iptr_;
 
 			if(ch > 0xFF)
 			{
@@ -150,7 +150,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 			if(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'))
 			{
-				const nana::char_t * idstr = iptr_;
+				auto idstr = iptr_;
 				do
 				{
 					ch = *(++iptr_);
@@ -172,7 +172,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			{
 				//pos keeps the current position, and it used for restring
 				//iptr_ when the search is failed.
-				const nana::char_t * pos = ++iptr_;
+				auto pos = ++iptr_;
 				_m_eat_whitespace();
 				if(*iptr_ == '/')
 				{
@@ -219,7 +219,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			_m_eat_whitespace();
 
-			nana::char_t ch = *iptr_++;
+			auto ch = *iptr_++;
 
 			switch(ch)
 			{
@@ -232,7 +232,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			case '"':
 				//Here is a string and all the meta characters will be ignored except "
 				{
-					const nana::char_t * str = iptr_;
+					auto str = iptr_;
 
 					while((iptr_ != endptr_) && (*iptr_ != '"'))
 						++iptr_;
@@ -244,7 +244,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				_m_eat_whitespace();
 				if((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 				{
-					const nana::char_t * pbegin = iptr_;
+					auto pbegin = iptr_;
 					while((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 						++iptr_;
 
@@ -281,45 +281,45 @@ namespace nana{ namespace widgets{	namespace skeletons
 				//Here is a identifier
 				_m_read_idstr();
 
-				if(STR("font") == idstr_)
+				if(L"font" == idstr_)
 					return token::font;
-				else if(STR("bold") == idstr_)
+				else if(L"bold" == idstr_)
 					return token::bold;
-				else if(STR("size") == idstr_)
+				else if(L"size" == idstr_)
 					return token::size;
-				else if(STR("baseline") == idstr_)
+				else if(L"baseline" == idstr_)
 					return token::baseline;
-				else if(STR("top") == idstr_)
+				else if(L"top" == idstr_)
 					return token::top;
-				else if(STR("center") == idstr_)
+				else if(L"center" == idstr_)
 					return token::center;
-				else if(STR("bottom") == idstr_)
+				else if(L"bottom" == idstr_)
 					return token::bottom;
-				else if(STR("color") == idstr_)
+				else if(L"color" == idstr_)
 					return token::color;
-				else if(STR("image") == idstr_)
+				else if(L"image" == idstr_)
 					return token::image;
-				else if(STR("true") == idstr_)
+				else if(L"true" == idstr_)
 					return token::_true;
-				else if(STR("url") == idstr_)
+				else if(L"url" == idstr_)
 					return token::url;
-				else if(STR("target") == idstr_)
+				else if(L"target" == idstr_)
 					return token::target;
-				else if(STR("false") == idstr_)
+				else if(L"false" == idstr_)
 					return token::_false;
-				else if(STR("red") == idstr_)
+				else if(L"red" == idstr_)
 					return token::red;
-				else if(STR("green") == idstr_)
+				else if(L"green" == idstr_)
 					return token::green;
-				else if(STR("blue") == idstr_)
+				else if(L"blue" == idstr_)
 					return token::blue;
-				else if(STR("white") == idstr_)
+				else if(L"white" == idstr_)
 					return token::white;
-				else if(STR("black") == idstr_)
+				else if(L"black" == idstr_)
 					return token::black;
-				else if(STR("min_limited") == idstr_)
+				else if(L"min_limited" == idstr_)
 					return token::min_limited;
-				else if(STR("max_limited") == idstr_)
+				else if(L"max_limited" == idstr_)
 					return token::max_limited;
 
 				return token::string;
@@ -335,7 +335,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return token::eof;
 		}
 
-		static bool _m_is_idstr_element(nana::char_t ch)
+		static bool _m_is_idstr_element(wchar_t ch)
 		{
 			return (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('_' == ch) || ('0' <= ch && ch <= '9'));
 		}
@@ -343,9 +343,9 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the identifier.
 		void _m_read_idstr()
 		{
-			const nana::char_t * idstr = iptr_;
+			auto idstr = iptr_;
 
-			nana::char_t ch;
+			wchar_t ch;
 			do
 			{
 				ch = *(++iptr_);
@@ -360,7 +360,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			idstr_.clear();
 
-			nana::char_t ch = *iptr_;
+			wchar_t ch = *iptr_;
 
 			idstr_ += ch;
 
@@ -412,13 +412,13 @@ namespace nana{ namespace widgets{	namespace skeletons
 			}
 		}
 	private:
-		const ::nana::char_t * iptr_;
-		const ::nana::char_t * endptr_;
+		const wchar_t * iptr_;
+		const wchar_t * endptr_;
 		const bool	format_enabled_;
 		bool	format_state_{false};
 
-		::nana::string idstr_;
-		std::pair<nana::string, nana::string> binary_;
+		std::wstring idstr_;
+		std::pair<std::wstring, std::wstring> binary_;
 		token revert_token_{token::eof};
 	};
 
@@ -434,7 +434,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			};
 		};
 
-		::nana::string	font;
+		::std::string	font;
 		std::size_t		font_size;
 		bool	bold;
 		bool	bold_empty;	//bold should be ignored if bold_empty is true
@@ -442,8 +442,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 		::nana::color	bgcolor;	//If the color is not specified, it will be ignored, and the system will search for its parent.
 		::nana::color	fgcolor;	//ditto
 
-		::nana::string	target;
-		::nana::string	url;
+		::std::wstring	target;
+		::std::wstring	url;
 
 		fblock * parent;
 	};
@@ -458,7 +458,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 		virtual bool	is_text() const = 0;
 		virtual bool	is_whitespace() const = 0;
-		virtual const nana::string& text() const = 0;
+		virtual const std::wstring& text() const = 0;
 		virtual void measure(graph_reference) = 0;
 		virtual void nontext_render(graph_reference, int x, int y) = 0;
 		virtual const nana::size & size() const = 0;
@@ -470,7 +470,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		: public data
 	{
 	public:
-		data_text(const nana::string& s)
+		data_text(const std::wstring& s)
 			: str_(s)
 		{}
 	private:
@@ -484,7 +484,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return false;
 		}
 
-		virtual const nana::string& text() const override
+		virtual const std::wstring& text() const override
 		{
 			return str_;
 		}
@@ -513,7 +513,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return ascent_;
 		}
 	private:
-		nana::string str_;
+		std::wstring str_;
 		nana::size	size_;
 		std::size_t ascent_;
 	};
@@ -522,7 +522,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		: public data
 	{
 	public:
-		data_image(const nana::string& imgpath, const nana::size & sz, std::size_t limited)
+		data_image(const std::wstring& imgpath, const nana::size & sz, std::size_t limited)
 			: image_(imgpath)//, limited_(limited)
 		{
 			size_ = image_.size();
@@ -562,7 +562,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return false;
 		}
 
-		virtual const nana::string& text() const override
+		virtual const std::wstring& text() const override
 		{
 			return str_;
 		}
@@ -589,7 +589,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return size_.height;
 		}
 	private:
-		nana::string str_;
+		std::wstring str_;
 		nana::paint::image image_;
 		nana::size size_;
 	};
@@ -626,7 +626,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			fblocks_.clear();
 		}
 
-		void parse(const nana::string& s, bool format_enabled)
+		void parse(const std::wstring& s, bool format_enabled)
 		{
 			close();
 
@@ -706,7 +706,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 					if(token::string != tknizer.read())
 						throw std::runtime_error("");
 
-					fp->font = tknizer.idstr();
+					fp->font = to_utf8(tknizer.idstr());
 					break;
 				case token::size:
 					if(token::equal != tknizer.read())
@@ -893,7 +893,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return fbp;
 		}
 
-		void _m_data_factory(token tk, const nana::string& idstr, fblock* fp, std::deque<value>& line)
+		void _m_data_factory(token tk, const std::wstring& idstr, fblock* fp, std::deque<value>& line)
 		{
 			value v;
 			v.fblock_ptr = fp;
@@ -926,7 +926,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 		struct attr_image_tag
 		{
-			nana::string	path;
+			std::wstring	path;
 			nana::size		size;
 			std::size_t		limited;
 

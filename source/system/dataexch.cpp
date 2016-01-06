@@ -27,14 +27,25 @@
 namespace nana{ namespace system{
 
 	//class dataexch
-		void dataexch::set(const nana::char_t* text)
+		void dataexch::set(const std::string& text)
 		{
-			_m_set(std::is_same<char, nana::char_t>::value ? format::text : format::unicode, text, (nana::strlen(text) + 1) * sizeof(nana::char_t));
+#ifdef NANA_WINDOWS
+			std::wstring wstr = ::nana::charset(text, nana::unicode::utf8);
+			_m_set(format::text, wstr.c_str(), (wstr.length() + 1) * sizeof(wchar_t));
+#elif defined(NANA_X11)
+			_m_set(format::text, text.c_str(), text.length() + 1);
+#endif
 		}
 
-		void dataexch::set(const nana::string& text)
+
+		void dataexch::set(const std::wstring& text)
 		{
-			_m_set(std::is_same<char, nana::char_t>::value ? format::text : format::unicode, text.c_str(), (text.length() + 1) * sizeof(nana::char_t));
+#ifdef NANA_WINDOWS
+			_m_set(format::text, text.c_str(), (text.length() + 1) * sizeof(wchar_t));
+#else
+			std::string str = utf8_cast(text);
+			_m_set(format::text, str.c_str(), str.size() + 1);
+#endif
 		}
 
 		bool dataexch::set(const nana::paint::graphics& g)
@@ -101,36 +112,74 @@ namespace nana{ namespace system{
 #endif
 		}
 
-		void dataexch::get(nana::string& str)
+
+		void dataexch::get(std::string& text_utf8)
 		{
 			std::size_t size;
-			void* res = _m_get(std::is_same<char, nana::char_t>::value ? format::text : format::unicode, size);
-			if(res)
+			auto res = _m_get(format::text, size);
+			if (res)
 			{
-#if defined(NANA_X11) && defined(NANA_UNICODE)
-				nana::detail::charset_conv conv("UTF-32", "UTF-8");
-				const std::string & utf32str = conv.charset(reinterpret_cast<char*>(res), size);
-				const nana::char_t * utf32ptr = reinterpret_cast<const nana::char_t*>(utf32str.c_str());
-				str.append(utf32ptr + 1, utf32ptr + utf32str.size() / sizeof(nana::char_t));
-#else
-				str.reserve(size / sizeof(nana::char_t));
-				str.append(reinterpret_cast<nana::char_t*>(res), reinterpret_cast<nana::char_t*>(res) + size / sizeof(nana::char_t));
-#endif
-				auto pos = str.find_last_not_of(nana::char_t(0));
-				if(pos != str.npos)
-					str.erase(pos + 1);
+#if defined(NANA_WINDOWS)
+				size /= sizeof(wchar_t);
+				std::wstring wstr;
+				wstr.reserve(size);
+				wstr.append(reinterpret_cast<wchar_t*>(res), reinterpret_cast<wchar_t*>(res) + size);
 
-#if defined(NANA_X11)
+				auto pos = wstr.find_last_not_of(L'\0');
+				if (pos != wstr.npos)
+					wstr.erase(pos + 1);
+
+				text_utf8 = utf8_cast(wstr);
+#else
+				text_utf8.reserve(size);
+				text_utf8.append(reinterpret_cast<char*>(res), reinterpret_cast<char*>(res) + size);
+
+				auto pos = text_utf8.find_last_not_of('\0');
+				if (pos != text_utf8.npos)
+					text_utf8.erase(pos + 1);
 				::XFree(res);
 #endif
 			}
 		}
+
+		void dataexch::get(std::wstring& str)
+		{
+			std::size_t size;
+			auto res = _m_get(format::text, size);
+			if(res)
+			{
+#if defined(NANA_WINDOWS)
+				str.clear();
+
+				size /= sizeof(wchar_t);
+
+				str.reserve(size);
+				str.append(reinterpret_cast<wchar_t*>(res), reinterpret_cast<wchar_t*>(res) + size);
+
+				auto pos = str.find_last_not_of(L'\0');
+				if (pos != str.npos)
+					str.erase(pos + 1);
+#else
+				std::string text_utf8;
+				text_utf8.reserve(size);
+				text_utf8.append(reinterpret_cast<char*>(res), reinterpret_cast<char*>(res) + size);
+
+				auto pos = text_utf8.find_last_not_of('\0');
+				if (pos != text_utf8.npos)
+					text_utf8.erase(pos + 1);
+				::XFree(res);
+
+				str = utf8_cast(text_utf8);
+#endif
+			}
+		}
 	//private:
-		bool dataexch::_m_set(unsigned type, const void* buf, std::size_t size)
+		bool dataexch::_m_set(format fmt, const void* buf, std::size_t size)
 		{
 			bool res = false;
+
 #if defined(NANA_WINDOWS)
-			if(type < format::end && ::OpenClipboard(::GetFocus()))
+			if(::OpenClipboard(::GetFocus()))
 			{
 				if(::EmptyClipboard())
 				{
@@ -140,14 +189,14 @@ namespace nana{ namespace system{
 					memcpy(addr, buf, size);
 					::GlobalUnlock(g);
 
-					switch(type)
+					unsigned data_format;
+					switch(fmt)
 					{
-					case format::text:		type = CF_TEXT;			break;
-					case format::unicode:	type = CF_UNICODETEXT;	break;
-					case format::pixmap:	type = CF_BITMAP;		break;
+					case format::text:		data_format = CF_UNICODETEXT;	break;
+					case format::pixmap:	data_format = CF_BITMAP;		break;
 					}
-					HANDLE h = ::SetClipboardData(type, g);
-					res = (h != NULL);
+					
+					res = (nullptr != ::SetClipboardData(data_format, g));
 				}
 				::CloseClipboard();
 			}
@@ -163,20 +212,13 @@ namespace nana{ namespace system{
 			if(owner)
 			{
 				Atom atom_type;
-				switch(type)
+				switch(fmt)
 				{
-				case format::text:	atom_type = XA_STRING;			break;
-				case format::unicode:	atom_type = spec.atombase().utf8_string;	break;
+				case format::text:	atom_type = spec.atombase().utf8_string;	break;
 				default:
 					return false;
 				}
-	#if defined(NANA_UNICODE)
-				//The internal clipboard stores UTF8_STRING, the parameter string should be converted from utf32 to utf8.
-				nana::detail::charset_conv conv("UTF-8", "UTF-32");
-				std::string utf8str = conv.charset(reinterpret_cast<const char*>(buf), size);
-				buf = utf8str.c_str();
-				size = utf8str.size();
-	#endif
+
 				spec.write_selection(owner, atom_type, buf, size);
 				return true;
 			}
@@ -184,19 +226,20 @@ namespace nana{ namespace system{
 			return res;
 		}
 
-		void* dataexch::_m_get(unsigned type, size_t& size)
+		void* dataexch::_m_get(format fmt, size_t& size)
 		{
-			void* res = 0;
+			size = 0;
+			void* res = nullptr;
 #if defined(NANA_WINDOWS)
-			if(type < format::end && ::OpenClipboard(::GetFocus()))
+			if(::OpenClipboard(::GetFocus()))
 			{
-				switch(type)
+				unsigned data_format;
+				switch(fmt)
 				{
-				case format::text:		type = CF_TEXT;			break;
-				case format::unicode:	type = CF_UNICODETEXT;	break;
-				case format::pixmap:	type = CF_BITMAP;		break;
+				case format::text:		data_format = CF_UNICODETEXT;	break;
+				case format::pixmap:	data_format = CF_BITMAP;	break;
 				}
-				HANDLE handle = ::GetClipboardData(type);
+				HANDLE handle = ::GetClipboardData(data_format);
 				if(handle)
 				{
 					res = reinterpret_cast<HGLOBAL>(::GlobalLock(handle));
@@ -222,12 +265,11 @@ namespace nana{ namespace system{
 			{
 				Atom atom;
 
-				switch(type)
+				switch(fmt)
 				{
-				case format::text:		atom = XA_STRING;			break;
-				case format::unicode:	atom = spec.atombase().utf8_string;	break;
+				case format::text:	atom = spec.atombase().utf8_string;	break;
 				default:
-					return 0;
+					return nullptr;
 				}
 				res = spec.request_selection(requester, atom, size);
 			}

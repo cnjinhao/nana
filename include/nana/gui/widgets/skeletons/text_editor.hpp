@@ -131,7 +131,7 @@ namespace nana{	namespace widgets
 			struct keywords;
 			class keyword_parser;
 		public:
-			using char_type = ::nana::char_t;
+			using char_type = wchar_t;
 			using size_type = textbase<char_type>::size_type;
 			using string_type = textbase<char_type>::string_type;
 
@@ -152,10 +152,10 @@ namespace nana{	namespace widgets
 			text_editor(window, graph_reference, const text_editor_scheme*);
 			~text_editor();
 
-			void set_highlight(const std::string& name, const ::nana::color&, const ::nana::color&);
-			void erase_highlight(const std::string& name);
-			void set_keyword(const ::nana::string& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
-			void erase_keyword(const ::nana::string& kw);
+			void set_highlight(const ::std::string& name, const ::nana::color&, const ::nana::color&);
+			void erase_highlight(const ::std::string& name);
+			void set_keyword(const ::std::wstring& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
+			void erase_keyword(const ::std::wstring& kw);
 
 			void set_accept(std::function<bool(char_type)>);
 			void set_accept(accepts);
@@ -164,7 +164,7 @@ namespace nana{	namespace widgets
 
 			void typeface_changed();
 
-			void indent(bool, std::function<nana::string()> generator);
+			void indent(bool, std::function<std::string()> generator);
 			void set_event(event_interface*);
 
 			/// Determine whether the text_editor is line wrapped.
@@ -174,7 +174,7 @@ namespace nana{	namespace widgets
 
 			void border_renderer(std::function<void(graph_reference, const ::nana::color& bgcolor)>);
 
-			bool load(const nana::char_t*);
+			bool load(const char*);
 
 			/// Sets the text area.
 			/// @return true if the area is changed with the new value.
@@ -183,7 +183,7 @@ namespace nana{	namespace widgets
 			/// Returns the text area
 			rectangle text_area(bool including_scroll) const;
 
-			bool tip_string(nana::string&&);
+			bool tip_string(::std::string&&);
 
 			const attributes & attr() const;
 			bool multi_lines(bool);
@@ -201,9 +201,9 @@ namespace nana{	namespace widgets
 			unsigned line_height() const;
 			unsigned screen_lines() const;
 
-			bool getline(std::size_t pos, nana::string&) const;
-			void text(nana::string);
-			nana::string text() const;
+			bool getline(std::size_t pos, ::std::wstring&) const;
+			void text(std::wstring);
+			std::wstring text() const;
 
 			/// Sets caret position through text coordinate.
 			void move_caret(const upoint&);
@@ -221,7 +221,7 @@ namespace nana{	namespace widgets
 			bool hit_select_area(nana::upoint pos) const;
 
 			bool move_select();
-			bool mask(char_t);
+			bool mask(wchar_t);
 
 			/// Returns width of text area excluding the vscroll size.
 			unsigned width_pixels() const;
@@ -233,8 +233,8 @@ namespace nana{	namespace widgets
 			void draw_corner();
 			void render(bool focused);
 		public:
-			void put(nana::string);
-			void put(nana::char_t);
+			void put(std::wstring);
+			void put(wchar_t);
 			void copy() const;
 			void cut();
 			void paste();
@@ -253,8 +253,8 @@ namespace nana{	namespace widgets
 			bool mouse_move(bool left_button, const point& screen_pos);
 			bool mouse_pressed(const arg_mouse& arg);
 
-			skeletons::textbase<nana::char_t>& textbase();
-			const skeletons::textbase<nana::char_t>& textbase() const;
+			skeletons::textbase<wchar_t>& textbase();
+			const skeletons::textbase<wchar_t>& textbase() const;
 		private:
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
@@ -264,11 +264,11 @@ namespace nana{	namespace widgets
 			::nana::size _m_text_area() const;
 			void _m_get_scrollbar_size();
 			void _m_reset();
-			::nana::upoint _m_put(nana::string);
+			::nana::upoint _m_put(::std::wstring);
 			::nana::upoint _m_erase_select();
 
-			bool _m_make_select_string(nana::string&) const;
-			static bool _m_resolve_text(const nana::string&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
+			bool _m_make_select_string(::std::wstring&) const;
+			static bool _m_resolve_text(const ::std::wstring&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
 
 			bool _m_cancel_select(int align);
 			unsigned _m_tabs_pixels(size_type tabs) const;
@@ -283,10 +283,10 @@ namespace nana{	namespace widgets
 			/// Returns the right/bottom point of text area.
 			int _m_end_pos(bool right) const;	
 
-			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const ::nana::char_t*, std::size_t len) const;
+			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const wchar_t*, std::size_t len) const;
 			//_m_draw_string
 			//@brief: Draw a line of string
-			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const nana::string&, bool if_mask) const;
+			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const ::std::wstring&, bool if_mask) const;
 			//_m_update_caret_line
 			//@brief: redraw whole line specified by caret pos. 
 			//@return: true if caret overs the border
@@ -295,8 +295,8 @@ namespace nana{	namespace widgets
 
 			void _m_offset_y(int y);
 
-			unsigned _m_char_by_pixels(const nana::char_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
-			unsigned _m_pixels_by_char(const nana::string&, std::size_t pos) const;
+			unsigned _m_char_by_pixels(const wchar_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
+			unsigned _m_pixels_by_char(const ::std::wstring&, std::size_t pos) const;
 			void _handle_move_key(const arg_keyboard& arg);
 
 		private:
@@ -308,8 +308,8 @@ namespace nana{	namespace widgets
 			event_interface *			event_handler_{ nullptr };
 			std::unique_ptr<keywords> keywords_;
 
-			skeletons::textbase<nana::char_t> textbase_;
-			nana::char_t mask_char_{0};
+			skeletons::textbase<wchar_t> textbase_;
+			wchar_t mask_char_{0};
 
 			mutable ext_renderer_tag ext_renderer_;
 
@@ -318,7 +318,7 @@ namespace nana{	namespace widgets
 			struct indent_rep
 			{
 				bool enabled{ false };
-				std::function<nana::string()> generator;
+				std::function<std::string()> generator;
 			}indent_;
 
 			struct attributes
@@ -326,7 +326,7 @@ namespace nana{	namespace widgets
 				accepts acceptive{ accepts::no_restrict };
 				std::function<bool(char_type)> pred_acceptive;
 
-				nana::string tip_string;
+				::std::string tip_string;
 
 				bool line_wrapped{false};
 				bool multi_lines{true};

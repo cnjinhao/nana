@@ -534,12 +534,12 @@ namespace nana
 			});
 		}
 
-		field_interface& operator<<(const nana::char_t* label_text) override
+		field_interface& operator<<(const char* label_text) override
 		{
-			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text ? label_text : L""));
+			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text ? label_text : ""));
 		}
 
-		virtual field_interface& operator<<(nana::string label_text) override
+		field_interface& operator<<(std::string label_text) override
 		{
 			return static_cast<field_interface*>(this)->operator<<(agent<label>(label_text));
 		}
@@ -1009,7 +1009,7 @@ namespace nana
 
 			auto find_lowest = [&revises](double level_px)
 			{
-				double v = std::numeric_limits<double>::max();
+				double v = (std::numeric_limits<double>::max)();
 				for (auto i = revises.begin(); i != revises.end(); ++i)
 				{
 					if (i->min_px >= 0 && i->min_px < v && i->min_px > level_px)

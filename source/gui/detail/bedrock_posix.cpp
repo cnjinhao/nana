@@ -1017,7 +1017,7 @@ namespace detail
 						}
 
 						keybuf[len] = 0;
-						::nana::char_t os_code = 0;
+						wchar_t os_code = 0;
 						switch(status)
 						{
 						case XLookupKeySym:
@@ -1074,7 +1074,7 @@ namespace detail
 
 								if(brock.wd_manager().available(msgwnd) && (msgwnd->root_widget->other.attribute.root->menubar == msgwnd))
 								{
-									int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(arg.key)) ? 1 : 0 );
+									int cmd = (menu_wd && (keyboard::escape == static_cast<wchar_t>(arg.key)) ? 1 : 0 );
 									brock.delay_restore(cmd);
 								}
 							}
@@ -1087,11 +1087,11 @@ namespace detail
 						case XLookupChars:
 							if (msgwnd->flags.enabled)
 							{
-								const ::nana::char_t* charbuf;
+								const wchar_t* charbuf;
 #if defined(NANA_UNICODE)
 								nana::detail::charset_conv charset("UTF-32", "UTF-8");
 								const std::string& str = charset.charset(std::string(keybuf, keybuf + len));
-								charbuf = reinterpret_cast<const nana::char_t*>(str.c_str()) + 1;
+								charbuf = reinterpret_cast<const wchar_t*>(str.c_str()) + 1;
 								len = str.size() / sizeof(wchar_t) - 1;
 #else
 								charbuf = keybuf;

@@ -29,11 +29,11 @@ namespace nana
 		{
 			using node_type = trigger::node_type;
 
-			bool no_sensitive_compare(const nana::string& text, const nana::char_t *pattern, std::size_t len)
+			bool no_sensitive_compare(const std::string& text, const char *pattern, std::size_t len)
 			{
 				if(len <= text.length())
 				{
-					const nana::char_t * s = text.c_str();
+					auto s = text.c_str();
 					for(std::size_t i = 0; i < len; ++i)
 					{
 						if('a' <= s[i] && s[i] <= 'z')
@@ -49,7 +49,7 @@ namespace nana
 				return false;
 			}
 
-			const node_type* find_track_child_node(const node_type* node, const node_type * end, const nana::char_t* pattern, std::size_t len, bool &finish)
+			const node_type* find_track_child_node(const node_type* node, const node_type * end, const char* pattern, std::size_t len, bool &finish)
 			{
 				if(node->value.second.expanded)
 				{
@@ -217,7 +217,7 @@ namespace nana
 					nana::scroll<true> scroll;
 					std::size_t	prev_first_value;
 
-					mutable std::map<nana::string, node_image_tag> image_table;
+					mutable std::map<std::string, node_image_tag> image_table;
 
 					tree_cont_type::node_type * first;
 					int indent_pixels;
@@ -241,7 +241,7 @@ namespace nana
 
 				struct track_node_tag
 				{
-					nana::string key_buf;
+					::std::string key_buf;
 					std::size_t key_time;
 				}track_node;
 
@@ -320,9 +320,9 @@ namespace nana
 					return false;
 				}
 
-				const trigger::node_type* find_track_node(nana::char_t key)
+				const trigger::node_type* find_track_node(wchar_t key)
 				{
-					nana::string pattern;
+					std::string pattern;
 
 					if('a' <= key && key <= 'z') key -= 'a' - 'A';
 
@@ -334,8 +334,18 @@ namespace nana
 						pattern = track_node.key_buf;
 
 					track_node.key_time = now;
-					pattern += key;
-					track_node.key_buf += key;
+
+					if (key <= 0x7f)
+					{
+						pattern += static_cast<char>(key);
+						track_node.key_buf += static_cast<char>(key);
+					}
+					else
+					{
+						wchar_t wstr[2] = { key, 0 };
+						pattern += utf8_cast(wstr);
+						track_node.key_buf += utf8_cast(wstr);
+					}
 
 					const node_type *begin = node_state.selected ? node_state.selected : attr.tree_cont.get_root()->child;
 
@@ -604,7 +614,7 @@ namespace nana
 
 				std::size_t visual_item_size() const
 				{
-					return attr.tree_cont.child_size_if(nana::string{}, pred_allow_child{});
+					return attr.tree_cont.child_size_if(std::string(), pred_allow_child{});
 				}
 
 				int visible_w_pixels() const
@@ -629,7 +639,7 @@ namespace nana
 
 				nana::paint::image* image(const node_type* node)
 				{
-					const nana::string& idstr = node->value.second.img_idstr;
+					const std::string& idstr = node->value.second.img_idstr;
 					if(idstr.size())
 					{
 						auto i = shape.image_table.find(idstr);
@@ -820,7 +830,7 @@ namespace nana
 					}
 				}
 
-				item_proxy item_proxy::append(const nana::string& key, nana::string name)
+				item_proxy item_proxy::append(const std::string& key, std::string name)
 				{
 					if(nullptr == trigger_ || nullptr == node_)
 						return item_proxy();
@@ -892,34 +902,34 @@ namespace nana
 					return *this;
 				}
 
-				const nana::string& item_proxy::icon() const
+				const std::string& item_proxy::icon() const
 				{
 					return node_->value.second.img_idstr;
 				}
 
-				item_proxy& item_proxy::icon(const nana::string& id)
+				item_proxy& item_proxy::icon(const std::string& id)
 				{
 					node_->value.second.img_idstr = id;
 					return *this;
 				}
 
-				item_proxy& item_proxy::key(const nana::string& kstr)
+				item_proxy& item_proxy::key(const std::string& kstr)
 				{
 					trigger_->rename(node_, kstr.data(), nullptr);
 					return *this;
 				}
 
-				const nana::string& item_proxy::key() const
+				const std::string& item_proxy::key() const
 				{
 					return node_->value.first;
 				}
 
-				const nana::string& item_proxy::text() const
+				const std::string& item_proxy::text() const
 				{
 					return node_->value.second.text;
 				}
 
-				item_proxy& item_proxy::text(const nana::string& id)
+				item_proxy& item_proxy::text(const std::string& id)
 				{
 					trigger_->rename(node_, nullptr, id.data());
 					return *this;
@@ -973,27 +983,19 @@ namespace nana
 					return end();
 				}
 
-				bool item_proxy::operator==(const nana::string& s) const
+				bool item_proxy::operator==(const std::string& s) const
 				{
 					return (node_ && (node_->value.second.text == s));
 				}
 
 				bool item_proxy::operator==(const char* s) const
 				{
-#if defined(NANA_UNICODE)
-					return (node_ && (node_->value.second.text == nana::string(nana::charset(s))));
-#else
-					return (node_ && s && (node_->value.second.text == s));
-#endif
+					return (node_ && (node_->value.second.text == s));
 				}
 
 				bool item_proxy::operator==(const wchar_t* s) const
 				{
-#if defined(NANA_UNICODE)
-					return (node_ && s && (node_->value.second.text == s));
-#else
-					return (node_ && (node_->value.second.text == nana::string(nana::charset(s))));
-#endif
+					return (node_ && s && (node_->value.second.text == utf8_cast(s)));
 				}
 
 				// Behavior of Iterator
@@ -1114,7 +1116,7 @@ namespace nana
 
 				virtual unsigned item_height(graph_reference graph) const override
 				{
-					return graph.text_extent_size(STR("jH{"), 3).height + 8;
+					return graph.text_extent_size(L"jH{", 3).height + 8;
 				}
 
 				virtual unsigned item_width(graph_reference graph, const item_attribute_t& attr) const override
@@ -1468,7 +1470,7 @@ namespace nana
 						:expanded(false), checked(checkstate::unchecked)
 					{}
 
-					trigger::treebox_node_type::treebox_node_type(nana::string text)
+					trigger::treebox_node_type::treebox_node_type(std::string text)
 						:text(std::move(text)), expanded(false), checked(checkstate::unchecked)
 					{}
 
@@ -1702,7 +1704,7 @@ namespace nana
 					return node->value.second.value;
 				}
 
-				trigger::node_type* trigger::insert(node_type* node, const nana::string& key, nana::string&& title)
+				trigger::node_type* trigger::insert(node_type* node, const std::string& key, std::string&& title)
 				{
 					node_type * p = impl_->attr.tree_cont.node(node, key);
 					if(p)
@@ -1715,7 +1717,7 @@ namespace nana
 					return p;
 				}
 
-				trigger::node_type* trigger::insert(const nana::string& path, nana::string&& title)
+				trigger::node_type* trigger::insert(const std::string& path, std::string&& title)
 				{
 					auto x = impl_->attr.tree_cont.insert(path, treebox_node_type(std::move(title)));
 					if(x && impl_->attr.auto_draw && impl_->draw(true))
@@ -1781,7 +1783,7 @@ namespace nana
 					}
 				}
 
-				void trigger::set_expand(const nana::string& path, bool exp)
+				void trigger::set_expand(const std::string& path, bool exp)
 				{
 					if(impl_->set_expanded(impl_->attr.tree_cont.find(path), exp))
 					{
@@ -1790,7 +1792,7 @@ namespace nana
 					}
 				}
 
-				node_image_tag& trigger::icon(const nana::string& id) const
+				node_image_tag& trigger::icon(const std::string& id) const
 				{
 					auto i = impl_->shape.image_table.find(id);
 					if(i != impl_->shape.image_table.end())
@@ -1801,14 +1803,14 @@ namespace nana
 					return impl_->shape.image_table[id];
 				}
 
-				void trigger::icon_erase(const nana::string& id)
+				void trigger::icon_erase(const std::string& id)
 				{
 					impl_->shape.image_table.erase(id);
 					if(0 == impl_->shape.image_table.size())
 						impl_->data.comp_placer->enable(component::icon, false);
 				}
 
-				void trigger::node_icon(node_type* node, const nana::string& id)
+				void trigger::node_icon(node_type* node, const std::string& id)
 				{
 					if(tree().verify(node))
 					{
@@ -1826,7 +1828,7 @@ namespace nana
 					return impl_->data.comp_placer->item_width(*impl_->data.graph, node_attr);
 				}
 
-				bool trigger::rename(node_type *node, const nana::char_t* key, const nana::char_t* name)
+				bool trigger::rename(node_type *node, const char* key, const char* name)
 				{
 					if((key || name ) && tree().verify(node))
 					{
@@ -1856,7 +1858,7 @@ namespace nana
 
 					widget.bgcolor(colors::white);
 					impl_->data.widget_ptr = static_cast< ::nana::treebox*>(&widget);
-					widget.caption(STR("Nana Treebox"));
+					widget.caption("nana treebox");
 				}
 
 				void trigger::refresh(graph_reference)
@@ -2194,28 +2196,28 @@ namespace nana
 			return get_drawer_trigger().checkable();
 		}
 
-		treebox::node_image_type& treebox::icon(const nana::string& id) const
+		treebox::node_image_type& treebox::icon(const std::string& id) const
 		{
 			return get_drawer_trigger().icon(id);
 		}
 
-		void treebox::icon_erase(const nana::string& id)
+		void treebox::icon_erase(const std::string& id)
 		{
 			get_drawer_trigger().icon_erase(id);
 		}
 
-		auto treebox::find(const nana::string& keypath) -> item_proxy
+		auto treebox::find(const std::string& keypath) -> item_proxy
 		{
 			auto * trg = &get_drawer_trigger();
 			return item_proxy(trg, trg->tree().find(keypath));
 		}
 
-		treebox::item_proxy treebox::insert(const nana::string& path_key, nana::string title)
+		treebox::item_proxy treebox::insert(const std::string& path_key, std::string title)
 		{
 			return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(path_key, std::move(title)));
 		}
 
-		treebox::item_proxy treebox::insert(item_proxy i, const nana::string& key, nana::string title)
+		treebox::item_proxy treebox::insert(item_proxy i, const std::string& key, std::string title)
 		{
 			return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(i._m_node(), key, std::move(title)));
 		}
@@ -2227,22 +2229,22 @@ namespace nana
 			return next;
 		}
 
-		void treebox::erase(const nana::string& keypath)
+		void treebox::erase(const std::string& keypath)
 		{
 			auto i = find(keypath);
 			if(!i.empty())
 				get_drawer_trigger().remove(i._m_node());
 		}
 
-		nana::string treebox::make_key_path(item_proxy i, const nana::string& splitter) const
+		std::string treebox::make_key_path(item_proxy i, const std::string& splitter) const
 		{
 			auto & tree = get_drawer_trigger().tree();
 			auto pnode = i._m_node();
 			if(tree.verify(pnode))
 			{
 				auto root = tree.get_root();
-				nana::string path;
-				nana::string temp;
+				std::string path;
+				std::string temp;
 				while(pnode->owner != root)
 				{
 					temp = splitter;

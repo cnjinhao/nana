@@ -37,7 +37,7 @@ namespace nana{
 		///  The construction that creates the widget and set the titel or caption
 
 		group(window			parent,		///< a handle to the parent
-			  ::nana::string	titel,		///< caption of the group
+			  ::std::string	titel,		///< caption of the group
 			  bool				formatted = false,  ///< Enable/disable the formatted text for the title
 			  unsigned			gap = 2,			///< betwen the content  and the external limit
 			  const rectangle&	r = {} ,
@@ -49,7 +49,7 @@ namespace nana{
 		~group();
 
 		/// Adds an option for user selection
-		group& add_option(::nana::string);
+		group& add_option(::std::string);
 
 		/// Enables/disables the radio mode which is single selection
 		group& radio_mode(bool);
@@ -77,8 +77,8 @@ namespace nana{
 		void _m_add_child(const char* field, widget*);
 		void _m_init();
 		void _m_complete_creation() override;
-		::nana::string _m_caption() const throw() override;
-		void _m_caption(::nana::string&&) override;
+		native_string_type _m_caption() const throw() override;
+		void _m_caption(native_string_type&&) override;
 	private:
 		std::unique_ptr<implement> impl_;
     };

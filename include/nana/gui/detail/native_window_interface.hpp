@@ -34,6 +34,8 @@ namespace detail
 			unsigned extra_height;	//extra border size, it is useful in Windows, ignore in X11 always 0
 		};
 
+		using native_string_type = ::nana::detail::native_string_type;
+
 		static nana::size	primary_monitor_size();
 		static rectangle screen_area_from_point(const point&);
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
@@ -65,8 +67,8 @@ namespace detail
 
 		static void	window_size(native_window_type, const size&);
 		static void	get_window_rect(native_window_type, rectangle&);
-		static void	window_caption(native_window_type, const nana::string&);
-		static nana::string	window_caption(native_window_type);
+		static void	window_caption(native_window_type, const native_string_type&);
+		static native_string_type	window_caption(native_window_type);
 		static void	capture_window(native_window_type, bool);
 		static nana::point	cursor_position();
 		static native_window_type get_owner_window(native_window_type);
