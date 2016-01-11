@@ -407,6 +407,8 @@ namespace skeletons
 		{
 			std::deque<string_type>().swap(text_cont_);
 			attr_max_.reset();
+			text_cont_.emplace_back();	//text_cont_ must not be empty
+
 			_m_saved(std::string());
 		}
 

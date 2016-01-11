@@ -1495,6 +1495,7 @@ namespace nana{	namespace widgets
 
 			_m_reset();
 			behavior_->pre_calc_lines(width_pixels());
+
 			render(API::is_focus_ready(window_));
 			_m_scrollbar();
 			return true;
@@ -1747,6 +1748,7 @@ namespace nana{	namespace widgets
 		{
 			textbase_.erase_all();
 			_m_reset();
+			behavior_->pre_calc_lines(width_pixels());
 			put(std::move(str));
 		}
 
