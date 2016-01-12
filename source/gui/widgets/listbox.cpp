@@ -2168,9 +2168,8 @@ namespace nana
 					return (seq.size() ? (header.item_pos(seq[0], nullptr) - scroll.offset_x + r.x) : 0);
 				}
 
-				bool calc_where(int x, int y)
-				{
-					decltype(pointer_where) new_where;
+				std::pair<parts, size_t> where(int x, int y){
+                    std::pair<parts, size_t> new_where;
 
 					if(2 < x && x < static_cast<int>(graph->width()) - 2 && 1 < y && y < static_cast<int>(graph->height()) - 1)
 					{
@@ -2201,7 +2200,12 @@ namespace nana
 						new_where.first = parts::unknown;
 						new_where.second = npos;
 					}
+                    return new_where;
+				}
 
+				bool calc_where(int x, int y)
+				{
+                    std::pair< parts, size_t > new_where=where(x,y);
 					if (new_where == pointer_where)
 						return false;
 
@@ -3564,12 +3568,11 @@ namespace nana
 					//Get the item which the mouse is placed.
 					if (lister.forward(offset_y, essence_->pointer_where.second, item_pos))
 					{
-                        drawerbase::listbox::size_type col=essence_->header.item_by_x(arg.pos.x - 2 - essence_->scroll.offset_x);
-                        arg_item ai(item_pos, col==npos?-1:col);
-                        lister.wd_ptr()->events().item_dbl_click.emit(ai);
-
 						if (!item_pos.is_category())	//being the npos of item.second is a category
 							return;
+
+                        arg_category ai(cat_proxy(essence_, item_pos.cat));
+                        lister.wd_ptr()->events().category_dbl_click.emit(ai);
 
                         if(!ai.category_change_blocked()){
                             bool do_expand = (lister.expand(item_pos.cat) == false);
@@ -4291,16 +4294,16 @@ namespace nana
 	{
 	}
 
-	arg_item::arg_item ( const nana::drawerbase::listbox::index_pair& itm, nana::drawerbase::listbox::size_type column )
-        : item(itm), column(column), _m_block_change(false)
+	arg_category::arg_category ( const nana::drawerbase::listbox::cat_proxy& cat )
+        : category(cat), _m_block_change(false)
     {
     }
 
-    void arg_item::block_category_change() const {
+    void arg_category::block_category_change() const {
         _m_block_change=true;
     }
 
-    bool arg_item::category_change_blocked() const {
+    bool arg_category::category_change_blocked() const {
         return _m_block_change;
     }
 
@@ -4477,6 +4480,27 @@ namespace nana
 		{
 			return at(pos_abs.cat).at(pos_abs.item);
 		}
+
+        listbox::index_pair listbox::at ( const point& pos ) const
+        {
+            auto & ess=_m_ess();
+            auto _where=ess.where(pos.x, pos.y);
+            index_pair item_pos{npos,npos};
+            if(_where.first==drawerbase::listbox::essence_t::parts::lister){
+                auto & offset_y = ess.scroll.offset_y_dpl;
+                ess.lister.forward(offset_y, _where.second, item_pos);
+            }
+            return item_pos;
+        }
+
+        listbox::columns_indexs listbox::column_from_pos ( const point& pos )
+        {
+            auto & ess=_m_ess();
+            columns_indexs col=ess.header.item_by_x(pos.x - 2 - ess.scroll.offset_x);
+            return col;
+        }
+
+
 
 		void listbox::insert(const index_pair& pos, std::string text)
 		{
