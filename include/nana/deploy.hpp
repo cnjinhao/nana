@@ -1,7 +1,7 @@
 /*
  *	The Deploy Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -154,7 +154,7 @@ namespace nana
 #define NANA_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
 
 
-#if defined(STD_make_unique_NOT_SUPPORTED)
+#ifdef STD_MAKE_UNIQUE_NOT_SUPPORTED
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3656.htm
 
 #include <cstddef>

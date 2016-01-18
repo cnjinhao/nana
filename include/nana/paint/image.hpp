@@ -15,7 +15,8 @@
 #define NANA_PAINT_IMAGE_HPP
 
 #include "graphics.hpp"
-#include "../filesystem/filesystem.hpp"
+
+#include <nana/filesystem/filesystem.hpp>
 
 namespace nana
 {

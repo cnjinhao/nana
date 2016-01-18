@@ -1,7 +1,7 @@
 /*
 *	Filebox
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,7 +17,7 @@
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 	#include <nana/gui/widgets/label.hpp>
 	#include <nana/gui/widgets/button.hpp>
 	#include <nana/gui/widgets/listbox.hpp>
@@ -25,7 +25,7 @@
 	#include <nana/gui/widgets/textbox.hpp>
 	#include <nana/gui/widgets/treebox.hpp>
 	#include <nana/gui/widgets/combox.hpp>
-	#include <nana/filesystem/file_iterator.hpp>
+	#include <nana/filesystem/filesystem.hpp>
 	#include <nana/gui/place.hpp>
 	#include <stdexcept>
 	#include <algorithm>
@@ -33,7 +33,7 @@
 
 namespace nana
 {
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 	class filebox_implement
 		: public form
 	{
@@ -421,8 +421,6 @@ namespace nana
 
 		void _m_init_tree()
 		{
-			using namespace nana::filesystem;
-
 			//The path in linux is starting with the character '/', the name of root key should be
 			//"FS.HOME", "FS.ROOT". Because a key of the tree widget should not be '/'
 			nodes_.home = tree_.insert("FS.HOME", "Home");
@@ -430,28 +428,27 @@ namespace nana
 			nodes_.filesystem = tree_.insert("FS.ROOT", "Filesystem");
 			nodes_.filesystem.value(kind::filesystem);
 
-			file_iterator end;
-			for(file_iterator i(to_nstring(path_user())); i != end; ++i)
+			namespace fs = ::nana::experimental::filesystem;
+
+			std::vector<std::string> paths;
+			paths.emplace_back(nana::filesystem::path_user());
+			paths.emplace_back("/");
+
+			fs::directory_iterator end;
+			for (auto & p : paths)
 			{
-				if((false == i->directory) || (i->name.size() && i->name[0] == '.')) continue;
-
-				item_proxy node = tree_.insert(nodes_.home, i->name, i->name);
-				if(false == node.empty())
+				for (fs::directory_iterator i(p); i != end; ++i)
 				{
-					node.value(kind::filesystem);
-					break;
-				}
-			}
+					auto name = i->path().filename().native();
+					if (!is_directory(i->status()) || (name.size() && name[0] == '.'))
+						continue;
 
-			for(file_iterator i("/"); i != end; ++i)
-			{
-				if((false == i->directory) || (i->name.size() && i->name[0] == '.')) continue;
-
-				item_proxy node = tree_.insert(nodes_.filesystem, i->name, i->name);
-				if(false == node.empty())
-				{
-					node.value(kind::filesystem);
-					break;
+					item_proxy node = tree_.insert(nodes_.filesystem, name, name);
+					if (false == node.empty())
+					{
+						node.value(kind::filesystem);
+						break;
+					}
 				}
 			}
 
@@ -494,29 +491,31 @@ namespace nana
 
 			file_container_.clear();
 
-			using namespace nana::filesystem;
-			file_iterator end;
-			for(file_iterator i(path); i != end; ++i)
-			{
-				if((i->name.size() == 0) || (i->name[0] == '.'))
-					continue;
-				item_fs m;
-				m.name = i->name;
+			namespace fs = ::nana::experimental::filesystem;
 
-				namespace fs = ::nana::experimental::filesystem;
+			fs::directory_iterator end;
+			for(fs::directory_iterator i(path); i != end; ++i)
+			{
+				auto name = i->path().filename().native();
+				if(name.empty() || (name.front() == '.'))
+					continue;
+
+				item_fs m;
+				m.name = name;
+
 				auto fattr = fs::status(path + m.name);
 
 				if(fattr.type() != fs::file_type::not_found && fattr.type() != fs::file_type::unknown)
 				{
 					m.bytes = fs::file_size(path + m.name);
 					m.directory = fs::is_directory(fattr);
-					modified_file_time(path + m.name, m.modified_time);
+					::nana::filesystem::modified_file_time(path + m.name, m.modified_time);
 				}
 				else
 				{
 					m.bytes = 0;
-					m.directory = i->directory;
-					modified_file_time(path + i->name, m.modified_time);				
+					m.directory = fs::is_directory(*i);
+					::nana::filesystem::modified_file_time(path + i->path().filename().native(), m.modified_time);				
 				}
 
 				file_container_.push_back(m);
@@ -554,11 +553,13 @@ namespace nana
 			if(head.size() == 0 || head[head.size() - 1] != '/')
 				head += '/';
 
-			nana::filesystem::file_iterator end;
-			for(nana::filesystem::file_iterator i(head); i != end; ++i)
+			namespace fs = ::nana::experimental::filesystem;
+
+			fs::directory_iterator end;
+			for(fs::directory_iterator i(head); i != end; ++i)
 			{
-				if(i->directory)
-					path_.childset(i->name, 0);
+				if(is_directory(*i))
+					path_.childset(i->path().filename().native(), 0);
 			}
 			auto cat_path = path_.caption();
 			if(cat_path.size() && cat_path[cat_path.size() - 1] != '/')
@@ -574,10 +575,10 @@ namespace nana
 				(head += folder) += '/';
 				path_.caption(cat_path);
 				
-				for(nana::filesystem::file_iterator i(head); i != end; ++i)
+				for(fs::directory_iterator i(head); i != end; ++i)
 				{
-					if(i->directory)
-						path_.childset(i->name, 0);
+					if (is_directory(*i))
+						path_.childset(i->path().filename().native(), 0);
 				}
 
 				if(pos == path.npos)
@@ -809,18 +810,25 @@ namespace nana
 				auto path = tree_.make_key_path(node, "/") + "/";
 				_m_resolute_path(path);
 
-				nana::filesystem::file_iterator end;
-				for(nana::filesystem::file_iterator i(path); i != end; ++i)
+				namespace fs = ::nana::experimental::filesystem;
+
+				fs::directory_iterator end;
+				for (fs::directory_iterator i{path}; i != end; ++i)
 				{
-					if((false == i->directory) || (i->name.size() && i->name[0] == '.')) continue;
-					auto child = node.append(i->name, i->name, kind::filesystem);
+					auto name = i->path().filename().native();
+					if((!is_directory(*i)) || (name.size() && name[0] == '.'))
+						continue;
+
+					auto child = node.append(name, name, kind::filesystem);
 					if(!child.empty())
 					{
-						for(nana::filesystem::file_iterator u(path + i->name); u != end; ++u)
+						for(fs::directory_iterator u(i->path()); u != end; ++u)
 						{
-							if(false == u->directory || (u->name.size() && u->name[0] == '.')) continue;
+							auto uname = i->path().filename().native();
+							if ((!is_directory(*i)) || (uname.size() && uname[0] == '.'))
+								continue;
 
-							child.append(u->name, u->name, kind::filesystem);
+							child.append(uname, uname, kind::filesystem);
 							break;
 						}
 					}
@@ -1047,7 +1055,7 @@ namespace nana
 			
 			wfile.resize(std::wcslen(wfile.data()));
 			impl_->file = utf8_cast(wfile);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 			filebox_implement fb(impl_->owner, impl_->open_or_save, impl_->title);
 			
 			if(impl_->filters.size())

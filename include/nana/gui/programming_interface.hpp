@@ -313,9 +313,6 @@ namespace API
 	void eat_tabstop(window, bool);
 	window move_tabstop(window, bool next);     ///< Sets the focus to the window which tabstop is near to the specified window.
 
-	//bool glass_window(window);			//deprecated
-	//bool glass_window(window, bool);	//deprecated
-
 	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
 

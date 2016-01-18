@@ -1,6 +1,6 @@
 /*
  *	A FileSystem Utility Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,6 @@
  */
 
 #include <nana/filesystem/fs_utility.hpp>
-#include <nana/filesystem/file_iterator.hpp>
 #include <nana/deploy.hpp>
 #include <vector>
 #if defined(NANA_WINDOWS)
@@ -53,27 +52,6 @@ namespace filesystem
 
 	namespace detail
 	{
-		//rm_dir_recursive
-		//@brief: remove a directory, if it is not empty, recursively remove it's subfiles and sub directories
-		bool rm_dir_recursive(std::string&& dir)
-		{
-			std::vector<file_iterator::value_type> files;
-			auto path = dir;
-			path += '\\';
-
-			std::copy(file_iterator(dir), file_iterator(), std::back_inserter(files));
-
-			for(auto & f : files)
-			{
-				if(f.directory)
-					rm_dir_recursive(path + f.name);
-				else
-					rmfile((path + f.name).c_str());
-			}
-
-			return rmdir(dir.c_str(), true);
-		}
-
 #if defined(NANA_WINDOWS)
 		void filetime_to_c_tm(FILETIME& ft, struct tm& t)
 		{
@@ -150,41 +128,18 @@ namespace filesystem
 #endif
 	}
 
-	bool rmdir(const char* dir, bool fails_if_not_empty)
-	{
-		bool ret = false;
-		if(dir)
-		{
-#if defined(NANA_WINDOWS)
-			ret = (::RemoveDirectory(utf8_cast(dir).c_str()) == TRUE);
-			if(!fails_if_not_empty && (::GetLastError() == ERROR_DIR_NOT_EMPTY))
-				ret = detail::rm_dir_recursive(dir);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			std::string mbstr = nana::charset(dir);
-			if(::rmdir(mbstr.c_str()))
-			{
-				if(!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
-					ret = detail::rm_dir_recursive(dir);
-			}
-			else
-				ret = true;
-#endif
-		}
-		return ret;
-	}
-
-	std::wstring path_user()
+	std::string path_user()
 	{
 #if defined(NANA_WINDOWS)
 		wchar_t path[MAX_PATH];
 		if(SUCCEEDED(SHGetFolderPath(0, CSIDL_PROFILE, 0, SHGFP_TYPE_CURRENT, path)))
-			return path;
+			return to_utf8(path);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 		const char * s = ::getenv("HOME");
 		if(s)
-			return nana::charset(std::string(s, std::strlen(s)), nana::unicode::utf8);
+			return s;
 #endif
-		return std::wstring();
+		return std::string();
 	}
 }//end namespace filesystem
 }//end namespace nana

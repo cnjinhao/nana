@@ -24,7 +24,7 @@
 
 	#include <shlobj.h>
 	#include <nana/datetime.hpp>
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 	#include <nana/charset.hpp>
 	#include <sys/stat.h>
 	#include <sys/types.h>
@@ -36,9 +36,38 @@
 	#include <stdlib.h>
 #endif
 
+
 namespace nana {	namespace experimental {
 	namespace filesystem
 	{
+		//class filesystem_error
+			filesystem_error::filesystem_error(const std::string& msg, std::error_code err)
+				: std::system_error(err, msg)
+			{}
+
+			filesystem_error::filesystem_error(const std::string& msg, const path& path1, std::error_code err)
+				:	std::system_error(err, msg),
+					path1_(path1)
+			{}
+
+			filesystem_error::filesystem_error(const std::string& msg, const path& path1, const path& path2, std::error_code err)
+				:	std::system_error(err, msg),
+					path1_(path1),
+					path2_(path2)
+			{}
+
+			const path& filesystem_error::path1() const
+			{
+				return path1_;
+			}
+
+			const path&filesystem_error::path2() const
+			{
+				return path2_;
+			}
+		//end class filesystem_error
+
+
 		//Because of No wide character version of POSIX
 #if defined(NANA_LINUX) || defined(NANA_MACOS)
 		const char* splstr = "/";
@@ -72,9 +101,7 @@ namespace nana {	namespace experimental {
 		}
 	//end filestatus
 
-		//class path
-		path::path() {}
-
+	//class path
 		int path::compare(const path& p) const
 		{
 			return pathstr_.compare(p.pathstr_);
@@ -158,6 +185,41 @@ namespace nana {	namespace experimental {
 			return{ pathstr_ };
 		}
 
+		path& path::remove_filename()
+		{
+#ifdef NANA_WINDOWS
+			wchar_t seps[] = L"/\\";
+#else
+			char seps[] = "/\\";
+#endif
+			auto pos = pathstr_.find_last_of(seps);
+			if (pos != pathstr_.npos)
+			{
+				pos = pathstr_.find_last_not_of(seps, pos);
+				if (pos != pathstr_.npos)
+				{
+#ifdef NANA_WINDOWS
+					if (pathstr_[pos] == L':')
+					{
+						pathstr_.erase(pos + 1);
+						pathstr_ += L'\\';
+
+						return *this;
+					}
+#endif
+					++pos;
+				}
+				else
+					pos = 0;
+			}
+			else
+				pos = 0;
+
+			pathstr_.erase(pos);
+
+			return *this;
+		}
+
 		const path::value_type* path::c_str() const
 		{
 			return native().c_str();
@@ -186,6 +248,36 @@ namespace nana {	namespace experimental {
 		std::string path::u8string() const
 		{
 			return to_utf8(pathstr_);
+		}
+
+		path & path::operator/=(const path& p)
+		{
+			if (p.empty())
+				return *this;
+
+			if (this == &p)
+			{
+				auto other = p.pathstr_;
+				if ((other.front() != '/') && (other.front() == path::preferred_separator))
+				{
+					if (!this->pathstr_.empty() && (pathstr_.back() != '/' && pathstr_.back() == path::preferred_separator))
+						pathstr_.append(path::preferred_separator, 1);
+				}
+
+				pathstr_ += other;
+			}
+			else
+			{
+				auto & other = p.pathstr_;
+				if ((other.front() != '/') && (other.front() == path::preferred_separator))
+				{
+					if (!this->pathstr_.empty() && (pathstr_.back() != '/' && pathstr_.back() == path::preferred_separator))
+						pathstr_.append(path::preferred_separator, 1);
+				}
+
+				pathstr_ += p.pathstr_;
+			}
+			return *this;
 		}
 
 		void path::_m_assign(const std::string& source_utf8)
@@ -227,52 +319,251 @@ namespace nana {	namespace experimental {
 			return (rhs.compare(lhs) < 0);
 		}
 
+		path operator/(const path& lhs, const path& rhs)
+		{
+			auto path = lhs;
+			return (path /= rhs);
+		}
+
+		//class directory_entry
+			directory_entry::directory_entry(const filesystem::path& p)
+				:path_{ p }
+			{}
+
+			//modifiers
+			void directory_entry::assign(const  filesystem::path& p)
+			{
+				path_ = p;
+			}
+
+			void directory_entry::replace_filename(const  filesystem::path& p)
+			{
+				path_ = path_.parent_path() / p;
+			}
+
+			//observers
+			file_status directory_entry::status() const
+			{
+				return filesystem::status(path_);
+			}
+
+			directory_entry::operator const  filesystem::path&() const
+			{
+				return path_;
+			}
+
+			const path& directory_entry::path() const
+			{
+				return path_;
+			}
+		//end class directory_entry
+
+
+		//class directory_iterator
+			struct inner_handle_deleter
+			{
+				void operator()(void** handle)
+				{
+#if defined(NANA_WINDOWS)
+						::FindClose(*handle);
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+						::closedir(*reinterpret_cast<DIR**>(handle));
+#endif
+				}
+			};
+
+				directory_iterator::directory_iterator()
+					:	end_(true),
+						handle_(nullptr)
+				{}
+
+				directory_iterator::directory_iterator(const path& file_path)
+				{
+					_m_prepare(file_path);
+				}
+
+				const directory_iterator::value_type& directory_iterator::operator*() const { return value_; }
+
+				const directory_iterator::value_type*
+					directory_iterator::operator->() const { return &(operator*()); }
+
+				directory_iterator& directory_iterator::operator++()
+				{
+					_m_read(); return *this;
+				}
+
+				directory_iterator directory_iterator::operator++(int)
+				{
+					directory_iterator tmp = *this;
+					_m_read();
+					return tmp;
+				}
+
+				bool directory_iterator::equal(const directory_iterator& x) const
+				{
+					if (end_ && (end_ == x.end_)) return true;
+					return (value_.path().filename() == x.value_.path().filename());
+				}
+
+
+				// enable directory_iterator range-based for statements
+				directory_iterator directory_iterator::begin()    { return *this; }
+				directory_iterator directory_iterator::end()      { return{}; }
+
+				void directory_iterator::_m_prepare(const path& file_path)
+				{
+					path_ = file_path.native();
+#if defined(NANA_WINDOWS)
+					if (!path_.empty() && (path_.back() != L'/' && path_.back() != L'\\'))
+						path_ += L'\\';
+
+					auto pat = path_;
+					DWORD attr = ::GetFileAttributes(pat.data());
+					if ((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY))
+						pat += L"*";
+
+					WIN32_FIND_DATAW wfd;
+					::HANDLE handle = ::FindFirstFile(pat.data(), &wfd);
+
+					if (handle == INVALID_HANDLE_VALUE)
+					{
+						end_ = true;
+						return;
+					}
+
+					while (_m_ignore(wfd.cFileName))
+					{
+						if (::FindNextFile(handle, &wfd) == 0)
+						{
+							end_ = true;
+							::FindClose(handle);
+							return;
+						}
+					}
+
+					value_ = value_type(path(path_ + wfd.cFileName));
+
+#elif defined(NANA_POSIX)
+					if (path_.size() && (path_.back() != '/'))
+						path_ += '/';
+					auto handle = opendir(path_.c_str());
+					end_ = true;
+					if (handle)
+					{
+						struct dirent * dnt = readdir(handle);
+						if (dnt)
+						{
+							while (_m_ignore(dnt->d_name))
+							{
+								dnt = readdir(handle);
+								if (dnt == 0)
+								{
+									closedir(handle);
+									return;
+								}
+							}
+
+							value_ = value_type(path_ + dnt->d_name);
+							end_ = false;
+						}
+					}
+#endif
+					if (false == end_)
+					{
+						find_ptr_ = std::shared_ptr<find_handle>(new find_handle(handle), inner_handle_deleter());
+						handle_ = handle;
+					}
+				}
+
+				void directory_iterator::_m_read()
+				{
+					if (handle_)
+					{
+#if defined(NANA_WINDOWS)
+						WIN32_FIND_DATAW wfd;
+						if (::FindNextFile(handle_, &wfd) != 0)
+						{
+							while (_m_ignore(wfd.cFileName))
+							{
+								if (::FindNextFile(handle_, &wfd) == 0)
+								{
+									end_ = true;
+									return;
+								}
+							}
+							value_ = value_type(path(path_ + wfd.cFileName));
+						}
+						else
+							end_ = true;
+#elif defined(NANA_POSIX)
+						struct dirent * dnt = readdir(reinterpret_cast<DIR*>(handle_));
+						if (dnt)
+						{
+							while (_m_ignore(dnt->d_name))
+							{
+								dnt = readdir(reinterpret_cast<DIR*>(handle_));
+								if (!dnt)
+								{
+									end_ = true;
+									return;
+								}
+							}
+
+							value_ = value_type(path(path_ + dnt->d_name));
+						}
+						else
+							end_ = true;
+#endif
+					}
+				}
+		//end class directory_iterator
+
 		namespace detail
 		{
-				//rm_dir_recursive
-				//@brief: remove a directory, if it is not empty, recursively remove it's subfiles and sub directories
-				template<typename CharT>
-				bool rm_dir_recursive(const CharT* dir)
+			//rm_dir_recursive
+			//@brief: remove a directory, if it is not empty, recursively remove it's subfiles and sub directories
+			template<typename CharT>
+			bool rm_dir_recursive(const CharT* dir)
+			{
+				std::vector<directory_iterator::value_type> files;
+				std::basic_string<CharT> path = dir;
+				path += '\\';
+
+				std::copy(directory_iterator(dir), directory_iterator(), std::back_inserter(files));
+
+				for (auto & f : files)
 				{
-					std::vector<directory_iterator::value_type> files;
-					std::basic_string<CharT> path = dir;
-					path += '\\';
+					auto subpath = path + f.path().filename().native();
 
-					std::copy(directory_iterator(dir), directory_iterator(), std::back_inserter(files));
-
-					for (auto & f : files)
-					{
-						auto subpath = path + f.path().filename().native();
-						if (f.attr.directory)
-							rm_dir_recursive(subpath.c_str());
-						else
-							rmfile(subpath.c_str());
-					}
-
-					return rmdir(dir, true);
+					if (is_directory(f))
+						rm_dir_recursive(subpath.c_str());
+					else
+						rmfile(subpath.c_str());
 				}
+				return rmdir(dir, true);
+			}
 
 #if defined(NANA_WINDOWS)
-				void filetime_to_c_tm(FILETIME& ft, struct tm& t)
+			void filetime_to_c_tm(FILETIME& ft, struct tm& t)
+			{
+				FILETIME local_file_time;
+				if (::FileTimeToLocalFileTime(&ft, &local_file_time))
 				{
-					FILETIME local_file_time;
-					if (::FileTimeToLocalFileTime(&ft, &local_file_time))
-					{
-						SYSTEMTIME st;
-						::FileTimeToSystemTime(&local_file_time, &st);
-						t.tm_year = st.wYear - 1900;
-						t.tm_mon = st.wMonth - 1;
-						t.tm_mday = st.wDay;
-						t.tm_wday = st.wDayOfWeek - 1;
-						t.tm_yday = nana::date::day_in_year(st.wYear, st.wMonth, st.wDay);
+					SYSTEMTIME st;
+					::FileTimeToSystemTime(&local_file_time, &st);
+					t.tm_year = st.wYear - 1900;
+					t.tm_mon = st.wMonth - 1;
+					t.tm_mday = st.wDay;
+					t.tm_wday = st.wDayOfWeek - 1;
+					t.tm_yday = nana::date::day_in_year(st.wYear, st.wMonth, st.wDay);
 
-						t.tm_hour = st.wHour;
-						t.tm_min = st.wMinute;
-						t.tm_sec = st.wSecond;
-					}
+					t.tm_hour = st.wHour;
+					t.tm_min = st.wMinute;
+					t.tm_sec = st.wSecond;
 				}
+			}
 #endif
-			}//end namespace detail
+		}//end namespace detail
 
 		bool not_found_error(int errval)
 		{

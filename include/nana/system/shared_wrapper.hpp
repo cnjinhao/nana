@@ -1,6 +1,6 @@
 /*
  *	Operation System Shared Linkage Library Wrapper Implementation
- *	Copyright(C) 2003 Jinhao
+ *	Copyright(C) 2003-2016 Jinhao
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -13,7 +13,7 @@
 #define NANA_SYSTEM_SHARED_WRAPPER_HPP
 
 #include <nana/deploy.hpp>
-#include <nana/traits.hpp>
+#include <type_traits>
 #include <stdexcept>
 
 
@@ -69,7 +69,8 @@ namespace system
 		{
 			typedef typename function_ptr<Function>::type fptr_type;
 
-			if(nana::traits::is_function_pointer<fptr_type>::value == false)
+			//if(nana::traits::is_function_pointer<fptr_type>::value == false)
+			if (::std::is_function<typename std::remove_pointer<fptr_type>::type>::value == false)
 				throw std::invalid_argument("shared_wrapper::symbols, template<_Function> is not a function type or a function pointer type");
 
 			if(symbol == 0)

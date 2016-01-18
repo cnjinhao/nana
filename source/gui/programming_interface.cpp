@@ -1168,24 +1168,6 @@ namespace API
 		return reinterpret_cast<window>(ts_wd);
 	}
 
-	/*
-	//glass_window deprecated
-	//@brief: Test a window whether it is a glass attribute.
-	bool glass_window(window wd)
-	{
-		return (bground_mode::basic == effects_bground_mode(wd));
-	}
-
-	bool glass_window(window wd, bool isglass)	//deprecated
-	{
-		if(isglass)
-			effects_bground(wd, effects::bground_transparent(0), 0);
-		else
-			effects_bground_remove(wd);
-		return true;
-	}
-	*/
-
 	void take_active(window wd, bool active, window take_if_active_false)
 	{
 		auto const iwd = reinterpret_cast<basic_window*>(wd);

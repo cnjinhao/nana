@@ -1,7 +1,7 @@
 /**
  *	Nana Configuration
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -134,13 +134,13 @@
 			//but if USE_github_com_meganz_mingw_std_threads is enabled,
 			//boost.thread will be replaced with meganz's mingw-std-threads.
 			// https://github.com/meganz/mingw-std-threads
-        	#if !defined( USE_github_com_meganz_mingw_std_threads )
-			    //#define USE_github_com_meganz_mingw_std_threads
-            #endif
-			#if !defined(STD_make_unique_NOT_SUPPORTED)
-				#define STD_make_unique_NOT_SUPPORTED
-			#endif	//STD_make_unique_NOT_SUPPORTED
+			#if !defined( USE_github_com_meganz_mingw_std_threads )
+				//#define USE_github_com_meganz_mingw_std_threads
+			#endif
+		#endif
 
+		#if (__GNUC_MINOR__ < 9)
+			#define STD_MAKE_UNIQUE_NOT_SUPPORTED
 		#endif
 
 		#if defined(NANA_MINGW)

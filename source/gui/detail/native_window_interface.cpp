@@ -158,7 +158,7 @@ namespace nana{
 		{
 #if defined(NANA_WINDOWS)
 			typedef HMONITOR (__stdcall * MonitorFromPointT)(POINT,DWORD);
-			
+
 			MonitorFromPointT mfp = reinterpret_cast<MonitorFromPointT>(::GetProcAddress(::GetModuleHandleA("User32.DLL"), "MonitorFromPoint"));
 			if(mfp)
 			{
@@ -473,13 +473,13 @@ namespace nana{
 				auto & atombase = restrict::spec.atombase();
 				::XSetTransientForHint(disp, reinterpret_cast<Window>(wd), owner);
 				::XChangeProperty(disp, reinterpret_cast<Window>(wd),
-								atombase.net_wm_state, XA_ATOM, sizeof(int) * 8, 
+								atombase.net_wm_state, XA_ATOM, sizeof(int) * 8,
 								PropModeReplace,
 								reinterpret_cast<const unsigned char*>(&atombase.net_wm_state_modal), 1);
 			}
 		}
 #endif
-		
+
 		void native_interface::enable_dropfiles(native_window_type wd, bool enb)
 		{
 #if defined(NANA_WINDOWS)
@@ -505,7 +505,7 @@ namespace nana{
 			}
 
 			::XSelectInput(restrict::spec.open_display(), reinterpret_cast<Window>(wd), mask);
-#endif		
+#endif
 		}
 
 		bool native_interface::window_icon(native_window_type wd, const nana::paint::image& sml_icon, const ::nana::paint::image& big_icon)
@@ -1117,9 +1117,9 @@ namespace nana{
 				native_string_type str;
                 //One for NULL terminator which GetWindowText will write.
 				str.resize(length+1);
-				
+
 				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), static_cast<int>(str.size()));
-				
+
 				//Remove the null terminator writtien by GetWindowText
 				str.resize(length);
 
@@ -1207,9 +1207,9 @@ namespace nana{
 			Window parent;
 			Window * children;
 			unsigned size;
-			
+
 			platform_scope_guard lock;
-			
+
 			if(0 != ::XQueryTree(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
 				&root, &parent, &children, &size))
 			{
@@ -1226,7 +1226,7 @@ namespace nana{
 			auto prev = ::SetParent(reinterpret_cast<HWND>(child), reinterpret_cast<HWND>(new_parent));
 
 			if (prev)
-				::PostMessage(prev, WM_CHANGEUISTATE, UIS_INITIALIZE, NULL);
+				::PostMessage(prev, /*WM_CHANGEUISTATE*/0x0127, /*UIS_INITIALIZE*/ 3, 0);
 
 			::SetWindowPos(reinterpret_cast<HWND>(child), NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
@@ -1239,7 +1239,7 @@ namespace nana{
 			if(returns_previous)
 				prev = parent_window(child);
 
-			::XReparentWindow(restrict::spec.open_display(), 
+			::XReparentWindow(restrict::spec.open_display(),
 				reinterpret_cast<Window>(child), reinterpret_cast<Window>(new_parent),
 				0, 0);
 			return prev;
