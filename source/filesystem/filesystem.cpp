@@ -347,7 +347,7 @@ namespace nana {	namespace experimental {
 				return filesystem::status(path_);
 			}
 
-			directory_entry::operator const  filesystem::path&() const
+			directory_entry::operator const filesystem::path&() const
 			{
 				return path_;
 			}
@@ -518,8 +518,53 @@ namespace nana {	namespace experimental {
 				}
 		//end class directory_iterator
 
+		bool not_found_error(int errval)
+		{
+#if defined(NANA_WINDOWS)
+			switch (errval)
+			{
+			case ERROR_FILE_NOT_FOUND:
+			case ERROR_PATH_NOT_FOUND:
+			case ERROR_INVALID_NAME:
+			case ERROR_INVALID_DRIVE:
+			case ERROR_NOT_READY:
+			case ERROR_INVALID_PARAMETER:
+			case ERROR_BAD_PATHNAME:
+			case ERROR_BAD_NETPATH:
+				return true;
+			}
+			return false;
+#elif defined(NANA_POSIX)
+			return (errval == ENOENT || errval == ENOTDIR);
+#else
+			static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
+#endif
+		}
+
 		namespace detail
 		{
+			bool rm_file(const path& p)
+			{
+				if (p.empty())
+					return false;
+#if defined(NANA_WINDOWS)	
+				return (FALSE != ::DeleteFileW(p.c_str()));
+#elif defined(NANA_POSIX)
+				return (!std::remove(p.c_str()));
+#endif			
+			}
+
+			bool rm_dir(const path& p)
+			{
+#if defined(NANA_WINDOWS)
+				return (FALSE != ::RemoveDirectoryW(p.c_str())) || not_found_error(static_cast<int>(::GetLastError()));
+#elif defined(NANA_POSIX)
+				return (!::rmdir(p.c_str())) || not_found_error(errno);
+#endif			
+			}
+
+			bool rm_dir(const path& p, bool fails_if_not_empty);
+
 			//rm_dir_recursive
 			//@brief: remove a directory, if it is not empty, recursively remove it's subfiles and sub directories
 			template<typename CharT>
@@ -538,9 +583,34 @@ namespace nana {	namespace experimental {
 					if (is_directory(f))
 						rm_dir_recursive(subpath.c_str());
 					else
-						rmfile(subpath.c_str());
+						rm_file(subpath.c_str());
 				}
-				return rmdir(dir, true);
+				return rm_dir(dir, true);
+			}
+
+			bool rm_dir(const path& p, bool fails_if_not_empty)
+			{
+				if (p.empty())
+					return false;
+
+#if defined(NANA_WINDOWS)
+				if (FALSE != ::RemoveDirectoryW(p.c_str()))
+					return true;
+
+				if (!fails_if_not_empty && (ERROR_DIR_NOT_EMPTY == ::GetLastError()))
+					return detail::rm_dir_recursive(p.c_str());
+
+				return false;
+#elif defined(NANA_POSIX)
+				if (::rmdir(p.c_str()))
+				{
+					if (!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
+						return detail::rm_dir_recursive(p.c_str());
+
+					return false;
+				}
+				return true;
+#endif
 			}
 
 #if defined(NANA_WINDOWS)
@@ -565,154 +635,143 @@ namespace nana {	namespace experimental {
 #endif
 		}//end namespace detail
 
-		bool not_found_error(int errval)
-		{
-#if defined(NANA_WINDOWS)
-			switch (errval)
-			{
-			case ERROR_FILE_NOT_FOUND:
-			case ERROR_PATH_NOT_FOUND:
-			case ERROR_INVALID_NAME:
-			case ERROR_INVALID_DRIVE:
-			case ERROR_NOT_READY:
-			case ERROR_INVALID_PARAMETER:
-			case ERROR_BAD_PATHNAME:
-			case ERROR_BAD_NETPATH:
-				return true;
-			}
-			return false;
-#elif defined(NANA_POSIX)
-			return (errval == ENOENT || errval == ENOTDIR);
-#else
-			static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
-#endif
-		}
 
 		file_status status(const path& p)
 		{
+			std::error_code err;
+			auto stat = status(p, err);
+
+			if (err != std::error_code())
+				throw filesystem_error("nana::filesystem::status", p, err);
+
+			return stat;
+		}
+
+		file_status status(const path& p, std::error_code& ec)
+		{
+			ec = std::error_code();
 #if defined(NANA_WINDOWS)
 			auto attr = ::GetFileAttributesW(p.c_str());
 			if (INVALID_FILE_ATTRIBUTES == attr)
 			{
 				if (not_found_error(static_cast<int>(::GetLastError())))
-					return file_status{file_type::not_found};
+					return file_status{ file_type::not_found };
 				return file_status{ file_type::unknown };
 			}
-			return file_status{(FILE_ATTRIBUTE_DIRECTORY & attr) ? file_type::directory : file_type::regular, perms::all};	
+			return file_status{ (FILE_ATTRIBUTE_DIRECTORY & attr) ? file_type::directory : file_type::regular, perms::all };
 #elif defined(NANA_POSIX)
 			struct stat path_stat;
-			if(0 != ::stat(p.c_str(), &path_stat))
+			if (0 != ::stat(p.c_str(), &path_stat))
 			{
-				if(errno == ENOENT || errno == ENOTDIR)
-					return file_status{file_type::not_found};
-				
-				return file_status{file_type::unknown};
+				if (errno == ENOENT || errno == ENOTDIR)
+					return file_status{ file_type::not_found };
+
+				return file_status{ file_type::unknown };
 			}
 
 			auto prms = static_cast<perms>(path_stat.st_mode & static_cast<unsigned>(perms::mask));
 
-			if(S_ISREG(path_stat.st_mode))
-				return file_status{file_type::regular, prms};
+			if (S_ISREG(path_stat.st_mode))
+				return file_status{ file_type::regular, prms };
 
-			if(S_ISDIR(path_stat.st_mode))
-				return file_status{file_type::directory, prms};
+			if (S_ISDIR(path_stat.st_mode))
+				return file_status{ file_type::directory, prms };
 
-			if(S_ISLNK(path_stat.st_mode))
-				return file_status{file_type::symlink, prms};
+			if (S_ISLNK(path_stat.st_mode))
+				return file_status{ file_type::symlink, prms };
 
-			if(S_ISBLK(path_stat.st_mode))
-				return file_status{file_type::block, prms};
+			if (S_ISBLK(path_stat.st_mode))
+				return file_status{ file_type::block, prms };
 
-			if(S_ISCHR(path_stat.st_mode))
-				return file_status{file_type::character, prms};
+			if (S_ISCHR(path_stat.st_mode))
+				return file_status{ file_type::character, prms };
 
-			if(S_ISFIFO(path_stat.st_mode))
-				return file_status{file_type::fifo, prms};
+			if (S_ISFIFO(path_stat.st_mode))
+				return file_status{ file_type::fifo, prms };
 
-			if(S_ISSOCK(path_stat.st_mode))
-				return file_status{file_type::socket, prms};
+			if (S_ISSOCK(path_stat.st_mode))
+				return file_status{ file_type::socket, prms };
 
-			return file_status{file_type::unknown};
+			return file_status{ file_type::unknown };
+#endif		
+		}
+
+		bool is_directory(const path& p)
+		{
+			return (status(p).type() == file_type::directory);
+		}
+
+		std::uintmax_t file_size(const path& p)
+		{
+#if defined(NANA_WINDOWS)
+			//Some compilation environment may fail to link to GetFileSizeEx
+			typedef BOOL(__stdcall *GetFileSizeEx_fptr_t)(HANDLE, PLARGE_INTEGER);
+			GetFileSizeEx_fptr_t get_file_size_ex = reinterpret_cast<GetFileSizeEx_fptr_t>(::GetProcAddress(::GetModuleHandleA("Kernel32.DLL"), "GetFileSizeEx"));
+			if (get_file_size_ex)
+			{
+				HANDLE handle = ::CreateFile(p.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+				if (INVALID_HANDLE_VALUE != handle)
+				{
+					LARGE_INTEGER li;
+					if (!get_file_size_ex(handle, &li))
+						li.QuadPart = 0;
+
+					::CloseHandle(handle);
+					return li.QuadPart;
+				}
+			}
+			return 0;
+#elif defined(NANA_POSIX)
+			FILE * stream = ::fopen(p.c_str(), "rb");
+			long long size = 0;
+			if (stream)
+			{
+#	if defined(NANA_LINUX)
+				fseeko64(stream, 0, SEEK_END);
+				size = ftello64(stream);
+#	elif defined(NANA_MACOS)
+				fseeko(stream, 0, SEEK_END);
+				size = ftello(stream);
+#	endif
+				::fclose(stream);
+			}
+			return size;
 #endif
 		}
 
-			bool is_directory(const path& p)
-			{
-				return (status(p).type() == file_type::directory);
-			}
-
-			std::uintmax_t file_size(const path& p)
-			{
+		bool modified_file_time(const path& p, struct tm& t)
+		{
 #if defined(NANA_WINDOWS)
-				//Some compilation environment may fail to link to GetFileSizeEx
-				typedef BOOL(__stdcall *GetFileSizeEx_fptr_t)(HANDLE, PLARGE_INTEGER);
-				GetFileSizeEx_fptr_t get_file_size_ex = reinterpret_cast<GetFileSizeEx_fptr_t>(::GetProcAddress(::GetModuleHandleA("Kernel32.DLL"), "GetFileSizeEx"));
-				if (get_file_size_ex)
-				{
-					HANDLE handle = ::CreateFile(p.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-					if (INVALID_HANDLE_VALUE != handle)
-					{
-						LARGE_INTEGER li;
-						if (!get_file_size_ex(handle, &li))
-							li.QuadPart = 0;
-
-						::CloseHandle(handle);
-						return li.QuadPart;
-					}
-				}
-				return 0;
-#elif defined(NANA_POSIX)
-				FILE * stream = ::fopen(p.c_str(), "rb");
-				long long size = 0;
-				if (stream)
-				{
-#	if defined(NANA_LINUX)
-					fseeko64(stream, 0, SEEK_END);
-					size = ftello64(stream);
-#	elif defined(NANA_MACOS)
-					fseeko(stream, 0, SEEK_END);
-					size = ftello(stream);
-#	endif
-					::fclose(stream);
-				}
-				return size;
-#endif
-			}
-
-
-			bool modified_file_time(const std::wstring& file, struct tm& t)
+			WIN32_FILE_ATTRIBUTE_DATA attr;
+			if (::GetFileAttributesEx(p.c_str(), GetFileExInfoStandard, &attr))
 			{
-#if defined(NANA_WINDOWS)
-				WIN32_FILE_ATTRIBUTE_DATA attr;
-				if (::GetFileAttributesEx(file.c_str(), GetFileExInfoStandard, &attr))
+				FILETIME local_file_time;
+				if (::FileTimeToLocalFileTime(&attr.ftLastWriteTime, &local_file_time))
 				{
-					FILETIME local_file_time;
-					if (::FileTimeToLocalFileTime(&attr.ftLastWriteTime, &local_file_time))
-					{
-						SYSTEMTIME st;
-						::FileTimeToSystemTime(&local_file_time, &st);
-						t.tm_year = st.wYear - 1900;
-						t.tm_mon = st.wMonth - 1;
-						t.tm_mday = st.wDay;
-						t.tm_wday = st.wDayOfWeek - 1;
-						t.tm_yday = nana::date::day_in_year(st.wYear, st.wMonth, st.wDay);
+					SYSTEMTIME st;
+					::FileTimeToSystemTime(&local_file_time, &st);
+					t.tm_year = st.wYear - 1900;
+					t.tm_mon = st.wMonth - 1;
+					t.tm_mday = st.wDay;
+					t.tm_wday = st.wDayOfWeek - 1;
+					t.tm_yday = nana::date::day_in_year(st.wYear, st.wMonth, st.wDay);
 
-						t.tm_hour = st.wHour;
-						t.tm_min = st.wMinute;
-						t.tm_sec = st.wSecond;
-						return true;
-					}
-				}
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				struct stat attr;
-				if (0 == ::stat(static_cast<std::string>(nana::charset(file)).c_str(), &attr))
-				{
-					t = *(::localtime(&attr.st_ctime));
+					t.tm_hour = st.wHour;
+					t.tm_min = st.wMinute;
+					t.tm_sec = st.wSecond;
 					return true;
 				}
-#endif
-				return false;
 			}
+#elif defined(NANA_POSIX)
+			struct stat attr;
+			if (0 == ::stat(p.c_str(), &attr))
+			{
+				t = *(::localtime(&attr.st_ctime));
+				return true;
+			}
+#endif
+			return false;
+		}
 
 
 			bool create_directory(const path& p)
@@ -724,46 +783,22 @@ namespace nana {	namespace experimental {
 #endif
 			}
 
-			bool rmfile(const path& p)
+			bool remove(const path& p)
 			{
-				if(p.empty())
-					return false;
-#if defined(NANA_WINDOWS)	
-				if (FALSE == ::DeleteFileW(p.c_str()))
-					return (ERROR_FILE_NOT_FOUND == ::GetLastError());
+				auto stat = status(p);
+				if (stat.type() == file_type::directory)
+					return detail::rm_dir(p);
 
-				return true;
-#elif defined(NANA_POSIX)
-				if (std::remove(p.c_str()))
-					return (errno == ENOENT);
-				return true;
-#endif
+				return detail::rm_file(p);
 			}
 
-
-			bool rmdir(const path& p, bool fails_if_not_empty)
+			bool remove(const path& p, std::error_code & ec)
 			{
-				if(p.empty())
-					return false;
+				auto stat = status(p);
+				if (stat.type() == file_type::directory)
+					return detail::rm_dir(p);
 
-#if defined(NANA_WINDOWS)
-				if(FALSE != ::RemoveDirectoryW(p.c_str()))
-					return true;
-
-				if(!fails_if_not_empty && (ERROR_DIR_NOT_EMPTY == ::GetLastError()))
-					return detail::rm_dir_recursive(p.c_str());
-
-				return false;
-#elif defined(NANA_POSIX)
-				if(::rmdir(p.c_str()))
-				{
-					if (!fails_if_not_empty && (errno == EEXIST || errno == ENOTEMPTY))
-						return detail::rm_dir_recursive(p.c_str());
-				
-					return false;
-				}
-				return true;	
-#endif
+				return detail::rm_file(p);
 			}
 
 			path path_user()

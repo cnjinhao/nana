@@ -1,7 +1,7 @@
 /**
 *	Definition of General Events
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -111,7 +111,7 @@ namespace nana
 					evt_->deleted_flags_ = false;
 					for (auto i = evt_->dockers_->begin(); i != evt_->dockers_->end();)
 					{
-						if (i->get()->flag_deleted)
+						if (static_cast<docker*>(i->get())->flag_deleted)
 							i = evt_->dockers_->erase(i);
 						else
 							++i;
@@ -128,11 +128,11 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			if (nullptr == dockers_)
-				dockers_.reset(new std::vector<std::unique_ptr<docker>>);
+				dockers_.reset(new std::vector<std::unique_ptr<detail::docker_interface>>);
 
 			using prototype = typename std::remove_reference<Function>::type;
-			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
-			auto evt = reinterpret_cast<event_handle>(static_cast<detail::docker_interface*>(dck.get()));
+			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
+			auto evt = reinterpret_cast<event_handle>(dck.get());
 			dockers_->emplace(dockers_->begin(), std::move(dck));
 			detail::events_operation_register(evt);
 			return evt;
@@ -151,11 +151,11 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			if (nullptr == dockers_)
-				dockers_.reset(new std::vector<std::unique_ptr<docker>>);
+				dockers_.reset(new std::vector<std::unique_ptr<detail::docker_interface>>);
 
 			using prototype = typename std::remove_reference<Function>::type;
-			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
-			auto evt = reinterpret_cast<event_handle>(static_cast<detail::docker_interface*>(dck.get()));
+			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
+			auto evt = reinterpret_cast<event_handle>(dck.get());
 			dockers_->emplace_back(std::move(dck));
 			detail::events_operation_register(evt);
 			return evt;
@@ -174,11 +174,11 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			if (nullptr == dockers_)
-				dockers_.reset(new std::vector<std::unique_ptr<docker>>);
+				dockers_.reset(new std::vector<std::unique_ptr<detail::docker_interface>>);
 
 			using prototype = typename std::remove_reference<Function>::type;
-			std::unique_ptr<docker> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true));
-			auto evt = reinterpret_cast<event_handle>(static_cast<detail::docker_interface*>(dck.get()));
+			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true));
+			auto evt = reinterpret_cast<event_handle>(dck.get());
 			if (in_front)
 				dockers_->emplace(dockers_->begin(), std::move(dck));
 			else
@@ -208,7 +208,7 @@ namespace nana
 			//Traverses with position can avaid crash error which caused by a iterator which becomes invalid.
 			for (std::size_t pos = 0; pos < dockers_len; ++pos)
 			{
-				auto docker_ptr = dockers[pos].get();
+				auto docker_ptr = static_cast<docker*>(dockers[pos].get());
 				if (docker_ptr->flag_deleted)
 					continue;
 
@@ -217,7 +217,7 @@ namespace nana
 				{
 					for (++pos; pos < dockers_len; ++pos)
 					{
-						auto docker_ptr = dockers[pos].get();
+						auto docker_ptr = static_cast<docker*>(dockers[pos].get());
 						if (!docker_ptr->unignorable || docker_ptr->flag_deleted)
 							continue;
 
@@ -247,7 +247,7 @@ namespace nana
 						//Checks whether this event is working now.
 						if (emitting_count_ > 1)
 						{
-							i->get()->flag_deleted = true;
+							static_cast<docker*>(i->get())->flag_deleted = true;
 							deleted_flags_ = true;
 						}
 						else
@@ -416,7 +416,7 @@ namespace nana
 	private:
 		unsigned emitting_count_{ 0 };
 		bool deleted_flags_{ false };
-		std::unique_ptr<std::vector<std::unique_ptr<docker>>> dockers_;
+		std::unique_ptr<std::vector<std::unique_ptr<detail::docker_interface>>> dockers_;
 	};
 
 	struct arg_mouse
@@ -528,7 +528,7 @@ namespace nana
     /// provides some fundamental events that every widget owns.
 	struct general_events
 	{
-		virtual ~general_events(){}
+		virtual ~general_events() = default;
 		basic_event<arg_mouse> mouse_enter;	///< the cursor enters the window
 		basic_event<arg_mouse> mouse_move;	///< the cursor moves on the window
 		basic_event<arg_mouse> mouse_leave;	///< the cursor leaves the window

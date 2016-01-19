@@ -1,7 +1,7 @@
 /**
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -17,10 +17,30 @@
 #include <memory>
 
 namespace nana {
+
+	//forward-declaration
+	class checkbox;
+
+	struct arg_checkbox
+		: public event_arg
+	{
+		checkbox * const widget;
+
+		arg_checkbox(checkbox* wdg)
+			: widget(wdg)
+		{}
+	};
+
 namespace drawerbase
 {
 	namespace checkbox
 	{
+		struct events_type
+			: public general_events
+		{
+			basic_event<arg_checkbox> checked;
+		};
+
 		class drawer
 			: public drawer_trigger
 		{
@@ -51,7 +71,7 @@ namespace drawerbase
 
 	
     class checkbox
-		: public widget_object<category::widget_tag, drawerbase::checkbox::drawer>
+		: public widget_object<category::widget_tag, drawerbase::checkbox::drawer, drawerbase::checkbox::events_type>
 	{
 	public:
 		checkbox();
@@ -81,6 +101,7 @@ namespace drawerbase
 			checkbox * uiobj;
 			event_handle eh_checked;
 			event_handle eh_destroy;
+			event_handle eh_keyboard;
 		};
 	public:
 		~radio_group();

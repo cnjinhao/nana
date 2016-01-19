@@ -52,7 +52,6 @@
 		<Unit filename="../../source/detail/platform_spec_posix.cpp" />
 		<Unit filename="../../source/detail/platform_spec_windows.cpp" />
 		<Unit filename="../../source/filesystem/filesystem.cpp" />
-		<Unit filename="../../source/filesystem/fs_utility.cpp" />
 		<Unit filename="../../source/gui/animation.cpp" />
 		<Unit filename="../../source/gui/basis.cpp" />
 		<Unit filename="../../source/gui/detail/basic_window.cpp" />

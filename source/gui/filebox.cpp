@@ -12,7 +12,6 @@
 
 #include <nana/gui.hpp>
 #include <nana/gui/filebox.hpp>
-#include <nana/filesystem/fs_utility.hpp>
 #include <nana/filesystem/filesystem.hpp>
 
 #if defined(NANA_WINDOWS)

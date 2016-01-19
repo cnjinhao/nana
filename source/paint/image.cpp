@@ -1,7 +1,7 @@
 /*
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,6 +19,7 @@
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 #if defined(NANA_ENABLE_JPEG)
 #include "detail/image_jpeg.hpp"
@@ -173,7 +174,12 @@ namespace paint
 			:	image_ptr_(std::move(r.image_ptr_))
 		{}
 
-		image::image(const ::nana::experimental::filesystem::path& file)
+		image::image(const std::string& file)
+		{
+			open(file);
+		}
+
+		image::image(const std::wstring& file)
 		{
 			open(file);
 		}
@@ -187,7 +193,7 @@ namespace paint
 		{
 			if(this != &r)
 				image_ptr_ = r.image_ptr_;
-			
+
 			return * this;
 		}
 
@@ -198,90 +204,99 @@ namespace paint
 			return *this;
 		}
 
-		bool image::open(const ::nana::experimental::filesystem::path& file)
+		std::shared_ptr<image::image_impl_interface> create_image(const ::nana::experimental::filesystem::path & p)
 		{
-			image_ptr_.reset();
+			std::shared_ptr<image::image_impl_interface> ptr;
 
-			auto extension = file.extension().native();
-			if (extension.empty())
-				return false;
+			auto ext = p.extension().native();
+			if (ext.empty())
+				return ptr;
 
-			image::image_impl_interface * helper = nullptr;
-
+			std::transform(ext.begin(), ext.end(), ext.begin(), [](int ch)
 			{
-					std::transform(extension.begin(), extension.end(), extension.begin(), [](int ch)
-					{
-						if('A' <= ch && ch <= 'Z')
-							ch  -= ('A' - 'a');
-						return ch;
-					});
+				if ('A' <= ch && ch <= 'Z')
+					ch -= ('A' - 'a');
+				return ch;
+			});
 
 #if defined(NANA_WINDOWS)
-					const wchar_t* ext_ico = L".ico";
-					const wchar_t* ext_png = L".png";
-					const wchar_t* ext_jpg = L".jpg";
-					const wchar_t* ext_jpeg = L".jpeg";
+			const wchar_t* ext_ico = L".ico";
+			const wchar_t* ext_png = L".png";
+			const wchar_t* ext_jpg = L".jpg";
+			const wchar_t* ext_jpeg = L".jpeg";
 #else
-					const char* ext_ico = ".ico";
-					const char* ext_png = ".png";
-					const char* ext_jpg = ".jpg";
-					const char* ext_jpeg = ".jpeg";
+			const char* ext_ico = ".ico";
+			const char* ext_png = ".png";
+			const char* ext_jpg = ".jpg";
+			const char* ext_jpeg = ".jpeg";
 #endif
-					do
-					{
-						if (ext_ico == extension)
-						{
-#if defined(NANA_WINDOWS)
-							helper = new detail::image_ico(true);
-#else
-							return false;
-#endif
-							break;
-						}
-
-						if (ext_png == extension)
-						{
-#if defined(NANA_ENABLE_PNG)
-							helper = new detail::image_png;
-#else
-							return false;
-#endif
-							break;
-						}
-
-						if (ext_jpg == extension || ext_jpeg == extension)
-						{
-#if defined(NANA_ENABLE_JPEG)
-							helper = new detail::image_jpeg;
-#else
-							return false;
-#endif
-							break;
-						}
-					} while (false);
-
-				//Check for BMP
-				if (!helper)
+			do
+			{
+				if (ext_ico == ext)
 				{
-					std::ifstream ifs(file.string(), std::ios::binary);
-					if (ifs)
-					{
-						unsigned short meta = 0;
-						ifs.read(reinterpret_cast<char*>(&meta), 2);
-						if (*reinterpret_cast<const short*>("BM") == meta)
-							helper = new detail::image_bmp;
-						else if (*reinterpret_cast<const short*>("MZ") == meta)
-							helper = new detail::image_ico(false);
-					}
+#if defined(NANA_WINDOWS)
+					ptr = std::make_shared<detail::image_ico>(true);
+#else
+					return false;
+#endif
+					break;
 				}
 
-				if (helper)
+				if (ext_png == ext)
 				{
-					image_ptr_ = std::shared_ptr<image_impl_interface>(helper);
-					return helper->open(file.c_str());
+#if defined(NANA_ENABLE_PNG)
+					ptr = std::make_shared<detail::image_png>;
+#else
+					return false;
+#endif
+					break;
+				}
+
+				if (ext_jpg == ext || ext_jpeg == ext)
+				{
+#if defined(NANA_ENABLE_JPEG)
+					ptr = std::make_shared<detail::image_jpeg>();
+#else
+					return false;
+#endif
+					break;
+				}
+			} while (false);
+
+			//Check for BMP
+			if (!ptr)
+			{
+#ifndef NANA_MINGW
+				std::ifstream ifs(p.c_str(), std::ios::binary);
+#else
+				std::ifstream ifs(to_osmbstr(to_utf8(p.native())).c_str(), std::ios::binary);
+#endif
+				if (ifs)
+				{
+					unsigned short meta = 0;
+					ifs.read(reinterpret_cast<char*>(&meta), 2);
+					if (*reinterpret_cast<const short*>("BM") == meta)
+						ptr = std::make_shared<detail::image_bmp>();
+					else if (*reinterpret_cast<const short*>("MZ") == meta)
+						ptr = std::make_shared<detail::image_ico>(false);
 				}
 			}
-			return false;
+
+			return ptr;
+		}
+
+		bool image::open(const ::std::string& file)
+		{
+			::nana::experimental::filesystem::path path(file);
+			image_ptr_ = create_image(path);
+			return (image_ptr_ ? image_ptr_->open(path) : false);
+		}
+
+		bool image::open(const std::wstring& file)
+		{
+			::nana::experimental::filesystem::path path(file);
+			image_ptr_ = create_image(path);
+			return (image_ptr_ ? image_ptr_->open(path) : false);
 		}
 
 		bool image::open_icon(const void* data, std::size_t bytes)

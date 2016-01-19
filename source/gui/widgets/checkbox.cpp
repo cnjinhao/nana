@@ -1,7 +1,7 @@
 /*
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -60,8 +60,12 @@ namespace checkbox
 
 			void drawer::mouse_up(graph_reference graph, const arg_mouse&)
 			{
-				if(impl_->react)
+				if (impl_->react)
+				{
 					impl_->crook.reverse();
+					arg_checkbox arg{ static_cast<nana::checkbox*>(widget_) };
+					API::events<nana::checkbox>(widget_->handle()).checked.emit(arg);
+				}
 				refresh(graph);
 				API::lazy_refresh();
 			}
@@ -164,9 +168,15 @@ namespace checkbox
 
 		void checkbox::check(bool chk)
 		{
-			typedef drawerbase::checkbox::crook_state crook_state;
-			get_drawer_trigger().impl()->crook.check(chk ? crook_state::checked : crook_state::unchecked);
-			API::refresh_window(handle());
+			using crook_state = drawerbase::checkbox::crook_state;
+			if (checked() != chk)
+			{
+				get_drawer_trigger().impl()->crook.check(chk ? crook_state::checked : crook_state::unchecked);
+				API::refresh_window(handle());
+
+				arg_checkbox arg(this);
+				this->events().checked.emit(arg);
+			}
 		}
 
 		void checkbox::radio(bool is_radio)
@@ -208,15 +218,28 @@ namespace checkbox
 			uiobj.check(false);
 			uiobj.react(false);
 
-			element_tag el;
+			element_tag el = {};
 
 			el.uiobj = &uiobj;
+
+			uiobj.events().checked.connect_unignorable([this](const arg_checkbox& arg)
+			{
+				if (arg.widget->checked())
+				{
+					for (auto & ck : ui_container_)
+					{
+						if (ck.uiobj->handle() != arg.widget->handle())
+							ck.uiobj->check(false);
+					}
+				}
+			}, true);
+
 			el.eh_checked = uiobj.events().click.connect_unignorable([this](const arg_click& arg)
 			{
 				for (auto & i : ui_container_)
 					i.uiobj->check(arg.window_handle == i.uiobj->handle());
 			}, true);
-
+			
 			el.eh_destroy = uiobj.events().destroy.connect_unignorable([this](const arg_destroy& arg)
 			{
 				for (auto i = ui_container_.begin(); i != ui_container_.end(); ++i)
@@ -228,6 +251,39 @@ namespace checkbox
 					}
 				}
 			});
+
+			el.eh_keyboard = uiobj.events().key_press.connect_unignorable([this](const arg_keyboard& arg)
+			{
+				auto window_handle = arg.window_handle;
+
+				auto i = std::find_if(ui_container_.begin(), ui_container_.end(), [window_handle](const element_tag& e){
+					return (e.uiobj->handle() == window_handle);
+				});
+				
+				if (ui_container_.end() == i)
+					return;
+
+				checkbox * target;
+
+				if (keyboard::os_arrow_up == arg.key)
+				{
+					if (ui_container_.begin() != i)
+						target = (i - 1)->uiobj;
+					else
+						target = ui_container_.back().uiobj;
+				}
+				else if (keyboard::os_arrow_down == arg.key)
+				{
+					if (ui_container_.end() - 1 != i)
+						target = (i + 1)->uiobj;
+					else
+						target = ui_container_.front().uiobj;
+				}
+
+				target->check(true);
+				target->focus();
+			});
+			
 
 			ui_container_.push_back(el);
 		}

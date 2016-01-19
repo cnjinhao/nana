@@ -2,6 +2,7 @@
 #define NANA_PAINT_DETAIL_IMAGE_ICO_HPP
 
 #include <nana/paint/detail/image_impl_interface.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 namespace nana{	namespace paint
 {

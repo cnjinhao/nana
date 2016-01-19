@@ -282,6 +282,7 @@ namespace filesystem
 
 
 	file_status status(const path& p);
+	file_status status(const path& p, std::error_code&);
 
 	std::uintmax_t file_size(const path& p);
 	//uintmax_t file_size(const path& p, error_code& ec) noexcept;
@@ -315,7 +316,8 @@ namespace filesystem
 	bool create_directory(const path& p, const path& attributes);
 	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
 	
-	bool modified_file_time(const std::wstring& file, struct tm&);
+	bool modified_file_time(const path& p, struct tm&);
+
 	path path_user();
 	
 	path current_path();
@@ -324,14 +326,13 @@ namespace filesystem
 	//void current_path(const path& p, error_code& ec) noexcept;    
 
 
-	//bool remove(const path& p);
-	//bool remove(const path& p, error_code& ec) noexcept;
-	bool rmfile(const path& p);
+	bool remove(const path& p);
+	bool remove(const path& p, std::error_code& ec); // noexcept;
 
 	//uintmax_t remove_all(const path& p);
 	//uintmax_t remove_all(const path& p, error_code& ec) noexcept;
 
-	bool rmdir(const path& p, bool fails_if_not_empty);
+	//bool rmdir(const path& p, bool fails_if_not_empty);	//deprecated
 
 	template<typename CharType>
 	std::basic_string<CharType> parent_path(const std::basic_string<CharType>& path)

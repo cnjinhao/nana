@@ -1,7 +1,7 @@
 /*
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -15,8 +15,6 @@
 #define NANA_PAINT_IMAGE_HPP
 
 #include "graphics.hpp"
-
-#include <nana/filesystem/filesystem.hpp>
 
 namespace nana
 {
@@ -33,18 +31,14 @@ namespace paint
 		image();
 		image(const image&);
 		image(image&&);
-		image(const ::nana::experimental::filesystem::path& file);
-
-		template<typename Source>
-		image(const Source& source)
-		{
-			open(source);
-		}
+		explicit image(const ::std::string& file);
+		explicit image(const ::std::wstring& file);
 
 		~image();
 		image& operator=(const image& rhs);
 		image& operator=(image&&);
-		bool open(const ::nana::experimental::filesystem::path& file);
+		bool open(const ::std::string& file);
+		bool open(const ::std::wstring& file);
 		
 		/// Opens an icon from a specified buffer
 		bool open_icon(const void* data, std::size_t bytes);

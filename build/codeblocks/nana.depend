@@ -745,8 +745,8 @@
 1447167067 source:d:\git.repo\nana\source\gui\detail\events_operation.cpp
 	<nana/gui/detail/events_operation.hpp>
 
-1444647213 source:d:\git.repo\nana\source\gui\detail\native_window_interface.cpp
-	<nana/config.hpp>
+1453137865 source:d:\git.repo\nana\source\gui\detail\native_window_interface.cpp
+	<nana/detail/platform_spec_selector.hpp>
 	<nana/gui/detail/native_window_interface.hpp>
 	<nana/gui/screen.hpp>
 	<nana/std_mutex.hpp>
@@ -755,9 +755,11 @@
 	"../../paint/detail/image_ico.hpp"
 	<nana/system/platform.hpp>
 	<nana/gui/detail/bedrock.hpp>
+	<nana/gui/detail/window_manager.hpp>
 
-1452100459 d:\git.repo\nana\source\paint\detail\image_ico.hpp
+1453189013 d:\git.repo\nana\source\paint\detail\image_ico.hpp
 	<nana/paint/detail/image_impl_interface.hpp>
+	<nana/filesystem/filesystem.hpp>
 
 1451801884 source:d:\git.repo\nana\source\gui\detail\window_layout.cpp
 	<nana/gui/detail/window_layout.hpp>
@@ -802,10 +804,9 @@
 	<nana/std_mutex.hpp>
 	<mutex>
 
-1453128893 source:d:\git.repo\nana\source\gui\filebox.cpp
+1453222083 source:d:\git.repo\nana\source\gui\filebox.cpp
 	<nana/gui.hpp>
 	<nana/gui/filebox.hpp>
-	<nana/filesystem/fs_utility.hpp>
 	<nana/filesystem/filesystem.hpp>
 	<windows.h>
 	<nana/gui/widgets/label.hpp>
@@ -909,7 +910,7 @@
 	<nana/gui/widgets/detail/tree_cont.hpp>
 	<stdexcept>
 
-1452100459 source:d:\git.repo\nana\source\gui\widgets\checkbox.cpp
+1453214888 source:d:\git.repo\nana\source\gui\widgets\checkbox.cpp
 	<nana/gui/widgets/checkbox.hpp>
 	<nana/paint/text_renderer.hpp>
 	<nana/gui/element.hpp>
@@ -1319,9 +1320,8 @@
 	"../basic_types.hpp"
 	"../traits.hpp"
 
-1453125056 d:\git.repo\nana\include\nana\paint\image.hpp
+1453215024 d:\git.repo\nana\include\nana\paint\image.hpp
 	"graphics.hpp"
-	<nana/filesystem/filesystem.hpp>
 
 1452100458 d:\git.repo\nana\include\nana\paint\graphics.hpp
 	"../basic_types.hpp"
@@ -1333,7 +1333,7 @@
 	<nana/gui/basis.hpp>
 	<memory>
 
-1453129811 d:\git.repo\nana\include\nana\filesystem\filesystem.hpp
+1453221913 d:\git.repo\nana\include\nana\filesystem\filesystem.hpp
 	<string>
 	<system_error>
 	<iterator>
@@ -1391,7 +1391,7 @@
 	"color_schemes.hpp"
 	"internal_scope_guard.hpp"
 
-1452100458 d:\git.repo\nana\include\nana\gui\detail\general_events.hpp
+1453221339 d:\git.repo\nana\include\nana\gui\detail\general_events.hpp
 	<nana/gui/basis.hpp>
 	"event_code.hpp"
 	"internal_scope_guard.hpp"
@@ -1615,7 +1615,7 @@
 	<nana/gui/layout_utility.hpp>
 	<nana/gui/detail/window_layout.hpp>
 
-1453130060 source:d:\git.repo\nana\source\filesystem\filesystem.cpp
+1453221942 source:d:\git.repo\nana\source\filesystem\filesystem.cpp
 	<nana/filesystem/filesystem.hpp>
 	<vector>
 	<windows.h>
@@ -1753,7 +1753,7 @@
 1452100757 d:\git.repo\nana\include\nana\gui\tooltip.hpp
 	"widgets/widget.hpp"
 
-1452100458 d:\git.repo\nana\include\nana\gui\widgets\checkbox.hpp
+1453214821 d:\git.repo\nana\include\nana\gui\widgets\checkbox.hpp
 	"widget.hpp"
 	<vector>
 	<memory>
@@ -1843,8 +1843,9 @@
 1452100458 d:\git.repo\nana\include\nana\paint\detail\native_paint_interface.hpp
 	<nana/basic_types.hpp>
 
-1452100458 d:\git.repo\nana\include\nana\paint\detail\image_impl_interface.hpp
+1453189097 d:\git.repo\nana\include\nana\paint\detail\image_impl_interface.hpp
 	"../image.hpp"
+	<nana/filesystem/filesystem.hpp>
 
 1447167068 d:\git.repo\nana\source\paint\detail\image_jpeg.hpp
 	"image_pixbuf.hpp"
