@@ -23,6 +23,14 @@
 
 // Here defines some flags that tell Nana what features will be supported.
 
+
+//Support of std::thread
+//Boost.Thread is preferred.
+//NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ is only available on MinGW when STD_THREAD_NOT_SUPPORTED is defined.
+//if NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ is enabled, Boost.Thread will be replaced with meganz's mingw-std-threads.
+//https://github.com/meganz/mingw-std-threads
+//#define NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ
+
 ///////////////////
 //Support for PNG
 //	Define the NANA_ENABLE_PNG to enable the support of PNG.

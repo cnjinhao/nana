@@ -32,7 +32,6 @@
  *	- STD_CODECVT_NOT_SUPPORTED (VC RC, <codecvt> is a known issue on libstdc++, it works on libc++)
  *	- STD_THREAD_NOT_SUPPORTED (GCC < 4.8.1)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
- *	- USE_github_com_meganz_mingw_std_threads  (MinGW with GCC < 4.8.1)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED (MinGW with GCC < 4.8.1)
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
  *	- VERBOSE_PREPROCESSOR, STOP_VERBOSE_PREPROCESSOR
@@ -123,14 +122,6 @@
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
 			#define STD_THREAD_NOT_SUPPORTED
-
-			//boost.thread is preferred
-			//but if USE_github_com_meganz_mingw_std_threads is enabled,
-			//boost.thread will be replaced with meganz's mingw-std-threads.
-			// https://github.com/meganz/mingw-std-threads
-			#if !defined( USE_github_com_meganz_mingw_std_threads )
-				//#define USE_github_com_meganz_mingw_std_threads
-			#endif
 		#endif
 
 		#if (__GNUC_MINOR__ < 9)
