@@ -237,7 +237,7 @@ namespace paint
 #if defined(NANA_WINDOWS)
 					ptr = std::make_shared<detail::image_ico>(true);
 #else
-					return false;
+					return ptr;
 #endif
 					break;
 				}
@@ -247,7 +247,7 @@ namespace paint
 #if defined(NANA_ENABLE_PNG)
 					ptr = std::make_shared<detail::image_png>;
 #else
-					return false;
+					return ptr;
 #endif
 					break;
 				}
@@ -257,7 +257,7 @@ namespace paint
 #if defined(NANA_ENABLE_JPEG)
 					ptr = std::make_shared<detail::image_jpeg>();
 #else
-					return false;
+					return ptr;
 #endif
 					break;
 				}

@@ -263,7 +263,7 @@ namespace checkbox
 				if (ui_container_.end() == i)
 					return;
 
-				checkbox * target;
+				checkbox * target = nullptr;
 
 				if (keyboard::os_arrow_up == arg.key)
 				{
@@ -280,8 +280,11 @@ namespace checkbox
 						target = ui_container_.front().uiobj;
 				}
 
-				target->check(true);
-				target->focus();
+				if(target)
+				{
+					target->check(true);
+					target->focus();
+				}
 			});
 			
 

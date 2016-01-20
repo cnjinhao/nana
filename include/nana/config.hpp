@@ -106,6 +106,12 @@
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
+
+
+		#ifndef STD_MAKE_UNIQUE_NOT_SUPPORTED
+			#define STD_MAKE_UNIQUE_NOT_SUPPORTED
+		#endif
+
 	#endif
 
 #elif defined(__GNUC__) //GCC

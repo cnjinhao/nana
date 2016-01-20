@@ -364,6 +364,8 @@ namespace filesystem
 
 }//end namespace filesystem
 } //end namespace experimental
+
+	namespace filesystem = experimental::filesystem;
 }//end namespace nana
 
 #endif

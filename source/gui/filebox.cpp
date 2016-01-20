@@ -142,7 +142,7 @@ namespace nana
 				auto path = path_.caption();
 				auto root = path.substr(0, path.find('/'));
 				if(root == "HOME")
-					path.replace(0, 4, to_nstring(nana::filesystem::path_user()));
+					path.replace(0, 4, nana::filesystem::path_user().native());
 				else if(root == "FILESYSTEM")
 					path.erase(0, 10);
 				else
@@ -344,9 +344,9 @@ namespace nana
 			else
 				dir = saved_selected_path;
 
-			_m_load_cat_path(dir.size() ? dir : to_nstring(nana::filesystem::path_user()));
+			_m_load_cat_path(dir.size() ? dir : nana::filesystem::path_user().native());
 
-			tb_file_.caption(file_with_path_removed);					
+			tb_file_.caption(file_with_path_removed);
 		}
 		
 		void add_filter(const std::string& desc, const std::string& type)
@@ -430,7 +430,7 @@ namespace nana
 			namespace fs = ::nana::experimental::filesystem;
 
 			std::vector<std::string> paths;
-			paths.emplace_back(nana::filesystem::path_user());
+			paths.emplace_back(fs::path_user().native());
 			paths.emplace_back("/");
 
 			fs::directory_iterator end;
@@ -474,7 +474,7 @@ namespace nana
 			{
 				auto begstr = path.substr(0, pos);
 				if(begstr == "FS.HOME")
-					path.replace(0, 7, to_nstring(nana::filesystem::path_user()));
+					path.replace(0, 7, nana::filesystem::path_user().native());
 				else
 					path.erase(0, pos);
 				return begstr;
@@ -534,7 +534,7 @@ namespace nana
 			while(!beg_node.empty() && (beg_node != nodes_.home) && (beg_node != nodes_.filesystem))
 				beg_node = beg_node.owner();
 			
-			auto head = to_nstring(nana::filesystem::path_user());
+			auto head = nana::filesystem::path_user().native();
 			if(path.size() >= head.size() && (path.substr(0, head.size()) == head))
 			{//This is HOME
 				path_.caption("HOME");
