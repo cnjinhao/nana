@@ -319,7 +319,7 @@ namespace drawerbase {
 				std::wstring line_text;
 				if (editor->getline(line_index, line_text))
 				{
-					text = utf8_cast(line_text);
+					text = to_utf8(line_text);
 					return true;
 				}
 			}

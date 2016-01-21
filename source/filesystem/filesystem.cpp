@@ -282,20 +282,12 @@ namespace nana {	namespace experimental {
 
 		void path::_m_assign(const std::string& source_utf8)
 		{
-#if defined(NANA_WINDOWS)
-			pathstr_ = utf8_cast(source_utf8);
-#else
-			pathstr_ = source_utf8;
-#endif
+			pathstr_ = to_nstring(source_utf8);
 		}
 
 		void path::_m_assign(const std::wstring& source)
 		{
-#if defined(NANA_WINDOWS)
-			pathstr_ = source;
-#else
-			pathstr_ = utf8_cast(source);
-#endif			
+			pathstr_ = to_nstring(source);	
 		}
 		//end class path
 

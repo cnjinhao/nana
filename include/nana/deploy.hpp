@@ -100,9 +100,6 @@ namespace nana
 	void throw_not_utf8(const char*, unsigned len);
 	void throw_not_utf8(const char*);
 
-	std::wstring utf8_cast(const std::string&);
-	std::string utf8_cast(const std::wstring&);
-
 	const std::string& to_utf8(const std::string&);
 	std::string to_utf8(const std::wstring&);
 

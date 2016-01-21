@@ -332,8 +332,6 @@ namespace filesystem
 	//uintmax_t remove_all(const path& p);
 	//uintmax_t remove_all(const path& p, error_code& ec) noexcept;
 
-	//bool rmdir(const path& p, bool fails_if_not_empty);	//deprecated
-
 	template<typename CharType>
 	std::basic_string<CharType> parent_path(const std::basic_string<CharType>& path)
 	{	

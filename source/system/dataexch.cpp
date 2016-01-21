@@ -43,7 +43,7 @@ namespace nana{ namespace system{
 #ifdef NANA_WINDOWS
 			_m_set(format::text, text.c_str(), (text.length() + 1) * sizeof(wchar_t));
 #else
-			std::string str = utf8_cast(text);
+			std::string str = to_utf8(text);
 			_m_set(format::text, str.c_str(), str.size() + 1);
 #endif
 		}
@@ -129,7 +129,7 @@ namespace nana{ namespace system{
 				if (pos != wstr.npos)
 					wstr.erase(pos + 1);
 
-				text_utf8 = utf8_cast(wstr);
+				text_utf8 = to_utf8(wstr);
 #else
 				text_utf8.reserve(size);
 				text_utf8.append(reinterpret_cast<char*>(res), reinterpret_cast<char*>(res) + size);
@@ -169,7 +169,7 @@ namespace nana{ namespace system{
 					text_utf8.erase(pos + 1);
 				::XFree(res);
 
-				str = utf8_cast(text_utf8);
+				str = to_wstring(text_utf8);
 #endif
 			}
 		}

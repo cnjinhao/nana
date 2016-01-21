@@ -57,13 +57,7 @@ namespace drawerbase
 		public:
 			implement * impl() const;
 		private:
-			void _m_draw_background(graph_reference);
-			void _m_draw_checkbox(graph_reference, unsigned first_line_height);
-			void _m_draw_title(graph_reference);
-		private:
 			static const int interval = 4;
-			widget* widget_;
-			std::unique_ptr<implement> imptr_;
 			implement * impl_;
 		};
 	}//end namespace checkbox

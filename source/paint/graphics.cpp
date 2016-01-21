@@ -949,8 +949,7 @@ namespace paint
 
 		void graphics::string(const point& pos, const std::string& text_utf8)
 		{
-			throw_not_utf8(text_utf8);
-			string(pos, utf8_cast(text_utf8));
+			string(pos, to_wstring(text_utf8));
 		}
 
 		void graphics::string(const point& pos, const std::string& text_utf8, const color& clr)

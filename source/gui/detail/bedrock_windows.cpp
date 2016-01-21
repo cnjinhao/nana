@@ -1191,7 +1191,7 @@ namespace detail
 
 							::DragQueryFile(drop, i, varbuf.get(), reqlen);
 
-							dropfiles.files.emplace_back(utf8_cast(varbuf.get()));
+							dropfiles.files.emplace_back(to_utf8(varbuf.get()));
 						}
 
 						while(msgwnd && (msgwnd->flags.dropable == false))

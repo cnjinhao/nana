@@ -17,39 +17,68 @@
 
 namespace nana{ namespace drawerbase
 {
-namespace checkbox
-{
-	typedef element::crook_interface::state crook_state;
-
-	struct drawer::implement
+	namespace checkbox
 	{
-		bool react;
-		bool radio;
-		facade<element::crook> crook;
-	};
+		typedef element::crook_interface::state crook_state;
+
+		struct drawer::implement
+		{
+			widget * widget_ptr;
+			bool react;
+			bool radio;
+			facade<element::crook> crook;
+		};
+
+		//class drawer
 
 			drawer::drawer()
-				: widget_(nullptr),
-					imptr_(new drawer::implement),
-					impl_(imptr_.get())
+				:	impl_(new implement)
 			{
+				impl_->widget_ptr = nullptr;
 				impl_->react = true;
 				impl_->radio = false;
 			}
 
 			drawer::~drawer()
-			{}
+			{
+				delete impl_;
+			}
 
 			void drawer::attached(widget_reference widget, graph_reference)
 			{
-				widget_ = &widget;
+				impl_->widget_ptr = &widget;
 			}
 
 			void drawer::refresh(graph_reference graph)
 			{
-				_m_draw_background(graph);
-				_m_draw_title(graph);
-				_m_draw_checkbox(graph, graph.text_extent_size(L"jN", 2).height + 2);
+				auto wdg = impl_->widget_ptr;
+
+				//draw background
+				if (bground_mode::basic != API::effects_bground_mode(*wdg))
+					graph.rectangle(true, wdg->bgcolor());
+
+				//draw title
+				if (graph.width() > 16 + interval)
+				{
+					auto title = to_wstring(wdg->caption_native());
+					unsigned pixels = graph.width() - (16 + interval);
+
+					nana::paint::text_renderer tr(graph);
+					if (!wdg->enabled())
+					{
+						graph.palette(true, colors::white);
+						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels);
+						graph.palette(true, static_cast<color_rgb>(0x808080));
+					}
+					else
+						graph.palette(true, wdg->fgcolor());
+
+					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels);
+				}
+
+				//draw crook
+				auto txt_px = graph.text_extent_size(L"jN", 2).height + 2;
+				impl_->crook.draw(graph, wdg->bgcolor(), wdg->fgcolor(), rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), API::element_state(*wdg));
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
@@ -63,8 +92,8 @@ namespace checkbox
 				if (impl_->react)
 				{
 					impl_->crook.reverse();
-					arg_checkbox arg{ static_cast<nana::checkbox*>(widget_) };
-					API::events<nana::checkbox>(widget_->handle()).checked.emit(arg);
+					arg_checkbox arg{ static_cast<nana::checkbox*>(impl_->widget_ptr) };
+					API::events<nana::checkbox>(impl_->widget_ptr->handle()).checked.emit(arg);
 				}
 				refresh(graph);
 				API::lazy_refresh();
@@ -85,39 +114,6 @@ namespace checkbox
 			drawer::implement * drawer::impl() const
 			{
 				return impl_;
-			}
-
-			void drawer::_m_draw_background(graph_reference graph)
-			{
-				if(bground_mode::basic != API::effects_bground_mode(*widget_))
-					graph.rectangle(true, API::bgcolor(*widget_));
-			}
-
-			void drawer::_m_draw_checkbox(graph_reference graph, unsigned first_line_height)
-			{
-				impl_->crook.draw(graph, widget_->bgcolor(), widget_->fgcolor(), rectangle(0, first_line_height > 16 ? (first_line_height - 16) / 2 : 0, 16, 16), API::element_state(*widget_));
-			}
-
-			void drawer::_m_draw_title(graph_reference graph)
-			{
-				if (graph.width() > 16 + interval)
-				{
-					std::wstring title = ::nana::charset(widget_->caption(), ::nana::unicode::utf8);
-
-					unsigned pixels = graph.width() - (16 + interval);
-
-					nana::paint::text_renderer tr(graph);
-					if (API::window_enabled(widget_->handle()) == false)
-					{
-						graph.palette(true, colors::white);
-						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels);
-						graph.palette(true, { 0x80, 0x80, 0x80 });
-					}
-					else
-						graph.palette(true, widget_->fgcolor());
-
-					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels);
-				}
 			}
 		//end class drawer
 	} //end namespace checkbox
@@ -209,6 +205,7 @@ namespace checkbox
 				e.uiobj->react(true);
 				API::umake_event(e.eh_checked);
 				API::umake_event(e.eh_destroy);
+				API::umake_event(e.eh_keyboard);
 			}
 		}
 

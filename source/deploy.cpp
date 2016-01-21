@@ -487,16 +487,6 @@ namespace nana
 		
 	}
 
-	std::wstring utf8_cast(const std::string& text)
-	{
-		return ::nana::charset(text, ::nana::unicode::utf8);
-	}
-
-	std::string utf8_cast(const std::wstring& text)
-	{
-		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
-	}
-
 	const std::string& to_utf8(const std::string& str)
 	{
 		return str;

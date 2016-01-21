@@ -158,7 +158,7 @@ namespace nana
 				iresolver& operator>>(double&);
 				iresolver& operator>>(long double&);
 
-				iresolver& operator>>(std::string& utf8_cast);
+				iresolver& operator>>(std::string& text_utf8);
 				iresolver& operator>>(std::wstring&);
 				iresolver& operator>>(cell&);
 				iresolver& operator>>(std::nullptr_t);

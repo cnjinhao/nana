@@ -912,7 +912,7 @@ namespace nana
 				::GetCurrentDirectory(len, &(path[0]));
 				path.resize(len);
 
-				impl_->path = utf8_cast(path);
+				impl_->path = to_utf8(path);
 			}
 #endif
 		}
@@ -1002,9 +1002,9 @@ namespace nana
 			{
 				for(auto & f : impl_->filters)
 				{
-					filter_holder += utf8_cast(f.des);
+					filter_holder += to_wstring(f.des);
 					filter_holder += static_cast<std::wstring::value_type>('\0');
-					std::wstring fs = utf8_cast(f.type);
+					std::wstring fs = to_wstring(f.type);
 					std::size_t pos = 0;
 					while(true)
 					{
@@ -1036,8 +1036,8 @@ namespace nana
 			else
 				filter = L"All Files\0*.*\0";
 
-			auto wtitle = utf8_cast(impl_->title);
-			auto wpath = utf8_cast(impl_->path);
+			auto wtitle = to_wstring(impl_->title);
+			auto wpath = to_wstring(impl_->path);
 			ofn.lpstrFilter = filter;
 			ofn.lpstrTitle = (wtitle.empty() ? nullptr : wtitle.c_str());
 			ofn.nFilterIndex = 0;
@@ -1053,7 +1053,7 @@ namespace nana
 				return false;
 			
 			wfile.resize(std::wcslen(wfile.data()));
-			impl_->file = utf8_cast(wfile);
+			impl_->file = to_utf8(wfile);
 #elif defined(NANA_POSIX)
 			filebox_implement fb(impl_->owner, impl_->open_or_save, impl_->title);
 			

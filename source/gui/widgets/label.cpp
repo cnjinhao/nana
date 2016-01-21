@@ -851,7 +851,7 @@ namespace nana
 			throw_not_utf8(str);
 			drawerbase::label::renderer rd;
 			rd.format(format_enabled);
-			rd.parse(utf8_cast(str));
+			rd.parse(to_wstring(str));
 			return rd.measure(graph, allowed_width_in_pixel, h_align, v_align);
 		}
 

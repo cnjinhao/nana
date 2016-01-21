@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1255,11 +1255,12 @@ namespace nana{	namespace widgets
 						return (a.begin < b.begin);
 					});
 
-					auto previous = entities.begin();
-					auto i = previous + 1;
-					while(i != entities.end())
+					auto i = entities.begin();
+					auto bound = i->end;
+
+					for (++i; i != entities.end(); )
 					{
-						if (previous->end > i->begin)
+						if (bound > i->begin)
 							i = entities.erase(i);  // erase overlaping. Left only the first.
 						else
 							++i;
@@ -1321,7 +1322,7 @@ namespace nana{	namespace widgets
 			auto sp = std::make_shared<keyword_scheme>();
 			sp->fgcolor = fgcolor;
 			sp->bgcolor = bgcolor;
-			keywords_->schemes[name] = sp;
+			keywords_->schemes[name].swap(sp);
 		}
 
 		void text_editor::erase_highlight(const std::string& name)

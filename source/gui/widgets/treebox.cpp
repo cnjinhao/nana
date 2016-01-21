@@ -343,8 +343,8 @@ namespace nana
 					else
 					{
 						wchar_t wstr[2] = { key, 0 };
-						pattern += utf8_cast(wstr);
-						track_node.key_buf += utf8_cast(wstr);
+						pattern += to_utf8(wstr);
+						track_node.key_buf += to_utf8(wstr);
 					}
 
 					const node_type *begin = node_state.selected ? node_state.selected : attr.tree_cont.get_root()->child;
@@ -995,7 +995,7 @@ namespace nana
 
 				bool item_proxy::operator==(const wchar_t* s) const
 				{
-					return (node_ && s && (node_->value.second.text == utf8_cast(s)));
+					return (node_ && s && (node_->value.second.text == to_utf8(s)));
 				}
 
 				// Behavior of Iterator

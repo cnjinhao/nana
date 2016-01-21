@@ -207,7 +207,7 @@ namespace detail
 #endif
 #endif
 		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
-		def_font_ptr_ = make_native_font(utf8_cast(metrics.lfMessageFont.lfFaceName).c_str(), font_size_to_height(9), 400, false, false, false);
+		def_font_ptr_ = make_native_font(to_utf8(metrics.lfMessageFont.lfFaceName).c_str(), font_size_to_height(9), 400, false, false, false);
 	}
 
 	const platform_spec::font_ptr_t& platform_spec::default_native_font() const
@@ -244,7 +244,7 @@ namespace detail
 		memset(&logfont, 0, sizeof logfont);
 
 		if (name && *name)
-			std::wcscpy(logfont.lfFaceName, utf8_cast(name).c_str());
+			std::wcscpy(logfont.lfFaceName, to_wstring(name).c_str());
 		else
 			std::wcscpy(logfont.lfFaceName, def_font_ptr_->name.c_str());
 

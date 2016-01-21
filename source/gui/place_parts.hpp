@@ -83,7 +83,7 @@ namespace nana
 				graph.rectangle(true, static_cast<color_rgb>(0x83EB));
 
 				//draw caption
-				auto text = utf8_cast(API::window_caption(window_handle_));
+				auto text = to_wstring(API::window_caption(window_handle_));
 				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, true);
 
 				//draw x button

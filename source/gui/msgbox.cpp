@@ -435,7 +435,7 @@ namespace nana
         default:    break;
 		}
 
-		auto bt = ::MessageBoxW(reinterpret_cast<HWND>(API::root(wd_)), utf8_cast(sstream_.str()).c_str(), utf8_cast(title_).c_str(), type);
+		auto bt = ::MessageBoxW(reinterpret_cast<HWND>(API::root(wd_)), to_wstring(sstream_.str()).c_str(), to_wstring(title_).c_str(), type);
 
 		switch(bt)
 		{
@@ -835,7 +835,7 @@ namespace nana
 
 	void inputbox::text::tip_string(std::wstring tip)
 	{
-		impl_->tip = utf8_cast(tip);
+		impl_->tip = to_utf8(tip);
 	}
 
 	void inputbox::text::tip_string(std::string tip_utf8)
