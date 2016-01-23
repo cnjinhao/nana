@@ -26,13 +26,9 @@ namespace nana
 				std::jmp_buf	setjmp_buf;
 			};
 		public:
-			bool open(const nana::char_t* jpeg_file) override
+			bool open(const experimental::filesystem::path& jpeg_file) override
 			{
-#ifdef NANA_UNICODE
-				FILE * fp = ::fopen(static_cast<std::string>(nana::charset(jpeg_file)).c_str(), "rb");
-#else
-				FILE* fp = ::fopen(jpeg_file, "rb");
-#endif
+				auto fp = ::fopen(to_osmbstr(to_utf8(jpeg_file.native())).c_str(), "rb");
 				if(nullptr == fp) return false;
 
 				bool is_opened = false;

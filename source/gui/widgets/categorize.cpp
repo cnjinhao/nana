@@ -579,17 +579,17 @@ namespace nana
 
 						if ((style_.module.index != npos) && style_.module.have_selected)
 						{
+							node_handle node = nullptr;
 							if (ui_element::item_arrow == style_.list_trigger)
 							{
 								treebase_.tail(style_.active);
-								node_handle node = treebase_.find_child(style_.module.items[style_.module.index]->text());
+								node = treebase_.find_child(style_.module.items[style_.module.index]->text());
 								if (!node)
 								{
 									style_.listbox = nullptr;
 									return;
 								}
 								treebase_.cur(node);
-								_m_selected(node);
 							}
 							else if (ui_element::item_root != style_.list_trigger)
 							{
@@ -597,7 +597,9 @@ namespace nana
 								return;
 							}
 							else
-								_m_selected(treebase_.tail(style_.module.index));
+								node = treebase_.tail(style_.module.index);
+							
+							_m_selected(node);
 						}
 
 						API::refresh_window(window_);
