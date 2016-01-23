@@ -596,7 +596,8 @@ namespace nana
 								style_.listbox = nullptr;
 								return;
 							}
-							_m_selected(treebase_.tail(style_.module.index));
+							else
+								_m_selected(treebase_.tail(style_.module.index));
 						}
 
 						API::refresh_window(window_);
