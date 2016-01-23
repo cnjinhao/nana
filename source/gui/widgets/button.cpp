@@ -1,7 +1,7 @@
 /*
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -336,16 +336,14 @@ namespace nana{	namespace drawerbase
 
 		void trigger::_m_press(graph_reference graph, bool is_pressed)
 		{
-			bool draw = false;
 			if (is_pressed)
 			{
-				if (attr_.e_state != element_state::pressed)
-				{
-					attr_.e_state = element_state::pressed;
-					attr_.keep_pressed = true;
-					API::capture_window(*wdg_, true);
-					draw = true;
-				}
+				if (attr_.e_state == element_state::pressed)
+					return;
+
+				attr_.e_state = element_state::pressed;
+				attr_.keep_pressed = true;
+				API::capture_window(*wdg_, true);
 			}
 			else
 			{
@@ -354,24 +352,19 @@ namespace nana{	namespace drawerbase
 				if (attr_.enable_pushed && (false == attr_.pushed))
 				{
 					attr_.pushed = true;
+					return;
 				}
+
+				if (element_state::pressed == attr_.e_state)
+					attr_.e_state = element_state::hovered;
 				else
-				{
-					if (element_state::pressed == attr_.e_state)
-						attr_.e_state = element_state::hovered;
-					else
-						attr_.e_state = element_state::normal;
+					attr_.e_state = element_state::normal;
 
-					attr_.pushed = false;
-					draw = true;
-				}
+				attr_.pushed = false;
 			}
 
-			if (draw)
-			{
-				refresh(graph);
-				API::lazy_refresh();
-			}
+			refresh(graph);
+			API::lazy_refresh();
 		}
 
 		void trigger::emit_click()
@@ -518,14 +511,12 @@ namespace nana{	namespace drawerbase
 			{
 				API::unregister_shortkey(handle());
 
-				native_string_type ntext = std::move(text);
-
 				wchar_t shortkey;
-				API::transform_shortkey_text(to_utf8(ntext), shortkey, nullptr);
+				API::transform_shortkey_text(to_utf8(text), shortkey, nullptr);
 				if (shortkey)
 					API::register_shortkey(handle(), shortkey);
 
-				base_type::_m_caption(std::move(ntext));
+				base_type::_m_caption(std::move(text));
 			}
 		//end class button
 }//end namespace nana
