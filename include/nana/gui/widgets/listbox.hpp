@@ -466,13 +466,24 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-	struct arg_listbox
+    struct arg_listbox
+        : public event_arg
+    {
+        mutable drawerbase::listbox::item_proxy item;
+        bool    selected;
+
+        arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
+    };
+    struct arg_category
 		: public event_arg
 	{
-		mutable drawerbase::listbox::item_proxy item;
-		bool	selected;
+        drawerbase::listbox::cat_proxy category;
+        void block_category_change() const;
+        bool category_change_blocked() const;
 
-		arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
+        arg_category(const drawerbase::listbox::cat_proxy&);
+    private:
+        mutable bool _m_block_change;
 	};
 
 	namespace drawerbase
@@ -484,6 +495,7 @@ namespace nana
 			{
 				basic_event<arg_listbox> checked;
 				basic_event<arg_listbox> selected;
+                basic_event<arg_category> category_dbl_click;
 			};
 
 			struct scheme
@@ -615,6 +627,9 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		}
 
 		item_proxy at(const index_pair &abs_pos) const;
+        index_pair at(const point & pos) const;
+        columns_indexs column_from_pos(const point & pos);
+
 
 		void insert(const index_pair&, ::std::string);		///<Insert a new item with a text in the first column.
 		void insert(const index_pair&, ::std::wstring);		///<Insert a new item with a text in the first column.

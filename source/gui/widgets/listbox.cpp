@@ -2168,9 +2168,8 @@ namespace nana
 					return (seq.size() ? (header.item_pos(seq[0], nullptr) - scroll.offset_x + r.x) : 0);
 				}
 
-				bool calc_where(int x, int y)
-				{
-					decltype(pointer_where) new_where;
+				std::pair<parts, size_t> where(int x, int y){
+                    std::pair<parts, size_t> new_where;
 
 					if(2 < x && x < static_cast<int>(graph->width()) - 2 && 1 < y && y < static_cast<int>(graph->height()) - 1)
 					{
@@ -2201,7 +2200,12 @@ namespace nana
 						new_where.first = parts::unknown;
 						new_where.second = npos;
 					}
+                    return new_where;
+				}
 
+				bool calc_where(int x, int y)
+				{
+                    std::pair< parts, size_t > new_where=where(x,y);
 					if (new_where == pointer_where)
 						return false;
 
@@ -3545,7 +3549,7 @@ namespace nana
 					}
 				}
 
-				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
+				void trigger::dbl_click(graph_reference graph, const arg_mouse& arg)
 				{
 					if (essence_->pointer_where.first == essence_t::parts::header)
 						if (cursor::size_we == essence_->lister.wd_ptr()->cursor())
@@ -3567,19 +3571,24 @@ namespace nana
 						if (!item_pos.is_category())	//being the npos of item.second is a category
 							return;
 
-						bool do_expand = (lister.expand(item_pos.cat) == false);
-						lister.expand(item_pos.cat, do_expand);
+                        arg_category ai(cat_proxy(essence_, item_pos.cat));
+                        lister.wd_ptr()->events().category_dbl_click.emit(ai);
 
-						if(false == do_expand)
-						{
-							auto last = lister.last();
-							size_type n = essence_->number_of_lister_items(false);
-							if (lister.backward(last, n, last))
-								offset_y = last;
-						}
-						essence_->adjust_scroll_life();
-						refresh(graph);
-						API::lazy_refresh();
+                        if(!ai.category_change_blocked()){
+                            bool do_expand = (lister.expand(item_pos.cat) == false);
+                            lister.expand(item_pos.cat, do_expand);
+
+                            if(false == do_expand)
+                            {
+                                auto last = lister.last();
+                                size_type n = essence_->number_of_lister_items(false);
+                                if (lister.backward(last, n, last))
+                                    offset_y = last;
+                            }
+                            essence_->adjust_scroll_life();
+                            refresh(graph);
+                            API::lazy_refresh();
+                        }
 					}
 				}
 
@@ -4285,6 +4294,22 @@ namespace nana
 	{
 	}
 
+	arg_category::arg_category ( const nana::drawerbase::listbox::cat_proxy& cat )
+        : category(cat), _m_block_change(false)
+    {
+    }
+
+    void arg_category::block_category_change() const {
+        _m_block_change=true;
+    }
+
+    bool arg_category::category_change_blocked() const {
+        return _m_block_change;
+    }
+
+
+
+
 	//class listbox
 		listbox::listbox(window wd, bool visible)
 		{
@@ -4455,6 +4480,27 @@ namespace nana
 		{
 			return at(pos_abs.cat).at(pos_abs.item);
 		}
+
+        listbox::index_pair listbox::at ( const point& pos ) const
+        {
+            auto & ess=_m_ess();
+            auto _where=ess.where(pos.x, pos.y);
+            index_pair item_pos{npos,npos};
+            if(_where.first==drawerbase::listbox::essence_t::parts::lister){
+                auto & offset_y = ess.scroll.offset_y_dpl;
+                ess.lister.forward(offset_y, _where.second, item_pos);
+            }
+            return item_pos;
+        }
+
+        listbox::columns_indexs listbox::column_from_pos ( const point& pos )
+        {
+            auto & ess=_m_ess();
+            columns_indexs col=ess.header.item_by_x(pos.x - 2 - ess.scroll.offset_x);
+            return col;
+        }
+
+
 
 		void listbox::insert(const index_pair& pos, std::string text)
 		{
