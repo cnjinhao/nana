@@ -418,12 +418,14 @@ namespace nana
 	}//end namespace drawerbase
 
 	//class toolbar
-		toolbar::toolbar(window wd, bool visible)
+		toolbar::toolbar(window wd, bool visible, bool detached) :
+			detached_(detached)
 		{
 			create(wd, rectangle(), visible);
 		}
 
-		toolbar::toolbar(window wd, const rectangle& r, bool visible)
+		toolbar::toolbar(window wd, const rectangle& r, bool visible, bool detached) :
+			detached_(detached)
 		{
 			create(wd, r, visible);
 		}

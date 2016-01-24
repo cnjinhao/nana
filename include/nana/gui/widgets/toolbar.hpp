@@ -83,8 +83,8 @@ namespace nana
 		using size_type = std::size_t;      ///< A type to count the number of elements.
 
 		toolbar() = default;
-		toolbar(window, bool visible);
-		toolbar(window, const rectangle& = rectangle(), bool visible = true);
+		toolbar(window, bool visible, bool detached=false);
+		toolbar(window, const rectangle& = rectangle(), bool visible = true, bool detached = false);
 
 		void separate();                      ///< Adds a separator.
 		void append(const ::std::string& text, const nana::paint::image& img);   ///< Adds a control button.
