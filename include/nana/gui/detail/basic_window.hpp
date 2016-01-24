@@ -145,7 +145,7 @@ namespace detail
 		basic_window	*parent;
 		basic_window	*owner;
 
-		::nana::string	title;
+		native_string_type		title;
 		::nana::detail::drawer	drawer;	//Self Drawer with owen graphics
 		basic_window*		root_widget;	//A pointer refers to the root basic window, if the window is a root, the pointer refers to itself.
 		paint::graphics*	root_graph;		//Refer to the root buffer graphics

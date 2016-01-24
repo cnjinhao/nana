@@ -79,12 +79,11 @@ namespace nana
 
 			void refresh(graph_reference& graph) override
 			{
-				graph.set_color(static_cast<color_rgb>(0x83EB));
-				graph.set_text_color(colors::white);
-				graph.rectangle(true);
+				graph.palette(true, colors::white);
+				graph.rectangle(true, static_cast<color_rgb>(0x83EB));
 
 				//draw caption
-				auto text = API::window_caption(window_handle_);
+				auto text = to_wstring(API::window_caption(window_handle_));
 				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, true);
 
 				//draw x button
@@ -300,7 +299,7 @@ namespace nana
 							if (handle)
 								caption_.caption(API::window_caption(handle));
 							else
-								caption_.caption(::nana::string());
+								caption_.caption(::std::string());
 						});
 
 						tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });

@@ -1,5 +1,17 @@
+/*
+*	A Dragger Implementation
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/dragger.cpp
+*/
 
 #include <nana/gui/dragger.hpp>
+#include <nana/gui/programming_interface.hpp>
 
 namespace nana
 {
@@ -178,6 +190,23 @@ namespace nana
 		dragger::~dragger()
 		{
 			delete impl_;
+		}
+
+		dragger::dragger(dragger&& other)
+			: impl_(other.impl_)
+		{
+			other.impl_ = nullptr;
+		}
+
+		dragger& dragger::operator=(dragger&& other)
+		{
+			if (this != &other)
+			{
+				delete impl_;
+				impl_ = other.impl_;
+				other.impl_ = nullptr;
+			}
+			return *this;
 		}
 
 		void dragger::target(window wd)

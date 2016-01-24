@@ -67,7 +67,8 @@ namespace nana
 		}
 	};
 
-	typedef std::basic_string<nana::char_t, casei_char_traits<nana::char_t> > cistring;
+	using cistring = std::basic_string<char, casei_char_traits<char>>;
+	using ciwstring = std::basic_string<wchar_t, casei_char_traits<wchar_t>>;
 	
 
 	namespace detail

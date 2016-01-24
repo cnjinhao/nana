@@ -1,7 +1,7 @@
 /*
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -32,9 +32,9 @@ namespace nana
 				: public float_listbox::item_interface
 			{
 				nana::paint::image	item_image;
-				nana::string		item_text;
+				std::string		item_text;
 			public:
-				item(const nana::string& s)
+				item(const std::string& s)
 					: item_text(s)
 				{}
 			public:
@@ -44,7 +44,7 @@ namespace nana
 					return item_image;
 				}
 
-				const nana::char_t * text() const override
+				const char * text() const override
 				{
 					return item_text.data();
 				}
@@ -78,7 +78,7 @@ namespace nana
 
 					if(ue.what == ue.none || (API::window_enabled(wd) == false))
 					{	//the mouse is out of the widget.
-						style_.bgcolor = style_.bgcolor.blend(color{ 0xa0, 0xc9, 0xf5 }, 0.9);
+						style_.bgcolor = style_.bgcolor.blend(static_cast<color_rgb>(0xa0c9f5), 0.9);
 					}
 					graph.rectangle(r, true, style_.bgcolor);
 				}
@@ -90,7 +90,7 @@ namespace nana
 					if(ui_el_.what == ui_el_.item_root)
 					{
 						_m_item_bground(graph, r.x + 1, r.y, r.width - 2, r.height, (state == mouse_action::pressed ? mouse_action::pressed : mouse_action::over));
-						graph.rectangle(r, false, color{ 0x3C, 0x7F, 0xB1 });
+						graph.rectangle(r, false, static_cast<color_rgb>(0x3C7FB1));
 						if(state == mouse_action::pressed)
 						{
 							++arrow_r.x;
@@ -105,7 +105,7 @@ namespace nana
 					arrow.draw(graph, {}, style_.fgcolor, arrow_r, element_state::normal);
 				}
 
-				void item(graph_reference graph, const nana::rectangle& r, std::size_t index, const nana::string& name, unsigned txtheight, bool has_child, mouse_action state)
+				void item(graph_reference graph, const nana::rectangle& r, std::size_t index, const std::string& name_utf8, unsigned txtheight, bool has_child, mouse_action state)
 				{
 					nana::point strpos(r.x + 5, r.y + static_cast<int>(r.height - txtheight) / 2);
 
@@ -128,7 +128,7 @@ namespace nana
 						unsigned width = r.width - 2;
 						unsigned height = r.height - 2;
 
-						::nana::color clr{ 0x3C, 0x7F, 0xB1 };
+						::nana::color clr{static_cast<color_rgb>(0x3C7FB1)};
 						if(has_child)
 						{
 							width -= 16;
@@ -141,7 +141,7 @@ namespace nana
 						_m_item_bground(graph, r.x + 1, top, width, height, state_name);
 						graph.rectangle(r, false, clr);
 					}
-					graph.string(strpos, name, style_.fgcolor);
+					graph.string(strpos, name_utf8, style_.fgcolor);
 
 					if(has_child)
 					{
@@ -191,12 +191,14 @@ namespace nana
 						int bottom = y + height - 1;
 						int right = x + width - 1;
 
-						graph.set_color(static_cast<color_rgb>(0x6E8D9F));
-						graph.line(point{ x, y }, point{right, y});
+						graph.palette(false, static_cast<color_rgb>(0x6E8D9F));
+						graph.line(point{ x, y }, point{ right, y });
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
+
 						++x;
 						++y;
-						graph.set_color(color(0xa6, 0xc7, 0xd9));
+
+						graph.palette(false, static_cast<color_rgb>(0xa6c7d9));
 						graph.line(point{ x, y }, point{ right, y });
 						graph.line(point{ x, y + 1 }, point{ x, bottom });
 					}
@@ -218,7 +220,7 @@ namespace nana
 				using node_handle = container::node_type*;
 
 				tree_wrapper()
-					:splitstr_(STR("\\")), cur_(nullptr)
+					: splitstr_("\\")
 				{}
 
 				bool seq(std::size_t index, std::vector<node_handle> & seqv) const
@@ -234,23 +236,23 @@ namespace nana
 					return false;
 				}
 
-				void splitstr(const nana::string& ss)
+				void splitstr(const std::string& ss)
 				{
 					if(ss.size())
 						splitstr_ = ss;
 				}
 
-				const nana::string& splitstr() const
+				const std::string& splitstr() const
 				{
 					return splitstr_;
 				}
 
-				nana::string path() const
+				std::string path() const
 				{
 					std::vector<node_handle> v;
 					_m_read_node_path(v);
 
-					nana::string str;
+					std::string str;
 					bool not_head = false;
 					for(auto i : v)
 					{
@@ -263,23 +265,24 @@ namespace nana
 					return str;
 				}
 
-				void path(const nana::string& key)
+				void path(const std::string& key)
 				{
 					cur_ = tree_.ref(key);
 				}
 
-				node_handle at(std::size_t index) const
+				node_handle at(std::size_t pos) const
 				{
 					std::vector<node_handle> v;
 					_m_read_node_path(v);
-					return (index < v.size() ? v[index] : nullptr);
+					return (pos < v.size() ? v[pos] : nullptr);
 				}
 
 				node_handle tail(std::size_t index)
 				{
-					node_handle i = at(index);
-					if(i)	cur_ = i;
-					return i;
+					auto node = at(index);
+					if(node)
+						cur_ = node;
+					return node;
 				}
 
 				node_handle cur() const
@@ -287,12 +290,12 @@ namespace nana
 					return cur_;
 				}
 
-				void cur(node_handle i)
+				void cur(node_handle node)
 				{
-					cur_ = i;
+					cur_ = node;
 				}
 
-				void insert(const nana::string& name, const nana::any& value)
+				void insert(const std::string& name, const nana::any& value)
 				{
 					item_tag m;
 					m.pixels = 0;
@@ -300,36 +303,30 @@ namespace nana
 					cur_ = tree_.insert(cur_, name, m);
 				}
 
-				bool childset(const nana::string& name, const nana::any& value)
+				bool childset(const std::string& name, const nana::any& value)
 				{
 					if(cur_)
 					{
-						item_tag m;
-						m.pixels = 0;
-						m.value = value;
-						tree_.insert(cur_, name, m);
+						auto cur_before_insert = cur_;
+
+						insert(name, value);
+						cur_ = cur_before_insert;
 						return true;
 					}
 					return false;
 				}
 
-				bool childset_erase(const nana::string& name)
+				bool childset_erase(const std::string& name)
 				{
-					if(cur_)
-					{
-						for(node_handle i = cur_->child; i; i = i->next)
-						{
-							if(i->value.first == name)
-							{
-								tree_.remove(i);
-								return true;
-							}
-						}
-					}
-					return false;
+					auto node = find_child(name);
+					if (!node)
+						return false;
+
+					tree_.remove(node);
+					return true;
 				}
 
-				node_handle find_child(const nana::string& name) const
+				node_handle find_child(const std::string& name) const
 				{
 					if(cur_)
 					{
@@ -352,16 +349,16 @@ namespace nana
 					return false;
 				}
 			private:
-				void _m_read_node_path(std::vector<node_handle>& v) const
+				void _m_read_node_path(std::vector<node_handle>& nodes) const
 				{
-					node_handle root = tree_.get_root();
-					for(node_handle i = cur_; i && (i != root); i = i->owner)
-						v.insert(v.begin(), i);
+					auto root = tree_.get_root();
+					for(auto i = cur_; i && (i != root); i = i->owner)
+						nodes.insert(nodes.begin(), i);
 				}
 			private:
 				container tree_;
-				nana::string splitstr_;
-				node_handle cur_;
+				std::string splitstr_ ;
+				node_handle cur_{ nullptr };
 			};
 
 			//class scheme
@@ -384,17 +381,15 @@ namespace nana
 					style_.listbox = nullptr;
 				}
 
-				void attach(window wd, nana::paint::graphics* graph)
+				void attach(window wd)
 				{
 					window_ = wd;
 					API::bgcolor(wd, colors::white);
-					graph_ = graph;
 				}
 
 				void detach()
 				{
 					window_ = nullptr;
-					graph_ = nullptr;
 				}
 
 				window window_handle() const
@@ -402,88 +397,81 @@ namespace nana
 					return window_;
 				}
 
-				const container& tree() const
-				{
-					return treebase_;
-				}
-
 				container& tree()
 				{
 					return treebase_;
 				}
 
-				void draw()
+				void draw(graph_reference graph)
 				{
-					_m_calc_scale();
+					_m_calc_scale(graph);
 
 					nana::rectangle r = _m_make_rectangle(); //_m_make_rectangle must be called after _m_calc_scale()
 					_m_calc_pixels(r);
 
-					proto_.ui_renderer->background(*graph_, window_, r, ui_el_);
+					proto_.ui_renderer->background(graph, window_, r, ui_el_);
 					if(head_)
-						proto_.ui_renderer->root_arrow(*graph_, _m_make_root_rectangle(), style_.state);
-					_m_draw_items(r);
-					proto_.ui_renderer->border(*graph_);
+						proto_.ui_renderer->root_arrow(graph, _m_make_root_rectangle(), style_.state);
+					_m_draw_items(graph, r);
+					proto_.ui_renderer->border(graph);
 				}
 
 				bool locate(int x, int y) const
 				{
-					if(graph_)
+					if(head_)
 					{
-						if(head_)
+						auto r = _m_make_root_rectangle();
+						if (r.is_hit(x, y))
 						{
-							auto r = _m_make_root_rectangle();
-							if (r.is_hit(x, y))
-							{
-								style_.active_item_rectangle = r;
-								if(ui_el_.what == ui_el_.item_root)
-									return false;
-								ui_el_.what = ui_el_.item_root;
-								return true;
-							}
-						}
-
-						nana::rectangle r = _m_make_rectangle();
-						std::vector<node_handle> seq;
-						if(r.is_hit(x, y) && treebase_.seq(head_, seq))
-						{
-							const int xbase = r.x;
-							const int xend = static_cast<int>(r.width) + r.x;
-
-							//Change the meaning of variable r. Now, r indicates the area of a item
-							r.height = item_height_;
-
-							std::size_t seq_index = 0;
-							for(auto i : seq)
-							{
-								r.width = i->value.second.pixels;
-								//If the item is over the right border of widget, the item would be painted at
-								//the begining of the next line.
-								if(static_cast<int>(r.width) + r.x > xend)
-								{
-									r.x = xbase;
-									r.y += r.height;
-								}
-
-								if(r.is_hit(x, y))
-								{
-									style_.active_item_rectangle = r;
-									std::size_t index = seq_index + head_;
-
-									ui_element::t what = ((i->child && (r.x + static_cast<int>(r.width) - 16 < x))
-															? ui_el_.item_arrow : ui_el_.item_name);
-									if(what == ui_el_.what && index == ui_el_.index)
-										return false;
-
-									ui_el_.what = what;
-									ui_el_.index = index;
-									return true;
-								}
-								r.x += r.width;
-								++seq_index;
-							}
+							style_.active_item_rectangle = r;
+							if(ui_el_.what == ui_el_.item_root)
+								return false;
+							ui_el_.what = ui_el_.item_root;
+							return true;
 						}
 					}
+
+					nana::rectangle r = _m_make_rectangle();
+					std::vector<node_handle> seq;
+					if(r.is_hit(x, y) && treebase_.seq(head_, seq))
+					{
+						const int xbase = r.x;
+						const int xend = r.right();
+
+						//Change the meaning of variable r. Now, r indicates the area of a item
+						r.height = item_height_;
+
+						std::size_t seq_index = 0;
+						for(auto i : seq)
+						{
+							r.width = i->value.second.pixels;
+							//If the item is over the right border of widget, the item would be painted at
+							//the begining of the next line.
+							if(r.right() > xend)
+							{
+								r.x = xbase;
+								r.y += r.height;
+							}
+
+							if(r.is_hit(x, y))
+							{
+								style_.active_item_rectangle = r;
+								std::size_t index = seq_index + head_;
+
+								ui_element::t what = ((i->child && (r.right() - 16 < x))
+														? ui_el_.item_arrow : ui_el_.item_name);
+								if(what == ui_el_.what && index == ui_el_.index)
+									return false;
+
+								ui_el_.what = what;
+								ui_el_.index = index;
+								return true;
+							}
+							r.x += r.width;
+							++seq_index;
+						}
+					}
+					
 					if(ui_el_.what == ui_el_.somewhere) return false;
 					ui_el_.what = ui_el_.somewhere;
 					return true;
@@ -499,7 +487,7 @@ namespace nana
 					return true;
 				}
 
-				ui_element locate() const
+				const ui_element& locate() const
 				{
 					return ui_el_;
 				}
@@ -507,15 +495,12 @@ namespace nana
 				void mouse_pressed()
 				{
 					style_.state = mouse_action::pressed;
-					switch(ui_el_.what)
+
+					//Check the click whether to show the list
+					if (ui_element::item_root == ui_el_.what || ui_element::item_arrow == ui_el_.what)
 					{
-					case ui_element::item_root:
-					case ui_element::item_arrow:
 						_m_show_list();
 						style_.mode = mode::floatlist;
-						break;
-					default:	//Don't take care about other elements
-						break;
 					}
 				}
 
@@ -543,7 +528,7 @@ namespace nana
 				{
 					if(node)
 					{
-						API::dev::window_caption(window_handle(), tree().path());
+						API::dev::window_caption(window_handle(), to_nstring(tree().path()));
 						if(evt_holder_.selected)
 							evt_holder_.selected(node->value.second.value);
 					}
@@ -582,59 +567,51 @@ namespace nana
 					}
 					r.y += r.height;
 					r.width = r.height = 100;
+
 					style_.listbox = &(form_loader<nana::float_listbox>()(window_, r, true));
 					style_.listbox->set_module(style_.module, 16);
+
 					style_.listbox->events().destroy.connect_unignorable([this]
 					{
-						_m_list_closed();
+						//Close list when listbox is destoryed
+						style_.mode = mode::normal;
+						style_.state = mouse_action::normal;
+
+						if ((style_.module.index != npos) && style_.module.have_selected)
+						{
+							node_handle node = nullptr;
+							if (ui_element::item_arrow == style_.list_trigger)
+							{
+								treebase_.tail(style_.active);
+								node = treebase_.find_child(style_.module.items[style_.module.index]->text());
+								if (!node)
+								{
+									style_.listbox = nullptr;
+									return;
+								}
+								treebase_.cur(node);
+							}
+							else if (ui_element::item_root != style_.list_trigger)
+							{
+								style_.listbox = nullptr;
+								return;
+							}
+							else
+								node = treebase_.tail(style_.module.index);
+							
+							_m_selected(node);
+						}
+
+						API::refresh_window(window_);
+						API::update_window(window_);
+						style_.listbox = nullptr;
 					});
 				}
 
-				void _m_list_closed()
-				{
-					style_.mode = mode::normal;
-					style_.state = mouse_action::normal;
-
-					bool is_draw = false;
-					if((style_.module.index != npos) && style_.module.have_selected)
-					{
-						switch(style_.list_trigger)
-						{
-						case ui_element::item_arrow:
-							{
-								treebase_.tail(style_.active);
-								nana::string name = style_.module.items[style_.module.index]->text();
-								node_handle node = treebase_.find_child(name);
-								if(node)
-								{
-									treebase_.cur(node);
-									_m_selected(node);
-									is_draw = true;
-								}
-							}
-							break;
-						case ui_element::item_root:
-							_m_selected(treebase_.tail(style_.module.index));
-							is_draw = true;
-							break;
-						default:	//Don't take care about other elements
-							break;
-						}
-					}
-					else
-						is_draw = true;
-
-					if(is_draw)
-					{
-						draw();
-						API::update_window(window_);
-					}
-					style_.listbox = nullptr;
-				}
 			private:
 				unsigned _m_item_fix_scale() const
 				{
-					return graph_->height() - 2;
+					return (API::window_size(this->window_handle()).height - 2);
 				}
 
 				nana::rectangle _m_make_root_rectangle() const
@@ -646,7 +623,8 @@ namespace nana
 				//@brief: This function calculate the items area. This must be called after _m_calc_scale()
 				nana::rectangle _m_make_rectangle() const
 				{
-					nana::rectangle r(1, 1, graph_->width() - 2, _m_item_fix_scale());
+					auto dimension = API::window_size(this->window_handle());
+					nana::rectangle r(1, 1, dimension.width - 2, _m_item_fix_scale());
 					
 					unsigned px = r.width;
 					std::size_t lines = item_lines_;
@@ -680,7 +658,7 @@ namespace nana
 					return r;
 				}
 
-				void _m_calc_scale()
+				void _m_calc_scale(graph_reference graph)
 				{
 					nana::size tsz;
 					unsigned highest = 0;
@@ -688,7 +666,7 @@ namespace nana
 					treebase_.seq(0, v);
 					for(auto node : v)
 					{
-						node->value.second.scale = graph_->text_extent_size(node->value.first);
+						node->value.second.scale = graph.text_extent_size(node->value.first);
 
 						if(highest < node->value.second.scale.height)
 							highest = node->value.second.scale.height;
@@ -698,10 +676,12 @@ namespace nana
 
 					highest += 6; //the default height of item.
 
-					item_lines_ = (graph_->height() - 2) / highest;
+					auto fixed_scale_px = _m_item_fix_scale();
+
+					item_lines_ = fixed_scale_px / highest;
 					if(item_lines_ == 0)
 						item_lines_ = 1;
-					item_height_ = (1 != item_lines_ ? highest : _m_item_fix_scale());
+					item_height_ = (1 != item_lines_ ? highest : fixed_scale_px);
 				}
 
 				void _m_calc_pixels(const nana::rectangle& r)
@@ -740,12 +720,12 @@ namespace nana
 					}
 				}
 
-				unsigned _m_minimial_pixels()
+				static unsigned _m_minimial_pixels()
 				{
 					return 46;
 				}
 
-				void _m_draw_items(const nana::rectangle& r)
+				void _m_draw_items(graph_reference graph, const nana::rectangle& r)
 				{
 					nana::rectangle item_r = r;
 					item_r.height = item_height_;
@@ -762,14 +742,12 @@ namespace nana
 							item_r.y += item_height_;
 						}
 						item_r.width = i->value.second.pixels;
-						proto_.ui_renderer->item(*graph_, item_r, index++, i->value.first, i->value.second.scale.height, i->child != 0, style_.state);
+						proto_.ui_renderer->item(graph, item_r, index++, i->value.first, i->value.second.scale.height, i->child != 0, style_.state);
 						item_r.x += item_r.width;
 					}
 				}
 			private:
 				window	window_{nullptr};
-				nana::paint::graphics * graph_{nullptr};
-				nana::string splitstr_;
 				std::size_t	head_;
 				unsigned	item_height_;
 				std::size_t	item_lines_;
@@ -805,28 +783,29 @@ namespace nana
 					delete scheme_;
 				}
 
-				void trigger::insert(const nana::string& str, nana::any value)
+				void trigger::insert(const std::string& str, nana::any value)
 				{
+					throw_not_utf8(str);
 					scheme_->tree().insert(str, value);
-					API::dev::window_caption(scheme_->window_handle(), scheme_->tree().path());
-					scheme_->draw();
+					API::dev::window_caption(scheme_->window_handle(), to_nstring(scheme_->tree().path()));
+					API::refresh_window(this->scheme_->window_handle());
 				}
 
-				bool trigger::childset(const nana::string& str, nana::any value)
+				bool trigger::childset(const std::string& str, nana::any value)
 				{
 					if(scheme_->tree().childset(str, value))
 					{
-						scheme_->draw();
+						API::refresh_window(this->scheme_->window_handle());
 						return true;
 					}
 					return false;
 				}
 
-				bool trigger::childset_erase(const nana::string& str)
+				bool trigger::childset_erase(const std::string& str)
 				{
 					if(scheme_->tree().childset_erase(str))
 					{
-						scheme_->draw();
+						API::refresh_window(this->scheme_->window_handle());
 						return true;
 					}
 					return false;
@@ -836,28 +815,28 @@ namespace nana
 				{
 					if(scheme_->tree().clear())
 					{
-						scheme_->draw();
+						API::refresh_window(this->scheme_->window_handle());
 						return true;
 					}
 					return false;
 				}
 
-				void trigger::splitstr(const nana::string& sstr)
+				void trigger::splitstr(const std::string& sstr)
 				{
 					scheme_->tree().splitstr(sstr);
 				}
 
-				const nana::string& trigger::splitstr() const
+				const std::string& trigger::splitstr() const
 				{
 					return scheme_->tree().splitstr();
 				}
 
-				void trigger::path(const nana::string& str)
+				void trigger::path(const std::string& str)
 				{
 					scheme_->tree().path(str);
 				}
 
-				nana::string trigger::path() const
+				std::string trigger::path() const
 				{
 					return scheme_->tree().path();
 				}
@@ -868,7 +847,7 @@ namespace nana
 					if(node)
 						return node->value.second.value;
 
-					throw std::runtime_error("Nana.GUI.categorize::value(), current category is empty");
+					throw std::runtime_error("nana::categorize::value, current category is empty");
 				}
 
 				void trigger::_m_event_agent_ready() const
@@ -879,9 +858,9 @@ namespace nana
 					};
 				}
 
-				void trigger::attached(widget_reference widget, graph_reference graph)
+				void trigger::attached(widget_reference widget, graph_reference)
 				{
-					scheme_->attach(widget, &graph);
+					scheme_->attach(widget);
 				}
 
 				void trigger::detached()
@@ -889,51 +868,51 @@ namespace nana
 					scheme_->detach();
 				}
 
-				void trigger::refresh(graph_reference)
+				void trigger::refresh(graph_reference graph)
 				{
-					scheme_->draw();
+					scheme_->draw(graph);
 				}
 
-				void trigger::mouse_down(graph_reference, const arg_mouse&)
+				void trigger::mouse_down(graph_reference graph, const arg_mouse&)
 				{
 					if(scheme_->locate().what > ui_element::somewhere)
 					{
 						if(API::window_enabled(scheme_->window_handle()))
 						{
 							scheme_->mouse_pressed();
-							scheme_->draw();
+							scheme_->draw(graph);
 							API::lazy_refresh();
 						}
 					}
 				}
 
-				void trigger::mouse_up(graph_reference, const arg_mouse&)
+				void trigger::mouse_up(graph_reference graph, const arg_mouse&)
 				{
 					if(scheme_->locate().what > ui_element::somewhere)
 					{
 						if(API::window_enabled(scheme_->window_handle()))
 						{
 							scheme_->mouse_release();
-							scheme_->draw();
+							scheme_->draw(graph);
 							API::lazy_refresh();
 						}
 					}
 				}
 
-				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
+				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
 					if(scheme_->locate(arg.pos.x, arg.pos.y) && API::window_enabled(scheme_->window_handle()))
 					{
-						scheme_->draw();
+						scheme_->draw(graph);
 						API::lazy_refresh();
 					}
 				}
 
-				void trigger::mouse_leave(graph_reference, const arg_mouse&)
+				void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
 				{
 					if(API::window_enabled(scheme_->window_handle()) && (scheme_->is_list_shown() == false) && scheme_->erase_locate())
 					{
-						scheme_->draw();
+						scheme_->draw(graph);
 						API::lazy_refresh();
 					}
 				}

@@ -111,13 +111,13 @@ namespace nana
 		/// @param window  A handle to the parent window of the widget being created.
 		/// @param text  the text that will be displayed.
 		/// @param visible  specifying the visible after creating.
-		textbox(window, const nana::string& text, bool visible = true);
+		textbox(window, const std::string& text, bool visible = true);
 
 		/// \brief The construct that creates a widget with a specified text.
 		/// @param window  A handle to the parent window of the widget being created.
 		/// @param text  the text that will be displayed.
 		/// @param visible  specifying the visible after creating.
-		textbox(window, const nana::char_t* text, bool visible = true);
+		textbox(window, const char* text, bool visible = true);
 
 		/// \brief The construct that creates a widget.
 		/// @param window  A handle to the parent window of the widget being created.
@@ -126,19 +126,19 @@ namespace nana
 		textbox(window, const rectangle& = rectangle(), bool visible = true);
 
         ///  \brief Loads a text file. When attempt to load a unicode encoded text file, be sure the file have a BOM header.
-		void load(nana::string file);
-		void store(nana::string file);
-		void store(nana::string file, nana::unicode encoding);
+		void load(std::string file);
+		void store(std::string file);
+		void store(std::string file, nana::unicode encoding);
 
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
-		textbox& indention(bool, std::function<nana::string()> generator = {});
+		textbox& indention(bool, std::function<std::string()> generator = {});
 
 		//A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
-		textbox& reset(nana::string = nana::string());      ///< discard the old text and set a new text
+		textbox& reset(const std::string& = std::string());      ///< discard the old text and set a new text
 
 		/// The file of last store operation.
-		nana::string filename() const;
+		std::string filename() const;
 
 		/// Determine whether the text was edited.
 		bool edited() const;
@@ -150,7 +150,7 @@ namespace nana
 		bool saved() const;
 
         /// Read the text from a specified line. It returns true for success.
-		bool getline(std::size_t pos, nana::string&) const;
+		bool getline(std::size_t pos, std::string&) const;
 
 		/// Gets the caret position
 		/// Returns true if the caret is in the area of display, false otherwise.
@@ -160,7 +160,7 @@ namespace nana
 		textbox& caret_pos(const upoint&);
 
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
-		textbox& append(const nana::string& text, bool at_caret);
+		textbox& append(const std::string& text, bool at_caret);
 
 		/// Determine wheter the text is line wrapped.
 		bool line_wrapped() const;
@@ -171,12 +171,12 @@ namespace nana
 		textbox& multi_lines(bool);
 		bool editable() const;
 		textbox& editable(bool);
-		void set_accept(std::function<bool(nana::char_t)>);
+		void set_accept(std::function<bool(wchar_t)>);
 
-		textbox& tip_string(nana::string);
+		textbox& tip_string(::std::string);
 
         /// Set a mask character. Text is displayed as mask character if a mask character is set. This is used for hiding some special text, such as password.
-		textbox& mask(nana::char_t);
+		textbox& mask(wchar_t);
 
         /// Returns true if some text is selected.
 		bool selected() const;
@@ -195,10 +195,9 @@ namespace nana
 
 		void set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor);
 		void erase_highlight(const std::string& name);
-		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<nana::string> kw_list);
+		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::wstring> kw_list);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
-		void erase_keyword(const nana::string& kw);
-
+		void erase_keyword(const std::string& kw);
 
 		/// Returns the text position of each line that currently displays on screen.
 		text_positions text_position() const;
@@ -210,8 +209,8 @@ namespace nana
 		unsigned line_pixels() const;
 	protected:
 		//Overrides widget's virtual functions
-		::nana::string _m_caption() const throw() override;
-		void _m_caption(::nana::string&&) override;
+		native_string_type _m_caption() const throw() override;
+		void _m_caption(native_string_type&&) override;
 		void _m_typeface(const paint::font&) override;
 	};
 }//end namespace nana

@@ -75,8 +75,8 @@ namespace nana
 			{
 			public:
 				item_proxy(drawer_impl*, std::size_t pos);
-				item_proxy&		text(const nana::string&);
-				nana::string	text() const;
+				item_proxy&		text(const ::std::string&);
+				::std::string	text() const;
 				item_proxy&	select();
 				bool		selected() const;
 				item_proxy& icon(const nana::paint::image&);
@@ -112,14 +112,13 @@ namespace nana
 				template<typename T>
 				item_proxy& value(T&& t)
 				{
-					*_m_anyobj(true) = std::move(t);
+					*_m_anyobj(true) = ::std::move(t);
 					return *this;
 				}
 			public:
 				/// Behavior of Iterator's value_type
-				bool operator==(const nana::string&) const;
+				bool operator==(const ::std::string&) const;
 				bool operator==(const char*) const;
-				bool operator==(const wchar_t*) const;
 
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
@@ -166,19 +165,19 @@ namespace nana
 
 		combox();
 		combox(window, bool visible);
-		combox(window, nana::string, bool visible = true);
-		combox(window, const nana::char_t*, bool visible = true);
+		combox(window, ::std::string, bool visible = true);
+		combox(window, const char*, bool visible = true);
 		combox(window, const rectangle& r = rectangle(), bool visible = true);
 
 		void clear();
 		void editable(bool);
 		bool editable() const;
-		void set_accept(std::function<bool(nana::char_t)>);
-		combox& push_back(nana::string);
+		void set_accept(std::function<bool(wchar_t)>);
+		combox& push_back(std::string);
 		std::size_t the_number_of_options() const;
 		std::size_t option() const;   ///< Index of the last selected, from drop-down list, item.
 		void option(std::size_t);   ///< Select the text specified by index
-		nana::string text(std::size_t) const;
+		::std::string text(std::size_t) const;
 		void erase(std::size_t pos);
 
 		template<typename Key>
@@ -224,8 +223,8 @@ namespace nana
 		const drawerbase::combox::drawer_impl& _m_impl() const;
 	private:
 		//Overrides widget's virtual functions
-		nana::string _m_caption() const throw() override;
-		void _m_caption(nana::string&&) override;
+		native_string_type _m_caption() const throw() override;
+		void _m_caption(native_string_type&&) override;
 		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
 }

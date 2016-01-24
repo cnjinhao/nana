@@ -11,7 +11,7 @@ namespace nana
 		namespace helper
 		{
 			template<typename F>
-			void for_each_line(const nana::char_t * str, std::size_t len, int top, F & f)
+			void for_each_line(const wchar_t * str, std::size_t len, int top, F & f)
 			{
 				auto head = str;
 				auto end = str + len;
@@ -39,7 +39,7 @@ namespace nana
 					: dw(dw), x(x), endpos(endpos), text_align(ta)
 				{}
 
-				unsigned operator()(const int top, const nana::char_t * buf, std::size_t bufsize)
+				unsigned operator()(const int top, const wchar_t * buf, std::size_t bufsize)
 				{
 					nana::point pos{ x, top };
 					unsigned pixels = 0;
@@ -124,14 +124,14 @@ namespace nana
 				draw_string_omitted(graphics& graph, int x, int endpos, bool omitted)
 					: graph(graph), x(x), endpos(endpos)
 				{
-					omitted_pixels = (omitted ? graph.text_extent_size(STR("..."), 3).width : 0);
+					omitted_pixels = (omitted ? graph.text_extent_size(L"...", 3).width : 0);
 					if (endpos - x > static_cast<int>(omitted_pixels))
 						this->endpos -= omitted_pixels;
 					else
 						this->endpos = x;
 				}
 
-				unsigned operator()(const int top, const nana::char_t * buf, std::size_t bufsize)
+				unsigned operator()(const int top, const wchar_t * buf, std::size_t bufsize)
 				{
 					drawable_type dw = graph.handle();
 					::nana::point pos{ x, top };
@@ -158,14 +158,14 @@ namespace nana
 
 							dum_graph.bitblt(r, graph, pos);
 
-							dum_graph.set_text_color(graph.palette(true));
+							dum_graph.palette(true, graph.palette(true));
 							dum_graph.string({}, i.begin, len);
 
 							r.x = pos.x;
 							r.y = top;
 							graph.bitblt(r, dum_graph);
 							if(omitted_pixels)
-								detail::draw_string(dw, point{ endpos, top }, STR("..."), 3);
+								detail::draw_string(dw, point{ endpos, top }, L"...", 3);
 							break;
 						}
 					}
@@ -187,7 +187,7 @@ namespace nana
 					: graph(graph), x(x), endpos(endpos), text_align(ta)
 				{}
 
-				unsigned operator()(const int top, const nana::char_t * buf, std::size_t bufsize)
+				unsigned operator()(const int top, const wchar_t * buf, std::size_t bufsize)
 				{
 					unsigned pixels = 0;
 
@@ -249,8 +249,8 @@ namespace nana
 										else
 										{
 											//Search the splittable character from idx_head to idx_splitted
-											const nana::char_t * u = i.begin + idx_splitted;
-											const nana::char_t * head = i.begin + idx_head;
+											const wchar_t * u = i.begin + idx_splitted;
+											const wchar_t * head = i.begin + idx_head;
 
 											for(; head < u; --u)
 											{
@@ -269,7 +269,7 @@ namespace nana
 											else
 											{
 												u = i.begin + idx_splitted;
-												const nana::char_t * end = i.begin + len;
+												const wchar_t * end = i.begin + len;
 												for(; u < end; ++u)
 												{
 													if(splittable(head, u - head))
@@ -372,12 +372,12 @@ namespace nana
 					return end;
 				}
 
-				static bool splittable(const nana::char_t * str, std::size_t index)
+				static bool splittable(const wchar_t * str, std::size_t index)
 				{
-					nana::char_t ch = str[index];
+					wchar_t ch = str[index];
 					if(('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'))
 					{
-						nana::char_t prch;
+						wchar_t prch;
 						if(index)
 						{
 							prch = str[index - 1];
@@ -406,7 +406,7 @@ namespace nana
 					: graph(graph), x(x), endpos(endpos), extents(0)
 				{}
 
-				unsigned operator()(int top, const nana::char_t * buf, std::size_t bufsize)
+				unsigned operator()(int top, const wchar_t * buf, std::size_t bufsize)
 				{
 					unsigned pixels = 0;
 
@@ -467,8 +467,8 @@ namespace nana
 										else
 										{
 											//Search the splittable character from idx_head to idx_splitted
-											const nana::char_t * u = i.begin + idx_splitted;
-											const nana::char_t * head = i.begin + idx_head;
+											const wchar_t * u = i.begin + idx_splitted;
+											const wchar_t * head = i.begin + idx_head;
 
 											for(; head < u; --u)
 											{
@@ -486,7 +486,7 @@ namespace nana
 											else
 											{
 												u = i.begin + idx_splitted;
-												const nana::char_t * end = i.begin + len;
+												const wchar_t * end = i.begin + len;
 												for(; u < end; ++u)
 												{
 													if(draw_string_auto_changing_lines::splittable(head, u - head))
@@ -542,7 +542,7 @@ namespace nana
 			: graph_(graph), text_align_(ta)
 		{}
 
-		nana::size text_renderer::extent_size(int x, int y, const char_t* str, std::size_t len, unsigned restricted_pixels) const
+		nana::size text_renderer::extent_size(int x, int y, const wchar_t* str, std::size_t len, unsigned restricted_pixels) const
 		{
 			nana::size extents;
 			if(graph_)
@@ -555,7 +555,7 @@ namespace nana
 			return extents;
 		}
 
-		void text_renderer::render(const point& pos, const char_t * str, std::size_t len)
+		void text_renderer::render(const point& pos, const wchar_t * str, std::size_t len)
 		{
 			if (graph_)
 			{
@@ -564,7 +564,7 @@ namespace nana
 			}
 		}
 
-		void text_renderer::render(const point& pos, const char_t* str, std::size_t len, unsigned restricted_pixels, bool omitted)
+		void text_renderer::render(const point& pos, const wchar_t* str, std::size_t len, unsigned restricted_pixels, bool omitted)
 		{
 			if (graph_)
 			{
@@ -573,7 +573,7 @@ namespace nana
 			}
 		}
 
-		void text_renderer::render(const point& pos, const char_t * str, std::size_t len, unsigned restricted_pixels)
+		void text_renderer::render(const point& pos, const wchar_t * str, std::size_t len, unsigned restricted_pixels)
 		{
 			if (graph_)
 			{

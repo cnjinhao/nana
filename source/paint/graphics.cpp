@@ -79,7 +79,7 @@ namespace paint
 				impl_->font_ptr = rhs.impl_->font_ptr;
 		}
 
-		font::font(const nana::char_t* name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
+		font::font(const std::string& name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
 			: impl_(new impl_type)
 		{
 			make(name, size, bold, italic, underline, strike_out);
@@ -95,17 +95,17 @@ namespace paint
 			return ((nullptr == impl_) || (nullptr == impl_->font_ptr));
 		}
 
-		void font::make(const nana::char_t* name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
+		void font::make(const std::string& name, unsigned size, bool bold, bool italic, bool underline, bool strike_out)
 		{
 			size = nana::detail::platform_spec::instance().font_size_to_height(size);
 			make_raw(name, size, bold ? 700 : 400, italic, underline, strike_out);
 		}
 
-		void font::make_raw(const nana::char_t*name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
+		void font::make_raw(const std::string& name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
 		{
 			if(impl_)
 			{
-				auto t = nana::detail::platform_spec::instance().make_native_font(name, height, weight, italic, underline, strike_out);
+				auto t = nana::detail::platform_spec::instance().make_native_font(name.c_str(), height, weight, italic, underline, strike_out);
 				if(t)
 					impl_->font_ptr = t;
 			}
@@ -119,10 +119,11 @@ namespace paint
 			nana::detail::platform_spec::instance().default_native_font(impl_->font_ptr);
 		}
 
-		nana::string font::name() const
+		std::string font::name() const
 		{
-			if(empty()) return nana::string();
-			return impl_->font_ptr->name;
+			if(empty()) return std::string();
+
+			return to_utf8(impl_->font_ptr->name);
 		}
 
 		unsigned font::size() const
@@ -322,8 +323,8 @@ namespace paint
 					handle_ = dw;
 					size_ = sz;
 
-					handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, STR("\t"), 1).width;
-					handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, STR(" "), 1).width;
+					handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, L"\t", 1).width;
+					handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, L" ", 1).width;
 				}
 			}
 
@@ -348,8 +349,8 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				::SelectObject(handle_->context, reinterpret_cast<HFONT>(f.impl_->font_ptr->handle));
 #endif
-				handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, STR("\t"), 1).width;
-				handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, STR(" "), 1).width;
+				handle_->string.tab_pixels = detail::raw_text_extent_size(handle_, L"\t", 1).width;
+				handle_->string.whitespace_pixels = detail::raw_text_extent_size(handle_, L" ", 1).width;
 				if(changed_ == false) changed_ = true;
 			}
 		}
@@ -361,27 +362,38 @@ namespace paint
 			return (handle_ ? font(handle_) : font_shadow_);
 		}
 
-		nana::size	graphics::text_extent_size(const nana::char_t* text)	const
+		::nana::size graphics::text_extent_size(const ::std::string& text) const
 		{
-			return text_extent_size(text, nana::strlen(text));
+			throw_not_utf8(text);
+			return text_extent_size(to_wstring(text));
 		}
 
-		nana::size	graphics::text_extent_size(const nana::string& text)	const
+		::nana::size graphics::text_extent_size(const char* text, std::size_t len) const
+		{
+			return text_extent_size(std::string(text, text + len));
+		}
+
+		nana::size	graphics::text_extent_size(const wchar_t* text)	const
+		{
+			return text_extent_size(text, std::wcslen(text));
+		}
+
+		nana::size	graphics::text_extent_size(const std::wstring& text)	const
 		{
 			return text_extent_size(text.c_str(), static_cast<unsigned>(text.length()));
 		}
 
-		nana::size	graphics::text_extent_size(const nana::char_t* str, std::size_t len)	const
+		nana::size	graphics::text_extent_size(const wchar_t* str, std::size_t len)	const
 		{
 			return detail::text_extent_size(handle_, str, len);
 		}
 
-		nana::size	graphics::text_extent_size(const nana::string& str, std::size_t len)	const
+		nana::size	graphics::text_extent_size(const std::wstring& str, std::size_t len)	const
 		{
 			return detail::text_extent_size(handle_, str.c_str(), len);
 		}
 
-		nana::size graphics::glyph_extent_size(const nana::char_t * str, std::size_t len, std::size_t begin, std::size_t end) const
+		nana::size graphics::glyph_extent_size(const wchar_t * str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
 			if(len < end) end = len;
 			if (nullptr == handle_ || nullptr == str || 0 == len || begin >= end) return{};
@@ -393,8 +405,8 @@ namespace paint
 			::GetTextExtentExPoint(handle_->context, str, static_cast<int>(len), 0, 0, dx, &extents);
 			sz.width = dx[end - 1] - (begin ? dx[begin - 1] : 0);
 			unsigned tab_pixels = handle_->string.tab_length * handle_->string.whitespace_pixels;
-			const nana::char_t * pend = str + end;
-			for(const nana::char_t * p = str + begin; p != pend; ++p)
+			const wchar_t * pend = str + end;
+			for(const wchar_t * p = str + begin; p != pend; ++p)
 			{
 				if(*p == '\t')
 					sz.width += tab_pixels;
@@ -407,12 +419,12 @@ namespace paint
 			return sz;
 		}
 
-		nana::size graphics::glyph_extent_size(const nana::string& str, std::size_t len, std::size_t begin, std::size_t end) const
+		nana::size graphics::glyph_extent_size(const std::wstring& str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
 			return glyph_extent_size(str.c_str(), len, begin, end);
 		}
 
-		bool graphics::glyph_pixels(const nana::char_t * str, std::size_t len, unsigned* pxbuf) const
+		bool graphics::glyph_pixels(const wchar_t * str, std::size_t len, unsigned* pxbuf) const
 		{
 			if(nullptr == handle_ || nullptr == handle_->context || nullptr == str || nullptr == pxbuf) return false;
 			if(len == 0) return true;
@@ -861,18 +873,6 @@ namespace paint
 			}
 		}
 
-		void graphics::set_color(const ::nana::color& col)
-		{
-			if (handle_)
-				handle_->set_color(col);
-		}
-
-		void graphics::set_text_color(const ::nana::color& col)
-		{
-			if (handle_)
-				handle_->set_text_color(col);
-		}
-
 		::nana::color graphics::palette(bool for_text) const
 		{
 			if (handle_)
@@ -894,7 +894,7 @@ namespace paint
 			return *this;
 		}
 
-		unsigned graphics::bidi_string(const nana::point& pos, const char_t * str, std::size_t len)
+		unsigned graphics::bidi_string(const nana::point& pos, const wchar_t * str, std::size_t len)
 		{
 			auto moved_pos = pos;
 			unicode_bidi bidi;
@@ -947,12 +947,23 @@ namespace paint
 			}
 		}
 
-		void graphics::string(nana::point pos, const char_t* str, std::size_t len)
+		void graphics::string(const point& pos, const std::string& text_utf8)
+		{
+			string(pos, to_wstring(text_utf8));
+		}
+
+		void graphics::string(const point& pos, const std::string& text_utf8, const color& clr)
+		{
+			palette(true, clr);
+			string(pos, text_utf8);
+		}
+
+		void graphics::string(nana::point pos, const wchar_t* str, std::size_t len)
 		{
 			if (handle_ && str && len)
 			{
-				const nana::char_t * end = str + len;
-				const nana::char_t * i = std::find(str, end, '\t');
+				auto const end = str + len;
+				auto i = std::find(str, end, '\t');
 #if defined(NANA_LINUX) || defined(NANA_MACOS)
 				handle_->update_text_color();
 #endif
@@ -989,19 +1000,19 @@ namespace paint
 			}
 		}
 
-		void graphics::string(const nana::point& pos, const char_t* str)
+		void graphics::string(const nana::point& pos, const wchar_t* str)
 		{
-			string(pos, str, nana::strlen(str));
+			string(pos, str, std::wcslen(str));
 		}
 
-		void graphics::string(const nana::point& pos, const nana::string& str)
+		void graphics::string(const nana::point& pos, const std::wstring& str)
 		{
 			string(pos, str.data(), str.size());
 		}
 
-		void graphics::string(const point& pos, const ::nana::string& text, const color& clr)
+		void graphics::string(const point& pos, const ::std::wstring& text, const color& clr)
 		{
-			set_text_color(clr);
+			palette(true, clr);
 			string(pos, text.data(), text.size());
 		}
 
@@ -1026,7 +1037,7 @@ namespace paint
 
 		void graphics::line(const point& pos_a, const point& pos_b, const color& clr)
 		{
-			set_color(clr);
+			palette(false, clr);
 			line(pos_a, pos_b);
 		}
 
@@ -1061,7 +1072,7 @@ namespace paint
 
 		void graphics::rectangle(bool solid, const ::nana::color& clr)
 		{
-			set_color(clr);
+			palette(false, clr);
 			rectangle(::nana::rectangle{ size() }, solid);
 		}
 
@@ -1087,7 +1098,7 @@ namespace paint
 
 		void graphics::rectangle(const ::nana::rectangle& r, bool solid, const color& clr)
 		{
-			set_color(clr);
+			palette(false, clr);
 			rectangle(r, solid);
 		}
 

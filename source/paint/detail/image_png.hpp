@@ -20,13 +20,9 @@ namespace nana
 			: public basic_image_pixbuf
 		{
 		public:
-			bool open(const nana::char_t* png_file) override
+			bool open(const experimental::filesystem::path& png_file) override
 			{
-#ifdef NANA_UNICODE
-				FILE * fp = ::fopen(static_cast<std::string>(nana::charset(png_file)).c_str(), "rb");
-#else
-				FILE* fp = ::fopen(png_file, "rb");
-#endif
+				auto fp = ::fopen(to_osmbstr(to_utf8(png_file.native())).c_str(), "rb");
 				if(nullptr == fp) return false;
 
 				bool is_opened = false;

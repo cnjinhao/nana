@@ -97,17 +97,17 @@ namespace nana
 		void range(std::initializer_list<std::wstring> values);
 
 		/// Gets the spined value
-		::nana::string value() const;
-		void value(const ::nana::string&);
+		::std::string value() const;
+		void value(const ::std::string&);
 		int to_int() const;
 		double to_double() const;
 
 		/// Sets the modifiers
-		void modifier(std::wstring prefix, std::wstring suffix);
-		void modifier(const std::string & prefix_utf8, const std::string& suffix_utf8);
+		void modifier(std::string prefix_utf8, std::string suffix_utf8);
+		void modifier(const std::wstring & prefix, const std::wstring& suffix);
 	private:
-		::nana::string _m_caption() const throw();
-		void _m_caption(::nana::string&&);
+		native_string_type _m_caption() const throw();
+		void _m_caption(native_string_type&&);
 	}; //end class spinbox
 }//end namespace nana
 

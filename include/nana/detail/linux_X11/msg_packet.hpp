@@ -22,7 +22,7 @@ namespace detail
 				Window window;
 				int x;
 				int y;
-				std::vector<nana::string> * files;
+				std::vector<std::string> * files;
 			}mouse_drop;
 		}u;
 	};

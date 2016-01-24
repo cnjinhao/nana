@@ -149,7 +149,7 @@ namespace nana
 
 		struct data
 		{
-			std::unordered_map<std::string, nana::string> table;
+			std::unordered_map<std::string, std::string> table;
 		};
 
 		static std::shared_ptr<data>& get_data_ptr()
@@ -183,14 +183,14 @@ namespace nana
 				if (token::string != tknizer.read())
 					return;
 
-				nana::string str;
+				std::string str;
 
 				if (utf8)
 					str = nana::charset(std::move(tknizer.get_str()), nana::unicode::utf8);
 				else
 					str = nana::charset(std::move(tknizer.get_str()));
 
-				nana::string::size_type pos = 0;
+				std::string::size_type pos = 0;
 				while (true)
 				{
 					pos = str.find('\\', pos);
@@ -302,21 +302,21 @@ namespace nana
 		internationalization_parts::load(file, true);
 	}
 
-	nana::string internationalization::get(std::string msgid) const
+	std::string internationalization::get(std::string msgid) const
 	{
-		nana::string str;
+		std::string str;
 		if(_m_get(msgid, str))
 			_m_replace_args(str, nullptr);
 		return str;
 	}
 
-	void internationalization::set(std::string msgid, nana::string msgstr)
+	void internationalization::set(std::string msgid, std::string msgstr)
 	{
 		auto & ptr = internationalization_parts::get_data_ptr();
 		ptr->table[msgid].swap(msgstr);
 	}
 
-	bool internationalization::_m_get(std::string& msgid, nana::string& msgstr) const
+	bool internationalization::_m_get(std::string& msgid, std::string& msgstr) const
 	{
 		auto & impl = internationalization_parts::get_data_ptr();
 		auto i = impl->table.find(msgid);
@@ -330,22 +330,22 @@ namespace nana
 		return false;
 	}
 
-	void internationalization::_m_replace_args(nana::string& str, std::vector<nana::string> * arg_strs) const
+	void internationalization::_m_replace_args(std::string& str, std::vector<std::string> * arg_strs) const
 	{
-		nana::string::size_type offset = 0;
+		std::string::size_type offset = 0;
 		while (true)
 		{
-			auto pos = str.find(L"%arg", offset);
+			auto pos = str.find("%arg", offset);
 			if (pos == str.npos)
 				break;
 
 			offset = pos;
-			pos = str.find_first_not_of(L"0123456789", offset + 4);
+			pos = str.find_first_not_of("0123456789", offset + 4);
 
 			if ((pos == str.npos) || (pos != offset + 4))
 			{
-				nana::string::size_type erase_n = 0;
-				nana::string::size_type arg_n = str.npos;
+				std::string::size_type erase_n = 0;
+				std::string::size_type arg_n = str.npos;
 				if (pos != str.npos)
 				{
 					erase_n = pos - offset;
@@ -373,11 +373,11 @@ namespace nana
 		: public eval_arg
 	{
 	public:
-		arg_string(nana::string str)
+		arg_string(std::string str)
 			: str_(std::move(str))
 		{}
 
-		nana::string eval() const override
+		std::string eval() const override
 		{
 			return str_;
 		}
@@ -387,7 +387,7 @@ namespace nana
 			return std::unique_ptr<eval_arg>(new arg_string(str_));
 		}
 	private:
-		nana::string str_;
+		std::string str_;
 	};
 
 	class i18n_eval::arg_eval
@@ -402,7 +402,7 @@ namespace nana
 			: eval_{ std::move(eval) }
 		{}
 
-		nana::string eval() const override
+		std::string eval() const override
 		{
 			return eval_();
 		}
@@ -450,18 +450,18 @@ namespace nana
 		return *this;
 	}
 
-	nana::string i18n_eval::operator()() const
+	std::string i18n_eval::operator()() const
 	{
 		if (msgid_.empty())
 			return{};
 
-		std::vector<nana::string> arg_strs;
+		std::vector<std::string> arg_strs;
 		for (auto & arg : args_)
 			arg_strs.emplace_back(arg->eval());
 
 		internationalization i18n;
 		std::string msgid = msgid_;	//msgid is required to be movable by i18n._m_get
-		nana::string msgstr;
+		std::string msgstr;
 		if (i18n._m_get(msgid, msgstr))
 			i18n._m_replace_args(msgstr, &arg_strs);
 		return msgstr;

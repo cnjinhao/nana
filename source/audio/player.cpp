@@ -17,7 +17,7 @@ namespace nana{	namespace audio
 			: impl_(new implementation)
 		{}
 
-		player::player(const nana::string& file)
+		player::player(const std::string& file)
 			: impl_(new implementation)
 		{
 			open(file);
@@ -28,7 +28,7 @@ namespace nana{	namespace audio
 			delete impl_;
 		}
 
-		bool player::open(const nana::string& file)
+		bool player::open(const std::string& file)
 		{
 			if(impl_->stream.open(file))
 			{

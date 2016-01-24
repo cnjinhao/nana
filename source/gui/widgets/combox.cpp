@@ -54,7 +54,7 @@ namespace nana
 				std::shared_ptr<nana::detail::key_interface> key;
 
 				nana::paint::image	item_image;
-				nana::string		item_text;
+				std::string		item_text;
 				mutable std::shared_ptr<nana::any>	any_ptr;
 
 				item(std::shared_ptr<nana::detail::key_interface> && kv)
@@ -62,7 +62,7 @@ namespace nana
 				{
 				}
 
-				item(nana::string&& s)
+				item(std::string&& s)
 					: item_text(std::move(s))
 				{}
 			private:
@@ -72,7 +72,7 @@ namespace nana
 					return item_image;
 				}
 
-				const nana::char_t* text() const override
+				const char* text() const override
 				{
 					return item_text.data();
 				}
@@ -120,7 +120,7 @@ namespace nana
 					graph_ = nullptr;
 				}
 
-				void insert(nana::string&& text)
+				void insert(std::string&& text)
 				{
 					items_.emplace_back(std::make_shared<item>(std::move(text)));
 					API::refresh_window(widget_->handle());
@@ -338,7 +338,7 @@ namespace nana
 						if (calc_where(*graph_, pos.x, pos.y))
 							state_.button_state = element_state::normal;
 
-						editor_->text(items_[index]->item_text);
+						editor_->text(::nana::charset(items_[index]->item_text, ::nana::unicode::utf8));
 						_m_draw_push_button(widget_->enabled());
 						_m_draw_image();
 
@@ -398,7 +398,7 @@ namespace nana
 					if (pos == module_.index)
 					{
 						module_.index = ::nana::npos;
-						this->widget_->caption(L"");
+						this->widget_->caption("");
 					}
 					else if ((::nana::npos != module_.index) && (pos < module_.index))
 						--module_.index;
@@ -731,13 +731,14 @@ namespace nana
 						pos_(pos)
 				{}
 
-				item_proxy& item_proxy::text(const nana::string& s)
+				item_proxy& item_proxy::text(const ::std::string& s)
 				{
+					throw_not_utf8(s);
 					impl_->at(pos_).item_text = s;
 					return *this;
 				}
 
-				nana::string item_proxy::text() const
+				::std::string item_proxy::text() const
 				{
 					return impl_->at(pos_).item_text;
 				}
@@ -767,7 +768,7 @@ namespace nana
 				}
 
 				/// Behavior of Iterator's value_type
-				bool item_proxy::operator == (const nana::string& s) const
+				bool item_proxy::operator == (const ::std::string& s) const
 				{
 					if (pos_ == nana::npos)
 						return false;
@@ -778,16 +779,9 @@ namespace nana
 				{
 					if (pos_ == nana::npos)
 						return false;
-					return (impl_->at(pos_).item_text == static_cast<nana::string>(nana::charset(s, nana::unicode::utf8)));
-				}
-
-				bool item_proxy::operator == (const wchar_t * s) const
-				{
-					if (pos_ == nana::npos)
-						return false;
-
 					return (impl_->at(pos_).item_text == s);
 				}
+
 
 				/// Behavior of Iterator
 				item_proxy & item_proxy::operator=(const item_proxy& r)
@@ -876,16 +870,16 @@ namespace nana
 			create(wd, rectangle(), visible);
 		}
 
-		combox::combox(window wd, nana::string text, bool visible)
+		combox::combox(window wd, std::string text, bool visible)
 		{
+			throw_not_utf8(text);
 			create(wd, rectangle(), visible);
 			caption(std::move(text));
 		}
 
-		combox::combox(window wd, const nana::char_t* text, bool visible)
+		combox::combox(window wd, const char* text, bool visible)
+			: combox(wd, std::string(text), visible)
 		{
-			create(wd, rectangle(), visible);
-			caption(text);
 		}
 
 		combox::combox(window wd, const nana::rectangle& r, bool visible)
@@ -912,7 +906,7 @@ namespace nana
 			return _m_impl().editable();
 		}
 
-		void combox::set_accept(std::function<bool(nana::char_t)> pred)
+		void combox::set_accept(std::function<bool(wchar_t)> pred)
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();
@@ -920,7 +914,7 @@ namespace nana
 				editor->set_accept(std::move(pred));
 		}
 
-		combox& combox::push_back(nana::string text)
+		combox& combox::push_back(std::string text)
 		{
 			internal_scope_guard lock;
 			_m_impl().insert(std::move(text));
@@ -946,7 +940,7 @@ namespace nana
 			API::update_window(handle());
 		}
 
-		nana::string combox::text(std::size_t pos) const
+		::std::string combox::text(std::size_t pos) const
 		{
 			internal_scope_guard lock;
 			return _m_impl().at(pos).item_text;
@@ -988,20 +982,22 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		nana::string combox::_m_caption() const throw()
+		auto combox::_m_caption() const throw() -> native_string_type
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();
-			return (editor ? editor->text() : nana::string());
+			if (editor)
+				return to_nstring(editor->text());
+			return native_string_type();
 		}
 
-		void combox::_m_caption(nana::string&& str)
+		void combox::_m_caption(native_string_type&& str)
 		{
 			internal_scope_guard lock;
 
 			auto editor = _m_impl().editor();
 			if (editor)
-				editor->text(std::move(str));
+				editor->text(to_wstring(str));
 
 			API::refresh_window(*this);
 		}

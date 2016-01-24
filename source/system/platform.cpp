@@ -98,20 +98,21 @@ namespace system
 	}
 
 	//open an url through a default browser
-	void open_url(const nana::string& url)
+	void open_url(const std::string& url_utf8)
 	{
-		if(url.empty())
+		if(url_utf8.empty())
 			return;
 
 #if defined(NANA_WINDOWS)
-		if(::ShellExecute(0, STR("open"), url.c_str(), 0, 0, SW_SHOWNORMAL) < reinterpret_cast<HINSTANCE>(32))
+		std::wstring url = to_wstring(url_utf8);
+		if(::ShellExecute(0, L"open", url.c_str(), 0, 0, SW_SHOWNORMAL) < reinterpret_cast<HINSTANCE>(32))
 		{
 			//Because ShellExecute can delegate execution to Shell extensions (data sources, context menu handlers,
 			//verb implementations) that are activated using Component Object Model (COM), COM should be initialized
 			//before ShellExecute is called. Some Shell extensions require the COM single-threaded apartment (STA) type.
 			//In that case, COM should be initialized under WinXP.
 			nana::detail::platform_spec::co_initializer co_init;
-			::ShellExecute(0, STR("open"), url.c_str(), 0, 0, SW_SHOWNORMAL);
+			::ShellExecute(0, L"open", url.c_str(), 0, 0, SW_SHOWNORMAL);
 		}
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 #endif

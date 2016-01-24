@@ -4,7 +4,7 @@
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
 
-#if defined(USE_github_com_meganz_mingw_std_threads)
+#if defined(NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
 #include <windows.h>
 #include <mutex>
 #include <condition_variable>
@@ -32,6 +32,6 @@ namespace std
     typedef boost::mutex mutex;
     typedef boost::recursive_mutex recursive_mutex;
 }
-#endif  // (USE_github_com_meganz_mingw_std_threads)
+#endif  // (NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
 #endif // (STD_THREAD_NOT_SUPPORTED)
 #endif // NANA_STD_MUTEX_HPP
