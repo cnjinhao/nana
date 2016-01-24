@@ -92,6 +92,13 @@ namespace nana
 		bool enable(size_type index) const;
 		void enable(size_type index, bool enable_state);
 		void scale(unsigned s);   ///< Sets the scale of control button.
+
+		void go_right();
+
+		bool detached() { return detached_; };
+
+	private:
+		bool   detached_;
 	};
 }//end namespace nana
 #endif
