@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -277,8 +277,7 @@ namespace nana
 				template<typename T>
 				T* value_ptr() const
 				{
-					auto * pany = _m_value();
-					return (pany ? pany->get<T>() : nullptr);
+					return any_cast<T>(_m_value());
 				}
 
 				template<typename T>
@@ -288,7 +287,7 @@ namespace nana
 					if(nullptr == pany)
 						throw std::runtime_error("listbox::item_proxy.value<T>() is empty");
 
-					T * p = pany->get<T>();
+					T * p = any_cast<T>(_m_value());
 					if(nullptr == p)
 						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
 					return *p;

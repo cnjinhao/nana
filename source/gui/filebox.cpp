@@ -202,8 +202,8 @@ namespace nana
 			ls_file_.events().mouse_down.connect_unignorable(fn_sel_file);
 			ls_file_.set_sort_compare(0, [](const std::string& a, nana::any* fs_a, const std::string& b, nana::any* fs_b, bool reverse) -> bool
 				{
-					int dira = fs_a->get<item_fs>()->directory ? 1 : 0;
-					int dirb = fs_b->get<item_fs>()->directory ? 1 : 0;
+					int dira = any_cast<item_fs>(fs_a)->directory ? 1 : 0;
+					int dirb = any_cast<item_fs>(fs_b)->directory ? 1 : 0;
 					if(dira != dirb)
 						return (reverse ? dira < dirb : dira > dirb);
 
@@ -256,8 +256,8 @@ namespace nana
 				});
 			ls_file_.set_sort_compare(2, [](const std::string& a, nana::any* anyptr_a, const std::string& b, nana::any* anyptr_b, bool reverse) -> bool
 				{
-					int dir1 = anyptr_a->get<item_fs>()->directory ? 1 : 0;
-					int dir2 = anyptr_b->get<item_fs>()->directory ? 1 : 0;
+					int dir1 = any_cast<item_fs>(anyptr_a)->directory ? 1 : 0;
+					int dir2 = any_cast<item_fs>(anyptr_b)->directory ? 1 : 0;
 					if(dir1 != dir2)
 						return (reverse ? dir1 < dir2 : dir1 > dir2);
 
@@ -265,8 +265,8 @@ namespace nana
 				});
 			ls_file_.set_sort_compare(3, [this](const std::string&, nana::any* anyptr_a, const std::string&, nana::any* anyptr_b, bool reverse) -> bool
 				{
-					item_fs * fsa = anyptr_a->get<item_fs>();
-					item_fs * fsb = anyptr_b->get<item_fs>();
+					item_fs * fsa = any_cast<item_fs>(anyptr_a);
+					item_fs * fsb = any_cast<item_fs>(anyptr_b);
 					return (reverse ? fsa->bytes > fsb->bytes : fsa->bytes < fsb->bytes);
 				});
 

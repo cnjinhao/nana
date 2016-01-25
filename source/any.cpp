@@ -1,70 +1,87 @@
-#include <nana/any.hpp>
+/**
+*	Any
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file  nana/any.cpp
+*
+*	@brief An implementation of experimental library any of C++ standard(http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4480.html#any)
+*/
 
+#include <nana/any.hpp>
+#include <utility>
 
 namespace nana
 {
+	//constructors and destructor
+	any::any() noexcept
+		: content_(nullptr)
+	{
+	}
 
-	//class any
-		//struct super_type
-			any::super_type::~super_type(){}
-			
-			any::super_type& any::super_type::operator=(const super_type &rhs)
-			{
-				return assign(rhs);
-			}
-		//end struct super_type
+	any::any(const any& other)
+		: content_(other.content_ ? other.content_->clone() : nullptr)
+	{}
 
-		any::any()
-			:super_(nullptr)
-		{}
-		
-		any::any(const any& rhs)
-			:super_(rhs.super_ ? rhs.super_->clone() : nullptr)
-		{}
+	any::any(any && other) noexcept
+		: content_(other.content_)
+	{
+		other.content_ = nullptr;
+	}
 
-		any::any(any&& r)
-			:super_(r.super_)
-		{
-			r.super_ = nullptr;
-		}
-		
-		any::~any()
-		{
-			delete super_;	
-		}
-		
-		any& any::operator=(const any& rhs)
-		{
-			if(this != &rhs)
-			{
-				delete super_;
-				super_ = (rhs.super_ ? rhs.super_->clone() : nullptr);
-			}
-			return *this;	
-		}
+	any::~any()
+	{
+		delete content_;
+	}
 
-		any& any::operator=(any&& r)
-		{
-			if(this != &r)
-			{
-				delete super_;
-				super_ = r.super_;
-				r.super_ = nullptr;
-			}
-			return *this;
-		}
+	//assignments
+	any& any::operator=(const any& other)
+	{
+		if (this != &other)
+			any(other).swap(*this);
 		
-		bool any::same(const any &rhs) const
+		return *this;
+	}
+
+	any& any::operator=(any&& other) noexcept
+	{
+		if (this != &other)
 		{
-			if(this != &rhs)
-			{
-				if(super_ && rhs.super_)
-					return super_->same(*rhs.super_);
-				else if(super_ || rhs.super_)
-					return false;
-			}
-			return true;
+			other.swap(*this);
+			other.clear();
 		}
-	//end class any
+		return *this;
+	}
+
+	//modifiers
+	void any::clear() noexcept
+	{
+		if (content_)
+		{
+			auto cnt = content_;
+			content_ = nullptr;
+			delete cnt;
+		}
+	}
+
+	void any::swap(any& other) noexcept
+	{
+		std::swap(content_, other.content_);
+	}
+
+	//observers
+	bool any::empty() const noexcept
+	{
+		return (nullptr == content_);
+	}
+
+	const std::type_info& any::type() const noexcept
+	{
+		return (content_ ? content_->type() : typeid(void));
+	}
 }//end namespace nana
 

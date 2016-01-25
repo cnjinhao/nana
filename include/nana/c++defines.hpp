@@ -43,6 +43,21 @@
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
 
+//C++ language
+#if defined(_MSC_VER)
+#	if (_MSC_VER < 1900)
+#		//Nana defines some macros for lack of support of keywords
+#		define _ALLOW_KEYWORD_MACROS
+#		
+#		define noexcept		//no support of noexcept until Visual C++ 2015
+#		define constexpr	//no support of constexpr until Visual C++ 2015
+#	endif
+#elif defined(__GNUC__)
+#	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
+#		define noexcept		//no support of noexcept until GCC 4.6
+#	endif
+#endif
+
 // Select platform  ......
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)	//Microsoft Windows
 	#define NANA_WINDOWS

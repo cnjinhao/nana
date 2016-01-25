@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -137,7 +137,7 @@ namespace detail
 		if(::GetTextExtentPoint32(dw->context, text, static_cast<int>(len), &size))
 			return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
-	#if defined(NANA_UNICODE)
+	#if defined(NANA_USE_XFT)
 		std::string utf8str = to_utf8(std::wstring(text, len));
 		XGlyphInfo ext;
 		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
@@ -179,7 +179,7 @@ namespace detail
 		::TextOut(dw->context, pos.x, pos.y, str, static_cast<int>(len));
 #elif defined(NANA_X11)
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
-	#if defined(NANA_UNICODE)
+	#if defined(NANA_USE_XFT)
 		auto fs = reinterpret_cast<XftFont*>(dw->font->handle);
 
 		//Fixed missing array declaration by dareg

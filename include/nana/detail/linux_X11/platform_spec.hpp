@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -34,7 +34,9 @@
 #include <vector>
 #include <map>
 #include "msg_packet.hpp"
-#if defined(NANA_UNICODE)
+
+#define NANA_USE_XFT
+#if defined(NANA_USE_XFT)
 	#include <X11/Xft/Xft.h>
 	#include <iconv.h>
 	#include <fstream>
@@ -45,7 +47,7 @@ namespace nana
 namespace detail
 {
 	class msg_dispatcher;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 	class conf
 	{
 	public:
@@ -76,7 +78,7 @@ namespace detail
 		bool italic;
 		bool underline;
 		bool strikeout;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 		XftFont * handle;
 #else
 		XFontSet handle;
@@ -99,7 +101,7 @@ namespace detail
 			unsigned tab_pixels;
 			unsigned whitespace_pixels;
 		}string;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 		XftDraw * xftdraw{nullptr};
 		XftColor	xft_fgcolor;
 		const std::string charset(const std::wstring& str, const std::string& strcode);
@@ -120,7 +122,7 @@ namespace detail
 		unsigned color_{ 0xFFFFFFFF };
 		unsigned text_color_{ 0xFFFFFFFF };
 
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 		struct conv_tag
 		{
 			iconv_t handle;

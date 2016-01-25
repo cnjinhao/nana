@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -36,7 +36,7 @@ namespace nana
 namespace detail
 {
 	typedef native_window_type native_window_type;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 	//class conf
 		conf::conf(const char * file)
 		{
@@ -290,7 +290,7 @@ namespace detail
 		string.tab_length = 4;
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 		conv_.handle = ::iconv_open("UTF-8", "UTF-32");
 		conv_.code = "UTF-32";
 #endif
@@ -298,7 +298,7 @@ namespace detail
 
 	drawable_impl_type::~drawable_impl_type()
 	{
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 		::iconv_close(conv_.handle);
 #endif
 	}
@@ -366,7 +366,7 @@ namespace detail
 			::XSetForeground(spec.open_display(), context, col);
 			::XSetBackground(spec.open_display(), context, col);
 
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 			xft_fgcolor.color.red = ((0xFF0000 & col) >> 16) * 0x101;
 			xft_fgcolor.color.green = ((0xFF00 & col) >> 8) * 0x101;
 			xft_fgcolor.color.blue = (0xFF & col) * 0x101;
@@ -395,7 +395,7 @@ namespace detail
 			}
 			::XSetForeground(spec.open_display(), context, rgb);
 			::XSetBackground(spec.open_display(), context, rgb);
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 			xft_fgcolor.color.red = ((0xFF0000 & rgb) >> 16) * 0x101;
 			xft_fgcolor.color.green = ((0xFF00 & rgb) >> 8) * 0x101;
 			xft_fgcolor.color.blue = (0xFF & rgb) * 0x101;
@@ -412,7 +412,7 @@ namespace detail
             if(fp && fp->handle)
             {
                 platform_scope_guard psg;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
                 ::XftFontClose(nana::detail::platform_spec::instance().open_display(), fp->handle);
 #else
                 ::XFreeFontSet(nana::detail::platform_spec::instance().open_display(), fp->handle);

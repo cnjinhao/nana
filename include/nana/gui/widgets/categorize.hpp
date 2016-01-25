@@ -62,7 +62,7 @@ namespace nana
 
 				void selected(::nana::any & var)
 				{
-					auto vp = var.get<T>();
+					auto vp = any_cast<T>(&var);
 
 					T null_val;
 					arg_categorize<T> arg(widget_, vp ? *vp : null_val);

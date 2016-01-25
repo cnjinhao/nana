@@ -1,6 +1,6 @@
 /*
  *	A Concepts Definition of Nana C++ Library
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -22,7 +22,7 @@ namespace nana
 		class any_objective
 		{
 		public:
-			virtual ~any_objective(){}
+			virtual ~any_objective() = default;
 
 			template<typename Target>
 			void anyobj(const Target& t)
@@ -37,7 +37,7 @@ namespace nana
 			void anyobj(Target&& t)
 			{
 				nana::any * p = _m_anyobj(true);
-				if(nullptr == 0)
+				if(nullptr == p)
 					throw std::runtime_error("Nana.any_objective: Object does not exist");
 
 				*p = std::move(t);
@@ -46,8 +46,7 @@ namespace nana
 			template<typename Target>
 			Target * anyobj() const     ///< Retrieves the attached object. Returns a nullptr if empty or if the type not match.
 			{
-				nana::any * p = _m_anyobj(false);
-				return (p ? p->get<Target>() : nullptr);
+				return any_cast<Target>(_m_anyobj(false));
 			}
 		private:
 			virtual nana::any* _m_anyobj(bool allocate_if_empty) const = 0;
@@ -60,7 +59,7 @@ namespace nana
 		public:
 			typedef IndexType anyobj_index_t;      ///< The type of index.  It is available if Dimension is greater than 0.
 
-			virtual ~any_objective(){}
+			virtual ~any_objective() = default;
 
 			template<typename Target>
 			void anyobj(anyobj_index_t i, const Target& t)
@@ -83,8 +82,7 @@ namespace nana
 			template<typename Target>
 			Target * anyobj(anyobj_index_t i) const    ///< Retrieves the attached object. Returns a nullptr if empty or if the type not match.
 			{
-				nana::any * p = _m_anyobj(i, false);
-				return (p ? p->get<Target>() : nullptr);
+				return any_cast<Target>(_m_anyobj(i, false));
 			}
 		private:
 			virtual nana::any* _m_anyobj(anyobj_index_t i, bool allocate_if_empty) const = 0;
@@ -121,8 +119,7 @@ namespace nana
 			template<typename Target>
 			Target * anyobj(anyobj_index_t i0, anyobj_index_t i1) const    ///< Retrieves the attached object. Returns a nullptr if empty or if the type not match.
 			{
-				nana::any * p = _m_anyobj(i0, i1, false);
-				return (p ? p->get<Target>() : nullptr);
+				return any_cast<Target>(_m_anyobj(i0, i1, false));
 			}
 		private:
 			virtual nana::any* _m_anyobj(anyobj_index_t i0, anyobj_index_t i1, bool allocate_if_empty) const = 0;

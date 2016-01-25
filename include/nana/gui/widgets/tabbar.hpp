@@ -1,7 +1,7 @@
 /**
  *	A Tabbar implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -222,7 +222,7 @@ namespace nana
 
 		value_type & operator[](std::size_t pos) const
 		{
-			return static_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
+			return any_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
 		}
 
 		void activated(std::size_t pos)                  /// Activates a tab specified by pos.

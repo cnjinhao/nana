@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -288,15 +288,15 @@ namespace nana
 				bool operator!=(const item_proxy&) const;
 
 				template<typename T>
-				T * value_ptr() const
+				const T * value_ptr() const
 				{
-					return _m_value().get<T>();
+					return any_cast<T>(&_m_value());
 				}
 
 				template<typename T>
-				T& value() const
+				const T& value() const
 				{
-					T* p = _m_value().get<T>();
+					auto p = any_cast<T>(&_m_value());
 					if(nullptr == p)
 						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
 					return *p;

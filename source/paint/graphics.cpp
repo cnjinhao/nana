@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -40,7 +40,7 @@ namespace paint
 				if(p)
 				{
 					Display* disp = reinterpret_cast<Display*>(nana::detail::platform_spec::instance().open_display());
-	#if defined(NANA_UNICODE)
+	#if defined(NANA_USE_XFT)
 					::XftDrawDestroy(p->xftdraw);
 	#endif
 					::XFreeGC(disp, p->context);
@@ -306,7 +306,7 @@ namespace paint
 				Window root = ::XRootWindow(disp, screen);
 				dw->pixmap = ::XCreatePixmap(disp, root, (sz.width ? sz.width : 1), (sz.height ? sz.height : 1), DefaultDepth(disp, screen));
 				dw->context = ::XCreateGC(disp, dw->pixmap, 0, 0);
-	#if defined(NANA_UNICODE)
+	#if defined(NANA_USE_XFT)
 				dw->xftdraw = ::XftDrawCreate(disp, dw->pixmap, spec.screen_visual(), spec.colormap());
 	#endif
 #endif
@@ -442,7 +442,8 @@ namespace paint
 				pxbuf[i] = (str[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
 			}
 			delete [] dx;
-#elif defined(NANA_X11)
+#elif defined(NANA_X11) && defined(NANA_USE_XFT)
+
 			Display * disp = nana::detail::platform_spec::instance().open_display();
 			XftFont * xft = handle_->font->handle;
 
@@ -465,7 +466,6 @@ namespace paint
 		nana::size	graphics::bidi_extent_size(const std::wstring& str) const
 		{
 			nana::size sz;
-#if defined NANA_UNICODE
 			if(handle_ && handle_->context && str.size())
 			{
 				std::vector<unicode_bidi::entity> reordered;
@@ -479,7 +479,6 @@ namespace paint
 						sz.height = t.height;
 				}
 			}
-#endif
 			return sz;
 		}
 
@@ -502,7 +501,7 @@ namespace paint
 #elif defined(NANA_X11)
 				if(handle_->font)
 				{
-	#if defined(NANA_UNICODE)
+	#if defined(NANA_USE_XFT)
 					XftFont * fs = reinterpret_cast<XftFont*>(handle_->font->handle);
 					ascent = fs->ascent;
 					descent = fs->descent;
