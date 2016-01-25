@@ -387,12 +387,9 @@ namespace nana
 					std::size_t index = 0;
 					for(auto m: impl_->items.container())
 					{
-						auto px = static_cast<const int>(m ? m->pixels : 3);
-
-						if(pos.x < px)
+						unsigned x = static_cast<unsigned>(pos.x);
+						if (m && x >= m->position && x <= (m->position+m->pixels))
 							return (((!m) || (!m->enable && !want_if_disabled)) ? npos : index);
-
-						pos.x -= px;
 
 						++index;
 					}
