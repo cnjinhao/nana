@@ -28,7 +28,7 @@ namespace paint
 	public:
 		class image_impl_interface;
 
-		image();
+		image() noexcept;
 		image(const image&);
 		image(image&&);
 		explicit image(const ::std::string& file);
@@ -41,13 +41,13 @@ namespace paint
 		bool open(const ::std::wstring& file);
 		
 		/// Opens an icon from a specified buffer
-		bool open_icon(const void* data, std::size_t bytes);
-		bool empty() const;
+		bool open(const void* data, std::size_t bytes);
+		bool empty() const noexcept;
 		operator unspecified_bool_t() const;
-		void close();
+		void close() noexcept;
 
-		bool alpha() const;
-		nana::size size() const;
+		bool alpha() const noexcept;
+		nana::size size() const noexcept;
 		void paste(graphics& dst, const point& p_dst) const;
 		void paste(const nana::rectangle& r_src, graphics& dst, const point& p_dst) const;///< Paste the area of picture specified by r_src into the destination graphics specified by dst at position p_dst.
 		void stretch(const nana::rectangle& r_src, graphics& dst, const nana::rectangle& r_dst) const;///<Paste the picture into the dst, stretching or compressing the picture to fit the given area.

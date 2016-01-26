@@ -20,6 +20,7 @@
 #include <list>
 #include <map>
 #include <algorithm>
+#include <atomic>
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
     #include <nana/std_thread.hpp>
@@ -350,7 +351,7 @@ namespace nana
 		struct animation::impl
 		{
 			bool	looped{false};
-			volatile bool	paused{true};
+			std::atomic<bool>	paused{true};
 			std::size_t fps;
 
 			std::list<frameset> framesets;
