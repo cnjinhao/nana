@@ -1,0 +1,71 @@
+sudo: false
+language: generic
+
+cache:
+  apt: true
+  directories:
+    - /tmp/tools
+
+matrix:
+  include:
+    - env: CXX=g++-5 CC=gcc-5
+      addons:
+        apt:
+          packages:
+            - g++-5
+            - libjpeg8-dev
+            - libpng-dev
+          sources: &sources
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise
+            - llvm-toolchain-precise-3.7
+            - llvm-toolchain-precise-3.6
+    - env: CXX=g++-4.9 CC=gcc-4.9
+      addons:
+        apt:
+          packages:
+            - g++-4.9
+            - libjpeg8-dev
+            - libpng-dev
+          sources: *sources
+    - env: CXX=clang++-3.8 CC=clang-3.8
+      addons:
+        apt:
+          packages:
+            - clang-3.8
+            - libjpeg8-dev
+            - libpng-dev
+          sources: *sources
+    - env: CXX=clang++-3.7 CC=clang-3.7
+      addons:
+        apt:
+          packages:
+            - clang-3.7
+            - libjpeg8-dev
+            - libpng-dev
+          sources: *sources
+    - env: CXX=clang++-3.6 CC=clang-3.6
+      addons:
+        apt:
+          packages:
+            - clang-3.6
+            - libjpeg8-dev
+            - libpng-dev
+          sources: *sources
+
+before_install:
+  - export PATH="$HOME/bin:$PATH"
+  - mkdir ~/bin
+  - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Linux-x86_64.sh || true
+  - chmod -R +x /tmp/tools
+
+install:
+  - /tmp/tools/cmake --prefix="$HOME" --exclude-subdir
+
+before_script :
+  - mkdir bld
+  - cd bld
+
+script:
+  - cmake -G"Unix Makefiles" .. -DENABLE_JPEG=ON -DENABLE_PNG=ON
+  - make
