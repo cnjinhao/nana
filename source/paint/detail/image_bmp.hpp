@@ -1,7 +1,7 @@
 /*
  *	Bitmap Format Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -14,14 +14,12 @@
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 
 #include "image_pixbuf.hpp"
-
 #include <memory>
 
 namespace nana{	namespace paint
 {
 	namespace detail
 	{
-
 #ifndef NANA_WINDOWS
 		struct bitmap_file_header
 		{
@@ -78,8 +76,237 @@ namespace nana{	namespace paint
 
 			bool open(const void* data, std::size_t bytes) override
 			{
-				// TODO: read a BMP file from memory
-				return false;
+				auto bmp_data = reinterpret_cast<const char*>(data);
+
+				auto header = reinterpret_cast<const bitmap_file_header*>(bmp_data);
+				if ((header->bfType != 0x4D42) || (header->bfSize != bytes))
+					return false;
+
+				auto bits = reinterpret_cast<const unsigned char*>(bmp_data + header->bfOffBits);
+				auto info = reinterpret_cast<const bitmap_info *>(header + 1);
+
+				//Bitmap file is 4byte-aligned for each line.
+				std::size_t bytes_per_line;
+				const std::size_t height_pixels = std::abs(info->bmiHeader.biHeight);
+				if (0 == info->bmiHeader.biSizeImage)
+					bytes_per_line = (((info->bmiHeader.biWidth * info->bmiHeader.biBitCount + 31) & ~31) >> 3);
+				else
+					bytes_per_line = info->bmiHeader.biSizeImage / height_pixels;
+
+				pixbuf_.open(info->bmiHeader.biWidth, height_pixels);
+
+				auto d = pixbuf_.raw_ptr(0);
+
+				if (16 <= info->bmiHeader.biBitCount)
+				{
+					pixbuf_.put(bits, info->bmiHeader.biWidth, height_pixels, info->bmiHeader.biBitCount, bytes_per_line, (info->bmiHeader.biHeight < 0));
+				}
+				else if (8 == info->bmiHeader.biBitCount)
+				{
+					const auto lend = d + info->bmiHeader.biWidth * height_pixels;
+
+					if (info->bmiHeader.biHeight < 0)
+					{
+						auto s = bits;
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto dpend = d_p + info->bmiHeader.biWidth;
+							auto s_p = s;
+							while (d_p != dpend)
+							{
+								auto & rgb = info->bmiColors[*s_p++];
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+							}
+							d = dpend;
+							s += bytes_per_line;
+						}
+					}
+					else
+					{
+						const auto* s = bits + bytes_per_line * (height_pixels - 1);
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto* const dpend = d_p + info->bmiHeader.biWidth;
+							const auto * s_p = s;
+							while (d_p != dpend)
+							{
+								auto & rgb = info->bmiColors[*s_p++];
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+							}
+							d = dpend;
+							s -= bytes_per_line;
+						}
+					}
+				}
+				else if (4 == info->bmiHeader.biBitCount)
+				{
+					const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
+					if (info->bmiHeader.biHeight < 0)
+					{
+						const unsigned char* s = bits;
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto * const dpend = d_p + info->bmiHeader.biWidth;
+							unsigned index = 0;
+							while (d_p != dpend)
+							{
+								auto & rgb = info->bmiColors[(index & 1) ? (s[index >> 1] & 0xF) : (s[index >> 1] & 0xF0) >> 4];
+
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+								++index;
+							}
+							d = dpend;
+							s += bytes_per_line;
+						}
+					}
+					else
+					{
+						const auto* s = bits + bytes_per_line * (height_pixels - 1);
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto * const dpend = d_p + info->bmiHeader.biWidth;
+
+							unsigned index = 0;
+							while (d_p != dpend)
+							{
+								auto & rgb = info->bmiColors[(index & 1) ? (s[index >> 1] & 0xF) : (s[index >> 1] & 0xF0) >> 4];
+
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+								++index;
+							}
+							d = dpend;
+							s -= bytes_per_line;
+						}
+					}
+				}
+				else if (2 == info->bmiHeader.biBitCount)
+				{
+					const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
+					if (info->bmiHeader.biHeight < 0)
+					{
+						const unsigned char* s = bits;
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto * const dpend = d_p + info->bmiHeader.biWidth;
+							unsigned index = 0;
+							while (d_p != dpend)
+							{
+								unsigned shift = (3 - (index & 0x3)) << 1; // (index % 4) * 2
+								auto& rgb = info->bmiColors[(s[index >> 2] & (0x3 << shift)) >> shift];
+
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+								++index;
+							}
+							d = dpend;
+							s += bytes_per_line;
+						}
+					}
+					else
+					{
+						const auto* s = bits + bytes_per_line * (height_pixels - 1);
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto * const dpend = d_p + info->bmiHeader.biWidth;
+
+							unsigned index = 0;
+							while (d_p != dpend)
+							{
+								unsigned shift = (3 - (index & 0x3)) << 1; // (index % 4) * 2
+								auto& rgb = info->bmiColors[(s[index >> 2] & (0x3 << shift)) >> shift];
+
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+								++index;
+							}
+							d = dpend;
+							s -= bytes_per_line;
+						}
+					}
+				}
+				else if (1 == info->bmiHeader.biBitCount)
+				{
+					const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
+					if (info->bmiHeader.biHeight < 0)
+					{
+						const auto* s = bits;
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto * const dpend = d_p + info->bmiHeader.biWidth;
+							unsigned index = 0;
+							while (d_p != dpend)
+							{
+								unsigned bi = (7 - (index & 7));	//(index % 8)
+								auto & rgb = info->bmiColors[(s[index >> 3] & (1 << bi)) >> bi];
+
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+								++index;
+							}
+							d = dpend;
+							s += bytes_per_line;
+						}
+					}
+					else
+					{
+						const auto* s = bits + bytes_per_line * (height_pixels - 1);
+						while (d < lend)
+						{
+							auto d_p = d;
+							auto * const dpend = d_p + info->bmiHeader.biWidth;
+
+							unsigned index = 0;
+							while (d_p != dpend)
+							{
+								unsigned bi = (7 - (index & 7));
+								auto & rgb = info->bmiColors[(s[index >> 3] & (1 << bi)) >> bi];
+
+								d_p->element.red = rgb.rgbRed;
+								d_p->element.green = rgb.rgbGreen;
+								d_p->element.blue = rgb.rgbBlue;
+								d_p->element.alpha_channel = rgb.rgbReserved;
+								++d_p;
+								++index;
+							}
+							d = dpend;
+							s -= bytes_per_line;
+						}
+					}
+				}
+				
+				return true;
 			}
 
 			bool open(const nana::experimental::filesystem::path& filename) override
@@ -97,238 +324,10 @@ namespace nana{	namespace paint
 					std::unique_ptr<char[]> buffer(new char[static_cast<int>(size)]);
 
 					ifs.read(buffer.get(), size);
-					if(size == ifs.gcount())
-					{
-						bitmap_file_header * header = reinterpret_cast<bitmap_file_header*>(buffer.get());
-						if((header->bfType == 0x4D42) && (static_cast<std::streamsize>(header->bfSize) == size))
-						{
-							unsigned char* bits = reinterpret_cast<unsigned char*>(buffer.get() + header->bfOffBits);
-							bitmap_info * info = reinterpret_cast<bitmap_info *>(header + 1);
-
-							//Bitmap file is 4byte-aligned for each line.
-							std::size_t bytes_per_line;
-							const std::size_t height_pixels = std::abs(info->bmiHeader.biHeight);
-							if(0 == info->bmiHeader.biSizeImage)
-								bytes_per_line = (((info->bmiHeader.biWidth * info->bmiHeader.biBitCount + 31) & ~31) >> 3);
-							else
-								bytes_per_line = info->bmiHeader.biSizeImage / height_pixels;
-
-							pixbuf_.open(info->bmiHeader.biWidth, height_pixels);
-
-							auto d = pixbuf_.raw_ptr(0);
-
-							if(16 <= info->bmiHeader.biBitCount)
-							{
-								pixbuf_.put(bits, info->bmiHeader.biWidth, height_pixels, info->bmiHeader.biBitCount, bytes_per_line, (info->bmiHeader.biHeight < 0));
-							}
-							else if(8 == info->bmiHeader.biBitCount)
-							{
-								const auto lend = d + info->bmiHeader.biWidth * height_pixels;
-
-								if(info->bmiHeader.biHeight < 0)
-								{
-									auto s = bits;
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto dpend = d_p + info->bmiHeader.biWidth;
-										auto s_p = s;
-										while(d_p != dpend)
-										{
-											rgb_quad & rgb = info->bmiColors[*s_p++];
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-										}
-										d = dpend;
-										s += bytes_per_line;
-									}
-								}
-								else
-								{
-									const auto* s = bits + bytes_per_line * (height_pixels - 1);
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto* const dpend = d_p + info->bmiHeader.biWidth;
-										const auto * s_p = s;
-										while(d_p != dpend)
-										{
-											rgb_quad & rgb = info->bmiColors[*s_p++];
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-										}
-										d = dpend;
-										s -= bytes_per_line;
-									}
-								}
-							}
-							else if(4 == info->bmiHeader.biBitCount)
-							{
-								const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
-								if(info->bmiHeader.biHeight < 0)
-								{
-									const unsigned char* s = bits;
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto * const dpend = d_p + info->bmiHeader.biWidth;
-										unsigned index = 0;
-										while(d_p != dpend)
-										{
-											rgb_quad & rgb = info->bmiColors[(index & 1) ? (s[index >> 1] & 0xF) : (s[index >> 1] & 0xF0) >> 4];
-
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-											++index;
-										}
-										d = dpend;
-										s += bytes_per_line;
-									}
-								}
-								else
-								{
-									const auto* s = bits + bytes_per_line * (height_pixels - 1);
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto * const dpend = d_p + info->bmiHeader.biWidth;
-
-										unsigned index = 0;
-										while(d_p != dpend)
-										{
-											rgb_quad & rgb = info->bmiColors[(index & 1) ? (s[index >> 1] & 0xF) : (s[index >> 1] & 0xF0) >> 4];
-
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-											++index;
-										}
-										d = dpend;
-										s -= bytes_per_line;
-									}
-								}
-							}
-							else if(2 == info->bmiHeader.biBitCount)
-							{
-								const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
-								if(info->bmiHeader.biHeight < 0)
-								{
-									const unsigned char* s = bits;
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto * const dpend = d_p + info->bmiHeader.biWidth;
-										unsigned index = 0;
-										while(d_p != dpend)
-										{
-											unsigned shift = (3 - (index & 0x3)) << 1; // (index % 4) * 2
-											rgb_quad& rgb = info->bmiColors[(s[index >> 2] & (0x3 << shift))>>shift];
-
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-											++index;
-										}
-										d = dpend;
-										s += bytes_per_line;
-									}
-								}
-								else
-								{
-									const auto* s = bits + bytes_per_line * (height_pixels - 1);
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto * const dpend = d_p + info->bmiHeader.biWidth;
-
-										unsigned index = 0;
-										while(d_p != dpend)
-										{
-											unsigned shift = (3 - (index & 0x3)) << 1; // (index % 4) * 2
-											rgb_quad& rgb = info->bmiColors[(s[index >> 2] & (0x3 << shift))>>shift];
-
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-											++index;
-										}
-										d = dpend;
-										s -= bytes_per_line;
-									}
-								}
-							}
-							else if(1 == info->bmiHeader.biBitCount)
-							{
-								const auto * const lend = d + info->bmiHeader.biWidth * height_pixels;
-								if(info->bmiHeader.biHeight < 0)
-								{
-									const auto* s = bits;
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto * const dpend = d_p + info->bmiHeader.biWidth;
-										unsigned index = 0;
-										while(d_p != dpend)
-										{
-											unsigned bi = (7 - (index & 7));	//(index % 8)
-											rgb_quad & rgb = info->bmiColors[(s[index >> 3] & (1 << bi)) >> bi];
-
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-											++index;
-										}
-										d = dpend;
-										s += bytes_per_line;
-									}
-								}
-								else
-								{
-									const auto* s = bits + bytes_per_line * (height_pixels - 1);
-									while(d < lend)
-									{
-										auto d_p = d;
-										auto * const dpend = d_p + info->bmiHeader.biWidth;
-
-										unsigned index = 0;
-										while(d_p != dpend)
-										{
-											unsigned bi = (7 - (index & 7));
-											rgb_quad & rgb = info->bmiColors[(s[index >> 3] & (1 << bi)) >> bi];
-
-											d_p->element.red = rgb.rgbRed;
-											d_p->element.green = rgb.rgbGreen;
-											d_p->element.blue = rgb.rgbBlue;
-											d_p->element.alpha_channel = rgb.rgbReserved;
-											++d_p;
-											++index;
-										}
-										d = dpend;
-										s -= bytes_per_line;
-									}
-								}
-							}
-						}
-					}
+					if (size == ifs.gcount())
+						return open(buffer.get(), size);
 				}
-				return (false == pixbuf_.empty());
+				return false;
 			}
 
 			bool alpha_channel() const override
