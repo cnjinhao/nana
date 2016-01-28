@@ -1,4 +1,7 @@
 #include <nana/audio/player.hpp>
+
+#ifdef NANA_ENABLE_AUDIO
+
 #include <nana/audio/detail/audio_stream.hpp>
 #include <nana/audio/detail/audio_device.hpp>
 #include <nana/audio/detail/buffer_preparation.hpp>
@@ -63,3 +66,5 @@ namespace nana{	namespace audio
 		}
 }//end namespace audio
 }//end namespace nana
+
+#endif //NANA_ENABLE_AUDIO

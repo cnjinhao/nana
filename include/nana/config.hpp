@@ -32,6 +32,11 @@
 //#define NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ
 
 ///////////////////
+//Support of PCM playback
+//
+//#define NANA_ENABLE_AUDIO
+
+///////////////////
 //Support for PNG
 //	Define the NANA_ENABLE_PNG to enable the support of PNG.
 //

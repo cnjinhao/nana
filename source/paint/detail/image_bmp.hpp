@@ -315,7 +315,7 @@ namespace nana{	namespace paint
 				if(ifs)
 				{
 					ifs.seekg(0, std::ios::end);
-					auto size = ifs.tellg();
+					auto size = static_cast<std::size_t>(ifs.tellg());
 					ifs.seekg(0, std::ios::beg);
 
 					if(size <= static_cast<int>(sizeof(bitmap_file_header)))

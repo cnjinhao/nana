@@ -2,6 +2,9 @@
 #define NANA_AUDIO_DETAIL_AUDIO_DEVICE_HPP
 
 #include <nana/deploy.hpp>
+
+#ifdef NANA_ENABLE_AUDIO
+
 #include <nana/audio/detail/buffer_preparation.hpp>
 #include <vector>
 #if defined(NANA_WINDOWS)
@@ -50,4 +53,5 @@ namespace nana{	namespace audio
 }//end namespace audio
 }//end namespace nana
 
+#endif	//NANA_ENABLE_AUDIO
 #endif

@@ -1,4 +1,7 @@
 #include <nana/audio/detail/buffer_preparation.hpp>
+
+#ifdef NANA_ENABLE_AUDIO
+
 #include <cstring>
 
 namespace nana{	namespace audio
@@ -159,3 +162,5 @@ namespace nana{	namespace audio
 	}//end namespace detail
 }//end namespace audio
 }//end namespace nana
+
+#endif //NANA_ENABLE_AUDIO
