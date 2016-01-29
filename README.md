@@ -9,6 +9,12 @@ Nana is licensed under the [Boost Software License].
 
 [Boost Software License]: http://www.boost.org/LICENSE_1_0.txt
 
+## Members
+
+Jinhao, [Ariel Viña Rodríguez].
+
+[Ariel Viña Rodríguez]: http://qpcr4vir.github.io/
+
 ## Biicode
 Nana is available in biicode, download biicode and try the nana example:
 
