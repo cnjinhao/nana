@@ -145,7 +145,14 @@ namespace nana
 
 				void item_image(graph_reference graph, const nana::point& pos, unsigned image_px, const paint::image& img)
 				{
-					img.stretch(rectangle{ img.size() }, graph, rectangle{ pos, ::nana::size(image_px, image_px) });
+					if (img.size().width > image_px || img.size().height > image_px )
+						img.stretch(rectangle{ img.size() }, graph, rectangle{ pos, ::nana::size(image_px, image_px) });
+					else {
+						nana::point ipos = pos;
+						ipos.x += (image_px - img.size().width ) / 2;
+						ipos.y += (image_px - img.size().height) / 2;
+						img.paste(graph, ipos);
+					}
 				}
 
 				void item_text(graph_reference graph, const nana::point& pos, const std::string& text, unsigned text_pixels, const attr& at)
