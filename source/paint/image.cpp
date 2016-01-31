@@ -308,7 +308,7 @@ namespace paint
 				std::shared_ptr<image::image_impl_interface> ptr;
 
 				auto meta = *reinterpret_cast<const unsigned short*>(data);
-				
+
 				if (*reinterpret_cast<const short*>("BM") == meta)
 					ptr = std::make_shared<detail::image_bmp>();
 				else if (*reinterpret_cast<const short*>("MZ") == meta)
@@ -355,17 +355,17 @@ namespace paint
 			return (image_ptr_ ? &image::empty : nullptr);
 		}
 
-		void image::close()
+		void image::close() noexcept
 		{
 			image_ptr_.reset();
 		}
 
-		bool image::alpha() const
+		bool image::alpha() const noexcept
 		{
 			return (image_ptr_ ? image_ptr_->alpha_channel() : false);
 		}
 
-		nana::size image::size() const
+		nana::size image::size() const noexcept
 		{
 			return (image_ptr_ ? image_ptr_->size() : nana::size());
 		}
