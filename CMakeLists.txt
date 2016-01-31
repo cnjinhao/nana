@@ -1,4 +1,4 @@
-# CMake configuration for Nana
+﻿# CMake configuration for Nana
 # Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributor:
 #	Robert Hauck - Enable support for PNG/Freetype
@@ -14,6 +14,7 @@ option(ENABLE_PNG "Enable the use of PNG" OFF)
 option(LIBPNG_FROM_OS "Use libpng from operating system." ON)
 option(ENABLE_JPEG "Enable the use of JPEG" OFF)
 option(LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
+option(ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
 option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
@@ -98,7 +99,17 @@ if(ENABLE_JPEG)
     endif(LIBJPEG_FROM_OS)
 endif(ENABLE_JPEG)
 
-
+if(ENABLE_AUDIO)
+    add_definitions(-DNANA_ENABLE_AUDIO)
+    if(UNIX)
+        find_package(asound)
+        if (ASOUND_FOUND)
+            include_directories( ${ASOUND_INCLUDE_DIRS})
+        else(ASOUND_FOUND)
+            message(FATAL_ERROR "libasound is not found")
+        endif(ASOUND_FOUND)
+    endif(UNIX)
+endif(ENABLE_AUDIO)
 
 #Unicode
 if(CMAKE_VERBOSE_PREPROCESSOR)
