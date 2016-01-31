@@ -305,7 +305,7 @@ namespace nana{	namespace paint
 						}
 					}
 				}
-				
+
 				return true;
 			}
 
@@ -324,7 +324,7 @@ namespace nana{	namespace paint
 					std::unique_ptr<char[]> buffer(new char[static_cast<int>(size)]);
 
 					ifs.read(buffer.get(), size);
-					if (size == ifs.gcount())
+					if (size == static_cast<std::size_t>(ifs.gcount()))
 						return open(buffer.get(), size);
 				}
 				return false;
