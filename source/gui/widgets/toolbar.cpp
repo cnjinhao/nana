@@ -34,6 +34,7 @@ namespace nana
 				std::string text;
 				nana::paint::image image;
 				unsigned	pixels{0};
+				unsigned    position{ 0 }; // last item position.
 				nana::size	textsize;
 				bool		enable{true};
 
@@ -78,6 +79,16 @@ namespace nana
 					insert(cont_.size(), text, nana::paint::image(), item_type::kind::button);
 				}
 
+				void go_right()
+				{
+					right_ = cont_.size();
+				}
+
+				size_t right()
+				{
+					return right_;
+				}
+
 				void insert(size_type pos)
 				{
 					if(pos < cont_.size())
@@ -107,6 +118,7 @@ namespace nana
 				}
 			private:
 				container_type cont_;
+				size_t    right_{ npos };
 			};
 
 			class item_renderer
@@ -224,6 +236,7 @@ namespace nana
 						if (item)
 						{
 							_m_calc_pixels(item, false);
+							item->position = x;
 							ir(x, y, item->pixels, impl_->scale + ir.extra_size, *item, (index == impl_->which ? impl_->state : item_renderer::state_t::normal));
 							x += item->pixels;
 						}
@@ -234,6 +247,20 @@ namespace nana
 							x += 4;
 						}
 						++index;
+						if (index == impl_->items.right() && index < impl_->items.size())
+						{
+							int total_x = 0;
+							for (size_t i = index; i < impl_->items.size(); i++) {
+								if (impl_->items.at(i) == nullptr) {
+									total_x += 8; // we assume that separator has width = 8.
+								}
+								else {
+									_m_calc_pixels(impl_->items.at(i), false);
+									total_x += impl_->items.at(i)->pixels;
+								}
+							}
+							x = graph.size().width - total_x - 4;
+						}
 					}
 				}
 
@@ -243,6 +270,8 @@ namespace nana
 
 					widget_ = static_cast< ::nana::toolbar*>(&widget);
 					widget.caption("nana toolbar");
+
+					if (widget_->detached()) return;
 
 					impl_->event_size = API::events(widget.parent()).resized.connect_unignorable([this](const arg_resized& arg)
 					{
@@ -358,12 +387,9 @@ namespace nana
 					std::size_t index = 0;
 					for(auto m: impl_->items.container())
 					{
-						auto px = static_cast<const int>(m ? m->pixels : 3);
-
-						if(pos.x < px)
+						unsigned x = static_cast<unsigned>(pos.x);
+						if (m && x >= m->position && x <= (m->position+m->pixels))
 							return (((!m) || (!m->enable && !want_if_disabled)) ? npos : index);
-
-						pos.x -= px;
 
 						++index;
 					}
@@ -389,14 +415,21 @@ namespace nana
 	}//end namespace drawerbase
 
 	//class toolbar
-		toolbar::toolbar(window wd, bool visible)
+		toolbar::toolbar(window wd, bool visible, bool detached) :
+			detached_(detached)
 		{
 			create(wd, rectangle(), visible);
 		}
 
-		toolbar::toolbar(window wd, const rectangle& r, bool visible)
+		toolbar::toolbar(window wd, const rectangle& r, bool visible, bool detached) :
+			detached_(detached)
 		{
 			create(wd, r, visible);
+		}
+
+		void toolbar::go_right()
+		{
+			get_drawer_trigger().items().go_right();
 		}
 
 		void toolbar::separate()
