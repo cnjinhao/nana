@@ -1,13 +1,11 @@
-# Nana C++ Library
-[![Build Status](https://webapi.biicode.com/v1/badges/qiangwu/qiangwu/nana/master)](https://www.biicode.com/qiangwu/nana) 
+# Nana C++ Library [![BiiCode build status](https://webapi.biicode.com/v1/badges/qiangwu/qiangwu/nana/master)](https://www.biicode.com/qiangwu/nana) [![TravisCI build status](https://travis-ci.org/cnjinhao/nana.svg)](https://travis-ci.org/cnjinhao/nana) [![Licence](https://img.shields.io/badge/license-BSL-blue.svg?style=flat)](LICENSE_1_0.txt)
+
 
 Nana is a C++ library designed to allow developers to easily create cross-platform GUI applications with modern C++11 style, currently it can work on Linux(X11) and Windows. The nana repository contains the entire source of library, you can browse the source code and submit your pull request for contributing.
 
 ## License
 
-Nana is licensed under the [Boost Software License].
-
-[Boost Software License]: http://www.boost.org/LICENSE_1_0.txt
+Nana is licensed under the [Boost Software License](http://www.boost.org/LICENSE_1_0.txt)
 
 ## Biicode
 Nana is available in biicode, download biicode and try the nana example:
