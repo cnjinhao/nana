@@ -1,7 +1,7 @@
 /*
  *	A Character Encoding Set Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -11,6 +11,7 @@
  *	@brief: A conversion between unicode characters and multi bytes characters
  *	@contributions:
  *		UTF16 4-byte decoding issue by Renke Yan.
+ *		Pr0curo(pr#98)
  */
 
 #include <nana/charset.hpp>
@@ -18,7 +19,7 @@
 #include <nana/deploy.hpp>
 #include <cwchar>
 #include <clocale>
-#include <cstring>
+#include <cstring>	//Added by Pr0curo(pr#98)
 
 //GCC 4.7.0 does not implement the <codecvt> and codecvt_utfx classes
 #ifndef STD_CODECVT_NOT_SUPPORTED

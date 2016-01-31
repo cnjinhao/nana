@@ -11,7 +11,7 @@
  *	@contributors:
  *		Hiroshi Seki
  *		Ariel Vina-Rodriguez
- *		leobackes(pr#86)
+ *		leobackes(pr#86,pr#97)
  *		Benjamin Navarro(pr#81)
  *		
  */
@@ -4279,6 +4279,8 @@ namespace nana
 					cat_ = &(*i);
 				}
 
+				//A fix for auto_draw, to make sure the inline widget set() issued after value() and value_ptr() are actually set.
+				//Fixed by leobackes(pr#86)
 				void cat_proxy::_m_update() {
 					ess_->update();
 				}
@@ -4289,25 +4291,28 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-	arg_listbox::arg_listbox(const drawerbase::listbox::item_proxy& m, bool selected)
+	arg_listbox::arg_listbox(const drawerbase::listbox::item_proxy& m, bool selected) noexcept
 		: item(m), selected(selected)
 	{
 	}
 
-	arg_category::arg_category ( const nana::drawerbase::listbox::cat_proxy& cat )
-        : category(cat), _m_block_change(false)
+
+	//Implementation of arg_category
+	//Contributed by leobackes(pr#97)
+	arg_category::arg_category ( const nana::drawerbase::listbox::cat_proxy& cat ) noexcept
+		: category(cat), block_change_(false)
     {
     }
 
-    void arg_category::block_category_change() const {
-        _m_block_change=true;
+    void arg_category::block_category_change() const noexcept
+	{
+		block_change_ = true;
     }
 
-    bool arg_category::category_change_blocked() const {
-        return _m_block_change;
+    bool arg_category::category_change_blocked() const noexcept
+	{
+		return block_change_;
     }
-
-
 
 
 	//class listbox
@@ -4475,12 +4480,13 @@ namespace nana
 			return *this;
 		}
 
-		/// from abs pos
         listbox::item_proxy listbox::at(const index_pair& pos_abs) const
 		{
 			return at(pos_abs.cat).at(pos_abs.item);
 		}
 
+
+		// Contributed by leobackes(pr#97)
         listbox::index_pair listbox::at ( const point& pos ) const
         {
             auto & ess=_m_ess();
@@ -4493,6 +4499,7 @@ namespace nana
             return item_pos;
         }
 
+		//Contributed by leobackes(pr#97)
         listbox::columns_indexs listbox::column_from_pos ( const point& pos )
         {
             auto & ess=_m_ess();

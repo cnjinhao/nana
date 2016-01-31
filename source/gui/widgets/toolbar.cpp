@@ -1,13 +1,15 @@
 /*
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/toolbar.cpp
+ *	@contributors:
+ *		kmribti(pr#105)
  */
 
 #include <nana/gui/widgets/toolbar.hpp>
@@ -79,12 +81,14 @@ namespace nana
 					insert(cont_.size(), text, nana::paint::image(), item_type::kind::button);
 				}
 
-				void go_right()
+				//Contributed by kmribti(pr#105)
+				void go_right() noexcept
 				{
 					right_ = cont_.size();
 				}
 
-				size_t right()
+				//Contributed by kmribti(pr#105)
+				size_t right() const noexcept
 				{
 					return right_;
 				}
@@ -102,12 +106,12 @@ namespace nana
 					cont_.push_back(nullptr);
 				}
 
-				size_type size() const
+				size_type size() const noexcept
 				{
 					return cont_.size();
 				}
 
-				container_type& container()
+				container_type& container() noexcept
 				{
 					return cont_;
 				}
@@ -247,9 +251,12 @@ namespace nana
 							x += 4;
 						}
 						++index;
+
+						//Reset the x position of items which are right aligned
+						//Contributed by kmribti(pr#105)
 						if (index == impl_->items.right() && index < impl_->items.size())
 						{
-							int total_x = 0;
+							unsigned total_x = 0;
 							for (size_t i = index; i < impl_->items.size(); i++) {
 								if (impl_->items.at(i) == nullptr) {
 									total_x += 8; // we assume that separator has width = 8.
@@ -259,6 +266,7 @@ namespace nana
 									total_x += impl_->items.at(i)->pixels;
 								}
 							}
+
 							x = graph.size().width - total_x - 4;
 						}
 					}
@@ -427,6 +435,7 @@ namespace nana
 			create(wd, r, visible);
 		}
 
+		//Contributed by kmribti(pr#105)
 		void toolbar::go_right()
 		{
 			get_drawer_trigger().items().go_right();

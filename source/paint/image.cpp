@@ -8,6 +8,8 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/paint/image.cpp
+ *	@contributors:
+ *		nabijaczleweli(pr#106)
  */
 
 #include <nana/detail/platform_spec_selector.hpp>
@@ -355,16 +357,19 @@ namespace paint
 			return (image_ptr_ ? &image::empty : nullptr);
 		}
 
+		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)
 		void image::close() noexcept
 		{
 			image_ptr_.reset();
 		}
 
+		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)
 		bool image::alpha() const noexcept
 		{
 			return (image_ptr_ ? image_ptr_->alpha_channel() : false);
 		}
 
+		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)
 		nana::size image::size() const noexcept
 		{
 			return (image_ptr_ ? image_ptr_->size() : nana::size());

@@ -8,6 +8,8 @@
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
 *	@file: nana/gui/widgets/menu.cpp
+*	@contributors:
+*		kmribti(pr#102)
 */
 
 #include <nana/gui/widgets/menu.hpp>
@@ -145,14 +147,18 @@ namespace nana
 
 				void item_image(graph_reference graph, const nana::point& pos, unsigned image_px, const paint::image& img)
 				{
-					if (img.size().width > image_px || img.size().height > image_px )
+					if (img.size().width > image_px || img.size().height > image_px)
+					{
 						img.stretch(rectangle{ img.size() }, graph, rectangle{ pos, ::nana::size(image_px, image_px) });
-					else {
-						nana::point ipos = pos;
-						ipos.x += (image_px - img.size().width ) / 2;
-						ipos.y += (image_px - img.size().height) / 2;
-						img.paste(graph, ipos);
+						return;
 					}
+					
+					//Stretchs menu icon only when it doesn't fit, center it otherwise.
+					//Contributed by kmribti(pr#102)
+					nana::point ipos = pos;
+					ipos.x += (image_px - img.size().width ) / 2;
+					ipos.y += (image_px - img.size().height) / 2;
+					img.paste(graph, ipos);
 				}
 
 				void item_text(graph_reference graph, const nana::point& pos, const std::string& text, unsigned text_pixels, const attr& at)

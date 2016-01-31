@@ -8,8 +8,11 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.hpp
- *	@contributors: Ariel Vina-Rodriguez
- *
+ *	@contributors:
+ *		Hiroshi Seki
+ *		Ariel Vina-Rodriguez
+ *		leobackes
+ *		Benjamin Navarro
  */
 
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
@@ -471,18 +474,24 @@ namespace nana
         mutable drawerbase::listbox::item_proxy item;
         bool    selected;
 
-        arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
+        arg_listbox(const drawerbase::listbox::item_proxy&, bool selected) noexcept;
     };
+
+	/// The event argument type for listbox's category_dbl_click
     struct arg_category
 		: public event_arg
 	{
         drawerbase::listbox::cat_proxy category;
-        void block_category_change() const;
-        bool category_change_blocked() const;
 
-        arg_category(const drawerbase::listbox::cat_proxy&);
+		/// Block expension/shrink of category
+        void block_category_change() const noexcept;
+
+		/// Determines whether expension/shrink of category is blocked
+        bool category_change_blocked() const noexcept;
+
+        arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
     private:
-        mutable bool _m_block_change;
+        mutable bool block_change_;
 	};
 
 	namespace drawerbase
@@ -494,6 +503,8 @@ namespace nana
 			{
 				basic_event<arg_listbox> checked;
 				basic_event<arg_listbox> selected;
+
+				/// An event occurs when a listbox category is double clicking.
                 basic_event<arg_category> category_dbl_click;
 			};
 
@@ -625,8 +636,13 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 			return cat_proxy(&_m_ess(), _m_at_key(p));
 		}
 
+		/// Returns an item by the specified absolute position
 		item_proxy at(const index_pair &abs_pos) const;
+
+		/// Returns an index of item which contains the specified point.
         index_pair at(const point & pos) const;
+
+		/// Returns the column which contains the specified point.
         columns_indexs column_from_pos(const point & pos);
 
 
