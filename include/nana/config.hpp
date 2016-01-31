@@ -14,12 +14,19 @@
  *	External libraries:
  *	- NANA_LIBPNG, USE_LIBPNG_FROM_OS
  *	- NANA_LIBJPEG, USE_LIBJPEG_FROM_OS
+ *
+ *	messages:
+ *	- VERBOSE_PREPROCESSOR, STOP_VERBOSE_PREPROCESSOR
  */
 
 #ifndef NANA_CONFIG_HPP
 #define NANA_CONFIG_HPP
 
 #include "c++defines.hpp"
+
+//The basic configurations are ignored when NANA_IGNORE_CONF is defined.
+//The NANA_IGNORE_CONF may be specified by CMake generated makefile.
+#ifndef NANA_IGNORE_CONF
 
 // Here defines some flags that tell Nana what features will be supported.
 
@@ -60,5 +67,13 @@
 	#endif
 #endif
 
+#if !defined(VERBOSE_PREPROCESSOR)
+//#define VERBOSE_PREPROCESSOR
+#endif
 
+#if !defined(STOP_VERBOSE_PREPROCESSOR)
+#define STOP_VERBOSE_PREPROCESSOR
+#endif
+
+#endif  // NANA_IGNORE_CONFIG
 #endif  // NANA_CONFIG_HPP

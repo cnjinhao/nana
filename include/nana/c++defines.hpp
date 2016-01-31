@@ -34,10 +34,6 @@
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED (MinGW with GCC < 4.8.1)
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
- *	- VERBOSE_PREPROCESSOR, STOP_VERBOSE_PREPROCESSOR
- *	- STD_make_unique_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
- *	  or __cpp_lib_make_unique
- *	http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0096r0.html#detail.cpp14.n3656
  */
 
 #ifndef NANA_CXX_DEFINES_INCLUDED
@@ -171,14 +167,5 @@
 		#define UNICODE
 	#endif
 #endif
-
-#if !defined(VERBOSE_PREPROCESSOR)
-    //#define VERBOSE_PREPROCESSOR
-#endif
-
-#if !defined(STOP_VERBOSE_PREPROCESSOR)
-	#define STOP_VERBOSE_PREPROCESSOR
-#endif
-
 
 #endif  // NANA_CXX_DEFINES_INCLUDED
