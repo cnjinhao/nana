@@ -119,8 +119,9 @@ namespace nana{
 
 			struct condition_tag
 			{
-				core_window_t*	pressed{nullptr};			//The handle to a window which is being pressed
-				core_window_t*	hovered{nullptr};	//the latest window that mouse moved
+				core_window_t*	pressed{nullptr};				//The handle to a window which has been pressed by pressing left button of mouse.
+				core_window_t*	pressed_by_space{ nullptr };	//The handle to a window which has been pressed by pressing spacebar.
+				core_window_t*	hovered{nullptr};				//the latest window that mouse moved
 			}condition;
 
 			root_misc(core_window_t * wd, unsigned width, unsigned height)

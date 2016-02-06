@@ -40,6 +40,7 @@ namespace nana{	namespace drawerbase
 			wdg_ = &widget;
 			window wd = widget;
 
+			API::dev::enable_space_click(widget, true);
 			API::tabstop(wd);
 			API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 			API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
@@ -162,19 +163,8 @@ namespace nana{	namespace drawerbase
 			_m_press(graph, false);
 		}
 
-		void trigger::key_char(graph_reference, const arg_keyboard& arg)
-		{
-			if (static_cast<wchar_t>(keyboard::enter) == arg.key)
-				emit_click();
-		}
-
 		void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 		{
-			if (keyboard::space == static_cast<wchar_t>(arg.key))
-			{
-				_m_press(graph, true);
-				return;
-			}
 			bool ch_tabstop_next;
 			switch(arg.key)
 			{
@@ -189,18 +179,6 @@ namespace nana{	namespace drawerbase
 			}
 
 			API::move_tabstop(*wdg_, ch_tabstop_next);
-		}
-
-		void trigger::key_release(graph_reference graph, const arg_keyboard& arg)
-		{
-			if (arg.key != static_cast<wchar_t>(keyboard::space))
-				return;
-
-			emit_click();
-
-			//Check the widget, because it may be deleted by click event
-			if (API::is_window(*wdg_))
-				_m_press(graph, false);
 		}
 
 		void trigger::focus(graph_reference graph, const arg_focus& arg)

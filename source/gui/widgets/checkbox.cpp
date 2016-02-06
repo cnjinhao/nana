@@ -47,6 +47,7 @@ namespace nana{ namespace drawerbase
 			void drawer::attached(widget_reference widget, graph_reference)
 			{
 				impl_->widget_ptr = &widget;
+				API::dev::enable_space_click(widget, true);
 			}
 
 			void drawer::refresh(graph_reference graph)

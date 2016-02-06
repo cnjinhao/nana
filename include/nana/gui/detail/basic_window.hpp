@@ -1,7 +1,7 @@
 /*
  *	A Basic Window Widget Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -167,7 +167,8 @@ namespace detail
 			bool make_bground_declared	: 1;	//explicitly make bground for bground effects
 			bool ignore_menubar_focus	: 1;	//A flag indicates whether the menubar sets the focus.
 			bool ignore_mouse_focus		: 1;	//A flag indicates whether the widget accepts focus when clicking on it
-			unsigned Reserved	:19;
+			bool space_click_enabled : 1;		//A flag indicates whether enable mouse_down/click/mouse_up when pressing and releasing whitespace key.
+			unsigned Reserved	:18;
 			unsigned char tab;		//indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 		}flags;

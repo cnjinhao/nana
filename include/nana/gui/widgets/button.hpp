@@ -43,9 +43,7 @@ namespace nana{
 				void mouse_leave(graph_reference, const arg_mouse&) override;
 				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
-				void key_char(graph_reference, const arg_keyboard&)	override;
 				void key_press(graph_reference, const arg_keyboard&) override;
-				void key_release(graph_reference, const arg_keyboard&) override;
 				void focus(graph_reference, const arg_focus&) override;
 			private:
 				void _m_draw_title(graph_reference, bool enabled);

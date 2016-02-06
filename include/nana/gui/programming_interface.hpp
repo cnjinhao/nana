@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -86,6 +86,8 @@ namespace API
 
 		void register_menu_window(window, bool has_keyboard);
 		void set_menubar(window wd, bool attach);
+
+		void enable_space_click(window, bool enable);
 	}//end namespace dev
 
 

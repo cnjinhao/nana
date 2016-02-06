@@ -1,3 +1,15 @@
+/*
+*	A Basic Window Widget Definition
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/detail/basic_window.cpp
+*/
+
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 
@@ -384,6 +396,7 @@ namespace nana
 				flags.make_bground_declared	= false;
 				flags.ignore_menubar_focus	= false;
 				flags.ignore_mouse_focus	= false;
+				flags.space_click_enabled = false;
 
 				visible = false;
 
