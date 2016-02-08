@@ -1,145 +1,159 @@
+/**
+ *	Any
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file  nana/any.hpp
+ *
+ *	@brief An implementation of experimental library any of C++ standard(http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4480.html#any)
+ */
+
 #ifndef NANA_ANY_HPP
 #define NANA_ANY_HPP
 #include <typeinfo>
-#include <utility> //C++11 for std::move
+#include <type_traits>
+
+#include "c++defines.hpp"
 
 namespace nana
 {
 
+	class bad_any_cast
+		: public std::bad_cast
+	{
+	};
+
 	class any
 	{
-		struct super_type
+		class content_interface
 		{
-			virtual ~super_type();
-			super_type& operator=(const super_type&);
-			virtual super_type& assign(const super_type&) = 0;
-			virtual bool same(const super_type&) const = 0;
-			virtual super_type* clone() const = 0;
-		}; //end struct super_type
+		public:
+			virtual ~content_interface() = default;
+			
+			virtual const std::type_info& type() const noexcept = 0;
+			virtual content_interface* clone() const = 0;
+		};
 
-		template<typename T>
-		struct object_type
-			: public super_type
+		template<typename Value>
+		class holder : public content_interface
 		{
-			object_type(){}
-			
-			object_type(T const & obj)
-				: object(obj)
+			holder& operator=(const holder&) = delete;
+		public:
+			holder(const Value& other)
+				: value(other)
 			{}
 
-			object_type(T && obj)
-				: object(std::move(obj))
+			holder(Value&& other)
+				: value(static_cast<Value&&>(other))
 			{}
-			
-			object_type(const object_type& rhs)
-				:object(rhs.object)
-			{}
-			
-			virtual super_type& assign(const super_type& rhs)
+		public:
+			const std::type_info& type() const noexcept override
 			{
-				if(this != &rhs)
-				{
-					auto other = dynamic_cast<const object_type*>(&rhs);
-					if(other)
-						object = other->object;	
-				}
-				return *this;	
+				return typeid(Value);
 			}
-			
-			virtual bool same(const super_type& rhs) const
+
+			content_interface* clone() const override
 			{
-				return (dynamic_cast<const object_type*>(&rhs) != nullptr);
+				return new holder(value);
 			}
-			
-			virtual super_type* clone() const
-			{
-				return new object_type(object);
-			}
-			
-			T object;
-		}; //end struct object_type
+		public:
+			Value value;	//representation accessable for friend of any
+		};
 	public:
-		template<typename T>
-		any(const T & obj)
-			: super_(new object_type<typename std::remove_reference<T>::type>(obj))
-		{}
+		//constructors and destructor
+		any() noexcept;
 
-		template<typename T>
-		any(T && obj)
-			: super_(new object_type<typename std::remove_reference<T>::type>(std::move(obj)))
-		{}
+		any(const any& other);
+		any(any&& other) noexcept;
 
-		any();
-		any(const any&);
-		any(any&&);
+		template<typename Value>
+		any(Value && value,
+				typename std::enable_if<!std::is_same<any&, Value>::value>::type * = nullptr,
+				typename std::enable_if<!std::is_const<Value>::value>::type* = nullptr)
+			: content_(new holder<typename std::decay<Value>::type>(static_cast<Value&&>(value)))
+		{
+		}
+
 		~any();
-		
-		bool same(const any &) const;
-		any& operator=(const any&);
-		any& operator=(any&&);
-		
-		template<typename T>
-		any& operator=(T const &rhs)
+
+		//assignments
+		any& operator=(const any& other);
+		any& operator=(any&& other) noexcept;
+
+		template<class Value>
+		any& operator=(Value&& other)
 		{
-			T * obj = get<T>();
-			if(nullptr == obj)
-			{
-				delete super_;
-				super_ = new object_type<T>(rhs);
-			}
-			else
-				*obj = rhs;
+			any(other).swap(*this);
 			return *this;
 		}
 
-		template<typename T>
-		any & operator=(T && rhs)
-		{
-			typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type type;
-			type* obj = get<type>();
-			if(nullptr == obj)
-			{
-				delete super_;
-				super_ = new object_type<type>(std::move(rhs));
-			}
-			else
-				*obj = std::move(rhs);
-			return *this;
-		}
-		
-		template<typename T>
-		T * get() const
-		{
-			if(super_)
-			{
-				typedef typename std::remove_const<T>::type type;
-				object_type<type>* obj = dynamic_cast<object_type<type>*>(super_);
-				if(obj) return &(obj->object);
-			}
-			return nullptr;
-		}
-		
-		template<typename T>
-		operator T&() const
-		{
-			typedef typename std::remove_const<T>::type type;
-			type *obj = get<type>();
+		//modifiers
+		void clear() noexcept;
+		void swap(any& other) noexcept;
 
-			if(nullptr == obj)
-				throw std::bad_cast();
-
-			return *obj;
-		}
-
-		template<typename T>
-		operator T*() const
-		{
-			typedef typename std::remove_const<T>::type type;
-			return get<type>();
-		}
+		//observers
+		bool empty() const noexcept;
+		const std::type_info& type() const noexcept;
 	private:
-		super_type * super_;
+		template<typename Value>
+		friend Value* any_cast(any*) noexcept;
+	private:
+		content_interface * content_;
 	};
+
+	// Non-member functions
+	inline void swap(any& x, any& y) noexcept
+	{
+		x.swap(y);
+	}
+
+	template<typename Value>
+	Value any_cast(const any& operand)
+	{
+		using value_type = typename std::remove_reference<Value>::type;
+		return any_cast<const value_type&>(const_cast<any&>(operand));
+	}
+
+	template<typename Value>
+	Value any_cast(any& operand)
+	{
+		using value_type = typename std::remove_reference<Value>::type;
+
+		auto value_ptr = any_cast<value_type>(&operand);
+		if (!value_ptr)
+			throw bad_any_cast();
+
+		using ref_type = typename std::conditional<std::is_reference<Value>::value, Value, typename std::add_lvalue_reference<Value>::type>::type;
+		return static_cast<ref_type>(*value_ptr);
+	}
+
+	template<typename Value>
+	Value any_cast(any && operand)
+	{
+		static_assert(std::is_rvalue_reference<Value&&>::value || std::is_const<typename ::std::remove_reference<Value>::type>::value, "nana::any_cast shall not be used for getting non-const reference to temporary objects");
+		return any_cast<Value>(operand);
+	}
+
+	template<typename Value>
+	const Value* any_cast(const any* operand) noexcept
+	{
+		return any_cast<Value>(const_cast<any*>(operand));
+	}
+
+	template<typename Value>
+	Value* any_cast(any* operand) noexcept
+	{
+		if (!operand)
+			return nullptr;
+
+		auto holder = dynamic_cast<any::holder<Value>*>(operand->content_);
+		return (holder ? &holder->value : nullptr);
+	}
+
 }//end namespace nana
 
 #endif

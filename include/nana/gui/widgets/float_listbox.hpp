@@ -28,7 +28,7 @@ namespace nana
 				virtual ~item_interface(){}
 
 				virtual const nana::paint::image & image() const = 0;
-				virtual const nana::char_t*	text() const = 0;
+				virtual const char*	text() const = 0;
 			};
 
 			//struct module_def

@@ -55,9 +55,9 @@ namespace nana
 		notifier(window);
 		~notifier();
 		void close();
-		void text(const nana::string&);
-		void icon(const nana::string& icon_file);
-		void insert_icon(const nana::string& icon_file);
+		void text(const ::std::string&);
+		void icon(const ::std::string& icon_file);
+		void insert_icon(const ::std::string& icon_file);
 		void period(unsigned millisecond);
 		detail::notifier_events& events();
 		window handle() const;

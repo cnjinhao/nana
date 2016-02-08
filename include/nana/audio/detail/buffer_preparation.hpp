@@ -1,6 +1,9 @@
 #ifndef NANA_AUDIO_DETAIL_BUFFER_PREPARATION_HPP
 #define NANA_AUDIO_DETAIL_BUFFER_PREPARATION_HPP
 #include <nana/deploy.hpp>
+
+#ifdef NANA_ENABLE_AUDIO
+
 #include <nana/audio/detail/audio_stream.hpp>
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
@@ -62,4 +65,5 @@ namespace nana{	namespace audio
 	}//end namespace detail
 }//end namespace audio
 }//end namespace nana
+#endif	//NANA_ENABLE_AUDIO
 #endif

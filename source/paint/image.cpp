@@ -1,13 +1,15 @@
 /*
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/paint/image.cpp
+ *	@contributors:
+ *		nabijaczleweli(pr#106)
  */
 
 #include <nana/detail/platform_spec_selector.hpp>
@@ -19,6 +21,7 @@
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 #if defined(NANA_ENABLE_JPEG)
 #include "detail/image_jpeg.hpp"
@@ -40,19 +43,19 @@ namespace paint
 		//class image_ico
 			image_ico::image_ico(bool is_ico): is_ico_(is_ico){}
 
-			bool image_ico::open(const nana::char_t* filename)
+			bool image_ico::open(const nana::experimental::filesystem::path& file)
 			{
 				close();
 #if defined(NANA_WINDOWS)
 				HICON handle = 0;
 				if(is_ico_)
 				{
-					handle = (HICON)::LoadImage(0, filename, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+					handle = (HICON)::LoadImage(0, file.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
 				}
 				else
 				{
 					SHFILEINFO    sfi;
-					::SHGetFileInfo(filename, 0, &sfi, sizeof(sfi), SHGFI_ICON);
+					::SHGetFileInfo(file.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON);
 					handle = sfi.hIcon;
 				}
 
@@ -162,7 +165,7 @@ namespace paint
 	{}
 
 	//class image
-		image::image()
+		image::image() noexcept
 		{}
 
 		image::image(const image& rhs)
@@ -173,15 +176,14 @@ namespace paint
 			:	image_ptr_(std::move(r.image_ptr_))
 		{}
 
-		image::image(const nana::char_t* file)
+		image::image(const std::string& file)
 		{
-			if(file)
-				open(file);
+			open(file);
 		}
 
-		image::image(const nana::string& file)
+		image::image(const std::wstring& file)
 		{
-			this->open(file);
+			open(file);
 		}
 
 		image::~image()
@@ -193,7 +195,7 @@ namespace paint
 		{
 			if(this != &r)
 				image_ptr_ = r.image_ptr_;
-			
+
 			return * this;
 		}
 
@@ -204,89 +206,148 @@ namespace paint
 			return *this;
 		}
 
-		bool image::open(const nana::string& filename)
+		std::shared_ptr<image::image_impl_interface> create_image(const ::nana::experimental::filesystem::path & p)
 		{
-			image_ptr_.reset();
-			image::image_impl_interface * helper = nullptr;
+			std::shared_ptr<image::image_impl_interface> ptr;
 
-			if(filename.size())
+			auto ext = p.extension().native();
+			if (ext.empty())
+				return ptr;
+
+			std::transform(ext.begin(), ext.end(), ext.begin(), [](int ch)
 			{
-				auto dotpos = filename.find_last_of('.');
-				if (dotpos != filename.npos)
-				{
-					auto type_str = ::nana::cistring(filename.substr(dotpos + 1).data());
+				if ('A' <= ch && ch <= 'Z')
+					ch -= ('A' - 'a');
+				return ch;
+			});
 
-					do
-					{
-						if (STR("ICO") == type_str)
-						{
 #if defined(NANA_WINDOWS)
-							helper = new detail::image_ico(true);
+			const wchar_t* ext_ico = L".ico";
+			const wchar_t* ext_png = L".png";
+			const wchar_t* ext_jpg = L".jpg";
+			const wchar_t* ext_jpeg = L".jpeg";
 #else
-							return false;
+			const char* ext_ico = ".ico";
+			const char* ext_png = ".png";
+			const char* ext_jpg = ".jpg";
+			const char* ext_jpeg = ".jpeg";
 #endif
-							break;
-						}
-
-						if (STR("PNG") == type_str)
-						{
-#if defined(NANA_ENABLE_PNG)
-							helper = new detail::image_png;
-#else
-							return false;
-#endif
-							break;
-						}
-
-						if (STR("JPG") == type_str || STR("JPEG") == type_str)
-						{
-#if defined(NANA_ENABLE_JPEG)
-							helper = new detail::image_jpeg;
-#else
-							return false;
-#endif
-							break;
-						}
-					} while (false);
-					
-				}
-				
-				//Check for BMP
-				if(!helper)
+			do
+			{
+				if (ext_ico == ext)
 				{
-#if defined(NANA_UNICODE)
-					std::ifstream ifs(std::string(nana::charset(filename)).c_str(), std::ios::binary);
+#if defined(NANA_WINDOWS)
+					ptr = std::make_shared<detail::image_ico>(true);
 #else
-					std::ifstream ifs(filename.c_str(), std::ios::binary);
+					return ptr;
 #endif
-					if(ifs)
+					break;
+				}
+
+				if (ext_png == ext)
+				{
+#if defined(NANA_ENABLE_PNG)
+					ptr = std::make_shared<detail::image_png>();
+#else
+					return ptr;
+#endif
+					break;
+				}
+
+				if (ext_jpg == ext || ext_jpeg == ext)
+				{
+#if defined(NANA_ENABLE_JPEG)
+					ptr = std::make_shared<detail::image_jpeg>();
+#else
+					return ptr;
+#endif
+					break;
+				}
+			} while (false);
+
+			//Check for BMP
+			if (!ptr)
+			{
+#ifndef NANA_MINGW
+				std::ifstream ifs(p.c_str(), std::ios::binary);
+#else
+				std::ifstream ifs(to_osmbstr(to_utf8(p.native())).c_str(), std::ios::binary);
+#endif
+				if (ifs)
+				{
+					unsigned short meta = 0;
+					ifs.read(reinterpret_cast<char*>(&meta), 2);
+					if (*reinterpret_cast<const short*>("BM") == meta)
+						ptr = std::make_shared<detail::image_bmp>();
+					else if (*reinterpret_cast<const short*>("MZ") == meta)
+						ptr = std::make_shared<detail::image_ico>(false);
+				}
+			}
+
+			return ptr;
+		}
+
+		bool image::open(const ::std::string& file)
+		{
+			::nana::experimental::filesystem::path path(file);
+			image_ptr_ = create_image(path);
+			return (image_ptr_ ? image_ptr_->open(path) : false);
+		}
+
+		bool image::open(const std::wstring& file)
+		{
+			::nana::experimental::filesystem::path path(file);
+			image_ptr_ = create_image(path);
+			return (image_ptr_ ? image_ptr_->open(path) : false);
+		}
+
+		bool image::open(const void* data, std::size_t bytes)
+		{
+			close();
+
+			if (bytes > 2)
+			{
+				std::shared_ptr<image::image_impl_interface> ptr;
+
+				auto meta = *reinterpret_cast<const unsigned short*>(data);
+
+				if (*reinterpret_cast<const short*>("BM") == meta)
+					ptr = std::make_shared<detail::image_bmp>();
+				else if (*reinterpret_cast<const short*>("MZ") == meta)
+					ptr = std::make_shared<detail::image_ico>(false);
+				else
+				{
+					if (bytes > 8 && (0x474e5089 == *reinterpret_cast<const unsigned*>(data)))
 					{
-						unsigned short meta = 0;
-						ifs.read(reinterpret_cast<char*>(&meta), 2);
-						if(*reinterpret_cast<const short*>("BM") == meta)
-							helper = new detail::image_bmp;
-						else if(*reinterpret_cast<const short*>("MZ") == meta)
-							helper = new detail::image_ico(false);
+#if defined(NANA_ENABLE_PNG)
+						ptr = std::make_shared<detail::image_png>();
+#endif
+					}
+					else
+					{
+#if defined(NANA_ENABLE_JPEG)
+						//JFIF
+						if (bytes > 11 && (0xe0ffd8ff == *reinterpret_cast<const unsigned*>(data)) && 0x4649464A == *reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+6))
+							ptr = std::make_shared<detail::image_jpeg>();
+						else if (bytes > 9 && (0x66697845 == *reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+5))) //Exif
+							ptr = std::make_shared<detail::image_jpeg>();
+#endif
 					}
 				}
 
-				if(helper)
+
+				if (ptr)
 				{
-					image_ptr_ = std::shared_ptr<image_impl_interface>(helper);
-					return helper->open(filename.data());
+					image_ptr_.swap(ptr);
+					return image_ptr_->open(data, bytes);
 				}
 			}
+
 			return false;
 		}
 
-		bool image::open_icon(const void* data, std::size_t bytes)
-		{
-			image::image_impl_interface * helper = new detail::image_ico(true);
-			image_ptr_ = std::shared_ptr<image_impl_interface>(helper);
-			return helper->open(data, bytes);
-		}
 
-		bool image::empty() const
+		bool image::empty() const noexcept
 		{
 			return ((nullptr == image_ptr_) || image_ptr_->empty());
 		}
@@ -296,17 +357,20 @@ namespace paint
 			return (image_ptr_ ? &image::empty : nullptr);
 		}
 
-		void image::close()
+		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)
+		void image::close() noexcept
 		{
 			image_ptr_.reset();
 		}
 
-		bool image::alpha() const
+		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)
+		bool image::alpha() const noexcept
 		{
 			return (image_ptr_ ? image_ptr_->alpha_channel() : false);
 		}
 
-		nana::size image::size() const
+		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)
+		nana::size image::size() const noexcept
 		{
 			return (image_ptr_ ? image_ptr_->size() : nana::size());
 		}

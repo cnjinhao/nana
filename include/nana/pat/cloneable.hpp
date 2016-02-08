@@ -13,9 +13,11 @@
 #ifndef NANA_PAT_CLONEABLE_HPP
 #define NANA_PAT_CLONEABLE_HPP
 
+#include <nana/c++defines.hpp>
 #include <cstddef>
 #include <type_traits>
 #include <memory>
+
 
 namespace nana{ namespace pat{
 
@@ -99,9 +101,9 @@ namespace nana{ namespace pat{
 			: public std::enable_if<(!std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>
 		{};
 	public:
-		cloneable() = default;
+		cloneable() noexcept = default;
 
-		cloneable(std::nullptr_t){}
+		cloneable(std::nullptr_t) noexcept{}
 
 		template<typename T, typename member_enabled<T>::type* = nullptr>
 		cloneable(T&& t)
@@ -166,22 +168,22 @@ namespace nana{ namespace pat{
 			return *fast_ptr_;
 		}
 
-		const_base_ref operator*() const
+		const_base_ref operator*() const noexcept
 		{
 			return *fast_ptr_;
 		}
 
-		base_t * operator->()
+		base_t * operator->() noexcept
 		{
 			return fast_ptr_;
 		}
 
-		const_base_ptr operator->() const
+		const_base_ptr operator->() const noexcept
 		{
 			return fast_ptr_;
 		}
 
-		base_t * get() const
+		base_t * get() const noexcept
 		{
 			return fast_ptr_;
 		}
@@ -192,7 +194,7 @@ namespace nana{ namespace pat{
 			cwrapper_.reset();
 		}
 
-		operator operator_bool_t() const volatile
+		operator operator_bool_t() const volatile noexcept
 		{
 			return (fast_ptr_ ? &inner_bool::true_stand : nullptr);
 		}

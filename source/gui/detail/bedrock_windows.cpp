@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -141,7 +141,7 @@ namespace detail
 
 		struct platform_detail_tag
 		{
-			nana::char_t keychar;
+			wchar_t keychar;
 		}platform;
 
 		struct cursor_tag
@@ -215,7 +215,7 @@ namespace detail
 
 		WNDCLASSEX wincl;
 		wincl.hInstance = ::GetModuleHandle(0);
-		wincl.lpszClassName = STR("NanaWindowInternal");
+		wincl.lpszClassName = L"NanaWindowInternal";
 		wincl.lpfnWndProc = &Bedrock_WIN32_WindowProc;
 		wincl.style = CS_DBLCLKS | CS_OWNDC;
 		wincl.cbSize = sizeof(wincl);
@@ -441,9 +441,9 @@ namespace detail
 		}
         catch(std::exception& e)
         {
-             (msgbox(modal_window, STR("An uncaptured std::exception during message pumping: ")).icon(msgbox::icon_information)
-                                 <<STR("\n   in form: ") << API::window_caption(modal_window)
-                                 <<STR("\n   exception : ") << e.what()
+             (msgbox(modal_window, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
+                                 <<"\n   in form: "<< API::window_caption(modal_window)
+                                 <<"\n   exception : "<< e.what()
              ).show();
 
 			 internal_scope_guard lock;
@@ -459,8 +459,8 @@ namespace detail
         }
 		catch(...)
 		{
-			(msgbox(modal_window, STR("An exception during message pumping!")).icon(msgbox::icon_information)
-				<< STR("An uncaptured non-std exception during message pumping!")
+			(msgbox(modal_window, "An exception during message pumping!").icon(msgbox::icon_information)
+				<<"An uncaptured non-std exception during message pumping!"
 				).show();
 			internal_scope_guard lock;
 			_m_except_handler();
@@ -795,6 +795,7 @@ namespace detail
 			auto& context = *brock.get_thread_context();
 
 			auto pressed_wd = root_runtime->condition.pressed;
+			auto pressed_wd_space = root_runtime->condition.pressed_by_space;
 			auto hovered_wd = root_runtime->condition.hovered;
 
 			parameter_decoder pmdec;
@@ -913,6 +914,10 @@ namespace detail
 				def_window_proc = true;
 				break;
 			case WM_LBUTTONDBLCLK: case WM_MBUTTONDBLCLK: case WM_RBUTTONDBLCLK:
+				//Ignore mouse events when a window has been pressed by pressing spacebar
+				if (pressed_wd_space)
+					break;
+
 				pressed_wd = nullptr;
 				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if(msgwnd && msgwnd->flags.enabled)
@@ -938,8 +943,13 @@ namespace detail
 				def_window_proc = true;
 				break;
 			case WM_LBUTTONDOWN: case WM_MBUTTONDOWN: case WM_RBUTTONDOWN:
+				//Ignore mouse events when a window has been pressed by pressing spacebar
+				if (pressed_wd_space)
+					break;
+
 				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
-				if(nullptr == msgwnd)	break;
+				if ((nullptr == msgwnd) || (pressed_wd && (msgwnd != pressed_wd)))
+					break;
 
 				//if event on the menubar, just remove the menu if it is not associating with the menubar
 				if ((msgwnd == msgwnd->root_widget->other.attribute.root->menubar) && brock.get_menu(msgwnd->root, true))
@@ -994,7 +1004,11 @@ namespace detail
 			case WM_LBUTTONUP:
 			case WM_MBUTTONUP:
 			case WM_RBUTTONUP:
-				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
+				//Ignore mouse events when a window has been pressed by pressing spacebar
+				if (pressed_wd_space)
+					break;
+
+       			msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if(nullptr == msgwnd)
 					break;
 
@@ -1015,7 +1029,7 @@ namespace detail
 					if (msgwnd->dimension.is_hit(arg.pos))
 					{
 						msgwnd->flags.action = mouse_action::over;
-						if (::nana::mouse::left_button == arg.button)
+						if ((::nana::mouse::left_button == arg.button) && (pressed_wd == msgwnd))
 						{
 							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 							emit_drawer(&drawer::click, msgwnd, click_arg, &context);
@@ -1045,6 +1059,10 @@ namespace detail
 				pressed_wd = nullptr;
 				break;
 			case WM_MOUSEMOVE:
+				//Ignore mouse events when a window has been pressed by pressing spacebar
+				if (pressed_wd_space)
+					break;
+
 				msgwnd = brock.wd_manager().find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
 				if (brock.wd_manager().available(hovered_wd) && (msgwnd != hovered_wd))
 				{
@@ -1176,7 +1194,7 @@ namespace detail
 					{
 						arg_dropfiles dropfiles;
 
-						std::unique_ptr<nana::char_t[]> varbuf;
+						std::unique_ptr<wchar_t[]> varbuf;
 						std::size_t bufsize = 0;
 
 						unsigned size = ::DragQueryFile(drop, 0xFFFFFFFF, 0, 0);
@@ -1185,12 +1203,13 @@ namespace detail
 							unsigned reqlen = ::DragQueryFile(drop, i, 0, 0) + 1;
 							if(bufsize < reqlen)
 							{
-								varbuf.reset(new nana::char_t[reqlen]);
+								varbuf.reset(new wchar_t[reqlen]);
 								bufsize = reqlen;
 							}
 
 							::DragQueryFile(drop, i, varbuf.get(), reqlen);
-							dropfiles.files.emplace_back(varbuf.get());
+
+							dropfiles.files.emplace_back(to_utf8(varbuf.get()));
 						}
 
 						while(msgwnd && (msgwnd->flags.dropable == false))
@@ -1344,7 +1363,7 @@ namespace detail
 						arg.evt_code = event_code::key_press;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
 						arg.ignore = false;
-						arg.key = static_cast<nana::char_t>(wParam);
+						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
@@ -1372,7 +1391,7 @@ namespace detail
 						arg.evt_code = event_code::key_release;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
 						arg.ignore = false;
-						arg.key = static_cast<nana::char_t>(wParam);
+						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
 
@@ -1396,16 +1415,42 @@ namespace detail
 
 					if(msgwnd)
 					{
-						if((wParam == 9) && (!msgwnd->visible || (false == (msgwnd->flags.tab & tab_type::eating)))) //Tab
+						auto & wd_manager = brock.wd_manager();
+						if((VK_TAB == wParam) && (!msgwnd->visible || (false == (msgwnd->flags.tab & tab_type::eating)))) //Tab
 						{
 							bool is_forward = (::GetKeyState(VK_SHIFT) >= 0);
 
-							auto tstop_wd = brock.wd_manager().tabstop(msgwnd, is_forward);
+							auto tstop_wd = wd_manager.tabstop(msgwnd, is_forward);
 							if (tstop_wd)
 							{
-								brock.wd_manager().set_focus(tstop_wd, false);
-								brock.wd_manager().do_lazy_refresh(msgwnd, false);
-								brock.wd_manager().do_lazy_refresh(tstop_wd, true);
+								wd_manager.set_focus(tstop_wd, false);
+								wd_manager.do_lazy_refresh(msgwnd, false);
+								wd_manager.do_lazy_refresh(tstop_wd, true);
+							}
+						}
+						else if ((VK_SPACE == wParam) && msgwnd->flags.space_click_enabled)
+						{
+							//Clicked by spacebar
+							if (nullptr == pressed_wd && nullptr == pressed_wd_space)
+							{
+								arg_mouse arg;
+								arg.alt = false;
+								arg.button = ::nana::mouse::left_button;
+								arg.ctrl = false;
+								arg.evt_code = event_code::mouse_down;
+								arg.left_button = true;
+								arg.mid_button = false;
+								arg.pos.x = 0;
+								arg.pos.y = 0;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+								msgwnd->flags.action = mouse_action::pressed;
+
+								pressed_wd_space = msgwnd;
+								auto retain = msgwnd->together.events_ptr;
+
+								emit_drawer(&drawer::mouse_down, msgwnd, arg, &context);
+								wd_manager.do_lazy_refresh(msgwnd, false);
 							}
 						}
 						else
@@ -1414,7 +1459,7 @@ namespace detail
 							arg.evt_code = event_code::key_press;
 							arg.window_handle = reinterpret_cast<window>(msgwnd);
 							arg.ignore = false;
-							arg.key = static_cast<nana::char_t>(wParam);
+							arg.key = static_cast<wchar_t>(wParam);
 							brock.get_key_state(arg);
 							brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
@@ -1425,7 +1470,7 @@ namespace detail
 								//If no menu popuped by the menubar, it should enable delay restore to
 								//restore the focus for taken window.
 
-								int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(wParam)) ? 1 : 0);
+								int cmd = (menu_wd && (keyboard::escape == static_cast<wchar_t>(wParam)) ? 1 : 0);
 								brock.delay_restore(cmd);
 							}
 						}
@@ -1442,7 +1487,7 @@ namespace detail
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_char;
 						arg.window_handle = reinterpret_cast<window>(msgwnd);
-						arg.key = static_cast<nana::char_t>(wParam);
+						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						arg.ignore = false;
 
@@ -1455,18 +1500,48 @@ namespace detail
 				}
 				return 0;
 			case WM_KEYUP:
-				if(wParam != 18) //MUST NOT BE AN ALT
+				if(wParam != VK_MENU) //MUST NOT BE AN ALT
 				{
 					msgwnd = brock.focus();
 					if(msgwnd)
 					{
-						arg_keyboard arg;
-						arg.evt_code = event_code::key_release;
-						arg.window_handle = reinterpret_cast<window>(msgwnd);
-						arg.key = static_cast<nana::char_t>(wParam);
-						brock.get_key_state(arg);
-						arg.ignore = false;
-						brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+						if (msgwnd == pressed_wd_space)
+						{
+							msgwnd->flags.action = mouse_action::normal;
+
+							arg_click click_arg;
+							click_arg.mouse_args = nullptr;
+							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+							auto retain = msgwnd->together.events_ptr;
+							if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
+							{
+								arg_mouse arg;
+								arg.alt = false;
+								arg.button = ::nana::mouse::left_button;
+								arg.ctrl = false;
+								arg.evt_code = event_code::mouse_up;
+								arg.left_button = true;
+								arg.mid_button = false;
+								arg.pos.x = 0;
+								arg.pos.y = 0;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+								emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+								brock.wd_manager().do_lazy_refresh(msgwnd, false);
+							}
+							pressed_wd_space = nullptr;
+						}
+						else
+						{
+							arg_keyboard arg;
+							arg.evt_code = event_code::key_release;
+							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.key = static_cast<wchar_t>(wParam);
+							brock.get_key_state(arg);
+							arg.ignore = false;
+							brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+						}
 					}
 				}
 				else
@@ -1520,6 +1595,7 @@ namespace detail
 			{
 				root_runtime->condition.pressed = pressed_wd;
 				root_runtime->condition.hovered = hovered_wd;
+				root_runtime->condition.pressed_by_space = pressed_wd_space;
 			}
 
 			if (!def_window_proc)
@@ -1728,9 +1804,9 @@ namespace detail
 		return true;
 	}
 
-	const nana::char_t* translate(cursor id)
+	const wchar_t* translate(cursor id)
 	{
-		const nana::char_t* name = IDC_ARROW;
+		const wchar_t* name = IDC_ARROW;
 
 		switch(id)
 		{

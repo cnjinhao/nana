@@ -22,7 +22,7 @@ namespace nana
 		//class drawer
 			void drawer::attached(widget_reference wdg, graph_reference)
 			{
-				wdg.caption(STR("panel widget"));
+				wdg.caption("panel widget");
 				window_ = wdg.handle();
 
 				API::ignore_mouse_focus(wdg, true);

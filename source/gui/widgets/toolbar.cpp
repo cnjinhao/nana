@@ -1,13 +1,15 @@
 /*
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/toolbar.cpp
+ *	@contributors:
+ *		kmribti(pr#105)
  */
 
 #include <nana/gui/widgets/toolbar.hpp>
@@ -31,15 +33,16 @@ namespace nana
 
 				typedef std::size_t size_type;
 
-				nana::string text;
+				std::string text;
 				nana::paint::image image;
 				unsigned	pixels{0};
+				unsigned    position{ 0 }; // last item position.
 				nana::size	textsize;
 				bool		enable{true};
 
 				kind type;
 
-				item_type(const nana::string& text, const nana::paint::image& img, kind type)
+				item_type(const std::string& text, const nana::paint::image& img, kind type)
 					:text(text), image(img), type(type)
 				{}
 			};
@@ -58,9 +61,9 @@ namespace nana
 						delete ptr;
 				}
 
-				void insert(size_type pos, const nana::string& text, const nana::paint::image& img, item_type::kind type)
+				void insert(size_type pos, std::string text, const nana::paint::image& img, item_type::kind type)
 				{
-					item_type* m = new item_type(text, img, type);
+					item_type* m = new item_type(std::move(text), img, type);
 
 					if(pos < cont_.size())
 						cont_.insert(cont_.begin() + pos, m);
@@ -68,14 +71,26 @@ namespace nana
 						cont_.push_back(m);
 				}
 
-				void push_back(const nana::string& text, const nana::paint::image& img)
+				void push_back(const std::string& text, const nana::paint::image& img)
 				{
 					insert(cont_.size(), text, img, item_type::kind::button);
 				}
 
-				void push_back(const nana::string& text)
+				void push_back(const std::string& text)
 				{
 					insert(cont_.size(), text, nana::paint::image(), item_type::kind::button);
+				}
+
+				//Contributed by kmribti(pr#105)
+				void go_right() noexcept
+				{
+					right_ = cont_.size();
+				}
+
+				//Contributed by kmribti(pr#105)
+				size_t right() const noexcept
+				{
+					return right_;
 				}
 
 				void insert(size_type pos)
@@ -91,12 +106,12 @@ namespace nana
 					cont_.push_back(nullptr);
 				}
 
-				size_type size() const
+				size_type size() const noexcept
 				{
 					return cont_.size();
 				}
 
-				container_type& container()
+				container_type& container() noexcept
 				{
 					return cont_;
 				}
@@ -107,6 +122,7 @@ namespace nana
 				}
 			private:
 				container_type cont_;
+				size_t    right_{ npos };
 			};
 
 			class item_renderer
@@ -138,9 +154,9 @@ namespace nana
 						if (imgsize.width > scale) imgsize.width = scale;
 						if (imgsize.height > scale) imgsize.height = scale;
 
-						nana::point pos(x, y);
-						pos.x += static_cast<int>(scale + extra_size - imgsize.width) / 2;
-						pos.y += static_cast<int>(height - imgsize.height) / 2;
+						nana::point pos(
+							x + static_cast<int>(scale + extra_size - imgsize.width) / 2, 
+							y + static_cast<int>(height - imgsize.height) / 2);
 
 						item.image.paste(::nana::rectangle{ imgsize }, graph, pos);
 						if(item.enable == false)
@@ -213,7 +229,7 @@ namespace nana
 					int x = 2, y = 2;
 
 					auto bgcolor = API::bgcolor(widget_->handle());
-					graph.set_text_color(bgcolor);
+					graph.palette(true, bgcolor);
 					graph.gradual_rectangle(rectangle{ graph.size() }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.95), true);
 
 					item_renderer ir(graph, impl_->textout, impl_->scale, bgcolor);
@@ -224,6 +240,7 @@ namespace nana
 						if (item)
 						{
 							_m_calc_pixels(item, false);
+							item->position = x;
 							ir(x, y, item->pixels, impl_->scale + ir.extra_size, *item, (index == impl_->which ? impl_->state : item_renderer::state_t::normal));
 							x += item->pixels;
 						}
@@ -234,6 +251,24 @@ namespace nana
 							x += 4;
 						}
 						++index;
+
+						//Reset the x position of items which are right aligned
+						//Contributed by kmribti(pr#105)
+						if (index == impl_->items.right() && index < impl_->items.size())
+						{
+							unsigned total_x = 0;
+							for (size_t i = index; i < impl_->items.size(); i++) {
+								if (impl_->items.at(i) == nullptr) {
+									total_x += 8; // we assume that separator has width = 8.
+								}
+								else {
+									_m_calc_pixels(impl_->items.at(i), false);
+									total_x += impl_->items.at(i)->pixels;
+								}
+							}
+
+							x = graph.size().width - total_x - 4;
+						}
 					}
 				}
 
@@ -242,7 +277,9 @@ namespace nana
 					impl_->graph_ptr = &graph;
 
 					widget_ = static_cast< ::nana::toolbar*>(&widget);
-					widget.caption(L"Nana Toolbar");
+					widget.caption("nana toolbar");
+
+					if (widget_->detached()) return;
 
 					impl_->event_size = API::events(widget.parent()).resized.connect_unignorable([this](const arg_resized& arg)
 					{
@@ -358,12 +395,9 @@ namespace nana
 					std::size_t index = 0;
 					for(auto m: impl_->items.container())
 					{
-						auto px = static_cast<const int>(m ? m->pixels : 3);
-
-						if(pos.x < px)
+						unsigned x = static_cast<unsigned>(pos.x);
+						if (m && x >= m->position && x <= (m->position+m->pixels))
 							return (((!m) || (!m->enable && !want_if_disabled)) ? npos : index);
-
-						pos.x -= px;
 
 						++index;
 					}
@@ -389,14 +423,22 @@ namespace nana
 	}//end namespace drawerbase
 
 	//class toolbar
-		toolbar::toolbar(window wd, bool visible)
+		toolbar::toolbar(window wd, bool visible, bool detached) :
+			detached_(detached)
 		{
 			create(wd, rectangle(), visible);
 		}
 
-		toolbar::toolbar(window wd, const rectangle& r, bool visible)
+		toolbar::toolbar(window wd, const rectangle& r, bool visible, bool detached) :
+			detached_(detached)
 		{
 			create(wd, r, visible);
+		}
+
+		//Contributed by kmribti(pr#105)
+		void toolbar::go_right()
+		{
+			get_drawer_trigger().items().go_right();
 		}
 
 		void toolbar::separate()
@@ -405,13 +447,13 @@ namespace nana
 			API::refresh_window(handle());
 		}
 
-		void toolbar::append(const nana::string& text, const nana::paint::image& img)
+		void toolbar::append(const std::string& text, const nana::paint::image& img)
 		{
 			get_drawer_trigger().items().push_back(text, img);
 			API::refresh_window(handle());
 		}
 
-		void toolbar::append(const nana::string& text)
+		void toolbar::append(const std::string& text)
 		{
 			get_drawer_trigger().items().push_back(text, {});
 			API::refresh_window(this->handle());

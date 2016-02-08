@@ -51,8 +51,7 @@
 		<Unit filename="../../source/deploy.cpp" />
 		<Unit filename="../../source/detail/platform_spec_posix.cpp" />
 		<Unit filename="../../source/detail/platform_spec_windows.cpp" />
-		<Unit filename="../../source/filesystem/file_iterator.cpp" />
-		<Unit filename="../../source/filesystem/fs_utility.cpp" />
+		<Unit filename="../../source/filesystem/filesystem.cpp" />
 		<Unit filename="../../source/gui/animation.cpp" />
 		<Unit filename="../../source/gui/basis.cpp" />
 		<Unit filename="../../source/gui/detail/basic_window.cpp" />
@@ -119,7 +118,6 @@
 		<Unit filename="../../source/system/shared_wrapper.cpp" />
 		<Unit filename="../../source/system/timepiece.cpp" />
 		<Unit filename="../../source/threads/pool.cpp" />
-		<Unit filename="../../source/traits.cpp" />
 		<Unit filename="../../source/unicode_bidi.cpp" />
 		<Extensions>
 			<code_completion />

@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -36,7 +36,7 @@ namespace nana
 namespace detail
 {
 	typedef native_window_type native_window_type;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 	//class conf
 		conf::conf(const char * file)
 		{
@@ -290,7 +290,7 @@ namespace detail
 		string.tab_length = 4;
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 		conv_.handle = ::iconv_open("UTF-8", "UTF-32");
 		conv_.code = "UTF-32";
 #endif
@@ -298,7 +298,7 @@ namespace detail
 
 	drawable_impl_type::~drawable_impl_type()
 	{
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 		::iconv_close(conv_.handle);
 #endif
 	}
@@ -366,7 +366,7 @@ namespace detail
 			::XSetForeground(spec.open_display(), context, col);
 			::XSetBackground(spec.open_display(), context, col);
 
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 			xft_fgcolor.color.red = ((0xFF0000 & col) >> 16) * 0x101;
 			xft_fgcolor.color.green = ((0xFF00 & col) >> 8) * 0x101;
 			xft_fgcolor.color.blue = (0xFF & col) * 0x101;
@@ -395,7 +395,7 @@ namespace detail
 			}
 			::XSetForeground(spec.open_display(), context, rgb);
 			::XSetBackground(spec.open_display(), context, rgb);
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
 			xft_fgcolor.color.red = ((0xFF0000 & rgb) >> 16) * 0x101;
 			xft_fgcolor.color.green = ((0xFF00 & rgb) >> 8) * 0x101;
 			xft_fgcolor.color.blue = (0xFF & rgb) * 0x101;
@@ -412,7 +412,7 @@ namespace detail
             if(fp && fp->handle)
             {
                 platform_scope_guard psg;
-#if defined(NANA_UNICODE)
+#if defined(NANA_USE_XFT)
                 ::XftFontClose(nana::detail::platform_spec::instance().open_display(), fp->handle);
 #else
                 ::XFreeFontSet(nana::detail::platform_spec::instance().open_display(), fp->handle);
@@ -515,7 +515,7 @@ namespace detail
 		atombase_.xdnd_finished = ::XInternAtom(display_, "XdndFinished", False);
 
 		//Create default font object.
-		def_font_ptr_ = make_native_font(0, font_size_to_height(10), 400, false, false, false);
+		def_font_ptr_ = make_native_font(nullptr, font_size_to_height(10), 400, false, false, false);
 		msg_dispatcher_ = new msg_dispatcher(display_);
 	}
 
@@ -550,17 +550,16 @@ namespace detail
 		return height;
 	}
 
-	platform_spec::font_ptr_t platform_spec::make_native_font(const nana::char_t* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
+	platform_spec::font_ptr_t platform_spec::make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
 	{
 		font_ptr_t ref;
-#if defined(NANA_UNICODE)
+#if 1 //Xft
 		if(0 == name || *name == 0)
-			name = STR("*");
+			name = "*";
 
-		std::string nmstr = nana::charset(name);
 		XftFont* handle = 0;
 		std::stringstream ss;
-		ss<<nmstr<<"-"<<(height ? height : 10);
+		ss<<name<<"-"<<(height ? height : 10);
 		XftPattern * pat = ::XftNameParse(ss.str().c_str());
 		XftResult res;
 		XftPattern * match_pat = ::XftFontMatch(display_, ::XDefaultScreen(display_), pat, &res);
@@ -1216,7 +1215,7 @@ namespace detail
 															0, AnyPropertyType, &type, &format, &len,
 															&dummy_bytes_left, &data))
 						{
-							std::vector<nana::string> * files = new std::vector<nana::string>;
+							auto files = new std::vector<std::string>;
 							std::stringstream ss(reinterpret_cast<char*>(data));
 							while(true)
 							{
@@ -1235,7 +1234,7 @@ namespace detail
 										break;
 								}
 
-								files->push_back(nana::charset(file));
+								files->push_back(file);
 							}
 							if(files->size())
 							{
@@ -1244,6 +1243,8 @@ namespace detail
 								msg.u.mouse_drop.y = self.xdnd_.pos.y;
 								msg.u.mouse_drop.files = files;
 							}
+							else
+								delete files;
 
 							accepted = true;
 							::XFree(data);

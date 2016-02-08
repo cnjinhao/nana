@@ -30,11 +30,11 @@ namespace nana
 		{
 			struct item_type
 			{
-				item_type(const ::nana::string& text, unsigned long shortkey)
+				item_type(const native_string_type text, unsigned long shortkey)
 					: text(text), shortkey(shortkey)
 				{}
 
-				::nana::string	text;
+				native_string_type	text;
 				unsigned long	shortkey;
 				::nana::menu	menu_obj;
 				::nana::point	pos;
@@ -52,7 +52,7 @@ namespace nana
 						delete i;
 				}
 
-				void append(const ::nana::string& text, unsigned long shortkey)
+				void append(const native_string_type& text, unsigned long shortkey)
 				{
 					if(shortkey && shortkey < 0x61) shortkey += (0x61 - 0x41);
 					cont_.push_back(new item_type(text, shortkey));
@@ -114,7 +114,7 @@ namespace nana
 
 					int right = pos.x + static_cast<int>(size.width) - 1;
 					int bottom = pos.y + static_cast<int>(size.height) - 1;
-					graph_.set_color(corner);
+					graph_.palette(false, corner);
 					graph_.set_pixel(pos.x, pos.y);
 					graph_.set_pixel(right, pos.y);
 					graph_.set_pixel(pos.x, bottom);
@@ -122,7 +122,7 @@ namespace nana
 					graph_.rectangle(r.pare_off(1), true, body);
 				}
 
-				void item_renderer::caption(const point& pos, const nana::string& text)
+				void item_renderer::caption(const point& pos, const native_string_type& text)
 				{
 					graph_.string(pos, text, colors::black);
 				}
@@ -138,16 +138,16 @@ namespace nana
 					delete items_;
 				}
 
-				nana::menu* trigger::push_back(const ::nana::string& text)
+				nana::menu* trigger::push_back(const std::string& text)
 				{
-					::nana::char_t shkey;
+					wchar_t shkey;
 					API::transform_shortkey_text(text, shkey, nullptr);
 
 					if(shkey)
 						API::register_shortkey(widget_->handle(), shkey);
 
 					auto pos = items_->cont().size();
-					items_->append(text, shkey);
+					items_->append(to_nstring(text), shkey);
 					refresh(*graph_);
 					API::update_window(*widget_);
 
@@ -187,9 +187,9 @@ namespace nana
 					for (auto i : items_->cont())
 					{
 						//Transform the text if it contains the hotkey character
-						::nana::char_t hotkey;
-						::nana::string::size_type hotkey_pos;
-						auto text = API::transform_shortkey_text(i->text, hotkey, &hotkey_pos);
+						wchar_t hotkey;
+						::std::wstring::size_type hotkey_pos;
+						auto text = API::transform_shortkey_text(to_utf8(i->text), hotkey, &hotkey_pos);
 
 						nana::size text_s = graph.text_extent_size(text);
 
@@ -212,11 +212,11 @@ namespace nana
 
 						//Draw text, the text is transformed from orignal for hotkey character
 						int text_top_off = (item_s.height - text_s.height) / 2;
-						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, text);
+						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, to_nstring(text));
 
 						if (hotkey)
 						{
-							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
+							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text.c_str(), static_cast<unsigned>(hotkey_pos)).width : 0);
 							nana::size hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
 
 							unsigned ascent, descent, inleading;
@@ -608,7 +608,8 @@ namespace nana
 		{
 			widget_object<category::widget_tag, drawerbase::menubar::trigger>
 				::create(wd, rectangle(nana::size(API::window_size(wd).width, 28)));
-			API::attach_menubar(handle());
+
+			API::dev::set_menubar(handle(), true);
 			evt_resized_ = API::events(wd).resized([this](const ::nana::arg_resized& arg)
 			{
 				auto sz = this->size();
@@ -617,7 +618,7 @@ namespace nana
 			});
 		}
 
-		menu& menubar::push_back(const nana::string& text)
+		menu& menubar::push_back(const std::string& text)
 		{
 			return *(get_drawer_trigger().push_back(text));
 		}

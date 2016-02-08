@@ -43,10 +43,10 @@ namespace nana
 		msgbox& operator=(const msgbox&);
 
 		/// Construct that creates a message box with a specified title and default button.
-		msgbox(const nana::string&);
+		msgbox(const ::std::string&);
 
 		/// Construct that creates a message box with an owner windoow, a specified title and buttons. 
-		msgbox(window, const nana::string&, button_t = ok);
+		msgbox(window, const ::std::string&, button_t = ok);
 
 		/// Sets an icon for informing user.
 		msgbox& icon(icon_t);
@@ -55,10 +55,10 @@ namespace nana
 		void clear();
 
 		/// Writes a string to the buffer.
-		msgbox & operator<<(const nana::string&);
+		msgbox & operator<<(const std::wstring&);
 
 		/// Writes a string to the buffer.
-		msgbox & operator<<(const nana::char_t*);
+		msgbox & operator<<(const wchar_t*);
 
 		/// Writes a string to the buffer.
 		msgbox & operator<<(const nana::charset&);
@@ -86,7 +86,7 @@ namespace nana
 	private:
 		std::stringstream sstream_;
 		window wd_;
-		nana::string title_;
+		std::string title_;
 		button_t button_;
 		icon_t icon_;
 	};
@@ -97,7 +97,7 @@ namespace nana
 		{
 			virtual ~abstract_content() = default;
 
-			virtual const ::nana::string& label() const = 0;
+			virtual const ::std::string& label() const = 0;
 			virtual window create(window, unsigned label_px) = 0;
 			virtual unsigned fixed_pixels() const;
 		};
@@ -107,13 +107,13 @@ namespace nana
 		{
 			struct implement;
 		public:
-			integer(::nana::string label, int init_value, int begin, int last, int step);
+			integer(::std::string label, int init_value, int begin, int last, int step);
 			~integer();
 
 			int value() const;
 		private:
 			//Implementation of abstract_content
-			const ::nana::string& label() const override;
+			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
 		private:
 			std::unique_ptr<implement> impl_;
@@ -124,13 +124,13 @@ namespace nana
 		{
 			struct implement;
 		public:
-			real(::nana::string label, double init_value, double begin, double last, double step);
+			real(::std::string label, double init_value, double begin, double last, double step);
 			~real();
 
 			double value() const;
 		private:
 			//Implementation of abstract_content
-			const ::nana::string& label() const override;
+			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
 		private:
 			std::unique_ptr<implement> impl_;
@@ -144,8 +144,8 @@ namespace nana
 			text(const text&) = delete;
 			text& operator=(const text&) = delete;
 		public:
-			text(::nana::string label, ::nana::string init_text = ::nana::string());
-			text(::nana::string label, std::vector<::nana::string>);
+			text(::std::string label, ::std::string init_text = ::std::string());
+			text(::std::string label, std::vector<::std::string>);
 
 			~text();
 
@@ -154,10 +154,10 @@ namespace nana
 
 			void mask_character(wchar_t ch);
 
-			::nana::string value() const;
+			::std::string value() const;
 		private:
 			//Implementation of abstract_content
-			const ::nana::string& label() const override;
+			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
 		private:
 			std::unique_ptr<implement> impl_;
@@ -168,17 +168,17 @@ namespace nana
 		{
 			struct implement;
 		public:
-			date(::nana::string label);
+			date(::std::string label);
 
 			~date();
 
-			::nana::string value() const;
+			::std::string value() const;
 			int year() const;
 			int month() const;	//[1, 12]
 			int day() const;	//[1, 31]
 		private:
 			//Implementation of abstract_content
-			const ::nana::string& label() const override;
+			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
 			unsigned fixed_pixels() const override;
 		private:
@@ -190,19 +190,19 @@ namespace nana
 		{
 			struct implement;
 		public:
-			path(::nana::string label, const ::nana::filebox&);
+			path(::std::string label, const ::nana::filebox&);
 			~path();
 
-			::nana::string value() const;
+			::std::string value() const;
 		private:
 			//Implementation of abstract_content
-			const ::nana::string& label() const override;
+			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};
 
-		inputbox(window, ::nana::string description, ::nana::string title = ::nana::string());
+		inputbox(window, ::std::string description, ::std::string title = ::std::string());
 
 		void image(::nana::paint::image, bool is_left, const rectangle& valid_area = {});
 		void image_v(::nana::paint::image, bool is_top, const rectangle& valid_area = {});
@@ -246,8 +246,8 @@ namespace nana
 		bool _m_open(std::vector<abstract_content*>&, bool modal);
 	private:
 		window owner_;
-		::nana::string description_;
-		::nana::string title_;
+		::std::string description_;
+		::std::string title_;
 		std::function<bool(window)> verifier_;
 		::nana::paint::image images_[4];
 		::nana::rectangle valid_areas_[4];

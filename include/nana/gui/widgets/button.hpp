@@ -1,7 +1,7 @@
 /**
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -43,9 +43,7 @@ namespace nana{
 				void mouse_leave(graph_reference, const arg_mouse&) override;
 				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
-				void key_char(graph_reference, const arg_keyboard&)	override;
 				void key_press(graph_reference, const arg_keyboard&) override;
-				void key_release(graph_reference, const arg_keyboard&) override;
 				void focus(graph_reference, const arg_focus&) override;
 			private:
 				void _m_draw_title(graph_reference, bool enabled);
@@ -83,8 +81,8 @@ namespace nana{
 		public:
 			button();
 			button(window, bool visible);
-			button(window, const nana::string& caption, bool visible = true);
-			button(window, const nana::char_t* caption, bool visible = true);
+			button(window, const ::std::string& caption, bool visible = true);
+			button(window, const char* caption, bool visible = true);
 			button(window, const nana::rectangle& = rectangle(), bool visible = true);
 
 			button& icon(const nana::paint::image&);
@@ -104,7 +102,7 @@ namespace nana{
 		private:
 			//Overrides widget virtual functions
 			void _m_complete_creation() override;
-			void _m_caption(nana::string&&) override;
+			void _m_caption(native_string_type&&) override;
 		};
 }//end namespace nana
 #endif

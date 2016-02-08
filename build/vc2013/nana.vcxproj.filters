@@ -111,12 +111,6 @@
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp">
       <Filter>Source Files\nana\filesystem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\filesystem\file_iterator.cpp">
-      <Filter>Source Files\nana\filesystem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\filesystem\fs_utility.cpp">
-      <Filter>Source Files\nana\filesystem</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\gui\detail\basic_window.cpp">
       <Filter>Source Files\nana\gui\detail</Filter>
     </ClCompile>
@@ -289,9 +283,6 @@
       <Filter>Source Files\nana</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\deploy.cpp">
-      <Filter>Source Files\nana</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\traits.cpp">
       <Filter>Source Files\nana</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\unicode_bidi.cpp">
@@ -617,12 +608,6 @@
       <Filter>Header Files\detail\win32</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\filesystem\filesystem.hpp">
-      <Filter>Header Files\filesystem</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\filesystem\file_iterator.hpp">
-      <Filter>Header Files\filesystem</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\filesystem\fs_utility.hpp">
       <Filter>Header Files\filesystem</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\paint\gadget.hpp">

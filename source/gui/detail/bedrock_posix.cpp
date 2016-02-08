@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -233,7 +233,7 @@ namespace detail
 	{
 		if(wd)
 		{
-			internal_scope_guard isg;
+			internal_scope_guard lock;
 			if(wd_manager().available(wd))
 				return wd->other.category;
 		}
@@ -656,12 +656,17 @@ namespace detail
 
 			auto pre_event_window = context.event_window;
 			auto pressed_wd = root_runtime->condition.pressed;
+			auto pressed_wd_space = root_runtime->condition.pressed_by_space;
 			auto hovered_wd = root_runtime->condition.hovered;
 
 			const int message = xevent.type;
 			switch(xevent.type)
 			{
 			case EnterNotify:
+				//Ignore mouse events when a window has been pressed by pressing spacebar.
+				if(pressed_wd_space)
+					break;
+
 				msgwnd = brock.wd_manager().find_window(native_window, xevent.xcrossing.x, xevent.xcrossing.y);
 				if(msgwnd)
 				{
@@ -733,6 +738,10 @@ namespace detail
 				}
 				break;
 			case ButtonPress:
+				//Ignore mouse events when a window has been pressed by pressing spacebar
+				if(pressed_wd_space)
+					break;
+
 				if(xevent.xbutton.button == Button4 || xevent.xbutton.button == Button5)
 					break;
 					
@@ -788,6 +797,10 @@ namespace detail
 				}
 				break;
 			case ButtonRelease:
+				//Ignore mouse events when a window has been pressed by pressing spacebar
+				if(pressed_wd_space)
+					break;
+
 				if(xevent.xbutton.button == Button4 || xevent.xbutton.button == Button5)
 				{
 					//The hovered window receives the message, unlike in Windows, no redirection is required.
@@ -898,6 +911,10 @@ namespace detail
 				else
 					break;
 
+				//Ignore mouse events when a window has been pressed by pressing spacebar
+				if(pressed_wd_space)
+					break;
+
 				msgwnd = brock.wd_manager().find_window(native_window, xevent.xmotion.x, xevent.xmotion.y);
 				if (brock.wd_manager().available(hovered_wd) && (msgwnd != hovered_wd))
 				{
@@ -993,7 +1010,7 @@ namespace detail
 						if(input_context)
 						{
 							nana::detail::platform_scope_guard psg;
-#if defined(NANA_UNICODE)
+#if 1	//Utf8
 							len = ::Xutf8LookupString(input_context, &xevent.xkey, keybuf, 32, &keysym, &status);
 							if(status == XBufferOverflow)
 							{
@@ -1017,7 +1034,8 @@ namespace detail
 						}
 
 						keybuf[len] = 0;
-						::nana::char_t os_code = 0;
+						wchar_t os_code = 0;
+						auto & wd_manager = brock.wd_manager();
 						switch(status)
 						{
 						case XLookupKeySym:
@@ -1027,11 +1045,37 @@ namespace detail
 							{
 								arg_keyboard argkey;
 								brock.get_key_state(argkey);
-								auto tstop_wd = brock.wd_manager().tabstop(msgwnd, !argkey.shift);
+								auto tstop_wd = wd_manager.tabstop(msgwnd, !argkey.shift);
 								if (tstop_wd)
 								{
-									brock.wd_manager().set_focus(tstop_wd, false);
-									brock.wd_manager().do_lazy_refresh(tstop_wd, true);
+									wd_manager.set_focus(tstop_wd, false);
+									wd_manager.do_lazy_refresh(msgwnd, false);
+									wd_manager.do_lazy_refresh(tstop_wd, true);
+								}
+							}
+							else if((keyboard::space == os_code) && msgwnd->flags.space_click_enabled)
+							{
+								//Clicked by spacebar
+								if((nullptr == pressed_wd) && (nullptr == pressed_wd_space))
+								{
+									arg_mouse arg;
+									arg.alt = false;
+									arg.button = ::nana::mouse::left_button;
+									arg.ctrl = false;
+									arg.evt_code = event_code::mouse_down;
+									arg.left_button = true;
+									arg.mid_button = false;
+									arg.pos.x = 0;
+									arg.pos.y = 0;
+									arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+									msgwnd->flags.action = mouse_action::pressed;
+
+									pressed_wd_space = msgwnd;
+									auto retain = msgwnd->together.events_ptr;
+
+									emit_drawer(&drawer::mouse_down, msgwnd, arg, &context);
+									wd_manager.do_lazy_refresh(msgwnd, false);
 								}
 							}
 							else if(keyboard::alt == os_code)
@@ -1074,28 +1118,26 @@ namespace detail
 
 								if(brock.wd_manager().available(msgwnd) && (msgwnd->root_widget->other.attribute.root->menubar == msgwnd))
 								{
-									int cmd = (menu_wd && (keyboard::escape == static_cast<nana::char_t>(arg.key)) ? 1 : 0 );
+									int cmd = (menu_wd && (keyboard::escape == static_cast<wchar_t>(arg.key)) ? 1 : 0 );
 									brock.delay_restore(cmd);
 								}
 							}
 
 							if(XLookupKeySym == status)
 							{
-								brock.wd_manager().do_lazy_refresh(msgwnd, false);
+								wd_manager.do_lazy_refresh(msgwnd, false);
 								break;
 							}
 						case XLookupChars:
 							if (msgwnd->flags.enabled)
 							{
-								const ::nana::char_t* charbuf;
-#if defined(NANA_UNICODE)
+								const wchar_t* charbuf;
+
 								nana::detail::charset_conv charset("UTF-32", "UTF-8");
 								const std::string& str = charset.charset(std::string(keybuf, keybuf + len));
-								charbuf = reinterpret_cast<const nana::char_t*>(str.c_str()) + 1;
+								charbuf = reinterpret_cast<const wchar_t*>(str.c_str()) + 1;
 								len = str.size() / sizeof(wchar_t) - 1;
-#else
-								charbuf = keybuf;
-#endif
+
 								for(int i = 0; i < len; ++i)
 								{
 									arg_keyboard arg;
@@ -1111,7 +1153,7 @@ namespace detail
 										arg.ctrl = arg.shift = false;
 										arg.evt_code = event_code::shortkey;
 										brock.set_keyboard_shortkey(true);
-										auto shr_wd = brock.wd_manager().find_shortkey(native_window, arg.key);
+										auto shr_wd = wd_manager.find_shortkey(native_window, arg.key);
 										if(shr_wd)
 										{
 											arg.window_handle = reinterpret_cast<window>(shr_wd);
@@ -1123,7 +1165,7 @@ namespace detail
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 									brock.get_key_state(arg);
 									msgwnd->together.events_ptr->key_char.emit(arg);
-									if(arg.ignore == false && brock.wd_manager().available(msgwnd))
+									if(arg.ignore == false && wd_manager.available(msgwnd))
 										brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
 								}
 
@@ -1133,7 +1175,7 @@ namespace detail
 							break;
 						}
 
-						brock.wd_manager().do_lazy_refresh(msgwnd, false);
+						wd_manager.do_lazy_refresh(msgwnd, false);
 						if(keybuf != fixbuf)
 							delete [] keybuf;
 					}
@@ -1151,13 +1193,43 @@ namespace detail
 						msgwnd = brock.focus();
 						if(msgwnd)
 						{
-							arg_keyboard arg;
-							arg.evt_code = event_code::key_release;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
-							arg.ignore = false;
-							arg.key = os_code;
-							brock.get_key_state(arg);
-							brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+							if(msgwnd == pressed_wd_space)
+							{
+								msgwnd->flags.action = mouse_action::normal;
+
+								arg_click click_arg;
+								click_arg.mouse_args = nullptr;
+								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+								auto retain = msgwnd->together.events_ptr;
+								if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
+								{
+									arg_mouse arg;
+									arg.alt = false;
+									arg.button = ::nana::mouse::left_button;
+									arg.ctrl = false;
+									arg.evt_code = event_code::mouse_up;
+									arg.left_button = true;
+									arg.mid_button = false;
+									arg.pos.x = 0;
+									arg.pos.y = 0;
+									arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+									emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+									brock.wd_manager().do_lazy_refresh(msgwnd, false);
+								}
+								pressed_wd_space = nullptr;
+							}
+							else
+							{
+								arg_keyboard arg;
+								arg.evt_code = event_code::key_release;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.ignore = false;
+								arg.key = os_code;
+								brock.get_key_state(arg);
+								brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+							}
 						}
 
 						if(os_code < keyboard::os_arrow_left || keyboard::os_arrow_down < os_code)
@@ -1218,6 +1290,7 @@ namespace detail
 				context.event_window = pre_event_window;
 				root_runtime->condition.pressed	= pressed_wd;
 				root_runtime->condition.hovered = hovered_wd;
+				root_runtime->condition.pressed_by_space = pressed_wd_space;
 			}
 			else
 			{

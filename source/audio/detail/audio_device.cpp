@@ -1,4 +1,8 @@
+
 #include <nana/audio/detail/audio_device.hpp>
+
+#ifdef NANA_ENABLE_AUDIO
+
 #include <nana/system/platform.hpp>
 
 #if defined(NANA_LINUX)
@@ -235,3 +239,5 @@ namespace nana{namespace audio
 	}//end namespace detail
 }//end namespace audio
 }//end namespace nana
+
+#endif //NANA_ENABLE_AUDIO

@@ -158,7 +158,7 @@ namespace nana{
 		{
 #if defined(NANA_WINDOWS)
 			typedef HMONITOR (__stdcall * MonitorFromPointT)(POINT,DWORD);
-			
+
 			MonitorFromPointT mfp = reinterpret_cast<MonitorFromPointT>(::GetProcAddress(::GetModuleHandleA("User32.DLL"), "MonitorFromPoint"));
 			if(mfp)
 			{
@@ -202,7 +202,7 @@ namespace nana{
 			if(owner && (nested == false))
 				::ClientToScreen(reinterpret_cast<HWND>(owner), &pt);
 
-			HWND native_wd = ::CreateWindowEx(style_ex, STR("NanaWindowInternal"), STR("Nana Window"),
+			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
 											reinterpret_cast<HWND>(owner), 0, ::GetModuleHandle(0), 0);
@@ -281,7 +281,8 @@ namespace nana{
 							attr_mask, &win_attr);
 			if(handle)
 			{
-				if(owner)
+				//make owner if it is a popup window
+				if((!nested) && owner)
 					restrict::spec.make_owner(owner, reinterpret_cast<native_window_type>(handle));
 
 				XTextProperty name;
@@ -377,8 +378,8 @@ namespace nana{
 			if(nullptr == parent) return nullptr;
 #if defined(NANA_WINDOWS)
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilites for variation
-										STR("NanaWindowInternal"),
-										STR("Nana Child Window"),	// Title Text
+										L"NanaWindowInternal",
+										L"Nana Child Window",	// Title Text
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
 										r.x, r.y, r.width, r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
@@ -417,8 +418,6 @@ namespace nana{
 
 			if(handle)
 			{
-				restrict::spec.make_owner(parent, reinterpret_cast<native_window_type>(handle));
-
 				XTextProperty name;
 				char text[] = "Nana Child Window";
 				char * str = text;
@@ -474,13 +473,13 @@ namespace nana{
 				auto & atombase = restrict::spec.atombase();
 				::XSetTransientForHint(disp, reinterpret_cast<Window>(wd), owner);
 				::XChangeProperty(disp, reinterpret_cast<Window>(wd),
-								atombase.net_wm_state, XA_ATOM, sizeof(int) * 8, 
+								atombase.net_wm_state, XA_ATOM, sizeof(int) * 8,
 								PropModeReplace,
 								reinterpret_cast<const unsigned char*>(&atombase.net_wm_state_modal), 1);
 			}
 		}
 #endif
-		
+
 		void native_interface::enable_dropfiles(native_window_type wd, bool enb)
 		{
 #if defined(NANA_WINDOWS)
@@ -506,7 +505,7 @@ namespace nana{
 			}
 
 			::XSelectInput(restrict::spec.open_display(), reinterpret_cast<Window>(wd), mask);
-#endif		
+#endif
 		}
 
 		bool native_interface::window_icon(native_window_type wd, const nana::paint::image& sml_icon, const ::nana::paint::image& big_icon)
@@ -786,21 +785,30 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), & r);
-			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
-			if(owner)
+			HWND coord_wd = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
+
+			if (!coord_wd)
+				coord_wd = ::GetParent(reinterpret_cast<HWND>(wd));
+
+			if (coord_wd)
 			{
 				::POINT pos = {r.left, r.top};
-				::ScreenToClient(owner, &pos);
+				::ScreenToClient(coord_wd, &pos);
 				return nana::point(pos.x, pos.y);
 			}
 			return nana::point(r.left, r.top);
 #elif defined(NANA_X11)
 			int x, y;
 			nana::detail::platform_scope_guard psg;
-			Window root = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
-			if(root == 0) root = restrict::spec.root_window();
+			Window coord_wd = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
+			if(!coord_wd)
+			{
+				coord_wd = reinterpret_cast<Window>(parent_window(wd));
+				if(!coord_wd)
+					coord_wd = restrict::spec.root_window();
+			}
 			Window child;
-			if(True == ::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), root, 0, 0, &x, &y, &child))
+			if(True == ::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), coord_wd, 0, 0, &x, &y, &child))
 				return nana::point(x, y);
 			return nana::point(0, 0);
 #endif
@@ -1076,59 +1084,47 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::window_caption(native_window_type wd, const nana::string& title)
+		void native_interface::window_caption(native_window_type wd, const native_string_type& title)
 		{
 #if defined(NANA_WINDOWS)
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
-				wchar_t * wstr;
-#if defined(NANA_UNICODE)
-				wstr = new wchar_t[title.length() + 1];
-				wcscpy(wstr, title.c_str());
-#else
-				std::wstring str = nana::charset(title);
-				wstr = new wchar_t[str.length() + 1];
-				wcscpy(wstr, str.c_str());
-#endif
+				wchar_t * wstr = new wchar_t[title.length() + 1];
+				std::wcscpy(wstr, title.c_str());
 				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_set_window_text, reinterpret_cast<WPARAM>(wstr), 0);
 			}
 			else
 				::SetWindowText(reinterpret_cast<HWND>(wd), title.c_str());
 #elif defined(NANA_X11)
 			::XTextProperty name;
-	#if defined(NANA_UNICODE)
-			std::string mbstr = nana::charset(title);
-			char* text = const_cast<char*>(mbstr.c_str());
-	#else
-			char* text = const_cast<char*>(title.c_str());
-	#endif
+			char * text = const_cast<char*>(title.c_str());
+
 			nana::detail::platform_scope_guard psg;
 			::XStringListToTextProperty(&text, 1, &name);
 			::XSetWMName(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &name);
 			::XChangeProperty(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
 					restrict::spec.atombase().net_wm_name, restrict::spec.atombase().utf8_string, 8,
-					PropModeReplace, reinterpret_cast<unsigned char*>(text), mbstr.size());
+					PropModeReplace, reinterpret_cast<unsigned char*>(text), title.size());
 #endif
 		}
 
-		nana::string native_interface::window_caption(native_window_type wd)
+		auto native_interface::window_caption(native_window_type wd) -> native_string_type
 		{
 #if defined(NANA_WINDOWS)
 			int length = ::GetWindowTextLength(reinterpret_cast<HWND>(wd));
 			if(length > 0)
 			{
-				nana::string str;
+				native_string_type str;
                 //One for NULL terminator which GetWindowText will write.
 				str.resize(length+1);
-				
+
 				::GetWindowText(reinterpret_cast<HWND>(wd), &(str[0]), static_cast<int>(str.size()));
-				
+
 				//Remove the null terminator writtien by GetWindowText
 				str.resize(length);
 
 				return str;
 			}
-			return nana::string();
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 			::XTextProperty txtpro;
@@ -1140,14 +1136,14 @@ namespace nana{
 				{
 					if(size > 1)
 					{
-						nana::string str = nana::charset(*strlist);
+						std::string text = *strlist;
 						::XFreeStringList(strlist);
-						return str;
+						return text;
 					}
 				}
 			}
-			return nana::string();
 #endif
+			return native_string_type();
 		}
 
 		void native_interface::capture_window(native_window_type wd, bool cap)
@@ -1199,6 +1195,54 @@ namespace nana{
 			return reinterpret_cast<native_window_type>(::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER));
 #elif defined(NANA_X11)
 			return restrict::spec.get_owner(wd);
+#endif
+		}
+
+		native_window_type native_interface::parent_window(native_window_type wd)
+		{
+#ifdef NANA_WINDOWS
+			return reinterpret_cast<native_window_type>(::GetParent(reinterpret_cast<HWND>(wd)));
+#elif defined(NANA_X11)
+			Window root;
+			Window parent;
+			Window * children;
+			unsigned size;
+
+			platform_scope_guard lock;
+
+			if(0 != ::XQueryTree(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
+				&root, &parent, &children, &size))
+			{
+				::XFree(children);
+				return reinterpret_cast<native_window_type>(parent);
+			}
+			return nullptr;
+#endif
+		}
+
+		native_window_type native_interface::parent_window(native_window_type child, native_window_type new_parent, bool returns_previous)
+		{
+#ifdef NANA_WINDOWS
+			auto prev = ::SetParent(reinterpret_cast<HWND>(child), reinterpret_cast<HWND>(new_parent));
+
+			if (prev)
+				::PostMessage(prev, /*WM_CHANGEUISTATE*/0x0127, /*UIS_INITIALIZE*/ 3, 0);
+
+			::SetWindowPos(reinterpret_cast<HWND>(child), NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+			return reinterpret_cast<native_window_type>(returns_previous ? prev : nullptr);
+#elif defined(NANA_X11)
+			native_window_type prev = nullptr;
+
+			platform_scope_guard lock;
+
+			if(returns_previous)
+				prev = parent_window(child);
+
+			::XReparentWindow(restrict::spec.open_display(),
+				reinterpret_cast<Window>(child), reinterpret_cast<Window>(new_parent),
+				0, 0);
+			return prev;
 #endif
 		}
 

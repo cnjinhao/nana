@@ -42,12 +42,12 @@ namespace nana
 				trigger();
 				bool chose() const;
 				nana::date read() const;
-				void week_name(unsigned index, const nana::string&);
+				void week_name(unsigned index, const std::string&);
 			private:
 				where _m_pos_where(graph_reference, const ::nana::point& pos);
 				void _m_draw_topbar(graph_reference);
 				void _m_make_drawing_basis(drawing_basis&, graph_reference, const nana::point& refpos);
-				void _m_draw_pos(drawing_basis &, graph_reference, int x, int y, const nana::string&, bool primary, bool sel);
+				void _m_draw_pos(drawing_basis &, graph_reference, int x, int y, const ::std::string&, bool primary, bool sel);
 				void _m_draw_pos(drawing_basis &, graph_reference, int x, int y, int number, bool primary, bool sel);
 				void _m_draw_ex_days(drawing_basis &, graph_reference, int begx, int begy, bool before);
 				void _m_draw_days(const nana::point& refpos, graph_reference);
@@ -61,7 +61,7 @@ namespace nana
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
-				nana::string weekstr_[7];
+				::std::string weekstr_[7];
 
 				widget * widget_;
 				
@@ -105,13 +105,13 @@ namespace nana
 	public:
 		date_chooser();
 		date_chooser(window, bool visible);
-		date_chooser(window, const nana::string& text, bool visible = true);
-		date_chooser(window, const nana::char_t* text, bool visible = true);
+		date_chooser(window, const ::std::string& text, bool visible = true);
+		date_chooser(window, const char* text, bool visible = true);
 		date_chooser(window, const nana::rectangle& r = rectangle(), bool visible = true);
 
 		bool chose() const;
 		nana::date read() const;
-		void weekstr(unsigned index, const nana::string&);///<Set the week strings which will be displayed for day, index is in range of [0, 6]
+		void weekstr(unsigned index, const ::std::string&);///<Set the week strings which will be displayed for day, index is in range of [0, 6]
 	};
 }//end namespace nana
 

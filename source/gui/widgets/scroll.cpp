@@ -199,7 +199,7 @@ namespace nana
 				graph.rectangle(r, false, clr);
 
 				clr = clr.blend(colors::white, 0.5);
-				graph.set_color(clr);
+				graph.palette(false, clr);
 
 				r.pare_off(2);
 				if(vertical_)

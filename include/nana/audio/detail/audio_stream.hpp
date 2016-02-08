@@ -1,7 +1,11 @@
 #ifndef NANA_AUDIO_DETAIL_AUDIO_STREAM_HPP
 #define NANA_AUDIO_DETAIL_AUDIO_STREAM_HPP
-#include <fstream>
+
 #include <nana/deploy.hpp>
+
+#ifdef NANA_ENABLE_AUDIO
+
+#include <fstream>
 
 namespace nana{	namespace audio{
 	namespace detail
@@ -59,7 +63,7 @@ namespace nana{	namespace audio{
 				unsigned cksize;
 			};
 		public:
-			bool open(const nana::string& file);
+			bool open(const std::string& file);
 			void close();
 			bool empty() const;
 			const wave_spec::format_chunck & format() const;
@@ -78,4 +82,5 @@ namespace nana{	namespace audio{
 	}
 }//end namespace audio
 }//end namespace nana
+#endif	//NANA_ENABLE_AUDIO
 #endif

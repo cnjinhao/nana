@@ -299,10 +299,10 @@ namespace nana
 		impl_->native_handle = nullptr;
 	}
 
-	void notifier::text(const nana::string& str)
+	void notifier::text(const std::string& str)
 	{
 #if defined(NANA_WINDOWS)
-		NOTIFYICONDATA icon_data;
+		NOTIFYICONDATAW icon_data;
 		memset(&icon_data, 0, sizeof icon_data);
 		icon_data.cbSize = sizeof icon_data;
 		icon_data.hWnd = reinterpret_cast<HWND>(impl_->native_handle);
@@ -310,18 +310,18 @@ namespace nana
 		icon_data.uFlags = NIF_MESSAGE | NIF_TIP;
 		icon_data.uCallbackMessage = nana::detail::messages::tray;
 
-		strcpy(icon_data.szTip, str.data());
+		std::wcscpy(icon_data.szTip, to_wstring(str).c_str());
 
 		::Shell_NotifyIcon(impl_->icon_added ? NIM_MODIFY : NIM_ADD, &icon_data);
 		impl_->icon_added = true;
 #endif
 	}
 
-	void notifier::icon(const nana::string& icon_file)
+	void notifier::icon(const std::string& icon_file)
 	{
 #if defined(NANA_WINDOWS)
 		auto pre_icon = impl_->icon_handle;
-		auto ico = (HICON)::LoadImage(0, icon_file.data(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+		auto ico = (HICON)::LoadImageW(0, to_wstring(icon_file).data(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
 		if (ico)
 		{
 			impl_->icon_handle = ico;
@@ -333,10 +333,10 @@ namespace nana
 #endif	
 	}
 
-	void notifier::insert_icon(const nana::string& icon_file)
+	void notifier::insert_icon(const std::string& icon_file)
 	{
 #if defined(NANA_WINDOWS)
-		auto icon = (HICON)::LoadImage(0, icon_file.data(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+		auto icon = (HICON)::LoadImage(0, to_wstring(icon_file).data(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
 		impl_->icons.push_back(icon);
 #endif
 	}

@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -72,8 +72,8 @@ namespace API
 		widget_colors* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
-		nana::string window_caption(window) throw();
-		void window_caption(window, nana::string);
+		::nana::detail::native_string_type window_caption(window) throw();
+		void window_caption(window, ::nana::detail::native_string_type);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);
@@ -83,6 +83,11 @@ namespace API
 		paint::graphics* window_graphics(window);
 
 		void delay_restore(bool);
+
+		void register_menu_window(window, bool has_keyboard);
+		void set_menubar(window wd, bool attach);
+
+		void enable_space_click(window, bool enable);
 	}//end namespace dev
 
 
@@ -140,7 +145,7 @@ namespace API
 
 	void exit();
 
-	nana::string transform_shortkey_text(nana::string text, nana::string::value_type &shortkey, nana::string::size_type *skpos);
+	std::string transform_shortkey_text(std::string text, wchar_t &shortkey, std::string::size_type *skpos);
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 
@@ -271,8 +276,8 @@ namespace API
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
-	void window_caption(window, const nana::string& title);
-	nana::string window_caption(window);
+	void window_caption(window, const std::wstring& title);
+	::std::string window_caption(window);
 
 	void window_cursor(window, cursor);
 	cursor window_cursor(window);
@@ -310,9 +315,6 @@ namespace API
 	void eat_tabstop(window, bool);
 	window move_tabstop(window, bool next);     ///< Sets the focus to the window which tabstop is near to the specified window.
 
-	bool glass_window(window);			/// \deprecated
-	bool glass_window(window, bool);	/// \deprecated
-
 	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
 
@@ -327,10 +329,6 @@ namespace API
 	bool calc_window_point(window, point&);   ///<Converts screen coordinates to window coordinates.
 
 	window find_window(const nana::point& mspos);
-
-	void register_menu_window(window, bool has_keyboard);
-	bool attach_menubar(window menubar);
-	void detach_menubar(window menubar);
 
 	bool is_window_zoomed(window, bool ask_for_max);  ///<Tests a window whether it is maximized or minimized.
 

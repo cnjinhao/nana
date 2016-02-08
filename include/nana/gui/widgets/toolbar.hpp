@@ -1,7 +1,7 @@
 /**
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -83,15 +83,22 @@ namespace nana
 		using size_type = std::size_t;      ///< A type to count the number of elements.
 
 		toolbar() = default;
-		toolbar(window, bool visible);
-		toolbar(window, const rectangle& = rectangle(), bool visible = true);
+		toolbar(window, bool visible, bool detached=false);
+		toolbar(window, const rectangle& = rectangle(), bool visible = true, bool detached = false);
 
 		void separate();                      ///< Adds a separator.
-		void append(const nana::string& text, const nana::paint::image& img);   ///< Adds a control button.
-		void append(const nana::string& text);   ///< Adds a control button.
+		void append(const ::std::string& text, const nana::paint::image& img);   ///< Adds a control button.
+		void append(const ::std::string& text);   ///< Adds a control button.
 		bool enable(size_type index) const;
 		void enable(size_type index, bool enable_state);
 		void scale(unsigned s);   ///< Sets the scale of control button.
+
+		void go_right();
+
+		bool detached() { return detached_; };
+
+	private:
+		bool   detached_;
 	};
 }//end namespace nana
 #endif

@@ -1,6 +1,6 @@
 /*
  *	A Tabbar Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,11 +21,12 @@ namespace nana
 	{
 		namespace tabbar
 		{
+			using native_string_type = ::nana::detail::native_string_type;
 			struct item_t
 			{
 				window relative{nullptr};
 				paint::image img;
-				nana::string text;
+				native_string_type text;
 				any	value;
 
 				::nana::color bgcolor;
@@ -33,7 +34,7 @@ namespace nana
 
 				item_t() = default;
 				
-				item_t(nana::string&& text, any && value)
+				item_t(native_string_type&& text, any && value)
 					: text(std::move(text)), value(std::move(value))
 				{}
 			};
@@ -420,7 +421,7 @@ namespace nana
 					evt_agent_ = evt;
 				}
 
-				void insert(std::size_t pos, nana::string&& text, nana::any&& value)
+				void insert(std::size_t pos, native_string_type&& text, nana::any&& value)
 				{
 					if (pos >= list_.size())
 						pos = list_.size();
@@ -639,7 +640,7 @@ namespace nana
 						m.img.close();
 				}
 
-				bool text(std::size_t pos, const nana::string& str)
+				bool text(std::size_t pos, const native_string_type& str)
 				{
 					if (pos >= list_.size())
 						throw std::out_of_range("tabbar: invalid position");
@@ -654,7 +655,7 @@ namespace nana
 					return false;
 				}
 
-				nana::string text(std::size_t pos) const
+				native_string_type text(std::size_t pos) const
 				{
 					if (pos >= list_.size())
 						throw std::out_of_range("tabbar: invalid position");
@@ -787,7 +788,7 @@ namespace nana
 					};
 
 					for(auto & m : list_)
-						menulister_.append(m.text, fn);
+						menulister_.append(to_utf8(m.text), fn);
 
 					auto r = toolbox_.area(toolbox_.ButtonList, basis_.graph->height());
 					r.x += _m_toolbox_pos();
@@ -1003,10 +1004,12 @@ namespace nana
 							if(item.text.size())
 							{
 								nana::size ts = basis_.graph->text_extent_size(item.text);
-								basis_.graph->set_text_color(m.fgcolor.invisible() ? fgcolor : m.fgcolor);
+								basis_.graph->palette(true, m.fgcolor.invisible() ? fgcolor : m.fgcolor);
 								nana::paint::text_renderer tr(*basis_.graph);
+
+								std::wstring wtext = to_wstring(item.text);
 								tr.render({ m.r.x + 24, m.r.y + static_cast<int>(m.r.height - ts.height) / 2 },
-											item.text.c_str(), item.text.length(), basis_.item_pixels - 24 - 18, true);
+											wtext.c_str(), wtext.length(), basis_.item_pixels - 24 - 18, true);
 							}
 						}
 
@@ -1027,7 +1030,7 @@ namespace nana
 						}
 					}
 
-					basis_.graph->set_color(static_cast<color_rgb>(0x808080));
+					basis_.graph->palette(false, static_cast<color_rgb>(0x808080));
 
 					int right = static_cast<int>(basis_.graph->width());
 					int end = active_m.r.x + static_cast<int>(active_m.r.width);
@@ -1163,7 +1166,7 @@ namespace nana
 					layouter_->event_agent(evt);
 				}
 
-				void trigger::insert(std::size_t pos, nana::string&& text, nana::any&& value)
+				void trigger::insert(std::size_t pos, native_string_type&& text, nana::any&& value)
 				{
 					layouter_->insert(pos, std::move(text), std::move(value));
 				}
@@ -1200,13 +1203,13 @@ namespace nana
 					API::refresh_window(layouter_->widget_handle());
 				}
 
-				void trigger::text(std::size_t i, const nana::string& str)
+				void trigger::text(std::size_t i, const native_string_type& str)
 				{
 					if(layouter_->text(i, str))
 						API::refresh_window(layouter_->widget_handle());
 				}
 
-				nana::string trigger::text(std::size_t i) const
+				native_string_type trigger::text(std::size_t i) const
 				{
 					return layouter_->text(i);
 				}
@@ -1450,8 +1453,8 @@ namespace nana
 							rectangle r{ m.pos_ends.first, 0, static_cast<unsigned>(m.pos_ends.second - m.pos_ends.first), graph.height() };
 							if (indexes.active_pos == pos)
 							{
-								graph.set_color(colors::white);
-								graph.set_text_color(colors::black);
+								graph.palette(false, colors::white);
+								graph.palette(true, colors::black);
 							}
 							else
 							{
@@ -1460,8 +1463,8 @@ namespace nana
 								if (pos == indexes.hovered_pos)
 									bgcolor = bgcolor.blend(colors::white, 0.5);
 
-								graph.set_color(bgcolor);
-								graph.set_text_color(colors::white);
+								graph.palette(false, bgcolor);
+								graph.palette(true, colors::white);
 							}
 
 							graph.rectangle(r, true);

@@ -1,7 +1,7 @@
 /*
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -40,6 +40,7 @@ namespace nana{	namespace drawerbase
 			wdg_ = &widget;
 			window wd = widget;
 
+			API::dev::enable_space_click(widget, true);
 			API::tabstop(wd);
 			API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 			API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
@@ -162,19 +163,8 @@ namespace nana{	namespace drawerbase
 			_m_press(graph, false);
 		}
 
-		void trigger::key_char(graph_reference, const arg_keyboard& arg)
-		{
-			if (static_cast<char_t>(keyboard::enter) == arg.key)
-				emit_click();
-		}
-
 		void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 		{
-			if (keyboard::space == static_cast<char_t>(arg.key))
-			{
-				_m_press(graph, true);
-				return;
-			}
 			bool ch_tabstop_next;
 			switch(arg.key)
 			{
@@ -191,18 +181,6 @@ namespace nana{	namespace drawerbase
 			API::move_tabstop(*wdg_, ch_tabstop_next);
 		}
 
-		void trigger::key_release(graph_reference graph, const arg_keyboard& arg)
-		{
-			if (arg.key != static_cast<char_t>(keyboard::space))
-				return;
-
-			emit_click();
-
-			//Check the widget, because it may be deleted by click event
-			if (API::is_window(*wdg_))
-				_m_press(graph, false);
-		}
-
 		void trigger::focus(graph_reference graph, const arg_focus& arg)
 		{
 			attr_.focused = arg.getting;
@@ -212,11 +190,10 @@ namespace nana{	namespace drawerbase
 
 		void trigger::_m_draw_title(graph_reference graph, bool enabled)
 		{
-			nana::string text = wdg_->caption();
-
-			nana::string::value_type shortkey;
-			nana::string::size_type shortkey_pos;
-			nana::string str = API::transform_shortkey_text(text, shortkey, &shortkey_pos);
+			wchar_t shortkey;
+			std::string::size_type shortkey_pos;
+			std::string mbstr = API::transform_shortkey_text(wdg_->caption(), shortkey, &shortkey_pos);
+			std::wstring str = to_wstring(mbstr);
 
 			nana::size ts = graph.text_extent_size(str);
 			nana::size gsize = graph.size();
@@ -237,7 +214,7 @@ namespace nana{	namespace drawerbase
 
 			unsigned omitted_pixels = gsize.width - icon_sz.width;
 			std::size_t txtlen = str.size();
-			const nana::char_t* txtptr = str.c_str();
+			const auto txtptr = str.c_str();
 			if(ts.width)
 			{
 				nana::paint::text_renderer tr(graph);
@@ -249,7 +226,7 @@ namespace nana{	namespace drawerbase
 						++pos.y;
 					}
 
-					graph.set_text_color(attr_.focus_color && attr_.focused ? ::nana::color(colors::blue) : attr_.fgcolor);
+					graph.palette(true, attr_.focus_color && attr_.focused ? ::nana::color(colors::blue) : attr_.fgcolor);
 
 					if (attr_.omitted)
 						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
@@ -258,27 +235,33 @@ namespace nana{	namespace drawerbase
 
 					if(shortkey)
 					{
-						unsigned off_w = (shortkey_pos ? graph.text_extent_size(str, static_cast<unsigned>(shortkey_pos)).width : 0);
-						nana::size shortkey_size = graph.text_extent_size(txtptr + shortkey_pos, 1);
+						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), static_cast<unsigned>(shortkey_pos)).width : 0);
+
+						wchar_t keystr[2] = {nana::utf::char_at(mbstr.c_str() + shortkey_pos, 0, 0), 0};
+						auto shortkey_size = graph.text_extent_size(keystr, 1);
+
+						unsigned ascent, descent, inleading;
+						graph.text_metrics(ascent, descent, inleading);
+
 						pos.x += off_w;
-						pos.y += static_cast<int>(shortkey_size.height);
-						graph.set_color(colors::black);
-						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y });
+						pos.y += static_cast<int>(ascent + 2);
+
+						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y }, colors::black);
 					}
 				}
 				else
 				{
-					graph.set_text_color(::nana::color(colors::white));
+					graph.palette(true, ::nana::color(colors::white));
 					if(attr_.omitted)
 					{
 						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, true);
-						graph.set_text_color(::nana::color(colors::gray));
+						graph.palette(true, ::nana::color(colors::gray));
 						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
 					}
 					else
 					{
 						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen);
-						graph.set_text_color(::nana::color(colors::gray));
+						graph.palette(true, ::nana::color(colors::gray));
 						graph.bidi_string(pos, txtptr, txtlen);
 					}
 				}
@@ -319,10 +302,10 @@ namespace nana{	namespace drawerbase
 			::nana::color lt(static_cast<color_rgb>(0x7f7f7f)), rb(static_cast<color_rgb>(0x707070));
 			graph.frame_rectangle(r, lt, lt, rb, rb);
 
-			graph.set_color(colors::button_face);
+			graph.palette(false, colors::button_face);
 			draw_corner_point(graph, r);
 
-			graph.set_color(static_cast<color_rgb>(0x919191));
+			graph.palette(false, static_cast<color_rgb>(0x919191));
 			draw_corner_point(graph, r.pare_off(1));
 
 			if (element_state::pressed == attr_.e_state)
@@ -331,16 +314,14 @@ namespace nana{	namespace drawerbase
 
 		void trigger::_m_press(graph_reference graph, bool is_pressed)
 		{
-			bool draw = false;
 			if (is_pressed)
 			{
-				if (attr_.e_state != element_state::pressed)
-				{
-					attr_.e_state = element_state::pressed;
-					attr_.keep_pressed = true;
-					API::capture_window(*wdg_, true);
-					draw = true;
-				}
+				if (attr_.e_state == element_state::pressed)
+					return;
+
+				attr_.e_state = element_state::pressed;
+				attr_.keep_pressed = true;
+				API::capture_window(*wdg_, true);
 			}
 			else
 			{
@@ -349,24 +330,19 @@ namespace nana{	namespace drawerbase
 				if (attr_.enable_pushed && (false == attr_.pushed))
 				{
 					attr_.pushed = true;
+					return;
 				}
+
+				if (element_state::pressed == attr_.e_state)
+					attr_.e_state = element_state::hovered;
 				else
-				{
-					if (element_state::pressed == attr_.e_state)
-						attr_.e_state = element_state::hovered;
-					else
-						attr_.e_state = element_state::normal;
+					attr_.e_state = element_state::normal;
 
-					attr_.pushed = false;
-					draw = true;
-				}
+				attr_.pushed = false;
 			}
 
-			if (draw)
-			{
-				refresh(graph);
-				API::lazy_refresh();
-			}
+			refresh(graph);
+			API::lazy_refresh();
 		}
 
 		void trigger::emit_click()
@@ -398,13 +374,13 @@ namespace nana{	namespace drawerbase
 				create(wd, rectangle(), visible);
 			}
 
-			button::button(window wd, const nana::string& text, bool visible)
+			button::button(window wd, const std::string& text, bool visible)
 			{
 				create(wd, rectangle(), visible);
 				caption(text);
 			}
 
-			button::button(window wd, const nana::char_t* text, bool visible)
+			button::button(window wd, const char* text, bool visible)
 			{
 				create(wd, rectangle(), visible);
 				caption(text);
@@ -509,12 +485,12 @@ namespace nana{	namespace drawerbase
 				});
 			}
 
-			void button::_m_caption(nana::string&& text)
+			void button::_m_caption(native_string_type&& text)
 			{
 				API::unregister_shortkey(handle());
 
-				nana::char_t shortkey;
-				API::transform_shortkey_text(text, shortkey, 0);
+				wchar_t shortkey;
+				API::transform_shortkey_text(to_utf8(text), shortkey, nullptr);
 				if (shortkey)
 					API::register_shortkey(handle(), shortkey);
 

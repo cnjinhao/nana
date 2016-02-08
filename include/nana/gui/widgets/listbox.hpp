@@ -1,15 +1,18 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.hpp
- *	@contributors: Ariel Vina-Rodriguez
- *
+ *	@contributors:
+ *		Hiroshi Seki
+ *		Ariel Vina-Rodriguez
+ *		leobackes
+ *		Benjamin Navarro
  */
 
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
@@ -31,6 +34,7 @@ namespace nana
 		namespace listbox
 		{
 			using size_type = std::size_t;
+			using native_string_type = ::nana::detail::native_string_type;
 
 			/// usefull for both absolute and display (sorted) positions
 			struct index_pair
@@ -81,7 +85,7 @@ namespace nana
 
 			using selection = std::vector<index_pair>;
 
-			using inline_notifier_interface = detail::inline_widget_notifier_interface<index_pair, std::wstring>;
+			using inline_notifier_interface = detail::inline_widget_notifier_interface<index_pair, std::string>;
 
 			struct cell
 			{
@@ -94,17 +98,17 @@ namespace nana
 					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 				};
 
-				using format_ptr = std::unique_ptr < format > ;
+				using format_ptr = ::std::unique_ptr<format>;
 
-				::nana::string	text;
-				format_ptr custom_format;
+				::std::string	text;
+				format_ptr	custom_format;
 
 				cell() = default;
 				cell(const cell&);
 				cell(cell&&);
-				cell(nana::string);
-				cell(nana::string, const format&);
-				cell(nana::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);
+				cell(::std::string);
+				cell(::std::string, const format&);
+				cell(::std::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);
 
 				cell& operator=(const cell&);
 				cell& operator=(cell&&);
@@ -126,9 +130,9 @@ namespace nana
 				oresolver& operator<<(double);
 				oresolver& operator<<(long double);
 
-				oresolver& operator<<(const char*);
+				oresolver& operator<<(const char* text_utf8);
 				oresolver& operator<<(const wchar_t*);
-				oresolver& operator<<(const std::string&);
+				oresolver& operator<<(const std::string& text_utf8);
 				oresolver& operator<<(const std::wstring&);
 				oresolver& operator<<(std::wstring&&);
 				oresolver& operator<<(cell);
@@ -157,7 +161,7 @@ namespace nana
 				iresolver& operator>>(double&);
 				iresolver& operator>>(long double&);
 
-				iresolver& operator>>(std::string&);
+				iresolver& operator>>(std::string& text_utf8);
 				iresolver& operator>>(std::wstring&);
 				iresolver& operator>>(cell&);
 				iresolver& operator>>(std::nullptr_t);
@@ -241,8 +245,9 @@ namespace nana
 				size_type columns() const;
 
 				item_proxy&		text(size_type col, cell);
-				item_proxy&		text(size_type col, nana::string);
-				nana::string	text(size_type col) const;
+				item_proxy&		text(size_type col, std::string);
+				item_proxy&		text(size_type col, std::wstring);
+				std::string	text(size_type col) const;
 
 				void icon(const nana::paint::image&);
 
@@ -257,7 +262,7 @@ namespace nana
 					for (auto pos = 0u; pos < cols; ++pos)
 					{
 						auto & el = cells[pos];
-						if (el.text.size() == 1 && el.text[0] == nana::char_t(0))
+						if (el.text.size() == 1 && el.text[0] == '\0')
 							continue;
 						text(pos, std::move(el));
 					}
@@ -275,8 +280,7 @@ namespace nana
 				template<typename T>
 				T* value_ptr() const
 				{
-					auto * pany = _m_value();
-					return (pany ? pany->get<T>() : nullptr);
+					return any_cast<T>(_m_value());
 				}
 
 				template<typename T>
@@ -286,7 +290,7 @@ namespace nana
 					if(nullptr == pany)
 						throw std::runtime_error("listbox::item_proxy.value<T>() is empty");
 
-					T * p = pany->get<T>();
+					T * p = any_cast<T>(_m_value());
 					if(nullptr == p)
 						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
 					return *p;
@@ -300,9 +304,10 @@ namespace nana
 				}
 
 				/// Behavior of Iterator's value_type
-				bool operator==(const nana::string& s) const;
 				bool operator==(const char * s) const;
 				bool operator==(const wchar_t * s) const;
+				bool operator==(const ::std::string& s) const;
+				bool operator==(const ::std::wstring& s) const;
 
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
@@ -375,18 +380,20 @@ namespace nana
 				}
 
 				/// Appends one item at the end of this category with the specifies text in the column fields
-                void append(std::initializer_list<nana::string>);
+				void append(std::initializer_list<std::string> texts_utf8);
+				void append(std::initializer_list<std::wstring> texts);
 
 				size_type columns() const;
 
-				cat_proxy& text(nana::string);
-				nana::string text() const;
+				cat_proxy& text(std::string);
+				cat_proxy& text(std::wstring);
+				std::string text() const;
 
 				cat_proxy & select(bool);
 				bool selected() const;
 
 				/// Behavior of a container
-				void push_back(nana::string);
+				void push_back(std::string text_utf8);
 
 				item_proxy begin() const;
 				item_proxy end() const;
@@ -449,8 +456,8 @@ namespace nana
 		
 			struct export_options
 			{
-				nana::string sep = nana::string {STR("\t" )}, 
-							 endl= nana::string {STR("\n")};
+				std::string sep = ::std::string {"\t"}, 
+							 endl= ::std::string {"\n"};
 				bool only_selected_items{true}, 
 					 only_checked_items {false},
 					 only_visible_columns{true};
@@ -461,13 +468,30 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-	struct arg_listbox
+    struct arg_listbox
+        : public event_arg
+    {
+        mutable drawerbase::listbox::item_proxy item;
+        bool    selected;
+
+        arg_listbox(const drawerbase::listbox::item_proxy&, bool selected) noexcept;
+    };
+
+	/// The event argument type for listbox's category_dbl_click
+    struct arg_category
 		: public event_arg
 	{
-		mutable drawerbase::listbox::item_proxy item;
-		bool	selected;
+        drawerbase::listbox::cat_proxy category;
 
-		arg_listbox(const drawerbase::listbox::item_proxy&, bool selected);
+		/// Block expension/shrink of category
+        void block_category_change() const noexcept;
+
+		/// Determines whether expension/shrink of category is blocked
+        bool category_change_blocked() const noexcept;
+
+        arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
+    private:
+        mutable bool block_change_;
 	};
 
 	namespace drawerbase
@@ -479,6 +503,9 @@ namespace nana
 			{
 				basic_event<arg_listbox> checked;
 				basic_event<arg_listbox> selected;
+
+				/// An event occurs when a listbox category is double clicking.
+                basic_event<arg_category> category_dbl_click;
 			};
 
 			struct scheme
@@ -510,16 +537,16 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 	and 
 		antisymmetry(comp(a, b) != comp(b, a) returns true)
 	A simple example.
-		bool sort_compare( const nana::string& s1, nana::any*, 
-						   const nana::string& s2, nana::any*, bool reverse)
+		bool sort_compare( const std::string& s1, nana::any*, 
+						   const std::string& s2, nana::any*, bool reverse)
 		{
 			return (reverse ? s1 > s2 : s1 < s2);
 		}
 		listbox.set_sort_compare(0, sort_compare);
 	The listbox supports attaching a customer's object for each item, therefore the items can be 
 	sorted by comparing these customer's object.
-		bool sort_compare( const nana::string&, nana::any* o1, 
-						   const nana::string&, nana::any* o2, bool reverse)
+		bool sort_compare( const std::string&, nana::any* o1, 
+						   const std::string&, nana::any* o2, bool reverse)
 		{
 			if(o1 && o2) 	//some items may not attach a customer object.
 			{
@@ -565,15 +592,20 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void scroll(bool to_bottom, const index_pair& pos);
 
         /// Appends a new column with a header text and the specified width at the end, and return it position
-        size_type append_header(nana::string header_text, unsigned width = 120);		
+		size_type append_header(std::string text_utf8, unsigned width = 120);
+		size_type append_header(std::wstring text, unsigned width = 120);
         listbox& header_width(size_type position, unsigned pixels);
 		unsigned header_width(size_type position) const;
         unsigned auto_width(size_type position, unsigned max=3000);
 
 
-		cat_proxy append(nana::string);          ///< Appends a new category at the end
-		void append(std::initializer_list<nana::string>); ///< Appends categories at the end
-		cat_proxy insert(cat_proxy, nana::string);
+		cat_proxy append(std::string);          ///< Appends a new category to the end
+		cat_proxy append(std::wstring);			///< Appends a new category to the end
+		void append(std::initializer_list<std::string>); ///< Appends categories to the end
+		void append(std::initializer_list<std::wstring>); ///< Appends categories to the end
+
+		cat_proxy insert(cat_proxy, ::std::string);
+		cat_proxy insert(cat_proxy, ::std::wstring);
 		cat_proxy at(size_type pos) const;
 
         /// add categories in order when use a key?
@@ -604,9 +636,18 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 			return cat_proxy(&_m_ess(), _m_at_key(p));
 		}
 
+		/// Returns an item by the specified absolute position
 		item_proxy at(const index_pair &abs_pos) const;
 
-		void insert(const index_pair&, nana::string);         ///<Insert a new item with a text in the first column.
+		/// Returns an index of item which contains the specified point.
+        index_pair at(const point & pos) const;
+
+		/// Returns the column which contains the specified point.
+        columns_indexs column_from_pos(const point & pos);
+
+
+		void insert(const index_pair&, ::std::string);		///<Insert a new item with a text in the first column.
+		void insert(const index_pair&, ::std::wstring);		///<Insert a new item with a text in the first column.
 
 		void checkable(bool);
 		selection checked() const;                         ///<Returns the items which are checked.                       
@@ -637,8 +678,8 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void sortable(bool enable);
 		
 		///Sets a strict weak ordering comparer for a column
-		void set_sort_compare(size_type col, std::function<bool(const nana::string&, nana::any*,
-				                                        const nana::string&, nana::any*, bool reverse)> strick_ordering);
+		void set_sort_compare(size_type col, std::function<bool(const std::string&, nana::any*,
+				                                        const std::string&, nana::any*, bool reverse)> strick_ordering);
 
 		/// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
         void sort_col(size_type col, bool reverse = false);

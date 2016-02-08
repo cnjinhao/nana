@@ -1,4 +1,7 @@
 #include <nana/audio/player.hpp>
+
+#ifdef NANA_ENABLE_AUDIO
+
 #include <nana/audio/detail/audio_stream.hpp>
 #include <nana/audio/detail/audio_device.hpp>
 #include <nana/audio/detail/buffer_preparation.hpp>
@@ -17,7 +20,7 @@ namespace nana{	namespace audio
 			: impl_(new implementation)
 		{}
 
-		player::player(const nana::string& file)
+		player::player(const std::string& file)
 			: impl_(new implementation)
 		{
 			open(file);
@@ -28,7 +31,7 @@ namespace nana{	namespace audio
 			delete impl_;
 		}
 
-		bool player::open(const nana::string& file)
+		bool player::open(const std::string& file)
 		{
 			if(impl_->stream.open(file))
 			{
@@ -63,3 +66,5 @@ namespace nana{	namespace audio
 		}
 }//end namespace audio
 }//end namespace nana
+
+#endif //NANA_ENABLE_AUDIO

@@ -1,4 +1,6 @@
 #include <nana/audio/detail/audio_stream.hpp>
+#ifdef NANA_ENABLE_AUDIO
+
 #include <nana/charset.hpp>
 
 namespace nana{	namespace audio
@@ -6,9 +8,9 @@ namespace nana{	namespace audio
 	namespace detail
 	{
 		//class audio_stream
-			bool audio_stream::open(const nana::string& file)
+			bool audio_stream::open(const std::string& file)
 			{
-				fs_.open(static_cast<std::string>(charset(file)), std::ios::binary);
+				fs_.open(to_osmbstr(file), std::ios::binary);
 				if(fs_)
 				{
 					wave_spec::master_riff_chunk riff;
@@ -92,3 +94,4 @@ namespace nana{	namespace audio
 
 }//end namespace audio
 }//end namespace nana
+#endif //NANA_ENABLE_AUDIO
