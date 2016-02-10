@@ -24,17 +24,6 @@ message("  --->    Running cmake .... ")
 	message ( "COMPILER_IS_CLANG= " ${COMPILER_IS_CLANG})
 	message ( "CMAKE_CXX_FLAGS= "  ${CMAKE_CXX_FLAGS})
 
-
-# move this to the end ??
-if(BIICODE)
-    # prepare BII_LIB_SRC
-    set(LIB_SRC ${BII_LIB_SRC})
-
-    add_biicode_targets()
-    
-    return()
-endif(BIICODE)
-
 project(nana)
 cmake_minimum_required(VERSION 2.8)
 
