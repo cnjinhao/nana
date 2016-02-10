@@ -37,7 +37,7 @@ add_definitions(-DNANA_IGNORE_CONF)
 
 if(WIN32)
     add_definitions(-DWIN32)
-
+    option(BUILD_FreeMe "Build FreeMe only on Windows." ON)
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
 		option(WIN32_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
@@ -197,10 +197,12 @@ if (BUILD_NANA_DEMOS)
     target_link_libraries(calculator ${PROJECT_NAME})
     install(TARGETS calculator RUNTIME DESTINATION &{DEMO_BIN})
 
-    add_executable(FreeMe ../nana-demo/FreeMe.cpp)
-    set_property( TARGET FreeMe PROPERTY CXX_STANDARD 14 )
-    target_link_libraries(FreeMe ${PROJECT_NAME})
-    install(TARGETS FreeMe RUNTIME DESTINATION &{DEMO_BIN})
+    if (BUILD_FreeMe)
+        add_executable(FreeMe ../nana-demo/FreeMe.cpp)
+        set_property( TARGET FreeMe PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(FreeMe ${PROJECT_NAME})
+        install(TARGETS FreeMe RUNTIME DESTINATION &{DEMO_BIN})
+    endif (BUILD_FreeMe)     
 
     add_executable(notepad ../nana-demo/notepad.cpp)
     set_property( TARGET notepad PROPERTY CXX_STANDARD 14 )
