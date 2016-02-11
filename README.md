@@ -1,5 +1,5 @@
 # Nana C++ Library 
-[![TravisCI build status](https://travis-ci.org/qPCR4vir/nana.svg)](https://travis-ci.org/qPCR4vir/nana) [![Licence](https://img.shields.io/badge/license-BSL-blue.svg?style=flat)](LICENSE_1_0.txt)
+[Linux ![TravisCI build status](https://travis-ci.org/qPCR4vir/nana.svg)](https://travis-ci.org/qPCR4vir/nana) [Windows ![AppVeyor uild status](https://ci.appveyor.com/api/projects/status/5j79p9fi887usv7h/branch/master?svg=true)](https://ci.appveyor.com/project/qPCR4vir/nana/branch/master) [![Licence](https://img.shields.io/badge/license-BSL-blue.svg?style=flat)](LICENSE_1_0.txt)
 
 
 Nana is a C++ library designed to allow developers to easily create cross-platform GUI applications with modern C++11 style, currently it can work on Linux(X11) and Windows. The nana repository contains the entire source of library, you can browse the source code and submit your pull request for contributing.
