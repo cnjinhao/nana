@@ -18,6 +18,7 @@ matrix:
             - libasound2-dev
             - alsa-utils
             - alsa-oss
+            - libx11-dev
           sources: 
             - ubuntu-toolchain-r-test
     - env: CXX=g++-4.9 CC=gcc-4.9
@@ -30,6 +31,7 @@ matrix:
             - libasound2-dev
             - alsa-utils
             - alsa-oss
+            - libx11-dev
           sources: 
             - ubuntu-toolchain-r-test
             
@@ -39,12 +41,12 @@ matrix:
         apt:
           packages:
             - clang-3.8
-            - g++-5
             - libjpeg8-dev
             - libpng-dev
             - libasound2-dev
             - alsa-utils
             - alsa-oss
+            - libx11-dev
           sources: 
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise 
