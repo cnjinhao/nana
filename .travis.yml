@@ -19,6 +19,7 @@ matrix:
             - alsa-utils
             - alsa-oss
             - libx11-dev
+            - libxft-dev
           sources: 
             - ubuntu-toolchain-r-test
     - env: CXX=g++-4.9 CC=gcc-4.9
@@ -32,6 +33,7 @@ matrix:
             - alsa-utils
             - alsa-oss
             - libx11-dev
+            - libxft-dev
           sources: 
             - ubuntu-toolchain-r-test
             
@@ -47,6 +49,7 @@ matrix:
             - alsa-utils
             - alsa-oss
             - libx11-dev
+            - libxft-dev
           sources: 
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise 
