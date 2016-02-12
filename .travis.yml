@@ -20,9 +20,6 @@ matrix:
             - alsa-oss
           sources: 
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise
-            - llvm-toolchain-precise-3.7
-            - llvm-toolchain-precise-3.6
     - env: CXX=g++-4.9 CC=gcc-4.9
       addons:
         apt:
@@ -35,9 +32,6 @@ matrix:
             - alsa-oss
           sources: 
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise
-            - llvm-toolchain-precise-3.7
-            - llvm-toolchain-precise-3.6
     - env: CXX=clang++-3.8 CC=clang-3.8
       addons:
         apt:
@@ -80,6 +74,7 @@ matrix:
             - llvm-toolchain-precise-3.6
 
 before_install:
+  - git clone --depth=50 --branch=master https://github.com/qPCR4vir/nana-demo.git nana-demo
   - export PATH="$HOME/bin:$PATH"
   - mkdir ~/bin
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Linux-x86_64.sh || true
@@ -93,6 +88,6 @@ before_script :
   - cd bld
 
 script:
-  - cmake -G"Unix Makefiles" .. -DENABLE_JPEG=ON -DENABLE_PNG=OFF
+  - cmake -G"Unix Makefiles" .. -DENABLE_JPEG=ON -DENABLE_PNG=OFF -DBUILD_NANA_DEMOS=ON
   #-DENABLE_JPEG=ON -DENABLE_PNG=ON
   - make
