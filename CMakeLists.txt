@@ -37,7 +37,7 @@ add_definitions(-DNANA_IGNORE_CONF)
 
 if(WIN32)
     add_definitions(-DWIN32)
-    option(BUILD_FreeMe "Build FreeMe only on Windows." ON)
+    set(BUILD_FreeMe ON)  #"Build FreeMe only on Windows."
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
 		option(WIN32_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
@@ -52,14 +52,16 @@ if(WIN32)
             add_definitions(-DNANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
         endif(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
     endif(MINGW)
+elseif(WIN32)
+    set(BUILD_FreeMe OFF) 
 endif(WIN32)
-
 
 if(APPLE)
     add_definitions(-DAPPLE)
     include_directories(/opt/X11/include/)
 elseif(UNIX)
     add_definitions(-Dlinux)
+	message("added -D linux")
 endif(APPLE)
 
 
@@ -263,16 +265,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 	else("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 	endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	message ( "CMAKE_CXX_COMPILER_ID= " ${CMAKE_CXX_COMPILER_ID})
-	message ( "COMPILER_IS_CLANG= " ${COMPILER_IS_CLANG})
-	message ( "CMAKE_CXX_FLAGS= "  ${CMAKE_CXX_FLAGS})
+
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
     # enable static linkage  
     if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
       #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-      set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
-	  
+      set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
+	     
     endif ()
 
     if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -283,3 +283,4 @@ message ( "CMAKE_CXX_COMPILER_ID= " ${CMAKE_CXX_COMPILER_ID})
 message ( "COMPILER_IS_CLANG= " ${COMPILER_IS_CLANG})
 message ( "CMAKE_CXX_FLAGS= "  ${CMAKE_CXX_FLAGS})
 message ( "CMAKE_COMPILER_IS_GNUCXX= "  ${CMAKE_COMPILER_IS_GNUCXX})
+message ( "CMAKE_EXE_LINKER_FLAGS= "  ${CMAKE_EXE_LINKER_FLAGS})
