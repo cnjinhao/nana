@@ -230,10 +230,12 @@ if (BUILD_NANA_DEMOS)
     target_link_libraries(notepad ${PROJECT_NAME} )# X11 Xft ${NANA_JPEG_LIB} ${NANA_PNG_LIB})
     install(TARGETS notepad RUNTIME DESTINATION &{DEMO_BIN})
 
+	if (OFF)
     add_executable(widget_show ../nana-demo/widget_show.cpp)
     set_property( TARGET widget_show PROPERTY CXX_STANDARD 14 )
     target_link_libraries(widget_show ${PROJECT_NAME})#  X11 Xft ${NANA_JPEG_LIB} ${NANA_PNG_LIB})
     install(TARGETS widget_show RUNTIME DESTINATION &{DEMO_BIN})
+	endif(OFF)
 
     add_executable(widget_show2 ../nana-demo/widget_show2.cpp)
     set_property( TARGET widget_show2 PROPERTY CXX_STANDARD 14 )
