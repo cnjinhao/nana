@@ -24,6 +24,16 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
+    # enable static linkage  
+    if (CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANG AND NOT MINGW)
+      #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+      set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+    endif ()
+
+    if (APPLE AND COMPILER_IS_CLANG)
+      set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
+    endif ()
+
 # move this to the end ??
 if(BIICODE)
     # prepare BII_LIB_SRC
@@ -48,7 +58,7 @@ add_definitions(-DNANA_IGNORE_CONF)
 if(WIN32)
     add_definitions(-DWIN32)
 
-    #Global MSVC definitions
+    #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
 		option(WIN32_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
 		# ??
