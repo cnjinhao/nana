@@ -69,6 +69,6 @@ before_script :
   - cd bld
 
 script:
-  - cmake -G"Unix Makefiles" .. -DENABLE_JPEG=ON -DENABLE_PNG=OFF -DBUILD_NANA_DEMOS=ON
-  #-DENABLE_JPEG=ON -DENABLE_PNG=ON
+  - cmake -G"Unix Makefiles" .. -DENABLE_JPEG=ON -DENABLE_PNG=OFF -DBUILD_NANA_DEMOS=ON -DENABLE_AUDIO=OFF
+   
   - make
