@@ -205,11 +205,13 @@ if (BUILD_NANA_DEMOS)
     set (CMAKE_INSTALL_PREFIX ${DEMO_BIN})
     set(DEMO_BIN ${NANA_SOURCE_DIR}../nana-demo/bin)
     set(CMAKE_INSTALL_PREFIX )
-    add_executable(file_explorer ../nana-demo/file_explorer.cpp)
-    set_property( TARGET file_explorer PROPERTY CXX_STANDARD 14 )
-    target_link_libraries(file_explorer ${PROJECT_NAME} )         
-	#X11 Xft ${NANA_JPEG_LIB} ${NANA_PNG_LIB}
-    install(TARGETS file_explorer RUNTIME DESTINATION &{DEMO_BIN})
+	
+	if (OFF)
+		add_executable(file_explorer ../nana-demo/file_explorer.cpp)
+		set_property( TARGET file_explorer PROPERTY CXX_STANDARD 14 )
+		target_link_libraries(file_explorer ${PROJECT_NAME} )         
+		install(TARGETS file_explorer RUNTIME DESTINATION &{DEMO_BIN})
+	endif(OFF)
 
     add_executable(calculator ../nana-demo/calculator.cpp)
     set_property( TARGET calculator PROPERTY CXX_STANDARD 14 )
