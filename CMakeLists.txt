@@ -244,6 +244,78 @@ if (BUILD_NANA_DEMOS)
     set_property( TARGET dock PROPERTY CXX_STANDARD 14 )
     target_link_libraries(dock ${PROJECT_NAME})
 
+    add_executable(drag-button ../nana-demo/Examples/drag-button.cpp)
+    set_property( TARGET drag-button PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(drag-button ${PROJECT_NAME})
+
+    add_executable(draw ../nana-demo/Examples/draw.cpp)
+    set_property( TARGET draw PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(draw ${PROJECT_NAME})
+
+    add_executable(example_combox ../nana-demo/Examples/example_combox.cpp)
+    set_property( TARGET example_combox PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(example_combox ${PROJECT_NAME})
+
+    add_executable(example_listbox ../nana-demo/Examples/example_listbox.cpp)
+    set_property( TARGET example_listbox PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(example_listbox ${PROJECT_NAME})
+
+    add_executable(example_menu ../nana-demo/Examples/example_menu.cpp)
+    set_property( TARGET example_menu PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(example_menu ${PROJECT_NAME})
+
+    add_executable(filebox-txt ../nana-demo/Examples/filebox-txt.cpp)
+    set_property( TARGET filebox-txt PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(filebox-txt ${PROJECT_NAME})
+
+    add_executable(folder_tree ../nana-demo/Examples/folder_tree.cpp)
+    set_property( TARGET folder_tree PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(folder_tree ${PROJECT_NAME})
+
+    add_executable(folder_tree_nana ../nana-demo/Examples/folder_tree_nana.cpp)
+    set_property( TARGET folder_tree_nana PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(folder_tree_nana ${PROJECT_NAME})
+
+    add_executable(folder_tree_std ../nana-demo/Examples/folder_tree_std.cpp)
+    set_property( TARGET folder_tree_std PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(folder_tree_std ${PROJECT_NAME})
+
+    add_executable(listbox_Resolver ../nana-demo/Examples/listbox_Resolver.cpp)
+    set_property( TARGET listbox_Resolver PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(listbox_Resolver ${PROJECT_NAME})
+
+    add_executable(framework_design_2 ../nana-demo/Examples/framework_design_2.cpp)
+    set_property( TARGET framework_design_2 PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(framework_design_2 ${PROJECT_NAME})
+
+    add_executable(framework_design_3 ../nana-demo/Examples/framework_design_3.cpp)
+    set_property( TARGET framework_design_3 PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(framework_design_3 ${PROJECT_NAME})
+
+    add_executable(group ../nana-demo/Examples/group.cpp)
+    set_property( TARGET group PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(group ${PROJECT_NAME})
+
+    add_executable(HelloWord ../nana-demo/Examples/HelloWord.cpp)
+    set_property( TARGET HelloWord PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(HelloWord ${PROJECT_NAME})
+
+    add_executable(listbox_inline_widget ../nana-demo/Examples/listbox_inline_widget.cpp)
+    set_property( TARGET listbox_inline_widget PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(listbox_inline_widget ${PROJECT_NAME})
+
+    add_executable(inputbox ../nana-demo/Examples/inputbox.cpp)
+    set_property( TARGET inputbox PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(inputbox ${PROJECT_NAME})
+
+    add_executable(label_listener ../nana-demo/Examples/label_listener.cpp)
+    set_property( TARGET label_listener PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(label_listener ${PROJECT_NAME})
+
+    add_executable(lambda_event.Cpp11 ../nana-demo/Examples/lambda_event.Cpp11.cpp)
+    set_property( TARGET lambda_event.Cpp11 PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(lambda_event.Cpp11 ${PROJECT_NAME})
+
     if (ENABLE_AUDIO)
 		add_executable(audio_player ../nana-demo/Examples/audio_player.cpp)
 		set_property( TARGET audio_player PROPERTY CXX_STANDARD 14 )
