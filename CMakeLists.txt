@@ -19,20 +19,11 @@ option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilati
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
 
-# set compile  flags
-if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+message("  --->    Running cmake .... ")
+	message ( "CMAKE_CXX_COMPILER_ID= " ${CMAKE_CXX_COMPILER_ID})
+	message ( "COMPILER_IS_CLANG= " ${COMPILER_IS_CLANG})
+	message ( "CMAKE_CXX_FLAGS= "  ${CMAKE_CXX_FLAGS})
 
-    # enable static linkage  
-    if (CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANG AND NOT MINGW)
-      #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-      set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
-    endif ()
-
-    if (APPLE AND COMPILER_IS_CLANG)
-      set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
-    endif ()
 
 # move this to the end ??
 if(BIICODE)
@@ -201,6 +192,8 @@ install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
+
+
 if (BUILD_NANA_DEMOS)
     set (CMAKE_INSTALL_PREFIX ${DEMO_BIN})
     set(DEMO_BIN ${NANA_SOURCE_DIR}../nana-demo/bin)
@@ -265,3 +258,31 @@ if (BUILD_NANA_DEMOS)
    #endforeach( demofile ${DEMO_SOURCES} )
 endif(BUILD_NANA_DEMOS)
 
+
+# set compile  flags
+if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -Wall")
+	else("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+	endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+	message ( "CMAKE_CXX_COMPILER_ID= " ${CMAKE_CXX_COMPILER_ID})
+	message ( "COMPILER_IS_CLANG= " ${COMPILER_IS_CLANG})
+	message ( "CMAKE_CXX_FLAGS= "  ${CMAKE_CXX_FLAGS})
+endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+
+    # enable static linkage  
+    if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
+      #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+      set(CMAKE_EXE_LINKER_FLAGS " -stdlib=libstdc++ -static-libgcc -static-libstdc++")
+	  
+    endif ()
+
+    if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+      set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
+    endif ()
+
+message ( "CMAKE_CXX_COMPILER_ID= " ${CMAKE_CXX_COMPILER_ID})
+message ( "COMPILER_IS_CLANG= " ${COMPILER_IS_CLANG})
+message ( "CMAKE_CXX_FLAGS= "  ${CMAKE_CXX_FLAGS})
+message ( "CMAKE_COMPILER_IS_GNUCXX= "  ${CMAKE_COMPILER_IS_GNUCXX})
