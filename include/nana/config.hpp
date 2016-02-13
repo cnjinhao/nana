@@ -14,6 +14,7 @@
  *	External libraries:
  *	- NANA_LIBPNG, USE_LIBPNG_FROM_OS
  *	- NANA_LIBJPEG, USE_LIBJPEG_FROM_OS
+ *  - NANA_ENABLE_AUDIO
  *
  *	messages:
  *	- VERBOSE_PREPROCESSOR, STOP_VERBOSE_PREPROCESSOR
@@ -41,7 +42,7 @@
 ///////////////////
 //Support of PCM playback
 //
-//#define NANA_ENABLE_AUDIO
+#define NANA_ENABLE_AUDIO
 
 ///////////////////
 //Support for PNG
