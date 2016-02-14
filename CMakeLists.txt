@@ -196,23 +196,26 @@ if (BUILD_NANA_DEMOS)
     set_property( TARGET notepad PROPERTY CXX_STANDARD 14 )
     target_link_libraries(notepad ${PROJECT_NAME} )
     install(TARGETS notepad RUNTIME DESTINATION &{DEMO_BIN})
-
-	if (OFF)  # temporal: we need to adapt the use of filesystem to nana v1.03 (no file iterator)
+	
 
     add_executable(widget_show ../nana-demo/widget_show.cpp)
     set_property( TARGET widget_show PROPERTY CXX_STANDARD 14 )
     target_link_libraries(widget_show ${PROJECT_NAME})
     install(TARGETS widget_show RUNTIME DESTINATION &{DEMO_BIN})
+	
+	if (OFF)  # temporal: we need to adapt the use of filesystem to nana v1.03 (no file iterator)
 
-    add_executable(widget_show2 ../nana-demo/widget_show2.cpp)
-    set_property( TARGET widget_show2 PROPERTY CXX_STANDARD 14 )
-    target_link_libraries(widget_show2 ${PROJECT_NAME})
-    install(TARGETS widget_show2 RUNTIME DESTINATION &{DEMO_BIN})
 
     add_executable(file_explorer ../nana-demo/file_explorer.cpp)
     set_property( TARGET file_explorer PROPERTY CXX_STANDARD 14 )
     target_link_libraries(file_explorer ${PROJECT_NAME} )
     install(TARGETS file_explorer RUNTIME DESTINATION &{DEMO_BIN})
+
+    add_executable(widget_show2 ../nana-demo/widget_show2.cpp)
+    set_property( TARGET widget_show2 PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(widget_show2 ${PROJECT_NAME})
+    install(TARGETS widget_show2 RUNTIME DESTINATION &{DEMO_BIN})
+	
 
 	endif(OFF)
 	
