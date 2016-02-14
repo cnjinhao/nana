@@ -173,4 +173,17 @@
 	#endif
 #endif
 
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0061r0.html
+
+#  if __cpp_lib_experimental_filesystem
+#    undef STD_FILESYSTEM_NOT_SUPPORTED
+#  endif
+
+
+#ifdef __has_include
+#  if __has_include(<filesystem>)
+#    undef STD_FILESYSTEM_NOT_SUPPORTED
+#  endif
+#endif
+
 #endif  // NANA_CXX_DEFINES_INCLUDED
