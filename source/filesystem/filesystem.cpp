@@ -38,6 +38,7 @@
 
 
 namespace nana {	namespace experimental {
+	inline namespace v1 {
 	namespace filesystem
 	{
 		//class filesystem_error
@@ -249,7 +250,24 @@ namespace nana {	namespace experimental {
 		{
 			return to_utf8(pathstr_);
 		}
-
+		std::string path::generic_string() const  
+		{
+			auto str = string();
+			std::replace(str.begin(), str.end(), '\\', '/');
+			return str;
+		}
+		std::wstring path::generic_wstring() const
+		{
+			auto str = wstring();
+			std::replace(str.begin(), str.end(), L'\\', L'/');
+			return str;
+		}
+		std::string path::generic_u8string() const // uppss ...   
+		{
+			auto str = pathstr_;
+			std::replace(str.begin(), str.end(), '\\', '/');  // uppss ...  revise this !!!!!
+			return to_utf8(str);
+		}
 		path & path::operator/=(const path& p)
 		{
 			if (p.empty())
@@ -852,6 +870,7 @@ namespace nana {	namespace experimental {
 				::chdir(p.c_str());
 #endif
 			}
+		} //end namespace v1
 		}//end namespace filesystem
 	} //end namespace experimental
 }//end namespace nana
