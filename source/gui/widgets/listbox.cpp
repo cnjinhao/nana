@@ -3571,10 +3571,10 @@ namespace nana
 						if (!item_pos.is_category())	//being the npos of item.second is a category
 							return;
 
-                        arg_category ai(cat_proxy(essence_, item_pos.cat));
-                        lister.wd_ptr()->events().category_dbl_click.emit(ai);
+						arg_listbox_category arg_cat(cat_proxy(essence_, item_pos.cat));
+						lister.wd_ptr()->events().category_dbl_click.emit(arg_cat);
 
-                        if(!ai.category_change_blocked()){
+						if (!arg_cat.category_change_blocked()){
                             bool do_expand = (lister.expand(item_pos.cat) == false);
                             lister.expand(item_pos.cat, do_expand);
 
@@ -4299,17 +4299,17 @@ namespace nana
 
 	//Implementation of arg_category
 	//Contributed by leobackes(pr#97)
-	arg_category::arg_category ( const nana::drawerbase::listbox::cat_proxy& cat ) noexcept
+	arg_listbox_category::arg_listbox_category(const nana::drawerbase::listbox::cat_proxy& cat) noexcept
 		: category(cat), block_change_(false)
     {
     }
 
-    void arg_category::block_category_change() const noexcept
+	void arg_listbox_category::block_category_change() const noexcept
 	{
 		block_change_ = true;
     }
 
-    bool arg_category::category_change_blocked() const noexcept
+	bool arg_listbox_category::category_change_blocked() const noexcept
 	{
 		return block_change_;
     }
