@@ -652,7 +652,7 @@ namespace nana {	namespace experimental {
 			auto stat = status(p, err);
 
 			if (err != std::error_code())
-				throw filesystem_error("nana::filesystem::status", p, err);
+				throw filesystem_error("nana::experimental::filesystem::status", p, err);
 
 			return stat;
 		}
