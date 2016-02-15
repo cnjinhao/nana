@@ -272,7 +272,7 @@ namespace API
 	 *	@param window: specify a window to be refreshed.
 	 */
 	void refresh_window(window);           ///< Refreshs the window and display it immediately calling the refresh method of its drawer_trigger..
-	void refresh_window_tree(window);      ///< Refreshs the specified window and all it’s children windows, then display it immediately
+	void refresh_window_tree(window);      ///< Refreshs the specified window and all it's children windows, then display it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
@@ -347,3 +347,5 @@ namespace API
 
 #endif
 
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

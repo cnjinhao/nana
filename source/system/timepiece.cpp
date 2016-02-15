@@ -1,76 +1,78 @@
 #include <nana/system/timepiece.hpp>
 #include <nana/config.hpp>
 #ifdef NANA_WINDOWS
-	#include <windows.h>
+    #include <windows.h>
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-	#include <sys/time.h>
+    #include <sys/time.h>
 #endif
 
 namespace nana
 {
 namespace system
 {
-	//class timepiece
-		struct timepiece::impl_t
-		{
+    //class timepiece
+        struct timepiece::impl_t
+        {
 #if defined(NANA_WINDOWS)
-			LARGE_INTEGER beg_timestamp;
+            LARGE_INTEGER beg_timestamp;
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			struct timeval beg_timestamp;
+            struct timeval beg_timestamp;
 #endif
-		};
+        };
 
-		timepiece::timepiece()
-			: impl_(new impl_t)
-		{}
+        timepiece::timepiece()
+            : impl_(new impl_t)
+        {}
 
-		timepiece::timepiece(const volatile timepiece& rhs)
-			: impl_(new impl_t(*rhs.impl_))
-		{}
+        timepiece::timepiece(const volatile timepiece& rhs)
+            : impl_(new impl_t(*rhs.impl_))
+        {}
 
-		timepiece::~timepiece()
-		{
-			delete impl_;
-		}
+        timepiece::~timepiece()
+        {
+            delete impl_;
+        }
 
-		timepiece & timepiece::operator=(const volatile timepiece & rhs)
-		{
-			if(this != &rhs)
-				*impl_ = *rhs.impl_;
+        timepiece & timepiece::operator=(const volatile timepiece & rhs)
+        {
+            if(this != &rhs)
+                *impl_ = *rhs.impl_;
 
-			return *this;
-		}
+            return *this;
+        }
 
-		void timepiece::start() volatile
-		{
+        void timepiece::start() volatile
+        {
 #if defined(NANA_WINDOWS)
-			::QueryPerformanceCounter(&impl_->beg_timestamp);
+            ::QueryPerformanceCounter(&impl_->beg_timestamp);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			struct timezone tz;
-			::gettimeofday(&impl_->beg_timestamp, &tz);
+            struct timezone tz;
+            ::gettimeofday(&impl_->beg_timestamp, &tz);
 #endif
-		}
+        }
 
-		double timepiece::calc() const volatile
-		{
+        double timepiece::calc() const volatile
+        {
 #if defined(NANA_WINDOWS)
-			LARGE_INTEGER li;
-			::QueryPerformanceCounter(&li);
+            LARGE_INTEGER li;
+            ::QueryPerformanceCounter(&li);
 
-			__int64 diff = li.QuadPart - impl_->beg_timestamp.QuadPart;
+            __int64 diff = li.QuadPart - impl_->beg_timestamp.QuadPart;
 
-			LARGE_INTEGER freq;
-			::QueryPerformanceFrequency(&freq);
+            LARGE_INTEGER freq;
+            ::QueryPerformanceFrequency(&freq);
 
-			return double(diff)/double(freq.QuadPart) * 1000;
+            return double(diff)/double(freq.QuadPart) * 1000;
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-			struct timeval tv;
-			struct timezone tz;
-			gettimeofday(&tv, &tz);
-			return static_cast<double>(tv.tv_sec - impl_->beg_timestamp.tv_sec) * 1000 + static_cast<double>(tv.tv_usec - impl_->beg_timestamp.tv_usec) / 1000;
+            struct timeval tv;
+            struct timezone tz;
+            gettimeofday(&tv, &tz);
+            return static_cast<double>(tv.tv_sec - impl_->beg_timestamp.tv_sec) * 1000 + static_cast<double>(tv.tv_usec - impl_->beg_timestamp.tv_usec) / 1000;
 #endif
-		}
-	//end class timepiece
+        }
+    //end class timepiece
 
 }//end namespace system
 }//end namespace nana
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

@@ -1,22 +1,22 @@
 /**
- *	Nana Configuration
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *  Nana Configuration
+ *  Nana C++ Library(http://www.nanapro.org)
+ *  Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0.
- *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://www.boost.org/LICENSE_1_0.txt)
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  (See accompanying file LICENSE_1_0.txt or copy at
+ *  http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file  nana/config.hpp
+ *  @file  nana/config.hpp
  *
- *	@brief Provide switches to enable 3rd-party libraries for a certain feature.
+ *  @brief Provide switches to enable 3rd-party libraries for a certain feature.
  *
- *	External libraries:
- *	- NANA_LIBPNG, USE_LIBPNG_FROM_OS
- *	- NANA_LIBJPEG, USE_LIBJPEG_FROM_OS
+ *  External libraries:
+ *  - NANA_LIBPNG, USE_LIBPNG_FROM_OS
+ *  - NANA_LIBJPEG, USE_LIBJPEG_FROM_OS
  *
- *	messages:
- *	- VERBOSE_PREPROCESSOR, STOP_VERBOSE_PREPROCESSOR
+ *  messages:
+ *  - VERBOSE_PREPROCESSOR, STOP_VERBOSE_PREPROCESSOR
  */
 
 #ifndef NANA_CONFIG_HPP
@@ -45,26 +45,26 @@
 
 ///////////////////
 //Support for PNG
-//	Define the NANA_ENABLE_PNG to enable the support of PNG.
+//  Define the NANA_ENABLE_PNG to enable the support of PNG.
 //
-//#define NANA_ENABLE_PNG	//!
+//#define NANA_ENABLE_PNG   //!
 //#define USE_LIBPNG_FROM_OS // Un-Comment it to use libpng from operating system.
 #if defined(NANA_ENABLE_PNG)
-	#if !defined(USE_LIBPNG_FROM_OS)
-		#define NANA_LIBPNG
-	#endif
+    #if !defined(USE_LIBPNG_FROM_OS)
+        #define NANA_LIBPNG
+    #endif
 #endif
 
 ///////////////////
 //Support for JPEG
-//	Define the NANA_ENABLE_JPEG to enable the support of JPEG.
+//  Define the NANA_ENABLE_JPEG to enable the support of JPEG.
 //
-//#define NANA_ENABLE_JPEG	//!
+//#define NANA_ENABLE_JPEG  //!
 //#define USE_LIBJPEG_FROM_OS // Un-Comment it to use libjpeg from operating system.
 #if defined(NANA_ENABLE_JPEG)
-	#if !defined(USE_LIBJPEG_FROM_OS)
-		#define NANA_LIBJPEG
-	#endif
+    #if !defined(USE_LIBJPEG_FROM_OS)
+        #define NANA_LIBJPEG
+    #endif
 #endif
 
 #if !defined(VERBOSE_PREPROCESSOR)
@@ -77,3 +77,5 @@
 
 #endif  // NANA_IGNORE_CONFIG
 #endif  // NANA_CONFIG_HPP
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

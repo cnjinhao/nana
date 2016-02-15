@@ -1,15 +1,15 @@
 /*
- *	Nana GUI Library Definition
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *  Nana GUI Library Definition
+ *  Nana C++ Library(http://www.nanapro.org)
+ *  Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0.
- *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://www.boost.org/LICENSE_1_0.txt)
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  (See accompanying file LICENSE_1_0.txt or copy at
+ *  http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/wvl.hpp
- *	@description:
- *		the header file contains the files required for running of Nana.GUI
+ *  @file: nana/gui/wvl.hpp
+ *  @description:
+ *      the header file contains the files required for running of Nana.GUI
  */
 
 #ifndef NANA_GUI_WVL_HPP
@@ -24,18 +24,18 @@
 
 namespace nana
 {
-	namespace detail
-	{
-		struct form_loader_private
-		{
-			template<typename, bool> friend class form_loader;
-		private:
-			static void insert_form(::nana::widget*);
-		};
+    namespace detail
+    {
+        struct form_loader_private
+        {
+            template<typename, bool> friend class form_loader;
+        private:
+            static void insert_form(::nana::widget*);
+        };
 
-		template<typename Form, bool IsVisible>
-		class form_loader
-		{
+        template<typename Form, bool IsVisible>
+        class form_loader
+        {
         public:
             template<typename... Args>
             Form & operator()(Args &&... args) const
@@ -53,11 +53,13 @@ namespace nana
             }
 
         };
-	}
+    }
 
     template<typename Form, bool IsVisible = true>
     using form_loader = detail::form_loader<Form, IsVisible>;
 
-	void exec();
+    void exec();
 }//end namespace nana
 #endif
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

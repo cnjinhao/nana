@@ -1,13 +1,13 @@
 /*
-*	Inner Forward Declaration
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*   Inner Forward Declaration
+*   Nana C++ Library(http://www.nanapro.org)
+*   Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
 *
-*	Distributed under the Boost Software License, Version 1.0.
-*	(See accompanying file LICENSE_1_0.txt or copy at
-*	http://www.boost.org/LICENSE_1_0.txt)
+*   Distributed under the Boost Software License, Version 1.0.
+*   (See accompanying file LICENSE_1_0.txt or copy at
+*   http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/detail/inner_fwd.hpp
+*   @file: nana/gui/detail/inner_fwd.hpp
 *
 */
 
@@ -17,8 +17,10 @@
 #include <nana/deploy.hpp>
 
 namespace nana{
-	namespace detail
-	{
-	}
+    namespace detail
+    {
+    }
 }
-#endif	//NANA_GUI_INNER_FWD_HPP
+#endif  //NANA_GUI_INNER_FWD_HPP
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

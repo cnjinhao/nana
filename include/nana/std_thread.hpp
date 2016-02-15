@@ -15,3 +15,5 @@ namespace std
 #endif  // (NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
 #endif // (STD_THREAD_NOT_SUPPORTED)
 #endif // NANA_STD_THREAD_HPP
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */
