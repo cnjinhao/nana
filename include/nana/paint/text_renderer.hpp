@@ -4,25 +4,27 @@
 
 namespace nana
 {
-	namespace paint
-	{
-		class text_renderer
-		{
-		public:
-			typedef graphics & graph_reference;
-			
-			text_renderer(graph_reference graph, align = align::left);
+    namespace paint
+    {
+        class text_renderer
+        {
+        public:
+            typedef graphics & graph_reference;
+            
+            text_renderer(graph_reference graph, align = align::left);
 
-			nana::size extent_size(int x, int y, const wchar_t*, std::size_t len, unsigned restricted_pixels) const;
+            nana::size extent_size(int x, int y, const wchar_t*, std::size_t len, unsigned restricted_pixels) const;
 
-			void render(const point&, const wchar_t*, std::size_t len);
-			void render(const point&, const wchar_t*, std::size_t len, unsigned restricted_pixels, bool omitted);
-			void render(const point&, const wchar_t*, std::size_t len, unsigned restricted_pixels);
-		private:
-			graph_reference graph_;
-			align text_align_;
-		};
-	}
+            void render(const point&, const wchar_t*, std::size_t len);
+            void render(const point&, const wchar_t*, std::size_t len, unsigned restricted_pixels, bool omitted);
+            void render(const point&, const wchar_t*, std::size_t len, unsigned restricted_pixels);
+        private:
+            graph_reference graph_;
+            align text_align_;
+        };
+    }
 }
 
 #endif
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

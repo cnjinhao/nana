@@ -7,6 +7,7 @@ bii/cmake/*
 bii/deps/*
 build/vc2013-bkl/*
 build/makefile-bkl/*
+build/makefile/out/*
 *.obj
 *.exe
 *.pdb

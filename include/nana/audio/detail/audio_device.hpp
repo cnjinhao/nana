@@ -8,50 +8,51 @@
 #include <nana/audio/detail/buffer_preparation.hpp>
 #include <vector>
 #if defined(NANA_WINDOWS)
-	#include <windows.h>
+    #include <windows.h>
 #elif defined(NANA_LINUX)
-	#include <alsa/asoundlib.h> 
+    #include <alsa/asoundlib.h> 
 #endif
 
-namespace nana{	namespace audio
+namespace nana{ namespace audio
 {
-	namespace detail
-	{
-		class audio_device
-		{
-		public:
-			audio_device();
-			~audio_device();
+    namespace detail
+    {
+        class audio_device
+        {
+        public:
+            audio_device();
+            ~audio_device();
 
-			bool empty() const;
-			bool open(std::size_t channels, std::size_t rate, std::size_t bits_per_sample);
-			void close();
-			void prepare(buffer_preparation & buf_prep);
-			void write(buffer_preparation::meta * m);
-			void wait_for_drain() const;
-		private:
+            bool empty() const;
+            bool open(std::size_t channels, std::size_t rate, std::size_t bits_per_sample);
+            void close();
+            void prepare(buffer_preparation & buf_prep);
+            void write(buffer_preparation::meta * m);
+            void wait_for_drain() const;
+        private:
 #if defined(NANA_WINDOWS)
-			static void __stdcall _m_dev_callback(HWAVEOUT handle, UINT msg, audio_device * self, DWORD_PTR, DWORD_PTR);
+            static void __stdcall _m_dev_callback(HWAVEOUT handle, UINT msg, audio_device * self, DWORD_PTR, DWORD_PTR);
 #endif
 
-	
+    
 #if defined(NANA_WINDOWS)
-			HWAVEOUT handle_;
-			std::recursive_mutex queue_lock_;
-			std::vector<buffer_preparation::meta*> done_queue_;
+            HWAVEOUT handle_;
+            std::recursive_mutex queue_lock_;
+            std::vector<buffer_preparation::meta*> done_queue_;
 #elif defined(NANA_LINUX)
-			snd_pcm_t * handle_;
-			std::size_t rate_;
-			std::size_t channels_;
-			std::size_t bytes_per_sample_;
-			std::size_t bytes_per_frame_;
+            snd_pcm_t * handle_;
+            std::size_t rate_;
+            std::size_t channels_;
+            std::size_t bytes_per_sample_;
+            std::size_t bytes_per_frame_;
 #endif
-			buffer_preparation * buf_prep_;
-		};
+            buffer_preparation * buf_prep_;
+        };
 
-	}//end namespace detail
+    }//end namespace detail
 }//end namespace audio
 }//end namespace nana
 
-#endif	//NANA_ENABLE_AUDIO
+#endif  //NANA_ENABLE_AUDIO
 #endif
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

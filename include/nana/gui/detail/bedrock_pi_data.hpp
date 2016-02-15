@@ -9,15 +9,17 @@
 
 namespace nana
 {
-	namespace detail
-	{
-		struct bedrock::pi_data
-		{
-			color_schemes				scheme;
-			events_operation			evt_operation;
-			window_manager				wd_manager;
-			std::set<core_window_t*>	auto_form_set;
-		};
-	}
+    namespace detail
+    {
+        struct bedrock::pi_data
+        {
+            color_schemes               scheme;
+            events_operation            evt_operation;
+            window_manager              wd_manager;
+            std::set<core_window_t*>    auto_form_set;
+        };
+    }
 }
 #endif
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

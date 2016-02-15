@@ -4,17 +4,19 @@
 
 namespace nana
 {
-	struct general_events;
+    struct general_events;
 
-	namespace detail
-	{
-		class events_holder
-		{
-		public:
-			virtual ~events_holder(){}
-			virtual bool set_events(const std::shared_ptr<general_events>&) = 0;
-			virtual general_events* get_events() const = 0;
-		};
-	}//end namespace detail
+    namespace detail
+    {
+        class events_holder
+        {
+        public:
+            virtual ~events_holder(){}
+            virtual bool set_events(const std::shared_ptr<general_events>&) = 0;
+            virtual general_events* get_events() const = 0;
+        };
+    }//end namespace detail
 }//end namespace nana
 #endif
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

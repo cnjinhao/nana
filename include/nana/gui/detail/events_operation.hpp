@@ -13,22 +13,24 @@
 
 namespace nana
 {
-	namespace detail
-	{
-		class events_operation
-		{
-		public:
-			void make(window, const std::shared_ptr<general_events> &);
-			void umake(window);
-			void register_evt(event_handle);
-			void cancel(event_handle);
-			void erase(event_handle);
-		private:
-			std::recursive_mutex mutex_;
-			std::unordered_set<event_handle>	handles_;
-			std::unordered_map<window, std::shared_ptr<general_events>> evt_table_;
-		};
-	}//end namespace detail
+    namespace detail
+    {
+        class events_operation
+        {
+        public:
+            void make(window, const std::shared_ptr<general_events> &);
+            void umake(window);
+            void register_evt(event_handle);
+            void cancel(event_handle);
+            void erase(event_handle);
+        private:
+            std::recursive_mutex mutex_;
+            std::unordered_set<event_handle>    handles_;
+            std::unordered_map<window, std::shared_ptr<general_events>> evt_table_;
+        };
+    }//end namespace detail
 }//end namespace nana
 
 #endif
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */

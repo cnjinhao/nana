@@ -8,25 +8,27 @@ namespace nana
 {
 namespace detail
 {
-	struct msg_packet_tag
-	{
-		enum kind_t{kind_xevent, kind_mouse_drop, kind_cleanup};
-		kind_t kind;
-		union
-		{
-			XEvent xevent;
+    struct msg_packet_tag
+    {
+        enum kind_t{kind_xevent, kind_mouse_drop, kind_cleanup};
+        kind_t kind;
+        union
+        {
+            XEvent xevent;
 
-			Window packet_window; //Avaiable if the packet is not kind_xevent
-			struct mouse_drop_tag
-			{
-				Window window;
-				int x;
-				int y;
-				std::vector<std::string> * files;
-			}mouse_drop;
-		}u;
-	};
+            Window packet_window; //Avaiable if the packet is not kind_xevent
+            struct mouse_drop_tag
+            {
+                Window window;
+                int x;
+                int y;
+                std::vector<std::string> * files;
+            }mouse_drop;
+        }u;
+    };
 }//end namespace detail
 }//end namespace nana
 #endif
 
+
+ /* vim: set expandtab ts=4 sw=4 sts=4 tw=100: */
