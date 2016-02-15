@@ -263,7 +263,7 @@ namespace nana
 
 		tabbar& append(std::string text, window attach_wd, value_type value = {})
 		{
-			return this->append( std::wstring((nana::charset(std::move(text), nana::unicode::utf8))), attach_wd, std::move(value));
+			return this->append( static_cast<std::wstring&&>(nana::charset(std::move(text), nana::unicode::utf8)), attach_wd, std::move(value));
 		}
 
 		tabbar& append(std::wstring text, window attach_wd, value_type value = {})
