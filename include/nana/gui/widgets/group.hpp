@@ -19,6 +19,7 @@
 
 #include <nana/gui/place.hpp>
 #include <nana/gui/widgets/panel.hpp>
+#include <nana/gui/widgets/checkbox.hpp>
 
 namespace nana{
 	class group
@@ -49,7 +50,7 @@ namespace nana{
 		~group();
 
 		/// Adds an option for user selection
-		group& add_option(::std::string);
+		checkbox& add_option(::std::string);
 
 		/// Enables/disables the radio mode which is single selection
 		group& radio_mode(bool);

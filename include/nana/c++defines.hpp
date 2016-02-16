@@ -38,9 +38,10 @@
 
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
-
+#define STD_FILESYSTEM_NOT_SUPPORTED
 //C++ language
 #if defined(_MSC_VER)
+#   undef STD_FILESYSTEM_NOT_SUPPORTED
 #	if (_MSC_VER < 1900)
 #		//Nana defines some macros for lack of support of keywords
 #		define _ALLOW_KEYWORD_MACROS
@@ -130,6 +131,10 @@
 		#endif
 	#endif
 
+    #if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
+		#undef STD_FILESYSTEM_NOT_SUPPORTED
+    #endif
+
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
 			#define STD_THREAD_NOT_SUPPORTED
@@ -166,6 +171,19 @@
 	#ifndef UNICODE
 		#define UNICODE
 	#endif
+#endif
+
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0061r0.html
+
+#  if __cpp_lib_experimental_filesystem
+#    undef STD_FILESYSTEM_NOT_SUPPORTED
+#  endif
+
+
+#ifdef __has_include
+#  if __has_include(<filesystem>)
+#    undef STD_FILESYSTEM_NOT_SUPPORTED
+#  endif
 #endif
 
 #endif  // NANA_CXX_DEFINES_INCLUDED
