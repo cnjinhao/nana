@@ -38,7 +38,9 @@
 
 
 namespace nana {	namespace experimental {
+#ifndef CXX_NO_INLINE_NAMESPACE
 	inline namespace v1 {
+#endif
 	namespace filesystem
 	{
 		//class filesystem_error
@@ -870,7 +872,10 @@ namespace nana {	namespace experimental {
 				::chdir(p.c_str());
 #endif
 			}
+
+#ifndef CXX_NO_INLINE_NAMESPACE
 		} //end namespace v1
+#endif
 		}//end namespace filesystem
 	} //end namespace experimental
 }//end namespace nana

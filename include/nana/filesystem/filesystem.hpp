@@ -42,8 +42,13 @@
 
  // namespace std { namespace experimental { namespace filesystem { inline namespace v1 {
 
-namespace nana  { namespace experimental { 	inline namespace v1
+namespace nana  { namespace experimental { 	
+
+#ifndef CXX_NO_INLINE_NAMESPACE
+inline namespace v1
 {
+#endif
+
 namespace filesystem
 {
 	enum class file_type 
@@ -367,8 +372,9 @@ namespace filesystem
 
 		return index ? path.substr(0, index + 1) : std::basic_string<CharType>();
 	}
-
+#ifndef CXX_NO_INLINE_NAMESPACE
 } //end namespace v1
+#endif
 } //end namespace filesystem
 } //end namespace experimental
 
