@@ -39,13 +39,15 @@
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
 #define STD_FILESYSTEM_NOT_SUPPORTED
+
 //C++ language
 #if defined(_MSC_VER)
 #   undef STD_FILESYSTEM_NOT_SUPPORTED
 #	if (_MSC_VER < 1900)
 #		//Nana defines some macros for lack of support of keywords
 #		define _ALLOW_KEYWORD_MACROS
-#		
+#
+#		define CXX_NO_INLINE_NAMESPACE //no support of C++11 inline namespace until Visual C++ 2015
 #		define noexcept		//no support of noexcept until Visual C++ 2015
 #		define constexpr	//no support of constexpr until Visual C++ 2015
 #	endif
