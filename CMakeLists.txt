@@ -1,7 +1,8 @@
-﻿# CMake configuration for Nana
+# CMake configuration for Nana
 # Author: Andrew Kornilov(https://github.com/ierofant)
-# Contributor:
-#	Robert Hauck - Enable support for PNG/Freetype
+# Contributors:
+#   Jinhao	
+#   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 #   Ariel Vina-Rodriguez (qPCR4vir) 
 
@@ -9,6 +10,7 @@
 #https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
+
 option(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
 option(ENABLE_PNG "Enable the use of PNG" OFF)
 option(LIBPNG_FROM_OS "Use libpng from operating system." ON)
@@ -144,7 +146,6 @@ if(ENABLE_AUDIO)
     endif(UNIX)
 endif(ENABLE_AUDIO)
 
-#Unicode
 if(CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(CMAKE_VERBOSE_PREPROCESSOR)
@@ -187,53 +188,47 @@ add_library(${PROJECT_NAME} ${NANA_SOURCE}
                             ${NANA_SYSTEM_SOURCE}
                             ${NANA_THREADS_SOURCE})    
 
-    #Headers: use INCLUDE_DIRECTORIES
-    #   Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES
+    #  Headers: use INCLUDE_DIRECTORIES
+    #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
     target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
                  
 install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib)
-# ??
-#install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
-
 
 # TODO: move this nana-demo section to the nana demo repository, and here only include that cmake file
 
 if (BUILD_NANA_DEMOS)
 
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
-    set(DEMO_BIN ${CMAKE_INSTALL_PREFIX}../nana-demo/bin)
-
-    # file_explorer
-    # FreeMe
     set (demos    calculator notepad widget_show widget_show2      )
+    # Pending:    file_explorer  FreeMe
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
         set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
         target_link_libraries(${demo} ${PROJECT_NAME})
-        install(TARGETS ${demo} RUNTIME DESTINATION  &{DEMO_BIN})
-
+        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
+
 
     set (demos    a_group_impl  animate-bmp  audio_player audio_player_simple  background-effects categ clicked
                   decore dock  drag-button  draw example.button example_combox example_listbox example_menu
                   filebox-txt folder_tree folder_tree_nana folder_tree_std framework_design_1 framework_design_2 framework_design_3
                   group HelloWord helloword_quit inputbox label_listener lambda_event.Cpp11 listbox_inline_widget listbox_Resolver loader_1 loader_2
-                  mbox menu_debug menu_popuper modal_form MontiHall place_login png screen stretch_image
+                  mbox menu_debug menu_popuper modal_form MontiHall place_login screen stretch_image
                   threading thread-pool various_events window-dragger windows-subclassing
                   )
-
+    # Pending: png
+    
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/Examples/${demo}.cpp")
         set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
         target_link_libraries(${demo} ${PROJECT_NAME})
-        install(TARGETS ${demo} RUNTIME DESTINATION  &{DEMO_BIN})
+        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/Examples/")
 
         message("... to build: ../nana-demo/Examples/${demo}.cpp" )
     endforeach( demo ${demos})
