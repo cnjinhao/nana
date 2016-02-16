@@ -261,7 +261,8 @@ namespace nana
 			return this->get_drawer_trigger().length();
 		}
 
-		tabbar& append(std::string text, window attach_wd, value_type value = {})
+		/// Append a new tab
+		tabbar& append(std::string text, window attach_wd, value_type value = {})  // 2x text convertion. maybe better to duplicate code?
 		{
 			return this->append( static_cast<std::wstring&&>(nana::charset(std::move(text), nana::unicode::utf8)), attach_wd, std::move(value));
 		}
@@ -271,7 +272,7 @@ namespace nana
 			if (attach_wd && API::empty_window(attach_wd))
 				throw std::invalid_argument("Appening a tab to a tabbar - error: tabbar.attach: invalid window handle");
 
-			this->get_drawer_trigger().insert(::nana::npos, std::move(text), std::move(value));
+			this->get_drawer_trigger().insert(::nana::npos, to_nstring(std::move(text)), std::move(value));
 			if (attach_wd)
 				this->attach(this->get_drawer_trigger().length() - 1, attach_wd);
 			
