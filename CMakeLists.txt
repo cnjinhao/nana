@@ -18,6 +18,7 @@ option(ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
 option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
+
 # The ISO C++ File System Technical Specification is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
 # This is not a workaround, but an user option.
@@ -195,22 +196,24 @@ install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib)
 # ??
-install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
+#install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 
 # TODO: move this nana-demo section to the nana demo repository, and here only include that cmake file
 
-if (BUILD_NANA_DEMOS)
-    set (CMAKE_INSTALL_PREFIX ${DEMO_BIN})
-    set(DEMO_BIN ${NANA_SOURCE_DIR}../nana-demo/bin)
-    set(CMAKE_INSTALL_PREFIX )
-	
-    add_executable(calculator ../nana-demo/calculator.cpp)
-    set_property( TARGET calculator PROPERTY CXX_STANDARD 14 )
-    target_link_libraries(calculator ${PROJECT_NAME}  )
-    install(TARGETS calculator RUNTIME DESTINATION &{DEMO_BIN})
+
+
+if (BUILD_NANA_DEMOS_)
+    #set (CMAKE_INSTALL_PREFIX ${DEMO_BIN})
+    #set(DEMO_BIN ${NANA_SOURCE_DIR}../nana-demo/bin)
+    #set(CMAKE_INSTALL_PREFIX )
+
+    #add_executable(calculator ../nana-demo/calculator.cpp)
+    #set_property( TARGET calculator PROPERTY CXX_STANDARD 14 )
+    #target_link_libraries(calculator ${PROJECT_NAME}  )
+    #install(TARGETS calculator RUNTIME DESTINATION &{DEMO_BIN})
 
     if (BUILD_FreeMe)
         add_executable(FreeMe ../nana-demo/FreeMe.cpp)
@@ -348,7 +351,7 @@ if (BUILD_NANA_DEMOS)
     if (ENABLE_AUDIO)
 		add_executable(audio_player ../nana-demo/Examples/audio_player.cpp)
 		set_property( TARGET audio_player PROPERTY CXX_STANDARD 14 )
-		target_link_libraries(audio_player ${PROJECT_NAME} ) 
+		target_link_libraries(audio_player ${PROJECT_NAME} )
 	endif(ENABLE_AUDIO)
 
    # TODO: make it automatic to select each demo and example and build each.
@@ -364,8 +367,71 @@ if (BUILD_NANA_DEMOS)
    #    target_link_libraries(${demoname} ${PROJECT_NAME} )# X11 Xft ${NANA_JPEG_LIB} ${NANA_PNG_LIB})
    #endforeach( demofile ${DEMO_SOURCES} )
 
-endif(BUILD_NANA_DEMOS)
+endif(BUILD_NANA_DEMOS_)
 
+
+if (BUILD_NANA_DEMOS_temp)
+
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR})
+    set(DEMO_BIN ${CMAKE_INSTALL_PREFIX}../nana-demo/bin)
+
+    set (demos
+            calculator notepad widget_show widget_show2
+        )
+    # file_explorer
+    # FreeMe
+
+    foreach ( demo ${demos})
+        add_executable(${demo} "../nana-demo/${demo}.cpp")
+        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${demo} ${PROJECT_NAME})
+        install(TARGETS ${demo} RUNTIME DESTINATION  &{DEMO_BIN})
+
+        message("... building ../nana-demo/${demo}.cpp" ) # dont works as I specte
+    endforeach( demo ${demos})
+
+endif (BUILD_NANA_DEMOS)
+
+if(BUILD_NANA_DEMOS)
+
+    # TODO: make it automatic to select each demo and example and build each.
+    set(NANA_DEMOS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../nana-demo/")
+    message ( "NANA_DEMOS_DIR            = "  ${NANA_DEMOS_DIR})
+    # https://cmake.org/cmake/help/v3.3/command/file.html?highlight=glob#file
+    file( GLOB DEMO_SOURCES RELATIVE ${NANA_DEMOS_DIR} *.cpp )
+    message ( "DEMO_SOURCES            = "  ${DEMO_SOURCES})
+
+    foreach( demofile ${DEMO_SOURCES} )
+        string( REPLACE ".cpp" "" demoname ${demofile} )
+        message ( "demofile            = "  ${demofile})
+        message ( "demoname            = "  ${demoname})
+        add_executable( ${demoname} ${demofile} )
+        set_property( TARGET ${demoname} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${demoname} ${PROJECT_NAME} )
+    endforeach( demofile ${DEMO_SOURCES} )
+
+
+    set(NANA_EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../nana-demo/Examples/")
+    message ( "NANA_EXAMPLES_DIR            = "  ${NANA_EXAMPLES_DIR})
+    file( GLOB EXAMPLES_SOURCES RELATIVE ${NANA_EXAMPLES_DIR} *.cpp )
+    message ( "EXAMPLES_SOURCES            = "  ${EXAMPLES_SOURCES})
+
+    foreach( demofile ${EXAMPLES_SOURCES} )
+        string( REPLACE ".cpp" "" demoname ${demofile} )
+        message ( "demofile            = "  ${demofile})
+        message ( "demoname            = "  ${demoname})
+        add_executable( ${demoname} ${demofile} )
+        set_property( TARGET ${demoname} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${demoname} ${PROJECT_NAME} )
+    endforeach( demofile ${EXAMPLES_SOURCES} )
+
+
+    add_executable(label_listener ../nana-demo/Examples/label_listener.cpp)
+    set_property( TARGET label_listener PROPERTY CXX_STANDARD 14 )
+    target_link_libraries(label_listener ${PROJECT_NAME})
+
+
+endif(BUILD_NANA_DEMOS)
 
 # set compile  flags
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -395,3 +461,4 @@ message ( "CMAKE_COMPILER_IS_GNUCXX= "  ${CMAKE_COMPILER_IS_GNUCXX})
 message ( "CMAKE_EXE_LINKER_FLAGS  = "  ${CMAKE_EXE_LINKER_FLAGS})
 message ( "NANA_LINKS              = "  ${NANA_LINKS})
 message ( "ENABLE_AUDIO            = "  ${ENABLE_AUDIO})
+
