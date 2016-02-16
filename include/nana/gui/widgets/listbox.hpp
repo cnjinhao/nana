@@ -478,7 +478,7 @@ namespace nana
     };
 
 	/// The event argument type for listbox's category_dbl_click
-    struct arg_category
+    struct arg_listbox_category
 		: public event_arg
 	{
         drawerbase::listbox::cat_proxy category;
@@ -489,7 +489,7 @@ namespace nana
 		/// Determines whether expension/shrink of category is blocked
         bool category_change_blocked() const noexcept;
 
-        arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
+		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
     private:
         mutable bool block_change_;
 	};
@@ -505,7 +505,7 @@ namespace nana
 				basic_event<arg_listbox> selected;
 
 				/// An event occurs when a listbox category is double clicking.
-                basic_event<arg_category> category_dbl_click;
+                basic_event<arg_listbox_category> category_dbl_click;
 			};
 
 			struct scheme
