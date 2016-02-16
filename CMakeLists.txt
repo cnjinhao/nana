@@ -18,9 +18,36 @@ option(ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
 option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
-
+# The ISO C++ File System Technical Specification is optional.
+#              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
+# This is not a workaround, but an user option.
+# The library maybe available in the std library in use or from Boost (almost compatible)
+#              http://www.boost.org/doc/libs/1_60_0/libs/filesystem/doc/index.htm
+# or you can choose to use the (partial, but functional) implementation provided by nana.
+# If you include the file <nana/filesystem/filesystem_selector.hpp>
+# The selected option will be set by nana into std::experimental::filesystem
+# By default Nana will use the ISO TS if available, or nana if not.
+# Boost will be use only if you change one of the following:
+option(CMAKE_BOOST_FILESYSTEM_AVAILABLE "Is Boost filesystem available?" OFF)
+option(NANA_BOOST_FILESYSTEM_PREFERRED "Is Boost filesystem preferred over nana?" OFF)
+option(CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over ISO)?" OFF)
+option(CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
+option(CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
 
 set(NANA_LINKS)
+
+if (CMAKE_BOOST_FILESYSTEM_AVAILABLE)
+    if (CMAKE_BOOST_FILESYSTEM_PREFERED OR CMAKE_BOOST_FILESYSTEM_FORCE)
+        add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
+        if (CMAKE_BOOST_FILESYSTEM_FORCE)
+            add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
+        else()
+            add_definitions(-DNANA_BOOST_FILESYSTEM_PREFERED)
+        endif()
+        include_directories("${CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT}")
+        list(APPEND NANA_LINKS "${CMAKE_BOOST_FILESYSTEM_LIB}")
+     endif (CMAKE_BOOST_FILESYSTEM_PREFERED OR CMAKE_BOOST_FILESYSTEM_FORCE)
+endif (CMAKE_BOOST_FILESYSTEM_AVAILABLE)
 
 project(nana)
 cmake_minimum_required(VERSION 2.8)

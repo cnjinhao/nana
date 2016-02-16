@@ -31,22 +31,37 @@
 
 // Here defines some flags that tell Nana what features will be supported.
 
-
-//Support of std::thread
-//Boost.Thread is preferred.
-//NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ is only available on MinGW when STD_THREAD_NOT_SUPPORTED is defined.
-//if NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ is enabled, Boost.Thread will be replaced with meganz's mingw-std-threads.
-//https://github.com/meganz/mingw-std-threads
+///////////////////////////
+//  Support of std::thread
+//  Boost.Thread is preferred.
+//  NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ is only available on MinGW when STD_THREAD_NOT_SUPPORTED is defined.
+//  if NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ is enabled, Boost.Thread will be replaced with meganz's mingw-std-threads.
+//  https://github.com/meganz/mingw-std-threads
 //#define NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ
 
+////////////////////////////
+//  The ISO C++ File System Technical Specification is optional.
+//               http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
+//  This is not a workaround, but an user option.
+//  The library maybe available in the std library in use or from Boost (almost compatible)
+//               http://www.boost.org/doc/libs/1_60_0/libs/filesystem/doc/index.htm
+//  or you can choose to use the (partial, but functional) implementation provided by nana.
+//  If you include the file <nana/filesystem/filesystem_selector.hpp>
+//  The selected option will be set by nana into std::experimental::filesystem
+//  By default Nana will use the ISO TS if available, or nana if not.
+//  Boost will be use only if you change one of the following (set the includes and link correspondly):
+//#define NANA_BOOST_FILESYSTEM_AVAILABLE         // "Is Boost filesystem available?"
+//#define NANA_BOOST_FILESYSTEM_PREFERRED          // "Is Boost filesystem preferred over nana?"
+//#define NANA_BOOST_FILESYSTEM_FORCE             // "Force use of Boost filesystem if available (over ISO)?
+
 ///////////////////
-//Support of PCM playback
+//  Support of PCM playback
 //
 #define NANA_ENABLE_AUDIO
 
 ///////////////////
-//Support for PNG
-//	Define the NANA_ENABLE_PNG to enable the support of PNG.
+//  Support for PNG
+//	  Define the NANA_ENABLE_PNG to enable the support of PNG.
 //
 //#define NANA_ENABLE_PNG	//!
 //#define USE_LIBPNG_FROM_OS // Un-Comment it to use libpng from operating system.
@@ -57,8 +72,8 @@
 #endif
 
 ///////////////////
-//Support for JPEG
-//	Define the NANA_ENABLE_JPEG to enable the support of JPEG.
+//  Support for JPEG
+//	  Define the NANA_ENABLE_JPEG to enable the support of JPEG.
 //
 //#define NANA_ENABLE_JPEG	//!
 //#define USE_LIBJPEG_FROM_OS // Un-Comment it to use libjpeg from operating system.
