@@ -103,7 +103,7 @@ namespace nana{
 		delete impl_->radio_logic;
 	}
 
-	group& group::add_option(std::string text)
+	checkbox& group::add_option(std::string text)
 	{
 		_THROW_IF_EMPTY()
 
@@ -118,7 +118,7 @@ namespace nana{
 		if (impl_->radio_logic)
 			impl_->radio_logic->add(*opt);
 
-		return *this;
+		return *impl_->options.back();
 	}
 
 	group& group::radio_mode(bool enable)

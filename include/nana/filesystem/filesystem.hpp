@@ -36,12 +36,13 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <algorithm>
 
 #include <nana/deploy.hpp>
 
  // namespace std { namespace experimental { namespace filesystem { inline namespace v1 {
 
-namespace nana  { namespace experimental
+namespace nana  { namespace experimental { 	inline namespace v1
 {
 namespace filesystem
 {
@@ -149,6 +150,14 @@ namespace filesystem
 		std::string string() const;
 		std::wstring wstring() const;
 		std::string u8string() const;
+		// std::u16string u16string() const;
+		// std::u32string u32string() const;
+
+		std::string generic_string() const ;
+		std::wstring generic_wstring() const;
+		std::string generic_u8string() const;
+		// std::u16string generic_u16string() const;
+		// std::u32string generic_u32string() const;
 
 		//appends
 		path& operator/=(const path& other);
@@ -359,11 +368,11 @@ namespace filesystem
 		return index ? path.substr(0, index + 1) : std::basic_string<CharType>();
 	}
 
-
-}//end namespace filesystem
+} //end namespace v1
+} //end namespace filesystem
 } //end namespace experimental
 
-	namespace filesystem = experimental::filesystem;
-}//end namespace nana
+  //namespace filesystem = experimental::filesystem;
+} //end namespace nana
 
 #endif
