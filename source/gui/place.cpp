@@ -1323,8 +1323,6 @@ namespace nana
 	public:
 		div_splitter(place_parts::number_t init_weight)
 			: division(kind::splitter, std::string()),
-			splitter_cursor_(cursor::arrow),
-			pause_move_collocate_(false),
 			init_weight_(init_weight)
 		{
 			this->weight.assign(splitter_px);
@@ -1373,11 +1371,18 @@ namespace nana
 
 					left_pixels_ = area_left.*px_ptr;
 					right_pixels_ = area_right.*px_ptr;
+
+					grabbed_ = true;
+				});
+
+				splitter_.events().mouse_up([this](const arg_mouse&)
+				{
+					grabbed_ = false;
 				});
 
 				splitter_.events().mouse_move.connect_unignorable([this](const arg_mouse& arg)
 				{
-					if (false == arg.left_button)
+					if ((false == arg.left_button) || (false == grabbed_))
 						return;
 
 					const bool vert = (::nana::cursor::size_we != splitter_cursor_);
@@ -1526,13 +1531,14 @@ namespace nana
 			return area;
 		}
 	private:
-		nana::cursor	splitter_cursor_;
+		nana::cursor	splitter_cursor_{nana::cursor::arrow};
 		place_parts::splitter<true>	splitter_;
 		nana::point	begin_point_;
 		int			left_pos_, right_pos_;
 		unsigned	left_pixels_, right_pixels_;
 		dragger	dragger_;
-		bool	pause_move_collocate_;	//A flag represents whether do move when collocating.
+		bool	grabbed_{ false };
+		bool	pause_move_collocate_{ false };	//A flag represents whether do move when collocating.
 		place_parts::number_t init_weight_;
 	};
 
