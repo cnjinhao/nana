@@ -24,6 +24,9 @@ namespace nana
 {
 	namespace detail
 	{
+		void events_operation_register(event_handle);
+		void events_operation_cancel(event_handle);
+
 		class event_interface
 		{
 		public:
@@ -38,8 +41,50 @@ namespace nana
 			virtual event_interface*	get_event() const = 0;
 		};
 
-		void events_operation_register(event_handle);
-		void events_operation_cancel(event_handle);
+
+		struct docker_base
+			: public docker_interface
+		{
+			event_interface * event_ptr;
+			bool flag_deleted{ false };
+			const bool unignorable;
+
+			docker_base(event_interface*, bool unignorable_flag);
+
+			detail::event_interface * get_event() const override;
+		};
+
+		class event_base
+			: public detail::event_interface
+		{
+		public:
+			~event_base();
+
+			std::size_t length() const;
+			void clear() noexcept;
+
+			void remove(event_handle evt) override;
+		protected:
+			//class emit_counter is a RAII helper for emitting count
+			//It is used for avoiding a try{}catch block which is required for some finial works when
+			//event handlers throw exceptions.
+			class emit_counter
+			{
+			public:
+				emit_counter(event_base*);
+				~emit_counter();
+			private:
+				event_base * const evt_;
+			};
+			
+			//event_handle _m_emplace(::std::unique_ptr<detail::docker_interface>& docker_ptr, bool in_front);
+			event_handle _m_emplace(detail::docker_interface*, bool in_front);
+		protected:
+			unsigned emitting_count_{ 0 };
+			bool deleted_flags_{ false };
+			//std::unique_ptr<std::vector<std::unique_ptr<detail::docker_interface>>> dockers_;
+			std::vector<detail::docker_interface*> * dockers_{ nullptr };
+		};
 	}//end namespace detail
 
     /// base clase for all event argument types
@@ -59,83 +104,32 @@ namespace nana
 
     /// the type of the members of general_events 
 	template<typename Arg>
-	class basic_event : public detail::event_interface
+	class basic_event : public detail::event_base
 	{
 	public:
 		using arg_reference = const typename std::remove_reference<Arg>::type &;
 	private:
 		struct docker
-			: public detail::docker_interface
+			: public detail::docker_base
 		{
-			basic_event * const event_ptr;
 			std::function<void(arg_reference)> invoke;
 
-			bool flag_deleted{ false };
-			bool unignorable{false};
-
-			docker(basic_event * s, std::function<void(arg_reference)> && ivk, bool unignorable_flag)
-				: event_ptr(s), invoke(std::move(ivk)), unignorable(unignorable_flag)
+			docker(basic_event * evt, std::function<void(arg_reference)> && ivk, bool unignorable_flag)
+				: docker_base(evt, unignorable_flag), invoke(std::move(ivk))
 			{}
 
-			docker(basic_event * s, const std::function<void(arg_reference)> & ivk, bool unignorable_flag)
-				: event_ptr(s), invoke(ivk), unignorable(unignorable_flag)
+			docker(basic_event * evt, const std::function<void(arg_reference)> & ivk, bool unignorable_flag)
+				: docker_base(evt, unignorable_flag), invoke(ivk)
 			{}
-
-			~docker()
-			{
-				detail::events_operation_cancel(reinterpret_cast<event_handle>(this));
-			}
-
-			detail::event_interface * get_event() const override
-			{
-				return event_ptr;
-			}
-		};
-
-		//class emit_counter is a RAII helper for emitting count
-		//It is used for avoiding a try{}catch block which is required for some finial works when
-		//event handlers throw exceptions.
-		class emit_counter
-		{
-		public:
-			emit_counter(basic_event* evt)
-				: evt_{evt}
-			{
-				++evt->emitting_count_;
-			}
-
-			~emit_counter()
-			{
-				if ((0 == --evt_->emitting_count_) && evt_->deleted_flags_)
-				{
-					evt_->deleted_flags_ = false;
-					for (auto i = evt_->dockers_->begin(); i != evt_->dockers_->end();)
-					{
-						if (static_cast<docker*>(i->get())->flag_deleted)
-							i = evt_->dockers_->erase(i);
-						else
-							++i;
-					}
-				}
-			}
-		private:
-			basic_event * const evt_;
 		};
 	public:
-        /// It will get called firstly, because it is set at the beginning of the chain.
+		/// Creates an event handler at the beginning of event chain
 		template<typename Function>
 		event_handle connect_front(Function && fn)
-		{
-			internal_scope_guard lock;
-			if (nullptr == dockers_)
-				dockers_.reset(new std::vector<std::unique_ptr<detail::docker_interface>>);
-
+		{	
 			using prototype = typename std::remove_reference<Function>::type;
-			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
-			auto evt = reinterpret_cast<event_handle>(dck.get());
-			dockers_->emplace(dockers_->begin(), std::move(dck));
-			detail::events_operation_register(evt);
-			return evt;
+
+			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), true);
 		}
 
 		event_handle connect(void (*fn)(arg_reference))
@@ -149,16 +143,9 @@ namespace nana
 		template<typename Function>
 		event_handle connect(Function && fn)
 		{
-			internal_scope_guard lock;
-			if (nullptr == dockers_)
-				dockers_.reset(new std::vector<std::unique_ptr<detail::docker_interface>>);
-
 			using prototype = typename std::remove_reference<Function>::type;
-			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
-			auto evt = reinterpret_cast<event_handle>(dck.get());
-			dockers_->emplace_back(std::move(dck));
-			detail::events_operation_register(evt);
-			return evt;
+
+			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), false);
 		}
 
 		/// It will not get called if stop_propagation() was called.
@@ -171,26 +158,10 @@ namespace nana
 		/// It will get called because it is unignorable.
         template<typename Function>
 		event_handle connect_unignorable(Function && fn, bool in_front = false)
-		{
-			internal_scope_guard lock;
-			if (nullptr == dockers_)
-				dockers_.reset(new std::vector<std::unique_ptr<detail::docker_interface>>);
-
+		{			
 			using prototype = typename std::remove_reference<Function>::type;
-			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true));
-			auto evt = reinterpret_cast<event_handle>(dck.get());
-			if (in_front)
-				dockers_->emplace(dockers_->begin(), std::move(dck));
-			else
-				dockers_->emplace_back(std::move(dck));
-			detail::events_operation_register(evt);
-			return evt;
-		}
 
-		std::size_t length() const
-		{
-			internal_scope_guard lock;
-			return (nullptr == dockers_ ? 0 : dockers_->size());
+			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true), in_front);
 		}
 
 		void emit(arg_reference& arg)
@@ -202,13 +173,13 @@ namespace nana
 			emit_counter ec(this);
 
 			auto& dockers = *dockers_;
-			const auto dockers_len = dockers.size();
+			const auto dockers_len = dockers_->size();
 
 			//The dockers may resize when a new event handler is created by a calling handler.
 			//Traverses with position can avaid crash error which caused by a iterator which becomes invalid.
 			for (std::size_t pos = 0; pos < dockers_len; ++pos)
 			{
-				auto docker_ptr = static_cast<docker*>(dockers[pos].get());
+				auto docker_ptr = static_cast<docker*>(dockers[pos]);
 				if (docker_ptr->flag_deleted)
 					continue;
 
@@ -217,43 +188,13 @@ namespace nana
 				{
 					for (++pos; pos < dockers_len; ++pos)
 					{
-						auto docker_ptr = static_cast<docker*>(dockers[pos].get());
+						auto docker_ptr = static_cast<docker*>(dockers[pos]);
 						if (!docker_ptr->unignorable || docker_ptr->flag_deleted)
 							continue;
 
 						docker_ptr->invoke(arg);
 					}
 					break;
-				}
-			}
-		}
-
-		void clear()
-		{
-			internal_scope_guard lock;
-			if (dockers_)
-				dockers_.reset();
-		}
-
-		void remove(event_handle evt) override
-		{
-			internal_scope_guard lock;
-			if (dockers_)
-			{
-				for (auto i = dockers_->begin(), end = dockers_->end(); i != end; ++i)
-				{
-					if (reinterpret_cast<detail::docker_interface*>(evt) == i->get())
-					{
-						//Checks whether this event is working now.
-						if (emitting_count_ > 1)
-						{
-							static_cast<docker*>(i->get())->flag_deleted = true;
-							deleted_flags_ = true;
-						}
-						else
-							dockers_->erase(i);
-						break;
-					}
 				}
 			}
 		}
@@ -413,10 +354,6 @@ namespace nana
 				};
 			}
 		};
-	private:
-		unsigned emitting_count_{ 0 };
-		bool deleted_flags_{ false };
-		std::unique_ptr<std::vector<std::unique_ptr<detail::docker_interface>>> dockers_;
 	};
 
 	struct arg_mouse
@@ -427,12 +364,12 @@ namespace nana
 		::nana::point pos;   ///< cursor position in the event window
 		::nana::mouse button;	///< indicates a button which triggers the event
 
-		bool left_button;	///< mouse left button is pressed?
-		bool mid_button;	///< mouse middle button is pressed?
-		bool right_button;	///< mouse right button is pressed?
-		bool alt;			///< keyboard alt is pressed?
-		bool shift;			///< keyboard Shift is pressed?
-		bool ctrl;			///< keyboard Ctrl is pressed?
+		bool left_button;	///< true if mouse left button is pressed
+		bool mid_button;	///< true if mouse middle button is pressed
+		bool right_button;	///< true if mouse right button is pressed
+		bool alt;			///< true if keyboard alt is pressed
+		bool shift;			///< true if keyboard Shift is pressed
+		bool ctrl;			///< true if keyboard Ctrl is pressed
 
 		/// Checks if left button is operated,
 		bool is_left_button() const
@@ -481,7 +418,7 @@ namespace nana
 		event_code evt_code;	    ///< it is event_code::key_press in current event
 		::nana::window window_handle;	///< A handle to the event window
 		mutable wchar_t key;	///< the key corresponding to the key pressed
-		mutable bool ignore;	    ///< this member is not used
+		mutable bool ignore;	    ///< this member is only available for key_char event, set 'true' to ignore the input.
 		bool ctrl;	                ///< keyboard Ctrl is pressed?
 		bool shift;	                ///< keyboard Shift is pressed
 	};
