@@ -49,6 +49,9 @@
     <Filter Include="Source Files\paint\detail">
       <UniqueIdentifier>{53feb93f-2b86-4bf5-b2f3-f60ef1bbbf76}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\filesystem">
+      <UniqueIdentifier>{6caffbf6-c023-4dbf-ba69-cdb49feddb5d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\any.cpp">
@@ -279,5 +282,10 @@
     <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp">
       <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\nana\filesystem\filesystem_selector.hpp">
+      <Filter>Header Files\filesystem</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
