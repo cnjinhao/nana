@@ -1,7 +1,7 @@
 /**
  *	The fundamental widget class implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -132,9 +132,25 @@ namespace nana
 		virtual nana::color _m_bgcolor() const;
 	};
 
+	namespace detail
+	{
+		class widget_base
+			: public widget
+		{
+		public:
+			~widget_base();
+
+			window handle() const override;
+		private:
+			void _m_notify_destroy() override final;
+		protected:
+			window handle_{ nullptr };
+		};
+	}
+
             /// Base class of all the classes defined as a widget window. Defaultly a widget_tag
 	template<typename Category, typename DrawerTrigger, typename Events = ::nana::general_events, typename Scheme = ::nana::widget_colors>
-	class widget_object: public widget
+	class widget_object: public detail::widget_base
 	{
 	protected:
 		typedef DrawerTrigger drawer_trigger_t;
@@ -146,12 +162,6 @@ namespace nana
 			:	events_{ std::make_shared<Events>() },
 				scheme_{ API::dev::make_scheme<Scheme>() }
 		{}
-
-		~widget_object()
-		{
-			if(handle_)
-				API::close_window(handle_);
-		}
 
 		event_type& events() const
 		{
@@ -177,11 +187,6 @@ namespace nana
 				this->_m_complete_creation();
 			}
 			return (this->empty() == false);
-		}
-
-		window handle() const override
-		{
-			return handle_;
 		}
 
 		widget_object& borderless(bool enable)
@@ -214,13 +219,7 @@ namespace nana
 		{
 			return *events_;
 		}
-
-		void _m_notify_destroy() override final
-		{
-			handle_ = nullptr;
-		}
 	private:
-		window handle_{nullptr};
 		DrawerTrigger trigger_;
 		std::shared_ptr<Events> events_;
 		std::unique_ptr<scheme_type> scheme_;
@@ -228,7 +227,7 @@ namespace nana
 
 	        /// Base class of all the classes defined as a non-graphics-buffer widget window. The second template parameter DrawerTrigger is always ignored.\see nana::panel
 	template<typename DrawerTrigger, typename Events, typename Scheme>
-	class widget_object<category::lite_widget_tag, DrawerTrigger, Events, Scheme>: public widget
+	class widget_object<category::lite_widget_tag, DrawerTrigger, Events, Scheme>: public detail::widget_base
 	{
 	protected:
 		typedef DrawerTrigger drawer_trigger_t;
@@ -239,12 +238,6 @@ namespace nana
 		widget_object()
 			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
 		{}
-
-		~widget_object()
-		{
-			if(handle_)
-				API::close_window(handle_);
-		}
 
 		event_type& events() const
 		{
@@ -269,12 +262,7 @@ namespace nana
 			}
 			return (this->empty() == false);
 		}
-
-		window handle() const override
-		{
-			return handle_;
-		}
-
+		
 		scheme_type& scheme() const
 		{
 			return *scheme_;
@@ -284,13 +272,7 @@ namespace nana
 		{
 			return *events_;
 		}
-
-		void _m_notify_destroy() override final
-		{
-			handle_ = nullptr;
-		}
 	private:
-		window handle_{nullptr};
 		std::shared_ptr<Events> events_;
 		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object
@@ -298,7 +280,7 @@ namespace nana
 
 	        /// Base class of all the classes defined as a root window. \see nana::form
 	template<typename DrawerTrigger, typename Events, typename Scheme>
-	class widget_object<category::root_tag, DrawerTrigger, Events, Scheme>: public widget
+	class widget_object<category::root_tag, DrawerTrigger, Events, Scheme>: public detail::widget_base
 	{
 	protected:
 		typedef DrawerTrigger drawer_trigger_t;
@@ -324,12 +306,6 @@ namespace nana
 			_m_bind_and_attach();
 		}
 
-		~widget_object()
-		{
-			if(handle_)
-				API::close_window(handle_);
-		}
-
 		event_type& events() const
 		{
 			return *events_;
@@ -338,11 +314,6 @@ namespace nana
 		void activate()
 		{
 			API::activate_window(handle_);
-		}
-
-		window handle() const override
-		{
-			return handle_;
 		}
 
 		native_window_type native_handle() const
@@ -435,13 +406,7 @@ namespace nana
 		{
 			return *events_;
 		}
-
-		void _m_notify_destroy() override final
-		{
-			handle_ = nullptr;
-		}
 	private:
-		window handle_;
 		DrawerTrigger trigger_;
 		std::shared_ptr<Events> events_;
 		std::unique_ptr<scheme_type> scheme_;
@@ -453,7 +418,7 @@ namespace nana
 
 	           /// Especialization. Base class of all the classes defined as a frame window. \see nana::frame
 	template<typename Events, typename Scheme>
-	class widget_object<category::frame_tag, int, Events, Scheme>: public widget
+	class widget_object<category::frame_tag, int, Events, Scheme>: public detail::widget_base
 	{
 	protected:
 		typedef int drawer_trigger_t;
@@ -464,12 +429,6 @@ namespace nana
 		widget_object()
 			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
 		{}
-
-		~widget_object()
-		{
-			if(handle_)
-				API::close_window(handle_);
-		}
 
 		event_type& events() const
 		{
@@ -494,11 +453,6 @@ namespace nana
 			return (this->empty() == false);
 		}
 
-		window handle() const override
-		{
-			return handle_;
-		}
-
 		scheme_type& scheme() const
 		{
 			return *scheme_;
@@ -513,13 +467,7 @@ namespace nana
 		{
 			return *events_;
 		}
-
-		void _m_notify_destroy() override final
-		{
-			handle_ = nullptr;
-		}
 	private:
-		window handle_{nullptr};
 		std::shared_ptr<Events> events_;
 		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object<category::frame_tag>

@@ -95,9 +95,9 @@ namespace std
 namespace nana
 {
 	/// Checks whether a specified text is utf8 encoding
-	bool is_utf8(const char* str, unsigned len);
+	bool is_utf8(const char* str, std::size_t len);
 	void throw_not_utf8(const std::string& text);
-	void throw_not_utf8(const char*, unsigned len);
+	void throw_not_utf8(const char*, std::size_t len);
 	void throw_not_utf8(const char*);
 
 	const std::string& to_utf8(const std::string&);

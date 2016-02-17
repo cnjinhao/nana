@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -78,8 +78,8 @@ namespace detail
 		void define_state_cursor(core_window_t*, nana::cursor, thread_context*);
 		void undefine_state_cursor(core_window_t*, thread_context*);
 
-		widget_colors& get_scheme_template(scheme_factory_base&&);
-		widget_colors* make_scheme(scheme_factory_base&&);
+		widget_colors& get_scheme_template(scheme_factory_interface&&);
+		widget_colors* make_scheme(scheme_factory_interface&&);
 
 		events_operation&	evt_operation();
 		window_manager&		wd_manager();

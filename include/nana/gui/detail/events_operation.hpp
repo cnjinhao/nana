@@ -4,6 +4,7 @@
 #include <nana/gui/detail/general_events.hpp>
 #include <unordered_set>
 #include <unordered_map>
+#include <memory>
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
 #include <nana/std_mutex.hpp>

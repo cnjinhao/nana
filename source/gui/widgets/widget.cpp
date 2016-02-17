@@ -1,6 +1,6 @@
 /*
  *	The fundamental widget class implementation
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -370,6 +370,24 @@ namespace nana
 		{
 			return std::unique_ptr<widget_notifier_interface>(new widget::inner_widget_notifier(*wdg));
 		}
+
+		//class widget_base
+			widget_base::~widget_base()
+			{
+				if (handle_)
+					API::close_window(handle_);
+			}
+
+			window widget_base::handle() const
+			{
+				return handle_;
+			}
+
+			void widget_base::_m_notify_destroy()
+			{
+				handle_ = nullptr;
+			}
+		//end class widget_base
 	}
 }//end namespace nana
 

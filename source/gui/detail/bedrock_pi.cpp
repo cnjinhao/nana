@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -198,12 +198,12 @@ namespace nana
 			}
 		}
 
-		widget_colors& bedrock::get_scheme_template(scheme_factory_base&& factory)
+		widget_colors& bedrock::get_scheme_template(scheme_factory_interface&& factory)
 		{
 			return pi_data_->scheme.scheme_template(std::move(factory));
 		}
 
-		widget_colors* bedrock::make_scheme(scheme_factory_base&& factory)
+		widget_colors* bedrock::make_scheme(scheme_factory_interface&& factory)
 		{
 			return pi_data_->scheme.create(std::move(factory));
 		}

@@ -46,7 +46,7 @@ namespace API
 {
 	namespace detail
 	{
-		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_base&&);
+		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_interface&&);
 	}
 
 	void effects_edge_nimbus(window, effects::edge_nimbus);

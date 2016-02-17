@@ -55,9 +55,9 @@ namespace API
 
 	namespace detail
 	{
-		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_base&& factory)
+		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_interface&& factory)
 		{
-			return restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_base&&>(factory));
+			return restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_interface&&>(factory));
 		}
 
 		bool emit_event(event_code evt_code, window wd, const ::nana::event_arg& arg)

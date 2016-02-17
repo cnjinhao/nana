@@ -17,7 +17,6 @@
 #include "internal_scope_guard.hpp"
 #include <type_traits>
 #include <functional>
-#include <memory>
 #include <vector>
 
 namespace nana
@@ -67,7 +66,7 @@ namespace nana
 		protected:
 			//class emit_counter is a RAII helper for emitting count
 			//It is used for avoiding a try{}catch block which is required for some finial works when
-			//event handlers throw exceptions.
+			//event handlers throw exceptions. Precondition event_base.dockers_ != nullptr.
 			class emit_counter
 			{
 			public:
@@ -77,12 +76,10 @@ namespace nana
 				event_base * const evt_;
 			};
 			
-			//event_handle _m_emplace(::std::unique_ptr<detail::docker_interface>& docker_ptr, bool in_front);
 			event_handle _m_emplace(detail::docker_interface*, bool in_front);
 		protected:
 			unsigned emitting_count_{ 0 };
 			bool deleted_flags_{ false };
-			//std::unique_ptr<std::vector<std::unique_ptr<detail::docker_interface>>> dockers_;
 			std::vector<detail::docker_interface*> * dockers_{ nullptr };
 		};
 	}//end namespace detail
@@ -172,27 +169,26 @@ namespace nana
 
 			emit_counter ec(this);
 
-			auto& dockers = *dockers_;
-			const auto dockers_len = dockers_->size();
-
 			//The dockers may resize when a new event handler is created by a calling handler.
 			//Traverses with position can avaid crash error which caused by a iterator which becomes invalid.
-			for (std::size_t pos = 0; pos < dockers_len; ++pos)
+
+			auto i = dockers_->data();
+			auto const end = i + dockers_->size();
+
+			for (; i != end; ++i)
 			{
-				auto docker_ptr = static_cast<docker*>(dockers[pos]);
-				if (docker_ptr->flag_deleted)
+				if (static_cast<docker*>(*i)->flag_deleted)
 					continue;
 
-				docker_ptr->invoke(arg);
+				static_cast<docker*>(*i)->invoke(arg);
 				if (arg.propagation_stopped())
 				{
-					for (++pos; pos < dockers_len; ++pos)
+					for (++i; i != end; ++i)
 					{
-						auto docker_ptr = static_cast<docker*>(dockers[pos]);
-						if (!docker_ptr->unignorable || docker_ptr->flag_deleted)
+						if (!static_cast<docker*>(*i)->unignorable || static_cast<docker*>(*i)->flag_deleted)
 							continue;
 
-						docker_ptr->invoke(arg);
+						static_cast<docker*>(*i)->invoke(arg);
 					}
 					break;
 				}
@@ -274,7 +270,7 @@ namespace nana
 				};
 			}
 		};
-
+		
 		template<typename Ret, typename Arg2>
 		struct factory < std::function<Ret(Arg2)>, false>
 		{

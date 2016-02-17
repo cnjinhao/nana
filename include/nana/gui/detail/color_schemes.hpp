@@ -1,7 +1,7 @@
 /*
 *	Color Schemes
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,20 +19,21 @@ namespace nana
 {
 	namespace detail
 	{
-		class scheme_factory_base
+		class scheme_factory_interface
 		{
 		public:
 			struct factory_identifier{};
-			virtual ~scheme_factory_base() = default;
+			virtual ~scheme_factory_interface() = default;
 
 			virtual factory_identifier* get_id() const = 0;
 			virtual	widget_colors* create() = 0;
 			virtual widget_colors* create(widget_colors&) = 0;
 		};
+		
 
 		template<typename Scheme>
 		class scheme_factory
-			: public scheme_factory_base
+			: public scheme_factory_interface
 		{
 		private:
 			factory_identifier* get_id() const override
@@ -54,7 +55,7 @@ namespace nana
 		};
 
 		template<typename Scheme>
-		scheme_factory_base::factory_identifier scheme_factory<Scheme>::fid_;
+		scheme_factory_interface::factory_identifier scheme_factory<Scheme>::fid_;
 
 		class color_schemes
 		{
@@ -69,8 +70,8 @@ namespace nana
 			color_schemes();
 			~color_schemes();
 
-			scheme&	scheme_template(scheme_factory_base&&);
-			scheme* create(scheme_factory_base&&);
+			scheme&	scheme_template(scheme_factory_interface&&);
+			scheme* create(scheme_factory_interface&&);
 		private:
 			implement * impl_;
 		};

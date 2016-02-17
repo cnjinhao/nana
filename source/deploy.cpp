@@ -438,7 +438,7 @@ namespace std
 
 namespace nana
 {
-	bool is_utf8(const char* str, unsigned len)
+	bool is_utf8(const char* str, std::size_t len)
 	{
 		auto ustr = reinterpret_cast<const unsigned char*>(str);
 		auto end = ustr + len;
@@ -474,7 +474,7 @@ namespace nana
 			throw std::invalid_argument("The text is not encoded in UTF8");
 	}
 
-	void throw_not_utf8(const char* text, unsigned len)
+	void throw_not_utf8(const char* text, std::size_t len)
 	{
 		if (!is_utf8(text, len))
 			throw std::invalid_argument("The text is not encoded in UTF8");

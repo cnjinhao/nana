@@ -1346,74 +1346,77 @@ namespace nana
 				splitter_.cursor(splitter_cursor_);
 
 				dragger_.trigger(splitter_);
-				splitter_.events().mouse_down.connect_unignorable([this](const arg_mouse& arg)
+
+				auto grab_fn = [this](const arg_mouse& arg)
 				{
 					if (false == arg.left_button)
 						return;
 
-					begin_point_ = splitter_.pos();
-
-					auto px_ptr = &nana::rectangle::width;
-
-					//Use field_area of leaf, not margin_area. Otherwise splitter would be at wrong position
-					auto area_left = _m_leaf_left()->field_area;
-					auto area_right = _m_leaf_right()->field_area;
-
-					if (nana::cursor::size_we != splitter_cursor_)
+					if (event_code::mouse_down == arg.evt_code)
 					{
-						left_pos_ = area_left.y;
-						right_pos_ = area_right.bottom();
-						px_ptr = &nana::rectangle::height;
+						begin_point_ = splitter_.pos();
+
+						auto px_ptr = &nana::rectangle::width;
+
+						//Use field_area of leaf, not margin_area. Otherwise splitter would be at wrong position
+						auto area_left = _m_leaf_left()->field_area;
+						auto area_right = _m_leaf_right()->field_area;
+
+						if (nana::cursor::size_we != splitter_cursor_)
+						{
+							left_pos_ = area_left.y;
+							right_pos_ = area_right.bottom();
+							px_ptr = &nana::rectangle::height;
+						}
+						else
+						{
+							left_pos_ = area_left.x;
+							right_pos_ = area_right.right();
+						}
+
+						left_pixels_ = area_left.*px_ptr;
+						right_pixels_ = area_right.*px_ptr;
 					}
-					else
+					else if (event_code::mouse_move == arg.evt_code)
 					{
-						left_pos_ = area_left.x;
-						right_pos_ = area_right.right();
+						const bool vert = (::nana::cursor::size_we != splitter_cursor_);
+						auto area_px = rectangle_rotator(vert, div_owner->margin_area()).w();
+						int delta = (vert ? splitter_.pos().y - begin_point_.y : splitter_.pos().x - begin_point_.x);
+
+						int total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
+
+						auto left_px = static_cast<int>(left_pixels_) + delta;
+						if (left_px > total_pixels)
+							left_px = total_pixels;
+						else if (left_px < 0)
+							left_px = 0;
+
+						double imd_rate = 100.0 / area_px;
+						left_px = static_cast<int>(limit_px(_m_leaf_left(), left_px, area_px));
+						_m_leaf_left()->weight.assign_percent(imd_rate * left_px);
+
+						auto right_px = static_cast<int>(right_pixels_) - delta;
+						if (right_px > total_pixels)
+							right_px = total_pixels;
+						else if (right_px < 0)
+							right_px = 0;
+
+						right_px = static_cast<int>(limit_px(_m_leaf_right(), right_px, area_px));
+						_m_leaf_right()->weight.assign_percent(imd_rate * right_px);
+
+						pause_move_collocate_ = true;
+						div_owner->collocate(splitter_.parent());
+
+						//After the collocating, the splitter keeps the calculated weight of left division,
+						//and clear the weight of right division.
+						_m_leaf_right()->weight.reset();
+
+						pause_move_collocate_ = false;
 					}
+				};
 
-					left_pixels_ = area_left.*px_ptr;
-					right_pixels_ = area_right.*px_ptr;
-				});
-
-				splitter_.events().mouse_move.connect_unignorable([this](const arg_mouse& arg)
-				{
-					if (false == arg.left_button)
-						return;
-
-					const bool vert = (::nana::cursor::size_we != splitter_cursor_);
-					auto area_px = rectangle_rotator(vert, div_owner->margin_area()).w();
-					int delta = (vert ? splitter_.pos().y - begin_point_.y : splitter_.pos().x - begin_point_.x);
-
-					int total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
-
-					auto left_px = static_cast<int>(left_pixels_)+delta;
-					if (left_px > total_pixels)
-						left_px = total_pixels;
-					else if (left_px < 0)
-						left_px = 0;
-
-					double imd_rate = 100.0 / area_px;
-					left_px = static_cast<int>(limit_px(_m_leaf_left(), left_px, area_px));
-					_m_leaf_left()->weight.assign_percent(imd_rate * left_px);
-
-					auto right_px = static_cast<int>(right_pixels_)-delta;
-					if (right_px > total_pixels)
-						right_px = total_pixels;
-					else if (right_px < 0)
-						right_px = 0;
-
-					right_px = static_cast<int>(limit_px(_m_leaf_right(), right_px, area_px));
-					_m_leaf_right()->weight.assign_percent(imd_rate * right_px);
-
-					pause_move_collocate_ = true;
-					div_owner->collocate(splitter_.parent());
-
-					//After the collocating, the splitter keeps the calculated weight of left division,
-					//and clear the weight of right division.
-					_m_leaf_right()->weight.reset();
-
-					pause_move_collocate_ = false;
-				});
+				splitter_.events().mouse_down.connect_unignorable(grab_fn);
+				splitter_.events().mouse_move.connect_unignorable(grab_fn);
 			}
 
 			auto limited_range = _m_update_splitter_range();
@@ -1621,7 +1624,7 @@ namespace nana
 				indicator_.docker->z_order(nullptr, ::nana::z_order_action::topmost);
 				indicator_.docker->show();
 
-				indicator_.docker->events().destroy([this]
+				indicator_.docker->events().destroy([this](const arg_destroy&)
 				{
 					if (indicator_.dock_area)
 					{
@@ -1764,81 +1767,86 @@ namespace nana
 				this->bgcolor(colors::alice_blue);
 				this->cursor(_m_is_vert(dir_) ? ::nana::cursor::size_ns : ::nana::cursor::size_we);
 
-				this->events().mouse_down([this](const arg_mouse& arg)
+
+				auto grab_fn = [this, wd](const arg_mouse& arg)
 				{
-					if (arg.button != ::nana::mouse::left_button)
-						return;
-
-					bool is_vert = _m_is_vert(dir_);
-
-					API::capture_window(this->handle(), true);
-					auto basepos = API::cursor_position();
-					base_pos_.x = (is_vert ? basepos.y : basepos.x);
-
-					basepos = this->pos();
-					base_pos_.y = (is_vert ? basepos.y : basepos.x);
-
-					base_px_ = (is_vert ? pane_dv_->field_area.height : pane_dv_->field_area.width);
-				});
-
-				this->events().mouse_up([this]
-				{
-					API::capture_window(this->handle(), false);
-				});
-
-				this->events().mouse_move([this, wd](const arg_mouse& arg)
-				{
-					if (!arg.is_left_button())
-						return;
-
-					auto now_pos = API::cursor_position();
-					int delta = (_m_is_vert(dir_) ? now_pos.y : now_pos.x) - base_pos_.x;
-					int new_pos = base_pos_.y + delta;
-					if (new_pos < range_.x)
+					if (event_code::mouse_down == arg.evt_code)	//press mouse button
 					{
-						new_pos = range_.x;
-						delta = new_pos - base_pos_.y;
-					}
-					else if (new_pos >= range_.y)
-					{
-						new_pos = range_.y - 1;
-						delta = new_pos - base_pos_.y;
-					}
+						if (arg.button != ::nana::mouse::left_button)
+							return;
 
-					now_pos = this->pos();
-					if (_m_is_vert(dir_))
-						now_pos.y = new_pos;
+						bool is_vert = _m_is_vert(dir_);
+
+						API::capture_window(this->handle(), true);
+						auto basepos = API::cursor_position();
+						base_pos_.x = (is_vert ? basepos.y : basepos.x);
+
+						basepos = this->pos();
+						base_pos_.y = (is_vert ? basepos.y : basepos.x);
+
+						base_px_ = (is_vert ? pane_dv_->field_area.height : pane_dv_->field_area.width);
+					}
+					else if (event_code::mouse_move == arg.evt_code)	//hover
+					{
+						if (!arg.is_left_button())
+							return;
+
+						auto now_pos = API::cursor_position();
+						int delta = (_m_is_vert(dir_) ? now_pos.y : now_pos.x) - base_pos_.x;
+						int new_pos = base_pos_.y + delta;
+						if (new_pos < range_.x)
+						{
+							new_pos = range_.x;
+							delta = new_pos - base_pos_.y;
+						}
+						else if (new_pos >= range_.y)
+						{
+							new_pos = range_.y - 1;
+							delta = new_pos - base_pos_.y;
+						}
+
+						now_pos = this->pos();
+						if (_m_is_vert(dir_))
+							now_pos.y = new_pos;
+						else
+							now_pos.x = new_pos;
+						this->move(now_pos);
+
+						auto px = base_px_;
+						switch (dir_)
+						{
+						case ::nana::direction::west:
+						case ::nana::direction::north:
+							if (delta < 0)
+								px -= static_cast<unsigned>(-delta);
+							else
+								px += static_cast<unsigned>(delta);
+							break;
+						case ::nana::direction::east:
+						case ::nana::direction::south:
+							if (delta < 0)
+								px += static_cast<unsigned>(-delta);
+							else
+								px -= static_cast<unsigned>(delta);
+							break;
+						default:
+							break;
+						}
+
+						auto dock_px = (_m_is_vert(dir_) ? dock_dv_->field_area.height : dock_dv_->field_area.width);
+
+						pane_dv_->weight.assign_percent(double(px) / double(dock_px) * 100);
+
+						dock_dv_->collocate(wd);
+					}
 					else
-						now_pos.x = new_pos;
-					this->move(now_pos);
+						API::capture_window(this->handle(), false);	//release mouse button
+				};
 
-					auto px = base_px_;
-					switch (dir_)
-					{
-					case ::nana::direction::west:
-					case ::nana::direction::north:
-						if (delta < 0)
-							px -= static_cast<unsigned>(-delta);
-						else
-							px += static_cast<unsigned>(delta);
-						break;
-					case ::nana::direction::east:
-					case ::nana::direction::south:
-						if (delta < 0)
-							px += static_cast<unsigned>(-delta);
-						else
-							px -= static_cast<unsigned>(delta);
-						break;
-                    default:
-                        break;
-					}
-
-					auto dock_px = (_m_is_vert(dir_) ? dock_dv_->field_area.height : dock_dv_->field_area.width);
-
-					pane_dv_->weight.assign_percent(double(px) / double(dock_px) * 100);
-
-					dock_dv_->collocate(wd);
-				});
+				auto & evt = this->events();
+				evt.mouse_down(grab_fn);
+				evt.mouse_up(grab_fn);
+				evt.mouse_move(grab_fn);
 			}
 
 			void range(int begin, int end)
@@ -1867,6 +1875,7 @@ namespace nana
 				if (i->get()->display)
 					return i->get();
 			}
+
 			return nullptr;
 		}
 

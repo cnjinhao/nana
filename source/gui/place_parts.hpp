@@ -1,7 +1,7 @@
 /*
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -233,45 +233,50 @@ namespace nana
 					}
 				});
 
-				caption_.events().mouse_down([this](const arg_mouse& arg)
+				auto grab_fn = [this](const arg_mouse& arg)
 				{
-					if (::nana::mouse::left_button == arg.button)
+					if (event_code::mouse_down == arg.evt_code)
 					{
-						moves_.started = true;
-						moves_.start_pos = API::cursor_position();
-						moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
-						API::capture_window(caption_, true);
-					}
-				});
-
-				caption_.events().mouse_move([this](const arg_mouse& arg)
-				{
-					if (arg.left_button && moves_.started)
-					{
-						auto move_pos = API::cursor_position() - moves_.start_pos;
-						if (!floating())
+						if (::nana::mouse::left_button == arg.button)
 						{
-							if (std::abs(move_pos.x) > 4 || std::abs(move_pos.y) > 4)
-								float_away(move_pos);
-						}
-						else
-						{
-							move_pos += moves_.start_container_pos;
-							API::move_window(container_->handle(), move_pos);
-							notifier_->notify_move();
+							moves_.started = true;
+							moves_.start_pos = API::cursor_position();
+							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
+							API::capture_window(caption_, true);
 						}
 					}
-				});
-
-				caption_.events().mouse_up([this](const arg_mouse& arg)
-				{
-					if ((::nana::mouse::left_button == arg.button) && moves_.started)
+					else if (event_code::mouse_move == arg.evt_code)
 					{
-						moves_.started = false;
-						API::capture_window(caption_, false);
-						notifier_->notify_move_stopped();
+						if (arg.left_button && moves_.started)
+						{
+							auto move_pos = API::cursor_position() - moves_.start_pos;
+							if (!floating())
+							{
+								if (std::abs(move_pos.x) > 4 || std::abs(move_pos.y) > 4)
+									float_away(move_pos);
+							}
+							else
+							{
+								move_pos += moves_.start_container_pos;
+								API::move_window(container_->handle(), move_pos);
+								notifier_->notify_move();
+							}
+						}
 					}
-				});
+					else if (event_code::mouse_up == arg.evt_code)
+					{
+						if ((::nana::mouse::left_button == arg.button) && moves_.started)
+						{
+							moves_.started = false;
+							API::capture_window(caption_, false);
+							notifier_->notify_move_stopped();
+						}
+					}
+				};
+
+				caption_.events().mouse_down(grab_fn);
+				caption_.events().mouse_move(grab_fn);
+				caption_.events().mouse_up(grab_fn);
 
 			}
 
@@ -293,13 +298,13 @@ namespace nana
 						tabbar_.reset(new tabbar_lite(*this));
 
 						tabbar_->events().selected.clear();
-						tabbar_->events().selected([this]
+						tabbar_->events().selected([this](const event_arg&)
 						{
 							auto handle = tabbar_->attach(tabbar_->selected());
-							if (handle)
-								caption_.caption(API::window_caption(handle));
-							else
-								caption_.caption(::std::string());
+
+							//Set caption through a caption of window specified by handle
+							//Empty if handle is null
+							caption_.caption(API::window_caption(handle));
 						});
 
 						tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });
@@ -320,7 +325,7 @@ namespace nana
 
 				if (tabbar_)
 				{
-					tabbar_->push_back(::nana::charset(wdg->caption()));
+					tabbar_->push_back(wdg->caption());
 					tabbar_->attach(panels_.size(), wdg->handle());
 				}
 
