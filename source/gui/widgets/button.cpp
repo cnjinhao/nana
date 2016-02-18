@@ -479,7 +479,7 @@ namespace nana{	namespace drawerbase
 
 			void button::_m_complete_creation()
 			{
-				events().shortkey.connect_unignorable([this]
+				events().shortkey.connect_unignorable([this](const arg_keyboard&)
 				{
 					get_drawer_trigger().emit_click();
 				});

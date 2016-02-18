@@ -3771,8 +3771,6 @@ namespace nana
 							ess_->lister.last_selected_abs.set_both(npos);
 
 					ess_->update();
-
-					ess_->update();
 					return *this;
 				}
 

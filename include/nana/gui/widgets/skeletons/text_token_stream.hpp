@@ -15,7 +15,6 @@
 
 #include <nana/gui/layout_utility.hpp>
 
-#include <sstream>
 #include <deque>
 #include <vector>
 #include <list>
@@ -86,26 +85,12 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 		std::pair<unsigned, unsigned> binary_number() const
 		{
-			std::stringstream ss;
-			ss<<static_cast<std::string>(nana::charset(binary_.first))<<' '<<static_cast<std::string>(nana::charset(binary_.second));
-
-			std::pair<unsigned, unsigned> r;
-			ss>>r.first>>r.second;
-			return r;
+			return{ std::stoul(binary_.first), std::stoul(binary_.second) };
 		}
 
 		int number() const
 		{
-			std::stringstream ss;
-			ss<<static_cast<std::string>(nana::charset(idstr_));
-
-			//It's a hex number.
-			if(idstr_.size() > 2 && idstr_[0] == '0' && (idstr_[1] == 'x' || idstr_[1] == 'X'))
-				ss>>std::hex;
-
-			int n;
-			ss>>n;
-			return n;
+			return std::stoi(idstr_, nullptr, 0);
 		}
 	private:
 		static bool _m_unicode_word_breakable(wchar_t ch)

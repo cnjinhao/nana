@@ -203,7 +203,6 @@ namespace nana
 						destroy_dockarea = (0 == tabbar_->length());
 					}
 
-
 					if (destroy_dockarea)
 						notifier_->request_close();
 				});
@@ -224,7 +223,6 @@ namespace nana
 						else
 							r.height = arg.height - 20;
 					}
-					
 
 					for (auto & pn : panels_)
 					{
@@ -313,7 +311,7 @@ namespace nana
 						std::size_t pos = 0;
 						for (auto & pn : panels_)
 						{
-							tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
+							tabbar_->push_back(pn.widget_ptr->caption());
 							tabbar_->attach(pos++, *pn.widget_ptr);
 						}
 					}
@@ -330,9 +328,7 @@ namespace nana
 				}
 
 				if (panels_.empty())
-				{
 					caption_.caption(wdg->caption());
-				}
 
 				panels_.emplace_back();
 				panels_.back().widget_ptr.swap(wdg);
@@ -358,8 +354,6 @@ namespace nana
 				{
 					graph.rectangle(false, colors::coral);
 				});
-
-
 
 				API::set_parent_window(handle(), container_->handle());
 				this->move({ 1, 1 });

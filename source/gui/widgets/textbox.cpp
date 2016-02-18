@@ -13,7 +13,6 @@
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <stdexcept>
-#include <sstream>
 
 namespace nana
 {
@@ -495,11 +494,7 @@ namespace drawerbase {
 			auto s = _m_caption();
 			if (s.empty()) return 0;
 
-			std::stringstream ss;
-			int value;
-			ss << to_utf8(s);
-			ss >> value;
-			return value;
+			return std::stoi(s, nullptr, 0);
 		}
 
 		double textbox::to_double() const
@@ -507,11 +502,7 @@ namespace drawerbase {
 			auto s = _m_caption();
 			if (s.empty()) return 0;
 
-			std::stringstream ss;
-			double value;
-			ss << to_utf8(s);
-			ss >> value;
-			return value;
+			return std::stod(s);
 		}
 
 		textbox& textbox::from(int n)

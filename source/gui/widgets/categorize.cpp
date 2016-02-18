@@ -571,7 +571,7 @@ namespace nana
 					style_.listbox = &(form_loader<nana::float_listbox>()(window_, r, true));
 					style_.listbox->set_module(style_.module, 16);
 
-					style_.listbox->events().destroy.connect_unignorable([this]
+					style_.listbox->events().destroy.connect_unignorable([this](const arg_destroy&)
 					{
 						//Close list when listbox is destoryed
 						style_.mode = mode::normal;

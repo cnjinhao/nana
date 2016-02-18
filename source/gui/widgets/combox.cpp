@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -253,12 +253,25 @@ namespace nana
 						state_.lister->renderer(item_renderer_);
 						state_.lister->set_module(module_, image_pixels_);
 						state_.item_index_before_selection = module_.index;
+
 						//The lister window closes by itself. I just take care about the destroy event.
 						//The event should be destroy rather than unload. Because the unload event is invoked while
 						//the lister is not closed, if popuping a message box, the lister will cover the message box.
-						state_.lister->events().destroy.connect_unignorable([this]
+						state_.lister->events().destroy.connect_unignorable([this](const arg_destroy&)
 						{
-							_m_lister_close_sig();
+							state_.lister = nullptr;	//The lister closes by itself.
+							if ((module_.index != nana::npos) && (module_.index != state_.item_index_before_selection))
+							{
+								option(module_.index, true);
+								API::update_window(*widget_);
+							}
+							else
+							{
+								//Redraw the widget even though the index has not been changed,
+								//because the push button should be updated due to the state
+								//changed from pressed to normal/hovered.
+								API::refresh_window(*widget_);
+							}
 						});
 					}
 				}
@@ -432,23 +445,6 @@ namespace nana
 					return true;
 				}
 			private:
-				void _m_lister_close_sig()
-				{
-					state_.lister = nullptr;	//The lister closes by itself.
-					if ((module_.index != nana::npos) && (module_.index != state_.item_index_before_selection))
-					{
-						option(module_.index, true);
-						API::update_window(*widget_);
-					}
-					else
-					{
-						//Redraw the widget even though the index has not been changed,
-						//because the push button should be updated due to the state
-						//changed from pressed to normal/hovered.
-						API::refresh_window(*widget_);
-					}
-				}
-
 				void _m_draw_push_button(bool enabled)
 				{
 					::nana::rectangle r{graph_->size()};

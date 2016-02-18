@@ -231,11 +231,6 @@ namespace nana
 				};
 			}
 
-			static std::function<void(arg_reference)> build_second(fn_type&& fn, void(fn_type::*)(arg_reference))
-			{
-				return std::move(fn);
-			}
-
 			template<typename Tfn, typename Ret>
 			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)()const)
 			{
@@ -245,9 +240,34 @@ namespace nana
 				};
 			}
 
+			static std::function<void(arg_reference)> build_second(fn_type&& fn, void(fn_type::*)(arg_reference))
+			{
+				return std::move(fn);
+			}
+
 			static std::function<void(arg_reference)> build_second(fn_type&& fn, void(fn_type::*)(arg_reference) const)
 			{
 				return std::move(fn);
+			}
+
+			static std::function<void(arg_reference)> build_second(fn_type& fn, void(fn_type::*)(arg_reference))
+			{
+				return fn;
+			}
+
+			static std::function<void(arg_reference)> build_second(fn_type& fn, void(fn_type::*)(arg_reference) const)
+			{
+				return fn;
+			}
+		
+			static std::function<void(arg_reference)> build_second(const fn_type& fn, void(fn_type::*)(arg_reference))
+			{
+				return fn;
+			}
+
+			static std::function<void(arg_reference)> build_second(const fn_type& fn, void(fn_type::*)(arg_reference) const)
+			{
+				return fn;
 			}
 
 			template<typename Tfn, typename Ret, typename Arg2>
@@ -259,7 +279,7 @@ namespace nana
 					fn(arg);
 				};
 			}
-
+			
 			template<typename Tfn, typename Ret, typename Arg2>
 			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(Arg2)const)
 			{

@@ -708,7 +708,7 @@ namespace nana
 			impl->spinbox.size({ value_px, 24 });
 		});
 
-		impl->spinbox.events().destroy.connect_unignorable([impl]
+		impl->spinbox.events().destroy.connect_unignorable([impl](const arg_destroy&)
 		{
 			impl->value = impl->spinbox.to_int();
 		});
@@ -786,7 +786,7 @@ namespace nana
 			impl->spinbox.size(::nana::size{ value_px, 24 });
 		});
 
-		impl->spinbox.events().destroy.connect_unignorable([impl]
+		impl->spinbox.events().destroy.connect_unignorable([impl](const arg_destroy&)
 		{
 			impl->value = impl->spinbox.to_double();
 		});
@@ -913,7 +913,7 @@ namespace nana
 		});
 
 		auto & wdg = (value_px ? static_cast<widget&>(impl->combox) : static_cast<widget&>(impl->textbox));
-		wdg.events().destroy.connect_unignorable([&wdg, impl]
+		wdg.events().destroy.connect_unignorable([&wdg, impl](const arg_destroy&)
 		{
 			impl->value = wdg.caption();
 		});
@@ -1028,16 +1028,19 @@ namespace nana
 			impl->wdg_year.size(sz);
 		});
 
-		impl->wdg_day.events().destroy.connect_unignorable([impl]
+		auto destroy_fn = [impl](const arg_destroy& arg)
 		{
-			impl->day = impl->wdg_day.to_int();
-			impl->month = static_cast<int>(impl->wdg_month.option()) + 1;
-		});
+			if (arg.window_handle == impl->wdg_day.handle())
+			{
+				impl->day = impl->wdg_day.to_int();
+				impl->month = static_cast<int>(impl->wdg_month.option()) + 1;
+			}
+			else if(arg.window_handle == impl->wdg_year.handle())
+				impl->year = impl->wdg_year.to_int();
+		};
 
-		impl->wdg_year.events().destroy.connect_unignorable([impl]
-		{
-			impl->year = impl->wdg_year.to_int();
-		});
+		impl->wdg_day.events().destroy.connect_unignorable(destroy_fn);
+		impl->wdg_year.events().destroy.connect_unignorable(destroy_fn);
 
 		auto make_days = [impl]
 		{
@@ -1123,7 +1126,7 @@ namespace nana
 
 		impl->browse.create(impl->dock);
 		impl->browse.i18n(i18n_eval("Browse"));
-		impl->browse.events().click([wd, impl]
+		impl->browse.events().click([wd, impl](const arg_click&)
 		{
 			impl->fbox.owner(wd);
 			if (impl->fbox.show())
@@ -1140,7 +1143,7 @@ namespace nana
 			impl->browse.move({static_cast<int>(arg.width - 60), 0, 60, arg.height});
 		});
 
-		impl->path_edit.events().destroy.connect_unignorable([impl]
+		impl->path_edit.events().destroy.connect_unignorable([impl](const arg_destroy&)
 		{
 			impl->value = impl->path_edit.caption();
 		});

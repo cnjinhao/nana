@@ -304,9 +304,7 @@ namespace nana
 
 			void _m_throw_error(const std::string& err)
 			{
-				std::stringstream ss;
-				ss << "place: " << err << " at " << static_cast<unsigned>(sp_ - divstr_);
-				throw std::runtime_error(ss.str());
+				throw std::runtime_error("nana::place: " + err + " at " + std::to_string(static_cast<unsigned>(sp_ - divstr_)));
 			}
 
 			void _m_attr_number_value()

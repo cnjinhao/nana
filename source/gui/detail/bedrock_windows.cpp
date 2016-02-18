@@ -17,7 +17,6 @@
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
-#include <sstream>
 #include <nana/system/timepiece.hpp>
 #include <nana/gui.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
@@ -252,9 +251,8 @@ namespace detail
 	{
 		if(wd_manager().number_of_core_window())
 		{
-			std::stringstream ss;
-			ss<<"Nana.GUI detects a memory leaks in window_manager, "<<static_cast<unsigned>(wd_manager().number_of_core_window())<<" window(s) are not uninstalled.";
-			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
+			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().number_of_core_window()) + " window(s) are not uninstalled.";
+			::MessageBoxA(0, msg.c_str(), ("Nana C++ Library"), MB_OK);
 		}
 
 		delete impl_;
