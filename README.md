@@ -1,7 +1,7 @@
 # Nana C++ Library 
-[Linux (gcc 5, including demos) ![TravisCI build status](https://travis-ci.org/cnjinhao/nana.svg)](https://travis-ci.org/cnjinhao/nana) 
+[Linux (gcc 5.2.1 and 4.9.2)![TravisCI build status](https://travis-ci.org/cnjinhao/nana.svg)](https://travis-ci.org/cnjinhao/nana)  including [(nana-demos)](https://github.com/qPCR4vir/nana-demo)
 
-[Windows (VC2015) ![AppVeyor uild status](https://ci.appveyor.com/api/projects/status/5j79p9fi887usv7h?svg=true)](https://ci.appveyor.com/project/qPCR4vir/nana) 
+[Windows (Microsoft (R) Build Engine version 14.0.24720.0) ![AppVeyor uild status](https://ci.appveyor.com/api/projects/status/5j79p9fi887usv7h?svg=true)](https://ci.appveyor.com/project/qPCR4vir/nana) 
 
 [![Licence](https://img.shields.io/badge/license-BSL-blue.svg?style=flat)](LICENSE_1_0.txt)
 
