@@ -37,12 +37,12 @@
 #endif
 
 
-namespace nana {	namespace experimental {
-#ifndef CXX_NO_INLINE_NAMESPACE
-	inline namespace v1 {
-#endif
-	namespace filesystem
+namespace nana {	namespace experimental {	namespace filesystem
 	{
+#ifndef CXX_NO_INLINE_NAMESPACE
+			inline namespace v1 {
+#endif
+
 		//class filesystem_error
 			filesystem_error::filesystem_error(const std::string& msg, std::error_code err)
 				: std::system_error(err, msg)

@@ -15,6 +15,7 @@
 #ifndef NANA_FILESYSTEM_EXT_HPP
 #define NANA_FILESYSTEM_EXT_HPP
 
+namespace nana {namespace experimental {namespace filesystem {namespace ext {
 #if defined(NANA_WINDOWS)
     constexpr auto def_root = "C:";
     constexpr auto def_rootstr = "C:\\";
@@ -27,4 +28,17 @@
 
 // nana::experimental::filesystem::path_user());   //  REPLACE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! to filesystem_ext.hhp
 
+template<class DI> // DI = directory_iterator from std, boost, or nana
+class directory_only_iterator : public DI
+{
+   // if (!this->is_directory()) continue;
+};
+
+template<class DI> // DI = directory_iterator from std, boost, or nana
+class regular_file_only_iterator : public DI
+{
+    // if (this->is_directory()) continue;
+};
+
+    }}}}
 #endif //NANA_FILESYSTEM_EXT_HPP

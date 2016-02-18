@@ -40,18 +40,14 @@
 
 #include <nana/deploy.hpp>
 
- // namespace std { namespace experimental { namespace filesystem { inline namespace v1 {
-
-namespace nana  { namespace experimental { 	
-
-#ifndef CXX_NO_INLINE_NAMESPACE
-inline namespace v1
+namespace nana  { namespace experimental { namespace filesystem
 {
+#ifndef CXX_NO_INLINE_NAMESPACE
+			inline namespace v1
+			{
 #endif
 
-namespace filesystem
-{
-	enum class file_type 
+				enum class file_type
 	{ 
 		none = 0,   ///< has not been determined or an error occurred while trying to determine
 		not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error

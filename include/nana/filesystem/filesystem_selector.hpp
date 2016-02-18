@@ -31,29 +31,40 @@
 #if defined(NANA_BOOST_FILESYSTEM_AVAILABLE) && ( defined(NANA_BOOST_FILESYSTEM_FORCE) || (defined(STD_FILESYSTEM_NOT_SUPPORTED) && defined(NANA_BOOST_FILESYSTEM_PREFERRED) ) )
 
 #   include <boost/filesystem.hpp>
+
 	// add boost::filesystem into std::experimental::filesystem
-	namespace std {
-		namespace experimental {
+namespace std {
+	namespace experimental {
+		namespace filesystem {
+
 #       ifdef CXX_NO_INLINE_NAMESPACE
-			using namespace boost::experimental;
+				using namespace boost::experimental::filesystem;
 #       else
-			using namespace boost::experimental::v3;
+				using namespace boost::experimental::filesystem::v3;
 #       endif
 
-		}
+		} // filesystem
+	} // experimental
+} // std
+
 
 #elif defined(STD_FILESYSTEM_NOT_SUPPORTED)
 
 #   include <nana/filesystem/filesystem.hpp>
-	namespace std {
-		namespace experimental {
+
+namespace std {
+	namespace experimental {
+		namespace filesystem {
+
 #       ifdef CXX_NO_INLINE_NAMESPACE
-			using namespace nana::experimental;
+				using namespace nana::experimental::filesystem;
 #       else
-			using namespace nana::experimental::v1;
+				using namespace nana::experimental::filesystem::v1;
 #       endif
-		}
-}
+
+		} // filesystem
+	} // experimental
+} // std
 
 #else
 #    include <filesystem>
