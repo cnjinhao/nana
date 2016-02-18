@@ -26,18 +26,56 @@ namespace nana {namespace experimental {namespace filesystem {namespace ext {
     constexpr auto def_rootname = "Root/";
 #endif
 
-// nana::experimental::filesystem::path_user());   //  REPLACE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! to filesystem_ext.hhp
+// nana::experimental::filesystem::path_user());   //  REPLACE !!!!!!!!!! to filesystem_ext.hhp
 
-template<class DI> // DI = directory_iterator from std, boost, or nana
+inline bool is_directory(const directory_entry& d) noexcept
+{
+    return is_directory(d.status());
+}
+
+
+template<class DI> // DI = directory_iterator from std, boost, or nana : return directory_entry
 class directory_only_iterator : public DI
 {
-   // if (!this->is_directory()) continue;
+   DI& find_first()
+   {
+       while(( (*this) != DI{}) || !is_directory((*this)) )
+           this->DI::operator++();
+       return (*this);
+   }
+public:
+    template <class... Arg>
+    directory_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
+    {
+        find_first();
+    }
+    directory_only_iterator& operator++()
+    {
+        this->DI::operator++();
+        return find_first();
+    }
 };
 
-template<class DI> // DI = directory_iterator from std, boost, or nana
+template<class DI> // DI = directory_iterator from std, boost, or nana : value_type directory_entry
 class regular_file_only_iterator : public DI
 {
-    // if (this->is_directory()) continue;
+    DI& find_first()
+    {
+        while(( (*this) != DI{}) || !is_regular_file(*this) )
+            this->DI::operator++();
+        return (*this);
+    }
+public:
+    template <class... Arg>
+    regular_file_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
+    {
+            find_first();
+    }
+    regular_file_only_iterator& operator++()
+    {
+        this->DI::operator++();
+        return find_first();
+    }
 };
 
     }}}}

@@ -297,15 +297,12 @@ namespace nana  { namespace experimental { namespace filesystem
 	std::uintmax_t file_size(const path& p);
 	//uintmax_t file_size(const path& p, error_code& ec) noexcept;
 
-	inline bool is_directory(file_status s) { return s.type() == file_type::directory ;}
-	bool is_directory(const path& p);
-	inline bool is_directory(const directory_entry& d)
-	{
-		return is_directory(d.status());
-	}
-    //bool is_directory(const path& p, error_code& ec) noexcept;
+	inline bool is_directory(file_status s) noexcept
+	{ return s.type() == file_type::directory ;}
 
-    //bool is_regular_file(file_status s) noexcept;
+	bool is_directory(const path& p);
+
+    //bool is_directory(const path& p, error_code& ec) noexcept;
 
 	inline bool is_empty(const path& p)
     {
