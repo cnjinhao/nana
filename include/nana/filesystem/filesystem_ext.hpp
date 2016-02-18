@@ -39,7 +39,7 @@ class directory_only_iterator : public DI
 {
    DI& find_first()
    {
-       while(( (*this) != DI{}) || !is_directory((*this)) )
+       while(( (*this) != DI{}) || !is_directory((*this)->status()) )
            this->DI::operator++();
        return (*this);
    }
@@ -61,7 +61,7 @@ class regular_file_only_iterator : public DI
 {
     DI& find_first()
     {
-        while(( (*this) != DI{}) || !is_regular_file(*this) )
+        while(( (*this) != DI{}) || !is_regular_file((*this)->status()) )
             this->DI::operator++();
         return (*this);
     }
