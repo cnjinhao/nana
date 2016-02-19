@@ -28,7 +28,7 @@
 
 #include <nana/config.hpp>
 
-#if defined(NANA_BOOST_FILESYSTEM_AVAILABLE) && ( defined(NANA_BOOST_FILESYSTEM_FORCE) || (defined(STD_FILESYSTEM_NOT_SUPPORTED) && defined(NANA_BOOST_FILESYSTEM_PREFERRED) ) )
+#if (!defined(NANA_FILESYSTEM_FORCE) && defined(NANA_BOOST_FILESYSTEM_AVAILABLE) && ( defined(NANA_BOOST_FILESYSTEM_FORCE) || (defined(STD_FILESYSTEM_NOT_SUPPORTED) && defined(NANA_BOOST_FILESYSTEM_PREFERRED) ) ))
 
 #   include <boost/filesystem.hpp>
 
@@ -48,7 +48,7 @@ namespace std {
 } // std
 
 
-#elif defined(STD_FILESYSTEM_NOT_SUPPORTED)
+#elif  (defined(NANA_FILESYSTEM_FORCE) || defined(STD_FILESYSTEM_NOT_SUPPORTED))
 
 #   include <nana/filesystem/filesystem.hpp>
 

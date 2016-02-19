@@ -15,6 +15,8 @@
 #ifndef NANA_FILESYSTEM_EXT_HPP
 #define NANA_FILESYSTEM_EXT_HPP
 
+#include <nana/filesystem/filesystem_selector.hpp>
+
 namespace nana {namespace experimental {namespace filesystem {namespace ext {
 #if defined(NANA_WINDOWS)
     constexpr auto def_root = "C:";
