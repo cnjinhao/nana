@@ -59,12 +59,12 @@ namespace nana {	namespace experimental {	namespace filesystem
 					path2_(path2)
 			{}
 
-			const path& filesystem_error::path1() const
+			const path& filesystem_error::path1() const noexcept
 			{
 				return path1_;
 			}
 
-			const path&filesystem_error::path2() const
+			const path& filesystem_error::path2() const noexcept
 			{
 				return path2_;
 			}
