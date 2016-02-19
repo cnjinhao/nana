@@ -49,7 +49,7 @@ class directory_only_iterator : public std::experimental::filesystem::directory_
 			   return *this;
 		   this->DI::operator++();
 	   }
-       return end;
+       return *this;
    }
 public:
     template <class... Arg>
