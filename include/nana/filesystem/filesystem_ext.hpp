@@ -26,22 +26,28 @@ namespace nana {namespace experimental {namespace filesystem {namespace ext {
     constexpr auto def_rootname = "Root/";
 #endif
 
-// nana::experimental::filesystem::path_user());   //  REPLACE !!!!!!!!!! to filesystem_ext.hhp
+// nana::experimental::filesystem::path_user());    
 
-inline bool is_directory(const directory_entry& d) noexcept
+inline bool is_directory(const std::experimental::filesystem::directory_entry& dir) noexcept
 {
-    return is_directory(d.status());
+    return is_directory(dir.status());
 }
 
 
-template<class DI> // DI = directory_iterator from std, boost, or nana : return directory_entry
-class directory_only_iterator : public DI
-{
-   DI& find_first()
+//template<class DI> // DI = directory_iterator from std, boost, or nana : return directory_entry
+class directory_only_iterator : public std::experimental::filesystem::directory_iterator
+{ 
+	using DI = std::experimental::filesystem::directory_iterator;
+	directory_only_iterator& find_first()
    {
-       while(( (*this) != DI{}) || !is_directory((*this)->status()) )
-           this->DI::operator++();
-       return (*this);
+	   auto end = directory_only_iterator{};
+	   while (*this != end)
+	   {
+		   if (is_directory((**this).status())) 
+			   return *this;
+		   this->DI::operator++();
+	   }
+       return end;
    }
 public:
     template <class... Arg>
@@ -49,19 +55,31 @@ public:
     {
         find_first();
     }
+	directory_only_iterator( ) {}
     directory_only_iterator& operator++()
     {
         this->DI::operator++();
         return find_first();
     }
 };
-
-template<class DI> // DI = directory_iterator from std, boost, or nana : value_type directory_entry
-class regular_file_only_iterator : public DI
+inline directory_only_iterator begin(directory_only_iterator iter) noexcept
 {
-    DI& find_first()
+	return iter;
+}
+
+inline directory_only_iterator end(const directory_only_iterator&) noexcept
+{
+	return{};
+}
+
+
+//template<class DI> // DI = directory_iterator from std, boost, or nana : value_type directory_entry
+class regular_file_only_iterator : public std::experimental::filesystem::directory_iterator
+{
+	using DI = std::experimental::filesystem::directory_iterator;
+	regular_file_only_iterator& find_first()
     {
-        while(( (*this) != DI{}) || !is_regular_file((*this)->status()) )
+        while(( (*this) != DI{}) && !is_regular_file((**this).status()))
             this->DI::operator++();
         return (*this);
     }
@@ -71,6 +89,7 @@ public:
     {
             find_first();
     }
+	regular_file_only_iterator() : DI() {}
     regular_file_only_iterator& operator++()
     {
         this->DI::operator++();
@@ -78,5 +97,15 @@ public:
     }
 };
 
-    }}}}
+inline regular_file_only_iterator begin(regular_file_only_iterator iter) noexcept
+{
+	return iter;
+}
+
+inline regular_file_only_iterator end(const regular_file_only_iterator&) noexcept
+{
+	return{};
+}
+    
+}}}}
 #endif //NANA_FILESYSTEM_EXT_HPP
