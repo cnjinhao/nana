@@ -59,12 +59,12 @@ namespace nana {	namespace experimental {	namespace filesystem
 					path2_(path2)
 			{}
 
-			const path& filesystem_error::path1() const
+			const path& filesystem_error::path1() const noexcept
 			{
 				return path1_;
 			}
 
-			const path&filesystem_error::path2() const
+			const path& filesystem_error::path2() const noexcept
 			{
 				return path2_;
 			}
@@ -384,7 +384,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				}
 			};
 
-				directory_iterator::directory_iterator()
+				directory_iterator::directory_iterator() noexcept
 					:	end_(true),
 						handle_(nullptr)
 				{}
@@ -414,13 +414,9 @@ namespace nana {	namespace experimental {	namespace filesystem
 				bool directory_iterator::equal(const directory_iterator& x) const
 				{
 					if (end_ && (end_ == x.end_)) return true;
-					return (value_.path().filename() == x.value_.path().filename());
+					return (value_.path().filename() == x.value_.path().filename()); 
 				}
 
-
-				// enable directory_iterator range-based for statements
-				directory_iterator directory_iterator::begin()    { return *this; }
-				directory_iterator directory_iterator::end()      { return{}; }
 
 				void directory_iterator::_m_prepare(const path& file_path)
 				{
