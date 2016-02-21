@@ -1,4 +1,4 @@
-/*
+/**
  *	A ISO C++ filesystem Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
@@ -7,17 +7,17 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/filesystem/filesystem.hpp
- *  Modiffied by Ariel Vina-Rodriguez:
- *  Now mimic std::experimental::filesystem::v1   (boost v3)
- *  and need VC2015 or a C++11 compiler. With a few correction will be compiler by VC2013
+ *	@file nana/filesystem/filesystem.hpp
+ *  @author Jinhao, conributed: Ariel Vina-Rodriguez
+ *  @brief Mimic std::experimental::filesystem::v1   (boost v3)
+ *  and need VC2015 or a C++11 compiler. With a few correction can be compiler by VC2013
  */
 
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf      --- last pdf of std draft N4100 <filesystem> 2014-07-04
 // http://en.cppreference.com/w/cpp/experimental/fs
 // http://cpprocks.com/introduction-to-tr2-filesystem-library-in-vs2012/  --- TR2 filesystem in VS2012
 // https://msdn.microsoft.com/en-us/library/hh874694%28v=vs.140%29.aspx   ---  C++ 14, the <filesystem> header VS2015
 // https://msdn.microsoft.com/en-us/library/hh874694%28v=vs.120%29.aspx   --- <filesystem> header VS2013
-// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf      --- last pdf of std draft N4100    2014-07-04
 // http://cplusplus.github.io/filesystem-ts/working-draft.html            --- in html format
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4099.html     --- in html format
 // http://article.gmane.org/gmane.comp.lib.boost.devel/256220             --- The filesystem TS unanimously approved by ISO.
@@ -47,7 +47,7 @@ namespace nana  { namespace experimental { namespace filesystem
 			{
 #endif
 
-				enum class file_type
+	enum class file_type
 	{ 
 		none = 0,   ///< has not been determined or an error occurred while trying to determine
 		not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error
@@ -78,7 +78,7 @@ namespace nana  { namespace experimental { namespace filesystem
         uintmax_t available;
     };
 
-	using file_time_type = std::chrono::time_point<std::chrono::system_clock>;// trivial-clock> ;
+	using file_time_type = std::chrono::time_point<std::chrono::system_clock>; ///< trivial-clock> ;
 
 	class file_status
 	{
@@ -112,7 +112,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	public:
 #if defined(NANA_WINDOWS)
 		using value_type = wchar_t;
-		const static value_type preferred_separator = '\\';
+		const static value_type preferred_separator = '\\';  //? L'\\' ?
 #else
 		using value_type = char;
 		const static value_type preferred_separator = '/';
@@ -199,8 +199,9 @@ namespace nana  { namespace experimental { namespace filesystem
 		filesystem_error(const std::string& msg, const path& path1, std::error_code err);
 		filesystem_error(const std::string& msg, const path& path1, const path& path2, std::error_code err);
 
-		const path& path1() const; //noexcept
-		const path& path2() const; //noexcept
+		const path& path1() const noexcept;  
+		const path& path2() const noexcept;  
+		// const char* what() const noexcept;
 	private:
 		path path1_;
 		path path2_;
@@ -225,33 +226,23 @@ namespace nana  { namespace experimental { namespace filesystem
 		filesystem::path path_;
 	};
 
-    /// an iterator for a sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
-	//template<typename FileInfo>
+    /// InputIterator that iterate over the sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
 	class directory_iterator 		:public std::iterator<std::input_iterator_tag, directory_entry>
 	{
 		using find_handle = void*;
 	public:
-		using value_type = directory_entry ;
-		typedef ptrdiff_t                   difference_type;
-		typedef const directory_entry*      pointer;
-		typedef const directory_entry&      reference;
-		typedef std::input_iterator_tag     iterator_category;
 
-		directory_iterator();
-		directory_iterator(const path& file_path);
+		directory_iterator() noexcept;
+		explicit directory_iterator(const path& dir);
 
 		const value_type& operator*() const;
 		const value_type* operator->() const;
 
 		directory_iterator& operator++();
-		directory_iterator operator++(int);
+		directory_iterator operator++(int);  ///< extention
 
-		bool equal(const directory_iterator& x) const;
+		bool equal(const directory_iterator& x) const; 
     
-		// enable directory_iterator range-based for statements
-		directory_iterator begin();
-		directory_iterator end();
-	
 	private:
 		template<typename Char>
 		static bool _m_ignore(const Char * p)
@@ -271,6 +262,16 @@ namespace nana  { namespace experimental { namespace filesystem
 		find_handle	handle_{nullptr};
 		value_type	value_;
 	};
+	/// enable directory_iterator range-based for statements
+	inline directory_iterator begin( directory_iterator iter) noexcept
+	{	
+		return iter;
+	}
+
+	inline directory_iterator end(	const directory_iterator&) noexcept
+	{	
+		return {};
+	}
 
 
     //class recursive_directory_iterator;
@@ -297,15 +298,23 @@ namespace nana  { namespace experimental { namespace filesystem
 	std::uintmax_t file_size(const path& p);
 	//uintmax_t file_size(const path& p, error_code& ec) noexcept;
 
-	inline bool is_directory(file_status s) { return s.type() == file_type::directory ;}
+	inline bool is_directory(file_status s) noexcept
+	{ return s.type() == file_type::directory ;}
+
 	bool is_directory(const path& p);
-	inline bool is_directory(const directory_entry& d)
-	{
-		return is_directory(d.status());
-	}
+
     //bool is_directory(const path& p, error_code& ec) noexcept;
 
-    //bool is_regular_file(file_status s) noexcept;
+	inline bool is_regular_file(file_status s) noexcept
+	{
+		return s.type() == file_type::regular;
+	}
+	inline bool is_regular_file(const path& p)
+	{
+		return is_regular_file(status(p));
+	}
+	// bool is_regular_file(const path& p, error_code& ec) noexcept;
+    // Returns: is_regular_file(status(p, ec)).Returns false if an error occurs.
 
 	inline bool is_empty(const path& p)
     {
@@ -316,7 +325,7 @@ namespace nana  { namespace experimental { namespace filesystem
 		
 		return (file_size(p) == 0);
     }
-    //bool is_empty(const path& p, error_code& ec) noexcept;
+    // bool is_empty(const path& p, error_code& ec) noexcept;
 
 
 	bool create_directories(const path& p);
@@ -328,11 +337,11 @@ namespace nana  { namespace experimental { namespace filesystem
 	
 	bool modified_file_time(const path& p, struct tm&);
 
-	path path_user();
+	path path_user();    ///< extention ?
 	
 	path current_path();
 	//path current_path(error_code& ec);
-	void current_path(const path& p);
+	void current_path(const path& p);   ///< chdir
 	//void current_path(const path& p, error_code& ec) noexcept;    
 
 
