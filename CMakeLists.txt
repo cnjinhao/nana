@@ -203,8 +203,8 @@ set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 if (BUILD_NANA_DEMOS)
 
-    set (demos    calculator notepad widget_show widget_show2      )
-    # Pending:    file_explorer  FreeMe
+    set (demos    calculator file_explorer notepad widget_show widget_show2      )
+    # Pending:      FreeMe
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
