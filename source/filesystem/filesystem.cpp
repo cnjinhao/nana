@@ -110,7 +110,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			return pathstr_.compare(p.pathstr_);
 		}
 
-		bool path::empty() const
+		bool path::empty() const noexcept
 		{
 #if defined(NANA_WINDOWS)
 			return (::GetFileAttributes(pathstr_.c_str()) == INVALID_FILE_ATTRIBUTES);
@@ -781,6 +781,13 @@ namespace nana {	namespace experimental {	namespace filesystem
 			return false;
 		}
 
+		file_time_type last_write_time(const path& p)
+		{
+			struct tm t;
+			modified_file_time(p, t);   
+			std::chrono::system_clock::time_point dateTime =std::chrono::system_clock::from_time_t( mktime(&t) );
+			return 	dateTime;
+		}
 
 			bool create_directory(const path& p)
 			{
