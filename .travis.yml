@@ -65,7 +65,6 @@ install:
   - /tmp/tools/cmake --prefix="$HOME" --exclude-subdir
 
 before_script :
-  - sudo apt-get update -qq
   - sudo apt-get install libboost-filesystem-dev
   - mkdir bld
   - cd bld
