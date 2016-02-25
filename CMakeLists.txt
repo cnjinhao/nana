@@ -32,7 +32,7 @@ option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF
 # By default Nana will use the ISO TS if available, or nana if not.
 # Boost will be use only if you change one of the following:
 option(CMAKE_BOOST_FILESYSTEM_AVAILABLE "Is Boost filesystem available?" OFF)
-option(NANA_BOOST_FILESYSTEM_PREFERRED "Is Boost filesystem preferred over nana?" OFF)
+option(NANA_BOOST_FILESYSTEM_PREFERRED "Is Boost filesystem preferred over nana?" ON)
 option(CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over ISO)?" OFF)
 option(CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
 option(CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
