@@ -20,6 +20,7 @@ matrix:
             - alsa-oss
             - libx11-dev
             - libxft-dev
+            - libboost-filesystem-dev
           sources: 
             - ubuntu-toolchain-r-test
     - env: CXX=g++-4.9 CC=gcc-4.9
@@ -65,7 +66,6 @@ install:
   - /tmp/tools/cmake --prefix="$HOME" --exclude-subdir
 
 before_script :
-  - sudo apt-get install libboost-filesystem-dev
   - mkdir bld
   - cd bld
 
