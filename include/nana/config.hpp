@@ -39,20 +39,30 @@
 //  https://github.com/meganz/mingw-std-threads
 //#define NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ
 
-////////////////////////////
-//  The ISO C++ File System Technical Specification is optional.
-//               http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
-//  This is not a workaround, but an user option.
-//  The library maybe available in the std library in use or from Boost (almost compatible)
-//               http://www.boost.org/doc/libs/1_60_0/libs/filesystem/doc/index.htm
-//  or you can choose to use the (partial, but functional) implementation provided by nana.
-//  If you include the file <nana/filesystem/filesystem_selector.hpp>
-//  The selected option will be set by nana into std::experimental::filesystem
-//  By default Nana will use the ISO TS if available, or nana if not.
-//  Boost will be use only if you change one of the following (set the includes and link correspondly):
-//#define NANA_BOOST_FILESYSTEM_AVAILABLE         // "Is Boost filesystem available?"
-//#define NANA_BOOST_FILESYSTEM_PREFERRED          // "Is Boost filesystem preferred over nana?"
-//#define NANA_BOOST_FILESYSTEM_FORCE             // "Force use of Boost filesystem if available (over ISO)?
+//# The ISO C++ File System Technical Specification(ISO - TS, or STD) is optional.
+//#              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
+//# This is not a workaround, but an user option.
+//# The library maybe available in the std library in use or from Boost(almost compatible)
+//#              http://www.boost.org/doc/libs/1_60_0/libs/filesystem/doc/index.htm
+//# or you can choose to use the(partial, but functional) implementation provided by nana.
+//# If you include the file <nana/filesystem/filesystem_selector.hpp>
+//# the selected option will be set by nana into std::experimental::filesystem
+//# By default Nana will try to use the STD.If not available will try
+//# to use boost if available.Nana own implementation will be use only none of them are available.
+//# You can change that default if you change one of the following
+//# (please don't define more than one of the _XX_FORCE options):
+//
+//#define BOOST_FILESYSTEM_AVAILABLE // "Is Boost filesystem available?"
+//#define BOOST_FILESYSTEM_FORCE     // "Force use of Boost filesystem if available (over ISO and nana)
+//#define STD_FILESYSTEM_FORCE       // "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
+//#define NANA_FILESYSTEM_FORCE      // "Force nana filesystem over ISO and boost?" OFF)
+//
+//	Make sure you (cmake?) provide the following where correspond (please find the correct values):
+//	set CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
+//	set CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
+//	include_directories CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT
+//	APPEND flag LINKS CMAKE_BOOST_FILESYSTEM_LIB
+
 
 ///////////////////
 //  Support of PCM playback

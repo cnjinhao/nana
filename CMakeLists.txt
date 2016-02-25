@@ -11,6 +11,8 @@
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
 
+set(NANA_LINKS)
+
 option(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
 option(ENABLE_PNG "Enable the use of PNG" OFF)
 option(LIBPNG_FROM_OS "Use libpng from operating system." ON)
@@ -20,8 +22,9 @@ option(ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
 option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
+option(INCLUDE_EXPERIMENTAL_DEMOS "" OFF)
 
-# The ISO C++ File System Technical Specification is optional.
+# The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
 # This is not a workaround, but an user option.
 # The library maybe available in the std library in use or from Boost (almost compatible)
@@ -29,28 +32,51 @@ option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF
 # or you can choose to use the (partial, but functional) implementation provided by nana.
 # If you include the file <nana/filesystem/filesystem_selector.hpp>
 # The selected option will be set by nana into std::experimental::filesystem
-# By default Nana will use the ISO TS if available, or nana if not.
-# Boost will be use only if you change one of the following:
-option(CMAKE_BOOST_FILESYSTEM_AVAILABLE "Is Boost filesystem available?" OFF)
-option(NANA_BOOST_FILESYSTEM_PREFERRED "Is Boost filesystem preferred over nana?" ON)
-option(CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over ISO)?" OFF)
-option(CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
-option(CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
+# By default Nana will try to use the STD. If not available will try 
+# to use boost if available. Nana own implementation will be use only none of them are available.
+# You can change that default if you change one of the following 
+# (please don't define more than one of the _XX_FORCE options):
+option(CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" ON)
+option(CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
+option(CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
+option(CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
+# cmake will find the package self, if don't works set the following (please find the correct values):
+#option(CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
+#option(CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
+#include_directories("${CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT}")
+#list(APPEND NANA_LINKS "${CMAKE_BOOST_FILESYSTEM_LIB}")
 
-set(NANA_LINKS)
 
-if (CMAKE_BOOST_FILESYSTEM_AVAILABLE)
-    if (CMAKE_BOOST_FILESYSTEM_PREFERED OR CMAKE_BOOST_FILESYSTEM_FORCE)
+
+if (CMAKE_NANA_FILESYSTEM_FORCE)
+    add_definitions(-DNANA_FILESYSTEM_FORCE)
+	
+elseif (CMAKE_STD_FILESYSTEM_FORCE)
+    add_definitions(-DSTD_FILESYSTEM_FORCE)
+	
+elseif (CMAKE_FIND_BOOST_FILESYSTEM OR CMAKE_BOOST_FILESYSTEM_FORCE)
+
+	if (CMAKE_BOOST_FILESYSTEM_FORCE)
+        add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
+	endif(CMAKE_BOOST_FILESYSTEM_FORCE)
+	
+    # https://cmake.org/cmake/help/git-master/module/FindBoost.html
+	# Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied, 
+	# even if system is not specified when using find_package and if Boost::system is not added to target_link_libraries. 
+	# If using Boost::thread, then Thread::Thread will also be added automatically.
+    find_package(Boost COMPONENTS filesystem)
+	if (Boost_FOUND)
         add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
-        if (CMAKE_BOOST_FILESYSTEM_FORCE)
-            add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
-        else()
-            add_definitions(-DNANA_BOOST_FILESYSTEM_PREFERED)
-        endif()
-        include_directories("${CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT}")
-        list(APPEND NANA_LINKS "${CMAKE_BOOST_FILESYSTEM_LIB}")
-     endif (CMAKE_BOOST_FILESYSTEM_PREFERED OR CMAKE_BOOST_FILESYSTEM_FORCE)
-endif (CMAKE_BOOST_FILESYSTEM_AVAILABLE)
+		include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
+		list(APPEND NANA_LINKS "${Boost_LIBRARIES}")
+	endif (Boost_FOUND)
+	
+	set(Boost_USE_STATIC_LIBS ON)
+	set(Boost_USE_STATIC_RUNTIME ON)  # ??
+	#set(Boost_USE_MULTITHREADED ON)
+	
+endif (CMAKE_FIND_BOOST_FILESYSTEM OR CMAKE_BOOST_FILESYSTEM_FORCE)
+
 
 project(nana)
 cmake_minimum_required(VERSION 2.8)
@@ -203,7 +229,10 @@ set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 if (BUILD_NANA_DEMOS)
 
-    set (demos    calculator file_explorer notepad widget_show widget_show2      )
+    set (demos    calculator  notepad widget_show widget_show2      )
+	if (INCLUDE_EXPERIMENTAL_DEMOS)
+	    list(APPEND demos  file_explorer)  
+	endif (INCLUDE_EXPERIMENTAL_DEMOS)
     # Pending:      FreeMe
 
     foreach ( demo ${demos})
