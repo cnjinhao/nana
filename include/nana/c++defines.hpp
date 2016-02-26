@@ -136,7 +136,7 @@
 
 
 	#if ((__GNUC__ < 5)   )
-	#	defie STD_put_time_NOT_SUPPORTED
+	#	define STD_put_time_NOT_SUPPORTED
     #endif
 
     #if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
