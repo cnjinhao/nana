@@ -1289,7 +1289,11 @@ namespace nana{	namespace widgets
 			text_area_.tab_space = 4;
 			text_area_.scroll_pixels = 16;
 			text_area_.hscroll = text_area_.vscroll = 0;
-			select_.mode_selection = selection::mode_no_selected;
+
+			select_.behavior = text_focus_behavior::select_if_tabstop_or_click;
+			select_.move_to_end = false;
+			select_.mode_selection = selection::mode::no_selected;
+			select_.ignore_press = false;
 			select_.dragged = false;
 
 			API::create_caret(wd, 1, line_height());
@@ -1348,11 +1352,13 @@ namespace nana{	namespace widgets
 		void text_editor::erase_keyword(const ::std::wstring& kw)
 		{
 			for (auto i = keywords_->kwbase.begin(); i != keywords_->kwbase.end(); ++i)
+			{
 				if (i->text == kw)
 				{
 					keywords_->kwbase.erase(i);
 					return;
 				}
+			}
 		}
 
 		void text_editor::set_accept(std::function<bool(char_type)> pred)
@@ -1624,6 +1630,47 @@ namespace nana{	namespace widgets
 			return 0;
 		}
 
+		bool text_editor::focus_changed(const arg_focus& arg)
+		{
+			bool renderred = false;
+
+			if (arg.getting && (select_.a == select_.b)) //Do not change the selected text
+			{
+				bool select_all = false;
+				switch (select_.behavior)
+				{
+				case text_focus_behavior::select:
+					select_all = true;
+					break;
+				case text_focus_behavior::select_if_click:
+					select_all = (arg_focus::reason::mouse_press == arg.focus_reason);
+					break;
+				case text_focus_behavior::select_if_tabstop:
+					select_all = (arg_focus::reason::tabstop == arg.focus_reason);
+					break;
+				case text_focus_behavior::select_if_tabstop_or_click:
+					select_all = (arg_focus::reason::tabstop == arg.focus_reason || arg_focus::reason::mouse_press == arg.focus_reason);
+				default:
+					break;
+				}
+
+				if (select_all)
+				{
+					select(true);
+					move_caret_end();
+					renderred = true;
+
+					//If the text widget is focused by clicking mouse button, the selected text will be cancelled
+					//by the subsequent mouse down event. In this situation, the subsequent mouse down event should
+					//be ignored.
+					select_.ignore_press = (arg_focus::reason::mouse_press == arg.focus_reason);
+				}
+			}
+			show_caret(arg.getting);
+			reset_caret();
+			return renderred;
+		}
+
 		bool text_editor::mouse_enter(bool enter)
 		{
 			if((false == enter) && (false == text_area_.captured))
@@ -1649,7 +1696,7 @@ namespace nana{	namespace widgets
 				auto caret_pos_before = caret();
 				mouse_caret(scrpos);
 
-				if(select_.mode_selection != selection::mode_no_selected)
+				if(select_.mode_selection != selection::mode::no_selected)
 					set_end_caret();
 				else if ((!select_.dragged) && (caret_pos_before != caret()))
 					select_.dragged = true;
@@ -1664,8 +1711,11 @@ namespace nana{	namespace widgets
 		{
 			if (event_code::mouse_down == arg.evt_code)
 			{
-				if (!hit_text_area(arg.pos))
+				if (select_.ignore_press || (!hit_text_area(arg.pos)))
+				{
+					select_.ignore_press = false;
 					return false;
+				}
 
 				if (::nana::mouse::left_button == arg.button)
 				{
@@ -1691,7 +1741,7 @@ namespace nana{	namespace widgets
 						}
 						points_.shift_begin_caret = points_.caret;
 					}
-					select_.mode_selection = selection::mode_mouse_selected;
+					select_.mode_selection = selection::mode::mouse_selected;
 				}
 
 				text_area_.border_renderer(graph_, _m_bgcolor());
@@ -1699,11 +1749,12 @@ namespace nana{	namespace widgets
 			}
 			else if (event_code::mouse_up == arg.evt_code)
 			{
-				auto is_prev_no_selected = (select_.mode_selection == selection::mode_no_selected);
+				select_.ignore_press = false;
+				auto is_prev_no_selected = (select_.mode_selection == selection::mode::no_selected);
 
-				if (select_.mode_selection == selection::mode_mouse_selected)
+				if (select_.mode_selection == selection::mode::mouse_selected)
 				{
-					select_.mode_selection = selection::mode_no_selected;
+					select_.mode_selection = selection::mode::no_selected;
 					set_end_caret();
 				}
 				else if (is_prev_no_selected)
@@ -1842,12 +1893,12 @@ namespace nana{	namespace widgets
 				select_.b.y = static_cast<unsigned>(textbase_.lines());
 				if(select_.b.y) --select_.b.y;
 				select_.b.x = static_cast<unsigned>(textbase_.getline(select_.b.y).size());
-				select_.mode_selection = selection::mode_method_selected;
+				select_.mode_selection = selection::mode::method_selected;
 				render(true);
 				return true;
 			}
 
-			select_.mode_selection = selection::mode_no_selected;
+			select_.mode_selection = selection::mode::no_selected;
 			if (_m_cancel_select(0))
 			{
 				render(true);
@@ -1922,6 +1973,16 @@ namespace nana{	namespace widgets
 		const std::vector<upoint>& text_editor::text_position() const
 		{
 			return text_position_;
+		}
+
+		void text_editor::focus_behavior(text_focus_behavior behavior)
+		{
+			select_.behavior = behavior;
+		}
+
+		void text_editor::select_behavior(bool move_to_end)
+		{
+			select_.move_to_end = move_to_end;
 		}
 
 		void text_editor::draw_corner()
@@ -2339,26 +2400,44 @@ namespace nana{	namespace widgets
 			size_t lnsz = textbase_.getline(caret.y).size();
 			switch (key) {
 			case keyboard::os_arrow_left:
-				if (caret.x != 0) {
-					--caret.x;
+				if (select_.move_to_end && (select_.a != select_.b) && (!arg.shift))
+				{
+					caret = select_.a;
 					changed = true;
-				}else {
-					if (caret.y != 0) {
-						--caret.y;
-						caret.x = static_cast<decltype(caret.x)>(textbase_.getline(caret.y).size());
+				}
+				else
+				{
+					if (caret.x != 0) {
+						--caret.x;
 						changed = true;
+					}
+					else {
+						if (caret.y != 0) {
+							--caret.y;
+							caret.x = static_cast<decltype(caret.x)>(textbase_.getline(caret.y).size());
+							changed = true;
+						}
 					}
 				}
 				break;
 			case keyboard::os_arrow_right:
-				if (caret.x < lnsz) {
-					++caret.x;
+				if (select_.move_to_end && (select_.a != select_.b) && (!arg.shift))
+				{
+					caret = select_.b;
 					changed = true;
-				}else {
-					if (caret.y != nlines - 1) {
-						++caret.y;
-						caret.x = 0;
+				}
+				else
+				{
+					if (caret.x < lnsz) {
+						++caret.x;
 						changed = true;
+					}
+					else {
+						if (caret.y != nlines - 1) {
+							++caret.y;
+							caret.x = 0;
+							changed = true;
+						}
 					}
 				}
 				break;
@@ -2411,6 +2490,7 @@ namespace nana{	namespace widgets
 			if (select_.a != caret || select_.b != caret) {
 				changed = true;
 			}
+
 			if (changed) {
 				if (arg.shift) {
 					switch (key) {

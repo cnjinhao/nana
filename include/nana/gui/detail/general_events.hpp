@@ -424,9 +424,18 @@ namespace nana
 
 	struct arg_focus : public event_arg
 	{
-		::nana::window window_handle;	      ///< A handle to the event window
-		::nana::native_window_type receiver;  ///< it is a native window handle, and specified which window receives focus
-		bool getting;	                      ///< the window received focus?
+		/// A constant to indicate how keyboard focus emitted.
+		enum class reason
+		{
+			general,	///< the focus is received by OS native window manager.
+			tabstop,	///< the focus is received by pressing tab.
+			mouse_press ///< the focus is received by pressing a mouse button.
+		};
+
+		::nana::window window_handle;			///< A handle to the event window
+		::nana::native_window_type receiver;	///< it is a native window handle, and specified which window receives focus
+		bool	getting;						///< the window received focus?
+		reason	focus_reason;					///< determines how the widget receives keyboard focus, it is ignored when 'getting' is equal to false
 	};
 
 	struct arg_keyboard : public event_arg

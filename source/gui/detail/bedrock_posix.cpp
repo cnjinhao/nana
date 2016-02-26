@@ -255,7 +255,7 @@ namespace detail
 		if ((!wd) && pre)
 		{
 			internal_scope_guard lock;
-			wd_manager().set_focus(pre, false);
+			wd_manager().set_focus(pre, false, arg_focus::reason::general);
 			wd_manager().update(pre, true, false);
 		}
 	}
@@ -479,6 +479,7 @@ namespace detail
 		arg.window_handle = reinterpret_cast<window>(wd);
 		arg.receiver = recv;
 		arg.getting = getting;
+        arg.focus_reason = arg_focus::reason::general;
 	}
 
 	void assign_arg(arg_wheel& arg, basic_window* wd, const XEvent& evt)
@@ -701,7 +702,7 @@ namespace detail
 					arg.receiver = native_window;
 					arg.getting = true;
 					if(!brock.emit(event_code::focus, focus, arg, true, &context))
-						brock.wd_manager().set_focus(msgwnd, true);
+						brock.wd_manager().set_focus(msgwnd, true, arg_focus::reason::general);
 				}
 				break;
 			case FocusOut:
@@ -765,7 +766,7 @@ namespace detail
 						if (new_focus && !new_focus->flags.ignore_mouse_focus)
 						{
 							context.event_window = new_focus;
-							auto kill_focus = brock.wd_manager().set_focus(new_focus, false);
+							auto kill_focus = brock.wd_manager().set_focus(new_focus, false, arg_focus::reason::mouse_press);
 							if (kill_focus != new_focus)
 								brock.wd_manager().do_lazy_refresh(kill_focus, false);
 						}
@@ -1048,7 +1049,8 @@ namespace detail
 								auto tstop_wd = wd_manager.tabstop(msgwnd, !argkey.shift);
 								if (tstop_wd)
 								{
-									wd_manager.set_focus(tstop_wd, false);
+                                    root_runtime->condition.ignore_tab = true;
+									wd_manager.set_focus(tstop_wd, false, arg_focus::reason::tabstop);
 									wd_manager.do_lazy_refresh(msgwnd, false);
 									wd_manager.do_lazy_refresh(tstop_wd, true);
 								}
@@ -1144,8 +1146,8 @@ namespace detail
 									arg.ignore = false;
 									arg.key = charbuf[i];
 
-									// When tab is pressed, only tab-eating mode is allowed
-									if ((keyboard::tab == arg.key) && !(msgwnd->flags.tab & tab_type::eating))
+									//Only accept tab when it is not ignored.
+									if ((keyboard::tab == arg.key) && root_runtime->condition.ignore_tab)
 										continue;
 
 									if(context.is_alt_pressed)
@@ -1185,52 +1187,61 @@ namespace detail
 				nana::detail::platform_spec::instance().write_keystate(xevent.xkey);
 				{
 					auto os_code = os_code_from_keysym(::XLookupKeysym(&xevent.xkey, 0));
-					if(keyboard::alt != os_code)
+					if(keyboard::alt != os_code) //MUST NOT BE AN ALT
 					{
 						if(0x11 == os_code)
 							context.is_ctrl_pressed = false;
 
-						msgwnd = brock.focus();
-						if(msgwnd)
-						{
-							if(msgwnd == pressed_wd_space)
-							{
-								msgwnd->flags.action = mouse_action::normal;
+                        if (('\t' == os_code) && root_runtime->condition.ignore_tab)
+                        { 
+                            root_runtime->condition.ignore_tab = false;
+                        }
+                        else
+                        {
+                        
+						    msgwnd = brock.focus();
+						    if(msgwnd)
+						    {
+							    if(msgwnd == pressed_wd_space)
+							    {
+								    msgwnd->flags.action = mouse_action::normal;
 
-								arg_click click_arg;
-								click_arg.mouse_args = nullptr;
-								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+								    arg_click click_arg;
+								    click_arg.mouse_args = nullptr;
+								    click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-								auto retain = msgwnd->together.events_ptr;
-								if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
-								{
-									arg_mouse arg;
-									arg.alt = false;
-									arg.button = ::nana::mouse::left_button;
-									arg.ctrl = false;
-									arg.evt_code = event_code::mouse_up;
-									arg.left_button = true;
-									arg.mid_button = false;
-									arg.pos.x = 0;
-									arg.pos.y = 0;
-									arg.window_handle = reinterpret_cast<window>(msgwnd);
+								    auto retain = msgwnd->together.events_ptr;
+								    if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
+							    	{
+									    arg_mouse arg;
+									    arg.alt = false;
+									    arg.button = ::nana::mouse::left_button;
+									    arg.ctrl = false;
+									    arg.evt_code = event_code::mouse_up;
+									    arg.left_button = true;
+									    arg.mid_button = false;
+									    arg.pos.x = 0;
+								    	arg.pos.y = 0;
+									    arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-									emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
-									brock.wd_manager().do_lazy_refresh(msgwnd, false);
-								}
-								pressed_wd_space = nullptr;
-							}
-							else
-							{
-								arg_keyboard arg;
-								arg.evt_code = event_code::key_release;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
-								arg.ignore = false;
-								arg.key = os_code;
-								brock.get_key_state(arg);
-								brock.emit(event_code::key_release, msgwnd, arg, true, &context);
-							}
-						}
+									    emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+									    brock.wd_manager().do_lazy_refresh(msgwnd, false);
+								    }
+							    	pressed_wd_space = nullptr;
+							    }
+							    else
+							    {
+								    arg_keyboard arg;
+                          
+								    arg.evt_code = event_code::key_release;
+								    arg.window_handle = reinterpret_cast<window>(msgwnd);
+								    arg.ignore = false;
+								    arg.key = os_code;
+								    brock.get_key_state(arg);
+							    	brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+				   			    }
+						    }
+                        }
 
 						if(os_code < keyboard::os_arrow_left || keyboard::os_arrow_down < os_code)
 							brock.delay_restore(2);	//Restores while key release
@@ -1245,7 +1256,7 @@ namespace detail
 							{
 								bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
 								if (set_focus)
-									brock.wd_manager().set_focus(msgwnd, false);
+									brock.wd_manager().set_focus(msgwnd, false, arg_focus::reason::general);
 
 								arg_keyboard arg;
 								arg.evt_code = event_code::key_release;

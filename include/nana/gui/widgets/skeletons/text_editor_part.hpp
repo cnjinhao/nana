@@ -11,6 +11,15 @@ namespace nana
 	{
 		namespace skeletons
 		{
+			enum class text_focus_behavior
+			{
+				none,
+				select,
+				select_if_tabstop,
+				select_if_click,
+				select_if_tabstop_or_click
+			};
+
 			//forward declaration
 			class text_editor;
 

@@ -98,6 +98,8 @@ namespace nana
 		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
+		using text_focus_behavior = widgets::skeletons::text_focus_behavior;
+
 		using text_positions = std::vector<upoint>;
 		/// The default constructor without creating the widget.
 		textbox();
@@ -207,6 +209,14 @@ namespace nana
 
 		/// Returns the height of line in pixels
 		unsigned line_pixels() const;
+
+		/// Sets the behavior when textbox gets focus.
+		void focus_behavior(text_focus_behavior);
+
+		/// Sets the caret move behavior when the content of textbox is selected.
+		/// E.g. Whether caret moves to left of selected content or moves to left of last position when left arrow key is pressed.
+		/// @param move_to_end determines whether to move caret to left of selected_content or to left of last position.
+		void select_behavior(bool move_to_end);
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const throw() override;

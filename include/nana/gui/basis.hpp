@@ -95,6 +95,7 @@ namespace nana
 			undo = substitute,
 
 			//System Code for OS
+			os_tab = 0x09,
 			os_shift = 0x10,
 			os_ctrl = 0x11,
 			os_pageup = 0x21, os_pagedown,

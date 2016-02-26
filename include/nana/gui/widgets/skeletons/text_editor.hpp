@@ -229,6 +229,9 @@ namespace nana{	namespace widgets
 
 			/// Returns text position of each line that currently displays on screen
 			const std::vector<upoint>& text_position() const;
+
+			void focus_behavior(text_focus_behavior);
+			void select_behavior(bool move_to_end);
 		public:
 			void draw_corner();
 			void render(bool focused);
@@ -249,6 +252,8 @@ namespace nana{	namespace widgets
 			const upoint& caret() const;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
+
+			bool focus_changed(const arg_focus&);
 			bool mouse_enter(bool);
 			bool mouse_move(bool left_button, const point& screen_pos);
 			bool mouse_pressed(const arg_mouse& arg);
@@ -353,10 +358,13 @@ namespace nana{	namespace widgets
 
 			struct selection
 			{
-				enum mode_selection_t{mode_no_selected, mode_mouse_selected, mode_method_selected};
+				enum class mode{ no_selected, mouse_selected, method_selected };
 
-				mode_selection_t mode_selection;
+				text_focus_behavior behavior;
+				bool move_to_end;
+				mode mode_selection;
 				bool dragged;
+				bool ignore_press;
 				nana::upoint a, b;
 			}select_;
 

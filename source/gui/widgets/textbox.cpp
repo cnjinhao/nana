@@ -94,14 +94,9 @@ namespace drawerbase {
 
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
-			refresh(graph);
-			if (!editor_->attr().multi_lines && arg.getting)
-			{
-				editor_->select(true);
-				editor_->move_caret_end();
-			}
-			editor_->show_caret(arg.getting);
-			editor_->reset_caret();
+			if (!editor_->focus_changed(arg))
+				refresh(graph);
+
 			API::lazy_refresh();
 		}
 
@@ -588,6 +583,22 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			return (editor ? editor->line_height() : 0);
+		}
+
+		void textbox::focus_behavior(text_focus_behavior behavior)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->focus_behavior(behavior);
+		}
+
+		void textbox::select_behavior(bool move_to_end)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->select_behavior(move_to_end);
 		}
 
 		//Override _m_caption for caption()

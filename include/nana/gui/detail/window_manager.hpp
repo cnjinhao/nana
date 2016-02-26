@@ -136,7 +136,7 @@ namespace detail
 
 		std::vector<core_window_t*> get_children(core_window_t*) const;
 		bool set_parent(core_window_t* wd, core_window_t* new_parent);
-		core_window_t* set_focus(core_window_t*, bool root_has_been_focused);
+		core_window_t* set_focus(core_window_t*, bool root_has_been_focused, arg_focus::reason);
 
 		core_window_t* capture_redirect(core_window_t*);
 		void capture_ignore_children(bool ignore);

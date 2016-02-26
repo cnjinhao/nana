@@ -283,8 +283,14 @@ namespace API
 	cursor window_cursor(window);
 
 	void activate_window(window);
+
+	/// Determines whether the specified window will get the keyboard focus when its root window gets native system focus. 
 	bool is_focus_ready(window);
+
+	/// Returns the current keyboard focus window.
 	window focus_window();
+
+	/// Sets the keyboard focus for a specified window.
 	void focus_window(window);
 
 	window	capture_window();

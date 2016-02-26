@@ -117,8 +117,9 @@ namespace nana{
 			nana::paint::graphics	root_graph;
 			shortkey_container		shortkeys;
 
-			struct condition_tag
+			struct condition_rep
 			{
+				bool			ignore_tab{ false };			//ignore tab when the focus is changed by pressing tab.
 				core_window_t*	pressed{nullptr};				//The handle to a window which has been pressed by pressing left button of mouse.
 				core_window_t*	pressed_by_space{ nullptr };	//The handle to a window which has been pressed by pressing spacebar.
 				core_window_t*	hovered{nullptr};				//the latest window that mouse moved

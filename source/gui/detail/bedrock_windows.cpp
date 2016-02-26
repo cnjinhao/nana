@@ -549,6 +549,7 @@ namespace detail
 		arg.window_handle = reinterpret_cast<window>(wd);
 		arg.receiver = recv;
 		arg.getting = getting;
+		arg.focus_reason = arg_focus::reason::general;
 	}
 
 	void assign_arg(arg_wheel& arg, basic_window* wd, const parameter_decoder& pmdec)
@@ -882,7 +883,7 @@ namespace detail
 					arg_focus arg;
 					assign_arg(arg, focus, native_window, true);
 					if (!brock.emit(event_code::focus, focus, arg, true, &context))
-						brock.wd_manager().set_focus(msgwnd, true);
+						brock.wd_manager().set_focus(msgwnd, true, arg_focus::reason::general);
 				}
 				def_window_proc = true;
 				break;
@@ -922,7 +923,7 @@ namespace detail
 				{
 					if (msgwnd->flags.take_active && !msgwnd->flags.ignore_mouse_focus)
 					{
-						auto killed = brock.wd_manager().set_focus(msgwnd, false);
+						auto killed = brock.wd_manager().set_focus(msgwnd, false, arg_focus::reason::mouse_press);
 						if (killed != msgwnd)
 							brock.wd_manager().do_lazy_refresh(killed, false);
 					}
@@ -964,7 +965,7 @@ namespace detail
 						auto new_focus = (msgwnd->flags.take_active ? msgwnd : msgwnd->other.active_window);
 						if (new_focus && (!new_focus->flags.ignore_mouse_focus))
 						{
-							auto kill_focus = brock.wd_manager().set_focus(new_focus, false);
+							auto kill_focus = brock.wd_manager().set_focus(new_focus, false, arg_focus::reason::mouse_press);
 							if (kill_focus != new_focus)
 								brock.wd_manager().do_lazy_refresh(kill_focus, false);
 						}
@@ -1383,7 +1384,7 @@ namespace detail
 
 						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
 						if (set_focus)
-							brock.wd_manager().set_focus(msgwnd, false);
+							brock.wd_manager().set_focus(msgwnd, false, arg_focus::reason::general);
 
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_release;
@@ -1414,14 +1415,16 @@ namespace detail
 					if(msgwnd)
 					{
 						auto & wd_manager = brock.wd_manager();
-						if((VK_TAB == wParam) && (!msgwnd->visible || (false == (msgwnd->flags.tab & tab_type::eating)))) //Tab
+						
+						if ((VK_TAB == wParam) && (!msgwnd->visible || (false == (msgwnd->flags.tab & tab_type::eating)))) //Tab
 						{
 							bool is_forward = (::GetKeyState(VK_SHIFT) >= 0);
 
 							auto tstop_wd = wd_manager.tabstop(msgwnd, is_forward);
 							if (tstop_wd)
 							{
-								wd_manager.set_focus(tstop_wd, false);
+								root_runtime->condition.ignore_tab = true;
+								wd_manager.set_focus(tstop_wd, false, arg_focus::reason::tabstop);
 								wd_manager.do_lazy_refresh(msgwnd, false);
 								wd_manager.do_lazy_refresh(tstop_wd, true);
 							}
@@ -1479,8 +1482,10 @@ namespace detail
 				msgwnd = brock.focus();
 				if (msgwnd && msgwnd->flags.enabled)
 				{
-					// When tab is pressed, only tab-eating mode is allowed
-					if ((9 != wParam) || (msgwnd->flags.tab & tab_type::eating))
+					auto & wd_manager = brock.wd_manager();
+
+					//Only accept tab when it is not ignored.
+					if (VK_TAB != wParam || !root_runtime->condition.ignore_tab)
 					{
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_char;
@@ -1490,55 +1495,62 @@ namespace detail
 						arg.ignore = false;
 
 						msgwnd->together.events_ptr->key_char.emit(arg);
-						if ((false == arg.ignore) && brock.wd_manager().available(msgwnd))
+						if ((false == arg.ignore) && wd_manager.available(msgwnd))
 							brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
 
-						brock.wd_manager().do_lazy_refresh(msgwnd, false);
+						wd_manager.do_lazy_refresh(msgwnd, false);
 					}
 				}
 				return 0;
 			case WM_KEYUP:
 				if(wParam != VK_MENU) //MUST NOT BE AN ALT
 				{
-					msgwnd = brock.focus();
-					if(msgwnd)
+					if (VK_TAB == wParam && root_runtime->condition.ignore_tab)
 					{
-						if (msgwnd == pressed_wd_space)
+						root_runtime->condition.ignore_tab = false;
+					}
+					else
+					{
+						msgwnd = brock.focus();
+						if (msgwnd)
 						{
-							msgwnd->flags.action = mouse_action::normal;
-
-							arg_click click_arg;
-							click_arg.mouse_args = nullptr;
-							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
-
-							auto retain = msgwnd->together.events_ptr;
-							if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
+							if (msgwnd == pressed_wd_space)
 							{
-								arg_mouse arg;
-								arg.alt = false;
-								arg.button = ::nana::mouse::left_button;
-								arg.ctrl = false;
-								arg.evt_code = event_code::mouse_up;
-								arg.left_button = true;
-								arg.mid_button = false;
-								arg.pos.x = 0;
-								arg.pos.y = 0;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								msgwnd->flags.action = mouse_action::normal;
 
-								emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
-								brock.wd_manager().do_lazy_refresh(msgwnd, false);
+								arg_click click_arg;
+								click_arg.mouse_args = nullptr;
+								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+								auto retain = msgwnd->together.events_ptr;
+								if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
+								{
+									arg_mouse arg;
+									arg.alt = false;
+									arg.button = ::nana::mouse::left_button;
+									arg.ctrl = false;
+									arg.evt_code = event_code::mouse_up;
+									arg.left_button = true;
+									arg.mid_button = false;
+									arg.pos.x = 0;
+									arg.pos.y = 0;
+									arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+									emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+									brock.wd_manager().do_lazy_refresh(msgwnd, false);
+								}
+								pressed_wd_space = nullptr;
 							}
-							pressed_wd_space = nullptr;
-						}
-						else
-						{
-							arg_keyboard arg;
-							arg.evt_code = event_code::key_release;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
-							arg.key = static_cast<wchar_t>(wParam);
-							brock.get_key_state(arg);
-							arg.ignore = false;
-							brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+							else
+							{
+								arg_keyboard arg;
+								arg.evt_code = event_code::key_release;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.key = static_cast<wchar_t>(wParam);
+								brock.get_key_state(arg);
+								arg.ignore = false;
+								brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+							}
 						}
 					}
 				}
@@ -1625,7 +1637,7 @@ namespace detail
 		if ((!wd) && pre && (pre->root != get_menu()))
 		{
 			internal_scope_guard lock;
-			wd_manager().set_focus(pre, false);
+			wd_manager().set_focus(pre, false, arg_focus::reason::general);
 			wd_manager().update(pre, true, false);
 		}
 	}

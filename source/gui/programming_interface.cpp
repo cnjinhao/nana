@@ -929,7 +929,7 @@ namespace API
 
 	void focus_window(window wd)
 	{
-		restrict::wd_manager().set_focus(reinterpret_cast<basic_window*>(wd), false);
+		restrict::wd_manager().set_focus(reinterpret_cast<basic_window*>(wd), false, arg_focus::reason::general);
 		restrict::wd_manager().update(reinterpret_cast<basic_window*>(wd), false, false);
 	}
 
@@ -1171,7 +1171,7 @@ namespace API
 	window move_tabstop(window wd, bool next)
 	{
 		basic_window* ts_wd = restrict::wd_manager().tabstop(reinterpret_cast<basic_window*>(wd), next);
-		restrict::wd_manager().set_focus(ts_wd, false);
+		restrict::wd_manager().set_focus(ts_wd, false, arg_focus::reason::general);
 		restrict::wd_manager().update(ts_wd, false, false);
 		return reinterpret_cast<window>(ts_wd);
 	}
