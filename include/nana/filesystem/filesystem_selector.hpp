@@ -55,13 +55,7 @@ namespace std {
 namespace std {
 	namespace experimental {
 		namespace filesystem {
-
-#       ifdef CXX_NO_INLINE_NAMESPACE
-				using namespace boost::experimental::filesystem;
-#       else
-				using namespace boost::experimental::filesystem::v3;
-#       endif
-
+                  using namespace boost::filesystem;
 		} // filesystem
 	} // experimental
 } // std
