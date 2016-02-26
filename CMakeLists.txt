@@ -11,6 +11,11 @@
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
 
+#  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
+#  https://bbs.archlinux.org/viewtopic.php?id=84967
+project(nana)
+cmake_minimum_required(VERSION 2.8)
+
 set(NANA_LINKS)
 
 option(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
@@ -22,7 +27,7 @@ option(ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
 option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
 option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
-option(INCLUDE_EXPERIMENTAL_DEMOS "" OFF)
+option(INCLUDE_EXPERIMENTAL_DEMOS "" ON)
 
 # The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
@@ -45,7 +50,6 @@ option(CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available 
 #option(CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
 #include_directories("${CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT}")
 #list(APPEND NANA_LINKS "${CMAKE_BOOST_FILESYSTEM_LIB}")
-
 
 
 if (CMAKE_NANA_FILESYSTEM_FORCE)
@@ -78,8 +82,6 @@ elseif (CMAKE_FIND_BOOST_FILESYSTEM OR CMAKE_BOOST_FILESYSTEM_FORCE)
 endif (CMAKE_FIND_BOOST_FILESYSTEM OR CMAKE_BOOST_FILESYSTEM_FORCE)
 
 
-project(nana)
-cmake_minimum_required(VERSION 2.8)
 
 # Compatibility with CMake 3.1
 if(POLICY CMP0054)
@@ -230,9 +232,9 @@ set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 if (BUILD_NANA_DEMOS)
 
     set (demos    calculator  notepad widget_show widget_show2      )
-	if (INCLUDE_EXPERIMENTAL_DEMOS)
+	#if (INCLUDE_EXPERIMENTAL_DEMOS)
 	    list(APPEND demos  file_explorer)  
-	endif (INCLUDE_EXPERIMENTAL_DEMOS)
+	#endif (INCLUDE_EXPERIMENTAL_DEMOS)
     # Pending:      FreeMe
 
     foreach ( demo ${demos})
