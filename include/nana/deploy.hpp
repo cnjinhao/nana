@@ -93,6 +93,7 @@ namespace std
 #endif
 
 #ifdef STD_put_time_NOT_SUPPORTED
+#include <ctime>
 namespace std
 {
 	//Workaround for no implemenation of std::put_time in gcc < 5.
