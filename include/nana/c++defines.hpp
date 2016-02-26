@@ -135,7 +135,7 @@
 	#endif
 
 
-	#if ((__GNUC__ > 5)   )
+	#if ((__GNUC__ < 5)   )
 	#	defie STD_put_time_NOT_SUPPORTED
     #endif
 
