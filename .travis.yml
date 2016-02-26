@@ -23,6 +23,8 @@ matrix:
             - libboost-filesystem-dev
           sources: 
             - ubuntu-toolchain-r-test
+			
+  allow_failures:					
     - env: CXX=g++-4.9 CC=gcc-4.9
       addons:
         apt:
