@@ -15,6 +15,7 @@
 #ifndef NANA_FILESYSTEM_EXT_HPP
 #define NANA_FILESYSTEM_EXT_HPP
 
+#include <iomanip>
 #include <nana/filesystem/filesystem_selector.hpp>
 
 namespace nana {namespace experimental {namespace filesystem {namespace ext {
