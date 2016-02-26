@@ -232,9 +232,9 @@ set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 if (BUILD_NANA_DEMOS)
 
     set (demos    calculator  notepad widget_show widget_show2      )
-	#if (INCLUDE_EXPERIMENTAL_DEMOS)
+	if (INCLUDE_EXPERIMENTAL_DEMOS)
 	    list(APPEND demos  file_explorer)  
-	#endif (INCLUDE_EXPERIMENTAL_DEMOS)
+	endif (INCLUDE_EXPERIMENTAL_DEMOS)
     # Pending:      FreeMe
 
     foreach ( demo ${demos})
