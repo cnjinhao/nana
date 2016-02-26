@@ -110,6 +110,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			return pathstr_.compare(p.pathstr_);
 		}
 
+		/// true if the path is empty, false otherwise. ??
 		bool path::empty() const noexcept
 		{
 #if defined(NANA_WINDOWS)
@@ -122,17 +123,20 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		path path::extension() const
 		{
+			// todo: make more globlal
 #if defined(NANA_WINDOWS)
-			auto pos = pathstr_.find_last_of(L"\\/.");
+            auto SLorP=L"\\/.";
+			auto P=L'.';
 #else
-			auto pos = pathstr_.find_last_of("\\/.");
+			auto SLorP="\\/.";
+			auto P='.';
 #endif
-			if ((pos == pathstr_.npos) || (pathstr_[pos] != '.'))
-				return path();
+			auto pos = pathstr_.find_last_of(SLorP);
 
-				
-			if (pos + 1 == pathstr_.size())
-				return path();
+			if (    ( pos == pathstr_.npos)
+				 || ( pathstr_[pos] != P )
+				 || ( pos + 1 == pathstr_.size()  ))
+			   return path();
 
 			return path(pathstr_.substr(pos));
 		}
