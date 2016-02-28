@@ -60,10 +60,8 @@ namespace std {
 	} // experimental
 } // std
 
-#elif (__GNUC__)
-#    include <experimental/filesystem>
 #else
-#    include <filesystem>
+#    include <experimental/filesystem>
 #endif
 
 #ifndef __cpp_lib_experimental_filesystem
