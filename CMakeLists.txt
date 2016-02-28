@@ -225,6 +225,10 @@ install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib)
 
+# Install include directories too.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/nana
+        DESTINATION include)
+
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 # TODO: move this nana-demo section to the nana demo repository, and here only include that cmake file
