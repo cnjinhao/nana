@@ -80,7 +80,7 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
 	set(Boost_USE_STATIC_RUNTIME ON)  # ??
 	#set(Boost_USE_MULTITHREADED ON)
 	
-endif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+endif (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
 
 
 
@@ -238,7 +238,7 @@ set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 if (NANA_CMAKE_BUILD_DEMOS)
 
-    set (demos    calculator  notepad widget_show widget_show2      )
+    set (demos    calculator helloworld_demo notepad widget_show widget_show2      )
 	if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
 	    list(APPEND demos  file_explorer)  
 	endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
