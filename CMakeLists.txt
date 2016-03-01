@@ -249,9 +249,6 @@ if (NANA_CMAKE_BUILD_DEMOS)
 	     add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
 	endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
 	
-	NANA_ADD_DEF_AUTOMATIC_GUI_TESTING
-	
-	
     set (demos    calculator helloworld_demo notepad widget_show widget_show2      )
 	if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
 	    list(APPEND demos  file_explorer)  
