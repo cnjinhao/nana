@@ -29,6 +29,9 @@ option(NANA_CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during comp
 option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(NANA_CMAKE_BUILD_DEMOS "Build all the demos form the nana_demo repository." OFF)
 option(NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS "" ON)
+option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
+option(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING "Add defoult automatic GUI test?" OFF)
+
 
 # The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
@@ -238,6 +241,17 @@ set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 if (NANA_CMAKE_BUILD_DEMOS)
 
+	if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+	     add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
+	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+
+	if(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
+	     add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
+	endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
+	
+	NANA_ADD_DEF_AUTOMATIC_GUI_TESTING
+	
+	
     set (demos    calculator helloworld_demo notepad widget_show widget_show2      )
 	if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
 	    list(APPEND demos  file_explorer)  
