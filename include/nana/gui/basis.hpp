@@ -1,15 +1,15 @@
-/*
+/**
+ *  \file basis.hpp
+ *  \brief This file provides basis class and data structures required by the GUI
+ *
  *	Basis Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/basis.hpp
- *
- *	This file provides basis class and data structrue that required by gui
  */
 
 #ifndef NANA_GUI_BASIS_HPP
@@ -151,7 +151,25 @@ namespace nana
 		appearance();
 		appearance(bool has_decoration, bool taskbar, bool floating, bool no_activate, bool min, bool max, bool sizable);
 	};
-    /// Provided to generate an appearance object with better readability and understandability   
+	
+	
+/** @brief Provided to generate an appearance object with better readability and understandability   
+ 
+A window has an appearance. This appearance can be specified when a window is being created. 
+To determine the appearance of a window there is a structure named nana::appearance with 
+a bool member for each feature with can be included or excluded in the "apereance" of the windows form. 
+But in practical development is hard to describe the style of the appearance using the struct nana::appearance.
+If a form would to be defined without min/max button and sizable border, then
+
+\code{.CPP}
+    nana::form form(x, y, width, height, nana::appearance(false, false, false, true, false));
+\endcode
+
+This piece of code may be confusing because of the 5 parameters of the constructor of `nana::form`. So the library provides a helper class for making it easy.  
+For better readability and understandability Nana provides three templates classes to generate an appearance object: 
+nana::appear::decorate, nana::appear::bald and nana::appear::optional. Each provide an operator 
+that return a corresponding nana::appearance with predefined values. 
+*/
 	struct appear
 	{
 		struct minimize{};
@@ -160,7 +178,20 @@ namespace nana
 		struct taskbar{};
 		struct floating{};
 		struct no_activate{};
-        /// Create an appearance of a window with "decoration"
+		
+        /** @brief Create an appearance of a window with "decoration" in non-client area, such as title bar
+         *  
+         *  We can create a form without min/max button and sizable border like this:  
+         * \code{.CPP}
+         * using nana::appear;
+         * nana::form form(x, y, width, height, appear::decorate<appear::taskbar>());
+         * \endcode
+		 * The appearance created by appear::decorate<>() has a titlebar and borders that are draw by the 
+		 * platform- window manager. If a window needs a minimize button, it should be:
+         * \code{.CPP}
+         * appear::decorate<appear::minimize, appear::taskbar>()
+         * \endcode
+         */
 		template<   typename Minimize = null_type,
 					typename Maximize = null_type,
 					typename Sizable = null_type,
@@ -181,7 +212,8 @@ namespace nana
 									);
 			}
 		};
-        /// Create an appearance of a window without "decoration"
+		
+        /// Create an appearance of a window without "decoration" with no titlebar and no 3D-look borders.
 		template < typename Taskbar  = null_type, 
                    typename Floating = null_type, 
                    typename NoActive = null_type, 
