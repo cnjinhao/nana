@@ -286,9 +286,6 @@ if (NANA_CMAKE_BUILD_DEMOS)
 	     add_custom_command( TARGET clicked POST_BUILD COMMAND clicked )
     endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 	
-add_custom_command(OUTPUT generated.cpp generated.hpp
-                   COMMAND marks-code-generator
-
 endif (NANA_CMAKE_BUILD_DEMOS)
 
 
