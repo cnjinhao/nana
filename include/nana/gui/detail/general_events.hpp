@@ -58,6 +58,7 @@ namespace nana
 	struct general_events;
 
     /// \brief the type of the members of general_events. 
+	
 	/// It connect the functions to be called as response to the event and manages that chain of responses
 	/// It is a functor, that get called to connect a "normal" response function, with normal "priority".
     /// If a response function need another priority (unignorable or called first) it will need to be connected with 
@@ -99,7 +100,8 @@ namespace nana
 			}
 		};
 
-		/// \breif RAII helper for emitting count.
+		/// \brief RAII helper for emitting count.
+		
 		/// It is used to avoid a try{}catch block which is required for some finial works when
 		/// event handlers throw exceptions.
 		class emit_counter
@@ -451,7 +453,8 @@ namespace nana
 		}
 	};
 
-    /// in arg_wheel event_code is event_code::mouse_wheel 
+    /// \brief in arg_wheel event_code is event_code::mouse_wheel 
+	
     /// The type arg_wheel is derived from arg_mouse, a handler 
     /// with prototype void(const arg_mouse&) can be set for mouse_wheel.
 	struct arg_wheel : public arg_mouse
