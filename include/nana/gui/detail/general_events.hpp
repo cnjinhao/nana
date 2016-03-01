@@ -57,13 +57,14 @@ namespace nana
 
 	struct general_events;
 
-    /// \brief the type of the members of general_events. 
-	
-	/// It connect the functions to be called as response to the event and manages that chain of responses
-	/// It is a functor, that get called to connect a "normal" response function, with normal "priority".
-    /// If a response function need another priority (unignorable or called first) it will need to be connected with 
-    /// the specific connect function not with the operator()	
-	/// It also permit to "emit" that event, calling all the active responders.
+    /** @brief the type of the members of general_events. 
+	*  
+	*   It connect the functions to be called as response to the event and manages that chain of responses
+	*   It is a functor, that get called to connect a "normal" response function, with normal "priority".
+    *   If a response function need another priority (unignorable or called first) it will need to be connected with 
+    *   the specific connect function not with the operator()	
+	*   It also permit to "emit" that event, calling all the active responders.
+	*/
 	template<typename Arg>
 	class basic_event : public detail::event_interface
 	{
