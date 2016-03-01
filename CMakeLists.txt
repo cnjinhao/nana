@@ -283,7 +283,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
     endforeach( demo ${demos})
 
     if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-	     add_custom_command( TARGET clicked POST_BUILD COMMAND clicked )
+	     #add_custom_command( TARGET clicked POST_BUILD COMMAND clicked )
     endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 	
 endif (NANA_CMAKE_BUILD_DEMOS)
