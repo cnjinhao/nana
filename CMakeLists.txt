@@ -31,6 +31,7 @@ option(NANA_CMAKE_BUILD_DEMOS "Build all the demos form the nana_demo repository
 option(NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS "" ON)
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
 option(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING "Add defoult automatic GUI test?" OFF)
+option(NANA_CMAKE_BUILD_FreeMe "Build FreeMe (currently broken)?" OFF)
 
 
 # The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
@@ -178,6 +179,10 @@ if(NANA_CMAKE_ENABLE_AUDIO)
     endif(UNIX)
 endif(NANA_CMAKE_ENABLE_AUDIO)
 
+if (NANA_CMAKE_BUILD_FreeMe)
+    add_definitions(-DBUILD_FreeMe)
+endif (NANA_CMAKE_BUILD_FreeMe)
+
 if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
@@ -250,10 +255,11 @@ if (NANA_CMAKE_BUILD_DEMOS)
 	endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
 	
     set (demos    calculator helloworld_demo notepad widget_show widget_show2      )
+
 	if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-	    list(APPEND demos  file_explorer)  
+	    list(APPEND demos  file_explorer FreeMe)
 	endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-    # Pending:      FreeMe
+    # Pending:      FreeMe (added but really completelly compiled if defined BUILD_FreeMe  )
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
