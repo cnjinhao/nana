@@ -18,8 +18,6 @@
 #include <iostream> 
 
 
-//#define NANA_AUTOMATIC_GUI_TESTING
-
 inline unsigned Wait(unsigned wait = 0)
 {
 #ifdef NANA_AUTOMATIC_GUI_TESTING
@@ -39,7 +37,7 @@ namespace nana
 		}
 	}
 
-	void exec(unsigned wait, std::function<void()> f )
+	void exec(unsigned wait, std::function<void()> f, unsigned wait_end, form *fm )
 	{
 		#ifdef NANA_ADD_DEF_AUTOMATIC_GUI_TESTING
 				if (!wait)
@@ -51,16 +49,21 @@ namespace nana
 		wait = Wait(wait);
 
 		std::cout << "Will wait " << wait << " sec...\n";
-		std::thread t([wait, &f]() 
+		std::thread t([wait, &f, wait_end, fm]()
 		              { if (wait) 
 		                   {   
 							   std::cout << "Waiting " << wait << " sec...\n";
 							   std::this_thread::sleep_for(std::chrono::seconds{ wait } ); 
-							   std::cout << "Waited !! running... \n"  ;
+							   std::cout << "running... \n"  ;
 		                       f(); 
-							   //API::exit();
-							   std::cout << "Runed... \n";
-		                   }
+							   std::cout << "Done... \n";
+							   std::cout << "Now waiting anothers " << wait << " sec...\n";
+							   std::this_thread::sleep_for(std::chrono::seconds{ wait_end } );
+							   std::cout << "Done... \n";
+							   if (fm)
+								   fm->close();
+							   API::exit();    // why not works?
+						   }
 		              });
 		
 		detail::bedrock::instance().pump_event(nullptr, false);

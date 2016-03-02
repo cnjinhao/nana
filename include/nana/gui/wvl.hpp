@@ -60,7 +60,7 @@ namespace nana
     template<typename Form, bool IsVisible = true>
     using form_loader = detail::form_loader<Form, IsVisible>;
 
-	void exec(unsigned wait = 0, std::function<void()> = {});
+	void exec(unsigned wait = 0, std::function<void()> = {}, unsigned wait_end=0, form *fm= nullptr);
  
 }//end namespace nana
 #endif
