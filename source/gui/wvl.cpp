@@ -18,7 +18,7 @@
 #include <iostream> 
 
 
-inline unsigned Wait(unsigned wait = 0)
+inline unsigned Wait_or_not(unsigned wait = 0)
 {
 #ifdef NANA_AUTOMATIC_GUI_TESTING
 	return wait;
@@ -46,7 +46,7 @@ namespace nana
 					f = []() {API::exit(); };
 		#endif
 
-		wait = Wait(wait);
+		wait = Wait_or_not(wait);
 
 		std::cout << "Will wait " << wait << " sec...\n";
 		std::thread t([wait, &f, wait_end, fm]()
@@ -57,7 +57,7 @@ namespace nana
 							   std::cout << "running... \n"  ;
 		                       f(); 
 							   std::cout << "Done... \n";
-							   std::cout << "Now waiting anothers " << wait << " sec...\n";
+							   std::cout << "Now waiting anothers " << wait_end << " sec...\n";
 							   std::this_thread::sleep_for(std::chrono::seconds{ wait_end } );
 							   std::cout << "Done... \n";
 							   if (fm)
