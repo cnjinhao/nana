@@ -181,6 +181,7 @@ if (NANA_CMAKE_BUILD_FreeMe)
     add_definitions(-DBUILD_FreeMe)
 endif (NANA_CMAKE_BUILD_FreeMe)
 
+
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
     add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
 
@@ -263,11 +264,24 @@ if (NANA_CMAKE_BUILD_DEMOS)
 	     add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
 	endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
 	
-    set (demos    calculator helloworld_demo notepad widget_show widget_show2      )
+    set (demos    calculator helloworld_demo notepad        )
 
-	if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-	    list(APPEND demos  file_explorer FreeMe)
-	endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+    foreach ( demo ${demos})
+        add_executable(${demo} "../nana-demo/${demo}.cpp")
+        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${demo} ${PROJECT_NAME})
+        if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+            add_custom_command( TARGET  ${demo} POST_BUILD COMMAND  ${demo} )
+        endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
+        message("... to build: ../nana-demo/${demo}.cpp" )
+    endforeach( demo ${demos})
+
+    set (demos       widget_show widget_show2      )
+
+    if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+        list(APPEND demos  file_explorer FreeMe)
+    endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
     # Pending:      FreeMe (added but really completelly compiled if defined BUILD_FreeMe  )
 
     foreach ( demo ${demos})
@@ -293,14 +307,10 @@ if (NANA_CMAKE_BUILD_DEMOS)
         set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
         target_link_libraries(${demo} ${PROJECT_NAME})
         install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/Examples/")
-
         message("... to build: ../nana-demo/Examples/${demo}.cpp" )
     endforeach( demo ${demos})
 
-    if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-	     #add_custom_command( TARGET clicked POST_BUILD COMMAND clicked )
-    endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-	
+
 endif (NANA_CMAKE_BUILD_DEMOS)
 
 
