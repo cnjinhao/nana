@@ -76,4 +76,25 @@ script:
   - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON -DNANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING=ON
   - make
   - ls
+  - ./clicked
+  - ./HelloWord
+  - ./background-effects
+  - ./categ
+  - ./decore
+  - ./dock
+  - ./drag-button
+  - ./draw
+  - ./file_explorer
+  #- ./example_menu
+  - ./example_listbox
+  #- ./example_combox
+  #- ./example.button
+  #- ./MontiHall
+  - ./a_group_impl
+  #- ./animate-bmp
+  #- ./calculator  
+  #- ./helloworld_demo 
+  #- ./notepad 
+  
+
 
