@@ -93,6 +93,21 @@
 	#endif
 #endif
 
+
+///////////////////
+//  Support for NANA_AUTOMATIC_GUI_TESTING
+//	  Will cause the program to self-test the GUI.
+//    If NANA_ADD_DEF_AUTOMATIC_GUI_TESTING is also defined a default automatic GUI test
+//    will be added to all programs which don't have yet one defined. This default test will simple
+//    wait 10 sec. (time to construct, show and execute the GUI) and then exit normally.
+//
+//#define NANA_AUTOMATIC_GUI_TESTING
+//#if defined(NANA_AUTOMATIC_GUI_TESTING)
+	//#define NANA_ADD_DEF_AUTOMATIC_GUI_TESTING
+//#endif
+
+
+
 #if !defined(VERBOSE_PREPROCESSOR)
 //#define VERBOSE_PREPROCESSOR
 #endif

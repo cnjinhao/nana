@@ -15,6 +15,8 @@
 #ifndef NANA_GUI_WVL_HPP
 #define NANA_GUI_WVL_HPP
 
+
+
 #include "programming_interface.hpp"
 #include "screen.hpp"
 #include "widgets/form.hpp"
@@ -58,6 +60,7 @@ namespace nana
     template<typename Form, bool IsVisible = true>
     using form_loader = detail::form_loader<Form, IsVisible>;
 
-	void exec();
+	void exec(unsigned wait = 0, std::function<void()> = {}, unsigned wait_end=0, form *fm= nullptr);
+ 
 }//end namespace nana
 #endif
