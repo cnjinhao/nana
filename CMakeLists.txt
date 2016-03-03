@@ -29,6 +29,10 @@ option(NANA_CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during comp
 option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
 option(NANA_CMAKE_BUILD_DEMOS "Build all the demos form the nana_demo repository." OFF)
 option(NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS "" ON)
+option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
+option(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING "Add defoult automatic GUI test?" OFF)
+option(NANA_CMAKE_BUILD_FreeMe "Build FreeMe (currently broken)?" OFF)
+
 
 # The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
@@ -109,8 +113,6 @@ if(WIN32)
             add_definitions(-DNANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
         endif(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
     endif(MINGW)
-elseif(WIN32)
-    set(BUILD_FreeMe OFF) 
 endif(WIN32)
 
 if(APPLE)
@@ -175,6 +177,22 @@ if(NANA_CMAKE_ENABLE_AUDIO)
     endif(UNIX)
 endif(NANA_CMAKE_ENABLE_AUDIO)
 
+if (NANA_CMAKE_BUILD_FreeMe)
+    add_definitions(-DBUILD_FreeMe)
+endif (NANA_CMAKE_BUILD_FreeMe)
+
+
+if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+    add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
+
+    if(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
+        add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
+    endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
+
+endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+
+
+
 if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
@@ -238,11 +256,36 @@ set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 if (NANA_CMAKE_BUILD_DEMOS)
 
-    set (demos    calculator helloworld_demo notepad widget_show widget_show2      )
-	if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-	    list(APPEND demos  file_explorer)  
-	endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-    # Pending:      FreeMe
+	if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+	     add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
+         enable_testing ()
+	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+
+	if(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
+	     add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
+	endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
+	
+    set (demos     helloworld_demo notepad        )
+
+    foreach ( demo ${demos})
+        add_executable(${demo} "../nana-demo/${demo}.cpp")
+        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${demo} ${PROJECT_NAME})
+        #if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+            #add_custom_command( TARGET  ${demo} POST_BUILD COMMAND  ${demo} )
+            #add_custom_target(do_always_${demo} ALL COMMAND ${demo})
+            add_test(${demo} COMMAND ${demo})
+        #endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
+        message("... to build: ../nana-demo/${demo}.cpp" )
+    endforeach( demo ${demos})
+
+    set (demos     calculator  widget_show widget_show2      )
+
+    if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+        list(APPEND demos  file_explorer FreeMe)
+    endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+    # Pending:      FreeMe (added but really completelly compiled if defined BUILD_FreeMe  )
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
@@ -267,9 +310,9 @@ if (NANA_CMAKE_BUILD_DEMOS)
         set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
         target_link_libraries(${demo} ${PROJECT_NAME})
         install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/Examples/")
-
         message("... to build: ../nana-demo/Examples/${demo}.cpp" )
     endforeach( demo ${demos})
+
 
 endif (NANA_CMAKE_BUILD_DEMOS)
 
@@ -308,5 +351,7 @@ message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = "  ${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_LIB          = "  ${NANA_CMAKE_BOOST_FILESYSTEM_LIB})
+message ( "NANA_CMAKE_AUTOMATIC_GUI_TESTING         = "  ${NANA_CMAKE_AUTOMATIC_GUI_TESTING})
+message ( "NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING = "  ${NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING})
 
 
