@@ -14,18 +14,9 @@
 #include <nana/gui/wvl.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <thread>
-
 #include <iostream> 
 
-
-inline unsigned Wait_or_not(unsigned wait = 0)
-{
-#ifdef NANA_AUTOMATIC_GUI_TESTING
-	return wait;
-#else
-	return 0;
-#endif
-}
+#define NANA_AUTOMATIC_GUI_TESTING
 
 namespace nana
 {
@@ -37,38 +28,60 @@ namespace nana
 		}
 	}
 
-	void exec(unsigned wait, std::function<void()> f, unsigned wait_end, form *fm )
+	void click(widget& w)
 	{
-		#ifdef NANA_ADD_DEF_AUTOMATIC_GUI_TESTING
-				if (!wait)
-					wait = 10;
-				if (!f)
-					f = []() {API::exit(); };
-		#endif
+		arg_click arg;
+		arg.window_handle = w.handle();
+		w.events().click.emit(arg);
+	}
 
-		wait = Wait_or_not(wait);
+	/// in seconds
+	void Wait(unsigned wait)
+	{
+		if (wait)
+			std::this_thread::sleep_for(std::chrono::seconds{ wait });
+	}
 
-		std::cout << "Will wait " << wait << " sec...\n";
-		std::thread t([wait, &f, wait_end, fm]()
-		              { if (wait) 
-		                   {   
-							   std::cout << "Waiting " << wait << " sec...\n";
-							   std::this_thread::sleep_for(std::chrono::seconds{ wait } ); 
-							   std::cout << "running... \n"  ;
-		                       f(); 
-							   std::cout << "Done... \n";
-							   std::cout << "Now waiting anothers " << wait_end << " sec...\n";
-							   std::this_thread::sleep_for(std::chrono::seconds{ wait_end } );
-							   std::cout << "Done... \n";
-							   if (fm)
-								   fm->close();
-							   API::exit();    // why not works?
-						   }
-		              });
-		
+	void pump()
+	{
 		detail::bedrock::instance().pump_event(nullptr, false);
+	}
 
+
+	void exec(form *main_form, //= nullptr, ///< used to close the program
+		unsigned wait,         // = 1,      ///< for the GUI to be constructed, in seconds  
+		unsigned wait_end,     // = 1,      ///< for the GUI to be destructed, in seconds
+		std::function<void()>f // = {}      ///< emit events to mimics user actions and may asert results
+	)
+	{
+	#ifdef NANA_AUTOMATIC_GUI_TESTING
+		//if (!wait)	
+		//	wait = 1;
+		//if (!main_form && !f)
+		//	f = []() {API::exit(); };
+			
+	    std::cout << "Will wait " << wait << " sec...\n";
+	    std::thread t([wait, &f, wait_end, main_form]()
+		            { if (wait) 
+		                {   
+							std::cout << "Waiting " << wait << " sec...\n";
+							Wait( wait );
+							std::cout << "running... \n"  ;
+		                    if (f) f(); 
+							std::cout << "Done... \n";
+							std::cout << "Now waiting anothers " << wait_end << " sec...\n";
+							Wait(wait_end);
+							std::cout << "Done... \n";
+							if (main_form)
+								 main_form->close();
+							API::exit();    // why not works?
+						}
+		            });		
+		pump();
 		if (t.joinable())
 			t.join();
+    #else
+			pump();
+	#endif
 	}
 }//end namespace nana
