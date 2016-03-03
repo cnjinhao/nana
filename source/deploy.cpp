@@ -436,6 +436,49 @@ namespace std
 }
 #endif
 
+//#ifdef STD_put_time_NOT_SUPPORTED
+#include  <ctime>
+#include  <cwchar>
+namespace std
+{
+	//Workaround for no implemenation of std::put_time in gcc < 5.
+	/* std unspecified return type */
+	//template< class CharT, class RTSTR >// let fail for CharT != char / wchar_t
+	//RTSTR put_time(const std::tm* tmb, const CharT* fmt);
+
+	//template<   >
+	std::string put_time/*<char, std::string>*/(const std::tm* tmb, const char* fmt)
+	{  
+		unsigned sz = 200;
+		std::string str(sz, '\0'); 
+		sz = std::strftime(&str[0], str.size() - 1, fmt, tmb);  
+		str.resize(sz);
+		return str;
+	}
+	//Defined in header <ctime>
+	//	std::size_t strftime(char* str, std::size_t count, const char* format, const std::tm* time);
+	//template<>
+	//std::wstring put_time<wchar_t, std::wstring>(const std::tm* tmb, const wchar_t* fmt)
+	//{
+	//	unsigned sz = 200;
+	//	std::wstring str(sz, L'\0');
+	//	sz = std::wcsftime(&str[0], str.size() - 1, fmt, tmb); 
+	//	str.resize(sz);
+	//	return str;
+	//}
+	// http://en.cppreference.com/w/cpp/chrono/c/wcsftime
+	// Defined in header <cwchar>
+	//	std::size_t wcsftime(wchar_t* str, std::size_t count, const wchar_t* format, const std::tm* time);
+	// Converts the date and time information from a given calendar time time to a null - terminated 
+	// wide character string str according to format string format.Up to count bytes are written.
+	//	Parameters
+	//	str - pointer to the first element of the wchar_t array for output
+	//	count - maximum number of wide characters to write
+	//	format - pointer to a null - terminated wide character string specifying the format of conversion.
+
+	}
+//#endif  // STD_put_time_NOT_SUPPORTED
+
 namespace nana
 {
 	bool is_utf8(const char* str, unsigned len)

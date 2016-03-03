@@ -15,6 +15,7 @@
 #ifndef NANA_FILESYSTEM_EXT_HPP
 #define NANA_FILESYSTEM_EXT_HPP
 
+#include <iomanip>
 #include <nana/filesystem/filesystem_selector.hpp>
 
 namespace nana {namespace experimental {namespace filesystem {namespace ext {
@@ -108,6 +109,54 @@ inline regular_file_only_iterator end(const regular_file_only_iterator&) noexcep
 {
 	return{};
 }
-    
+
+inline std::string pretty_file_size(const std::experimental::filesystem::path& path) // todo: move to .cpp
+{
+    try {
+        std::size_t bytes = std::experimental::filesystem::file_size ( path );
+        const char * ustr[] = { " KB", " MB", " GB", " TB" };
+        std::stringstream ss;
+        if (bytes < 1024)
+            ss << bytes << " Bytes";
+        else
+        {
+            double cap = bytes / 1024.0;
+            std::size_t uid = 0;
+            while ((cap >= 1024.0) && (uid < sizeof(ustr) / sizeof(char *)))
+            {
+                cap /= 1024.0;
+                ++uid;
+            }
+            ss << cap;
+            auto s = ss.str();
+            auto pos = s.find('.');
+            if (pos != s.npos)
+            {
+                if (pos + 2 < s.size())
+                    s.erase(pos + 2);
+            }
+            return s + ustr[uid];
+        }
+
+        return ss.str();
+    }
+    catch (...) {}
+    return {};
+}
+
+inline std::string pretty_file_date(const std::experimental::filesystem::path& path) // todo: move to .cpp
+{
+    try {
+        auto ftime = std::experimental::filesystem::last_write_time(path);
+        std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
+        std::stringstream tm;
+        tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
+        return tm.str();
+    }
+    catch (...) {
+        return {};
+    }
+}
+
 }}}}
 #endif //NANA_FILESYSTEM_EXT_HPP

@@ -31,6 +31,7 @@
  *	- _SCL_SECURE_NO_WARNNGS, _CRT_SECURE_NO_DEPRECATE (VC)
  *	- STD_CODECVT_NOT_SUPPORTED (VC RC, <codecvt> is a known issue on libstdc++, it works on libc++)
  *	- STD_THREAD_NOT_SUPPORTED (GCC < 4.8.1)
+ *	- STD_put_time_NOT_SUPPORTED (GCC < 5)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED (MinGW with GCC < 4.8.1)
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
@@ -133,8 +134,13 @@
 		#endif
 	#endif
 
+
+	#if ((__GNUC__ < 5)   )
+	#	define STD_put_time_NOT_SUPPORTED
+    #endif
+
     #if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
-		#undef STD_FILESYSTEM_NOT_SUPPORTED
+	#	undef STD_FILESYSTEM_NOT_SUPPORTED
     #endif
 
 	#if (__GNUC__ == 4)

@@ -20,6 +20,7 @@ matrix:
             - alsa-oss
             - libx11-dev
             - libxft-dev
+            - libboost-filesystem-dev
           sources: 
             - ubuntu-toolchain-r-test
     - env: CXX=g++-4.9 CC=gcc-4.9
@@ -55,7 +56,7 @@ matrix:
             - llvm-toolchain-precise 
 
 before_install:
-  - git clone --depth=50 --branch=dev_dir_it https://github.com/qPCR4vir/nana-demo.git nana-demo
+  - git clone --depth=50 --branch=dev_nana_in_examples https://github.com/qPCR4vir/nana-demo.git nana-demo
   - export PATH="$HOME/bin:$PATH"
   - mkdir ~/bin
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Linux-x86_64.sh || true
@@ -69,6 +70,6 @@ before_script :
   - cd bld
 
 script:
-  - cmake -G"Unix Makefiles" .. -DENABLE_JPEG=ON -DENABLE_PNG=OFF -DBUILD_NANA_DEMOS=ON -DENABLE_AUDIO=OFF
+  - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=ON
    
   - make

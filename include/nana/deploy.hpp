@@ -92,6 +92,25 @@ namespace std
 }
 #endif
 
+#ifdef STD_put_time_NOT_SUPPORTED
+#include <ctime>
+namespace std
+{
+	//Workaround for no implemenation of std::put_time in gcc < 5.
+	/* std unspecified return type */
+	//template< class CharT, class RTSTR >// let fail for CharT != char / wchar_t
+	//RTSTR put_time(const std::tm* tmb, const CharT* fmt);
+
+	//template<   >
+	std::string put_time/*<char, std::string>*/(const std::tm* tmb, const char* fmt);
+
+	//Defined in header <ctime>
+	//	std::size_t strftime(char* str, std::size_t count, const char* format, const std::tm* time);
+	//template<>
+	//std::wstring put_time<wchar_t, std::wstring>(const std::tm* tmb, const wchar_t* fmt);
+}
+#endif  // STD_put_time_NOT_SUPPORTED
+
 namespace nana
 {
 	/// Checks whether a specified text is utf8 encoding

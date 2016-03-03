@@ -11,17 +11,26 @@
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
 
-option(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
-option(ENABLE_PNG "Enable the use of PNG" OFF)
-option(LIBPNG_FROM_OS "Use libpng from operating system." ON)
-option(ENABLE_JPEG "Enable the use of JPEG" OFF)
-option(LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
-option(ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
-option(CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
-option(CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
-option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF)
+#  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
+#  https://bbs.archlinux.org/viewtopic.php?id=84967
+project(nana)
+cmake_minimum_required(VERSION 2.8)
 
-# The ISO C++ File System Technical Specification is optional.
+set(NANA_LINKS)
+
+option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
+option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
+option(NANA_CMAKE_ENABLE_PNG "Enable the use of PNG" OFF)
+option(NANA_CMAKE_LIBPNG_FROM_OS "Use libpng from operating system." ON)
+option(NANA_CMAKE_ENABLE_JPEG "Enable the use of JPEG" OFF)
+option(NANA_CMAKE_LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
+option(NANA_CMAKE_ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
+option(NANA_CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." OFF)
+option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." ON)
+option(NANA_CMAKE_BUILD_DEMOS "Build all the demos form the nana_demo repository." OFF)
+option(NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS "" ON)
+
+# The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
 # This is not a workaround, but an user option.
 # The library maybe available in the std library in use or from Boost (almost compatible)
@@ -29,31 +38,51 @@ option(BUILD_NANA_DEMOS "Build all the demos form the nana_demo repository." OFF
 # or you can choose to use the (partial, but functional) implementation provided by nana.
 # If you include the file <nana/filesystem/filesystem_selector.hpp>
 # The selected option will be set by nana into std::experimental::filesystem
-# By default Nana will use the ISO TS if available, or nana if not.
-# Boost will be use only if you change one of the following:
-option(CMAKE_BOOST_FILESYSTEM_AVAILABLE "Is Boost filesystem available?" OFF)
-option(NANA_BOOST_FILESYSTEM_PREFERRED "Is Boost filesystem preferred over nana?" OFF)
-option(CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over ISO)?" OFF)
-option(CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
-option(CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
+# By default Nana will try to use the STD. If not available will try 
+# to use boost if available. Nana own implementation will be use only none of them are available.
+# You can change that default if you change one of the following 
+# (please don't define more than one of the _XX_FORCE options):
+option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" ON)
+option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
+option(NANA_CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
+option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
+# cmake will find the package self, if don't works set the following (please find the correct values):
+#option(NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
+#option(NANA_CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
+#include_directories("${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT}")
+#list(APPEND NANA_LINKS "${NANA_CMAKE_BOOST_FILESYSTEM_LIB}")
 
-set(NANA_LINKS)
 
-if (CMAKE_BOOST_FILESYSTEM_AVAILABLE)
-    if (CMAKE_BOOST_FILESYSTEM_PREFERED OR CMAKE_BOOST_FILESYSTEM_FORCE)
+if (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
+    add_definitions(-DNANA_FILESYSTEM_FORCE)
+	
+elseif (NANA_CMAKE_STD_FILESYSTEM_FORCE)
+    add_definitions(-DSTD_FILESYSTEM_FORCE)
+	
+elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+
+	if (NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+        add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
+	endif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+	
+    # https://cmake.org/cmake/help/git-master/module/FindBoost.html
+	# Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied, 
+	# even if system is not specified when using find_package and if Boost::system is not added to target_link_libraries. 
+	# If using Boost::thread, then Thread::Thread will also be added automatically.
+    find_package(Boost COMPONENTS filesystem)
+	if (Boost_FOUND)
         add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
-        if (CMAKE_BOOST_FILESYSTEM_FORCE)
-            add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
-        else()
-            add_definitions(-DNANA_BOOST_FILESYSTEM_PREFERED)
-        endif()
-        include_directories("${CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT}")
-        list(APPEND NANA_LINKS "${CMAKE_BOOST_FILESYSTEM_LIB}")
-     endif (CMAKE_BOOST_FILESYSTEM_PREFERED OR CMAKE_BOOST_FILESYSTEM_FORCE)
-endif (CMAKE_BOOST_FILESYSTEM_AVAILABLE)
+		include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
+		list(APPEND NANA_LINKS "${Boost_LIBRARIES}")
+	endif (Boost_FOUND)
+	
+	set(Boost_USE_STATIC_LIBS ON)
+	set(Boost_USE_STATIC_RUNTIME ON)  # ??
+	#set(Boost_USE_MULTITHREADED ON)
+	
+endif (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
 
-project(nana)
-cmake_minimum_required(VERSION 2.8)
+
 
 # Compatibility with CMake 3.1
 if(POLICY CMP0054)
@@ -76,9 +105,9 @@ if(WIN32)
 	endif(MSVC)
 
     if(MINGW)
-        if(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
+        if(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
             add_definitions(-DNANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
-        endif(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
+        endif(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
     endif(MINGW)
 elseif(WIN32)
     set(BUILD_FreeMe OFF) 
@@ -106,34 +135,34 @@ if(UNIX)
 endif(UNIX)
 
 #Find PNG
-if(ENABLE_PNG)
+if(NANA_CMAKE_ENABLE_PNG)
     add_definitions(-DNANA_ENABLE_PNG)
     #set(NANA_PNG_LIB "png")
 	list(APPEND NANA_LINKS   -lpng )	
-    if(LIBPNG_FROM_OS)
+    if(NANA_CMAKE_LIBPNG_FROM_OS)
         find_package(PNG)
         if (PNG_FOUND)
             include_directories( ${PNG_INCLUDE_DIRS})
             add_definitions(-DUSE_LIBPNG_FROM_OS)
         endif(PNG_FOUND)
-    endif(LIBPNG_FROM_OS)
-endif(ENABLE_PNG)
+    endif(NANA_CMAKE_LIBPNG_FROM_OS)
+endif(NANA_CMAKE_ENABLE_PNG)
 
 #Find JPEG
-if(ENABLE_JPEG)
+if(NANA_CMAKE_ENABLE_JPEG)
     add_definitions(-DNANA_ENABLE_JPEG)
     #set(NANA_JPEG_LIB "jpeg")
 	list(APPEND NANA_LINKS   -ljpeg )	
-    if(LIBJPEG_FROM_OS)
+    if(NANA_CMAKE_LIBJPEG_FROM_OS)
         find_package(JPEG)
         if (JPEG_FOUND)
             include_directories( ${JPEG_INCLUDE_DIRS})
             add_definitions(-DUSE_LIBJPEG_FROM_OS)
         endif(JPEG_FOUND)
-    endif(LIBJPEG_FROM_OS)
-endif(ENABLE_JPEG)
+    endif(NANA_CMAKE_LIBJPEG_FROM_OS)
+endif(NANA_CMAKE_ENABLE_JPEG)
 
-if(ENABLE_AUDIO)
+if(NANA_CMAKE_ENABLE_AUDIO)
     add_definitions(-DNANA_ENABLE_AUDIO)
     if(UNIX)
         find_package(ASOUND)
@@ -144,11 +173,11 @@ if(ENABLE_AUDIO)
             message(FATAL_ERROR "libasound is not found")
         endif(ASOUND_FOUND)
     endif(UNIX)
-endif(ENABLE_AUDIO)
+endif(NANA_CMAKE_ENABLE_AUDIO)
 
-if(CMAKE_VERBOSE_PREPROCESSOR)
+if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
-endif(CMAKE_VERBOSE_PREPROCESSOR)
+endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
 
 
 set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
@@ -166,7 +195,7 @@ aux_source_directory(${NANA_SOURCE_DIR}/paint NANA_PAINT_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/paint/detail NANA_PAINT_DETAIL_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/system NANA_SYSTEM_SOURCE)
 aux_source_directory(${NANA_SOURCE_DIR}/threads NANA_THREADS_SOURCE)
-if(ENABLE_AUDIO)
+if(NANA_CMAKE_ENABLE_AUDIO)
     aux_source_directory(${NANA_SOURCE_DIR}/audio NANA_AUDIO_SOURCE)
     aux_source_directory(${NANA_SOURCE_DIR}/audio/detail NANA_AUDIO_DETAIL_SOURCE)
 endif()
@@ -197,14 +226,23 @@ install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib)
 
+# Install include directories too.
+if(NANA_CMAKE_INSTALL_INCLUDES)
+	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/nana
+			DESTINATION include)
+endif(NANA_CMAKE_INSTALL_INCLUDES)
+
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 # TODO: move this nana-demo section to the nana demo repository, and here only include that cmake file
 
-if (BUILD_NANA_DEMOS)
+if (NANA_CMAKE_BUILD_DEMOS)
 
-    set (demos    calculator notepad widget_show widget_show2      )
-    # Pending:    file_explorer  FreeMe
+    set (demos    calculator helloworld_demo notepad widget_show widget_show2      )
+	if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+	    list(APPEND demos  file_explorer)  
+	endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+    # Pending:      FreeMe
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
@@ -233,7 +271,7 @@ if (BUILD_NANA_DEMOS)
         message("... to build: ../nana-demo/Examples/${demo}.cpp" )
     endforeach( demo ${demos})
 
-endif (BUILD_NANA_DEMOS)
+endif (NANA_CMAKE_BUILD_DEMOS)
 
 
 # set compile  flags
@@ -262,6 +300,13 @@ message ( "COMPILER_IS_CLANG       = "  ${COMPILER_IS_CLANG})
 message ( "CMAKE_CXX_FLAGS         = "  ${CMAKE_CXX_FLAGS})
 message ( "CMAKE_COMPILER_IS_GNUCXX= "  ${CMAKE_COMPILER_IS_GNUCXX})
 message ( "CMAKE_EXE_LINKER_FLAGS  = "  ${CMAKE_EXE_LINKER_FLAGS})
+message ( "DESTDIR                 = "  ${DESTDIR})
+message ( "CMAKE_INSTALL_PREFIX    = "  ${CMAKE_INSTALL_PREFIX})
 message ( "NANA_LINKS              = "  ${NANA_LINKS})
-message ( "ENABLE_AUDIO            = "  ${ENABLE_AUDIO})
+message ( "NANA_CMAKE_ENABLE_AUDIO = "  ${NANA_CMAKE_ENABLE_AUDIO})
+message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
+message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
+message ( "NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = "  ${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT})
+message ( "NANA_CMAKE_BOOST_FILESYSTEM_LIB          = "  ${NANA_CMAKE_BOOST_FILESYSTEM_LIB})
+
 

@@ -112,7 +112,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	public:
 #if defined(NANA_WINDOWS)
 		using value_type = wchar_t;
-		const static value_type preferred_separator = '\\';  //? L'\\' ?
+		const static value_type preferred_separator = L'\\';  //? L'\\' ?
 #else
 		using value_type = char;
 		const static value_type preferred_separator = '/';
@@ -127,22 +127,40 @@ namespace nana  { namespace experimental { namespace filesystem
 			_m_assign(source);
 		}
 
+		// modifiers
+		//void clear() noexcept;
+		path& make_preferred();   
+		path& remove_filename();
+		//path& replace_filename(const path& replacement);
+		//path& replace_extension(const path& replacement = path());
+		//void swap(path& rhs) noexcept;
+
+		// decomposition
+		//path root_name() const;
+		//path root_directory() const;
+		//path root_path() const;
+		//path relative_path() const;
+		path parent_path() const;    
+		path filename() const;        
+		//path stem() const;
+		path extension() const;   
+
+		// query
+		bool empty() const noexcept; 
+		//bool has_root_name() const;
+		//bool has_root_directory() const;
+		//bool has_root_path() const;
+		//bool has_relative_path() const;
+		bool has_parent_path() const { return !parent_path().string().empty(); };   // temp;;
+		bool has_filename() const    { return !filename().string().empty(); };   // temp;
+		//bool has_stem() const;
+		bool has_extension() const   { return !extension().string().empty(); };   // temp
+		//bool is_absolute() const;
+		//bool is_relative() const;
 
 		int compare(const path& other) const;
 
-		bool empty() const;
-		path extension() const;
-
-		path parent_path() const;
 		file_type what() const;
-
-		//decomposition
-		path filename() const;
-
-		//modifiers
-		path& remove_filename();
-		
-
 
 		const value_type*c_str() const;
 		const string_type& native() const;
@@ -335,15 +353,20 @@ namespace nana  { namespace experimental { namespace filesystem
 	bool create_directory(const path& p, const path& attributes);
 	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
 	
-	bool modified_file_time(const path& p, struct tm&);
+	bool modified_file_time(const path& p, struct tm&);    ///< extention ?
+
+	/// The time of last data modification of p, determined as if by the value of the POSIX
+    /// stat structure member st_mtime obtained as if by POSIX stat().
+	file_time_type last_write_time(const path& p);
+	/// returns file_time_type::min() if an error occurs
+	//file_time_type last_write_time(const path& p, error_code& ec) noexcept;
 
 	path path_user();    ///< extention ?
-	
+
 	path current_path();
 	//path current_path(error_code& ec);
 	void current_path(const path& p);   ///< chdir
 	//void current_path(const path& p, error_code& ec) noexcept;    
-
 
 	bool remove(const path& p);
 	bool remove(const path& p, std::error_code& ec); // noexcept;

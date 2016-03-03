@@ -42,7 +42,7 @@ namespace nana
 		void events_operation_cancel(event_handle);
 	}//end namespace detail
 
-    /// base clase for all event argument types
+    /// base class for all event argument types
 	class event_arg
 	{
 	public:
@@ -57,7 +57,14 @@ namespace nana
 
 	struct general_events;
 
-    /// the type of the members of general_events 
+    /** @brief the type of the members of general_events. 
+	*  
+	*   It connect the functions to be called as response to the event and manages that chain of responses
+	*   It is a functor, that get called to connect a "normal" response function, with normal "priority".
+    *   If a response function need another priority (unignorable or called first) it will need to be connected with 
+    *   the specific connect function not with the operator()	
+	*   It also permit to "emit" that event, calling all the active responders.
+	*/
 	template<typename Arg>
 	class basic_event : public detail::event_interface
 	{
@@ -68,6 +75,8 @@ namespace nana
 			: public detail::docker_interface
 		{
 			basic_event * const event_ptr;
+			
+			/// the callback/response function taking the typed argument
 			std::function<void(arg_reference)> invoke;
 
 			bool flag_deleted{ false };
@@ -92,9 +101,10 @@ namespace nana
 			}
 		};
 
-		//class emit_counter is a RAII helper for emitting count
-		//It is used for avoiding a try{}catch block which is required for some finial works when
-		//event handlers throw exceptions.
+		/// \brief RAII helper for emitting count.
+		
+		/// It is used to avoid a try{}catch block which is required for some finial works when
+		/// event handlers throw exceptions.
 		class emit_counter
 		{
 		public:
@@ -133,11 +143,12 @@ namespace nana
 			using prototype = typename std::remove_reference<Function>::type;
 			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
 			auto evt = reinterpret_cast<event_handle>(dck.get());
-			dockers_->emplace(dockers_->begin(), std::move(dck));
+			dockers_->emplace(dockers_->begin(), std::move(dck));    // <----   the difference
 			detail::events_operation_register(evt);
 			return evt;
 		}
 
+		/// It will not get called if stop_propagation() was called.
 		event_handle connect(void (*fn)(arg_reference))
 		{
 			return connect([fn](arg_reference arg){
@@ -145,7 +156,7 @@ namespace nana
 			});
 		}
 
-		/// It will not get called if stop_propagation() was called.
+		/// It will not get called if stop_propagation() was called, because it is set at the end of the chain..
 		template<typename Function>
 		event_handle connect(Function && fn)
 		{
@@ -156,7 +167,7 @@ namespace nana
 			using prototype = typename std::remove_reference<Function>::type;
 			std::unique_ptr<detail::docker_interface> dck(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false));
 			auto evt = reinterpret_cast<event_handle>(dck.get());
-			dockers_->emplace_back(std::move(dck));
+			dockers_->emplace_back(std::move(dck));     // <----   the difference
 			detail::events_operation_register(evt);
 			return evt;
 		}
@@ -187,12 +198,14 @@ namespace nana
 			return evt;
 		}
 
+		/// how many responses are registered?
 		std::size_t length() const
 		{
 			internal_scope_guard lock;
 			return (nullptr == dockers_ ? 0 : dockers_->size());
 		}
 
+		/// by emitting the event it call each active response with the given arg.
 		void emit(arg_reference& arg)
 		{
 			internal_scope_guard lock;
@@ -205,7 +218,7 @@ namespace nana
 			const auto dockers_len = dockers.size();
 
 			//The dockers may resize when a new event handler is created by a calling handler.
-			//Traverses with position can avaid crash error which caused by a iterator which becomes invalid.
+			//Traverses with position can avoid crash error caused by an iterator which becomes invalid.
 			for (std::size_t pos = 0; pos < dockers_len; ++pos)
 			{
 				auto docker_ptr = static_cast<docker*>(dockers[pos].get());
@@ -221,7 +234,7 @@ namespace nana
 						if (!docker_ptr->unignorable || docker_ptr->flag_deleted)
 							continue;
 
-						docker_ptr->invoke(arg);
+						docker_ptr->invoke(arg);    // <---  finally call the response
 					}
 					break;
 				}
@@ -418,11 +431,11 @@ namespace nana
 		bool deleted_flags_{ false };
 		std::unique_ptr<std::vector<std::unique_ptr<detail::docker_interface>>> dockers_;
 	};
-
+ 
 	struct arg_mouse
 		: public event_arg
 	{
-		event_code evt_code; ///< 
+		event_code evt_code; ///< what kind of mouse event?
 		::nana::window window_handle;  ///< A handle to the event window
 		::nana::point pos;   ///< cursor position in the event window
 		::nana::mouse button;	///< indicates a button which triggers the event
@@ -441,7 +454,8 @@ namespace nana
 		}
 	};
 
-    /// in arg_wheel event_code is event_code::mouse_wheel 
+    /// \brief in arg_wheel event_code is event_code::mouse_wheel 
+	
     /// The type arg_wheel is derived from arg_mouse, a handler 
     /// with prototype void(const arg_mouse&) can be set for mouse_wheel.
 	struct arg_wheel : public arg_mouse
@@ -473,7 +487,7 @@ namespace nana
 	{
 		::nana::window window_handle;	      ///< A handle to the event window
 		::nana::native_window_type receiver;  ///< it is a native window handle, and specified which window receives focus
-		bool getting;	                      ///< the window received focus?
+		bool getting;	                      ///< the window received focus? (as oppose to losing focus)
 	};
 
 	struct arg_keyboard : public event_arg
@@ -518,7 +532,7 @@ namespace nana
 	{
 		::nana::window window_handle;	///< A handle to the event window
 	};
-
+    /// a higher level event argument than just mouse down
 	struct arg_click : public event_arg
 	{
 		::nana::window window_handle;	///< A handle to the event window
