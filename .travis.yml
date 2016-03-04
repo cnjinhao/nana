@@ -91,12 +91,12 @@ script:
   #- ./example_menu
   - ./example_listbox
   #- ./example_combox
-  - ./example.button
+  #- ./example.button  # ??
   - ./HelloWord
   #- ./MontiHall
   #- ./helloworld_demo 
   #- ./notepad 
-  - ./loader_2
+  #- ./loader_2
 
   
   
