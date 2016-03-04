@@ -17,7 +17,6 @@
 #include <iostream> 
 
 #define NANA_AUTOMATIC_GUI_TESTING
-
 namespace nana
 {
 	namespace detail

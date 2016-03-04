@@ -78,24 +78,25 @@ script:
   - ls
   - ./audio_player
   - ./a_group_impl
-  - ./animate-bmp
+  #- ./animate-bmp
   - ./background-effects
   - ./categ
-  - ./calculator
+  #- ./calculator
   - ./clicked 
   - ./decore
   - ./dock
   - ./drag-button
   - ./draw
   - ./file_explorer
-  - ./example_menu
+  #- ./example_menu
   - ./example_listbox
-  - ./example_combox
+  #- ./example_combox
   - ./example.button
   - ./HelloWord
-  - ./MontiHall
-  - ./helloworld_demo 
-  - ./notepad 
+  #- ./MontiHall
+  #- ./helloworld_demo 
+  #- ./notepad 
+  - ./loader_2
 
   
   
