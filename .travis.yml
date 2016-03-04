@@ -97,6 +97,7 @@ script:
   #- ./helloworld_demo 
   #- ./notepad 
   #- ./loader_2
+  #- ./widget_show2
 
   
   
