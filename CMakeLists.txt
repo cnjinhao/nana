@@ -271,7 +271,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
     set (demos    widget_show widget_show2      )
 
     if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-        list(APPEND demos  file_explorer FreeMe)    # ??
+        list(APPEND demos  FreeMe)    # ??
     endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
     # Pending:      FreeMe (added but really completelly compiled if defined BUILD_FreeMe  )
 
