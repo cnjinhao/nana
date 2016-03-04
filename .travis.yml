@@ -98,7 +98,7 @@ script:
   #- ./notepad 
   #- ./loader_2
   #- ./widget_show2
-
+  #- ./widget_show
   
   
 
