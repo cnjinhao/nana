@@ -24,6 +24,7 @@ build/makefile-bkl/*
 *.ilk
 *.log
 [Bb]in
+[Bb]in/
 [Dd]ebug*/
 *.lib
 *.a
