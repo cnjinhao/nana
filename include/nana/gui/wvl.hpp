@@ -23,6 +23,7 @@
 #include "msgbox.hpp"
 #include "place.hpp"
 
+
 namespace nana
 {
 	namespace detail

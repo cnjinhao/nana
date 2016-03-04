@@ -29,6 +29,7 @@ namespace nana
 
 	void click(widget& w)
 	{
+		std::cout << "Automatically clicking widget "<<w.caption()<<":\n";
 		arg_click arg;
 		arg.window_handle = w.handle();
 		w.events().click.emit(arg);
@@ -37,8 +38,9 @@ namespace nana
 	/// in seconds
 	void Wait(unsigned wait)
 	{
-		if (wait)
-			std::this_thread::sleep_for(std::chrono::seconds{ wait });
+		if (!wait) return;
+		std::cout << "waiting " << wait << " sec...\n";
+		std::this_thread::sleep_for(std::chrono::seconds{ wait });
 	}
 
 	void pump()
@@ -57,23 +59,31 @@ namespace nana
 		//if (!wait)	
 		//	wait = 1;
 		//if (!main_form && !f)
-		//	f = []() {API::exit(); };
+		//	f = []() {API::exit_all(); };
 			
 	    std::cout << "Will wait " << wait << " sec...\n";
 	    std::thread t([wait, &f, wait_end, main_form]()
 		            { if (wait) 
 		                {   
-							std::cout << "Waiting " << wait << " sec...\n";
 							Wait( wait );
 							std::cout << "running... \n"  ;
-		                    if (f) f(); 
+							if (f)
+							{
+								f();
+								std::cout << "\nCongratulations, this was not trivial !" << std::endl;
+							}else
+							{
+								std::cout << "\nJust a trivial test." << std::endl;
+							}
 							std::cout << "Done... \n";
-							std::cout << "Now waiting anothers " << wait_end << " sec...\n";
+							std::cout << "Now again ";
 							Wait(wait_end);
-							std::cout << "Done... \n";
-							if (main_form)
-								 main_form->close();
-							API::exit();    // why not works?
+							std::cout << "Done... Now closing the main form...\n";
+							/*if (main_form)
+								 main_form->close();*/
+							std::cout << "Closed... Now API::exit ...\n";
+							API::exit_all();    // why not works?
+							std::cout << "Done... Upps - this had not to appear !! \n";
 						}
 		            });		
 		pump();
