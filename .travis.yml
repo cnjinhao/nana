@@ -127,10 +127,10 @@ script:
   - ./png  
   #- ./screen  
   - ./stretch_image  
-  #- ./threading  # Press a char: 
+  - ./threading  
   - ./thread-pool  
   - ./various_events  
-  - ./window-dragger
+  #- ./window-dragger
   - ./windows-subclassing   
 
 
