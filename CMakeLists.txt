@@ -30,7 +30,6 @@ option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the 
 option(NANA_CMAKE_BUILD_DEMOS "Build all the demos form the nana_demo repository." OFF)
 option(NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS "" ON)
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
-option(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING "Add defoult automatic GUI test?" OFF)
 option(NANA_CMAKE_BUILD_FreeMe "Build FreeMe (currently broken)?" OFF)
 
 
@@ -177,10 +176,6 @@ if(NANA_CMAKE_ENABLE_AUDIO)
     endif(UNIX)
 endif(NANA_CMAKE_ENABLE_AUDIO)
 
-if (NANA_CMAKE_BUILD_FreeMe)
-    add_definitions(-DBUILD_FreeMe)
-endif (NANA_CMAKE_BUILD_FreeMe)
-
 if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
@@ -249,10 +244,6 @@ if (NANA_CMAKE_BUILD_DEMOS)
          enable_testing ()
 	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
-	if(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
-	     add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
-	endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
-	
     set (demos    calculator file_explorer helloworld_demo notepad        )
 
     foreach ( demo ${demos})
@@ -269,6 +260,10 @@ if (NANA_CMAKE_BUILD_DEMOS)
     endforeach( demo ${demos})
 
     set (demos    widget_show widget_show2      )
+
+if (NANA_CMAKE_BUILD_FreeMe)
+    add_definitions(-DBUILD_FreeMe)
+endif (NANA_CMAKE_BUILD_FreeMe)
 
     if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
         list(APPEND demos  FreeMe)    # ??

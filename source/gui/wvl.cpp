@@ -49,46 +49,39 @@ namespace nana
 	}
 
 
-	void exec(form *main_form, //= nullptr, ///< used to close the program
+	void exec(
 		unsigned wait,         // = 1,      ///< for the GUI to be constructed, in seconds  
 		unsigned wait_end,     // = 1,      ///< for the GUI to be destructed, in seconds
 		std::function<void()>f // = {}      ///< emit events to mimics user actions and may asert results
 	)
 	{
 	#ifdef NANA_AUTOMATIC_GUI_TESTING
-		//if (!wait)	
-		//	wait = 1;
-		//if (!main_form && !f)
-		//	f = []() {API::exit_all(); };
 			
 	    std::cout << "Will wait " << wait << " sec...\n";
-	    std::thread t([wait, &f, wait_end, main_form]()
-		            { if (wait) 
-		                {   
-							Wait( wait );
-							std::cout << "running... \n"  ;
-							if (f)
-							{
-								f();
-								std::cout << "\nCongratulations, this was not trivial !" << std::endl;
-							}else
-							{
-								std::cout << "\nJust a trivial test." << std::endl;
-							}
-							std::cout << "Done... \n";
-							std::cout << "Now again ";
-							Wait(wait_end);
-							std::cout << "Done... Now closing the main form...\n";
-							/*if (main_form)
-								 main_form->close();*/
-							std::cout << "Closed... Now API::exit ...\n";
-							API::exit_all();    // why not works?
-							std::cout << "Done... Upps - this had not to appear !! \n";
-						}
-		            });		
+
+	    std::thread t([wait, &f, wait_end]()
+			{ 
+				Wait( wait );
+				std::cout << "running... \n"  ;
+				if (f)
+				{
+					f();
+					std::cout << "\nCongratulations, this was not trivial !" << std::endl;
+				}else
+				{
+					std::cout << "\nJust a trivial test." << std::endl;
+				}
+				std::cout << "Done... \n";
+				std::cout << "Now again ";
+				Wait(wait_end);
+				std::cout << "Done... Now API::exit all ...\n";
+				API::exit_all();   
+			});		
+
 		pump();
 		if (t.joinable())
 			t.join();
+
     #else
 			pump();
 	#endif

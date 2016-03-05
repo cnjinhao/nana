@@ -66,9 +66,8 @@ namespace nana
 	///         from the underlying OS, interpreting and sending it with suitable arguments 
 	///         to the nana widgets that registered a response in the corresponding event.	
 	///         It also accept arguments to be used in case of automatic GUI testing.	
-	///         Other Way the arguments are ignored. It seems that only works in simple 
-	///         programs with only one active form ??
-	void exec(form *main_form = nullptr, ///< used to close the program
+	///         Other Way the arguments are ignored. 
+	void exec(
 		      unsigned wait = 1,         ///< for the GUI to be constructed, in seconds  
 		      unsigned wait_end = 1,     ///< for the GUI to be destructed, in seconds
 		      std::function<void()> = {} ///< emit events to mimics user actions and may asert results
