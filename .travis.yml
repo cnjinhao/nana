@@ -112,22 +112,22 @@ script:
   - ./listbox_inline_widget  
   - ./listbox_Resolver  
   - ./loader_1  
-  - ./loader_2  
+  #- ./loader_2  
   - ./mbox  
   - ./menu_debug  
-  - ./MontiHall
-  - ./helloworld_demo 
-  - ./notepad 
+  #- ./MontiHall
+  #- ./helloworld_demo 
+  #- ./notepad 
   - ./menu_debug  
   - ./menu_popuper  
-  - ./modal_form   
-  - ./widget_show2
-  - ./widget_show
+  #- ./modal_form   
+  #- ./widget_show2
+  #- ./widget_show
   - ./place_login  
   - ./png  
-  - ./screen  
+  #- ./screen  
   - ./stretch_image  
-  - ./threading  
+  #- ./threading  # Press a char: 
   - ./thread-pool  
   - ./various_events  
   - ./window-dragger
