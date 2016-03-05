@@ -128,7 +128,7 @@ script:
   #- ./screen  
   - ./stretch_image  
   - ./threading  
-  - ./thread-pool  
+  #- ./thread-pool  
   - ./various_events  
   #- ./window-dragger
   - ./windows-subclassing   
