@@ -106,9 +106,9 @@ script:
   - ./group
   - ./HelloWord
   #- ./helloword_quit
-  - ./inputbox  
+  #- ./inputbox  
   - ./label_listener  
-  - ./lambda_event.cpp11  
+  #- ./lambda_event.cpp11  
   - ./listbox_inline_widget  
   - ./listbox_Resolver  
   - ./loader_1  
@@ -118,8 +118,6 @@ script:
   - ./MontiHall
   - ./helloworld_demo 
   - ./notepad 
-  - ./loader_2
-  - ./mbox  
   - ./menu_debug  
   - ./menu_popuper  
   - ./modal_form   
