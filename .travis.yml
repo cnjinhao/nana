@@ -76,7 +76,7 @@ before_script :
   - cd bin
 
 script:
-  - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON -DNANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING=ON
+  - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
   - make
   - cd ..
   - mv -v bin/ nana-demo/
@@ -86,7 +86,7 @@ script:
   - ./animate-bmp
   - ./audio_player
   - ./background-effects
-  - ./calculator 
+  #- ./calculator 
   - ./categ
   - ./clicked
   - ./decore
@@ -94,18 +94,18 @@ script:
   - ./drag-button
   - ./draw
   - ./file_explorer
-  - ./example_menu
+  #- ./example_menu
   - ./example_listbox
-  - ./example_combox
+  #- ./example_combox
   - ./example.button
-  - ./folder_tree_nana
-  - ./folder_tree_std
+  #- ./folder_tree_nana
+  #- ./folder_tree_std
   - ./framework_design_1
   - ./framework_design_2
   - ./framework_design_3
   - ./group
   - ./HelloWord
-  - ./helloword_quit
+  #- ./helloword_quit
   - ./inputbox  
   - ./label_listener  
   - ./lambda_event.cpp11  

@@ -100,7 +100,7 @@
 //    will be added to all programs which don't have yet one defined. This default test will simple
 //    wait 10 sec. (time to construct, show and execute the GUI) and then exit normally.
 //
-#define NANA_AUTOMATIC_GUI_TESTING
+//#define NANA_AUTOMATIC_GUI_TESTING
 
 
 
