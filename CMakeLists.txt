@@ -30,7 +30,6 @@ option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the 
 option(NANA_CMAKE_BUILD_DEMOS "Build all the demos form the nana_demo repository." OFF)
 option(NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS "" ON)
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
-option(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING "Add defoult automatic GUI test?" OFF)
 option(NANA_CMAKE_BUILD_FreeMe "Build FreeMe (currently broken)?" OFF)
 
 
@@ -54,7 +53,7 @@ option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if avail
 #option(NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT "Where to find <boost/filesystem.hpp>?" "../")
 #option(NANA_CMAKE_BOOST_FILESYSTEM_LIB "Flag for the compiler to link: " "-lboost/fs")
 #include_directories("${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT}")
-#list(APPEND NANA_LINKS "${NANA_CMAKE_BOOST_FILESYSTEM_LIB}")
+#list(APPEND NANA_LINKS "${NANA_CMAKE_BOOST_FILESYSTEM_LIB}" )
 
 
 if (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
@@ -177,22 +176,6 @@ if(NANA_CMAKE_ENABLE_AUDIO)
     endif(UNIX)
 endif(NANA_CMAKE_ENABLE_AUDIO)
 
-if (NANA_CMAKE_BUILD_FreeMe)
-    add_definitions(-DBUILD_FreeMe)
-endif (NANA_CMAKE_BUILD_FreeMe)
-
-
-if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-    add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
-
-    if(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
-        add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
-    endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
-
-endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-
-
-
 if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
@@ -261,11 +244,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
          enable_testing ()
 	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
-	if(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
-	     add_definitions(-DNANA_ADD_DEF_AUTOMATIC_GUI_TESTING)
-	endif(NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING)
-	
-    set (demos     helloworld_demo notepad        )
+    set (demos    calculator file_explorer helloworld_demo notepad        )
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
@@ -274,16 +253,20 @@ if (NANA_CMAKE_BUILD_DEMOS)
         #if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
             #add_custom_command( TARGET  ${demo} POST_BUILD COMMAND  ${demo} )
             #add_custom_target(do_always_${demo} ALL COMMAND ${demo})
-            add_test(${demo} COMMAND ${demo})
+            #add_test(${demo} COMMAND ${demo})
         #endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
         install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
 
-    set (demos     calculator  widget_show widget_show2      )
+    set (demos    widget_show widget_show2      )
+
+if (NANA_CMAKE_BUILD_FreeMe)
+    add_definitions(-DBUILD_FreeMe)
+endif (NANA_CMAKE_BUILD_FreeMe)
 
     if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-        list(APPEND demos  file_explorer FreeMe)
+        list(APPEND demos  FreeMe)    # ??
     endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
     # Pending:      FreeMe (added but really completelly compiled if defined BUILD_FreeMe  )
 
@@ -300,7 +283,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
                   decore dock  drag-button  draw example.button example_combox example_listbox example_menu
                   filebox-txt folder_tree folder_tree_nana folder_tree_std framework_design_1 framework_design_2 framework_design_3
                   group HelloWord helloword_quit inputbox label_listener lambda_event.Cpp11 listbox_inline_widget listbox_Resolver loader_1 loader_2
-                  mbox menu_debug menu_popuper modal_form MontiHall place_login png screen stretch_image
+                  main mbox menu_debug menu_popuper modal_form MontiHall place_login png screen stretch_image
                   threading thread-pool various_events window-dragger windows-subclassing
                   )
     # Pending: 

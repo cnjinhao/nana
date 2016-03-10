@@ -1,4 +1,4 @@
-/*
+/**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,8 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/win32/bedrock.cpp
+ *	@file nana/gui/detail/win32/bedrock.cpp
+ *  @brief A Bedrock Implementation
  *	@contributors: Ariel Vina-Rodriguez
  */
 
@@ -18,6 +19,7 @@
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
+#include <iostream>
 #include <nana/system/timepiece.hpp>
 #include <nana/gui.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
@@ -254,6 +256,7 @@ namespace detail
 		{
 			std::stringstream ss;
 			ss<<"Nana.GUI detects a memory leaks in window_manager, "<<static_cast<unsigned>(wd_manager().number_of_core_window())<<" window(s) are not uninstalled.";
+			std::cerr << ss.str();  /// \todo add list of cations of open windows and if aut testin GUI do auto Ok after 2 sec.
 			::MessageBoxA(0, ss.str().c_str(), ("Nana C++ Library"), MB_OK);
 		}
 
@@ -261,8 +264,8 @@ namespace detail
 		delete pi_data_;
 	}
 
-	//inc_window
-	//@brief: increament the number of windows
+
+	/// @brief increament the number of windows in the thread id
 	int bedrock::inc_window(unsigned tid)
 	{
 		//impl refers to the object of private_impl, the object is created when bedrock is creating.
@@ -461,6 +464,7 @@ namespace detail
 		{
 			(msgbox(modal_window, "An exception during message pumping!").icon(msgbox::icon_information)
 				<<"An uncaptured non-std exception during message pumping!"
+				<< "\n   in form: " << API::window_caption(modal_window)
 				).show();
 			internal_scope_guard lock;
 			_m_except_handler();

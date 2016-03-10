@@ -1,20 +1,19 @@
-/*
+/**
  *	Nana GUI Library Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/wvl.hpp
- *	@description:
+ *	@file nana/gui/wvl.hpp
+ *	@description
  *		the header file contains the files required for running of Nana.GUI
  */
 
 #ifndef NANA_GUI_WVL_HPP
 #define NANA_GUI_WVL_HPP
-
 
 
 #include "programming_interface.hpp"
@@ -23,6 +22,7 @@
 #include "drawing.hpp"
 #include "msgbox.hpp"
 #include "place.hpp"
+
 
 namespace nana
 {
@@ -60,7 +60,25 @@ namespace nana
     template<typename Form, bool IsVisible = true>
     using form_loader = detail::form_loader<Form, IsVisible>;
 
-	void exec(unsigned wait = 0, std::function<void()> = {}, unsigned wait_end=0, form *fm= nullptr);
+	/// @brief  Take control of the GUI and optionaly automaticaly tests it.
+	///
+	/// @detail It transfers to nana the program flow control, which begin pumping messages 
+	///         from the underlying OS, interpreting and sending it with suitable arguments 
+	///         to the nana widgets that registered a response in the corresponding event.	
+	///         It also accept arguments to be used in case of automatic GUI testing.	
+	///         Other Way the arguments are ignored. 
+	void exec(
+		      unsigned wait = 1,         ///< for the GUI to be constructed, in seconds  
+		      unsigned wait_end = 1,     ///< for the GUI to be destructed, in seconds
+		      std::function<void()> = {} ///< emit events to mimics user actions and may asert results
+	         );
+
+	/// send a click message to this widget - useffull in GUI testing
+	void click(widget& w);
+
+	/// in seconds
+	void Wait(unsigned wait = 0);
+
  
 }//end namespace nana
 #endif
