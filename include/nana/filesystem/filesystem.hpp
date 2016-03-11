@@ -112,7 +112,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	public:
 #if defined(NANA_WINDOWS)
 		using value_type = wchar_t;
-		const static value_type preferred_separator = L'\\';  //? L'\\' ?
+		const static value_type preferred_separator = L'\\';
 #else
 		using value_type = char;
 		const static value_type preferred_separator = '/';
