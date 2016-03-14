@@ -1779,8 +1779,12 @@ namespace detail
 
 		_m_emit_core(evt_code, wd, false, arg);
 
-		if (ask_update)
-			wd_manager().do_lazy_refresh(wd, false);
+		//A child of wd may not be drawn if it was out of wd's range before wd resized,
+		//so refresh all children of wd when a resized occurs.
+		if (ask_update || (event_code::resized == evt_code))
+		{
+			wd_manager().do_lazy_refresh(wd, false, (event_code::resized == evt_code));
+		}
 		else if (wd_manager().available(wd))
 			wd->other.upd_state = basic_window::update_state::none;
 
@@ -1790,7 +1794,7 @@ namespace detail
 
 	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, thread_context* thrd)
 	{
-		if (bedrock_object.wd_manager().available(wd) == false)
+		if (wd_manager().available(wd) == false)
 			return false;
 
 		core_window_t* prev_event_wd;

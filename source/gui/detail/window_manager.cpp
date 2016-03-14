@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -833,7 +833,7 @@ namespace detail
 		//do_lazy_refresh
 		//@brief: defined a behavior of flush the screen
 		//@return: it returns true if the wnd is available
-		bool window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen)
+		bool window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen, bool refresh_tree)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -848,7 +848,7 @@ namespace detail
 				{
 					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
 					{
-						window_layer::paint(wd, false, false);
+						window_layer::paint(wd, false, refresh_tree);
 						this->map(wd, force_copy_to_screen);
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
@@ -857,7 +857,7 @@ namespace detail
 					}
 				}
 				else
-					window_layer::paint(wd, true, false);	//only refreshing if it has an invisible parent
+					window_layer::paint(wd, true, refresh_tree);	//only refreshing if it has an invisible parent
 			}
 			wd->other.upd_state = core_window_t::update_state::none;
 			return true;
