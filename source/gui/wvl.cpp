@@ -82,8 +82,12 @@ namespace nana
 		if (t.joinable())
 			t.join();
 
-    #else
-			pump();
+	#else
+		static_cast<void>(wait);
+		static_cast<void>(wait_end);
+		static_cast<void>(f); //to eliminte unused parameter compiler warning.
+
+		pump();
 	#endif
 	}
 }//end namespace nana

@@ -68,7 +68,7 @@ namespace nana
 			private:
 				implementation * const impl_;
 			};
-		};
+		}
 	}//end namespace drawerbase
 
 	/// Spinbox Widget

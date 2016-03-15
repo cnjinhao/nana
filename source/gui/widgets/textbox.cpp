@@ -88,7 +88,7 @@ namespace drawerbase {
 			editor_ = nullptr;
 		}
 
-		void drawer::refresh(graph_reference graph)
+		void drawer::refresh(graph_reference)
 		{
 			editor_->render(API::is_focus_ready(*widget_));
 		}
@@ -121,7 +121,7 @@ namespace drawerbase {
 				API::lazy_refresh();
 		}
 
-		void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
+		void drawer::mouse_up(graph_reference, const arg_mouse& arg)
 		{
 			if(editor_->mouse_pressed(arg))
 				API::lazy_refresh();

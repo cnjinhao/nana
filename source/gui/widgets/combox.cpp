@@ -615,7 +615,7 @@ namespace nana
 					}
 				}
 
-				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
+				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
 				{
 					//drawer_->set_mouse_press(true);
 					drawer_->set_button_state(element_state::pressed, false);
@@ -633,7 +633,7 @@ namespace nana
 					}
 				}
 
-				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
+				void trigger::mouse_up(graph_reference, const arg_mouse& arg)
 				{
 					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
 					{
@@ -660,7 +660,7 @@ namespace nana
 					}
 				}
 
-				void trigger::mouse_wheel(graph_reference graph, const arg_wheel& arg)
+				void trigger::mouse_wheel(graph_reference, const arg_wheel& arg)
 				{
 					if(drawer_->widget_ptr()->enabled())
 					{
@@ -718,7 +718,7 @@ namespace nana
 					API::lazy_refresh();
 				}
 
-				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
+				void trigger::key_char(graph_reference, const arg_keyboard& arg)
 				{
 					if (drawer_->editor()->respond_char(arg))
 						API::lazy_refresh();

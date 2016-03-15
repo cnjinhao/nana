@@ -524,7 +524,7 @@ namespace nana
 		//It will delete the element and recollocate when the window destroyed.
 		event_handle _m_make_destroy(window wd)
 		{
-			return API::events(wd).destroy.connect([this, wd](const arg_destroy& arg)
+			return API::events(wd).destroy.connect([this, wd](const arg_destroy&)
 			{
 				for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
 				{
@@ -1127,7 +1127,7 @@ namespace nana
 			}
 		}
 
-		void collocate(window wd) override
+		void collocate(window) override
 		{
 			if (!field || !(visible && display))
 				return;
@@ -1563,7 +1563,7 @@ namespace nana
 			}
 		}
 
-		void collocate(window wd) override
+		void collocate(window) override
 		{
 			if (!dockable_field)
 			{

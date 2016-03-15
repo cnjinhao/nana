@@ -429,7 +429,7 @@ namespace nana
 	private:
 		unsigned emitting_count_{ 0 };
 		bool deleted_flags_{ false };
-		std::unique_ptr<std::vector<std::unique_ptr<detail::docker_interface>>> dockers_;
+		std::unique_ptr<std::vector<std::unique_ptr<detail::docker_interface>>> dockers_{ nullptr };
 	};
  
 	struct arg_mouse

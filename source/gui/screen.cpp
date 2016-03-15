@@ -167,6 +167,8 @@ namespace nana
 				}
 			}
 		}
+#else
+		static_cast<void>(pos); //to eliminate unused parameter compiler warning.
 #endif
 		return get_primary();
 	}

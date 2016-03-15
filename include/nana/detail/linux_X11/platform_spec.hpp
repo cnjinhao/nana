@@ -60,6 +60,8 @@ namespace detail
 
 	class charset_conv
 	{
+		charset_conv(const charset_conv&) = delete;
+		charset_conv& operator=(const charset_conv*) = delete;
 	public:
 		charset_conv(const char* tocode, const char* fromcode);
 		~charset_conv();
@@ -118,6 +120,9 @@ namespace detail
 		void update_color();
 		void update_text_color();
 	private:
+		drawable_impl_type(const drawable_impl_type&) = delete;
+		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
+
 		unsigned current_color_{ 0xFFFFFF };
 		unsigned color_{ 0xFFFFFFFF };
 		unsigned text_color_{ 0xFFFFFFFF };

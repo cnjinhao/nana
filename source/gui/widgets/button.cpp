@@ -163,7 +163,7 @@ namespace nana{	namespace drawerbase
 			_m_press(graph, false);
 		}
 
-		void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
+		void trigger::key_press(graph_reference, const arg_keyboard& arg)
 		{
 			bool ch_tabstop_next;
 			switch(arg.key)

@@ -867,7 +867,7 @@ namespace paint
 				::DeleteObject(hBmp);
 				::DeleteDC(hdcMem);
 #elif defined(NANA_X11)
-
+				static_cast<void>(file_utf8);	//eliminate unused parameter compil warning.
 #endif
 			}
 		}
@@ -1201,6 +1201,10 @@ namespace paint
 					if(solid)
 						rectangle(::nana::rectangle(r).pare_off(1), true, solid_clr);
 				}
+
+				//eliminate unused parameter compiler warning.
+				static_cast<void>(radius_x);
+				static_cast<void>(radius_y);
 #endif
 			}
 		}

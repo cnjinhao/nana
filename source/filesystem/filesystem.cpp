@@ -813,6 +813,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 			bool remove(const path& p, std::error_code & ec)
 			{
+				ec.clear();
 				auto stat = status(p);
 				if (stat.type() == file_type::directory)
 					return detail::rm_dir(p);

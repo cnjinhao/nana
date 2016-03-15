@@ -337,9 +337,9 @@ namespace nana
 		bool operator==(const color& other) const;
 		bool operator!=(const color& other) const;
 	private:
-		double r_;
-		double g_;
-		double b_;
+		double r_{ 0.0 };
+		double g_{ 0.0 };
+		double b_{ 0.0 };
 		double a_{ 0.0 };	//invisible
 	};
 

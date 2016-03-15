@@ -173,6 +173,8 @@ namespace nana{
 									mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top);
 				}
 			}
+#else
+			static_cast<void>(pos); //eliminate unused parameter compiler warning.
 #endif
 			return rectangle{ primary_monitor_size() };
 		}
@@ -547,6 +549,8 @@ namespace nana{
 			activate_window(reinterpret_cast<native_window_type>(
 								::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER)
 							));
+#else
+			static_cast<void>(wd);	//eliminate unused parameter compiler warning.
 #endif
 		}
 
@@ -565,6 +569,8 @@ namespace nana{
 				else
 					::PostMessage(native_wd, nana::detail::messages::async_activate, 0, 0);
 			}
+#else
+			static_cast<void>(wd);	//eliminate unused parameter compiler warning.
 #endif
 		}
 
@@ -640,6 +646,7 @@ namespace nana{
 
 				::XFlush(disp);
 			}
+			static_cast<void>(active);	//eliminate unused parameter compiler warning.
 #endif
 		}
 
@@ -715,6 +722,7 @@ namespace nana{
 #if defined(NANA_WINDOWS)
 			::InvalidateRect(reinterpret_cast<HWND>(wd), nullptr, true);
 #elif defined(NANA_X11)
+			static_cast<void>(wd); //eliminate unused parameter compiler warning.
 #endif
 		}
 
@@ -963,6 +971,7 @@ namespace nana{
 			::SetWindowPos(native_wd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 			::AttachThreadInput(::GetCurrentThreadId(), fg_tid, FALSE);
 #else
+			static_cast<void>(activated); //eliminate unused parameter compiler warning.
 			set_window_z_order(wd, nullptr, z_order_action::top);
 #endif
 		}
@@ -1414,6 +1423,11 @@ namespace nana{
 				if(static_cast<unsigned>(y) > sz.height + ext_height)
 					sz.height = static_cast<unsigned>(y);
 			}
+#else
+			//eliminate unused parameter compiler warning.
+			static_cast<void>(ext_width);
+			static_cast<void>(ext_height);
+			static_cast<void>(true_for_max);
 #endif
 			return sz;
 		}

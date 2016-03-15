@@ -104,8 +104,7 @@ namespace API
 			{
 				if (iwd->effect.edge_nimbus == effects::edge_nimbus::none)
 				{
-					basic_window::edge_nimbus_action ena = { iwd };
-					cont.push_back(ena);
+					cont.push_back(basic_window::edge_nimbus_action{ iwd, false});
 				}
 				iwd->effect.edge_nimbus = static_cast<effects::edge_nimbus>(static_cast<unsigned>(en) | static_cast<unsigned>(iwd->effect.edge_nimbus));
 			}

@@ -53,7 +53,7 @@ namespace nana{	namespace widgets
 				return cmd_;
 			}
 
-			virtual bool merge(const undoable_command_interface<EnumCommand>& rhs) override
+			virtual bool merge(const undoable_command_interface<EnumCommand>&) override
 			{
 				return false;
 			}
@@ -273,8 +273,8 @@ namespace nana{	namespace widgets
 				: editor_(editor)
 			{}
 
-			void merge_lines(std::size_t first, std::size_t second) override{}
-			void add_lines(std::size_t pos, std::size_t lines) override{}
+			void merge_lines(std::size_t, std::size_t) override{}
+			void add_lines(std::size_t, std::size_t) override{}
 			void pre_calc_line(std::size_t, unsigned) override{}
 			void pre_calc_lines(unsigned) override{}
 
@@ -283,12 +283,12 @@ namespace nana{	namespace widgets
 				return editor_.textbase_.lines();
 			}
 
-			std::size_t take_lines(std::size_t pos) const override
+			std::size_t take_lines(std::size_t) const override
 			{
 				return 1;
 			}
 
-			void update_line(std::size_t textline, std::size_t secondary_before) override
+			void update_line(std::size_t textline, std::size_t) override
 			{
 				int top = editor_._m_text_top_base() + static_cast<int>(editor_.line_height() * (textline - editor_.points_.offset.y));
 				editor_.graph_.rectangle({ editor_.text_area_.area.x, top, editor_.text_area_.area.width, editor_.line_height() }, true, API::bgcolor(editor_.window_));

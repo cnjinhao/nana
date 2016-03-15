@@ -216,7 +216,7 @@ namespace nana{ namespace drawerbase
 			uiobj.check(false);
 			uiobj.react(false);
 
-			element_tag el = {};
+			element_tag el;
 
 			el.uiobj = &uiobj;
 

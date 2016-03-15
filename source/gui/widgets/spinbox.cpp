@@ -518,7 +518,7 @@ namespace nana
 				impl_->render();
 			}
 
-			void drawer::focus(graph_reference, const arg_focus& arg)
+			void drawer::focus(graph_reference, const arg_focus&)
 			{
 				impl_->reset_text();
 				impl_->render();
@@ -578,7 +578,7 @@ namespace nana
 				}
 			}
 
-			void drawer::resized(graph_reference graph, const arg_resized& arg)
+			void drawer::resized(graph_reference, const arg_resized&)
 			{
 				impl_->reset_text_area();
 				impl_->render();

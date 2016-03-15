@@ -432,13 +432,13 @@ namespace detail
 		platform_spec::instance().unlock_xlib();
 	}
 
-	int X11_error_handler(Display* disp, XErrorEvent* err)
+	int X11_error_handler(Display*, XErrorEvent* err)
 	{
 	    platform_spec::instance().error_code = err->error_code;
 		return 0;
 	}
 
-	int X11_fatal_handler(Display* disp)
+	int X11_fatal_handler(Display*)
 	{
 		return 0;
 	}

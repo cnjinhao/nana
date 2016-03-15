@@ -357,7 +357,7 @@ namespace nana
 
 			//_m_notify_glasses
 			//@brief:	Notify the glass windows that are overlapped with the specified vis_rect
-			void window_layout::_m_notify_glasses(core_window_t* const sigwd, const nana::rectangle& r_visual)
+			void window_layout::_m_notify_glasses(core_window_t* const sigwd, const nana::rectangle& /*r_visual*/)
 			{
 				typedef category::flags cat_flags;
 

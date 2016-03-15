@@ -43,7 +43,7 @@ namespace nana
 				: public item_renderer
 			{
 			private:
-				virtual void background(graph_reference graph, const nana::rectangle& r, const ::nana::color& bgcolor)
+				virtual void background(graph_reference graph, const nana::rectangle&, const ::nana::color& bgcolor)
 				{
 					if(bgcolor_ != bgcolor)
 					{
@@ -59,7 +59,6 @@ namespace nana
 
 				virtual void item(graph_reference graph, const item_t& m, bool active, state_t sta)
 				{
-					//*
 					const nana::rectangle & r = m.r;
 					color bgcolor;
 					color blcolor;
@@ -961,7 +960,8 @@ namespace nana
 					auto bgcolor = API::bgcolor(basis_.wd);
 					auto fgcolor = API::fgcolor(basis_.wd);
 
-					item_renderer::item_t m{ ::nana::rectangle{ basis_.graph->size() } };
+					item_renderer::item_t m;
+					m.r = ::nana::rectangle{ basis_.graph->size() };
 
 					basis_.renderer->background(*basis_.graph, m.r, bgcolor);
 

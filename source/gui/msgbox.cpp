@@ -702,7 +702,7 @@ namespace nana
 
 		impl->spinbox.value(std::to_string(impl->value));
 
-		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized&)
 		{
 			impl->label.size({ label_px, 24 });
 			impl->spinbox.size({ value_px, 24 });
@@ -780,7 +780,7 @@ namespace nana
 
 		impl->spinbox.value(std::to_string(impl->value));
 
-		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized&)
 		{
 			impl->label.size(::nana::size{ label_px, 24 });
 			impl->spinbox.size(::nana::size{ value_px, 24 });

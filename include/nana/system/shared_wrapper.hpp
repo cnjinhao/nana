@@ -30,7 +30,7 @@ namespace system
 			typedef void*	module_t;
 			void* symbols(module_t handle, const char* symbol);
 
-		}; //end struct shared_helper
+		} //end namespace shared_helper
 	}//end namespace detail
 
 	class shared_wrapper

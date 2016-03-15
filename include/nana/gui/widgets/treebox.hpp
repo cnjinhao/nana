@@ -307,14 +307,14 @@ namespace nana
 				{
 					_m_value() = t;
 					return *this;
-				};
+				}
 
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
 					_m_value() = std::move(t);
 					return *this;
-				};
+				}
 
 				// Undocumentated methods for internal use
 				trigger::node_type * _m_node() const;

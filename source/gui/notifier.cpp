@@ -314,6 +314,8 @@ namespace nana
 
 		::Shell_NotifyIcon(impl_->icon_added ? NIM_MODIFY : NIM_ADD, &icon_data);
 		impl_->icon_added = true;
+#else
+		static_cast<void>(str); //to eliminate unused parameter compiler warning.
 #endif
 	}
 
@@ -330,6 +332,8 @@ namespace nana
 			impl_->set_icon(impl_->icon_handle);
 			::DestroyIcon(pre_icon);
 		}
+#else
+		static_cast<void>(icon_file); //to eliminate unused parameter compiler warning
 #endif	
 	}
 
@@ -338,6 +342,8 @@ namespace nana
 #if defined(NANA_WINDOWS)
 		auto icon = (HICON)::LoadImage(0, to_wstring(icon_file).data(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
 		impl_->icons.push_back(icon);
+#else
+		static_cast<void>(icon_file); //to eliminate unused parameter compiler warning.
 #endif
 	}
 
@@ -352,6 +358,8 @@ namespace nana
 		}
 		else
 			impl_->ani_timer.stop();
+#else
+		static_cast<void>(ms); //to eliminate unused parameter compiler warning.
 #endif
 	}
 

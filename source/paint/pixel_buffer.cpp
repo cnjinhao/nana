@@ -977,7 +977,7 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::gradual_rectangle(const ::nana::rectangle& draw_rct, const ::nana::color& from, const ::nana::color& to, double fade_rate, bool vertical)
+	void pixel_buffer::gradual_rectangle(const ::nana::rectangle& draw_rct, const ::nana::color& from, const ::nana::color& to, double /*fade_rate*/, bool vertical)
 	{
 		auto sp = storage_.get();
 		if (nullptr == sp) return;

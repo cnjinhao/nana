@@ -437,7 +437,7 @@ namespace nana
 					return total_w;
 				}
 
-				bool _m_each_line(graph_reference graph, dstream::linecontainer& line, render_status& rs)
+				bool _m_each_line(graph_reference graph, dstream::linecontainer&, render_status& rs)
 				{
 					std::wstring text;
 					iterator block_start;

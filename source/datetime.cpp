@@ -264,6 +264,7 @@ namespace nana
 		}
 
 		time::time()
+			: value_{}
 		{
 			struct tm t;
 			localtime(t);

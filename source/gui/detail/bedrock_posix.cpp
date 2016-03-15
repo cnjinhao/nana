@@ -153,7 +153,7 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t*, bool forced, const rectangle*)
+	void bedrock::map_thread_root_buffer(core_window_t*, bool /*forced*/, const rectangle*)
 	{
 		//GUI in X11 is thread-independent, so no implementation.
 	}
@@ -366,7 +366,7 @@ namespace detail
 		return impl_->estore;
 	}
 
-	void bedrock::map_through_widgets(core_window_t* wd, native_drawable_type drawable)
+	void bedrock::map_through_widgets(core_window_t*, native_drawable_type)
 	{
 		//No implementation for Linux
 	}
@@ -523,7 +523,7 @@ namespace detail
 		}
 	}
 
-	void window_proc_for_packet(Display * display, nana::detail::msg_packet_tag& msg)
+	void window_proc_for_packet(Display * /*display*/, nana::detail::msg_packet_tag& msg)
 	{
 		static auto& brock = detail::bedrock::instance();
 
@@ -642,7 +642,7 @@ namespace detail
 		return wchar_t(keysym);
 	}
 
-	void window_proc_for_xevent(Display* display, XEvent& xevent)
+	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
 	{
 		typedef detail::bedrock::core_window_t core_window_t;
 
@@ -1308,7 +1308,7 @@ namespace detail
 		}
 	}
 
-	void bedrock::pump_event(window modal_window, bool is_modal)
+	void bedrock::pump_event(window modal_window, bool /*is_modal*/)
 	{
 		thread_context * context = open_thread_context();
 		if(0 == context->window_count)
