@@ -12,6 +12,7 @@
 
 #ifndef NANA_GUI_DETAIL_BASIC_WINDOW_HPP
 #define NANA_GUI_DETAIL_BASIC_WINDOW_HPP
+#include <nana/push_ignore_diagnostic>
 #include "drawer.hpp"
 #include "events_holder.hpp"
 #include "widget_colors.hpp"
@@ -237,5 +238,6 @@ namespace detail
 
 }//end namespace detail
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 #endif
 

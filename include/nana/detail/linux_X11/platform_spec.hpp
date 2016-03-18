@@ -18,6 +18,8 @@
 #ifndef NANA_DETAIL_PLATFORM_SPEC_HPP
 #define NANA_DETAIL_PLATFORM_SPEC_HPP
 
+#include <nana/push_ignore_diagnostic>
+
 #include <thread>
 #include <mutex>
 #include <memory>
@@ -193,8 +195,8 @@ namespace detail
 			native_window_type owner;
 			std::vector<native_window_type> * owned;
 		};
-    public:
-        int error_code;
+	public:
+		int error_code;
 	public:
 		typedef drawable_impl_type::font_ptr_t font_ptr_t;
 		typedef void (*timer_proc_type)(unsigned tid);
@@ -202,6 +204,8 @@ namespace detail
 		typedef ::nana::event_code		event_code;
 		typedef ::nana::native_window_type	native_window_type;
 
+		platform_spec(const platform_spec&) = delete;
+		platform_spec& operator=(const platform_spec&) = delete;
 
 		platform_spec();
 		~platform_spec();
@@ -332,6 +336,7 @@ namespace detail
 
 }//end namespace nana
 
+#include <nana/pop_ignore_diagnostic>
 // .h ward
 #endif
 

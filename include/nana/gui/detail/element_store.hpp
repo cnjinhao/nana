@@ -15,8 +15,12 @@
 
 #include <nana/gui/element.hpp>
 #include <nana/pat/cloneable.hpp>
+
 #include <map>
 #include <string>
+
+#include <nana/push_ignore_diagnostic>
+
 
 namespace nana
 {
@@ -48,5 +52,6 @@ namespace detail
 	};
 }//end namespace detail
 }
+#include <nana/pop_ignore_diagnostic>
 
 #endif

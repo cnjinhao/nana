@@ -12,6 +12,8 @@
 
 #ifndef NANA_GUI_WIDGET_HPP
 #define NANA_GUI_WIDGET_HPP
+
+#include <nana/push_ignore_diagnostic>
 #include "../basis.hpp"
 #include "../programming_interface.hpp"
 #include <nana/internationalization.hpp>
@@ -524,4 +526,6 @@ namespace nana
 		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object<category::frame_tag>
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 #endif

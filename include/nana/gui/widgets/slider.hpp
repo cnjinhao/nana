@@ -11,6 +11,9 @@
  */
 #ifndef NANA_GUI_WIDGETS_SLIDER_HPP
 #define NANA_GUI_WIDGETS_SLIDER_HPP
+
+#include <nana/push_ignore_diagnostic>
+
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 
@@ -141,5 +144,6 @@ namespace nana
 		bool transparent() const;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 
 #endif

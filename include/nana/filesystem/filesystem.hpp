@@ -29,6 +29,9 @@
 
 #ifndef NANA_FILESYSTEM_HPP
 #define NANA_FILESYSTEM_HPP
+
+#include <nana/push_ignore_diagnostic>
+
 #include <string>
 #include <system_error>
 #include <iterator>
@@ -409,4 +412,5 @@ namespace nana  { namespace experimental { namespace filesystem
   //namespace filesystem = experimental::filesystem;
 } //end namespace nana
 
+#include <nana/pop_ignore_diagnostic>
 #endif

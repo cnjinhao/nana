@@ -344,11 +344,11 @@ namespace nana
 		{
 		public:
 			charset_string(const std::string& s)
-				: data_(s), is_unicode_(false)
+				: data_(s)
 			{}
 
 			charset_string(std::string&& s)
-				: data_(std::move(s)), is_unicode_(false)
+				: data_(std::move(s))
 			{}
 
 			charset_string(const std::string& s, unicode encoding)
@@ -501,9 +501,9 @@ namespace nana
 			}
 		private:
 			std::string data_;
-			std::wstring wdata_for_move_;
-			bool is_unicode_;
-			unicode utf_x_;
+			std::wstring wdata_for_move_{};
+			bool is_unicode_{ false };
+			unicode utf_x_{ unicode::utf8 };
 		};
 
 		class charset_wstring
@@ -950,11 +950,11 @@ namespace nana
 		{
 		public:
 			charset_string(const std::string& s)
-				: data_(s), is_unicode_(false)
+				: data_(s)
 			{}
 
 			charset_string(std::string&& s)
-				: data_(std::move(s)), is_unicode_(false)
+				: data_(std::move(s))
 			{}
 
 			charset_string(const std::string& s, unicode encoding)
@@ -1122,9 +1122,9 @@ namespace nana
 			}
 		private:
 			std::string data_;
-			std::wstring wdata_for_move_;
-			bool is_unicode_;
-			unicode utf_x_;
+			std::wstring wdata_for_move_{};
+			bool is_unicode_{ false };
+			unicode utf_x_{ unicode::utf8 };
 		};
 
 
@@ -1195,7 +1195,7 @@ namespace nana
 			}
 		private:
 			std::wstring data_;
-			std::string data_for_move_;
+			std::string data_for_move_{};
 		};
 #endif
 	}

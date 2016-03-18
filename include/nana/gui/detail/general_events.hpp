@@ -12,6 +12,8 @@
 #ifndef NANA_DETAIL_GENERAL_EVENTS_HPP
 #define NANA_DETAIL_GENERAL_EVENTS_HPP
 
+#include <nana/push_ignore_diagnostic>
+
 #include <nana/gui/basis.hpp>
 #include "event_code.hpp"
 #include "internal_scope_guard.hpp"
@@ -575,5 +577,7 @@ namespace nana
 		};
 	}//end namespace detail
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 
 #endif

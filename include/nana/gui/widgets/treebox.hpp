@@ -17,6 +17,8 @@
 
 #ifndef NANA_GUI_WIDGETS_TREEBOX_HPP
 #define NANA_GUI_WIDGETS_TREEBOX_HPP
+
+#include <nana/push_ignore_diagnostic>
 #include "widget.hpp"
 #include "detail/compset.hpp"
 #include "detail/tree_cont.hpp"
@@ -452,4 +454,6 @@ namespace nana
 		item_proxy selected() const; ///< returns the selected node
 	};//end class treebox
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif

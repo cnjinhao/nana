@@ -14,6 +14,7 @@
 
 #ifndef NANA_DEPLOY_HPP
 #define NANA_DEPLOY_HPP
+#include <nana/push_ignore_diagnostic>
 
 #include <nana/config.hpp>
 #if defined(VERBOSE_PREPROCESSOR)
@@ -209,5 +210,5 @@ namespace std {
 			make_unique(Args&&...) = delete;
 }
 #endif //STD_make_unique_NOT_SUPPORTED
-
-#endif //NANA_MACROS_HPP
+#include <nana/pop_ignore_diagnostic>
+#endif //NANA_DEPLOY_HPP

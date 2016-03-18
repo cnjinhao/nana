@@ -207,10 +207,10 @@ namespace nana
 				{
 					switch(categ)
 					{
-					case category::root_tag::value:
+					case category::flags::root:
 						attribute.root = new attr_root_tag;
 						break;
-					case category::frame_tag::value:
+					case category::flags::frame:
 						attribute.frame = new attr_frame_tag;
 						break;
 					default:
@@ -222,10 +222,10 @@ namespace nana
 				{
 					switch(category)
 					{
-					case category::root_tag::value:
+					case category::flags::root:
 						delete attribute.root;
 						break;
-					case category::frame_tag::value:
+					case category::flags::frame:
 						delete attribute.frame;
 						break;
 					default: break;
@@ -236,7 +236,7 @@ namespace nana
 			//basic_window
 			//@brief: constructor for the root window
 			basic_window::basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, category::root_tag**)
-				: widget_notifier(std::move(wdg_notifier)), other(category::root_tag::value)
+				: widget_notifier(std::move(wdg_notifier)), other(category::flags::root)
 			{
 				drawer.bind(this);
 				_m_init_pos_and_size(nullptr, rectangle());
@@ -256,7 +256,7 @@ namespace nana
 			//@brief: bind a native window and baisc_window
 			void basic_window::bind_native_window(native_window_type wd, unsigned width, unsigned height, unsigned extra_width, unsigned extra_height, nana::paint::graphics& graphics)
 			{
-				if(category::root_tag::value == this->other.category)
+				if(category::flags::root == this->other.category)
 				{
 					this->root = wd;
 					dimension.width = width;
@@ -270,7 +270,7 @@ namespace nana
 
 			void basic_window::frame_window(native_window_type wd)
 			{
-				if(category::frame_tag::value == this->other.category)
+				if(category::flags::frame == this->other.category)
 					other.attribute.frame->container = wd;
 			}
 
@@ -357,12 +357,12 @@ namespace nana
 
 			void basic_window::_m_initialize(basic_window* agrparent)
 			{
-				if(other.category == category::root_tag::value)
+				if(category::flags::root == other.category)
 				{
 					if(agrparent && (nana::system::this_thread_id() != agrparent->thread_id))
 						agrparent = nullptr;
 
-					while(agrparent && (agrparent->other.category != category::root_tag::value))
+					while(agrparent && (category::flags::root != agrparent->other.category))
 						agrparent = agrparent->parent;
 				
 					owner = agrparent;

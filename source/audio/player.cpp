@@ -1,4 +1,7 @@
+
+#include <nana/push_ignore_diagnostic>
 #include <nana/audio/player.hpp>
+
 
 #ifdef NANA_ENABLE_AUDIO
 

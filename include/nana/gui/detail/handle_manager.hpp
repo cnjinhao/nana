@@ -25,6 +25,8 @@
 
 #include <map>
 #include <iterator>
+#include <nana/push_ignore_diagnostic>
+
 
 namespace nana
 {
@@ -288,4 +290,6 @@ namespace nana
 		};//end class handle_manager
 	}//end namespace detail
 }// end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif

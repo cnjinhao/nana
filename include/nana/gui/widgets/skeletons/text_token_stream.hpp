@@ -22,6 +22,8 @@
 #include <stack>
 #include <stdexcept>
 
+#include <nana/push_ignore_diagnostic>
+
 namespace nana{ namespace widgets{	namespace skeletons
 {
 	//The tokens are defined for representing a text, the tokens are divided
@@ -941,4 +943,5 @@ namespace nana{ namespace widgets{	namespace skeletons
 }//end namespace skeletons
 }//end namespace widgets
 }//end namepsace nana
+#include <nana/pop_ignore_diagnostic>
 #endif	//NANA_GUI_WIDGETS_SKELETONS_TEXT_TOKEN_STREAM

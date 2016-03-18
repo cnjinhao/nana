@@ -15,6 +15,7 @@
 #include <cmath>
 #include <map>
 #include <deque>
+#include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -528,8 +529,14 @@ namespace nana
 			{
 				for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
 				{
-					if (!API::is_destroying(API::get_parent_window(wd)))
-						place_ptr_->collocate();
+					if (i->handle == wd)
+					{
+						elements.erase(i);
+
+						if (!API::is_destroying(API::get_parent_window(wd)))
+							place_ptr_->collocate();
+						break;
+					}
 				}
 			});
 		}
@@ -2845,3 +2852,5 @@ namespace nana
 	}
 	//end class place
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
