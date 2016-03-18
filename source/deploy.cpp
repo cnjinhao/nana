@@ -479,6 +479,8 @@ namespace std
 	}
 //#endif  // STD_put_time_NOT_SUPPORTED
 
+#include <iostream>
+
 namespace nana
 {
 	bool is_utf8(const char* str, unsigned len)
@@ -511,22 +513,52 @@ namespace nana
 		return true;
 	}
 
+	struct utf8_Error : std::runtime_error
+	{
+		static bool use_throw; ///< def { true }; use carefully - it is a global variable !! \todo initialize from a #define ?
+
+		utf8_Error(const std::string& what_arg)
+			:std::runtime_error{ std::string("\nRun-time utf8 Error: ") + what_arg }
+		{}
+
+		utf8_Error(const char * what_arg)
+			:utf8_Error{ std::string(what_arg) }
+		{}
+
+
+		void emit()
+		{
+			if (use_throw)
+				throw utf8_Error(*this);
+			std::cerr << what();
+		}
+	};
+
+	//bool utf8_Error::use_throw{true}; 
+	bool utf8_Error::use_throw{ false };
+
 	void throw_not_utf8(const std::string& text)
 	{
 		if (!is_utf8(text.c_str(), text.length()))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+
+			//throw std::invalid_argument(  std::string("The text is not encoded in UTF8: ")+text  ) ;
 	}
 
 	void throw_not_utf8(const char* text, unsigned len)
 	{
 		if (!is_utf8(text, len))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("The text is not encoded in UTF8: ") + std::string(text, len) ).emit();
+
+		//throw std::invalid_argument("The text is not encoded in UTF8");
 	}
 
 	void throw_not_utf8(const char* text)
 	{
 		if (!is_utf8(text, std::strlen(text)))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+
+		//throw std::invalid_argument("The text is not encoded in UTF8");
 		
 	}
 
