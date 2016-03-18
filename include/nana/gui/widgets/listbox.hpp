@@ -295,7 +295,18 @@ namespace nana
 						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
 					return *p;
 				}
+				template<typename T>
+				T & value() 
+				{
+					auto * pany = _m_value();
+					if (nullptr == pany)
+						throw std::runtime_error("listbox::item_proxy.value<T>() is empty");
 
+					T * p = any_cast<T>(_m_value(false));
+					if (nullptr == p)
+						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
+					return *p;
+				}
 				template<typename T>
 				item_proxy & value(T&& t)
 				{

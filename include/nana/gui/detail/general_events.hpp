@@ -536,7 +536,7 @@ namespace nana
 	struct arg_click : public event_arg
 	{
 		::nana::window window_handle;	///< A handle to the event window
-		const arg_mouse* mouse_args;	///< If it is not null, it refers to the mouse arguments for click event emitted by mouse, nullptr otherwise.
+		const arg_mouse* mouse_args{};	///< If it is not null, it refers to the mouse arguments for click event emitted by mouse, nullptr otherwise.
 	};
 
     /// provides some fundamental events that every widget owns.
