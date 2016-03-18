@@ -119,6 +119,12 @@ namespace nana
 	void throw_not_utf8(const char*, unsigned len);
 	void throw_not_utf8(const char*);
 
+	/// this text needed change, it needed review ??
+	bool review_utf8(const std::string& text);
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(std::string& text);
+
 	const std::string& to_utf8(const std::string&);
 	std::string to_utf8(const std::wstring&);
 

@@ -3148,6 +3148,7 @@ namespace nana
 							{
 								auto cell_txtcolor = fgcolor;
 								auto & m_cell = item.cells[column_pos];
+								review_utf8(m_cell.text);
 								nana::size ts = graph->text_extent_size(m_cell.text);        // precalcule text geometry
 
 								if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need

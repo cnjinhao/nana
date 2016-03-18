@@ -513,19 +513,13 @@ namespace nana
 		return true;
 	}
 
+	/// move to *.h ??
 	struct utf8_Error : std::runtime_error
 	{
 		static bool use_throw; ///< def { true }; use carefully - it is a global variable !! \todo initialize from a #define ?
-
-		utf8_Error(const std::string& what_arg)
-			:std::runtime_error{ std::string("\nRun-time utf8 Error: ") + what_arg }
-		{}
-
-		utf8_Error(const char * what_arg)
-			:utf8_Error{ std::string(what_arg) }
-		{}
-
-
+		
+		using std::runtime_error::runtime_error;
+		
 		void emit()
 		{
 			if (use_throw)
@@ -541,8 +535,6 @@ namespace nana
 	{
 		if (!is_utf8(text.c_str(), text.length()))
 			return utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
-
-			//throw std::invalid_argument(  std::string("The text is not encoded in UTF8: ")+text  ) ;
 	}
 
 	void throw_not_utf8(const char* text, unsigned len)
@@ -561,6 +553,38 @@ namespace nana
 		//throw std::invalid_argument("The text is not encoded in UTF8");
 		
 	}
+
+	std::string recode_to_utf8(std::string no_utf8)
+	{
+		return nana::charset(no_utf8).to_bytes(nana::unicode::utf8);
+	}
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(const std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+		{
+			utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+			return true;   /// it needed change, it needed review !!
+		}
+		else
+			return false;
+	}
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+		{
+			utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+			text.swap(recode_to_utf8(text));
+			return true;   /// it needed change, it needed review !!
+		}
+		else
+			return false;
+	}
+
+
 
 	const std::string& to_utf8(const std::string& str)
 	{
