@@ -312,7 +312,7 @@ namespace detail
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd, wd->thread_id);
 
-				if (owner && owner->other.category == category::frame_tag::value)
+				if (owner && (category::flags::frame == owner->other.category))
 					insert_frame(owner, wd);
 
 				bedrock::inc_window(wd->thread_id);
@@ -344,7 +344,7 @@ namespace detail
 			{
 				//Thread-Safe Required!
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				if(frame->other.category == category::frame_tag::value)
+				if(category::flags::frame == frame->other.category)
 					frame->other.attribute.frame->attach.push_back(wd);
 				return true;
 			}
@@ -357,9 +357,9 @@ namespace detail
 			{
 				//Thread-Safe Required!
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				if(frame->other.category == category::frame_tag::value)
+				if(category::flags::frame == frame->other.category)
 				{
-					if (impl_->wd_register.available(wd) && wd->other.category == category::root_tag::value && wd->root != frame->root)
+					if (impl_->wd_register.available(wd) && (category::flags::root == wd->other.category) && wd->root != frame->root)
 					{
 						frame->other.attribute.frame->attach.push_back(wd->root);
 						return true;
@@ -399,7 +399,7 @@ namespace detail
 			if (wd->flags.destroying)
 				return;
 
-			if(wd->other.category == category::root_tag::value)
+			if(category::flags::root == wd->other.category)
 			{
 				auto &brock = bedrock::instance();
 				arg_unload arg;
@@ -464,7 +464,7 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
-			if((wd->other.category == category::root_tag::value) || (wd->other.category != category::frame_tag::value))
+			if((category::flags::root == wd->other.category) || (category::flags::frame != wd->other.category))
 			{
 				impl_->misc_register.erase(wd->root);
 				impl_->wd_register.remove(wd);
@@ -484,7 +484,7 @@ namespace detail
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 				if (impl_->wd_register.available(wd))
 				{
-					if(wd->other.category == category::root_tag::value)
+					if(category::flags::root == wd->other.category)
 						native_interface::window_icon(wd->root, small_icon, big_icon);
 				}
 			}
@@ -504,9 +504,9 @@ namespace detail
 				native_window_type nv = nullptr;
 				switch(wd->other.category)
 				{
-				case category::root_tag::value:
+				case category::flags::root:
 					nv = wd->root; break;
-				case category::frame_tag::value:
+				case category::flags::frame:
 					nv = wd->other.attribute.frame->container; break;
 				default:	//category::widget_tag, category::lite_widget_tag
 					break;
@@ -703,7 +703,7 @@ namespace detail
 
 			wd->dimension = sz;
 
-			if(category::lite_widget_tag::value != wd->other.category)
+			if(category::flags::lite_widget != wd->other.category)
 			{
 				bool graph_state = wd->drawer.graphics.empty();
 				wd->drawer.graphics.make(sz);
@@ -714,13 +714,13 @@ namespace detail
 				if(graph_state != wd->drawer.graphics.empty())
 					wd->drawer.typeface_changed();
 
-				if(category::root_tag::value == wd->other.category)
+				if(category::flags::root == wd->other.category)
 				{
 					wd->root_graph->make(sz);
 					if(false == passive)
 						native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height));
 				}
-				else if(category::frame_tag::value == wd->other.category)
+				else if(category::flags::frame == wd->other.category)
 				{
 					native_interface::window_size(wd->other.attribute.frame->container, sz);
 					for(auto natwd : wd->other.attribute.frame->attach)
@@ -850,6 +850,9 @@ namespace detail
 					{
 						window_layer::paint(wd, false, refresh_tree);
 						this->map(wd, force_copy_to_screen);
+
+						wd->drawer.graphics.save_as_file("d:\\button.bmp");
+						wd->root_graph->save_as_file("d:\\button_root.bmp");
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
@@ -1379,7 +1382,7 @@ namespace detail
 						root_attr->menubar = nullptr;
 				}
 
-				if (wd->other.category == category::root_tag::value)
+				if (wd->other.category == category::flags::root)
 				{
 					root_runtime(wd->root)->shortkeys.clear();
 					wd->other.attribute.root->focus = nullptr;
@@ -1459,7 +1462,7 @@ namespace detail
 				}
 			}
 
-			if (wd->other.category == category::frame_tag::value)
+			if (category::flags::frame == wd->other.category)
 			{
 				//remove the frame handle from the WM frames manager.
 				utl::erase(root_attr->frames, wd);
@@ -1565,7 +1568,7 @@ namespace detail
 			wd->drawer.detached();
 			wd->widget_notifier->destroy();
 
-			if(wd->other.category == category::frame_tag::value)
+			if(category::flags::frame == wd->other.category)
 			{
 				//The frame widget does not have an owner, and close their element windows without activating owner.
 				//close the frame container window, it's a native window.
@@ -1616,7 +1619,7 @@ namespace detail
 			for(auto i = wd->children.rbegin(); i != wd->children.rend(); ++i)
 			{
 				core_window_t* child = *i;
-				if((child->other.category != category::root_tag::value) && _m_effective(child, pos))
+				if((child->other.category != category::flags::root) && _m_effective(child, pos))
 				{
 					child = _m_find(child, pos);
 					if(child)

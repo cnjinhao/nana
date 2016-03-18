@@ -13,6 +13,8 @@
 
 #ifndef NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #define NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
+#include <nana/push_ignore_diagnostic>
+
 #include "textbase.hpp"
 #include "text_editor_part.hpp"
 #include <nana/gui/widgets/scroll.hpp>
@@ -371,6 +373,8 @@ namespace nana{	namespace widgets
 	}//end namespace skeletons
 }//end namespace widgets
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 
 #endif
 

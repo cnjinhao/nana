@@ -15,6 +15,7 @@
 
 #include <nana/deploy.hpp>
 #include <cctype>
+#include <nana/push_ignore_diagnostic>
 
 namespace nana
 {
@@ -484,7 +485,7 @@ namespace nana
 		southeast
 	};
 }//end namespace nana
-
+#include <nana/pop_ignore_diagnostic>
 #endif
 
 

@@ -17,6 +17,8 @@
 
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
 #define NANA_GUI_WIDGETS_LISTBOX_HPP
+#include <nana/push_ignore_diagnostic>
+
 #include "widget.hpp"
 #include "detail/inline_widget.hpp"
 #include <nana/pat/abstract_factory.hpp>
@@ -720,4 +722,6 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void _m_erase_key(nana::detail::key_interface*);
 	};
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 #endif

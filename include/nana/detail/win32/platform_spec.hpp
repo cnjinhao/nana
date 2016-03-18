@@ -142,6 +142,9 @@ namespace detail
 			unsigned whitespace_pixels;
 		}string;
 
+		drawable_impl_type(const drawable_impl_type&) = delete;
+		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
+
 		drawable_impl_type();
 		~drawable_impl_type();
 

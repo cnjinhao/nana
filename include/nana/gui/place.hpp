@@ -15,6 +15,7 @@
 
 #ifndef NANA_GUI_PLACE_HPP
 #define NANA_GUI_PLACE_HPP
+#include <nana/push_ignore_diagnostic>
 #include <nana/gui/basis.hpp>
 #include <utility>
 #include <memory>
@@ -145,5 +146,6 @@ namespace nana
 		implement * impl_;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 
 #endif //#ifndef NANA_GUI_PLACE_HPP

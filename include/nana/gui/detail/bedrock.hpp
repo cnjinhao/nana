@@ -33,6 +33,9 @@ namespace detail
 	class bedrock
 	{
 		bedrock();
+
+		bedrock(const bedrock&) = delete;
+		bedrock& operator=(const bedrock&) = delete;
 	public:
 		using core_window_t = basic_window;
 

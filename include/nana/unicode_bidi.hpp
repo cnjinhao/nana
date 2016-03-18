@@ -1,6 +1,8 @@
 #ifndef NANA_UNICODE_BIDI_HPP
 #define NANA_UNICODE_BIDI_HPP
 #include <vector>
+#include <nana/push_ignore_diagnostic>
+
 
 namespace nana
 {
@@ -71,5 +73,6 @@ namespace nana
 	};
 
 }
+#include <nana/pop_ignore_diagnostic>
 
 #endif

@@ -16,6 +16,9 @@
 
 #include <nana/detail/platform_spec_selector.hpp>
 #if defined(NANA_POSIX) && defined(NANA_X11)
+
+#include <nana/push_ignore_diagnostic>
+
 #include <X11/Xlocale.h>
 #include <locale>
 #include <map>
@@ -1414,4 +1417,6 @@ namespace detail
 	}
 }//end namespace detail
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 #endif //NANA_POSIX && NANA_X11

@@ -12,6 +12,7 @@
 
 #ifndef NANA_GUI_WIDGET_TOOLBAR_HPP
 #define NANA_GUI_WIDGET_TOOLBAR_HPP
+#include <nana/push_ignore_diagnostic>
 
 #include "widget.hpp"
 
@@ -101,4 +102,6 @@ namespace nana
 		bool   detached_;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif

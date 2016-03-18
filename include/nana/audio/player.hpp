@@ -1,6 +1,6 @@
 #ifndef NANA_AUDIO_PLAYER_HPP
 #define NANA_AUDIO_PLAYER_HPP
-
+#include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
 
 #ifdef NANA_ENABLE_AUDIO
@@ -31,4 +31,7 @@ namespace nana{	namespace audio
 }//end namespace nana
 
 #endif	//NANA_ENABLE_AUDIO
+
+#include <nana/pop_ignore_diagnostic>
+
 #endif

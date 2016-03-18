@@ -15,7 +15,6 @@
 #ifndef NANA_GUI_WVL_HPP
 #define NANA_GUI_WVL_HPP
 
-
 #include "programming_interface.hpp"
 #include "screen.hpp"
 #include "widgets/form.hpp"

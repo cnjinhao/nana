@@ -15,6 +15,7 @@
 #include <cmath>
 #include <map>
 #include <deque>
+#include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -2851,3 +2852,5 @@ namespace nana
 	}
 	//end class place
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>

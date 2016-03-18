@@ -137,11 +137,11 @@
 
 	#if ((__GNUC__ < 5)   )
 	#	define STD_put_time_NOT_SUPPORTED
-    #endif
+	#endif
 
-    #if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
+	#if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
 	#	undef STD_FILESYSTEM_NOT_SUPPORTED
-    #endif
+	#endif
 
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))

@@ -15,6 +15,8 @@
 #ifndef NANA_GUI_BASIS_HPP
 #define NANA_GUI_BASIS_HPP
 
+#include <nana/push_ignore_diagnostic>
+
 #include "../basic_types.hpp"
 #include "../traits.hpp"	//metacomp::fixed_type_set
 
@@ -59,9 +61,9 @@ namespace nana
 		};
 		//wait for constexpr
 		struct widget_tag{ static const flags value = flags::widget; };
-		struct lite_widget_tag : widget_tag{ static const flags value = flags::lite_widget;};
-		struct root_tag : widget_tag{ static const flags value = flags::root; };
-		struct frame_tag: widget_tag{ static const flags value = flags::frame; };
+		struct lite_widget_tag : public widget_tag{ static const flags value = flags::lite_widget;  };
+		struct root_tag : public widget_tag{ static const flags value = flags::root;  };
+		struct frame_tag : public widget_tag{ static const flags value = flags::frame;  };
 	}// end namespace category
 
 	using native_window_type = detail::native_window_handle_impl*;
@@ -258,4 +260,6 @@ that return a corresponding nana::appearance with predefined values.
 		};
 	};//end namespace apper
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 #endif
