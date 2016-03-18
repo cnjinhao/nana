@@ -528,8 +528,14 @@ namespace nana
 			{
 				for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
 				{
-					if (!API::is_destroying(API::get_parent_window(wd)))
-						place_ptr_->collocate();
+					if (i->handle == wd)
+					{
+						elements.erase(i);
+
+						if (!API::is_destroying(API::get_parent_window(wd)))
+							place_ptr_->collocate();
+						break;
+					}
 				}
 			});
 		}
