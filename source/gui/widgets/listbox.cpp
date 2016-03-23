@@ -3435,6 +3435,9 @@ namespace nana
 						if (lister.forward(essence_->scroll.offset_y_dpl, ptr_where.second, item_pos))
 						{
 							auto * item_ptr = (item_pos.is_item() ? &lister.at(item_pos) : nullptr);
+
+							const index_pair abs_item_pos{ item_pos.cat, lister.absolute(item_pos) };
+
 							if(ptr_where.first == parts::lister)
 							{
 								bool sel = true;
@@ -3443,28 +3446,32 @@ namespace nana
 									if (arg.shift)
 										lister.select_display_range(lister.last_selected_abs , item_pos, sel);
 									else if (arg.ctrl)
-										sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();
+										sel = !item_proxy(essence_, abs_item_pos).selected();
 									else
 										lister.select_for_all(false);	//cancel all selections
 								}
 								else
-									sel = !item_proxy(essence_, index_pair (item_pos.cat, lister.absolute(item_pos))).selected();
+								{
+									//Clicking on a category is ignored when single selection is enabled.
+									//Fixed by Greentwip(issue #121)
+									if (item_ptr)
+										sel = !item_proxy(essence_, abs_item_pos).selected();
+								}
 
 								if(item_ptr)
 								{
 									item_ptr->flags.selected = sel;
-									index_pair last_selected(item_pos.cat, lister.absolute(item_pos));
 
-									arg_listbox arg{item_proxy{essence_, last_selected}, sel};
+									arg_listbox arg{ item_proxy{ essence_, abs_item_pos }, sel };
 									lister.wd_ptr()->events().selected.emit(arg);
 
 									if (item_ptr->flags.selected)
 									{
-										lister.cancel_others_if_single_enabled(true, last_selected);
-										essence_->lister.last_selected_abs = last_selected;
+										lister.cancel_others_if_single_enabled(true, abs_item_pos);
+										essence_->lister.last_selected_abs = abs_item_pos;
 
 									}
-									else if (essence_->lister.last_selected_abs == last_selected)
+									else if (essence_->lister.last_selected_abs == abs_item_pos)
 										essence_->lister.last_selected_abs.set_both(npos);
 								}
 								else if(!lister.single_selection())
@@ -3475,13 +3482,11 @@ namespace nana
 								if(item_ptr)
 								{
 									item_ptr->flags.checked = ! item_ptr->flags.checked;
-
-									index_pair abs_pos{ item_pos.cat, lister.absolute(item_pos) };
-									arg_listbox arg{ item_proxy{ essence_, abs_pos }, item_ptr->flags.checked };
+									arg_listbox arg{ item_proxy{ essence_, abs_item_pos }, item_ptr->flags.checked };
 									lister.wd_ptr()->events().checked.emit(arg);
 
 									if (item_ptr->flags.checked)
-										lister.cancel_others_if_single_enabled(false, abs_pos);
+										lister.cancel_others_if_single_enabled(false, abs_item_pos);
 								}
 								else if (! lister.single_check())
 									lister.categ_checked_reverse(item_pos.cat);
