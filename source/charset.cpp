@@ -578,37 +578,38 @@ namespace nana
 			std::string data_for_move_;
 		};
 #else
+        /// return the first code point and move the pointer to next character, springing to the end by errors
 		unsigned long utf8char(const unsigned char*& p, const unsigned char* end)
 		{
 			if(p != end)
 			{
-				if(*p < 0x80)
+				if(*p < 0x80)        // ASCII char   0-127 or 0-0x80
 				{
 					return *(p++);
 				}
 				unsigned ch = *p;
 				unsigned long code;
-				if(ch < 0xC0)
+				if(ch < 0xC0)       // error? - move to end. Posible ANSI or ISO code-page 
 				{
 					p = end;
 					return 0;
 				}
-				else if(ch < 0xE0 && (p + 1 <= end))
+				else if(ch < 0xE0 && (p + 1 <= end))      // two byte chararcter
 				{
 					code = ((ch & 0x1F) << 6) | (p[1] & 0x3F);
 					p += 2;
 				}
-				else if(ch < 0xF0 && (p + 2 <= end))
+				else if(ch < 0xF0 && (p + 2 <= end))     // 3 byte character
 				{
 					code = ((((ch & 0xF) << 6) | (p[1] & 0x3F)) << 6) | (p[2] & 0x3F);
 					p += 3;
 				}
-				else if(ch < 0x1F && (p + 3 <= end))
+				else if(ch < 0x1F && (p + 3 <= end))   // 4 byte character
 				{
 					code = ((((((ch & 0x7) << 6) | (p[1] & 0x3F)) << 6) | (p[2] & 0x3F)) << 6) | (p[3] & 0x3F);
 					p += 4;
 				}
-				else
+				else    //  error, go to end
 				{
 					p = end;
 					return 0;
