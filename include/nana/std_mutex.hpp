@@ -8,12 +8,12 @@
 #include <windows.h>
 #include <mutex>
 #include <condition_variable>
-#include <thread>
-#include <pthread.h>
+//#include <thread>
+//#include <pthread.h>
 #include <errno.h>
 #include <cstdio>
 // http://lxr.free-electrons.com/source/include/uapi/asm-generic/errno.h#L53
-#define EPROTO          71      /* Protocol error */
+//#define EPROTO          71      /* Protocol error */
 #include <mingw.thread.h>
 #include <mingw.mutex.h>
 #else
