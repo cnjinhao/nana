@@ -15,6 +15,7 @@
 #include <nana/paint/graphics.hpp>
 #include <vector>
 #include <cassert>
+#include <cstring>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>

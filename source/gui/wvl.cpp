@@ -13,8 +13,9 @@
 
 #include <nana/gui/wvl.hpp>
 #include <nana/gui/detail/bedrock.hpp>
-#include <thread>
+#include <nana/std_thread.hpp>
 #include <iostream> 
+#include <chrono>
 
 //#define NANA_AUTOMATIC_GUI_TESTING
 namespace nana

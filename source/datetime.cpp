@@ -57,7 +57,7 @@ namespace nana
 		}
 
 		date::date()
-			: value_(to_dateval(*std::localtime(nullptr)))
+			: value_(to_dateval(localtime()))
 		{
 		}
 
