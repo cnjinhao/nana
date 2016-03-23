@@ -591,6 +591,7 @@ namespace nana
 				unsigned long code;
 				if(ch < 0xC0)       // error? - move to end. Posible ANSI or ISO code-page 
 				{
+					return *(p++); // temp: assume equal
 					p = end;
 					return 0;
 				}
