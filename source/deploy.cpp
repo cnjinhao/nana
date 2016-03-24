@@ -569,7 +569,7 @@ namespace nana
 		if (!is_utf8(text.c_str(), text.length()))
 		{
 			utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
-			text.swap(recode_to_utf8(text));
+			text=recode_to_utf8(text);
 			return true;   /// it needed change, it needed review !!
 		}
 		else
