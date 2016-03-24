@@ -526,13 +526,13 @@ namespace nana
 	void throw_not_utf8(const std::string& text)
 	{
 		if (!is_utf8(text.c_str(), text.length()))
-			return utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
 	}
 
 	void throw_not_utf8(const char* text, unsigned len)
 	{
 		if (!is_utf8(text, len))
-			return utf8_Error(std::string("The text is not encoded in UTF8: ") + std::string(text, len) ).emit();
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + std::string(text, len) ).emit();
 
 		//throw std::invalid_argument("The text is not encoded in UTF8");
 	}
@@ -540,7 +540,7 @@ namespace nana
 	void throw_not_utf8(const char* text)
 	{
 		if (!is_utf8(text, std::strlen(text)))
-			return utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
 
 		//throw std::invalid_argument("The text is not encoded in UTF8");
 		
@@ -548,7 +548,7 @@ namespace nana
 
 	std::string recode_to_utf8(std::string no_utf8)
 	{
-		return nana::charset(no_utf8).to_bytes(nana::unicode::utf8);
+		return nana::charset(std::move(no_utf8)).to_bytes(nana::unicode::utf8);
 	}
 
 	/// this text needed change, it needed review ??
@@ -556,7 +556,7 @@ namespace nana
 	{
 		if (!is_utf8(text.c_str(), text.length()))
 		{
-			utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+			utf8_Error(std::string("\nThe const text is not encoded in UTF8: ") + text).emit();
 			return true;   /// it needed change, it needed review !!
 		}
 		else
@@ -568,7 +568,7 @@ namespace nana
 	{
 		if (!is_utf8(text.c_str(), text.length()))
 		{
-			utf8_Error(std::string("The text is not encoded in UTF8: ") + text).emit();
+			utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
 			text=recode_to_utf8(text);
 			return true;   /// it needed change, it needed review !!
 		}

@@ -35,6 +35,7 @@ namespace nana
 {
 	namespace utf
 	{
+		/// return a pointer to the code unit of the character at pos
 		const char* char_ptr(const char* text, unsigned pos)
 		{
 			auto ustr = reinterpret_cast<const unsigned char*>(text);
@@ -49,10 +50,10 @@ namespace nana
 					continue;
 				}
 
-				if (uch < 0xC0)
+				if (uch < 0xC0)        // use police ?
 					return nullptr;
 
-				if ((uch < 0xE0) && (ustr + 1 < end))
+				if ((uch < 0xE0) && (ustr + 1 < end)) //? *(ustr + 1) < 0xE0 
 					ustr += 2;
 				else if (uch < 0xF0 && (ustr + 2 <= end))
 					ustr += 3;
@@ -65,6 +66,7 @@ namespace nana
 			return reinterpret_cast<const char*>(ustr);
 		}
 
+		/// return a pointer to the code unit of the character at pos - reuse ^ ?
 		const char* char_ptr(const std::string& text_utf8, unsigned pos)
 		{
 			auto ustr = reinterpret_cast<const unsigned char*>(text_utf8.c_str());
@@ -95,6 +97,7 @@ namespace nana
 			return reinterpret_cast<const char*>(ustr);
 		}
 
+		/// return a code point (max 16 bits?) and the len in code units of the character at pos
 		wchar_t char_at(const char* text_utf8, unsigned pos, unsigned * len)
 		{
 			if (!text_utf8)
@@ -113,10 +116,10 @@ namespace nana
 				if (len)
 					*len = 1;
 
-				return *text_utf8;
+				return *text_utf8;  // uch ?
 			}
 
-			if (uch < 0xC0)
+			if (uch < 0xC0)    // use police or ??
 			{
 				if (len)
 					*len = 0;
@@ -152,6 +155,7 @@ namespace nana
 			return 0;
 		}
 
+		/// return a code point (max 16 bits?) and the len in code units of the character at pos
 		wchar_t char_at(const ::std::string& text_utf8, unsigned pos, unsigned * len)
 		{
 			const char* ptr;
@@ -401,6 +405,7 @@ namespace nana
 			}
 		};
 
+		/// buggie?
 		struct utf8_error_police_system : public encoding_error_police
 		{
 			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
@@ -408,16 +413,18 @@ namespace nana
 				std::wstring wc;
 				mb2wc(wc, reinterpret_cast<const char*>(current_code_unit));
 				current_code_unit++;
-				return wc[0];      // use utf16char
+				//wchar_t *p = &wc[0];
+
+				return wc[0];      // use utf16char but what endian?
 			}
 		};
 
 
-		auto def_encoding_error_police = std::make_unique<utf8_error_police>();  // the nana default
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police>();  // the nana default
 //		auto def_encoding_error_police = std::make_unique<utf8_error_police_latin>();
 //		auto def_encoding_error_police = std::make_unique<utf8_error_police_throw>();
 //		auto def_encoding_error_police = std::make_unique<utf8_error_police_def_char>('X');
-//		auto def_encoding_error_police = std::make_unique<utf8_error_police_system>();
+		auto def_encoding_error_police = std::make_unique<utf8_error_police_system>();
 
 
 
