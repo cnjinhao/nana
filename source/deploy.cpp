@@ -513,20 +513,12 @@ namespace nana
 		return true;
 	}
 
-	/// move to *.h ??
-	struct utf8_Error : std::runtime_error
-	{
-		static bool use_throw; ///< def { true }; use carefully - it is a global variable !! \todo initialize from a #define ?
-		
-		using std::runtime_error::runtime_error;
-		
-		void emit()
+    void utf8_Error::emit()
 		{
 			if (use_throw)
 				throw utf8_Error(*this);
 			std::cerr << what();
 		}
-	};
 
 	//bool utf8_Error::use_throw{true}; 
 	bool utf8_Error::use_throw{ false };
