@@ -1,4 +1,4 @@
-/*
+/**
  *	A Character Encoding Set Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
@@ -7,9 +7,9 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/charset.cpp
- *	@brief: A conversion between unicode characters and multi bytes characters
- *	@contributions:
+ *	@file nana/charset.cpp
+ *	@brief A conversion between unicode characters and multi bytes characters
+ *	@contributions
  *		UTF16 4-byte decoding issue by Renke Yan.
  *		Pr0curo(pr#98)
  */
@@ -20,6 +20,7 @@
 #include <cwchar>
 #include <clocale>
 #include <cstring>	//Added by Pr0curo(pr#98)
+#include <memory>
 
 //GCC 4.7.0 does not implement the <codecvt> and codecvt_utfx classes
 #ifndef STD_CODECVT_NOT_SUPPORTED
@@ -210,22 +211,23 @@ namespace nana
 	}
 
 	namespace detail
-	{
+	{   
+		/// candidate to be more general??
 		class locale_initializer
 		{
 		public:
 			static void init()
 			{
 				static bool initialized = false;
-				if(false == initialized)
-				{
-					initialized = true;
-					//Only set the C library locale
-					std::setlocale(LC_CTYPE, "");
-				}
+				if (initialized) return;
+				
+				initialized = true;
+				//Only set the C library locale
+				std::setlocale(LC_CTYPE, "");
 			}
 		};
 
+		/// convert wchar C string from ? ANSI code page CP_ACP (windows) or LC_CTYPE c locale (-nix) into utf8 std::string
 		bool wc2mb(std::string& mbstr, const wchar_t * s)
 		{
 			if(nullptr == s || *s == 0)
@@ -258,7 +260,8 @@ namespace nana
 #endif
 			return true;
 		}
-		
+
+		/// convert a char C-string from The system default Windows ANSI code page CP_ACP or from LC_CTYPE c locale (-nix) into utf16 std::wstring
 		bool mb2wc(std::wstring& wcstr, const char* s)
 		{
 			if(nullptr == s || *s == 0)
@@ -291,6 +294,7 @@ namespace nana
 			return true;
 		}
 
+		/// convert a char C string from The system default Windows ANSI code page CP_ACP or LC_CTYPE c locale (-nix) into utf16 std::string
 		bool mb2wc(std::string& wcstr, const char* s)
 		{
 			if(nullptr == s || *s == 0)
@@ -304,6 +308,7 @@ namespace nana
 			{
 				wcstr.resize((chars - 1) * sizeof(wchar_t));
 				::MultiByteToWideChar(CP_ACP, 0, s, -1, reinterpret_cast<wchar_t*>(&wcstr[0]), chars - 1);
+				                                      // ^ the trick !
 			}
 #else
 			locale_initializer::init();
@@ -337,6 +342,84 @@ namespace nana
 			virtual std::wstring wstr() const = 0;
 			virtual std::wstring&& wstr_move() = 0;
 		};
+
+		/// playing with the idea - we need a mechanisme to set a user selected police - Testing an abtract interphase
+		struct encoding_error_police
+		{
+			virtual unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) = 0;
+			virtual ~encoding_error_police() = default;
+		};
+
+		/// the current nana default: it is safe - you may want to keep it ! use the other at your risk: mainly for debugging
+		struct utf8_error_police : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				current_code_unit = end;
+				return 0;
+			}
+
+		};
+
+		/// 
+		struct utf8_error_police_def_char : public encoding_error_police
+		{
+			static unsigned long def_error_mark ;
+
+			unsigned long error_mark{ def_error_mark };
+			utf8_error_police_def_char() = default;
+			utf8_error_police_def_char( unsigned long mark): error_mark{mark}{}
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				++current_code_unit;  //check (p != end) ?
+				return error_mark;
+			}
+
+		};
+
+		unsigned long utf8_error_police_def_char::def_error_mark{ '*' };
+
+		///  
+		struct utf8_error_police_throw : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				//utf8_Error::use_throw = true;
+				utf8_Error(std::string("The text is not encoded in UTF8: ") + 
+					reinterpret_cast<const char*>( current_code_unit) ).emit();;
+				current_code_unit = end;
+				return 0;
+			}
+
+		};
+
+		struct utf8_error_police_latin : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				return *(current_code_unit++) ;
+			}
+		};
+
+		struct utf8_error_police_system : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				std::wstring wc;
+				mb2wc(wc, reinterpret_cast<const char*>(current_code_unit));
+				current_code_unit++;
+				return wc[0];      // use utf16char
+			}
+		};
+
+
+		auto def_encoding_error_police = std::make_unique<utf8_error_police>();  // the nana default
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police_latin>();
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police_throw>();
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police_def_char>('X');
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police_system>();
+
+
 
 #ifndef STD_CODECVT_NOT_SUPPORTED
 		class charset_string
@@ -578,6 +661,8 @@ namespace nana
 			std::string data_for_move_;
 		};
 #else
+
+
         /// return the first code point and move the pointer to next character, springing to the end by errors
 		unsigned long utf8char(const unsigned char*& p, const unsigned char* end)
 		{
@@ -591,9 +676,10 @@ namespace nana
 				unsigned long code;
 				if(ch < 0xC0)       // error? - move to end. Posible ANSI or ISO code-page 
 				{
-					return *(p++); // temp: assume equal
-					p = end;
-					return 0;
+					//return *(p++); // temp: assume equal
+					//p = end;
+					//return 0;
+					return def_encoding_error_police->next_code_point(p, end);
 				}
 				else if(ch < 0xE0 && (p + 1 <= end))      // two byte chararcter
 				{
