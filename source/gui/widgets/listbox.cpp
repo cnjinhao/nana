@@ -1858,7 +1858,7 @@ namespace nana
 
 				struct scroll_part
 				{
-					static const unsigned scale = 16;
+					static const unsigned scale = 16; // ?
 					int offset_x;
 					index_pair offset_y_abs, offset_y_dpl;	//cat stands for category, item stands for item. "item == npos" means that is a category.
                                                 // need to be abs??? to see the same item after sort() ??
@@ -1982,8 +1982,9 @@ namespace nana
 
                 void trace_item_abs( index_pair abs_pos )
                 {
-					if(abs_pos.item == npos && abs_pos.cat              == scroll.offset_y_abs.cat
-                                            && scroll.offset_y_abs.item == npos                      ) // if item==off y and is a cat
+					if(                abs_pos.item == npos 
+						&&             abs_pos.cat  == scroll.offset_y_abs.cat
+                        && scroll.offset_y_abs.item == npos                      ) // if item==off y and is a cat
 						return;
 
                     trace_item_dpl( lister.relative_pair(abs_pos))  ;   //  ???   scroll_y_dpl_refresh() ;
@@ -2680,8 +2681,8 @@ namespace nana
 				}
 
 				//grab_move
-				//@brief: draw when an item is grabbing.
-				//@return: 0 = no graphics changed, 1 = just update, 2 = refresh
+				/// @brief draw when an item is grabbing.
+				/// @return 0 = no graphics changed, 1 = just update, 2 = refresh
 				int grab_move(const nana::rectangle& rect, const nana::point& pos)
 				{
 					if(item_spliter_ == npos)

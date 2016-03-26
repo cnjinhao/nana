@@ -529,8 +529,18 @@ namespace nana
 				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
 				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
 
-                unsigned max_header_width{3000},     /// \todo how to implement some geometrical parameters ??
-                         ext_w = 5;
+                  /// \todo how to implement some geometrical parameters ??
+				unsigned max_header_width{ 3000 };  ///< during auto width don't alow more than this           
+				unsigned min_header_width{ 20   };  ///< non counting suspension_width           
+				unsigned suspension_width{ 0    };  ///< the trigger will set this to the width if ("...")
+				unsigned ext_w           { 5    };  ///< ??
+				unsigned header_height   { 20   };  ///< header height   header_size
+				unsigned text_height     { 0    };  ///< the trigger will set this to the height of the text font
+				unsigned item_height_ex  { 6    };  ///< 6? item_height = text_height + item_height_ex
+				unsigned item_height     { 0    };  ///< the trigger will set this TO item_height = text_height + item_height_ex
+				unsigned header_mouse_spliter_area_before{ 2 };
+				unsigned header_mouse_spliter_area_after { 3 };
+
 			};
 		}
 	}//end namespace drawerbase
