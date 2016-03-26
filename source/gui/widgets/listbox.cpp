@@ -338,6 +338,7 @@ namespace nana
 					column_t(native_string_type&& txt, unsigned px, size_type pos)
 						: text(std::move(txt)), pixels(px), index(pos)
 					{}
+					/// \todo introduce default cell format
 				};
 
 				using container = std::vector<column_t> ;
@@ -1828,9 +1829,7 @@ namespace nana
 			};//end class es_lister
 
 
-			//struct essence_t
-			//@brief:	this struct gives many data for listbox,
-			//			the state of the struct does not effect on member funcions, therefore all data members are public.
+			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member funcions, therefore all data members are public.
 			struct essence_t
 			{
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
@@ -2644,6 +2643,7 @@ namespace nana
 					item_spliter_ = npos;
 				}
 
+				/// return true an set member item_spliter_ if x is in the spliter area after that header item (column)
 				bool mouse_spliter(const nana::rectangle& r, int x)
 				{
 					if(essence_->ptr_state == item_state::highlighted)
@@ -3003,9 +3003,19 @@ namespace nana
 					}
 				}
 
-				//Draws an item
-				//@param content_r the rectangle of list content
-				void _m_draw_item(const category_t& cat, const index_pair& item_pos, const int x, const int y, const int txtoff, unsigned width, const nana::rectangle& content_r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
+				/// Draws an item
+				void _m_draw_item(const category_t& cat, 
+					              const index_pair& item_pos, 
+					              const int x, 
+					              const int y, 
+					              const int txtoff, 
+					              unsigned width, 
+					              const nana::rectangle& content_r,      ///< the rectangle where the full list content have to be drawn
+					              const std::vector<size_type>& seqs, 
+					              nana::color bgcolor, 
+					              nana::color fgcolor, 
+					              item_state state
+					) const
 				{
 					auto & item = cat.items[item_pos.item];
 
@@ -3022,7 +3032,7 @@ namespace nana
 						if (item.flags.selected)
 							bgcolor = bgcolor.blend(colors::black, 0.98);           // or "selected"
 						else
-							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);
+							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);   /// \todo create a parametre for amount of blend
 					}
 
 					unsigned show_w = width - essence_->scroll.offset_x;
