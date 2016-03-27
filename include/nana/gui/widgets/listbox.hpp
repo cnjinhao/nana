@@ -532,14 +532,14 @@ namespace nana
                   /// \todo how to implement some geometrical parameters ??
 				unsigned max_header_width{ 3000 };  ///< during auto width don't alow more than this           
 				unsigned min_header_width{ 20   };  ///< non counting suspension_width           
-				unsigned suspension_width{ 0    };  ///< the trigger will set this to the width if ("...")
-				unsigned ext_w           { 5    };  ///< ??
-				unsigned header_height   { 20   };  ///< header height   header_size
-				unsigned text_height     { 0    };  ///< the trigger will set this to the height of the text font
-				unsigned item_height_ex  { 6    };  ///< 6? item_height = text_height + item_height_ex
-				unsigned item_height     { 0    };  ///< the trigger will set this TO item_height = text_height + item_height_ex
-				unsigned header_mouse_spliter_area_before{ 2 };
-				unsigned header_mouse_spliter_area_after { 3 };
+				unsigned suspension_width{ 8    };  ///<  def= . the trigger will set this to the width if ("...")
+				unsigned ext_w           { 5    };  ///<  def= . ??
+				unsigned header_height   { 20   };  ///<  def= . header height   header_size
+				unsigned text_height     { 14   };  ///< the trigger will set this to the height of the text font
+				unsigned item_height_ex  { 2    };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
+				unsigned item_height     { 16   };  ///< the trigger will set this TO item_height = text_height + item_height_ex
+				unsigned header_mouse_spliter_area_before{ 4 }; ///< def=2
+				unsigned header_mouse_spliter_area_after { 4 }; ///< def=3
 
 			};
 		}
@@ -586,6 +586,17 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		}
 		listbox.anyobj(0, 0, 10); //the type of customer's object is int.
 		listbox.anyobj(0, 0, 20);
+5. listbox is a widget_object, with template parameters drawerbase::listbox::trigger and drawerbase::listbox::scheme 
+amon others.
+That means that listbox have a member trigger_ constructed first and accecible with get_drawer_trigger() and
+a member (unique pointer to) scheme_ accesible with scheme_type& scheme() created in the constructor 
+with API::dev::make_scheme<Scheme>() which call API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>())
+which call restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_base&&>(factory));
+which call pi_data_->scheme.create(std::move(factory));
+which call factory.create(scheme_template(std::move(factory)));
+which call (new Scheme(static_cast<Scheme&>(other)));
+and which in create is setted with: API::dev::set_scheme(handle_, scheme_.get()); which save the scheme pointer in 
+the nana::detail::basic_window member pointer scheme
 \todo doc: actualize this example listbox.at(0)...
 \see nana::drawerbase::listbox::cat_proxy
 \see nana::drawerbase::listbox::item_proxy
