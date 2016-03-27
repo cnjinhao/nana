@@ -17,8 +17,6 @@
 
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
 #define NANA_GUI_WIDGETS_LISTBOX_HPP
-#include <nana/push_ignore_diagnostic>
-
 #include "widget.hpp"
 #include "detail/inline_widget.hpp"
 #include <nana/pat/abstract_factory.hpp>
@@ -541,6 +539,8 @@ namespace nana
 				unsigned header_mouse_spliter_area_before{ 4 }; ///< def=2
 				unsigned header_mouse_spliter_area_after { 4 }; ///< def=3
 
+				void debug_print(const std::string &msg);
+
 			};
 		}
 	}//end namespace drawerbase
@@ -747,6 +747,4 @@ the nana::detail::basic_window member pointer scheme
 		void _m_erase_key(nana::detail::key_interface*);
 	};
 }//end namespace nana
-
-#include <nana/pop_ignore_diagnostic>
 #endif
