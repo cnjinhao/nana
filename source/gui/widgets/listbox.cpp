@@ -1883,7 +1883,7 @@ namespace nana
 
 				struct scroll_part
 				{
-					static const unsigned scale = 16; // ?
+					static const unsigned scale = 16;    // ?
 					int offset_x;
 					index_pair offset_y_abs, offset_y_dpl;	//cat stands for category, item stands for item. "item == npos" means that is a category.
                                                 // need to be abs??? to see the same item after sort() ??
@@ -2123,7 +2123,7 @@ namespace nana
 
 					if(h)
 					{
-						rectangle r(1, sz.height - scroll.scale - 1, width, scroll.scale);
+						rectangle r(1, sz.height - scroll.scale - 1, width, scroll.scale);  // -? 
 						if(scroll.h.empty())
 						{
 							scroll.h.create(wd, r);
@@ -2138,7 +2138,7 @@ namespace nana
 
 					if(v)
 					{
-						rectangle r(sz.width - 1 - scroll.scale, 1, scroll.scale, height);
+						rectangle r(sz.width - 1 - scroll.scale, 1, scroll.scale, height);  // -? 
 						if(scroll.v.empty())
 						{
 							scroll.v.create(wd, r);
@@ -2159,7 +2159,7 @@ namespace nana
 						{
 							if(header_s > r.width)
 							{
-								if((header_s - scroll.offset_x) < r.width)
+								if(header_s < r.width - scroll.offset_x)
 									scroll.offset_x = header_s - r.width;
 							}
 							else
@@ -2182,7 +2182,7 @@ namespace nana
 					}
 				}
 
-				nana::rectangle checkarea(int x, int y) const
+				nana::rectangle checkarea(int x, int y) const /// move to scheme ?? 16 ?
 				{
 					return nana::rectangle(x + 4, y + (static_cast<int>(scheme_ptr->item_height) - 16) / 2, 16, 16);
 				}
@@ -2205,7 +2205,7 @@ namespace nana
 
 							x -= (2 - scroll.offset_x);
 							new_where.first = parts::header;
-							new_where.second = static_cast<int>(header.item_by_x(x));
+							new_where.second = header.item_by_x(x); 
 						}
 						else
 						{
