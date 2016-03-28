@@ -2356,8 +2356,8 @@ namespace nana
 
 					unsigned ext_w = scheme_ptr->ext_w;
 					if (pos == 0 && checkable)    //   only before the first column (display_order=0 ?)
-						ext_w += 18;
-					header.item_width(pos, max_w + ext_w + 1 < max ? max_w + ext_w + 1 : max);
+						ext_w += 18;              // add to geom. scheme (width of the checker)  ??
+					header.item_width(pos, std::min(max, max_w + ext_w + 1 ));
 					return max_w;
 				}
 
@@ -2842,7 +2842,7 @@ namespace nana
 					{
 						facade<element::arrow> arrow("hollow_triangle");
 						arrow.direction(essence_->lister.sort_reverse() ? ::nana::direction::south : ::nana::direction::north);
-						arrow.draw(graph, {}, colors::black, { x + static_cast<int>(item.pixels - 16) / 2, -4, 16, 16 }, element_state::normal);
+						arrow.draw(graph, {}, colors::black, { x + (static_cast<int>(item.pixels) - 16) / 2, -4, 16, 16 }, element_state::normal); // geometric scheme?
 					}
 				}
 
@@ -2892,11 +2892,11 @@ namespace nana
 					auto bgcolor = wdptr->bgcolor();
 					auto fgcolor = wdptr->fgcolor();
 
-					unsigned header_w = essence_->header.pixels();
+					int header_w = essence_->header.pixels();
 					essence_->graph->palette(false, bgcolor);
-					if(header_w - essence_->scroll.offset_x < rect.width)
-						essence_->graph->rectangle(rectangle{ point(rect.x + static_cast<int>(header_w)-essence_->scroll.offset_x,  rect.y),
-                                                              size(static_cast<int>(rect.width)  + essence_->scroll.offset_x - static_cast<int>(header_w),  rect.height) },
+					if(  header_w  - essence_->scroll.offset_x < static_cast<int>(rect.width) )
+						essence_->graph->rectangle(rectangle{ point(rect.x + header_w -essence_->scroll.offset_x,  rect.y),
+                                                              size(static_cast<int>(rect.width)  + essence_->scroll.offset_x -  header_w ,  rect.height) },
                                                     true);
 
 					es_lister & lister = essence_->lister;
@@ -3040,12 +3040,12 @@ namespace nana
 				/// Draws an item
 				void _m_draw_item(const category_t& cat, 
 					              const index_pair& item_pos, 
-					              const int x, 
-					              const int y, 
-					              const int txtoff, 
+					              const int x,                           ///< left coordinate ?
+					              const int y,                           ///< top coordinate 
+					              const int txtoff,                      ///< below y to print the text
 					              unsigned width, 
 					              const nana::rectangle& content_r,      ///< the rectangle where the full list content have to be drawn
-					              const std::vector<size_type>& seqs, 
+					              const std::vector<size_type>& seqs,    ///< columns to print
 					              nana::color bgcolor, 
 					              nana::color fgcolor, 
 					              item_state state
@@ -3069,11 +3069,11 @@ namespace nana
 							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);   /// \todo create a parametre for amount of blend
 					}
 
-					unsigned show_w = width - essence_->scroll.offset_x;
-					if(show_w >= content_r.width) show_w = content_r.width;
+					unsigned show_w = std::min(content_r.width, width - essence_->scroll.offset_x);
 
 					auto graph = essence_->graph;
-					//draw the background
+
+					//draw the background for the whole item
 					graph->rectangle(rectangle{ content_r.x, y, show_w, essence_->scheme_ptr->item_height }, true, bgcolor);
 
 					int item_xpos         = x;
@@ -3094,7 +3094,7 @@ namespace nana
 							{
 								if (essence_->checkable)
 								{
-									content_pos += 18;
+									content_pos += 18;   // checker width, geom scheme?
 
 									element_state estate = element_state::normal;
 									if (essence_->pointer_where.first == parts::checker)
@@ -3120,17 +3120,17 @@ namespace nana
 									if (item.img)
 									{
 										nana::rectangle img_r(item.img_show_size);
-										img_r.x = content_pos + item_xpos + static_cast<int>(16 - item.img_show_size.width) / 2;
-										img_r.y = y + static_cast<int>(essence_->scheme_ptr->item_height - item.img_show_size.height) / 2;
+										img_r.x = content_pos + item_xpos + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
+										img_r.y = y + (static_cast<int>(essence_->scheme_ptr->item_height) - static_cast<int>(item.img_show_size.height)) / 2; // center
 										item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 									}
-									content_pos += 18;
+									content_pos += 18;  // image width, geom scheme?
 								}
 							}
 
 							bool draw_column = true;
 
-							if (static_cast<unsigned>(content_pos) < header.pixels)
+							if ( content_pos < static_cast<int>(header.pixels)) // we have room
 							{
 								auto inline_wdg = _m_get_inline_pane(cat, column_pos);
 								if (inline_wdg)
