@@ -3076,8 +3076,8 @@ namespace nana
 					//draw the background for the whole item
 					graph->rectangle(rectangle{ content_r.x, y, show_w, essence_->scheme_ptr->item_height }, true, bgcolor);
 
-					int item_xpos         = x;
-					unsigned extreme_text = x;
+					int item_xpos    = x;
+					int extreme_text = x;
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
@@ -3212,23 +3212,25 @@ namespace nana
 								{
 									graph->string(point{ item_xpos + content_pos, y + txtoff }, m_cell.text, cell_txtcolor); // draw full text of the cell index (column)
 
-									if (static_cast<int>(ts.width) > static_cast<int>(header.pixels) - (content_pos + item_xpos))	// it was an excess
+									int item_right = item_xpos + static_cast<int>(header.pixels);
+								    int text_right =  item_xpos + content_pos + static_cast<int>(ts.width);
+									int excess = text_right - item_right  ;
+									if (excess > 0)	// it was an excess
 									{
 										//The text is painted over the next subitem                // here beging the ...
-										int xpos = item_xpos + static_cast<int>(header.pixels) - static_cast<int>(essence_->scheme_ptr->suspension_width);
+										int xpos = item_right - static_cast<int>(essence_->scheme_ptr->suspension_width);
 
 										// litter rect with the  item bg end ...
-										graph->rectangle(rectangle{ xpos, y + 2, essence_->scheme_ptr->suspension_width, essence_->scheme_ptr->item_height - 4 }, true, it_bgcolor);
-										graph->string(point{ xpos, y + 2 }, L"...");
+										graph->rectangle(rectangle{ xpos, y /*+ 2*/, essence_->scheme_ptr->suspension_width, essence_->scheme_ptr->item_height /*- 4*/ }, true, it_bgcolor);
+										graph->string(point{ xpos, y /*+ 2*/ }, L"...");
 
 										//Erase the part that over the next subitem only if the right of column is less than right of listbox
-										if (item_xpos + content_pos < content_r.right() - static_cast<int>(header.pixels))
+										if (item_right  < content_r.right() )
 										{
 											graph->palette(false, bgcolor);       // we need to erase the excess, because some cell may not draw text over
-											graph->rectangle(rectangle{ item_xpos + static_cast<int>(header.pixels), y + 2,
-												ts.width + static_cast<unsigned>(content_pos)-header.pixels, essence_->scheme_ptr->item_height - 4 }, true);
+											graph->rectangle(rectangle( item_right, y /*+ 2*/, excess, essence_->scheme_ptr->item_height /*- 4*/ ), true);
 										}
-										extreme_text = (std::max)(extreme_text, item_xpos + content_pos + ts.width);
+										extreme_text = std::max(extreme_text, text_right);
 									}
 								}
 							}
@@ -3238,9 +3240,9 @@ namespace nana
 						}
 
 						item_xpos += static_cast<int>(header.pixels);
-						if (display_order + 1 >= seqs.size() && static_cast<int>(extreme_text) > item_xpos)
+						if (display_order + 1 >= seqs.size() && extreme_text > item_xpos)
 						{
-							graph->rectangle(rectangle{item_xpos , y + 2, extreme_text - item_xpos, essence_->scheme_ptr->item_height - 4}, true, item.bgcolor);
+							graph->rectangle(rectangle(item_xpos , y + 2, extreme_text - item_xpos, essence_->scheme_ptr->item_height - 4), true, item.bgcolor);
 						}
 					}
 
@@ -3568,7 +3570,6 @@ namespace nana
 						API::lazy_refresh();
 					}
 				}
-
 
 				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
