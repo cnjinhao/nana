@@ -2836,7 +2836,7 @@ namespace nana
 					}
 
 					graph.gradual_rectangle({ x, y, item.pixels, height }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.9), true);
-					graph.string({ x + 5, txtop }, item.text, fgcolor);
+					graph.string({ x + static_cast<int>(essence_->scheme_ptr->ext_w), txtop }, item.text, fgcolor);
 
 					if(item.index == essence_->lister.sort_index())
 					{
@@ -3085,9 +3085,9 @@ namespace nana
 						const auto & header = essence_->header.column(column_pos);     // deduce the corresponding header which is in a kind of dislay order
 						auto it_bgcolor = bgcolor;
 
-						if (header.pixels > 5)
+						if (header.pixels > essence_->scheme_ptr->ext_w )
 						{
-							int content_pos = 5;
+							int content_pos = essence_->scheme_ptr->ext_w;
 
 							//Draw the image in the 1st column in display order
 							if (0 == display_order)
