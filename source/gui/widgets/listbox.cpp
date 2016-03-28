@@ -32,29 +32,29 @@
 
 namespace nana
 { 
-	void debug(const std::string &msg, const rectangle&r)
-	{
-		std::cerr <<"\n" <<msg << "(" << r.x << ", " << r.y << " (" << r.width << ", " << r.height << ") )";
-	}
+	//void debug(const std::string &msg, const rectangle&r)
+	//{
+	//	std::cerr <<"\n" <<msg << "(" << r.x << ", " << r.y << " (" << r.width << ", " << r.height << ") )";
+	//}
 	namespace drawerbase
 	{
 		namespace listbox
 		{
-			void scheme::debug_print(const std::string &msg)
-			{
-				
-				std::cerr << "\n " << msg;
-				std::cerr << "\n  max_header_width: " << max_header_width;  
-				std::cerr << "\n  min_header_width: " << min_header_width;  
-				std::cerr << "\n  suspension_width: " << suspension_width;
-				std::cerr << "\n  ext_w: " << ext_w;
-				std::cerr << "\n  header_height: " << header_height;
-				std::cerr << "\n  text_height: " << text_height;
-				std::cerr << "\n  item_height_ex: " << item_height_ex;
-				std::cerr << "\n  item_height: " << item_height;
-				std::cerr << "\n  header_mouse_spliter_area_before: " << header_mouse_spliter_area_before;
-				std::cerr << "\n  header_mouse_spliter_area_after: " << header_mouse_spliter_area_after;
-			}
+			//void scheme::debug_print(const std::string &msg)
+			//{
+			//	
+			//	std::cerr << "\n " << msg;
+			//	std::cerr << "\n  max_header_width: " << max_header_width;  
+			//	std::cerr << "\n  min_header_width: " << min_header_width;  
+			//	std::cerr << "\n  suspension_width: " << suspension_width;
+			//	std::cerr << "\n  ext_w: " << ext_w;
+			//	std::cerr << "\n  header_height: " << header_height;
+			//	std::cerr << "\n  text_height: " << text_height;
+			//	std::cerr << "\n  item_height_ex: " << item_height_ex;
+			//	std::cerr << "\n  item_height: " << item_height;
+			//	std::cerr << "\n  header_mouse_spliter_area_before: " << header_mouse_spliter_area_before;
+			//	std::cerr << "\n  header_mouse_spliter_area_after: " << header_mouse_spliter_area_after;
+			//}
 			//struct cell
 				cell::format::format(const ::nana::color& bgcolor, const ::nana::color& fgcolor)
 					: bgcolor{ bgcolor }, fgcolor{ fgcolor }
@@ -3343,10 +3343,10 @@ namespace nana
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
-					essence_->scheme_ptr = &static_cast<::nana::listbox&>(widget).scheme();
-					essence_->scheme_ptr->debug_print("In trigger::attached with &static_cast<::nana::listbox&>(widget).scheme();");
+					//essence_->scheme_ptr = &static_cast<::nana::listbox&>(widget).scheme();
+					//essence_->scheme_ptr->debug_print("In trigger::attached with &static_cast<::nana::listbox&>(widget).scheme();");
 					essence_->scheme_ptr = static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));
-					essence_->scheme_ptr->debug_print("In trigger::attached with static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));");
+					//essence_->scheme_ptr->debug_print("In trigger::attached with static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));");
 
 					essence_->graph = &graph;
 					typeface_changed(graph);
@@ -3374,17 +3374,17 @@ namespace nana
 
 					nana::rectangle r;
 
-					essence_->scheme_ptr->debug_print("From trigger::refresh(graph_reference) ");
+					//essence_->scheme_ptr->debug_print("From trigger::refresh(graph_reference) ");
 
 					if (essence_->header.visible() && essence_->rect_header(r))
 						drawer_header_->draw(r);
 
-					debug("Header: ", r);
+					//debug("Header: ", r);
 
 					if (essence_->rect_lister(r))
 						drawer_lister_->draw(r);
 
-					debug("Lister: ", r);
+					//debug("Lister: ", r);
 
 					_m_draw_border();
 				}
