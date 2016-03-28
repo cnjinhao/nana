@@ -392,8 +392,12 @@ namespace drawerbase {
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->multi_lines(ml))
-				API::update_window(handle());
+			if (editor && editor->multi_lines(ml))
+			{
+				auto wd = handle();
+				API::eat_tabstop(wd, ml);	//textbox handles the Tab pressing when it is multi-line.
+				API::update_window(wd);
+			}
 			return *this;
 		}
 
