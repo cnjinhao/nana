@@ -529,13 +529,13 @@ namespace nana
 
                   /// \todo how to implement some geometrical parameters ??
 				unsigned max_header_width{ 3000 };  ///< during auto width don't alow more than this           
-				unsigned min_header_width{ 20   };  ///< non counting suspension_width           
+				unsigned min_header_width{ 20   };  ///< def=20 . non counting suspension_width           
 				unsigned suspension_width{ 8    };  ///<  def= . the trigger will set this to the width if ("...")
-				unsigned ext_w           { 5    };  ///<  def= . ??
-				unsigned header_height   { 20   };  ///<  def= . header height   header_size
+				unsigned ext_w           { 5    };  ///<  def= 5. Additional or extended with added (before) to the text width to determine the cell width. cell_w = text_w + ext_w +1
+				unsigned header_height   { 20   };  ///<  def=25 . header height   header_size
 				unsigned text_height     { 14   };  ///< the trigger will set this to the height of the text font
 				unsigned item_height_ex  { 2    };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
-				unsigned item_height     { 16   };  ///< the trigger will set this TO item_height = text_height + item_height_ex
+				unsigned item_height     { 16   };  ///<  def=24 . the trigger will set this TO item_height = text_height + item_height_ex
 				unsigned header_mouse_spliter_area_before{ 4 }; ///< def=2
 				unsigned header_mouse_spliter_area_after { 4 }; ///< def=3
 
