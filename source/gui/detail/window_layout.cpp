@@ -1,7 +1,7 @@
 /*
 *	Window Layout Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,7 +24,7 @@ namespace nana
 		//class window_layout
 			void window_layout::paint(core_window_t* wd, bool is_redraw, bool is_child_refreshed)
 			{
-				if (wd->flags.refreshing)
+				if (is_redraw && wd->flags.refreshing)
 					return;
 
 				if (nullptr == wd->effect.bground)
