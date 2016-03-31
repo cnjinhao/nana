@@ -3242,7 +3242,7 @@ namespace nana
 						item_xpos += static_cast<int>(header.pixels);
 						if (display_order + 1 >= seqs.size() && extreme_text > item_xpos)
 						{
-							graph->rectangle(rectangle(item_xpos , y + 2, extreme_text - item_xpos, essence_->scheme_ptr->item_height - 4), true, item.bgcolor);
+							graph->rectangle(rectangle(item_xpos , y /*+ 2*/, extreme_text - item_xpos, essence_->scheme_ptr->item_height /*- 4*/), true, item.bgcolor);
 						}
 					}
 
