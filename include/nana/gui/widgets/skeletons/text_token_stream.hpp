@@ -194,13 +194,24 @@ namespace nana{ namespace widgets{	namespace skeletons
 				return token::tag_begin;
 			}
 
+
 			//Escape
-			if(ch == '\\')
+			if(this->format_enabled_ && (ch == '\\'))
 			{
 				if(iptr_ + 1 < endptr_)
 				{
 					ch = *(iptr_ + 1);
-					iptr_ += 2;
+
+					if ('<' == ch || '>' == ch)	//two characters need to be escaped.
+					{
+						iptr_ += 2;
+					}
+					else
+					{
+						//ignore escape
+						ch = '\\';
+						iptr_++;
+					}
 				}
 				else
 				{
@@ -208,8 +219,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 					return token::eof;
 				}
 			}
-
-			++iptr_;
+			else
+				++iptr_;
 
 			idstr_.clear();
 			idstr_.append(1, ch);
@@ -276,6 +287,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 				}
 				return token::eof;
 			}
+
+			
 
 			if(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '_' == ch)
 			{
