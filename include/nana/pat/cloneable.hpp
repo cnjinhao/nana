@@ -97,13 +97,6 @@ namespace nana{ namespace pat{
 
 		typedef int inner_bool::* operator_bool_t;
 
-		/*
-		template<typename U>
-		struct member_enabled		//deprecated
-			: public std::enable_if<(!std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>
-		{};
-		*/
-
 		template<typename U>
 		using member_enabled = std::enable_if<(!std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>;
 	public:

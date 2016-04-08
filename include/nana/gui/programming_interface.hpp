@@ -60,6 +60,8 @@ namespace API
 	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
 	namespace dev
 	{
+		void affinity_execute(window window_handle, const std::function<void()>&);
+
 		bool set_events(window, const std::shared_ptr<general_events>&);
 		
 		template<typename Scheme>
