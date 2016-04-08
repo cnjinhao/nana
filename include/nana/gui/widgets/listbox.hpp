@@ -26,6 +26,8 @@
 #include <nana/key_type.hpp>
 #include <functional>
 #include <initializer_list>
+#include <mutex>
+#include <typeinfo>
 
 namespace nana
 {
@@ -35,6 +37,543 @@ namespace nana
 	{
 		namespace listbox
 		{
+			class const_virtual_pointer
+			{
+				struct intern
+				{
+				public:
+					virtual ~intern() = default;
+				};
+
+				template<typename T>
+				struct real_pointer
+					: public intern
+				{
+					const T * ptr;
+
+					real_pointer(const T* p)
+						: ptr(p)
+					{}
+				};
+
+				const_virtual_pointer(const const_virtual_pointer&) = delete;
+				const_virtual_pointer& operator=(const const_virtual_pointer&) = delete;
+
+				const_virtual_pointer(const_virtual_pointer&&) = delete;
+				const_virtual_pointer& operator=(const_virtual_pointer&&) = delete;
+			public:
+				template<typename Type>
+				explicit const_virtual_pointer(const Type* p)
+					: intern_(new real_pointer<Type>{p})
+				{
+				}
+
+				~const_virtual_pointer()
+				{
+					delete intern_;
+				}
+
+				template<typename Type>
+				const typename std::remove_const<Type>::type *get()
+				{
+					using value_type = typename std::remove_const<Type>::type;
+					auto target = dynamic_cast<real_pointer<value_type>*>(intern_);
+					return (target ? target->ptr : nullptr);
+				}
+			private:
+				intern * intern_;
+			};
+
+			struct cell
+			{
+				struct format
+				{
+					::nana::color bgcolor;
+					::nana::color fgcolor;
+
+					format() = default;
+					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
+				};
+
+				using format_ptr = ::std::unique_ptr<format>;
+
+				::std::string	text;
+				format_ptr	custom_format;
+
+				cell() = default;
+				cell(const cell&);
+				cell(cell&&);
+				cell(::std::string);
+				cell(::std::string, const format&);
+				cell(::std::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);
+
+				cell& operator=(const cell&);
+				cell& operator=(cell&&);
+			};
+
+			class container_interface
+			{
+				friend class model_guard;
+			public:
+				virtual ~container_interface() = default;
+
+				virtual void clear() = 0;
+				virtual void erase(std::size_t pos) = 0;
+
+				virtual std::size_t size() const = 0;
+				virtual bool immutable() const = 0;
+
+				virtual void emplace(std::size_t pos) = 0;
+				virtual void emplace_back() = 0;
+
+				virtual void assign(std::size_t pos, const std::vector<cell>& cells) = 0;
+				virtual std::vector<cell> to_cells(std::size_t pos) const = 0;
+
+				virtual bool push_back(const_virtual_pointer&) = 0;
+
+				virtual void * pointer() = 0;
+				virtual const void* pointer() const = 0;
+			};
+
+			template<typename Value>
+			struct container_translator
+			{
+				using value_translator = std::function<Value(const std::vector<cell>& cells)>;
+				using cell_translator = std::function<std::vector<cell>(const Value&)>;
+
+				value_translator	to_value;
+				cell_translator		to_cell;
+			};
+
+			template<typename STLContainer>
+			class basic_container
+				: public container_interface
+			{
+			};
+
+			template<typename STLContainer>
+			class standalone_container
+				: public basic_container<STLContainer>
+			{
+				using value_type = typename STLContainer::value_type;
+				using value_translator = typename container_translator<value_type>::value_translator;
+				using cell_translator = typename container_translator<value_type>::cell_translator;
+			public:
+				standalone_container(STLContainer&& cont, value_translator vtrans, cell_translator ctrans)
+					:	container_(std::move(cont)),
+						translator_({ vtrans, ctrans })
+				{}
+
+				standalone_container(const STLContainer& cont, value_translator vtrans, cell_translator ctrans)
+					:	container_(cont),
+						translator_({ vtrans, ctrans })
+				{}
+			private:
+				void clear() override
+				{
+					container_.clear();
+				}
+
+				void erase(std::size_t pos) override
+				{
+					auto i = container_.begin();
+					std::advance(i, static_cast<int>(pos));
+					container_.erase(i);
+				}
+
+				std::size_t size() const override
+				{
+					return container_.size();
+				}
+
+				bool immutable() const override
+				{
+					return false;
+				}
+
+				void emplace(std::size_t pos) override
+				{
+					auto i = container_.begin();
+					std::advance(i, static_cast<int>(pos));
+
+					container_.emplace(i);
+				}
+
+				void emplace_back() override
+				{
+					container_.emplace_back();
+				}
+			
+				void assign(std::size_t pos, const std::vector<cell>& cells) override
+				{
+					container_.at(pos) = translator_.to_value(cells);
+				}
+
+				std::vector<cell> to_cells(std::size_t pos) const override
+				{
+					return translator_.to_cell(container_.at(pos));
+				}
+
+				bool push_back(const_virtual_pointer& dptr) override
+				{
+					auto value = dptr.get<value_type>();
+					if (value)
+					{
+						container_.push_back(*value);
+						return true;
+					}
+					return false;
+				}
+
+				void* pointer() override
+				{
+					return &container_;
+				}
+
+				const void* pointer() const override
+				{
+					return &container_;
+				}
+			private:
+				STLContainer container_;
+				container_translator<value_type> translator_;
+			};
+
+
+			template<typename STLContainer>
+			class shared_container
+				: public basic_container<STLContainer>
+			{
+				using value_type = typename STLContainer::value_type;
+				using value_translator = typename container_translator<value_type>::value_translator;
+				using cell_translator = typename container_translator<value_type>::cell_translator;
+
+			public:
+				using container_reference = STLContainer&;
+
+				
+				shared_container(container_reference cont, value_translator vtrans, cell_translator ctrans)
+					: container_(cont), translator_({ vtrans, ctrans })
+				{
+					
+				}
+			private:
+				void clear() override
+				{
+					container_.clear();
+				}
+
+				void erase(std::size_t pos) override
+				{
+					auto i = container_.begin();
+					std::advance(i, static_cast<int>(pos));
+					container_.erase(i);
+				}
+
+				std::size_t size() const override
+				{
+					return container_.size();
+				}
+
+				bool immutable() const override
+				{
+					return false;
+				}
+
+				void emplace(std::size_t pos) override
+				{
+					auto i = container_.begin();
+					std::advance(i, static_cast<int>(pos));
+
+					container_.emplace(i);
+				}
+
+				void emplace_back() override
+				{
+					container_.emplace_back();
+				}
+
+				void assign(std::size_t pos, const std::vector<cell>& cells) override
+				{
+					container_.at(pos) = translator_.to_value(cells);
+				}
+
+				std::vector<cell> to_cells(std::size_t pos) const override
+				{
+					return translator_.to_cell(container_.at(pos));
+				}
+
+				bool push_back(const_virtual_pointer& dptr) override
+				{
+					auto value = dptr.get<value_type>();
+					if (value)
+					{
+						container_.push_back(*value);
+						return true;
+					}
+					return false;
+				}
+
+				void* pointer() override
+				{
+					return &container_;
+				}
+
+				const void* pointer() const override
+				{
+					return &container_;
+				}
+			private:
+				container_reference container_;
+				container_translator<value_type> translator_;
+			};
+
+			template<typename STLContainer>
+			class shared_immutable_container
+				: public basic_container<STLContainer>
+			{
+				using value_type = typename STLContainer::value_type;
+				using cell_translator = typename container_translator<value_type>::cell_translator;
+
+
+			public:
+				using container_reference = const STLContainer&;
+
+
+				shared_immutable_container(container_reference cont, cell_translator ctrans)
+					: container_(cont), ctrans_(ctrans)
+				{
+				}
+			private:
+				void clear() override
+				{
+					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
+				}
+
+				void erase(std::size_t pos) override
+				{
+					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
+				}
+
+				std::size_t size() const override
+				{
+					return container_.size();
+				}
+
+				bool immutable() const override
+				{
+					return true;
+				}
+
+				void emplace(std::size_t pos) override
+				{
+					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
+				}
+
+				void emplace_back() override
+				{
+					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
+				}
+
+				void assign(std::size_t pos, const std::vector<cell>& cells) override
+				{
+					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
+				}
+
+				std::vector<cell> to_cells(std::size_t pos) const override
+				{
+					return ctrans_(container_.at(pos));
+				}
+
+				bool push_back(const_virtual_pointer& dptr) override
+				{
+					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
+				}
+
+				void* pointer() override
+				{
+					return nullptr;
+				}
+
+				const void* pointer() const override
+				{
+					return &container_;
+				}
+			private:
+				container_reference container_;
+				cell_translator ctrans_;
+			};
+
+			class model_interface
+			{
+			public:
+				virtual ~model_interface() = default;
+
+				virtual void lock() = 0;
+				virtual void unlock() = 0;
+
+				virtual container_interface* container() = 0;
+				virtual const container_interface* container() const = 0;
+			};
+
+			class model_guard
+			{
+				model_guard(const model_guard&) = delete;
+				model_guard& operator=(const model_guard&) = delete;
+			public:
+				model_guard(model_interface* model)
+					: model_(model)
+				{
+					model->lock();
+				}
+
+				model_guard(model_guard&& other)
+					: model_(other.model_)
+				{
+					other.model_ = nullptr;
+				}
+
+				~model_guard() noexcept
+				{
+					if (model_)
+						model_->unlock();
+				}
+
+				model_guard& operator=(model_guard&& other)
+				{
+					if (this != &other)
+					{
+						if (model_)
+							model_->unlock();
+
+						model_ = other.model_;
+						other.model_ = nullptr;
+					}
+					return *this;
+				}
+
+				template<typename STLContainer>
+				STLContainer& container()
+				{
+					using stlcontainer = typename std::decay<STLContainer>::type;
+
+					if (!model_)
+						throw std::runtime_error("nana::listbox empty model_guard");
+
+					using type = basic_container<stlcontainer>;
+					auto p = dynamic_cast<type*>(model_->container());
+					if (nullptr == p)
+						throw std::invalid_argument("invalid listbox model container type");
+
+					if (nullptr == p->pointer())
+						throw std::runtime_error("the modal is immutable");
+
+					return *static_cast<stlcontainer*>(p->pointer());
+				}
+
+				template<typename STLContainer>
+				const STLContainer& container() const
+				{
+					using stlcontainer = typename std::decay<STLContainer>::type;
+
+					if (!model_)
+						throw std::runtime_error("nana::listbox empty model_guard");
+
+					using type = basic_container<stlcontainer>;
+					auto p = dynamic_cast<const type*>(model_->container());
+					if (nullptr == p)
+						throw std::invalid_argument("invalid listbox model container type");
+
+					return *static_cast<const stlcontainer*>(p->pointer());
+				}
+			private:
+				model_interface* model_;
+			};
+
+			template<typename STLContainer, typename Mutex>
+			class standalone_model_container
+				: public model_interface
+			{
+			public:
+				using value_translator = typename container_translator<typename STLContainer::value_type>::value_translator;
+				using cell_translator = typename container_translator<typename STLContainer::value_type>::cell_translator;
+
+				standalone_model_container(STLContainer&& container, value_translator vtrans, cell_translator ctrans)
+					: container_(std::move(container), std::move(vtrans), std::move(ctrans))
+				{
+				}
+
+				standalone_model_container(const STLContainer& container, value_translator vtrans, cell_translator ctrans)
+					: container_(container, std::move(vtrans), std::move(ctrans))
+				{
+				}
+
+				void lock() override
+				{
+					mutex_.lock();
+				}
+
+				void unlock() override
+				{
+					mutex_.unlock();
+				}
+
+				container_interface* container() override
+				{
+					return &container_;
+				}
+
+				const container_interface* container() const override
+				{
+					return &container_;
+				}
+			private:
+				Mutex mutex_;
+				standalone_container<STLContainer> container_;
+			};
+
+			template<typename STLContainer, typename Mutex>
+			class shared_model_container
+				: public model_interface
+			{
+			public:
+				using value_translator = typename container_translator<typename STLContainer::value_type>::value_translator;
+				using cell_translator = typename container_translator<typename STLContainer::value_type>::cell_translator;
+
+				shared_model_container(STLContainer& container, value_translator vtrans, cell_translator ctrans)
+					: container_ptr_(new shared_container<STLContainer>(container, std::move(vtrans), std::move(ctrans)))
+				{
+				}
+
+				shared_model_container(const STLContainer& container, cell_translator ctrans)
+					: container_ptr_(new shared_immutable_container<STLContainer>(container, std::move(ctrans)))
+				{
+				}
+
+				void lock() override
+				{
+					mutex_.lock();
+				}
+
+				void unlock() override
+				{
+					mutex_.unlock();
+				}
+
+				container_interface* container() override
+				{
+					return container_ptr_.get();
+				}
+
+				const container_interface* container() const override
+				{
+					return container_ptr_.get();
+				}
+			private:
+				Mutex mutex_;
+				std::unique_ptr<container_interface> container_ptr_;
+			};
+
 			using size_type = std::size_t;
 			using native_string_type = ::nana::detail::native_string_type;
 
@@ -89,36 +628,15 @@ namespace nana
 
 			using inline_notifier_interface = detail::inline_widget_notifier_interface<index_pair, std::string>;
 
-			struct cell
-			{
-				struct format
-				{
-					::nana::color bgcolor;
-					::nana::color fgcolor;
-                    /// ::nana::paint::font font;  \todo 
-					format() = default;
-					format(const ::nana::color& bgcolor, const ::nana::color& fgcolor);
-				};
-
-				using format_ptr = ::std::unique_ptr<format>;
-
-				::std::string	text;
-				format_ptr	custom_format;
-
-				cell() = default;
-				cell(const cell&);
-				cell(cell&&);
-				cell(::std::string);
-				cell(::std::string, const format&);
-				cell(::std::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);
-
-				cell& operator=(const cell&);
-				cell& operator=(cell&&);
-			};
+			// struct essence_t
+			//@brief:	this struct gives many data for listbox,
+			//			the state of the struct does not effect on member funcions, therefore all data members are public.
+			struct essence_t;
 
 			class oresolver
 			{
 			public:
+				oresolver(essence_t*);
 				oresolver& operator<<(bool);
 				oresolver& operator<<(short);
 				oresolver& operator<<(unsigned short);
@@ -141,7 +659,10 @@ namespace nana
 				oresolver& operator<<(std::nullptr_t);
 
 				std::vector<cell> && move_cells();
+
+				::nana::listbox& listbox();
 			private:
+				essence_t* const ess_;
 				std::vector<cell> cells_;
 			};
 
@@ -173,11 +694,6 @@ namespace nana
 			};
 
 			using selection = std::vector<index_pair>;
-
-			/// struct essence_t
-			///@brief:	this struct gives many data for listbox,
-			///			the state of the struct does not effect on member funcions, therefore all data members are public.
-			struct essence_t;
 
 			struct category_t;
 			class drawer_header_impl;
@@ -256,7 +772,7 @@ namespace nana
 				template<typename T>
 				item_proxy & resolve_from(const T& t)
 				{
-					oresolver ores;
+					oresolver ores(_m_ess());
 					ores << t;
 					auto && cells = ores.move_cells();
 					auto cols = columns();
@@ -355,6 +871,8 @@ namespace nana
 			{
 			public:
 				using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
+				template<typename Value> using value_translator = typename container_translator<Value>::value_translator;
+				template<typename Value> using cell_translator = typename container_translator<Value>::cell_translator;
 
 				cat_proxy() = default;
 				cat_proxy(essence_t*, size_type pos);
@@ -364,7 +882,11 @@ namespace nana
 				template<typename T>
 				item_proxy append(T&& t, bool set_value = false)
 				{
-					oresolver ores;
+					oresolver ores(ess_);
+
+					//Troubleshoot:
+					//If a compiler error that no operator<< overload found for type T occurs, please define a overload operator<<(oresolver&, const T&).
+					//If a listbox have a model set, try call append_model instead.
 					if (set_value)
 						ores << t;	//copy it if it is rvalue and set_value is true.
 					else
@@ -380,6 +902,33 @@ namespace nana
 
 					return iter;
 				}
+
+				template<typename T>
+				void append_model(const T& t)
+				{
+					_m_try_append_model(const_virtual_pointer{ &t });
+					_m_update();
+				}
+
+				template<typename Mutex, typename STLContainer, typename ValueTranslator, typename CellTranslator>
+				void model(STLContainer&& container, ValueTranslator vtrans, CellTranslator ctrans)
+				{
+					_m_reset_model(new standalone_model_container<typename std::decay<STLContainer>::type, Mutex>(std::forward<STLContainer>(container), std::move(vtrans), std::move(ctrans)));
+				}
+
+				template<typename Mutex, typename STLContainer, typename ValueTranslator, typename CellTranslator>
+				void shared_model(STLContainer& container, ValueTranslator vtrans, CellTranslator ctrans)
+				{
+					_m_reset_model(new shared_model_container<typename std::decay<STLContainer>::type, Mutex>(container, std::move(vtrans), std::move(ctrans)));
+				}
+
+				template<typename Mutex, typename STLContainer, typename CellTranslator>
+				void shared_model(const STLContainer& container, CellTranslator ctrans)
+				{
+					_m_reset_model(new shared_model_container<typename std::decay<STLContainer>::type, Mutex>(container, std::move(ctrans)));
+				}
+
+				model_guard model();
 
 				/// Appends one item at the end of this category with the specifies text in the column fields
 				void append(std::initializer_list<std::string> texts_utf8);
@@ -448,8 +997,10 @@ namespace nana
 				void inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_notifier_interface>> factory);
 			private:
 				void _m_append(std::vector<cell> && cells);
+				void _m_try_append_model(const_virtual_pointer&);
 				void _m_cat_by_pos();
 				void _m_update();
+				void _m_reset_model(model_interface*);
 			private:
 				essence_t*	ess_{nullptr};
 				category_t*	cat_{nullptr};
@@ -480,7 +1031,7 @@ namespace nana
     };
 
 	/// The event argument type for listbox's category_dbl_click
-    struct arg_category
+    struct arg_listbox_category
 		: public event_arg
 	{
         drawerbase::listbox::cat_proxy category;
@@ -491,7 +1042,7 @@ namespace nana
 		/// Determines whether expension/shrink of category is blocked
         bool category_change_blocked() const noexcept;
 
-        arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
+		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
     private:
         mutable bool block_change_;
 	};
@@ -507,7 +1058,7 @@ namespace nana
 				basic_event<arg_listbox> selected;
 
 				/// An event occurs when a listbox category is double clicking.
-                basic_event<arg_category> category_dbl_click;
+                basic_event<arg_listbox_category> category_dbl_click;
 			};
 
 			struct scheme
@@ -599,7 +1150,6 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
         listbox& header_width(size_type position, unsigned pixels);
 		unsigned header_width(size_type position) const;
         unsigned auto_width(size_type position, unsigned max=3000);
-
 
 		cat_proxy append(std::string);          ///< Appends a new category to the end
 		cat_proxy append(std::wstring);			///< Appends a new category to the end
@@ -707,7 +1257,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
-		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
+		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>&);
 		void _m_erase_key(nana::detail::key_interface*);
 	};
 }//end namespace nana

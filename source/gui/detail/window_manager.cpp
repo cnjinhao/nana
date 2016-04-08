@@ -850,9 +850,6 @@ namespace detail
 					{
 						window_layer::paint(wd, false, refresh_tree);
 						this->map(wd, force_copy_to_screen);
-
-						wd->drawer.graphics.save_as_file("d:\\button.bmp");
-						wd->root_graph->save_as_file("d:\\button_root.bmp");
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
