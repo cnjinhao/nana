@@ -669,6 +669,14 @@ namespace detail
 		case nana::detail::messages::tray:
 			notifications_window_proc(wd, wParam, lParam);
 			return true;
+		case nana::detail::messages::affinity_execute:
+			if (wParam)
+			{
+				auto arg = reinterpret_cast<detail::messages::arg_affinity_execute*>(wParam);
+				if (arg->function_ptr)
+					(*arg->function_ptr)();
+			}
+			break;
 		default:
 			break;
 		}

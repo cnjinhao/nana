@@ -179,6 +179,11 @@ namespace API
 	namespace dev
 	{
 
+		void affinity_execute(window window_handle, const std::function<void()>& fn)
+		{
+			interface_type::affinity_execute(root(window_handle), fn);
+		}
+
 		bool set_events(window wd, const std::shared_ptr<general_events>& gep)
 		{
 			auto iwd = reinterpret_cast<basic_window*>(wd);

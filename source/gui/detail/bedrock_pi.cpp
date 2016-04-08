@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -36,6 +36,18 @@ namespace nana
 			detail::bedrock::instance().wd_manager().internal_lock().unlock();
 		}
 	//end class internal_scope_guard
+	
+	//class internal_revert_guard
+		internal_revert_guard::internal_revert_guard()
+		{
+			detail::bedrock::instance().wd_manager().internal_lock().revert();
+		}
+
+		internal_revert_guard::~internal_revert_guard()
+		{
+			detail::bedrock::instance().wd_manager().internal_lock().forward();
+		}
+		//end class internal_revert_guard
 
 	//class event_arg
 	void event_arg::stop_propagation() const

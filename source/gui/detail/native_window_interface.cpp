@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,6 +13,9 @@
 #include <nana/detail/platform_spec_selector.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/screen.hpp>
+#include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/window_manager.hpp>
+
 #if defined(NANA_WINDOWS)
 	#if defined(STD_THREAD_NOT_SUPPORTED)
         #include <nana/std_mutex.hpp>
@@ -23,8 +26,6 @@
 	#include "../../paint/detail/image_ico.hpp"
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
-	#include <nana/gui/detail/bedrock.hpp>
-	#include <nana/gui/detail/window_manager.hpp>
 #endif
 
 namespace nana{
@@ -131,9 +132,13 @@ namespace nana{
 			}
 		}
 		if (async)
+		{
 			::ShowWindowAsync(wd, cmd);
-		else
-			::ShowWindow(wd, cmd);
+			return;
+		}
+		
+		internal_revert_guard revert;
+		::ShowWindow(wd, cmd);
 	}
 #elif defined(NANA_X11)
 	namespace restrict
@@ -143,6 +148,33 @@ namespace nana{
 #endif
 
 	//struct native_interface
+		void native_interface::affinity_execute(native_window_type native_handle, const std::function<void()>& fn)
+		{
+			if (!fn)
+				return;
+
+#if defined(NANA_WINDOWS)
+			auto mswin = reinterpret_cast<HWND>(native_handle);
+			if (::IsWindow(mswin))
+			{
+				if (::GetCurrentThreadId() != ::GetWindowThreadProcessId(mswin, nullptr))
+				{
+					detail::messages::arg_affinity_execute arg;
+					arg.function_ptr = &fn;
+
+					internal_revert_guard revert;
+					::SendMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(&arg), 0);
+
+					return;
+				}
+			}
+
+			fn();
+#else
+			fn();
+#endif	
+		}
+
 		nana::size native_interface::primary_monitor_size()
 		{
 #if defined(NANA_WINDOWS)
@@ -1119,11 +1151,18 @@ namespace nana{
 
 		auto native_interface::window_caption(native_window_type wd) -> native_string_type
 		{
+			native_string_type str;
+
 #if defined(NANA_WINDOWS)
+			auto & lock = bedrock::instance().wd_manager().internal_lock();
+			bool is_current_thread = (::GetCurrentThreadId() == ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), nullptr));
+
+			if (!is_current_thread)
+				lock.revert();
+
 			int length = ::GetWindowTextLength(reinterpret_cast<HWND>(wd));
 			if(length > 0)
 			{
-				native_string_type str;
                 //One for NULL terminator which GetWindowText will write.
 				str.resize(length+1);
 
@@ -1131,9 +1170,11 @@ namespace nana{
 
 				//Remove the null terminator writtien by GetWindowText
 				str.resize(length);
-
-				return str;
 			}
+
+			if (!is_current_thread)
+				lock.forward();
+
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 			::XTextProperty txtpro;
@@ -1145,14 +1186,13 @@ namespace nana{
 				{
 					if(size > 1)
 					{
-						std::string text = *strlist;
+						str = *strlist;
 						::XFreeStringList(strlist);
-						return text;
 					}
 				}
 			}
 #endif
-			return native_string_type();
+			return str;
 		}
 
 		void native_interface::capture_window(native_window_type wd, bool cap)
@@ -1314,7 +1354,10 @@ namespace nana{
 				if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), nullptr))
 					::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::async_set_focus, 0, 0);
 				else
+				{
+					internal_revert_guard revert;
 					::SetFocus(reinterpret_cast<HWND>(wd));
+				}
 			}
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard lock;
