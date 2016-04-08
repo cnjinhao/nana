@@ -74,7 +74,7 @@ namespace nana
 				}
 
 				template<typename Type>
-				const typename std::remove_const<Type>::type *get()
+				const typename std::remove_const<Type>::type *get() const
 				{
 					using value_type = typename std::remove_const<Type>::type;
 					auto target = dynamic_cast<real_pointer<value_type>*>(intern_);
@@ -129,7 +129,7 @@ namespace nana
 				virtual void assign(std::size_t pos, const std::vector<cell>& cells) = 0;
 				virtual std::vector<cell> to_cells(std::size_t pos) const = 0;
 
-				virtual bool push_back(const_virtual_pointer&) = 0;
+				virtual bool push_back(const const_virtual_pointer&) = 0;
 
 				virtual void * pointer() = 0;
 				virtual const void* pointer() const = 0;
@@ -214,7 +214,7 @@ namespace nana
 					return translator_.to_cell(container_.at(pos));
 				}
 
-				bool push_back(const_virtual_pointer& dptr) override
+				bool push_back(const const_virtual_pointer& dptr) override
 				{
 					auto value = dptr.get<value_type>();
 					if (value)
@@ -303,7 +303,7 @@ namespace nana
 					return translator_.to_cell(container_.at(pos));
 				}
 
-				bool push_back(const_virtual_pointer& dptr) override
+				bool push_back(const const_virtual_pointer& dptr) override
 				{
 					auto value = dptr.get<value_type>();
 					if (value)
@@ -385,7 +385,7 @@ namespace nana
 					return ctrans_(container_.at(pos));
 				}
 
-				bool push_back(const_virtual_pointer& dptr) override
+				bool push_back(const const_virtual_pointer& dptr) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -997,7 +997,7 @@ namespace nana
 				void inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_notifier_interface>> factory);
 			private:
 				void _m_append(std::vector<cell> && cells);
-				void _m_try_append_model(const_virtual_pointer&);
+				void _m_try_append_model(const const_virtual_pointer&);
 				void _m_cat_by_pos();
 				void _m_update();
 				void _m_reset_model(model_interface*);

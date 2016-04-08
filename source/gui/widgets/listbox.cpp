@@ -4601,7 +4601,7 @@ namespace nana
 					}
 				}
 
-				void cat_proxy::_m_try_append_model(const_virtual_pointer& dptr)
+				void cat_proxy::_m_try_append_model(const const_virtual_pointer& dptr)
 				{
 					if (!cat_->model_ptr)
 					{
