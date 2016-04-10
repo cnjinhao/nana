@@ -1208,7 +1208,7 @@ namespace nana
 								m.flags.checked = ck;
 
 								arg_listbox arg{ item_proxy{ess_, pos}, ck};
-								wd_ptr()->events().checked.emit(arg);
+								wd_ptr()->events().checked.emit(arg, wd_ptr()->handle());
 							}
 							++pos.item;
 						}
@@ -1279,7 +1279,7 @@ namespace nana
 								m.flags.selected = sel;
 
 								arg_listbox arg{ item_proxy(ess_, i), sel };
-								wd_ptr()->events().selected.emit(arg);
+								wd_ptr()->events().selected.emit(arg, wd_ptr()->handle());
 
 								if (m.flags.selected)
 									last_selected_abs = i;
@@ -1371,12 +1371,12 @@ namespace nana
 						if (for_selection)
 						{
 							m.flags.selected = false;
-							widget_->events().selected.emit(arg);
+							widget_->events().selected.emit(arg, widget_->handle());
 						}
 						else
 						{
 							m.flags.checked = false;
-							widget_->events().checked.emit(arg);
+							widget_->events().checked.emit(arg, widget_->handle());
 						}
 					};
 
@@ -1454,12 +1454,12 @@ namespace nana
 							if (for_selection)
 							{
 								m.flags.selected = false;
-								widget_->events().selected.emit(arg);
+								widget_->events().selected.emit(arg, widget_->handle());
 							}
 							else
 							{
 								m.flags.checked = false;
-								widget_->events().checked.emit(arg);
+								widget_->events().checked.emit(arg, widget_->handle());
 							}
 						};
 
@@ -1554,7 +1554,7 @@ namespace nana
 							m.flags.checked = ck;
 
 							arg_listbox arg{ item_proxy(ess_, index_pair(cat, index)), ck};
-							wd_ptr()->events().checked.emit(arg);
+							wd_ptr()->events().checked.emit(arg, widget_->handle());
 
 							changed = true;
 						}
@@ -3456,7 +3456,7 @@ namespace nana
 									index_pair last_selected(item_pos.cat, lister.absolute(item_pos));
 
 									arg_listbox arg{item_proxy{essence_, last_selected}, sel};
-									lister.wd_ptr()->events().selected.emit(arg);
+									lister.wd_ptr()->events().selected.emit(arg, lister.wd_ptr()->handle());
 
 									if (item_ptr->flags.selected)
 									{
@@ -3478,7 +3478,7 @@ namespace nana
 
 									index_pair abs_pos{ item_pos.cat, lister.absolute(item_pos) };
 									arg_listbox arg{ item_proxy{ essence_, abs_pos }, item_ptr->flags.checked };
-									lister.wd_ptr()->events().checked.emit(arg);
+									lister.wd_ptr()->events().checked.emit(arg, lister.wd_ptr()->handle());
 
 									if (item_ptr->flags.checked)
 										lister.cancel_others_if_single_enabled(false, abs_pos);
@@ -3572,7 +3572,7 @@ namespace nana
 							return;
 
 						arg_listbox_category arg_cat(cat_proxy(essence_, item_pos.cat));
-						lister.wd_ptr()->events().category_dbl_click.emit(arg_cat);
+						lister.wd_ptr()->events().category_dbl_click.emit(arg_cat, lister.wd_ptr()->handle());
 
 						if (!arg_cat.category_change_blocked()){
                             bool do_expand = (lister.expand(item_pos.cat) == false);
@@ -3741,7 +3741,7 @@ namespace nana
 					{
 						m.flags.checked = ck;
 						arg_listbox arg{*this, ck};
-						ess_->lister.wd_ptr()->events().checked.emit(arg);
+						ess_->lister.wd_ptr()->events().checked.emit(arg, ess_->lister.wd_ptr()->handle());
 						ess_->update();
 					}
 					return *this;
@@ -3760,7 +3760,7 @@ namespace nana
 					m.flags.selected = s;                       // actually change selection
 
                     arg_listbox arg{*this, s};
-					ess_->lister.wd_ptr()->events().selected.emit(arg);
+					ess_->lister.wd_ptr()->events().selected.emit(arg, ess_->lister.wd_ptr()->handle());
 
 					if (m.flags.selected)
 					{

@@ -931,10 +931,7 @@ namespace detail
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
 					if (brock.emit(arg.evt_code, msgwnd, arg, true, &context))
-					{
-						if (brock.wd_manager().available(msgwnd))
-							pressed_wd = msgwnd;
-					}
+						pressed_wd = msgwnd;
 				}
 				break;
 			case WM_NCLBUTTONDOWN: case WM_NCMBUTTONDOWN: case WM_NCRBUTTONDOWN:
@@ -1042,16 +1039,16 @@ namespace detail
 						draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 
 						if (click_arg.window_handle)
-							retain->click.emit(click_arg);
+							retain->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
 
 						if (brock.wd_manager().available(msgwnd))
 						{
 							arg.evt_code = event_code::mouse_up;
-							retain->mouse_up.emit(arg);
+							retain->mouse_up.emit(arg, reinterpret_cast<window>(msgwnd));
 						}
 					}
 					else if (click_arg.window_handle)
-						retain->click.emit(click_arg);
+						retain->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
 
 					brock.wd_manager().do_lazy_refresh(msgwnd, false);
 				}
@@ -1119,8 +1116,11 @@ namespace detail
 						brock.emit(event_code::mouse_enter, msgwnd, arg, true, &context);
 					}
 
-					arg.evt_code = event_code::mouse_move;
-					brock.emit(event_code::mouse_move, msgwnd, arg, true, &context);
+					if (hovered_wd)
+					{
+						arg.evt_code = event_code::mouse_move;
+						brock.emit(event_code::mouse_move, msgwnd, arg, true, &context);
+					}
 					track.hwndTrack = native_window;
 					restrict::track_mouse_event(&track);
 				}
@@ -1223,7 +1223,7 @@ namespace detail
 							brock.wd_manager().calc_window_point(msgwnd, dropfiles.pos);
 							dropfiles.window_handle = reinterpret_cast<window>(msgwnd);
 
-							msgwnd->together.events_ptr->mouse_dropfiles.emit(dropfiles);
+							msgwnd->together.events_ptr->mouse_dropfiles.emit(dropfiles, reinterpret_cast<window>(msgwnd));
 							brock.wd_manager().do_lazy_refresh(msgwnd, false);
 						}
 					}
@@ -1495,7 +1495,7 @@ namespace detail
 						brock.get_key_state(arg);
 						arg.ignore = false;
 
-						msgwnd->together.events_ptr->key_char.emit(arg);
+						msgwnd->together.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
 						if ((false == arg.ignore) && wd_manager.available(msgwnd))
 							draw_invoker(&drawer::key_char, msgwnd, arg, &context);
 
@@ -1785,13 +1785,19 @@ namespace detail
 
 		_m_emit_core(evt_code, wd, false, arg);
 
-		if (ask_update)
-			wd_manager().do_lazy_refresh(wd, false);
-		else if (wd_manager().available(wd))
-			wd->other.upd_state = basic_window::update_state::none;
+		bool good_wd = false;
+		if (wd_manager().available(wd))
+		{
+			if (ask_update)
+				wd_manager().do_lazy_refresh(wd, false);
+			else
+				wd->other.upd_state = basic_window::update_state::none;
+
+			good_wd = true;
+		}
 
 		if (thrd)	thrd->event_window = prev_event_wd;
-		return true;
+		return good_wd;
 	}
 
 	const wchar_t* translate(cursor id)

@@ -520,7 +520,7 @@ namespace detail
 					delete msg.u.mouse_drop.files;
 					arg.pos.x = msg.u.mouse_drop.x - msgwd->pos_root.x;
 					arg.pos.y = msg.u.mouse_drop.y - msgwd->pos_root.y;
-					msgwd->together.events_ptr->mouse_dropfiles.emit(arg);
+					msgwd->together.events_ptr->mouse_dropfiles.emit(arg, reinterpret_cast<window>(msgwd));
 					brock.wd_manager().do_lazy_refresh(msgwd, false);
 				}
 				break;
@@ -842,16 +842,16 @@ namespace detail
 							draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 
 							if(click_arg.window_handle)
-								evt_ptr->click.emit(click_arg);
+								evt_ptr->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
 
 							if (brock.wd_manager().available(msgwnd))
 							{
 								arg.evt_code = event_code::mouse_up;
-								evt_ptr->mouse_up.emit(arg);
+								evt_ptr->mouse_up.emit(arg, reinterpret_cast<window>(msgwnd));
 							}
 						}
 						else if(click_arg.window_handle)
-							msgwnd->together.events_ptr->click.emit(click_arg);
+							msgwnd->together.events_ptr->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
 
 						brock.wd_manager().do_lazy_refresh(msgwnd, false);
 					}
@@ -1143,7 +1143,7 @@ namespace detail
 									arg.evt_code = event_code::key_char;
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 									brock.get_key_state(arg);
-									msgwnd->together.events_ptr->key_char.emit(arg);
+									msgwnd->together.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
 									if(arg.ignore == false && wd_manager.available(msgwnd))
 										draw_invoker(&drawer::key_char, msgwnd, arg, &context);
 								}

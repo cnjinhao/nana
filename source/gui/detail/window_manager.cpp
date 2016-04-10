@@ -86,13 +86,12 @@ namespace detail
 	private:
 		std::vector<key_value_rep> table_;
 	};
-	//class window_manager
 
+	//class window_manager
 			struct window_handle_deleter
 			{
 				void operator()(basic_window* wd) const
 				{
-					bedrock::instance().evt_operation().umake(reinterpret_cast<window>(wd));
 					delete wd;
 				}
 			};
@@ -399,7 +398,7 @@ namespace detail
 			if (wd->flags.destroying)
 				return;
 
-			if(wd->other.category == category::root_tag::value)
+			if(category::flags::root == wd->other.category)
 			{
 				auto &brock = bedrock::instance();
 				arg_unload arg;
@@ -844,10 +843,10 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-			//It's not worthy to redraw if visible is false
 			if (false == impl_->wd_register.available(wd))
 				return false;
 
+			//It's not worthy to redraw if visible is false
 			if(wd->visible && (!wd->is_draw_through()))
 			{
 				if (wd->visible_parents())
@@ -1573,7 +1572,7 @@ namespace detail
 			wd->drawer.detached();
 			wd->widget_notifier->destroy();
 
-			if(wd->other.category == category::frame_tag::value)
+			if(category::flags::frame == wd->other.category)
 			{
 				//The frame widget does not have an owner, and close their element windows without activating owner.
 				//close the frame container window, it's a native window.

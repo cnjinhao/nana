@@ -1562,7 +1562,7 @@ namespace nana
 							API::lazy_refresh();
 
 							event_arg arg;
-							model_->widget_ptr()->events().selected.emit(arg);
+							model_->widget_ptr()->events().selected.emit(arg, model_->widget_ptr()->handle());
 						}
 					}
 				//end class driver
@@ -1701,7 +1701,7 @@ namespace nana
 			if (selection_changed && (active_pos != npos))
 			{
 				event_arg arg;
-				events().selected.emit(arg);
+				events().selected.emit(arg, handle());
 			}
 		}
 		//end class tabbar

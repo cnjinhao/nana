@@ -1,4 +1,5 @@
 #include <nana/gui/detail/events_operation.hpp>
+#include <nana/gui/detail/bedrock.hpp>
 
 namespace nana
 {
@@ -6,18 +7,6 @@ namespace nana
 	{
 		//class events_operation
 			using lock_guard = std::lock_guard<std::recursive_mutex>;
-
-			void events_operation::make(window wd, const std::shared_ptr<general_events>& sp)
-			{
-				lock_guard lock(mutex_);
-				evt_table_[wd] = sp;
-			}
-
-			void events_operation::umake(window wd)
-			{
-				lock_guard lock(mutex_);
-				evt_table_.erase(wd);
-			}
 
 			void events_operation::register_evt(event_handle evt)
 			{
@@ -72,9 +61,11 @@ namespace nana
 				internal_scope_guard lock;
 				if (dockers_)
 				{
+					auto & evt_operation = bedrock::instance().evt_operation();
+
 					for (auto p : *dockers_)
 					{
-						detail::events_operation_cancel(reinterpret_cast<event_handle>(p));
+						evt_operation.cancel(reinterpret_cast<event_handle>(p));
 						delete p;
 					}
 					dockers_->clear();

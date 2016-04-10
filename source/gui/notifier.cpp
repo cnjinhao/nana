@@ -169,19 +169,19 @@ namespace nana
 			switch (arg.evt_code)
 			{
 			case event_code::mouse_down:
-				evt_ptr->mouse_down.emit(arg);
+				evt_ptr->mouse_down.emit(arg, nullptr);
 				break;
 			case event_code::mouse_up:
-				evt_ptr->mouse_up.emit(arg);
+				evt_ptr->mouse_up.emit(arg, nullptr);
 				break;
 			case event_code::mouse_leave:
-				evt_ptr->mouse_leave.emit(arg);
+				evt_ptr->mouse_leave.emit(arg, nullptr);
 				break;
 			case event_code::mouse_move:
-				evt_ptr->mouse_move.emit(arg);
+				evt_ptr->mouse_move.emit(arg, nullptr);
 				break;
 			case event_code::dbl_click:
-				evt_ptr->dbl_click.emit(arg);
+				evt_ptr->dbl_click.emit(arg, nullptr);
 				break;
 			default:
 				break;

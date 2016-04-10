@@ -30,18 +30,18 @@ namespace drawerbase {
 
 			void event_agent::first_change()
 			{
-				widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ });
+				widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
 			}
 
 			void event_agent::text_changed()
 			{
-				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ });
+				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
 			}
 
 			void event_agent::text_exposed(const std::vector<upoint>& text_pos)
 			{
 				::nana::arg_textbox arg(widget_, text_pos);
-				widget_.events().text_exposed.emit(arg);
+				widget_.events().text_exposed.emit(arg, widget_);
 			}
 		//end class event_agent
 

@@ -480,7 +480,7 @@ namespace nana
 					chose_ = true;
 
 					arg_datechooser evt_arg{ static_cast<nana::date_chooser*>(API::get_widget(window_handle)) };
-					API::events<nana::date_chooser>(window_handle).date_changed.emit(evt_arg);
+					API::events<nana::date_chooser>(window_handle).date_changed.emit(evt_arg, window_handle);
 				}
 
 				bool chose() const

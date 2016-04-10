@@ -314,7 +314,7 @@ namespace nana
 			private:
 				void _m_emit_value_changed()
 				{
-					widget_->events().value_changed.emit({ widget_->handle() });
+					widget_->events().value_changed.emit({ widget_->handle() }, widget_->handle());
 				}
 
 				void _m_tick()

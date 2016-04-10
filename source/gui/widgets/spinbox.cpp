@@ -38,7 +38,7 @@ namespace nana
 
 				void text_changed() override
 				{
-					widget_.events().text_changed.emit(::nana::arg_spinbox{ widget_ });
+					widget_.events().text_changed.emit(::nana::arg_spinbox{ widget_ }, widget_.handle());
 				}
 			private:
 				::nana::spinbox & widget_;

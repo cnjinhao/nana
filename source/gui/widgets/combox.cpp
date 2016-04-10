@@ -41,7 +41,7 @@ namespace nana
 
 				void text_changed() override
 				{
-					widget_.events().text_changed.emit(::nana::arg_combox{ widget_ });
+					widget_.events().text_changed.emit(::nana::arg_combox{ widget_ }, widget_);
 				}
 			private:
 				::nana::combox & widget_;
@@ -355,7 +355,7 @@ namespace nana
 						_m_draw_push_button(widget_->enabled());
 						_m_draw_image();
 
-						widget_->events().selected.emit(::nana::arg_combox(*widget_));
+						widget_->events().selected.emit(::nana::arg_combox(*widget_), widget_->handle());
 					}
 				}
 

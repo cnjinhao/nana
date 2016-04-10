@@ -496,7 +496,7 @@ namespace nana
 						{
 							data.stop_drawing = true;
 							item_proxy iprx(data.trigger_ptr, node);
-							data.widget_ptr->events().checked.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, (checkstate::unchecked != cs) });
+							data.widget_ptr->events().checked.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, (checkstate::unchecked != cs) }, data.widget_ptr->handle());
 							data.stop_drawing = false;
 						}
 						return true;
@@ -512,14 +512,14 @@ namespace nana
 						if (node_state.selected)
 						{
 							item_proxy iprx(data.trigger_ptr, node_state.selected);
-							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false });
+							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 						}
 
 						node_state.selected = node;
 						if (node)
 						{
 							item_proxy iprx(data.trigger_ptr, node_state.selected);
-							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true });
+							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 						}
 						data.stop_drawing = false;
 						return true;
@@ -544,7 +544,7 @@ namespace nana
 							data.stop_drawing = true;
 							//attr.ext_event.expand(data.widget_ptr->handle(), item_proxy(data.trigger_ptr, node), value);
 							item_proxy iprx(data.trigger_ptr, node);
-							data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, value });
+							data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, value }, data.widget_ptr->handle());
 							data.stop_drawing = false;
 						}
 						return true;
@@ -682,7 +682,7 @@ namespace nana
 							if (node_state.pointed)
 							{
 								item_proxy iprx(data.trigger_ptr, node_state.pointed);
-								data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false });
+								data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 
 								if (nl.node() != node_state.pointed)
 									close_tooltip_window();
@@ -691,7 +691,7 @@ namespace nana
 
 							node_state.pointed = nl.node();
 							item_proxy iprx(data.trigger_ptr, node_state.pointed);
-							data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true });
+							data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 
 							redraw = (node_state.comp_pointed != component::end);
 
@@ -709,7 +709,7 @@ namespace nana
 						redraw = true;
 						node_state.comp_pointed = component::end;
 						item_proxy iprx(data.trigger_ptr, node_state.pointed);
-						data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false });
+						data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 
 						close_tooltip_window();
 						node_state.pointed = nullptr;
@@ -1995,7 +1995,7 @@ namespace nana
 					if (impl_->node_state.pointed && (!impl_->node_state.tooltip))
 					{
 						item_proxy iprx(impl_->data.trigger_ptr, impl_->node_state.pointed);
-						impl_->data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *impl_->data.widget_ptr, iprx, false });
+						impl_->data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *impl_->data.widget_ptr, iprx, false }, impl_->data.widget_ptr->handle());
 						impl_->node_state.pointed = nullptr;
 						impl_->draw(false);
 						API::lazy_refresh();

@@ -51,14 +51,14 @@ namespace nana
 
 	namespace detail
 	{
+		bool check_window(window wd)
+		{
+			return bedrock::instance().wd_manager().available(reinterpret_cast<window_manager::core_window_t*>(wd));
+		}
+
 		void events_operation_register(event_handle evt)
 		{
 			bedrock::instance().evt_operation().register_evt(evt);
-		}
-
-		void events_operation_cancel(event_handle evt)
-		{
-			bedrock::instance().evt_operation().cancel(evt);
 		}
 
 		class bedrock::flag_guard
@@ -213,21 +213,21 @@ namespace nana
 			auto retain = wd->together.events_ptr;
 			auto evts_ptr = retain.get();
 
-
 			switch (evt_code)
 			{
 			case event_code::click:
 				{
 					auto arg = dynamic_cast<const arg_click*>(&event_arg);
-					if (nullptr == arg)
-						return;
+					if (arg)
 					{
-						//enable refreshing flag, this is a RAII class for exception-safe
-						flag_guard fguard(this, wd);
-						wd->drawer.click(*arg);
+						{
+							//enable refreshing flag, this is a RAII class for exception-safe
+							flag_guard fguard(this, wd);
+							wd->drawer.click(*arg);
+						}
+						if (!draw_only)
+							evts_ptr->click.emit(*arg, reinterpret_cast<window>(wd));
 					}
-					if (!draw_only)
-						evts_ptr->click.emit(*arg);
 				}
 				break;
 			case event_code::dbl_click:
@@ -281,7 +281,7 @@ namespace nana
 				}
 				
 				if (!draw_only)
-					evt_addr->emit(*arg);
+					evt_addr->emit(*arg, reinterpret_cast<window>(wd));
 				break;
 			}
 			case event_code::mouse_wheel:
@@ -296,7 +296,7 @@ namespace nana
 					}
 
 					if (!draw_only)
-						evts_ptr->mouse_wheel.emit(*arg);
+						evts_ptr->mouse_wheel.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			}
@@ -340,7 +340,7 @@ namespace nana
 				}
 
 				if (!draw_only)
-					evt_addr->emit(*arg);
+					evt_addr->emit(*arg, reinterpret_cast<window>(wd));
 				break;
 			}
 			case event_code::expose:
@@ -348,7 +348,7 @@ namespace nana
 				{
 					auto arg = dynamic_cast<const arg_expose*>(&event_arg);
 					if (arg)
-						evts_ptr->expose.emit(*arg);
+						evts_ptr->expose.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			case event_code::focus:
@@ -362,7 +362,7 @@ namespace nana
 						wd->drawer.focus(*arg);
 					}
 					if (!draw_only)
-						evts_ptr->focus.emit(*arg);
+						evts_ptr->focus.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			}
@@ -377,7 +377,7 @@ namespace nana
 						wd->drawer.move(*arg);
 					}
 					if (!draw_only)
-						evts_ptr->move.emit(*arg);
+						evts_ptr->move.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			}
@@ -392,7 +392,7 @@ namespace nana
 						wd->drawer.resizing(*arg);
 					}
 					if (!draw_only)
-						evts_ptr->resizing.emit(*arg);
+						evts_ptr->resizing.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			}
@@ -407,7 +407,7 @@ namespace nana
 						wd->drawer.resized(*arg);
 					}
 					if (!draw_only)
-						evts_ptr->resized.emit(*arg);
+						evts_ptr->resized.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			}
@@ -419,7 +419,7 @@ namespace nana
 					{
 						auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
 						if (evt_root)
-							evt_root->unload.emit(*arg);
+							evt_root->unload.emit(*arg, reinterpret_cast<window>(wd));
 					}
 				}
 				break;
@@ -428,7 +428,7 @@ namespace nana
 				{
 					auto arg = dynamic_cast<const arg_destroy*>(&event_arg);
 					if (arg)
-						evts_ptr->destroy.emit(*arg);
+						evts_ptr->destroy.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			default:

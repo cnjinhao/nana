@@ -385,7 +385,7 @@ namespace nana
 			private:
 				void _m_emit_value_changed() const
 				{
-					other_.widget->events().value_changed.emit(::nana::arg_slider{ *other_.widget });
+					other_.widget->events().value_changed.emit(::nana::arg_slider{ *other_.widget }, other_.widget->handle());
 				}
 
 				nana::rectangle _m_bar_area() const

@@ -66,7 +66,7 @@ namespace nana
 
 					T null_val;
 					arg_categorize<T> arg(widget_, vp ? *vp : null_val);
-					widget_.events().selected.emit(arg);
+					widget_.events().selected.emit(arg, widget_.handle());
 				}
 			private:
 				::nana::categorize<T> & widget_;

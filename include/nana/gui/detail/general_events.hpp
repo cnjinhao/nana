@@ -23,8 +23,8 @@ namespace nana
 {
 	namespace detail
 	{
+		bool check_window(window);
 		void events_operation_register(event_handle);
-		void events_operation_cancel(event_handle);
 
 		class event_interface
 		{
@@ -161,7 +161,7 @@ namespace nana
 			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true), in_front);
 		}
 
-		void emit(arg_reference& arg)
+		void emit(arg_reference& arg, window window_handle)
 		{
 			internal_scope_guard lock;
 			if (nullptr == dockers_)
@@ -181,6 +181,10 @@ namespace nana
 					continue;
 
 				static_cast<docker*>(*i)->invoke(arg);
+
+				if (window_handle && (!detail::check_window(window_handle)))
+					break;
+
 				if (arg.propagation_stopped())
 				{
 					for (++i; i != end; ++i)
@@ -189,6 +193,9 @@ namespace nana
 							continue;
 
 						static_cast<docker*>(*i)->invoke(arg);
+
+						if (window_handle && (!detail::check_window(window_handle)))
+							break;
 					}
 					break;
 				}

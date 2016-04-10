@@ -94,7 +94,7 @@ namespace nana{ namespace drawerbase
 				{
 					impl_->crook.reverse();
 					arg_checkbox arg{ static_cast<nana::checkbox*>(impl_->widget_ptr) };
-					API::events<nana::checkbox>(impl_->widget_ptr->handle()).checked.emit(arg);
+					API::events<nana::checkbox>(impl_->widget_ptr->handle()).checked.emit(arg, impl_->widget_ptr->handle());
 				}
 				refresh(graph);
 				API::lazy_refresh();
@@ -172,7 +172,7 @@ namespace nana{ namespace drawerbase
 				API::refresh_window(handle());
 
 				arg_checkbox arg(this);
-				this->events().checked.emit(arg);
+				this->events().checked.emit(arg, this->handle());
 			}
 		}
 

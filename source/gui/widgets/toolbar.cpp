@@ -308,7 +308,7 @@ namespace nana
 						if (impl_->which != npos && container.at(impl_->which)->enable)
 						{
 							::nana::arg_toolbar arg{ *widget_, impl_->which };
-							widget_->events().leave.emit(arg);
+							widget_->events().leave.emit(arg, widget_->handle());
 						}
 
 						impl_->which = which;
@@ -322,7 +322,7 @@ namespace nana
 							if (impl_->state == item_renderer::state_t::highlighted)
 							{
 								::nana::arg_toolbar arg{ *widget_, which };
-								widget_->events().enter.emit(arg);
+								widget_->events().enter.emit(arg, widget_->handle());
 							}
 						}
 
@@ -346,7 +346,7 @@ namespace nana
 						if (which != npos && impl_->items.at(which)->enable)
 						{
 							::nana::arg_toolbar arg{ *widget_, which };
-							widget_->events().leave.emit(arg);
+							widget_->events().leave.emit(arg, widget_->handle());
 						}
 					}
 					impl_->tooltip.close();
@@ -371,7 +371,7 @@ namespace nana
 						if(impl_->which == which)
 						{
 							::nana::arg_toolbar arg{ *widget_, which };
-							widget_->events().selected.emit(arg);
+							widget_->events().selected.emit(arg, widget_->handle());
 
 							impl_->state = item_renderer::state_t::highlighted;
 						}

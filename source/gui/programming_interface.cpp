@@ -184,12 +184,11 @@ namespace API
 		{
 			auto iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;
-			if (restrict::wd_manager().available(iwd) && iwd->set_events(gep))
-			{
-				restrict::bedrock.evt_operation().make(wd, gep);
-				return true;
-			}
+
+			if (restrict::wd_manager().available(iwd))
+				iwd->set_events(gep);
 			return false;
+			
 		}
 
 		void set_scheme(window wd, widget_colors* wdg_colors)
