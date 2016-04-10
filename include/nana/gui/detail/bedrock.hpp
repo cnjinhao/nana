@@ -87,7 +87,6 @@ namespace detail
 		void manage_form_loader(core_window_t*, bool insert_or_remove);
 	public:
 		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*);
-		bool emit_drawer(event_code, core_window_t*, const event_arg&, thread_context*);
 	private:
 		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg&);
 		void _m_event_filter(event_code, core_window_t*, thread_context*);

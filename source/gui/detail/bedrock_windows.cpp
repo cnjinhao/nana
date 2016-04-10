@@ -756,7 +756,7 @@ namespace detail
 	}
 
 	template<typename Arg>
-	void emit_drawer(void (::nana::detail::drawer::*event_ptr)(const Arg&), basic_window* wd, const Arg& arg, bedrock::thread_context* thrd)
+	void draw_invoker(void (::nana::detail::drawer::*event_ptr)(const Arg&), basic_window* wd, const Arg& arg, bedrock::thread_context* thrd)
 	{
 		if (bedrock::instance().wd_manager().available(wd) == false)
 			return;
@@ -990,7 +990,7 @@ namespace detail
 								msgwnd->flags.action = mouse_action::normal;
 
 								arg.evt_code = event_code::mouse_up;
-								emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+								draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 								brock.wd_manager().do_lazy_refresh(msgwnd, false);
 							}
 						}
@@ -1031,7 +1031,7 @@ namespace detail
 						if ((::nana::mouse::left_button == arg.button) && (pressed_wd == msgwnd))
 						{
 							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
-							emit_drawer(&drawer::click, msgwnd, click_arg, &context);
+							draw_invoker(&drawer::click, msgwnd, click_arg, &context);
 						}
 					}
 
@@ -1039,7 +1039,7 @@ namespace detail
 					if(brock.wd_manager().available(msgwnd) && msgwnd->flags.enabled)
 					{
 						arg.evt_code = event_code::mouse_up;
-						emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+						draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 
 						if (click_arg.window_handle)
 							retain->click.emit(click_arg);
@@ -1169,7 +1169,8 @@ namespace detail
 							arg_wheel arg;
 							arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
 							assign_arg(arg, scrolled_wd, pmdec);
-							brock.emit_drawer(event_code::mouse_wheel, scrolled_wd, arg, &context);
+
+							draw_invoker(&drawer::mouse_wheel, scrolled_wd, arg, &context);
 							brock.wd_manager().do_lazy_refresh(scrolled_wd, false);
 						}
 					}
@@ -1450,7 +1451,7 @@ namespace detail
 								pressed_wd_space = msgwnd;
 								auto retain = msgwnd->together.events_ptr;
 
-								emit_drawer(&drawer::mouse_down, msgwnd, arg, &context);
+								draw_invoker(&drawer::mouse_down, msgwnd, arg, &context);
 								wd_manager.do_lazy_refresh(msgwnd, false);
 							}
 						}
@@ -1496,7 +1497,7 @@ namespace detail
 
 						msgwnd->together.events_ptr->key_char.emit(arg);
 						if ((false == arg.ignore) && wd_manager.available(msgwnd))
-							brock.emit_drawer(event_code::key_char, msgwnd, arg, &context);
+							draw_invoker(&drawer::key_char, msgwnd, arg, &context);
 
 						wd_manager.do_lazy_refresh(msgwnd, false);
 					}
@@ -1536,7 +1537,7 @@ namespace detail
 									arg.pos.y = 0;
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-									emit_drawer(&drawer::mouse_up, msgwnd, arg, &context);
+									draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 									brock.wd_manager().do_lazy_refresh(msgwnd, false);
 								}
 								pressed_wd_space = nullptr;
@@ -1790,27 +1791,6 @@ namespace detail
 			wd->other.upd_state = basic_window::update_state::none;
 
 		if (thrd)	thrd->event_window = prev_event_wd;
-		return true;
-	}
-
-	bool bedrock::emit_drawer(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, thread_context* thrd)
-	{
-		if (bedrock_object.wd_manager().available(wd) == false)
-			return false;
-
-		core_window_t* prev_event_wd;
-		if (thrd)
-		{
-			prev_event_wd = thrd->event_window;
-			thrd->event_window = wd;
-		}
-
-		if (wd->other.upd_state == core_window_t::update_state::none)
-			wd->other.upd_state = core_window_t::update_state::lazy;
-
-		_m_emit_core(evt_code, wd, true, arg);
-
-		if (thrd) thrd->event_window = prev_event_wd;
 		return true;
 	}
 
