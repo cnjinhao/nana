@@ -668,37 +668,15 @@ namespace detail
 				hovered_wd = nullptr;
 				break;
 			case FocusIn:
-				if(msgwnd->flags.enabled && msgwnd->flags.take_active)
-				{
-					auto focus = msgwnd->other.attribute.root->focus;
-					if(focus && focus->together.caret)
-						focus->together.caret->set_active(true);
-
-					arg_focus arg;
-					arg.window_handle = reinterpret_cast<window>(focus);
-					arg.receiver = native_window;
-					arg.getting = true;
-					if(!brock.emit(event_code::focus, focus, arg, true, &context))
-						brock.wd_manager().set_focus(msgwnd, true, arg_focus::reason::general);
-				}
+				brock.event_focus_changed(msgwnd, native_window, true);
 				break;
 			case FocusOut:
-				if(msgwnd->other.attribute.root->focus && native_interface::is_window(msgwnd->root))
+				if(native_interface::is_window(msgwnd->root))
 				{
 					nana::point pos = native_interface::cursor_position();
 					auto recv = native_interface::find_window(pos.x, pos.y);
 
-					auto focus = msgwnd->other.attribute.root->focus;
-					arg_focus arg;
-					arg.window_handle = reinterpret_cast<window>(focus);
-					arg.getting = false;
-					arg.receiver = recv;
-					if(brock.emit(event_code::focus, focus, arg, true, &context))
-					{
-						if(focus->together.caret)
-							focus->together.caret->set_active(false);
-					}
-					brock.close_menu_if_focus_other_window(recv);
+					brock.event_focus_changed(msgwnd, recv, false);
 				}
 				break;
 			case ConfigureNotify:

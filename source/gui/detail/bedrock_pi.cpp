@@ -176,6 +176,41 @@ namespace nana
 			return false;
 		}
 
+		//The wd must be a root window
+		void bedrock::event_focus_changed(core_window_t* root_wd, native_window_type receiver, bool getting)
+		{
+			auto focused = root_wd->other.attribute.root->focus;
+
+			arg_focus arg;
+			arg.window_handle = reinterpret_cast<window>(focused);
+			arg.getting = getting;
+			arg.receiver = receiver;
+
+			if (getting)
+			{
+				if (root_wd->flags.enabled && root_wd->flags.take_active)
+				{
+					if (focused && focused->together.caret)
+						focused->together.caret->set_active(false);
+
+					if (!emit(event_code::focus, focused, arg, true, get_thread_context()))
+						this->wd_manager().set_focus(root_wd, true, arg_focus::reason::general);
+				}
+			}
+			else
+			{
+				if (root_wd->other.attribute.root->focus)
+				{
+					if (emit(event_code::focus, focused, arg, true, get_thread_context()))
+					{
+						if (focused->together.caret)
+							focused->together.caret->set_active(false);
+					}
+					close_menu_if_focus_other_window(receiver);
+				}
+			}
+		}
+
 		void bedrock::update_cursor(core_window_t * wd)
 		{
 			internal_scope_guard isg;

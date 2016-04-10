@@ -388,13 +388,7 @@ namespace nana
 					if (trace_.empty_logic_pos())
 						return 0;
 
-					int lines = 7, rows = 7;	//for page::date
-
-					if (page_mode::month == page)
-					{
-						lines = 3;
-						rows = 4;
-					}
+					const int rows = (page_mode::month == page ? 4 : 7);
 
 					int n = trace_.logic_pos.y * rows + trace_.logic_pos.x + 1;
 					if (page_mode::date == page)
@@ -635,8 +629,6 @@ namespace nana
 				void _m_draw_ex_days(graph_reference graph, const upoint& begin_logic_pos, bool before)
 				{
 					int x = nana::date::day_of_week(view_month_.year, view_month_.month, 1);
-					int y = (x ? 1 : 2);
-
 					int year = view_month_.year;
 					if (before)
 					{

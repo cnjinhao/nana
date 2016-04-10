@@ -873,37 +873,12 @@ namespace detail
 				def_window_proc = true;
 				break;
 			case WM_SETFOCUS:
-				if(msgwnd->flags.enabled && msgwnd->flags.take_active)
-				{
-					auto focus = msgwnd->other.attribute.root->focus;
-
-					if(focus && focus->together.caret)
-						focus->together.caret->set_active(true);
-
-					arg_focus arg;
-					assign_arg(arg, focus, native_window, true);
-					if (!brock.emit(event_code::focus, focus, arg, true, &context))
-						brock.wd_manager().set_focus(msgwnd, true, arg_focus::reason::general);
-				}
+				brock.event_focus_changed(msgwnd, native_window, true);
 				def_window_proc = true;
 				break;
 			case WM_KILLFOCUS:
-				if(msgwnd->other.attribute.root->focus)
-				{
-					auto focus = msgwnd->other.attribute.root->focus;
-
-					arg_focus arg;
-					assign_arg(arg, focus, reinterpret_cast<native_window_type>(wParam), false);
-					if(brock.emit(event_code::focus, focus, arg, true, &context))
-					{
-						if(focus->together.caret)
-							focus->together.caret->set_active(false);
-					}
-
-					//wParam indicates a handle of window that receives the focus.
-					brock.close_menu_if_focus_other_window(reinterpret_cast<native_window_type>(wParam));
-				}
-
+				//wParam indicates a handle of window that receives the focus.
+				brock.event_focus_changed(msgwnd, reinterpret_cast<native_window_type>(wParam), false);
 				def_window_proc = true;
 				break;
 			case WM_MOUSEACTIVATE:

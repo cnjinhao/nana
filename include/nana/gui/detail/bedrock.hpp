@@ -71,6 +71,7 @@ namespace detail
 		void event_expose(core_window_t *, bool exposed);
 		void event_move(core_window_t*, int x, int y);
 		bool event_msleave(core_window_t*);
+		void event_focus_changed(core_window_t* root_wd, native_window_type receiver, bool getting);
 		void thread_context_destroy(core_window_t*);
 		void thread_context_lazy_refresh();
 		void update_cursor(core_window_t*);
