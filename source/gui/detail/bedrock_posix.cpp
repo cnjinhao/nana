@@ -97,27 +97,6 @@ namespace detail
 				thread_context *object{ nullptr };
 			}tcontext;
 		}cache;
-
-		struct menu_tag
-		{
-			core_window_t*	taken_window{ nullptr };
-			bool			delay_restore{ false };
-			native_window_type window{ nullptr };
-			native_window_type owner{ nullptr };
-			bool	has_keyboard{ false };
-		}menu;
-
-		struct keyboard_tracking_state_tag
-		{
-			keyboard_tracking_state_tag()
-				:has_shortkey_occured(false), has_keyup(true), alt(0)
-			{}
-
-			bool has_shortkey_occured;
-			bool has_keyup;
-
-			unsigned long alt : 2;
-		}keyboard_tracking_state;
 	};
 
 	void timer_proc(unsigned);
@@ -153,9 +132,9 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t*, bool forced, const rectangle*)
+	void bedrock::flush_surface(core_window_t* wd, bool forced, const rectangle* update_area)
 	{
-		//GUI in X11 is thread-independent, so no implementation.
+		wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
 	}
 
 	//inc_window
@@ -229,116 +208,10 @@ namespace detail
 		return bedrock_object;
 	}
 
-	category::flags bedrock::category(bedrock::core_window_t* wd)
-	{
-		if(wd)
-		{
-			internal_scope_guard lock;
-			if(wd_manager().available(wd))
-				return wd->other.category;
-		}
-		return category::flags::super;
-	}
-
 	bedrock::core_window_t* bedrock::focus()
 	{
 		core_window_t* wd = wd_manager().root(native_interface::get_focus_window());
 		return (wd ? wd->other.attribute.root->focus : 0);
-	}
-
-	void bedrock::set_menubar_taken(core_window_t* wd)
-	{
-		auto pre = impl_->menu.taken_window;
-		impl_->menu.taken_window = wd;
-
-		//assigning of a nullptr taken window is to restore the focus of pre taken
-		if ((!wd) && pre)
-		{
-			internal_scope_guard lock;
-			wd_manager().set_focus(pre, false, arg_focus::reason::general);
-			wd_manager().update(pre, true, false);
-		}
-	}
-
-	//0:Enable delay, 1:Cancel, 2:Restores, 3: Restores when menu is destroying
-	void bedrock::delay_restore(int state)
-	{
-		switch (state)
-		{
-		case 0:	//Enable
-			break;
-		case 1: //Cancel
-			break;
-		case 2:	//Restore if key released
-			//restores the focus when menu is closed by pressing keyboard
-			if ((!impl_->menu.window) && impl_->menu.delay_restore)
-				set_menubar_taken(nullptr);
-			break;
-		case 3:	//Restores if destroying
-			//when the menu is destroying, restores the focus if delay restore is not declared
-			if (!impl_->menu.delay_restore)
-				set_menubar_taken(nullptr);
-		}
-
-		impl_->menu.delay_restore = (0 == state);
-	}
-
-	bool bedrock::close_menu_if_focus_other_window(native_window_type wd)
-	{
-		if(impl_->menu.window && (impl_->menu.window != wd))
-		{
-			wd = native_interface::get_owner_window(wd);
-			while(wd)
-			{
-				if(wd != impl_->menu.window)
-					wd = native_interface::get_owner_window(wd);
-				else
-					return false;
-			}
-			erase_menu(true);
-			return true;
-		}
-		return false;
-	}
-
-	void bedrock::set_menu(native_window_type menu_window, bool has_keyboard)
-	{
-		if(menu_window && impl_->menu.window != menu_window)
-		{
-			erase_menu(true);
-			impl_->menu.window = menu_window;
-			impl_->menu.owner = native_interface::get_owner_window(menu_window);
-			impl_->menu.has_keyboard = has_keyboard;
-		}
-	}
-
-	native_window_type bedrock::get_menu(native_window_type owner, bool is_keyboard_condition)
-	{
-		if(	(impl_->menu.owner == nullptr) ||
-			(owner && (impl_->menu.owner == owner))
-			)
-		{
-			return ( is_keyboard_condition ? (impl_->menu.has_keyboard ? impl_->menu.window : nullptr) : impl_->menu.window);
-		}
-
-		return 0;
-	}
-
-	native_window_type bedrock::get_menu()
-	{
-		return impl_->menu.window;
-	}
-
-	void bedrock::erase_menu(bool try_destroy)
-	{
-		if (impl_->menu.window)
-		{
-			if (try_destroy)
-				native_interface::close_window(impl_->menu.window);
-
-			impl_->menu.window = impl_->menu.owner = nullptr;
-			impl_->menu.has_keyboard = false;
-		}
 	}
 
 	void bedrock::get_key_state(arg_keyboard& arg)
@@ -347,18 +220,6 @@ namespace detail
 		nana::detail::platform_spec::instance().read_keystate(xkey);
 		arg.ctrl = (xkey.state & ControlMask);
 		arg.shift = (xkey.state & ShiftMask);
-	}
-
-	bool bedrock::set_keyboard_shortkey(bool yes)
-	{
-		bool ret = impl_->keyboard_tracking_state.has_shortkey_occured;
-		impl_->keyboard_tracking_state.has_shortkey_occured = yes;
-		return ret;
-	}
-
-	bool bedrock::whether_keyboard_shortkey() const
-	{
-		return impl_->keyboard_tracking_state.has_shortkey_occured;
 	}
 
 	element_store& bedrock::get_element_store() const
@@ -1038,7 +899,7 @@ namespace detail
 							else if(keyboard::alt == os_code)
 							{
 								context.is_alt_pressed = true;
-								if (brock.whether_keyboard_shortkey() == false)
+								if (brock.shortkey_occurred() == false)
 								{
 									msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 									if (msgwnd)
@@ -1109,7 +970,7 @@ namespace detail
 									{
 										arg.ctrl = arg.shift = false;
 										arg.evt_code = event_code::shortkey;
-										brock.set_keyboard_shortkey(true);
+										brock.shortkey_occurred(true);
 										auto shr_wd = wd_manager.find_shortkey(native_window, arg.key);
 										if(shr_wd)
 										{
@@ -1126,7 +987,7 @@ namespace detail
 										draw_invoker(&drawer::key_char, msgwnd, arg, &context);
 								}
 
-								if(brock.set_keyboard_shortkey(false))
+								if(brock.shortkey_occurred(false))
 									context.is_alt_pressed = false;
 							}
 							break;
@@ -1204,7 +1065,7 @@ namespace detail
 					else
 					{
 						context.is_alt_pressed = false;
-						if (brock.set_keyboard_shortkey(false) == false)
+						if (brock.shortkey_occurred(false) == false)
 						{
 							msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 							if (msgwnd)

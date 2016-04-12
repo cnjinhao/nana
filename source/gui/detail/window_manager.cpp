@@ -777,15 +777,7 @@ namespace detail
 					parent = parent->parent;
 				}
 
-				//Copy the root buffer that wd specified into DeviceContext
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
-				wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
-#elif defined(NANA_WINDOWS)
-				if(nana::system::this_thread_id() == wd->thread_id)
-					wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
-				else
-					bedrock::instance().map_thread_root_buffer(wd, forced, update_area);
-#endif
+				bedrock::instance().flush_surface(wd, forced, update_area);
 			}
 		}
 

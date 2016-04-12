@@ -14,7 +14,6 @@
 #define NANA_GUI_DETAIL_BEDROCK_HPP
 #include "general_events.hpp"
 #include "color_schemes.hpp"
-#include "internal_scope_guard.hpp"
 
 namespace nana
 {
@@ -41,14 +40,13 @@ namespace detail
 
 		~bedrock();
 		void pump_event(window, bool is_modal);
-		void map_thread_root_buffer(core_window_t*, bool forced, const rectangle* update_area = nullptr);
+		void flush_surface(core_window_t*, bool forced, const rectangle* update_area = nullptr);
 		static int inc_window(unsigned tid = 0);
 		thread_context* open_thread_context(unsigned tid = 0);
 		thread_context* get_thread_context(unsigned tid = 0);
 		void remove_thread_context(unsigned tid = 0);
 		static bedrock& instance();
 
-		::nana::category::flags category(core_window_t*);
 		core_window_t* focus();
 
 		void set_menubar_taken(core_window_t*);
@@ -62,8 +60,9 @@ namespace detail
 		void erase_menu(bool try_destroy);
 
 		void get_key_state(arg_keyboard&);
-		bool set_keyboard_shortkey(bool yes);
-		bool whether_keyboard_shortkey() const;
+
+		bool shortkey_occurred(bool status);
+		bool shortkey_occurred() const;
 
 		element_store& get_element_store() const;
 		void map_through_widgets(core_window_t*, native_drawable_type);

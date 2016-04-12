@@ -68,7 +68,7 @@ namespace detail
 			tray = 0x501,
 			async_activate,
 			async_set_focus,
-			map_thread_root_buffer,
+			remote_flush_surface,
 			remote_thread_destroy_window,
 			remote_thread_move_window,
 			operate_caret,	//wParam: 1=Destroy, 2=SetPos

@@ -177,26 +177,6 @@ namespace detail
 				thread_context *object{ nullptr };
 			}tcontext;
 		}cache;
-
-		struct menu_tag
-		{
-			core_window_t*	taken_window{ nullptr };
-			bool			delay_restore{ false };
-			native_window_type window{ nullptr };
-			native_window_type owner{ nullptr };
-			bool	has_keyboard{false};
-		}menu;
-
-		struct keyboard_tracking_state_tag
-		{
-			keyboard_tracking_state_tag()
-				:alt(0)
-			{}
-
-			bool has_shortkey_occured = false;
-			bool has_keyup	= true;
-			unsigned long alt : 2;
-		}keyboard_tracking_state;
 	};
 
 	//class bedrock defines a static object itself to implement a static singleton
@@ -325,14 +305,28 @@ namespace detail
 		return bedrock_object;
 	}
 
-	void bedrock::map_thread_root_buffer(core_window_t* wd, bool forced, const rectangle* update_area)
+	void bedrock::flush_surface(core_window_t* wd, bool forced, const rectangle* update_area)
 	{
-		auto stru = reinterpret_cast<detail::messages::map_thread*>(::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
-		if (stru)
+		if (nana::system::this_thread_id() != wd->thread_id)
 		{
-			if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::map_thread_root_buffer, reinterpret_cast<WPARAM>(wd), reinterpret_cast<LPARAM>(stru)))
-				::HeapFree(::GetProcessHeap(), 0, stru);
+			auto stru = reinterpret_cast<detail::messages::map_thread*>(::HeapAlloc(::GetProcessHeap(), 0, sizeof(detail::messages::map_thread)));
+			if (stru)
+			{
+				stru->forced = forced;
+				stru->ignore_update_area = true;
+
+				if (update_area)
+				{
+					stru->ignore_update_area = false;
+					stru->update_area = *update_area;
+				}
+
+				if (FALSE == ::PostMessage(reinterpret_cast<HWND>(wd->root), nana::detail::messages::remote_flush_surface, reinterpret_cast<WPARAM>(wd), reinterpret_cast<LPARAM>(stru)))
+					::HeapFree(::GetProcessHeap(), 0, stru);
+			}
 		}
+		else
+			wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
 	}
 
 	void interior_helper_for_menu(MSG& msg, native_window_type menu_window)
@@ -544,14 +538,6 @@ namespace detail
 		}
 	}
 
-	void assign_arg(arg_focus& arg, basic_window* wd, native_window_type recv, bool getting)
-	{
-		arg.window_handle = reinterpret_cast<window>(wd);
-		arg.receiver = recv;
-		arg.getting = getting;
-		arg.focus_reason = arg_focus::reason::general;
-	}
-
 	void assign_arg(arg_wheel& arg, basic_window* wd, const parameter_decoder& pmdec)
 	{
 		arg.window_handle = reinterpret_cast<window>(wd);
@@ -602,7 +588,7 @@ namespace detail
 				break;
 			}
 			return true;
-		case nana::detail::messages::map_thread_root_buffer:
+		case nana::detail::messages::remote_flush_surface:
 			{
 				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);
 				bedrock.wd_manager().map(reinterpret_cast<bedrock::core_window_t*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
@@ -858,10 +844,9 @@ namespace detail
 				}
 				break;
 			case WM_SHOWWINDOW:
-				if (msgwnd->visible && (wParam == FALSE))
-					brock.event_expose(msgwnd, false);
-				else if ((!msgwnd->visible) && (wParam != FALSE))
-					brock.event_expose(msgwnd, true);
+				if (msgwnd->visible == (FALSE == wParam))
+					brock.event_expose(msgwnd, !msgwnd->visible);
+
 				def_window_proc = true;
 				break;
 			case WM_WINDOWPOSCHANGED:
@@ -1312,7 +1297,7 @@ namespace detail
 				break;
 			case WM_SYSCHAR:
 				def_window_proc = true;
-				brock.set_keyboard_shortkey(true);
+				brock.shortkey_occurred(true);
 				msgwnd = brock.wd_manager().find_shortkey(native_window, static_cast<unsigned long>(wParam));
 				if(msgwnd)
 				{
@@ -1328,7 +1313,7 @@ namespace detail
 				break;
 			case WM_SYSKEYDOWN:
 				def_window_proc = true;
-				if (brock.whether_keyboard_shortkey() == false)
+				if (brock.shortkey_occurred() == false)
 				{
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 					if (msgwnd)
@@ -1350,7 +1335,7 @@ namespace detail
 				break;
 			case WM_SYSKEYUP:
 				def_window_proc = true;
-				if(brock.set_keyboard_shortkey(false) == false)
+				if (brock.shortkey_occurred(false) == false)
 				{
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 					if(msgwnd)
@@ -1531,7 +1516,7 @@ namespace detail
 					}
 				}
 				else
-					brock.set_keyboard_shortkey(false);
+					brock.shortkey_occurred(false);
 
 				//Do delay restore if key is not arrow_left/right/up/down, otherwise
 				//A menubar will be restored if the item is empty(not have a menu item)
@@ -1591,130 +1576,16 @@ namespace detail
 		return ::DefWindowProc(root_window, message, wParam, lParam);
 	}
 
-	::nana::category::flags bedrock::category(core_window_t* wd)
-	{
-		internal_scope_guard lock;
-		return (wd_manager().available(wd) ? wd->other.category : ::nana::category::flags::super);
-	}
-
 	auto bedrock::focus() ->core_window_t*
 	{
 		core_window_t* wd = wd_manager().root(native_interface::get_focus_window());
 		return (wd ? wd->other.attribute.root->focus : nullptr);
 	}
 
-	void bedrock::set_menubar_taken(core_window_t* wd)
-	{
-		auto pre = impl_->menu.taken_window;
-		impl_->menu.taken_window = wd;
-
-		//assigning of a nullptr taken window is to restore the focus of pre taken
-		//don't restore the focus if pre is a menu.
-		if ((!wd) && pre && (pre->root != get_menu()))
-		{
-			internal_scope_guard lock;
-			wd_manager().set_focus(pre, false, arg_focus::reason::general);
-			wd_manager().update(pre, true, false);
-		}
-	}
-
-	//0:Enable delay, 1:Cancel, 2:Restores, 3: Restores when menu is destroying
-	void bedrock::delay_restore(int state)
-	{
-		switch (state)
-		{
-		case 0:	//Enable
-			break;
-		case 1: //Cancel
-			break;
-		case 2:	//Restore if key released
-			//restores the focus when menu is closed by pressing keyboard
-			if ((!impl_->menu.window) && impl_->menu.delay_restore)
-				set_menubar_taken(nullptr);
-			break;
-		case 3:	//Restores if destroying
-			//when the menu is destroying, restores the focus if delay restore is not declared
-			if (!impl_->menu.delay_restore)
-				set_menubar_taken(nullptr);
-		}
-
-		impl_->menu.delay_restore = (0 == state);
-	}
-
-	bool bedrock::close_menu_if_focus_other_window(native_window_type wd)
-	{
-		if(impl_->menu.window && (impl_->menu.window != wd))
-		{
-			wd = native_interface::get_owner_window(wd);
-			while(wd)
-			{
-				if(wd != impl_->menu.window)
-					wd = native_interface::get_owner_window(wd);
-				else
-					return false;
-			}
-			erase_menu(true);
-			return true;
-		}
-		return false;
-	}
-
-	void bedrock::set_menu(native_window_type menu_wd, bool has_keyboard)
-	{
-		if(menu_wd && impl_->menu.window != menu_wd)
-		{
-			erase_menu(true);
-
-			impl_->menu.window = menu_wd;
-			impl_->menu.owner = native_interface::get_owner_window(menu_wd);
-			impl_->menu.has_keyboard = has_keyboard;
-		}
-	}
-
-	native_window_type bedrock::get_menu(native_window_type owner, bool is_keyboard_condition)
-	{
-		if(	(impl_->menu.owner == nullptr) ||
-			(owner && (impl_->menu.owner == owner))
-			)
-		{
-			return ((!is_keyboard_condition) || impl_->menu.has_keyboard ? impl_->menu.window : nullptr);
-		}
-		return nullptr;
-	}
-
-	native_window_type bedrock::get_menu()
-	{
-		return impl_->menu.window;
-	}
-
-	void bedrock::erase_menu(bool try_destroy)
-	{
-		if (impl_->menu.window)
-		{
-			if (try_destroy)
-				native_interface::close_window(impl_->menu.window);
-
-			impl_->menu.window = impl_->menu.owner = nullptr;
-			impl_->menu.has_keyboard = false;
-		}
-	}
-
 	void bedrock::get_key_state(arg_keyboard& kb)
 	{
 		kb.ctrl = (0 != (::GetKeyState(VK_CONTROL) & 0x80));
 		kb.shift = (0 != (::GetKeyState(VK_SHIFT) & 0x80));
-	}
-
-	bool bedrock::set_keyboard_shortkey(bool yes)
-	{
-		bool ret = impl_->keyboard_tracking_state.has_shortkey_occured;
-		impl_->keyboard_tracking_state.has_shortkey_occured = yes;
-		return ret;
-	}
-
-	bool bedrock::whether_keyboard_shortkey() const
-	{
-		return impl_->keyboard_tracking_state.has_shortkey_occured;
 	}
 
 	element_store& bedrock::get_element_store() const
@@ -1724,7 +1595,6 @@ namespace detail
 
 	void bedrock::map_through_widgets(core_window_t* wd, native_drawable_type drawable)
 	{
-#if defined(NANA_WINDOWS)
 		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);
 
 		for (auto child : wd->children)
@@ -1739,7 +1609,6 @@ namespace detail
 			else if (::nana::category::flags::lite_widget == child->other.category)
 				map_through_widgets(child, drawable);
 		}
-#endif
 	}
 
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd)

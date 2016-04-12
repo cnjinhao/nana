@@ -233,6 +233,115 @@ namespace nana
 			}
 		}
 
+		void bedrock::set_menubar_taken(core_window_t* wd)
+		{
+			auto pre = pi_data_->menu.taken_window;
+			pi_data_->menu.taken_window = wd;
+
+			//assigning of a nullptr taken window is to restore the focus of pre taken
+			//don't restore the focus if pre is a menu.
+			if ((!wd) && pre && (pre->root != get_menu()))
+			{
+				internal_scope_guard lock;
+				wd_manager().set_focus(pre, false, arg_focus::reason::general);
+				wd_manager().update(pre, true, false);
+			}
+		}
+
+		//0:Enable delay, 1:Cancel, 2:Restores, 3: Restores when menu is destroying
+		void bedrock::delay_restore(int state)
+		{
+			switch (state)
+			{
+			case 0:	//Enable
+				break;
+			case 1: //Cancel
+				break;
+			case 2:	//Restore if key released
+				//restores the focus when menu is closed by pressing keyboard
+				if ((!pi_data_->menu.window) && pi_data_->menu.delay_restore)
+					set_menubar_taken(nullptr);
+				break;
+			case 3:	//Restores if destroying
+				//when the menu is destroying, restores the focus if delay restore is not declared
+				if (!pi_data_->menu.delay_restore)
+					set_menubar_taken(nullptr);
+			}
+
+			pi_data_->menu.delay_restore = (0 == state);
+		}
+
+		bool bedrock::close_menu_if_focus_other_window(native_window_type wd)
+		{
+			if (pi_data_->menu.window && (pi_data_->menu.window != wd))
+			{
+				wd = native_interface::get_owner_window(wd);
+				while (wd)
+				{
+					if (wd != pi_data_->menu.window)
+						wd = native_interface::get_owner_window(wd);
+					else
+						return false;
+				}
+				erase_menu(true);
+				return true;
+			}
+			return false;
+		}
+		
+		void bedrock::set_menu(native_window_type menu_wd, bool has_keyboard)
+		{
+			if(menu_wd && pi_data_->menu.window != menu_wd)
+			{
+				erase_menu(true);
+
+				pi_data_->menu.window = menu_wd;
+				pi_data_->menu.owner = native_interface::get_owner_window(menu_wd);
+				pi_data_->menu.has_keyboard = has_keyboard;
+			}
+		}
+
+		native_window_type bedrock::get_menu(native_window_type owner, bool is_keyboard_condition)
+		{
+			if ((pi_data_->menu.owner == nullptr) ||
+				(owner && (pi_data_->menu.owner == owner))
+				)
+			{
+				return (is_keyboard_condition ? (pi_data_->menu.has_keyboard ? pi_data_->menu.window : nullptr) : pi_data_->menu.window);
+			}
+
+			return 0;
+		}
+
+		native_window_type bedrock::get_menu()
+		{
+			return pi_data_->menu.window;
+		}
+
+		void bedrock::erase_menu(bool try_destroy)
+		{
+			if (pi_data_->menu.window)
+			{
+				if (try_destroy)
+					native_interface::close_window(pi_data_->menu.window);
+
+				pi_data_->menu.window = pi_data_->menu.owner = nullptr;
+				pi_data_->menu.has_keyboard = false;
+			}
+		}
+
+		bool bedrock::shortkey_occurred(bool status)
+		{
+			auto last_status = pi_data_->shortkey_occurred;
+			pi_data_->shortkey_occurred = status;
+			return last_status;
+		}
+
+		bool bedrock::shortkey_occurred() const
+		{
+			return pi_data_->shortkey_occurred;
+		}
+
 		widget_colors& bedrock::get_scheme_template(scheme_factory_interface&& factory)
 		{
 			return pi_data_->scheme.scheme_template(std::move(factory));
