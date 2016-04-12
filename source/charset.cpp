@@ -1162,12 +1162,21 @@ namespace nana
 				{
 					switch(encoding)
 					{
+#if defined(NANA_WINDOWS)
 					case unicode::utf8:
 						return utf16_to_utf8(wcstr);
 					case unicode::utf32:
 						return utf16_to_utf32(wcstr);
 					case unicode::utf16:
 						return wcstr;
+#else //POSIX
+					case unicode::utf8:
+						return utf32_to_utf8(wcstr);
+					case unicode::utf16:
+						return utf32_to_utf16(wcstr);
+					case unicode::utf32:
+						return wcstr;
+#endif
 					}
 				}
 				return {};
