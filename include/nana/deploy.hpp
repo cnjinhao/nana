@@ -121,6 +121,13 @@ namespace nana
 
 		using std::runtime_error::runtime_error;
 
+#if defined(_MSC_VER)
+#	if (_MSC_VER < 1900)
+		//A workaround for lack support of C++11 inheriting constructors  for VC2013
+		explicit utf8_Error(const std::string& msg);
+#	endif
+#endif
+
 		void emit();
 	};
 

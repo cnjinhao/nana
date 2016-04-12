@@ -513,6 +513,17 @@ namespace nana
 		return true;
 	}
 
+	//class utf8_Error
+
+#if defined(_MSC_VER)
+#	if (_MSC_VER < 1900)
+	//A workaround for lack support of C++11 inheriting constructors  for VC2013
+	utf8_Error::utf8_Error(const std::string& msg)
+		: std::runtime_error(msg)
+	{}
+#	endif
+#endif
+
     void utf8_Error::emit()
 		{
 			if (use_throw)
@@ -522,6 +533,7 @@ namespace nana
 
 	//bool utf8_Error::use_throw{true}; 
 	bool utf8_Error::use_throw{ false };
+	//end class utf8_Error
 
 	void throw_not_utf8(const std::string& text)
 	{
