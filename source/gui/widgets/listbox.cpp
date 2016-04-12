@@ -329,7 +329,7 @@ namespace nana
 				struct column_t
 				{
 					native_string_type text;  ///< "text" header of the column number "index" with weigth "pixels"
-					unsigned pixels;
+					unsigned pixels;		  ///< width
 					bool visible{true};
 					size_type index;
 					std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> weak_ordering;
@@ -338,6 +338,7 @@ namespace nana
 					column_t(native_string_type&& txt, unsigned px, size_type pos)
 						: text(std::move(txt)), pixels(px), index(pos)
 					{}
+					/// \todo introduce default cell format
 				};
 
 				using container = std::vector<column_t> ;
@@ -410,7 +411,7 @@ namespace nana
                     return cont_.back().index;
 				}
 
-				void item_width(size_type pos, unsigned width)
+				void item_width(size_type pos, unsigned width)  ///< set the column width
 				{
 					column(pos).pixels = width;
 				}
@@ -427,7 +428,7 @@ namespace nana
 					return 0;
 				}
 
-				unsigned pixels() const
+				unsigned pixels() const  ///< the visible width of the whole header
 				{
 					unsigned pixels = 0;
 					for(auto & m : cont_)
@@ -470,12 +471,13 @@ namespace nana
 					{
 						if(x < static_cast<int>(col.pixels))
 							return col.index;
-						x -= col.pixels;
+						if (col.visible)
+ 						    x -= col.pixels;
 					}
 					return npos;
 				}
 
-                /// return the left position of the column originaly at index "pos" .
+                /// return the left position and width (in variable *pixels) of the column originaly at index "pos" .
 				int item_pos(size_type pos, unsigned * pixels) const
 				{
 					int left = 0;
@@ -493,7 +495,8 @@ namespace nana
 					}
 					return left;
 				}
-                /// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
+
+				/// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
 				size_type neighbor(size_type index, bool front) const
 				{
 					size_type n = npos;
@@ -509,11 +512,12 @@ namespace nana
 							break;
 						}
 						else if(i->visible)
-							n = i->index;
+							    n = i->index;
 					}
 					return npos;
 				}
-                /// return the original index of the currently first visible col
+                
+				/// return the original index of the currently first visible col
 				size_type begin() const
 				{
 					for(const auto & m : cont_)
@@ -532,7 +536,8 @@ namespace nana
 					}
 					return npos;
 				}
-                /// move the col originaly at index to the position currently in front (or after) the col originaly at index "to" invalidating some current index
+                
+				/// move the col originaly at "index" to the position currently in front (or after) the col originaly at index "to" invalidating some current index
 				void move(size_type index, size_type to, bool front) throw()
 				{
 					if ((index == to) || (index >= cont_.size()) || (to >= cont_.size()))
@@ -879,7 +884,8 @@ namespace nana
 					list_.back().key_ptr = ptr;
 					return &list_.back();
 				}
-                /// add a new cat created at "pos" and return a ref to it
+                
+				/// add a new cat created at "pos" and return a ref to it
 				category_t* create_cat(std::size_t pos, native_string_type&& text)
 				{
 					return &(*list_.emplace(this->get(pos), std::move(text)));
@@ -1828,9 +1834,7 @@ namespace nana
 			};//end class es_lister
 
 
-			//struct essence_t
-			//@brief:	this struct gives many data for listbox,
-			//			the state of the struct does not effect on member funcions, therefore all data members are public.
+			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member funcions, therefore all data members are public.
 			struct essence_t
 			{
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
@@ -1859,7 +1863,7 @@ namespace nana
 
 				struct scroll_part
 				{
-					static const unsigned scale = 16;
+					static const unsigned scale = 16; // ?
 					int offset_x;
 					index_pair offset_y_abs, offset_y_dpl;	//cat stands for category, item stands for item. "item == npos" means that is a category.
                                                 // need to be abs??? to see the same item after sort() ??
@@ -1942,8 +1946,8 @@ namespace nana
 
 
 				//number_of_lister_item
-				//@brief: Returns the number of items that are contained in pixels
-				//@param,with_rest: Means whether including extra one item that is not completely contained in reset pixels.
+				/// @brief  Returns the number of items that are contained in pixels
+				/// @param  with_rest: Means whether including extra one item that is not completely contained in reset pixels.
 				size_type number_of_lister_items(bool with_rest) const
 				{
 					unsigned lister_s = graph->height() - 2 - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
@@ -1983,8 +1987,9 @@ namespace nana
 
                 void trace_item_abs( index_pair abs_pos )
                 {
-					if(abs_pos.item == npos && abs_pos.cat              == scroll.offset_y_abs.cat
-                                            && scroll.offset_y_abs.item == npos                      ) // if item==off y and is a cat
+					if(                abs_pos.item == npos 
+						&&             abs_pos.cat  == scroll.offset_y_abs.cat
+                        && scroll.offset_y_abs.item == npos                      ) // if item==off y and is a cat
 						return;
 
                     trace_item_dpl( lister.relative_pair(abs_pos))  ;   //  ???   scroll_y_dpl_refresh() ;
@@ -2072,10 +2077,10 @@ namespace nana
 					bool v = (lister.the_number_of_expanded() > screen_number);
 
 					if(v == true && h == false)
-						h = (header_s > (sz.width - 2 - scroll.scale));
+						h = ( (header_s + 2 + scroll.scale ) > sz.width);   // 2?
 
-					unsigned width = sz.width - 2 - (v ? scroll.scale : 0);
-					unsigned height = sz.height - 2 - (h ? scroll.scale : 0);
+					unsigned width = sz.width - 2 - (v ? scroll.scale : 0);     // -? 2?
+					unsigned height = sz.height - 2 - (h ? scroll.scale : 0);   // -? 2?
 
 					//event hander for scrollbars
 					auto evt_fn = [this](const arg_scroll& arg)
@@ -2168,7 +2173,8 @@ namespace nana
 					return (seq.size() ? (header.item_pos(seq[0], nullptr) - scroll.offset_x + r.x) : 0);
 				}
 
-				std::pair<parts, size_t> where(int x, int y){
+				std::pair<parts, size_t> where(int x, int y)
+				{
                     std::pair<parts, size_t> new_where;
 
 					if(2 < x && x < static_cast<int>(graph->width()) - 2 && 1 < y && y < static_cast<int>(graph->height()) - 1)
@@ -2644,6 +2650,7 @@ namespace nana
 					item_spliter_ = npos;
 				}
 
+				/// return true an set member item_spliter_ if x is in the spliter area after that header item (column)
 				bool mouse_spliter(const nana::rectangle& r, int x)
 				{
 					if(essence_->ptr_state == item_state::highlighted)
@@ -2658,7 +2665,7 @@ namespace nana
 									item_spliter_ = hd.index; // original index
 									return true;
 								}
-								x -= hd.pixels;
+								x -= hd.pixels;    
 							}
 						}
 					}
@@ -2672,7 +2679,7 @@ namespace nana
 					if(is_grab)
 					{
 						ref_xpos_ = pos.x;
-						if(item_spliter_ != npos)
+						if(item_spliter_ != npos)  // resize header item, not move it
 							orig_item_width_ = essence_->header.column(item_spliter_).pixels;
 					}
 					else if(grab_terminal_.index != npos && grab_terminal_.index != essence_->pointer_where.second)
@@ -2680,21 +2687,21 @@ namespace nana
 				}
 
 				//grab_move
-				//@brief: draw when an item is grabbing.
-				//@return: 0 = no graphics changed, 1 = just update, 2 = refresh
+				/// @brief draw when an item is grabbing.
+				/// @return 0 = no graphics changed, 1 = just update, 2 = refresh
 				int grab_move(const nana::rectangle& rect, const nana::point& pos)
 				{
 					if(item_spliter_ == npos)
-					{
-						draw(rect);
-						_m_make_float(rect, pos);
+					{  // move header item, not resize it
+						draw(rect);                 // first draw the entery header as it was
+						_m_make_float(rect, pos);   // now draw one floating header item
 
 						//Draw the target strip
 						grab_terminal_.index = _m_target_strip(pos.x, rect, essence_->pointer_where.second, grab_terminal_.place_front);
 						return 1;
 					}
 					else
-					{
+					{   // resize header item, not move it
 						const auto& item = essence_->header.column(item_spliter_);
 						//Resize the item specified by item_spliter_.
 						auto new_w = orig_item_width_ - (ref_xpos_ - pos.x);
@@ -3003,9 +3010,19 @@ namespace nana
 					}
 				}
 
-				//Draws an item
-				//@param content_r the rectangle of list content
-				void _m_draw_item(const category_t& cat, const index_pair& item_pos, const int x, const int y, const int txtoff, unsigned width, const nana::rectangle& content_r, const std::vector<size_type>& seqs, nana::color bgcolor, nana::color fgcolor, item_state state) const
+				/// Draws an item
+				void _m_draw_item(const category_t& cat, 
+					              const index_pair& item_pos, 
+					              const int x, 
+					              const int y, 
+					              const int txtoff, 
+					              unsigned width, 
+					              const nana::rectangle& content_r,      ///< the rectangle where the full list content have to be drawn
+					              const std::vector<size_type>& seqs, 
+					              nana::color bgcolor, 
+					              nana::color fgcolor, 
+					              item_state state
+					) const
 				{
 					auto & item = cat.items[item_pos.item];
 
@@ -3022,7 +3039,7 @@ namespace nana
 						if (item.flags.selected)
 							bgcolor = bgcolor.blend(colors::black, 0.98);           // or "selected"
 						else
-							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);
+							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);   /// \todo create a parametre for amount of blend
 					}
 
 					unsigned show_w = width - essence_->scroll.offset_x;
@@ -3148,6 +3165,7 @@ namespace nana
 							{
 								auto cell_txtcolor = fgcolor;
 								auto & m_cell = item.cells[column_pos];
+								review_utf8(m_cell.text);
 								nana::size ts = graph->text_extent_size(m_cell.text);        // precalcule text geometry
 
 								if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
@@ -3338,18 +3356,18 @@ namespace nana
 					if(essence_->ptr_state == item_state::pressed)
 					{
 						if(essence_->pointer_where.first == parts::header)
-						{
+						{   // moving a pressed header : grab it   (or split-resize?)
 							essence_->ptr_state = item_state::grabbed;
 							nana::point pos = arg.pos;
 							essence_->widget_to_header(pos);
 							drawer_header_->grab(pos, true);
 							API::capture_window(essence_->lister.wd_ptr()->handle(), true);
-							update = 2;
+							update = 2; //0 = nothing, 1 = update, 2 = refresh
 						}
 					}
 
                     if(essence_->ptr_state == item_state::grabbed)
-					{
+					{   // moving a grabbed header 
 						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);
 
@@ -3701,6 +3719,7 @@ namespace nana
 			//end class trigger
 
 			//class item_proxy
+
 				item_proxy::item_proxy(essence_t * ess)
 					:	ess_(ess)
 				{}
@@ -3973,6 +3992,7 @@ namespace nana
 			//end class item_proxy
 
 			//class cat_proxy
+
 			//the member cat_ is used for fast accessing to the category
 				cat_proxy::cat_proxy(essence_t * ess, size_type pos)
 					:	ess_(ess),
@@ -4303,6 +4323,7 @@ namespace nana
 
 	//Implementation of arg_category
 	//Contributed by leobackes(pr#97)
+
 	arg_category::arg_category ( const nana::drawerbase::listbox::cat_proxy& cat ) noexcept
 		: category(cat), block_change_(false)
     {
@@ -4320,6 +4341,7 @@ namespace nana
 
 
 	//class listbox
+
 		listbox::listbox(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);

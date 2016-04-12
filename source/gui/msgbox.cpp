@@ -355,13 +355,15 @@ namespace nana
 	msgbox::msgbox(const std::string& title)
 		: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
 	{
-		throw_not_utf8(title_);
+		// throw_not_utf8(title_);
+		review_utf8(title_);
 	}
 
 	msgbox::msgbox(window wd, const std::string& title, button_t b)
 		: wd_(wd), title_(title), button_(b), icon_(icon_none)
 	{
-		throw_not_utf8(title_);
+		// throw_not_utf8(title_);
+		review_utf8(title_);
 	}
 
 	msgbox& msgbox::icon(icon_t ic)
