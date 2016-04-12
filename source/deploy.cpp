@@ -479,6 +479,8 @@ namespace std
 	}
 //#endif  // STD_put_time_NOT_SUPPORTED
 
+#include <iostream>
+
 namespace nana
 {
 	bool is_utf8(const char* str, unsigned len)
@@ -511,24 +513,70 @@ namespace nana
 		return true;
 	}
 
+    void utf8_Error::emit()
+		{
+			if (use_throw)
+				throw utf8_Error(*this);
+			std::cerr << what();
+		}
+
+	//bool utf8_Error::use_throw{true}; 
+	bool utf8_Error::use_throw{ false };
+
 	void throw_not_utf8(const std::string& text)
 	{
 		if (!is_utf8(text.c_str(), text.length()))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
 	}
 
 	void throw_not_utf8(const char* text, unsigned len)
 	{
 		if (!is_utf8(text, len))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + std::string(text, len) ).emit();
+
+		//throw std::invalid_argument("The text is not encoded in UTF8");
 	}
 
 	void throw_not_utf8(const char* text)
 	{
 		if (!is_utf8(text, std::strlen(text)))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
+
+		//throw std::invalid_argument("The text is not encoded in UTF8");
 		
 	}
+
+	std::string recode_to_utf8(std::string no_utf8)
+	{
+		return nana::charset(std::move(no_utf8)).to_bytes(nana::unicode::utf8);
+	}
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(const std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+		{
+			utf8_Error(std::string("\nThe const text is not encoded in UTF8: ") + text).emit();
+			return true;   /// it needed change, it needed review !!
+		}
+		else
+			return false;
+	}
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+		{
+			utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
+			text=recode_to_utf8(text);
+			return true;   /// it needed change, it needed review !!
+		}
+		else
+			return false;
+	}
+
+
 
 	const std::string& to_utf8(const std::string& str)
 	{

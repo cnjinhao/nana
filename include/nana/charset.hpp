@@ -46,7 +46,31 @@ namespace nana
 		class charset_encoding_interface;
 	}
 
-	/// An intelligent charset class for character code conversion.
+	/*!\class charset
+	\brief An intelligent charset class for character code conversion.
+	Example:
+	1. A UTF-8 string from the socket.
+
+	    int len = ::recv(sd, buf, buflen, 0);
+	    textbox.caption(nana::charset(std::string(buf, len), nana::unicode::utf8));
+
+	2. Send the string in text to the socket as UTF-8.
+
+	    std::string utf8str = nana::charset(textbox.caption()).to_bytes(nana::unicode::utf8);
+	    ::send(sd, utf8str.c_str(), utf8str.size(), 0);
+
+	3, Convert a string to the specified multi-byte character code.
+
+	    // Convert to a multibytes string through default system language.
+	    std::string mbstr = nana::charset(a_wstring);
+
+	    // If the default system language is English and convert
+	    // a Chinese unicode string to multibytes string through GB2312
+	    std::setlocale(LC_CTYPE, "zh_CN.GB2312");
+	               //set::setlocale(LC_CTYPE, ".936"); call it in Windows
+	    std::string mbstr = nana::charset(a_wstring_with_chinese);
+
+	*/
 	class charset
 	{
 	public:
@@ -74,27 +98,3 @@ namespace nana
 }//end namespace nana
 #endif
 
-/*!\class charset
-
-Example
-1. A UTF-8 string from the socket.
-
-		int len = ::recv(sd, buf, buflen, 0);
-		textbox.caption(nana::charset(std::string(buf, len), nana::unicode::utf8));
-
-2. Send the string in text to the socket as UTF-8.
-
-		std::string utf8str = nana::charset(textbox.caption()).to_bytes(nana::unicode::utf8);
-		::send(sd, utf8str.c_str(), utf8str.size(), 0);
-
-3, Convert a string to the specified multi-byte character code.
-
-			//Convert to a multibytes string through default system language.
-		std::string mbstr = nana::charset(a_wstring);
-			//If the default system language is English and convert
-			//a Chinese unicode string to multibytes string through GB2312
-		std::setlocale(LC_CTYPE, "zh_CN.GB2312"); 
-			//set::setlocale(LC_CTYPE, ".936"); call it in Windows
-		std::string mbstr = nana::charset(a_wstring_with_chinese);
-
-*/
