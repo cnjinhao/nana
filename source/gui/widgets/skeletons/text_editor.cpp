@@ -1290,7 +1290,6 @@ namespace nana{	namespace widgets
 			text_area_.scroll_pixels = 16;
 			text_area_.hscroll = text_area_.vscroll = 0;
 			select_.mode_selection = selection::mode_no_selected;
-			select_.dragged = false;
 
 			API::create_caret(wd, 1, line_height());
 			API::bgcolor(wd, colors::white);
@@ -1646,13 +1645,10 @@ namespace nana{	namespace widgets
 
 			if(left_button)
 			{
-				auto caret_pos_before = caret();
 				mouse_caret(scrpos);
 
-				if(select_.mode_selection != selection::mode_no_selected)
+				if (selection::mode_mouse_selected == select_.mode_selection || selection::mode_method_selected == select_.mode_selection)
 					set_end_caret();
-				else if ((!select_.dragged) && (caret_pos_before != caret()))
-					select_.dragged = true;
 
 				text_area_.border_renderer(graph_, _m_bgcolor());
 				return true;
@@ -1672,26 +1668,34 @@ namespace nana{	namespace widgets
 					API::capture_window(window_, true);
 					text_area_.captured = true;
 
-					//Set caret pos by screen point and get the caret pos.
-					mouse_caret(arg.pos);
-					if (arg.shift)
+
+					if (this->hit_select_area(behavior_->screen_to_caret(arg.pos), true))
 					{
-						if (points_.shift_begin_caret != points_.caret)
-						{
-							select_.a = points_.shift_begin_caret;
-							select_.b = points_.caret;
-						}
+						select_.mode_selection = selection::mode_move_selected;
 					}
 					else
 					{
-						if (!select(false))
+						//Set caret pos by screen point and get the caret pos.
+						mouse_caret(arg.pos);
+						if (arg.shift)
 						{
-							select_.a = points_.caret;	//Set begin caret
-							set_end_caret();
+							if (points_.shift_begin_caret != points_.caret)
+							{
+								select_.a = points_.shift_begin_caret;
+								select_.b = points_.caret;
+							}
 						}
-						points_.shift_begin_caret = points_.caret;
+						else
+						{
+							if (!select(false))
+							{
+								select_.a = points_.caret;	//Set begin caret
+								set_end_caret();
+							}
+							points_.shift_begin_caret = points_.caret;
+						}
+						select_.mode_selection = selection::mode_mouse_selected;
 					}
-					select_.mode_selection = selection::mode_mouse_selected;
 				}
 
 				text_area_.border_renderer(graph_, _m_bgcolor());
@@ -1699,19 +1703,19 @@ namespace nana{	namespace widgets
 			}
 			else if (event_code::mouse_up == arg.evt_code)
 			{
-				auto is_prev_no_selected = (select_.mode_selection == selection::mode_no_selected);
+				bool updated = false;
 
 				if (select_.mode_selection == selection::mode_mouse_selected)
 				{
 					select_.mode_selection = selection::mode_no_selected;
 					set_end_caret();
 				}
-				else if (is_prev_no_selected)
+				else if (selection::mode_move_selected == select_.mode_selection)
 				{
-					if ((!select_.dragged) || (!move_select()))
+					if (!move_select())
 						select(false);
+					updated = true;
 				}
-				select_.dragged = false;
 
 				API::capture_window(window_, false);
 				text_area_.captured = false;
@@ -1720,8 +1724,7 @@ namespace nana{	namespace widgets
 
 				text_area_.border_renderer(graph_, _m_bgcolor());
 
-				//Redraw if is_prev_no_selected is true
-				return is_prev_no_selected;
+				return updated;
 			}
 			return false;
 		}
@@ -1861,11 +1864,21 @@ namespace nana{	namespace widgets
 			return ((text_area_.area.x <= pos.x && pos.x < _m_end_pos(true)) && (text_area_.area.y <= pos.y && pos.y < _m_end_pos(false)));
 		}
 
-		bool text_editor::hit_select_area(nana::upoint pos) const
+		bool text_editor::hit_select_area(nana::upoint pos, bool ignore_when_select_all) const
 		{
 			nana::upoint a, b;
 			if(_m_get_sort_select_points(a, b))
 			{
+				if (ignore_when_select_all)
+				{
+					if (a.x == 0 && a.y == 0 && (b.y + 1) == static_cast<unsigned>(textbase_.lines()))
+					{
+						//is select all
+						if (b.x == static_cast<unsigned>(textbase_.getline(b.y).size()))
+							return false;
+					}
+				}
+
 				if((pos.y > a.y || (pos.y == a.y && pos.x >= a.x)) && ((pos.y < b.y) || (pos.y == b.y && pos.x < b.x)))
 					return true;
 			}
@@ -1874,7 +1887,10 @@ namespace nana{	namespace widgets
 
 		bool text_editor::move_select()
 		{
-			if(hit_select_area(points_.caret) || (select_.b == points_.caret))
+			if (! attributes_.editable)
+				return false;
+
+			if(hit_select_area(points_.caret, true) || (select_.b == points_.caret))
 			{
 				points_.caret = select_.b;
 
