@@ -1775,7 +1775,8 @@ namespace nana
 
 						bool is_vert = _m_is_vert(dir_);
 
-						API::capture_window(this->handle(), true);
+						this->set_capture(true);
+
 						auto basepos = API::cursor_position();
 						base_pos_.x = (is_vert ? basepos.y : basepos.x);
 
@@ -1838,7 +1839,7 @@ namespace nana
 						dock_dv_->collocate(wd);
 					}
 					else
-						API::capture_window(this->handle(), false);	//release mouse button
+						this->release_capture();
 				};
 
 				auto & evt = this->events();

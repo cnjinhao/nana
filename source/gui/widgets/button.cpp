@@ -321,11 +321,12 @@ namespace nana{	namespace drawerbase
 
 				attr_.e_state = element_state::pressed;
 				attr_.keep_pressed = true;
-				API::capture_window(*wdg_, true);
+				wdg_->set_capture(true);
 			}
 			else
 			{
-				API::capture_window(*wdg_, false);
+				wdg_->release_capture();
+
 				attr_.keep_pressed = false;
 				if (attr_.enable_pushed && (false == attr_.pushed))
 				{

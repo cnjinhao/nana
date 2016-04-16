@@ -263,14 +263,15 @@ namespace nana
 					slider_state_.trace = slider_state_.TraceCapture;
 					slider_state_.snap_pos = static_cast<int>(attr_.pos);
 					slider_state_.refpos = pos;
-					API::capture_window(other_.wd, true);
+					API::set_capture(other_.wd, true);
 				}
 
 				bool release_slider()
 				{
 					if(slider_state_.trace == slider_state_.TraceCapture)
 					{
-						API::capture_window(other_.wd, false);
+						API::release_capture(other_.wd);
+
 						if(other_.wd != API::find_window(API::cursor_position()))
 						{
 							slider_state_.trace = slider_state_.TraceNone;

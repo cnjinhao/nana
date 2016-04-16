@@ -104,13 +104,13 @@ namespace detail
 
 		//destroy_handle
 		//@brief:	Delete window handle, the handle type must be a root and a frame.
+
+		// Deletes a window whose category type is a root type or a frame type.
 		void destroy_handle(core_window_t*);
 
 		void default_icon(const paint::image& _small_icon, const paint::image& big_icon);
 		void icon(core_window_t*, const paint::image& small_icon, const paint::image& big_icon);
 
-		//show
-		//@brief: show or hide a window
 		bool show(core_window_t* wd, bool visible);
 
 		core_window_t* find_window(native_window_type root, int x, int y);
@@ -139,10 +139,10 @@ namespace detail
 		core_window_t* set_focus(core_window_t*, bool root_has_been_focused, arg_focus::reason);
 
 		core_window_t* capture_redirect(core_window_t*);
-		void capture_ignore_children(bool ignore);
+
 		bool capture_window_entered(int root_x, int root_y, bool& prev);
 		core_window_t * capture_window() const;
-		core_window_t* capture_window(core_window_t*, bool value);
+		void capture_window(core_window_t*, bool capture, bool ignore_children_if_captured);
 
 		void enable_tabstop(core_window_t*);
 		core_window_t* tabstop(core_window_t*, bool forward) const;	//forward means move to next in logic.

@@ -47,7 +47,7 @@ namespace nana
 				API::umake_event(t.over);
 				API::umake_event(t.release);
 				API::umake_event(t.destroy);
-				API::capture_window(t.wd, false);
+				API::release_capture(t.wd);
 			}
 		}
 
@@ -87,7 +87,8 @@ namespace nana
 				{
 				case event_code::mouse_down:
 					dragging_ = true;
-					API::capture_window(arg.window_handle, true);
+					API::set_capture(arg.window_handle, true);
+
 					origin_ = API::cursor_position();
 					for (auto & t : targets_)
 					{
@@ -133,7 +134,8 @@ namespace nana
 					}
 					break;
 				case event_code::mouse_up:
-					API::capture_window(arg.window_handle, false);
+					API::release_capture(arg.window_handle);
+
 					dragging_ = false;
 					break;
 				default:
@@ -151,7 +153,7 @@ namespace nana
 					if (i->wd == arg.window_handle)
 					{
 						triggers_.erase(i);
-						API::capture_window(arg.window_handle, false);
+						API::release_capture(arg.window_handle);
 						return;
 					}
 				}

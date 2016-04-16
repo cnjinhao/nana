@@ -1719,7 +1719,7 @@ namespace nana{	namespace widgets
 
 				if (::nana::mouse::left_button == arg.button)
 				{
-					API::capture_window(window_, true);
+					API::set_capture(window_, true);
 					text_area_.captured = true;
 
 					//Set caret pos by screen point and get the caret pos.
@@ -1764,7 +1764,8 @@ namespace nana{	namespace widgets
 				}
 				select_.dragged = false;
 
-				API::capture_window(window_, false);
+				API::release_capture(window_);
+
 				text_area_.captured = false;
 				if (hit_text_area(arg.pos) == false)
 					API::window_cursor(window_, nana::cursor::arrow);

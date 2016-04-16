@@ -268,10 +268,13 @@ namespace API
 	 */
 	void lazy_refresh();
 
-	/**	@brief:	calls refresh() of a widget's drawer. if currently state is lazy_refresh, Nana.GUI may paste the drawing on the window after an event processing.
-	 *	@param window: specify a window to be refreshed.
+
+	/// Refresh the window and display it immediately calling the refresh function of its drawer_trigger.
+	/*
+	 * The drawer::refresh() will be called. If the currently state is lazy_refrsh, the window is delayed to update the graphics until an event is finished.
+	 * @param window_handle A handle to the window to be refreshed.
 	 */
-	void refresh_window(window);           ///< Refreshs the window and display it immediately calling the refresh method of its drawer_trigger..
+	void refresh_window(window window_handle);
 	void refresh_window_tree(window);      ///< Refreshs the specified window and all it’s children windows, then display it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
@@ -294,8 +297,20 @@ namespace API
 	void focus_window(window);
 
 	window	capture_window();
-	window	capture_window(window, bool);         ///< Enables or disables the window to grab the mouse input
-	void	capture_ignore_children(bool ignore); ///< Enables or disables the captured window whether redirects the mouse input to its children if the mouse is over its children.
+
+	/// Enables a window to grab the mouse input.
+	/**
+	 * @param window_handle A handle to a window to grab the mouse input.
+	 * @param ignore_children Indicates whether to redirect the mouse input to its children if the mouse pointer is over its children.
+	 */
+	void set_capture(window window_handle, bool ignore_children);
+	
+	/// Disable a window to grab the mouse input.
+	/**
+	 * @param window handle A handle to a window to release grab of mouse input.
+	 */
+	void release_capture(window window_handle);
+
 	void modal_window(window);                    ///< Blocks the routine til the specified window is closed.
 	void wait_for(window);
 
@@ -316,10 +331,25 @@ namespace API
 	void caret_visible(window, bool is_show);
 	bool caret_visible(window);
 
-	void tabstop(window);                       ///< Sets the window that owns the tabstop.
-            /// treu: The focus is not to be changed when Tab key is pressed, and a key_char event with tab will be generated.
-	void eat_tabstop(window, bool);
-	window move_tabstop(window, bool next);     ///< Sets the focus to the window which tabstop is near to the specified window.
+	/// Enables that the user can give input focus to the specified window using TAB key.
+	void tabstop(window);
+
+	/// Enables or disables a window to receive a key_char event for pressing TAB key.
+	/*
+	 * @param window_handle A handle to the window to catch TAB key through key_char event.
+	 * @param enable Indicates whether to enable or disable catch of TAB key. If this parameter is *true*, the window is
+	 * received a key_char when pressing TAB key, and the input focus is not changed. If this parameter is *false*, the
+	 * input focus is changed to the next tabstop window.
+	 */
+	void eat_tabstop(window window_handle, bool enable);
+
+	/// Sets the input focus to the window which the tabstop is near to the specified window.
+	/*
+	 * @param window_handle A handle to the window.
+	 * @param forward Indicates whether forward or backward window to be given the input focus.
+	 * @return A handle to the window which to be given the input focus.
+	 */
+	window move_tabstop(window window_handle, bool forward);
 
 	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
@@ -349,6 +379,7 @@ namespace API
 
 	void at_safe_place(window, std::function<void()>);
 }//end namespace API
+
 }//end namespace nana
 
 #endif

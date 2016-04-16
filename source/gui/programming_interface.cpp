@@ -937,16 +937,15 @@ namespace API
 		return reinterpret_cast<window>(restrict::wd_manager().capture_window());
 	}
 
-	window capture_window(window wd, bool value)
+	void set_capture(window wd, bool ignore_children)
 	{
-		return reinterpret_cast<window>(
-					restrict::wd_manager().capture_window(reinterpret_cast<basic_window*>(wd), value)
-		);
+		restrict::wd_manager().capture_window(reinterpret_cast<basic_window*>(wd), true, ignore_children);
 	}
 
-	void capture_ignore_children(bool ignore)
+	void release_capture(window wd)
 	{
-		restrict::wd_manager().capture_ignore_children(ignore);
+		//The 3rd parameter is useless when the 2nd parameter is false.
+		restrict::wd_manager().capture_window(reinterpret_cast<basic_window*>(wd), false, false);
 	}
 
 	void modal_window(window wd)

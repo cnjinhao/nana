@@ -3343,7 +3343,8 @@ namespace nana
 							nana::point pos = arg.pos;
 							essence_->widget_to_header(pos);
 							drawer_header_->grab(pos, true);
-							API::capture_window(essence_->lister.wd_ptr()->handle(), true);
+							essence_->lister.wd_ptr()->set_capture(true);
+
 							update = 2;
 						}
 					}
@@ -3535,7 +3536,7 @@ namespace nana
 						drawer_header_->grab(pos, false);
 						refresh(graph);
 						API::lazy_refresh();
-						API::capture_window(essence_->lister.wd_ptr()->handle(), false);
+						essence_->lister.wd_ptr()->release_capture();
 					}
 				}
 

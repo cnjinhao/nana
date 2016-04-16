@@ -310,7 +310,7 @@ namespace nana
 				return (is_keyboard_condition ? (pi_data_->menu.has_keyboard ? pi_data_->menu.window : nullptr) : pi_data_->menu.window);
 			}
 
-			return 0;
+			return nullptr;
 		}
 
 		native_window_type bedrock::get_menu()

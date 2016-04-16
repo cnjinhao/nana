@@ -183,6 +183,16 @@ namespace nana
 			_m_size(sz);
 		}
 
+		void widget::set_capture(bool ignore_children)
+		{
+			API::set_capture(*this, ignore_children);
+		}
+
+		void widget::release_capture()
+		{
+			API::release_capture(*this);
+		}
+
 		nana::point widget::pos() const
 		{
 			return API::window_position(handle());

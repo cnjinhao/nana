@@ -351,7 +351,8 @@ namespace nana
 				{
 					if (!pressed)
 					{
-						API::capture_window(editor_->window_handle(), false);
+						API::release_capture(editor_->window_handle());
+
 						timer_.stop();
 						timer_.interval(600);
 					}
@@ -361,7 +362,7 @@ namespace nana
 						//Spins the value when mouse button is released
 						if (pressed)
 						{
-							API::capture_window(editor_->window_handle(), true);
+							API::set_capture(editor_->window_handle(), true);
 							range_->spin(buttons::increase == spin_stated_);
 							reset_text();
 							timer_.start();

@@ -455,8 +455,6 @@ namespace detail
 			update(parent, false, false, &update_area);
 		}
 
-		//destroy_handle
-		//@brief:	Delete window handle, the handle type must be a root and a frame.
 		void window_manager::destroy_handle(core_window_t* wd)
 		{
 			//Thread-Safe Required!
@@ -975,7 +973,7 @@ namespace detail
 			//A fix by Katsuhisa Yuasa
 			//The menubar token window will be redirected to the prev focus window when the new
 			//focus window is a menubar.
-			//The focus window will be restore to the prev focus which losts the focus becuase of
+			//The focus window will be restored to the prev focus which losts the focus becuase of
 			//memberbar. 
 			if (prev_focus && (wd == wd->root_widget->other.attribute.root->menubar))
 				wd = prev_focus;
@@ -998,11 +996,6 @@ namespace detail
 			return attr_.capture.window;
 		}
 
-		void window_manager::capture_ignore_children(bool ignore)
-		{
-			attr_.capture.ignore_children = ignore;
-		}
-
 		bool window_manager::capture_window_entered(int root_x, int root_y, bool& prev)
 		{
 			if(attr_.capture.window)
@@ -1023,19 +1016,15 @@ namespace detail
 			return attr_.capture.window;
 		}
 
-		//capture_window
-		//@brief:	set a window that always captures the mouse event if it is not in the range of window
-		//@return:	this function dose return the previous captured window. If the wnd set captured twice,
-		//			the return value is NULL
-		window_manager::core_window_t* window_manager::capture_window(core_window_t* wd, bool value)
+		void window_manager::capture_window(core_window_t* wd, bool captured, bool ignore_children)
 		{
 			if (!this->available(wd))
-				return nullptr;
+				return;
 
 			nana::point pos = native_interface::cursor_position();
 			auto & attr_cap = attr_.capture.history;
 
-			if(value)
+			if (captured)
 			{
 				if(wd != attr_.capture.window)
 				{
@@ -1045,19 +1034,17 @@ namespace detail
 					if (impl_->wd_register.available(wd))
 					{
 						wd->flags.captured = true;
-						native_interface::capture_window(wd->root, value);
-						auto prev = attr_.capture.window;
-						if(prev && (prev != wd))
-							attr_cap.emplace_back(prev, attr_.capture.ignore_children);
+						native_interface::capture_window(wd->root, captured);
+
+						if (attr_.capture.window)
+							attr_cap.emplace_back(attr_.capture.window, attr_.capture.ignore_children);
 
 						attr_.capture.window = wd;
-						attr_.capture.ignore_children = true;
+						attr_.capture.ignore_children = ignore_children;
 						native_interface::calc_window_point(wd->root, pos);
 						attr_.capture.inside = _m_effective(wd, pos);
-						return prev;
 					}
 				}
-				return attr_.capture.window;
 			}
 			else if(wd == attr_.capture.window)
 			{
@@ -1092,10 +1079,7 @@ namespace detail
 						break;
 					}
 				}
-
-				return attr_.capture.window;
 			}
-			return wd;
 		}
 
 		//enable_tabstop
@@ -1356,7 +1340,7 @@ namespace detail
 				if (established)
 				{
 					if (check_tree(wd, attr_.capture.window))
-						capture_window(attr_.capture.window, false);
+						capture_window(attr_.capture.window, false, false);	//The 3rd parameter is ignored
 
 					if (root_attr->focus && check_tree(wd, root_attr->focus))
 						root_attr->focus = nullptr;
@@ -1369,7 +1353,7 @@ namespace detail
 				else
 				{
 					if (wd == attr_.capture.window)
-						capture_window(attr_.capture.window, false);
+						capture_window(attr_.capture.window, false, false);	//The 3rd parameter is ignored.
 
 					if (root_attr->focus == wd)
 						root_attr->focus = nullptr;

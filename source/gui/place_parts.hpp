@@ -240,7 +240,7 @@ namespace nana
 							moves_.started = true;
 							moves_.start_pos = API::cursor_position();
 							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
-							API::capture_window(caption_, true);
+							caption_.set_capture(true);
 						}
 					}
 					else if (event_code::mouse_move == arg.evt_code)
@@ -266,7 +266,7 @@ namespace nana
 						if ((::nana::mouse::left_button == arg.button) && moves_.started)
 						{
 							moves_.started = false;
-							API::capture_window(caption_, false);
+							caption_.release_capture();
 							notifier_->notify_move_stopped();
 						}
 					}
@@ -345,7 +345,7 @@ namespace nana
 				if (container_)
 					return;
 
-				API::capture_window(caption_, false);
+				caption_.release_capture();
 
 				rectangle r{ pos() + move_pos, size() };
 				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
@@ -364,14 +364,15 @@ namespace nana
 				});
 
 				container_->show();
-				API::capture_window(caption_, true);
+				caption_.set_capture(true);
 
 				notifier_->notify_float();
 			}
 
 			void dock()
 			{
-				API::capture_window(caption_, false);
+				caption_.release_capture();
+
 				API::set_parent_window(handle(), host_window_);
 				container_.reset();
 				notifier_->notify_dock();

@@ -78,6 +78,15 @@ namespace nana
 
 		nana::size size() const;
 		void size(const nana::size&);
+
+		/// Enables the widget to grab the mouse input.
+		/*
+		 * @param ignore_children Indicates whether to redirect the mouse input to its children if the mouse pointer is over its children.
+		 */
+		void set_capture(bool ignore_children);
+
+		/// Disables the widget to grab the mouse input.
+		void release_capture();
 		
 		point pos() const;
 		void move(int x, int y);
