@@ -220,7 +220,7 @@ namespace nana{	namespace widgets
 			void set_end_caret();
 			
 			bool hit_text_area(const point&) const;
-			bool hit_select_area(nana::upoint pos) const;
+			bool hit_select_area(nana::upoint pos, bool ignore_when_select_all) const;
 
 			bool move_select();
 			bool mask(wchar_t);
@@ -355,10 +355,9 @@ namespace nana{	namespace widgets
 
 			struct selection
 			{
-				enum mode_selection_t{mode_no_selected, mode_mouse_selected, mode_method_selected};
+				enum mode_selection_t{mode_no_selected, mode_mouse_selected, mode_method_selected, mode_move_selected};
 
 				mode_selection_t mode_selection;
-				bool dragged;
 				nana::upoint a, b;
 			}select_;
 
