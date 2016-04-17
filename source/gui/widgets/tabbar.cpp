@@ -1255,7 +1255,7 @@ namespace nana
 						if(false == layouter_->active_by_trace())
 							layouter_->toolbox_answer(arg);
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1266,7 +1266,7 @@ namespace nana
 					if(rd)
 					{
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1275,7 +1275,7 @@ namespace nana
 					if(layouter_->trace(arg.pos.x, arg.pos.y))
 					{
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1284,7 +1284,7 @@ namespace nana
 					if(layouter_->leave())
 					{
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			//end class trigger
@@ -1535,7 +1535,7 @@ namespace nana
 							return;
 
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 
 					void driver::mouse_leave(graph_reference graph, const arg_mouse&)
@@ -1544,7 +1544,7 @@ namespace nana
 							return;
 
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 
 					void driver::mouse_down(graph_reference graph, const arg_mouse&)
@@ -1559,7 +1559,7 @@ namespace nana
 							model_->show_attached_window();
 
 							refresh(graph);
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 
 							event_arg arg;
 							model_->widget_ptr()->events().selected.emit(arg, model_->widget_ptr()->handle());

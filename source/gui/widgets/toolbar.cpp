@@ -317,7 +317,7 @@ namespace nana
 							impl_->state = item_renderer::state_t::highlighted;
 
 							refresh(graph);
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 
 							if (impl_->state == item_renderer::state_t::highlighted)
 							{
@@ -341,7 +341,7 @@ namespace nana
 
 						impl_->which = npos;
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 
 						if (which != npos && impl_->items.at(which)->enable)
 						{
@@ -359,7 +359,7 @@ namespace nana
 					{
 						impl_->state = item_renderer::state_t::selected;
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -382,7 +382,7 @@ namespace nana
 						}
 
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 

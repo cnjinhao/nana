@@ -314,6 +314,11 @@ namespace API
 			if (restrict::wd_manager().available(iwd))
 				iwd->flags.space_click_enabled = enable;
 		}
+
+		void lazy_refresh()
+		{
+			restrict::bedrock.thread_context_lazy_refresh();
+		}
 	}//end namespace dev
 
 
@@ -822,13 +827,6 @@ namespace API
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
 		return (restrict::wd_manager().available(iwd) ? iwd->flags.enabled : false);
-	}
-
-	//lazy_refresh:
-	//@brief: A widget drawer draws the widget surface in answering an event. This function will tell the drawer to copy the graphics into window after event answering.
-	void lazy_refresh()
-	{
-		restrict::bedrock.thread_context_lazy_refresh();
 	}
 
 	//refresh_window

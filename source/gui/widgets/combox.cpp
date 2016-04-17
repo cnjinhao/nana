@@ -586,7 +586,7 @@ namespace nana
 					{
 						drawer_->draw();
 						drawer_->editor()->reset_caret();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -596,7 +596,7 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -607,7 +607,7 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -625,7 +625,7 @@ namespace nana
 						if(editor->attr().editable)
 							editor->reset_caret();
 
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -636,7 +636,7 @@ namespace nana
 						drawer_->editor()->mouse_pressed(arg);
 						drawer_->set_button_state(element_state::hovered, false);
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -651,7 +651,7 @@ namespace nana
 						{
 							drawer_->draw();
 							drawer_->editor()->reset_caret();
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 						}
 					}
 				}
@@ -711,13 +711,13 @@ namespace nana
 					if (call_other_keys)
 						drawer_->editor()->respond_key(arg);
 
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
 				{
 					if (drawer_->editor()->respond_char(arg))
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 				}
 			//end class trigger
 

@@ -626,7 +626,7 @@ namespace nana
 						if(mkdir)
 						{
 							impl_->draw();
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 						}
 					}
 				}
@@ -637,7 +637,7 @@ namespace nana
 					if(mkdraw)
 					{
 						impl_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -660,7 +660,7 @@ namespace nana
 					if(mkdraw)
 					{
 						impl_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -669,7 +669,7 @@ namespace nana
 					if(impl_->reset_adorn())
 					{
 						impl_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -677,7 +677,7 @@ namespace nana
 				{
 					impl_->resize();
 					impl_->draw();
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 			//end class trigger
 		}//end namespace slider

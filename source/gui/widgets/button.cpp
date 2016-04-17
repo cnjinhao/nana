@@ -134,7 +134,7 @@ namespace nana{	namespace drawerbase
 		{
 			attr_.e_state = (attr_.pushed || attr_.keep_pressed ? element_state::pressed : element_state::hovered);
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
@@ -144,7 +144,7 @@ namespace nana{	namespace drawerbase
 
 			attr_.e_state = element_state::normal;
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
@@ -185,7 +185,7 @@ namespace nana{	namespace drawerbase
 		{
 			attr_.focused = arg.getting;
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::_m_draw_title(graph_reference graph, bool enabled)
@@ -343,7 +343,7 @@ namespace nana{	namespace drawerbase
 			}
 
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::emit_click()

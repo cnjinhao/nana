@@ -205,14 +205,14 @@ namespace nana
 				void resized(graph_reference graph, const ::nana::arg_resized&) override
 				{
 					drawer_.draw(graph, metrics_.what);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_enter(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
 					metrics_.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph, metrics_.what);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg) override
@@ -238,7 +238,7 @@ namespace nana
 					if (redraw)
 					{
 						drawer_.draw(graph, metrics_.what);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -278,7 +278,7 @@ namespace nana
 							break;
 						}
 						drawer_.draw(graph, metrics_.what);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -291,7 +291,7 @@ namespace nana
 					metrics_.pressed = false;
 					metrics_.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph, metrics_.what);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_leave(graph_reference graph, const arg_mouse&) override
@@ -300,7 +300,7 @@ namespace nana
 
 					metrics_.what = buttons::none;
 					drawer_.draw(graph, buttons::none);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_wheel(graph_reference graph, const arg_wheel& arg) override
@@ -308,7 +308,7 @@ namespace nana
 					if (make_step(arg.upwards == false, 3))
 					{
 						drawer_.draw(graph, metrics_.what);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			private:

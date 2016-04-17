@@ -3392,7 +3392,7 @@ namespace nana
 						if (2 == update)
 							refresh(graph);
 
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -3409,7 +3409,7 @@ namespace nana
 						}
 
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -3504,7 +3504,7 @@ namespace nana
 					if(update)
 					{
 						_m_draw_border();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -3525,7 +3525,7 @@ namespace nana
 							{
 								essence_->trace_item_dpl({0,0});
 								refresh(graph);
-								API::lazy_refresh();
+								API::dev::lazy_refresh();
 							}
 						}
 					}
@@ -3535,7 +3535,7 @@ namespace nana
 						essence_->widget_to_header(pos);
 						drawer_header_->grab(pos, false);
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 						essence_->lister.wd_ptr()->release_capture();
 					}
 				}
@@ -3546,7 +3546,7 @@ namespace nana
 					{
 						refresh(graph);
 						essence_->adjust_scroll_value();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -3588,7 +3588,7 @@ namespace nana
                             }
                             essence_->adjust_scroll_life();
                             refresh(graph);
-                            API::lazy_refresh();
+                            API::dev::lazy_refresh();
                         }
 					}
 				}
@@ -3597,7 +3597,7 @@ namespace nana
 				{
 					essence_->adjust_scroll_life();
 					refresh(graph);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
@@ -3670,7 +3670,7 @@ namespace nana
 						return;
 					}
 					refresh(graph);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
@@ -3688,7 +3688,7 @@ namespace nana
                     case keyboard::select_all :
                         essence_->lister.select_for_all(true);
 						refresh(graph);
-					    API::lazy_refresh();
+					    API::dev::lazy_refresh();
                         break;
 
 					default:

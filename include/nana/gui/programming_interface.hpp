@@ -88,10 +88,20 @@ namespace API
 		void set_menubar(window wd, bool attach);
 
 		void enable_space_click(window, bool enable);
+
+		/// Refreshs a widget surface
+		/*
+		 * This function will copy the drawer surface into system window after the event process finished.
+		 */
+		void lazy_refresh();
 	}//end namespace dev
 
-
-	widget* get_widget(window);
+	/// Returns the widget pointer of the specified window.
+	/*
+	 * @param window_handle A handle to a window owning the widget.
+	 * @return A widget pointer.
+	 */
+	widget* get_widget(window window_handle);
 
 	namespace detail
 	{
@@ -258,17 +268,6 @@ namespace API
 	void window_enabled(window, bool);
 	bool window_enabled(window);
 
-	/**	@brief	A widget drawer draws the widget surface in answering an event.
-     *
-     *          This function will tell the drawer to copy the graphics into window after event answering.
-     *          Tells Nana.GUI to copy the buffer of event window to screen after the event is processed.
-     *          This function only works for a drawer_trigger, when a drawer_trigger receives an event,
-     *          after drawing, a drawer_trigger should call lazy_refresh to tell the Nana.GUI to refresh
-     *          the window to the screen after the event process finished.
-	 */
-	void lazy_refresh();
-
-
 	/// Refresh the window and display it immediately calling the refresh function of its drawer_trigger.
 	/*
 	 * The drawer::refresh() will be called. If the currently state is lazy_refrsh, the window is delayed to update the graphics until an event is finished.
@@ -296,6 +295,7 @@ namespace API
 	/// Sets the keyboard focus for a specified window.
 	void focus_window(window);
 
+	/// Returns a window which has grabbed the mouse input.
 	window	capture_window();
 
 	/// Enables a window to grab the mouse input.
@@ -311,7 +311,10 @@ namespace API
 	 */
 	void release_capture(window window_handle);
 
-	void modal_window(window);                    ///< Blocks the routine til the specified window is closed.
+	/// Blocks the execution and other windows' messages until the specified window is closed.
+	void modal_window(window);
+
+	/// Blocks the execution until the specified window is closesd.
 	void wait_for(window);
 
 	color fgcolor(window);

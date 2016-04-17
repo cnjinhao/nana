@@ -85,7 +85,7 @@ namespace nana{ namespace drawerbase
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
 			{
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_up(graph_reference graph, const arg_mouse&)
@@ -97,19 +97,19 @@ namespace nana{ namespace drawerbase
 					API::events<nana::checkbox>(impl_->widget_ptr->handle()).checked.emit(arg, impl_->widget_ptr->handle());
 				}
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_enter(graph_reference graph, const arg_mouse&)
 			{
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_leave(graph_reference graph, const arg_mouse&)
 			{
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			drawer::implement * drawer::impl() const

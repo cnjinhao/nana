@@ -350,7 +350,7 @@ namespace nana
 					if(track_mouse(arg.pos))
 					{
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 

@@ -443,7 +443,7 @@ namespace nana
 					if(drawer_->set_mouse(graph, arg.pos.x, arg.pos.y))
 					{
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 

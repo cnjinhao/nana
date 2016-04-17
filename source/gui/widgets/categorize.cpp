@@ -881,7 +881,7 @@ namespace nana
 						{
 							scheme_->mouse_pressed();
 							scheme_->draw(graph);
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 						}
 					}
 				}
@@ -894,7 +894,7 @@ namespace nana
 						{
 							scheme_->mouse_release();
 							scheme_->draw(graph);
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 						}
 					}
 				}
@@ -904,7 +904,7 @@ namespace nana
 					if(scheme_->locate(arg.pos.x, arg.pos.y) && API::window_enabled(scheme_->window_handle()))
 					{
 						scheme_->draw(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -913,7 +913,7 @@ namespace nana
 					if(API::window_enabled(scheme_->window_handle()) && (scheme_->is_list_shown() == false) && scheme_->erase_locate())
 					{
 						scheme_->draw(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			//end class trigger

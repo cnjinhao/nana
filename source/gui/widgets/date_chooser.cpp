@@ -797,7 +797,7 @@ namespace nana
 					if (model_->set_where(pos) || (model::where::textarea == pos))
 					{
 						model_->render(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -806,7 +806,7 @@ namespace nana
 					if (model_->set_where(model::where::none))
 					{
 						model_->render(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -882,7 +882,7 @@ namespace nana
 						if (!transformed)
 							model_->render(graph);
 
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -894,7 +894,7 @@ namespace nana
 						if (!redrawn)
 							refresh(graph);
 
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			//end class trigger

@@ -109,14 +109,14 @@ namespace nana
 				x_pointed_ = _m_button_area().is_hit(arg.pos);
 
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void mouse_leave(graph_reference graph, const arg_mouse&) override
 			{
 				x_pointed_ = false;
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void mouse_down(graph_reference graph, const arg_mouse&) override
@@ -127,7 +127,7 @@ namespace nana
 				x_state_ = ::nana::mouse_action::pressed;
 
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void mouse_up(graph_reference graph, const arg_mouse&) override
@@ -137,7 +137,7 @@ namespace nana
 
 				x_state_ = ::nana::mouse_action::over;
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 
 				close_fn_();
 			}

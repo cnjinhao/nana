@@ -524,38 +524,38 @@ namespace nana
 				impl_->reset_text();
 				impl_->render();
 				impl_->editor()->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
 			{
 				impl_->mouse_wheel(arg.upwards);
 				impl_->editor()->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 			{
 				if (impl_->mouse_button(arg, true))
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_up(graph_reference, const arg_mouse& arg)
 			{
 				if (impl_->mouse_button(arg, false))
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_move(graph_reference, const arg_mouse& arg)
 			{
 				if (impl_->mouse_move(arg.left_button, arg.pos))
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_leave(graph_reference, const arg_mouse&)
 			{
 				impl_->render();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::key_press(graph_reference, const arg_keyboard& arg)
@@ -564,7 +564,7 @@ namespace nana
 				{
 					impl_->editor()->reset_caret();
 					impl_->draw_spins();
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 			}
 
@@ -575,7 +575,7 @@ namespace nana
 					if (!impl_->value(to_utf8(impl_->editor()->text())))
 						impl_->draw_spins();
 
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 			}
 
@@ -584,7 +584,7 @@ namespace nana
 				impl_->reset_text_area();
 				impl_->render();
 				impl_->editor()->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 	}//end namespace drawerbase

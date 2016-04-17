@@ -1879,7 +1879,7 @@ namespace nana
 						impl_->node_state.event_node = nl.node();
 						impl_->set_expanded(impl_->node_state.event_node, !impl_->node_state.event_node->value.second.expanded);
 						impl_->draw(true);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1927,7 +1927,7 @@ namespace nana
 					if(has_redraw)
 					{
 						impl_->draw(true);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1960,7 +1960,7 @@ namespace nana
 						return;	//Do not refresh
 
 					impl_->draw(true);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
@@ -1968,7 +1968,7 @@ namespace nana
 					if(impl_->track_mouse(arg.pos.x, arg.pos.y))
 					{
 						impl_->draw(false);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1986,7 +1986,7 @@ namespace nana
 						impl_->track_mouse(arg.pos.x, arg.pos.y);
 
 						impl_->draw(false);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1998,14 +1998,14 @@ namespace nana
 						impl_->data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *impl_->data.widget_ptr, iprx, false }, impl_->data.widget_ptr->handle());
 						impl_->node_state.pointed = nullptr;
 						impl_->draw(false);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
 				void trigger::resized(graph_reference, const arg_resized&)
 				{
 					impl_->draw(false);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 					impl_->show_scroll();
 					if(!impl_->shape.scroll.empty())
 					{
@@ -2120,7 +2120,7 @@ namespace nana
 					if(redraw)
 					{
 						impl_->draw(scroll);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -2150,7 +2150,7 @@ namespace nana
 					if (do_refresh)
 					{
 						impl_->draw(do_refresh & 1);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			//end class trigger

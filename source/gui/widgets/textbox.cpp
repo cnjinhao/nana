@@ -97,7 +97,7 @@ namespace drawerbase {
 			if (!editor_->focus_changed(arg))
 				refresh(graph);
 
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
@@ -105,20 +105,20 @@ namespace drawerbase {
 			if (editor_->mouse_pressed(arg))
 			{
 				editor_->render(true);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 
 		void drawer::mouse_move(graph_reference, const arg_mouse& arg)
 		{
 			if(editor_->mouse_move(arg.left_button, arg.pos))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
 		{
 			if(editor_->mouse_pressed(arg))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
@@ -126,20 +126,20 @@ namespace drawerbase {
 			if(editor_->scroll(arg.upwards, true))
 			{
 				editor_->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 
 		void drawer::mouse_enter(graph_reference, const arg_mouse&)
 		{
 			if(editor_->mouse_enter(true))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_leave(graph_reference, const arg_mouse&)
 		{
 			if(editor_->mouse_enter(false))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
@@ -147,14 +147,14 @@ namespace drawerbase {
 			if(editor_->respond_key(arg))
 			{
 				editor_->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
 			if (editor_->respond_char(arg))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::resized(graph_reference graph, const arg_resized& arg)
@@ -162,7 +162,7 @@ namespace drawerbase {
 			_m_text_area(arg.width, arg.height);
 			refresh(graph);
 			editor_->reset_caret();
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void drawer::typeface_changed(graph_reference graph)
