@@ -587,10 +587,11 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		listbox.anyobj(0, 0, 10); //the type of customer's object is int.
 		listbox.anyobj(0, 0, 20);
 5. listbox is a widget_object, with template parameters drawerbase::listbox::trigger and drawerbase::listbox::scheme 
-amon others.
+among others.
 That means that listbox have a member trigger_ constructed first and accecible with get_drawer_trigger() and
 a member (unique pointer to) scheme_ accesible with scheme_type& scheme() created in the constructor 
-with API::dev::make_scheme<Scheme>() which call API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>())
+with API::dev::make_scheme<Scheme>() 
+which call API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>())
 which call restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_base&&>(factory));
 which call pi_data_->scheme.create(std::move(factory));
 which call factory.create(scheme_template(std::move(factory)));
@@ -603,7 +604,10 @@ the nana::detail::basic_window member pointer scheme
 \example listbox_Resolver.cpp
 */
 	class listbox
-		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
+		:	public widget_object<category::widget_tag, 
+		                         drawerbase::listbox::trigger, 
+		                         drawerbase::listbox::listbox_events, 
+		                         drawerbase::listbox::scheme>,
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:

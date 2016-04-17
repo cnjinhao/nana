@@ -353,13 +353,25 @@ namespace nana
 				basic_event<arg_treebox> selected; ///< a user selects or unselects a node
 				basic_event<arg_treebox> hovered;  ///< a user moves the cursor over a node
 			};
+
+			struct scheme
+				: public widget_colors
+			{
+				unsigned text_height{ 14 };  ///< the trigger will set this to the height of the text font
+				unsigned item_height_ex{ 6 };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
+				unsigned item_height{ 24 };  ///<  def=24 . the trigger will set this TO item_height = text_height + item_height_ex
+			};
+
 		}//end namespace treebox
 	}//end namespace drawerbase
 
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
     /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
     class treebox
-		:public widget_object < category::widget_tag, drawerbase::treebox::trigger, drawerbase::treebox::treebox_events>
+		:public widget_object < category::widget_tag, 
+		                        drawerbase::treebox::trigger, 
+		                        drawerbase::treebox::treebox_events, 
+		                        drawerbase::treebox::scheme>
 	{
 	public:
         /// A type refers to the item and is also used to iterate through the nodes.
