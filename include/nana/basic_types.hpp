@@ -15,6 +15,7 @@
 
 #include <nana/deploy.hpp>
 #include <cctype>
+#include <nana/push_ignore_diagnostic>
 
 namespace nana
 {
@@ -337,9 +338,9 @@ namespace nana
 		bool operator==(const color& other) const;
 		bool operator!=(const color& other) const;
 	private:
-		double r_;
-		double g_;
-		double b_;
+		double r_{ 0.0 };
+		double g_{ 0.0 };
+		double b_{ 0.0 };
 		double a_{ 0.0 };	//invisible
 	};
 
@@ -484,7 +485,7 @@ namespace nana
 		southeast
 	};
 }//end namespace nana
-
+#include <nana/pop_ignore_diagnostic>
 #endif
 
 

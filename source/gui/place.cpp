@@ -15,6 +15,7 @@
 #include <cmath>
 #include <map>
 #include <deque>
+#include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
 #include <nana/gui/place.hpp>
 #include <nana/gui/programming_interface.hpp>
@@ -522,12 +523,18 @@ namespace nana
 		//It will delete the element and recollocate when the window destroyed.
 		event_handle _m_make_destroy(window wd)
 		{
-			return API::events(wd).destroy.connect([this, wd](const arg_destroy& arg)
+			return API::events(wd).destroy.connect([this, wd](const arg_destroy&)
 			{
 				for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
 				{
-					if (!API::is_destroying(API::get_parent_window(wd)))
-						place_ptr_->collocate();
+					if (i->handle == wd)
+					{
+						elements.erase(i);
+
+						if (!API::is_destroying(API::get_parent_window(wd)))
+							place_ptr_->collocate();
+						break;
+					}
 				}
 			});
 		}
@@ -1125,7 +1132,7 @@ namespace nana
 			}
 		}
 
-		void collocate(window wd) override
+		void collocate(window) override
 		{
 			if (!field || !(visible && display))
 				return;
@@ -1321,8 +1328,6 @@ namespace nana
 	public:
 		div_splitter(place_parts::number_t init_weight)
 			: division(kind::splitter, std::string()),
-			splitter_cursor_(cursor::arrow),
-			pause_move_collocate_(false),
 			init_weight_(init_weight)
 		{
 			this->weight.assign(splitter_px);
@@ -1374,9 +1379,18 @@ namespace nana
 
 						left_pixels_ = area_left.*px_ptr;
 						right_pixels_ = area_right.*px_ptr;
+						
+						grabbed_ = true;
+					}
+					else if(event_code::mouse_up == arg.evt_code)
+					{
+						grabbed_ = false;
 					}
 					else if (event_code::mouse_move == arg.evt_code)
 					{
+						if(!grabbed_)
+							return;
+							
 						const bool vert = (::nana::cursor::size_we != splitter_cursor_);
 						auto area_px = rectangle_rotator(vert, div_owner->margin_area()).w();
 						int delta = (vert ? splitter_.pos().y - begin_point_.y : splitter_.pos().x - begin_point_.x);
@@ -1413,8 +1427,10 @@ namespace nana
 					}
 				};
 
-				splitter_.events().mouse_down.connect_unignorable(grab_fn);
-				splitter_.events().mouse_move.connect_unignorable(grab_fn);
+				auto & events = splitter_.events();
+				events.mouse_down.connect_unignorable(grab_fn);
+				events.mouse_up.connect_unignorable(grab_fn);
+				events.mouse_move.connect_unignorable(grab_fn);
 			}
 
 			auto limited_range = _m_update_splitter_range();
@@ -1527,13 +1543,14 @@ namespace nana
 			return area;
 		}
 	private:
-		nana::cursor	splitter_cursor_;
+		nana::cursor	splitter_cursor_{nana::cursor::arrow};
 		place_parts::splitter<true>	splitter_;
 		nana::point	begin_point_;
 		int			left_pos_, right_pos_;
 		unsigned	left_pixels_, right_pixels_;
 		dragger	dragger_;
-		bool	pause_move_collocate_;	//A flag represents whether do move when collocating.
+		bool	grabbed_{ false };
+		bool	pause_move_collocate_{ false };	//A flag represents whether do move when collocating.
 		place_parts::number_t init_weight_;
 	};
 
@@ -1558,7 +1575,7 @@ namespace nana
 			}
 		}
 
-		void collocate(window wd) override
+		void collocate(window) override
 		{
 			if (!dockable_field)
 			{
@@ -2847,3 +2864,5 @@ namespace nana
 	}
 	//end class place
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>

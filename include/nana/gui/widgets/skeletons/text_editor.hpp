@@ -13,6 +13,8 @@
 
 #ifndef NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #define NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
+#include <nana/push_ignore_diagnostic>
+
 #include "textbase.hpp"
 #include "text_editor_part.hpp"
 #include <nana/gui/widgets/scroll.hpp>
@@ -218,7 +220,7 @@ namespace nana{	namespace widgets
 			void set_end_caret();
 			
 			bool hit_text_area(const point&) const;
-			bool hit_select_area(nana::upoint pos) const;
+			bool hit_select_area(nana::upoint pos, bool ignore_when_select_all) const;
 
 			bool move_select();
 			bool mask(wchar_t);
@@ -358,12 +360,11 @@ namespace nana{	namespace widgets
 
 			struct selection
 			{
-				enum class mode{ no_selected, mouse_selected, method_selected };
+				enum class mode{ no_selected, mouse_selected, method_selected, move_selected };
 
 				text_focus_behavior behavior;
 				bool move_to_end;
 				mode mode_selection;
-				bool dragged;
 				bool ignore_press;
 				nana::upoint a, b;
 			}select_;
@@ -379,6 +380,8 @@ namespace nana{	namespace widgets
 	}//end namespace skeletons
 }//end namespace widgets
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 
 #endif
 

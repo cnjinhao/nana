@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,6 +17,8 @@
 
 #ifndef NANA_GUI_DETAIL_WINDOW_MANAGER_HPP
 #define NANA_GUI_DETAIL_WINDOW_MANAGER_HPP
+
+#include <nana/push_ignore_diagnostic>
 
 #include <vector>
 #include "window_layout.hpp"
@@ -129,7 +131,7 @@ namespace detail
 		bool update(core_window_t*, bool redraw, bool force, const rectangle* update_area = nullptr);
 		void refresh_tree(core_window_t*);
 
-		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen);
+		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen, bool refresh_tree = false);
 
 		bool get_graphics(core_window_t*, nana::paint::graphics&);
 		bool get_visual_rectangle(core_window_t*, nana::rectangle&);
@@ -195,4 +197,7 @@ namespace detail
 	};//end class window_manager
 }//end namespace detail
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
+
 #endif

@@ -37,12 +37,12 @@
 #endif
 
 
-namespace nana {	namespace experimental {
-#ifndef CXX_NO_INLINE_NAMESPACE
-	inline namespace v1 {
-#endif
-	namespace filesystem
+namespace nana {	namespace experimental {	namespace filesystem
 	{
+#ifndef CXX_NO_INLINE_NAMESPACE
+			inline namespace v1 {
+#endif
+
 		//class filesystem_error
 			filesystem_error::filesystem_error(const std::string& msg, std::error_code err)
 				: std::system_error(err, msg)
@@ -59,12 +59,12 @@ namespace nana {	namespace experimental {
 					path2_(path2)
 			{}
 
-			const path& filesystem_error::path1() const
+			const path& filesystem_error::path1() const noexcept
 			{
 				return path1_;
 			}
 
-			const path&filesystem_error::path2() const
+			const path& filesystem_error::path2() const noexcept
 			{
 				return path2_;
 			}
@@ -110,7 +110,8 @@ namespace nana {	namespace experimental {
 			return pathstr_.compare(p.pathstr_);
 		}
 
-		bool path::empty() const
+		/// true if the path is empty, false otherwise. ??
+		bool path::empty() const noexcept
 		{
 #if defined(NANA_WINDOWS)
 			return (::GetFileAttributes(pathstr_.c_str()) == INVALID_FILE_ATTRIBUTES);
@@ -122,17 +123,20 @@ namespace nana {	namespace experimental {
 
 		path path::extension() const
 		{
+			// todo: make more globlal
 #if defined(NANA_WINDOWS)
-			auto pos = pathstr_.find_last_of(L"\\/.");
+            auto SLorP=L"\\/.";
+			auto P=L'.';
 #else
-			auto pos = pathstr_.find_last_of("\\/.");
+			auto SLorP="\\/.";
+			auto P='.';
 #endif
-			if ((pos == pathstr_.npos) || (pathstr_[pos] != '.'))
-				return path();
+			auto pos = pathstr_.find_last_of(SLorP);
 
-				
-			if (pos + 1 == pathstr_.size())
-				return path();
+			if (    ( pos == pathstr_.npos)
+				 || ( pathstr_[pos] != P )
+				 || ( pos + 1 == pathstr_.size()  ))
+			   return path();
 
 			return path(pathstr_.substr(pos));
 		}
@@ -384,7 +388,7 @@ namespace nana {	namespace experimental {
 				}
 			};
 
-				directory_iterator::directory_iterator()
+				directory_iterator::directory_iterator() noexcept
 					:	end_(true),
 						handle_(nullptr)
 				{}
@@ -414,13 +418,9 @@ namespace nana {	namespace experimental {
 				bool directory_iterator::equal(const directory_iterator& x) const
 				{
 					if (end_ && (end_ == x.end_)) return true;
-					return (value_.path().filename() == x.value_.path().filename());
+					return (value_.path().filename() == x.value_.path().filename()); 
 				}
 
-
-				// enable directory_iterator range-based for statements
-				directory_iterator directory_iterator::begin()    { return *this; }
-				directory_iterator directory_iterator::end()      { return{}; }
 
 				void directory_iterator::_m_prepare(const path& file_path)
 				{
@@ -785,6 +785,13 @@ namespace nana {	namespace experimental {
 			return false;
 		}
 
+		file_time_type last_write_time(const path& p)
+		{
+			struct tm t;
+			modified_file_time(p, t);   
+			std::chrono::system_clock::time_point dateTime =std::chrono::system_clock::from_time_t( mktime(&t) );
+			return 	dateTime;
+		}
 
 			bool create_directory(const path& p)
 			{
@@ -806,6 +813,7 @@ namespace nana {	namespace experimental {
 
 			bool remove(const path& p, std::error_code & ec)
 			{
+				ec.clear();
 				auto stat = status(p);
 				if (stat.type() == file_type::directory)
 					return detail::rm_dir(p);

@@ -14,6 +14,8 @@
 #define NANA_GUI_WIDGET_BUTTON_HPP
 #include "widget.hpp"
 #include <nana/gui/element.hpp>
+#include <nana/push_ignore_diagnostic>
+
 
 namespace nana{
 	namespace drawerbase
@@ -105,5 +107,7 @@ namespace nana{
 			void _m_caption(native_string_type&&) override;
 		};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif
 

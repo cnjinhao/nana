@@ -53,7 +53,7 @@ namespace nana
 					//get the root graphics
 					auto& graph = *(wd->root_graph);
 
-					if (wd->other.category != category::lite_widget_tag::value)
+					if (category::flags::lite_widget != wd->other.category)
 						graph.bitblt(vr, wd->drawer.graphics, nana::point(vr.x - wd->pos_root.x, vr.y - wd->pos_root.y));
 
 					_m_paste_children(wd, is_child_refreshed, have_refreshed, vr, graph, nana::point());
@@ -66,7 +66,7 @@ namespace nana
 							nana::point p_src;
 							for (auto & el : blocks)
 							{
-								if (el.window->other.category == category::frame_tag::value)
+								if (category::flags::frame == el.window->other.category)
 								{
 									native_window_type container = el.window->other.attribute.frame->container;
 									native_interface::refresh_window(container);
@@ -95,9 +95,9 @@ namespace nana
 			}
 
 			//read_visual_rectangle
-			//@brief:	Reads the visual rectangle of a window, the visual rectangle's reference frame is to root widget,
-			//			the visual rectangle is a rectangular block that a window should be displayed on screen.
-			//			The result is a rectangle that is a visible area for its ancesters.
+			///@brief 	Reads the visual rectangle of a window, the visual rectangle's reference frame is to root widget,
+			///			the visual rectangle is a rectangular block that a window should be displayed on screen.
+			///			The result is a rectangle that is a visible area for its ancesters.
 			bool window_layout::read_visual_rectangle(core_window_t* wd, nana::rectangle& visual)
 			{
 				if (! wd->displayed())	return false;
@@ -158,7 +158,7 @@ namespace nana
 
 			bool window_layout::enable_effects_bground(core_window_t * wd, bool enabled)
 			{
-				if (wd->other.category != category::widget_tag::value)
+				if (category::flags::widget != wd->other.category)
 					return false;
 
 				if (false == enabled)
@@ -199,11 +199,11 @@ namespace nana
 				nana::point rpos{ wd->pos_root };
 				auto & glass_buffer = wd->other.glass_buffer;
 
-				if (wd->parent->other.category == category::lite_widget_tag::value)
+				if (category::flags::lite_widget == wd->parent->other.category)
 				{
 					std::vector<core_window_t*> layers;
 					core_window_t * beg = wd->parent;
-					while (beg && (beg->other.category == category::lite_widget_tag::value))
+					while (beg && (category::flags::lite_widget == beg->other.category))
 					{
 						layers.push_back(beg);
 						beg = beg->parent;
@@ -229,7 +229,7 @@ namespace nana
 							nana::rectangle ovlp;
 							if (child->visible && overlap(r, rectangle(child->pos_owner, child->dimension), ovlp))
 							{
-								if (child->other.category != category::lite_widget_tag::value)
+								if (category::flags::lite_widget != child->other.category)
 									glass_buffer.bitblt(nana::rectangle(ovlp.x - pre->pos_owner.x, ovlp.y - pre->pos_owner.y, ovlp.width, ovlp.height), child->drawer.graphics, nana::point(ovlp.x - child->pos_owner.x, ovlp.y - child->pos_owner.y));
 								ovlp.x += pre->pos_root.x;
 								ovlp.y += pre->pos_root.y;
@@ -250,7 +250,7 @@ namespace nana
 					nana::rectangle ovlp;
 					if (child->visible && overlap(r_of_wd, rectangle{ child->pos_owner, child->dimension }, ovlp))
 					{
-						if (child->other.category != category::lite_widget_tag::value)
+						if (category::flags::lite_widget != child->other.category)
 							glass_buffer.bitblt(nana::rectangle{ ovlp.x - wd->pos_owner.x, ovlp.y - wd->pos_owner.y, ovlp.width, ovlp.height }, child->drawer.graphics, nana::point(ovlp.x - child->pos_owner.x, ovlp.y - child->pos_owner.y));
 
 						ovlp.x += wd->pos_root.x;
@@ -285,7 +285,7 @@ namespace nana
 						if (overlap(nana::rectangle{ child->pos_root, child->dimension }, parent_rect, rect))
 						{
 							bool have_child_refreshed = false;
-							if (child->other.category != category::lite_widget_tag::value)
+							if (category::flags::lite_widget != child->other.category)
 							{
 								if (is_child_refreshed && (false == child->flags.refreshing))
 								{
@@ -357,7 +357,7 @@ namespace nana
 
 			//_m_notify_glasses
 			//@brief:	Notify the glass windows that are overlapped with the specified vis_rect
-			void window_layout::_m_notify_glasses(core_window_t* const sigwd, const nana::rectangle& r_visual)
+			void window_layout::_m_notify_glasses(core_window_t* const sigwd, const nana::rectangle& /*r_visual*/)
 			{
 				typedef category::flags cat_flags;
 

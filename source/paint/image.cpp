@@ -11,7 +11,7 @@
  *	@contributors:
  *		nabijaczleweli(pr#106)
  */
-
+#include <nana/push_ignore_diagnostic>
 #include <nana/detail/platform_spec_selector.hpp>
 #include <nana/paint/image.hpp>
 #include <algorithm>
@@ -73,7 +73,8 @@ namespace paint
 					return true;
 				}
 #else
-				if(is_ico_){}	//kill the unused compiler warning in Linux.
+				static_cast<void>(is_ico_);	 //eliminate the unused compiler warning in Linux.
+				static_cast<void>(file);   //to eliminate the unused parameter compiler warning.
 #endif
 				return false;
 			}
@@ -98,7 +99,9 @@ namespace paint
 					}
 				}
 #else
-				if(is_ico_){}	//kill the unused compiler warning in Linux.
+				static_cast<void>(is_ico_);	//kill the unused compiler warning in Linux.
+				static_cast<void>(data);	//to eliminate unused parameter compiler warning.
+				static_cast<void>(bytes);
 #endif
 				return false;
 			}
@@ -129,6 +132,9 @@ namespace paint
 				{
 #if defined(NANA_WINDOWS)
 					::DrawIconEx(graph.handle()->context, p_dst.x, p_dst.y, *ptr_, src_r.width, src_r.height, 0, 0, DI_NORMAL);
+#else
+					static_cast<void>(src_r);	//eliminate unused parameter compiler warning.
+					static_cast<void>(p_dst);
 #endif
 				}
 			}
@@ -139,6 +145,8 @@ namespace paint
 				{
 #if defined(NANA_WINDOWS)
 					::DrawIconEx(graph.handle()->context, r.x, r.y, *ptr_, r.width, r.height, 0, 0, DI_NORMAL);
+#else
+					static_cast<void>(r); //eliminate unused parameter compiler warning.
 #endif
 				}
 			}

@@ -227,7 +227,7 @@ namespace nana
 					window_->tooltip_move(API::cursor_position(), true);
 				}
 
-				void show_duration(window wd, point pos, const std::string& text, std::size_t duration)
+				void show_duration(window /*wd*/, point pos, const std::string& text, std::size_t duration)
 				{
 					if (nullptr == window_ || window_->tooltip_empty())
 					{

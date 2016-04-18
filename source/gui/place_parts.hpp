@@ -280,64 +280,11 @@ namespace nana
 
 			void add_pane(factory & fn)
 			{
-				rectangle r{ point(), this->size()};
-
-				//get a rectangle excluding caption
-				r.y = 20;
-				if (r.height > 20)
-					r.height -= 20;
-				else
-					r.height = 0;
-
-				if (!tabbar_)
+				auto fn_ptr = &fn;
+				API::dev::affinity_execute(*this, [this, fn_ptr]
 				{
-					if (panels_.size() > 0)
-					{
-						tabbar_.reset(new tabbar_lite(*this));
-
-						tabbar_->events().selected.clear();
-						tabbar_->events().selected([this](const event_arg&)
-						{
-							auto handle = tabbar_->attach(tabbar_->selected());
-
-							//Set caption through a caption of window specified by handle
-							//Empty if handle is null
-							caption_.caption(API::window_caption(handle));
-						});
-
-						tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });
-						r.height -= 20;
-
-						std::size_t pos = 0;
-						for (auto & pn : panels_)
-						{
-							tabbar_->push_back(pn.widget_ptr->caption());
-							tabbar_->attach(pos++, *pn.widget_ptr);
-						}
-					}
-				}
-				else
-					r.height -= 20;
-
-				auto wdg = fn(*this);
-
-				if (tabbar_)
-				{
-					tabbar_->push_back(wdg->caption());
-					tabbar_->attach(panels_.size(), wdg->handle());
-				}
-
-				if (panels_.empty())
-					caption_.caption(wdg->caption());
-
-				panels_.emplace_back();
-				panels_.back().widget_ptr.swap(wdg);
-
-				for (auto & pn : panels_)
-				{
-					if (pn.widget_ptr)
-						pn.widget_ptr->move(r);
-				}
+					_m_add_pane(*fn_ptr);
+				});
 			}
 
 			void float_away(const ::nana::point& move_pos)
@@ -381,6 +328,71 @@ namespace nana
 			bool floating() const
 			{
 				return (nullptr != container_);
+			}
+		private:
+			void _m_add_pane(factory & fn)
+			{
+				rectangle r{ point(), this->size() };
+
+				//get a rectangle excluding caption
+				r.y = 20;
+				if (r.height > 20)
+					r.height -= 20;
+				else
+					r.height = 0;
+
+				if (!tabbar_)
+				{
+					if (panels_.size() > 0)
+					{
+						tabbar_.reset(new tabbar_lite(*this));
+
+						tabbar_->events().selected.clear();
+						tabbar_->events().selected([this]
+						{
+							auto handle = tabbar_->attach(tabbar_->selected());
+							//Set caption through a caption of window specified by handle
+							//Empty if handle is null
+							caption_.caption(API::window_caption(handle));
+						});
+
+						r.height -= 20;
+						tabbar_->move({ 0, r.bottom(), r.width, 20 });
+
+						std::size_t pos = 0;
+						for (auto & pn : panels_)
+						{
+							tabbar_->push_back(pn.widget_ptr->caption());
+							tabbar_->attach(pos++, *pn.widget_ptr);
+						}
+					}
+				}
+				else
+					r.height -= 20;
+
+				auto wdg = fn(*this);
+				if (wdg)
+				{
+					if (tabbar_)
+					{
+						tabbar_->push_back(::nana::charset(wdg->caption()));
+						tabbar_->attach(panels_.size(), wdg->handle());
+					}
+
+					if (panels_.empty())
+					{
+						caption_.caption(wdg->caption());
+					}
+
+					panels_.emplace_back();
+					panels_.back().widget_ptr.swap(wdg);
+
+					for (auto & pn : panels_)
+					{
+						if (pn.widget_ptr)
+							pn.widget_ptr->move(r);
+					}
+				}
 			}
 		private:
 			window host_window_{nullptr};

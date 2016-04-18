@@ -20,6 +20,7 @@ matrix:
             - alsa-oss
             - libx11-dev
             - libxft-dev
+            - libboost-filesystem-dev
           sources: 
             - ubuntu-toolchain-r-test
     - env: CXX=g++-4.9 CC=gcc-4.9
@@ -55,7 +56,7 @@ matrix:
             - llvm-toolchain-precise 
 
 before_install:
-  - git clone --depth=50 --branch=stable https://github.com/qPCR4vir/nana-demo.git nana-demo
+  - git clone --depth=1 --branch=dev_nana_in_examples https://github.com/qPCR4vir/nana-demo.git nana-demo
   - export PATH="$HOME/bin:$PATH"
   - mkdir ~/bin
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Linux-x86_64.sh || true
@@ -65,10 +66,71 @@ install:
   - /tmp/tools/cmake --prefix="$HOME" --exclude-subdir
 
 before_script :
-  - mkdir bld
-  - cd bld
+  # travis dont have a fisical monitor. We need to instal an emulator: https://docs.travis-ci.com/user/gui-and-headless-browsers/
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
+  # we have:  qPCR4vir/nana/nana-demo and  now we are in: qPCR4vir/nana/  our executable tests will assces: ../Examples/*.bmp etc.(need to be in parallel with nana-demo/Examples)
+  #- cd nana-demo
+  - mkdir bin
+  - cd bin
 
 script:
-  - cmake -G"Unix Makefiles" .. -DENABLE_JPEG=ON -DENABLE_PNG=OFF -DBUILD_NANA_DEMOS=ON -DENABLE_AUDIO=OFF
-   
+  - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
   - make
+  - cd ..
+  - mv -v bin/ nana-demo/
+  - cd nana-demo/bin
+  - ls
+  - ./a_group_impl
+  - ./animate-bmp
+  - ./audio_player
+  - ./background-effects
+  #- ./calculator 
+  - ./categ
+  - ./clicked
+  - ./decore
+  - ./dock
+  - ./drag-button
+  - ./draw
+  - ./file_explorer
+  #- ./example_menu
+  - ./example_listbox
+  #- ./example_combox
+  - ./example.button
+  #- ./folder_tree_nana
+  #- ./folder_tree_std
+  - ./framework_design_1
+  - ./framework_design_2
+  - ./framework_design_3
+  - ./group
+  - ./HelloWord
+  #- ./helloword_quit
+  #- ./inputbox  
+  - ./label_listener  
+  #- ./lambda_event.cpp11  
+  - ./listbox_inline_widget  
+  - ./listbox_Resolver  
+  - ./loader_1  
+  #- ./loader_2  
+  - ./mbox  
+  - ./menu_debug  
+  #- ./MontiHall
+  #- ./helloworld_demo 
+  #- ./notepad 
+  - ./menu_debug  
+  - ./menu_popuper  
+  #- ./modal_form   
+  #- ./widget_show2
+  #- ./widget_show
+  - ./place_login  
+  - ./png  
+  #- ./screen  
+  - ./stretch_image  
+  - ./threading  
+  #- ./thread-pool  
+  - ./various_events  
+  #- ./window-dragger
+  - ./windows-subclassing   
+
+

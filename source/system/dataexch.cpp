@@ -15,6 +15,7 @@
 #include <nana/paint/graphics.hpp>
 #include <vector>
 #include <cassert>
+#include <cstring>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -82,31 +83,35 @@ namespace nana{ namespace system{
 			// Bitmaps are huge, so to avoid unnegligible extra copy, this routine does not use private _m_set method.
 			HGLOBAL h_gmem = ::GlobalAlloc(GHND | GMEM_SHARE, header_size + bitmap_bytes);
 			void * gmem = ::GlobalLock(h_gmem);
-			if (gmem) {
-                char* p = (char*)gmem;
-                // Fix BITMAPINFOHEADER obtained from GetDIBits WinAPI
-                bmi.bmiHeader.biCompression = BI_RGB;
-                bmi.bmiHeader.biHeight = ::abs(bmi.bmiHeader.biHeight);
-                memcpy(p, &bmi, header_size);
-                p += header_size;
-                // many programs do not support bottom-up DIB, so reversing row order is needed.
-                for (int y=0; y<bmi.bmiHeader.biHeight; ++y) {
-                    memcpy(p, pbuffer.raw_ptr(bmi.bmiHeader.biHeight - 1 - y), bytes_per_line);
-                    p += bytes_per_line;
-                }
-                if (::GlobalUnlock(h_gmem) || GetLastError() == NO_ERROR)
-                    if (::OpenClipboard(::GetFocus()))
-                        if (::EmptyClipboard())
-                            if (::SetClipboardData(CF_DIB, h_gmem))
-                                if (::CloseClipboard())
-                                    return true;
+			if (gmem)
+			{
+				char* p = (char*)gmem;
+				// Fix BITMAPINFOHEADER obtained from GetDIBits WinAPI
+				bmi.bmiHeader.biCompression = BI_RGB;
+				bmi.bmiHeader.biHeight = ::abs(bmi.bmiHeader.biHeight);
+				std::memcpy(p, &bmi, header_size);
+				p += header_size;
+				// many programs do not support bottom-up DIB, so reversing row order is needed.
+				for (int y=0; y<bmi.bmiHeader.biHeight; ++y)
+				{
+					memcpy(p, pbuffer.raw_ptr(bmi.bmiHeader.biHeight - 1 - y), bytes_per_line);
+					p += bytes_per_line;
+				}
+
+				if (::GlobalUnlock(h_gmem) || GetLastError() == NO_ERROR)
+					if (::OpenClipboard(::GetFocus()))
+						if (::EmptyClipboard())
+							if (::SetClipboardData(CF_DIB, h_gmem))
+								if (::CloseClipboard())
+									return true;
 			}
-		    assert(false);
+			assert(false);
 			::GlobalFree(h_gmem);
 			return false;
 
 //#elif defined(NANA_X11)
 #else
+			static_cast<void>(g); //eliminate unused parameter compiler warning.
 			throw "not implemented yet.";
 			return false;
 #endif

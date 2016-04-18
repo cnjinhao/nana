@@ -14,6 +14,7 @@
 
 #ifndef NANA_DEPLOY_HPP
 #define NANA_DEPLOY_HPP
+#include <nana/push_ignore_diagnostic>
 
 #include <nana/config.hpp>
 #if defined(VERBOSE_PREPROCESSOR)
@@ -92,13 +93,56 @@ namespace std
 }
 #endif
 
+#ifdef STD_put_time_NOT_SUPPORTED
+#include <ctime>
+namespace std
+{
+	//Workaround for no implemenation of std::put_time in gcc < 5.
+	/* std unspecified return type */
+	//template< class CharT, class RTSTR >// let fail for CharT != char / wchar_t
+	//RTSTR put_time(const std::tm* tmb, const CharT* fmt);
+
+	//template<   >
+	std::string put_time/*<char, std::string>*/(const std::tm* tmb, const char* fmt);
+
+	//Defined in header <ctime>
+	//	std::size_t strftime(char* str, std::size_t count, const char* format, const std::tm* time);
+	//template<>
+	//std::wstring put_time<wchar_t, std::wstring>(const std::tm* tmb, const wchar_t* fmt);
+}
+#endif  // STD_put_time_NOT_SUPPORTED
+
 namespace nana
 {
+	/// move to *.h ??
+	struct utf8_Error : std::runtime_error
+	{
+		static bool use_throw; ///< def { true }; use carefully - it is a global variable !! \todo initialize from a #define ?
+
+		using std::runtime_error::runtime_error;
+
+#if defined(_MSC_VER)
+#	if (_MSC_VER < 1900)
+		//A workaround for lack support of C++11 inheriting constructors  for VC2013
+		explicit utf8_Error(const std::string& msg);
+#	endif
+#endif
+
+		void emit();
+	};
+
+	
 	/// Checks whether a specified text is utf8 encoding
 	bool is_utf8(const char* str, std::size_t len);
 	void throw_not_utf8(const std::string& text);
 	void throw_not_utf8(const char*, std::size_t len);
 	void throw_not_utf8(const char*);
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(const std::string& text);
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(std::string& text);
 
 	const std::string& to_utf8(const std::string&);
 	std::string to_utf8(const std::wstring&);
@@ -190,5 +234,5 @@ namespace std {
 			make_unique(Args&&...) = delete;
 }
 #endif //STD_make_unique_NOT_SUPPORTED
-
-#endif //NANA_MACROS_HPP
+#include <nana/pop_ignore_diagnostic>
+#endif //NANA_DEPLOY_HPP

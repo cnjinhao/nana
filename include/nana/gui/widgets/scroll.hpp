@@ -15,6 +15,7 @@
 
 #include "widget.hpp"
 #include <nana/gui/timer.hpp>
+#include <nana/push_ignore_diagnostic>
 
 namespace nana
 {
@@ -502,4 +503,5 @@ namespace nana
 		}
 	};//end class scroll
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 #endif

@@ -398,24 +398,28 @@ namespace nana
 						//Draw text, the text is transformed from orignal for hotkey character
 						wchar_t hotkey;
 						std::string::size_type hotkey_pos;
-						auto text = to_wstring(API::transform_shortkey_text(m.text, hotkey, &hotkey_pos));
+						auto text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
 
 						if (m.image.empty() == false)
 							renderer->item_image(graph, nana::point(item_r.x + 5, item_r.y + static_cast<int>(item_h_px - image_px) / 2 - 1), image_px, m.image);
 
-						renderer->item_text(graph, nana::point(item_r.x + 40, item_r.y + text_top_off), to_utf8(text), strpixels, attr);
+						renderer->item_text(graph, nana::point(item_r.x + 40, item_r.y + text_top_off), text, strpixels, attr);
 
 						if (hotkey)
 						{
 							m.hotkey = hotkey;
 							if (m.flags.enabled)
 							{
-								unsigned off_w = (hotkey_pos ? graph.text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
-								nana::size hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
-								int x = item_r.x + 40 + off_w;
-								int y = item_r.y + text_top_off + hotkey_size.height;
+								auto off_px = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
+								auto hotkey_px = graph.text_extent_size(text.c_str() + hotkey_pos, 1).width;
 
-								graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, colors::black);
+								unsigned ascent, descent, inleading;
+								graph.text_metrics(ascent, descent, inleading);
+
+								int x = item_r.x + 40 + off_px;
+								int y = item_r.y + text_top_off + ascent + 1;
+
+								graph_->line({ x, y }, { x + static_cast<int>(hotkey_px)-1, y }, colors::black);
 							}
 						}
 
@@ -582,9 +586,12 @@ namespace nana
 							}
 							else if(m.flags.enabled)
 							{
-								std::move(fn_close_tree_)();
-								item_proxy ip(index, m);
-								m.functor.operator()(ip);
+								fn_close_tree_();
+								if (m.functor)
+								{
+									item_proxy ip(index, m);
+									m.functor.operator()(ip);
+								}
 								return 1;
 							}
 						}

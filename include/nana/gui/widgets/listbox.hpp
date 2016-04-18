@@ -17,6 +17,8 @@
 
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
 #define NANA_GUI_WIDGETS_LISTBOX_HPP
+#include <nana/push_ignore_diagnostic>
+
 #include "widget.hpp"
 #include "detail/inline_widget.hpp"
 #include <nana/pat/abstract_factory.hpp>
@@ -295,7 +297,18 @@ namespace nana
 						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
 					return *p;
 				}
+				template<typename T>
+				T & value() 
+				{
+					auto * pany = _m_value();
+					if (nullptr == pany)
+						throw std::runtime_error("listbox::item_proxy.value<T>() is empty");
 
+					T * p = any_cast<T>(_m_value(false));
+					if (nullptr == p)
+						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
+					return *p;
+				}
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
@@ -503,9 +516,7 @@ namespace nana
 			{
 				basic_event<arg_listbox> checked;
 				basic_event<arg_listbox> selected;
-
-				/// An event occurs when a listbox category is double clicking.
-                basic_event<arg_listbox_category> category_dbl_click;
+                basic_event<arg_listbox_category> category_dbl_click;	///< An event occurs when a listbox category is double clicking.
 			};
 
 			struct scheme
@@ -516,26 +527,40 @@ namespace nana
 				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
 				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
 
-                unsigned max_header_width{3000},     /// \todo how to implement some geometrical parameters ??
-                         ext_w = 5;
+                  /// \todo how to implement some geometrical parameters ??
+				unsigned max_header_width{ 3000 };  ///< during auto width don't alow more than this           
+				unsigned min_header_width{ 20   };  ///< non counting suspension_width           
+				unsigned suspension_width{ 0    };  ///< the trigger will set this to the width if ("...")
+				unsigned ext_w           { 5    };  ///< ??
+				unsigned header_height   { 20   };  ///< header height   header_size
+				unsigned text_height     { 0    };  ///< the trigger will set this to the height of the text font
+				unsigned item_height_ex  { 6    };  ///< 6? item_height = text_height + item_height_ex
+				unsigned item_height     { 0    };  ///< the trigger will set this TO item_height = text_height + item_height_ex
+				unsigned header_mouse_spliter_area_before{ 2 };
+				unsigned header_mouse_spliter_area_after { 3 };
+
 			};
 		}
 	}//end namespace drawerbase
 
 /*! \class listbox
-\brief A rectangle containing a list of strings from which the user can select. This widget contain a list of \a categories, with in turn contain a list of \a items. 
-A category is a text with can be \a selected, \a checked and \a expanded to show the items.
-An item is formed by \a column-fields, each corresponding to one of the \a headers. 
-An item can be \a selected and \a checked.
+\brief A rectangle containing a list of strings from which the user can select. 
+This widget contain a list of \a categories, with in turn contain a list of \a items. 
+A \a category is a text with can be \a selected, \a checked and \a expanded to show the \a items.
+An \a item is formed by \a column-fields, each corresponding to one of the \a headers. 
+An \a item can be \a selected and \a checked.
 The user can \a drag the header to \a resize it or to \a reorganize it. 
 By \a clicking on one header the list get \a reordered, first up, and then down alternatively.
 
-1. The resolver is used to resolute an object of the specified type for a listbox item.
-3. nana::listbox creates the category 0 by default. The member functions without the categ parameter operate the items that belong to category 0.
+1. The resolver is used to resolute an object of the specified type into (or back from) a listbox item.
+3. nana::listbox creates the category 0 by default. 
+   This is an special category, becouse it is invisible, while the associated items are visible. 
+   The optional, user-created categories begin at index 1 and are visibles.
+   The member functions without the categ parameter operate the items that belong to category 0.
 4. A sort compare is used for sorting the items. It is a strict weak ordering comparer that must meet the requirement:
 		Irreflexivity (comp(x, x) returns false) 
 	and 
-		antisymmetry(comp(a, b) != comp(b, a) returns true)
+		Antisymmetry(comp(a, b) != comp(b, a) returns true)
 	A simple example.
 		bool sort_compare( const std::string& s1, nana::any*, 
 						   const std::string& s2, nana::any*, bool reverse)
@@ -550,10 +575,10 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		{
 			if(o1 && o2) 	//some items may not attach a customer object.
 			{
-				int * i1 = o1->get<int>();
-				int * i2 = o2->get<int>();
+				int * i1 = any_cast<int>(*o1);
+				int * i2 = any_cast<int>(*o2);
 				return (i1 && i2 && (reverse ? *i1 > *i2 : *i1 < *i2));
- 							;//some types may not be int.
+ 					  // ^ some types may not be int.
 			}
 			return false;
 		}
@@ -697,7 +722,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 
 		size_type size_categ() const;                   ///<Get the number of categories
 		size_type size_item() const;                    ///<The number of items in the default category
-		size_type size_item(size_type cat) const;          ///<The number of items in category "cat"
+		size_type size_item(size_type cat) const;       ///<The number of items in category "cat"
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
@@ -709,4 +734,6 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void _m_erase_key(nana::detail::key_interface*);
 	};
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 #endif

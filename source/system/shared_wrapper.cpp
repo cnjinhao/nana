@@ -54,7 +54,7 @@ namespace system
 				::FreeLibrary(reinterpret_cast<HMODULE>(handle));
 #endif
 			}
-		}; //end struct shared_helper
+		} //end namespace shared_helper
 	}//end namespace detail
 
 

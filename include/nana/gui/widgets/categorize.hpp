@@ -16,6 +16,7 @@
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/pat/cloneable.hpp>
 #include <nana/any.hpp>
+#include <nana/push_ignore_diagnostic>
 
 namespace nana
 {
@@ -141,7 +142,7 @@ namespace nana
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 			private:
 				std::unique_ptr<event_agent_interface> event_agent_;
-				scheme * scheme_;
+				scheme * scheme_{nullptr};
 			};
 		}//end namespace categorize
 	}//end namespace drawerbase
@@ -258,5 +259,5 @@ namespace nana
 		}
 	};
 }//end namespace nana
-
+#include <nana/pop_ignore_diagnostic>
 #endif

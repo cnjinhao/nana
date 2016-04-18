@@ -36,6 +36,18 @@ namespace nana
 			detail::bedrock::instance().wd_manager().internal_lock().unlock();
 		}
 	//end class internal_scope_guard
+	
+	//class internal_revert_guard
+		internal_revert_guard::internal_revert_guard()
+		{
+			detail::bedrock::instance().wd_manager().internal_lock().revert();
+		}
+
+		internal_revert_guard::~internal_revert_guard()
+		{
+			detail::bedrock::instance().wd_manager().internal_lock().forward();
+		}
+		//end class internal_revert_guard
 
 	//class event_arg
 	void event_arg::stop_propagation() const

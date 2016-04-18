@@ -10,6 +10,8 @@
 *	@file: nana/internationalization.cpp
 */
 
+#include <nana/push_ignore_diagnostic>
+
 #include <nana/internationalization.hpp>
 #include <nana/gui/widgets/widget.hpp>
 #include <unordered_map>
@@ -513,3 +515,5 @@ namespace nana
 	}
 	//end class i18n_eval
 }
+
+#include <nana/pop_ignore_diagnostic>

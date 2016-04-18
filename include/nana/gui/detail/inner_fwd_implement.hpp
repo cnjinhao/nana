@@ -14,6 +14,7 @@
 #ifndef NANA_GUI_INNER_FWD_IMPLEMENT_HPP
 #define NANA_GUI_INNER_FWD_IMPLEMENT_HPP
 
+#include <nana/push_ignore_diagnostic>
 #include "inner_fwd.hpp"
 #include "basic_window.hpp"
 #include "../../paint/graphics.hpp"
@@ -173,4 +174,7 @@ namespace nana{
 		};
 	}
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
+
 #endif	//NANA_GUI_INNER_FWD_IMPLEMENT_HPP

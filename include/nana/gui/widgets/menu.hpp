@@ -17,6 +17,8 @@
 #include <nana/gui/timer.hpp>
 #include <nana/pat/cloneable.hpp>
 
+#include <nana/push_ignore_diagnostic>
+
 namespace nana
 {
 	namespace drawerbase
@@ -198,4 +200,6 @@ namespace nana
 	detail::popuper menu_popuper(menu&, mouse = mouse::right_button);
 	detail::popuper menu_popuper(menu&, window owner, const point&, mouse = mouse::right_button);
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif

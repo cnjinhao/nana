@@ -18,7 +18,7 @@ namespace nana
 		namespace form
 		{
 		//class trigger
-			void trigger::attached(widget_reference wdg, graph_reference graph)
+			void trigger::attached(widget_reference wdg, graph_reference)
 			{
 				wd_ = &wdg;
 				API::ignore_mouse_focus(wdg, true);

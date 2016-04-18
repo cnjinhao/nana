@@ -11,6 +11,9 @@
  */
 #ifndef NANA_GUI_WIDGETS_SLIDER_HPP
 #define NANA_GUI_WIDGETS_SLIDER_HPP
+
+#include <nana/push_ignore_diagnostic>
+
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 
@@ -111,7 +114,7 @@ namespace nana
 			};
 		}//end namespace slider
 	}//end namespace drawerbase
-    /// A slider widget wich the user can drag for tracking
+    /// A slider widget wich the user can drag for tracking \todo add scheme ?
 	class slider
 		: public widget_object<category::widget_tag, drawerbase::slider::trigger, drawerbase::slider::slider_events>
 	{
@@ -141,5 +144,6 @@ namespace nana
 		bool transparent() const;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 
 #endif

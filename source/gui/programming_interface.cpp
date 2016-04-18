@@ -104,8 +104,7 @@ namespace API
 			{
 				if (iwd->effect.edge_nimbus == effects::edge_nimbus::none)
 				{
-					basic_window::edge_nimbus_action ena = { iwd };
-					cont.push_back(ena);
+					cont.push_back(basic_window::edge_nimbus_action{ iwd, false});
 				}
 				iwd->effect.edge_nimbus = static_cast<effects::edge_nimbus>(static_cast<unsigned>(en) | static_cast<unsigned>(iwd->effect.edge_nimbus));
 			}
@@ -179,6 +178,11 @@ namespace API
 
 	namespace dev
 	{
+
+		void affinity_execute(window window_handle, const std::function<void()>& fn)
+		{
+			interface_type::affinity_execute(root(window_handle), fn);
+		}
 
 		bool set_events(window wd, const std::shared_ptr<general_events>& gep)
 		{
@@ -330,7 +334,7 @@ namespace API
 
 		return nullptr;
 	}
-	//exit
+
 	//close all windows in current thread
 	void exit()
 	{
@@ -364,6 +368,42 @@ namespace API
 			}
 
 			for(auto i : roots)
+				interface_type::close_window(i);
+		}
+	}
+	//close all windows  
+	void exit_all()
+	{
+		std::vector<basic_window*> v;
+
+		internal_scope_guard lock;
+		restrict::wd_manager().all_handles(v);
+		if (v.size())
+		{
+			std::vector<native_window_type> roots;
+			native_window_type root = nullptr;
+			//unsigned tid = nana::system::this_thread_id();
+			for (auto wd : v)
+			{
+				if (/*(wd->thread_id == tid) &&*/ (wd->root != root))
+				{
+					root = wd->root;
+					bool exists = false;
+					for (auto i = roots.cbegin(); i != roots.cend(); ++i)
+					{
+						if (*i == root)
+						{
+							exists = true;
+							break;
+						}
+					}
+
+					if (!exists)
+						roots.push_back(root);
+				}
+			}
+
+			for (auto i : roots)
 				interface_type::close_window(i);
 		}
 	}

@@ -21,6 +21,8 @@
 #include <stack>
 #include <stdexcept>
 
+#include <nana/push_ignore_diagnostic>
+
 namespace nana{ namespace widgets{	namespace skeletons
 {
 	//The tokens are defined for representing a text, the tokens are divided
@@ -177,13 +179,24 @@ namespace nana{ namespace widgets{	namespace skeletons
 				return token::tag_begin;
 			}
 
+
 			//Escape
-			if(ch == '\\')
+			if(this->format_enabled_ && (ch == '\\'))
 			{
 				if(iptr_ + 1 < endptr_)
 				{
 					ch = *(iptr_ + 1);
-					iptr_ += 2;
+
+					if ('<' == ch || '>' == ch)	//two characters need to be escaped.
+					{
+						iptr_ += 2;
+					}
+					else
+					{
+						//ignore escape
+						ch = '\\';
+						iptr_++;
+					}
 				}
 				else
 				{
@@ -191,8 +204,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 					return token::eof;
 				}
 			}
-
-			++iptr_;
+			else
+				++iptr_;
 
 			idstr_.clear();
 			idstr_.append(1, ch);
@@ -259,6 +272,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 				}
 				return token::eof;
 			}
+
+			
 
 			if(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '_' == ch)
 			{
@@ -926,4 +941,5 @@ namespace nana{ namespace widgets{	namespace skeletons
 }//end namespace skeletons
 }//end namespace widgets
 }//end namepsace nana
+#include <nana/pop_ignore_diagnostic>
 #endif	//NANA_GUI_WIDGETS_SKELETONS_TEXT_TOKEN_STREAM

@@ -12,6 +12,8 @@
 #ifndef NANA_DETAIL_GENERAL_EVENTS_HPP
 #define NANA_DETAIL_GENERAL_EVENTS_HPP
 
+#include <nana/push_ignore_diagnostic>
+
 #include <nana/gui/basis.hpp>
 #include "event_code.hpp"
 #include "internal_scope_guard.hpp"
@@ -84,7 +86,7 @@ namespace nana
 		};
 	}//end namespace detail
 
-    /// base clase for all event argument types
+    /// base class for all event argument types
 	class event_arg
 	{
 	public:
@@ -99,7 +101,14 @@ namespace nana
 
 	struct general_events;
 
-    /// the type of the members of general_events 
+    /** @brief the type of the members of general_events. 
+	*  
+	*   It connect the functions to be called as response to the event and manages that chain of responses
+	*   It is a functor, that get called to connect a "normal" response function, with normal "priority".
+    *   If a response function need another priority (unignorable or called first) it will need to be connected with 
+    *   the specific connect function not with the operator()	
+	*   It also permit to "emit" that event, calling all the active responders.
+	*/
 	template<typename Arg>
 	class basic_event : public detail::event_base
 	{
@@ -108,7 +117,8 @@ namespace nana
 	private:
 		struct docker
 			: public detail::docker_base
-		{
+		{	
+			/// the callback/response function taking the typed argument
 			std::function<void(arg_reference)> invoke;
 
 			docker(basic_event * evt, std::function<void(arg_reference)> && ivk, bool unignorable_flag)
@@ -125,10 +135,10 @@ namespace nana
 		event_handle connect_front(Function && fn)
 		{	
 			using prototype = typename std::remove_reference<Function>::type;
-
 			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), true);
 		}
 
+		/// It will not get called if stop_propagation() was called.
 		event_handle connect(void (*fn)(arg_reference))
 		{
 			return connect([fn](arg_reference arg){
@@ -136,12 +146,11 @@ namespace nana
 			});
 		}
 
-		/// It will not get called if stop_propagation() was called.
+		/// It will not get called if stop_propagation() was called, because it is set at the end of the chain..
 		template<typename Function>
 		event_handle connect(Function && fn)
 		{
 			using prototype = typename std::remove_reference<Function>::type;
-
 			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), false);
 		}
 
@@ -193,7 +202,6 @@ namespace nana
 							continue;
 
 						static_cast<docker*>(*i)->invoke(arg);
-
 						if (window_handle && (!detail::check_window(window_handle)))
 							break;
 					}
@@ -378,11 +386,11 @@ namespace nana
 			}
 		};
 	};
-
+ 
 	struct arg_mouse
 		: public event_arg
 	{
-		event_code evt_code; ///< 
+		event_code evt_code; ///< what kind of mouse event?
 		::nana::window window_handle;  ///< A handle to the event window
 		::nana::point pos;   ///< cursor position in the event window
 		::nana::mouse button;	///< indicates a button which triggers the event
@@ -401,7 +409,8 @@ namespace nana
 		}
 	};
 
-    /// in arg_wheel event_code is event_code::mouse_wheel 
+    /// \brief in arg_wheel event_code is event_code::mouse_wheel 
+	
     /// The type arg_wheel is derived from arg_mouse, a handler 
     /// with prototype void(const arg_mouse&) can be set for mouse_wheel.
 	struct arg_wheel : public arg_mouse
@@ -487,11 +496,11 @@ namespace nana
 	{
 		::nana::window window_handle;	///< A handle to the event window
 	};
-
+    /// a higher level event argument than just mouse down
 	struct arg_click : public event_arg
 	{
 		::nana::window window_handle;	///< A handle to the event window
-		const arg_mouse* mouse_args;	///< If it is not null, it refers to the mouse arguments for click event emitted by mouse, nullptr otherwise.
+		const arg_mouse* mouse_args{};	///< If it is not null, it refers to the mouse arguments for click event emitted by mouse, nullptr otherwise.
 	};
 
     /// provides some fundamental events that every widget owns.
@@ -530,5 +539,7 @@ namespace nana
 		};
 	}//end namespace detail
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 
 #endif

@@ -60,6 +60,8 @@ namespace API
 	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
 	namespace dev
 	{
+		void affinity_execute(window window_handle, const std::function<void()>&);
+
 		bool set_events(window, const std::shared_ptr<general_events>&);
 		
 		template<typename Scheme>
@@ -153,9 +155,17 @@ namespace API
 		};
 	}//end namespace detail
 
-	void exit();
+	void exit();	    ///< close all windows in current thread
+	void exit_all();	///< close all windows 
 
-	std::string transform_shortkey_text(std::string text, wchar_t &shortkey, std::string::size_type *skpos);
+	/// @brief	Searchs whether the text contains a '&' and removes the character for transforming.
+	///			If the text contains more than one '&' charachers, the others are ignored. e.g
+	///			text = "&&a&bcd&ef", the result should be "&abcdef", shortkey = 'b', and pos = 2.
+	std::string transform_shortkey_text
+					( std::string text,      ///< the text is transformed
+					  wchar_t &shortkey,     ///<  the character which indicates a short key.
+					  std::string::size_type *skpos ///< retrives the shortkey position if it is not a null_ptr;
+					);
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 

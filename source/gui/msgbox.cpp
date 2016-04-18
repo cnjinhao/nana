@@ -355,13 +355,15 @@ namespace nana
 	msgbox::msgbox(const std::string& title)
 		: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
 	{
-		throw_not_utf8(title_);
+		// throw_not_utf8(title_);
+		review_utf8(title_);
 	}
 
 	msgbox::msgbox(window wd, const std::string& title, button_t b)
 		: wd_(wd), title_(title), button_(b), icon_(icon_none)
 	{
-		throw_not_utf8(title_);
+		// throw_not_utf8(title_);
+		review_utf8(title_);
 	}
 
 	msgbox& msgbox::icon(icon_t ic)
@@ -702,7 +704,7 @@ namespace nana
 
 		impl->spinbox.value(std::to_string(impl->value));
 
-		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized&)
 		{
 			impl->label.size({ label_px, 24 });
 			impl->spinbox.size({ value_px, 24 });
@@ -780,7 +782,7 @@ namespace nana
 
 		impl->spinbox.value(std::to_string(impl->value));
 
-		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized&)
 		{
 			impl->label.size(::nana::size{ label_px, 24 });
 			impl->spinbox.size(::nana::size{ value_px, 24 });

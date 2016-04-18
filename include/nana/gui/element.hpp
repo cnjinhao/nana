@@ -12,6 +12,7 @@
 #ifndef NANA_GUI_ELEMENT_HPP
 #define NANA_GUI_ELEMENT_HPP
 
+#include <nana/push_ignore_diagnostic>
 #include <nana/paint/graphics.hpp>
 #include <nana/pat/cloneable.hpp>
 #include <vector>
@@ -348,4 +349,5 @@ namespace nana
 	}//end namespace element
 }//end namespace nana
 
+#include <nana/pop_ignore_diagnostic>
 #endif	//NANA_GUI_ELEMENT_HPP

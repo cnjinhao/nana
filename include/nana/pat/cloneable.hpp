@@ -13,6 +13,7 @@
 #ifndef NANA_PAT_CLONEABLE_HPP
 #define NANA_PAT_CLONEABLE_HPP
 
+#include <nana/push_ignore_diagnostic>
 #include <nana/c++defines.hpp>
 #include <cstddef>
 #include <type_traits>
@@ -97,9 +98,7 @@ namespace nana{ namespace pat{
 		typedef int inner_bool::* operator_bool_t;
 
 		template<typename U>
-		struct member_enabled
-			: public std::enable_if<(!std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>
-		{};
+		using member_enabled = std::enable_if<(!std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>;
 	public:
 		cloneable() noexcept = default;
 
@@ -207,5 +206,5 @@ namespace nana{ namespace pat{
 	using mutable_cloneable = cloneable<T, true>;
 }//end namespace pat
 }//end namespace nana
-
+#include <nana/pop_ignore_diagnostic>
 #endif
