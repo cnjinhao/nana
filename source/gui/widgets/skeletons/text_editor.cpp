@@ -39,8 +39,10 @@ namespace nana{	namespace widgets
 
 			void set_selected_text()
 			{
-				if (editor_._m_get_sort_select_points(sel_a_, sel_b_))
-					editor_._m_make_select_string(selected_text_);
+				//sel_a_ and sel_b_ are not sorted, sel_b_ keeps the caret position.
+				sel_a_ = editor_.select_.a;
+				sel_b_ = editor_.select_.b;
+				editor_._m_make_select_string(selected_text_);
 			}
 
 			void set_caret_pos()
@@ -217,14 +219,26 @@ namespace nana{	namespace widgets
 					editor_.select_.a = sel_a_;
 					editor_.select_.b = sel_b_;
 					editor_.points_.caret = pos_;
+					editor_._m_move_select(false);
 				}
 				else
 				{
 					editor_.select_.a = dest_a_;
 					editor_.select_.b = dest_b_;
-					editor_.points_.caret = sel_a_;
+					editor_.points_.caret = (sel_a_ < sel_b_ ? sel_a_ : sel_b_);
+
+					std::wstring text;
+					editor_._m_make_select_string(text);
+
+					editor_._m_erase_select();
+					editor_._m_put(text);
+
+					editor_.select_.a = sel_a_;
+					editor_.select_.b = sel_b_;
+
+					editor_.points_.caret = sel_b_;
+					editor_.reset_caret();
 				}
-				editor_._m_move_select(false);
 			}
 
 			void set_destination(const nana::upoint& dest_a, const nana::upoint& dest_b)
@@ -3013,13 +3027,16 @@ namespace nana{	namespace widgets
 				auto undo_ptr = std::unique_ptr<undo_move_text>(new undo_move_text(*this));
 				undo_ptr->set_selected_text();
 
+				//Determines whether the caret is at left or at right. The select_.b indicates the caret position when finish selection
+				const bool at_left = (select_.b < select_.a);
+
 				nana::upoint a, b;
 				_m_get_sort_select_points(a, b);
 				if (caret.y < a.y || (caret.y == a.y && caret.x < a.x))
 				{//forward
-					_m_erase_select();
-
 					undo_ptr->set_caret_pos();
+
+					_m_erase_select();
 					_m_put(text);
 
 					select_.a = caret;
@@ -3028,6 +3045,7 @@ namespace nana{	namespace widgets
 				else if (b.y < caret.y || (caret.y == b.y && b.x < caret.x))
 				{
 					undo_ptr->set_caret_pos();
+
 					_m_put(text);
 					_m_erase_select();
 
@@ -3037,13 +3055,17 @@ namespace nana{	namespace widgets
 				}
 				select_.b.x = b.x + (a.y == b.y ? (select_.a.x - a.x) : 0);
 
+				//restores the caret at the proper end.
+				if ((select_.b < select_.a) != at_left)
+					std::swap(select_.a, select_.b);
+
 				if (record_undo)
 				{
 					undo_ptr->set_destination(select_.a, select_.b);
 					undo_.push(std::move(undo_ptr));
 				}
 
-				points_.caret = select_.a;
+				points_.caret = select_.b;
 				reset_caret();
 				return true;
 			}
@@ -3400,16 +3422,17 @@ namespace nana{	namespace widgets
 			if (select_.a == select_.b)
 				return false;
 
-			if((select_.a.y > select_.b.y) || ((select_.a.y == select_.b.y) && (select_.a.x > select_.b.x)))
-			{
-				a = select_.b;
-				b = select_.a;
-			}
-			else
+			if (select_.a < select_.b)
 			{
 				a = select_.a;
 				b = select_.b;
 			}
+			else
+			{
+				a = select_.b;
+				b = select_.a;
+			}
+
 			return true;
 		}
 
