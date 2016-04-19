@@ -2311,9 +2311,9 @@ namespace nana
 
 					index_pair target;
 					if(upwards == false)
-						lister.forward(scroll.offset_y_dpl, 1, target);
+						lister.forward(scroll.offset_y_dpl, 3, target);  // scheme ??
 					else
-						lister.backward(scroll.offset_y_dpl, 1, target);
+						lister.backward(scroll.offset_y_dpl, 3, target);
 
 					if (target == scroll.offset_y_dpl)
 						return false;
