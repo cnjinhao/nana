@@ -245,9 +245,7 @@ namespace nana
 			if(wd)
 			{
 				auto iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
-				auto caret_wd = iwd->root_widget->other.attribute.root->focus;
-
-				bool owns_caret = (caret_wd && (caret_wd->together.caret) && (caret_wd->together.caret->visible()));
+				bool owns_caret = (iwd->together.caret) && (iwd->together.caret->visible());
 
 				//The caret in X11 is implemented by Nana, it is different from Windows'
 				//the caret in X11 is asynchronous, it is hard to hide and show the caret
@@ -256,7 +254,7 @@ namespace nana
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					caret_wd->together.caret->visible(false);
+					iwd->together.caret->visible(false);
 #else
 					owns_caret = nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, false);
 #endif
@@ -267,7 +265,7 @@ namespace nana
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					caret_wd->together.caret->visible(true);
+					iwd->together.caret->visible(true);
 #else
 					nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, true);
 #endif

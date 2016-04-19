@@ -165,8 +165,7 @@ namespace nana
 				arg.window_handle = reinterpret_cast<window>(wd);
 				arg.x = x;
 				arg.y = y;
-				if (emit(event_code::move, wd, arg, false, get_thread_context()))
-					wd_manager().update(wd, false, true);
+				emit(event_code::move, wd, arg, true, get_thread_context());
 			}
 		}
 
@@ -174,7 +173,7 @@ namespace nana
 		{
 			if (wd_manager().available(hovered) && hovered->flags.enabled)
 			{
-				hovered->flags.action = mouse_action::normal;
+				hovered->set_action(mouse_action::normal);
 
 				arg_mouse arg;
 				arg.evt_code = event_code::mouse_leave;
@@ -203,7 +202,7 @@ namespace nana
 				if (root_wd->flags.enabled && root_wd->flags.take_active)
 				{
 					if (focused && focused->together.caret)
-						focused->together.caret->set_active(false);
+						focused->together.caret->set_active(true);
 
 					if (!emit(event_code::focus, focused, arg, true, get_thread_context()))
 						this->wd_manager().set_focus(root_wd, true, arg_focus::reason::general);

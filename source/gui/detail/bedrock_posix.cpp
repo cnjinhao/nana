@@ -515,7 +515,8 @@ namespace detail
 				if(msgwnd)
 				{
 					if (mouse_action::pressed != msgwnd->flags.action)
-						msgwnd->flags.action = mouse_action::over;
+						msgwnd->set_action(mouse_action::over);
+
 					hovered_wd = msgwnd;
 
 					arg_mouse arg;
@@ -597,7 +598,8 @@ namespace detail
 					context.event_window = msgwnd;
 
 					pressed_wd = nullptr;
-					msgwnd->flags.action = mouse_action::pressed;
+
+					msgwnd->set_action(mouse_action::pressed);
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, ButtonPress, xevent);
 					arg.evt_code = dbl_click ? event_code::dbl_click : event_code::mouse_down;
@@ -610,7 +612,7 @@ namespace detail
 							if (msgwnd->root != native_interface::get_focus_window())
 							{
 								//call the drawer mouse up event for restoring the surface graphics
-								msgwnd->flags.action = mouse_action::normal;
+								msgwnd->set_action(mouse_action::normal);
 
 								draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 								wd_manager.do_lazy_refresh(msgwnd, false);
@@ -648,7 +650,7 @@ namespace detail
 					if(nullptr == msgwnd)
 						break;
 
-					msgwnd->flags.action = mouse_action::normal;
+					msgwnd->set_action(mouse_action::normal);
 					if(msgwnd->flags.enabled)
 					{
 						auto retain = msgwnd->together.events_ptr;
@@ -667,7 +669,7 @@ namespace detail
 						{
 							if((arg.button == ::nana::mouse::left_button) && hit)
 							{
-								msgwnd->flags.action = mouse_action::over;
+								msgwnd->set_action(mouse_action::over);
 
 								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 								draw_invoker(&drawer::click, msgwnd, click_arg, &context);
@@ -678,7 +680,7 @@ namespace detail
 						if(wd_manager.available(msgwnd) && msgwnd->flags.enabled)
 						{
 							if(hit)
-								msgwnd->flags.action = mouse_action::over;
+								msgwnd->set_action(mouse_action::over);
 							
 							auto retain = msgwnd->together.events_ptr;
 							auto evt_ptr = retain.get();
@@ -740,7 +742,7 @@ namespace detail
 				if (wd_manager.available(hovered_wd) && (msgwnd != hovered_wd))
 				{
 					brock.event_msleave(hovered_wd);
-					hovered_wd->flags.action = mouse_action::normal;
+					hovered_wd->set_action(mouse_action::normal);
 					hovered_wd = nullptr;
 
 					//if msgwnd is neither a captured window nor a child of captured window,
@@ -758,13 +760,13 @@ namespace detail
 						if(prev_captured_inside)
 						{
 							evt_code = event_code::mouse_leave;
-							msgwnd->flags.action = mouse_action::normal;
+							msgwnd->set_action(mouse_action::normal);
 						}
 						else
 						{
 							evt_code = event_code::mouse_enter;
 							if (mouse_action::pressed != msgwnd->flags.action)
-								msgwnd->flags.action = mouse_action::over;
+								msgwnd->set_action(mouse_action::over);
 						}
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
@@ -779,7 +781,7 @@ namespace detail
 					assign_arg(arg, msgwnd, message, xevent);
 					
 					if (mouse_action::pressed != msgwnd->flags.action)
-						msgwnd->flags.action = mouse_action::over;
+						msgwnd->set_action(mouse_action::over);
 
 					if (hovered_wd != msgwnd)
 					{
@@ -890,7 +892,7 @@ namespace detail
 									arg.pos.y = 0;
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-									msgwnd->flags.action = mouse_action::pressed;
+									msgwnd->set_action(mouse_action::pressed);
 
 									pressed_wd_space = msgwnd;
 									auto retain = msgwnd->together.events_ptr;
@@ -1023,7 +1025,7 @@ namespace detail
 						    {
 							    if(msgwnd == pressed_wd_space)
 							    {
-								    msgwnd->flags.action = mouse_action::normal;
+									msgwnd->set_action(mouse_action::normal);
 
 								    arg_click click_arg;
 								    click_arg.mouse_args = nullptr;

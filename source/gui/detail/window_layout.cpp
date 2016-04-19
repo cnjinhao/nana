@@ -108,7 +108,7 @@ namespace nana
 				{
 					//Test if the root widget is overlapped the specified widget
 					//the pos of root widget is (0, 0)
-					if (overlap(visual, rectangle{ wd->root_widget->pos_owner, wd->root_widget->dimension }) == false)
+					if (overlapped(visual, rectangle{ wd->root_widget->pos_owner, wd->root_widget->dimension }) == false)
 						return false;
 				}
 
@@ -365,7 +365,7 @@ namespace nana
 				for (auto wd : data_sect.effects_bground_windows)
 				{
 					if (wd == sigwd || !wd->displayed() ||
-						(false == overlap(nana::rectangle{ wd->pos_root, wd->dimension }, r_of_sigwd)))
+						(false == overlapped(nana::rectangle{ wd->pos_root, wd->dimension }, r_of_sigwd)))
 						continue;
 
 					if (sigwd->parent == wd->parent)

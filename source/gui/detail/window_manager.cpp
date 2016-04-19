@@ -845,13 +845,13 @@ namespace detail
 					{
 						window_layer::paint(wd, false, refresh_tree);
 						this->map(wd, force_copy_to_screen);
-
-						wd->drawer.graphics.save_as_file("d:\\button.bmp");
-						wd->root_graph->save_as_file("d:\\button_root.bmp");
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
-						this->map(wd, true);
+						//The window is still mapped because of edge nimbus effect.
+						//Avoid duplicate copy if action state is not changed and the window is not focused.
+						if ((wd->flags.action != wd->flags.action_before) || (bedrock::instance().focus() == wd))
+							this->map(wd, true);
 					}
 				}
 				else
@@ -1398,9 +1398,10 @@ namespace detail
 
 			if (!established)
 			{
+				using effect_renderer = detail::edge_nimbus_renderer<basic_window>;
+
 				//remove the window from edge nimbus effect when it is destroying
-				using edge_nimbus = detail::edge_nimbus_renderer<core_window_t>;
-				edge_nimbus::instance().erase(wd);
+				effect_renderer::instance().erase(wd);
 			}
 			else if (pa_root_attr != root_attr)
 			{

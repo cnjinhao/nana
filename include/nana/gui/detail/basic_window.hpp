@@ -118,6 +118,8 @@ namespace detail
 		bool is_draw_through() const;	///< Determines whether it is a draw-through window.
 
 		basic_window * seek_non_lite_widget_ancestor() const;
+
+		void set_action(mouse_action);
 	public:
 		/// Override event_holder
 		bool set_events(const std::shared_ptr<general_events>&) override;
@@ -169,6 +171,7 @@ namespace detail
 			unsigned Reserved	:18;
 			unsigned char tab;		///< indicate a window that can receive the keyboard TAB
 			mouse_action	action;
+			mouse_action	action_before;
 		}flags;
 
 		struct

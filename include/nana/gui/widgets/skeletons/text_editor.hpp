@@ -256,7 +256,7 @@ namespace nana{	namespace widgets
 			bool scroll(bool upwards, bool vertical);
 
 			bool focus_changed(const arg_focus&);
-			bool mouse_enter(bool);
+			bool mouse_enter(bool entering);
 			bool mouse_move(bool left_button, const point& screen_pos);
 			bool mouse_pressed(const arg_mouse& arg);
 
@@ -274,7 +274,7 @@ namespace nana{	namespace widgets
 			::nana::upoint _m_put(::std::wstring);
 			::nana::upoint _m_erase_select();
 
-			bool _m_make_select_string(::std::wstring&) const;
+			::std::wstring _m_make_select_string() const;
 			static bool _m_resolve_text(const ::std::wstring&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
 
 			bool _m_cancel_select(int align);

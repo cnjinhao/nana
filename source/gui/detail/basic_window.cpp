@@ -346,6 +346,12 @@ namespace nana
 				return anc;
 			}
 
+			void basic_window::set_action(mouse_action act)
+			{
+				flags.action_before = flags.action;
+				flags.action = act;
+			}
+
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
 				pos_owner = pos_root = r;
@@ -390,6 +396,8 @@ namespace nana
 				flags.fullscreen = false;
 				flags.tab = nana::detail::tab_type::none;
 				flags.action = mouse_action::normal;
+				flags.action_before = mouse_action::normal;
+
 				flags.refreshing = false;
 				flags.destroying = false;
 				flags.borderless = false;

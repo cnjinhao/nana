@@ -42,7 +42,6 @@ namespace nana{	namespace widgets
 				//sel_a_ and sel_b_ are not sorted, sel_b_ keeps the caret position.
 				sel_a_ = editor_.select_.a;
 				sel_b_ = editor_.select_.b;
-				editor_._m_make_select_string(selected_text_);
 			}
 
 			void set_caret_pos()
@@ -227,8 +226,7 @@ namespace nana{	namespace widgets
 					editor_.select_.b = dest_b_;
 					editor_.points_.caret = (sel_a_ < sel_b_ ? sel_a_ : sel_b_);
 
-					std::wstring text;
-					editor_._m_make_select_string(text);
+					const auto text = editor_._m_make_select_string();
 
 					editor_._m_erase_select();
 					editor_._m_put(text);
@@ -1684,16 +1682,12 @@ namespace nana{	namespace widgets
 			return renderred;
 		}
 
-		bool text_editor::mouse_enter(bool enter)
+		bool text_editor::mouse_enter(bool entering)
 		{
-			if((false == enter) && (false == text_area_.captured))
+			if ((false == entering) && (false == text_area_.captured))
 				API::window_cursor(window_, nana::cursor::arrow);
 
-			if(API::focus_window() == window_)
-				return false;
-			
-			render(false);
-			return true;
+			return false;
 		}
 
 		bool text_editor::mouse_move(bool left_button, const point& scrpos)
@@ -2131,9 +2125,9 @@ namespace nana{	namespace widgets
 
 		void text_editor::copy() const
 		{
-			std::wstring str;
-			if(_m_make_select_string(str))
-				nana::system::dataexch().set(str);
+			auto text = _m_make_select_string();
+			if (!text.empty())
+				nana::system::dataexch().set(text);
 		}
 
 		void text_editor::cut()
@@ -2845,27 +2839,29 @@ namespace nana{	namespace widgets
 			return points_.caret;
 		}
 
-		bool text_editor::_m_make_select_string(std::wstring& text) const
+		std::wstring text_editor::_m_make_select_string() const
 		{
+			std::wstring text;
+			
 			nana::upoint a, b;
-			if (!_m_get_sort_select_points(a, b))
-				return false;
-
-			if(a.y != b.y)
+			if (_m_get_sort_select_points(a, b))
 			{
-				text = textbase_.getline(a.y).substr(a.x);
-				text += L"\r\n";
-				for(unsigned i = a.y + 1; i < b.y; ++i)
+				if (a.y != b.y)
 				{
-					text += textbase_.getline(i);
+					text = textbase_.getline(a.y).substr(a.x);
 					text += L"\r\n";
+					for (unsigned i = a.y + 1; i < b.y; ++i)
+					{
+						text += textbase_.getline(i);
+						text += L"\r\n";
+					}
+					text += textbase_.getline(b.y).substr(0, b.x);
 				}
-				text += textbase_.getline(b.y).substr(0, b.x);
+				else
+					text = textbase_.getline(a.y).substr(a.x, b.x - a.x);
 			}
-			else
-				text = textbase_.getline(a.y).substr(a.x, b.x - a.x);
 
-			return true;
+			return text;
 		}
 
 		std::size_t eat_endl(const wchar_t* str, std::size_t pos)
@@ -3021,8 +3017,8 @@ namespace nana{	namespace widgets
 		bool text_editor::_m_move_select(bool record_undo)
 		{
 			nana::upoint caret = points_.caret;
-			std::wstring text;
-			if (_m_make_select_string(text))
+			const auto text = _m_make_select_string();
+			if (!text.empty())
 			{
 				auto undo_ptr = std::unique_ptr<undo_move_text>(new undo_move_text(*this));
 				undo_ptr->set_selected_text();
