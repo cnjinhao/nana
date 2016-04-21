@@ -421,19 +421,24 @@ namespace nana
 					return *this;
 				}
 
-				std::string to_string(const export_options& exp_opt) const
+				std::string to_string(const export_options& exp_opt, const std::vector<cell>* model_cells) const
 				{
 					std::string item_str;
 
 					bool ignore_first = true;
-					for (size_type idx{}; idx < exp_opt.columns_order.size(); ++idx)
+
+					for (auto col : exp_opt.columns_order)
 					{
 						if (ignore_first)
 							ignore_first = false;
 						else
 							item_str += exp_opt.sep;
 
-						item_str += cells[exp_opt.columns_order[idx]].text;
+						//Use the model cells instead if model cells is avaiable
+						if (model_cells)
+							item_str += model_cells->operator[](col).text;
+						else
+							item_str += cells[col].text;
 					}
 
                     return item_str;
@@ -2879,12 +2884,23 @@ namespace nana
 						first=false;
 					else
  						list_str += (to_utf8(cat.text) + exp_opt.endl);
+	
+					std::vector<cell> model_cells;
 
 					for (auto i : cat.sorted)
 					{
-						auto& it= cat.items[i] ;
-						if(it.flags.selected || !exp_opt.only_selected_items)
-							list_str += (it.to_string(exp_opt) + exp_opt.endl);
+						auto& item = cat.items[i];
+						if (item.flags.selected || !exp_opt.only_selected_items)
+						{
+							//Test if the category have a model set.
+							if (cat.model_ptr)
+							{
+								cat.model_ptr->container()->to_cells(i).swap(model_cells);
+								list_str += (item.to_string(exp_opt, &model_cells) + exp_opt.endl);
+							}
+							else
+								list_str += (item.to_string(exp_opt, nullptr) + exp_opt.endl);
+						}
 					}
 				}
 				return list_str ;
