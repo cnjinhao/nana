@@ -31,11 +31,12 @@ SOURCES = $(SRC_NANA) $(SRC_DETAIL) $(SRC_FILESYSTEM) $(SRC_AUDIO) $(SRC_AUDIO_D
 LINKOBJ	= $(SOURCES:.cpp=.o)
 
 $(BIN): $(LINKOBJ)
+	mkdir ../bin
 	ar r ../bin/$(BIN) $(LINKOBJ)
 	ranlib ../bin/$(BIN)
 
 .cpp.o:
-	$(GCC) -g -c $< -o $@ $(INCS) -std=c++11 -Wall
+	$(GCC) -g -c $< -o $@ $(INCS) -std=c++14 -Wall
 
 clean:
 	rm -f $(LINKOBJ)
