@@ -31,7 +31,7 @@ SOURCES = $(SRC_NANA) $(SRC_DETAIL) $(SRC_FILESYSTEM) $(SRC_AUDIO) $(SRC_AUDIO_D
 LINKOBJ	= $(SOURCES:.cpp=.o)
 
 $(BIN): $(LINKOBJ)
-	mkdir ../bin
+	mkdir "../bin"
 	ar r ../bin/$(BIN) $(LINKOBJ)
 	ranlib ../bin/$(BIN)
 
