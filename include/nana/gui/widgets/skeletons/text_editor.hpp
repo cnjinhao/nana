@@ -42,6 +42,12 @@ namespace nana{	namespace widgets
 			using command = EnumCommand;
 			using container = std::deque < std::unique_ptr<undoable_command_interface<command>> >;
 
+			void clear()
+			{
+				commands_.clear();
+				pos_ = 0;
+			}
+
 			void max_steps(std::size_t maxs)
 			{
 				max_steps_ = maxs;
@@ -58,7 +64,7 @@ namespace nana{	namespace widgets
 			{
 				enabled_ = enb;
 				if (!enb)
-					commands_.clear();
+					clear();
 			}
 
 			bool enabled() const
@@ -204,7 +210,7 @@ namespace nana{	namespace widgets
 			unsigned screen_lines() const;
 
 			bool getline(std::size_t pos, ::std::wstring&) const;
-			void text(std::wstring);
+			void text(std::wstring, bool end_caret);
 			std::wstring text() const;
 
 			/// Sets caret position through text coordinate.

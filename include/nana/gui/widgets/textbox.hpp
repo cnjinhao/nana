@@ -1,7 +1,7 @@
 /**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -138,8 +138,14 @@ namespace nana
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
 		textbox& indention(bool, std::function<std::string()> generator = {});
 
-		//A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
-		textbox& reset(const std::string& = std::string());      ///< discard the old text and set a new text
+		/// Discards the old text and set a new text. It also clears the filename/edited flags and undo command.
+		/// A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
+		/*
+		 * @param text A new text replaces the old text.
+		 * @param end_caret Indicates whether to position the caret to the end of text.
+		 * @return a reference of *this.
+		 */
+		textbox& reset(const std::string& text = std::string(), bool end_caret = true);      ///< discard the old text and set a new text
 
 		/// The file of last store operation.
 		std::string filename() const;

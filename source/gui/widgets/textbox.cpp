@@ -254,13 +254,14 @@ namespace drawerbase {
 			return *this;
 		}
 
-		textbox& textbox::reset(const std::string& str)
+		textbox& textbox::reset(const std::string& str, bool end_caret)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-			{
-				editor->text(to_wstring(str));
+			{				
+				editor->text(to_wstring(str), end_caret);
+
 				editor->textbase().reset();
 				API::update_window(this->handle());
 			}
@@ -622,7 +623,7 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
-				editor->text(to_wstring(str));
+				editor->text(to_wstring(str), false);
 				API::update_window(this->handle());
 			}
 		}

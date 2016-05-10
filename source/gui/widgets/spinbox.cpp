@@ -422,9 +422,9 @@ namespace nana
 						return;
 
 					if (API::is_focus_ready(editor_->window_handle()))
-						editor_->text(to_wstring(range_->value()));
+						editor_->text(to_wstring(range_->value()), false);
 					else
-						editor_->text(to_wstring(modifier_.prefix + range_->value() + modifier_.suffix));
+						editor_->text(to_wstring(modifier_.prefix + range_->value() + modifier_.suffix), false);
 
 					_m_draw_spins(spin_stated_);
 				}
@@ -697,7 +697,7 @@ namespace nana
 		auto editor = get_drawer_trigger().impl()->editor();
 		if (editor)
 		{
-			editor->text(to_wstring(text));
+			editor->text(to_wstring(text), false);
 			API::refresh_window(*this);
 		}
 	}

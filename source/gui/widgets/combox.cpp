@@ -351,7 +351,7 @@ namespace nana
 						if (calc_where(*graph_, pos.x, pos.y))
 							state_.button_state = element_state::normal;
 
-						editor_->text(::nana::charset(items_[index]->item_text, ::nana::unicode::utf8));
+						editor_->text(::nana::charset(items_[index]->item_text, ::nana::unicode::utf8), false);
 						_m_draw_push_button(widget_->enabled());
 						_m_draw_image();
 
@@ -993,7 +993,7 @@ namespace nana
 
 			auto editor = _m_impl().editor();
 			if (editor)
-				editor->text(to_wstring(str));
+				editor->text(to_wstring(str), false);
 
 			API::refresh_window(*this);
 		}

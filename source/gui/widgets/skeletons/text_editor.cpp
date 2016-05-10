@@ -18,7 +18,6 @@
 #include <numeric>
 #include <cwctype>
 #include <cstring>
-#include <set>
 #include <algorithm>
 
 namespace nana{	namespace widgets
@@ -442,11 +441,8 @@ namespace nana{	namespace widgets
 
 				editor_._m_get_scrollbar_size();
 
-				auto	x = points.caret.x;
 				auto&	lnstr = textbase.getline(points.caret.y);
-
-				if (x > lnstr.size()) x = static_cast<unsigned>(lnstr.size());
-
+				const auto x = (points.caret.x > lnstr.size() ? static_cast<decltype(points.caret.x)>(lnstr.size()) : points.caret.x);
 				auto const text_w = editor_._m_pixels_by_char(lnstr, x);
 
 				unsigned area_w = editor_._m_text_area().width;
@@ -515,11 +511,12 @@ namespace nana{	namespace widgets
 				const wchar_t* begin;
 				const wchar_t* end;
 				unsigned pixels;
-
-				text_section()
+				/*
+				text_section()	//deprecated
 				{
 					throw std::runtime_error("text_section default construction is forbidden.");
 				}
+				*/
 
 				text_section(const wchar_t* ptr, const wchar_t* endptr)
 					: begin(ptr), end(endptr)
@@ -1808,12 +1805,34 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		void text_editor::text(std::wstring str)
+		void text_editor::text(std::wstring str, bool end_caret)
 		{
+			undo_.clear();
+
 			textbase_.erase_all();
 			_m_reset();
 			behavior_->pre_calc_lines(width_pixels());
-			put(std::move(str));
+			if (!end_caret)
+			{
+				auto undo_ptr = std::unique_ptr<undo_input_text>{ new undo_input_text(*this, str) };
+				undo_ptr->set_caret_pos();
+
+				_m_put(std::move(str));
+
+				undo_.push(std::move(undo_ptr));
+
+				if (graph_)
+				{
+					behavior_->adjust_caret_into_screen();
+					reset_caret();
+					render(API::is_focus_ready(window_));
+					_m_scrollbar();
+
+					points_.xpos = 0;
+				}
+			}
+			else
+				put(std::move(str));
 		}
 
 		std::wstring text_editor::text() const
@@ -2324,7 +2343,6 @@ namespace nana{	namespace widgets
 			behavior_->adjust_caret_into_screen();
 			render(true);
 			_m_scrollbar();
-
 		}
 
 		void text_editor::move_ns(bool to_north)
@@ -2965,9 +2983,6 @@ namespace nana{	namespace widgets
 
 		nana::size text_editor::_m_text_extent_size(const char_type* str, size_type n) const
 		{
-			if (!graph_)
-				return{};
-
 			if(mask_char_)
 			{
 				std::wstring maskstr;
