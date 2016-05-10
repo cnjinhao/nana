@@ -18,8 +18,6 @@
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
-#include <sstream>
-#include <iostream>
 #include <nana/system/timepiece.hpp>
 #include <nana/gui.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
@@ -27,6 +25,9 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/gui/detail/color_schemes.hpp>
+
+#include <sstream>
+#include <iostream>
 
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL	0x020A
