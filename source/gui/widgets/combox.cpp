@@ -171,7 +171,7 @@ namespace nana
 					if(editor_)
 					{
 						editor_->editable(enb);
-
+						editor_->show_caret(enb);
 						if (!enb)
 						{
 							editor_->ext_renderer().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
@@ -245,22 +245,23 @@ namespace nana
 
 				void open_lister_if_push_button_positioned()
 				{
-					if((nullptr == state_.lister) && !items_.empty() && (parts::push_button == state_.pointer_where))
-					{
-						module_.items.clear();
-						std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
-						state_.lister = &form_loader<nana::float_listbox, false>()(widget_->handle(), nana::rectangle(0, widget_->size().height, widget_->size().width, 10), true);
-						state_.lister->renderer(item_renderer_);
-						state_.lister->set_module(module_, image_pixels_);
-						state_.item_index_before_selection = module_.index;
-						//The lister window closes by itself. I just take care about the destroy event.
-						//The event should be destroy rather than unload. Because the unload event is invoked while
-						//the lister is not closed, if popuping a message box, the lister will cover the message box.
-						state_.lister->events().destroy.connect_unignorable([this]
+					if(nullptr == state_.lister && !items_.empty())
+						if((parts::push_button == state_.pointer_where && editor_->attr().editable) || !editor_->attr().editable)
 						{
-							_m_lister_close_sig();
-						});
-					}
+							module_.items.clear();
+							std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
+							state_.lister = &form_loader<nana::float_listbox, false>()(widget_->handle(), nana::rectangle(0, widget_->size().height, widget_->size().width, 10), true);
+							state_.lister->renderer(item_renderer_);
+							state_.lister->set_module(module_, image_pixels_);
+							state_.item_index_before_selection = module_.index;
+							//The lister window closes by itself. I just take care about the destroy event.
+							//The event should be destroy rather than unload. Because the unload event is invoked while
+							//the lister is not closed, if popuping a message box, the lister will cover the message box.
+							state_.lister->events().destroy.connect_unignorable([this]
+							{
+								_m_lister_close_sig();
+							});
+						}
 				}
 
 				void scroll_items(bool upwards)
@@ -622,8 +623,8 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
-						if (!editor->mouse_pressed(arg))
-							drawer_->open_lister_if_push_button_positioned();
+						editor->mouse_pressed(arg);
+						drawer_->open_lister_if_push_button_positioned();
 
 						drawer_->draw();
 						if(editor->attr().editable)
