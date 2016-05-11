@@ -97,7 +97,7 @@ namespace nana
 
 					graph.rectangle(r, true, xclr);
 				}
-				
+
 				r.x += (r.width - 16) / 2;
 				r.y = (r.height - 16) / 2;
 
@@ -278,13 +278,15 @@ namespace nana
 
 			}
 
-			void add_pane(factory & fn)
+			widget* add_pane(factory & fn)
 			{
 				auto fn_ptr = &fn;
-				API::dev::affinity_execute(*this, [this, fn_ptr]
+                widget * w = nullptr;
+				API::dev::affinity_execute(*this, [this, fn_ptr, &w]
 				{
-					_m_add_pane(*fn_ptr);
+					w=_m_add_pane(*fn_ptr);
 				});
+                return w;
 			}
 
 			void float_away(const ::nana::point& move_pos)
@@ -330,7 +332,7 @@ namespace nana
 				return (nullptr != container_);
 			}
 		private:
-			void _m_add_pane(factory & fn)
+			widget* _m_add_pane(factory & fn)
 			{
 				rectangle r{ point(), this->size() };
 
@@ -385,6 +387,7 @@ namespace nana
 					}
 
 					panels_.emplace_back();
+					widget * w=wdg.get();
 					panels_.back().widget_ptr.swap(wdg);
 
 					for (auto & pn : panels_)
@@ -392,7 +395,9 @@ namespace nana
 						if (pn.widget_ptr)
 							pn.widget_ptr->move(r);
 					}
+					return w;
 				}
+				return nullptr;
 			}
 		private:
 			window host_window_{nullptr};

@@ -2837,7 +2837,7 @@ namespace nana
 		return *this;
 	}
 
-	place& place::dock_create(const std::string& factory)
+	widget* place::dock_create(const std::string& factory)
 	{
 		auto i = impl_->dock_factoris.find(factory);
 		if (i == impl_->dock_factoris.end())
@@ -2857,10 +2857,10 @@ namespace nana
 				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
 			}
 
-			dock_ptr->dockarea->add_pane(i->second->factories[factory]);
+			return dock_ptr->dockarea->add_pane(i->second->factories[factory]);
 		}
 
-		return *this;
+		return nullptr;
 	}
 	//end class place
 }//end namespace nana
