@@ -141,7 +141,7 @@ namespace nana
 		}
 
 		place& dock(const std::string& dockname, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory);
-		place& dock_create(const std::string& factory);
+		widget* dock_create(const std::string& factory);
 	private:
 		implement * impl_;
 	};
