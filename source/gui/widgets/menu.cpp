@@ -1370,24 +1370,8 @@ namespace nana
 					return;
 				}
 			}
-			bool popup = false;
-			switch(mouse_)
-			{
-			case mouse::left_button:
-				popup = arg.left_button;
-				break;
-			case mouse::middle_button:
-				popup = arg.mid_button;
-				break;
-			case mouse::right_button:
-				popup = arg.right_button;
-				break;
-			case mouse::any_button:
-				popup = true;
-			default:
-				break;
-			}
-			if(popup)
+
+			if((mouse::any_button == mouse_) || (mouse_ == arg.button))
 				mobj_.popup(owner_, pos_.x, pos_.y);
 		}
 	//end class
