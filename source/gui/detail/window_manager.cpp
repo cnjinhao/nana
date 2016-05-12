@@ -275,7 +275,7 @@ namespace detail
 				if (impl_->wd_register.available(owner))
 				{
 					if (owner->flags.destroying)
-						throw std::logic_error("the specified owner is destory");
+						throw std::runtime_error("the specified owner is destory");
 
 					native = (category::flags::frame == owner->other.category ?
 										owner->other.attribute.frame->container : owner->root_widget->root);
