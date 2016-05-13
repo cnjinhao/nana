@@ -2287,11 +2287,16 @@ namespace nana
 					if(scroll.v.empty() || !scroll.v.scrollable(upwards))
 						return false;
 
+					int ucNumLines = 3; // default
+#ifdef NANA_WINDOWS
+#include <windows.h>
+					SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &ucNumLines, 0);
+#endif
 					index_pair target;
 					if(upwards == false)
-						lister.forward(scroll.offset_y_dpl, 1, target);
+						lister.forward(scroll.offset_y_dpl, ucNumLines, target);
 					else
-						lister.backward(scroll.offset_y_dpl, 1, target);
+						lister.backward(scroll.offset_y_dpl, ucNumLines, target);
 
 					if (target == scroll.offset_y_dpl)
 						return false;
