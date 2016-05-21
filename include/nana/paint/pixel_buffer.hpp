@@ -75,6 +75,7 @@ namespace nana{	namespace paint
 		void blend(const nana::rectangle& s_r, drawable_type dw_dst, const nana::point& d_pos, double fade_rate) const;
 		void blur(const nana::rectangle& r, std::size_t radius);
 
+		pixel_buffer rotate(double angle, const color& extend_color);
 	private:
 		std::shared_ptr<pixel_buffer_storage> storage_;
 	};
