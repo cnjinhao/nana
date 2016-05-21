@@ -1,5 +1,6 @@
 
 #include <nana/gui/widgets/slider.hpp>
+#include <cstring>	//memcpy
 
 namespace nana
 {
