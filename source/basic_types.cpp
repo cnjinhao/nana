@@ -621,24 +621,24 @@ namespace nana
 			return *this;
 		}
 
-		point rectangle::position() const
+		point rectangle::position() const noexcept
 		{
 			return{ x, y };
 		}
 
-		rectangle& rectangle::position(const point& p)
+		rectangle& rectangle::position(const point& p) noexcept
 		{
 			x = p.x;
 			y = p.y;
 			return *this;
 		}
 
-		size rectangle::dimension() const
+		size rectangle::dimension() const noexcept
 		{
 			return{width, height};
 		}
 
-		rectangle& rectangle::dimension(const size& sz)
+		rectangle& rectangle::dimension(const size& sz) noexcept
 		{
 			width = sz.width;
 			height = sz.height;

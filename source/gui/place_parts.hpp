@@ -387,7 +387,7 @@ namespace nana
 					}
 
 					panels_.emplace_back();
-					auto wdg = wdg.get();
+					auto wdg_ptr = wdg.get();
 					panels_.back().widget_ptr.swap(wdg);
 
 					for (auto & pn : panels_)
@@ -395,7 +395,7 @@ namespace nana
 						if (pn.widget_ptr)
 							pn.widget_ptr->move(r);
 					}
-					return wdg;
+					return wdg_ptr;
 				}
 				return nullptr;
 			}
