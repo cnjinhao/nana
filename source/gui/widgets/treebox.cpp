@@ -1270,7 +1270,7 @@ namespace nana
 							if(size.width > attr.area.width || size.height > attr.area.height)
 							{
 								nana::size fit_size;
-								nana::fit_zoom(size, attr.area, fit_size);
+								nana::fit_zoom(size, attr.area.dimension(), fit_size);
 
 								attr.area.x += (attr.area.width - fit_size.width) / 2;
 								attr.area.y += (attr.area.height - fit_size.height) / 2;
@@ -1442,8 +1442,9 @@ namespace nana
 				virtual bool comp_attribute(component_t comp, comp_attribute_t& attr) const override
 				{
 					attr.area = node_r_;
-					if(impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
+					if (impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
 					{
+						attr.mouse_pointed = node_attr_.mouse_pointed;
 						attr.area.x += pos_.x;
 						attr.area.y += pos_.y;
 						return true;

@@ -1300,7 +1300,7 @@ namespace nana
 			if (stretch_all_)
 			{
 				if (from_r.width == to_r.width && from_r.height == to_r.height)
-					method_->paste(from_r, dst, to_r);
+					method_->paste(from_r, dst, to_r.position());
 				else
 					method_->stretch(from_r, dst, to_r);
 
@@ -1392,7 +1392,7 @@ namespace nana
 				if (top_)
 				{
 					src_r.height = top_;
-					method_->paste(src_r, dst, to_r);
+					method_->paste(src_r, dst, to_r.position());
 				}
 				if (bottom_)
 				{

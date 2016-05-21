@@ -135,7 +135,7 @@ namespace nana
 				if (!x_pointed_)
 					return;
 
-				x_state_ = ::nana::mouse_action::over;
+				x_state_ = ::nana::mouse_action::hovered;
 				refresh(graph);
 				API::dev::lazy_refresh();
 
@@ -387,7 +387,7 @@ namespace nana
 					}
 
 					panels_.emplace_back();
-					widget * w=wdg.get();
+					auto wdg = wdg.get();
 					panels_.back().widget_ptr.swap(wdg);
 
 					for (auto & pn : panels_)
@@ -395,7 +395,7 @@ namespace nana
 						if (pn.widget_ptr)
 							pn.widget_ptr->move(r);
 					}
-					return w;
+					return wdg;
 				}
 				return nullptr;
 			}

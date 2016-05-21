@@ -354,8 +354,8 @@ namespace nana
 
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
-				pos_owner = pos_root = r;
-				dimension = r;
+				pos_owner = pos_root = r.position();
+				dimension = r.dimension();
 
 				if (parent)
 					pos_root += parent->pos_root;

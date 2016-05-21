@@ -1358,7 +1358,7 @@ namespace API
 			{
 			case nana::mouse_action::normal:
 				return (is_focused ? nana::element_state::focus_normal : nana::element_state::normal);
-			case nana::mouse_action::over:
+			case nana::mouse_action::hovered:
 				return (is_focused ? nana::element_state::focus_hovered : nana::element_state::hovered);
 			case nana::mouse_action::pressed:
 				return nana::element_state::pressed;

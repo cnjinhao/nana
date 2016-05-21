@@ -999,7 +999,7 @@ namespace detail
 
 					if (msgwnd->dimension.is_hit(arg.pos))
 					{
-						msgwnd->set_action(mouse_action::over);
+						msgwnd->set_action(mouse_action::hovered);
 						if ((::nana::mouse::left_button == arg.button) && (pressed_wd == msgwnd))
 						{
 							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
@@ -1065,7 +1065,7 @@ namespace detail
 							if (pressed_wd == msgwnd)
 								msgwnd->set_action(mouse_action::pressed);
 							else if (mouse_action::pressed != msgwnd->flags.action)
-								msgwnd->set_action(mouse_action::over);
+								msgwnd->set_action(mouse_action::hovered);
 						}
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, pmdec);
@@ -1084,7 +1084,7 @@ namespace detail
 						if (pressed_wd == msgwnd)
 							msgwnd->set_action(mouse_action::pressed);
 						else if (mouse_action::pressed != msgwnd->flags.action)
-							msgwnd->set_action(mouse_action::over);
+							msgwnd->set_action(mouse_action::hovered);
 
 						hovered_wd = msgwnd;
 						arg.evt_code = event_code::mouse_enter;
