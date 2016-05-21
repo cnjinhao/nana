@@ -515,7 +515,7 @@ namespace detail
 				if(msgwnd)
 				{
 					if (mouse_action::pressed != msgwnd->flags.action)
-						msgwnd->set_action(mouse_action::over);
+						msgwnd->set_action(mouse_action::hovered);
 
 					hovered_wd = msgwnd;
 
@@ -669,7 +669,7 @@ namespace detail
 						{
 							if((arg.button == ::nana::mouse::left_button) && hit)
 							{
-								msgwnd->set_action(mouse_action::over);
+								msgwnd->set_action(mouse_action::hovered);
 
 								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 								draw_invoker(&drawer::click, msgwnd, click_arg, &context);
@@ -680,7 +680,7 @@ namespace detail
 						if(wd_manager.available(msgwnd) && msgwnd->flags.enabled)
 						{
 							if(hit)
-								msgwnd->set_action(mouse_action::over);
+								msgwnd->set_action(mouse_action::hovered);
 							
 							auto retain = msgwnd->together.events_ptr;
 							auto evt_ptr = retain.get();
@@ -766,7 +766,7 @@ namespace detail
 						{
 							evt_code = event_code::mouse_enter;
 							if (mouse_action::pressed != msgwnd->flags.action)
-								msgwnd->set_action(mouse_action::over);
+								msgwnd->set_action(mouse_action::hovered);
 						}
 						arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
@@ -781,7 +781,7 @@ namespace detail
 					assign_arg(arg, msgwnd, message, xevent);
 					
 					if (mouse_action::pressed != msgwnd->flags.action)
-						msgwnd->set_action(mouse_action::over);
+						msgwnd->set_action(mouse_action::hovered);
 
 					if (hovered_wd != msgwnd)
 					{
