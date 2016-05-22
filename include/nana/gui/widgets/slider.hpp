@@ -33,6 +33,23 @@ namespace nana
 	{
 		namespace slider
 		{
+
+			struct scheme_impl
+				: public widget_geometrics
+			{
+				/// Colors
+				color_proxy color_adorn{ static_cast<color_rgb>(0x3da3ce) };
+				color_proxy color_bar{ static_cast<color_rgb>(0x878787) };
+				color_proxy color_slider{ static_cast<color_rgb>(0x606060) };
+				color_proxy color_slider_highlighted{ static_cast<color_rgb>(0x2d93be) };
+				color_proxy color_vernier{ colors::red };
+				color_proxy color_vernier_text{ colors::white };
+
+				/// Geometrical parameters
+				unsigned vernier_text_margin{ 8 };
+
+			};
+
 			struct slider_events
 				: public general_events
 			{
@@ -49,6 +66,7 @@ namespace nana
 			{
 			public:
 				using graph_reference = ::nana::paint::graphics&;
+				using scheme = scheme_impl;
 
 				struct data_bar
 				{
@@ -86,11 +104,11 @@ namespace nana
 
 				virtual ~renderer_interface() = default;
 
-				virtual void background(window, graph_reference, bool isglass) = 0;
-				virtual void adorn(window, graph_reference, const data_adorn&) = 0;
-				virtual void vernier(window, graph_reference, const data_vernier&) = 0;
-				virtual void bar(window, graph_reference, const data_bar&) = 0;
-				virtual void slider(window, graph_reference, mouse_action, const data_slider&) = 0;
+				virtual void background(window, graph_reference, bool transparent, const scheme&) = 0;
+				virtual void adorn(window, graph_reference, const data_adorn&, const scheme&) = 0;
+				virtual void vernier(window, graph_reference, const data_vernier&, const scheme&) = 0;
+				virtual void bar(window, graph_reference, const data_bar&, const scheme&) = 0;
+				virtual void slider(window, graph_reference, mouse_action, const data_slider&, const scheme&) = 0;
 			};
 
 			class trigger
@@ -118,7 +136,7 @@ namespace nana
 
     /// A slider widget wich the user can drag for tracking \todo add scheme ?
 	class slider
-		: public widget_object<category::widget_tag, drawerbase::slider::trigger, drawerbase::slider::slider_events>
+		: public widget_object<category::widget_tag, drawerbase::slider::trigger, drawerbase::slider::slider_events, drawerbase::slider::scheme_impl>
 	{
 	public:
 		using renderer_interface = drawerbase::slider::renderer_interface;	///< The interface for customized renderer.

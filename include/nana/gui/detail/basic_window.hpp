@@ -16,7 +16,7 @@
 #include <nana/push_ignore_diagnostic>
 #include "drawer.hpp"
 #include "events_holder.hpp"
-#include "widget_colors.hpp"
+#include "widget_geometrics.hpp"
 #include "widget_notifier_interface.hpp"
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
@@ -180,7 +180,7 @@ namespace detail
 			std::shared_ptr<general_events> events_ptr;
 		}together;
 		
-		widget_colors* scheme{ nullptr };
+		widget_geometrics* scheme{ nullptr };
 
 		struct
 		{

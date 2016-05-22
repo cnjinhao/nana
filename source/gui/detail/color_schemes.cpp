@@ -93,7 +93,7 @@ namespace nana
 				return *tmpl_scheme.get();
 			}
 
-			widget_colors* color_schemes::create(scheme_factory_interface&& factory)
+			widget_geometrics* color_schemes::create(scheme_factory_interface&& factory)
 			{
 				return factory.create(scheme_template(std::move(factory)));
 			}

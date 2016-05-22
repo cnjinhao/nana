@@ -17,13 +17,13 @@ namespace nana
 				: public renderer_interface
 			{
 			private:
-				void background(window wd, graph_reference graph, bool isglass) override
+				void background(window wd, graph_reference graph, bool transparent, const scheme& schm) override
 				{
-					if(!isglass)
-						graph.rectangle(true, API::bgcolor(wd));
+					if (!transparent)
+						graph.rectangle(true, schm.background);
 				}
 
-				void bar(window, graph_reference graph, const data_bar& data) override
+				void bar(window, graph_reference graph, const data_bar& data, const scheme& schm) override
 				{
 					auto area = data.area;
 
@@ -38,10 +38,10 @@ namespace nana
 						area.height = 4;
 					}
 
-					graph.rectangle(area, false, static_cast<color_rgb>(0x878787));
+					graph.rectangle(area, false, schm.color_bar);
 				}
 
-				void adorn(window, graph_reference graph, const data_adorn& data) override
+				void adorn(window, graph_reference graph, const data_adorn& data, const scheme& schm) override
 				{
 					rectangle area{
 						data.bound.x, data.fixedpos + static_cast<int>(data.block / 2) - 1,
@@ -51,19 +51,19 @@ namespace nana
 					if (data.vert)
 						area.shift();
 
-					graph.rectangle(area, true, static_cast<color_rgb>(0x3DA3CE));
+					graph.rectangle(area, true, schm.color_adorn);
 
 				}
 
-				void vernier(window, graph_reference graph, const data_vernier& data) override
+				void vernier(window, graph_reference graph, const data_vernier& data, const scheme& schm) override
 				{
 					if (data.vert)
-						_m_draw_vernier_vert(graph, data);
+						_m_draw_vernier_vert(graph, data, schm);
 					else
-						_m_draw_vernier_horz(graph, data);
+						_m_draw_vernier_horz(graph, data, schm);
 				}
 
-				void slider(window, graph_reference graph, mouse_action mouse_act, const data_slider& data) override
+				void slider(window, graph_reference graph, mouse_action mouse_act, const data_slider& data, const scheme& schm) override
 				{
 					nana::rectangle area{ graph.size() };
 
@@ -78,9 +78,9 @@ namespace nana
 						area.width = data.weight;
 					}
 
-					color rgb{ static_cast<color_rgb>(0x606060) };
+					color rgb = schm.color_slider;
 					if (mouse_action::normal != mouse_act)
-						rgb = static_cast<color_rgb>(0x2d93be);
+						rgb = schm.color_slider_highlighted;
 
 					graph.frame_rectangle(area, rgb + static_cast<color_rgb>(0x0d0d0d), 1);
 					graph.rectangle(area.pare_off(1), true, rgb);
@@ -89,7 +89,7 @@ namespace nana
 					graph.rectangle(area, true, rgb + static_cast<color_rgb>(0x101010));
 				}
 			private:
-				void _m_draw_vernier_horz(graph_reference graph, const data_vernier& data)
+				void _m_draw_vernier_horz(graph_reference graph, const data_vernier& data, const scheme& schm)
 				{
 					const unsigned arrow_weight = 5;
 
@@ -107,12 +107,10 @@ namespace nana
 
 					const size arrow_size{ arrow_weight, 9 };
 
-
-					const unsigned text_margin = 8;
-					const auto label_size = graph.text_extent_size(data.text) + size{ text_margin * 2, 0 };
+					const auto label_size = graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 };
 
 					paint::graphics graph_vern{ label_size };
-					graph_vern.rectangle(true, colors::red);
+					graph_vern.rectangle(true, schm.color_vernier);
 
 					int arrow_pos;
 
@@ -132,10 +130,11 @@ namespace nana
 					graph_vern.blend(rectangle{ label_size }, graph, label_pos, 0.5);
 
 
+					unsigned arrow_color = 0x7F | schm.color_vernier.get_color().argb().value;
 					for (auto & color : arrow_pxbuf)
 					{
 						if (color == 0x7F)
-							color = 0x7FFF0000;
+							color = arrow_color;
 					}
 
 					if (label_pos.x > data.position)
@@ -155,12 +154,11 @@ namespace nana
 
 					pxbuf.paste(rectangle{ arrow_size }, graph.handle(), { arrow_pos, label_pos.y + static_cast<int>(label_size.height - arrow_size.height) / 2 });
 
-					label_pos.x += text_margin;
-					graph.palette(true, colors::white);
-					graph.string(label_pos, data.text);
+					label_pos.x += static_cast<int>(schm.vernier_text_margin);
+					graph.string(label_pos, data.text, schm.color_vernier_text);
 				}
 
-				void _m_draw_vernier_vert(graph_reference graph, const data_vernier& data)
+				void _m_draw_vernier_vert(graph_reference graph, const data_vernier& data, const scheme& schm)
 				{
 					const unsigned arrow_weight = 5;
 
@@ -174,15 +172,13 @@ namespace nana
 
 					const size arrow_size{ 9, arrow_weight};
 
-
-					const unsigned text_margin = 8;
-					const size label_size = (graph.text_extent_size(data.text) + size{ text_margin * 2, 0 }).shift();
+					const size label_size = (graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 }).shift();
 
 					paint::graphics graph_vern{ label_size };
 
 					paint::graphics graph_horz{ size(label_size).shift() };
-					graph_horz.rectangle(true, colors::red);
-					graph_horz.string({static_cast<int>(text_margin), static_cast<int>(graph_horz.height() - label_size.width) / 2}, data.text, colors::white);
+					graph_horz.rectangle(true, schm.color_vernier);
+					graph_horz.string({ static_cast<int>(schm.vernier_text_margin), static_cast<int>(graph_horz.height() - label_size.width) / 2 }, data.text, schm.color_vernier_text);
 
 					paint::pixel_buffer{ graph_horz.handle(), 0, graph_horz.height() }.rotate(90, colors::white).paste(graph_vern.handle(), {});
 
@@ -216,14 +212,13 @@ namespace nana
 					graph_vern.blend(rectangle{ label_size }, graph, label_pos, 0.5);
 
 
+					unsigned arrow_color = 0x7F | schm.color_vernier.get_color().argb().value;
 					for (auto & color : arrow_pxbuf)
 					{
 						if (color == 0x7F)
-							color = 0x7FFF0000;
+							color = arrow_color;
 					}
 
-					/*
-					*/
 
 					paint::pixel_buffer pxbuf{ arrow_size.width, arrow_size.height };
 					pxbuf.alpha_channel(true);
@@ -231,11 +226,7 @@ namespace nana
 
 					pxbuf.paste(rectangle{ arrow_size }, graph.handle(), { label_pos.x + static_cast<int>(label_size.width - arrow_size.width) / 2, arrow_pos });
 
-					label_pos.y += text_margin;
-					/*
-					graph.palette(true, colors::white);
-					graph.string(label_pos, data.text);
-					*/
+					label_pos.y += static_cast<int>(schm.vernier_text_margin);
 				}
 			};
 
@@ -308,7 +299,7 @@ namespace nana
 				{
 					if(!graph.size().empty())
 					{
-						proto_.renderer->background(other_.wd, graph, (bground_mode::basic == API::effects_bground_mode(other_.wd)));
+						proto_.renderer->background(other_.wd, graph, (bground_mode::basic == API::effects_bground_mode(other_.wd)), other_.widget->scheme());
 						_m_draw_elements(graph);
 					}
 				}
@@ -634,6 +625,8 @@ namespace nana
 
 				void _m_draw_elements(graph_reference graph)
 				{
+					auto & scheme = other_.widget->scheme();
+
 					renderer_interface::data_bar bar;
 
 					bar.vert = attr_.slider.vert;
@@ -643,7 +636,7 @@ namespace nana
 					if (bar.area.empty())
 						return;
 
-					proto_.renderer->bar(other_.wd, graph, bar);
+					proto_.renderer->bar(other_.wd, graph, bar, scheme);
 
 					//adorn
 					renderer_interface::data_adorn adorn;
@@ -664,10 +657,10 @@ namespace nana
 					adorn.block = (bar.vert ? bar.area.width : bar.area.height) - attr_.slider.border_weight * 2;
 					adorn.fixedpos = static_cast<int>((bar.vert ? bar.area.x : bar.area.y) + attr_.slider.border_weight);
 
-					proto_.renderer->adorn(other_.wd, graph, adorn);
+					proto_.renderer->adorn(other_.wd, graph, adorn, scheme);
 
 					//Draw slider
-					proto_.renderer->slider(other_.wd, graph, slider_state_.mouse_state, attr_.slider);
+					proto_.renderer->slider(other_.wd, graph, slider_state_.mouse_state, attr_.slider, scheme);
 
 					//adorn textbox
 					if (proto_.vernier && attr_.is_draw_adorn)
@@ -685,7 +678,7 @@ namespace nana
 								vern.position += static_cast<int>(attr_.adorn_pos);
 
 							vern.end_position = adorn.bound.y;
-							proto_.renderer->vernier(other_.wd, graph, vern);
+							proto_.renderer->vernier(other_.wd, graph, vern, scheme);
 						}
 					}
 				}

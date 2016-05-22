@@ -13,7 +13,7 @@
 #ifndef NANA_DETAIL_COLOR_SCHEMES_HPP
 #define NANA_DETAIL_COLOR_SCHEMES_HPP
 
-#include "widget_colors.hpp"
+#include "widget_geometrics.hpp"
 
 namespace nana
 {
@@ -26,8 +26,8 @@ namespace nana
 			virtual ~scheme_factory_interface() = default;
 
 			virtual factory_identifier* get_id() const = 0;
-			virtual	widget_colors* create() = 0;
-			virtual widget_colors* create(widget_colors&) = 0;
+			virtual	widget_geometrics* create() = 0;
+			virtual widget_geometrics* create(widget_geometrics&) = 0;
 		};
 		
 
@@ -41,12 +41,12 @@ namespace nana
 				return &fid_;
 			}
 
-			widget_colors* create() override
+			widget_geometrics* create() override
 			{
 				return (new Scheme);
 			}
 
-			widget_colors* create(widget_colors& other) override
+			widget_geometrics* create(widget_geometrics& other) override
 			{
 				return (new Scheme(static_cast<Scheme&>(other)));
 			}
@@ -65,7 +65,7 @@ namespace nana
 			color_schemes& operator=(const color_schemes&) = delete;
 			color_schemes& operator=(color_schemes&&) = delete;
 		public:
-			using scheme = widget_colors;
+			using scheme = widget_geometrics;
 
 			color_schemes();
 			~color_schemes();

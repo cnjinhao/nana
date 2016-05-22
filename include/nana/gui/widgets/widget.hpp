@@ -160,7 +160,7 @@ namespace nana
 	}
 
             /// Base class of all the classes defined as a widget window. Defaultly a widget_tag
-	template<typename Category, typename DrawerTrigger, typename Events = ::nana::general_events, typename Scheme = ::nana::widget_colors>
+	template<typename Category, typename DrawerTrigger, typename Events = ::nana::general_events, typename Scheme = ::nana::widget_geometrics>
 	class widget_object: public detail::widget_base
 	{
 	protected:

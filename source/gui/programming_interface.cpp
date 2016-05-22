@@ -55,7 +55,7 @@ namespace API
 
 	namespace detail
 	{
-		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_interface&& factory)
+		::nana::widget_geometrics* make_scheme(::nana::detail::scheme_factory_interface&& factory)
 		{
 			return restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_interface&&>(factory));
 		}
@@ -195,15 +195,15 @@ namespace API
 			
 		}
 
-		void set_scheme(window wd, widget_colors* wdg_colors)
+		void set_scheme(window wd, widget_geometrics* wdg_geom)
 		{
 			auto iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;
 			if (restrict::wd_manager().available(iwd))
-				iwd->scheme = wdg_colors;
+				iwd->scheme = wdg_geom;
 		}
 
-		widget_colors* get_scheme(window wd)
+		widget_geometrics* get_scheme(window wd)
 		{
 			auto iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;

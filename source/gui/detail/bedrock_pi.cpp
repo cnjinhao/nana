@@ -353,12 +353,12 @@ namespace nana
 			return pi_data_->shortkey_occurred;
 		}
 
-		widget_colors& bedrock::get_scheme_template(scheme_factory_interface&& factory)
+		widget_geometrics& bedrock::get_scheme_template(scheme_factory_interface&& factory)
 		{
 			return pi_data_->scheme.scheme_template(std::move(factory));
 		}
 
-		widget_colors* bedrock::make_scheme(scheme_factory_interface&& factory)
+		widget_geometrics* bedrock::make_scheme(scheme_factory_interface&& factory)
 		{
 			return pi_data_->scheme.create(std::move(factory));
 		}

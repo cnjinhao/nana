@@ -38,7 +38,7 @@ namespace nana
 		struct widget_traits<widget>
 		{
 			using event_type = ::nana::general_events;
-			using scheme_type = ::nana::widget_colors;
+			using scheme_type = ::nana::widget_geometrics;
 		};
 	}
 
@@ -46,7 +46,7 @@ namespace API
 {
 	namespace detail
 	{
-		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_interface&&);
+		::nana::widget_geometrics* make_scheme(::nana::detail::scheme_factory_interface&&);
 	}
 
 	void effects_edge_nimbus(window, effects::edge_nimbus);
@@ -70,8 +70,8 @@ namespace API
 			return std::unique_ptr<Scheme>{static_cast<Scheme*>(API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>()))};
 		}
 
-		void set_scheme(window, widget_colors*);
-		widget_colors* get_scheme(window);
+		void set_scheme(window, widget_geometrics*);
+		widget_geometrics* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
 		::nana::detail::native_string_type window_caption(window) throw();
@@ -250,7 +250,7 @@ namespace API
 		if (nullptr == wdg_colors)
 			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
 
-		if (std::is_same<::nana::widget_colors, scheme_type>::value)
+		if (std::is_same<::nana::widget_geometrics, scheme_type>::value)
 			return *static_cast<scheme_type*>(wdg_colors);
 
 		auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);

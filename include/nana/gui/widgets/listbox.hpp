@@ -520,7 +520,7 @@ namespace nana
 			};
 
 			struct scheme
-				: public widget_colors
+				: public widget_geometrics
 			{
 				color_proxy header_bgcolor{static_cast<color_rgb>(0xf1f2f4)};
 				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
