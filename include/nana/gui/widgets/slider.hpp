@@ -38,12 +38,12 @@ namespace nana
 				: public widget_geometrics
 			{
 				/// Colors
-				color_proxy color_adorn{ static_cast<color_rgb>(0x3da3ce) };
-				color_proxy color_bar{ static_cast<color_rgb>(0x878787) };
-				color_proxy color_slider{ static_cast<color_rgb>(0x606060) };
+				color_proxy color_adorn		{ static_cast<color_rgb>(0x3da3ce) };
+				color_proxy color_bar		{ static_cast<color_rgb>(0x878787) };
+				color_proxy color_slider	{ static_cast<color_rgb>(0x606060) };
 				color_proxy color_slider_highlighted{ static_cast<color_rgb>(0x2d93be) };
-				color_proxy color_vernier{ colors::red };
-				color_proxy color_vernier_text{ colors::white };
+				color_proxy color_vernier		{ colors::red };
+				color_proxy color_vernier_text	{ colors::white };
 
 				/// Geometrical parameters
 				unsigned vernier_text_margin{ 8 };

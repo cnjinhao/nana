@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1251,9 +1251,6 @@ namespace nana{	namespace paint
 			dest = dest + origin;
 
 			const int right_point = static_cast<int>(dest.x) + static_cast<int>(size_rotated.width);
-
-			const int source_right = static_cast<int>(sp->pixel_size.width);
-			const int source_bottom = static_cast<int>(sp->pixel_size.height);
 
 			for (point point_dest{ static_cast<int>(dest.x), static_cast<int>(dest.y) }; point_dest.x < right_point; ++point_dest.x)
 			{
