@@ -14,11 +14,10 @@
 #define NANA_GUI_WIDGET_HPP
 
 #include <nana/push_ignore_diagnostic>
-#include "../basis.hpp"
+#include <nana/gui/place.hpp>
 #include "../programming_interface.hpp"
 #include <nana/internationalization.hpp>
 #include <nana/gui/detail/drawer.hpp>
-#include <functional>
 
 namespace nana
 {
@@ -392,6 +391,33 @@ namespace nana
 		{
 			return API::window_outline_size(handle());
 		}
+
+		place & get_place()
+		{
+			if (this->empty())
+				throw std::runtime_error("form::get_plac: the form has destroyed.");
+
+			if (!place_)
+				place_.reset(new place{ *this });
+
+			return *place_;
+		}
+
+		void div(const char* div_text)
+		{
+			get_place().div(div_text);
+		}
+
+		place::field_reference operator[](const char* field_name)
+		{
+			return get_place()[field_name];
+		}
+
+		void collocate() noexcept
+		{
+			if (place_)
+				place_->collocate();
+		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()
 		{
@@ -418,9 +444,10 @@ namespace nana
 			return *events_;
 		}
 	private:
-		DrawerTrigger trigger_;
-		std::shared_ptr<Events> events_;
-		std::unique_ptr<scheme_type> scheme_;
+		DrawerTrigger					trigger_;
+		std::shared_ptr<Events>			events_;
+		std::unique_ptr<scheme_type>	scheme_;
+		std::unique_ptr<place>			place_;
 	};//end class widget_object<root_tag>
 
 	           /// Base class of all the classes defined as a frame window. \see nana::frame

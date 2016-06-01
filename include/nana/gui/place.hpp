@@ -100,7 +100,7 @@ namespace nana
 		};
 	public:
         ///  reference to a field manipulator which refers to a field object created by place 
-		typedef field_interface & field_reference;
+		using field_reference = field_interface &;
 
 		place();
 		place(window);///< Attaches to a specified widget.

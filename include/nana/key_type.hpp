@@ -34,55 +34,55 @@ namespace nana
 		template<typename T>
 		struct type_escape
 		{
-			typedef T type;
+			using type = T;
 		};
 
 		template<>
 		struct type_escape<char*>
 		{
-			typedef std::string type;
+			using type = ::std::string;
 		};
 
 		template<>
 		struct type_escape<const char*>
 		{
-			typedef std::string type;
+			using type = ::std::string;
 		};
 
 		template<int Size>
 		struct type_escape<char[Size]>
 		{
-			typedef std::string type;
+			using type = ::std::string;
 		};
 
 		template<int Size>
 		struct type_escape<const char[Size]>
 		{
-			typedef std::string type;
+			using type = ::std::string;
 		};
 
 		template<>
 		struct type_escape<wchar_t*>
 		{
-			typedef std::wstring type;
+			using type = ::std::wstring;
 		};
 
 		template<>
 		struct type_escape<const wchar_t*>
 		{
-			typedef std::wstring type;
+			using type = ::std::wstring;
 		};
 
 		template<int Size>
 		struct type_escape<wchar_t[Size]>
 		{
-			typedef std::wstring type;
+			using type = ::std::wstring;
 		};
 
 		template<int Size>
 		struct type_escape<const wchar_t[Size]>
 		{
-			typedef std::wstring type;
+			using type = ::std::wstring;
 		};
 	}
 
