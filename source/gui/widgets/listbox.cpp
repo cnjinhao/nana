@@ -2341,7 +2341,7 @@ namespace nana
 
 				unsigned auto_width(size_type pos, unsigned max = 100000) 
 				{
-					max = std::min(max, scheme_ptr->max_header_width);
+					max = (std::min)(max, scheme_ptr->max_header_width);
 					unsigned max_w{ 0 };
 					for (const auto &cat : lister.cat_container())
 						for (const auto &it : cat.items)
@@ -2357,7 +2357,7 @@ namespace nana
 					unsigned ext_w = scheme_ptr->ext_w;
 					if (pos == 0 && checkable)    //   only before the first column (display_order=0 ?)
 						ext_w += 18;              // add to geom. scheme (width of the checker)  ??
-					header.item_width(pos, std::min(max, max_w + ext_w + 1 ));
+					header.item_width(pos, (std::min)(max, max_w + ext_w + 1 ));
 					return max_w;
 				}
 
@@ -3069,7 +3069,7 @@ namespace nana
 							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);   /// \todo create a parametre for amount of blend
 					}
 
-					unsigned show_w = std::min(content_r.width, width - essence_->scroll.offset_x);
+					unsigned show_w = (std::min)(content_r.width, width - essence_->scroll.offset_x);
 
 					auto graph = essence_->graph;
 
@@ -3230,7 +3230,7 @@ namespace nana
 											graph->palette(false, bgcolor);       // we need to erase the excess, because some cell may not draw text over
 											graph->rectangle(rectangle( item_right, y /*+ 2*/, excess, essence_->scheme_ptr->item_height /*- 4*/ ), true);
 										}
-										extreme_text = std::max(extreme_text, text_right);
+										extreme_text = (std::max)(extreme_text, text_right);
 									}
 								}
 							}
@@ -3343,10 +3343,7 @@ namespace nana
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
-					//essence_->scheme_ptr = &static_cast<::nana::listbox&>(widget).scheme();
-					//essence_->scheme_ptr->debug_print("In trigger::attached with &static_cast<::nana::listbox&>(widget).scheme();");
 					essence_->scheme_ptr = static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));
-					//essence_->scheme_ptr->debug_print("In trigger::attached with static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));");
 
 					essence_->graph = &graph;
 					typeface_changed(graph);
