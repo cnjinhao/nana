@@ -872,11 +872,20 @@ namespace nana
 				{
 					for (auto i = list_.begin(); i != list_.end(); ++i)
 					{
-						if (i->key_ptr && i->key_ptr->compare(ptr.get()))
+						if (i->key_ptr)
 						{
-							i = list_.emplace(i);
-							i->key_ptr = ptr;
-							return &(*i);
+							if (!i->key_ptr->same_type(ptr.get()))
+							{
+								this->ordered_categories_ = false;
+								break;
+							}
+							else if (ptr->compare(i->key_ptr.get()))
+							{
+
+								i = list_.emplace(i);
+								i->key_ptr = ptr;
+								return &(*i);
+							}
 						}
 					}
 
@@ -892,13 +901,13 @@ namespace nana
 				}
 
 				/// Insert  before item in absolute "pos" a new item with "text" in column 0, and place it in last display position of this cat
-				bool insert(const index_pair& pos, std::string&& text)
+				void insert(const index_pair& pos, std::string&& text)
 				{
 					auto & catobj = *get(pos.cat);
 
 					const auto n = catobj.items.size();
 					if (pos.item > n)
-						return false;
+						throw std::out_of_range("listbox: insert an item at invalid position");
 
 					catobj.sorted.push_back(n);
 
@@ -906,8 +915,6 @@ namespace nana
 						catobj.items.emplace(catobj.items.begin() + pos.item, std::move(text));
 					else
 						catobj.items.emplace_back(std::move(text));
-
-					return true;
 				}
 
 				/// convert from display order to absolute (find the real item in that display pos) but without check from current active sorting, in fact using just the last sorting !!!
@@ -1178,10 +1185,28 @@ namespace nana
 				//Enable/Disable the ordered categories
 				bool enable_ordered(bool enb)
 				{
-					if (ordered_categories_ == enb)
-						return false;
+					if (ordered_categories_ != enb)
+					{
+						if (enb)
+						{
+							::nana::detail::key_interface * refkey = nullptr;
+							for (auto i = list_.begin(); i != list_.end(); ++i)
+							{
+								if (i->key_ptr)
+								{
+									if (refkey)
+									{
+										if (!i->key_ptr->same_type(refkey))
+											return false;
+									}
+									else
+										refkey = i->key_ptr.get();
+								}
+							}
+						}
 
-					ordered_categories_ = enb;
+						ordered_categories_ = enb;
+					}
 					return true;
 				}
 
@@ -4352,6 +4377,17 @@ namespace nana
 			create(wd, r, visible);
 		}
 
+		bool listbox::assoc_ordered(bool enable)
+		{
+			internal_scope_guard lock;
+
+			auto & ess = _m_ess();
+			if (ess.lister.enable_ordered(enable))
+				ess.update();
+
+			return true;
+		}
+
 		void listbox::auto_draw(bool ad)
 		{
 			_m_ess().set_auto_draw(ad);
@@ -4486,16 +4522,57 @@ namespace nana
 			return cat_proxy{ &ess, new_cat_ptr };
 		}
 
-		listbox::cat_proxy listbox::at(size_type pos) const
+
+		void listbox::insert_item(const index_pair& pos, std::string text)
+		{
+			internal_scope_guard lock;
+			auto & ess = _m_ess();
+			ess.lister.insert(pos, std::move(text));
+			
+			if (!empty())
+			{
+				auto & item = ess.lister.at(pos);
+				item.bgcolor = bgcolor();
+				item.fgcolor = fgcolor();
+				ess.update();
+			}
+		}
+
+		void listbox::insert_item(const index_pair& pos, std::wstring text)
+		{
+			insert_item(pos, to_utf8(text));
+		}
+
+		listbox::cat_proxy listbox::at(size_type pos)
+		{
+			auto & ess = _m_ess();
+			if (pos >= ess.lister.size_categ())
+				throw std::out_of_range("Nana.Listbox.at(): invalid position");
+
+			return{ &ess, pos };
+		}
+
+		const listbox::cat_proxy listbox::at(size_type pos) const
 		{
 			auto & ess = _m_ess();
 			if(pos >= ess.lister.size_categ())
 				throw std::out_of_range("Nana.Listbox.at(): invalid position");
 
-			return cat_proxy(&ess, pos);
+			return{ &ess, pos };
 		}
 
-		listbox& listbox::ordered_categories(bool enable_ordered)
+		listbox::item_proxy listbox::at(const index_pair& abs_pos)
+		{
+			return at(abs_pos.cat).at(abs_pos.item);
+		}
+
+		const listbox::item_proxy listbox::at(const index_pair& pos_abs) const
+		{
+			return at(pos_abs.cat).at(pos_abs.item);
+		}
+
+		/*
+		listbox& listbox::ordered_categories(bool enable_ordered)	//deprecated
 		{
 			internal_scope_guard lock;
 
@@ -4505,15 +4582,11 @@ namespace nana
 
 			return *this;
 		}
-
-		listbox::item_proxy listbox::at(const index_pair& pos_abs) const
-		{
-			return at(pos_abs.cat).at(pos_abs.item);
-		}
+		*/
 
 
 		// Contributed by leobackes(pr#97)
-		listbox::index_pair listbox::at ( const point& pos ) const
+		listbox::index_pair listbox::cast( const point& pos ) const
 		{
 			auto & ess=_m_ess();
 			auto _where=ess.where(pos.x, pos.y);
@@ -4532,27 +4605,6 @@ namespace nana
 			auto & ess=_m_ess();
 			columns_indexs col=ess.header.item_by_x(pos.x - 2 - ess.scroll.offset_x);
 			return col;
-		}
-
-		void listbox::insert(const index_pair& pos, std::string text)
-		{
-			internal_scope_guard lock;
-			auto & ess = _m_ess();
-			if (ess.lister.insert(pos, std::move(text)))
-			{
-				if (!empty())
-				{
-					auto & item = ess.lister.at(pos);
-					item.bgcolor = bgcolor();
-					item.fgcolor = fgcolor();
-					ess.update();
-				}
-			}
-		}
-
-		void listbox::insert(const index_pair& pos, std::wstring text)
-		{
-			insert(pos, to_utf8(text));
 		}
 
 		void listbox::checkable(bool chkable)
@@ -4767,7 +4819,7 @@ namespace nana
 			return _m_ess().lister.anyobj(index_pair{cat, index}, allocate_if_empty);
 		}
 
-		drawerbase::listbox::category_t* listbox::_m_at_key(std::shared_ptr<nana::detail::key_interface> ptr)
+		drawerbase::listbox::category_t* listbox::_m_assoc(std::shared_ptr<nana::detail::key_interface> ptr, bool create_if_not_exists)
 		{
 			auto & ess = _m_ess();
 
@@ -4775,9 +4827,12 @@ namespace nana
 
 			for (auto & m : ess.lister.cat_container())
 			{
-				if (m.key_ptr && nana::detail::pred_equal_by_less(ptr.get(), m.key_ptr.get()))
+				if (m.key_ptr && nana::detail::pred_equal(ptr.get(), m.key_ptr.get()))
 					return &m;
 			}
+
+			if (!create_if_not_exists)
+				return nullptr;
 
 			drawerbase::listbox::category_t* cat;
 
@@ -4801,7 +4856,7 @@ namespace nana
 			internal_scope_guard lock;
 			for (auto i = cont.begin(); i != cont.end(); ++i)
 			{
-				if (i->key_ptr && nana::detail::pred_equal_by_less(p, i->key_ptr.get()))
+				if (i->key_ptr && nana::detail::pred_equal(p, i->key_ptr.get()))
 				{
 					cont.erase(i);
 					return;

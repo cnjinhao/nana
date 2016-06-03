@@ -610,7 +610,92 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		listbox(window, bool visible);
 		listbox(window, const rectangle& = {}, bool visible = true);
 
+	//Element access
+
+		/// Returns the category at specified location pos, with bounds checking.
+		cat_proxy at(size_type pos);
+		const cat_proxy at(size_type pos) const;
+
+		/// Returns the item at specified absolute position
+		item_proxy at(const index_pair& abs_pos);
+		const item_proxy at(const index_pair &abs_pos) const;
+
+		/// Returns the category at specified location pos, no bounds checking is performed.
+		cat_proxy operator[](size_type pos);
+		const cat_proxy operator[](size_type pos) const;
+
+		/// Returns the item at specified absolute position, no bounds checking is performed.
+		item_proxy operator[](const index_pair& abs_pos);
+		const item_proxy operator[](const index_pair &abs_pos) const;
+
+	//Associative element access
+
+		/// Returns a proxy to the category of the key or create a new one in the right order
+		/**
+		* @param key The key of category to find
+		* @return A category proxy
+		*/
+		template<typename Key>
+		cat_proxy assoc(Key&& key)
+		{
+			using key_type = typename ::nana::detail::type_escape<const typename std::decay<Key>::type>::type;
+
+			auto p = std::make_shared<nana::key<key_type, std::less<key_type>>>(std::forward<Key>(key));
+			return cat_proxy(&_m_ess(), _m_assoc(p, true));
+		}
+
+		/// Returns a proxy to the category of the key or create a new one in the right order
+		/**
+		* @param key The key of category to find
+		* @return A category proxy
+		*/
+		template<typename Key>
+		cat_proxy assoc_at(Key&& key)
+		{
+			using key_type = typename ::nana::detail::type_escape<const typename std::decay<Key>::type>::type;
+
+			auto p = std::make_shared<nana::key<key_type, std::less<key_type>>>(std::forward<Key>(key));
+
+			auto categ = _m_assoc(p, false);
+			if (nullptr == categ)
+				throw std::out_of_range("listbox: invalid key.");
+
+			return cat_proxy(&_m_ess(), categ);
+		}
+
+		/// Removes a category which is associated with the specified key
+		/**
+		* @param key The key of category to remove
+		*/
+		template<typename Key>
+		void assoc_erase(Key&& key)
+		{
+			using key_type = typename ::nana::detail::type_escape<const typename std::decay<Key>::type>::type;
+
+			::nana::key<key_type, std::less<key_type>> wrap(key);
+			_m_erase_key(&wrap);
+		}
+
+		bool assoc_ordered(bool);
+
+
 		void auto_draw(bool);                                ///< Set state: Redraw automatically after an operation
+
+		template<typename Function>
+		void avoid_drawing(Function fn)
+		{
+			this->auto_draw(false);
+			try
+			{
+				fn();
+			}
+			catch (...)
+			{
+				this->auto_draw(true);
+				throw;
+			}
+			this->auto_draw(true);
+		}
 
 		/// Scrolls the view to the first or last item of a specified category
 		void scroll(bool to_bottom, size_type cat_pos = ::nana::npos);
@@ -631,48 +716,31 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 
 		cat_proxy insert(cat_proxy, ::std::string);
 		cat_proxy insert(cat_proxy, ::std::wstring);
-		cat_proxy at(size_type pos) const;
 
-        /// add categories in order when use a key?
-		listbox& ordered_categories(bool);
+		/// Inserts an item before a specified position
+		/**
+		 * @param abs_pos The absolute position before which an item will be inserted.
+		 * @param text Text of the first column, in UTF-8 encoded.
+		 */
+		void insert_item(const index_pair& abs_pos, ::std::string text);
 
-        /// return a proxy to tha cat with the key or create a new one in the right order
-		template<typename Key>
-		cat_proxy operator[](const Key & ck)
-		{
-			using catkey = typename ::nana::detail::type_escape<Key>::type;
-			std::shared_ptr<nana::detail::key_interface> p(new nana::key<catkey, std::less<catkey>>(ck), [](nana::detail::key_interface* p)
-			{
-				delete p;
-			});
+		/// Inserts an item before a specified position
+		/**
+		 * @param abs_pos The absolute position before which an item will be inserted.
+		 * @param text Text of the first column.
+		 */
+		void insert_item(const index_pair& abs_pos, ::std::wstring text);
 
-			return cat_proxy(&_m_ess(), _m_at_key(p));
-		}
 
-		template<typename Key>
-		cat_proxy operator[](Key && ck)
-		{
-			using catkey = typename ::nana::detail::type_escape<Key>::type;
-			std::shared_ptr<nana::detail::key_interface> p(new nana::key<catkey, std::less<catkey>>(std::move(ck)), [](nana::detail::key_interface* p)
-			{
-				delete p;
-			});
-
-			return cat_proxy(&_m_ess(), _m_at_key(p));
-		}
-
-		/// Returns an item by the specified absolute position
-		item_proxy at(const index_pair &abs_pos) const;
 
 		/// Returns an index of item which contains the specified point.
-        index_pair at(const point & pos) const;
+		index_pair cast(const point & pos) const;
+
+        /// add categories in order when use a key?
+		//listbox& ordered_categories(bool);	//deprecated
 
 		/// Returns the column which contains the specified point.
         columns_indexs column_from_pos(const point & pos);
-
-
-		void insert(const index_pair&, ::std::string);		///<Insert a new item with a text in the first column.
-		void insert(const index_pair&, ::std::wstring);		///<Insert a new item with a text in the first column.
 
 		void checkable(bool);
 		selection checked() const;                         ///<Returns the items which are checked.                       
@@ -683,8 +751,9 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void erase();                                      ///<Erases all categories.
 		item_proxy erase(item_proxy);
 
+		/*
 		template<typename Key>
-		void erase_key(const Key& kv)
+		void erase_key(const Key& kv)	//deprecated
 		{
 			typedef typename nana::detail::type_escape<Key>::type key_t;
 			nana::key<key_t, std::less<key_t> > key(kv);
@@ -698,6 +767,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 			nana::key<key_t, std::less<key_t> > key(std::move(kv));
 			_m_erase_key(&key);
 		}
+		*/
 
 		bool sortable() const;
 		void sortable(bool enable);
@@ -730,7 +800,7 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
-		drawerbase::listbox::category_t* _m_at_key(std::shared_ptr<nana::detail::key_interface>);
+		drawerbase::listbox::category_t* _m_assoc(std::shared_ptr<nana::detail::key_interface>, bool create_if_not_exists);
 		void _m_erase_key(nana::detail::key_interface*);
 	};
 }//end namespace nana

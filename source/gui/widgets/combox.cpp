@@ -364,7 +364,7 @@ namespace nana
 					std::size_t pos = 0;
 					for (auto & m : items_)
 					{
-						if (m->key && detail::pred_equal_by_less(m->key.get(), p.get()))
+						if (m->key && detail::pred_equal(m->key.get(), p.get()))
 							return pos;
 						++pos;
 					}
@@ -384,7 +384,7 @@ namespace nana
 					std::size_t pos = 0;
 					for (auto & m : items_)
 					{
-						if (m->key && detail::pred_equal_by_less(m->key.get(), kv))
+						if (m->key && detail::pred_equal(m->key.get(), kv))
 						{
 							erase(pos);
 							return;

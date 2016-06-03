@@ -26,9 +26,9 @@ namespace nana
 		};	//end class key_interface
 
 		//Use less compare for equal compare [call it equal_by_less()?]
-		inline bool pred_equal_by_less(const key_interface * left, const key_interface* right)
+		inline bool pred_equal(const key_interface * left, const key_interface* right)
 		{
-			return (left->compare(right) == false) && (right->compare(left) == false);
+			return (left->same_type(right) && (left->compare(right) == false) && (right->compare(left) == false));
 		}
 
 		template<typename T>
