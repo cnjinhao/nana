@@ -34,10 +34,27 @@
 #include "detail/image_bmp.hpp"
 #include "detail/image_ico.hpp"
 
+#include "image_accessor.hpp"
+
 namespace nana
 {
 namespace paint
 {
+#if defined(NANA_WINDOWS)
+	HICON image_accessor::icon(const nana::paint::image& img)
+	{
+		auto ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
+		if (ico && ico->ptr())
+			return *(ico->ptr());
+		return nullptr;
+	}
+#else
+	int image_accessor::icon(const image&)
+	{
+		return 0;
+	}
+#endif
+
 	namespace detail
 	{
 		//class image_ico
