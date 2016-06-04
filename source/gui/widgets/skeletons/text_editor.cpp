@@ -477,7 +477,8 @@ namespace nana{	namespace widgets
 			std::size_t	_m_textline_from_screen(int y) const
 			{
 				const std::size_t textlines = editor_.textbase_.lines();
-				if (0 == textlines)
+				const auto line_px = static_cast<int>(editor_.line_height());
+				if ((0 == textlines) || (0 == line_px))
 					return 0;
 
 				const int offset_top = editor_.points_.offset.y;
@@ -486,7 +487,7 @@ namespace nana{	namespace widgets
 				if (y < text_area_top)
 					y = offset_top ? offset_top - 1 : 0;
 				else
-					y = (y - text_area_top) / static_cast<int>(editor_.line_height()) + offset_top;
+					y = (y - text_area_top) / line_px + offset_top;
 
 				return (textlines <= static_cast<std::size_t>(y) ? textlines - 1 : static_cast<std::size_t>(y));
 			}
@@ -1106,28 +1107,24 @@ namespace nana{	namespace widgets
 			//secondary, index of line that the text was splitted into multilines.
 			std::size_t _m_textline_from_screen(int y, std::size_t & secondary) const
 			{
-				const int text_area_top = editor_.text_area_.area.y;
-				const int offset_top = editor_.points_.offset.y;
+				const auto line_px = static_cast<int>(editor_.line_height());
 
-				if (0 == editor_.textbase_.lines())
+				if ((0 == editor_.textbase_.lines()) || (0 == line_px))
 				{
 					secondary = 0;
 					return 0;
 				}
 
-				std::size_t screen_line;
-				if (y < text_area_top)
-				{
-					screen_line = (text_area_top - y) / static_cast<int>(editor_.line_height());
-					if (screen_line > static_cast<std::size_t>(offset_top))
-						screen_line = 0;
-					else
-						screen_line = static_cast<std::size_t>(offset_top)-screen_line;
-				}
-				else
-					screen_line = static_cast<std::size_t>((y - text_area_top) / static_cast<int>(editor_.line_height()) + offset_top);
+				const int text_area_top = editor_.text_area_.area.y;
+				const int offset_top = editor_.points_.offset.y;
 
-				auto primary = _m_textline(screen_line, secondary);
+				auto screen_line = (text_area_top - y) / line_px;
+				if ((y < text_area_top) && (screen_line > offset_top))
+					screen_line = 0;
+				else
+					screen_line = offset_top - screen_line;
+
+				auto primary = _m_textline(static_cast<std::size_t>(screen_line), secondary);
 				if (primary < linemtr_.size())
 					return primary;
 
