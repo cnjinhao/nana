@@ -1635,10 +1635,13 @@ namespace nana{	namespace widgets
 		bool text_editor::mouse_move(bool left_button, const point& scrpos)
 		{
 			cursor cur = cursor::iterm;
-			if ((!hit_text_area(scrpos)) && (!text_area_.captured))
+			if(((!hit_text_area(scrpos)) && (!text_area_.captured)) || !attributes_.editable || !API::window_enabled(window_))
 				cur = cursor::arrow;
 
 			API::window_cursor(window_, cur);
+
+			if(!attributes_.editable)
+				return false;
 
 			if(left_button)
 			{
@@ -1655,6 +1658,9 @@ namespace nana{	namespace widgets
 
 		bool text_editor::mouse_pressed(const arg_mouse& arg)
 		{
+			if(!attributes_.editable)
+				return false;
+
 			if (event_code::mouse_down == arg.evt_code)
 			{
 				if (!hit_text_area(arg.pos))
@@ -1789,6 +1795,9 @@ namespace nana{	namespace widgets
 				else if (API::caret_size(window_).height != line_pixels)
 					reset_caret_pixels();
 			}
+
+			if(!attributes_.editable)
+				visible = false;
 
 			API::caret_visible(window_, visible);
 
@@ -3078,7 +3087,7 @@ namespace nana{	namespace widgets
 			graph_.palette(false, scheme_->selection.get_color());
 
 			//The text is not selected or the whole line text is selected
-			if (!focused || (!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
+			if(!focused || (!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y) || !attributes_.editable)
 			{
 				bool selected = (a.y < str_pos.y && str_pos.y < b.y);
 				for (auto & ent : reordered)

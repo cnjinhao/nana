@@ -502,7 +502,7 @@ namespace nana
 		/// Determines whether expension/shrink of category is blocked
         bool category_change_blocked() const noexcept;
 
-        arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
+		arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
     private:
         mutable bool block_change_;
 	};
