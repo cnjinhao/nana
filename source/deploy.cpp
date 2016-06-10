@@ -500,16 +500,15 @@ namespace nana
 			if (uv < 0xC0)
 				return false;
 
-			if ((uv < 0xE0) && (ustr + 1 < end))
+			if ((uv < 0xE0) && (end - ustr > 1))
 				ustr += 2;
-			else if (uv < 0xF0 && (ustr + 2 <= end))
+			else if ((uv < 0xF0) && (end - ustr > 2))
 				ustr += 3;
-			else if (uv < 0x1F && (ustr + 3 <= end))
+			else if ((uv < 0x1F) && (end - ustr > 3))
 				ustr += 4;
 			else
 				return false;
 		}
-
 		return true;
 	}
 
