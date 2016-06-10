@@ -4360,18 +4360,17 @@ namespace nana
 
 	//Implementation of arg_category
 	//Contributed by leobackes(pr#97)
-
 	arg_category::arg_category ( const nana::drawerbase::listbox::cat_proxy& cat ) noexcept
 		: category(cat), block_change_(false)
     {
     }
 
-    void arg_category::block_category_change() const noexcept
+	void arg_category::block_category_change() const noexcept
 	{
 		block_change_ = true;
     }
 
-    bool arg_category::category_change_blocked() const noexcept
+	bool arg_category::category_change_blocked() const noexcept
 	{
 		return block_change_;
     }
