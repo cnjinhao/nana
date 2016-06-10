@@ -4571,20 +4571,6 @@ namespace nana
 			return at(pos_abs.cat).at(pos_abs.item);
 		}
 
-		/*
-		listbox& listbox::ordered_categories(bool enable_ordered)	//deprecated
-		{
-			internal_scope_guard lock;
-
-			auto & ess = _m_ess();
-			if (ess.lister.enable_ordered(enable_ordered))
-				ess.update();
-
-			return *this;
-		}
-		*/
-
-
 		// Contributed by leobackes(pr#97)
 		listbox::index_pair listbox::cast( const point& pos ) const
 		{

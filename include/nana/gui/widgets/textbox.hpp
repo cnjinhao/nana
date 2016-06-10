@@ -172,15 +172,18 @@ namespace nana
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
 		textbox& append(const std::string& text, bool at_caret);
 
-		/// Determine wheter the text is line wrapped.
+		/// Determines whether the text is line wrapped.
 		bool line_wrapped() const;
 		textbox& line_wrapped(bool);
 
-		/// Determine whether the text is multi-line enabled.
+		/// Determines whether the text is multi-line enabled.
 		bool multi_lines() const;
 		textbox& multi_lines(bool);
+
+		/// Determines whether the textbox accepts user input
 		bool editable() const;
 		textbox& editable(bool);
+
 		void set_accept(std::function<bool(wchar_t)>);
 
 		textbox& tip_string(::std::string);

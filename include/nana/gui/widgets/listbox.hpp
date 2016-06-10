@@ -736,9 +736,6 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		/// Returns an index of item which contains the specified point.
 		index_pair cast(const point & pos) const;
 
-        /// add categories in order when use a key?
-		//listbox& ordered_categories(bool);	//deprecated
-
 		/// Returns the column which contains the specified point.
         columns_indexs column_from_pos(const point & pos);
 
@@ -750,24 +747,6 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		void erase(size_type cat);                         ///<Erases a category
 		void erase();                                      ///<Erases all categories.
 		item_proxy erase(item_proxy);
-
-		/*
-		template<typename Key>
-		void erase_key(const Key& kv)	//deprecated
-		{
-			typedef typename nana::detail::type_escape<Key>::type key_t;
-			nana::key<key_t, std::less<key_t> > key(kv);
-			_m_erase_key(&key);
-		}
-
-		template<typename Key>
-		void erase_key(Key&& kv)
-		{
-			typedef typename nana::detail::type_escape<Key>::type key_t;
-			nana::key<key_t, std::less<key_t> > key(std::move(kv));
-			_m_erase_key(&key);
-		}
-		*/
 
 		bool sortable() const;
 		void sortable(bool enable);
