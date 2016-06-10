@@ -485,7 +485,8 @@ namespace nana{	namespace widgets
 			std::size_t	_m_textline_from_screen(int y) const
 			{
 				const std::size_t textlines = editor_.textbase_.lines();
-				if (0 == textlines)
+				const auto line_px = static_cast<int>(editor_.line_height());
+				if ((0 == textlines) || (0 == line_px))
 					return 0;
 
 				const int offset_top = editor_.points_.offset.y;
@@ -494,7 +495,7 @@ namespace nana{	namespace widgets
 				if (y < text_area_top)
 					y = offset_top ? offset_top - 1 : 0;
 				else
-					y = (y - text_area_top) / static_cast<int>(editor_.line_height()) + offset_top;
+					y = (y - text_area_top) / line_px + offset_top;
 
 				return (textlines <= static_cast<std::size_t>(y) ? textlines - 1 : static_cast<std::size_t>(y));
 			}
@@ -1115,28 +1116,24 @@ namespace nana{	namespace widgets
 			//secondary, index of line that the text was splitted into multilines.
 			std::size_t _m_textline_from_screen(int y, std::size_t & secondary) const
 			{
-				const int text_area_top = editor_.text_area_.area.y;
-				const int offset_top = editor_.points_.offset.y;
+				const auto line_px = static_cast<int>(editor_.line_height());
 
-				if (0 == editor_.textbase_.lines())
+				if ((0 == editor_.textbase_.lines()) || (0 == line_px))
 				{
 					secondary = 0;
 					return 0;
 				}
 
-				std::size_t screen_line;
-				if (y < text_area_top)
-				{
-					screen_line = (text_area_top - y) / static_cast<int>(editor_.line_height());
-					if (screen_line > static_cast<std::size_t>(offset_top))
-						screen_line = 0;
-					else
-						screen_line = static_cast<std::size_t>(offset_top)-screen_line;
-				}
-				else
-					screen_line = static_cast<std::size_t>((y - text_area_top) / static_cast<int>(editor_.line_height()) + offset_top);
+				const int text_area_top = editor_.text_area_.area.y;
+				const int offset_top = editor_.points_.offset.y;
 
-				auto primary = _m_textline(screen_line, secondary);
+				auto screen_line = (text_area_top - y) / line_px;
+				if ((y < text_area_top) && (screen_line > offset_top))
+					screen_line = 0;
+				else
+					screen_line = offset_top - screen_line;
+
+				auto primary = _m_textline(static_cast<std::size_t>(screen_line), secondary);
 				if (primary < linemtr_.size())
 					return primary;
 
@@ -1690,10 +1687,13 @@ namespace nana{	namespace widgets
 		bool text_editor::mouse_move(bool left_button, const point& scrpos)
 		{
 			cursor cur = cursor::iterm;
-			if ((!hit_text_area(scrpos)) && (!text_area_.captured))
+			if(((!hit_text_area(scrpos)) && (!text_area_.captured)) || !attributes_.editable || !API::window_enabled(window_))
 				cur = cursor::arrow;
 
 			API::window_cursor(window_, cur);
+
+			if(!attributes_.editable)
+				return false;
 
 			if(left_button)
 			{
@@ -1710,6 +1710,9 @@ namespace nana{	namespace widgets
 
 		bool text_editor::mouse_pressed(const arg_mouse& arg)
 		{
+			if(!attributes_.editable)
+				return false;
+
 			if (event_code::mouse_down == arg.evt_code)
 			{
 				if (select_.ignore_press || (!hit_text_area(arg.pos)))
@@ -1871,6 +1874,9 @@ namespace nana{	namespace widgets
 				else if (API::caret_size(window_).height != line_pixels)
 					reset_caret_pixels();
 			}
+
+			if(!attributes_.editable)
+				visible = false;
 
 			API::caret_visible(window_, visible);
 
@@ -3195,7 +3201,7 @@ namespace nana{	namespace widgets
 			graph_.palette(false, scheme_->selection.get_color());
 
 			//The text is not selected or the whole line text is selected
-			if (!focused || (!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y))
+			if(!focused || (!_m_get_sort_select_points(a, b)) || (select_.a.y != str_pos.y && select_.b.y != str_pos.y) || !attributes_.editable)
 			{
 				bool selected = (a.y < str_pos.y && str_pos.y < b.y);
 				for (auto & ent : reordered)

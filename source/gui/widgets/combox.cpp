@@ -171,7 +171,7 @@ namespace nana
 					if(editor_)
 					{
 						editor_->editable(enb);
-
+						editor_->show_caret(enb);
 						if (!enb)
 						{
 							editor_->ext_renderer().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
@@ -245,7 +245,7 @@ namespace nana
 
 				void open_lister_if_push_button_positioned()
 				{
-					if((nullptr == state_.lister) && !items_.empty() && (parts::push_button == state_.pointer_where))
+					if((nullptr == state_.lister) && !items_.empty() && (!editor_->attr().editable || (parts::push_button == state_.pointer_where)))
 					{
 						module_.items.clear();
 						std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
@@ -618,8 +618,8 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
-						if (!editor->mouse_pressed(arg))
-							drawer_->open_lister_if_push_button_positioned();
+						editor->mouse_pressed(arg);
+						drawer_->open_lister_if_push_button_positioned();
 
 						drawer_->draw();
 						if(editor->attr().editable)

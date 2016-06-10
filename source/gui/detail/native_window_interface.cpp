@@ -28,24 +28,9 @@
 	#include <nana/system/platform.hpp>
 #endif
 
-namespace nana{
-	namespace paint
-	{
-		class image_accessor
-		{
-		public:
-#if defined(NANA_WINDOWS)
-			static HICON icon(const nana::paint::image& img)
-			{
-				auto ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
-				if(ico && ico->ptr())
-						return *(ico->ptr());
-				return nullptr;
-			}
-#endif
-		};
-	}
+#include "../../paint/image_accessor.hpp"
 
+namespace nana{
 	namespace detail{
 
 #if defined(NANA_WINDOWS)

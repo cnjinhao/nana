@@ -11,8 +11,9 @@
  *	@contributors:
  *		Hiroshi Seki
  *		Ariel Vina-Rodriguez
- *		leobackes
- *		Benjamin Navarro
+ *		leobackes(pr#86,pr#97)
+ *		Benjamin Navarro(pr#81)
+ *		besh81(pr#130)
  */
 
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
@@ -491,7 +492,7 @@ namespace nana
     };
 
 	/// The event argument type for listbox's category_dbl_click
-    struct arg_listbox_category
+    struct arg_category
 		: public event_arg
 	{
         drawerbase::listbox::cat_proxy category;
@@ -502,7 +503,7 @@ namespace nana
 		/// Determines whether expension/shrink of category is blocked
         bool category_change_blocked() const noexcept;
 
-		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
+		arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
     private:
         mutable bool block_change_;
 	};
@@ -514,9 +515,14 @@ namespace nana
 			struct listbox_events
 				: public general_events
 			{
+				/// An envent occurs when the toggle of a listbox item is checked.
 				basic_event<arg_listbox> checked;
+
+				/// An event occurs when a listbox item is clicked.
 				basic_event<arg_listbox> selected;
-                basic_event<arg_listbox_category> category_dbl_click;	///< An event occurs when a listbox category is double clicking.
+
+				/// An event occurs when a listbox category is double clicking.
+                basic_event<arg_listbox_category> category_dbl_click;
 			};
 
 			struct scheme
@@ -529,15 +535,17 @@ namespace nana
 
                   /// \todo how to implement some geometrical parameters ??
 				unsigned max_header_width{ 3000 };  ///< during auto width don't alow more than this           
-				unsigned min_header_width{ 20   };  ///< non counting suspension_width           
-				unsigned suspension_width{ 0    };  ///< the trigger will set this to the width if ("...")
-				unsigned ext_w           { 5    };  ///< ??
-				unsigned header_height   { 20   };  ///< header height   header_size
-				unsigned text_height     { 0    };  ///< the trigger will set this to the height of the text font
-				unsigned item_height_ex  { 6    };  ///< 6? item_height = text_height + item_height_ex
-				unsigned item_height     { 0    };  ///< the trigger will set this TO item_height = text_height + item_height_ex
-				unsigned header_mouse_spliter_area_before{ 2 };
-				unsigned header_mouse_spliter_area_after { 3 };
+				unsigned min_header_width{ 20   };  ///< def=20 . non counting suspension_width           
+				unsigned suspension_width{ 8    };  ///<  def= . the trigger will set this to the width if ("...")
+				unsigned ext_w           { 5    };  ///<  def= 5. Additional or extended with added (before) to the text width to determine the cell width. cell_w = text_w + ext_w +1
+				unsigned header_height   { 25   };  ///<  def=25 . header height   header_size
+				unsigned text_height     { 14   };  ///< the trigger will set this to the height of the text font
+				unsigned item_height_ex  { 6    };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
+				unsigned item_height     { 24   };  ///<  def=24 . the trigger will set this TO item_height = text_height + item_height_ex
+				unsigned header_mouse_spliter_area_before{ 2 }; ///< def=2. But 4 is better... IMO
+				unsigned header_mouse_spliter_area_after { 3 }; ///< def=3. But 4 is better... 
+
+				//void debug_print(const std::string &msg);
 
 			};
 		}
@@ -584,6 +592,17 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		}
 		listbox.anyobj(0, 0, 10); //the type of customer's object is int.
 		listbox.anyobj(0, 0, 20);
+5. listbox is a widget_object, with template parameters drawerbase::listbox::trigger and drawerbase::listbox::scheme 
+amon others.
+That means that listbox have a member trigger_ constructed first and accecible with get_drawer_trigger() and
+a member (unique pointer to) scheme_ accesible with scheme_type& scheme() created in the constructor 
+with API::dev::make_scheme<Scheme>() which call API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>())
+which call restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_base&&>(factory));
+which call pi_data_->scheme.create(std::move(factory));
+which call factory.create(scheme_template(std::move(factory)));
+which call (new Scheme(static_cast<Scheme&>(other)));
+and which in create is setted with: API::dev::set_scheme(handle_, scheme_.get()); which save the scheme pointer in 
+the nana::detail::basic_window member pointer scheme
 \todo doc: actualize this example listbox.at(0)...
 \see nana::drawerbase::listbox::cat_proxy
 \see nana::drawerbase::listbox::item_proxy

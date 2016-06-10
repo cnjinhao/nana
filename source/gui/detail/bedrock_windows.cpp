@@ -26,8 +26,6 @@
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/gui/detail/color_schemes.hpp>
 
-#include <iostream>
-
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL	0x020A
 #endif

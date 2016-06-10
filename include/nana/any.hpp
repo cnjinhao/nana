@@ -150,7 +150,7 @@ namespace nana
 		if (!operand)
 			return nullptr;
 
-		auto holder = dynamic_cast<any::holder<Value>*>(operand->content_);
+		auto holder = dynamic_cast<any::holder<typename std::decay<Value>::type>*>(operand->content_);
 		return (holder ? &holder->value : nullptr);
 	}
 

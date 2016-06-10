@@ -1,17 +1,17 @@
 /*
- *	Implementation of Notifier
- *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
- *
- *	Distributed under the Boost Software License, Version 1.0.
- *	(See accompanying file LICENSE_1_0.txt or copy at
- *	http://www.boost.org/LICENSE_1_0.txt)
- *
- *	@file: nana/gui/notifier.cpp
- *	@contributors:
- *		Jan
- *		Benjamin Navarro(pr#81)
- */
+*	Implementation of Notifier
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/notifier.cpp
+*	@contributors:
+*		Jan
+*		Benjamin Navarro(pr#81)
+*/
 #include <nana/deploy.hpp>
 #include <nana/gui/programming_interface.hpp>
 #include <nana/gui/notifier.hpp>
@@ -33,9 +33,11 @@
 #include <iostream>
 #endif
 
+#include "../paint/image_accessor.hpp"
+
 namespace nana
 {
-	typedef std::lock_guard<std::recursive_mutex> lock_guard;
+	using lock_guard = std::lock_guard<std::recursive_mutex>;
 
 	struct notifier::implement
 	{
@@ -47,13 +49,15 @@ namespace nana
 		detail::notifier_events events;
 		bool icon_added = false;
 		std::size_t	play_index;
-#if defined(NANA_WINDOWS)
-		HICON icon_handle = nullptr;
-		std::vector<HICON> icons;
 
-		void set_icon(HICON icon)
+		paint::image icon;
+		::std::vector<paint::image> icons;
+
+		void set_icon(const paint::image& ico)
 		{
-			if (icon_handle)
+#if defined(NANA_WINDOWS)
+			auto ico_handle = paint::image_accessor::icon(ico);
+			if (ico_handle)
 			{
 				NOTIFYICONDATA icon_data;
 				memset(&icon_data, 0, sizeof icon_data);
@@ -62,13 +66,13 @@ namespace nana
 				icon_data.uID = id;
 				icon_data.uFlags = NIF_MESSAGE | NIF_ICON;
 				icon_data.uCallbackMessage = nana::detail::messages::tray;
-				icon_data.hIcon = icon;
+				icon_data.hIcon = ico_handle;
 
 				::Shell_NotifyIcon(icon_added ? NIM_MODIFY : NIM_ADD, &icon_data);
 				icon_added = true;
 			}
-		}
 #endif
+		}
 	};
 
 	arg_notifier::operator nana::arg_mouse() const
@@ -287,12 +291,6 @@ namespace nana
 		icon_data.hWnd = reinterpret_cast<HWND>(impl_->native_handle);
 		icon_data.uID = impl_->id;
 		::Shell_NotifyIcon(NIM_DELETE, &icon_data);
-
-		if (impl_->icon_handle)
-			::DestroyIcon(impl_->icon_handle);
-
-		for (auto handle : impl_->icons)
-			::DestroyIcon(handle);
 #endif
 		API::umake_event(impl_->evt_destroy);
 		notifications::instance().cancel(impl_->native_handle, impl_->id);
@@ -321,30 +319,23 @@ namespace nana
 
 	void notifier::icon(const std::string& icon_file)
 	{
-#if defined(NANA_WINDOWS)
-		auto pre_icon = impl_->icon_handle;
-		auto ico = (HICON)::LoadImageW(0, to_wstring(icon_file).data(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-		if (ico)
+		paint::image image_ico{ icon_file };
+		auto icon_handle = paint::image_accessor::icon(image_ico);
+		if (icon_handle)
 		{
-			impl_->icon_handle = ico;
 			impl_->ani_timer.stop();
 			impl_->play_index = 0;
-			impl_->set_icon(impl_->icon_handle);
-			::DestroyIcon(pre_icon);
+			impl_->set_icon(image_ico);
+			impl_->icon = image_ico;
 		}
-#else
-		static_cast<void>(icon_file); //to eliminate unused parameter compiler warning
-#endif	
 	}
 
 	void notifier::insert_icon(const std::string& icon_file)
 	{
-#if defined(NANA_WINDOWS)
-		auto icon = (HICON)::LoadImage(0, to_wstring(icon_file).data(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-		impl_->icons.push_back(icon);
-#else
-		static_cast<void>(icon_file); //to eliminate unused parameter compiler warning.
-#endif
+		paint::image image_ico{ icon_file };
+		auto icon_handle = paint::image_accessor::icon(image_ico);
+		if (icon_handle)
+			impl_->icons.emplace_back(static_cast<paint::image&&>(image_ico));
 	}
 
 	void notifier::period(unsigned ms)
