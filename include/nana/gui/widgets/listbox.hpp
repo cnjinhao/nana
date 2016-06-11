@@ -359,7 +359,8 @@ namespace nana
 			private:
 				essence_t * ess_;
 				category_t*	cat_{nullptr};
-				index_pair	pos_;
+
+				index_pair	pos_; //Position of an item, it never represents a category when item proxy is available.
 			};
 
 			class cat_proxy
@@ -492,7 +493,7 @@ namespace nana
     };
 
 	/// The event argument type for listbox's category_dbl_click
-    struct arg_category
+    struct arg_listbox_category
 		: public event_arg
 	{
         drawerbase::listbox::cat_proxy category;
@@ -503,7 +504,7 @@ namespace nana
 		/// Determines whether expension/shrink of category is blocked
         bool category_change_blocked() const noexcept;
 
-		arg_category(const drawerbase::listbox::cat_proxy&) noexcept;
+		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
     private:
         mutable bool block_change_;
 	};
