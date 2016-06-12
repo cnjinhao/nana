@@ -256,12 +256,12 @@ namespace nana
 				item_proxy(essence_t*);
 				item_proxy(essence_t*, const index_pair&);
 
-                /// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
-                static item_proxy from_display(essence_t *ess, const index_pair &relative) ;
-                item_proxy from_display(const index_pair &relative) const;
+				/// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
+				static item_proxy from_display(essence_t *ess, const index_pair &relative) ;
+				item_proxy from_display(const index_pair &relative) const;
 
-                /// posible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
-                index_pair to_display() const;
+				/// posible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
+				index_pair to_display() const;
 
 				bool empty() const;
 
@@ -388,8 +388,8 @@ namespace nana
 				essence_t * _m_ess() const;
 			private:
 				std::vector<cell> & _m_cells() const;
-				nana::any         * _m_value(bool alloc_if_empty);
-				const nana::any   * _m_value() const;
+				nana::any		* _m_value(bool alloc_if_empty);
+				const nana::any	* _m_value() const;
 			private:
 				essence_t * ess_;
 				category_t*	cat_{nullptr};
@@ -456,11 +456,11 @@ namespace nana
 				/// convert from display order to absolute (find the real item in that display pos) but without check from current active sorting, in fact using just the last sorting !!!
 				size_type index_by_display_order(size_type disp_order) const;
 				
-          		/// find display order for the real item but without check from current active sorting, in fact using just the last sorting !!!
-                size_type display_order(size_type pos) const;
+				/// find display order for the real item but without check from current active sorting, in fact using just the last sorting !!!
+				size_type display_order(size_type pos) const;
 				
-                /// this cat position
-                size_type position() const;
+				/// this cat position
+				size_type position() const;
 
 				/// Returns the number of items
 				size_type size() const;
@@ -517,30 +517,30 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-    struct arg_listbox
-        : public event_arg
-    {
-        mutable drawerbase::listbox::item_proxy item;
-        bool    selected;
-
-        arg_listbox(const drawerbase::listbox::item_proxy&, bool selected) noexcept;
-    };
-
-	/// The event argument type for listbox's category_dbl_click
-    struct arg_listbox_category
+	struct arg_listbox
 		: public event_arg
 	{
-        drawerbase::listbox::cat_proxy category;
+		mutable drawerbase::listbox::item_proxy item;
+		bool	selected;
+	
+		arg_listbox(const drawerbase::listbox::item_proxy&, bool selected) noexcept;
+	};
+
+	/// The event argument type for listbox's category_dbl_click
+	struct arg_listbox_category
+		: public event_arg
+	{
+		drawerbase::listbox::cat_proxy category;
 
 		/// Block expension/shrink of category
-        void block_category_change() const noexcept;
+		void block_category_change() const noexcept;
 
 		/// Determines whether expension/shrink of category is blocked
-        bool category_change_blocked() const noexcept;
+		bool category_change_blocked() const noexcept;
 
 		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
-    private:
-        mutable bool block_change_;
+	private:
+		mutable bool block_change_;
 	};
 
 	namespace drawerbase
@@ -557,7 +557,7 @@ namespace nana
 				basic_event<arg_listbox> selected;
 
 				/// An event occurs when a listbox category is double clicking.
-                basic_event<arg_listbox_category> category_dbl_click;
+				basic_event<arg_listbox_category> category_dbl_click;
 			};
 
 			struct scheme
@@ -674,10 +674,10 @@ the nana::detail::basic_window member pointer scheme
 		using oresolver = drawerbase::listbox::oresolver;
 
 		/// The representation of an item
-		using cell      = drawerbase::listbox::cell;
+		using cell		= drawerbase::listbox::cell;
 
 		/// The options of exporting items into a string variable
-		using export_options= drawerbase::listbox::export_options;
+		using export_options = drawerbase::listbox::export_options;
 
 		/// The interface for user-defined inline widgets
 		using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
@@ -760,7 +760,7 @@ the nana::detail::basic_window member pointer scheme
 		bool assoc_ordered(bool);
 
 
-		void auto_draw(bool);                                ///< Set state: Redraw automatically after an operation
+		void auto_draw(bool);		///< Set state: Redraw automatically after an operation
 
 		template<typename Function>
 		void avoid_drawing(Function fn)
@@ -782,7 +782,7 @@ the nana::detail::basic_window member pointer scheme
 		void scroll(bool to_bottom, size_type cat_pos = ::nana::npos);
 		void scroll(bool to_bottom, const index_pair& pos);
 
-        /// Appends a new column with a header text and the specified width at the end, and return it position
+		/// Appends a new column with a header text and the specified width at the end, and return it position
 		size_type append_header(std::string text_utf8, unsigned width = 120);
 		size_type append_header(std::wstring text, unsigned width = 120);
 
@@ -805,8 +805,8 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the number of columns
 		size_type column_size() const;
 
-		cat_proxy append(std::string);          ///< Appends a new category to the end
-		cat_proxy append(std::wstring);			///< Appends a new category to the end
+		cat_proxy append(std::string);		///< Appends a new category to the end
+		cat_proxy append(std::wstring);		///< Appends a new category to the end
 		void append(std::initializer_list<std::string>); ///< Appends categories to the end
 		void append(std::initializer_list<std::wstring>); ///< Appends categories to the end
 
@@ -831,10 +831,10 @@ the nana::detail::basic_window member pointer scheme
 		index_pair cast(const point & pos) const;
 
 		/// Returns the column which contains the specified point.
-        size_type column_from_pos(const point & pos);
+		size_type column_from_pos(const point & pos);
 
 		void checkable(bool);
-		index_pairs checked() const;                         ///<Returns the items which are checked.                       
+		index_pairs checked() const;                         ///<Returns the items which are checked.
 
 		void clear(size_type cat);                         ///<Removes all the items from the specified category
 		void clear();                                      ///<Removes all the items from all categories
@@ -846,22 +846,22 @@ the nana::detail::basic_window member pointer scheme
 		void sortable(bool enable);
 		
 		///Sets a strict weak ordering comparer for a column
-		void set_sort_compare(size_type col, std::function<bool(const std::string&, nana::any*,
-				                                        const std::string&, nana::any*, bool reverse)> strick_ordering);
+		void set_sort_compare(	size_type col,
+								std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> strick_ordering);
 
 		/// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
-        void sort_col(size_type col, bool reverse = false);
+		void sort_col(size_type col, bool reverse = false);
 		size_type sort_col() const;
 
-        /// potencially ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
-        void unsort();
+		/// potencially ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+		void unsort();
 		bool freeze_sort(bool freeze);
 
-		index_pairs selected() const;                         ///<Get the absolute indexs of all the selected items
-                                    
+		index_pairs selected() const;		///<Get the absolute indexs of all the selected items
+
 		void show_header(bool);
 		bool visible_header() const;
-		void move_select(bool upwards);  ///<Selects an item besides the current selected item in the display.
+		void move_select(bool upwards);		///<Selects an item besides the current selected item in the display.
 
 		size_type size_categ() const;                   ///<Get the number of categories
 		size_type size_item() const;                    ///<The number of items in the default category
@@ -869,7 +869,7 @@ the nana::detail::basic_window member pointer scheme
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
-        export_options& def_export_options();
+		export_options& def_export_options();
 	private:
 		drawerbase::listbox::essence_t & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
