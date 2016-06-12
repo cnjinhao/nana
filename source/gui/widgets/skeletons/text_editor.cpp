@@ -512,12 +512,6 @@ namespace nana{	namespace widgets
 				const wchar_t* begin;
 				const wchar_t* end;
 				unsigned pixels;
-				/*
-				text_section()	//deprecated
-				{
-					throw std::runtime_error("text_section default construction is forbidden.");
-				}
-				*/
 
 				text_section(const wchar_t* ptr, const wchar_t* endptr)
 					: begin(ptr), end(endptr)
