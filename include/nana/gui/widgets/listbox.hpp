@@ -70,6 +70,18 @@ namespace nana
 				 * The priority of max: maximize, ranged width, scheme's max_fit_content.
 				 */
 				virtual void fit_content(unsigned maximize = 0) noexcept = 0;
+
+				/// Determines the visibility state of the column
+				/**
+				 * @return true if the column is visible, false otherwise
+				 */
+				virtual bool visible() const noexcept = 0;
+
+				/// Sets the visibility state of the column
+				/**
+				 * @param is_visible Indicates whether to show or hide the column
+				 */
+				virtual void visible(bool is_visible) noexcept = 0;
 			};
 
 			using size_type = std::size_t;

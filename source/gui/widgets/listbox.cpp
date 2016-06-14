@@ -458,7 +458,7 @@ namespace nana
 					native_string_type text;
 					unsigned width_px;
 					std::pair<unsigned, unsigned> range_width_px;
-					bool visible{ true };
+					bool visible_state{ true };
 
 					/// Position of column when it was creating
 					size_type index;
@@ -480,7 +480,7 @@ namespace nana
 							text = other.text;
 							width_px = other.width_px;
 							range_width_px = other.range_width_px;
-							visible = other.visible;
+							visible_state = other.visible_state;
 							index = other.index;
 							alignment = other.alignment;
 							weak_ordering = other.weak_ordering;
@@ -493,7 +493,7 @@ namespace nana
 						text(std::move(other.text)),
 						width_px(other.width_px),
 						range_width_px(other.range_width_px),
-						visible(other.visible),
+						visible_state(other.visible_state),
 						index(other.index),
 						alignment(other.alignment),
 						weak_ordering(weak_ordering),
@@ -508,7 +508,7 @@ namespace nana
 							text = std::move(other.text);
 							width_px = other.width_px;
 							range_width_px = other.range_width_px;
-							visible = other.visible;
+							visible_state = other.visible_state;
 							index = other.index;
 							alignment = other.alignment;
 							weak_ordering = std::move(other.weak_ordering);
@@ -524,6 +524,9 @@ namespace nana
 					{
 					}
 				private:
+					//The definition is provided after essence_t
+					void _m_refresh();
+				private:
 					essence_t* const ess_;
 				public:
 					//Implementation of column_interface
@@ -537,6 +540,8 @@ namespace nana
 					{
 						width_px = pixels;
 						range_width_px.first = range_width_px.second = 0;
+
+						_m_refresh();
 					}
 
 					void width(unsigned minimize, unsigned maximize)
@@ -556,6 +561,17 @@ namespace nana
 
 					//Definition is provided after essence
 					void fit_content(unsigned maximize = 100000) noexcept override;
+
+					bool visible() const noexcept override
+					{
+						return visible_state;
+					}
+
+					void visible(bool is_visible) noexcept override
+					{
+						visible_state = is_visible;
+						_m_refresh();
+					}
 				};
 
 				using container = std::vector<column>;
@@ -565,7 +581,7 @@ namespace nana
                     export_options::columns_indexs	idx;
 					for(const auto &col : cont())
 					{
-						if(col.visible || !only_visibles)
+						if(col.visible_state || !only_visibles)
 							idx.push_back(col.index);
 					}
                     return idx;
@@ -633,7 +649,7 @@ namespace nana
 					unsigned pixels = 0;
 					for(auto & col : cont_)
 					{
-						if (col.visible)
+						if (col.visible_state)
 							pixels += col.width_px;
 					}
 					return pixels;
@@ -670,7 +686,7 @@ namespace nana
 				{
 					for (const auto & col : cont_)
 					{
-						if (col.visible)
+						if (col.visible_state)
 						{
 							x -= static_cast<int>(col.width_px);
 							continue;
@@ -696,7 +712,7 @@ namespace nana
 							break;
 						}
 
-						if (m.visible)
+						if (m.visible_state)
 							left += m.width_px;
 					}
 					return left;
@@ -713,11 +729,11 @@ namespace nana
 							if(front)	return n;
 							for(++i; i != cont_.cend(); ++i)
 							{
-								if(i->visible) return i->index;
+								if(i->visible_state) return i->index;
 							}
 							break;
 						}
-						else if(i->visible)
+						else if(i->visible_state)
 							    n = i->index;
 					}
 					return npos;
@@ -727,7 +743,7 @@ namespace nana
 				size_type begin() const
 				{
 					for(const auto & m : cont_)
-						if(m.visible) return m.index;
+						if(m.visible_state) return m.index;
 
 					return npos;
 				}
@@ -737,7 +753,8 @@ namespace nana
 				{
 					for(auto i = cont_.rbegin(); i != cont_.rend(); ++i)
 					{
-						if(i->visible) return i->index;
+						if(i->visible_state)
+							return i->index;
 					}
 					return npos;
 				}
@@ -2444,7 +2461,7 @@ namespace nana
 #endif
 					for (const auto& col : header.cont())
 					{
-						if (!col.visible)
+						if (!col.visible_state)
 							continue;
 
 						x += col.width_px;
@@ -2506,6 +2523,12 @@ namespace nana
 				return max_px;
 			}
 
+			//es_header::column member functions
+			void es_header::column::_m_refresh()
+			{
+				ess_->adjust_scroll_life();
+				API::refresh_window(ess_->lister.wd_ptr()->handle());
+			}
 
 			void es_header::column::fit_content(unsigned maximize) noexcept
 			{
@@ -2538,9 +2561,9 @@ namespace nana
 
 				width_px = content_px;
 
-				ess_->adjust_scroll_life();
-				API::refresh_window(ess_->lister.wd_ptr()->handle());
+				_m_refresh();
 			}
+			//end es_header::column functions
 
 			class inline_indicator
 				: public ::nana::detail::inline_widget_indicator<index_pair, std::string>
@@ -2836,7 +2859,7 @@ namespace nana
 #endif
 						for(auto & col : essence_->header.cont()) // in current order
 						{
-							if(col.visible)
+							if(col.visible_state)
 							{
 								auto col_pixels = static_cast<int>(col.width_px);
 
@@ -2941,7 +2964,7 @@ namespace nana
 
 					for (auto & col : essence_->header.cont())
 					{
-						if (col.visible)
+						if (col.visible_state)
 						{
 							int next_x = x + static_cast<int>(col.width_px);
 							if (next_x > r.x)
@@ -4793,6 +4816,21 @@ namespace nana
 				ess.lister.forward(offset_y, _where.second, item_pos);
 			}
 			return item_pos;
+		}
+
+		auto listbox::column_at(size_type pos) -> column_interface&
+		{
+			return _m_ess().header.at(pos);
+		}
+
+		auto listbox::column_at(size_type pos) const -> const column_interface&
+		{
+			return _m_ess().header.at(pos);
+		}
+
+		auto listbox::column_size() const ->size_type
+		{
+			return _m_ess().header.cont().size();
 		}
 
 		//Contributed by leobackes(pr#97)
