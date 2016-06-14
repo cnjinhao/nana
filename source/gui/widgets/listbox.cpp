@@ -3878,7 +3878,7 @@ namespace nana
 						arg_listbox_category arg_cat(cat_proxy(essence_, item_pos.cat));
 						lister.wd_ptr()->events().category_dbl_click.emit(arg_cat, lister.wd_ptr()->handle());
 
-						if (!arg_cat.category_change_blocked())
+						if (!arg_cat.block_operation)
 						{
                             bool do_expand = (lister.expand(item_pos.cat) == false);
                             lister.expand(item_pos.cat, do_expand);
