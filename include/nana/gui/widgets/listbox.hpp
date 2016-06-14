@@ -54,10 +54,10 @@ namespace nana
 
 				/// Automatically adjusted width
 				/**
-				 * @param minimize The minimized width of column, in pixel
-				 * @param maximize The maximized width of column, in pixel
+				 * @param minimum The minimal width of column, in pixel
+				 * @param maximum The maximal width of column, in pixel
 				 */
-				virtual void width(unsigned minimize, unsigned maximize) = 0;
+				virtual void width(unsigned minimum, unsigned maximum) = 0;
 
 				/// Sets alignment of column text
 				/**
@@ -67,9 +67,10 @@ namespace nana
 
 				/// Adjusts the width to fit the content
 				/**
-				 * The priority of max: maximize, ranged width, scheme's max_fit_content.
+				 * The priority of max: maximum, ranged width, scheme's max_fit_content.
+				 * @param maximum Sets the width of column to the maximum if the width of content is larger than maximum
 				 */
-				virtual void fit_content(unsigned maximize = 0) noexcept = 0;
+				virtual void fit_content(unsigned maximum = 0) noexcept = 0;
 
 				/// Determines the visibility state of the column
 				/**
@@ -533,26 +534,20 @@ namespace nana
 		: public event_arg
 	{
 		mutable drawerbase::listbox::item_proxy item;
-		bool	selected;
-	
-		arg_listbox(const drawerbase::listbox::item_proxy&, bool selected) noexcept;
+
+		arg_listbox(const drawerbase::listbox::item_proxy&) noexcept;
 	};
 
-	/// The event argument type for listbox's category_dbl_click
+	/// The event parameter type for listbox's category_dbl_click
 	struct arg_listbox_category
 		: public event_arg
 	{
 		drawerbase::listbox::cat_proxy category;
 
-		/// Block expension/shrink of category
-		void block_category_change() const noexcept;
-
-		/// Determines whether expension/shrink of category is blocked
-		bool category_change_blocked() const noexcept;
+		/// A flag that indicates whether or not to block expension/shrink of category when it is double clicking.
+		mutable bool block_operation{ false };
 
 		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
-	private:
-		mutable bool block_change_;
 	};
 
 	namespace drawerbase

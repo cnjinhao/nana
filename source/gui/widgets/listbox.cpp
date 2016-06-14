@@ -544,14 +544,14 @@ namespace nana
 						_m_refresh();
 					}
 
-					void width(unsigned minimize, unsigned maximize)
+					void width(unsigned minimum, unsigned maximum)
 					{
-						//maximize must be larger than minimize, but minimize == maximize is allowed
-						if ((minimize >= maximize) && (minimize != 0))
-							throw std::invalid_argument("listbox.column.width() minimize must be less than maximize");
+						//maximum must be larger than minimum, but maximum == 0 is allowed if minimum is 0
+						if ((minimum >= maximum) && (minimum != 0))
+							throw std::invalid_argument("listbox.column.width() minimum must be less than maximum");
 
-						range_width_px.first = minimize;
-						range_width_px.second = maximize;
+						range_width_px.first = minimum;
+						range_width_px.second = maximum;
 					}
 
 					void text_align(::nana::align align) noexcept override
@@ -1344,7 +1344,7 @@ namespace nana
 							{
 								m.flags.checked = ck;
 
-								arg_listbox arg{ item_proxy{ess_, pos}, ck};
+								arg_listbox arg{ item_proxy{ess_, pos}};
 								wd_ptr()->events().checked.emit(arg, wd_ptr()->handle());
 							}
 							++pos.item;
@@ -1398,7 +1398,7 @@ namespace nana
 								changed = true;
 								m.flags.selected = sel;
 
-								arg_listbox arg{ item_proxy(ess_, i), sel };
+								arg_listbox arg{ item_proxy(ess_, i) };
 								wd_ptr()->events().selected.emit(arg, wd_ptr()->handle());
 
 								if (m.flags.selected)
@@ -1490,7 +1490,7 @@ namespace nana
 
 					auto do_cancel = [this, for_selection](category_t::container::value_type& m, std::size_t cat_pos, std::size_t item_pos)
 					{
-						arg_listbox arg{ item_proxy(ess_, index_pair(cat_pos, item_pos)), false };
+						arg_listbox arg{ item_proxy(ess_, index_pair(cat_pos, item_pos)) };
 						if (for_selection)
 						{
 							m.flags.selected = false;
@@ -1573,7 +1573,7 @@ namespace nana
 
 					auto cancel = [this, for_selection](category_t::container::value_type& m, std::size_t cat_pos, std::size_t item_pos)
 					{
-						arg_listbox arg{ item_proxy(ess_, index_pair(cat_pos, item_pos)), false };
+						arg_listbox arg{ item_proxy(ess_, index_pair(cat_pos, item_pos)) };
 						if (for_selection)
 						{
 							m.flags.selected = false;
@@ -1678,7 +1678,7 @@ namespace nana
 						{
 							m.flags.checked = ck;
 
-							arg_listbox arg{ item_proxy(ess_, index_pair(cat, index)), ck};
+							arg_listbox arg{ item_proxy(ess_, index_pair(cat, index)) };
 							wd_ptr()->events().checked.emit(arg, widget_->handle());
 
 							changed = true;
@@ -3749,7 +3749,7 @@ namespace nana
 								{
 									item_ptr->flags.selected = sel;
 
-									arg_listbox arg{ item_proxy{ essence_, abs_item_pos }, sel };
+									arg_listbox arg{ item_proxy{ essence_, abs_item_pos } };
 									lister.wd_ptr()->events().selected.emit(arg, lister.wd_ptr()->handle());
 
 									if (item_ptr->flags.selected)
@@ -3771,7 +3771,7 @@ namespace nana
 									item_ptr->flags.checked = ! item_ptr->flags.checked;
 
 									index_pair abs_pos{ item_pos.cat, lister.absolute(item_pos) };
-									arg_listbox arg{ item_proxy{ essence_, abs_pos }, item_ptr->flags.checked };
+									arg_listbox arg{ item_proxy{ essence_, abs_pos } };
 									lister.wd_ptr()->events().checked.emit(arg, lister.wd_ptr()->handle());
 
 									if (item_ptr->flags.checked)
@@ -4043,7 +4043,7 @@ namespace nana
 					if(m.flags.checked != ck)
 					{
 						m.flags.checked = ck;
-						arg_listbox arg{*this, ck};
+						arg_listbox arg{*this};
 						ess_->lister.wd_ptr()->events().checked.emit(arg, ess_->lister.wd_ptr()->handle());
 						ess_->update();
 					}
@@ -4063,7 +4063,7 @@ namespace nana
 					if(m.flags.selected == s) return *this;     // ignore if no change
 					m.flags.selected = s;                       // actually change selection
 
-                    arg_listbox arg{*this, s};
+                    arg_listbox arg{*this};
 					ess_->lister.wd_ptr()->events().selected.emit(arg, ess_->lister.wd_ptr()->handle());
 
 					if (m.flags.selected)
@@ -4594,8 +4594,8 @@ namespace nana
 		}
 	}//end namespace drawerbase
 
-	arg_listbox::arg_listbox(const drawerbase::listbox::item_proxy& m, bool selected) noexcept
-		: item(m), selected(selected)
+	arg_listbox::arg_listbox(const drawerbase::listbox::item_proxy& m) noexcept
+		: item(m)
 	{
 	}
 
@@ -4603,18 +4603,8 @@ namespace nana
 	//Implementation of arg_listbox_category
 	//Contributed by leobackes(pr#97)
 	arg_listbox_category::arg_listbox_category(const nana::drawerbase::listbox::cat_proxy& cat) noexcept
-		: category(cat), block_change_(false)
+		: category(cat)
     {
-    }
-
-	void arg_listbox_category::block_category_change() const noexcept
-	{
-		block_change_ = true;
-    }
-
-	bool arg_listbox_category::category_change_blocked() const noexcept
-	{
-		return block_change_;
     }
 
 
