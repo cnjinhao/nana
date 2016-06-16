@@ -2898,17 +2898,14 @@ namespace nana
 
 				//grab_move
 				/// @brief draw when an item is grabbing.
-				/// @return 0 = no graphics changed, 1 = just update, 2 = refresh
-				int grab_move(const nana::rectangle& rect, const nana::point& pos)
+				/// @return true if refresh is needed, false otherwise
+				bool grab_move(const nana::rectangle& rect, const nana::point& pos)
 				{
 					if(item_spliter_ == npos)
 					{  // move column, not resize it
-						draw(rect);                 // first draw the entery header as it was
-						_m_make_float(rect, pos);   // now draw one floating header item
-
-						//Draw the target strip
-						grab_terminal_.index = _m_target_strip(pos.x, rect, essence_->pointer_where.second, grab_terminal_.place_front);
-						return 1;
+						options_.grab_column = true;
+						options_.grab_column_position = pos;
+						return true;
 					}
 					else
 					{   // resize column, not move it
@@ -2942,16 +2939,14 @@ namespace nana
 #endif
 
 							essence_->adjust_scroll_life();
-							return 2;
+							return true;
 						}
 					}
-					return 0;
+					return false;
 				}
 
-				void draw(const nana::rectangle& r)
+				void draw(graph_reference graph, const nana::rectangle& r)
 				{
-					graph_reference graph = *(essence_->graph);
-
 					int text_top = (r.height - essence_->scheme_ptr->text_height) / 2 + r.y;
 					auto text_color = essence_->lister.wd_ptr()->fgcolor();
 
@@ -2989,7 +2984,17 @@ namespace nana
 						graph.rectangle({ x, r.y, static_cast<unsigned>(r.right() - x), height }, true, essence_->scheme_ptr->header_bgcolor);
 
 					const int y = r.y + r.height - 1;
-					essence_->graph->line({ r.x, y }, { r.x + static_cast<int>(r.width), y }, _m_border_color());
+					graph.line({ r.x, y }, { r.x + static_cast<int>(r.width), y }, _m_border_color());
+
+					if (options_.grab_column)
+					{
+						_m_make_float(r, options_.grab_column_position);   // now draw one floating header item
+
+						//Draw the target strip
+						grab_terminal_.index = _m_target_strip(options_.grab_column_position.x, r, essence_->pointer_where.second, grab_terminal_.place_front);
+
+						options_.grab_column = false;
+					}
 				}
 			private:
 				::nana::color _m_border_color() const
@@ -3085,6 +3090,7 @@ namespace nana
 				}
 
 			private:
+				essence_t * essence_;
 				int			ref_xpos_;
 				unsigned	orig_item_width_;
 				size_type	item_spliter_{npos};
@@ -3093,7 +3099,12 @@ namespace nana
 					size_type index;
 					bool place_front;
 				}grab_terminal_;
-				essence_t * essence_;
+
+				struct options
+				{
+					bool	grab_column{ false };
+					point	grab_column_position;
+				}options_;
 			};
 
 			class drawer_lister_impl
@@ -3608,7 +3619,7 @@ namespace nana
 					essence_->scheme_ptr->suspension_width = graph.text_extent_size("...").width;
 				}
 
-				void trigger::refresh(graph_reference)
+				void trigger::refresh(graph_reference graph)
 				{
 					if (API::is_destroying(essence_->lister.wd_ptr()->handle()))
 						return;
@@ -3616,7 +3627,7 @@ namespace nana
 					nana::rectangle r;
 
 					if (essence_->header.visible() && essence_->rect_header(r))
-						drawer_header_->draw(r);
+						drawer_header_->draw(graph, r);
 					if (essence_->rect_lister(r))
 						drawer_lister_->draw(r);
 					_m_draw_border();
@@ -3648,7 +3659,7 @@ namespace nana
 
 						nana::rectangle r;
 						essence_->rect_header(r);
-						update = drawer_header_->grab_move(r, pos);
+						update = (drawer_header_->grab_move(r, pos) ? 2 : 0);
 					}
 					else if(essence_->calc_where(arg.pos))
 					{
@@ -3705,7 +3716,7 @@ namespace nana
 					}
 				}
 
-				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
+				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 				{
 					using item_state = essence_t::item_state;
 					using parts = essence_t::parts;
@@ -3717,7 +3728,7 @@ namespace nana
 						nana::rectangle r;
 						if(essence_->rect_header(r))
 						{
-							drawer_header_->draw(r);
+							drawer_header_->draw(graph, r);
 							update = true;
 						}
 					}
