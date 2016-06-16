@@ -552,11 +552,18 @@ namespace nana
 
 						range_width_px.first = minimum;
 						range_width_px.second = maximum;
+
+						if (width_px < range_width_px.first || range_width_px.second > width_px)
+							_m_refresh();
 					}
 
 					void text_align(::nana::align align) noexcept override
 					{
-						alignment = align;
+						if (alignment != align)
+						{
+							alignment = align;
+							_m_refresh();
+						}
 					}
 
 					//Definition is provided after essence
