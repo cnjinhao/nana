@@ -688,14 +688,13 @@ namespace nana
 					{
 						if (col.visible_state)
 						{
+							if (x < static_cast<int>(col.width_px))
+								return col.index;
+
 							x -= static_cast<int>(col.width_px);
 							continue;
 						}
-
-						if (x < static_cast<int>(col.width_px))
-							return col.index;
 					}
-
 					return npos;
 				}
 
