@@ -2911,8 +2911,10 @@ namespace nana
 					{   // resize column, not move it
 						auto& col = essence_->header.at(grabs_.splitter);
 
+						auto delta_px = (grabs_.start_pos - pos.x);
+
 						//Resize the item specified by item_spliter_.
-						auto new_w = grabs_.item_width - (grabs_.start_pos - pos.x);
+						auto new_w = static_cast<int>(grabs_.item_width) > delta_px ?  grabs_.item_width - delta_px : 0;
 
 						//Check the minimized and maximized value
 						if (col.range_width_px.first != col.range_width_px.second)
