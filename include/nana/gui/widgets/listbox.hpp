@@ -588,8 +588,8 @@ namespace nana
 				unsigned text_height		{ 14   };  ///< the trigger will set this to the height of the text font
 				unsigned item_height_ex		{ 6    };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
 				unsigned item_height		{ 24   };  ///<  def=24 . the trigger will set this TO item_height = text_height + item_height_ex
-				unsigned header_mouse_spliter_area_before{ 2 }; ///< def=2. But 4 is better... IMO
-				unsigned header_mouse_spliter_area_after { 3 }; ///< def=3. But 4 is better... 
+				unsigned header_splitter_area_before{ 2 }; ///< def=2. But 4 is better... IMO
+				unsigned header_splitter_area_after { 3 }; ///< def=3. But 4 is better... 
 
 				//void debug_print(const std::string &msg);
 
