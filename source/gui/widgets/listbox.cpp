@@ -2843,18 +2843,18 @@ namespace nana
 
 				drawer_header_impl(essence_t* es): essence_(es){}
 
-				size_type item_spliter() const
+				size_type splitter() const
 				{
-					return item_spliter_;
+					return grabs_.splitter;
 				}
 
-				void cancel_spliter()
+				void cancel_splitter()
 				{
-					item_spliter_ = npos;
+					grabs_.splitter = npos;
 				}
 
-				/// return true an set member item_spliter_ if x is in the spliter area after that header item (column)
-				bool mouse_spliter(const nana::rectangle& r, int x)
+				// Detects a header spliter, return true if x is in the splitter area after that header item (column)
+				bool detect_splitter(const nana::rectangle& r, int x)
 				{
 					if(essence_->ptr_state == item_state::highlighted)
 					{
@@ -2869,10 +2869,10 @@ namespace nana
 							{
 								auto col_pixels = static_cast<int>(col.width_px);
 
-								if ((col_pixels < x + static_cast<int>(essence_->scheme_ptr->header_mouse_spliter_area_before))
-									&& (x < col_pixels + static_cast<int>(essence_->scheme_ptr->header_mouse_spliter_area_after)))
+								if ((col_pixels < x + static_cast<int>(essence_->scheme_ptr->header_splitter_area_before))
+									&& (x < col_pixels + static_cast<int>(essence_->scheme_ptr->header_splitter_area_after)))
 								{
-									item_spliter_ = col.index; // original index
+									grabs_.splitter = col.index; // original index
 									return true;
 								}
 								x -= col_pixels;
@@ -2880,7 +2880,7 @@ namespace nana
 						}
 					}
 					else if(essence_->ptr_state == item_state::normal)
-						item_spliter_ = npos;
+						grabs_.splitter = npos;
 					return false;
 				}
 
@@ -2888,9 +2888,9 @@ namespace nana
 				{
 					if(is_grab)
 					{
-						ref_xpos_ = pos.x;
-						if(item_spliter_ != npos)  // resize header item, not move it
-							orig_item_width_ = essence_->header.at(item_spliter_).width_px;
+						grabs_.start_pos = pos.x;
+						if(grabs_.splitter != npos)  // resize header item, not move it
+							grabs_.item_width = essence_->header.at(grabs_.splitter).width_px;
 					}
 					else if(grab_terminal_.index != npos && grab_terminal_.index != essence_->pointer_where.second)
 						essence_->header.move(essence_->pointer_where.second, grab_terminal_.index, grab_terminal_.place_front);
@@ -2901,7 +2901,7 @@ namespace nana
 				/// @return true if refresh is needed, false otherwise
 				bool grab_move(const nana::rectangle& rect, const nana::point& pos)
 				{
-					if(item_spliter_ == npos)
+					if(npos == grabs_.splitter)
 					{  // move column, not resize it
 						options_.grab_column = true;
 						options_.grab_column_position = pos;
@@ -2909,10 +2909,10 @@ namespace nana
 					}
 					else
 					{   // resize column, not move it
-						auto& col = essence_->header.at(item_spliter_);
+						auto& col = essence_->header.at(grabs_.splitter);
 
 						//Resize the item specified by item_spliter_.
-						auto new_w = orig_item_width_ - (ref_xpos_ - pos.x);
+						auto new_w = grabs_.item_width - (grabs_.start_pos - pos.x);
 
 						//Check the minimized and maximized value
 						if (col.range_width_px.first != col.range_width_px.second)
@@ -2952,7 +2952,7 @@ namespace nana
 
 					auto state = item_state::normal;
 					//check whether grabing an item, if item_spliter_ != npos, that indicates the grab item is a spliter.
-					if (essence_->pointer_where.first == parts::header && (item_spliter_ == npos))
+					if ((parts::header == essence_->pointer_where.first) && (npos == grabs_.splitter))
 						state = essence_->ptr_state;
 
 					const unsigned height = r.height - 1;
@@ -3091,9 +3091,15 @@ namespace nana
 
 			private:
 				essence_t * essence_;
-				int			ref_xpos_;
-				unsigned	orig_item_width_;
-				size_type	item_spliter_{npos};
+
+				struct grab_variables
+				{
+					int start_pos{ npos };
+					unsigned item_width;
+
+					size_type splitter{ npos };
+				}grabs_;
+
 				struct grab_terminal
 				{
 					size_type index;
@@ -3637,18 +3643,22 @@ namespace nana
 				{
 					using item_state = essence_t::item_state;
 					using parts = essence_t::parts;
-					int update = 0; //0 = nothing, 1 = update, 2 = refresh
+
+					bool need_refresh = false;
+
 					if(essence_->ptr_state == item_state::pressed)
 					{
 						if(essence_->pointer_where.first == parts::header)
-						{   // moving a pressed header : grab it   (or split-resize?)
+						{   // moving a pressed header : grab it
 							essence_->ptr_state = item_state::grabbed;
 							nana::point pos = arg.pos;
 							essence_->widget_to_header(pos);
+
+							//Start to move a header column or resize a header column(depends on item_spliter_)
 							drawer_header_->grab(pos, true);
 							
 							essence_->lister.wd_ptr()->set_capture(true);
-							update = 2; //0 = nothing, 1 = update, 2 = refresh
+							need_refresh = true;
 						}
 					}
 
@@ -3659,42 +3669,41 @@ namespace nana
 
 						nana::rectangle r;
 						essence_->rect_header(r);
-						update = (drawer_header_->grab_move(r, pos) ? 2 : 0);
+						need_refresh = drawer_header_->grab_move(r, pos);
 					}
 					else if(essence_->calc_where(arg.pos))
 					{
 						essence_->ptr_state = item_state::highlighted;
-						update = 2;
+						need_refresh = true;
 					}
 
-					bool set_spliter = false;
+					bool set_splitter = false;
 					if(essence_->pointer_where.first == parts::header)
 					{
 						nana::rectangle r;
 						if(essence_->rect_header(r))
 						{
-							if(drawer_header_->mouse_spliter(r, arg.pos.x))
+							if(drawer_header_->detect_splitter(r, arg.pos.x))
 							{
-								set_spliter = true;
+								set_splitter = true;
 								essence_->lister.wd_ptr()->cursor(cursor::size_we);
 							}
 						}
 					}
-					if(set_spliter == false && essence_->ptr_state != item_state::grabbed)
+
+					if((!set_splitter) && (essence_->ptr_state != item_state::grabbed))
 					{
-						if((drawer_header_->item_spliter() != npos) || (essence_->lister.wd_ptr()->cursor() == cursor::size_we))
+						if((drawer_header_->splitter() != npos) || (essence_->lister.wd_ptr()->cursor() == cursor::size_we))
 						{
 							essence_->lister.wd_ptr()->cursor(cursor::arrow);
-							drawer_header_->cancel_spliter();
-							update = 2;
+							drawer_header_->cancel_splitter();
+							need_refresh = true;
 						}
 					}
 
-					if (update)
+					if (need_refresh)
 					{
-						if (2 == update)
-							refresh(graph);
-
+						refresh(graph);
 						API::dev::lazy_refresh();
 					}
 				}
@@ -3722,7 +3731,7 @@ namespace nana
 					using parts = essence_t::parts;
 					bool update = false;
 					auto & ptr_where = essence_->pointer_where;
-					if((ptr_where.first == parts::header) && (ptr_where.second != npos || (drawer_header_->item_spliter() != npos)))
+					if((ptr_where.first == parts::header) && (ptr_where.second != npos || (drawer_header_->splitter() != npos)))
 					{
 						essence_->ptr_state = item_state::pressed;
 						nana::rectangle r;
@@ -3869,7 +3878,7 @@ namespace nana
 						if (cursor::size_we == essence_->lister.wd_ptr()->cursor())
 						{
 							//adjust the width of column to fit its content.
-							auto split_pos = drawer_header_->item_spliter();
+							auto split_pos = drawer_header_->splitter();
 							if (split_pos != npos)
 							{
 								essence_->header.at(split_pos).fit_content();
