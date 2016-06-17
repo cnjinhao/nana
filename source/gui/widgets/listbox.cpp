@@ -26,6 +26,8 @@
 
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/element.hpp>
+#include <nana/paint/text_renderer.hpp>
+
 #include <list>
 #include <deque>
 #include <stdexcept>
@@ -2959,34 +2961,47 @@ namespace nana
 
 					const unsigned height = r.height - 1;
 					const int bottom_y = r.bottom() - 2;
+
+					rectangle column_r{
 #ifdef USE_OFFSET_X
-					int x = r.x - essence_->scroll.offset_x;
+						r.x - essence_->scroll.offset_x,
 #else
-					int x = r.x - static_cast<int>(essence_->scroll.x_offset());
+						r.x - static_cast<int>(essence_->scroll.x_offset()),
 #endif
+						r.y,
+						0, r.height - 1
+					};
 
 					for (auto & col : essence_->header.cont())
 					{
 						if (col.visible_state)
 						{
-							int next_x = x + static_cast<int>(col.width_px);
-							if (next_x > r.x)
+							column_r.width = col.width_px;
+
+							const auto right_pos = column_r.right();
+
+							//Make sure the column is in the display area.
+							if (right_pos > r.x)
 							{
-								_m_draw_header_item(graph, x, r.y, height, text_top, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
-								graph.line({ next_x - 1, r.y }, { next_x - 1, bottom_y }, _m_border_color());
+								_m_draw_header_item(graph, column_r, text_top, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
+								graph.line({ right_pos - 1, r.y }, { right_pos - 1, bottom_y }, _m_border_color());
 							}
 
-							x = next_x;
-							if (x > r.right())
+							column_r.x = right_pos;
+							if (right_pos > r.right())
 								break;
 						}
 					}
 
-					if (x < r.right())
-						graph.rectangle({ x, r.y, static_cast<unsigned>(r.right() - x), height }, true, essence_->scheme_ptr->header_bgcolor);
+					//If the last rendered column's right is less than r.right, fill the spare space.
+					if (column_r.x < r.right())
+					{
+						column_r.width = (r.right() - column_r.x);
+						graph.rectangle(column_r, true, essence_->scheme_ptr->header_bgcolor);
+					}
 
-					const int y = r.y + r.height - 1;
-					graph.line({ r.x, y }, { r.x + static_cast<int>(r.width), y }, _m_border_color());
+					const int y = r.bottom() - 1;
+					graph.line({ r.x, y }, { r.right(), y }, _m_border_color());
 
 					if (options_.grab_column)
 					{
@@ -3048,8 +3063,7 @@ namespace nana
 					return npos;
 				}
 
-				template<typename Item>
-				void _m_draw_header_item(graph_reference graph, int x, int y, unsigned height, int txtop, const ::nana::color& fgcolor, const Item& item, item_state state)
+				void _m_draw_header_item(graph_reference graph, const rectangle& column_r, int text_top, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
 				{
 					::nana::color bgcolor;
 					switch(state)
@@ -3061,14 +3075,31 @@ namespace nana
 					case item_state::floated:		bgcolor = essence_->scheme_ptr->header_floated.get_color();	break;
 					}
 
-					graph.gradual_rectangle({ x, y, item.width_px, height }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.9), true);
-					graph.string({ x + static_cast<int>(essence_->scheme_ptr->text_margin), txtop }, item.text, fgcolor);
+					graph.gradual_rectangle(column_r, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.9), true);
 
-					if(item.index == essence_->lister.sort_index())
+					paint::aligner text_aligner{ graph, column.alignment, column.alignment };
+
+					auto text_margin = essence_->scheme_ptr->text_margin;
+
+					if (text_margin < column_r.width)
+					{
+						graph.palette(true, fgcolor);
+
+						point text_pos{ column_r.x, text_top };
+
+						if (align::left == column.alignment)
+							text_pos.x += text_margin;
+						else if (align::center == column.alignment)
+							text_margin = 0;
+
+						text_aligner.draw(column.text, text_pos, column_r.width - text_margin);
+					}
+
+					if (column.index == essence_->lister.sort_index())
 					{
 						facade<element::arrow> arrow("hollow_triangle");
 						arrow.direction(essence_->lister.sort_reverse() ? ::nana::direction::south : ::nana::direction::north);
-						arrow.draw(graph, {}, colors::black, { x + (static_cast<int>(item.width_px) - 16) / 2, -4, 16, 16 }, element_state::normal); // geometric scheme?
+						arrow.draw(graph, {}, colors::black, { column_r.x + (static_cast<int>(column_r.width) - 16) / 2, -4, 16, 16 }, element_state::normal); // geometric scheme?
 					}
 				}
 
@@ -3079,10 +3110,10 @@ namespace nana
 					nana::paint::graphics ext_graph({ col.width_px, essence_->scheme_ptr->header_height });
 					ext_graph.typeface(essence_->graph->typeface());
 
-					int txtop = (essence_->scheme_ptr->header_height - essence_->scheme_ptr->text_height) / 2;
-					_m_draw_header_item(ext_graph, 0, 0, essence_->scheme_ptr->header_height, txtop, colors::white, col, item_state::floated);
+					int text_top = (essence_->scheme_ptr->header_height - essence_->scheme_ptr->text_height) / 2;
+					_m_draw_header_item(ext_graph, rectangle{ext_graph.size()}, text_top, colors::white, col, item_state::floated);
 
-					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - ref_xpos_;
+					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
 
 #ifdef USE_OFFSET_X
 					ext_graph.blend(rectangle{ ext_graph.size() }, *(essence_->graph), nana::point(xpos - essence_->scroll.offset_x + rect.x, rect.y), 0.5);
@@ -3340,8 +3371,7 @@ namespace nana
 					//draw the background for the whole item
 					graph->rectangle(rectangle{ content_r.x, y, show_w, essence_->scheme_ptr->item_height }, true, bgcolor);
 
-					int item_xpos    = x;
-					int extreme_text = x;
+					int column_x = x;
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
@@ -3351,7 +3381,7 @@ namespace nana
 
 						if (col.width_px > essence_->scheme_ptr->text_margin)
 						{
-							int content_pos = essence_->scheme_ptr->text_margin;
+							int content_pos = 0;
 
 							//Draw the image in the 1st column in display order
 							if (0 == display_order)
@@ -3375,7 +3405,7 @@ namespace nana
 
 									using state = facade<element::crook>::state;
 									crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
-									crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(item_xpos, y), estate);
+									crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(column_x, y), estate);
 								}
 
 								if (essence_->if_image)
@@ -3384,7 +3414,7 @@ namespace nana
 									if (item.img)
 									{
 										nana::rectangle img_r(item.img_show_size);
-										img_r.x = content_pos + item_xpos + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
+										img_r.x = content_pos + column_x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
 										img_r.y = y + (static_cast<int>(essence_->scheme_ptr->item_height) - static_cast<int>(item.img_show_size.height)) / 2; // center
 										item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 									}
@@ -3394,14 +3424,14 @@ namespace nana
 
 							bool draw_column = true;
 
-							if ( content_pos < static_cast<int>(col.width_px)) // we have room
+							if ( content_pos + essence_->scheme_ptr->text_margin < static_cast<int>(col.width_px)) // we have room
 							{
 								auto inline_wdg = _m_get_inline_pane(cat, column_pos);
 								if (inline_wdg)
 								{
 									//Make sure the user-define inline widgets in right visible rectangle.
 									rectangle pane_r;
-									auto wdg_x = item_xpos + content_pos;
+									auto wdg_x = column_x + content_pos;
 									auto wdg_w = col.width_px - static_cast<unsigned>(content_pos);
 
 									bool visible_state = true;
@@ -3467,47 +3497,32 @@ namespace nana
 									if (item_state::highlighted == state)
 										it_bgcolor = it_bgcolor.blend(static_cast<color_rgb>(0x99defd), 0.8);
 
-									graph->rectangle(rectangle{ item_xpos, y, col.width_px, essence_->scheme_ptr->item_height }, true, it_bgcolor);
+									graph->rectangle(rectangle{ column_x, y, col.width_px, essence_->scheme_ptr->item_height }, true, it_bgcolor);
 
 									cell_txtcolor = m_cell.custom_format->fgcolor;
 								}
 
 								if (draw_column)
 								{
-									graph->string(point{ item_xpos + content_pos, y + txtoff }, m_cell.text, cell_txtcolor); // draw full text of the cell index (column)
+									paint::aligner text_aligner{*graph, col.alignment};
 
-									int item_right = item_xpos + col.width_px;
-								    int text_right =  item_xpos + content_pos + ts.width;
-									int excess = text_right - item_right  ;
-									if (excess > 0)	// it was an excess
-									{
-										//The text is painted over the next subitem                // here beging the ...
-										int xpos = item_right - static_cast<int>(essence_->scheme_ptr->suspension_width);
+									unsigned text_margin_right = 0;
+									if (align::left == col.alignment)
+										content_pos += essence_->scheme_ptr->text_margin;
+									else if (align::right == col.alignment)
+										text_margin_right = essence_->scheme_ptr->text_margin;
+										
 
-										// litter rect with the  item bg end ...
-										graph->rectangle(rectangle{ xpos, y /*+ 2*/, essence_->scheme_ptr->suspension_width, essence_->scheme_ptr->item_height /*- 4*/ }, true, it_bgcolor);
-										graph->string(point{ xpos, y /*+ 2*/ }, L"...");
-
-										//Erase the part that over the next subitem only if the right of column is less than right of listbox
-										if (item_right  < content_r.right() )
-										{
-											graph->palette(false, bgcolor);       // we need to erase the excess, because some cell may not draw text over
-											graph->rectangle(rectangle( item_right, y /*+ 2*/, excess, essence_->scheme_ptr->item_height /*- 4*/ ), true);
-										}
-										extreme_text = (std::max)(extreme_text, text_right);
-									}
+									graph->palette(true, cell_txtcolor);
+									text_aligner.draw(m_cell.text, { column_x + content_pos, y + txtoff }, col.width_px - content_pos - text_margin_right);
 								}
 							}
 
-							graph->line({ item_xpos - 1, y }, { item_xpos - 1, y + static_cast<int>(essence_->scheme_ptr->item_height) - 1 }, static_cast<color_rgb>(0xEBF4F9));
+							graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->scheme_ptr->item_height) - 1 }, static_cast<color_rgb>(0xEBF4F9));
 
 						}
 
-						item_xpos += col.width_px;
-						if (display_order + 1 >= seqs.size() && extreme_text > item_xpos)
-						{
-							graph->rectangle(rectangle(item_xpos , y /*+ 2*/, extreme_text - item_xpos, essence_->scheme_ptr->item_height /*- 4*/), true, item.bgcolor);
-						}
+						column_x += col.width_px;
 					}
 
 					//Draw selecting inner rectangle
