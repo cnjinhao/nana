@@ -555,8 +555,16 @@ namespace nana
 						range_width_px.first = minimum;
 						range_width_px.second = maximum;
 
-						if (width_px < range_width_px.first || range_width_px.second > width_px)
+						if (width_px < range_width_px.first)
+						{
+							width_px = range_width_px.first;
 							_m_refresh();
+						}
+						else if (range_width_px.second < width_px)
+						{
+							width_px = range_width_px.second;
+							_m_refresh();
+						}
 					}
 
 					void text_align(::nana::align align) noexcept override
@@ -662,6 +670,92 @@ namespace nana
 							pixels += col.width_px;
 					}
 					return pixels;
+				}
+
+				/// Calculates the ranged columns to make the whole header fit a specified width
+				/**
+				 * @param width The width to be fittd
+				 * @return true if the ranged columns is adjusted for the width, false otherwise.
+				 */
+				bool calc_ranged_columns(unsigned width)
+				{
+					unsigned fixed_px = 0;
+					unsigned minimal_px = 0;
+					unsigned maximal_px = 0;
+
+					unsigned ranged_px = 0;
+					unsigned ranged_count = 0;
+
+					for (auto & col : cont_)
+					{
+						if (col.visible_state)
+						{
+							if (col.range_width_px.first == col.range_width_px.second)
+							{
+								fixed_px += col.width_px;
+								continue;
+							}
+
+							minimal_px += col.range_width_px.first;
+							maximal_px += col.range_width_px.second;
+
+							ranged_px += col.width_px;
+							++ranged_count;
+						}
+					}
+
+					//Don't calculate the ranged columns if
+					//There isn't a ranged column while maximal_px == 0, or
+					//ranged_px + fixed_px == width, or
+					//the minimal ranged size is larger than width
+					if ((0 == maximal_px) || (ranged_px + fixed_px == width) || (fixed_px + minimal_px > width))
+						return false;
+
+					if (ranged_px + fixed_px > width)
+					{
+						auto delta_px = ranged_px + fixed_px - width;
+
+						while (delta_px)
+						{
+							for (auto & col : cont_)
+							{
+								if (0 == delta_px)
+									break;
+
+								if (col.visible_state && (col.range_width_px.first < col.range_width_px.second))
+								{
+									if (col.range_width_px.first < col.width_px)
+									{
+										--col.width_px;
+										--delta_px;
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						auto delta_px = width - (ranged_px + fixed_px);
+						while (delta_px)
+						{
+							for (auto & col : cont_)
+							{
+								if (0 == delta_px)
+									break;
+
+								if (col.visible_state && (col.range_width_px.first < col.range_width_px.second))
+								{
+									if (col.width_px < col.range_width_px.second)
+									{
+										++col.width_px;
+										--delta_px;
+									}
+								}
+							}
+						}
+					}
+					
+					return true;
 				}
 
 				const container& cont() const
@@ -2205,23 +2299,36 @@ namespace nana
 					internal_scope_guard lock;
 
 					const nana::size sz = graph->size();
-					unsigned header_s = header.pixels();
-					window wd = lister.wd_ptr()->handle();
+
+					// Adjust the ranged column assume the vertical scrollbar is enabled.
+					auto range_adjusted = !this->header.calc_ranged_columns(sz.width - 2 - scroll.scale);
+					auto columns_pixels = header.pixels();
 
 					//H scroll enabled
-					bool h = (header_s + 4 > sz.width );										// 4px = left and right borders(2px) + left and right gaps(2px)
-					unsigned head_scroll = 2 + header_visible_px() + (h ? scroll.scale : 0);	// 2px left and right gaps(2px) 
-					unsigned lister_s = sz.height > head_scroll ? sz.height - head_scroll : 0 ;
+					//If range_adjusted is true, it indicates no horzontal scroll bar is enabled.
+					bool enable_horz = (range_adjusted && (columns_pixels + 4 > sz.width)); // 4px = left and right borders(2px) + left and right gaps(2px)
+
+					unsigned head_scroll = 2 + header_visible_px() + (enable_horz ? scroll.scale : 0);	// 2px left and right gaps(2px) 
+					unsigned lister_s = sz.height > head_scroll ? sz.height - head_scroll : 0;
 					size_type screen_number = (lister_s / scheme_ptr->item_height);
 
 					//V scroll enabled
-					bool v = (lister.the_number_of_expanded() > screen_number);
+					auto enable_vert = (lister.the_number_of_expanded() > screen_number);
 
-					if(v == true && h == false)
-						h = ( (header_s + 2 + scroll.scale ) > sz.width);
+					if (enable_vert)
+					{
+						if (!enable_horz)
+							enable_horz = ((columns_pixels + 2 + scroll.scale) > sz.width);
+					}
+					else if (range_adjusted)
+					{
+						//No vertical scrollbar, then re-adjust the range columns for a new width that excludes vert scroll.
+						this->header.calc_ranged_columns(sz.width - 2);
+					}
 
-					unsigned width = sz.width - 2 - (v ? scroll.scale : 0);
-					unsigned height = sz.height - 2 - (h ? scroll.scale : 0);
+					
+					unsigned width = sz.width - 2 - (enable_vert ? scroll.scale : 0);
+					unsigned height = sz.height - 2 - (enable_horz ? scroll.scale : 0);
 
 					//event hander for scrollbars
 					auto evt_fn = [this](const arg_scroll& arg)
@@ -2244,13 +2351,16 @@ namespace nana
 						API::refresh_window(this->lister.wd_ptr()->handle());
 					};
 
-					if(h)
+
+					const auto wd_handle = lister.wd_ptr()->handle();
+
+					if (enable_horz)
 					{
 						rectangle r(1, sz.height - scroll.scale - 1, width, scroll.scale);
 						if(scroll.h.empty())
 						{
-							scroll.h.create(wd, r);
-							API::take_active(scroll.h.handle(), false, wd);
+							scroll.h.create(wd_handle, r);
+							API::take_active(scroll.h.handle(), false, wd_handle);
 							scroll.h.events().value_changed.connect_unignorable(evt_fn);
 						}
 						else
@@ -2259,13 +2369,13 @@ namespace nana
 					else if(!scroll.h.empty())
 						scroll.h.close();
 
-					if(v)
+					if (enable_vert)
 					{
 						rectangle r(sz.width - 1 - scroll.scale, 1, scroll.scale, height);
 						if(scroll.v.empty())
 						{
-							scroll.v.create(wd, r);
-							API::take_active(scroll.v.handle(), false, wd);
+							scroll.v.create(wd_handle, r);
+							API::take_active(scroll.v.handle(), false, wd_handle);
 							scroll.v.events().value_changed.connect_unignorable(evt_fn);
 						}
 						else
@@ -3310,7 +3420,7 @@ namespace nana
 
 					graph->string({ x + 25 + static_cast<int>(text_s), y + txtoff }, str);
 
-					if (x + 35 + extend_text_w < x + width)
+					if (x + 35 + static_cast<int>(extend_text_w) < x + static_cast<int>(width))
 					{
 						::nana::point pos{ x + 30 + static_cast<int>(extend_text_w), y + static_cast<int>(essence_->scheme_ptr->item_height) / 2 };
 						graph->line(pos, { x + static_cast<int>(width)-5, pos.y }, txt_color);
