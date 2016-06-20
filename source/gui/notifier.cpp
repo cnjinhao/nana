@@ -71,6 +71,8 @@ namespace nana
 				::Shell_NotifyIcon(icon_added ? NIM_MODIFY : NIM_ADD, &icon_data);
 				icon_added = true;
 			}
+#else
+			static_cast<void>(ico);
 #endif
 		}
 	};

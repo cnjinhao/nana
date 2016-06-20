@@ -326,7 +326,7 @@ namespace nana
 
 			struct essence_t;
 
-			struct item_t
+			struct item_data
 			{
 				using container = std::vector<cell>;
 
@@ -344,12 +344,12 @@ namespace nana
 
 				mutable std::unique_ptr<nana::any> anyobj;
 
-				item_t()
+				item_data()
 				{
 					flags.selected = flags.checked = false;
 				}
 
-				item_t(const item_t& r)
+				item_data(const item_data& r)
 					: cells(r.cells),
 					bgcolor(r.bgcolor),
 					fgcolor(r.fgcolor),
@@ -358,27 +358,19 @@ namespace nana
 					anyobj(r.anyobj ? new nana::any(*r.anyobj) : nullptr)
 				{}
 
-				item_t(container&& cont)
+				item_data(container&& cont)
 					: cells(std::move(cont))
 				{
 					flags.selected = flags.checked = false;
 				}
-
-				item_t(std::string&& s)
+				
+				item_data(std::string&& s)
 				{
 					flags.selected = flags.checked = false;
 					cells.emplace_back(std::move(s));
 				}
 
-				item_t(std::string&& s, const nana::color& bg, const nana::color& fg)
-					: bgcolor(bg),
-					fgcolor(fg)
-				{
-					flags.selected = flags.checked = false;
-					cells.emplace_back(std::move(s));
-				}
-
-				item_t& operator=(const item_t& r)
+				item_data& operator=(const item_data& r)
 				{
 					if (this != &r)
 					{
@@ -415,7 +407,7 @@ namespace nana
 
 			struct category_t
 			{
-				using container = std::deque<item_t>;
+				using container = std::deque<item_data>;
 
 				native_string_type text;
 				std::vector<std::size_t> sorted;
@@ -495,7 +487,7 @@ namespace nana
 						visible_state(other.visible_state),
 						index(other.index),
 						alignment(other.alignment),
-						weak_ordering(weak_ordering),
+						weak_ordering(std::move(other.weak_ordering)),
 						ess_(other.ess_)
 					{
 					}
@@ -590,16 +582,16 @@ namespace nana
 
 				using container = std::vector<column>;
 
-                export_options::columns_indexs all_headers(bool only_visibles) const
-                {
-                    export_options::columns_indexs	idx;
+				export_options::columns_indexs all_headers(bool only_visibles) const
+				{
+					export_options::columns_indexs	idx;
 					for(const auto &col : cont())
 					{
 						if(col.visible_state || !only_visibles)
 							idx.push_back(col.index);
 					}
-                    return idx;
-                }
+					return idx;
+				}
 
 				std::string to_string(const export_options& exp_opt) const
 				{
@@ -801,7 +793,7 @@ namespace nana
 					return npos;
 				}
 
-				/// Returns the left point position and width(in variable * pixels) of column originaly at position pos.
+				/// Returns the left point position and width(in variable *pixels) of column originaly at position pos.
 				int position(size_type pos, unsigned * pixels) const
 				{
 					int left = 0;
@@ -1120,9 +1112,11 @@ namespace nana
 					catobj.sorted.push_back(n);
 
 					if (pos.item < n)
-						catobj.items.emplace(catobj.items.begin() + pos.item, std::move(text));
+						catobj.items.emplace(catobj.items.begin() + pos.item);
 					else
-						catobj.items.emplace_back(std::move(text));
+						catobj.items.emplace_back();
+
+					catobj.items.back().cells.emplace_back(std::move(text));
 				}
 
 				/// convert from display order to absolute (find the real item in that display pos) but without check from current active sorting, in fact using just the last sorting !!!
@@ -1398,18 +1392,19 @@ namespace nana
 						if (enb)
 						{
 							::nana::detail::key_interface * refkey = nullptr;
-							for (auto i = list_.begin(); i != list_.end(); ++i)
+
+							for (auto & cat : list_)
 							{
-								if (i->key_ptr)
+								if (!cat.key_ptr)
+									continue;
+
+								if (refkey)
 								{
-									if (refkey)
-									{
-										if (!i->key_ptr->same_type(refkey))
-											return false;
-									}
-									else
-										refkey = i->key_ptr.get();
+									if (!cat.key_ptr->same_type(refkey))
+										return false;
 								}
+								else
+									refkey = cat.key_ptr.get();
 							}
 						}
 
@@ -2964,7 +2959,7 @@ namespace nana
 				//grab_move
 				/// @brief draw when an item is grabbing.
 				/// @return true if refresh is needed, false otherwise
-				bool grab_move(const nana::rectangle& rect, const nana::point& pos)
+				bool grab_move(const nana::point& pos)
 				{
 					if(npos == grabs_.splitter)
 					{  // move column, not resize it
@@ -3016,9 +3011,6 @@ namespace nana
 					if ((parts::header == essence_->pointer_where.first) && (npos == grabs_.splitter))
 						state = essence_->ptr_state;
 
-					const unsigned height = r.height - 1;
-					const int bottom_y = r.bottom() - 2;
-
 					rectangle column_r{
 						r.x - static_cast<int>(essence_->scroll.x_offset()), r.y,
 						0, r.height - 1
@@ -3036,7 +3028,7 @@ namespace nana
 							if (right_pos > r.x)
 							{
 								_m_draw_header_item(graph, column_r, text_top, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
-								graph.line({ right_pos - 1, r.y }, { right_pos - 1, bottom_y }, _m_border_color());
+								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, _m_border_color());
 							}
 
 							column_r.x = right_pos;
@@ -3163,7 +3155,7 @@ namespace nana
 
 				struct grab_variables
 				{
-					int start_pos{ npos };
+					int start_pos;
 					unsigned item_width;
 
 					size_type splitter{ npos };
@@ -3440,7 +3432,7 @@ namespace nana
 
 							bool draw_column = true;
 
-							if ( content_pos + essence_->scheme_ptr->text_margin < static_cast<int>(col.width_px)) // we have room
+							if ( content_pos + essence_->scheme_ptr->text_margin < col.width_px) // we have room
 							{
 								auto inline_wdg = _m_get_inline_pane(cat, column_pos);
 								if (inline_wdg)
@@ -3503,7 +3495,6 @@ namespace nana
 								auto cell_txtcolor = fgcolor;
 								auto & m_cell = item.cells[column_pos];
 								review_utf8(m_cell.text);
-								nana::size ts = graph->text_extent_size(m_cell.text);        // precalcule text geometry
 
 								if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
 								{
@@ -3699,10 +3690,7 @@ namespace nana
 					{   // moving a grabbed header 
 						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);
-
-						nana::rectangle r;
-						essence_->rect_header(r);
-						need_refresh = drawer_header_->grab_move(r, pos);
+						need_refresh = drawer_header_->grab_move(pos);
 					}
 					else if(essence_->calc_where(arg.pos))
 					{

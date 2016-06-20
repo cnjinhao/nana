@@ -156,6 +156,7 @@ namespace nana{
 
 			fn();
 #else
+			static_cast<void>(native_handle);
 			fn();
 #endif	
 		}

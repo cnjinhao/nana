@@ -17,7 +17,7 @@ namespace nana
 				: public renderer_interface
 			{
 			private:
-				void background(window wd, graph_reference graph, bool transparent, const scheme& schm) override
+				void background(window, graph_reference graph, bool transparent, const scheme& schm) override
 				{
 					if (!transparent)
 						graph.rectangle(true, schm.background);
@@ -277,7 +277,7 @@ namespace nana
 					return other_.wd;
 				}
 
-				void attached(nana::slider& wdg, graph_reference graph)
+				void attached(nana::slider& wdg, graph_reference)
 				{
 					other_.wd = wdg.handle();
 					other_.widget = &wdg;

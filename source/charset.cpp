@@ -375,7 +375,8 @@ namespace nana
 			utf8_error_police_def_char( unsigned long mark): error_mark{mark}{}
 			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
 			{
-				++current_code_unit;  //check (p != end) ?
+				if(current_code_unit < end)
+					++current_code_unit;
 				return error_mark;
 			}
 
@@ -399,7 +400,7 @@ namespace nana
 
 		struct utf8_error_police_latin : public encoding_error_police
 		{
-			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* /*end*/) override
 			{
 				return *(current_code_unit++) ;
 			}
@@ -408,12 +409,11 @@ namespace nana
 		/// buggie?
 		struct utf8_error_police_system : public encoding_error_police
 		{
-			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* /*end*/) override
 			{
 				std::wstring wc;
 				mb2wc(wc, reinterpret_cast<const char*>(current_code_unit));
 				current_code_unit++;
-				//wchar_t *p = &wc[0];
 
 				return wc[0];      // use utf16char but what endian?
 			}
