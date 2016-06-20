@@ -5,6 +5,13 @@
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 #   Ariel Vina-Rodriguez (qPCR4vir) 
+#
+# Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
+# In the future CMake could be the prefered, and maybe will be used to generate the others and the central nana repo
+# will distribute all of them. But by now CMake is just one of them and all the other distributed build system
+# files/projects are manually write. This current CMakeList.txt reflect this fact and that is why we don't
+# generate here configurated *.h files or explicitly enumerate the sources files: anyway this CM-list
+# will be "touched" to force a re-run of cmake.
 
 #https://cmake.org/cmake-tutorial/
 #https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
@@ -13,6 +20,8 @@
 
 #  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
 #  https://bbs.archlinux.org/viewtopic.php?id=84967
+
+
 project(nana)
 cmake_minimum_required(VERSION 2.8)
 
@@ -87,13 +96,16 @@ endif (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
 
 
 
-# Compatibility with CMake 3.1
+########### Compatibility with CMake 3.1
 if(POLICY CMP0054)
   # http://www.cmake.org/cmake/help/v3.1/policy/CMP0054.html
   cmake_policy(SET CMP0054 OLD)
 endif()
 
 add_definitions(-DNANA_IGNORE_CONF)
+
+
+########### OS
 
 if(WIN32)
     add_definitions(-DWIN32)
@@ -135,6 +147,9 @@ if(UNIX)
 		list(APPEND NANA_LINKS  -lXft )
     endif(FREETYPE_FOUND)
 endif(UNIX)
+
+
+############# Optional libraries
 
 #Find PNG
 if(NANA_CMAKE_ENABLE_PNG)
