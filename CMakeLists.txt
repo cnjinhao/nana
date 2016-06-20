@@ -137,8 +137,6 @@ elseif(UNIX)
 	message("added -D linux")
 endif(APPLE)
 
-
-
 if(UNIX)
     list(APPEND NANA_LINKS -lX11  )
     find_package(Freetype)
@@ -200,43 +198,39 @@ endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
 set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-include_directories(${NANA_INCLUDE_DIR})
-aux_source_directory(${NANA_SOURCE_DIR} NANA_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/detail NANA_DETAIL_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/filesystem NANA_FILESYSTEM_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/gui NANA_GUI_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/gui/detail NANA_GUI_DETAIL_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/gui/widgets NANA_GUI_WIDGETS_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/gui/widgets/skeletons NANA_GUI_WIDGETS_SKELETONS_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/paint NANA_PAINT_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/paint/detail NANA_PAINT_DETAIL_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/system NANA_SYSTEM_SOURCE)
-aux_source_directory(${NANA_SOURCE_DIR}/threads NANA_THREADS_SOURCE)
+# collect all source sub-directories in a list to avoid duplication here
+set(NANA_SOURCE_SUBDIRS /.
+                        /detail
+                        /filesystem
+                        /gui
+                        /gui/detail
+                        /gui/widgets
+                        /gui/widgets/skeletons
+                        /paint
+                        /paint/detail
+                        /system
+                        /threads      )
 if(NANA_CMAKE_ENABLE_AUDIO)
-    aux_source_directory(${NANA_SOURCE_DIR}/audio NANA_AUDIO_SOURCE)
-    aux_source_directory(${NANA_SOURCE_DIR}/audio/detail NANA_AUDIO_DETAIL_SOURCE)
+    list(APPEND NANA_SOURCE_SUBDIRS
+                        /audio
+                        /audio/detail  )
 endif()
 
+# collect all source files in the source-sub-dir
 #To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
 #and Use SOURCE_GROUP if all your sources are in the same directory
+foreach(subdir ${NANA_SOURCE_SUBDIRS})
+    aux_source_directory(${NANA_SOURCE_DIR}${subdir} sources)
+    message("Subir:  ${subdir}")
+    message("Files:  ${sources}")
+endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
-add_library(${PROJECT_NAME} ${NANA_SOURCE}
-                            ${NANA_DETAIL_SOURCE}
-                            ${NANA_FILESYSTEM_SOURCE}
-                            ${NANA_AUDIO_SOURCE}
-                            ${NANA_AUDIO_DETAIL_SOURCE}
-                            ${NANA_GUI_SOURCE}
-                            ${NANA_GUI_DETAIL_SOURCE}
-                            ${NANA_GUI_WIDGETS_SOURCE}
-                            ${NANA_GUI_WIDGETS_SKELETONS_SOURCE}
-                            ${NANA_PAINT_SOURCE}
-                            ${NANA_PAINT_DETAIL_SOURCE}
-                            ${NANA_SYSTEM_SOURCE}
-                            ${NANA_THREADS_SOURCE})    
+include_directories(${NANA_INCLUDE_DIR})
+add_library(${PROJECT_NAME} ${sources} )
+target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
     #  Headers: use INCLUDE_DIRECTORIES
     #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
-    target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
                  
 install(TARGETS ${PROJECT_NAME}
