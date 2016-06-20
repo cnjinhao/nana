@@ -100,7 +100,8 @@ namespace paint
 			{
 				close();
 #if defined(NANA_WINDOWS)
-				HICON handle = ::CreateIconFromResource((PBYTE)data, static_cast<DWORD>(bytes), TRUE, 0x00030000);
+				// use actual resource size, stopped using CreateIconFromResource since it loads blurry image
+				HICON handle = ::CreateIconFromResourceEx((PBYTE)data, static_cast<DWORD>(bytes), TRUE, 0x00030000, 0, 0, LR_DEFAULTCOLOR);
 				if(handle)
 				{
 					ICONINFO info;
@@ -357,6 +358,10 @@ namespace paint
 						else if (bytes > 9 && (0x66697845 == *reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+5))) //Exif
 							ptr = std::make_shared<detail::image_jpeg>();
 #endif
+						// suppose icon data is bitmap data
+						if (!ptr && bytes > 40 /* sizeof(BITMAPINFOHEADER) */ && (40 == *reinterpret_cast<const uint32_t*>(data))) {
+							ptr = std::make_shared<detail::image_ico>(true);
+						}
 					}
 				}
 
