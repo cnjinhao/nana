@@ -358,10 +358,13 @@ namespace paint
 						else if (bytes > 9 && (0x66697845 == *reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+5))) //Exif
 							ptr = std::make_shared<detail::image_jpeg>();
 #endif
+
+#if defined(NANA_WINDOWS)
 						// suppose icon data is bitmap data
 						if (!ptr && bytes > 40 /* sizeof(BITMAPINFOHEADER) */ && (40 == *reinterpret_cast<const uint32_t*>(data))) {
 							ptr = std::make_shared<detail::image_ico>(true);
 						}
+#endif
 					}
 				}
 
