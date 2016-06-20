@@ -13,6 +13,7 @@
 # generate here configurated *.h files or explicitly enumerate the sources files: anyway this CM-list
 # will be "touched" to force a re-run of cmake.
 
+
 #https://cmake.org/cmake-tutorial/
 #https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
@@ -310,26 +311,34 @@ endif (NANA_CMAKE_BUILD_FreeMe)
 endif (NANA_CMAKE_BUILD_DEMOS)
 
 
+#
+# Using gcc: gcc 4.8 don't sopourt C++14 and make_unique. You may want to update at least to 4.9.
+# In Windows, the gcc which come with CLion was 4.8 from MinGW. You may want to install MinGW-w64 from the
+# TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
+# gcc 5.3 and 5.4 include filesytem, but you need to add the link flag: -lstdc++fs
+#
+# see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
+
 # set compile  flags
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -Wall")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall")
 	else("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -lstdc++fs -Wall")
 	endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
-    # enable static linkage  
-    if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
-      #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-      set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
-	     
-    endif ()
+# enable static linkage
+if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
+  #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
 
-    if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-      set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
-    endif ()
+endif ()
+
+if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
+endif ()
 
 message ( "CMAKE_CXX_COMPILER_ID   = "  ${CMAKE_CXX_COMPILER_ID})
 message ( "COMPILER_IS_CLANG       = "  ${COMPILER_IS_CLANG})

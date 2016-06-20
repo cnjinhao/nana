@@ -9,7 +9,7 @@
  *
  *	@file: nana/detail/platform_spec.cpp
  *
- *	@brief basis classes and data structrues required by nana
+ *	@brief basis classes and data structures required by nana
  */
 
 #include <nana/detail/platform_spec_selector.hpp>
