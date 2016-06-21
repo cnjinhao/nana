@@ -1,4 +1,4 @@
-# CMake configuration for Nana
+﻿# CMake configuration for Nana
 # Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributors:
 #   Jinhao	
@@ -245,7 +245,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
          enable_testing ()
 	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
-    set (demos    calculator file_explorer helloworld_demo notepad        )
+    set (demos    calculator helloworld_demo notepad        )
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
