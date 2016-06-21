@@ -93,7 +93,7 @@ script:
   - ./dock
   - ./drag-button
   - ./draw
-  - ./file_explorer
+  #- ./file_explorer
   #- ./example_menu
   - ./example_listbox
   #- ./example_combox
