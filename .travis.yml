@@ -76,9 +76,9 @@ before_script :
   - cd bin
 
 script:
-  - pwd
-  - ls
+  - cat ../nana-demo/CMakeLists.txt
   - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
+  - cat Makefile
   - make
   - cd ..
   - mv -v bin/ nana-demo/
