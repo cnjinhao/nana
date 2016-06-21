@@ -85,9 +85,10 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     find_package(Boost COMPONENTS filesystem)
 	if (Boost_FOUND)
         add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
-		include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
-		list(APPEND NANA_LINKS "${Boost_LIBRARIES}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Boost_LIBRARIES}")
+	include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${Boost_LIBRARIES}")
+	#list(APPEND NANA_LINKS "${Boost_LIBRARIES}")
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Boost_LIBRARIES}")
 	endif (Boost_FOUND)
 	
 	set(Boost_USE_STATIC_LIBS ON)
@@ -132,8 +133,9 @@ endif(WIN32)
 if(APPLE)
     add_definitions(-DAPPLE)
     include_directories(/opt/X11/include/)
-	list(APPEND NANA_LINKS -L/opt/X11/lib/  -liconv)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -liconv")
+    #list(APPEND NANA_LINKS -L/opt/X11/lib/  -liconv)
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -liconv")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -liconv")
     set(ENABLE_AUDIO OFF)
 elseif(UNIX)
     add_definitions(-Dlinux)
@@ -142,12 +144,14 @@ endif(APPLE)
 
 if(UNIX)
     list(APPEND NANA_LINKS -lX11  )
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lX11")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lX11")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lX11")
     find_package(Freetype)
     if (FREETYPE_FOUND)
         include_directories( ${FREETYPE_INCLUDE_DIRS})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lXft")
-        list(APPEND NANA_LINKS  -lXft )
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lXft")
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lXft")
+        #list(APPEND NANA_LINKS  -lXft )
     endif(FREETYPE_FOUND)
 endif(UNIX)
 
@@ -158,8 +162,9 @@ endif(UNIX)
 if(NANA_CMAKE_ENABLE_PNG)
     add_definitions(-DNANA_ENABLE_PNG)
     #set(NANA_PNG_LIB "png")
-	list(APPEND NANA_LINKS   -lpng )
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpng")
+    #list(APPEND NANA_LINKS   -lpng )
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpng")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpng")
     if(NANA_CMAKE_LIBPNG_FROM_OS)
         find_package(PNG)
         if (PNG_FOUND)
@@ -173,8 +178,9 @@ endif(NANA_CMAKE_ENABLE_PNG)
 if(NANA_CMAKE_ENABLE_JPEG)
     add_definitions(-DNANA_ENABLE_JPEG)
     #set(NANA_JPEG_LIB "jpeg")
-	list(APPEND NANA_LINKS   -ljpeg )
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ljpeg")
+    # list(APPEND NANA_LINKS   -ljpeg )
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ljpeg")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ljpeg")
     if(NANA_CMAKE_LIBJPEG_FROM_OS)
         find_package(JPEG)
         if (JPEG_FOUND)
@@ -190,8 +196,9 @@ if(NANA_CMAKE_ENABLE_AUDIO)
         find_package(ASOUND)
         if (ASOUND_FOUND)
             include_directories( ${ASOUND_INCLUDE_DIRS})
-	        list(APPEND NANA_LINKS   -lasound )
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -lasound")
+	    # list(APPEND NANA_LINKS   -lasound )
+            # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -lasound")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lasound")
         else(ASOUND_FOUND)
             message(FATAL_ERROR "libasound is not found")
         endif(ASOUND_FOUND)
@@ -229,16 +236,16 @@ endif()
 #and Use SOURCE_GROUP if all your sources are in the same directory
 foreach(subdir ${NANA_SOURCE_SUBDIRS})
     aux_source_directory(${NANA_SOURCE_DIR}${subdir} sources)
-    message("Subir:  ${subdir}")
-    message("Files:  ${sources}")
+    # message("Subir:  ${subdir}")
+    # message("Files:  ${sources}")
 endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
 include_directories(${NANA_INCLUDE_DIR})
 add_library(${PROJECT_NAME} ${sources} )
-target_link_libraries(${PROJECT_NAME} )  # ${NANA_LINKS}  or ${CMAKE_CXX_FLAGS}
+target_link_libraries(${PROJECT_NAME} )  # ${NANA_LINKS}  or ${ }
 
-    #  Headers: use INCLUDE_DIRECTORIES
-    #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
+ #  Headers: use INCLUDE_DIRECTORIES
+ #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
 
                  
 install(TARGETS ${PROJECT_NAME}
@@ -267,7 +274,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
         set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
-        target_link_libraries(${demo} ${PROJECT_NAME})     # ${NANA_LINKS}  or ${CMAKE_CXX_FLAGS}
+        target_link_libraries(${demo} ${PROJECT_NAME})        # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
         #if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
             #add_custom_command( TARGET  ${demo} POST_BUILD COMMAND  ${demo} )
             #add_custom_target(do_always_${demo} ALL COMMAND ${demo})
@@ -279,9 +286,9 @@ if (NANA_CMAKE_BUILD_DEMOS)
 
     set (demos    widget_show widget_show2      )
 
-#if (NANA_CMAKE_BUILD_FreeMe)
-    # add_definitions(-DBUILD_FreeMe)
-#endif (NANA_CMAKE_BUILD_FreeMe)
+    #if (NANA_CMAKE_BUILD_FreeMe)
+      # add_definitions(-DBUILD_FreeMe)
+    #endif (NANA_CMAKE_BUILD_FreeMe)
 
     # if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
     #    list(APPEND demos  )    # ?? FreeMe
@@ -291,7 +298,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
         set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
-        target_link_libraries(${demo} ${PROJECT_NAME})    # ${NANA_LINKS}  or ${CMAKE_CXX_FLAGS}
+        target_link_libraries(${demo} ${PROJECT_NAME})                 # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
         install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
@@ -309,7 +316,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/Examples/${demo}.cpp")
         set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
-        target_link_libraries(${demo} ${PROJECT_NAME})     # ${NANA_LINKS}  or ${CMAKE_CXX_FLAGS}
+        target_link_libraries(${demo} ${PROJECT_NAME})                  # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
         install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/Examples/")
         message("... to build: ../nana-demo/Examples/${demo}.cpp" )
     endforeach( demo ${demos})
@@ -327,37 +334,42 @@ endif (NANA_CMAKE_BUILD_DEMOS)
 # see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
 
 # set compile  flags
-if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall")    # Clang
-	else("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-		    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall")   # IS_GNUCXX < 5.3
-        else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -lstdc++fs -Wall")   # IS_GNUCXX 5.3 or more
-        endif()
-	endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")    # Clang || GNU
+
+    if  ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall")       # Clang
+	
+    else ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall")       # GNU 
+          
+    endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 # enable static linkage
-if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
+if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)    # GNU || CLang not MinGW
     #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++  -pthread")
+    
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
+	                                                                     # IS_GNUCXX < 5.3
+    else()
+       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
+    endif()
 endif ()
 
-if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
 endif ()
 
 message ( "CMAKE_CXX_COMPILER_ID   = "  ${CMAKE_CXX_COMPILER_ID})
 message ( "COMPILER_IS_CLANG       = "  ${COMPILER_IS_CLANG})
-message ( "CMAKE_CXX_FLAGS         = "  ${CMAKE_CXX_FLAGS})
 message ( "CMAKE_COMPILER_IS_GNUCXX= "  ${CMAKE_COMPILER_IS_GNUCXX})
+message ( "CMAKE_CXX_FLAGS         = "  ${CMAKE_CXX_FLAGS})
 message ( "CMAKE_EXE_LINKER_FLAGS  = "  ${CMAKE_EXE_LINKER_FLAGS})
+message ( "NANA_LINKS              = "  ${NANA_LINKS})
 message ( "DESTDIR                 = "  ${DESTDIR})
 message ( "CMAKE_INSTALL_PREFIX    = "  ${CMAKE_INSTALL_PREFIX})
-message ( "NANA_LINKS              = "  ${NANA_LINKS})
 message ( "NANA_CMAKE_ENABLE_AUDIO = "  ${NANA_CMAKE_ENABLE_AUDIO})
 message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
