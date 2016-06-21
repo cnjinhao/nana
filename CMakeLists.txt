@@ -260,7 +260,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
 
-    set (demos    widget_show widget_show2      )
+    set (demos    widget_show2      )
 
 if (NANA_CMAKE_BUILD_FreeMe)
     add_definitions(-DBUILD_FreeMe)
