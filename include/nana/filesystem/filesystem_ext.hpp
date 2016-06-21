@@ -42,29 +42,32 @@ class directory_only_iterator : public std::experimental::filesystem::directory_
 { 
 	using DI = std::experimental::filesystem::directory_iterator;
 	directory_only_iterator& find_first()
-   {
-	   auto end = directory_only_iterator{};
-	   while (*this != end)
-	   {
-		   if (is_directory((**this).status())) 
-			   return *this;
-		   this->DI::operator++();
-	   }
-       return *this;
-   }
+	{
+		auto end = directory_only_iterator{};
+		while (*this != end)
+		{
+			if (is_directory((**this).status())) 
+				return *this;
+			this->DI::operator++();
+		}
+		return *this;
+	}
 public:
-    template <class... Arg>
-    directory_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
-    {
-        find_first();
-    }
-	directory_only_iterator( ) {}
+	directory_only_iterator(){}
+
+	template <class... Arg>
+	directory_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
+	{
+		find_first();
+	}
+
     directory_only_iterator& operator++()
     {
         this->DI::operator++();
         return find_first();
     }
 };
+
 inline directory_only_iterator begin(directory_only_iterator iter) noexcept
 {
 	return iter;
@@ -81,23 +84,25 @@ class regular_file_only_iterator : public std::experimental::filesystem::directo
 {
 	using DI = std::experimental::filesystem::directory_iterator;
 	regular_file_only_iterator& find_first()
-    {
-        while(( (*this) != DI{}) && !is_regular_file((**this).status()))
-            this->DI::operator++();
-        return (*this);
-    }
+	{
+		while(( (*this) != DI{}) && !is_regular_file((**this).status()))
+			this->DI::operator++();
+		return (*this);
+	}
 public:
-    template <class... Arg>
-    regular_file_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
-    {
-            find_first();
-    }
 	regular_file_only_iterator() : DI() {}
-    regular_file_only_iterator& operator++()
-    {
-        this->DI::operator++();
-        return find_first();
-    }
+
+	template <class... Arg>
+	regular_file_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
+	{
+		find_first();
+	}
+	
+	regular_file_only_iterator& operator++()
+	{
+		this->DI::operator++();
+		return find_first();
+	}
 };
 
 inline regular_file_only_iterator begin(regular_file_only_iterator iter) noexcept
@@ -113,7 +118,7 @@ inline regular_file_only_iterator end(const regular_file_only_iterator&) noexcep
 inline std::string pretty_file_size(const std::experimental::filesystem::path& path) // todo: move to .cpp
 {
     try {
-        std::size_t bytes = std::experimental::filesystem::file_size ( path );
+        auto bytes = std::experimental::filesystem::file_size ( path );
         const char * ustr[] = { " KB", " MB", " GB", " TB" };
         std::stringstream ss;
         if (bytes < 1024)

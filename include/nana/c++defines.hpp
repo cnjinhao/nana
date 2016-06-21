@@ -43,14 +43,19 @@
 
 //C++ language
 #if defined(_MSC_VER)
-#   undef STD_FILESYSTEM_NOT_SUPPORTED
 #	if (_MSC_VER < 1900)
+#		//About std.experimental.filesystem.
+#		//Through VC2013 has provided <filesystem>, but all the names are given in namespace std. It's hard to alias these names into std::experimental,
+#		//So Nana use nana.filesystem implement instead for VC2013
+#
 #		//Nana defines some macros for lack of support of keywords
 #		define _ALLOW_KEYWORD_MACROS
 #
 #		define CXX_NO_INLINE_NAMESPACE //no support of C++11 inline namespace until Visual C++ 2015
 #		define noexcept		//no support of noexcept until Visual C++ 2015
 #		define constexpr	//no support of constexpr until Visual C++ 2015
+#	else
+#		undef STD_FILESYSTEM_NOT_SUPPORTED
 #	endif
 #elif defined(__GNUC__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
