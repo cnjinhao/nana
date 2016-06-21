@@ -35,7 +35,10 @@
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED (MinGW with GCC < 4.8.1)
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
- */
+ *	- STD_FILESYSTEM_NOT_SUPPORTED (GCC < 5.3) ....
+ *	- CXX_NO_INLINE_NAMESPACE (Visual C++ < 2015)
+ *	- STD_MAKE_UNIQUE_NOT_SUPPORTED (GCC < 4.9)
+  */
 
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
@@ -50,7 +53,7 @@
 #
 #		define CXX_NO_INLINE_NAMESPACE //no support of C++11 inline namespace until Visual C++ 2015
 #		define noexcept		//no support of noexcept until Visual C++ 2015
-#		define constexpr	//no support of constexpr until Visual C++ 2015
+#		define constexpr const	//no support of constexpr until Visual C++ 2015 ? const ??
 #	endif
 #elif defined(__GNUC__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
@@ -141,6 +144,7 @@
 
 	#if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
 	#	undef STD_FILESYSTEM_NOT_SUPPORTED
+    /// \todo define the namespace ????
 	#endif
 
 	#if (__GNUC__ == 4)
