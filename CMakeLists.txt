@@ -282,7 +282,7 @@ endif (NANA_CMAKE_BUILD_FreeMe)
 
     set (demos    a_group_impl  animate-bmp  audio_player audio_player_simple  background-effects categ clicked
                   decore dock  drag-button  draw example.button example_combox example_listbox example_menu
-                  filebox-txt folder_tree folder_tree_nana folder_tree_std framework_design_1 framework_design_2 framework_design_3
+                  filebox-txt folder_tree folder_tree_nana framework_design_1 framework_design_2 framework_design_3
                   group HelloWord helloword_quit inputbox label_listener lambda_event.Cpp11 listbox_inline_widget listbox_Resolver loader_1 loader_2
                   main mbox menu_debug menu_popuper modal_form MontiHall place_login png screen stretch_image
                   threading thread-pool various_events window-dragger windows-subclassing
