@@ -362,11 +362,15 @@ if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # A
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
 endif ()
 
+set (CMAKE_STATIC_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+
+
 message ( "CMAKE_CXX_COMPILER_ID   = "  ${CMAKE_CXX_COMPILER_ID})
 message ( "COMPILER_IS_CLANG       = "  ${COMPILER_IS_CLANG})
 message ( "CMAKE_COMPILER_IS_GNUCXX= "  ${CMAKE_COMPILER_IS_GNUCXX})
 message ( "CMAKE_CXX_FLAGS         = "  ${CMAKE_CXX_FLAGS})
 message ( "CMAKE_EXE_LINKER_FLAGS  = "  ${CMAKE_EXE_LINKER_FLAGS})
+message ( "CMAKE_STATIC_LINKER_FLAGS= "  ${CMAKE_STATIC_LINKER_FLAGS})
 message ( "NANA_LINKS              = "  ${NANA_LINKS})
 message ( "DESTDIR                 = "  ${DESTDIR})
 message ( "CMAKE_INSTALL_PREFIX    = "  ${CMAKE_INSTALL_PREFIX})
