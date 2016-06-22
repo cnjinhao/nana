@@ -355,6 +355,7 @@ if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND N
 	                                                                     # IS_GNUCXX < 5.3
     else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
        set(CMAKE_EXE_LINKER_FLAGS " -lstdc++fs ${CMAKE_EXE_LINKER_FLAGS}")    # IS_GNUCXX 5.3 or more
+       set(NANA_LINKS " -lstdc++fs ${NANA_LINKS}") 
     endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
     
 endif (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
