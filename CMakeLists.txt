@@ -260,11 +260,9 @@ if (NANA_CMAKE_BUILD_DEMOS)
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
 
-    set (demos    widget_show2      )
-
 if (NANA_CMAKE_BUILD_FreeMe)
     add_definitions(-DBUILD_FreeMe)
-endif (NANA_CMAKE_BUILD_FreeMe)
+    set (demos    FreeMe      )
 
     if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
         list(APPEND demos  FreeMe)    # ??
@@ -278,6 +276,8 @@ endif (NANA_CMAKE_BUILD_FreeMe)
         install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
+
+endif (NANA_CMAKE_BUILD_FreeMe)
 
 
     set (demos    a_group_impl  animate-bmp  audio_player audio_player_simple  background-effects categ clicked
