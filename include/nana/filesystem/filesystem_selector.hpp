@@ -46,8 +46,8 @@ namespace std {
 #       else
 			using namespace nana::experimental::filesystem::v1;
 #       endif
-#define NANA_USING_NANA_FILESYSTEM  true
-		} // filesystem
+#undef  NANA_USING_NANA_FILESYSTEM 
+#define NANA_USING_NANA_FILESYSTEM  true		} // filesystem
 	} // experimental
 } // std
 
@@ -60,6 +60,7 @@ namespace std {
 	namespace experimental {
 		namespace filesystem {
                   using namespace boost::filesystem;
+#undef  NANA_USING_BOOST_FILESYSTEM
 #define NANA_USING_BOOST_FILESYSTEM true
 		} // filesystem
 	} // experimental
@@ -67,6 +68,7 @@ namespace std {
 
 #else
 #    include <experimental/filesystem>
+#undef NANA_USING_STD_FILESYSTEM 
 #define NANA_USING_STD_FILESYSTEM true
 #endif
 
