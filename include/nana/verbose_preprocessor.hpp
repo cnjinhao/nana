@@ -123,6 +123,7 @@
 	#pragma message (  SHOW_VALUE(NANA_ENABLE_JPEG)  )
 	#pragma message (  SHOW_VALUE(USE_LIBJPEG_FROM_OS)  )
 	#pragma message (  SHOW_VALUE(NANA_LIBJPEG)  )
+
    
    // #pragma message ( "\n =" STRING() ", \n =" STRING()"  , \n =" STRING() )
 

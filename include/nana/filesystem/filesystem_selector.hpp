@@ -47,7 +47,8 @@ namespace std {
 			using namespace nana::experimental::filesystem::v1;
 #       endif
 #undef  NANA_USING_NANA_FILESYSTEM 
-#define NANA_USING_NANA_FILESYSTEM  true		} // filesystem
+#define NANA_USING_NANA_FILESYSTEM  true		
+		} // filesystem
 	} // experimental
 } // std
 
