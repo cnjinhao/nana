@@ -85,7 +85,7 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
       add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
 	  include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
 	  #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${Boost_LIBRARIES}")
-	  set(NANA_LINKS "${Boost_LIBRARIES}")    ######  FIRST !!!!!!!!!!!!!!!!!    add  ${NANA_LINKS} is not first
+	  set(NANA_LINKS "${NANA_LINKS} ${Boost_LIBRARIES}")    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
 	  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Boost_LIBRARIES}")
 	endif (Boost_FOUND)
 	
@@ -240,7 +240,7 @@ endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
 include_directories(${NANA_INCLUDE_DIR})
 add_library(${PROJECT_NAME} ${sources} )
-target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
+target_link_libraries(${PROJECT_NAME}${NANA_LINKS}) 
 
  #  Headers: use INCLUDE_DIRECTORIES
  #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
