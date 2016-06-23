@@ -57,7 +57,7 @@ namespace API
 	{
 		::nana::widget_geometrics* make_scheme(::nana::detail::scheme_factory_interface&& factory)
 		{
-			return restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_interface&&>(factory));
+			return restrict::bedrock.scheme().create(static_cast<::nana::detail::scheme_factory_interface&&>(factory));
 		}
 
 		bool emit_event(event_code evt_code, window wd, const ::nana::event_arg& arg)
@@ -89,7 +89,7 @@ namespace API
 			if (!restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
 				return nullptr;
 
-			return reinterpret_cast<basic_window*>(wd)->together.events_ptr.get();
+			return reinterpret_cast<basic_window*>(wd)->annex.events_ptr.get();
 		}
 	}//end namespace detail
 
@@ -200,14 +200,14 @@ namespace API
 			auto iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;
 			if (restrict::wd_manager().available(iwd))
-				iwd->scheme = wdg_geom;
+				iwd->annex.scheme = wdg_geom;
 		}
 
 		widget_geometrics* get_scheme(window wd)
 		{
 			auto iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;
-			return (restrict::wd_manager().available(iwd) ? iwd->scheme : nullptr);
+			return (restrict::wd_manager().available(iwd) ? iwd->annex.scheme : nullptr);
 		}
 
 		void attach_drawer(widget& wd, drawer_trigger& dr)
@@ -217,7 +217,7 @@ namespace API
 			if(restrict::wd_manager().available(iwd))
 			{
 				iwd->drawer.graphics.make(iwd->dimension);
-				iwd->drawer.graphics.rectangle(true, iwd->scheme->background.get_color());
+				iwd->drawer.graphics.rectangle(true, iwd->annex.scheme->background.get_color());
 				iwd->drawer.attached(wd, dr);
 				iwd->drawer.refresh();	//Always redrawe no matter it is visible or invisible. This can make the graphics data correctly.
 			}
@@ -266,10 +266,12 @@ namespace API
 			return reinterpret_cast<window>(restrict::wd_manager().create_widget(reinterpret_cast<basic_window*>(parent), r, true, wdg));
 		}
 
+#ifndef WIDGET_FRAME_DEPRECATED
 		window create_frame(window parent, const rectangle& r, widget* wdg)
 		{
 			return reinterpret_cast<window>(restrict::wd_manager().create_frame(reinterpret_cast<basic_window*>(parent), r, wdg));
 		}
+#endif
 
 		paint::graphics* window_graphics(window wd)
 		{
@@ -546,6 +548,7 @@ namespace API
 			reinterpret_cast<basic_window*>(wd)->flags.fullscreen = v;
 	}
 
+#ifndef WIDGET_FRAME_DEPRECATED
 	bool insert_frame(window frame, native_window_type native_window)
 	{
 		return restrict::wd_manager().insert_frame(reinterpret_cast<basic_window*>(frame), native_window);
@@ -571,6 +574,7 @@ namespace API
 		}
 		return nullptr;
 	}
+#endif
 
 	void close_window(window wd)
 	{
@@ -1022,7 +1026,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
-			return reinterpret_cast<basic_window*>(wd)->scheme->foreground.get_color();
+			return reinterpret_cast<basic_window*>(wd)->annex.scheme->foreground.get_color();
 		return{};
 	}
 
@@ -1032,10 +1036,10 @@ namespace API
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
 		{
-			auto prev = iwd->scheme->foreground.get_color();
+			auto prev = iwd->annex.scheme->foreground.get_color();
 			if (prev != clr)
 			{
-				iwd->scheme->foreground = clr;
+				iwd->annex.scheme->foreground = clr;
 				restrict::wd_manager().update(iwd, true, false);
 			}
 			return prev;
@@ -1047,7 +1051,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
-			return reinterpret_cast<basic_window*>(wd)->scheme->background.get_color();
+			return reinterpret_cast<basic_window*>(wd)->annex.scheme->background.get_color();
 		return{};
 	}
 
@@ -1057,10 +1061,10 @@ namespace API
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
 		{
-			auto prev = iwd->scheme->background.get_color();
+			auto prev = iwd->annex.scheme->background.get_color();
 			if (prev != clr)
 			{
-				iwd->scheme->background = clr;
+				iwd->annex.scheme->background = clr;
 
 				//If the bground mode of this window is basic, it should remake the background
 				if (iwd->effect.bground && iwd->effect.bground_fade_rate < 0.01) // fade rate < 0.01 means it is basic mode
@@ -1077,7 +1081,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
-			return reinterpret_cast<basic_window*>(wd)->scheme->activated.get_color();
+			return reinterpret_cast<basic_window*>(wd)->annex.scheme->activated.get_color();
 		return{};
 	}
 
@@ -1087,10 +1091,10 @@ namespace API
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
 		{
-			auto prev = iwd->scheme->activated.get_color();
+			auto prev = iwd->annex.scheme->activated.get_color();
 			if (prev != clr)
 			{
-				iwd->scheme->activated = clr;
+				iwd->annex.scheme->activated = clr;
 				restrict::wd_manager().update(iwd, true, false);
 			}
 			return prev;
@@ -1099,12 +1103,99 @@ namespace API
 		return{};
 	}
 
-	void create_caret(window wd, unsigned width, unsigned height)
+	class caret_proxy
+		: public caret_interface
+	{
+	public:
+		caret_proxy(basic_window* wd)
+			: window_{ wd }
+		{}
+
+		void disable_throw() noexcept override
+		{
+			throw_ = false;
+		}
+
+		void effective_range(const rectangle& range) override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			if (caret)
+				caret->effective_range(range);
+		}
+
+		void position(const point& pos) override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			if (caret)
+				caret->position(pos);
+		}
+
+		point position() const override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			if (caret)
+				return caret->position();
+
+			return{};
+		}
+
+		void dimension(const size& size) override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			if (caret)
+				caret->dimension(size);
+		}
+
+		size dimension() const override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			if (caret)
+				return caret->dimension();
+
+			return{};
+		}
+
+		void visible(bool visibility) override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			if (caret)
+				caret->visible(visibility);
+		}
+
+		bool visible() const override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			return (caret && caret->visible());
+		}
+	private:
+		caret_interface* _m_caret() const
+		{
+			if (restrict::wd_manager().available(window_) && window_->annex.caret_ptr)
+				return window_->annex.caret_ptr;
+
+			if (throw_)
+				throw std::runtime_error("nana.api: access invalid caret");
+
+			return nullptr;
+		}
+	private:
+		basic_window* const window_;
+		bool throw_{ true };
+	};
+
+	void create_caret(window wd, const size& caret_size)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && (nullptr == iwd->together.caret))
-			iwd->together.caret = new ::nana::detail::caret_descriptor(iwd, width, height);
+		if (restrict::wd_manager().available(iwd) && !(iwd->annex.caret_ptr))
+			iwd->annex.caret_ptr = new ::nana::detail::caret(iwd, caret_size);
 	}
 
 	void destroy_caret(window wd)
@@ -1113,72 +1204,19 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::wd_manager().available(iwd))
 		{
-			auto p = iwd->together.caret;
-			iwd->together.caret = nullptr;
+			auto p = iwd->annex.caret_ptr;
+			iwd->annex.caret_ptr = nullptr;
 			delete p;
 		}
 	}
 
-	void caret_pos(window wd, const point& pos)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && iwd->together.caret)
-			iwd->together.caret->position(pos.x, pos.y);
-	}
+	std::unique_ptr<caret_interface> open_caret(window window_handle, bool disable_throw)
+	{		
+		auto p = new caret_proxy{ reinterpret_cast<basic_window*>(window_handle) };
+		if (disable_throw)
+			p->disable_throw();
 
-	nana::point caret_pos(window wd)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && iwd->together.caret)
-			return iwd->together.caret->position();
-
-		return{};
-	}
-
-	void caret_effective_range(window wd, const nana::rectangle& rect)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && iwd->together.caret)
-			iwd->together.caret->effective_range(rect);
-	}
-
-	void caret_size(window wd, const nana::size& sz)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard isg;
-		if(restrict::wd_manager().available(iwd) && iwd->together.caret)
-			iwd->together.caret->size(sz);
-	}
-
-	nana::size caret_size(window wd)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && iwd->together.caret)
-			return iwd->together.caret->size();
-
-		return{};
-	}
-
-	void caret_visible(window wd, bool is_show)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && iwd->together.caret)
-			iwd->together.caret->visible(is_show);
-	}
-
-	bool caret_visible(window wd)
-	{
-		auto iwd = reinterpret_cast<basic_window*>(wd);
-		internal_scope_guard lock;
-		if(restrict::wd_manager().available(iwd) && iwd->together.caret)
-			return iwd->together.caret->visible();
-
-		return false;
+		return std::unique_ptr<caret_interface>{ p };
 	}
 
 	void tabstop(window wd)

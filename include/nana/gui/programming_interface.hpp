@@ -80,8 +80,9 @@ namespace API
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);
 		window create_lite_widget(window, const rectangle&, widget* attached);
+#ifndef WIDGET_FRAME_DEPRECATED
 		window create_frame(window, const rectangle&, widget* attached);
-
+#endif
 		paint::graphics* window_graphics(window);
 
 		void delay_restore(bool);
@@ -201,9 +202,12 @@ namespace API
 
 	void fullscreen(window, bool);
 	bool enabled_double_click(window, bool);
+
+#ifndef WIDGET_FRAME_DEPRECATED
 	bool insert_frame(window frame, native_window_type);
 	native_window_type frame_container(window frame);
 	native_window_type frame_element(window frame, unsigned index);
+#endif
 	void close_window(window);
 	void show_window(window, bool show);                  ///< Sets a window visible state.
 	void restore_window(window);
@@ -334,15 +338,18 @@ namespace API
 	color activated_color(window);
 	color activated_color(window, const color&);
 
-	void create_caret(window, unsigned width, unsigned height);
+	void create_caret(window, const size&);
 	void destroy_caret(window);
-	void caret_effective_range(window, const rectangle&);
-	void caret_pos(window, const ::nana::point&);
-	nana::point caret_pos(window);
-	nana::size caret_size(window);
-	void caret_size(window, const size&);
-	void caret_visible(window, bool is_show);
-	bool caret_visible(window);
+
+	/// Opens an existing caret of a window.
+	/**
+	 * This function returns an object to operate caret. The object doesn't create or destroy the caret.
+	 * When you are finished with the caret, be sure to reset the pointer.
+	 *
+	 * @param window_handle A handle to a window whose caret is to be retrieved
+	 * @return a pointer to the caret proxy. nullptr if the window doesn't have a caret.
+	 */
+	::std::unique_ptr<caret_interface> open_caret(window window_handle, bool disable_throw = false);
 
 	/// Enables that the user can give input focus to the specified window using TAB key.
 	void tabstop(window);

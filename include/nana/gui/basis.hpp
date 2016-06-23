@@ -56,14 +56,18 @@ namespace nana
 			super,
 			widget = 0x1,
 			lite_widget = 0x3,
-			root = 0x5,
-			frame = 0x9
+			root = 0x5
+#ifndef WIDGET_FRAME_DEPRECATED
+			,frame = 0x9
+#endif
 		};
 		//wait for constexpr
 		struct widget_tag{ static const flags value = flags::widget; };
 		struct lite_widget_tag : public widget_tag{ static const flags value = flags::lite_widget;  };
 		struct root_tag : public widget_tag{ static const flags value = flags::root;  };
+#ifndef WIDGET_FRAME_DEPRECATED
 		struct frame_tag : public widget_tag{ static const flags value = flags::frame;  };
+#endif
 	}// end namespace category
 
 	using native_window_type = detail::native_window_handle_impl*;
@@ -260,6 +264,26 @@ that return a corresponding nana::appearance with predefined values.
 			}
 		};
 	};//end namespace apper
+
+	/// Interface for caret operations
+	class caret_interface
+	{
+	public:
+		virtual ~caret_interface() = default;
+
+		virtual void disable_throw() noexcept = 0;
+
+		virtual void effective_range(const rectangle& range) = 0;
+
+		virtual void position(const point& pos) = 0;
+		virtual point position() const = 0;
+
+		virtual void dimension(const size& size) = 0;
+		virtual size dimension() const  = 0;
+
+		virtual void visible(bool visibility) = 0;
+		virtual bool visible() const = 0;
+	};//end class caret_interface
 }//end namespace nana
 
 #include <nana/pop_ignore_diagnostic>

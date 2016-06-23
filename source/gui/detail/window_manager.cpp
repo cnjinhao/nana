@@ -237,7 +237,7 @@ namespace detail
 			switch(evtid)
 			{
 			case event_code::mouse_drop:
-				wd->flags.dropable = (is_make || (0 != wd->together.events_ptr->mouse_dropfiles.length()));
+				wd->flags.dropable = (is_make || (0 != wd->annex.events_ptr->mouse_dropfiles.length()));
 				break;
 			default:
 				break;
@@ -277,8 +277,12 @@ namespace detail
 					if (owner->flags.destroying)
 						throw std::runtime_error("the specified owner is destory");
 
+#ifndef WIDGET_FRAME_DEPRECATED
 					native = (category::flags::frame == owner->other.category ?
 										owner->other.attribute.frame->container : owner->root_widget->root);
+#else
+					native = owner->root_widget->root;
+#endif
 					r.x += owner->pos_root.x;
 					r.y += owner->pos_root.y;
 				}
@@ -311,8 +315,10 @@ namespace detail
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd, wd->thread_id);
 
+#ifndef WIDGET_FRAME_DEPRECATED
 				if (owner && (category::flags::frame == owner->other.category))
 					insert_frame(owner, wd);
+#endif
 
 				bedrock::inc_window(wd->thread_id);
 				this->icon(wd, impl_->default_icon_small, impl_->default_icon_big);
@@ -321,6 +327,7 @@ namespace detail
 			return nullptr;
 		}
 
+#ifndef WIDGET_FRAME_DEPRECATED
 		window_manager::core_window_t* window_manager::create_frame(core_window_t* parent, const rectangle& r, widget* wdg)
 		{
 			//Thread-Safe Required!
@@ -336,6 +343,7 @@ namespace detail
 			wd->root_widget->other.attribute.root->frames.push_back(wd);
 			return (wd);
 		}
+
 
 		bool window_manager::insert_frame(core_window_t* frame, native_window wd)
 		{
@@ -367,6 +375,7 @@ namespace detail
 			}
 			return false;
 		}
+#endif
 
 		window_manager::core_window_t* window_manager::create_widget(core_window_t* parent, const rectangle& r, bool is_lite, widget* wdg)
 		{
@@ -461,7 +470,11 @@ namespace detail
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
+#ifndef WIDGET_FRAME_DEPRECATED
 			if((category::flags::root == wd->other.category) || (category::flags::frame != wd->other.category))
+#else
+			if (category::flags::root == wd->other.category)
+#endif
 			{
 				impl_->misc_register.erase(wd->root);
 				impl_->wd_register.remove(wd);
@@ -498,6 +511,7 @@ namespace detail
 
 			if(visible != wd->visible)
 			{
+#ifndef WIDGET_FRAME_DEPRECATED
 				native_window_type nv = nullptr;
 				switch(wd->other.category)
 				{
@@ -508,6 +522,9 @@ namespace detail
 				default:	//category::widget_tag, category::lite_widget_tag
 					break;
 				}
+#else
+				auto nv = (category::flags::root == wd->other.category ? wd->root : nullptr);
+#endif
 
 				if(visible && wd->effect.bground)
 					window_layer::make_bground(wd);
@@ -717,12 +734,14 @@ namespace detail
 					if(false == passive)
 						native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height));
 				}
+#ifndef WIDGET_FRAME_DEPRECATED
 				else if(category::flags::frame == wd->other.category)
 				{
 					native_interface::window_size(wd->other.attribute.frame->container, sz);
 					for(auto natwd : wd->other.attribute.frame->attach)
 						native_interface::window_size(natwd, sz);
 				}
+#endif
 				else
 				{
 					//update the bground buffer of glass window.
@@ -943,8 +962,8 @@ namespace detail
 
 				if (impl_->wd_register.available(prev_focus))
 				{
-					if(prev_focus->together.caret)
-						prev_focus->together.caret->set_active(false);
+					if(prev_focus->annex.caret_ptr)
+						prev_focus->annex.caret_ptr->activate(false);
 
 					arg.getting = false;
 					arg.window_handle = reinterpret_cast<window>(prev_focus);
@@ -961,8 +980,8 @@ namespace detail
 				return prev_focus; //no new focus_window
 
 
-			if(wd->together.caret)
-				wd->together.caret->set_active(true);
+			if(wd->annex.caret_ptr)
+				wd->annex.caret_ptr->activate(true);
 
 			arg.window_handle = reinterpret_cast<window>(wd);
 			arg.getting = true;
@@ -1446,6 +1465,7 @@ namespace detail
 				}
 			}
 
+#ifndef WIDGET_FRAME_DEPRECATED
 			if (category::flags::frame == wd->other.category)
 			{
 				//remove the frame handle from the WM frames manager.
@@ -1454,6 +1474,7 @@ namespace detail
 				if (established)
 					pa_root_attr->frames.push_back(wd);
 			}
+#endif
 
 			if (established)
 			{
@@ -1507,11 +1528,11 @@ namespace detail
 
 			wd->flags.destroying = true;
 
-			if(wd->together.caret)
+			if(wd->annex.caret_ptr)
 			{
 				//The deletion of caret wants to know whether the window is destroyed under SOME platform. Such as X11
-				delete wd->together.caret;
-				wd->together.caret = nullptr;
+				delete wd->annex.caret_ptr;
+				wd->annex.caret_ptr = nullptr;
 			}
 
 			arg_destroy arg;
@@ -1552,6 +1573,7 @@ namespace detail
 			wd->drawer.detached();
 			wd->widget_notifier->destroy();
 
+#ifndef WIDGET_FRAME_DEPRECATED
 			if(category::flags::frame == wd->other.category)
 			{
 				//The frame widget does not have an owner, and close their element windows without activating owner.
@@ -1561,6 +1583,7 @@ namespace detail
 
 				native_interface::close_window(wd->other.attribute.frame->container);
 			}
+#endif
 
 			if(wd->other.category != category::flags::root)	//Not a root window
 				impl_->wd_register.remove(wd);
@@ -1571,13 +1594,18 @@ namespace detail
 			if(category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its childs are not to be changed
 			{
 				wd->pos_root += delta;
+#ifndef WIDGET_FRAME_DEPRECATED
 				if (category::flags::frame != wd->other.category)
 				{
-					if (wd->together.caret && wd->together.caret->visible())
-						wd->together.caret->update();
+					if (wd->annex.caret_ptr && wd->annex.caret_ptr->visible())
+						wd->annex.caret_ptr->update();
 				}
 				else
 					native_interface::move_window(wd->other.attribute.frame->container, wd->pos_root.x, wd->pos_root.y);
+#else
+				if (wd->annex.caret_ptr && wd->annex.caret_ptr->visible())
+					wd->annex.caret_ptr->update();
+#endif
 
 				if (wd->displayed() && wd->effect.bground)
 					window_layer::make_bground(wd);

@@ -48,6 +48,7 @@ namespace nana{	namespace paint
 	struct pixel_buffer::pixel_buffer_storage
 		: private nana::noncopyable
 	{
+		pixel_buffer_storage(const pixel_buffer_storage& other) = delete;
 		pixel_buffer_storage& operator=(const pixel_buffer_storage&) = delete;
 
 		bool _m_alloc()
@@ -111,18 +112,6 @@ namespace nana{	namespace paint
 				blur = provider.blur();
 			}
 		}img_pro;
-
-		pixel_buffer_storage(const pixel_buffer_storage& other) :
-			drawable{ other.drawable },
-			valid_r{ other.valid_r },
-			pixel_size{ other.pixel_size },
-			bytes_per_line{ other.bytes_per_line },
-			alpha_channel{ other.alpha_channel },
-			img_pro{ other.img_pro }
-		{
-			if (_m_alloc())
-				std::memcpy(raw_pixel_buffer, other.raw_pixel_buffer, pixel_size.width * pixel_size.height);
-		}
 
 		pixel_buffer_storage(std::size_t width, std::size_t height)
 			:	drawable(nullptr),

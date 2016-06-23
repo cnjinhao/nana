@@ -385,7 +385,7 @@ namespace detail
 					delete msg.u.mouse_drop.files;
 					arg.pos.x = msg.u.mouse_drop.x - msgwd->pos_root.x;
 					arg.pos.y = msg.u.mouse_drop.y - msgwd->pos_root.y;
-					msgwd->together.events_ptr->mouse_dropfiles.emit(arg, reinterpret_cast<window>(msgwd));
+					msgwd->annex.events_ptr->mouse_dropfiles.emit(arg, reinterpret_cast<window>(msgwd));
 					brock.wd_manager().do_lazy_refresh(msgwd, false);
 				}
 				break;
@@ -594,7 +594,7 @@ namespace detail
 						}
 					}
 
-					auto retain = msgwnd->together.events_ptr;
+					auto retain = msgwnd->annex.events_ptr;
 					context.event_window = msgwnd;
 
 					pressed_wd = nullptr;
@@ -632,7 +632,7 @@ namespace detail
 					nana::point mspos{xevent.xbutton.x, xevent.xbutton.y};
 					while(msgwnd)
 					{
-						if(msgwnd->together.events_ptr->mouse_wheel.length() != 0)
+						if(msgwnd->annex.events_ptr->mouse_wheel.length() != 0)
 						{
 							mspos -= msgwnd->pos_root;
 							arg_wheel arg;
@@ -653,7 +653,7 @@ namespace detail
 					msgwnd->set_action(mouse_action::normal);
 					if(msgwnd->flags.enabled)
 					{
-						auto retain = msgwnd->together.events_ptr;
+						auto retain = msgwnd->annex.events_ptr;
 
 						::nana::arg_mouse arg;
 						assign_arg(arg, msgwnd, message, xevent);
@@ -682,7 +682,7 @@ namespace detail
 							if(hit)
 								msgwnd->set_action(mouse_action::hovered);
 							
-							auto retain = msgwnd->together.events_ptr;
+							auto retain = msgwnd->annex.events_ptr;
 							auto evt_ptr = retain.get();
 
 							arg.evt_code = event_code::mouse_up;
@@ -698,7 +698,7 @@ namespace detail
 							}
 						}
 						else if(click_arg.window_handle)
-							msgwnd->together.events_ptr->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
+							msgwnd->annex.events_ptr->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
 
 						wd_manager.do_lazy_refresh(msgwnd, false);
 					}
@@ -895,7 +895,7 @@ namespace detail
 									msgwnd->set_action(mouse_action::pressed);
 
 									pressed_wd_space = msgwnd;
-									auto retain = msgwnd->together.events_ptr;
+									auto retain = msgwnd->annex.events_ptr;
 
 									draw_invoker(&drawer::mouse_down, msgwnd, arg, &context);
 									wd_manager.do_lazy_refresh(msgwnd, false);
@@ -987,7 +987,7 @@ namespace detail
 									arg.evt_code = event_code::key_char;
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
 									brock.get_key_state(arg);
-									msgwnd->together.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
+									msgwnd->annex.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
 									if(arg.ignore == false && wd_manager.available(msgwnd))
 										draw_invoker(&drawer::key_char, msgwnd, arg, &context);
 								}
@@ -1031,7 +1031,7 @@ namespace detail
 								    click_arg.mouse_args = nullptr;
 								    click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-								    auto retain = msgwnd->together.events_ptr;
+								    auto retain = msgwnd->annex.events_ptr;
 								    if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
 							    	{
 									    arg_mouse arg;

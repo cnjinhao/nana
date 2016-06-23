@@ -82,9 +82,7 @@ namespace detail
 		void define_state_cursor(core_window_t*, nana::cursor, thread_context*);
 		void undefine_state_cursor(core_window_t*, thread_context*);
 
-		widget_geometrics& get_scheme_template(scheme_factory_interface&&);
-		widget_geometrics* make_scheme(scheme_factory_interface&&);
-
+		color_schemes& scheme();
 		events_operation&	evt_operation();
 		window_manager&		wd_manager();
 

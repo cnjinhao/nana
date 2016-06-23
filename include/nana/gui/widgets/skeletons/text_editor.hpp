@@ -308,7 +308,8 @@ namespace nana{	namespace widgets
 
 			void _m_offset_y(int y);
 
-			unsigned _m_char_by_pixels(const wchar_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
+			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos);
+
 			unsigned _m_pixels_by_char(const ::std::wstring&, std::size_t pos) const;
 			void _handle_move_key(const arg_keyboard& arg);
 
@@ -316,6 +317,7 @@ namespace nana{	namespace widgets
 			std::unique_ptr<editor_behavior_interface> behavior_;
 			undoable<command>	undo_;
 			nana::window window_;
+			std::unique_ptr<caret_interface> caret_;
 			graph_reference graph_;
 			const text_editor_scheme*	scheme_;
 			event_interface *			event_handler_{ nullptr };

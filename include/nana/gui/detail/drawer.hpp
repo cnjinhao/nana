@@ -14,7 +14,6 @@
 #define NANA_GUI_DETAIL_DRAWER_HPP
 
 #include <nana/push_ignore_diagnostic>
-#include <vector>
 #include "general_events.hpp"
 #include <nana/paint/graphics.hpp>
 #include <functional>
@@ -29,14 +28,23 @@ namespace nana
 	}
 
 	class drawer_trigger
-		: ::nana::noncopyable, ::nana::nonmovable
 	{
 		friend class detail::drawer;
+
+		//Noncopyable
+		drawer_trigger(const drawer_trigger&) = delete;
+		drawer_trigger& operator=(const drawer_trigger&) = delete;
+
+		//Nonmovable
+		drawer_trigger(drawer_trigger&&) = delete;
+		drawer_trigger& operator=(drawer_trigger&&) = delete;
+
 	public:
 		using widget_reference = widget&;
 		using graph_reference = paint::graphics&;
 
-		virtual ~drawer_trigger();
+		drawer_trigger() = default;
+		virtual ~drawer_trigger() = default;
 		virtual void attached(widget_reference, graph_reference);	//none-const
 		virtual void detached();	//none-const
 
@@ -73,21 +81,11 @@ namespace nana
 	{
 		struct basic_window;
 
-		namespace dynamic_drawing
-		{
-			//declaration
-			class object;
-		}
-
 		//@brief:	Every window has a drawer, the drawer holds a drawer_trigger for
 		//			a widget.
 		class drawer
 			: nana::noncopyable, nana::nonmovable
 		{
-			enum{
-				event_size = static_cast<int>(event_code::end)
-			};
-
 			enum class method_state
 			{
 				pending,
@@ -95,6 +93,7 @@ namespace nana
 				not_overrided
 			};
 		public:
+			drawer();
 			~drawer();
 
 			void bind(basic_window*);
@@ -136,21 +135,21 @@ namespace nana
 			void _m_emit(event_code evt_code, const Arg& arg, Mfptr mfptr)
 			{
 				const int pos = static_cast<int>(evt_code);
-				if (realizer_ && (method_state::not_overrided != mth_state_[pos]))
+				if (data_impl_->realizer && (method_state::not_overrided != data_impl_->mth_state[pos]))
 				{
 					_m_bground_pre();
 
-					if (method_state::pending == mth_state_[pos])
+					if (method_state::pending == data_impl_->mth_state[pos])
 					{
-						(realizer_->*mfptr)(graphics, arg);
+						(data_impl_->realizer->*mfptr)(graphics, arg);
 						
 						//Check realizer, when the window is closed in that event handler, the drawer will be
 						//detached and realizer will be a nullptr
-						if(realizer_)
-							mth_state_[pos] = (realizer_->_m_overrided(evt_code) ? method_state::overrided : method_state::not_overrided);
+						if (data_impl_->realizer)
+							data_impl_->mth_state[pos] = (data_impl_->realizer->_m_overrided(evt_code) ? method_state::overrided : method_state::not_overrided);
 					}
 					else
-						(realizer_->*mfptr)(graphics, arg);
+						(data_impl_->realizer->*mfptr)(graphics, arg);
 
 					if (_m_lazy_decleared())
 					{
@@ -162,11 +161,9 @@ namespace nana
 		public:
 			nana::paint::graphics graphics;
 		private:
-			basic_window*	core_window_{nullptr};
-			drawer_trigger*	realizer_{nullptr};
-			std::vector<dynamic_drawing::object*>	dynamic_drawing_objects_;
-			bool refreshing_{false};
-			method_state mth_state_[event_size];
+			struct data_implement;
+
+			data_implement * const data_impl_;
 		};
 	}//end namespace detail
 }//end namespace nana

@@ -947,7 +947,7 @@ namespace detail
 					assign_arg(arg, msgwnd, message, pmdec);
 					msgwnd->set_action(mouse_action::pressed);
 
-					auto retain = msgwnd->together.events_ptr;
+					auto retain = msgwnd->annex.events_ptr;
 					if (brock.emit(event_code::mouse_down, msgwnd, arg, true, &context))
 					{
 						//If a root_window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
@@ -986,7 +986,7 @@ namespace detail
 				msgwnd->set_action(mouse_action::normal);
 				if(msgwnd->flags.enabled)
 				{
-					auto retain = msgwnd->together.events_ptr;
+					auto retain = msgwnd->annex.events_ptr;
 
 					::nana::arg_mouse arg;
 					assign_arg(arg, msgwnd, message, pmdec);
@@ -1121,7 +1121,7 @@ namespace detail
 						auto evt_wd = scrolled_wd;
 						while (evt_wd)
 						{
-							if (evt_wd->together.events_ptr->mouse_wheel.length() != 0)
+							if (evt_wd->annex.events_ptr->mouse_wheel.length() != 0)
 							{
 								def_window_proc = false;
 								nana::point mspos{ scr_pos.x, scr_pos.y };
@@ -1198,7 +1198,7 @@ namespace detail
 							wd_manager.calc_window_point(msgwnd, dropfiles.pos);
 							dropfiles.window_handle = reinterpret_cast<window>(msgwnd);
 
-							msgwnd->together.events_ptr->mouse_dropfiles.emit(dropfiles, reinterpret_cast<window>(msgwnd));
+							msgwnd->annex.events_ptr->mouse_dropfiles.emit(dropfiles, reinterpret_cast<window>(msgwnd));
 							wd_manager.do_lazy_refresh(msgwnd, false);
 						}
 					}
@@ -1422,7 +1422,7 @@ namespace detail
 								msgwnd->set_action(mouse_action::pressed);
 
 								pressed_wd_space = msgwnd;
-								auto retain = msgwnd->together.events_ptr;
+								auto retain = msgwnd->annex.events_ptr;
 
 								draw_invoker(&drawer::mouse_down, msgwnd, arg, &context);
 								wd_manager.do_lazy_refresh(msgwnd, false);
@@ -1468,7 +1468,7 @@ namespace detail
 						brock.get_key_state(arg);
 						arg.ignore = false;
 
-						msgwnd->together.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
+						msgwnd->annex.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
 						if ((false == arg.ignore) && wd_manager.available(msgwnd))
 							draw_invoker(&drawer::key_char, msgwnd, arg, &context);
 
@@ -1496,7 +1496,7 @@ namespace detail
 								click_arg.mouse_args = nullptr;
 								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-								auto retain = msgwnd->together.events_ptr;
+								auto retain = msgwnd->annex.events_ptr;
 								if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
 								{
 									arg_mouse arg;

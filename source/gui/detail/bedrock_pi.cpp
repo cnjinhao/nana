@@ -129,16 +129,16 @@ namespace nana
 			arg.window_handle = reinterpret_cast<window>(wd);
 			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
 			{
-				const core_window_t * caret_wd = (wd->together.caret ? wd : wd->child_caret());
+				const core_window_t * caret_wd = (wd->annex.caret_ptr ? wd : wd->child_caret());
 				if (caret_wd)
 				{
 					if (exposed)
 					{
 						if (wd->root_widget->other.attribute.root->focus == caret_wd)
-							caret_wd->together.caret->visible(true);
+							caret_wd->annex.caret_ptr->visible(true);
 					}
 					else
-						caret_wd->together.caret->visible(false);
+						caret_wd->annex.caret_ptr->visible(false);
 				}
 
 				if (!exposed)
@@ -148,8 +148,10 @@ namespace nana
 						//find an ancestor until it is not a lite_widget
 						wd = wd->seek_non_lite_widget_ancestor();
 					}
+#ifndef WIDGET_FRAME_DEPRECATED
 					else if (category::flags::frame == wd->other.category)
 						wd = wd_manager().find_window(wd->root, wd->pos_root.x, wd->pos_root.y);
+#endif
 				}
 
 				wd_manager().refresh_tree(wd);
@@ -201,24 +203,21 @@ namespace nana
 			{
 				if (root_wd->flags.enabled && root_wd->flags.take_active)
 				{
-					if (focused && focused->together.caret)
-						focused->together.caret->set_active(true);
+					if (focused && focused->annex.caret_ptr)
+						focused->annex.caret_ptr->activate(true);
 
 					if (!emit(event_code::focus, focused, arg, true, get_thread_context()))
 						this->wd_manager().set_focus(root_wd, true, arg_focus::reason::general);
 				}
 			}
-			else
+			else if (root_wd->other.attribute.root->focus)
 			{
-				if (root_wd->other.attribute.root->focus)
+				if (emit(event_code::focus, focused, arg, true, get_thread_context()))
 				{
-					if (emit(event_code::focus, focused, arg, true, get_thread_context()))
-					{
-						if (focused->together.caret)
-							focused->together.caret->set_active(false);
-					}
-					close_menu_if_focus_other_window(receiver);
+					if (focused->annex.caret_ptr)
+						focused->annex.caret_ptr->activate(false);
 				}
+				close_menu_if_focus_other_window(receiver);
 			}
 		}
 
@@ -353,19 +352,14 @@ namespace nana
 			return pi_data_->shortkey_occurred;
 		}
 
-		widget_geometrics& bedrock::get_scheme_template(scheme_factory_interface&& factory)
+		color_schemes& bedrock::scheme()
 		{
-			return pi_data_->scheme.scheme_template(std::move(factory));
-		}
-
-		widget_geometrics* bedrock::make_scheme(scheme_factory_interface&& factory)
-		{
-			return pi_data_->scheme.create(std::move(factory));
+			return pi_data_->scheme;
 		}
 
 		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::event_arg& event_arg)
 		{
-			auto retain = wd->together.events_ptr;
+			auto retain = wd->annex.events_ptr;
 			auto evts_ptr = retain.get();
 
 			switch (evt_code)

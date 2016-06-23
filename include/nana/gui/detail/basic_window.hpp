@@ -32,32 +32,37 @@ namespace detail
 		invisible, visible, displayed
 	};
 
-	class caret_descriptor
+	class caret
+		: public caret_interface
 	{
 	public:
-		typedef basic_window core_window_t;
+		caret(basic_window* owner, const size& size);
+		~caret();
 
-		caret_descriptor(core_window_t*, unsigned width, unsigned height);
-		~caret_descriptor();
-		void set_active(bool);
-		core_window_t* window() const;
-		void position(int x, int y);
-		void effective_range(::nana::rectangle);
-		::nana::point position() const;
-		void visible(bool isshow);
-		bool visible() const;
-		::nana::size size() const;
-		void size(const ::nana::size&);
+		void activate(bool activity);
+		basic_window* owner() const noexcept;
 		void update();
+	public:
+		//Implement caret_interface functions
+
+		//This function is useless for class caret, see caret_proxy.
+		void disable_throw() noexcept override;
+		void effective_range(const rectangle& r) override;
+		void position(const point& pos) override;
+		nana::point position() const override;
+		size dimension() const override;
+		void dimension(const size& s);
+		void visible(bool visibility) override;
+		bool visible() const override;
 	private:
-		core_window_t*	wd_;
-		::nana::point point_;
-		::nana::size	size_;
-		::nana::size	paint_size_;
-		visible_state	visible_state_;
-		bool		out_of_range_;
-		::nana::rectangle effective_range_;
-	};//end class caret_descriptor
+		basic_window * owner_;
+		point	position_;
+		size	size_;
+		size	visual_size_;
+		visible_state visibility_{ visible_state::invisible };
+		bool	out_of_range_{ false };
+		rectangle effect_range_;
+	};//end class caret
 
 	/// Define some constant about tab category, these flags can be combine with operator |
 	struct tab_type
@@ -69,6 +74,8 @@ namespace detail
 			eating,		///< process by current window
 		};
 	};
+
+	class caret;
 
 	/// a window data structure descriptor 
 	struct basic_window
@@ -107,7 +114,9 @@ namespace detail
 		/// bind a native window and baisc_window
 		void bind_native_window(native_window_type, unsigned width, unsigned height, unsigned extra_width, unsigned extra_height, paint::graphics&);
 
+#ifndef WIDGET_FRAME_DEPRECATED
 		void frame_window(native_window_type);
+#endif
 
 		bool is_ancestor_of(const basic_window* wd) const;
 		bool visible_parents() const;
@@ -174,13 +183,15 @@ namespace detail
 			mouse_action	action_before;
 		}flags;
 
-		struct
+
+		struct annex_components
 		{
-			caret_descriptor* caret;
+			caret* caret_ptr{ nullptr };
+
+			//The following pointers refer to the widget's object.
 			std::shared_ptr<general_events> events_ptr;
-		}together;
-		
-		widget_geometrics* scheme{ nullptr };
+			widget_geometrics* scheme{ nullptr };
+		}annex;
 
 		struct
 		{
@@ -191,11 +202,13 @@ namespace detail
 		
 		struct other_tag
 		{
+#ifndef WIDGET_FRAME_DEPRECATED
 			struct	attr_frame_tag
 			{
 				native_window_type container{nullptr};
 				std::vector<native_window_type> attach;
 			};
+#endif
 
 			struct	attr_root_tag
 			{
@@ -223,7 +236,9 @@ namespace detail
 			union
 			{
 				attr_root_tag * root;
+#ifndef WIDGET_FRAME_DEPRECATED
 				attr_frame_tag * frame;
+#endif
 			}attribute;
 
 			other_tag(category::flags);

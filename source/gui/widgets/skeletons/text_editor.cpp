@@ -376,9 +376,7 @@ namespace nana{	namespace widgets
 							auto str_px = static_cast<int>(editor_._m_text_extent_size(ent.begin, len).width);
 							if (scrpos.x < str_px)
 							{
-								std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
-
-								res.x = editor_._m_char_by_pixels(ent.begin, len, pxbuf.get(), str_px, scrpos.x, is_right_text(ent));
+								res.x = editor_._m_char_by_pixels(ent, static_cast<unsigned>(scrpos.x));
 								res.x += static_cast<unsigned>(ent.begin - lnstr.data());
 								return res;
 							}
@@ -837,9 +835,7 @@ namespace nana{	namespace widgets
 					auto str_px = static_cast<int>(editor_._m_text_extent_size(ent.begin, len).width);
 					if (scrpos.x < str_px)
 					{
-						std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
-
-						res.x += editor_._m_char_by_pixels(ent.begin, len, pxbuf.get(), str_px, scrpos.x, is_right_text(ent));
+						res.x += editor_._m_char_by_pixels(ent, scrpos.x);
 						res.x += static_cast<unsigned>(ent.begin - str);
 						return res;
 					}
@@ -1281,7 +1277,9 @@ namespace nana{	namespace widgets
 		//class text_editor
 		text_editor::text_editor(window wd, graph_reference graph, const text_editor_scheme* schm)
 			:	behavior_(new behavior_normal(*this)),
-				window_(wd), graph_(graph),
+				window_(wd),
+				caret_(API::open_caret(wd, true)),
+				graph_(graph),
 				scheme_(schm), keywords_(new keywords)
 		{
 			text_area_.area = graph.size();
@@ -1295,7 +1293,7 @@ namespace nana{	namespace widgets
 			select_.mode_selection = selection::mode::no_selected;
 			select_.ignore_press = false;
 
-			API::create_caret(wd, 1, line_height());
+			API::create_caret(wd, { 1, line_height() });
 			API::bgcolor(wd, colors::white);
 			API::fgcolor(wd, colors::black);
 
@@ -1864,18 +1862,17 @@ namespace nana{	namespace widgets
 			{
 				visible = true;
 				if (line_bottom > _m_end_pos(false))
-					API::caret_size(window_, nana::size(1, line_pixels - (line_bottom - _m_end_pos(false))));
-				else if (API::caret_size(window_).height != line_pixels)
+					caret_->dimension(nana::size(1, line_pixels - (line_bottom - _m_end_pos(false))));
+				else if (caret_->dimension().height != line_pixels)
 					reset_caret_pixels();
 			}
 
 			if(!attributes_.editable)
 				visible = false;
 
-			API::caret_visible(window_, visible);
-
+			caret_->visible(visible);
 			if(visible)
-				API::caret_pos(window_, pos);
+				caret_->position(pos);
 		}
 
 		void text_editor::move_caret_end()
@@ -1887,7 +1884,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::reset_caret_pixels() const
 		{
-			API::caret_size(window_, nana::size(1, line_height()));
+			caret_->dimension({ 1, line_height() });
 		}
 
 		void text_editor::reset_caret()
@@ -1898,7 +1895,7 @@ namespace nana{	namespace widgets
 		void text_editor::show_caret(bool isshow)
 		{
 			if(isshow == false || API::is_focus_ready(window_))
-				API::caret_visible(window_, isshow);
+				caret_->visible(isshow);
 		}
 
 		bool text_editor::selected() const
@@ -2004,7 +2001,7 @@ namespace nana{	namespace widgets
 			if (attributes_.line_wrapped)
 				exclude_px = text_area_.vscroll;
 			else
-				exclude_px = API::caret_size(window_).width;
+				exclude_px = caret_->dimension().width;
 
 			return (text_area_.area.width > exclude_px ? text_area_.area.width - exclude_px : 0);
 		}
@@ -3452,42 +3449,48 @@ namespace nana{	namespace widgets
 			points_.offset.y = y;
 		}
 
-		unsigned text_editor::_m_char_by_pixels(const wchar_t* str, std::size_t len, unsigned * pxbuf, int str_px, int pixels, bool is_rtl)
+		unsigned text_editor::_m_char_by_pixels(const unicode_bidi::entity& ent, unsigned pos)
 		{
-			if (graph_.glyph_pixels(str, len, pxbuf))
-			{
-				if (is_rtl)
-				{	//RTL
-					for (std::size_t u = 0; u < len; ++u)
-					{
-						auto px = static_cast<int>(pxbuf[u]);
-						auto chbeg = str_px - px;
-						if (chbeg <= pixels && pixels < str_px)
-						{
-							if ((px < 2) || (pixels <= chbeg + (px >> 1)))
-								return static_cast<unsigned>(u + 1);
+			unsigned len = ent.end - ent.begin;
 
-							return static_cast<unsigned>(u);
+			std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
+			if (graph_.glyph_pixels(ent.begin, len, pxbuf.get()))
+			{
+				const auto px_end = pxbuf.get() + len;
+
+				if (is_right_text(ent))
+				{
+					auto total_px = std::accumulate(pxbuf.get(), px_end, static_cast<unsigned>(0));
+
+					for (auto p = pxbuf.get(); p != px_end; ++p)
+					{
+						auto chpos = total_px - *p;
+						if ((chpos <= pos) && (pos < total_px))
+						{
+							if ((*p < 2) || (pos <= chpos + (*p >> 1)))
+								return static_cast<unsigned>(p - pxbuf.get()) + 1;
+
+							return static_cast<unsigned>(p - pxbuf.get());
 						}
-						str_px = chbeg;
+						total_px = chpos;
 					}
 				}
 				else
 				{
-					//LTR
-					for (std::size_t u = 0; u < len; ++u)
+					for (auto p = pxbuf.get(); p != px_end; ++p)
 					{
-						auto px = static_cast<int>(pxbuf[u]);
-						if (pixels < px)
+						if (pos < *p)
 						{
-							if ((px > 1) && (pixels > (px >> 1)))
-								return static_cast<unsigned>(u + 1);
-							return static_cast<unsigned>(u);
+							if ((*p > 1) && (pos >(*p >> 1)))
+								return static_cast<unsigned>(p - pxbuf.get()) + 1;
+							return static_cast<unsigned>(p - pxbuf.get());
 						}
-						pixels -= px;
+
+						pos -= *p;
 					}
 				}
 			}
+
 			return 0;
 		}
 

@@ -66,6 +66,7 @@ namespace nana
 							nana::point p_src;
 							for (auto & el : blocks)
 							{
+#ifndef WIDGET_FRAME_DEPRECATED
 								if (category::flags::frame == el.window->other.category)
 								{
 									native_window_type container = el.window->other.attribute.frame->container;
@@ -73,6 +74,7 @@ namespace nana
 									graph.bitblt(el.r, container);
 								}
 								else
+#endif
 								{
 									p_src.x = el.r.x - el.window->pos_root.x;
 									p_src.y = el.r.y - el.window->pos_root.y;
