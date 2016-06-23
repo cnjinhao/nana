@@ -16,7 +16,7 @@
 
 #https://cmake.org/cmake-tutorial/
 #https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
-# use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
+# use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
 
 #  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
@@ -320,7 +320,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
          enable_testing ()
 	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
-    set (demos    calculator helloworld_demo notepad        )
+    set (demos    calculator file_explorer helloworld_demo notepad        )
 
     foreach ( demo ${demos})
         add_executable(${demo} "../nana-demo/${demo}.cpp")
@@ -334,7 +334,6 @@ if (NANA_CMAKE_BUILD_DEMOS)
         install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
-
 
     set (demos    widget_show widget_show2      )
 
@@ -355,12 +354,10 @@ if (NANA_CMAKE_BUILD_DEMOS)
         message("... to build: ../nana-demo/${demo}.cpp" )
     endforeach( demo ${demos})
 
-endif (NANA_CMAKE_BUILD_FreeMe)
-
 
     set (demos    a_group_impl  animate-bmp  audio_player audio_player_simple  background-effects categ clicked
                   decore dock  drag-button  draw example.button example_combox example_listbox example_menu
-                  filebox-txt folder_tree folder_tree_nana framework_design_1 framework_design_2 framework_design_3
+                  filebox-txt folder_tree folder_tree_nana folder_tree_std framework_design_1 framework_design_2 framework_design_3
                   group HelloWord helloword_quit inputbox label_listener lambda_event.Cpp11 listbox_inline_widget listbox_Resolver loader_1 loader_2
                   main mbox menu_debug menu_popuper modal_form MontiHall place_login png screen stretch_image
                   threading thread-pool various_events window-dragger windows-subclassing
