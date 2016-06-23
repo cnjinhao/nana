@@ -32,6 +32,8 @@
 
     #define STRING2(x) #x
 	#define STRING(x) STRING2(x)
+    #define SHOW_VALUE(x)  "\n x=" STRING2(x) 
+
 	#pragma message ( "\n ---> SVerbose preprocessor \nVERBOSE_PREPROCESSOR=" STRING(VERBOSE_PREPROCESSOR)" , \n STOP_VERBOSE_PREPROCESSOR=" STRING(STOP_VERBOSE_PREPROCESSOR)  )
 
 	#pragma message ( "\n ---> OS: \nWindows: \n _WIN32=" STRING(_WIN32) ", \n __WIN32__ =" STRING(__WIN32__) " , \n WIN32=" STRING(WIN32)" , \n NANA_WINDOWS=" STRING(NANA_WINDOWS)   )
@@ -58,6 +60,8 @@
 
 	#pragma message ( "\n CXX_NO_INLINE_NAMESPACE=" STRING(CXX_NO_INLINE_NAMESPACE) ", \n __has_include=" STRING(__has_include)"  , \n __cpp_lib_experimental_filesystem=" STRING(__cpp_lib_experimental_filesystem) )
 
+    #pragma message ( "\n NANA_USING_NANA_FILESYSTEM=" STRING(NANA_USING_NANA_FILESYSTEM) ", \n NANA_USING_STD_FILESYSTEM=" STRING(NANA_USING_STD_FILESYSTEM)"  , \n NANA_USING_BOOST_FILESYSTEM=" STRING(NANA_USING_BOOST_FILESYSTEM) )
+
     #include <nana/filesystem/filesystem_selector.hpp>
 
     #pragma message ( "\n ...including filesystem_selector: \n STD_put_time_NOT_SUPPORTED=" STRING(STD_put_time_NOT_SUPPORTED) " , \n STD_FILESYSTEM_NOT_SUPPORTED=" STRING(STD_FILESYSTEM_NOT_SUPPORTED))
@@ -66,7 +70,12 @@
 
 	#pragma message ( "\n CXX_NO_INLINE_NAMESPACE=" STRING(CXX_NO_INLINE_NAMESPACE) ", \n __has_include=" STRING(__has_include)"  , \n __cpp_lib_experimental_filesystem=" STRING(__cpp_lib_experimental_filesystem) )
 
-    // #pragma message ( "\n =" STRING() ", \n =" STRING()"  , \n =" STRING() )
+    #pragma message ( "\n NANA_USING_NANA_FILESYSTEM=" STRING(NANA_USING_NANA_FILESYSTEM) ", \n NANA_USING_STD_FILESYSTEM=" STRING(NANA_USING_STD_FILESYSTEM)"  , \n NANA_USING_BOOST_FILESYSTEM=" STRING(NANA_USING_BOOST_FILESYSTEM) )
+   
+   // #pragma message ( "\n =" STRING() ", \n =" STRING()"  , \n =" STRING() )
+   
+    #pragma message ( "\n Show value: =>\n " SHOW_VALUE(NANA_USING_NANA_FILESYSTEM)   )
+
 
 	#pragma message ( "\nUNICODE: \n NANA_UNICODE=" STRING(NANA_UNICODE) ", \n _UNICODE =" STRING(_UNICODE) " , \n UNICODE=" STRING(UNICODE)  )
 
