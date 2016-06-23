@@ -701,3 +701,6 @@ namespace nana
 
 }
 
+#if defined(VERBOSE_PREPROCESSOR)
+#	include <nana/verbose_preprocessor.hpp>
+#endif

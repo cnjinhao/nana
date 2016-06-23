@@ -29,6 +29,10 @@
 
 #include <nana/config.hpp>
 
+#define NANA_USING_NANA_FILESYSTEM  false
+#define NANA_USING_STD_FILESYSTEM   false
+#define NANA_USING_BOOST_FILESYSTEM false
+
 #if (defined(NANA_FILESYSTEM_FORCE) || ( (defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(BOOST_FILESYSTEM_AVAILABLE)) && !(defined(BOOST_FILESYSTEM_FORCE) || defined(STD_FILESYSTEM_FORCE)) ) )
 
 #   include <nana/filesystem/filesystem.hpp>
@@ -42,7 +46,8 @@ namespace std {
 #       else
 			using namespace nana::experimental::filesystem::v1;
 #       endif
-
+#undef  NANA_USING_NANA_FILESYSTEM 
+#define NANA_USING_NANA_FILESYSTEM  true		
 		} // filesystem
 	} // experimental
 } // std
@@ -56,12 +61,17 @@ namespace std {
 	namespace experimental {
 		namespace filesystem {
                   using namespace boost::filesystem;
+#undef  NANA_USING_BOOST_FILESYSTEM
+#define NANA_USING_BOOST_FILESYSTEM true
 		} // filesystem
 	} // experimental
 } // std
 
 #else
-#	include <experimental/filesystem>
+
+#    include <experimental/filesystem>
+#undef NANA_USING_STD_FILESYSTEM 
+#define NANA_USING_STD_FILESYSTEM true
 #endif
 
 #ifndef __cpp_lib_experimental_filesystem
