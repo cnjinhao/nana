@@ -72,6 +72,11 @@ if(POLICY CMP0054)
   cmake_policy(SET CMP0054 OLD)
 endif()
 
+if(POLICY CMP0004)    # ignore leading space
+  # http://www.cmake.org/cmake/help/v3.0/policy/CMP0004.html
+  cmake_policy(SET CMP0004 OLD)
+endif()
+
 add_definitions(-DNANA_IGNORE_CONF)
 
 
