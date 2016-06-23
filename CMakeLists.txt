@@ -64,37 +64,6 @@ option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if avail
 #set(NANA_LINKS "${NANA_LINKS} ${NANA_CMAKE_BOOST_FILESYSTEM_LIB}")
 
 
-if (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
-    add_definitions(-DNANA_FILESYSTEM_FORCE)
-	
-elseif (NANA_CMAKE_STD_FILESYSTEM_FORCE)
-    add_definitions(-DSTD_FILESYSTEM_FORCE)
-	
-elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-
-	if (NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-        add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
-	endif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-	
-    # https://cmake.org/cmake/help/git-master/module/FindBoost.html
-	# Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied, 
-	# even if system is not specified when using find_package and if Boost::system is not added to target_link_libraries. 
-	# If using Boost::thread, then Thread::Thread will also be added automatically.
-    find_package(Boost COMPONENTS filesystem)
-	if (Boost_FOUND)
-      add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
-	  include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
-	  #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${Boost_LIBRARIES}")
-	  set(NANA_LINKS "${NANA_LINKS} ${Boost_LIBRARIES}")    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
-	  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Boost_LIBRARIES}")
-	endif (Boost_FOUND)
-	
-	set(Boost_USE_STATIC_LIBS ON)
-	set(Boost_USE_STATIC_RUNTIME ON)  # ??
-	#set(Boost_USE_MULTITHREADED ON)
-	
-endif (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
-
 
 
 ########### Compatibility with CMake 3.1
@@ -154,6 +123,52 @@ if(UNIX)
 endif(UNIX)
 
 
+########### Compliers
+#
+# Using gcc: gcc 4.8 don't sopourt C++14 and make_unique. You may want to update at least to 4.9.
+# In Windows, the gcc which come with CLion was 4.8 from MinGW. You may want to install MinGW-w64 from the
+# TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
+# gcc 5.3 and 5.4 include filesytem, but you need to add the link flag: -lstdc++fs
+#
+# see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
+
+# set compile  flags
+if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")    # Clang || GNU
+
+    if  ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall")       # Clang
+	
+    else ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall")       # GNU 
+          
+    endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+
+endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+
+# enable static linkage
+if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)    # GNU || CLang not MinGW
+    #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
+    
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
+	                                                                     # IS_GNUCXX < 5.3
+    else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
+       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
+       set(NANA_LINKS "${NANA_LINKS} -lstdc++fs") 
+    endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
+    
+endif (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
+
+
+if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
+endif ()
+
+# set (CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
+
+
+
+
 ############# Optional libraries
 
 #Find PNG
@@ -203,6 +218,39 @@ if(NANA_CMAKE_ENABLE_AUDIO)
     endif(UNIX)
 endif(NANA_CMAKE_ENABLE_AUDIO)
 
+if (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
+    add_definitions(-DNANA_FILESYSTEM_FORCE)
+	
+elseif (NANA_CMAKE_STD_FILESYSTEM_FORCE)
+    add_definitions(-DSTD_FILESYSTEM_FORCE)
+	
+elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+
+	if (NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+        add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
+	endif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+	
+    # https://cmake.org/cmake/help/git-master/module/FindBoost.html
+	# Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied, 
+	# even if system is not specified when using find_package and if Boost::system is not added to target_link_libraries. 
+	# If using Boost::thread, then Thread::Thread will also be added automatically.
+    find_package(Boost COMPONENTS filesystem)
+	if (Boost_FOUND)
+      add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
+	  include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
+	  #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${Boost_LIBRARIES}")
+	  set(NANA_LINKS "${NANA_LINKS} ${Boost_LIBRARIES}")    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
+	  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Boost_LIBRARIES}")
+	endif (Boost_FOUND)
+	
+	set(Boost_USE_STATIC_LIBS ON)
+	set(Boost_USE_STATIC_RUNTIME ON)  # ??
+	#set(Boost_USE_MULTITHREADED ON)
+	
+endif (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
+
+
+
 if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
@@ -240,7 +288,7 @@ endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
 include_directories(${NANA_INCLUDE_DIR})
 add_library(${PROJECT_NAME} ${sources} )
-target_link_libraries(${PROJECT_NAME}${NANA_LINKS}) 
+target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
 
  #  Headers: use INCLUDE_DIRECTORIES
  #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
@@ -322,48 +370,6 @@ if (NANA_CMAKE_BUILD_DEMOS)
 
 endif (NANA_CMAKE_BUILD_DEMOS)
 
-
-#
-# Using gcc: gcc 4.8 don't sopourt C++14 and make_unique. You may want to update at least to 4.9.
-# In Windows, the gcc which come with CLion was 4.8 from MinGW. You may want to install MinGW-w64 from the
-# TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
-# gcc 5.3 and 5.4 include filesytem, but you need to add the link flag: -lstdc++fs
-#
-# see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
-
-# set compile  flags
-if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")    # Clang || GNU
-
-    if  ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall")       # Clang
-	
-    else ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall")       # GNU 
-          
-    endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-
-endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-
-# enable static linkage
-if (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)    # GNU || CLang not MinGW
-    #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
-    
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-	                                                                     # IS_GNUCXX < 5.3
-    else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
-       set(NANA_LINKS "${NANA_LINKS} -lstdc++fs") 
-    endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-    
-endif (CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NOT MINGW)
-
-
-if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
-  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
-endif ()
-
-# set (CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
 
 
 message ( "CMAKE_CXX_COMPILER_ID   = "  ${CMAKE_CXX_COMPILER_ID})
