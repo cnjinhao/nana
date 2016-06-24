@@ -13,6 +13,8 @@
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 
+#include <iostream> //debug travis
+
 namespace nana
 {
 	namespace detail
@@ -215,6 +217,7 @@ namespace nana
 					{
 					case category::flags::root:
 						attribute.root = new attr_root_tag;
+						std::cout<<"basic_window: create attr root "<<attribute.root<<std::endl;
 						break;
 #ifndef WIDGET_FRAME_DEPRECATED
 					case category::flags::frame:
@@ -240,8 +243,13 @@ namespace nana
 					default: break;
 					}
 #endif
+
 					if (category::flags::root == category)
+					{
+						std::cout<<"basic_window: delete attr root"<<attribute.root<<std::endl;
 						delete attribute.root;
+						std::cout<<"    delete successfully"<<std::endl;
+					}
 				}
 			//end struct basic_window::other_tag
 
