@@ -30,6 +30,9 @@
 #ifndef NANA_FILESYSTEM_HPP
 #define NANA_FILESYSTEM_HPP
 
+//#undef  NANA_USING_NANA_FILESYSTEM 
+#if NANA_USING_NANA_FILESYSTEM 
+
 #include <nana/push_ignore_diagnostic>
 
 #include <string>
@@ -233,18 +236,18 @@ namespace nana  { namespace experimental { namespace filesystem
 	{
 	public:
 		directory_entry() = default;
-		explicit directory_entry(const path&);
+		explicit directory_entry(const ::nana::experimental::filesystem::path&);
 
 		//modifiers
-		void assign(const path&);
-		void replace_filename(const path&);
+		void assign(const ::nana::experimental::filesystem::path&);
+		void replace_filename(const ::nana::experimental::filesystem::path&);
 
 		//observers
 		file_status status() const;
-		operator const path&() const {	return path_;	};
-		const path& path() const;
+		operator const filesystem::path&() const {	return path_;	};
+		const filesystem::path& path() const;
 	private:
-		filesystem::path path_;
+		::nana::experimental::filesystem::path path_;
 	};
 
     /// InputIterator that iterate over the sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
@@ -413,4 +416,5 @@ namespace nana  { namespace experimental { namespace filesystem
 } //end namespace nana
 
 #include <nana/pop_ignore_diagnostic>
+#endif
 #endif

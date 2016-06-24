@@ -13,10 +13,11 @@
 #ifndef NANA_PAINT_GRAPHICS_HPP
 #define NANA_PAINT_GRAPHICS_HPP
 
+#include <memory>
+
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
 #include "pixel_buffer.hpp"
-#include <memory>
 
 namespace nana
 {

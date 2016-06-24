@@ -1,4 +1,4 @@
-/*
+/**
  *	Filebox
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,9 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/filebox.hpp
+ *	@file nana/gui/filebox.hpp
+ *  @author Jinhao
+ *  @brief a dialog to chose file(s), implemented "native" in windows but using nana for X11 
  */
 
 #ifndef NANA_GUI_FILEBOX_HPP
@@ -37,18 +39,20 @@ namespace nana
 		/// Change owner window
 		void owner(window);
 
-		/// specify a title for the dialog
+		/// Set a new title for the dialog
 		/// @param	string	a text for title
-		/// @return old title.
-		::std::string title( ::std::string new_title); ///< . Set a new title for the dialog and \return the old title
+		/// @return the old title.
+		::std::string title( ::std::string new_title);  
 
-		/**	@brief	specify a suggestion directory
-		 *	@param	string	a path of initial directory
+		/**	@brief	Suggest initial path used to locate a directory when the filebox starts.
+		 *	@param	string	initial_directory a path of initial directory
 		 *	@note	the behavior of init_path is different between Win7 and Win2K/XP/Vista, but its behavior under Linux is conformed with Win7.
 		 */
-		filebox& init_path(const ::std::string&); ///< Suggested init path used to locate a directory when the filebox starts.
+		filebox& init_path(const ::std::string& initial_directory);
+
 		filebox& init_file(const ::std::string&); ///< Init file, if it contains a path, the init path is replaced by the path of init file.
-        /// \brief Add a filetype filter. 
+        
+		/// \brief Add a filetype filter. 
         /// To specify multiple filter in a single description, use a semicolon to separate the patterns(for example,"*.TXT;*.DOC;*.BAK").
 		filebox& add_filter(const ::std::string& description,  ///< for example. "Text File"
                             const ::std::string& filetype      ///< filter pattern(for example, "*.TXT")
@@ -68,8 +72,7 @@ namespace nana
 		/// Display the filebox dialog
 		bool show() const;
 		
-		/// Display the filebox dialog
-		/// A function object method alternative to show()
+		/// a function object method alternative to show() to display the filebox dialog, 
 		bool operator()() const
 		{
 			return show();

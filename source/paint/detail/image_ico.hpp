@@ -1,8 +1,8 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_ICO_HPP
 #define NANA_PAINT_DETAIL_IMAGE_ICO_HPP
 
+#include <nana/filesystem/filesystem_ext.hpp>
 #include <nana/paint/detail/image_impl_interface.hpp>
-#include <nana/filesystem/filesystem.hpp>
 
 namespace nana{	namespace paint
 {
@@ -24,7 +24,7 @@ namespace nana{	namespace paint
 			image_ico(bool is_ico);
 
 
-			bool open(const ::nana::experimental::filesystem::path& filename) override;
+			bool open(const std::experimental::filesystem::path& filename) override;
 			bool open(const void* data, std::size_t bytes) override;
 			bool alpha_channel() const override;
 			bool empty() const override;

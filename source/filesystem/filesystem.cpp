@@ -11,7 +11,8 @@
  *		provide some interface for file managment
  */
 
-#include <nana/filesystem/filesystem.hpp>
+#include <nana/filesystem/filesystem_ext.hpp>
+#if NANA_USING_NANA_FILESYSTEM 
 #include <vector>
 #if defined(NANA_WINDOWS)
     #include <windows.h>
@@ -369,7 +370,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			//	return path_;
 			//}
 
-			const path& directory_entry::path() const
+			const nana_fs::path& directory_entry::path() const
 			{
 				return path_;
 			}
@@ -888,3 +889,5 @@ namespace nana {	namespace experimental {	namespace filesystem
 		}//end namespace filesystem
 	} //end namespace experimental
 }//end namespace nana
+#endif
+

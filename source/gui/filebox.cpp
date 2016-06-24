@@ -12,7 +12,7 @@
 
 #include <nana/gui.hpp>
 #include <nana/gui/filebox.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <nana/filesystem/filesystem_ext.hpp>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -24,13 +24,12 @@
 	#include <nana/gui/widgets/textbox.hpp>
 	#include <nana/gui/widgets/treebox.hpp>
 	#include <nana/gui/widgets/combox.hpp>
-	#include <nana/filesystem/filesystem.hpp>
 	#include <nana/gui/place.hpp>
 	#include <stdexcept>
 	#include <algorithm>
 #endif
 
-namespace fs = nana::experimental::filesystem;
+namespace fs = std::experimental::filesystem;
 
 namespace nana
 {
@@ -527,8 +526,6 @@ namespace nana
 		{
 			if((path.size() == 0) || (path[path.size() - 1] != '/'))
 				path += '/';
-
-			namespace fs = ::nana::experimental::filesystem;
 
 			auto beg_node = tree_.selected();
 			while(!beg_node.empty() && (beg_node != nodes_.home) && (beg_node != nodes_.filesystem))
