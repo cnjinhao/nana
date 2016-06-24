@@ -18,7 +18,11 @@
 #include <iomanip>
 #include <nana/filesystem/filesystem_selector.hpp>
 
-namespace nana {namespace experimental {namespace filesystem {namespace ext {
+namespace nana 
+{
+namespace filesystem_ext 
+{
+
 #if defined(NANA_WINDOWS)
     constexpr auto def_root = "C:";
     constexpr auto def_rootstr = "C:\\";
@@ -153,6 +157,13 @@ inline std::string pretty_file_date(const std::experimental::filesystem::path& p
 {
     try {
         auto ftime = std::experimental::filesystem::last_write_time(path);
+
+		// crash: VS2015 will not read the time for some files (for example: C:/hiberfil.sys)
+		//   and will return file_time_type(-1) without throwing
+		//   https://msdn.microsoft.com/en-us/library/dn823784.aspx
+
+		if (ftime == ((std::experimental::filesystem::file_time_type::min)())) return {};
+
         std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
         std::stringstream tm;
         tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
@@ -163,5 +174,7 @@ inline std::string pretty_file_date(const std::experimental::filesystem::path& p
     }
 }
 
-}}}}
+}  // filesystem_ext
+}  // nana
+
 #endif //NANA_FILESYSTEM_EXT_HPP

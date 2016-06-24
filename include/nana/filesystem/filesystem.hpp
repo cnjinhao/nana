@@ -241,8 +241,8 @@ namespace nana  { namespace experimental { namespace filesystem
 
 		//observers
 		file_status status() const;
-		operator const filesystem::path&() const;
-		const filesystem::path& path() const;
+		operator const path&() const {	return path_;	};
+		const path& path() const;
 	private:
 		filesystem::path path_;
 	};

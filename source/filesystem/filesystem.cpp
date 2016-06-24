@@ -36,6 +36,7 @@
 	#include <stdlib.h>
 #endif
 
+namespace nana_fs = nana::experimental::filesystem;
 
 namespace nana {	namespace experimental {	namespace filesystem
 	{
@@ -143,7 +144,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		path path::parent_path() const
 		{
-			return{filesystem::parent_path(pathstr_)};
+			return{nana_fs::parent_path(pathstr_)};
 		}
 
 		file_type path::what() const
@@ -342,17 +343,17 @@ namespace nana {	namespace experimental {	namespace filesystem
 		}
 
 		//class directory_entry
-			directory_entry::directory_entry(const filesystem::path& p)
+			directory_entry::directory_entry(const nana_fs::path& p)
 				:path_{ p }
 			{}
 
 			//modifiers
-			void directory_entry::assign(const  filesystem::path& p)
+			void directory_entry::assign(const  nana_fs::path& p)
 			{
 				path_ = p;
 			}
 
-			void directory_entry::replace_filename(const  filesystem::path& p)
+			void directory_entry::replace_filename(const  nana_fs::path& p)
 			{
 				path_ = path_.parent_path() / p;
 			}
@@ -360,13 +361,13 @@ namespace nana {	namespace experimental {	namespace filesystem
 			//observers
 			file_status directory_entry::status() const
 			{
-				return filesystem::status(path_);
+				return nana_fs::status(path_);
 			}
 
-			directory_entry::operator const filesystem::path&() const
-			{
-				return path_;
-			}
+			//directory_entry::operator const nana_fs::path&() const
+			//{
+			//	return path_;
+			//}
 
 			const path& directory_entry::path() const
 			{
