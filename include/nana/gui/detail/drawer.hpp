@@ -148,8 +148,8 @@ namespace nana
 						
 						//Check realizer, when the window is closed in that event handler, the drawer will be
 						//detached and realizer will be a nullptr
-						if (realizer)
-							mth_state = (realizer->_m_overrided(evt_code) ? method_state::overrided : method_state::not_overrided);
+						//if (realizer)
+						//	mth_state = (realizer->_m_overrided(evt_code) ? method_state::overrided : method_state::not_overrided);
 					}
 					else
 						(realizer->*mfptr)(graphics, arg);
