@@ -95,7 +95,7 @@
 
 //This marco is defined since 1.4 and until 1.5 for deprecating frame widget.
 //This marco and class frame will be removed in version 1.5
-//#define WIDGET_FRAME_DEPRECATED
+#define WIDGET_FRAME_DEPRECATED
 
 ///////////////////
 //  Support for NANA_AUTOMATIC_GUI_TESTING
