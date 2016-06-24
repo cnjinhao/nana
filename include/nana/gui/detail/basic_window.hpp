@@ -64,6 +64,7 @@ namespace detail
 		rectangle effect_range_;
 	};//end class caret
 
+
 	/// Define some constant about tab category, these flags can be combine with operator |
 	struct tab_type
 	{
@@ -75,7 +76,6 @@ namespace detail
 		};
 	};
 
-	class caret;
 
 	/// a window data structure descriptor 
 	struct basic_window
@@ -212,9 +212,18 @@ namespace detail
 
 			struct	attr_root_tag
 			{
+				attr_root_tag(const attr_root_tag&) = delete;
+				attr_root_tag(attr_root_tag&&) = delete;
+#ifndef WIDGET_FRAME_DEPRECATED
 				container	frames;	///< initialization is null, it will be created while creating a frame widget. Refer to WindowManager::create_frame
-				container	tabstop;
-				std::vector<edge_nimbus_action> effects_edge_nimbus;
+#endif
+				//Following p_xxx pointers are used for debugging
+				container * p_tabstop;
+				std::vector<edge_nimbus_action> * p_effects;
+				std::function<void()> * p_draw_through;
+
+				container&	tabstop;
+				std::vector<edge_nimbus_action>& effects_edge_nimbus;
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
 				bool			ime_enabled{false};
@@ -224,7 +233,18 @@ namespace detail
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 
-				std::function<void()> draw_through;	///< A draw through renderer for root widgets.
+				std::function<void()>& draw_through;	///< A draw through renderer for root widgets.
+
+				attr_root_tag():
+					p_tabstop(new container),
+					p_effects(new std::vector<edge_nimbus_action>),
+					p_draw_through(new std::function<void()>),
+					tabstop(*p_tabstop),
+					effects_edge_nimbus(*p_effects),
+					draw_through(*p_draw_through)
+				{
+					
+				}
 			};
 
 			const category::flags category;
