@@ -236,6 +236,7 @@ namespace nana
 				basic_window::other_tag::~other_tag()
 				{
 #ifndef WIDGET_FRAME_DEPRECATED
+					std::cout<<"~other_tag "<<this<<std::endl;
 					switch(category)
 					{
 					case category::flags::root:
