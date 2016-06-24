@@ -209,6 +209,10 @@ namespace nana
 		//end class caret
 
 		//struct basic_window
+			basic_window::other_tag::attr_root_tag::~attr_root_tag()
+			{
+				std::cout<<"~attr_root_tag "<<this<<std::endl;
+			}
 			//struct basic_window::other_tag
 				basic_window::other_tag::other_tag(category::flags categ)
 					: category(categ), active_window(nullptr), upd_state(update_state::none)

@@ -242,9 +242,10 @@ namespace detail
 					tabstop(*p_tabstop),
 					effects_edge_nimbus(*p_effects),
 					draw_through(*p_draw_through)
-				{
-					
+				{}
 				}
+
+				~attr_root_tag();
 			};
 
 			const category::flags category;
