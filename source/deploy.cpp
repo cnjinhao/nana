@@ -449,7 +449,7 @@ namespace std
 	//template<   >
 	std::string put_time/*<char, std::string>*/(const std::tm* tmb, const char* fmt)
 	{  
-		unsigned sz = 200;
+		std::size_t sz = 200;
 		std::string str(sz, '\0'); 
 		sz = std::strftime(&str[0], str.size() - 1, fmt, tmb);  
 		str.resize(sz);

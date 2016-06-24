@@ -244,6 +244,7 @@ namespace detail
 			}attribute;
 
 			other_tag(category::flags);
+			~other_tag();
 		}other;
 
 		native_window_type	root;		    ///< root Window handle

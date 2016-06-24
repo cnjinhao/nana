@@ -2078,7 +2078,7 @@ namespace nana
 
 					unsigned x_offset() const
 					{
-						return (h.empty() ? 0 : h.value());
+						return static_cast<unsigned>(h.empty() ? 0 : h.value());
 					}
 
 					index_pair offset_y_abs, offset_y_dpl;	//cat stands for category, item stands for item. "item == npos" means that is a category.
