@@ -23,6 +23,8 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include <iostream> //debug travis
+
 namespace nana
 {
 
@@ -92,6 +94,7 @@ namespace detail
 			{
 				void operator()(basic_window* wd) const
 				{
+					std::cout << "delete basic_window " << wd << std::endl;
 					delete wd;
 				}
 			};
