@@ -217,6 +217,8 @@ namespace nana
 					{
 					case category::flags::root:
 						attribute.root = new attr_root_tag;
+						delete attribute.root;
+						attribute.root = new attr_root_tag;
 						std::cout<<"basic_window: create attr root "<<attribute.root<<std::endl;
 						break;
 #ifndef WIDGET_FRAME_DEPRECATED
