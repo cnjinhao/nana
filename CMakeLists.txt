@@ -320,9 +320,48 @@ if (NANA_CMAKE_BUILD_DEMOS)
          enable_testing ()
 	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
+    set (demos    calculator file_explorer helloworld_demo notepad        )
+
+    foreach ( demo ${demos})
+        add_executable(${demo} "../nana-demo/${demo}.cpp")
+        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${demo} ${PROJECT_NAME})        # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
+        #if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+            #add_custom_command( TARGET  ${demo} POST_BUILD COMMAND  ${demo} )
+            #add_custom_target(do_always_${demo} ALL COMMAND ${demo})
+            #add_test(${demo} COMMAND ${demo})
+        #endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
+        message("... to build: ../nana-demo/${demo}.cpp" )
+    endforeach( demo ${demos})
+
+    set (demos    widget_show widget_show2      )
+
+    #if (NANA_CMAKE_BUILD_FreeMe)
+      # add_definitions(-DBUILD_FreeMe)
+    #endif (NANA_CMAKE_BUILD_FreeMe)
+
+    # if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+    #    list(APPEND demos  )    # ?? FreeMe
+    # endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+    # Pending:      FreeMe (added but really completelly compiled if defined BUILD_FreeMe  )
+
+    foreach ( demo ${demos})
+        add_executable(${demo} "../nana-demo/${demo}.cpp")
+        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${demo} ${PROJECT_NAME})                 # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
+        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
+        message("... to build: ../nana-demo/${demo}.cpp" )
+    endforeach( demo ${demos})
 
 
-    set (demos    main    )
+    set (demos    a_group_impl  animate-bmp  audio_player audio_player_simple  background-effects categ clicked
+                  decore dock  drag-button  draw example.button example_combox example_listbox example_menu
+                  filebox-txt folder_tree folder_tree_nana folder_tree_std framework_design_1 framework_design_2 framework_design_3
+                  group HelloWord helloword_quit inputbox label_listener lambda_event.Cpp11 listbox_inline_widget listbox_Resolver loader_1 loader_2
+                  main mbox menu_debug menu_popuper modal_form MontiHall place_login png screen stretch_image
+                  threading thread-pool various_events window-dragger windows-subclassing
+                  )
     # Pending: 
     
     foreach ( demo ${demos})
