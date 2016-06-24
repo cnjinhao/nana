@@ -246,7 +246,8 @@ namespace nana
 
 					if (category::flags::root == category)
 					{
-						std::cout<<"basic_window: delete attr root"<<attribute.root<<std::endl;
+						std::cout<<"basic_window: delete attr root "<<attribute.root<<std::endl;
+						std::cout<<"basic_window: root.effects size "<<attribute.root->effects_edge_numbus.size()<<std::endl;
 						delete attribute.root;
 						std::cout<<"    delete successfully"<<std::endl;
 					}
