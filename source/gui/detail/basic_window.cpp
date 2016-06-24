@@ -13,8 +13,6 @@
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 
-#include <iostream> //debug travis
-
 namespace nana
 {
 	namespace detail
@@ -209,34 +207,33 @@ namespace nana
 		//end class caret
 
 		//struct basic_window
-			basic_window::other_tag::attr_root_tag::~attr_root_tag()
-			{
-				std::cout<<"~attr_root_tag "<<this<<std::endl;
-			}
 			//struct basic_window::other_tag
 				basic_window::other_tag::other_tag(category::flags categ)
 					: category(categ), active_window(nullptr), upd_state(update_state::none)
 				{
+#ifndef WIDGET_FRAME_DEPRECATED
 					switch(categ)
 					{
 					case category::flags::root:
 						attribute.root = new attr_root_tag;
-						std::cout<<"basic_window: create attr root "<<attribute.root<<std::endl;
 						break;
-#ifndef WIDGET_FRAME_DEPRECATED
 					case category::flags::frame:
 						attribute.frame = new attr_frame_tag;
 						break;
-#endif
 					default:
 						attribute.root = nullptr;
 					}
+#else
+					if (category::flags::root == categ)
+						attribute.root = new attr_root_tag;
+					else
+						attribute.root = nullptr;
+#endif
 				}
 
 				basic_window::other_tag::~other_tag()
 				{
 #ifndef WIDGET_FRAME_DEPRECATED
-					std::cout<<"~other_tag "<<this<<std::endl;
 					switch(category)
 					{
 					case category::flags::root:
@@ -248,14 +245,8 @@ namespace nana
 					default: break;
 					}
 #endif
-
 					if (category::flags::root == category)
-					{
-						std::cout<<"basic_window: delete attr root "<<attribute.root<<std::endl;
-						std::cout<<"basic_window: root.effects size "<<attribute.root->effects_edge_nimbus.size()<<std::endl;
 						delete attribute.root;
-						std::cout<<"    delete successfully"<<std::endl;
-					}
 				}
 			//end struct basic_window::other_tag
 

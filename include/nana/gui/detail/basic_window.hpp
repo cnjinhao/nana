@@ -212,18 +212,11 @@ namespace detail
 
 			struct	attr_root_tag
 			{
-				attr_root_tag(const attr_root_tag&) = delete;
-				attr_root_tag(attr_root_tag&&) = delete;
 #ifndef WIDGET_FRAME_DEPRECATED
 				container	frames;	///< initialization is null, it will be created while creating a frame widget. Refer to WindowManager::create_frame
 #endif
-				//Following p_xxx pointers are used for debugging
-				container * p_tabstop;
-				std::vector<edge_nimbus_action> * p_effects;
-				std::function<void()> * p_draw_through;
-
-				container&	tabstop;
-				std::vector<edge_nimbus_action>& effects_edge_nimbus;
+				container	tabstop;
+				std::vector<edge_nimbus_action> effects_edge_nimbus;
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
 				bool			ime_enabled{false};
@@ -233,18 +226,7 @@ namespace detail
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 
-				std::function<void()>& draw_through;	///< A draw through renderer for root widgets.
-
-				attr_root_tag():
-					p_tabstop(new container),
-					p_effects(new std::vector<edge_nimbus_action>),
-					p_draw_through(new std::function<void()>),
-					tabstop(*p_tabstop),
-					effects_edge_nimbus(*p_effects),
-					draw_through(*p_draw_through)
-				{}
-
-				~attr_root_tag();
+				std::function<void()> draw_through;	///< A draw through renderer for root widgets.
 			};
 
 			const category::flags category;
@@ -262,7 +244,6 @@ namespace detail
 			}attribute;
 
 			other_tag(category::flags);
-			~other_tag();
 		}other;
 
 		native_window_type	root;		    ///< root Window handle
