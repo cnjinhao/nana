@@ -15,10 +15,16 @@
 #ifndef NANA_FILESYSTEM_EXT_HPP
 #define NANA_FILESYSTEM_EXT_HPP
 
+#include <sstream>
 #include <iomanip>
+
 #include <nana/filesystem/filesystem_selector.hpp>
 
-namespace nana {namespace experimental {namespace filesystem {namespace ext {
+namespace nana 
+{
+namespace filesystem_ext 
+{
+
 #if defined(NANA_WINDOWS)
     constexpr auto def_root = "C:";
     constexpr auto def_rootstr = "C:\\";
@@ -28,14 +34,13 @@ namespace nana {namespace experimental {namespace filesystem {namespace ext {
     constexpr auto def_rootstr = "/";
     constexpr auto def_rootname = "Root/";
 #endif
-
-// nana::experimental::filesystem::path_user());    
+ 
+std::experimental::filesystem::path path_user();    ///< extention ?
 
 inline bool is_directory(const std::experimental::filesystem::directory_entry& dir) noexcept
 {
     return is_directory(dir.status());
 }
-
 
 //template<class DI> // DI = directory_iterator from std, boost, or nana : return directory_entry
 class directory_only_iterator : public std::experimental::filesystem::directory_iterator
@@ -78,7 +83,6 @@ inline directory_only_iterator end(const directory_only_iterator&) noexcept
 	return{};
 }
 
-
 //template<class DI> // DI = directory_iterator from std, boost, or nana : value_type directory_entry
 class regular_file_only_iterator : public std::experimental::filesystem::directory_iterator
 {
@@ -115,53 +119,13 @@ inline regular_file_only_iterator end(const regular_file_only_iterator&) noexcep
 	return{};
 }
 
-inline std::string pretty_file_size(const std::experimental::filesystem::path& path) // todo: move to .cpp
-{
-    try {
-        auto bytes = std::experimental::filesystem::file_size ( path );
-        const char * ustr[] = { " KB", " MB", " GB", " TB" };
-        std::stringstream ss;
-        if (bytes < 1024)
-            ss << bytes << " Bytes";
-        else
-        {
-            double cap = bytes / 1024.0;
-            std::size_t uid = 0;
-            while ((cap >= 1024.0) && (uid < sizeof(ustr) / sizeof(char *)))
-            {
-                cap /= 1024.0;
-                ++uid;
-            }
-            ss << cap;
-            auto s = ss.str();
-            auto pos = s.find('.');
-            if (pos != s.npos)
-            {
-                if (pos + 2 < s.size())
-                    s.erase(pos + 2);
-            }
-            return s + ustr[uid];
-        }
+std::string pretty_file_size(const std::experimental::filesystem::path& path);
 
-        return ss.str();
-    }
-    catch (...) {}
-    return {};
-}
+std::string pretty_file_date(const std::experimental::filesystem::path& path);
 
-inline std::string pretty_file_date(const std::experimental::filesystem::path& path) // todo: move to .cpp
-{
-    try {
-        auto ftime = std::experimental::filesystem::last_write_time(path);
-        std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
-        std::stringstream tm;
-        tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
-        return tm.str();
-    }
-    catch (...) {
-        return {};
-    }
-}
+bool modified_file_time(const std::experimental::filesystem::path& p, struct tm&);    ///< extention ?
 
-}}}}
+}  // filesystem_ext
+}  // nana
+
 #endif //NANA_FILESYSTEM_EXT_HPP

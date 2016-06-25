@@ -21,7 +21,7 @@
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <nana/filesystem/filesystem_ext.hpp>
 
 #if defined(NANA_ENABLE_JPEG)
 #include "detail/image_jpeg.hpp"
@@ -35,6 +35,8 @@
 #include "detail/image_ico.hpp"
 
 #include "image_accessor.hpp"
+
+namespace fs = std::experimental::filesystem;
 
 namespace nana
 {
@@ -60,7 +62,7 @@ namespace paint
 		//class image_ico
 			image_ico::image_ico(bool is_ico): is_ico_(is_ico){}
 
-			bool image_ico::open(const nana::experimental::filesystem::path& file)
+			bool image_ico::open(const fs::path& file)
 			{
 				close();
 #if defined(NANA_WINDOWS)
@@ -231,7 +233,7 @@ namespace paint
 			return *this;
 		}
 
-		std::shared_ptr<image::image_impl_interface> create_image(const ::nana::experimental::filesystem::path & p)
+		std::shared_ptr<image::image_impl_interface> create_image(const fs::path & p)
 		{
 			std::shared_ptr<image::image_impl_interface> ptr;
 
@@ -314,14 +316,14 @@ namespace paint
 
 		bool image::open(const ::std::string& file)
 		{
-			::nana::experimental::filesystem::path path(file);
+			fs::path path(file);
 			image_ptr_ = create_image(path);
 			return (image_ptr_ ? image_ptr_->open(path) : false);
 		}
 
 		bool image::open(const std::wstring& file)
 		{
-			::nana::experimental::filesystem::path path(file);
+			fs::path path(file);
 			image_ptr_ = create_image(path);
 			return (image_ptr_ ? image_ptr_->open(path) : false);
 		}

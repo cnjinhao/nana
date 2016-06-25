@@ -12,7 +12,7 @@
 
 #include <nana/gui.hpp>
 #include <nana/gui/filebox.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <nana/filesystem/filesystem_ext.hpp>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -24,11 +24,14 @@
 	#include <nana/gui/widgets/textbox.hpp>
 	#include <nana/gui/widgets/treebox.hpp>
 	#include <nana/gui/widgets/combox.hpp>
-	#include <nana/filesystem/filesystem.hpp>
 	#include <nana/gui/place.hpp>
 	#include <stdexcept>
 	#include <algorithm>
 #endif
+
+namespace fs = std::experimental::filesystem;
+namespace fs_ext = nana::filesystem_ext;
+
 
 namespace nana
 {
@@ -54,7 +57,7 @@ namespace nana
 			friend listbox::oresolver& operator<<(listbox::oresolver& ores, const item_fs& item)
 			{
 				std::wstringstream tm;
-				tm<<(item.modified_time.tm_year + 1900)<<'-';
+				tm<<(item.modified_time.tm_year + 1900)<<'-';    /// \todo : use nana::filesystem_ext:: pretty_file_date
 				_m_add(tm, item.modified_time.tm_mon + 1)<<'-';
 				_m_add(tm, item.modified_time.tm_mday)<<' ';
 
@@ -87,7 +90,7 @@ namespace nana
 				return ss;
 			}
 
-			static std::string _m_trans(std::size_t bytes)
+			static std::string _m_trans(std::size_t bytes)  /// \todo : use nana::filesystem_ext::pretty_file_size
 			{
 				const char * ustr[] = {" KB", " MB", " GB", " TB"};
 				std::stringstream ss;
@@ -142,13 +145,13 @@ namespace nana
 				auto path = path_.caption();
 				auto root = path.substr(0, path.find('/'));
 				if(root == "HOME")
-					path.replace(0, 4, nana::experimental::filesystem::path_user().native());
+					path.replace(0, 4, fs_ext::path_user().native());
 				else if(root == "FILESYSTEM")
 					path.erase(0, 10);
 				else
 					throw std::runtime_error("Nana.GUI.Filebox: Wrong categorize path");
 
-				if(path.size() == 0) path = "/";
+				if(path.size() == 0) path = "/";    /// \todo : use nana::filesystem_ext::def_rootstr?
 				_m_load_cat_path(path);
 			});
 
@@ -344,7 +347,7 @@ namespace nana
 			else
 				dir = saved_selected_path;
 
-			_m_load_cat_path(dir.size() ? dir : nana::experimental::filesystem::path_user().native());
+			_m_load_cat_path(dir.size() ? dir : fs_ext::path_user().native());
 
 			tb_file_.caption(file_with_path_removed);
 		}
@@ -427,10 +430,8 @@ namespace nana
 			nodes_.filesystem = tree_.insert("FS.ROOT", "Filesystem");
 			nodes_.filesystem.value(kind::filesystem);
 
-			namespace fs = ::nana::experimental::filesystem;
-
 			std::vector<std::string> paths;
-			paths.emplace_back(fs::path_user().native());
+			paths.emplace_back(fs_ext::path_user().native());
 			paths.emplace_back("/");
 
 			fs::directory_iterator end;
@@ -474,7 +475,7 @@ namespace nana
 			{
 				auto begstr = path.substr(0, pos);
 				if(begstr == "FS.HOME")
-					path.replace(0, 7, nana::experimental::filesystem::path_user().native());
+					path.replace(0, 7, fs_ext::path_user().native());
 				else
 					path.erase(0, pos);
 				return begstr;
@@ -489,8 +490,6 @@ namespace nana
 				addr_.filesystem += '/';
 
 			file_container_.clear();
-
-			namespace fs = ::nana::experimental::filesystem;
 
 			fs::directory_iterator end;
 			for(fs::directory_iterator i(path); i != end; ++i)
@@ -508,13 +507,13 @@ namespace nana
 				{
 					m.bytes = fs::file_size(path + m.name);
 					m.directory = fs::is_directory(fattr);
-					::nana::experimental::filesystem::modified_file_time(path + m.name, m.modified_time);
+					fs_ext::modified_file_time(path + m.name, m.modified_time);
 				}
 				else
 				{
 					m.bytes = 0;
 					m.directory = fs::is_directory(*i);
-					::nana::experimental::filesystem::modified_file_time(path + i->path().filename().native(), m.modified_time);				
+					fs_ext::modified_file_time(path + i->path().filename().native(), m.modified_time);				
 				}
 
 				file_container_.push_back(m);
@@ -534,7 +533,7 @@ namespace nana
 			while(!beg_node.empty() && (beg_node != nodes_.home) && (beg_node != nodes_.filesystem))
 				beg_node = beg_node.owner();
 			
-			auto head = nana::experimental::filesystem::path_user().native();
+			auto head = fs_ext::path_user().native();
 			if(path.size() >= head.size() && (path.substr(0, head.size()) == head))
 			{//This is HOME
 				path_.caption("HOME");
@@ -552,7 +551,6 @@ namespace nana
 			if(head.size() == 0 || head[head.size() - 1] != '/')
 				head += '/';
 
-			namespace fs = ::nana::experimental::filesystem;
 
 			fs::directory_iterator end;
 			for(fs::directory_iterator i(head); i != end; ++i)
@@ -649,20 +647,20 @@ namespace nana
 					return;
 				}
 
-				using file_type = nana::experimental::filesystem::file_type;
+				using file_type = fs::file_type;
 
-				experimental::filesystem::path fspath(fb_.addr_.filesystem + path);
+				fs::path fspath(fb_.addr_.filesystem + path);
 
-				auto fs = experimental::filesystem::status(fspath);
+				auto fst = fs::status(fspath);
 
-				if(fs.type() != file_type::not_found && fs.type() != file_type::none)
+				if(fst.type() != file_type::not_found && fst.type() != file_type::none)
 				{
 					mb<<L"The folder is existing, please rename it.";
 					mb();
 					return;
 				}
 
-				if(false == experimental::filesystem::create_directory(fspath))
+				if(false == fs::create_directory(fspath))
 				{
 					mb<<L"Failed to create the folder, please rename it.";
 					mb();
@@ -756,7 +754,6 @@ namespace nana
 
 					bool good = true;
 
-					namespace fs = ::nana::experimental::filesystem;
 					auto fattr = fs::status(tar);
 					if(fattr.type() == fs::file_type::not_found)
 					{
@@ -808,8 +805,6 @@ namespace nana
 			{
 				auto path = tree_.make_key_path(node, "/") + "/";
 				_m_resolute_path(path);
-
-				namespace fs = ::nana::experimental::filesystem;
 
 				fs::directory_iterator end;
 				for (fs::directory_iterator i{path}; i != end; ++i)
@@ -952,7 +947,6 @@ namespace nana
 			}
 			else
 			{
-				namespace fs = ::nana::experimental::filesystem;
 				if (fs::is_directory(ipstr))
 					impl_->path = ipstr;
 			}

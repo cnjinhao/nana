@@ -30,6 +30,9 @@
 #ifndef NANA_FILESYSTEM_HPP
 #define NANA_FILESYSTEM_HPP
 
+//#undef  NANA_USING_NANA_FILESYSTEM 
+#if NANA_USING_NANA_FILESYSTEM 
+
 #include <nana/push_ignore_diagnostic>
 
 #include <string>
@@ -233,18 +236,18 @@ namespace nana  { namespace experimental { namespace filesystem
 	{
 	public:
 		directory_entry() = default;
-		explicit directory_entry(const path&);
+		explicit directory_entry(const ::nana::experimental::filesystem::path&);
 
 		//modifiers
-		void assign(const path&);
-		void replace_filename(const path&);
+		void assign(const ::nana::experimental::filesystem::path&);
+		void replace_filename(const ::nana::experimental::filesystem::path&);
 
 		//observers
 		file_status status() const;
-		operator const filesystem::path&() const;
+		operator const filesystem::path&() const {	return path_;	};
 		const filesystem::path& path() const;
 	private:
-		filesystem::path path_;
+		::nana::experimental::filesystem::path path_;
 	};
 
     /// InputIterator that iterate over the sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
@@ -356,7 +359,6 @@ namespace nana  { namespace experimental { namespace filesystem
 	bool create_directory(const path& p, const path& attributes);
 	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
 	
-	bool modified_file_time(const path& p, struct tm&);    ///< extention ?
 
 	/// The time of last data modification of p, determined as if by the value of the POSIX
     /// stat structure member st_mtime obtained as if by POSIX stat().
@@ -364,7 +366,6 @@ namespace nana  { namespace experimental { namespace filesystem
 	/// returns file_time_type::min() if an error occurs
 	//file_time_type last_write_time(const path& p, error_code& ec) noexcept;
 
-	path path_user();    ///< extention ?
 
 	path current_path();
 	//path current_path(error_code& ec);
@@ -413,4 +414,5 @@ namespace nana  { namespace experimental { namespace filesystem
 } //end namespace nana
 
 #include <nana/pop_ignore_diagnostic>
+#endif
 #endif

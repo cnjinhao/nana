@@ -13,8 +13,8 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 
-#include "image_pixbuf.hpp"
 #include <memory>
+#include "image_pixbuf.hpp"
 
 namespace nana{	namespace paint
 {
@@ -309,7 +309,7 @@ namespace nana{	namespace paint
 				return true;
 			}
 
-			bool open(const nana::experimental::filesystem::path& filename) override
+			bool open(const std::experimental::filesystem::path& filename) override
 			{
 				std::ifstream ifs(filename.string(), std::ios::binary);
 				if(ifs)
