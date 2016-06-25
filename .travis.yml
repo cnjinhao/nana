@@ -86,7 +86,7 @@ script:
   - ./animate-bmp
   - ./audio_player
   - ./background-effects
-  #- ./calculator 
+  - ./calculator 
   - ./categ
   - ./clicked
   - ./decore
