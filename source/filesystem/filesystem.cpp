@@ -12,7 +12,6 @@
  */
 
 #include <nana/filesystem/filesystem_ext.hpp>
-#if NANA_USING_NANA_FILESYSTEM 
 #include <vector>
 #if defined(NANA_WINDOWS)
     #include <windows.h>
@@ -36,6 +35,120 @@
 	#include <unistd.h>
 	#include <stdlib.h>
 #endif
+
+namespace fs = std::experimental::filesystem;
+
+namespace nana
+{
+	namespace filesystem_ext
+	{
+
+		fs::path path_user()
+		{
+#if defined(NANA_WINDOWS)
+			wchar_t pstr[MAX_PATH];
+			if (SUCCEEDED(SHGetFolderPath(0, CSIDL_PROFILE, 0, SHGFP_TYPE_CURRENT, pstr)))
+				return pstr;
+#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+			const char * pstr = ::getenv("HOME");
+			if (pstr)
+				return pstr;
+#endif
+			return fs::path();
+		}
+
+		std::string pretty_file_size(const fs::path& path)  
+		{
+			try {
+				auto bytes = fs::file_size(path);
+				const char * ustr[] = { " KB", " MB", " GB", " TB" };
+				std::stringstream ss;
+				if (bytes < 1024)
+					ss << bytes << " Bytes";
+				else
+				{
+					double cap = bytes / 1024.0;
+					std::size_t uid = 0;
+					while ((cap >= 1024.0) && (uid < sizeof(ustr) / sizeof(char *)))
+					{
+						cap /= 1024.0;
+						++uid;
+					}
+					ss << cap;
+					auto s = ss.str();
+					auto pos = s.find('.');
+					if (pos != s.npos)
+					{
+						if (pos + 2 < s.size())
+							s.erase(pos + 2);
+					}
+					return s + ustr[uid];
+				}
+
+				return ss.str();
+			}
+			catch (...) {}
+			return{};
+		}
+
+		std::string pretty_file_date(const fs::path& path) // todo: move to .cpp
+		{
+			try {
+				auto ftime = fs::last_write_time(path);
+
+				// crash: VS2015 will not read the time for some files (for example: C:/hiberfil.sys)
+				//   and will return file_time_type(-1) without throwing
+				//   https://msdn.microsoft.com/en-us/library/dn823784.aspx
+
+				if (ftime == ((fs::file_time_type::min)())) return{};
+
+				std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
+				std::stringstream tm;
+				tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
+				return tm.str();
+			}
+			catch (...) {
+				return{};
+			}
+		}
+
+		bool modified_file_time(const fs::path& p, struct tm& t)
+		{
+#if defined(NANA_WINDOWS)
+			WIN32_FILE_ATTRIBUTE_DATA attr;
+			if (::GetFileAttributesEx(p.c_str(), GetFileExInfoStandard, &attr))
+			{
+				FILETIME local_file_time;
+				if (::FileTimeToLocalFileTime(&attr.ftLastWriteTime, &local_file_time))
+				{
+					SYSTEMTIME st;
+					::FileTimeToSystemTime(&local_file_time, &st);
+					t.tm_year = st.wYear - 1900;
+					t.tm_mon = st.wMonth - 1;
+					t.tm_mday = st.wDay;
+					t.tm_wday = st.wDayOfWeek - 1;
+					t.tm_yday = nana::date::day_in_year(st.wYear, st.wMonth, st.wDay);
+
+					t.tm_hour = st.wHour;
+					t.tm_min = st.wMinute;
+					t.tm_sec = st.wSecond;
+					return true;
+				}
+			}
+#elif defined(NANA_POSIX)
+			struct stat attr;
+			if (0 == ::stat(p.c_str(), &attr))
+			{
+				t = *(::localtime(&attr.st_ctime));
+				return true;
+			}
+#endif
+			return false;
+		}
+	}
+}
+
+#if NANA_USING_NANA_FILESYSTEM 
 
 namespace nana_fs = nana::experimental::filesystem;
 
@@ -753,44 +866,11 @@ namespace nana {	namespace experimental {	namespace filesystem
 #endif
 		}
 
-		bool modified_file_time(const path& p, struct tm& t)
-		{
-#if defined(NANA_WINDOWS)
-			WIN32_FILE_ATTRIBUTE_DATA attr;
-			if (::GetFileAttributesEx(p.c_str(), GetFileExInfoStandard, &attr))
-			{
-				FILETIME local_file_time;
-				if (::FileTimeToLocalFileTime(&attr.ftLastWriteTime, &local_file_time))
-				{
-					SYSTEMTIME st;
-					::FileTimeToSystemTime(&local_file_time, &st);
-					t.tm_year = st.wYear - 1900;
-					t.tm_mon = st.wMonth - 1;
-					t.tm_mday = st.wDay;
-					t.tm_wday = st.wDayOfWeek - 1;
-					t.tm_yday = nana::date::day_in_year(st.wYear, st.wMonth, st.wDay);
-
-					t.tm_hour = st.wHour;
-					t.tm_min = st.wMinute;
-					t.tm_sec = st.wSecond;
-					return true;
-				}
-			}
-#elif defined(NANA_POSIX)
-			struct stat attr;
-			if (0 == ::stat(p.c_str(), &attr))
-			{
-				t = *(::localtime(&attr.st_ctime));
-				return true;
-			}
-#endif
-			return false;
-		}
 
 		file_time_type last_write_time(const path& p)
 		{
 			struct tm t;
-			modified_file_time(p, t);   
+			nana::filesystem_ext::modified_file_time(p, t);   
 			std::chrono::system_clock::time_point dateTime =std::chrono::system_clock::from_time_t( mktime(&t) );
 			return 	dateTime;
 		}
@@ -821,20 +901,6 @@ namespace nana {	namespace experimental {	namespace filesystem
 					return detail::rm_dir(p);
 
 				return detail::rm_file(p);
-			}
-
-			path path_user()
-			{
-#if defined(NANA_WINDOWS)
-				wchar_t pstr[MAX_PATH];
-				if (SUCCEEDED(SHGetFolderPath(0, CSIDL_PROFILE, 0, SHGFP_TYPE_CURRENT, pstr)))
-					return pstr;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-				const char * pstr = ::getenv("HOME");
-				if (pstr)
-					return pstr;
-#endif
-				return path();
 			}
 
 			path current_path()

@@ -359,7 +359,6 @@ namespace nana  { namespace experimental { namespace filesystem
 	bool create_directory(const path& p, const path& attributes);
 	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
 	
-	bool modified_file_time(const path& p, struct tm&);    ///< extention ?
 
 	/// The time of last data modification of p, determined as if by the value of the POSIX
     /// stat structure member st_mtime obtained as if by POSIX stat().
@@ -367,7 +366,6 @@ namespace nana  { namespace experimental { namespace filesystem
 	/// returns file_time_type::min() if an error occurs
 	//file_time_type last_write_time(const path& p, error_code& ec) noexcept;
 
-	path path_user();    ///< extention ?
 
 	path current_path();
 	//path current_path(error_code& ec);
