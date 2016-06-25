@@ -352,10 +352,10 @@ if (NANA_CMAKE_BUILD_DEMOS)
     # Pending:      FreeMe (added but really completely compiled if defined BUILD_FreeMe  )
 	
 	set (tests)
- 	for (demo  ${demos})
+ 	foreach (demo  ${demos})
 	   set(tests ${tests} ${demos_dir}${demo})
     endforeach( demo ${demos})
- 	for (example  ${examples})
+ 	foreach (example  ${examples})
 	   set(tests ${tests} ${examples_dir}${example})
     endforeach(example  ${examples})
 	
