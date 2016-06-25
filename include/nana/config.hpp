@@ -25,7 +25,11 @@
 
 #include "c++defines.hpp"
 
-//The basic configurations are ignored when NANA_IGNORE_CONF is defined.
+//This marco is defined since 1.4 and until 1.5 for deprecating frame widget.
+//This marco and class frame will be removed in version 1.5
+#define WIDGET_FRAME_DEPRECATED
+
+//The following basic configurations are ignored when NANA_IGNORE_CONF is defined.
 //The NANA_IGNORE_CONF may be specified by CMake generated makefile.
 #ifndef NANA_IGNORE_CONF
 
@@ -92,10 +96,6 @@
 		#define NANA_LIBJPEG
 	#endif
 #endif
-
-//This marco is defined since 1.4 and until 1.5 for deprecating frame widget.
-//This marco and class frame will be removed in version 1.5
-#define WIDGET_FRAME_DEPRECATED
 
 ///////////////////
 //  Support for NANA_AUTOMATIC_GUI_TESTING

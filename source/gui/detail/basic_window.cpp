@@ -211,19 +211,24 @@ namespace nana
 				basic_window::other_tag::other_tag(category::flags categ)
 					: category(categ), active_window(nullptr), upd_state(update_state::none)
 				{
+#ifndef WIDGET_FRAME_DEPRECATED
 					switch(categ)
 					{
 					case category::flags::root:
 						attribute.root = new attr_root_tag;
 						break;
-#ifndef WIDGET_FRAME_DEPRECATED
 					case category::flags::frame:
 						attribute.frame = new attr_frame_tag;
 						break;
-#endif
 					default:
 						attribute.root = nullptr;
 					}
+#else
+					if (category::flags::root == categ)
+						attribute.root = new attr_root_tag;
+					else
+						attribute.root = nullptr;
+#endif
 				}
 
 				basic_window::other_tag::~other_tag()

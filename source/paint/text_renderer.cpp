@@ -627,7 +627,7 @@ namespace nana
 			std::unique_ptr<unsigned[]> pixels(new unsigned[text.size()]);
 			graph_.glyph_pixels(text.c_str(), text.size(), pixels.get());
 
-			unsigned substr_len = 0;
+			std::size_t substr_len = 0;
 			unsigned substr_px = 0;
 
 			if (align::right == text_align_ex_)

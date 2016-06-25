@@ -10,8 +10,8 @@
  *	@file: nana/gui/detail/window_manager.hpp
  *
  *	<Knowledge: 1, 2007-8-17, "Difference between destroy and destroy_handle">
- *		destroy method destroys a window handle and the handles of its children, but it doesn't delete the handle which type is a root window or a frame
- *		destroy_handle method just destroys the handle which type is a root window or a frame
+ *		destroy method destroys a window handle and the handles of its children, but it doesn't delete the handle which type is a root window
+ *		destroy_handle method just destroys the handle which type is a root window
  *
  */
 

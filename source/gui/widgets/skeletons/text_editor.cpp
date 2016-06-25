@@ -3451,7 +3451,7 @@ namespace nana{	namespace widgets
 
 		unsigned text_editor::_m_char_by_pixels(const unicode_bidi::entity& ent, unsigned pos)
 		{
-			unsigned len = ent.end - ent.begin;
+			auto len = static_cast<std::size_t>(ent.end - ent.begin);
 
 			std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 			if (graph_.glyph_pixels(ent.begin, len, pxbuf.get()))
