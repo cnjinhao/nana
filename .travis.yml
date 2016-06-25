@@ -75,6 +75,22 @@ before_script :
   - mkdir bin
   - cd bin
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 script:
   - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_BOOST_FILESYSTEM_FORCE=OFF -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
   - make
@@ -98,6 +114,8 @@ script:
   - ./example_listbox
   #- ./example_combox    # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1378
   - ./example.button
+  - ./filebox-txt
+  - ./folder_tree
   #- ./folder_tree_nana   # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1408
   #- ./folder_tree_std     # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1421
   - ./framework_design_1
@@ -114,7 +132,9 @@ script:
   - ./loader_1  
   #- ./loader_2      # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1732
   - ./mbox  
+  - ./main
   - ./menu_debug  
+  - ./modal_form  
   #- ./MontiHall             # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1775
   #- ./helloworld_demo           # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1786
   #- ./notepad      # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1799
@@ -128,7 +148,7 @@ script:
   #- ./screen       # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1909
   - ./stretch_image  
   - ./threading     # https://travis-ci.org/qPCR4vir/nana/jobs/140245437#L1826   ?
-  - ./thread-pool  
+  - ./thread-pool  # https://travis-ci.org/qPCR4vir/nana/jobs/140247564#L1782
   - ./various_events  
   #- ./window-dragger    # https://travis-ci.org/qPCR4vir/nana/jobs/140245438#L1820
   - ./windows-subclassing   
