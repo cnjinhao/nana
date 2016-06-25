@@ -329,7 +329,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
 	
 	set (examples_dir ../nana-demo/Examples/)
     set (examples a_group_impl       animate-bmp        audio_player       audio_player_simple  
-	              background-effects categ              clicked            decore   
+	              background-effects categ              clicked            windows-subclassing   
 				  dock               drag-button        draw               example.button 
 				  example_combox     example_listbox    example_menu       lambda_event.Cpp11 
                   filebox-txt        folder_tree        folder_tree_nana   folder_tree_std 
@@ -337,9 +337,9 @@ if (NANA_CMAKE_BUILD_DEMOS)
                   group              HelloWord          helloword_quit     listbox_inline_widget
 				  inputbox           listbox_Resolver   loader_1           loader_2
                   main mbox          menu_debug         menu_popuper       modal_form 
-				  MontiHall          place_login        png                screen 
+				  MontiHall          place_login        png                textbox_line_number 
 				  stretch_image      threading          thread-pool        various_events 
-				  window-dragger     windows-subclassing
+				  window-dragger     screen             decore   
                   )
     # Pending: 
 
