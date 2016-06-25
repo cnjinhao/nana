@@ -364,7 +364,7 @@ if (NANA_CMAKE_BUILD_DEMOS)
 			install(TARGETS ${test} RUNTIME DESTINATION  "../nana-demo/")
 			message("... to build:  ${dir}${test}.cpp" )
 		endforeach( test ${files})
-	function(set_nana_test)
+	endfunction(set_nana_test)
 	
 	set_nana_test(demos_dir demos)
 	set_nana_test(examples_dir examples)
