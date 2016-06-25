@@ -130,7 +130,7 @@ endif(UNIX)
 
 ########### Compliers
 #
-# Using gcc: gcc 4.8 don't sopourt C++14 and make_unique. You may want to update at least to 4.9.
+# Using gcc: gcc 4.8 don't support C++14 and make_unique. You may want to update at least to 4.9.
 # In Windows, the gcc which come with CLion was 4.8 from MinGW. You may want to install MinGW-w64 from the
 # TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
 # gcc 5.3 and 5.4 include filesytem, but you need to add the link flag: -lstdc++fs
@@ -311,6 +311,8 @@ endif(NANA_CMAKE_INSTALL_INCLUDES)
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
+
+
 # TODO: move this nana-demo section to the nana demo repository, and here only include that cmake file
 
 if (NANA_CMAKE_BUILD_DEMOS)
@@ -320,58 +322,56 @@ if (NANA_CMAKE_BUILD_DEMOS)
          enable_testing ()
 	endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
-    set (demos    calculator file_explorer helloworld_demo notepad        )
-
-    foreach ( demo ${demos})
-        add_executable(${demo} "../nana-demo/${demo}.cpp")
-        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
-        target_link_libraries(${demo} ${PROJECT_NAME})        # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
-        #if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-            #add_custom_command( TARGET  ${demo} POST_BUILD COMMAND  ${demo} )
-            #add_custom_target(do_always_${demo} ALL COMMAND ${demo})
-            #add_test(${demo} COMMAND ${demo})
-        #endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
-        message("... to build: ../nana-demo/${demo}.cpp" )
-    endforeach( demo ${demos})
-
-    set (demos    widget_show widget_show2      )
-
-    #if (NANA_CMAKE_BUILD_FreeMe)
-      # add_definitions(-DBUILD_FreeMe)
-    #endif (NANA_CMAKE_BUILD_FreeMe)
-
-    # if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-    #    list(APPEND demos  )    # ?? FreeMe
-    # endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
-    # Pending:      FreeMe (added but really completelly compiled if defined BUILD_FreeMe  )
-
-    foreach ( demo ${demos})
-        add_executable(${demo} "../nana-demo/${demo}.cpp")
-        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
-        target_link_libraries(${demo} ${PROJECT_NAME})                 # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
-        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/")
-        message("... to build: ../nana-demo/${demo}.cpp" )
-    endforeach( demo ${demos})
-
-
-    set (demos    a_group_impl  animate-bmp  audio_player audio_player_simple  background-effects categ clicked
-                  decore dock  drag-button  draw example.button example_combox example_listbox example_menu
-                  filebox-txt folder_tree folder_tree_nana folder_tree_std framework_design_1 framework_design_2 framework_design_3
-                  group HelloWord helloword_quit inputbox label_listener lambda_event.Cpp11 listbox_inline_widget listbox_Resolver loader_1 loader_2
-                  main mbox menu_debug menu_popuper modal_form MontiHall place_login png screen stretch_image
-                  threading thread-pool various_events window-dragger windows-subclassing
+	
+	set (demos_dir ../nana-demo/)
+    set (demos    calculator file_explorer helloworld_demo notepad   widget_show  widget_show2   )
+	# Pending: 
+	
+	set (examples_dir ../nana-demo/Examples/)
+    set (examples a_group_impl       animate-bmp        audio_player       audio_player_simple  
+	              background-effects categ              clicked            decore   
+				  dock               drag-button        draw               example.button 
+				  example_combox     example_listbox    example_menu       lambda_event.Cpp11 
+                  filebox-txt        folder_tree        folder_tree_nana   folder_tree_std 
+				  framework_design_1 framework_design_2 framework_design_3 label_listener
+                  group              HelloWord          helloword_quit     listbox_inline_widget
+				  inputbox           listbox_Resolver   loader_1           loader_2
+                  main mbox          menu_debug         menu_popuper       modal_form 
+				  MontiHall          place_login        png                screen 
+				  stretch_image      threading          thread-pool        various_events 
+				  window-dragger     windows-subclassing
                   )
     # Pending: 
-    
-    foreach ( demo ${demos})
-        add_executable(${demo} "../nana-demo/Examples/${demo}.cpp")
-        set_property( TARGET ${demo} PROPERTY CXX_STANDARD 14 )
-        target_link_libraries(${demo} ${PROJECT_NAME})                  # ${NANA_LINKS} or ${CMAKE_EXE_LINKER_FLAGS} 
-        install(TARGETS ${demo} RUNTIME DESTINATION  "../nana-demo/Examples/")
-        message("... to build: ../nana-demo/Examples/${demo}.cpp" )
-    endforeach( demo ${demos})
 
+    if (NANA_CMAKE_BUILD_FreeMe)
+       add_definitions(-DBUILD_FreeMe)
+    endif (NANA_CMAKE_BUILD_FreeMe)
+    if (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+        list(APPEND demos  )    # ?? FreeMe
+    endif (NANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS)
+    # Pending:      FreeMe (added but really completely compiled if defined BUILD_FreeMe  )
+	
+	set (tests)
+ 	for (demo  ${demos})
+	   set(tests ${tests} ${demos_dir}${demo})
+    endforeach( demo ${demos})
+ 	for (example  ${examples})
+	   set(tests ${tests} ${examples_dir}${example})
+    endforeach(example  ${examples})
+	
+	
+    foreach ( test ${tests})
+        add_executable(${test} "${test}.cpp")
+        set_property( TARGET ${test} PROPERTY CXX_STANDARD 14 )
+        target_link_libraries(${test} ${PROJECT_NAME})       
+        #if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+            #add_custom_command( TARGET  ${test} POST_BUILD COMMAND  ${test} )
+            #add_custom_target(do_always_${test} ALL COMMAND ${test})
+            #add_test(${test} COMMAND ${test})
+        #endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+        install(TARGETS ${test} RUNTIME DESTINATION  "../nana-demo/")
+        message("... to build:  ${test}.cpp" )
+    endforeach( test ${tests})
 
 endif (NANA_CMAKE_BUILD_DEMOS)
 
