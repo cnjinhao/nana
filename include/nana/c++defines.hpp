@@ -58,8 +58,9 @@
 #		define noexcept		//no support of noexcept until Visual C++ 2015
 
 #		define constexpr const	//no support of constexpr until Visual C++ 2015 ? const ??
-#	endif
+#	else
 #	undef STD_FILESYSTEM_NOT_SUPPORTED
+#	endif
 #elif defined(__GNUC__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
 #		define noexcept		//no support of noexcept until GCC 4.6
