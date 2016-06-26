@@ -13,6 +13,9 @@
 
 #include <nana/filesystem/filesystem_ext.hpp>
 #include <vector>
+#include <sstream>
+#include <iomanip>	//put_time
+
 #if defined(NANA_WINDOWS)
     #include <windows.h>
 
@@ -102,7 +105,13 @@ namespace nana
 
 				if (ftime == ((fs::file_time_type::min)())) return{};
 
-				std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
+				//std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
+				
+				//A workaround for VC2013
+				using time_point = decltype(ftime);
+
+				auto cftime = time_point::clock::to_time_t(ftime);
+
 				std::stringstream tm;
 				tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
 				return tm.str();

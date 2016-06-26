@@ -49,7 +49,7 @@
 //# The library maybe available in the std library in use or from Boost(almost compatible)
 //#              http://www.boost.org/doc/libs/1_60_0/libs/filesystem/doc/index.htm
 //# or you can choose to use the(partial, but functional) implementation provided by nana.
-//# If you include the file <nana/filesystem/filesystem_selector.hpp>
+//# If you include the file <nana/filesystem/filesystem.hpp>
 //# the selected option will be set by nana into std::experimental::filesystem
 //# By default Nana will try to use the STD.If not available will try
 //# to use boost if available.Nana own implementation will be use only none of them are available.

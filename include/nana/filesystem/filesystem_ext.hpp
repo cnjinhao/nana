@@ -15,10 +15,7 @@
 #ifndef NANA_FILESYSTEM_EXT_HPP
 #define NANA_FILESYSTEM_EXT_HPP
 
-#include <sstream>
-#include <iomanip>
-
-#include <nana/filesystem/filesystem_selector.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 namespace nana 
 {
@@ -45,7 +42,8 @@ inline bool is_directory(const std::experimental::filesystem::directory_entry& d
 //template<class DI> // DI = directory_iterator from std, boost, or nana : return directory_entry
 class directory_only_iterator : public std::experimental::filesystem::directory_iterator
 { 
-	using DI = std::experimental::filesystem::directory_iterator;
+	using directory_iterator = std::experimental::filesystem::directory_iterator;
+
 	directory_only_iterator& find_first()
 	{
 		auto end = directory_only_iterator{};
@@ -53,22 +51,22 @@ class directory_only_iterator : public std::experimental::filesystem::directory_
 		{
 			if (is_directory((**this).status())) 
 				return *this;
-			this->DI::operator++();
+			this->directory_iterator::operator++();
 		}
 		return *this;
 	}
 public:
-	directory_only_iterator(){}
+	directory_only_iterator() = default;
 
-	template <class... Arg>
-	directory_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
+	template <typename Arg, typename... Args>
+	directory_only_iterator(Arg&& arg, Args&&... args) : directory_iterator(arg, std::forward<Args>(args)...)
 	{
 		find_first();
 	}
 
     directory_only_iterator& operator++()
     {
-        this->DI::operator++();
+		this->directory_iterator::operator++();
         return find_first();
     }
 };
@@ -86,25 +84,25 @@ inline directory_only_iterator end(const directory_only_iterator&) noexcept
 //template<class DI> // DI = directory_iterator from std, boost, or nana : value_type directory_entry
 class regular_file_only_iterator : public std::experimental::filesystem::directory_iterator
 {
-	using DI = std::experimental::filesystem::directory_iterator;
+	using directory_iterator = std::experimental::filesystem::directory_iterator;
 	regular_file_only_iterator& find_first()
 	{
-		while(( (*this) != DI{}) && !is_regular_file((**this).status()))
-			this->DI::operator++();
+		while (((*this) != directory_iterator{}) && !is_regular_file((**this).status()))
+			this->directory_iterator::operator++();
 		return (*this);
 	}
 public:
-	regular_file_only_iterator() : DI() {}
+	regular_file_only_iterator() = default;
 
-	template <class... Arg>
-	regular_file_only_iterator(Arg&&... arg ): DI(std::forward<Arg>(arg)...)
+	template <typename Arg, typename... Args>
+	regular_file_only_iterator(Arg&& arg, Args&&... args) : directory_iterator(std::forward<Arg>(arg), std::forward<Args>(args)...)
 	{
 		find_first();
 	}
 	
 	regular_file_only_iterator& operator++()
 	{
-		this->DI::operator++();
+		this->directory_iterator::operator++();
 		return find_first();
 	}
 };

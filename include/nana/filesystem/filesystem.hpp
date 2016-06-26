@@ -8,7 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file nana/filesystem/filesystem.hpp
- *  @author Jinhao, conributed: Ariel Vina-Rodriguez
+ *  @author Ariel Vina-Rodriguez, Jinhao
  *  @brief Mimic std::experimental::filesystem::v1   (boost v3)
  *  and need VC2015 or a C++11 compiler. With a few correction can be compiler by VC2013
  */
@@ -29,11 +29,53 @@
 
 #ifndef NANA_FILESYSTEM_HPP
 #define NANA_FILESYSTEM_HPP
-
-//#undef  NANA_USING_NANA_FILESYSTEM 
-#if NANA_USING_NANA_FILESYSTEM 
-
 #include <nana/push_ignore_diagnostic>
+
+//Filesystem Selection
+#include <nana/config.hpp>
+
+#if defined(NANA_USING_NANA_FILESYSTEM) || defined(NANA_USING_STD_FILESYSTEM) || defined(NANA_USING_BOOST_FILESYSTEM)
+#undef NANA_USING_NANA_FILESYSTEM
+#undef NANA_USING_STD_FILESYSTEM
+#undef NANA_USING_BOOST_FILESYSTEM
+#endif
+
+#define NANA_USING_NANA_FILESYSTEM  0
+#define NANA_USING_STD_FILESYSTEM   0
+#define NANA_USING_BOOST_FILESYSTEM 0
+
+#if (defined(NANA_FILESYSTEM_FORCE) || ( (defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(BOOST_FILESYSTEM_AVAILABLE)) && !(defined(BOOST_FILESYSTEM_FORCE) || defined(STD_FILESYSTEM_FORCE)) ) )
+
+#undef  NANA_USING_NANA_FILESYSTEM 
+#define NANA_USING_NANA_FILESYSTEM  1
+
+#elif (defined(BOOST_FILESYSTEM_AVAILABLE) && ( defined(BOOST_FILESYSTEM_FORCE) || ( defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(STD_FILESYSTEM_FORCE) ) )) 
+
+#undef  NANA_USING_BOOST_FILESYSTEM
+#define NANA_USING_BOOST_FILESYSTEM 1
+#   include <boost/filesystem.hpp>
+
+// add boost::filesystem into std::experimental::filesystem
+namespace std {
+	namespace experimental {
+		namespace filesystem {
+			using namespace boost::filesystem;
+		} // filesystem
+	} // experimental
+} // std
+
+#else
+
+#undef NANA_USING_STD_FILESYSTEM 
+#define NANA_USING_STD_FILESYSTEM 1
+#    include <experimental/filesystem>
+#endif
+
+#ifndef __cpp_lib_experimental_filesystem
+#   define __cpp_lib_experimental_filesystem 1
+#endif
+
+#if NANA_USING_NANA_FILESYSTEM
 
 #include <string>
 #include <system_error>
@@ -413,6 +455,21 @@ namespace nana  { namespace experimental { namespace filesystem
   //namespace filesystem = experimental::filesystem;
 } //end namespace nana
 
+
+namespace std {
+	namespace experimental {
+		namespace filesystem {
+
+#       ifdef CXX_NO_INLINE_NAMESPACE
+			using namespace nana::experimental::filesystem;
+#       else
+			using namespace nana::experimental::filesystem::v1;
+#       endif
+		} // filesystem
+	} // experimental
+} // std
+
+#endif	//NANA_USING_NANA_FILESYSTEM
+
 #include <nana/pop_ignore_diagnostic>
-#endif
-#endif
+#endif	//NANA_FILESYSTEM_HPP

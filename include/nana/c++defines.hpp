@@ -59,7 +59,7 @@
 
 #		define constexpr const	//no support of constexpr until Visual C++ 2015 ? const ??
 #	else
-#	undef STD_FILESYSTEM_NOT_SUPPORTED
+#		undef STD_FILESYSTEM_NOT_SUPPORTED
 #	endif
 #elif defined(__GNUC__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
