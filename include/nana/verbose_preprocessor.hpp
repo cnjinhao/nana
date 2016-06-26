@@ -95,8 +95,8 @@
 	#pragma message (  SHOW_VALUE(NANA_USING_STD_FILESYSTEM)  )
 	#pragma message (  SHOW_VALUE(NANA_USING_BOOST_FILESYSTEM)  )
 
-    #pragma message ( "\n#include <nana/filesystem/filesystem_selector.hpp> " )
-    #include <nana/filesystem/filesystem_selector.hpp>
+    #pragma message ( "\n#include <nana/filesystem/filesystem.hpp> " )
+    #include <nana/filesystem/filesystem.hpp>
 
 	#pragma message (  SHOW_VALUE(STD_MAKE_UNIQUE_NOT_SUPPORTED)  )
 	#pragma message (  SHOW_VALUE(STD_FILESYSTEM_NOT_SUPPORTED)  )
