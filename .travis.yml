@@ -34,7 +34,7 @@ matrix:
             - alsa-oss
             - libx11-dev
             - libxft-dev
-			- libboost-filesystem-dev
+            - libboost-filesystem-dev
           sources: 
             - ubuntu-toolchain-r-test
             
