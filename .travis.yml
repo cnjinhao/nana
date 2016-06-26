@@ -94,9 +94,9 @@ before_script :
 script:
   - cmake -G"Unix Makefiles" .. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_BOOST_FILESYSTEM_FORCE=OFF  -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
   - make
-  - cd ../lib
-  - ls
-  - cd ../..
+  #- cd ../lib
+  #- ls
+  - cd ..
   - ls
   - mv -v bin/ ../nana-demo/
   - cd ../nana-demo/bin
