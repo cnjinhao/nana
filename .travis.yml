@@ -95,7 +95,10 @@ script:
   - cd nana_demo_bin
   - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_BOOST_FILESYSTEM_FORCE=OFF -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
   - make
+  - make install
   # todo: separate resources from sources (a directory for images)
+  - ls
+  - cd ../bin
   - ls
   - ./a_group_impl
   - ./animate-bmp
