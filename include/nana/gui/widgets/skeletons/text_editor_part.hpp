@@ -28,6 +28,8 @@ namespace nana
 			{
 				color_proxy selection{static_cast<color_rgb>(0x3399FF)};
 				color_proxy selection_text{colors::white};
+
+				parameters::mouse_wheel mouse_wheel;	///< The number of lines/characters to scroll when the vertical/horizontal mouse wheel is moved.
 			};
 
 			class text_editor_event_interface

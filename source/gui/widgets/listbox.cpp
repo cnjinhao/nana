@@ -2147,8 +2147,17 @@ namespace nana
 				}
 
 				/// directly set a tested relative display pos
-				void set_scroll_y_dpl(const index_pair& pos_dpl)
+				void set_scroll_y_dpl(index_pair pos_dpl)
 				{
+					if (lister.first() != pos_dpl)
+					{
+						//check the pos_dpl to make sure the last item is at bottom of listbox
+						const auto numbers = this->number_of_lister_items(false);
+						const auto distance = lister.distance(pos_dpl, lister.last());
+						if (numbers > 1 && distance < numbers)
+							lister.backward(lister.last(), numbers - 1, pos_dpl);
+					}
+
 					scroll.offset_y_dpl = pos_dpl;
 					if (pos_dpl.is_category())
 						scroll.offset_y_abs = pos_dpl;
@@ -2161,7 +2170,7 @@ namespace nana
 
 
 				//number_of_lister_item
-				/// @brief  Returns the number of items that are contained in pixels
+				/// @brief  Returns the number of items that are contained on screen.
 				/// @param  with_rest: Means whether including extra one item that is not completely contained in reset pixels.
 				size_type number_of_lister_items(bool with_rest) const
 				{
@@ -2509,11 +2518,11 @@ namespace nana
 					if(scroll.v.empty() || !scroll.v.scrollable(upwards))
 						return false;
 
-					index_pair target;
-					if(upwards == false)
-						lister.forward(scroll.offset_y_dpl, 1, target);
+					index_pair target; //index for display
+					if (upwards == false)
+						lister.forward(scroll.offset_y_dpl, this->scheme_ptr->mouse_wheel.lines, target);
 					else
-						lister.backward(scroll.offset_y_dpl, 1, target);
+						lister.backward(scroll.offset_y_dpl, this->scheme_ptr->mouse_wheel.lines, target);
 
 					if (target == scroll.offset_y_dpl)
 						return false;
