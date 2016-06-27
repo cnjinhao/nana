@@ -279,15 +279,17 @@ target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
  #  Headers: use INCLUDE_DIRECTORIES
  #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
 
-                 
+
+ # Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
+# and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
 install(TARGETS ${PROJECT_NAME}
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib)
 
 # Install include directories too.
 if(NANA_CMAKE_INSTALL_INCLUDES)
-	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/nana
-			DESTINATION include)
+	install(DIRECTORY ${NANA_INCLUDE_DIR}
+			DESTINATION .)
 endif(NANA_CMAKE_INSTALL_INCLUDES)
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
@@ -302,6 +304,9 @@ message ( "CMAKE_STATIC_LINKER_FLAGS= "  ${CMAKE_STATIC_LINKER_FLAGS})
 message ( "NANA_LINKS              = "  ${NANA_LINKS})
 message ( "DESTDIR                 = "  ${DESTDIR})
 message ( "CMAKE_INSTALL_PREFIX    = "  ${CMAKE_INSTALL_PREFIX})
+message ( "NANA_INCLUDE_DIR        = "  ${NANA_INCLUDE_DIR})
+message ( "CMAKE_CURRENT_SOURCE_DIR= "  ${CMAKE_CURRENT_SOURCE_DIR})
+
 message ( "NANA_CMAKE_ENABLE_AUDIO = "  ${NANA_CMAKE_ENABLE_AUDIO})
 message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
