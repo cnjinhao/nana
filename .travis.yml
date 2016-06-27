@@ -109,6 +109,7 @@ script:
   - ls
   - cd ../nana_demo_bin
   - cmake -G"Unix Makefiles" ../nana-demo  -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
+  - make
   - ls
   - ./a_group_impl
   - ./animate-bmp
