@@ -86,7 +86,7 @@
 	#define NANA_LINUX
 	#define NANA_X11
 #else
-#	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
+	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
 #endif
 
 //Define a symbol for POSIX operating system.

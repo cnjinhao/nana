@@ -2584,7 +2584,7 @@ namespace nana{	namespace widgets
 		{
 			if(vert && attributes_.vscroll)
 			{
-				attributes_.vscroll->make_step(!upwards);
+				attributes_.vscroll->make_step(!upwards, this->scheme_->mouse_wheel.lines);
 				if(_m_scroll_text(true))
 				{
 					render(true);

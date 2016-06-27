@@ -284,6 +284,18 @@ that return a corresponding nana::appearance with predefined values.
 		virtual void visible(bool visibility) = 0;
 		virtual bool visible() const = 0;
 	};//end class caret_interface
+
+	namespace parameters
+	{
+		/// The system-wide parameters for mouse wheel
+		struct mouse_wheel
+		{
+			unsigned lines;			///< The number of lines to scroll when the vertical mouse wheel is moved.
+			unsigned characters;	///< The number of characters to scroll when the horizontal mouse wheel is moved.
+
+			mouse_wheel();
+		};
+	}
 }//end namespace nana
 
 #include <nana/pop_ignore_diagnostic>
