@@ -39,6 +39,9 @@ mouse_wheel::mouse_wheel()
 	: lines(3), characters(3)
 {
 #if defined(NANA_WINDOWS)
+    // https://msdn.microsoft.com/en-us/library/ms997498.aspx
+    #define SPI_SETWHEELSCROLLCHARS   0x006D
+    #define SPI_GETWHEELSCROLLCHARS   0x006C
 	::SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &lines, 0);
 	::SystemParametersInfo(SPI_GETWHEELSCROLLCHARS, 0, &characters, 0);
 #endif

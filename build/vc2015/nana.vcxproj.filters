@@ -283,9 +283,4 @@
       <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\include\nana\filesystem\filesystem_selector.hpp">
-      <Filter>Header Files\filesystem</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>
