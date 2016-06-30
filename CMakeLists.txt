@@ -144,68 +144,6 @@ if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # A
 endif ()
 
 
-######## Nana options
-
-add_definitions(-DNANA_IGNORE_CONF)
-if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
-    add_definitions(-DVERBOSE_PREPROCESSOR)
-endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
-if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-	 add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
-	 enable_testing ()
-endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-
-
-#######################     Main setting of Nana sources, targets and install
-
-set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
-set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-#    collect all source sub-directories in a list to avoid duplication here
-set(NANA_SOURCE_SUBDIRS              /.
-                                     /detail
-                                     /filesystem
-                                     /gui
-                                     /gui/detail
-                                     /gui/widgets
-                                     /gui/widgets/skeletons
-                                     /paint
-                                     /paint/detail
-                                     /system
-                                     /threads      )
-if(NANA_CMAKE_ENABLE_AUDIO)
-    list(APPEND NANA_SOURCE_SUBDIRS
-                                     /audio
-                                     /audio/detail  )
-endif(NANA_CMAKE_ENABLE_AUDIO)
-# collect all source files in the source-sub-dir
-# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
-# and Use SOURCE_GROUP if all your sources are in the same directory
-foreach(subdir ${NANA_SOURCE_SUBDIRS})
-    aux_source_directory(${NANA_SOURCE_DIR}${subdir} sources)
-        # message("Subir:  ${subdir}") # message("Files:  ${sources}")
-endforeach(subdir ${NANA_SOURCE_SUBDIRS})
-
-include_directories(${NANA_INCLUDE_DIR})
-add_library(${PROJECT_NAME} ${sources} )
-target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
-
- #  Headers: use INCLUDE_DIRECTORIES
- #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
-
-# Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
-# and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
-install(TARGETS ${PROJECT_NAME}   ARCHIVE DESTINATION lib
-                                  LIBRARY DESTINATION lib)
-message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
-# Install the include directories too.
-if(NANA_CMAKE_INSTALL_INCLUDES)
-	install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include )
-    message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
-endif(NANA_CMAKE_INSTALL_INCLUDES)
-
-set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
-
-
 ############# Optional libraries
 
 # Find PNG
@@ -271,7 +209,67 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     set(Boost_USE_STATIC_RUNTIME ON)  # ??
 endif (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
 
-#set(NANA_LINKS B)
+
+######## Nana options
+
+add_definitions(-DNANA_IGNORE_CONF)
+if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
+    add_definitions(-DVERBOSE_PREPROCESSOR)
+endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
+if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+	 add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
+	 enable_testing ()
+endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+
+
+#######################     Main setting of Nana sources, targets and install
+
+set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
+set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+#    collect all source sub-directories in a list to avoid duplication here
+set(NANA_SOURCE_SUBDIRS              /.
+                                     /detail
+                                     /filesystem
+                                     /gui
+                                     /gui/detail
+                                     /gui/widgets
+                                     /gui/widgets/skeletons
+                                     /paint
+                                     /paint/detail
+                                     /system
+                                     /threads      )
+if(NANA_CMAKE_ENABLE_AUDIO)
+    list(APPEND NANA_SOURCE_SUBDIRS
+                                     /audio
+                                     /audio/detail  )
+endif(NANA_CMAKE_ENABLE_AUDIO)
+# collect all source files in the source-sub-dir
+# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
+# and Use SOURCE_GROUP if all your sources are in the same directory
+foreach(subdir ${NANA_SOURCE_SUBDIRS})
+    aux_source_directory(${NANA_SOURCE_DIR}${subdir} sources)
+        # message("Subir:  ${subdir}") # message("Files:  ${sources}")
+endforeach(subdir ${NANA_SOURCE_SUBDIRS})
+
+include_directories(${NANA_INCLUDE_DIR})
+add_library(${PROJECT_NAME} ${sources} )
+target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
+
+ #  Headers: use INCLUDE_DIRECTORIES
+ #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
+
+# Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
+# and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
+install(TARGETS ${PROJECT_NAME}   ARCHIVE DESTINATION lib
+                                  LIBRARY DESTINATION lib)
+message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
+# Install the include directories too.
+if(NANA_CMAKE_INSTALL_INCLUDES)
+	install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include )
+    message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
+endif(NANA_CMAKE_INSTALL_INCLUDES)
+
+set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
 # Just for information:
 message ( "CMAKE_CXX_COMPILER_ID   = "  ${CMAKE_CXX_COMPILER_ID})
