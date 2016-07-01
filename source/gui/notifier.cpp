@@ -268,7 +268,7 @@ namespace nana
 #endif
 		});
 
-		impl_->evt_destroy = API::events(wd).destroy([this]
+		impl_->evt_destroy = API::events(wd).destroy.connect([this](const arg_destroy&)
 		{
 			close();
 		});

@@ -1237,14 +1237,14 @@ namespace nana
 			return impl_->mbuilder.data().items.at(index).flags.checked;
 		}
 
-		void menu::answerer(std::size_t index, const menu::event_fn_t& fn)
+		void menu::answerer(std::size_t index, const event_fn_t& fn)
 		{
 			impl_->mbuilder.data().items.at(index).functor = fn;
 		}
 
-		void menu::destroy_answer(const std::function<void()>& f)
+		void menu::destroy_answer(const std::function<void()>& fn)
 		{
-			impl_->destroy_answer = f;
+			impl_->destroy_answer = fn;
 		}
 
 		void menu::gaps(const nana::point& pos)

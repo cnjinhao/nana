@@ -135,7 +135,7 @@ namespace skeletons
 			while(ifs.good())
 			{
 				std::getline(ifs, str_mbs);
-				text_cont_.emplace_back(nana::charset(str_mbs));
+				text_cont_.emplace_back(static_cast<string_type&&>(nana::charset{ str_mbs }));
 				if(text_cont_.back().size() > attr_max_.size)
 				{
 					attr_max_.size = text_cont_.back().size();
@@ -218,7 +218,7 @@ namespace skeletons
 						byte_order_translate_4bytes(str);
 				}
 
-				text_cont_.emplace_back(nana::charset(str, encoding));
+				text_cont_.emplace_back(static_cast<string_type&&>(nana::charset{ str, encoding }));
 
 				attr_max_.size = text_cont_.back().size();
 				attr_max_.line = 0;
@@ -236,7 +236,7 @@ namespace skeletons
 						byte_order_translate_4bytes(str);
 				}
 
-				text_cont_.emplace_back(nana::charset(str, encoding));
+				text_cont_.emplace_back(static_cast<string_type&&>(nana::charset{ str, encoding }));
 				if(text_cont_.back().size() > attr_max_.size)
 				{
 					attr_max_.size = text_cont_.back().size();
@@ -406,7 +406,7 @@ namespace skeletons
 
 		void erase_all()
 		{
-			std::deque<string_type>().swap(text_cont_);
+			text_cont_.clear();
 			attr_max_.reset();
 			text_cont_.emplace_back();	//text_cont_ must not be empty
 

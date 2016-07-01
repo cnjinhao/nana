@@ -310,7 +310,7 @@ namespace nana{	namespace widgets
 
 			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos);
 
-			unsigned _m_pixels_by_char(const ::std::wstring&, std::size_t pos) const;
+			unsigned _m_pixels_by_char(const ::std::wstring&, ::std::size_t pos) const;
 			void _handle_move_key(const arg_keyboard& arg);
 
 		private:

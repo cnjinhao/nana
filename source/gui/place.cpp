@@ -572,7 +572,7 @@ namespace nana
 
 			//Listen to destroy of a window. The deleting a fastened window
 			//does not change the layout.
-			auto evt = API::events(wd).destroy([this](const arg_destroy& arg)
+			auto evt = API::events(wd).destroy.connect([this](const arg_destroy& arg)
 			{
 				erase_element(fastened, arg.window_handle);
 			});
@@ -1015,12 +1015,14 @@ namespace nana
 			auto find_lowest = [&revises](double level_px)
 			{
 				double v = (std::numeric_limits<double>::max)();
+
 				for (auto i = revises.begin(); i != revises.end(); ++i)
 				{
-					if (i->min_px >= 0 && i->min_px < v && i->min_px > level_px)
-						v = i->min_px;
-					else if (i->max_px >= 0 && i->max_px < v)
-						v = i->max_px;
+					auto & rev = *i;
+					if (rev.min_px >= 0 && rev.min_px < v && rev.min_px > level_px)
+						v = rev.min_px;
+					else if (rev.max_px >= 0 && rev.max_px < v)
+						v = rev.max_px;
 				}
 				return v;
 			};
@@ -1639,7 +1641,7 @@ namespace nana
 				indicator_.docker->z_order(nullptr, ::nana::z_order_action::topmost);
 				indicator_.docker->show();
 
-				indicator_.docker->events().destroy([this](const arg_destroy&)
+				indicator_.docker->events().destroy.connect([this](const arg_destroy&)
 				{
 					if (indicator_.dock_area)
 					{
@@ -1860,9 +1862,9 @@ namespace nana
 				};
 
 				auto & evt = this->events();
-				evt.mouse_down(grab_fn);
-				evt.mouse_up(grab_fn);
-				evt.mouse_move(grab_fn);
+				evt.mouse_down.connect(grab_fn);
+				evt.mouse_up.connect(grab_fn);
+				evt.mouse_move.connect(grab_fn);
 			}
 
 			void range(int begin, int end)
@@ -1886,10 +1888,10 @@ namespace nana
 
 		division* front() const
 		{
-			for (auto i = children.cbegin(); i != children.cend(); ++i)
+			for (auto & child : children)
 			{
-				if (i->get()->display)
-					return i->get();
+				if (child->display)
+					return child.get();
 			}
 
 			return nullptr;
@@ -2181,7 +2183,7 @@ namespace nana
 				{
 					auto splitter = new div_splitter(tknizer.number());
 					children.back()->div_next = splitter;
-					children.emplace_back(splitter);
+					children.emplace_back(std::unique_ptr<division>{ splitter });
 				}
 				break;
 			case token::div_start:
@@ -2190,7 +2192,7 @@ namespace nana
 				if (!children.empty())
 					children.back()->div_next = div.get();
 
-				children.emplace_back(div.release());
+				children.emplace_back(std::move(div));
 			}
 				break;
 			case token::vert:
@@ -2430,7 +2432,7 @@ namespace nana
 					auto dockpn = new div_dockpane(std::move(child->name), this, child->dir);
 					dockpn->div_owner = child->div_owner;
 					dockpn->weight = child->weight;
-					adjusted_children.emplace_back(dockpn);
+					adjusted_children.emplace_back(std::unique_ptr<division>{ dockpn });
 				}
 
 				division * next = nullptr;
@@ -2646,11 +2648,11 @@ namespace nana
 		implement::division * div_next = div_ptr->div_next;
 		if (div_owner)
 		{
-			for (auto i = div_owner->children.begin(); i != div_owner->children.end(); ++i)
+			for (auto& child: div_owner->children)
 			{
-				if (i->get() == div_ptr)
+				if (child.get() == div_ptr)
 				{
-					replaced = &(*i);
+					replaced = &child;
 					break;
 				}
 			}
@@ -2702,7 +2704,7 @@ namespace nana
 		{
 			//search the division with the specified name,
 			//and attached the division to the field
-			implement::division * div = implement::search_div_name(impl_->root_division.get(), name);
+			auto div = implement::search_div_name(impl_->root_division.get(), name);
 			if (div)
 			{
 				if (div->field && (div->field != p))
@@ -2803,12 +2805,11 @@ namespace nana
 		//Register the factory if it has a name
 		if (!factory_name.empty())
 		{
-			auto i = impl_->dock_factoris.find(factory_name);
-			if (i != impl_->dock_factoris.end())
+			if (impl_->dock_factoris.find(factory_name) != impl_->dock_factoris.end())
 				throw std::invalid_argument("nana::place - the specified factory name(" + factory_name + ") already exists");
 
 			impl_->dock_factoris[factory_name] = dock_ptr;
-			dock_ptr->factories[factory_name].swap(factory);
+			dock_ptr->factories[factory_name] = std::move(factory);
 		}
 
 		auto div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), name));

@@ -610,7 +610,7 @@ namespace nana
 				::create(wd, rectangle(nana::size(API::window_size(wd).width, 28)));
 
 			API::dev::set_menubar(handle(), true);
-			evt_resized_ = API::events(wd).resized([this](const ::nana::arg_resized& arg)
+			evt_resized_ = API::events(wd).resized.connect([this](const ::nana::arg_resized& arg)
 			{
 				auto sz = this->size();
 				sz.width = arg.width;

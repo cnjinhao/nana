@@ -1128,7 +1128,7 @@ namespace nana
 
 		impl->browse.create(impl->dock);
 		impl->browse.i18n(i18n_eval("Browse"));
-		impl->browse.events().click([wd, impl](const arg_click&)
+		impl->browse.events().click.connect_unignorable([wd, impl](const arg_click&)
 		{
 			impl->fbox.owner(wd);
 			if (impl->fbox.show())

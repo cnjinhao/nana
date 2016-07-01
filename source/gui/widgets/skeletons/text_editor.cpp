@@ -332,18 +332,18 @@ namespace nana{	namespace widgets
 
 			nana::point	caret_to_screen(nana::upoint pos) override
 			{
-				auto & textbase = editor_.textbase_;
-				if (pos.y > static_cast<unsigned>(textbase.lines()))
-					pos.y = static_cast<unsigned>(textbase.lines());
+				pos.y = (std::min)(pos.y, static_cast<unsigned>(editor_.textbase_.lines()));
 
-				std::unique_ptr<std::wstring> mask_str;
+				auto text_ptr = &editor_.textbase_.getline(pos.y);
+
+				std::wstring mask_str;
 				if (editor_.mask_char_)
-					mask_str.reset(new std::wstring(textbase.getline(pos.y).size(), editor_.mask_char_));
+				{
+					mask_str.resize(text_ptr->size(), editor_.mask_char_);
+					text_ptr = &mask_str;
+				}
 				
-				auto & lnstr = editor_.mask_char_ ? *mask_str : textbase.getline(pos.y);
-
-				pos.x = editor_._m_pixels_by_char(lnstr, pos.x) + editor_.text_area_.area.x;
-
+				pos.x = editor_._m_pixels_by_char(*text_ptr, pos.x) + editor_.text_area_.area.x;
 				int pos_y = static_cast<int>((pos.y - editor_.points_.offset.y) * editor_.line_height() + editor_._m_text_top_base());
 
 				return{ static_cast<int>(pos.x - editor_.points_.offset.x), pos_y };
@@ -354,21 +354,23 @@ namespace nana{	namespace widgets
 				nana::upoint res{ 0, static_cast<unsigned>(_m_textline_from_screen(scrpos.y)) };
 
 				//Convert the screen point to text caret point
-				const string_type& real_str = editor_.textbase_.getline(res.y);
 
-				std::unique_ptr<std::wstring> mask_str;
+				auto text_ptr = &editor_.textbase_.getline(res.y);
+
+				std::wstring mask_str;
 				if (editor_.mask_char_)
-					mask_str.reset(new std::wstring(real_str.size(), editor_.mask_char_));
-				
-				auto & lnstr = (editor_.mask_char_ ? *mask_str : real_str);
-				if (lnstr.size() > 0)
+				{
+					mask_str.resize(text_ptr->size(), editor_.mask_char_);
+					text_ptr = &mask_str;
+				}
+
+				if (text_ptr->size() > 0)
 				{
 					scrpos.x += (editor_.points_.offset.x - editor_.text_area_.area.x);
 					if (scrpos.x > 0)
 					{
-						unicode_bidi bidi;
 						std::vector<unicode_bidi::entity> reordered;
-						bidi.linestr(lnstr.data(), lnstr.size(), reordered);
+						unicode_bidi{}.linestr(text_ptr->c_str(), text_ptr->size(), reordered);
 
 						for (auto & ent : reordered)
 						{
@@ -377,13 +379,13 @@ namespace nana{	namespace widgets
 							if (scrpos.x < str_px)
 							{
 								res.x = editor_._m_char_by_pixels(ent, static_cast<unsigned>(scrpos.x));
-								res.x += static_cast<unsigned>(ent.begin - lnstr.data());
+								res.x += static_cast<unsigned>(ent.begin - text_ptr->c_str());
 								return res;
 							}
 							scrpos.x -= str_px;
 						}
 
-						res.x = static_cast<int>(lnstr.size());
+						res.x = static_cast<int>(text_ptr->size());
 					}
 				}
 
@@ -398,10 +400,9 @@ namespace nana{	namespace widgets
 				{
 					if (points.caret.y)
 					{
-						points.caret.x = static_cast<unsigned>(editor_.textbase_.getline(--points.caret.y).size());
-
-						if (points.xpos < points.caret.x)
-							points.caret.x = points.xpos;
+						points.caret.x = (std::min)(points.xpos,
+							static_cast<unsigned>(editor_.textbase_.getline(--points.caret.y).size())
+							);
 
 						bool out_of_screen = (static_cast<int>(points.caret.y) < points.offset.y);
 						if (out_of_screen)
@@ -414,10 +415,9 @@ namespace nana{	namespace widgets
 				{
 					if (points.caret.y + 1 < editor_.textbase_.lines())
 					{
-						points.caret.x = static_cast<unsigned>(editor_.textbase_.getline(++points.caret.y).size());
-
-						if (points.xpos < points.caret.x)
-							points.caret.x = points.xpos;
+						points.caret.x = (std::min)(points.xpos,
+							static_cast<unsigned>(editor_.textbase_.getline(++points.caret.y).size())
+							);
 
 						return adjust_caret_into_screen();
 					}
@@ -511,8 +511,8 @@ namespace nana{	namespace widgets
 				const wchar_t* end;
 				unsigned pixels;
 
-				text_section(const wchar_t* ptr, const wchar_t* endptr)
-					: begin(ptr), end(endptr)
+				text_section(const wchar_t* ptr, const wchar_t* endptr, unsigned px)
+					: begin(ptr), end(endptr), pixels(px)
 				{}
 			};
 
@@ -543,7 +543,7 @@ namespace nana{	namespace widgets
 				{
 					auto& linestr = editor_.textbase_.getline(line);
 					auto p = mtr.line_sections.front().begin;
-					if (p < linestr.data() || (linestr.data() + linestr.size() < p))
+					if (p < linestr.c_str() || (linestr.c_str() + linestr.size() < p))
 						pre_calc_line(line, editor_.width_pixels());
 
 					++line;
@@ -566,7 +566,7 @@ namespace nana{	namespace widgets
 						{
 							auto & linestr = editor_.textbase_.getline(line);
 							auto p = mtr.line_sections.front().begin;
-							if (p < linestr.data() || (linestr.data() + linestr.size() < p))
+							if (p < linestr.c_str() || (linestr.c_str() + linestr.size() < p))
 								pre_calc_line(line, editor_.width_pixels());
 						}
 						++line;
@@ -581,8 +581,8 @@ namespace nana{	namespace widgets
 				{
 					auto & mtr = linemtr_[line];
 					mtr.line_sections.clear();
-					mtr.line_sections.emplace_back(lnstr.data(), lnstr.data());
-					mtr.line_sections.back().pixels = 0;
+
+					mtr.line_sections.emplace_back(lnstr.c_str(), lnstr.c_str(), unsigned{});
 					mtr.take_lines = 1;
 					return;
 				}
@@ -606,8 +606,7 @@ namespace nana{	namespace widgets
 					{
 						if (text_px != str_w)
 						{
-							line_sections.emplace_back(secondary_begin, ts.begin);
-							line_sections.back().pixels = text_px - str_w;
+							line_sections.emplace_back(secondary_begin, ts.begin, unsigned{ text_px - str_w });
 							text_px = str_w;
 							secondary_begin = ts.begin;
 						}
@@ -630,8 +629,7 @@ namespace nana{	namespace widgets
 									continue;
 
 								const wchar_t * endptr = ts.begin + (pxi - pxptr) + (text_px == pixels ? 1 : 0);
-								line_sections.emplace_back(secondary_begin, endptr);
-								line_sections.back().pixels = text_px - (text_px == pixels ? 0 : *pxi);
+								line_sections.emplace_back(secondary_begin, endptr, unsigned{ text_px - (text_px == pixels ? 0 : *pxi) });
 								secondary_begin = endptr;
 
 								text_px = (text_px == pixels ? 0 : *pxi);
@@ -641,8 +639,7 @@ namespace nana{	namespace widgets
 					}
 					else if (text_px == pixels)
 					{
-						line_sections.emplace_back(secondary_begin, ts.begin);
-						line_sections.back().pixels = text_px - str_w;
+						line_sections.emplace_back(secondary_begin, ts.begin, unsigned{ text_px - str_w });
 						secondary_begin = ts.begin;
 						text_px = str_w;
 					}
@@ -655,8 +652,7 @@ namespace nana{	namespace widgets
 
 				if (secondary_begin)
 				{
-					mtr.line_sections.emplace_back(secondary_begin, sections.back().end);
-					mtr.line_sections.back().pixels = text_px;
+					mtr.line_sections.emplace_back(secondary_begin, sections.back().end, unsigned{ text_px });
 					++mtr.take_lines;
 				}
 			}
@@ -694,7 +690,7 @@ namespace nana{	namespace widgets
 					editor_.graph_.rectangle({ editor_.text_area_.area.x, top, editor_.width_pixels(), static_cast<unsigned>(pixels * secondary_before) }, true, API::bgcolor(editor_.window_));
 
 					auto fgcolor = API::fgcolor(editor_.window_);
-					auto text_ptr = editor_.textbase_.getline(textline).data();
+					auto text_ptr = editor_.textbase_.getline(textline).c_str();
 
 					for (std::size_t pos = 0; pos < secondary_before; ++pos, top+=pixels)
 					{
@@ -716,7 +712,7 @@ namespace nana{	namespace widgets
 					return line_index;
 
 				nana::upoint str_pos(0, static_cast<unsigned>(primary));
-				str_pos.x = static_cast<unsigned>(linemtr_[primary].line_sections[secondary].begin - editor_.textbase_.getline(primary).data());
+				str_pos.x = static_cast<unsigned>(linemtr_[primary].line_sections[secondary].begin - editor_.textbase_.getline(primary).c_str());
 
 				int top = editor_._m_text_top_base();
 				const unsigned pixels = editor_.line_height();
@@ -786,7 +782,7 @@ namespace nana{	namespace widgets
 						}
 						else if (pos.x == chsize)
 						{
-							scrpos.x = editor_._m_text_extent_size(str.data(), sec.end - sec.begin).width;
+							scrpos.x = editor_._m_text_extent_size(str.c_str(), sec.end - sec.begin).width;
 							break;
 						}
 						else
@@ -814,15 +810,18 @@ namespace nana{	namespace widgets
 				//First of all, find the text of secondary.
 				auto real_str = mtr.line_sections[secondary];
 
-				std::unique_ptr<std::wstring> mask_str;
-				if (editor_.mask_char_)
-					mask_str.reset(new std::wstring(real_str.end - real_str.begin, editor_.mask_char_));
+				auto text_ptr = real_str.begin;
+				const auto text_size = real_str.end - real_str.begin;
 
-				const wchar_t * str = (editor_.mask_char_ ? mask_str->data() : real_str.begin);
+				std::wstring mask_str;
+				if (editor_.mask_char_)
+				{
+					mask_str.resize(text_size, editor_.mask_char_);
+					text_ptr = mask_str.c_str();
+				}
 
 				std::vector<unicode_bidi::entity> reordered;
-				unicode_bidi bidi;
-				bidi.linestr(str, real_str.end - real_str.begin, reordered);
+				unicode_bidi{}.linestr(text_ptr, text_size, reordered);
 
 				nana::upoint res(static_cast<unsigned>(real_str.begin - mtr.line_sections.front().begin), static_cast<unsigned>(primary));
 				scrpos.x -= editor_.text_area_.area.x;
@@ -831,12 +830,11 @@ namespace nana{	namespace widgets
 
 				for (auto & ent : reordered)
 				{
-					std::size_t len = ent.end - ent.begin;
-					auto str_px = static_cast<int>(editor_._m_text_extent_size(ent.begin, len).width);
+					auto str_px = static_cast<int>(editor_._m_text_extent_size(ent.begin, ent.end - ent.begin).width);
 					if (scrpos.x < str_px)
 					{
 						res.x += editor_._m_char_by_pixels(ent, scrpos.x);
-						res.x += static_cast<unsigned>(ent.begin - str);
+						res.x += static_cast<unsigned>(ent.begin - text_ptr);
 						return res;
 					}
 					scrpos.x -= str_px;
@@ -929,13 +927,13 @@ namespace nana{	namespace widgets
 			{
 				if (str.empty())
 				{
-					tsec.emplace_back(str.data(), str.data());
+					tsec.emplace_back(str.c_str(), str.c_str(), unsigned{});
 					return;
 				}
-				const auto end = str.data() + str.size();
+				const auto end = str.c_str() + str.size();
 
 				const wchar_t * word = nullptr;
-				for (auto i = str.data(); i != end; ++i)
+				for (auto i = str.c_str(); i != end; ++i)
 				{
 					wchar_t const ch = *i;
 
@@ -944,11 +942,11 @@ namespace nana{	namespace widgets
 					{
 						if (word)	//Record the word.
 						{
-							tsec.emplace_back(word, i);
+							tsec.emplace_back(word, i, unsigned{});
 							word = nullptr;
 						}
 
-						tsec.emplace_back(i, i + 1);
+						tsec.emplace_back(i, i + 1, unsigned{});
 						continue;
 					}
 
@@ -957,7 +955,7 @@ namespace nana{	namespace widgets
 				}
 
 				if(word)
-					tsec.emplace_back(word, end);
+					tsec.emplace_back(word, end, unsigned{});
 			}
 
 			void _m_set_offset_by_secondary(std::size_t primary, std::size_t secondary)
@@ -1054,7 +1052,7 @@ namespace nana{	namespace widgets
 				unsigned len = static_cast<unsigned>(section.end - section.begin);
 
 				auto chptr = section.begin + (secondary.x > len ? len : secondary.x);
-				pos = static_cast<unsigned>(chptr - editor_.textbase_.getline(textline).data());
+				pos = static_cast<unsigned>(chptr - editor_.textbase_.getline(textline).c_str());
 				return true;
 			}
 
@@ -1179,25 +1177,6 @@ namespace nana{	namespace widgets
 
 				std::vector<entity> entities;
 
-				auto test_whole_word = [&text](index pos, index len)
-				{
-					if (pos)
-					{
-						auto chr = text[pos - 1];
-						if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
-							return false;
-					}
-
-					if (pos + len < text.size())
-					{
-						auto chr = text[pos + len];
-						if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
-							return false;
-					}
-
-					return true;
-				};
-
 				::nana::ciwstring cistr;
 				for (auto & ds : kwptr->kwbase)
 				{
@@ -1212,22 +1191,22 @@ namespace nana{	namespace widgets
 
 						    if (ds.whole_word_matched)
 						    {
-							    if (!test_whole_word(pos, ds.text.size()))
+							    if (!_m_whole_word(text, pos, ds.text.size()))
 								    continue;
 						    }
 					    }
 					    else
 					    {
 						    if (cistr.empty())
-							    cistr.append(text.data(), text.size());
+							    cistr.append(text.c_str(), text.size());
 
-						    pos = cistr.find(ds.text.data(), pos);
+						    pos = cistr.find(ds.text.c_str(), pos);
 						    if (pos == cistr.npos)
 							    break;
 
 						    if (ds.whole_word_matched)
 						    {
-							    if (!test_whole_word(pos, ds.text.size()))
+							    if (!_m_whole_word(text, pos, ds.text.size()))
 								    continue;
 						    }
 					    }
@@ -1237,7 +1216,7 @@ namespace nana{	namespace widgets
 					    {
 							entities.emplace_back();
 							auto & last = entities.back();
-							last.begin = text.data() + pos;
+							last.begin = text.c_str() + pos;
 							last.end = last.begin + ds.text.size();
 							last.scheme = ki->second.get();
 					    }
@@ -1269,6 +1248,25 @@ namespace nana{	namespace widgets
 			const std::vector<entity>& entities() const
 			{
 				return entities_;
+			}
+		private:
+			static bool _m_whole_word(const std::wstring& text, std::wstring::size_type pos, std::size_t len)
+			{
+				if (pos)
+				{
+					auto chr = text[pos - 1];
+					if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
+						return false;
+				}
+
+				if (pos + len < text.size())
+				{
+					auto chr = text[pos + len];
+					if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
+						return false;
+				}
+
+				return true;
 			}
 		private:
 			std::vector<entity> entities_;
@@ -1343,6 +1341,7 @@ namespace nana{	namespace widgets
 					return;
 				}
 			}
+
 			keywords_->kwbase.emplace_back(kw, name, case_sensitive, whole_word_matched);
 		}
 
@@ -1448,7 +1447,7 @@ namespace nana{	namespace widgets
 		void text_editor::indent(bool enb, std::function<std::string()> generator)
 		{
 			indent_.enabled = enb;
-			indent_.generator.swap(generator);
+			indent_.generator = std::move(generator);
 		}
 
 		void text_editor::set_event(event_interface* ptr)
@@ -2030,7 +2029,7 @@ namespace nana{	namespace widgets
 		{
 			if(text_area_.vscroll && text_area_.hscroll)
 			{
-				graph_.rectangle({ text_area_.area.right() - static_cast<int>(text_area_.vscroll), text_area_.area.bottom() - static_cast<int>(text_area_.hscroll), text_area_.vscroll, text_area_.hscroll },
+				graph_.rectangle(rectangle{ text_area_.area.right() - static_cast<int>(text_area_.vscroll), text_area_.area.bottom() - static_cast<int>(text_area_.hscroll), text_area_.vscroll, text_area_.hscroll },
 								true, colors::button_face);
 			}
 		}
@@ -2054,17 +2053,16 @@ namespace nana{	namespace widgets
 				ext_renderer_.background(graph_, text_area_.area, bgcolor);
 
 			if(attributes_.counterpart && !text_area_.area.empty())
-				attributes_.counterpart.bitblt(nana::rectangle(0, 0, text_area_.area.width, text_area_.area.height), graph_, nana::point(text_area_.area.x, text_area_.area.y));
+				attributes_.counterpart.bitblt(rectangle{ text_area_.area.dimension() }, graph_, text_area_.area.position());
 
 			//Render the content when the text isn't empty or the window has got focus,
 			//otherwise draw the tip string.
 			if ((false == textbase_.empty()) || has_focus)
 			{
-				auto && text_pos = behavior_->render(fgcolor);
+				auto text_pos = behavior_->render(fgcolor);
 				
-
 				if (text_pos.empty())
-					text_pos.push_back({ 0, 0 });
+					text_pos.push_back(upoint{});
 				
 				if (text_pos != text_position_)
 				{
@@ -2077,7 +2075,7 @@ namespace nana{	namespace widgets
 				graph_.string({ text_area_.area.x - points_.offset.x, text_area_.area.y }, attributes_.tip_string, static_cast<color_rgb>(0x787878));
 
 			if (text_position_.empty())
-				text_position_.push_back({ 0, 0 });
+				text_position_.push_back(upoint{});
 
 			draw_corner();
 
@@ -2086,6 +2084,9 @@ namespace nana{	namespace widgets
 	//public:
 		void text_editor::put(std::wstring text)
 		{
+			if (text.empty())
+				return;
+
 			auto undo_ptr = std::unique_ptr<undo_input_text>{ new undo_input_text(*this, text) };
 
 			undo_ptr->set_selected_text();
@@ -2222,26 +2223,20 @@ namespace nana{	namespace widgets
 
 			if (indent_.enabled)
 			{
-				std::wstring indent_text;
 				if (indent_.generator)
 				{
-					indent_text = to_wstring(indent_.generator());
+					put(to_wstring(indent_.generator()));
 				}
 				else
 				{
 					auto & text = textbase_.getline(points_.caret.y - 1);
 					auto indent_pos = text.find_first_not_of(L"\t ");
 					if (indent_pos != std::wstring::npos)
-						indent_text = text.substr(0, indent_pos);
+						put(text.substr(0, indent_pos));
 					else
-						indent_text = text;
+						put(text);
 				}
-
-				if (indent_text.size())
-					put(indent_text);
-				
 			}
-
 
 			if (behavior_->adjust_caret_into_screen() || need_refresh)
 				render(true);
@@ -2906,7 +2901,7 @@ namespace nana{	namespace widgets
 
 		bool text_editor::_m_resolve_text(const std::wstring& text, std::vector<std::pair<std::size_t, std::size_t>> & lines)
 		{
-			auto const text_str = text.data();
+			auto const text_str = text.c_str();
 			std::size_t begin = 0;
 			while (true)
 			{
@@ -2932,14 +2927,14 @@ namespace nana{	namespace widgets
 					auto eats = eat_endl(chp, 0);
 					if (eats)
 					{
-						lines.emplace_back(0, 0);
+						lines.emplace_back();
 						chp += (eats - 1);
 					}
 				}
 
 				if (text.npos == begin)
 				{
-					lines.emplace_back(0, 0);
+					lines.emplace_back();
 					break;
 				}
 			}
@@ -3130,7 +3125,7 @@ namespace nana{	namespace widgets
 				if (str <= ent.begin && ent.begin < str_end)
 				{
 					ent_begin = ent.begin;
-					ent_off = std::accumulate(glyphs, glyphs + (ent.begin - str), 0);
+					ent_off = static_cast<int>(std::accumulate(glyphs, glyphs + (ent.begin - str), unsigned{}));
 				}
 				else if (ent.begin <= str && str < ent.end)
 					ent_begin = str;
@@ -3146,16 +3141,17 @@ namespace nana{	namespace widgets
 					canvas.rectangle(true);
 
 					ent_pos.x += ent_off;
+
 					if (rtl)
 					{
 						//draw the whole text if it is a RTL text, because Arbic language is transformable.
 						canvas.string({}, str, len);
-						graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas, ::nana::point{ ent_off, 0 });
+						graph_.bitblt(rectangle{ ent_pos, size{ ent_pixels, canvas.height() } }, canvas, point{ ent_off, 0 });
 					}
 					else
 					{
 						canvas.string({}, ent_begin, ent_end - ent_begin);
-						graph_.bitblt(::nana::rectangle{ ent_pos, ::nana::size{ ent_pixels, canvas.height() } }, canvas);
+						graph_.bitblt(rectangle{ ent_pos, size{ ent_pixels, canvas.height() } }, canvas);
 					}
 				}
 			}
@@ -3163,24 +3159,26 @@ namespace nana{	namespace widgets
 
 		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& str_pos, const std::wstring& str, bool if_mask) const
 		{
-			::nana::point text_pos{ text_area_.area.x - points_.offset.x, top };
+			point text_pos{ text_area_.area.x - points_.offset.x, top };
 			const int text_right = text_area_.area.right();
 
-			std::unique_ptr<std::wstring> mask_str;
+			auto text_ptr = &str;
+
+			std::wstring mask_str;
 			if (if_mask && mask_char_)
-				mask_str.reset(new std::wstring(str.size(), mask_char_));
+			{
+				mask_str.resize(str.size(), mask_char_);
+				text_ptr = &mask_str;
+			}
 
-			bool focused = API::is_focus_ready(window_);
+			const auto focused = API::is_focus_ready(window_);
 
-			auto & linestr = (if_mask && mask_char_ ? *mask_str : str);
-
-			unicode_bidi bidi;
 			std::vector<unicode_bidi::entity> reordered;
-			bidi.linestr(linestr.c_str(), linestr.size(), reordered);
+			unicode_bidi{}.linestr(text_ptr->c_str(), text_ptr->size(), reordered);
 
 			//Parse highlight keywords
 			keyword_parser parser;
-			parser.parse(linestr, keywords_.get());
+			parser.parse(*text_ptr, keywords_.get());
 
 			auto whitespace_w = graph_.text_extent_size(L" ", 1).width;
 
@@ -3233,7 +3231,7 @@ namespace nana{	namespace widgets
 					graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_h_pixels), graph);
 				};
 
-				const wchar_t * strbeg = linestr.c_str();
+				auto const strbeg = text_ptr->c_str();
 				if (a.y == b.y)
 				{
 					for (auto & ent : reordered)
@@ -3242,7 +3240,7 @@ namespace nana{	namespace widgets
 						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
 						if ((text_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_pos.x < text_right))
 						{
-							std::size_t pos = ent.begin - strbeg + str_pos.x;
+							auto const pos = ent.begin - strbeg + str_pos.x;
 							const auto str_end = pos + len;
 
 							//NOT selected or seleceted all
@@ -3460,7 +3458,7 @@ namespace nana{	namespace widgets
 
 				if (is_right_text(ent))
 				{
-					auto total_px = std::accumulate(pxbuf.get(), px_end, static_cast<unsigned>(0));
+					auto total_px = std::accumulate(pxbuf.get(), px_end, unsigned{});
 
 					for (auto p = pxbuf.get(); p != px_end; ++p)
 					{
@@ -3499,17 +3497,16 @@ namespace nana{	namespace widgets
 			if (pos > lnstr.size())
 				return 0;
 
-			unicode_bidi bidi;
 			std::vector<unicode_bidi::entity> reordered;
-			bidi.linestr(lnstr.data(), lnstr.size(), reordered);
+			unicode_bidi{}.linestr(lnstr.c_str(), lnstr.size(), reordered);
 
-			auto ch = lnstr.data() + pos;
+			auto target = lnstr.c_str() + pos;
 
 			unsigned text_w = 0;
 			for (auto & ent : reordered)
 			{
 				std::size_t len = ent.end - ent.begin;
-				if (ent.begin <= ch && ch <= ent.end)
+				if (ent.begin <= target && target <= ent.end)
 				{
 					if (is_right_text(ent))
 					{
@@ -3517,10 +3514,10 @@ namespace nana{	namespace widgets
 						//RTL
 						std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 						graph_.glyph_pixels(ent.begin, len, pxbuf.get());
-						return std::accumulate(pxbuf.get() + (ch - ent.begin), pxbuf.get() + len, text_w);
+						return std::accumulate(pxbuf.get() + (target - ent.begin), pxbuf.get() + len, text_w);
 					}
 					//LTR
-					return text_w + _m_text_extent_size(ent.begin, ch - ent.begin).width;
+					return text_w + _m_text_extent_size(ent.begin, target - ent.begin).width;
 				}
 				else
 					text_w += _m_text_extent_size(ent.begin, len).width;

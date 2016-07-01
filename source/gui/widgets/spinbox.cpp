@@ -162,7 +162,7 @@ namespace nana
 				{
 					for (auto & s : initlist)
 					{
-						texts_.emplace_back(::nana::charset(s, ::nana::unicode::utf8));
+						texts_.emplace_back(std::string{ s });
 					}
 				}
 

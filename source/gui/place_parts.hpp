@@ -164,10 +164,7 @@ namespace nana
 			: public widget_object < category::widget_tag, dockcaption_dtrigger >
 		{
 		public:
-			void on_close(std::function<void()> fn)
-			{
-				get_drawer_trigger().on_close(std::move(fn));
-			}
+			using widget_object<category::widget_tag, dockcaption_dtrigger>::get_drawer_trigger;
 		};
 
 		class dockarea
@@ -192,7 +189,7 @@ namespace nana
 				base_type::create(parent, true);
 				this->caption("dockarea");
 				caption_.create(*this, true);
-				caption_.on_close([this]
+				caption_.get_drawer_trigger().on_close([this]
 				{
 					bool destroy_dockarea = true;
 
@@ -207,7 +204,7 @@ namespace nana
 						notifier_->request_close();
 				});
 
-				this->events().resized([this](const arg_resized& arg)
+				this->events().resized.connect([this](const arg_resized& arg)
 				{
 					rectangle r{ 0, 0, arg.width, 20 };
 					caption_.move(r);
@@ -272,9 +269,9 @@ namespace nana
 					}
 				};
 
-				caption_.events().mouse_down(grab_fn);
-				caption_.events().mouse_move(grab_fn);
-				caption_.events().mouse_up(grab_fn);
+				caption_.events().mouse_down.connect(grab_fn);
+				caption_.events().mouse_move.connect(grab_fn);
+				caption_.events().mouse_up.connect(grab_fn);
 
 			}
 
@@ -307,7 +304,7 @@ namespace nana
 				API::set_parent_window(handle(), container_->handle());
 				this->move({ 1, 1 });
 
-				container_->events().resized([this](const arg_resized& arg)
+				container_->events().resized.connect([this](const arg_resized& arg)
 				{
 					this->size({arg.width - 2, arg.height - 2});
 				});
@@ -350,7 +347,7 @@ namespace nana
 						tabbar_.reset(new tabbar_lite(*this));
 
 						tabbar_->events().selected.clear();
-						tabbar_->events().selected([this]
+						tabbar_->events().selected.connect([this](const event_arg&)
 						{
 							auto handle = tabbar_->attach(tabbar_->selected());
 							//Set caption through a caption of window specified by handle
