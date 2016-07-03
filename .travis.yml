@@ -56,7 +56,7 @@ matrix:
             - llvm-toolchain-precise 
 
 before_install:
-  - git clone --depth=1 --branch=dev_nana_fs https://github.com/qPCR4vir/nana-demo.git ../nana-demo
+  - git clone --depth=1 --branch=develop https://github.com/qPCR4vir/nana-demo.git ../nana-demo
   - export PATH="$HOME/bin:$PATH"
   - mkdir ~/bin
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Linux-x86_64.sh || true
@@ -85,7 +85,6 @@ script:
   # Thus, make install will put the nana.lib in "... nana/../nana_lib/lib/"
   # and the includes in "... nana/../nana_lib/include/"
   - cmake -G"Unix Makefiles" ../../nana -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_BOOST_FILESYSTEM_FORCE=OFF  -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
-  - make
   - make install
   - ls
   - cd ..
@@ -94,7 +93,6 @@ script:
   - ls
   - cd nana_demo_bin
   - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_ENABLE_PNG=OFF -DNANA_CMAKE_BUILD_DEMOS=ON -DNANA_CMAKE_ENABLE_AUDIO=OFF -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=ON -DNANA_CMAKE_BOOST_FILESYSTEM_FORCE=OFF -DNANA_CMAKE_INCLUDE_EXPERIMENTAL_DEMOS=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
-  - make
   - make install
   # todo: separate resources from sources (a directory for images)
   - ls
