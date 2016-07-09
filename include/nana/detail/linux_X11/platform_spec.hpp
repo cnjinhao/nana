@@ -175,7 +175,8 @@ namespace detail
 		Atom xdnd_finished;
 	};
 
-	struct caret_tag;
+	//A forward declaration of caret data
+	struct caret_rep;
 
 	class timer_runner;
 
@@ -243,9 +244,7 @@ namespace detail
 		void caret_close(native_window_type);
 		void caret_pos(native_window_type, const ::nana::point&);
 		void caret_visible(native_window_type, bool);
-		void caret_flash(caret_tag&);
 		bool caret_update(native_window_type, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph);
-		static bool caret_reinstate(caret_tag&);
 		void set_error_handler();
 		int rev_error_handler();
 
@@ -287,7 +286,7 @@ namespace detail
 		{
 			volatile bool exit_thread;
 			std::unique_ptr<std::thread> thr;
-			std::map<native_window_type, caret_tag*> carets;
+			std::map<native_window_type, caret_rep*> carets;
 		}caret_holder_;
 
 		std::map<native_window_type, window_context_t> wincontext_;

@@ -140,26 +140,69 @@ namespace detail
 	//end class charset_conv
 #endif
 
-	struct caret_tag
+	//Caret implementation
+	struct caret_rep
 	{
 		native_window_type window;
-		bool has_input_method_focus;
-		bool visible;
+		bool has_input_method_focus{ false };
+		bool visible{ false };
 		nana::point pos;
 		nana::size	size;
 		nana::rectangle rev;
-		nana::paint::graphics graph;
 		nana::paint::graphics rev_graph;
-		XIM	input_method;
-		XIC	input_context;
-		XFontSet input_font;
+		XIM	input_method{ 0 };
+		XIC	input_context{ 0 };
+		XFontSet input_font{ 0 };
 		XRectangle input_spot;
 		XRectangle input_status_area;
-		long input_context_event_mask;
+		long input_context_event_mask{ 0 };
 
-		caret_tag(native_window_type wd)
-			: window(wd), has_input_method_focus(false), visible(false), input_method(0), input_context(0), input_font(0), input_context_event_mask(0)
+		caret_rep(native_window_type wd)
+			: window{ wd }
 		{}
+
+		//Copy the reversed graphics to the window
+		bool reinstate()
+		{
+			if(rev.width && rev.height)
+			{
+				rev_graph.paste(window, rev, 0, 0);
+				//Drop the reversed graphics in order to draw the
+				//caret in the next flash.
+				rev.width = rev.height = 0;
+				return true;
+			}
+			return false;
+		}
+
+		void twinkle()
+		{
+			if(!visible)
+				return;
+
+			if(!reinstate())
+			{
+				rev_graph.bitblt(rectangle{size}, window, pos);
+				rev.width = size.width;
+				rev.height = size.height;
+				rev.x = pos.x;
+				rev.y = pos.y;
+
+				paint::pixel_buffer pxbuf;
+				pxbuf.open(rev_graph.handle());
+
+				auto pxsize = pxbuf.size();
+				for(int y = 0; y < static_cast<int>(pxsize.height); ++y)
+					for(int x = 0; x < static_cast<int>(pxsize.width); ++x)
+					{
+						auto px = pxbuf.at({x, y});
+						px->element.red = ~px->element.red;
+						px->element.green = ~px->element.green;
+						px->element.blue = ~px->element.blue;
+					}
+				pxbuf.paste(window, {rev.x, rev.y});
+			}
+		}
 	};
 	
 	class timer_runner
@@ -734,12 +777,12 @@ namespace detail
 	{
 		bool is_start_routine = false;
 		platform_scope_guard psg;
-		caret_tag * & addr = caret_holder_.carets[wd];
-		if(0 == addr)
+		auto & addr = caret_holder_.carets[wd];
+		if(nullptr == addr)
 		{
 			::XSetLocaleModifiers("");
 
-			addr = new caret_tag(wd);
+			addr = new caret_rep(wd);
 			is_start_routine = (caret_holder_.carets.size() == 1);
 			addr->input_method = ::XOpenIM(display_, 0, 0, 0);
 			if(addr->input_method)
@@ -815,10 +858,7 @@ namespace detail
 		}
 
 		addr->visible = false;
-		addr->graph.make(caret_sz);
-		addr->graph.rectangle(true, colors::black);
 		addr->rev_graph.make(caret_sz);
-
 		addr->size = caret_sz;
 
 		if(addr->input_context && (false == addr->has_input_method_focus))
@@ -844,7 +884,7 @@ namespace detail
 			auto i = caret_holder_.carets.find(wd);
 			if(i != caret_holder_.carets.end())
 			{
-				caret_tag * addr = i->second;
+				auto addr = i->second;
 				if(addr->input_context)
 				{
 					if(addr->has_input_method_focus)
@@ -901,9 +941,8 @@ namespace detail
 		auto i = caret_holder_.carets.find(wd);
 		if(i != caret_holder_.carets.end())
 		{
-			caret_tag & crt = *i->second;
-			caret_reinstate(crt);
-			crt.pos = pos;
+			i->second->reinstate();
+			i->second->pos = pos;
 		}
 	}
 
@@ -913,12 +952,12 @@ namespace detail
 		auto i = caret_holder_.carets.find(wd);
 		if(i != caret_holder_.carets.end())
 		{
-			caret_tag& crt = *i->second;
+			auto & crt = *i->second;
 			if(crt.visible != vis)
 			{
 				if(vis == false)
 				{
-					caret_reinstate(crt);
+					crt.reinstate();
 					if(crt.input_context && crt.has_input_method_focus)
 					{
 						::XUnsetICFocus(crt.input_context);
@@ -938,60 +977,19 @@ namespace detail
 		}
 	}
 
-	void platform_spec::caret_flash(caret_tag & crt)
-	{
-		if(crt.visible && (false == caret_reinstate(crt)))
-		{
-			crt.rev_graph.bitblt(rectangle{crt.size}, crt.window, crt.pos);
-			crt.rev.width = crt.size.width;
-			crt.rev.height = crt.size.height;
-			crt.rev.x = crt.pos.x;
-			crt.rev.y = crt.pos.y;
-			crt.graph.paste(crt.window, crt.rev, 0, 0);
-		}
-	}
-
-	bool platform_spec::caret_update(native_window_type wd, nana::paint::graphics& root_graph, bool is_erase_caret_from_root_graph)
+	bool platform_spec::caret_update(native_window_type wd, nana::paint::graphics& /*root_graph*/, bool after_mapping)
 	{
 		platform_scope_guard psg;
 		auto i = caret_holder_.carets.find(wd);
 		if(i != caret_holder_.carets.end())
 		{
-			caret_tag & crt = *i->second;
-			if(is_erase_caret_from_root_graph)
+			auto & crt = *i->second;
+			if(!after_mapping)
 			{
-				root_graph.bitblt(crt.rev, crt.rev_graph);
+				return crt.reinstate();
 			}
 			else
-			{
-				bool owns_caret = false;
-				nana::paint::graphics * crt_graph;
-				if(crt.rev.width && crt.rev.height)
-				{
-					crt.rev_graph.bitblt(rectangle{crt.size}, root_graph, crt.pos);
-					crt_graph = &crt.graph;
-					owns_caret = true;
-				}
-				else
-					crt_graph = &crt.rev_graph;
-
-				root_graph.bitblt(crt.rev, *crt_graph);
-				return owns_caret;
-			}
-		}
-		return false;
-	}
-
-	//Copy the reversed graphics to the window
-	bool platform_spec::caret_reinstate(caret_tag& crt)
-	{
-		if(crt.rev.width && crt.rev.height)
-		{
-			crt.rev_graph.paste(crt.window, crt.rev, 0, 0);
-			//Drop the reversed graphics in order to draw the
-			//caret in the next flash.
-			crt.rev.width = crt.rev.height = 0;
-			return true;
+				crt.twinkle();
 		}
 		return false;
 	}
@@ -1021,7 +1019,7 @@ namespace detail
 			if(xlib_locker_.try_lock())
 			{
 				for(auto i : caret_holder_.carets)
-					caret_flash(*(i.second));
+					i.second->twinkle();
 
 				xlib_locker_.unlock();
 			}
