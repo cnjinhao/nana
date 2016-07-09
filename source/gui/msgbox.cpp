@@ -355,14 +355,12 @@ namespace nana
 	msgbox::msgbox(const std::string& title)
 		: wd_(nullptr), title_(title), button_(ok), icon_(icon_none)
 	{
-		// throw_not_utf8(title_);
 		review_utf8(title_);
 	}
 
 	msgbox::msgbox(window wd, const std::string& title, button_t b)
 		: wd_(wd), title_(title), button_(b), icon_(icon_none)
 	{
-		// throw_not_utf8(title_);
 		review_utf8(title_);
 	}
 
@@ -380,19 +378,35 @@ namespace nana
 
 	msgbox & msgbox::operator<<(const std::wstring& str)
 	{
-		sstream_ << to_osmbstr(to_utf8(str));
+		sstream_ << to_utf8(str);
 		return *this;
 	}
 
 	msgbox & msgbox::operator<<(const wchar_t* str)
 	{
-		sstream_ << to_osmbstr(to_utf8(str));
+		sstream_ << to_utf8(str);
 		return *this;
+	}
+
+
+	/// Writes a UTF-8 string to the buffer.
+	msgbox & msgbox::operator<<(const std::string& u8str)
+	{
+		review_utf8(u8str);
+		sstream_ << u8str;
+
+		return *this;
+	}
+
+	/// Writes a UTF-8 string to the buffer.
+	msgbox & msgbox::operator<<(const char* u8str)
+	{
+		return operator<<(std::string{ u8str });
 	}
 
 	msgbox & msgbox::operator<<(const nana::charset& cs)
 	{
-		std::string str = cs;
+		std::string str = cs.to_bytes(nana::unicode::utf8);
 		sstream_ << str;
 		return *this;
 	}
@@ -454,7 +468,7 @@ namespace nana
 		return pick_yes;
 #elif defined(NANA_X11)
 		msgbox_window box(wd_, title_, button_, icon_);
-		box.prompt(nana::charset(sstream_.str()));
+		box.prompt(sstream_.str());
 		return box.pick();
 #endif
 		return pick_yes;
