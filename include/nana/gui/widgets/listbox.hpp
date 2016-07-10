@@ -633,7 +633,7 @@ namespace nana
 				size_type cat;	//The pos of category
 				size_type item;	//the pos of item in a category.
 
-				index_pair(size_type cat_pos = 0, size_type item_pos = 0)
+				explicit index_pair(size_type cat_pos = 0, size_type item_pos = 0)
 					: cat(cat_pos),
 					item(item_pos)
 				{}
@@ -1383,7 +1383,7 @@ the nana::detail::basic_window member pointer scheme
 		 * @param abs_pos The absolute position before which an item will be inserted.
 		 * @param text Text of the first column.
 		 */
-		void insert_item(const index_pair& abs_pos, ::std::wstring text);
+		void insert_item(const index_pair& abs_pos, const ::std::wstring& text);
 
 		/// Returns an index of item which contains the specified point.
 		index_pair cast(const point & pos) const;

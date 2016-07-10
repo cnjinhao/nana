@@ -1578,7 +1578,7 @@ namespace nana
 						}
 						++id.cat;
 					}
-                    return {npos,npos};
+                    return index_pair{npos,npos};
                 }
 
 				/// return absolute positions, no relative to display
@@ -1867,7 +1867,7 @@ namespace nana
                 /// absolute position of the last displayed item
                 index_pair last_displ() const
 				{
-					return absolute ( last() );
+					return index_pair{ absolute(last()) };
 				}
 
                 /// can be used as the absolute position of the first absolute item, or as the display pos of the first displayed item
@@ -1880,7 +1880,7 @@ namespace nana
                 /// absolute position of the first displayed item
                 index_pair first_displ() const
                 {
-					return absolute ( first() );
+					return index_pair{ absolute(first()) };
                 }
 
 				bool good(size_type cat) const
@@ -1938,7 +1938,7 @@ namespace nana
 				{
 					//Returns an empty pos if item pos npos
 					auto item_pos = absolute(display_pos);
-					return {item_pos != npos ? display_pos.cat : npos, item_pos};
+					return index_pair{item_pos != npos ? display_pos.cat : npos, item_pos};
 				}
 
                 ///Translate absolute position (original data order) into relative position (position in display)
@@ -1962,7 +1962,7 @@ namespace nana
 				{
 					//Returns an empty pos if item is npos
 					auto item_pos = relative(pos);
-					return {(item_pos != npos ? pos.cat : npos), item_pos};
+					return index_pair{(item_pos != npos ? pos.cat : npos), item_pos};
 				}
 
 				/// all arg are relative to display order, or all are absolute, but not mixed
@@ -2301,12 +2301,12 @@ namespace nana
 						const auto items = lister.the_number_of_expanded();
 						const auto disp_items = number_of_lister_items(false);
 
-						size_type off = lister.distance({ 0, 0 }, scroll.offset_y_dpl);
+						size_type off = lister.distance(index_pair{ 0, 0 }, scroll.offset_y_dpl);
 
 						if (items < disp_items + off)
 						{
 							index_pair pos;
-							if (lister.forward({ 0, 0 }, items - disp_items, pos))
+							if (lister.forward(index_pair{ 0, 0 }, items - disp_items, pos))
 							{
 								off = items - disp_items;
 								set_scroll_y_dpl(pos);
@@ -2406,7 +2406,7 @@ namespace nana
 					else if(!scroll.v.empty())
 					{
 						scroll.v.close();
-                        set_scroll_y_dpl({0,0});
+                        set_scroll_y_dpl(index_pair{0,0});
 					}
 					adjust_scroll_value();
 				}
@@ -4206,7 +4206,7 @@ namespace nana
 						{
 							if(essence_->lister.sort_index(essence_->pointer_where.second))
 							{
-								essence_->trace_item_dpl({0,0});
+								essence_->trace_item_dpl(index_pair{0,0});
 								refresh(graph);
 								API::dev::lazy_refresh();
 							}
@@ -4780,8 +4780,7 @@ namespace nana
 				{
 					internal_scope_guard lock;
 
-					ess_->lister.throw_if_immutable_model(pos_);
-
+					ess_->lister.throw_if_immutable_model(index_pair{ pos_ });
 
 					cat_->sorted.push_back(cat_->items.size());
 
@@ -5233,7 +5232,7 @@ namespace nana
 			}
 		}
 
-		void listbox::insert_item(const index_pair& pos, std::wstring text)
+		void listbox::insert_item(const index_pair& pos, const std::wstring& text)
 		{
 			insert_item(pos, to_utf8(text));
 		}
