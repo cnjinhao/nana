@@ -679,15 +679,15 @@ namespace nana
 			using inline_notifier_interface = detail::inline_widget_notifier_interface<index_pair, ::std::string>;
 
 
-			// struct essence_t
+			// struct essence
 			//@brief:	this struct gives many data for listbox,
 			//			the state of the struct does not effect on member funcions, therefore all data members are public.
-			struct essence_t;
+			struct essence;
 
 			class oresolver
 			{
 			public:
-				oresolver(essence_t*);
+				oresolver(essence*);
 				oresolver& operator<<(bool);
 				oresolver& operator<<(short);
 				oresolver& operator<<(unsigned short);
@@ -713,7 +713,7 @@ namespace nana
 
 				::nana::listbox& listbox();
 			private:
-				essence_t* const ess_;
+				essence* const ess_;
 				std::vector<cell> cells_;
 			};
 
@@ -755,7 +755,7 @@ namespace nana
 			public:
 				trigger();
 				~trigger();
-				essence_t& essence() const;
+				essence& ess() const;
 			private:
 				void _m_draw_border();
 			private:
@@ -773,7 +773,7 @@ namespace nana
 				void key_press(graph_reference, const arg_keyboard&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
-				essence_t * essence_;
+				essence * essence_;
 				drawer_header_impl *drawer_header_;
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
@@ -784,11 +784,11 @@ namespace nana
 				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
-				item_proxy(essence_t*);
-				item_proxy(essence_t*, const index_pair&);
+				item_proxy(essence*);
+				item_proxy(essence*, const index_pair&);
 
 				/// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
-				static item_proxy from_display(essence_t *ess, const index_pair &relative) ;
+				static item_proxy from_display(essence *, const index_pair &relative) ;
 				item_proxy from_display(const index_pair &relative) const;
 
 				/// posible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
@@ -814,7 +814,7 @@ namespace nana
 
 				item_proxy&		text(size_type col, cell);
 				item_proxy&		text(size_type col, std::string);
-				item_proxy&		text(size_type col, std::wstring);
+				item_proxy&		text(size_type col, const std::wstring&);
 				std::string	text(size_type col) const;
 
 				void icon(const nana::paint::image&);
@@ -916,13 +916,13 @@ namespace nana
 				bool operator!=(const item_proxy&) const;
 
 				//Undocumented method
-				essence_t * _m_ess() const;
+				essence * _m_ess() const;
 			private:
 				std::vector<cell> & _m_cells() const;
 				nana::any		* _m_value(bool alloc_if_empty);
 				const nana::any	* _m_value() const;
 			private:
-				essence_t * ess_;
+				essence * ess_;
 				category_t*	cat_{nullptr};
 
 				index_pair	pos_; //Position of an item, it never represents a category when item proxy is available.
@@ -937,8 +937,8 @@ namespace nana
 				template<typename Value> using cell_translator = typename container_translator<Value>::cell_translator;
 
 				cat_proxy() = default;
-				cat_proxy(essence_t*, size_type pos);
-				cat_proxy(essence_t*, category_t*);
+				cat_proxy(essence*, size_type pos);
+				cat_proxy(essence*, category_t*);
 
 				/// Append an item at abs end of the category, set_value determines whether assign T object to the value of item.
 				template<typename T>
@@ -1064,7 +1064,7 @@ namespace nana
 				void _m_update();
 				void _m_reset_model(model_interface*);
 			private:
-				essence_t*	ess_{nullptr};
+				essence*	ess_{nullptr};
 				category_t*	cat_{nullptr};
 				size_type	pos_{0};  ///< Absolute position, not relative to display, and dont change during sort()
 			};
@@ -1422,14 +1422,13 @@ the nana::detail::basic_window member pointer scheme
 		void move_select(bool upwards);		///<Selects an item besides the current selected item in the display.
 
 		size_type size_categ() const;                   ///<Get the number of categories
-		size_type size_item() const;                    ///<The number of items in the default category
 		size_type size_item(size_type cat) const;       ///<The number of items in category "cat"
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
 		export_options& def_export_options();
 	private:
-		drawerbase::listbox::essence_t & _m_ess() const;
+		drawerbase::listbox::essence & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const;
 		drawerbase::listbox::category_t* _m_assoc(std::shared_ptr<nana::detail::key_interface>, bool create_if_not_exists);
 		void _m_erase_key(nana::detail::key_interface*);

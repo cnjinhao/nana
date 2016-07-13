@@ -181,7 +181,7 @@ namespace nana
 						return *this;
 					}
 
-					column(essence_t* ess, native_string_type&& text, unsigned px, size_type pos) :
+					column(essence* ess, native_string_type&& text, unsigned px, size_type pos) :
 						text(std::move(text)),
 						width_px(px),
 						index(pos),
@@ -189,10 +189,10 @@ namespace nana
 					{
 					}
 				private:
-					//The definition is provided after essence_t
+					//The definition is provided after essence
 					void _m_refresh();
 				private:
-					essence_t* const ess_;
+					essence* const ess_;
 				public:
 					//Implementation of column_interface
 					unsigned width() const noexcept override
@@ -306,19 +306,7 @@ namespace nana
 					sortable_ = enable;
 				}
 
-				std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> fetch_comp(std::size_t pos) const
-				{
-					try
-					{
-						return at(pos).weak_ordering;
-					}
-					catch (...)
-					{
-					}
-					return{};
-				}
-
-				size_type create(essence_t* ess, native_string_type&& text, unsigned pixels)
+				size_type create(essence* ess, native_string_type&& text, unsigned pixels)
 				{
 					cont_.emplace_back(ess, std::move(text), pixels, static_cast<size_type>(cont_.size()));
                     return cont_.back().index;
@@ -559,7 +547,7 @@ namespace nana
 			};
 
 
-			struct essence_t;
+			struct essence;
 
 			struct item_data
 			{
@@ -708,7 +696,7 @@ namespace nana
 					categories_.emplace_back();
 				}
 
-				void bind(essence_t* ess, widget& wd)
+				void bind(essence* ess, widget& wd)
 				{
 					ess_ = ess;
 					widget_ = dynamic_cast<nana::listbox*>(&wd);
@@ -741,7 +729,7 @@ namespace nana
                 std::string to_string(const export_options& exp_opt) const;
 
 
-				// Definition is provided after struct essence_t
+				// Definition is provided after struct essence
 				unsigned column_content_pixels(size_type pos) const;
 
                 /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
@@ -2074,7 +2062,7 @@ namespace nana
 			public:
 				index_pair last_selected_abs, last_selected_dpl;
 			private:
-				essence_t * ess_{nullptr};
+				essence * ess_{nullptr};
 				nana::listbox * widget_{nullptr};
 				std::size_t sorted_index_{npos};		///< The index of the column used to sort
 				bool	resort_{true};
@@ -2091,7 +2079,7 @@ namespace nana
 
 
 			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member funcions, therefore all data members are public.
-			struct essence_t
+			struct essence
 			{
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
 				enum class parts{unknown = -1, header, lister, checker};
@@ -2143,10 +2131,22 @@ namespace nana
 
 				std::map<pat::detail::abstract_factory_base*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
 
-				essence_t()
+				essence()
 				{
 					pointer_where.first = parts::unknown;
-					lister.fetch_ordering_comparer = std::bind(&es_header::fetch_comp, &header, std::placeholders::_1);
+
+					lister.fetch_ordering_comparer = [this](std::size_t pos) -> std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)>
+					{
+						try
+						{
+							return header.at(pos).weak_ordering;
+						}
+						catch (...)
+						{
+						}
+
+						return {};
+					};
 				}
 
                 std::string to_string(const export_options& exp_opt) const
@@ -2627,7 +2627,7 @@ namespace nana
 			};
 
 			//definition of iresolver/oresolver
-			oresolver::oresolver(essence_t* ess)
+			oresolver::oresolver(essence* ess)
 				: ess_(ess)
 			{}
 
@@ -2950,14 +2950,14 @@ namespace nana
 				: public ::nana::detail::inline_widget_indicator<index_pair, std::string>
 			{
 			public:
-				using parts = essence_t::parts;
+				using parts = essence::parts;
 
-				inline_indicator(essence_t* ess, std::size_t column_pos)
+				inline_indicator(essence* ess, std::size_t column_pos)
 					: ess_{ ess }, column_pos_{column_pos}
 				{
 				}
 				
-				void attach(index_type pos, essence_t::inline_pane* pane)
+				void attach(index_type pos, essence::inline_pane* pane)
 				{
 					for (auto & pn : panes_)
 					{
@@ -3031,9 +3031,9 @@ namespace nana
 					}
 				}
 			private:
-				essence_t * const ess_;
+				essence * const ess_;
 				const std::size_t column_pos_;
-				std::vector<std::pair<index_type, essence_t::inline_pane*>> panes_;
+				std::vector<std::pair<index_type, essence::inline_pane*>> panes_;
 			};
 
 			void es_lister::scroll(const index_pair& pos, bool to_bottom)
@@ -3238,10 +3238,10 @@ namespace nana
 			{
 			public:
 				using graph_reference = nana::paint::graphics&;
-				using item_state = essence_t::item_state;
-				using parts = essence_t::parts;
+				using item_state = essence::item_state;
+				using parts = essence::parts;
 
-				drawer_header_impl(essence_t* es): essence_(es){}
+				drawer_header_impl(essence* es): essence_(es){}
 
 				size_type splitter() const
 				{
@@ -3340,6 +3340,8 @@ namespace nana
 
 				void draw(graph_reference graph, const nana::rectangle& r)
 				{
+					const auto border_color = essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.8);
+
 					int text_top = (r.height - essence_->scheme_ptr->text_height) / 2 + r.y;
 					auto text_color = essence_->lister.wd_ptr()->fgcolor();
 
@@ -3365,7 +3367,7 @@ namespace nana
 							if (right_pos > r.x)
 							{
 								_m_draw_header_item(graph, column_r, text_top, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
-								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, _m_border_color());
+								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, /*_m_border_color()*/ border_color);
 							}
 
 							column_r.x = right_pos;
@@ -3382,7 +3384,7 @@ namespace nana
 					}
 
 					const int y = r.bottom() - 1;
-					graph.line({ r.x, y }, { r.right(), y }, _m_border_color());
+					graph.line({ r.x, y }, { r.right(), y }, /*_m_border_color()*/ border_color);
 
 					if (options_.grab_column)
 					{
@@ -3395,11 +3397,6 @@ namespace nana
 					}
 				}
 			private:
-				::nana::color _m_border_color() const
-				{
-					return essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.8);
-				}
-
 				size_type _m_target_strip(int x, const nana::rectangle& rect, size_type grab, bool& place_front)
 				{
 					//convert x to header logic coordinate.
@@ -3488,7 +3485,7 @@ namespace nana
 				}
 
 			private:
-				essence_t * essence_;
+				essence * essence_;
 
 				struct grab_variables
 				{
@@ -3514,10 +3511,10 @@ namespace nana
 			class drawer_lister_impl
 			{
 			public:
-				using item_state = essence_t::item_state;
-				using parts = essence_t::parts;
+				using item_state = essence::item_state;
+				using parts = essence::parts;
 
-				drawer_lister_impl(essence_t * es)
+				drawer_lister_impl(essence * es)
 					:essence_(es)
 				{}
 
@@ -3899,7 +3896,7 @@ namespace nana
 						_m_draw_border(content_r.x, y, show_w);
 				}
 
-				essence_t::inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
+				essence::inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
 				{
 					if (column_pos < cat.factories.size())
 					{
@@ -3910,7 +3907,7 @@ namespace nana
 					return nullptr;
 				}
 
-				essence_t::inline_pane* _m_find_inline_pane(const index_pair& pos, std::size_t column_pos) const
+				essence::inline_pane* _m_find_inline_pane(const index_pair& pos, std::size_t column_pos) const
 				{
 					auto & cat = *essence_->lister.get(pos.cat);
 
@@ -3937,22 +3934,26 @@ namespace nana
 				{
 					//Draw selecting inner rectangle
 					auto graph = essence_->graph;
-					graph->rectangle({ x, y, width, essence_->scheme_ptr->item_height }, false, static_cast<color_rgb>(0x99defd));
 
+					graph->rectangle({ x, y, width, essence_->scheme_ptr->item_height }, false, static_cast<color_rgb>(0x99defd));
 					graph->rectangle({ x + 1, y + 1, width - 2, essence_->scheme_ptr->item_height - 2 }, false, colors::white);
+
+					const int right = x + width - 1;
+					const int bottom = y + essence_->scheme_ptr->item_height - 1;
+
 					graph->set_pixel(x, y);
-					graph->set_pixel(x, y + essence_->scheme_ptr->item_height - 1);
-					graph->set_pixel(x + width - 1, y);
-					graph->set_pixel(x + width - 1, y + essence_->scheme_ptr->item_height - 1);
+					graph->set_pixel(x, bottom);
+					graph->set_pixel(right, y);
+					graph->set_pixel(right, bottom);
 				}
 			private:
-				essence_t * essence_;
+				essence * const essence_;
 				mutable facade<element::crook> crook_renderer_;
 			};
 
 			//class trigger: public drawer_trigger
 				trigger::trigger()
-					:	essence_(new essence_t),
+					:	essence_(new essence),
 						drawer_header_(new drawer_header_impl(essence_)),
 						drawer_lister_(new drawer_lister_impl(essence_))
 				{}
@@ -3964,7 +3965,7 @@ namespace nana
 					delete essence_;
 				}
 
-				essence_t& trigger::essence() const
+				essence& trigger::ess() const
 				{
 					return *essence_;
 				}
@@ -3975,18 +3976,22 @@ namespace nana
 						return;
 
 					auto & graph = *essence_->graph;
-					auto size = graph.size();
+
+					int right = static_cast<int>(graph.width()) - 1;
+					int bottom = static_cast<int>(graph.height()) - 1;
+
 					//Draw Border
 					graph.rectangle(false, static_cast<color_rgb>(0x9cb6c5));
-					graph.line({ 1, 1 }, {1, static_cast<int>(size.height) - 2}, colors::white);
-					graph.line({ static_cast<int>(size.width) - 2, 1 }, { static_cast<int>(size.width) - 2, static_cast<int>(size.height) - 2 });
+
+					graph.line({ 1, 1 }, { 1, bottom - 1}, colors::white);
+					graph.line({ right - 1, 1 }, { right - 1, bottom - 1 });
 
 					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
-						graph.rectangle({ static_cast<int>(size.width - 1 - essence_->scroll.scale),
-											static_cast<int>(size.height - 1 - essence_->scroll.scale),
-											essence_->scroll.scale,
-											essence_->scroll.scale },
-										true, colors::button_face);
+						graph.rectangle({ right - static_cast<int>(essence_->scroll.scale),
+							bottom - static_cast<int>(essence_->scroll.scale),
+							essence_->scroll.scale,
+							essence_->scroll.scale },
+							true, colors::button_face);
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
@@ -4030,8 +4035,8 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
-					using item_state = essence_t::item_state;
-					using parts = essence_t::parts;
+					using item_state = essence::item_state;
+					using parts = essence::parts;
 
 					bool need_refresh = false;
 
@@ -4096,8 +4101,8 @@ namespace nana
 
 				void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
 				{
-					using item_state = essence_t::item_state;
-					using parts = essence_t::parts;
+					using item_state = essence::item_state;
+					using parts = essence::parts;
 					if((essence_->pointer_where.first != parts::unknown) || (essence_->ptr_state != item_state::normal))
 					{
 						if (essence_->ptr_state != item_state::grabbed)
@@ -4113,8 +4118,8 @@ namespace nana
 
 				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 				{
-					using item_state = essence_t::item_state;
-					using parts = essence_t::parts;
+					using item_state = essence::item_state;
+					using parts = essence::parts;
 					bool update = false;
 					auto & ptr_where = essence_->pointer_where;
 					if((ptr_where.first == parts::header) && (ptr_where.second != npos || (drawer_header_->splitter() != npos)))
@@ -4215,8 +4220,8 @@ namespace nana
 
 				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 				{
-					using item_state = essence_t::item_state;
-					using parts = essence_t::parts;
+					using item_state = essence::item_state;
+					using parts = essence::parts;
 
 					auto prev_state = essence_->ptr_state;
 					essence_->ptr_state = item_state::highlighted;
@@ -4256,7 +4261,7 @@ namespace nana
 
 				void trigger::dbl_click(graph_reference graph, const arg_mouse& arg)
 				{
-					using parts = essence_t::parts;
+					using parts = essence::parts;
 
 					if (parts::header == essence_->pointer_where.first)
 					{
@@ -4411,11 +4416,11 @@ namespace nana
 
 			//class item_proxy
 
-				item_proxy::item_proxy(essence_t * ess)
+				item_proxy::item_proxy(essence * ess)
 					:	ess_(ess)
 				{}
 
-				item_proxy::item_proxy(essence_t * ess, const index_pair& pos)
+				item_proxy::item_proxy(essence * ess, const index_pair& pos)
 					:	ess_(ess),
 						pos_(pos)
 				{
@@ -4425,7 +4430,7 @@ namespace nana
 				}
 
 				/// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
-				item_proxy item_proxy::from_display(essence_t *ess, const index_pair &relative)
+				item_proxy item_proxy::from_display(essence *ess, const index_pair &relative)
 				{
 					return item_proxy{ess, ess->lister.absolute_pair(relative)};
 				}
@@ -4535,7 +4540,7 @@ namespace nana
 					return *this;
 				}
 
-				item_proxy& item_proxy::text(size_type col, std::wstring str)
+				item_proxy& item_proxy::text(size_type col, const std::wstring& str)
 				{
 					ess_->lister.text(cat_, pos_.item, col, to_utf8(str), columns());
 					ess_->update();
@@ -4661,7 +4666,7 @@ namespace nana
 				}
 
 				//Undocumented methods
-				essence_t * item_proxy::_m_ess() const
+				essence * item_proxy::_m_ess() const
 				{
 					return ess_;
 				}
@@ -4690,14 +4695,14 @@ namespace nana
 			//class cat_proxy
 
 			//the member cat_ is used for fast accessing to the category
-				cat_proxy::cat_proxy(essence_t * ess, size_type pos)
+				cat_proxy::cat_proxy(essence * ess, size_type pos)
 					:	ess_(ess),
 						pos_(pos)
 				{
 					_m_cat_by_pos();
 				}
 
-				cat_proxy::cat_proxy(essence_t* ess, category_t* cat)
+				cat_proxy::cat_proxy(essence* ess, category_t* cat)
 					:	ess_(ess),
 						cat_(cat)
 				{
@@ -4739,7 +4744,7 @@ namespace nana
 					size_type pos = 0;
 					for (auto & txt : arg)
 					{
-						ip.text(pos++, to_utf8(txt));
+						ip.text(pos++, txt);
 						if (pos >= items)
 							break;
 					}
@@ -4797,6 +4802,20 @@ namespace nana
 					return to_utf8(cat_->text);
 				}
 
+				bool assign_colors_for_last(essence* ess, category_t* cat)
+				{
+					auto wd = ess->lister.wd_ptr();
+					if (wd && !API::empty_window(wd->handle()))
+					{
+						auto & m = cat->items.back();
+						m.bgcolor = wd->bgcolor();
+						m.fgcolor = wd->fgcolor();
+
+						return true;
+					}
+					return false;
+				}
+
 				void cat_proxy::push_back(std::string s)
 				{
 					internal_scope_guard lock;
@@ -4821,14 +4840,8 @@ namespace nana
 					else
 						cat_->items.emplace_back(std::move(s));
 
-					auto wd = ess_->lister.wd_ptr();
-					if(wd && !(API::empty_window(wd->handle())))
-					{
-						auto & m = cat_->items.back();
-						m.bgcolor = wd->bgcolor();
-						m.fgcolor = wd->fgcolor();
+					if (assign_colors_for_last(ess_, cat_))
 						ess_->update();
-					}
 				}
 
 				//Behavior of a container
@@ -5002,13 +5015,7 @@ namespace nana
 					cells.resize(columns());
 					cat_->items.emplace_back(std::move(cells));
 
-					auto wd = ess_->lister.wd_ptr();
-					if (wd && !(API::empty_window(wd->handle())))
-					{
-						auto & m = cat_->items.back();
-						m.bgcolor = wd->bgcolor();
-						m.fgcolor = wd->fgcolor();
-					}
+					assign_colors_for_last(ess_, cat_);
 				}
 
 				void cat_proxy::_m_try_append_model(const const_virtual_pointer& dptr)
@@ -5028,13 +5035,7 @@ namespace nana
 						cat_->sorted.push_back(cat_->items.size());
 						cat_->items.emplace_back();
 
-						auto wd = ess_->lister.wd_ptr();
-						if (wd && !(API::empty_window(wd->handle())))
-						{
-							auto & m = cat_->items.back();
-							m.bgcolor = wd->bgcolor();
-							m.fgcolor = wd->fgcolor();
-						}
+						assign_colors_for_last(ess_, cat_);
 					}
 					else
 					{
@@ -5295,7 +5296,7 @@ namespace nana
 			auto & ess=_m_ess();
 			auto _where=ess.where(pos.x, pos.y);
 			index_pair item_pos{npos,npos};
-			if(_where.first==drawerbase::listbox::essence_t::parts::lister)
+			if(_where.first==drawerbase::listbox::essence::parts::lister)
 			{
 				auto & offset_y = ess.scroll.offset_y_dpl;
 				ess.lister.forward(offset_y, _where.second, item_pos);
@@ -5498,11 +5499,6 @@ namespace nana
 			return _m_ess().lister.size_categ();
 		}
 
-		listbox::size_type listbox::size_item() const
-		{
-			return size_item(0);
-		}
-
 		listbox::size_type listbox::size_item(size_type categ) const
 		{
 			return _m_ess().lister.size_item(categ);
@@ -5524,9 +5520,9 @@ namespace nana
 			return _m_ess().def_exp_options;
         }
 
-		drawerbase::listbox::essence_t & listbox::_m_ess() const
+		drawerbase::listbox::essence & listbox::_m_ess() const
 		{
-			return get_drawer_trigger().essence();
+			return get_drawer_trigger().ess();
 		}
 
 		nana::any* listbox::_m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const
