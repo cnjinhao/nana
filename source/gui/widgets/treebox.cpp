@@ -1274,8 +1274,8 @@ namespace nana
 
 								attr.area.x += (attr.area.width - fit_size.width) / 2;
 								attr.area.y += (attr.area.height - fit_size.height) / 2;
-								attr.area = fit_size;
-								img->stretch(::nana::rectangle{ size }, graph, attr.area);
+								attr.area.dimension(fit_size);
+								img->stretch(rectangle{ size }, graph, attr.area);
 							}
 							else
 								img->paste(graph, point{ attr.area.x + static_cast<int>(attr.area.width - size.width) / 2, attr.area.y + static_cast<int>(attr.area.height - size.height) / 2 });

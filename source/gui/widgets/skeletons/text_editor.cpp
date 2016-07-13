@@ -1280,7 +1280,7 @@ namespace nana{	namespace widgets
 				graph_(graph),
 				scheme_(schm), keywords_(new keywords)
 		{
-			text_area_.area = graph.size();
+			text_area_.area.dimension(graph.size());
 			text_area_.captured = false;
 			text_area_.tab_space = 4;
 			text_area_.scroll_pixels = 16;

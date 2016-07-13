@@ -56,7 +56,7 @@ namespace nana
 		if (overlap(ir, valid_r, op_ir) == false)
 			return false;
 
-		valid_r = valid_dst_area;
+		valid_r.dimension(valid_dst_area);
 		rectangle good_dr;
 		if (overlap(dr, valid_r, good_dr) == false)
 			return false;

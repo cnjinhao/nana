@@ -449,9 +449,6 @@ namespace nana
 		bool operator==(const rectangle& rhs) const;
 		bool operator!=(const rectangle& rhs) const;
 
-		rectangle& operator=(const point&);
-		rectangle& operator=(const size&);
-
 		point position() const noexcept;
 		rectangle& position(const point&) noexcept;
 

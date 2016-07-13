@@ -61,7 +61,7 @@ namespace nana
 				if (0 == effect_range_.width || 0 == effect_range_.height)
 				{
 					rect.x = rect.y = 0;
-					rect = owner_->dimension;
+					rect.dimension(owner_->dimension);
 				}
 				else
 				{

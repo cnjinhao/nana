@@ -474,7 +474,7 @@ namespace API
 
 		nana::point pos{ r.x, r.y };
 		calc_window_point(wd, pos);
-		r = pos;
+		r.position(pos);
 		return r;
 	}
 

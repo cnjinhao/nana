@@ -607,20 +607,6 @@ namespace nana
 			return (width != rhs.width) || (height != rhs.height) || (x != rhs.x) || (y != rhs.y);
 		}
 
-		rectangle & rectangle::operator=(const point& pos)
-		{
-			x = pos.x;
-			y = pos.y;
-			return *this;
-		}
-
-		rectangle & rectangle::operator=(const size & sz)
-		{
-			width = sz.width;
-			height = sz.height;
-			return *this;
-		}
-
 		point rectangle::position() const noexcept
 		{
 			return{ x, y };

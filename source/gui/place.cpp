@@ -1684,7 +1684,7 @@ namespace nana
 						graph.blend(r, clr, 0.5);
 
 						r.x = r.y = 0;
-						r = graph.size();
+						r.dimension(graph.size());
 						r.width = border_px;
 						graph.blend(r, clr, 0.5);
 						r.x = right - border_px;
@@ -2099,7 +2099,7 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
-			root_division->field_area = API::window_size(window_handle);
+			root_division->field_area.dimension(API::window_size(window_handle));
 
 			if (root_division->field_area.empty())
 				return;
@@ -2590,7 +2590,7 @@ namespace nana
 		{
 			if (impl_->root_division)
 			{
-				impl_->root_division->field_area = ::nana::size(arg.width, arg.height);
+				impl_->root_division->field_area.dimension({ arg.width, arg.height });
 				impl_->root_division->collocate(arg.window_handle);
 			}
 		});
