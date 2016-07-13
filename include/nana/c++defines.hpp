@@ -118,9 +118,10 @@
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 
-
-		#ifndef STD_MAKE_UNIQUE_NOT_SUPPORTED
-			#define STD_MAKE_UNIQUE_NOT_SUPPORTED
+		#if !defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304)
+			#ifndef STD_MAKE_UNIQUE_NOT_SUPPORTED
+				#define STD_MAKE_UNIQUE_NOT_SUPPORTED
+			#endif
 		#endif
 
 	#endif
@@ -195,9 +196,9 @@
 
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0061r0.html
 
-#  if __cpp_lib_experimental_filesystem
-#    undef STD_FILESYSTEM_NOT_SUPPORTED
-#  endif
+#if defined(__cpp_lib_experimental_filesystem) && (__cpp_lib_experimental_filesystem == 201406)
+#	undef STD_FILESYSTEM_NOT_SUPPORTED
+#endif
 
 
 #ifdef __has_include
