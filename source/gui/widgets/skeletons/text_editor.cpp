@@ -1312,7 +1312,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
 		{
-			if (fgcolor.invisible() && fgcolor.invisible())
+			if (fgcolor.invisible() && bgcolor.invisible())
 			{
 				keywords_->schemes.erase(name);
 				return;
@@ -3259,7 +3259,7 @@ namespace nana{	namespace widgets
 							else if (pos <= a.x && a.x < str_end)
 							{	//Partial selected
 								int endpos = static_cast<int>(b.x < str_end ? b.x : str_end);
-								std::unique_ptr<unsigned> pxbuf_ptr(new unsigned[len]);
+								std::unique_ptr<unsigned[]> pxbuf_ptr(new unsigned[len]);
 								unsigned * pxbuf = pxbuf_ptr.get();
 								if (graph_.glyph_pixels(ent.begin, len, pxbuf))
 								{

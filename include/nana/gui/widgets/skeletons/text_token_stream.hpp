@@ -665,8 +665,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				case token::eof:
 					return;
 				default:
-					int * debug = 0;	//for debug.
-					*debug = 0;
+					throw std::runtime_error("invalid token");
 				}
 			}
 		}

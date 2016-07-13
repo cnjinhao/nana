@@ -293,7 +293,7 @@ namespace detail
 			auto result = native_interface::create_window(native, nested, r, app);
 			if (result.native_handle)
 			{
-				core_window_t* wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
+				auto wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
 				if (nested)
 				{
 					wd->owner = nullptr;
