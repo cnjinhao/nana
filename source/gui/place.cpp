@@ -503,7 +503,7 @@ namespace nana
 
 		static event_handle erase_element(std::vector<element_t>& elements, window handle)
 		{
-			for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
+			for (auto i = elements.begin(); i != elements.end(); ++i)
 			{
 				if (i->handle == handle)
 				{
@@ -515,26 +515,16 @@ namespace nana
 			return nullptr;
 		}
 	private:
-		//The defintion is moved after the definition of class division
-		template<typename Function>
-		void _m_for_each(division*, Function);
-
 		//Listen to destroy of a window
 		//It will delete the element and recollocate when the window destroyed.
 		event_handle _m_make_destroy(window wd)
 		{
 			return API::events(wd).destroy.connect([this, wd](const arg_destroy&)
 			{
-				for (auto i = elements.begin(), end = elements.end(); i != end; ++i)
+				if (erase_element(elements, wd))
 				{
-					if (i->handle == wd)
-					{
-						elements.erase(i);
-
-						if (!API::is_destroying(API::get_parent_window(wd)))
-							place_ptr_->collocate();
-						break;
-					}
+					if (!API::is_destroying(API::get_parent_window(wd)))
+						place_ptr_->collocate();
 				}
 			});
 		}
@@ -613,10 +603,7 @@ namespace nana
 
 		division(kind k, std::string&& n)
 			: kind_of_division(k),
-			name(std::move(n)),
-			field(nullptr),
-			div_next(nullptr),
-			div_owner(nullptr)
+			name(std::move(n))
 		{}
 
 		virtual ~division()
@@ -754,7 +741,6 @@ namespace nana
 		//Collocate the division and its children divisions,
 		//The window parameter is specified for the window which the place object binded.
 		virtual void collocate(window) = 0;
-
 	public:
 		kind kind_of_division;
 		bool display{ true };
@@ -769,17 +755,10 @@ namespace nana
 
 		place_parts::margin	margin;
 		place_parts::repeated_array gap;
-		field_gather * field;
-		division * div_next, *div_owner;
+		field_gather * field{ nullptr };
+		division * div_next{ nullptr };
+		division * div_owner{ nullptr };
 	};//end class division
-
-	template<typename Function>
-	void place::implement::field_gather::_m_for_each(division * div, Function fn)
-	{
-		for (auto & up : div->children)	//The element of children is unique_ptr
-			fn(up.get());
-	}
-
 
 	class place::implement::div_arrange
 		: public division

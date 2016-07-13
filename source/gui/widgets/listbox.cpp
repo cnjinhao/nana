@@ -547,8 +547,6 @@ namespace nana
 			};
 
 
-			struct essence;
-
 			struct item_data
 			{
 				using container = std::vector<cell>;
@@ -719,7 +717,7 @@ namespace nana
 
 						if (allocate_if_empty)
 						{
-							std::make_unique<nana::any>().swap(item.anyobj);
+							item.anyobj.reset(new any);
 							return item.anyobj.get();
 						}
 					}
@@ -1044,8 +1042,8 @@ namespace nana
 					{
 						auto i = categories_.cbegin();
 						std::advance(i, pos.cat);
-						if (i->model_ptr && i->model_ptr->container()->immutable())
-							throw std::runtime_error("nana::listbox disallow the operation because of immutable modal");
+
+						throw_if_immutable_model(i->model_ptr.get());
 					}
 				}
 
@@ -1057,8 +1055,7 @@ namespace nana
 						std::advance(i, pos.cat);
 						if (i->model_ptr)
 						{
-							if (i->model_ptr->container()->immutable())
-								throw std::runtime_error("nana::listbox disallow to modify the item because of immutable model");
+							throw_if_immutable_model(i->model_ptr.get());
 
 							i->model_ptr->container()->assign(pos.item, cells);
 						}
@@ -1874,7 +1871,7 @@ namespace nana
                 {
 					return index_pair{ absolute(first()) };
                 }
-
+				
 				bool good(size_type cat) const
 				{
 					return (cat < categories_.size());
@@ -1884,6 +1881,7 @@ namespace nana
 				{
 					return ((pos.cat < categories_.size()) && (pos.item < size_item(pos.cat)));
 				}
+
                 /// if good return the same item (in arg item), or just the next cat and true, but If fail return false
 				bool good_item(index_pair pos, index_pair& item) const
 				{
@@ -1951,6 +1949,7 @@ namespace nana
 
 					return npos;
 				}
+
 				index_pair relative_pair(const index_pair& pos) const
 				{
 					//Returns an empty pos if item is npos
@@ -2251,19 +2250,14 @@ namespace nana
 					adjust_scroll_life();  // call adjust_scroll_value(); 		//adjust_scroll_value(); // again?
                 }
 
-                void trace_item_abs( index_pair abs_pos )
-                {
-					if(                abs_pos.item == npos 
-						&&             abs_pos.cat  == scroll.offset_y_abs.cat
-                        && scroll.offset_y_abs.item == npos                      ) // if item==off y and is a cat
-						return;
-
-                    trace_item_dpl( lister.relative_pair(abs_pos))  ;   //  ???   scroll_y_dpl_refresh() ;
-                }
-
                 void trace_last_selected_item( )
                 {
-                    trace_item_abs(lister.last_selected_abs);
+					if (lister.last_selected_abs.item == npos &&
+						lister.last_selected_abs.cat == scroll.offset_y_abs.cat &&
+						scroll.offset_y_abs.item == npos) // if item==off y and is a cat
+						return;
+
+					trace_item_dpl(lister.relative_pair(lister.last_selected_abs));   //  ???   scroll_y_dpl_refresh() ;
                 }
 
 				void update()
@@ -3040,7 +3034,7 @@ namespace nana
 			{
 				auto& cat = *get(pos.cat);
 
-				if ((pos.item != ::nana::npos) && (pos.item >= cat.items.size()))
+				if ((pos.item != nana::npos) && (pos.item >= cat.items.size()))
 					throw std::invalid_argument("listbox: invalid pos to scroll");
 
 				if (!cat.expand)
@@ -3069,12 +3063,12 @@ namespace nana
 						if (categories_.back().expand)
 						{
 							if (categories_.back().items.empty())
-								last.item = npos;
+								last.item = nana::npos;
 							else
 								last.item = categories_.back().items.size() - 1;
 						}
 						else
-							last.item = ::nana::npos;
+							last.item = nana::npos;
 
 						backward(last, view_items, start_pos);
 					}
@@ -3204,19 +3198,18 @@ namespace nana
 	
 					std::vector<cell> model_cells;
 
+					auto const pcell = (cat.model_ptr ? &model_cells : nullptr);
+
 					for (auto i : cat.sorted)
 					{
 						auto& item = cat.items[i];
 						if (item.flags.selected || !exp_opt.only_selected_items)
 						{
 							//Test if the category have a model set.
-							if (cat.model_ptr)
-							{
+							if (pcell)
 								cat.model_ptr->container()->to_cells(i).swap(model_cells);
-								list_str += (item.to_string(exp_opt, &model_cells) + exp_opt.endl);
-							}
-							else
-								list_str += (item.to_string(exp_opt, nullptr) + exp_opt.endl);
+							
+							list_str += (item.to_string(exp_opt, pcell) + exp_opt.endl);
 						}
 					}
 				}
@@ -3473,15 +3466,16 @@ namespace nana
 				{
 					const auto & col = essence_->header.at(essence_->pointer_where.second);
 
-					nana::paint::graphics ext_graph({ col.width_px, essence_->scheme_ptr->header_height });
-					ext_graph.typeface(essence_->graph->typeface());
+					paint::graphics fl_graph({ col.width_px, essence_->scheme_ptr->header_height });
+
+					fl_graph.typeface(essence_->graph->typeface());
 
 					int text_top = (essence_->scheme_ptr->header_height - essence_->scheme_ptr->text_height) / 2;
-					_m_draw_header_item(ext_graph, rectangle{ext_graph.size()}, text_top, colors::white, col, item_state::floated);
+					_m_draw_header_item(fl_graph, rectangle{ fl_graph.size()}, text_top, colors::white, col, item_state::floated);
 
 					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
 
-					ext_graph.blend(rectangle{ ext_graph.size() }, *(essence_->graph), point{xpos - static_cast<int>(essence_->scroll.x_offset()) + rect.x, rect.y}, 0.5);
+					fl_graph.blend(rectangle{ fl_graph.size() }, *(essence_->graph), point{xpos - static_cast<int>(essence_->scroll.x_offset()) + rect.x, rect.y}, 0.5);
 				}
 
 			private:
@@ -5084,9 +5078,6 @@ namespace nana
 						API::refresh_window(ess_->listbox_ptr->handle());
 					}
 				}
-
-			//class cat_proxy
-
 			//end class cat_proxy
 		}
 	}//end namespace drawerbase
