@@ -2330,7 +2330,7 @@ namespace nana
 
 					//H scroll enabled
 					//If range_adjusted is true, it indicates no horzontal scroll bar is enabled.
-					bool enable_horz = (range_adjusted && (columns_pixels + 4 > sz.width)); // 4px = left and right borders(2px) + left and right gaps(2px)
+					bool enable_horz = ((!range_adjusted) && (columns_pixels + 4 > sz.width)); // 4px = left and right borders(2px) + left and right gaps(2px)
 
 					unsigned head_scroll = 2 + header_visible_px() + (enable_horz ? scroll.scale : 0);	// 2px left and right gaps(2px) 
 					unsigned lister_s = sz.height > head_scroll ? sz.height - head_scroll : 0;
