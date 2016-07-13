@@ -961,7 +961,7 @@ namespace nana
 				}
 
 				/// Insert  before item in absolute "pos" a new item with "text" in column 0, and place it in last display position of this cat
-				void insert(const index_pair& pos, std::string&& text)
+				void insert(const index_pair& pos, std::string&& text, std::size_t columns)
 				{
 					auto & catobj = *get(pos.cat);
 
@@ -990,8 +990,8 @@ namespace nana
 							container->emplace_back();
 						}
 
-						std::vector<cell> cells;
-						cells.emplace_back(std::move(text));
+						std::vector<cell> cells{ columns };
+						cells[0] = std::move(text);
 						container->assign(item_index, cells);
 					}
 					else
@@ -1000,9 +1000,9 @@ namespace nana
 							catobj.items.emplace(catobj.items.begin() + pos.item, std::move(text));
 						else
 							catobj.items.emplace_back(std::move(text));
-					}
 
-					catobj.items.back().cells->emplace_back(std::move(text));
+						catobj.items.back().cells->emplace_back(std::move(text));
+					}
 				}
 
 				/// convert from display order to absolute (find the real item in that display pos) but without check from current active sorting, in fact using just the last sorting !!!
@@ -5246,7 +5246,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
-			ess.lister.insert(pos, std::move(text));
+			ess.lister.insert(pos, std::move(text), ess.header.cont().size());
 			
 			if (!empty())
 			{
