@@ -3158,8 +3158,8 @@ namespace nana{	namespace widgets
 				graph_( graph ),
 				editor_( editor ),
 				parser_( parser ),
-				selection_fgcolor_{ selection_fgcolor },
-				selection_bgcolor_{ selection_bgcolor },
+				selection_fgcolor_( selection_fgcolor ),
+				selection_bgcolor_( selection_bgcolor ),
 				line_px_( editor.line_height() )
 			{}
 
@@ -3196,6 +3196,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& text_coord, const std::wstring& text, bool if_mask) const
 		{
+			
 			point text_draw_pos{ text_area_.area.x - points_.offset.x, top };
 			const int text_right = text_area_.area.right();
 
