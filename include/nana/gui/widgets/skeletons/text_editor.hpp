@@ -138,6 +138,7 @@ namespace nana{	namespace widgets
 
 			struct keywords;
 			class keyword_parser;
+			class helper_pencil;
 		public:
 			using char_type = wchar_t;
 			using size_type = textbase<char_type>::size_type;
@@ -269,10 +270,11 @@ namespace nana{	namespace widgets
 			skeletons::textbase<wchar_t>& textbase();
 			const skeletons::textbase<wchar_t>& textbase() const;
 		private:
+			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
+
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
 			bool _m_scroll_text(bool vertical);
-			void _m_on_scroll(const arg_mouse&);
 			void _m_scrollbar();
 			::nana::size _m_text_area() const;
 			void _m_get_scrollbar_size();
