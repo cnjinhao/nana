@@ -2322,10 +2322,20 @@ namespace nana
 				{
 					internal_scope_guard lock;
 
+					const unsigned border_px = 1;
+					const unsigned border_px_twice = (border_px << 1);
+
 					const nana::size sz = graph->size();
+					
+					if ((sz.width <= border_px_twice) || (sz.height <= border_px_twice))
+					{
+						scroll.h.close();
+						scroll.v.close();
+						return;
+					}
 
 					// Adjust the ranged column assume the vertical scrollbar is enabled.
-					auto range_adjusted = this->header.calc_ranged_columns(sz.width - 2 - scroll.scale);
+					auto range_adjusted = this->header.calc_ranged_columns(sz.width - border_px_twice - scroll.scale);
 					auto columns_pixels = header.pixels();
 
 					//H scroll enabled
@@ -2347,12 +2357,8 @@ namespace nana
 					else if (range_adjusted)
 					{
 						//No vertical scrollbar, then re-adjust the range columns for a new width that excludes vert scroll.
-						this->header.calc_ranged_columns(sz.width - 2);
+						this->header.calc_ranged_columns(sz.width - border_px_twice);
 					}
-
-					
-					unsigned width = sz.width - 2 - (enable_vert ? scroll.scale : 0);
-					unsigned height = sz.height - 2 - (enable_horz ? scroll.scale : 0);
 
 					//event hander for scrollbars
 					auto evt_fn = [this](const arg_scroll& arg)
@@ -2371,12 +2377,28 @@ namespace nana
 						API::refresh_window(this->lister.wd_ptr()->handle());
 					};
 
+					unsigned horz_px = sz.width - border_px_twice;
+					if (enable_vert)
+					{
+						if (horz_px < scroll.scale)
+							horz_px = 0;
+						else
+							horz_px -= scroll.scale;
+					}
 
-					const auto wd_handle = lister.wd_ptr()->handle();
-
+					unsigned vert_px = sz.height - border_px_twice;
 					if (enable_horz)
 					{
-						rectangle r(1, sz.height - scroll.scale - 1, width, scroll.scale);
+						if (vert_px < scroll.scale)
+							vert_px = 0;
+						else
+							vert_px -= scroll.scale;
+					}
+
+					const auto wd_handle = lister.wd_ptr()->handle();
+					if (enable_horz && horz_px)
+					{
+						rectangle r(border_px, static_cast<int>(sz.height - border_px) - static_cast<int>(scroll.scale), horz_px, scroll.scale);
 						if(scroll.h.empty())
 						{
 							scroll.h.create(wd_handle, r);
@@ -2389,9 +2411,9 @@ namespace nana
 					else if(!scroll.h.empty())
 						scroll.h.close();
 
-					if (enable_vert)
+					if (enable_vert && vert_px)
 					{
-						rectangle r(sz.width - 1 - scroll.scale, 1, scroll.scale, height);
+						rectangle r(static_cast<int>(sz.width - border_px) - static_cast<int>(scroll.scale), border_px, scroll.scale, vert_px);
 						if(scroll.v.empty())
 						{
 							scroll.v.create(wd_handle, r);
@@ -4253,7 +4275,7 @@ namespace nana
 					}
 				}
 
-				void trigger::dbl_click(graph_reference graph, const arg_mouse& arg)
+				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
 				{
 					using parts = essence::parts;
 
@@ -5022,8 +5044,6 @@ namespace nana
 
 					ess_->lister.throw_if_immutable_model(cat_->model_ptr.get());
 
-
-					auto pos = cat_->model_ptr->container()->size();
 					if (cat_->model_ptr->container()->push_back(dptr))
 					{
 						cat_->sorted.push_back(cat_->items.size());
