@@ -3241,7 +3241,7 @@ namespace nana{	namespace widgets
 				else if ((a.y == b.y) && a.y == text_coord.y)
 				{
 					auto sbegin_pos = (std::max)(a.x, text_coord.x);
-					auto send_pos = (std::min)(text_coord.x + text_ptr->size(), b.x);
+					auto send_pos = (std::min)(text_coord.x + static_cast<unsigned>(text_ptr->size()), b.x);
 
 					if (sbegin_pos < send_pos)
 					{
@@ -3265,7 +3265,7 @@ namespace nana{	namespace widgets
 					if (text_coord.x < b.x)
 					{
 						sbegin = text_ptr->c_str();
-						send = text_ptr->c_str() + (std::min)(b.x - text_coord.x, text_ptr->size());
+						send = text_ptr->c_str() + (std::min)(b.x - text_coord.x, static_cast<unsigned>(text_ptr->size()));
 					}
 				}
 			}
@@ -3325,8 +3325,8 @@ namespace nana{	namespace widgets
 							auto ent_sbegin = (std::max)(sbegin, ent.begin);
 							auto ent_send = (std::min)(send, ent.end);
 
-							unsigned select_pos = (ent_sbegin != ent.begin ? ent_sbegin - ent.begin : 0);
-							unsigned select_len = ent_send - ent_sbegin;
+							unsigned select_pos = static_cast<unsigned>(ent_sbegin != ent.begin ? ent_sbegin - ent.begin : 0);
+							unsigned select_len = static_cast<unsigned>(ent_send - ent_sbegin);
 
 							std::unique_ptr<unsigned[]> pxbuf{ new unsigned[len] };
 							graph_.glyph_pixels(ent.begin, len, pxbuf.get());
