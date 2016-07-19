@@ -585,9 +585,17 @@ namespace nana
 				{
 					if(pos < list_.size() && (pos != basis_.active))
 					{
-						API::show_window(iterator_at(pos)->relative, true);
-						if(basis_.active < list_.size())
-							API::show_window(iterator_at(basis_.active)->relative, false);
+						auto & tab_act = *iterator_at(pos);
+						API::show_window(tab_act.relative, true);
+						if (basis_.active < list_.size())
+						{
+							auto & tab_deact = *iterator_at(basis_.active);
+
+							//Don't hide the relative window if it is equal to active relative window.
+							//The tabbar allows a window to be attached to multiple tabs(pass false to DropOther of attach method)
+							if (tab_deact.relative != tab_act.relative)
+								API::show_window(tab_deact.relative, false);
+						}
 
 						basis_.active = pos;
 						track();
@@ -603,13 +611,27 @@ namespace nana
 					return basis_.active;
 				}
 
-				void attach(std::size_t pos, window wd)
+				window attach(std::size_t pos, window wd, bool drop_other)
 				{
 					if (pos >= list_.size())
 						throw std::out_of_range("tabbar: invalid position");
 
-					iterator_at(pos)->relative = wd;
+					auto & tab = *iterator_at(pos);
+					auto old = tab.relative;
+
+					if (drop_other)
+					{
+						//Drop the relative windows which are equal to wd.
+						for (auto & t : list_)
+						{
+							if (wd == t.relative)
+								t.relative = nullptr;
+						}
+					}
+					
+					tab.relative = wd;
 					API::show_window(wd, basis_.active == pos);
+					return old;
 				}
 
 				bool tab_color(std::size_t pos, bool is_bgcolor, const ::nana::color& clr)
@@ -1181,9 +1203,9 @@ namespace nana
 					return layouter_->toolbox_object().close_fly(fly);
 				}
 
-				void trigger::attach(std::size_t pos, window wd)
+				window trigger::attach(std::size_t pos, window wd, bool drop_other)
 				{
-					layouter_->attach(pos, wd);
+					return layouter_->attach(pos, wd, drop_other);
 				}
 
 				void trigger::erase(std::size_t pos)
