@@ -61,6 +61,12 @@ namespace nana
 		/// Writes a string to the buffer.
 		msgbox & operator<<(const wchar_t*);
 
+		/// Writes a UTF-8 string to the buffer.
+		msgbox & operator<<(const std::string&);
+
+		/// Writes a UTF-8 string to the buffer.
+		msgbox & operator<<(const char*);
+
 		/// Writes a string to the buffer.
 		msgbox & operator<<(const nana::charset&);
 
