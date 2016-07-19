@@ -746,7 +746,7 @@ namespace nana
 
 							if (cat.model_ptr)
 							{
-								std::sort(bi, ei, [&cat, &weak_ordering_comp, this](std::size_t x, std::size_t y){
+								std::stable_sort(bi, ei, [&cat, &weak_ordering_comp, this](std::size_t x, std::size_t y){
 									//The predicate must be a strict weak ordering.
 									//!comp(x, y) != comp(x, y)
 									auto & mx = cat.items[x];
@@ -773,7 +773,7 @@ namespace nana
 							}
 							else
 							{
-								std::sort(bi, ei, [&cat, &weak_ordering_comp, this](std::size_t x, std::size_t y){
+								std::stable_sort(bi, ei, [&cat, &weak_ordering_comp, this](std::size_t x, std::size_t y){
 									//The predicate must be a strict weak ordering.
 									//!comp(x, y) != comp(x, y)
 
@@ -804,7 +804,7 @@ namespace nana
 						{
 							if (cat.model_ptr)
 							{
-								std::sort(std::begin(cat.sorted), std::end(cat.sorted), [&cat, this](std::size_t x, std::size_t y){
+								std::stable_sort(std::begin(cat.sorted), std::end(cat.sorted), [&cat, this](std::size_t x, std::size_t y){
 									auto mx_cells = cat.model_ptr->container()->to_cells(x);
 									auto my_cells = cat.model_ptr->container()->to_cells(y);
 
@@ -828,7 +828,7 @@ namespace nana
 							}
 							else
 							{
-								std::sort(std::begin(cat.sorted), std::end(cat.sorted), [&cat, this](std::size_t x, std::size_t y){
+								std::stable_sort(std::begin(cat.sorted), std::end(cat.sorted), [&cat, this](std::size_t x, std::size_t y){
 
 									auto & mx = cat.items[x];
 									auto & my = cat.items[y];
