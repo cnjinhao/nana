@@ -134,7 +134,7 @@ namespace nana{	namespace drawerbase
 		{
 			attr_.e_state = (attr_.pushed || attr_.keep_pressed ? element_state::pressed : element_state::hovered);
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
@@ -144,7 +144,7 @@ namespace nana{	namespace drawerbase
 
 			attr_.e_state = element_state::normal;
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
@@ -163,7 +163,7 @@ namespace nana{	namespace drawerbase
 			_m_press(graph, false);
 		}
 
-		void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
+		void trigger::key_press(graph_reference, const arg_keyboard& arg)
 		{
 			bool ch_tabstop_next;
 			switch(arg.key)
@@ -185,7 +185,7 @@ namespace nana{	namespace drawerbase
 		{
 			attr_.focused = arg.getting;
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::_m_draw_title(graph_reference graph, bool enabled)
@@ -321,11 +321,12 @@ namespace nana{	namespace drawerbase
 
 				attr_.e_state = element_state::pressed;
 				attr_.keep_pressed = true;
-				API::capture_window(*wdg_, true);
+				wdg_->set_capture(true);
 			}
 			else
 			{
-				API::capture_window(*wdg_, false);
+				wdg_->release_capture();
+
 				attr_.keep_pressed = false;
 				if (attr_.enable_pushed && (false == attr_.pushed))
 				{
@@ -342,7 +343,7 @@ namespace nana{	namespace drawerbase
 			}
 
 			refresh(graph);
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void trigger::emit_click()
@@ -479,7 +480,7 @@ namespace nana{	namespace drawerbase
 
 			void button::_m_complete_creation()
 			{
-				events().shortkey.connect_unignorable([this]
+				events().shortkey.connect_unignorable([this](const arg_keyboard&)
 				{
 					get_drawer_trigger().emit_click();
 				});

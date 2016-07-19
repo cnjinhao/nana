@@ -584,7 +584,7 @@ namespace nana
 			_m_resolve_weak_types();
 			_m_resolve_neutral_types();
 			_m_resolve_implicit_levels();
-			_m_reordering_resolved_levels(str, reordered);
+			_m_reordering_resolved_levels(reordered);
 		}
 
 		unsigned unicode_bidi::_m_paragraph_level(const char_type * begin, const char_type * end)
@@ -885,7 +885,7 @@ namespace nana
 			}
 		}
 
-		void unicode_bidi::_m_reordering_resolved_levels(const char_type * str, std::vector<entity> & reordered)
+		void unicode_bidi::_m_reordering_resolved_levels(std::vector<entity> & reordered)
 		{
 			reordered = levels_;
 

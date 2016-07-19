@@ -15,6 +15,7 @@
 
 #include "widget.hpp"
 #include <nana/gui/timer.hpp>
+#include <nana/push_ignore_diagnostic>
 
 namespace nana
 {
@@ -205,14 +206,14 @@ namespace nana
 				void resized(graph_reference graph, const ::nana::arg_resized&) override
 				{
 					drawer_.draw(graph, metrics_.what);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_enter(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
 					metrics_.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph, metrics_.what);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg) override
@@ -238,7 +239,7 @@ namespace nana
 					if (redraw)
 					{
 						drawer_.draw(graph, metrics_.what);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -262,7 +263,7 @@ namespace nana
 							timer_.start();
 							break;
 						case buttons::scroll:
-							API::capture_window(widget_->handle(), true);
+							widget_->set_capture(true);
 							metrics_.scroll_mouse_offset = (Vertical ? arg.pos.y : arg.pos.x) - metrics_.scroll_pos;
 							break;
 						case buttons::forward:
@@ -278,7 +279,7 @@ namespace nana
 							break;
 						}
 						drawer_.draw(graph, metrics_.what);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -286,12 +287,12 @@ namespace nana
 				{
 					timer_.stop();
 
-					API::capture_window(widget_->handle(), false);
+					widget_->release_capture();
 
 					metrics_.pressed = false;
 					metrics_.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph, metrics_.what);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_leave(graph_reference graph, const arg_mouse&) override
@@ -300,7 +301,7 @@ namespace nana
 
 					metrics_.what = buttons::none;
 					drawer_.draw(graph, buttons::none);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void mouse_wheel(graph_reference graph, const arg_wheel& arg) override
@@ -308,13 +309,13 @@ namespace nana
 					if (make_step(arg.upwards == false, 3))
 					{
 						drawer_.draw(graph, metrics_.what);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			private:
 				void _m_emit_value_changed()
 				{
-					widget_->events().value_changed.emit({ widget_->handle() });
+					widget_->events().value_changed.emit({ widget_->handle() }, widget_->handle());
 				}
 
 				void _m_tick()
@@ -502,4 +503,5 @@ namespace nana
 		}
 	};//end class scroll
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 #endif

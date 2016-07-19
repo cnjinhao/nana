@@ -17,6 +17,8 @@
 
 #ifndef NANA_GUI_WIDGETS_TREEBOX_HPP
 #define NANA_GUI_WIDGETS_TREEBOX_HPP
+
+#include <nana/push_ignore_diagnostic>
 #include "widget.hpp"
 #include "detail/compset.hpp"
 #include "detail/tree_cont.hpp"
@@ -70,9 +72,7 @@ namespace nana
 				typedef compset_interface::item_attribute_t item_attribute_t;
 				typedef compset_interface::comp_attribute_t comp_attribute_t;
 
-				virtual ~renderer_interface()
-				{}
-
+				virtual ~renderer_interface() = default;
 				virtual void set_color(const nana::color& bgcolor, const nana::color& fgcolor) = 0;
 
 				virtual void bground(graph_reference, const compset_interface *) const = 0;
@@ -307,14 +307,14 @@ namespace nana
 				{
 					_m_value() = t;
 					return *this;
-				};
+				}
 
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
 					_m_value() = std::move(t);
 					return *this;
-				};
+				}
 
 				// Undocumentated methods for internal use
 				trigger::node_type * _m_node() const;
@@ -452,4 +452,6 @@ namespace nana
 		item_proxy selected() const; ///< returns the selected node
 	};//end class treebox
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif

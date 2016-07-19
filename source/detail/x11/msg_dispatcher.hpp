@@ -1,6 +1,6 @@
 /*
  *	Message Dispatcher Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -164,7 +164,7 @@ namespace detail
 	private:
 		void _m_msg_driver()
 		{
-			int fd_X11 = ConnectionNumber(display_);
+			const int fd_X11 = ConnectionNumber(display_);
 
 			msg_packet_tag msg_pack;
 			XEvent event;
@@ -177,6 +177,18 @@ namespace detail
 					if(pending)
 					{
 						::XNextEvent(display_, &event);
+						
+						if(KeyRelease == event.type)
+						{
+							//Check whether the key is pressed, because X will send KeyRelease when pressing and
+							//holding a key if auto repeat is on.
+							char keymap[32];
+							::XQueryKeymap(display_, keymap);
+
+							if(keymap[event.xkey.keycode / 8] & (1 << (event.xkey.keycode % 8)))
+								continue;
+						}
+
 						if(::XFilterEvent(&event, None))
 							continue;
 					}

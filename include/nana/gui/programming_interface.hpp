@@ -38,7 +38,7 @@ namespace nana
 		struct widget_traits<widget>
 		{
 			using event_type = ::nana::general_events;
-			using scheme_type = ::nana::widget_colors;
+			using scheme_type = ::nana::widget_geometrics;
 		};
 	}
 
@@ -46,7 +46,7 @@ namespace API
 {
 	namespace detail
 	{
-		::nana::widget_colors* make_scheme(::nana::detail::scheme_factory_base&&);
+		::nana::widget_geometrics* make_scheme(::nana::detail::scheme_factory_interface&&);
 	}
 
 	void effects_edge_nimbus(window, effects::edge_nimbus);
@@ -60,6 +60,8 @@ namespace API
 	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
 	namespace dev
 	{
+		void affinity_execute(window window_handle, const std::function<void()>&);
+
 		bool set_events(window, const std::shared_ptr<general_events>&);
 		
 		template<typename Scheme>
@@ -68,8 +70,8 @@ namespace API
 			return std::unique_ptr<Scheme>{static_cast<Scheme*>(API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>()))};
 		}
 
-		void set_scheme(window, widget_colors*);
-		widget_colors* get_scheme(window);
+		void set_scheme(window, widget_geometrics*);
+		widget_geometrics* get_scheme(window);
 
 		void attach_drawer(widget&, drawer_trigger&);
 		::nana::detail::native_string_type window_caption(window) throw();
@@ -78,8 +80,9 @@ namespace API
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);
 		window create_lite_widget(window, const rectangle&, widget* attached);
+#ifndef WIDGET_FRAME_DEPRECATED
 		window create_frame(window, const rectangle&, widget* attached);
-
+#endif
 		paint::graphics* window_graphics(window);
 
 		void delay_restore(bool);
@@ -88,10 +91,20 @@ namespace API
 		void set_menubar(window wd, bool attach);
 
 		void enable_space_click(window, bool enable);
+
+		/// Refreshs a widget surface
+		/*
+		 * This function will copy the drawer surface into system window after the event process finished.
+		 */
+		void lazy_refresh();
 	}//end namespace dev
 
-
-	widget* get_widget(window);
+	/// Returns the widget pointer of the specified window.
+	/*
+	 * @param window_handle A handle to a window owning the widget.
+	 * @return A widget pointer.
+	 */
+	widget* get_widget(window window_handle);
 
 	namespace detail
 	{
@@ -143,9 +156,17 @@ namespace API
 		};
 	}//end namespace detail
 
-	void exit();
+	void exit();	    ///< close all windows in current thread
+	void exit_all();	///< close all windows 
 
-	std::string transform_shortkey_text(std::string text, wchar_t &shortkey, std::string::size_type *skpos);
+	/// @brief	Searchs whether the text contains a '&' and removes the character for transforming.
+	///			If the text contains more than one '&' charachers, the others are ignored. e.g
+	///			text = "&&a&bcd&ef", the result should be "&abcdef", shortkey = 'b', and pos = 2.
+	std::string transform_shortkey_text
+					( std::string text,      ///< the text is transformed
+					  wchar_t &shortkey,     ///<  the character which indicates a short key.
+					  std::string::size_type *skpos ///< retrives the shortkey position if it is not a null_ptr;
+					);
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 
@@ -181,9 +202,12 @@ namespace API
 
 	void fullscreen(window, bool);
 	bool enabled_double_click(window, bool);
+
+#ifndef WIDGET_FRAME_DEPRECATED
 	bool insert_frame(window frame, native_window_type);
 	native_window_type frame_container(window frame);
 	native_window_type frame_element(window frame, unsigned index);
+#endif
 	void close_window(window);
 	void show_window(window, bool show);                  ///< Sets a window visible state.
 	void restore_window(window);
@@ -230,7 +254,7 @@ namespace API
 		if (nullptr == wdg_colors)
 			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
 
-		if (std::is_same<::nana::widget_colors, scheme_type>::value)
+		if (std::is_same<::nana::widget_geometrics, scheme_type>::value)
 			return *static_cast<scheme_type*>(wdg_colors);
 
 		auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
@@ -258,20 +282,12 @@ namespace API
 	void window_enabled(window, bool);
 	bool window_enabled(window);
 
-	/**	@brief	A widget drawer draws the widget surface in answering an event.
-     *
-     *          This function will tell the drawer to copy the graphics into window after event answering.
-     *          Tells Nana.GUI to copy the buffer of event window to screen after the event is processed.
-     *          This function only works for a drawer_trigger, when a drawer_trigger receives an event,
-     *          after drawing, a drawer_trigger should call lazy_refresh to tell the Nana.GUI to refresh
-     *          the window to the screen after the event process finished.
+	/// Refresh the window and display it immediately calling the refresh function of its drawer_trigger.
+	/*
+	 * The drawer::refresh() will be called. If the currently state is lazy_refrsh, the window is delayed to update the graphics until an event is finished.
+	 * @param window_handle A handle to the window to be refreshed.
 	 */
-	void lazy_refresh();
-
-	/**	@brief:	calls refresh() of a widget's drawer. if currently state is lazy_refresh, Nana.GUI may paste the drawing on the window after an event processing.
-	 *	@param window: specify a window to be refreshed.
-	 */
-	void refresh_window(window);           ///< Refreshs the window and display it immediately calling the refresh method of its drawer_trigger..
+	void refresh_window(window window_handle);
 	void refresh_window_tree(window);      ///< Refreshs the specified window and all it’s children windows, then display it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
@@ -283,14 +299,36 @@ namespace API
 	cursor window_cursor(window);
 
 	void activate_window(window);
+
+	/// Determines whether the specified window will get the keyboard focus when its root window gets native system focus. 
 	bool is_focus_ready(window);
+
+	/// Returns the current keyboard focus window.
 	window focus_window();
+
+	/// Sets the keyboard focus for a specified window.
 	void focus_window(window);
 
+	/// Returns a window which has grabbed the mouse input.
 	window	capture_window();
-	window	capture_window(window, bool);         ///< Enables or disables the window to grab the mouse input
-	void	capture_ignore_children(bool ignore); ///< Enables or disables the captured window whether redirects the mouse input to its children if the mouse is over its children.
-	void modal_window(window);                    ///< Blocks the routine til the specified window is closed.
+
+	/// Enables a window to grab the mouse input.
+	/**
+	 * @param window_handle A handle to a window to grab the mouse input.
+	 * @param ignore_children Indicates whether to redirect the mouse input to its children if the mouse pointer is over its children.
+	 */
+	void set_capture(window window_handle, bool ignore_children);
+	
+	/// Disable a window to grab the mouse input.
+	/**
+	 * @param window handle A handle to a window to release grab of mouse input.
+	 */
+	void release_capture(window window_handle);
+
+	/// Blocks the execution and other windows' messages until the specified window is closed.
+	void modal_window(window);
+
+	/// Blocks the execution until the specified window is closesd.
 	void wait_for(window);
 
 	color fgcolor(window);
@@ -300,20 +338,38 @@ namespace API
 	color activated_color(window);
 	color activated_color(window, const color&);
 
-	void create_caret(window, unsigned width, unsigned height);
+	void create_caret(window, const size&);
 	void destroy_caret(window);
-	void caret_effective_range(window, const rectangle&);
-	void caret_pos(window, const ::nana::point&);
-	nana::point caret_pos(window);
-	nana::size caret_size(window);
-	void caret_size(window, const size&);
-	void caret_visible(window, bool is_show);
-	bool caret_visible(window);
 
-	void tabstop(window);                       ///< Sets the window that owns the tabstop.
-            /// treu: The focus is not to be changed when Tab key is pressed, and a key_char event with tab will be generated.
-	void eat_tabstop(window, bool);
-	window move_tabstop(window, bool next);     ///< Sets the focus to the window which tabstop is near to the specified window.
+	/// Opens an existing caret of a window.
+	/**
+	 * This function returns an object to operate caret. The object doesn't create or destroy the caret.
+	 * When you are finished with the caret, be sure to reset the pointer.
+	 *
+	 * @param window_handle A handle to a window whose caret is to be retrieved
+	 * @return a pointer to the caret proxy. nullptr if the window doesn't have a caret.
+	 */
+	::std::unique_ptr<caret_interface> open_caret(window window_handle, bool disable_throw = false);
+
+	/// Enables that the user can give input focus to the specified window using TAB key.
+	void tabstop(window);
+
+	/// Enables or disables a window to receive a key_char event for pressing TAB key.
+	/*
+	 * @param window_handle A handle to the window to catch TAB key through key_char event.
+	 * @param enable Indicates whether to enable or disable catch of TAB key. If this parameter is *true*, the window is
+	 * received a key_char when pressing TAB key, and the input focus is not changed. If this parameter is *false*, the
+	 * input focus is changed to the next tabstop window.
+	 */
+	void eat_tabstop(window window_handle, bool enable);
+
+	/// Sets the input focus to the window which the tabstop is near to the specified window.
+	/*
+	 * @param window_handle A handle to the window.
+	 * @param forward Indicates whether forward or backward window to be given the input focus.
+	 * @return A handle to the window which to be given the input focus.
+	 */
+	window move_tabstop(window window_handle, bool forward);
 
 	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
@@ -343,6 +399,7 @@ namespace API
 
 	void at_safe_place(window, std::function<void()>);
 }//end namespace API
+
 }//end namespace nana
 
 #endif

@@ -18,7 +18,7 @@
 namespace nana
 {
 	//overlap test if overlaped between r1 and r2
-	bool overlap(const rectangle& r1, const rectangle& r2);
+	bool overlapped(const rectangle& r1, const rectangle& r2);
 
 	// overlap, compute the overlap area between r1 and r2. the r is for root
 	bool overlap(const rectangle& r1, const rectangle& r2, rectangle& r);

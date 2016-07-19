@@ -1,8 +1,8 @@
-Building Nana C++ Library
-requires:
+# Building Nana C++ Library directly with make
+If you are using make directly, it require:
 X11, pthread, Xpm, rt, dl, freetype2, Xft, fontconfig, ALSA
 
-Writing a makefile for creating applications with Nana C++ Library
+Example of writing a makefile for creating applications with Nana C++ Library
 -------------------
 ```
 GCC	= g++

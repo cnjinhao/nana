@@ -14,6 +14,7 @@
 #ifndef NANA_GUI_INNER_FWD_IMPLEMENT_HPP
 #define NANA_GUI_INNER_FWD_IMPLEMENT_HPP
 
+#include <nana/push_ignore_diagnostic>
 #include "inner_fwd.hpp"
 #include "basic_window.hpp"
 #include "../../paint/graphics.hpp"
@@ -111,20 +112,19 @@ namespace nana{
 
 		struct root_misc
 		{
-			typedef basic_window core_window_t;
-
-			core_window_t * window;
+			basic_window * window;
 			nana::paint::graphics	root_graph;
 			shortkey_container		shortkeys;
 
-			struct condition_tag
+			struct condition_rep
 			{
-				core_window_t*	pressed{nullptr};				//The handle to a window which has been pressed by pressing left button of mouse.
-				core_window_t*	pressed_by_space{ nullptr };	//The handle to a window which has been pressed by pressing spacebar.
-				core_window_t*	hovered{nullptr};				//the latest window that mouse moved
+				bool			ignore_tab{ false };			//ignore tab when the focus is changed by TAB key.
+				basic_window*	pressed{ nullptr };				//The handle to a window which has been pressed by mouse left button.
+				basic_window*	pressed_by_space{ nullptr };	//The handle to a window which has been pressed by SPACEBAR key.
+				basic_window*	hovered{ nullptr };				//the latest window that mouse moved
 			}condition;
 
-			root_misc(core_window_t * wd, unsigned width, unsigned height)
+			root_misc(basic_window * wd, unsigned width, unsigned height)
 				:	window(wd),
 				root_graph({ width, height })
 			{}
@@ -172,4 +172,7 @@ namespace nana{
 		};
 	}
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
+
 #endif	//NANA_GUI_INNER_FWD_IMPLEMENT_HPP

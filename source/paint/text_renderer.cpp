@@ -582,5 +582,97 @@ namespace nana
 			}
 		}
 		//end class text_renderer
+
+		//class aligner
+
+		//Constructor
+		aligner::aligner(graph_reference graph, align text_align)
+			: aligner{ graph, text_align, text_align }
+		{}
+
+		aligner::aligner(graph_reference graph, align text_align, align text_align_ex) :
+			graph_(graph),
+			text_align_(text_align), 
+			text_align_ex_(text_align_ex)
+		{}
+
+		// Draws a text with specified text alignment.
+		void aligner::draw(const std::string& text, point pos, unsigned width)
+		{
+			draw(to_wstring(text), pos, width);
+		}
+
+		void aligner::draw(const std::wstring& text, point pos, unsigned width)
+		{
+			auto text_px = graph_.text_extent_size(text).width;
+			if (text_px <= width)
+			{
+				switch (text_align_)
+				{
+				case align::center:
+					pos.x += static_cast<int>(width - text_px) / 2;
+					break;
+				case align::right:
+					pos.x += static_cast<int>(width - text_px);
+				default:
+					break;
+				}
+
+				graph_.bidi_string(pos, text.c_str(), text.size());
+				return;
+			}
+
+			const auto ellipsis = graph_.text_extent_size("...", 3).width;
+
+			std::unique_ptr<unsigned[]> pixels(new unsigned[text.size()]);
+			graph_.glyph_pixels(text.c_str(), text.size(), pixels.get());
+
+			std::size_t substr_len = 0;
+			unsigned substr_px = 0;
+
+			if (align::right == text_align_ex_)
+			{
+				auto end = pixels.get();
+				auto p = end + text.size();
+				do
+				{
+					--p;
+					if (substr_px + *p + ellipsis > width)
+					{
+						substr_len = p - pixels.get() + 1;
+						break;
+					}
+					substr_px += *p;
+				} while (p != end);
+
+				pos.x += static_cast<int>(width - ellipsis - substr_px);
+
+				graph_.string(pos, "...");
+				pos.x += ellipsis;
+				graph_.bidi_string(pos, text.c_str() + substr_len, text.size() - substr_len);
+			}
+			else
+			{
+				for (auto p = pixels.get(), end = pixels.get() + text.size(); p != end; ++p)
+				{
+					if (substr_px + *p + ellipsis > width)
+					{
+						substr_len = p - pixels.get();
+						break;
+					}
+					substr_px += *p;
+				}
+
+				if (align::center == text_align_ex_)
+					pos.x += (width - substr_px - ellipsis) / 2;
+
+				graph_.bidi_string(pos, text.c_str(), substr_len);
+
+				pos.x += substr_px;
+				graph_.string(pos, "...");
+			}
+		}
+
+		//end class string
 	}
 }

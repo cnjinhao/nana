@@ -528,124 +528,25 @@ namespace nana
 		return (px_color().value != other.px_color().value);
 	}
 
+	color operator+(const color& x, const color& y)
+	{
+		double a = x.a_ + y.a_;
+		auto r = static_cast<unsigned>(x.r_ + y.r_);
+		auto g = static_cast<unsigned>(x.g_ + y.g_);
+		auto b = static_cast<unsigned>(x.b_ + y.b_);
+
+		return color{
+			r > 255 ? 255 : r,
+			g > 255 ? 255 : g,
+			b > 255 ? 255 : b,
+			a > 1.0 ? 1.0 : a };
+	}
 	//end class color
-	//struct point
-		point::point():x(0), y(0){}
-		point::point(int x, int y):x(x), y(y){}
-		point::point(const rectangle& r)
-			: x(r.x), y(r.y)
-		{}
 
-		point& point::operator=(const rectangle& r)
-		{
-			x = r.x;
-			y = r.y;
-			return *this;
-		}
-
-		bool point::operator==(const point& rhs) const
-		{
-			return ((x == rhs.x) && (y == rhs.y));
-		}
-
-		bool point::operator!=(const point& rhs) const
-		{
-			return ((x != rhs.x) || (y != rhs.y));
-		}
-
-		bool point::operator<(const point& rhs) const
-		{
-			return ((y < rhs.y) || (y == rhs.y && x < rhs.x));
-		}
-
-		bool point::operator<=(const point& rhs) const
-		{
-			return ((y < rhs.y) || (y == rhs.y && x <= rhs.x));
-		}
-
-		bool point::operator>(const point& rhs) const
-		{
-			return ((y > rhs.y) || (y == rhs.y && x > rhs.x));
-		}
-
-		bool point::operator>=(const point& rhs) const
-		{
-			return ((y > rhs.y) || (y == rhs.y && x >= rhs.x));
-		}
-
-		point point::operator-(const point& rhs) const
-		{
-			return{x - rhs.x, y - rhs.y};
-		}
-
-		point point::operator+(const point& rhs) const
-		{
-			return{ x + rhs.x, y + rhs.y };
-		}
-
-		point& point::operator-=(const point& rhs)
-		{
-			x -= rhs.x;
-			y -= rhs.y;
-			return *this;
-		}
-
-		point& point::operator+=(const point& rhs)
-		{
-			x += rhs.x;
-			y += rhs.y;
-			return *this;
-		}
-	//end struct point
-
-	//struct upoint
-		upoint::upoint():x(0), y(0){}
-		upoint::upoint(unsigned x, unsigned y):x(x), y(y){}
-
-		bool upoint::operator==(const upoint& rhs) const
-		{
-			return ((x == rhs.x) && (y == rhs.y));
-		}
-
-		bool upoint::operator!=(const upoint& rhs) const
-		{
-			return ((x != rhs.x) || (y != rhs.y));
-		}
-
-		bool upoint::operator<(const upoint& rhs) const
-		{
-			return ((y < rhs.y) || (y == rhs.y && x < rhs.x));
-		}
-
-		bool upoint::operator<=(const upoint& rhs) const
-		{
-			return ((y < rhs.y) || (y == rhs.y && x <= rhs.x));
-		}
-
-		bool upoint::operator>(const upoint& rhs) const
-		{
-			return ((y > rhs.y) || (y == rhs.y && x > rhs.x));
-		}
-
-		bool upoint::operator>=(const upoint& rhs) const
-		{
-			return ((y > rhs.y) || (y == rhs.y && x >= rhs.x));
-		}
-	//end struct upoint
 
 	//struct size
 		size::size():width(0), height(0){}
 		size::size(value_type width, value_type height) : width(width), height(height){}
-		size::size(const rectangle& r)
-			: width(r.width), height(r.height)
-		{}
-
-		size& size::operator=(const rectangle& r)
-		{
-			width = r.width;
-			height = r.height;
-			return *this;
-		}
 
 		bool size::empty() const
 		{
@@ -655,6 +556,12 @@ namespace nana
 		bool size::is_hit(const point& pos) const
 		{
 			return (0 <= pos.x && pos.x < static_cast<int>(width) && 0 <= pos.y && pos.y < static_cast<int>(height));
+		}
+
+		size& size::shift()
+		{
+			std::swap(width, height);
+			return *this;
 		}
 
 		bool size::operator==(const size& rhs) const
@@ -700,33 +607,38 @@ namespace nana
 			return (width != rhs.width) || (height != rhs.height) || (x != rhs.x) || (y != rhs.y);
 		}
 
-		rectangle & rectangle::operator=(const point& pos)
+		point rectangle::position() const noexcept
 		{
-			x = pos.x;
-			y = pos.y;
+			return{ x, y };
+		}
+
+		rectangle& rectangle::position(const point& p) noexcept
+		{
+			x = p.x;
+			y = p.y;
 			return *this;
 		}
 
-		rectangle & rectangle::operator=(const size & sz)
+		size rectangle::dimension() const noexcept
+		{
+			return{width, height};
+		}
+
+		rectangle& rectangle::dimension(const size& sz) noexcept
 		{
 			width = sz.width;
 			height = sz.height;
 			return *this;
 		}
 
-		rectangle& rectangle::set_pos(const point& pos)
-		{
-			x = pos.x;
-			y = pos.y;
-			return *this;
-		}
-
+		/*
 		rectangle& rectangle::set_size(const size& sz)
 		{
 			width = sz.width;
 			height = sz.height;
 			return *this;
 		}
+		*/
 
 		rectangle& rectangle::pare_off(int pixels)
 		{
@@ -762,6 +674,13 @@ namespace nana
 		bool rectangle::empty() const
 		{
 			return (0 == width) || (0 == height);
+		}
+
+		rectangle& rectangle::shift()
+		{
+			std::swap(x, y);
+			std::swap(width, height);
+			return *this;
 		}
 	//end struct rectangle
 

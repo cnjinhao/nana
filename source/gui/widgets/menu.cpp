@@ -350,7 +350,7 @@ namespace nana
 					if(track_mouse(arg.pos))
 					{
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -398,24 +398,28 @@ namespace nana
 						//Draw text, the text is transformed from orignal for hotkey character
 						wchar_t hotkey;
 						std::string::size_type hotkey_pos;
-						auto text = to_wstring(API::transform_shortkey_text(m.text, hotkey, &hotkey_pos));
+						auto text = API::transform_shortkey_text(m.text, hotkey, &hotkey_pos);
 
 						if (m.image.empty() == false)
 							renderer->item_image(graph, nana::point(item_r.x + 5, item_r.y + static_cast<int>(item_h_px - image_px) / 2 - 1), image_px, m.image);
 
-						renderer->item_text(graph, nana::point(item_r.x + 40, item_r.y + text_top_off), to_utf8(text), strpixels, attr);
+						renderer->item_text(graph, nana::point(item_r.x + 40, item_r.y + text_top_off), text, strpixels, attr);
 
 						if (hotkey)
 						{
 							m.hotkey = hotkey;
 							if (m.flags.enabled)
 							{
-								unsigned off_w = (hotkey_pos ? graph.text_extent_size(text, static_cast<unsigned>(hotkey_pos)).width : 0);
-								nana::size hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
-								int x = item_r.x + 40 + off_w;
-								int y = item_r.y + text_top_off + hotkey_size.height;
+								auto off_px = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
+								auto hotkey_px = graph.text_extent_size(text.c_str() + hotkey_pos, 1).width;
 
-								graph_->line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, colors::black);
+								unsigned ascent, descent, inleading;
+								graph.text_metrics(ascent, descent, inleading);
+
+								int x = item_r.x + 40 + off_px;
+								int y = item_r.y + text_top_off + ascent + 1;
+
+								graph_->line({ x, y }, { x + static_cast<int>(hotkey_px)-1, y }, colors::black);
 							}
 						}
 
@@ -582,9 +586,12 @@ namespace nana
 							}
 							else if(m.flags.enabled)
 							{
-								std::move(fn_close_tree_)();
-								item_proxy ip(index, m);
-								m.functor.operator()(ip);
+								fn_close_tree_();
+								if (m.functor)
+								{
+									item_proxy ip(index, m);
+									m.functor.operator()(ip);
+								}
 								return 1;
 							}
 						}
@@ -1230,14 +1237,14 @@ namespace nana
 			return impl_->mbuilder.data().items.at(index).flags.checked;
 		}
 
-		void menu::answerer(std::size_t index, const menu::event_fn_t& fn)
+		void menu::answerer(std::size_t index, const event_fn_t& fn)
 		{
 			impl_->mbuilder.data().items.at(index).functor = fn;
 		}
 
-		void menu::destroy_answer(const std::function<void()>& f)
+		void menu::destroy_answer(const std::function<void()>& fn)
 		{
-			impl_->destroy_answer = f;
+			impl_->destroy_answer = fn;
 		}
 
 		void menu::gaps(const nana::point& pos)
@@ -1363,24 +1370,8 @@ namespace nana
 					return;
 				}
 			}
-			bool popup = false;
-			switch(mouse_)
-			{
-			case mouse::left_button:
-				popup = arg.left_button;
-				break;
-			case mouse::middle_button:
-				popup = arg.mid_button;
-				break;
-			case mouse::right_button:
-				popup = arg.right_button;
-				break;
-			case mouse::any_button:
-				popup = true;
-			default:
-				break;
-			}
-			if(popup)
+
+			if((mouse::any_button == mouse_) || (mouse_ == arg.button))
 				mobj_.popup(owner_, pos_.x, pos_.y);
 		}
 	//end class

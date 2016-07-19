@@ -93,6 +93,7 @@ namespace system
 
 		return (::GetAsyncKeyState(button) != 0);
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
+		static_cast<void>(button);	//eliminate unused parameter compiler warning.
 		return false;
 #endif
 	}

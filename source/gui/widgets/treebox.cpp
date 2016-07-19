@@ -496,7 +496,7 @@ namespace nana
 						{
 							data.stop_drawing = true;
 							item_proxy iprx(data.trigger_ptr, node);
-							data.widget_ptr->events().checked.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, (checkstate::unchecked != cs) });
+							data.widget_ptr->events().checked.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, (checkstate::unchecked != cs) }, data.widget_ptr->handle());
 							data.stop_drawing = false;
 						}
 						return true;
@@ -512,14 +512,14 @@ namespace nana
 						if (node_state.selected)
 						{
 							item_proxy iprx(data.trigger_ptr, node_state.selected);
-							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false });
+							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 						}
 
 						node_state.selected = node;
 						if (node)
 						{
 							item_proxy iprx(data.trigger_ptr, node_state.selected);
-							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true });
+							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 						}
 						data.stop_drawing = false;
 						return true;
@@ -544,7 +544,7 @@ namespace nana
 							data.stop_drawing = true;
 							//attr.ext_event.expand(data.widget_ptr->handle(), item_proxy(data.trigger_ptr, node), value);
 							item_proxy iprx(data.trigger_ptr, node);
-							data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, value });
+							data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, value }, data.widget_ptr->handle());
 							data.stop_drawing = false;
 						}
 						return true;
@@ -682,7 +682,7 @@ namespace nana
 							if (node_state.pointed)
 							{
 								item_proxy iprx(data.trigger_ptr, node_state.pointed);
-								data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false });
+								data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 
 								if (nl.node() != node_state.pointed)
 									close_tooltip_window();
@@ -691,7 +691,7 @@ namespace nana
 
 							node_state.pointed = nl.node();
 							item_proxy iprx(data.trigger_ptr, node_state.pointed);
-							data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true });
+							data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 
 							redraw = (node_state.comp_pointed != component::end);
 
@@ -709,7 +709,7 @@ namespace nana
 						redraw = true;
 						node_state.comp_pointed = component::end;
 						item_proxy iprx(data.trigger_ptr, node_state.pointed);
-						data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false });
+						data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 
 						close_tooltip_window();
 						node_state.pointed = nullptr;
@@ -1270,12 +1270,12 @@ namespace nana
 							if(size.width > attr.area.width || size.height > attr.area.height)
 							{
 								nana::size fit_size;
-								nana::fit_zoom(size, attr.area, fit_size);
+								nana::fit_zoom(size, attr.area.dimension(), fit_size);
 
 								attr.area.x += (attr.area.width - fit_size.width) / 2;
 								attr.area.y += (attr.area.height - fit_size.height) / 2;
-								attr.area = fit_size;
-								img->stretch(::nana::rectangle{ size }, graph, attr.area);
+								attr.area.dimension(fit_size);
+								img->stretch(rectangle{ size }, graph, attr.area);
 							}
 							else
 								img->paste(graph, point{ attr.area.x + static_cast<int>(attr.area.width - size.width) / 2, attr.area.y + static_cast<int>(attr.area.height - size.height) / 2 });
@@ -1442,8 +1442,9 @@ namespace nana
 				virtual bool comp_attribute(component_t comp, comp_attribute_t& attr) const override
 				{
 					attr.area = node_r_;
-					if(impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
+					if (impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
 					{
+						attr.mouse_pointed = node_attr_.mouse_pointed;
 						attr.area.x += pos_.x;
 						attr.area.y += pos_.y;
 						return true;
@@ -1879,7 +1880,7 @@ namespace nana
 						impl_->node_state.event_node = nl.node();
 						impl_->set_expanded(impl_->node_state.event_node, !impl_->node_state.event_node->value.second.expanded);
 						impl_->draw(true);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1927,7 +1928,7 @@ namespace nana
 					if(has_redraw)
 					{
 						impl_->draw(true);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1960,7 +1961,7 @@ namespace nana
 						return;	//Do not refresh
 
 					impl_->draw(true);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
@@ -1968,7 +1969,7 @@ namespace nana
 					if(impl_->track_mouse(arg.pos.x, arg.pos.y))
 					{
 						impl_->draw(false);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1986,7 +1987,7 @@ namespace nana
 						impl_->track_mouse(arg.pos.x, arg.pos.y);
 
 						impl_->draw(false);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1995,17 +1996,17 @@ namespace nana
 					if (impl_->node_state.pointed && (!impl_->node_state.tooltip))
 					{
 						item_proxy iprx(impl_->data.trigger_ptr, impl_->node_state.pointed);
-						impl_->data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *impl_->data.widget_ptr, iprx, false });
+						impl_->data.widget_ptr->events().hovered.emit(::nana::arg_treebox{ *impl_->data.widget_ptr, iprx, false }, impl_->data.widget_ptr->handle());
 						impl_->node_state.pointed = nullptr;
 						impl_->draw(false);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
 				void trigger::resized(graph_reference, const arg_resized&)
 				{
 					impl_->draw(false);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 					impl_->show_scroll();
 					if(!impl_->shape.scroll.empty())
 					{
@@ -2120,7 +2121,7 @@ namespace nana
 					if(redraw)
 					{
 						impl_->draw(scroll);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -2150,7 +2151,7 @@ namespace nana
 					if (do_refresh)
 					{
 						impl_->draw(do_refresh & 1);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			//end class trigger

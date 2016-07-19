@@ -1,5 +1,6 @@
 
 #include <nana/gui/widgets/slider.hpp>
+#include <cstring>	//memcpy
 
 namespace nana
 {
@@ -13,91 +14,262 @@ namespace nana
 		{
 
 			class interior_renderer
-				: public renderer
+				: public renderer_interface
 			{
 			private:
-				virtual void background(window wd, graph_reference graph, bool isglass)
+				void background(window, graph_reference graph, bool transparent, const scheme& schm) override
 				{
-					if(!isglass)
-						graph.rectangle(true, API::bgcolor(wd));
+					if (!transparent)
+						graph.rectangle(true, schm.background);
 				}
 
-				virtual void bar(window, graph_reference graph, const bar_t& bi)
+				void bar(window, graph_reference graph, const data_bar& data, const scheme& schm) override
 				{
-					//draw border
-					::nana::color lt(0x83, 0x90, 0x97), rb(0x9d,0xae,0xc2);
-					graph.frame_rectangle(bi.r, lt, lt, rb, rb);
-				}
+					auto area = data.area;
 
-				virtual void adorn(window, graph_reference graph, const adorn_t& ad)
-				{
-					auto len = static_cast<const unsigned>(ad.bound.y - ad.bound.x);
-					const auto upperblock = ad.block - ad.block / 2;
-
-					::nana::color clr_from(0x84, 0xc5, 0xff), clr_trans(0x0f, 0x41, 0xcd), clr_to(0x6e, 0x96, 0xff);
-					if(ad.horizontal)
+					if (data.vert)
 					{
-						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos, len, upperblock }, clr_from, clr_trans, true);
-						graph.gradual_rectangle({ ad.bound.x, ad.fixedpos + static_cast<int>(upperblock), len, ad.block - upperblock }, clr_trans, clr_to, true);
+						area.x = area.width / 2 - 2;
+						area.width = 4;
 					}
 					else
 					{
-						graph.gradual_rectangle({ ad.fixedpos, ad.bound.x, upperblock, len }, clr_from, clr_trans, false);
-						graph.gradual_rectangle({ ad.fixedpos + static_cast<int>(upperblock), ad.bound.x, ad.block - upperblock, len }, clr_trans, clr_to, false);
+						area.y = area.height / 2 - 2;
+						area.height = 4;
 					}
+
+					graph.rectangle(area, false, schm.color_bar);
 				}
 
-				virtual void adorn_textbox(window, graph_reference graph, const std::string& str, const nana::rectangle & r)
+				void adorn(window, graph_reference graph, const data_adorn& data, const scheme& schm) override
 				{
-					graph.rectangle(r, false, colors::white);
-					graph.string({ r.x + 2, r.y + 1 }, str, colors::white);
+					rectangle area{
+						data.bound.x, data.fixedpos + static_cast<int>(data.block / 2) - 1,
+						static_cast<unsigned>(data.bound.y - data.bound.x) , 2
+					};
+
+					if (data.vert)
+						area.shift();
+
+					graph.rectangle(area, true, schm.color_adorn);
+
 				}
 
-				virtual void slider(window, graph_reference graph, const slider_t& s)
+				void vernier(window, graph_reference graph, const data_vernier& data, const scheme& schm) override
 				{
-					nana::rectangle r{ graph.size() };
-					if(s.horizontal)
+					if (data.vert)
+						_m_draw_vernier_vert(graph, data, schm);
+					else
+						_m_draw_vernier_horz(graph, data, schm);
+				}
+
+				void slider(window, graph_reference graph, mouse_action mouse_act, const data_slider& data, const scheme& schm) override
+				{
+					nana::rectangle area{ graph.size() };
+
+					if (data.vert)
 					{
-						r.x = s.pos;
-						r.width = s.scale;
+						area.y = static_cast<int>(data.pos);
+						area.height = data.weight;
 					}
 					else
 					{
-						r.y = s.pos;
-						r.height = s.scale;
+						area.x = static_cast<int>(data.pos);
+						area.width = data.weight;
 					}
-					graph.round_rectangle(r, 3, 3, colors::black, true, static_cast<color_rgb>(0xf0f0f0));
+
+					color rgb = schm.color_slider;
+					if (mouse_action::normal != mouse_act)
+						rgb = schm.color_slider_highlighted;
+
+					graph.frame_rectangle(area, rgb + static_cast<color_rgb>(0x0d0d0d), 1);
+					graph.rectangle(area.pare_off(1), true, rgb);
+
+					area.height /= 2;
+					graph.rectangle(area, true, rgb + static_cast<color_rgb>(0x101010));
+				}
+			private:
+				void _m_draw_vernier_horz(graph_reference graph, const data_vernier& data, const scheme& schm)
+				{
+					const unsigned arrow_weight = 5;
+
+					unsigned arrow_pxbuf[] = {
+						0x7F, 0x00, 0x00, 0x00, 0x00,
+						0x7F, 0x7F, 0x00, 0x00, 0x00,
+						0x7F, 0x7F, 0x7F, 0x00, 0x00,
+						0x7F, 0x7F, 0x7F, 0x7F, 0x00,
+						0x7F, 0x7F, 0x7F, 0x7F, 0x7F,
+						0x7F, 0x7F, 0x7F, 0x7F, 0x00,
+						0x7F, 0x7F, 0x7F, 0x00, 0x00,
+						0x7F, 0x7F, 0x00, 0x00, 0x00,
+						0x7F, 0x00, 0x00, 0x00, 0x00
+					};
+
+					const size arrow_size{ arrow_weight, 9 };
+
+					const auto label_size = graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 };
+
+					paint::graphics graph_vern{ label_size };
+					graph_vern.rectangle(true, schm.color_vernier);
+
+					int arrow_pos;
+
+					point label_pos{ data.position, static_cast<int>(graph.height() - label_size.height) / 2 };
+
+					if (static_cast<int>(label_size.width + arrow_weight) > data.position)
+					{
+						label_pos.x += arrow_weight;
+						arrow_pos = data.position;
+					}
+					else
+					{
+						label_pos.x -= label_size.width + arrow_weight;
+						arrow_pos = data.position - arrow_weight;
+					}
+
+					graph_vern.blend(rectangle{ label_size }, graph, label_pos, 0.5);
+
+
+					unsigned arrow_color = 0x7F | schm.color_vernier.get_color().argb().value;
+					for (auto & color : arrow_pxbuf)
+					{
+						if (color == 0x7F)
+							color = arrow_color;
+					}
+
+					if (label_pos.x > data.position)
+					{
+						for (::nana::size::value_type l = 0; l < arrow_size.height; ++l)
+						{
+							auto ptr = arrow_pxbuf + l * arrow_size.width;
+
+							for (::nana::size::value_type x = 0; x < arrow_size.width / 2; ++x)
+								std::swap(ptr[x], ptr[(arrow_size.width - 1) - x]);
+						}
+					}
+
+					paint::pixel_buffer pxbuf{ arrow_size.width, arrow_size.height };
+					pxbuf.alpha_channel(true);
+					pxbuf.put(reinterpret_cast<unsigned char*>(arrow_pxbuf), arrow_size.width, arrow_size.height, 32, arrow_size.width * 4, false);
+
+					pxbuf.paste(rectangle{ arrow_size }, graph.handle(), { arrow_pos, label_pos.y + static_cast<int>(label_size.height - arrow_size.height) / 2 });
+
+					label_pos.x += static_cast<int>(schm.vernier_text_margin);
+					graph.string(label_pos, data.text, schm.color_vernier_text);
+				}
+
+				void _m_draw_vernier_vert(graph_reference graph, const data_vernier& data, const scheme& schm)
+				{
+					const unsigned arrow_weight = 5;
+
+					unsigned arrow_pxbuf[] = {
+						0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+						0x00, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x00,
+						0x00, 0x00, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x7f, 0x7f, 0x7f, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00, 0x00,
+					};
+
+					const size arrow_size{ 9, arrow_weight};
+
+					const size label_size = (graph.text_extent_size(data.text) + size{ schm.vernier_text_margin * 2, 0 }).shift();
+
+					paint::graphics graph_vern{ label_size };
+
+					paint::graphics graph_horz{ size(label_size).shift() };
+					graph_horz.rectangle(true, schm.color_vernier);
+					graph_horz.string({ static_cast<int>(schm.vernier_text_margin), static_cast<int>(graph_horz.height() - label_size.width) / 2 }, data.text, schm.color_vernier_text);
+
+					paint::pixel_buffer{ graph_horz.handle(), 0, graph_horz.height() }.rotate(90, colors::white).paste(graph_vern.handle(), {});
+
+					int arrow_pos;
+
+					point label_pos{ static_cast<int>(graph.width() - label_size.width) / 2, data.position };
+
+					if (static_cast<int>(label_size.height + arrow_weight) > (data.end_position - data.position))
+					{
+						label_pos.y -= arrow_weight + label_size.height;
+						arrow_pos = data.position - arrow_weight;
+
+						const unsigned line_bytes = arrow_size.width * sizeof(unsigned);
+						for (size::value_type l = 0; l < arrow_size.height / 2; ++l)
+						{
+							auto swap_x = arrow_pxbuf + l* arrow_size.width;
+							auto swap_y = arrow_pxbuf + (arrow_size.height - 1 - l) * arrow_size.width;
+
+							unsigned tmp[9];
+							std::memcpy(tmp, swap_x, line_bytes);
+							std::memcpy(swap_x, swap_y, line_bytes);
+							std::memcpy(swap_y, tmp, line_bytes);
+						}
+					}
+					else
+					{
+						label_pos.y += arrow_weight;
+						arrow_pos = data.position;
+					}
+
+					graph_vern.blend(rectangle{ label_size }, graph, label_pos, 0.5);
+
+
+					unsigned arrow_color = 0x7F | schm.color_vernier.get_color().argb().value;
+					for (auto & color : arrow_pxbuf)
+					{
+						if (color == 0x7F)
+							color = arrow_color;
+					}
+
+
+					paint::pixel_buffer pxbuf{ arrow_size.width, arrow_size.height };
+					pxbuf.alpha_channel(true);
+					pxbuf.put(reinterpret_cast<unsigned char*>(arrow_pxbuf), arrow_size.width, arrow_size.height, 32, arrow_size.width * 4, false);
+
+					pxbuf.paste(rectangle{ arrow_size }, graph.handle(), { label_pos.x + static_cast<int>(label_size.width - arrow_size.width) / 2, arrow_pos });
+
+					label_pos.y += static_cast<int>(schm.vernier_text_margin);
 				}
 			};
 
-			class controller
+			class trigger::model
 			{
+				struct attrib_rep
+				{
+					seekdir		seek_dir;
+					bool		is_draw_adorn;
+
+					unsigned	vmax;
+					double		vcur;
+					double		adorn_pos;
+
+					renderer_interface::data_slider slider;
+				};
 			public:
-				enum class style{horizontal, vertical};
 				enum class parts{none, bar, slider};
 				
-				typedef drawer_trigger::graph_reference graph_reference;
+				using graph_reference = drawer_trigger::graph_reference;
 
-				controller()
+				model()
 				{
 					other_.wd = nullptr;
 					other_.widget = nullptr;
-					other_.graph = nullptr;
 
-					proto_.renderer = pat::cloneable<renderer>(interior_renderer());
+					proto_.renderer = pat::cloneable<renderer_interface>{interior_renderer{}};
 
-					attr_.skdir = seekdir::bilateral;
-					attr_.dir = style::horizontal;
+					attr_.seek_dir = seekdir::bilateral;
+					
+					attr_.is_draw_adorn = false;
 					attr_.vcur = 0;
 					attr_.vmax = 10;
-					attr_.slider_scale = 8;
-					attr_.border = 1;
-					attr_.is_draw_adorn = false;
+
+					attr_.slider.vert = false;
+					attr_.slider.border_weight = 1;
+					attr_.slider.pos = 0;
+					attr_.slider.weight = 8;
 				}
 
-				void seek(seekdir sd)
+				void seek_direction(seekdir sd)
 				{
-					attr_.skdir = sd;
+					attr_.seek_dir = sd;
 				}
 
 				window handle() const
@@ -105,86 +277,68 @@ namespace nana
 					return other_.wd;
 				}
 
-				void attached(nana::slider& wd, graph_reference graph)
+				void attached(nana::slider& wdg, graph_reference)
 				{
-					other_.wd = wd.handle();
-					other_.widget = &wd;
+					other_.wd = wdg.handle();
+					other_.widget = &wdg;
 
-					other_.graph = &graph;
 					_m_mk_slider_pos_by_value();
 				}
 
-				void detached()
-				{
-					other_.graph = nullptr;
-				}
-
-				pat::cloneable<renderer>& ext_renderer()
+				pat::cloneable<renderer_interface>& renderer()
 				{
 					return proto_.renderer;
 				}
 
-				void ext_renderer(const pat::cloneable<renderer>& rd)
+				void vernier(std::function<std::string(unsigned maximum, unsigned cursor_value)> vernier_string)
 				{
-					proto_.renderer = rd;
+					proto_.vernier = vernier_string;
 				}
 
-				void ext_provider(const pat::cloneable<provider>& pd)
+				void draw(graph_reference graph)
 				{
-					proto_.provider = pd;
-				}
-
-				void draw()
-				{
-					if(other_.graph && !other_.graph->size().empty())
+					if(!graph.size().empty())
 					{
-						bool is_transparent = (bground_mode::basic == API::effects_bground_mode(other_.wd));
-						proto_.renderer->background(other_.wd, *other_.graph, is_transparent);
-						_m_draw_objects();
+						proto_.renderer->background(other_.wd, graph, (bground_mode::basic == API::effects_bground_mode(other_.wd)), other_.widget->scheme());
+						_m_draw_elements(graph);
 					}
 				}
 
-				void vertical(bool v)
+				const attrib_rep & attribute() const
 				{
-					auto dir = (v ? style::vertical : style::horizontal);
+					return attr_;
+				}
 
-					if(dir != attr_.dir)
+				bool vertical(bool vert)
+				{
+					if (vert != attr_.slider.vert)
 					{
-						attr_.dir = dir;
+						attr_.slider.vert = vert;
 						_m_mk_slider_pos_by_value();
-						this->draw();
+						return true;
 					}
+					return false;
 				}
 
-				bool vertical() const
-				{
-					return (style::vertical == attr_.dir);
-				}
-
-				void vmax(unsigned m)
+				void maximum(unsigned m)
 				{
 					if(m == 0) m = 1;
 
-					if(attr_.vmax != m)
+					if (attr_.vmax == m)
+						return;
+
+					attr_.vmax = m;
+					if(attr_.vcur > m)
 					{
-						attr_.vmax = m;
-						if(attr_.vcur > m)
-						{
-							attr_.vcur = m;
-							_m_emit_value_changed();
-						}
-
-						_m_mk_slider_pos_by_value();
-						draw();
+						attr_.vcur = m;
+						_m_emit_value_changed();
 					}
+
+					_m_mk_slider_pos_by_value();
+					API::refresh_window(other_.wd);
 				}
 
-				unsigned vmax() const
-				{
-					return attr_.vmax;
-				}
-
-				void vcur(unsigned v)
+				bool vcur(unsigned v)
 				{
 					if(attr_.vmax < v)
 						v = attr_.vmax;
@@ -193,39 +347,36 @@ namespace nana
 					{
 						attr_.vcur = v;
 						this->_m_mk_slider_pos_by_value();
-						draw();
+						return true;
 					}
-				}
-
-				unsigned vcur() const
-				{
-					return static_cast<unsigned>(attr_.vcur);
+					return false;
 				}
 
 				void resize()
 				{
 					_m_mk_slider_pos_by_value();
-					attr_.adorn_pos = attr_.pos;
+					attr_.adorn_pos = attr_.slider.pos;
 				}
 
 				parts seek_where(::nana::point pos) const
 				{
 					nana::rectangle r = _m_bar_area();
-					if(style::vertical == attr_.dir)
+					
+					if (attr_.slider.vert)
 					{
 						std::swap(pos.x, pos.y);
 						std::swap(r.width, r.height);
 					}
 
 					int sdpos = _m_slider_pos();
-					if (sdpos <= pos.x && pos.x < sdpos + static_cast<int>(attr_.slider_scale))
+					if (sdpos <= pos.x && pos.x < sdpos + static_cast<int>(attr_.slider.weight))
 						return parts::slider;
 
-					sdpos = static_cast<int>(attr_.slider_scale) / 2;
+					sdpos = static_cast<int>(attr_.slider.weight) / 2;
 					
 					if (sdpos <= pos.x && pos.x < sdpos + static_cast<int>(r.width))
 					{
-						if(pos.y < r.y + static_cast<int>(r.height))
+						if(pos.y < r.bottom())
 							return parts::bar;
 					}
 					return parts::none;
@@ -235,49 +386,50 @@ namespace nana
 				//move the slider to a position where a mouse click on WhereBar.
 				bool set_slider_pos(::nana::point pos)
 				{
-					if(style::vertical == attr_.dir)
+					if(attr_.slider.vert)
 						std::swap(pos.x, pos.y);
 
 					pos.x -= _m_slider_refpos();
 					if(pos.x < 0)
 						return false;
 
-					if(pos.x > static_cast<int>(_m_scale()))
-						pos.x = static_cast<int>(_m_scale());
+					if(pos.x > static_cast<int>(_m_range()))
+						pos.x = static_cast<int>(_m_range());
 
-					double attr_pos = attr_.pos;
+					auto attr_pos = attr_.slider.pos;
 					double dx = _m_evaluate_by_seekdir(pos.x);
 
-					attr_.pos = dx;
+					attr_.slider.pos = dx;
 					attr_.adorn_pos = dx;
 					_m_mk_slider_value_by_pos();
 
-					return (attr_.pos != attr_pos);
+					return (attr_.slider.pos != attr_pos);
 				}
 
 				void set_slider_refpos(::nana::point pos)
 				{
-					if(style::vertical == attr_.dir)
+					if (attr_.slider.vert)
 						std::swap(pos.x, pos.y);
 
-					slider_state_.trace = slider_state_.TraceCapture;
-					slider_state_.snap_pos = static_cast<int>(attr_.pos);
+					slider_state_.mouse_state = ::nana::mouse_action::pressed;
+					slider_state_.snap_pos = static_cast<int>(attr_.slider.pos);
 					slider_state_.refpos = pos;
-					API::capture_window(other_.wd, true);
+					API::set_capture(other_.wd, true);
 				}
 
 				bool release_slider()
 				{
-					if(slider_state_.trace == slider_state_.TraceCapture)
+					if(::nana::mouse_action::pressed == slider_state_.mouse_state)
 					{
-						API::capture_window(other_.wd, false);
-						if(other_.wd != API::find_window(API::cursor_position()))
+						API::release_capture(other_.wd);
+
+						if (other_.wd != API::find_window(API::cursor_position()))
 						{
-							slider_state_.trace = slider_state_.TraceNone;
+							slider_state_.mouse_state = ::nana::mouse_action::normal;
 							attr_.is_draw_adorn = false;
 						}
 						else
-							slider_state_.trace = slider_state_.TraceOver;
+							slider_state_.mouse_state = ::nana::mouse_action::hovered;
 
 						_m_mk_slider_value_by_pos();
 						_m_mk_slider_pos_by_value();
@@ -288,19 +440,18 @@ namespace nana
 
 				bool if_trace_slider() const
 				{
-					return (slider_state_.trace == slider_state_.TraceCapture);
+					return (::nana::mouse_action::pressed == slider_state_.mouse_state);
 				}
 
 				bool move_slider(const ::nana::point& pos)
 				{
-					int mpos = (style::horizontal == attr_.dir ? pos.x : pos.y);
-					int adorn_pos = slider_state_.snap_pos + (mpos - slider_state_.refpos.x);
+					int adorn_pos = slider_state_.snap_pos + (attr_.slider.vert ? pos.y : pos.x) - slider_state_.refpos.x;
 					
 					if (adorn_pos > 0)
 					{
-						int scale = static_cast<int>(_m_scale());
-						if (adorn_pos > scale)
-							adorn_pos = scale;
+						int range = static_cast<int>(_m_range());
+						if (adorn_pos > range)
+							adorn_pos = range;
 					}
 					else
 						adorn_pos = 0;
@@ -308,9 +459,9 @@ namespace nana
 					double dstpos = _m_evaluate_by_seekdir(adorn_pos);
 					attr_.is_draw_adorn = true;
 
-					if(dstpos != attr_.pos)
+					if(dstpos != attr_.slider.pos)
 					{
-						attr_.pos = dstpos;
+						attr_.slider.pos = dstpos;
 						attr_.adorn_pos = dstpos;
 						return true;
 					}
@@ -319,11 +470,11 @@ namespace nana
 
 				bool move_adorn(const ::nana::point& pos)
 				{
-					double xpos = (style::horizontal == attr_.dir ? pos.x : pos.y);
+					double xpos = (attr_.slider.vert ? pos.y : pos.x) - _m_slider_refpos();
 
-					xpos -= _m_slider_refpos();
-					if(xpos > static_cast<int>(_m_scale()))
-						xpos = static_cast<int>(_m_scale());
+					auto range = static_cast<int>(_m_range());
+					if (xpos > range)
+						xpos = range;
 
 					int adorn_pos = static_cast<int>(attr_.adorn_pos);
 					xpos = _m_evaluate_by_seekdir(xpos);
@@ -331,8 +482,8 @@ namespace nana
 					attr_.adorn_pos = xpos;
 					attr_.is_draw_adorn = true;
 
-					if(slider_state_.trace == slider_state_.TraceNone)
-						slider_state_.trace = slider_state_.TraceOver;
+					if (::nana::mouse_action::normal == slider_state_.mouse_state)
+						slider_state_.mouse_state = ::nana::mouse_action::hovered;
 
 					return (adorn_pos != static_cast<int>(xpos));
 				}
@@ -353,7 +504,8 @@ namespace nana
 					if (cmpvalue != value)
 					{
 						_m_mk_slider_pos_by_value();
-						draw();
+						API::refresh_window(other_.wd);
+
 						_m_emit_value_changed();
 					}
 
@@ -369,14 +521,14 @@ namespace nana
 				{
 					//Test if the slider is captured, the operation should be ignored. Because the mouse_leave always be generated even through
 					//the slider is captured.
-					if(slider_state_.trace == slider_state_.TraceCapture && (nana::API::capture_window() == this->other_.wd))
+					if((::nana::mouse_action::pressed == slider_state_.mouse_state) && (API::capture_window() == this->other_.wd))
 						return false;
 
-					slider_state_.trace = slider_state_.TraceNone;
+					slider_state_.mouse_state = ::nana::mouse_action::normal;
 					attr_.is_draw_adorn = false;
-					if(attr_.adorn_pos != attr_.pos)
+					if(attr_.adorn_pos != attr_.slider.pos)
 					{
-						attr_.adorn_pos = attr_.pos;
+						attr_.adorn_pos = attr_.slider.pos;
 						return true;
 					}
 					return false;
@@ -385,72 +537,65 @@ namespace nana
 			private:
 				void _m_emit_value_changed() const
 				{
-					other_.widget->events().value_changed.emit(::nana::arg_slider{ *other_.widget });
+					other_.widget->events().value_changed.emit(::nana::arg_slider{ *other_.widget }, other_.widget->handle());
 				}
 
-				nana::rectangle _m_bar_area() const
+				::nana::rectangle _m_bar_area() const
 				{
-					auto sz = other_.graph->size();
-					nana::rectangle r{ sz };
-					if(style::horizontal == attr_.dir)
+					auto sz = other_.widget->size();
+
+					nana::rectangle area{ sz };
+					if (attr_.slider.vert)
 					{
-						r.x = attr_.slider_scale / 2 - attr_.border;
-						r.width = (static_cast<int>(sz.width) > (r.x << 1) ? sz.width - (r.x << 1) : 0);
+						area.y = attr_.slider.weight / 2 - attr_.slider.border_weight;
+						area.height = (static_cast<int>(sz.height) > (area.y << 1) ? sz.height - (area.y << 1) : 0);
 					}
 					else
 					{
-						r.y = attr_.slider_scale / 2 - attr_.border;
-						r.height = (static_cast<int>(sz.height) > (r.y << 1) ? sz.height - (r.y << 1) : 0);
+						area.x = attr_.slider.weight / 2 - attr_.slider.border_weight;
+						area.width = (static_cast<int>(sz.width) > (area.x << 1) ? sz.width - (area.x << 1) : 0);
 					}
-					return r;
+					return area;
 				}
 
-				unsigned _m_scale() const
+				unsigned _m_range() const
 				{
 					nana::rectangle r = _m_bar_area();
-					return ((style::horizontal == attr_.dir ? r.width : r.height) - attr_.border * 2);
+					return (attr_.slider.vert ? r.height : r.width) - attr_.slider.border_weight * 2;
 				}
 
 				double _m_evaluate_by_seekdir(double pos) const
 				{
-					switch(attr_.skdir)
+					if (seekdir::bilateral != attr_.seek_dir)
 					{
-					case seekdir::backward:
-						if(pos < attr_.pos)
-							pos = attr_.pos;
-						break;
-					case seekdir::forward:
-						if(pos > attr_.pos)
-							pos = attr_.pos;
-						break;
-					default:
-						break;
+						if ((seekdir::backward == attr_.seek_dir) == (pos < attr_.slider.pos))
+							pos = attr_.slider.pos;
 					}
 					return (pos < 0 ? 0 : pos);
 				}
 
 				int _m_slider_refpos() const
 				{
-					return static_cast<int>(attr_.slider_scale / 2);
+					return static_cast<int>(attr_.slider.weight / 2);
 				}
 
 				int _m_slider_pos() const
 				{
-					return static_cast<int>(_m_scale() * attr_.vcur / attr_.vmax);
+					return static_cast<int>(_m_range() * attr_.vcur / attr_.vmax);
 				}
 
 				void _m_mk_slider_value_by_pos()
 				{
-					if(_m_scale())
+					auto range = _m_range();
+					if (range)
 					{
 						auto cmpvalue = static_cast<int>(attr_.vcur);
-						if (style::vertical == attr_.dir)
-						{
-							double scl = _m_scale();
-							attr_.vcur = (scl - attr_.pos) * attr_.vmax / scl;
-						}
+						if (attr_.slider.vert)
+							attr_.vcur = (range - attr_.slider.pos) * attr_.vmax;
 						else
-							attr_.vcur = (attr_.pos * attr_.vmax / _m_scale());
+							attr_.vcur = (attr_.slider.pos * attr_.vmax);
+
+						attr_.vcur /= range;
 						if (cmpvalue != static_cast<int>(attr_.vcur))
 							_m_emit_value_changed();
 					}
@@ -458,225 +603,195 @@ namespace nana
 
 				void _m_mk_slider_pos_by_value()
 				{
-					attr_.pos = double(_m_scale()) * attr_.vcur / attr_.vmax;
+					const auto range = _m_range();
+					attr_.slider.pos = double(range) * attr_.vcur / attr_.vmax;
 
-					if (style::vertical == attr_.dir)
-						attr_.pos = _m_scale() - attr_.pos;
+					if (attr_.slider.vert)
+						attr_.slider.pos = range - attr_.slider.pos;
 
-					if(slider_state_.trace == slider_state_.TraceNone)
-						attr_.adorn_pos = attr_.pos;
+					if(::nana::mouse_action::normal == slider_state_.mouse_state)
+						attr_.adorn_pos = attr_.slider.pos;
 				}
 
 				unsigned _m_value_by_pos(double pos) const
 				{
-					if(_m_scale())
-						return static_cast<unsigned>(pos * attr_.vmax / _m_scale());
-					return 0;
+					const auto range = _m_range();
+
+					if (0 == range)
+						return 0;
+
+					return static_cast<unsigned>((attr_.slider.vert ? range - pos : pos) * attr_.vmax / range);
 				}
 
-				void _m_draw_objects()
+				void _m_draw_elements(graph_reference graph)
 				{
-					renderer::bar_t bar;
+					auto & scheme = other_.widget->scheme();
 
-					bar.horizontal = (style::horizontal == attr_.dir);
-					bar.border_size = attr_.border;
-					bar.r = _m_bar_area();
+					renderer_interface::data_bar bar;
 
-					if (bar.r.empty())
+					bar.vert = attr_.slider.vert;
+					bar.border_weight = attr_.slider.border_weight;
+					bar.area = _m_bar_area();
+
+					if (bar.area.empty())
 						return;
 
-					proto_.renderer->bar(other_.wd, *other_.graph, bar);
+					proto_.renderer->bar(other_.wd, graph, bar, scheme);
 
 					//adorn
-					renderer::adorn_t adorn;
-					adorn.horizontal = bar.horizontal;
-					if (adorn.horizontal)
+					renderer_interface::data_adorn adorn;
+					adorn.vert = bar.vert;
+					if (adorn.vert)
 					{
-						adorn.bound.x = bar.r.x + attr_.border;
-						adorn.bound.y = adorn.bound.x + static_cast<int>(attr_.adorn_pos);
+						adorn.bound.x = static_cast<int>(attr_.adorn_pos + attr_.slider.border_weight + bar.area.y);
+						adorn.bound.y = static_cast<int>(graph.height()) - static_cast<int>(attr_.slider.border_weight + bar.area.y);
+						//adorn.bound.x = 
 					}
 					else
 					{
-						adorn.bound.y = static_cast<int>(other_.graph->height()) - static_cast<int>(attr_.border + bar.r.y);
-						adorn.bound.x = static_cast<int>(attr_.adorn_pos + attr_.border + bar.r.y);
+						adorn.bound.x = bar.area.x + attr_.slider.border_weight;
+						adorn.bound.y = adorn.bound.x + static_cast<int>(attr_.adorn_pos);
 					}
-					adorn.vcur_scale = static_cast<unsigned>(attr_.pos);
-					adorn.block = (bar.horizontal ? bar.r.height : bar.r.width) - attr_.border * 2;
-					adorn.fixedpos = static_cast<int>((bar.horizontal ? bar.r.y : bar.r.x) + attr_.border);
 
-					proto_.renderer->adorn(other_.wd, *other_.graph, adorn);
+					adorn.vcur_scale = static_cast<unsigned>(attr_.slider.pos);
+					adorn.block = (bar.vert ? bar.area.width : bar.area.height) - attr_.slider.border_weight * 2;
+					adorn.fixedpos = static_cast<int>((bar.vert ? bar.area.x : bar.area.y) + attr_.slider.border_weight);
 
-					_m_draw_slider();
+					proto_.renderer->adorn(other_.wd, graph, adorn, scheme);
+
+					//Draw slider
+					proto_.renderer->slider(other_.wd, graph, slider_state_.mouse_state, attr_.slider, scheme);
 
 					//adorn textbox
-					if(proto_.provider && attr_.is_draw_adorn)
+					if (proto_.vernier && attr_.is_draw_adorn)
 					{
-						unsigned vadorn = _m_value_by_pos(attr_.adorn_pos);
-						auto str = proto_.provider->adorn_trace(attr_.vmax, vadorn);
-						if(str.size())
-						{
-							nana::size ts = other_.graph->text_extent_size(str);
-							ts.width += 6;
-							ts.height += 2;
+						renderer_interface::data_vernier vern;
+						vern.vert = attr_.slider.vert;
+						vern.knob_weight = attr_.slider.weight;
 
-							int x, y;
-							const int room = static_cast<int>(attr_.adorn_pos);
-							if(bar.horizontal)
-							{
-								y = adorn.fixedpos + static_cast<int>(adorn.block - ts.height) / 2;
-								x = (room > static_cast<int>(ts.width + 2) ? room - static_cast<int>(ts.width + 2) : room + 2) + _m_slider_refpos();
-							}
-							else
-							{
-								x = (other_.graph->width() - ts.width) / 2;
-								y = (room > static_cast<int>(ts.height + 2) ? room - static_cast<int>(ts.height + 2) : room + 2) + _m_slider_refpos();
-							}
-							proto_.renderer->adorn_textbox(other_.wd, *other_.graph, str, {x, y, ts.width, ts.height});
+						auto vadorn = _m_value_by_pos(attr_.adorn_pos);
+						proto_.vernier(attr_.vmax, vadorn).swap(vern.text);
+						if(vern.text.size())
+						{
+							vern.position = adorn.bound.x;
+							if (!adorn.vert)
+								vern.position += static_cast<int>(attr_.adorn_pos);
+
+							vern.end_position = adorn.bound.y;
+							proto_.renderer->vernier(other_.wd, graph, vern, scheme);
 						}
 					}
 				}
-
-				void _m_draw_slider()
-				{
-					renderer::slider_t s;
-					s.pos = static_cast<int>(attr_.pos);
-					s.horizontal = (style::horizontal == attr_.dir);
-					s.scale = attr_.slider_scale;
-					s.border = attr_.border;
-					proto_.renderer->slider(other_.wd, *other_.graph, s);
-				}
 			private:
+				attrib_rep attr_;
+
 				struct other_tag
 				{
 					window wd;
 					nana::slider * widget;
-					paint::graphics * graph;
 				}other_;
 				
 				struct prototype_tag
 				{
-					pat::cloneable<slider::renderer> renderer;
-					pat::cloneable<slider::provider> provider;
+					pat::cloneable<slider::renderer_interface> renderer;
+					std::function<std::string(unsigned maximum, unsigned vernier_value)> vernier;
 				}proto_;
-
-				struct attr_tag
-				{
-					seekdir skdir;
-					style dir;
-					unsigned border;
-					unsigned vmax;
-					double vcur;
-					double		pos;
-					bool		is_draw_adorn;
-					double		adorn_pos;
-					unsigned slider_scale;
-				}attr_;
 
 				struct slider_state_tag
 				{
-					enum t{TraceNone, TraceOver, TraceCapture};
-
-					t trace;	//true if the mouse press on slider.
 					int		snap_pos;
-					nana::point refpos; //a point for slider when the mouse was clicking on slider.
-
-					slider_state_tag(): trace(TraceNone){}
+					::nana::point refpos; //a point for slider when the mouse was clicking on slider.
+					::nana::mouse_action mouse_state{ ::nana::mouse_action::normal };
 				}slider_state_;
 			};
 
 			//class trigger
 				trigger::trigger()
-					: impl_(new controller_t)
+					: model_ptr_(new model)
 				{}
 
 				trigger::~trigger()
 				{
-					delete impl_;
+					delete model_ptr_;
 				}
 
-				trigger::controller_t* trigger::ctrl() const
+				auto trigger::get_model() const -> model*
 				{
-					return impl_;
+					return model_ptr_;
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
-					impl_->attached(static_cast<nana::slider&>(widget), graph);
+					model_ptr_->attached(static_cast< ::nana::slider&>(widget), graph);
 				}
 
-				void trigger::detached()
+				void trigger::refresh(graph_reference graph)
 				{
-					impl_->detached();
+					model_ptr_->draw(graph);
 				}
 
-				void trigger::refresh(graph_reference)
+				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 				{
-					impl_->draw();
-				}
-
-				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
-				{
-					using parts = controller_t::parts;
-					auto what = impl_->seek_where(arg.pos);
+					using parts = model::parts;
+					auto what = model_ptr_->seek_where(arg.pos);
 					if(parts::bar == what || parts::slider == what)
 					{
-						bool mkdir = impl_->set_slider_pos(arg.pos);
-						impl_->set_slider_refpos(arg.pos);
-						if(mkdir)
+						bool updated = model_ptr_->set_slider_pos(arg.pos);
+						model_ptr_->set_slider_refpos(arg.pos);
+						if (updated)
 						{
-							impl_->draw();
-							API::lazy_refresh();
+							model_ptr_->draw(graph);
+							API::dev::lazy_refresh();
 						}
 					}
 				}
 
-				void trigger::mouse_up(graph_reference, const arg_mouse&)
+				void trigger::mouse_up(graph_reference graph, const arg_mouse&)
 				{
-					bool mkdraw = impl_->release_slider();
-					if(mkdraw)
+					if (model_ptr_->release_slider())
 					{
-						impl_->draw();
-						API::lazy_refresh();
+						model_ptr_->draw(graph);
+						API::dev::lazy_refresh();
 					}
 				}
 
-				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
+				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
-					bool mkdraw = false;
-					if(impl_->if_trace_slider())
+					bool updated = false;
+					if (model_ptr_->if_trace_slider())
 					{
-						mkdraw = impl_->move_slider(arg.pos);
+						updated = model_ptr_->move_slider(arg.pos);
+						updated |= model_ptr_->set_slider_pos(arg.pos);
 					}
 					else
 					{
-						auto what = impl_->seek_where(arg.pos);
-						if(controller_t::parts::none != what)
-							mkdraw = impl_->move_adorn(arg.pos);
+						if (model::parts::none != model_ptr_->seek_where(arg.pos))
+							updated = model_ptr_->move_adorn(arg.pos);
 						else
-							mkdraw = impl_->reset_adorn();
+							updated = model_ptr_->reset_adorn();
 					}
 
-					if(mkdraw)
+					if (updated)
 					{
-						impl_->draw();
-						API::lazy_refresh();
+						model_ptr_->draw(graph);
+						API::dev::lazy_refresh();
 					}
 				}
 
-				void trigger::mouse_leave(graph_reference, const arg_mouse&)
+				void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
 				{
-					if(impl_->reset_adorn())
+					if (model_ptr_->reset_adorn())
 					{
-						impl_->draw();
-						API::lazy_refresh();
+						model_ptr_->draw(graph);
+						API::dev::lazy_refresh();
 					}
 				}
 
-				void trigger::resized(graph_reference, const arg_resized&)
+				void trigger::resized(graph_reference graph, const arg_resized&)
 				{
-					impl_->resize();
-					impl_->draw();
-					API::lazy_refresh();
+					model_ptr_->resize();
+					model_ptr_->draw(graph);
+					API::dev::lazy_refresh();
 				}
 			//end class trigger
 		}//end namespace slider
@@ -695,86 +810,81 @@ namespace nana
 			create(wd, r, visible);
 		}
 
-		void slider::seek(slider::seekdir sd)
+		void slider::seek(seekdir sd)
 		{
-			get_drawer_trigger().ctrl()->seek(sd);
+			get_drawer_trigger().get_model()->seek_direction(sd);
 		}
 
 		void slider::vertical(bool v)
 		{
-			get_drawer_trigger().ctrl()->vertical(v);
-			API::update_window(this->handle());
+			if(get_drawer_trigger().get_model()->vertical(v))
+				API::refresh_window(this->handle());
 		}
 
 		bool slider::vertical() const
 		{
-			return get_drawer_trigger().ctrl()->vertical();
+			return get_drawer_trigger().get_model()->attribute().slider.vert;
 		}
 
-		void slider::vmax(unsigned m)
+		void slider::maximum(unsigned m)
 		{
-			if(this->handle())
-			{
-				get_drawer_trigger().ctrl()->vmax(m);
-				API::update_window(handle());
-			}
+			get_drawer_trigger().get_model()->maximum(m);
 		}
 
-		unsigned slider::vmax() const
+		unsigned slider::maximum() const
 		{
-			if(handle())
-				return get_drawer_trigger().ctrl()->vmax();
-			return 0;
+			if (empty())
+				return 0;
+
+			return get_drawer_trigger().get_model()->attribute().vmax;
 		}
 
 		void slider::value(unsigned v)
 		{
 			if(handle())
 			{
-				get_drawer_trigger().ctrl()->vcur(v);
-				API::update_window(handle());
+				if(get_drawer_trigger().get_model()->vcur(v))
+					API::refresh_window(handle());
 			}
 		}
 
 		unsigned slider::value() const
 		{
-			if(handle())
-				return get_drawer_trigger().ctrl()->vcur();
-			return 0;
+			if (empty())
+				return 0;
+
+			return static_cast<unsigned>(get_drawer_trigger().get_model()->attribute().vcur);
 		}
 
 		unsigned slider::move_step(bool forward)
 		{
-			if(handle())
-			{
-				drawerbase::slider::controller* ctrl = this->get_drawer_trigger().ctrl();
-				unsigned val = ctrl->move_step(forward);
-				if(val != ctrl->vcur())
-					API::update_window(handle());
-				return val;
-			}
-			return 0;
+			if (empty())
+				return 0;
+
+			return this->get_drawer_trigger().get_model()->move_step(forward);
 		}
 
 		unsigned slider::adorn() const
 		{
-			if(empty())	return 0;
-			return get_drawer_trigger().ctrl()->adorn();
+			if(empty())
+				return 0;
+
+			return get_drawer_trigger().get_model()->adorn();
 		}
 
-		pat::cloneable<slider::renderer>& slider::ext_renderer()
+		const pat::cloneable<slider::renderer_interface>& slider::renderer()
 		{
-			return get_drawer_trigger().ctrl()->ext_renderer();
+			return get_drawer_trigger().get_model()->renderer();
 		}
 
-		void slider::ext_renderer(const pat::cloneable<slider::renderer>& di)
+		void slider::renderer(const pat::cloneable<slider::renderer_interface>& rd)
 		{
-			get_drawer_trigger().ctrl()->ext_renderer(di);
+			get_drawer_trigger().get_model()->renderer() = rd;
 		}
 
-		void slider::ext_provider(const pat::cloneable<slider::provider>& pi)
+		void slider::vernier(std::function<std::string(unsigned maximum, unsigned cursor_value)> vernier_string)
 		{
-			get_drawer_trigger().ctrl()->ext_provider(pi);
+			get_drawer_trigger().get_model()->vernier(vernier_string);
 		}
 
 		void slider::transparent(bool enabled)

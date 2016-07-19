@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -26,7 +26,6 @@ namespace nana
 	typedef detail::edge_nimbus_renderer<detail::bedrock::core_window_t> edge_nimbus_renderer_t;
 
 	//class drawer_trigger
-		drawer_trigger::~drawer_trigger(){}
 		void drawer_trigger::attached(widget_reference, graph_reference){}
 		void drawer_trigger::detached(){}	//none-const
 		void drawer_trigger::typeface_changed(graph_reference){}
@@ -136,23 +135,43 @@ namespace nana
 		typedef bedrock bedrock_type;
 
 		//class drawer
+
+		enum{
+			event_size = static_cast<int>(event_code::end)
+		};
+
+		struct drawer::data_implement
+		{
+			bool			refreshing{ false };
+			basic_window*	window_handle{ nullptr };
+			drawer_trigger*	realizer{ nullptr };
+			method_state	mth_state[event_size];
+			std::vector<dynamic_drawing::object*>	draws;
+		};
+
+		drawer::drawer()
+			: data_impl_{ new data_implement }
+		{}
+
 		drawer::~drawer()
 		{
-			for(auto p : dynamic_drawing_objects_)
+			for(auto p : data_impl_->draws)
 			{
 				delete p;
 			}
+
+			delete data_impl_;
 		}
 
 		void drawer::bind(basic_window* cw)
 		{
-			core_window_ = cw;
+			data_impl_->window_handle = cw;
 		}
 
 		void drawer::typeface_changed()
 		{
-			if(realizer_)
-				realizer_->typeface_changed(graphics);
+			if(data_impl_->realizer)
+				data_impl_->realizer->typeface_changed(graphics);
 		}
 
 		void drawer::click(const arg_click& arg)
@@ -245,9 +264,7 @@ namespace nana
 			if(wd)
 			{
 				auto iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
-				auto caret_wd = iwd->root_widget->other.attribute.root->focus;
-
-				bool owns_caret = (caret_wd && (caret_wd->together.caret) && (caret_wd->together.caret->visible()));
+				bool owns_caret = (iwd->annex.caret_ptr) && (iwd->annex.caret_ptr->visible());
 
 				//The caret in X11 is implemented by Nana, it is different from Windows'
 				//the caret in X11 is asynchronous, it is hard to hide and show the caret
@@ -256,7 +273,7 @@ namespace nana
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					caret_wd->together.caret->visible(false);
+					iwd->annex.caret_ptr->visible(false);
 #else
 					owns_caret = nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, false);
 #endif
@@ -267,7 +284,7 @@ namespace nana
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					caret_wd->together.caret->visible(true);
+					iwd->annex.caret_ptr->visible(true);
 #else
 					nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, true);
 #endif
@@ -277,39 +294,38 @@ namespace nana
 
 		void drawer::refresh()
 		{
-			if(realizer_ && (refreshing_ == false))
+			if (data_impl_->realizer && !data_impl_->refreshing)
 			{
-				refreshing_ = true;
-				_m_bground_pre();
-				realizer_->refresh(graphics);
-				_m_draw_dynamic_drawing_object();
-				_m_bground_end();
+				data_impl_->refreshing = true;
+				_m_effect_bground(true);
+				data_impl_->realizer->refresh(graphics);
+				_m_effect_bground(false);
 				graphics.flush();
-				refreshing_ = false;
+				data_impl_->refreshing = false;
 			}
 		}
 
 		drawer_trigger* drawer::realizer() const
 		{
-			return realizer_;
+			return data_impl_->realizer;
 		}
 
 		void drawer::attached(widget& wd, drawer_trigger& realizer)
 		{
-			for (auto i = std::begin(mth_state_), end = std::end(mth_state_); i != end; ++i)
+			for (auto i = std::begin(data_impl_->mth_state), end = std::end(data_impl_->mth_state); i != end; ++i)
 				*i = method_state::pending;
 
-			realizer_ = &realizer;
+			data_impl_->realizer = &realizer;
 			realizer._m_reset_overrided();
 			realizer.attached(wd, graphics);
 		}
 
 		drawer_trigger* drawer::detached()
 		{
-			if(realizer_)
+			if (data_impl_->realizer)
 			{
-				auto rmp = realizer_;
-				realizer_ = nullptr;
+				auto rmp = data_impl_->realizer;
+				data_impl_->realizer = nullptr;
 				rmp->detached();
 				return rmp;
 			}
@@ -319,7 +335,7 @@ namespace nana
 		void drawer::clear()
 		{
 			std::vector<dynamic_drawing::object*> then;
-			for(auto p : dynamic_drawing_objects_)
+			for (auto p : data_impl_->draws)
 			{
 				if(p->diehard())
 					then.push_back(p);
@@ -327,7 +343,7 @@ namespace nana
 					delete p;
 			}
 
-			then.swap(dynamic_drawing_objects_);
+			then.swap(data_impl_->draws);
 		}
 
 		void* drawer::draw(std::function<void(paint::graphics&)> && f, bool diehard)
@@ -335,7 +351,7 @@ namespace nana
 			if(f)
 			{
 				auto p = new dynamic_drawing::user_draw_function(std::move(f), diehard);
-				dynamic_drawing_objects_.push_back(p);
+				data_impl_->draws.push_back(p);
 				return (diehard ? p : nullptr);
 			}
 			return nullptr;
@@ -345,37 +361,42 @@ namespace nana
 		{
 			if(p)
 			{
-				for (auto i = dynamic_drawing_objects_.begin(); i != dynamic_drawing_objects_.end(); ++i)
+				for (auto i = data_impl_->draws.begin(); i != data_impl_->draws.end(); ++i)
 					if (*i == p)
 					{
 						delete (*i);
-						dynamic_drawing_objects_.erase(i);
+						data_impl_->draws.erase(i);
 						break;
 					}
 			}
 		}
 
-		void drawer::_m_bground_pre()
+		void drawer::_m_effect_bground(bool before)
 		{
-			if(core_window_->effect.bground && core_window_->effect.bground_fade_rate < 0.01)
-				core_window_->other.glass_buffer.paste(graphics, 0, 0);
-		}
-
-		void drawer::_m_bground_end()
-		{
-			if(core_window_->effect.bground && core_window_->effect.bground_fade_rate >= 0.01)
-				core_window_->other.glass_buffer.blend(::nana::rectangle{ core_window_->other.glass_buffer.size() }, graphics, nana::point(), core_window_->effect.bground_fade_rate);
-		}
-
-		void drawer::_m_draw_dynamic_drawing_object()
-		{
-			for(auto * dw : dynamic_drawing_objects_)
+			for (auto * dw : data_impl_->draws)
 				dw->draw(graphics);
+
+			auto & effect = data_impl_->window_handle->effect;
+			if (effect.bground)
+			{
+				if (before)
+				{
+					if (effect.bground_fade_rate < 0.01)
+						data_impl_->window_handle->other.glass_buffer.paste(graphics, 0, 0);
+				}
+				else if (effect.bground_fade_rate >= 0.01)
+					data_impl_->window_handle->other.glass_buffer.blend(::nana::rectangle{ data_impl_->window_handle->other.glass_buffer.size() }, graphics, nana::point(), effect.bground_fade_rate);
+			}
 		}
 
 		bool drawer::_m_lazy_decleared() const
 		{
-			return (basic_window::update_state::refresh == core_window_->other.upd_state);
+			return (basic_window::update_state::refresh == data_impl_->window_handle->other.upd_state);
+		}
+
+		drawer::method_state& drawer::_m_mth_state(int pos)
+		{
+			return data_impl_->mth_state[pos];
 		}
 	}//end namespace detail
 }//end namespace nana

@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <map>
 #include <memory>
+#include <functional>
 
 namespace nana
 {
@@ -63,17 +64,27 @@ namespace detail
 			bool forced;
 		};
 
+		struct arg_affinity_execute
+		{
+			const std::function<void()> * function_ptr;
+		};
+
 		enum
 		{
 			tray = 0x501,
+
 			async_activate,
 			async_set_focus,
-			map_thread_root_buffer,
+			remote_flush_surface,
 			remote_thread_destroy_window,
 			remote_thread_move_window,
 			operate_caret,	//wParam: 1=Destroy, 2=SetPos
 			remote_thread_set_window_pos,
 			remote_thread_set_window_text,
+
+			//Execute a function in a thread with is associated with a specified native window
+			affinity_execute,
+
 			user,
 		};
 	};
@@ -141,6 +152,9 @@ namespace detail
 			unsigned tab_pixels;
 			unsigned whitespace_pixels;
 		}string;
+
+		drawable_impl_type(const drawable_impl_type&) = delete;
+		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
 
 		drawable_impl_type();
 		~drawable_impl_type();

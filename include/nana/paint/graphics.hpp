@@ -13,10 +13,11 @@
 #ifndef NANA_PAINT_GRAPHICS_HPP
 #define NANA_PAINT_GRAPHICS_HPP
 
+#include <memory>
+
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
 #include "pixel_buffer.hpp"
-#include <memory>
 
 namespace nana
 {
@@ -111,6 +112,7 @@ namespace nana
 			void bitblt(const ::nana::rectangle& r_dst, const graphics& src);     ///< Transfers the color data corresponding to r_dst from the src graphics to this graphics.
 			void bitblt(const ::nana::rectangle& r_dst, const graphics& src, const point& p_src);///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
 
+			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
 			void blend(const ::nana::rectangle& s_r, graphics& dst, const point& d_pos, double fade_rate) const;///< blends with the dst object.
 
 			void blur(const ::nana::rectangle& r, std::size_t radius);      ///< Blur process.
@@ -144,8 +146,6 @@ namespace nana
 			unsigned bidi_string(const nana::point&, const wchar_t *, std::size_t len);
 			unsigned bidi_string(const point& pos, const char*, std::size_t len);
 
-			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
-
 			void set_pixel(int x, int y, const ::nana::color&);
 			void set_pixel(int x, int y);
 
@@ -167,6 +167,7 @@ namespace nana
 			void rectangle(const ::nana::rectangle&, bool solid);
 			void rectangle(const ::nana::rectangle&, bool solid, const color&);
 			void frame_rectangle(const ::nana::rectangle&, const color& left, const color& top, const color& right, const color& bottom);
+			void frame_rectangle(const ::nana::rectangle&, const color&, unsigned gap);
 
 			void gradual_rectangle(const ::nana::rectangle&, const color& from, const color& to, bool vertical);
 			void round_rectangle(const ::nana::rectangle&, unsigned radius_x, unsigned radius_y, const color&, bool solid, const color& color_if_solid);

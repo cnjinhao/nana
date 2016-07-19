@@ -330,19 +330,21 @@ namespace detail
 						}
 
 						const pixel_argb_t * s_end = s_rgb + rest;
+						auto rest_d_rgb = d_rgb;
 						for(auto i = s_rgb; i != s_end; ++i)
 						{
 							if(i->element.alpha_channel)
 							{
 								if(i->element.alpha_channel != 255)
 								{
-									d_rgb[3].element.red = unsigned(d_rgb[3].element.red * (255 - i->element.alpha_channel) + i->element.red * i->element.alpha_channel) / 255;
-									d_rgb[3].element.green = unsigned(d_rgb[3].element.green * (255 - i->element.alpha_channel) + i->element.green * i->element.alpha_channel) / 255;
-									d_rgb[3].element.blue = unsigned(d_rgb[3].element.blue * (255 - i->element.alpha_channel) + i->element.blue * i->element.alpha_channel) / 255;
+									rest_d_rgb->element.red = unsigned(rest_d_rgb->element.red * (255 - i->element.alpha_channel) + i->element.red * i->element.alpha_channel) / 255;
+									rest_d_rgb->element.green = unsigned(rest_d_rgb->element.green * (255 - i->element.alpha_channel) + i->element.green * i->element.alpha_channel) / 255;
+									rest_d_rgb->element.blue = unsigned(rest_d_rgb->element.blue * (255 - i->element.alpha_channel) + i->element.blue * i->element.alpha_channel) / 255;
 								}
 								else
-									d_rgb[3] = *i;
+									*rest_d_rgb = *i;
 							}
+							++rest_d_rgb;
 						}
 						d_rgb = pixel_at(d_rgb, d_step_bytes);
 						s_rgb = pixel_at(s_rgb, s_step_bytes);

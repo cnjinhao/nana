@@ -1,20 +1,21 @@
-/*
+/**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/bedrock.hpp
+ *	@file nana/gui/detail/bedrock.hpp
+ *
+ *  @brief A Bedrock Implementation
  */
 
 #ifndef NANA_GUI_DETAIL_BEDROCK_HPP
 #define NANA_GUI_DETAIL_BEDROCK_HPP
 #include "general_events.hpp"
 #include "color_schemes.hpp"
-#include "internal_scope_guard.hpp"
 
 namespace nana
 {
@@ -26,12 +27,14 @@ namespace detail
 	struct	basic_window;
 	class	window_manager;
 
-	//class bedrock
-	//@brief:	bedrock is a fundamental core component, it provides a abstract to the OS platform
-	//			and some basic functions.
+	
+	/// @brief	fundamental core component, it provides an abstraction to the OS platform and some basic functions.
 	class bedrock
 	{
 		bedrock();
+
+		bedrock(const bedrock&) = delete;
+		bedrock& operator=(const bedrock&) = delete;
 	public:
 		using core_window_t = basic_window;
 
@@ -41,14 +44,13 @@ namespace detail
 
 		~bedrock();
 		void pump_event(window, bool is_modal);
-		void map_thread_root_buffer(core_window_t*, bool forced, const rectangle* update_area = nullptr);
+		void flush_surface(core_window_t*, bool forced, const rectangle* update_area = nullptr);
 		static int inc_window(unsigned tid = 0);
 		thread_context* open_thread_context(unsigned tid = 0);
 		thread_context* get_thread_context(unsigned tid = 0);
 		void remove_thread_context(unsigned tid = 0);
 		static bedrock& instance();
 
-		::nana::category::flags category(core_window_t*);
 		core_window_t* focus();
 
 		void set_menubar_taken(core_window_t*);
@@ -62,8 +64,9 @@ namespace detail
 		void erase_menu(bool try_destroy);
 
 		void get_key_state(arg_keyboard&);
-		bool set_keyboard_shortkey(bool yes);
-		bool whether_keyboard_shortkey() const;
+
+		bool shortkey_occurred(bool status);
+		bool shortkey_occurred() const;
 
 		element_store& get_element_store() const;
 		void map_through_widgets(core_window_t*, native_drawable_type);
@@ -71,6 +74,7 @@ namespace detail
 		void event_expose(core_window_t *, bool exposed);
 		void event_move(core_window_t*, int x, int y);
 		bool event_msleave(core_window_t*);
+		void event_focus_changed(core_window_t* root_wd, native_window_type receiver, bool getting);
 		void thread_context_destroy(core_window_t*);
 		void thread_context_lazy_refresh();
 		void update_cursor(core_window_t*);
@@ -78,16 +82,13 @@ namespace detail
 		void define_state_cursor(core_window_t*, nana::cursor, thread_context*);
 		void undefine_state_cursor(core_window_t*, thread_context*);
 
-		widget_colors& get_scheme_template(scheme_factory_base&&);
-		widget_colors* make_scheme(scheme_factory_base&&);
-
+		color_schemes& scheme();
 		events_operation&	evt_operation();
 		window_manager&		wd_manager();
 
 		void manage_form_loader(core_window_t*, bool insert_or_remove);
 	public:
 		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*);
-		bool emit_drawer(event_code, core_window_t*, const event_arg&, thread_context*);
 	private:
 		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg&);
 		void _m_event_filter(event_code, core_window_t*, thread_context*);

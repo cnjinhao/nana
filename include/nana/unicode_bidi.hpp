@@ -1,6 +1,8 @@
 #ifndef NANA_UNICODE_BIDI_HPP
 #define NANA_UNICODE_BIDI_HPP
 #include <vector>
+#include <nana/push_ignore_diagnostic>
+
 
 namespace nana
 {
@@ -60,7 +62,7 @@ namespace nana
 		void _m_resolve_weak_types();
 		void _m_resolve_neutral_types();
 		void _m_resolve_implicit_levels();
-		void _m_reordering_resolved_levels(const char_type*, std::vector<entity> & reordered);
+		void _m_reordering_resolved_levels(std::vector<entity> & reordered);
 		static bidi_category _m_bidi_category(bidi_char);
 		static bidi_char _m_char_dir(char_type);
 	private:
@@ -71,5 +73,6 @@ namespace nana
 	};
 
 }
+#include <nana/pop_ignore_diagnostic>
 
 #endif

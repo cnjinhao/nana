@@ -15,6 +15,7 @@
 
 #include <nana/deploy.hpp>
 #include <cctype>
+#include <nana/push_ignore_diagnostic>
 
 namespace nana
 {
@@ -83,7 +84,7 @@ namespace nana
 
 	enum class mouse_action
 	{
-		begin, normal = begin, over, pressed, end
+		begin, normal = begin, hovered, pressed, end
 	};
 
 	enum class element_state
@@ -336,67 +337,100 @@ namespace nana
 
 		bool operator==(const color& other) const;
 		bool operator!=(const color& other) const;
+
+		friend color operator+(const color&, const color&);
 	private:
-		double r_;
-		double g_;
-		double b_;
+		double r_{ 0.0 };
+		double g_{ 0.0 };
+		double b_{ 0.0 };
 		double a_{ 0.0 };	//invisible
 	};
 
-
-	struct rectangle;
-
-	struct point
+	template<typename T>
+	struct basic_point
 	{
-		point();
-		point(int x, int y);
-		point(const rectangle&);
+		//typedef-names
+		using value_type = T;
 
-		point& operator=(const rectangle&);
-		bool operator==(const point&) const;
-		bool operator!=(const point&) const;
-		bool operator<(const point&) const;
-		bool operator<=(const point&) const;
-		bool operator>(const point&) const;
-		bool operator>=(const point&) const;
+		//data member
+		value_type x{};
+		value_type y{};
 
-		point operator-(const point&) const;
-		point operator+(const point&) const;
-		point& operator-=(const point&);
-		point& operator+=(const point&);
+		//member functions
+		basic_point() = default;
 
-		int x;
-		int y;
+		basic_point(value_type x, value_type y)
+			: x{ x }, y{y}
+		{}
+
+		bool operator==(const basic_point& other) const noexcept
+		{
+			return (x == other.x && y == other.y);
+		}
+
+		bool operator!=(const basic_point& other) const noexcept
+		{
+			return (x != other.x || y != other.y);
+		}
+
+		bool operator<(const basic_point& other) const noexcept
+		{
+			return ((y < other.y) || (y == other.y && x < other.x));
+		}
+
+		bool operator<=(const basic_point& other) const noexcept
+		{
+			return ((y < other.y) || (y == other.y && x <= other.x));
+		}
+
+		bool operator>(const basic_point& other) const noexcept
+		{
+			return ((y > other.y) || (y == other.y && x > other.x));
+		}
+
+		bool operator>=(const basic_point& other) const noexcept
+		{
+			return ((y > other.y) || (y == other.y && x >= other.x));
+		}
+
+		basic_point operator-(const basic_point& other) const noexcept
+		{
+			return{ x - other.x, y - other.y };
+		}
+
+		basic_point operator+(const basic_point& other) const noexcept
+		{
+			return{ x + other.x, y + other.y };
+		}
+
+		basic_point& operator-=(const basic_point& other) noexcept
+		{
+			x -= other.x;
+			y -= other.y;
+			return *this;
+		}
+
+		basic_point& operator+=(const basic_point& other) noexcept
+		{
+			x += other.x;
+			y += other.y;
+			return *this;
+		}
 	};
 
-	struct upoint
-	{
-		typedef unsigned value_type;
-
-		upoint();
-		upoint(value_type x, value_type y);
-		bool operator==(const upoint&) const;
-		bool operator!=(const upoint&) const;
-		bool operator<(const upoint&) const;
-		bool operator<=(const upoint&) const;
-		bool operator>(const upoint&) const;
-		bool operator>=(const upoint&) const;
-
-		value_type x;
-		value_type y;
-	};
+	using point = basic_point<int>;
+	using upoint = basic_point<unsigned>;
 
 	struct size
 	{
 		using value_type = unsigned;
 		size();
 		size(value_type width, value_type height);
-		size(const rectangle&);
-
-		size& operator=(const rectangle&);
 
 		bool empty() const;		///< true if width * height == 0
 		bool is_hit(const point&) const;	///< Assume it is a rectangle at (0,0), and check whether a specified position is in the rectange.
+		size& shift();
+
 		bool operator==(const size& rhs) const;
 		bool operator!=(const size& rhs) const;
 		size operator+(const size&) const;
@@ -415,11 +449,11 @@ namespace nana
 		bool operator==(const rectangle& rhs) const;
 		bool operator!=(const rectangle& rhs) const;
 
-		rectangle& operator=(const point&);
-		rectangle& operator=(const size&);
+		point position() const noexcept;
+		rectangle& position(const point&) noexcept;
 
-		rectangle& set_pos(const point&);
-		rectangle& set_size(const size&);
+		size dimension() const noexcept;
+		rectangle& dimension(const size&) noexcept;
 
 		rectangle& pare_off(int pixels);	 ///<Pares the specified pixels off the rectangle. It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
 
@@ -427,7 +461,8 @@ namespace nana
 		int bottom() const;
 		bool is_hit(int x, int y) const;
 		bool is_hit(const point& pos) const;
-		bool empty() const;		///< true if width * height == 0
+		bool empty() const;		///< true if width * height == 0.
+		rectangle& shift();	///< Swap position x and y, size width and height.
 
 		int x;
 		int y;
@@ -484,7 +519,7 @@ namespace nana
 		southeast
 	};
 }//end namespace nana
-
+#include <nana/pop_ignore_diagnostic>
 #endif
 
 

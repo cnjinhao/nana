@@ -15,6 +15,7 @@
 
 #ifndef NANA_GUI_PLACE_HPP
 #define NANA_GUI_PLACE_HPP
+#include <nana/push_ignore_diagnostic>
 #include <nana/gui/basis.hpp>
 #include <utility>
 #include <memory>
@@ -99,7 +100,7 @@ namespace nana
 		};
 	public:
         ///  reference to a field manipulator which refers to a field object created by place 
-		typedef field_interface & field_reference;
+		using field_reference = field_interface &;
 
 		place();
 		place(window);///< Attaches to a specified widget.
@@ -140,10 +141,11 @@ namespace nana
 		}
 
 		place& dock(const std::string& dockname, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory);
-		place& dock_create(const std::string& factory);
+		widget* dock_create(const std::string& factory);
 	private:
 		implement * impl_;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 
 #endif //#ifndef NANA_GUI_PLACE_HPP

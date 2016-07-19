@@ -38,7 +38,7 @@ namespace nana
 
 				void text_changed() override
 				{
-					widget_.events().text_changed.emit(::nana::arg_spinbox{ widget_ });
+					widget_.events().text_changed.emit(::nana::arg_spinbox{ widget_ }, widget_.handle());
 				}
 			private:
 				::nana::spinbox & widget_;
@@ -162,7 +162,7 @@ namespace nana
 				{
 					for (auto & s : initlist)
 					{
-						texts_.emplace_back(::nana::charset(s, ::nana::unicode::utf8));
+						texts_.emplace_back(std::string{ s });
 					}
 				}
 
@@ -351,7 +351,8 @@ namespace nana
 				{
 					if (!pressed)
 					{
-						API::capture_window(editor_->window_handle(), false);
+						API::release_capture(editor_->window_handle());
+
 						timer_.stop();
 						timer_.interval(600);
 					}
@@ -361,7 +362,7 @@ namespace nana
 						//Spins the value when mouse button is released
 						if (pressed)
 						{
-							API::capture_window(editor_->window_handle(), true);
+							API::set_capture(editor_->window_handle(), true);
 							range_->spin(buttons::increase == spin_stated_);
 							reset_text();
 							timer_.start();
@@ -421,9 +422,9 @@ namespace nana
 						return;
 
 					if (API::is_focus_ready(editor_->window_handle()))
-						editor_->text(to_wstring(range_->value()));
+						editor_->text(to_wstring(range_->value()), false);
 					else
-						editor_->text(to_wstring(modifier_.prefix + range_->value() + modifier_.suffix));
+						editor_->text(to_wstring(modifier_.prefix + range_->value() + modifier_.suffix), false);
 
 					_m_draw_spins(spin_stated_);
 				}
@@ -518,43 +519,43 @@ namespace nana
 				impl_->render();
 			}
 
-			void drawer::focus(graph_reference, const arg_focus& arg)
+			void drawer::focus(graph_reference, const arg_focus&)
 			{
 				impl_->reset_text();
 				impl_->render();
 				impl_->editor()->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
 			{
 				impl_->mouse_wheel(arg.upwards);
 				impl_->editor()->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 			{
 				if (impl_->mouse_button(arg, true))
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_up(graph_reference, const arg_mouse& arg)
 			{
 				if (impl_->mouse_button(arg, false))
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_move(graph_reference, const arg_mouse& arg)
 			{
 				if (impl_->mouse_move(arg.left_button, arg.pos))
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_leave(graph_reference, const arg_mouse&)
 			{
 				impl_->render();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::key_press(graph_reference, const arg_keyboard& arg)
@@ -563,7 +564,7 @@ namespace nana
 				{
 					impl_->editor()->reset_caret();
 					impl_->draw_spins();
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 			}
 
@@ -574,16 +575,16 @@ namespace nana
 					if (!impl_->value(to_utf8(impl_->editor()->text())))
 						impl_->draw_spins();
 
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 			}
 
-			void drawer::resized(graph_reference graph, const arg_resized& arg)
+			void drawer::resized(graph_reference, const arg_resized&)
 			{
 				impl_->reset_text_area();
 				impl_->render();
 				impl_->editor()->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 	}//end namespace drawerbase
@@ -696,7 +697,7 @@ namespace nana
 		auto editor = get_drawer_trigger().impl()->editor();
 		if (editor)
 		{
-			editor->text(to_wstring(text));
+			editor->text(to_wstring(text), false);
 			API::refresh_window(*this);
 		}
 	}

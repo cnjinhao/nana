@@ -1,7 +1,7 @@
 /*
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -97,7 +97,7 @@ namespace nana
 
 					graph.rectangle(r, true, xclr);
 				}
-				
+
 				r.x += (r.width - 16) / 2;
 				r.y = (r.height - 16) / 2;
 
@@ -109,14 +109,14 @@ namespace nana
 				x_pointed_ = _m_button_area().is_hit(arg.pos);
 
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void mouse_leave(graph_reference graph, const arg_mouse&) override
 			{
 				x_pointed_ = false;
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void mouse_down(graph_reference graph, const arg_mouse&) override
@@ -127,7 +127,7 @@ namespace nana
 				x_state_ = ::nana::mouse_action::pressed;
 
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void mouse_up(graph_reference graph, const arg_mouse&) override
@@ -135,9 +135,9 @@ namespace nana
 				if (!x_pointed_)
 					return;
 
-				x_state_ = ::nana::mouse_action::over;
+				x_state_ = ::nana::mouse_action::hovered;
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 
 				close_fn_();
 			}
@@ -164,10 +164,7 @@ namespace nana
 			: public widget_object < category::widget_tag, dockcaption_dtrigger >
 		{
 		public:
-			void on_close(std::function<void()> fn)
-			{
-				get_drawer_trigger().on_close(std::move(fn));
-			}
+			using widget_object<category::widget_tag, dockcaption_dtrigger>::get_drawer_trigger;
 		};
 
 		class dockarea
@@ -192,7 +189,7 @@ namespace nana
 				base_type::create(parent, true);
 				this->caption("dockarea");
 				caption_.create(*this, true);
-				caption_.on_close([this]
+				caption_.get_drawer_trigger().on_close([this]
 				{
 					bool destroy_dockarea = true;
 
@@ -203,12 +200,11 @@ namespace nana
 						destroy_dockarea = (0 == tabbar_->length());
 					}
 
-
 					if (destroy_dockarea)
 						notifier_->request_close();
 				});
 
-				this->events().resized([this](const arg_resized& arg)
+				this->events().resized.connect([this](const arg_resized& arg)
 				{
 					rectangle r{ 0, 0, arg.width, 20 };
 					caption_.move(r);
@@ -224,7 +220,6 @@ namespace nana
 						else
 							r.height = arg.height - 20;
 					}
-					
 
 					for (auto & pn : panels_)
 					{
@@ -233,51 +228,110 @@ namespace nana
 					}
 				});
 
-				caption_.events().mouse_down([this](const arg_mouse& arg)
+				auto grab_fn = [this](const arg_mouse& arg)
 				{
-					if (::nana::mouse::left_button == arg.button)
+					if (event_code::mouse_down == arg.evt_code)
 					{
-						moves_.started = true;
-						moves_.start_pos = API::cursor_position();
-						moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
-						API::capture_window(caption_, true);
-					}
-				});
-
-				caption_.events().mouse_move([this](const arg_mouse& arg)
-				{
-					if (arg.left_button && moves_.started)
-					{
-						auto move_pos = API::cursor_position() - moves_.start_pos;
-						if (!floating())
+						if (::nana::mouse::left_button == arg.button)
 						{
-							if (std::abs(move_pos.x) > 4 || std::abs(move_pos.y) > 4)
-								float_away(move_pos);
-						}
-						else
-						{
-							move_pos += moves_.start_container_pos;
-							API::move_window(container_->handle(), move_pos);
-							notifier_->notify_move();
+							moves_.started = true;
+							moves_.start_pos = API::cursor_position();
+							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
+							caption_.set_capture(true);
 						}
 					}
-				});
-
-				caption_.events().mouse_up([this](const arg_mouse& arg)
-				{
-					if ((::nana::mouse::left_button == arg.button) && moves_.started)
+					else if (event_code::mouse_move == arg.evt_code)
 					{
-						moves_.started = false;
-						API::capture_window(caption_, false);
-						notifier_->notify_move_stopped();
+						if (arg.left_button && moves_.started)
+						{
+							auto move_pos = API::cursor_position() - moves_.start_pos;
+							if (!floating())
+							{
+								if (std::abs(move_pos.x) > 4 || std::abs(move_pos.y) > 4)
+									float_away(move_pos);
+							}
+							else
+							{
+								move_pos += moves_.start_container_pos;
+								API::move_window(container_->handle(), move_pos);
+								notifier_->notify_move();
+							}
+						}
 					}
-				});
+					else if (event_code::mouse_up == arg.evt_code)
+					{
+						if ((::nana::mouse::left_button == arg.button) && moves_.started)
+						{
+							moves_.started = false;
+							caption_.release_capture();
+							notifier_->notify_move_stopped();
+						}
+					}
+				};
+
+				caption_.events().mouse_down.connect(grab_fn);
+				caption_.events().mouse_move.connect(grab_fn);
+				caption_.events().mouse_up.connect(grab_fn);
 
 			}
 
-			void add_pane(factory & fn)
+			widget* add_pane(factory & fn)
 			{
-				rectangle r{ point(), this->size()};
+				auto fn_ptr = &fn;
+                widget * w = nullptr;
+				API::dev::affinity_execute(*this, [this, fn_ptr, &w]
+				{
+					w=_m_add_pane(*fn_ptr);
+				});
+                return w;
+			}
+
+			void float_away(const ::nana::point& move_pos)
+			{
+				if (container_)
+					return;
+
+				caption_.release_capture();
+
+				rectangle r{ pos() + move_pos, size() };
+				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
+				drawing dw(container_->handle());
+				dw.draw([](paint::graphics& graph)
+				{
+					graph.rectangle(false, colors::coral);
+				});
+
+				API::set_parent_window(handle(), container_->handle());
+				this->move({ 1, 1 });
+
+				container_->events().resized.connect([this](const arg_resized& arg)
+				{
+					this->size({arg.width - 2, arg.height - 2});
+				});
+
+				container_->show();
+				caption_.set_capture(true);
+
+				notifier_->notify_float();
+			}
+
+			void dock()
+			{
+				caption_.release_capture();
+
+				API::set_parent_window(handle(), host_window_);
+				container_.reset();
+				notifier_->notify_dock();
+			}
+
+			bool floating() const
+			{
+				return (nullptr != container_);
+			}
+		private:
+			widget* _m_add_pane(factory & fn)
+			{
+				rectangle r{ point(), this->size() };
 
 				//get a rectangle excluding caption
 				r.y = 20;
@@ -293,22 +347,21 @@ namespace nana
 						tabbar_.reset(new tabbar_lite(*this));
 
 						tabbar_->events().selected.clear();
-						tabbar_->events().selected([this]
+						tabbar_->events().selected.connect([this](const event_arg&)
 						{
 							auto handle = tabbar_->attach(tabbar_->selected());
-							if (handle)
-								caption_.caption(API::window_caption(handle));
-							else
-								caption_.caption(::std::string());
+							//Set caption through a caption of window specified by handle
+							//Empty if handle is null
+							caption_.caption(API::window_caption(handle));
 						});
 
-						tabbar_->move({ 0, r.bottom() - 20, r.width, 20 });
 						r.height -= 20;
+						tabbar_->move({ 0, r.bottom(), r.width, 20 });
 
 						std::size_t pos = 0;
 						for (auto & pn : panels_)
 						{
-							tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
+							tabbar_->push_back(pn.widget_ptr->caption());
 							tabbar_->attach(pos++, *pn.widget_ptr);
 						}
 					}
@@ -317,70 +370,31 @@ namespace nana
 					r.height -= 20;
 
 				auto wdg = fn(*this);
-
-				if (tabbar_)
+				if (wdg)
 				{
-					tabbar_->push_back(::nana::charset(wdg->caption()));
-					tabbar_->attach(panels_.size(), wdg->handle());
+					if (tabbar_)
+					{
+						tabbar_->push_back(::nana::charset(wdg->caption()));
+						tabbar_->attach(panels_.size(), wdg->handle());
+					}
+
+					if (panels_.empty())
+					{
+						caption_.caption(wdg->caption());
+					}
+
+					panels_.emplace_back();
+					auto wdg_ptr = wdg.get();
+					panels_.back().widget_ptr.swap(wdg);
+
+					for (auto & pn : panels_)
+					{
+						if (pn.widget_ptr)
+							pn.widget_ptr->move(r);
+					}
+					return wdg_ptr;
 				}
-
-				if (panels_.empty())
-				{
-					caption_.caption(wdg->caption());
-				}
-
-				panels_.emplace_back();
-				panels_.back().widget_ptr.swap(wdg);
-
-				for (auto & pn : panels_)
-				{
-					if (pn.widget_ptr)
-						pn.widget_ptr->move(r);
-				}
-			}
-
-			void float_away(const ::nana::point& move_pos)
-			{
-				if (container_)
-					return;
-
-				API::capture_window(caption_, false);
-
-				rectangle r{ pos() + move_pos, size() };
-				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
-				drawing dw(container_->handle());
-				dw.draw([](paint::graphics& graph)
-				{
-					graph.rectangle(false, colors::coral);
-				});
-
-
-
-				API::set_parent_window(handle(), container_->handle());
-				this->move({ 1, 1 });
-
-				container_->events().resized([this](const arg_resized& arg)
-				{
-					this->size({arg.width - 2, arg.height - 2});
-				});
-
-				container_->show();
-				API::capture_window(caption_, true);
-
-				notifier_->notify_float();
-			}
-
-			void dock()
-			{
-				API::capture_window(caption_, false);
-				API::set_parent_window(handle(), host_window_);
-				container_.reset();
-				notifier_->notify_dock();
-			}
-
-			bool floating() const
-			{
-				return (nullptr != container_);
+				return nullptr;
 			}
 		private:
 			window host_window_{nullptr};

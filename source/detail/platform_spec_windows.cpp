@@ -1,7 +1,7 @@
-/*
+/**
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,7 @@
  *
  *	@file: nana/detail/platform_spec.cpp
  *
- *	This file provides basis class and data structrue that required by nana
+ *	@brief basis classes and data structures required by nana
  */
 
 #include <nana/detail/platform_spec_selector.hpp>
@@ -19,9 +19,172 @@
 #include <shellapi.h>
 #include <stdexcept>
 
-#if defined(_MSC_VER)
-#include <VersionHelpers.h>
-#endif // _MSVC
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/******************************************************************
+*                                                                 *
+*  VersionHelpers.h -- This module defines helper functions to    *
+*                      promote version check with proper          *
+*                      comparisons.                               *
+*                                                                 *
+*  Copyright (c) Microsoft Corp.  All rights reserved.            *
+*                                                                 *
+******************************************************************/
+
+#include <specstrings.h>    // for _In_, etc.
+
+#if !defined(__midl) && !defined(SORTPP_PASS)
+
+#if (NTDDI_VERSION >= NTDDI_WINXP)
+
+#ifdef __cplusplus
+
+#define VERSIONHELPERAPI inline bool
+
+#else  // __cplusplus
+
+#define VERSIONHELPERAPI FORCEINLINE BOOL
+
+#endif // __cplusplus
+
+VERSIONHELPERAPI
+IsWindowsVersionOrGreater(WORD wMajorVersion, WORD wMinorVersion, WORD wServicePackMajor)
+{
+	OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0,{ 0 }, 0, 0 };
+	DWORDLONG        const dwlConditionMask = VerSetConditionMask(
+		VerSetConditionMask(
+			VerSetConditionMask(
+				0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+			VER_MINORVERSION, VER_GREATER_EQUAL),
+		VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
+
+	osvi.dwMajorVersion = wMajorVersion;
+	osvi.dwMinorVersion = wMinorVersion;
+	osvi.wServicePackMajor = wServicePackMajor;
+
+	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
+}
+
+VERSIONHELPERAPI
+IsWindowsXPOrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINXP), LOBYTE(_WIN32_WINNT_WINXP), 0);
+}
+
+VERSIONHELPERAPI
+IsWindowsXPSP1OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINXP), LOBYTE(_WIN32_WINNT_WINXP), 1);
+}
+
+VERSIONHELPERAPI
+IsWindowsXPSP2OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINXP), LOBYTE(_WIN32_WINNT_WINXP), 2);
+}
+
+VERSIONHELPERAPI
+IsWindowsXPSP3OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINXP), LOBYTE(_WIN32_WINNT_WINXP), 3);
+}
+
+VERSIONHELPERAPI
+IsWindowsVistaOrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_VISTA), LOBYTE(_WIN32_WINNT_VISTA), 0);
+}
+
+VERSIONHELPERAPI
+IsWindowsVistaSP1OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_VISTA), LOBYTE(_WIN32_WINNT_VISTA), 1);
+}
+
+VERSIONHELPERAPI
+IsWindowsVistaSP2OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_VISTA), LOBYTE(_WIN32_WINNT_VISTA), 2);
+}
+
+VERSIONHELPERAPI
+IsWindows7OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WIN7), LOBYTE(_WIN32_WINNT_WIN7), 0);
+}
+
+VERSIONHELPERAPI
+IsWindows7SP1OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WIN7), LOBYTE(_WIN32_WINNT_WIN7), 1);
+}
+
+#ifndef	_WIN32_WINNT_WIN8    //  (0x0602)
+	#define	_WIN32_WINNT_WIN8 (0x0602)
+#endif  //	_WIN32_WINNT_WIN8(0x0602)
+
+VERSIONHELPERAPI
+IsWindows8OrGreater()
+{
+
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8), 0);
+}
+
+#ifndef	_WIN32_WINNT_WINBLUE   // (0x0602)    
+	#define	_WIN32_WINNT_WINBLUE (0x0602)
+#endif  //	_WIN32_WINNT_WINBLUE (0x0602)
+
+VERSIONHELPERAPI
+IsWindows8Point1OrGreater()
+{
+	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINBLUE), LOBYTE(_WIN32_WINNT_WINBLUE), 0);
+}
+
+VERSIONHELPERAPI
+IsWindowsServer()
+{
+	OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0,{ 0 }, 0, 0, 0, VER_NT_WORKSTATION };
+	DWORDLONG        const dwlConditionMask = VerSetConditionMask(0, VER_PRODUCT_TYPE, VER_EQUAL);
+
+	return !VerifyVersionInfoW(&osvi, VER_PRODUCT_TYPE, dwlConditionMask);
+}
+
+#endif // NTDDI_VERSION
+
+#endif // defined(__midl)
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//#if defined(_MSC_VER)
+////#include <VersionHelpers.h>
+//bool IsWindowsVistaOrGreater() { return false; }
+//bool //VERSIONHELPERAPI
+//IsWindowsVersionOrGreater(WORD wMajorVersion, WORD wMinorVersion, WORD wServicePackMajor)
+//{
+//	OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0,{ 0 }, 0, 0 };
+//	DWORDLONG        const dwlConditionMask = VerSetConditionMask(
+//		VerSetConditionMask(
+//			VerSetConditionMask(
+//				0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+//			VER_MINORVERSION, VER_GREATER_EQUAL),
+//		VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
+//
+//	osvi.dwMajorVersion = wMajorVersion;
+//	osvi.dwMinorVersion = wMinorVersion;
+//	osvi.wServicePackMajor = wServicePackMajor;
+//
+//	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
+//}
+//
+//
+//
+//#endif // _MSVC
 
 namespace nana
 {

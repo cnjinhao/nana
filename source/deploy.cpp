@@ -436,9 +436,54 @@ namespace std
 }
 #endif
 
+//#ifdef STD_put_time_NOT_SUPPORTED
+#include  <ctime>
+#include  <cwchar>
+namespace std
+{
+	//Workaround for no implemenation of std::put_time in gcc < 5.
+	/* std unspecified return type */
+	//template< class CharT, class RTSTR >// let fail for CharT != char / wchar_t
+	//RTSTR put_time(const std::tm* tmb, const CharT* fmt);
+
+	//template<   >
+	std::string put_time/*<char, std::string>*/(const std::tm* tmb, const char* fmt)
+	{  
+		std::size_t sz = 200;
+		std::string str(sz, '\0'); 
+		sz = std::strftime(&str[0], str.size() - 1, fmt, tmb);  
+		str.resize(sz);
+		return str;
+	}
+	//Defined in header <ctime>
+	//	std::size_t strftime(char* str, std::size_t count, const char* format, const std::tm* time);
+	//template<>
+	//std::wstring put_time<wchar_t, std::wstring>(const std::tm* tmb, const wchar_t* fmt)
+	//{
+	//	unsigned sz = 200;
+	//	std::wstring str(sz, L'\0');
+	//	sz = std::wcsftime(&str[0], str.size() - 1, fmt, tmb); 
+	//	str.resize(sz);
+	//	return str;
+	//}
+	// http://en.cppreference.com/w/cpp/chrono/c/wcsftime
+	// Defined in header <cwchar>
+	//	std::size_t wcsftime(wchar_t* str, std::size_t count, const wchar_t* format, const std::tm* time);
+	// Converts the date and time information from a given calendar time time to a null - terminated 
+	// wide character string str according to format string format.Up to count bytes are written.
+	//	Parameters
+	//	str - pointer to the first element of the wchar_t array for output
+	//	count - maximum number of wide characters to write
+	//	format - pointer to a null - terminated wide character string specifying the format of conversion.
+
+	}
+//#endif  // STD_put_time_NOT_SUPPORTED
+
+#include <iostream>
+
 namespace nana
 {
-	bool is_utf8(const char* str, unsigned len)
+	bool is_utf8(const char* str, std::size_t len)
 	{
 		auto ustr = reinterpret_cast<const unsigned char*>(str);
 		auto end = ustr + len;
@@ -455,37 +500,94 @@ namespace nana
 			if (uv < 0xC0)
 				return false;
 
-			if ((uv < 0xE0) && (ustr + 1 < end))
+			if ((uv < 0xE0) && (end - ustr > 1))
 				ustr += 2;
-			else if (uv < 0xF0 && (ustr + 2 <= end))
+			else if ((uv < 0xF0) && (end - ustr > 2))
 				ustr += 3;
-			else if (uv < 0x1F && (ustr + 3 <= end))
+			else if ((uv < 0x1F) && (end - ustr > 3))
 				ustr += 4;
 			else
 				return false;
 		}
-
 		return true;
 	}
+
+	//class utf8_Error
+
+#if defined(_MSC_VER)
+#	if (_MSC_VER < 1900)
+	//A workaround for lack support of C++11 inheriting constructors  for VC2013
+	utf8_Error::utf8_Error(const std::string& msg)
+		: std::runtime_error(msg)
+	{}
+#	endif
+#endif
+
+    void utf8_Error::emit()
+		{
+			if (use_throw)
+				throw utf8_Error(*this);
+			std::cerr << what();
+		}
+
+	//bool utf8_Error::use_throw{true}; 
+	bool utf8_Error::use_throw{ false };
+	//end class utf8_Error
 
 	void throw_not_utf8(const std::string& text)
 	{
 		if (!is_utf8(text.c_str(), text.length()))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
 	}
 
-	void throw_not_utf8(const char* text, unsigned len)
+	void throw_not_utf8(const char* text, std::size_t len)
 	{
 		if (!is_utf8(text, len))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + std::string(text, len) ).emit();
+
+		//throw std::invalid_argument("The text is not encoded in UTF8");
 	}
 
 	void throw_not_utf8(const char* text)
 	{
 		if (!is_utf8(text, std::strlen(text)))
-			throw std::invalid_argument("The text is not encoded in UTF8");
+			return utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
+
+		//throw std::invalid_argument("The text is not encoded in UTF8");
 		
 	}
+
+	std::string recode_to_utf8(std::string no_utf8)
+	{
+		return nana::charset(std::move(no_utf8)).to_bytes(nana::unicode::utf8);
+	}
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(const std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+		{
+			utf8_Error(std::string("\nThe const text is not encoded in UTF8: ") + text).emit();
+			return true;   /// it needed change, it needed review !!
+		}
+		else
+			return false;
+	}
+
+	/// this text needed change, it needed review ??
+	bool review_utf8(std::string& text)
+	{
+		if (!is_utf8(text.c_str(), text.length()))
+		{
+			utf8_Error(std::string("\nThe text is not encoded in UTF8: ") + text).emit();
+			text=recode_to_utf8(text);
+			return true;   /// it needed change, it needed review !!
+		}
+		else
+			return false;
+	}
+
+
 
 	const std::string& to_utf8(const std::string& str)
 	{
@@ -599,3 +701,6 @@ namespace nana
 
 }
 
+#if defined(VERBOSE_PREPROCESSOR)
+#	include <nana/verbose_preprocessor.hpp>
+#endif

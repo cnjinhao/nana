@@ -13,6 +13,8 @@
 
 #ifndef NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
 #define NANA_GUI_SKELETONS_TEXT_EDITOR_HPP
+#include <nana/push_ignore_diagnostic>
+
 #include "textbase.hpp"
 #include "text_editor_part.hpp"
 #include <nana/gui/widgets/scroll.hpp>
@@ -40,6 +42,12 @@ namespace nana{	namespace widgets
 			using command = EnumCommand;
 			using container = std::deque < std::unique_ptr<undoable_command_interface<command>> >;
 
+			void clear()
+			{
+				commands_.clear();
+				pos_ = 0;
+			}
+
 			void max_steps(std::size_t maxs)
 			{
 				max_steps_ = maxs;
@@ -56,7 +64,7 @@ namespace nana{	namespace widgets
 			{
 				enabled_ = enb;
 				if (!enb)
-					commands_.clear();
+					clear();
 			}
 
 			bool enabled() const
@@ -130,6 +138,7 @@ namespace nana{	namespace widgets
 
 			struct keywords;
 			class keyword_parser;
+			class helper_pencil;
 		public:
 			using char_type = wchar_t;
 			using size_type = textbase<char_type>::size_type;
@@ -202,7 +211,7 @@ namespace nana{	namespace widgets
 			unsigned screen_lines() const;
 
 			bool getline(std::size_t pos, ::std::wstring&) const;
-			void text(std::wstring);
+			void text(std::wstring, bool end_caret);
 			std::wstring text() const;
 
 			/// Sets caret position through text coordinate.
@@ -218,7 +227,7 @@ namespace nana{	namespace widgets
 			void set_end_caret();
 			
 			bool hit_text_area(const point&) const;
-			bool hit_select_area(nana::upoint pos) const;
+			bool hit_select_area(nana::upoint pos, bool ignore_when_select_all) const;
 
 			bool move_select();
 			bool mask(wchar_t);
@@ -229,6 +238,9 @@ namespace nana{	namespace widgets
 
 			/// Returns text position of each line that currently displays on screen
 			const std::vector<upoint>& text_position() const;
+
+			void focus_behavior(text_focus_behavior);
+			void select_behavior(bool move_to_end);
 		public:
 			void draw_corner();
 			void render(bool focused);
@@ -249,17 +261,20 @@ namespace nana{	namespace widgets
 			const upoint& caret() const;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
-			bool mouse_enter(bool);
+
+			bool focus_changed(const arg_focus&);
+			bool mouse_enter(bool entering);
 			bool mouse_move(bool left_button, const point& screen_pos);
 			bool mouse_pressed(const arg_mouse& arg);
 
 			skeletons::textbase<wchar_t>& textbase();
 			const skeletons::textbase<wchar_t>& textbase() const;
 		private:
+			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
+
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
 			bool _m_scroll_text(bool vertical);
-			void _m_on_scroll(const arg_mouse&);
 			void _m_scrollbar();
 			::nana::size _m_text_area() const;
 			void _m_get_scrollbar_size();
@@ -267,7 +282,7 @@ namespace nana{	namespace widgets
 			::nana::upoint _m_put(::std::wstring);
 			::nana::upoint _m_erase_select();
 
-			bool _m_make_select_string(::std::wstring&) const;
+			::std::wstring _m_make_select_string() const;
 			static bool _m_resolve_text(const ::std::wstring&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
 
 			bool _m_cancel_select(int align);
@@ -295,14 +310,16 @@ namespace nana{	namespace widgets
 
 			void _m_offset_y(int y);
 
-			unsigned _m_char_by_pixels(const wchar_t*, std::size_t len, unsigned* pxbuf, int str_px, int pixels, bool is_rtl);
-			unsigned _m_pixels_by_char(const ::std::wstring&, std::size_t pos) const;
+			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos);
+
+			unsigned _m_pixels_by_char(const ::std::wstring&, ::std::size_t pos) const;
 			void _handle_move_key(const arg_keyboard& arg);
 
 		private:
 			std::unique_ptr<editor_behavior_interface> behavior_;
 			undoable<command>	undo_;
 			nana::window window_;
+			std::unique_ptr<caret_interface> caret_;
 			graph_reference graph_;
 			const text_editor_scheme*	scheme_;
 			event_interface *			event_handler_{ nullptr };
@@ -353,10 +370,12 @@ namespace nana{	namespace widgets
 
 			struct selection
 			{
-				enum mode_selection_t{mode_no_selected, mode_mouse_selected, mode_method_selected};
+				enum class mode{ no_selected, mouse_selected, method_selected, move_selected };
 
-				mode_selection_t mode_selection;
-				bool dragged;
+				text_focus_behavior behavior;
+				bool move_to_end;
+				mode mode_selection;
+				bool ignore_press;
 				nana::upoint a, b;
 			}select_;
 
@@ -371,6 +390,8 @@ namespace nana{	namespace widgets
 	}//end namespace skeletons
 }//end namespace widgets
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 
 #endif
 

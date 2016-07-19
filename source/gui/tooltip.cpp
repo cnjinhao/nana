@@ -227,7 +227,7 @@ namespace nana
 					window_->tooltip_move(API::cursor_position(), true);
 				}
 
-				void show_duration(window wd, point pos, const std::string& text, std::size_t duration)
+				void show_duration(window /*wd*/, point pos, const std::string& text, std::size_t duration)
 				{
 					if (nullptr == window_ || window_->tooltip_empty())
 					{
@@ -282,17 +282,22 @@ namespace nana
 					}
 
 					auto & events = API::events(wd);
-					events.mouse_enter.connect([this](const arg_mouse& arg){
-						auto & pr = _m_get(arg.window_handle);
-						if (pr.second.size())
-							this->show(pr.second);
-					});
 
-					auto leave_fn = [this]{
-						this->close();
+					auto mouse_fn = [this](const arg_mouse& arg)
+					{
+						if (event_code::mouse_enter == arg.evt_code)
+						{
+							auto & pr = _m_get(arg.window_handle);
+							if (pr.second.size())
+								this->show(pr.second);
+						}
+						else
+							this->close();
 					};
-					events.mouse_leave.connect(leave_fn);
-					events.mouse_down.connect(leave_fn);
+
+					events.mouse_enter.connect(mouse_fn);
+					events.mouse_leave.connect(mouse_fn);
+					events.mouse_down.connect(mouse_fn);
 
 					events.destroy.connect([this](const arg_destroy& arg){
 						_m_untip(arg.window_handle);

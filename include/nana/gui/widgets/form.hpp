@@ -14,9 +14,12 @@
 #define NANA_GUI_WIDGET_FORM_HPP
 
 #include "widget.hpp"
+#include <nana/gui/place.hpp>
 
 namespace nana
 {
+	class place;
+
 	namespace drawerbase
 	{
 		namespace form
@@ -29,12 +32,29 @@ namespace nana
 			private:
 				widget*	wd_{nullptr};
 			};
+
+			class form_base
+				: public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
+			{
+			public:
+				form_base(window owner, bool nested, const rectangle&, const appearance&);
+				
+				//place methods
+
+				place & get_place();
+				void div(const char* div_text);
+				place::field_reference operator[](const char* field_name);
+				void collocate() noexcept;
+			private:
+				std::unique_ptr<place> place_;
+			};
 		}//end namespace form
 	}//end namespace drawerbase
 
 	/// \brief Pop-up window. Is different from other window widgets: its default  constructor create the window.
 	/// \see nana::appearance
-	class form: public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
+	class form
+		: public drawerbase::form::form_base
 	{
 	public:
 		using appear = ::nana::appear;
@@ -50,7 +70,8 @@ namespace nana
 		void wait_for_this();
 	};
 
-	class nested_form : public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
+	class nested_form
+		: public drawerbase::form::form_base
 	{
 	public:
 		using appear = ::nana::appear;

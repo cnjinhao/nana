@@ -1,7 +1,7 @@
-/*
+/**
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,13 +10,15 @@
  *	@file: nana/gui/detail/window_manager.hpp
  *
  *	<Knowledge: 1, 2007-8-17, "Difference between destroy and destroy_handle">
- *		destroy method destroys a window handle and the handles of its children, but it doesn't delete the handle which type is a root window or a frame
- *		destroy_handle method just destroys the handle which type is a root window or a frame
+ *		destroy method destroys a window handle and the handles of its children, but it doesn't delete the handle which type is a root window
+ *		destroy_handle method just destroys the handle which type is a root window
  *
  */
 
 #ifndef NANA_GUI_DETAIL_WINDOW_MANAGER_HPP
 #define NANA_GUI_DETAIL_WINDOW_MANAGER_HPP
+
+#include <nana/push_ignore_diagnostic>
 
 #include <vector>
 #include "window_layout.hpp"
@@ -92,10 +94,12 @@ namespace detail
 
 		core_window_t* create_root(core_window_t*, bool nested, rectangle, const appearance&, widget*);
 		core_window_t* create_widget(core_window_t*, const rectangle&, bool is_lite, widget*);
+#ifndef WIDGET_FRAME_DEPRECATED
 		core_window_t* create_frame(core_window_t*, const rectangle&, widget*);
 
 		bool insert_frame(core_window_t* frame, native_window);
 		bool insert_frame(core_window_t* frame, core_window_t*);
+#endif
 		void close(core_window_t*);
 
 		//destroy
@@ -104,13 +108,13 @@ namespace detail
 
 		//destroy_handle
 		//@brief:	Delete window handle, the handle type must be a root and a frame.
+
+		// Deletes a window whose category type is a root type or a frame type.
 		void destroy_handle(core_window_t*);
 
 		void default_icon(const paint::image& _small_icon, const paint::image& big_icon);
 		void icon(core_window_t*, const paint::image& small_icon, const paint::image& big_icon);
 
-		//show
-		//@brief: show or hide a window
 		bool show(core_window_t* wd, bool visible);
 
 		core_window_t* find_window(native_window_type root, int x, int y);
@@ -129,20 +133,20 @@ namespace detail
 		bool update(core_window_t*, bool redraw, bool force, const rectangle* update_area = nullptr);
 		void refresh_tree(core_window_t*);
 
-		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen);
+		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen, bool refresh_tree = false);
 
 		bool get_graphics(core_window_t*, nana::paint::graphics&);
 		bool get_visual_rectangle(core_window_t*, nana::rectangle&);
 
 		std::vector<core_window_t*> get_children(core_window_t*) const;
 		bool set_parent(core_window_t* wd, core_window_t* new_parent);
-		core_window_t* set_focus(core_window_t*, bool root_has_been_focused);
+		core_window_t* set_focus(core_window_t*, bool root_has_been_focused, arg_focus::reason);
 
 		core_window_t* capture_redirect(core_window_t*);
-		void capture_ignore_children(bool ignore);
+
 		bool capture_window_entered(int root_x, int root_y, bool& prev);
 		core_window_t * capture_window() const;
-		core_window_t* capture_window(core_window_t*, bool value);
+		void capture_window(core_window_t*, bool capture, bool ignore_children_if_captured);
 
 		void enable_tabstop(core_window_t*);
 		core_window_t* tabstop(core_window_t*, bool forward) const;	//forward means move to next in logic.
@@ -195,4 +199,7 @@ namespace detail
 	};//end class window_manager
 }//end namespace detail
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
+
 #endif

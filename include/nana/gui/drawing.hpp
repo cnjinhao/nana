@@ -11,6 +11,8 @@
  */
 #ifndef NANA_GUI_DRAWING_HPP
 #define NANA_GUI_DRAWING_HPP
+
+#include <nana/push_ignore_diagnostic>
 #include "widgets/widget.hpp"
 #include "../traits.hpp"
 namespace nana
@@ -46,4 +48,6 @@ namespace nana
 		window handle_;
 	};//end class drawing
 }//end namespace nana
+
+#include <nana/pop_ignore_diagnostic>
 #endif

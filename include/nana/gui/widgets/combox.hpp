@@ -12,6 +12,7 @@
 
 #ifndef NANA_GUI_WIDGETS_COMBOX_HPP
 #define NANA_GUI_WIDGETS_COMBOX_HPP
+#include <nana/push_ignore_diagnostic>
 #include "widget.hpp"
 #include "float_listbox.hpp"
 #include "skeletons/text_editor_part.hpp"
@@ -227,4 +228,5 @@ namespace nana
 		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
 }
+#include <nana/pop_ignore_diagnostic>
 #endif

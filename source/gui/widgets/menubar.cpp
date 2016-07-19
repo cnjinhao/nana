@@ -253,7 +253,7 @@ namespace nana
 					{
 						_m_popup_menu();
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 
 					state_.mouse_pos = arg.pos;
@@ -281,7 +281,7 @@ namespace nana
 						_m_total_close();
 
 					refresh(graph);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::mouse_up(graph_reference graph, const arg_mouse&)
@@ -298,7 +298,7 @@ namespace nana
 						state_.behavior = state_.behavior_none;
 						_m_total_close();
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -312,7 +312,7 @@ namespace nana
 						_m_close_menu();
 						state_.active = npos;
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -407,7 +407,7 @@ namespace nana
 					}
 
 					refresh(graph);
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::key_release(graph_reference graph, const arg_keyboard& arg)
@@ -429,7 +429,7 @@ namespace nana
 
 						state_.menu_active = false;
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -449,7 +449,7 @@ namespace nana
 							state_.menu->goto_next(true);
 
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 						state_.behavior = state_.behavior_menu;
 					}
 				}
@@ -477,7 +477,7 @@ namespace nana
 					{
 						state_.active = index;
 						refresh(*graph_);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 
 						if(_m_popup_menu())
 							state_.menu->goto_next(true);
@@ -610,7 +610,7 @@ namespace nana
 				::create(wd, rectangle(nana::size(API::window_size(wd).width, 28)));
 
 			API::dev::set_menubar(handle(), true);
-			evt_resized_ = API::events(wd).resized([this](const ::nana::arg_resized& arg)
+			evt_resized_ = API::events(wd).resized.connect([this](const ::nana::arg_resized& arg)
 			{
 				auto sz = this->size();
 				sz.width = arg.width;

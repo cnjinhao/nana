@@ -867,7 +867,7 @@ namespace paint
 				::DeleteObject(hBmp);
 				::DeleteDC(hdcMem);
 #elif defined(NANA_X11)
-
+				static_cast<void>(file_utf8);	//eliminate unused parameter compil warning.
 #endif
 			}
 		}
@@ -1112,6 +1112,29 @@ namespace paint
 			line_to({ r.x, r.y }, left_clr);
 		}
 
+		void graphics::frame_rectangle(const ::nana::rectangle& r, const color& clr, unsigned gap)
+		{
+			palette(false, clr);
+
+			if (r.width > gap * 2)
+			{
+				point left{ r.x + static_cast<int>(gap), r.y }, right{ r.right() - static_cast<int>(gap) - 1, r.y };
+				line(left, right);
+
+				left.y = right.y = r.bottom() - 1;
+				line(left, right);
+			}
+
+			if (r.height > gap * 2)
+			{
+				point top{ r.x, r.y + static_cast<int>(gap) }, bottom{ r.x, r.bottom() - static_cast<int>(gap) - 1 };
+				line(top, bottom);
+
+				top.x = bottom.x = r.right() - 1;
+				line(top, bottom);
+			}
+		}
+
 		void graphics::gradual_rectangle(const ::nana::rectangle& rct, const ::nana::color& from, const ::nana::color& to, bool vertical)
 		{
 #if defined(NANA_WINDOWS)
@@ -1201,6 +1224,10 @@ namespace paint
 					if(solid)
 						rectangle(::nana::rectangle(r).pare_off(1), true, solid_clr);
 				}
+
+				//eliminate unused parameter compiler warning.
+				static_cast<void>(radius_x);
+				static_cast<void>(radius_y);
 #endif
 			}
 		}

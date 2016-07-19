@@ -31,10 +31,14 @@
  *	- _SCL_SECURE_NO_WARNNGS, _CRT_SECURE_NO_DEPRECATE (VC)
  *	- STD_CODECVT_NOT_SUPPORTED (VC RC, <codecvt> is a known issue on libstdc++, it works on libc++)
  *	- STD_THREAD_NOT_SUPPORTED (GCC < 4.8.1)
+ *	- STD_put_time_NOT_SUPPORTED (GCC < 5)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED  (MinGW with GCC < 4.8.1)
  *	- STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED (MinGW with GCC < 4.8.1)
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
- */
+ *	- STD_FILESYSTEM_NOT_SUPPORTED (GCC < 5.3) ....
+ *	- CXX_NO_INLINE_NAMESPACE (Visual C++ < 2015)
+ *	- STD_MAKE_UNIQUE_NOT_SUPPORTED (GCC < 4.9)
+  */
 
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
@@ -42,14 +46,20 @@
 
 //C++ language
 #if defined(_MSC_VER)
-#   undef STD_FILESYSTEM_NOT_SUPPORTED
 #	if (_MSC_VER < 1900)
+#		//About std.experimental.filesystem.
+#		//Through VC2013 has provided <filesystem>, but all the names are given in namespace std. It's hard to alias these names into std::experimental,
+#		//So Nana use nana.filesystem implement instead for VC2013
+#
 #		//Nana defines some macros for lack of support of keywords
 #		define _ALLOW_KEYWORD_MACROS
 #
 #		define CXX_NO_INLINE_NAMESPACE //no support of C++11 inline namespace until Visual C++ 2015
 #		define noexcept		//no support of noexcept until Visual C++ 2015
-#		define constexpr	//no support of constexpr until Visual C++ 2015
+
+#		define constexpr const	//no support of constexpr until Visual C++ 2015 ? const ??
+#	else
+#		undef STD_FILESYSTEM_NOT_SUPPORTED
 #	endif
 #elif defined(__GNUC__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
@@ -76,7 +86,7 @@
 	#define NANA_LINUX
 	#define NANA_X11
 #else
-#	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
+	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
 #endif
 
 //Define a symbol for POSIX operating system.
@@ -108,9 +118,10 @@
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 
-
-		#ifndef STD_MAKE_UNIQUE_NOT_SUPPORTED
-			#define STD_MAKE_UNIQUE_NOT_SUPPORTED
+		#if !defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304)
+			#ifndef STD_MAKE_UNIQUE_NOT_SUPPORTED
+				#define STD_MAKE_UNIQUE_NOT_SUPPORTED
+			#endif
 		#endif
 
 	#endif
@@ -133,9 +144,15 @@
 		#endif
 	#endif
 
-    #if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
-		#undef STD_FILESYSTEM_NOT_SUPPORTED
-    #endif
+
+	#if ((__GNUC__ < 5)   )
+	#	define STD_put_time_NOT_SUPPORTED
+	#endif
+
+	#if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
+	#	undef STD_FILESYSTEM_NOT_SUPPORTED
+    /// \todo define the namespace ????
+	#endif
 
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
@@ -147,8 +164,10 @@
 		#endif
 
 		#if defined(NANA_MINGW)
-			//It's a knonwn issue under MinGW
-			#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
+			#ifndef __MINGW64_VERSION_MAJOR
+				//It's a knonwn issue under MinGW(except MinGW-W64)
+				#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
+			#endif
 		#endif
 
 		#if (__GNUC_MINOR__ < 8)
@@ -177,9 +196,9 @@
 
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0061r0.html
 
-#  if __cpp_lib_experimental_filesystem
-#    undef STD_FILESYSTEM_NOT_SUPPORTED
-#  endif
+#if defined(__cpp_lib_experimental_filesystem) && (__cpp_lib_experimental_filesystem == 201406)
+#	undef STD_FILESYSTEM_NOT_SUPPORTED
+#endif
 
 
 #ifdef __has_include

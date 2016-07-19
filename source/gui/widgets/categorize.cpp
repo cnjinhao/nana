@@ -89,7 +89,7 @@ namespace nana
 
 					if(ui_el_.what == ui_el_.item_root)
 					{
-						_m_item_bground(graph, r.x + 1, r.y, r.width - 2, r.height, (state == mouse_action::pressed ? mouse_action::pressed : mouse_action::over));
+						_m_item_bground(graph, r.x + 1, r.y, r.width - 2, r.height, (state == mouse_action::pressed ? mouse_action::pressed : mouse_action::hovered));
 						graph.rectangle(r, false, static_cast<color_rgb>(0x3C7FB1));
 						if(state == mouse_action::pressed)
 						{
@@ -114,8 +114,8 @@ namespace nana
 						mouse_action state_arrow, state_name;
 						if(mouse_action::pressed != state)
 						{
-							state_arrow = (ui_el_.what == ui_el_.item_arrow ? mouse_action::over : mouse_action::normal);
-							state_name = (ui_el_.what == ui_el_.item_name ? mouse_action::over : mouse_action::normal);
+							state_arrow = (ui_el_.what == ui_el_.item_arrow ? mouse_action::hovered : mouse_action::normal);
+							state_name = (ui_el_.what == ui_el_.item_name ? mouse_action::hovered : mouse_action::normal);
 						}
 						else
 						{
@@ -170,7 +170,7 @@ namespace nana
 					nana::color clr_top(static_cast<color_rgb>(0xEAEAEA)), clr_bottom(static_cast<color_rgb>(0xDCDCDC));
 					switch(state)
 					{
-					case mouse_action::over:
+					case mouse_action::hovered:
 						clr_top.from_rgb(0xdf, 0xf2, 0xfc);
 						clr_bottom.from_rgb(0xa9, 0xda, 0xf5);
 						break;
@@ -571,7 +571,7 @@ namespace nana
 					style_.listbox = &(form_loader<nana::float_listbox>()(window_, r, true));
 					style_.listbox->set_module(style_.module, 16);
 
-					style_.listbox->events().destroy.connect_unignorable([this]
+					style_.listbox->events().destroy.connect_unignorable([this](const arg_destroy&)
 					{
 						//Close list when listbox is destoryed
 						style_.mode = mode::normal;
@@ -881,7 +881,7 @@ namespace nana
 						{
 							scheme_->mouse_pressed();
 							scheme_->draw(graph);
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 						}
 					}
 				}
@@ -894,7 +894,7 @@ namespace nana
 						{
 							scheme_->mouse_release();
 							scheme_->draw(graph);
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 						}
 					}
 				}
@@ -904,7 +904,7 @@ namespace nana
 					if(scheme_->locate(arg.pos.x, arg.pos.y) && API::window_enabled(scheme_->window_handle()))
 					{
 						scheme_->draw(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -913,7 +913,7 @@ namespace nana
 					if(API::window_enabled(scheme_->window_handle()) && (scheme_->is_list_shown() == false) && scheme_->erase_locate())
 					{
 						scheme_->draw(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			//end class trigger

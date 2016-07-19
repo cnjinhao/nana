@@ -1,3 +1,15 @@
+/*
+*	Color Schemes
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/color_schemes.cpp
+*/
+
 #include <nana/gui/detail/color_schemes.hpp>
 #include <map>
 
@@ -57,7 +69,7 @@ namespace nana
 		//class color_schemes
 			struct color_schemes::implement
 			{
-				std::map<scheme_factory_base::factory_identifier*, std::unique_ptr<scheme>> scheme_template;
+				std::map<scheme_factory_interface::factory_identifier*, std::unique_ptr<scheme>> scheme_template;
 			};
 
 			color_schemes::color_schemes()
@@ -70,7 +82,7 @@ namespace nana
 				delete impl_;
 			}
 
-			auto color_schemes::scheme_template(scheme_factory_base&& factory) -> scheme&
+			auto color_schemes::scheme_template(scheme_factory_interface&& factory) -> scheme&
 			{
 				auto & tmpl_scheme = impl_->scheme_template[factory.get_id()];
 
@@ -81,7 +93,7 @@ namespace nana
 				return *tmpl_scheme.get();
 			}
 
-			widget_colors* color_schemes::create(scheme_factory_base&& factory)
+			widget_geometrics* color_schemes::create(scheme_factory_interface&& factory)
 			{
 				return factory.create(scheme_template(std::move(factory)));
 			}

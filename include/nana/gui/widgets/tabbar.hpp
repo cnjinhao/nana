@@ -13,6 +13,8 @@
  */
 #ifndef NANA_GUI_WIDGET_TABBAR_HPP
 #define NANA_GUI_WIDGET_TABBAR_HPP
+#include <nana/push_ignore_diagnostic>
+
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 #include <nana/any.hpp>
@@ -111,14 +113,14 @@ namespace nana
 					if(pos != npos)
 					{
 						drawer_trigger_.at_no_bound_check(pos) = T();
-						tabbar_.events().added.emit(arg_tabbar({ tabbar_, tabbar_[pos] }));
+						tabbar_.events().added.emit(arg_tabbar({ tabbar_, tabbar_[pos] }), tabbar_);
 					}
 				}
 
 				void activated(std::size_t pos) override
 				{
 					if(pos != npos)
-						tabbar_.events().activated.emit(arg_tabbar({ tabbar_, tabbar_[pos]}));
+						tabbar_.events().activated.emit(arg_tabbar({ tabbar_, tabbar_[pos]}), tabbar_);
 				}
 
 				bool removed(std::size_t pos, bool & close_attach) override
@@ -126,7 +128,7 @@ namespace nana
 					if (pos != npos)
 					{
 						::nana::arg_tabbar_removed<T> arg(tabbar_, tabbar_[pos]);
-						tabbar_.events().removed.emit(arg);
+						tabbar_.events().removed.emit(arg, tabbar_);
 						close_attach = arg.close_attach_window;
 						return arg.remove;
 					}
@@ -410,5 +412,6 @@ namespace nana
 		void erase(std::size_t pos, bool close_attached = true);
 	};
 }
+#include <nana/pop_ignore_diagnostic>
 
 #endif

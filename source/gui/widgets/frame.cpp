@@ -13,6 +13,8 @@
 
 #include <nana/gui/widgets/frame.hpp>
 
+#ifndef WIDGET_FRAME_DEPRECATED
+
 namespace nana
 {
 	//class frame:: public widget_object<category::frame_tag>
@@ -44,4 +46,6 @@ namespace nana
 		}
 	//end class frame
 }//end namespace nana
+
+#endif
 

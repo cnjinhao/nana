@@ -24,7 +24,7 @@ namespace nana{
 				return object;
 			}
 
-			unsigned weight() const
+			constexpr unsigned weight() const
 			{
 				return 2;
 			}
@@ -122,22 +122,37 @@ namespace nana{
 					}
 				}
 
+				rectangle wd_r{ wd->pos_root, wd->dimension };
+				wd_r.pare_off(-static_cast<int>(this->weight()));
 				//Render
 				for (auto & rd : rd_set)
-					_m_render_edge_nimbus(rd.second, rd.first);
+				{
+					auto other_wd = rd.second;
+
+					if (other_wd != wd)
+					{
+						rectangle other_r{ other_wd->pos_root, other_wd->dimension };
+						other_r.pare_off(-static_cast<int>(this->weight()));
+						if (!overlapped(wd_r, other_r))
+							continue;
+					}
+					_m_render_edge_nimbus(other_wd, rd.first);
+				}
 			}
 		private:
 			static bool _m_edge_nimbus(core_window_t * focused_wd, core_window_t * wd)
 			{
 				if((focused_wd == wd) && (static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::active)))
 					return true;
-				else if((static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::over)) && (wd->flags.action == mouse_action::over))
+				else if((static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::over)) && (wd->flags.action == mouse_action::hovered))
 					return true;
 				return false;
 			}
 
 			void _m_render_edge_nimbus(core_window_t* wd, const nana::rectangle & visual)
 			{
+				wd->flags.action_before = wd->flags.action;
+
 				auto r = visual;
 				r.pare_off(-static_cast<int>(weight()));
 				rectangle good_r;
@@ -159,12 +174,12 @@ namespace nana{
 						good_r.x = good_r.y = 1;
 						good_r.width = r.width - 2;
 						good_r.height = r.height - 2;
-						pixbuf.rectangle(good_r, wd->scheme->activated.get_color(), 0.95, false);
+						pixbuf.rectangle(good_r, wd->annex.scheme->activated.get_color(), 0.95, false);
 
 						good_r.x = good_r.y = 0;
 						good_r.width = r.width;
 						good_r.height = r.height;
-						pixbuf.rectangle(good_r, wd->scheme->activated.get_color(), 0.4, false);
+						pixbuf.rectangle(good_r, wd->annex.scheme->activated.get_color(), 0.4, false);
 
 						pixbuf.pixel(0, 0, px0);
 						pixbuf.pixel(r.width - 1, 0, px1);

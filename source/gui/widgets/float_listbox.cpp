@@ -443,7 +443,7 @@ namespace nana
 					if(drawer_->set_mouse(graph, arg.pos.x, arg.pos.y))
 					{
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -469,8 +469,8 @@ namespace nana
 		float_listbox::float_listbox(window wd, const rectangle & r, bool is_ignore_first_mouse_up)
 			:base_type(wd, false, r, appear::bald<appear::floating, appear::no_activate>())
 		{
-			API::capture_window(handle(), true);
-			API::capture_ignore_children(false);
+			this->set_capture(false);
+
 			API::take_active(handle(), false, parent());
 			auto & impl = get_drawer_trigger().get_drawer_impl();
 			impl.clear_state();

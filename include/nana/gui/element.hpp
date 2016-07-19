@@ -1,7 +1,7 @@
 /*
  *	Elements of GUI Gadgets
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -12,6 +12,7 @@
 #ifndef NANA_GUI_ELEMENT_HPP
 #define NANA_GUI_ELEMENT_HPP
 
+#include <nana/push_ignore_diagnostic>
 #include <nana/paint/graphics.hpp>
 #include <nana/pat/cloneable.hpp>
 #include <vector>
@@ -88,7 +89,6 @@ namespace nana
 			struct factory_interface
 				: public detail::factory_abstract
 			{
-				virtual ~factory_interface(){}
 				virtual ElementInterface* create() const = 0;
 			};
 
@@ -349,4 +349,5 @@ namespace nana
 	}//end namespace element
 }//end namespace nana
 
+#include <nana/pop_ignore_diagnostic>
 #endif	//NANA_GUI_ELEMENT_HPP

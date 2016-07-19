@@ -18,7 +18,7 @@ namespace nana
 		namespace form
 		{
 		//class trigger
-			void trigger::attached(widget_reference wdg, graph_reference graph)
+			void trigger::attached(widget_reference wdg, graph_reference)
 			{
 				wd_ = &wdg;
 				API::ignore_mouse_focus(wdg, true);
@@ -28,27 +28,61 @@ namespace nana
 			{
 				graph.rectangle(true, API::bgcolor(*wd_));
 			}
+			//end class trigger
+
+			//class form_base
+				form_base::form_base(window owner, bool nested, const rectangle& r, const appearance& app)
+					: widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>(owner, nested, r, app)
+				{}
+
+				place & form_base::get_place()
+				{
+					if (this->empty())
+						throw std::runtime_error("form::get_plac: the form has destroyed.");
+
+					if (!place_)
+						place_.reset(new place{ *this });
+
+					return *place_;
+				}
+
+				void form_base::div(const char* div_text)
+				{
+					get_place().div(div_text);
+				}
+
+				place::field_reference form_base::operator[](const char* field_name)
+				{
+					return get_place()[field_name];
+				}
+
+				void form_base::collocate() noexcept
+				{
+					if (place_)
+						place_->collocate();
+				}
+			//end class form_base
 		}//end namespace form
 	}//end namespace drawerbase
 
 	//class form
-	typedef widget_object<category::root_tag, drawerbase::form::trigger, ::nana::detail::events_root_extension> form_base_t;
+		using form_base = drawerbase::form::form_base;
 
 		form::form(const form& fm, const ::nana::size& sz, const appearance& apr)
-			: form_base_t(fm.handle(), false, API::make_center(fm.handle(), sz.width, sz.height), apr)
+			: form_base(fm.handle(), false, API::make_center(fm.handle(), sz.width, sz.height), apr)
 		{
 		}
 
 		form::form(const rectangle& r, const appearance& apr)
-			: form_base_t(nullptr, false, r, apr)
+			: form_base(nullptr, false, r, apr)
 		{}
 
 		form::form(window owner, const ::nana::size& sz, const appearance& apr)
-			: form_base_t(owner, false, API::make_center(owner, sz.width, sz.height), apr)
+			: form_base(owner, false, API::make_center(owner, sz.width, sz.height), apr)
 		{}
 
 		form::form(window owner, const rectangle& r, const appearance& apr)
-			: form_base_t(owner, false, r, apr)
+			: form_base(owner, false, r, apr)
 		{}
 
 		void form::modality() const
@@ -64,21 +98,21 @@ namespace nana
 
 	//class nested_form
 		nested_form::nested_form(const form& fm, const rectangle& r, const appearance& apr)
-			: form_base_t(fm.handle(), true, r, apr)
+			: form_base(fm.handle(), true, r, apr)
 		{
 		}
 
 		nested_form::nested_form(const nested_form& fm, const rectangle& r, const appearance& apr)
-			: form_base_t(fm.handle(), true, r, apr)
+			: form_base(fm.handle(), true, r, apr)
 		{
 		}
 
 		nested_form::nested_form(window owner, const appearance& apr)
-			: form_base_t(owner, true, rectangle(), apr)
+			: form_base(owner, true, rectangle(), apr)
 		{}
 
 		nested_form::nested_form(window owner, const rectangle& r, const appearance& apr)
-			: form_base_t(owner, true, r, apr)
+			: form_base(owner, true, r, apr)
 		{}
 	//end nested_form
 }//end namespace nana

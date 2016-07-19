@@ -13,7 +13,6 @@
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <stdexcept>
-#include <sstream>
 
 namespace nana
 {
@@ -31,18 +30,18 @@ namespace drawerbase {
 
 			void event_agent::first_change()
 			{
-				widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ });
+				widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
 			}
 
 			void event_agent::text_changed()
 			{
-				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ });
+				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
 			}
 
 			void event_agent::text_exposed(const std::vector<upoint>& text_pos)
 			{
 				::nana::arg_textbox arg(widget_, text_pos);
-				widget_.events().text_exposed.emit(arg);
+				widget_.events().text_exposed.emit(arg, widget_);
 			}
 		//end class event_agent
 
@@ -88,22 +87,17 @@ namespace drawerbase {
 			editor_ = nullptr;
 		}
 
-		void drawer::refresh(graph_reference graph)
+		void drawer::refresh(graph_reference)
 		{
 			editor_->render(API::is_focus_ready(*widget_));
 		}
 
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
 		{
-			refresh(graph);
-			if (!editor_->attr().multi_lines && arg.getting)
-			{
-				editor_->select(true);
-				editor_->move_caret_end();
-			}
-			editor_->show_caret(arg.getting);
-			editor_->reset_caret();
-			API::lazy_refresh();
+			if (!editor_->focus_changed(arg))
+				refresh(graph);
+
+			API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
@@ -111,20 +105,20 @@ namespace drawerbase {
 			if (editor_->mouse_pressed(arg))
 			{
 				editor_->render(true);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 
 		void drawer::mouse_move(graph_reference, const arg_mouse& arg)
 		{
 			if(editor_->mouse_move(arg.left_button, arg.pos))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
-		void drawer::mouse_up(graph_reference graph, const arg_mouse& arg)
+		void drawer::mouse_up(graph_reference, const arg_mouse& arg)
 		{
 			if(editor_->mouse_pressed(arg))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
@@ -132,20 +126,20 @@ namespace drawerbase {
 			if(editor_->scroll(arg.upwards, true))
 			{
 				editor_->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 
 		void drawer::mouse_enter(graph_reference, const arg_mouse&)
 		{
 			if(editor_->mouse_enter(true))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_leave(graph_reference, const arg_mouse&)
 		{
 			if(editor_->mouse_enter(false))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
@@ -153,14 +147,14 @@ namespace drawerbase {
 			if(editor_->respond_key(arg))
 			{
 				editor_->reset_caret();
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 		}
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
 			if (editor_->respond_char(arg))
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 		}
 
 		void drawer::resized(graph_reference graph, const arg_resized& arg)
@@ -168,7 +162,7 @@ namespace drawerbase {
 			_m_text_area(arg.width, arg.height);
 			refresh(graph);
 			editor_->reset_caret();
-			API::lazy_refresh();
+			API::dev::lazy_refresh();
 		}
 
 		void drawer::typeface_changed(graph_reference graph)
@@ -260,13 +254,14 @@ namespace drawerbase {
 			return *this;
 		}
 
-		textbox& textbox::reset(const std::string& str)
+		textbox& textbox::reset(const std::string& str, bool end_caret)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-			{
-				editor->text(to_wstring(str));
+			{				
+				editor->text(to_wstring(str), end_caret);
+
 				editor->textbase().reset();
 				API::update_window(this->handle());
 			}
@@ -398,8 +393,12 @@ namespace drawerbase {
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->multi_lines(ml))
-				API::update_window(handle());
+			if (editor && editor->multi_lines(ml))
+			{
+				auto wd = handle();
+				API::eat_tabstop(wd, ml);	//textbox handles the Tab pressing when it is multi-line.
+				API::update_window(wd);
+			}
 			return *this;
 		}
 
@@ -495,11 +494,7 @@ namespace drawerbase {
 			auto s = _m_caption();
 			if (s.empty()) return 0;
 
-			std::stringstream ss;
-			int value;
-			ss << to_utf8(s);
-			ss >> value;
-			return value;
+			return std::stoi(s, nullptr, 0);
 		}
 
 		double textbox::to_double() const
@@ -507,11 +502,7 @@ namespace drawerbase {
 			auto s = _m_caption();
 			if (s.empty()) return 0;
 
-			std::stringstream ss;
-			double value;
-			ss << to_utf8(s);
-			ss >> value;
-			return value;
+			return std::stod(s);
 		}
 
 		textbox& textbox::from(int n)
@@ -599,6 +590,22 @@ namespace drawerbase {
 			return (editor ? editor->line_height() : 0);
 		}
 
+		void textbox::focus_behavior(text_focus_behavior behavior)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->focus_behavior(behavior);
+		}
+
+		void textbox::select_behavior(bool move_to_end)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->select_behavior(move_to_end);
+		}
+
 		//Override _m_caption for caption()
 		auto textbox::_m_caption() const throw() -> native_string_type
 		{
@@ -616,7 +623,7 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 			{
-				editor->text(to_wstring(str));
+				editor->text(to_wstring(str), false);
 				API::update_window(this->handle());
 			}
 		}

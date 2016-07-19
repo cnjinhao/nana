@@ -1,7 +1,7 @@
 /**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -11,6 +11,8 @@
  */
 #ifndef NANA_GUI_WIDGET_TEXTBOX_HPP
 #define NANA_GUI_WIDGET_TEXTBOX_HPP
+#include <nana/push_ignore_diagnostic>
+
 #include <nana/gui/widgets/widget.hpp>
 #include "skeletons/textbase_export_interface.hpp"
 #include "skeletons/text_editor_part.hpp"
@@ -98,6 +100,8 @@ namespace nana
 		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
+		using text_focus_behavior = widgets::skeletons::text_focus_behavior;
+
 		using text_positions = std::vector<upoint>;
 		/// The default constructor without creating the widget.
 		textbox();
@@ -134,8 +138,14 @@ namespace nana
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
 		textbox& indention(bool, std::function<std::string()> generator = {});
 
-		//A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
-		textbox& reset(const std::string& = std::string());      ///< discard the old text and set a new text
+		/// Discards the old text and set a new text. It also clears the filename/edited flags and undo command.
+		/// A workaround for reset, explicit default constructor syntax, because VC2013 incorrectly treats {} as {0}.
+		/*
+		 * @param text A new text replaces the old text.
+		 * @param end_caret Indicates whether to position the caret to the end of text.
+		 * @return a reference of *this.
+		 */
+		textbox& reset(const std::string& text = std::string(), bool end_caret = true);      ///< discard the old text and set a new text
 
 		/// The file of last store operation.
 		std::string filename() const;
@@ -162,15 +172,18 @@ namespace nana
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
 		textbox& append(const std::string& text, bool at_caret);
 
-		/// Determine wheter the text is line wrapped.
+		/// Determines whether the text is line wrapped.
 		bool line_wrapped() const;
 		textbox& line_wrapped(bool);
 
-		/// Determine whether the text is multi-line enabled.
+		/// Determines whether the text is multi-line enabled.
 		bool multi_lines() const;
 		textbox& multi_lines(bool);
+
+		/// Determines whether the textbox accepts user input
 		bool editable() const;
 		textbox& editable(bool);
+
 		void set_accept(std::function<bool(wchar_t)>);
 
 		textbox& tip_string(::std::string);
@@ -207,6 +220,14 @@ namespace nana
 
 		/// Returns the height of line in pixels
 		unsigned line_pixels() const;
+
+		/// Sets the behavior when textbox gets focus.
+		void focus_behavior(text_focus_behavior);
+
+		/// Sets the caret move behavior when the content of textbox is selected.
+		/// E.g. Whether caret moves to left of selected content or moves to left of last position when left arrow key is pressed.
+		/// @param move_to_end determines whether to move caret to left of selected_content or to left of last position.
+		void select_behavior(bool move_to_end);
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const throw() override;
@@ -214,4 +235,6 @@ namespace nana
 		void _m_typeface(const paint::font&) override;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif

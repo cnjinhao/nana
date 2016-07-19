@@ -11,6 +11,9 @@
  */
 #ifndef NANA_GUI_WIDGETS_SLIDER_HPP
 #define NANA_GUI_WIDGETS_SLIDER_HPP
+
+#include <nana/push_ignore_diagnostic>
+
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 
@@ -30,6 +33,23 @@ namespace nana
 	{
 		namespace slider
 		{
+
+			struct scheme_impl
+				: public widget_geometrics
+			{
+				/// Colors
+				color_proxy color_adorn		{ static_cast<color_rgb>(0x3da3ce) };
+				color_proxy color_bar		{ static_cast<color_rgb>(0x878787) };
+				color_proxy color_slider	{ static_cast<color_rgb>(0x606060) };
+				color_proxy color_slider_highlighted{ static_cast<color_rgb>(0x2d93be) };
+				color_proxy color_vernier		{ colors::red };
+				color_proxy color_vernier_text	{ colors::white };
+
+				/// Geometrical parameters
+				unsigned vernier_text_margin{ 8 };
+
+			};
+
 			struct slider_events
 				: public general_events
 			{
@@ -41,65 +61,66 @@ namespace nana
 				bilateral, forward, backward
 			};
 
-			class provider
+
+			class renderer_interface
 			{
 			public:
-				virtual ~provider() = default;
-				virtual std::string adorn_trace(unsigned vmax, unsigned vadorn) const = 0;
-			};
+				using graph_reference = ::nana::paint::graphics&;
+				using scheme = scheme_impl;
 
-			class renderer
-			{
-			public:
-				typedef ::nana::paint::graphics & graph_reference;
-
-				struct bar_t
+				struct data_bar
 				{
-					bool horizontal;
-					nana::rectangle r;		//the rectangle of bar.
-					unsigned border_size;	//border_size of bar.
+					bool vert;		///< Indicates whether the slider is vertical.
+					::nana::rectangle area;	///< Position and size of bar.
+					unsigned border_weight;	///< The border weight in pixels.
 				};
 
-				struct slider_t
+				struct data_slider
 				{
-					bool horizontal;
-					int pos;
-					unsigned border;
-					unsigned scale;
+					bool		vert;	///< Indicates whether the slider is vertical.
+					double		pos;
+					unsigned	border_weight;
+					unsigned	weight;
 				};
 
-				struct adorn_t
+				struct data_adorn
 				{
-					bool horizontal;
-					nana::point bound;
+					bool vert;	///< Indicates whether the slider is vertical.
+					::nana::point bound;
 					int fixedpos;
 					unsigned block;
-					unsigned vcur_scale;	//pixels of vcur scale.
+					unsigned vcur_scale;
 				};
 
-				virtual ~renderer() = default;
+				struct data_vernier
+				{
+					bool		vert;	///< Indicates whether the slider is vertical.
+					int			position;
+					int			end_position;
+					unsigned	knob_weight;
 
-				virtual void background(window, graph_reference, bool isglass) = 0;
-				virtual void adorn(window, graph_reference, const adorn_t&) = 0;
-				virtual void adorn_textbox(window, graph_reference, const ::std::string&, const nana::rectangle&) = 0;
-				virtual void bar(window, graph_reference, const bar_t&) = 0;
-				virtual void slider(window, graph_reference, const slider_t&) = 0;
+					std::string text;
+				};
+
+				virtual ~renderer_interface() = default;
+
+				virtual void background(window, graph_reference, bool transparent, const scheme&) = 0;
+				virtual void adorn(window, graph_reference, const data_adorn&, const scheme&) = 0;
+				virtual void vernier(window, graph_reference, const data_vernier&, const scheme&) = 0;
+				virtual void bar(window, graph_reference, const data_bar&, const scheme&) = 0;
+				virtual void slider(window, graph_reference, mouse_action, const data_slider&, const scheme&) = 0;
 			};
-
-			class controller;
 
 			class trigger
 				: public drawer_trigger
 			{
+				class model;
 			public:
-				typedef controller controller_t;
-
 				trigger();
 				~trigger();
-				controller_t* ctrl() const;
+				model* get_model() const;
 			private:
 				void attached(widget_reference, graph_reference)	override;
-				void detached()	override;
 				void refresh(graph_reference)	override;
 				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
@@ -107,18 +128,19 @@ namespace nana
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 				void resized(graph_reference, const arg_resized&)		override;
 			private:
-				controller_t * impl_;
+				model * model_ptr_;
 			};
 		}//end namespace slider
 	}//end namespace drawerbase
-    /// A slider widget wich the user can drag for tracking
+
+
+    /// A slider widget wich the user can drag for tracking \todo add scheme ?
 	class slider
-		: public widget_object<category::widget_tag, drawerbase::slider::trigger, drawerbase::slider::slider_events>
+		: public widget_object<category::widget_tag, drawerbase::slider::trigger, drawerbase::slider::slider_events, drawerbase::slider::scheme_impl>
 	{
 	public:
-		typedef drawerbase::slider::renderer renderer;       ///< The interface for user-defined renderer.
-		typedef drawerbase::slider::provider provider;       ///< The interface for user-defined provider.
-		typedef drawerbase::slider::seekdir seekdir;         ///< Defines the slider seek direction.
+		using renderer_interface = drawerbase::slider::renderer_interface;	///< The interface for customized renderer.
+		using seekdir = drawerbase::slider::seekdir;						///< Defines the slider seek direction.
 
 		slider();
 		slider(window, bool visible);
@@ -127,19 +149,21 @@ namespace nana
 		void seek(seekdir);                                  ///< Define the direction that user can seek by using mouse.
 		void vertical(bool);
 		bool vertical() const;
-		void vmax(unsigned);
-		unsigned vmax() const;
+		void maximum(unsigned);
+		unsigned maximum() const;
 		void value(unsigned);
 		unsigned value() const;
 		unsigned move_step(bool forward);                         ///< Increase or decrease the value of slider.
 		unsigned adorn() const;
 
-		pat::cloneable<renderer>& ext_renderer();                 ///< Refers to the current renderer that slider is using.
-		void ext_renderer(const pat::cloneable<renderer>&);       ///< Set the current renderer.
-		void ext_provider(const pat::cloneable<provider>&);
+		const pat::cloneable<renderer_interface>& renderer();                 ///< Refers to the current renderer that slider is using.
+		void renderer(const pat::cloneable<renderer_interface>&);       ///< Set the current renderer.
+
+		void vernier(std::function<std::string(unsigned maximum, unsigned cursor_value)> provider);
 		void transparent(bool);
 		bool transparent() const;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 
 #endif

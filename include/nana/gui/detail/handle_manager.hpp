@@ -25,6 +25,8 @@
 
 #include <map>
 #include <iterator>
+#include <nana/push_ignore_diagnostic>
+
 
 namespace nana
 {
@@ -171,7 +173,7 @@ namespace nana
 				{
 					is_queue<std::is_same<cond_type, nana::null_type>::value, std::vector<handle_type> >::erase(handle, queue_);
 					cacher_.insert(handle, false);
-					trash_.emplace_back(i->first, i->second);
+					trash_.push_back(*i);
 					holder_.erase(i);
 				}
 			}
@@ -288,4 +290,6 @@ namespace nana
 		};//end class handle_manager
 	}//end namespace detail
 }// end namespace nana
+#include <nana/pop_ignore_diagnostic>
+
 #endif

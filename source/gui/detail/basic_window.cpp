@@ -17,226 +17,243 @@ namespace nana
 {
 	namespace detail
 	{
-		//class caret_descriptor
-			caret_descriptor::caret_descriptor(core_window_t* wd, unsigned width, unsigned height)
-				:wd_(wd), size_(width, height), visible_state_(visible_state::invisible), out_of_range_(false)
+		//class caret
+			caret::caret(basic_window* owner, const size& size):
+				owner_(owner),
+				size_(size)
 			{}
 
-			caret_descriptor::~caret_descriptor()
+			caret::~caret()
 			{
-				if(wd_)	native_interface::caret_destroy(wd_->root);
+				if (owner_)
+					native_interface::caret_destroy(owner_->root);
 			}
 
-			void caret_descriptor::set_active(bool active)
+			void caret::activate(bool activity)
 			{
-				if(wd_)
+				if (owner_)
 				{
-					if(active)
+					if (activity)
 					{
-						native_interface::caret_create(wd_->root, size_);
+						native_interface::caret_create(owner_->root, size_);
 
-						visible_state_ = visible_state::invisible;
-						this->position(point_.x, point_.y);
+						visibility_ = visible_state::invisible;
+						this->position(position_);
 					}
 					else
-						native_interface::caret_destroy(wd_->root);
+						native_interface::caret_destroy(owner_->root);
 
-					wd_->root_widget->other.attribute.root->ime_enabled = active;
+					owner_->root_widget->other.attribute.root->ime_enabled = activity;
 				}
 			}
 
-			auto caret_descriptor::window() const ->core_window_t*
+			basic_window* caret::owner() const noexcept
 			{
-				return wd_;
+				return owner_;
 			}
 
-			void caret_descriptor::position(int x, int y)
+			void caret::update()
 			{
-				point_.x = x;
-				point_.y = y;
+				auto pos = position_;
+				auto size = size_;
 
-				update();
-			}
-
-			void caret_descriptor::effective_range(nana::rectangle rect)
-			{
-				//Chech rect
-				if (rect.width && rect.height && rect.right() > 0 && rect.bottom() > 0)
-				{
-					if(rect.x < 0)
-					{
-						rect.width += rect.x;
-						rect.x = 0;
-					}
-
-					if(rect.y < 0)
-					{
-						rect.height += rect.y;
-						rect.y = 0;
-					}
-
-					if(effective_range_ != rect)
-					{
-						effective_range_ = rect;
-						update();
-					}
-				}
-			}
-
-			nana::point caret_descriptor::position() const
-			{
-				return point_;
-			}
-
-			void caret_descriptor::visible(bool is_show)
-			{
-				auto pre_displayed = (visible_state::displayed == visible_state_);
-
-				if (is_show)
-				{
-					visible_state_ = visible_state::visible;
-					if (wd_->displayed() && (! out_of_range_))
-						visible_state_ = visible_state::displayed;
-				}
-				else
-					visible_state_ = visible_state::invisible;
-
-				if (pre_displayed != (visible_state::displayed == visible_state_))
-					native_interface::caret_visible(wd_->root, !pre_displayed);
-			}
-
-			bool caret_descriptor::visible() const
-			{
-				return (visible_state::invisible != visible_state_);
-			}
-
-			nana::size caret_descriptor::size() const
-			{
-				return size_;
-			}
-
-			void caret_descriptor::size(const nana::size& s)
-			{
-				size_ = s;
-				update();
-
-				if (visible_state::invisible != visible_state_)
-					visible(true);
-			}
-
-			void caret_descriptor::update()
-			{
-				nana::point pos = point_;
-				nana::size	size = size_;
-
-				nana::rectangle rect = effective_range_;
-				if(0 == effective_range_.width || 0 == effective_range_.height)
+				auto rect = effect_range_;
+				if (0 == effect_range_.width || 0 == effect_range_.height)
 				{
 					rect.x = rect.y = 0;
-					rect = wd_->dimension;
+					rect.dimension(owner_->dimension);
 				}
 				else
 				{
-					pos.x += effective_range_.x;
-					pos.y += effective_range_.y;
+					pos += effect_range_.position();
 				}
 
-				if(	(pos.x + static_cast<int>(size.width) <= rect.x) || (pos.x >= rect.right()) ||
+				if ((pos.x + static_cast<int>(size.width) <= rect.x) || (pos.x >= rect.right()) ||
 					(pos.y + static_cast<int>(size.height) <= rect.y) || (pos.y >= rect.bottom())
 					)
 				{//Out of Range without overlap
-					if(false == out_of_range_)
+					if (false == out_of_range_)
 					{
 						out_of_range_ = true;
 
-						if (visible_state::invisible != visible_state_)
+						if (visible_state::invisible != visibility_)
 							visible(false);
 					}
 				}
 				else
 				{
-					if(pos.x < rect.x)
+					if (pos.x < rect.x)
 					{
 						size.width -= (rect.x - pos.x);
 						pos.x = rect.x;
 					}
-					else if(pos.x + static_cast<int>(size.width) > rect.right())
+					else if (pos.x + static_cast<int>(size.width) > rect.right())
 					{
 						size.width -= pos.x + size.width - rect.right();
 					}
 
-					if(pos.y < rect.y)
+					if (pos.y < rect.y)
 					{
 						size.width -= (rect.y - pos.y);
 						pos.y = rect.y;
 					}
-					else if(pos.y + static_cast<int>(size.height) > rect.bottom())
+					else if (pos.y + static_cast<int>(size.height) > rect.bottom())
 						size.height -= pos.y + size.height - rect.bottom();
 
-					if(out_of_range_)
+					if (out_of_range_)
 					{
-						if (paint_size_ == size)
+						if (visual_size_ == size)
 							visible(true);
 
 						out_of_range_ = false;
 					}
 
-					if(paint_size_ != size)
+					if (visual_size_ != size)
 					{
-						bool vs = (visible_state::invisible != visible_state_);
-						native_interface::caret_destroy(wd_->root);
-						native_interface::caret_create(wd_->root, size);
+						bool vs = (visible_state::invisible != visibility_);
+						native_interface::caret_destroy(owner_->root);
+						native_interface::caret_create(owner_->root, size);
 
-						visible_state_ = visible_state::invisible;
+						visibility_ = visible_state::invisible;
 						if (vs)
 							visible(true);
 
 
-						paint_size_ = size;
+						visual_size_ = size;
 					}
-				
-					native_interface::caret_pos(wd_->root, wd_->pos_root + pos);
+
+					native_interface::caret_pos(owner_->root, owner_->pos_root + pos);
 				}
 			}
-		//end class caret_descriptor
+		
+			//Implement caret_interface functions
+			void caret::disable_throw() noexcept
+			{
+				//This function is useless for class caret, see caret_proxy.
+			}
+
+			void caret::effective_range(const rectangle& r)
+			{
+				auto range = r;
+				//Chech rect
+				if (range.width && range.height && range.right() > 0 && range.bottom() > 0)
+				{
+					if (range.x < 0)
+					{
+						range.width += range.x;
+						range.x = 0;
+					}
+
+					if (range.y < 0)
+					{
+						range.height += range.y;
+						range.y = 0;
+					}
+
+					if (effect_range_ != range)
+					{
+						effect_range_ = range;
+						update();
+					}
+				}
+			}
+
+			void caret::position(const point& pos)
+			{
+				position_ = pos;
+				update();
+			}
+
+			point caret::position() const
+			{
+				return position_;
+			}
+
+			size caret::dimension() const
+			{
+				return size_;
+			}
+
+			void caret::dimension(const size& s)
+			{
+				size_ = s;
+				update();
+
+				if (visible_state::invisible != visibility_)
+					visible(true);
+			}
+
+			void caret::visible(bool visibility)
+			{
+				auto pre_displayed = (visible_state::displayed == visibility_);
+
+				if (visibility)
+				{
+					visibility_ = visible_state::visible;
+					if (owner_->displayed() && (!out_of_range_))
+						visibility_ = visible_state::displayed;
+				}
+				else
+					visibility_ = visible_state::invisible;
+
+				if (pre_displayed != (visible_state::displayed == visibility_))
+					native_interface::caret_visible(owner_->root, !pre_displayed);
+			}
+
+			bool caret::visible() const
+			{
+				return (visible_state::invisible != visibility_);
+			}
+		//end class caret
 
 		//struct basic_window
 			//struct basic_window::other_tag
 				basic_window::other_tag::other_tag(category::flags categ)
 					: category(categ), active_window(nullptr), upd_state(update_state::none)
 				{
+#ifndef WIDGET_FRAME_DEPRECATED
 					switch(categ)
 					{
-					case category::root_tag::value:
+					case category::flags::root:
 						attribute.root = new attr_root_tag;
 						break;
-					case category::frame_tag::value:
+					case category::flags::frame:
 						attribute.frame = new attr_frame_tag;
 						break;
 					default:
 						attribute.root = nullptr;
 					}
+#else
+					if (category::flags::root == categ)
+						attribute.root = new attr_root_tag;
+					else
+						attribute.root = nullptr;
+#endif
 				}
 
 				basic_window::other_tag::~other_tag()
 				{
+#ifndef WIDGET_FRAME_DEPRECATED
 					switch(category)
 					{
-					case category::root_tag::value:
+					case category::flags::root:
 						delete attribute.root;
 						break;
-					case category::frame_tag::value:
+					case category::flags::frame:
 						delete attribute.frame;
 						break;
 					default: break;
 					}
+#endif
+					if (category::flags::root == category)
+						delete attribute.root;
 				}
 			//end struct basic_window::other_tag
 
 			//basic_window
 			//@brief: constructor for the root window
 			basic_window::basic_window(basic_window* owner, std::unique_ptr<widget_notifier_interface>&& wdg_notifier, category::root_tag**)
-				: widget_notifier(std::move(wdg_notifier)), other(category::root_tag::value)
+				: widget_notifier(std::move(wdg_notifier)), other(category::flags::root)
 			{
 				drawer.bind(this);
 				_m_init_pos_and_size(nullptr, rectangle());
@@ -245,8 +262,8 @@ namespace nana
 
 			basic_window::~basic_window()
 			{
-				delete together.caret;
-				together.caret = nullptr;
+				delete annex.caret_ptr;
+				annex.caret_ptr = nullptr;
 
 				delete effect.bground;
 				effect.bground = nullptr;
@@ -256,7 +273,7 @@ namespace nana
 			//@brief: bind a native window and baisc_window
 			void basic_window::bind_native_window(native_window_type wd, unsigned width, unsigned height, unsigned extra_width, unsigned extra_height, nana::paint::graphics& graphics)
 			{
-				if(category::root_tag::value == this->other.category)
+				if(category::flags::root == this->other.category)
 				{
 					this->root = wd;
 					dimension.width = width;
@@ -268,11 +285,13 @@ namespace nana
 				}
 			}
 
+#ifndef WIDGET_FRAME_DEPRECATED
 			void basic_window::frame_window(native_window_type wd)
 			{
-				if(category::frame_tag::value == this->other.category)
+				if(category::flags::frame == this->other.category)
 					other.attribute.frame->container = wd;
 			}
+#endif
 
 			bool basic_window::is_ancestor_of(const basic_window* wd) const
 			{
@@ -312,7 +331,7 @@ namespace nana
 
 			const basic_window* get_child_caret(const basic_window* wd, bool this_is_a_child)
 			{
-				if (this_is_a_child && wd->together.caret)
+				if (this_is_a_child && wd->annex.caret_ptr)
 					return wd;
 
 				for (auto child : wd->children)
@@ -346,10 +365,16 @@ namespace nana
 				return anc;
 			}
 
+			void basic_window::set_action(mouse_action act)
+			{
+				flags.action_before = flags.action;
+				flags.action = act;
+			}
+
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
-				pos_owner = pos_root = r;
-				dimension = r;
+				pos_owner = pos_root = r.position();
+				dimension = r.dimension();
 
 				if (parent)
 					pos_root += parent->pos_root;
@@ -357,12 +382,12 @@ namespace nana
 
 			void basic_window::_m_initialize(basic_window* agrparent)
 			{
-				if(other.category == category::root_tag::value)
+				if(category::flags::root == other.category)
 				{
 					if(agrparent && (nana::system::this_thread_id() != agrparent->thread_id))
 						agrparent = nullptr;
 
-					while(agrparent && (agrparent->other.category != category::root_tag::value))
+					while(agrparent && (category::flags::root != agrparent->other.category))
 						agrparent = agrparent->parent;
 				
 					owner = agrparent;
@@ -390,6 +415,8 @@ namespace nana
 				flags.fullscreen = false;
 				flags.tab = nana::detail::tab_type::none;
 				flags.action = mouse_action::normal;
+				flags.action_before = mouse_action::normal;
+
 				flags.refreshing = false;
 				flags.destroying = false;
 				flags.borderless = false;
@@ -404,8 +431,6 @@ namespace nana
 				effect.bground = nullptr;
 				effect.bground_fade_rate = 0;
 
-				together.caret = nullptr;
-
 				extra_width = extra_height = 0;
 
 				//The window must keep its thread_id same as its parent if it is a child.
@@ -417,15 +442,15 @@ namespace nana
 
 			bool basic_window::set_events(const std::shared_ptr<general_events>& p)
 			{
-				if (together.events_ptr)
+				if (annex.events_ptr)
 					return false;
-				together.events_ptr = p;
+				annex.events_ptr = p;
 				return true;
 			}
 
 			general_events * basic_window::get_events() const
 			{
-				return together.events_ptr.get();
+				return annex.events_ptr.get();
 			}
 		//end struct basic_window
 	}//end namespace detail

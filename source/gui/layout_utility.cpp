@@ -16,7 +16,7 @@
 namespace nana
 {
 	//overlap test if overlaped between r1 and r2
-	bool overlap(const rectangle& r1, const rectangle& r2)
+	bool overlapped(const rectangle& r1, const rectangle& r2)
 	{
 		if (r1.y + (long long)(r1.height) <= r2.y) return false;
 		if(r1.y >= r2.y + (long long)(r2.height)) return false;
@@ -30,7 +30,7 @@ namespace nana
 	//overlap, compute the overlap area between r1 and r2. the rect is for root
 	bool overlap(const rectangle& r1, const rectangle& r2, rectangle& r)
 	{
-		if(overlap(r1, r2))
+		if(overlapped(r1, r2))
 		{
 			auto l1 = static_cast<long long>(r1.x) + r1.width;
 			auto l2 = static_cast<long long>(r2.x) + r2.width;
@@ -56,7 +56,7 @@ namespace nana
 		if (overlap(ir, valid_r, op_ir) == false)
 			return false;
 
-		valid_r = valid_dst_area;
+		valid_r.dimension(valid_dst_area);
 		rectangle good_dr;
 		if (overlap(dr, valid_r, good_dr) == false)
 			return false;

@@ -12,6 +12,7 @@
 
 #ifndef NANA_GUI_DRAGGER_HPP
 #define NANA_GUI_DRAGGER_HPP
+#include <nana/push_ignore_diagnostic>
 #include "basis.hpp"
 #include "../basic_types.hpp"
 #include "../traits.hpp"
@@ -44,4 +45,5 @@ namespace nana
 		dragger_impl_t * impl_;
 	};
 }//end namespace nana
+#include <nana/pop_ignore_diagnostic>
 #endif

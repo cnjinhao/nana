@@ -10,6 +10,8 @@
 *	@file: nana/internationalization.cpp
 */
 
+#include <nana/push_ignore_diagnostic>
+
 #include <nana/internationalization.hpp>
 #include <nana/gui/widgets/widget.hpp>
 #include <unordered_map>
@@ -269,7 +271,7 @@ namespace nana
 			if (i == mgr.table.end())
 			{
 				auto result = mgr.table.emplace(wd, std::move(eval));
-				result.first->second.destroy = nana::API::events(wd).destroy([wd]{
+				result.first->second.destroy = nana::API::events(wd).destroy.connect([wd](const arg_destroy&){
 					auto & eval_mgr = get_eval_manager();
 					std::lock_guard<std::recursive_mutex> lockgd(eval_mgr.mutex);
 
@@ -513,3 +515,5 @@ namespace nana
 	}
 	//end class i18n_eval
 }
+
+#include <nana/pop_ignore_diagnostic>

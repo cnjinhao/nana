@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -86,13 +86,12 @@ namespace detail
 	private:
 		std::vector<key_value_rep> table_;
 	};
-	//class window_manager
 
+	//class window_manager
 			struct window_handle_deleter
 			{
 				void operator()(basic_window* wd) const
 				{
-					bedrock::instance().evt_operation().umake(reinterpret_cast<window>(wd));
 					delete wd;
 				}
 			};
@@ -238,7 +237,7 @@ namespace detail
 			switch(evtid)
 			{
 			case event_code::mouse_drop:
-				wd->flags.dropable = (is_make || (0 != wd->together.events_ptr->mouse_dropfiles.length()));
+				wd->flags.dropable = (is_make || (0 != wd->annex.events_ptr->mouse_dropfiles.length()));
 				break;
 			default:
 				break;
@@ -276,10 +275,14 @@ namespace detail
 				if (impl_->wd_register.available(owner))
 				{
 					if (owner->flags.destroying)
-						throw std::logic_error("the specified owner is destory");
+						throw std::runtime_error("the specified owner is destory");
 
+#ifndef WIDGET_FRAME_DEPRECATED
 					native = (category::flags::frame == owner->other.category ?
 										owner->other.attribute.frame->container : owner->root_widget->root);
+#else
+					native = owner->root_widget->root;
+#endif
 					r.x += owner->pos_root.x;
 					r.y += owner->pos_root.y;
 				}
@@ -290,7 +293,7 @@ namespace detail
 			auto result = native_interface::create_window(native, nested, r, app);
 			if (result.native_handle)
 			{
-				core_window_t* wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
+				auto wd = new core_window_t(owner, widget_notifier_interface::get_notifier(wdg), (category::root_tag**)nullptr);
 				if (nested)
 				{
 					wd->owner = nullptr;
@@ -312,8 +315,10 @@ namespace detail
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd, wd->thread_id);
 
-				if (owner && owner->other.category == category::frame_tag::value)
+#ifndef WIDGET_FRAME_DEPRECATED
+				if (owner && (category::flags::frame == owner->other.category))
 					insert_frame(owner, wd);
+#endif
 
 				bedrock::inc_window(wd->thread_id);
 				this->icon(wd, impl_->default_icon_small, impl_->default_icon_big);
@@ -322,6 +327,7 @@ namespace detail
 			return nullptr;
 		}
 
+#ifndef WIDGET_FRAME_DEPRECATED
 		window_manager::core_window_t* window_manager::create_frame(core_window_t* parent, const rectangle& r, widget* wdg)
 		{
 			//Thread-Safe Required!
@@ -338,13 +344,14 @@ namespace detail
 			return (wd);
 		}
 
+
 		bool window_manager::insert_frame(core_window_t* frame, native_window wd)
 		{
 			if(frame)
 			{
 				//Thread-Safe Required!
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				if(frame->other.category == category::frame_tag::value)
+				if(category::flags::frame == frame->other.category)
 					frame->other.attribute.frame->attach.push_back(wd);
 				return true;
 			}
@@ -357,9 +364,9 @@ namespace detail
 			{
 				//Thread-Safe Required!
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				if(frame->other.category == category::frame_tag::value)
+				if(category::flags::frame == frame->other.category)
 				{
-					if (impl_->wd_register.available(wd) && wd->other.category == category::root_tag::value && wd->root != frame->root)
+					if (impl_->wd_register.available(wd) && (category::flags::root == wd->other.category) && wd->root != frame->root)
 					{
 						frame->other.attribute.frame->attach.push_back(wd->root);
 						return true;
@@ -368,6 +375,7 @@ namespace detail
 			}
 			return false;
 		}
+#endif
 
 		window_manager::core_window_t* window_manager::create_widget(core_window_t* parent, const rectangle& r, bool is_lite, widget* wdg)
 		{
@@ -399,7 +407,7 @@ namespace detail
 			if (wd->flags.destroying)
 				return;
 
-			if(wd->other.category == category::root_tag::value)
+			if(category::flags::root == wd->other.category)
 			{
 				auto &brock = bedrock::instance();
 				arg_unload arg;
@@ -456,15 +464,17 @@ namespace detail
 			update(parent, false, false, &update_area);
 		}
 
-		//destroy_handle
-		//@brief:	Delete window handle, the handle type must be a root and a frame.
 		void window_manager::destroy_handle(core_window_t* wd)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
-			if((wd->other.category == category::root_tag::value) || (wd->other.category != category::frame_tag::value))
+#ifndef WIDGET_FRAME_DEPRECATED
+			if((category::flags::root == wd->other.category) || (category::flags::frame != wd->other.category))
+#else
+			if (category::flags::root == wd->other.category)
+#endif
 			{
 				impl_->misc_register.erase(wd->root);
 				impl_->wd_register.remove(wd);
@@ -484,7 +494,7 @@ namespace detail
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
 				if (impl_->wd_register.available(wd))
 				{
-					if(wd->other.category == category::root_tag::value)
+					if(category::flags::root == wd->other.category)
 						native_interface::window_icon(wd->root, small_icon, big_icon);
 				}
 			}
@@ -501,16 +511,20 @@ namespace detail
 
 			if(visible != wd->visible)
 			{
+#ifndef WIDGET_FRAME_DEPRECATED
 				native_window_type nv = nullptr;
 				switch(wd->other.category)
 				{
-				case category::root_tag::value:
+				case category::flags::root:
 					nv = wd->root; break;
-				case category::frame_tag::value:
+				case category::flags::frame:
 					nv = wd->other.attribute.frame->container; break;
 				default:	//category::widget_tag, category::lite_widget_tag
 					break;
 				}
+#else
+				auto nv = (category::flags::root == wd->other.category ? wd->root : nullptr);
+#endif
 
 				if(visible && wd->effect.bground)
 					window_layer::make_bground(wd);
@@ -703,7 +717,7 @@ namespace detail
 
 			wd->dimension = sz;
 
-			if(category::lite_widget_tag::value != wd->other.category)
+			if(category::flags::lite_widget != wd->other.category)
 			{
 				bool graph_state = wd->drawer.graphics.empty();
 				wd->drawer.graphics.make(sz);
@@ -714,18 +728,20 @@ namespace detail
 				if(graph_state != wd->drawer.graphics.empty())
 					wd->drawer.typeface_changed();
 
-				if(category::root_tag::value == wd->other.category)
+				if(category::flags::root == wd->other.category)
 				{
 					wd->root_graph->make(sz);
 					if(false == passive)
 						native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height));
 				}
-				else if(category::frame_tag::value == wd->other.category)
+#ifndef WIDGET_FRAME_DEPRECATED
+				else if(category::flags::frame == wd->other.category)
 				{
 					native_interface::window_size(wd->other.attribute.frame->container, sz);
 					for(auto natwd : wd->other.attribute.frame->attach)
 						native_interface::window_size(natwd, sz);
 				}
+#endif
 				else
 				{
 					//update the bground buffer of glass window.
@@ -778,15 +794,7 @@ namespace detail
 					parent = parent->parent;
 				}
 
-				//Copy the root buffer that wd specified into DeviceContext
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
-				wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
-#elif defined(NANA_WINDOWS)
-				if(nana::system::this_thread_id() == wd->thread_id)
-					wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
-				else
-					bedrock::instance().map_thread_root_buffer(wd, forced, update_area);
-#endif
+				bedrock::instance().flush_surface(wd, forced, update_area);
 			}
 		}
 
@@ -808,6 +816,12 @@ namespace detail
 					{
 						window_layer::paint(wd, redraw, false);
 						this->map(wd, forced, update_area);
+						return true;
+					}
+					else if (forced)
+					{
+						window_layer::paint(wd, false, false);
+						this->map(wd, true, update_area);
 						return true;
 					}
 				}
@@ -833,31 +847,34 @@ namespace detail
 		//do_lazy_refresh
 		//@brief: defined a behavior of flush the screen
 		//@return: it returns true if the wnd is available
-		bool window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen)
+		bool window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen, bool refresh_tree)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
 
-			//It's not worthy to redraw if visible is false
 			if (false == impl_->wd_register.available(wd))
 				return false;
 
+			//It's not worthy to redraw if visible is false
 			if(wd->visible && (!wd->is_draw_through()))
 			{
 				if (wd->visible_parents())
 				{
 					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
 					{
-						window_layer::paint(wd, false, false);
+						window_layer::paint(wd, false, refresh_tree);
 						this->map(wd, force_copy_to_screen);
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
-						this->map(wd, true);
+						//The window is still mapped because of edge nimbus effect.
+						//Avoid duplicate copy if action state is not changed and the window is not focused.
+						if ((wd->flags.action != wd->flags.action_before) || (bedrock::instance().focus() == wd))
+							this->map(wd, true);
 					}
 				}
 				else
-					window_layer::paint(wd, true, false);	//only refreshing if it has an invisible parent
+					window_layer::paint(wd, true, refresh_tree);	//only refreshing if it has an invisible parent
 			}
 			wd->other.upd_state = core_window_t::update_state::none;
 			return true;
@@ -925,7 +942,7 @@ namespace detail
 
 		//set_focus
 		//@brief: set a keyboard focus to a window. this may fire a focus event.
-		window_manager::core_window_t* window_manager::set_focus(core_window_t* wd, bool root_has_been_focused)
+		window_manager::core_window_t* window_manager::set_focus(core_window_t* wd, bool root_has_been_focused, arg_focus::reason reason)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -945,12 +962,13 @@ namespace detail
 
 				if (impl_->wd_register.available(prev_focus))
 				{
-					if(prev_focus->together.caret)
-						prev_focus->together.caret->set_active(false);
+					if(prev_focus->annex.caret_ptr)
+						prev_focus->annex.caret_ptr->activate(false);
 
 					arg.getting = false;
 					arg.window_handle = reinterpret_cast<window>(prev_focus);
 					arg.receiver = wd->root;
+					arg.focus_reason = arg_focus::reason::general;
 					brock.emit(event_code::focus, prev_focus, arg, true, brock.get_thread_context());
 				}
 
@@ -962,12 +980,13 @@ namespace detail
 				return prev_focus; //no new focus_window
 
 
-			if(wd->together.caret)
-				wd->together.caret->set_active(true);
+			if(wd->annex.caret_ptr)
+				wd->annex.caret_ptr->activate(true);
 
 			arg.window_handle = reinterpret_cast<window>(wd);
 			arg.getting = true;
 			arg.receiver = wd->root;
+			arg.focus_reason = reason;
 			brock.emit(event_code::focus, wd, arg, true, brock.get_thread_context());
 
 			if (!root_has_been_focused)
@@ -976,7 +995,7 @@ namespace detail
 			//A fix by Katsuhisa Yuasa
 			//The menubar token window will be redirected to the prev focus window when the new
 			//focus window is a menubar.
-			//The focus window will be restore to the prev focus which losts the focus becuase of
+			//The focus window will be restored to the prev focus which losts the focus becuase of
 			//memberbar. 
 			if (prev_focus && (wd == wd->root_widget->other.attribute.root->menubar))
 				wd = prev_focus;
@@ -999,11 +1018,6 @@ namespace detail
 			return attr_.capture.window;
 		}
 
-		void window_manager::capture_ignore_children(bool ignore)
-		{
-			attr_.capture.ignore_children = ignore;
-		}
-
 		bool window_manager::capture_window_entered(int root_x, int root_y, bool& prev)
 		{
 			if(attr_.capture.window)
@@ -1024,19 +1038,15 @@ namespace detail
 			return attr_.capture.window;
 		}
 
-		//capture_window
-		//@brief:	set a window that always captures the mouse event if it is not in the range of window
-		//@return:	this function dose return the previous captured window. If the wnd set captured twice,
-		//			the return value is NULL
-		window_manager::core_window_t* window_manager::capture_window(core_window_t* wd, bool value)
+		void window_manager::capture_window(core_window_t* wd, bool captured, bool ignore_children)
 		{
 			if (!this->available(wd))
-				return nullptr;
+				return;
 
 			nana::point pos = native_interface::cursor_position();
 			auto & attr_cap = attr_.capture.history;
 
-			if(value)
+			if (captured)
 			{
 				if(wd != attr_.capture.window)
 				{
@@ -1046,19 +1056,17 @@ namespace detail
 					if (impl_->wd_register.available(wd))
 					{
 						wd->flags.captured = true;
-						native_interface::capture_window(wd->root, value);
-						auto prev = attr_.capture.window;
-						if(prev && (prev != wd))
-							attr_cap.emplace_back(prev, attr_.capture.ignore_children);
+						native_interface::capture_window(wd->root, captured);
+
+						if (attr_.capture.window)
+							attr_cap.emplace_back(attr_.capture.window, attr_.capture.ignore_children);
 
 						attr_.capture.window = wd;
-						attr_.capture.ignore_children = true;
+						attr_.capture.ignore_children = ignore_children;
 						native_interface::calc_window_point(wd->root, pos);
 						attr_.capture.inside = _m_effective(wd, pos);
-						return prev;
 					}
 				}
-				return attr_.capture.window;
 			}
 			else if(wd == attr_.capture.window)
 			{
@@ -1093,10 +1101,7 @@ namespace detail
 						break;
 					}
 				}
-
-				return attr_.capture.window;
 			}
-			return wd;
 		}
 
 		//enable_tabstop
@@ -1357,7 +1362,7 @@ namespace detail
 				if (established)
 				{
 					if (check_tree(wd, attr_.capture.window))
-						capture_window(attr_.capture.window, false);
+						capture_window(attr_.capture.window, false, false);	//The 3rd parameter is ignored
 
 					if (root_attr->focus && check_tree(wd, root_attr->focus))
 						root_attr->focus = nullptr;
@@ -1370,7 +1375,7 @@ namespace detail
 				else
 				{
 					if (wd == attr_.capture.window)
-						capture_window(attr_.capture.window, false);
+						capture_window(attr_.capture.window, false, false);	//The 3rd parameter is ignored.
 
 					if (root_attr->focus == wd)
 						root_attr->focus = nullptr;
@@ -1379,7 +1384,7 @@ namespace detail
 						root_attr->menubar = nullptr;
 				}
 
-				if (wd->other.category == category::root_tag::value)
+				if (wd->other.category == category::flags::root)
 				{
 					root_runtime(wd->root)->shortkeys.clear();
 					wd->other.attribute.root->focus = nullptr;
@@ -1412,9 +1417,10 @@ namespace detail
 
 			if (!established)
 			{
+				using effect_renderer = detail::edge_nimbus_renderer<basic_window>;
+
 				//remove the window from edge nimbus effect when it is destroying
-				using edge_nimbus = detail::edge_nimbus_renderer<core_window_t>;
-				edge_nimbus::instance().erase(wd);
+				effect_renderer::instance().erase(wd);
 			}
 			else if (pa_root_attr != root_attr)
 			{
@@ -1459,7 +1465,8 @@ namespace detail
 				}
 			}
 
-			if (wd->other.category == category::frame_tag::value)
+#ifndef WIDGET_FRAME_DEPRECATED
+			if (category::flags::frame == wd->other.category)
 			{
 				//remove the frame handle from the WM frames manager.
 				utl::erase(root_attr->frames, wd);
@@ -1467,6 +1474,7 @@ namespace detail
 				if (established)
 					pa_root_attr->frames.push_back(wd);
 			}
+#endif
 
 			if (established)
 			{
@@ -1520,11 +1528,11 @@ namespace detail
 
 			wd->flags.destroying = true;
 
-			if(wd->together.caret)
+			if(wd->annex.caret_ptr)
 			{
 				//The deletion of caret wants to know whether the window is destroyed under SOME platform. Such as X11
-				delete wd->together.caret;
-				wd->together.caret = nullptr;
+				delete wd->annex.caret_ptr;
+				wd->annex.caret_ptr = nullptr;
 			}
 
 			arg_destroy arg;
@@ -1565,7 +1573,8 @@ namespace detail
 			wd->drawer.detached();
 			wd->widget_notifier->destroy();
 
-			if(wd->other.category == category::frame_tag::value)
+#ifndef WIDGET_FRAME_DEPRECATED
+			if(category::flags::frame == wd->other.category)
 			{
 				//The frame widget does not have an owner, and close their element windows without activating owner.
 				//close the frame container window, it's a native window.
@@ -1574,6 +1583,7 @@ namespace detail
 
 				native_interface::close_window(wd->other.attribute.frame->container);
 			}
+#endif
 
 			if(wd->other.category != category::flags::root)	//Not a root window
 				impl_->wd_register.remove(wd);
@@ -1584,13 +1594,18 @@ namespace detail
 			if(category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its childs are not to be changed
 			{
 				wd->pos_root += delta;
+#ifndef WIDGET_FRAME_DEPRECATED
 				if (category::flags::frame != wd->other.category)
 				{
-					if (wd->together.caret && wd->together.caret->visible())
-						wd->together.caret->update();
+					if (wd->annex.caret_ptr && wd->annex.caret_ptr->visible())
+						wd->annex.caret_ptr->update();
 				}
 				else
 					native_interface::move_window(wd->other.attribute.frame->container, wd->pos_root.x, wd->pos_root.y);
+#else
+				if (wd->annex.caret_ptr && wd->annex.caret_ptr->visible())
+					wd->annex.caret_ptr->update();
+#endif
 
 				if (wd->displayed() && wd->effect.bground)
 					window_layer::make_bground(wd);
@@ -1616,7 +1631,7 @@ namespace detail
 			for(auto i = wd->children.rbegin(); i != wd->children.rend(); ++i)
 			{
 				core_window_t* child = *i;
-				if((child->other.category != category::root_tag::value) && _m_effective(child, pos))
+				if((child->other.category != category::flags::root) && _m_effective(child, pos))
 				{
 					child = _m_find(child, pos);
 					if(child)

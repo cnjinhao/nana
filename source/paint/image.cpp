@@ -11,7 +11,7 @@
  *	@contributors:
  *		nabijaczleweli(pr#106)
  */
-
+#include <nana/push_ignore_diagnostic>
 #include <nana/detail/platform_spec_selector.hpp>
 #include <nana/paint/image.hpp>
 #include <algorithm>
@@ -21,7 +21,7 @@
 
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <nana/filesystem/filesystem_ext.hpp>
 
 #if defined(NANA_ENABLE_JPEG)
 #include "detail/image_jpeg.hpp"
@@ -34,16 +34,35 @@
 #include "detail/image_bmp.hpp"
 #include "detail/image_ico.hpp"
 
+#include "image_accessor.hpp"
+
+namespace fs = std::experimental::filesystem;
+
 namespace nana
 {
 namespace paint
 {
+#if defined(NANA_WINDOWS)
+	HICON image_accessor::icon(const nana::paint::image& img)
+	{
+		auto ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
+		if (ico && ico->ptr())
+			return *(ico->ptr());
+		return nullptr;
+	}
+#else
+	int image_accessor::icon(const image&)
+	{
+		return 0;
+	}
+#endif
+
 	namespace detail
 	{
 		//class image_ico
 			image_ico::image_ico(bool is_ico): is_ico_(is_ico){}
 
-			bool image_ico::open(const nana::experimental::filesystem::path& file)
+			bool image_ico::open(const fs::path& file)
 			{
 				close();
 #if defined(NANA_WINDOWS)
@@ -73,7 +92,8 @@ namespace paint
 					return true;
 				}
 #else
-				if(is_ico_){}	//kill the unused compiler warning in Linux.
+				static_cast<void>(is_ico_);	 //eliminate the unused compiler warning in Linux.
+				static_cast<void>(file);   //to eliminate the unused parameter compiler warning.
 #endif
 				return false;
 			}
@@ -98,7 +118,9 @@ namespace paint
 					}
 				}
 #else
-				if(is_ico_){}	//kill the unused compiler warning in Linux.
+				static_cast<void>(is_ico_);	//kill the unused compiler warning in Linux.
+				static_cast<void>(data);	//to eliminate unused parameter compiler warning.
+				static_cast<void>(bytes);
 #endif
 				return false;
 			}
@@ -129,6 +151,9 @@ namespace paint
 				{
 #if defined(NANA_WINDOWS)
 					::DrawIconEx(graph.handle()->context, p_dst.x, p_dst.y, *ptr_, src_r.width, src_r.height, 0, 0, DI_NORMAL);
+#else
+					static_cast<void>(src_r);	//eliminate unused parameter compiler warning.
+					static_cast<void>(p_dst);
 #endif
 				}
 			}
@@ -139,6 +164,8 @@ namespace paint
 				{
 #if defined(NANA_WINDOWS)
 					::DrawIconEx(graph.handle()->context, r.x, r.y, *ptr_, r.width, r.height, 0, 0, DI_NORMAL);
+#else
+					static_cast<void>(r); //eliminate unused parameter compiler warning.
 #endif
 				}
 			}
@@ -206,7 +233,7 @@ namespace paint
 			return *this;
 		}
 
-		std::shared_ptr<image::image_impl_interface> create_image(const ::nana::experimental::filesystem::path & p)
+		std::shared_ptr<image::image_impl_interface> create_image(const fs::path & p)
 		{
 			std::shared_ptr<image::image_impl_interface> ptr;
 
@@ -289,14 +316,14 @@ namespace paint
 
 		bool image::open(const ::std::string& file)
 		{
-			::nana::experimental::filesystem::path path(file);
+			fs::path path(file);
 			image_ptr_ = create_image(path);
 			return (image_ptr_ ? image_ptr_->open(path) : false);
 		}
 
 		bool image::open(const std::wstring& file)
 		{
-			::nana::experimental::filesystem::path path(file);
+			fs::path path(file);
 			image_ptr_ = create_image(path);
 			return (image_ptr_ ? image_ptr_->open(path) : false);
 		}

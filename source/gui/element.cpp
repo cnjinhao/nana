@@ -212,7 +212,7 @@ namespace nana
 		class menu_crook
 			: public crook_interface
 		{
-			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color& fgcolor, const nana::rectangle& r, element_state es, const data& crook_data) override
+			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color& fgcolor, const nana::rectangle& r, element_state, const data& crook_data) override
 			{
 				if(crook_data.check_state == state::unchecked)
 					return true;
@@ -266,7 +266,7 @@ namespace nana
 		class border_depressed
 			: public border_interface
 		{
-			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, unsigned weight)
+			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color&, const ::nana::rectangle& r, element_state estate, unsigned)
 			{
 				graph.rectangle(r, false, static_cast<color_rgb>((element_state::focus_hovered == estate || element_state::focus_normal == estate) ? 0x0595E2 : 0x999A9E));
 				graph.rectangle(::nana::rectangle(r).pare_off(1), false, bgcolor);
@@ -277,7 +277,7 @@ namespace nana
 		class arrow_solid_triangle
 			: public arrow_interface
 		{
-			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, direction dir) override
+			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color&, const ::nana::rectangle& r, element_state, direction dir) override
 			{
 				::nana::point pos{ r.x + 3, r.y + 3 };
 				switch (dir)
@@ -318,7 +318,7 @@ namespace nana
 		class arrow_hollow_triangle
 			: public arrow_interface
 		{
-			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, ::nana::direction dir) override
+			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color&, const ::nana::rectangle& r, element_state, ::nana::direction dir) override
 			{
 				int x = r.x + 3;
 				int y = r.y + 3;
@@ -364,7 +364,7 @@ namespace nana
 		class arrowhead
 			: public arrow_interface
 		{
-			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, ::nana::direction dir) override
+			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color&, const ::nana::rectangle& r, element_state, ::nana::direction dir) override
 			{
 				int x = r.x;
 				int y = r.y + 5;
@@ -425,7 +425,7 @@ namespace nana
 		class arrow_double
 			: public arrow_interface
 		{
-			bool draw(graph_reference graph, const ::nana::color& bgcolor, const ::nana::color& fgcolor, const ::nana::rectangle& r, element_state estate, ::nana::direction dir) override
+			bool draw(graph_reference graph, const ::nana::color&, const ::nana::color&, const ::nana::rectangle& r, element_state, ::nana::direction dir) override
 			{
 				int x = r.x;
 				int y = r.y;
@@ -486,7 +486,7 @@ namespace nana
 		class annex_button
 			: public element_interface
 		{
-			bool draw(graph_reference graph, const ::nana::color& arg_bgcolor, const ::nana::color& fgcolor, const rectangle& r, element_state estate) override
+			bool draw(graph_reference graph, const ::nana::color& arg_bgcolor, const ::nana::color&, const rectangle& r, element_state estate) override
 			{
 				auto bgcolor = arg_bgcolor;
 
@@ -1300,7 +1300,7 @@ namespace nana
 			if (stretch_all_)
 			{
 				if (from_r.width == to_r.width && from_r.height == to_r.height)
-					method_->paste(from_r, dst, to_r);
+					method_->paste(from_r, dst, to_r.position());
 				else
 					method_->stretch(from_r, dst, to_r);
 
@@ -1392,7 +1392,7 @@ namespace nana
 				if (top_)
 				{
 					src_r.height = top_;
-					method_->paste(src_r, dst, to_r);
+					method_->paste(src_r, dst, to_r.position());
 				}
 				if (bottom_)
 				{

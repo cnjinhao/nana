@@ -85,7 +85,7 @@ namespace nana{ namespace drawerbase
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
 			{
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_up(graph_reference graph, const arg_mouse&)
@@ -94,22 +94,22 @@ namespace nana{ namespace drawerbase
 				{
 					impl_->crook.reverse();
 					arg_checkbox arg{ static_cast<nana::checkbox*>(impl_->widget_ptr) };
-					API::events<nana::checkbox>(impl_->widget_ptr->handle()).checked.emit(arg);
+					API::events<nana::checkbox>(impl_->widget_ptr->handle()).checked.emit(arg, impl_->widget_ptr->handle());
 				}
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_enter(graph_reference graph, const arg_mouse&)
 			{
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			void drawer::mouse_leave(graph_reference graph, const arg_mouse&)
 			{
 				refresh(graph);
-				API::lazy_refresh();
+				API::dev::lazy_refresh();
 			}
 
 			drawer::implement * drawer::impl() const
@@ -172,7 +172,7 @@ namespace nana{ namespace drawerbase
 				API::refresh_window(handle());
 
 				arg_checkbox arg(this);
-				this->events().checked.emit(arg);
+				this->events().checked.emit(arg, this->handle());
 			}
 		}
 
@@ -216,7 +216,7 @@ namespace nana{ namespace drawerbase
 			uiobj.check(false);
 			uiobj.react(false);
 
-			element_tag el = {};
+			element_tag el;
 
 			el.uiobj = &uiobj;
 

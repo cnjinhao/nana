@@ -12,6 +12,8 @@
 
 #ifndef NANA_GUI_WIDGET_SPINBOX_HPP
 #define NANA_GUI_WIDGET_SPINBOX_HPP
+
+#include <nana/push_ignore_diagnostic>
 #include "widget.hpp"
 #include "skeletons/text_editor_part.hpp"
 
@@ -68,7 +70,7 @@ namespace nana
 			private:
 				implementation * const impl_;
 			};
-		};
+		}
 	}//end namespace drawerbase
 
 	/// Spinbox Widget
@@ -110,5 +112,5 @@ namespace nana
 		void _m_caption(native_string_type&&);
 	}; //end class spinbox
 }//end namespace nana
-
+#include <nana/pop_ignore_diagnostic>
 #endif //NANA_GUI_WIDGET_SPINBOX_HPP

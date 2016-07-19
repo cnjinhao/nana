@@ -76,7 +76,7 @@ namespace nana
 				{
 					auto valid_area = backimg.valid_area;
 					if (valid_area.empty())
-						valid_area = backimg.image.size();
+						valid_area.dimension(backimg.image.size());
 
 					if (backimg.stretchable)
 					{

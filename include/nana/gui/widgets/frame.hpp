@@ -16,6 +16,8 @@
 #define NANA_GUI_WIDGET_FRAME_HPP
 
 #include "widget.hpp"
+
+#ifndef WIDGET_FRAME_DEPRECATED
 namespace nana
 {
 	/** 
@@ -50,4 +52,5 @@ namespace nana
 		native_window_type container() const;	     	    ///< Returns the frame container native window handle.
 	};
 }//end namespace nana
+#endif
 #endif

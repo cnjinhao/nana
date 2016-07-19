@@ -1,4 +1,4 @@
-/*
+/**
  *	A Character Encoding Set Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
@@ -7,9 +7,9 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/charset.cpp
- *	@brief: A conversion between unicode characters and multi bytes characters
- *	@contributions:
+ *	@file nana/charset.cpp
+ *	@brief A conversion between unicode characters and multi bytes characters
+ *	@contributions
  *		UTF16 4-byte decoding issue by Renke Yan.
  *		Pr0curo(pr#98)
  */
@@ -20,6 +20,7 @@
 #include <cwchar>
 #include <clocale>
 #include <cstring>	//Added by Pr0curo(pr#98)
+#include <memory>
 
 //GCC 4.7.0 does not implement the <codecvt> and codecvt_utfx classes
 #ifndef STD_CODECVT_NOT_SUPPORTED
@@ -34,6 +35,7 @@ namespace nana
 {
 	namespace utf
 	{
+		/// return a pointer to the code unit of the character at pos
 		const char* char_ptr(const char* text, unsigned pos)
 		{
 			auto ustr = reinterpret_cast<const unsigned char*>(text);
@@ -48,10 +50,10 @@ namespace nana
 					continue;
 				}
 
-				if (uch < 0xC0)
+				if (uch < 0xC0)        // use police ?
 					return nullptr;
 
-				if ((uch < 0xE0) && (ustr + 1 < end))
+				if ((uch < 0xE0) && (ustr + 1 < end)) //? *(ustr + 1) < 0xE0 
 					ustr += 2;
 				else if (uch < 0xF0 && (ustr + 2 <= end))
 					ustr += 3;
@@ -64,6 +66,7 @@ namespace nana
 			return reinterpret_cast<const char*>(ustr);
 		}
 
+		/// return a pointer to the code unit of the character at pos - reuse ^ ?
 		const char* char_ptr(const std::string& text_utf8, unsigned pos)
 		{
 			auto ustr = reinterpret_cast<const unsigned char*>(text_utf8.c_str());
@@ -94,6 +97,7 @@ namespace nana
 			return reinterpret_cast<const char*>(ustr);
 		}
 
+		/// return a code point (max 16 bits?) and the len in code units of the character at pos
 		wchar_t char_at(const char* text_utf8, unsigned pos, unsigned * len)
 		{
 			if (!text_utf8)
@@ -112,10 +116,10 @@ namespace nana
 				if (len)
 					*len = 1;
 
-				return *text_utf8;
+				return *text_utf8;  // uch ?
 			}
 
-			if (uch < 0xC0)
+			if (uch < 0xC0)    // use police or ??
 			{
 				if (len)
 					*len = 0;
@@ -151,6 +155,7 @@ namespace nana
 			return 0;
 		}
 
+		/// return a code point (max 16 bits?) and the len in code units of the character at pos
 		wchar_t char_at(const ::std::string& text_utf8, unsigned pos, unsigned * len)
 		{
 			const char* ptr;
@@ -210,22 +215,23 @@ namespace nana
 	}
 
 	namespace detail
-	{
+	{   
+		/// candidate to be more general??
 		class locale_initializer
 		{
 		public:
 			static void init()
 			{
 				static bool initialized = false;
-				if(false == initialized)
-				{
-					initialized = true;
-					//Only set the C library locale
-					std::setlocale(LC_CTYPE, "");
-				}
+				if (initialized) return;
+				
+				initialized = true;
+				//Only set the C library locale
+				std::setlocale(LC_CTYPE, "");
 			}
 		};
 
+		/// convert wchar C string from ? ANSI code page CP_ACP (windows) or LC_CTYPE c locale (-nix) into utf8 std::string
 		bool wc2mb(std::string& mbstr, const wchar_t * s)
 		{
 			if(nullptr == s || *s == 0)
@@ -258,7 +264,8 @@ namespace nana
 #endif
 			return true;
 		}
-		
+
+		/// convert a char C-string from The system default Windows ANSI code page CP_ACP or from LC_CTYPE c locale (-nix) into utf16 std::wstring
 		bool mb2wc(std::wstring& wcstr, const char* s)
 		{
 			if(nullptr == s || *s == 0)
@@ -291,6 +298,7 @@ namespace nana
 			return true;
 		}
 
+		/// convert a char C string from The system default Windows ANSI code page CP_ACP or LC_CTYPE c locale (-nix) into utf16 std::string
 		bool mb2wc(std::string& wcstr, const char* s)
 		{
 			if(nullptr == s || *s == 0)
@@ -304,6 +312,7 @@ namespace nana
 			{
 				wcstr.resize((chars - 1) * sizeof(wchar_t));
 				::MultiByteToWideChar(CP_ACP, 0, s, -1, reinterpret_cast<wchar_t*>(&wcstr[0]), chars - 1);
+				                                      // ^ the trick !
 			}
 #else
 			locale_initializer::init();
@@ -338,17 +347,98 @@ namespace nana
 			virtual std::wstring&& wstr_move() = 0;
 		};
 
+		/// playing with the idea - we need a mechanisme to set a user selected police - Testing an abtract interphase
+		struct encoding_error_police
+		{
+			virtual unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) = 0;
+			virtual ~encoding_error_police() = default;
+		};
+
+		/// the current nana default: it is safe - you may want to keep it ! use the other at your risk: mainly for debugging
+		struct utf8_error_police : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				current_code_unit = end;
+				return 0;
+			}
+
+		};
+
+		/// 
+		struct utf8_error_police_def_char : public encoding_error_police
+		{
+			static unsigned long def_error_mark ;
+
+			unsigned long error_mark{ def_error_mark };
+			utf8_error_police_def_char() = default;
+			utf8_error_police_def_char( unsigned long mark): error_mark{mark}{}
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				if(current_code_unit < end)
+					++current_code_unit;
+				return error_mark;
+			}
+
+		};
+
+		unsigned long utf8_error_police_def_char::def_error_mark{ '*' };
+
+		///  
+		struct utf8_error_police_throw : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
+			{
+				//utf8_Error::use_throw = true;
+				utf8_Error(std::string("The text is not encoded in UTF8: ") + 
+					reinterpret_cast<const char*>( current_code_unit) ).emit();;
+				current_code_unit = end;
+				return 0;
+			}
+
+		};
+
+		struct utf8_error_police_latin : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* /*end*/) override
+			{
+				return *(current_code_unit++) ;
+			}
+		};
+
+		/// buggie?
+		struct utf8_error_police_system : public encoding_error_police
+		{
+			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* /*end*/) override
+			{
+				std::wstring wc;
+				mb2wc(wc, reinterpret_cast<const char*>(current_code_unit));
+				current_code_unit++;
+
+				return wc[0];      // use utf16char but what endian?
+			}
+		};
+
+
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police>();  // the nana default
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police_latin>();
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police_throw>();
+//		auto def_encoding_error_police = std::make_unique<utf8_error_police_def_char>('X');
+		auto def_encoding_error_police = std::make_unique<utf8_error_police_system>();
+
+
+
 #ifndef STD_CODECVT_NOT_SUPPORTED
 		class charset_string
 			: public charset_encoding_interface
 		{
 		public:
 			charset_string(const std::string& s)
-				: data_(s), is_unicode_(false)
+				: data_(s)
 			{}
 
 			charset_string(std::string&& s)
-				: data_(std::move(s)), is_unicode_(false)
+				: data_(std::move(s))
 			{}
 
 			charset_string(const std::string& s, unicode encoding)
@@ -501,9 +591,9 @@ namespace nana
 			}
 		private:
 			std::string data_;
-			std::wstring wdata_for_move_;
-			bool is_unicode_;
-			unicode utf_x_;
+			std::wstring wdata_for_move_{};
+			bool is_unicode_{ false };
+			unicode utf_x_{ unicode::utf8 };
 		};
 
 		class charset_wstring
@@ -578,37 +668,42 @@ namespace nana
 			std::string data_for_move_;
 		};
 #else
+
+
+        /// return the first code point and move the pointer to next character, springing to the end by errors
 		unsigned long utf8char(const unsigned char*& p, const unsigned char* end)
 		{
 			if(p != end)
 			{
-				if(*p < 0x80)
+				if(*p < 0x80)        // ASCII char   0-127 or 0-0x80
 				{
 					return *(p++);
 				}
 				unsigned ch = *p;
 				unsigned long code;
-				if(ch < 0xC0)
+				if(ch < 0xC0)       // error? - move to end. Posible ANSI or ISO code-page 
 				{
-					p = end;
-					return 0;
+					//return *(p++); // temp: assume equal
+					//p = end;
+					//return 0;
+					return def_encoding_error_police->next_code_point(p, end);
 				}
-				else if(ch < 0xE0 && (p + 1 <= end))
+				else if(ch < 0xE0 && (p + 1 <= end))      // two byte chararcter
 				{
 					code = ((ch & 0x1F) << 6) | (p[1] & 0x3F);
 					p += 2;
 				}
-				else if(ch < 0xF0 && (p + 2 <= end))
+				else if(ch < 0xF0 && (p + 2 <= end))     // 3 byte character
 				{
 					code = ((((ch & 0xF) << 6) | (p[1] & 0x3F)) << 6) | (p[2] & 0x3F);
 					p += 3;
 				}
-				else if(ch < 0x1F && (p + 3 <= end))
+				else if(ch < 0x1F && (p + 3 <= end))   // 4 byte character
 				{
 					code = ((((((ch & 0x7) << 6) | (p[1] & 0x3F)) << 6) | (p[2] & 0x3F)) << 6) | (p[3] & 0x3F);
 					p += 4;
 				}
-				else
+				else    //  error, go to end
 				{
 					p = end;
 					return 0;
@@ -950,11 +1045,11 @@ namespace nana
 		{
 		public:
 			charset_string(const std::string& s)
-				: data_(s), is_unicode_(false)
+				: data_(s)
 			{}
 
 			charset_string(std::string&& s)
-				: data_(std::move(s)), is_unicode_(false)
+				: data_(std::move(s))
 			{}
 
 			charset_string(const std::string& s, unicode encoding)
@@ -1067,12 +1162,21 @@ namespace nana
 				{
 					switch(encoding)
 					{
+#if defined(NANA_WINDOWS)
+					case unicode::utf8:
+						return utf16_to_utf8(wcstr);
+					case unicode::utf32:
+						return utf16_to_utf32(wcstr);
+					case unicode::utf16:
+						return wcstr;
+#else //POSIX
 					case unicode::utf8:
 						return utf32_to_utf8(wcstr);
 					case unicode::utf16:
 						return utf32_to_utf16(wcstr);
 					case unicode::utf32:
 						return wcstr;
+#endif
 					}
 				}
 				return {};
@@ -1122,9 +1226,9 @@ namespace nana
 			}
 		private:
 			std::string data_;
-			std::wstring wdata_for_move_;
-			bool is_unicode_;
-			unicode utf_x_;
+			std::wstring wdata_for_move_{};
+			bool is_unicode_{ false };
+			unicode utf_x_{ unicode::utf8 };
 		};
 
 
@@ -1195,7 +1299,7 @@ namespace nana
 			}
 		private:
 			std::wstring data_;
-			std::string data_for_move_;
+			std::string data_for_move_{};
 		};
 #endif
 	}

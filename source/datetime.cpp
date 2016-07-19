@@ -17,62 +17,65 @@
 #include <cassert>
 
 namespace {
-	void localtime(struct tm& tm)
+	std::tm localtime()
 	{
 #if defined(NANA_WINDOWS) && !defined(NANA_MINGW)
 		time_t t;
 		::time(&t);
+		std::tm tm;
 		if(localtime_s(&tm, &t) != 0)
-		{
 			assert(false);
-		}
+
+		return tm;
 #else
 		time_t t = std::time(nullptr);
 		struct tm * tm_addr = std::localtime(&t);
 		assert(tm_addr);
-		tm = *tm_addr;
+		
+		return *tm_addr;
 #endif
 	}
+	
+	::nana::date::value to_dateval(const std::tm& t)
+	{
+		return {static_cast<unsigned>(t.tm_year + 1900), static_cast<unsigned>(t.tm_mon + 1), static_cast<unsigned>(t.tm_mday)};
+	}
+
+	::nana::time::value to_timeval(const std::tm& t)
+	{
+		return {static_cast<unsigned>(t.tm_hour), static_cast<unsigned>(t.tm_min), static_cast<unsigned>(t.tm_sec)};
+	}
+
 } // namespace anonymous
 
 namespace nana
 {
-	//class date
+	//class date		
 		void date::set(const std::tm& t)
 		{
-			value_.year = t.tm_year + 1900;
-			value_.month = t.tm_mon + 1;
-			value_.day = t.tm_mday;
+			value_ = to_dateval(t);
 		}
 
 		date::date()
+			: value_(to_dateval(localtime()))
 		{
-			struct tm t;
-			localtime(t);
-			set(t);
 		}
 
 		date::date(const std::tm& t)
+			: value_(to_dateval(t))
 		{
-			set(t);
 		}
 
 		date::date(int year, int month, int day)
+			: value_({static_cast<unsigned>(year), static_cast<unsigned>(month), static_cast<unsigned>(day)})
 		{
 			if(1601 <= year && year < 30827 && 0 < month && month < 13 && day > 0)
 			{
 				if(day <= static_cast<int>(date::month_days(year, month)))
-				{
-					value_.year = year;
-					value_.month = month;
-					value_.day = day;
 					return;
-				}
 			}
 
-			struct tm t;
-			localtime(t);
-			set(t);
+			set(localtime());
 		}
 
 		date date::operator - (int off) const
@@ -258,39 +261,27 @@ namespace nana
 	//class time
 		void time::set(const std::tm& t)
 		{
-			value_.hour = t.tm_hour;
-			value_.minute = t.tm_min;
-			value_.second = t.tm_sec;
+			value_ = to_timeval(t);
 		}
 
 		time::time()
+			: value_(to_timeval(localtime()))
 		{
-			struct tm t;
-			localtime(t);
-			set(t);
 		}
 
 		time::time(const std::tm& t)
+			: value_(to_timeval(t))
 		{
-			value_.hour = t.tm_hour;
-			value_.minute = t.tm_min;
-			value_.second = t.tm_sec;
 		}
 
 		time::time(unsigned hour, unsigned minute, unsigned second)
+			: value_({hour, minute, second})
 		{
 			if(hour < 24 && minute < 60 && second < 62)
-			{
-				value_.hour = hour;
-				value_.minute = minute;
-				value_.second = second;
 				return;
-			}
-			struct tm t;
-			localtime(t);
-			set(t);
-		}
 
+			set(localtime());
+		}
 		const time::value& time::read() const
 		{
 			return value_;

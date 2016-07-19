@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -41,7 +41,7 @@ namespace nana
 
 				void text_changed() override
 				{
-					widget_.events().text_changed.emit(::nana::arg_combox{ widget_ });
+					widget_.events().text_changed.emit(::nana::arg_combox{ widget_ }, widget_);
 				}
 			private:
 				::nana::combox & widget_;
@@ -171,7 +171,7 @@ namespace nana
 					if(editor_)
 					{
 						editor_->editable(enb);
-
+						editor_->show_caret(enb);
 						if (!enb)
 						{
 							editor_->ext_renderer().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
@@ -245,7 +245,7 @@ namespace nana
 
 				void open_lister_if_push_button_positioned()
 				{
-					if((nullptr == state_.lister) && !items_.empty() && (parts::push_button == state_.pointer_where))
+					if((nullptr == state_.lister) && !items_.empty() && (!editor_->attr().editable || (parts::push_button == state_.pointer_where)))
 					{
 						module_.items.clear();
 						std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
@@ -253,12 +253,25 @@ namespace nana
 						state_.lister->renderer(item_renderer_);
 						state_.lister->set_module(module_, image_pixels_);
 						state_.item_index_before_selection = module_.index;
+
 						//The lister window closes by itself. I just take care about the destroy event.
 						//The event should be destroy rather than unload. Because the unload event is invoked while
 						//the lister is not closed, if popuping a message box, the lister will cover the message box.
-						state_.lister->events().destroy.connect_unignorable([this]
+						state_.lister->events().destroy.connect_unignorable([this](const arg_destroy&)
 						{
-							_m_lister_close_sig();
+							state_.lister = nullptr;	//The lister closes by itself.
+							if ((module_.index != nana::npos) && (module_.index != state_.item_index_before_selection))
+							{
+								option(module_.index, true);
+								API::update_window(*widget_);
+							}
+							else
+							{
+								//Redraw the widget even though the index has not been changed,
+								//because the push button should be updated due to the state
+								//changed from pressed to normal/hovered.
+								API::refresh_window(*widget_);
+							}
 						});
 					}
 				}
@@ -338,11 +351,11 @@ namespace nana
 						if (calc_where(*graph_, pos.x, pos.y))
 							state_.button_state = element_state::normal;
 
-						editor_->text(::nana::charset(items_[index]->item_text, ::nana::unicode::utf8));
+						editor_->text(::nana::charset(items_[index]->item_text, ::nana::unicode::utf8), false);
 						_m_draw_push_button(widget_->enabled());
 						_m_draw_image();
 
-						widget_->events().selected.emit(::nana::arg_combox(*widget_));
+						widget_->events().selected.emit(::nana::arg_combox(*widget_), widget_->handle());
 					}
 				}
 
@@ -351,7 +364,7 @@ namespace nana
 					std::size_t pos = 0;
 					for (auto & m : items_)
 					{
-						if (m->key && detail::pred_equal_by_less(m->key.get(), p.get()))
+						if (m->key && detail::pred_equal(m->key.get(), p.get()))
 							return pos;
 						++pos;
 					}
@@ -371,7 +384,7 @@ namespace nana
 					std::size_t pos = 0;
 					for (auto & m : items_)
 					{
-						if (m->key && detail::pred_equal_by_less(m->key.get(), kv))
+						if (m->key && detail::pred_equal(m->key.get(), kv))
 						{
 							erase(pos);
 							return;
@@ -432,23 +445,6 @@ namespace nana
 					return true;
 				}
 			private:
-				void _m_lister_close_sig()
-				{
-					state_.lister = nullptr;	//The lister closes by itself.
-					if ((module_.index != nana::npos) && (module_.index != state_.item_index_before_selection))
-					{
-						option(module_.index, true);
-						API::update_window(*widget_);
-					}
-					else
-					{
-						//Redraw the widget even though the index has not been changed,
-						//because the push button should be updated due to the state
-						//changed from pressed to normal/hovered.
-						API::refresh_window(*widget_);
-					}
-				}
-
 				void _m_draw_push_button(bool enabled)
 				{
 					::nana::rectangle r{graph_->size()};
@@ -590,7 +586,7 @@ namespace nana
 					{
 						drawer_->draw();
 						drawer_->editor()->reset_caret();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -600,7 +596,7 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -611,36 +607,36 @@ namespace nana
 					if(drawer_->widget_ptr()->enabled())
 					{
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
-				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
+				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
 				{
 					//drawer_->set_mouse_press(true);
 					drawer_->set_button_state(element_state::pressed, false);
 					if(drawer_->widget_ptr()->enabled())
 					{
 						auto * editor = drawer_->editor();
-						if (!editor->mouse_pressed(arg))
-							drawer_->open_lister_if_push_button_positioned();
+						editor->mouse_pressed(arg);
+						drawer_->open_lister_if_push_button_positioned();
 
 						drawer_->draw();
 						if(editor->attr().editable)
 							editor->reset_caret();
 
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
-				void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
+				void trigger::mouse_up(graph_reference, const arg_mouse& arg)
 				{
 					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
 					{
 						drawer_->editor()->mouse_pressed(arg);
 						drawer_->set_button_state(element_state::hovered, false);
 						drawer_->draw();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -655,12 +651,12 @@ namespace nana
 						{
 							drawer_->draw();
 							drawer_->editor()->reset_caret();
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 						}
 					}
 				}
 
-				void trigger::mouse_wheel(graph_reference graph, const arg_wheel& arg)
+				void trigger::mouse_wheel(graph_reference, const arg_wheel& arg)
 				{
 					if(drawer_->widget_ptr()->enabled())
 					{
@@ -715,13 +711,13 @@ namespace nana
 					if (call_other_keys)
 						drawer_->editor()->respond_key(arg);
 
-					API::lazy_refresh();
+					API::dev::lazy_refresh();
 				}
 
-				void trigger::key_char(graph_reference graph, const arg_keyboard& arg)
+				void trigger::key_char(graph_reference, const arg_keyboard& arg)
 				{
 					if (drawer_->editor()->respond_char(arg))
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 				}
 			//end class trigger
 
@@ -997,7 +993,7 @@ namespace nana
 
 			auto editor = _m_impl().editor();
 			if (editor)
-				editor->text(to_wstring(str));
+				editor->text(to_wstring(str), false);
 
 			API::refresh_window(*this);
 		}

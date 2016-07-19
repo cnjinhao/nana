@@ -135,7 +135,7 @@ namespace nana
 
 		void emit(const arg_elapse& arg)
 		{
-			evt_elapse_.emit(arg);
+			evt_elapse_.emit(arg, nullptr);
 		}
 	private:
 		const timer_identifier timer_;

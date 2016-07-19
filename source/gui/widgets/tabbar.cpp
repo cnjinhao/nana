@@ -43,7 +43,7 @@ namespace nana
 				: public item_renderer
 			{
 			private:
-				virtual void background(graph_reference graph, const nana::rectangle& r, const ::nana::color& bgcolor)
+				virtual void background(graph_reference graph, const nana::rectangle&, const ::nana::color& bgcolor)
 				{
 					if(bgcolor_ != bgcolor)
 					{
@@ -59,7 +59,6 @@ namespace nana
 
 				virtual void item(graph_reference graph, const item_t& m, bool active, state_t sta)
 				{
-					//*
 					const nana::rectangle & r = m.r;
 					color bgcolor;
 					color blcolor;
@@ -961,7 +960,8 @@ namespace nana
 					auto bgcolor = API::bgcolor(basis_.wd);
 					auto fgcolor = API::fgcolor(basis_.wd);
 
-					item_renderer::item_t m{ ::nana::rectangle{ basis_.graph->size() } };
+					item_renderer::item_t m;
+					m.r = ::nana::rectangle{ basis_.graph->size() };
 
 					basis_.renderer->background(*basis_.graph, m.r, bgcolor);
 
@@ -1255,7 +1255,7 @@ namespace nana
 						if(false == layouter_->active_by_trace())
 							layouter_->toolbox_answer(arg);
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1266,7 +1266,7 @@ namespace nana
 					if(rd)
 					{
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1275,7 +1275,7 @@ namespace nana
 					if(layouter_->trace(arg.pos.x, arg.pos.y))
 					{
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 
@@ -1284,7 +1284,7 @@ namespace nana
 					if(layouter_->leave())
 					{
 						layouter_->render();
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 				}
 			//end class trigger
@@ -1535,7 +1535,7 @@ namespace nana
 							return;
 
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 
 					void driver::mouse_leave(graph_reference graph, const arg_mouse&)
@@ -1544,7 +1544,7 @@ namespace nana
 							return;
 
 						refresh(graph);
-						API::lazy_refresh();
+						API::dev::lazy_refresh();
 					}
 
 					void driver::mouse_down(graph_reference graph, const arg_mouse&)
@@ -1559,10 +1559,10 @@ namespace nana
 							model_->show_attached_window();
 
 							refresh(graph);
-							API::lazy_refresh();
+							API::dev::lazy_refresh();
 
 							event_arg arg;
-							model_->widget_ptr()->events().selected.emit(arg);
+							model_->widget_ptr()->events().selected.emit(arg, model_->widget_ptr()->handle());
 						}
 					}
 				//end class driver
@@ -1701,7 +1701,7 @@ namespace nana
 			if (selection_changed && (active_pos != npos))
 			{
 				event_arg arg;
-				events().selected.emit(arg);
+				events().selected.emit(arg, handle());
 			}
 		}
 		//end class tabbar

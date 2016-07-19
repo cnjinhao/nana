@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,6 +19,7 @@
 
 #include <stdexcept>
 #include <cstring>
+#include <cmath>
 
 namespace nana{	namespace paint
 {
@@ -47,11 +48,37 @@ namespace nana{	namespace paint
 	struct pixel_buffer::pixel_buffer_storage
 		: private nana::noncopyable
 	{
+		pixel_buffer_storage(const pixel_buffer_storage& other) = delete;
+		pixel_buffer_storage& operator=(const pixel_buffer_storage&) = delete;
+
+		bool _m_alloc()
+		{
+			if (pixel_size.empty())
+				return false;
+
+			std::unique_ptr<pixel_color_t[]> pxbuf{ new pixel_color_t[pixel_size.width * pixel_size.height] };
+#if defined(NANA_X11)
+			auto & spec = nana::detail::platform_spec::instance();
+			x11.image = ::XCreateImage(spec.open_display(), spec.screen_visual(), 32, ZPixmap, 0, reinterpret_cast<char*>(pxbuf.get()), pixel_size.width, pixel_size.height, 32, 0);
+			x11.attached = false;
+			if (!x11.image)
+				throw std::runtime_error("Nana.pixel_buffer: XCreateImage failed");
+
+			if (static_cast<int>(bytes_per_line) != x11.image->bytes_per_line)
+			{
+				x11.image->data = nullptr;
+				XDestroyImage(x11.image);
+				throw std::runtime_error("Nana.pixel_buffer: Invalid pixel buffer context.");
+			}
+#endif
+			raw_pixel_buffer = pxbuf.release();
+			return true;
+		}
 	public:
 		const drawable_type drawable; //Attached handle
 		const nana::rectangle valid_r;
 		const nana::size pixel_size;
-		pixel_color_t * raw_pixel_buffer;
+		pixel_color_t * raw_pixel_buffer{ nullptr };
 		const std::size_t bytes_per_line;
 		bool	alpha_channel{false};
 #if defined(NANA_X11)
@@ -90,33 +117,15 @@ namespace nana{	namespace paint
 			:	drawable(nullptr),
 				valid_r(0, 0, static_cast<unsigned>(width), static_cast<unsigned>(height)),
 				pixel_size(static_cast<unsigned>(width), static_cast<unsigned>(height)),
-				raw_pixel_buffer(new pixel_color_t[width * height]),
 				bytes_per_line(width * sizeof(pixel_color_t))
 		{
-#if defined(NANA_X11)
-			nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
-			x11.image = ::XCreateImage(spec.open_display(), spec.screen_visual(), 32, ZPixmap, 0, reinterpret_cast<char*>(raw_pixel_buffer), width, height, 32, 0);
-			x11.attached = false;
-			if(nullptr == x11.image)
-			{
-				delete [] raw_pixel_buffer;
-				throw std::runtime_error("Nana.pixel_buffer: XCreateImage failed");
-			}
-
-			if(static_cast<int>(bytes_per_line) != x11.image->bytes_per_line)
-			{
-				x11.image->data = nullptr;
-				XDestroyImage(x11.image);
-				delete [] raw_pixel_buffer;
-				throw std::runtime_error("Nana.pixel_buffer: Invalid pixel buffer context.");
-			}
-#endif
+			_m_alloc();
 		}
 
 		pixel_buffer_storage(drawable_type drawable, const nana::rectangle& want_r)
 			:	drawable(drawable),
 				valid_r(valid_rectangle(paint::detail::drawable_size(drawable), want_r)),
-				pixel_size(valid_r),
+				pixel_size(valid_r.dimension()),
 #if defined(NANA_WINDOWS)
 				raw_pixel_buffer(reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(drawable->pixbuf_ptr + valid_r.x) + drawable->bytes_per_line * valid_r.y)),
 				bytes_per_line(drawable->bytes_per_line)
@@ -362,7 +371,7 @@ namespace nana{	namespace paint
 			XDestroyImage(img);
 		}
 #endif
-	};
+	};//end struct pixel_buffer_storage
 
 	pixel_buffer::pixel_buffer(drawable_type drawable, const nana::rectangle& want_rectangle)
 	{
@@ -977,7 +986,7 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::gradual_rectangle(const ::nana::rectangle& draw_rct, const ::nana::color& from, const ::nana::color& to, double fade_rate, bool vertical)
+	void pixel_buffer::gradual_rectangle(const ::nana::rectangle& draw_rct, const ::nana::color& from, const ::nana::color& to, double /*fade_rate*/, bool vertical)
 	{
 		auto sp = storage_.get();
 		if (nullptr == sp) return;
@@ -1104,6 +1113,151 @@ namespace nana{	namespace paint
 		::nana::rectangle good_r;
 		if (overlap(r, ::nana::rectangle{ this->size() }, good_r))
 			(*(sp->img_pro.blur))->process(*this, good_r, radius);
+	}
+
+
+	//x' = x*cos(angle) - y*sin(angle)
+	//y' = y*cos(angle) - x*sin(angle)
+	class calc_rotate
+	{
+		enum class angles
+		{
+			none, half_pi, pi, triangle_pi
+		};
+	public:
+		calc_rotate(double angle, const basic_point<double>& origin):
+			specific_{ _m_spec(angle) },
+			sin_a_{ std::sin(angle * degree_) },
+			cos_a_{ std::cos(angle * degree_) },
+			origin_{ origin }
+		{
+		}
+
+		basic_point<double> from(const point& p)
+		{
+			switch (specific_)
+			{
+			case angles::half_pi:
+				return{ p.y - origin_.y, origin_.x - p.x};
+			case angles::pi:
+				return{ origin_.x - p.x, origin_.y - p.y};
+			case angles::triangle_pi:
+				return{ origin_.y - p.y, p.x - origin_.x};
+			default:
+				break;
+			}
+
+			return{
+				(p.x - origin_.x) * cos_a_ + (p.y - origin_.y) * sin_a_,
+				(p.y - origin_.y) * cos_a_ - (p.x - origin_.x) * sin_a_
+			};
+		}
+
+		basic_point<double> to(const point& p)
+		{
+			switch (specific_)
+			{
+			case angles::half_pi:
+				return{ origin_.y - p.y, p.x - origin_.x };
+			case angles::pi:
+				return{ origin_.x - p.x, origin_.y - p.y };
+			case angles::triangle_pi:
+				return{ p.y - origin_.y, origin_.x - p.x };
+			default:
+				break;
+			}
+
+			return{
+				(p.x - origin_.x) * cos_a_ - (p.y - origin_.y) * sin_a_,
+				(p.y - origin_.y) * cos_a_ + (p.x - origin_.x) * sin_a_
+			};
+		}
+	private:
+		static angles _m_spec(double angle)
+		{
+			if (90.0 == angle)
+				return angles::half_pi;
+			else if (180.0 == angle)
+				return angles::pi;
+			else if (270.0 == angle)
+				return angles::triangle_pi;
+
+			return angles::none;
+		}
+	private:
+		const angles specific_;
+		const double degree_{ std::acos(-1) / 180 };
+		const double sin_a_;
+		const double cos_a_;
+		const basic_point<double> origin_;
+	};
+
+	pixel_buffer pixel_buffer::rotate(double angle, const color& extend_color)
+	{
+		auto sp = storage_.get();
+		if (!sp)
+			return{};
+
+		if (angle <= 0 || 360 <= angle)
+		{
+			return{*this};
+		}
+
+		const basic_point<double> origin{ (sp->pixel_size.width - 1) / 2.0, (sp->pixel_size.height - 1) / 2.0 };
+		calc_rotate point_rotate{ angle, origin };
+
+		nana::size size_rotated{ sp->pixel_size };
+
+		if (90 == angle || 270 == angle)
+		{
+			size_rotated.shift();
+		}
+		else
+		{
+			point pw, ph;
+			if (angle < 180)
+			{
+				ph.x = static_cast<int>(sp->pixel_size.width);
+			}
+			else if (angle > 180)
+			{
+				pw.x = static_cast<int>(sp->pixel_size.width);
+			}
+
+			size_rotated.width = static_cast<unsigned>(std::abs(point_rotate.from(pw).x) * 2) + 1;
+			size_rotated.height = static_cast<unsigned>(std::abs(point_rotate.from(ph).y) * 2) + 1;
+		}
+
+		pixel_buffer rotated_pxbuf{ size_rotated.width, size_rotated.height };
+
+		const basic_point<double> rotated_origin{ (size_rotated.width - 1) / 2.0, (size_rotated.height - 1) / 2.0 };
+
+		for (int y = 0; y < static_cast<int>(size_rotated.height); ++y)
+		{
+			auto buf = rotated_pxbuf.raw_ptr(y);
+
+			basic_point<double> dest{ -rotated_origin.x, y - rotated_origin.y };
+			dest = dest + origin;
+
+			const int right_point = static_cast<int>(dest.x) + static_cast<int>(size_rotated.width);
+
+			for (point point_dest{ static_cast<int>(dest.x), static_cast<int>(dest.y) }; point_dest.x < right_point; ++point_dest.x)
+			{
+				auto point_source = point_rotate.to(point_dest) + origin;
+
+				if (0 <= point_source.x && point_source.x <= static_cast<double>(sp->pixel_size.width - 1) && 0 <= point_source.y && point_source.y <= static_cast<double>(sp->pixel_size.height - 1))
+				{
+					*buf = this->raw_ptr(static_cast<std::size_t>(point_source.y))[static_cast<int>(point_source.x)];
+				}
+				else
+					*buf = extend_color.px_color();
+
+				++buf;
+			}
+		}
+
+
+		return rotated_pxbuf;
 	}
 }//end namespace paint
 }//end namespace nana
