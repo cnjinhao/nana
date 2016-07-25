@@ -179,6 +179,16 @@ namespace nana
 			pixel_buffer	pxbuf_;
 			bool changed_;
 		};
+
+		class draw
+		{
+		public:
+			draw(graphics& graph);
+
+			void corner(const rectangle& r, unsigned pixels);
+		private:
+			graphics& graph_;
+		};
 	}//end namespace paint
 }	//end namespace nana
 #endif
