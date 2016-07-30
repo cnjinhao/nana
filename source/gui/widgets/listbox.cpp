@@ -972,6 +972,7 @@ namespace nana
 
 					if (catobj.model_ptr)
 					{
+						throw_if_immutable_model(catobj.model_ptr.get());
 						auto container = catobj.model_ptr->container();
 						std::size_t item_index;
 						//
@@ -5027,9 +5028,24 @@ namespace nana
 
 					internal_scope_guard lock;
 
-					cat_->sorted.push_back(cat_->items.size());
-					cells.resize(columns());
-					cat_->items.emplace_back(std::move(cells));
+					if (cat_->model_ptr)
+					{
+						es_lister::throw_if_immutable_model(cat_->model_ptr.get());
+
+						auto container = cat_->model_ptr->container();
+	
+						auto item_index = container->size();
+						cat_->items.emplace_back();
+						container->emplace_back();
+
+						container->assign(item_index, cells);
+					}
+					else
+					{
+						cat_->sorted.push_back(cat_->items.size());
+						cells.resize(columns());
+						cat_->items.emplace_back(std::move(cells));
+					}
 
 					assign_colors_for_last(ess_, cat_);
 				}
