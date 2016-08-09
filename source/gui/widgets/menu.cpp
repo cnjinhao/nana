@@ -475,7 +475,7 @@ namespace nana
 								--pos;
 						}
 
-						if(! menu_->items.at(pos).flags.splitter)
+						if(! menu_->items.at(pos).flags.splitter && menu_->items.at(pos).flags.enabled)
 							break;
 					}
 
