@@ -720,7 +720,7 @@ namespace nana
 			class iresolver
 			{
 			public:
-				iresolver(const std::vector<cell>&);
+				iresolver(std::vector<cell>);
 
 				iresolver& operator>>(bool&);
 				iresolver& operator>>(short&);
@@ -740,7 +740,7 @@ namespace nana
 				iresolver& operator>>(cell&);
 				iresolver& operator>>(std::nullptr_t);
 			private:
-				const std::vector<cell>& cells_;
+				std::vector<cell> cells_;
 				std::size_t pos_{0};
 			};
 
@@ -918,7 +918,7 @@ namespace nana
 				//Undocumented method
 				essence * _m_ess() const;
 			private:
-				std::vector<cell> & _m_cells() const;
+				std::vector<cell> _m_cells() const;
 				nana::any		* _m_value(bool alloc_if_empty);
 				const nana::any	* _m_value() const;
 			private:

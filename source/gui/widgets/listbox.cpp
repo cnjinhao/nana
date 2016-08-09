@@ -32,6 +32,7 @@
 #include <nana/system/dataexch.hpp>
 #include <cassert>
 #include <mutex>
+#include <map>
 
 namespace nana
 {
@@ -972,6 +973,7 @@ namespace nana
 
 					if (catobj.model_ptr)
 					{
+						throw_if_immutable_model(catobj.model_ptr.get());
 						auto container = catobj.model_ptr->container();
 						std::size_t item_index;
 						//
@@ -1249,26 +1251,15 @@ namespace nana
 					return n;
 				}
 
-				std::vector<cell>& get_cells(category_t * cat, std::size_t pos) const
+				std::vector<cell> get_cells(category_t * cat, std::size_t pos) const
 				{
 					if (!cat)
 						throw std::out_of_range("nana::listbox: category is null");
 
 					if (cat->model_ptr)
-						throw std::runtime_error("nana::listbox disallow to get item cells, because there are model cells");
+						return cat->model_ptr->container()->to_cells(pos);
 
 					return *(cat->items.at(pos).cells);
-				}
-
-				std::vector<cell> get_model_cells(category_t* cat, std::size_t pos) const
-				{
-					if (!cat)
-						throw std::out_of_range("nana::listbox: category is null");
-
-					if (!(cat->model_ptr))
-						throw std::runtime_error("nana::listbox: the category hasn't a model");
-
-					return cat->model_ptr->container()->to_cells(pos);
 				}
 
 				void text(category_t* cat, size_type pos, size_type col, cell&& cl, size_type columns)
@@ -2868,8 +2859,8 @@ namespace nana
 				return *this;
 			}
 
-			iresolver::iresolver(const std::vector<cell>& cl)
-				: cells_(cl)
+			iresolver::iresolver(std::vector<cell> cl)
+				: cells_(std::move(cl))
 			{}
 
 			iresolver& iresolver::operator>>(cell& cl)
@@ -4565,14 +4556,6 @@ namespace nana
 
 				std::string item_proxy::text(size_type col) const
 				{
-					if (cat_->model_ptr)
-					{
-						auto cells = cat_->model_ptr->container()->to_cells(pos_.item);
-						if (col < cells.size())
-							return cells[col].text;
-
-						return{};
-					}
 					return ess_->lister.get_cells(cat_, pos_.item).at(col).text;
 				}
 
@@ -4692,7 +4675,7 @@ namespace nana
 					return pos_;
 				}
 
-				auto item_proxy::_m_cells() const -> std::vector<cell>&
+				auto item_proxy::_m_cells() const -> std::vector<cell>
 				{
 					return ess_->lister.get_cells(cat_, pos_.item);
 				}
@@ -5027,9 +5010,24 @@ namespace nana
 
 					internal_scope_guard lock;
 
-					cat_->sorted.push_back(cat_->items.size());
-					cells.resize(columns());
-					cat_->items.emplace_back(std::move(cells));
+					if (cat_->model_ptr)
+					{
+						es_lister::throw_if_immutable_model(cat_->model_ptr.get());
+
+						auto container = cat_->model_ptr->container();
+	
+						auto item_index = container->size();
+						cat_->items.emplace_back();
+						container->emplace_back();
+
+						container->assign(item_index, cells);
+					}
+					else
+					{
+						cat_->sorted.push_back(cat_->items.size());
+						cells.resize(columns());
+						cat_->items.emplace_back(std::move(cells));
+					}
 
 					assign_colors_for_last(ess_, cat_);
 				}

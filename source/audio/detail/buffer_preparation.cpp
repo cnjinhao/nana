@@ -30,7 +30,7 @@ namespace nana{	namespace audio
 					m->bufsize = ck.nAvgBytesPerSec;
 					m->buf = rawbuf + sizeof(meta);
 #endif
-					prepared_.push_back(m);
+					prepared_.emplace_back(m);
 				}
 
 				thr_ = std::move(std::thread([this](){this->_m_prepare_routine();}));
@@ -79,7 +79,7 @@ namespace nana{	namespace audio
 			{
 				std::lock_guard<decltype(token_prepared_)> lock(token_prepared_);
 				bool if_signal = prepared_.empty();
-				prepared_.push_back(m);
+				prepared_.emplace_back(m);
 				if(if_signal)
 					cond_prepared_.notify_one();
 			}
@@ -148,7 +148,7 @@ namespace nana{	namespace audio
 					m->bufsize = buffered;
 #endif
 					std::lock_guard<decltype(token_buffer_)> lock(token_buffer_);
-					buffer_.push_back(m);
+					buffer_.emplace_back(m);
 					if(wait_for_buffer_)
 					{
 						cond_buffer_.notify_one();

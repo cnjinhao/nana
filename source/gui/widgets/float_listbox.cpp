@@ -13,6 +13,8 @@
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/widgets/scroll.hpp>
 
+#include <nana/gui/layout_utility.hpp>
+
 namespace nana
 {
 	namespace drawerbase{
@@ -66,35 +68,7 @@ namespace nana
 						unsigned vpix = (r.height - 4);
 						if(item->image())
 						{
-							nana::size imgsz = item->image().size();
-							if(imgsz.width > image_pixels_)
-							{
-								unsigned new_h = image_pixels_ * imgsz.height / imgsz.width;
-								if(new_h > vpix)
-								{
-									imgsz.width = vpix * imgsz.width / imgsz.height;
-									imgsz.height = vpix;
-								}
-								else
-								{
-									imgsz.width = image_pixels_;
-									imgsz.height = new_h;
-								}
-							}
-							else if(imgsz.height > vpix)
-							{
-								unsigned new_w = vpix * imgsz.width / imgsz.height;
-								if(new_w > image_pixels_)
-								{
-									imgsz.height = image_pixels_ * imgsz.height / imgsz.width;
-									imgsz.width = image_pixels_;
-								}
-								else
-								{
-									imgsz.height = vpix;
-									imgsz.width = new_w;
-								}
-							}
+							auto imgsz = nana::fit_zoom(item->image().size(), {image_pixels_, vpix});
 
 							nana::point to_pos(x, r.y + 2);
 							to_pos.x += (image_pixels_ - imgsz.width) / 2;

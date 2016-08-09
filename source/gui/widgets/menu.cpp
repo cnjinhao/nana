@@ -18,6 +18,7 @@
 #include <nana/gui/wvl.hpp>
 #include <nana/paint/text_renderer.hpp>
 #include <cctype>	//introduces tolower
+#include <map>
 
 namespace nana
 {

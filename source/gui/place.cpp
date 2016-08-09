@@ -661,13 +661,14 @@ namespace nana
 				//This is a splitter, it only checks when it is being displayed
 				if (dsp)
 				{
+					//Left field of splitterbar
 					auto left = this->previous();
 					if (left && !left->display)
 						left->set_display(true);
 
-					auto right = div_next;
-					if (right && !right->display)
-						right->set_display(true);
+					//Right field of splitterbar
+					if (div_next && !div_next->display)
+						div_next->set_display(true);
 				}
 			}
 		}

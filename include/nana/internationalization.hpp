@@ -12,7 +12,6 @@
 
 #ifndef NANA_INTERNATIONALIZATION_HPP
 #define NANA_INTERNATIONALIZATION_HPP
-#include "basic_types.hpp"
 #include <vector>
 #include <sstream>
 #include <functional>
@@ -186,9 +185,7 @@ namespace nana
 		void _m_add_args(const std::string&);
 		void _m_add_args(std::string&&);
 
-		void _m_add_args(std::wstring&);
 		void _m_add_args(const std::wstring&);
-		void _m_add_args(std::wstring&&);
 	private:
 		std::string msgid_;
 		std::vector<std::unique_ptr<eval_arg>> args_;

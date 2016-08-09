@@ -133,10 +133,10 @@ namespace nana{
 		class root_register
 		{
 		public:
-			root_misc* insert(native_window_type wd, const root_misc& misc)
+			root_misc* insert(native_window_type wd, root_misc&& misc)
 			{
 				recent_ = wd;
-				auto ret = table_.insert(std::make_pair(wd, misc));
+				auto ret = table_.emplace(wd, std::move(misc));
 				misc_ptr_ = &(ret.first->second);
 				return misc_ptr_;
 			}

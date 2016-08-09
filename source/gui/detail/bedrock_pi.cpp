@@ -600,7 +600,7 @@ namespace nana
 					{
 						root = wd->root;
 						if (roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
-							roots.push_back(root);
+							roots.emplace_back(root);
 					}
 				}
 

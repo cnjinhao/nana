@@ -402,7 +402,7 @@ namespace nana
 					root = agrparent->root;
 					root_graph = agrparent->root_graph;
 					index = static_cast<unsigned>(agrparent->children.size());
-					agrparent->children.push_back(this);
+					agrparent->children.emplace_back(this);
 				}
 
 				predef_cursor = cursor::arrow;
