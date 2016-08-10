@@ -32,6 +32,178 @@
 namespace nana
 {
 
+	namespace detail
+	{
+		//class shortkey_container
+		struct shortkey_rep
+		{
+			window handle;
+			std::vector<unsigned long> keys;
+		};
+
+		struct shortkey_container::implementation
+		{
+			std::vector<shortkey_rep> base;
+		};
+
+		shortkey_container::shortkey_container()
+			:impl_(new implementation)
+		{}
+
+		shortkey_container::shortkey_container(shortkey_container&& other)
+			: impl_(other.impl_)
+		{
+			other.impl_ = nullptr;
+		}
+
+		shortkey_container::~shortkey_container()
+		{
+			delete impl_;
+		}
+
+		void shortkey_container::clear()
+		{
+			impl_->base.clear();
+		}
+
+		bool shortkey_container::make(window wd, unsigned long key)
+		{
+			if (wd == nullptr) return false;
+			if (key < 0x61) key += (0x61 - 0x41);
+
+			for (auto & m : impl_->base)
+			{
+				if (m.handle == wd)
+				{
+					m.keys.emplace_back(key);
+					return true;
+				}
+			}
+
+			impl_->base.emplace_back();
+			auto & rep = impl_->base.back();
+			rep.handle = wd;
+			rep.keys.emplace_back(key);
+
+			return true;
+		}
+
+		void shortkey_container::umake(window wd)
+		{
+			if (wd == nullptr) return;
+
+			for (auto i = impl_->base.begin(); i != impl_->base.end(); ++i)
+			{
+				if (i->handle == wd)
+				{
+					impl_->base.erase(i);
+					break;
+				}
+			}
+		}
+
+		std::vector<unsigned long> shortkey_container::keys(window wd) const
+		{
+			if (wd)
+			{
+				for (auto & m : impl_->base)
+				{
+					if (m.handle == wd)
+						return m.keys;
+				}
+			}
+			return{};
+		}
+
+		window shortkey_container::find(unsigned long key) const
+		{
+			if (key < 0x61) key += (0x61 - 0x41);
+
+			for (auto & m : impl_->base)
+			{
+				for (auto n : m.keys)
+				{
+					if (key == n)
+						return m.handle;
+				}
+			}
+			return nullptr;
+		}
+		//end class shortkey_container
+
+
+		//struct root_misc
+		root_misc::root_misc(root_misc&& other):
+			window(other.window),
+			root_graph(std::move(other.root_graph)),
+			shortkeys(std::move(other.shortkeys)),
+			condition(std::move(other.condition))
+		{
+		}
+
+		root_misc::root_misc(basic_window * wd, unsigned width, unsigned height)
+			: window(wd),
+			root_graph({ width, height })
+		{
+			condition.ignore_tab = false;
+			condition.pressed = nullptr;
+			condition.pressed_by_space = nullptr;
+			condition.hovered = nullptr;
+		}
+		//end struct root_misc
+
+		//class root_register
+		struct root_register::implementation
+		{
+			//Cached
+			native_window_type	recent_access{ nullptr };
+			root_misc *			misc_ptr{ nullptr };
+
+			std::map<native_window_type, root_misc> table;
+		};
+
+		root_register::root_register()
+			: impl_(new implementation)
+		{}
+
+		root_register::~root_register()
+		{
+			delete impl_;
+		}
+
+		root_misc* root_register::insert(native_window_type wd, root_misc&& misc)
+		{
+			impl_->recent_access = wd;
+			auto ret = impl_->table.emplace(wd, std::move(misc));
+			impl_->misc_ptr = &(ret.first->second);
+			return impl_->misc_ptr;
+		}
+
+		root_misc * root_register::find(native_window_type wd)
+		{
+			if (wd == impl_->recent_access)
+				return impl_->misc_ptr;
+
+			impl_->recent_access = wd;
+
+			auto i = impl_->table.find(wd);
+			if (i != impl_->table.end())
+				impl_->misc_ptr = &(i->second);
+			else
+				impl_->misc_ptr = nullptr;
+
+			return impl_->misc_ptr;
+		}
+
+		void root_register::erase(native_window_type wd)
+		{
+			impl_->table.erase(wd);
+			impl_->recent_access = wd;
+			impl_->misc_ptr = nullptr;
+		}
+		//end class root_register
+	}
+
 namespace detail
 {
 	template<typename Key, typename Value>

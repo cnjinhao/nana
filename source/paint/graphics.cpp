@@ -973,7 +973,7 @@ namespace paint
 #elif defined(NANA_X11)
 				Display* disp = nana::detail::platform_spec::instance().open_display();
 				impl_->handle->update_color();
-				::XDrawPoint(disp, impl_->handle->pixmap, handle_->context, x, y);
+				::XDrawPoint(disp, impl_->handle->pixmap, impl_->handle->context, x, y);
 #endif
 				if (impl_->changed == false) impl_->changed = true;
 			}
@@ -997,7 +997,7 @@ namespace paint
 				auto const end = str + len;
 				auto i = std::find(str, end, '\t');
 #if defined(NANA_LINUX) || defined(NANA_MACOS)
-				handle_->update_text_color();
+				impl_->handle->update_text_color();
 #endif
 				if (i != end)
 				{
@@ -1177,7 +1177,7 @@ namespace paint
 				impl_->pxbuf.paste(impl_->handle, point{});
 			}
 #elif defined(NANA_X11)
-			if (nullptr == handle_) return;
+			if (nullptr == impl_->handle) return;
 
 			double deltapx = double(vertical ? rct.height : rct.width);
 			double r, g, b;

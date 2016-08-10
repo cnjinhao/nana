@@ -1176,7 +1176,7 @@ namespace nana
 		}
 
 		bground::bground(const bground& rhs)
-			: impl_{ new implementation }
+			: impl_{ new implementation(*rhs.impl_) }
 		{
 			if (impl_->method)
 				impl_->method = impl_->method->clone();

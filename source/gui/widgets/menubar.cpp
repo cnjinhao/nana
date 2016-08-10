@@ -55,7 +55,7 @@ namespace nana
 				void append(const native_string_type& text, unsigned long shortkey)
 				{
 					if(shortkey && shortkey < 0x61) shortkey += (0x61 - 0x41);
-					cont_.push_back(new item_type(text, shortkey));
+					cont_.emplace_back(new item_type(text, shortkey));
 				}
 
 				std::size_t find(unsigned long shortkey) const

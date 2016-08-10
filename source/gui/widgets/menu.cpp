@@ -272,7 +272,7 @@ namespace nana
 						if(item.sub_menu == nullptr)
 						{
 							item.sub_menu = &sub;
-							sub.owner.push_back(&root_);
+							sub.owner.emplace_back(&root_);
 							return true;
 						}
 					}
