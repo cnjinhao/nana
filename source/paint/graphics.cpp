@@ -1267,5 +1267,40 @@ namespace paint
 		}
 	//end class graphics
 
+	//class draw
+		draw::draw(graphics& graph)
+			: graph_(graph)
+		{}
+
+		void draw::corner(const rectangle& r, unsigned pixels)
+		{
+			if (1 == pixels)
+			{
+				graph_.set_pixel(r.x, r.y);
+				graph_.set_pixel(r.right() - 1, r.y);
+
+				graph_.set_pixel(r.x, r.bottom() - 1);
+				graph_.set_pixel(r.right() - 1, r.bottom() - 1);
+				return;
+			}
+			else if (1 < pixels)
+			{
+				graph_.line(r.position(), point(r.x + pixels, r.y));
+				graph_.line(r.position(), point(r.x, r.y + pixels));
+
+				int right = r.right() - 1;
+				graph_.line(point(right, r.y), point(right - pixels, r.y));
+				graph_.line(point(right, r.y), point(right, r.y - pixels));
+
+				int bottom = r.bottom() - 1;
+				graph_.line(point(r.x, bottom), point(r.x + pixels, bottom));
+				graph_.line(point(r.x, bottom), point(r.x, bottom - pixels));
+
+				graph_.line(point(right, bottom), point(right - pixels, bottom));
+				graph_.line(point(right, bottom), point(right, bottom - pixels));
+			}
+		}
+	//end class draw
+
 }//end namespace paint
 }//end namespace nana

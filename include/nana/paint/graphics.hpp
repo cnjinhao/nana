@@ -178,6 +178,16 @@ namespace nana
 			struct implementation;
 			std::unique_ptr<implementation> impl_;
 		};
+
+		class draw
+		{
+		public:
+			draw(graphics& graph);
+
+			void corner(const rectangle& r, unsigned pixels);
+		private:
+			graphics& graph_;
+		};
 	}//end namespace paint
 }	//end namespace nana
 #endif
