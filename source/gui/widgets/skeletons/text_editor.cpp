@@ -2300,6 +2300,8 @@ namespace nana{	namespace widgets
 			}
 			else
 			{
+				undo_ptr->set_removed(this->_m_make_select_string());
+
 				undo_ptr->set_selected_text();
 				points_.caret = _m_erase_select();
 				undo_ptr->set_caret_pos();
