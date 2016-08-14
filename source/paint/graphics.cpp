@@ -140,13 +140,13 @@ namespace paint
 
 		unsigned font::height() const
 		{
-			if(empty()) return false;
+			if(empty()) return 0;
 			return (impl_->font_ptr->height);
 		}
 
 		unsigned font::weight() const
 		{
-			if(empty()) return false;
+			if(empty()) return 0;
 			return (impl_->font_ptr->weight);
 		}
 
