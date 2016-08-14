@@ -413,7 +413,7 @@ namespace paint
 
 		nana::size	graphics::text_extent_size(const std::wstring& text)	const
 		{
-			return text_extent_size(text.c_str(), static_cast<unsigned>(text.length()));
+			return text_extent_size(text.c_str(), text.length());
 		}
 
 		nana::size	graphics::text_extent_size(const wchar_t* str, std::size_t len)	const

@@ -751,7 +751,7 @@ namespace nana
 					if((pos == npos) || (pos >= list_.size()))
 					{
 						this->list_.emplace_back();
-						pos = static_cast<unsigned>(list_.size() - 1);
+						pos = list_.size() - 1;
 					}
 					else
 						list_.emplace(iterator_at(pos));

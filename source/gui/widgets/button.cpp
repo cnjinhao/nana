@@ -235,7 +235,7 @@ namespace nana{	namespace drawerbase
 
 					if(shortkey)
 					{
-						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), static_cast<unsigned>(shortkey_pos)).width : 0);
+						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), shortkey_pos).width : 0);
 
 						wchar_t keystr[2] = {nana::utf::char_at(mbstr.c_str() + shortkey_pos, 0, 0), 0};
 						auto shortkey_size = graph.text_extent_size(keystr, 1);
