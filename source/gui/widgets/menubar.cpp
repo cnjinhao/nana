@@ -112,13 +112,9 @@ namespace nana
 					nana::rectangle r(pos, size);
 					graph_.rectangle(r, false, border);
 
-					int right = pos.x + static_cast<int>(size.width) - 1;
-					int bottom = pos.y + static_cast<int>(size.height) - 1;
 					graph_.palette(false, corner);
-					graph_.set_pixel(pos.x, pos.y);
-					graph_.set_pixel(right, pos.y);
-					graph_.set_pixel(pos.x, bottom);
-					graph_.set_pixel(right, bottom);
+
+					paint::draw{ graph_ }.corner(r, 1);
 					graph_.rectangle(r.pare_off(1), true, body);
 				}
 

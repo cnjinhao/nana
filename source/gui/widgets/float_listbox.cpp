@@ -36,28 +36,20 @@ namespace nana
 				{
 					if (state == StateHighlighted)
 					{
-						::nana::color clr(static_cast<color_rgb>(0xafc7e3));
-						graph.rectangle(r, false, clr);
+						graph.rectangle(r, false, static_cast<color_rgb>(0xafc7e3));
 
-						auto right = r.right() - 1;
-						auto bottom = r.bottom() - 1;
 						graph.palette(false, colors::white);
-						graph.set_pixel(r.x, r.y);
-						graph.set_pixel(right, r.y);
-						graph.set_pixel(r.x, bottom);
-						graph.set_pixel(right, bottom);
 
-						--right;
-						--bottom;
-						graph.palette(false, clr);
-						graph.set_pixel(r.x + 1, r.y + 1);
-						graph.set_pixel(right, r.y + 1);
-						graph.set_pixel(r.x + 1, bottom);
-						graph.set_pixel(right, bottom);
+						paint::draw draw{ graph };
+						draw.corner(r, 1);
 
-						nana::rectangle po_r(r);
-						graph.rectangle(po_r.pare_off(1), false, static_cast<color_rgb>(0xEBF4FB));
-						graph.gradual_rectangle(po_r.pare_off(1), static_cast<color_rgb>(0xDDECFD), static_cast<color_rgb>(0xC2DCFD), true);
+						graph.palette(false, static_cast<color_rgb>(0xafc7e3));
+
+						auto inner_r = r;
+						draw.corner(inner_r.pare_off(1), 1);
+
+						graph.rectangle(inner_r, false, static_cast<color_rgb>(0xEBF4FB));
+						graph.gradual_rectangle(inner_r.pare_off(1), static_cast<color_rgb>(0xDDECFD), static_cast<color_rgb>(0xC2DCFD), true);
 					}
 					else
 						graph.rectangle(r, true, colors::white);
@@ -83,7 +75,9 @@ namespace nana
 
 				unsigned item_pixels(graph_reference graph) const
 				{
-					return graph.text_extent_size(L"jHWn/?\\{[(0569").height + 4;
+					unsigned ascent, descent, ileading;
+					graph.text_metrics(ascent, descent, ileading);
+					return ascent + descent + 4;
 				}
 			};//end class item_renderer
 

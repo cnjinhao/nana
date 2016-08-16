@@ -3940,18 +3940,14 @@ namespace nana
 				void _m_draw_border(int x, int y, unsigned width) const
 				{
 					//Draw selecting inner rectangle
-					auto graph = essence_->graph;
+					rectangle r{ x, y, width, essence_->scheme_ptr->item_height };
 
-					graph->rectangle({ x, y, width, essence_->scheme_ptr->item_height }, false, static_cast<color_rgb>(0x99defd));
-					graph->rectangle({ x + 1, y + 1, width - 2, essence_->scheme_ptr->item_height - 2 }, false, colors::white);
+					essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
 
-					const int right = x + width - 1;
-					const int bottom = y + essence_->scheme_ptr->item_height - 1;
+					essence_->graph->palette(false, colors::white);
+					paint::draw(*essence_->graph).corner(r, 1);
 
-					graph->set_pixel(x, y);
-					graph->set_pixel(x, bottom);
-					graph->set_pixel(right, y);
-					graph->set_pixel(right, bottom);
+					essence_->graph->rectangle(r.pare_off(1), false);
 				}
 			private:
 				essence * const essence_;
