@@ -140,13 +140,13 @@ namespace paint
 
 		unsigned font::height() const
 		{
-			if(empty()) return false;
+			if(empty()) return 0;
 			return (impl_->font_ptr->height);
 		}
 
 		unsigned font::weight() const
 		{
-			if(empty()) return false;
+			if(empty()) return 0;
 			return (impl_->font_ptr->weight);
 		}
 
@@ -413,7 +413,7 @@ namespace paint
 
 		nana::size	graphics::text_extent_size(const std::wstring& text)	const
 		{
-			return text_extent_size(text.c_str(), static_cast<unsigned>(text.length()));
+			return text_extent_size(text.c_str(), text.length());
 		}
 
 		nana::size	graphics::text_extent_size(const wchar_t* str, std::size_t len)	const
