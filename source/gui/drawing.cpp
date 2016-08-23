@@ -80,7 +80,9 @@ namespace nana
 
 		void drawing::erase(diehard_t d)
 		{
-			if(API::empty_window(handle_))
+			//Fixed by Tumiz
+			//https://github.com/cnjinhao/nana/issues/153
+			if(!API::empty_window(handle_))
 				restrict::get_drawer(handle_).erase(d);
 		}
 
