@@ -1840,8 +1840,11 @@ namespace nana{	namespace widgets
 
 		//move_caret
 		//Set caret position through text coordinate
-		void text_editor::move_caret(const upoint& crtpos)
+		void text_editor::move_caret(const upoint& crtpos, bool reset_caret)
 		{
+			if (reset_caret)
+				points_.caret = crtpos;
+
 			if (!API::is_focus_ready(window_))
 				return;
 			
