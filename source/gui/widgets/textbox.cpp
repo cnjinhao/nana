@@ -344,8 +344,8 @@ namespace drawerbase {
 		{
 			auto editor = get_drawer_trigger().editor();
 			internal_scope_guard lock;
-			if (editor)
-				editor->move_caret(pos, true);
+			if (editor && editor->move_caret(pos, true))
+				API::refresh_window(handle());
 			
 			return *this;
 		}
