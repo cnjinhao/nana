@@ -1124,8 +1124,6 @@ namespace detail
 							if (evt_wd->annex.events_ptr->mouse_wheel.length() != 0)
 							{
 								def_window_proc = false;
-								nana::point mspos{ scr_pos.x, scr_pos.y };
-								wd_manager.calc_window_point(evt_wd, mspos);
 
 								arg_wheel arg;
 								arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
@@ -1138,9 +1136,6 @@ namespace detail
 
 						if (scrolled_wd && (nullptr == evt_wd))
 						{
-							nana::point mspos{ scr_pos.x, scr_pos.y };
-							wd_manager.calc_window_point(scrolled_wd, mspos);
-
 							arg_wheel arg;
 							arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
 							assign_arg(arg, scrolled_wd, pmdec);
