@@ -1507,6 +1507,9 @@ namespace nana{	namespace widgets
 
 		bool text_editor::respond_char(const arg_keyboard& arg)	//key is a character of ASCII code
 		{
+			if (!API::window_enabled(window_))
+				return false;
+
 			char_type key = arg.key;
 			switch (key)
 			{
@@ -1518,7 +1521,7 @@ namespace nana{	namespace widgets
 				return true;
 			}
 
-			if (attributes_.editable && API::window_enabled(window_) && (!impl_->capacities.pred_acceptive || impl_->capacities.pred_acceptive(key)))
+			if (attributes_.editable && (!impl_->capacities.pred_acceptive || impl_->capacities.pred_acceptive(key)))
 			{
 				switch (key)
 				{
@@ -1700,9 +1703,10 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		void text_editor::editable(bool v)
+		void text_editor::editable(bool enable, bool enable_caret)
 		{
-			attributes_.editable = v;
+			attributes_.editable = enable;
+			attributes_.enable_caret = (enable || enable_caret);
 		}
 
 		void text_editor::enable_background(bool enb)
@@ -1815,12 +1819,12 @@ namespace nana{	namespace widgets
 		bool text_editor::mouse_move(bool left_button, const point& scrpos)
 		{
 			cursor cur = cursor::iterm;
-			if(((!hit_text_area(scrpos)) && (!text_area_.captured)) || !attributes_.editable || !API::window_enabled(window_))
+			if(((!hit_text_area(scrpos)) && (!text_area_.captured)) || !attributes_.enable_caret || !API::window_enabled(window_))
 				cur = cursor::arrow;
 
 			API::window_cursor(window_, cur);
 
-			if(!attributes_.editable)
+			if(!attributes_.enable_caret)
 				return false;
 
 			if(left_button)
@@ -1838,7 +1842,7 @@ namespace nana{	namespace widgets
 
 		bool text_editor::mouse_pressed(const arg_mouse& arg)
 		{
-			if(!attributes_.editable)
+			if(!attributes_.enable_caret)
 				return false;
 
 			if (event_code::mouse_down == arg.evt_code)
@@ -1857,7 +1861,9 @@ namespace nana{	namespace widgets
 
 					if (this->hit_select_area(impl_->capacities.behavior->screen_to_caret(arg.pos), true))
 					{
-						select_.mode_selection = selection::mode::move_selected;
+						//The selected of text can be moved only if it is editable
+						if (attributes_.editable)
+							select_.mode_selection = selection::mode::move_selected;
 					}
 					else
 					{
@@ -2007,7 +2013,7 @@ namespace nana{	namespace widgets
 					reset_caret_pixels();
 			}
 
-			if(!attributes_.editable)
+			if(!attributes_.enable_caret)
 				visible = false;
 
 			caret->visible(visible);
@@ -2103,9 +2109,6 @@ namespace nana{	namespace widgets
 
 		bool text_editor::move_select()
 		{
-			if (! attributes_.editable)
-				return false;
-
 			if(hit_select_area(points_.caret, true) || (select_.b == points_.caret))
 			{
 				points_.caret = select_.b;
@@ -3206,6 +3209,9 @@ namespace nana{	namespace widgets
 
 		bool text_editor::_m_move_select(bool record_undo)
 		{
+			if (!attributes_.editable)
+				return false;
+
 			nana::upoint caret = points_.caret;
 			const auto text = _m_make_select_string();
 			if (!text.empty())
@@ -3457,7 +3463,7 @@ namespace nana{	namespace widgets
 
 			const bool text_selected = (sbegin == text_ptr->c_str() && send == text_ptr->c_str() + text_ptr->size());
 			//The text is not selected or the whole line text is selected
-			if (!focused || (!sbegin || !send) || text_selected || !attributes_.editable)
+			if (!focused || (!sbegin || !send) || text_selected || !attributes_.enable_caret)
 			{
 				for (auto & ent : reordered)
 				{

@@ -415,7 +415,16 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->editable(able);
+				editor->editable(able, false);
+			return *this;
+		}
+
+		textbox& textbox::enable_caret()
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->editable(editor->attr().editable, true);
 			return *this;
 		}
 

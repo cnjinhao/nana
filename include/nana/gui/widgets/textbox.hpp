@@ -184,6 +184,9 @@ namespace nana
 		bool editable() const;
 		textbox& editable(bool);
 
+		/// Enables the caret if the textbox current is not editable
+		textbox& enable_caret();
+
 		void set_accept(std::function<bool(wchar_t)>);
 
 		textbox& tip_string(::std::string);

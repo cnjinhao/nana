@@ -607,7 +607,7 @@ namespace nana
 		internal_scope_guard lock;
 		auto editor = get_drawer_trigger().impl()->editor();
 		if (editor)
-			editor->editable(accept);
+			editor->editable(accept, false);
 	}
 
 	bool spinbox::editable() const

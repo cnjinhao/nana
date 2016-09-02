@@ -170,7 +170,7 @@ namespace nana
 				{
 					if(editor_)
 					{
-						editor_->editable(enb);
+						editor_->editable(enb, false);
 						editor_->show_caret(enb);
 						if (!enb)
 						{
