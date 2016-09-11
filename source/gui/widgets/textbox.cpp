@@ -469,6 +469,18 @@ namespace drawerbase {
 				API::update_window(*this);
 		}
 
+		std::pair<upoint, upoint> textbox::selection() const
+		{
+			std::pair<upoint, upoint> points;
+
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->get_select_points(points.first, points.second);
+
+			return points;
+		}
+
 		void textbox::copy() const
 		{
 			internal_scope_guard lock;

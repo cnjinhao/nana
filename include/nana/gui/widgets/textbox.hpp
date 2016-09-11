@@ -184,7 +184,7 @@ namespace nana
 		bool editable() const;
 		textbox& editable(bool);
 
-		/// Enables the caret if the textbox current is not editable
+		/// Enables the caret if the textbox currently is not editable
 		textbox& enable_caret();
 
 		void set_accept(std::function<bool(wchar_t)>);
@@ -199,6 +199,12 @@ namespace nana
 
         /// Selects/unselects all text.
 		void select(bool);
+
+		/// Returns the bounds of a text selection
+		/**
+		 * @return no selection if pair.first == pair.second.
+		 */
+		std::pair<upoint, upoint> selection() const;
 
 		void copy() const;  ///< Copies the selected text into shared memory, such as clipboard under Windows.
 		void paste();       ///< Pastes the text from shared memory.

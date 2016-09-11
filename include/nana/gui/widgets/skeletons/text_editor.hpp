@@ -151,6 +151,8 @@ namespace nana{	namespace widgets
 
 			bool selected() const;
 			bool select(bool);
+			bool get_select_points(nana::upoint&, nana::upoint&) const;
+
 			/// Sets the end position of a selected string.
 			void set_end_caret();
 			
@@ -233,7 +235,6 @@ namespace nana{	namespace widgets
 			//@brief: redraw whole line specified by caret pos. 
 			//@return: true if caret overs the border
 			bool _m_update_caret_line(std::size_t secondary_before);
-			bool _m_get_sort_select_points(nana::upoint&, nana::upoint&) const;
 
 			void _m_offset_y(int y);
 
