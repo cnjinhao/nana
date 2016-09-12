@@ -442,8 +442,6 @@ namespace nana
 
 			bool basic_window::set_events(const std::shared_ptr<general_events>& p)
 			{
-				if (annex.events_ptr)
-					return false;
 				annex.events_ptr = p;
 				return true;
 			}

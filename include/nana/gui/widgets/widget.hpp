@@ -150,8 +150,8 @@ namespace nana
 			~widget_base();
 
 			window handle() const override;
-		private:
-			void _m_notify_destroy() override final;
+		protected:
+			void _m_notify_destroy() override;
 		protected:
 			window handle_{ nullptr };
 		};
@@ -228,6 +228,13 @@ namespace nana
 		{
 			return *events_;
 		}
+
+		void _m_notify_destroy() override final
+		{
+			widget_base::_m_notify_destroy();
+			events_ = std::make_shared<Events>();
+			API::dev::set_events(handle_, events_);
+		}
 	private:
 		DrawerTrigger trigger_;
 		std::shared_ptr<Events> events_;
@@ -280,6 +287,13 @@ namespace nana
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			widget_base::_m_notify_destroy();
+			events_ = std::make_shared<Events>();
+			API::dev::set_events(handle_, events_);
 		}
 	private:
 		std::shared_ptr<Events> events_;
@@ -414,6 +428,13 @@ namespace nana
 		general_events& _m_get_general_events() const override
 		{
 			return *events_;
+		}
+
+		void _m_notify_destroy() override final
+		{
+			widget_base::_m_notify_destroy();
+			events_ = std::make_shared<Events>();
+			API::dev::set_events(handle_, events_);
 		}
 	private:
 		DrawerTrigger					trigger_;
