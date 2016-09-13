@@ -1490,9 +1490,14 @@ namespace nana
 
 				void select_display_range(index_pair fr_abs, index_pair to_dpl, bool sel)
 				{
+					const auto already_selected = this->pick_items(true);
+
 					index_pair fr_dpl (fr_abs.cat, this->display_order(fr_abs.cat, fr_abs.item));
                     if (fr_dpl > to_dpl)
 						std::swap(fr_dpl, to_dpl);
+
+					const auto begin = fr_dpl;
+					const auto last = to_dpl;
 
 					for (; fr_dpl != to_dpl; forward(fr_dpl, 1, fr_dpl))
 					{
@@ -1502,6 +1507,14 @@ namespace nana
 
 					if (to_dpl.is_item())
 						item_proxy(ess_, index_pair(to_dpl.cat, absolute( to_dpl ) )).select(sel);
+
+					//Unselects the already selected which is out of range [begin, last] 
+					for (auto index : already_selected)
+					{
+						index_pair disp_order{ index.cat, this->display_order(index.cat, index.item) };
+						if (begin > disp_order || disp_order > last)
+							item_proxy(ess_, index_pair(index.cat, absolute(disp_order))).select(false);
+					}
 				}
 
 				bool select_for_all(bool sel)
@@ -2060,7 +2073,7 @@ namespace nana
 					return i;
 				}
 			public:
-				index_pair last_selected_abs, last_selected_dpl;
+				index_pair last_selected_abs;
 			private:
 				essence * ess_{nullptr};
 				nana::listbox * widget_{nullptr};
@@ -3126,7 +3139,7 @@ namespace nana
 
 			void es_lister::move_select(bool upwards, bool unselect_previous, bool trace_selected)
 			{
-				auto next_selected_dpl = relative_pair ( last_selected_abs); // last_selected_dpl; // ??
+				auto next_selected_dpl = relative_pair ( last_selected_abs);
 				if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
 				{
 					bool good = false;
@@ -3247,7 +3260,7 @@ namespace nana
                     if (it.selected() != sel)
 						it.select(sel);
                 }
-                last_selected_abs = last_selected_dpl = index_pair{cat, npos};
+                last_selected_abs = index_pair{cat, npos};
 			}
 
 			class drawer_header_impl
@@ -4165,7 +4178,18 @@ namespace nana
 								if (!lister.single_selection())
 								{
 									if (arg.shift)
-										lister.select_display_range(lister.last_selected_abs , item_pos, sel);
+									{
+										//Set the first item as the begin of selected item if there
+										//is not a last selected item.(#154 reported by RenaudAlpes)
+										if (lister.last_selected_abs.empty() || lister.last_selected_abs.is_category())
+											lister.last_selected_abs.set_both(0);
+
+										auto before = lister.last_selected_abs;
+
+										lister.select_display_range(lister.last_selected_abs, item_pos, sel);
+
+										lister.last_selected_abs = before;
+									}
 									else if (arg.ctrl)
 										sel = !item_proxy(essence_, abs_item_pos).selected();
 									else
@@ -4181,19 +4205,22 @@ namespace nana
 
 								if(item_ptr)
 								{
-									item_ptr->flags.selected = sel;
-
-									arg_listbox arg{ item_proxy{ essence_, abs_item_pos } };
-									lister.wd_ptr()->events().selected.emit(arg, lister.wd_ptr()->handle());
-
-									if (item_ptr->flags.selected)
+									if (item_ptr->flags.selected != sel)
 									{
-										lister.cancel_others_if_single_enabled(true, abs_item_pos);
-										essence_->lister.last_selected_abs = abs_item_pos;
+										item_ptr->flags.selected = sel;
 
+										arg_listbox arg{ item_proxy{ essence_, abs_item_pos } };
+										lister.wd_ptr()->events().selected.emit(arg, lister.wd_ptr()->handle());
+
+										if (item_ptr->flags.selected)
+										{
+											lister.cancel_others_if_single_enabled(true, abs_item_pos);
+											essence_->lister.last_selected_abs = abs_item_pos;
+
+										}
+										else if (essence_->lister.last_selected_abs == abs_item_pos)
+											essence_->lister.last_selected_abs.set_both(npos);
 									}
-									else if (essence_->lister.last_selected_abs == abs_item_pos)
-										essence_->lister.last_selected_abs.set_both(npos);
 								}
 								else if(!lister.single_selection())
 									lister.categ_selected(item_pos.cat, true);
@@ -4772,10 +4799,11 @@ namespace nana
                     for (item_proxy &it : *this )
                         it.select(sel);
 
-                    ess_->lister.last_selected_abs = ess_->lister.last_selected_dpl =  index_pair {this->pos_, npos};
+                    ess_->lister.last_selected_abs =  index_pair {this->pos_, npos};
 
                     return *this;
                 }
+
 				bool cat_proxy::selected() const
                 {
                     for (item_proxy &it : *this )
