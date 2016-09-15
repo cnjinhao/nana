@@ -2139,7 +2139,6 @@ namespace nana
 					inline_indicator * indicator;
 					index_pair	item_pos;				//The item index of the inline widget
 					std::size_t	column_pos;
-					::std::string text;					//text in UTF-8 encoded
 				};
 
 				std::map<pat::detail::abstract_factory_base*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
@@ -2986,7 +2985,7 @@ namespace nana
 					: ess_{ ess }, column_pos_{column_pos}
 				{
 				}
-				
+
 				void attach(index_type pos, essence::inline_pane* pane)
 				{
 					for (auto & pn : panes_)
@@ -3023,15 +3022,6 @@ namespace nana
 
 					if (cells[column_pos_].text != value)
 					{
-						for (auto & pn : panes_)
-						{
-							if (pn.first == pos)
-							{
-								pn.second->text = value;
-								break;
-							}
-						}
-
 						cells[column_pos_].text = value;
 
 						if (model_cells.size())
@@ -3862,19 +3852,9 @@ namespace nana
 
 									//To reduce the memory usage, the cells may not be allocated
 									if (cells.size() > column_pos)
-									{
-										auto & text = cells[column_pos].text;
-										if (text != inline_wdg->text)
-										{
-											inline_wdg->text = text;
-											inline_wdg->inline_ptr->set(text);
-										}
-									}
+										inline_wdg->inline_ptr->set(cells[column_pos].text);
 									else
-									{
-										inline_wdg->text.clear();
 										inline_wdg->inline_ptr->set({});
-									}
 
 									API::show_window(inline_wdg->pane_bottom, visible_state);
 								}
@@ -3932,7 +3912,9 @@ namespace nana
 					{
 						auto & factory = cat.factories[column_pos];
 						if (factory)
+						{
 							return essence_->open_inline(factory.get(), cat.indicators[column_pos].get());
+						}
 					}
 					return nullptr;
 				}
