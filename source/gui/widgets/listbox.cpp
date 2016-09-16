@@ -678,6 +678,16 @@ namespace nana
 				}
 			};
 
+			struct inline_pane
+			{
+				::nana::panel<false> pane_bottom;	//pane for pane_widget
+				::nana::panel<false> pane_widget;	//pane for placing user-define widget
+				std::unique_ptr<inline_notifier_interface> inline_ptr;
+				inline_indicator * indicator;
+				index_pair	item_pos;				//The item index of the inline widget
+				std::size_t	column_pos;
+			};
+
 			class es_lister
 			{
 			public:
@@ -726,6 +736,37 @@ namespace nana
 
                 std::string to_string(const export_options& exp_opt) const;
 
+				inline_pane * get_inline_pane(const index_pair& item_pos)
+				{
+					for (auto p : active_panes_)
+					{
+						if (p && (p->item_pos == item_pos))
+							return p;
+					}
+					return nullptr;
+				}
+
+				void emit_checked(index_pair pos)
+				{
+					item_proxy i(ess_, pos);
+					arg_listbox arg{ i };
+					wd_ptr()->events().checked.emit(arg, wd_ptr()->handle());
+
+					auto pane = get_inline_pane(pos);
+					if (pane)
+						pane->inline_ptr->notify_status(inline_widget_status::checking, i.checked());
+				}
+
+				void emit_selected(index_pair pos)
+				{
+					item_proxy i(ess_, pos);
+					arg_listbox arg{ i };
+					wd_ptr()->events().selected.emit(arg, wd_ptr()->handle());
+
+					auto pane = get_inline_pane(pos);
+					if (pane)
+						pane->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
+				}
 
 				// Definition is provided after struct essence
 				unsigned column_content_pixels(size_type pos) const;
@@ -1121,6 +1162,14 @@ namespace nana
 					return get(pos.cat)->items.at(index);
 				}
 
+				void append_active_panes(inline_pane* p)
+				{
+					if (nullptr == p)
+						active_panes_.clear();
+					else
+						active_panes_.push_back(p);
+				}
+
 				// Removes all items of a specified category
 				// It throws when the category is out of range or has an immutable model.
 				void clear(size_type cat)
@@ -1463,9 +1512,7 @@ namespace nana
 							if(m.flags.checked != ck)
 							{
 								m.flags.checked = ck;
-
-								arg_listbox arg{ item_proxy{ess_, pos}};
-								wd_ptr()->events().checked.emit(arg, wd_ptr()->handle());
+								emit_checked(pos);
 							}
 							++pos.item;
 						}
@@ -1531,8 +1578,7 @@ namespace nana
 								changed = true;
 								m.flags.selected = sel;
 
-								arg_listbox arg{ item_proxy(ess_, i) };
-								wd_ptr()->events().selected.emit(arg, wd_ptr()->handle());
+								this->emit_selected(i);
 
 								if (m.flags.selected)
 									last_selected_abs = i;
@@ -1622,18 +1668,17 @@ namespace nana
 						return (for_selection ? m.flags.selected : m.flags.checked);
 					};
 
-					auto do_cancel = [this, for_selection](category_t::container::value_type& m, std::size_t cat_pos, std::size_t item_pos)
+					auto do_cancel = [this, for_selection](category_t::container::value_type& m, const index_pair& item_pos)
 					{
-						arg_listbox arg{ item_proxy(ess_, index_pair(cat_pos, item_pos)) };
 						if (for_selection)
 						{
 							m.flags.selected = false;
-							widget_->events().selected.emit(arg, widget_->handle());
+							this->emit_selected(item_pos);
 						}
 						else
 						{
 							m.flags.checked = false;
-							widget_->events().checked.emit(arg, widget_->handle());
+							this->emit_checked(item_pos);
 						}
 					};
 
@@ -1645,7 +1690,7 @@ namespace nana
 						for (auto & m : i->items)
 						{
 							if ((item_pos != except.item) && pred(m))
-								do_cancel(m, except.cat, item_pos);
+								do_cancel(m, index_pair{ except.cat, item_pos });
 
 							++item_pos;
 						}
@@ -1661,7 +1706,7 @@ namespace nana
 								for (auto & m : cat.items)
 								{
 									if (pred(m))
-										do_cancel(m, cat_pos, item_pos);
+										do_cancel(m, index_pair{ cat_pos, item_pos });
 									++item_pos;
 								}
 							}
@@ -1671,7 +1716,7 @@ namespace nana
 								for (auto & m : cat.items)
 								{
 									if ((item_pos != except.item) && pred(m))
-										do_cancel(m, cat_pos, item_pos);
+										do_cancel(m, index_pair{ cat_pos, item_pos });
 									++item_pos;
 								}
 							}
@@ -1705,18 +1750,17 @@ namespace nana
 						return (for_selection ? m.flags.selected : m.flags.checked);
 					};
 
-					auto cancel = [this, for_selection](category_t::container::value_type& m, std::size_t cat_pos, std::size_t item_pos)
+					auto cancel = [this, for_selection](category_t::container::value_type& m, const index_pair& item_pos)
 					{
-						arg_listbox arg{ item_proxy(ess_, index_pair(cat_pos, item_pos)) };
 						if (for_selection)
 						{
 							m.flags.selected = false;
-							widget_->events().selected.emit(arg, widget_->handle());
+							this->emit_selected(item_pos);
 						}
 						else
 						{
 							m.flags.checked = false;
-							widget_->events().checked.emit(arg, widget_->handle());
+							this->emit_checked(item_pos);
 						}
 					};
 
@@ -1732,7 +1776,7 @@ namespace nana
 								for (auto end = cat.items.end(); i != end; ++i)
 								{
 									if (pred(*i))
-										cancel(*i, cat_pos, i - cat.items.begin());
+										cancel(*i, index_pair{ cat_pos, static_cast<size_type>(i - cat.items.begin()) });
 								}
 							}
 							++cat_pos;
@@ -1755,7 +1799,7 @@ namespace nana
 									for (++i; i != end; ++i)
 									{
 										if (pred(*i))
-											cancel(*i, cat_pos, i - cat.items.begin());
+											cancel(*i, index_pair{ cat_pos, static_cast<std::size_t>(i - cat.items.begin()) });
 									}
 								}
 							}
@@ -1767,7 +1811,7 @@ namespace nana
 									for (auto & m : cat.items)
 									{
 										if (pred(m))
-											cancel(m, cat_pos, item_pos);
+											cancel(m, index_pair{ cat_pos, item_pos });
 
 										++item_pos;
 									}
@@ -1814,10 +1858,7 @@ namespace nana
 						if(m.flags.checked != ck)
 						{
 							m.flags.checked = ck;
-
-							arg_listbox arg{ item_proxy(ess_, index_pair(cat, index)) };
-							wd_ptr()->events().checked.emit(arg, widget_->handle());
-
+							this->emit_checked(index_pair{cat, index});
 							changed = true;
 						}
 						++index;
@@ -2088,6 +2129,8 @@ namespace nana
 				bool single_selection_category_limited_{ false };
 				bool single_check_{ false };
 				bool single_check_category_limited_{ false };
+
+				std::vector<inline_pane*> active_panes_;
 			};//end class es_lister
 
 
@@ -2096,6 +2139,8 @@ namespace nana
 			{
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
 				enum class parts{unknown = -1, header, lister, checker};
+
+				using inline_pane = inline_pane;
 
 				::nana::listbox* listbox_ptr{nullptr};
 				::nana::listbox::scheme_type* scheme_ptr{nullptr};
@@ -2130,16 +2175,6 @@ namespace nana
 					nana::scroll<false> h;
 				}scroll;
 
-
-				struct inline_pane
-				{
-					::nana::panel<false> pane_bottom;	//pane for pane_widget
-					::nana::panel<false> pane_widget;	//pane for placing user-define widget
-					std::unique_ptr<inline_notifier_interface> inline_ptr;
-					inline_indicator * indicator;
-					index_pair	item_pos;				//The item index of the inline widget
-					std::size_t	column_pos;
-				};
 
 				std::map<pat::detail::abstract_factory_base*, std::deque<std::unique_ptr<inline_pane>>> inline_table, inline_buffered_table;
 
@@ -3010,6 +3045,11 @@ namespace nana
 					return *ess_->lister.wd_ptr();
 				}
 
+				std::size_t column() const override
+				{
+					return column_pos_;
+				}
+
 				void modify(index_type pos, const value_type& value) const override
 				{
 					ess_->lister.throw_if_immutable_model(pos);
@@ -3533,14 +3573,18 @@ namespace nana
 			public:
 				using item_state = essence::item_state;
 				using parts = essence::parts;
+				using status_type = inline_notifier_interface::status_type;
 
 				drawer_lister_impl(essence * es)
 					:essence_(es)
 				{}
 
-				void draw(const nana::rectangle& rect) const
+				void draw(const nana::rectangle& rect)
 				{
                     internal_scope_guard lock;
+
+					//clear active panes
+					essence_->lister.append_active_panes(nullptr);
 
 					//The count of items to be drawn
 					auto item_count = essence_->number_of_lister_items(true);
@@ -3724,7 +3768,7 @@ namespace nana
 					              nana::color bgcolor, 
 					              nana::color fgcolor, 
 					              item_state state
-					) const
+					)
 				{
 					auto & item = cat.items[item_pos.item];
 
@@ -3838,15 +3882,19 @@ namespace nana
 									else
 										visible_state = false;
 
-									::nana::size sz{ wdg_w, essence_->scheme_ptr->item_height };
-									inline_wdg->pane_widget.size(sz);
-									inline_wdg->inline_ptr->resize(sz);
 
 									draw_column = inline_wdg->inline_ptr->whether_to_draw();
 
 									inline_wdg->item_pos = item_pos;
 									inline_wdg->column_pos = column_pos;
 									inline_wdg->inline_ptr->activate(*inline_wdg->indicator, item_pos);
+
+									::nana::size sz{ wdg_w, essence_->scheme_ptr->item_height };
+									inline_wdg->pane_widget.size(sz);
+									inline_wdg->inline_ptr->resize(sz);
+
+									inline_wdg->inline_ptr->notify_status(status_type::selected, item.flags.selected);
+									inline_wdg->inline_ptr->notify_status(status_type::checked, item.flags.checked);
 									
 									inline_wdg->indicator->attach(item_pos, inline_wdg);
 
@@ -3857,6 +3905,8 @@ namespace nana
 										inline_wdg->inline_ptr->set({});
 
 									API::show_window(inline_wdg->pane_bottom, visible_state);
+
+									essence_->lister.append_active_panes(inline_wdg);
 								}
 							}
 
@@ -4191,14 +4241,12 @@ namespace nana
 									{
 										item_ptr->flags.selected = sel;
 
-										arg_listbox arg{ item_proxy{ essence_, abs_item_pos } };
-										lister.wd_ptr()->events().selected.emit(arg, lister.wd_ptr()->handle());
+										lister.emit_selected(abs_item_pos);
 
 										if (item_ptr->flags.selected)
 										{
 											lister.cancel_others_if_single_enabled(true, abs_item_pos);
 											essence_->lister.last_selected_abs = abs_item_pos;
-
 										}
 										else if (essence_->lister.last_selected_abs == abs_item_pos)
 											essence_->lister.last_selected_abs.set_both(npos);
@@ -4213,8 +4261,7 @@ namespace nana
 								{
 									item_ptr->flags.checked = ! item_ptr->flags.checked;
 
-									arg_listbox arg{ item_proxy{ essence_, abs_item_pos } };
-									lister.wd_ptr()->events().checked.emit(arg, lister.wd_ptr()->handle());
+									lister.emit_checked(abs_item_pos);
 
 									if (item_ptr->flags.checked)
 										lister.cancel_others_if_single_enabled(false, abs_item_pos);
@@ -4479,12 +4526,13 @@ namespace nana
 
 				item_proxy & item_proxy::check(bool ck)
 				{
+					internal_scope_guard lock;
 					auto & m = cat_->items.at(pos_.item);
 					if(m.flags.checked != ck)
 					{
 						m.flags.checked = ck;
-						arg_listbox arg{*this};
-						ess_->lister.wd_ptr()->events().checked.emit(arg, ess_->lister.wd_ptr()->handle());
+						ess_->lister.emit_checked(pos_);
+
 						ess_->update();
 					}
 					return *this;
@@ -4498,13 +4546,14 @@ namespace nana
 				/// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected
 				item_proxy & item_proxy::select(bool s)
 				{
+					internal_scope_guard lock;
+
 					//pos_ never represents a category if this item_proxy is available.
 					auto & m = cat_->items.at(pos_.item);       // a ref to the real item
 					if(m.flags.selected == s) return *this;     // ignore if no change
 					m.flags.selected = s;                       // actually change selection
 
-                    arg_listbox arg{*this};
-					ess_->lister.wd_ptr()->events().selected.emit(arg, ess_->lister.wd_ptr()->handle());
+					ess_->lister.emit_selected(this->pos_);
 
 					if (m.flags.selected)
 					{
