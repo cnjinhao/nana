@@ -2140,8 +2140,6 @@ namespace nana
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
 				enum class parts{unknown = -1, header, lister, checker};
 
-				using inline_pane = inline_pane;
-
 				::nana::listbox* listbox_ptr{nullptr};
 				::nana::listbox::scheme_type* scheme_ptr{nullptr};
 				::nana::paint::graphics *graph{nullptr};
@@ -3021,7 +3019,7 @@ namespace nana
 				{
 				}
 
-				void attach(index_type pos, essence::inline_pane* pane)
+				void attach(index_type pos, inline_pane* pane)
 				{
 					for (auto & pn : panes_)
 					{
@@ -3093,7 +3091,7 @@ namespace nana
 			private:
 				essence * const ess_;
 				const std::size_t column_pos_;
-				std::vector<std::pair<index_type, essence::inline_pane*>> panes_;
+				std::vector<std::pair<index_type, inline_pane*>> panes_;
 			};
 
 			void es_lister::scroll(const index_pair& pos, bool to_bottom)
@@ -3956,7 +3954,7 @@ namespace nana
 						_m_draw_border(content_r.x, y, show_w);
 				}
 
-				essence::inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
+				inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
 				{
 					if (column_pos < cat.factories.size())
 					{
@@ -3969,7 +3967,7 @@ namespace nana
 					return nullptr;
 				}
 
-				essence::inline_pane* _m_find_inline_pane(const index_pair& pos, std::size_t column_pos) const
+				inline_pane* _m_find_inline_pane(const index_pair& pos, std::size_t column_pos) const
 				{
 					auto & cat = *essence_->lister.get(pos.cat);
 
