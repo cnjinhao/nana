@@ -736,14 +736,17 @@ namespace nana
 
                 std::string to_string(const export_options& exp_opt) const;
 
-				inline_pane * get_inline_pane(const index_pair& item_pos)
+				std::vector<inline_pane*> get_inline_pane(const index_pair& item_pos)
 				{
+					std::vector<inline_pane*> panes;
 					for (auto p : active_panes_)
 					{
 						if (p && (p->item_pos == item_pos))
-							return p;
+						{
+							panes.emplace_back(p);
+						}
 					}
-					return nullptr;
+					return panes;
 				}
 
 				void emit_checked(index_pair pos)
@@ -752,9 +755,9 @@ namespace nana
 					arg_listbox arg{ i };
 					wd_ptr()->events().checked.emit(arg, wd_ptr()->handle());
 
-					auto pane = get_inline_pane(pos);
-					if (pane)
-						pane->inline_ptr->notify_status(inline_widget_status::checking, i.checked());
+					auto panes = get_inline_pane(pos);
+					for (auto p : panes)
+						p->inline_ptr->notify_status(inline_widget_status::checking, i.checked());
 				}
 
 				void emit_selected(index_pair pos)
@@ -763,9 +766,9 @@ namespace nana
 					arg_listbox arg{ i };
 					wd_ptr()->events().selected.emit(arg, wd_ptr()->handle());
 
-					auto pane = get_inline_pane(pos);
-					if (pane)
-						pane->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
+					auto panes = get_inline_pane(pos);
+					for (auto p : panes)
+						p->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
 				}
 
 				// Definition is provided after struct essence
