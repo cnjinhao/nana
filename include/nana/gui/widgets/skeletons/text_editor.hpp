@@ -52,7 +52,15 @@ namespace nana{	namespace widgets
 			{
 				max_steps_ = maxs;
 				if (maxs && (commands_.size() >= maxs))
+				{
+					auto move = commands_.size() - pos_;
 					commands_.erase(commands_.begin(), commands_.begin() + (commands_.size() - maxs + 1));
+					pos_ = commands_.size() - std::min(move, commands_.size());
+				}
+				else if (0 == maxs)
+				{
+					clear();
+				}
 			}
 
 			std::size_t max_steps() const
@@ -258,6 +266,7 @@ namespace nana{	namespace widgets
 			void del();
 			void backspace(bool record_undo = true);
 			void undo(bool reverse);
+			void set_undo_queue_length(std::size_t len);
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();

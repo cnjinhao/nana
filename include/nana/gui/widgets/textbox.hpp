@@ -228,6 +228,12 @@ namespace nana
 		/// E.g. Whether caret moves to left of selected content or moves to left of last position when left arrow key is pressed.
 		/// @param move_to_end determines whether to move caret to left of selected_content or to left of last position.
 		void select_behavior(bool move_to_end);
+
+		/// Sets the undo/redo queue length
+		/**
+		 * @param len The length of the queue. If this parameter is zero, the undo/redo is disabled.
+		 */
+		void set_undo_queue_length(std::size_t len);
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const throw() override;

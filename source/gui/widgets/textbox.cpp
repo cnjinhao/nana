@@ -606,6 +606,14 @@ namespace drawerbase {
 				editor->select_behavior(move_to_end);
 		}
 
+		void textbox::set_undo_queue_length(std::size_t len)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->set_undo_queue_length(len);
+		}
+
 		//Override _m_caption for caption()
 		auto textbox::_m_caption() const throw() -> native_string_type
 		{

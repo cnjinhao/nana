@@ -2348,6 +2348,11 @@ namespace nana{	namespace widgets
 			_m_scrollbar();
 		}
 
+		void text_editor::set_undo_queue_length(std::size_t len)
+		{
+			undo_.max_steps(len);
+		}
+
 		void text_editor::move_ns(bool to_north)
 		{
 			const bool redraw_required = _m_cancel_select(0);
