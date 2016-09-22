@@ -85,7 +85,7 @@ namespace nana
 				std::unique_ptr<Interface> create() override
 				{
 					constexpr auto Size = std::tuple_size<decltype(args_)>::value;
-					return std::unique_ptr<Interface>{ _m_new(typename make_pack<Size>{}) };
+					return std::unique_ptr<Interface>{ _m_new(make_pack<Size>{}) };
 				}
 
 				template<std::size_t ... Index>
