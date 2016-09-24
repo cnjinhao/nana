@@ -147,8 +147,6 @@ namespace nana
 			: public widget
 		{
 		public:
-			~widget_base();
-
 			window handle() const override;
 		protected:
 			void _m_notify_destroy() override;
@@ -171,6 +169,11 @@ namespace nana
 			:	events_{ std::make_shared<Events>() },
 				scheme_{ API::dev::make_scheme<Scheme>() }
 		{}
+
+		~widget_object()
+		{
+			API::close_window(handle());
+		}
 
 		event_type& events() const
 		{
@@ -255,6 +258,11 @@ namespace nana
 			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
 		{}
 
+		~widget_object()
+		{
+			API::close_window(handle());
+		}
+
 		event_type& events() const
 		{
 			return *events_;
@@ -327,6 +335,11 @@ namespace nana
 		{
 			handle_ = API::dev::create_window(owner, nested, r, apr, this);
 			_m_bind_and_attach();
+		}
+
+		~widget_object()
+		{
+			API::close_window(handle());
 		}
 
 		event_type& events() const
@@ -460,6 +473,11 @@ namespace nana
 		widget_object()
 			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
 		{}
+
+		~widget_object()
+		{
+			API::close_window(handle());
+		}
 
 		event_type& events() const
 		{
