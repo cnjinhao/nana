@@ -1714,6 +1714,11 @@ namespace detail
 				wd->annex.caret_ptr = nullptr;
 			}
 
+			using effect_renderer = detail::edge_nimbus_renderer<basic_window>;
+
+			//remove the window from edge nimbus effect when it is destroying
+			effect_renderer::instance().erase(wd);
+
 			arg_destroy arg;
 			arg.window_handle = reinterpret_cast<window>(wd);
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());

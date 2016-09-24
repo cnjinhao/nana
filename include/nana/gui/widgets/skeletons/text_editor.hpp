@@ -143,7 +143,11 @@ namespace nana{	namespace widgets
 			std::wstring text() const;
 
 			/// Sets caret position through text coordinate.
-			void move_caret(const upoint&);
+			/**
+			 * @param pos the text position
+			 * @param reset indicates whether to reset the text position by the pos. If this parameter is true, the text position is set by pos. If the parameter is false, it only moves the UI caret to the specified position. 
+			 */
+			bool move_caret(const upoint& pos, bool reset = false);
 			void move_caret_end();
 			void reset_caret_pixels() const;
 			void reset_caret();
@@ -184,6 +188,7 @@ namespace nana{	namespace widgets
 			void del();
 			void backspace(bool record_undo = true);
 			void undo(bool reverse);
+			void set_undo_queue_length(std::size_t len);
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();

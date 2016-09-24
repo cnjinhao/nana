@@ -441,6 +441,9 @@ namespace nana{	namespace widgets
 					text_ptr = &mask_str;
 				}
 				
+				if (pos.x > text_ptr->size())
+					pos.x = text_ptr->size();
+
 				pos.x = editor_._m_pixels_by_char(*text_ptr, pos.x) + editor_.text_area_.area.x;
 				int pos_y = static_cast<int>((pos.y - editor_.points_.offset.y) * editor_.line_height() + editor_._m_text_top_base());
 
@@ -1990,20 +1993,22 @@ namespace nana{	namespace widgets
 
 		//move_caret
 		//Set caret position through text coordinate
-		void text_editor::move_caret(const upoint& crtpos)
-		{
-			if (!API::is_focus_ready(window_))
-				return;
-			
+		bool text_editor::move_caret(const upoint& crtpos, bool reset_caret)
+		{	
 			const unsigned line_pixels = line_height();
 			auto pos = impl_->capacities.behavior->caret_to_screen(crtpos);
 			const int line_bottom = pos.y + static_cast<int>(line_pixels);
 
+			if (reset_caret)
+				points_.caret = this->impl_->capacities.behavior->screen_to_caret(pos);
+
+			if (!API::is_focus_ready(window_))
+				return false;
+
 			auto caret = API::open_caret(window_, true);
 
-			auto text_area = _m_text_area();
-
 			bool visible = false;
+			auto text_area = _m_text_area();
 			if (text_area.is_hit(pos) && (line_bottom > text_area.y))
 			{
 				visible = true;
@@ -2019,6 +2024,16 @@ namespace nana{	namespace widgets
 			caret->visible(visible);
 			if(visible)
 				caret->position(pos);
+
+			//Adjust the caret into screen when the caret position is modified by this function
+			if (reset_caret && (!hit_text_area(pos)))
+			{
+				impl_->capacities.behavior->adjust_caret_into_screen();
+				render(true);
+				caret->visible(true);
+				return true;
+			}
+			return false;
 		}
 
 		void text_editor::move_caret_end()
@@ -2505,6 +2520,11 @@ namespace nana{	namespace widgets
 			impl_->capacities.behavior->adjust_caret_into_screen();
 			render(true);
 			_m_scrollbar();
+		}
+
+		void text_editor::set_undo_queue_length(std::size_t len)
+		{
+			impl_->undo.max_steps(len);
 		}
 
 		void text_editor::move_ns(bool to_north)
