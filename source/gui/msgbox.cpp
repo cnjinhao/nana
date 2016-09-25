@@ -1,7 +1,7 @@
 /*
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -61,14 +61,14 @@ namespace nana
 				{
 					_m_click(arg);
 				});
-				yes_.caption("OK");
+				yes_.i18n(i18n_eval("OK"));
 				width_pixel += 77;
 
 				if(msgbox::yes_no == btn || msgbox::yes_no_cancel == btn)
 				{
-					yes_.caption("Yes");
+					yes_.i18n(i18n_eval("Yes"));
 					no_.create(*this);
-					no_.caption("No");
+					no_.i18n(i18n_eval("No"));
 					no_.events().click.connect_unignorable([this](const arg_click& arg)
 					{
 						_m_click(arg);
@@ -79,7 +79,7 @@ namespace nana
 					if(msgbox::yes_no_cancel == btn)
 					{
 						cancel_.create(*this);
-						cancel_.caption("Cancel");
+						cancel_.i18n(i18n_eval("Cancel"));
 						cancel_.events().click.connect_unignorable([this](const arg_click& arg)
 						{
 							_m_click(arg);
