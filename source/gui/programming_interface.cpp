@@ -104,7 +104,7 @@ namespace API
 			{
 				if (iwd->effect.edge_nimbus == effects::edge_nimbus::none)
 				{
-					cont.push_back(basic_window::edge_nimbus_action{ iwd, false});
+					cont.emplace_back(basic_window::edge_nimbus_action{ iwd, false});
 				}
 				iwd->effect.edge_nimbus = static_cast<effects::edge_nimbus>(static_cast<unsigned>(en) | static_cast<unsigned>(iwd->effect.edge_nimbus));
 			}
@@ -365,7 +365,7 @@ namespace API
 					}
 
 					if (!exists)
-						roots.push_back(root);
+						roots.emplace_back(root);
 				}
 			}
 
@@ -401,7 +401,7 @@ namespace API
 					}
 
 					if (!exists)
-						roots.push_back(root);
+						roots.emplace_back(root);
 				}
 			}
 

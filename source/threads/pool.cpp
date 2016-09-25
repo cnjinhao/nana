@@ -94,7 +94,7 @@ namespace threads
 					pto->suspended = false;
 					::pthread_create(&(pto->handle), 0, reinterpret_cast<void*(*)(void*)>(&impl::_m_thr_starter), pto);
 #endif
-					container_.threads.push_back(pto);
+					container_.threads.emplace_back(pto);
 				}
 			}
 
@@ -168,7 +168,7 @@ namespace threads
 				else
 				{
 					std::lock_guard<decltype(mutex_)> lock(mutex_);
-					container_.tasks.push_back(taskptr);
+					container_.tasks.emplace_back(taskptr);
 				}
 			}
 

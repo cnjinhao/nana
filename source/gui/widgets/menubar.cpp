@@ -55,7 +55,7 @@ namespace nana
 				void append(const native_string_type& text, unsigned long shortkey)
 				{
 					if(shortkey && shortkey < 0x61) shortkey += (0x61 - 0x41);
-					cont_.push_back(new item_type(text, shortkey));
+					cont_.emplace_back(new item_type(text, shortkey));
 				}
 
 				std::size_t find(unsigned long shortkey) const
@@ -112,13 +112,9 @@ namespace nana
 					nana::rectangle r(pos, size);
 					graph_.rectangle(r, false, border);
 
-					int right = pos.x + static_cast<int>(size.width) - 1;
-					int bottom = pos.y + static_cast<int>(size.height) - 1;
 					graph_.palette(false, corner);
-					graph_.set_pixel(pos.x, pos.y);
-					graph_.set_pixel(right, pos.y);
-					graph_.set_pixel(pos.x, bottom);
-					graph_.set_pixel(right, bottom);
+
+					paint::draw{ graph_ }.corner(r, 1);
 					graph_.rectangle(r.pare_off(1), true, body);
 				}
 
@@ -216,7 +212,7 @@ namespace nana
 
 						if (hotkey)
 						{
-							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text.c_str(), static_cast<unsigned>(hotkey_pos)).width : 0);
+							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
 							nana::size hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
 
 							unsigned ascent, descent, inleading;

@@ -13,6 +13,8 @@
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/widgets/scroll.hpp>
 
+#include <nana/gui/layout_utility.hpp>
+
 namespace nana
 {
 	namespace drawerbase{
@@ -34,28 +36,20 @@ namespace nana
 				{
 					if (state == StateHighlighted)
 					{
-						::nana::color clr(static_cast<color_rgb>(0xafc7e3));
-						graph.rectangle(r, false, clr);
+						graph.rectangle(r, false, static_cast<color_rgb>(0xafc7e3));
 
-						auto right = r.right() - 1;
-						auto bottom = r.bottom() - 1;
 						graph.palette(false, colors::white);
-						graph.set_pixel(r.x, r.y);
-						graph.set_pixel(right, r.y);
-						graph.set_pixel(r.x, bottom);
-						graph.set_pixel(right, bottom);
 
-						--right;
-						--bottom;
-						graph.palette(false, clr);
-						graph.set_pixel(r.x + 1, r.y + 1);
-						graph.set_pixel(right, r.y + 1);
-						graph.set_pixel(r.x + 1, bottom);
-						graph.set_pixel(right, bottom);
+						paint::draw draw{ graph };
+						draw.corner(r, 1);
 
-						nana::rectangle po_r(r);
-						graph.rectangle(po_r.pare_off(1), false, static_cast<color_rgb>(0xEBF4FB));
-						graph.gradual_rectangle(po_r.pare_off(1), static_cast<color_rgb>(0xDDECFD), static_cast<color_rgb>(0xC2DCFD), true);
+						graph.palette(false, static_cast<color_rgb>(0xafc7e3));
+
+						auto inner_r = r;
+						draw.corner(inner_r.pare_off(1), 1);
+
+						graph.rectangle(inner_r, false, static_cast<color_rgb>(0xEBF4FB));
+						graph.gradual_rectangle(inner_r.pare_off(1), static_cast<color_rgb>(0xDDECFD), static_cast<color_rgb>(0xC2DCFD), true);
 					}
 					else
 						graph.rectangle(r, true, colors::white);
@@ -66,35 +60,7 @@ namespace nana
 						unsigned vpix = (r.height - 4);
 						if(item->image())
 						{
-							nana::size imgsz = item->image().size();
-							if(imgsz.width > image_pixels_)
-							{
-								unsigned new_h = image_pixels_ * imgsz.height / imgsz.width;
-								if(new_h > vpix)
-								{
-									imgsz.width = vpix * imgsz.width / imgsz.height;
-									imgsz.height = vpix;
-								}
-								else
-								{
-									imgsz.width = image_pixels_;
-									imgsz.height = new_h;
-								}
-							}
-							else if(imgsz.height > vpix)
-							{
-								unsigned new_w = vpix * imgsz.width / imgsz.height;
-								if(new_w > image_pixels_)
-								{
-									imgsz.height = image_pixels_ * imgsz.height / imgsz.width;
-									imgsz.width = image_pixels_;
-								}
-								else
-								{
-									imgsz.height = vpix;
-									imgsz.width = new_w;
-								}
-							}
+							auto imgsz = nana::fit_zoom(item->image().size(), {image_pixels_, vpix});
 
 							nana::point to_pos(x, r.y + 2);
 							to_pos.x += (image_pixels_ - imgsz.width) / 2;
@@ -109,7 +75,9 @@ namespace nana
 
 				unsigned item_pixels(graph_reference graph) const
 				{
-					return graph.text_extent_size(L"jHWn/?\\{[(0569").height + 4;
+					unsigned ascent, descent, ileading;
+					graph.text_metrics(ascent, descent, ileading);
+					return ascent + descent + 4;
 				}
 			};//end class item_renderer
 
@@ -187,7 +155,7 @@ namespace nana
 									--(state_.index);
 								else if(recycle)
 								{
-									state_.index = static_cast<unsigned>(module_->items.size() - 1);
+									state_.index = module_->items.size() - 1;
 									state_.offset_y = last_offset_y;
 								}
 
@@ -205,7 +173,7 @@ namespace nana
 								}
 
 								if(state_.index >= state_.offset_y + module_->max_items)
-									state_.offset_y = static_cast<unsigned>(state_.index - module_->max_items + 1);
+									state_.offset_y = state_.index - module_->max_items + 1;
 							}
 						}
 						else

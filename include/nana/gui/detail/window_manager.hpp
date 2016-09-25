@@ -20,17 +20,10 @@
 
 #include <nana/push_ignore_diagnostic>
 
-#include <vector>
 #include "window_layout.hpp"
 #include "event_code.hpp"
 #include "inner_fwd.hpp"
 #include <functional>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-	#include <nana/std_mutex.hpp>
-#else
-	#include <mutex>
-#endif
 
 namespace nana
 {
@@ -51,15 +44,14 @@ namespace detail
 	class window_manager
 	{
 		class revertible_mutex
-			: public std::recursive_mutex
 		{
-			struct thr_refcnt
-			{
-				unsigned tid;
-				std::size_t refcnt;
-			};
+			revertible_mutex(const revertible_mutex&) = delete;
+			revertible_mutex& operator=(const revertible_mutex&) = delete;
+			revertible_mutex(revertible_mutex&&) = delete;
+			revertible_mutex& operator=(revertible_mutex&&) = delete;
 		public:
 			revertible_mutex();
+			~revertible_mutex();
 
 			void lock();
 			bool try_lock();
@@ -68,8 +60,8 @@ namespace detail
 			void revert();
 			void forward();
 		private:
-			thr_refcnt thr_;
-			std::vector<thr_refcnt> stack_;
+			struct implementation;
+			implementation * const impl_;
 		};
 	public:
 		using native_window = native_window_type;
@@ -90,7 +82,6 @@ namespace detail
 
 		bool available(core_window_t*);
 		bool available(core_window_t *, core_window_t*);
-		bool available(native_window_type);
 
 		core_window_t* create_root(core_window_t*, bool nested, rectangle, const appearance&, widget*);
 		core_window_t* create_widget(core_window_t*, const rectangle&, bool is_lite, widget*);
@@ -157,7 +148,7 @@ namespace detail
 
 		bool calc_window_point(core_window_t*, nana::point&);
 
-		root_misc* root_runtime(native_window_type) const;
+		root_misc* root_runtime(native_window) const;
 
 		bool register_shortkey(core_window_t*, unsigned long key);
 		void unregister_shortkey(core_window_t*, bool with_children);

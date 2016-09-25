@@ -347,7 +347,8 @@ namespace API
 	 * When you are finished with the caret, be sure to reset the pointer.
 	 *
 	 * @param window_handle A handle to a window whose caret is to be retrieved
-	 * @return a pointer to the caret proxy. nullptr if the window doesn't have a caret.
+	 * @return a pointer to the caret proxy.
+	 * @except throws std::runtime if the window doesn't have a caret when disable_throw is false
 	 */
 	::std::unique_ptr<caret_interface> open_caret(window window_handle, bool disable_throw = false);
 

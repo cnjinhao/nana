@@ -15,6 +15,7 @@
 #include <cmath>
 #include <map>
 #include <deque>
+#include <algorithm>
 #include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
 #include <nana/gui/place.hpp>
@@ -661,13 +662,14 @@ namespace nana
 				//This is a splitter, it only checks when it is being displayed
 				if (dsp)
 				{
+					//Left field of splitterbar
 					auto left = this->previous();
 					if (left && !left->display)
 						left->set_display(true);
 
-					auto right = div_next;
-					if (right && !right->display)
-						right->set_display(true);
+					//Right field of splitterbar
+					if (div_next && !div_next->display)
+						div_next->set_display(true);
 				}
 			}
 		}
@@ -816,7 +818,7 @@ namespace nana
 				if ((!child->is_fixed()) && child->max_px.empty() && is_back(child) && (endpos != area.right()))
 					endpos = area.right();
 
-				child_area.w_ref() = static_cast<unsigned>(endpos - child_area.x());
+				child_area.w_ref() = static_cast<unsigned>((std::max)(endpos - child_area.x(), 0));
 
 				child->field_area = child_area.result();
 				position += child_px;

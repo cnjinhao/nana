@@ -285,8 +285,7 @@ namespace nana{ namespace drawerbase
 				}
 			});
 			
-
-			ui_container_.push_back(el);
+			ui_container_.emplace_back(el);
 		}
 
 		std::size_t radio_group::checked() const

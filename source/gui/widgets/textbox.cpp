@@ -65,13 +65,14 @@ namespace drawerbase {
 		{
 			auto wd = wdg.handle();
 			widget_ = &wdg;
-			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
 
 			auto scheme = API::dev::get_scheme(wdg);
 
 			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
 			editor_->textbase().set_event_agent(evt_agent_.get());
 			editor_->set_event(evt_agent_.get());
+
+			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
 
 			_m_text_area(graph.width(), graph.height());
 
@@ -344,8 +345,8 @@ namespace drawerbase {
 		{
 			auto editor = get_drawer_trigger().editor();
 			internal_scope_guard lock;
-			if (editor)
-				editor->move_caret(pos);
+			if (editor && editor->move_caret(pos, true))
+				API::refresh_window(handle());
 			
 			return *this;
 		}
@@ -414,7 +415,16 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
-				editor->editable(able);
+				editor->editable(able, false);
+			return *this;
+		}
+
+		textbox& textbox::enable_caret()
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->editable(editor->attr().editable, true);
 			return *this;
 		}
 
@@ -457,6 +467,18 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			if(editor && editor->select(yes))
 				API::update_window(*this);
+		}
+
+		std::pair<upoint, upoint> textbox::selection() const
+		{
+			std::pair<upoint, upoint> points;
+
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->get_select_points(points.first, points.second);
+
+			return points;
 		}
 
 		void textbox::copy() const
@@ -604,6 +626,14 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->select_behavior(move_to_end);
+		}
+
+		void textbox::set_undo_queue_length(std::size_t len)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->set_undo_queue_length(len);
 		}
 
 		//Override _m_caption for caption()

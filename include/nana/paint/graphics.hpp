@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,7 +17,6 @@
 
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
-#include "pixel_buffer.hpp"
 
 namespace nana
 {
@@ -72,12 +71,16 @@ namespace nana
 		class graphics
 		{
 		public:
-			typedef ::nana::native_window_type native_window_type;
-
 			graphics();
 			graphics(const ::nana::size&);                 ///< size in pixel
 			graphics(const graphics&);      ///< the resource is not copyed, the two graphics objects refer to the *SAME* resource
 			graphics& operator=(const graphics&);
+
+			graphics(graphics&&);
+			graphics& operator=(graphics&&);
+
+			~graphics();
+
 			bool changed() const;           ///< Returns true if the graphics object is operated
 			bool empty() const;             ///< Returns true if the graphics object does not refer to any resource.
 			operator const void*() const;
@@ -129,10 +132,10 @@ namespace nana
 
 			void flush();
 
-			unsigned width() const;
-			unsigned height() const;      ///< Returns the height of the off-screen buffer.
+			unsigned width() const;		///< Returns the width of the off-screen buffer.
+			unsigned height() const;	///< Returns the height of the off-screen buffer.
 			::nana::size size() const;
-			void setsta();      ///<  	Clears the status if the graphics object had been changed
+			void setsta();				///< Clears the status if the graphics object had been changed
 			void set_changed();
 			void release();
 
@@ -172,12 +175,18 @@ namespace nana
 			void gradual_rectangle(const ::nana::rectangle&, const color& from, const color& to, bool vertical);
 			void round_rectangle(const ::nana::rectangle&, unsigned radius_x, unsigned radius_y, const color&, bool solid, const color& color_if_solid);
 		private:
-			std::shared_ptr< ::nana::detail::drawable_impl_type> dwptr_;
-			font			font_shadow_;
-            drawable_type	handle_;
-			::nana::size	size_;
-			pixel_buffer	pxbuf_;
-			bool changed_;
+			struct implementation;
+			std::unique_ptr<implementation> impl_;
+		};
+
+		class draw
+		{
+		public:
+			draw(graphics& graph);
+
+			void corner(const rectangle& r, unsigned pixels);
+		private:
+			graphics& graph_;
 		};
 	}//end namespace paint
 }	//end namespace nana

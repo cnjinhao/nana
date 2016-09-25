@@ -60,7 +60,7 @@ namespace nana
 				typedef widget_object<category::root_tag, drawer> base_type;
 			public:
 				tip_form()
-					:	base_type(nana::rectangle(), appear::bald<appear::floating>()),
+					:	base_type(nullptr, false, rectangle(), appear::bald<appear::floating>()),
 						duration_(0)
 				{
 					API::take_active(this->handle(), false, nullptr);

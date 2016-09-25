@@ -221,8 +221,8 @@ namespace nana
 							continue;
 
 						core_window_t * term = ((i + 1 != layers_rend) ? *(i + 1) : wd);
-						r.x = wd->pos_root.x - pre->pos_root.x;
-						r.y = wd->pos_root.y - pre->pos_root.y;
+						r.position(wd->pos_root - pre->pos_root);
+
 						for (auto child : pre->children)
 						{
 							if (child->index >= term->index)
@@ -253,7 +253,7 @@ namespace nana
 					if (child->visible && overlap(r_of_wd, rectangle{ child->pos_owner, child->dimension }, ovlp))
 					{
 						if (category::flags::lite_widget != child->other.category)
-							glass_buffer.bitblt(nana::rectangle{ ovlp.x - wd->pos_owner.x, ovlp.y - wd->pos_owner.y, ovlp.width, ovlp.height }, child->drawer.graphics, nana::point(ovlp.x - child->pos_owner.x, ovlp.y - child->pos_owner.y));
+							glass_buffer.bitblt(nana::rectangle{ ovlp.x - wd->pos_owner.x, ovlp.y - wd->pos_owner.y, ovlp.width, ovlp.height }, child->drawer.graphics, {ovlp.position() - child->pos_owner});
 
 						ovlp.x += wd->pos_root.x;
 						ovlp.y += wd->pos_root.y;

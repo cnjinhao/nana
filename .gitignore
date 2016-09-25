@@ -43,3 +43,5 @@ CMakeFiles/
 cmake_install.cmake
 *.DS_Store
 
+*.db
+*.opendb

@@ -18,6 +18,7 @@
 #include <nana/gui/wvl.hpp>
 #include <nana/paint/text_renderer.hpp>
 #include <cctype>	//introduces tolower
+#include <map>
 
 namespace nana
 {
@@ -113,19 +114,15 @@ namespace nana
 
 				void item(graph_reference graph, const nana::rectangle& r, const attr& at)
 				{
+					if (!at.enabled)
+						return;
+
 					if(at.item_state == state::active)
 					{
 						graph.rectangle(r, false, static_cast<color_rgb>(0xa8d8eb));
-						nana::point points[4] = {
-							nana::point(r.x, r.y),
-							nana::point(r.x + r.width - 1, r.y),
-							nana::point(r.x, r.y + r.height - 1),
-							nana::point(r.x + r.width - 1, r.y + r.height - 1)
-						};
 
 						graph.palette(false, static_cast<color_rgb>(0xc0ddfc));
-						for(int i = 0; i < 4; ++i)
-							graph.set_pixel(points[i].x, points[i].y);
+						paint::draw(graph).corner(r, 1);
 
 						if(at.enabled)
 							graph.gradual_rectangle(nana::rectangle(r).pare_off(1), static_cast<color_rgb>(0xE8F0F4), static_cast<color_rgb>(0xDBECF4), true);
@@ -271,7 +268,7 @@ namespace nana
 						if(item.sub_menu == nullptr)
 						{
 							item.sub_menu = &sub;
-							sub.owner.push_back(&root_);
+							sub.owner.emplace_back(&root_);
 							return true;
 						}
 					}
@@ -479,7 +476,7 @@ namespace nana
 								--pos;
 						}
 
-						if(! menu_->items.at(pos).flags.splitter)
+						if(! menu_->items.at(pos).flags.splitter && menu_->items.at(pos).flags.enabled)
 							break;
 					}
 
@@ -785,9 +782,8 @@ namespace nana
 					{
 						if (event_code::mouse_down == arg.evt_code)
 							_m_open_sub(0);	//Try to open submenu immediately
-						else if (event_code::mouse_up == arg.evt_code)
-							if (arg.button == ::nana::mouse::left_button)
-								pick();
+						else if ((event_code::mouse_up == arg.evt_code) && (mouse::left_button == arg.button))
+							pick();
 					};
 
 					events.mouse_down.connect_unignorable(fn);
@@ -885,48 +881,45 @@ namespace nana
 						return;
 					
 					menu_item_type & item = menu->items.at(active);
-					if (item.flags.splitter == false && item.sub_menu == nullptr)
+
+					if ((!item.flags.enabled) || item.flags.splitter || item.sub_menu)
+						return;
+
+					if (checks::highlight == item.style)
 					{
-						//There is a situation that menu will not call functor if the item style is check_option
-						//and it is checked before clicking.
-						bool call_functor = true;
-
-						if (checks::highlight == item.style)
+						item.flags.checked = !item.flags.checked;
+					}
+					else if (checks::option == item.style)
+					{
+						//Forward Looks for a splitter
+						auto pos = active;
+						while (pos)
 						{
-							item.flags.checked = !item.flags.checked;
-						}
-						else if (checks::option == item.style)
-						{
-							//Forward Looks for a splitter
-							auto pos = active;
-							while (pos)
-							{
-								if (menu->items.at(--pos).flags.splitter)
-									break;
-							}
-
-							for (; pos < menu->items.size(); ++pos)
-							{
-								menu_item_type & im = menu->items.at(pos);
-								if (im.flags.splitter) break;
-
-								if ((checks::option == im.style) && im.flags.checked)
-									im.flags.checked = false;
-							}
-
-							item.flags.checked = true;
+							if (menu->items.at(--pos).flags.splitter)
+								break;
 						}
 
-						this->_m_close_all();	//means deleting this;
-						//The deleting operation has moved here, because item.functor.operator()(ip)
-						//may create a window, which make a killing focus for menu window, if so the close_all
-						//operation preformences after item.functor.operator()(ip), that would be deleting this object twice!
-
-						if (call_functor && item.flags.enabled && item.functor)
+						for (; pos < menu->items.size(); ++pos)
 						{
-							item_type::item_proxy ip(active, item);
-							item.functor.operator()(ip);
+							menu_item_type & im = menu->items.at(pos);
+							if (im.flags.splitter) break;
+
+							if ((checks::option == im.style) && im.flags.checked)
+								im.flags.checked = false;
 						}
+
+						item.flags.checked = true;
+					}
+
+					this->_m_close_all();	//means deleting this;
+					//The deleting operation has moved here, because item.functor.operator()(ip)
+					//may create a window, which make a killing focus for menu window, if so the close_all
+					//operation preformences after item.functor.operator()(ip), that would be deleting this object twice!
+
+					if (item.functor)
+					{
+						item_type::item_proxy ip(active, item);
+						item.functor.operator()(ip);
 					}
 				}
 			private:

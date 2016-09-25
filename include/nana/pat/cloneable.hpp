@@ -1,7 +1,7 @@
 /*
 *	A Generic Cloneable Pattern Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -106,8 +106,8 @@ namespace nana{ namespace pat{
 
 		template<typename T, typename member_enabled<T>::type* = nullptr>
 		cloneable(T&& t)
-			: cwrapper_(new detail::cloneable_wrapper<typename std::remove_cv<typename std::remove_reference<T>::type>::type>(std::forward<T>(t)), detail::cloneable_interface_deleter()),
-				fast_ptr_(reinterpret_cast<typename std::remove_cv<typename std::remove_reference<T>::type>::type*>(cwrapper_->get()))
+			: cwrapper_(new detail::cloneable_wrapper<typename std::decay<T>::type>(std::forward<T>(t)), detail::cloneable_interface_deleter()),
+				fast_ptr_(reinterpret_cast<typename std::decay<T>::type*>(cwrapper_->get()))
 		{}
 
 		cloneable(const cloneable& r)

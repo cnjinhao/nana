@@ -23,8 +23,186 @@
 #include <stdexcept>
 #include <algorithm>
 
+#if defined(STD_THREAD_NOT_SUPPORTED)
+#include <nana/std_mutex.hpp>
+#else
+#include <mutex>
+#endif
+
 namespace nana
 {
+
+	namespace detail
+	{
+		//class shortkey_container
+		struct shortkey_rep
+		{
+			window handle;
+			std::vector<unsigned long> keys;
+		};
+
+		struct shortkey_container::implementation
+		{
+			std::vector<shortkey_rep> base;
+		};
+
+		shortkey_container::shortkey_container()
+			:impl_(new implementation)
+		{}
+
+		shortkey_container::shortkey_container(shortkey_container&& other)
+			: impl_(other.impl_)
+		{
+			other.impl_ = nullptr;
+		}
+
+		shortkey_container::~shortkey_container()
+		{
+			delete impl_;
+		}
+
+		void shortkey_container::clear()
+		{
+			impl_->base.clear();
+		}
+
+		bool shortkey_container::make(window wd, unsigned long key)
+		{
+			if (wd == nullptr) return false;
+			if (key < 0x61) key += (0x61 - 0x41);
+
+			for (auto & m : impl_->base)
+			{
+				if (m.handle == wd)
+				{
+					m.keys.emplace_back(key);
+					return true;
+				}
+			}
+
+			impl_->base.emplace_back();
+			auto & rep = impl_->base.back();
+			rep.handle = wd;
+			rep.keys.emplace_back(key);
+
+			return true;
+		}
+
+		void shortkey_container::umake(window wd)
+		{
+			if (wd == nullptr) return;
+
+			for (auto i = impl_->base.begin(); i != impl_->base.end(); ++i)
+			{
+				if (i->handle == wd)
+				{
+					impl_->base.erase(i);
+					break;
+				}
+			}
+		}
+
+		std::vector<unsigned long> shortkey_container::keys(window wd) const
+		{
+			if (wd)
+			{
+				for (auto & m : impl_->base)
+				{
+					if (m.handle == wd)
+						return m.keys;
+				}
+			}
+			return{};
+		}
+
+		window shortkey_container::find(unsigned long key) const
+		{
+			if (key < 0x61) key += (0x61 - 0x41);
+
+			for (auto & m : impl_->base)
+			{
+				for (auto n : m.keys)
+				{
+					if (key == n)
+						return m.handle;
+				}
+			}
+			return nullptr;
+		}
+		//end class shortkey_container
+
+
+		//struct root_misc
+		root_misc::root_misc(root_misc&& other):
+			window(other.window),
+			root_graph(std::move(other.root_graph)),
+			shortkeys(std::move(other.shortkeys)),
+			condition(std::move(other.condition))
+		{
+		}
+
+		root_misc::root_misc(basic_window * wd, unsigned width, unsigned height)
+			: window(wd),
+			root_graph({ width, height })
+		{
+			condition.ignore_tab = false;
+			condition.pressed = nullptr;
+			condition.pressed_by_space = nullptr;
+			condition.hovered = nullptr;
+		}
+		//end struct root_misc
+
+		//class root_register
+		struct root_register::implementation
+		{
+			//Cached
+			native_window_type	recent_access{ nullptr };
+			root_misc *			misc_ptr{ nullptr };
+
+			std::map<native_window_type, root_misc> table;
+		};
+
+		root_register::root_register()
+			: impl_(new implementation)
+		{}
+
+		root_register::~root_register()
+		{
+			delete impl_;
+		}
+
+		root_misc* root_register::insert(native_window_type wd, root_misc&& misc)
+		{
+			impl_->recent_access = wd;
+			auto ret = impl_->table.emplace(wd, std::move(misc));
+			impl_->misc_ptr = &(ret.first->second);
+			return impl_->misc_ptr;
+		}
+
+		root_misc * root_register::find(native_window_type wd)
+		{
+			if (wd == impl_->recent_access)
+				return impl_->misc_ptr;
+
+			impl_->recent_access = wd;
+
+			auto i = impl_->table.find(wd);
+			if (i != impl_->table.end())
+				impl_->misc_ptr = &(i->second);
+			else
+				impl_->misc_ptr = nullptr;
+
+			return impl_->misc_ptr;
+		}
+
+		void root_register::erase(native_window_type wd)
+		{
+			impl_->table.erase(wd);
+			impl_->recent_access = wd;
+			impl_->misc_ptr = nullptr;
+		}
+		//end class root_register
+	}
 
 namespace detail
 {
@@ -36,9 +214,7 @@ namespace detail
 			Key first;
 			Value second;
 
-			key_value_rep()
-				: first{}, second{}
-			{}
+			key_value_rep() = default;
 
 			key_value_rep(const Key& k)
 				: first(k), second{}
@@ -69,19 +245,9 @@ namespace detail
 			return table_.end();
 		}
 
-		iterator erase(iterator pos)
+		std::vector<key_value_rep>& table()
 		{
-			return table_.erase(pos);
-		}
-
-		iterator begin()
-		{
-			return table_.begin();
-		}
-
-		iterator end()
-		{
-			return table_.end();
+			return table_;
 		}
 	private:
 		std::vector<key_value_rep> table_;
@@ -109,27 +275,50 @@ namespace detail
 		//end struct wdm_private_impl
 
 		//class revertible_mutex
-			window_manager::revertible_mutex::revertible_mutex()
+			struct thread_refcount
 			{
-				thr_.tid = 0;
-				thr_.refcnt = 0;
+				unsigned tid;
+				std::size_t ref;
+			};
+
+			struct window_manager::revertible_mutex::implementation
+			{
+				std::recursive_mutex mutex;
+
+				thread_refcount thread;
+				std::vector<thread_refcount> invoke_stack;
+			};
+
+			window_manager::revertible_mutex::revertible_mutex()
+				: impl_(new implementation)
+			{
+				impl_->thread.tid = 0;
+				impl_->thread.ref = 0;
+			}
+
+			window_manager::revertible_mutex::~revertible_mutex()
+			{
+				delete impl_;
 			}
 
 			void window_manager::revertible_mutex::lock()
 			{
-				std::recursive_mutex::lock();
-				if(0 == thr_.tid)
-					thr_.tid = nana::system::this_thread_id();
-				++thr_.refcnt;
+				impl_->mutex.lock();
+
+				if(0 == impl_->thread.tid)
+					impl_->thread.tid = nana::system::this_thread_id();
+
+				++(impl_->thread.ref);
 			}
 
 			bool window_manager::revertible_mutex::try_lock()
 			{
-				if(std::recursive_mutex::try_lock())
+				if(impl_->mutex.try_lock())
 				{
-					if(0 == thr_.tid)
-						thr_.tid = nana::system::this_thread_id();
-					++thr_.refcnt;
+					if (0 == impl_->thread.tid)
+						impl_->thread.tid = nana::system::this_thread_id();
+
+					++(impl_->thread.ref);
 					return true;
 				}
 				return false;
@@ -137,44 +326,45 @@ namespace detail
 
 			void window_manager::revertible_mutex::unlock()
 			{
-				if(thr_.tid == nana::system::this_thread_id())
-					if(0 == --thr_.refcnt)
-						thr_.tid = 0;
-				std::recursive_mutex::unlock();
+				if(impl_->thread.tid == nana::system::this_thread_id())
+					if(0 == --(impl_->thread.ref))
+						impl_->thread.tid = 0;
+
+				impl_->mutex.unlock();
 			}
 
 			void window_manager::revertible_mutex::revert()
 			{
-				if(thr_.refcnt && (thr_.tid == nana::system::this_thread_id()))
+				if(impl_->thread.ref && (impl_->thread.tid == nana::system::this_thread_id()))
 				{
-					std::size_t cnt = thr_.refcnt;
+					std::size_t cnt = impl_->thread.ref;
 
-					stack_.push_back(thr_);
-					thr_.tid = 0;
-					thr_.refcnt = 0;
+					impl_->invoke_stack.push_back(impl_->thread);
+					impl_->thread.tid = 0;
+					impl_->thread.ref = 0;
 
-					for(std::size_t i = 0; i < cnt; ++i)
-						std::recursive_mutex::unlock();
+					for (std::size_t i = 0; i < cnt; ++i)
+						impl_->mutex.unlock();
 				}
 			}
 
 			void window_manager::revertible_mutex::forward()
 			{
-				std::recursive_mutex::lock();
-				if(stack_.size())
+				impl_->mutex.lock();
+				if(impl_->invoke_stack.size())
 				{
-					auto thr = stack_.back();
+					auto thr = impl_->invoke_stack.back();
 					if(thr.tid == nana::system::this_thread_id())
 					{
-						stack_.pop_back();
-						for(std::size_t i = 0; i < thr.refcnt; ++i)
-							std::recursive_mutex::lock();
-						thr_ = thr;
+						impl_->invoke_stack.pop_back();
+						for (std::size_t i = 0; i < thr.ref; ++i)
+							impl_->mutex.lock();
+						impl_->thread = thr;
 					}
 					else
 						throw std::runtime_error("Nana.GUI: The forward is not matched.");
 				}
-				std::recursive_mutex::unlock();
+				impl_->mutex.unlock();
 			}
 		//end class revertible_mutex
 
@@ -254,23 +444,13 @@ namespace detail
 			return (impl_->wd_register.available(a) && impl_->wd_register.available(b));
 		}
 
-		bool window_manager::available(native_window_type wd)
-		{
-			if(wd)
-			{
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
-				return (impl_->misc_register.find(wd) != nullptr);
-			}
-			return false;
-		}
-
 		window_manager::core_window_t* window_manager::create_root(core_window_t* owner, bool nested, rectangle r, const appearance& app, widget* wdg)
 		{
 			native_window_type native = nullptr;
 			if (owner)
 			{
 				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 
 				if (impl_->wd_register.available(owner))
 				{
@@ -306,11 +486,10 @@ namespace detail
 				wd->title = native_interface::window_caption(result.native_handle);
 
 				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 
 				//create Root graphics Buffer and manage it
-				root_misc misc(wd, result.width, result.height);
-				auto* value = impl_->misc_register.insert(result.native_handle, misc);
+				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.width, result.height));
 
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd, wd->thread_id);
@@ -331,7 +510,7 @@ namespace detail
 		window_manager::core_window_t* window_manager::create_frame(core_window_t* parent, const rectangle& r, widget* wdg)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 
 			if (impl_->wd_register.available(parent) == false)	return nullptr;
 
@@ -350,7 +529,7 @@ namespace detail
 			if(frame)
 			{
 				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 				if(category::flags::frame == frame->other.category)
 					frame->other.attribute.frame->attach.push_back(wd);
 				return true;
@@ -363,7 +542,7 @@ namespace detail
 			if(frame)
 			{
 				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 				if(category::flags::frame == frame->other.category)
 				{
 					if (impl_->wd_register.available(wd) && (category::flags::root == wd->other.category) && wd->root != frame->root)
@@ -380,7 +559,7 @@ namespace detail
 		window_manager::core_window_t* window_manager::create_widget(core_window_t* parent, const rectangle& r, bool is_lite, widget* wdg)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(parent) == false)
 				throw std::invalid_argument("invalid parent/owner handle");
 
@@ -401,7 +580,7 @@ namespace detail
 		void window_manager::close(core_window_t *wd)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
 			if (wd->flags.destroying)
@@ -443,7 +622,7 @@ namespace detail
 		void window_manager::destroy(core_window_t* wd)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
 			rectangle update_area(wd->pos_owner, wd->dimension);
@@ -467,7 +646,7 @@ namespace detail
 		void window_manager::destroy_handle(core_window_t* wd)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
 #ifndef WIDGET_FRAME_DEPRECATED
@@ -491,7 +670,7 @@ namespace detail
 		{
 			if(!big_icon.empty() || !small_icon.empty())
 			{
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 				if (impl_->wd_register.available(wd))
 				{
 					if(category::flags::root == wd->other.category)
@@ -505,7 +684,7 @@ namespace detail
 		bool window_manager::show(core_window_t* wd, bool visible)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return false;
 
@@ -548,7 +727,7 @@ namespace detail
 			if((false == attr_.capture.ignore_children) || (nullptr == attr_.capture.window) || (attr_.capture.window->root != root))
 			{
 				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 				auto rrt = root_runtime(root);
 				point pos{ x, y };
 				if (rrt && _m_effective(rrt->window, pos))
@@ -561,7 +740,7 @@ namespace detail
 		bool window_manager::move(core_window_t* wd, int x, int y, bool passive)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 			{
 				if (category::flags::root != wd->other.category)
@@ -606,7 +785,7 @@ namespace detail
 		bool window_manager::move(core_window_t* wd, const rectangle& r)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return false;
 				
@@ -680,7 +859,7 @@ namespace detail
 		bool window_manager::size(core_window_t* wd, nana::size sz, bool passive, bool ask_update)
 		{	
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return false;
 			
@@ -767,7 +946,7 @@ namespace detail
 			if(cache.first == wd) return cache.second;
 
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 
 			auto rrt = root_runtime(wd);
 			if(rrt)
@@ -783,7 +962,7 @@ namespace detail
 		void window_manager::map(core_window_t* wd, bool forced, const rectangle* update_area)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
 			{
 				auto parent = wd->parent;
@@ -805,7 +984,7 @@ namespace detail
 		bool window_manager::update(core_window_t* wd, bool redraw, bool forced, const rectangle* update_area)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false) return false;
 
 			if (wd->displayed())
@@ -837,7 +1016,7 @@ namespace detail
 		void window_manager::refresh_tree(core_window_t* wd)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 
 			//It's not worthy to redraw if visible is false
 			if (impl_->wd_register.available(wd) && wd->displayed())
@@ -850,7 +1029,7 @@ namespace detail
 		bool window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen, bool refresh_tree)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 
 			if (false == impl_->wd_register.available(wd))
 				return false;
@@ -888,7 +1067,7 @@ namespace detail
 		bool window_manager::get_graphics(core_window_t* wd, nana::paint::graphics& result)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return false;
 
@@ -901,7 +1080,7 @@ namespace detail
 		bool window_manager::get_visual_rectangle(core_window_t* wd, nana::rectangle& r)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			return (impl_->wd_register.available(wd) ?
 				window_layer::read_visual_rectangle(wd, r) :
 				false);
@@ -909,7 +1088,7 @@ namespace detail
 
 		std::vector<window_manager::core_window_t*> window_manager::get_children(core_window_t* wd) const
 		{
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 				return wd->children;
 			return{};
@@ -918,7 +1097,7 @@ namespace detail
 		bool window_manager::set_parent(core_window_t* wd, core_window_t* newpa)
 		{	
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return false;
 
@@ -945,7 +1124,7 @@ namespace detail
 		window_manager::core_window_t* window_manager::set_focus(core_window_t* wd, bool root_has_been_focused, arg_focus::reason reason)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 
 			if (!impl_->wd_register.available(wd))
 				return nullptr;
@@ -1051,7 +1230,7 @@ namespace detail
 				if(wd != attr_.capture.window)
 				{
 					//Thread-Safe Required!
-					std::lock_guard<decltype(mutex_)> lock(mutex_);
+					std::lock_guard<mutex_type> lock(mutex_);
 
 					if (impl_->wd_register.available(wd))
 					{
@@ -1112,7 +1291,7 @@ namespace detail
 		void window_manager::enable_tabstop(core_window_t* wd)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) && (detail::tab_type::none == wd->flags.tab))
 			{
 				wd->root_widget->other.attribute.root->tabstop.push_back(wd);
@@ -1156,7 +1335,7 @@ namespace detail
 		auto window_manager::tabstop(core_window_t* wd, bool forward) const -> core_window_t*
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return nullptr;
 
@@ -1198,7 +1377,7 @@ namespace detail
 		bool window_manager::enable_effects_bground(core_window_t* wd, bool enabled)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 				return window_layer::enable_effects_bground(wd, enabled);
 
@@ -1208,7 +1387,7 @@ namespace detail
 		bool window_manager::calc_window_point(core_window_t* wd, nana::point& pos)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 			{
 				if(native_interface::calc_window_point(wd->root, pos))
@@ -1220,7 +1399,7 @@ namespace detail
 			return false;
 		}
 
-		root_misc* window_manager::root_runtime(native_window_type native_wd) const
+		root_misc* window_manager::root_runtime(native_window native_wd) const
 		{
 			return impl_->misc_register.find(native_wd);
 		}
@@ -1228,7 +1407,7 @@ namespace detail
 		bool window_manager::register_shortkey(core_window_t* wd, unsigned long key)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 			{
 				auto object = root_runtime(wd->root);
@@ -1241,7 +1420,7 @@ namespace detail
 		void window_manager::unregister_shortkey(core_window_t* wd, bool with_children)
 		{
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false) return;
 
 			auto root_rt = root_runtime(wd->root);
@@ -1261,7 +1440,7 @@ namespace detail
 			std::vector<std::pair<core_window_t*, unsigned long>> result;
 
 			//Thread-Safe Required!
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 			{
 				auto root_rt = root_runtime(wd->root);
@@ -1290,7 +1469,7 @@ namespace detail
 			if(native_window)
 			{
 				//Thread-Safe Required!
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 				auto object = root_runtime(native_window);
 				if(object)
 					return reinterpret_cast<core_window_t*>(object->shortkeys.find(key));
@@ -1302,7 +1481,7 @@ namespace detail
 		{
 			if (fn)
 			{
-				std::lock_guard<decltype(mutex_)> lock(mutex_);
+				std::lock_guard<mutex_type> lock(mutex_);
 				if (!available(wd))
 					return;
 
@@ -1312,21 +1491,21 @@ namespace detail
 
 		void window_manager::call_safe_place(unsigned thread_id)
 		{
-			std::lock_guard<decltype(mutex_)> lock(mutex_);
+			std::lock_guard<mutex_type> lock(mutex_);
 
-			for (auto i = impl_->safe_place.begin(); i != impl_->safe_place.end();)
+			auto& safe_place = impl_->safe_place.table();
+			for (auto i = safe_place.begin(); i != safe_place.end();)
 			{
 				if (i->first->thread_id == thread_id)
 				{
 					for (auto & fn : i->second)
 						fn();
 
-					i = impl_->safe_place.erase(i);
+					i = safe_place.erase(i);
 				}
 				else
 					++i;
 			}
-
 		}
 
 		bool check_tree(basic_window* wd, basic_window* const cond)
@@ -1534,6 +1713,11 @@ namespace detail
 				delete wd->annex.caret_ptr;
 				wd->annex.caret_ptr = nullptr;
 			}
+
+			using effect_renderer = detail::edge_nimbus_renderer<basic_window>;
+
+			//remove the window from edge nimbus effect when it is destroying
+			effect_renderer::instance().erase(wd);
 
 			arg_destroy arg;
 			arg.window_handle = reinterpret_cast<window>(wd);

@@ -17,7 +17,7 @@
 #include <sstream>
 #include <nana/system/timepiece.hpp>
 #include <nana/gui/wvl.hpp>
-#include <nana/gui/detail/inner_fwd_implement.hpp>
+#include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
@@ -25,6 +25,7 @@
 
 namespace nana
 {
+
 	//class internal_scope_guard
 		internal_scope_guard::internal_scope_guard()
 		{
@@ -600,7 +601,7 @@ namespace nana
 					{
 						root = wd->root;
 						if (roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
-							roots.push_back(root);
+							roots.emplace_back(root);
 					}
 				}
 

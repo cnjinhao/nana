@@ -170,11 +170,11 @@ namespace nana
 				{
 					if(editor_)
 					{
-						editor_->editable(enb);
+						editor_->editable(enb, false);
 						editor_->show_caret(enb);
 						if (!enb)
 						{
-							editor_->ext_renderer().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
+							editor_->customized_renderers().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
 							{
 								auto clr_from = colors::button_face_shadow_start;
 								auto clr_to = colors::button_face_shadow_end;
@@ -190,7 +190,7 @@ namespace nana
 							};
 						}
 						else
-							editor_->ext_renderer().background = nullptr;
+							editor_->customized_renderers().background = nullptr;
 
 						editor_->enable_background(enb);
 						editor_->enable_background_counterpart(!enb);

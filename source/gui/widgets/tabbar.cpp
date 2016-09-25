@@ -748,14 +748,13 @@ namespace nana
 
 				bool _m_add_tab(std::size_t pos)
 				{
-					item_t m;
 					if((pos == npos) || (pos >= list_.size()))
 					{
-						this->list_.push_back(m);
-						pos = static_cast<unsigned>(list_.size() - 1);
+						this->list_.emplace_back();
+						pos = list_.size() - 1;
 					}
 					else
-						list_.insert(iterator_at(pos), m);
+						list_.emplace(iterator_at(pos));
 
 					basis_.active = pos;
 					if(evt_agent_)
@@ -1505,7 +1504,7 @@ namespace nana
 						for (auto & m : items)
 						{
 							auto ts = graph.bidi_extent_size(m.text);
-							pxs.push_back(ts.width + 12);
+							pxs.emplace_back(ts.width + 12);
 							pixels += ts.width + 12;
 						}
 

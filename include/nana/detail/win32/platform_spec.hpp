@@ -17,13 +17,11 @@
 #ifndef NANA_DETAIL_PLATFORM_SPEC_HPP
 #define NANA_DETAIL_PLATFORM_SPEC_HPP
 
-#include <nana/deploy.hpp>
 #include <nana/gui/basis.hpp>
 #include <nana/paint/image.hpp>
 #include <nana/gui/detail/event_code.hpp>
 
 #include <windows.h>
-#include <map>
 #include <memory>
 #include <functional>
 
@@ -174,6 +172,12 @@ namespace detail
 
 	class platform_spec
 	{
+		platform_spec();
+		platform_spec(const platform_spec&) = delete;
+		platform_spec& operator=(const platform_spec&) = delete;
+
+		platform_spec(platform_spec&&) = delete;
+		platform_spec& operator=(platform_spec&&) = delete;
 	public:
 		typedef drawable_impl_type::font_ptr_t	font_ptr_t;
 		typedef ::nana::event_code event_code;
@@ -194,7 +198,7 @@ namespace detail
 			::nana::paint::image big_icon;
 		};
 
-		platform_spec();
+		~platform_spec();
 
 		const font_ptr_t& default_native_font() const;
 		void default_native_font(const font_ptr_t&);
@@ -207,8 +211,8 @@ namespace detail
 		void keep_window_icon(native_window_type, const paint::image&sml_icon, const paint::image& big_icon);
 		void release_window_icon(native_window_type);
 	private:
-		font_ptr_t	def_font_ptr_;
-		std::map<native_window_type, window_icons> iconbase_;
+		struct implementation;
+		implementation * const impl_;
 	};
 
 }//end namespace detail

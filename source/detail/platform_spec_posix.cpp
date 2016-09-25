@@ -29,6 +29,7 @@
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 #include <nana/system/platform.hpp>
+#include <nana/paint/pixel_buffer.hpp>
 #include <errno.h>
 #include <sstream>
 

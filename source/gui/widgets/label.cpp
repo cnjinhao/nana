@@ -206,15 +206,13 @@ namespace nana
 				{
 					if(fbp->target.size() || fbp->url.size())
 					{
-						traceable tr;
+						traceable_.emplace_back();
+						auto & tr = traceable_.back();
 						tr.r.x = x;
 						tr.r.y = y;
-						tr.r.width = sz.width;
-						tr.r.height = sz.height;
+						tr.r.dimension(sz);
 						tr.target = fbp->target;
 						tr.url = fbp->url;
-
-						traceable_.push_back(tr);
 					}
 				}
 
@@ -331,7 +329,7 @@ namespace nana
 						px.pixels = def_line_pixels;
 						px.x_base = 0;
 
-						rs.pixels.push_back(px);
+						rs.pixels.emplace_back(px);
 
 						return 0;
 					}
@@ -374,7 +372,7 @@ namespace nana
 							if(max_ascent < as)		max_ascent = as;
 							if(max_descent < ds)	max_descent = ds;
 							if(max_px < sz.height)	max_px = sz.height;
-							line_values.push_back(i);
+							line_values.emplace_back(i);
 						}
 						else
 						{
@@ -393,13 +391,13 @@ namespace nana
 								px.baseline = max_ascent;
 								px.values.swap(line_values);
 
-								rs.pixels.push_back(px);
+								rs.pixels.emplace_back(px);
 
 								w = sz.width;
 								max_px = sz.height;
 								max_ascent = as;
 								max_descent = ds;
-								line_values.push_back(i);
+								line_values.emplace_back(i);
 							}
 							else
 							{
@@ -409,9 +407,9 @@ namespace nana
 								px.pixels = sz.height;
 								px.baseline = as;
 
-								px.values.push_back(i);
+								px.values.emplace_back(i);
 
-								rs.pixels.push_back(px);
+								rs.pixels.emplace_back(px);
 								max_px = 0;
 								max_ascent = max_descent = 0;
 							}
@@ -432,7 +430,7 @@ namespace nana
 						px.pixels = max_px;
 						px.baseline = max_ascent;
 						px.values.swap(line_values);
-						rs.pixels.push_back(px);
+						rs.pixels.emplace_back(px);
 					}
 					return total_w;
 				}
