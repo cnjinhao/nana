@@ -442,7 +442,7 @@ namespace nana{	namespace widgets
 				}
 				
 				if (pos.x > text_ptr->size())
-					pos.x = text_ptr->size();
+					pos.x = static_cast<decltype(pos.x)>(text_ptr->size());
 
 				pos.x = editor_._m_pixels_by_char(*text_ptr, pos.x) + editor_.text_area_.area.x;
 				int pos_y = static_cast<int>((pos.y - editor_.points_.offset.y) * editor_.line_height() + editor_._m_text_top_base());
