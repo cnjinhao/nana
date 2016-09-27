@@ -56,7 +56,7 @@ namespace nana
 			{
 				div_start, div_end, splitter,
 				identifier, dock, vert, grid, number, array, reparray,
-				weight, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom,
+				weight, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom, undisplayed, invisible,
 				collapse, parameters,
 				equal,
 				eof, error
@@ -275,7 +275,7 @@ namespace nana
 							_m_throw_error("a parameter list is required after 'collapse'");
 						return token::collapse;
 					}
-					else if ("left" == idstr_ || "right" == idstr_ || "top" == idstr_ || "bottom" == idstr_)
+					else if ("left" == idstr_ || "right" == idstr_ || "top" == idstr_ || "bottom" == idstr_ || "undisplayed" == idstr_ || "invisible" == idstr_)
 					{
 						switch (idstr_.front())
 						{
@@ -283,8 +283,11 @@ namespace nana
 						case 'r': return token::right;
 						case 't': return token::top;
 						case 'b': return token::bottom;
+						case 'u': return token::undisplayed;
+						case 'i': return token::invisible;
 						}
 					}
+
 					return token::identifier;
 				}
 
@@ -442,6 +445,8 @@ namespace nana
 
 		window window_handle{nullptr};
 		event_handle event_size_handle{nullptr};
+
+		std::string div_text;
 		std::unique_ptr<division> root_division;
 		std::map<std::string, field_gather*> fields;
 		std::map<std::string, field_dock*> docks;
@@ -2147,6 +2152,9 @@ namespace nana
 		std::vector<std::unique_ptr<division>> children;
 		::nana::direction div_dir = ::nana::direction::west;
 
+		bool undisplayed = false;
+		bool invisible = false;
+
 		for (token tk = tknizer.read(); tk != token::eof; tk = tknizer.read())
 		{
 			bool exit_for = false;
@@ -2305,6 +2313,10 @@ namespace nana
 				div_dir = ::nana::direction::north; break;
 			case token::bottom:
 				div_dir = ::nana::direction::south; break;
+			case token::undisplayed:
+				undisplayed = true; break;
+			case token::invisible:
+				invisible = true; break;
 			default:	break;
 			}
 			if (exit_for)
@@ -2430,6 +2442,9 @@ namespace nana
 		div->children.swap(children);
 		div->margin = std::move(margin);
 		div->dir = div_dir;
+
+		div->display = !undisplayed;
+		div->visible = !(undisplayed || invisible);
 		return div;
 	}
 
@@ -2593,12 +2608,18 @@ namespace nana
 			impl_->connect(div.get());
 			impl_->root_division.reset();	//clear atachments div-fields
 			impl_->root_division.swap(div);
+			impl_->div_text.assign(s);
 		}
 		catch (...)
 		{
 			//redefined a name of field
 			throw;
 		}
+	}
+
+	const std::string& place::div() const noexcept
+	{
+		return impl_->div_text;
 	}
 
 	void place::modify(const char* name, const char* div_text)
@@ -2698,6 +2719,133 @@ namespace nana
 		return *p;
 	}
 
+	bool is_idchar(int ch)
+	{
+		return ('_' == ch || isalpha(ch) || isalnum(ch));
+	}
+
+	std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
+	{
+		const auto len = std::strlen(idstr);
+		auto pos = text.find(idstr, off);
+		if (text.npos == pos)
+			return text.npos;
+
+		if (pos && is_idchar(text[pos - 1]))
+			return text.npos;
+
+		if ((pos + len < text.length()) && is_idchar(text[pos + len]))
+			return text.npos;
+
+		return pos;
+	}
+
+	void update_div(std::string& div, const char* field, const char* attr, bool insertion)
+	{
+		const auto fieldname_pos = find_idstr(div, field);
+		if (div.npos == fieldname_pos)
+			return;
+
+		//Get the bounds of this field
+		std::size_t begin = 0, end = 0;
+
+		//Find the begin
+		int level = 0;
+		std::size_t pos = fieldname_pos;
+		while (true)
+		{
+			pos = div.find_last_of("<>", pos);
+			if (div.npos == pos)
+				return;
+
+			if ('<' == div[pos])
+			{
+				if (0 == level)
+				{
+					begin = pos;
+					break;
+				}
+				else
+					--level;
+			}
+			else
+				++level;
+		}
+
+		//Find the end
+		level = 0;
+		pos = fieldname_pos;
+		while (true)
+		{
+			pos = div.find_first_of("<>", pos);
+			if (div.npos == pos)
+				return;
+
+			if ('>' == div[pos])
+			{
+				if (0 == level)
+				{
+					end = pos + 1;
+					break;
+				}
+				else
+					--level;
+			}
+			else
+				++level;
+		}
+
+		auto fieldstr = div.substr(begin + 1, end - begin - 2);
+
+		//Search the attribute
+		for (pos = 0; true; ++pos)
+		{
+			pos = find_idstr(fieldstr, attr, pos);
+			if (fieldstr.npos == pos)
+				break;
+
+			//Check if the attr is belong to this field.
+			level = 0;
+			std::size_t off = pos;
+			while (true)
+			{
+				off = fieldstr.find_last_of("<>", off);
+				if (fieldstr.npos == off)
+					break;
+
+				if ('>' == fieldstr[off])
+					++level;
+				else
+					--level;
+
+				if (0 == off)
+					break;
+				--off;
+			}
+
+			if (0 == level)
+				break;
+		}
+
+		if (fieldstr.npos == pos)
+		{
+			//There is not an attribute
+			if (insertion)
+				div.insert(fieldname_pos + std::strlen(field), " " + std::string(attr));
+		}
+		else
+		{
+			//There is an attribute
+			if (!insertion)
+			{
+				div.erase(begin + pos + 1, std::strlen(attr));
+
+				if ((div[begin + pos] == div[begin + pos + 1]) && (' ' == div[begin + pos]))
+					div.erase(begin + pos, 1);
+			}
+		}
+	}
+
 	void place::field_visible(const char* name, bool vsb)
 	{
 		if (!name)	name = "";
@@ -2707,7 +2855,10 @@ namespace nana
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		if (div)
+		{
 			div->set_visible(vsb);
+			update_div(impl_->div_text, name, "invisible", !vsb);
+		}
 	}
 
 	bool place::field_visible(const char* name) const
@@ -2730,7 +2881,11 @@ namespace nana
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		if (div)
+		{
+			update_div(impl_->div_text, name, "invisible", false);
+			update_div(impl_->div_text, name, "undisplayed", !dsp);
 			div->set_display(dsp);
+		}
 	}
 
 	bool place::field_display(const char* name) const
