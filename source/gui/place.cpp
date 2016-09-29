@@ -1890,7 +1890,7 @@ namespace nana
 			unsigned vert_count = 0, horz_count = 0;
 
 			bool is_first = true;
-			bool prev_attr = false;
+			bool prev_attr;
 
 			for (auto & child : children)
 			{
@@ -1967,7 +1967,7 @@ namespace nana
 					child_dv->splitter.reset();
 
 				::nana::rectangle child_r;
-				double split_range_begin = -1, split_range_end = 0;
+				double split_range_begin = -1, split_range_end;
 				switch (child->dir)
 				{
 				default:
@@ -2622,10 +2622,6 @@ namespace nana
 		return impl_->div_text;
 	}
 
-	enum div_type {	erase = 0, insert, replace };
-
-	void update_div(std::string& div, const char* field, const char* attr, div_type insertion);
-
 	void place::modify(const char* name, const char* div_text)
 	{
 		if (nullptr == div_text)
@@ -2680,7 +2676,6 @@ namespace nana
 			impl_->check_unique(impl_->root_division.get());
 			impl_->connect(impl_->root_division.get());
 			impl_->tmp_replaced.reset();
-			update_div(impl_->div_text, name, div_text, div_type::replace);
 
 			modified_ptr->div_owner = div_owner;
 			modified_ptr->div_next = div_next;
@@ -2745,7 +2740,7 @@ namespace nana
 		return pos;
 	}
 
-	void update_div(std::string& div, const char* field, const char* attr, div_type insertion)
+	void update_div(std::string& div, const char* field, const char* attr, bool insertion)
 	{
 		const auto fieldname_pos = find_idstr(div, field);
 		if (div.npos == fieldname_pos)
@@ -2835,18 +2830,13 @@ namespace nana
 		if (fieldstr.npos == pos)
 		{
 			//There is not an attribute
-			if (insertion == div_type::insert)
+			if (insertion)
 				div.insert(fieldname_pos + std::strlen(field), " " + std::string(attr));
-			else if (insertion == div_type::replace)
-			{
-				div.erase(begin + 1, fieldstr.length());
-				div.insert(begin + 1, std::string(attr) + " " + std::string(field));
-			}
 		}
 		else
 		{
 			//There is an attribute
-			if (insertion == div_type::erase)
+			if (!insertion)
 			{
 				div.erase(begin + pos + 1, std::strlen(attr));
 
@@ -2856,7 +2846,7 @@ namespace nana
 		}
 	}
 
-	void place::field_visible(const char* name, bool vsb) const
+	void place::field_visible(const char* name, bool vsb)
 	{
 		if (!name)	name = "";
 
@@ -2867,7 +2857,7 @@ namespace nana
 		if (div)
 		{
 			div->set_visible(vsb);
-			update_div(impl_->div_text, name, "invisible", !vsb ? div_type::insert : div_type::erase);
+			update_div(impl_->div_text, name, "invisible", !vsb);
 		}
 	}
 
@@ -2882,7 +2872,7 @@ namespace nana
 		return (div && div->visible);
 	}
 
-	void place::field_display(const char* name, bool dsp) const
+	void place::field_display(const char* name, bool dsp)
 	{
 		if (!name)	name = "";
 
@@ -2892,8 +2882,8 @@ namespace nana
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		if (div)
 		{
-			update_div(impl_->div_text, name, "invisible", div_type::erase);
-			update_div(impl_->div_text, name, "undisplayed", !dsp ? div_type::insert : div_type::erase);
+			update_div(impl_->div_text, name, "invisible", false);
+			update_div(impl_->div_text, name, "undisplayed", !dsp);
 			div->set_display(dsp);
 		}
 	}
