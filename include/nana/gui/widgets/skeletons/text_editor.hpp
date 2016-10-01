@@ -148,7 +148,7 @@ namespace nana{	namespace widgets
 			 * @param reset indicates whether to reset the text position by the pos. If this parameter is true, the text position is set by pos. If the parameter is false, it only moves the UI caret to the specified position. 
 			 */
 			bool move_caret(const upoint& pos, bool reset = false);
-			void move_caret_end();
+			void move_caret_end(bool update);
 			void reset_caret_pixels() const;
 			void reset_caret();
 			void show_caret(bool isshow);

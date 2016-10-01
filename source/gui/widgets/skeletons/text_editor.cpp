@@ -1797,7 +1797,7 @@ namespace nana{	namespace widgets
 				if (select_all)
 				{
 					select(true);
-					move_caret_end();
+					move_caret_end(false);
 					renderred = true;
 
 					//If the text widget is focused by clicking mouse button, the selected text will be cancelled
@@ -1991,8 +1991,6 @@ namespace nana{	namespace widgets
 			return str;
 		}
 
-		//move_caret
-		//Set caret position through text coordinate
 		bool text_editor::move_caret(const upoint& crtpos, bool reset_caret)
 		{	
 			const unsigned line_pixels = line_height();
@@ -2036,11 +2034,14 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		void text_editor::move_caret_end()
+		void text_editor::move_caret_end(bool update)
 		{
 			points_.caret.y = static_cast<unsigned>(impl_->textbase.lines());
 			if(points_.caret.y) --points_.caret.y;
 			points_.caret.x = static_cast<unsigned>(impl_->textbase.getline(points_.caret.y).size());
+
+			if (update)
+				this->move_caret(points_.caret, false);
 		}
 
 		void text_editor::reset_caret_pixels() const

@@ -260,8 +260,11 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-			{				
-				editor->text(to_wstring(str), end_caret);
+			{
+				editor->text(to_wstring(str), false);
+				
+				if (end_caret)
+					editor->move_caret_end(true);
 
 				editor->textbase().reset();
 				API::update_window(this->handle());
@@ -358,7 +361,7 @@ namespace drawerbase {
 			if(editor)
 			{
 				if(at_caret == false)
-					editor->move_caret_end();
+					editor->move_caret_end(false);
 
 				editor->put(to_wstring(text));
 				API::update_window(this->handle());
