@@ -2726,23 +2726,24 @@ namespace nana
 
 	bool is_idchar(int ch)
 	{
-		return ('_' == ch || isalpha(ch) || isalnum(ch));
+		return ('_' == ch || isalnum(ch));
 	}
 
 	std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
 	{
 		const auto len = std::strlen(idstr);
-		auto pos = text.find(idstr, off);
-		if (text.npos == pos)
-			return text.npos;
+		size_t pos;
+		while ((pos = text.find(idstr, off)) != text.npos)
+		{
+			if (!is_idchar(text[pos + len]))
+			{
+				if (pos == 0 || !is_idchar(text[pos - 1]))
+					return pos;
+			}
 
-		if (pos && is_idchar(text[pos - 1]))
-			return text.npos;
-
-		if ((pos + len < text.length()) && is_idchar(text[pos + len]))
-			return text.npos;
-
-		return pos;
+			off = pos + len; // occurrence not found, advancing the offset and try again
+		}
+		return text.npos;
 	}
 
 	void update_div(std::string& div, const char* field, const char* attr, div_type insertion)
