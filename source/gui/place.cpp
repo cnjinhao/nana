@@ -1890,7 +1890,7 @@ namespace nana
 			unsigned vert_count = 0, horz_count = 0;
 
 			bool is_first = true;
-			bool prev_attr;
+			bool prev_attr = false;
 
 			for (auto & child : children)
 			{
@@ -1967,7 +1967,7 @@ namespace nana
 					child_dv->splitter.reset();
 
 				::nana::rectangle child_r;
-				double split_range_begin = -1, split_range_end;
+				double split_range_begin = -1, split_range_end = 0;
 				switch (child->dir)
 				{
 				default:
@@ -2622,6 +2622,10 @@ namespace nana
 		return impl_->div_text;
 	}
 
+	enum div_type {	erase = 0, insert, replace };
+
+	void update_div(std::string& div, const char* field, const char* attr, div_type insertion);
+
 	void place::modify(const char* name, const char* div_text)
 	{
 		if (nullptr == div_text)
@@ -2676,6 +2680,7 @@ namespace nana
 			impl_->check_unique(impl_->root_division.get());
 			impl_->connect(impl_->root_division.get());
 			impl_->tmp_replaced.reset();
+			update_div(impl_->div_text, name, div_text, div_type::replace);
 
 			modified_ptr->div_owner = div_owner;
 			modified_ptr->div_next = div_next;
@@ -2719,37 +2724,30 @@ namespace nana
 		return *p;
 	}
 
-	bool is_idchar(int ch)
+	inline bool is_idchar(int ch)
 	{
-		return ('_' == ch || isalpha(ch) || isalnum(ch));
+		return ('_' == ch || isalnum(ch));
 	}
 
 	std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
 	{
 		const auto len = std::strlen(idstr);
 
-		while (true)
+		size_t pos;
+		while ((pos = text.find(idstr, off)) != text.npos)
 		{
-			auto pos = text.find(idstr, off);
-			if (text.npos == pos)
-				return text.npos;
-
-			if (pos && is_idchar(text[pos - 1]))
+			if (!is_idchar(text[pos + len]))
 			{
-				off = pos + 1;
-				continue;
+				if (pos == 0 || !is_idchar(text[pos - 1]))
+					return pos;
 			}
 
-			if ((pos + len < text.length()) && is_idchar(text[pos + len]))
-			{
-				off = pos + 1;
-				continue;
-			}
-			return pos;
+			off = pos + len; // occurrence not found, advancing the offset and try again
 		}
+		return text.npos;
 	}
 
-	void update_div(std::string& div, const char* field, const char* attr, bool insertion)
+	void update_div(std::string& div, const char* field, const char* attr, div_type insertion)
 	{
 		const auto fieldname_pos = find_idstr(div, field);
 		if (div.npos == fieldname_pos)
@@ -2839,13 +2837,18 @@ namespace nana
 		if (fieldstr.npos == pos)
 		{
 			//There is not an attribute
-			if (insertion)
+			if (insertion == div_type::insert)
 				div.insert(fieldname_pos + std::strlen(field), " " + std::string(attr));
+			else if (insertion == div_type::replace)
+			{
+				div.erase(begin + 1, fieldstr.length());
+				div.insert(begin + 1, std::string(attr) + " " + std::string(field));
+			}
 		}
 		else
 		{
 			//There is an attribute
-			if (!insertion)
+			if (insertion == div_type::erase)
 			{
 				div.erase(begin + pos + 1, std::strlen(attr));
 
@@ -2855,7 +2858,7 @@ namespace nana
 		}
 	}
 
-	void place::field_visible(const char* name, bool vsb)
+	void place::field_visible(const char* name, bool vsb) const
 	{
 		if (!name)	name = "";
 
@@ -2866,7 +2869,7 @@ namespace nana
 		if (div)
 		{
 			div->set_visible(vsb);
-			update_div(impl_->div_text, name, "invisible", !vsb);
+			update_div(impl_->div_text, name, "invisible", !vsb ? div_type::insert : div_type::erase);
 		}
 	}
 
@@ -2881,7 +2884,7 @@ namespace nana
 		return (div && div->visible);
 	}
 
-	void place::field_display(const char* name, bool dsp)
+	void place::field_display(const char* name, bool dsp) const
 	{
 		if (!name)	name = "";
 
@@ -2891,8 +2894,8 @@ namespace nana
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		if (div)
 		{
-			update_div(impl_->div_text, name, "invisible", false);
-			update_div(impl_->div_text, name, "undisplayed", !dsp);
+			update_div(impl_->div_text, name, "invisible", div_type::erase);
+			update_div(impl_->div_text, name, "undisplayed", !dsp ? div_type::insert : div_type::erase);
 			div->set_display(dsp);
 		}
 	}
