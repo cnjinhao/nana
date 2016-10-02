@@ -2727,17 +2727,26 @@ namespace nana
 	std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
 	{
 		const auto len = std::strlen(idstr);
-		auto pos = text.find(idstr, off);
-		if (text.npos == pos)
-			return text.npos;
 
-		if (pos && is_idchar(text[pos - 1]))
-			return text.npos;
+		while (true)
+		{
+			auto pos = text.find(idstr, off);
+			if (text.npos == pos)
+				return text.npos;
 
-		if ((pos + len < text.length()) && is_idchar(text[pos + len]))
-			return text.npos;
+			if (pos && is_idchar(text[pos - 1]))
+			{
+				off = pos + 1;
+				continue;
+			}
 
-		return pos;
+			if ((pos + len < text.length()) && is_idchar(text[pos + len]))
+			{
+				off = pos + 1;
+				continue;
+			}
+			return pos;
+		}
 	}
 
 	void update_div(std::string& div, const char* field, const char* attr, bool insertion)
