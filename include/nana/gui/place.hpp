@@ -118,10 +118,10 @@ namespace nana
 
 		field_reference field(const char* name);///< Returns a field with the specified name.
 
-		void field_visible(const char* field_name, bool visible) const; ///<<Shows/Hides an existing field.
+		void field_visible(const char* field_name, bool visible); ///<<Shows/Hides an existing field.
 		bool field_visible(const char* field_name) const;	///<Determines whether the specified field is visible.
 
-		void field_display(const char* field_name, bool display) const; ///<Displays/Discards an existing field.
+		void field_display(const char* field_name, bool display); ///<Displays/Discards an existing field.
 		bool field_display(const char* field_name) const;	///<Determines whether the specified field is displayed.
 
 		void collocate();                     ///< Layouts the widgets.

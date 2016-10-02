@@ -8,7 +8,8 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/place.cpp
- *	@contributors: Ariel Vina-Rodriguez
+ *	@contributors:	Ariel Vina-Rodriguez
+ *					dankan1890(PR#156)
  */
 
 #include <cfloat>
@@ -2622,9 +2623,10 @@ namespace nana
 		return impl_->div_text;
 	}
 
-	enum div_type {	erase = 0, insert, replace };
+	//Contributed by dankan1890(PR#156)
+	enum class update_operation { erase = 0, insert, replace };
 
-	void update_div(std::string& div, const char* field, const char* attr, div_type insertion);
+	void update_div(std::string& div, const char* field, const char* attr, update_operation operation);
 
 	void place::modify(const char* name, const char* div_text)
 	{
@@ -2680,7 +2682,7 @@ namespace nana
 			impl_->check_unique(impl_->root_division.get());
 			impl_->connect(impl_->root_division.get());
 			impl_->tmp_replaced.reset();
-			update_div(impl_->div_text, name, div_text, div_type::replace);
+			update_div(impl_->div_text, name, div_text, update_operation::replace);
 
 			modified_ptr->div_owner = div_owner;
 			modified_ptr->div_next = div_next;
@@ -2747,7 +2749,7 @@ namespace nana
 		return text.npos;
 	}
 
-	void update_div(std::string& div, const char* field, const char* attr, div_type insertion)
+	void update_div(std::string& div, const char* field, const char* attr, update_operation operation)
 	{
 		const auto fieldname_pos = find_idstr(div, field);
 		if (div.npos == fieldname_pos)
@@ -2837,9 +2839,9 @@ namespace nana
 		if (fieldstr.npos == pos)
 		{
 			//There is not an attribute
-			if (insertion == div_type::insert)
+			if (operation == update_operation::insert)
 				div.insert(fieldname_pos + std::strlen(field), " " + std::string(attr));
-			else if (insertion == div_type::replace)
+			else if (operation == update_operation::replace)
 			{
 				div.erase(begin + 1, fieldstr.length());
 				div.insert(begin + 1, std::string(attr) + " " + std::string(field));
@@ -2848,7 +2850,7 @@ namespace nana
 		else
 		{
 			//There is an attribute
-			if (insertion == div_type::erase)
+			if (operation == update_operation::erase)
 			{
 				div.erase(begin + pos + 1, std::strlen(attr));
 
@@ -2858,7 +2860,7 @@ namespace nana
 		}
 	}
 
-	void place::field_visible(const char* name, bool vsb) const
+	void place::field_visible(const char* name, bool vsb)
 	{
 		if (!name)	name = "";
 
@@ -2869,7 +2871,7 @@ namespace nana
 		if (div)
 		{
 			div->set_visible(vsb);
-			update_div(impl_->div_text, name, "invisible", !vsb ? div_type::insert : div_type::erase);
+			update_div(impl_->div_text, name, "invisible", !vsb ? update_operation::insert : update_operation::erase);
 		}
 	}
 
@@ -2884,7 +2886,7 @@ namespace nana
 		return (div && div->visible);
 	}
 
-	void place::field_display(const char* name, bool dsp) const
+	void place::field_display(const char* name, bool dsp)
 	{
 		if (!name)	name = "";
 
@@ -2894,8 +2896,8 @@ namespace nana
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		if (div)
 		{
-			update_div(impl_->div_text, name, "invisible", div_type::erase);
-			update_div(impl_->div_text, name, "undisplayed", !dsp ? div_type::insert : div_type::erase);
+			update_div(impl_->div_text, name, "invisible", update_operation::erase);
+			update_div(impl_->div_text, name, "undisplayed", !dsp ? update_operation::insert : update_operation::erase);
 			div->set_display(dsp);
 		}
 	}
