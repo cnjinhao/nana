@@ -800,12 +800,31 @@ namespace nana
 				/// posible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
 				index_pair to_display() const;
 
+				/// Determines whether the item is displayed on the screen
+				bool displayed() const;
+
 				bool empty() const;
 
-				item_proxy & check(bool ck);
+				/// Checks/unchecks the item
+				/**
+				* @param chk Indicates whether to check or uncheck the item
+				* @param scroll_view Indicates whether to scroll the view to the item. It is ignored if the item is displayed.
+				* @return the reference of *this.
+				*/
+				item_proxy & check(bool chk, bool scroll_view = false);
+
+				/// Determines whether the item is checked
 				bool checked() const;
 
-				item_proxy & select(bool);
+				/// Selects/unselects the item
+				/**
+				 * @param sel Indicates whether to select or unselect the item
+				 * @param scroll_view Indicates whether to scroll the view to the item. It is ignored if the item is displayed.
+				 * @return the reference of *this.
+				 */
+				item_proxy & select(bool sel, bool scroll_view = false);
+
+				/// Determines whether he item is selected
 				bool selected() const;
 
 				item_proxy & bgcolor(const nana::color&);
