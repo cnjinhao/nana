@@ -411,8 +411,18 @@ namespace nana
 					sp = _m_eat_whitespace(sp);
 					if ('%' == *sp)
 					{
-						if (number_t::kind::integer == number_.kind_of())
+						switch (number_.kind_of())
+						{
+						case number_t::kind::integer:
 							number_.assign_percent(number_.integer());
+							break;
+						case number_t::kind::real:
+							number_.assign_percent(number_.real());
+							break;
+						default:
+							break;
+						}
+
 						return sp - allstart + 1;
 					}
 					return sp - allstart;
