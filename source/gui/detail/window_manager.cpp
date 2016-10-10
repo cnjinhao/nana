@@ -1048,7 +1048,7 @@ namespace detail
 					{
 						//The window is still mapped because of edge nimbus effect.
 						//Avoid duplicate copy if action state is not changed and the window is not focused.
-						if ((wd->flags.action != wd->flags.action_before) || (bedrock::instance().focus() == wd))
+						if (wd->flags.action != wd->flags.action_before)
 							this->map(wd, true);
 					}
 				}
