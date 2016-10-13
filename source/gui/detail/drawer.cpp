@@ -391,7 +391,7 @@ namespace nana
 
 		bool drawer::_m_lazy_decleared() const
 		{
-			return (basic_window::update_state::refresh == data_impl_->window_handle->other.upd_state);
+			return (basic_window::update_state::refreshed == data_impl_->window_handle->other.upd_state);
 		}
 
 		drawer::method_state& drawer::_m_mth_state(int pos)

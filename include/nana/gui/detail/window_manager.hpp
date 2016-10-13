@@ -124,7 +124,7 @@ namespace detail
 		bool update(core_window_t*, bool redraw, bool force, const rectangle* update_area = nullptr);
 		void refresh_tree(core_window_t*);
 
-		bool do_lazy_refresh(core_window_t*, bool force_copy_to_screen, bool refresh_tree = false);
+		void do_lazy_refresh(core_window_t*, bool force_copy_to_screen, bool refresh_tree = false);
 
 		bool get_graphics(core_window_t*, nana::paint::graphics&);
 		bool get_visual_rectangle(core_window_t*, nana::rectangle&);

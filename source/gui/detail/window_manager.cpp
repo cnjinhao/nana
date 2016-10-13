@@ -759,6 +759,10 @@ namespace detail
 						arg.window_handle = reinterpret_cast<window>(wd);
 						arg.x = x;
 						arg.y = y;
+
+						if (wd->effect.bground)
+							wd->other.upd_state = basic_window::update_state::request_refresh;
+
 						brock.emit(event_code::move, wd, arg, true, brock.get_thread_context());
 						return true;
 					}
@@ -802,6 +806,9 @@ namespace detail
 					wd->pos_owner.y = r.y;
 					_m_move_core(wd, delta);
 					moved = true;
+
+					if ((!size_changed) && wd->effect.bground)
+						wd->other.upd_state = basic_window::update_state::request_refresh;
 
 					arg_move arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
@@ -989,26 +996,28 @@ namespace detail
 
 			if (wd->displayed())
 			{
+				using paint_operation = window_layer::paint_operation;
+
 				if(forced || (false == wd->belong_to_lazy()))
 				{
 					if (!wd->flags.refreshing)
 					{
-						window_layer::paint(wd, redraw, false);
+						window_layer::paint(wd, (redraw ? paint_operation::try_refresh : paint_operation::none), false);
 						this->map(wd, forced, update_area);
 						return true;
 					}
 					else if (forced)
 					{
-						window_layer::paint(wd, false, false);
+						window_layer::paint(wd, paint_operation::none, false);
 						this->map(wd, true, update_area);
 						return true;
 					}
 				}
 				else if (redraw)
-					window_layer::paint(wd, true, false);
+					window_layer::paint(wd, paint_operation::try_refresh, false);
 
 				if (wd->other.upd_state == core_window_t::update_state::lazy)
-					wd->other.upd_state = core_window_t::update_state::refresh;
+					wd->other.upd_state = core_window_t::update_state::refreshed;
 			}
 			return true;
 		}
@@ -1020,28 +1029,28 @@ namespace detail
 
 			//It's not worthy to redraw if visible is false
 			if (impl_->wd_register.available(wd) && wd->displayed())
-				window_layer::paint(wd, true, true);
+				window_layer::paint(wd, window_layer::paint_operation::try_refresh, true);
 		}
 
 		//do_lazy_refresh
 		//@brief: defined a behavior of flush the screen
-		//@return: it returns true if the wnd is available
-		bool window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen, bool refresh_tree)
+		void window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen, bool refresh_tree)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 
 			if (false == impl_->wd_register.available(wd))
-				return false;
+				return;
 
 			//It's not worthy to redraw if visible is false
 			if(wd->visible && (!wd->is_draw_through()))
 			{
+				using paint_operation = window_layer::paint_operation;
 				if (wd->visible_parents())
 				{
-					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
+					if ((wd->other.upd_state == core_window_t::update_state::refreshed) || (wd->other.upd_state == core_window_t::update_state::request_refresh) || force_copy_to_screen)
 					{
-						window_layer::paint(wd, false, refresh_tree);
+						window_layer::paint(wd, (wd->other.upd_state == core_window_t::update_state::request_refresh ? paint_operation::try_refresh : paint_operation::have_refreshed), refresh_tree);
 						this->map(wd, force_copy_to_screen);
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
@@ -1053,10 +1062,10 @@ namespace detail
 					}
 				}
 				else
-					window_layer::paint(wd, true, refresh_tree);	//only refreshing if it has an invisible parent
+					window_layer::paint(wd, paint_operation::try_refresh, refresh_tree);	//only refreshing if it has an invisible parent
 			}
 			wd->other.upd_state = core_window_t::update_state::none;
-			return true;
+			return;
 		}
 
 		//get_graphics

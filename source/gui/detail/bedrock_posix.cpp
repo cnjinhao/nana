@@ -1203,17 +1203,7 @@ namespace detail
 	{
 		thread_context* thrd = get_thread_context(0);
 		if(thrd && thrd->event_window)
-		{
-			//the state none should be tested, becuase in an event, there would be draw after an update,
-			//if the none is not tested, the draw after update will not be refreshed.
-			switch(thrd->event_window->other.upd_state)
-			{
-			case core_window_t::update_state::none:
-			case core_window_t::update_state::lazy:
-				thrd->event_window->other.upd_state = core_window_t::update_state::refresh;
-			default:	break;
-			}
-		}
+			thrd->event_window->other.upd_state = core_window_t::update_state::refresh;
 	}
 
 	//Dynamically set a cursor for a window
