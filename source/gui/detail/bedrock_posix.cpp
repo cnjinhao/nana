@@ -567,9 +567,12 @@ namespace detail
 
 				if(xevent.xbutton.button == Button4 || xevent.xbutton.button == Button5)
 					break;
-					
+
 				msgwnd = wd_manager.find_window(native_window, xevent.xbutton.x, xevent.xbutton.y);
-				if(nullptr == msgwnd) break;
+
+				pressed_wd = nullptr;
+				if(nullptr == msgwnd)
+					break;
 					
 				if ((msgwnd == msgwnd->root_widget->other.attribute.root->menubar) && brock.get_menu(msgwnd->root, true))
 					brock.erase_menu(true);
@@ -578,7 +581,9 @@ namespace detail
 
 				if(msgwnd->flags.enabled)
 				{
-					bool dbl_click = (last_mouse_down_window == msgwnd) && (xevent.xbutton.time - last_mouse_down_time <= 400);
+					pressed_wd = msgwnd;
+
+					const bool dbl_click = (last_mouse_down_window == msgwnd) && (xevent.xbutton.time - last_mouse_down_time <= 400);
 					last_mouse_down_time = xevent.xbutton.time;
 					last_mouse_down_window = msgwnd;
 
@@ -597,28 +602,24 @@ namespace detail
 					auto retain = msgwnd->annex.events_ptr;
 					context.event_window = msgwnd;
 
-					pressed_wd = nullptr;
-
 					msgwnd->set_action(mouse_action::pressed);
 					arg_mouse arg;
 					assign_arg(arg, msgwnd, ButtonPress, xevent);
 					arg.evt_code = dbl_click ? event_code::dbl_click : event_code::mouse_down;
-					if(brock.emit(arg.evt_code, msgwnd, arg, true, &context))
+					if (brock.emit(arg.evt_code, msgwnd, arg, true, &context))
 					{
-						if (wd_manager.available(msgwnd))
+						//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
+						if (msgwnd->root != native_interface::get_focus_window())
 						{
-							pressed_wd = msgwnd;
-							//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
-							if (msgwnd->root != native_interface::get_focus_window())
-							{
-								//call the drawer mouse up event for restoring the surface graphics
-								msgwnd->set_action(mouse_action::normal);
+							//call the drawer mouse up event for restoring the surface graphics
+							msgwnd->set_action(mouse_action::normal);
 
-								draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
-								wd_manager.do_lazy_refresh(msgwnd, false);
-							}
+							draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
+							wd_manager.do_lazy_refresh(msgwnd, false);
 						}
 					}
+					else
+						pressed_wd = nullptr;
 				}
 				break;
 			case ButtonRelease:

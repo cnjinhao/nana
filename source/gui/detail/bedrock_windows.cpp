@@ -919,7 +919,13 @@ namespace detail
 					break;
 
 				msgwnd = wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
-				if ((nullptr == msgwnd) || (pressed_wd && (msgwnd != pressed_wd)))
+
+				//Don't take care about whether msgwnd is equal to the pressed_wd.
+				//
+				//pressed_wd will remains when opens a no-actived window in an mouse_down event(like combox popups the drop-list).
+				//After the no-actived window is closed, the window doesn't respond to the mouse click other than pressed_wd.
+				pressed_wd = nullptr;
+				if (nullptr == msgwnd)
 					break;
 
 				//if event on the menubar, just remove the menu if it is not associating with the menubar
