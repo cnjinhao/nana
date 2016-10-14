@@ -69,10 +69,10 @@ namespace drawerbase {
 			auto scheme = API::dev::get_scheme(wdg);
 
 			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
-			editor_->textbase().set_event_agent(evt_agent_.get());
-			editor_->set_event(evt_agent_.get());
 
 			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
+			editor_->textbase().set_event_agent(evt_agent_.get());
+			editor_->set_event(evt_agent_.get());
 
 			_m_text_area(graph.width(), graph.height());
 
