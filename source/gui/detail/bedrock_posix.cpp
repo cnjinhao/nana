@@ -1204,7 +1204,7 @@ namespace detail
 	{
 		thread_context* thrd = get_thread_context(0);
 		if(thrd && thrd->event_window)
-			thrd->event_window->other.upd_state = core_window_t::update_state::refresh;
+			thrd->event_window->other.upd_state = core_window_t::update_state::refreshed;
 	}
 
 	//Dynamically set a cursor for a window
