@@ -144,6 +144,7 @@ namespace nana
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
 		void close();
 		void image(std::size_t pos, const paint::image& icon);
+		void change_text(std::size_t pos, const std::string& text);
 		void check_style(std::size_t pos, checks);
 		void checked(std::size_t pos, bool);
 		bool checked(std::size_t pos) const;

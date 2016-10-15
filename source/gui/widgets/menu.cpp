@@ -1158,6 +1158,11 @@ namespace nana
 			impl_->mbuilder.data().items.at(index).image = img;
 		}
 
+		void menu::change_text(std::size_t index, const std::string& text)
+		{
+			impl_->mbuilder.data().items.at(index).text = text;
+		}
+
 		bool menu::link(std::size_t index, menu& menu_obj)
 		{
 			if(impl_->mbuilder.set_sub_menu(index, menu_obj.impl_->mbuilder.data()))
