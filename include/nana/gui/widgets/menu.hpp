@@ -1,13 +1,14 @@
 /**
  *	A Menu implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/menu.hpp
+ *
  */
 
 #ifndef NANA_GUI_WIDGETS_MENU_HPP
@@ -138,13 +139,13 @@ namespace nana
 		~menu();
 
 			/// Appends an item to the menu.
-		item_proxy	append(const std::string& text, const event_fn_t& callback= event_fn_t());
+		item_proxy	append(std::string text_utf8, const event_fn_t& callback= event_fn_t());
 		void		append_splitter();
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
 		void close();
 		void image(std::size_t pos, const paint::image& icon);
-		void change_text(std::size_t pos, const std::string& text);
+		void text(std::size_t pos, std::string text_utf8);
 		void check_style(std::size_t pos, checks);
 		void checked(std::size_t pos, bool);
 		bool checked(std::size_t pos) const;

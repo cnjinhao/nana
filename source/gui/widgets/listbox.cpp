@@ -14,7 +14,8 @@
  *		leobackes(pr#86,pr#97)
  *		Benjamin Navarro(pr#81)
  *		besh81(pr#130)
- *		
+ *		dankan1890(pr#154)
+ *
  */
 
 #include <nana/gui/widgets/listbox.hpp>
@@ -3394,6 +3395,7 @@ namespace nana
 
 					int text_top = (r.height - essence_->scheme_ptr->text_height) / 2 + r.y;
 					auto text_color = essence_->scheme_ptr->header_fgcolor.get_color();
+					
 
 					auto state = item_state::normal;
 					//check whether grabing an item, if item_spliter_ != npos, that indicates the grab item is a spliter.

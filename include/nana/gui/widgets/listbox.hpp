@@ -8,12 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/listbox.hpp
- *	@contributors:
- *		Hiroshi Seki
- *		Ariel Vina-Rodriguez
- *		leobackes(pr#86,pr#97)
- *		Benjamin Navarro(pr#81)
- *		besh81(pr#130)
+ *
  */
 
 #ifndef NANA_GUI_WIDGETS_LISTBOX_HPP
@@ -1149,7 +1144,7 @@ namespace nana
 				: public widget_geometrics
 			{
 				color_proxy header_bgcolor{static_cast<color_rgb>(0xf1f2f4)};
-				color_proxy header_fgcolor{ static_cast<color_rgb>(0x000000) };
+				color_proxy header_fgcolor{ colors::black };
 				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
 				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
 				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
