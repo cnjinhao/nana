@@ -10,7 +10,7 @@
 *	@file: nana/gui/widgets/menu.cpp
 *	@contributors:
 *		kmribti(pr#102)
-*		dankan1890(pr#154)
+*		dankan1890(pr#158)
 */
 
 #include <nana/gui/widgets/menu.hpp>
