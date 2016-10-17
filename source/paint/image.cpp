@@ -35,6 +35,7 @@
 #include "detail/image_ico.hpp"
 
 #include "image_accessor.hpp"
+#include "detail/image_ico_ex.hpp"
 
 namespace fs = std::experimental::filesystem;
 
@@ -264,11 +265,7 @@ namespace paint
 			{
 				if (ext_ico == ext)
 				{
-#if defined(NANA_WINDOWS)
-					ptr = std::make_shared<detail::image_ico>(true);
-#else
-					return ptr;
-#endif
+					ptr = std::make_shared<detail::image_ico_ex>();
 					break;
 				}
 
@@ -367,6 +364,8 @@ namespace paint
 							ptr = std::make_shared<detail::image_ico>(true);
 						}
 #endif
+						else if (!ptr && bytes > 40 && (0x00010000 == *reinterpret_cast<const unsigned*>(data)))
+							ptr = std::make_shared<detail::image_ico_ex>();
 					}
 				}
 
