@@ -1158,7 +1158,9 @@ namespace detail
 		}
 
 		++(context->event_pump_ref_count);
-		wd_manager().internal_lock().revert();
+
+		auto & lock = wd_manager().internal_lock();
+		lock.revert();
 		
 		native_window_type owner_native = 0;
 		core_window_t * owner = 0;
@@ -1183,8 +1185,9 @@ namespace detail
 				owner->flags.enabled = true;
 			native_interface::enable_window(owner_native, true);
 		}
-		
-		wd_manager().internal_lock().forward();
+
+		lock.forward();
+
 		if(0 == --(context->event_pump_ref_count))
 		{
 			if(0 == modal_window || 0 == context->window_count)

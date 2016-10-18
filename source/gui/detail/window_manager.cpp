@@ -335,7 +335,7 @@ namespace detail
 
 			void window_manager::revertible_mutex::revert()
 			{
-				if(impl_->thread.ref && (impl_->thread.tid == nana::system::this_thread_id()))
+				if(impl_->thread.tid == nana::system::this_thread_id())
 				{
 					std::size_t cnt = impl_->thread.ref;
 
@@ -346,24 +346,30 @@ namespace detail
 					for (std::size_t i = 0; i < cnt; ++i)
 						impl_->mutex.unlock();
 				}
+				else
+					throw std::runtime_error("The revert is not allowed");
 			}
 
 			void window_manager::revertible_mutex::forward()
 			{
 				impl_->mutex.lock();
+				
 				if(impl_->invoke_stack.size())
 				{
 					auto thr = impl_->invoke_stack.back();
+
+					impl_->invoke_stack.pop_back();
+					
 					if(thr.tid == nana::system::this_thread_id())
 					{
-						impl_->invoke_stack.pop_back();
 						for (std::size_t i = 0; i < thr.ref; ++i)
 							impl_->mutex.lock();
 						impl_->thread = thr;
 					}
 					else
-						throw std::runtime_error("Nana.GUI: The forward is not matched.");
+						throw std::runtime_error("The forward is not matched. Please report this issue");
 				}
+
 				impl_->mutex.unlock();
 			}
 		//end class revertible_mutex

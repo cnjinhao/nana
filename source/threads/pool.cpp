@@ -356,9 +356,26 @@ namespace threads
 		{
 		}
 
+		pool::pool(pool&& other)
+			: pool()
+		{
+			std::swap(impl_, other.impl_);
+		}
+
 		pool::pool(std::size_t thread_number)
 			: impl_(new impl(thread_number))
 		{
+		}
+
+		pool& pool::operator=(pool&& other)
+		{
+			if(this != &other)
+			{
+				delete impl_;
+				impl_ = other.impl_;
+				other.impl_ = new impl(4);
+			}
+			return *this;
 		}
 
 		pool::~pool()
