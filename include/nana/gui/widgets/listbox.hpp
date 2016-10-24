@@ -838,6 +838,7 @@ namespace nana
 				std::string	text(size_type col) const;
 
 				void icon(const nana::paint::image&);
+				bool icon() const;
 
 				template<typename T>
 				item_proxy & resolve_from(const T& t)
@@ -1111,6 +1112,14 @@ namespace nana
 		arg_listbox(const drawerbase::listbox::item_proxy&) noexcept;
 	};
 
+	struct arg_listbox_scroll
+		: public event_arg
+	{
+		mutable drawerbase::listbox::item_proxy item;
+
+		arg_listbox_scroll(const drawerbase::listbox::item_proxy&) noexcept;
+	};
+
 	/// The event parameter type for listbox's category_dbl_click
 	struct arg_listbox_category
 		: public event_arg
@@ -1138,6 +1147,9 @@ namespace nana
 
 				/// An event occurs when a listbox category is double clicking.
 				basic_event<arg_listbox_category> category_dbl_click;
+
+				/// An event occurs when a listbox is scrolled.
+				basic_event<arg_listbox_scroll> scrolled;
 			};
 
 			struct scheme

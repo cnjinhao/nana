@@ -773,6 +773,17 @@ namespace nana
 						p->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
 				}
 
+				void emit_scrolled(index_pair pos)
+				{
+					item_proxy i(ess_, pos);
+					arg_listbox_scroll arg{ i };
+					wd_ptr()->events().scrolled.emit(arg, wd_ptr()->handle());
+
+//					auto panes = get_inline_pane(pos);
+//					for (auto p : panes)
+//						p->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
+				}
+
 				// Definition is provided after struct essence
 				unsigned column_content_pixels(size_type pos) const;
 
@@ -2412,6 +2423,7 @@ namespace nana
 								return;
 
 							set_scroll_y_dpl(item);
+							lister.emit_scrolled(scroll.offset_y_dpl);
 						}
 
 						API::refresh_window(this->lister.wd_ptr()->handle());
@@ -4557,6 +4569,11 @@ namespace nana
 					return cat_->items.at(pos_.item).flags.checked;
 				}
 
+				bool item_proxy::icon() const
+				{
+					return !cat_->items.at(pos_.item).img.empty();
+				}
+
 				/// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected
 				item_proxy & item_proxy::select(bool sel, bool scroll_view)
 				{
@@ -5198,6 +5215,10 @@ namespace nana
 		: item(m)
 	{
 	}
+
+	arg_listbox_scroll::arg_listbox_scroll(const drawerbase::listbox::item_proxy& m) noexcept
+		: item(m)
+	{}
 
 
 	//Implementation of arg_listbox_category
