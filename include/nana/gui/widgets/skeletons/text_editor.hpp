@@ -205,6 +205,8 @@ namespace nana{	namespace widgets
 			void undo_max_steps(std::size_t);
 			std::size_t undo_max_steps() const;
 
+			void clear_undo();
+
 			ext_renderer_tag& ext_renderer() const;
 
 			unsigned line_height() const;
@@ -226,6 +228,7 @@ namespace nana{	namespace widgets
 			void show_caret(bool isshow);
 
 			bool selected() const;
+			bool selected(nana::upoint &a,nana::upoint &b) const;
 			bool select(bool);
 			/// Sets the end position of a selected string.
 			void set_end_caret();
