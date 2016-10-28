@@ -1427,7 +1427,8 @@ namespace nana{	namespace widgets
 				_handle_move_key(arg);
 				break;
 			case keyboard::os_del:
-				if (this->attr().editable)
+				// send delete to set_accept function
+				if (this->attr().editable && (!attributes_.pred_acceptive || attributes_.pred_acceptive(key)))
 					del();
 				break;
 			default:
@@ -1914,6 +1915,13 @@ namespace nana{	namespace widgets
 		bool text_editor::selected() const
 		{
 			return (select_.a != select_.b);
+		}
+
+		bool text_editor::selected(nana::upoint &a,nana::upoint &b) const
+		{
+			a = select_.a;
+			b = select_.b;
+			return selected();
 		}
 
 		void text_editor::set_end_caret()
