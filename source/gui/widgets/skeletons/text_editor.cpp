@@ -1602,6 +1602,11 @@ namespace nana{	namespace widgets
 			return undo_.max_steps();
 		}
 
+		void text_editor::clear_undo()
+		{
+			undo_.clear();
+		}
+
 		text_editor::ext_renderer_tag& text_editor::ext_renderer() const
 		{
 			return ext_renderer_;
