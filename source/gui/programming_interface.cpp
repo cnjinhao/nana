@@ -104,7 +104,7 @@ namespace API
 			{
 				if (iwd->effect.edge_nimbus == effects::edge_nimbus::none)
 				{
-					cont.push_back(basic_window::edge_nimbus_action{ iwd, false});
+					cont.emplace_back(basic_window::edge_nimbus_action{ iwd, false});
 				}
 				iwd->effect.edge_nimbus = static_cast<effects::edge_nimbus>(static_cast<unsigned>(en) | static_cast<unsigned>(iwd->effect.edge_nimbus));
 			}
@@ -365,7 +365,7 @@ namespace API
 					}
 
 					if (!exists)
-						roots.push_back(root);
+						roots.emplace_back(root);
 				}
 			}
 
@@ -401,7 +401,7 @@ namespace API
 					}
 
 					if (!exists)
-						roots.push_back(root);
+						roots.emplace_back(root);
 				}
 			}
 
@@ -992,33 +992,30 @@ namespace API
 
 	void modal_window(window wd)
 	{
+		auto const iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard isg;
+
+		if (!restrict::wd_manager().available(iwd))
+			return;
+
+		if ((iwd->other.category == category::flags::root) && (iwd->flags.modal == false))
 		{
-			auto const iwd = reinterpret_cast<basic_window*>(wd);
-			internal_scope_guard isg;
-
-			if (!restrict::wd_manager().available(iwd))
-				return;
-
-			if ((iwd->other.category == category::flags::root) && (iwd->flags.modal == false))
-			{
-				iwd->flags.modal = true;
+			iwd->flags.modal = true;
 #if defined(NANA_X11)
-				interface_type::set_modal(iwd->root);
+			interface_type::set_modal(iwd->root);
 #endif
-				restrict::wd_manager().show(iwd, true);
-			}
-			else
-				return;
+			restrict::wd_manager().show(iwd, true);
 		}
+		else
+			return;
 
-		//modal has to guarantee that does not lock the mutex of window_manager before invokeing the pump_event,
-		//otherwise, the modal will prevent the other thread access the window.
 		restrict::bedrock.pump_event(wd, true);
 	}
 
 	void wait_for(window wd)
 	{
-		if (wd)
+		internal_scope_guard lock;
+		if (restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
 			restrict::bedrock.pump_event(wd, false);
 	}
 

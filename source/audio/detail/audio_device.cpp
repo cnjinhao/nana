@@ -184,7 +184,7 @@ namespace nana{namespace audio
 			{
 #if defined(NANA_WINDOWS)
 				std::lock_guard<decltype(queue_lock_)> lock(queue_lock_);
-				done_queue_.push_back(m);
+				done_queue_.emplace_back(m);
 				if(m->dwFlags & WHDR_PREPARED)
 					wave_native_if.out_unprepare(handle_, m, sizeof(WAVEHDR));
 

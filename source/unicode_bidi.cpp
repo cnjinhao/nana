@@ -536,7 +536,8 @@ namespace nana
 				}
 				else if (LRE <= *c && *c <= RLO)
 				{
-					stack.push_back(cur);
+					stack.emplace_back(cur);
+
 					if (begin_character)
 					{
 						_m_push_entity(begin_character, c, cur.level, begin_char_type);
@@ -607,19 +608,21 @@ namespace nana
 
 		void unicode_bidi::_m_push_entity(const char_type * begin, const char_type *end, unsigned level, bidi_char bidi_char_type)
 		{
-			entity e;
+			levels_.emplace_back();
+			auto & e = levels_.back();
 			e.begin = begin;
 			e.end = end;
 			e.level = level;
 			e.bidi_char_type = bidi_char_type;
-			levels_.push_back(e);
-		}
 
+		}
+		
 		std::vector<unicode_bidi::entity>::iterator unicode_bidi::_m_search_first_character()
 		{
 			return levels_.begin();
 		}
 
+	
 		auto unicode_bidi::_m_eor(std::vector<entity>::iterator i) ->bidi_char
 		{
 			const auto end = levels_.end();

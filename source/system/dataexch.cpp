@@ -13,6 +13,7 @@
 #include <nana/system/dataexch.hpp>
 #include <nana/traits.hpp>
 #include <nana/paint/graphics.hpp>
+#include <nana/paint/pixel_buffer.hpp>
 #include <vector>
 #include <cassert>
 #include <cstring>

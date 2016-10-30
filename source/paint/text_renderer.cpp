@@ -70,7 +70,7 @@ namespace nana
 								auto ts = detail::text_extent_size(dw, ent.begin, ent.end - ent.begin);
 								if(ts.height > pixels) pixels = ts.height;
 								lenpx += ts.width;
-								widths.push_back(ts.width);
+								widths.emplace_back(ts.width);
 							}
 
 							pos.x += (endpos - pos.x - static_cast<int>(lenpx))/2;
@@ -199,7 +199,7 @@ namespace nana
 					{
 						nana::size ts = detail::text_extent_size(dw, i.begin, i.end - i.begin);
 						if(ts.height > pixels) pixels = ts.height;
-						ts_keeper.push_back(ts);
+						ts_keeper.emplace_back(ts);
 						str_w += ts.width;
 					}
 
@@ -417,7 +417,7 @@ namespace nana
 					for(auto & i : reordered)
 					{
 						nana::size ts = detail::text_extent_size(dw, i.begin, i.end - i.begin);
-						ts_keeper.push_back(ts);
+						ts_keeper.emplace_back(ts);
 						str_w += ts.width;
 					}
 

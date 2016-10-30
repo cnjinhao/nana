@@ -1,5 +1,6 @@
 
 #include <nana/gui/widgets/slider.hpp>
+#include <nana/paint/pixel_buffer.hpp>
 #include <cstring>	//memcpy
 
 namespace nana
@@ -645,7 +646,6 @@ namespace nana
 					{
 						adorn.bound.x = static_cast<int>(attr_.adorn_pos + attr_.slider.border_weight + bar.area.y);
 						adorn.bound.y = static_cast<int>(graph.height()) - static_cast<int>(attr_.slider.border_weight + bar.area.y);
-						//adorn.bound.x = 
 					}
 					else
 					{

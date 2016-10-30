@@ -13,9 +13,9 @@
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/drawer.hpp>
-#include <nana/gui/detail/dynamic_drawing_object.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
 #include <nana/gui/detail/basic_window.hpp>
+#include "dynamic_drawing_object.hpp"
 
 #if defined(NANA_X11)
 	#include <nana/detail/linux_X11/platform_spec.hpp>
@@ -338,7 +338,7 @@ namespace nana
 			for (auto p : data_impl_->draws)
 			{
 				if(p->diehard())
-					then.push_back(p);
+					then.emplace_back(p);
 				else
 					delete p;
 			}
@@ -351,7 +351,7 @@ namespace nana
 			if(f)
 			{
 				auto p = new dynamic_drawing::user_draw_function(std::move(f), diehard);
-				data_impl_->draws.push_back(p);
+				data_impl_->draws.emplace_back(p);
 				return (diehard ? p : nullptr);
 			}
 			return nullptr;
@@ -391,7 +391,7 @@ namespace nana
 
 		bool drawer::_m_lazy_decleared() const
 		{
-			return (basic_window::update_state::refresh == data_impl_->window_handle->other.upd_state);
+			return (basic_window::update_state::refreshed == data_impl_->window_handle->other.upd_state);
 		}
 
 		drawer::method_state& drawer::_m_mth_state(int pos)

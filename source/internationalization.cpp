@@ -13,7 +13,7 @@
 #include <nana/push_ignore_diagnostic>
 
 #include <nana/internationalization.hpp>
-#include <nana/gui/widgets/widget.hpp>
+#include <nana/gui/programming_interface.hpp>
 #include <unordered_map>
 #include <fstream>
 
@@ -486,32 +486,22 @@ namespace nana
 
 	void i18n_eval::_m_add_args(std::string& str)
 	{
-		args_.emplace_back(new arg_string(nana::charset(str)));
+		args_.emplace_back(new arg_string(str));
 	}
 
 	void i18n_eval::_m_add_args(const std::string& str)
 	{
-		args_.emplace_back(new arg_string(nana::charset(str)));
+		args_.emplace_back(new arg_string(str));
 	}
 
 	void i18n_eval::_m_add_args(std::string&& str)
 	{
-		args_.emplace_back(new arg_string(nana::charset(std::move(str))));
-	}
-
-	void i18n_eval::_m_add_args(std::wstring& str)
-	{
-		args_.emplace_back(new arg_string(nana::charset(str)));
+		args_.emplace_back(new arg_string(std::move(str)));
 	}
 
 	void i18n_eval::_m_add_args(const std::wstring& str)
 	{
-		args_.emplace_back(new arg_string(nana::charset(str)));
-	}
-
-	void i18n_eval::_m_add_args(std::wstring&& str)
-	{
-		args_.emplace_back(new arg_string(nana::charset(std::move(str))));
+		args_.emplace_back(new arg_string(to_utf8(str)));
 	}
 	//end class i18n_eval
 }

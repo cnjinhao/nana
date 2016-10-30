@@ -16,10 +16,10 @@
 
 #if defined(NANA_WINDOWS)
 
-#include <shellapi.h>
 #include <stdexcept>
+#include <map>
 
-
+#include <shellapi.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -352,7 +352,14 @@ namespace detail
 		}
 	}
 
+	struct platform_spec::implementation
+	{
+		font_ptr_t	def_font_ptr;
+		std::map<native_window_type, window_icons> iconbase;
+	};
+
 	platform_spec::platform_spec()
+		: impl_{ new implementation}
 	{
 		//Create default font object.
 		NONCLIENTMETRICS metrics = {};
@@ -370,17 +377,22 @@ namespace detail
 #endif
 #endif
 		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
-		def_font_ptr_ = make_native_font(to_utf8(metrics.lfMessageFont.lfFaceName).c_str(), font_size_to_height(9), 400, false, false, false);
+		impl_->def_font_ptr = make_native_font(to_utf8(metrics.lfMessageFont.lfFaceName).c_str(), font_size_to_height(9), 400, false, false, false);
+	}
+
+	platform_spec::~platform_spec()
+	{
+		delete impl_;
 	}
 
 	const platform_spec::font_ptr_t& platform_spec::default_native_font() const
 	{
-		return def_font_ptr_;
+		return impl_->def_font_ptr;
 	}
 
 	void platform_spec::default_native_font(const font_ptr_t& fp)
 	{
-		def_font_ptr_ = fp;
+		impl_->def_font_ptr = fp;
 	}
 
 	unsigned platform_spec::font_size_to_height(unsigned size) const
@@ -409,7 +421,7 @@ namespace detail
 		if (name && *name)
 			std::wcscpy(logfont.lfFaceName, to_wstring(name).c_str());
 		else
-			std::wcscpy(logfont.lfFaceName, def_font_ptr_->name.c_str());
+			std::wcscpy(logfont.lfFaceName, impl_->def_font_ptr->name.c_str());
 
 		logfont.lfCharSet = DEFAULT_CHARSET;
 		HDC hdc = ::GetDC(0);
@@ -448,14 +460,14 @@ namespace detail
 
 	void platform_spec::keep_window_icon(native_window_type wd, const paint::image& sml_icon, const paint::image& big_icon)
 	{
-		auto & icons = iconbase_[wd];
+		auto & icons = impl_->iconbase[wd];
 		icons.sml_icon = sml_icon;
 		icons.big_icon = big_icon;
 	}
 
 	void platform_spec::release_window_icon(native_window_type wd)
 	{
-		iconbase_.erase(wd);
+		impl_->iconbase.erase(wd);
 	}
 }//end namespace detail
 }//end namespace nana

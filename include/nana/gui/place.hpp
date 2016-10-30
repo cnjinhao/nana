@@ -17,7 +17,6 @@
 #define NANA_GUI_PLACE_HPP
 #include <nana/push_ignore_diagnostic>
 #include <nana/gui/basis.hpp>
-#include <utility>
 #include <memory>
 #include <functional>
 

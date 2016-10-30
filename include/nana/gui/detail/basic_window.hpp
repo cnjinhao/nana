@@ -85,7 +85,7 @@ namespace detail
 
 		enum class update_state
 		{
-			none, lazy, refresh
+			none, lazy, refreshed, request_refresh
 		};
 
 		struct edge_nimbus_action

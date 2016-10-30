@@ -16,7 +16,6 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/pat/cloneable.hpp>
 #include <vector>
-#include <map>
 
 namespace nana
 {
@@ -338,13 +337,8 @@ namespace nana
 			struct draw_image;
 			struct draw_graph;
 
-			draw_method * method_;
-			bool	vertical_;
-			nana::rectangle valid_area_;
-			std::vector<element_state> states_;
-			std::map<element_state, element_state> join_;
-			bool	stretch_all_;
-			unsigned left_, top_, right_, bottom_;
+			struct implementation;
+			std::unique_ptr<implementation> impl_;
 		}; //end class bground
 	}//end namespace element
 }//end namespace nana

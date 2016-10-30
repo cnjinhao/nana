@@ -498,24 +498,26 @@ namespace nana
 				if(name.empty() || (name.front() == '.'))
 					continue;
 
+				auto fpath = i->path().native();
+				auto fattr = fs::status(fpath);
+
 				item_fs m;
 				m.name = name;
+				m.directory = fs::is_directory(fattr);
 
-				auto fattr = fs::status(path + m.name);
-
-				if(fattr.type() != fs::file_type::not_found && fattr.type() != fs::file_type::unknown)
+				switch(fattr.type())
 				{
-					m.bytes = fs::file_size(path + m.name);
-					m.directory = fs::is_directory(fattr);
-					fs_ext::modified_file_time(path + m.name, m.modified_time);
-				}
-				else
-				{
+				case fs::file_type::not_found:
+				case fs::file_type::unknown:
+				case fs::file_type::directory:
 					m.bytes = 0;
-					m.directory = fs::is_directory(*i);
-					fs_ext::modified_file_time(path + i->path().filename().native(), m.modified_time);				
+					break;
+				default:
+					m.bytes = fs::file_size(fpath);
 				}
 
+				fs_ext::modified_file_time(fpath, m.modified_time);
+				
 				file_container_.push_back(m);
 
 				if(m.directory)

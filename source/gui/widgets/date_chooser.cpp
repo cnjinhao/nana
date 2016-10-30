@@ -393,7 +393,7 @@ namespace nana
 					int n = trace_.logic_pos.y * rows + trace_.logic_pos.x + 1;
 					if (page_mode::date == page)
 					{
-						if (n < 8) return false; //Here is week title bar
+						if (n < 8) return 0; //Here is week title bar
 						int dw = nana::date::day_of_week(view_month_.year, view_month_.month, 1);
 						n -= (dw ? dw + 7 : 14);
 					}

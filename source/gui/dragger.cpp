@@ -159,7 +159,7 @@ namespace nana
 				}
 			});
 
-			triggers_.push_back(tg);
+			triggers_.emplace_back(tg);
 		}
 	private:
 		static void _m_check_restrict_area(nana::point & pos, const nana::size & size, const nana::rectangle& restr_area)

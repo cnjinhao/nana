@@ -382,12 +382,6 @@ namespace nana
 		}
 
 		//class widget_base
-			widget_base::~widget_base()
-			{
-				if (handle_)
-					API::close_window(handle_);
-			}
-
 			window widget_base::handle() const
 			{
 				return handle_;

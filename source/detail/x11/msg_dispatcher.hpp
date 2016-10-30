@@ -58,6 +58,15 @@ namespace detail
 			proc_.filter_proc = 0;
 		}
 
+		~msg_dispatcher()
+		{
+			if(thrd_ && thrd_->joinable())
+			{
+				is_work_ = false;
+				thrd_->join();
+			}
+		}
+
 		void set(timer_proc_type timer_proc, event_proc_type event_proc, event_filter_type filter)
 		{
 			proc_.timer_proc = timer_proc;

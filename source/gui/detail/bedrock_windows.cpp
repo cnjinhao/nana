@@ -919,7 +919,13 @@ namespace detail
 					break;
 
 				msgwnd = wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
-				if ((nullptr == msgwnd) || (pressed_wd && (msgwnd != pressed_wd)))
+
+				//Don't take care about whether msgwnd is equal to the pressed_wd.
+				//
+				//pressed_wd will remains when opens a no-actived window in an mouse_down event(like combox popups the drop-list).
+				//After the no-actived window is closed, the window doesn't respond to the mouse click other than pressed_wd.
+				pressed_wd = nullptr;
+				if (nullptr == msgwnd)
 					break;
 
 				//if event on the menubar, just remove the menu if it is not associating with the menubar
@@ -1124,8 +1130,6 @@ namespace detail
 							if (evt_wd->annex.events_ptr->mouse_wheel.length() != 0)
 							{
 								def_window_proc = false;
-								nana::point mspos{ scr_pos.x, scr_pos.y };
-								wd_manager.calc_window_point(evt_wd, mspos);
 
 								arg_wheel arg;
 								arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
@@ -1138,9 +1142,6 @@ namespace detail
 
 						if (scrolled_wd && (nullptr == evt_wd))
 						{
-							nana::point mspos{ scr_pos.x, scr_pos.y };
-							wd_manager.calc_window_point(scrolled_wd, mspos);
-
 							arg_wheel arg;
 							arg.which = (WM_MOUSEHWHEEL == message ? arg_wheel::wheel::horizontal : arg_wheel::wheel::vertical);
 							assign_arg(arg, scrolled_wd, pmdec);
@@ -1696,17 +1697,7 @@ namespace detail
 	{
 		auto* thrd = get_thread_context(0);
 		if (thrd && thrd->event_window)
-		{
-			//the state none should be tested, becuase in an event, there would be draw after an update,
-			//if the none is not tested, the draw after update will not be refreshed.
-			switch (thrd->event_window->other.upd_state)
-			{
-			case core_window_t::update_state::none:
-			case core_window_t::update_state::lazy:
-				thrd->event_window->other.upd_state = core_window_t::update_state::refresh;
-			default:	break;
-			}
-		}
+			thrd->event_window->other.upd_state = core_window_t::update_state::refreshed;
 	}
 
 	//Dynamically set a cursor for a window

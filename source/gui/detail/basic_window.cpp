@@ -323,7 +323,7 @@ namespace nana
 			{
 				for (auto wd = this; wd; wd = wd->parent)
 				{
-					if (basic_window::update_state::refresh == wd->other.upd_state)
+					if (basic_window::update_state::refreshed == wd->other.upd_state)
 						return true;
 				}
 				return false;
@@ -402,7 +402,7 @@ namespace nana
 					root = agrparent->root;
 					root_graph = agrparent->root_graph;
 					index = static_cast<unsigned>(agrparent->children.size());
-					agrparent->children.push_back(this);
+					agrparent->children.emplace_back(this);
 				}
 
 				predef_cursor = cursor::arrow;
@@ -442,8 +442,6 @@ namespace nana
 
 			bool basic_window::set_events(const std::shared_ptr<general_events>& p)
 			{
-				if (annex.events_ptr)
-					return false;
 				annex.events_ptr = p;
 				return true;
 			}

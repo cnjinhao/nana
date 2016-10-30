@@ -235,7 +235,7 @@ namespace nana{	namespace drawerbase
 
 					if(shortkey)
 					{
-						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), static_cast<unsigned>(shortkey_pos)).width : 0);
+						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), shortkey_pos).width : 0);
 
 						wchar_t keystr[2] = {nana::utf::char_at(mbstr.c_str() + shortkey_pos, 0, 0), 0};
 						auto shortkey_size = graph.text_extent_size(keystr, 1);
@@ -287,14 +287,6 @@ namespace nana{	namespace drawerbase
 			graph.gradual_rectangle(r, from, to, true);
 		}
 
-		void draw_corner_point(::nana::paint::graphics& graph, const rectangle& r)
-		{
-			graph.set_pixel(r.x, r.y);
-			graph.set_pixel(r.right() - 1, r.y);
-			graph.set_pixel(r.right() - 1, r.bottom() - 1);
-			graph.set_pixel(r.x, r.bottom() - 1);
-		}
-
 		void trigger::_m_draw_border(graph_reference graph)
 		{
 			nana::rectangle r(graph.size());
@@ -303,10 +295,13 @@ namespace nana{	namespace drawerbase
 			graph.frame_rectangle(r, lt, lt, rb, rb);
 
 			graph.palette(false, colors::button_face);
-			draw_corner_point(graph, r);
+
+			paint::draw draw(graph);
+			draw.corner(r, 1);
 
 			graph.palette(false, static_cast<color_rgb>(0x919191));
-			draw_corner_point(graph, r.pare_off(1));
+
+			draw.corner(r.pare_off(1), 1);
 
 			if (element_state::pressed == attr_.e_state)
 				graph.rectangle(r, false, static_cast<color_rgb>(0xc3c3c3));

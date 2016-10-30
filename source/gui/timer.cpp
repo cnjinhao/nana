@@ -47,8 +47,7 @@ namespace nana
 
 		friend class timer_core;
 
-		timer_driver()
-		{}
+		timer_driver() = default;
 	public:
 		static timer_driver& instance()
 		{

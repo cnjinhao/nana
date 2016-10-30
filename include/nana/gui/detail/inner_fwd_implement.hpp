@@ -1,7 +1,7 @@
 /*
  *	Implementations of Inner Forward Declaration
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -26,87 +26,32 @@ namespace nana{
 	{
 		class shortkey_container
 		{
-			struct item_type
-			{
-				window handle;
-				std::vector<unsigned long> keys;
-			};
+			struct item_type;
+
+			//Noncopyable
+			shortkey_container(const shortkey_container&) = delete;
+			shortkey_container& operator=(const shortkey_container&) = delete;
+
+			shortkey_container& operator=(shortkey_container&&) = delete;
 		public:
-			void clear()
-			{
-				keybase_.clear();
-			}
+			shortkey_container();
 
-			bool make(window wd, unsigned long key)
-			{
-				if (wd == nullptr) return false;
-				if (key < 0x61) key += (0x61 - 0x41);
+			shortkey_container(shortkey_container&&);
 
-				for (auto & m : keybase_)
-				{
-					if (m.handle == wd)
-					{
-						m.keys.push_back(key);
-						return true;
-					}
-				}
+			~shortkey_container();
 
-				item_type m;
-				m.handle = wd;
-				m.keys.push_back(key);
-				keybase_.push_back(m);
+			void clear();
 
-				return true;
-			}
+			bool make(window wd, unsigned long key);
 
-			void umake(window wd)
-			{
-				if (wd == nullptr) return;
+			void umake(window wd);
 
-				for (auto i = keybase_.begin(), end = keybase_.end(); i != end; ++i)
-				{
-					if (i->handle == wd)
-					{
-						keybase_.erase(i);
-						break;
-					}
-				}
-			}
+			std::vector<unsigned long> keys(window wd) const;
 
-			std::vector<unsigned long> keys(window wd) const
-			{
-				std::vector<unsigned long> v;
-				if (wd)
-				{
-					for (auto & m : keybase_)
-					{
-						if (m.handle == wd)
-						{
-							v = m.keys;
-							break;
-						}
-					}
-				}
-				return v;
-
-			}
-
-			window find(unsigned long key) const
-			{
-				if (key < 0x61) key += (0x61 - 0x41);
-
-				for (auto & m : keybase_)
-				{
-					for (auto n : m.keys)
-					{
-						if (key == n)
-							return m.handle;
-					}
-				}
-				return nullptr;
-			}
+			window find(unsigned long key) const;
 		private:
-			std::vector<item_type> keybase_;
+			struct implementation;
+			implementation * impl_;
 		};
 
 
@@ -118,57 +63,39 @@ namespace nana{
 
 			struct condition_rep
 			{
-				bool			ignore_tab{ false };			//ignore tab when the focus is changed by TAB key.
-				basic_window*	pressed{ nullptr };				//The handle to a window which has been pressed by mouse left button.
-				basic_window*	pressed_by_space{ nullptr };	//The handle to a window which has been pressed by SPACEBAR key.
-				basic_window*	hovered{ nullptr };				//the latest window that mouse moved
+				bool			ignore_tab;			//ignore tab when the focus is changed by TAB key.
+				basic_window*	pressed;			//The handle to a window which has been pressed by mouse left button.
+				basic_window*	pressed_by_space;	//The handle to a window which has been pressed by SPACEBAR key.
+				basic_window*	hovered;			//the latest window that mouse moved
 			}condition;
 
-			root_misc(basic_window * wd, unsigned width, unsigned height)
-				:	window(wd),
-				root_graph({ width, height })
-			{}
+			root_misc(root_misc&&);
+			root_misc(basic_window * wd, unsigned width, unsigned height);
 		};//end struct root_misc
+
+
 
 		class root_register
 		{
+			//Noncopyable
+			root_register(const root_register&) = delete;
+			root_register& operator=(const root_register&) = delete;
+
+			//Nonmovable
+			root_register(root_register&&) = delete;
+			root_register& operator=(root_register&&) = delete;
 		public:
-			root_misc* insert(native_window_type wd, const root_misc& misc)
-			{
-				recent_ = wd;
-				auto ret = table_.insert(std::make_pair(wd, misc));
-				misc_ptr_ = &(ret.first->second);
-				return misc_ptr_;
-			}
+			root_register();
+			~root_register();
 
-			root_misc * find(native_window_type wd)
-			{
-				if (wd == recent_)
-					return misc_ptr_;
+			root_misc* insert(native_window_type, root_misc&&);
 
-				recent_ = wd;
-				
-				auto i = table_.find(wd);
-				if (i != table_.end())
-					misc_ptr_ = &(i->second);
-				else
-					misc_ptr_ = nullptr;
+			root_misc * find(native_window_type);
 
-				return misc_ptr_;
-			}
-
-			void erase(native_window_type wd)
-			{
-				table_.erase(wd);
-				recent_ = wd;
-				misc_ptr_ = nullptr;
-			}
+			void erase(native_window_type);
 		private:
-			//Cached
-			mutable native_window_type	recent_{nullptr};
-			mutable root_misc *			misc_ptr_{nullptr};
-
-			std::map<native_window_type, root_misc> table_;
+			struct implementation;
+			implementation * const impl_;
 		};
 	}
 }//end namespace nana

@@ -1,7 +1,7 @@
 /**
  *	A Inline Widget Interface Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -35,6 +35,9 @@ namespace nana
 			/// Returns the host widget of the indicator
 			virtual ::nana::widget& host() const = 0;
 
+			/// Returns the position of column
+			virtual std::size_t column() const = 0;
+
 			/// Modifies the value of a item specified by pos
 			virtual void modify(index_type pos, const value_type&) const = 0;
 
@@ -45,7 +48,7 @@ namespace nana
 			virtual void hovered(index_type) = 0;
 		};
 
-		template<typename Index, typename Value>
+		template<typename Index, typename Status, typename Value>
 		class inline_widget_notifier_interface
 		{
 		public:
@@ -54,6 +57,9 @@ namespace nana
 
 			/// A type to the value of the item
 			using value_type = Value;
+
+			/// A type to the status 
+			using status_type = Status;
 
 			/// A typedef name of a inline widget indicator
 			using inline_indicator = inline_widget_indicator<index_type, value_type>;
@@ -69,6 +75,9 @@ namespace nana
 
 			/// A message to activate the inline widget to attach a specified item
 			virtual void activate(inline_indicator&, index_type) = 0;
+
+			/// A message to change the status
+			virtual void notify_status(status_type, bool) = 0;
 
 			/// A message to resize the inline widget
 			virtual void resize(const size&) = 0;

@@ -15,6 +15,7 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/system/platform.hpp>
 #include <stdexcept>
+#include <map>
 
 namespace nana
 {
