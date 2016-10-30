@@ -156,6 +156,18 @@ namespace paint
 			return (impl_->font_ptr->italic);
 		}
 
+		bool font::underline() const
+		{
+			if(empty()) return false;
+			return (impl_->font_ptr->underline);
+		}
+
+		bool font::strikeout() const
+		{
+			if(empty()) return false;
+			return (impl_->font_ptr->strikeout);
+		}
+
 		native_font_type font::handle() const
 		{
 			if(empty())	return nullptr;
