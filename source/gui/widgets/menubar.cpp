@@ -20,7 +20,7 @@ namespace nana
 	public:
 		static void popup(menu& m, window wd, int x, int y)
 		{
-			m._m_popup(wd, x, y, true);
+			m._m_popup(wd, { x, y }, true);
 		}
 	};
 

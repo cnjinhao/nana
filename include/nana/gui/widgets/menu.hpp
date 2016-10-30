@@ -14,10 +14,7 @@
 #ifndef NANA_GUI_WIDGETS_MENU_HPP
 #define NANA_GUI_WIDGETS_MENU_HPP
 #include "widget.hpp"
-#include <vector>
-#include <nana/gui/timer.hpp>
 #include <nana/pat/cloneable.hpp>
-
 #include <nana/push_ignore_diagnostic>
 
 namespace nana
@@ -72,23 +69,10 @@ namespace nana
 
 				menu_type		*sub_menu{nullptr};
 				std::string	text;
-				event_fn_t	functor;
+				event_fn_t	event_handler;
 				checks			style{checks::none};
 				paint::image	image;
 				mutable wchar_t	hotkey{0};
-			};
-
-			struct menu_type
-			{
-				typedef std::vector<menu_item_type> item_container;
-				typedef item_container::iterator iterator;
-				typedef item_container::const_iterator const_iterator;
-
-				std::vector<menu_type*>		owner;
-				std::vector<menu_item_type>	items;
-				unsigned max_pixels;
-				unsigned item_pixels;
-				nana::point gaps;
 			};
 
 			class renderer_interface
@@ -158,7 +142,7 @@ namespace nana
 		void popup(window owner, int x, int y);     ///< Popup the menu at the owner window. 
 		void popup_await(window owner, int x, int y);
 		void answerer(std::size_t index, const event_fn_t&);  ///< Modify answerer of the specified item.
-		void destroy_answer(const std::function<void()>&);  ///< Sets an answerer for the callback while the menu window is closing.
+		void destroy_answer(std::function<void()>);  ///< Sets an answerer for the callback while the menu window is closing.
 		void gaps(const nana::point&);				///< Sets the gap between a menu and its sub menus.(\See Note4)
 		void goto_next(bool forward);				///< Moves the focus to the next or previous item.
 		bool goto_submen();///< Popup the submenu of the current item if it has a sub menu. Returns true if succeeds.
@@ -177,7 +161,7 @@ namespace nana
 		const pat::cloneable<renderer_interface>& renderer() const;
 
 	private:
-		void _m_popup(window, int x, int y, bool called_by_menubar);
+		void _m_popup(window, const point& position, bool called_by_menubar);
 	private:
 		implement * impl_;
 	};

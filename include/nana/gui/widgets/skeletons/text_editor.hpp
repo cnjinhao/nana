@@ -134,6 +134,7 @@ namespace nana{	namespace widgets
 			std::size_t undo_max_steps() const;
 
 			renderers& customized_renderers();
+			void clear_undo();	///< same with undo_max_steps(0)
 
 			unsigned line_height() const;
 			unsigned screen_lines() const;
@@ -148,14 +149,15 @@ namespace nana{	namespace widgets
 			 * @param reset indicates whether to reset the text position by the pos. If this parameter is true, the text position is set by pos. If the parameter is false, it only moves the UI caret to the specified position. 
 			 */
 			bool move_caret(const upoint& pos, bool reset = false);
-			void move_caret_end();
+			void move_caret_end(bool update);
 			void reset_caret_pixels() const;
 			void reset_caret();
 			void show_caret(bool isshow);
 
 			bool selected() const;
+			bool get_selected_points(nana::upoint&, nana::upoint&) const;
+
 			bool select(bool);
-			bool get_select_points(nana::upoint&, nana::upoint&) const;
 
 			/// Sets the end position of a selected string.
 			void set_end_caret();

@@ -51,6 +51,8 @@ namespace nana
 			bool italic() const;
 			native_font_type handle() const;
 			void release();
+			bool strikeout() const;
+			bool underline() const;
 
 			font& operator=(const font&);
 			bool operator==(const font&) const;

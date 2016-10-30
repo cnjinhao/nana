@@ -54,10 +54,16 @@ namespace threads
 
 		struct task_signal;
 		class impl;
+
+		pool(const pool&) = delete;
+		pool& operator=(const pool&) = delete;
 	public:
 		pool();                             ///< Creates a group of threads.
+		pool(pool&&);
 		pool(std::size_t thread_number);    ///< Creates a number of threads specifed by thread_number.
 		~pool();    ///< waits for the all running tasks till they are finished and skips all the queued tasks.
+
+		pool& operator=(pool&&);
 
 		template<typename Function>
 		void push(const Function& f)

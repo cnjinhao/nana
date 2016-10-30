@@ -69,10 +69,10 @@ namespace drawerbase {
 			auto scheme = API::dev::get_scheme(wdg);
 
 			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
-			editor_->textbase().set_event_agent(evt_agent_.get());
-			editor_->set_event(evt_agent_.get());
 
 			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
+			editor_->textbase().set_event_agent(evt_agent_.get());
+			editor_->set_event(evt_agent_.get());
 
 			_m_text_area(graph.width(), graph.height());
 
@@ -260,8 +260,11 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-			{				
-				editor->text(to_wstring(str), end_caret);
+			{
+				editor->text(to_wstring(str), false);
+				
+				if (end_caret)
+					editor->move_caret_end(true);
 
 				editor->textbase().reset();
 				API::update_window(this->handle());
@@ -319,6 +322,25 @@ namespace drawerbase {
 			return false;
 		}
 
+		bool textbox::getline(std::size_t line_index,std::size_t start_point,std::string& text) const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+			{
+				std::wstring line_text;
+				if(editor->getline(line_index,line_text))
+				{
+					if(line_text.length() >= start_point)
+					{
+						text = to_utf8(line_text.substr(start_point));
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		/// Gets the caret position
 		bool textbox::caret_pos(point& pos, bool text_coordinate) const
 		{
@@ -358,7 +380,7 @@ namespace drawerbase {
 			if(editor)
 			{
 				if(at_caret == false)
-					editor->move_caret_end();
+					editor->move_caret_end(false);
 
 				editor->put(to_wstring(text));
 				API::update_window(this->handle());
@@ -461,6 +483,13 @@ namespace drawerbase {
 			return (editor ? editor->selected() : false);
 		}
 
+		bool textbox::get_selected_points(nana::upoint &a, nana::upoint &b) const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			return (editor ? editor->get_selected_points(a, b) : false);
+		}
+
 		void textbox::select(bool yes)
 		{
 			internal_scope_guard lock;
@@ -476,7 +505,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->get_select_points(points.first, points.second);
+				editor->get_selected_points(points.first, points.second);
 
 			return points;
 		}
@@ -537,6 +566,11 @@ namespace drawerbase {
 		{
 			_m_caption(to_nstring(d));
 			return *this;
+		}
+
+		void textbox::clear_undo()
+		{
+			get_drawer_trigger().editor()->clear_undo();
 		}
 
 		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)

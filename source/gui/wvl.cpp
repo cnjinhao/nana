@@ -46,6 +46,7 @@ namespace nana
 
 	void pump()
 	{
+		internal_scope_guard lock;
 		detail::bedrock::instance().pump_event(nullptr, false);
 	}
 

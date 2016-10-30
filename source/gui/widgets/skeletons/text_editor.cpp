@@ -1574,7 +1574,8 @@ namespace nana{	namespace widgets
 				_m_handle_move_key(arg);
 				break;
 			case keyboard::os_del:
-				if (this->attr().editable)
+				// send delete to set_accept function
+				if (this->attr().editable && (!impl_->capacities.pred_acceptive || impl_->capacities.pred_acceptive(key)))
 					del();
 				break;
 			default:
@@ -1746,6 +1747,13 @@ namespace nana{	namespace widgets
 			return impl_->undo.max_steps();
 		}
 
+		void text_editor::clear_undo()
+		{
+			auto size = impl_->undo.max_steps();
+			impl_->undo.max_steps(0);
+			impl_->undo.max_steps(size);
+		}
+
 		auto text_editor::customized_renderers() -> renderers&
 		{
 			return impl_->customized_renderers;
@@ -1797,7 +1805,7 @@ namespace nana{	namespace widgets
 				if (select_all)
 				{
 					select(true);
-					move_caret_end();
+					move_caret_end(false);
 					renderred = true;
 
 					//If the text widget is focused by clicking mouse button, the selected text will be cancelled
@@ -1991,8 +1999,6 @@ namespace nana{	namespace widgets
 			return str;
 		}
 
-		//move_caret
-		//Set caret position through text coordinate
 		bool text_editor::move_caret(const upoint& crtpos, bool reset_caret)
 		{	
 			const unsigned line_pixels = line_height();
@@ -2036,11 +2042,14 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		void text_editor::move_caret_end()
+		void text_editor::move_caret_end(bool update)
 		{
 			points_.caret.y = static_cast<unsigned>(impl_->textbase.lines());
 			if(points_.caret.y) --points_.caret.y;
 			points_.caret.x = static_cast<unsigned>(impl_->textbase.getline(points_.caret.y).size());
+
+			if (update)
+				this->move_caret(points_.caret, false);
 		}
 
 		void text_editor::reset_caret_pixels() const
@@ -2062,6 +2071,25 @@ namespace nana{	namespace widgets
 		bool text_editor::selected() const
 		{
 			return (select_.a != select_.b);
+		}
+
+		bool text_editor::get_selected_points(nana::upoint &a, nana::upoint &b) const
+		{
+			if (select_.a == select_.b)
+				return false;
+
+			if (select_.a < select_.b)
+			{
+				a = select_.a;
+				b = select_.b;
+			}
+			else
+			{
+				a = select_.b;
+				b = select_.a;
+			}
+
+			return true;
 		}
 
 		void text_editor::set_end_caret()
@@ -2096,25 +2124,6 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		bool text_editor::get_select_points(nana::upoint& a, nana::upoint& b) const
-		{
-			if (select_.a == select_.b)
-				return false;
-
-			if (select_.a < select_.b)
-			{
-				a = select_.a;
-				b = select_.b;
-			}
-			else
-			{
-				a = select_.b;
-				b = select_.a;
-			}
-
-			return true;
-		}
-
 		bool text_editor::hit_text_area(const point& pos) const
 		{
 			return _m_text_area().is_hit(pos);
@@ -2123,7 +2132,7 @@ namespace nana{	namespace widgets
 		bool text_editor::hit_select_area(nana::upoint pos, bool ignore_when_select_all) const
 		{
 			nana::upoint a, b;
-			if(get_select_points(a, b))
+			if (get_selected_points(a, b))
 			{
 				if (ignore_when_select_all)
 				{
@@ -3045,7 +3054,7 @@ namespace nana{	namespace widgets
 		nana::upoint text_editor::_m_erase_select()
 		{
 			nana::upoint a, b;
-			if (get_select_points(a, b))
+			if (get_selected_points(a, b))
 			{
 				auto & textbase = this->textbase();
 				if(a.y != b.y)
@@ -3076,7 +3085,7 @@ namespace nana{	namespace widgets
 			std::wstring text;
 			
 			nana::upoint a, b;
-			if (get_select_points(a, b))
+			if (get_selected_points(a, b))
 			{
 				auto & textbase = this->textbase();
 				if (a.y != b.y)
@@ -3167,7 +3176,7 @@ namespace nana{	namespace widgets
 		bool text_editor::_m_cancel_select(int align)
 		{
 			nana::upoint a, b;
-			if (get_select_points(a, b))
+			if (get_selected_points(a, b))
 			{
 				switch(align)
 				{
@@ -3262,7 +3271,7 @@ namespace nana{	namespace widgets
 				const bool at_left = (select_.b < select_.a);
 
 				nana::upoint a, b;
-				get_select_points(a, b);
+				get_selected_points(a, b);
 				if (caret.y < a.y || (caret.y == a.y && caret.x < a.x))
 				{//forward
 					undo_ptr->set_caret_pos();
@@ -3458,7 +3467,7 @@ namespace nana{	namespace widgets
 			const wchar_t *sbegin = nullptr, *send = nullptr;
 
 			nana::upoint a, b;
-			if (get_select_points(a, b))
+			if (get_selected_points(a, b))
 			{
 				if (a.y < text_coord.y && text_coord.y < b.y)
 				{
