@@ -162,6 +162,9 @@ namespace nana
         /// Read the text from a specified line. It returns true for success.
 		bool getline(std::size_t pos, std::string&) const;
 
+		/// Read the text from a specified line with a set offset. It returns true for success.
+		bool getline(std::size_t line_index,std::size_t offset,std::string& text) const;
+
 		/// Gets the caret position
 		/// Returns true if the caret is in the area of display, false otherwise.
 		bool caret_pos(point& pos, bool text_coordinate) const;
@@ -196,6 +199,7 @@ namespace nana
 
         /// Returns true if some text is selected.
 		bool selected() const;
+		bool get_selected_points(nana::upoint &a, nana::upoint &b) const;
 
         /// Selects/unselects all text.
 		void select(bool);
@@ -214,6 +218,8 @@ namespace nana
 		double to_double() const;
 		textbox& from(int);
 		textbox& from(double);
+
+		void clear_undo();
 
 		void set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor);
 		void erase_highlight(const std::string& name);

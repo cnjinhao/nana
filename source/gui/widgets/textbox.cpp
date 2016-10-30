@@ -322,6 +322,25 @@ namespace drawerbase {
 			return false;
 		}
 
+		bool textbox::getline(std::size_t line_index,std::size_t start_point,std::string& text) const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if(editor)
+			{
+				std::wstring line_text;
+				if(editor->getline(line_index,line_text))
+				{
+					if(line_text.length() >= start_point)
+					{
+						text = to_utf8(line_text.substr(start_point));
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		/// Gets the caret position
 		bool textbox::caret_pos(point& pos, bool text_coordinate) const
 		{
@@ -464,6 +483,13 @@ namespace drawerbase {
 			return (editor ? editor->selected() : false);
 		}
 
+		bool textbox::get_selected_points(nana::upoint &a, nana::upoint &b) const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			return (editor ? editor->get_selected_points(a, b) : false);
+		}
+
 		void textbox::select(bool yes)
 		{
 			internal_scope_guard lock;
@@ -479,7 +505,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->get_select_points(points.first, points.second);
+				editor->get_selected_points(points.first, points.second);
 
 			return points;
 		}
@@ -540,6 +566,11 @@ namespace drawerbase {
 		{
 			_m_caption(to_nstring(d));
 			return *this;
+		}
+
+		void textbox::clear_undo()
+		{
+			get_drawer_trigger().editor()->clear_undo();
 		}
 
 		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
