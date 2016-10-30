@@ -235,15 +235,14 @@ public:
 		if (!file.is_open()) return false;
 
 		// allocates a buffer for the image
-		std::streampos size = 0;
 		file.seekg(0, std::ios::end);
-		size = file.tellg() - size;
+		const auto bytes = static_cast<std::size_t>(file.tellg());
 		file.seekg(0, std::ios::beg);
-		auto buffer = new char[size];
+		auto buffer = new char[bytes];
 
 		// read data from the file and set them in the buffer
-		file.read(buffer, size);
-		auto okret = _m_read_ico(buffer, size);
+		file.read(buffer, bytes);
+		auto okret = _m_read_ico(buffer, bytes);
 
 		// delete buffer and return
 		delete[] buffer;
