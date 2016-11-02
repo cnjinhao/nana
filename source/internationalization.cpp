@@ -306,9 +306,8 @@ namespace nana
 
 	std::string internationalization::get(std::string msgid) const
 	{
-		std::string str;
-		if(_m_get(msgid, str))
-			_m_replace_args(str, nullptr);
+		std::string str = _m_get(std::move(msgid));
+		_m_replace_args(str, nullptr);
 		return str;
 	}
 
@@ -318,18 +317,14 @@ namespace nana
 		ptr->table[msgid].swap(msgstr);
 	}
 
-	bool internationalization::_m_get(std::string& msgid, std::string& msgstr) const
+	std::string internationalization::_m_get(std::string&& msgid) const
 	{
 		auto & impl = internationalization_parts::get_data_ptr();
 		auto i = impl->table.find(msgid);
 		if (i != impl->table.end())
-		{
-			msgstr = i->second;
-			return true;
-		}
+			return i->second;
 
-		msgstr = nana::charset(std::move(msgid), nana::unicode::utf8);
-		return false;
+		return std::move(msgid);
 	}
 
 	void internationalization::_m_replace_args(std::string& str, std::vector<std::string> * arg_strs) const
@@ -368,6 +363,50 @@ namespace nana
 				offset += 4;
 		}
 	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>&) const
+	{}
+	
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const char* arg) const
+	{
+		v.emplace_back(arg);
+	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const std::string& arg) const
+	{
+		v.emplace_back(arg);
+	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::string& arg) const
+	{
+		v.emplace_back(arg);
+	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::string&& arg) const
+	{
+		v.emplace_back(std::move(arg));
+	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const wchar_t* arg) const
+	{
+		v.emplace_back(to_utf8(arg));
+	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const std::wstring& arg) const
+	{
+		v.emplace_back(to_utf8(arg));
+	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::wstring& arg) const
+	{
+		v.emplace_back(to_utf8(arg));
+	}
+
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::wstring&& arg) const
+	{
+		v.emplace_back(to_utf8(arg));
+	}
+	
 	//end class internationalization
 
 
@@ -462,10 +501,9 @@ namespace nana
 			arg_strs.emplace_back(arg->eval());
 
 		internationalization i18n;
-		std::string msgid = msgid_;	//msgid is required to be movable by i18n._m_get
-		std::string msgstr;
-		if (i18n._m_get(msgid, msgstr))
-			i18n._m_replace_args(msgstr, &arg_strs);
+
+		std::string msgstr = i18n._m_get(std::string{msgid_});		
+		i18n._m_replace_args(msgstr, &arg_strs);
 		return msgstr;
 	}
 
