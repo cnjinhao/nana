@@ -64,7 +64,7 @@ namespace nana
 		template<typename ...Args>
 		void i18n(std::string msgid, Args&&... args)
 		{
-			_m_caption(nana::internationalization().get(msgid, std::forward<Args>(args)...));
+			_m_caption(::nana::to_nstring(::nana::internationalization().get(msgid, std::forward<Args>(args)...)));
 		}
 
 		void i18n(i18n_eval);
