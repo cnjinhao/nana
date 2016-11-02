@@ -11,6 +11,8 @@
 #endif
 
 #include <stdio.h>
+#include <cstring>
+
 
 namespace nana
 {

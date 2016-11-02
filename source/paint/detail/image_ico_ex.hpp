@@ -10,47 +10,47 @@ namespace detail {
 // in an ICO file.
 typedef struct
 {
-	uint8_t   bWidth;                // Width of the image
-	uint8_t   bHeight;               // Height of the image (times 2)
-	uint8_t   bColorCount;           // Number of colors in image (0 if >=8bpp)
-	uint8_t   bReserved;             // Reserved
-	uint16_t  wPlanes;               // Color Planes
-	uint16_t  wBitCount;             // Bits per pixel
-	uint32_t  dwBytesInRes;          // how many bytes in this resource?
-	uint32_t  dwImageOffset;         // where in the file is this image
+	std::uint8_t   bWidth;                // Width of the image
+	std::uint8_t   bHeight;               // Height of the image (times 2)
+	std::uint8_t   bColorCount;           // Number of colors in image (0 if >=8bpp)
+	std::uint8_t   bReserved;             // Reserved
+	std::uint16_t  wPlanes;               // Color Planes
+	std::uint16_t  wBitCount;             // Bits per pixel
+	std::uint32_t  dwBytesInRes;          // how many bytes in this resource?
+	std::uint32_t  dwImageOffset;         // where in the file is this image
 } ICONDIRENTRY, *LPICONDIRENTRY;
 
 typedef struct
 {
-	uint16_t  idReserved;            // Reserved
-	uint16_t  idType;                // resource type (1 for icons)
-	uint16_t  idCount;               // how many images?
+	std::uint16_t  idReserved;            // Reserved
+	std::uint16_t  idType;                // resource type (1 for icons)
+	std::uint16_t  idCount;               // how many images?
 	//ICONDIRENTRY  idEntries[1];    // the entries for each image
 } ICONDIR, *LPICONDIR;
 
 // size - 40 bytes
 typedef struct
 {
-	uint32_t  biSize;
-	uint32_t  biWidth;
-	uint32_t  biHeight;   // Icon Height (added height of XOR-Bitmap and AND-Bitmap)
-	uint16_t  biPlanes;
-	uint16_t  biBitCount;
-	uint32_t  biCompression;
-	int32_t   biSizeImage;
-	uint32_t  biXPelsPerMeter;
-	uint32_t  biYPelsPerMeter;
-	uint32_t  biClrUsed;
-	uint32_t  biClrImportant;
+	std::uint32_t  biSize;
+	std::uint32_t  biWidth;
+	std::uint32_t  biHeight;   // Icon Height (added height of XOR-Bitmap and AND-Bitmap)
+	std::uint16_t  biPlanes;
+	std::uint16_t  biBitCount;
+	std::uint32_t  biCompression;
+	std::int32_t   biSizeImage;
+	std::uint32_t  biXPelsPerMeter;
+	std::uint32_t  biYPelsPerMeter;
+	std::uint32_t  biClrUsed;
+	std::uint32_t  biClrImportant;
 } s_BITMAPINFOHEADER, *s_PBITMAPINFOHEADER;
 
 // 46 bytes
 typedef struct
 {
 	s_BITMAPINFOHEADER    icHeader;       // DIB header
-	uint32_t              icColors[1];    // Color table (short 4 bytes) //RGBQUAD
-	uint8_t               icXOR[1];       // DIB bits for XOR mask
-	uint8_t               icAND[1];       // DIB bits for AND mask
+	std::uint32_t              icColors[1];    // Color table (short 4 bytes) //RGBQUAD
+	std::uint8_t               icXOR[1];       // DIB bits for XOR mask
+	std::uint8_t               icAND[1];       // DIB bits for AND mask
 } ICONIMAGE, *LPICONIMAGE;
 
 
@@ -61,7 +61,7 @@ class image_ico_ex
 	{
 		auto width = 0;
 		auto height = 0;
-		auto buffer = (unsigned char *)data;
+		auto buffer = (std::uint8_t *)data;
 		auto icoDir = reinterpret_cast<LPICONDIR>(buffer);
 		int iconsCount = icoDir->idCount;
 		if (icoDir->idReserved != 0 || icoDir->idType != 1 || iconsCount == 0 || iconsCount > 20)
