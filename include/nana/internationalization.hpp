@@ -32,9 +32,8 @@ namespace nana
 			std::vector<std::string> arg_strs;
 			_m_fetch_args(arg_strs, std::forward<Args>(args)...);
 			
-			::std::string msgstr;
-			if (_m_get(msgid_utf8, msgstr))
-				_m_replace_args(msgstr, &arg_strs);
+			auto msgstr = _m_get(std::move(msgid_utf8));
+			_m_replace_args(msgstr, &arg_strs);
 			return msgstr;
 		}
 
@@ -47,16 +46,24 @@ namespace nana
 			return get(msgid_utf8, std::forward<Args>(args)...);
 		}
 	private:
-		bool _m_get(std::string& msgid, ::std::string& msgstr) const;
+		std::string _m_get(std::string&& msgid) const;
 		void _m_replace_args(::std::string& str, std::vector<::std::string> * arg_strs) const;
 
-		void _m_fetch_args(std::vector<std::string>&) const //Termination of _m_fetch_args
-		{}
+		void _m_fetch_args(std::vector<std::string>&) const; //Termination of _m_fetch_args
+
+		void _m_fetch_args(std::vector<std::string>& v, const char* arg) const;
+		void _m_fetch_args(std::vector<std::string>& v, const std::string& arg) const;
+		void _m_fetch_args(std::vector<std::string>& v, std::string& arg) const;
+		void _m_fetch_args(std::vector<std::string>& v, std::string&& arg) const;
+		void _m_fetch_args(std::vector<std::string>& v, const wchar_t* arg) const;
+		void _m_fetch_args(std::vector<std::string>& v, const std::wstring& arg) const;
+		void _m_fetch_args(std::vector<std::string>& v, std::wstring& arg) const;
+		void _m_fetch_args(std::vector<std::string>& v, std::wstring&& arg) const;
 
 		template<typename Arg>
 		void _m_fetch_args(std::vector<std::string>& v, Arg&& arg) const
 		{
-			std::wstringstream ss;
+			std::stringstream ss;
 			ss << arg;
 			v.emplace_back(ss.str());
 		}
@@ -86,6 +93,34 @@ namespace nana
 		void _m_fetch_args(std::vector<std::string>& v, std::string&& arg, Args&&... args) const
 		{
 			v.emplace_back(std::move(arg));
+			_m_fetch_args(v, std::forward<Args>(args)...);
+		}
+
+		template<typename ...Args>
+		void _m_fetch_args(std::vector<std::string>& v, const wchar_t* arg, Args&&... args) const
+		{
+			v.emplace_back(to_utf8(arg));
+			_m_fetch_args(v, std::forward<Args>(args)...);
+		}
+
+		template<typename ...Args>
+		void _m_fetch_args(std::vector<std::string>& v, const std::wstring& arg, Args&&... args) const
+		{
+			v.emplace_back(to_utf8(arg));
+			_m_fetch_args(v, std::forward<Args>(args)...);
+		}
+
+		template<typename ...Args>
+		void _m_fetch_args(std::vector<std::string>& v, std::wstring& arg, Args&&... args) const
+		{
+			v.emplace_back(to_utf8(arg));
+			_m_fetch_args(v, std::forward<Args>(args)...);
+		}
+
+		template<typename ...Args>
+		void _m_fetch_args(std::vector<std::string>& v, std::wstring&& arg, Args&&... args) const
+		{
+			v.emplace_back(to_utf8(arg));
 			_m_fetch_args(v, std::forward<Args>(args)...);
 		}
 
