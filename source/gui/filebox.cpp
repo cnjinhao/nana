@@ -1044,10 +1044,13 @@ namespace nana
 			if (!impl_->open_or_save)
 				ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
 			ofn.Flags |= OFN_NOCHANGEDIR;
-			
-			if(FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
-				return false;
-			
+
+			{
+				internal_revert_guard revert;
+				if (FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
+					return false;
+			}
+
 			wfile.resize(std::wcslen(wfile.data()));
 			impl_->file = to_utf8(wfile);
 #elif defined(NANA_POSIX)
