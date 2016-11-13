@@ -16,6 +16,7 @@
 #include <sstream>
 #include <functional>
 #include <memory>
+#include <nana/deploy.hpp>
 
 namespace nana
 {
