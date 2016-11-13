@@ -10,6 +10,7 @@
 *	@file: nana/gui/widgets/menu.cpp
 *	@contributors:
 *		kmribti(pr#102)
+*		dankan1890(pr#158)
 */
 
 #include <nana/gui/widgets/menu.hpp>
@@ -1116,9 +1117,9 @@ namespace nana
 			delete impl_;
 		}
 
-		auto menu::append(const std::string& text, const event_fn_t& callback) -> item_proxy
+		auto menu::append(std::string text_utf8, const menu::event_fn_t& callback) -> item_proxy
 		{
-			impl_->mbuilder.data().items.emplace_back(new item_type(text, callback));
+			impl_->mbuilder.data().items.emplace_back(new item_type(std::move(text_utf8), callback));
 			return item_proxy(size() - 1, *impl_->mbuilder.data().items.back());
 		}
 
@@ -1154,6 +1155,11 @@ namespace nana
 		void menu::image(std::size_t index, const paint::image& img)
 		{
 			impl_->mbuilder.data().items.at(index)->image = img;
+		}
+
+		void menu::text(std::size_t index, std::string text_utf8)
+		{
+			impl_->mbuilder.data().items.at(index)->text.swap(text_utf8);
 		}
 
 		bool menu::link(std::size_t index, menu& menu_obj)

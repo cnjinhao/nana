@@ -14,7 +14,8 @@
  *		leobackes(pr#86,pr#97)
  *		Benjamin Navarro(pr#81)
  *		besh81(pr#130)
- *		
+ *		dankan1890(pr#158)
+ *
  */
 
 #include <nana/gui/widgets/listbox.hpp>
@@ -3393,7 +3394,8 @@ namespace nana
 					const auto border_color = essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.8);
 
 					int text_top = (r.height - essence_->scheme_ptr->text_height) / 2 + r.y;
-					auto text_color = essence_->lister.wd_ptr()->fgcolor();
+					auto text_color = essence_->scheme_ptr->header_fgcolor.get_color();
+					
 
 					auto state = item_state::normal;
 					//check whether grabing an item, if item_spliter_ != npos, that indicates the grab item is a spliter.
@@ -3784,7 +3786,7 @@ namespace nana
 						if (item.flags.selected)
 							bgcolor = bgcolor.blend(colors::black, 0.98);           // or "selected"
 						else
-							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_selected, 0.7);   /// \todo create a parametre for amount of blend
+							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);   /// \todo create a parametre for amount of blend
 					}
 
 					unsigned show_w = (std::min)(content_r.width, width - essence_->scroll.x_offset());
@@ -4506,12 +4508,28 @@ namespace nana
 					return ess_->lister.relative_pair(pos_);
 				}
 
+				bool item_proxy::displayed() const
+				{
+					if (!ess_->lister.get(pos_.cat)->expand)
+						return false;
+
+					auto pos = to_display();
+					if (ess_->scroll.offset_y_dpl > pos)
+						return false;
+
+					auto size = ess_->number_of_lister_items(false);
+
+					auto last = ess_->lister.advance(ess_->scroll.offset_y_dpl, size);
+
+					return (last > pos || last == pos);
+				}
+
 				bool item_proxy::empty() const
 				{
 					return !ess_;
 				}
 
-				item_proxy & item_proxy::check(bool ck)
+				item_proxy & item_proxy::check(bool ck, bool scroll_view)
 				{
 					internal_scope_guard lock;
 					auto & m = cat_->items.at(pos_.item);
@@ -4519,6 +4537,15 @@ namespace nana
 					{
 						m.flags.checked = ck;
 						ess_->lister.emit_checked(pos_);
+
+						if (scroll_view)
+						{
+							if (ess_->lister.get(pos_.cat)->expand)
+								ess_->lister.get(pos_.cat)->expand = false;
+
+							if (!this->displayed())
+								ess_->lister.scroll(pos_, !(ess_->scroll.offset_y_dpl > this->to_display()));
+						}
 
 						ess_->update();
 					}
@@ -4531,26 +4558,37 @@ namespace nana
 				}
 
 				/// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected
-				item_proxy & item_proxy::select(bool s)
+				item_proxy & item_proxy::select(bool sel, bool scroll_view)
 				{
 					internal_scope_guard lock;
 
 					//pos_ never represents a category if this item_proxy is available.
 					auto & m = cat_->items.at(pos_.item);       // a ref to the real item
-					if(m.flags.selected == s) return *this;     // ignore if no change
-					m.flags.selected = s;                       // actually change selection
-
-					ess_->lister.emit_selected(this->pos_);
-
-					if (m.flags.selected)
+					if (m.flags.selected != sel)
 					{
-						ess_->lister.cancel_others_if_single_enabled(true, pos_);	//Cancel all selections except pos_ if single_selection is enabled.
-						ess_->lister.last_selected_abs = pos_;
-					}
-					else if (ess_->lister.last_selected_abs == pos_)
+						m.flags.selected = sel;                       // actually change selection
+
+						ess_->lister.emit_selected(this->pos_);
+
+						if (m.flags.selected)
+						{
+							ess_->lister.cancel_others_if_single_enabled(true, pos_);	//Cancel all selections except pos_ if single_selection is enabled.
+							ess_->lister.last_selected_abs = pos_;
+						}
+						else if (ess_->lister.last_selected_abs == pos_)
 							ess_->lister.last_selected_abs.set_both(npos);
 
-					ess_->update();
+						if (scroll_view)
+						{
+							if (ess_->lister.get(pos_.cat)->expand)
+								ess_->lister.get(pos_.cat)->expand = false;
+
+							if (!this->displayed())
+								ess_->lister.scroll(pos_, !(ess_->scroll.offset_y_dpl > this->to_display()));
+						}
+
+						ess_->update();
+					}
 					return *this;
 				}
 
