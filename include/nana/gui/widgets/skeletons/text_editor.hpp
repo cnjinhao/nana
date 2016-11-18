@@ -99,12 +99,6 @@ namespace nana{	namespace widgets
 			void indent(bool, std::function<std::string()> generator);
 			void set_event(event_interface*);
 
-			/// Determine whether the text_editor is line wrapped.
-			bool line_wrapped() const;
-
-			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
-			bool line_wrapped(bool);
-
 			bool load(const char*);
 
 			/// Sets the text area.
@@ -116,7 +110,12 @@ namespace nana{	namespace widgets
 
 			bool tip_string(::std::string&&);
 
-			const attributes & attr() const;
+			/// Returns the reference of listbox attributes
+			const attributes & attr() const noexcept;
+
+			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
+			bool line_wrapped(bool);
+
 			bool multi_lines(bool);
 
 			/// Enables/disables the editability of text_editor

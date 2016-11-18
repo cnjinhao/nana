@@ -13,7 +13,7 @@
 
 #ifndef NANA_GUI_WIDGETS_MENU_HPP
 #define NANA_GUI_WIDGETS_MENU_HPP
-#include <nana/gui/widgets/widget.hpp>
+#include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
 #include <nana/push_ignore_diagnostic>
 

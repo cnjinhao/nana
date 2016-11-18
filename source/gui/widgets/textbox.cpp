@@ -392,7 +392,7 @@ namespace drawerbase {
 		bool textbox::line_wrapped() const
 		{
 			internal_scope_guard lock;
-			return get_drawer_trigger().editor()->line_wrapped();
+			return get_drawer_trigger().editor()->attr().line_wrapped;
 		}
 
 		textbox& textbox::line_wrapped(bool autl)

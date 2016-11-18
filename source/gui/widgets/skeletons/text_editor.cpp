@@ -430,7 +430,7 @@ namespace nana{	namespace widgets
 
 			nana::point	caret_to_screen(nana::upoint pos) override
 			{
-				pos.y = (std::min)(pos.y, static_cast<unsigned>(editor_.textbase().lines()));
+				pos.y = (std::min)(pos.y, static_cast<decltype(pos.y)>(editor_.textbase().lines()));
 
 				auto text_ptr = &editor_.textbase().getline(pos.y);
 
@@ -440,9 +440,8 @@ namespace nana{	namespace widgets
 					mask_str.resize(text_ptr->size(), editor_.mask_char_);
 					text_ptr = &mask_str;
 				}
-				
-				if (pos.x > text_ptr->size())
-					pos.x = static_cast<decltype(pos.x)>(text_ptr->size());
+
+				pos.x = (std::min)(static_cast<decltype(pos.x)>(text_ptr->size()), pos.x);
 
 				pos.x = editor_._m_pixels_by_char(*text_ptr, pos.x) + editor_.text_area_.area.x;
 				int pos_y = static_cast<int>((pos.y - editor_.points_.offset.y) * editor_.line_height() + editor_._m_text_top_base());
@@ -543,12 +542,12 @@ namespace nana{	namespace widgets
 				editor_._m_get_scrollbar_size();
 
 				auto&	lnstr = textbase.getline(points.caret.y);
-				const auto x = (points.caret.x > lnstr.size() ? static_cast<decltype(points.caret.x)>(lnstr.size()) : points.caret.x);
+				const auto x = (std::min)(points.caret.x, static_cast<decltype(points.caret.x)>(lnstr.size()));
 				auto const text_w = editor_._m_pixels_by_char(lnstr, x);
 
 				unsigned area_w = editor_._m_text_area().width;
 
-				bool adjusted_cond = true;
+				const auto pre_x = points.offset.x;
 				if (static_cast<int>(text_w) < points.offset.x)
 				{
 					auto delta_pixels = editor_._m_text_extent_size(L"    ", 4).width;
@@ -556,12 +555,11 @@ namespace nana{	namespace widgets
 				}
 				else if (area_w && (text_w >= points.offset.x + area_w))
 					points.offset.x = text_w - area_w + 2;
-				else
-					adjusted_cond = false;
 
-				bool adjusted_cond2 = true;
 				int value = points.offset.y;
-				if (scrlines && (points.caret.y >= points.offset.y + scrlines))
+				const auto pre_y = points.offset.y;
+
+				if (points.caret.y >= points.offset.y + scrlines)	//implicit condition scrlines > 0
 				{
 					value = static_cast<int>(points.caret.y - scrlines) + 1;
 				}
@@ -574,12 +572,10 @@ namespace nana{	namespace widgets
 				}
 				else if (points.offset.y && (textbase.lines() <= scrlines))
 					value = 0;
-				else
-					adjusted_cond2 = false;
 
 				editor_._m_offset_y(value);
 				editor_._m_scrollbar();
-				return (adjusted_cond || adjusted_cond2);
+				return (pre_x != points.offset.x) || (pre_y != points.offset.y);
 			}
 
 		private:
@@ -1333,12 +1329,6 @@ namespace nana{	namespace widgets
 						    pos = text.find(ds.text, pos);
 						    if (pos == text.npos)
 							    break;
-
-						    if (ds.whole_word_matched)
-						    {
-							    if (!_m_whole_word(text, pos, ds.text.size()))
-								    continue;
-						    }
 					    }
 					    else
 					    {
@@ -1348,16 +1338,13 @@ namespace nana{	namespace widgets
 						    pos = cistr.find(ds.text.c_str(), pos);
 						    if (pos == cistr.npos)
 							    break;
-
-						    if (ds.whole_word_matched)
-						    {
-							    if (!_m_whole_word(text, pos, ds.text.size()))
-								    continue;
-						    }
 					    }
 
+						if (ds.whole_word_matched && (!_m_whole_word(text, pos, ds.text.size())))
+							continue;
+
 					    auto ki = keywords.schemes.find(ds.scheme);
-					    if (ki != keywords.schemes.end() && ki->second)
+					    if ((ki != keywords.schemes.end()) && ki->second)
 					    {
 							entities.emplace_back();
 							auto & last = entities.back();
@@ -1591,10 +1578,6 @@ namespace nana{	namespace widgets
 
 		void text_editor::indent(bool enb, std::function<std::string()> generator)
 		{
-			/*
-			indent_.enabled = enb;
-			indent_.generator = std::move(generator);
-			*/
 			impl_->indent.enabled = enb;
 			impl_->indent.generator = std::move(generator);
 		}
@@ -1602,39 +1585,6 @@ namespace nana{	namespace widgets
 		void text_editor::set_event(event_interface* ptr)
 		{
 			event_handler_ = ptr;
-		}
-
-		bool text_editor::line_wrapped() const
-		{
-			return attributes_.line_wrapped;
-		}
-
-		bool text_editor::line_wrapped(bool autl)
-		{
-			if (autl != attributes_.line_wrapped)
-			{
-				attributes_.line_wrapped = autl;
-
-				delete impl_->capacities.behavior;
-				if (autl)
-				{
-					impl_->capacities.behavior = new behavior_linewrapped(*this);
-					text_area_.vscroll = text_area_.scroll_pixels;
-					text_area_.hscroll = 0;
-					impl_->capacities.behavior->pre_calc_lines(width_pixels());
-				}
-				else
-					impl_->capacities.behavior = new behavior_normal(*this);
-
-				points_.offset.x = 0;
-				_m_offset_y(0);
-				move_caret(upoint{});
-				
-				_m_scrollbar();
-				render(API::is_focus_ready(window_));
-				return true;
-			}
-			return false;
 		}
 
 		bool text_editor::load(const char* fs)
@@ -1681,9 +1631,37 @@ namespace nana{	namespace widgets
 			return true;
 		}
 
-		const text_editor::attributes& text_editor::attr() const
+		const text_editor::attributes& text_editor::attr() const noexcept
 		{
 			return attributes_;
+		}
+
+		bool text_editor::line_wrapped(bool autl)
+		{
+			if (autl != attributes_.line_wrapped)
+			{
+				attributes_.line_wrapped = autl;
+
+				delete impl_->capacities.behavior;
+				if (autl)
+				{
+					impl_->capacities.behavior = new behavior_linewrapped(*this);
+					text_area_.vscroll = text_area_.scroll_pixels;
+					text_area_.hscroll = 0;
+					impl_->capacities.behavior->pre_calc_lines(width_pixels());
+				}
+				else
+					impl_->capacities.behavior = new behavior_normal(*this);
+
+				points_.offset.x = 0;
+				_m_offset_y(0);
+				move_caret(upoint{});
+
+				_m_scrollbar();
+				render(API::is_focus_ready(window_));
+				return true;
+			}
+			return false;
 		}
 
 		bool text_editor::multi_lines(bool ml)
@@ -2054,7 +2032,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::reset_caret_pixels() const
 		{
-			API::open_caret(window_, true)->dimension({ 1, line_height() });
+			API::open_caret(window_, true).get()->dimension({ 1, line_height() });
 		}
 
 		void text_editor::reset_caret()
@@ -2065,7 +2043,7 @@ namespace nana{	namespace widgets
 		void text_editor::show_caret(bool isshow)
 		{
 			if(isshow == false || API::is_focus_ready(window_))
-				API::open_caret(window_, true)->visible(isshow);
+				API::open_caret(window_, true).get()->visible(isshow);
 		}
 
 		bool text_editor::selected() const
@@ -2187,7 +2165,7 @@ namespace nana{	namespace widgets
 			if (attributes_.line_wrapped)
 				exclude_px = text_area_.vscroll;
 			else
-				exclude_px = API::open_caret(window_, true)->dimension().width;
+				exclude_px = API::open_caret(window_, true).get()->dimension().width;
 
 			return (text_area_.area.width > exclude_px ? text_area_.area.width - exclude_px : 0);
 		}
