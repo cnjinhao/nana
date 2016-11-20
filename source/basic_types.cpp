@@ -649,12 +649,12 @@ namespace nana
 			return *this;
 		}
 
-		int rectangle::right() const
+		int rectangle::right() const noexcept
 		{
 			return x + static_cast<int>(width);
 		}
 
-		int rectangle::bottom() const
+		int rectangle::bottom() const noexcept
 		{
 			return y + static_cast<int>(height);
 		}
