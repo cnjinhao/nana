@@ -12,8 +12,8 @@
  
 #ifndef NANA_GUI_WIDGETS_MENUBAR_HPP
 #define NANA_GUI_WIDGETS_MENUBAR_HPP
-#include <nana/gui/widgets/widget.hpp>
-#include <nana/gui/widgets/menu.hpp>
+#include "widget.hpp"
+#include "menu.hpp"
 #include <nana/push_ignore_diagnostic>
 
 namespace nana
