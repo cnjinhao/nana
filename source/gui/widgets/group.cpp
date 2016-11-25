@@ -12,6 +12,9 @@
  *	@Author: Stefan Pfeifer(st-321), Ariel Vina-Rodriguez (qPCR4vir)
  *
  *	@brief group is a widget used to visually group and layout other widgets.
+ *
+ * 	@contributor:
+ *		dankan1890(https://github.com/dankan1890) 
  */
 
 
