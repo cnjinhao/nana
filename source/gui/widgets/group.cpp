@@ -77,6 +77,9 @@ namespace nana{
 
 			if (options.empty())
 				place_content.field_display(field_options, false);
+
+			if (caption.caption().empty())
+				place_content.field_display(field_title, false);
 		}
 	};
 
