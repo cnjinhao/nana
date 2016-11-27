@@ -363,8 +363,9 @@ namespace paint
 						if (!ptr && bytes > 40 /* sizeof(BITMAPINFOHEADER) */ && (40 == *reinterpret_cast<const uint32_t*>(data))) {
 							ptr = std::make_shared<detail::image_ico>(true);
 						}
+						else
 #endif
-						else if (!ptr && bytes > 40 && (0x00010000 == *reinterpret_cast<const unsigned*>(data)))
+						if (!ptr && bytes > 40 && (0x00010000 == *reinterpret_cast<const unsigned*>(data)))
 							ptr = std::make_shared<detail::image_ico_ex>();
 					}
 				}
