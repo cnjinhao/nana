@@ -734,69 +734,73 @@ namespace nana
 
 		void _m_ok()
 		{
-			if(0 == selection_.target.size())
+			std::string tar = selection_.target;
+
+			if(selection_.target.empty())
 			{
 				auto file = tb_file_.caption();
 				if(file.size())
 				{
-					if(file[0] == L'.')
+					if(file[0] == '.')
 					{
 						msgbox mb(*this, caption());
 						mb.icon(msgbox::icon_warning);
-						mb<<file<<std::endl<<L"The filename is invalid.";
+						mb<<file<<std::endl<<"The filename is invalid.";
 						mb();
 						return;
 					}
-					std::string tar;
+					
 					if(file[0] == '/')
 						tar = file;
 					else
 						tar = addr_.filesystem + file;
 
-
-					bool good = true;
-
 					auto fattr = fs::status(tar);
-					if(fattr.type() == fs::file_type::not_found)
-					{
-						good = (_m_append_def_extension(tar) && (fs::status(tar).type() == fs::file_type::not_found));					
-					}
 
-					if(good && fs::is_directory(fattr))
+					//Check if the selected name is a directory
+					auto is_dir = fs::is_directory(fattr);
+
+					if(!is_dir && _m_append_def_extension(tar))
 					{
-						_m_load_cat_path(tar);
-						tb_file_.caption("");
-						return;
+						//Add the extension, then check if it is a directory again.
+						fattr = fs::status(tar);
+						is_dir = fs::is_directory(fattr);
 					}
 					
+					if(is_dir)
+					{
+						_m_load_cat_path(tar);
+						tb_file_.caption(std::string{});
+						return;
+					}
+
 					if(io_read_)
 					{
-						if(false == good)
+						if(fs::file_type::not_found == fattr.type())
 						{
 							msgbox mb(*this, caption());
 							mb.icon(msgbox::icon_information);
-							mb<<L"The file \""<<nana::charset(tar, nana::unicode::utf8)<<L"\"\n is not existing. Please check and retry.";
+							mb<<"The file \""<<tar<<"\"\n is not existing. Please check and retry.";
 							mb();
+
+							return;
 						}
-						else
-							_m_finish(kind::filesystem, tar);
 					}
 					else
 					{
-						if(good)
+						if(fs::file_type::not_found != fattr.type())
 						{
 							msgbox mb(*this, caption(), msgbox::yes_no);
 							mb.icon(msgbox::icon_question);
-							mb<<L"The input file is existing, do you want to overwrite it?";
+							mb<<"The input file is existing, do you want to overwrite it?";
 							if(msgbox::pick_no == mb())
 								return;
 						}
-						_m_finish(kind::filesystem, tar);
 					}
 				}
 			}
-			else
-				_m_finish(kind::filesystem, selection_.target);
+
+			_m_finish(kind::filesystem, tar);
 		}
 
 		void _m_tr_expand(item_proxy node, bool exp)
