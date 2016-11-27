@@ -2255,8 +2255,12 @@ namespace nana
 				/// @param  with_rest: Means whether including extra one item that is not completely contained in reset pixels.
 				size_type number_of_lister_items(bool with_rest) const
 				{
-					unsigned lister_s = graph->height() - 2 - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
-					return (lister_s / scheme_ptr->item_height) + (with_rest && (lister_s % scheme_ptr->item_height) ? 1 : 0);
+					unsigned lister_s = content_area().height - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
+
+					auto item_px = (std::max)(static_cast<decltype(scheme_ptr->item_height)>(1), scheme_ptr->item_height);
+					item_px = scheme_ptr->item_height;
+
+					return (lister_s / item_px) + (with_rest && (lister_s % item_px) ? 1 : 0);
 				}
 
 				//keep the first selected item in the display area: the distances are in display positions!
@@ -2362,42 +2366,31 @@ namespace nana
 				{
 					internal_scope_guard lock;
 
-					const unsigned border_px = 1;
-					const unsigned border_px_twice = (border_px << 1);
-
-					const nana::size sz = graph->size();
-					
-					if ((sz.width <= border_px_twice) || (sz.height <= border_px_twice))
-					{
-						scroll.h.close();
-						scroll.v.close();
-						return;
-					}
+					auto const ctt_area = this->content_area();
 
 					// Adjust the ranged column assume the vertical scrollbar is enabled.
-					auto range_adjusted = this->header.calc_ranged_columns(sz.width - border_px_twice - scroll.scale);
-					auto columns_pixels = header.pixels();
+					auto range_adjusted = this->header.calc_ranged_columns(ctt_area.width - scroll.scale);
+					auto const columns_pixels = header.pixels();
 
 					//H scroll enabled
 					//If range_adjusted is true, it indicates no horzontal scroll bar is enabled.
-					bool enable_horz = ((!range_adjusted) && (columns_pixels + 4 > sz.width)); // 4px = left and right borders(2px) + left and right gaps(2px)
+					bool enable_horz = ((!range_adjusted) && (columns_pixels + 2 > ctt_area.width)); // 2px = left and right gaps(2px)
 
 					unsigned head_scroll = 2 + header_visible_px() + (enable_horz ? scroll.scale : 0);	// 2px left and right gaps(2px) 
-					unsigned lister_s = sz.height > head_scroll ? sz.height - head_scroll : 0;
-					size_type screen_number = (lister_s / scheme_ptr->item_height);
+					size_type exposed_count = ((ctt_area.height > head_scroll ? ctt_area.height - head_scroll : 0) / scheme_ptr->item_height);
 
 					//V scroll enabled
-					auto enable_vert = (lister.the_number_of_expanded() > screen_number);
+					auto enable_vert = (lister.the_number_of_expanded() > exposed_count);
 
 					if (enable_vert)
 					{
 						if (!enable_horz)
-							enable_horz = ((columns_pixels + 2 + scroll.scale) > sz.width);
+							enable_horz = (columns_pixels + scroll.scale > ctt_area.width);
 					}
 					else if (range_adjusted)
 					{
 						//No vertical scrollbar, then re-adjust the range columns for a new width that excludes vert scroll.
-						this->header.calc_ranged_columns(sz.width - border_px_twice);
+						this->header.calc_ranged_columns(ctt_area.width);
 					}
 
 					//event hander for scrollbars
@@ -2417,7 +2410,7 @@ namespace nana
 						API::refresh_window(this->lister.wd_ptr()->handle());
 					};
 
-					unsigned horz_px = sz.width - border_px_twice;
+					auto horz_px = ctt_area.width;
 					if (enable_vert)
 					{
 						if (horz_px < scroll.scale)
@@ -2426,7 +2419,7 @@ namespace nana
 							horz_px -= scroll.scale;
 					}
 
-					unsigned vert_px = sz.height - border_px_twice;
+					auto vert_px = ctt_area.height;
 					if (enable_horz)
 					{
 						if (vert_px < scroll.scale)
@@ -2438,7 +2431,7 @@ namespace nana
 					const auto wd_handle = lister.wd_ptr()->handle();
 					if (enable_horz && horz_px)
 					{
-						rectangle r(border_px, static_cast<int>(sz.height - border_px) - static_cast<int>(scroll.scale), horz_px, scroll.scale);
+						rectangle r(ctt_area.x, ctt_area.bottom() - static_cast<int>(scroll.scale), horz_px, scroll.scale);
 						if(scroll.h.empty())
 						{
 							scroll.h.create(wd_handle, r);
@@ -2453,7 +2446,7 @@ namespace nana
 
 					if (enable_vert && vert_px)
 					{
-						rectangle r(static_cast<int>(sz.width - border_px) - static_cast<int>(scroll.scale), border_px, scroll.scale, vert_px);
+						rectangle r(ctt_area.right() - static_cast<int>(scroll.scale), ctt_area.y, scroll.scale, vert_px);
 						if(scroll.v.empty())
 						{
 							scroll.v.create(wd_handle, r);
@@ -2554,28 +2547,43 @@ namespace nana
 					pos.x += static_cast<int>(scroll.x_offset()) - 2;
 				}
 
-				bool rect_header(nana::rectangle& r) const
+				void draw_peripheral()
 				{
-					if(header.visible())
-					{
-						if (lister.wd_ptr()->borderless())
-						{
-							r.dimension(graph->size());
-							r.height = scheme_ptr->header_height;
-							return !r.empty();
-						}
+					auto ctt_area = this->content_area();
 
-						const unsigned ex_width = 4 + (scroll.v.empty() ? 0 : scroll.scale - 1);
-						if(graph->width() > ex_width)
-						{
-							r.x = 2;
-							r.y = 1;
-							r.width = graph->width() - ex_width;
-							r.height = scheme_ptr->header_height;
-							return true;
-						}
+					if (!API::widget_borderless(*lister.wd_ptr()))
+					{
+						//Draw Border
+						graph->rectangle(false, static_cast<color_rgb>(0x9cb6c5));
+
+						graph->line({ ctt_area.x, ctt_area.y }, { ctt_area.x, ctt_area.bottom() - 1 }, colors::white);
+						graph->line({ ctt_area.right() - 1, ctt_area.y }, { ctt_area.right() - 1, ctt_area.bottom() - 1 });
+
 					}
-					return false;
+
+					if ((scroll.h.empty() == false) && (scroll.v.empty() == false))
+					{
+						graph->rectangle({ ctt_area.right() - static_cast<int>(scroll.scale),
+							ctt_area.bottom() - static_cast<int>(scroll.scale),
+							scroll.scale,
+							scroll.scale },
+							true, colors::button_face);
+					}
+				}
+
+				rectangle content_area() const
+				{
+					rectangle r{ graph->size() };
+
+					if (!this->listbox_ptr->borderless())
+					{
+						r.x = 1;
+						r.width -= (r.width > 2 ? 2 : r.width);
+						
+						r.y = 1;
+						r.height -= (r.height > 2 ? 2 : r.height);
+					}
+					return r;
 				}
 
 				unsigned header_visible_px() const
@@ -2583,31 +2591,45 @@ namespace nana
 					return (header.visible() ? scheme_ptr->header_height : 0);
 				}
 
+				bool rect_header(nana::rectangle& r) const
+				{
+					if(header.visible())
+					{
+						r = this->content_area();
+
+						r.height = scheme_ptr->header_height;
+
+						if (lister.wd_ptr()->borderless())
+							return !r.empty();
+
+						const unsigned ex_width = 2 + (scroll.v.empty() ? 0 : scroll.scale - 1);
+						if(r.width > ex_width)
+						{
+							r.x += 1;
+							r.width -= ex_width;
+							return true;
+						}
+					}
+					return false;
+				}
+
 				bool rect_lister(nana::rectangle& r) const
 				{
 					auto head_pixels = header_visible_px();
-					unsigned width = (scroll.v.empty() ? 0 : scroll.scale - 1);
-					unsigned height = (scroll.h.empty() ? 0 : scroll.scale) + head_pixels;
+					unsigned extr_w = (scroll.v.empty() ? 0 : scroll.scale - 1);
+					unsigned extr_h = (scroll.h.empty() ? 0 : scroll.scale) + head_pixels;
 
+					r = this->content_area();
+					r.y += head_pixels;
 					if (!lister.wd_ptr()->borderless())
 					{
-						width += 4;
-						height += 2;
-
-						r.x = 2;
-						r.y = head_pixels + 1;
-					}
-					else
-					{
-						r.x = 0;
-						r.y = head_pixels;
+						extr_w += 2;
+						r.x += 1;
 					}
 
-					nana::size gsz = graph->size();
-					if(gsz.width <= width || gsz.height <= height) return false;
+					if(r.width <= extr_w || r.height <= extr_h)
+						return false;
 
-					r.width = gsz.width - width;
-					r.height = gsz.height - height;
 					return true;
 				}
 
@@ -3745,7 +3767,7 @@ namespace nana
 					//Draw selecting inner rectangle
 					if (sel && (categ.expand == false))
 					{
-						_m_draw_border(r.x, y, (std::min)(r.width, width - essence_->scroll.x_offset()));
+						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->scroll.x_offset()));
 					}
 				}
 
@@ -3946,7 +3968,7 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if(item.flags.selected)
-						_m_draw_border(content_r.x, y, show_w);
+						_m_draw_item_border(content_r.x, y, show_w);
 				}
 
 				inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
@@ -3985,7 +4007,7 @@ namespace nana
 					return nullptr;
 				}
 
-				void _m_draw_border(int x, int y, unsigned width) const
+				void _m_draw_item_border(int x, int y, unsigned width) const
 				{
 					//Draw selecting inner rectangle
 					rectangle r{ x, y, width, essence_->scheme_ptr->item_height };
@@ -4019,30 +4041,6 @@ namespace nana
 				essence& trigger::ess() const
 				{
 					return *essence_;
-				}
-
-				void trigger::_m_draw_border()
-				{
-					if (API::widget_borderless(*essence_->lister.wd_ptr()))
-						return;
-
-					auto & graph = *essence_->graph;
-
-					int right = static_cast<int>(graph.width()) - 1;
-					int bottom = static_cast<int>(graph.height()) - 1;
-
-					//Draw Border
-					graph.rectangle(false, static_cast<color_rgb>(0x9cb6c5));
-
-					graph.line({ 1, 1 }, { 1, bottom - 1}, colors::white);
-					graph.line({ right - 1, 1 }, { right - 1, bottom - 1 });
-
-					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
-						graph.rectangle({ right - static_cast<int>(essence_->scroll.scale),
-							bottom - static_cast<int>(essence_->scroll.scale),
-							essence_->scroll.scale,
-							essence_->scroll.scale },
-							true, colors::button_face);
 				}
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
@@ -4081,7 +4079,8 @@ namespace nana
 						drawer_header_->draw(graph, r);
 					if (essence_->rect_lister(r))
 						drawer_lister_->draw(r);
-					_m_draw_border();
+
+					essence_->draw_peripheral();
 				}
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
@@ -4274,7 +4273,7 @@ namespace nana
 
 					if(update)
 					{
-						_m_draw_border();
+						essence_->draw_peripheral();
 						API::dev::lazy_refresh();
 					}
 				}

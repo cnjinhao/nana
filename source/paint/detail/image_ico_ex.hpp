@@ -57,7 +57,7 @@ typedef struct
 class image_ico_ex
 	: public basic_image_pixbuf
 {
-	bool _m_read_ico(const void* data, std::size_t size)
+	bool _m_read_ico(const void* data, std::size_t /*size*/)
 	{
 		auto width = 0;
 		auto height = 0;
@@ -94,7 +94,7 @@ class image_ico_ex
 		cursor += offset;
 		auto icon = reinterpret_cast<ICONIMAGE*>(cursor);
 		auto realBitsCount = static_cast<int>(icon->icHeader.biBitCount);
-		auto hasAndMask = (realBitsCount < 32) && (height != icon->icHeader.biHeight);
+		auto hasAndMask = (realBitsCount < 32) && (height != static_cast<int>(icon->icHeader.biHeight));
 		cursor += 40;
 		pixbuf_.open(width, height);
 

@@ -758,8 +758,6 @@ namespace nana
 				~trigger();
 				essence& ess() const;
 			private:
-				void _m_draw_border();
-			private:
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
 				void typeface_changed(graph_reference)	override;

@@ -472,8 +472,6 @@ namespace nana
 		if (depth < 0 || start_pos >= div.length())
 			return{};
 
-		const char* p = div.c_str() + start_pos;
-
 		while (depth >= 0)
 		{
 			auto pos = div.find_last_of("<>", start_pos);

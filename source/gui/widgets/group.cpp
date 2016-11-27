@@ -12,6 +12,9 @@
  *	@Author: Stefan Pfeifer(st-321), Ariel Vina-Rodriguez (qPCR4vir)
  *
  *	@brief group is a widget used to visually group and layout other widgets.
+ *
+ * 	@contributor:
+ *		dankan1890(https://github.com/dankan1890) 
  */
 
 
@@ -77,6 +80,9 @@ namespace nana{
 
 			if (options.empty())
 				place_content.field_display(field_options, false);
+
+			if (caption.caption().empty())
+				place_content.field_display(field_title, false);
 		}
 	};
 
