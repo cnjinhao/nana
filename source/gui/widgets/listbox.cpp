@@ -2255,12 +2255,9 @@ namespace nana
 				/// @param  with_rest: Means whether including extra one item that is not completely contained in reset pixels.
 				size_type number_of_lister_items(bool with_rest) const
 				{
-					unsigned lister_s = content_area().height - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
-
-					auto item_px = (std::max)(static_cast<decltype(scheme_ptr->item_height)>(1), scheme_ptr->item_height);
-					item_px = scheme_ptr->item_height;
-
-					return (lister_s / item_px) + (with_rest && (lister_s % item_px) ? 1 : 0);
+					unsigned exposed_px = content_area().height - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
+					auto const item_px = (std::max)(static_cast<decltype(scheme_ptr->item_height)>(1), scheme_ptr->item_height);
+					return (exposed_px / item_px) + (with_rest && (exposed_px % item_px) ? 1 : 0);
 				}
 
 				//keep the first selected item in the display area: the distances are in display positions!
