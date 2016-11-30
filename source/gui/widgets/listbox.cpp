@@ -3826,6 +3826,8 @@ namespace nana
 						if (col.width_px > essence_->scheme_ptr->text_margin)
 						{
 							int content_pos = 0;
+							element_state estate = element_state::normal;
+							nana::rectangle img_r;
 
 							//Draw the image in the 1st column in display order
 							if (0 == display_order)
@@ -3834,7 +3836,6 @@ namespace nana
 								{
 									content_pos += 18;   // checker width, geom scheme?
 
-									element_state estate = element_state::normal;
 									if (essence_->pointer_where.first == parts::checker)
 									{
 										switch (state)
@@ -3849,7 +3850,6 @@ namespace nana
 
 									using state = facade<element::crook>::state;
 									crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
-									crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(column_x, y), estate);
 								}
 
 								if (essence_->if_image)
@@ -3857,10 +3857,10 @@ namespace nana
 									//Draw the image in the 1st column in display order
 									if (item.img)
 									{
-										nana::rectangle img_r(item.img_show_size);
+										nana::rectangle imgt(item.img_show_size);
+										img_r = imgt;
 										img_r.x = content_pos + column_x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
 										img_r.y = y + (static_cast<int>(essence_->scheme_ptr->item_height) - static_cast<int>(item.img_show_size.height)) / 2; // center
-										item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 									}
 									content_pos += 18;  // image width, geom scheme?
 								}
@@ -3922,24 +3922,32 @@ namespace nana
 								}
 							}
 
+							auto cell_txtcolor = fgcolor;
+
 							if (cells.size() > column_pos)        // process only if the cell is visible
 							{
-								auto cell_txtcolor = fgcolor;
-
 								auto & m_cell = cells[column_pos];
 								review_utf8(m_cell.text);
 
-								if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
+								if (m_cell.custom_format)  // adapt to costum format if need
 								{
-									it_bgcolor = m_cell.custom_format->bgcolor;
-									if (item.flags.selected)
-										it_bgcolor = it_bgcolor.blend(bgcolor, 0.5);
-									if (item_state::highlighted == state)
-										it_bgcolor = it_bgcolor.blend(static_cast<color_rgb>(0x99defd), 0.8);
-
-									graph->rectangle(rectangle{ column_x, y, col.width_px, essence_->scheme_ptr->item_height }, true, it_bgcolor);
+									if (!item.bgcolor.invisible())
+										cell_txtcolor = m_cell.custom_format->bgcolor;
+									
+									if (item.flags.selected)                                    // fetch the "def" colors
+										it_bgcolor = essence_->scheme_ptr->item_selected;
 
 									cell_txtcolor = m_cell.custom_format->fgcolor;
+
+									if (item_state::highlighted == state)                          // and blend it if "highlighted"
+									{
+									if (item.flags.selected)
+											it_bgcolor = it_bgcolor.blend(colors::black, 0.98);           // or "selected"
+										else
+											it_bgcolor = it_bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);   /// \todo create a parametre for amount of blend
+									}
+
+									graph->rectangle(rectangle{ column_x, y, col.width_px, essence_->scheme_ptr->item_height }, true, it_bgcolor);
 								}
 
 								if (draw_column)
@@ -3957,7 +3965,16 @@ namespace nana
 								}
 							}
 
-							graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->scheme_ptr->item_height) - 1 }, static_cast<color_rgb>(0xEBF4F9));
+							if (0 == display_order)
+							{
+								if (essence_->checkable)
+									crook_renderer_.draw(*graph, it_bgcolor, cell_txtcolor, essence_->checkarea(column_x, y), estate);
+								if (item.img)
+									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
+							}
+
+							if (essence_->scheme_ptr->item_bordered)
+								graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->scheme_ptr->item_height) - 1 }, essence_->scheme_ptr->item_border);
 						}
 
 						column_x += col.width_px;
