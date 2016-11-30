@@ -3973,8 +3973,7 @@ namespace nana
 									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 							}
 
-							if (essence_->scheme_ptr->item_bordered)
-								graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->scheme_ptr->item_height) - 1 }, essence_->scheme_ptr->item_border);
+							graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->scheme_ptr->item_height) - 1 }, static_cast<color_rgb>(0xEBF4F9));
 						}
 
 						column_x += col.width_px;
