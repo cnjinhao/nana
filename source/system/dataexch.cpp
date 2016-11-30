@@ -195,7 +195,7 @@ namespace nana{ namespace system{
 					memcpy(addr, buf, size);
 					::GlobalUnlock(g);
 
-					unsigned data_format;
+					unsigned data_format = 0;
 					switch(fmt)
 					{
 					case format::text:		data_format = CF_UNICODETEXT;	break;
@@ -239,7 +239,7 @@ namespace nana{ namespace system{
 #if defined(NANA_WINDOWS)
 			if(::OpenClipboard(::GetFocus()))
 			{
-				unsigned data_format;
+				unsigned data_format = 0;
 				switch(fmt)
 				{
 				case format::text:		data_format = CF_UNICODETEXT;	break;

@@ -760,7 +760,7 @@ namespace detail
 		if (bedrock::instance().wd_manager().available(wd) == false)
 			return;
 
-		basic_window* prev_event_wd;
+		basic_window* prev_event_wd = nullptr;
 		if (thrd)
 		{
 			prev_event_wd = thrd->event_window;
@@ -1630,7 +1630,7 @@ namespace detail
 		if (wd_manager().available(wd) == false)
 			return false;
 
-		basic_window* prev_event_wd;
+		basic_window* prev_event_wd = nullptr;
 		if (thrd)
 		{
 			prev_event_wd = thrd->event_window;

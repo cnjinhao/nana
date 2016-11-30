@@ -237,7 +237,7 @@ namespace detail
 		if(wd_manager().available(wd) == false)
 			return false;
 
-		core_window_t * prev_wd;
+		core_window_t * prev_wd = nullptr;
 		if(thrd)
 		{
 			prev_wd = thrd->event_window;
