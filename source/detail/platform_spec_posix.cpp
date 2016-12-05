@@ -1131,6 +1131,7 @@ namespace detail
 	void platform_spec::write_selection(native_window_type owner, Atom type, const void * buf, size_t bufsize)
 	{
 		platform_scope_guard psg;
+		::XSetSelectionOwner(display_, XA_PRIMARY, reinterpret_cast<Window>(owner), CurrentTime);
 		::XSetSelectionOwner(display_, atombase_.clipboard, reinterpret_cast<Window>(owner), CurrentTime);
 		::XFlush(display_);
 		if(XA_STRING == type || atombase_.utf8_string == type)

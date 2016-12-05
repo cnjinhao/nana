@@ -2333,7 +2333,7 @@ namespace nana{	namespace widgets
 		{
 			auto text = _m_make_select_string();
 			if (!text.empty())
-				nana::system::dataexch().set(text);
+				nana::system::dataexch().set(text, API::root(this->window_));
 		}
 
 		void text_editor::cut()
