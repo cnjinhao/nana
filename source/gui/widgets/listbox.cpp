@@ -437,16 +437,24 @@ namespace nana
 					if (pos >= cont_.size())
 						throw std::out_of_range("listbox: invalid header index.");
 
-					if (disp_order)
-						return cont_[pos].index;
-
-					size_type order = 0;
+					size_type order = 0; //order for display position
 					for (auto & m : cont_)
 					{
-						if (m.index == pos)
-							return order;
+						if (!m.visible_state)
+							continue;
 
-						++order;
+						if (disp_order)
+						{
+							if (0 == pos)
+								return m.index;
+							++pos;
+						}
+						else
+						{
+							if (m.index == pos)
+								return order;
+							++order;
+						}
 					}
 
 					throw std::invalid_argument("listbox: invalid header index");
