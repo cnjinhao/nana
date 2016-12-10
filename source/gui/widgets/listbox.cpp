@@ -122,12 +122,12 @@ namespace nana
 				struct column
 					: public column_interface
 				{
-					native_string_type text;
+					native_string_type caption;
 					unsigned width_px;
 					std::pair<unsigned, unsigned> range_width_px;
 					bool visible_state{ true };
 
-					/// Position of column when it was creating
+					/// Absolute position of column when it was creating
 					size_type index;
 
 					nana::align alignment{ nana::align::left };
@@ -144,7 +144,7 @@ namespace nana
 					{
 						if (this != &other)
 						{
-							text = other.text;
+							caption = other.caption;
 							width_px = other.width_px;
 							range_width_px = other.range_width_px;
 							visible_state = other.visible_state;
@@ -157,7 +157,7 @@ namespace nana
 					}
 
 					column(column&& other):
-						text(std::move(other.text)),
+						caption(std::move(other.caption)),
 						width_px(other.width_px),
 						range_width_px(other.range_width_px),
 						visible_state(other.visible_state),
@@ -172,7 +172,7 @@ namespace nana
 					{
 						if (this != &other)
 						{
-							text = std::move(other.text);
+							caption = std::move(other.caption);
 							width_px = other.width_px;
 							range_width_px = other.range_width_px;
 							visible_state = other.visible_state;
@@ -184,7 +184,7 @@ namespace nana
 					}
 
 					column(essence* ess, native_string_type&& text, unsigned px, size_type pos) :
-						text(std::move(text)),
+						caption(std::move(text)),
 						width_px(px),
 						index(pos),
 						ess_(ess)
@@ -230,6 +230,19 @@ namespace nana
 							width_px = range_width_px.second;
 							_m_refresh();
 						}
+					}
+
+					size_type position(bool disp_order) const noexcept override;	//The definition is provided after essence
+
+					std::string text() const noexcept override
+					{
+						return to_utf8(caption);
+					}
+
+					void text(std::string text_utf8) override
+					{
+						caption = to_nstring(std::move(text_utf8));
+						_m_refresh();
 					}
 
 					void text_align(::nana::align align) noexcept override
@@ -279,7 +292,7 @@ namespace nana
 							first=false;
 						else
 							head_str += exp_opt.sep;
-						head_str += to_utf8(at(exp_opt.columns_order[idx]).text);
+						head_str += this->at(exp_opt.columns_order[idx]).text();
 					}
 					return head_str;
 				}
@@ -419,25 +432,47 @@ namespace nana
 					return cont_;
 				}
 
-                /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
-				column& at(size_type pos)
+				size_type cast(size_type pos, bool disp_order) const
 				{
-					for(auto & m : cont_)
+					if (pos >= cont_.size())
+						throw std::out_of_range("listbox: invalid header index.");
+
+					if (disp_order)
+						return cont_[pos].index;
+
+					size_type order = 0;
+					for (auto & m : cont_)
 					{
 						if (m.index == pos)
-							return m;
+							return order;
+
+						++order;
 					}
-					throw std::out_of_range("Nana.GUI.Listbox: invalid header index.");
+
+					throw std::invalid_argument("listbox: invalid header index");
 				}
 
-				const column& at(size_type pos) const
+                /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
+				column& at(size_type pos, bool disp_order = false)
+				{
+					if(pos >= cont_.size())
+						throw std::out_of_range("listbox: invalid header index.");
+
+					if (!disp_order)
+						pos = this->cast(pos, false);
+					
+					return cont_[pos];
+				}
+
+				const column& at(size_type pos, bool disp_order = false) const
                 {
-					for(const auto & m : cont_)
-					{
-						if (m.index == pos)
-							return m;
-					}
-					throw std::out_of_range("Nana.GUI.Listbox: invalid header index.");
+					if (pos >= cont_.size())
+						throw std::out_of_range("listbox: invalid header index.");
+
+					if (!disp_order)
+						pos = this->cast(pos, false);
+
+					return cont_[pos];
                 }
 
 				/// Returns the position(original index when it is creating) of the current column at point x
@@ -1315,9 +1350,9 @@ namespace nana
 					return *(cat->items.at(pos).cells);
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, cell&& cl, size_type columns)
+				void text(category_t* cat, size_type pos, size_type abs_col, cell&& cl, size_type columns)
 				{
-					if ((col < columns) && (pos < cat->items.size()))
+					if ((abs_col < columns) && (pos < cat->items.size()))
 					{
 						std::vector<cell> model_cells;
 
@@ -1330,16 +1365,16 @@ namespace nana
 
 						auto & cells = (cat->model_ptr ? model_cells : *(cat->items[pos].cells));
 
-						if (col < cells.size())
+						if (abs_col < cells.size())
 						{
-							cells[col] = std::move(cl);
-							if (sorted_index_ == col)
+							cells[abs_col] = std::move(cl);
+							if (sorted_index_ == abs_col)
 								sort();
 						}
 						else
 						{	//If the index of specified sub item is over the number of sub items that item contained,
 							//it fills the non-exist items.
-							cells.resize(col);
+							cells.resize(abs_col);
 							cells.emplace_back(std::move(cl));
 						}
 
@@ -1348,9 +1383,9 @@ namespace nana
 					}
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, std::string&& str, size_type columns)
+				void text(category_t* cat, size_type pos, size_type abs_col, std::string&& str, size_type columns)
 				{
-					if ((col < columns) && (pos < cat->items.size()))
+					if ((abs_col < columns) && (pos < cat->items.size()))
 					{
 						std::vector<cell> model_cells;
 
@@ -1363,16 +1398,16 @@ namespace nana
 
 						auto & cells = (cat->model_ptr ? model_cells : *(cat->items[pos].cells));
 
-						if (col < cells.size())
+						if (abs_col < cells.size())
 						{
-							cells[col].text.swap(str);
-							if (sorted_index_ == col)
+							cells[abs_col].text.swap(str);
+							if (sorted_index_ == abs_col)
 								sort();
 						}
 						else
 						{	//If the index of specified sub item is over the number of sub items that item contained,
 							//it fills the non-exist items.
-							cells.resize(col);
+							cells.resize(abs_col);
 							cells.emplace_back(std::move(str));
 						}
 
@@ -2986,6 +3021,11 @@ namespace nana
 				API::refresh_window(ess_->lister.wd_ptr()->handle());
 			}
 
+			size_type es_header::column::position(bool disp_order) const noexcept
+			{
+				return (disp_order ? ess_->header.cast(index, false) : index);
+			}
+
 			void es_header::column::fit_content(unsigned maximize) noexcept
 			{
 				auto content_px = ess_->lister.column_content_pixels(index);
@@ -3529,7 +3569,7 @@ namespace nana
 						else if (align::center == column.alignment)
 							text_margin = 0;
 
-						text_aligner.draw(column.text, text_pos, column_r.width - text_margin);
+						text_aligner.draw(column.caption, text_pos, column_r.width - text_margin);
 					}
 
 					if (column.index == essence_->lister.sort_index())
@@ -4061,7 +4101,6 @@ namespace nana
 					essence_->listbox_ptr = static_cast<nana::listbox*>(&widget);
 					essence_->scheme_ptr = static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));
 					essence_->graph = &graph;
-					typeface_changed(graph);
 
 					essence_->lister.bind(essence_, widget);
 					widget.bgcolor(colors::white);
@@ -4636,6 +4675,12 @@ namespace nana
 				std::size_t item_proxy::columns() const
 				{
 					return ess_->header.cont().size();
+				}
+
+
+				size_type item_proxy::column_cast(size_type pos, bool disp_order) const
+				{
+					return ess_->header.cast(pos, disp_order);
 				}
 
 				item_proxy& item_proxy::text(size_type col, cell cl)
@@ -5419,14 +5464,14 @@ namespace nana
 			return item_pos;
 		}
 
-		auto listbox::column_at(size_type pos) -> column_interface&
+		auto listbox::column_at(size_type pos, bool disp_order) -> column_interface&
 		{
-			return _m_ess().header.at(pos);
+			return _m_ess().header.at(pos, disp_order);
 		}
 
-		auto listbox::column_at(size_type pos) const -> const column_interface&
+		auto listbox::column_at(size_type pos, bool disp_order) const -> const column_interface&
 		{
-			return _m_ess().header.at(pos);
+			return _m_ess().header.at(pos, disp_order);
 		}
 
 		auto listbox::column_size() const ->size_type

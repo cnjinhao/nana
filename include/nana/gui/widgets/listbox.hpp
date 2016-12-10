@@ -33,6 +33,9 @@ namespace nana
 	{
 		namespace listbox
 		{
+			using size_type = std::size_t;
+			using native_string_type = ::nana::detail::native_string_type;
+
 			/// An interface of column operations
 			class column_interface
 			{
@@ -55,6 +58,22 @@ namespace nana
 				 * @param maximum The maximal width of column, in pixel
 				 */
 				virtual void width(unsigned minimum, unsigned maximum) = 0;
+
+				/// Returns the position of the column
+				/**
+				 * @param disp_order Indicates whether the display position or absolute position to be returned
+				 * @return the position of the column.
+				 */
+				virtual size_type position(bool disp_order) const noexcept = 0;
+
+				/// Returns the caption of column
+				virtual std::string text() const noexcept = 0;
+
+				/// Sets the caption of column
+				/**
+				 * @param text_utf8 A UTF-8 string for the caption.
+				 */
+				virtual void text(std::string text_utf8) = 0;
 
 				/// Sets alignment of column text
 				/**
@@ -619,8 +638,6 @@ namespace nana
 				std::unique_ptr<container_interface> container_ptr_;
 			};
 
-			using size_type = std::size_t;
-			using native_string_type = ::nana::detail::native_string_type;
 
 			/// usefull for both absolute and display (sorted) positions
 			struct index_pair
@@ -830,10 +847,18 @@ namespace nana
 
 				size_type columns() const;
 
-				item_proxy&		text(size_type col, cell);
-				item_proxy&		text(size_type col, std::string);
-				item_proxy&		text(size_type col, const std::wstring&);
-				std::string	text(size_type col) const;
+				/// Converts a position of column between display position and absolute position
+				/**
+				 * @param col The display position or absolute position.
+				 * @param disp_order Indicates whether the col is a display position or absolute position. If this parameter is true, the col is display position
+				 * @return absolute position if disp_order is false, display position otherwise. 
+				 */
+				size_type column_cast(size_type col, bool disp_order) const;
+
+				item_proxy&		text(size_type abs_col, cell);
+				item_proxy&		text(size_type abs_col, std::string);
+				item_proxy&		text(size_type abs_col, const std::wstring&);
+				std::string	text(size_type abs_col) const;
 
 				void icon(const nana::paint::image&);
 
@@ -1367,18 +1392,20 @@ the nana::detail::basic_window member pointer scheme
 		/// Access a column at specified position
 		/**
 		 * @param pos Position of column
+		 * @param disp_order Indicates whether the pos is display position or absolute position.
 		 * @return Reference to the requested column
 		 * @except std::out_of_range if !(pos < columns())
 		 */
-		column_interface & column_at(size_type pos);
+		column_interface & column_at(size_type pos, bool disp_order = false);
 
 		/// Access a column at specified position
 		/**
 		* @param pos Position of column
+		* @param disp_order Indicates whether the pos is display position or absolute position.
 		* @return Constant reference to the requested column
 		* @except std::out_of_range if !(pos < columns())
 		*/
-		const column_interface & column_at(size_type pos) const;
+		const column_interface & column_at(size_type pos, bool disp_order = false) const;
 
 		/// Returns the number of columns
 		size_type column_size() const;
@@ -1408,7 +1435,7 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns an index of item which contains the specified point.
 		index_pair cast(const point & pos) const;
 
-		/// Returns the column which contains the specified point.
+		/// Returns the absolute position of column which contains the specified point.
 		size_type column_from_pos(const point & pos);
 
 		void checkable(bool);
