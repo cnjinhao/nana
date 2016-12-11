@@ -447,7 +447,7 @@ namespace nana
 						{
 							if (0 == pos)
 								return m.index;
-							++pos;
+							--pos;
 						}
 						else
 						{
