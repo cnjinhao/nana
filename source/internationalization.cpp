@@ -41,7 +41,7 @@ namespace nana
 		class tokenizer
 		{
 		public:
-			tokenizer(const std::string& file)
+			tokenizer(const std::string& file, bool utf8)
 			{
 				std::ifstream ifs(file.data(), std::ios::binary);
 				if (ifs)
@@ -54,6 +54,11 @@ namespace nana
 						data_.reset(new char[len]);
 						ifs.read(data_.get(), len);
 						read_ptr_ = data_.get();
+						if (utf8 && len > 3)
+						{
+							if (static_cast<unsigned char>(read_ptr_[0]) == 0xEF && static_cast<unsigned char>(read_ptr_[1]) == 0xBB && static_cast<unsigned char>(read_ptr_[2]) == 0xBF)
+								read_ptr_ += 3;
+						}
 						end_ptr_ = read_ptr_ + len;
 					}
 				}
@@ -205,7 +210,7 @@ namespace nana
 		{
 			auto impl = std::make_shared<data>();
 
-			tokenizer tknizer(file);
+			tokenizer tknizer(file, utf8);
 			while (true)
 			{
 				if (token::msgid != tknizer.read())
@@ -226,9 +231,9 @@ namespace nana
 				std::string str;
 
 				if (utf8)
-					str = nana::charset(std::move(tknizer.get_str()), nana::unicode::utf8);
+					str = tknizer.get_str();
 				else
-					str = nana::charset(std::move(tknizer.get_str()));
+					str = nana::charset(std::move(tknizer.get_str())).to_bytes(nana::unicode::utf8);
 
 				std::string::size_type pos = 0;
 				while (true)
