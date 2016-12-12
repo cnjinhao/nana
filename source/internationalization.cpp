@@ -78,6 +78,7 @@ namespace nana
 							if (escape)
 							{
 								escape = false;
+								str_ += '\\';
 								str_ += *i;
 								continue;
 							}
