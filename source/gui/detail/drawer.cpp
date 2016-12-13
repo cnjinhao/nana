@@ -318,6 +318,7 @@ namespace nana
 			data_impl_->realizer = &realizer;
 			realizer._m_reset_overrided();
 			realizer.attached(wd, graphics);
+			realizer.typeface_changed(graphics);
 		}
 
 		drawer_trigger* drawer::detached()

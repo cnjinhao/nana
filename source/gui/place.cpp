@@ -1039,6 +1039,49 @@ namespace nana
 			return result;
 		}
 
+		struct revised_division
+		{
+			division * div;
+			double min_px;
+			double max_px;
+		};
+
+		static double _m_find_lowest_revised_division(const std::vector<revised_division>& revises, double level_px)
+		{
+			double v = (std::numeric_limits<double>::max)();
+
+			for(auto & rev : revises)
+			{
+				if (rev.min_px >= 0 && rev.min_px < v && rev.min_px > level_px)
+					v = rev.min_px;
+				else if (rev.max_px >= 0 && rev.max_px < v)
+					v = rev.max_px;
+			}
+			return v;
+		}
+
+		static std::size_t _m_remove_revised(std::vector<revised_division>& revises, double value, std::size_t& full_count)
+		{
+			full_count = 0;
+			std::size_t reached_mins = 0;
+			auto i = revises.begin();
+			while (i != revises.end())
+			{
+				if (i->max_px == value)
+				{
+					++full_count;
+					i = revises.erase(i);
+				}
+				else
+				{
+					if (i->min_px == value)
+						++reached_mins;
+					++i;
+				}
+			}
+			return reached_mins;
+		}
+
 		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, unsigned area_px)
 		{
 			if (fa.first >= area_px || 0 == fa.second)
@@ -1046,16 +1089,20 @@ namespace nana
 
 			double var_px = area_px - fa.first;
 
-			struct revise_t
+			/*
+			struct revise_t	//deprecated
 			{
 				division * div;
 				double min_px;
 				double max_px;
 			};
+			*/
 
 			std::size_t min_count = 0;
 			double sum_min_px = 0;
-			std::vector<revise_t> revises;
+			//std::vector<revise_t> revises;	//deprecated
+			std::vector<revised_division> revises;
+
 			for (auto& child : children)
 			{
 				if ((!child->weight.empty()) || !child->display)
@@ -1088,7 +1135,8 @@ namespace nana
 			if (revises.empty())
 				return var_px / fa.second;
 
-			auto find_lowest = [&revises](double level_px)
+			/*
+			auto find_lowest = [&revises](double level_px)	//deprecated
 			{
 				double v = (std::numeric_limits<double>::max)();
 
@@ -1102,7 +1150,9 @@ namespace nana
 				}
 				return v;
 			};
+			*/
 
+			/*
 			auto remove_full = [&revises](double value, std::size_t& full_count)
 			{
 				full_count = 0;
@@ -1124,6 +1174,7 @@ namespace nana
 				}
 				return reached_mins;
 			};
+			*/
 
 			double block_px = 0;
 			double level_px = 0;
@@ -1132,7 +1183,8 @@ namespace nana
 
 			while ((rest_px > 0) && blocks)
 			{
-				auto lowest = find_lowest(level_px);
+				//auto lowest = find_lowest(level_px);	//deprecated
+				auto lowest = _m_find_lowest_revised_division(revises, level_px);
 				double fill_px = 0;
 				//blocks may be equal to min_count. E.g, all child divisions have min/max attribute.
 				if (blocks > min_count)
@@ -1150,7 +1202,8 @@ namespace nana
 					rest_px -= (lowest-level_px) * (blocks - min_count);
 
 				std::size_t full_count;
-				min_count -= remove_full(lowest, full_count);
+				//min_count -= remove_full(lowest, full_count);	//deprecated
+				min_count -= _m_remove_revised(revises, lowest, full_count);
 				blocks -= full_count;
 				level_px = lowest;
 			}
@@ -1578,10 +1631,7 @@ namespace nana
 					name = child->name;
 					return 1;
 				}
-			}
 
-			for (auto & child : div->children)
-			{
 				auto depth = _m_search_name(child.get(), name);
 				if (depth >= 0)
 					return depth + 1;
@@ -2700,7 +2750,8 @@ namespace nana
 			max_px.reset();
 		}
 
-		//The weight will be ignored if one of min and max is specified.
+		/*
+		//The weight will be ignored if one of min and max is specified.	//deprecated
 		if (min_px.empty() && max_px.empty())
 		{
 			div->weight = weight;
@@ -2710,6 +2761,23 @@ namespace nana
 			div->min_px = min_px;
 			div->max_px = max_px;
 		}
+		*/
+
+		if (!min_px.empty())
+			div->min_px = min_px;
+
+		if (!max_px.empty())
+			div->max_px = max_px;
+
+		if ((!min_px.empty()) && (!weight.empty()) && (weight.get_value(100) < min_px.get_value(100)))
+			weight.reset();
+
+		if ((!max_px.empty()) && (!weight.empty()) && (weight.get_value(100) > max_px.get_value(100)))
+			weight.reset();
+
+		if(!weight.empty())
+			div->weight = weight;
+
 
 		div->gap = std::move(gap);
 

@@ -248,7 +248,7 @@ namespace nana
 				API::refresh_window(this->handle());
 		}
 
-		pat::cloneable<item_renderer>& renderer() const
+		const pat::cloneable<item_renderer>& renderer() const
 		{
 			return this->get_drawer_trigger().ext_renderer();
 		}

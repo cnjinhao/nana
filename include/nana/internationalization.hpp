@@ -24,6 +24,9 @@ namespace nana
 	{
 		friend class i18n_eval;
 	public:
+		/// Sets a handler to handle a msgid which hasn't been translated.
+		static void set_missing(std::function<void(const std::string& msgid_utf8)> handler);
+
 		void load(const std::string& file);
 		void load_utf8(const std::string& file);
 
