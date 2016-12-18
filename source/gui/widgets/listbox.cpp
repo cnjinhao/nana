@@ -35,10 +35,17 @@
 
 namespace nana
 {
+	static void check_range(std::size_t pos, std::size_t size)
+	{
+		if (!(pos < size))
+			throw std::out_of_range("listbox: invalid element position");
+	}
+
 	namespace drawerbase
 	{
 		namespace listbox
 		{
+
 			class model_lock_guard
 			{
 				model_lock_guard(const model_lock_guard&) = delete;
@@ -84,13 +91,15 @@ namespace nana
 
 				cell::cell(std::string text, const format& fmt)
 					:	text(std::move(text)),
-						custom_format(std::make_unique<format>( fmt ))	// or  custom_format(new format{ fmt })
+						custom_format(std::make_unique<format>( fmt ))
 				{}
 
-				cell::cell(std::string text, const ::nana::color& bgcolor, const ::nana::color& fgcolor)
+				/*
+				cell::cell(std::string text, const ::nana::color& bgcolor, const ::nana::color& fgcolor)	//deprecated
 					:	text(std::move(text)),
 						custom_format{std::make_unique<format>( bgcolor, fgcolor ) }
 				{}
+				*/
 
 				cell& cell::operator=(const cell& rhs)
 				{
@@ -135,7 +144,6 @@ namespace nana
 
 					column() = default;
 					
-
 					column(const column&) = default;
 
 					column& operator=(const column& other)
@@ -403,8 +411,9 @@ namespace nana
 
 				size_type cast(size_type pos, bool disp_order) const
 				{
-					if (pos >= cont_.size())
-						throw std::out_of_range("listbox: invalid header index.");
+					//if (pos >= cont_.size())
+					//	throw std::out_of_range("listbox: invalid header index.");	//deprecated
+					check_range(pos, cont_.size());
 
 					size_type order = 0; //order for display position
 					for (auto & m : cont_)
@@ -432,8 +441,9 @@ namespace nana
                 /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
 				column& at(size_type pos, bool disp_order = false)
 				{
-					if(pos >= cont_.size())
-						throw std::out_of_range("listbox: invalid header index.");
+					//if(pos >= cont_.size())
+					//	throw std::out_of_range("listbox: invalid header index.");	//deprecated
+					check_range(pos, cont_.size());
 
 					if (!disp_order)
 						pos = this->cast(pos, false);
@@ -443,8 +453,9 @@ namespace nana
 
 				const column& at(size_type pos, bool disp_order = false) const
                 {
-					if (pos >= cont_.size())
-						throw std::out_of_range("listbox: invalid header index.");
+					//if (pos >= cont_.size())
+					//	throw std::out_of_range("listbox: invalid header index.");	//deprecated
+					check_range(pos, cont_.size());
 
 					if (!disp_order)
 						pos = this->cast(pos, false);
@@ -1009,8 +1020,9 @@ namespace nana
 					auto & catobj = *get(pos.cat);
 
 					const auto item_count = catobj.items.size();
-					if (pos.item > item_count)
-						throw std::out_of_range("listbox: insert an item at invalid position");
+					//if (pos.item > item_count)
+					//	throw std::out_of_range("listbox: insert an item at invalid position");	//deprecated
+					check_range(pos.item, item_count);
 
 					catobj.sorted.push_back(item_count);
 
@@ -1934,8 +1946,9 @@ namespace nana
 				/// categories iterator
 				container::iterator get(size_type pos)
 				{
-					if (pos >= categories_.size())
-						throw std::out_of_range("nana::listbox: invalid category index");
+					//if (pos >= categories_.size())
+					//	throw std::out_of_range("nana::listbox: invalid category index");	//deprecated
+					check_range(pos, categories_.size());
 
 					auto i = categories_.begin();
 					std::advance(i, pos);
@@ -1944,8 +1957,9 @@ namespace nana
 
 				container::const_iterator get(size_type pos) const
 				{
-					if (pos >= categories_.size())
-						throw std::out_of_range("nana::listbox: invalid category index");
+					//if (pos >= categories_.size())
+					//	throw std::out_of_range("nana::listbox: invalid category index");	//deprecated
+					check_range(pos, categories_.size());
 
 					auto i = categories_.cbegin();
 					std::advance(i, pos);
@@ -5063,8 +5077,10 @@ namespace nana
 
 				item_proxy cat_proxy::at(size_type pos_abs) const
 				{
-					if(pos_abs >= size())
-						throw std::out_of_range("listbox.cat_proxy.at() invalid position");
+					//if(pos_abs >= size())
+					//	throw std::out_of_range("listbox.cat_proxy.at() invalid position");	//deprecated
+
+					check_range(pos_abs, size());
 					return item_proxy(ess_, index_pair(pos_, pos_abs));
 				}
 
@@ -5166,8 +5182,9 @@ namespace nana
 
 				void cat_proxy::inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_notifier_interface>> factory)
 				{
-					if (column >= this->columns())
-						throw std::out_of_range("listbox.cat_proxy.inline_factory: invalid column index");
+					//if (column >= this->columns())
+					//	throw std::out_of_range("listbox.cat_proxy.inline_factory: invalid column index");	//deprecated
+					check_range(column, this->columns());
 
 					if (column >= cat_->factories.size())
 					{
@@ -5443,16 +5460,18 @@ namespace nana
 
 		listbox::cat_proxy listbox::at(size_type pos)
 		{
-			if (pos >= this->size_categ())
-				throw std::out_of_range("Nana.Listbox.at(): invalid position");
+			//if (pos >= this->size_categ())
+			//	throw std::out_of_range("Nana.Listbox.at(): invalid position");	//deprecated
+			check_range(pos, size_categ());
 
 			return{ &_m_ess(), pos };
 		}
 
 		const listbox::cat_proxy listbox::at(size_type pos) const
 		{
-			if(pos >= this->size_categ())
-				throw std::out_of_range("Nana.Listbox.at(): invalid position");
+			//if(pos >= this->size_categ())
+			//	throw std::out_of_range("Nana.Listbox.at(): invalid position");	//deprecated
+			check_range(pos, size_categ());
 
 			return{ &_m_ess(), pos };
 		}

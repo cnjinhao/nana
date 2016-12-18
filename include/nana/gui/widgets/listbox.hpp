@@ -175,7 +175,7 @@ namespace nana
 				cell(cell&&) noexcept;
 				cell(::std::string) noexcept;
 				cell(::std::string, const format&);
-				cell(::std::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);
+				//cell(::std::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);	//deprecated
 
 				cell& operator=(const cell&);
 				cell& operator=(cell&&) noexcept;
