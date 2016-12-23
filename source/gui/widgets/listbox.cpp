@@ -26,6 +26,7 @@
 #include <nana/gui/element.hpp>
 #include <nana/paint/text_renderer.hpp>
 #include <nana/system/dataexch.hpp>
+#include <nana/system/platform.hpp>
 
 #include <list>
 #include <deque>
@@ -411,8 +412,6 @@ namespace nana
 
 				size_type cast(size_type pos, bool disp_order) const
 				{
-					//if (pos >= cont_.size())
-					//	throw std::out_of_range("listbox: invalid header index.");	//deprecated
 					check_range(pos, cont_.size());
 
 					size_type order = 0; //order for display position
@@ -441,8 +440,6 @@ namespace nana
                 /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
 				column& at(size_type pos, bool disp_order = false)
 				{
-					//if(pos >= cont_.size())
-					//	throw std::out_of_range("listbox: invalid header index.");	//deprecated
 					check_range(pos, cont_.size());
 
 					if (!disp_order)
@@ -453,8 +450,6 @@ namespace nana
 
 				const column& at(size_type pos, bool disp_order = false) const
                 {
-					//if (pos >= cont_.size())
-					//	throw std::out_of_range("listbox: invalid header index.");	//deprecated
 					check_range(pos, cont_.size());
 
 					if (!disp_order)
@@ -1020,8 +1015,7 @@ namespace nana
 					auto & catobj = *get(pos.cat);
 
 					const auto item_count = catobj.items.size();
-					//if (pos.item > item_count)
-					//	throw std::out_of_range("listbox: insert an item at invalid position");	//deprecated
+
 					check_range(pos.item, item_count);
 
 					catobj.sorted.push_back(item_count);
@@ -1946,8 +1940,6 @@ namespace nana
 				/// categories iterator
 				container::iterator get(size_type pos)
 				{
-					//if (pos >= categories_.size())
-					//	throw std::out_of_range("nana::listbox: invalid category index");	//deprecated
 					check_range(pos, categories_.size());
 
 					auto i = categories_.begin();
@@ -1957,8 +1949,6 @@ namespace nana
 
 				container::const_iterator get(size_type pos) const
 				{
-					//if (pos >= categories_.size())
-					//	throw std::out_of_range("nana::listbox: invalid category index");	//deprecated
 					check_range(pos, categories_.size());
 
 					auto i = categories_.cbegin();
@@ -2030,10 +2020,16 @@ namespace nana
 					bool	started{ false };
 					bool	reverse_selection{ false };
 
+					point	screen_pos;
 					point	begin_position;	///< Logical position to the 
 					point	end_position;
 					index_pairs already_selected;
 					index_pairs selections;
+
+					nana::timer timer;
+					bool scroll_direction;
+					unsigned scroll_step{ 1 };
+					unsigned mouse_move_timestamp{ 0 };
 				}mouse_selection;
 
 
@@ -2047,6 +2043,19 @@ namespace nana
 					{
 						return header.at(pos).weak_ordering;
 					};
+
+					mouse_selection.timer.elapse([this] {
+						if (this->scroll_mouse_selection())
+						{
+							this->update_mouse_selection(this->mouse_selection.screen_pos);
+							this->update(true);
+						}
+					});
+				}
+
+				size_type column_from_pos(int screen_x) const
+				{
+					return header.column_from_point(screen_x - content_area().x + static_cast<int>(scroll.x_offset()));
 				}
 
                 std::string to_string(const export_options& exp_opt) const
@@ -2133,8 +2142,47 @@ namespace nana
 					}
 				};
 
+				void update_mouse_selection_speed(const nana::point& screen_pos)
+				{
+					rectangle r;
+					if (this->rect_lister(r) && !r.is_hit(screen_pos))
+					{
+						//speed parameters
+						unsigned steps = 0;
+						unsigned interval = 0;
+
+						bool enable_timer = true;
+
+						if (screen_pos.y < r.y)
+						{
+							mouse_selection.scroll_direction = false;
+							steps = (r.y - screen_pos.y) / this->item_height();
+						}
+						else if (screen_pos.y > r.bottom())
+						{
+							mouse_selection.scroll_direction = true;
+							steps = (screen_pos.y - r.bottom()) / this->item_height();
+						}
+						else
+							enable_timer = false;
+
+						if (enable_timer)
+						{
+							mouse_selection.scroll_step = steps + 1;
+							mouse_selection.timer.interval(600 / (steps + 1));
+							mouse_selection.timer.start();
+						}
+						else
+							mouse_selection.timer.stop();
+					}
+					else
+						mouse_selection.timer.stop();
+				}
+
 				void update_mouse_selection(const point& screen_pos)
 				{
+					mouse_selection.screen_pos = screen_pos;
+
 					auto logic_pos = coordinate_cast(screen_pos, true);
 					mouse_selection.end_position = logic_pos;
 
@@ -2221,6 +2269,35 @@ namespace nana
 					mouse_selection.begin_position = mouse_selection.end_position;
 					mouse_selection.already_selected.clear();
 					mouse_selection.selections.clear();
+
+					mouse_selection.timer.stop();
+				}
+
+				bool scroll_mouse_selection()
+				{
+					auto const prev_offset = scroll.offset_display;
+					if (mouse_selection.scroll_direction)
+					{
+						//downwards
+						auto last_cat = lister.cat_container().size() - 1;
+						auto count = this->count_of_exposed(false);
+
+						auto max_steps = this->lister.distance(first_display(), index_pair{ last_cat, lister.size_item(last_cat) - 1 }) + 1;
+						if (max_steps >= count)
+						{
+							scroll.offset_display += (std::min)(static_cast<unsigned>(max_steps - count), mouse_selection.scroll_step);
+						}
+					}
+					else if (scroll.offset_display > 0)
+					{
+						//upwards
+						if (scroll.offset_display > mouse_selection.scroll_step)
+							scroll.offset_display -= mouse_selection.scroll_step;
+						else
+							scroll.offset_display = 0;
+					}
+
+					return (prev_offset == scroll.offset_display);
 				}
 
 				/// Returns the number of items that are contained on on screen
@@ -2462,18 +2539,19 @@ namespace nana
 				{
 					std::pair<parts, size_t> new_where;
 
-					if(2 < pos.x && pos.x < static_cast<int>(graph->width()) - 2 && 1 < pos.y && pos.y < static_cast<int>(graph->height()) - 1)
-					{   /// we are inside
+					const auto area = this->content_area();
 
-						if(header.visible() && pos.y < static_cast<int>(scheme_ptr->header_height + 1))
+					if(area.is_hit(pos))
+					{   /// we are inside
+						if(header.visible() && (pos.y < static_cast<int>(scheme_ptr->header_height) + area.y))
 						{   /// we are in the header
 							new_where.first = parts::header;
-							new_where.second = header.column_from_point(pos.x + static_cast<int>(scroll.x_offset()) - 2); 
+							new_where.second = this->column_from_pos(pos.x);
 						}
 						else
 						{
 							new_where.first = parts::lister;
-							new_where.second = (pos.y + 1 - header_visible_px()) / item_height(); // y>1 !
+							new_where.second = (pos.y - area.y - header_visible_px()) / item_height();
 
 							if(checkable)
 							{
@@ -2584,15 +2662,13 @@ namespace nana
 					unsigned extr_h = (scroll.h.empty() ? 0 : scroll.scale) + head_pixels;
 
 					r = this->content_area();
-					r.y += head_pixels;
-					if (!lister.wd_ptr()->borderless())
-					{
-						extr_w += 2;
-						r.x += 1;
-					}
 
 					if(r.width <= extr_w || r.height <= extr_h)
 						return false;
+
+					r.y += head_pixels;
+					r.width -= extr_w;
+					r.height -= extr_h;
 
 					return true;
 				}
@@ -4187,6 +4263,18 @@ namespace nana
 					if (essence_->mouse_selection.started)
 					{
 						essence_->update_mouse_selection(arg.pos);
+						essence_->update_mouse_selection_speed(arg.pos);
+
+						if (essence_->mouse_selection.timer.started())
+						{
+							auto now = nana::system::timestamp();
+							if (now - essence_->mouse_selection.mouse_move_timestamp > 100)
+							{
+								essence_->mouse_selection.mouse_move_timestamp = now;
+								essence_->scroll_mouse_selection();
+							}
+						}
+
 						need_refresh = true;
 					}
 
@@ -4238,9 +4326,8 @@ namespace nana
 					{
 						auto & lister = essence_->lister;
 						index_pair item_pos;
-						auto first_disp = essence_->first_display();
 
-						if (lister.forward(first_disp, ptr_where.second, item_pos))
+						if ((essence_->column_from_pos(arg.pos.x) != npos) && lister.forward(essence_->first_display(), ptr_where.second, item_pos))
 						{
 							auto * item_ptr = (item_pos.is_category() ? nullptr : &lister.at(item_pos));
 
@@ -5077,9 +5164,6 @@ namespace nana
 
 				item_proxy cat_proxy::at(size_type pos_abs) const
 				{
-					//if(pos_abs >= size())
-					//	throw std::out_of_range("listbox.cat_proxy.at() invalid position");	//deprecated
-
 					check_range(pos_abs, size());
 					return item_proxy(ess_, index_pair(pos_, pos_abs));
 				}
@@ -5182,8 +5266,6 @@ namespace nana
 
 				void cat_proxy::inline_factory(size_type column, pat::cloneable<pat::abstract_factory<inline_notifier_interface>> factory)
 				{
-					//if (column >= this->columns())
-					//	throw std::out_of_range("listbox.cat_proxy.inline_factory: invalid column index");	//deprecated
 					check_range(column, this->columns());
 
 					if (column >= cat_->factories.size())
@@ -5460,19 +5542,13 @@ namespace nana
 
 		listbox::cat_proxy listbox::at(size_type pos)
 		{
-			//if (pos >= this->size_categ())
-			//	throw std::out_of_range("Nana.Listbox.at(): invalid position");	//deprecated
 			check_range(pos, size_categ());
-
 			return{ &_m_ess(), pos };
 		}
 
 		const listbox::cat_proxy listbox::at(size_type pos) const
 		{
-			//if(pos >= this->size_categ())
-			//	throw std::out_of_range("Nana.Listbox.at(): invalid position");	//deprecated
 			check_range(pos, size_categ());
-
 			return{ &_m_ess(), pos };
 		}
 
@@ -5516,10 +5592,9 @@ namespace nana
 		}
 
 		//Contributed by leobackes(pr#97)
-		listbox::size_type listbox::column_from_pos ( const point& pos )
+		listbox::size_type listbox::column_from_pos ( const point& pos ) const
 		{
-			auto & ess=_m_ess();
-			return ess.header.column_from_point(pos.x - 2 - static_cast<int>(ess.scroll.x_offset()));
+			return _m_ess().column_from_pos(pos.x);
 		}
 
 		void listbox::checkable(bool chkable)

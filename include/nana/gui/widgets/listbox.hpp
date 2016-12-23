@@ -1446,7 +1446,7 @@ the nana::detail::basic_window member pointer scheme
 		index_pair cast(const point & screen_pos) const;
 
 		/// Returns the absolute position of column which contains the specified point.
-		size_type column_from_pos(const point & pos);
+		size_type column_from_pos(const point & pos) const;
 
 		void checkable(bool);
 		index_pairs checked() const;                         ///<Returns the items which are checked.
