@@ -5169,24 +5169,24 @@ namespace nana
 
 					internal_scope_guard lock;
 
+					auto const pos = cat_->items.size();
 					if (cat_->model_ptr)
 					{
 						es_lister::throw_if_immutable_model(cat_->model_ptr.get());
 
 						auto container = cat_->model_ptr->container();
 	
-						auto item_index = container->size();
 						cat_->items.emplace_back();
 						container->emplace_back();
-
-						container->assign(item_index, cells);
+						container->assign(pos, cells);
 					}
 					else
 					{
-						cat_->sorted.push_back(cat_->items.size());
 						cells.resize(columns());
 						cat_->items.emplace_back(std::move(cells));
 					}
+
+					cat_->sorted.push_back(pos);
 
 					assign_colors_for_last(ess_, cat_);
 				}
