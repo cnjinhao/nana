@@ -56,7 +56,7 @@ matrix:
             - llvm-toolchain-precise 
 
 before_install:
-  - git clone --depth=1 --branch=develop https://github.com/qPCR4vir/nana-demo.git ../nana-demo
+  - git clone --depth=1 --branch=hotfix-1.4 https://github.com/qPCR4vir/nana-demo.git ../nana-demo
   - export PATH="$HOME/bin:$PATH"
   - mkdir ~/bin
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.4/cmake-3.4.0-rc3-Linux-x86_64.sh || true

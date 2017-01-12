@@ -122,12 +122,12 @@ namespace nana
 				struct column
 					: public column_interface
 				{
-					native_string_type text;
+					native_string_type caption;
 					unsigned width_px;
 					std::pair<unsigned, unsigned> range_width_px;
 					bool visible_state{ true };
 
-					/// Position of column when it was creating
+					/// Absolute position of column when it was creating
 					size_type index;
 
 					nana::align alignment{ nana::align::left };
@@ -144,7 +144,7 @@ namespace nana
 					{
 						if (this != &other)
 						{
-							text = other.text;
+							caption = other.caption;
 							width_px = other.width_px;
 							range_width_px = other.range_width_px;
 							visible_state = other.visible_state;
@@ -157,7 +157,7 @@ namespace nana
 					}
 
 					column(column&& other):
-						text(std::move(other.text)),
+						caption(std::move(other.caption)),
 						width_px(other.width_px),
 						range_width_px(other.range_width_px),
 						visible_state(other.visible_state),
@@ -172,7 +172,7 @@ namespace nana
 					{
 						if (this != &other)
 						{
-							text = std::move(other.text);
+							caption = std::move(other.caption);
 							width_px = other.width_px;
 							range_width_px = other.range_width_px;
 							visible_state = other.visible_state;
@@ -184,7 +184,7 @@ namespace nana
 					}
 
 					column(essence* ess, native_string_type&& text, unsigned px, size_type pos) :
-						text(std::move(text)),
+						caption(std::move(text)),
 						width_px(px),
 						index(pos),
 						ess_(ess)
@@ -230,6 +230,19 @@ namespace nana
 							width_px = range_width_px.second;
 							_m_refresh();
 						}
+					}
+
+					size_type position(bool disp_order) const noexcept override;	//The definition is provided after essence
+
+					std::string text() const noexcept override
+					{
+						return to_utf8(caption);
+					}
+
+					void text(std::string text_utf8) override
+					{
+						caption = to_nstring(std::move(text_utf8));
+						_m_refresh();
 					}
 
 					void text_align(::nana::align align) noexcept override
@@ -279,7 +292,7 @@ namespace nana
 							first=false;
 						else
 							head_str += exp_opt.sep;
-						head_str += to_utf8(at(exp_opt.columns_order[idx]).text);
+						head_str += this->at(exp_opt.columns_order[idx]).text();
 					}
 					return head_str;
 				}
@@ -419,25 +432,55 @@ namespace nana
 					return cont_;
 				}
 
-                /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
-				column& at(size_type pos)
+				size_type cast(size_type pos, bool disp_order) const
 				{
-					for(auto & m : cont_)
+					if (pos >= cont_.size())
+						throw std::out_of_range("listbox: invalid header index.");
+
+					size_type order = 0; //order for display position
+					for (auto & m : cont_)
 					{
-						if (m.index == pos)
-							return m;
+						if (!m.visible_state)
+							continue;
+
+						if (disp_order)
+						{
+							if (0 == pos)
+								return m.index;
+							--pos;
+						}
+						else
+						{
+							if (m.index == pos)
+								return order;
+							++order;
+						}
 					}
-					throw std::out_of_range("Nana.GUI.Listbox: invalid header index.");
+
+					throw std::invalid_argument("listbox: invalid header index");
 				}
 
-				const column& at(size_type pos) const
+                /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
+				column& at(size_type pos, bool disp_order = false)
+				{
+					if(pos >= cont_.size())
+						throw std::out_of_range("listbox: invalid header index.");
+
+					if (!disp_order)
+						pos = this->cast(pos, false);
+					
+					return cont_[pos];
+				}
+
+				const column& at(size_type pos, bool disp_order = false) const
                 {
-					for(const auto & m : cont_)
-					{
-						if (m.index == pos)
-							return m;
-					}
-					throw std::out_of_range("Nana.GUI.Listbox: invalid header index.");
+					if (pos >= cont_.size())
+						throw std::out_of_range("listbox: invalid header index.");
+
+					if (!disp_order)
+						pos = this->cast(pos, false);
+
+					return cont_[pos];
                 }
 
 				/// Returns the position(original index when it is creating) of the current column at point x
@@ -1315,9 +1358,9 @@ namespace nana
 					return *(cat->items.at(pos).cells);
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, cell&& cl, size_type columns)
+				void text(category_t* cat, size_type pos, size_type abs_col, cell&& cl, size_type columns)
 				{
-					if ((col < columns) && (pos < cat->items.size()))
+					if ((abs_col < columns) && (pos < cat->items.size()))
 					{
 						std::vector<cell> model_cells;
 
@@ -1330,16 +1373,16 @@ namespace nana
 
 						auto & cells = (cat->model_ptr ? model_cells : *(cat->items[pos].cells));
 
-						if (col < cells.size())
+						if (abs_col < cells.size())
 						{
-							cells[col] = std::move(cl);
-							if (sorted_index_ == col)
+							cells[abs_col] = std::move(cl);
+							if (sorted_index_ == abs_col)
 								sort();
 						}
 						else
 						{	//If the index of specified sub item is over the number of sub items that item contained,
 							//it fills the non-exist items.
-							cells.resize(col);
+							cells.resize(abs_col);
 							cells.emplace_back(std::move(cl));
 						}
 
@@ -1348,9 +1391,9 @@ namespace nana
 					}
 				}
 
-				void text(category_t* cat, size_type pos, size_type col, std::string&& str, size_type columns)
+				void text(category_t* cat, size_type pos, size_type abs_col, std::string&& str, size_type columns)
 				{
-					if ((col < columns) && (pos < cat->items.size()))
+					if ((abs_col < columns) && (pos < cat->items.size()))
 					{
 						std::vector<cell> model_cells;
 
@@ -1363,16 +1406,16 @@ namespace nana
 
 						auto & cells = (cat->model_ptr ? model_cells : *(cat->items[pos].cells));
 
-						if (col < cells.size())
+						if (abs_col < cells.size())
 						{
-							cells[col].text.swap(str);
-							if (sorted_index_ == col)
+							cells[abs_col].text.swap(str);
+							if (sorted_index_ == abs_col)
 								sort();
 						}
 						else
 						{	//If the index of specified sub item is over the number of sub items that item contained,
 							//it fills the non-exist items.
-							cells.resize(col);
+							cells.resize(abs_col);
 							cells.emplace_back(std::move(str));
 						}
 
@@ -2255,8 +2298,9 @@ namespace nana
 				/// @param  with_rest: Means whether including extra one item that is not completely contained in reset pixels.
 				size_type number_of_lister_items(bool with_rest) const
 				{
-					unsigned lister_s = graph->height() - 2 - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
-					return (lister_s / scheme_ptr->item_height) + (with_rest && (lister_s % scheme_ptr->item_height) ? 1 : 0);
+					unsigned exposed_px = content_area().height - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
+					auto const item_px = (std::max)(static_cast<decltype(scheme_ptr->item_height)>(1), scheme_ptr->item_height);
+					return (exposed_px / item_px) + (with_rest && (exposed_px % item_px) ? 1 : 0);
 				}
 
 				//keep the first selected item in the display area: the distances are in display positions!
@@ -2362,42 +2406,31 @@ namespace nana
 				{
 					internal_scope_guard lock;
 
-					const unsigned border_px = 1;
-					const unsigned border_px_twice = (border_px << 1);
-
-					const nana::size sz = graph->size();
-					
-					if ((sz.width <= border_px_twice) || (sz.height <= border_px_twice))
-					{
-						scroll.h.close();
-						scroll.v.close();
-						return;
-					}
+					auto const ctt_area = this->content_area();
 
 					// Adjust the ranged column assume the vertical scrollbar is enabled.
-					auto range_adjusted = this->header.calc_ranged_columns(sz.width - border_px_twice - scroll.scale);
-					auto columns_pixels = header.pixels();
+					auto range_adjusted = this->header.calc_ranged_columns(ctt_area.width - scroll.scale);
+					auto const columns_pixels = header.pixels();
 
 					//H scroll enabled
 					//If range_adjusted is true, it indicates no horzontal scroll bar is enabled.
-					bool enable_horz = ((!range_adjusted) && (columns_pixels + 4 > sz.width)); // 4px = left and right borders(2px) + left and right gaps(2px)
+					bool enable_horz = ((!range_adjusted) && (columns_pixels + 2 > ctt_area.width)); // 2px = left and right gaps(2px)
 
 					unsigned head_scroll = 2 + header_visible_px() + (enable_horz ? scroll.scale : 0);	// 2px left and right gaps(2px) 
-					unsigned lister_s = sz.height > head_scroll ? sz.height - head_scroll : 0;
-					size_type screen_number = (lister_s / scheme_ptr->item_height);
+					size_type exposed_count = ((ctt_area.height > head_scroll ? ctt_area.height - head_scroll : 0) / scheme_ptr->item_height);
 
 					//V scroll enabled
-					auto enable_vert = (lister.the_number_of_expanded() > screen_number);
+					auto enable_vert = (lister.the_number_of_expanded() > exposed_count);
 
 					if (enable_vert)
 					{
 						if (!enable_horz)
-							enable_horz = ((columns_pixels + 2 + scroll.scale) > sz.width);
+							enable_horz = (columns_pixels + scroll.scale > ctt_area.width);
 					}
 					else if (range_adjusted)
 					{
 						//No vertical scrollbar, then re-adjust the range columns for a new width that excludes vert scroll.
-						this->header.calc_ranged_columns(sz.width - border_px_twice);
+						this->header.calc_ranged_columns(ctt_area.width);
 					}
 
 					//event hander for scrollbars
@@ -2417,7 +2450,7 @@ namespace nana
 						API::refresh_window(this->lister.wd_ptr()->handle());
 					};
 
-					unsigned horz_px = sz.width - border_px_twice;
+					auto horz_px = ctt_area.width;
 					if (enable_vert)
 					{
 						if (horz_px < scroll.scale)
@@ -2426,7 +2459,7 @@ namespace nana
 							horz_px -= scroll.scale;
 					}
 
-					unsigned vert_px = sz.height - border_px_twice;
+					auto vert_px = ctt_area.height;
 					if (enable_horz)
 					{
 						if (vert_px < scroll.scale)
@@ -2438,7 +2471,7 @@ namespace nana
 					const auto wd_handle = lister.wd_ptr()->handle();
 					if (enable_horz && horz_px)
 					{
-						rectangle r(border_px, static_cast<int>(sz.height - border_px) - static_cast<int>(scroll.scale), horz_px, scroll.scale);
+						rectangle r(ctt_area.x, ctt_area.bottom() - static_cast<int>(scroll.scale), horz_px, scroll.scale);
 						if(scroll.h.empty())
 						{
 							scroll.h.create(wd_handle, r);
@@ -2453,7 +2486,7 @@ namespace nana
 
 					if (enable_vert && vert_px)
 					{
-						rectangle r(static_cast<int>(sz.width - border_px) - static_cast<int>(scroll.scale), border_px, scroll.scale, vert_px);
+						rectangle r(ctt_area.right() - static_cast<int>(scroll.scale), ctt_area.y, scroll.scale, vert_px);
 						if(scroll.v.empty())
 						{
 							scroll.v.create(wd_handle, r);
@@ -2554,28 +2587,43 @@ namespace nana
 					pos.x += static_cast<int>(scroll.x_offset()) - 2;
 				}
 
-				bool rect_header(nana::rectangle& r) const
+				void draw_peripheral()
 				{
-					if(header.visible())
-					{
-						if (lister.wd_ptr()->borderless())
-						{
-							r.dimension(graph->size());
-							r.height = scheme_ptr->header_height;
-							return !r.empty();
-						}
+					auto ctt_area = this->content_area();
 
-						const unsigned ex_width = 4 + (scroll.v.empty() ? 0 : scroll.scale - 1);
-						if(graph->width() > ex_width)
-						{
-							r.x = 2;
-							r.y = 1;
-							r.width = graph->width() - ex_width;
-							r.height = scheme_ptr->header_height;
-							return true;
-						}
+					if (!API::widget_borderless(*lister.wd_ptr()))
+					{
+						//Draw Border
+						graph->rectangle(false, static_cast<color_rgb>(0x9cb6c5));
+
+						graph->line({ ctt_area.x, ctt_area.y }, { ctt_area.x, ctt_area.bottom() - 1 }, colors::white);
+						graph->line({ ctt_area.right() - 1, ctt_area.y }, { ctt_area.right() - 1, ctt_area.bottom() - 1 });
+
 					}
-					return false;
+
+					if ((scroll.h.empty() == false) && (scroll.v.empty() == false))
+					{
+						graph->rectangle({ ctt_area.right() - static_cast<int>(scroll.scale),
+							ctt_area.bottom() - static_cast<int>(scroll.scale),
+							scroll.scale,
+							scroll.scale },
+							true, colors::button_face);
+					}
+				}
+
+				rectangle content_area() const
+				{
+					rectangle r{ graph->size() };
+
+					if (!this->listbox_ptr->borderless())
+					{
+						r.x = 1;
+						r.width -= (r.width > 2 ? 2 : r.width);
+						
+						r.y = 1;
+						r.height -= (r.height > 2 ? 2 : r.height);
+					}
+					return r;
 				}
 
 				unsigned header_visible_px() const
@@ -2583,31 +2631,45 @@ namespace nana
 					return (header.visible() ? scheme_ptr->header_height : 0);
 				}
 
+				bool rect_header(nana::rectangle& r) const
+				{
+					if(header.visible())
+					{
+						r = this->content_area();
+
+						r.height = scheme_ptr->header_height;
+
+						if (lister.wd_ptr()->borderless())
+							return !r.empty();
+
+						const unsigned ex_width = 2 + (scroll.v.empty() ? 0 : scroll.scale - 1);
+						if(r.width > ex_width)
+						{
+							r.x += 1;
+							r.width -= ex_width;
+							return true;
+						}
+					}
+					return false;
+				}
+
 				bool rect_lister(nana::rectangle& r) const
 				{
 					auto head_pixels = header_visible_px();
-					unsigned width = (scroll.v.empty() ? 0 : scroll.scale - 1);
-					unsigned height = (scroll.h.empty() ? 0 : scroll.scale) + head_pixels;
+					unsigned extr_w = (scroll.v.empty() ? 0 : scroll.scale - 1);
+					unsigned extr_h = (scroll.h.empty() ? 0 : scroll.scale) + head_pixels;
 
+					r = this->content_area();
+					r.y += head_pixels;
 					if (!lister.wd_ptr()->borderless())
 					{
-						width += 4;
-						height += 2;
-
-						r.x = 2;
-						r.y = head_pixels + 1;
-					}
-					else
-					{
-						r.x = 0;
-						r.y = head_pixels;
+						extr_w += 2;
+						r.x += 1;
 					}
 
-					nana::size gsz = graph->size();
-					if(gsz.width <= width || gsz.height <= height) return false;
+					if(r.width <= extr_w || r.height <= extr_h)
+						return false;
 
-					r.width = gsz.width - width;
-					r.height = gsz.height - height;
 					return true;
 				}
 
@@ -2965,6 +3027,11 @@ namespace nana
 			{
 				ess_->adjust_scroll_life();
 				API::refresh_window(ess_->lister.wd_ptr()->handle());
+			}
+
+			size_type es_header::column::position(bool disp_order) const noexcept
+			{
+				return (disp_order ? ess_->header.cast(index, false) : index);
 			}
 
 			void es_header::column::fit_content(unsigned maximize) noexcept
@@ -3510,7 +3577,7 @@ namespace nana
 						else if (align::center == column.alignment)
 							text_margin = 0;
 
-						text_aligner.draw(column.text, text_pos, column_r.width - text_margin);
+						text_aligner.draw(column.caption, text_pos, column_r.width - text_margin);
 					}
 
 					if (column.index == essence_->lister.sort_index())
@@ -3745,7 +3812,7 @@ namespace nana
 					//Draw selecting inner rectangle
 					if (sel && (categ.expand == false))
 					{
-						_m_draw_border(r.x, y, (std::min)(r.width, width - essence_->scroll.x_offset()));
+						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->scroll.x_offset()));
 					}
 				}
 
@@ -3807,6 +3874,8 @@ namespace nana
 						if (col.width_px > essence_->scheme_ptr->text_margin)
 						{
 							int content_pos = 0;
+							element_state estate = element_state::normal;
+							nana::rectangle img_r;
 
 							//Draw the image in the 1st column in display order
 							if (0 == display_order)
@@ -3815,7 +3884,6 @@ namespace nana
 								{
 									content_pos += 18;   // checker width, geom scheme?
 
-									element_state estate = element_state::normal;
 									if (essence_->pointer_where.first == parts::checker)
 									{
 										switch (state)
@@ -3830,7 +3898,6 @@ namespace nana
 
 									using state = facade<element::crook>::state;
 									crook_renderer_.check(item.flags.checked ? state::checked : state::unchecked);
-									crook_renderer_.draw(*graph, bgcolor, fgcolor, essence_->checkarea(column_x, y), estate);
 								}
 
 								if (essence_->if_image)
@@ -3838,10 +3905,10 @@ namespace nana
 									//Draw the image in the 1st column in display order
 									if (item.img)
 									{
-										nana::rectangle img_r(item.img_show_size);
+										nana::rectangle imgt(item.img_show_size);
+										img_r = imgt;
 										img_r.x = content_pos + column_x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
 										img_r.y = y + (static_cast<int>(essence_->scheme_ptr->item_height) - static_cast<int>(item.img_show_size.height)) / 2; // center
-										item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 									}
 									content_pos += 18;  // image width, geom scheme?
 								}
@@ -3903,24 +3970,32 @@ namespace nana
 								}
 							}
 
+							auto cell_txtcolor = fgcolor;
+
 							if (cells.size() > column_pos)        // process only if the cell is visible
 							{
-								auto cell_txtcolor = fgcolor;
-
 								auto & m_cell = cells[column_pos];
 								review_utf8(m_cell.text);
 
-								if (m_cell.custom_format && (!m_cell.custom_format->bgcolor.invisible()))  // adapt to costum format if need
+								if (m_cell.custom_format)  // adapt to costum format if need
 								{
-									it_bgcolor = m_cell.custom_format->bgcolor;
-									if (item.flags.selected)
-										it_bgcolor = it_bgcolor.blend(bgcolor, 0.5);
-									if (item_state::highlighted == state)
-										it_bgcolor = it_bgcolor.blend(static_cast<color_rgb>(0x99defd), 0.8);
-
-									graph->rectangle(rectangle{ column_x, y, col.width_px, essence_->scheme_ptr->item_height }, true, it_bgcolor);
+									if (!item.bgcolor.invisible())
+										cell_txtcolor = m_cell.custom_format->bgcolor;
+									
+									if (item.flags.selected)                                    // fetch the "def" colors
+										it_bgcolor = essence_->scheme_ptr->item_selected;
 
 									cell_txtcolor = m_cell.custom_format->fgcolor;
+
+									if (item_state::highlighted == state)                          // and blend it if "highlighted"
+									{
+									if (item.flags.selected)
+											it_bgcolor = it_bgcolor.blend(colors::black, 0.98);           // or "selected"
+										else
+											it_bgcolor = it_bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);   /// \todo create a parametre for amount of blend
+									}
+
+									graph->rectangle(rectangle{ column_x, y, col.width_px, essence_->scheme_ptr->item_height }, true, it_bgcolor);
 								}
 
 								if (draw_column)
@@ -3938,6 +4013,14 @@ namespace nana
 								}
 							}
 
+							if (0 == display_order)
+							{
+								if (essence_->checkable)
+									crook_renderer_.draw(*graph, it_bgcolor, cell_txtcolor, essence_->checkarea(column_x, y), estate);
+								if (item.img)
+									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
+							}
+
 							graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->scheme_ptr->item_height) - 1 }, static_cast<color_rgb>(0xEBF4F9));
 						}
 
@@ -3946,7 +4029,7 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if(item.flags.selected)
-						_m_draw_border(content_r.x, y, show_w);
+						_m_draw_item_border(content_r.x, y, show_w);
 				}
 
 				inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
@@ -3985,7 +4068,7 @@ namespace nana
 					return nullptr;
 				}
 
-				void _m_draw_border(int x, int y, unsigned width) const
+				void _m_draw_item_border(int x, int y, unsigned width) const
 				{
 					//Draw selecting inner rectangle
 					rectangle r{ x, y, width, essence_->scheme_ptr->item_height };
@@ -4021,36 +4104,11 @@ namespace nana
 					return *essence_;
 				}
 
-				void trigger::_m_draw_border()
-				{
-					if (API::widget_borderless(*essence_->lister.wd_ptr()))
-						return;
-
-					auto & graph = *essence_->graph;
-
-					int right = static_cast<int>(graph.width()) - 1;
-					int bottom = static_cast<int>(graph.height()) - 1;
-
-					//Draw Border
-					graph.rectangle(false, static_cast<color_rgb>(0x9cb6c5));
-
-					graph.line({ 1, 1 }, { 1, bottom - 1}, colors::white);
-					graph.line({ right - 1, 1 }, { right - 1, bottom - 1 });
-
-					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
-						graph.rectangle({ right - static_cast<int>(essence_->scroll.scale),
-							bottom - static_cast<int>(essence_->scroll.scale),
-							essence_->scroll.scale,
-							essence_->scroll.scale },
-							true, colors::button_face);
-				}
-
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
 					essence_->listbox_ptr = static_cast<nana::listbox*>(&widget);
 					essence_->scheme_ptr = static_cast<::nana::listbox::scheme_type*>(API::dev::get_scheme(widget));
 					essence_->graph = &graph;
-					typeface_changed(graph);
 
 					essence_->lister.bind(essence_, widget);
 					widget.bgcolor(colors::white);
@@ -4081,7 +4139,8 @@ namespace nana
 						drawer_header_->draw(graph, r);
 					if (essence_->rect_lister(r))
 						drawer_lister_->draw(r);
-					_m_draw_border();
+
+					essence_->draw_peripheral();
 				}
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
@@ -4274,7 +4333,7 @@ namespace nana
 
 					if(update)
 					{
-						_m_draw_border();
+						essence_->draw_peripheral();
 						API::dev::lazy_refresh();
 					}
 				}
@@ -4461,7 +4520,7 @@ namespace nana
 							export_options exp_opt {essence_->def_exp_options};
 							exp_opt.columns_order = essence_->header.all_headers(true);
 							exp_opt.only_selected_items = true;
-							::nana::system::dataexch().set(essence_->to_string(exp_opt));
+							::nana::system::dataexch().set(essence_->to_string(exp_opt), API::root(essence_->listbox_ptr->handle()));
 							return;
 						}
 					case keyboard::select_all :
@@ -4624,6 +4683,12 @@ namespace nana
 				std::size_t item_proxy::columns() const
 				{
 					return ess_->header.cont().size();
+				}
+
+
+				size_type item_proxy::column_cast(size_type pos, bool disp_order) const
+				{
+					return ess_->header.cast(pos, disp_order);
 				}
 
 				item_proxy& item_proxy::text(size_type col, cell cl)
@@ -5104,24 +5169,24 @@ namespace nana
 
 					internal_scope_guard lock;
 
+					auto const pos = cat_->items.size();
 					if (cat_->model_ptr)
 					{
 						es_lister::throw_if_immutable_model(cat_->model_ptr.get());
 
 						auto container = cat_->model_ptr->container();
 	
-						auto item_index = container->size();
 						cat_->items.emplace_back();
 						container->emplace_back();
-
-						container->assign(item_index, cells);
+						container->assign(pos, cells);
 					}
 					else
 					{
-						cat_->sorted.push_back(cat_->items.size());
 						cells.resize(columns());
 						cat_->items.emplace_back(std::move(cells));
 					}
+
+					cat_->sorted.push_back(pos);
 
 					assign_colors_for_last(ess_, cat_);
 				}
@@ -5407,14 +5472,14 @@ namespace nana
 			return item_pos;
 		}
 
-		auto listbox::column_at(size_type pos) -> column_interface&
+		auto listbox::column_at(size_type pos, bool disp_order) -> column_interface&
 		{
-			return _m_ess().header.at(pos);
+			return _m_ess().header.at(pos, disp_order);
 		}
 
-		auto listbox::column_at(size_type pos) const -> const column_interface&
+		auto listbox::column_at(size_type pos, bool disp_order) const -> const column_interface&
 		{
-			return _m_ess().header.at(pos);
+			return _m_ess().header.at(pos, disp_order);
 		}
 
 		auto listbox::column_size() const ->size_type

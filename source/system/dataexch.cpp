@@ -29,28 +29,28 @@
 namespace nana{ namespace system{
 
 	//class dataexch
-		void dataexch::set(const std::string& text)
+		void dataexch::set(const std::string& text, native_window_type owner)
 		{
 #ifdef NANA_WINDOWS
 			std::wstring wstr = ::nana::charset(text, nana::unicode::utf8);
-			_m_set(format::text, wstr.c_str(), (wstr.length() + 1) * sizeof(wchar_t));
+			_m_set(format::text, wstr.c_str(), (wstr.length() + 1) * sizeof(wchar_t), owner);
 #elif defined(NANA_X11)
-			_m_set(format::text, text.c_str(), text.length() + 1);
+			_m_set(format::text, text.c_str(), text.length() + 1, owner);
 #endif
 		}
 
 
-		void dataexch::set(const std::wstring& text)
+		void dataexch::set(const std::wstring& text, native_window_type owner)
 		{
 #ifdef NANA_WINDOWS
-			_m_set(format::text, text.c_str(), (text.length() + 1) * sizeof(wchar_t));
+			_m_set(format::text, text.c_str(), (text.length() + 1) * sizeof(wchar_t), owner);
 #else
 			std::string str = to_utf8(text);
-			_m_set(format::text, str.c_str(), str.size() + 1);
+			_m_set(format::text, str.c_str(), str.size() + 1, owner);
 #endif
 		}
 
-		bool dataexch::set(const nana::paint::graphics& g)
+		bool dataexch::set(const nana::paint::graphics& g, native_window_type owner)
 		{
 #if defined(NANA_WINDOWS)
 			size sz = g.size();
@@ -100,11 +100,14 @@ namespace nana{ namespace system{
 				}
 
 				if (::GlobalUnlock(h_gmem) || GetLastError() == NO_ERROR)
-					if (::OpenClipboard(::GetFocus()))
+					if (::OpenClipboard(reinterpret_cast<HWND>(owner)))
+					{
 						if (::EmptyClipboard())
 							if (::SetClipboardData(CF_DIB, h_gmem))
 								if (::CloseClipboard())
 									return true;
+						::CloseClipboard();
+					}
 			}
 			assert(false);
 			::GlobalFree(h_gmem);
@@ -180,12 +183,12 @@ namespace nana{ namespace system{
 			}
 		}
 	//private:
-		bool dataexch::_m_set(format fmt, const void* buf, std::size_t size)
+		bool dataexch::_m_set(format fmt, const void* buf, std::size_t size, native_window_type owner)
 		{
 			bool res = false;
 
 #if defined(NANA_WINDOWS)
-			if(::OpenClipboard(::GetFocus()))
+			if(::OpenClipboard(reinterpret_cast<HWND>(owner)))
 			{
 				if(::EmptyClipboard())
 				{
@@ -208,26 +211,18 @@ namespace nana{ namespace system{
 			}
 #elif defined(NANA_X11)
 			auto & spec = ::nana::detail::platform_spec::instance();
-			native_window_type owner = nullptr;
+			
+			Atom atom_type;
+			switch(fmt)
 			{
-				internal_scope_guard lock;
-				auto wd = detail::bedrock::instance().focus();
-				if(wd)	owner = wd->root;
+			case format::text:	atom_type = spec.atombase().utf8_string;	break;
+			default:
+				return false;
 			}
 
-			if(owner)
-			{
-				Atom atom_type;
-				switch(fmt)
-				{
-				case format::text:	atom_type = spec.atombase().utf8_string;	break;
-				default:
-					return false;
-				}
-
-				spec.write_selection(owner, atom_type, buf, size);
-				return true;
-			}
+			spec.write_selection(owner, atom_type, buf, size);
+			return true;
+			
 #endif
 			return res;
 		}

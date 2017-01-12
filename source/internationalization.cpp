@@ -41,7 +41,7 @@ namespace nana
 		class tokenizer
 		{
 		public:
-			tokenizer(const std::string& file)
+			tokenizer(const std::string& file, bool utf8)
 			{
 				std::ifstream ifs(file.data(), std::ios::binary);
 				if (ifs)
@@ -54,6 +54,11 @@ namespace nana
 						data_.reset(new char[len]);
 						ifs.read(data_.get(), len);
 						read_ptr_ = data_.get();
+						if (utf8 && len > 3)
+						{
+							if (static_cast<unsigned char>(read_ptr_[0]) == 0xEF && static_cast<unsigned char>(read_ptr_[1]) == 0xBB && static_cast<unsigned char>(read_ptr_[2]) == 0xBF)
+								read_ptr_ += 3;
+						}
 						end_ptr_ = read_ptr_ + len;
 					}
 				}
@@ -78,6 +83,7 @@ namespace nana
 							if (escape)
 							{
 								escape = false;
+								str_ += '\\';
 								str_ += *i;
 								continue;
 							}
@@ -151,7 +157,44 @@ namespace nana
 
 		struct data
 		{
+			std::function<void(const std::string&)> on_missing;
 			std::unordered_map<std::string, std::string> table;
+
+			data()
+			{
+				//initializes nana's translation
+				table["NANA_BUTTON_OK"] = "OK";
+				table["NANA_BUTTON_OK_SHORTKEY"] = "&OK";
+				table["NANA_BUTTON_YES"] = "Yes";
+				table["NANA_BUTTON_NO"] = "No";
+				table["NANA_BUTTON_BROWSE"] = "Browse";
+				table["NANA_BUTTON_CANCEL"] = "Cancel";
+				table["NANA_BUTTON_CANCEL_SHORTKEY"] = "&Cancel";
+				table["NANA_BUTTON_CREATE"] = "Create";
+		
+				table["NANA_FILEBOX_BYTES"] = "Bytes";
+				table["NANA_FILEBOX_FILESYSTEM"] = "FILESYSTEM";
+				table["NANA_FILEBOX_FILTER"] = "Filter";
+				table["NANA_FILEBOX_NEW_FOLDER"] = "New Folder";
+				table["NANA_FILEBOX_NEW_FOLDER_SHORTKEY"] = "&New Folder";
+				table["NANA_FILEBOX_HEADER_NAME"] = "Name";
+				table["NANA_FILEBOX_HEADER_MODIFIED"] = "Modified";
+				table["NANA_FILEBOX_HEADER_TYPE"] = "Type";
+				table["NANA_FILEBOX_HEADER_SIZE"] = "Size";
+				table["NANA_FILEBOX_NEW_FOLDER_CAPTION"] = "Name the new folder";
+
+				table["NANA_FILEBOX_SAVE_AS"] = "Save As";
+				table["NANA_FILEBOX_OPEN"] = "Open";
+				table["NANA_FILEBOX_DIRECTORY"] = "Directory";
+				table["NANA_FILEBOX_FILE"] = "File";
+				table["NANA_FILEBOX_FILE_COLON"] = "File:";
+				table["NANA_FILEBOX_ERROR_INVALID_FOLDER_NAME"] = "Please input a valid name for the new folder.";
+				table["NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_EXISTING"] = "The folder is existing, please rename it.";
+				table["NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_FAILED_CREATION"] = "Failed to create the folder, please rename it.";
+				table["NANA_FILEBOX_ERROR_INVALID_FILENAME"] = "The filename is invalid.";
+				table["NANA_FILEBOX_ERROR_NOT_EXISTING_AND_RETRY"] = "The file \"%arg0\"\n is not existing. Please check and retry.";
+				table["NANA_FILEBOX_ERROR_QUERY_REWRITE_BECAUSE_OF_EXISTING"] = "The input file is existing, do you want to overwrite it?";
+			}
 		};
 
 		static std::shared_ptr<data>& get_data_ptr()
@@ -167,7 +210,7 @@ namespace nana
 		{
 			auto impl = std::make_shared<data>();
 
-			tokenizer tknizer(file);
+			tokenizer tknizer(file, utf8);
 			while (true)
 			{
 				if (token::msgid != tknizer.read())
@@ -188,9 +231,9 @@ namespace nana
 				std::string str;
 
 				if (utf8)
-					str = nana::charset(std::move(tknizer.get_str()), nana::unicode::utf8);
+					str = tknizer.get_str();
 				else
-					str = nana::charset(std::move(tknizer.get_str()));
+					str = nana::charset(std::move(tknizer.get_str())).to_bytes(nana::unicode::utf8);
 
 				std::string::size_type pos = 0;
 				while (true)
@@ -293,6 +336,10 @@ namespace nana
 		}
 	}//end namespace internationalization_parts
 
+	void internationalization::set_missing(std::function<void(const std::string& msgid_utf8)> handler)
+	{
+		internationalization_parts::get_data_ptr()->on_missing = std::move(handler);
+	}
 
 	void internationalization::load(const std::string& file)
 	{
@@ -323,6 +370,9 @@ namespace nana
 		auto i = impl->table.find(msgid);
 		if (i != impl->table.end())
 			return i->second;
+
+		if (impl->on_missing)
+			impl->on_missing(msgid);
 
 		return std::move(msgid);
 	}

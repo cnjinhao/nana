@@ -426,7 +426,7 @@ namespace detail
 				
 				unsigned char * fade_table = nullptr;
 				std::unique_ptr<unsigned char[]> autoptr;
-				nana::pixel_argb_t rgb_imd;
+				nana::pixel_argb_t rgb_imd = {};
 				if(fade_rate != 0.0)
 				{
 					autoptr = detail::alloc_fade_table(1 - fade_rate);
