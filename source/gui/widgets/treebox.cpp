@@ -866,8 +866,7 @@ namespace nana
 				item_proxy& item_proxy::check(bool ck)
 				{
 					trigger_->check(node_, ck ? checkstate::checked : checkstate::unchecked);
-					if(trigger_->draw())
-						API::update_window(trigger_->impl()->data.widget_ptr->handle());
+					trigger_->draw();
 					return *this;
 				}
 
@@ -1664,7 +1663,8 @@ namespace nana
 					if (!impl_->attr.auto_draw)
 						return false;
 
-					impl_->draw(false);
+					if(impl_->draw(false))
+						API::update_window(impl_->data.widget_ptr->handle());
 					return true;
 				}
 
@@ -2196,6 +2196,13 @@ namespace nana
 		bool treebox::checkable() const
 		{
 			return get_drawer_trigger().checkable();
+		}
+
+		void treebox::clear()
+		{
+			auto impl = get_drawer_trigger().impl();
+			impl->attr.tree_cont.clear();
+			get_drawer_trigger().draw();
 		}
 
 		treebox::node_image_type& treebox::icon(const std::string& id) const

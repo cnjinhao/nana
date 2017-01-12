@@ -421,6 +421,9 @@ namespace nana
 		
 		bool checkable() const; ///< Determinte whether the checkboxs are enabled.
 
+		/// Clears the contents
+		void clear();
+
         /// \brief Creates an icon scheme with the specified name.
         ///
         /// The icon scheme includes 3 images for node states. 
