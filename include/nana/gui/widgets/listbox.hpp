@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -175,7 +175,6 @@ namespace nana
 				cell(cell&&) noexcept;
 				cell(::std::string) noexcept;
 				cell(::std::string, const format&);
-				//cell(::std::string, const ::nana::color& bgcolor, const ::nana::color& fgcolor);	//deprecated
 
 				cell& operator=(const cell&);
 				cell& operator=(cell&&) noexcept;
@@ -328,7 +327,7 @@ namespace nana
 					
 				}
 			private:
-				void clear() override
+				void clear() noexcept override
 				{
 					container_.clear();
 				}
@@ -782,8 +781,6 @@ namespace nana
 				~trigger();
 				essence& ess() const noexcept;
 			private:
-				void _m_draw_border();
-			private:
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
 				void typeface_changed(graph_reference)	override;
@@ -792,7 +789,6 @@ namespace nana
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
-				void mouse_wheel(graph_reference, const arg_wheel&)	override;
 				void dbl_click(graph_reference, const arg_mouse&)	override;
 				void resized(graph_reference, const arg_resized&)		override;
 				void key_press(graph_reference, const arg_keyboard&)	override;
@@ -809,8 +805,7 @@ namespace nana
 				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
-				item_proxy(essence*) noexcept;
-				item_proxy(essence*, const index_pair&);
+				item_proxy(essence*, const index_pair& = index_pair{});
 
 				/// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
 				static item_proxy from_display(essence *, const index_pair &relative) ;
@@ -1192,7 +1187,6 @@ namespace nana
 				unsigned suspension_width	{ 8    };  ///<  def= . the trigger will set this to the width if ("...")
 				unsigned text_margin		{ 5    };  ///<  def= 5. Additional or extended with added (before) to the text width to determine the cell width. cell_w = text_w + ext_w +1
 				unsigned header_height		{ 25   };  ///<  def=25 . header height   header_size
-				unsigned text_height		{ 14   };  ///< the trigger will set this to the height of the text font
 				unsigned item_height_ex		{ 6    };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
 				unsigned header_splitter_area_before{ 2 }; ///< def=2. But 4 is better... IMO
 				unsigned header_splitter_area_after { 3 }; ///< def=3. But 4 is better... 

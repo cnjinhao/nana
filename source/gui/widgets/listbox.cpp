@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -41,6 +41,405 @@ namespace nana
 		if (!(pos < size))
 			throw std::out_of_range("listbox: invalid element position");
 	}
+
+	class intermediary
+	{
+	public:
+		struct events_type
+		{
+			std::function<void(const point&)> hover_outside;
+		};
+
+		intermediary(window handle)
+			: window_handle_(handle)
+		{
+			API::events(handle).mouse_wheel([this](const arg_wheel& arg){
+				scroll_interface * scroll = nullptr;
+				switch (arg.which)
+				{
+				case arg_wheel::wheel::vertical:
+					scroll = &vert_;
+					break;
+				case arg_wheel::wheel::horizontal:
+					scroll = &horz_;
+					break;
+				default:
+					//Other button is not unsupported.
+					return;
+				}
+
+				if (!API::empty_window(arg.window_handle))
+				{
+					auto align_px = (scroll->value() % scroll->step());
+					if (align_px)
+					{
+						auto new_value = scroll->value() - align_px;
+						if (!arg.upwards)
+							new_value += scroll->step();
+
+						scroll->value(new_value);
+					}
+					else
+						scroll->make_step(!arg.upwards, 1);
+				}
+			});
+
+			API::events(handle).mouse_move([this](const arg_mouse& arg)
+			{
+				if (!arg.is_left_button())
+					return;
+
+				if (this->_m_drive(arg.pos))
+				{
+					tmr_.interval(16);
+					tmr_.start();
+				}
+			});
+
+			tmr_.elapse([this](const arg_elapse& arg)
+			{
+				auto curs = ::nana::API::cursor_position();
+				::nana::API::calc_window_point(window_handle_, curs);
+
+				if (this->_m_drive(curs))
+				{
+					if (events_.hover_outside)
+						events_.hover_outside(curs);
+
+					API::refresh_window(window_handle_);
+				}
+				else
+					tmr_.stop();
+			});
+		}
+
+		events_type& events()
+		{
+			return events_;
+		}
+
+		void step(unsigned step_value, bool horz)
+		{
+			if (horz)
+				horz_.step(step_value);
+			else
+				vert_.step(step_value);
+		}
+
+		bool turn_page(bool forwards, bool horz)
+		{
+			if (horz)
+				return horz_.make_page_scroll(forwards);
+			else
+				return vert_.make_page_scroll(forwards);
+		}
+
+		void disp_area(const rectangle& da, const point& skew_horz, const point& skew_vert, const size& extra_px, bool try_update = true)
+		{
+			if (disp_area_ != da)
+			{
+				disp_area_ = da;
+				skew_horz_ = skew_horz;
+				skew_vert_ = skew_vert;
+				extra_px_ = extra_px;
+
+				auto imd_area = this->intermediary_area();
+				if (static_cast<int>(content_size_.width) - origin_.x < static_cast<int>(imd_area.width))
+				{
+					origin_.x = static_cast<int>(content_size_.width) - static_cast<int>(imd_area.width);
+					if (origin_.x < 0)
+						origin_.x = 0;
+				}
+
+				if (static_cast<int>(content_size_.height) - origin_.y < static_cast<int>(imd_area.height))
+				{
+					origin_.y = static_cast<int>(content_size_.height) - static_cast<int>(imd_area.height);
+					if (origin_.y < 0)
+						origin_.y = 0;
+				}
+
+				_m_size_changed(try_update);
+			}
+		}
+
+		void content_size(const size& sz, bool try_update = true)
+		{
+			content_size_ = sz;
+			_m_size_changed(try_update);
+		}
+
+		const point& origin() const
+		{
+			return origin_;
+		}
+
+		rectangle corner() const
+		{
+			rectangle r;
+
+			auto imd_area = this->intermediary_area();
+
+			r.x = disp_area_.x + static_cast<int>(imd_area.width) + skew_vert_.x;
+			r.y = disp_area_.y + static_cast<int>(imd_area.height) + skew_horz_.y;
+
+
+			unsigned extra_horz = (disp_area_.width < content_size_.width ? _m_extra_px() : 0);
+			unsigned extra_vert = (disp_area_.height < content_size_.height + extra_horz ? _m_extra_px() : 0);
+
+			if ((0 == extra_horz) && extra_vert)
+				extra_horz = (disp_area_.width < content_size_.width + extra_vert ? _m_extra_px() : 0);
+
+			r.width = extra_horz;
+			r.height = extra_vert;
+
+			return r;
+		}
+
+		rectangle intermediary_area() const
+		{
+			unsigned extra_horz = (disp_area_.width < content_size_.width ? _m_extra_px() : 0);
+			unsigned extra_vert = (disp_area_.height < content_size_.height + extra_horz ? _m_extra_px() : 0);
+
+			if ((0 == extra_horz) && extra_vert)
+				extra_horz = (disp_area_.width < content_size_.width + extra_vert ? _m_extra_px() : 0);
+
+			return rectangle{
+				disp_area_.position(),
+				size{
+					disp_area_.width > extra_vert ? disp_area_.width - extra_vert : 0,
+					disp_area_.height > extra_horz ? disp_area_.height - extra_horz : 0
+				}
+			};
+		}
+
+		unsigned extra_space(bool horz) const
+		{
+			return ((horz ? horz_.empty() : vert_.empty()) ? 0 : _m_extra_px());
+		}
+
+		void change_position(int pos, bool aligned, bool horz)
+		{
+			if (aligned)
+				pos -= (pos % static_cast<int>(horz ? horz_.step() : vert_.step()));
+
+			auto imd_size = this->intermediary_area();
+			
+			if (horz)
+			{
+				if (pos + imd_size.width > content_size_.width)
+					pos = static_cast<int>(content_size_.width) - static_cast<int>(imd_size.width);
+
+				if (pos < 0)	pos = 0;
+
+				origin_.x = pos;
+			}
+			else
+			{
+				if (pos + imd_size.height > content_size_.height)
+					pos = static_cast<int>(content_size_.height) - static_cast<int>(imd_size.height);
+
+				if (pos < 0)	pos = 0;
+
+				origin_.y = pos;
+			}
+		}
+
+		void move_origin(const point& skew)
+		{
+			auto imd_area = this->intermediary_area();
+
+			origin_.x += skew.x;
+			if (origin_.x + imd_area.width > content_size_.width)
+				origin_.x = static_cast<int>(content_size_.width) - static_cast<int>(imd_area.width);
+
+			if (origin_.x < 0)	origin_.x = 0;
+
+
+			origin_.y += skew.y;
+			if (origin_.y + imd_area.height > content_size_.height)
+				origin_.y = static_cast<int>(content_size_.height) - static_cast<int>(imd_area.height);
+
+			if (origin_.y < 0)	origin_.y = 0;
+		}
+
+		void sync(bool try_update)
+		{
+			this->enable_update_ = try_update;
+			horz_.value(origin_.x);
+			vert_.value(origin_.y);
+			this->enable_update_ = true;
+		}
+
+		void pursue(const point& cursor)
+		{
+			if (disp_area_.is_hit(cursor))
+				return;
+
+			int delta = 0;
+			if (cursor.x < disp_area_.x)
+				delta = cursor.x - disp_area_.x;
+			else if (cursor.x > disp_area_.right())
+				delta = cursor.x - disp_area_.right();
+
+			origin_.x += delta;
+			if (origin_.x < 0)
+				origin_.x = 0;
+
+			if (cursor.y < disp_area_.y)
+				delta = cursor.y - disp_area_.y;
+			else if (cursor.y > disp_area_.bottom())
+				delta = cursor.y - disp_area_.bottom();
+
+			origin_.y += delta;
+			if (origin_.y < 0)
+				origin_.y = 0;
+
+			bool changed = false;
+			if (!horz_.empty() && (horz_.value() != origin_.x))
+			{
+				horz_.value(origin_.x);
+				changed = true;
+			}
+
+			if ((!vert_.empty()) && (vert_.value() != origin_.y))
+			{
+				vert_.value(origin_.y);
+				changed = true;
+			}
+
+			if (changed)
+				API::refresh_window(window_handle_);
+		}
+	private:
+		static constexpr unsigned _m_extra_px()
+		{
+			return 16;
+		}
+
+		bool _m_drive(const point& cursor_pos)
+		{
+			auto const imd_area = this->intermediary_area();
+
+			point skew;
+
+			if (disp_area_.x > cursor_pos.x)
+				skew.x = cursor_pos.x - disp_area_.x;
+			else if (cursor_pos.x > disp_area_.x + static_cast<int>(imd_area.width))
+				skew.x = cursor_pos.x - (disp_area_.x + static_cast<int>(imd_area.width));
+
+			if (disp_area_.y > cursor_pos.y)
+				skew.y = cursor_pos.y - disp_area_.y;
+			else if (cursor_pos.y > disp_area_.y + static_cast<int>(imd_area.height))
+				skew.y = cursor_pos.y - (disp_area_.y + static_cast<int>(imd_area.height));
+
+			if (skew.x == 0 && skew.y == 0)
+				return false;
+
+			auto speed_horz = 0;
+			if (skew.x)
+				speed_horz = skew.x / (std::max)(1, static_cast<int>(horz_.step())) + (skew.x < 0 ? -1 : 1);
+
+			auto speed_vert = 0;
+			if(skew.y)
+				speed_vert = skew.y / (std::max)(1, static_cast<int>(vert_.step())) + (skew.y < 0 ? -1 : 1);
+
+			speed_horz = (std::min)(5, (std::max)(speed_horz, -5));
+			speed_vert = (std::min)(5, (std::max)(speed_vert, -5));
+
+			move_origin({
+				speed_horz, speed_vert
+			});
+
+			return true;
+		}
+
+		void _m_size_changed(bool try_update)
+		{
+			auto imd_area = intermediary_area();
+
+			//event hander for scrollbars
+			auto event_fn = [this](const arg_scroll& arg)
+			{
+				if (arg.window_handle == this->vert_.handle())
+					origin_.y = static_cast<int>(this->vert_.value());
+				else
+					origin_.x = static_cast<int>(this->horz_.value());
+				
+				if (this->enable_update_)
+				{
+					API::refresh_window(this->window_handle_);
+				}
+			};
+
+			this->enable_update_ = try_update;
+
+			if (imd_area.width != disp_area_.width)
+			{
+				if (vert_.empty())
+				{
+					vert_.create(window_handle_);
+					vert_.events().value_changed.connect_unignorable(event_fn);
+					this->enable_update_ = false;
+				}
+
+				vert_.move({
+					disp_area_.x + static_cast<int>(imd_area.width) + skew_vert_.x,
+					disp_area_.y + skew_vert_.y,
+					_m_extra_px(),
+					imd_area.height + extra_px_.height
+				});
+
+				vert_.amount(content_size_.height);
+				vert_.range(imd_area.height);
+				vert_.value(origin_.y);
+			}
+			else
+				vert_.close();
+
+			if (imd_area.height != disp_area_.height)
+			{
+				if (horz_.empty())
+				{
+					horz_.create(window_handle_);
+					horz_.events().value_changed.connect_unignorable(event_fn);
+					this->enable_update_ = false;
+				}
+
+				horz_.move({
+					disp_area_.x + skew_horz_.x,
+					disp_area_.y + static_cast<int>(imd_area.height) + skew_horz_.y,
+					imd_area.width + extra_px_.width,
+					_m_extra_px()
+				});
+
+				horz_.amount(content_size_.width);
+				horz_.range(imd_area.width);
+				horz_.value(origin_.x);
+			}
+			else
+				horz_.close();
+
+			this->enable_update_ = true;
+		}
+	private:
+		window const	window_handle_;
+		nana::rectangle	disp_area_;
+		nana::size		content_size_;
+
+		point skew_horz_;
+		point skew_vert_;
+		nana::size extra_px_;
+
+		bool	enable_update_{ true };
+		point origin_;
+
+		nana::scroll<false>	horz_;
+		nana::scroll<true>	vert_;
+
+		timer tmr_;
+
+		events_type events_;
+	};
 
 	namespace drawerbase
 	{
@@ -94,13 +493,6 @@ namespace nana
 					:	text(std::move(text)),
 						custom_format(std::make_unique<format>( fmt ))
 				{}
-
-				/*
-				cell::cell(std::string text, const ::nana::color& bgcolor, const ::nana::color& fgcolor)	//deprecated
-					:	text(std::move(text)),
-						custom_format{std::make_unique<format>( bgcolor, fgcolor ) }
-				{}
-				*/
 
 				cell& cell::operator=(const cell& rhs)
 				{
@@ -1980,7 +2372,7 @@ namespace nana
 			struct essence
 			{
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
-				enum class parts{unknown = -1, header, lister, checker};
+				enum class parts{unknown = -1, header, list, list_blank, checker};
 
 				::nana::listbox* listbox_ptr{nullptr};
 				::nana::listbox::scheme_type* scheme_ptr{nullptr};
@@ -1988,6 +2380,7 @@ namespace nana
 				bool auto_draw{true};
 				bool checkable{false};
 				bool if_image{false};
+				unsigned text_height;
 
                 ::nana::listbox::export_options def_exp_options;
 
@@ -2000,20 +2393,7 @@ namespace nana
 																//if where == lister || where == checker, 'second' indicates the offset to the scroll offset_y which stands for the first item displayed in lister.
 																//if where == unknown, 'second' ignored.
 
-				struct scroll_part
-				{
-					static const unsigned scale = 16;	//pixels of scrollbar fixed edge
-
-					unsigned x_offset() const noexcept
-					{
-						return static_cast<unsigned>(h.empty() ? 0 : h.value());
-					}
-
-					std::size_t offset_display{ 0 };
-
-					nana::scroll<true> v;
-					nana::scroll<false> h;
-				}scroll;
+				std::unique_ptr<intermediary> intermed;
 
 				struct mouse_selection_part
 				{
@@ -2026,7 +2406,7 @@ namespace nana
 					index_pairs already_selected;
 					index_pairs selections;
 
-					nana::timer timer;
+					//nana::timer timer;
 					bool scroll_direction;
 					unsigned scroll_step{ 1 };
 					unsigned mouse_move_timestamp{ 0 };
@@ -2043,19 +2423,26 @@ namespace nana
 					{
 						return header.at(pos).weak_ordering;
 					};
+				}
 
-					mouse_selection.timer.elapse([this] {
-						if (this->scroll_mouse_selection())
-						{
-							this->update_mouse_selection(this->mouse_selection.screen_pos);
-							this->update(true);
-						}
-					});
+				void resize_disp_area()
+				{
+					auto head_px = this->header_visible_px();
+
+					auto r = this->content_area();
+					r.y += head_px;
+					
+					if (r.height <= head_px)
+						r.height = 0;
+					else
+						r.height -= head_px;
+
+					this->intermed->disp_area(r, { -1, 0 }, { 1, -static_cast<int>(head_px) }, { 2, head_px });
 				}
 
 				size_type column_from_pos(int screen_x) const
 				{
-					return header.column_from_point(screen_x - content_area().x + static_cast<int>(scroll.x_offset()));
+					return header.column_from_point(screen_x - content_area().x + intermed->origin().x);
 				}
 
                 std::string to_string(const export_options& exp_opt) const
@@ -2063,33 +2450,22 @@ namespace nana
                     return header.to_string(exp_opt) + exp_opt.endl + lister.to_string(exp_opt) ;
                 }
 
+				int content_position(const index_pair& pos) const
+				{
+					return static_cast<int>(lister.distance(lister.first(), pos) * this->item_height());
+				}
+
 				index_pair first_display() const noexcept
 				{
-					return lister.advance(lister.first(), scroll.offset_display);
-				}
-
-				void first_display(const index_pair& disp_pos)
-				{
-					scroll.offset_display = lister.distance(lister.first(), disp_pos);
-				}
-
-				void first_display_move(long long delta) noexcept
-				{
-					if (delta < 0)
-					{
-						auto move = static_cast<std::size_t>(-delta);
-						if (move > scroll.offset_display)
-							scroll.offset_display = 0;
-						else
-							scroll.offset_display -= move;
-					}
-					else
-						scroll.offset_display += static_cast<std::size_t>(delta);
+					auto offset_display = intermed->origin().y / item_height();
+					return lister.advance(lister.first(), offset_display);
 				}
 
 				unsigned item_height() const noexcept
 				{
-					return (std::max)(scheme_ptr->item_height_ex + scheme_ptr->text_height, unsigned(1));
+					auto px = (std::max)(scheme_ptr->item_height_ex + text_height, unsigned(1));
+					intermed->step(px, false);
+					return px;
 				}
 
 				point coordinate_cast(const point& from, bool from_screen) noexcept
@@ -2098,35 +2474,12 @@ namespace nana
 					if (!rect_lister(orignal))
 						return{};
 
-					const auto offset_pixels = static_cast<int>(scroll.offset_display * item_height());
+					const auto origin = this->intermed->origin();
 
 					if (from_screen)
-					{
-						auto logic_pos = from - orignal.position();
-						logic_pos.x += static_cast<int>(scroll.x_offset());
-						logic_pos.y += offset_pixels;
+						return from - orignal.position() + origin;
 
-						return logic_pos;
-					}
-
-					auto screen_pos = from + orignal.position();
-					screen_pos.x -= static_cast<int>(scroll.x_offset());
-					screen_pos.y -= offset_pixels;
-
-					return screen_pos;
-				}
-
-				void start_mouse_selection(const point& screen_pos)
-				{
-					auto logic_pos = coordinate_cast(screen_pos, true);
-
-					mouse_selection.started = true;
-					mouse_selection.begin_position = logic_pos;
-					mouse_selection.end_position = logic_pos;
-
-					mouse_selection.already_selected = lister.pick_items(true);
-
-					API::set_capture(*listbox_ptr, true);
+					return from + orignal.position() - origin;
 				}
 
 				struct pred_mouse_selection
@@ -2142,41 +2495,27 @@ namespace nana
 					}
 				};
 
-				void update_mouse_selection_speed(const nana::point& screen_pos)
+				std::pair<int, int> columns_range() const
 				{
 					rectangle r;
-					if (this->rect_lister(r) && !r.is_hit(screen_pos))
-					{
-						//speed parameters
-						unsigned steps = 0;
-						unsigned interval = 0;
+					if (!rect_header(r))
+						return{};
 
-						bool enable_timer = true;
+					auto origin = intermed->origin();
+					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.pixels()) };
+				}
 
-						if (screen_pos.y < r.y)
-						{
-							mouse_selection.scroll_direction = false;
-							steps = (r.y - screen_pos.y) / this->item_height();
-						}
-						else if (screen_pos.y > r.bottom())
-						{
-							mouse_selection.scroll_direction = true;
-							steps = (screen_pos.y - r.bottom()) / this->item_height();
-						}
-						else
-							enable_timer = false;
+				void start_mouse_selection(const point& screen_pos)
+				{
+					auto logic_pos = coordinate_cast(screen_pos, true);
 
-						if (enable_timer)
-						{
-							mouse_selection.scroll_step = steps + 1;
-							mouse_selection.timer.interval(600 / (steps + 1));
-							mouse_selection.timer.start();
-						}
-						else
-							mouse_selection.timer.stop();
-					}
-					else
-						mouse_selection.timer.stop();
+					mouse_selection.started = true;
+					mouse_selection.begin_position = logic_pos;
+					mouse_selection.end_position = logic_pos;
+
+					mouse_selection.already_selected = lister.pick_items(true);
+
+					API::set_capture(*listbox_ptr, true);
 				}
 
 				void update_mouse_selection(const point& screen_pos)
@@ -2184,7 +2523,26 @@ namespace nana
 					mouse_selection.screen_pos = screen_pos;
 
 					auto logic_pos = coordinate_cast(screen_pos, true);
+					auto imd_area = intermed->intermediary_area();
+
+					if (logic_pos.y > mouse_selection.begin_position.y)
+					{
+						//The top of logic_pos shouldn't be less than the top of imd_area.
+						//This is a feature that listbox always shows the first displayed item on the screen as a selected item when
+						//move the cursor upwards.
+						logic_pos.y = (std::max)(logic_pos.y, coordinate_cast(imd_area.position(), true).y);
+					}
+
 					mouse_selection.end_position = logic_pos;
+
+					auto content_x = coordinate_cast({ columns_range().first, 0 }, true).x;
+					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) <= content_x ||
+						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x + static_cast<int>(header.pixels())
+						)
+					{
+						lister.select_for_all(false);
+						return;
+					}
 
 					auto begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
 					auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
@@ -2269,35 +2627,6 @@ namespace nana
 					mouse_selection.begin_position = mouse_selection.end_position;
 					mouse_selection.already_selected.clear();
 					mouse_selection.selections.clear();
-
-					mouse_selection.timer.stop();
-				}
-
-				bool scroll_mouse_selection()
-				{
-					auto const prev_offset = scroll.offset_display;
-					if (mouse_selection.scroll_direction)
-					{
-						//downwards
-						auto last_cat = lister.cat_container().size() - 1;
-						auto count = this->count_of_exposed(false);
-
-						auto max_steps = this->lister.distance(first_display(), index_pair{ last_cat, lister.size_item(last_cat) - 1 }) + 1;
-						if (max_steps >= count)
-						{
-							scroll.offset_display += (std::min)(static_cast<unsigned>(max_steps - count), mouse_selection.scroll_step);
-						}
-					}
-					else if (scroll.offset_display > 0)
-					{
-						//upwards
-						if (scroll.offset_display > mouse_selection.scroll_step)
-							scroll.offset_display -= mouse_selection.scroll_step;
-						else
-							scroll.offset_display = 0;
-					}
-
-					return (prev_offset == scroll.offset_display);
 				}
 
 				/// Returns the number of items that are contained on on screen
@@ -2307,217 +2636,31 @@ namespace nana
 				 */
 				size_type count_of_exposed(bool with_rest) const
 				{
-					unsigned lister_s = graph->height() - 2 - header_visible_px() - (scroll.h.empty() ? 0 : scroll.scale);
+					auto lister_s = this->intermed->intermediary_area().height;
 					return (lister_s / item_height()) + (with_rest && (lister_s % item_height()) ? 1 : 0);
-				}
-
-				//keep the first selected item in the display area: the distances are in display positions!
-                void trace_item_dpl( index_pair dpl_pos )
-                {
-					auto first_disp_pos = first_display();
-
-					if(dpl_pos < first_disp_pos)
-                    {
-						if(lister.expand(dpl_pos.cat) == false)
-						{
-							if(lister.cat_status(dpl_pos.cat, true))
-								dpl_pos.item = static_cast<std::size_t>(npos);
-							else
-								lister.expand(dpl_pos.cat, true);
-						}
-
-						first_display(dpl_pos);
-					}
-					else
-					{
-						size_type numbers = count_of_exposed(false);       // revise ... ok
-
-						auto off = lister.distance(first_disp_pos, dpl_pos);
-
-						if(numbers > off) return;
-
-						index_pair n_off = lister.advance(first_disp_pos, (off - numbers) + 1);
-
-						if (n_off.cat != npos)
-							first_display(n_off);
-					}
-
-					adjust_scroll_life();  // call adjust_scroll_value(); 		//adjust_scroll_value(); // again?
-                }
-
-				void trace_last_selected_item()
-				{
-					auto first_abs = lister.index_cast(first_display(), true);	//convert display position to absolute position
-
-					if (lister.last_selected_abs.item == npos &&
-						lister.last_selected_abs.cat == first_abs.cat &&
-						first_abs.item == npos) // if item==off y and is a cat
-						return;
-
-					//trace_item_dpl(lister.relative_pair(lister.last_selected_abs));   //  ???   scroll_y_dpl_refresh() ;
-					trace_item_dpl(lister.index_cast(lister.last_selected_abs, false));	//convert absolute position to display position
 				}
 
 				void update(bool ignore_auto_draw = false) noexcept
 				{
 					if((auto_draw || ignore_auto_draw) && lister.wd_ptr())
 					{
-						adjust_scroll_life();
+						calc_content_size(false);
 						API::refresh_window(lister.wd_ptr()->handle());
 					}
 				}
 
-				void adjust_scroll_value()
+				::nana::size calc_content_size(bool try_update = true)
 				{
-					const auto graph_size = graph->size();
-					if(scroll.h.empty() == false)
-					{
-						const auto ext_px = (4 + (scroll.v.empty() ? 0 : scroll.scale - 1));
-						if (ext_px > graph_size.width)
-							return;
+					size ctt_size(
+						this->header.pixels() + 5,
+						static_cast<size::value_type>(this->lister.the_number_of_expanded())
+					);
 
-						const auto header_px = header.pixels();
-						const unsigned window_px = graph_size.width - ext_px;
+					ctt_size.height *= this->item_height();
 
-						scroll.h.amount(header_px);
-						scroll.h.range(window_px);
+					this->intermed->content_size(ctt_size, try_update);
 
-						const auto offset_x = scroll.x_offset();
-
-						scroll.h.value(header_px < window_px + offset_x ? header_px - window_px : offset_x);
-						scroll.h.step(graph->text_extent_size(L"W").width);
-					}
-
-					if(scroll.v.empty() == false)
-					{
-						const auto ext_px = 2 + (scroll.h.empty() ? 0 : scroll.scale);
-						if (ext_px >= graph_size.height)
-							return;
-
-						const auto items = lister.the_number_of_expanded();
-						const auto disp_items = count_of_exposed(false);
-
-						auto off = scroll.offset_display;
-
-						if (items < disp_items + off)
-						{
-							index_pair pos;
-							if (lister.forward(lister.first(), items - disp_items, pos))
-							{
-								off = items - disp_items;
-								first_display(pos);
-							}
-						}
-
-						scroll.v.amount(lister.the_number_of_expanded());
-						scroll.v.range(count_of_exposed(false));
-						scroll.v.value(off);
-					}
-				}
-
-				void adjust_scroll_life()  // at end call adjust_scroll_value();
-				{
-					internal_scope_guard lock;
-
-					auto const ctt_area = this->content_area();
-
-					// Adjust the ranged column assume the vertical scrollbar is enabled.
-					auto range_adjusted = this->header.calc_ranged_columns(ctt_area.width - scroll.scale);
-					auto const columns_pixels = header.pixels();
-
-					//H scroll enabled
-					//If range_adjusted is true, it indicates no horzontal scroll bar is enabled.
-					bool enable_horz = ((!range_adjusted) && (columns_pixels + 2 > ctt_area.width)); // 2px = left and right gaps(2px)
-
-					unsigned head_scroll = 2 + header_visible_px() + (enable_horz ? scroll.scale : 0);	// 2px left and right gaps(2px) 
-					size_type exposed_count = ((ctt_area.height > head_scroll ? ctt_area.height - head_scroll : 0) / item_height());
-
-					//V scroll enabled
-					auto enable_vert = (lister.the_number_of_expanded() > exposed_count);
-
-					if (enable_vert)
-					{
-						if (!enable_horz)
-							enable_horz = (columns_pixels + scroll.scale > ctt_area.width);
-					}
-					else if (range_adjusted)
-					{
-						//No vertical scrollbar, then re-adjust the range columns for a new width that excludes vert scroll.
-						this->header.calc_ranged_columns(ctt_area.width);
-					}
-
-					//event hander for scrollbars
-					auto evt_fn = [this](const arg_scroll& arg)
-					{
-						if (scroll.h.empty() || (scroll.h.handle() != arg.window_handle))
-						{
-							if (scroll.v.value() == scroll.offset_display)
-								return;
-
-							index_pair item;
-							if (!lister.forward(lister.first(), scroll.v.value(), item))
-								return;
-
-							first_display(item);
-						}
-
-						API::refresh_window(this->lister.wd_ptr()->handle());
-					};
-
-					auto horz_px = ctt_area.width;
-					if (enable_vert)
-					{
-						if (horz_px < scroll.scale)
-							horz_px = 0;
-						else
-							horz_px -= scroll.scale;
-					}
-
-					auto vert_px = ctt_area.height;
-					if (enable_horz)
-					{
-						if (vert_px < scroll.scale)
-							vert_px = 0;
-						else
-							vert_px -= scroll.scale;
-					}
-
-					const auto wd_handle = lister.wd_ptr()->handle();
-					if (enable_horz && horz_px)
-					{
-						rectangle r(ctt_area.x, ctt_area.bottom() - static_cast<int>(scroll.scale), horz_px, scroll.scale);
-						if(scroll.h.empty())
-						{
-							scroll.h.create(wd_handle, r);
-							API::take_active(scroll.h.handle(), false, wd_handle);
-							scroll.h.events().value_changed.connect_unignorable(evt_fn);
-						}
-						else
-							scroll.h.move(r);
-					}
-					else if(!scroll.h.empty())
-						scroll.h.close();
-
-					if (enable_vert && vert_px)
-					{
-						rectangle r(ctt_area.right() - static_cast<int>(scroll.scale), ctt_area.y, scroll.scale, vert_px);
-						if(scroll.v.empty())
-						{
-							scroll.v.create(wd_handle, r);
-							API::take_active(scroll.v.handle(), false, wd_handle);
-							scroll.v.events().value_changed.connect_unignorable(evt_fn);
-						}
-						else
-							scroll.v.move(r);
-
-					}
-					else if(!scroll.v.empty())
-					{
-						scroll.v.close();
-						first_display(lister.first());
-
-					}
-					adjust_scroll_value();
+					return ctt_size;
 				}
 
 				nana::rectangle checkarea(int x, int y) const noexcept /// move to scheme ?? 16 ?
@@ -2532,44 +2675,44 @@ namespace nana
 					if (seq.empty())
 						return 0;
 
-					return (header.position(seq[0], nullptr) - static_cast<int>(scroll.x_offset()) + r.x);
+					return (header.position(seq[0], nullptr) - this->intermed->origin().x + r.x);
 				}
 
 				std::pair<parts, size_t> where(const nana::point& pos) const noexcept
 				{
-					std::pair<parts, size_t> new_where;
+					std::pair<parts, size_t> new_where{ parts::unknown, npos };
 
 					const auto area = this->content_area();
 
 					if(area.is_hit(pos))
 					{   /// we are inside
+						auto const origin = intermed->origin();
+
 						if(header.visible() && (pos.y < static_cast<int>(scheme_ptr->header_height) + area.y))
 						{   /// we are in the header
 							new_where.first = parts::header;
 							new_where.second = this->column_from_pos(pos.x);
 						}
-						else
+						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.pixels()))
 						{
-							new_where.first = parts::lister;
+							new_where.first = parts::list;
 							new_where.second = (pos.y - area.y - header_visible_px()) / item_height();
 
-							if(checkable)
+							if (checkable)
 							{
 								nana::rectangle r;
-								if(rect_lister(r))
+								if (rect_lister(r))
 								{
 									auto top = new_where.second * item_height() + header_visible_px();
-									if(checkarea(item_xpos(r), static_cast<int>(top)).is_hit(pos))
+									if (checkarea(item_xpos(r), static_cast<int>(top)).is_hit(pos))
 										new_where.first = parts::checker;
 								}
 							}
 						}
+						else
+							new_where.first = parts::list_blank;
 					}
-					else
-					{
-						new_where.first = parts::unknown;
-						new_where.second = npos;
-					}
+
 					return new_where;
 				}
 
@@ -2586,7 +2729,7 @@ namespace nana
 				void widget_to_header(nana::point& pos) noexcept
 				{
 					--pos.y;
-					pos.x += static_cast<int>(scroll.x_offset()) - 2;
+					pos.x += this->intermed->origin().x - 2;
 				}
 
 				void draw_peripheral()
@@ -2598,19 +2741,13 @@ namespace nana
 						//Draw Border
 						graph->rectangle(false, static_cast<color_rgb>(0x9cb6c5));
 
-						graph->line({ ctt_area.x, ctt_area.y }, { ctt_area.x, ctt_area.bottom() - 1 }, colors::white);
-						graph->line({ ctt_area.right() - 1, ctt_area.y }, { ctt_area.right() - 1, ctt_area.bottom() - 1 });
-
+						graph->line({ ctt_area.x - 1, ctt_area.y }, { ctt_area.x - 1, ctt_area.bottom() - 1 }, colors::white);
+						graph->line({ ctt_area.right(), ctt_area.y }, { ctt_area.right(), ctt_area.bottom() - 1 });
 					}
 
-					if ((scroll.h.empty() == false) && (scroll.v.empty() == false))
-					{
-						graph->rectangle({ ctt_area.right() - static_cast<int>(scroll.scale),
-							ctt_area.bottom() - static_cast<int>(scroll.scale),
-							scroll.scale,
-							scroll.scale },
-							true, colors::button_face);
-					}
+					auto r = this->intermed->corner();
+					if (!r.empty())
+						graph->rectangle(r, true, colors::button_face);
 				}
 
 				rectangle content_area() const
@@ -2619,8 +2756,8 @@ namespace nana
 
 					if (!this->listbox_ptr->borderless())
 					{
-						r.x = 1;
-						r.width -= (r.width > 2 ? 2 : r.width);
+						r.x = 2;
+						r.width -= (r.width > 4 ? 4 : r.width);
 						
 						r.y = 1;
 						r.height -= (r.height > 2 ? 2 : r.height);
@@ -2644,10 +2781,11 @@ namespace nana
 						if (lister.wd_ptr()->borderless())
 							return !r.empty();
 
-						const unsigned ex_width = 2 + (scroll.v.empty() ? 0 : scroll.scale - 1);
+						auto exs = this->intermed->extra_space(false);
+						const unsigned ex_width = (exs ? exs - 1 : 0);
+
 						if(r.width > ex_width)
 						{
-							r.x += 1;
 							r.width -= ex_width;
 							return true;
 						}
@@ -2658,48 +2796,30 @@ namespace nana
 				bool rect_lister(nana::rectangle& r) const
 				{
 					auto head_pixels = header_visible_px();
-					unsigned extr_w = (scroll.v.empty() ? 0 : scroll.scale - 1);
-					unsigned extr_h = (scroll.h.empty() ? 0 : scroll.scale) + head_pixels;
+
+					auto exs_vert = this->intermed->extra_space(false);
+					auto exs_horz = this->intermed->extra_space(true);
+
+					unsigned extr_w = (exs_vert ? exs_vert - 1 : 0);
+					unsigned extr_h = exs_horz + head_pixels;
 
 					r = this->content_area();
 
-					if(r.width <= extr_w || r.height <= extr_h)
+					if (r.width <= extr_w || r.height <= extr_h)
 						return false;
 
 					r.y += head_pixels;
+
 					r.width -= extr_w;
 					r.height -= extr_h;
 
 					return true;
 				}
 
-				bool wheel(bool upwards)
-				{
-					if(scroll.v.empty() || !scroll.v.scrollable(upwards))
-						return false;
-
-					auto first_pos = first_display();
-
-					index_pair target;
-					if (upwards == false)
-					{
-						if (!lister.forward(first_pos, this->scheme_ptr->mouse_wheel.lines, target))
-							return false;
-					}
-					else
-						lister.backward(first_pos, this->scheme_ptr->mouse_wheel.lines, target);
-
-					if (target == first_pos)
-						return false;
-
-					first_display(target);
-					return true;
-				}
-
 				std::vector<size_type> header_seq(unsigned lister_w) const
 				{
 					std::vector<size_type> seqs;
-					int x = -static_cast<int>(scroll.x_offset());
+					int x = -intermed->origin().x;
 
 					for (const auto& col : header.cont())
 					{
@@ -3139,10 +3259,11 @@ namespace nana
 
 				void hovered(index_type pos) override
 				{
-					auto offset = ess_->lister.distance(ess_->first_display(), pos);
-					if (ess_->pointer_where.first != parts::lister || ess_->pointer_where.second != offset)
+					auto offset = ess_->intermed->origin().y / ess_->item_height();
+
+					if (ess_->pointer_where.first != parts::list || ess_->pointer_where.second != offset)
 					{
-						ess_->pointer_where.first = parts::lister;
+						ess_->pointer_where.first = parts::list;
 						ess_->pointer_where.second = offset;
 						ess_->update();
 					}
@@ -3163,34 +3284,10 @@ namespace nana
 				if (!cat.expand)
 				{
 					this->expand(pos.cat, true);
-					ess_->adjust_scroll_life();
+					ess_->calc_content_size();
 				}
 
-				//The number of items can be displayed on screen
-				auto view_items = ess_->count_of_exposed(false) - 1;
-
-				index_pair start_pos;
-				if (to_bottom)
-				{
-					//start_pos will be (0,0) if backward fails
-					backward(pos, view_items, start_pos);
-				}
-				else if (forward(pos, view_items, start_pos))
-				{
-					start_pos = pos;
-				}
-				else
-				{
-					index_pair last(categories_.size() - 1, ::nana::npos);
-
-					if (categories_.back().expand && (!categories_.back().items.empty()))
-						last.item = categories_.back().items.size() - 1;
-
-					backward(last, view_items, start_pos);
-				}
-
-				ess_->first_display(start_pos);
-				ess_->adjust_scroll_value();
+				ess_->intermed->turn_page(to_bottom, false);
 			}
 
 			void es_lister::erase(const index_pair& pos)
@@ -3287,8 +3384,8 @@ namespace nana
 							/// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected
 							item_proxy::from_display(ess_, next_selected_dpl).select(true);
 
-							if (trace_selected)
-								ess_->trace_item_dpl(next_selected_dpl);
+							//if (trace_selected)
+							//	ess_->trace_item_dpl(next_selected_dpl);	//deprecated
 						}
 						break;
 					}
@@ -3384,7 +3481,7 @@ namespace nana
 				{
 					if(essence_->ptr_state == item_state::highlighted)
 					{
-						x -= r.x - static_cast<int>(essence_->scroll.x_offset());
+						x -= r.x - essence_->intermed->origin().x;
 
 						for(auto & col : essence_->header.cont()) // in current order
 						{
@@ -3457,7 +3554,7 @@ namespace nana
 						if(col.width_px != new_w)
 						{
 							col.width_px = new_w;
-							essence_->adjust_scroll_life();
+							essence_->calc_content_size();
 							return true;
 						}
 					}
@@ -3468,7 +3565,7 @@ namespace nana
 				{
 					const auto border_color = essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.8);
 
-					int text_top = (r.height - essence_->scheme_ptr->text_height) / 2 + r.y;
+					int text_top = (r.height - essence_->text_height) / 2 + r.y;
 					auto text_color = essence_->scheme_ptr->header_fgcolor.get_color();
 
 					auto state = item_state::normal;
@@ -3477,7 +3574,7 @@ namespace nana
 						state = essence_->ptr_state;
 
 					rectangle column_r{
-						r.x - static_cast<int>(essence_->scroll.x_offset()), r.y,
+						r.x - essence_->intermed->origin().x, r.y,
 						0, r.height - 1
 					};
 
@@ -3526,7 +3623,7 @@ namespace nana
 				size_type _m_target_strip(int x, const nana::rectangle& rect, size_type grab, bool& place_front)
 				{
 					//convert x to header logic coordinate.
-					const int x_offset = static_cast<int>(essence_->scroll.x_offset());
+					auto const x_offset = essence_->intermed->origin().x;
 					if (x < x_offset)
 						x = x_offset;
 					else if (x > x_offset + static_cast<int>(rect.width))
@@ -3605,12 +3702,12 @@ namespace nana
 
 					fl_graph.typeface(essence_->graph->typeface());
 
-					int text_top = (essence_->scheme_ptr->header_height - essence_->scheme_ptr->text_height) / 2;
+					int text_top = (essence_->scheme_ptr->header_height - essence_->text_height) / 2;
 					_m_draw_header_item(fl_graph, rectangle{ fl_graph.size()}, text_top, colors::white, col, item_state::floated);
 
 					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
 
-					fl_graph.blend(rectangle{ fl_graph.size() }, *(essence_->graph), point{xpos - static_cast<int>(essence_->scroll.x_offset()) + rect.x, rect.y}, 0.5);
+					fl_graph.blend(rectangle{ fl_graph.size() }, *(essence_->graph), point{ xpos - essence_->intermed->origin().x + rect.x, rect.y }, 0.5);
 				}
 
 			private:
@@ -3660,24 +3757,24 @@ namespace nana
 					if (0 == item_count)
 						return;
 
-					widget * wdptr = essence_->lister.wd_ptr();
-					const auto bgcolor = wdptr->bgcolor();
-					const auto fgcolor = wdptr->fgcolor();
+					auto const self = essence_->lister.wd_ptr();
+					auto const bgcolor = self->bgcolor();
+					auto const fgcolor = self->fgcolor();
 
 					essence_->graph->palette(false, bgcolor);
 
-					const auto header_w = essence_->header.pixels();
-					const auto x_offset = essence_->scroll.x_offset();
-					if (header_w < x_offset + rect.width)
-						essence_->graph->rectangle(rectangle{ point{ rect.x + static_cast<int>(header_w) - static_cast<int>(x_offset), rect.y },
-																	size{rect.width + x_offset - header_w, rect.height} }, true);
+					auto const header_w = essence_->header.pixels();
+
+					auto origin = essence_->intermed->origin();
+					if (header_w < origin.x + rect.width)
+						essence_->graph->rectangle(rectangle{ point{ rect.x + static_cast<int>(header_w) - origin.x, rect.y },
+						size{ rect.width + origin.x - header_w, rect.height } }, true);
 
 					es_lister & lister = essence_->lister;
 
 					auto & ptr_where = essence_->pointer_where;
 
-					int item_top = rect.y;
-
+					int item_top = rect.y - (origin.y % essence_->item_height());
 					auto first_disp = essence_->first_display();
 
 					// The first display is empty when the listbox is empty.
@@ -3687,7 +3784,7 @@ namespace nana
 						index_pair hoverred_pos(npos, npos);	//the hoverred item.
 
 						//if where == lister || where == checker, 'second' indicates the offset to the  relative display-order pos of the scroll offset_y which stands for the first item to be displayed in lister.
-						if ((ptr_where.first == parts::lister || ptr_where.first == parts::checker) && ptr_where.second != npos)
+						if ((ptr_where.first == parts::list || ptr_where.first == parts::checker) && ptr_where.second != npos)
 							lister.forward(first_disp, ptr_where.second, hoverred_pos);
 
 						auto subitems = essence_->header_seq(rect.width);
@@ -3695,7 +3792,7 @@ namespace nana
 						if (subitems.empty())
 							return;
 
-						int txtoff = (essence_->item_height() - essence_->scheme_ptr->text_height) / 2;
+						int txtoff = essence_->scheme_ptr->item_height_ex / 2;
 
 						auto i_categ = lister.get(first_disp.cat);
 
@@ -3718,8 +3815,6 @@ namespace nana
 							if (idx.cat == 0 && idx.is_category())  // the 0 cat
 							{
 								first_disp.item = 0;
-								essence_->first_display(first_disp);
-
 								idx.item = 0;
 							}
 
@@ -3749,7 +3844,7 @@ namespace nana
 
 							idx.item = 0;
 
-							_m_draw_categ(*i_categ, rect.x - static_cast<int>(x_offset), item_top, txtoff, header_w, rect, bgcolor, 
+							_m_draw_categ(*i_categ, rect.x - origin.x, item_top, txtoff, header_w, rect, bgcolor, 
 									(hoverred_pos.is_category() && (idx.cat == hoverred_pos.cat) ? item_state::highlighted : item_state::normal)
 								);
 							item_top += essence_->item_height();
@@ -3847,9 +3942,7 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if (sel && (categ.expand == false))
-					{
-						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->scroll.x_offset()));
-					}
+						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->intermed->origin().x));
 				}
 
 				/// Draws an item
@@ -3892,7 +3985,7 @@ namespace nana
 							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);/// \todo create a parametre for amount of blend
 					}
 
-					const unsigned show_w = (std::min)(content_r.width, width - essence_->scroll.x_offset());
+					const unsigned show_w = (std::min)(content_r.width, width - essence_->intermed->origin().x);
 
 					auto graph = essence_->graph;
 
@@ -4140,30 +4233,6 @@ namespace nana
 					return *essence_;
 				}
 
-				void trigger::_m_draw_border()
-				{
-					if (API::widget_borderless(*essence_->lister.wd_ptr()))
-						return;
-
-					auto & graph = *essence_->graph;
-
-					int right = static_cast<int>(graph.width()) - 1;
-					int bottom = static_cast<int>(graph.height()) - 1;
-
-					//Draw Border
-					graph.rectangle(false, static_cast<color_rgb>(0x9cb6c5));
-
-					graph.line({ 1, 1 }, { 1, bottom - 1}, colors::white);
-					graph.line({ right - 1, 1 }, { right - 1, bottom - 1 });
-
-					if ((essence_->scroll.h.empty() == false) && (essence_->scroll.v.empty() == false))
-						graph.rectangle({ right - static_cast<int>(essence_->scroll.scale),
-							bottom - static_cast<int>(essence_->scroll.scale),
-							essence_->scroll.scale,
-							essence_->scroll.scale },
-							true, colors::button_face);
-				}
-
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
 					essence_->listbox_ptr = static_cast<nana::listbox*>(&widget);
@@ -4172,6 +4241,13 @@ namespace nana
 
 					essence_->lister.bind(essence_, widget);
 					widget.bgcolor(colors::white);
+
+					essence_->intermed.reset(new intermediary(widget));
+					essence_->resize_disp_area();
+
+					essence_->intermed->events().hover_outside = [this](const point& cur_pos) {
+						essence_->update_mouse_selection(cur_pos);
+					};
 				}
 
 				void trigger::detached()
@@ -4182,8 +4258,15 @@ namespace nana
 
 				void trigger::typeface_changed(graph_reference graph)
 				{
-					essence_->scheme_ptr->text_height = graph.text_extent_size(L"jHWn0123456789/<?'{[|\\_").height;
+					//essence_->text_height = graph.text_extent_size(L"jHWn0123456789/<?'{[|\\_").height;
+
+					essence_->text_height = 0;
+					unsigned as, ds, il;
+					if (graph.text_metrics(as, ds, il))
+						essence_->text_height = as + ds;
+
 					essence_->scheme_ptr->suspension_width = graph.text_extent_size("...").width;
+					essence_->calc_content_size(true);
 				}
 
 				void trigger::refresh(graph_reference graph)
@@ -4193,10 +4276,11 @@ namespace nana
 
 					nana::rectangle r;
 
-					if (essence_->header.visible() && essence_->rect_header(r))
-						drawer_header_->draw(graph, r);
 					if (essence_->rect_lister(r))
 						drawer_lister_->draw(r);
+
+					if (essence_->header.visible() && essence_->rect_header(r))
+						drawer_header_->draw(graph, r);
 
 					essence_->draw_peripheral();
 				}
@@ -4263,18 +4347,6 @@ namespace nana
 					if (essence_->mouse_selection.started)
 					{
 						essence_->update_mouse_selection(arg.pos);
-						essence_->update_mouse_selection_speed(arg.pos);
-
-						if (essence_->mouse_selection.timer.started())
-						{
-							auto now = nana::system::timestamp();
-							if (now - essence_->mouse_selection.mouse_move_timestamp > 100)
-							{
-								essence_->mouse_selection.mouse_move_timestamp = now;
-								essence_->scroll_mouse_selection();
-							}
-						}
-
 						need_refresh = true;
 					}
 
@@ -4311,6 +4383,8 @@ namespace nana
 
 					essence_->mouse_selection.reverse_selection = false;
 
+					auto & lister = essence_->lister;
+
 					auto & ptr_where = essence_->pointer_where;
 					if((ptr_where.first == parts::header) && (ptr_where.second != npos || (drawer_header_->splitter() != npos)))
 					{
@@ -4322,9 +4396,8 @@ namespace nana
 							update = true;
 						}
 					}
-					else if(ptr_where.first == parts::lister || ptr_where.first == parts::checker)
+					else if(ptr_where.first == parts::list || ptr_where.first == parts::checker)
 					{
-						auto & lister = essence_->lister;
 						index_pair item_pos;
 
 						if ((essence_->column_from_pos(arg.pos.x) != npos) && lister.forward(essence_->first_display(), ptr_where.second, item_pos))
@@ -4333,7 +4406,7 @@ namespace nana
 
 							const auto abs_item_pos = lister.index_cast_noexcpt(item_pos, true, item_pos);	//convert display position to absolute position
 
-							if(ptr_where.first == parts::lister)
+							if(ptr_where.first == parts::list)
 							{
 								bool sel = true;
 
@@ -4439,14 +4512,25 @@ namespace nana
 								update = lister.select_for_all(false); //unselect all items due to the blank area being clicked
 						}
 
-						if(arg.is_left_button() && (!lister.single_status(true)))	//not selected
-							essence_->start_mouse_selection(arg.pos);
-
 						if(update)
 						{
 							nana::rectangle r;
 							update = essence_->rect_lister(r);
 							if(update)
+								drawer_lister_->draw(r);
+						}
+					}
+					else if (ptr_where.first == parts::list_blank)	//not selected
+					{
+						if (arg.is_left_button() && (!lister.single_status(true)))
+							essence_->start_mouse_selection(arg.pos);
+
+
+						if (lister.select_for_all(false))
+						{
+							nana::rectangle r;
+							update = essence_->rect_lister(r);
+							if (update)
 								drawer_lister_->draw(r);
 						}
 					}
@@ -4472,11 +4556,14 @@ namespace nana
 					{
 						if(essence_->pointer_where.second < essence_->header.cont().size())
 						{
+							/*
 							if(essence_->lister.sort_column(essence_->pointer_where.second, nullptr))
 							{
-								essence_->trace_item_dpl(index_pair{0,0});
+								//essence_->trace_item_dpl(index_pair{0,0});	//deprecated
 								need_refresh = true;
 							}
+							*/
+							need_refresh = essence_->lister.sort_column(essence_->pointer_where.second, nullptr);
 						}
 					}
 					else if (item_state::grabbed == prev_state)
@@ -4501,16 +4588,6 @@ namespace nana
 					}
 				}
 
-				void trigger::mouse_wheel(graph_reference graph, const arg_wheel& arg)
-				{
-					if(essence_->wheel(arg.upwards))
-					{
-						refresh(graph);
-						essence_->adjust_scroll_value();
-						API::dev::lazy_refresh();
-					}
-				}
-
 				void trigger::dbl_click(graph_reference graph, const arg_mouse&)
 				{
 					using parts = essence::parts;
@@ -4531,7 +4608,7 @@ namespace nana
 						}
 					}
 
-					if (parts::lister != essence_->pointer_where.first)
+					if (parts::list != essence_->pointer_where.first)
 						return;
 
 					index_pair item_pos;
@@ -4559,20 +4636,23 @@ namespace nana
                                 size_type n = essence_->count_of_exposed(false);
 								if (lister.backward(last, n, last))
 								{
-									offset_y = last;
-									essence_->first_display(last);
+									auto px = lister.distance(lister.first(), last) * essence_->item_height();
+									essence_->intermed->change_position(static_cast<int>(px), true, false);
 								}
-                            }
-                            essence_->adjust_scroll_life();
-                            refresh(graph);
-                            API::dev::lazy_refresh();
+							}
+
+							essence_->calc_content_size(false);
+							essence_->intermed->sync(false);
+							refresh(graph);
+							API::dev::lazy_refresh();
                         }
 					}
 				}
 
 				void trigger::resized(graph_reference graph, const arg_resized&)
 				{
-					essence_->adjust_scroll_life();
+					essence_->resize_disp_area();
+
 					refresh(graph);
 					API::dev::lazy_refresh();
 				}
@@ -4603,22 +4683,23 @@ namespace nana
 						up = true;
 					case keyboard::os_pagedown:
 						{
-							auto& scrl = essence_->scroll.v;
-							if (! scrl.make_page_scroll(!up))
+							//Turns page, then returns if no change occurs
+							if (!essence_->intermed->turn_page(!up, false))
 								return;
+
 							essence_->lister.select_for_all(false);
 
 							auto idx = essence_->first_display();
 
 							if (!up)
-								essence_->lister.forward(idx, scrl.range()-1, idx);
+								essence_->lister.forward(idx, essence_->count_of_exposed(false) - 1, idx);
 
 							if (!idx.is_category())
 								item_proxy::from_display(essence_, idx).select(true);
 							else if (!essence_->lister.single_status(true))	//not selected
 								essence_->lister.cat_status(idx.cat, true, true);
 
-							essence_->trace_last_selected_item ();
+							//essence_->trace_last_selected_item ();	//deprecated
 
 							break;
 						}
@@ -4632,13 +4713,13 @@ namespace nana
 							else if (!essence_->lister.single_status(true))	//not selected
 								essence_->lister.cat_status(frst.cat, true, true);
 
-							essence_->trace_last_selected_item ();
+							//essence_->trace_last_selected_item ();	//deprecated
 							break;
 						}
 					case keyboard::os_end:
 						essence_->lister.select_for_all(false);
 						item_proxy::from_display(essence_, essence_->lister.last()).select(true);
-						essence_->trace_last_selected_item ();
+						//essence_->trace_last_selected_item ();	//deprecated
 						break;
 					default:
 						return;
@@ -4671,17 +4752,12 @@ namespace nana
 			//end class trigger
 
 			//class item_proxy
-
-				item_proxy::item_proxy(essence * ess) noexcept
-					:	ess_(ess)
-				{}
-
 				item_proxy::item_proxy(essence * ess, const index_pair& pos)
 					:	ess_(ess),
 						pos_(pos)
 				{
 					//get the cat of the item specified by pos
-					if (ess)
+					if (ess && !pos.empty())
 						cat_ = &(*ess->lister.get(pos.cat));
 				}
 
@@ -5306,10 +5382,11 @@ namespace nana
 					}
 					else
 					{
-						cat_->sorted.push_back(cat_->items.size());
 						cells.resize(columns());
 						cat_->items.emplace_back(std::move(cells));
 					}
+
+					cat_->sorted.push_back(cat_->items.size() - 1);
 
 					assign_colors_for_last(ess_, cat_);
 				}
@@ -5570,7 +5647,7 @@ namespace nana
 
 			index_pair item_pos{npos,npos};
 
-			if (drawerbase::listbox::essence::parts::lister == _where.first)
+			if (drawerbase::listbox::essence::parts::list == _where.first)
 				ess.lister.forward(ess.first_display(), _where.second, item_pos);
 	
 			return item_pos;
@@ -5616,11 +5693,22 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 
-			auto move = ess.lister.size_item(cat);
+			auto origin = ess.intermed->origin();
+
+			int new_pos = origin.y;
+
+			auto start_pos = static_cast<int>(ess.lister.distance(ess.lister.first(), index_pair{cat, npos}) * ess.item_height());
+			auto count = static_cast<int>(ess.lister.size_item(cat) * ess.item_height());
+			if (start_pos + count <= origin.y)
+				new_pos = origin.y - static_cast<int>(count);
+			else if (start_pos < origin.y && origin.y < start_pos + count)
+				new_pos = start_pos + ess.item_height();
 
 			ess.lister.clear(cat);
 
-			ess.first_display_move(-static_cast<long long>(move));
+			ess.calc_content_size(false);
+			ess.intermed->change_position(new_pos, false, false);
+			ess.intermed->sync(false);
 			ess.update();
 		}
 
@@ -5631,27 +5719,33 @@ namespace nana
 			ess.lister.clear();
             unsort();   // apperar to be espected
 
-			ess.first_display(ess.lister.first());
+			ess.calc_content_size(false);
+			ess.intermed->change_position(0, false, false);
+			ess.intermed->sync(false);
+
 			ess.update();
 		}
 
 		void listbox::erase(size_type cat)
 		{
 			auto & ess = _m_ess();
+
+			auto origin = ess.intermed->origin();
+
+			auto start_pos = ess.content_position(index_pair{ cat, npos });
+
+			int new_pos = origin.y;
+			auto count = static_cast<int>((ess.lister.size_item(cat) + 1) * ess.item_height());
+			if (start_pos + count <= origin.y)
+				new_pos = origin.y - static_cast<int>(count);
+			else if (start_pos < origin.y && origin.y < start_pos + count)
+				new_pos = start_pos;
+
 			ess.lister.erase(cat);
-			if (cat)
-			{
-				auto pos = ess.first_display();
-				if (cat <= pos.cat)
-				{
-					if (pos.cat == this->size_categ())
-						--pos.cat;
-					pos.item = npos;
-					ess.first_display(pos);
-				}
-			}
-			else
-				ess.first_display(ess.lister.first());
+
+			ess.calc_content_size(false);
+			ess.intermed->change_position(new_pos, false, false);
+			ess.intermed->sync(false);
 
 			ess.update();
 		}
@@ -5660,7 +5754,8 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 			ess.lister.erase();
-			ess.first_display(ess.lister.first());
+			//ess.first_display(ess.lister.first());
+			ess.calc_content_size();
 			ess.update();
 		}
 		
@@ -5673,7 +5768,7 @@ namespace nana
 
 			auto & ess = _m_ess();
 
-			const auto disp_distance = ess.scroll.offset_display;
+			auto const origin = ess.intermed->origin();
 
 			for (auto & pos : indexes)
 			{
@@ -5701,12 +5796,9 @@ namespace nana
 				}
 			}
 
-			auto new_disp = ess.lister.advance(index_pair{}, disp_distance);
-
-			if (new_disp.empty())
-				new_disp.cat = new_disp.item = 0;
-
-			ess.first_display(new_disp);
+			ess.calc_content_size(false);
+			ess.intermed->change_position(origin.y, false, false);
+			ess.intermed->sync(false);
 
 			ess.lister.sort();
 			
@@ -5721,32 +5813,15 @@ namespace nana
 			auto * ess = ip._m_ess();
 			auto _where = ip.pos();
 
-			auto pos_before = ess->first_display();
-			ess->lister.erase(_where);
+			auto origin = ess->intermed->origin();
+			auto start_pos = ess->content_position(_where);
+			if (start_pos < origin.y)
+				origin.y -= ess->item_height();
 
-			auto pos = ess->first_display();
-			if (!pos.empty())
-			{
-				if ((pos.cat == _where.cat) && (_where.item <= pos.item))
-				{
-					if (pos.item == 0)
-					{
-						if (ess->lister.size_item(_where.cat) == 0)
-							pos.item = (pos.cat > 0 ? npos : 0);
-					}
-					else
-						--pos.item;
+			ess->calc_content_size(false);
+			ess->intermed->change_position(origin.y, false, false);
+			ess->intermed->sync(false);
 
-					ess->first_display(pos);
-				}
-			}
-			else
-			{
-				if (pos_before.item)
-					--pos_before.item;
-
-				ess->first_display(pos_before);
-			}
 			ess->update();
 			if(_where.item < ess->lister.size_item(_where.cat))
 				return ip;
