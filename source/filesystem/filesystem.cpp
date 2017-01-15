@@ -845,7 +845,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			GetFileSizeEx_fptr_t get_file_size_ex = reinterpret_cast<GetFileSizeEx_fptr_t>(::GetProcAddress(::GetModuleHandleA("Kernel32.DLL"), "GetFileSizeEx"));
 			if (get_file_size_ex)
 			{
-				HANDLE handle = ::CreateFile(p.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+				HANDLE handle = ::CreateFile(p.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 				if (INVALID_HANDLE_VALUE != handle)
 				{
 					LARGE_INTEGER li;
