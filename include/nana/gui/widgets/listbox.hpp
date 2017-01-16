@@ -170,7 +170,7 @@ namespace nana
 				::std::string	text;
 				format_ptr	custom_format;
 
-				cell() noexcept = default;
+				cell() = default;
 				cell(const cell&);
 				cell(cell&&) noexcept;
 				cell(::std::string) noexcept;

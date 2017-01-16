@@ -96,7 +96,7 @@ namespace nana
 				}
 			});
 
-			tmr_.elapse([this](const arg_elapse& arg)
+			tmr_.elapse([this](const arg_elapse&)
 			{
 				auto curs = ::nana::API::cursor_position();
 				::nana::API::calc_window_point(window_handle_, curs);
@@ -295,13 +295,13 @@ namespace nana
 				origin_.y = 0;
 
 			bool changed = false;
-			if (!horz_.empty() && (horz_.value() != origin_.x))
+			if (!horz_.empty() && (static_cast<long long>(horz_.value()) != origin_.x))
 			{
 				horz_.value(origin_.x);
 				changed = true;
 			}
 
-			if ((!vert_.empty()) && (vert_.value() != origin_.y))
+			if ((!vert_.empty()) && (static_cast<long long>(vert_.value()) != origin_.y))
 			{
 				vert_.value(origin_.y);
 				changed = true;
@@ -934,7 +934,13 @@ namespace nana
 							auto col_from = std::move(*i);
 							cont_.erase(i);
 
+							//A workaround for old libstdc++, that some operations of vector
+							//don't accept const iterator.
+#ifdef _MSC_VER
 							for (auto u = cont_.cbegin(); u != cont_.cend(); ++u)
+#else
+							for (auto u = cont_.begin(); u != cont_.end(); ++u)
+#endif
 							{
 								if (to == u->index)
 								{
@@ -1372,7 +1378,13 @@ namespace nana
 		        /// will use the key to insert new cat before the first cat with compare less than the key, or at the end of the list of cat and return a ref to that new cat.  ?
 				category_t* create_cat(std::shared_ptr<nana::detail::key_interface>& ptr)
 				{
+					//A workaround for old version of libstdc++
+					//Some operations of vector provided by libstdc++ don't accept const iterator.
+#ifdef _MSC_VER
 					for (auto i = categories_.cbegin(); i != categories_.cend(); ++i)
+#else
+					for (auto i = categories_.begin(); i != categories_.end(); ++i)
+#endif
 					{
 						if (i->key_ptr)
 						{
@@ -1810,8 +1822,13 @@ namespace nana
 
 					if (categories_.size() > 1)
 					{
-						auto i = categories_.cbegin();
-						categories_.erase(++i, categories_.cend());
+						//A workaround for old version of libstdc++
+						//Some operations of vector provided by libstdc++ don't accept const iterator.
+#ifdef _MSC_VER
+						categories_.erase(++categories_.cbegin(), categories_.cend());
+#else
+						categories_.erase(++categories_.begin(), categories_.end());
+#endif
 					}
 				}
 
@@ -2579,7 +2596,12 @@ namespace nana
 							}
 						}
 
+#ifdef _MSC_VER
 						for(auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
+#else
+						for(auto i = mouse_selection.selections.begin(); i != mouse_selection.selections.end();)
+
+#endif
 						{
 							if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{*i}))
 							{
@@ -3257,7 +3279,7 @@ namespace nana
 					cat_proxy(ess_, pos.cat).at(pos.item).select(true);
 				}
 
-				void hovered(index_type pos) override
+				void hovered(index_type /*pos*/) override
 				{
 					auto offset = ess_->intermed->origin().y / ess_->item_height();
 
@@ -3308,7 +3330,7 @@ namespace nana
 				}
 			}
 
-			void es_lister::move_select(bool upwards, bool unselect_previous, bool trace_selected) noexcept
+			void es_lister::move_select(bool upwards, bool unselect_previous, bool /*trace_selected*/) noexcept
 			{
 				auto next_selected_dpl = index_cast_noexcpt(last_selected_abs, false);	//convert absolute position to display position
 
