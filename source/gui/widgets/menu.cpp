@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -84,6 +84,11 @@ namespace nana
 					bool menu_item_type::item_proxy::checked() const
 					{
 						return item_.flags.checked;
+					}
+
+					std::string menu_item_type::item_proxy::text() const
+					{
+						return item_.text;
 					}
 
 					std::size_t menu_item_type::item_proxy::index() const
@@ -1117,15 +1122,28 @@ namespace nana
 			delete impl_;
 		}
 
-		auto menu::append(std::string text_utf8, const menu::event_fn_t& callback) -> item_proxy
+		auto menu::append(std::string text_utf8, const menu::event_fn_t& handler) -> item_proxy
 		{
-			impl_->mbuilder.data().items.emplace_back(new item_type(std::move(text_utf8), callback));
-			return item_proxy(size() - 1, *impl_->mbuilder.data().items.back());
+			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
+			impl_->mbuilder.data().items.emplace_back(item.get());
+			return item_proxy(size() - 1, *item.release());
 		}
 
 		void menu::append_splitter()
 		{
 			impl_->mbuilder.data().items.emplace_back(new item_type);
+		}
+
+		auto menu::insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler) -> item_proxy
+		{
+			auto & items = impl_->mbuilder.data().items;
+			if (pos > items.size())
+				throw std::out_of_range("menu: a new item inserted to an invalid position");
+
+			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
+			impl_->mbuilder.data().items.emplace(impl_->mbuilder.data().items.cbegin() + pos, item.get());
+
+			return item_proxy{ pos, *item.release() };
 		}
 
 		void menu::clear()

@@ -1,7 +1,7 @@
 /**
  *	A Menu implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -47,6 +47,8 @@ namespace nana
 					item_proxy&	check_style(checks);
 					item_proxy&	checked(bool);
 					bool		checked() const;
+
+					std::string text() const;
 
 					std::size_t index() const;
 				private:
@@ -123,8 +125,19 @@ namespace nana
 		~menu();
 
 			/// Appends an item to the menu.
-		item_proxy	append(std::string text_utf8, const event_fn_t& callback= event_fn_t());
+		item_proxy	append(std::string text_utf8, const event_fn_t& handler = {});
 		void		append_splitter();
+
+		/// Inserts new item at specified position
+		/**
+		 * It will invalidate the existing item proxies from the specified position.
+		 * @param pos The position where new item to be inserted
+		 * @param text_utf8 The title of item
+		 * @param handler The event handler for the item.
+		 * @return the item proxy to the new inserted item.
+		 */
+		item_proxy	insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler = {});
+
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
 		void close();
