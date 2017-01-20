@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -110,17 +110,14 @@ namespace nana
 
 				struct pseudo_node_type{};
 
-				typedef widgets::detail::tree_cont<treebox_node_type> tree_cont_type;
-				typedef tree_cont_type::node_type	node_type;
+				using tree_cont_type = widgets::detail::tree_cont<treebox_node_type>;
+				using node_type = tree_cont_type::node_type;
 
 				trigger();
 				~trigger();
 
 				implement * impl() const;
 
-				void auto_draw(bool);
-				void checkable(bool);
-				bool checkable() const;
 				void check(node_type*, checkstate);
 				bool draw();
 
@@ -136,7 +133,6 @@ namespace nana
 				node_type* insert(node_type*, const std::string& key, std::string&&);
 				node_type* insert(const std::string& path, std::string&&);
 
-				bool verify(const void*) const;
 				bool verify_kinship(node_type* parent, node_type* child) const;
 
 				void remove(node_type*);
@@ -148,7 +144,6 @@ namespace nana
 				node_image_tag& icon(const ::std::string&) const;
 				void icon_erase(const ::std::string&);
 				void node_icon(node_type*, const ::std::string& id);
-
 				unsigned node_width(const node_type*) const;
 
 				bool rename(node_type*, const char* key, const char* name);
