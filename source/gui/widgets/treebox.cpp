@@ -1562,35 +1562,6 @@ namespace nana
 					return impl_;
 				}
 
-				void trigger::auto_draw(bool ad)
-				{
-					if(impl_->attr.auto_draw != ad)
-					{
-						impl_->attr.auto_draw = ad;
-						if(ad)
-							API::update_window(impl_->data.widget_ptr->handle());
-					}
-				}
-
-				void trigger::checkable(bool enable)
-				{
-					auto & comp_placer = impl_->data.comp_placer;
-					if(comp_placer->enabled(component::crook) != enable)
-					{
-						comp_placer->enable(component::crook, enable);
-						if(impl_->attr.auto_draw)
-						{
-							impl_->draw(false);
-							API::update_window(impl_->data.widget_ptr->handle());
-						}
-					}
-				}
-
-				bool trigger::checkable() const
-				{
-					return impl_->data.comp_placer->enabled(component::crook);
-				}
-
 				void trigger::check(node_type* node, checkstate cs)
 				{
 					if (!node->owner) return;
@@ -1727,11 +1698,6 @@ namespace nana
 					return x;
 				}
 
-				bool trigger::verify(const void* node) const
-				{
-					return impl_->attr.tree_cont.verify(reinterpret_cast<const node_type*>(node));
-				}
-
 				bool trigger::verify_kinship(node_type* parent, node_type* child) const
 				{
 					if(false == (parent && child)) return false;
@@ -1744,7 +1710,7 @@ namespace nana
 
 				void trigger::remove(node_type* node)
 				{
-					if(!verify(node))
+					if (!tree().verify(node))
 						return;
 
 					auto & shape = impl_->shape;
@@ -1769,10 +1735,10 @@ namespace nana
 
 				void trigger::selected(node_type* node)
 				{
-					if(impl_->attr.tree_cont.verify(node) && impl_->set_selected(node))
+					if(tree().verify(node) && impl_->set_selected(node))
 					{
-						impl_->draw(true);
-						API::update_window(impl_->data.widget_ptr->handle());
+						if(impl_->draw(true))
+							API::update_window(impl_->data.widget_ptr->handle());
 					}
 				}
 
@@ -2160,6 +2126,8 @@ namespace nana
 	}//end namespace drawerbase
 
 	//class treebox
+		using component = drawerbase::treebox::component;
+
 		treebox::treebox(){}
 
 		treebox::treebox(window wd, bool visible)
@@ -2184,18 +2152,30 @@ namespace nana
 
 		void treebox::auto_draw(bool ad)
 		{
-			get_drawer_trigger().auto_draw(ad);
+			auto impl = get_drawer_trigger().impl();
+			if (impl->attr.auto_draw != ad)
+			{
+				impl->attr.auto_draw = ad;
+				if (ad)
+					API::refresh_window(this->handle());
+			}
 		}
 
 		treebox & treebox::checkable(bool enable)
 		{
-			get_drawer_trigger().checkable(enable);
+			auto impl = get_drawer_trigger().impl();
+			auto & comp_placer = impl->data.comp_placer;
+			if (comp_placer->enabled(component::crook) != enable)
+			{
+				comp_placer->enable(component::crook, enable);
+				get_drawer_trigger().draw();
+			}
 			return *this;
 		}
 
 		bool treebox::checkable() const
 		{
-			return get_drawer_trigger().checkable();
+			return get_drawer_trigger().impl()->data.comp_placer->enabled(component::crook);
 		}
 
 		void treebox::clear()
