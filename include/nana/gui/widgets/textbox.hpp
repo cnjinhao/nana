@@ -1,7 +1,7 @@
 /**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -226,6 +226,9 @@ namespace nana
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::wstring> kw_list);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
 		void erase_keyword(const std::string& kw);
+
+		/// Sets the text alignment
+		textbox& text_align(::nana::align alignment);
 
 		/// Returns the text position of each line that currently displays on screen.
 		text_positions text_position() const;

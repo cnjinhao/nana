@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -617,6 +617,19 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
 				editor->erase_keyword(to_wstring(kw));
+		}
+
+		textbox& textbox::text_align(::nana::align alignment)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				editor->text_align(alignment);
+				API::update_window(this->handle());
+			}
+
+			return *this;
 		}
 
 		std::vector<upoint> textbox::text_position() const

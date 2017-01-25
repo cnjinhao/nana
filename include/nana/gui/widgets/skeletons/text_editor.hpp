@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -56,6 +56,8 @@ namespace nana{	namespace widgets
 			class keyword_parser;
 			class helper_pencil;
 
+			struct text_section;
+
 			text_editor(const text_editor&) = delete;
 			text_editor& operator=(const text_editor&) = delete;
 
@@ -100,6 +102,8 @@ namespace nana{	namespace widgets
 			void set_event(event_interface*);
 
 			bool load(const char*);
+
+			void text_align(::nana::align alignment);
 
 			/// Sets the text area.
 			/// @return true if the area is changed with the new value.
@@ -206,7 +210,16 @@ namespace nana{	namespace widgets
 			skeletons::textbase<char_type>& textbase();
 			const skeletons::textbase<char_type>& textbase() const;
 		private:
+			std::vector<upoint> _m_render_text(const ::nana::color& text_color);
 			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
+
+			::nana::point	_m_caret_to_screen(::nana::upoint pos) const;
+			::nana::upoint	_m_screen_to_caret(::nana::point pos) const;
+
+			bool _m_pos_from_secondary(std::size_t textline, const nana::upoint& secondary, unsigned & pos);
+			bool _m_pos_secondary(const nana::upoint& charpos, nana::upoint& secondary_pos) const;
+			bool _m_move_caret_ns(bool to_north);
+			void _m_update_line(std::size_t pos, std::size_t secondary_count_before);
 
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
@@ -233,10 +246,13 @@ namespace nana{	namespace widgets
 
 			int _m_text_top_base() const;
 
+			/// Returns the logical position that text starts of a specified line in x-axis
+			int _m_text_x(const text_section&) const;
+
 			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const wchar_t*, std::size_t len) const;
 			//_m_draw_string
 			//@brief: Draw a line of string
-			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const ::std::wstring&, bool if_mask) const;
+			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const text_section&, bool if_mask) const;
 			//_m_update_caret_line
 			//@brief: redraw whole line specified by caret pos. 
 			//@return: true if caret overs the border
@@ -244,7 +260,7 @@ namespace nana{	namespace widgets
 
 			void _m_offset_y(int y);
 
-			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos);
+			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos) const;
 
 			unsigned _m_pixels_by_char(const ::std::wstring&, ::std::size_t pos) const;
 			void _m_handle_move_key(const arg_keyboard& arg);
@@ -264,6 +280,8 @@ namespace nana{	namespace widgets
 			struct attributes
 			{
 				::std::string tip_string;
+
+				::nana::align alignment{ ::nana::align::left };
 
 				bool line_wrapped{false};
 				bool multi_lines{true};
