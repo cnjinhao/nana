@@ -1377,10 +1377,11 @@ namespace nana{	namespace widgets
 					impl_->capacities.behavior = new behavior_linewrapped(*this);
 					text_area_.vscroll = text_area_.scroll_pixels;
 					text_area_.hscroll = 0;
-					impl_->capacities.behavior->pre_calc_lines(width_pixels());
 				}
 				else
 					impl_->capacities.behavior = new behavior_normal(*this);
+
+				impl_->capacities.behavior->pre_calc_lines(width_pixels());
 
 				points_.offset.x = 0;
 				_m_offset_y(0);
@@ -2628,7 +2629,7 @@ namespace nana{	namespace widgets
 			else
 				scrpos.x += _m_text_x(*sct_ptr);
 
-			scrpos.y = text_area_.area.y + static_cast<int>((lines - points_.offset.y) * line_height());
+			scrpos.y = this->_m_text_top_base() + static_cast<int>((lines - points_.offset.y) * line_height());
 			return scrpos;
 		}
 
