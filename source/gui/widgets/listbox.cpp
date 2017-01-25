@@ -107,6 +107,7 @@ namespace nana
 						events_.hover_outside(curs);
 
 					API::refresh_window(window_handle_);
+					this->sync(false);
 				}
 				else
 					tmr_.stop();
@@ -3904,22 +3905,20 @@ namespace nana
 					//Check if the mouse selection box is present.
 					if (essence_->mouse_selection.begin_position != essence_->mouse_selection.end_position)
 					{
-						rectangle box{
-							point{
-								std::min(essence_->mouse_selection.begin_position.x, essence_->mouse_selection.end_position.x),
-								std::min(essence_->mouse_selection.begin_position.y, essence_->mouse_selection.end_position.y)
-							},
-							size{
+						point box_position{
+							std::min(essence_->mouse_selection.begin_position.x, essence_->mouse_selection.end_position.x),
+							std::min(essence_->mouse_selection.begin_position.y, essence_->mouse_selection.end_position.y)
+						};
+						size box_size{
 								static_cast<size::value_type>(std::abs(essence_->mouse_selection.begin_position.x - essence_->mouse_selection.end_position.x)),
 								static_cast<size::value_type>(std::abs(essence_->mouse_selection.begin_position.y - essence_->mouse_selection.end_position.y))
-							}
 						};
 
-						box.position(essence_->coordinate_cast(box.position(), false));
+						paint::graphics box_graph{ box_size };
+						box_graph.rectangle(true, essence_->scheme_ptr->selection_box.get_color().blend(colors::white, 0.6));
+						box_graph.rectangle(false, essence_->scheme_ptr->selection_box.get_color());
 
-						rectangle visual_box;
-						if(overlap(box, rect, visual_box))
-							essence_->graph->rectangle(visual_box, false, colors::blue);
+						box_graph.blend(rectangle{ box_size }, *essence_->graph, essence_->coordinate_cast(box_position, false), 0.5);
 					}
 				}
 			private:
