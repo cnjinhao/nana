@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -197,6 +197,13 @@ namespace nana{
 			return rectangle{ primary_monitor_size() };
 		}
 
+#ifdef NANA_X11
+		//The XMoveWindow and XMoveResizeWindow don't take effect if the specified window is
+		//unmapped, and the members x and y of XSetSizeHints is obsoluted. So the position that
+		//set to a unmapped windows should be kept and use the position when the window is mapped.
+		std::map<Window, ::nana::point> exposed_positions;	//locked by platform_scope_guard
+#endif
+
 		//platform-dependent
 		native_interface::window_result native_interface::create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& app)
 		{
@@ -289,6 +296,7 @@ namespace nana{
 			{
 				win_attr.save_under = True;
 				attr_mask |= CWSaveUnder;
+
 				parent = restrict::spec.root_window();
 				calc_screen_point(owner, pos);
 			}
@@ -303,7 +311,12 @@ namespace nana{
 			{
 				//make owner if it is a popup window
 				if((!nested) && owner)
+				{
 					restrict::spec.make_owner(owner, reinterpret_cast<native_window_type>(handle));
+					exposed_positions[handle] = pos;
+				}
+
+				XChangeWindowAttributes(disp, handle, attr_mask, &win_attr);
 
 				XTextProperty name;
 				char text[] = "Nana Window";
@@ -655,6 +668,14 @@ namespace nana{
 				if(show)
 				{
 					::XMapWindow(disp, reinterpret_cast<Window>(wd));
+
+					auto i = exposed_positions.find(reinterpret_cast<Window>(wd));
+					if(i != exposed_positions.end())
+					{
+						::XMoveWindow(disp, reinterpret_cast<Window>(wd), i->second.x, i->second.y);
+						exposed_positions.erase(i);
+					}
+					
 					Window grab = restrict::spec.grab(0);
 					if(grab == reinterpret_cast<Window>(wd))
 						capture_window(wd, true);
@@ -882,13 +903,7 @@ namespace nana{
 			XWindowAttributes attr;
 			::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 			if(attr.map_state == IsUnmapped)
-			{
-				XSizeHints hints;
-				hints.flags = USPosition;
-				hints.x = x;
-				hints.y = y;
-				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
-			}
+				exposed_positions[reinterpret_cast<Window>(wd)] = ::nana::point{x, y};
 
 			::XMoveWindow(disp, reinterpret_cast<Window>(wd), x, y);
 #endif
@@ -959,11 +974,11 @@ namespace nana{
 			::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 			if(attr.map_state == IsUnmapped)
 			{
-				hints.flags |= (USPosition | USSize);
-				hints.x = x;
-				hints.y = y;
+				hints.flags |= USSize;
 				hints.width = r.width;
 				hints.height = r.height;
+
+				exposed_positions[reinterpret_cast<Window>(wd)] = point{x, y};
 			}
 
 			if(hints.flags)

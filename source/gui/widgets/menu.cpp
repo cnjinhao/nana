@@ -1141,7 +1141,14 @@ namespace nana
 				throw std::out_of_range("menu: a new item inserted to an invalid position");
 
 			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
-			impl_->mbuilder.data().items.emplace(impl_->mbuilder.data().items.cbegin() + pos, item.get());
+
+			items.emplace(
+#ifdef _MSC_VER
+				items.cbegin() + pos,
+#else
+				items.begin() + pos,
+#endif
+				item.get());
 
 			return item_proxy{ pos, *item.release() };
 		}

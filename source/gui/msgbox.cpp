@@ -618,7 +618,7 @@ namespace nana
 					place_.field_display(img_fields[i], false);
 			}
 
-			size({desc_extent.width, height });
+			move(API::make_center(this->owner(), desc_extent.width, height));
 			caption(title);
 		}
 
