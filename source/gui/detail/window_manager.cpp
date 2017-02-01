@@ -685,6 +685,30 @@ namespace detail
 			}
 		}
 
+		void sync_child_root_display(window_manager::core_window_t* wd)
+		{
+			for (auto & child : wd->children)
+			{
+				if (category::flags::root != child->other.category)
+				{
+					sync_child_root_display(child);
+					continue;
+				}
+
+				auto const vs_parents = child->visible_parents();
+
+				if (vs_parents != child->visible)
+				{
+					native_interface::show_window(child->root, vs_parents, false);
+				}
+				else
+				{
+					if (child->visible != native_interface::is_window_visible(child->root))
+						native_interface::show_window(child->root, child->visible, false);
+				}
+			}
+		}
+
 		//show
 		//@brief: show or hide a window
 		bool window_manager::show(core_window_t* wd, bool visible)
@@ -719,8 +743,15 @@ namespace detail
 				if(category::flags::root != wd->other.category)
 					bedrock::instance().event_expose(wd, visible);
 
-				if(nv)
+				if (nv)
+				{
+					if (visible && !wd->visible_parents())
+						return true;
+
 					native_interface::show_window(nv, visible, wd->flags.take_active);
+				}
+
+				sync_child_root_display(wd);
 			}
 			return true;
 		}
