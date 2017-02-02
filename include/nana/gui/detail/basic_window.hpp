@@ -1,7 +1,7 @@
 /**
  *	A Basic Window Widget Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -220,9 +220,6 @@ namespace detail
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
 				bool			ime_enabled{false};
-#if defined(NANA_WINDOWS)
-				cursor			running_cursor{ nana::cursor::arrow };
-#endif
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 

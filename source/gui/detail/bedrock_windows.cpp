@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -784,7 +784,7 @@ namespace detail
 		static auto& brock = bedrock::instance();
 		static restrict::TRACKMOUSEEVENT track = {sizeof track, 0x00000002};
 
-		auto native_window = reinterpret_cast<native_window_type>(root_window);
+		auto const native_window = reinterpret_cast<native_window_type>(root_window);
 
 		auto & wd_manager = brock.wd_manager();
 		auto* root_runtime = wd_manager.root_runtime(native_window);
@@ -1720,9 +1720,16 @@ namespace detail
 			thrd->cursor.handle = ::LoadCursor(nullptr, translate(cur));
 		}
 
-		if (wd->root_widget->other.attribute.root->running_cursor != cur)
+		auto this_cur = reinterpret_cast<HCURSOR>(
+#ifdef _WIN64
+			::GetClassLongPtr(reinterpret_cast<HWND>(wd->root), GCLP_HCURSOR)
+#else
+			::GetClassLong(reinterpret_cast<HWND>(wd->root), GCL_HCURSOR)
+#endif
+			);
+
+		if(this_cur != thrd->cursor.handle)
 		{
-			wd->root_widget->other.attribute.root->running_cursor = cur;
 #ifdef _WIN64
 			::SetClassLongPtr(reinterpret_cast<HWND>(wd->root), GCLP_HCURSOR,
 				reinterpret_cast<LONG_PTR>(thrd->cursor.handle));
@@ -1731,6 +1738,7 @@ namespace detail
 				static_cast<unsigned long>(reinterpret_cast<size_t>(thrd->cursor.handle)));
 #endif
 		}
+
 		if (cursor::arrow == thrd->cursor.predef_cursor)
 		{
 			thrd->cursor.window = nullptr;
@@ -1804,10 +1812,7 @@ namespace detail
 				undefine_state_cursor(wd, thrd);
 
 			if(wd == thrd->cursor.window)
-			{
 				set_cursor(wd, cursor::arrow, thrd);
-				wd->root_widget->other.attribute.root->running_cursor = cursor::arrow;
-			}
 			break;
         default:
             break;
