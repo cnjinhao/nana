@@ -16,6 +16,7 @@
 #include "effects.hpp"
 #include "detail/general_events.hpp"
 #include "detail/color_schemes.hpp"
+#include "detail/widget_content_measurer_interface.hpp"
 #include <nana/paint/image.hpp>
 #include <memory>
 
@@ -72,6 +73,9 @@ namespace API
 
 		void set_scheme(window, widget_geometrics*);
 		widget_geometrics* get_scheme(window);
+
+		/// Sets a content measurer
+		void set_measurer(window, ::nana::dev::widget_content_measurer_interface*);
 
 		void attach_drawer(widget&, drawer_trigger&);
 		::nana::detail::native_string_type window_caption(window) throw();

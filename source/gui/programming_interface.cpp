@@ -210,6 +210,14 @@ namespace API
 			return (restrict::wd_manager().available(iwd) ? iwd->annex.scheme : nullptr);
 		}
 
+		void set_measurer(window wd, ::nana::dev::widget_content_measurer_interface* measurer)
+		{
+			auto iwd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(iwd))
+				iwd->annex.content_measurer = measurer;
+		}
+
 		void attach_drawer(widget& wd, drawer_trigger& dr)
 		{
 			const auto iwd = reinterpret_cast<basic_window*>(wd.handle());
@@ -1009,6 +1017,8 @@ namespace API
 		else
 			return;
 
+		//modal has to guarantee that does not lock the mutex of window_manager before invokeing the pump_event,
+		//otherwise, the modal will prevent the other thread access the window.
 		restrict::bedrock.pump_event(wd, true);
 	}
 

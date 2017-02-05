@@ -1,7 +1,7 @@
 /*
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -30,6 +30,7 @@
 #include <limits>	//numeric_limits
 #include <cstdlib>	//std::abs
 #include <cstring>	//std::memset
+#include <cctype>	//std::isalpha/std::isalnum
 
 #include "place_parts.hpp"
 
@@ -56,18 +57,18 @@ namespace nana
 			enum class token
 			{
 				div_start, div_end, splitter,
-				identifier, dock, vert, grid, number, array, reparray,
+				identifier, dock, fit, vert, grid, number, array, reparray,
 				weight, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom, undisplayed, invisible,
 				collapse, parameters,
 				equal,
 				eof, error
 			};
 
-			tokenizer(const char* p)
+			tokenizer(const char* p) noexcept
 				: divstr_(p), sp_(p)
 			{}
 
-			const std::string& idstr() const
+			const std::string& idstr() const noexcept
 			{
 				return idstr_;
 			}
@@ -77,22 +78,22 @@ namespace nana
 				return number_;
 			}
 
-			std::vector<number_t>& array()
+			std::vector<number_t>& array() noexcept
 			{
 				return array_;
 			}
 
-			repeated_array&& reparray()
+			repeated_array&& reparray() noexcept
 			{
 				return std::move(reparray_);
 			}
 
-			std::vector<number_t>& parameters()
+			std::vector<number_t>& parameters() noexcept
 			{
 				return parameters_;
 			}
 
-			std::size_t pos() const
+			std::size_t pos() const noexcept
 			{
 				return (sp_ - divstr_);
 			}
@@ -230,11 +231,11 @@ namespace nana
 					break;
 				}
 
-				if ('_' == *sp_ || isalpha(*sp_))
+				if ('_' == *sp_ || std::isalpha(*sp_))
 				{
 					const char * idstart = sp_++;
 
-					while ('_' == *sp_ || isalpha(*sp_) || isalnum(*sp_))
+					while ('_' == *sp_ || std::isalpha(*sp_) || std::isalnum(*sp_))
 						++sp_;
 
 					idstr_.assign(idstart, sp_);
@@ -252,6 +253,8 @@ namespace nana
 					}
 					else if ("dock" == idstr_)
 						return token::dock;
+					else if ("fit" == idstr_)
+						return token::fit;
 					else if ("vertical" == idstr_ || "vert" == idstr_)
 						return token::vert;
 					else if ("variable" == idstr_ || "repeated" == idstr_)
@@ -357,7 +360,7 @@ namespace nana
 				}
 			}
 
-			static const char* _m_eat_whitespace(const char* sp)
+			static const char* _m_eat_whitespace(const char* sp) noexcept
 			{
 				while (*sp && !isgraph(*sp))
 					++sp;
@@ -442,9 +445,9 @@ namespace nana
 	}
 
 
-	inline bool is_idchar(int ch)
+	inline bool is_idchar(int ch) noexcept
 	{
-		return ('_' == ch || isalnum(ch));
+		return ('_' == ch || std::isalnum(ch));
 	}
 
 	std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
@@ -518,7 +521,6 @@ namespace nana
 			off = pos + 1;
 		}
 	}
-
 
 	//struct implement
 	struct place::implement
@@ -683,7 +685,6 @@ namespace nana
 
 	class place::implement::field_dock
 	{
-
 	public:
 		div_dockpane * attached{ nullptr };					//attached div object
 		std::unique_ptr<place_parts::dockarea> dockarea;	//the dockable widget
@@ -697,7 +698,7 @@ namespace nana
 	public:
 		enum class kind{ arrange, vertical_arrange, grid, splitter, dock, dockpane};
 
-		division(kind k, std::string&& n)
+		division(kind k, std::string&& n) noexcept
 			: kind_of_division(k),
 			name(std::move(n))
 		{}
@@ -707,6 +708,53 @@ namespace nana
 			//detach the field
 			if (field)
 				field->attached = nullptr;
+		}
+
+		std::pair<double, double> calc_weight_floor()
+		{
+			std::pair<double, double> floor;
+
+			run_.weight_floor = floor;
+
+			if (this->display)
+			{
+				double ratio = 0;
+
+				for (auto & child : children)
+				{
+					auto child_floor = child->calc_weight_floor();
+
+					if(child->weight.kind_of() == number_t::kind::percent)
+					{
+						ratio += child->weight.real();
+					}
+					else
+					{
+						floor.first += child_floor.first;
+						floor.second += child_floor.second;
+					}
+				}
+
+				auto const vert = (this->div_owner && (this->div_owner->kind_of_division == kind::vertical_arrange));
+
+				double& fv = (vert ? floor.second : floor.first);
+
+				if(ratio > 0.001)
+				{
+					if(fv > 0)
+						fv = fv / ratio;
+				}
+
+				if (!this->weight.empty())
+				{
+					if (this->weight.kind_of() != number_t::kind::percent)
+						fv = this->weight.real();
+				}
+				else
+					run_.weight_floor = floor;
+			}
+
+			return floor;
 		}
 
 		void set_visible(bool vsb)
@@ -769,26 +817,39 @@ namespace nana
 			}
 		}
 
-		bool is_back(const division* div) const
+		bool is_back(const division* div) const noexcept
 		{
-			for (auto i = children.crbegin(); i != children.crend(); ++i)
+			const division * last = nullptr;
+			for (auto & p : children)
 			{
-				if (!(i->get()->display))
+				if (!(p->display))
 					continue;
 
-				return (div == i->get());
+				last = p.get();
 			}
-			return false;
+
+			return (div == last);
 		}
 
 		static double limit_px(const division* div, double px, unsigned area_px)
 		{
+			auto const vert = (div->div_owner && (div->div_owner->kind_of_division == kind::vertical_arrange));
+
+			auto weight_floor = (vert? div->run_.weight_floor.second : div->run_.weight_floor.first);
+
 			if (!div->min_px.empty())
 			{
 				auto v = div->min_px.get_value(static_cast<int>(area_px));
+
+				if ((weight_floor > 0) && (v < weight_floor))
+					v = weight_floor;
+
 				if (px < v)
 					return v;
 			}
+			else if ((weight_floor > 0) && (px < weight_floor))
+				return weight_floor;
+
 			if (!div->max_px.empty())
 			{
 				auto v = div->max_px.get_value(static_cast<int>(area_px));
@@ -813,7 +874,7 @@ namespace nana
 			return margin.area(field_area);
 		}
 
-		division * previous() const
+		division * previous() const noexcept
 		{
 			if (div_owner)
 			{
@@ -822,7 +883,6 @@ namespace nana
 						return child.get();
 			}
 			return nullptr;
-
 		}
 	public:
 		void _m_visible_for_child(division * div, bool vsb)
@@ -842,6 +902,7 @@ namespace nana
 		kind kind_of_division;
 		bool display{ true };
 		bool visible{ true };
+		bool fit_content{ false };
 		::nana::direction dir{::nana::direction::west};
 		std::string name;
 		std::vector<std::unique_ptr<division>> children;
@@ -855,13 +916,18 @@ namespace nana
 		field_gather * field{ nullptr };
 		division * div_next{ nullptr };
 		division * div_owner{ nullptr };
+
+		struct run_data
+		{
+			std::pair<double, double> weight_floor;
+		}run_;
 	};//end class division
 
 	class place::implement::div_arrange
 		: public division
 	{
 	public:
-		div_arrange(bool vert, std::string&& name, place_parts::repeated_array&& arr)
+		div_arrange(bool vert, std::string&& name, place_parts::repeated_array&& arr) noexcept
 			: division((vert ? kind::vertical_arrange : kind::arrange), std::move(name)),
 			arrange_(std::move(arr))
 		{}
@@ -1089,32 +1155,28 @@ namespace nana
 
 			double var_px = area_px - fa.first;
 
-			/*
-			struct revise_t	//deprecated
-			{
-				division * div;
-				double min_px;
-				double max_px;
-			};
-			*/
-
 			std::size_t min_count = 0;
 			double sum_min_px = 0;
-			//std::vector<revise_t> revises;	//deprecated
 			std::vector<revised_division> revises;
 
 			for (auto& child : children)
 			{
-				if ((!child->weight.empty()) || !child->display)
+				if ((!child->weight.empty()) || (!child->display))
 					continue;
 
 				double min_px = std::numeric_limits<double>::lowest(), max_px = std::numeric_limits<double>::lowest();
 
 				if (!child->min_px.empty())
-				{
 					min_px = child->min_px.get_value(static_cast<int>(area_px));
+
+				auto weight_floor = (this->kind_of_division == kind::arrange ? child->run_.weight_floor.first : child->run_.weight_floor.second);
+				if ((weight_floor > 0) && (min_px < weight_floor))
+					min_px = weight_floor;
+
+				if(!child->min_px.empty() || (weight_floor > 0))
+				{
 					sum_min_px += min_px;
-					++min_count;
+					++min_count;					
 				}
 
 				if (!child->max_px.empty())
@@ -1122,7 +1184,9 @@ namespace nana
 
 				if (min_px >= 0 && max_px >= 0 && min_px > max_px)
 				{
-					if (child->min_px.kind_of() == number_t::kind::percent)
+					if(weight_floor > 0)
+						max_px = min_px;
+					else if (child->min_px.kind_of() == number_t::kind::percent)
 						min_px = std::numeric_limits<double>::lowest();
 					else if (child->max_px.kind_of() == number_t::kind::percent)
 						max_px = std::numeric_limits<double>::lowest();
@@ -1135,47 +1199,6 @@ namespace nana
 			if (revises.empty())
 				return var_px / fa.second;
 
-			/*
-			auto find_lowest = [&revises](double level_px)	//deprecated
-			{
-				double v = (std::numeric_limits<double>::max)();
-
-				for (auto i = revises.begin(); i != revises.end(); ++i)
-				{
-					auto & rev = *i;
-					if (rev.min_px >= 0 && rev.min_px < v && rev.min_px > level_px)
-						v = rev.min_px;
-					else if (rev.max_px >= 0 && rev.max_px < v)
-						v = rev.max_px;
-				}
-				return v;
-			};
-			*/
-
-			/*
-			auto remove_full = [&revises](double value, std::size_t& full_count)
-			{
-				full_count = 0;
-				std::size_t reached_mins = 0;
-				auto i = revises.begin();
-				while(i != revises.end())
-				{
-					if (i->max_px == value)
-					{
-						++full_count;
-						i = revises.erase(i);
-					}
-					else
-					{
-						if (i->min_px == value)
-							++reached_mins;
-						++i;
-					}
-				}
-				return reached_mins;
-			};
-			*/
-
 			double block_px = 0;
 			double level_px = 0;
 			auto rest_px = var_px - sum_min_px;
@@ -1183,8 +1206,8 @@ namespace nana
 
 			while ((rest_px > 0) && blocks)
 			{
-				//auto lowest = find_lowest(level_px);	//deprecated
 				auto lowest = _m_find_lowest_revised_division(revises, level_px);
+
 				double fill_px = 0;
 				//blocks may be equal to min_count. E.g, all child divisions have min/max attribute.
 				if (blocks > min_count)
@@ -1202,7 +1225,6 @@ namespace nana
 					rest_px -= (lowest-level_px) * (blocks - min_count);
 
 				std::size_t full_count;
-				//min_count -= remove_full(lowest, full_count);	//deprecated
 				min_count -= _m_remove_revised(revises, lowest, full_count);
 				blocks -= full_count;
 				level_px = lowest;
@@ -1218,7 +1240,7 @@ namespace nana
 		: public division
 	{
 	public:
-		div_grid(std::string&& name, place_parts::repeated_array&& arrange, std::vector<rectangle>&& collapses)
+		div_grid(std::string&& name, place_parts::repeated_array&& arrange, std::vector<rectangle>&& collapses) noexcept
 			: division(kind::grid, std::move(name)),
 			arrange_(std::move(arrange)),
 			collapses_(std::move(collapses))
@@ -1226,7 +1248,7 @@ namespace nana
 			dimension.first = dimension.second = 0;
 		}
 
-		void revise_collapses()
+		void revise_collapses() noexcept
 		{
 			if (collapses_.empty())
 				return;
@@ -1424,7 +1446,7 @@ namespace nana
 	public:
 		std::pair<unsigned, unsigned> dimension;
 	private:
-		void _m_find_collapse(int x, int y, std::pair<unsigned, unsigned>& collapse) const
+		void _m_find_collapse(int x, int y, std::pair<unsigned, unsigned>& collapse) const noexcept
 		{
 			for (auto & col : collapses_)
 			{
@@ -1450,14 +1472,14 @@ namespace nana
 			int	pixels;
 			double		scale;
 
-			div_block(division* d, int px)
+			div_block(division* d, int px) noexcept
 				: div(d), pixels(px)
 			{}
 		};
 
 		enum{splitter_px = 4};
 	public:
-		div_splitter(place_parts::number_t init_weight, implement* impl):
+		div_splitter(const place_parts::number_t & init_weight, implement* impl) noexcept :
 			division(kind::splitter, std::string()),
 			impl_(impl),
 			init_weight_(init_weight)
@@ -1465,7 +1487,7 @@ namespace nana
 			this->weight.assign(splitter_px);
 		}
 
-		void direction(bool horizontal)
+		void direction(bool horizontal) noexcept
 		{
 			splitter_cursor_ = (horizontal ? cursor::size_we : cursor::size_ns);
 		}
@@ -1528,23 +1550,29 @@ namespace nana
 						auto area_px = rectangle_rotator(vert, div_owner->margin_area()).w();
 						int delta = (vert ? splitter_.pos().y - begin_point_.y : splitter_.pos().x - begin_point_.x);
 
-						int total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
-
-						auto left_px = static_cast<int>(left_pixels_) + delta;
+						const auto total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
+/*
+						auto left_px = static_cast<int>(left_pixels_) + delta;	//deprecated
 						if (left_px > total_pixels)
 							left_px = total_pixels;
 						else if (left_px < 0)
 							left_px = 0;
+*/
+						auto left_px = std::clamp(static_cast<int>(left_pixels_) + delta, 0, total_pixels);
 
 						double imd_rate = 100.0 / area_px;
 						left_px = static_cast<int>(limit_px(_m_leaf_left(), left_px, area_px));
 						_m_leaf_left()->weight.assign_percent(imd_rate * left_px);
 
-						auto right_px = static_cast<int>(right_pixels_) - delta;
+						/*
+						auto right_px = static_cast<int>(right_pixels_) - delta;	//deprecated
 						if (right_px > total_pixels)
 							right_px = total_pixels;
 						else if (right_px < 0)
 							right_px = 0;
+							*/
+
+						auto right_px = std::clamp(static_cast<int>(right_pixels_) - delta, 0, total_pixels);
 
 						right_px = static_cast<int>(limit_px(_m_leaf_right(), right_px, area_px));
 						_m_leaf_right()->weight.assign_percent(imd_rate * right_px);
@@ -1579,11 +1607,17 @@ namespace nana
 				auto area_px = right.right() - left.x();
 				auto right_px = static_cast<int>(limit_px(leaf_right, init_weight_.get_value(area_px), static_cast<unsigned>(area_px)));
 
+				/*	//deprecated
 				auto pos = area_px - right_px - splitter_px; //New position of splitter
 				if (pos < limited_range.x())
 					pos = limited_range.x();
 				else if (pos > limited_range.right())
 					pos = limited_range.right();
+				*/
+
+				//New position of splitter
+				const auto pos = std::clamp(static_cast<int>(area_px - right_px - splitter_px), limited_range.x(), limited_range.right());
+
 
 				rectangle_rotator sp_r(vert, field_area);
 				sp_r.x_ref() = pos;
@@ -1865,29 +1899,31 @@ namespace nana
 			int endpos = right_base;
 
 			if (!leaf_left->min_px.empty())
-			{
-				auto v = leaf_left->min_px.get_value(area.w());
-				pos += static_cast<int>(v);
-			}
+				pos += static_cast<int>(leaf_left->min_px.get_value(area.w()));
+	
 			if (!leaf_left->max_px.empty())
-			{
-				auto v = leaf_left->max_px.get_value(area.w());
-				endpos = left_base + static_cast<int>(v);
-			}
+				endpos = left_base + static_cast<int>(leaf_left->max_px.get_value(area.w()));
 
 			if (!leaf_right->min_px.empty())
 			{
-				auto v = leaf_right->min_px.get_value(area.w());
+				/*
+				auto v = leaf_right->min_px.get_value(area.w());	//deprecated
 				auto x = right_base - static_cast<int>(v);
 				if (x < endpos)
 					endpos = x;
+				*/
+
+				endpos = (std::min)(right_base - static_cast<int>(leaf_right->min_px.get_value(area.w())), endpos);
 			}
 			if (!leaf_right->max_px.empty())
 			{
-				auto v = leaf_right->max_px.get_value(area.w());
+				/*
+				auto v = leaf_right->max_px.get_value(area.w());	//deprecated
 				auto x = right_base - static_cast<int>(v);
 				if (x > pos)
 					pos = x;
+				*/
+				pos = (std::max)(right_base - static_cast<int>(leaf_right->max_px.get_value(area.w())), pos);
 			}
 
 			area.x_ref() = pos;
@@ -1914,7 +1950,7 @@ namespace nana
 		: public division, public place_parts::dock_notifier_interface
 	{
 	public:
-		div_dockpane(std::string && name, implement* impl, direction pane_dir)
+		div_dockpane(std::string && name, implement* impl, direction pane_dir) noexcept
 			:	division(kind::dockpane, std::move(name)),
 				impl_ptr_{impl}
 		{
@@ -1922,7 +1958,7 @@ namespace nana
 			this->display = false;
 		}
 
-		~div_dockpane()
+		~div_dockpane() noexcept
 		{
 			if (dockable_field)
 			{
@@ -2060,7 +2096,6 @@ namespace nana
 					indicator_.graph.release();
 				}
 			}
-
 		}
 
 		void notify_move_stopped() override
@@ -2221,7 +2256,7 @@ namespace nana
 				evt.mouse_move.connect(grab_fn);
 			}
 
-			void range(int begin, int end)
+			void range(int begin, int end) noexcept
 			{
 				range_.x = begin;
 				range_.y = end;
@@ -2236,7 +2271,7 @@ namespace nana
 
 		};
 	public:
-		div_dock(std::string && name, implement* impl)
+		div_dock(std::string && name, implement* impl) noexcept
 			: division(kind::dock, std::move(name)), impl_(impl)
 		{}
 
@@ -2458,6 +2493,8 @@ namespace nana
 			if (root_division->field_area.empty())
 				return;
 
+			root_division->calc_weight_floor();
+
 			root_division->collocate(window_handle);
 
 			for (auto & field : fields)
@@ -2509,6 +2546,7 @@ namespace nana
 
 		std::unique_ptr<division> div;
 		token div_type = token::eof;
+		bool fit_content = false;
 
 		//These variables stand for the new division's attributes
 		std::string name;
@@ -2533,6 +2571,9 @@ namespace nana
 					throw std::invalid_argument("nana.place: conflict of div type at " + tknizer.pos_str());
 
 				div_type = token::dock;
+				break;
+			case token::fit:
+				fit_content = true;
 				break;
 			case token::splitter:
 				//Ignore the splitter when there is not a division.
@@ -2831,6 +2872,7 @@ namespace nana
 
 		div->display = !undisplayed;
 		div->visible = !(undisplayed || invisible);
+		div->fit_content = fit_content;
 		return div;
 	}
 
@@ -2973,6 +3015,7 @@ namespace nana
 			if (impl_->root_division)
 			{
 				impl_->root_division->field_area.dimension({ arg.width, arg.height });
+				impl_->root_division->calc_weight_floor();
 				impl_->root_division->collocate(arg.window_handle);
 			}
 		});
