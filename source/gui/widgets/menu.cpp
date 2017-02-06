@@ -991,6 +991,12 @@ namespace nana
 					case keyboard::enter:
 						this->pick();
 						break;
+					case keyboard::escape:
+						//Leave sub menu. But if the sub menu doesn't exist,
+						//close the menu.
+						if (!this->submenu(false))
+							close();
+						break;
 					default:
 						if (2 != send_shortkey(arg.key))
 						{
