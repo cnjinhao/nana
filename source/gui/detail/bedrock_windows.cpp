@@ -345,7 +345,7 @@ namespace detail
 		}
 	}
 
-	void bedrock::pump_event(window modal_window, bool is_modal)
+	void bedrock::pump_event(window condition_wd, bool is_modal)
 	{
 		const unsigned tid = ::GetCurrentThreadId();
 		auto context = this->open_thread_context(tid);
@@ -365,9 +365,9 @@ namespace detail
 		try
 		{
 			MSG msg;
-			if(modal_window)
+			if (condition_wd)
 			{
-				HWND native_handle = reinterpret_cast<HWND>(reinterpret_cast<core_window_t*>(modal_window)->root);
+				HWND native_handle = reinterpret_cast<HWND>(reinterpret_cast<core_window_t*>(condition_wd)->root);
 				if (is_modal)
 				{
 					HWND owner = ::GetWindow(native_handle, GW_OWNER);
@@ -437,27 +437,27 @@ namespace detail
 		}
         catch(std::exception& e)
         {
-             (msgbox(modal_window, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
-                                 <<"\n   in form: "<< API::window_caption(modal_window)
-                                 <<"\n   exception : "<< e.what()
-             ).show();
+			(msgbox(condition_wd, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
+								<< "\n   in form: " << API::window_caption(condition_wd)
+								<<"\n   exception : "<< e.what()
+			).show();
 
-			 internal_scope_guard lock;
-			 _m_except_handler();
+			internal_scope_guard lock;
+			_m_except_handler();
 
-			 intr_locker.forward();
-			 if (0 == --(context->event_pump_ref_count))
-			 {
-				 if ((nullptr == modal_window) || (0 == context->window_count))
-					 remove_thread_context();
-			 }
-			 throw;
+			intr_locker.forward();
+			if (0 == --(context->event_pump_ref_count))
+			{
+				if ((nullptr == condition_wd) || (0 == context->window_count))
+					remove_thread_context();
+			}
+			throw;
         }
 		catch(...)
 		{
-			(msgbox(modal_window, "An exception during message pumping!").icon(msgbox::icon_information)
+			(msgbox(condition_wd, "An exception during message pumping!").icon(msgbox::icon_information)
 				<<"An uncaptured non-std exception during message pumping!"
-				<< "\n   in form: " << API::window_caption(modal_window)
+				<< "\n   in form: " << API::window_caption(condition_wd)
 				).show();
 			internal_scope_guard lock;
 			_m_except_handler();
@@ -465,7 +465,7 @@ namespace detail
 			intr_locker.forward();
 			if(0 == --(context->event_pump_ref_count))
 			{
-				if((nullptr == modal_window) || (0 == context->window_count))
+				if ((nullptr == condition_wd) || (0 == context->window_count))
 					remove_thread_context();
 			}
 			throw;
@@ -474,7 +474,7 @@ namespace detail
 		intr_locker.forward();
 		if(0 == --(context->event_pump_ref_count))
 		{
-			if((nullptr == modal_window) || (0 == context->window_count))
+			if ((nullptr == condition_wd) || (0 == context->window_count))
 				remove_thread_context();
 		}
 	}//end pump_event

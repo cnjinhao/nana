@@ -1147,7 +1147,7 @@ namespace detail
 		}
 	}
 
-	void bedrock::pump_event(window modal_window, bool /*is_modal*/)
+	void bedrock::pump_event(window condition_wd, bool is_modal)
 	{
 		thread_context * context = open_thread_context();
 		if(0 == context->window_count)
@@ -1162,11 +1162,11 @@ namespace detail
 		auto & lock = wd_manager().internal_lock();
 		lock.revert();
 		
-		native_window_type owner_native = 0;
+		native_window_type owner_native{};
 		core_window_t * owner = 0;
-		if(modal_window)
+		if(condition_wd && is_modal)
 		{
-			native_window_type modal = reinterpret_cast<core_window_t*>(modal_window)->root;
+			native_window_type modal = reinterpret_cast<core_window_t*>(condition_wd)->root;
 			owner_native = native_interface::get_owner_window(modal);
 			if(owner_native)
 			{
@@ -1177,7 +1177,7 @@ namespace detail
 			}	
 		}
 		
-		nana::detail::platform_spec::instance().msg_dispatch(modal_window ? reinterpret_cast<core_window_t*>(modal_window)->root : 0);
+		nana::detail::platform_spec::instance().msg_dispatch(condition_wd ? reinterpret_cast<core_window_t*>(condition_wd)->root : 0);
 
 		if(owner_native)
 		{
@@ -1190,7 +1190,7 @@ namespace detail
 
 		if(0 == --(context->event_pump_ref_count))
 		{
-			if(0 == modal_window || 0 == context->window_count)
+			if(0 == condition_wd || 0 == context->window_count)
 				remove_thread_context();
 		}
 

@@ -1,6 +1,6 @@
 /*
  *	Message Dispatcher Implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -51,7 +51,7 @@ namespace detail
 		typedef std::list<msg_packet_tag> msg_queue_type;
 
 		msg_dispatcher(Display* disp)
-			: display_(disp), is_work_(false)
+			: display_(disp)
 		{
 			proc_.event_proc = 0;
 			proc_.timer_proc = 0;
@@ -338,7 +338,7 @@ namespace detail
 		
 	private:
 		Display * display_;
-		volatile bool is_work_;
+		volatile bool is_work_{ false };
 		std::unique_ptr<std::thread> thrd_;
 
 		struct table_tag

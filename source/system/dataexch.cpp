@@ -116,6 +116,7 @@ namespace nana{ namespace system{
 //#elif defined(NANA_X11)
 #else
 			static_cast<void>(g); //eliminate unused parameter compiler warning.
+			static_cast<void>(owner);
 			throw "not implemented yet.";
 			return false;
 #endif

@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1163,8 +1163,16 @@ namespace detail
 	//		2 = msg_dispatcher should ignore the msg, because the XEvent is processed by _m_msg_filter
 	int platform_spec::_m_msg_filter(XEvent& evt, msg_packet_tag& msg)
 	{
+		auto & bedrock = detail::bedrock::instance();	
+
 		platform_spec & self = instance();
-		if(SelectionNotify == evt.type)
+		if(KeyPress == evt.type || KeyRelease == evt.type)
+		{
+			auto menu_wd = bedrock.get_menu(reinterpret_cast<native_window_type>(evt.xkey.window), true);
+			if(menu_wd)
+				evt.xkey.window = reinterpret_cast<Window>(menu_wd);
+		}
+		else if(SelectionNotify == evt.type)
 		{
 			if(evt.xselection.property)
 			{
@@ -1196,7 +1204,6 @@ namespace detail
 								im->bufsize = len;
 							}
 						}
-
 
 						self.selection_.items.erase(self.selection_.items.begin());
 
@@ -1373,9 +1380,8 @@ namespace detail
 				{
 					Window child;
 					::XTranslateCoordinates(self.display_, self.root_window(), evt.xclient.window, x, y, &self.xdnd_.pos.x, &self.xdnd_.pos.y, &child);
-					typedef detail::bedrock bedrock;
 
-					auto wd = bedrock::instance().wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
+					auto wd = bedrock.wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
 					if(wd && wd->flags.dropable)
 					{
 						accepted = true;

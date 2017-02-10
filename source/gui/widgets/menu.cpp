@@ -747,7 +747,7 @@ namespace nana
 					//add a is_wd_parent_menu to determine whether the menu wants the focus.
 					//if a submenu gets the focus, the program may cause a crash error when the submenu is being destroyed
 					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>()),
-						want_focus_{ (!wd) || ((!is_wd_parent_menu) && (API::focus_window() != wd)) },
+						want_focus_{ (!wd) || ((!is_wd_parent_menu) && (API::root(API::focus_window()) != API::root(wd))) },
 						event_focus_{ nullptr }
 				{
 					caption("nana menu window");
