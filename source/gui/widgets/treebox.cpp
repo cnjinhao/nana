@@ -166,7 +166,7 @@ namespace nana
 			class trigger::item_locator
 			{
 			public:
-				typedef tree_cont_type::node_type node_type;
+				using node_type = tree_cont_type::node_type;
 
 				item_locator(implement * impl, int item_pos, int x, int y);
 				int operator()(node_type &node, int affect);
@@ -1323,29 +1323,31 @@ namespace nana
 					node_r.width = comp_placer->item_width(*impl_->data.graph, node_attr_);
 					node_r.height = comp_placer->item_height(*impl_->data.graph);
 
-					if(pos_.y < item_pos_.y + static_cast<int>(node_r.height))
+					if ((pos_.y < item_pos_.y + static_cast<int>(node_r.height)) && (pos_.y >= item_pos_.y))
 					{
-						auto logic_pos = pos_ - item_pos_;
-						node_ = &node;
+						auto const logic_pos = pos_ - item_pos_;
 
-						for(int comp = static_cast<int>(component::begin); comp != static_cast<int>(component::end); ++comp)
+						for (int comp = static_cast<int>(component::begin); comp != static_cast<int>(component::end); ++comp)
 						{
 							nana::rectangle r = node_r;
-							if(comp_placer->locate(static_cast<component>(comp), node_attr_, &r))
+							if (!comp_placer->locate(static_cast<component>(comp), node_attr_, &r))
+								continue;
+							
+							if (r.is_hit(logic_pos))
 							{
-								if(r.is_hit(logic_pos))
-								{
-									what_ = static_cast<component>(comp);
-									if(component::expender == what_ && (false == node_attr_.has_children))
-										what_ = component::end;
+								node_ = &node;
+								what_ = static_cast<component>(comp);
+								if (component::expender == what_ && (false == node_attr_.has_children))
+									what_ = component::end;
 
-									if(component::text == what_)
-										node_text_r_ = r;
+								if (component::text == what_)
+									node_text_r_ = r;
 
-									return 0;
-								}
+								break;
 							}
 						}
+
+						return 0; //Stop iterating
 					}
 
 					item_pos_.y += node_r.height;
@@ -1874,22 +1876,15 @@ namespace nana
 								if(impl_->set_expanded(node_state.event_node, !node_state.event_node->value.second.expanded))
 									impl_->make_adjust(node_state.event_node, 0);
 
-								has_redraw = true;
-							}
-							else if(nl.item_body())
-							{
-								if(node_state.selected != node_state.event_node)
-								{
-									impl_->set_selected(node_state.event_node);
-									has_redraw = true;
-								}
+								has_redraw = true;	//btw, don't select the node
 							}
 						}
-						else if(node_state.selected != node_state.event_node)
-						{
-							impl_->set_selected(node_state.event_node);
-							has_redraw = true;
-						}
+					}
+					
+					if ((!has_redraw) && (node_state.selected != node_state.event_node))
+					{
+						impl_->set_selected(node_state.event_node);
+						has_redraw = true;
 					}
 
 					if(has_redraw)
