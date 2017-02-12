@@ -201,6 +201,9 @@ namespace nana
 				/// Set the check state, and it returns itself.
 				item_proxy& check(bool);
 
+				/// Clears the child nodes
+				item_proxy& clear();
+
 				/// Return true when the node is expanded  \todo change to expanded ??
 				bool expanded() const;
 

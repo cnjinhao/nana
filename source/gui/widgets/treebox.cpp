@@ -2175,8 +2175,8 @@ namespace nana
 
 		void treebox::clear()
 		{
-			auto impl = get_drawer_trigger().impl();
-			impl->attr.tree_cont.clear();
+			auto& tree_cont = get_drawer_trigger().impl()->attr.tree_cont;
+			tree_cont.clear(tree_cont.get_root());
 			get_drawer_trigger().draw();
 		}
 
