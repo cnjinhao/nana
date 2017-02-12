@@ -611,11 +611,18 @@ namespace detail
 						//If a root window is created during the mouse_down event, Nana.GUI will ignore the mouse_up event.
 						if (msgwnd->root != native_interface::get_focus_window())
 						{
-							//call the drawer mouse up event for restoring the surface graphics
-							msgwnd->set_action(mouse_action::normal);
+							auto pos = native_interface::cursor_position();
+							auto rootwd = native_interface::find_window(pos.x, pos.y);
+							native_interface::calc_window_point(rootwd, pos);
+							if(msgwnd != wd_manager.find_window(rootwd, pos.x, pos.y))
+							{
+								//call the drawer mouse up event for restoring the surface graphics
+								msgwnd->set_action(mouse_action::normal);
 
-							draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
-							wd_manager.do_lazy_refresh(msgwnd, false);
+								arg.evt_code = event_code::mouse_up;
+								draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
+								wd_manager.do_lazy_refresh(msgwnd, false);
+							}
 						}
 					}
 					else
