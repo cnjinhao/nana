@@ -870,6 +870,16 @@ namespace nana
 					return *this;
 				}
 
+				item_proxy& item_proxy::clear()
+				{
+					if (node_)
+					{
+						trigger_->impl()->attr.tree_cont.clear(node_);
+						trigger_->draw();
+					}
+					return *this;
+				}
+
 				bool item_proxy::expanded() const
 				{
 					return (node_ && node_->value.second.expanded);
