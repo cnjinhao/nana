@@ -1,6 +1,6 @@
 /*
  *	Data Exchanger Implementation
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -183,6 +183,14 @@ namespace nana{ namespace system{
 #endif
 			}
 		}
+
+		std::wstring dataexch::wget()
+		{
+			std::wstring str;
+			this->get(str);
+			return str;
+		}
+
 	//private:
 		bool dataexch::_m_set(format fmt, const void* buf, std::size_t size, native_window_type owner)
 		{

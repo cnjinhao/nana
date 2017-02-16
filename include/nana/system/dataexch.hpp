@@ -1,6 +1,6 @@
 /*
  *	Data Exchanger Implementation
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -38,6 +38,8 @@ namespace system{
 
 		void get(std::string& text_utf8);
 		void get(std::wstring& text);
+
+		std::wstring wget();
 	private:
 		bool _m_set(format, const void* buf, std::size_t size, native_window_type);
 		void* _m_get(format, size_t& size);

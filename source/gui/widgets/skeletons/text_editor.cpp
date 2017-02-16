@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -2344,24 +2344,29 @@ namespace nana{	namespace widgets
 
 		void text_editor::paste()
 		{
-			std::wstring text;
-			nana::system::dataexch().get(text);
+			auto text = system::dataexch{}.wget();
 
 			//If it is required check the acceptable
-			if (accepts::no_restrict != impl_->capacities.acceptive)
+			if ((accepts::no_restrict != impl_->capacities.acceptive) || impl_->capacities.pred_acceptive)
 			{
 				for (auto i = text.begin(); i != text.end(); ++i)
 				{
-					if (!_m_accepts(*i))
+					if (_m_accepts(*i))
+					{
+						if (accepts::no_restrict == impl_->capacities.acceptive)
+							put(*i);
+
+						continue;
+					}
+
+					if (accepts::no_restrict != impl_->capacities.acceptive)
 					{
 						text.erase(i, text.end());
-						break;
+						put(std::move(text));
 					}
+					break;
 				}
 			}
-
-			if (!text.empty())
-				put(std::move(text));
 		}
 
 		void text_editor::enter(bool record_undo)
@@ -2814,8 +2819,12 @@ namespace nana{	namespace widgets
 
 		bool text_editor::_m_accepts(char_type ch) const
 		{
-			if(accepts::no_restrict == impl_->capacities.acceptive)
+			if (accepts::no_restrict == impl_->capacities.acceptive)
+			{
+				if (impl_->capacities.pred_acceptive)
+					return impl_->capacities.pred_acceptive(ch);
 				return true;
+			}
 
 			//Checks the input whether it meets the requirement for a numeric.
 			auto str = text();
