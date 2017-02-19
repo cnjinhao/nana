@@ -119,7 +119,6 @@ namespace nana
 				implement * impl() const;
 
 				void check(node_type*, checkstate);
-				bool draw();
 
 				const tree_cont_type & tree() const;
 				tree_cont_type & tree();

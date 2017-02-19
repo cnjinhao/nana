@@ -220,7 +220,7 @@ namespace nana
 
 					mutable std::map<std::string, node_image_tag> image_table;
 
-					tree_cont_type::node_type * first;
+					tree_cont_type::node_type * first; //The node at the top of screen
 					int indent_pixels;
 					int offset_x;
 				}shape;
@@ -304,19 +304,56 @@ namespace nana
 					}
 				}
 
-				bool draw(bool scrollbar_react)
+				bool clear(node_type* node)
+				{
+					if (!node)
+						return false;
+
+					if (node->is_ancestor_of(shape.first))
+					{
+						shape.first = node->front();
+						if (shape.first)
+							shape.first = node->owner;
+					}
+
+					if (node->is_ancestor_of(node_state.pointed))
+						node_state.pointed = nullptr;
+
+					if (node->is_ancestor_of(node_state.selected))
+						node_state.selected = nullptr;
+
+					if (node->is_ancestor_of(node_state.event_node))
+						node_state.event_node = nullptr;
+
+					if (node->child)
+					{
+						attr.tree_cont.clear(node);
+						return true;
+					}
+					return false;
+				}
+
+				bool draw(bool reset_scroll, bool ignore_update = false)
 				{
 					if(data.graph && (false == data.stop_drawing))
 					{
-						if(scrollbar_react)
+						if (reset_scroll)
 							show_scroll();
 
-						//Draw background
-						data.graph->rectangle(true, data.widget_ptr->bgcolor());
+						if (attr.auto_draw)
+						{
 
-						//Draw tree
-						attr.tree_cont.for_each(shape.first, Renderer(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, 1)));
-						return true;
+							//Draw background
+							data.graph->rectangle(true, data.widget_ptr->bgcolor());
+
+							//Draw tree
+							attr.tree_cont.for_each(shape.first, Renderer(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, 1)));
+
+							if (!ignore_update)
+								API::update_window(data.widget_ptr->handle());
+
+							return true;
+						}
 					}
 					return false;
 				}
@@ -535,7 +572,7 @@ namespace nana
 						if(value == false)
 						{
 							//if contracting a parent of the selected node, select the contracted node.
-							if(check_kinship(node, node_state.selected))
+							if (node->is_ancestor_of(node_state.selected))
 								set_selected(node);
 						}
 
@@ -543,7 +580,6 @@ namespace nana
 						if(node->child)
 						{
 							data.stop_drawing = true;
-							//attr.ext_event.expand(data.widget_ptr->handle(), item_proxy(data.trigger_ptr, node), value);
 							item_proxy iprx(data.trigger_ptr, node);
 							data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, value }, data.widget_ptr->handle());
 							data.stop_drawing = false;
@@ -866,7 +902,7 @@ namespace nana
 				item_proxy& item_proxy::check(bool ck)
 				{
 					trigger_->check(node_, ck ? checkstate::checked : checkstate::unchecked);
-					trigger_->draw();
+					trigger_->impl()->draw(false);
 					return *this;
 				}
 
@@ -874,8 +910,9 @@ namespace nana
 				{
 					if (node_)
 					{
-						trigger_->impl()->attr.tree_cont.clear(node_);
-						trigger_->draw();
+						auto impl = trigger_->impl();
+						impl->clear(node_);
+						impl->draw(true);
 					}
 					return *this;
 				}
@@ -889,10 +926,8 @@ namespace nana
 				{
 					auto * impl = trigger_->impl();
 					if(impl->set_expanded(node_, exp))
-					{
 						impl->draw(true);
-						API::update_window(impl->data.widget_ptr->handle());
-					}
+
 					return *this;
 				}
 
@@ -905,10 +940,8 @@ namespace nana
 				{
 					auto * impl = trigger_->impl();
 					if(impl->set_selected(s ? node_ : nullptr))
-					{
 						impl->draw(true);
-						API::update_window(*impl->data.widget_ptr);
-					}
+
 					return *this;
 				}
 
@@ -1542,7 +1575,6 @@ namespace nana
 							}
 
 							impl_->draw(false);
-							API::update_window(impl_->data.widget_ptr->handle());
 
 							if (impl_->node_state.tooltip)
 							{
@@ -1641,16 +1673,6 @@ namespace nana
 					}
 				}
 
-				bool trigger::draw()
-				{
-					if (!impl_->attr.auto_draw)
-						return false;
-
-					if(impl_->draw(false))
-						API::update_window(impl_->data.widget_ptr->handle());
-					return true;
-				}
-
 				auto trigger::tree() -> tree_cont_type &
 				{
 					return impl_->attr.tree_cont;
@@ -1697,16 +1719,17 @@ namespace nana
 					else
 						p = impl_->attr.tree_cont.insert(node, key, treebox_node_type(std::move(title)));
 
-					if(p && impl_->attr.auto_draw && impl_->draw(true))
-						API::update_window(impl_->data.widget_ptr->handle());
+					if (p)
+						impl_->draw(true);
+
 					return p;
 				}
 
 				trigger::node_type* trigger::insert(const std::string& path, std::string&& title)
 				{
 					auto x = impl_->attr.tree_cont.insert(path, treebox_node_type(std::move(title)));
-					if(x && impl_->attr.auto_draw && impl_->draw(true))
-						API::update_window(impl_->data.widget_ptr->handle());
+					if (x)
+						impl_->draw(true);
 					return x;
 				}
 
@@ -1748,28 +1771,19 @@ namespace nana
 				void trigger::selected(node_type* node)
 				{
 					if(tree().verify(node) && impl_->set_selected(node))
-					{
-						if(impl_->draw(true))
-							API::update_window(impl_->data.widget_ptr->handle());
-					}
+						impl_->draw(true);
 				}
 
 				void trigger::set_expand(node_type* node, bool exp)
 				{
 					if((impl_->data.widget_ptr) && impl_->set_expanded(node, exp))
-					{
 						impl_->draw(true);
-						API::update_window(impl_->data.widget_ptr->handle());
-					}
 				}
 
 				void trigger::set_expand(const std::string& path, bool exp)
 				{
 					if(impl_->set_expanded(impl_->attr.tree_cont.find(path), exp))
-					{
 						impl_->draw(true);
-						API::update_window(impl_->data.widget_ptr->handle());
-					}
 				}
 
 				node_image_tag& trigger::icon(const std::string& id) const
@@ -1796,8 +1810,8 @@ namespace nana
 					{
 						node->value.second.img_idstr = id;
 						auto i = impl_->shape.image_table.find(id);
-						if((i != impl_->shape.image_table.end()) && impl_->draw(true))
-							API::update_window(impl_->data.widget_ptr->handle());
+						if (i != impl_->shape.image_table.end())
+							impl_->draw(true);
 					}
 				}
 
@@ -1843,7 +1857,8 @@ namespace nana
 
 				void trigger::refresh(graph_reference)
 				{
-					impl_->draw(false);
+					//Don't reset the scroll and update the window
+					impl_->draw(false, true);
 				}
 
 				void trigger::dbl_click(graph_reference, const arg_mouse& arg)
@@ -2173,7 +2188,7 @@ namespace nana
 			if (comp_placer->enabled(component::crook) != enable)
 			{
 				comp_placer->enable(component::crook, enable);
-				get_drawer_trigger().draw();
+				impl->draw(false);
 			}
 			return *this;
 		}
@@ -2185,9 +2200,9 @@ namespace nana
 
 		void treebox::clear()
 		{
-			auto& tree_cont = get_drawer_trigger().impl()->attr.tree_cont;
-			tree_cont.clear(tree_cont.get_root());
-			get_drawer_trigger().draw();
+			auto impl = get_drawer_trigger().impl();
+			impl->clear(impl->attr.tree_cont.get_root());
+			impl->draw(true);
 		}
 
 		treebox::node_image_type& treebox::icon(const std::string& id) const

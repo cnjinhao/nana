@@ -58,6 +58,31 @@ namespace detail
 					t = t_next;
 				}
 			}
+
+			bool is_ancestor_of(const tree_node* child) const
+			{
+				while (child)
+				{
+					if (child->owner == this)
+						return true;
+
+					child = child->owner;
+				}
+				return false;
+			}
+
+			tree_node * front() const
+			{
+				if (this->owner && (this != this->owner->child))
+				{
+					auto i = this->owner->child;
+					while (i->next != this)
+						i = i->next;
+
+					return i;
+				}
+				return nullptr;
+			}
 		};
 
 		template<typename UserData>
