@@ -37,7 +37,7 @@ namespace nana
 		{
 			enum class component
 			{
-				begin, expender = begin, crook, icon, text, bground, end
+				begin, expander = begin, crook, icon, text, bground, end
 			};
 
 			struct node_image_tag
@@ -119,9 +119,6 @@ namespace nana
 				implement * impl() const;
 
 				void check(node_type*, checkstate);
-
-				const tree_cont_type & tree() const;
-				tree_cont_type & tree();
 
 				void renderer(::nana::pat::cloneable<renderer_interface>&&);
 				const ::nana::pat::cloneable<renderer_interface>& renderer() const;
