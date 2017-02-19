@@ -128,17 +128,11 @@ namespace nana
 				void placer(::nana::pat::cloneable<compset_placer_interface>&&);
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
-				nana::any & value(node_type*) const;
 				node_type* insert(node_type*, const std::string& key, std::string&&);
 				node_type* insert(const std::string& path, std::string&&);
 
-				bool verify_kinship(node_type* parent, node_type* child) const;
-
-				void remove(node_type*);
 				node_type * selected() const;
 				void selected(node_type*);
-				void set_expand(node_type*, bool);
-				void set_expand(const ::std::string& path, bool);
 
 				node_image_tag& icon(const ::std::string&) const;
 				void icon_erase(const ::std::string&);

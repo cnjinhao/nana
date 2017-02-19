@@ -14,7 +14,6 @@
 #include <nana/gui/element.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/system/platform.hpp>
-#include <stdexcept>
 #include <map>
 
 namespace nana
@@ -304,9 +303,9 @@ namespace nana
 					}
 				}
 
-				bool clear(node_type* node)
+				bool unlink(node_type* node, bool perf_clear)
 				{
-					if (!node)
+					if (!attr.tree_cont.verify(node))
 						return false;
 
 					if (node->is_ancestor_of(shape.first))
@@ -325,12 +324,18 @@ namespace nana
 					if (node->is_ancestor_of(node_state.event_node))
 						node_state.event_node = nullptr;
 
-					if (node->child)
+					if (perf_clear)
 					{
-						attr.tree_cont.clear(node);
-						return true;
+						if (node->child)
+						{
+							attr.tree_cont.clear(node);
+							return true;
+						}
+						return false;
 					}
-					return false;
+
+					attr.tree_cont.remove(node);
+					return true;
 				}
 
 				bool draw(bool reset_scroll, bool ignore_update = false)
@@ -437,17 +442,6 @@ namespace nana
 						}
 					}
 					return nullptr;
-				}
-
-				static bool check_kinship(const node_type* parent, const node_type * child)
-				{
-					if((!parent) || (!child))
-						return false;
-
-					while(child && (child != parent))
-						child = child->owner;
-
-					return (nullptr != child);
 				}
 
 				bool make_adjust(node_type * node, int reason)
@@ -911,8 +905,8 @@ namespace nana
 					if (node_)
 					{
 						auto impl = trigger_->impl();
-						impl->clear(node_);
-						impl->draw(true);
+						if(impl->unlink(node_, true))
+							impl->draw(true);
 					}
 					return *this;
 				}
@@ -1703,14 +1697,6 @@ namespace nana
 					return impl_->data.comp_placer;
 				}
 
-				nana::any & trigger::value(node_type* node) const
-				{
-					if(impl_->attr.tree_cont.verify(node) == false)
-						throw std::invalid_argument("Nana.GUI.treebox.value() invalid node");
-
-					return node->value.second.value;
-				}
-
 				trigger::node_type* trigger::insert(node_type* node, const std::string& key, std::string&& title)
 				{
 					node_type * p = impl_->attr.tree_cont.node(node, key);
@@ -1733,36 +1719,6 @@ namespace nana
 					return x;
 				}
 
-				bool trigger::verify_kinship(node_type* parent, node_type* child) const
-				{
-					if(false == (parent && child)) return false;
-
-					while(child && (child != parent))
-						child = child->owner;
-
-					return (nullptr != child);
-				}
-
-				void trigger::remove(node_type* node)
-				{
-					if (!tree().verify(node))
-						return;
-
-					auto & shape = impl_->shape;
-					auto & node_state = impl_->node_state;
-
-					if(verify_kinship(node, node_state.event_node))
-						node_state.event_node = nullptr;
-
-					if(verify_kinship(node, shape.first))
-						shape.first = nullptr;
-
-					if(verify_kinship(node, node_state.selected))
-						node_state.selected = nullptr;
-
-					impl_->attr.tree_cont.remove(node);
-				}
-
 				trigger::node_type* trigger::selected() const
 				{
 					return impl_->node_state.selected;
@@ -1771,18 +1727,6 @@ namespace nana
 				void trigger::selected(node_type* node)
 				{
 					if(tree().verify(node) && impl_->set_selected(node))
-						impl_->draw(true);
-				}
-
-				void trigger::set_expand(node_type* node, bool exp)
-				{
-					if((impl_->data.widget_ptr) && impl_->set_expanded(node, exp))
-						impl_->draw(true);
-				}
-
-				void trigger::set_expand(const std::string& path, bool exp)
-				{
-					if(impl_->set_expanded(impl_->attr.tree_cont.find(path), exp))
 						impl_->draw(true);
 				}
 
@@ -2201,8 +2145,8 @@ namespace nana
 		void treebox::clear()
 		{
 			auto impl = get_drawer_trigger().impl();
-			impl->clear(impl->attr.tree_cont.get_root());
-			impl->draw(true);
+			if (impl->unlink(impl->attr.tree_cont.get_root(), true))
+				impl->draw(true);
 		}
 
 		treebox::node_image_type& treebox::icon(const std::string& id) const
@@ -2234,15 +2178,16 @@ namespace nana
 		treebox::item_proxy treebox::erase(item_proxy i)
 		{
 			auto next = i.sibling();
-			get_drawer_trigger().remove(i._m_node());
+			if (get_drawer_trigger().impl()->unlink(i._m_node(), false))
+				get_drawer_trigger().impl()->draw(true);
 			return next;
 		}
 
 		void treebox::erase(const std::string& keypath)
 		{
 			auto i = find(keypath);
-			if(!i.empty())
-				get_drawer_trigger().remove(i._m_node());
+			if (!i.empty())
+				this->erase(i);
 		}
 
 		std::string treebox::make_key_path(item_proxy i, const std::string& splitter) const
