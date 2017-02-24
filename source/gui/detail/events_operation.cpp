@@ -80,7 +80,6 @@ namespace nana
 				internal_scope_guard lock;
 				if (dockers_)
 				{
-
 					for (auto i = dockers_->begin(), end = dockers_->end(); i != end; ++i)
 					{
 						if (reinterpret_cast<detail::docker_interface*>(evt) == *i)
@@ -92,7 +91,11 @@ namespace nana
 								deleted_flags_ = true;
 							}
 							else
+							{
+								bedrock::instance().evt_operation().cancel(evt);
 								dockers_->erase(i);
+								delete reinterpret_cast<detail::docker_interface*>(evt);
+							}
 							break;
 						}
 					}
