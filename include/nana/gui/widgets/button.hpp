@@ -25,6 +25,7 @@ namespace nana{
 			///	Draw the button
 			class trigger: public drawer_trigger
 			{
+				class measurer;
 			public:
 				trigger();
 				~trigger();

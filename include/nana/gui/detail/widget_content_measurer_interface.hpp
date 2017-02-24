@@ -14,8 +14,8 @@
 #define NANA_WIDGET_CONTENT_MEASURER_INTERFACE_HEADER_INCLUDED
 
 #include <nana/basic_types.hpp>
-
 #include <nana/optional.hpp>
+#include <nana/paint/graphics.hpp>
 
 namespace nana
 {
@@ -25,6 +25,7 @@ namespace nana
 		class widget_content_measurer_interface
 		{
 		public:
+			using graph_reference = paint::graphics&;
 			virtual ~widget_content_measurer_interface() = default;
 
 			/// Measures content
@@ -33,7 +34,7 @@ namespace nana
 			* @param limit_pixels the number of pixels of the limited edge. If this parameter is zero, it is ignored
 			* @return the size of content
 			*/
-			virtual optional<size> measure(bool limit_width, unsigned limit_pixels) const = 0;
+			virtual optional<size> measure(graph_reference, bool limit_width, unsigned limit_pixels) const = 0;
 		};
 	}
 }
