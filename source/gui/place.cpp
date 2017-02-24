@@ -298,19 +298,10 @@ namespace nana
 				std::string err = "an invalid character '";
 				err += *sp_;
 				err += "'";
-
 				_m_throw_error(err);
 				return token::error;	//Useless, just for syntax correction.
 			}
 		private:
-			void _m_throw_error(char err_char)
-			{
-				std::string str = "place: invalid character '";
-				str += err_char;
-				str += '\'';
-				_m_throw_error(str);
-			}
-
 			void _m_throw_error(const std::string& err)
 			{
 				throw std::runtime_error("nana::place: " + err + " at " + std::to_string(static_cast<unsigned>(sp_ - divstr_)));
@@ -362,12 +353,12 @@ namespace nana
 
 			static const char* _m_eat_whitespace(const char* sp) noexcept
 			{
-				while (*sp && !isgraph(*sp))
+				while (*sp && !std::isgraph(*sp))
 					++sp;
 				return sp;
 			}
 
-			std::size_t _m_number(const char* sp, bool negative)
+			std::size_t _m_number(const char* sp, bool negative) noexcept
 			{
 				const char* allstart = sp;
 				sp = _m_eat_whitespace(sp);
@@ -412,23 +403,22 @@ namespace nana
 				if (gotcha)
 				{
 					sp = _m_eat_whitespace(sp);
-					if ('%' == *sp)
+					if ('%' != *sp)
+						return sp - allstart;
+					
+					switch (number_.kind_of())
 					{
-						switch (number_.kind_of())
-						{
-						case number_t::kind::integer:
-							number_.assign_percent(number_.integer());
-							break;
-						case number_t::kind::real:
-							number_.assign_percent(number_.real());
-							break;
-						default:
-							break;
-						}
-
-						return sp - allstart + 1;
+					case number_t::kind::integer:
+						number_.assign_percent(number_.integer());
+						break;
+					case number_t::kind::real:
+						number_.assign_percent(number_.real());
+						break;
+					default:
+						break;
 					}
-					return sp - allstart;
+
+					return sp - allstart + 1;
 				}
 				number_.reset();
 				return 0;
@@ -445,12 +435,12 @@ namespace nana
 	}
 
 
-	inline bool is_idchar(int ch) noexcept
+	static bool is_idchar(int ch) noexcept
 	{
 		return ('_' == ch || std::isalnum(ch));
 	}
 
-	std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
+	static std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
 	{
 		const auto len = std::strlen(idstr);
 
@@ -468,7 +458,65 @@ namespace nana
 		return text.npos;
 	}
 
-	std::pair<std::size_t, std::size_t> get_field_bound(const std::string& div, const char* idstr, int depth)
+	//Find the text bound of a field. The parameter start_pos is one of bound characters of the field whose bound will be returned
+	static std::pair<std::size_t, std::size_t> get_field_bound(const std::string& div, std::size_t start_pos)
+	{
+		int depth = 0;
+		if ('<' == div[start_pos])
+		{
+			auto off = start_pos + 1;
+			while (off < div.length())
+			{
+				auto pos = div.find_first_of("<>", off);
+				if (div.npos == pos)
+					break;
+
+				if ('<' == div[pos])
+				{
+					++depth;
+					off = pos + 1;
+					continue;
+				}
+
+				if (0 == depth)
+					return{ start_pos, pos + 1 };
+
+				--depth;
+				off = pos + 1;
+			}
+		}
+		else if (('>' == div[start_pos]) && (start_pos > 0))
+		{
+			auto off = start_pos - 1;
+			while (true)
+			{
+				auto pos = div.find_last_of("<>", off);
+				if (div.npos == pos)
+					break;
+
+				if ('>' == div[pos])
+				{
+					++depth;
+					if (0 == pos)
+						break;
+
+					off = pos - 1;
+				}
+
+				if (0 == depth)
+					return{ pos, start_pos + 1 };
+
+				if (0 == pos)
+					break;
+
+				off = pos - 1;
+			}
+		}
+
+		return{};
+	}
+
+	static std::pair<std::size_t, std::size_t> get_field_bound(const std::string& div, const char* idstr, int depth)
 	{
 		auto start_pos = find_idstr(div, idstr);
 
@@ -498,28 +546,7 @@ namespace nana
 			start_pos = pos - 1;
 		}
 
-		auto off = start_pos + 1;
-
-		while (true)
-		{
-			auto pos = div.find_first_of("<>", off);
-
-			if (div.npos == pos)
-				return{};
-
-			if ('<' == div[pos])
-			{
-				++depth;
-				off = pos + 1;
-				continue;
-			}
-
-			if (0 == depth)
-				return{ start_pos, pos + 1 };
-
-			--depth;
-			off = pos + 1;
-		}
+		return get_field_bound(div, start_pos + 1);
 	}
 
 	//struct implement
@@ -554,13 +581,13 @@ namespace nana
 
 		void collocate();
 
-		static division * search_div_name(division* start, const std::string&);
+		static division * search_div_name(division* start, const std::string&) noexcept;
 		std::unique_ptr<division> scan_div(place_parts::tokenizer&);
 		void check_unique(const division*) const;
 
 		//connect the field/dock with div object
 		void connect(division* start);
-		void disconnect();
+		void disconnect() noexcept;
 	};	//end struct implement
 
 	class place::implement::field_gather
@@ -572,16 +599,16 @@ namespace nana
 			window handle;
 			event_handle evt_destroy;
 
-			element_t(window h, event_handle event_destroy)
+			element_t(window h, event_handle event_destroy) noexcept
 				:handle(h), evt_destroy(event_destroy)
 			{}
 		};
 
-		field_gather(place * p)
+		field_gather(place * p) noexcept
 			: place_ptr_(p)
 		{}
 
-		~field_gather()
+		~field_gather() noexcept
 		{
 			for (auto & e : elements)
 				API::umake_event(e.evt_destroy);
@@ -599,7 +626,7 @@ namespace nana
 				API::show_window(e.handle, vsb);
 		}
 
-		static event_handle erase_element(std::vector<element_t>& elements, window handle)
+		static event_handle erase_element(std::vector<element_t>& elements, window handle) noexcept
 		{
 			for (auto i = elements.begin(); i != elements.end(); ++i)
 			{
@@ -710,6 +737,28 @@ namespace nana
 				field->attached = nullptr;
 		}
 
+		static unsigned calc_number(const place_parts::number_t& number, unsigned area_px, double adjustable_px, double& precise_px)
+		{
+			switch (number.kind_of())
+			{
+			case number_t::kind::integer:
+				return static_cast<unsigned>(number.integer());
+			case number_t::kind::real:
+				return static_cast<unsigned>(number.real());
+			case number_t::kind::percent:
+				adjustable_px = area_px * number.real();
+			case number_t::kind::none:
+				{
+					auto fpx = adjustable_px + precise_px;
+					auto px = static_cast<unsigned>(fpx);
+					precise_px = fpx - px;
+					return px;
+				}
+				break;
+			}
+			return 0; //Useless
+		}
+
 		std::pair<double, double> calc_weight_floor()
 		{
 			std::pair<double, double> floor;
@@ -751,7 +800,62 @@ namespace nana
 						fv = this->weight.real();
 				}
 				else
+				{
+					if (this->fit_content)
+					{
+						std::size_t fit_count = 0;
+						unsigned max_value = 0;
+						for (auto & elm : this->field->elements)
+						{
+							auto extent = API::content_extent(elm.handle, 0, false);
+							if (extent)
+							{
+								++fit_count;
+								if (vert)
+								{
+									floor.second += extent->second.height;
+									if (extent->second.width > max_value)
+										max_value = extent->second.width;
+								}
+								else
+								{
+									floor.first += extent->second.width;
+									if (extent->second.height > max_value)
+										max_value = extent->second.height;
+								}
+							}
+						}
+
+						if (max_value)
+						{
+							if (vert)
+								floor.first = max_value;
+							else
+								floor.second = max_value;
+						}
+
+						if (fit_count > 1)
+						{
+							double percent = 0;
+							for (std::size_t i = 0; i < fit_count - 1; ++i)
+							{
+								auto gap_value = gap.at(i);
+								if (gap_value.kind_of() == number_t::kind::percent)
+								{
+									percent += gap_value.real();
+								}
+								else
+								{
+									double precise_px = 0;
+									fv += calc_number(gap_value, 100, 0, precise_px);
+								}
+							}
+
+							fv *= (1 + percent);
+						}
+					}
 					run_.weight_floor = floor;
+				}
 			}
 
 			return floor;
@@ -831,7 +935,7 @@ namespace nana
 			return (div == last);
 		}
 
-		static double limit_px(const division* div, double px, unsigned area_px)
+		static double limit_px(const division* div, double px, unsigned area_px) noexcept
 		{
 			auto const vert = (div->div_owner && (div->div_owner->kind_of_division == kind::vertical_arrange));
 
@@ -885,7 +989,7 @@ namespace nana
 			return nullptr;
 		}
 	public:
-		void _m_visible_for_child(division * div, bool vsb)
+		static void _m_visible_for_child(division * div, bool vsb) noexcept
 		{
 			for (auto & child : div->children)
 			{
@@ -1002,13 +1106,43 @@ namespace nana
 				for (auto & el : field->elements)
 				{
 					element_r.x_ref() = static_cast<int>(position);
-					auto px = _m_calc_number(arrange_.at(index), area_px, adjustable_px, precise_px);
 
-					element_r.w_ref() = px;
-					API::move_window(el.handle, element_r.result());
+					bool moved = false;
+					unsigned px = 0;
+					if (this->fit_content)
+					{
+						auto extent = API::content_extent(el.handle, 0, false);
+						if (extent)
+						{
+							auto r = element_r.result();
+							r.dimension(extent->second);
+
+							if (vert)
+							{
+								if (area_margined.width > r.width)
+									r.x += (area_margined.width - r.width) / 2;
+							}
+							else
+							{
+								if (area_margined.height > r.height)
+									r.y += (area_margined.height - r.height) / 2;
+							}
+
+							API::move_window(el.handle, r);
+							px = (vert ? r.height : r.width);
+							moved = true;
+						}
+					}
+
+					if (!moved)
+					{
+						px = calc_number(arrange_.at(index), area_px, adjustable_px, precise_px);
+						element_r.w_ref() = px;
+						API::move_window(el.handle, element_r.result());
+					}
 
 					if (index + 1 < field->elements.size())
-						position += (px + _m_calc_number(gap.at(index), area_px, 0, precise_px));
+						position += (px + calc_number(gap.at(index), area_px, 0, precise_px));
 
 					++index;
 				}
@@ -1018,28 +1152,6 @@ namespace nana
 			}
 		}
 	private:
-		static unsigned _m_calc_number(const place_parts::number_t& number, unsigned area_px, double adjustable_px, double& precise_px)
-		{
-			switch (number.kind_of())
-			{
-			case number_t::kind::integer:
-				return static_cast<unsigned>(number.integer());
-			case number_t::kind::real:
-				return static_cast<unsigned>(number.real());
-			case number_t::kind::percent:
-				adjustable_px = area_px * number.real();
-			case number_t::kind::none:
-				{
-					auto fpx = adjustable_px + precise_px;
-					auto px = static_cast<unsigned>(fpx);
-					precise_px = fpx - px;
-					return px;
-				}
-				break;
-			}
-			return 0; //Useless
-		}
-
 		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px)
 		{
 			std::pair<unsigned, std::size_t> result;
@@ -1067,7 +1179,7 @@ namespace nana
 		}
 
 		//Returns the fixed pixels and the number of adjustable items.
-		std::pair<unsigned, std::size_t> _m_fixed_and_adjustable(kind match_kind, unsigned area_px) const
+		std::pair<unsigned, std::size_t> _m_fixed_and_adjustable(kind match_kind, unsigned area_px) const noexcept
 		{
 			std::pair<unsigned, std::size_t> result;
 			if (field && (kind_of_division == match_kind))
@@ -1112,7 +1224,7 @@ namespace nana
 			double max_px;
 		};
 
-		static double _m_find_lowest_revised_division(const std::vector<revised_division>& revises, double level_px)
+		static double _m_find_lowest_revised_division(const std::vector<revised_division>& revises, double level_px) noexcept
 		{
 			double v = (std::numeric_limits<double>::max)();
 
@@ -1126,7 +1238,7 @@ namespace nana
 			return v;
 		}
 
-		static std::size_t _m_remove_revised(std::vector<revised_division>& revises, double value, std::size_t& full_count)
+		static std::size_t _m_remove_revised(std::vector<revised_division>& revises, double value, std::size_t& full_count) noexcept
 		{
 			full_count = 0;
 			std::size_t reached_mins = 0;
@@ -1148,7 +1260,7 @@ namespace nana
 			return reached_mins;
 		}
 
-		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, unsigned area_px)
+		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, unsigned area_px) noexcept
 		{
 			if (fa.first >= area_px || 0 == fa.second)
 				return 0;
@@ -1305,6 +1417,8 @@ namespace nana
 				return;
 			}
 
+			auto i = field->elements.cbegin();
+			auto const end = field->elements.cend();
 			if (dimension.first <= 1 && dimension.second <= 1)
 			{
 				auto n_of_wd = field->elements.size();
@@ -1321,7 +1435,6 @@ namespace nana
 					if ((edge * edge) < n_of_wd) ++edge;
 				}
 
-				bool exit_for = false;
 				double y = area.y;
 				double block_w = area.width / double(edge);
 				double block_h = area.height / double((n_of_wd / edge) + (n_of_wd % edge ? 1 : 0));
@@ -1329,19 +1442,12 @@ namespace nana
 				unsigned uns_block_h = static_cast<unsigned>(block_h);
 				unsigned height = (uns_block_h > gap_size ? uns_block_h - gap_size : uns_block_h);
 
-				auto i = field->elements.cbegin(), end = field->elements.cend();
 				std::size_t arr_pos = 0;
-				for (std::size_t u = 0; u < edge; ++u)
+				for (std::size_t u = 0; (u < edge && i != end); ++u)
 				{
 					double x = area.x;
-					for (std::size_t v = 0; v < edge; ++v)
+					for (std::size_t v = 0; (v < edge && i != end); ++v, ++i)
 					{
-						if (i == end)
-						{
-							exit_for = true;
-							break;
-						}
-
 						unsigned value = 0;
 						auto arr = arrange_.at(arr_pos++);
 
@@ -1354,9 +1460,7 @@ namespace nana
 						if (width > gap_size)	width -= gap_size;
 						API::move_window(i->handle, rectangle{ static_cast<int>(x), static_cast<int>(y), width, height });
 						x += block_w;
-						++i;
 					}
-					if (exit_for) break;
 					y += block_h;
 				}
 			}
@@ -1365,52 +1469,40 @@ namespace nana
 				double block_w = int(area.width - gap_size * (dimension.first - 1)) / double(dimension.first);
 				double block_h = int(area.height - gap_size * (dimension.second - 1)) / double(dimension.second);
 
-				std::unique_ptr<char[]> table_ptr(new char[dimension.first * dimension.second]);
-
+				std::unique_ptr<char[]> table_ptr{ new char[dimension.first * dimension.second] };
 				char *table = table_ptr.get();
 				std::memset(table, 0, dimension.first * dimension.second);
 
 				std::size_t lbp = 0;
-				bool exit_for = false;
-
-				auto i = field->elements.cbegin(), end = field->elements.cend();
 
 				double precise_h = 0;
-				for (std::size_t c = 0; c < dimension.second; ++c)
+				for (std::size_t u = 0; (u < dimension.second && i != end); ++u)
 				{
-					unsigned block_height_px = static_cast<unsigned>(block_h + precise_h);
+					auto const block_height_px = static_cast<unsigned>(block_h + precise_h);
 					precise_h = (block_h + precise_h) - block_height_px;
 
 					double precise_w = 0;
-					for (std::size_t l = 0; l < dimension.first; ++l)
+					for (std::size_t v = 0; (v < dimension.first && i != end); ++v)
 					{
-						if (table[l + lbp])
+						if (table[v + lbp])
 						{
 							precise_w += block_w;
-							auto px = static_cast<int>(precise_w);
-							precise_w -= px;
+							precise_w -= static_cast<int>(precise_w);
 							continue;
 						}
 
-						if (i == end)
-						{
-							exit_for = true;
-							break;
-						}
-
 						std::pair<unsigned, unsigned> room{ 1, 1 };
+						_m_find_collapse(static_cast<int>(v), static_cast<int>(u), room);
 
-						_m_find_collapse(static_cast<int>(l), static_cast<int>(c), room);
-
-						int pos_x = area.x + static_cast<int>(l * (block_w + gap_size));
-						int pos_y = area.y + static_cast<int>(c * (block_h + gap_size));
+						int pos_x = area.x + static_cast<int>(v * (block_w + gap_size));
+						int pos_y = area.y + static_cast<int>(u * (block_h + gap_size));
 
 						unsigned result_h;
 						if (room.first <= 1 && room.second <= 1)
 						{
 							precise_w += block_w;
 							result_h = block_height_px;
-							table[l + lbp] = 1;
+							table[v + lbp] = 1;
 						}
 						else
 						{
@@ -1419,7 +1511,7 @@ namespace nana
 
 							for (unsigned y = 0; y < room.second; ++y)
 								for (unsigned x = 0; x < room.first; ++x)
-									table[l + x + lbp + y * dimension.first] = 1;
+									table[v + x + lbp + y * dimension.first] = 1;
 						}
 
 						unsigned result_w = static_cast<unsigned>(precise_w);
@@ -1429,16 +1521,13 @@ namespace nana
 						++i;
 					}
 
-					if (exit_for)
-					{
-						size empty_sz;
-						for (; i != end; ++i)
-							API::window_size(i->handle, empty_sz);
-						break;
-					}
 					lbp += dimension.first;
 				}
 			}
+
+			// Empty the size of windows that are out range of grid
+			for (; i != end; ++i)
+				API::window_size(i->handle, size{});
 
 			for (auto & fsn : field->fastened)
 				API::move_window(fsn.handle, area);
@@ -1551,26 +1640,12 @@ namespace nana
 						int delta = (vert ? splitter_.pos().y - begin_point_.y : splitter_.pos().x - begin_point_.x);
 
 						const auto total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
-/*
-						auto left_px = static_cast<int>(left_pixels_) + delta;	//deprecated
-						if (left_px > total_pixels)
-							left_px = total_pixels;
-						else if (left_px < 0)
-							left_px = 0;
-*/
+
 						auto left_px = std::clamp(static_cast<int>(left_pixels_) + delta, 0, total_pixels);
 
 						double imd_rate = 100.0 / area_px;
 						left_px = static_cast<int>(limit_px(_m_leaf_left(), left_px, area_px));
 						_m_leaf_left()->weight.assign_percent(imd_rate * left_px);
-
-						/*
-						auto right_px = static_cast<int>(right_pixels_) - delta;	//deprecated
-						if (right_px > total_pixels)
-							right_px = total_pixels;
-						else if (right_px < 0)
-							right_px = 0;
-							*/
 
 						auto right_px = std::clamp(static_cast<int>(right_pixels_) - delta, 0, total_pixels);
 
@@ -1607,17 +1682,8 @@ namespace nana
 				auto area_px = right.right() - left.x();
 				auto right_px = static_cast<int>(limit_px(leaf_right, init_weight_.get_value(area_px), static_cast<unsigned>(area_px)));
 
-				/*	//deprecated
-				auto pos = area_px - right_px - splitter_px; //New position of splitter
-				if (pos < limited_range.x())
-					pos = limited_range.x();
-				else if (pos > limited_range.right())
-					pos = limited_range.right();
-				*/
-
 				//New position of splitter
 				const auto pos = std::clamp(static_cast<int>(area_px - right_px - splitter_px), limited_range.x(), limited_range.right());
-
 
 				rectangle_rotator sp_r(vert, field_area);
 				sp_r.x_ref() = pos;
@@ -1650,7 +1716,7 @@ namespace nana
 				splitter_.move(this->field_area);
 		}
 	private:
-		static int _m_search_name(const division* div, std::string& name)
+		static int _m_search_name(const division* div, std::string& name) noexcept
 		{
 			if (div->name.size())
 			{
@@ -1672,64 +1738,6 @@ namespace nana
 			}
 
 			return -1;
-		}
-
-		static std::pair<std::size_t, std::size_t> _m_field_bound(const std::string& div, std::size_t start_pos)
-		{
-			int depth = 0;
-
-			if ('<' == div[start_pos])
-			{
-				auto off = start_pos + 1;
-				while (off < div.length())
-				{
-					auto pos = div.find_first_of("<>", off);
-					if (div.npos == pos)
-						break;
-
-					if ('<' == div[pos])
-					{
-						++depth;
-						off = pos + 1;
-						continue;
-					}
-					
-					if (0 == depth)
-						return{ start_pos, pos + 1};
-
-					--depth;
-					off = pos + 1;
-				}
-			}
-			else if (('>' == div[start_pos]) && (start_pos > 0))
-			{
-				auto off = start_pos - 1;
-				while (true)
-				{
-					auto pos = div.find_last_of("<>", off);
-					if (div.npos == pos)
-						break;
-
-					if ('>' == div[pos])
-					{
-						++depth;
-						if (0 == pos)
-							break;
-
-						off = pos - 1;
-					}
-
-					if (0 == depth)
-						return{ pos, start_pos + 1};
-
-					if (0 == pos)
-						break;
-
-					off = pos - 1;
-				}
-			}
-
-			return{};
 		}
 
 		static void _m_remove_attr(std::string& div, const char* attr)
@@ -1820,25 +1828,11 @@ namespace nana
 			auto fieldstr = div.substr(bound.first, bound.second - bound.first);
 			_m_remove_attr(fieldstr, "weight");
 
-			decltype(bound) other_bound;
-			if (left)
-			{
-				//Get the bound of leaf right
-				auto pos = div.find('<', bound.second + 1);
-				if (div.npos == pos)
-					throw std::runtime_error("please report an issue if it throws");
+			std::string::size_type tag_pos{ left ? div.find('<', bound.second + 1) : div.rfind('>', bound.first - 1) };
+			if (div.npos == tag_pos)
+				throw std::runtime_error("place report an issue if it throws");
 
-				other_bound = _m_field_bound(div, pos);
-			}
-			else
-			{
-				//Get the bound of leaf left
-				auto pos = div.rfind('>', bound.first - 1);
-				if (div.npos == pos)
-					throw std::runtime_error("place report an issue if it throws");
-
-				other_bound = _m_field_bound(div, pos);
-			}
+			auto other_bound = get_field_bound(div, tag_pos);
 
 			auto other_fieldstr = div.substr(other_bound.first, other_bound.second - other_bound.first);
 			_m_remove_attr(other_fieldstr, "weight");
@@ -1905,26 +1899,10 @@ namespace nana
 				endpos = left_base + static_cast<int>(leaf_left->max_px.get_value(area.w()));
 
 			if (!leaf_right->min_px.empty())
-			{
-				/*
-				auto v = leaf_right->min_px.get_value(area.w());	//deprecated
-				auto x = right_base - static_cast<int>(v);
-				if (x < endpos)
-					endpos = x;
-				*/
-
 				endpos = (std::min)(right_base - static_cast<int>(leaf_right->min_px.get_value(area.w())), endpos);
-			}
+
 			if (!leaf_right->max_px.empty())
-			{
-				/*
-				auto v = leaf_right->max_px.get_value(area.w());	//deprecated
-				auto x = right_base - static_cast<int>(v);
-				if (x > pos)
-					pos = x;
-				*/
 				pos = (std::max)(right_base - static_cast<int>(leaf_right->max_px.get_value(area.w())), pos);
-			}
 
 			area.x_ref() = pos;
 			area.w_ref() = unsigned(endpos - pos + splitter_px);
@@ -2275,7 +2253,7 @@ namespace nana
 			: division(kind::dock, std::move(name)), impl_(impl)
 		{}
 
-		division* front() const
+		division* front() const noexcept
 		{
 			for (auto & child : children)
 			{
@@ -2523,7 +2501,7 @@ namespace nana
 
 	//search_div_name
 	//search a division with the specified name.
-	place::implement::division * place::implement::search_div_name(division* start, const std::string& name)
+	place::implement::division * place::implement::search_div_name(division* start, const std::string& name) noexcept
 	{
 		if (start)
 		{
@@ -2538,6 +2516,20 @@ namespace nana
 			}
 		}
 		return nullptr;
+	}
+
+	static int get_parameter(place_parts::tokenizer& tknizer, std::size_t pos)
+	{
+		auto & arg = tknizer.parameters()[pos];
+		//auto & arg = params[pos];
+
+		if (arg.kind_of() == number_t::kind::integer)
+			return arg.integer();
+		else if (arg.kind_of() == number_t::kind::real)
+			return static_cast<int>(arg.real());
+
+		const char* pos_strs[] = { "1st", "2nd", "3rd", "4th" };
+		throw std::invalid_argument("nana.place: the type of the " + std::string{pos_strs[pos]} +"th parameter for collapse should be integer.");
 	}
 
 	auto place::implement::scan_div(place_parts::tokenizer& tknizer) -> std::unique_ptr<division>
@@ -2561,9 +2553,8 @@ namespace nana
 		bool undisplayed = false;
 		bool invisible = false;
 
-		for (token tk = tknizer.read(); tk != token::eof; tk = tknizer.read())
+		for (token tk = tknizer.read(); (tk != token::eof && tk != token::div_end); tk = tknizer.read())
 		{
-			bool exit_for = false;
 			switch (tk)
 			{
 			case token::dock:
@@ -2620,28 +2611,12 @@ namespace nana
 					if (tknizer.parameters().size() != 4)
 						throw std::invalid_argument("nana.place: collapse requires 4 parameters.");
 
-					auto get_number = [](const number_t & arg, const std::string& nth)
-					{
-						if (arg.kind_of() == number_t::kind::integer)
-							return arg.integer();
-						else if (arg.kind_of() == number_t::kind::real)
-							return static_cast<int>(arg.real());
-
-						throw std::invalid_argument("nana.place: the type of the "+ nth +" parameter for collapse should be integer.");
+					::nana::rectangle col{
+						get_parameter(tknizer, 0),
+						get_parameter(tknizer, 1),
+						static_cast<decltype(col.width)>(get_parameter(tknizer, 2)),
+						static_cast<decltype(col.width)>(get_parameter(tknizer, 3))
 					};
-
-					::nana::rectangle col;
-					auto arg = tknizer.parameters().at(0);
-					col.x = get_number(arg, "1st");
-
-					arg = tknizer.parameters().at(1);
-					col.y = get_number(arg, "2nd");
-
-					arg = tknizer.parameters().at(2);
-					col.width = static_cast<decltype(col.width)>(get_number(arg, "3rd"));
-
-					arg = tknizer.parameters().at(3);
-					col.height = static_cast<decltype(col.height)>(get_number(arg, "4th"));
 
 					//Check the collapse area.
 					//Ignore this collapse if its area is less than 2(col.width * col.height < 2)
@@ -2708,9 +2683,6 @@ namespace nana
 					break;
 				}
 				break;
-			case token::div_end:
-				exit_for = true;
-				break;
 			case token::identifier:
 				name = tknizer.idstr();
 				break;
@@ -2728,8 +2700,6 @@ namespace nana
 				invisible = true; break;
 			default:	break;
 			}
-			if (exit_for)
-				break;
 		}
 
 		field_gather * attached_field = nullptr;
@@ -2791,19 +2761,6 @@ namespace nana
 			max_px.reset();
 		}
 
-		/*
-		//The weight will be ignored if one of min and max is specified.	//deprecated
-		if (min_px.empty() && max_px.empty())
-		{
-			div->weight = weight;
-		}
-		else
-		{
-			div->min_px = min_px;
-			div->max_px = max_px;
-		}
-		*/
-
 		if (!min_px.empty())
 			div->min_px = min_px;
 
@@ -2856,10 +2813,10 @@ namespace nana
 				}
 
 				division * next = nullptr;
-				for (auto i = adjusted_children.rbegin(); i != adjusted_children.rend(); ++i)
+				for (int i = static_cast<int>(adjusted_children.size()) - 1; i >= 0; --i)
 				{
-					i->get()->div_next = next;
-					next = i->get();
+					adjusted_children[i]->div_next = next;
+					next = adjusted_children[i].get();
 				}
 
 				children.swap(adjusted_children);
@@ -2910,6 +2867,8 @@ namespace nana
 	{
 		if (!start)
 			return;
+
+		check_unique(start);	//may throw if there is a redefined name of field.
 
 		this->disconnect();
 
@@ -2976,7 +2935,7 @@ namespace nana
 		}
 	}
 
-	void place::implement::disconnect()
+	void place::implement::disconnect() noexcept
 	{
 		for (auto & fd : fields)
 		{
@@ -3033,8 +2992,7 @@ namespace nana
 		auto div = impl_->scan_div(tknizer);
 		try
 		{
-			impl_->check_unique(div.get());	//may throw if there is a redefined name of field.
-			impl_->connect(div.get());
+			impl_->connect(div.get());		//throws if there is a redefined name of field.
 			impl_->root_division.reset();	//clear atachments div-fields
 			impl_->root_division.swap(div);
 			impl_->div_text.assign(s);
@@ -3107,8 +3065,7 @@ namespace nana
 
 			replaced->swap(modified);
 
-			impl_->check_unique(impl_->root_division.get());
-			impl_->connect(impl_->root_division.get());
+			impl_->connect(impl_->root_division.get());	//throws if there is a duplicate name
 			impl_->tmp_replaced.reset();
 			update_div(impl_->div_text, name, div_text, update_operation::replace);
 
@@ -3367,7 +3324,7 @@ namespace nana
 				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
 			}
 
-			return dock_ptr->dockarea->add_pane(i->second->factories[factory]);
+			return dock_ptr->dockarea->add_pane(dock_ptr->factories[factory]);
 		}
 
 		return nullptr;

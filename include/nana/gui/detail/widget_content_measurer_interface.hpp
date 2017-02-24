@@ -30,11 +30,18 @@ namespace nana
 
 			/// Measures content
 			/**
-			* @param limit_width true if limits the width, false if limits the height.
-			* @param limit_pixels the number of pixels of the limited edge. If this parameter is zero, it is ignored
-			* @return the size of content
-			*/
-			virtual optional<size> measure(graph_reference, bool limit_width, unsigned limit_pixels) const = 0;
+			 * @param graph The graphics for the operation.
+			 * @param limit_pixels The number of pixels of the limited edge. If this parameter is zero, it is ignored.
+			 * @param limit_width True if limits the width, false if limits the height.
+			 * @return the size of content.
+			 */
+			virtual optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const = 0;
+
+			/// Returns the extension to the size of widget from content extent
+			/**
+			 * @return the width and height of extension to the widget size.
+			 */
+			virtual size extension() const = 0;
 		};
 	}
 }

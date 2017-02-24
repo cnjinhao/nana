@@ -403,6 +403,17 @@ namespace API
 	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 
 	void at_safe_place(window, std::function<void()>);
+
+	/// Returns a widget content extent size
+	/**
+	 * @param wd A handle to a window that returns its content extent size.
+	 * @param limited_px Specifies the max pixels of width or height. If this parameter is zero, this parameter will be ignored.
+	 * @param limit_width Indicates whether the it limits the width or height. If this parameter is *true*, the width is limited.
+	 * If the parameter is *false*, the height is limited. This parameter is ignored if limited_px = 0.
+	 * @return if optional has a value, the first size indicates the content extent, the second size indicates the size of
+	 * widget by the content extent. 
+	 */
+	optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 }//end namespace API
 
 }//end namespace nana

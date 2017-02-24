@@ -1,7 +1,7 @@
 /*
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -426,7 +426,7 @@ namespace nana
 				value_.integer = 0;
 			}
 
-			void reset()
+			void reset() noexcept
 			{
 				kind_ = kind::none;
 				value_.integer = 0;
@@ -447,17 +447,17 @@ namespace nana
 				return false;
 			}
 
-			bool empty() const throw()
+			bool empty() const noexcept
 			{
 				return (kind::none == kind_);
 			}
 
-			kind kind_of() const
+			kind kind_of() const noexcept
 			{
 				return kind_;
 			}
 
-			double get_value(int ref_percent) const
+			double get_value(int ref_percent) const noexcept
 			{
 				switch (kind_)
 				{
@@ -473,33 +473,33 @@ namespace nana
 				return 0;
 			}
 
-			int integer() const
+			int integer() const noexcept
 			{
 				if (kind::integer == kind_)
 					return value_.integer;
 				return static_cast<int>(value_.real);
 			}
 
-			double real() const
+			double real() const noexcept
 			{
 				if (kind::integer == kind_)
 					return value_.integer;
 				return value_.real;
 			}
 
-			void assign(int i)
+			void assign(int i) noexcept
 			{
 				kind_ = kind::integer;
 				value_.integer = i;
 			}
 
-			void assign(double d)
+			void assign(double d) noexcept
 			{
 				kind_ = kind::real;
 				value_.real = d;
 			}
 
-			void assign_percent(double d)
+			void assign_percent(double d) noexcept
 			{
 				kind_ = kind::percent;
 				value_.real = d / 100;

@@ -1,7 +1,7 @@
 /*
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -11,12 +11,40 @@
  */
 
 #include <nana/gui/widgets/button.hpp>
+#include <nana/gui/detail/widget_content_measurer_interface.hpp>
+
 #include <nana/paint/text_renderer.hpp>
 
 namespace nana{	namespace drawerbase
 {
 	namespace button
 	{
+		class trigger::measurer
+			: public dev::widget_content_measurer_interface
+		{
+		public:
+			measurer(trigger* t)
+				: trigger_{ t }
+			{}
+
+			optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+			{
+				wchar_t shortkey;
+				std::string::size_type shortkey_pos;
+				
+				auto str = to_wstring(API::transform_shortkey_text(trigger_->wdg_->caption(), shortkey, &shortkey_pos));
+				auto text_sz = graph.text_extent_size(str);
+
+				return size{ text_sz.width, text_sz.height };
+			}
+
+			size extension() const override
+			{
+				return { 14, 10};
+			}
+		private:
+			trigger * trigger_;
+		};
 
 		//trigger
 		//@brief: draw the button
@@ -26,6 +54,8 @@ namespace nana{	namespace drawerbase
 			attr_.omitted = attr_.focused = attr_.pushed = attr_.enable_pushed = attr_.keep_pressed =  false;
 			attr_.focus_color = true;
 			attr_.icon = nullptr;
+
+			measurer_.reset(new measurer{this});
 		}
 
 		trigger::~trigger()
@@ -44,6 +74,7 @@ namespace nana{	namespace drawerbase
 			API::tabstop(wd);
 			API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 			API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
+			API::dev::set_measurer(widget, measurer_.get());
 		}
 
 		bool trigger::enable_pushed(bool eb)
@@ -251,17 +282,17 @@ namespace nana{	namespace drawerbase
 				}
 				else
 				{
-					graph.palette(true, ::nana::color(colors::white));
+					graph.palette(true, color{ colors::white });
 					if(attr_.omitted)
 					{
 						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, true);
-						graph.palette(true, ::nana::color(colors::gray));
+						graph.palette(true, color{ colors::gray });
 						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
 					}
 					else
 					{
 						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen);
-						graph.palette(true, ::nana::color(colors::gray));
+						graph.palette(true, color{ colors::gray });
 						graph.bidi_string(pos, txtptr, txtlen);
 					}
 				}

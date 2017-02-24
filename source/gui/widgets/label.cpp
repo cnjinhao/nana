@@ -655,13 +655,18 @@ namespace nana
 						: impl_{ impl }
 					{}
 
-					optional<size> measure(bool limit_width, unsigned limit_pixels) const override
+					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
 					{
-						if (impl_->graph)
+						if (graph)
 						{
 
 						}
 						return{};
+					}
+
+					size extension() const override
+					{
+						return{ 2, 2 };
 					}
 				private:
 					implement * const impl_;

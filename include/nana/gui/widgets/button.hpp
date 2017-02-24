@@ -59,6 +59,8 @@ namespace nana{
 
 				element::cite_bground cite_{"button"};
 
+				std::unique_ptr<measurer> measurer_;
+
 				struct attr_tag
 				{
 					element_state e_state;
