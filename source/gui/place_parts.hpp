@@ -29,21 +29,16 @@ namespace nana
 			virtual ~splitter_interface(){}
 		};
 
-		class splitter_dtrigger
-			: public drawer_trigger
-		{
-		};
-
 		template<bool IsLite>
 		class splitter
-			: public widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>,
+			: public widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, drawer_trigger>,
 			public splitter_interface
 		{
 		private:
 			void _m_complete_creation() override
 			{
 				this->caption("place-splitter");
-				widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>::_m_complete_creation();
+				widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, drawer_trigger>::_m_complete_creation();
 			}
 		};
 
@@ -92,7 +87,7 @@ namespace nana
 				{
 					color xclr = colors::red;
 
-					if(x_state_ ==  ::nana::mouse_action::pressed)
+					if(x_state_ == ::nana::mouse_action::pressed)
 						xclr = xclr.blend(colors::white, 0.8);
 
 					graph.rectangle(r, true, xclr);
@@ -144,11 +139,8 @@ namespace nana
 		private:
 			::nana::rectangle _m_button_area() const
 			{
-				::nana::rectangle r{API::window_size(window_handle_)};
-
-				r.x = r.right() - 20;
-				r.width = 20;
-				return r;
+				auto sz = API::window_size(window_handle_);
+				return{static_cast<int>(sz.width) - 20, 0, 20, sz.height};
 			}
 		public:
 			window window_handle_;
@@ -161,11 +153,16 @@ namespace nana
 		};
 
 		class dockarea_caption
-			: public widget_object < category::widget_tag, dockcaption_dtrigger >
+			: public widget_object<category::widget_tag, dockcaption_dtrigger>
 		{
 		public:
 			using widget_object<category::widget_tag, dockcaption_dtrigger>::get_drawer_trigger;
 		};
+
+		static unsigned differ(unsigned x, unsigned y) noexcept
+		{
+			return (x > y ? x - y : 0);
+		}
 
 		class dockarea
 			: public widget_object <category::lite_widget_tag, drawer_trigger>
@@ -183,6 +180,7 @@ namespace nana
 			{
 				notifier_ = notifier;
 			}
+
 			void create(window parent)
 			{
 				host_window_ = parent;
@@ -191,17 +189,14 @@ namespace nana
 				caption_.create(*this, true);
 				caption_.get_drawer_trigger().on_close([this]
 				{
-					bool destroy_dockarea = true;
-
 					if (tabbar_)
 					{
 						tabbar_->erase(tabbar_->selected());
-
-						destroy_dockarea = (0 == tabbar_->length());
+						if (tabbar_->length())
+							return;
 					}
 
-					if (destroy_dockarea)
-						notifier_->request_close();
+					notifier_->request_close();
 				});
 
 				this->events().resized.connect([this](const arg_resized& arg)
@@ -331,14 +326,11 @@ namespace nana
 		private:
 			widget* _m_add_pane(factory & fn)
 			{
-				rectangle r{ point(), this->size() };
+				rectangle r{ this->size() };
 
 				//get a rectangle excluding caption
 				r.y = 20;
-				if (r.height > 20)
-					r.height -= 20;
-				else
-					r.height = 0;
+				r.height = differ(r.height, 20);
 
 				if (!tabbar_)
 				{
@@ -434,17 +426,8 @@ namespace nana
 
 			bool is_negative() const
 			{
-				switch (kind_)
-				{
-				case kind::integer:
-					return (value_.integer < 0);
-				case kind::real:
-				case kind::percent:
-					return (value_.real < 0);
-				default:
-					break;
-				}
-				return false;
+				return (((kind::integer == kind_) && (value_.integer < 0)) ||
+					((kind::real == kind_ || kind::percent == kind_) && (value_.real < 0)));
 			}
 
 			bool empty() const noexcept
@@ -532,15 +515,12 @@ namespace nana
 				all_edges_ = true;
 				margins_.clear();
 			}
-
-			void push(const number_t& v)
+			
+			void push(const number_t& v, bool reset = false)
 			{
-				margins_.emplace_back(v);
-			}
+				if (reset)
+					clear();
 
-			void set_value(const number_t& v)
-			{
-				clear();
 				margins_.emplace_back(v);
 			}
 
@@ -559,12 +539,11 @@ namespace nana
 				if (all_edges_)
 				{
 					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width)));
-					const auto dbl_px = static_cast<unsigned>(px << 1);
 					r.x += px;
-					r.width = (r.width < dbl_px ? 0 : r.width - dbl_px);
+					r.width = differ(r.width, (static_cast<unsigned>(px) << 1));
 
 					r.y += px;
-					r.height = (r.height < dbl_px ? 0 : r.height - dbl_px);
+					r.height = differ(r.height, (static_cast<unsigned>(px) << 1));
 				}
 				else
 				{
@@ -587,49 +566,44 @@ namespace nana
 						ib = 2;
 					}
 
-					typedef decltype(r.height) px_type;
-					auto calc = [](px_type a, px_type b)
-					{
-						return (a > b ? a - b : 0);
-					};
+					using px_type = decltype(r.height);
 
 					if (0 == it)	//top
 					{
 						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height)));
 						r.y += px;
-						r.height = calc(r.height, static_cast<px_type>(px));
+						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != ib)	//bottom
 					{
 						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height)));
-						r.height = calc(r.height, static_cast<px_type>(px));
+						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != il)	//left
 					{
 						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width)));
 						r.x += px;
-						r.width = calc(r.width, static_cast<px_type>(px));
+						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 
 					if (-1 != ir)	//right
 					{
 						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width)));
-						r.width = calc(r.width, static_cast<px_type>(px));
+						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 				}
 				return r;
 			}
 		private:
-			bool all_edges_ = true;
+			bool all_edges_{ true };
 			std::vector<number_t> margins_;
 		};//end class margin
 
 		class repeated_array
 		{
 		public:
-
 			//A workaround for VC2013, becuase it does not generated an implicit declared move-constructor as defaulted.
 			repeated_array() = default;
 
@@ -678,15 +652,10 @@ namespace nana
 
 			number_t at(std::size_t pos) const
 			{
-				if (values_.empty())
-					return{};
+				if (values_.size() && (repeated_ || pos < values_.size()))
+					return values_[pos % values_.size()];
 
-				if (repeated_)
-					pos %= values_.size();
-				else if (pos >= values_.size())
-					return{};
-
-				return values_[pos];
+				return{};
 			}
 		private:
 			bool repeated_ = false;
