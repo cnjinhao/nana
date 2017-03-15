@@ -222,9 +222,6 @@ namespace detail
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
 				bool			ime_enabled{false};
-#if defined(NANA_WINDOWS)
-				cursor			running_cursor{ nana::cursor::arrow };
-#endif
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 

@@ -37,7 +37,7 @@ namespace nana
 		{
 			enum class component
 			{
-				begin, expender = begin, crook, icon, text, bground, end
+				begin, expander = begin, crook, icon, text, bground, end
 			};
 
 			struct node_image_tag
@@ -119,27 +119,17 @@ namespace nana
 				implement * impl() const;
 
 				void check(node_type*, checkstate);
-				bool draw();
-
-				const tree_cont_type & tree() const;
-				tree_cont_type & tree();
 
 				void renderer(::nana::pat::cloneable<renderer_interface>&&);
 				const ::nana::pat::cloneable<renderer_interface>& renderer() const;
 				void placer(::nana::pat::cloneable<compset_placer_interface>&&);
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
-				nana::any & value(node_type*) const;
 				node_type* insert(node_type*, const std::string& key, std::string&&);
 				node_type* insert(const std::string& path, std::string&&);
 
-				bool verify_kinship(node_type* parent, node_type* child) const;
-
-				void remove(node_type*);
 				node_type * selected() const;
 				void selected(node_type*);
-				void set_expand(node_type*, bool);
-				void set_expand(const ::std::string& path, bool);
 
 				node_image_tag& icon(const ::std::string&) const;
 				void icon_erase(const ::std::string&);
@@ -200,6 +190,9 @@ namespace nana
 
 				/// Set the check state, and it returns itself.
 				item_proxy& check(bool);
+
+				/// Clears the child nodes
+				item_proxy& clear();
 
 				/// Return true when the node is expanded  \todo change to expanded ??
 				bool expanded() const;

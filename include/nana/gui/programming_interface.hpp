@@ -64,7 +64,7 @@ namespace API
 		void affinity_execute(window window_handle, const std::function<void()>&);
 
 		bool set_events(window, const std::shared_ptr<general_events>&);
-		
+
 		template<typename Scheme>
 		std::unique_ptr<Scheme> make_scheme()
 		{
@@ -161,7 +161,7 @@ namespace API
 	}//end namespace detail
 
 	void exit();	    ///< close all windows in current thread
-	void exit_all();	///< close all windows 
+	void exit_all();	///< close all windows
 
 	/// @brief	Searchs whether the text contains a '&' and removes the character for transforming.
 	///			If the text contains more than one '&' charachers, the others are ignored. e.g
@@ -189,7 +189,7 @@ namespace API
 
 	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon = {});
 	void window_icon(window, const paint::image& small_icon, const paint::image& big_icon = {});
-	
+
 	bool empty_window(window);		///< Determines whether a window is existing.
 	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
 	bool is_destroying(window);		///< Determines whether a window is destroying
@@ -292,7 +292,7 @@ namespace API
 	 * @param window_handle A handle to the window to be refreshed.
 	 */
 	void refresh_window(window window_handle);
-	void refresh_window_tree(window);      ///< Refreshs the specified window and all it’s children windows, then display it immediately
+	void refresh_window_tree(window);      ///< Refreshes the specified window and all its children windows, then display it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
@@ -304,7 +304,7 @@ namespace API
 
 	void activate_window(window);
 
-	/// Determines whether the specified window will get the keyboard focus when its root window gets native system focus. 
+	/// Determines whether the specified window will get the keyboard focus when its root window gets native system focus.
 	bool is_focus_ready(window);
 
 	/// Returns the current keyboard focus window.
@@ -322,7 +322,7 @@ namespace API
 	 * @param ignore_children Indicates whether to redirect the mouse input to its children if the mouse pointer is over its children.
 	 */
 	void set_capture(window window_handle, bool ignore_children);
-	
+
 	/// Disable a window to grab the mouse input.
 	/**
 	 * @param window handle A handle to a window to release grab of mouse input.

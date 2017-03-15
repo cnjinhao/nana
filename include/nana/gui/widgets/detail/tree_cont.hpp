@@ -1,6 +1,6 @@
 /*
  *	A Tree Container class implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -58,6 +58,31 @@ namespace detail
 					t = t_next;
 				}
 			}
+
+			bool is_ancestor_of(const tree_node* child) const
+			{
+				while (child)
+				{
+					if (child->owner == this)
+						return true;
+
+					child = child->owner;
+				}
+				return false;
+			}
+
+			tree_node * front() const
+			{
+				if (this->owner && (this != this->owner->child))
+				{
+					auto i = this->owner->child;
+					while (i->next != this)
+						i = i->next;
+
+					return i;
+				}
+				return nullptr;
+			}
 		};
 
 		template<typename UserData>
@@ -76,12 +101,17 @@ namespace detail
 
 			~tree_cont()
 			{
-				clear();
+				clear(&root_);
 			}
 
-			void clear()
+			void clear(node_type* node)
 			{
-				remove(root_.child);
+				while (node->child)
+				{
+					//If there is a sibling of child, the root_.child
+					//will be assigned with the sibling.
+					remove(node->child);
+				}
 			}
 
 			bool verify(const node_type* node) const

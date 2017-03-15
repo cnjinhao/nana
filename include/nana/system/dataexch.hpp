@@ -38,6 +38,8 @@ namespace system{
 
 		void get(std::string& text_utf8);
 		void get(std::wstring& text);
+
+		std::wstring wget();
 	private:
 		bool _m_set(format, const void* buf, std::size_t size, native_window_type);
 		void* _m_get(format, size_t& size);

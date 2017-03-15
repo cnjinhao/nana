@@ -118,6 +118,7 @@ namespace nana{ namespace system{
 			static_cast<void>(g); //eliminate unused parameter compiler warning.
 			static_cast<void>(owner);
 			throw std::logic_error("dataexch::set(const paint::graphics&, native_window_type owner) not implemented yet.");
+
 			return false;
 #endif
 		}
@@ -183,6 +184,14 @@ namespace nana{ namespace system{
 #endif
 			}
 		}
+
+		std::wstring dataexch::wget()
+		{
+			std::wstring str;
+			this->get(str);
+			return str;
+		}
+
 	//private:
 		bool dataexch::_m_set(format fmt, const void* buf, std::size_t size, native_window_type owner)
 		{

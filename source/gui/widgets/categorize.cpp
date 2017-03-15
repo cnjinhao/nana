@@ -1,7 +1,7 @@
 /*
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -343,7 +343,7 @@ namespace nana
 				{
 					if(tree_.get_root()->child)
 					{
-						tree_.clear();
+						tree_.clear(tree_.get_root());
 						return true;
 					}
 					return false;

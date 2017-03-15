@@ -747,7 +747,7 @@ namespace nana
 					//add a is_wd_parent_menu to determine whether the menu wants the focus.
 					//if a submenu gets the focus, the program may cause a crash error when the submenu is being destroyed
 					:	base_type(wd, false, rectangle(pos, nana::size(2, 2)), appear::bald<appear::floating>()),
-						want_focus_{ (!wd) || ((!is_wd_parent_menu) && (API::focus_window() != wd)) },
+						want_focus_{ (!wd) || ((!is_wd_parent_menu) && (API::root(API::focus_window()) != API::root(wd))) },
 						event_focus_{ nullptr }
 				{
 					caption("nana menu window");
@@ -991,6 +991,12 @@ namespace nana
 					case keyboard::enter:
 						this->pick();
 						break;
+					case keyboard::escape:
+						//Leave sub menu. But if the sub menu doesn't exist,
+						//close the menu.
+						if (!this->submenu(false))
+							close();
+						break;
 					default:
 						if (2 != send_shortkey(arg.key))
 						{
@@ -1141,7 +1147,14 @@ namespace nana
 				throw std::out_of_range("menu: a new item inserted to an invalid position");
 
 			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
-			impl_->mbuilder.data().items.emplace(impl_->mbuilder.data().items.cbegin() + pos, item.get());
+
+			items.emplace(
+#ifdef _MSC_VER
+				items.cbegin() + pos,
+#else
+				items.begin() + pos,
+#endif
+				item.get());
 
 			return item_proxy{ pos, *item.release() };
 		}

@@ -1,7 +1,7 @@
 /*
  *	A Spin box widget
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -295,13 +295,13 @@ namespace nana
 					return range_->value();
 				}
 
-				bool value(const ::std::string& value_str)
+				bool value(const ::std::string& value_str, bool reset_editor)
 				{
 					bool diff;
 					if (!range_->value(value_str, diff))
 						return false;
 
-					if (diff)
+					if (diff && reset_editor)
 						reset_text();
 					return true;
 				}
@@ -572,7 +572,7 @@ namespace nana
 			{
 				if (impl_->editor()->respond_char(arg))
 				{
-					if (!impl_->value(to_utf8(impl_->editor()->text())))
+					if (!impl_->value(to_utf8(impl_->editor()->text()), false))
 						impl_->draw_spins();
 
 					API::dev::lazy_refresh();
@@ -657,7 +657,7 @@ namespace nana
 		internal_scope_guard lock;
 		if (handle())
 		{
-			if (get_drawer_trigger().impl()->value(s))
+			if (get_drawer_trigger().impl()->value(s, true))
 				API::refresh_window(handle());
 		}
 	}
