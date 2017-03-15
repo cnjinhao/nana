@@ -184,10 +184,10 @@ namespace nana
 					rs.text_align = th;
 					rs.text_align_v = tv;
 
-					for(auto i = dstream_.begin(), end = dstream_.end(); i != end; ++i)
+					for(auto & line: dstream_)
 					{
 						rs.pixels.clear();
-						unsigned w = _m_line_pixels(*i, def_line_pixels, rs);
+						unsigned w = _m_line_pixels(line, def_line_pixels, rs);
 
 						if(limited && (w > limited))
 							w = limited;
@@ -366,7 +366,8 @@ namespace nana
 								sz.height = max_ascent + max_descent;
 						}
 
-						if(w + sz.width <= rs.allowed_width)
+						//Check if the content is displayed in a new line.
+						if((0 == rs.allowed_width) || (w + sz.width <= rs.allowed_width))
 						{
 							w += sz.width;
 
@@ -620,7 +621,7 @@ namespace nana
 
 					widget * wd{nullptr};
 					paint::graphics * graph{nullptr};
-					class measurer * measurer{ nullptr };
+					std::unique_ptr<measurer> msr_ptr{ nullptr };
 
 					align	text_align{align::left};
 					align_v	text_align_v;
@@ -657,9 +658,10 @@ namespace nana
 
 					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
 					{
-						if (graph)
+						//Label now doesn't support to measure content with a specified height.
+						if (graph && ((0 == limit_pixels) || limit_width))
 						{
-
+							return impl_->renderer.measure(graph, limit_pixels, impl_->text_align, impl_->text_align_v);
 						}
 						return{};
 					}
@@ -674,7 +676,9 @@ namespace nana
 
 				trigger::trigger()
 					:impl_(new implement)
-				{}
+				{
+					impl_->msr_ptr.reset(new trigger::implement::measurer{impl_});
+				}
 
 				trigger::~trigger()
 				{
@@ -690,6 +694,7 @@ namespace nana
 				{
 					impl_->graph = &graph;
 					impl_->wd = &widget;
+					API::dev::set_measurer(widget, impl_->msr_ptr.get());
 				}
 
 				void trigger::mouse_move(graph_reference, const arg_mouse& arg)

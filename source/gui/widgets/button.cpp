@@ -29,6 +29,10 @@ namespace nana{	namespace drawerbase
 
 			optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
 			{
+				//Button doesn't provide a support of vfit and hfit
+				if (limit_pixels)
+					return{};
+
 				wchar_t shortkey;
 				std::string::size_type shortkey_pos;
 				

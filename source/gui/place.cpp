@@ -56,7 +56,7 @@ namespace nana
 			enum class token
 			{
 				div_start, div_end, splitter,
-				identifier, dock, fit, fit_s, vert, grid, number, array, reparray,
+				identifier, dock, fit, hfit, vfit, vert, grid, number, array, reparray,
 				weight, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom, undisplayed, invisible,
 				collapse, parameters,
 				equal,
@@ -249,17 +249,22 @@ namespace nana
 						return token::dock;
 					else if ("fit" == idstr_)
 						return token::fit;
-					else if ("fit_s" == idstr_)
-						return token::fit_s;
 					else if ("vertical" == idstr_ || "vert" == idstr_)
 						return token::vert;
 					else if ("variable" == idstr_ || "repeated" == idstr_)
 						return ('v' == idstr_[0] ? token::variable : token::repeated);
-					else if ("arrange" == idstr_ || "gap" == idstr_)
+					else if ("arrange" == idstr_ || "hfit" == idstr_ || "vfit" == idstr_ || "gap" == idstr_)
 					{
 						auto ch = idstr_[0];
 						_m_attr_reparray();
-						return ('a' == ch ? token::arrange : token::gap);
+						switch (ch)
+						{
+						case 'a': return token::arrange;
+						case 'h': return token::hfit;
+						case 'v': return token::vfit;
+						case 'g': return token::gap;
+						default: break;
+						}
 					}
 					else if ("grid" == idstr_ || "margin" == idstr_)
 					{
@@ -722,7 +727,8 @@ namespace nana
 	{
 		none,	//Doesn't fit the content
 		both,	//Fits both width and height of content
-		single	//Fits only width or height of content
+		horz,	//Fits width of content with a specified height
+		vert	//Fits height of content with a specified width
 	};
 
 	class place::implement::division
@@ -767,6 +773,7 @@ namespace nana
 		std::pair<double, double> calc_weight_floor()
 		{
 			std::pair<double, double> floor;
+			run_.fit_extents.clear();
 
 			run_.weight_floor = floor;
 
@@ -788,9 +795,10 @@ namespace nana
 						floor.second += child_floor.second;
 					}
 				}
-
-				auto const vert = (this->div_owner && (this->div_owner->kind_of_division == kind::vertical_arrange));
-				double& fv = (vert ? floor.second : floor.first);
+				
+				auto const vert_fields = (kind::vertical_arrange == this->kind_of_division);
+				auto const vert_div = (this->div_owner && (kind::vertical_arrange == this->div_owner->kind_of_division));
+				double& fv = (vert_div ? floor.second : floor.first);
 
 				if((ratio > 0.001) && (fv > 0))
 					fv /= ratio;
@@ -804,33 +812,48 @@ namespace nana
 				{
 					if (fit_policy::none != this->fit)
 					{
-						unsigned limited_px = 0;
-						bool limit_width = false;
-
 						std::size_t fit_count = 0;
+
 						unsigned max_value = 0;
+						auto const fit_horz = (fit_policy::vert == this->fit);
+
+						std::size_t pos = 0;
 						for (auto & elm : this->field->elements)
 						{
-							auto extent = API::content_extent(elm.handle, 0, false);
+							++pos;
+
+							unsigned edge_px = 0;
+							if (fit_policy::both != this->fit)
+							{
+								auto fit_val = this->fit_parameters.at(pos - 1);
+								if (fit_val.empty())
+									continue;
+
+								edge_px = fit_val.integer();
+							}
+
+							auto extent = API::content_extent(elm.handle, edge_px, fit_horz);
 							if (extent)
 							{
+								run_.fit_extents[elm.handle] = extent->second;
 								++fit_count;
-								if (vert)
+								if (vert_fields)
 									floor.second += extent->second.height;
 								else
 									floor.first += extent->second.width;
-	
-								max_value = (std::max)(max_value, (vert ? extent->second.width : extent->second.height));
+
+								max_value = (std::max)(max_value, (vert_fields ? extent->second.width : extent->second.height));
 							}
 						}
 
 						if (max_value)
 						{
-							if (vert)
+							if (vert_fields)
 								floor.first = max_value;
 							else
 								floor.second = max_value;
 						}
+
 
 						if (fit_count > 1)
 						{
@@ -1005,6 +1028,7 @@ namespace nana
 		bool display{ true };
 		bool visible{ true };
 		fit_policy fit{ fit_policy::none };
+		repeated_array fit_parameters; //it is ignored when fit is not fit_policy::horz or fit_policy::vert
 		::nana::direction dir{::nana::direction::west};
 		std::string name;
 		std::vector<std::unique_ptr<division>> children;
@@ -1022,6 +1046,7 @@ namespace nana
 		struct run_data
 		{
 			std::pair<double, double> weight_floor;
+			std::map<window, ::nana::size> fit_extents;
 		}run_;
 	};//end class division
 
@@ -1069,6 +1094,7 @@ namespace nana
 						child_px = adjustable_px;
 
 					child_px = limit_px(child, child_px, area_px);
+
 					auto npx = static_cast<unsigned>(child_px);
 					precise_px = child_px - npx;
 					child_px = npx;
@@ -1109,9 +1135,23 @@ namespace nana
 					unsigned px = 0;
 
 					auto move_r = element_r.result();
-					if (fit_policy::both == this->fit)
+					if (fit_policy::none != this->fit)
 					{
-						auto extent = API::content_extent(el.handle, 0, false);
+						auto i = run_.fit_extents.find(el.handle);
+						if (run_.fit_extents.end() != i)
+						{
+							move_r.dimension(i->second);
+
+							if (vert)
+								move_r.x += place_parts::differ(area_margined.width, move_r.width) / 2;
+							else
+								move_r.y += place_parts::differ(area_margined.height, move_r.height) / 2;
+
+							px = (vert ? move_r.height : move_r.width);
+							moved = true;
+						}
+						/*
+						auto extent = API::content_extent(el.handle, 0, false);	//deprecated
 						if (extent)
 						{
 							move_r.dimension(extent->second);
@@ -1124,6 +1164,7 @@ namespace nana
 							px = (vert ? move_r.height : move_r.width);
 							moved = true;
 						}
+						*/
 					}
 
 					if (!moved)
@@ -1178,12 +1219,26 @@ namespace nana
 			std::pair<unsigned, std::size_t> result;
 			if (field && (kind_of_division == match_kind))
 			{
+				auto const vert = (kind_of_division == kind::vertical_arrange);
+
 				//Calculate fixed and adjustable of elements
 				double precise_px = 0;
 				auto count = field->elements.size();
 				for (decltype(count) i = 0; i < count; ++i)
 				{
 					auto fa = _m_calc_fa(arrange_.at(i), area_px, precise_px);
+
+					//The fit-content element is like a fixed element
+					if (fit_policy::none != this->fit)
+					{
+						auto fi = this->run_.fit_extents.find(field->elements[i].handle);
+						if (this->run_.fit_extents.cend() != fi)
+						{
+							fa.first = (vert ? fi->second.height : fi->second.width);
+							fa.second = 0; //This isn't an adjustable element
+						}
+					}
+
 					result.first += fa.first;
 					result.second += fa.second;
 
@@ -2515,6 +2570,7 @@ namespace nana
 		std::unique_ptr<division> div;
 		token div_type = token::eof;
 		auto fit = fit_policy::none;
+		place_parts::repeated_array fit_parameters;
 
 		//These variables stand for the new division's attributes
 		std::string name;
@@ -2542,8 +2598,10 @@ namespace nana
 			case token::fit:
 				fit = fit_policy::both;
 				break;
-			case token::fit_s:
-				fit = fit_policy::single;
+			case token::hfit:
+			case token::vfit:
+				fit = (token::hfit == tk ? fit_policy::horz : fit_policy::vert);
+				fit_parameters = tknizer.reparray();
 				break;
 			case token::splitter:
 				//Ignore the splitter when there is not a division.
@@ -2809,6 +2867,8 @@ namespace nana
 		div->display = !undisplayed;
 		div->visible = !(undisplayed || invisible);
 		div->fit = fit;
+		div->fit_parameters = std::move(fit_parameters);
+
 		return div;
 	}
 

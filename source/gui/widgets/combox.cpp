@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,8 +17,10 @@
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
+#include <nana/gui/detail/widget_content_measurer_interface.hpp>
 
 #include <iterator>
+#include <algorithm>
 
 namespace nana
 {
@@ -80,6 +82,46 @@ namespace nana
 
 			class drawer_impl
 			{
+				class content_measurer
+					: public dev::widget_content_measurer_interface
+				{
+				public:
+					content_measurer(drawer_impl* drwimpl)
+						: drw_{ drwimpl }
+					{}
+
+					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+					{
+						//Button doesn't provide a support of vfit and hfit
+						if (limit_pixels)
+							return{};
+
+						size content_size;
+						for (auto i = 0; i < drw_->the_number_of_options(); ++i)
+						{
+							auto & m = drw_->at(i);
+							auto sz = graph.text_extent_size(m.item_text);
+
+							content_size.width = (std::max)(content_size.width, sz.width);
+							content_size.height = (std::max)(content_size.height, sz.height);
+						}
+
+						return content_size;
+					}
+
+					size extension() const override
+					{
+						auto text_size = drw_->editor()->text_area(false).dimension();
+						auto wdg_size = drw_->widget_ptr()->size();
+
+						return{
+							wdg_size.width > text_size.width ? wdg_size.width - text_size.width : 0,
+							wdg_size.height > text_size.height ? wdg_size.height - text_size.height : 0
+						};
+					}
+				private:
+					drawer_impl* const drw_;
+				};
 			public:
 				using graph_reference = paint::graphics&;
 				using widget_reference = widget&;
@@ -92,6 +134,8 @@ namespace nana
 					state_.button_state = element_state::normal;
 					state_.pointer_where = parts::none;
 					state_.lister = nullptr;
+
+					measurer_.reset(new content_measurer{this});
 				}
 
 				void renderer(drawerbase::float_listbox::item_renderer* ir)
@@ -111,6 +155,8 @@ namespace nana
 
 					evt_agent_.reset(new event_agent{ static_cast<nana::combox&>(wd) });
 					editor_->textbase().set_event_agent(evt_agent_.get());
+
+					API::dev::set_measurer(wd, measurer_.get());
 				}
 
 				void detached()
@@ -528,6 +574,8 @@ namespace nana
 				unsigned image_pixels_{ 16 };
 				widgets::skeletons::text_editor * editor_{ nullptr };
 				std::unique_ptr<event_agent> evt_agent_;
+
+				std::unique_ptr<content_measurer> measurer_;
 				struct state_type
 				{
 					bool	focused;
@@ -537,188 +585,191 @@ namespace nana
 					nana::float_listbox * lister;
 					std::size_t	item_index_before_selection;
 				}state_;
-			};
+
+
+			}; //end class drawer_impl
 
 
 			//class trigger
-				trigger::trigger()
-					: drawer_(new drawer_impl)
-				{}
+			trigger::trigger() :
+				drawer_(new drawer_impl)
+			{
+			}
 
-				trigger::~trigger()
-				{
-					delete drawer_;
-				}
+			trigger::~trigger()
+			{
+				delete drawer_;
+			}
 
-				drawer_impl& trigger::get_drawer_impl()
-				{
-					return *drawer_;
-				}
+			drawer_impl& trigger::get_drawer_impl()
+			{
+				return *drawer_;
+			}
 
-				const drawer_impl& trigger::get_drawer_impl() const
-				{
-					return *drawer_;
-				}
+			const drawer_impl& trigger::get_drawer_impl() const
+			{
+				return *drawer_;
+			}
 
-				void trigger::attached(widget_reference wdg, graph_reference graph)
-				{
-					wdg.bgcolor(colors::white);
-					drawer_->attached(wdg, graph);
+			void trigger::attached(widget_reference wdg, graph_reference graph)
+			{
+				wdg.bgcolor(colors::white);
+				drawer_->attached(wdg, graph);
 
-					API::effects_edge_nimbus(wdg, effects::edge_nimbus::active);
-					API::effects_edge_nimbus(wdg, effects::edge_nimbus::over);
-				}
+				API::effects_edge_nimbus(wdg, effects::edge_nimbus::active);
+				API::effects_edge_nimbus(wdg, effects::edge_nimbus::over);
+			}
 
-				void trigger::detached()
-				{
-					drawer_->detached();
-				}
+			void trigger::detached()
+			{
+				drawer_->detached();
+			}
 
-				void trigger::refresh(graph_reference)
+			void trigger::refresh(graph_reference)
+			{
+				drawer_->draw();
+			}
+
+			void trigger::focus(graph_reference, const arg_focus& arg)
+			{
+				drawer_->set_focused(arg.getting);
+				if(drawer_->widget_ptr()->enabled())
 				{
 					drawer_->draw();
+					drawer_->editor()->reset_caret();
+					API::dev::lazy_refresh();
 				}
+			}
 
-				void trigger::focus(graph_reference, const arg_focus& arg)
+			void trigger::mouse_enter(graph_reference, const arg_mouse&)
+			{
+				drawer_->set_button_state(element_state::hovered, true);
+				if(drawer_->widget_ptr()->enabled())
 				{
-					drawer_->set_focused(arg.getting);
-					if(drawer_->widget_ptr()->enabled())
+					drawer_->draw();
+					API::dev::lazy_refresh();
+				}
+			}
+
+			void trigger::mouse_leave(graph_reference, const arg_mouse&)
+			{
+				drawer_->set_button_state(element_state::normal, true);
+				drawer_->editor()->mouse_enter(false);
+				if(drawer_->widget_ptr()->enabled())
+				{
+					drawer_->draw();
+					API::dev::lazy_refresh();
+				}
+			}
+
+			void trigger::mouse_down(graph_reference, const arg_mouse& arg)
+			{
+				//drawer_->set_mouse_press(true);
+				drawer_->set_button_state(element_state::pressed, false);
+				if(drawer_->widget_ptr()->enabled())
+				{
+					auto * editor = drawer_->editor();
+					editor->mouse_pressed(arg);
+					drawer_->open_lister_if_push_button_positioned();
+
+					drawer_->draw();
+					if(editor->attr().editable)
+						editor->reset_caret();
+
+					API::dev::lazy_refresh();
+				}
+			}
+
+			void trigger::mouse_up(graph_reference, const arg_mouse& arg)
+			{
+				if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
+				{
+					drawer_->editor()->mouse_pressed(arg);
+					drawer_->set_button_state(element_state::hovered, false);
+					drawer_->draw();
+					API::dev::lazy_refresh();
+				}
+			}
+
+			void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
+			{
+				if(drawer_->widget_ptr()->enabled())
+				{
+					bool redraw = drawer_->calc_where(graph, arg.pos.x, arg.pos.y);
+					redraw |= drawer_->editor()->mouse_move(arg.left_button, arg.pos);
+
+					if(redraw)
 					{
 						drawer_->draw();
 						drawer_->editor()->reset_caret();
 						API::dev::lazy_refresh();
 					}
 				}
+			}
 
-				void trigger::mouse_enter(graph_reference, const arg_mouse&)
+			void trigger::mouse_wheel(graph_reference, const arg_wheel& arg)
+			{
+				if(drawer_->widget_ptr()->enabled())
 				{
-					drawer_->set_button_state(element_state::hovered, true);
-					if(drawer_->widget_ptr()->enabled())
-					{
-						drawer_->draw();
-						API::dev::lazy_refresh();
-					}
-				}
-
-				void trigger::mouse_leave(graph_reference, const arg_mouse&)
-				{
-					drawer_->set_button_state(element_state::normal, true);
-					drawer_->editor()->mouse_enter(false);
-					if(drawer_->widget_ptr()->enabled())
-					{
-						drawer_->draw();
-						API::dev::lazy_refresh();
-					}
-				}
-
-				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
-				{
-					//drawer_->set_mouse_press(true);
-					drawer_->set_button_state(element_state::pressed, false);
-					if(drawer_->widget_ptr()->enabled())
-					{
-						auto * editor = drawer_->editor();
-						editor->mouse_pressed(arg);
-						drawer_->open_lister_if_push_button_positioned();
-
-						drawer_->draw();
-						if(editor->attr().editable)
-							editor->reset_caret();
-
-						API::dev::lazy_refresh();
-					}
-				}
-
-				void trigger::mouse_up(graph_reference, const arg_mouse& arg)
-				{
-					if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
-					{
-						drawer_->editor()->mouse_pressed(arg);
-						drawer_->set_button_state(element_state::hovered, false);
-						drawer_->draw();
-						API::dev::lazy_refresh();
-					}
-				}
-
-				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
-				{
-					if(drawer_->widget_ptr()->enabled())
-					{
-						bool redraw = drawer_->calc_where(graph, arg.pos.x, arg.pos.y);
-						redraw |= drawer_->editor()->mouse_move(arg.left_button, arg.pos);
-
-						if(redraw)
-						{
-							drawer_->draw();
-							drawer_->editor()->reset_caret();
-							API::dev::lazy_refresh();
-						}
-					}
-				}
-
-				void trigger::mouse_wheel(graph_reference, const arg_wheel& arg)
-				{
-					if(drawer_->widget_ptr()->enabled())
-					{
-						if(drawer_->has_lister())
-							drawer_->scroll_items(arg.upwards);
-						else
-							drawer_->move_items(arg.upwards, false);
-					}
-				}
-
-				void trigger::key_press(graph_reference, const arg_keyboard& arg)
-				{
-					if(!drawer_->widget_ptr()->enabled())
-						return;
-
-					bool call_other_keys = false;
-					if(drawer_->editable())
-					{
-						bool is_move_up = false;
-						switch(arg.key)
-						{
-						case keyboard::os_arrow_left:
-						case keyboard::os_arrow_right:
-							drawer_->editor()->respond_key(arg);
-							drawer_->editor()->reset_caret();
-							break;
-						case keyboard::os_arrow_up:
-							is_move_up = true;
-						case keyboard::os_arrow_down:
-							drawer_->move_items(is_move_up, true);
-							break;
-						default:
-							call_other_keys = true;
-						}
-					}
+					if(drawer_->has_lister())
+						drawer_->scroll_items(arg.upwards);
 					else
-					{
-						bool is_move_up = false;
-						switch(arg.key)
-						{
-						case keyboard::os_arrow_left:
-						case keyboard::os_arrow_up:
-							is_move_up = true;
-						case keyboard::os_arrow_right:
-						case keyboard::os_arrow_down:
-							drawer_->move_items(is_move_up, true);
-							break;
-						default:
-							call_other_keys = true;
-						}
-					}
-					if (call_other_keys)
-						drawer_->editor()->respond_key(arg);
-
-					API::dev::lazy_refresh();
+						drawer_->move_items(arg.upwards, false);
 				}
+			}
 
-				void trigger::key_char(graph_reference, const arg_keyboard& arg)
+			void trigger::key_press(graph_reference, const arg_keyboard& arg)
+			{
+				if(!drawer_->widget_ptr()->enabled())
+					return;
+
+				bool call_other_keys = false;
+				if(drawer_->editable())
 				{
-					if (drawer_->editor()->respond_char(arg))
-						API::dev::lazy_refresh();
+					bool is_move_up = false;
+					switch(arg.key)
+					{
+					case keyboard::os_arrow_left:
+					case keyboard::os_arrow_right:
+						drawer_->editor()->respond_key(arg);
+						drawer_->editor()->reset_caret();
+						break;
+					case keyboard::os_arrow_up:
+						is_move_up = true;
+					case keyboard::os_arrow_down:
+						drawer_->move_items(is_move_up, true);
+						break;
+					default:
+						call_other_keys = true;
+					}
 				}
+				else
+				{
+					bool is_move_up = false;
+					switch(arg.key)
+					{
+					case keyboard::os_arrow_left:
+					case keyboard::os_arrow_up:
+						is_move_up = true;
+					case keyboard::os_arrow_right:
+					case keyboard::os_arrow_down:
+						drawer_->move_items(is_move_up, true);
+						break;
+					default:
+						call_other_keys = true;
+					}
+				}
+				if (call_other_keys)
+					drawer_->editor()->respond_key(arg);
+
+				API::dev::lazy_refresh();
+			}
+
+			void trigger::key_char(graph_reference, const arg_keyboard& arg)
+			{
+				if (drawer_->editor()->respond_char(arg))
+					API::dev::lazy_refresh();
+			}
 			//end class trigger
 
 			//class item_proxy
