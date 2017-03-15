@@ -249,6 +249,7 @@
     <ClCompile Include="..\..\source\paint\image_process_selector.cpp" />
     <ClCompile Include="..\..\source\paint\pixel_buffer.cpp" />
     <ClCompile Include="..\..\source\paint\text_renderer.cpp" />
+    <ClCompile Include="..\..\source\stdc++.cpp" />
     <ClCompile Include="..\..\source\system\dataexch.cpp" />
     <ClCompile Include="..\..\source\system\platform.cpp" />
     <ClCompile Include="..\..\source\system\shared_wrapper.cpp" />

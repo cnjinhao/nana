@@ -282,5 +282,8 @@
     <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp">
       <Filter>Source Files\gui\detail</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\stdc++.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -113,6 +113,7 @@
 		<Unit filename="../../source/paint/image_process_selector.cpp" />
 		<Unit filename="../../source/paint/pixel_buffer.cpp" />
 		<Unit filename="../../source/paint/text_renderer.cpp" />
+		<Unit filename="../../source/stdc++.cpp" />
 		<Unit filename="../../source/system/dataexch.cpp" />
 		<Unit filename="../../source/system/platform.cpp" />
 		<Unit filename="../../source/system/shared_wrapper.cpp" />
