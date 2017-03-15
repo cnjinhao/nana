@@ -1417,7 +1417,8 @@ namespace detail
 
 		void window_manager::remove_trash_handle(unsigned tid)
 		{
-			internal_scope_guard lock;
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
 			impl_->wd_register.delete_trash(tid);
 		}
 
