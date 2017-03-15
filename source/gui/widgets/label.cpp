@@ -1,7 +1,7 @@
 /*
  *	A Label Control Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,8 +13,9 @@
  */
 
 #include <nana/gui/widgets/label.hpp>
-#include <nana/unicode_bidi.hpp>
 #include <nana/gui/widgets/skeletons/text_token_stream.hpp>
+#include <nana/gui/detail/widget_content_measurer_interface.hpp>
+#include <nana/unicode_bidi.hpp>
 #include <nana/system/platform.hpp>
 #include <stdexcept>
 #include <sstream>
@@ -80,14 +81,14 @@ namespace nana
 				{
 					traceable_.clear();
 
-					nana::paint::font ft = graph.typeface();	//used for restoring the font
+					auto pre_font = graph.typeface();	//used for restoring the font
 
 					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
 
-					font_ = ft;
+					font_ = pre_font;
 					fblock_ = nullptr;
 
-					_m_set_default(ft, fgcolor);
+					_m_set_default(pre_font, fgcolor);
 
 					_m_measure(graph);
 
@@ -145,7 +146,7 @@ namespace nana
 						rs.pos.y += static_cast<int>(rs.pixels.back().pixels);
 					}
 
-					graph.typeface(ft);
+					graph.typeface(pre_font);
 				}
 
 				bool find(int x, int y, std::wstring& target, std::wstring& url) const
@@ -183,10 +184,10 @@ namespace nana
 					rs.text_align = th;
 					rs.text_align_v = tv;
 
-					for(auto i = dstream_.begin(), end = dstream_.end(); i != end; ++i)
+					for(auto & line: dstream_)
 					{
 						rs.pixels.clear();
-						unsigned w = _m_line_pixels(*i, def_line_pixels, rs);
+						unsigned w = _m_line_pixels(line, def_line_pixels, rs);
 
 						if(limited && (w > limited))
 							w = limited;
@@ -365,7 +366,8 @@ namespace nana
 								sz.height = max_ascent + max_descent;
 						}
 
-						if(w + sz.width <= rs.allowed_width)
+						//Check if the content is displayed in a new line.
+						if((0 == rs.allowed_width) || (w + sz.width <= rs.allowed_width))
 						{
 							w += sz.width;
 
@@ -613,10 +615,13 @@ namespace nana
 
 			//class trigger
 			//@brief: Draw the label
-				struct trigger::impl_t
+				struct trigger::implement
 				{
+					class measurer;
+
 					widget * wd{nullptr};
 					paint::graphics * graph{nullptr};
+					std::unique_ptr<measurer> msr_ptr{ nullptr };
 
 					align	text_align{align::left};
 					align_v	text_align_v;
@@ -643,16 +648,44 @@ namespace nana
 					std::vector<std::function<void(command, const std::string&)>> listener_;
 				};
 
+				class trigger::implement::measurer
+					: public dev::widget_content_measurer_interface
+				{
+				public:
+					measurer(implement* impl)
+						: impl_{ impl }
+					{}
+
+					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+					{
+						//Label now doesn't support to measure content with a specified height.
+						if (graph && ((0 == limit_pixels) || limit_width))
+						{
+							return impl_->renderer.measure(graph, limit_pixels, impl_->text_align, impl_->text_align_v);
+						}
+						return{};
+					}
+
+					size extension() const override
+					{
+						return{ 2, 2 };
+					}
+				private:
+					implement * const impl_;
+				};
+
 				trigger::trigger()
-					:impl_(new impl_t)
-				{}
+					:impl_(new implement)
+				{
+					impl_->msr_ptr.reset(new trigger::implement::measurer{impl_});
+				}
 
 				trigger::~trigger()
 				{
 					delete impl_;
 				}
 
-				trigger::impl_t * trigger::impl() const
+				trigger::implement * trigger::impl() const
 				{
 					return impl_;
 				}
@@ -661,6 +694,7 @@ namespace nana
 				{
 					impl_->graph = &graph;
 					impl_->wd = &widget;
+					API::dev::set_measurer(widget, impl_->msr_ptr.get());
 				}
 
 				void trigger::mouse_move(graph_reference, const arg_mouse& arg)

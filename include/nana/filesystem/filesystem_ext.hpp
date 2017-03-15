@@ -1,6 +1,6 @@
 /**
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -23,13 +23,13 @@ namespace filesystem_ext
 {
 
 #if defined(NANA_WINDOWS)
-    constexpr auto def_root = "C:";
-    constexpr auto def_rootstr = "C:\\";
-    constexpr auto def_rootname = "Local Drive(C:)";
+    constexpr auto const def_root = "C:";
+    constexpr auto const def_rootstr = "C:\\";
+    constexpr auto const def_rootname = "Local Drive(C:)";
 #elif defined(NANA_LINUX)
-    constexpr auto def_root = "/";
-    constexpr auto def_rootstr = "/";
-    constexpr auto def_rootname = "Root/";
+    constexpr auto const def_root = "/";
+    constexpr auto const def_rootstr = "/";
+    constexpr auto const def_rootname = "Root/";
 #endif
  
 std::experimental::filesystem::path path_user();    ///< extention ?

@@ -1,7 +1,7 @@
 /**
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -68,7 +68,7 @@ namespace nana
 				void key_press(graph_reference, const arg_keyboard&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
-				drawer_impl * drawer_;
+				drawer_impl * const drawer_;
 			};
 
 			class item_proxy

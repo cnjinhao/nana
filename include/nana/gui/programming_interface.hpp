@@ -16,6 +16,7 @@
 #include "effects.hpp"
 #include "detail/general_events.hpp"
 #include "detail/color_schemes.hpp"
+#include "detail/widget_content_measurer_interface.hpp"
 #include <nana/paint/image.hpp>
 #include <memory>
 
@@ -72,6 +73,9 @@ namespace API
 
 		void set_scheme(window, widget_geometrics*);
 		widget_geometrics* get_scheme(window);
+
+		/// Sets a content measurer
+		void set_measurer(window, ::nana::dev::widget_content_measurer_interface*);
 
 		void attach_drawer(widget&, drawer_trigger&);
 		::nana::detail::native_string_type window_caption(window) throw();
@@ -399,6 +403,17 @@ namespace API
 	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 
 	void at_safe_place(window, std::function<void()>);
+
+	/// Returns a widget content extent size
+	/**
+	 * @param wd A handle to a window that returns its content extent size.
+	 * @param limited_px Specifies the max pixels of width or height. If this parameter is zero, this parameter will be ignored.
+	 * @param limit_width Indicates whether the it limits the width or height. If this parameter is *true*, the width is limited.
+	 * If the parameter is *false*, the height is limited. This parameter is ignored if limited_px = 0.
+	 * @return if optional has a value, the first size indicates the content extent, the second size indicates the size of
+	 * widget by the content extent. 
+	 */
+	optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 }//end namespace API
 
 }//end namespace nana

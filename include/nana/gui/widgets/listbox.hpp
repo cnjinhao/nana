@@ -647,7 +647,7 @@ namespace nana
 			/// usefull for both absolute and display (sorted) positions
 			struct index_pair
 			{
-				constexpr static size_type npos = ::nana::npos;
+				constexpr static const size_type npos = ::nana::npos;
 
 				size_type cat;	//The pos of category
 				size_type item;	//the pos of item in a category.

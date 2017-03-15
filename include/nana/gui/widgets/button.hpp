@@ -25,6 +25,7 @@ namespace nana{
 			///	Draw the button
 			class trigger: public drawer_trigger
 			{
+				class measurer;
 			public:
 				trigger();
 				~trigger();
@@ -57,6 +58,8 @@ namespace nana{
 				paint::graphics* graph_{nullptr};
 
 				element::cite_bground cite_{"button"};
+
+				std::unique_ptr<measurer> measurer_;
 
 				struct attr_tag
 				{

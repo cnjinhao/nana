@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -208,6 +208,14 @@ namespace API
 			auto iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard lock;
 			return (restrict::wd_manager().available(iwd) ? iwd->annex.scheme : nullptr);
+		}
+
+		void set_measurer(window wd, ::nana::dev::widget_content_measurer_interface* measurer)
+		{
+			auto iwd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(iwd))
+				iwd->annex.content_measurer = measurer;
 		}
 
 		void attach_drawer(widget& wd, drawer_trigger& dr)
@@ -1009,6 +1017,8 @@ namespace API
 		else
 			return;
 
+		//modal has to guarantee that does not lock the mutex of window_manager before invokeing the pump_event,
+		//otherwise, the modal will prevent the other thread access the window.
 		restrict::bedrock.pump_event(wd, true);
 	}
 
@@ -1428,6 +1438,30 @@ namespace API
 	void at_safe_place(window wd, std::function<void()> fn)
 	{
 		restrict::wd_manager().set_safe_place(reinterpret_cast<basic_window*>(wd), std::move(fn));
+	}
+
+	optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
+	{
+		auto iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+
+		if (restrict::wd_manager().available(iwd) && iwd->annex.content_measurer)
+		{
+			paint::graphics* graph = &iwd->drawer.graphics;
+			paint::graphics temp_graph;
+			if (graph->empty())
+			{
+				temp_graph.make({ 1, 1 });
+				temp_graph.typeface(graph->typeface());
+				graph = &temp_graph;
+			}
+
+			auto extent = iwd->annex.content_measurer->measure(*graph, limited_px, limit_width);
+			if (extent)
+				return std::make_pair(extent.value(), extent.value() + iwd->annex.content_measurer->extension());
+		}
+		
+		return{};
 	}
 }//end namespace API
 }//end namespace nana
