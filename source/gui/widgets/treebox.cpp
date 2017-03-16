@@ -611,7 +611,7 @@ namespace nana
 						{
 							scroll.create(*data.widget_ptr, nana::rectangle(data.graph->width() - 16, 0, 16, data.graph->height()));
 
-							scroll.events().value_changed.connect_unignorable([this](const arg_scroll& arg)
+							scroll.events().value_changed.connect_unignorable([this](const arg_scroll&)
 							{
 								adjust.scroll_timestamp = nana::system::timestamp();
 								adjust.timer.start();
@@ -1791,7 +1791,6 @@ namespace nana
 					if (!node)
 						return;
 
-					auto & node_state = impl_->node_state;
 					switch (nl.what())
 					{
 					case component::icon:

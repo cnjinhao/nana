@@ -27,7 +27,7 @@ namespace nana{	namespace drawerbase
 				: trigger_{ t }
 			{}
 
-			optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+			optional<size> measure(graph_reference graph, unsigned limit_pixels, bool /*limit_width*/) const override
 			{
 				//Button doesn't provide a support of vfit and hfit
 				if (limit_pixels)

@@ -96,7 +96,7 @@ namespace nana
 					*ptr() = std::forward<U>(value);
 				else
 				{
-					::new (data) value_type(std::forward<U>(value));
+					::new (data_) value_type(std::forward<U>(value));
 					initialized_ = true;
 				}
 			}
@@ -110,10 +110,10 @@ namespace nana
 				}
 
 				if (initialized_)
-					*ptr = *other.ptr();
+					*ptr() = *other.ptr();
 				else
 				{
-					::new (data) value_type(*other.ptr());
+					::new (data_) value_type(*other.ptr());
 					initialized_ = true;
 				}
 			}
@@ -130,7 +130,7 @@ namespace nana
 					*ptr() = std::move(*other.ptr());
 				else
 				{
-					::new (data) value_type(std::move(*other.ptr()));
+					::new (data_) value_type(std::move(*other.ptr()));
 					initialized_ = true;
 				}
 			}
@@ -203,9 +203,9 @@ namespace nana
 		{
 			if (this != &other)
 			{
-				storage_.assign(std::move(other.storage_))
+				storage_.assign(std::move(other.storage_));
 			}
-			return *this;l
+			return *this;
 		}
 
 		template<typename U>

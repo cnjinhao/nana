@@ -1150,21 +1150,6 @@ namespace nana
 							px = (vert ? move_r.height : move_r.width);
 							moved = true;
 						}
-						/*
-						auto extent = API::content_extent(el.handle, 0, false);	//deprecated
-						if (extent)
-						{
-							move_r.dimension(extent->second);
-
-							if (vert)
-								move_r.x += place_parts::differ(area_margined.width, move_r.width) / 2;
-							else
-								move_r.y += place_parts::differ(area_margined.height, move_r.height) / 2;
-
-							px = (vert ? move_r.height : move_r.width);
-							moved = true;
-						}
-						*/
 					}
 
 					if (!moved)

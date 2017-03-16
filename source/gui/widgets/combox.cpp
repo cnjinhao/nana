@@ -90,14 +90,14 @@ namespace nana
 						: drw_{ drwimpl }
 					{}
 
-					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool /*limit_width*/) const override
 					{
-						//Button doesn't provide a support of vfit and hfit
+						//Combox doesn't provide a support of vfit and hfit
 						if (limit_pixels)
 							return{};
 
 						size content_size;
-						for (auto i = 0; i < drw_->the_number_of_options(); ++i)
+						for (std::size_t i = 0; i < drw_->the_number_of_options(); ++i)
 						{
 							auto & m = drw_->at(i);
 							auto sz = graph.text_extent_size(m.item_text);

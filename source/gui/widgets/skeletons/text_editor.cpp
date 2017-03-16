@@ -446,8 +446,11 @@ namespace nana{	namespace widgets
 					std::swap(first, second);
 
 				if (second < this->sections_.size())
+#ifdef _MSC_VER
 					this->sections_.erase(this->sections_.cbegin() + (first + 1), this->sections_.cbegin() + second);
-
+#else
+					this->sections_.erase(this->sections_.begin() + (first + 1), this->sections_.begin() + second);
+#endif
 				pre_calc_line(first, 0);
 
 				//textbase is implement by using deque, and the linemtr holds the text pointers
@@ -468,8 +471,11 @@ namespace nana{	namespace widgets
 				if (pos < this->sections_.size())
 				{
 					for (std::size_t i = 0; i < line_size; ++i)
+#ifdef _MSC_VER
 						this->sections_.emplace(this->sections_.cbegin() + (pos + i));
-
+#else
+						this->sections_.emplace(this->sections_.begin() + (pos + i));
+#endif
 					//textbase is implement by using deque, and the linemtr holds the text pointers
 					//If the textbase is changed, it will check the text pointers.
 					std::size_t line = 0;
@@ -2664,7 +2670,6 @@ namespace nana{	namespace widgets
 			unicode_bidi{}.linestr(text_ptr, text_size, reordered);
 
 			nana::upoint res(static_cast<unsigned>(real_str.begin - sections.front().begin), static_cast<unsigned>(row.first));
-			//scrpos.x += points_.offset.x - text_area_.area.x;	//deprecated
 			scrpos.x -= _m_text_x(sections[row.second]);
 
 			if (scrpos.x < 0)
@@ -3440,12 +3445,9 @@ namespace nana{	namespace widgets
 
 		void text_editor::_m_draw_string(int top, const ::nana::color& clr, const nana::upoint& text_coord, const text_section& sct, bool if_mask) const
 		{
-			auto const behavior = impl_->capacities.behavior;
 			point text_draw_pos{ _m_text_x(sct), top };
 
 			const int text_right = text_area_.area.right();
-
-			//auto text_ptr = &text;	//deprecated
 			auto const text_len = static_cast<unsigned>(sct.end - sct.begin);
 			auto text_ptr = sct.begin;
 
@@ -3482,8 +3484,6 @@ namespace nana{	namespace widgets
 			{
 				if (a.y < text_coord.y && text_coord.y < b.y)
 				{
-					//sbegin = text_ptr->c_str();	//deprecated
-					//send = sbegin + text_ptr->size();
 					sbegin = sct.begin;
 					send = sct.end;
 				}

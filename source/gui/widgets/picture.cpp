@@ -58,9 +58,9 @@ namespace nana
 					: impl_{impl}
 				{}
 
-				optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+				optional<size> measure(graph_reference /*graph*/, unsigned limit_pixels, bool /*limit_width*/) const override
 				{
-					//Button doesn't provide a support of vfit and hfit
+					//Picture doesn't provide a support of vfit and hfit
 					if (!limit_pixels)
 					{
 						if (impl_->backimg.valid_area.empty())

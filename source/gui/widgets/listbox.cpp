@@ -3406,9 +3406,6 @@ namespace nana
 
 							/// is ignored if no change (maybe set last_selected anyway??), but if change emit event, deselect others if need ans set/unset last_selected
 							item_proxy::from_display(ess_, next_selected_dpl).select(true);
-
-							//if (trace_selected)
-							//	ess_->trace_item_dpl(next_selected_dpl);	//deprecated
 						}
 						break;
 					}
@@ -4576,16 +4573,7 @@ namespace nana
 					if (essence_->header.sortable() && essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
 					{
 						if(essence_->pointer_where.second < essence_->header.cont().size())
-						{
-							/*
-							if(essence_->lister.sort_column(essence_->pointer_where.second, nullptr))
-							{
-								//essence_->trace_item_dpl(index_pair{0,0});	//deprecated
-								need_refresh = true;
-							}
-							*/
 							need_refresh = essence_->lister.sort_column(essence_->pointer_where.second, nullptr);
-						}
 					}
 					else if (item_state::grabbed == prev_state)
 					{
@@ -4720,8 +4708,6 @@ namespace nana
 							else if (!essence_->lister.single_status(true))	//not selected
 								essence_->lister.cat_status(idx.cat, true, true);
 
-							//essence_->trace_last_selected_item ();	//deprecated
-
 							break;
 						}
 					case keyboard::os_home:
@@ -4734,13 +4720,11 @@ namespace nana
 							else if (!essence_->lister.single_status(true))	//not selected
 								essence_->lister.cat_status(frst.cat, true, true);
 
-							//essence_->trace_last_selected_item ();	//deprecated
 							break;
 						}
 					case keyboard::os_end:
 						essence_->lister.select_for_all(false);
 						item_proxy::from_display(essence_, essence_->lister.last()).select(true);
-						//essence_->trace_last_selected_item ();	//deprecated
 						break;
 					default:
 						return;
