@@ -181,7 +181,7 @@ namespace API
 	template<typename Widget=::nana::widget, typename EnumFunction>
 	void enum_widgets(window wd, bool recursive, EnumFunction && fn)
 	{
-		static_assert(std::is_convertible<Widget, ::nana::widget>::value, "enum_widgets<Widget>: The specified Widget is not a widget type.");
+		static_assert(std::is_convertible<typename std::decay<Widget>::type*, ::nana::widget*>::value, "enum_widgets<Widget>: The specified Widget is not a widget type.");
 
 		detail::enum_widgets_function<Widget, EnumFunction> enum_fn(static_cast<EnumFunction&&>(fn));
 		enum_fn.enum_widgets(wd, recursive);

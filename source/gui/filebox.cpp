@@ -997,6 +997,9 @@ namespace nana
 
 			OPENFILENAME ofn;
 			memset(&ofn, 0, sizeof ofn);
+
+			internal_scope_guard lock;
+
 			ofn.lStructSize = sizeof(ofn);
 			ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
 			ofn.lpstrFile = &(wfile[0]);
