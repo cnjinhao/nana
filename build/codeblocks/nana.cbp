@@ -96,6 +96,7 @@
 		<Unit filename="../../source/gui/widgets/picture.cpp" />
 		<Unit filename="../../source/gui/widgets/progress.cpp" />
 		<Unit filename="../../source/gui/widgets/scroll.cpp" />
+		<Unit filename="../../source/gui/widgets/skeletons/content_view.cpp" />
 		<Unit filename="../../source/gui/widgets/skeletons/text_editor.cpp" />
 		<Unit filename="../../source/gui/widgets/slider.cpp" />
 		<Unit filename="../../source/gui/widgets/spinbox.cpp" />

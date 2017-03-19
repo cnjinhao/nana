@@ -285,5 +285,8 @@
     <ClCompile Include="..\..\source\stdc++.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\content_view.cpp">
+      <Filter>Source Files\gui\widgets\skeletons</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

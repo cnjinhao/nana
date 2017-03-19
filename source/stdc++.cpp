@@ -425,8 +425,7 @@ namespace std
 #endif
 
 #ifdef _enable_std_put_time
-#include  <ctime>
-#include  <cwchar>
+#include <cwchar>
 namespace std
 {
 	//Workaround for no implemenation of std::put_time in gcc < 5.

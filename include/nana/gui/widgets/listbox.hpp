@@ -805,7 +805,7 @@ namespace nana
 				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
-				item_proxy(essence*, const index_pair& = index_pair{});
+				item_proxy(essence*, const index_pair& = index_pair{npos, npos});
 
 				/// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
 				static item_proxy from_display(essence *, const index_pair &relative) ;

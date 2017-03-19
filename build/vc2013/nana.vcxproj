@@ -232,6 +232,7 @@
     <ClCompile Include="..\..\source\gui\widgets\picture.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\progress.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\scroll.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\content_view.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\skeletons\text_editor.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\slider.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp" />

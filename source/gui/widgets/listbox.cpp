@@ -19,7 +19,6 @@
  */
 
 #include <nana/gui/widgets/listbox.hpp>
-#include <nana/gui/widgets/scroll.hpp>
 #include <nana/gui/widgets/panel.hpp>	//for inline widget
 
 #include <nana/gui/layout_utility.hpp>
@@ -27,11 +26,12 @@
 #include <nana/paint/text_renderer.hpp>
 #include <nana/system/dataexch.hpp>
 #include <nana/system/platform.hpp>
+#include "skeletons/content_view.hpp"
 
+#include <algorithm>
 #include <list>
 #include <deque>
 #include <stdexcept>
-#include <algorithm>
 #include <map>
 
 namespace nana
@@ -41,406 +41,6 @@ namespace nana
 		if (!(pos < size))
 			throw std::out_of_range("listbox: invalid element position");
 	}
-
-	class intermediary
-	{
-	public:
-		struct events_type
-		{
-			std::function<void(const point&)> hover_outside;
-		};
-
-		intermediary(window handle)
-			: window_handle_(handle)
-		{
-			API::events(handle).mouse_wheel([this](const arg_wheel& arg){
-				scroll_interface * scroll = nullptr;
-				switch (arg.which)
-				{
-				case arg_wheel::wheel::vertical:
-					scroll = &vert_;
-					break;
-				case arg_wheel::wheel::horizontal:
-					scroll = &horz_;
-					break;
-				default:
-					//Other button is not unsupported.
-					return;
-				}
-
-				if (!API::empty_window(arg.window_handle))
-				{
-					auto align_px = (scroll->value() % scroll->step());
-					if (align_px)
-					{
-						auto new_value = scroll->value() - align_px;
-						if (!arg.upwards)
-							new_value += scroll->step();
-
-						scroll->value(new_value);
-					}
-					else
-						scroll->make_step(!arg.upwards, 1);
-				}
-			});
-
-			API::events(handle).mouse_move([this](const arg_mouse& arg)
-			{
-				if (!arg.is_left_button())
-					return;
-
-				if (this->_m_drive(arg.pos))
-				{
-					tmr_.interval(16);
-					tmr_.start();
-				}
-			});
-
-			tmr_.elapse([this](const arg_elapse&)
-			{
-				auto curs = ::nana::API::cursor_position();
-				::nana::API::calc_window_point(window_handle_, curs);
-
-				if (this->_m_drive(curs))
-				{
-					if (events_.hover_outside)
-						events_.hover_outside(curs);
-
-					API::refresh_window(window_handle_);
-					this->sync(false);
-				}
-				else
-					tmr_.stop();
-			});
-		}
-
-		events_type& events()
-		{
-			return events_;
-		}
-
-		void step(unsigned step_value, bool horz)
-		{
-			if (horz)
-				horz_.step(step_value);
-			else
-				vert_.step(step_value);
-		}
-
-		bool turn_page(bool forwards, bool horz)
-		{
-			if (horz)
-				return horz_.make_page_scroll(forwards);
-			else
-				return vert_.make_page_scroll(forwards);
-		}
-
-		void disp_area(const rectangle& da, const point& skew_horz, const point& skew_vert, const size& extra_px, bool try_update = true)
-		{
-			if (disp_area_ != da)
-			{
-				disp_area_ = da;
-				skew_horz_ = skew_horz;
-				skew_vert_ = skew_vert;
-				extra_px_ = extra_px;
-
-				auto imd_area = this->intermediary_area();
-				if (static_cast<int>(content_size_.width) - origin_.x < static_cast<int>(imd_area.width))
-				{
-					origin_.x = static_cast<int>(content_size_.width) - static_cast<int>(imd_area.width);
-					if (origin_.x < 0)
-						origin_.x = 0;
-				}
-
-				if (static_cast<int>(content_size_.height) - origin_.y < static_cast<int>(imd_area.height))
-				{
-					origin_.y = static_cast<int>(content_size_.height) - static_cast<int>(imd_area.height);
-					if (origin_.y < 0)
-						origin_.y = 0;
-				}
-
-				_m_size_changed(try_update);
-			}
-		}
-
-		void content_size(const size& sz, bool try_update = true)
-		{
-			content_size_ = sz;
-			_m_size_changed(try_update);
-		}
-
-		const point& origin() const
-		{
-			return origin_;
-		}
-
-		rectangle corner() const
-		{
-			rectangle r;
-
-			auto imd_area = this->intermediary_area();
-
-			r.x = disp_area_.x + static_cast<int>(imd_area.width) + skew_vert_.x;
-			r.y = disp_area_.y + static_cast<int>(imd_area.height) + skew_horz_.y;
-
-
-			unsigned extra_horz = (disp_area_.width < content_size_.width ? _m_extra_px() : 0);
-			unsigned extra_vert = (disp_area_.height < content_size_.height + extra_horz ? _m_extra_px() : 0);
-
-			if ((0 == extra_horz) && extra_vert)
-				extra_horz = (disp_area_.width < content_size_.width + extra_vert ? _m_extra_px() : 0);
-
-			r.width = extra_horz;
-			r.height = extra_vert;
-
-			return r;
-		}
-
-		rectangle intermediary_area() const
-		{
-			unsigned extra_horz = (disp_area_.width < content_size_.width ? _m_extra_px() : 0);
-			unsigned extra_vert = (disp_area_.height < content_size_.height + extra_horz ? _m_extra_px() : 0);
-
-			if ((0 == extra_horz) && extra_vert)
-				extra_horz = (disp_area_.width < content_size_.width + extra_vert ? _m_extra_px() : 0);
-
-			return rectangle{
-				disp_area_.position(),
-				size{
-					disp_area_.width > extra_vert ? disp_area_.width - extra_vert : 0,
-					disp_area_.height > extra_horz ? disp_area_.height - extra_horz : 0
-				}
-			};
-		}
-
-		unsigned extra_space(bool horz) const
-		{
-			return ((horz ? horz_.empty() : vert_.empty()) ? 0 : _m_extra_px());
-		}
-
-		void change_position(int pos, bool aligned, bool horz)
-		{
-			if (aligned)
-				pos -= (pos % static_cast<int>(horz ? horz_.step() : vert_.step()));
-
-			auto imd_size = this->intermediary_area();
-			
-			if (horz)
-			{
-				if (pos + imd_size.width > content_size_.width)
-					pos = static_cast<int>(content_size_.width) - static_cast<int>(imd_size.width);
-
-				if (pos < 0)	pos = 0;
-
-				origin_.x = pos;
-			}
-			else
-			{
-				if (pos + imd_size.height > content_size_.height)
-					pos = static_cast<int>(content_size_.height) - static_cast<int>(imd_size.height);
-
-				if (pos < 0)	pos = 0;
-
-				origin_.y = pos;
-			}
-		}
-
-		void move_origin(const point& skew)
-		{
-			auto imd_area = this->intermediary_area();
-
-			origin_.x += skew.x;
-			if (origin_.x + imd_area.width > content_size_.width)
-				origin_.x = static_cast<int>(content_size_.width) - static_cast<int>(imd_area.width);
-
-			if (origin_.x < 0)	origin_.x = 0;
-
-
-			origin_.y += skew.y;
-			if (origin_.y + imd_area.height > content_size_.height)
-				origin_.y = static_cast<int>(content_size_.height) - static_cast<int>(imd_area.height);
-
-			if (origin_.y < 0)	origin_.y = 0;
-		}
-
-		void sync(bool try_update)
-		{
-			this->enable_update_ = try_update;
-			horz_.value(origin_.x);
-			vert_.value(origin_.y);
-			this->enable_update_ = true;
-		}
-
-		void pursue(const point& cursor)
-		{
-			if (disp_area_.is_hit(cursor))
-				return;
-
-			int delta = 0;
-			if (cursor.x < disp_area_.x)
-				delta = cursor.x - disp_area_.x;
-			else if (cursor.x > disp_area_.right())
-				delta = cursor.x - disp_area_.right();
-
-			origin_.x += delta;
-			if (origin_.x < 0)
-				origin_.x = 0;
-
-			if (cursor.y < disp_area_.y)
-				delta = cursor.y - disp_area_.y;
-			else if (cursor.y > disp_area_.bottom())
-				delta = cursor.y - disp_area_.bottom();
-
-			origin_.y += delta;
-			if (origin_.y < 0)
-				origin_.y = 0;
-
-			bool changed = false;
-			if (!horz_.empty() && (static_cast<long long>(horz_.value()) != origin_.x))
-			{
-				horz_.value(origin_.x);
-				changed = true;
-			}
-
-			if ((!vert_.empty()) && (static_cast<long long>(vert_.value()) != origin_.y))
-			{
-				vert_.value(origin_.y);
-				changed = true;
-			}
-
-			if (changed)
-				API::refresh_window(window_handle_);
-		}
-	private:
-		static constexpr unsigned _m_extra_px()
-		{
-			return 16;
-		}
-
-		bool _m_drive(const point& cursor_pos)
-		{
-			auto const imd_area = this->intermediary_area();
-
-			point skew;
-
-			if (disp_area_.x > cursor_pos.x)
-				skew.x = cursor_pos.x - disp_area_.x;
-			else if (cursor_pos.x > disp_area_.x + static_cast<int>(imd_area.width))
-				skew.x = cursor_pos.x - (disp_area_.x + static_cast<int>(imd_area.width));
-
-			if (disp_area_.y > cursor_pos.y)
-				skew.y = cursor_pos.y - disp_area_.y;
-			else if (cursor_pos.y > disp_area_.y + static_cast<int>(imd_area.height))
-				skew.y = cursor_pos.y - (disp_area_.y + static_cast<int>(imd_area.height));
-
-			if (skew.x == 0 && skew.y == 0)
-				return false;
-
-			auto speed_horz = 0;
-			if (skew.x)
-				speed_horz = skew.x / (std::max)(1, static_cast<int>(horz_.step())) + (skew.x < 0 ? -1 : 1);
-
-			auto speed_vert = 0;
-			if(skew.y)
-				speed_vert = skew.y / (std::max)(1, static_cast<int>(vert_.step())) + (skew.y < 0 ? -1 : 1);
-
-			speed_horz = (std::min)(5, (std::max)(speed_horz, -5));
-			speed_vert = (std::min)(5, (std::max)(speed_vert, -5));
-
-			move_origin({
-				speed_horz, speed_vert
-			});
-
-			return true;
-		}
-
-		void _m_size_changed(bool try_update)
-		{
-			auto imd_area = intermediary_area();
-
-			//event hander for scrollbars
-			auto event_fn = [this](const arg_scroll& arg)
-			{
-				if (arg.window_handle == this->vert_.handle())
-					origin_.y = static_cast<int>(this->vert_.value());
-				else
-					origin_.x = static_cast<int>(this->horz_.value());
-				
-				if (this->enable_update_)
-				{
-					API::refresh_window(this->window_handle_);
-				}
-			};
-
-			this->enable_update_ = try_update;
-
-			if (imd_area.width != disp_area_.width)
-			{
-				if (vert_.empty())
-				{
-					vert_.create(window_handle_);
-					vert_.events().value_changed.connect_unignorable(event_fn);
-					this->enable_update_ = false;
-				}
-
-				vert_.move({
-					disp_area_.x + static_cast<int>(imd_area.width) + skew_vert_.x,
-					disp_area_.y + skew_vert_.y,
-					_m_extra_px(),
-					imd_area.height + extra_px_.height
-				});
-
-				vert_.amount(content_size_.height);
-				vert_.range(imd_area.height);
-				vert_.value(origin_.y);
-			}
-			else
-				vert_.close();
-
-			if (imd_area.height != disp_area_.height)
-			{
-				if (horz_.empty())
-				{
-					horz_.create(window_handle_);
-					horz_.events().value_changed.connect_unignorable(event_fn);
-					this->enable_update_ = false;
-				}
-
-				horz_.move({
-					disp_area_.x + skew_horz_.x,
-					disp_area_.y + static_cast<int>(imd_area.height) + skew_horz_.y,
-					imd_area.width + extra_px_.width,
-					_m_extra_px()
-				});
-
-				horz_.amount(content_size_.width);
-				horz_.range(imd_area.width);
-				horz_.value(origin_.x);
-			}
-			else
-				horz_.close();
-
-			this->enable_update_ = true;
-		}
-	private:
-		window const	window_handle_;
-		nana::rectangle	disp_area_;
-		nana::size		content_size_;
-
-		point skew_horz_;
-		point skew_vert_;
-		nana::size extra_px_;
-
-		bool	enable_update_{ true };
-		point origin_;
-
-		nana::scroll<false>	horz_;
-		nana::scroll<true>	vert_;
-
-		timer tmr_;
-
-		events_type events_;
-	};
 
 	namespace drawerbase
 	{
@@ -1632,56 +1232,35 @@ namespace nana
 				index_pair advance(const index_pair& from, size_type offset) const
 				{
 					const auto cat_size = categories_.size();
-                    index_pair dpos{npos, npos};
+					index_pair dpos{ npos, npos };
 					if (from.cat >= cat_size || (from.item != npos && from.item >= size_item(from.cat)))
-                        return dpos;
+						return dpos;
 
-					dpos  = from;
+					if ((0 == from.cat && npos == from.item) || (!expand(from.cat) && (npos != from.item)))
+						return dpos;
 
-					while(offset)
+					if (0 == offset)
+						return from;
+
+					dpos = from;
+					std::size_t pos = (npos == from.item ? 0 : 1);
+
+					while (offset)
 					{
-						if(dpos.item == npos)
+						std::size_t end = 1;
+						if (expand(dpos.cat))
+							end += size_item(dpos.cat);
+
+						if (offset < end - pos)
 						{
-							if(expand(dpos.cat) == false)
-							{
-								if (dpos.cat + 1 == cat_size)
-									break;
-								++dpos.cat;
-							}
-							else
-								dpos.item = 0;
-							--offset;
+							return index_pair{ dpos.cat, pos + offset - 1 };
 						}
-						else
-						{
-							size_type rest = size_item(dpos.cat) - dpos.item - 1;
-							if(rest == 0)
-							{
-								if (dpos.cat + 1 == cat_size)
-									break;
-								++dpos.cat;
-								dpos.item = npos;
-								--offset;
-							}
-							else if(rest < offset)
-							{
-								offset -= rest;
-								if (dpos.cat + 1 >= cat_size)
-								{
-									dpos.item += rest;
-									break;
-								}
-								dpos.item = npos;
-								++dpos.cat;
-							}
-							else
-							{
-								dpos.item += offset;
-								break;
-							}
-						}
+
+						offset -= (end - pos);
+						pos = 0;
+						++dpos.cat;
 					}
-					return dpos;
+					return index_pair{ dpos.cat, npos };
 				}
 
                 /// change to index arg
@@ -1699,32 +1278,24 @@ namespace nana
 					else if(to.cat < from.cat)
 						std::swap(from, to);
 
-					size_type n = 0;
-					auto i = get(from.cat);
-					if(from.item == npos)
+					std::size_t count = 1;
+					for (auto i = get(from.cat); i != get(to.cat); ++i)
 					{
-						if(i->expand)
-							n = i->items.size();
-					}
-					else
-						n = i->items.size() - (from.item + 1);
-
-					for(++i, ++from.cat; i != categories_.cend(); ++i, ++from.cat)
-					{
-						++n; //this is a category
-						if(from.cat != to.cat)
-						{
-							if(i->expand)
-								n += i->items.size();
-						}
+						if (i->expand)
+							count += i->items.size() + 1;
 						else
-						{
-							if(to.item != npos)
-								n += (to.item + 1);
-							break;
-						}
+							++count;
 					}
-					return n;
+
+					if (npos != to.item)
+						count += (1 + to.item);
+
+					if (npos != from.item)
+						count -= (1 + from.item);
+					else if (0 == from.cat)
+						--count;
+
+					return count - 1;
 				}
 
 				void text(category_t* cat, size_type pos, size_type abs_col, cell&& cl, size_type columns)
@@ -1835,7 +1406,7 @@ namespace nana
 
 				bool expand(size_type cat, bool exp) noexcept
 				{
-					if(good(cat))
+					if(good(cat) && cat)
 					{
 						auto & expanded = get(cat)->expand;
 						if(expanded != exp)
@@ -2411,7 +1982,7 @@ namespace nana
 																//if where == lister || where == checker, 'second' indicates the offset to the scroll offset_y which stands for the first item displayed in lister.
 																//if where == unknown, 'second' ignored.
 
-				std::unique_ptr<intermediary> intermed;
+				std::unique_ptr<widgets::skeletons::content_view> content_view;
 
 				struct mouse_selection_part
 				{
@@ -2455,12 +2026,12 @@ namespace nana
 					else
 						r.height -= head_px;
 
-					this->intermed->disp_area(r, { -1, 0 }, { 1, -static_cast<int>(head_px) }, { 2, head_px });
+					this->content_view->disp_area(r, { -1, 0 }, { 1, -static_cast<int>(head_px) }, { 2, head_px });
 				}
 
 				size_type column_from_pos(int screen_x) const
 				{
-					return header.column_from_point(screen_x - content_area().x + intermed->origin().x);
+					return header.column_from_point(screen_x - content_area().x + content_view->origin().x);
 				}
 
                 std::string to_string(const export_options& exp_opt) const
@@ -2475,14 +2046,14 @@ namespace nana
 
 				index_pair first_display() const noexcept
 				{
-					auto offset_display = intermed->origin().y / item_height();
+					auto offset_display = content_view->origin().y / item_height();
 					return lister.advance(lister.first(), offset_display);
 				}
 
 				unsigned item_height() const noexcept
 				{
 					auto px = (std::max)(scheme_ptr->item_height_ex + text_height, unsigned(1));
-					intermed->step(px, false);
+					content_view->step(px, false);
 					return px;
 				}
 
@@ -2492,7 +2063,7 @@ namespace nana
 					if (!rect_lister(orignal))
 						return{};
 
-					const auto origin = this->intermed->origin();
+					const auto origin = this->content_view->origin();
 
 					if (from_screen)
 						return from - orignal.position() + origin;
@@ -2519,7 +2090,7 @@ namespace nana
 					if (!rect_header(r))
 						return{};
 
-					auto origin = intermed->origin();
+					auto origin = content_view->origin();
 					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.pixels()) };
 				}
 
@@ -2541,7 +2112,7 @@ namespace nana
 					mouse_selection.screen_pos = screen_pos;
 
 					auto logic_pos = coordinate_cast(screen_pos, true);
-					auto imd_area = intermed->intermediary_area();
+					auto imd_area = content_view->view_area();
 
 					if (logic_pos.y > mouse_selection.begin_position.y)
 					{
@@ -2659,7 +2230,7 @@ namespace nana
 				 */
 				size_type count_of_exposed(bool with_rest) const
 				{
-					auto lister_s = this->intermed->intermediary_area().height;
+					auto lister_s = this->content_view->view_area().height;
 					return (lister_s / item_height()) + (with_rest && (lister_s % item_height()) ? 1 : 0);
 				}
 
@@ -2681,7 +2252,7 @@ namespace nana
 
 					ctt_size.height *= this->item_height();
 
-					this->intermed->content_size(ctt_size, try_update);
+					this->content_view->content_size(ctt_size, try_update);
 
 					return ctt_size;
 				}
@@ -2698,7 +2269,19 @@ namespace nana
 					if (seq.empty())
 						return 0;
 
-					return (header.position(seq[0], nullptr) - this->intermed->origin().x + r.x);
+					return (header.position(seq[0], nullptr) - this->content_view->origin().x + r.x);
+				}
+
+				//Returns the absolute coordinate of the specified item in the window
+				point item_coordinate(const index_pair& pos) const
+				{
+					auto top = static_cast<int>(this->lister.distance(index_pair{}, pos) * item_height()) - content_view->origin().y;
+
+					rectangle r;
+					if (rect_lister(r))
+						top += r.y;
+
+					return{ top, top + static_cast<int>(item_height()) };
 				}
 
 				std::pair<parts, size_t> where(const nana::point& pos) const noexcept
@@ -2709,7 +2292,7 @@ namespace nana
 
 					if(area.is_hit(pos))
 					{   /// we are inside
-						auto const origin = intermed->origin();
+						auto const origin = content_view->origin();
 
 						if(header.visible() && (pos.y < static_cast<int>(scheme_ptr->header_height) + area.y))
 						{   /// we are in the header
@@ -2719,14 +2302,17 @@ namespace nana
 						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.pixels()))
 						{
 							new_where.first = parts::list;
-							new_where.second = (pos.y - area.y - header_visible_px()) / item_height();
+
+							auto const item_h = item_height();
+							//don't combine the following formula into the (pos.y - area.y - header_visible_px()) / item_h
+							new_where.second = ((pos.y - area.y - header_visible_px() + origin.y) / item_h) - (origin.y / item_h);
 
 							if (checkable)
 							{
 								nana::rectangle r;
 								if (rect_lister(r))
 								{
-									auto top = new_where.second * item_height() + header_visible_px();
+									auto top = new_where.second * item_h + header_visible_px();
 									if (checkarea(item_xpos(r), static_cast<int>(top)).is_hit(pos))
 										new_where.first = parts::checker;
 								}
@@ -2752,7 +2338,7 @@ namespace nana
 				void widget_to_header(nana::point& pos) noexcept
 				{
 					--pos.y;
-					pos.x += this->intermed->origin().x - 2;
+					pos.x += this->content_view->origin().x - 2;
 				}
 
 				void draw_peripheral()
@@ -2768,7 +2354,7 @@ namespace nana
 						graph->line({ ctt_area.right(), ctt_area.y }, { ctt_area.right(), ctt_area.bottom() - 1 });
 					}
 
-					auto r = this->intermed->corner();
+					auto r = this->content_view->corner();
 					if (!r.empty())
 						graph->rectangle(r, true, colors::button_face);
 				}
@@ -2804,7 +2390,7 @@ namespace nana
 						if (lister.wd_ptr()->borderless())
 							return !r.empty();
 
-						auto exs = this->intermed->extra_space(false);
+						auto exs = this->content_view->extra_space(false);
 						const unsigned ex_width = (exs ? exs - 1 : 0);
 
 						if(r.width > ex_width)
@@ -2820,8 +2406,8 @@ namespace nana
 				{
 					auto head_pixels = header_visible_px();
 
-					auto exs_vert = this->intermed->extra_space(false);
-					auto exs_horz = this->intermed->extra_space(true);
+					auto exs_vert = this->content_view->extra_space(false);
+					auto exs_horz = this->content_view->extra_space(true);
 
 					unsigned extr_w = (exs_vert ? exs_vert - 1 : 0);
 					unsigned extr_h = exs_horz + head_pixels;
@@ -2842,7 +2428,7 @@ namespace nana
 				std::vector<size_type> header_seq(unsigned lister_w) const
 				{
 					std::vector<size_type> seqs;
-					int x = -intermed->origin().x;
+					int x = -content_view->origin().x;
 
 					for (const auto& col : header.cont())
 					{
@@ -3282,7 +2868,7 @@ namespace nana
 
 				void hovered(index_type /*pos*/) override
 				{
-					auto offset = ess_->intermed->origin().y / ess_->item_height();
+					auto offset = ess_->content_view->origin().y / ess_->item_height();
 
 					if (ess_->pointer_where.first != parts::list || ess_->pointer_where.second != offset)
 					{
@@ -3310,7 +2896,7 @@ namespace nana
 					ess_->calc_content_size();
 				}
 
-				ess_->intermed->turn_page(to_bottom, false);
+				ess_->content_view->turn_page(to_bottom, false);
 			}
 
 			void es_lister::erase(const index_pair& pos)
@@ -3501,7 +3087,7 @@ namespace nana
 				{
 					if(essence_->ptr_state == item_state::highlighted)
 					{
-						x -= r.x - essence_->intermed->origin().x;
+						x -= r.x - essence_->content_view->origin().x;
 
 						for(auto & col : essence_->header.cont()) // in current order
 						{
@@ -3594,7 +3180,7 @@ namespace nana
 						state = essence_->ptr_state;
 
 					rectangle column_r{
-						r.x - essence_->intermed->origin().x, r.y,
+						r.x - essence_->content_view->origin().x, r.y,
 						0, r.height - 1
 					};
 
@@ -3643,7 +3229,7 @@ namespace nana
 				size_type _m_target_strip(int x, const nana::rectangle& rect, size_type grab, bool& place_front)
 				{
 					//convert x to header logic coordinate.
-					auto const x_offset = essence_->intermed->origin().x;
+					auto const x_offset = essence_->content_view->origin().x;
 					if (x < x_offset)
 						x = x_offset;
 					else if (x > x_offset + static_cast<int>(rect.width))
@@ -3727,7 +3313,7 @@ namespace nana
 
 					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
 
-					fl_graph.blend(rectangle{ fl_graph.size() }, *(essence_->graph), point{ xpos - essence_->intermed->origin().x + rect.x, rect.y }, 0.5);
+					fl_graph.blend(rectangle{ fl_graph.size() }, *(essence_->graph), point{ xpos - essence_->content_view->origin().x + rect.x, rect.y }, 0.5);
 				}
 
 			private:
@@ -3785,7 +3371,7 @@ namespace nana
 
 					auto const header_w = essence_->header.pixels();
 
-					auto origin = essence_->intermed->origin();
+					auto origin = essence_->content_view->origin();
 					if (header_w < origin.x + rect.width)
 						essence_->graph->rectangle(rectangle{ point{ rect.x + static_cast<int>(header_w) - origin.x, rect.y },
 						size{ rect.width + origin.x - header_w, rect.height } }, true);
@@ -3960,7 +3546,7 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if (sel && (categ.expand == false))
-						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->intermed->origin().x));
+						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->content_view->origin().x));
 				}
 
 				/// Draws an item
@@ -4003,7 +3589,7 @@ namespace nana
 							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);/// \todo create a parametre for amount of blend
 					}
 
-					const unsigned show_w = (std::min)(content_r.width, width - essence_->intermed->origin().x);
+					const unsigned show_w = (std::min)(content_r.width, width - essence_->content_view->origin().x);
 
 					auto graph = essence_->graph;
 
@@ -4260,10 +3846,10 @@ namespace nana
 					essence_->lister.bind(essence_, widget);
 					widget.bgcolor(colors::white);
 
-					essence_->intermed.reset(new intermediary(widget));
+					essence_->content_view.reset(new widgets::skeletons::content_view{ widget.handle() });
 					essence_->resize_disp_area();
 
-					essence_->intermed->events().hover_outside = [this](const point& cur_pos) {
+					essence_->content_view->events().hover_outside = [this](const point& cur_pos) {
 						essence_->update_mouse_selection(cur_pos);
 					};
 				}
@@ -4403,14 +3989,17 @@ namespace nana
 
 					auto & lister = essence_->lister;
 
+					rectangle head_r, list_r;
+					auto const good_head_r = essence_->rect_header(head_r);
+					auto const good_list_r = essence_->rect_lister(list_r);
+
 					auto & ptr_where = essence_->pointer_where;
 					if((ptr_where.first == parts::header) && (ptr_where.second != npos || (drawer_header_->splitter() != npos)))
 					{
 						essence_->ptr_state = item_state::pressed;
-						nana::rectangle r;
-						if(essence_->rect_header(r))
+						if(good_head_r)
 						{
-							drawer_header_->draw(graph, r);
+							drawer_header_->draw(graph, head_r);
 							update = true;
 						}
 					}
@@ -4426,6 +4015,18 @@ namespace nana
 
 							if(ptr_where.first == parts::list)
 							{
+								//adjust the display of selected into the list rectangle if the part of the item is beyond the top/bottom edge
+								if (good_list_r)
+								{
+									auto item_coord = this->essence_->item_coordinate(abs_item_pos);	//item_coord.x = top, item_coord.y = bottom
+									if (item_coord.x < list_r.y && list_r.y < item_coord.y)
+										essence_->content_view->move_origin({ 0, item_coord.x - list_r.y });
+									else if (item_coord.x < list_r.bottom() && list_r.bottom() < item_coord.y)
+										essence_->content_view->move_origin({ 0, item_coord.y - list_r.bottom() });
+
+									essence_->content_view->sync(false);
+								}
+
 								bool sel = true;
 
 								//no single selected
@@ -4532,10 +4133,14 @@ namespace nana
 
 						if(update)
 						{
-							nana::rectangle r;
-							update = essence_->rect_lister(r);
-							if(update)
-								drawer_lister_->draw(r);
+							if (good_list_r)
+							{
+								drawer_lister_->draw(list_r);
+								if (good_head_r)
+									drawer_header_->draw(graph, head_r);
+							}
+							else
+								update = false;
 						}
 					}
 					else if (ptr_where.first == parts::list_blank)	//not selected
@@ -4543,14 +4148,7 @@ namespace nana
 						if (arg.is_left_button() && (!lister.single_status(true)))
 							essence_->start_mouse_selection(arg.pos);
 
-
-						if (lister.select_for_all(false))
-						{
-							nana::rectangle r;
-							update = essence_->rect_lister(r);
-							if (update)
-								drawer_lister_->draw(r);
-						}
+						lister.select_for_all(false);
 					}
 
 					if(update)
@@ -4646,12 +4244,12 @@ namespace nana
 								if (lister.backward(last, n, last))
 								{
 									auto px = lister.distance(lister.first(), last) * essence_->item_height();
-									essence_->intermed->change_position(static_cast<int>(px), true, false);
+									essence_->content_view->change_position(static_cast<int>(px), true, false);
 								}
 							}
 
 							essence_->calc_content_size(false);
-							essence_->intermed->sync(false);
+							essence_->content_view->sync(false);
 							refresh(graph);
 							API::dev::lazy_refresh();
                         }
@@ -4693,7 +4291,7 @@ namespace nana
 					case keyboard::os_pagedown:
 						{
 							//Turns page, then returns if no change occurs
-							if (!essence_->intermed->turn_page(!up, false))
+							if (!essence_->content_view->turn_page(!up, false))
 								return;
 
 							essence_->lister.select_for_all(false);
@@ -5698,7 +5296,7 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 
-			auto origin = ess.intermed->origin();
+			auto origin = ess.content_view->origin();
 
 			int new_pos = origin.y;
 
@@ -5712,8 +5310,8 @@ namespace nana
 			ess.lister.clear(cat);
 
 			ess.calc_content_size(false);
-			ess.intermed->change_position(new_pos, false, false);
-			ess.intermed->sync(false);
+			ess.content_view->change_position(new_pos, false, false);
+			ess.content_view->sync(false);
 			ess.update();
 		}
 
@@ -5725,8 +5323,8 @@ namespace nana
             unsort();   // apperar to be espected
 
 			ess.calc_content_size(false);
-			ess.intermed->change_position(0, false, false);
-			ess.intermed->sync(false);
+			ess.content_view->change_position(0, false, false);
+			ess.content_view->sync(false);
 
 			ess.update();
 		}
@@ -5735,7 +5333,7 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 
-			auto origin = ess.intermed->origin();
+			auto origin = ess.content_view->origin();
 
 			auto start_pos = ess.content_position(index_pair{ cat, npos });
 
@@ -5749,8 +5347,8 @@ namespace nana
 			ess.lister.erase(cat);
 
 			ess.calc_content_size(false);
-			ess.intermed->change_position(new_pos, false, false);
-			ess.intermed->sync(false);
+			ess.content_view->change_position(new_pos, false, false);
+			ess.content_view->sync(false);
 
 			ess.update();
 		}
@@ -5773,7 +5371,7 @@ namespace nana
 
 			auto & ess = _m_ess();
 
-			auto const origin = ess.intermed->origin();
+			auto const origin = ess.content_view->origin();
 
 			for (auto & pos : indexes)
 			{
@@ -5802,8 +5400,8 @@ namespace nana
 			}
 
 			ess.calc_content_size(false);
-			ess.intermed->change_position(origin.y, false, false);
-			ess.intermed->sync(false);
+			ess.content_view->change_position(origin.y, false, false);
+			ess.content_view->sync(false);
 
 			ess.lister.sort();
 			
@@ -5818,14 +5416,14 @@ namespace nana
 			auto * ess = ip._m_ess();
 			auto _where = ip.pos();
 
-			auto origin = ess->intermed->origin();
+			auto origin = ess->content_view->origin();
 			auto start_pos = ess->content_position(_where);
 			if (start_pos < origin.y)
 				origin.y -= ess->item_height();
 
 			ess->calc_content_size(false);
-			ess->intermed->change_position(origin.y, false, false);
-			ess->intermed->sync(false);
+			ess->content_view->change_position(origin.y, false, false);
+			ess->content_view->sync(false);
 
 			ess->update();
 			if(_where.item < ess->lister.size_item(_where.cat))
