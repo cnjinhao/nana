@@ -2058,26 +2058,29 @@ namespace nana{	namespace widgets
 		{
 			auto text = system::dataexch{}.wget();
 
-			//If it is required check the acceptable
-			if ((accepts::no_restrict != impl_->capacities.acceptive) || impl_->capacities.pred_acceptive)
+			if ((accepts::no_restrict == impl_->capacities.acceptive) || !impl_->capacities.pred_acceptive)
 			{
-				for (auto i = text.begin(); i != text.end(); ++i)
+				put(move(text));
+				return;
+			}
+
+			//Check if the input is acceptable
+			for (auto i = text.begin(); i != text.end(); ++i)
+			{
+				if (_m_accepts(*i))
 				{
-					if (_m_accepts(*i))
-					{
-						if (accepts::no_restrict == impl_->capacities.acceptive)
-							put(*i);
+					if (accepts::no_restrict == impl_->capacities.acceptive)
+						put(*i);
 
-						continue;
-					}
-
-					if (accepts::no_restrict != impl_->capacities.acceptive)
-					{
-						text.erase(i, text.end());
-						put(std::move(text));
-					}
-					break;
+					continue;
 				}
+
+				if (accepts::no_restrict != impl_->capacities.acceptive)
+				{
+					text.erase(i, text.end());
+					put(move(text));
+				}
+				break;
 			}
 		}
 
