@@ -269,7 +269,9 @@ public:
 	{
 		if (_m_read_ico(data, bytes))
 		{
+#if defined(NANA_WINDOWS)
 			native_handle_ = ::CreateIconFromResourceEx(reinterpret_cast<PBYTE>(const_cast<void*>(data)), static_cast<DWORD>(bytes), TRUE, 0x00030000, 0, 0, LR_DEFAULTCOLOR);
+#endif
 			return true;
 		}
 		return false;
