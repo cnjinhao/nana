@@ -89,17 +89,27 @@ namespace nana {
 						}
 					});
 
-					API::events(handle).mouse_move.connect_unignorable([this](const arg_mouse& arg)
+					auto mouse_evt = [this](const arg_mouse& arg)
 					{
-						if (!arg.is_left_button())
-							return;
-
-						if (this->drive(arg.pos))
+						if (event_code::mouse_move == arg.evt_code)
 						{
-							tmr.interval(16);
-							tmr.start();
+							if (!arg.is_left_button())
+								return;
+
+							if (this->drive(arg.pos))
+							{
+								tmr.interval(16);
+								tmr.start();
+							}
 						}
-					});
+						else if (event_code::mouse_up == arg.evt_code)
+						{
+							tmr.stop();
+						}
+					};
+
+					API::events(handle).mouse_move.connect_unignorable(mouse_evt);
+					API::events(handle).mouse_up.connect_unignorable(mouse_evt);
 
 					tmr.elapse([this](const arg_elapse&)
 					{
@@ -168,10 +178,11 @@ namespace nana {
 						else
 							origin.x = static_cast<int>(this->horz.value());
 
+						if (this->events.scrolled)
+							this->events.scrolled();
+
 						if (this->enable_update)
-						{
 							API::refresh_window(this->window_handle);
-						}
 					};
 
 					this->enable_update = try_update;
@@ -182,13 +193,14 @@ namespace nana {
 						{
 							vert.create(window_handle);
 							vert.events().value_changed.connect_unignorable(event_fn);
+							API::take_active(vert, false, window_handle);
 							this->enable_update = false;
 						}
-
+						
 						vert.move({
 							disp_area.x + static_cast<int>(imd_area.width) + skew_vert.x,
 							disp_area.y + skew_vert.y,
-							_m_extra_px(),
+							space(),
 							imd_area.height + extra_px.height
 						});
 
@@ -205,6 +217,7 @@ namespace nana {
 						{
 							horz.create(window_handle);
 							horz.events().value_changed.connect_unignorable(event_fn);
+							API::take_active(horz, false, window_handle);
 							this->enable_update = false;
 						}
 
@@ -212,7 +225,7 @@ namespace nana {
 							disp_area.x + skew_horz.x,
 							disp_area.y + static_cast<int>(imd_area.height) + skew_horz.y,
 							imd_area.width + extra_px.width,
-							_m_extra_px()
+							space()
 						});
 
 						horz.amount(content_size.width);
@@ -299,6 +312,11 @@ namespace nana {
 				impl_->size_changed(try_update);
 			}
 
+			const size& content_view::content_size() const
+			{
+				return impl_->content_size;
+			}
+
 			const point& content_view::origin() const
 			{
 				return impl_->origin;
@@ -314,11 +332,11 @@ namespace nana {
 				r.y = impl_->disp_area.y + static_cast<int>(imd_area.height) + impl_->skew_horz.y;
 
 
-				unsigned extra_horz = (impl_->disp_area.width < impl_->content_size.width ? _m_extra_px() : 0);
-				unsigned extra_vert = (impl_->disp_area.height < impl_->content_size.height + extra_horz ? _m_extra_px() : 0);
+				unsigned extra_horz = (impl_->disp_area.width < impl_->content_size.width ? space() : 0);
+				unsigned extra_vert = (impl_->disp_area.height < impl_->content_size.height + extra_horz ? space() : 0);
 
 				if ((0 == extra_horz) && extra_vert)
-					extra_horz = (impl_->disp_area.width < impl_->content_size.width + extra_vert ? _m_extra_px() : 0);
+					extra_horz = (impl_->disp_area.width < impl_->content_size.width + extra_vert ? space() : 0);
 
 				r.width = extra_horz;
 				r.height = extra_vert;
@@ -326,13 +344,20 @@ namespace nana {
 				return r;
 			}
 
+			void content_view::draw_corner(graph_reference graph)
+			{
+				auto r = corner();
+				if(!r.empty())
+					graph.rectangle(r, true, colors::button_face);
+			}
+
 			rectangle content_view::view_area() const
 			{
-				unsigned extra_horz = (impl_->disp_area.width < impl_->content_size.width ? _m_extra_px() : 0);
-				unsigned extra_vert = (impl_->disp_area.height < impl_->content_size.height + extra_horz ? _m_extra_px() : 0);
+				unsigned extra_horz = (impl_->disp_area.width < impl_->content_size.width ? space() : 0);
+				unsigned extra_vert = (impl_->disp_area.height < impl_->content_size.height + extra_horz ? space() : 0);
 
 				if ((0 == extra_horz) && extra_vert)
-					extra_horz = (impl_->disp_area.width < impl_->content_size.width + extra_vert ? _m_extra_px() : 0);
+					extra_horz = (impl_->disp_area.width < impl_->content_size.width + extra_vert ? space() : 0);
 
 				return rectangle{
 					impl_->disp_area.position(),
@@ -345,7 +370,7 @@ namespace nana {
 
 			unsigned content_view::extra_space(bool horz) const
 			{
-				return ((horz ? impl_->horz.empty() : impl_->vert.empty()) ? 0 : _m_extra_px());
+				return ((horz ? impl_->horz.empty() : impl_->vert.empty()) ? 0 : space());
 			}
 
 			void content_view::change_position(int pos, bool aligned, bool horz)

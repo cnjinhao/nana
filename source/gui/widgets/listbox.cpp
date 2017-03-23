@@ -1229,38 +1229,71 @@ namespace nana
 						clear(i);
 				}
 
-				index_pair advance(const index_pair& from, size_type offset) const
+				index_pair advance(const index_pair& pos, int n) const
 				{
 					const auto cat_size = categories_.size();
 					index_pair dpos{ npos, npos };
-					if (from.cat >= cat_size || (from.item != npos && from.item >= size_item(from.cat)))
+		
+					if (pos.cat >= cat_size || (pos.item != npos && pos.item >= size_item(pos.cat)))
 						return dpos;
 
-					if ((0 == from.cat && npos == from.item) || (!expand(from.cat) && (npos != from.item)))
+					if ((0 == pos.cat && npos == pos.item) || (!expand(pos.cat) && (npos != pos.item)))
 						return dpos;
 
-					if (0 == offset)
-						return from;
+					if (0 == n)
+						return pos;
 
-					dpos = from;
-					std::size_t pos = (npos == from.item ? 0 : 1);
-
-					while (offset)
+					dpos = pos;
+					if (0 < n)
 					{
-						std::size_t end = 1;
-						if (expand(dpos.cat))
-							end += size_item(dpos.cat);
+						//Forward
+						std::size_t index = (npos == pos.item ? 0 : pos.item + 1);
 
-						if (offset < end - pos)
+						while (n)
 						{
-							return index_pair{ dpos.cat, pos + offset - 1 };
-						}
+							std::size_t end = 1;
+							if (expand(dpos.cat))
+								end += size_item(dpos.cat);
 
-						offset -= (end - pos);
-						pos = 0;
-						++dpos.cat;
+							if (n < static_cast<int>(end - index))
+								return index_pair{ dpos.cat, index + n - 1 };
+
+							++dpos.cat;
+							if (cat_size == dpos.cat)
+								return index_pair{ npos, npos };
+
+							n -= static_cast<int>(end - index);
+							index = 0;
+						}
+						return index_pair{ dpos.cat, npos };
 					}
-					return index_pair{ dpos.cat, npos };
+					
+					//Backward
+					dpos = pos;
+					if (good(dpos.cat))
+					{
+						auto count = static_cast<int>(dpos.is_category() ? 1 : pos.item + 2);
+						auto i = get(pos.cat);
+						while (true)
+						{
+							if (count > n)
+							{
+								count -= n;
+								dpos.item = (count == 1 ? npos : count - 2);
+								return dpos;
+							}
+
+							n -= count;
+
+							if (i == categories_.cbegin())
+								break;
+
+							--i;
+							--dpos.cat;
+							count = static_cast<int>(i->expand ? i->items.size() : 0) + 1;
+						}
+					}
+					return index_pair{npos, npos};
 				}
 
                 /// change to index arg
@@ -1494,7 +1527,7 @@ namespace nana
 					//pair second: indicates whether the index is selected before selection.
 					std::vector<std::pair<index_pair, bool>> pairs;
 
-					for (; fr_dpl != to_dpl; forward(fr_dpl, 1, fr_dpl))
+					for (; fr_dpl != to_dpl; fr_dpl = advance(fr_dpl, 1))
 					{
 						if (!fr_dpl.is_category())
 						{
@@ -1844,78 +1877,6 @@ namespace nana
 					item.cat = pos.cat + 1;         // select the next cat
 					item.item = npos;
 					return true;
-				}
-
-				/// all arg are relative to display order, or all are absolute, but not mixed
-				bool forward(index_pair from, size_type offs, index_pair& item) const noexcept
-				{
-					if (!good_item(from, from))
-						return false;
-
-					auto cat = get(from.cat);
-
-					auto items_left = (cat->expand ? cat->items.size() : 0);
-
-					if (from.is_category())
-						items_left += 1;				//add 1 category bar
-					else if (items_left >= from.item)
-						items_left -= from.item;
-					else
-						return false;					//invalid argument
-
-					while (offs)
-					{
-						if (items_left > offs)
-						{
-							item.cat = from.cat;
-							item.item = (npos == from.item ? offs - 1 : from.item + offs);
-							return true;
-						}
-
-						offs -= items_left;
-						if (++cat == categories_.cend())
-							return false;
-
-						++from.cat;
-						from.item = npos;
-						items_left = (cat->expand ? cat->items.size() + 1 : 1);
-					}
-
-					item = from;
-					return true;
-				}
-
-                /// all arg are relative to display order, or all are absolute, but not mixed
-				bool backward(index_pair from, size_type offs, index_pair& item) const noexcept
-				{
-					if(offs == 0)
-						item = from;
-
-					if(good(from.cat))
-					{
-						size_type n = (from.is_category() ? 1 : from.item + 2);
-						auto i = get(from.cat);
-						while(true)
-						{
-							if (n > offs)
-							{
-								n -= offs;
-								item.cat = from.cat;
-								item.item = (n == 1 ? npos : n - 2);
-								return true;
-							}
-
-							offs -= n;
-
-							if (i == categories_.cbegin())
-								break;
-
-							--i;
-							--from.cat;
-							n = (i->expand ? i->items.size() : 0) + 1;
-						}
-					}
-					return false;
 				}
 
 				/// categories iterator
@@ -2354,9 +2315,7 @@ namespace nana
 						graph->line({ ctt_area.right(), ctt_area.y }, { ctt_area.right(), ctt_area.bottom() - 1 });
 					}
 
-					auto r = this->content_view->corner();
-					if (!r.empty())
-						graph->rectangle(r, true, colors::button_face);
+					this->content_view->draw_corner(*graph);
 				}
 
 				rectangle content_area() const
@@ -3391,7 +3350,9 @@ namespace nana
 
 						//if where == lister || where == checker, 'second' indicates the offset to the  relative display-order pos of the scroll offset_y which stands for the first item to be displayed in lister.
 						if ((ptr_where.first == parts::list || ptr_where.first == parts::checker) && ptr_where.second != npos)
-							lister.forward(first_disp, ptr_where.second, hoverred_pos);
+						{
+							hoverred_pos = lister.advance(first_disp, static_cast<int>(ptr_where.second));
+						}
 
 						auto subitems = essence_->header_seq(rect.width);
 
@@ -4005,9 +3966,9 @@ namespace nana
 					}
 					else if(ptr_where.first == parts::list || ptr_where.first == parts::checker)
 					{
-						index_pair item_pos;
+						index_pair item_pos = lister.advance(essence_->first_display(), static_cast<int>(ptr_where.second));
 
-						if ((essence_->column_from_pos(arg.pos.x) != npos) && lister.forward(essence_->first_display(), ptr_where.second, item_pos))
+						if ((essence_->column_from_pos(arg.pos.x) != npos) && !item_pos.empty())
 						{
 							auto * item_ptr = (item_pos.is_category() ? nullptr : &lister.at(item_pos));
 
@@ -4218,13 +4179,11 @@ namespace nana
 					if (parts::list != essence_->pointer_where.first)
 						return;
 
-					index_pair item_pos;
-						
-					auto offset_y = essence_->first_display();
-
 					auto & lister = essence_->lister;
 					//Get the item which the mouse is placed.
-					if (lister.forward(offset_y, essence_->pointer_where.second, item_pos))
+
+					auto item_pos = lister.advance(essence_->first_display(), static_cast<int>(essence_->pointer_where.second));
+					if (!item_pos.empty())
 					{
 						if (!item_pos.is_category())	//being the npos of item.second is a category
 							return;
@@ -4239,9 +4198,8 @@ namespace nana
 
                             if(false == do_expand)
                             {
-                                auto last = lister.last();
-                                size_type n = essence_->count_of_exposed(false);
-								if (lister.backward(last, n, last))
+								auto last = lister.advance(lister.last(), -static_cast<int>(essence_->count_of_exposed(false)));
+								if (!last.empty())
 								{
 									auto px = lister.distance(lister.first(), last) * essence_->item_height();
 									essence_->content_view->change_position(static_cast<int>(px), true, false);
@@ -4299,7 +4257,7 @@ namespace nana
 							auto idx = essence_->first_display();
 
 							if (!up)
-								essence_->lister.forward(idx, essence_->count_of_exposed(false) - 1, idx);
+								idx = essence_->lister.advance(idx, static_cast<int>(essence_->count_of_exposed(false)) - 1);
 
 							if (!idx.is_category())
 								item_proxy::from_display(essence_, idx).select(true);
@@ -4390,7 +4348,7 @@ namespace nana
 					if (ess_->first_display() > pos)
 						return false;
 
-					auto last = ess_->lister.advance(ess_->first_display(), ess_->count_of_exposed(false));
+					auto last = ess_->lister.advance(ess_->first_display(), static_cast<int>(ess_->count_of_exposed(false)));
 
 					return (last > pos || last == pos);
 				}
@@ -4495,7 +4453,6 @@ namespace nana
 				{
 					return ess_->header.cont().size();
 				}
-
 
 				size_type item_proxy::column_cast(size_type pos, bool disp_order) const
 				{
@@ -5248,12 +5205,10 @@ namespace nana
 			auto & ess=_m_ess();
 			auto _where = ess.where(pos);
 
-			index_pair item_pos{npos,npos};
-
 			if (drawerbase::listbox::essence::parts::list == _where.first)
-				ess.lister.forward(ess.first_display(), _where.second, item_pos);
+				return ess.lister.advance(ess.first_display(), static_cast<int>(_where.second));
 	
-			return item_pos;
+			return index_pair{ npos, npos };
 		}
 
 		auto listbox::column_at(size_type pos, bool disp_order) -> column_interface&

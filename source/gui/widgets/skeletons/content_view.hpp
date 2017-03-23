@@ -17,6 +17,14 @@
 #include <nana/gui/basis.hpp>
 #include <functional>
 
+namespace nana
+{
+	namespace paint
+	{
+		class graphics;
+	}
+}
+
 namespace nana { namespace widgets {
 namespace skeletons
 {
@@ -30,9 +38,12 @@ namespace skeletons
 		content_view(content_view&&) = delete;
 		content_view& operator=(content_view&&) = delete;
 	public:
+		using graph_reference = paint::graphics&;
+
 		struct events_type
 		{
-			std::function<void(const point&)> hover_outside;
+			::std::function<void(const point&)> hover_outside;
+			::std::function<void()> scrolled;
 		};
 
 		content_view(window handle);
@@ -47,8 +58,11 @@ namespace skeletons
 		void disp_area(const rectangle& da, const point& skew_horz, const point& skew_vert, const size& extra_px, bool try_update = true);
 
 		void content_size(const size& sz, bool try_update = true);
+		const size& content_size() const;
+
 		const point& origin() const;
 		rectangle corner() const;
+		void draw_corner(graph_reference);
 
 		rectangle view_area() const;
 
@@ -63,8 +77,8 @@ namespace skeletons
 		void pursue(const point& cursor);
 
 		void set_wheel_speed(std::function<unsigned()> fn);
-	private:
-		static constexpr unsigned _m_extra_px()
+
+		static constexpr unsigned space()
 		{
 			return 16;
 		}
