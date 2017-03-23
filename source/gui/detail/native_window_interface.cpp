@@ -23,7 +23,6 @@
         #include <mutex>
 	#endif
 	#include <map>
-	#include "../../paint/detail/image_ico.hpp"
 #elif defined(NANA_X11)
 	#include <nana/system/platform.hpp>
 #endif
