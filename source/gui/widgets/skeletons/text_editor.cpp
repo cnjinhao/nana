@@ -1347,23 +1347,22 @@ namespace nana{	namespace widgets
 
 			impl_->capacities.behavior->pre_calc_lines(width_pixels());
 
-			if (points_.offset.x > 0)
+			auto maxline = textbase().max_line();
+			nana::size text_size = _m_text_extent_size(textbase().getline(maxline.first).c_str(), maxline.second);
+
+			text_size.width += 1;
+			if (static_cast<int>(text_size.width) - points_.offset.x < static_cast<int>(this->width_pixels()))
 			{
-				auto maxline = textbase().max_line();
-				nana::size text_size = _m_text_extent_size(textbase().getline(maxline.first).c_str(), maxline.second);
-
-				text_size.width += 1;
-
 				points_.offset.x = (std::max)(0,
-					static_cast<int>(text_size.width + 1) - static_cast<int>(this->width_pixels())
+					static_cast<int>(text_size.width) - static_cast<int>(this->width_pixels())
 					);
 			}
 
-			if (points_.offset.y > 0)
-			{
-				auto const lines = impl_->capacities.behavior->take_lines();
-				auto const scr_lines = this->screen_lines();
+			auto const lines = impl_->capacities.behavior->take_lines();
+			auto const scr_lines = this->screen_lines();
 
+			if (static_cast<int>(lines) - points_.offset.y < static_cast<int>(scr_lines))
+			{
 				_m_offset_y((std::max)(static_cast<int>(lines)-static_cast<int>(scr_lines), 0));
 			}
 
