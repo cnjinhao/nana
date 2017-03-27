@@ -286,7 +286,7 @@ namespace detail
 				std::recursive_mutex mutex;
 
 				thread_refcount thread;
-				std::vector<thread_refcount> invoke_stack;
+				std::vector<thread_refcount> records;
 			};
 
 			window_manager::revertible_mutex::revertible_mutex()
@@ -339,7 +339,7 @@ namespace detail
 				{
 					std::size_t cnt = impl_->thread.ref;
 
-					impl_->invoke_stack.push_back(impl_->thread);
+					impl_->records.push_back(impl_->thread);
 					impl_->thread.tid = 0;
 					impl_->thread.ref = 0;
 
@@ -354,20 +354,24 @@ namespace detail
 			{
 				impl_->mutex.lock();
 				
-				if(impl_->invoke_stack.size())
+				if(impl_->records.size())
 				{
-					auto thr = impl_->invoke_stack.back();
+					auto const this_tid = nana::system::this_thread_id();
 
-					impl_->invoke_stack.pop_back();
-					
-					if(thr.tid == nana::system::this_thread_id())
+					for (auto i = impl_->records.begin(); i != impl_->records.end(); ++i)
 					{
-						for (std::size_t i = 0; i < thr.ref; ++i)
+						if (this_tid != i->tid)
+							continue;
+
+						for (std::size_t u = 1; u < i->ref; ++u)
 							impl_->mutex.lock();
-						impl_->thread = thr;
+
+						impl_->thread = *i;
+						impl_->records.erase(i);
+						return;
 					}
-					else
-						throw std::runtime_error("The forward is not matched. Please report this issue");
+
+					throw std::runtime_error("The forward is not matched. Please report this issue");
 				}
 
 				impl_->mutex.unlock();
