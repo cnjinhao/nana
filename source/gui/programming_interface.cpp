@@ -348,74 +348,15 @@ namespace API
 	//close all windows in current thread
 	void exit()
 	{
-		std::vector<basic_window*> v;
-
 		internal_scope_guard lock;
-		restrict::wd_manager().all_handles(v);
-		if(v.size())
-		{
-			std::vector<native_window_type> roots;
-			native_window_type root = nullptr;
-			unsigned tid = nana::system::this_thread_id();
-			for(auto wd : v)
-			{
-				if((wd->thread_id == tid) && (wd->root != root))
-				{
-					root = wd->root;
-					bool exists = false;
-					for (auto i = roots.cbegin(); i != roots.cend(); ++i)
-					{
-						if (*i == root)
-						{
-							exists = true;
-							break;
-						}
-					}
-
-					if (!exists)
-						roots.emplace_back(root);
-				}
-			}
-
-			for(auto i : roots)
-				interface_type::close_window(i);
-		}
+		restrict::bedrock.close_thread_window(nana::system::this_thread_id());
 	}
+
 	//close all windows  
 	void exit_all()
 	{
-		std::vector<basic_window*> v;
-
 		internal_scope_guard lock;
-		restrict::wd_manager().all_handles(v);
-		if (v.size())
-		{
-			std::vector<native_window_type> roots;
-			native_window_type root = nullptr;
-			//unsigned tid = nana::system::this_thread_id();
-			for (auto wd : v)
-			{
-				if (/*(wd->thread_id == tid) &&*/ (wd->root != root))
-				{
-					root = wd->root;
-					bool exists = false;
-					for (auto i = roots.cbegin(); i != roots.cend(); ++i)
-					{
-						if (*i == root)
-						{
-							exists = true;
-							break;
-						}
-					}
-
-					if (!exists)
-						roots.emplace_back(root);
-				}
-			}
-
-			for (auto i : roots)
-				interface_type::close_window(i);
-		}
+		restrict::bedrock.close_thread_window(0);
 	}
 
 	//transform_shortkey_text

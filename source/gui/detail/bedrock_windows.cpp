@@ -443,7 +443,7 @@ namespace detail
 			).show();
 
 			internal_scope_guard lock;
-			_m_except_handler();
+			this->close_thread_window(nana::system::this_thread_id());
 
 			intr_locker.forward();
 			if (0 == --(context->event_pump_ref_count))
@@ -460,7 +460,7 @@ namespace detail
 				<< "\n   in form: " << API::window_caption(condition_wd)
 				).show();
 			internal_scope_guard lock;
-			_m_except_handler();
+			this->close_thread_window(nana::system::this_thread_id());
 
 			intr_locker.forward();
 			if(0 == --(context->event_pump_ref_count))
