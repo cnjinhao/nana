@@ -19,7 +19,6 @@
 #include "text_editor_part.hpp"
 #include <nana/unicode_bidi.hpp>
 
-//#include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/general_events.hpp>
 
 #include <functional>
@@ -163,7 +162,7 @@ namespace nana{	namespace widgets
 			bool select(bool);
 
 			/// Sets the end position of a selected string.
-			void set_end_caret();
+			void set_end_caret(bool stay_in_view);
 			
 			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos, bool ignore_when_select_all) const;
@@ -197,7 +196,7 @@ namespace nana{	namespace widgets
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
-			const upoint& mouse_caret(const point& screen_pos);
+			const upoint& mouse_caret(const point& screen_pos, bool stay_in_view);
 			const upoint& caret() const;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
@@ -223,12 +222,8 @@ namespace nana{	namespace widgets
 
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
-			bool _m_scroll_text(bool vertical);
-			void _m_scrollbar();
 
-			::nana::rectangle _m_text_area() const;
-
-			void _m_get_scrollbar_size();
+			void _m_reset_content_size();
 			void _m_reset();
 			::nana::upoint _m_put(::std::wstring);
 			::nana::upoint _m_erase_select();
@@ -245,6 +240,7 @@ namespace nana{	namespace widgets
 			bool _m_move_select(bool record_undo);
 
 			int _m_text_top_base() const;
+			int _m_text_topline() const;
 
 			/// Returns the logical position that text starts of a specified line in x-axis
 			int _m_text_x(const text_section&) const;
@@ -258,10 +254,7 @@ namespace nana{	namespace widgets
 			//@return: true if caret overs the border
 			bool _m_update_caret_line(std::size_t secondary_before);
 
-			void _m_offset_y(int y);
-
 			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos) const;
-
 			unsigned _m_pixels_by_char(const ::std::wstring&, ::std::size_t pos) const;
 			void _m_handle_move_key(const arg_keyboard& arg);
 
@@ -294,27 +287,24 @@ namespace nana{	namespace widgets
 			{
 				nana::rectangle	area;
 
-				bool		captured;
-				unsigned	tab_space;
-				unsigned	scroll_pixels;
-				unsigned	vscroll;
-				unsigned	hscroll;
+				bool		captured{ false };
+				unsigned	tab_space{ 4 };
 			}text_area_;
 
 			struct selection
 			{
-				enum class mode{ no_selected, mouse_selected, method_selected, move_selected };
+				enum class mode{ no_selected, mouse_selected, method_selected, move_selected, move_selected_take_effect };
 
-				text_focus_behavior behavior;
-				bool move_to_end;
-				mode mode_selection;
-				bool ignore_press;
+				bool ignore_press{ false };
+				bool move_to_end{ false };
+				mode mode_selection{ mode::no_selected };
+				text_focus_behavior behavior{text_focus_behavior::none};
+
 				nana::upoint a, b;
 			}select_;
 
 			struct coordinate
 			{
-				nana::point		offset;	//x stands for pixels, y for lines
 				nana::upoint	caret;	//position of caret by text, it specifies the position of a new character
 				nana::upoint	shift_begin_caret;
 				unsigned		xpos{0};	//This data is used for move up/down

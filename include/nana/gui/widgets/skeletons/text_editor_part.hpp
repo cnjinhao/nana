@@ -26,7 +26,8 @@ namespace nana
 			struct text_editor_scheme
 				: public ::nana::widget_geometrics
 			{
-				color_proxy selection{static_cast<color_rgb>(0x3399FF)};
+				color_proxy selection{ static_cast<color_rgb>(0x3399FF) };
+				color_proxy selection_unfocused{ static_cast<color_rgb>(0xF0F0F0) };
 				color_proxy selection_text{colors::white};
 
 				parameters::mouse_wheel mouse_wheel;	///< The number of lines/characters to scroll when the vertical/horizontal mouse wheel is moved.

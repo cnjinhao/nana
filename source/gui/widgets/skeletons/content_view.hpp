@@ -55,7 +55,7 @@ namespace skeletons
 		bool scroll(bool forwards, bool horz);
 		bool turn_page(bool forwards, bool horz);
 
-		void disp_area(const rectangle& da, const point& skew_horz, const point& skew_vert, const size& extra_px, bool try_update = true);
+		void disp_area(const rectangle& da, const point& skew_horz_bar, const point& skew_vert_bar, const size& extra_px, bool try_update = true);
 
 		void content_size(const size& sz, bool try_update = true);
 		const size& content_size() const;
