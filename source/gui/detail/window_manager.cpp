@@ -274,26 +274,34 @@ namespace detail
 			};
 		//end struct wdm_private_impl
 
-		//class revertible_mutex
+			//class revertible_mutex
 			struct thread_refcount
 			{
-				unsigned tid;
-				std::size_t ref;
+				unsigned tid;	//Thread ID
+				std::vector<unsigned> callstack_refs;
+
+				thread_refcount(unsigned thread_id, unsigned refs)
+					: tid(thread_id)
+				{
+					callstack_refs.push_back(refs);
+				}
 			};
 
 			struct window_manager::revertible_mutex::implementation
 			{
 				std::recursive_mutex mutex;
 
-				thread_refcount thread;
+				unsigned thread_id;	//Thread ID
+				unsigned refs;	//Ref count
+
 				std::vector<thread_refcount> records;
 			};
 
 			window_manager::revertible_mutex::revertible_mutex()
 				: impl_(new implementation)
 			{
-				impl_->thread.tid = 0;
-				impl_->thread.ref = 0;
+				impl_->thread_id = 0;
+				impl_->refs = 0;
 			}
 
 			window_manager::revertible_mutex::~revertible_mutex()
@@ -305,20 +313,20 @@ namespace detail
 			{
 				impl_->mutex.lock();
 
-				if(0 == impl_->thread.tid)
-					impl_->thread.tid = nana::system::this_thread_id();
+				if (0 == impl_->thread_id)
+					impl_->thread_id = nana::system::this_thread_id();
 
-				++(impl_->thread.ref);
+				++(impl_->refs);
 			}
 
 			bool window_manager::revertible_mutex::try_lock()
 			{
-				if(impl_->mutex.try_lock())
+				if (impl_->mutex.try_lock())
 				{
-					if (0 == impl_->thread.tid)
-						impl_->thread.tid = nana::system::this_thread_id();
+					if (0 == impl_->thread_id)
+						impl_->thread_id = nana::system::this_thread_id();
 
-					++(impl_->thread.ref);
+					++(impl_->refs);
 					return true;
 				}
 				return false;
@@ -326,24 +334,40 @@ namespace detail
 
 			void window_manager::revertible_mutex::unlock()
 			{
-				if(impl_->thread.tid == nana::system::this_thread_id())
-					if(0 == --(impl_->thread.ref))
-						impl_->thread.tid = 0;
+				if (impl_->thread_id == nana::system::this_thread_id())
+					if (0 == --(impl_->refs))
+						impl_->thread_id = 0;
 
 				impl_->mutex.unlock();
 			}
 
 			void window_manager::revertible_mutex::revert()
 			{
-				if(impl_->thread.tid == nana::system::this_thread_id())
+				if (impl_->thread_id == nana::system::this_thread_id())
 				{
-					std::size_t cnt = impl_->thread.ref;
+					auto const current_refs = impl_->refs;
 
-					impl_->records.push_back(impl_->thread);
-					impl_->thread.tid = 0;
-					impl_->thread.ref = 0;
+					//Check if there is a record
+					for (auto & r : impl_->records)
+					{
+						if (r.tid == impl_->thread_id)
+						{
+							r.callstack_refs.push_back(current_refs);
+							impl_->thread_id = 0;	//Indicates a record is existing
+							break;
+						}
+					}
 
-					for (std::size_t i = 0; i < cnt; ++i)
+					if (impl_->thread_id)
+					{
+						//Creates a new record
+						impl_->records.emplace_back(impl_->thread_id, current_refs);
+						impl_->thread_id = 0;
+					}
+
+					impl_->refs = 0;
+
+					for (std::size_t i = 0; i < current_refs; ++i)
 						impl_->mutex.unlock();
 				}
 				else
@@ -353,8 +377,8 @@ namespace detail
 			void window_manager::revertible_mutex::forward()
 			{
 				impl_->mutex.lock();
-				
-				if(impl_->records.size())
+
+				if (impl_->records.size())
 				{
 					auto const this_tid = nana::system::this_thread_id();
 
@@ -363,11 +387,18 @@ namespace detail
 						if (this_tid != i->tid)
 							continue;
 
-						for (std::size_t u = 1; u < i->ref; ++u)
+						auto const refs = i->callstack_refs.back();
+
+						for (std::size_t u = 1; u < refs; ++u)
 							impl_->mutex.lock();
 
-						impl_->thread = *i;
-						impl_->records.erase(i);
+						impl_->thread_id = this_tid;
+						impl_->refs = refs;
+
+						if (i->callstack_refs.size() > 1)
+							i->callstack_refs.pop_back();
+						else
+							impl_->records.erase(i);
 						return;
 					}
 
@@ -376,7 +407,7 @@ namespace detail
 
 				impl_->mutex.unlock();
 			}
-		//end class revertible_mutex
+			//end class revertible_mutex
 
 			//Utilities in this unit.
 			namespace utl
