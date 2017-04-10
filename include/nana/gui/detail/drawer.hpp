@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -126,8 +126,7 @@ namespace nana
 			void* draw(std::function<void(paint::graphics&)> &&, bool diehard);
 			void erase(void* diehard);
 		private:
-			void _m_effect_bground(bool before);
-			bool _m_lazy_decleared() const;
+			void _m_effect_bground_subsequent();
 			method_state& _m_mth_state(int pos);
 
 			template<typename Arg, typename Mfptr>
@@ -140,8 +139,6 @@ namespace nana
 
 				if (realizer && (method_state::not_overrided != mth_state))
 				{
-					_m_effect_bground(true);
-
 					if (method_state::pending == mth_state)
 					{
 						(realizer->*mfptr)(graphics, arg);
@@ -154,8 +151,7 @@ namespace nana
 					else
 						(realizer->*mfptr)(graphics, arg);
 
-					if (_m_lazy_decleared())
-						_m_effect_bground(false);
+					_m_effect_bground_subsequent();
 				}
 			}
 		public:

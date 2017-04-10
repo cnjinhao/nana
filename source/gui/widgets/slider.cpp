@@ -300,7 +300,7 @@ namespace nana
 				{
 					if(!graph.size().empty())
 					{
-						proto_.renderer->background(other_.wd, graph, (bground_mode::basic == API::effects_bground_mode(other_.wd)), other_.widget->scheme());
+						proto_.renderer->background(other_.wd, graph, API::dev::copy_transparent_background(other_.wd, graph), other_.widget->scheme());
 						_m_draw_elements(graph);
 					}
 				}
@@ -897,7 +897,7 @@ namespace nana
 
 		bool slider::transparent() const
 		{
-			return (bground_mode::basic == API::effects_bground_mode(*this));
+			return API::is_transparent_background(*this);
 		}
 	//end class slider
 }//end namespace nana

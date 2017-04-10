@@ -372,7 +372,8 @@ namespace nana
 						return true;
 					}
 
-					if (editor_->mouse_pressed(arg))
+					editor_->mouse_pressed(arg);
+					if(editor_->try_refresh())
 					{
 						_m_draw_spins(buttons::none);
 						return true;
@@ -383,10 +384,11 @@ namespace nana
 
 				bool mouse_move(bool left_button, const ::nana::point& pos)
 				{
-					if (editor_->mouse_move(left_button, pos))
+					editor_->mouse_move(left_button, pos);
+					if(editor_->try_refresh())
 					{
 						editor_->reset_caret();
-						render();
+						_m_draw_spins(spin_stated_);
 						return true;
 					}
 
@@ -570,10 +572,11 @@ namespace nana
 
 			void drawer::key_char(graph_reference, const arg_keyboard& arg)
 			{
-				if (impl_->editor()->respond_char(arg))
+				impl_->editor()->respond_char(arg);
+				if (impl_->editor()->try_refresh())
 				{
-					if (!impl_->value(to_utf8(impl_->editor()->text()), false))
-						impl_->draw_spins();
+					impl_->value(to_utf8(impl_->editor()->text()), false);
+					impl_->draw_spins();
 
 					API::dev::lazy_refresh();
 				}

@@ -1,7 +1,7 @@
 /**
  *	A Panel Implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -57,7 +57,7 @@ namespace nana
 
 		bool transparent() const
 		{
-			return (bground_mode::basic == API::effects_bground_mode(*this));
+			return API::is_transparent_background(*this);
 		}
 
 		void transparent(bool tr)

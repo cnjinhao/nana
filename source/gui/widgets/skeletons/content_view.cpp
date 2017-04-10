@@ -209,7 +209,10 @@ namespace nana {
 						vert.value(origin.y);
 					}
 					else
+					{
 						vert.close();
+						origin.y = 0;
+					}
 
 					if (imd_area.height != disp_area.height)
 					{
@@ -233,7 +236,10 @@ namespace nana {
 						horz.value(origin.x);
 					}
 					else
+					{
 						horz.close();
+						origin.x = 0;
+					}
 
 					this->enable_update = true;
 				}
@@ -308,7 +314,31 @@ namespace nana {
 
 			void content_view::content_size(const size& sz, bool try_update)
 			{
+				if (sz.height < impl_->content_size.height)
+				{
+					if (impl_->origin.y + impl_->disp_area.height > sz.height)
+					{
+						if (impl_->disp_area.height > sz.height)
+							impl_->origin.y = 0;
+						else
+							impl_->origin.y = sz.height - impl_->disp_area.height;
+					}
+				}
+
+				if (sz.width < impl_->content_size.width)
+				{
+					if (impl_->origin.x + impl_->disp_area.width > sz.width)
+					{
+						if (impl_->disp_area.width > sz.width)
+							impl_->origin.x = 0;
+						else
+							impl_->origin.x = sz.width - impl_->disp_area.width;
+					}
+				}
+
+
 				impl_->content_size = sz;
+
 				impl_->size_changed(try_update);
 			}
 

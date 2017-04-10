@@ -784,7 +784,7 @@ namespace nana
 					if(nullptr == impl_->wd) return;
 
 					window wd = impl_->wd->handle();
-					if(bground_mode::basic != API::effects_bground_mode(wd))
+					if (!API::dev::copy_transparent_background(wd, graph))
 						graph.rectangle(true, API::bgcolor(wd));
 
 					impl_->renderer.render(graph, API::fgcolor(wd), impl_->text_align, impl_->text_align_v);
@@ -830,7 +830,7 @@ namespace nana
 
 		bool label::transparent() const throw()
 		{
-			return (bground_mode::basic == API::effects_bground_mode(*this));
+			return API::is_transparent_background(*this);
 		}
 
 		label& label::format(bool f)

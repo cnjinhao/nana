@@ -155,6 +155,12 @@ namespace API
 		}
 	}
 
+	void effects_bground(std::initializer_list<window> wdgs, const effects::bground_factory_interface& factory, double fade_rate)
+	{
+		for (auto wd : wdgs)
+			effects_bground(wd, factory, fade_rate);
+	}
+
 	bground_mode effects_bground_mode(window wd)
 	{
 		auto const iwd = reinterpret_cast<basic_window*>(wd);
@@ -329,6 +335,32 @@ namespace API
 				iwd->flags.space_click_enabled = enable;
 		}
 
+		bool copy_transparent_background(window wd, paint::graphics& graph)
+		{
+			auto & buf = reinterpret_cast<basic_window*>(wd)->other.glass_buffer;
+			internal_scope_guard lock;
+
+			if (bground_mode::basic != API::effects_bground_mode(wd))
+				return false;
+
+			buf.paste(rectangle{ buf.size() }, graph, 0, 0);
+
+			return true;
+		}
+
+		bool copy_transparent_background(window wd, const rectangle& src_r, paint::graphics& graph, const point& dst_pt)
+		{
+			auto iwd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+
+			if (bground_mode::basic != API::effects_bground_mode(wd))
+				return false;
+			
+			iwd->other.glass_buffer.paste(src_r, graph, dst_pt.x, dst_pt.y);
+
+			return true;
+		}
+
 		void lazy_refresh()
 		{
 			restrict::bedrock.thread_context_lazy_refresh();
@@ -467,6 +499,11 @@ namespace API
 			iwd->flags.dropable = enb;
 			interface_type::enable_dropfiles(native_handle, enb);
 		}
+	}
+
+	bool is_transparent_background(window wd)
+	{
+		return (bground_mode::basic == effects_bground_mode(wd));
 	}
 
 	native_window_type root(window wd)

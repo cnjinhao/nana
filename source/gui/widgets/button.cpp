@@ -155,7 +155,7 @@ namespace nana{	namespace drawerbase
 
 			if (false == cite_.draw(graph, attr_.bgcolor, attr_.fgcolor, ::nana::rectangle{ graph.size() }, e_state))
 			{
-				if (bground_mode::basic != API::effects_bground_mode(wdg_->handle()))
+				if (!API::is_transparent_background(*wdg_))
 				{
 					_m_draw_background(graph);
 					_m_draw_border(graph);
@@ -492,7 +492,7 @@ namespace nana{	namespace drawerbase
 
 			bool button::transparent() const
 			{
-				return (bground_mode::basic == API::effects_bground_mode(*this));
+				return API::is_transparent_background(*this);
 			}
 
 			button& button::edge_effects(bool enable)

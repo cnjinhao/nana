@@ -193,6 +193,7 @@ namespace nana
 						if(r.width > place)	r.width -= place;
 					}
 					editor_->text_area(r);
+					editor_->render(state_.focused);
 				}
 
 				widgets::skeletons::text_editor * editor() const
@@ -233,6 +234,12 @@ namespace nana
 								}
 
 								graph.gradual_rectangle(::nana::rectangle(graph.size()).pare_off(pare_off_px), clr_from, clr_to, true);
+								if (API::is_transparent_background(this->widget_ptr()->handle()))
+								{
+									paint::graphics trns_graph{ graph.size() };
+									if (API::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
+										trns_graph.blend(rectangle{ trns_graph.size() }, graph, { 0, 0 }, 0.5);
+								}
 							};
 						}
 						else
@@ -362,7 +369,6 @@ namespace nana
 					if(editor_)
 					{
 						text_area(widget_->size());
-						editor_->render(state_.focused);
 					}
 					_m_draw_push_button(enb);
 					_m_draw_image();
@@ -397,7 +403,8 @@ namespace nana
 						if (calc_where(*graph_, pos.x, pos.y))
 							state_.button_state = element_state::normal;
 
-						editor_->text(::nana::charset(items_[index]->item_text, ::nana::unicode::utf8), false);
+						editor_->text(to_wstring(items_[index]->item_text), false);
+						editor_->try_refresh();
 						_m_draw_push_button(widget_->enabled());
 						_m_draw_image();
 
@@ -511,9 +518,10 @@ namespace nana
 					facade<element::button> button;
 					button.draw(*graph_, ::nana::color{ 3, 65, 140 }, colors::white, r, estate);
 
-					facade<element::arrow> arrow("solid_triangle");
+					facade<element::arrow> arrow;// ("solid_triangle");
 					arrow.direction(::nana::direction::south);
 
+					r.x += 4;
 					r.y += (r.height / 2) - 7;
 					r.width = r.height = 16;
 					arrow.draw(*graph_, {}, colors::white, r, element_state::normal);
@@ -664,7 +672,6 @@ namespace nana
 
 			void trigger::mouse_down(graph_reference, const arg_mouse& arg)
 			{
-				//drawer_->set_mouse_press(true);
 				drawer_->set_button_state(element_state::pressed, false);
 				if(drawer_->widget_ptr()->enabled())
 				{
@@ -762,12 +769,14 @@ namespace nana
 				if (call_other_keys)
 					drawer_->editor()->respond_key(arg);
 
+				drawer_->editor()->try_refresh();
 				API::dev::lazy_refresh();
 			}
 
 			void trigger::key_char(graph_reference, const arg_keyboard& arg)
 			{
-				if (drawer_->editor()->respond_char(arg))
+				drawer_->editor()->respond_char(arg);
+				if (drawer_->editor()->try_refresh())
 					API::dev::lazy_refresh();
 			}
 			//end class trigger

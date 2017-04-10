@@ -672,6 +672,15 @@ namespace paint
 			}
 		}
 
+		void graphics::blend(const nana::rectangle& r, const ::nana::color& clr, double fade_rate)
+		{
+			if (impl_->handle)
+			{
+				nana::paint::detail::blend(impl_->handle, r, clr.px_color(), fade_rate);
+				if (impl_->changed == false) impl_->changed = true;
+			}
+		}
+
 		void graphics::blur(const nana::rectangle& r, std::size_t radius)
 		{
 			if(impl_->handle)
@@ -966,15 +975,6 @@ namespace paint
 		{
 			std::wstring wstr = ::nana::charset(std::string(str, str + len), ::nana::unicode::utf8);
 			return bidi_string(pos, wstr.data(), wstr.size());
-		}
-
-		void graphics::blend(const nana::rectangle& r, const ::nana::color& clr, double fade_rate)
-		{
-			if (impl_->handle)
-			{
-				nana::paint::detail::blend(impl_->handle, r, clr.px_color(), fade_rate);
-				if (impl_->changed == false) impl_->changed = true;
-			}
 		}
 
 		void graphics::set_pixel(int x, int y, const ::nana::color& clr)

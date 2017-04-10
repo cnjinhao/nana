@@ -3168,7 +3168,10 @@ namespace nana
 					if (column_r.x < r.right())
 					{
 						column_r.width = (r.right() - column_r.x);
-						graph.rectangle(column_r, true, essence_->scheme_ptr->header_bgcolor);
+						if(API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), column_r, graph, column_r.position()))
+							graph.blend(column_r, essence_->scheme_ptr->header_bgcolor, 0.8);
+						else
+							graph.rectangle(column_r, true, essence_->scheme_ptr->header_bgcolor);
 					}
 
 					const int y = r.bottom() - 1;
@@ -3229,7 +3232,15 @@ namespace nana
 					case item_state::floated:		bgcolor = essence_->scheme_ptr->header_floated.get_color();	break;
 					}
 
-					graph.gradual_rectangle(column_r, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.9), true);
+					if(API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), column_r, graph, column_r.position()))
+					{
+						paint::graphics grad_graph{column_r.dimension()};
+						grad_graph.gradual_rectangle(rectangle{column_r.dimension()}, bgcolor.blend(colors::white, 0.1), bgcolor.blend(colors::black, 0.1), true);
+
+						grad_graph.blend(rectangle{column_r.dimension()}, graph, column_r.position(), 0.3);
+					}
+					else
+						graph.gradual_rectangle(column_r, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.9), true);
 
 					paint::aligner text_aligner{ graph, column.alignment, column.alignment };
 
@@ -3329,23 +3340,28 @@ namespace nana
 					essence_->graph->palette(false, bgcolor);
 
 					auto const header_w = essence_->header.pixels();
+					auto const item_height_px = essence_->item_height();
 
 					auto origin = essence_->content_view->origin();
 					if (header_w < origin.x + rect.width)
-						essence_->graph->rectangle(rectangle{ point{ rect.x + static_cast<int>(header_w) - origin.x, rect.y },
-						size{ rect.width + origin.x - header_w, rect.height } }, true);
+					{
+						rectangle r{ point{ rect.x + static_cast<int>(header_w)-origin.x, rect.y },
+							size{ rect.width + origin.x - header_w, rect.height } };
+						
+						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), r, *essence_->graph, r.position()))
+							essence_->graph->rectangle(r, true);
+					}
 
 					es_lister & lister = essence_->lister;
 
 					auto & ptr_where = essence_->pointer_where;
 
-					int item_top = rect.y - (origin.y % essence_->item_height());
+					int item_top = rect.y - (origin.y % item_height_px);
 					auto first_disp = essence_->first_display();
 
 					// The first display is empty when the listbox is empty.
 					if (!first_disp.empty())
 					{
-
 						index_pair hoverred_pos(npos, npos);	//the hoverred item.
 
 						//if where == lister || where == checker, 'second' indicates the offset to the  relative display-order pos of the scroll offset_y which stands for the first item to be displayed in lister.
@@ -3397,7 +3413,7 @@ namespace nana
 									(hoverred_pos == idx ? item_state::highlighted : item_state::normal)
 								);
 
-								item_top += essence_->item_height();
+								item_top += item_height_px;
 							}
 
 							++i_categ;
@@ -3414,7 +3430,7 @@ namespace nana
 							_m_draw_categ(*i_categ, rect.x - origin.x, item_top, txtoff, header_w, rect, bgcolor, 
 									(hoverred_pos.is_category() && (idx.cat == hoverred_pos.cat) ? item_state::highlighted : item_state::normal)
 								);
-							item_top += essence_->item_height();
+							item_top += item_height_px;
 
 							if (false == i_categ->expand)
 								continue;
@@ -3431,7 +3447,7 @@ namespace nana
 									(idx == hoverred_pos ? item_state::highlighted : item_state::normal)
 								);
 
-								item_top += essence_->item_height();
+								item_top += item_height_px;
 								if (item_top >= rect.bottom())
 									break;
 
@@ -3443,7 +3459,11 @@ namespace nana
 					}
 
 					if (item_top < rect.bottom())
-						essence_->graph->rectangle(rectangle{ rect.x, item_top, rect.width, static_cast<unsigned>(rect.bottom() - item_top) }, true, bgcolor);
+					{
+						rectangle bground_r{ rect.x, item_top, rect.width, static_cast<unsigned>(rect.bottom() - item_top) };
+						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), bground_r, *essence_->graph, bground_r.position()))
+							essence_->graph->rectangle(bground_r, true, bgcolor);
+					}
 
 					//Draw mouse selection
 					//Check if the mouse selection box is present.
@@ -3459,26 +3479,24 @@ namespace nana
 						};
 
 						paint::graphics box_graph{ box_size };
-						box_graph.rectangle(true, essence_->scheme_ptr->selection_box.get_color().blend(colors::white, 0.6));
+						box_graph.rectangle(true, essence_->scheme_ptr->selection_box.get_color().blend(colors::white, 0.4));
 						box_graph.rectangle(false, essence_->scheme_ptr->selection_box.get_color());
 
 						box_graph.blend(rectangle{ box_size }, *essence_->graph, essence_->coordinate_cast(box_position, false), 0.5);
 					}
 				}
 			private:
-				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::color bgcolor, item_state state) const
+				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::color bgcolor, item_state state)
 				{
-					const bool sel = categ.selected();
-					if (sel && (categ.expand == false))
-						bgcolor = static_cast<color_rgb>(0xD5EFFC);
-
-					if (state == item_state::highlighted)
-						bgcolor = bgcolor.blend(static_cast<color_rgb>(0x99defd), 0.8);
-
 					const auto item_height = essence_->item_height();
 
+					rectangle bground_r{ x, y, width, item_height };
 					auto graph = essence_->graph;
-					graph->rectangle(rectangle{ x, y, width, item_height }, true, bgcolor);
+
+					item_data item;
+					item.flags.selected = categ.selected();
+
+					this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
 					color txt_color{ static_cast<color_rgb>(0x3399) };
 
@@ -3506,8 +3524,51 @@ namespace nana
 					}
 
 					//Draw selecting inner rectangle
-					if (sel && (categ.expand == false))
+					if (item.flags.selected && (categ.expand == false))
 						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->content_view->origin().x));
+				}
+
+				color _m_draw_item_bground(const rectangle& bground_r, color bgcolor, color cell_color, item_state state, const item_data& item)
+				{
+					auto graph = essence_->graph;
+
+					auto const is_transparent = API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), bground_r, *graph, bground_r.position());
+
+					if (is_transparent)
+						bgcolor = color{};
+
+					if (item.flags.selected)
+					{
+						bgcolor = essence_->scheme_ptr->item_selected;
+
+						if (!cell_color.invisible())
+							bgcolor = bgcolor.blend(cell_color, 0.5);
+					}
+					else if (!cell_color.invisible())
+						bgcolor = cell_color;
+					else if (!item.bgcolor.invisible())
+						bgcolor = item.bgcolor;
+
+					if (item_state::highlighted == state)
+					{
+						if (item.flags.selected)
+							bgcolor = bgcolor.blend(colors::black, 0.9);
+						else
+							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.3);
+					}
+
+					if (is_transparent)
+					{
+						if(!bgcolor.invisible())
+							graph->blend(bground_r, bgcolor, 0.2);
+					}
+					else
+					{
+						graph->rectangle(bground_r, true, bgcolor);
+
+					}
+
+					return bgcolor;
 				}
 
 				/// Draws an item
@@ -3534,28 +3595,16 @@ namespace nana
 
 					auto & cells = (cat.model_ptr ? model_cells : *item.cells);
 
-					if (item.flags.selected)                                    // fetch the "def" colors
-						bgcolor = essence_->scheme_ptr->item_selected;
-					else if (!item.bgcolor.invisible())
-						bgcolor = item.bgcolor;
-
 					if(!item.fgcolor.invisible())
 						fgcolor = item.fgcolor;
-
-					if (item_state::highlighted == state)                          // and blend it if "highlighted"
-					{
-						if (item.flags.selected)
-							bgcolor = bgcolor.blend(colors::black, 0.98);           // or "selected"
-						else
-							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);/// \todo create a parametre for amount of blend
-					}
 
 					const unsigned show_w = (std::min)(content_r.width, width - essence_->content_view->origin().x);
 
 					auto graph = essence_->graph;
 
 					//draw the background for the whole item
-					graph->rectangle(rectangle{ content_r.x, y, show_w, essence_->item_height() }, true, bgcolor);
+					rectangle bground_r{ content_r.x, y, show_w, essence_->item_height() };
+					auto const state_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
 					int column_x = x;
 
@@ -3563,7 +3612,6 @@ namespace nana
 					{
 						const auto column_pos = seqs[display_order];
 						const auto & col = essence_->header.at(column_pos);     // deduce the corresponding header which is in a kind of dislay order
-						auto it_bgcolor = bgcolor;
 
 						if (col.width_px > essence_->scheme_ptr->text_margin)
 						{
@@ -3664,7 +3712,8 @@ namespace nana
 								}
 							}
 
-							auto cell_txtcolor = fgcolor;
+							auto col_bgcolor = bgcolor;
+							auto col_fgcolor = fgcolor;
 
 							if (cells.size() > column_pos)        // process only if the cell is visible
 							{
@@ -3673,24 +3722,13 @@ namespace nana
 
 								if (m_cell.custom_format)  // adapt to costum format if need
 								{
-									if (!item.bgcolor.invisible())
-										cell_txtcolor = m_cell.custom_format->bgcolor;
-									
-									if (item.flags.selected)                                    // fetch the "def" colors
-										it_bgcolor = essence_->scheme_ptr->item_selected;
+									col_fgcolor = m_cell.custom_format->fgcolor;
 
-									cell_txtcolor = m_cell.custom_format->fgcolor;
-
-									if (item_state::highlighted == state)                          // and blend it if "highlighted"
-									{
-									if (item.flags.selected)
-											it_bgcolor = it_bgcolor.blend(colors::black, 0.98);           // or "selected"
-										else
-											it_bgcolor = it_bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);   /// \todo create a parametre for amount of blend
-									}
-
-									graph->rectangle(rectangle{ column_x, y, col.width_px, essence_->item_height() }, true, it_bgcolor);
+									bground_r = rectangle{ column_x, y, col.width_px, essence_->item_height() };
+									col_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, m_cell.custom_format->bgcolor, state, item);
 								}
+								else
+									col_bgcolor = state_bgcolor;
 
 								if (draw_column)
 								{
@@ -3702,7 +3740,7 @@ namespace nana
 									else if (align::right == col.alignment)
 										text_margin_right = essence_->scheme_ptr->text_margin;
 
-									graph->palette(true, cell_txtcolor);
+									graph->palette(true, col_fgcolor);
 									text_aligner.draw(m_cell.text, { column_x + content_pos, y + txtoff }, col.width_px - content_pos - text_margin_right);
 								}
 							}
@@ -3710,7 +3748,7 @@ namespace nana
 							if (0 == display_order)
 							{
 								if (essence_->checkable)
-									crook_renderer_.draw(*graph, it_bgcolor, cell_txtcolor, essence_->checkarea(column_x, y), estate);
+									crook_renderer_.draw(*graph, col_bgcolor, col_fgcolor, essence_->checkarea(column_x, y), estate);
 								if (item.img)
 									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 							}
@@ -4195,16 +4233,6 @@ namespace nana
 						{
                             bool do_expand = (lister.expand(item_pos.cat) == false);
                             lister.expand(item_pos.cat, do_expand);
-
-                            if(false == do_expand)
-                            {
-								auto last = lister.advance(lister.last(), -static_cast<int>(essence_->count_of_exposed(false)));
-								if (!last.empty())
-								{
-									auto px = lister.distance(lister.first(), last) * essence_->item_height();
-									essence_->content_view->change_position(static_cast<int>(px), true, false);
-								}
-							}
 
 							essence_->calc_content_size(false);
 							essence_->content_view->sync(false);
@@ -4727,20 +4755,6 @@ namespace nana
 					return to_utf8(cat_->text);
 				}
 
-				bool assign_colors_for_last(essence* ess, category_t* cat)
-				{
-					auto wd = ess->lister.wd_ptr();
-					if (wd && !API::empty_window(wd->handle()))
-					{
-						auto & m = cat->items.back();
-						m.bgcolor = wd->bgcolor();
-						m.fgcolor = wd->fgcolor();
-
-						return true;
-					}
-					return false;
-				}
-
 				void cat_proxy::push_back(std::string s)
 				{
 					internal_scope_guard lock;
@@ -4766,8 +4780,7 @@ namespace nana
 					else
 						cat_->items.emplace_back(std::move(s));
 
-					if (assign_colors_for_last(ess_, cat_))
-						ess_->update();
+					ess_->update();
 				}
 
 				//Behavior of a container
@@ -4947,8 +4960,6 @@ namespace nana
 					}
 
 					cat_->sorted.push_back(cat_->items.size() - 1);
-
-					assign_colors_for_last(ess_, cat_);
 				}
 
 				void cat_proxy::_m_try_append_model(const const_virtual_pointer& dptr)
@@ -4964,7 +4975,6 @@ namespace nana
 
 					cat_->sorted.push_back(cat_->items.size());
 					cat_->items.emplace_back();
-					assign_colors_for_last(ess_, cat_);
 				}
 
 				void cat_proxy::_m_cat_by_pos() noexcept

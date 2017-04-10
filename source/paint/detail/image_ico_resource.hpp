@@ -36,11 +36,13 @@ namespace nana{	namespace paint
 				::SHGetFileInfo(filename.c_str(), 0, &sfi, sizeof sfi, SHGFI_ICON);
 
 				native_handle_ = sfi.hIcon;
+#else
+				static_cast<void>(filename);	//eliminate unused parameter compiler warnings
 #endif
 				return (nullptr != native_handle_);
 			}
 
-			bool open(const void* data, std::size_t bytes) override
+			bool open(const void* /*data*/, std::size_t /*bytes*/) override
 			{
 				return false;
 			}
@@ -92,6 +94,7 @@ namespace nana{	namespace paint
 				::DrawIconEx(graph.handle()->context, p_dst.x, p_dst.y, reinterpret_cast<HICON>(native_handle_), src_r.width, src_r.height, 0, 0, DI_NORMAL);
 #else
 				static_cast<void>(src_r);	//eliminate unused parameter compiler warning.
+				static_cast<void>(graph);
 				static_cast<void>(p_dst);
 #endif
 
@@ -105,7 +108,8 @@ namespace nana{	namespace paint
 #if defined(NANA_WINDOWS)
 				::DrawIconEx(graph.handle()->context, r.x, r.y, reinterpret_cast<HICON>(native_handle_), r.width, r.height, 0, 0, DI_NORMAL);
 #else
-				static_cast<void>(r); //eliminate unused parameter compiler warning.
+				static_cast<void>(graph);	//eliminate unused parameter compiler warning.
+				static_cast<void>(r);
 #endif			
 			}
 

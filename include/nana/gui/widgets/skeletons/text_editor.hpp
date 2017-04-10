@@ -139,7 +139,7 @@ namespace nana{	namespace widgets
 			void clear_undo();	///< same with undo_max_steps(0)
 
 			unsigned line_height() const;
-			unsigned screen_lines() const;
+			unsigned screen_lines(bool completed_line = false) const;
 
 			bool getline(std::size_t pos, ::std::wstring&) const;
 			void text(std::wstring, bool end_caret);
@@ -153,7 +153,7 @@ namespace nana{	namespace widgets
 			bool move_caret(const upoint& pos, bool reset = false);
 			void move_caret_end(bool update);
 			void reset_caret_pixels() const;
-			void reset_caret();
+			void reset_caret(bool stay_in_view = false);
 			void show_caret(bool isshow);
 
 			bool selected() const;
@@ -204,10 +204,12 @@ namespace nana{	namespace widgets
 			bool focus_changed(const arg_focus&);
 			bool mouse_enter(bool entering);
 			bool mouse_move(bool left_button, const point& screen_pos);
-			bool mouse_pressed(const arg_mouse& arg);
+			void mouse_pressed(const arg_mouse& arg);
 
 			skeletons::textbase<char_type>& textbase();
 			const skeletons::textbase<char_type>& textbase() const;
+
+			bool try_refresh();
 		private:
 			std::vector<upoint> _m_render_text(const ::nana::color& text_color);
 			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
@@ -223,7 +225,7 @@ namespace nana{	namespace widgets
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
 
-			void _m_reset_content_size();
+			void _m_reset_content_size(bool calc_lines = false);
 			void _m_reset();
 			::nana::upoint _m_put(::std::wstring);
 			::nana::upoint _m_erase_select();
@@ -258,6 +260,7 @@ namespace nana{	namespace widgets
 			unsigned _m_pixels_by_char(const ::std::wstring&, ::std::size_t pos) const;
 			void _m_handle_move_key(const arg_keyboard& arg);
 
+			unsigned _m_width_px(bool exclude_vs) const;
 			void _m_draw_border();
 		private:
 			struct implementation;

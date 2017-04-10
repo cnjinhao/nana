@@ -73,8 +73,8 @@ namespace nana
 				typedef compset_interface::comp_attribute_t comp_attribute_t;
 
 				virtual ~renderer_interface() = default;
-				virtual void set_color(const nana::color& bgcolor, const nana::color& fgcolor) = 0;
 
+				virtual void begin_paint(::nana::widget&) = 0;
 				virtual void bground(graph_reference, const compset_interface *) const = 0;
 				virtual void expander(graph_reference, const compset_interface *) const = 0;
 				virtual void crook(graph_reference, const compset_interface *) const = 0;

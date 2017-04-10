@@ -54,6 +54,8 @@ namespace API
 	effects::edge_nimbus effects_edge_nimbus(window);
 
 	void effects_bground(window, const effects::bground_factory_interface&, double fade_rate);
+	void effects_bground(std::initializer_list<window> wdgs, const effects::bground_factory_interface&, double fade_rate);
+
 	bground_mode effects_bground_mode(window);
 	void effects_bground_remove(window);
 
@@ -95,6 +97,9 @@ namespace API
 		void set_menubar(window wd, bool attach);
 
 		void enable_space_click(window, bool enable);
+
+		bool copy_transparent_background(window, paint::graphics&);
+		bool copy_transparent_background(window, const rectangle& src_r, paint::graphics&, const point& dst_pt);
 
 		/// Refreshs a widget surface
 		/*
@@ -194,6 +199,8 @@ namespace API
 	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
 	bool is_destroying(window);		///< Determines whether a window is destroying
 	void enable_dropfiles(window, bool);
+
+	bool is_transparent_background(window);
 
     /// \brief Retrieves the native window of a Nana.GUI window.
     ///

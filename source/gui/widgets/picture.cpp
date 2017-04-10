@@ -194,9 +194,9 @@ namespace nana
 			{
 				auto graph = impl_->graph_ptr;
 
-				if (graph && (bground_mode::basic != API::effects_bground_mode(*impl_->wdg_ptr)))
+				if (graph && (!API::dev::copy_transparent_background(*impl_->wdg_ptr, *graph)))
 				{
-					if (w < graph->size().width || h < graph->size().height /*  .width   ???  */ || impl_->backimg.image.alpha())
+					if (w < graph->size().width || h < graph->size().height || impl_->backimg.image.alpha())
 					{
 						auto & bground = impl_->gradual_bground;
 						if (bground.gradual_from.invisible() || bground.gradual_to.invisible())
@@ -320,7 +320,7 @@ namespace nana
 
 		bool picture::transparent() const
 		{
-			return (bground_mode::basic == API::effects_bground_mode(*this));
+			return API::is_transparent_background(*this);
 		}
 	//end class picture
 }//end namespace nana

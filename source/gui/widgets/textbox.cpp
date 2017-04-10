@@ -103,22 +103,22 @@ namespace drawerbase {
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 		{
-			if (editor_->mouse_pressed(arg))
-			{
-				editor_->render(true);
+			editor_->mouse_pressed(arg);
+			if(editor_->try_refresh())
 				API::dev::lazy_refresh();
-			}
 		}
 
 		void drawer::mouse_move(graph_reference, const arg_mouse& arg)
 		{
-			if(editor_->mouse_move(arg.left_button, arg.pos))
+			editor_->mouse_move(arg.left_button, arg.pos);
+			if(editor_->try_refresh())
 				API::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_up(graph_reference, const arg_mouse& arg)
 		{
-			if(editor_->mouse_pressed(arg))
+			editor_->mouse_pressed(arg);
+			if(editor_->try_refresh())
 				API::dev::lazy_refresh();
 		}
 
@@ -145,16 +145,16 @@ namespace drawerbase {
 
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
 		{
-			if(editor_->respond_key(arg))
-			{
-				editor_->reset_caret();
+			editor_->respond_key(arg);
+			editor_->reset_caret(true);
+			if(editor_->try_refresh())
 				API::dev::lazy_refresh();
-			}
 		}
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
-			if (editor_->respond_char(arg))
+			editor_->respond_char(arg);
+			if(editor_->try_refresh())
 				API::dev::lazy_refresh();
 		}
 
@@ -163,6 +163,10 @@ namespace drawerbase {
 			_m_text_area(arg.width, arg.height);
 			refresh(graph);
 			editor_->reset_caret();
+
+			if (!editor_->try_refresh())
+				refresh(graph);
+
 			API::dev::lazy_refresh();
 		}
 
@@ -225,7 +229,10 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor && editor->load(file.data()))
-				API::update_window(handle());
+			{
+				if (editor->try_refresh())
+					API::update_window(handle());
+			}
 		}
 
 		void textbox::store(std::string file)
@@ -267,7 +274,9 @@ namespace drawerbase {
 					editor->move_caret_end(true);
 
 				editor->textbase().reset();
-				API::update_window(this->handle());
+
+				if (editor->try_refresh())
+					API::update_window(this->handle());
 			}
 			return *this;
 		}
@@ -383,6 +392,8 @@ namespace drawerbase {
 					editor->move_caret_end(false);
 
 				editor->put(to_wstring(text));
+
+				editor->try_refresh();
 				API::update_window(this->handle());
 			}
 			return *this;
@@ -399,8 +410,11 @@ namespace drawerbase {
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if (editor->line_wrapped(autl))
+			if (editor && editor->line_wrapped(autl))
+			{
+				editor->try_refresh();
 				API::update_window(handle());
+			}
 
 			return *this;
 		}
@@ -420,6 +434,8 @@ namespace drawerbase {
 			{
 				auto wd = handle();
 				API::eat_tabstop(wd, ml);	//textbox handles the Tab pressing when it is multi-line.
+
+				editor->try_refresh();
 				API::update_window(wd);
 			}
 			return *this;
@@ -495,7 +511,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if(editor && editor->select(yes))
-				API::update_window(*this);
+				API::refresh_window(*this);
 		}
 
 		std::pair<upoint, upoint> textbox::selection() const
@@ -525,7 +541,8 @@ namespace drawerbase {
 			if(editor)
 			{
 				editor->paste();
-				API::update_window(*this);
+				if (editor->try_refresh())
+					API::update_window(*this);
 			}
 		}
 
@@ -578,7 +595,10 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
+			{
 				editor->set_highlight(name, fgcolor, bgcolor);
+				API::refresh_window(handle());
+			}
 		}
 
 		void textbox::erase_highlight(const std::string& name)
@@ -586,7 +606,10 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
+			{
 				editor->erase_highlight(name);
+				API::refresh_window(handle());
+			}
 		}
 
 		void textbox::set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::wstring> kw_list)
@@ -597,6 +620,7 @@ namespace drawerbase {
 			{
 				for (auto & kw : kw_list)
 					editor->set_keyword(kw, name, case_sensitive, whole_word_match);
+				API::refresh_window(handle());
 			}
 		}
 
@@ -608,6 +632,7 @@ namespace drawerbase {
 			{
 				for (auto & kw : kw_list_utf8)
 					editor->set_keyword(::nana::charset(kw, ::nana::unicode::utf8), name, case_sensitive, whole_word_match);
+				API::refresh_window(handle());
 			}
 		}
 
@@ -616,7 +641,10 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
+			{
 				editor->erase_keyword(to_wstring(kw));
+				API::refresh_window(handle());
+			}
 		}
 
 		textbox& textbox::text_align(::nana::align alignment)
@@ -626,7 +654,7 @@ namespace drawerbase {
 			if (editor)
 			{
 				editor->text_align(alignment);
-				API::update_window(this->handle());
+				API::refresh_window(handle());
 			}
 
 			return *this;

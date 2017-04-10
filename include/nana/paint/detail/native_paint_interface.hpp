@@ -30,7 +30,8 @@ namespace detail
 	nana::pixel_color_t fade_color_intermedia(pixel_color_t fgcolor, const unsigned char* fade_table);
 	nana::pixel_color_t fade_color_by_intermedia(pixel_color_t bgcolor, nana::pixel_color_t fgcolor_intermedia, const unsigned char* const fade_table);
 
-	void blend(drawable_type dw, const nana::rectangle& r, pixel_color_t, double fade_rate);
+	//dw color = dw color * fade_rate + bdcolor * (1 - fade_rate)
+	void blend(drawable_type dw, const nana::rectangle& r, pixel_color_t bdcolor, double fade_rate);
 
 	nana::size raw_text_extent_size(drawable_type, const wchar_t*, std::size_t len);
 	nana::size text_extent_size(drawable_type, const wchar_t*, std::size_t len);

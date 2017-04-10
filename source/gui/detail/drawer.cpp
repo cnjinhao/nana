@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -297,9 +297,8 @@ namespace nana
 			if (data_impl_->realizer && !data_impl_->refreshing)
 			{
 				data_impl_->refreshing = true;
-				_m_effect_bground(true);
 				data_impl_->realizer->refresh(graphics);
-				_m_effect_bground(false);
+				_m_effect_bground_subsequent();
 				graphics.flush();
 				data_impl_->refreshing = false;
 			}
@@ -372,27 +371,20 @@ namespace nana
 			}
 		}
 
-		void drawer::_m_effect_bground(bool before)
+		void drawer::_m_effect_bground_subsequent()
 		{
+			auto & effect = data_impl_->window_handle->effect;
+
 			for (auto * dw : data_impl_->draws)
 				dw->draw(graphics);
 
-			auto & effect = data_impl_->window_handle->effect;
+
 			if (effect.bground)
 			{
-				if (before)
-				{
-					if (effect.bground_fade_rate < 0.01)
-						data_impl_->window_handle->other.glass_buffer.paste(graphics, 0, 0);
-				}
-				else if (effect.bground_fade_rate >= 0.01)
+				if (effect.bground_fade_rate >= 0.01)
 					data_impl_->window_handle->other.glass_buffer.blend(::nana::rectangle{ data_impl_->window_handle->other.glass_buffer.size() }, graphics, nana::point(), effect.bground_fade_rate);
 			}
-		}
-
-		bool drawer::_m_lazy_decleared() const
-		{
-			return (basic_window::update_state::refreshed == data_impl_->window_handle->other.upd_state);
+			
 		}
 
 		drawer::method_state& drawer::_m_mth_state(int pos)

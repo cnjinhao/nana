@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -100,18 +100,23 @@ namespace detail
 
 	void blend(drawable_type dw, const rectangle& area, pixel_color_t color, double fade_rate)
 	{
-		if (fade_rate <= 0) return;
-		if (fade_rate > 1) fade_rate = 1;
+		if (fade_rate < 0)
+			fade_rate = 0;
+		else if (fade_rate >= 1)
+			return;
 
 		rectangle r;
 		if (false == ::nana::overlap(rectangle{ drawable_size(dw) }, area, r))
 			return;
 
-		unsigned red = static_cast<unsigned>((color.value & 0xFF0000) * fade_rate);
-		unsigned green = static_cast<unsigned>((color.value & 0xFF00) * fade_rate);
-		unsigned blue = static_cast<unsigned>((color.value & 0xFF) * fade_rate);
+		auto const color_fd_rate = (double(color.element.alpha_channel) / 255.0) * (1 - fade_rate);
 
-		double lrate = 1 - fade_rate;
+		fade_rate = (1 - color_fd_rate);
+
+		unsigned red = static_cast<unsigned>((color.value & 0xFF0000) * color_fd_rate);
+		unsigned green = static_cast<unsigned>((color.value & 0xFF00) * color_fd_rate);
+		unsigned blue = static_cast<unsigned>((color.value & 0xFF) * color_fd_rate);
+
 		pixel_buffer pixbuf(dw, r.y, r.height);
 
 		for (std::size_t row = 0; row < r.height; ++row)
@@ -120,9 +125,9 @@ namespace detail
 			const auto end = i + r.width;
 			for (; i < end; ++i)
 			{
-				unsigned px_r = ((static_cast<unsigned>((i->value & 0xFF0000) * lrate) + red) & 0xFF0000);
-				unsigned px_g = ((static_cast<unsigned>((i->value & 0xFF00) * lrate) + green) & 0xFF00);
-				unsigned px_b = ((static_cast<unsigned>((i->value & 0xFF) * lrate) + blue) & 0xFF);
+				unsigned px_r = ((static_cast<unsigned>((i->value & 0xFF0000) * fade_rate) + red) & 0xFF0000);
+				unsigned px_g = ((static_cast<unsigned>((i->value & 0xFF00) * fade_rate) + green) & 0xFF00);
+				unsigned px_b = ((static_cast<unsigned>((i->value & 0xFF) * fade_rate) + blue) & 0xFF);
 				i->value = (px_r | px_g | px_b);
 			}
 		}
