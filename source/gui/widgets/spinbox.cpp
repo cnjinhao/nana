@@ -54,6 +54,11 @@ namespace nana
 					: begin_{ vbegin }, last_{ vlast }, step_{ step }, value_{ vbegin }
 				{}
 
+				std::pair<T, T> range() const
+				{
+					return std::make_pair(begin_, last_);
+				}
+
 				std::string value() const override
 				{
 					return std::to_string(value_);
@@ -139,19 +144,14 @@ namespace nana
 				: public range_interface
 			{
 			public:
-				range_text(std::initializer_list<std::string> & initlist)
-					: texts_(initlist)
+				range_text(std::vector<std::string>&& texts):
+					texts_(std::move(texts))
 				{
-					for (auto & s : initlist)
-					{
-						texts_.emplace_back(std::string{ s });
-					}
 				}
 
-				range_text(std::initializer_list<std::wstring>& initlist)
+				const std::vector<std::string>& range() const
 				{
-					for (auto & s : initlist)
-						texts_.emplace_back(to_utf8(s));
+					return texts_;
 				}
 
 				std::string value() const override
@@ -316,6 +316,11 @@ namespace nana
 					range_.swap(ptr);
 
 					reset_text();
+				}
+
+				const range_interface* range() const
+				{
+					return range_.get();
 				}
 
 				void modifier(std::string&& prefix, std::string&& suffix)
@@ -637,18 +642,38 @@ namespace nana
 		API::refresh_window(handle());
 	}
 
-	void spinbox::range(std::initializer_list<std::string> steps_utf8)
+	void spinbox::range(std::vector<std::string> values)
 	{
 		using namespace drawerbase::spinbox;
-		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(steps_utf8)));
+		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(std::move(values))));
 		API::refresh_window(handle());
 	}
 
-	void spinbox::range(std::initializer_list<std::wstring> steps)
+	std::vector<std::string> spinbox::range_string() const
 	{
-		using namespace drawerbase::spinbox;
-		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(steps)));
-		API::refresh_window(handle());
+		auto range = dynamic_cast<const drawerbase::spinbox::range_text*>(get_drawer_trigger().impl()->range());
+		if (nullptr == range)
+			throw std::runtime_error("the type of spinbox range is not string");
+
+		return range->range();
+	}
+
+	std::pair<int, int> spinbox::range_int() const
+	{
+		auto range = dynamic_cast<const drawerbase::spinbox::range_numeric<int>*>(get_drawer_trigger().impl()->range());
+		if (nullptr == range)
+			throw std::runtime_error("the type of spinbox range is not integer");
+
+		return range->range();
+	}
+
+	std::pair<double, double> spinbox::range_double() const
+	{
+		auto range = dynamic_cast<const drawerbase::spinbox::range_numeric<double>*>(get_drawer_trigger().impl()->range());
+		if (nullptr == range)
+			throw std::runtime_error("the type of spinbox range is not double");
+
+		return range->range();
 	}
 
 	::std::string spinbox::value() const
