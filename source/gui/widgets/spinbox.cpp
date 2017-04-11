@@ -25,25 +25,6 @@ namespace nana
 	{
 		namespace spinbox
 		{
-
-			class event_agent
-				: public widgets::skeletons::textbase_event_agent_interface
-			{
-			public:
-				event_agent(::nana::spinbox& wdg)
-					: widget_(wdg)
-				{}
-
-				void first_change() override{}	//empty, because spinbox does not have this event.
-
-				void text_changed() override
-				{
-					widget_.events().text_changed.emit(::nana::arg_spinbox{ widget_ }, widget_.handle());
-				}
-			private:
-				::nana::spinbox & widget_;
-			};
-
 			enum class buttons
 			{
 				none, increase, decrease
@@ -73,6 +54,11 @@ namespace nana
 					: begin_{ vbegin }, last_{ vlast }, step_{ step }, value_{ vbegin }
 				{}
 
+				std::pair<T, T> range() const
+				{
+					return std::make_pair(begin_, last_);
+				}
+
 				std::string value() const override
 				{
 					return std::to_string(value_);
@@ -85,7 +71,8 @@ namespace nana
 
 					T v;
 					ss >> v;
-					if (v < begin_ || last_ < v)
+
+					if (ss.fail() || v < begin_ || last_ < v)
 						return false;
 
 					diff = (value_ != v);
@@ -157,19 +144,14 @@ namespace nana
 				: public range_interface
 			{
 			public:
-				range_text(std::initializer_list<std::string> & initlist)
-					: texts_(initlist)
+				range_text(std::vector<std::string>&& texts):
+					texts_(std::move(texts))
 				{
-					for (auto & s : initlist)
-					{
-						texts_.emplace_back(std::string{ s });
-					}
 				}
 
-				range_text(std::initializer_list<std::wstring>& initlist)
+				const std::vector<std::string>& range() const
 				{
-					for (auto & s : initlist)
-						texts_.emplace_back(to_utf8(s));
+					return texts_;
 				}
 
 				std::string value() const override
@@ -229,6 +211,29 @@ namespace nana
 
 			class implementation
 			{
+				class event_agent
+					: public widgets::skeletons::textbase_event_agent_interface
+				{
+				public:
+					event_agent(implementation* impl)
+						: impl_(impl)
+					{}
+
+					void first_change() override {}	//empty, because spinbox does not have this event.
+
+					void text_changed() override
+					{
+						auto wdg = static_cast<nana::spinbox*>(API::get_widget(impl_->editor_->window_handle()));
+
+						if (!impl_->value(to_utf8(impl_->editor_->text()), false))
+							API::refresh_window(wdg->handle());
+
+						wdg->events().text_changed.emit(*wdg, wdg->handle());
+					}
+				private:
+					implementation* const impl_;
+				};
+
 			public:
 				implementation()
 				{
@@ -269,7 +274,7 @@ namespace nana
 						return range_->check_value(to_utf8(str));
 					});
 
-					evt_agent_.reset(new event_agent(static_cast<nana::spinbox&>(wdg)));
+					evt_agent_.reset(new event_agent{this});
 					editor_->textbase().set_event_agent(evt_agent_.get());
 
 					if (!range_)
@@ -311,6 +316,11 @@ namespace nana
 					range_.swap(ptr);
 
 					reset_text();
+				}
+
+				const range_interface* range() const
+				{
+					return range_.get();
 				}
 
 				void modifier(std::string&& prefix, std::string&& suffix)
@@ -423,10 +433,15 @@ namespace nana
 					if (!editor_)
 						return;
 
+					std::wstring text;
+
 					if (API::is_focus_ready(editor_->window_handle()))
-						editor_->text(to_wstring(range_->value()), false);
+						text = to_wstring(range_->value());
 					else
-						editor_->text(to_wstring(modifier_.prefix + range_->value() + modifier_.suffix), false);
+						text = to_wstring(modifier_.prefix + range_->value() + modifier_.suffix);
+
+					if (editor_->text() != text)
+						editor_->text(text, false);
 
 					_m_draw_spins(spin_stated_);
 				}
@@ -574,12 +589,7 @@ namespace nana
 			{
 				impl_->editor()->respond_char(arg);
 				if (impl_->editor()->try_refresh())
-				{
-					impl_->value(to_utf8(impl_->editor()->text()), false);
-					impl_->draw_spins();
-
 					API::dev::lazy_refresh();
-				}
 			}
 
 			void drawer::resized(graph_reference, const arg_resized&)
@@ -633,18 +643,38 @@ namespace nana
 		API::refresh_window(handle());
 	}
 
-	void spinbox::range(std::initializer_list<std::string> steps_utf8)
+	void spinbox::range(std::vector<std::string> values)
 	{
 		using namespace drawerbase::spinbox;
-		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(steps_utf8)));
+		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(std::move(values))));
 		API::refresh_window(handle());
 	}
 
-	void spinbox::range(std::initializer_list<std::wstring> steps)
+	std::vector<std::string> spinbox::range_string() const
 	{
-		using namespace drawerbase::spinbox;
-		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(steps)));
-		API::refresh_window(handle());
+		auto range = dynamic_cast<const drawerbase::spinbox::range_text*>(get_drawer_trigger().impl()->range());
+		if (nullptr == range)
+			throw std::runtime_error("the type of spinbox range is not string");
+
+		return range->range();
+	}
+
+	std::pair<int, int> spinbox::range_int() const
+	{
+		auto range = dynamic_cast<const drawerbase::spinbox::range_numeric<int>*>(get_drawer_trigger().impl()->range());
+		if (nullptr == range)
+			throw std::runtime_error("the type of spinbox range is not integer");
+
+		return range->range();
+	}
+
+	std::pair<double, double> spinbox::range_double() const
+	{
+		auto range = dynamic_cast<const drawerbase::spinbox::range_numeric<double>*>(get_drawer_trigger().impl()->range());
+		if (nullptr == range)
+			throw std::runtime_error("the type of spinbox range is not double");
+
+		return range->range();
 	}
 
 	::std::string spinbox::value() const

@@ -95,8 +95,11 @@ namespace nana
 		void range(double begin, double last, double step);
 
 		/// Sets the string spin values.
-		void range(std::initializer_list<std::string> values_utf8);
-		void range(std::initializer_list<std::wstring> values);
+		void range(std::vector<std::string> values_utf8);
+
+		std::vector<std::string> range_string() const;
+		std::pair<int, int> range_int() const;
+		std::pair<double, double> range_double() const;
 
 		/// Gets the spined value
 		::std::string value() const;
