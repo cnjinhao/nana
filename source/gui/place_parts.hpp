@@ -29,16 +29,77 @@ namespace nana
 			virtual ~splitter_interface(){}
 		};
 
-		template<bool IsLite>
+		class drawer_splitter
+			: public drawer_trigger
+		{
+		public:
+			void set_renderer(const std::function<void(window, paint::graphics&, mouse_action)>& rd)
+			{
+				renderer_ = rd;
+			}
+		private:
+			void attached(widget_reference wdg, graph_reference) override
+			{
+				window_handle_ = wdg;
+			}
+
+			void refresh(graph_reference graph) override
+			{
+				API::dev::copy_transparent_background(window_handle_, graph);
+				if (renderer_)
+					renderer_(window_handle_, graph, API::mouse_action(window_handle_));
+			}
+
+			void mouse_enter(graph_reference graph, const arg_mouse&) override
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+
+			void mouse_move(graph_reference graph, const arg_mouse&) override
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+			
+			void mouse_leave(graph_reference graph, const arg_mouse&) override
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+
+			void mouse_down(graph_reference graph, const arg_mouse&)
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+
+			void mouse_up(graph_reference graph, const arg_mouse&)
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+		private:
+			window window_handle_{nullptr};
+			std::function<void(window, paint::graphics&, mouse_action)> renderer_;
+		};
+		
 		class splitter
-			: public widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, drawer_trigger>,
+			: public widget_object<category::widget_tag, drawer_splitter>,
 			public splitter_interface
 		{
+		public:
+			void set_renderer(const std::function<void(window, paint::graphics&, mouse_action)>& rd)
+			{
+				get_drawer_trigger().set_renderer(rd);
+			}
 		private:
 			void _m_complete_creation() override
 			{
 				this->caption("place-splitter");
-				widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, drawer_trigger>::_m_complete_creation();
+				widget_object<category::widget_tag, drawer_splitter>::_m_complete_creation();
+
+				API::effects_bground(*this, effects::bground_transparent(0), 0);
 			}
 		};
 

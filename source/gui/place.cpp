@@ -15,6 +15,7 @@
 #include <cfloat>
 #include <cmath>
 #include <map>
+#include <set>
 #include <algorithm>
 #include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
@@ -581,6 +582,9 @@ namespace nana
 		std::map<std::string, field_gather*> fields;
 		std::map<std::string, field_dock*> docks;
 		std::map<std::string, field_dock*> dock_factoris;
+
+		std::function<void(window, paint::graphics&, nana::mouse_action)> split_renderer;
+		std::set<div_splitter*> splitters;
 
 		//A temporary pointer used to refer to a specified div object which
 		//will be deleted in modification process.
@@ -1601,7 +1605,22 @@ namespace nana
 			impl_(impl),
 			init_weight_(init_weight)
 		{
+			impl->splitters.insert(this);
+			this->splitter_.set_renderer(impl_->split_renderer);
+
 			this->weight.assign(splitter_px);
+		}
+
+		~div_splitter()
+		{
+			impl_->splitters.erase(this);
+		}
+
+		void set_renderer(const std::function<void(window, paint::graphics&, mouse_action)> & fn, bool update)
+		{
+			this->splitter_.set_renderer(fn);
+			if (update && this->splitter_.handle())
+				API::refresh_window(this->splitter_);
 		}
 
 		void direction(bool horizontal) noexcept
@@ -1943,7 +1962,7 @@ namespace nana
 	private:
 		implement* const impl_;
 		nana::cursor	splitter_cursor_{nana::cursor::arrow};
-		place_parts::splitter<true>	splitter_;
+		place_parts::splitter	splitter_;
 		nana::point	begin_point_;
 		int			left_pos_, right_pos_;
 		unsigned	left_pixels_, right_pixels_;
@@ -2510,8 +2529,7 @@ namespace nana
 					}
 				}
 
-				for (auto & el : field.second->elements)
-					API::show_window(el.handle, is_show);
+				field.second->visible(is_show);
 			}
 		}
 	}
@@ -3007,6 +3025,14 @@ namespace nana
 	window place::window_handle() const
 	{
 		return impl_->window_handle;
+	}
+
+	void place::splitter_renderer(std::function<void(window, paint::graphics&, mouse_action)> fn)
+	{
+		impl_->split_renderer.swap(fn);
+
+		for (auto sp : impl_->splitters)
+			sp->set_renderer(impl_->split_renderer, true);
 	}
 
 	void place::div(const char* s)

@@ -22,6 +22,11 @@
 
 namespace nana
 {
+	namespace paint
+	{
+		class graphics;
+	}
+
 	class widget;
 	namespace detail
 	{
@@ -111,6 +116,8 @@ namespace nana
 		 */
 		void bind(window handle);
 		window window_handle() const;
+
+		void splitter_renderer(std::function<void(window, paint::graphics&, mouse_action)> fn);
         
 		void div(const char* s);			///< Divides the attached widget into fields.
 		const std::string& div() const noexcept;	///< Returns div-text that depends on fields status.
