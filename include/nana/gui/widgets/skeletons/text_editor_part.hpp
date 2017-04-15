@@ -40,6 +40,29 @@ namespace nana
 
 				virtual void text_exposed(const std::vector<upoint>&) = 0;
 			};
+
+			struct colored_area_type
+			{
+				const ::std::size_t begin;	///< The begin line position
+				::std::size_t count;		///< The number of lines
+
+				::nana::color bgcolor;
+				::nana::color fgcolor;
+			};
+
+			class colored_area_access_interface
+			{
+			public:
+				using colored_area_type = skeletons::colored_area_type;
+
+				virtual ~colored_area_access_interface();
+
+				virtual std::shared_ptr<colored_area_type> get(std::size_t line_pos) = 0;
+				virtual bool clear() = 0;
+				virtual bool remove(std::size_t line_pos) = 0;
+				virtual std::size_t size() const = 0;
+				virtual std::shared_ptr<colored_area_type> at(std::size_t index) = 0;
+			};
 		}
 	}
 }

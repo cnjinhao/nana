@@ -100,9 +100,12 @@ namespace nana
 		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
-		using text_focus_behavior = widgets::skeletons::text_focus_behavior;
+		using colored_area_type = widgets::skeletons::colored_area_type;
+		using colored_area_access_interface = widgets::skeletons::colored_area_access_interface;
 
+		using text_focus_behavior = widgets::skeletons::text_focus_behavior;
 		using text_positions = std::vector<upoint>;
+
 		/// The default constructor without creating the widget.
 		textbox();
 
@@ -133,6 +136,8 @@ namespace nana
 		void load(std::string file);
 		void store(std::string file);
 		void store(std::string file, nana::unicode encoding);
+
+		colored_area_access_interface* colored_area_access();
 
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.

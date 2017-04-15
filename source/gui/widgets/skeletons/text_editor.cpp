@@ -15,8 +15,6 @@
 #include <nana/gui/element.hpp>
 #include <nana/system/dataexch.hpp>
 #include <nana/unicode_bidi.hpp>
-
-
 #include <nana/gui/widgets/widget.hpp>
 #include "content_view.hpp"
 
@@ -395,6 +393,91 @@ namespace nana{	namespace widgets
 			lazy_refresh
 		};
 
+		colored_area_access_interface::~colored_area_access_interface(){}
+
+		class colored_area_access
+			: public colored_area_access_interface
+		{
+		public:
+			void set_window(window handle)
+			{
+				window_handle_ = handle;
+			}
+
+			std::shared_ptr<colored_area_type> find(std::size_t pos) const
+			{
+				for (auto i = colored_areas_.cbegin(); i != colored_areas_.cend(); ++i)
+				{
+					if (i->get()->begin <= pos && pos < i->get()->begin + i->get()->count)
+						return *i;
+					else if (i->get()->begin > pos)
+						break;
+				}
+				return{};
+			}
+		public:
+			//Overrides methods of colored_area_access_interface
+			std::shared_ptr<colored_area_type> get(std::size_t line_pos) override
+			{
+				auto i = colored_areas_.cbegin();
+				for (; i != colored_areas_.cend(); ++i)
+				{
+					auto & area = *(i->get());
+					if (area.begin <= line_pos && line_pos < area.begin + area.count)
+						return *i;
+
+					if (area.begin > line_pos)
+						break;
+				}
+
+				auto iter = colored_areas_.emplace(i, std::make_shared<colored_area_type>(colored_area_type{line_pos}));
+				auto & area = *(iter->get());
+				area.count = 1;
+				return *iter;
+			}
+
+			bool clear()
+			{
+				if (colored_areas_.empty())
+					return false;
+
+				colored_areas_.clear();
+				API::refresh_window(window_handle_);
+				return true;
+			}
+
+			bool remove(std::size_t pos) override
+			{
+				bool changed = false;
+				for (auto i = colored_areas_.cbegin(); i != colored_areas_.cend();)
+				{
+					if (i->get()->begin <= pos && pos < i->get()->begin + i->get()->count)
+					{
+						i = colored_areas_.erase(i);
+						changed = true;
+					}
+					else if (i->get()->begin > pos)
+						break;
+				}
+				if (changed)
+					API::refresh_window(window_handle_);
+
+				return changed;
+			}
+
+			std::size_t size() const override
+			{
+				return colored_areas_.size();
+			}
+
+			std::shared_ptr<colored_area_type> at(std::size_t index) override
+			{
+				return colored_areas_.at(index);
+			}
+		private:
+			window window_handle_;
+			std::vector<std::shared_ptr<colored_area_type>> colored_areas_;
+		};
 
 		struct text_editor::implementation
 		{
@@ -405,6 +488,8 @@ namespace nana{	namespace widgets
 			skeletons::textbase<wchar_t> textbase;
 
 			sync_graph try_refresh{ sync_graph::none };
+
+			colored_area_access colored_area;
 
 			struct inner_capacities
 			{
@@ -1201,6 +1286,11 @@ namespace nana{	namespace widgets
 					return;
 				}
 			}
+		}
+		
+		colored_area_access_interface& text_editor::colored_area()
+		{
+			return impl_->colored_area;
 		}
 
 		void text_editor::set_accept(std::function<bool(char_type)> pred)
@@ -2558,6 +2648,29 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
+		color text_editor::_m_draw_colored_area(paint::graphics& graph, std::size_t line_pos)
+		{
+			auto area = impl_->colored_area.find(line_pos);
+			if (area)
+			{
+				if (!area->bgcolor.invisible())
+				{
+					auto top = _m_caret_to_screen(upoint{ 0, static_cast<unsigned>(line_pos) }).y;
+
+					const unsigned pixels = line_height();
+					const rectangle area_r = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(pixels * impl_->capacities.behavior->take_lines(line_pos))};
+
+					if (API::is_transparent_background(this->window_))
+						graph.blend(area_r, area->bgcolor, 1);
+					else
+						graph.rectangle(area_r, true, area->bgcolor);
+				}
+
+				return area->fgcolor;
+			}
+			return{};
+		}
+
 		std::vector<upoint> text_editor::_m_render_text(const color& text_color)
 		{
 			std::vector<upoint> line_indexes;
@@ -2584,12 +2697,16 @@ namespace nana{	namespace widgets
 					if (row.first >= line_count)
 						break;
 
+					auto fgcolor = _m_draw_colored_area(graph_, row.first);
+					if (fgcolor.invisible())
+						fgcolor = text_color;
+
 					sections = behavior->line(row.first);
 					if (row.second < sections.size())
 					{
 						auto const & sct = sections[row.second];
 
-						_m_draw_string(top, text_color, str_pos, sct, true);
+						_m_draw_string(top, fgcolor, str_pos, sct, true);
 						line_indexes.emplace_back(str_pos);
 						++row.second;
 						if (row.second >= sections.size())
@@ -2817,8 +2934,14 @@ namespace nana{	namespace widgets
 
 				const unsigned pixels = line_height();
 				const rectangle update_area = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(pixels * secondary_count_before) };
+				
 				if (!API::dev::copy_transparent_background(window_, update_area, graph_, update_area.position()))
+				{
+					_m_draw_colored_area(graph_, pos);
 					graph_.rectangle(update_area, true, API::bgcolor(window_));
+				}
+				else
+					_m_draw_colored_area(graph_, pos);
 
 				auto fgcolor = API::fgcolor(window_);
 				auto text_ptr = textbase().getline(pos).c_str();
@@ -3407,7 +3530,6 @@ namespace nana{	namespace widgets
 
 			helper_pencil pencil(graph_, *this, parser);
 			
-
 			graph_.palette(true, clr);
 			graph_.palette(false, scheme_->selection.get_color());
 

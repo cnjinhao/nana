@@ -251,6 +251,15 @@ namespace drawerbase {
 				editor->textbase().store(std::move(file), true, encoding);
 		}
 
+		textbox::colored_area_access_interface* textbox::colored_area_access()
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return &editor->colored_area();
+
+			return nullptr;
+		}
+
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
 		textbox& textbox::indention(bool enb, std::function<std::string()> generator)

@@ -90,6 +90,8 @@ namespace nana{	namespace widgets
 			void set_keyword(const ::std::wstring& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
 			void erase_keyword(const ::std::wstring& kw);
 
+			colored_area_access_interface& colored_area();
+
 			void set_accept(std::function<bool(char_type)>);
 			void set_accept(accepts);
 			bool respond_char(const arg_keyboard& arg);
@@ -211,6 +213,7 @@ namespace nana{	namespace widgets
 
 			bool try_refresh();
 		private:
+			nana::color _m_draw_colored_area(paint::graphics& graph, std::size_t line_pos);
 			std::vector<upoint> _m_render_text(const ::nana::color& text_color);
 			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
 
