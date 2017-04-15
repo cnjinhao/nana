@@ -1240,7 +1240,8 @@ namespace nana
 								item_graph.rectangle(false, clrptr[1]);
 								item_graph.rectangle(rectangle{attr.area.dimension()}.pare_off(1), true, *clrptr);
 
-								item_graph.blend(rectangle{ attr.area.dimension() }, graph, attr.area.position(), 0.5);
+
+								graph.blend(attr.area, item_graph, attr.area.position(), 0.5);
 							}
 							else
 							{

@@ -1380,6 +1380,7 @@ namespace API
 			switch(iwd->flags.action)
 			{
 			case nana::mouse_action::normal:
+			case nana::mouse_action::normal_captured:
 				return (is_focused ? nana::element_state::focus_normal : nana::element_state::normal);
 			case nana::mouse_action::hovered:
 				return (is_focused ? nana::element_state::focus_hovered : nana::element_state::hovered);

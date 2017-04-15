@@ -1,7 +1,7 @@
 /*
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -166,8 +166,10 @@ namespace nana
 							gh.rgb_to_wb();
 							gh.paste(graph, pos.x, pos.y);
 						}
-						else if(state == state_t::normal)
+						else if (state == state_t::normal)
+						{
 							graph.blend(nana::rectangle(pos, imgsize), ::nana::color(0xc0, 0xdd, 0xfc).blend(bgcolor, 0.5), 0.25);
+						}
 
 						x += scale;
 						width -= scale;
@@ -230,7 +232,7 @@ namespace nana
 
 					auto bgcolor = API::bgcolor(widget_->handle());
 					graph.palette(true, bgcolor);
-					graph.gradual_rectangle(rectangle{ graph.size() }, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.95), true);
+					graph.gradual_rectangle(rectangle{ graph.size() }, bgcolor.blend(colors::white, 0.1), bgcolor.blend(colors::black, 0.05), true);
 
 					item_renderer ir(graph, impl_->textout, impl_->scale, bgcolor);
 					size_type index = 0;

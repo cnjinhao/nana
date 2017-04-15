@@ -84,7 +84,7 @@ namespace nana
 
 	enum class mouse_action
 	{
-		begin, normal = begin, hovered, pressed, end
+		begin, normal = begin, normal_captured, hovered, pressed, end
 	};
 
 	enum class element_state
@@ -298,8 +298,7 @@ namespace nana
 		color(color_rgb);
 		color(color_argb);
 		color(color_rgba);
-		color(unsigned red, unsigned green, unsigned blue);
-		color(unsigned red, unsigned green, unsigned blue, double alpha);
+		color(unsigned red, unsigned green, unsigned blue, double alpha = 1.0);
 
 		/// Initializes the color with a CSS-like rgb string.
 		explicit color(std::string css_rgb);
@@ -313,10 +312,7 @@ namespace nana
 		/// @param lightness  in range of [0, 1]
 		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
 
-		color blend(const color& bgcolor, bool ignore_bgcolor_alpha) const;
-
-		/// Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
-		color blend(const color& bgcolor, double alpha) const;
+		color blend(const color& blending_color, double alpha) const;
 
 		/// Determines whether the color is completely transparent.
 		bool invisible() const;

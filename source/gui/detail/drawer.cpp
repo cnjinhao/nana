@@ -382,7 +382,9 @@ namespace nana
 			if (effect.bground)
 			{
 				if (effect.bground_fade_rate >= 0.01)
-					data_impl_->window_handle->other.glass_buffer.blend(::nana::rectangle{ data_impl_->window_handle->other.glass_buffer.size() }, graphics, nana::point(), effect.bground_fade_rate);
+				{
+					graphics.blend(::nana::rectangle{ data_impl_->window_handle->other.glass_buffer.size() }, data_impl_->window_handle->other.glass_buffer, {}, 1 - effect.bground_fade_rate);
+				}
 			}
 			
 		}

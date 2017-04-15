@@ -53,11 +53,6 @@ namespace nana
 			a_((static_cast<int>(rgba) & 0xFF) / 255.0)
 	{}
 
-	color::color(unsigned red, unsigned green, unsigned blue)
-		: r_(red), g_(green), b_(blue), a_(1.0)
-	{
-	}
-
 	color::color(unsigned red, unsigned green, unsigned blue, double alpha)
 		: r_(red), g_(green), b_(blue), a_(alpha)
 	{
@@ -426,47 +421,12 @@ namespace nana
 		return *this;
 	}
 
-	color color::blend(const color& bgcolor, bool ignore_bgcolor_alpha) const
-	{
-		if (a_ < 1.0)
-		{
-			color result;
-			if (0.0 < a_)
-			{
-				if (ignore_bgcolor_alpha || (1.0 == bgcolor.b_))
-				{
-					result.r_ = r_ * a_ + bgcolor.r_ * (1.0 - a_);
-					result.g_ = g_ * a_ + bgcolor.g_ * (1.0 - a_);
-					result.b_ = b_ * a_ + bgcolor.b_ * (1.0 - a_);
-					result.a_ = 1.0;
-				}
-				else
-				{
-					result.r_ = r_ * a_ + bgcolor.r_ * bgcolor.a_ * (1.0 - a_);
-					result.g_ = g_ * a_ + bgcolor.g_ * bgcolor.a_ * (1.0 - a_);
-					result.b_ = b_ * a_ + bgcolor.b_ * bgcolor.a_ * (1.0 - a_);
-					result.a_ = a_ + (bgcolor.a_ * (1.0 - a_));
-				}
-			}
-			else
-			{
-				result.r_ = bgcolor.r_;
-				result.g_ = bgcolor.g_;
-				result.b_ = bgcolor.b_;
-				result.a_ = (ignore_bgcolor_alpha ? 1.0 : bgcolor.a_);
-			}
-			return result;
-		}
-
-		return *this;
-	}
-
 	color color::blend(const color& bgcolor, double alpha) const
 	{
 		color result;
-		result.r_ = r_ * alpha + bgcolor.r_ * (1.0 - alpha);
-		result.g_ = g_ * alpha + bgcolor.g_ * (1.0 - alpha);
-		result.b_ = b_ * alpha + bgcolor.b_ * (1.0 - alpha);
+		result.r_ = r_ * (1.0 - alpha) + bgcolor.r_ * alpha;
+		result.g_ = g_ * (1.0 - alpha) + bgcolor.g_ * alpha;
+		result.b_ = b_ * (1.0 - alpha) + bgcolor.b_ * alpha;
 		result.a_ = 1.0;
 		return result;
 	}

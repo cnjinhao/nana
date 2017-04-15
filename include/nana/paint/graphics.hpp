@@ -118,7 +118,7 @@ namespace nana
 			void bitblt(const ::nana::rectangle& r_dst, const graphics& src, const point& p_src);///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
 
 			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
-			void blend(const ::nana::rectangle& s_r, graphics& dst, const point& d_pos, double fade_rate) const;///< blends with the dst object.
+			void blend(const ::nana::rectangle& blend_r, const graphics& blend_graph, const point& blend_graph_point, double fade_rate);///< blends with the blend_graph.
 
 			void blur(const ::nana::rectangle& r, std::size_t radius);      ///< Blur process.
 

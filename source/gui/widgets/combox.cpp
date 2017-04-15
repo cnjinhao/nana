@@ -238,7 +238,9 @@ namespace nana
 								{
 									paint::graphics trns_graph{ graph.size() };
 									if (API::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
-										trns_graph.blend(rectangle{ trns_graph.size() }, graph, { 0, 0 }, 0.5);
+									{
+										graph.blend(rectangle{ trns_graph.size() }, trns_graph, {}, 0.5);
+									}
 								}
 							};
 						}

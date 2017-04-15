@@ -100,16 +100,16 @@ namespace detail
 
 	void blend(drawable_type dw, const rectangle& area, pixel_color_t color, double fade_rate)
 	{
-		if (fade_rate < 0)
-			fade_rate = 0;
-		else if (fade_rate >= 1)
+		if (fade_rate <= 0)
 			return;
+		else if (fade_rate >= 1)
+			fade_rate = 1;
 
 		rectangle r;
 		if (false == ::nana::overlap(rectangle{ drawable_size(dw) }, area, r))
 			return;
 
-		auto const color_fd_rate = (double(color.element.alpha_channel) / 255.0) * (1 - fade_rate);
+		auto const color_fd_rate = (double(color.element.alpha_channel) / 255.0) * fade_rate;
 
 		fade_rate = (1 - color_fd_rate);
 

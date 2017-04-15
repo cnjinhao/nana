@@ -149,7 +149,7 @@ namespace nana
 					color xclr = colors::red;
 
 					if(x_state_ == ::nana::mouse_action::pressed)
-						xclr = xclr.blend(colors::white, 0.8);
+						xclr = xclr.blend(colors::white, 0.2);
 
 					graph.rectangle(r, true, xclr);
 				}

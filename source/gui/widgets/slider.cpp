@@ -80,7 +80,7 @@ namespace nana
 					}
 
 					color rgb = schm.color_slider;
-					if (mouse_action::normal != mouse_act)
+					if (mouse_action::normal != mouse_act && mouse_action::normal_captured != mouse_act)
 						rgb = schm.color_slider_highlighted;
 
 					graph.frame_rectangle(area, rgb + static_cast<color_rgb>(0x0d0d0d), 1);
@@ -128,7 +128,7 @@ namespace nana
 						arrow_pos = data.position - arrow_weight;
 					}
 
-					graph_vern.blend(rectangle{ label_size }, graph, label_pos, 0.5);
+					graph.blend(rectangle{ label_pos, label_size }, graph_vern, {}, 0.5);
 
 
 					unsigned arrow_color = 0x7F | schm.color_vernier.get_color().argb().value;
@@ -210,8 +210,7 @@ namespace nana
 						arrow_pos = data.position;
 					}
 
-					graph_vern.blend(rectangle{ label_size }, graph, label_pos, 0.5);
-
+					graph.blend(rectangle{ label_pos, label_size }, graph_vern, {}, 0.5);
 
 					unsigned arrow_color = 0x7F | schm.color_vernier.get_color().argb().value;
 					for (auto & color : arrow_pxbuf)
@@ -483,7 +482,7 @@ namespace nana
 					attr_.adorn_pos = xpos;
 					attr_.is_draw_adorn = true;
 
-					if (::nana::mouse_action::normal == slider_state_.mouse_state)
+					if (mouse_action::normal == slider_state_.mouse_state || mouse_action::normal_captured == slider_state_.mouse_state)
 						slider_state_.mouse_state = ::nana::mouse_action::hovered;
 
 					return (adorn_pos != static_cast<int>(xpos));
@@ -610,7 +609,7 @@ namespace nana
 					if (attr_.slider.vert)
 						attr_.slider.pos = range - attr_.slider.pos;
 
-					if(::nana::mouse_action::normal == slider_state_.mouse_state)
+					if(mouse_action::normal == slider_state_.mouse_state || mouse_action::normal_captured == slider_state_.mouse_state)
 						attr_.adorn_pos = attr_.slider.pos;
 				}
 

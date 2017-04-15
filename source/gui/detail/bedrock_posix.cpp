@@ -776,7 +776,7 @@ namespace detail
 						if(prev_captured_inside)
 						{
 							evt_code = event_code::mouse_leave;
-							msgwnd->set_action(mouse_action::normal);
+							msgwnd->set_action(mouse_action::normal_captured);
 						}
 						else
 						{

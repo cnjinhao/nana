@@ -1,7 +1,7 @@
 /*
 *	A Menubar implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -204,7 +204,7 @@ namespace nana
 						{
 							int x = item_pos.x + item_s.width;
 							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
-							graph.line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.4));
+							graph.line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.6));
 							graph.line({ x + 1, y1 }, { x + 1, y2 }, bgcolor.blend(colors::button_face_shadow_end, 0.5));
 						}
 

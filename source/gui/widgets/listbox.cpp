@@ -46,7 +46,6 @@ namespace nana
 	{
 		namespace listbox
 		{
-
 			class model_lock_guard
 			{
 				model_lock_guard(const model_lock_guard&) = delete;
@@ -3128,7 +3127,7 @@ namespace nana
 
 				void draw(graph_reference graph, const nana::rectangle& r)
 				{
-					const auto border_color = essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.8);
+					const auto border_color = essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.2);
 
 					int text_top = (r.height - essence_->text_height) / 2 + r.y;
 					auto text_color = essence_->scheme_ptr->header_fgcolor.get_color();
@@ -3169,7 +3168,7 @@ namespace nana
 					{
 						column_r.width = (r.right() - column_r.x);
 						if(API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), column_r, graph, column_r.position()))
-							graph.blend(column_r, essence_->scheme_ptr->header_bgcolor, 0.8);
+							graph.blend(column_r, essence_->scheme_ptr->header_bgcolor, 0.5);
 						else
 							graph.rectangle(column_r, true, essence_->scheme_ptr->header_bgcolor);
 					}
@@ -3237,10 +3236,10 @@ namespace nana
 						paint::graphics grad_graph{column_r.dimension()};
 						grad_graph.gradual_rectangle(rectangle{column_r.dimension()}, bgcolor.blend(colors::white, 0.1), bgcolor.blend(colors::black, 0.1), true);
 
-						grad_graph.blend(rectangle{column_r.dimension()}, graph, column_r.position(), 0.3);
+						graph.blend(column_r, grad_graph, {}, 0.8);
 					}
 					else
-						graph.gradual_rectangle(column_r, bgcolor.blend(colors::white, 0.9), bgcolor.blend(colors::black, 0.9), true);
+						graph.gradual_rectangle(column_r, bgcolor.blend(colors::white, 0.1), bgcolor.blend(colors::black, 0.1), true);
 
 					paint::aligner text_aligner{ graph, column.alignment, column.alignment };
 
@@ -3283,7 +3282,7 @@ namespace nana
 
 					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
 
-					fl_graph.blend(rectangle{ fl_graph.size() }, *(essence_->graph), point{ xpos - essence_->content_view->origin().x + rect.x, rect.y }, 0.5);
+					essence_->graph->blend(rectangle{ point{ xpos - essence_->content_view->origin().x + rect.x, rect.y } , fl_graph.size() }, fl_graph, {}, 0.5);
 				}
 
 			private:
@@ -3479,10 +3478,10 @@ namespace nana
 						};
 
 						paint::graphics box_graph{ box_size };
-						box_graph.rectangle(true, essence_->scheme_ptr->selection_box.get_color().blend(colors::white, 0.4));
+						box_graph.rectangle(true, essence_->scheme_ptr->selection_box.get_color().blend(colors::white, 0.6));
 						box_graph.rectangle(false, essence_->scheme_ptr->selection_box.get_color());
 
-						box_graph.blend(rectangle{ box_size }, *essence_->graph, essence_->coordinate_cast(box_position, false), 0.5);
+						essence_->graph->blend(rectangle{ essence_->coordinate_cast(box_position, false), box_size }, box_graph, {}, 0.5);
 					}
 				}
 			private:
@@ -3552,9 +3551,9 @@ namespace nana
 					if (item_state::highlighted == state)
 					{
 						if (item.flags.selected)
-							bgcolor = bgcolor.blend(colors::black, 0.9);
+							bgcolor = bgcolor.blend(colors::black, 0.1);
 						else
-							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.3);
+							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);
 					}
 
 					if (is_transparent)

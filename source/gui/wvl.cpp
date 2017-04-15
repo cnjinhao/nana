@@ -1,6 +1,6 @@
 /*
  *	Nana GUI Library Definition
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -41,7 +41,11 @@ namespace nana
 	{
 		if (!wait) return;
 		std::cout << "waiting " << wait << " sec...\n";
+#ifdef STD_THREAD_NOT_SUPPORTED
+		boost::this_thread::sleep_for(boost::chrono::seconds{ wait });
+#else
 		std::this_thread::sleep_for(std::chrono::seconds{ wait });
+#endif
 	}
 
 	void pump()

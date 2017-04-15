@@ -149,7 +149,7 @@ namespace nana
 					graph.typeface(pre_font);
 				}
 
-				bool find(int x, int y, std::wstring& target, std::wstring& url) const
+				bool find(int x, int y, std::wstring& target, std::wstring& url) const noexcept
 				{
 					for (auto & t : traceable_)
 					{
@@ -225,7 +225,7 @@ namespace nana
 					def_.fgcolor = fgcolor;
 				}
 
-				const ::nana::color& _m_fgcolor(nana::widgets::skeletons::fblock* fp)
+				const ::nana::color& _m_fgcolor(nana::widgets::skeletons::fblock* fp) noexcept
 				{
 					while(fp->fgcolor.invisible())
 					{
@@ -236,7 +236,7 @@ namespace nana
 					return fp->fgcolor;
 				}
 
-				std::size_t _m_font_size(nana::widgets::skeletons::fblock* fp)
+				std::size_t _m_font_size(nana::widgets::skeletons::fblock* fp) noexcept
 				{
 					while(fp->font_size == 0xFFFFFFFF)
 					{
@@ -247,7 +247,7 @@ namespace nana
 					return fp->font_size;
 				}
 
-				bool _m_bold(nana::widgets::skeletons::fblock* fp)
+				bool _m_bold(nana::widgets::skeletons::fblock* fp) noexcept
 				{
 					while(fp->bold_empty)
 					{
@@ -258,7 +258,7 @@ namespace nana
 					return fp->bold;
 				}
 
-				const std::string& _m_fontname(nana::widgets::skeletons::fblock* fp)
+				const std::string& _m_fontname(nana::widgets::skeletons::fblock* fp) noexcept
 				{
 					while(fp->font.empty())
 					{
@@ -305,7 +305,7 @@ namespace nana
 					}
 				}
 
-				void _m_align_x_base(const render_status& rs, pixel_tag & px, unsigned w)
+				void _m_align_x_base(const render_status& rs, pixel_tag & px, unsigned w) noexcept
 				{
 					switch(rs.text_align)
 					{
@@ -498,7 +498,7 @@ namespace nana
 					return (rs.pos.y <= lastpos);
 				}
 
-				static bool _m_overline(const render_status& rs, int right, bool equal_required)
+				static bool _m_overline(const render_status& rs, int right, bool equal_required) noexcept
 				{
 					if(align::left == rs.text_align)
 						return (equal_required ? right >= static_cast<int>(rs.allowed_width) : right > static_cast<int>(rs.allowed_width));
@@ -569,9 +569,12 @@ namespace nana
 							else
 							{
 								auto str = data_ptr->text().substr(text_range.first, text_range.second);
-								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 								sz = graph.text_extent_size(str);
+
+								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 							}
+
+
 							_m_inser_if_traceable(rs.pos.x, y, sz, fblock_ptr);
 							rs.pos.x += static_cast<int>(sz.width);
 
@@ -586,7 +589,7 @@ namespace nana
 					}
 				}
 
-				std::pair<std::size_t, std::size_t> _m_locate(dstream::linecontainer::iterator& i, std::size_t pos)
+				static std::pair<std::size_t, std::size_t> _m_locate(dstream::linecontainer::iterator& i, std::size_t pos)
 				{
 					std::size_t n = i->data_ptr->text().length();
 					while(pos >= n)

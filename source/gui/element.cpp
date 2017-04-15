@@ -1,7 +1,7 @@
 /*
 *	Elements of GUI Gadgets
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -148,22 +148,22 @@ namespace nana
 				}
 				else
 				{
-					::nana::color highlighted(0x5e, 0xb6, 0xf7);
+					::nana::color highlighted(static_cast<color_rgb>(0x5eb6f7));
 					auto bld_bgcolor = bgcolor;
 					auto bld_fgcolor = fgcolor;
 					switch(es)
 					{
 					case element_state::hovered:
 					case element_state::focus_hovered:
-						bld_bgcolor = bgcolor.blend(highlighted, 0.8);
-						bld_fgcolor = fgcolor.blend(highlighted, 0.8);
+						bld_bgcolor = bgcolor.blend(highlighted, 0.2);
+						bld_fgcolor = fgcolor.blend(highlighted, 0.2);
 						break;
 					case element_state::pressed:
-						bld_bgcolor = bgcolor.blend(highlighted, 0.4);
-						bld_fgcolor = fgcolor.blend(highlighted, 0.4);
+						bld_bgcolor = bgcolor.blend(highlighted, 0.6);
+						bld_fgcolor = fgcolor.blend(highlighted, 0.6);
 						break;
 					case element_state::disabled:
-						bld_bgcolor = bld_fgcolor = nana::color(0xb2, 0xb7, 0xbc);
+						bld_bgcolor = bld_fgcolor = static_cast<color_rgb>(0xb2b7bc);
 						break;
 					default:
 						//Leave things as they are
@@ -493,10 +493,10 @@ namespace nana
 				{
 				case element_state::hovered:
 				case element_state::focus_hovered:
-					bgcolor = arg_bgcolor.blend(colors::white, 0.8);
+					bgcolor = arg_bgcolor.blend(colors::white, 0.2);
 					break;
 				case element_state::pressed:
-					bgcolor = arg_bgcolor.blend(colors::black, 0.8);
+					bgcolor = arg_bgcolor.blend(colors::black, 0.2);
 					break;
 				case element_state::disabled:
 					bgcolor = colors::dark_gray;
@@ -505,13 +505,13 @@ namespace nana
 				}
 
 				auto part_px = (r.height - 3) * 5 / 13;
-				graph.rectangle(r, false, bgcolor.blend(colors::black, 0.6));
+				graph.rectangle(r, false, bgcolor.blend(colors::black, 0.4));
 				
 				::nana::point left_top{ r.x + 1, r.y + 1 }, right_top{r.right() - 2, r.y + 1};
 				::nana::point left_mid{ r.x + 1, r.y + 1 + static_cast<int>(part_px) }, right_mid{ right_top.x, left_mid.y };
 				::nana::point left_bottom{ r.x + 1, r.bottom() - 2 }, right_bottom{ r.right() - 2, r.bottom() - 2 };
 
-				graph.palette(false, bgcolor.blend(colors::white, 0.9));
+				graph.palette(false, bgcolor.blend(colors::white, 0.1));
 				graph.line(left_top, left_mid);
 				graph.line(right_top, right_mid);
 
@@ -520,12 +520,12 @@ namespace nana
 
 				left_mid.y++;
 				right_mid.y++;
-				graph.palette(false, bgcolor.blend(colors::black, 0.8));
+				graph.palette(false, bgcolor.blend(colors::black, 0.2));
 				graph.line(left_mid, left_bottom);
 				graph.line(right_mid, right_bottom);
 
 				::nana::rectangle part_r{ r.x + 2, r.y + 2, r.width - 4, part_px };
-				graph.rectangle(part_r, true, bgcolor.blend(colors::white, 0.8));
+				graph.rectangle(part_r, true, bgcolor.blend(colors::white, 0.2));
 
 				part_r.y += static_cast<int>(part_r.height);
 				part_r.height = (r.height - 3 - part_r.height);
@@ -545,7 +545,7 @@ namespace nana
 				{
 				case element_state::hovered:
 				case element_state::pressed:
-					clr = clr.blend(colors::black, 0.8);
+					clr = clr.blend(colors::black, 0.2);
 					break;
 				case element_state::disabled:
 					clr = colors::dark_gray;
@@ -954,7 +954,7 @@ namespace nana
 				ps[11].x = r.x + gap;
 				ps[11].y = r.y + gap;
 
-				graph.palette(false, fgcolor.blend(colors::black, true));
+				graph.palette(false, fgcolor.blend(colors::black, 1.0 - fgcolor.a()));
 
 				for (int i = 0; i < 11; ++i)
 					graph.line(ps[i], ps[i + 1]);

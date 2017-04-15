@@ -659,25 +659,27 @@ namespace paint
 			}
 		}
 
-		void graphics::blend(const nana::rectangle& s_r, graphics& dst, const nana::point& d_pos, double fade_rate) const
-		{
-			if(dst.impl_->handle && impl_->handle && (dst.impl_->handle != impl_->handle))
-			{
-				pixel_buffer s_pixbuf;
-				s_pixbuf.attach(impl_->handle, ::nana::rectangle{ size() });
-
-				s_pixbuf.blend(s_r, dst.impl_->handle, d_pos, fade_rate);
-
-				if(dst.impl_->changed == false) dst.impl_->changed = true;
-			}
-		}
-
 		void graphics::blend(const nana::rectangle& r, const ::nana::color& clr, double fade_rate)
 		{
 			if (impl_->handle)
 			{
 				nana::paint::detail::blend(impl_->handle, r, clr.px_color(), fade_rate);
 				if (impl_->changed == false) impl_->changed = true;
+			}
+		}
+
+		void graphics::blend(const ::nana::rectangle& blend_r, const graphics& graph, const point& blend_graph_point, double fade_rate)///< blends with the blend_graph.
+		{
+			if (graph.impl_->handle && impl_->handle && (graph.impl_->handle != impl_->handle))
+			{
+				pixel_buffer graph_px;
+
+				nana::rectangle r{ blend_graph_point, blend_r.dimension() };
+
+				graph_px.attach(graph.impl_->handle, r);
+				graph_px.blend(r, impl_->handle, blend_r.position(), 1 - fade_rate);
+
+				if (graph.impl_->changed == false) graph.impl_->changed = true;
 			}
 		}
 
