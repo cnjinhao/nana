@@ -25,7 +25,6 @@ namespace detail
 	void free_fade_table(const unsigned char*);
 
 	//color = bgcolor * fade_rate + fgcolor * (1 - fade_rate);
-	//nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, double fade_rate);	//deprecated
 	nana::pixel_color_t fade_color(nana::pixel_color_t bgcolor, nana::pixel_color_t fgcolor, const unsigned char* const fade_table);
 	nana::pixel_color_t fade_color_intermedia(pixel_color_t fgcolor, const unsigned char* fade_table);
 	nana::pixel_color_t fade_color_by_intermedia(pixel_color_t bgcolor, nana::pixel_color_t fgcolor_intermedia, const unsigned char* const fade_table);

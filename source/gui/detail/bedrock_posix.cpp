@@ -376,7 +376,7 @@ namespace detail
 			switch(msg.kind)
 			{
 			case nana::detail::msg_packet_tag::kind_mouse_drop:
-				msgwd = brock.wd_manager().find_window(native_window, msg.u.mouse_drop.x, msg.u.mouse_drop.y);
+				msgwd = brock.wd_manager().find_window(native_window, {msg.u.mouse_drop.x, msg.u.mouse_drop.y});
 				if(msgwd)
 				{
 					arg_dropfiles arg;
@@ -511,7 +511,7 @@ namespace detail
 				if(pressed_wd_space)
 					break;
 
-				msgwnd = wd_manager.find_window(native_window, xevent.xcrossing.x, xevent.xcrossing.y);
+				msgwnd = wd_manager.find_window(native_window, {xevent.xcrossing.x, xevent.xcrossing.y});
 				if(msgwnd)
 				{
 					if (mouse_action::pressed != msgwnd->flags.action)
@@ -568,7 +568,7 @@ namespace detail
 				if(xevent.xbutton.button == Button4 || xevent.xbutton.button == Button5)
 					break;
 
-				msgwnd = wd_manager.find_window(native_window, xevent.xbutton.x, xevent.xbutton.y);
+				msgwnd = wd_manager.find_window(native_window, {xevent.xbutton.x, xevent.xbutton.y});
 
 				pressed_wd = nullptr;
 				if(nullptr == msgwnd)
@@ -614,7 +614,7 @@ namespace detail
 							auto pos = native_interface::cursor_position();
 							auto rootwd = native_interface::find_window(pos.x, pos.y);
 							native_interface::calc_window_point(rootwd, pos);
-							if(msgwnd != wd_manager.find_window(rootwd, pos.x, pos.y))
+							if(msgwnd != wd_manager.find_window(rootwd, pos))
 							{
 								//call the drawer mouse up event for restoring the surface graphics
 								msgwnd->set_action(mouse_action::normal);
@@ -634,7 +634,7 @@ namespace detail
 				if(pressed_wd_space)
 					break;
 
-				msgwnd = wd_manager.find_window(native_window, xevent.xbutton.x, xevent.xbutton.y);
+				msgwnd = wd_manager.find_window(native_window, {xevent.xbutton.x, xevent.xbutton.y});
 				if(nullptr == msgwnd)
 					break;
 
@@ -754,7 +754,7 @@ namespace detail
 				if(pressed_wd_space)
 					break;
 
-				msgwnd = wd_manager.find_window(native_window, xevent.xmotion.x, xevent.xmotion.y);
+				msgwnd = wd_manager.find_window(native_window, {xevent.xmotion.x, xevent.xmotion.y});
 				if (wd_manager.available(hovered_wd) && (msgwnd != hovered_wd))
 				{
 					brock.event_msleave(hovered_wd);
@@ -1282,7 +1282,7 @@ namespace detail
 			return;
 
 		native_interface::calc_window_point(native_handle, pos);
-		auto rev_wd = wd_manager().find_window(native_handle, pos.x, pos.y);
+		auto rev_wd = wd_manager().find_window(native_handle, pos);
 		if (rev_wd)
 			set_cursor(rev_wd, rev_wd->predef_cursor, thrd);
 	}

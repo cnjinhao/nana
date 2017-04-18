@@ -258,7 +258,7 @@ namespace nana
 					return;
 
 				native_interface::calc_window_point(native_handle, pos);
-				if (wd != wd_manager().find_window(native_handle, pos.x, pos.y))
+				if (wd != wd_manager().find_window(native_handle, pos))
 					return;
 
 				set_cursor(wd, wd->predef_cursor, thrd);

@@ -1381,7 +1381,7 @@ namespace detail
 					Window child;
 					::XTranslateCoordinates(self.display_, self.root_window(), evt.xclient.window, x, y, &self.xdnd_.pos.x, &self.xdnd_.pos.y, &child);
 
-					auto wd = bedrock.wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window),													self.xdnd_.pos.x, self.xdnd_.pos.y);
+					auto wd = bedrock.wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window), self.xdnd_.pos);
 					if(wd && wd->flags.dropable)
 					{
 						accepted = true;

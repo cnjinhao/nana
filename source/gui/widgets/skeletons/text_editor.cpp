@@ -419,8 +419,13 @@ namespace nana{	namespace widgets
 			//Overrides methods of colored_area_access_interface
 			std::shared_ptr<colored_area_type> get(std::size_t line_pos) override
 			{
+#ifdef _MSC_VER
 				auto i = colored_areas_.cbegin();
 				for (; i != colored_areas_.cend(); ++i)
+#else
+				auto i = colored_areas_.begin();
+				for (; i != colored_areas_.end(); ++i)
+#endif
 				{
 					auto & area = *(i->get());
 					if (area.begin <= line_pos && line_pos < area.begin + area.count)
@@ -430,10 +435,9 @@ namespace nana{	namespace widgets
 						break;
 				}
 
-				auto iter = colored_areas_.emplace(i, std::make_shared<colored_area_type>(colored_area_type{line_pos}));
-				auto & area = *(iter->get());
-				area.count = 1;
-				return *iter;
+				return *colored_areas_.emplace(i, 
+						std::make_shared<colored_area_type>(colored_area_type{line_pos, 1, color{}, color{}})
+					);
 			}
 
 			bool clear()
@@ -449,7 +453,11 @@ namespace nana{	namespace widgets
 			bool remove(std::size_t pos) override
 			{
 				bool changed = false;
+#ifdef _MSC_VER
 				for (auto i = colored_areas_.cbegin(); i != colored_areas_.cend();)
+#else
+				for (auto i = colored_areas_.begin(); i != colored_areas_.end();)
+#endif
 				{
 					if (i->get()->begin <= pos && pos < i->get()->begin + i->get()->count)
 					{

@@ -461,12 +461,13 @@ namespace API
 
 	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon)
 	{
-		restrict::wd_manager().default_icon(small_icon, big_icon);
+		restrict::wd_manager().icon(nullptr, small_icon, big_icon);
 	}
 
 	void window_icon(window wd, const paint::image& small_icon, const paint::image& big_icon)
 	{
-		restrict::wd_manager().icon(reinterpret_cast<basic_window*>(wd), small_icon, big_icon);
+		if(nullptr != wd)
+			restrict::wd_manager().icon(reinterpret_cast<basic_window*>(wd), small_icon, big_icon);
 	}
 
 	bool empty_window(window wd)
@@ -1320,7 +1321,7 @@ namespace API
 			::nana::point clipos{pos};
 			interface_type::calc_window_point(wd, clipos);
 			return reinterpret_cast<window>(
-						restrict::wd_manager().find_window(wd, clipos.x, clipos.y));
+						restrict::wd_manager().find_window(wd, clipos));
 		}
 		return nullptr;
 	}

@@ -1,7 +1,7 @@
 /**
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -20,7 +20,6 @@
 
 #include <nana/push_ignore_diagnostic>
 
-#include "window_layout.hpp"
 #include "event_code.hpp"
 #include "inner_fwd.hpp"
 #include <functional>
@@ -31,6 +30,7 @@ namespace nana
 	namespace paint
 	{
 		class image;
+		class graphics;
 	}
 }
 
@@ -68,12 +68,10 @@ namespace detail
 		using mutex_type = revertible_mutex;
 
 		using core_window_t = basic_window;
-		using window_layer = window_layout;
 
 		window_manager();
 		~window_manager();
 
-		static bool is_queue(core_window_t*);
 		std::size_t number_of_core_window() const;
 		mutex_type & internal_lock() const;
 		void all_handles(std::vector<core_window_t*>&) const;
@@ -103,12 +101,11 @@ namespace detail
 		// Deletes a window whose category type is a root type or a frame type.
 		void destroy_handle(core_window_t*);
 
-		void default_icon(const paint::image& _small_icon, const paint::image& big_icon);
 		void icon(core_window_t*, const paint::image& small_icon, const paint::image& big_icon);
 
 		bool show(core_window_t* wd, bool visible);
 
-		core_window_t* find_window(native_window_type root, int x, int y);
+		core_window_t* find_window(native_window_type root, const point& pos);
 
 		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
 		bool move(core_window_t*, int x, int y, bool passive);

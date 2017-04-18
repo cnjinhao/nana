@@ -204,14 +204,12 @@ namespace nana
 						range_width_px.first = minimum;
 						range_width_px.second = maximum;
 
-						if (width_px < range_width_px.first)
-							width_px = range_width_px.first;
-						else if (range_width_px.second < width_px)
-							width_px = range_width_px.second;
-						else
-							return;
-
-						_m_refresh();
+						unsigned px = std::clamp(static_cast<int>(width_px), static_cast<int>(minimum), static_cast<int>(maximum));
+						if (width_px != px)
+						{
+							width_px = px;
+							_m_refresh();
+						}
 					}
 
 					size_type position(bool disp_order) const noexcept override;	//The definition is provided after essence
@@ -3104,10 +3102,7 @@ namespace nana
 						if (col.range_width_px.first != col.range_width_px.second)
 						{
 							//Column ranged width
-							if (new_w < col.range_width_px.first)
-								new_w = col.range_width_px.first;
-							else if (new_w > col.range_width_px.second)
-								new_w = col.range_width_px.second;
+							new_w = std::clamp(static_cast<int>(new_w), static_cast<int>(col.range_width_px.first), static_cast<int>(col.range_width_px.second));
 						}
 						else
 						{
@@ -3129,7 +3124,6 @@ namespace nana
 				{
 					const auto border_color = essence_->scheme_ptr->header_bgcolor.get_color().blend(colors::black, 0.2);
 
-					int text_top = (r.height - essence_->text_height) / 2 + r.y;
 					auto text_color = essence_->scheme_ptr->header_fgcolor.get_color();
 
 					auto state = item_state::normal;
@@ -3153,7 +3147,7 @@ namespace nana
 							//Make sure the column is in the display area.
 							if (right_pos > r.x)
 							{
-								_m_draw_header_item(graph, column_r, text_top, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
+								_m_draw_header_item(graph, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
 								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, border_color);
 							}
 
@@ -3191,10 +3185,8 @@ namespace nana
 				{
 					//convert x to header logic coordinate.
 					auto const x_offset = essence_->content_view->origin().x;
-					if (x < x_offset)
-						x = x_offset;
-					else if (x > x_offset + static_cast<int>(rect.width))
-						x = x_offset + static_cast<int>(rect.width);
+
+					x = std::clamp(x, x_offset, x_offset + static_cast<int>(rect.width));
 
 					auto i = essence_->header.column_from_point(x);
 
@@ -3219,9 +3211,10 @@ namespace nana
 					return npos;
 				}
 
-				void _m_draw_header_item(graph_reference graph, const rectangle& column_r, int text_top, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
+				void _m_draw_header_item(graph_reference graph, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
 				{
 					::nana::color bgcolor;
+
 					switch(state)
 					{
 					case item_state::normal:		bgcolor = essence_->scheme_ptr->header_bgcolor.get_color(); break;
@@ -3249,7 +3242,7 @@ namespace nana
 					{
 						graph.palette(true, fgcolor);
 
-						point text_pos{ column_r.x, text_top };
+						point text_pos{ column_r.x, (static_cast<int>(essence_->scheme_ptr->header_height) - static_cast<int>(essence_->text_height)) / 2 };
 
 						if (align::left == column.alignment)
 							text_pos.x += text_margin;
@@ -3277,11 +3270,9 @@ namespace nana
 
 					fl_graph.typeface(essence_->graph->typeface());
 
-					int text_top = (essence_->scheme_ptr->header_height - essence_->text_height) / 2;
-					_m_draw_header_item(fl_graph, rectangle{ fl_graph.size()}, text_top, colors::white, col, item_state::floated);
+					_m_draw_header_item(fl_graph, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
 
 					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
-
 					essence_->graph->blend(rectangle{ point{ xpos - essence_->content_view->origin().x + rect.x, rect.y } , fl_graph.size() }, fl_graph, {}, 0.5);
 				}
 

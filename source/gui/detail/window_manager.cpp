@@ -14,14 +14,17 @@
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/events_operation.hpp>
-#include <nana/gui/detail/handle_manager.hpp>
 #include <nana/gui/detail/window_manager.hpp>
+#include <nana/gui/detail/window_layout.hpp>
+#include "window_register.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
+
 #include <stdexcept>
 #include <algorithm>
+#include <iterator>
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
 #include <nana/std_mutex.hpp>
@@ -34,6 +37,8 @@ namespace nana
 
 	namespace detail
 	{
+		using window_layer = window_layout;
+
 		//class shortkey_container
 		struct shortkey_rep
 		{
@@ -266,7 +271,8 @@ namespace detail
 			struct window_manager::wdm_private_impl
 			{
 				root_register	misc_register;
-				handle_manager<core_window_t*, window_manager, window_handle_deleter>	wd_register;
+				window_register wd_register;
+
 				paint::image default_icon_big;
 				paint::image default_icon_small;
 
@@ -443,13 +449,11 @@ namespace detail
 			delete impl_;
 		}
 
-		bool window_manager::is_queue(core_window_t* wd)
-		{
-			return (wd && (category::flags::root == wd->other.category));
-		}
-
 		std::size_t window_manager::number_of_core_window() const
 		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+
 			return impl_->wd_register.size();
 		}
 
@@ -460,7 +464,9 @@ namespace detail
 
 		void window_manager::all_handles(std::vector<core_window_t*> &v) const
 		{
-			impl_->wd_register.all(v);
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+			v = impl_->wd_register.queue();
 		}
 
 		void window_manager::event_filter(core_window_t* wd, bool is_make, event_code evtid)
@@ -477,11 +483,15 @@ namespace detail
 
 		bool window_manager::available(core_window_t* wd)
 		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
 			return impl_->wd_register.available(wd);
 		}
 
 		bool window_manager::available(core_window_t * a, core_window_t* b)
 		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
 			return (impl_->wd_register.available(a) && impl_->wd_register.available(b));
 		}
 
@@ -533,7 +543,7 @@ namespace detail
 				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.width, result.height));
 
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
-				impl_->wd_register.insert(wd, wd->thread_id);
+				impl_->wd_register.insert(wd);
 
 #ifndef WIDGET_FRAME_DEPRECATED
 				if (owner && (category::flags::frame == owner->other.category))
@@ -614,7 +624,8 @@ namespace detail
 				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::lite_widget_tag**)nullptr);
 			else
 				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::widget_tag**)nullptr);
-			impl_->wd_register.insert(wd, wd->thread_id);
+
+			impl_->wd_register.insert(wd);
 			return wd;
 		}
 
@@ -701,21 +712,23 @@ namespace detail
 			}
 		}
 
-		void window_manager::default_icon(const nana::paint::image& _small, const nana::paint::image& big)
-		{
-			impl_->default_icon_big = big;
-			impl_->default_icon_small = _small;
-		}
-
 		void window_manager::icon(core_window_t* wd, const paint::image& small_icon, const paint::image& big_icon)
 		{
 			if(!big_icon.empty() || !small_icon.empty())
 			{
-				std::lock_guard<mutex_type> lock(mutex_);
-				if (impl_->wd_register.available(wd))
+				if (nullptr == wd)
 				{
-					if(category::flags::root == wd->other.category)
-						native_interface::window_icon(wd->root, small_icon, big_icon);
+					impl_->default_icon_big = big_icon;
+					impl_->default_icon_small = small_icon;
+				}
+				else
+				{
+					std::lock_guard<mutex_type> lock(mutex_);
+					if (impl_->wd_register.available(wd))
+					{
+						if (category::flags::root == wd->other.category)
+							native_interface::window_icon(wd->root, small_icon, big_icon);
+					}
 				}
 			}
 		}
@@ -791,7 +804,7 @@ namespace detail
 			return true;
 		}
 
-		window_manager::core_window_t* window_manager::find_window(native_window_type root, int x, int y)
+		window_manager::core_window_t* window_manager::find_window(native_window_type root, const point& pos)
 		{
 			if (nullptr == root)
 				return nullptr;
@@ -801,7 +814,6 @@ namespace detail
 				//Thread-Safe Required!
 				std::lock_guard<mutex_type> lock(mutex_);
 				auto rrt = root_runtime(root);
-				point pos{ x, y };
 				if (rrt && _m_effective(rrt->window, pos))
 					return _m_find(rrt->window, pos);
 			}
@@ -873,9 +885,8 @@ namespace detail
 				//Move child widgets
 				if(r.x != wd->pos_owner.x || r.y != wd->pos_owner.y)
 				{
-					point delta{ r.x - wd->pos_owner.x, r.y - wd->pos_owner.y };
-					wd->pos_owner.x = r.x;
-					wd->pos_owner.y = r.y;
+					auto delta = r.position() - wd->pos_owner;
+					wd->pos_owner = r.position();
 					_m_move_core(wd, delta);
 					moved = true;
 
@@ -1807,32 +1818,18 @@ namespace detail
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
 			//Delete the children widgets.
-			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end;)
+			while (!wd->children.empty())
 			{
-				auto child = *i;
-
+				auto child = wd->children.back();
 				if (category::flags::root == child->other.category)
 				{
-					//closing a child root window erases itself from wd->children,
-					//to make sure the iterator is valid, it must be reloaded.
-
-					auto offset = std::distance(wd->children.rbegin(), i);
-
-					//!!!
-					//a potential issue is that if the calling thread is not same with child's thread,
-					//the child root window may not be erased from wd->children now.
+					//Only the nested_form meets the condition
 					native_interface::close_window(child->root);
-
-					i = wd->children.rbegin();
-					std::advance(i, offset);
-					end = wd->children.rend();
 					continue;
 				}
 				_m_destroy(child);
-				++i;
+				wd->children.pop_back();
 			}
-			wd->children.clear();
-
 
 			_m_disengage(wd, nullptr);
 			window_layer::enable_effects_bground(wd, false);
