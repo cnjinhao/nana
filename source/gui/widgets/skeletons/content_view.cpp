@@ -96,7 +96,7 @@ namespace nana {
 							if (!arg.is_left_button())
 								return;
 
-							if (this->drive(arg.pos))
+							if (this->drive(arg.pos, true))
 							{
 								tmr.interval(16);
 								tmr.start();
@@ -116,7 +116,7 @@ namespace nana {
 						auto curs = ::nana::API::cursor_position();
 						::nana::API::calc_window_point(window_handle, curs);
 
-						if (this->drive(curs))
+						if (this->drive(curs, false))
 						{
 							if (events.hover_outside)
 								events.hover_outside(curs);
@@ -129,9 +129,12 @@ namespace nana {
 					});
 				}
 
-				bool drive(const point& cursor_pos)
+				bool drive(const point& cursor_pos, bool check_cursor_pos)
 				{
 					auto const area = view.view_area();
+
+					if (check_cursor_pos && !area.is_hit(cursor_pos))
+						return false;
 
 					point skew;
 
