@@ -56,6 +56,7 @@ namespace nana
 			private:
 				//Overrides drawer_trigger
 				void attached(widget_reference, graph_reference) override;
+				void detached() override;
 				void refresh(graph_reference)	override;
 
 				void focus(graph_reference, const arg_focus&)	override;

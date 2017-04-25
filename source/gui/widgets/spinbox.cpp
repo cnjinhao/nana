@@ -531,6 +531,11 @@ namespace nana
 				impl_->attach(wdg, graph);
 			}
 
+			void drawer::detached()
+			{
+				impl_->detach();
+			}
+
 			void drawer::refresh(graph_reference)
 			{
 				impl_->render();
