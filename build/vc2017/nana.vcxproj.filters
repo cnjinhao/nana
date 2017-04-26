@@ -237,5 +237,8 @@
     <ClCompile Include="..\..\source\threads\pool.cpp">
       <Filter>源文件\threads</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\detail\platform_abstraction.cpp">
+      <Filter>源文件\detail</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

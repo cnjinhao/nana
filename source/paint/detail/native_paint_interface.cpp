@@ -11,7 +11,7 @@
  *	@contributors:	dareg
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../../detail/platform_spec_selector.hpp"
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
@@ -145,14 +145,14 @@ namespace detail
 	#if defined(NANA_USE_XFT)
 		std::string utf8str = to_utf8(std::wstring(text, len));
 		XGlyphInfo ext;
-		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
+		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
 		::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
 								reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size(), &ext);
 		return nana::size(ext.xOff, fs->ascent + fs->descent);
 	#else
 		XRectangle ink;
 		XRectangle logic;
-		::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->handle), text, len, &ink, &logic);
+		::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), text, len, &ink, &logic);
 		return nana::size(logic.width, logic.height);
 	#endif
 #endif
@@ -185,7 +185,7 @@ namespace detail
 #elif defined(NANA_X11)
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
 	#if defined(NANA_USE_XFT)
-		auto fs = reinterpret_cast<XftFont*>(dw->font->handle);
+		auto fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
 
 		//Fixed missing array declaration by dareg
 		std::unique_ptr<FT_UInt[]> glyphs_ptr(new FT_UInt[len]);
@@ -197,7 +197,7 @@ namespace detail
 		}
 		XftDrawGlyphs(dw->xftdraw, &(dw->xft_fgcolor), fs, pos.x, pos.y + fs->ascent, glyphs_ptr.get(), len);
 	#else
-		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->handle);
+		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->native_handle());
 		XFontSetExtents * ext = ::XExtentsOfFontSet(fs);
 		XFontStruct ** fontstructs;
 		char ** font_names;

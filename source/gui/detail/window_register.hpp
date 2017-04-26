@@ -133,9 +133,10 @@ namespace nana
 				if (base_.erase(wd))
 				{
 					wdcache_.insert(wd, false);
+					trash_.push_back(wd);
+
 					if (category::flags::root == wd->other.category)
 					{
-						trash_.push_back(wd);
 						auto i = std::find(queue_.begin(), queue_.end(), wd);
 						if (i != queue_.end())
 							queue_.erase(i);

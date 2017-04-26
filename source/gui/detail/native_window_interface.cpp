@@ -10,7 +10,7 @@
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../../detail/platform_spec_selector.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/screen.hpp>
 #include <nana/gui/detail/bedrock.hpp>

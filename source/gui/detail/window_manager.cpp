@@ -1397,13 +1397,13 @@ namespace detail
 		{
 			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
 
+			auto end = tabs.cend();
 			if (forward)
 			{
 				if (detail::tab_type::none == wd->flags.tab)
 					return (tabs.front());
 				else if (detail::tab_type::tabstop & wd->flags.tab)
 				{
-					auto end = tabs.cend();
 					auto i = std::find(tabs.cbegin(), end, wd);
 					if (i != end)
 					{
@@ -1417,8 +1417,8 @@ namespace detail
 			}
 			else if (tabs.size() > 1)	//at least 2 elments in tabs are required when moving backward. 
 			{
-				auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
-				if (i != tabs.cend())
+				auto i = std::find(tabs.cbegin(), end, wd);
+				if (i != end)
 					return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
 			}
 			return nullptr;
@@ -1729,7 +1729,7 @@ namespace detail
 
 				if (established)
 				{
-					utl::erase(pa_children, wd);
+					utl::erase(wd->parent->children, wd);
 					if (for_new->children.empty())
 						wd->index = 0;
 					else
@@ -1892,15 +1892,20 @@ namespace detail
 			if(!wd->visible)
 				return nullptr;
 
-			for(auto i = wd->children.rbegin(); i != wd->children.rend(); ++i)
+			if (!wd->children.empty())
 			{
-				core_window_t* child = *i;
-				if((child->other.category != category::flags::root) && _m_effective(child, pos))
+				auto index = wd->children.size();
+
+				do
 				{
-					child = _m_find(child, pos);
-					if(child)
-						return child;
-				}
+					auto child = wd->children[--index];
+					if ((child->other.category != category::flags::root) && _m_effective(child, pos))
+					{
+						child = _m_find(child, pos);
+						if (child)
+							return child;
+					}
+				} while (0 != index);
 			}
 			return wd;
 		}

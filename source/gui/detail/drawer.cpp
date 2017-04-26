@@ -18,7 +18,7 @@
 #include "dynamic_drawing_object.hpp"
 
 #if defined(NANA_X11)
-	#include <nana/detail/linux_X11/platform_spec.hpp>
+	#include "../../detail/posix/platform_spec.hpp"
 #endif
 
 namespace nana

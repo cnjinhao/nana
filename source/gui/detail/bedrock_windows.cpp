@@ -12,7 +12,7 @@
  *	@contributors: Ariel Vina-Rodriguez
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/bedrock_pi_data.hpp>

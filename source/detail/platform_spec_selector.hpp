@@ -15,7 +15,7 @@
 #include <nana/config.hpp>
 
 #if defined(NANA_WINDOWS)
-#include <nana/detail/win32/platform_spec.hpp>
+#include "mswin/platform_spec.hpp"
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
-#include <nana/detail/linux_X11/platform_spec.hpp>
+#include "posix/platform_spec.hpp"
 #endif

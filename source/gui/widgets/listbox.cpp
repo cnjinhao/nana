@@ -1953,7 +1953,6 @@ namespace nana
 					index_pairs already_selected;
 					index_pairs selections;
 
-					//nana::timer timer;
 					bool scroll_direction;
 					unsigned scroll_step{ 1 };
 					unsigned mouse_move_timestamp{ 0 };
@@ -4134,6 +4133,7 @@ namespace nana
 					}
 					else if (ptr_where.first == parts::list_blank)	//not selected
 					{
+						//Start box selection if mulit-selection is enabled
 						if (arg.is_left_button() && (!lister.single_status(true)))
 							essence_->start_mouse_selection(arg.pos);
 

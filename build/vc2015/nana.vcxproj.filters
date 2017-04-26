@@ -288,5 +288,8 @@
     <ClCompile Include="..\..\source\gui\widgets\skeletons\content_view.cpp">
       <Filter>Source Files\gui\widgets\skeletons</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\detail\platform_abstraction.cpp">
+      <Filter>Source Files\detail</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

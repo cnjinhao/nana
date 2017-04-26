@@ -17,7 +17,7 @@
 
 #ifndef NANA_DETAIL_MSG_DISPATCHER_HPP
 #define NANA_DETAIL_MSG_DISPATCHER_HPP
-#include <nana/detail/linux_X11/msg_packet.hpp>
+#include "msg_packet.hpp"
 #include <nana/system/platform.hpp>
 #include <list>
 #include <set>

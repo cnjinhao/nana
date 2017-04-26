@@ -435,7 +435,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		};
 
 		::std::string	font;
-		std::size_t		font_size;
+		double	font_size;
 		bool	bold;
 		bool	bold_empty;	//bold should be ignored if bold_empty is true
 		aligns::t	text_align;

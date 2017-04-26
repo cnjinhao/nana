@@ -14,7 +14,8 @@
  *	http://standards.freedesktop.org/clipboards-spec/clipboards-0.1.txt
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "platform_spec_selector.hpp"
+#include "platform_abstraction.hpp"
 #if defined(NANA_POSIX) && defined(NANA_X11)
 
 #include <nana/push_ignore_diagnostic>
@@ -33,7 +34,7 @@
 #include <errno.h>
 #include <sstream>
 
-#include "x11/msg_dispatcher.hpp"
+#include "posix/msg_dispatcher.hpp"
 
 namespace nana
 {
@@ -451,24 +452,6 @@ namespace detail
 		}
 	}
 
-	class font_deleter
-	{
-    public:
-        void operator()(const font_tag* fp) const
-        {
-            if(fp && fp->handle)
-            {
-                platform_scope_guard psg;
-#if defined(NANA_USE_XFT)
-                ::XftFontClose(nana::detail::platform_spec::instance().open_display(), fp->handle);
-#else
-                ::XFreeFontSet(nana::detail::platform_spec::instance().open_display(), fp->handle);
-#endif
-            }
-            delete fp;
-        }
-	};//end class font_deleter
-
 	platform_scope_guard::platform_scope_guard()
 	{
 		platform_spec::instance().lock_xlib();
@@ -561,9 +544,9 @@ namespace detail
 		atombase_.xdnd_typelist = ::XInternAtom(display_, "XdndTypeList", False);
 		atombase_.xdnd_finished = ::XInternAtom(display_, "XdndFinished", False);
 
-		//Create default font object.
-		def_font_ptr_ = make_native_font(nullptr, font_size_to_height(10), 400, false, false, false);
 		msg_dispatcher_ = new msg_dispatcher(display_);
+
+		platform_abstraction::initialize();
 	}
 
 	platform_spec::~platform_spec()
@@ -572,73 +555,9 @@ namespace detail
 
 		//The font should be destroyed before closing display,
 		//otherwise it crashs
-		def_font_ptr_.reset();
+		platform_abstraction::shutdown();
 
 		close_display();
-	}
-
-	const platform_spec::font_ptr_t& platform_spec::default_native_font() const
-	{
-		return def_font_ptr_;
-	}
-	
-	void platform_spec::default_native_font(const font_ptr_t& fp)
-	{
-		def_font_ptr_ = fp;
-	}
-
-	unsigned platform_spec::font_size_to_height(unsigned size) const
-	{
-		return size;
-	}
-
-	unsigned platform_spec::font_height_to_size(unsigned height) const
-	{
-		return height;
-	}
-
-	platform_spec::font_ptr_t platform_spec::make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
-	{
-		font_ptr_t ref;
-#if 1 //Xft
-		if(0 == name || *name == 0)
-			name = "*";
-
-		XftFont* handle = 0;
-		std::stringstream ss;
-		ss<<name<<"-"<<(height ? height : 10);
-		XftPattern * pat = ::XftNameParse(ss.str().c_str());
-		XftResult res;
-		XftPattern * match_pat = ::XftFontMatch(display_, ::XDefaultScreen(display_), pat, &res);
-		if(match_pat)
-			handle = ::XftFontOpenPattern(display_, match_pat);
-#else
-		std::string basestr;
-		if(0 == name || *name == 0)
-		{
-			basestr = "-misc-fixed-*";
-		}
-		else
-			basestr = "-misc-fixed-*";
-
-		char ** missing_list;
-		int missing_count;
-		char * defstr;
-		XFontSet handle = ::XCreateFontSet(display_, const_cast<char*>(basestr.c_str()), &missing_list, &missing_count, &defstr);
-#endif
-		if(handle)
-		{
-			font_tag * impl = new font_tag;
-			impl->name = name;
-			impl->height = height;
-			impl->weight = weight;
-			impl->italic = italic;
-			impl->underline = underline;
-			impl->strikeout = strike_out;
-			impl->handle = handle;
-			return font_ptr_t(impl, font_deleter());
-		}
-		return font_ptr_t();
 	}
 
 	Display* platform_spec::open_display()

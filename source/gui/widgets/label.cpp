@@ -117,10 +117,10 @@ namespace nana
 
 					if((tv != align_v::top) && extent_v_pixels < graph.height())
 					{
+						rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels);
+
 						if(align_v::center == tv)
-							rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels) >> 1;
-						else if(align_v::bottom == tv)
-							rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels);
+							rs.pos.y >>= 1;
 					}
 					else
 						rs.pos.y = 0;
@@ -203,7 +203,7 @@ namespace nana
 				}
 			private:
 				//Manage the fblock for a specified rectangle if it is a traceable fblock.
-				void _m_inser_if_traceable(int x, int y, const nana::size& sz, widgets::skeletons::fblock* fbp)
+				void _m_insert_if_traceable(int x, int y, const nana::size& sz, widgets::skeletons::fblock* fbp)
 				{
 					if(fbp->target.size() || fbp->url.size())
 					{
@@ -236,9 +236,9 @@ namespace nana
 					return fp->fgcolor;
 				}
 
-				std::size_t _m_font_size(nana::widgets::skeletons::fblock* fp) noexcept
+				double _m_font_size(nana::widgets::skeletons::fblock* fp) noexcept
 				{
-					while(fp->font_size == 0xFFFFFFFF)
+					while(fp->font_size == -1)
 					{
 						fp = fp->parent;
 						if(nullptr == fp)
@@ -274,12 +274,14 @@ namespace nana
 					if(fp != fblock_)
 					{
 						auto& name = _m_fontname(fp);
-						auto fontsize = static_cast<unsigned>(_m_font_size(fp));
+						auto fontsize = _m_font_size(fp);
 						bool bold = _m_bold(fp);
 
 						if((fontsize != font_.size()) || bold != font_.bold() || name != font_.name())
 						{
-							font_.make(name, fontsize, bold);
+							paint::font::font_style fs;
+							fs.weight = (bold ? 800 : 400);
+							font_ = paint::font{ name, fontsize, fs };
 							graph.typeface(font_);
 						}
 						fblock_ = fp;
@@ -345,7 +347,7 @@ namespace nana
 
 					std::vector<iterator> line_values;
 
-					for(auto i = line.begin(), end = line.end(); i != end; ++i)
+					for(auto i = line.begin(); i != line.end(); ++i)
 					{
 						data * data_ptr = i->data_ptr;
 						nana::size sz = data_ptr->size();
@@ -378,12 +380,11 @@ namespace nana
 						}
 						else
 						{
+							pixel_tag px;
+							_m_align_x_base(rs, px, (w ? w : sz.width));
+
 							if(w)
 							{
-								pixel_tag px;
-
-								_m_align_x_base(rs, px, w);
-
 								if(max_ascent + max_descent > max_px)
 									max_px = max_descent + max_ascent;
 								else
@@ -393,8 +394,6 @@ namespace nana
 								px.baseline = max_ascent;
 								px.values.swap(line_values);
 
-								rs.pixels.emplace_back(px);
-
 								w = sz.width;
 								max_px = sz.height;
 								max_ascent = as;
@@ -403,18 +402,16 @@ namespace nana
 							}
 							else
 							{
-								pixel_tag px;
-
-								_m_align_x_base(rs, px, sz.width);
 								px.pixels = sz.height;
 								px.baseline = as;
 
 								px.values.emplace_back(i);
 
-								rs.pixels.emplace_back(px);
 								max_px = 0;
 								max_ascent = max_descent = 0;
 							}
+
+							rs.pixels.emplace_back(px);
 						}
 					}
 
@@ -444,49 +441,48 @@ namespace nana
 
 					const int lastpos = static_cast<int>(graph.height()) - 1;
 
-					for(auto i = rs.pixels.begin(), end = rs.pixels.end(); i != end; ++i)
+					for(auto & px : rs.pixels)
 					{
-						for (auto & render_iterator : i->values)
+						for(auto & render_iterator: px.values)
 						{
 							auto & value = *render_iterator;
-							if(false == value.data_ptr->is_text())
-							{
-								if(text.size())
-								{
-									_m_draw_block(graph, text, block_start, rs);
-									if(lastpos <= rs.pos.y)
-										return false;
-									text.clear();
-								}
-								nana::size sz = value.data_ptr->size();
-
-								pixel_tag px = rs.pixels[rs.index];
-								if ((rs.allowed_width < rs.pos.x + sz.width) && (rs.pos.x != px.x_base))
-								{
-									//Change a line.
-									rs.pos.y += static_cast<int>(px.pixels);
-									px = rs.pixels[++rs.index];
-									rs.pos.x = px.x_base;
-								}
-
-								int y = rs.pos.y + _m_text_top(px, value.fblock_ptr, value.data_ptr);
-
-								value.data_ptr->nontext_render(graph, rs.pos.x, y);
-								_m_inser_if_traceable(rs.pos.x, y, sz, value.fblock_ptr);
-								rs.pos.x += static_cast<int>(sz.width);
-
-								if(lastpos < y)
-									return false;
-							}
-							else
+							if (value.data_ptr->is_text())
 							{
 								//hold the block while the text is empty,
 								//it stands for the first block
-								if(text.empty())
+								if (text.empty())
 									block_start = render_iterator;
 
 								text += value.data_ptr->text();
+								continue;
 							}
+							
+							if(text.size())
+							{
+								_m_draw_block(graph, text, block_start, rs);
+								if(lastpos <= rs.pos.y)
+									return false;
+								text.clear();
+							}
+							nana::size sz = value.data_ptr->size();
+
+							pixel_tag px = rs.pixels[rs.index];
+							if ((rs.allowed_width < rs.pos.x + sz.width) && (rs.pos.x != px.x_base))
+							{
+								//Change a line.
+								rs.pos.y += static_cast<int>(px.pixels);
+								px = rs.pixels[++rs.index];
+								rs.pos.x = px.x_base;
+							}
+
+							int y = rs.pos.y + _m_text_top(px, value.fblock_ptr, value.data_ptr);
+
+							value.data_ptr->nontext_render(graph, rs.pos.x, y);
+							_m_insert_if_traceable(rs.pos.x, y, sz, value.fblock_ptr);
+							rs.pos.x += static_cast<int>(sz.width);
+
+							if(lastpos < y)
+								return false;
 						}
 
 						if(text.size())
@@ -575,7 +571,7 @@ namespace nana
 							}
 
 
-							_m_inser_if_traceable(rs.pos.x, y, sz, fblock_ptr);
+							_m_insert_if_traceable(rs.pos.x, y, sz, fblock_ptr);
 							rs.pos.x += static_cast<int>(sz.width);
 
 							if(text_range.second < len)
@@ -604,13 +600,13 @@ namespace nana
 				dstream dstream_;
 				bool format_enabled_ = false;
 				::nana::widgets::skeletons::fblock * fblock_ = nullptr;
-				std::deque<traceable> traceable_;
+				::std::deque<traceable> traceable_;
 
 				::nana::paint::font font_;
 				struct def_font_tag
 				{
 					::std::string font_name;
-					std::size_t font_size;
+					double font_size;
 					bool	font_bold;
 					::nana::color fgcolor;
 				}def_;

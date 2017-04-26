@@ -11,7 +11,7 @@
  *	@note: The format of Xorg 16bits depth is 565
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../detail/platform_spec_selector.hpp"
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>

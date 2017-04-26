@@ -13,7 +13,7 @@
  */
 
 #include <nana/push_ignore_diagnostic>
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../detail/platform_spec_selector.hpp"
 #include <nana/paint/image.hpp>
 #include <algorithm>
 #include <fstream>

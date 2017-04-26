@@ -21,7 +21,7 @@
 	#include <windows.h>
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include <string.h>
-	#include <nana/detail/platform_spec_selector.hpp>
+	#include "detail/platform_spec_selector.hpp"
 #endif
 
 

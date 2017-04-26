@@ -116,6 +116,8 @@
 #		define _enable_std_clamp
 #	endif
 
+#elif defined(NANA_MINGW)
+#	define STD_THREAD_NOT_SUPPORTED
 #elif defined(__clang__)	//Clang
 
 	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library

@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,36 +17,45 @@
 
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
+#include <nana/filesystem/filesystem.hpp>
+
+#include "detail/ptdefs.hpp"
 
 namespace nana
 {
 	namespace paint
 	{
-		namespace detail
-		{
-			struct native_font_signature;
-		}// end namespace detail
-
-		typedef detail::native_font_signature*		native_font_type;
-
 		class font
 		{
 			friend class graphics;
 		public:
+			using path_type = ::std::experimental::filesystem::path;
+
+			using font_style = ::nana::detail::font_style;
+
 			font();
 			font(drawable_type);
 			font(const font&);
-			font(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
+
+			font(const ::std::string& name, double size_pt, const font_style& fs = {});
+			font(double size_pt, const path_type& truetype, const font_style& ft = {});
+
 			~font();
 			bool empty() const;
+
+			/*	//deprecated
 			void make(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
 			void make_raw(const ::std::string& name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
 
+			void make(const ::std::string& font_family, unsigned size, const font_style& fs = {});
+			void make_from_ttf(const path_type& truetype, unsigned size, const font_style& fs = {});
+			*/
+
 			void set_default() const;
 			::std::string name() const;
-			unsigned size() const;
+			double size() const;
 			bool bold() const;
-			unsigned height() const;
+			//unsigned height() const;	//deprecated
 			unsigned weight() const;
 			bool italic() const;
 			native_font_type handle() const;

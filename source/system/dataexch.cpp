@@ -19,11 +19,11 @@
 #include <cstring>
 
 #if defined(NANA_WINDOWS)
-	#include <windows.h>
+#	include <windows.h>
 #elif defined(NANA_X11)
-	#include <nana/detail/platform_spec_selector.hpp>
-	#include <nana/gui/detail/bedrock.hpp>
-	#include <nana/gui/detail/basic_window.hpp>
+#	include "../detail/platform_spec_selector.hpp"
+#	include <nana/gui/detail/bedrock.hpp>
+#	include <nana/gui/detail/basic_window.hpp>
 #endif
 
 namespace nana{ namespace system{
