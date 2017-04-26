@@ -116,7 +116,8 @@ namespace nana
 
 				for (auto* parent = wd->parent; parent; parent = parent->parent)
 				{
-					overlap(rectangle{ parent->pos_root, parent->dimension }, visual, visual);
+					if (!overlap(rectangle{ parent->pos_root, parent->dimension }, visual, visual))
+						return false;
 				}
 
 				return true;
