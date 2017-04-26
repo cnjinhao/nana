@@ -238,7 +238,7 @@ namespace nana
 
 				double _m_font_size(nana::widgets::skeletons::fblock* fp) noexcept
 				{
-					while(fp->font_size == -1)
+					while(fp->font_size < 0)
 					{
 						fp = fp->parent;
 						if(nullptr == fp)
@@ -623,7 +623,7 @@ namespace nana
 					std::unique_ptr<measurer> msr_ptr{ nullptr };
 
 					align	text_align{align::left};
-					align_v	text_align_v;
+					align_v	text_align_v{align_v::top};
 
 					class renderer renderer;
 

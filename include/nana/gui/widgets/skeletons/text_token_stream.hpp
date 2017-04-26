@@ -859,7 +859,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			//Create a default fblock.
 			fblock * fbp = new fblock;
 
-			fbp->font_size = 0xFFFFFFFF;
+			fbp->font_size = -1;
 			fbp->bold = false;
 			fbp->bold_empty = true;
 			fbp->text_align = fblock::aligns::baseline;
