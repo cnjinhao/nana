@@ -28,6 +28,8 @@ namespace nana
 		}
 	}
 
+#ifdef NANA_AUTOMATIC_GUI_TESTING
+
 	void click(widget& w)
 	{
 		std::cout << "Automatically clicking widget "<<w.caption()<<":\n";
@@ -41,11 +43,11 @@ namespace nana
 	{
 		if (!wait) return;
 		std::cout << "waiting " << wait << " sec...\n";
-#ifdef STD_THREAD_NOT_SUPPORTED
+#	ifdef STD_THREAD_NOT_SUPPORTED
 		boost::this_thread::sleep_for(boost::chrono::seconds{ wait });
-#else
+#	else
 		std::this_thread::sleep_for(std::chrono::seconds{ wait });
-#endif
+#	endif
 	}
 
 	void pump()
@@ -61,7 +63,6 @@ namespace nana
 		std::function<void()>f // = {}      ///< emit events to mimics user actions and may asert results
 	)
 	{
-	#ifdef NANA_AUTOMATIC_GUI_TESTING
 			
 	    std::cout << "Will wait " << wait << " sec...\n";
 
@@ -87,13 +88,12 @@ namespace nana
 		pump();
 		if (t.joinable())
 			t.join();
-
-	#else
-		static_cast<void>(wait);
-		static_cast<void>(wait_end);
-		static_cast<void>(f); //to eliminte unused parameter compiler warning.
-
-		pump();
-	#endif
 	}
+#else
+	void exec()
+	{
+		internal_scope_guard lock;
+		detail::bedrock::instance().pump_event(nullptr, false);
+	}
+#endif
 }//end namespace nana

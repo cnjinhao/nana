@@ -388,8 +388,7 @@ namespace nana
 		{
 			if(1 == ++(fc[ttf.string()]))
 			{
-				auto state = ::FcConfigAppFontAddFile(nullptr, reinterpret_cast<const FcChar8*>(ttf.string().c_str()));
-				state = 0;
+				::FcConfigAppFontAddFile(nullptr, reinterpret_cast<const FcChar8*>(ttf.string().c_str()));
 			}
 		}
 		else

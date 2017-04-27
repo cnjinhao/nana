@@ -1193,6 +1193,14 @@ namespace detail
 			native_interface::enable_window(owner_native, true);
 		}
 
+		//Before exit of pump_event, it should call the remove_trash_handle.
+		//Under Linux, if the windows are closed in other threads, all the widgets handles
+		//will be marked as deleted after exit of the event loop and in other threads. So the 
+		//handle should be deleted from trash before exit the pump_event.
+		auto thread_id = ::nana::system::this_thread_id();
+		wd_manager().call_safe_place(thread_id);
+		wd_manager().remove_trash_handle(thread_id);
+
 		lock.forward();
 
 		if(0 == --(context->event_pump_ref_count))
