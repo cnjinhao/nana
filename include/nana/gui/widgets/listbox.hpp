@@ -1176,8 +1176,8 @@ namespace nana
 				color_proxy header_fgcolor{ colors::black };
 				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
 				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
-				color_proxy item_selected{ static_cast<color_rgb>(0xD5EFFC) };
-				color_proxy item_highlighted{ static_cast<color_rgb>(0xD5EFFC) };
+				color_proxy item_selected{ static_cast<color_rgb>(0xCCE8FF) };
+				color_proxy item_highlighted{ static_cast<color_rgb>(0xE5F3FF) };
 
 				color_proxy selection_box{ static_cast<color_rgb>(0x3399FF) };	///< Color of selection box border.
 

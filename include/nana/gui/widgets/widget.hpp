@@ -245,9 +245,8 @@ namespace nana
 
 		void _m_notify_destroy() override final
 		{
-			events_ = std::make_shared<Events>();
-			API::dev::set_events(handle_, events_);
 			widget_base::_m_notify_destroy();
+			events_ = std::make_shared<Events>();
 		}
 	private:
 		DrawerTrigger trigger_;
@@ -310,9 +309,8 @@ namespace nana
 
 		void _m_notify_destroy() override final
 		{
-			events_ = std::make_shared<Events>();
-			API::dev::set_events(handle_, events_);
 			widget_base::_m_notify_destroy();
+			events_ = std::make_shared<Events>();
 		}
 	private:
 		std::shared_ptr<Events> events_;
@@ -449,9 +447,8 @@ namespace nana
 
 		void _m_notify_destroy() override final
 		{
-			events_ = std::make_shared<Events>();
-			API::dev::set_events(handle_, events_);
 			widget_base::_m_notify_destroy();
+			events_ = std::make_shared<Events>();
 		}
 	private:
 		DrawerTrigger					trigger_;
