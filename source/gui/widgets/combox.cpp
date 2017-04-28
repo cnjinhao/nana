@@ -111,13 +111,7 @@ namespace nana
 
 					size extension() const override
 					{
-						auto text_size = drw_->editor()->text_area(false).dimension();
-						auto wdg_size = drw_->widget_ptr()->size();
-
-						return{
-							wdg_size.width > text_size.width ? wdg_size.width - text_size.width : 0,
-							wdg_size.height > text_size.height ? wdg_size.height - text_size.height : 0
-						};
+						return{ 19, 4 };
 					}
 				private:
 					drawer_impl* const drw_;
@@ -185,7 +179,9 @@ namespace nana
 
 				void text_area(const nana::size& s)
 				{
-					nana::rectangle r(2, 2, s.width > 19 ? s.width - 19 : 0, s.height > 4 ? s.height - 4 : 0);
+					auto extension = measurer_->extension();
+
+					nana::rectangle r(2, 2, s.width > extension.width ? s.width - extension.width : 0, s.height > extension.height ? s.height - extension.height : 0);
 					if(image_enabled_)
 					{
 						unsigned place = image_pixels_ + 2;

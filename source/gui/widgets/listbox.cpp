@@ -3541,7 +3541,7 @@ namespace nana
 					if (item_state::highlighted == state)
 					{
 						if (item.flags.selected)
-							bgcolor = bgcolor.blend(colors::black, 0.1);
+							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.5);
 						else
 							bgcolor = bgcolor.blend(essence_->scheme_ptr->item_highlighted, 0.7);
 					}
