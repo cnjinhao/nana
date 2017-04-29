@@ -2656,17 +2656,24 @@ namespace nana{	namespace widgets
 			return false;
 		}
 
-		color text_editor::_m_draw_colored_area(paint::graphics& graph, std::size_t line_pos)
+		color text_editor::_m_draw_colored_area(paint::graphics& graph, const std::pair<std::size_t, std::size_t>& row, bool whole_line)
 		{
-			auto area = impl_->colored_area.find(line_pos);
+			auto area = impl_->colored_area.find(row.first);
 			if (area)
 			{
 				if (!area->bgcolor.invisible())
 				{
-					auto top = _m_caret_to_screen(upoint{ 0, static_cast<unsigned>(line_pos) }).y;
+					auto const height = line_height();
 
-					const unsigned pixels = line_height();
-					const rectangle area_r = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(pixels * impl_->capacities.behavior->take_lines(line_pos))};
+					auto top = _m_caret_to_screen(upoint{ 0, static_cast<unsigned>(row.first) }).y;
+					std::size_t lines = 1;
+
+					if (whole_line)
+						lines = impl_->capacities.behavior->take_lines(row.first);
+					else
+						top += height * row.second;
+					
+					const rectangle area_r = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(height * lines) };
 
 					if (API::is_transparent_background(this->window_))
 						graph.blend(area_r, area->bgcolor, 1);
@@ -2705,7 +2712,7 @@ namespace nana{	namespace widgets
 					if (row.first >= line_count)
 						break;
 
-					auto fgcolor = _m_draw_colored_area(graph_, row.first);
+					auto fgcolor = _m_draw_colored_area(graph_, row, false);
 					if (fgcolor.invisible())
 						fgcolor = text_color;
 
@@ -2945,11 +2952,11 @@ namespace nana{	namespace widgets
 				
 				if (!API::dev::copy_transparent_background(window_, update_area, graph_, update_area.position()))
 				{
-					_m_draw_colored_area(graph_, pos);
+					_m_draw_colored_area(graph_, { pos, 0 }, true);
 					graph_.rectangle(update_area, true, API::bgcolor(window_));
 				}
 				else
-					_m_draw_colored_area(graph_, pos);
+					_m_draw_colored_area(graph_, { pos, 0 }, true);
 
 				auto fgcolor = API::fgcolor(window_);
 				auto text_ptr = textbase().getline(pos).c_str();

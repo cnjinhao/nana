@@ -213,7 +213,7 @@ namespace nana{	namespace widgets
 
 			bool try_refresh();
 		private:
-			nana::color _m_draw_colored_area(paint::graphics& graph, std::size_t line_pos);
+			nana::color _m_draw_colored_area(paint::graphics& graph, const std::pair<std::size_t,std::size_t>& row, bool whole_line);
 			std::vector<upoint> _m_render_text(const ::nana::color& text_color);
 			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
 
