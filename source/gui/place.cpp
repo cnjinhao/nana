@@ -807,80 +807,107 @@ namespace nana
 				if((ratio > 0.001) && (fv > 0))
 					fv /= ratio;
 
+				int set_weight = 0;
+
+				if ((fit_policy::none != this->fit) && this->field)
+				{
+					std::size_t fit_count = 0;
+
+					unsigned max_value = 0;
+					auto const fit_horz = (fit_policy::vert == this->fit);
+
+					std::size_t pos = 0;
+
+					for (auto & elm : this->field->elements)
+					{
+						++pos;
+
+						unsigned edge_px = 0;
+						if (fit_policy::both != this->fit)
+						{
+							auto fit_val = this->fit_parameters.at(pos - 1);
+							if (fit_val.empty())
+								continue;
+
+							edge_px = fit_val.integer();
+						}
+
+						auto extent = API::content_extent(elm.handle, edge_px, fit_horz);
+						if (extent)
+						{
+							run_.fit_extents[elm.handle] = extent->second;
+							++fit_count;
+							if (vert_fields)
+								floor.second += extent->second.height;
+							else
+								floor.first += extent->second.width;
+
+							max_value = (std::max)(max_value, (vert_fields ? extent->second.width : extent->second.height));
+
+							if (0 == set_weight)
+								set_weight = 1;
+						}
+						else
+							set_weight = -1;
+					}
+
+					if (max_value)
+					{
+						if (vert_fields)
+							floor.first = max_value;
+						else
+							floor.second = max_value;
+					}
+
+					//reverse deduction with gap
+					if (fit_count > 1)
+					{
+						double percent = 0;
+						for (std::size_t i = 0; i < fit_count - 1; ++i)
+						{
+							auto gap_value = gap.at(i);
+							if (gap_value.kind_of() == number_t::kind::percent)
+							{
+								percent += gap_value.real();
+							}
+							else
+							{
+								double precise_px = 0;
+								fv += calc_number(gap_value, 100, 0, precise_px);
+							}
+						}
+
+						fv *= (1 + percent);
+					}
+
+					//reverse deduction with margin
+					double margin_per = _m_extend_with_margin(0, floor.second);
+					margin_per += _m_extend_with_margin(2, floor.second);
+
+					if (margin_per < 1)
+						floor.second /= (1 - margin_per);
+
+					margin_per = _m_extend_with_margin(1, floor.first);
+					margin_per += _m_extend_with_margin(3, floor.first);
+					if (margin_per < 1)
+						floor.first /= (1 - margin_per);
+				}
+				
 				if (!this->weight.empty())
 				{
-					if(!this->is_percent())
-						fv = this->weight.real();
-				}
-				else
-				{
-					if (fit_policy::none != this->fit)
+					if (!this->is_percent())
 					{
-						std::size_t fit_count = 0;
-
-						unsigned max_value = 0;
-						auto const fit_horz = (fit_policy::vert == this->fit);
-
-						std::size_t pos = 0;
-						for (auto & elm : this->field->elements)
-						{
-							++pos;
-
-							unsigned edge_px = 0;
-							if (fit_policy::both != this->fit)
-							{
-								auto fit_val = this->fit_parameters.at(pos - 1);
-								if (fit_val.empty())
-									continue;
-
-								edge_px = fit_val.integer();
-							}
-
-							auto extent = API::content_extent(elm.handle, edge_px, fit_horz);
-							if (extent)
-							{
-								run_.fit_extents[elm.handle] = extent->second;
-								++fit_count;
-								if (vert_fields)
-									floor.second += extent->second.height;
-								else
-									floor.first += extent->second.width;
-
-								max_value = (std::max)(max_value, (vert_fields ? extent->second.width : extent->second.height));
-							}
-						}
-
-						if (max_value)
-						{
-							if (vert_fields)
-								floor.first = max_value;
-							else
-								floor.second = max_value;
-						}
-
-
-						if (fit_count > 1)
-						{
-							double percent = 0;
-							for (std::size_t i = 0; i < fit_count - 1; ++i)
-							{
-								auto gap_value = gap.at(i);
-								if (gap_value.kind_of() == number_t::kind::percent)
-								{
-									percent += gap_value.real();
-								}
-								else
-								{
-									double precise_px = 0;
-									fv += calc_number(gap_value, 100, 0, precise_px);
-								}
-							}
-
-							fv *= (1 + percent);
-						}
+						//Cancel to set weight
+						if (fv <= this->weight.real())
+							set_weight = -1;
 					}
-					run_.weight_floor = floor;
 				}
+
+				if (1 == set_weight)
+					this->weight.assign(static_cast<int>(fv));
+
+				run_.weight_floor = floor;
+				
 			}
 
 			return floor;
@@ -1014,6 +1041,19 @@ namespace nana
 			return nullptr;
 		}
 	public:
+		double _m_extend_with_margin(std::size_t edge, double & extended)
+		{
+			auto margin_edge = margin.get_edge(edge);
+			if (!margin_edge.empty())
+			{
+				if (margin_edge.kind_of() != number_t::kind::percent)
+					extended += margin_edge.real();
+				else
+					return margin_edge.real();
+			}
+			return 0;
+		}
+
 		static void _m_visible_for_child(division * div, bool vsb) noexcept
 		{
 			for (auto & child : div->children)
@@ -1104,7 +1144,9 @@ namespace nana
 					child_px = npx;
 				}
 				else
+				{
 					child_px = static_cast<unsigned>(child->weight.integer());
+				}
 
 				//Use 'endpos' to calc width is to avoid deviation
 				int endpos = static_cast<int>(position + child_px);
@@ -2813,9 +2855,8 @@ namespace nana
 		if ((!max_px.empty()) && (!weight.empty()) && (weight.get_value(100) > max_px.get_value(100)))
 			weight.reset();
 
-		if(!weight.empty())
+		if (!weight.empty())
 			div->weight = weight;
-
 
 		div->gap = std::move(gap);
 

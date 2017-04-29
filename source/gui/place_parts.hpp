@@ -591,6 +591,45 @@ namespace nana
 				margins_ = v;
 			}
 
+			number_t get_edge(std::size_t edge) const
+			{
+				int il{ -1 }, ir{ -1 }, it{ -1 }, ib{ -1 };	//index of four corners in margin
+				switch (margins_.size())
+				{
+				case 0:	break;
+				case 1:	//top
+					il = ir = it = ib = 0;
+					break;
+				case 2://top,bottom and left,right
+					it = ib = 0;
+					il = ir = 1;
+					break;
+				default:
+					il = 3;	//left
+				case 3:	//top, right, bottom
+					it = 0;
+					ir = 1;
+					ib = 2;
+				}
+
+				int pos = 0;
+				switch (edge)
+				{
+				case 0: //top
+					pos = it; break;
+				case 1: //right
+					pos = ir; break;
+				case 2: //bottom
+					pos = ib; break;
+				case 3: //left
+					pos = il; break;
+				default:
+					return number_t{};
+				}
+
+				return (-1 == pos ? number_t{} : margins_[pos]);
+			}
+
 			nana::rectangle area(const ::nana::rectangle& field_area) const
 			{
 				if (margins_.empty())
@@ -613,7 +652,7 @@ namespace nana
 					{
 					case 0:	break;
 					case 1:	//top
-						it = 0;
+						il = ir = it = ib = 0;
 						break;
 					case 2://top,bottom and left,right
 						it = ib = 0;
