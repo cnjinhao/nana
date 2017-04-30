@@ -31,6 +31,7 @@ namespace nana {
 				nana::size extra_px;
 
 				bool	enable_update{ true };
+				bool	drag_started{ false };
 				point origin;
 
 				nana::scroll<false>	horz;
@@ -96,7 +97,10 @@ namespace nana {
 							if (!arg.is_left_button())
 								return;
 
-							if (this->drive(arg.pos, true))
+							if ((!this->drag_started) && this->view.view_area().is_hit(arg.pos))
+								this->drag_started = true;
+
+							if (this->drag_started && this->drive(arg.pos))
 							{
 								tmr.interval(16);
 								tmr.start();
@@ -104,6 +108,7 @@ namespace nana {
 						}
 						else if (event_code::mouse_up == arg.evt_code)
 						{
+							this->drag_started = false;
 							tmr.stop();
 						}
 					};
@@ -116,7 +121,7 @@ namespace nana {
 						auto curs = ::nana::API::cursor_position();
 						::nana::API::calc_window_point(window_handle, curs);
 
-						if (this->drive(curs, false))
+						if (this->drive(curs))
 						{
 							if (events.hover_outside)
 								events.hover_outside(curs);
@@ -129,12 +134,9 @@ namespace nana {
 					});
 				}
 
-				bool drive(const point& cursor_pos, bool check_cursor_pos)
+				bool drive(const point& cursor_pos)
 				{
 					auto const area = view.view_area();
-
-					if (check_cursor_pos && !area.is_hit(cursor_pos))
-						return false;
 
 					point skew;
 
