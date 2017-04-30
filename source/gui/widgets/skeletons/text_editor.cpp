@@ -2118,7 +2118,7 @@ namespace nana{	namespace widgets
 				impl_->capacities.behavior->adjust_caret_into_screen();
 				reset_caret();
 				impl_->try_refresh = sync_graph::refresh;
-				_m_reset_content_size();
+				_m_reset_content_size(true);
 				points_.xpos = points_.caret.x;
 			}
 		}
@@ -3012,15 +3012,9 @@ namespace nana{	namespace widgets
 				{
 					//detect if vertical scrollbar is required
 					auto const max_lines = screen_lines(true);
-					auto const text_lines = textbase().lines();
+					auto text_lines = textbase().lines();
 
-					csize.width = _m_width_px(true);
-					if (text_lines > max_lines)
-					{
-						//enable vertical scrollbar
-						csize.width = _m_width_px(false);
-					}
-					else
+					if (text_lines <= max_lines)
 					{
 						std::size_t lines = 0;
 						for (std::size_t i = 0; i < text_lines; ++i)
@@ -3030,12 +3024,14 @@ namespace nana{	namespace widgets
 
 							if (lines > max_lines)
 							{
-								//enable vertical scrollbar
-								csize.width = _m_width_px(false);
+								text_lines = lines;
 								break;
 							}
 						}
 					}
+
+					//enable vertical scrollbar when text_lines > max_lines
+					csize.width = _m_width_px(text_lines <= max_lines);
 
 					impl_->capacities.behavior->pre_calc_lines(csize.width);
 				}
