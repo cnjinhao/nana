@@ -324,6 +324,15 @@
     <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp">
       <Filter>Source Files\nana\gui\detail</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\stdc++.cpp">
+      <Filter>Source Files\nana</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\content_view.cpp">
+      <Filter>Source Files\nana\gui\widgets\skeletons</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\detail\platform_abstraction.cpp">
+      <Filter>Source Files\nana\detail</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\gui\widgets\group.cpp">

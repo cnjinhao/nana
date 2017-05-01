@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,40 +17,42 @@
 
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
+#include <nana/filesystem/filesystem.hpp>
+
+#include "detail/ptdefs.hpp"
 
 namespace nana
 {
 	namespace paint
 	{
-		namespace detail
-		{
-			struct native_font_signature;
-		}// end namespace detail
-
-		typedef detail::native_font_signature*		native_font_type;
-
 		class font
 		{
 			friend class graphics;
 		public:
+			using path_type = ::std::experimental::filesystem::path;
+
+			using font_style = ::nana::detail::font_style;
+
 			font();
 			font(drawable_type);
 			font(const font&);
-			font(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
+
+			font(const ::std::string& name, double size_pt, const font_style& fs = {});
+			font(double size_pt, const path_type& truetype, const font_style& ft = {});
+
 			~font();
 			bool empty() const;
-			void make(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
-			void make_raw(const ::std::string& name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
 
 			void set_default() const;
 			::std::string name() const;
-			unsigned size() const;
+			double size() const;
 			bool bold() const;
-			unsigned height() const;
 			unsigned weight() const;
 			bool italic() const;
 			native_font_type handle() const;
 			void release();
+			bool strikeout() const;
+			bool underline() const;
 
 			font& operator=(const font&);
 			bool operator==(const font&) const;
@@ -116,7 +118,7 @@ namespace nana
 			void bitblt(const ::nana::rectangle& r_dst, const graphics& src, const point& p_src);///< Transfers the color data corresponding to r_dst from the src graphics at point p_src to this graphics.
 
 			void blend(const ::nana::rectangle& r, const ::nana::color&, double fade_rate);
-			void blend(const ::nana::rectangle& s_r, graphics& dst, const point& d_pos, double fade_rate) const;///< blends with the dst object.
+			void blend(const ::nana::rectangle& blend_r, const graphics& blend_graph, const point& blend_graph_point, double fade_rate);///< blends with the blend_graph.
 
 			void blur(const ::nana::rectangle& r, std::size_t radius);      ///< Blur process.
 

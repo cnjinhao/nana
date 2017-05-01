@@ -1,7 +1,7 @@
 /**
  *	A Label Control Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -31,11 +31,11 @@ namespace nana
 			class trigger: public drawer_trigger
 			{
 			public:
-				struct impl_t;
+				struct implement;
 
 				trigger();
 				~trigger();
-				impl_t * impl() const;
+				implement * impl() const;
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
@@ -43,7 +43,7 @@ namespace nana
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 				void click(graph_reference, const arg_click&)	override;
 			private:
-				impl_t * impl_;
+				implement * impl_;
 			};
 
 		}//end namespace label

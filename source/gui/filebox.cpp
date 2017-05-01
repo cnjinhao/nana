@@ -1,7 +1,7 @@
 /*
 *	Filebox
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -44,13 +44,13 @@ namespace nana
 			std::string name;
 			::tm modified_time;
 			bool directory;
-			nana::long_long_t bytes;
+			long long bytes;
 
 			friend listbox::iresolver& operator>>(listbox::iresolver& ires, item_fs& m)
 			{
 				std::wstring type;
 				ires>>m.name>>type>>type;
-				m.directory = (type == L"Directory");
+				m.directory = (to_utf8(type) == internationalization()("NANA_FILEBOX_DIRECTORY"));
 				return ires;
 			}
 
@@ -65,6 +65,8 @@ namespace nana
 				_m_add(tm, item.modified_time.tm_min)<<':';
 				_m_add(tm, item.modified_time.tm_sec);
 
+				internationalization i18n;
+
 				ores<<item.name<<tm.str();
 				if(!item.directory)
 				{
@@ -72,12 +74,12 @@ namespace nana
 					if(pos != item.name.npos && (pos + 1 < item.name.size()))
 						ores<<item.name.substr(pos + 1);
 					else
-						ores<<L"File";
+						ores<<i18n("NANA_FILEBOX_FILE");
 
 					ores<<_m_trans(item.bytes);
 				}
 				else
-					ores<<L"Directory";
+					ores << i18n("NANA_FILEBOX_DIRECTORY");
 				return ores;
 			}
 
@@ -114,7 +116,8 @@ namespace nana
 
 					return s + ustr[uid];
 				}
-				ss<<bytes<<" Bytes";
+				internationalization i18n;
+				ss<<bytes<<" "<<i18n("NANA_FILEBOX_BYTES");
 				return ss.str();
 			}
 		};
@@ -138,6 +141,7 @@ namespace nana
 		filebox_implement(window owner, bool io_read, const std::string& title)
 			: form(owner, API::make_center(owner, 630, 440)), io_read_(io_read)
 		{
+			internationalization i18n;
 			path_.create(*this);
 			path_.splitstr("/");
 			path_.events().selected.connect_unignorable([this](const arg_categorize<int>&)
@@ -157,7 +161,7 @@ namespace nana
 
 			filter_.create(*this);
 			filter_.multi_lines(false);
-			filter_.tip_string("Filter");
+			filter_.tip_string(i18n("NANA_FILEBOX_FILTER"));
 
 			filter_.events().key_release.connect_unignorable([this](const arg_keyboard&)
 			{
@@ -165,23 +169,23 @@ namespace nana
 			});
 
 			btn_folder_.create(*this);
-			btn_folder_.caption("&New Folder");
+			btn_folder_.i18n(i18n_eval("NANA_FILEBOX_NEW_FOLDER_SHORTKEY"));
 
 			btn_folder_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				form fm(this->handle(), API::make_center(*this, 300, 35));
-				fm.caption("Name the new folder");
+				fm.i18n(i18n_eval("NANA_FILEBOX_NEW_FOLDER_CAPTION"));
 
 				textbox folder(fm, nana::rectangle(5, 5, 160, 25));
 				folder.multi_lines(false);
 
 				button btn(fm, nana::rectangle(170, 5, 60, 25));
-				btn.caption("Create");
+				btn.i18n(i18n_eval("NANA_BUTTON_CREATE"));
 
 				btn.events().click.connect_unignorable(folder_creator(*this, fm, folder));
 
 				button btn_cancel(fm, nana::rectangle(235, 5, 60, 25));
-				btn_cancel.caption("Cancel");
+				btn_cancel.i18n(i18n_eval("NANA_BUTTON_CANCEL"));
 
 				btn_cancel.events().click.connect_unignorable([&fm](const arg_click&)
 				{
@@ -193,10 +197,10 @@ namespace nana
 			tree_.create(*this);
 
 			ls_file_.create(*this);
-			ls_file_.append_header("Name", 190);
-			ls_file_.append_header("Modified", 145);
-			ls_file_.append_header("Type", 80);
-			ls_file_.append_header("Size", 70);
+			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_NAME"), 190);
+			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_MODIFIED"), 145);
+			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_TYPE"), 80);
+			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_SIZE"), 70);
 
 			auto fn_sel_file = [this](const arg_mouse& arg){
 				_m_sel_file(arg);
@@ -274,7 +278,7 @@ namespace nana
 				});
 
 			lb_file_.create(*this);
-			lb_file_.caption("File:");
+			lb_file_.i18n(i18n_eval("NANA_FILEBOX_FILE_COLON"));
 			
 			tb_file_.create(*this);
 			tb_file_.multi_lines(false);
@@ -290,14 +294,15 @@ namespace nana
 			cb_types_.events().selected.connect_unignorable([this](const arg_combox&){ _m_list_fs(); });
 
 			btn_ok_.create(*this);
-			btn_ok_.caption("&OK");
+			btn_ok_.i18n(i18n_eval("NANA_BUTTON_OK_SHORTKEY"));
+
 
 			btn_ok_.events().click.connect_unignorable([this](const arg_click&)
 			{
 				_m_ok();
 			});
 			btn_cancel_.create(*this);
-			btn_cancel_.caption("&Cancel");
+			btn_cancel_.i18n(i18n_eval("NANA_BUTTON_CANCEL_SHORTKEY"));
 
 			btn_cancel_.events().click.connect_unignorable([this](const arg_click&)
 			{
@@ -309,7 +314,7 @@ namespace nana
 			_m_init_tree();
 
 			if(0 == title.size())
-				caption(io_read ? "Open" : "Save As");
+				this->i18n(i18n_eval(io_read ? "NANA_FILEBOX_OPEN" : "NANA_FILEBOX_SAVE_AS"));
 			else
 				caption(title);
 		}
@@ -640,11 +645,12 @@ namespace nana
 			{
 				auto path = tx_path_.caption();
 
-				msgbox mb(fm_, "Create Folder");
+				internationalization i18n;
+				msgbox mb(fm_, i18n("NANA_FILEBOX_NEW_FOLDER"));
 				mb.icon(msgbox::icon_warning);
 				if(0 == path.size() || path[0] == '.' || path[0] == '/')
 				{
-					mb<<L"Please input a valid name for the new folder.";
+					mb << i18n("NANA_FILEBOX_ERROR_INVALID_FOLDER_NAME");
 					mb();
 					return;
 				}
@@ -657,14 +663,14 @@ namespace nana
 
 				if(fst.type() != file_type::not_found && fst.type() != file_type::none)
 				{
-					mb<<L"The folder is existing, please rename it.";
+					mb<<i18n("NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_EXISTING");
 					mb();
 					return;
 				}
 
 				if(false == fs::create_directory(fspath))
 				{
-					mb<<L"Failed to create the folder, please rename it.";
+					mb<<i18n("NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_FAILED_CREATION");
 					mb();
 					return;
 				}			
@@ -734,69 +740,74 @@ namespace nana
 
 		void _m_ok()
 		{
-			if(0 == selection_.target.size())
+			std::string tar = selection_.target;
+
+			if(selection_.target.empty())
 			{
 				auto file = tb_file_.caption();
 				if(file.size())
 				{
-					if(file[0] == L'.')
+					internationalization i18n;
+					if(file[0] == '.')
 					{
 						msgbox mb(*this, caption());
 						mb.icon(msgbox::icon_warning);
-						mb<<file<<std::endl<<L"The filename is invalid.";
+						mb<<file<<std::endl<<i18n("NANA_FILEBOX_ERROR_INVALID_FILENAME");
 						mb();
 						return;
 					}
-					std::string tar;
+					
 					if(file[0] == '/')
 						tar = file;
 					else
 						tar = addr_.filesystem + file;
 
-
-					bool good = true;
-
 					auto fattr = fs::status(tar);
-					if(fattr.type() == fs::file_type::not_found)
-					{
-						good = (_m_append_def_extension(tar) && (fs::status(tar).type() == fs::file_type::not_found));					
-					}
 
-					if(good && fs::is_directory(fattr))
+					//Check if the selected name is a directory
+					auto is_dir = fs::is_directory(fattr);
+
+					if(!is_dir && _m_append_def_extension(tar))
 					{
-						_m_load_cat_path(tar);
-						tb_file_.caption("");
-						return;
+						//Add the extension, then check if it is a directory again.
+						fattr = fs::status(tar);
+						is_dir = fs::is_directory(fattr);
 					}
 					
+					if(is_dir)
+					{
+						_m_load_cat_path(tar);
+						tb_file_.caption(std::string{});
+						return;
+					}
+
 					if(io_read_)
 					{
-						if(false == good)
+						if(fs::file_type::not_found == fattr.type())
 						{
 							msgbox mb(*this, caption());
 							mb.icon(msgbox::icon_information);
-							mb<<L"The file \""<<nana::charset(tar, nana::unicode::utf8)<<L"\"\n is not existing. Please check and retry.";
+							mb << i18n("NANA_FILEBOX_ERROR_NOT_EXISTING_AND_RETRY", tar);
 							mb();
+
+							return;
 						}
-						else
-							_m_finish(kind::filesystem, tar);
 					}
 					else
 					{
-						if(good)
+						if(fs::file_type::not_found != fattr.type())
 						{
 							msgbox mb(*this, caption(), msgbox::yes_no);
 							mb.icon(msgbox::icon_question);
-							mb<<L"The input file is existing, do you want to overwrite it?";
+							mb<<i18n("NANA_FILEBOX_ERROR_QUERY_REWRITE_BECAUSE_OF_EXISTING");
 							if(msgbox::pick_no == mb())
 								return;
 						}
-						_m_finish(kind::filesystem, tar);
 					}
 				}
 			}
-			else
-				_m_finish(kind::filesystem, selection_.target);
+
+			_m_finish(kind::filesystem, tar);
 		}
 
 		void _m_tr_expand(item_proxy node, bool exp)
@@ -986,6 +997,9 @@ namespace nana
 
 			OPENFILENAME ofn;
 			memset(&ofn, 0, sizeof ofn);
+
+			internal_scope_guard lock;
+
 			ofn.lStructSize = sizeof(ofn);
 			ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
 			ofn.lpstrFile = &(wfile[0]);
@@ -1044,10 +1058,13 @@ namespace nana
 			if (!impl_->open_or_save)
 				ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
 			ofn.Flags |= OFN_NOCHANGEDIR;
-			
-			if(FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
-				return false;
-			
+
+			{
+				internal_revert_guard revert;
+				if (FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
+					return false;
+			}
+
 			wfile.resize(std::wcslen(wfile.data()));
 			impl_->file = to_utf8(wfile);
 #elif defined(NANA_POSIX)

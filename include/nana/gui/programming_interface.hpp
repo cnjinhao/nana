@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,6 +16,7 @@
 #include "effects.hpp"
 #include "detail/general_events.hpp"
 #include "detail/color_schemes.hpp"
+#include "detail/widget_content_measurer_interface.hpp"
 #include <nana/paint/image.hpp>
 #include <memory>
 
@@ -53,6 +54,8 @@ namespace API
 	effects::edge_nimbus effects_edge_nimbus(window);
 
 	void effects_bground(window, const effects::bground_factory_interface&, double fade_rate);
+	void effects_bground(std::initializer_list<window> wdgs, const effects::bground_factory_interface&, double fade_rate);
+
 	bground_mode effects_bground_mode(window);
 	void effects_bground_remove(window);
 
@@ -63,7 +66,7 @@ namespace API
 		void affinity_execute(window window_handle, const std::function<void()>&);
 
 		bool set_events(window, const std::shared_ptr<general_events>&);
-		
+
 		template<typename Scheme>
 		std::unique_ptr<Scheme> make_scheme()
 		{
@@ -72,6 +75,9 @@ namespace API
 
 		void set_scheme(window, widget_geometrics*);
 		widget_geometrics* get_scheme(window);
+
+		/// Sets a content measurer
+		void set_measurer(window, ::nana::dev::widget_content_measurer_interface*);
 
 		void attach_drawer(widget&, drawer_trigger&);
 		::nana::detail::native_string_type window_caption(window) throw();
@@ -91,6 +97,9 @@ namespace API
 		void set_menubar(window wd, bool attach);
 
 		void enable_space_click(window, bool enable);
+
+		bool copy_transparent_background(window, paint::graphics&);
+		bool copy_transparent_background(window, const rectangle& src_r, paint::graphics&, const point& dst_pt);
 
 		/// Refreshs a widget surface
 		/*
@@ -157,7 +166,7 @@ namespace API
 	}//end namespace detail
 
 	void exit();	    ///< close all windows in current thread
-	void exit_all();	///< close all windows 
+	void exit_all();	///< close all windows
 
 	/// @brief	Searchs whether the text contains a '&' and removes the character for transforming.
 	///			If the text contains more than one '&' charachers, the others are ignored. e.g
@@ -177,7 +186,7 @@ namespace API
 	template<typename Widget=::nana::widget, typename EnumFunction>
 	void enum_widgets(window wd, bool recursive, EnumFunction && fn)
 	{
-		static_assert(std::is_convertible<Widget, ::nana::widget>::value, "enum_widgets<Widget>: The specified Widget is not a widget type.");
+		static_assert(std::is_convertible<typename std::decay<Widget>::type*, ::nana::widget*>::value, "enum_widgets<Widget>: The specified Widget is not a widget type.");
 
 		detail::enum_widgets_function<Widget, EnumFunction> enum_fn(static_cast<EnumFunction&&>(fn));
 		enum_fn.enum_widgets(wd, recursive);
@@ -185,11 +194,13 @@ namespace API
 
 	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon = {});
 	void window_icon(window, const paint::image& small_icon, const paint::image& big_icon = {});
-	
+
 	bool empty_window(window);		///< Determines whether a window is existing.
 	bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
 	bool is_destroying(window);		///< Determines whether a window is destroying
 	void enable_dropfiles(window, bool);
+
+	bool is_transparent_background(window);
 
     /// \brief Retrieves the native window of a Nana.GUI window.
     ///
@@ -288,7 +299,7 @@ namespace API
 	 * @param window_handle A handle to the window to be refreshed.
 	 */
 	void refresh_window(window window_handle);
-	void refresh_window_tree(window);      ///< Refreshs the specified window and all it’s children windows, then display it immediately
+	void refresh_window_tree(window);      ///< Refreshes the specified window and all its children windows, then display it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
@@ -300,7 +311,7 @@ namespace API
 
 	void activate_window(window);
 
-	/// Determines whether the specified window will get the keyboard focus when its root window gets native system focus. 
+	/// Determines whether the specified window will get the keyboard focus when its root window gets native system focus.
 	bool is_focus_ready(window);
 
 	/// Returns the current keyboard focus window.
@@ -318,7 +329,7 @@ namespace API
 	 * @param ignore_children Indicates whether to redirect the mouse input to its children if the mouse pointer is over its children.
 	 */
 	void set_capture(window window_handle, bool ignore_children);
-	
+
 	/// Disable a window to grab the mouse input.
 	/**
 	 * @param window handle A handle to a window to release grab of mouse input.
@@ -399,6 +410,17 @@ namespace API
 	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 
 	void at_safe_place(window, std::function<void()>);
+
+	/// Returns a widget content extent size
+	/**
+	 * @param wd A handle to a window that returns its content extent size.
+	 * @param limited_px Specifies the max pixels of width or height. If this parameter is zero, this parameter will be ignored.
+	 * @param limit_width Indicates whether the it limits the width or height. If this parameter is *true*, the width is limited.
+	 * If the parameter is *false*, the height is limited. This parameter is ignored if limited_px = 0.
+	 * @return if optional has a value, the first size indicates the content extent, the second size indicates the size of
+	 * widget by the content extent. 
+	 */
+	optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 }//end namespace API
 
 }//end namespace nana

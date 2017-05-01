@@ -1,7 +1,7 @@
 /*
  *	A Picture Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -16,6 +16,7 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/paint/image.hpp>
 #include <nana/gui/element.hpp>
+#include <nana/gui/detail/widget_content_measurer_interface.hpp>
 
 namespace nana
 {
@@ -23,11 +24,13 @@ namespace nana
 	{
 		namespace picture
 		{
+			class content_measurer;
+
 			struct implement
 			{
 				widget* wdg_ptr{nullptr};
 				paint::graphics* graph_ptr{nullptr};
-
+				std::unique_ptr<content_measurer> measurer;
 
 				struct gradual_bground_tag
 				{
@@ -47,9 +50,37 @@ namespace nana
 				}backimg;
 			};
 
+			class content_measurer
+				: public dev::widget_content_measurer_interface
+			{
+			public:
+				content_measurer(implement* impl)
+					: impl_{impl}
+				{}
+
+				optional<size> measure(graph_reference /*graph*/, unsigned limit_pixels, bool /*limit_width*/) const override
+				{
+					//Picture doesn't provide a support of vfit and hfit
+					if (!limit_pixels)
+					{
+						if (impl_->backimg.valid_area.empty())
+							return impl_->backimg.image.size();
+					}
+					return{};
+				}
+
+				size extension() const override
+				{
+					return{};
+				}
+			private:
+				implement* const impl_;
+			};
+
 			//class drawer
 			drawer::drawer() :impl_(new implement)
 			{
+				impl_->measurer.reset(new content_measurer{impl_});
 			}
 
 			drawer::~drawer()
@@ -61,6 +92,7 @@ namespace nana
 			{
 				impl_->wdg_ptr = &wdg;
 				impl_->graph_ptr = &graph;
+				API::dev::set_measurer(wdg, impl_->measurer.get());
 			}
 
 			void drawer::refresh(graph_reference graph)
@@ -162,9 +194,9 @@ namespace nana
 			{
 				auto graph = impl_->graph_ptr;
 
-				if (graph && (bground_mode::basic != API::effects_bground_mode(*impl_->wdg_ptr)))
+				if (graph && (!API::dev::copy_transparent_background(*impl_->wdg_ptr, *graph)))
 				{
-					if (w < graph->size().width || h < graph->size().height /*  .width   ???  */ || impl_->backimg.image.alpha())
+					if (w < graph->size().width || h < graph->size().height || impl_->backimg.image.alpha())
 					{
 						auto & bground = impl_->gradual_bground;
 						if (bground.gradual_from.invisible() || bground.gradual_to.invisible())
@@ -288,7 +320,7 @@ namespace nana
 
 		bool picture::transparent() const
 		{
-			return (bground_mode::basic == API::effects_bground_mode(*this));
+			return API::is_transparent_background(*this);
 		}
 	//end class picture
 }//end namespace nana

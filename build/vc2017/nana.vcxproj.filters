@@ -1,0 +1,244 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件\audio">
+      <UniqueIdentifier>{81850bad-7436-405a-beb5-357c5e34f039}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\audio\detail">
+      <UniqueIdentifier>{44582b36-4575-4663-ac02-e80417f95d05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\detail">
+      <UniqueIdentifier>{b7e3cdb7-99ac-473d-86c8-53dddce70480}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\filesystem">
+      <UniqueIdentifier>{02fa693c-edc1-4e04-bf1d-ec3c2a89182a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\gui">
+      <UniqueIdentifier>{cffe7506-b96c-42aa-a747-41b5115d9580}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\gui\detail">
+      <UniqueIdentifier>{b6b2c032-c6a4-4884-8c14-eca4aa69ef0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\gui\widgets">
+      <UniqueIdentifier>{58f2e0f8-4d63-40db-807d-d7adf71c4ebe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\gui\widgets\skeletons">
+      <UniqueIdentifier>{f288a25d-3ce8-4c2e-a86f-9aeda44bc557}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\paint">
+      <UniqueIdentifier>{90b2da01-605d-489b-b6c5-2af8d3c2d8a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\paint\detail">
+      <UniqueIdentifier>{430feed0-e1d9-45cb-8d59-e1a48a04d19f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\system">
+      <UniqueIdentifier>{dcf62634-a658-453b-a58d-f1a96a12a8b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\threads">
+      <UniqueIdentifier>{c1cdf46a-519f-422a-947f-39e173045414}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\any.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\basic_types.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\charset.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\datetime.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\deploy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\internationalization.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\stdc++.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\unicode_bidi.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\audio\detail\audio_device.cpp">
+      <Filter>源文件\audio\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\audio\detail\audio_stream.cpp">
+      <Filter>源文件\audio\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\audio\detail\buffer_preparation.cpp">
+      <Filter>源文件\audio\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\audio\player.cpp">
+      <Filter>源文件\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\detail\platform_spec_windows.cpp">
+      <Filter>源文件\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\filesystem\filesystem.cpp">
+      <Filter>源文件\filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\basic_window.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\bedrock_pi.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\color_schemes.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\drawer.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\element_store.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\events_operation.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\native_window_interface.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\window_layout.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\window_manager.cpp">
+      <Filter>源文件\gui\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\content_view.cpp">
+      <Filter>源文件\gui\widgets\skeletons</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\text_editor.cpp">
+      <Filter>源文件\gui\widgets\skeletons</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\button.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\categorize.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\checkbox.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\combox.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\date_chooser.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\float_listbox.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\form.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\frame.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\group.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\label.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\listbox.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\menu.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\menubar.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\panel.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\picture.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\progress.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\scroll.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\slider.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\tabbar.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\textbox.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\toolbar.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\treebox.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\widgets\widget.cpp">
+      <Filter>源文件\gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\paint\detail\image_process_provider.cpp">
+      <Filter>源文件\paint\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\paint\detail\native_paint_interface.cpp">
+      <Filter>源文件\paint\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\paint\graphics.cpp">
+      <Filter>源文件\paint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\paint\image.cpp">
+      <Filter>源文件\paint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\paint\image_process_selector.cpp">
+      <Filter>源文件\paint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\paint\pixel_buffer.cpp">
+      <Filter>源文件\paint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\paint\text_renderer.cpp">
+      <Filter>源文件\paint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\system\dataexch.cpp">
+      <Filter>源文件\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\system\platform.cpp">
+      <Filter>源文件\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\system\shared_wrapper.cpp">
+      <Filter>源文件\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\system\timepiece.cpp">
+      <Filter>源文件\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threads\pool.cpp">
+      <Filter>源文件\threads</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\detail\platform_abstraction.cpp">
+      <Filter>源文件\detail</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -49,7 +49,7 @@
 		<Unit filename="../../source/charset.cpp" />
 		<Unit filename="../../source/datetime.cpp" />
 		<Unit filename="../../source/deploy.cpp" />
-		<Unit filename="../../source/detail/platform_spec_posix.cpp" />
+		<Unit filename="../../source/detail/platform_abstraction.cpp" />
 		<Unit filename="../../source/detail/platform_spec_windows.cpp" />
 		<Unit filename="../../source/filesystem/filesystem.cpp" />
 		<Unit filename="../../source/gui/animation.cpp" />
@@ -96,6 +96,7 @@
 		<Unit filename="../../source/gui/widgets/picture.cpp" />
 		<Unit filename="../../source/gui/widgets/progress.cpp" />
 		<Unit filename="../../source/gui/widgets/scroll.cpp" />
+		<Unit filename="../../source/gui/widgets/skeletons/content_view.cpp" />
 		<Unit filename="../../source/gui/widgets/skeletons/text_editor.cpp" />
 		<Unit filename="../../source/gui/widgets/slider.cpp" />
 		<Unit filename="../../source/gui/widgets/spinbox.cpp" />
@@ -113,6 +114,7 @@
 		<Unit filename="../../source/paint/image_process_selector.cpp" />
 		<Unit filename="../../source/paint/pixel_buffer.cpp" />
 		<Unit filename="../../source/paint/text_renderer.cpp" />
+		<Unit filename="../../source/stdc++.cpp" />
 		<Unit filename="../../source/system/dataexch.cpp" />
 		<Unit filename="../../source/system/platform.cpp" />
 		<Unit filename="../../source/system/shared_wrapper.cpp" />

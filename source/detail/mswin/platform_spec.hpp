@@ -25,6 +25,8 @@
 #include <memory>
 #include <functional>
 
+#include "../platform_abstraction_types.hpp"
+
 namespace nana
 {
 
@@ -87,31 +89,16 @@ namespace detail
 		};
 	};
 
-	struct font_tag
-	{
-		native_string_type name;
-		unsigned height;
-		unsigned weight;
-		bool italic;
-		bool underline;
-		bool strikeout;
-		HFONT handle;
-
-		struct deleter
-		{
-			void operator()(const font_tag*) const;
-		};
-	};
-
 	struct drawable_impl_type
 	{
-		typedef std::shared_ptr<font_tag> font_ptr_t;
+		using font_type = ::std::shared_ptr<font_interface>;
 
 		HDC		context;
 		HBITMAP	pixmap;
 		pixel_argb_t*	pixbuf_ptr{nullptr};
 		std::size_t		bytes_per_line{0};
-		font_ptr_t font;
+
+		font_type font;
 
 		struct pen_spec
 		{
@@ -179,7 +166,6 @@ namespace detail
 		platform_spec(platform_spec&&) = delete;
 		platform_spec& operator=(platform_spec&&) = delete;
 	public:
-		typedef drawable_impl_type::font_ptr_t	font_ptr_t;
 		typedef ::nana::event_code event_code;
 		typedef ::nana::native_window_type	native_window_type;
 
@@ -199,12 +185,6 @@ namespace detail
 		};
 
 		~platform_spec();
-
-		const font_ptr_t& default_native_font() const;
-		void default_native_font(const font_ptr_t&);
-		unsigned font_size_to_height(unsigned) const;
-		unsigned font_height_to_size(unsigned) const;
-		font_ptr_t make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
 
 		static platform_spec& instance();
 

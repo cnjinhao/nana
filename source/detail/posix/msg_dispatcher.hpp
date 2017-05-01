@@ -1,6 +1,6 @@
 /*
  *	Message Dispatcher Implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -17,7 +17,7 @@
 
 #ifndef NANA_DETAIL_MSG_DISPATCHER_HPP
 #define NANA_DETAIL_MSG_DISPATCHER_HPP
-#include <nana/detail/linux_X11/msg_packet.hpp>
+#include "msg_packet.hpp"
 #include <nana/system/platform.hpp>
 #include <list>
 #include <set>
@@ -51,11 +51,20 @@ namespace detail
 		typedef std::list<msg_packet_tag> msg_queue_type;
 
 		msg_dispatcher(Display* disp)
-			: display_(disp), is_work_(false)
+			: display_(disp)
 		{
 			proc_.event_proc = 0;
 			proc_.timer_proc = 0;
 			proc_.filter_proc = 0;
+		}
+
+		~msg_dispatcher()
+		{
+			if(thrd_ && thrd_->joinable())
+			{
+				is_work_ = false;
+				thrd_->join();
+			}
 		}
 
 		void set(timer_proc_type timer_proc, event_proc_type event_proc, event_filter_type filter)
@@ -329,7 +338,7 @@ namespace detail
 		
 	private:
 		Display * display_;
-		volatile bool is_work_;
+		volatile bool is_work_{ false };
 		std::unique_ptr<std::thread> thrd_;
 
 		struct table_tag

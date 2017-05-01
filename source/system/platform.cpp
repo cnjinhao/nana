@@ -16,7 +16,7 @@
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
-	#include <nana/detail/win32/platform_spec.hpp>
+	#include "../detail/mswin/platform_spec.hpp"
 #elif defined(NANA_LINUX) || defined(NANA_MACOS)
 	#include <time.h>
 	#include <errno.h>

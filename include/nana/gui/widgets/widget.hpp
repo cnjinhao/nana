@@ -1,7 +1,7 @@
 /**
  *	The fundamental widget class implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -64,7 +64,7 @@ namespace nana
 		template<typename ...Args>
 		void i18n(std::string msgid, Args&&... args)
 		{
-			_m_caption(nana::internationalization().get(msgid, std::forward<Args>(args)...));
+			_m_caption(::nana::to_nstring(::nana::internationalization().get(msgid, std::forward<Args>(args)...)));
 		}
 
 		void i18n(i18n_eval);
@@ -247,7 +247,6 @@ namespace nana
 		{
 			widget_base::_m_notify_destroy();
 			events_ = std::make_shared<Events>();
-			API::dev::set_events(handle_, events_);
 		}
 	private:
 		DrawerTrigger trigger_;
@@ -312,7 +311,6 @@ namespace nana
 		{
 			widget_base::_m_notify_destroy();
 			events_ = std::make_shared<Events>();
-			API::dev::set_events(handle_, events_);
 		}
 	private:
 		std::shared_ptr<Events> events_;
@@ -451,7 +449,6 @@ namespace nana
 		{
 			widget_base::_m_notify_destroy();
 			events_ = std::make_shared<Events>();
-			API::dev::set_events(handle_, events_);
 		}
 	private:
 		DrawerTrigger					trigger_;

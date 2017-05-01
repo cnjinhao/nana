@@ -36,8 +36,8 @@
 #include <vector>
 #include <map>
 #include "msg_packet.hpp"
+#include "../platform_abstraction_types.hpp"
 
-#define NANA_USE_XFT
 #if defined(NANA_USE_XFT)
 	#include <X11/Xft/Xft.h>
 	#include <iconv.h>
@@ -49,6 +49,7 @@ namespace nana
 namespace detail
 {
 	class msg_dispatcher;
+
 #if defined(NANA_USE_XFT)
 	class conf
 	{
@@ -74,28 +75,14 @@ namespace detail
 	};
 #endif
 
-	struct font_tag
-	{
-		std::string name;
-		unsigned height;
-		unsigned weight;
-		bool italic;
-		bool underline;
-		bool strikeout;
-#if defined(NANA_USE_XFT)
-		XftFont * handle;
-#else
-		XFontSet handle;
-#endif
-	};
-
 	struct drawable_impl_type
 	{
-		typedef std::shared_ptr<font_tag> font_ptr_t;
+		using font_type = ::std::shared_ptr<font_interface>;
 
 		Pixmap	pixmap;
 		GC	context;
-		font_ptr_t font;
+
+		font_type font;
 
 		nana::point	line_begin_pos;
 
@@ -105,6 +92,7 @@ namespace detail
 			unsigned tab_pixels;
 			unsigned whitespace_pixels;
 		}string;
+
 #if defined(NANA_USE_XFT)
 		XftDraw * xftdraw{nullptr};
 		XftColor	xft_fgcolor;
@@ -199,7 +187,6 @@ namespace detail
 	public:
 		int error_code;
 	public:
-		typedef drawable_impl_type::font_ptr_t font_ptr_t;
 		typedef void (*timer_proc_type)(unsigned tid);
 		typedef void (*event_proc_type)(Display*, msg_packet_tag&);
 		typedef ::nana::event_code		event_code;
@@ -210,12 +197,6 @@ namespace detail
 
 		platform_spec();
 		~platform_spec();
-
-		const font_ptr_t& default_native_font() const;
-		void default_native_font(const font_ptr_t&);
-		unsigned font_size_to_height(unsigned) const;
-		unsigned font_height_to_size(unsigned) const;
-		font_ptr_t make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strick_out);
 
 		Display* open_display();
 		void close_display();
@@ -277,7 +258,7 @@ namespace detail
 		Display*	display_;
 		Colormap	colormap_;
 		atombase_tag atombase_;
-		font_ptr_t def_font_ptr_;
+
 		XKeyEvent	key_state_;
 		int (*def_X11_error_handler_)(Display*, XErrorEvent*);
 		Window grab_;

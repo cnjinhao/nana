@@ -2,6 +2,7 @@
 #define NANA_PAINT_DETAIL_IMAGE_PNG_HPP
 
 #include "image_pixbuf.hpp"
+#include <cstring>
 
 //Separate the libpng from the package that system provides.
 #if defined(NANA_LIBPNG)
@@ -11,6 +12,7 @@
 #endif
 
 #include <stdio.h>
+
 
 namespace nana
 {

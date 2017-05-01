@@ -1,7 +1,7 @@
 /**
  *	A group widget implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2015-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -12,6 +12,9 @@
  *	@Author: Stefan Pfeifer(st-321), Ariel Vina-Rodriguez (qPCR4vir)
  *
  *	@brief group is a widget used to visually group and layout other widgets.
+ *
+ * 	@contributor:
+ *		dankan1890(https://github.com/dankan1890) 
  */
 
 
@@ -35,6 +38,8 @@ namespace nana{
 		place	place_content;
 		unsigned gap{2};
 		std::string usr_div_str;
+
+		nana::size caption_dimension;
 
 		std::vector<std::unique_ptr<checkbox>> options;
 		radio_group * radio_logic{nullptr};
@@ -60,22 +65,24 @@ namespace nana{
 
 		void update_div()
 		{
-			::nana::size sz = caption.measure(1000);
+			caption_dimension = caption.measure(1000);
 
-			std::stringstream ss;
-			ss << "vert margin=[0," << gap << "," << gap + 5 << "," << gap << "]"
-				<< " <weight=" << sz.height << " <weight=5> <" << field_title << " weight=" << sz.width + 1 << "> >"
-				<< "<<vert margin=5 " << field_options << ">";
+			std::string div = "vert margin=[0," + std::to_string(gap) + "," + std::to_string(gap + 5) + "," + std::to_string(gap) + "]";
+			div += "<weight=" + std::to_string(caption_dimension.height) + " <weight=5><" + field_title + " weight=" + std::to_string(caption_dimension.width + 1) + ">>";
+			div += "<<vert margin=5 " + std::string(field_options) + ">";
 
 			if (!usr_div_str.empty())
-				ss << "<" << usr_div_str << ">>";
+				div += "<" + usr_div_str + ">>";
 			else
-				ss << ">";
+				div += ">";
 
-			place_content.div(ss.str().c_str());
+			place_content.div(div.c_str());
 
 			if (options.empty())
 				place_content.field_display(field_options, false);
+
+			if (caption.caption().empty())
+				place_content.field_display(field_title, false);
 		}
 	};
 
@@ -202,25 +209,23 @@ namespace nana{
 		outter.collocate();
 
 		color pbg = API::bgcolor(this->parent());
-		impl_->caption.bgcolor(pbg.blend(colors::black, 0.975));
-		color bg = pbg.blend(colors::black, 0.950);
 
-		bgcolor(bg);
+		impl_->caption.bgcolor(pbg.blend(colors::black, 0.025));
+
+		this->bgcolor(pbg.blend(colors::black, 0.05));
 
 		drawing dw(*this);
 
-		::nana::size sz = impl_->caption.measure(1000);
-
 		// This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
-		dw.draw([this, sz, bg, pbg](paint::graphics& graph)
+		dw.draw([this](paint::graphics& graph)
 		{
 			auto gap_px = impl_->gap - 1;
 
-			graph.rectangle(true, pbg);
-			graph.round_rectangle(rectangle(point(gap_px, sz.height / 2),
-				nana::size(graph.width() - 2 * gap_px, graph.height() - sz.height / 2 - gap_px)
+			graph.rectangle(true, API::bgcolor(this->parent()));
+			graph.round_rectangle(rectangle(point(gap_px, impl_->caption_dimension.height / 2),
+				nana::size(graph.width() - 2 * gap_px, graph.height() - impl_->caption_dimension.height / 2 - gap_px)
 				),
-				3, 3, colors::gray_border, true, bg);
+				3, 3, colors::gray_border, true, this->bgcolor());
 		});
 	}
 

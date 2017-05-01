@@ -86,7 +86,7 @@ namespace nana{
 							}
 
 							//Avoiding duplicated rendering. If the window is declared to lazy refresh, it should be rendered.
-							if ((forced && (action.window == wd)) || (focused == action.window) || !action.rendered || (action.window->other.upd_state == core_window_t::update_state::refresh))
+							if ((forced && (action.window == wd)) || (focused == action.window) || !action.rendered || (action.window->other.upd_state == core_window_t::update_state::refreshed))
 							{
 								rd_set.emplace_back(r, action.window);
 								action.rendered = true;

@@ -26,7 +26,7 @@
 #include <mutex>
 #endif
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../detail/platform_spec_selector.hpp"
 
 #if defined(NANA_LINUX) || defined(NANA_MACOS)
 #include <nana/system/platform.hpp>
@@ -201,7 +201,7 @@ namespace nana
 #if defined(NANA_WINDOWS)
 	void notifications_window_proc(HWND wd, WPARAM wparam, LPARAM lparam)
 	{
-		arg_notifier arg;
+		arg_notifier arg = {};
 		switch (lparam)
 		{
 		case WM_LBUTTONDBLCLK:
@@ -321,6 +321,7 @@ namespace nana
 
 	void notifier::icon(const std::string& icon_file)
 	{
+#if defined(NANA_WINDOWS)
 		paint::image image_ico{ icon_file };
 		auto icon_handle = paint::image_accessor::icon(image_ico);
 		if (icon_handle)
@@ -330,14 +331,21 @@ namespace nana
 			impl_->set_icon(image_ico);
 			impl_->icon = image_ico;
 		}
+#else
+		static_cast<void>(icon_file);	//eliminate unused parameter warning
+#endif
 	}
 
 	void notifier::insert_icon(const std::string& icon_file)
 	{
+#if defined(NANA_WINDOWS)
 		paint::image image_ico{ icon_file };
 		auto icon_handle = paint::image_accessor::icon(image_ico);
 		if (icon_handle)
 			impl_->icons.emplace_back(static_cast<paint::image&&>(image_ico));
+#else
+		static_cast<void>(icon_file);	//eliminate unused parameter warning
+#endif
 	}
 
 	void notifier::period(unsigned ms)

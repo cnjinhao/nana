@@ -1,7 +1,7 @@
 /*
  *	Basic Types definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -84,7 +84,7 @@ namespace nana
 
 	enum class mouse_action
 	{
-		begin, normal = begin, hovered, pressed, end
+		begin, normal = begin, normal_captured, hovered, pressed, end
 	};
 
 	enum class element_state
@@ -96,12 +96,6 @@ namespace nana
 		pressed,
 		disabled
 	};
-
-	typedef unsigned scalar_t;
-	typedef unsigned char	uint8_t;
-	typedef unsigned long	uint32_t;
-	typedef unsigned		uint_t;
-	typedef long long long_long_t;
 
 	union pixel_argb_t
 	{
@@ -304,8 +298,7 @@ namespace nana
 		color(color_rgb);
 		color(color_argb);
 		color(color_rgba);
-		color(unsigned red, unsigned green, unsigned blue);
-		color(unsigned red, unsigned green, unsigned blue, double alpha);
+		color(unsigned red, unsigned green, unsigned blue, double alpha = 1.0);
 
 		/// Initializes the color with a CSS-like rgb string.
 		explicit color(std::string css_rgb);
@@ -319,10 +312,7 @@ namespace nana
 		/// @param lightness  in range of [0, 1]
 		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
 
-		color blend(const color& bgcolor, bool ignore_bgcolor_alpha) const;
-
-		/// Blends two colors with the specified alpha, and the alpha values that come with these two colors are both ignored. 
-		color blend(const color& bgcolor, double alpha) const;
+		color blend(const color& blending_color, double alpha) const;
 
 		/// Determines whether the color is completely transparent.
 		bool invisible() const;
@@ -457,8 +447,8 @@ namespace nana
 
 		rectangle& pare_off(int pixels);	 ///<Pares the specified pixels off the rectangle. It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
 
-		int right() const;
-		int bottom() const;
+		int right() const noexcept;
+		int bottom() const noexcept;
 		bool is_hit(int x, int y) const;
 		bool is_hit(const point& pos) const;
 		bool empty() const;		///< true if width * height == 0.

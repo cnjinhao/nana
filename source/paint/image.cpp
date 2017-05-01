@@ -1,7 +1,7 @@
 /*
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -11,8 +11,9 @@
  *	@contributors:
  *		nabijaczleweli(pr#106)
  */
+
 #include <nana/push_ignore_diagnostic>
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../detail/platform_spec_selector.hpp"
 #include <nana/paint/image.hpp>
 #include <algorithm>
 #include <fstream>
@@ -32,9 +33,10 @@
 #endif
 
 #include "detail/image_bmp.hpp"
-#include "detail/image_ico.hpp"
 
 #include "image_accessor.hpp"
+#include "detail/image_ico_resource.hpp"
+#include "detail/image_ico.hpp"
 
 namespace fs = std::experimental::filesystem;
 
@@ -45,9 +47,14 @@ namespace paint
 #if defined(NANA_WINDOWS)
 	HICON image_accessor::icon(const nana::paint::image& img)
 	{
+		auto ico_res = dynamic_cast<paint::detail::image_ico_resource*>(img.image_ptr_.get());
+		if (ico_res)
+			return reinterpret_cast<HICON>(ico_res->native_handle());
+
 		auto ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
-		if (ico && ico->ptr())
-			return *(ico->ptr());
+		if (ico)
+			return reinterpret_cast<HICON>(ico->native_handle());
+
 		return nullptr;
 	}
 #else
@@ -56,138 +63,6 @@ namespace paint
 		return 0;
 	}
 #endif
-
-	namespace detail
-	{
-		//class image_ico
-			image_ico::image_ico(bool is_ico): is_ico_(is_ico){}
-
-			bool image_ico::open(const fs::path& file)
-			{
-				close();
-#if defined(NANA_WINDOWS)
-				HICON handle = 0;
-				if(is_ico_)
-				{
-					handle = (HICON)::LoadImage(0, file.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-				}
-				else
-				{
-					SHFILEINFO    sfi;
-					::SHGetFileInfo(file.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON);
-					handle = sfi.hIcon;
-				}
-
-				if(handle)
-				{
-					HICON * p = new HICON(handle);
-					ptr_ = std::shared_ptr<HICON>(p, handle_deleter());
-					ICONINFO info;
-					::GetIconInfo(handle, &info);
-					size_.width = (info.xHotspot << 1);
-					size_.height = (info.yHotspot << 1);
-
-					::DeleteObject(info.hbmColor);
-					::DeleteObject(info.hbmMask);
-					return true;
-				}
-#else
-				static_cast<void>(is_ico_);	 //eliminate the unused compiler warning in Linux.
-				static_cast<void>(file);   //to eliminate the unused parameter compiler warning.
-#endif
-				return false;
-			}
-
-			bool image_ico::open(const void* data, std::size_t bytes)
-			{
-				close();
-#if defined(NANA_WINDOWS)
-				// use actual resource size, stopped using CreateIconFromResource since it loads blurry image
-				HICON handle = ::CreateIconFromResourceEx((PBYTE)data, static_cast<DWORD>(bytes), TRUE, 0x00030000, 0, 0, LR_DEFAULTCOLOR);
-				if(handle)
-				{
-					ICONINFO info;
-					if (::GetIconInfo(handle, &info) != 0)
-					{
-						HICON * p = new HICON(handle);
-						ptr_ = std::shared_ptr<HICON>(p, handle_deleter());
-						size_.width = (info.xHotspot << 1);
-						size_.height = (info.yHotspot << 1);
-						::DeleteObject(info.hbmColor);
-						::DeleteObject(info.hbmMask);
-						return true;
-					}
-				}
-#else
-				static_cast<void>(is_ico_);	//kill the unused compiler warning in Linux.
-				static_cast<void>(data);	//to eliminate unused parameter compiler warning.
-				static_cast<void>(bytes);
-#endif
-				return false;
-			}
-
-			bool image_ico::alpha_channel() const
-			{
-				return false;
-			}
-
-			bool image_ico::empty() const
-			{
-				return (nullptr == ptr_);
-			}
-
-			void image_ico::close()
-			{
-				ptr_.reset();
-			}
-
-			nana::size image_ico::size() const
-			{
-				return size_;
-			}
-
-			void image_ico::paste(const nana::rectangle& src_r, graph_reference graph, const point& p_dst) const
-			{
-				if(ptr_ && (graph.empty() == false))
-				{
-#if defined(NANA_WINDOWS)
-					::DrawIconEx(graph.handle()->context, p_dst.x, p_dst.y, *ptr_, src_r.width, src_r.height, 0, 0, DI_NORMAL);
-#else
-					static_cast<void>(src_r);	//eliminate unused parameter compiler warning.
-					static_cast<void>(p_dst);
-#endif
-				}
-			}
-
-			void image_ico::stretch(const nana::rectangle&, graph_reference graph, const nana::rectangle& r) const
-			{
-				if(ptr_ && (graph.empty() == false))
-				{
-#if defined(NANA_WINDOWS)
-					::DrawIconEx(graph.handle()->context, r.x, r.y, *ptr_, r.width, r.height, 0, 0, DI_NORMAL);
-#else
-					static_cast<void>(r); //eliminate unused parameter compiler warning.
-#endif
-				}
-			}
-
-			const image_ico::ptr_t& image_ico::ptr() const
-			{
-				return ptr_;
-			}
-
-#if defined(NANA_WINDOWS)
-			//struct handle_deleter
-				void image_ico::handle_deleter::operator()(HICON* p) const
-				{
-					if(p && *p)
-						::DestroyIcon(*p);
-					delete p;
-				}
-			//end struct handle_deleter
-#endif
-		//end class image_ico
-	}
 
 	image::image_impl_interface::~image_impl_interface()
 	{}
@@ -264,11 +139,7 @@ namespace paint
 			{
 				if (ext_ico == ext)
 				{
-#if defined(NANA_WINDOWS)
-					ptr = std::make_shared<detail::image_ico>(true);
-#else
-					return ptr;
-#endif
+					ptr = std::make_shared<detail::image_ico>();
 					break;
 				}
 
@@ -308,7 +179,7 @@ namespace paint
 					if (*reinterpret_cast<const short*>("BM") == meta)
 						ptr = std::make_shared<detail::image_bmp>();
 					else if (*reinterpret_cast<const short*>("MZ") == meta)
-						ptr = std::make_shared<detail::image_ico>(false);
+						ptr = std::make_shared<detail::image_ico_resource>();
 				}
 			}
 
@@ -342,7 +213,7 @@ namespace paint
 				if (*reinterpret_cast<const short*>("BM") == meta)
 					ptr = std::make_shared<detail::image_bmp>();
 				else if (*reinterpret_cast<const short*>("MZ") == meta)
-					ptr = std::make_shared<detail::image_ico>(false);
+					ptr = std::make_shared<detail::image_ico_resource>();
 				else
 				{
 					if (bytes > 8 && (0x474e5089 == *reinterpret_cast<const unsigned*>(data)))
@@ -360,13 +231,16 @@ namespace paint
 						else if (bytes > 9 && (0x66697845 == *reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+5))) //Exif
 							ptr = std::make_shared<detail::image_jpeg>();
 #endif
-
-#if defined(NANA_WINDOWS)
-						// suppose icon data is bitmap data
-						if (!ptr && bytes > 40 /* sizeof(BITMAPINFOHEADER) */ && (40 == *reinterpret_cast<const uint32_t*>(data))) {
-							ptr = std::make_shared<detail::image_ico>(true);
+						if ((!ptr) && (bytes > 40))
+						{
+							switch (*reinterpret_cast<const unsigned*>(data))
+							{
+							case 40:
+							case 0x00010000:
+								if (!ptr && bytes > 40)
+									ptr = std::make_shared<detail::image_ico>();
+							}
 						}
-#endif
 					}
 				}
 

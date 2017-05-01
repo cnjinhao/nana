@@ -1,7 +1,7 @@
 /*
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -29,21 +29,77 @@ namespace nana
 			virtual ~splitter_interface(){}
 		};
 
-		class splitter_dtrigger
+		class drawer_splitter
 			: public drawer_trigger
 		{
-		};
+		public:
+			void set_renderer(const std::function<void(window, paint::graphics&, mouse_action)>& rd)
+			{
+				renderer_ = rd;
+			}
+		private:
+			void attached(widget_reference wdg, graph_reference) override
+			{
+				window_handle_ = wdg;
+			}
 
-		template<bool IsLite>
+			void refresh(graph_reference graph) override
+			{
+				API::dev::copy_transparent_background(window_handle_, graph);
+				if (renderer_)
+					renderer_(window_handle_, graph, API::mouse_action(window_handle_));
+			}
+
+			void mouse_enter(graph_reference graph, const arg_mouse&) override
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+
+			void mouse_move(graph_reference graph, const arg_mouse&) override
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+			
+			void mouse_leave(graph_reference graph, const arg_mouse&) override
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+
+			void mouse_down(graph_reference graph, const arg_mouse&)
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+
+			void mouse_up(graph_reference graph, const arg_mouse&)
+			{
+				refresh(graph);
+				API::dev::lazy_refresh();
+			}
+		private:
+			window window_handle_{nullptr};
+			std::function<void(window, paint::graphics&, mouse_action)> renderer_;
+		};
+		
 		class splitter
-			: public widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>,
+			: public widget_object<category::widget_tag, drawer_splitter>,
 			public splitter_interface
 		{
+		public:
+			void set_renderer(const std::function<void(window, paint::graphics&, mouse_action)>& rd)
+			{
+				get_drawer_trigger().set_renderer(rd);
+			}
 		private:
 			void _m_complete_creation() override
 			{
 				this->caption("place-splitter");
-				widget_object <typename std::conditional<IsLite, category::lite_widget_tag, category::widget_tag>::type, splitter_dtrigger>::_m_complete_creation();
+				widget_object<category::widget_tag, drawer_splitter>::_m_complete_creation();
+
+				API::effects_bground(*this, effects::bground_transparent(0), 0);
 			}
 		};
 
@@ -92,8 +148,8 @@ namespace nana
 				{
 					color xclr = colors::red;
 
-					if(x_state_ ==  ::nana::mouse_action::pressed)
-						xclr = xclr.blend(colors::white, 0.8);
+					if(x_state_ == ::nana::mouse_action::pressed)
+						xclr = xclr.blend(colors::white, 0.2);
 
 					graph.rectangle(r, true, xclr);
 				}
@@ -144,11 +200,8 @@ namespace nana
 		private:
 			::nana::rectangle _m_button_area() const
 			{
-				::nana::rectangle r{API::window_size(window_handle_)};
-
-				r.x = r.right() - 20;
-				r.width = 20;
-				return r;
+				auto sz = API::window_size(window_handle_);
+				return{static_cast<int>(sz.width) - 20, 0, 20, sz.height};
 			}
 		public:
 			window window_handle_;
@@ -161,11 +214,16 @@ namespace nana
 		};
 
 		class dockarea_caption
-			: public widget_object < category::widget_tag, dockcaption_dtrigger >
+			: public widget_object<category::widget_tag, dockcaption_dtrigger>
 		{
 		public:
 			using widget_object<category::widget_tag, dockcaption_dtrigger>::get_drawer_trigger;
 		};
+
+		static unsigned differ(unsigned x, unsigned y) noexcept
+		{
+			return (x > y ? x - y : 0);
+		}
 
 		class dockarea
 			: public widget_object <category::lite_widget_tag, drawer_trigger>
@@ -183,6 +241,7 @@ namespace nana
 			{
 				notifier_ = notifier;
 			}
+
 			void create(window parent)
 			{
 				host_window_ = parent;
@@ -191,17 +250,14 @@ namespace nana
 				caption_.create(*this, true);
 				caption_.get_drawer_trigger().on_close([this]
 				{
-					bool destroy_dockarea = true;
-
 					if (tabbar_)
 					{
 						tabbar_->erase(tabbar_->selected());
-
-						destroy_dockarea = (0 == tabbar_->length());
+						if (tabbar_->length())
+							return;
 					}
 
-					if (destroy_dockarea)
-						notifier_->request_close();
+					notifier_->request_close();
 				});
 
 				this->events().resized.connect([this](const arg_resized& arg)
@@ -331,14 +387,11 @@ namespace nana
 		private:
 			widget* _m_add_pane(factory & fn)
 			{
-				rectangle r{ point(), this->size() };
+				rectangle r{ this->size() };
 
 				//get a rectangle excluding caption
 				r.y = 20;
-				if (r.height > 20)
-					r.height -= 20;
-				else
-					r.height = 0;
+				r.height = differ(r.height, 20);
 
 				if (!tabbar_)
 				{
@@ -426,7 +479,7 @@ namespace nana
 				value_.integer = 0;
 			}
 
-			void reset()
+			void reset() noexcept
 			{
 				kind_ = kind::none;
 				value_.integer = 0;
@@ -434,30 +487,21 @@ namespace nana
 
 			bool is_negative() const
 			{
-				switch (kind_)
-				{
-				case kind::integer:
-					return (value_.integer < 0);
-				case kind::real:
-				case kind::percent:
-					return (value_.real < 0);
-				default:
-					break;
-				}
-				return false;
+				return (((kind::integer == kind_) && (value_.integer < 0)) ||
+					((kind::real == kind_ || kind::percent == kind_) && (value_.real < 0)));
 			}
 
-			bool empty() const throw()
+			bool empty() const noexcept
 			{
 				return (kind::none == kind_);
 			}
 
-			kind kind_of() const
+			kind kind_of() const noexcept
 			{
 				return kind_;
 			}
 
-			double get_value(int ref_percent) const
+			double get_value(int ref_percent) const noexcept
 			{
 				switch (kind_)
 				{
@@ -473,33 +517,33 @@ namespace nana
 				return 0;
 			}
 
-			int integer() const
+			int integer() const noexcept
 			{
 				if (kind::integer == kind_)
 					return value_.integer;
 				return static_cast<int>(value_.real);
 			}
 
-			double real() const
+			double real() const noexcept
 			{
 				if (kind::integer == kind_)
 					return value_.integer;
 				return value_.real;
 			}
 
-			void assign(int i)
+			void assign(int i) noexcept
 			{
 				kind_ = kind::integer;
 				value_.integer = i;
 			}
 
-			void assign(double d)
+			void assign(double d) noexcept
 			{
 				kind_ = kind::real;
 				value_.real = d;
 			}
 
-			void assign_percent(double d)
+			void assign_percent(double d) noexcept
 			{
 				kind_ = kind::percent;
 				value_.real = d / 100;
@@ -532,15 +576,12 @@ namespace nana
 				all_edges_ = true;
 				margins_.clear();
 			}
-
-			void push(const number_t& v)
+			
+			void push(const number_t& v, bool reset = false)
 			{
-				margins_.emplace_back(v);
-			}
+				if (reset)
+					clear();
 
-			void set_value(const number_t& v)
-			{
-				clear();
 				margins_.emplace_back(v);
 			}
 
@@ -548,6 +589,45 @@ namespace nana
 			{
 				all_edges_ = false;
 				margins_ = v;
+			}
+
+			number_t get_edge(std::size_t edge) const
+			{
+				int il{ -1 }, ir{ -1 }, it{ -1 }, ib{ -1 };	//index of four corners in margin
+				switch (margins_.size())
+				{
+				case 0:	break;
+				case 1:	//top
+					il = ir = it = ib = 0;
+					break;
+				case 2://top,bottom and left,right
+					it = ib = 0;
+					il = ir = 1;
+					break;
+				default:
+					il = 3;	//left
+				case 3:	//top, right, bottom
+					it = 0;
+					ir = 1;
+					ib = 2;
+				}
+
+				int pos = 0;
+				switch (edge)
+				{
+				case 0: //top
+					pos = it; break;
+				case 1: //right
+					pos = ir; break;
+				case 2: //bottom
+					pos = ib; break;
+				case 3: //left
+					pos = il; break;
+				default:
+					return number_t{};
+				}
+
+				return (-1 == pos ? number_t{} : margins_[pos]);
 			}
 
 			nana::rectangle area(const ::nana::rectangle& field_area) const
@@ -559,12 +639,11 @@ namespace nana
 				if (all_edges_)
 				{
 					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width)));
-					const auto dbl_px = static_cast<unsigned>(px << 1);
 					r.x += px;
-					r.width = (r.width < dbl_px ? 0 : r.width - dbl_px);
+					r.width = differ(r.width, (static_cast<unsigned>(px) << 1));
 
 					r.y += px;
-					r.height = (r.height < dbl_px ? 0 : r.height - dbl_px);
+					r.height = differ(r.height, (static_cast<unsigned>(px) << 1));
 				}
 				else
 				{
@@ -573,7 +652,7 @@ namespace nana
 					{
 					case 0:	break;
 					case 1:	//top
-						it = 0;
+						il = ir = it = ib = 0;
 						break;
 					case 2://top,bottom and left,right
 						it = ib = 0;
@@ -587,49 +666,44 @@ namespace nana
 						ib = 2;
 					}
 
-					typedef decltype(r.height) px_type;
-					auto calc = [](px_type a, px_type b)
-					{
-						return (a > b ? a - b : 0);
-					};
+					using px_type = decltype(r.height);
 
 					if (0 == it)	//top
 					{
 						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height)));
 						r.y += px;
-						r.height = calc(r.height, static_cast<px_type>(px));
+						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != ib)	//bottom
 					{
 						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height)));
-						r.height = calc(r.height, static_cast<px_type>(px));
+						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != il)	//left
 					{
 						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width)));
 						r.x += px;
-						r.width = calc(r.width, static_cast<px_type>(px));
+						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 
 					if (-1 != ir)	//right
 					{
 						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width)));
-						r.width = calc(r.width, static_cast<px_type>(px));
+						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 				}
 				return r;
 			}
 		private:
-			bool all_edges_ = true;
+			bool all_edges_{ true };
 			std::vector<number_t> margins_;
 		};//end class margin
 
 		class repeated_array
 		{
 		public:
-
 			//A workaround for VC2013, becuase it does not generated an implicit declared move-constructor as defaulted.
 			repeated_array() = default;
 
@@ -678,15 +752,10 @@ namespace nana
 
 			number_t at(std::size_t pos) const
 			{
-				if (values_.empty())
-					return{};
+				if (values_.size() && (repeated_ || pos < values_.size()))
+					return values_[pos % values_.size()];
 
-				if (repeated_)
-					pos %= values_.size();
-				else if (pos >= values_.size())
-					return{};
-
-				return values_[pos];
+				return{};
 			}
 		private:
 			bool repeated_ = false;

@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,7 +10,7 @@
 *	@file: nana/gui/detail/bedrock_pi.cpp
 */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../../detail/platform_spec_selector.hpp"
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
@@ -117,6 +117,27 @@ namespace nana
 				auto p = wd->widget_notifier->widget_ptr();
 				delete p;
 			}
+		}
+
+		void bedrock::close_thread_window(unsigned thread_id)
+		{
+			std::vector<core_window_t*> v;
+			wd_manager().all_handles(v);
+
+			std::vector<native_window_type> roots;
+			native_window_type root = nullptr;
+			for (auto wd : v)
+			{
+				if (((0 == thread_id) || (wd->thread_id == thread_id)) && (wd->root != root))
+				{
+					root = wd->root;
+					if (roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
+						roots.emplace_back(root);
+				}
+			}
+
+			for (auto i : roots)
+				native_interface::close_window(i);
 		}
 
 		void bedrock::event_expose(core_window_t * wd, bool exposed)
@@ -237,7 +258,7 @@ namespace nana
 					return;
 
 				native_interface::calc_window_point(native_handle, pos);
-				if (wd != wd_manager().find_window(native_handle, pos.x, pos.y))
+				if (wd != wd_manager().find_window(native_handle, pos))
 					return;
 
 				set_cursor(wd, wd->predef_cursor, thrd);
@@ -583,30 +604,6 @@ namespace nana
 				break;
 			default:
 				throw std::runtime_error("Invalid event code");
-			}
-		}
-
-		void bedrock::_m_except_handler()
-		{
-			std::vector<core_window_t*> v;
-			wd_manager().all_handles(v);
-			if (v.size())
-			{
-				std::vector<native_window_type> roots;
-				native_window_type root = nullptr;
-				unsigned tid = nana::system::this_thread_id();
-				for (auto wd : v)
-				{
-					if ((wd->thread_id == tid) && (wd->root != root))
-					{
-						root = wd->root;
-						if (roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
-							roots.emplace_back(root);
-					}
-				}
-
-				for (auto i : roots)
-					native_interface::close_window(i);
 			}
 		}
 	}//end namespace detail

@@ -1,7 +1,7 @@
 /**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -100,9 +100,12 @@ namespace nana
 		:public widget_object<category::widget_tag, drawerbase::textbox::drawer, drawerbase::textbox::textbox_events, ::nana::widgets::skeletons::text_editor_scheme>
 	{
 	public:
-		using text_focus_behavior = widgets::skeletons::text_focus_behavior;
+		using colored_area_type = widgets::skeletons::colored_area_type;
+		using colored_area_access_interface = widgets::skeletons::colored_area_access_interface;
 
+		using text_focus_behavior = widgets::skeletons::text_focus_behavior;
 		using text_positions = std::vector<upoint>;
+
 		/// The default constructor without creating the widget.
 		textbox();
 
@@ -134,6 +137,8 @@ namespace nana
 		void store(std::string file);
 		void store(std::string file, nana::unicode encoding);
 
+		colored_area_access_interface* colored_area_access();
+
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
 		textbox& indention(bool, std::function<std::string()> generator = {});
@@ -161,6 +166,9 @@ namespace nana
 
         /// Read the text from a specified line. It returns true for success.
 		bool getline(std::size_t pos, std::string&) const;
+
+		/// Read the text from a specified line with a set offset. It returns true for success.
+		bool getline(std::size_t line_index,std::size_t offset,std::string& text) const;
 
 		/// Gets the caret position
 		/// Returns true if the caret is in the area of display, false otherwise.
@@ -196,6 +204,7 @@ namespace nana
 
         /// Returns true if some text is selected.
 		bool selected() const;
+		bool get_selected_points(nana::upoint &a, nana::upoint &b) const;
 
         /// Selects/unselects all text.
 		void select(bool);
@@ -215,11 +224,16 @@ namespace nana
 		textbox& from(int);
 		textbox& from(double);
 
+		void clear_undo();
+
 		void set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor);
 		void erase_highlight(const std::string& name);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::wstring> kw_list);
 		void set_keywords(const std::string& name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::string> kw_list_utf8);
 		void erase_keyword(const std::string& kw);
+
+		/// Sets the text alignment
+		textbox& text_align(::nana::align alignment);
 
 		/// Returns the text position of each line that currently displays on screen.
 		text_positions text_position() const;

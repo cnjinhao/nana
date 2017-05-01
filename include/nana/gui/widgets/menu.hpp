@@ -1,22 +1,20 @@
 /**
  *	A Menu implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/menu.hpp
+ *
  */
 
 #ifndef NANA_GUI_WIDGETS_MENU_HPP
 #define NANA_GUI_WIDGETS_MENU_HPP
 #include "widget.hpp"
-#include <vector>
-#include <nana/gui/timer.hpp>
 #include <nana/pat/cloneable.hpp>
-
 #include <nana/push_ignore_diagnostic>
 
 namespace nana
@@ -50,6 +48,8 @@ namespace nana
 					item_proxy&	checked(bool);
 					bool		checked() const;
 
+					std::string text() const;
+
 					std::size_t index() const;
 				private:
 					std::size_t index_;
@@ -71,23 +71,10 @@ namespace nana
 
 				menu_type		*sub_menu{nullptr};
 				std::string	text;
-				event_fn_t	functor;
+				event_fn_t	event_handler;
 				checks			style{checks::none};
 				paint::image	image;
 				mutable wchar_t	hotkey{0};
-			};
-
-			struct menu_type
-			{
-				typedef std::vector<menu_item_type> item_container;
-				typedef item_container::iterator iterator;
-				typedef item_container::const_iterator const_iterator;
-
-				std::vector<menu_type*>		owner;
-				std::vector<menu_item_type>	items;
-				unsigned max_pixels;
-				unsigned item_pixels;
-				nana::point gaps;
 			};
 
 			class renderer_interface
@@ -138,12 +125,24 @@ namespace nana
 		~menu();
 
 			/// Appends an item to the menu.
-		item_proxy	append(const std::string& text, const event_fn_t& callback= event_fn_t());
+		item_proxy	append(std::string text_utf8, const event_fn_t& handler = {});
 		void		append_splitter();
+
+		/// Inserts new item at specified position
+		/**
+		 * It will invalidate the existing item proxies from the specified position.
+		 * @param pos The position where new item to be inserted
+		 * @param text_utf8 The title of item
+		 * @param handler The event handler for the item.
+		 * @return the item proxy to the new inserted item.
+		 */
+		item_proxy	insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler = {});
+
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
 		void close();
 		void image(std::size_t pos, const paint::image& icon);
+		void text(std::size_t pos, std::string text_utf8);
 		void check_style(std::size_t pos, checks);
 		void checked(std::size_t pos, bool);
 		bool checked(std::size_t pos) const;
@@ -156,7 +155,7 @@ namespace nana
 		void popup(window owner, int x, int y);     ///< Popup the menu at the owner window. 
 		void popup_await(window owner, int x, int y);
 		void answerer(std::size_t index, const event_fn_t&);  ///< Modify answerer of the specified item.
-		void destroy_answer(const std::function<void()>&);  ///< Sets an answerer for the callback while the menu window is closing.
+		void destroy_answer(std::function<void()>);  ///< Sets an answerer for the callback while the menu window is closing.
 		void gaps(const nana::point&);				///< Sets the gap between a menu and its sub menus.(\See Note4)
 		void goto_next(bool forward);				///< Moves the focus to the next or previous item.
 		bool goto_submen();///< Popup the submenu of the current item if it has a sub menu. Returns true if succeeds.
@@ -175,7 +174,7 @@ namespace nana
 		const pat::cloneable<renderer_interface>& renderer() const;
 
 	private:
-		void _m_popup(window, int x, int y, bool called_by_menubar);
+		void _m_popup(window, const point& position, bool called_by_menubar);
 	private:
 		implement * impl_;
 	};

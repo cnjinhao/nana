@@ -1,7 +1,7 @@
 /*
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -55,7 +55,7 @@ namespace nana{ namespace drawerbase
 				auto wdg = impl_->widget_ptr;
 
 				//draw background
-				if (bground_mode::basic != API::effects_bground_mode(*wdg))
+				if (!API::dev::copy_transparent_background(*wdg, graph))
 					graph.rectangle(true, wdg->bgcolor());
 
 				//draw title
@@ -193,7 +193,7 @@ namespace nana{ namespace drawerbase
 
 		bool checkbox::transparent() const
 		{
-			return (bground_mode::basic == API::effects_bground_mode(*this));
+			return API::is_transparent_background(*this);
 		}
 	//end class checkbox
 

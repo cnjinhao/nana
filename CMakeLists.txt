@@ -68,12 +68,26 @@ if(WIN32)
     add_definitions(-DWIN32)
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
-		option(WIN32_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
-		# ??
-		if(WIN32_USE_MP)
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-		endif(WIN32_USE_MP)
-	endif(MSVC)
+        option(MSVC_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
+        option(MSVC_USE_STATIC_RUNTIME "Set to ON to build nana with the /MT(d) option." ON)
+
+        # Change the MSVC Compiler flags
+        if(MSVC_USE_MP)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+        endif(MSVC_USE_MP)
+
+        if(MSVC_USE_STATIC_RUNTIME)
+            foreach(flag
+                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
+                CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+                CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+                if(${flag} MATCHES "/MD")
+                    string(REGEX REPLACE "/MD" "/MT" ${flag} "${${flag}}")
+                endif()
+            endforeach()
+        endif(MSVC_USE_STATIC_RUNTIME)
+    endif(MSVC)
 
     if(MINGW)
         if(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
@@ -251,8 +265,8 @@ foreach(subdir ${NANA_SOURCE_SUBDIRS})
         # message("Subir:  ${subdir}") # message("Files:  ${sources}")
 endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
-include_directories(${NANA_INCLUDE_DIR})
 add_library(${PROJECT_NAME} ${sources} )
+target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
 
  #  Headers: use INCLUDE_DIRECTORIES
@@ -290,5 +304,3 @@ message ( "NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = "  ${NANA_CMAKE_BOOST_FILE
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_LIB          = "  ${NANA_CMAKE_BOOST_FILESYSTEM_LIB})
 message ( "NANA_CMAKE_AUTOMATIC_GUI_TESTING         = "  ${NANA_CMAKE_AUTOMATIC_GUI_TESTING})
 message ( "NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING = "  ${NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING})
-
-

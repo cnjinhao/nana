@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -37,7 +37,7 @@ namespace nana
 		{
 			enum class component
 			{
-				begin, expender = begin, crook, icon, text, bground, end
+				begin, expander = begin, crook, icon, text, bground, end
 			};
 
 			struct node_image_tag
@@ -73,8 +73,8 @@ namespace nana
 				typedef compset_interface::comp_attribute_t comp_attribute_t;
 
 				virtual ~renderer_interface() = default;
-				virtual void set_color(const nana::color& bgcolor, const nana::color& fgcolor) = 0;
 
+				virtual void begin_paint(::nana::widget&) = 0;
 				virtual void bground(graph_reference, const compset_interface *) const = 0;
 				virtual void expander(graph_reference, const compset_interface *) const = 0;
 				virtual void crook(graph_reference, const compset_interface *) const = 0;
@@ -110,45 +110,30 @@ namespace nana
 
 				struct pseudo_node_type{};
 
-				typedef widgets::detail::tree_cont<treebox_node_type> tree_cont_type;
-				typedef tree_cont_type::node_type	node_type;
+				using tree_cont_type = widgets::detail::tree_cont<treebox_node_type>;
+				using node_type = tree_cont_type::node_type;
 
 				trigger();
 				~trigger();
 
 				implement * impl() const;
 
-				void auto_draw(bool);
-				void checkable(bool);
-				bool checkable() const;
 				void check(node_type*, checkstate);
-				bool draw();
-
-				const tree_cont_type & tree() const;
-				tree_cont_type & tree();
 
 				void renderer(::nana::pat::cloneable<renderer_interface>&&);
 				const ::nana::pat::cloneable<renderer_interface>& renderer() const;
 				void placer(::nana::pat::cloneable<compset_placer_interface>&&);
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
-				nana::any & value(node_type*) const;
 				node_type* insert(node_type*, const std::string& key, std::string&&);
 				node_type* insert(const std::string& path, std::string&&);
 
-				bool verify(const void*) const;
-				bool verify_kinship(node_type* parent, node_type* child) const;
-
-				void remove(node_type*);
 				node_type * selected() const;
 				void selected(node_type*);
-				void set_expand(node_type*, bool);
-				void set_expand(const ::std::string& path, bool);
 
 				node_image_tag& icon(const ::std::string&) const;
 				void icon_erase(const ::std::string&);
 				void node_icon(node_type*, const ::std::string& id);
-
 				unsigned node_width(const node_type*) const;
 
 				bool rename(node_type*, const char* key, const char* name);
@@ -205,6 +190,9 @@ namespace nana
 
 				/// Set the check state, and it returns itself.
 				item_proxy& check(bool);
+
+				/// Clears the child nodes
+				item_proxy& clear();
 
 				/// Return true when the node is expanded  \todo change to expanded ??
 				bool expanded() const;
@@ -420,6 +408,9 @@ namespace nana
 
 		
 		bool checkable() const; ///< Determinte whether the checkboxs are enabled.
+
+		/// Clears the contents
+		void clear();
 
         /// \brief Creates an icon scheme with the specified name.
         ///

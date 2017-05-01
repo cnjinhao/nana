@@ -61,14 +61,14 @@ namespace nana
 				{
 					_m_click(arg);
 				});
-				yes_.i18n(i18n_eval("OK"));
+				yes_.i18n(i18n_eval("NANA_BUTTON_OK"));
 				width_pixel += 77;
 
 				if(msgbox::yes_no == btn || msgbox::yes_no_cancel == btn)
 				{
-					yes_.i18n(i18n_eval("Yes"));
+					yes_.i18n(i18n_eval("NANA_BUTTON_YES"));
 					no_.create(*this);
-					no_.i18n(i18n_eval("No"));
+					no_.i18n(i18n_eval("NANA_BUTTON_NO"));
 					no_.events().click.connect_unignorable([this](const arg_click& arg)
 					{
 						_m_click(arg);
@@ -79,7 +79,7 @@ namespace nana
 					if(msgbox::yes_no_cancel == btn)
 					{
 						cancel_.create(*this);
-						cancel_.i18n(i18n_eval("Cancel"));
+						cancel_.i18n(i18n_eval("NANA_BUTTON_CANCEL"));
 						cancel_.events().click.connect_unignorable([this](const arg_click& arg)
 						{
 							_m_click(arg);
@@ -493,7 +493,7 @@ namespace nana
 			auto desc_extent = desc_.measure(470);
 
 			btn_ok_.create(*this);
-			btn_ok_.i18n(i18n_eval("OK"));
+			btn_ok_.i18n(i18n_eval("NANA_BUTTON_OK"));
 			btn_ok_.events().click.connect_unignorable([this]{
 
 				if (verifier_ && !verifier_(handle()))
@@ -504,7 +504,7 @@ namespace nana
 			});
 
 			btn_cancel_.create(*this);
-			btn_cancel_.i18n(i18n_eval("Cancel"));
+			btn_cancel_.i18n(i18n_eval("NANA_BUTTON_CANCEL"));
 			btn_cancel_.events().click.connect_unignorable([this]{
 				close();
 			});
@@ -618,7 +618,7 @@ namespace nana
 					place_.field_display(img_fields[i], false);
 			}
 
-			size({desc_extent.width, height });
+			move(API::make_center(this->owner(), desc_extent.width, height));
 			caption(title);
 		}
 
@@ -1141,7 +1141,7 @@ namespace nana
 		impl->path_edit.multi_lines(false);
 
 		impl->browse.create(impl->dock);
-		impl->browse.i18n(i18n_eval("Browse"));
+		impl->browse.i18n(i18n_eval("NANA_BUTTON_BROWSE"));
 		impl->browse.events().click.connect_unignorable([wd, impl](const arg_click&)
 		{
 			impl->fbox.owner(wd);

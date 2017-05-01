@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -14,14 +14,17 @@
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/events_operation.hpp>
-#include <nana/gui/detail/handle_manager.hpp>
 #include <nana/gui/detail/window_manager.hpp>
+#include <nana/gui/detail/window_layout.hpp>
+#include "window_register.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
+
 #include <stdexcept>
 #include <algorithm>
+#include <iterator>
 
 #if defined(STD_THREAD_NOT_SUPPORTED)
 #include <nana/std_mutex.hpp>
@@ -34,6 +37,8 @@ namespace nana
 
 	namespace detail
 	{
+		using window_layer = window_layout;
+
 		//class shortkey_container
 		struct shortkey_rep
 		{
@@ -266,7 +271,8 @@ namespace detail
 			struct window_manager::wdm_private_impl
 			{
 				root_register	misc_register;
-				handle_manager<core_window_t*, window_manager, window_handle_deleter>	wd_register;
+				window_register wd_register;
+
 				paint::image default_icon_big;
 				paint::image default_icon_small;
 
@@ -274,26 +280,34 @@ namespace detail
 			};
 		//end struct wdm_private_impl
 
-		//class revertible_mutex
+			//class revertible_mutex
 			struct thread_refcount
 			{
-				unsigned tid;
-				std::size_t ref;
+				unsigned tid;	//Thread ID
+				std::vector<unsigned> callstack_refs;
+
+				thread_refcount(unsigned thread_id, unsigned refs)
+					: tid(thread_id)
+				{
+					callstack_refs.push_back(refs);
+				}
 			};
 
 			struct window_manager::revertible_mutex::implementation
 			{
 				std::recursive_mutex mutex;
 
-				thread_refcount thread;
-				std::vector<thread_refcount> invoke_stack;
+				unsigned thread_id;	//Thread ID
+				unsigned refs;	//Ref count
+
+				std::vector<thread_refcount> records;
 			};
 
 			window_manager::revertible_mutex::revertible_mutex()
 				: impl_(new implementation)
 			{
-				impl_->thread.tid = 0;
-				impl_->thread.ref = 0;
+				impl_->thread_id = 0;
+				impl_->refs = 0;
 			}
 
 			window_manager::revertible_mutex::~revertible_mutex()
@@ -305,20 +319,20 @@ namespace detail
 			{
 				impl_->mutex.lock();
 
-				if(0 == impl_->thread.tid)
-					impl_->thread.tid = nana::system::this_thread_id();
+				if (0 == impl_->thread_id)
+					impl_->thread_id = nana::system::this_thread_id();
 
-				++(impl_->thread.ref);
+				++(impl_->refs);
 			}
 
 			bool window_manager::revertible_mutex::try_lock()
 			{
-				if(impl_->mutex.try_lock())
+				if (impl_->mutex.try_lock())
 				{
-					if (0 == impl_->thread.tid)
-						impl_->thread.tid = nana::system::this_thread_id();
+					if (0 == impl_->thread_id)
+						impl_->thread_id = nana::system::this_thread_id();
 
-					++(impl_->thread.ref);
+					++(impl_->refs);
 					return true;
 				}
 				return false;
@@ -326,47 +340,80 @@ namespace detail
 
 			void window_manager::revertible_mutex::unlock()
 			{
-				if(impl_->thread.tid == nana::system::this_thread_id())
-					if(0 == --(impl_->thread.ref))
-						impl_->thread.tid = 0;
+				if (impl_->thread_id == nana::system::this_thread_id())
+					if (0 == --(impl_->refs))
+						impl_->thread_id = 0;
 
 				impl_->mutex.unlock();
 			}
 
 			void window_manager::revertible_mutex::revert()
 			{
-				if(impl_->thread.ref && (impl_->thread.tid == nana::system::this_thread_id()))
+				if (impl_->thread_id == nana::system::this_thread_id())
 				{
-					std::size_t cnt = impl_->thread.ref;
+					auto const current_refs = impl_->refs;
 
-					impl_->invoke_stack.push_back(impl_->thread);
-					impl_->thread.tid = 0;
-					impl_->thread.ref = 0;
+					//Check if there is a record
+					for (auto & r : impl_->records)
+					{
+						if (r.tid == impl_->thread_id)
+						{
+							r.callstack_refs.push_back(current_refs);
+							impl_->thread_id = 0;	//Indicates a record is existing
+							break;
+						}
+					}
 
-					for (std::size_t i = 0; i < cnt; ++i)
+					if (impl_->thread_id)
+					{
+						//Creates a new record
+						impl_->records.emplace_back(impl_->thread_id, current_refs);
+						impl_->thread_id = 0;
+					}
+
+					impl_->refs = 0;
+
+					for (std::size_t i = 0; i < current_refs; ++i)
 						impl_->mutex.unlock();
 				}
+				else
+					throw std::runtime_error("The revert is not allowed");
 			}
 
 			void window_manager::revertible_mutex::forward()
 			{
 				impl_->mutex.lock();
-				if(impl_->invoke_stack.size())
+
+				if (impl_->records.size())
 				{
-					auto thr = impl_->invoke_stack.back();
-					if(thr.tid == nana::system::this_thread_id())
+					auto const this_tid = nana::system::this_thread_id();
+
+					for (auto i = impl_->records.begin(); i != impl_->records.end(); ++i)
 					{
-						impl_->invoke_stack.pop_back();
-						for (std::size_t i = 0; i < thr.ref; ++i)
+						if (this_tid != i->tid)
+							continue;
+
+						auto const refs = i->callstack_refs.back();
+
+						for (std::size_t u = 1; u < refs; ++u)
 							impl_->mutex.lock();
-						impl_->thread = thr;
+
+						impl_->thread_id = this_tid;
+						impl_->refs = refs;
+
+						if (i->callstack_refs.size() > 1)
+							i->callstack_refs.pop_back();
+						else
+							impl_->records.erase(i);
+						return;
 					}
-					else
-						throw std::runtime_error("Nana.GUI: The forward is not matched.");
+
+					throw std::runtime_error("The forward is not matched. Please report this issue");
 				}
+
 				impl_->mutex.unlock();
 			}
-		//end class revertible_mutex
+			//end class revertible_mutex
 
 			//Utilities in this unit.
 			namespace utl
@@ -402,13 +449,11 @@ namespace detail
 			delete impl_;
 		}
 
-		bool window_manager::is_queue(core_window_t* wd)
-		{
-			return (wd && (category::flags::root == wd->other.category));
-		}
-
 		std::size_t window_manager::number_of_core_window() const
 		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+
 			return impl_->wd_register.size();
 		}
 
@@ -419,7 +464,9 @@ namespace detail
 
 		void window_manager::all_handles(std::vector<core_window_t*> &v) const
 		{
-			impl_->wd_register.all(v);
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+			v = impl_->wd_register.queue();
 		}
 
 		void window_manager::event_filter(core_window_t* wd, bool is_make, event_code evtid)
@@ -436,11 +483,15 @@ namespace detail
 
 		bool window_manager::available(core_window_t* wd)
 		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
 			return impl_->wd_register.available(wd);
 		}
 
 		bool window_manager::available(core_window_t * a, core_window_t* b)
 		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
 			return (impl_->wd_register.available(a) && impl_->wd_register.available(b));
 		}
 
@@ -492,7 +543,7 @@ namespace detail
 				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.width, result.height));
 
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
-				impl_->wd_register.insert(wd, wd->thread_id);
+				impl_->wd_register.insert(wd);
 
 #ifndef WIDGET_FRAME_DEPRECATED
 				if (owner && (category::flags::frame == owner->other.category))
@@ -573,7 +624,8 @@ namespace detail
 				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::lite_widget_tag**)nullptr);
 			else
 				wd = new core_window_t(parent, std::move(wdg_notifier), r, (category::widget_tag**)nullptr);
-			impl_->wd_register.insert(wd, wd->thread_id);
+
+			impl_->wd_register.insert(wd);
 			return wd;
 		}
 
@@ -660,21 +712,47 @@ namespace detail
 			}
 		}
 
-		void window_manager::default_icon(const nana::paint::image& _small, const nana::paint::image& big)
-		{
-			impl_->default_icon_big = big;
-			impl_->default_icon_small = _small;
-		}
-
 		void window_manager::icon(core_window_t* wd, const paint::image& small_icon, const paint::image& big_icon)
 		{
 			if(!big_icon.empty() || !small_icon.empty())
 			{
-				std::lock_guard<mutex_type> lock(mutex_);
-				if (impl_->wd_register.available(wd))
+				if (nullptr == wd)
 				{
-					if(category::flags::root == wd->other.category)
-						native_interface::window_icon(wd->root, small_icon, big_icon);
+					impl_->default_icon_big = big_icon;
+					impl_->default_icon_small = small_icon;
+				}
+				else
+				{
+					std::lock_guard<mutex_type> lock(mutex_);
+					if (impl_->wd_register.available(wd))
+					{
+						if (category::flags::root == wd->other.category)
+							native_interface::window_icon(wd->root, small_icon, big_icon);
+					}
+				}
+			}
+		}
+
+		void sync_child_root_display(window_manager::core_window_t* wd)
+		{
+			for (auto & child : wd->children)
+			{
+				if (category::flags::root != child->other.category)
+				{
+					sync_child_root_display(child);
+					continue;
+				}
+
+				auto const vs_parents = child->visible_parents();
+
+				if (vs_parents != child->visible)
+				{
+					native_interface::show_window(child->root, vs_parents, false);
+				}
+				else
+				{
+					if (child->visible != native_interface::is_window_visible(child->root))
+						native_interface::show_window(child->root, child->visible, false);
 				}
 			}
 		}
@@ -713,13 +791,20 @@ namespace detail
 				if(category::flags::root != wd->other.category)
 					bedrock::instance().event_expose(wd, visible);
 
-				if(nv)
+				if (nv)
+				{
+					if (visible && !wd->visible_parents())
+						return true;
+
 					native_interface::show_window(nv, visible, wd->flags.take_active);
+				}
+
+				sync_child_root_display(wd);
 			}
 			return true;
 		}
 
-		window_manager::core_window_t* window_manager::find_window(native_window_type root, int x, int y)
+		window_manager::core_window_t* window_manager::find_window(native_window_type root, const point& pos)
 		{
 			if (nullptr == root)
 				return nullptr;
@@ -729,7 +814,6 @@ namespace detail
 				//Thread-Safe Required!
 				std::lock_guard<mutex_type> lock(mutex_);
 				auto rrt = root_runtime(root);
-				point pos{ x, y };
 				if (rrt && _m_effective(rrt->window, pos))
 					return _m_find(rrt->window, pos);
 			}
@@ -759,6 +843,10 @@ namespace detail
 						arg.window_handle = reinterpret_cast<window>(wd);
 						arg.x = x;
 						arg.y = y;
+
+						if (wd->effect.bground)
+							wd->other.upd_state = basic_window::update_state::request_refresh;
+
 						brock.emit(event_code::move, wd, arg, true, brock.get_thread_context());
 						return true;
 					}
@@ -797,11 +885,13 @@ namespace detail
 				//Move child widgets
 				if(r.x != wd->pos_owner.x || r.y != wd->pos_owner.y)
 				{
-					point delta{ r.x - wd->pos_owner.x, r.y - wd->pos_owner.y };
-					wd->pos_owner.x = r.x;
-					wd->pos_owner.y = r.y;
+					auto delta = r.position() - wd->pos_owner;
+					wd->pos_owner = r.position();
 					_m_move_core(wd, delta);
 					moved = true;
+
+					if ((!size_changed) && wd->effect.bground)
+						wd->other.upd_state = basic_window::update_state::request_refresh;
 
 					arg_move arg;
 					arg.window_handle = reinterpret_cast<window>(wd);
@@ -989,26 +1079,28 @@ namespace detail
 
 			if (wd->displayed())
 			{
+				using paint_operation = window_layer::paint_operation;
+
 				if(forced || (false == wd->belong_to_lazy()))
 				{
 					if (!wd->flags.refreshing)
 					{
-						window_layer::paint(wd, redraw, false);
+						window_layer::paint(wd, (redraw ? paint_operation::try_refresh : paint_operation::none), false);
 						this->map(wd, forced, update_area);
 						return true;
 					}
 					else if (forced)
 					{
-						window_layer::paint(wd, false, false);
+						window_layer::paint(wd, paint_operation::none, false);
 						this->map(wd, true, update_area);
 						return true;
 					}
 				}
 				else if (redraw)
-					window_layer::paint(wd, true, false);
+					window_layer::paint(wd, paint_operation::try_refresh, false);
 
 				if (wd->other.upd_state == core_window_t::update_state::lazy)
-					wd->other.upd_state = core_window_t::update_state::refresh;
+					wd->other.upd_state = core_window_t::update_state::refreshed;
 			}
 			return true;
 		}
@@ -1020,43 +1112,43 @@ namespace detail
 
 			//It's not worthy to redraw if visible is false
 			if (impl_->wd_register.available(wd) && wd->displayed())
-				window_layer::paint(wd, true, true);
+				window_layer::paint(wd, window_layer::paint_operation::try_refresh, true);
 		}
 
 		//do_lazy_refresh
 		//@brief: defined a behavior of flush the screen
-		//@return: it returns true if the wnd is available
-		bool window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen, bool refresh_tree)
+		void window_manager::do_lazy_refresh(core_window_t* wd, bool force_copy_to_screen, bool refresh_tree)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 
 			if (false == impl_->wd_register.available(wd))
-				return false;
+				return;
 
 			//It's not worthy to redraw if visible is false
 			if(wd->visible && (!wd->is_draw_through()))
 			{
+				using paint_operation = window_layer::paint_operation;
 				if (wd->visible_parents())
 				{
-					if ((wd->other.upd_state == core_window_t::update_state::refresh) || force_copy_to_screen)
+					if ((wd->other.upd_state == core_window_t::update_state::refreshed) || (wd->other.upd_state == core_window_t::update_state::request_refresh) || force_copy_to_screen)
 					{
-						window_layer::paint(wd, false, refresh_tree);
+						window_layer::paint(wd, (wd->other.upd_state == core_window_t::update_state::request_refresh ? paint_operation::try_refresh : paint_operation::have_refreshed), refresh_tree);
 						this->map(wd, force_copy_to_screen);
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
 						//The window is still mapped because of edge nimbus effect.
 						//Avoid duplicate copy if action state is not changed and the window is not focused.
-						if ((wd->flags.action != wd->flags.action_before) || (bedrock::instance().focus() == wd))
+						if (wd->flags.action != wd->flags.action_before)
 							this->map(wd, true);
 					}
 				}
 				else
-					window_layer::paint(wd, true, refresh_tree);	//only refreshing if it has an invisible parent
+					window_layer::paint(wd, paint_operation::try_refresh, refresh_tree);	//only refreshing if it has an invisible parent
 			}
 			wd->other.upd_state = core_window_t::update_state::none;
-			return true;
+			return;
 		}
 
 		//get_graphics
@@ -1305,13 +1397,13 @@ namespace detail
 		{
 			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
 
+			auto end = tabs.cend();
 			if (forward)
 			{
 				if (detail::tab_type::none == wd->flags.tab)
 					return (tabs.front());
 				else if (detail::tab_type::tabstop & wd->flags.tab)
 				{
-					auto end = tabs.cend();
 					auto i = std::find(tabs.cbegin(), end, wd);
 					if (i != end)
 					{
@@ -1325,8 +1417,8 @@ namespace detail
 			}
 			else if (tabs.size() > 1)	//at least 2 elments in tabs are required when moving backward. 
 			{
-				auto i = std::find(tabs.cbegin(), tabs.cend(), wd);
-				if (i != tabs.cend())
+				auto i = std::find(tabs.cbegin(), end, wd);
+				if (i != end)
 					return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
 			}
 			return nullptr;
@@ -1371,6 +1463,8 @@ namespace detail
 
 		void window_manager::remove_trash_handle(unsigned tid)
 		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
 			impl_->wd_register.delete_trash(tid);
 		}
 
@@ -1635,7 +1729,7 @@ namespace detail
 
 				if (established)
 				{
-					utl::erase(pa_children, wd);
+					utl::erase(wd->parent->children, wd);
 					if (for_new->children.empty())
 						wd->index = 0;
 					else
@@ -1724,32 +1818,18 @@ namespace detail
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
 			//Delete the children widgets.
-			for (auto i = wd->children.rbegin(), end = wd->children.rend(); i != end;)
+			while (!wd->children.empty())
 			{
-				auto child = *i;
-
+				auto child = wd->children.back();
 				if (category::flags::root == child->other.category)
 				{
-					//closing a child root window erases itself from wd->children,
-					//to make sure the iterator is valid, it must be reloaded.
-
-					auto offset = std::distance(wd->children.rbegin(), i);
-
-					//!!!
-					//a potential issue is that if the calling thread is not same with child's thread,
-					//the child root window may not be erased from wd->children now.
+					//Only the nested_form meets the condition
 					native_interface::close_window(child->root);
-
-					i = wd->children.rbegin();
-					std::advance(i, offset);
-					end = wd->children.rend();
 					continue;
 				}
 				_m_destroy(child);
-				++i;
+				wd->children.pop_back();
 			}
-			wd->children.clear();
-
 
 			_m_disengage(wd, nullptr);
 			window_layer::enable_effects_bground(wd, false);
@@ -1812,15 +1892,20 @@ namespace detail
 			if(!wd->visible)
 				return nullptr;
 
-			for(auto i = wd->children.rbegin(); i != wd->children.rend(); ++i)
+			if (!wd->children.empty())
 			{
-				core_window_t* child = *i;
-				if((child->other.category != category::flags::root) && _m_effective(child, pos))
+				auto index = wd->children.size();
+
+				do
 				{
-					child = _m_find(child, pos);
-					if(child)
-						return child;
-				}
+					auto child = wd->children[--index];
+					if ((child->other.category != category::flags::root) && _m_effective(child, pos))
+					{
+						child = _m_find(child, pos);
+						if (child)
+							return child;
+					}
+				} while (0 != index);
 			}
 			return wd;
 		}

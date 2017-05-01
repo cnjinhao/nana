@@ -323,7 +323,7 @@ namespace nana
 			{
 				for (auto wd = this; wd; wd = wd->parent)
 				{
-					if (basic_window::update_state::refresh == wd->other.upd_state)
+					if (basic_window::update_state::refreshed == wd->other.upd_state)
 						return true;
 				}
 				return false;

@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -11,7 +11,7 @@
  *	@contributors:	dareg
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../../detail/platform_spec_selector.hpp"
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
@@ -100,18 +100,23 @@ namespace detail
 
 	void blend(drawable_type dw, const rectangle& area, pixel_color_t color, double fade_rate)
 	{
-		if (fade_rate <= 0) return;
-		if (fade_rate > 1) fade_rate = 1;
+		if (fade_rate <= 0)
+			return;
+		else if (fade_rate >= 1)
+			fade_rate = 1;
 
 		rectangle r;
 		if (false == ::nana::overlap(rectangle{ drawable_size(dw) }, area, r))
 			return;
 
-		unsigned red = static_cast<unsigned>((color.value & 0xFF0000) * fade_rate);
-		unsigned green = static_cast<unsigned>((color.value & 0xFF00) * fade_rate);
-		unsigned blue = static_cast<unsigned>((color.value & 0xFF) * fade_rate);
+		auto const color_fd_rate = (double(color.element.alpha_channel) / 255.0) * fade_rate;
 
-		double lrate = 1 - fade_rate;
+		fade_rate = (1 - color_fd_rate);
+
+		unsigned red = static_cast<unsigned>((color.value & 0xFF0000) * color_fd_rate);
+		unsigned green = static_cast<unsigned>((color.value & 0xFF00) * color_fd_rate);
+		unsigned blue = static_cast<unsigned>((color.value & 0xFF) * color_fd_rate);
+
 		pixel_buffer pixbuf(dw, r.y, r.height);
 
 		for (std::size_t row = 0; row < r.height; ++row)
@@ -120,9 +125,9 @@ namespace detail
 			const auto end = i + r.width;
 			for (; i < end; ++i)
 			{
-				unsigned px_r = ((static_cast<unsigned>((i->value & 0xFF0000) * lrate) + red) & 0xFF0000);
-				unsigned px_g = ((static_cast<unsigned>((i->value & 0xFF00) * lrate) + green) & 0xFF00);
-				unsigned px_b = ((static_cast<unsigned>((i->value & 0xFF) * lrate) + blue) & 0xFF);
+				unsigned px_r = ((static_cast<unsigned>((i->value & 0xFF0000) * fade_rate) + red) & 0xFF0000);
+				unsigned px_g = ((static_cast<unsigned>((i->value & 0xFF00) * fade_rate) + green) & 0xFF00);
+				unsigned px_b = ((static_cast<unsigned>((i->value & 0xFF) * fade_rate) + blue) & 0xFF);
 				i->value = (px_r | px_g | px_b);
 			}
 		}
@@ -140,14 +145,14 @@ namespace detail
 	#if defined(NANA_USE_XFT)
 		std::string utf8str = to_utf8(std::wstring(text, len));
 		XGlyphInfo ext;
-		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->handle);
+		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
 		::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
 								reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size(), &ext);
 		return nana::size(ext.xOff, fs->ascent + fs->descent);
 	#else
 		XRectangle ink;
 		XRectangle logic;
-		::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->handle), text, len, &ink, &logic);
+		::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), text, len, &ink, &logic);
 		return nana::size(logic.width, logic.height);
 	#endif
 #endif
@@ -180,7 +185,7 @@ namespace detail
 #elif defined(NANA_X11)
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
 	#if defined(NANA_USE_XFT)
-		auto fs = reinterpret_cast<XftFont*>(dw->font->handle);
+		auto fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
 
 		//Fixed missing array declaration by dareg
 		std::unique_ptr<FT_UInt[]> glyphs_ptr(new FT_UInt[len]);
@@ -192,7 +197,7 @@ namespace detail
 		}
 		XftDrawGlyphs(dw->xftdraw, &(dw->xft_fgcolor), fs, pos.x, pos.y + fs->ascent, glyphs_ptr.get(), len);
 	#else
-		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->handle);
+		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->native_handle());
 		XFontSetExtents * ext = ::XExtentsOfFontSet(fs);
 		XFontStruct ** fontstructs;
 		char ** font_names;

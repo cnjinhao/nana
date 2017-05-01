@@ -1,7 +1,7 @@
 /*
  *	A Tooltip Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -210,24 +210,7 @@ namespace nana
 						_m_get(wd).second = str;
 				}
 
-				void show(const std::string& text)
-				{
-					if (nullptr == window_ || window_->tooltip_empty())
-					{
-						auto fp = factory();
-
-						window_ = std::unique_ptr<tooltip_interface, deleter_type>(fp->create(), [fp](tooltip_interface* ti)
-						{
-							fp->destroy(ti);
-						});
-					}
-
-					window_->duration(0);
-					window_->tooltip_text(text);
-					window_->tooltip_move(API::cursor_position(), true);
-				}
-
-				void show_duration(window /*wd*/, point pos, const std::string& text, std::size_t duration)
+				void show(const std::string& text, const point* pos, std::size_t duration)
 				{
 					if (nullptr == window_ || window_->tooltip_empty())
 					{
@@ -242,8 +225,10 @@ namespace nana
 					window_->duration(duration);
 					window_->tooltip_text(text);
 
-					pos = pos_by_screen(pos, window_->tooltip_size(), true);
-					window_->tooltip_move(pos, false);
+					if (pos)
+						window_->tooltip_move(pos_by_screen(*pos, window_->tooltip_size(), true), false);
+					else
+						window_->tooltip_move(API::cursor_position(), true);
 				}
 
 				void close()
@@ -289,7 +274,7 @@ namespace nana
 						{
 							auto & pr = _m_get(arg.window_handle);
 							if (pr.second.size())
-								this->show(pr.second);
+								this->show(pr.second, nullptr, 0);
 						}
 						else
 							this->close();
@@ -329,7 +314,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			API::calc_screen_point(wd, pos);
-			ctrl::instance()->show_duration(wd, pos, text, duration);
+			ctrl::instance()->show(text, &pos, duration);
 		}
 
 		void tooltip::close()

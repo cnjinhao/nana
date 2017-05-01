@@ -122,7 +122,9 @@ namespace nana
 
 				void value(size_type s)
 				{
-					if (s + metrics_.range > metrics_.peak)
+					if (metrics_.range > metrics_.peak)
+						s = 0;
+					else if (s + metrics_.range > metrics_.peak)
 						s = metrics_.peak - metrics_.range;
 
 					if (graph_ && (metrics_.value != s))

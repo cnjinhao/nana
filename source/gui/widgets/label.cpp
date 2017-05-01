@@ -1,7 +1,7 @@
 /*
  *	A Label Control Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,8 +13,9 @@
  */
 
 #include <nana/gui/widgets/label.hpp>
-#include <nana/unicode_bidi.hpp>
 #include <nana/gui/widgets/skeletons/text_token_stream.hpp>
+#include <nana/gui/detail/widget_content_measurer_interface.hpp>
+#include <nana/unicode_bidi.hpp>
 #include <nana/system/platform.hpp>
 #include <stdexcept>
 #include <sstream>
@@ -80,14 +81,14 @@ namespace nana
 				{
 					traceable_.clear();
 
-					nana::paint::font ft = graph.typeface();	//used for restoring the font
+					auto pre_font = graph.typeface();	//used for restoring the font
 
 					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
 
-					font_ = ft;
+					font_ = pre_font;
 					fblock_ = nullptr;
 
-					_m_set_default(ft, fgcolor);
+					_m_set_default(pre_font, fgcolor);
 
 					_m_measure(graph);
 
@@ -116,10 +117,10 @@ namespace nana
 
 					if((tv != align_v::top) && extent_v_pixels < graph.height())
 					{
+						rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels);
+
 						if(align_v::center == tv)
-							rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels) >> 1;
-						else if(align_v::bottom == tv)
-							rs.pos.y = static_cast<int>(graph.height() - extent_v_pixels);
+							rs.pos.y >>= 1;
 					}
 					else
 						rs.pos.y = 0;
@@ -145,10 +146,10 @@ namespace nana
 						rs.pos.y += static_cast<int>(rs.pixels.back().pixels);
 					}
 
-					graph.typeface(ft);
+					graph.typeface(pre_font);
 				}
 
-				bool find(int x, int y, std::wstring& target, std::wstring& url) const
+				bool find(int x, int y, std::wstring& target, std::wstring& url) const noexcept
 				{
 					for (auto & t : traceable_)
 					{
@@ -183,10 +184,10 @@ namespace nana
 					rs.text_align = th;
 					rs.text_align_v = tv;
 
-					for(auto i = dstream_.begin(), end = dstream_.end(); i != end; ++i)
+					for(auto & line: dstream_)
 					{
 						rs.pixels.clear();
-						unsigned w = _m_line_pixels(*i, def_line_pixels, rs);
+						unsigned w = _m_line_pixels(line, def_line_pixels, rs);
 
 						if(limited && (w > limited))
 							w = limited;
@@ -202,7 +203,7 @@ namespace nana
 				}
 			private:
 				//Manage the fblock for a specified rectangle if it is a traceable fblock.
-				void _m_inser_if_traceable(int x, int y, const nana::size& sz, widgets::skeletons::fblock* fbp)
+				void _m_insert_if_traceable(int x, int y, const nana::size& sz, widgets::skeletons::fblock* fbp)
 				{
 					if(fbp->target.size() || fbp->url.size())
 					{
@@ -224,7 +225,7 @@ namespace nana
 					def_.fgcolor = fgcolor;
 				}
 
-				const ::nana::color& _m_fgcolor(nana::widgets::skeletons::fblock* fp)
+				const ::nana::color& _m_fgcolor(nana::widgets::skeletons::fblock* fp) noexcept
 				{
 					while(fp->fgcolor.invisible())
 					{
@@ -235,9 +236,9 @@ namespace nana
 					return fp->fgcolor;
 				}
 
-				std::size_t _m_font_size(nana::widgets::skeletons::fblock* fp)
+				double _m_font_size(nana::widgets::skeletons::fblock* fp) noexcept
 				{
-					while(fp->font_size == 0xFFFFFFFF)
+					while(fp->font_size < 0)
 					{
 						fp = fp->parent;
 						if(nullptr == fp)
@@ -246,7 +247,7 @@ namespace nana
 					return fp->font_size;
 				}
 
-				bool _m_bold(nana::widgets::skeletons::fblock* fp)
+				bool _m_bold(nana::widgets::skeletons::fblock* fp) noexcept
 				{
 					while(fp->bold_empty)
 					{
@@ -257,7 +258,7 @@ namespace nana
 					return fp->bold;
 				}
 
-				const std::string& _m_fontname(nana::widgets::skeletons::fblock* fp)
+				const std::string& _m_fontname(nana::widgets::skeletons::fblock* fp) noexcept
 				{
 					while(fp->font.empty())
 					{
@@ -273,12 +274,14 @@ namespace nana
 					if(fp != fblock_)
 					{
 						auto& name = _m_fontname(fp);
-						auto fontsize = static_cast<unsigned>(_m_font_size(fp));
+						auto fontsize = _m_font_size(fp);
 						bool bold = _m_bold(fp);
 
 						if((fontsize != font_.size()) || bold != font_.bold() || name != font_.name())
 						{
-							font_.make(name, fontsize, bold);
+							paint::font::font_style fs;
+							fs.weight = (bold ? 800 : 400);
+							font_ = paint::font{ name, fontsize, fs };
 							graph.typeface(font_);
 						}
 						fblock_ = fp;
@@ -304,7 +307,7 @@ namespace nana
 					}
 				}
 
-				void _m_align_x_base(const render_status& rs, pixel_tag & px, unsigned w)
+				void _m_align_x_base(const render_status& rs, pixel_tag & px, unsigned w) noexcept
 				{
 					switch(rs.text_align)
 					{
@@ -344,7 +347,7 @@ namespace nana
 
 					std::vector<iterator> line_values;
 
-					for(auto i = line.begin(), end = line.end(); i != end; ++i)
+					for(auto i = line.begin(); i != line.end(); ++i)
 					{
 						data * data_ptr = i->data_ptr;
 						nana::size sz = data_ptr->size();
@@ -365,7 +368,8 @@ namespace nana
 								sz.height = max_ascent + max_descent;
 						}
 
-						if(w + sz.width <= rs.allowed_width)
+						//Check if the content is displayed in a new line.
+						if((0 == rs.allowed_width) || (w + sz.width <= rs.allowed_width))
 						{
 							w += sz.width;
 
@@ -376,12 +380,11 @@ namespace nana
 						}
 						else
 						{
+							pixel_tag px;
+							_m_align_x_base(rs, px, (w ? w : sz.width));
+
 							if(w)
 							{
-								pixel_tag px;
-
-								_m_align_x_base(rs, px, w);
-
 								if(max_ascent + max_descent > max_px)
 									max_px = max_descent + max_ascent;
 								else
@@ -391,8 +394,6 @@ namespace nana
 								px.baseline = max_ascent;
 								px.values.swap(line_values);
 
-								rs.pixels.emplace_back(px);
-
 								w = sz.width;
 								max_px = sz.height;
 								max_ascent = as;
@@ -401,18 +402,16 @@ namespace nana
 							}
 							else
 							{
-								pixel_tag px;
-
-								_m_align_x_base(rs, px, sz.width);
 								px.pixels = sz.height;
 								px.baseline = as;
 
 								px.values.emplace_back(i);
 
-								rs.pixels.emplace_back(px);
 								max_px = 0;
 								max_ascent = max_descent = 0;
 							}
+
+							rs.pixels.emplace_back(px);
 						}
 					}
 
@@ -442,49 +441,48 @@ namespace nana
 
 					const int lastpos = static_cast<int>(graph.height()) - 1;
 
-					for(auto i = rs.pixels.begin(), end = rs.pixels.end(); i != end; ++i)
+					for(auto & px : rs.pixels)
 					{
-						for (auto & render_iterator : i->values)
+						for(auto & render_iterator: px.values)
 						{
 							auto & value = *render_iterator;
-							if(false == value.data_ptr->is_text())
-							{
-								if(text.size())
-								{
-									_m_draw_block(graph, text, block_start, rs);
-									if(lastpos <= rs.pos.y)
-										return false;
-									text.clear();
-								}
-								nana::size sz = value.data_ptr->size();
-
-								pixel_tag px = rs.pixels[rs.index];
-								if ((rs.allowed_width < rs.pos.x + sz.width) && (rs.pos.x != px.x_base))
-								{
-									//Change a line.
-									rs.pos.y += static_cast<int>(px.pixels);
-									px = rs.pixels[++rs.index];
-									rs.pos.x = px.x_base;
-								}
-
-								int y = rs.pos.y + _m_text_top(px, value.fblock_ptr, value.data_ptr);
-
-								value.data_ptr->nontext_render(graph, rs.pos.x, y);
-								_m_inser_if_traceable(rs.pos.x, y, sz, value.fblock_ptr);
-								rs.pos.x += static_cast<int>(sz.width);
-
-								if(lastpos < y)
-									return false;
-							}
-							else
+							if (value.data_ptr->is_text())
 							{
 								//hold the block while the text is empty,
 								//it stands for the first block
-								if(text.empty())
+								if (text.empty())
 									block_start = render_iterator;
 
 								text += value.data_ptr->text();
+								continue;
 							}
+							
+							if(text.size())
+							{
+								_m_draw_block(graph, text, block_start, rs);
+								if(lastpos <= rs.pos.y)
+									return false;
+								text.clear();
+							}
+							nana::size sz = value.data_ptr->size();
+
+							pixel_tag px = rs.pixels[rs.index];
+							if ((rs.allowed_width < rs.pos.x + sz.width) && (rs.pos.x != px.x_base))
+							{
+								//Change a line.
+								rs.pos.y += static_cast<int>(px.pixels);
+								px = rs.pixels[++rs.index];
+								rs.pos.x = px.x_base;
+							}
+
+							int y = rs.pos.y + _m_text_top(px, value.fblock_ptr, value.data_ptr);
+
+							value.data_ptr->nontext_render(graph, rs.pos.x, y);
+							_m_insert_if_traceable(rs.pos.x, y, sz, value.fblock_ptr);
+							rs.pos.x += static_cast<int>(sz.width);
+
+							if(lastpos < y)
+								return false;
 						}
 
 						if(text.size())
@@ -496,7 +494,7 @@ namespace nana
 					return (rs.pos.y <= lastpos);
 				}
 
-				static bool _m_overline(const render_status& rs, int right, bool equal_required)
+				static bool _m_overline(const render_status& rs, int right, bool equal_required) noexcept
 				{
 					if(align::left == rs.text_align)
 						return (equal_required ? right >= static_cast<int>(rs.allowed_width) : right > static_cast<int>(rs.allowed_width));
@@ -567,10 +565,13 @@ namespace nana
 							else
 							{
 								auto str = data_ptr->text().substr(text_range.first, text_range.second);
-								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 								sz = graph.text_extent_size(str);
+
+								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 							}
-							_m_inser_if_traceable(rs.pos.x, y, sz, fblock_ptr);
+
+
+							_m_insert_if_traceable(rs.pos.x, y, sz, fblock_ptr);
 							rs.pos.x += static_cast<int>(sz.width);
 
 							if(text_range.second < len)
@@ -584,7 +585,7 @@ namespace nana
 					}
 				}
 
-				std::pair<std::size_t, std::size_t> _m_locate(dstream::linecontainer::iterator& i, std::size_t pos)
+				static std::pair<std::size_t, std::size_t> _m_locate(dstream::linecontainer::iterator& i, std::size_t pos)
 				{
 					std::size_t n = i->data_ptr->text().length();
 					while(pos >= n)
@@ -599,13 +600,13 @@ namespace nana
 				dstream dstream_;
 				bool format_enabled_ = false;
 				::nana::widgets::skeletons::fblock * fblock_ = nullptr;
-				std::deque<traceable> traceable_;
+				::std::deque<traceable> traceable_;
 
 				::nana::paint::font font_;
 				struct def_font_tag
 				{
 					::std::string font_name;
-					std::size_t font_size;
+					double font_size;
 					bool	font_bold;
 					::nana::color fgcolor;
 				}def_;
@@ -613,13 +614,16 @@ namespace nana
 
 			//class trigger
 			//@brief: Draw the label
-				struct trigger::impl_t
+				struct trigger::implement
 				{
+					class measurer;
+
 					widget * wd{nullptr};
 					paint::graphics * graph{nullptr};
+					std::unique_ptr<measurer> msr_ptr{ nullptr };
 
 					align	text_align{align::left};
-					align_v	text_align_v;
+					align_v	text_align_v{align_v::top};
 
 					class renderer renderer;
 
@@ -643,16 +647,44 @@ namespace nana
 					std::vector<std::function<void(command, const std::string&)>> listener_;
 				};
 
+				class trigger::implement::measurer
+					: public dev::widget_content_measurer_interface
+				{
+				public:
+					measurer(implement* impl)
+						: impl_{ impl }
+					{}
+
+					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+					{
+						//Label now doesn't support to measure content with a specified height.
+						if (graph && ((0 == limit_pixels) || limit_width))
+						{
+							return impl_->renderer.measure(graph, limit_pixels, impl_->text_align, impl_->text_align_v);
+						}
+						return{};
+					}
+
+					size extension() const override
+					{
+						return{ 2, 2 };
+					}
+				private:
+					implement * const impl_;
+				};
+
 				trigger::trigger()
-					:impl_(new impl_t)
-				{}
+					:impl_(new implement)
+				{
+					impl_->msr_ptr.reset(new trigger::implement::measurer{impl_});
+				}
 
 				trigger::~trigger()
 				{
 					delete impl_;
 				}
 
-				trigger::impl_t * trigger::impl() const
+				trigger::implement * trigger::impl() const
 				{
 					return impl_;
 				}
@@ -661,6 +693,7 @@ namespace nana
 				{
 					impl_->graph = &graph;
 					impl_->wd = &widget;
+					API::dev::set_measurer(widget, impl_->msr_ptr.get());
 				}
 
 				void trigger::mouse_move(graph_reference, const arg_mouse& arg)
@@ -750,7 +783,7 @@ namespace nana
 					if(nullptr == impl_->wd) return;
 
 					window wd = impl_->wd->handle();
-					if(bground_mode::basic != API::effects_bground_mode(wd))
+					if (!API::dev::copy_transparent_background(wd, graph))
 						graph.rectangle(true, API::bgcolor(wd));
 
 					impl_->renderer.render(graph, API::fgcolor(wd), impl_->text_align, impl_->text_align_v);
@@ -796,7 +829,7 @@ namespace nana
 
 		bool label::transparent() const throw()
 		{
-			return (bground_mode::basic == API::effects_bground_mode(*this));
+			return API::is_transparent_background(*this);
 		}
 
 		label& label::format(bool f)

@@ -1,7 +1,7 @@
 /**
  *	Nana GUI Library Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -59,6 +59,8 @@ namespace nana
     template<typename Form, bool IsVisible = true>
     using form_loader = detail::form_loader<Form, IsVisible>;
 
+#ifdef NANA_AUTOMATIC_GUI_TESTING
+
 	/// @brief  Take control of the GUI and optionaly automaticaly tests it.
 	///
 	/// @detail It transfers to nana the program flow control, which begin pumping messages 
@@ -77,6 +79,9 @@ namespace nana
 
 	/// in seconds
 	void Wait(unsigned wait = 0);
+#else
+	void exec();
+#endif
 
  
 }//end namespace nana

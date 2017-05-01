@@ -1,6 +1,6 @@
 /*
  *	A Panel Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -31,7 +31,7 @@ namespace nana
 
 			void drawer::refresh(graph_reference graph)
 			{
-				if(bground_mode::basic != API::effects_bground_mode(window_))
+				if (!API::dev::copy_transparent_background(window_, graph))
 					graph.rectangle(true, API::bgcolor(window_));
 			}
 			//end class drawer

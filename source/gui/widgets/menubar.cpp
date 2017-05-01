@@ -1,7 +1,7 @@
 /*
 *	A Menubar implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -20,7 +20,7 @@ namespace nana
 	public:
 		static void popup(menu& m, window wd, int x, int y)
 		{
-			m._m_popup(wd, x, y, true);
+			m._m_popup(wd, { x, y }, true);
 		}
 	};
 
@@ -85,24 +85,24 @@ namespace nana
 
 			//class item_renderer
 				item_renderer::item_renderer(window wd, graph_reference graph)
-					:handle_(wd), graph_(graph)
+					:handle_(wd), graph_(graph), scheme_ptr_(static_cast<scheme*>(API::dev::get_scheme(wd)))
 				{}
 
 				void item_renderer::background(const nana::point& pos, const nana::size& size, state item_state)
 				{
-					auto bground = API::fgcolor(handle_);
+					auto bground = scheme_ptr_->text_fgcolor;
 					::nana::color border, body, corner;
 
 					switch (item_state)
 					{
 					case state::highlighted:
-						border = colors::highlight;
-						body.from_rgb(0xC0, 0xDD, 0xFC);
+						border = scheme_ptr_->border_highlight;
+						body = scheme_ptr_->body_highlight;
 						corner = body.blend(bground, 0.5);
 						break;
 					case state::selected:
-						border = colors::dark_border;
-						body = colors::white;
+						border = scheme_ptr_->border_selected;
+						body = scheme_ptr_->body_selected;
 						corner = body.blend(bground, 0.5);
 						break;
 					default:	//Don't process other states.
@@ -120,14 +120,16 @@ namespace nana
 
 				void item_renderer::caption(const point& pos, const native_string_type& text)
 				{
-					graph_.string(pos, text, colors::black);
+					graph_.string(pos, text, scheme_ptr_->text_fgcolor);
+
 				}
 			//end class item_renderer
 
 			//class trigger
 				trigger::trigger()
-					: items_(new itembase)
-				{}
+					: widget_(nullptr)
+					, graph_(nullptr)
+					, items_(new itembase) {}
 
 				trigger::~trigger()
 				{
@@ -202,7 +204,7 @@ namespace nana
 						{
 							int x = item_pos.x + item_s.width;
 							int y1 = item_pos.y + 2, y2 = item_pos.y + item_s.height - 1;
-							graph.line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.4));
+							graph.line({ x, y1 }, { x, y2 }, bgcolor.blend(colors::gray_border, 0.6));
 							graph.line({ x + 1, y1 }, { x + 1, y2 }, bgcolor.blend(colors::button_face_shadow_end, 0.5));
 						}
 
@@ -213,13 +215,13 @@ namespace nana
 						if (hotkey)
 						{
 							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
-							nana::size hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
+							auto hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
 
 							unsigned ascent, descent, inleading;
 							graph.text_metrics(ascent, descent, inleading);
 							int x = item_pos.x + 8 + off_w;
 							int y = item_pos.y + text_top_off + ascent + 1;
-							graph.line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, ::nana::colors::black);
+							graph.line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, ird.scheme_ptr()->text_fgcolor);
 						}
 
 						item_pos.x += i->size.width;
@@ -235,7 +237,7 @@ namespace nana
 					bool popup = false;
 					if(state_.behavior == state_type::behavior_focus)
 					{
-						std::size_t index = _m_item_by_pos(arg.pos);
+						auto index = _m_item_by_pos(arg.pos);
 						if(index != npos && state_.active != index)
 						{
 							state_.active = index;
@@ -362,6 +364,7 @@ namespace nana
 							case 2: //GOTO SUBMENU
 								state_.menu->goto_submen();
 								break;
+							default: break;
 							}
 							break;
 						}
@@ -390,7 +393,7 @@ namespace nana
 							}
 							break;
 						default:
-							std::size_t index = items_->find(arg.key);
+							auto index = items_->find(arg.key);
 							if(index != npos)
 							{
 								state_.active = index;
@@ -418,7 +421,7 @@ namespace nana
 						else
 						{
 							state_.behavior = state_type::behavior_none;
-							nana::point pos = API::cursor_position();
+							auto pos = API::cursor_position();
 							API::calc_window_point(widget_->handle(), pos);
 							state_.active = _m_item_by_pos(pos);
 						}
@@ -433,7 +436,7 @@ namespace nana
 				{
 					API::focus_window(widget_->handle());
 
-					std::size_t index = items_->find(arg.key);
+					auto index = items_->find(arg.key);
 					if(index != npos && (index != state_.active || nullptr == state_.menu))
 					{
 						_m_close_menu();
@@ -455,7 +458,7 @@ namespace nana
 					if(items_->cont().empty()) return;
 
 					const std::size_t last_pos = items_->cont().size() - 1;
-					std::size_t index = state_.active;
+					auto index = state_.active;
 					if(to_left)
 					{
 						--index;
@@ -564,7 +567,7 @@ namespace nana
 				{
 					if(state_.nullify_mouse == false)
 					{
-						std::size_t which = _m_item_by_pos(pos);
+						auto which = _m_item_by_pos(pos);
 						if((which != state_.active) && (which != npos || (false == state_.menu_active)))
 						{
 							state_.active = which;
@@ -602,7 +605,7 @@ namespace nana
 
 		void menubar::create(window wd)
 		{
-			widget_object<category::widget_tag, drawerbase::menubar::trigger>
+			widget_object<category::widget_tag, drawerbase::menubar::trigger, ::nana::general_events, drawerbase::menubar::scheme>
 				::create(wd, rectangle(nana::size(API::window_size(wd).width, 28)));
 
 			API::dev::set_menubar(handle(), true);
@@ -621,7 +624,7 @@ namespace nana
 
 		menu& menubar::at(std::size_t index) const
 		{
-			menu* p = get_drawer_trigger().at(index);
+			auto p = get_drawer_trigger().at(index);
 			if(nullptr == p)
 				throw std::out_of_range("menubar::at, out of range");
 			return *p;

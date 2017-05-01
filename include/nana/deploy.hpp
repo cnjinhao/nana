@@ -1,7 +1,7 @@
 /*
  *	The Deploy Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,98 +17,11 @@
 #include <nana/push_ignore_diagnostic>
 
 #include <nana/config.hpp>
+#include <nana/stdc++.hpp>
 
-
-#include <stdexcept>
 #include <nana/charset.hpp>
 
-//Implement workarounds for GCC/MinGW which version is below 4.8.2
-#if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
-namespace std
-{
-	//Workaround for no implemenation of std::stoi in MinGW.
-	int stoi(const std::string&, std::size_t * pos = nullptr, int base = 10);
-	int stoi(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
-
-	//Workaround for no implemenation of std::stof in MinGW.
-	float stof(const std::string&, std::size_t * pos = nullptr);
-	float stof(const std::wstring&, std::size_t* pos = nullptr);
-
-	//Workaround for no implemenation of std::stod in MinGW.
-	double stod(const std::string&, std::size_t * pos = nullptr);
-	double stod(const std::wstring&, std::size_t* pos = nullptr);
-
-	//Workaround for no implemenation of std::stold in MinGW.
-	long double stold(const std::string&, std::size_t * pos = nullptr);
-	long double stold(const std::wstring&, std::size_t* pos = nullptr);
-
-	//Workaround for no implemenation of std::stol in MinGW.
-	long stol(const std::string&, std::size_t* pos = nullptr, int base = 10);
-	long stol(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
-
-	//Workaround for no implemenation of std::stoll in MinGW.
-	long long stoll(const std::string&, std::size_t* pos = nullptr, int base = 10);
-	long long stoll(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
-
-	//Workaround for no implemenation of std::stoul in MinGW.
-	unsigned long stoul(const std::string&, std::size_t* pos = nullptr, int base = 10);
-	unsigned long stoul(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
-
-	//Workaround for no implemenation of std::stoull in MinGW.
-	unsigned long long stoull(const std::string&, std::size_t* pos = nullptr, int base = 10);
-	unsigned long long stoull(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
-}
-#endif //STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
-
-#ifdef STD_TO_STRING_NOT_SUPPORTED
-namespace std
-{
-	//Workaround for no implemenation of std::to_string/std::to_wstring in MinGW.
-	std::string to_string(long double);
-	std::string to_string(double);
-	std::string to_string(unsigned);
-	std::string to_string(int);
-	std::string to_string(long);
-	std::string to_string(unsigned long);
-	std::string to_string(long long);
-	std::string to_string(unsigned long long);
-	std::string to_string(float);
-}
-#endif
-
-#ifdef STD_TO_WSTRING_NOT_SUPPORTED
-namespace std
-{
-	std::wstring to_wstring(long double);
-	std::wstring to_wstring(double);
-	std::wstring to_wstring(unsigned);
-	std::wstring to_wstring(int);
-	std::wstring to_wstring(long);
-	std::wstring to_wstring(unsigned long);
-	std::wstring to_wstring(long long);
-	std::wstring to_wstring(unsigned long long);
-	std::wstring to_wstring(float);
-}
-#endif
-
-#ifdef STD_put_time_NOT_SUPPORTED
-#include <ctime>
-namespace std
-{
-	//Workaround for no implemenation of std::put_time in gcc < 5.
-	/* std unspecified return type */
-	//template< class CharT, class RTSTR >// let fail for CharT != char / wchar_t
-	//RTSTR put_time(const std::tm* tmb, const CharT* fmt);
-
-	//template<   >
-	std::string put_time/*<char, std::string>*/(const std::tm* tmb, const char* fmt);
-
-	//Defined in header <ctime>
-	//	std::size_t strftime(char* str, std::size_t count, const char* format, const std::tm* time);
-	//template<>
-	//std::wstring put_time<wchar_t, std::wstring>(const std::tm* tmb, const wchar_t* fmt);
-}
-#endif  // STD_put_time_NOT_SUPPORTED
+#include <stdexcept>
 
 namespace nana
 {
@@ -192,45 +105,5 @@ namespace nana
 
 #define NANA_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
 
-
-#ifdef STD_MAKE_UNIQUE_NOT_SUPPORTED
-// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3656.htm
-
-#include <cstddef>
-#include <memory>
-#include <type_traits>
-#include <utility>
-
-namespace std {
-	template<class T> struct _Unique_if {
-		typedef unique_ptr<T> _Single_object;
-	};
-
-	template<class T> struct _Unique_if<T[]> {
-		typedef unique_ptr<T[]> _Unknown_bound;
-	};
-
-	template<class T, size_t N> struct _Unique_if<T[N]> {
-		typedef void _Known_bound;
-	};
-
-	template<class T, class... Args>
-	typename _Unique_if<T>::_Single_object
-	make_unique(Args&&... args) {
-		return unique_ptr<T>(new T(std::forward<Args>(args)...));
-	}
-
-	template<class T>
-	typename _Unique_if<T>::_Unknown_bound
-	make_unique(size_t n) {
-		typedef typename remove_extent<T>::type U;
-		return unique_ptr<T>(new U[n]());
-	}
-
-	template<class T, class... Args>
-	typename _Unique_if<T>::_Known_bound
-			make_unique(Args&&...) = delete;
-}
-#endif //STD_make_unique_NOT_SUPPORTED
 #include <nana/pop_ignore_diagnostic>
 #endif //NANA_DEPLOY_HPP

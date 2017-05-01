@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -19,7 +19,6 @@
 #include "text_editor_part.hpp"
 #include <nana/unicode_bidi.hpp>
 
-//#include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/general_events.hpp>
 
 #include <functional>
@@ -56,6 +55,8 @@ namespace nana{	namespace widgets
 			class keyword_parser;
 			class helper_pencil;
 
+			struct text_section;
+
 			text_editor(const text_editor&) = delete;
 			text_editor& operator=(const text_editor&) = delete;
 
@@ -89,6 +90,8 @@ namespace nana{	namespace widgets
 			void set_keyword(const ::std::wstring& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
 			void erase_keyword(const ::std::wstring& kw);
 
+			colored_area_access_interface& colored_area();
+
 			void set_accept(std::function<bool(char_type)>);
 			void set_accept(accepts);
 			bool respond_char(const arg_keyboard& arg);
@@ -99,13 +102,9 @@ namespace nana{	namespace widgets
 			void indent(bool, std::function<std::string()> generator);
 			void set_event(event_interface*);
 
-			/// Determine whether the text_editor is line wrapped.
-			bool line_wrapped() const;
-
-			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
-			bool line_wrapped(bool);
-
 			bool load(const char*);
+
+			void text_align(::nana::align alignment);
 
 			/// Sets the text area.
 			/// @return true if the area is changed with the new value.
@@ -116,7 +115,12 @@ namespace nana{	namespace widgets
 
 			bool tip_string(::std::string&&);
 
-			const attributes & attr() const;
+			/// Returns the reference of listbox attributes
+			const attributes & attr() const noexcept;
+
+			/// Set the text_editor whether it is line wrapped, it returns false if the state is not changed.
+			bool line_wrapped(bool);
+
 			bool multi_lines(bool);
 
 			/// Enables/disables the editability of text_editor
@@ -134,9 +138,10 @@ namespace nana{	namespace widgets
 			std::size_t undo_max_steps() const;
 
 			renderers& customized_renderers();
+			void clear_undo();	///< same with undo_max_steps(0)
 
 			unsigned line_height() const;
-			unsigned screen_lines() const;
+			unsigned screen_lines(bool completed_line = false) const;
 
 			bool getline(std::size_t pos, ::std::wstring&) const;
 			void text(std::wstring, bool end_caret);
@@ -148,17 +153,18 @@ namespace nana{	namespace widgets
 			 * @param reset indicates whether to reset the text position by the pos. If this parameter is true, the text position is set by pos. If the parameter is false, it only moves the UI caret to the specified position. 
 			 */
 			bool move_caret(const upoint& pos, bool reset = false);
-			void move_caret_end();
+			void move_caret_end(bool update);
 			void reset_caret_pixels() const;
-			void reset_caret();
+			void reset_caret(bool stay_in_view = false);
 			void show_caret(bool isshow);
 
 			bool selected() const;
+			bool get_selected_points(nana::upoint&, nana::upoint&) const;
+
 			bool select(bool);
-			bool get_select_points(nana::upoint&, nana::upoint&) const;
 
 			/// Sets the end position of a selected string.
-			void set_end_caret();
+			void set_end_caret(bool stay_in_view);
 			
 			bool hit_text_area(const point&) const;
 			bool hit_select_area(nana::upoint pos, bool ignore_when_select_all) const;
@@ -192,7 +198,7 @@ namespace nana{	namespace widgets
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
-			const upoint& mouse_caret(const point& screen_pos);
+			const upoint& mouse_caret(const point& screen_pos, bool stay_in_view);
 			const upoint& caret() const;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
@@ -200,21 +206,29 @@ namespace nana{	namespace widgets
 			bool focus_changed(const arg_focus&);
 			bool mouse_enter(bool entering);
 			bool mouse_move(bool left_button, const point& screen_pos);
-			bool mouse_pressed(const arg_mouse& arg);
+			void mouse_pressed(const arg_mouse& arg);
 
 			skeletons::textbase<char_type>& textbase();
 			const skeletons::textbase<char_type>& textbase() const;
+
+			bool try_refresh();
 		private:
+			nana::color _m_draw_colored_area(paint::graphics& graph, const std::pair<std::size_t,std::size_t>& row, bool whole_line);
+			std::vector<upoint> _m_render_text(const ::nana::color& text_color);
 			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
+
+			::nana::point	_m_caret_to_screen(::nana::upoint pos) const;
+			::nana::upoint	_m_screen_to_caret(::nana::point pos) const;
+
+			bool _m_pos_from_secondary(std::size_t textline, const nana::upoint& secondary, unsigned & pos);
+			bool _m_pos_secondary(const nana::upoint& charpos, nana::upoint& secondary_pos) const;
+			bool _m_move_caret_ns(bool to_north);
+			void _m_update_line(std::size_t pos, std::size_t secondary_count_before);
 
 			bool _m_accepts(char_type) const;
 			::nana::color _m_bgcolor() const;
-			bool _m_scroll_text(bool vertical);
-			void _m_scrollbar();
 
-			::nana::rectangle _m_text_area() const;
-
-			void _m_get_scrollbar_size();
+			void _m_reset_content_size(bool calc_lines = false);
 			void _m_reset();
 			::nana::upoint _m_put(::std::wstring);
 			::nana::upoint _m_erase_select();
@@ -231,23 +245,25 @@ namespace nana{	namespace widgets
 			bool _m_move_select(bool record_undo);
 
 			int _m_text_top_base() const;
+			int _m_text_topline() const;
+
+			/// Returns the logical position that text starts of a specified line in x-axis
+			int _m_text_x(const text_section&) const;
 
 			void _m_draw_parse_string(const keyword_parser&, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const wchar_t*, std::size_t len) const;
 			//_m_draw_string
 			//@brief: Draw a line of string
-			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const ::std::wstring&, bool if_mask) const;
+			void _m_draw_string(int top, const ::nana::color&, const nana::upoint& str_pos, const text_section&, bool if_mask) const;
 			//_m_update_caret_line
 			//@brief: redraw whole line specified by caret pos. 
 			//@return: true if caret overs the border
 			bool _m_update_caret_line(std::size_t secondary_before);
 
-			void _m_offset_y(int y);
-
-			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos);
-
+			unsigned _m_char_by_pixels(const unicode_bidi::entity&, unsigned pos) const;
 			unsigned _m_pixels_by_char(const ::std::wstring&, ::std::size_t pos) const;
 			void _m_handle_move_key(const arg_keyboard& arg);
 
+			unsigned _m_width_px(bool exclude_vs) const;
 			void _m_draw_border();
 		private:
 			struct implementation;
@@ -264,6 +280,8 @@ namespace nana{	namespace widgets
 			{
 				::std::string tip_string;
 
+				::nana::align alignment{ ::nana::align::left };
+
 				bool line_wrapped{false};
 				bool multi_lines{true};
 				bool editable{true};
@@ -275,27 +293,24 @@ namespace nana{	namespace widgets
 			{
 				nana::rectangle	area;
 
-				bool		captured;
-				unsigned	tab_space;
-				unsigned	scroll_pixels;
-				unsigned	vscroll;
-				unsigned	hscroll;
+				bool		captured{ false };
+				unsigned	tab_space{ 4 };
 			}text_area_;
 
 			struct selection
 			{
-				enum class mode{ no_selected, mouse_selected, method_selected, move_selected };
+				enum class mode{ no_selected, mouse_selected, method_selected, move_selected, move_selected_take_effect };
 
-				text_focus_behavior behavior;
-				bool move_to_end;
-				mode mode_selection;
-				bool ignore_press;
+				bool ignore_press{ false };
+				bool move_to_end{ false };
+				mode mode_selection{ mode::no_selected };
+				text_focus_behavior behavior{text_focus_behavior::none};
+
 				nana::upoint a, b;
 			}select_;
 
 			struct coordinate
 			{
-				nana::point		offset;	//x stands for pixels, y for lines
 				nana::upoint	caret;	//position of caret by text, it specifies the position of a new character
 				nana::upoint	shift_begin_caret;
 				unsigned		xpos{0};	//This data is used for move up/down

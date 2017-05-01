@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,7 @@
  *	@contributors: Ariel Vina-Rodriguez
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/bedrock_pi_data.hpp>
@@ -345,7 +345,7 @@ namespace detail
 		}
 	}
 
-	void bedrock::pump_event(window modal_window, bool is_modal)
+	void bedrock::pump_event(window condition_wd, bool is_modal)
 	{
 		const unsigned tid = ::GetCurrentThreadId();
 		auto context = this->open_thread_context(tid);
@@ -365,9 +365,9 @@ namespace detail
 		try
 		{
 			MSG msg;
-			if(modal_window)
+			if (condition_wd)
 			{
-				HWND native_handle = reinterpret_cast<HWND>(reinterpret_cast<core_window_t*>(modal_window)->root);
+				HWND native_handle = reinterpret_cast<HWND>(reinterpret_cast<core_window_t*>(condition_wd)->root);
 				if (is_modal)
 				{
 					HWND owner = ::GetWindow(native_handle, GW_OWNER);
@@ -437,35 +437,35 @@ namespace detail
 		}
         catch(std::exception& e)
         {
-             (msgbox(modal_window, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
-                                 <<"\n   in form: "<< API::window_caption(modal_window)
-                                 <<"\n   exception : "<< e.what()
-             ).show();
+			(msgbox(condition_wd, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
+								<< "\n   in form: " << API::window_caption(condition_wd)
+								<<"\n   exception : "<< e.what()
+			).show();
 
-			 internal_scope_guard lock;
-			 _m_except_handler();
+			internal_scope_guard lock;
+			this->close_thread_window(nana::system::this_thread_id());
 
-			 intr_locker.forward();
-			 if (0 == --(context->event_pump_ref_count))
-			 {
-				 if ((nullptr == modal_window) || (0 == context->window_count))
-					 remove_thread_context();
-			 }
-			 throw;
+			intr_locker.forward();
+			if (0 == --(context->event_pump_ref_count))
+			{
+				if ((nullptr == condition_wd) || (0 == context->window_count))
+					remove_thread_context();
+			}
+			throw;
         }
 		catch(...)
 		{
-			(msgbox(modal_window, "An exception during message pumping!").icon(msgbox::icon_information)
+			(msgbox(condition_wd, "An exception during message pumping!").icon(msgbox::icon_information)
 				<<"An uncaptured non-std exception during message pumping!"
-				<< "\n   in form: " << API::window_caption(modal_window)
+				<< "\n   in form: " << API::window_caption(condition_wd)
 				).show();
 			internal_scope_guard lock;
-			_m_except_handler();
+			this->close_thread_window(nana::system::this_thread_id());
 
 			intr_locker.forward();
 			if(0 == --(context->event_pump_ref_count))
 			{
-				if((nullptr == modal_window) || (0 == context->window_count))
+				if ((nullptr == condition_wd) || (0 == context->window_count))
 					remove_thread_context();
 			}
 			throw;
@@ -474,7 +474,7 @@ namespace detail
 		intr_locker.forward();
 		if(0 == --(context->event_pump_ref_count))
 		{
-			if((nullptr == modal_window) || (0 == context->window_count))
+			if ((nullptr == condition_wd) || (0 == context->window_count))
 				remove_thread_context();
 		}
 	}//end pump_event
@@ -760,7 +760,7 @@ namespace detail
 		if (bedrock::instance().wd_manager().available(wd) == false)
 			return;
 
-		basic_window* prev_event_wd;
+		basic_window* prev_event_wd = nullptr;
 		if (thrd)
 		{
 			prev_event_wd = thrd->event_window;
@@ -784,7 +784,7 @@ namespace detail
 		static auto& brock = bedrock::instance();
 		static restrict::TRACKMOUSEEVENT track = {sizeof track, 0x00000002};
 
-		auto native_window = reinterpret_cast<native_window_type>(root_window);
+		auto const native_window = reinterpret_cast<native_window_type>(root_window);
 
 		auto & wd_manager = brock.wd_manager();
 		auto* root_runtime = wd_manager.root_runtime(native_window);
@@ -805,10 +805,10 @@ namespace detail
 			internal_scope_guard lock;
 			auto msgwnd = root_runtime->window;
 
-			switch(message)
+			switch (message)
 			{
 			case WM_IME_STARTCOMPOSITION:
-				if(msgwnd->other.attribute.root->ime_enabled)
+				if (msgwnd->other.attribute.root->ime_enabled)
 				{
 					auto native_font = msgwnd->drawer.graphics.typeface().handle();
 					LOGFONTW logfont;
@@ -820,7 +820,7 @@ namespace detail
 					POINT pos;
 					::GetCaretPos(&pos);
 
-					COMPOSITIONFORM cf = {CFS_POINT};
+					COMPOSITIONFORM cf = { CFS_POINT };
 					cf.ptCurrentPos = pos;
 					restrict::imm_set_composition_window(imc, &cf);
 					restrict::imm_release_context(root_window, imc);
@@ -828,36 +828,36 @@ namespace detail
 				def_window_proc = true;
 				break;
 			case WM_GETMINMAXINFO:
-				{
-					bool take_over = false;
-					auto mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+			{
+				bool take_over = false;
+				auto mmi = reinterpret_cast<MINMAXINFO*>(lParam);
 
-					if(!msgwnd->min_track_size.empty())
+				if (!msgwnd->min_track_size.empty())
+				{
+					mmi->ptMinTrackSize.x = static_cast<LONG>(msgwnd->min_track_size.width + msgwnd->extra_width);
+					mmi->ptMinTrackSize.y = static_cast<LONG>(msgwnd->min_track_size.height + msgwnd->extra_height);
+					take_over = true;
+				}
+
+				if (false == msgwnd->flags.fullscreen)
+				{
+					if (msgwnd->max_track_size.width && msgwnd->max_track_size.height)
 					{
-						mmi->ptMinTrackSize.x = static_cast<LONG>(msgwnd->min_track_size.width + msgwnd->extra_width);
-						mmi->ptMinTrackSize.y = static_cast<LONG>(msgwnd->min_track_size.height + msgwnd->extra_height);
+						mmi->ptMaxTrackSize.x = static_cast<LONG>(msgwnd->max_track_size.width + msgwnd->extra_width);
+						mmi->ptMaxTrackSize.y = static_cast<LONG>(msgwnd->max_track_size.height + msgwnd->extra_height);
+						if (mmi->ptMaxSize.x > mmi->ptMaxTrackSize.x)
+							mmi->ptMaxSize.x = mmi->ptMaxTrackSize.x;
+						if (mmi->ptMaxSize.y > mmi->ptMaxTrackSize.y)
+							mmi->ptMaxSize.y = mmi->ptMaxTrackSize.y;
+
 						take_over = true;
 					}
-
-					if(false == msgwnd->flags.fullscreen)
-					{
-						if(msgwnd->max_track_size.width && msgwnd->max_track_size.height)
-						{
-							mmi->ptMaxTrackSize.x = static_cast<LONG>(msgwnd->max_track_size.width + msgwnd->extra_width);
-							mmi->ptMaxTrackSize.y = static_cast<LONG>(msgwnd->max_track_size.height + msgwnd->extra_height);
-							if(mmi->ptMaxSize.x > mmi->ptMaxTrackSize.x)
-								mmi->ptMaxSize.x = mmi->ptMaxTrackSize.x;
-							if(mmi->ptMaxSize.y > mmi->ptMaxTrackSize.y)
-								mmi->ptMaxSize.y = mmi->ptMaxTrackSize.y;
-
-							take_over = true;
-						}
-					}
-
-					if (take_over)
-						return 0;
 				}
-				break;
+
+				if (take_over)
+					return 0;
+			}
+			break;
 			case WM_SHOWWINDOW:
 				if (msgwnd->visible == (FALSE == wParam))
 					brock.event_expose(msgwnd, !msgwnd->visible);
@@ -882,7 +882,7 @@ namespace detail
 				def_window_proc = true;
 				break;
 			case WM_MOUSEACTIVATE:
-				if(msgwnd->flags.take_active == false)
+				if (msgwnd->flags.take_active == false)
 					return MA_NOACTIVATE;
 
 				def_window_proc = true;
@@ -893,8 +893,8 @@ namespace detail
 					break;
 
 				pressed_wd = nullptr;
-				msgwnd = wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
-				if(msgwnd && msgwnd->flags.enabled)
+				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				if (msgwnd && msgwnd->flags.enabled)
 				{
 					if (msgwnd->flags.take_active && !msgwnd->flags.ignore_mouse_focus)
 					{
@@ -918,8 +918,14 @@ namespace detail
 				if (pressed_wd_space)
 					break;
 
-				msgwnd = wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
-				if ((nullptr == msgwnd) || (pressed_wd && (msgwnd != pressed_wd)))
+				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+
+				//Don't take care about whether msgwnd is equal to the pressed_wd.
+				//
+				//pressed_wd will remains when opens a no-actived window in an mouse_down event(like combox popups the drop-list).
+				//After the no-actived window is closed, the window doesn't respond to the mouse click other than pressed_wd.
+				pressed_wd = nullptr;
+				if (nullptr == msgwnd)
 					break;
 
 				//if event on the menubar, just remove the menu if it is not associating with the menubar
@@ -928,7 +934,7 @@ namespace detail
 				else
 					brock.close_menu_if_focus_other_window(msgwnd->root);
 
-				if(msgwnd->flags.enabled)
+				if (msgwnd->flags.enabled)
 				{
 					pressed_wd = msgwnd;
 
@@ -956,7 +962,7 @@ namespace detail
 							auto pos = native_interface::cursor_position();
 							auto rootwd = native_interface::find_window(pos.x, pos.y);
 							native_interface::calc_window_point(rootwd, pos);
-							if(msgwnd != wd_manager.find_window(rootwd, pos.x, pos.y))
+							if (msgwnd != wd_manager.find_window(rootwd, pos))
 							{
 								//call the drawer mouse up event for restoring the surface graphics
 								msgwnd->set_action(mouse_action::normal);
@@ -971,7 +977,7 @@ namespace detail
 						pressed_wd = nullptr;
 				}
 				break;
-			//mouse_click, mouse_up
+				//mouse_click, mouse_up
 			case WM_LBUTTONUP:
 			case WM_MBUTTONUP:
 			case WM_RBUTTONUP:
@@ -979,12 +985,12 @@ namespace detail
 				if (pressed_wd_space)
 					break;
 
-       			msgwnd = wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
-				if(nullptr == msgwnd)
+				msgwnd = wd_manager.find_window(native_window, { pmdec.mouse.x, pmdec.mouse.y });
+				if (nullptr == msgwnd)
 					break;
 
 				msgwnd->set_action(mouse_action::normal);
-				if(msgwnd->flags.enabled)
+				if (msgwnd->flags.enabled)
 				{
 					auto retain = msgwnd->annex.events_ptr;
 
@@ -1008,7 +1014,7 @@ namespace detail
 					}
 
 					//Do mouse_up, this handle may be closed by click handler.
-					if(wd_manager.available(msgwnd) && msgwnd->flags.enabled)
+					if (wd_manager.available(msgwnd) && msgwnd->flags.enabled)
 					{
 						arg.evt_code = event_code::mouse_up;
 						draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
@@ -1034,7 +1040,7 @@ namespace detail
 				if (pressed_wd_space)
 					break;
 
-				msgwnd = wd_manager.find_window(native_window, pmdec.mouse.x, pmdec.mouse.y);
+				msgwnd = wd_manager.find_window(native_window, {pmdec.mouse.x, pmdec.mouse.y});
 				if (wd_manager.available(hovered_wd) && (msgwnd != hovered_wd))
 				{
 					brock.event_msleave(hovered_wd);
@@ -1057,7 +1063,7 @@ namespace detail
 						if(prev_captured_inside)
 						{
 							evt_code = event_code::mouse_leave;
-							msgwnd->set_action(mouse_action::normal);
+							msgwnd->set_action(mouse_action::normal_captured);
 						}
 						else
 						{
@@ -1115,7 +1121,7 @@ namespace detail
 					if (pointer_wd == root_window)
 					{
 						::ScreenToClient(pointer_wd, &scr_pos);
-						auto scrolled_wd = wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), scr_pos.x, scr_pos.y);
+						auto scrolled_wd = wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), { scr_pos.x, scr_pos.y });
 
 						def_window_proc = true;
 						auto evt_wd = scrolled_wd;
@@ -1156,10 +1162,12 @@ namespace detail
 			case WM_DROPFILES:
 				{
 					HDROP drop = reinterpret_cast<HDROP>(wParam);
-					POINT pos;
-					::DragQueryPoint(drop, &pos);
+					POINT mswin_pos;
+					::DragQueryPoint(drop, &mswin_pos);
 
-					msgwnd = wd_manager.find_window(native_window, pos.x, pos.y);
+					const point pos{ mswin_pos.x, mswin_pos.y };
+
+					msgwnd = wd_manager.find_window(native_window, pos);
 					if(msgwnd)
 					{
 						arg_dropfiles dropfiles;
@@ -1187,8 +1195,7 @@ namespace detail
 
 						if(msgwnd)
 						{
-							dropfiles.pos.x = pos.x;
-							dropfiles.pos.y = pos.y;
+							dropfiles.pos = pos;
 
 							wd_manager.calc_window_point(msgwnd, dropfiles.pos);
 							dropfiles.window_handle = reinterpret_cast<window>(msgwnd);
@@ -1624,7 +1631,7 @@ namespace detail
 		if (wd_manager().available(wd) == false)
 			return false;
 
-		basic_window* prev_event_wd;
+		basic_window* prev_event_wd = nullptr;
 		if (thrd)
 		{
 			prev_event_wd = thrd->event_window;
@@ -1691,17 +1698,7 @@ namespace detail
 	{
 		auto* thrd = get_thread_context(0);
 		if (thrd && thrd->event_window)
-		{
-			//the state none should be tested, becuase in an event, there would be draw after an update,
-			//if the none is not tested, the draw after update will not be refreshed.
-			switch (thrd->event_window->other.upd_state)
-			{
-			case core_window_t::update_state::none:
-			case core_window_t::update_state::lazy:
-				thrd->event_window->other.upd_state = core_window_t::update_state::refresh;
-			default:	break;
-			}
-		}
+			thrd->event_window->other.upd_state = core_window_t::update_state::refreshed;
 	}
 
 	//Dynamically set a cursor for a window
@@ -1724,9 +1721,16 @@ namespace detail
 			thrd->cursor.handle = ::LoadCursor(nullptr, translate(cur));
 		}
 
-		if (wd->root_widget->other.attribute.root->running_cursor != cur)
+		auto this_cur = reinterpret_cast<HCURSOR>(
+#ifdef _WIN64
+			::GetClassLongPtr(reinterpret_cast<HWND>(wd->root), GCLP_HCURSOR)
+#else
+			::GetClassLong(reinterpret_cast<HWND>(wd->root), GCL_HCURSOR)
+#endif
+			);
+
+		if(this_cur != thrd->cursor.handle)
 		{
-			wd->root_widget->other.attribute.root->running_cursor = cur;
 #ifdef _WIN64
 			::SetClassLongPtr(reinterpret_cast<HWND>(wd->root), GCLP_HCURSOR,
 				reinterpret_cast<LONG_PTR>(thrd->cursor.handle));
@@ -1735,6 +1739,7 @@ namespace detail
 				static_cast<unsigned long>(reinterpret_cast<size_t>(thrd->cursor.handle)));
 #endif
 		}
+
 		if (cursor::arrow == thrd->cursor.predef_cursor)
 		{
 			thrd->cursor.window = nullptr;
@@ -1779,7 +1784,7 @@ namespace detail
 		}
 
 		native_interface::calc_window_point(native_handle, pos);
-		auto rev_wd = wd_manager().find_window(native_handle, pos.x, pos.y);
+		auto rev_wd = wd_manager().find_window(native_handle, pos);
 		if (rev_wd)
 		{
 			set_cursor(rev_wd, rev_wd->predef_cursor, thrd);
@@ -1808,10 +1813,7 @@ namespace detail
 				undefine_state_cursor(wd, thrd);
 
 			if(wd == thrd->cursor.window)
-			{
 				set_cursor(wd, cursor::arrow, thrd);
-				wd->root_widget->other.attribute.root->running_cursor = cursor::arrow;
-			}
 			break;
         default:
             break;

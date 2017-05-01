@@ -24,6 +24,16 @@ namespace nana
 		{
 			using native_string_type = ::nana::detail::native_string_type;
 
+			struct scheme
+				: public widget_geometrics
+			{
+				color_proxy text_fgcolor{ colors::black };
+				color_proxy body_highlight{ static_cast<color_rgb>(0xc0ddfc) };
+				color_proxy body_selected{ colors::white };
+				color_proxy border_selected{ colors::dark_border };
+				color_proxy border_highlight{ colors::highlight };
+			};
+
 			class item_renderer
 			{
 			public:
@@ -33,13 +43,16 @@ namespace nana
 				};
 
 				using graph_reference = paint::graphics&;
+				using scheme = ::nana::drawerbase::menubar::scheme;
 
 				item_renderer(window, graph_reference);
 				virtual void background(const point&, const ::nana::size&, state);
 				virtual void caption(const point&, const native_string_type&);
+				scheme *scheme_ptr() const { return scheme_ptr_; };
 			private:
 				window	handle_;
 				graph_reference graph_;
+				scheme *scheme_ptr_;
 			};
 
 			class trigger
@@ -72,7 +85,7 @@ namespace nana
 				bool _m_track_mouse(const ::nana::point&);
 			private:
 				widget *widget_;
-				nana::paint::graphics	*graph_;
+				paint::graphics	*graph_;
 				
 				itembase*	items_;
 
@@ -104,7 +117,7 @@ namespace nana
 	  ///
 	  /// The widget sets as shortkey the character behind the first of & in the text, for the item. e.g. "File(&F)" or "&File".
 	class menubar
-		:	public widget_object<category::widget_tag, drawerbase::menubar::trigger>
+		:	public widget_object<category::widget_tag, drawerbase::menubar::trigger, ::nana::general_events, drawerbase::menubar::scheme>
 	{
 	public:
 		menubar() = default;					///< The default constructor delay creation.

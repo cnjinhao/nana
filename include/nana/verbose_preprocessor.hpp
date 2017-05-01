@@ -30,9 +30,9 @@
 
 
 
-    #define STRING2(x) #x
+    #define STRING2(...) #__VA_ARGS__
 	#define STRING(x) STRING2(x)
-    #define SHOW_VALUE(x) " " #x "  =  " STRING2(x) 
+    #define SHOW_VALUE(x) " " #x "  =  " STRING2(x)
 
 	#pragma message ( "\n -----> Verbose preprocessor"  )
 	#pragma message (  SHOW_VALUE(VERBOSE_PREPROCESSOR)  )
@@ -80,7 +80,7 @@
 	#pragma message (  SHOW_VALUE(USE_github_com_meganz_mingw_std_threads)  )
 	#pragma message (  SHOW_VALUE(NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)  )
 	#pragma message (  SHOW_VALUE(STD_THREAD_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(STD_put_time_NOT_SUPPORTED)  )
+	#pragma message (  SHOW_VALUE(_enable_std_put_time)  )
 	#pragma message (  SHOW_VALUE(STD_MAKE_UNIQUE_NOT_SUPPORTED)  )
 
 	#pragma message (  SHOW_VALUE(STD_FILESYSTEM_NOT_SUPPORTED)  )
@@ -124,7 +124,7 @@
 	#pragma message (  SHOW_VALUE(USE_LIBJPEG_FROM_OS)  )
 	#pragma message (  SHOW_VALUE(NANA_LIBJPEG)  )
 
-   
+
    // #pragma message ( "\n =" STRING() ", \n =" STRING()"  , \n =" STRING() )
 
     #if defined(STOP_VERBOSE_PREPROCESSOR)

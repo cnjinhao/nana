@@ -12,14 +12,17 @@
  *	@brief basis classes and data structures required by nana
  */
 
-#include <nana/detail/platform_spec_selector.hpp>
+#include "platform_spec_selector.hpp"
+#include "platform_abstraction.hpp"
 
 #if defined(NANA_WINDOWS)
 
 #include <stdexcept>
 #include <map>
 
+#include <windows.h>
 #include <shellapi.h>
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -310,15 +313,6 @@ namespace detail
 		}
 	}
 
-	//struct font_tag::deleter
-	void font_tag::deleter::operator()(const font_tag* tag) const
-	{
-		if(tag && tag->handle)
-			::DeleteObject(tag->handle);
-		delete tag;
-	}
-	//end struct font_tag::deleter
-
 	//class platform_spec
 	platform_spec::co_initializer::co_initializer()
 		: ole32_(::LoadLibrary(L"OLE32.DLL"))
@@ -354,102 +348,19 @@ namespace detail
 
 	struct platform_spec::implementation
 	{
-		font_ptr_t	def_font_ptr;
 		std::map<native_window_type, window_icons> iconbase;
 	};
 
 	platform_spec::platform_spec()
 		: impl_{ new implementation}
 	{
-		//Create default font object.
-		NONCLIENTMETRICS metrics = {};
-		metrics.cbSize = sizeof metrics;
-#if(WINVER >= 0x0600)
-#if defined(NANA_MINGW)
-		OSVERSIONINFO osvi = {};
-		osvi.dwOSVersionInfoSize = sizeof(osvi);
-		::GetVersionEx(&osvi);
-		if (osvi.dwMajorVersion < 6)
-			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
-#else
-		if(!IsWindowsVistaOrGreater())
-			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
-#endif
-#endif
-		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
-		impl_->def_font_ptr = make_native_font(to_utf8(metrics.lfMessageFont.lfFaceName).c_str(), font_size_to_height(9), 400, false, false, false);
+		platform_abstraction::initialize();
 	}
 
 	platform_spec::~platform_spec()
 	{
+		platform_abstraction::shutdown();
 		delete impl_;
-	}
-
-	const platform_spec::font_ptr_t& platform_spec::default_native_font() const
-	{
-		return impl_->def_font_ptr;
-	}
-
-	void platform_spec::default_native_font(const font_ptr_t& fp)
-	{
-		impl_->def_font_ptr = fp;
-	}
-
-	unsigned platform_spec::font_size_to_height(unsigned size) const
-	{
-		HDC hdc = ::GetDC(0);
-		size = ::MulDiv(int(size), ::GetDeviceCaps(hdc, LOGPIXELSY), 72);
-		::ReleaseDC(0, hdc);
-		return size;
-	}
-
-	unsigned platform_spec::font_height_to_size(unsigned height) const
-	{
-		HDC hdc = ::GetDC(0);
-		unsigned pixels = ::GetDeviceCaps(hdc, LOGPIXELSY);
-		::ReleaseDC(0, hdc);
-
-		height = static_cast<unsigned>(static_cast<long long>(72) * height / pixels);
-		return height;
-	}
-
-	platform_spec::font_ptr_t platform_spec::make_native_font(const char* name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out)
-	{
-		::LOGFONT logfont;
-		memset(&logfont, 0, sizeof logfont);
-
-		if (name && *name)
-			std::wcscpy(logfont.lfFaceName, to_wstring(name).c_str());
-		else
-			std::wcscpy(logfont.lfFaceName, impl_->def_font_ptr->name.c_str());
-
-		logfont.lfCharSet = DEFAULT_CHARSET;
-		HDC hdc = ::GetDC(0);
-		logfont.lfHeight = -static_cast<int>(height);
-		::ReleaseDC(0, hdc);
-
-		logfont.lfWidth = 0;
-		logfont.lfWeight = weight;
-		logfont.lfQuality = PROOF_QUALITY;
-		logfont.lfPitchAndFamily = FIXED_PITCH;
-		logfont.lfItalic = italic;
-		logfont.lfUnderline = underline;
-		logfont.lfStrikeOut = strike_out;
-		HFONT result = ::CreateFontIndirect(&logfont);
-
-		if(result)
-		{
-			font_tag * impl = new font_tag;
-			impl->name = logfont.lfFaceName;
-			impl->height = height;
-			impl->weight = weight;
-			impl->italic = italic;
-			impl->underline = underline;
-			impl->strikeout = strike_out;
-			impl->handle = result;
-			return std::shared_ptr<font_tag>(impl, font_tag::deleter());
-		}
-		return nullptr;
 	}
 
 	platform_spec& platform_spec::instance()

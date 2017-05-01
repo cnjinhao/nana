@@ -1,7 +1,7 @@
 /*
 *	A Key Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,12 +21,12 @@ namespace nana
 		public:
 			virtual ~key_interface(){}
 
-			virtual bool same_type(const key_interface*) const = 0;
-			virtual bool compare(const key_interface*) const = 0; ///< is this key less than right key? [call it less(rk), less_than(rk) or compare_less(rk)?: if (lk.less_than(rk )) ]
+			virtual bool same_type(const key_interface*) const noexcept = 0;
+			virtual bool compare(const key_interface*) const noexcept = 0; ///< is this key less than right key? [call it less(rk), less_than(rk) or compare_less(rk)?: if (lk.less_than(rk )) ]
 		};	//end class key_interface
 
 		//Use less compare for equal compare [call it equal_by_less()?]
-		inline bool pred_equal(const key_interface * left, const key_interface* right)
+		inline bool pred_equal(const key_interface * left, const key_interface* right) noexcept
 		{
 			return (left->same_type(right) && (left->compare(right) == false) && (right->compare(left) == false));
 		}
@@ -104,12 +104,12 @@ namespace nana
 		}
 	public:
 		//implement key_interface methods
-		bool same_type(const key_interface * p) const override
+		bool same_type(const key_interface * p) const noexcept override
 		{
 			return (nullptr != dynamic_cast<const key*>(p));
 		}
 
-		bool compare(const key_interface* p) const override
+		bool compare(const key_interface* p) const noexcept override
 		{
 			auto rhs = dynamic_cast<const key*>(p);
 			return rhs && compare_(key_object_, rhs->key_object_);

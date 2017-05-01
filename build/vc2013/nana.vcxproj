@@ -187,6 +187,7 @@
     <ClCompile Include="..\..\source\charset.cpp" />
     <ClCompile Include="..\..\source\datetime.cpp" />
     <ClCompile Include="..\..\source\deploy.cpp" />
+    <ClCompile Include="..\..\source\detail\platform_abstraction.cpp" />
     <ClCompile Include="..\..\source\detail\platform_spec_windows.cpp" />
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp" />
     <ClCompile Include="..\..\source\gui\animation.cpp" />
@@ -232,6 +233,7 @@
     <ClCompile Include="..\..\source\gui\widgets\picture.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\progress.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\scroll.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\content_view.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\skeletons\text_editor.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\slider.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp" />
@@ -249,6 +251,7 @@
     <ClCompile Include="..\..\source\paint\image_process_selector.cpp" />
     <ClCompile Include="..\..\source\paint\pixel_buffer.cpp" />
     <ClCompile Include="..\..\source\paint\text_renderer.cpp" />
+    <ClCompile Include="..\..\source\stdc++.cpp" />
     <ClCompile Include="..\..\source\system\dataexch.cpp" />
     <ClCompile Include="..\..\source\system\platform.cpp" />
     <ClCompile Include="..\..\source\system\shared_wrapper.cpp" />

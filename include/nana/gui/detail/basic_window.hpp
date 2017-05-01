@@ -1,7 +1,7 @@
 /**
  *	A Basic Window Widget Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -17,6 +17,7 @@
 #include "drawer.hpp"
 #include "events_holder.hpp"
 #include "widget_geometrics.hpp"
+#include "widget_content_measurer_interface.hpp"
 #include "widget_notifier_interface.hpp"
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
@@ -85,7 +86,7 @@ namespace detail
 
 		enum class update_state
 		{
-			none, lazy, refresh
+			none, lazy, refreshed, request_refresh
 		};
 
 		struct edge_nimbus_action
@@ -191,6 +192,7 @@ namespace detail
 			//The following pointers refer to the widget's object.
 			std::shared_ptr<general_events> events_ptr;
 			widget_geometrics* scheme{ nullptr };
+			::nana::dev::widget_content_measurer_interface* content_measurer{ nullptr };
 		}annex;
 
 		struct
@@ -220,9 +222,6 @@ namespace detail
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
 				bool			ime_enabled{false};
-#if defined(NANA_WINDOWS)
-				cursor			running_cursor{ nana::cursor::arrow };
-#endif
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 

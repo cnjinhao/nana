@@ -435,7 +435,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		};
 
 		::std::string	font;
-		std::size_t		font_size;
+		double	font_size;
 		bool	bold;
 		bool	bold_empty;	//bold should be ignored if bold_empty is true
 		aligns::t	text_align;
@@ -859,7 +859,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 			//Create a default fblock.
 			fblock * fbp = new fblock;
 
-			fbp->font_size = 0xFFFFFFFF;
+			fbp->font_size = -1;
 			fbp->bold = false;
 			fbp->bold_empty = true;
 			fbp->text_align = fblock::aligns::baseline;

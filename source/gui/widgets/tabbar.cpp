@@ -1,6 +1,6 @@
 /*
  *	A Tabbar Implementation
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -49,9 +49,9 @@ namespace nana
 					{
 						bgcolor_ = bgcolor;
 
-						dark_bgcolor_ = bgcolor.blend(colors::black, 0.9);
+						dark_bgcolor_ = bgcolor.blend(colors::black, 0.1);
 						blcolor_ = bgcolor.blend(colors::black, 0.5);
-						ilcolor_ = bgcolor.blend(colors::white, 0.9);
+						ilcolor_ = bgcolor.blend(colors::white, 0.1);
 					}
 
 					graph.rectangle(true, bgcolor);
@@ -74,7 +74,7 @@ namespace nana
 					{
 						bgcolor = m.bgcolor;
 						blcolor = m.bgcolor.blend(colors::black, 0.5);
-						dark_bgcolor = m.bgcolor.blend(colors::black, 0.9);
+						dark_bgcolor = m.bgcolor.blend(colors::black, 0.1);
 					}
 
 					auto round_r = r;
@@ -141,9 +141,9 @@ namespace nana
 						::nana::color rect_clr{ static_cast<color_rgb>(0x9da3ab) };
 						graph.round_rectangle(r, 1, 1, rect_clr, false, {});
 						nana::rectangle draw_r(r);
-						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.8));
-						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.4));
 						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.2));
+						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.6));
+						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.8));
 					}
 					else if (!active)
 						clr = static_cast<color_rgb>(0x9299a4);
