@@ -43,19 +43,10 @@ namespace nana
 			~font();
 			bool empty() const;
 
-			/*	//deprecated
-			void make(const ::std::string& name, unsigned size, bool bold = false, bool italic = false, bool underline = false, bool strike_out = false);
-			void make_raw(const ::std::string& name, unsigned height, unsigned weight, bool italic, bool underline, bool strike_out);
-
-			void make(const ::std::string& font_family, unsigned size, const font_style& fs = {});
-			void make_from_ttf(const path_type& truetype, unsigned size, const font_style& fs = {});
-			*/
-
 			void set_default() const;
 			::std::string name() const;
 			double size() const;
 			bool bold() const;
-			//unsigned height() const;	//deprecated
 			unsigned weight() const;
 			bool italic() const;
 			native_font_type handle() const;

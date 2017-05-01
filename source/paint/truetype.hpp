@@ -105,11 +105,10 @@ namespace nana
 									text.resize(string_length);
 									ifs.read(&text.front(), string_length);
 
-									for (auto i = 0; i < string_length; i += 2)
-									{
+									for (std::size_t i = 0; i < string_length; i += 2)
 										std::swap(text[i], text[i + 1]);
-									}
-									text = nana::charset(text, nana::unicode::utf16).to_bytes(nana::unicode::utf8);
+									
+									text = ::nana::charset(text, nana::unicode::utf16).to_bytes(nana::unicode::utf8);
 								}
 							}
 							else

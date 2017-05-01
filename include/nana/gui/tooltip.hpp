@@ -62,7 +62,7 @@ namespace nana
 			_m_hold_factory(new factory<TooltipWindow>);
 		}
 
-		tooltip(){}
+		tooltip() = default;
 		tooltip(window w, const ::std::string &tip){set(w,tip);}
 
 
