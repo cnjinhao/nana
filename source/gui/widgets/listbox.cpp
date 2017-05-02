@@ -5376,6 +5376,8 @@ namespace nana
 			if (start_pos < origin.y)
 				origin.y -= ess->item_height();
 
+			ess->lister.erase(_where);
+
 			ess->calc_content_size(false);
 			ess->content_view->change_position(origin.y, false, false);
 			ess->content_view->sync(false);
