@@ -164,11 +164,9 @@ namespace nana {
 					speed_horz = (std::min)(5, (std::max)(speed_horz, -5));
 					speed_vert = (std::min)(5, (std::max)(speed_vert, -5));
 
-					view.move_origin({
+					return view.move_origin({
 						speed_horz, speed_vert
 					});
-
-					return true;
 				}
 
 				void size_changed(bool try_update)
@@ -435,9 +433,11 @@ namespace nana {
 				}
 			}
 
-			void content_view::move_origin(const point& skew)
+			bool content_view::move_origin(const point& skew)
 			{
 				auto imd_area = this->view_area();
+
+				auto pre_origin = impl_->origin;
 
 				impl_->origin.x += skew.x;
 				if (impl_->origin.x + imd_area.width > impl_->content_size.width)
@@ -451,6 +451,8 @@ namespace nana {
 					impl_->origin.y = static_cast<int>(impl_->content_size.height) - static_cast<int>(imd_area.height);
 
 				if (impl_->origin.y < 0)	impl_->origin.y = 0;
+
+				return (pre_origin != impl_->origin);
 			}
 
 			void content_view::sync(bool try_update)
