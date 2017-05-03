@@ -117,9 +117,8 @@ namespace nana
 		typedef drawerbase::menu::checks checks;
 
 		typedef drawerbase::menu::renderer_interface renderer_interface;
-		typedef drawerbase::menu::menu_item_type item_type;
-		typedef item_type::item_proxy item_proxy;
-		typedef item_type::event_fn_t event_fn_t;	///< A callback functor type. Prototype: `void(item_proxy&)`
+		typedef drawerbase::menu::menu_item_type::item_proxy item_proxy;
+		typedef drawerbase::menu::menu_item_type::event_fn_t event_fn_t;	///< A callback functor type. Prototype: `void(item_proxy&)`
 
 		menu();										///< The default constructor. NO OTHER CONSTRUCTOR.
 		~menu();

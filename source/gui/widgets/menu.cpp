@@ -1128,6 +1128,8 @@ namespace nana
 			delete impl_;
 		}
 
+		using item_type = drawerbase::menu::menu_item_type;
+
 		auto menu::append(std::string text_utf8, const menu::event_fn_t& handler) -> item_proxy
 		{
 			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
