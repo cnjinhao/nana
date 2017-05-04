@@ -632,13 +632,16 @@ namespace nana
 				API::umake_event(e.evt_destroy);
 		}
 
-		void visible(bool vsb)
+		void visible(bool vsb, bool sync_fastened = true)
 		{
 			for (auto & e : elements)
 				API::show_window(e.handle, vsb);
 
-			for (auto & e : fastened)
-				API::show_window(e.handle, vsb);
+			if (sync_fastened)
+			{
+				for (auto & e : fastened)
+					API::show_window(e.handle, vsb);
+			}
 		}
 
 		static event_handle erase_element(std::vector<element_t>& elements, window handle) noexcept
@@ -2571,7 +2574,10 @@ namespace nana
 					}
 				}
 
-				field.second->visible(is_show);
+				//Collocate doesn't sync the visiblity of fastened windows.
+				//This is a feature that allows tabbar panels to be fastened to a same field, the collocate()
+				//shouldn't break the visibility of panels that are maintained by tabbar.
+				field.second->visible(is_show, false);
 			}
 		}
 	}
