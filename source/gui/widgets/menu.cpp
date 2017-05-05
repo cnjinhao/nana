@@ -1120,6 +1120,7 @@ namespace nana
 
 		menu::~menu()
 		{
+			this->close();
 			for(auto i = impl_->sub_container.rbegin(); i != impl_->sub_container.rend(); ++i)
 			{
 				if(i->second.kill)
@@ -1141,7 +1142,7 @@ namespace nana
 		{
 			impl_->mbuilder.data().items.emplace_back(new item_type);
 		}
-
+		
 		auto menu::insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler) -> item_proxy
 		{
 			auto & items = impl_->mbuilder.data().items;
