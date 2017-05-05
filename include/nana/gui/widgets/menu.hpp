@@ -19,6 +19,8 @@
 
 namespace nana
 {
+	class menu;
+
 	namespace drawerbase
 	{
 		namespace menu
@@ -69,7 +71,12 @@ namespace nana
 					bool checked:1;
 				}flags;
 
-				menu_type		*sub_menu{nullptr};
+				struct
+				{
+					bool			own_creation;	//Indicates the menu_ptr is created by create_sub_menu
+					menu_type*		menu_ptr;
+				}linked;
+
 				std::string	text;
 				event_fn_t	event_handler;
 				checks			style{checks::none};
@@ -149,7 +156,7 @@ namespace nana
 		bool enabled(std::size_t pos) const;
 		void erase(std::size_t pos);			 	 ///< Removes the item
 		bool link(std::size_t pos, menu& menu_obj);///< Link a menu to the item as a sub menu.
-		menu * link(std::size_t pos);		 	     ///< Retrieves a linked sub menu of the item.
+		menu * link(std::size_t pos) const;		 	     ///< Retrieves a linked sub menu of the item.
 		menu *create_sub_menu(std::size_t pos);
 		void popup(window owner, int x, int y);     ///< Popup the menu at the owner window. 
 		void popup_await(window owner, int x, int y);

@@ -21,7 +21,6 @@
 #include <nana/gui/wvl.hpp>
 #include <nana/paint/text_renderer.hpp>
 #include <cctype>	//introduces tolower
-#include <map>
 #include <vector>
 
 namespace nana
@@ -37,7 +36,8 @@ namespace nana
 				using item_container = std::vector<std::unique_ptr<item_type>>;
 				using iterator = item_container::iterator;
 
-				std::vector<menu_type*>		owner;
+				::nana::menu* owner;
+				std::vector<menu_type*>	links;
 				item_container	items;
 				unsigned max_pixels;
 				unsigned item_pixels;
@@ -103,6 +103,9 @@ namespace nana
 					flags.enabled = true;
 					flags.splitter = true;
 					flags.checked = false;
+
+					linked.own_creation = false;
+					linked.menu_ptr = nullptr;
 				}
 
 				menu_item_type::menu_item_type(std::string text, const event_fn_t& fn)
@@ -111,6 +114,9 @@ namespace nana
 					flags.enabled = true;
 					flags.splitter = false;
 					flags.checked = false;
+
+					linked.own_creation = false;
+					linked.menu_ptr = nullptr;
 				}
 			//end class menu_item_type
 
@@ -209,8 +215,9 @@ namespace nana
 				using event_fn_t = item_type::event_fn_t;
 				using iterator = menu_type::item_container::iterator;
 
-				menu_builder()
+				menu_builder(::nana::menu* owner)
 				{
+					root_.owner = owner;
 					root_.max_pixels = screen::primary_monitor_size().width * 2 / 3;
 					root_.item_pixels = 24;
 					renderer_ = pat::cloneable<renderer_interface>(internal_renderer());
@@ -218,7 +225,37 @@ namespace nana
 
 				~menu_builder()
 				{
-					this->destroy();
+					//Disconnects the link.
+
+					//Clears the all links which are parent of mine
+					for (auto link : root_.links)
+					{
+						for (auto & m : link->items)
+						{
+							if (m->linked.menu_ptr == &root_)
+							{
+								m->linked.own_creation = false;
+								m->linked.menu_ptr = nullptr;
+							}
+						}
+					}
+
+					for (auto & m : root_.items)
+					{
+						if (m->linked.menu_ptr)
+						{
+							for (auto i = m->linked.menu_ptr->links.begin(); i != m->linked.menu_ptr->links.end();)
+							{
+								if ((*i) == &root_)
+									i = m->linked.menu_ptr->links.erase(i);
+								else
+									++i;
+							}
+
+							if (m->linked.own_creation)
+								delete m->linked.menu_ptr->owner;
+						}
+					}
 				}
 
 				void check_style(std::size_t index, checks s)
@@ -270,41 +307,19 @@ namespace nana
 					return root_;
 				}
 
-				bool set_sub_menu(std::size_t pos, menu_type &sub)
+				//Returns false if the linked menu is already existing
+				bool set_linkage(std::size_t pos, menu_type &linked, bool own_creation)
 				{
-					if(root_.items.size() > pos)
-					{
-						auto & item = *(root_.items[pos]);
-						if(!item.sub_menu)
-						{
-							item.sub_menu = &sub;
-							sub.owner.emplace_back(&root_);
-							return true;
-						}
-					}
-					return false;
-				}
+					auto mi = root_.items.at(pos).get();
 
-				void destroy()
-				{
-					for(auto i : root_.owner)
-						for(auto & m : i->items)
-						{
-							if(m->sub_menu == &root_)
-								m->sub_menu = nullptr;
-						}
+					if (mi->linked.menu_ptr)
+						return false;
 
-					for(auto & m : root_.items)
-					{
-						if(m->sub_menu)
-							for(auto i = m->sub_menu->owner.begin(); i != m->sub_menu->owner.end();)
-							{
-								if((*i) == &root_)
-									i = m->sub_menu->owner.erase(i);
-								else
-									++i;
-							}
-					}
+					mi->linked.menu_ptr = &linked;
+					mi->linked.own_creation = own_creation;
+					linked.links.emplace_back(&root_);
+
+					return true;
 				}
 
 				pat::cloneable<renderer_interface>& renderer()
@@ -438,7 +453,7 @@ namespace nana
 							}
 						}
 
-						if (item_ptr->sub_menu)
+						if (item_ptr->linked.menu_ptr)
 							renderer->sub_arrow(graph, nana::point(graph_->width() - 20, item_r.y), item_h_px, attr);
 
 						item_r.y += item_r.height + 1;
@@ -522,7 +537,7 @@ namespace nana
 						std::size_t index = _m_get_index_by_pos(pos.x, pos.y);
 						if (index != state_.active)
 						{
-							if ((index == npos) && items.at(state_.active)->sub_menu && state_.sub_window)
+							if ((index == npos) && items.at(state_.active)->linked.menu_ptr && state_.sub_window)
 								return false;
 
 							state_.active = (index != npos && items.at(index)->flags.splitter) ? npos : index;
@@ -550,7 +565,7 @@ namespace nana
 						return nullptr;
 
 					auto & items = menu_->items;
-					auto sub = items.at(state_.active)->sub_menu;
+					auto sub = items.at(state_.active)->linked.menu_ptr;
 					if (sub)
 					{
 						pos.x = static_cast<int>(graph_->width()) - 2;
@@ -593,7 +608,7 @@ namespace nana
 
 						if (!item_ptr->flags.splitter)
 						{
-							if (item_ptr->sub_menu)
+							if (item_ptr->linked.menu_ptr)
 							{
 								state_.active = index;
 								state_.active_timestamp = nana::system::timestamp();
@@ -901,7 +916,7 @@ namespace nana
 					
 					menu_item_type & item = *(menu->items.at(active));
 
-					if ((!item.flags.enabled) || item.flags.splitter || item.sub_menu)
+					if ((!item.flags.enabled) || item.flags.splitter || item.linked.menu_ptr)
 						return;
 
 					if (checks::highlight == item.style)
@@ -1109,11 +1124,15 @@ namespace nana
 			drawerbase::menu::menu_builder	mbuilder;
 			drawerbase::menu::menu_window *	window_ptr;
 			std::function<void()> destroy_answer;
-			std::map<std::size_t, info> sub_container;
+
+			implement(menu* self):
+				mbuilder{self}
+			{
+			}
 		};
 
 		menu::menu()
-			:impl_(new implement)
+			:impl_(new implement(this))
 		{
 			impl_->window_ptr = nullptr;
 		}
@@ -1121,11 +1140,6 @@ namespace nana
 		menu::~menu()
 		{
 			this->close();
-			for(auto i = impl_->sub_container.rbegin(); i != impl_->sub_container.rend(); ++i)
-			{
-				if(i->second.kill)
-					delete i->second.handle;
-			}
 			delete impl_;
 		}
 
@@ -1198,37 +1212,25 @@ namespace nana
 
 		bool menu::link(std::size_t index, menu& menu_obj)
 		{
-			if(impl_->mbuilder.set_sub_menu(index, menu_obj.impl_->mbuilder.data()))
-			{
-				auto& minfo = impl_->sub_container[index];
-				minfo.handle = &menu_obj;
-				minfo.kill = false;
-				return true;
-			}
-			return false;
+			return impl_->mbuilder.set_linkage(index, menu_obj.impl_->mbuilder.data(), false);
 		}
 
-		menu* menu::link(std::size_t index)
+		menu* menu::link(std::size_t index) const
 		{
-			auto i = impl_->sub_container.find(index);
-			if(i == impl_->sub_container.end())
-				return nullptr;
-			return i->second.handle;
+			auto mi = impl_->mbuilder.data().items.at(index).get();
+
+			if (mi && mi->linked.menu_ptr)
+				return mi->linked.menu_ptr->owner;
+
+			return nullptr;
 		}
 
 		menu *menu::create_sub_menu(std::size_t index)
 		{
-			menu * sub = new menu;
-
-			if (this->link(index, *sub))
-			{
-				auto& minfo = impl_->sub_container[index];
-				minfo.handle = sub;
-				minfo.kill = true;
-				return sub;
-			}
-
-			delete sub;
+			std::unique_ptr<menu> guard{new menu};
+			if (impl_->mbuilder.set_linkage(index, guard->impl_->mbuilder.data(), true))
+				return guard.release();
+			
 			return nullptr;
 		}
 
