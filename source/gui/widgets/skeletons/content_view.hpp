@@ -70,7 +70,8 @@ namespace skeletons
 
 		void change_position(int pos, bool aligned, bool horz);
 
-		void move_origin(const point& skew);
+		/// Returns true if the origin is moved
+		bool move_origin(const point& skew);
 
 		void sync(bool try_update);
 

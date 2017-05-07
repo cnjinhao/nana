@@ -92,14 +92,15 @@ namespace nana {
 
 					auto mouse_evt = [this](const arg_mouse& arg)
 					{
-						if (event_code::mouse_move == arg.evt_code)
+						if (event_code::mouse_down == arg.evt_code)
 						{
 							if (!arg.is_left_button())
 								return;
 
-							if ((!this->drag_started) && this->view.view_area().is_hit(arg.pos))
-								this->drag_started = true;
-
+							this->drag_started = this->view.view_area().is_hit(arg.pos);
+						}
+						else if (event_code::mouse_move == arg.evt_code)
+						{
 							if (this->drag_started && this->drive(arg.pos))
 							{
 								tmr.interval(16);
@@ -113,6 +114,7 @@ namespace nana {
 						}
 					};
 
+					API::events(handle).mouse_down.connect_unignorable(mouse_evt);
 					API::events(handle).mouse_move.connect_unignorable(mouse_evt);
 					API::events(handle).mouse_up.connect_unignorable(mouse_evt);
 
@@ -164,11 +166,9 @@ namespace nana {
 					speed_horz = (std::min)(5, (std::max)(speed_horz, -5));
 					speed_vert = (std::min)(5, (std::max)(speed_vert, -5));
 
-					view.move_origin({
+					return view.move_origin({
 						speed_horz, speed_vert
 					});
-
-					return true;
 				}
 
 				void size_changed(bool try_update)
@@ -435,9 +435,11 @@ namespace nana {
 				}
 			}
 
-			void content_view::move_origin(const point& skew)
+			bool content_view::move_origin(const point& skew)
 			{
 				auto imd_area = this->view_area();
+
+				auto pre_origin = impl_->origin;
 
 				impl_->origin.x += skew.x;
 				if (impl_->origin.x + imd_area.width > impl_->content_size.width)
@@ -451,6 +453,8 @@ namespace nana {
 					impl_->origin.y = static_cast<int>(impl_->content_size.height) - static_cast<int>(imd_area.height);
 
 				if (impl_->origin.y < 0)	impl_->origin.y = 0;
+
+				return (pre_origin != impl_->origin);
 			}
 
 			void content_view::sync(bool try_update)

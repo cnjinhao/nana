@@ -111,6 +111,15 @@ namespace nana
 		public:
 			using window_handle_type = basic_window*;
 
+			~window_register()
+			{
+				//Deleting a basic_window if thread never called exec(), the basic_window object
+				//will always stay in trash.
+				//
+				//Empty the trash before destructs window register
+				delete_trash(0);
+			}
+
 			void insert(window_handle_type wd)
 			{
 				if (wd)
