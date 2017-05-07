@@ -42,7 +42,7 @@ namespace nana
 				class item_proxy
 				{
 				public:
-					item_proxy(std::size_t n, menu_item_type &);
+					item_proxy(std::size_t pos, ::nana::menu*);
 					item_proxy& enabled(bool);
 					bool		enabled() const;
 
@@ -50,12 +50,13 @@ namespace nana
 					item_proxy&	checked(bool);
 					bool		checked() const;
 
+					item_proxy& text(std::string title_utf8);
 					std::string text() const;
 
 					std::size_t index() const;
 				private:
-					std::size_t index_;
-					menu_item_type &item_;
+					std::size_t const	pos_;
+					::nana::menu* const	menu_;
 				};
 				    /// A callback functor type.  
 				typedef std::function<void(item_proxy&)> event_fn_t;
@@ -149,6 +150,7 @@ namespace nana
 		void close();
 		void image(std::size_t pos, const paint::image& icon);
 		void text(std::size_t pos, std::string text_utf8);
+		std::string text(std::size_t pos) const;
 		void check_style(std::size_t pos, checks);
 		void checked(std::size_t pos, bool);
 		bool checked(std::size_t pos) const;

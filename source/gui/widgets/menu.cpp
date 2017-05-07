@@ -51,52 +51,6 @@ namespace nana
 			}
 
 			//struct menu_item_type
-				//class item_proxy
-				//@brief: this class is used as parameter of menu event function.
-					menu_item_type::item_proxy::item_proxy(std::size_t index, menu_item_type &item)
-						:index_(index), item_(item)
-					{}
-
-					menu_item_type::item_proxy& menu_item_type::item_proxy::enabled(bool v)
-					{
-						item_.flags.enabled = v;
-						return *this;
-					}
-
-					bool menu_item_type::item_proxy::enabled() const
-					{
-						return item_.flags.enabled;
-					}
-
-					menu_item_type::item_proxy&	menu_item_type::item_proxy::check_style(checks style)
-					{
-						if (good_checks(style))
-							item_.style = style;
-						return *this;
-					}
-
-					menu_item_type::item_proxy&	menu_item_type::item_proxy::checked(bool ck)
-					{
-						item_.flags.checked = ck;
-						return *this;
-					}
-
-					bool menu_item_type::item_proxy::checked() const
-					{
-						return item_.flags.checked;
-					}
-
-					std::string menu_item_type::item_proxy::text() const
-					{
-						return item_.text;
-					}
-
-					std::size_t menu_item_type::item_proxy::index() const
-					{
-						return index_;
-					}
-				//end class item_proxy
-
 				//Default constructor initializes the item as a splitter
 				menu_item_type::menu_item_type()
 				{
@@ -335,6 +289,58 @@ namespace nana
 				menu_type root_;
 				pat::cloneable<renderer_interface> renderer_;
 			};//end class menu_builder
+
+
+			//class menu_item_type::item_proxy
+			menu_item_type::item_proxy::item_proxy(std::size_t pos, nana::menu* m):
+				pos_{pos},
+				menu_{m}
+			{}
+
+			menu_item_type::item_proxy& menu_item_type::item_proxy::enabled(bool v)
+			{
+				menu_->enabled(pos_, v);
+				return *this;
+			}
+
+			bool menu_item_type::item_proxy::enabled() const
+			{
+				return menu_->enabled(pos_);
+			}
+
+			menu_item_type::item_proxy&	menu_item_type::item_proxy::check_style(checks style)
+			{
+				menu_->check_style(pos_, style);
+				return *this;
+			}
+
+			menu_item_type::item_proxy&	menu_item_type::item_proxy::checked(bool ck)
+			{
+				menu_->checked(pos_, ck);
+				return *this;
+			}
+
+			bool menu_item_type::item_proxy::checked() const
+			{
+				return menu_->checked(pos_);
+			}
+
+			menu_item_type::item_proxy& menu_item_type::item_proxy::text(std::string title)
+			{
+				menu_->text(pos_, title);
+				return *this;
+			}
+
+			std::string menu_item_type::item_proxy::text() const
+			{
+				return menu_->text(pos_);
+			}
+
+			std::size_t menu_item_type::item_proxy::index() const
+			{
+				return pos_;
+			}
+			//end class item_proxy
 
 			class menu_drawer
 				: public drawer_trigger
@@ -621,7 +627,7 @@ namespace nana
 								fn_close_tree_();
 								if (item_ptr->event_handler)
 								{
-									item_proxy ip(index, *item_ptr);
+									item_proxy ip{ index, menu_->owner };
 									item_ptr->event_handler.operator()(ip);
 								}
 								return 1;
@@ -935,7 +941,7 @@ namespace nana
 
 					if (item.event_handler)
 					{
-						item_type::item_proxy ip(active, item);
+						item_type::item_proxy ip{ active, menu->owner };
 						item.event_handler.operator()(ip);
 					}
 				}
@@ -1148,15 +1154,15 @@ namespace nana
 		auto menu::append(std::string text_utf8, const menu::event_fn_t& handler) -> item_proxy
 		{
 			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
-			impl_->mbuilder.data().items.emplace_back(item.get());
-			return item_proxy(size() - 1, *item.release());
+			impl_->mbuilder.data().items.emplace_back(std::move(item));
+			return item_proxy{size() - 1, this};
 		}
 
 		void menu::append_splitter()
 		{
 			impl_->mbuilder.data().items.emplace_back(new item_type);
 		}
-		
+
 		auto menu::insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler) -> item_proxy
 		{
 			auto & items = impl_->mbuilder.data().items;
@@ -1171,9 +1177,9 @@ namespace nana
 #else
 				items.begin() + pos,
 #endif
-				item.get());
+				std::move(item));
 
-			return item_proxy{ pos, *item.release() };
+			return item_proxy{ pos, this};
 		}
 
 		void menu::clear()
@@ -1208,6 +1214,11 @@ namespace nana
 		void menu::text(std::size_t index, std::string text_utf8)
 		{
 			impl_->mbuilder.data().items.at(index)->text.swap(text_utf8);
+		}
+
+		std::string menu::text(std::size_t index) const
+		{
+			return impl_->mbuilder.data().items.at(index)->text;
 		}
 
 		bool menu::link(std::size_t index, menu& menu_obj)
