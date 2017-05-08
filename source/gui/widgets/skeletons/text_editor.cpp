@@ -1802,6 +1802,9 @@ namespace nana{	namespace widgets
 					reset_caret();
 					impl_->try_refresh = sync_graph::refresh;
 					points_.xpos = 0;
+
+					//_m_put calcs the lines
+					_m_reset_content_size(false);
 				}
 			}
 			else
