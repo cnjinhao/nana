@@ -230,7 +230,10 @@ namespace nana{	namespace widgets
 
 			void _m_reset_content_size(bool calc_lines = false);
 			void _m_reset();
+
+			//Inserts text at position where the caret is
 			::nana::upoint _m_put(::std::wstring);
+
 			::nana::upoint _m_erase_select();
 
 			::std::wstring _m_make_select_string() const;

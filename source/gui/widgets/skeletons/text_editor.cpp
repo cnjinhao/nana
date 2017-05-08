@@ -1802,6 +1802,9 @@ namespace nana{	namespace widgets
 					reset_caret();
 					impl_->try_refresh = sync_graph::refresh;
 					points_.xpos = 0;
+
+					//_m_put calcs the lines
+					_m_reset_content_size(false);
 				}
 			}
 			else
@@ -3067,15 +3070,14 @@ namespace nana{	namespace widgets
 			if (_m_resolve_text(text, lines) && attributes_.multi_lines)
 			{
 				auto str_orig = textbase.getline(crtpos.y);
-				auto x_orig = crtpos.x;
 
-				auto subpos = lines.front();
+				auto const subpos = lines.front();
 				auto substr = text.substr(subpos.first, subpos.second - subpos.first);
 
-				if (str_orig.size() == x_orig)
+				if (str_orig.size() == crtpos.x)
 					textbase.insert(crtpos, std::move(substr));
 				else
-					textbase.replace(crtpos.y, str_orig.substr(0, x_orig) + substr);
+					textbase.replace(crtpos.y, str_orig.substr(0, crtpos.x) + substr);
 
 				//There are at least 2 elements in lines
 				for (auto i = lines.begin() + 1, end = lines.end() - 1; i != end; ++i)
@@ -3084,7 +3086,7 @@ namespace nana{	namespace widgets
 				}
 
 				auto backpos = lines.back();
-				textbase.insertln(++crtpos.y, text.substr(backpos.first, backpos.second - backpos.first) + str_orig.substr(x_orig));
+				textbase.insertln(++crtpos.y, text.substr(backpos.first, backpos.second - backpos.first) + str_orig.substr(crtpos.x));
 				crtpos.x = static_cast<decltype(crtpos.x)>(backpos.second - backpos.first);
 
 				impl_->capacities.behavior->add_lines(points_.caret.y, lines.size() - 1);
@@ -3096,12 +3098,12 @@ namespace nana{	namespace widgets
 				if (lines.size() > 1)
 					text = text.substr(lines.front().first, lines.front().second - lines.front().first);
 
-				auto length = text.size();
-				textbase.insert(crtpos, std::move(text));
+				crtpos.x += static_cast<unsigned>(text.size());
+				textbase.insert(points_.caret, std::move(text));
 
-				crtpos.x += static_cast<unsigned>(length);
 				_m_pre_calc_lines(crtpos.y, 1);
 			}
+
 			return crtpos;
 		}
 
