@@ -51,7 +51,7 @@ namespace nana
 
 			truetype(const path_type& filename)
 			{
-				std::ifstream ifs{ filename, std::ios::binary };
+				std::ifstream ifs(filename.string(), std::ios::binary);
 				if (!ifs.is_open())
 					return;
 
