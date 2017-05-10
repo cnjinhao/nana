@@ -2674,7 +2674,7 @@ namespace nana{	namespace widgets
 					if (whole_line)
 						lines = impl_->capacities.behavior->take_lines(row.first);
 					else
-						top += height * row.second;
+						top += static_cast<int>(height * row.second);
 					
 					const rectangle area_r = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(height * lines) };
 
@@ -2842,7 +2842,7 @@ namespace nana{	namespace widgets
 			for (auto & ent : reordered)
 			{
 				auto str_px = static_cast<int>(_m_text_extent_size(ent.begin, ent.end - ent.begin).width);
-				if (scrpos.x < str_px)
+				if (scrpos.x <= str_px)
 				{
 					res.x += _m_char_by_pixels(ent, scrpos.x);
 					res.x += static_cast<unsigned>(ent.begin - text_ptr);
@@ -3739,7 +3739,7 @@ namespace nana{	namespace widgets
 				{
 					for (auto p = pxbuf.get(); p != px_end; ++p)
 					{
-						if (pos < *p)
+						if (pos <= *p)
 						{
 							if ((*p > 1) && (pos >(*p >> 1)))
 								return static_cast<unsigned>(p - pxbuf.get()) + 1;
