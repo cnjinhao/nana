@@ -1831,11 +1831,10 @@ namespace nana{	namespace widgets
 		{	
 			const unsigned line_pixels = line_height();
 
-			auto pos = _m_caret_to_screen(crtpos);
-			const int line_bottom = pos.y + static_cast<int>(line_pixels);
+			//The coordinate of caret
+			auto coord = _m_caret_to_screen(crtpos);
 
-			if (reset_caret)
-				points_.caret = _m_screen_to_caret(pos);
+			const int line_bottom = coord.y + static_cast<int>(line_pixels);
 
 			if (!API::is_focus_ready(window_))
 				return false;
@@ -1845,7 +1844,7 @@ namespace nana{	namespace widgets
 			bool visible = false;
 			auto text_area = impl_->cview->view_area();
 
-			if (text_area.is_hit(pos) && (line_bottom > text_area.y))
+			if (text_area.is_hit(coord) && (line_bottom > text_area.y))
 			{
 				visible = true;
 				if (line_bottom > text_area.bottom())
@@ -1859,10 +1858,10 @@ namespace nana{	namespace widgets
 
 			caret->visible(visible);
 			if(visible)
-				caret->position(pos);
+				caret->position(coord);
 
 			//Adjust the caret into screen when the caret position is modified by this function
-			if (reset_caret && (!hit_text_area(pos)))
+			if (reset_caret && (!hit_text_area(coord)))
 			{
 				impl_->capacities.behavior->adjust_caret_into_screen();
 				impl_->try_refresh = sync_graph::refresh;
