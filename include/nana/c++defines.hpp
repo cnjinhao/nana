@@ -116,8 +116,6 @@
 #		define _enable_std_clamp
 #	endif
 
-#elif defined(NANA_MINGW)
-#	define STD_THREAD_NOT_SUPPORTED
 #elif defined(__clang__)	//Clang
 
 	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
@@ -132,9 +130,6 @@
 		#endif
 
 	#endif
-
-#	define _enable_std_clamp
-
 #elif defined(__GNUC__) //GCC
 
 	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
@@ -190,8 +185,20 @@
 			#endif
 		#endif
 	#endif
+#endif
 
-#	define _enable_std_clamp
+//Assume the std::thread is not implement on MinGW
+//But some toolchains may implement std::thread.
+#ifdef NANA_MINGW
+#	ifndef STD_THREAD_NOT_SUPPORTED
+#		define STD_THREAD_NOT_SUPPORTED
+#	endif
+#endif
+
+#if (!defined(__cpp_lib_clamp)) || (__cpp_lib_clamp < 201603)
+#	ifndef _enable_std_clamp
+#		define _enable_std_clamp
+#	endif
 #endif
 
 

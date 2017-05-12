@@ -1802,6 +1802,9 @@ namespace nana{	namespace widgets
 					reset_caret();
 					impl_->try_refresh = sync_graph::refresh;
 					points_.xpos = 0;
+
+					//_m_put calcs the lines
+					_m_reset_content_size(false);
 				}
 			}
 			else
@@ -1828,11 +1831,10 @@ namespace nana{	namespace widgets
 		{	
 			const unsigned line_pixels = line_height();
 
-			auto pos = _m_caret_to_screen(crtpos);
-			const int line_bottom = pos.y + static_cast<int>(line_pixels);
+			//The coordinate of caret
+			auto coord = _m_caret_to_screen(crtpos);
 
-			if (reset_caret)
-				points_.caret = _m_screen_to_caret(pos);
+			const int line_bottom = coord.y + static_cast<int>(line_pixels);
 
 			if (!API::is_focus_ready(window_))
 				return false;
@@ -1842,7 +1844,7 @@ namespace nana{	namespace widgets
 			bool visible = false;
 			auto text_area = impl_->cview->view_area();
 
-			if (text_area.is_hit(pos) && (line_bottom > text_area.y))
+			if (text_area.is_hit(coord) && (line_bottom > text_area.y))
 			{
 				visible = true;
 				if (line_bottom > text_area.bottom())
@@ -1856,10 +1858,10 @@ namespace nana{	namespace widgets
 
 			caret->visible(visible);
 			if(visible)
-				caret->position(pos);
+				caret->position(coord);
 
 			//Adjust the caret into screen when the caret position is modified by this function
-			if (reset_caret && (!hit_text_area(pos)))
+			if (reset_caret && (!hit_text_area(coord)))
 			{
 				impl_->capacities.behavior->adjust_caret_into_screen();
 				impl_->try_refresh = sync_graph::refresh;
@@ -2671,7 +2673,7 @@ namespace nana{	namespace widgets
 					if (whole_line)
 						lines = impl_->capacities.behavior->take_lines(row.first);
 					else
-						top += height * row.second;
+						top += static_cast<int>(height * row.second);
 					
 					const rectangle area_r = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(height * lines) };
 
@@ -2839,7 +2841,7 @@ namespace nana{	namespace widgets
 			for (auto & ent : reordered)
 			{
 				auto str_px = static_cast<int>(_m_text_extent_size(ent.begin, ent.end - ent.begin).width);
-				if (scrpos.x < str_px)
+				if (scrpos.x <= str_px)
 				{
 					res.x += _m_char_by_pixels(ent, scrpos.x);
 					res.x += static_cast<unsigned>(ent.begin - text_ptr);
@@ -3067,15 +3069,14 @@ namespace nana{	namespace widgets
 			if (_m_resolve_text(text, lines) && attributes_.multi_lines)
 			{
 				auto str_orig = textbase.getline(crtpos.y);
-				auto x_orig = crtpos.x;
 
-				auto subpos = lines.front();
+				auto const subpos = lines.front();
 				auto substr = text.substr(subpos.first, subpos.second - subpos.first);
 
-				if (str_orig.size() == x_orig)
+				if (str_orig.size() == crtpos.x)
 					textbase.insert(crtpos, std::move(substr));
 				else
-					textbase.replace(crtpos.y, str_orig.substr(0, x_orig) + substr);
+					textbase.replace(crtpos.y, str_orig.substr(0, crtpos.x) + substr);
 
 				//There are at least 2 elements in lines
 				for (auto i = lines.begin() + 1, end = lines.end() - 1; i != end; ++i)
@@ -3084,7 +3085,7 @@ namespace nana{	namespace widgets
 				}
 
 				auto backpos = lines.back();
-				textbase.insertln(++crtpos.y, text.substr(backpos.first, backpos.second - backpos.first) + str_orig.substr(x_orig));
+				textbase.insertln(++crtpos.y, text.substr(backpos.first, backpos.second - backpos.first) + str_orig.substr(crtpos.x));
 				crtpos.x = static_cast<decltype(crtpos.x)>(backpos.second - backpos.first);
 
 				impl_->capacities.behavior->add_lines(points_.caret.y, lines.size() - 1);
@@ -3096,12 +3097,12 @@ namespace nana{	namespace widgets
 				if (lines.size() > 1)
 					text = text.substr(lines.front().first, lines.front().second - lines.front().first);
 
-				auto length = text.size();
-				textbase.insert(crtpos, std::move(text));
+				crtpos.x += static_cast<unsigned>(text.size());
+				textbase.insert(points_.caret, std::move(text));
 
-				crtpos.x += static_cast<unsigned>(length);
 				_m_pre_calc_lines(crtpos.y, 1);
 			}
+
 			return crtpos;
 		}
 
@@ -3737,7 +3738,7 @@ namespace nana{	namespace widgets
 				{
 					for (auto p = pxbuf.get(); p != px_end; ++p)
 					{
-						if (pos < *p)
+						if (pos <= *p)
 						{
 							if ((*p > 1) && (pos >(*p >> 1)))
 								return static_cast<unsigned>(p - pxbuf.get()) + 1;
