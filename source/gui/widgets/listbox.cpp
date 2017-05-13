@@ -4320,9 +4320,12 @@ namespace nana
 							return;
 						}
 					case keyboard::select_all :
-						essence_->lister.select_for_all(true);
-						refresh(graph);
-					    API::dev::lazy_refresh();
+						if (!essence_->lister.single_status(true))
+						{
+							essence_->lister.select_for_all(true);
+							refresh(graph);
+							API::dev::lazy_refresh();
+						}
                         break;
 					default:
 						return;
