@@ -4138,6 +4138,13 @@ namespace nana
 							essence_->start_mouse_selection(arg.pos);
 
 						lister.select_for_all(false);
+						update = true;
+						if (good_list_r)
+						{
+							drawer_lister_->draw(list_r);
+							if (good_head_r)
+								drawer_header_->draw(graph, head_r);
+						}
 					}
 
 					if(update)
