@@ -465,6 +465,28 @@ namespace nana
 					return npos;
 				}
 
+				unsigned margin() const
+				{
+					return margin_;
+				}
+
+				std::pair<int, unsigned> range(size_type pos) const
+				{
+					int left = static_cast<int>(margin_);
+
+					for (auto & m : cont_)
+					{
+						if (m.index == pos)
+							return{left, m.width_px};
+
+						if (m.visible_state)
+							left += static_cast<int>(m.width_px);
+					}
+
+					return{ left, 0 };
+				}
+
+				/*
 				/// Returns the left point position and width(in variable *pixels) of column originaly at position pos.
 				int position(size_type pos, unsigned * pixels) const
 				{
@@ -483,6 +505,7 @@ namespace nana
 					}
 					return left;
 				}
+				*/
 
 				/// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
 				size_type next(size_type index) const noexcept
@@ -553,6 +576,7 @@ namespace nana
 			private:
 				bool visible_{true};
 				bool sortable_{true};
+				unsigned	margin_{ 5 };
 				container cont_;
 			};
 
@@ -2203,11 +2227,9 @@ namespace nana
 				::nana::size calc_content_size(bool try_update = true)
 				{
 					size ctt_size(
-						this->header.pixels() + 5,
-						static_cast<size::value_type>(this->lister.the_number_of_expanded())
+						this->header.pixels() + this->header.margin(),
+						static_cast<size::value_type>(this->lister.the_number_of_expanded()) * this->item_height()
 					);
-
-					ctt_size.height *= this->item_height();
 
 					this->content_view->content_size(ctt_size, try_update);
 
@@ -2226,7 +2248,8 @@ namespace nana
 					if (seq.empty())
 						return 0;
 
-					return (header.position(seq[0], nullptr) - this->content_view->origin().x + r.x);
+					//return (header.position(seq[0], nullptr) - this->content_view->origin().x + r.x);	//deprecated
+					return header.range(seq.front()).first + r.x - this->content_view->origin().x;
 				}
 
 				//Returns the absolute coordinate of the specified item in the window
@@ -2258,11 +2281,18 @@ namespace nana
 						}
 						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.pixels()))
 						{
+							// detect if cursor is in the area of header margin
+							if (pos.x < area.x - origin.x + static_cast<int>(header.margin()))
+								return{ parts::list_blank, npos };
+
 							new_where.first = parts::list;
 
 							auto const item_h = item_height();
 							//don't combine the following formula into the (pos.y - area.y - header_visible_px()) / item_h
 							new_where.second = ((pos.y - area.y - header_visible_px() + origin.y) / item_h) - (origin.y / item_h);
+
+							if (this->lister.the_number_of_expanded() < new_where.second + 1)
+								return{ parts::list_blank, npos };
 
 							if (checkable)
 							{
@@ -3042,7 +3072,8 @@ namespace nana
 				{
 					if(essence_->ptr_state == item_state::highlighted)
 					{
-						x -= r.x - essence_->content_view->origin().x;
+						x -= r.x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin());
+
 
 						for(auto & col : essence_->header.cont()) // in current order
 						{
@@ -3135,20 +3166,25 @@ namespace nana
 						0, r.height - 1
 					};
 
+					//The first item includes the margin
+					unsigned margin = essence_->header.margin();
+
 					for (auto & col : essence_->header.cont())
 					{
 						if (col.visible_state)
 						{
-							column_r.width = col.width_px;
+							column_r.width = col.width_px + margin;
 
 							const auto right_pos = column_r.right();
 
 							//Make sure the column is in the display area.
 							if (right_pos > r.x)
 							{
-								_m_draw_header_item(graph, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
+								_m_draw_header_item(graph, margin, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
 								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, border_color);
 							}
+
+							margin = 0;
 
 							column_r.x = right_pos;
 							if (right_pos > r.right())
@@ -3189,28 +3225,35 @@ namespace nana
 
 					auto i = essence_->header.column_from_point(x);
 
-					if(i == npos)
-						i = essence_->header.boundary(essence_->header.position(grab, nullptr) >= x);
+					if (i == npos)
+						//i = essence_->header.boundary(essence_->header.position(grab, nullptr) >= x);	//deprecated
+						i = essence_->header.boundary(essence_->header.range(grab).first >= x);
 
 					if(grab != i)
 					{
-						unsigned item_pixels = 0;
-						auto item_x = essence_->header.position(i, &item_pixels);
+						//unsigned item_pixels = 0;
+						//auto item_x = essence_->header.position(i, &item_pixels);	//deprecated
+
+						auto item_rg = essence_->header.range(i);
 
 						//Get the item pos
 						//if mouse pos is at left of an item middle, the pos of itself otherwise the pos of the next.
-						place_front = (x <= (item_x + static_cast<int>(item_pixels / 2)));
-						x = (place_front ? item_x : essence_->header.position(essence_->header.next(i), nullptr));
+						place_front = (x <= (item_rg.first + static_cast<int>(item_rg.second / 2)));
+						x = (place_front ? item_rg.first : essence_->header.range(essence_->header.next(i)).first);
 
 						if (npos != i)
-							essence_->graph->rectangle({x - x_offset + rect.x, rect.y, 2, rect.height}, true, colors::red);
+						{
+							if (place_front && (0 == essence_->header.cast(i, false)))
+								x -= static_cast<int>(essence_->header.margin());
+							essence_->graph->rectangle({ x - x_offset + rect.x, rect.y, 2, rect.height }, true, colors::red);
+						}
 
 						return i;
 					}
 					return npos;
 				}
 
-				void _m_draw_header_item(graph_reference graph, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
+				void _m_draw_header_item(graph_reference graph, unsigned margin, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
 				{
 					::nana::color bgcolor;
 
@@ -3241,7 +3284,7 @@ namespace nana
 					{
 						graph.palette(true, fgcolor);
 
-						point text_pos{ column_r.x, (static_cast<int>(essence_->scheme_ptr->header_height) - static_cast<int>(essence_->text_height)) / 2 };
+						point text_pos{ column_r.x + static_cast<int>(margin), (static_cast<int>(essence_->scheme_ptr->header_height) - static_cast<int>(essence_->text_height)) / 2 };
 
 						if (align::left == column.alignment)
 							text_pos.x += text_margin;
@@ -3265,13 +3308,19 @@ namespace nana
 				{
 					const auto & col = essence_->header.at(essence_->pointer_where.second);
 
-					paint::graphics fl_graph({ col.width_px, essence_->scheme_ptr->header_height });
+					auto margin = 0;
+					
+					if (&essence_->header.at(0, true) == &col)
+						margin = essence_->header.margin();
+
+					paint::graphics fl_graph({ col.width_px + margin, essence_->scheme_ptr->header_height });
 
 					fl_graph.typeface(essence_->graph->typeface());
 
-					_m_draw_header_item(fl_graph, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
+					_m_draw_header_item(fl_graph, margin, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
 
-					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
+					//auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;	//deprecated
+					auto xpos = essence_->header.range(col.index).first + pos.x - grabs_.start_pos;
 					essence_->graph->blend(rectangle{ point{ xpos - essence_->content_view->origin().x + rect.x, rect.y } , fl_graph.size() }, fl_graph, {}, 0.5);
 				}
 
@@ -3331,12 +3380,23 @@ namespace nana
 					auto const header_w = essence_->header.pixels();
 					auto const item_height_px = essence_->item_height();
 
-					auto origin = essence_->content_view->origin();
-					if (header_w < origin.x + rect.width)
+					auto const origin = essence_->content_view->origin();
+
+					auto const header_margin = essence_->header.margin();
+					if (header_w + header_margin < origin.x + rect.width)
 					{
-						rectangle r{ point{ rect.x + static_cast<int>(header_w)-origin.x, rect.y },
+						rectangle r{ point{ rect.x + static_cast<int>(header_w + header_margin) - origin.x, rect.y },
 							size{ rect.width + origin.x - header_w, rect.height } };
 						
+						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), r, *essence_->graph, r.position()))
+							essence_->graph->rectangle(r, true);
+					}
+
+					if (header_margin > 0)
+					{
+						rectangle r = rect;
+						r.width = header_margin;
+
 						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), r, *essence_->graph, r.position()))
 							essence_->graph->rectangle(r, true);
 					}
@@ -3345,8 +3405,13 @@ namespace nana
 
 					auto & ptr_where = essence_->pointer_where;
 
-					int item_top = rect.y - (origin.y % item_height_px);
+					//int item_top = rect.y - (origin.y % item_height_px);	//deprecated
 					auto first_disp = essence_->first_display();
+
+					point item_coord{
+						essence_->item_xpos(rect),
+						rect.y - static_cast<int>(origin.y % item_height_px)
+					};
 
 					// The first display is empty when the listbox is empty.
 					if (!first_disp.empty())
@@ -3379,7 +3444,7 @@ namespace nana
 									ind->detach();
 							}
 
-						const int x = essence_->item_xpos(rect);
+						//const int x = essence_->item_xpos(rect);	//deprecated
 
 						//Here we draw the root categ (0) or a first item if the first drawing is not a categ.(item!=npos))
 						if (idx.cat == 0 || !idx.is_category())
@@ -3393,16 +3458,16 @@ namespace nana
 							std::size_t size = i_categ->items.size();
 							for (std::size_t offs = first_disp.item; offs < size; ++offs, ++idx.item)
 							{
-								if (item_top >= rect.bottom())
+								if (item_coord.y >= rect.bottom())
 									break;
 
 								auto item_pos = lister.index_cast(index_pair{ idx.cat, offs }, true);	//convert display position to absolute position
 
-								_m_draw_item(*i_categ, item_pos, x, item_top, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
+								_m_draw_item(*i_categ, item_pos, item_coord, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
 									(hoverred_pos == idx ? item_state::highlighted : item_state::normal)
 								);
 
-								item_top += item_height_px;
+								item_coord.y += static_cast<int>(item_height_px);
 							}
 
 							++i_categ;
@@ -3411,15 +3476,15 @@ namespace nana
 
 						for (; i_categ != lister.cat_container().end(); ++i_categ, ++idx.cat)
 						{
-							if (item_top > rect.bottom())
+							if (item_coord.y > rect.bottom())
 								break;
 
 							idx.item = 0;
 
-							_m_draw_categ(*i_categ, rect.x - origin.x, item_top, txtoff, header_w, rect, bgcolor, 
+							_m_draw_categ(*i_categ, rect.x - origin.x, item_coord.y, txtoff, header_w, rect, bgcolor, 
 									(hoverred_pos.is_category() && (idx.cat == hoverred_pos.cat) ? item_state::highlighted : item_state::normal)
 								);
-							item_top += item_height_px;
+							item_coord.y += static_cast<int>(item_height_px);
 
 							if (false == i_categ->expand)
 								continue;
@@ -3427,17 +3492,17 @@ namespace nana
 							auto size = i_categ->items.size();
 							for (decltype(size) pos = 0; pos < size; ++pos)
 							{
-								if (item_top > rect.bottom())
+								if (item_coord.y > rect.bottom())
 									break;
 
 								auto item_pos = lister.index_cast(index_pair{ idx.cat, pos }, true);	//convert display position to absolute position
 
-								_m_draw_item(*i_categ, item_pos, x, item_top, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
+								_m_draw_item(*i_categ, item_pos, item_coord, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
 									(idx == hoverred_pos ? item_state::highlighted : item_state::normal)
 								);
 
-								item_top += item_height_px;
-								if (item_top >= rect.bottom())
+								item_coord.y += static_cast<int>(item_height_px);
+								if (item_coord.y >= rect.bottom())
 									break;
 
 								++idx.item;
@@ -3447,9 +3512,9 @@ namespace nana
 						essence_->inline_buffered_table.clear();
 					}
 
-					if (item_top < rect.bottom())
+					if (item_coord.y < rect.bottom())
 					{
-						rectangle bground_r{ rect.x, item_top, rect.width, static_cast<unsigned>(rect.bottom() - item_top) };
+						rectangle bground_r{ rect.x, item_coord.y, rect.width, static_cast<unsigned>(rect.bottom() - item_coord.y) };
 						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), bground_r, *essence_->graph, bground_r.position()))
 							essence_->graph->rectangle(bground_r, true, bgcolor);
 					}
@@ -3479,7 +3544,7 @@ namespace nana
 				{
 					const auto item_height = essence_->item_height();
 
-					rectangle bground_r{ x, y, width, item_height };
+					rectangle bground_r{ x + static_cast<int>(essence_->header.margin()), y, width, item_height };
 					auto graph = essence_->graph;
 
 					item_data item;
@@ -3514,7 +3579,8 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if (item.flags.selected && (categ.expand == false))
-						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->content_view->origin().x));
+						//_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->content_view->origin().x));	//deprecated
+						_m_draw_item_border(y);
 				}
 
 				color _m_draw_item_bground(const rectangle& bground_r, color bgcolor, color cell_color, item_state state, const item_data& item)
@@ -3563,8 +3629,7 @@ namespace nana
 				/// Draws an item
 				void _m_draw_item(const category_t& cat,
 					              const index_pair& item_pos, 
-					              const int x,                           ///< left coordinate ?
-					              const int y,                           ///< top coordinate 
+								  const point& coord,
 					              const int txtoff,                      ///< below y to print the text
 					              unsigned width, 
 					              const nana::rectangle& content_r,      ///< the rectangle where the full list content have to be drawn
@@ -3592,10 +3657,10 @@ namespace nana
 					auto graph = essence_->graph;
 
 					//draw the background for the whole item
-					rectangle bground_r{ content_r.x, y, show_w, essence_->item_height() };
+					rectangle bground_r{ content_r.x + static_cast<int>(essence_->header.margin()), coord.y, show_w, essence_->item_height() };
 					auto const state_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
-					int column_x = x;
+					int column_x = coord.x;
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
@@ -3638,8 +3703,8 @@ namespace nana
 									{
 										nana::rectangle imgt(item.img_show_size);
 										img_r = imgt;
-										img_r.x = content_pos + column_x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
-										img_r.y = y + (static_cast<int>(essence_->item_height()) - static_cast<int>(item.img_show_size.height)) / 2; // center
+										img_r.x = content_pos + coord.x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
+										img_r.y = coord.y + (static_cast<int>(essence_->item_height()) - static_cast<int>(item.img_show_size.height)) / 2; // center
 									}
 									content_pos += 18;  // image width, geom scheme?
 								}
@@ -3655,18 +3720,18 @@ namespace nana
 									//Make sure the user-define inline widgets is in the right visible rectangle.
 									rectangle pane_r;
 
-									const auto wdg_x = column_x + content_pos;
+									const auto wdg_x = coord.x + content_pos;
 									const auto wdg_w = col.width_px - static_cast<unsigned>(content_pos);
 
 									bool visible_state = true;
-									if (::nana::overlap(content_r, { wdg_x, y, wdg_w, essence_->item_height() }, pane_r))
+									if (::nana::overlap(content_r, { wdg_x, coord.y, wdg_w, essence_->item_height() }, pane_r))
 									{
 										::nana::point pane_pos;
 										if (wdg_x < content_r.x)
 											pane_pos.x = wdg_x - content_r.x;
 
-										if (y < content_r.y)
-											pane_pos.y = y - content_r.y;
+										if (coord.y < content_r.y)
+											pane_pos.y = coord.y - content_r.y;
 
 										inline_wdg->pane_widget.move(pane_pos);
 										inline_wdg->pane_bottom.move(pane_r);
@@ -3713,7 +3778,7 @@ namespace nana
 								{
 									col_fgcolor = m_cell.custom_format->fgcolor;
 
-									bground_r = rectangle{ column_x, y, col.width_px, essence_->item_height() };
+									bground_r = rectangle{ column_x, coord.y, col.width_px, essence_->item_height() };
 									col_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, m_cell.custom_format->bgcolor, state, item);
 								}
 								else
@@ -3730,27 +3795,29 @@ namespace nana
 										text_margin_right = essence_->scheme_ptr->text_margin;
 
 									graph->palette(true, col_fgcolor);
-									text_aligner.draw(m_cell.text, { column_x + content_pos, y + txtoff }, col.width_px - content_pos - text_margin_right);
+									text_aligner.draw(m_cell.text, { column_x + content_pos, coord.y + txtoff }, col.width_px - content_pos - text_margin_right);
 								}
 							}
 
 							if (0 == display_order)
 							{
 								if (essence_->checkable)
-									crook_renderer_.draw(*graph, col_bgcolor, col_fgcolor, essence_->checkarea(column_x, y), estate);
+									crook_renderer_.draw(*graph, col_bgcolor, col_fgcolor, essence_->checkarea(column_x, coord.y), estate);
 								if (item.img)
 									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 							}
 
-							graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->item_height()) - 1 }, static_cast<color_rgb>(0xEBF4F9));
+							if (display_order > 0)
+								graph->line({ column_x - 1, coord.y }, { column_x - 1, coord.y + static_cast<int>(essence_->item_height()) - 1 }, static_cast<color_rgb>(0xEBF4F9));
 						}
 
 						column_x += col.width_px;
 					}
 
 					//Draw selecting inner rectangle
-					if(item.flags.selected)
-						_m_draw_item_border(content_r.x, y, show_w);
+					if (item.flags.selected)
+						//_m_draw_item_border(content_r.x, coord.y, show_w);	//deprecated
+						_m_draw_item_border(coord.y);
 				}
 
 				inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
@@ -3789,10 +3856,26 @@ namespace nana
 					return nullptr;
 				}
 
-				void _m_draw_item_border(int x, int y, unsigned width) const
+				void _m_draw_item_border(int item_top) const
 				{
 					//Draw selecting inner rectangle
+					/*
 					rectangle r{ x, y, width, essence_->item_height() };
+
+					essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
+
+					essence_->graph->palette(false, colors::white);
+					paint::draw(*essence_->graph).corner(r, 1);
+
+					essence_->graph->rectangle(r.pare_off(1), false);
+					*/
+
+					rectangle r{
+						essence_->content_area().x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin()),
+						item_top,
+						essence_->header.pixels(),
+						essence_->item_height()
+					};
 
 					essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
 
@@ -5148,6 +5231,15 @@ namespace nana
 			for (auto & arg : categories)
 				ess.lister.create_cat(native_string_type(to_nstring(arg)));
 			ess.update();
+		}
+
+		rectangle listbox::content_area() const
+		{
+			auto & ess = _m_ess();
+			auto carea = ess.content_area();
+			carea.x += ess.header.margin();
+			carea.width -= (std::min)(carea.width, ess.header.margin());
+			return carea;
 		}
 
 		auto listbox::insert(cat_proxy cat, std::string str) -> cat_proxy
