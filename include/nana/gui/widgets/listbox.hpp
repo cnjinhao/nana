@@ -1395,6 +1395,11 @@ the nana::detail::basic_window member pointer scheme
 		size_type append_header(std::string text_utf8, unsigned width = 120);
 		size_type append_header(std::wstring text, unsigned width = 120);
 
+		cat_proxy append(std::string category);		///< Appends a new category to the end
+		cat_proxy append(std::wstring category);		///< Appends a new category to the end
+		void append(std::initializer_list<std::string> categories); ///< Appends categories to the end
+		void append(std::initializer_list<std::wstring> categories); ///< Appends categories to the end
+
 		/// Access a column at specified position
 		/**
 		 * @param pos Position of column
@@ -1416,10 +1421,8 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the number of columns
 		size_type column_size() const;
 
-		cat_proxy append(std::string category);		///< Appends a new category to the end
-		cat_proxy append(std::wstring category);		///< Appends a new category to the end
-		void append(std::initializer_list<std::string> categories); ///< Appends categories to the end
-		void append(std::initializer_list<std::wstring> categories); ///< Appends categories to the end
+		/// Returns a rectangle in where the content is drawn.
+		rectangle content_area() const;
 
 		cat_proxy insert(cat_proxy, ::std::string);
 		cat_proxy insert(cat_proxy, ::std::wstring);
