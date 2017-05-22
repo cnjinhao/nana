@@ -65,6 +65,7 @@ namespace skeletons
 		void draw_corner(graph_reference);
 
 		rectangle view_area() const;
+		rectangle view_area(const size& alt_content_size) const;
 
 		unsigned extra_space(bool horz) const;
 

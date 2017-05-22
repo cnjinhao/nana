@@ -85,6 +85,8 @@ namespace nana{	namespace widgets
 			text_editor(window, graph_reference, const text_editor_scheme*);
 			~text_editor();
 
+			size caret_size() const;
+
 			void set_highlight(const ::std::string& name, const ::nana::color&, const ::nana::color&);
 			void erase_highlight(const ::std::string& name);
 			void set_keyword(const ::std::wstring& kw, const std::string& name, bool case_sensitive, bool whole_word_matched);
@@ -217,8 +219,10 @@ namespace nana{	namespace widgets
 			std::vector<upoint> _m_render_text(const ::nana::color& text_color);
 			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
 
-			::nana::point	_m_caret_to_screen(::nana::upoint pos) const;
-			::nana::upoint	_m_screen_to_caret(::nana::point pos) const;
+			//Caret to screen coordinate or context coordiate(in pixels)
+			::nana::point	_m_caret_to_coordinate(::nana::upoint pos, bool to_screen_coordinate = true) const;
+			//Screen coordinate or context coordinate(in pixels) to caret,
+			::nana::upoint	_m_coordinate_to_caret(::nana::point pos, bool from_screen_coordinate = true) const;
 
 			bool _m_pos_from_secondary(std::size_t textline, const nana::upoint& secondary, unsigned & pos);
 			bool _m_pos_secondary(const nana::upoint& charpos, nana::upoint& secondary_pos) const;
@@ -243,8 +247,9 @@ namespace nana{	namespace widgets
 			unsigned _m_tabs_pixels(size_type tabs) const;
 			nana::size _m_text_extent_size(const char_type*, size_type n) const;
 
-			/// Moves the view of window.
-			bool _m_move_offset_x_while_over_border(int many);
+			/// Adjust position of view to make caret stay in screen
+			bool _m_adjust_view();
+
 			bool _m_move_select(bool record_undo);
 
 			int _m_text_top_base() const;

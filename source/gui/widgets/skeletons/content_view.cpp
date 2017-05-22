@@ -319,31 +319,31 @@ namespace nana {
 
 			void content_view::content_size(const size& sz, bool try_update)
 			{
+				auto const view_sz = this->view_area(sz);
+
 				if (sz.height < impl_->content_size.height)
 				{
-					if (impl_->origin.y + impl_->disp_area.height > sz.height)
+					if (impl_->origin.y + view_sz.height > sz.height)
 					{
-						if (impl_->disp_area.height > sz.height)
+						if (view_sz.height > sz.height)
 							impl_->origin.y = 0;
 						else
-							impl_->origin.y = sz.height - impl_->disp_area.height;
+							impl_->origin.y = sz.height - view_sz.height;
 					}
 				}
 
 				if (sz.width < impl_->content_size.width)
 				{
-					if (impl_->origin.x + impl_->disp_area.width > sz.width)
+					if (impl_->origin.x + view_sz.width > sz.width)
 					{
-						if (impl_->disp_area.width > sz.width)
+						if (view_sz.width > sz.width)
 							impl_->origin.x = 0;
 						else
-							impl_->origin.x = sz.width - impl_->disp_area.width;
+							impl_->origin.x = sz.width - view_sz.width;
 					}
 				}
 
-
 				impl_->content_size = sz;
-
 				impl_->size_changed(try_update);
 			}
 
@@ -388,18 +388,23 @@ namespace nana {
 
 			rectangle content_view::view_area() const
 			{
-				unsigned extra_horz = (impl_->disp_area.width < impl_->content_size.width ? space() : 0);
-				unsigned extra_vert = (impl_->disp_area.height < impl_->content_size.height + extra_horz ? space() : 0);
+				return view_area(impl_->content_size);
+			}
+
+			rectangle content_view::view_area(const size& alt_content_size) const
+			{
+				unsigned extra_horz = (impl_->disp_area.width < alt_content_size.width ? space() : 0);
+				unsigned extra_vert = (impl_->disp_area.height < alt_content_size.height + extra_horz ? space() : 0);
 
 				if ((0 == extra_horz) && extra_vert)
-					extra_horz = (impl_->disp_area.width < impl_->content_size.width + extra_vert ? space() : 0);
+					extra_horz = (impl_->disp_area.width < alt_content_size.width + extra_vert ? space() : 0);
 
 				return rectangle{
 					impl_->disp_area.position(),
 					size{
-					impl_->disp_area.width > extra_vert ? impl_->disp_area.width - extra_vert : 0,
-					impl_->disp_area.height > extra_horz ? impl_->disp_area.height - extra_horz : 0
-				}
+						impl_->disp_area.width > extra_vert ? impl_->disp_area.width - extra_vert : 0,
+						impl_->disp_area.height > extra_horz ? impl_->disp_area.height - extra_horz : 0
+					}
 				};
 			}
 
