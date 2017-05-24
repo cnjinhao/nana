@@ -3132,7 +3132,7 @@ namespace nana{	namespace widgets
 				}
 				else if (coord.x + static_cast<int>(caret_size().width) >= origin.x + static_cast<int>(view_area.width))
 				{
-					extra.x = (std::min)(textbase().getline(points_.caret.y).size(), points_.caret.x + extra_count_horz);
+					extra.x = (std::min)(static_cast<unsigned>(textbase().getline(points_.caret.y).size()), points_.caret.x + extra_count_horz);
 					auto new_origin = _m_caret_to_coordinate(extra, false).x + static_cast<int>(caret_size().width) - static_cast<int>(view_area.width);
 					moved_origin.x = new_origin - origin.x;
 				}
