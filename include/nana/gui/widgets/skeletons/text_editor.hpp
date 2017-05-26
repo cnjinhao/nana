@@ -321,7 +321,6 @@ namespace nana{	namespace widgets
 			{
 				nana::upoint	caret;	//position of caret by text, it specifies the position of a new character
 				nana::upoint	shift_begin_caret;
-				unsigned		xpos{0};	//This data is used for move up/down
 			}points_;
 		};
 	}//end namespace skeletons

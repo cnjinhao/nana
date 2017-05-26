@@ -744,21 +744,6 @@ namespace nana{	namespace widgets
 				auto const width_px = editor_.width_pixels();
 
 				pre_calc_line(first, width_px);
-
-				/*
-				//textbase is implement by using deque, and the linemtr holds the text pointers
-				//If the textbase is changed, it will check the text pointers.
-				std::size_t line = 0;
-				for (auto & mtr: linemtr_)	//deprecated
-				{
-					auto& linestr = editor_.textbase().getline(line);
-					auto p = mtr.line_sections.front().begin;
-					if (p < linestr.c_str() || (linestr.c_str() + linestr.size() < p))
-						pre_calc_line(line, width_px);
-
-					++line;
-				}
-				*/
 			}
 
 			void add_lines(std::size_t pos, std::size_t lines) override
@@ -1641,7 +1626,6 @@ namespace nana{	namespace widgets
 
 					reset_caret();
 					impl_->try_refresh = sync_graph::refresh;
-					points_.xpos = 0;
 
 					//_m_put calcs the lines
 					_m_reset_content_size(false);
@@ -1787,7 +1771,6 @@ namespace nana{	namespace widgets
 		{
 			bool new_sel_end = (select_.b != points_.caret);
 			select_.b = points_.caret;
-			points_.xpos = points_.caret.x;
 
 			if (new_sel_end || (stay_in_view && this->_m_adjust_view()))
 				impl_->try_refresh = sync_graph::refresh;
@@ -1962,7 +1945,6 @@ namespace nana{	namespace widgets
 				reset_caret();
 				impl_->try_refresh = sync_graph::refresh;
 				_m_reset_content_size(true);
-				points_.xpos = points_.caret.x;
 			}
 		}
 
@@ -1997,7 +1979,6 @@ namespace nana{	namespace widgets
 				impl_->try_refresh = sync_graph::refresh;
 
 			_m_reset_content_size();
-			points_.xpos = points_.caret.x;
 		}
 
 		void text_editor::copy() const
@@ -2139,7 +2120,6 @@ namespace nana{	namespace widgets
 			if(has_erase)	backspace();
 
 			_m_reset_content_size();
-			points_.xpos = points_.caret.x;
 		}
 
 		void text_editor::backspace(bool record_undo)
@@ -2245,8 +2225,6 @@ namespace nana{	namespace widgets
 
 			if (pending && this->_m_adjust_view())
 				impl_->try_refresh = sync_graph::refresh;
-
-			points_.xpos = points_.caret.x;
 		}
 
 		void text_editor::move_right()
@@ -2272,8 +2250,6 @@ namespace nana{	namespace widgets
 
 			if (do_render)
 				impl_->try_refresh = sync_graph::refresh;
-
-			points_.xpos = points_.caret.x;
 		}
 
 		void text_editor::_m_handle_move_key(const arg_keyboard& arg)
@@ -2394,7 +2370,6 @@ namespace nana{	namespace widgets
 					select_.a = pos;
 				}
 				points_.caret = pos;
-				points_.xpos = points_.caret.x;
 				impl_->try_refresh = sync_graph::refresh;
 				this->_m_adjust_view();
 				impl_->cview->sync(true);
