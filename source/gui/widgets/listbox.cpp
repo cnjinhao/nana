@@ -2248,7 +2248,6 @@ namespace nana
 					if (seq.empty())
 						return 0;
 
-					//return (header.position(seq[0], nullptr) - this->content_view->origin().x + r.x);	//deprecated
 					return header.range(seq.front()).first + r.x - this->content_view->origin().x;
 				}
 
@@ -3226,14 +3225,10 @@ namespace nana
 					auto i = essence_->header.column_from_point(x);
 
 					if (i == npos)
-						//i = essence_->header.boundary(essence_->header.position(grab, nullptr) >= x);	//deprecated
 						i = essence_->header.boundary(essence_->header.range(grab).first >= x);
 
 					if(grab != i)
 					{
-						//unsigned item_pixels = 0;
-						//auto item_x = essence_->header.position(i, &item_pixels);	//deprecated
-
 						auto item_rg = essence_->header.range(i);
 
 						//Get the item pos
@@ -3319,7 +3314,6 @@ namespace nana
 
 					_m_draw_header_item(fl_graph, margin, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
 
-					//auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;	//deprecated
 					auto xpos = essence_->header.range(col.index).first + pos.x - grabs_.start_pos;
 					essence_->graph->blend(rectangle{ point{ xpos - essence_->content_view->origin().x + rect.x, rect.y } , fl_graph.size() }, fl_graph, {}, 0.5);
 				}
@@ -3405,7 +3399,6 @@ namespace nana
 
 					auto & ptr_where = essence_->pointer_where;
 
-					//int item_top = rect.y - (origin.y % item_height_px);	//deprecated
 					auto first_disp = essence_->first_display();
 
 					point item_coord{
@@ -3443,8 +3436,6 @@ namespace nana
 								if (ind)
 									ind->detach();
 							}
-
-						//const int x = essence_->item_xpos(rect);	//deprecated
 
 						//Here we draw the root categ (0) or a first item if the first drawing is not a categ.(item!=npos))
 						if (idx.cat == 0 || !idx.is_category())
@@ -3579,7 +3570,6 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if (item.flags.selected && (categ.expand == false))
-						//_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->content_view->origin().x));	//deprecated
 						_m_draw_item_border(y);
 				}
 
@@ -3816,7 +3806,6 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if (item.flags.selected)
-						//_m_draw_item_border(content_r.x, coord.y, show_w);	//deprecated
 						_m_draw_item_border(coord.y);
 				}
 
