@@ -66,6 +66,7 @@ endif()
 
 if(WIN32)
     add_definitions(-DWIN32)
+    set(CMAKE_DEBUG_POSTFIX "_d")
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
         option(MSVC_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
