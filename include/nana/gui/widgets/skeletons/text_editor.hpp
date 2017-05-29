@@ -244,7 +244,6 @@ namespace nana{	namespace widgets
 			static bool _m_resolve_text(const ::std::wstring&, std::vector<std::pair<std::size_t, std::size_t>> & lines);
 
 			bool _m_cancel_select(int align);
-			unsigned _m_tabs_pixels(size_type tabs) const;
 			nana::size _m_text_extent_size(const char_type*, size_type n) const;
 
 			/// Adjust position of view to make caret stay in screen

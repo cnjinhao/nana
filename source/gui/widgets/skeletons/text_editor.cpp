@@ -1969,6 +1969,7 @@ namespace nana{	namespace widgets
 
 			points_.caret.x ++;
 
+			_m_reset_content_size();
 
 			if (!refresh)
 			{
@@ -1978,7 +1979,6 @@ namespace nana{	namespace widgets
 			else
 				impl_->try_refresh = sync_graph::refresh;
 
-			_m_reset_content_size();
 		}
 
 		void text_editor::copy() const
@@ -2590,15 +2590,15 @@ namespace nana{	namespace widgets
 			else
 				scrpos.x += _m_text_x(*sct_ptr);
 
+			scrpos.y = static_cast<int>(lines * line_height());
+
 			if (!to_screen_coordinate)
 			{
-				scrpos.y = static_cast<int>(lines * line_height());
 				//_m_text_x includes origin x and text_area x. remove these factors
 				scrpos.x += (impl_->cview->origin().x - text_area_.area.x);
-
 			}
 			else
-				scrpos.y = static_cast<int>(lines * line_height()) - impl_->cview->origin().y + this->_m_text_top_base();
+				scrpos.y += this->_m_text_top_base() - impl_->cview->origin().y;
 
 			return scrpos;
 		}
@@ -2641,8 +2641,7 @@ namespace nana{	namespace widgets
 				auto str_px = static_cast<int>(_m_text_extent_size(ent.begin, ent.end - ent.begin).width);
 				if (scrpos.x <= str_px)
 				{
-					res.x += _m_char_by_pixels(ent, scrpos.x);
-					res.x += static_cast<unsigned>(ent.begin - text_ptr);
+					res.x += _m_char_by_pixels(ent, scrpos.x) + static_cast<unsigned>(ent.begin - text_ptr);
 					return res;
 				}
 				scrpos.x -= str_px;
@@ -2942,11 +2941,12 @@ namespace nana{	namespace widgets
 		std::wstring text_editor::_m_make_select_string() const
 		{
 			std::wstring text;
-			
+
 			nana::upoint a, b;
 			if (get_selected_points(a, b))
 			{
 				auto & textbase = this->textbase();
+
 				if (a.y != b.y)
 				{
 					text = textbase.getline(a.y).substr(a.x);
@@ -2959,7 +2959,7 @@ namespace nana{	namespace widgets
 					text += textbase.getline(b.y).substr(0, b.x);
 				}
 				else
-					text = textbase.getline(a.y).substr(a.x, b.x - a.x);
+					return textbase.getline(a.y).substr(a.x, b.x - a.x);
 			}
 
 			return text;
@@ -3034,36 +3034,21 @@ namespace nana{	namespace widgets
 
 		bool text_editor::_m_cancel_select(int align)
 		{
-			nana::upoint a, b;
+			upoint a, b;
 			if (get_selected_points(a, b))
 			{
-				switch(align)
+				//domain of algin = [0, 2]
+				if (align)
 				{
-				case 1:
-					points_.caret = a;
-					//_m_move_offset_x_while_over_border(-2);	//deprecated
+					this->points_.caret = (1 == align ? a : b);
 					this->_m_adjust_view();
-					break;
-				case 2:
-					points_.caret = b;
-					//_m_move_offset_x_while_over_border(2);	//deprecated
-					this->_m_adjust_view();
-					break;
 				}
+				
 				select_.a = select_.b = points_.caret;
 				reset_caret();
 				return true;
 			}
 			return false;
-		}
-
-		unsigned text_editor::_m_tabs_pixels(size_type tabs) const
-		{
-			if(0 == tabs) return 0;
-
-			wchar_t ws[2] = {};
-			ws[0] = mask_char_ ? mask_char_ : ' ';
-			return static_cast<unsigned>(tabs * graph_.text_extent_size(ws).width * text_area_.tab_space);
 		}
 
 		nana::size text_editor::_m_text_extent_size(const char_type* str, size_type n) const
@@ -3112,9 +3097,6 @@ namespace nana{	namespace widgets
 					moved_origin.x = new_origin - origin.x;
 				}
 			}
-
-			//upoint pos2nd;
-			//this->_m_pos_secondary(points_.caret, pos2nd);	//deprecated
 
 			auto extra_px = static_cast<int>(line_px * extra_count_vert);
 
