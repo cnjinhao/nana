@@ -1938,13 +1938,14 @@ namespace nana{	namespace widgets
 
 			impl_->undo.push(std::move(undo_ptr));
 
+			_m_reset_content_size(true);
+
 			if(graph_)
 			{
 				this->_m_adjust_view();
 
 				reset_caret();
 				impl_->try_refresh = sync_graph::refresh;
-				_m_reset_content_size(true);
 			}
 		}
 
@@ -3497,13 +3498,18 @@ namespace nana{	namespace widgets
 
 		bool text_editor::_m_update_caret_line(std::size_t secondary_before)
 		{
-			if(false == this->_m_adjust_view())
+			if (false == this->_m_adjust_view())
 			{
 				if (_m_caret_to_coordinate(points_.caret).x < impl_->cview->view_area().right())
 				{
 					_m_update_line(points_.caret.y, secondary_before);
 					return false;
 				}
+			}
+			else
+			{
+				//The content view is adjusted, now syncs it with active mode to avoid updating.
+				impl_->cview->sync(false);
 			}
 			impl_->try_refresh = sync_graph::refresh;
 			return true;

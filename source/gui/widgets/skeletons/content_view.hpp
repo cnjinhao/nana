@@ -74,7 +74,7 @@ namespace skeletons
 		/// Returns true if the origin is moved
 		bool move_origin(const point& skew);
 
-		void sync(bool try_update);
+		void sync(bool passive);
 
 		void pursue(const point& cursor);
 

@@ -30,7 +30,8 @@ namespace nana {
 				point skew_vert;
 				nana::size extra_px;
 
-				bool	enable_update{ true };
+				bool	passive{ true }; //The passive mode determines whether to update if scrollbar changes. It updates the client window if passive is true.
+
 				bool	drag_started{ false };
 				point origin;
 
@@ -171,7 +172,7 @@ namespace nana {
 					});
 				}
 
-				void size_changed(bool try_update)
+				void size_changed(bool passive)
 				{
 					auto imd_area = view.view_area();
 
@@ -186,11 +187,11 @@ namespace nana {
 						if (this->events.scrolled)
 							this->events.scrolled();
 
-						if (this->enable_update)
+						if (this->passive)
 							API::refresh_window(this->window_handle);
 					};
 
-					this->enable_update = try_update;
+					this->passive = passive;
 
 					if (imd_area.width != disp_area.width)
 					{
@@ -199,7 +200,7 @@ namespace nana {
 							vert.create(window_handle);
 							vert.events().value_changed.connect_unignorable(event_fn);
 							API::take_active(vert, false, window_handle);
-							this->enable_update = false;
+							this->passive = false;
 						}
 						
 						vert.move({
@@ -226,7 +227,7 @@ namespace nana {
 							horz.create(window_handle);
 							horz.events().value_changed.connect_unignorable(event_fn);
 							API::take_active(horz, false, window_handle);
-							this->enable_update = false;
+							this->passive = false;
 						}
 
 						horz.move({
@@ -246,7 +247,7 @@ namespace nana {
 						origin.x = 0;
 					}
 
-					this->enable_update = true;
+					this->passive = true;
 				}
 			};
 
@@ -462,12 +463,12 @@ namespace nana {
 				return (pre_origin != impl_->origin);
 			}
 
-			void content_view::sync(bool try_update)
+			void content_view::sync(bool passive)
 			{
-				impl_->enable_update = try_update;
+				impl_->passive = passive;
 				impl_->horz.value(impl_->origin.x);
 				impl_->vert.value(impl_->origin.y);
-				impl_->enable_update = true;
+				impl_->passive = true;
 			}
 
 			void content_view::pursue(const point& cursor)
