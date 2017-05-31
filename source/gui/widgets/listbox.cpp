@@ -332,7 +332,8 @@ namespace nana
 					unsigned ranged_px = 0;
 					unsigned ranged_count = 0;
 
-					for (auto & col : cont_)
+					auto const & const_cont = cont_;
+					for (auto & col : const_cont)
 					{
 						if (col.visible_state)
 						{
@@ -486,27 +487,6 @@ namespace nana
 					return{ left, 0 };
 				}
 
-				/*
-				/// Returns the left point position and width(in variable *pixels) of column originaly at position pos.
-				int position(size_type pos, unsigned * pixels) const
-				{
-					int left = 0;
-					for (auto & m : cont_)
-					{
-						if (m.index == pos)
-						{
-							if (pixels)
-								*pixels = m.width_px;
-							break;
-						}
-
-						if (m.visible_state)
-							left += m.width_px;
-					}
-					return left;
-				}
-				*/
-
 				/// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
 				size_type next(size_type index) const noexcept
 				{
@@ -548,11 +528,15 @@ namespace nana
 					if ((from == to) || (from >= cont_.size()) || (to >= cont_.size()))
 						return;
 					
+#ifdef _MSC_VER
+					for (auto i = cont_.cbegin(); i != cont_.cend(); ++i)
+#else
 					for (auto i = cont_.begin(); i != cont_.end(); ++i)
+#endif
 					{
 						if (from == i->index)
 						{
-							auto col_from = std::move(*i);
+							auto col_from = *i;
 							cont_.erase(i);
 
 							//A workaround for old libstdc++, that some operations of vector
@@ -781,19 +765,6 @@ namespace nana
 
                 std::string to_string(const export_options& exp_opt) const;
 
-				std::vector<inline_pane*> get_inline_pane(const index_pair& item_pos)
-				{
-					std::vector<inline_pane*> panes;
-					for (auto p : active_panes_)
-					{
-						if (p && (p->item_pos == item_pos))
-						{
-							panes.emplace_back(p);
-						}
-					}
-					return panes;
-				}
-
 				void emit_cs(const index_pair& pos, bool for_selection)
 				{
 					item_proxy i(ess_, pos);
@@ -806,13 +777,16 @@ namespace nana
 					else
 						events.checked.emit(arg, wd_ptr()->handle());
 
-					auto panes = get_inline_pane(pos);
-					for (auto p : panes)
+					//notify the inline pane. An item may have multiple panes, each pane is for a column.
+					for (auto p : active_panes_)
 					{
-						if(for_selection)
-							p->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
-						else
-							p->inline_ptr->notify_status(inline_widget_status::checking, i.checked());
+						if (p && (p->item_pos == pos))
+						{
+							if (for_selection)
+								p->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
+							else
+								p->inline_ptr->notify_status(inline_widget_status::checking, i.checked());
+						}
 					}
 				}
 

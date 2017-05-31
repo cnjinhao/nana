@@ -276,8 +276,7 @@ namespace nana
 				if(ch <= 0x1CC7) return L;	//N = 141
 				if(0x1CD3 == ch || 0x1CE1 == ch) return L;
 				if(ch <= 0x1CE8) return NSM;	//N = 7
-				if(0x1CED == ch) return NSM;
-				if(0x1CF4 == ch) return NSM;
+				if(0x1CED == ch || 0x1CF4 == ch) return NSM;
 				if(ch <= 0x1DBF) return L;	//N = 203
 				if(ch <= 0x1DFF) return NSM;	//N = 64
 				if(ch <= 0x1FBC) return L;	//N = 445
@@ -504,21 +503,21 @@ namespace nana
 	}
 
 	//class unicode_bidi
-		void unicode_bidi::linestr(const char_type* str, std::size_t len, std::vector<entity> & reordered)
+		std::vector<unicode_bidi::entity> unicode_bidi::reorder(const char_type* str, std::size_t len)
 		{
 			levels_.clear();
 			const char_type * const end = str + len;
 
 			std::vector<remember> stack;
-			
-			remember cur = {0, directional_override_status::neutral};
+
+			remember cur = { 0, directional_override_status::neutral };
 			cur.level = _m_paragraph_level(str, end);
 
 			//First character type
 			bidi_char begin_char_type = {};
 			const char_type * begin_character = nullptr;
 
-			for(const char_type * c = str; c < end; ++c)
+			for (const char_type * c = str; c < end; ++c)
 			{
 				if (PDF == *c)
 				{
@@ -579,13 +578,17 @@ namespace nana
 					begin_character = c;
 				}
 			}
-			if(begin_character)
+			if (begin_character)
 				_m_push_entity(begin_character, end, cur.level, begin_char_type);
 
 			_m_resolve_weak_types();
 			_m_resolve_neutral_types();
 			_m_resolve_implicit_levels();
+
+			std::vector<unicode_bidi::entity> reordered;
 			_m_reordering_resolved_levels(reordered);
+
+			return reordered;
 		}
 
 		unsigned unicode_bidi::_m_paragraph_level(const char_type * begin, const char_type * end)
@@ -938,4 +941,9 @@ namespace nana
 			return static_cast<bidi_char>(static_cast<int>(type - bidi_charmap::B) + 0x2000);
 		}
 	//end class unicode_bidi
+
+	std::vector<unicode_bidi::entity> unicode_reorder(const wchar_t* text, std::size_t length)
+	{
+		return unicode_bidi{}.reorder(text, length);
+	}
 }//end namespace nana

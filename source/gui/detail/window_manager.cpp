@@ -1397,14 +1397,14 @@ namespace detail
 		{
 			auto & tabs = wd->root_widget->other.attribute.root->tabstop;
 
-			auto end = tabs.cend();
+			auto end = tabs.end();
 			if (forward)
 			{
 				if (detail::tab_type::none == wd->flags.tab)
 					return (tabs.front());
 				else if (detail::tab_type::tabstop & wd->flags.tab)
 				{
-					auto i = std::find(tabs.cbegin(), end, wd);
+					auto i = std::find(tabs.begin(), end, wd);
 					if (i != end)
 					{
 						++i;
@@ -1417,9 +1417,9 @@ namespace detail
 			}
 			else if (tabs.size() > 1)	//at least 2 elments in tabs are required when moving backward. 
 			{
-				auto i = std::find(tabs.cbegin(), end, wd);
+				auto i = std::find(tabs.begin(), end, wd);
 				if (i != end)
-					return (tabs.cbegin() == i ? tabs.back() : *(i - 1));
+					return (tabs.begin() == i ? tabs.back() : *(i - 1));
 			}
 			return nullptr;
 		}
@@ -1549,7 +1549,7 @@ namespace detail
 						for (auto child : wd->children)
 						{
 							auto child_keys = shortkeys(child, true);
-							std::copy(child_keys.cbegin(), child_keys.cend(), std::back_inserter(result));
+							std::copy(child_keys.begin(), child_keys.end(), std::back_inserter(result));
 						}
 					}
 				}
@@ -1716,7 +1716,7 @@ namespace detail
 
 				if (pa_children.size() > 1)
 				{
-					for (auto i = pa_children.cbegin(), end = pa_children.cend(); i != end; ++i)
+					for (auto i = pa_children.begin(), end = pa_children.end(); i != end; ++i)
 					{
 						if (((*i)->index) > (wd->index))
 						{

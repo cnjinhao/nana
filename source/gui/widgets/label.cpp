@@ -519,9 +519,7 @@ namespace nana
 
 				void _m_draw_block(graph_reference graph, const std::wstring& s, dstream::linecontainer::iterator block_start, render_status& rs)
 				{
-					nana::unicode_bidi bidi;
-					std::vector<nana::unicode_bidi::entity> reordered;
-					bidi.linestr(s.data(), s.length(), reordered);
+					auto const reordered = unicode_reorder(s.data(), s.length());
 
 					pixel_tag px = rs.pixels[rs.index];
 

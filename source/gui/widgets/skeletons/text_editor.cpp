@@ -407,11 +407,11 @@ namespace nana{	namespace widgets
 
 			std::shared_ptr<colored_area_type> find(std::size_t pos) const
 			{
-				for (auto i = colored_areas_.cbegin(); i != colored_areas_.cend(); ++i)
+				for (auto & sp : colored_areas_)
 				{
-					if (i->get()->begin <= pos && pos < i->get()->begin + i->get()->count)
-						return *i;
-					else if (i->get()->begin > pos)
+					if (sp->begin <= pos && pos < sp->begin + sp->count)
+						return sp;
+					else if (sp->begin > pos)
 						break;
 				}
 				return{};
@@ -623,7 +623,9 @@ namespace nana{	namespace widgets
 				//textbase is implement by using deque, and the linemtr holds the text pointers
 				//If the textbase is changed, it will check the text pointers.
 				std::size_t line = 0;
-				for (auto & sct : this->sections_)
+
+				auto const & const_sections = sections_;
+				for (auto & sct : const_sections)
 				{
 					auto const& text = editor_.textbase().getline(line);
 					if (sct.begin < text.c_str() || (text.c_str() + text.size() < sct.begin))
@@ -646,7 +648,9 @@ namespace nana{	namespace widgets
 					//textbase is implement by using deque, and the linemtr holds the text pointers
 					//If the textbase is changed, it will check the text pointers.
 					std::size_t line = 0;
-					for (auto & sct : this->sections_)
+
+					auto const & const_sections = sections_;
+					for (auto & sct : const_sections)
 					{
 						if (line < pos || (pos + line_size) <= line)
 						{
@@ -664,8 +668,8 @@ namespace nana{	namespace widgets
 				auto const & text = editor_.textbase().getline(pos);
 				auto& txt_section = this->sections_[pos];
 				txt_section.begin = text.c_str();
-				txt_section.end = text.c_str() + text.size();
-				txt_section.pixels = editor_._m_text_extent_size(text.c_str(), text.size()).width;
+				txt_section.end = txt_section.begin + text.size();
+				txt_section.pixels = editor_._m_text_extent_size(txt_section.begin, text.size()).width;
 			}
 
 			void pre_calc_lines(unsigned) override
@@ -756,7 +760,9 @@ namespace nana{	namespace widgets
 					//textbase is implement by using deque, and the linemtr holds the text pointers
 					//If the textbase is changed, it will check the text pointers.
 					std::size_t line = 0;
-					for (auto & mtr : linemtr_)
+
+					auto const & const_linemtr = linemtr_;
+					for (auto & mtr : const_linemtr)
 					{
 						if (line < pos || (pos + lines) <= line)
 						{
@@ -2031,11 +2037,9 @@ namespace nana{	namespace widgets
 				return;
 
 			auto undo_ptr = std::unique_ptr<undo_input_text>(new undo_input_text(*this, std::wstring(1, '\n')));
-			bool need_refresh = (select_.a != select_.b);
 
 			undo_ptr->set_selected_text();
-			if(need_refresh)
-				points_.caret = _m_erase_select();
+			points_.caret = _m_erase_select();
 
 			undo_ptr->set_caret_pos();
 
@@ -2067,12 +2071,7 @@ namespace nana{	namespace widgets
 			points_.caret.x = 0;
 
 			auto origin = impl_->cview->origin();
-			if (origin.x || (points_.caret.y < textbase.lines()) || textbase.getline(points_.caret.y).size())
-			{
-				origin.x = -origin.x;
-				impl_->cview->move_origin(origin);
-				need_refresh = true;
-			}
+			origin.x = 0;
 
 			if (impl_->indent.enabled)
 			{
@@ -2090,13 +2089,13 @@ namespace nana{	namespace widgets
 						put(text);
 				}
 			}
+			else
+				_m_reset_content_size();
 
-			impl_->cview->move_origin(origin - impl_->cview->origin());
+			auto origin_moved = impl_->cview->move_origin(origin - impl_->cview->origin());
 
-			if (this->_m_adjust_view() || need_refresh)
+			if (this->_m_adjust_view() || origin_moved)
 				impl_->cview->sync(true);
-
-			_m_reset_content_size();
 		}
 
 		void text_editor::del()
@@ -2630,8 +2629,7 @@ namespace nana{	namespace widgets
 				text_ptr = mask_str.c_str();
 			}
 
-			std::vector<unicode_bidi::entity> reordered;
-			unicode_bidi{}.linestr(text_ptr, text_size, reordered);
+			auto const reordered = unicode_reorder(text_ptr, text_size);
 
 			nana::upoint res(static_cast<unsigned>(real_str.begin - sections.front().begin), static_cast<unsigned>(row.first));
 
@@ -3333,8 +3331,7 @@ namespace nana{	namespace widgets
 
 			const auto focused = API::is_focus_ready(window_);
 
-			std::vector<unicode_bidi::entity> reordered;
-			unicode_bidi{}.linestr(text_ptr, text_len, reordered);
+			auto const reordered = unicode_reorder(text_ptr, text_len);
 
 			//Parse highlight keywords
 			keyword_parser parser;
@@ -3564,9 +3561,8 @@ namespace nana{	namespace widgets
 			if (pos > lnstr.size())
 				return 0;
 
-			std::vector<unicode_bidi::entity> reordered;
-			unicode_bidi{}.linestr(lnstr.c_str(), lnstr.size(), reordered);
-
+			auto const reordered = unicode_reorder(lnstr.c_str(), lnstr.size());
+				
 			auto target = lnstr.c_str() + pos;
 
 			unsigned text_w = 0;
