@@ -1245,10 +1245,9 @@ namespace nana{	namespace widgets
 				return false;
 
 			_m_reset();
-			impl_->capacities.behavior->pre_calc_lines(width_pixels());
 
 			impl_->try_refresh = sync_graph::refresh;
-			_m_reset_content_size();
+			_m_reset_content_size(true);
 			return true;
 		}
 
@@ -2104,26 +2103,22 @@ namespace nana{	namespace widgets
 
 		void text_editor::del()
 		{
-			bool has_erase = true;
-
 			if(select_.a == select_.b)
 			{
 				if(textbase().getline(points_.caret.y).size() > points_.caret.x)
 				{
 					++points_.caret.x;
 				}
-				else if(points_.caret.y + 1 < textbase().lines())
+				else if (points_.caret.y + 1 < textbase().lines())
 				{	//Move to next line
 					points_.caret.x = 0;
-					++ points_.caret.y;
+					++points_.caret.y;
 				}
 				else
-					has_erase = false;	//No characters behind the caret
+					return;	//No characters behind the caret
 			}
 
-			if(has_erase)	backspace();
-
-			_m_reset_content_size();
+			backspace();
 		}
 
 		void text_editor::backspace(bool record_undo)
@@ -2847,7 +2842,7 @@ namespace nana{	namespace widgets
 			else
 			{
 				if (calc_lines)
-					impl_->capacities.behavior->pre_calc_lines(0);
+					impl_->capacities.behavior->pre_calc_lines(width_pixels());
 
 				auto maxline = textbase().max_line();
 				csize.width = _m_text_extent_size(textbase().getline(maxline.first).c_str(), maxline.second).width + caret_size().width;
