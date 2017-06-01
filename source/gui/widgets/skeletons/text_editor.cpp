@@ -143,6 +143,11 @@ namespace nana{	namespace widgets
 				//sel_a_ and sel_b_ are not sorted, sel_b_ keeps the caret position.
 				sel_a_ = editor_.select_.a;
 				sel_b_ = editor_.select_.b;
+
+				if (sel_a_ != sel_b_)
+				{
+					selected_text_ = editor_._m_make_select_string();
+				}
 			}
 
 			void set_caret_pos()
@@ -179,8 +184,7 @@ namespace nana{	namespace widgets
 
 			void set_removed(std::wstring str)
 			{
-				//use selected_text_ as removed text
-				selected_text_ = str;
+				selected_text_ = std::move(str);
 			}
 
 			void execute(bool redo) override
@@ -287,15 +291,15 @@ namespace nana{	namespace widgets
 						}
 						else
 							editor_.textbase().erase(pos_.y, pos_.x, text_.size());	//undo
+					}
 
-						if (!selected_text_.empty())
-						{
-							editor_.points_.caret = sel_a_;
-							editor_._m_put(selected_text_);
-							editor_.points_.caret = sel_b_;
-							editor_.select_.a = sel_a_;	//Reset the selected text
-							editor_.select_.b = sel_b_;
-						}
+					if (!selected_text_.empty())
+					{
+						editor_.points_.caret = (std::min)(sel_a_, sel_b_);
+						editor_._m_put(selected_text_);
+						editor_.points_.caret = sel_b_;
+						editor_.select_.a = sel_a_;	//Reset the selected text
+						editor_.select_.b = sel_b_;
 					}
 				}
 				editor_.move_caret(editor_.points_.caret);
@@ -2161,8 +2165,6 @@ namespace nana{	namespace widgets
 			}
 			else
 			{
-				undo_ptr->set_removed(this->_m_make_select_string());
-
 				undo_ptr->set_selected_text();
 				points_.caret = _m_erase_select();
 				undo_ptr->set_caret_pos();
