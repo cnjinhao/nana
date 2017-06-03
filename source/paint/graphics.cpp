@@ -1208,7 +1208,8 @@ namespace paint
 			unsigned last_color = (int(r) << 16) | (int(g) << 8) | int(b);
 
 			Display * disp = nana::detail::platform_spec::instance().open_display();
-			impl_->handle->fgcolor(static_cast<color_rgb>(last_color));
+			impl_->handle->set_color(static_cast<color_rgb>(last_color));
+			impl_->handle->update_color();
 			const int endpos = deltapx + (vertical ? rct.y : rct.x);
 			if (endpos > 0)
 			{
@@ -1223,7 +1224,8 @@ namespace paint
 						if (new_color != last_color)
 						{
 							last_color = new_color;
-							impl_->handle->fgcolor(static_cast<color_rgb>(last_color));
+							impl_->handle->set_color(static_cast<color_rgb>(last_color));
+							impl_->handle->update_color();
 						}
 					}
 				}
@@ -1238,7 +1240,8 @@ namespace paint
 						if (new_color != last_color)
 						{
 							last_color = new_color;
-							impl_->handle->fgcolor(static_cast<color_rgb>(last_color));
+							impl_->handle->set_color(static_cast<color_rgb>(last_color));
+							impl_->handle->update_color();
 						}
 					}
 				}

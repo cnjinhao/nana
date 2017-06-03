@@ -221,11 +221,6 @@ namespace detail
 		::DeleteObject(round_region.handle);
 	}
 
-	void drawable_impl_type::fgcolor(const ::nana::color& clr)
-	{
-		set_text_color(clr);
-	}
-
 	unsigned drawable_impl_type::get_color() const
 	{
 		return color_;
