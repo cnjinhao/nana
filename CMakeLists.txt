@@ -24,6 +24,7 @@ project(nana)
 cmake_minimum_required(VERSION 2.8)
 
 option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
+option(NANA_CMAKE_BUILD_EXAMPLES "Build nana examples when compile the library" ON)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
 option(NANA_CMAKE_ENABLE_PNG "Enable the use of PNG" OFF)
 option(NANA_CMAKE_LIBPNG_FROM_OS "Use libpng from operating system." ON)
@@ -269,6 +270,10 @@ endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 add_library(${PROJECT_NAME} ${sources} )
 target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
+
+if(NANA_CMAKE_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
  #  Headers: use INCLUDE_DIRECTORIES
  #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
