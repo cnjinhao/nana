@@ -441,7 +441,10 @@ namespace nana
 						text = to_wstring(modifier_.prefix + range_->value() + modifier_.suffix);
 
 					if (editor_->text() != text)
+					{
 						editor_->text(text, false);
+						editor_->try_refresh();
+					}
 
 					_m_draw_spins(spin_stated_);
 				}
@@ -736,7 +739,8 @@ namespace nana
 		if (editor)
 		{
 			editor->text(to_wstring(text), false);
-			API::refresh_window(*this);
+			if (editor->try_refresh())
+				API::update_window(*this);
 		}
 	}
 }//end namespace nana
