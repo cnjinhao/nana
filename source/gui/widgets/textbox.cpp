@@ -738,7 +738,9 @@ namespace drawerbase {
 			if (editor)
 			{
 				editor->text(to_wstring(str), false);
-				API::update_window(this->handle());
+
+				if (editor->try_refresh())
+					API::update_window(this->handle());
 			}
 		}
 

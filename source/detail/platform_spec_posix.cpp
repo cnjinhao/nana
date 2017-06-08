@@ -423,35 +423,6 @@ namespace detail
 		}
 	}
 
-	void drawable_impl_type::fgcolor(const ::nana::color& clr)
-	{
-		auto rgb = clr.px_color().value;
-
-		if (rgb != current_color_)
-		{
-			auto & spec = nana::detail::platform_spec::instance();
-			platform_scope_guard psg;
-
-			current_color_ = rgb;
-			switch(spec.screen_depth())
-			{
-			case 16:
-				rgb = ((((rgb >> 16) & 0xFF) * 31 / 255) << 11) |
-					((((rgb >> 8) & 0xFF) * 63 / 255) << 5)	|
-					(rgb & 0xFF) * 31 / 255;
-				break;
-			}
-			::XSetForeground(spec.open_display(), context, rgb);
-			::XSetBackground(spec.open_display(), context, rgb);
-#if defined(NANA_USE_XFT)
-			xft_fgcolor.color.red = ((0xFF0000 & rgb) >> 16) * 0x101;
-			xft_fgcolor.color.green = ((0xFF00 & rgb) >> 8) * 0x101;
-			xft_fgcolor.color.blue = (0xFF & rgb) * 0x101;
-			xft_fgcolor.color.alpha = 0xFFFF;
-#endif
-		}
-	}
-
 	platform_scope_guard::platform_scope_guard()
 	{
 		platform_spec::instance().lock_xlib();

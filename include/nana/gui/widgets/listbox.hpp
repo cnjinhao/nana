@@ -893,7 +893,7 @@ namespace nana
 				}
 
 				template<typename T>
-				T* value_ptr() const
+				T const * value_ptr() const
 				{
 					return any_cast<T>(_m_value());
 				}
