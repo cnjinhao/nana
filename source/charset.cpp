@@ -484,7 +484,7 @@ namespace nana
 			virtual std::string&& str_move()
 			{
 				if(is_unicode_)
-					data_ = std::move(str());
+					data_ = str();
 				return std::move(data_);
 			}
 
@@ -506,6 +506,8 @@ namespace nana
 								std::u32string u32str = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>().from_bytes(data_);
 								return std::string(reinterpret_cast<const char*>(u32str.c_str()), u32str.size() * sizeof(char32_t));
 							}
+						default:
+							break;	//no conversion
 						}
 						break;
 					case unicode::utf16:
@@ -520,6 +522,8 @@ namespace nana
 								std::u32string u32str = std::wstring_convert<std::codecvt_utf16<char32_t>, char32_t>().from_bytes(data_);
 								return std::string(reinterpret_cast<const char*>(u32str.c_str()), u32str.size() * sizeof(char32_t));
 							}
+						default:
+							break;	//no conversion
 						}
 						break;
 					case unicode::utf32:
@@ -533,6 +537,8 @@ namespace nana
 							return std::wstring_convert<std::codecvt_utf16<char32_t>, char32_t>().to_bytes(
 									std::u32string(reinterpret_cast<const char32_t*>(data_.c_str()), data_.size() / sizeof(char32_t))
 								);
+						default:
+							break; //no conversion
 						}
 						break;
 					}
@@ -588,7 +594,7 @@ namespace nana
 
 			virtual std::wstring && wstr_move()
 			{
-				wdata_for_move_ = std::move(wstr());
+				wdata_for_move_ = wstr();
 				return std::move(wdata_for_move_);
 			}
 		private:

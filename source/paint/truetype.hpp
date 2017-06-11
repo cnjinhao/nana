@@ -66,7 +66,7 @@ namespace nana
 					if (ifs.read(reinterpret_cast<char*>(&table_directory), sizeof table_directory).gcount() != sizeof table_directory)
 						return;
 
-					if (reinterpret_cast<const std::uint32_t&>("name") == reinterpret_cast<std::uint32_t&>(table_directory.name))
+					if (*reinterpret_cast<const std::uint32_t*>("name") == reinterpret_cast<std::uint32_t&>(table_directory.name))
 					{
 						//const std::size_t length = _m_swap(table_directory.length);
 						const std::size_t directory_offset = _m_swap(table_directory.offset);
