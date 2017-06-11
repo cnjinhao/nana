@@ -195,7 +195,7 @@ namespace nana
 						_m_refresh();
 					}
 
-					void width(unsigned minimum, unsigned maximum)
+					void width(unsigned minimum, unsigned maximum) override
 					{
 						//maximum must be larger than minimum, but maximum == 0 is allowed if minimum is 0
 						if ((minimum >= maximum) && (minimum != 0))
@@ -3531,7 +3531,7 @@ namespace nana
 					}
 				}
 			private:
-				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::color bgcolor, item_state state)
+				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& /*r*/, nana::color bgcolor, item_state state)
 				{
 					const auto item_height = essence_->item_height();
 
