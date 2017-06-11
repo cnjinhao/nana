@@ -471,7 +471,7 @@ namespace detail
 		}
 		else
 			langstr_dup = "en_US.UTF-8";
-		std::setlocale(LC_CTYPE, langstr_dup.c_str());
+		::setlocale(LC_CTYPE, langstr_dup.c_str());
 		if(::XSupportsLocale())
 			::XSetLocaleModifiers(langstr_dup.c_str());
 
