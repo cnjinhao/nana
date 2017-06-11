@@ -62,7 +62,7 @@
 #	else
 #		undef STD_FILESYSTEM_NOT_SUPPORTED
 #	endif
-#elif defined(__GNUC__)
+#elif !defined(__clang__) && defined(__GNUC__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
 #		define noexcept		//no support of noexcept until GCC 4.6
 #	endif
@@ -123,7 +123,7 @@
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 
-		#if !defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304)
+		#if defined(_LIBCPP_VERSION) && (!defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304))
 			#ifndef _enable_std_make_unique
 				#define _enable_std_make_unique
 			#endif
