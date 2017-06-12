@@ -1507,13 +1507,37 @@ namespace nana
 				}
 
 				template<typename Pred>
-				std::vector<std::pair<index_pair, bool>> select_display_range_if(index_pair fr_abs, index_pair to_dpl, bool unselect_others, Pred pred)
+				std::vector<std::pair<index_pair, bool>> select_display_range_if(const index_pair& fr_abs, index_pair to_dpl, bool unselect_others, Pred pred)
 				{
 					const auto already_selected = this->pick_items(true);
 
-					auto fr_dpl = this->index_cast(fr_abs, false);	//Converts an absolute position to display position
+					auto fr_dpl = (fr_abs.is_category() ? fr_abs : this->index_cast(fr_abs, false));	//Converts an absolute position to display position
                     if (fr_dpl > to_dpl)
 						std::swap(fr_dpl, to_dpl);
+
+					if (to_dpl.is_category())
+					{
+						auto size = this->size_item(to_dpl.cat);
+						if (0 == size)
+						{
+							while (to_dpl.cat > 0)
+							{
+								size = this->size_item(--to_dpl.cat);
+								if (size > 0)
+								{
+									to_dpl.item = size - 1;
+									break;
+								}
+							}
+						}
+						else if (size > 0)
+						{
+							to_dpl.item = size - 1;
+						}
+					}
+
+					if (!this->good(to_dpl))
+						to_dpl = this->last();
 
 					const auto begin = fr_dpl;
 					const auto last = to_dpl;
@@ -1524,7 +1548,26 @@ namespace nana
 
 					for (; fr_dpl != to_dpl; fr_dpl = advance(fr_dpl, 1))
 					{
-						if (!fr_dpl.is_category())
+						if (fr_dpl.is_category())
+						{
+							if (!expand(fr_dpl.cat))
+							{
+								auto size = size_item(fr_dpl.cat);
+								for (std::size_t i = 0; i < size; ++i)
+								{
+									index_pair abs_pos{ fr_dpl.cat, i };
+									item_proxy m{ ess_, abs_pos };
+									pairs.emplace_back(abs_pos, m.selected());
+
+									if (pred(abs_pos))
+										m.select(true);
+								}
+
+								if (fr_dpl.cat == to_dpl.cat)
+									break;
+							}
+						}
+						else
 						{
 							auto abs_pos = index_cast(fr_dpl, true);	//convert display position to absolute position
 							item_proxy m{ ess_, abs_pos };
@@ -1535,7 +1578,23 @@ namespace nana
 						}
 					}
 
-					if (!to_dpl.is_category())
+					if (to_dpl.is_category())
+					{
+						if (!expand(to_dpl.cat))
+						{
+							auto size = size_item(to_dpl.cat);
+							for (std::size_t i = 0; i < size; ++i)
+							{
+								index_pair abs_pos{ fr_dpl.cat, i };
+								item_proxy m{ ess_, abs_pos };
+								pairs.emplace_back(abs_pos, m.selected());
+
+								if (pred(abs_pos))
+									m.select(true);
+							}
+						}
+					}
+					else
 					{
 						auto abs_pos = index_cast(to_dpl, true);	//convert display position to absolute position
 
@@ -2088,18 +2147,21 @@ namespace nana
 						return;
 					}
 
-					auto begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
-					auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
+					auto const begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
 
 					auto begin = lister.advance(lister.first(), begin_off);
-					auto last = lister.advance(lister.first(), last_off);
+					if (begin.empty())
+						return;
 
-					if (!lister.good(last))
-						last = lister.last();
+					std::vector<std::pair<index_pair, bool>> selections;
 
-					if (lister.good(begin) && ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off)))
+					if ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off))
 					{
-						auto selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
+						//The range [begin_off, last_off] is a range of box selection
+						auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
+						auto last = lister.advance(lister.first(), last_off);
+
+						selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
 							if (this->mouse_selection.reverse_selection)
 							{
 								if(mouse_selection.already_selected.cend() != std::find(mouse_selection.already_selected.cbegin(), mouse_selection.already_selected.cend(), abs_pos))
@@ -2139,16 +2201,6 @@ namespace nana
 								++i;
 						}
 
-						if (mouse_selection.reverse_selection)
-						{
-							for (auto & abs_pos : mouse_selection.already_selected)
-							{
-								if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{abs_pos}))
-								{
-									item_proxy{ this, abs_pos }.select(true);
-								}
-							}
-						}
 					}
 					else
 					{
@@ -2158,10 +2210,13 @@ namespace nana
 						}
 
 						mouse_selection.selections.clear();
+					}
 
-						if (mouse_selection.reverse_selection)
+					if (mouse_selection.reverse_selection)
+					{
+						for (auto & abs_pos : mouse_selection.already_selected)
 						{
-							for (auto & abs_pos : mouse_selection.already_selected)
+							if (selections.empty() || (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{ abs_pos })))
 							{
 								item_proxy{ this, abs_pos }.select(true);
 							}
