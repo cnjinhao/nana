@@ -1,10 +1,10 @@
 ﻿# CMake configuration for Nana
 # Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributors:
-#   Jinhao	
+#   Jinhao
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
-#   Ariel Vina-Rodriguez (qPCR4vir) 
+#   Ariel Vina-Rodriguez (qPCR4vir)
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
 # In the future CMake could be the prefered, and maybe will be used to generate the others and the central nana repo
@@ -45,13 +45,13 @@ option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
 # By default Nana will try to use the STD. If STD is not available and NANA_CMAKE_FIND_BOOST_FILESYSTEM
 # is set to ON nana will try to use boost if available. Nana own implementation will be use if none of
 # the previus were selected or available.
-# You can change that default if you change one of the following 
+# You can change that default if you change one of the following
 # (please don't define more than one of the _XX_FORCE options):
 option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" OFF)
 option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
 option(NANA_CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
 option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
-
+option(NANA_CMAKE_CLANG_LIBC++_FORCE "Force use of libc++ (instead of gcc libstdc++) (only available with clang)" OFF)
 ########### Compatibility with CMake 3.1
 if(POLICY CMP0054)
   # http://www.cmake.org/cmake/help/v3.1/policy/CMP0054.html
@@ -104,7 +104,7 @@ if(APPLE)
     set(ENABLE_AUDIO OFF)
 elseif(UNIX)
     add_definitions(-Dlinux)
-	message("added -D linux")
+    message("added -D linux")
 endif(APPLE)
 
 if(UNIX)
@@ -126,13 +126,19 @@ endif(UNIX)
 #
 # see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")    # Clang || GNU
-
+    set(COMPILER_IS_CLANG "YES")
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
     if  ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -g")       # Clang
-	
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")       # Clang
+      if (NANA_CMAKE_CLANG_LIBC++_FORCE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+      else(NANA_CMAKE_CLANG_LIBC++_FORCE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+      endif(NANA_CMAKE_CLANG_LIBC++_FORCE)
     else ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall -g")       # GNU 
-          
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")       # GNU
+
     endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -140,15 +146,22 @@ endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 # enable static linkage     # GNU || CLang not MinGW
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
     # set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
+  if  ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NANA_CMAKE_CLANG_LIBC++_FORCE)
+    list(APPEND NANA_LINKS -static-libc++ -pthread)
+  else("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NANA_CMAKE_CLANG_LIBC++_FORCE)
     list(APPEND NANA_LINKS -static-libgcc -static-libstdc++ -pthread)
     # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
+  endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND NANA_CMAKE_CLANG_LIBC++_FORCE)
+
+  if(CMAKE_COMPILER_IS_GNUCXX)
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-	                                                                     # IS_GNUCXX < 5.3
+                                                                         # IS_GNUCXX < 5.3
     else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
        # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
        list(APPEND NANA_LINKS -lstdc++fs)
     endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-    
+  endif(CMAKE_COMPILER_IS_GNUCXX)
+
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
 
 
@@ -231,8 +244,8 @@ if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-	 add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
-	 enable_testing ()
+     add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
+     enable_testing ()
 endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
 
@@ -267,7 +280,7 @@ endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
 add_library(${PROJECT_NAME} ${sources} )
 target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
+target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
  #  Headers: use INCLUDE_DIRECTORIES
  #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
@@ -279,7 +292,7 @@ install(TARGETS ${PROJECT_NAME}   ARCHIVE DESTINATION lib
 message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
 # Install the include directories too.
 if(NANA_CMAKE_INSTALL_INCLUDES)
-	install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include )
+    install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include )
     message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
 endif(NANA_CMAKE_INSTALL_INCLUDES)
 
@@ -298,6 +311,7 @@ message ( "CMAKE_INSTALL_PREFIX    = "  ${CMAKE_INSTALL_PREFIX})
 message ( "NANA_INCLUDE_DIR        = "  ${NANA_INCLUDE_DIR})
 message ( "CMAKE_CURRENT_SOURCE_DIR= "  ${CMAKE_CURRENT_SOURCE_DIR})
 message ( "NANA_CMAKE_ENABLE_AUDIO = "  ${NANA_CMAKE_ENABLE_AUDIO})
+message ( "NANA_CMAKE_CLANG_LIBC++_FORCE            = "  ${NANA_CMAKE_CLANG_LIBC++_FORCE})
 message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = "  ${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT})

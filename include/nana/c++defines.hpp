@@ -123,7 +123,7 @@
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 
-		#if !defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304)
+		#if defined(_LIBCPP_VERSION) && (!defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304))
 			#ifndef _enable_std_make_unique
 				#define _enable_std_make_unique
 			#endif
