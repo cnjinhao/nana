@@ -62,7 +62,6 @@
 #	else
 #		undef STD_FILESYSTEM_NOT_SUPPORTED
 #	endif
-#elif !defined(__clang__) && defined(__GNUC__)
 #elif defined(__GNUC__) && not defined(__clang__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
 #		define noexcept		//no support of noexcept until GCC 4.6
