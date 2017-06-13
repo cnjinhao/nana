@@ -1517,22 +1517,20 @@ namespace nana
 
 					if (to_dpl.is_category())
 					{
-						auto size = this->size_item(to_dpl.cat);
-						if (0 == size)
+						//Search backward until a last item of a category is found.
+						while (true)
 						{
-							while (to_dpl.cat > 0)
+							auto msize = this->size_item(to_dpl.cat);
+							if (0 != msize)
 							{
-								size = this->size_item(--to_dpl.cat);
-								if (size > 0)
-								{
-									to_dpl.item = size - 1;
-									break;
-								}
+								to_dpl.item = msize - 1;
+								break;
 							}
-						}
-						else if (size > 0)
-						{
-							to_dpl.item = size - 1;
+
+							if (fr_dpl.cat == to_dpl.cat)
+								break;
+
+							--(to_dpl.cat);
 						}
 					}
 
@@ -1546,7 +1544,7 @@ namespace nana
 					//pair second: indicates whether the index is selected before selection.
 					std::vector<std::pair<index_pair, bool>> pairs;
 
-					for (; fr_dpl != to_dpl; fr_dpl = advance(fr_dpl, 1))
+					for (; !(fr_dpl > to_dpl); fr_dpl = advance(fr_dpl, 1))	//fr_dpl <= to_dpl
 					{
 						if (fr_dpl.is_category())
 						{
@@ -1576,33 +1574,6 @@ namespace nana
 							if (pred(abs_pos))
 								m.select(true);
 						}
-					}
-
-					if (to_dpl.is_category())
-					{
-						if (!expand(to_dpl.cat))
-						{
-							auto size = size_item(to_dpl.cat);
-							for (std::size_t i = 0; i < size; ++i)
-							{
-								index_pair abs_pos{ fr_dpl.cat, i };
-								item_proxy m{ ess_, abs_pos };
-								pairs.emplace_back(abs_pos, m.selected());
-
-								if (pred(abs_pos))
-									m.select(true);
-							}
-						}
-					}
-					else
-					{
-						auto abs_pos = index_cast(to_dpl, true);	//convert display position to absolute position
-
-						item_proxy m(ess_, abs_pos);
-						pairs.emplace_back(abs_pos, m.selected());
-
-						if (pred(abs_pos))
-							m.select(true);
 					}
 
 					if (unselect_others)
@@ -1638,9 +1609,9 @@ namespace nana
 									this->emit_cs(pos, true);
 
 									if (m.flags.selected)
-										last_selected_abs = pos;
-									else if (last_selected_abs == pos)
-										last_selected_abs.set_both(npos);		//make empty
+										latest_selected_abs = pos;
+									else if (latest_selected_abs == pos)
+										latest_selected_abs.set_both(npos);		//make empty
 								}
 							}
 							++pos.item;
@@ -1879,8 +1850,13 @@ namespace nana
 						else
 							i.item = npos;
 					}
-					else if (i.item)
-						--i.item;
+					else
+					{
+						if (i.item)
+							--i.item;
+						else
+							return index_pair{ npos, npos };
+					}
 
 					return i;
 				}
@@ -1888,9 +1864,14 @@ namespace nana
                 /// can be used as the absolute position of the first absolute item, or as the display pos of the first displayed item
                 index_pair first() const noexcept
                 {
-                    index_pair fst{0,npos};
-                    good_item(fst,fst);
-                    return fst;
+					auto i = categories_.cbegin();
+					if (i->items.size())
+						return index_pair{ 0, 0 };
+
+					if (categories_.size() > 1)
+						return index_pair{ 1, npos };
+
+					return index_pair{ npos, npos };
                 }
 				
 				bool good(size_type cat) const noexcept
@@ -1901,36 +1882,6 @@ namespace nana
 				bool good(const index_pair& pos) const noexcept
 				{
 					return ((pos.cat < categories_.size()) && (pos.item < size_item(pos.cat)));
-				}
-
-                /// if good return the same item (in arg item), or just the next cat and true, but If fail return false
-				bool good_item(const index_pair& pos, index_pair& item) const noexcept
-				{
-					if (!good(pos.cat))
-						return false;       // cat out of range
-
-					if (pos.is_category())
-					{
-						item = pos;          // return the cat self
-						if (0 == pos.cat)    // but for cat 0 return first item
-							item.item = 0;   // let check this is good
-                        else
-						    return true;
-					}
-
-					auto i = get(pos.cat);         // pos is not a cat and i point to it cat
-					if (pos.item < i->items.size())
-					{
-						item = pos;                // good item, return it
-						return true;
-					}
-
-					if (++i == categories_.cend())          // item out of range and no more cat
-						return false;
-
-					item.cat = pos.cat + 1;         // select the next cat
-					item.item = npos;
-					return true;
 				}
 
 				/// categories iterator
@@ -1952,7 +1903,7 @@ namespace nana
 					return i;
 				}
 			public:
-				index_pair last_selected_abs;
+				index_pair latest_selected_abs;	//Stands for the latest selected item that selected by last operation. Invalid if it is empty.
 			private:
 				essence * ess_{nullptr};
 				nana::listbox * widget_{nullptr};
@@ -2932,7 +2883,7 @@ namespace nana
 
 			void es_lister::move_select(bool upwards, bool unselect_previous, bool /*trace_selected*/) noexcept
 			{
-				auto next_selected_dpl = index_cast_noexcpt(last_selected_abs, false);	//convert absolute position to display position
+				auto next_selected_dpl = index_cast_noexcpt(latest_selected_abs, false);	//convert absolute position to display position
 
 				if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
 				{
@@ -3053,8 +3004,8 @@ namespace nana
 					for (item_proxy &it : cpx)
 						it.select(value);
 
-					last_selected_abs.cat = pos;
-					last_selected_abs.item = npos;
+					latest_selected_abs.cat = pos;
+					latest_selected_abs.item = npos;
 
 					return true;
 				}
@@ -4124,18 +4075,18 @@ namespace nana
 									if (arg.shift)
 									{
 										//Set the first item as the begin of selected item if there
-										//is not a last selected item.(#154 reported by RenaudAlpes)
-										if (lister.last_selected_abs.empty() || lister.last_selected_abs.is_category())
-											lister.last_selected_abs.set_both(0);
+										//is not a latest selected item.(#154 reported by RenaudAlpes)
+										if (lister.latest_selected_abs.empty() || lister.latest_selected_abs.is_category())
+											lister.latest_selected_abs.set_both(0);
 
-										auto before = lister.last_selected_abs;
+										auto before = lister.latest_selected_abs;
 
-										lister.select_display_range_if(lister.last_selected_abs, item_pos, true, [](const index_pair&)
+										lister.select_display_range_if(lister.latest_selected_abs, item_pos, true, [](const index_pair&)
 										{
 											return true;
 										});
 
-										lister.last_selected_abs = before;
+										lister.latest_selected_abs = before;
 									}
 									else if (arg.ctrl)
 									{
@@ -4176,10 +4127,10 @@ namespace nana
 										if (item_ptr->flags.selected)
 										{
 											lister.cancel_others_if_single_enabled(true, abs_item_pos);
-											essence_->lister.last_selected_abs = abs_item_pos;
+											essence_->lister.latest_selected_abs = abs_item_pos;
 										}
-										else if (essence_->lister.last_selected_abs == abs_item_pos)
-											essence_->lister.last_selected_abs.set_both(npos);
+										else if (essence_->lister.latest_selected_abs == abs_item_pos)
+											essence_->lister.latest_selected_abs.set_both(npos);
 									}
 								}
 								else
@@ -4350,17 +4301,18 @@ namespace nana
 
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
-					bool up = false;
+					// Exit if list is empty
+					if (essence_->lister.first().empty())
+						return;
 
-                    if (essence_->lister.cat_container().size() == 1 && essence_->lister.size_item(0)==0)
-                       return ;
+					bool upward = false;
 
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
-						up = true;
+						upward = true;
 					case keyboard::os_arrow_down:
-						essence_->lister.move_select(up, !arg.shift, true);
+						essence_->lister.move_select(upward, !arg.shift, true);
 						break;
 					case L' ':
 						{
@@ -4371,18 +4323,18 @@ namespace nana
 						}
 						break;
 					case keyboard::os_pageup :
-						up = true;
+						upward = true;
 					case keyboard::os_pagedown:
 						{
 							//Turns page, then returns if no change occurs
-							if (!essence_->content_view->turn_page(!up, false))
+							if (!essence_->content_view->turn_page(!upward, false))
 								return;
 
 							essence_->lister.select_for_all(false);
 
 							auto idx = essence_->first_display();
 
-							if (!up)
+							if (!upward)
 								idx = essence_->lister.advance(idx, static_cast<int>(essence_->count_of_exposed(false)) - 1);
 
 							if (!idx.is_category())
@@ -4393,20 +4345,59 @@ namespace nana
 							break;
 						}
 					case keyboard::os_home:
+					case keyboard::os_end:
 						{
 							essence_->lister.select_for_all(false);
 
-							index_pair frst{essence_->lister.first()};
-							if (! frst.is_category())
-								item_proxy::from_display(essence_, frst).select(true);
-							else if (!essence_->lister.single_status(true))	//not selected
-								essence_->lister.cat_status(frst.cat, true, true);
+							auto pos = (keyboard::os_home == arg.key ? essence_->lister.first() : essence_->lister.last());
+							if (!pos.empty())
+							{
+								//When the pos indicates an empty category, then search forwards/backwards(depending on arg.key whether it is Home or End) for a non empty category.
+								//When a non-empty category is found, assign the pos to the first/last item of the category if the category is expanded.
+								if (pos.is_category())
+								{
+									if (keyboard::os_home == arg.key)
+									{
+										while (0 == essence_->lister.size_item(pos.cat))
+										{
+											if (++pos.cat >= essence_->lister.cat_container().size())
+											{
+												pos = index_pair{ npos, npos };
+												break;
+											}
+										}
+									}
+									else
+									{
+										while (0 == essence_->lister.size_item(pos.cat))
+										{
+											if (pos.cat-- == 0)
+											{
+												pos = index_pair{ npos, npos };
+												break;
+											}
+										}
+									}
 
-							break;
+									if (!pos.empty())
+									{
+										if (essence_->lister.expand(pos.cat))
+											pos.item = 0;
+									}
+								}
+
+								if (!pos.empty())
+								{
+									if (pos.is_category())
+									{
+										if (!essence_->lister.single_status(true)) //multiple selection is not enabled
+											essence_->lister.cat_status(pos.cat, true, true);
+									}
+									else
+										item_proxy::from_display(essence_, pos).select(true);
+								}
+							}
 						}
-					case keyboard::os_end:
-						essence_->lister.select_for_all(false);
-						item_proxy::from_display(essence_, essence_->lister.last()).select(true);
 						break;
 					default:
 						return;
@@ -4531,10 +4522,10 @@ namespace nana
 					if (m.flags.selected)
 					{
 						ess_->lister.cancel_others_if_single_enabled(true, pos_);	//Cancel all selections except pos_ if single_selection is enabled.
-						ess_->lister.last_selected_abs = pos_;
+						ess_->lister.latest_selected_abs = pos_;
 					}
-					else if (ess_->lister.last_selected_abs == pos_)
-							ess_->lister.last_selected_abs.set_both(npos);
+					else if (ess_->lister.latest_selected_abs == pos_)
+						ess_->lister.latest_selected_abs.set_both(npos);
 
 					if (scroll_view)
 					{
@@ -4808,7 +4799,7 @@ namespace nana
                     for (item_proxy &it : *this )
                         it.select(sel);
 
-                    ess_->lister.last_selected_abs =  index_pair {this->pos_, npos};
+                    ess_->lister.latest_selected_abs = index_pair {this->pos_, npos};
 
                     return *this;
                 }
@@ -5432,7 +5423,6 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 			ess.lister.erase();
-			//ess.first_display(ess.lister.first());
 			ess.calc_content_size();
 			ess.update();
 		}
