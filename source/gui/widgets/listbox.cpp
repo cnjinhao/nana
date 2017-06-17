@@ -1507,35 +1507,21 @@ namespace nana
 				}
 
 				template<typename Pred>
-				std::vector<std::pair<index_pair, bool>> select_display_range_if(const index_pair& fr_abs, index_pair to_dpl, bool unselect_others, Pred pred)
+				std::vector<std::pair<index_pair, bool>> select_display_range_if(const index_pair& fr_abs, index_pair to_dpl, bool deselect_others, Pred pred)
 				{
-					const auto already_selected = this->pick_items(true);
+					const index_pairs already_selected = (deselect_others ? this->pick_items(true) : index_pairs{});
+
+					if (to_dpl.empty())
+					{
+						if (fr_abs.empty())
+							return{};
+
+						to_dpl = this->last();
+					}
 
 					auto fr_dpl = (fr_abs.is_category() ? fr_abs : this->index_cast(fr_abs, false));	//Converts an absolute position to display position
                     if (fr_dpl > to_dpl)
 						std::swap(fr_dpl, to_dpl);
-
-					if (to_dpl.is_category())
-					{
-						//Search backward until a last item of a category is found.
-						while (true)
-						{
-							auto msize = this->size_item(to_dpl.cat);
-							if (0 != msize)
-							{
-								to_dpl.item = msize - 1;
-								break;
-							}
-
-							if (fr_dpl.cat == to_dpl.cat)
-								break;
-
-							--(to_dpl.cat);
-						}
-					}
-
-					if (!this->good(to_dpl))
-						to_dpl = this->last();
 
 					const auto begin = fr_dpl;
 					const auto last = to_dpl;
@@ -1576,9 +1562,9 @@ namespace nana
 						}
 					}
 
-					if (unselect_others)
+					if (deselect_others)
 					{
-						//Unselects the already selected which is out of range [begin, last] 
+						//Deselects the already selected which is out of range [begin, last] 
 						for (auto index : already_selected)
 						{
 							auto disp_order = this->index_cast(index, false);	//converts an absolute position to a display position
@@ -1935,6 +1921,7 @@ namespace nana
 				bool auto_draw{true};
 				bool checkable{false};
 				bool if_image{false};
+				bool deselect_deferred{ false };	//deselects items when mouse button is released.
 				unsigned text_height;
 
                 ::nana::listbox::export_options def_exp_options;
@@ -2059,16 +2046,19 @@ namespace nana
 					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.pixels()) };
 				}
 
-				void start_mouse_selection(const point& screen_pos)
+				void start_mouse_selection(const arg_mouse& arg)
 				{
-					auto logic_pos = coordinate_cast(screen_pos, true);
+					auto logic_pos = coordinate_cast(arg.pos, true);
 
 					mouse_selection.started = true;
 					mouse_selection.begin_position = logic_pos;
 					mouse_selection.end_position = logic_pos;
 
-					mouse_selection.already_selected = lister.pick_items(true);
-
+					if (arg.ctrl || arg.shift)
+					{
+						mouse_selection.already_selected = lister.pick_items(true);
+						mouse_selection.reverse_selection = arg.ctrl;
+					}
 					API::set_capture(*listbox_ptr, true);
 				}
 
@@ -2089,89 +2079,88 @@ namespace nana
 
 					mouse_selection.end_position = logic_pos;
 
+					bool cancel_selections = true;
+
 					auto content_x = coordinate_cast({ columns_range().first, 0 }, true).x;
-					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) <= content_x ||
-						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x + static_cast<int>(header.pixels())
-						)
+					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x &&
+						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) < content_x + static_cast<int>(header.pixels()))
 					{
-						lister.select_for_all(false);
-						return;
-					}
+						auto const begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
 
-					auto const begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
-
-					auto begin = lister.advance(lister.first(), begin_off);
-					if (begin.empty())
-						return;
-
-					std::vector<std::pair<index_pair, bool>> selections;
-
-					if ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off))
-					{
-						//The range [begin_off, last_off] is a range of box selection
-						auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
-						auto last = lister.advance(lister.first(), last_off);
-
-						selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
-							if (this->mouse_selection.reverse_selection)
-							{
-								if(mouse_selection.already_selected.cend() != std::find(mouse_selection.already_selected.cbegin(), mouse_selection.already_selected.cend(), abs_pos))
-								{
-									item_proxy{ this, abs_pos }.select(false);
-									return false;
-								}
-							}
-							return true;
-						});
-
-						for (auto & pair : selections)
+						auto begin = lister.advance(lister.first(), begin_off);
+						if (!begin.empty())
 						{
-							if (pair.second)
-								continue;
+							std::vector<std::pair<index_pair, bool>> selections;
 
-							if (mouse_selection.selections.cend() ==
-								std::find(mouse_selection.selections.cbegin(), mouse_selection.selections.cend(), pair.first))
+							if ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off))
 							{
-								mouse_selection.selections.push_back(pair.first);
-							}
-						}
+								//The range [begin_off, last_off] is a range of box selection
+								auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
+								auto last = lister.advance(lister.first(), last_off);
+
+								selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
+									if (this->mouse_selection.reverse_selection)
+									{
+										if (mouse_selection.already_selected.cend() != std::find(mouse_selection.already_selected.cbegin(), mouse_selection.already_selected.cend(), abs_pos))
+										{
+											item_proxy{ this, abs_pos }.select(false);
+											return false;
+										}
+									}
+									return true;
+								});
+
+								for (auto & pair : selections)
+								{
+									if (pair.second)
+										continue;
+
+									if (mouse_selection.selections.cend() ==
+										std::find(mouse_selection.selections.cbegin(), mouse_selection.selections.cend(), pair.first))
+									{
+										mouse_selection.selections.push_back(pair.first);
+									}
+								}
 
 #ifdef _MSC_VER
-						for(auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
+								for (auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
 #else
-						for(auto i = mouse_selection.selections.begin(); i != mouse_selection.selections.end();)
+								for(auto i = mouse_selection.selections.begin(); i != mouse_selection.selections.end();)
 
 #endif
-						{
-							if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{*i}))
-							{
-								item_proxy{ this, *i }.select(false);
-								i = mouse_selection.selections.erase(i);
-							}
-							else
-								++i;
-						}
+								{
+									if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{ *i }))
+									{
+										item_proxy{ this, *i }.select(false);
+										i = mouse_selection.selections.erase(i);
+									}
+									else
+										++i;
+								}
 
-					}
-					else
-					{
-						for (auto & pos : mouse_selection.selections)
-						{
-							item_proxy{ this, pos }.select(false);
+								cancel_selections = false;
+							}
 						}
+					}
+
+					if (cancel_selections)
+					{
+						if (!mouse_selection.already_selected.empty())
+						{
+							for (auto & pos : mouse_selection.selections)
+								item_proxy(this, pos).select(false);
+
+							//Don't restore the already selections if it is reverse selection(pressing shift). Behaves like Windows Explorer.
+							if (!mouse_selection.reverse_selection)
+							{
+								for (auto & abs_pos : mouse_selection.already_selected)
+									item_proxy(this, abs_pos).select(true);
+							}
+						}
+						else
+							lister.select_for_all(false);
 
 						mouse_selection.selections.clear();
-					}
-
-					if (mouse_selection.reverse_selection)
-					{
-						for (auto & abs_pos : mouse_selection.already_selected)
-						{
-							if (selections.empty() || (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{ abs_pos })))
-							{
-								item_proxy{ this, abs_pos }.select(true);
-							}
-						}
 					}
 				}
 
@@ -3934,6 +3923,9 @@ namespace nana
 					using item_state = essence::item_state;
 					using parts = essence::parts;
 
+					//Cancel deferred deselection operation when mouse moves.
+					essence_->deselect_deferred = false;
+
 					bool need_refresh = false;
 
 					point pos_in_header = arg.pos;
@@ -4153,23 +4145,6 @@ namespace nana
 							}
 							update = true;
 						}
-						else
-						{
-							//Blank area is clicked
-
-							bool unselect_all = true;
-							if (!lister.single_status(true))	//not single selected
-							{
-								if (arg.ctrl || arg.shift)
-								{
-									essence_->mouse_selection.reverse_selection = arg.ctrl;
-									unselect_all = false;
-								}
-							}
-
-							if(unselect_all)
-								update = lister.select_for_all(false); //unselect all items due to the blank area being clicked
-						}
 
 						if(update)
 						{
@@ -4187,16 +4162,11 @@ namespace nana
 					{
 						//Start box selection if mulit-selection is enabled
 						if (arg.is_left_button() && (!lister.single_status(true)))
-							essence_->start_mouse_selection(arg.pos);
+							essence_->start_mouse_selection(arg);
 
-						lister.select_for_all(false);
-						update = true;
-						if (good_list_r)
-						{
-							drawer_lister_->draw(list_r);
-							if (good_head_r)
-								drawer_header_->draw(graph, head_r);
-						}
+						//Deselection of all items is deferred to the mouse up event when ctrl or shift is not pressed
+						//Pressing ctrl or shift is to selects other items without deselecting current selections.
+						essence_->deselect_deferred = !(arg.ctrl || arg.shift);
 					}
 
 					if(update)
@@ -4234,6 +4204,12 @@ namespace nana
 					{
 						essence_->stop_mouse_selection();
 						need_refresh = true;
+					}
+
+					if (essence_->deselect_deferred)
+					{
+						essence_->deselect_deferred = false;
+						need_refresh |= (essence_->lister.select_for_all(false));
 					}
 
 					if (need_refresh)
