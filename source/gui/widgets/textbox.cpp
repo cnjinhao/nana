@@ -720,6 +720,26 @@ namespace drawerbase {
 				editor->set_undo_queue_length(len);
 		}
 
+		std::size_t textbox::display_line_count() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->line_count(false);
+
+			return 0;
+		}
+
+		std::size_t textbox::text_line_count() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->line_count(true);
+
+			return 0;
+		}
+
 		//Override _m_caption for caption()
 		auto textbox::_m_caption() const throw() -> native_string_type
 		{

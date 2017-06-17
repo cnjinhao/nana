@@ -183,6 +183,8 @@ namespace nana{	namespace widgets
 
 			void focus_behavior(text_focus_behavior);
 			void select_behavior(bool move_to_end);
+
+			std::size_t line_count(bool text_lines) const;
 		public:
 			void draw_corner();
 			void render(bool focused);

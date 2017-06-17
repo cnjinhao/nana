@@ -1872,6 +1872,14 @@ namespace nana{	namespace widgets
 			select_.move_to_end = move_to_end;
 		}
 
+		std::size_t text_editor::line_count(bool text_lines) const
+		{
+			if (text_lines)
+				return textbase().lines();
+
+			return impl_->capacities.behavior->take_lines();
+		}
+
 		void text_editor::draw_corner()
 		{
 			impl_->cview->draw_corner(graph_);
