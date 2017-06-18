@@ -720,7 +720,7 @@ namespace drawerbase {
 				editor->set_undo_queue_length(len);
 		}
 
-		std::size_t textbox::display_line_count() const
+		std::size_t textbox::display_line_count() const noexcept
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -730,7 +730,7 @@ namespace drawerbase {
 			return 0;
 		}
 
-		std::size_t textbox::text_line_count() const
+		std::size_t textbox::text_line_count() const noexcept
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();

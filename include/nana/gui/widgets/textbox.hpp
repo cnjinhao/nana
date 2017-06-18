@@ -264,10 +264,10 @@ namespace nana
 		 * is line wrapped mode.
 		 * @return the number of lines that text are displayed in the screen.
 		 */
-		std::size_t display_line_count() const;
+		std::size_t display_line_count() const noexcept;
 
 		/// Returns the number of text lines.
-		std::size_t text_line_count() const;
+		std::size_t text_line_count() const noexcept;
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const throw() override;
