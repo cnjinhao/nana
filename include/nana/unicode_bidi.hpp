@@ -49,7 +49,7 @@ namespace nana
 			unsigned level;
 		};
 
-		void linestr(const char_type*, std::size_t len, std::vector<entity> & reordered);
+		std::vector<entity> reorder(const char_type*, std::size_t len);
 	private:
 		static unsigned _m_paragraph_level(const char_type * begin, const char_type * end);
 
@@ -66,11 +66,10 @@ namespace nana
 		static bidi_category _m_bidi_category(bidi_char);
 		static bidi_char _m_char_dir(char_type);
 	private:
-		void _m_output_levels() const;
-		void _m_output_bidi_char() const;
-	private:
 		std::vector<entity>	levels_;
 	};
+
+	std::vector<unicode_bidi::entity> unicode_reorder(const wchar_t* text, std::size_t length);
 
 }
 #include <nana/pop_ignore_diagnostic>

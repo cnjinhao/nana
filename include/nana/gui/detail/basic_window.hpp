@@ -52,7 +52,7 @@ namespace detail
 		void position(const point& pos) override;
 		nana::point position() const override;
 		size dimension() const override;
-		void dimension(const size& s);
+		void dimension(const size& s) override;
 		void visible(bool visibility) override;
 		bool visible() const override;
 	private:

@@ -186,7 +186,7 @@ namespace nana
 			public:
 				virtual ~container_interface() = default;
 
-				virtual void clear() noexcept = 0;
+				virtual void clear() = 0;
 				virtual void erase(std::size_t pos) = 0;
 
 				virtual std::size_t size() const = 0;
@@ -238,7 +238,7 @@ namespace nana
 						translator_({ vtrans, ctrans })
 				{}
 			private:
-				void clear() noexcept override
+				void clear() override
 				{
 					container_.clear();
 				}
@@ -246,7 +246,7 @@ namespace nana
 				void erase(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 					container_.erase(i);
 				}
 
@@ -263,7 +263,7 @@ namespace nana
 				void emplace(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 
 					container_.emplace(i);
 				}
@@ -327,7 +327,7 @@ namespace nana
 					
 				}
 			private:
-				void clear() noexcept override
+				void clear() override
 				{
 					container_.clear();
 				}
@@ -335,7 +335,7 @@ namespace nana
 				void erase(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 					container_.erase(i);
 				}
 
@@ -352,7 +352,7 @@ namespace nana
 				void emplace(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 
 					container_.emplace(i);
 				}
@@ -419,7 +419,7 @@ namespace nana
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
 
-				void erase(std::size_t pos) override
+				void erase(std::size_t /*pos*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -434,7 +434,7 @@ namespace nana
 					return true;
 				}
 
-				void emplace(std::size_t pos) override
+				void emplace(std::size_t /*pos*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -444,7 +444,7 @@ namespace nana
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
 
-				void assign(std::size_t pos, const std::vector<cell>& cells) override
+				void assign(std::size_t /*pos*/, const std::vector<cell>& /*cells*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -454,7 +454,7 @@ namespace nana
 					return ctrans_(container_.at(pos));
 				}
 
-				bool push_back(const const_virtual_pointer& dptr) override
+				bool push_back(const const_virtual_pointer& /*dptr*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -893,7 +893,7 @@ namespace nana
 				}
 
 				template<typename T>
-				T* value_ptr() const
+				T const * value_ptr() const
 				{
 					return any_cast<T>(_m_value());
 				}
@@ -1395,6 +1395,11 @@ the nana::detail::basic_window member pointer scheme
 		size_type append_header(std::string text_utf8, unsigned width = 120);
 		size_type append_header(std::wstring text, unsigned width = 120);
 
+		cat_proxy append(std::string category);		///< Appends a new category to the end
+		cat_proxy append(std::wstring category);		///< Appends a new category to the end
+		void append(std::initializer_list<std::string> categories); ///< Appends categories to the end
+		void append(std::initializer_list<std::wstring> categories); ///< Appends categories to the end
+
 		/// Access a column at specified position
 		/**
 		 * @param pos Position of column
@@ -1416,10 +1421,8 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the number of columns
 		size_type column_size() const;
 
-		cat_proxy append(std::string category);		///< Appends a new category to the end
-		cat_proxy append(std::wstring category);		///< Appends a new category to the end
-		void append(std::initializer_list<std::string> categories); ///< Appends categories to the end
-		void append(std::initializer_list<std::wstring> categories); ///< Appends categories to the end
+		/// Returns a rectangle in where the content is drawn.
+		rectangle content_area() const;
 
 		cat_proxy insert(cat_proxy, ::std::string);
 		cat_proxy insert(cat_proxy, ::std::wstring);

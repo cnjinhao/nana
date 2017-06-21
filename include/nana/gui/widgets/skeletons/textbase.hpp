@@ -1,7 +1,7 @@
 /*
  *	A textbase class implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -44,7 +44,7 @@ namespace skeletons
 		{
 			attr_max_.reset();
 			//Insert an empty string for the first line of empty text.
-			text_cont_.emplace_back();
+			text_cont_.emplace_back(new string_type);
 		}
 
 		void set_event_agent(textbase_event_agent_interface * evt)
@@ -55,7 +55,7 @@ namespace skeletons
 		bool empty() const
 		{
 			return (text_cont_.empty() ||
-					((text_cont_.size() == 1) && (text_cont_[0].empty())));
+					((text_cont_.size() == 1) && (text_cont_.front()->empty())));
 		}
 
 		bool load(const char* file_utf8)
@@ -135,10 +135,10 @@ namespace skeletons
 			while(ifs.good())
 			{
 				std::getline(ifs, str_mbs);
-				text_cont_.emplace_back(static_cast<string_type&&>(nana::charset{ str_mbs }));
-				if(text_cont_.back().size() > attr_max_.size)
+				text_cont_.emplace_back(new string_type(static_cast<string_type&&>(nana::charset{ str_mbs })));
+				if(text_cont_.back()->size() > attr_max_.size)
 				{
-					attr_max_.size = text_cont_.back().size();
+					attr_max_.size = text_cont_.back()->size();
 					attr_max_.line = text_cont_.size() - 1;
 				}
 			}
@@ -218,9 +218,9 @@ namespace skeletons
 						byte_order_translate_4bytes(str);
 				}
 
-				text_cont_.emplace_back(static_cast<string_type&&>(nana::charset{ str, encoding }));
+				text_cont_.emplace_back(new string_type(static_cast<string_type&&>(nana::charset{ str, encoding })));
 
-				attr_max_.size = text_cont_.back().size();
+				attr_max_.size = text_cont_.back()->size();
 				attr_max_.line = 0;
 			}
 
@@ -236,10 +236,10 @@ namespace skeletons
 						byte_order_translate_4bytes(str);
 				}
 
-				text_cont_.emplace_back(static_cast<string_type&&>(nana::charset{ str, encoding }));
-				if(text_cont_.back().size() > attr_max_.size)
+				text_cont_.emplace_back(new string_type(static_cast<string_type&&>(nana::charset{ str, encoding })));
+				if(text_cont_.back()->size() > attr_max_.size)
 				{
-					attr_max_.size = text_cont_.back().size();
+					attr_max_.size = text_cont_.back()->size();
 					attr_max_.line = text_cont_.size() - 1;
 				}
 			}
@@ -253,6 +253,9 @@ namespace skeletons
 			std::ofstream ofs(to_osmbstr(fs), std::ios::binary);
 			if(ofs && text_cont_.size())
 			{
+				auto i = text_cont_.cbegin();
+				auto const count = text_cont_.size() - 1;
+
 				std::string last_mbs;
 
 				if (is_unicode)
@@ -272,32 +275,27 @@ namespace skeletons
 					if (bytes)
 						ofs.write(le_boms[static_cast<int>(encoding)], bytes);
 
-					if (text_cont_.size() > 1)
+					for (std::size_t pos = 0; pos < count; ++pos)
 					{
-						std::string mbs;
-						for (auto i = text_cont_.cbegin(), end = text_cont_.cend() - 1; i != end; ++i)
-						{
-							std::string(nana::charset(*i).to_bytes(encoding)).swap(mbs);
-							mbs += "\r\n";
-							ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
-						}
+						auto mbs = nana::charset(**(i++)).to_bytes(encoding);
+						ofs.write(mbs.c_str(), static_cast<std::streamsize>(mbs.size()));
+						ofs.write("\r\n", 2);
 					}
 
-					last_mbs = nana::charset(text_cont_.back()).to_bytes(encoding);
+					last_mbs = nana::charset(*text_cont_.back()).to_bytes(encoding);
 				}
 				else
 				{
-					if (text_cont_.size() > 1)
+					for (std::size_t pos = 0; pos < count; ++pos)
 					{
-						for (auto i = text_cont_.cbegin(), end = text_cont_.cend() - 1; i != end; ++i)
-						{
-							std::string mbs = nana::charset(*i);
-							ofs.write(mbs.c_str(), mbs.size());
-							ofs.write("\r\n", 2);
-						}
+						std::string mbs = nana::charset(**(i++));
+						ofs.write(mbs.c_str(), mbs.size());
+						ofs.write("\r\n", 2);
 					}
-					last_mbs = nana::charset(text_cont_.back());
+
+					last_mbs = nana::charset(*text_cont_.back());
 				}
+
 				ofs.write(last_mbs.c_str(), static_cast<std::streamsize>(last_mbs.size()));
 				_m_saved(std::move(fs));
 			}
@@ -310,8 +308,8 @@ namespace skeletons
 
 		const string_type& getline(size_type pos) const
 		{
-			if(pos < text_cont_.size())
-				return text_cont_[pos];
+			if (pos < text_cont_.size())
+				return *text_cont_[pos];
 
 			return nullstr_;
 		}
@@ -323,13 +321,13 @@ namespace skeletons
 	public:
 		void replace(size_type pos, string_type && text)
 		{
-			if(text_cont_.size() <= pos)
+			if (text_cont_.size() <= pos)
 			{
-				text_cont_.emplace_back(std::move(text));
+				text_cont_.emplace_back(new string_type(std::move(text)));
 				pos = text_cont_.size() - 1;
 			}
 			else
-				text_cont_[pos].swap(text);
+				_m_at(pos).swap(text);
 
 			_m_make_max(pos);
 			_m_edited();
@@ -339,7 +337,7 @@ namespace skeletons
 		{
 			if(pos.y < text_cont_.size())
 			{
-				string_type& lnstr = text_cont_[pos.y];
+				string_type& lnstr = _m_at(pos.y);
 
 				if(pos.x < lnstr.size())
 					lnstr.insert(pos.x, str);
@@ -348,7 +346,7 @@ namespace skeletons
 			}
 			else
 			{
-				text_cont_.emplace_back(std::move(str));
+				text_cont_.emplace_back(new string_type(std::move(str)));
 				pos.y = static_cast<unsigned>(text_cont_.size() - 1);
 			}
 
@@ -358,10 +356,10 @@ namespace skeletons
 
 		void insertln(size_type pos, string_type&& str)
 		{
-			if(pos < text_cont_.size())
-				text_cont_.emplace(text_cont_.begin() + pos, std::move(str));
+			if (pos < text_cont_.size())
+				text_cont_.emplace(_m_iat(pos), new string_type(std::move(str)));
 			else
-				text_cont_.emplace_back(std::move(str));
+				text_cont_.emplace_back(new string_type(std::move(str)));
 
 			_m_make_max(pos);
 			_m_edited();
@@ -371,7 +369,7 @@ namespace skeletons
 		{
 			if (line < text_cont_.size())
 			{
-				string_type& lnstr = text_cont_[line];
+				string_type& lnstr = _m_at(line);
 				if ((pos == 0) && (count >= lnstr.size()))
 					lnstr.clear();
 				else
@@ -393,7 +391,7 @@ namespace skeletons
 			if (pos + n > text_cont_.size())
 				n = text_cont_.size() - pos;
 
-			text_cont_.erase(text_cont_.begin() + pos, text_cont_.begin() + (pos + n));
+			text_cont_.erase(_m_iat(pos), _m_iat(pos + n));
 
 			if (pos <= attr_max_.line && attr_max_.line < pos + n)
 				_m_scan_for_max();
@@ -408,7 +406,7 @@ namespace skeletons
 		{
 			text_cont_.clear();
 			attr_max_.reset();
-			text_cont_.emplace_back();	//text_cont_ must not be empty
+			text_cont_.emplace_back(new string_type);	//text_cont_ must not be empty
 
 			_m_saved(std::string());
 		}
@@ -417,9 +415,14 @@ namespace skeletons
 		{
 			if(pos + 1 < text_cont_.size())
 			{
-				text_cont_[pos] += text_cont_[pos + 1];
-				text_cont_.erase(text_cont_.begin() + (pos + 1));
+				auto i = _m_iat(pos + 1);
+				_m_at(pos) += **i;
+				text_cont_.erase(i);
 				_m_make_max(pos);
+
+				//If the maxline is behind the pos line,
+				//decrease the maxline. Because a line between maxline and pos line
+				//has been deleted.
 				if(pos < attr_max_.line)
 					--attr_max_.line;
 
@@ -458,9 +461,19 @@ namespace skeletons
 			return edited() || filename_.empty();
 		}
 	private:
+		string_type& _m_at(size_type pos)
+		{
+			return **_m_iat(pos);
+		}
+
+		typename std::deque<std::unique_ptr<string_type>>::iterator _m_iat(size_type pos)
+		{
+			return text_cont_.begin() + pos;
+		}
+
 		void _m_make_max(std::size_t pos)
 		{
-			const string_type& str = text_cont_[pos];
+			const string_type& str = _m_at(pos);
 			if(str.size() > attr_max_.size)
 			{
 				attr_max_.size = str.size();
@@ -472,11 +485,11 @@ namespace skeletons
 		{
 			attr_max_.size = 0;
 			std::size_t n = 0;
-			for(auto & s : text_cont_)
+			for(auto & p : text_cont_)
 			{
-				if(s.size() > attr_max_.size)
+				if(p->size() > attr_max_.size)
 				{
-					attr_max_.size = s.size();
+					attr_max_.size = p->size();
 					attr_max_.line = n;
 				}
 				++n;
@@ -514,7 +527,7 @@ namespace skeletons
 				evt_agent_->text_changed();
 		}
 	private:
-		std::deque<string_type>	text_cont_;
+		std::deque<std::unique_ptr<string_type>>	text_cont_;
 		textbase_event_agent_interface* evt_agent_{ nullptr };
 
 		mutable bool			changed_{ false };

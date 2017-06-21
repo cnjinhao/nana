@@ -13,26 +13,23 @@ namespace nana
 			template<typename F>
 			void for_each_line(const wchar_t * str, std::size_t len, int top, F & f)
 			{
-				auto head = str;
-				auto end = str + len;
+				auto const end = str + len;
 				for(auto i = str; i != end; ++i)
 				{
 					if(*i == '\n')
 					{
-						top += static_cast<int>(f(top, head, i - head));
-						head = i + 1;
+						top += static_cast<int>(f(top, str, i - str));
+						str = i + 1;
 					}
 				}
-				if(head != end)
-					f(top, head, end - head);
+				if(str != end)
+					f(top, str, end - str);
 			}
 
 			struct draw_string
 			{
 				drawable_type dw;
 				const int x, endpos;
-				nana::unicode_bidi bidi;
-				std::vector<nana::unicode_bidi::entity> reordered;
 				align text_align;
 
 				draw_string(drawable_type dw, int x, int endpos, align ta)
@@ -41,9 +38,13 @@ namespace nana
 
 				unsigned operator()(const int top, const wchar_t * buf, std::size_t bufsize)
 				{
+					auto const reordered = unicode_reorder(buf, bufsize);
+					if (reordered.empty())
+						return 0;
+
 					nana::point pos{ x, top };
 					unsigned pixels = 0;
-					bidi.linestr(buf, bufsize, reordered);
+
 					switch(text_align)
 					{
 					case align::left:
@@ -64,23 +65,28 @@ namespace nana
 					case align::center:
 						{
 							unsigned lenpx = 0;
-							std::vector<unsigned> widths;
+							std::unique_ptr<unsigned[]> entity_pxs(new unsigned[reordered.size()]);
+
+							auto ent_px = entity_pxs.get();
+
 							for(auto & ent : reordered)
 							{
 								auto ts = detail::text_extent_size(dw, ent.begin, ent.end - ent.begin);
 								if(ts.height > pixels) pixels = ts.height;
 								lenpx += ts.width;
-								widths.emplace_back(ts.width);
+								*ent_px++ = ts.width;
 							}
 
 							pos.x += (endpos - pos.x - static_cast<int>(lenpx))/2;
-							auto ipx = widths.begin();
+							ent_px = entity_pxs.get();
+
 							for(auto & ent : reordered)
 							{
-								if(pos.x + static_cast<int>(*ipx) > 0)
+								if (pos.x + static_cast<int>(*ent_px) > 0)
 									detail::draw_string(dw, pos, ent.begin, ent.end - ent.begin);
 
-								pos.x += static_cast<int>(*ipx);
+								pos.x += static_cast<int>(*ent_px++);
+
 								if(pos.x >= endpos)
 									break;
 							}
@@ -90,7 +96,7 @@ namespace nana
 						{
 							int xend = endpos;
 							std::swap(pos.x, xend);
-							for(auto i = reordered.rbegin(), end = reordered.rend(); i != end; ++i)
+							for(auto i = reordered.crbegin(); i != reordered.crend(); ++i)
 							{
 								auto & ent = *i;
 								std::size_t len = ent.end - ent.begin;
@@ -118,13 +124,11 @@ namespace nana
 				graphics & graph;
 				int x, endpos;
 				unsigned omitted_pixels;
-				nana::unicode_bidi bidi;
-				std::vector<nana::unicode_bidi::entity> reordered;
 
 				draw_string_omitted(graphics& graph, int x, int endpos, bool omitted)
 					: graph(graph), x(x), endpos(endpos)
 				{
-					omitted_pixels = (omitted ? graph.text_extent_size(L"...", 3).width : 0);
+					omitted_pixels = (omitted ? graph.text_extent_size("...", 3).width : 0);
 					if (endpos - x > static_cast<int>(omitted_pixels))
 						this->endpos -= omitted_pixels;
 					else
@@ -136,7 +140,9 @@ namespace nana
 					drawable_type dw = graph.handle();
 					::nana::point pos{ x, top };
 					unsigned pixels = 0;
-					bidi.linestr(buf, bufsize, reordered);
+
+					auto const reordered = unicode_reorder(buf, bufsize);
+
 					for(auto & i : reordered)
 					{
 						std::size_t len = i.end - i.begin;
@@ -178,9 +184,6 @@ namespace nana
 			{
 				graphics & graph;
 				int x, endpos;
-				nana::unicode_bidi bidi;
-				std::vector<nana::unicode_bidi::entity> reordered;
-				std::vector<nana::size> ts_keeper;
 				align text_align;
 
 				draw_string_auto_changing_lines(graphics& graph, int x, int endpos, align ta)
@@ -191,10 +194,13 @@ namespace nana
 				{
 					unsigned pixels = 0;
 
-					drawable_type dw = graph.handle();
+					auto const dw = graph.handle();
 					unsigned str_w = 0;
-					ts_keeper.clear();
-					bidi.linestr(buf, bufsize, reordered);
+
+					std::vector<nana::size> ts_keeper;
+
+					auto const reordered = unicode_reorder(buf, bufsize);
+
 					for(auto & i : reordered)
 					{
 						nana::size ts = detail::text_extent_size(dw, i.begin, i.end - i.begin);
@@ -213,28 +219,33 @@ namespace nana
 						auto i_ts_keeper = ts_keeper.cbegin();
 						for(auto & i : reordered)
 						{
-							if(line_pixels < i_ts_keeper->height)
+							if(line_pixels < i_ts_keeper->height)	
 								line_pixels = i_ts_keeper->height;
 
 							bool beyond_edge = (pos.x + static_cast<int>(i_ts_keeper->width) > endpos);
 							if(beyond_edge)
 							{
-								std::size_t len = i.end - i.begin;
+								const std::size_t len = i.end - i.begin;
 								if(len > 1)
 								{
-									unsigned * pxbuf = new unsigned[len];
+									std::unique_ptr<unsigned[]> pixel_buf(new unsigned[len]);
+
 									//Find the char that should be splitted
-									graph.glyph_pixels(i.begin, len, pxbuf);
+									graph.glyph_pixels(i.begin, len, pixel_buf.get());
 									std::size_t idx_head = 0, idx_splitted;
 
 									do
 									{
+										auto pxbuf = pixel_buf.get();
+
 										idx_splitted = find_splitted(idx_head, len, pos.x, endpos, pxbuf);
 										if(idx_splitted == len)
 										{
 											detail::draw_string(dw, pos, i.begin + idx_head, idx_splitted - idx_head);
+
 											for(std::size_t i = idx_head; i < len; ++i)
 												pos.x += static_cast<int>(pxbuf[i]);
+
 											break;
 										}
 										//Check the word whether it is splittable.
@@ -243,7 +254,7 @@ namespace nana
 											detail::draw_string(dw, pos, i.begin + idx_head, idx_splitted - idx_head);
 											idx_head = idx_splitted;
 											pos.x = x;
-											pos.y += line_pixels;
+											pos.y += static_cast<int>(line_pixels);
 											line_pixels = i_ts_keeper->height;
 										}
 										else
@@ -283,18 +294,16 @@ namespace nana
 
 												for(std::size_t k = idx_head; k < idx_head + splen; ++k)
 													pos.x += static_cast<int>(pxbuf[k]);
+
 												if (pos.x >= endpos)
 												{
 													pos.x = x;
 													pos.y += static_cast<int>(line_pixels);
-													line_pixels = i_ts_keeper->height;
 												}
 												idx_head += splen;
 											}
 										}
 									}while(idx_head < len);
-
-									delete [] pxbuf;
 								}
 								else
 								{
@@ -340,7 +349,7 @@ namespace nana
 						{
 							point pos{ endpos, top };
 							auto i_ts_keeper = ts_keeper.crbegin();
-							for(auto i = reordered.crbegin(), end = reordered.crend(); i != end; ++i)
+							for(auto i = reordered.crbegin(); i != reordered.crend(); ++i)
 							{
 								auto & ent = *i;
 								std::size_t len = ent.end - ent.begin;
@@ -397,9 +406,6 @@ namespace nana
 			{
 				graphics & graph;
 				int x, endpos;
-				nana::unicode_bidi bidi;
-				std::vector<nana::unicode_bidi::entity> reordered;
-				std::vector<nana::size> ts_keeper;
 				unsigned extents;
 
 				extent_auto_changing_lines(graphics& graph, int x, int endpos)
@@ -412,8 +418,10 @@ namespace nana
 
 					drawable_type dw = graph.handle();
 					unsigned str_w = 0;
-					ts_keeper.clear();
-					bidi.linestr(buf, bufsize, reordered);
+					std::vector<nana::size> ts_keeper;
+
+					auto const reordered = unicode_reorder(buf, bufsize);
+
 					for(auto & i : reordered)
 					{
 						nana::size ts = detail::text_extent_size(dw, i.begin, i.end - i.begin);
@@ -503,7 +511,6 @@ namespace nana
 												{
 													xpos = x;
 													top += line_pixels;
-													line_pixels = i_ts_keeper->height;
 												}
 												idx_head += splen;
 											}
@@ -645,11 +652,9 @@ namespace nana
 					substr_px += *p;
 				} while (p != end);
 
-				pos.x += static_cast<int>(width - ellipsis - substr_px);
-
-				graph_.string(pos, "...");
-				pos.x += ellipsis;
+				pos.x += static_cast<int>(width - ellipsis - substr_px) + ellipsis;
 				graph_.bidi_string(pos, text.c_str() + substr_len, text.size() - substr_len);
+				pos.x -= ellipsis;
 			}
 			else
 			{
@@ -669,8 +674,9 @@ namespace nana
 				graph_.bidi_string(pos, text.c_str(), substr_len);
 
 				pos.x += substr_px;
-				graph_.string(pos, "...");
 			}
+
+			graph_.string(pos, "...");
 		}
 
 		//end class string

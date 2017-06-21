@@ -195,7 +195,7 @@ namespace nana
 						_m_refresh();
 					}
 
-					void width(unsigned minimum, unsigned maximum)
+					void width(unsigned minimum, unsigned maximum) override
 					{
 						//maximum must be larger than minimum, but maximum == 0 is allowed if minimum is 0
 						if ((minimum >= maximum) && (minimum != 0))
@@ -332,7 +332,8 @@ namespace nana
 					unsigned ranged_px = 0;
 					unsigned ranged_count = 0;
 
-					for (auto & col : cont_)
+					auto const & const_cont = cont_;
+					for (auto & col : const_cont)
 					{
 						if (col.visible_state)
 						{
@@ -465,23 +466,25 @@ namespace nana
 					return npos;
 				}
 
-				/// Returns the left point position and width(in variable *pixels) of column originaly at position pos.
-				int position(size_type pos, unsigned * pixels) const
+				unsigned margin() const
 				{
-					int left = 0;
+					return margin_;
+				}
+
+				std::pair<int, unsigned> range(size_type pos) const
+				{
+					int left = static_cast<int>(margin_);
+
 					for (auto & m : cont_)
 					{
 						if (m.index == pos)
-						{
-							if (pixels)
-								*pixels = m.width_px;
-							break;
-						}
+							return{left, m.width_px};
 
 						if (m.visible_state)
-							left += m.width_px;
+							left += static_cast<int>(m.width_px);
 					}
-					return left;
+
+					return{ left, 0 };
 				}
 
 				/// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
@@ -525,11 +528,15 @@ namespace nana
 					if ((from == to) || (from >= cont_.size()) || (to >= cont_.size()))
 						return;
 					
+#ifdef _MSC_VER
+					for (auto i = cont_.cbegin(); i != cont_.cend(); ++i)
+#else
 					for (auto i = cont_.begin(); i != cont_.end(); ++i)
+#endif
 					{
 						if (from == i->index)
 						{
-							auto col_from = std::move(*i);
+							auto col_from = *i;
 							cont_.erase(i);
 
 							//A workaround for old libstdc++, that some operations of vector
@@ -553,6 +560,7 @@ namespace nana
 			private:
 				bool visible_{true};
 				bool sortable_{true};
+				unsigned	margin_{ 5 };
 				container cont_;
 			};
 
@@ -757,19 +765,6 @@ namespace nana
 
                 std::string to_string(const export_options& exp_opt) const;
 
-				std::vector<inline_pane*> get_inline_pane(const index_pair& item_pos)
-				{
-					std::vector<inline_pane*> panes;
-					for (auto p : active_panes_)
-					{
-						if (p && (p->item_pos == item_pos))
-						{
-							panes.emplace_back(p);
-						}
-					}
-					return panes;
-				}
-
 				void emit_cs(const index_pair& pos, bool for_selection)
 				{
 					item_proxy i(ess_, pos);
@@ -782,13 +777,16 @@ namespace nana
 					else
 						events.checked.emit(arg, wd_ptr()->handle());
 
-					auto panes = get_inline_pane(pos);
-					for (auto p : panes)
+					//notify the inline pane. An item may have multiple panes, each pane is for a column.
+					for (auto p : active_panes_)
 					{
-						if(for_selection)
-							p->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
-						else
-							p->inline_ptr->notify_status(inline_widget_status::checking, i.checked());
+						if (p && (p->item_pos == pos))
+						{
+							if (for_selection)
+								p->inline_ptr->notify_status(inline_widget_status::selecting, i.selected());
+							else
+								p->inline_ptr->notify_status(inline_widget_status::checking, i.checked());
+						}
 					}
 				}
 
@@ -1509,11 +1507,19 @@ namespace nana
 				}
 
 				template<typename Pred>
-				std::vector<std::pair<index_pair, bool>> select_display_range_if(index_pair fr_abs, index_pair to_dpl, bool unselect_others, Pred pred)
+				std::vector<std::pair<index_pair, bool>> select_display_range_if(const index_pair& fr_abs, index_pair to_dpl, bool deselect_others, Pred pred)
 				{
-					const auto already_selected = this->pick_items(true);
+					const index_pairs already_selected = (deselect_others ? this->pick_items(true) : index_pairs{});
 
-					auto fr_dpl = this->index_cast(fr_abs, false);	//Converts an absolute position to display position
+					if (to_dpl.empty())
+					{
+						if (fr_abs.empty())
+							return{};
+
+						to_dpl = this->last();
+					}
+
+					auto fr_dpl = (fr_abs.is_category() ? fr_abs : this->index_cast(fr_abs, false));	//Converts an absolute position to display position
                     if (fr_dpl > to_dpl)
 						std::swap(fr_dpl, to_dpl);
 
@@ -1524,9 +1530,28 @@ namespace nana
 					//pair second: indicates whether the index is selected before selection.
 					std::vector<std::pair<index_pair, bool>> pairs;
 
-					for (; fr_dpl != to_dpl; fr_dpl = advance(fr_dpl, 1))
+					for (; !(fr_dpl > to_dpl); fr_dpl = advance(fr_dpl, 1))	//fr_dpl <= to_dpl
 					{
-						if (!fr_dpl.is_category())
+						if (fr_dpl.is_category())
+						{
+							if (!expand(fr_dpl.cat))
+							{
+								auto size = size_item(fr_dpl.cat);
+								for (std::size_t i = 0; i < size; ++i)
+								{
+									index_pair abs_pos{ fr_dpl.cat, i };
+									item_proxy m{ ess_, abs_pos };
+									pairs.emplace_back(abs_pos, m.selected());
+
+									if (pred(abs_pos))
+										m.select(true);
+								}
+
+								if (fr_dpl.cat == to_dpl.cat)
+									break;
+							}
+						}
+						else
 						{
 							auto abs_pos = index_cast(fr_dpl, true);	//convert display position to absolute position
 							item_proxy m{ ess_, abs_pos };
@@ -1537,20 +1562,9 @@ namespace nana
 						}
 					}
 
-					if (!to_dpl.is_category())
+					if (deselect_others)
 					{
-						auto abs_pos = index_cast(to_dpl, true);	//convert display position to absolute position
-
-						item_proxy m(ess_, abs_pos);
-						pairs.emplace_back(abs_pos, m.selected());
-
-						if (pred(abs_pos))
-							m.select(true);
-					}
-
-					if (unselect_others)
-					{
-						//Unselects the already selected which is out of range [begin, last] 
+						//Deselects the already selected which is out of range [begin, last] 
 						for (auto index : already_selected)
 						{
 							auto disp_order = this->index_cast(index, false);	//converts an absolute position to a display position
@@ -1581,9 +1595,9 @@ namespace nana
 									this->emit_cs(pos, true);
 
 									if (m.flags.selected)
-										last_selected_abs = pos;
-									else if (last_selected_abs == pos)
-										last_selected_abs.set_both(npos);		//make empty
+										latest_selected_abs = pos;
+									else if (latest_selected_abs == pos)
+										latest_selected_abs.set_both(npos);		//make empty
 								}
 							}
 							++pos.item;
@@ -1822,8 +1836,13 @@ namespace nana
 						else
 							i.item = npos;
 					}
-					else if (i.item)
-						--i.item;
+					else
+					{
+						if (i.item)
+							--i.item;
+						else
+							return index_pair{ npos, npos };
+					}
 
 					return i;
 				}
@@ -1831,9 +1850,14 @@ namespace nana
                 /// can be used as the absolute position of the first absolute item, or as the display pos of the first displayed item
                 index_pair first() const noexcept
                 {
-                    index_pair fst{0,npos};
-                    good_item(fst,fst);
-                    return fst;
+					auto i = categories_.cbegin();
+					if (i->items.size())
+						return index_pair{ 0, 0 };
+
+					if (categories_.size() > 1)
+						return index_pair{ 1, npos };
+
+					return index_pair{ npos, npos };
                 }
 				
 				bool good(size_type cat) const noexcept
@@ -1844,36 +1868,6 @@ namespace nana
 				bool good(const index_pair& pos) const noexcept
 				{
 					return ((pos.cat < categories_.size()) && (pos.item < size_item(pos.cat)));
-				}
-
-                /// if good return the same item (in arg item), or just the next cat and true, but If fail return false
-				bool good_item(const index_pair& pos, index_pair& item) const noexcept
-				{
-					if (!good(pos.cat))
-						return false;       // cat out of range
-
-					if (pos.is_category())
-					{
-						item = pos;          // return the cat self
-						if (0 == pos.cat)    // but for cat 0 return first item
-							item.item = 0;   // let check this is good
-                        else
-						    return true;
-					}
-
-					auto i = get(pos.cat);         // pos is not a cat and i point to it cat
-					if (pos.item < i->items.size())
-					{
-						item = pos;                // good item, return it
-						return true;
-					}
-
-					if (++i == categories_.cend())          // item out of range and no more cat
-						return false;
-
-					item.cat = pos.cat + 1;         // select the next cat
-					item.item = npos;
-					return true;
 				}
 
 				/// categories iterator
@@ -1895,7 +1889,7 @@ namespace nana
 					return i;
 				}
 			public:
-				index_pair last_selected_abs;
+				index_pair latest_selected_abs;	//Stands for the latest selected item that selected by last operation. Invalid if it is empty.
 			private:
 				essence * ess_{nullptr};
 				nana::listbox * widget_{nullptr};
@@ -1927,6 +1921,7 @@ namespace nana
 				bool auto_draw{true};
 				bool checkable{false};
 				bool if_image{false};
+				bool deselect_deferred{ false };	//deselects items when mouse button is released.
 				unsigned text_height;
 
                 ::nana::listbox::export_options def_exp_options;
@@ -2051,16 +2046,19 @@ namespace nana
 					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.pixels()) };
 				}
 
-				void start_mouse_selection(const point& screen_pos)
+				void start_mouse_selection(const arg_mouse& arg)
 				{
-					auto logic_pos = coordinate_cast(screen_pos, true);
+					auto logic_pos = coordinate_cast(arg.pos, true);
 
 					mouse_selection.started = true;
 					mouse_selection.begin_position = logic_pos;
 					mouse_selection.end_position = logic_pos;
 
-					mouse_selection.already_selected = lister.pick_items(true);
-
+					if (arg.ctrl || arg.shift)
+					{
+						mouse_selection.already_selected = lister.pick_items(true);
+						mouse_selection.reverse_selection = arg.ctrl;
+					}
 					API::set_capture(*listbox_ptr, true);
 				}
 
@@ -2081,93 +2079,88 @@ namespace nana
 
 					mouse_selection.end_position = logic_pos;
 
+					bool cancel_selections = true;
+
 					auto content_x = coordinate_cast({ columns_range().first, 0 }, true).x;
-					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) <= content_x ||
-						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x + static_cast<int>(header.pixels())
-						)
+					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x &&
+						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) < content_x + static_cast<int>(header.pixels()))
 					{
-						lister.select_for_all(false);
-						return;
-					}
+						auto const begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
 
-					auto begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
-					auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
-
-					auto begin = lister.advance(lister.first(), begin_off);
-					auto last = lister.advance(lister.first(), last_off);
-
-					if (!lister.good(last))
-						last = lister.last();
-
-					if (lister.good(begin) && ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off)))
-					{
-						auto selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
-							if (this->mouse_selection.reverse_selection)
-							{
-								if(mouse_selection.already_selected.cend() != std::find(mouse_selection.already_selected.cbegin(), mouse_selection.already_selected.cend(), abs_pos))
-								{
-									item_proxy{ this, abs_pos }.select(false);
-									return false;
-								}
-							}
-							return true;
-						});
-
-						for (auto & pair : selections)
+						auto begin = lister.advance(lister.first(), begin_off);
+						if (!begin.empty())
 						{
-							if (pair.second)
-								continue;
+							std::vector<std::pair<index_pair, bool>> selections;
 
-							if (mouse_selection.selections.cend() ==
-								std::find(mouse_selection.selections.cbegin(), mouse_selection.selections.cend(), pair.first))
+							if ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off))
 							{
-								mouse_selection.selections.push_back(pair.first);
-							}
-						}
+								//The range [begin_off, last_off] is a range of box selection
+								auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
+								auto last = lister.advance(lister.first(), last_off);
+
+								selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
+									if (this->mouse_selection.reverse_selection)
+									{
+										if (mouse_selection.already_selected.cend() != std::find(mouse_selection.already_selected.cbegin(), mouse_selection.already_selected.cend(), abs_pos))
+										{
+											item_proxy{ this, abs_pos }.select(false);
+											return false;
+										}
+									}
+									return true;
+								});
+
+								for (auto & pair : selections)
+								{
+									if (pair.second)
+										continue;
+
+									if (mouse_selection.selections.cend() ==
+										std::find(mouse_selection.selections.cbegin(), mouse_selection.selections.cend(), pair.first))
+									{
+										mouse_selection.selections.push_back(pair.first);
+									}
+								}
 
 #ifdef _MSC_VER
-						for(auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
+								for (auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
 #else
-						for(auto i = mouse_selection.selections.begin(); i != mouse_selection.selections.end();)
+								for(auto i = mouse_selection.selections.begin(); i != mouse_selection.selections.end();)
 
 #endif
-						{
-							if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{*i}))
-							{
-								item_proxy{ this, *i }.select(false);
-								i = mouse_selection.selections.erase(i);
-							}
-							else
-								++i;
-						}
-
-						if (mouse_selection.reverse_selection)
-						{
-							for (auto & abs_pos : mouse_selection.already_selected)
-							{
-								if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{abs_pos}))
 								{
-									item_proxy{ this, abs_pos }.select(true);
+									if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{ *i }))
+									{
+										item_proxy{ this, *i }.select(false);
+										i = mouse_selection.selections.erase(i);
+									}
+									else
+										++i;
 								}
+
+								cancel_selections = false;
 							}
 						}
 					}
-					else
+
+					if (cancel_selections)
 					{
-						for (auto & pos : mouse_selection.selections)
+						if (!mouse_selection.already_selected.empty())
 						{
-							item_proxy{ this, pos }.select(false);
-						}
+							for (auto & pos : mouse_selection.selections)
+								item_proxy(this, pos).select(false);
 
-						mouse_selection.selections.clear();
-
-						if (mouse_selection.reverse_selection)
-						{
-							for (auto & abs_pos : mouse_selection.already_selected)
+							//Don't restore the already selections if it is reverse selection(pressing shift). Behaves like Windows Explorer.
+							if (!mouse_selection.reverse_selection)
 							{
-								item_proxy{ this, abs_pos }.select(true);
+								for (auto & abs_pos : mouse_selection.already_selected)
+									item_proxy(this, abs_pos).select(true);
 							}
 						}
+						else
+							lister.select_for_all(false);
+
+						mouse_selection.selections.clear();
 					}
 				}
 
@@ -2203,11 +2196,9 @@ namespace nana
 				::nana::size calc_content_size(bool try_update = true)
 				{
 					size ctt_size(
-						this->header.pixels() + 5,
-						static_cast<size::value_type>(this->lister.the_number_of_expanded())
+						this->header.pixels() + this->header.margin(),
+						static_cast<size::value_type>(this->lister.the_number_of_expanded()) * this->item_height()
 					);
-
-					ctt_size.height *= this->item_height();
 
 					this->content_view->content_size(ctt_size, try_update);
 
@@ -2226,7 +2217,7 @@ namespace nana
 					if (seq.empty())
 						return 0;
 
-					return (header.position(seq[0], nullptr) - this->content_view->origin().x + r.x);
+					return header.range(seq.front()).first + r.x - this->content_view->origin().x;
 				}
 
 				//Returns the absolute coordinate of the specified item in the window
@@ -2258,11 +2249,18 @@ namespace nana
 						}
 						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.pixels()))
 						{
+							// detect if cursor is in the area of header margin
+							if (pos.x < area.x - origin.x + static_cast<int>(header.margin()))
+								return{ parts::list_blank, npos };
+
 							new_where.first = parts::list;
 
 							auto const item_h = item_height();
 							//don't combine the following formula into the (pos.y - area.y - header_visible_px()) / item_h
 							new_where.second = ((pos.y - area.y - header_visible_px() + origin.y) / item_h) - (origin.y / item_h);
+
+							if (this->lister.the_number_of_expanded() < new_where.second + 1)
+								return{ parts::list_blank, npos };
 
 							if (checkable)
 							{
@@ -2874,7 +2872,7 @@ namespace nana
 
 			void es_lister::move_select(bool upwards, bool unselect_previous, bool /*trace_selected*/) noexcept
 			{
-				auto next_selected_dpl = index_cast_noexcpt(last_selected_abs, false);	//convert absolute position to display position
+				auto next_selected_dpl = index_cast_noexcpt(latest_selected_abs, false);	//convert absolute position to display position
 
 				if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
 				{
@@ -2995,8 +2993,8 @@ namespace nana
 					for (item_proxy &it : cpx)
 						it.select(value);
 
-					last_selected_abs.cat = pos;
-					last_selected_abs.item = npos;
+					latest_selected_abs.cat = pos;
+					latest_selected_abs.item = npos;
 
 					return true;
 				}
@@ -3042,7 +3040,8 @@ namespace nana
 				{
 					if(essence_->ptr_state == item_state::highlighted)
 					{
-						x -= r.x - essence_->content_view->origin().x;
+						x -= r.x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin());
+
 
 						for(auto & col : essence_->header.cont()) // in current order
 						{
@@ -3135,20 +3134,25 @@ namespace nana
 						0, r.height - 1
 					};
 
+					//The first item includes the margin
+					unsigned margin = essence_->header.margin();
+
 					for (auto & col : essence_->header.cont())
 					{
 						if (col.visible_state)
 						{
-							column_r.width = col.width_px;
+							column_r.width = col.width_px + margin;
 
 							const auto right_pos = column_r.right();
 
 							//Make sure the column is in the display area.
 							if (right_pos > r.x)
 							{
-								_m_draw_header_item(graph, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
+								_m_draw_header_item(graph, margin, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
 								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, border_color);
 							}
+
+							margin = 0;
 
 							column_r.x = right_pos;
 							if (right_pos > r.right())
@@ -3189,28 +3193,31 @@ namespace nana
 
 					auto i = essence_->header.column_from_point(x);
 
-					if(i == npos)
-						i = essence_->header.boundary(essence_->header.position(grab, nullptr) >= x);
+					if (i == npos)
+						i = essence_->header.boundary(essence_->header.range(grab).first >= x);
 
 					if(grab != i)
 					{
-						unsigned item_pixels = 0;
-						auto item_x = essence_->header.position(i, &item_pixels);
+						auto item_rg = essence_->header.range(i);
 
 						//Get the item pos
 						//if mouse pos is at left of an item middle, the pos of itself otherwise the pos of the next.
-						place_front = (x <= (item_x + static_cast<int>(item_pixels / 2)));
-						x = (place_front ? item_x : essence_->header.position(essence_->header.next(i), nullptr));
+						place_front = (x <= (item_rg.first + static_cast<int>(item_rg.second / 2)));
+						x = (place_front ? item_rg.first : essence_->header.range(essence_->header.next(i)).first);
 
 						if (npos != i)
-							essence_->graph->rectangle({x - x_offset + rect.x, rect.y, 2, rect.height}, true, colors::red);
+						{
+							if (place_front && (0 == essence_->header.cast(i, false)))
+								x -= static_cast<int>(essence_->header.margin());
+							essence_->graph->rectangle({ x - x_offset + rect.x, rect.y, 2, rect.height }, true, colors::red);
+						}
 
 						return i;
 					}
 					return npos;
 				}
 
-				void _m_draw_header_item(graph_reference graph, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
+				void _m_draw_header_item(graph_reference graph, unsigned margin, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
 				{
 					::nana::color bgcolor;
 
@@ -3241,7 +3248,7 @@ namespace nana
 					{
 						graph.palette(true, fgcolor);
 
-						point text_pos{ column_r.x, (static_cast<int>(essence_->scheme_ptr->header_height) - static_cast<int>(essence_->text_height)) / 2 };
+						point text_pos{ column_r.x + static_cast<int>(margin), (static_cast<int>(essence_->scheme_ptr->header_height) - static_cast<int>(essence_->text_height)) / 2 };
 
 						if (align::left == column.alignment)
 							text_pos.x += text_margin;
@@ -3265,13 +3272,18 @@ namespace nana
 				{
 					const auto & col = essence_->header.at(essence_->pointer_where.second);
 
-					paint::graphics fl_graph({ col.width_px, essence_->scheme_ptr->header_height });
+					auto margin = 0;
+					
+					if (&essence_->header.at(0, true) == &col)
+						margin = essence_->header.margin();
+
+					paint::graphics fl_graph({ col.width_px + margin, essence_->scheme_ptr->header_height });
 
 					fl_graph.typeface(essence_->graph->typeface());
 
-					_m_draw_header_item(fl_graph, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
+					_m_draw_header_item(fl_graph, margin, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
 
-					auto xpos = essence_->header.position(col.index, nullptr) + pos.x - grabs_.start_pos;
+					auto xpos = essence_->header.range(col.index).first + pos.x - grabs_.start_pos;
 					essence_->graph->blend(rectangle{ point{ xpos - essence_->content_view->origin().x + rect.x, rect.y } , fl_graph.size() }, fl_graph, {}, 0.5);
 				}
 
@@ -3331,12 +3343,23 @@ namespace nana
 					auto const header_w = essence_->header.pixels();
 					auto const item_height_px = essence_->item_height();
 
-					auto origin = essence_->content_view->origin();
-					if (header_w < origin.x + rect.width)
+					auto const origin = essence_->content_view->origin();
+
+					auto const header_margin = essence_->header.margin();
+					if (header_w + header_margin < origin.x + rect.width)
 					{
-						rectangle r{ point{ rect.x + static_cast<int>(header_w)-origin.x, rect.y },
+						rectangle r{ point{ rect.x + static_cast<int>(header_w + header_margin) - origin.x, rect.y },
 							size{ rect.width + origin.x - header_w, rect.height } };
 						
+						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), r, *essence_->graph, r.position()))
+							essence_->graph->rectangle(r, true);
+					}
+
+					if (header_margin > 0)
+					{
+						rectangle r = rect;
+						r.width = header_margin;
+
 						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), r, *essence_->graph, r.position()))
 							essence_->graph->rectangle(r, true);
 					}
@@ -3345,8 +3368,12 @@ namespace nana
 
 					auto & ptr_where = essence_->pointer_where;
 
-					int item_top = rect.y - (origin.y % item_height_px);
 					auto first_disp = essence_->first_display();
+
+					point item_coord{
+						essence_->item_xpos(rect),
+						rect.y - static_cast<int>(origin.y % item_height_px)
+					};
 
 					// The first display is empty when the listbox is empty.
 					if (!first_disp.empty())
@@ -3379,8 +3406,6 @@ namespace nana
 									ind->detach();
 							}
 
-						const int x = essence_->item_xpos(rect);
-
 						//Here we draw the root categ (0) or a first item if the first drawing is not a categ.(item!=npos))
 						if (idx.cat == 0 || !idx.is_category())
 						{
@@ -3393,16 +3418,16 @@ namespace nana
 							std::size_t size = i_categ->items.size();
 							for (std::size_t offs = first_disp.item; offs < size; ++offs, ++idx.item)
 							{
-								if (item_top >= rect.bottom())
+								if (item_coord.y >= rect.bottom())
 									break;
 
 								auto item_pos = lister.index_cast(index_pair{ idx.cat, offs }, true);	//convert display position to absolute position
 
-								_m_draw_item(*i_categ, item_pos, x, item_top, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
+								_m_draw_item(*i_categ, item_pos, item_coord, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
 									(hoverred_pos == idx ? item_state::highlighted : item_state::normal)
 								);
 
-								item_top += item_height_px;
+								item_coord.y += static_cast<int>(item_height_px);
 							}
 
 							++i_categ;
@@ -3411,15 +3436,15 @@ namespace nana
 
 						for (; i_categ != lister.cat_container().end(); ++i_categ, ++idx.cat)
 						{
-							if (item_top > rect.bottom())
+							if (item_coord.y > rect.bottom())
 								break;
 
 							idx.item = 0;
 
-							_m_draw_categ(*i_categ, rect.x - origin.x, item_top, txtoff, header_w, rect, bgcolor, 
+							_m_draw_categ(*i_categ, rect.x - origin.x, item_coord.y, txtoff, header_w, bgcolor, 
 									(hoverred_pos.is_category() && (idx.cat == hoverred_pos.cat) ? item_state::highlighted : item_state::normal)
 								);
-							item_top += item_height_px;
+							item_coord.y += static_cast<int>(item_height_px);
 
 							if (false == i_categ->expand)
 								continue;
@@ -3427,17 +3452,17 @@ namespace nana
 							auto size = i_categ->items.size();
 							for (decltype(size) pos = 0; pos < size; ++pos)
 							{
-								if (item_top > rect.bottom())
+								if (item_coord.y > rect.bottom())
 									break;
 
 								auto item_pos = lister.index_cast(index_pair{ idx.cat, pos }, true);	//convert display position to absolute position
 
-								_m_draw_item(*i_categ, item_pos, x, item_top, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
+								_m_draw_item(*i_categ, item_pos, item_coord, txtoff, header_w, rect, subitems, bgcolor, fgcolor,
 									(idx == hoverred_pos ? item_state::highlighted : item_state::normal)
 								);
 
-								item_top += item_height_px;
-								if (item_top >= rect.bottom())
+								item_coord.y += static_cast<int>(item_height_px);
+								if (item_coord.y >= rect.bottom())
 									break;
 
 								++idx.item;
@@ -3447,9 +3472,9 @@ namespace nana
 						essence_->inline_buffered_table.clear();
 					}
 
-					if (item_top < rect.bottom())
+					if (item_coord.y < rect.bottom())
 					{
-						rectangle bground_r{ rect.x, item_top, rect.width, static_cast<unsigned>(rect.bottom() - item_top) };
+						rectangle bground_r{ rect.x, item_coord.y, rect.width, static_cast<unsigned>(rect.bottom() - item_coord.y) };
 						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), bground_r, *essence_->graph, bground_r.position()))
 							essence_->graph->rectangle(bground_r, true, bgcolor);
 					}
@@ -3475,11 +3500,11 @@ namespace nana
 					}
 				}
 			private:
-				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& r, nana::color bgcolor, item_state state)
+				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, nana::color bgcolor, item_state state)
 				{
 					const auto item_height = essence_->item_height();
 
-					rectangle bground_r{ x, y, width, item_height };
+					rectangle bground_r{ x + static_cast<int>(essence_->header.margin()), y, width, item_height };
 					auto graph = essence_->graph;
 
 					item_data item;
@@ -3514,7 +3539,7 @@ namespace nana
 
 					//Draw selecting inner rectangle
 					if (item.flags.selected && (categ.expand == false))
-						_m_draw_item_border(r.x, y, (std::min)(r.width, width - essence_->content_view->origin().x));
+						_m_draw_item_border(y);
 				}
 
 				color _m_draw_item_bground(const rectangle& bground_r, color bgcolor, color cell_color, item_state state, const item_data& item)
@@ -3563,8 +3588,7 @@ namespace nana
 				/// Draws an item
 				void _m_draw_item(const category_t& cat,
 					              const index_pair& item_pos, 
-					              const int x,                           ///< left coordinate ?
-					              const int y,                           ///< top coordinate 
+								  const point& coord,
 					              const int txtoff,                      ///< below y to print the text
 					              unsigned width, 
 					              const nana::rectangle& content_r,      ///< the rectangle where the full list content have to be drawn
@@ -3592,10 +3616,10 @@ namespace nana
 					auto graph = essence_->graph;
 
 					//draw the background for the whole item
-					rectangle bground_r{ content_r.x, y, show_w, essence_->item_height() };
+					rectangle bground_r{ content_r.x + static_cast<int>(essence_->header.margin()), coord.y, show_w, essence_->item_height() };
 					auto const state_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
-					int column_x = x;
+					int column_x = coord.x;
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
@@ -3638,8 +3662,8 @@ namespace nana
 									{
 										nana::rectangle imgt(item.img_show_size);
 										img_r = imgt;
-										img_r.x = content_pos + column_x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
-										img_r.y = y + (static_cast<int>(essence_->item_height()) - static_cast<int>(item.img_show_size.height)) / 2; // center
+										img_r.x = content_pos + coord.x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
+										img_r.y = coord.y + (static_cast<int>(essence_->item_height()) - static_cast<int>(item.img_show_size.height)) / 2; // center
 									}
 									content_pos += 18;  // image width, geom scheme?
 								}
@@ -3655,18 +3679,18 @@ namespace nana
 									//Make sure the user-define inline widgets is in the right visible rectangle.
 									rectangle pane_r;
 
-									const auto wdg_x = column_x + content_pos;
+									const auto wdg_x = coord.x + content_pos;
 									const auto wdg_w = col.width_px - static_cast<unsigned>(content_pos);
 
 									bool visible_state = true;
-									if (::nana::overlap(content_r, { wdg_x, y, wdg_w, essence_->item_height() }, pane_r))
+									if (::nana::overlap(content_r, { wdg_x, coord.y, wdg_w, essence_->item_height() }, pane_r))
 									{
 										::nana::point pane_pos;
 										if (wdg_x < content_r.x)
 											pane_pos.x = wdg_x - content_r.x;
 
-										if (y < content_r.y)
-											pane_pos.y = y - content_r.y;
+										if (coord.y < content_r.y)
+											pane_pos.y = coord.y - content_r.y;
 
 										inline_wdg->pane_widget.move(pane_pos);
 										inline_wdg->pane_bottom.move(pane_r);
@@ -3713,7 +3737,7 @@ namespace nana
 								{
 									col_fgcolor = m_cell.custom_format->fgcolor;
 
-									bground_r = rectangle{ column_x, y, col.width_px, essence_->item_height() };
+									bground_r = rectangle{ column_x, coord.y, col.width_px, essence_->item_height() };
 									col_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, m_cell.custom_format->bgcolor, state, item);
 								}
 								else
@@ -3730,27 +3754,28 @@ namespace nana
 										text_margin_right = essence_->scheme_ptr->text_margin;
 
 									graph->palette(true, col_fgcolor);
-									text_aligner.draw(m_cell.text, { column_x + content_pos, y + txtoff }, col.width_px - content_pos - text_margin_right);
+									text_aligner.draw(m_cell.text, { column_x + content_pos, coord.y + txtoff }, col.width_px - content_pos - text_margin_right);
 								}
 							}
 
 							if (0 == display_order)
 							{
 								if (essence_->checkable)
-									crook_renderer_.draw(*graph, col_bgcolor, col_fgcolor, essence_->checkarea(column_x, y), estate);
+									crook_renderer_.draw(*graph, col_bgcolor, col_fgcolor, essence_->checkarea(column_x, coord.y), estate);
 								if (item.img)
 									item.img.stretch(rectangle{ item.img.size() }, *graph, img_r);
 							}
 
-							graph->line({ column_x - 1, y }, { column_x - 1, y + static_cast<int>(essence_->item_height()) - 1 }, static_cast<color_rgb>(0xEBF4F9));
+							if (display_order > 0)
+								graph->line({ column_x - 1, coord.y }, { column_x - 1, coord.y + static_cast<int>(essence_->item_height()) - 1 }, static_cast<color_rgb>(0xEBF4F9));
 						}
 
 						column_x += col.width_px;
 					}
 
 					//Draw selecting inner rectangle
-					if(item.flags.selected)
-						_m_draw_item_border(content_r.x, y, show_w);
+					if (item.flags.selected)
+						_m_draw_item_border(coord.y);
 				}
 
 				inline_pane * _m_get_inline_pane(const category_t& cat, std::size_t column_pos) const
@@ -3789,10 +3814,26 @@ namespace nana
 					return nullptr;
 				}
 
-				void _m_draw_item_border(int x, int y, unsigned width) const
+				void _m_draw_item_border(int item_top) const
 				{
 					//Draw selecting inner rectangle
+					/*
 					rectangle r{ x, y, width, essence_->item_height() };
+
+					essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
+
+					essence_->graph->palette(false, colors::white);
+					paint::draw(*essence_->graph).corner(r, 1);
+
+					essence_->graph->rectangle(r.pare_off(1), false);
+					*/
+
+					rectangle r{
+						essence_->content_area().x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin()),
+						item_top,
+						essence_->header.pixels(),
+						essence_->item_height()
+					};
 
 					essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
 
@@ -3881,6 +3922,9 @@ namespace nana
 				{
 					using item_state = essence::item_state;
 					using parts = essence::parts;
+
+					//Cancel deferred deselection operation when mouse moves.
+					essence_->deselect_deferred = false;
 
 					bool need_refresh = false;
 
@@ -4023,18 +4067,18 @@ namespace nana
 									if (arg.shift)
 									{
 										//Set the first item as the begin of selected item if there
-										//is not a last selected item.(#154 reported by RenaudAlpes)
-										if (lister.last_selected_abs.empty() || lister.last_selected_abs.is_category())
-											lister.last_selected_abs.set_both(0);
+										//is not a latest selected item.(#154 reported by RenaudAlpes)
+										if (lister.latest_selected_abs.empty() || lister.latest_selected_abs.is_category())
+											lister.latest_selected_abs.set_both(0);
 
-										auto before = lister.last_selected_abs;
+										auto before = lister.latest_selected_abs;
 
-										lister.select_display_range_if(lister.last_selected_abs, item_pos, true, [](const index_pair&)
+										lister.select_display_range_if(lister.latest_selected_abs, item_pos, true, [](const index_pair&)
 										{
 											return true;
 										});
 
-										lister.last_selected_abs = before;
+										lister.latest_selected_abs = before;
 									}
 									else if (arg.ctrl)
 									{
@@ -4075,10 +4119,10 @@ namespace nana
 										if (item_ptr->flags.selected)
 										{
 											lister.cancel_others_if_single_enabled(true, abs_item_pos);
-											essence_->lister.last_selected_abs = abs_item_pos;
+											essence_->lister.latest_selected_abs = abs_item_pos;
 										}
-										else if (essence_->lister.last_selected_abs == abs_item_pos)
-											essence_->lister.last_selected_abs.set_both(npos);
+										else if (essence_->lister.latest_selected_abs == abs_item_pos)
+											essence_->lister.latest_selected_abs.set_both(npos);
 									}
 								}
 								else
@@ -4101,23 +4145,6 @@ namespace nana
 							}
 							update = true;
 						}
-						else
-						{
-							//Blank area is clicked
-
-							bool unselect_all = true;
-							if (!lister.single_status(true))	//not single selected
-							{
-								if (arg.ctrl || arg.shift)
-								{
-									essence_->mouse_selection.reverse_selection = arg.ctrl;
-									unselect_all = false;
-								}
-							}
-
-							if(unselect_all)
-								update = lister.select_for_all(false); //unselect all items due to the blank area being clicked
-						}
 
 						if(update)
 						{
@@ -4135,9 +4162,11 @@ namespace nana
 					{
 						//Start box selection if mulit-selection is enabled
 						if (arg.is_left_button() && (!lister.single_status(true)))
-							essence_->start_mouse_selection(arg.pos);
+							essence_->start_mouse_selection(arg);
 
-						lister.select_for_all(false);
+						//Deselection of all items is deferred to the mouse up event when ctrl or shift is not pressed
+						//Pressing ctrl or shift is to selects other items without deselecting current selections.
+						essence_->deselect_deferred = !(arg.ctrl || arg.shift);
 					}
 
 					if(update)
@@ -4175,6 +4204,12 @@ namespace nana
 					{
 						essence_->stop_mouse_selection();
 						need_refresh = true;
+					}
+
+					if (essence_->deselect_deferred)
+					{
+						essence_->deselect_deferred = false;
+						need_refresh |= (essence_->lister.select_for_all(false));
 					}
 
 					if (need_refresh)
@@ -4242,17 +4277,18 @@ namespace nana
 
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
-					bool up = false;
+					// Exit if list is empty
+					if (essence_->lister.first().empty())
+						return;
 
-                    if (essence_->lister.cat_container().size() == 1 && essence_->lister.size_item(0)==0)
-                       return ;
+					bool upward = false;
 
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
-						up = true;
+						upward = true;
 					case keyboard::os_arrow_down:
-						essence_->lister.move_select(up, !arg.shift, true);
+						essence_->lister.move_select(upward, !arg.shift, true);
 						break;
 					case L' ':
 						{
@@ -4263,18 +4299,18 @@ namespace nana
 						}
 						break;
 					case keyboard::os_pageup :
-						up = true;
+						upward = true;
 					case keyboard::os_pagedown:
 						{
 							//Turns page, then returns if no change occurs
-							if (!essence_->content_view->turn_page(!up, false))
+							if (!essence_->content_view->turn_page(!upward, false))
 								return;
 
 							essence_->lister.select_for_all(false);
 
 							auto idx = essence_->first_display();
 
-							if (!up)
+							if (!upward)
 								idx = essence_->lister.advance(idx, static_cast<int>(essence_->count_of_exposed(false)) - 1);
 
 							if (!idx.is_category())
@@ -4285,20 +4321,59 @@ namespace nana
 							break;
 						}
 					case keyboard::os_home:
+					case keyboard::os_end:
 						{
 							essence_->lister.select_for_all(false);
 
-							index_pair frst{essence_->lister.first()};
-							if (! frst.is_category())
-								item_proxy::from_display(essence_, frst).select(true);
-							else if (!essence_->lister.single_status(true))	//not selected
-								essence_->lister.cat_status(frst.cat, true, true);
+							auto pos = (keyboard::os_home == arg.key ? essence_->lister.first() : essence_->lister.last());
+							if (!pos.empty())
+							{
+								//When the pos indicates an empty category, then search forwards/backwards(depending on arg.key whether it is Home or End) for a non empty category.
+								//When a non-empty category is found, assign the pos to the first/last item of the category if the category is expanded.
+								if (pos.is_category())
+								{
+									if (keyboard::os_home == arg.key)
+									{
+										while (0 == essence_->lister.size_item(pos.cat))
+										{
+											if (++pos.cat >= essence_->lister.cat_container().size())
+											{
+												pos = index_pair{ npos, npos };
+												break;
+											}
+										}
+									}
+									else
+									{
+										while (0 == essence_->lister.size_item(pos.cat))
+										{
+											if (pos.cat-- == 0)
+											{
+												pos = index_pair{ npos, npos };
+												break;
+											}
+										}
+									}
 
-							break;
+									if (!pos.empty())
+									{
+										if (essence_->lister.expand(pos.cat))
+											pos.item = 0;
+									}
+								}
+
+								if (!pos.empty())
+								{
+									if (pos.is_category())
+									{
+										if (!essence_->lister.single_status(true)) //multiple selection is not enabled
+											essence_->lister.cat_status(pos.cat, true, true);
+									}
+									else
+										item_proxy::from_display(essence_, pos).select(true);
+								}
+							}
 						}
-					case keyboard::os_end:
-						essence_->lister.select_for_all(false);
-						item_proxy::from_display(essence_, essence_->lister.last()).select(true);
 						break;
 					default:
 						return;
@@ -4320,9 +4395,12 @@ namespace nana
 							return;
 						}
 					case keyboard::select_all :
-						essence_->lister.select_for_all(true);
-						refresh(graph);
-					    API::dev::lazy_refresh();
+						if (!essence_->lister.single_status(true))
+						{
+							essence_->lister.select_for_all(true);
+							refresh(graph);
+							API::dev::lazy_refresh();
+						}
                         break;
 					default:
 						return;
@@ -4420,10 +4498,10 @@ namespace nana
 					if (m.flags.selected)
 					{
 						ess_->lister.cancel_others_if_single_enabled(true, pos_);	//Cancel all selections except pos_ if single_selection is enabled.
-						ess_->lister.last_selected_abs = pos_;
+						ess_->lister.latest_selected_abs = pos_;
 					}
-					else if (ess_->lister.last_selected_abs == pos_)
-							ess_->lister.last_selected_abs.set_both(npos);
+					else if (ess_->lister.latest_selected_abs == pos_)
+						ess_->lister.latest_selected_abs.set_both(npos);
 
 					if (scroll_view)
 					{
@@ -4697,7 +4775,7 @@ namespace nana
                     for (item_proxy &it : *this )
                         it.select(sel);
 
-                    ess_->lister.last_selected_abs =  index_pair {this->pos_, npos};
+                    ess_->lister.latest_selected_abs = index_pair {this->pos_, npos};
 
                     return *this;
                 }
@@ -5140,6 +5218,15 @@ namespace nana
 			ess.update();
 		}
 
+		rectangle listbox::content_area() const
+		{
+			auto & ess = _m_ess();
+			auto carea = ess.content_area();
+			carea.x += ess.header.margin();
+			carea.width -= (std::min)(carea.width, ess.header.margin());
+			return carea;
+		}
+
 		auto listbox::insert(cat_proxy cat, std::string str) -> cat_proxy
 		{
 			internal_scope_guard lock;
@@ -5312,7 +5399,6 @@ namespace nana
 		{
 			auto & ess = _m_ess();
 			ess.lister.erase();
-			//ess.first_display(ess.lister.first());
 			ess.calc_content_size();
 			ess.update();
 		}

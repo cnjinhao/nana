@@ -65,6 +65,7 @@ namespace skeletons
 		void draw_corner(graph_reference);
 
 		rectangle view_area() const;
+		rectangle view_area(const size& alt_content_size) const;
 
 		unsigned extra_space(bool horz) const;
 
@@ -73,7 +74,7 @@ namespace skeletons
 		/// Returns true if the origin is moved
 		bool move_origin(const point& skew);
 
-		void sync(bool try_update);
+		void sync(bool passive);
 
 		void pursue(const point& cursor);
 

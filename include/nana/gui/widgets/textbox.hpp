@@ -257,6 +257,17 @@ namespace nana
 		 * @param len The length of the queue. If this parameter is zero, the undo/redo is disabled.
 		 */
 		void set_undo_queue_length(std::size_t len);
+
+		/// Returns the number of lines that text are displayed in the screen.
+		/**
+		 * The number of display lines may be not equal to the number of text lines when the textbox
+		 * is line wrapped mode.
+		 * @return the number of lines that text are displayed in the screen.
+		 */
+		std::size_t display_line_count() const noexcept;
+
+		/// Returns the number of text lines.
+		std::size_t text_line_count() const noexcept;
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const throw() override;

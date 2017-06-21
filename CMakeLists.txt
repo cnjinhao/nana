@@ -66,6 +66,7 @@ endif()
 
 if(WIN32)
     add_definitions(-DWIN32)
+    set(CMAKE_DEBUG_POSTFIX "_d")
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
         option(MSVC_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
@@ -100,7 +101,7 @@ endif(WIN32)
 if(APPLE)
     add_definitions(-DAPPLE)
     include_directories(/opt/X11/include/)
-    set(NANA_LINKS "${NANA_LINKS} -L/opt/X11/lib/ -liconv")
+    list(APPEND NANA_LINKS -L/opt/X11/lib/ -liconv)
     set(ENABLE_AUDIO OFF)
 elseif(UNIX)
     add_definitions(-Dlinux)
@@ -108,11 +109,11 @@ elseif(UNIX)
 endif(APPLE)
 
 if(UNIX)
-    set(NANA_LINKS "${NANA_LINKS} -lX11")
+    list(APPEND NANA_LINKS -lX11)
     find_package(Freetype)
     if (FREETYPE_FOUND)
         include_directories( ${FREETYPE_INCLUDE_DIRS})
-        set(NANA_LINKS "${NANA_LINKS} -lXft")  
+        list(APPEND NANA_LINKS -lXft)
     endif(FREETYPE_FOUND)
 endif(UNIX)
 
@@ -140,13 +141,13 @@ endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 # enable static linkage     # GNU || CLang not MinGW
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
     # set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
-    set(NANA_LINKS "${NANA_LINKS} -static-libgcc -static-libstdc++  -pthread")
+    list(APPEND NANA_LINKS -static-libgcc -static-libstdc++ -pthread)
     # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
 	                                                                     # IS_GNUCXX < 5.3
     else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
        # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
-       set(NANA_LINKS "${NANA_LINKS} -lstdc++fs") 
+       list(APPEND NANA_LINKS -lstdc++fs)
     endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
     
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
@@ -154,7 +155,7 @@ endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") # 
 
 if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
   # set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
-  set(NANA_LINKS "${NANA_LINKS} -stdlib=libstdc++")
+  list(APPEND NANA_LINKS -stdlib=libstdc++)
 endif ()
 
 
@@ -163,11 +164,11 @@ endif ()
 # Find PNG
 if(NANA_CMAKE_ENABLE_PNG)
     add_definitions(-DNANA_ENABLE_PNG)
-    set(NANA_LINKS "${NANA_LINKS} -lpng")
     if(NANA_CMAKE_LIBPNG_FROM_OS)
         find_package(PNG)
         if (PNG_FOUND)
             include_directories( ${PNG_INCLUDE_DIRS})
+            list(APPEND NANA_LINKS ${PNG_LIBRARIES})
             add_definitions(-DUSE_LIBPNG_FROM_OS)
         endif(PNG_FOUND)
     endif(NANA_CMAKE_LIBPNG_FROM_OS)
@@ -176,11 +177,11 @@ endif(NANA_CMAKE_ENABLE_PNG)
 # Find JPEG
 if(NANA_CMAKE_ENABLE_JPEG)
     add_definitions(-DNANA_ENABLE_JPEG)
-    set(NANA_LINKS "${NANA_LINKS} -ljpeg")
     if(NANA_CMAKE_LIBJPEG_FROM_OS)
         find_package(JPEG)
         if (JPEG_FOUND)
-            include_directories( ${JPEG_INCLUDE_DIRS})
+            include_directories( ${JPEG_INCLUDE_DIR})
+            list(APPEND NANA_LINKS ${JPEG_LIBRARY})
             add_definitions(-DUSE_LIBJPEG_FROM_OS)
         endif(JPEG_FOUND)
     endif(NANA_CMAKE_LIBJPEG_FROM_OS)
@@ -193,7 +194,7 @@ if(NANA_CMAKE_ENABLE_AUDIO)
         find_package(ASOUND)
         if (ASOUND_FOUND)
             include_directories( ${ASOUND_INCLUDE_DIRS})
-            set(NANA_LINKS "${NANA_LINKS}  -lasound")
+            list(APPEND NANA_LINKS -lasound)
         else(ASOUND_FOUND)
             message(FATAL_ERROR "libasound is not found")
         endif(ASOUND_FOUND)
@@ -217,7 +218,7 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     if (Boost_FOUND)
         add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
         include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
-        set(NANA_LINKS "${NANA_LINKS} ${Boost_LIBRARIES}")    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
+        list(APPEND NANA_LINKS ${Boost_LIBRARIES})    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
     endif (Boost_FOUND)
     set(Boost_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC_RUNTIME ON)  # ??

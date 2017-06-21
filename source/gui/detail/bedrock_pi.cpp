@@ -131,7 +131,7 @@ namespace nana
 				if (((0 == thread_id) || (wd->thread_id == thread_id)) && (wd->root != root))
 				{
 					root = wd->root;
-					if (roots.cend() == std::find(roots.cbegin(), roots.cend(), root))
+					if (roots.end() == std::find(roots.begin(), roots.end(), root))
 						roots.emplace_back(root);
 				}
 			}

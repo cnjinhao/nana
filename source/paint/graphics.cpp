@@ -509,9 +509,7 @@ namespace paint
 			nana::size sz;
 			if(impl_->handle && impl_->handle->context && str.size())
 			{
-				std::vector<unicode_bidi::entity> reordered;
-				unicode_bidi bidi;
-				bidi.linestr(str.c_str(), str.size(), reordered);
+				auto const reordered = unicode_reorder(str.c_str(), str.size());
 				for(auto & i: reordered)
 				{
 					nana::size t = text_extent_size(i.begin, i.end - i.begin);
@@ -958,9 +956,8 @@ namespace paint
 		unsigned graphics::bidi_string(const nana::point& pos, const wchar_t * str, std::size_t len)
 		{
 			auto moved_pos = pos;
-			unicode_bidi bidi;
-			std::vector<unicode_bidi::entity> reordered;
-			bidi.linestr(str, len, reordered);
+
+			auto const reordered = unicode_reorder(str, len);
 			for (auto & i : reordered)
 			{
 				string(moved_pos, i.begin, i.end - i.begin);
@@ -1208,7 +1205,8 @@ namespace paint
 			unsigned last_color = (int(r) << 16) | (int(g) << 8) | int(b);
 
 			Display * disp = nana::detail::platform_spec::instance().open_display();
-			impl_->handle->fgcolor(static_cast<color_rgb>(last_color));
+			impl_->handle->set_color(static_cast<color_rgb>(last_color));
+			impl_->handle->update_color();
 			const int endpos = deltapx + (vertical ? rct.y : rct.x);
 			if (endpos > 0)
 			{
@@ -1223,7 +1221,8 @@ namespace paint
 						if (new_color != last_color)
 						{
 							last_color = new_color;
-							impl_->handle->fgcolor(static_cast<color_rgb>(last_color));
+							impl_->handle->set_color(static_cast<color_rgb>(last_color));
+							impl_->handle->update_color();
 						}
 					}
 				}
@@ -1238,7 +1237,8 @@ namespace paint
 						if (new_color != last_color)
 						{
 							last_color = new_color;
-							impl_->handle->fgcolor(static_cast<color_rgb>(last_color));
+							impl_->handle->set_color(static_cast<color_rgb>(last_color));
+							impl_->handle->update_color();
 						}
 					}
 				}

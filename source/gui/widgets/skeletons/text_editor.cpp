@@ -18,6 +18,7 @@
 #include <nana/gui/widgets/widget.hpp>
 #include "content_view.hpp"
 
+#include <deque>
 #include <numeric>
 #include <cwctype>
 #include <cstring>
@@ -45,7 +46,7 @@ namespace nana{	namespace widgets
 		{
 		public:
 			using command = EnumCommand;
-			using container = std::deque < std::unique_ptr<undoable_command_interface<command>> >;
+			using container = std::deque<std::unique_ptr<undoable_command_interface<command>>>;
 
 			void clear()
 			{
@@ -142,6 +143,11 @@ namespace nana{	namespace widgets
 				//sel_a_ and sel_b_ are not sorted, sel_b_ keeps the caret position.
 				sel_a_ = editor_.select_.a;
 				sel_b_ = editor_.select_.b;
+
+				if (sel_a_ != sel_b_)
+				{
+					selected_text_ = editor_._m_make_select_string();
+				}
 			}
 
 			void set_caret_pos()
@@ -178,8 +184,7 @@ namespace nana{	namespace widgets
 
 			void set_removed(std::wstring str)
 			{
-				//use selected_text_ as removed text
-				selected_text_ = str;
+				selected_text_ = std::move(str);
 			}
 
 			void execute(bool redo) override
@@ -286,15 +291,15 @@ namespace nana{	namespace widgets
 						}
 						else
 							editor_.textbase().erase(pos_.y, pos_.x, text_.size());	//undo
+					}
 
-						if (!selected_text_.empty())
-						{
-							editor_.points_.caret = sel_a_;
-							editor_._m_put(selected_text_);
-							editor_.points_.caret = sel_b_;
-							editor_.select_.a = sel_a_;	//Reset the selected text
-							editor_.select_.b = sel_b_;
-						}
+					if (!selected_text_.empty())
+					{
+						editor_.points_.caret = (std::min)(sel_a_, sel_b_);
+						editor_._m_put(selected_text_);
+						editor_.points_.caret = sel_b_;
+						editor_.select_.a = sel_a_;	//Reset the selected text
+						editor_.select_.b = sel_b_;
 					}
 				}
 				editor_.move_caret(editor_.points_.caret);
@@ -406,11 +411,11 @@ namespace nana{	namespace widgets
 
 			std::shared_ptr<colored_area_type> find(std::size_t pos) const
 			{
-				for (auto i = colored_areas_.cbegin(); i != colored_areas_.cend(); ++i)
+				for (auto & sp : colored_areas_)
 				{
-					if (i->get()->begin <= pos && pos < i->get()->begin + i->get()->count)
-						return *i;
-					else if (i->get()->begin > pos)
+					if (sp->begin <= pos && pos < sp->begin + sp->count)
+						return sp;
+					else if (sp->begin > pos)
 						break;
 				}
 				return{};
@@ -440,7 +445,7 @@ namespace nana{	namespace widgets
 					);
 			}
 
-			bool clear()
+			bool clear() override
 			{
 				if (colored_areas_.empty())
 					return false;
@@ -555,7 +560,6 @@ namespace nana{	namespace widgets
 			virtual std::size_t take_lines() const = 0;
 			/// Returns the number of lines that the line of text specified by pos takes.
 			virtual std::size_t take_lines(std::size_t pos) const = 0;
-			virtual bool adjust_caret_into_screen() = 0;
 		};
 
 		inline bool is_right_text(const unicode_bidi::entity& e)
@@ -623,7 +627,9 @@ namespace nana{	namespace widgets
 				//textbase is implement by using deque, and the linemtr holds the text pointers
 				//If the textbase is changed, it will check the text pointers.
 				std::size_t line = 0;
-				for (auto & sct : this->sections_)
+
+				auto const & const_sections = sections_;
+				for (auto & sct : const_sections)
 				{
 					auto const& text = editor_.textbase().getline(line);
 					if (sct.begin < text.c_str() || (text.c_str() + text.size() < sct.begin))
@@ -646,7 +652,9 @@ namespace nana{	namespace widgets
 					//textbase is implement by using deque, and the linemtr holds the text pointers
 					//If the textbase is changed, it will check the text pointers.
 					std::size_t line = 0;
-					for (auto & sct : this->sections_)
+
+					auto const & const_sections = sections_;
+					for (auto & sct : const_sections)
 					{
 						if (line < pos || (pos + line_size) <= line)
 						{
@@ -664,8 +672,8 @@ namespace nana{	namespace widgets
 				auto const & text = editor_.textbase().getline(pos);
 				auto& txt_section = this->sections_[pos];
 				txt_section.begin = text.c_str();
-				txt_section.end = text.c_str() + text.size();
-				txt_section.pixels = editor_._m_text_extent_size(text.c_str(), text.size()).width;
+				txt_section.end = txt_section.begin + text.size();
+				txt_section.pixels = editor_._m_text_extent_size(txt_section.begin, text.size()).width;
 			}
 
 			void pre_calc_lines(unsigned) override
@@ -684,62 +692,6 @@ namespace nana{	namespace widgets
 			std::size_t take_lines(std::size_t) const override
 			{
 				return 1;
-			}
-
-			//adjust_caret_into_screen
-			//@brief:	Adjust the text offset in order to moving caret into visible area if it is out of the visible area
-			//@note:	the function assumes the points_.caret is correct
-			bool adjust_caret_into_screen() override
-			{
-				const auto scrlines = editor_.screen_lines();
-				if (0 == scrlines)
-					return false;
-
-				auto const pre_origin = editor_.impl_->cview->origin();
-				auto origin = pre_origin;
-
-				auto& points = editor_.points_;
-				auto& textbase = editor_.textbase();
-
-				auto&	lnstr = textbase.getline(points.caret.y);
-				const auto x = (std::min)(points.caret.x, static_cast<decltype(points.caret.x)>(lnstr.size()));
-				auto const text_w = editor_._m_pixels_by_char(lnstr, x);
-
-				auto area_w = editor_.impl_->cview->view_area().width;
-
-				if (static_cast<int>(text_w) < origin.x)
-				{
-					auto delta_pixels = editor_._m_text_extent_size(L"    ", 4).width;
-					origin.x = (text_w > delta_pixels ? text_w - delta_pixels : 0);
-				}
-				else if (area_w && (text_w >= origin.x + area_w))
-					origin.x = text_w - area_w + 2;
-
-				int row = origin.y / static_cast<int>(editor_.line_height());
-				if (points.caret.y >= row + scrlines)	//implicit condition scrlines > 0
-				{
-					row = static_cast<int>(points.caret.y - scrlines) + 1;
-				}
-				else if (static_cast<int>(points.caret.y) < row)
-				{
-					if (scrlines >= static_cast<unsigned>(row))
-						row = 0;
-					else
-						row = static_cast<int>(row - scrlines);
-				}
-				else if (row && (textbase.lines() <= scrlines))
-					row = 0;
-
-				if(row != origin.y / static_cast<int>(editor_.line_height()))
-					origin.y = row * editor_.line_height();
-
-				if (pre_origin != origin)
-				{
-					editor_.impl_->cview->move_origin(origin - pre_origin);
-					editor_.impl_->cview->sync(true);
-					return true;
-				}
-				return false;
 			}
 		private:
 			text_editor& editor_;
@@ -773,9 +725,9 @@ namespace nana{	namespace widgets
 				if ((0 == editor_.textbase().lines()) || (0 == line_px))
 					return coord;
 
-				auto screen_rows = (top - editor_.text_area_.area.y + editor_.impl_->cview->origin().y) / line_px;
+				auto text_row = (std::max)(0, (top - editor_.text_area_.area.y + editor_.impl_->cview->origin().y) / line_px);
 
-				coord = _m_textline(static_cast<std::size_t>(screen_rows));
+				coord = _m_textline(static_cast<std::size_t>(text_row));
 				if (linemtr_.size() <= coord.first)
 				{
 					coord.first = linemtr_.size() - 1;
@@ -795,22 +747,11 @@ namespace nana{	namespace widgets
 					std::swap(first, second);
 
 				if (second < linemtr_.size())
-					linemtr_.erase(linemtr_.begin() + first + 1, linemtr_.begin() + second);
+					linemtr_.erase(linemtr_.begin() + first + 1, linemtr_.begin() + second + 1);
 
-				pre_calc_line(first, editor_.width_pixels());
+				auto const width_px = editor_.width_pixels();
 
-				//textbase is implement by using deque, and the linemtr holds the text pointers
-				//If the textbase is changed, it will check the text pointers.
-				std::size_t line = 0;
-				for (auto & mtr: linemtr_)
-				{
-					auto& linestr = editor_.textbase().getline(line);
-					auto p = mtr.line_sections.front().begin;
-					if (p < linestr.c_str() || (linestr.c_str() + linestr.size() < p))
-						pre_calc_line(line, editor_.width_pixels());
-
-					++line;
-				}
+				pre_calc_line(first, width_px);
 			}
 
 			void add_lines(std::size_t pos, std::size_t lines) override
@@ -823,7 +764,9 @@ namespace nana{	namespace widgets
 					//textbase is implement by using deque, and the linemtr holds the text pointers
 					//If the textbase is changed, it will check the text pointers.
 					std::size_t line = 0;
-					for (auto & mtr : linemtr_)
+
+					auto const & const_linemtr = linemtr_;
+					for (auto & mtr : const_linemtr)
 					{
 						if (line < pos || (pos + lines) <= line)
 						{
@@ -942,42 +885,6 @@ namespace nana{	namespace widgets
 			{
 				return (pos < linemtr_.size() ? linemtr_[pos].take_lines : 0);
 			}
-
-			bool adjust_caret_into_screen() override
-			{
-				const auto scrlines = editor_.screen_lines();
-				if (0 == scrlines)
-					return false;
-
-				const auto & points = editor_.points_;
-				auto off_coord = _m_textline(static_cast<std::size_t>(editor_._m_text_topline()));
-
-				nana::upoint caret_secondary;
-				editor_._m_pos_secondary(points.caret, caret_secondary);
-
-				//Use the caret line for the offset line when caret is in front of current offset line.
-				if (off_coord.first > points.caret.y || ((off_coord.first == points.caret.y) && (off_coord.second > caret_secondary.y)))
-				{
-					//Use the line which was specified by points.caret for the first line.
-					_m_set_offset_by_secondary(row_coordinate(points.caret.y, caret_secondary.y));
-					return true;
-				}
-
-				//Find the last screen line. If the text does not reach the bottom of screen,
-				//do not adjust the offset line.
-				row_coordinate bottom;
-				if (false == _m_advance_secondary(off_coord, static_cast<int>(scrlines - 1), bottom))
-					return false;
-
-				//Do not adjust the offset line if the caret line does not reach the bottom line.
-				if (points.caret.y < bottom.first || ((points.caret.y == bottom.first) && (caret_secondary.y <= bottom.second)))
-					return false;
-
-				_m_advance_secondary(row_coordinate(points.caret.y, caret_secondary.y), -static_cast<int>(scrlines - 1), bottom);
-
-				_m_set_offset_by_secondary(bottom);
-				return true;
-			}
 		private:
 			void _m_text_section(const std::wstring& str, std::vector<text_section>& tsec)
 			{
@@ -1012,90 +919,6 @@ namespace nana{	namespace widgets
 
 				if(word)
 					tsec.emplace_back(word, end, unsigned{});
-			}
-
-			void _m_set_offset_by_secondary(row_coordinate row)
-			{
-				for (auto i = linemtr_.begin(), end = linemtr_.begin() + row.first; i != end; ++i)
-					row.second += i->take_lines;
-
-				auto origin = editor_.impl_->cview->origin();
-				origin.y = static_cast<int>(row.second * editor_.line_height());
-				editor_.impl_->cview->move_origin(origin - editor_.impl_->cview->origin());
-			}
-
-			bool _m_advance_secondary(row_coordinate row, int distance, row_coordinate& new_row)
-			{
-				if ((row.first >= linemtr_.size()) || (row.second >= linemtr_[row.first].take_lines))
-					return false;
-
-				if (0 == distance)
-				{
-					new_row = row;
-					return true;
-				}
-
-				if (distance < 0)
-				{
-					std::size_t n = static_cast<std::size_t>(-distance);
-
-					if (row.second > n)
-					{
-						new_row.first = row.first;
-						new_row.second = row.second - n;
-						return true;
-					}
-
-					if (0 == row.first)
-						return false;
-
-					--row.first;
-					n -= (row.second + 1);
-
-					while (true)
-					{
-						auto lines = linemtr_[row.first].take_lines;
-						if (lines >= n)
-						{
-							new_row.first = row.first;
-							new_row.second = lines - n;
-							return true;
-						}
-						if (0 == row.first)
-							return false;
-
-						--row.first;
-						n -= lines;
-					}
-				}
-				else
-				{
-					std::size_t n = static_cast<std::size_t>(distance);
-
-					auto delta_lines = linemtr_[row.first].take_lines - (row.second + 1);
-
-					if (delta_lines >= n)
-					{
-						new_row.first = row.first;
-						new_row.second = row.second + n;
-						return true;
-					}
-
-					n -= delta_lines;
-
-					while (++row.first < linemtr_.size())
-					{
-						auto & mtr = linemtr_[row.first];
-						if (mtr.take_lines >= n)
-						{
-							new_row.first = row.first;
-							new_row.second = n - 1;
-							return true;
-						}
-						n -= mtr.take_lines;
-					}
-				}
-				return false;
 			}
 
 			row_coordinate _m_textline(std::size_t scrline) const
@@ -1236,6 +1059,12 @@ namespace nana{	namespace widgets
 				this->reset_caret();
 			};
 
+			impl_->cview->events().hover_outside = [this](const point& pos) {
+				mouse_caret(pos, false);
+				if (selection::mode::mouse_selected == select_.mode_selection || selection::mode::method_selected == select_.mode_selection)
+					set_end_caret(false);
+			};
+
 			API::create_caret(wd, { 1, line_height() });
 			API::bgcolor(wd, colors::white);
 			API::fgcolor(wd, colors::black);
@@ -1247,6 +1076,11 @@ namespace nana{	namespace widgets
 
 			delete impl_->capacities.behavior;
 			delete impl_;
+		}
+
+		size text_editor::caret_size() const
+		{
+			return { 1, line_height() };
 		}
 
 		void text_editor::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
@@ -1411,10 +1245,9 @@ namespace nana{	namespace widgets
 				return false;
 
 			_m_reset();
-			impl_->capacities.behavior->pre_calc_lines(width_pixels());
 
 			impl_->try_refresh = sync_graph::refresh;
-			_m_reset_content_size();
+			_m_reset_content_size(true);
 			return true;
 		}
 
@@ -1680,7 +1513,7 @@ namespace nana{	namespace widgets
 					API::set_capture(window_, true);
 					text_area_.captured = true;
 
-					if (this->hit_select_area(_m_screen_to_caret(arg.pos), true))
+					if (this->hit_select_area(_m_coordinate_to_caret(arg.pos), true))
 					{
 						//The selected of text can be moved only if it is editable
 						if (attributes_.editable)
@@ -1732,7 +1565,7 @@ namespace nana{	namespace widgets
 						//no move occurs
 						select(false);
 
-						move_caret(_m_screen_to_caret(arg.pos));
+						move_caret(_m_coordinate_to_caret(arg.pos));
 					}
 
 					select_.mode_selection = selection::mode::no_selected;
@@ -1798,10 +1631,10 @@ namespace nana{	namespace widgets
 
 				if (graph_)
 				{
-					impl_->capacities.behavior->adjust_caret_into_screen();
+					this->_m_adjust_view();
+
 					reset_caret();
 					impl_->try_refresh = sync_graph::refresh;
-					points_.xpos = 0;
 
 					//_m_put calcs the lines
 					_m_reset_content_size(false);
@@ -1832,7 +1665,7 @@ namespace nana{	namespace widgets
 			const unsigned line_pixels = line_height();
 
 			//The coordinate of caret
-			auto coord = _m_caret_to_screen(crtpos);
+			auto coord = _m_caret_to_coordinate(crtpos);
 
 			const int line_bottom = coord.y + static_cast<int>(line_pixels);
 
@@ -1863,7 +1696,7 @@ namespace nana{	namespace widgets
 			//Adjust the caret into screen when the caret position is modified by this function
 			if (reset_caret && (!hit_text_area(coord)))
 			{
-				impl_->capacities.behavior->adjust_caret_into_screen();
+				this->_m_adjust_view();
 				impl_->try_refresh = sync_graph::refresh;
 				caret->visible(true);
 				return true;
@@ -1947,9 +1780,8 @@ namespace nana{	namespace widgets
 		{
 			bool new_sel_end = (select_.b != points_.caret);
 			select_.b = points_.caret;
-			points_.xpos = points_.caret.x;
 
-			if(new_sel_end || (stay_in_view && impl_->capacities.behavior->adjust_caret_into_screen()))
+			if (new_sel_end || (stay_in_view && this->_m_adjust_view()))
 				impl_->try_refresh = sync_graph::refresh;
 		}
 
@@ -1985,7 +1817,7 @@ namespace nana{	namespace widgets
 			{
 				points_.caret = select_.b;
 
-				if (impl_->capacities.behavior->adjust_caret_into_screen())
+				if (this->_m_adjust_view())
 					impl_->try_refresh = sync_graph::refresh;
 
 				reset_caret();
@@ -1994,7 +1826,7 @@ namespace nana{	namespace widgets
 
 			if (_m_move_select(true))
 			{
-				impl_->capacities.behavior->adjust_caret_into_screen();
+				this->_m_adjust_view();
 				impl_->try_refresh = sync_graph::refresh;
 				return true;
 			}
@@ -2038,6 +1870,14 @@ namespace nana{	namespace widgets
 		void text_editor::select_behavior(bool move_to_end)
 		{
 			select_.move_to_end = move_to_end;
+		}
+
+		std::size_t text_editor::line_count(bool text_lines) const
+		{
+			if (text_lines)
+				return textbase().lines();
+
+			return impl_->capacities.behavior->take_lines();
 		}
 
 		void text_editor::draw_corner()
@@ -2115,13 +1955,14 @@ namespace nana{	namespace widgets
 
 			impl_->undo.push(std::move(undo_ptr));
 
+			_m_reset_content_size(true);
+
 			if(graph_)
 			{
-				impl_->capacities.behavior->adjust_caret_into_screen();
+				this->_m_adjust_view();
+
 				reset_caret();
 				impl_->try_refresh = sync_graph::refresh;
-				_m_reset_content_size(true);
-				points_.xpos = points_.caret.x;
 			}
 		}
 
@@ -2146,6 +1987,7 @@ namespace nana{	namespace widgets
 
 			points_.caret.x ++;
 
+			_m_reset_content_size();
 
 			if (!refresh)
 			{
@@ -2155,8 +1997,6 @@ namespace nana{	namespace widgets
 			else
 				impl_->try_refresh = sync_graph::refresh;
 
-			_m_reset_content_size();
-			points_.xpos = points_.caret.x;
 		}
 
 		void text_editor::copy() const
@@ -2208,11 +2048,9 @@ namespace nana{	namespace widgets
 				return;
 
 			auto undo_ptr = std::unique_ptr<undo_input_text>(new undo_input_text(*this, std::wstring(1, '\n')));
-			bool need_refresh = (select_.a != select_.b);
 
 			undo_ptr->set_selected_text();
-			if(need_refresh)
-				points_.caret = _m_erase_select();
+			points_.caret = _m_erase_select();
 
 			undo_ptr->set_caret_pos();
 
@@ -2244,12 +2082,7 @@ namespace nana{	namespace widgets
 			points_.caret.x = 0;
 
 			auto origin = impl_->cview->origin();
-			if (origin.x || (points_.caret.y < textbase.lines()) || textbase.getline(points_.caret.y).size())
-			{
-				origin.x = -origin.x;
-				impl_->cview->move_origin(origin);
-				need_refresh = true;
-			}
+			origin.x = 0;
 
 			if (impl_->indent.enabled)
 			{
@@ -2267,37 +2100,33 @@ namespace nana{	namespace widgets
 						put(text);
 				}
 			}
+			else
+				_m_reset_content_size();
 
-			impl_->cview->move_origin(origin - impl_->cview->origin());
-			if (impl_->capacities.behavior->adjust_caret_into_screen() || need_refresh)
+			auto origin_moved = impl_->cview->move_origin(origin - impl_->cview->origin());
+
+			if (this->_m_adjust_view() || origin_moved)
 				impl_->cview->sync(true);
-
-			_m_reset_content_size();
 		}
 
 		void text_editor::del()
 		{
-			bool has_erase = true;
-
 			if(select_.a == select_.b)
 			{
 				if(textbase().getline(points_.caret.y).size() > points_.caret.x)
 				{
 					++points_.caret.x;
 				}
-				else if(points_.caret.y + 1 < textbase().lines())
+				else if (points_.caret.y + 1 < textbase().lines())
 				{	//Move to next line
 					points_.caret.x = 0;
-					++ points_.caret.y;
+					++points_.caret.y;
 				}
 				else
-					has_erase = false;	//No characters behind the caret
+					return;	//No characters behind the caret
 			}
 
-			if(has_erase)	backspace();
-
-			_m_reset_content_size();
-			points_.xpos = points_.caret.x;
+			backspace();
 		}
 
 		void text_editor::backspace(bool record_undo)
@@ -2320,7 +2149,7 @@ namespace nana{	namespace widgets
 					textbase.erase(points_.caret.y, points_.caret.x, erase_number);
 					_m_pre_calc_lines(points_.caret.y, 1);
 
-					if(_m_move_offset_x_while_over_border(-2) == false)
+					if (!this->_m_adjust_view())
 					{
 						_m_update_line(points_.caret.y, secondary);
 						has_to_redraw = false;
@@ -2339,8 +2168,6 @@ namespace nana{	namespace widgets
 			}
 			else
 			{
-				undo_ptr->set_removed(this->_m_make_select_string());
-
 				undo_ptr->set_selected_text();
 				points_.caret = _m_erase_select();
 				undo_ptr->set_caret_pos();
@@ -2349,11 +2176,11 @@ namespace nana{	namespace widgets
 			if (record_undo)
 				impl_->undo.push(std::move(undo_ptr));
 
-			_m_reset_content_size(has_to_redraw);
+			_m_reset_content_size(false);
 
 			if(has_to_redraw)
 			{
-				impl_->capacities.behavior->adjust_caret_into_screen();
+				this->_m_adjust_view();
 				impl_->try_refresh = sync_graph::refresh;
 			}
 		}
@@ -2367,7 +2194,7 @@ namespace nana{	namespace widgets
 
 			_m_reset_content_size(true);
 
-			impl_->capacities.behavior->adjust_caret_into_screen();
+			this->_m_adjust_view();
 			impl_->try_refresh = sync_graph::refresh;
 		}
 
@@ -2391,10 +2218,8 @@ namespace nana{	namespace widgets
 				if(points_.caret.x)
 				{
 					--points_.caret.x;
-
 					pending = false;
-					bool adjust_y = (attributes_.line_wrapped && impl_->capacities.behavior->adjust_caret_into_screen());
-					if (_m_move_offset_x_while_over_border(-2) || adjust_y)
+					if (this->_m_adjust_view())
 						impl_->try_refresh = sync_graph::refresh;
 				}
 				else if (points_.caret.y) //Move to previous line
@@ -2403,39 +2228,33 @@ namespace nana{	namespace widgets
 					pending = false;
 			}
 
-			if (pending && impl_->capacities.behavior->adjust_caret_into_screen())
+			if (pending && this->_m_adjust_view())
 				impl_->try_refresh = sync_graph::refresh;
-
-			points_.xpos = points_.caret.x;
 		}
 
 		void text_editor::move_right()
 		{
 			bool do_render = false;
-			if(_m_cancel_select(2) == false)
+			if (_m_cancel_select(2) == false)
 			{
 				auto lnstr = textbase().getline(points_.caret.y);
-				if(lnstr.size() > points_.caret.x)
+				if (lnstr.size() > points_.caret.x)
 				{
 					++points_.caret.x;
-
-					bool adjust_y = (attributes_.line_wrapped && impl_->capacities.behavior->adjust_caret_into_screen());
-					do_render = (_m_move_offset_x_while_over_border(2) || adjust_y);
+					do_render = this->_m_adjust_view();
 				}
-				else if(points_.caret.y + 1 < textbase().lines())
+				else if (points_.caret.y + 1 < textbase().lines())
 				{	//Move to next line
 					points_.caret.x = 0;
-					++ points_.caret.y;
-					do_render = impl_->capacities.behavior->adjust_caret_into_screen();
+					++points_.caret.y;
+					do_render = this->_m_adjust_view();
 				}
 			}
 			else
-				do_render = impl_->capacities.behavior->adjust_caret_into_screen();
+				do_render = this->_m_adjust_view();
 
 			if (do_render)
 				impl_->try_refresh = sync_graph::refresh;
-
-			points_.xpos = points_.caret.x;
 		}
 
 		void text_editor::_m_handle_move_key(const arg_keyboard& arg)
@@ -2444,155 +2263,122 @@ namespace nana{	namespace widgets
 				select_.a = select_.b = points_.caret;
 
 			auto origin = impl_->cview->origin();
-			origin.y = _m_text_topline();
+			auto pos = points_.caret;
+			auto coord = _m_caret_to_coordinate(points_.caret, false);
 
-			bool changed = false;
-			nana::upoint caret = points_.caret;
 			wchar_t key = arg.key;
-			size_t nlines = textbase().lines();
-			if (arg.ctrl) {
-				switch (key) {
-				case keyboard::os_arrow_left:
-				case keyboard::os_arrow_right:
-					// TODO: move the caret word by word
-					break;
-				case keyboard::os_home:
-					if (caret.y != 0) {
-						caret.y = 0;
-						origin.y = 0;
-						changed = true;
-					}
-					break;
-				case keyboard::os_end:
-					if (caret.y != nlines - 1) {
-						caret.y = static_cast<decltype(caret.y)>(nlines - 1);
-						changed = true;
-					}
-					break;
-				}
-			}
-			size_t lnsz = textbase().getline(caret.y).size();
+
+			auto const line_px = this->line_height();
+
+			//The number of text lines
+			auto const line_count = textbase().lines();
+
+			//The number of charecters in the line of caret
+			auto const text_length = textbase().getline(points_.caret.y).size();
+
+			
 			switch (key) {
 			case keyboard::os_arrow_left:
 				if (select_.move_to_end && (select_.a != select_.b) && (!arg.shift))
 				{
-					caret = select_.a;
-					changed = true;
+					pos = select_.a;
 				}
-				else
+				else if (pos.x != 0)
 				{
-					if (caret.x != 0) {
-						--caret.x;
-						changed = true;
-					}
-					else {
-						if (caret.y != 0) {
-							--caret.y;
-							caret.x = static_cast<decltype(caret.x)>(textbase().getline(caret.y).size());
-							changed = true;
-						}
-					}
+					--pos.x;
+				}
+				else if (pos.y != 0) {
+					--pos.y;
+					pos.x = static_cast<decltype(pos.x)>(textbase().getline(pos.y).size());
 				}
 				break;
 			case keyboard::os_arrow_right:
 				if (select_.move_to_end && (select_.a != select_.b) && (!arg.shift))
 				{
-					caret = select_.b;
-					changed = true;
+					pos = select_.b;
 				}
-				else
+				else if (pos.x < text_length)
 				{
-					if (caret.x < lnsz) {
-						++caret.x;
-						changed = true;
-					}
-					else {
-						if (caret.y != nlines - 1) {
-							++caret.y;
-							caret.x = 0;
-							changed = true;
-						}
-					}
+					++pos.x;
+				}
+				else if (pos.y != line_count - 1)
+				{
+					++pos.y;
+					pos.x = 0;
 				}
 				break;
 			case keyboard::os_arrow_up:
+				coord.y -= static_cast<int>(line_px);
+				break;
 			case keyboard::os_arrow_down:
-				{
-					auto screen_pt = _m_caret_to_screen(caret);
-					int offset = line_height();
-					if (key == keyboard::os_arrow_up) {
-						offset = -offset;
-					}
-					screen_pt.y += offset;
-
-					auto const new_caret = _m_screen_to_caret(screen_pt);
-					if (new_caret != caret) {
-						caret = new_caret;
-						if (screen_pt.y < 0) {
-							scroll(true, true);
-						}
-						changed = true;
-					}
-				}
+				coord.y += static_cast<int>(line_px);
 				break;
 			case keyboard::os_home:
-				if (caret.x != 0) {
-					caret.x = 0;
-					changed = true;
-				}
+				//move the caret to the begining of the line
+				pos.x = 0;
+
+				//move the caret to the begining of the text if Ctrl is pressed
+				if (arg.ctrl)
+					pos.y = 0;
 				break;
 			case keyboard::os_end:
-				if (caret.x < lnsz) {
-					caret.x = static_cast<decltype(caret.x)>(lnsz);
-					changed = true;
-				}
+				//move the caret to the end of the line
+				pos.x = static_cast<decltype(pos.x)>(text_length);
+
+				//move the caret to the end of the text if Ctrl is pressed
+				if(arg.ctrl)
+					pos.y = static_cast<unsigned>((line_count - 1) * line_px);
 				break;
 			case keyboard::os_pageup:
-				if (caret.y >= screen_lines() && origin.y >= static_cast<int>(screen_lines())) {
-					origin.y -= screen_lines();
-					caret.y -= screen_lines();
-					changed = true;
+				if(origin.y > 0)
+				{
+					auto off = coord - origin;
+					origin.y -= (std::min)(origin.y, static_cast<int>(impl_->cview->view_area().height));
+					coord = off + origin;
 				}
 				break;
 			case keyboard::os_pagedown:
-				if (caret.y + screen_lines() <= impl_->capacities.behavior->take_lines()) {
-					origin.y += static_cast<int>(screen_lines());
-					caret.y += screen_lines();
-					changed = true;
+				if (impl_->cview->content_size().height > impl_->cview->view_area().height)
+				{
+					auto off = coord - origin;
+					origin.y = (std::min)(origin.y + static_cast<int>(impl_->cview->view_area().height), static_cast<int>(impl_->cview->content_size().height - impl_->cview->view_area().height));
+					coord = off + origin;
 				}
 				break;
 			}
-			if (select_.a != caret || select_.b != caret) {
-				changed = true;
+
+			if (pos == points_.caret)
+			{
+				impl_->cview->move_origin(origin - impl_->cview->origin());
+				pos = _m_coordinate_to_caret(coord, false);
 			}
 
-			if (changed) {
+			if (pos != points_.caret) {
 				if (arg.shift) {
 					switch (key) {
 					case keyboard::os_arrow_left:
 					case keyboard::os_arrow_up:
 					case keyboard::os_home:
 					case keyboard::os_pageup:
-						select_.b = caret;
+						select_.b = pos;
 						break;
 					case keyboard::os_arrow_right:
 					case keyboard::os_arrow_down:
 					case keyboard::os_end:
 					case keyboard::os_pagedown:
-						select_.b = caret;
+						select_.b = pos;
 						break;
 					}
-				}else {
-					select_.b = caret;
-					select_.a = caret;
 				}
-				points_.caret = caret;
-
-				origin.y *= line_height();
-				impl_->cview->move_origin(origin - impl_->cview->origin());
-				impl_->cview->sync(true);
-				points_.xpos = points_.caret.x;
+				else {
+					select_.b = pos;
+					select_.a = pos;
+				}
+				points_.caret = pos;
 				impl_->try_refresh = sync_graph::refresh;
+				this->_m_adjust_view();
+				impl_->cview->sync(true);
+				this->reset_caret();
 			}
 		}
 
@@ -2633,9 +2419,9 @@ namespace nana{	namespace widgets
 
 		const upoint& text_editor::mouse_caret(const point& scrpos, bool stay_in_view)	//From screen position
 		{
-			points_.caret = _m_screen_to_caret(scrpos);
+			points_.caret = _m_coordinate_to_caret(scrpos);
 
-			if (stay_in_view && impl_->capacities.behavior->adjust_caret_into_screen())
+			if (stay_in_view && this->_m_adjust_view())
 				impl_->try_refresh = sync_graph::refresh;
 
 			move_caret(points_.caret);
@@ -2649,7 +2435,7 @@ namespace nana{	namespace widgets
 
 		point text_editor::caret_screen_pos() const
 		{
-			return _m_caret_to_screen(points_.caret);
+			return _m_caret_to_coordinate(points_.caret);
 		}
 
 		bool text_editor::scroll(bool upwards, bool vert)
@@ -2667,7 +2453,7 @@ namespace nana{	namespace widgets
 				{
 					auto const height = line_height();
 
-					auto top = _m_caret_to_screen(upoint{ 0, static_cast<unsigned>(row.first) }).y;
+					auto top = _m_caret_to_coordinate(upoint{ 0, static_cast<unsigned>(row.first) }).y;
 					std::size_t lines = 1;
 
 					if (whole_line)
@@ -2751,7 +2537,7 @@ namespace nana{	namespace widgets
 				this->impl_->capacities.behavior->pre_calc_line(pos, width_px);
 		}
 
-		nana::point	text_editor::_m_caret_to_screen(nana::upoint pos) const
+		nana::point	text_editor::_m_caret_to_coordinate(nana::upoint pos, bool to_screen_coordinate) const
 		{
 			auto const behavior = impl_->capacities.behavior;
 			auto const sections = behavior->line(pos.y);
@@ -2759,7 +2545,7 @@ namespace nana{	namespace widgets
 			std::size_t lines = 0;	//lines before the caret line;
 			for (std::size_t i = 0; i < pos.y; ++i)
 			{
-				lines += behavior->line(i).size();
+				lines += behavior->take_lines(i);
 			}
 
 			const text_section * sct_ptr = nullptr;
@@ -2767,6 +2553,8 @@ namespace nana{	namespace widgets
 			if (0 != pos.x)
 			{
 				std::wstring str;
+
+				std::size_t sct_pos = 0;
 				for (auto & sct : sections)
 				{
 					std::size_t chsize = sct.end - sct.begin;
@@ -2776,7 +2564,9 @@ namespace nana{	namespace widgets
 					else
 						str.append(sct.begin, sct.end);
 
-					if (pos.x <= chsize)
+					//In line-wrapped mode. If the caret is at the end of a line which is not the last section,
+					//the caret should be moved to the beginning of next section line.
+					if ((sct_pos + 1 < sections.size()) ? (pos.x < chsize) : (pos.x <= chsize))
 					{
 						sct_ptr = &sct;
 						if (pos.x == chsize)
@@ -2790,6 +2580,8 @@ namespace nana{	namespace widgets
 						pos.x -= static_cast<unsigned>(chsize);
 						++lines;
 					}
+
+					++sct_pos;
 				}
 			}
 
@@ -2803,13 +2595,26 @@ namespace nana{	namespace widgets
 			else
 				scrpos.x += _m_text_x(*sct_ptr);
 
-			scrpos.y = static_cast<int>(lines * line_height()) - impl_->cview->origin().y + this->_m_text_top_base();
+			scrpos.y = static_cast<int>(lines * line_height());
+
+			if (!to_screen_coordinate)
+			{
+				//_m_text_x includes origin x and text_area x. remove these factors
+				scrpos.x += (impl_->cview->origin().x - text_area_.area.x);
+			}
+			else
+				scrpos.y += this->_m_text_top_base() - impl_->cview->origin().y;
+
 			return scrpos;
 		}
 
-		upoint text_editor::_m_screen_to_caret(point scrpos) const
+		upoint text_editor::_m_coordinate_to_caret(point scrpos, bool from_screen_coordinate) const
 		{
+			if (!from_screen_coordinate)
+				scrpos -= (impl_->cview->origin() - point{ text_area_.area.x, this->_m_text_top_base() });
+
 			auto const behavior = impl_->capacities.behavior;
+
 			auto const row = behavior->text_position_from_screen(scrpos.y);
 
 			auto sections = behavior->line(row.first);
@@ -2829,27 +2634,28 @@ namespace nana{	namespace widgets
 				text_ptr = mask_str.c_str();
 			}
 
-			std::vector<unicode_bidi::entity> reordered;
-			unicode_bidi{}.linestr(text_ptr, text_size, reordered);
+			auto const reordered = unicode_reorder(text_ptr, text_size);
 
 			nana::upoint res(static_cast<unsigned>(real_str.begin - sections.front().begin), static_cast<unsigned>(row.first));
-			scrpos.x -= _m_text_x(sections[row.second]);
 
-			if (scrpos.x < 0)
-				scrpos.x = 0;
+			scrpos.x = (std::max)(0, (scrpos.x - _m_text_x(sections[row.second])));
 
 			for (auto & ent : reordered)
 			{
 				auto str_px = static_cast<int>(_m_text_extent_size(ent.begin, ent.end - ent.begin).width);
 				if (scrpos.x <= str_px)
 				{
-					res.x += _m_char_by_pixels(ent, scrpos.x);
-					res.x += static_cast<unsigned>(ent.begin - text_ptr);
+					res.x += _m_char_by_pixels(ent, scrpos.x) + static_cast<unsigned>(ent.begin - text_ptr);
 					return res;
 				}
 				scrpos.x -= str_px;
 			}
-			res.x = static_cast<unsigned>(textbase().getline(res.y).size());
+
+			//move the caret to the end of this section.
+			res.x = static_cast<unsigned>(text_size);
+			for (std::size_t i = 0; i < row.second; ++i)
+				res.x += static_cast<int>(sections[i].end - sections[i].begin);
+
 			return res;
 		}
 
@@ -2939,7 +2745,7 @@ namespace nana{	namespace widgets
 			}
 
 			_m_pos_from_secondary(points_.caret.y, secondary_pos, points_.caret.x);
-			return behavior->adjust_caret_into_screen();
+			return this->_m_adjust_view();
 		}
 
 		void text_editor::_m_update_line(std::size_t pos, std::size_t secondary_count_before)
@@ -2947,7 +2753,7 @@ namespace nana{	namespace widgets
 			auto behavior = impl_->capacities.behavior;
 			if (behavior->take_lines(pos) == secondary_count_before)
 			{
-				auto top = _m_caret_to_screen(upoint{ 0, static_cast<unsigned>(pos) }).y;
+				auto top = _m_caret_to_coordinate(upoint{ 0, static_cast<unsigned>(pos) }).y;
 
 				const unsigned pixels = line_height();
 				const rectangle update_area = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(pixels * secondary_count_before) };
@@ -3010,12 +2816,12 @@ namespace nana{	namespace widgets
 
 			if (this->attributes_.line_wrapped)
 			{
+				//detect if vertical scrollbar is required
+				auto const max_lines = screen_lines(true);
+
 				if (calc_lines)
 				{
-					//detect if vertical scrollbar is required
-					auto const max_lines = screen_lines(true);
 					auto text_lines = textbase().lines();
-
 					if (text_lines <= max_lines)
 					{
 						std::size_t lines = 0;
@@ -3034,19 +2840,20 @@ namespace nana{	namespace widgets
 
 					//enable vertical scrollbar when text_lines > max_lines
 					csize.width = _m_width_px(text_lines <= max_lines);
-
 					impl_->capacities.behavior->pre_calc_lines(csize.width);
 				}
 				else
+				{
 					csize.width = impl_->cview->content_size().width;
+				}
 			}
 			else
 			{
 				if (calc_lines)
-					impl_->capacities.behavior->pre_calc_lines(0);
+					impl_->capacities.behavior->pre_calc_lines(width_pixels());
 
 				auto maxline = textbase().max_line();
-				csize.width = _m_text_extent_size(textbase().getline(maxline.first).c_str(), maxline.second).width;
+				csize.width = _m_text_extent_size(textbase().getline(maxline.first).c_str(), maxline.second).width + caret_size().width;
 			}
 
 			csize.height = static_cast<unsigned>(impl_->capacities.behavior->take_lines() * line_height());
@@ -3138,11 +2945,12 @@ namespace nana{	namespace widgets
 		std::wstring text_editor::_m_make_select_string() const
 		{
 			std::wstring text;
-			
+
 			nana::upoint a, b;
 			if (get_selected_points(a, b))
 			{
 				auto & textbase = this->textbase();
+
 				if (a.y != b.y)
 				{
 					text = textbase.getline(a.y).substr(a.x);
@@ -3155,7 +2963,7 @@ namespace nana{	namespace widgets
 					text += textbase.getline(b.y).substr(0, b.x);
 				}
 				else
-					text = textbase.getline(a.y).substr(a.x, b.x - a.x);
+					return textbase.getline(a.y).substr(a.x, b.x - a.x);
 			}
 
 			return text;
@@ -3230,34 +3038,21 @@ namespace nana{	namespace widgets
 
 		bool text_editor::_m_cancel_select(int align)
 		{
-			nana::upoint a, b;
+			upoint a, b;
 			if (get_selected_points(a, b))
 			{
-				switch(align)
+				//domain of algin = [0, 2]
+				if (align)
 				{
-				case 1:
-					points_.caret = a;
-					_m_move_offset_x_while_over_border(-2);
-					break;
-				case 2:
-					points_.caret = b;
-					_m_move_offset_x_while_over_border(2);
-					break;
+					this->points_.caret = (1 == align ? a : b);
+					this->_m_adjust_view();
 				}
+				
 				select_.a = select_.b = points_.caret;
 				reset_caret();
 				return true;
 			}
 			return false;
-		}
-
-		unsigned text_editor::_m_tabs_pixels(size_type tabs) const
-		{
-			if(0 == tabs) return 0;
-
-			wchar_t ws[2] = {};
-			ws[0] = mask_char_ ? mask_char_ : ' ';
-			return static_cast<unsigned>(tabs * graph_.text_extent_size(ws).width * text_area_.tab_space);
 		}
 
 		nana::size text_editor::_m_text_extent_size(const char_type* str, size_type n) const
@@ -3271,50 +3066,60 @@ namespace nana{	namespace widgets
 			return graph_.text_extent_size(str, static_cast<unsigned>(n));
 		}
 
-		//_m_move_offset_x_while_over_border
-		//@brief: Move the view window
-		bool text_editor::_m_move_offset_x_while_over_border(int many)
+		bool text_editor::_m_adjust_view()
 		{
-			//x never beyonds border in line-wrapped mode.
-			if (attributes_.line_wrapped || (0 == many))
+			auto const view_area = impl_->cview->view_area();
+
+			auto const line_px = static_cast<int>(this->line_height());
+			auto coord = _m_caret_to_coordinate(points_.caret, true);
+
+			if (view_area.is_hit(coord) && view_area.is_hit({coord.x, coord.y + line_px}))
 				return false;
 
-			const string_type& lnstr = textbase().getline(points_.caret.y);
-			unsigned width = _m_text_extent_size(lnstr.c_str(), points_.caret.x).width;
+			unsigned extra_count_horz = 4;
+			unsigned extra_count_vert = 0;
 
-			const auto count = static_cast<unsigned>(std::abs(many));
-			if(many < 0)
+			auto const origin = impl_->cview->origin();
+			coord = _m_caret_to_coordinate(points_.caret, false);
+
+			point moved_origin;
+
+			//adjust x-axis if it isn't line-wrapped mode
+			if (!attributes_.line_wrapped)
 			{
-				auto origin = impl_->cview->origin();
+				auto extra = points_.caret;
 
-				if (origin.x && (origin.x >= static_cast<int>(width)))
-				{	//Out of screen text area
-					if (points_.caret.x > count)
-						origin.x = static_cast<int>(width - _m_text_extent_size(lnstr.c_str() + points_.caret.x - count, count).width);
-					else
-						origin.x = 0;
-
-					impl_->cview->move_origin(origin - impl_->cview->origin());
-					return true;
+				if (coord.x < origin.x)
+				{
+					extra.x -= (std::min)(extra_count_horz, points_.caret.x);
+					moved_origin.x = _m_caret_to_coordinate(extra, false).x - origin.x;
+				}
+				else if (coord.x + static_cast<int>(caret_size().width) >= origin.x + static_cast<int>(view_area.width))
+				{
+					extra.x = (std::min)(static_cast<unsigned>(textbase().getline(points_.caret.y).size()), points_.caret.x + extra_count_horz);
+					auto new_origin = _m_caret_to_coordinate(extra, false).x + static_cast<int>(caret_size().width) - static_cast<int>(view_area.width);
+					moved_origin.x = new_origin - origin.x;
 				}
 			}
-			else
+
+			auto extra_px = static_cast<int>(line_px * extra_count_vert);
+
+			if (coord.y < origin.y)
 			{
-				auto const right_pos = impl_->cview->view_area().right();
-				width += text_area_.area.x;
+				//Top of caret is less than the top of view
 
-				auto origin = impl_->cview->origin();
-				if (static_cast<int>(width) - origin.x >= right_pos)
-				{	//Out of screen text area
-					origin.x = static_cast<int>(width) - right_pos + 1;
-					auto rest_size = lnstr.size() - points_.caret.x;
-					origin.x += static_cast<int>(_m_text_extent_size(lnstr.c_str() + points_.caret.x, (rest_size >= static_cast<unsigned>(many) ? static_cast<unsigned>(many) : rest_size)).width);
-
-					impl_->cview->move_origin(origin - impl_->cview->origin());
-					return true;
-				}
+				moved_origin.y = (std::max)(0, coord.y - extra_px) - origin.y;
 			}
-			return false;
+			else if (coord.y + line_px >= origin.y + static_cast<int>(view_area.height))
+			{
+				//Bottom of caret is greater than the bottom of view
+
+				auto const bottom = static_cast<int>(impl_->capacities.behavior->take_lines() * line_px);
+				auto new_origin = (std::min)(coord.y + line_px + extra_px, bottom) - static_cast<int>(view_area.height);
+				moved_origin.y = new_origin - origin.y;
+			}
+
+			return impl_->cview->move_origin(moved_origin);
 		}
 
 		bool text_editor::_m_move_select(bool record_undo)
@@ -3531,8 +3336,7 @@ namespace nana{	namespace widgets
 
 			const auto focused = API::is_focus_ready(window_);
 
-			std::vector<unicode_bidi::entity> reordered;
-			unicode_bidi{}.linestr(text_ptr, text_len, reordered);
+			auto const reordered = unicode_reorder(text_ptr, text_len);
 
 			//Parse highlight keywords
 			keyword_parser parser;
@@ -3696,13 +3500,18 @@ namespace nana{	namespace widgets
 
 		bool text_editor::_m_update_caret_line(std::size_t secondary_before)
 		{
-			if (false == impl_->capacities.behavior->adjust_caret_into_screen())
+			if (false == this->_m_adjust_view())
 			{
-				if (_m_caret_to_screen(points_.caret).x < impl_->cview->view_area().right())
+				if (_m_caret_to_coordinate(points_.caret).x < impl_->cview->view_area().right())
 				{
 					_m_update_line(points_.caret.y, secondary_before);
 					return false;
 				}
+			}
+			else
+			{
+				//The content view is adjusted, now syncs it with active mode to avoid updating.
+				impl_->cview->sync(false);
 			}
 			impl_->try_refresh = sync_graph::refresh;
 			return true;
@@ -3757,9 +3566,8 @@ namespace nana{	namespace widgets
 			if (pos > lnstr.size())
 				return 0;
 
-			std::vector<unicode_bidi::entity> reordered;
-			unicode_bidi{}.linestr(lnstr.c_str(), lnstr.size(), reordered);
-
+			auto const reordered = unicode_reorder(lnstr.c_str(), lnstr.size());
+				
 			auto target = lnstr.c_str() + pos;
 
 			unsigned text_w = 0;
@@ -3789,4 +3597,3 @@ namespace nana{	namespace widgets
 	}//end namespace skeletons
 }//end namespace widgets
 }//end namespace nana
-

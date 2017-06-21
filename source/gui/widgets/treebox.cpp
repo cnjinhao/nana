@@ -2200,7 +2200,7 @@ namespace nana
 				}
 
 				path.insert(0, pnode->value.first);
-				return std::move(path);
+				return path;
 			}
 			return{};
 		}

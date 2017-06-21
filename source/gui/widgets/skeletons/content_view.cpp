@@ -30,7 +30,8 @@ namespace nana {
 				point skew_vert;
 				nana::size extra_px;
 
-				bool	enable_update{ true };
+				bool	passive{ true }; //The passive mode determines whether to update if scrollbar changes. It updates the client window if passive is true.
+
 				bool	drag_started{ false };
 				point origin;
 
@@ -171,7 +172,7 @@ namespace nana {
 					});
 				}
 
-				void size_changed(bool try_update)
+				void size_changed(bool passive)
 				{
 					auto imd_area = view.view_area();
 
@@ -186,11 +187,11 @@ namespace nana {
 						if (this->events.scrolled)
 							this->events.scrolled();
 
-						if (this->enable_update)
+						if (this->passive)
 							API::refresh_window(this->window_handle);
 					};
 
-					this->enable_update = try_update;
+					this->passive = passive;
 
 					if (imd_area.width != disp_area.width)
 					{
@@ -199,7 +200,7 @@ namespace nana {
 							vert.create(window_handle);
 							vert.events().value_changed.connect_unignorable(event_fn);
 							API::take_active(vert, false, window_handle);
-							this->enable_update = false;
+							this->passive = false;
 						}
 						
 						vert.move({
@@ -226,7 +227,7 @@ namespace nana {
 							horz.create(window_handle);
 							horz.events().value_changed.connect_unignorable(event_fn);
 							API::take_active(horz, false, window_handle);
-							this->enable_update = false;
+							this->passive = false;
 						}
 
 						horz.move({
@@ -246,7 +247,7 @@ namespace nana {
 						origin.x = 0;
 					}
 
-					this->enable_update = true;
+					this->passive = true;
 				}
 			};
 
@@ -319,31 +320,31 @@ namespace nana {
 
 			void content_view::content_size(const size& sz, bool try_update)
 			{
+				auto const view_sz = this->view_area(sz);
+
 				if (sz.height < impl_->content_size.height)
 				{
-					if (impl_->origin.y + impl_->disp_area.height > sz.height)
+					if (impl_->origin.y + view_sz.height > sz.height)
 					{
-						if (impl_->disp_area.height > sz.height)
+						if (view_sz.height > sz.height)
 							impl_->origin.y = 0;
 						else
-							impl_->origin.y = sz.height - impl_->disp_area.height;
+							impl_->origin.y = sz.height - view_sz.height;
 					}
 				}
 
 				if (sz.width < impl_->content_size.width)
 				{
-					if (impl_->origin.x + impl_->disp_area.width > sz.width)
+					if (impl_->origin.x + view_sz.width > sz.width)
 					{
-						if (impl_->disp_area.width > sz.width)
+						if (view_sz.width > sz.width)
 							impl_->origin.x = 0;
 						else
-							impl_->origin.x = sz.width - impl_->disp_area.width;
+							impl_->origin.x = sz.width - view_sz.width;
 					}
 				}
 
-
 				impl_->content_size = sz;
-
 				impl_->size_changed(try_update);
 			}
 
@@ -388,18 +389,23 @@ namespace nana {
 
 			rectangle content_view::view_area() const
 			{
-				unsigned extra_horz = (impl_->disp_area.width < impl_->content_size.width ? space() : 0);
-				unsigned extra_vert = (impl_->disp_area.height < impl_->content_size.height + extra_horz ? space() : 0);
+				return view_area(impl_->content_size);
+			}
+
+			rectangle content_view::view_area(const size& alt_content_size) const
+			{
+				unsigned extra_horz = (impl_->disp_area.width < alt_content_size.width ? space() : 0);
+				unsigned extra_vert = (impl_->disp_area.height < alt_content_size.height + extra_horz ? space() : 0);
 
 				if ((0 == extra_horz) && extra_vert)
-					extra_horz = (impl_->disp_area.width < impl_->content_size.width + extra_vert ? space() : 0);
+					extra_horz = (impl_->disp_area.width < alt_content_size.width + extra_vert ? space() : 0);
 
 				return rectangle{
 					impl_->disp_area.position(),
 					size{
-					impl_->disp_area.width > extra_vert ? impl_->disp_area.width - extra_vert : 0,
-					impl_->disp_area.height > extra_horz ? impl_->disp_area.height - extra_horz : 0
-				}
+						impl_->disp_area.width > extra_vert ? impl_->disp_area.width - extra_vert : 0,
+						impl_->disp_area.height > extra_horz ? impl_->disp_area.height - extra_horz : 0
+					}
 				};
 			}
 
@@ -457,12 +463,12 @@ namespace nana {
 				return (pre_origin != impl_->origin);
 			}
 
-			void content_view::sync(bool try_update)
+			void content_view::sync(bool passive)
 			{
-				impl_->enable_update = try_update;
+				impl_->passive = passive;
 				impl_->horz.value(impl_->origin.x);
 				impl_->vert.value(impl_->origin.y);
-				impl_->enable_update = true;
+				impl_->passive = true;
 			}
 
 			void content_view::pursue(const point& cursor)

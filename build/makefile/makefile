@@ -8,7 +8,6 @@ SRCROOT	= ../../source
 EXTRLIB = ../../extrlib
 NANA_INC= $(INCROOT)/nana
 OUTROOT = out
-#CXXFLAGS= -g -std=c++11 -Wall
 CXXFLAGS= -g -fexceptions -std=c++11 -Wall -Wextra -Wunused-variable -Wfatal-errors
 
 INCS	= -I$(INCROOT) -I/usr/include/freetype2 -I$(EXTRLIB)
