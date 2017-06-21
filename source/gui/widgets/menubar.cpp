@@ -85,7 +85,7 @@ namespace nana
 
 			//class item_renderer
 				item_renderer::item_renderer(window wd, graph_reference graph)
-					:handle_(wd), graph_(graph), scheme_ptr_(static_cast<scheme*>(API::dev::get_scheme(wd)))
+					:graph_(graph), scheme_ptr_(static_cast<scheme*>(API::dev::get_scheme(wd)))
 				{}
 
 				void item_renderer::background(const nana::point& pos, const nana::size& size, state item_state)

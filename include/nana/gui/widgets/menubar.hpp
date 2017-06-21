@@ -50,7 +50,6 @@ namespace nana
 				virtual void caption(const point&, const native_string_type&);
 				scheme *scheme_ptr() const { return scheme_ptr_; };
 			private:
-				window	handle_;
 				graph_reference graph_;
 				scheme *scheme_ptr_;
 			};

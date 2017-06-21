@@ -445,7 +445,7 @@ namespace nana{	namespace widgets
 					);
 			}
 
-			bool clear()
+			bool clear() override
 			{
 				if (colored_areas_.empty())
 					return false;

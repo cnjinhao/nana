@@ -68,13 +68,13 @@ namespace nana
 				API::dev::lazy_refresh();
 			}
 
-			void mouse_down(graph_reference graph, const arg_mouse&)
+			void mouse_down(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
 				API::dev::lazy_refresh();
 			}
 
-			void mouse_up(graph_reference graph, const arg_mouse&)
+			void mouse_up(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
 				API::dev::lazy_refresh();

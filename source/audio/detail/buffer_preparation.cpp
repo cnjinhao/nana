@@ -33,7 +33,7 @@ namespace nana{	namespace audio
 					prepared_.emplace_back(m);
 				}
 
-				thr_ = std::move(std::thread([this](){this->_m_prepare_routine();}));
+				thr_ = std::thread{[this](){this->_m_prepare_routine();}};
 			}
 
 			buffer_preparation::~buffer_preparation()

@@ -270,7 +270,7 @@ namespace nana
 
 					return (reverse ? a > b : a < b);
 				});
-			ls_file_.set_sort_compare(3, [this](const std::string&, nana::any* anyptr_a, const std::string&, nana::any* anyptr_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(3, [](const std::string&, nana::any* anyptr_a, const std::string&, nana::any* anyptr_b, bool reverse) -> bool
 				{
 					item_fs * fsa = any_cast<item_fs>(anyptr_a);
 					item_fs * fsb = any_cast<item_fs>(anyptr_b);

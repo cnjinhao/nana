@@ -419,7 +419,7 @@ namespace nana
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
 
-				void erase(std::size_t pos) override
+				void erase(std::size_t /*pos*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -434,7 +434,7 @@ namespace nana
 					return true;
 				}
 
-				void emplace(std::size_t pos) override
+				void emplace(std::size_t /*pos*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -444,7 +444,7 @@ namespace nana
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
 
-				void assign(std::size_t pos, const std::vector<cell>& cells) override
+				void assign(std::size_t /*pos*/, const std::vector<cell>& /*cells*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
@@ -454,7 +454,7 @@ namespace nana
 					return ctrans_(container_.at(pos));
 				}
 
-				bool push_back(const const_virtual_pointer& dptr) override
+				bool push_back(const const_virtual_pointer& /*dptr*/) override
 				{
 					throw std::runtime_error("nana::listbox disallow to remove items because of immutable model");
 				}
