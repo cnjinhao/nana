@@ -3441,7 +3441,7 @@ namespace nana
 
 							idx.item = 0;
 
-							_m_draw_categ(*i_categ, rect.x - origin.x, item_coord.y, txtoff, header_w, rect, bgcolor, 
+							_m_draw_categ(*i_categ, rect.x - origin.x, item_coord.y, txtoff, header_w, bgcolor, 
 									(hoverred_pos.is_category() && (idx.cat == hoverred_pos.cat) ? item_state::highlighted : item_state::normal)
 								);
 							item_coord.y += static_cast<int>(item_height_px);
@@ -3500,7 +3500,7 @@ namespace nana
 					}
 				}
 			private:
-				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, const nana::rectangle& /*r*/, nana::color bgcolor, item_state state)
+				void _m_draw_categ(const category_t& categ, int x, int y, int txtoff, unsigned width, nana::color bgcolor, item_state state)
 				{
 					const auto item_height = essence_->item_height();
 
