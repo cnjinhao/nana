@@ -2327,7 +2327,7 @@ namespace nana{	namespace widgets
 
 				//move the caret to the end of the text if Ctrl is pressed
 				if(arg.ctrl)
-					pos.y = (line_count - 1) * line_px;
+					pos.y = static_cast<unsigned>((line_count - 1) * line_px);
 				break;
 			case keyboard::os_pageup:
 				if(origin.y > 0)
@@ -2652,7 +2652,7 @@ namespace nana{	namespace widgets
 			}
 
 			//move the caret to the end of this section.
-			res.x = text_size;
+			res.x = static_cast<unsigned>(text_size);
 			for (std::size_t i = 0; i < row.second; ++i)
 				res.x += static_cast<int>(sections[i].end - sections[i].begin);
 
