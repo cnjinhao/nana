@@ -186,7 +186,7 @@ namespace nana
 			public:
 				virtual ~container_interface() = default;
 
-				virtual void clear() noexcept = 0;
+				virtual void clear() = 0;
 				virtual void erase(std::size_t pos) = 0;
 
 				virtual std::size_t size() const = 0;
@@ -238,7 +238,7 @@ namespace nana
 						translator_({ vtrans, ctrans })
 				{}
 			private:
-				void clear() noexcept override
+				void clear() override
 				{
 					container_.clear();
 				}
@@ -246,7 +246,7 @@ namespace nana
 				void erase(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 					container_.erase(i);
 				}
 
@@ -263,7 +263,7 @@ namespace nana
 				void emplace(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 
 					container_.emplace(i);
 				}
@@ -327,7 +327,7 @@ namespace nana
 					
 				}
 			private:
-				void clear() noexcept override
+				void clear() override
 				{
 					container_.clear();
 				}
@@ -335,7 +335,7 @@ namespace nana
 				void erase(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 					container_.erase(i);
 				}
 
@@ -352,7 +352,7 @@ namespace nana
 				void emplace(std::size_t pos) override
 				{
 					auto i = container_.begin();
-					std::advance(i, static_cast<int>(pos));
+					std::advance(i, pos);
 
 					container_.emplace(i);
 				}
