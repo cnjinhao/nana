@@ -16,6 +16,8 @@
 #include "../basis.hpp"
 #include <nana/paint/image.hpp>
 
+#include <functional>
+
 namespace nana
 {
 namespace detail
