@@ -1196,7 +1196,11 @@ namespace paint
 #elif defined(NANA_X11)
 			if (nullptr == impl_->handle) return;
 
-			double deltapx = double(vertical ? rct.height : rct.width);
+			nana::rectangle good_rct;
+			if(!nana::overlap(nana::rectangle{ size() }, rct, good_rct))
+				return;
+
+			double deltapx = double(vertical ? good_rct.height : good_rct.width);
 			double r, g, b;
 			const double delta_r = (to.r() - (r = from.r())) / deltapx;
 			const double delta_g = (to.g() - (g = from.g())) / deltapx;
@@ -1207,13 +1211,13 @@ namespace paint
 			Display * disp = nana::detail::platform_spec::instance().open_display();
 			impl_->handle->set_color(static_cast<color_rgb>(last_color));
 			impl_->handle->update_color();
-			const int endpos = deltapx + (vertical ? rct.y : rct.x);
+			const int endpos = deltapx + (vertical ? good_rct.y : good_rct.x);
 			if (endpos > 0)
 			{
 				if (vertical)
 				{
-					int x1 = rct.x, x2 = rct.right();
-					auto y = rct.y;
+					int x1 = good_rct.x, x2 = good_rct.right();
+					auto y = good_rct.y;
 					for (; y < endpos; ++y)
 					{
 						::XDrawLine(disp, impl_->handle->pixmap, impl_->handle->context, x1, y, x2, y);
@@ -1228,8 +1232,8 @@ namespace paint
 				}
 				else
 				{
-					int y1 = rct.y, y2 = rct.bottom();
-					auto x = rct.x;
+					int y1 = good_rct.y, y2 = good_rct.bottom();
+					auto x = good_rct.x;
 					for (; x < endpos; ++x)
 					{
 						::XDrawLine(disp, impl_->handle->pixmap, impl_->handle->context, x, y1, x, y2);
