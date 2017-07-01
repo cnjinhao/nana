@@ -195,6 +195,8 @@
 #	endif
 #endif
 
+// std::clamp's feature test macro is defined inside <algorithm> 
+#include <algorithm>
 #if (!defined(__cpp_lib_clamp)) || (__cpp_lib_clamp < 201603)
 #	ifndef _enable_std_clamp
 #		define _enable_std_clamp
