@@ -112,10 +112,6 @@
 #		define STD_CODECVT_NOT_SUPPORTED
 #	endif // _MSC_VER == 1900
 
-#	if (_MSC_VER < 1910) //VS2017 RTM
-#		define _enable_std_clamp
-#	endif
-
 #elif defined(__clang__)	//Clang
 
 	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
@@ -195,13 +191,19 @@
 #	endif
 #endif
 
-#ifndef _MSC_VER
-// std::clamp's feature test macro is defined inside <algorithm> 
-#	include <algorithm>
-#	if (!defined(__cpp_lib_clamp)) || (__cpp_lib_clamp < 201603)
-#		ifndef _enable_std_clamp
-#			define _enable_std_clamp
-#		endif
+//Detects the feature std::clamp
+
+//Visual C++ 2017 with /std:c++latest provides the std::clamp
+#if !defined(_MSVC_LANG) || (_MSVC_LANG < 201403L)
+
+// std::clamp's feature test macro is defined inside <algorithm>
+// But nana still avoids introducing <algorithm> on MSVC.
+#	ifndef _MSC_VER
+#		include <algorithm>
+#	endif
+
+#	if ((!defined(__cpp_lib_clamp)) || (__cpp_lib_clamp < 201603)) && (!defined(_enable_std_clamp))
+#		define _enable_std_clamp
 #	endif
 #endif
 
