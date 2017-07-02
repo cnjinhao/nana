@@ -195,11 +195,13 @@
 #	endif
 #endif
 
+#ifndef _MSC_VER
 // std::clamp's feature test macro is defined inside <algorithm> 
-#include <algorithm>
-#if (!defined(__cpp_lib_clamp)) || (__cpp_lib_clamp < 201603)
-#	ifndef _enable_std_clamp
-#		define _enable_std_clamp
+#	include <algorithm>
+#	if (!defined(__cpp_lib_clamp)) || (__cpp_lib_clamp < 201603)
+#		ifndef _enable_std_clamp
+#			define _enable_std_clamp
+#		endif
 #	endif
 #endif
 
