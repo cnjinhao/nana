@@ -294,7 +294,7 @@ namespace nana
 
 		void drawer::refresh()
 		{
-			if (data_impl_->realizer && !data_impl_->refreshing)
+			if (data_impl_->realizer && (!(data_impl_->refreshing || graphics.size().empty())))
 			{
 				data_impl_->refreshing = true;
 				data_impl_->realizer->refresh(graphics);
