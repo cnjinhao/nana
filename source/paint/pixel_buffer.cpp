@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -515,13 +515,12 @@ namespace nana{	namespace paint
 		else if(16 == image->depth)
 		{
 			//The format of Xorg 16bits depth is 565
-			std::unique_ptr<unsigned[]> table_5bit_holder{new unsigned[32]};
-			auto * const table_5bit = table_5bit_holder.get();
+			std::unique_ptr<unsigned[]> table_holder{new unsigned[96]};
+			auto * const table_5bit = table_holder.get();
 			for(std::size_t i = 0; i < 32; ++i)
 				table_5bit[i] = (i * 255 / 31);
 
-			std::unique_ptr<unsigned[]> table_6bit_holder{new unsigned[64]};
-			auto * const table_6bit = table_6bit_holder.get();
+			auto * const table_6bit = table_holder.get() + 32;
 			for(std::size_t i = 0; i < 64; ++i)
 				table_6bit[i] = (i* 255 / 63); 
 
