@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -328,10 +328,14 @@ namespace nana{	namespace paint
 			else if(16 == depth)
 			{
 				//The format of Xorg 16bits depth is 565
-				std::unique_ptr<unsigned short[]> table_holder(new unsigned short[256]);
-				unsigned short * const fast_table = table_holder.get();
+				std::unique_ptr<unsigned short[]> table_5_6bit_holder(new unsigned short[512]);
+				auto * const table_5bit = table_5_6bit_holder.get();
+				auto * const table_6bit = table_5_6bit_holder.get() + 256;
 				for(int i = 0; i < 256; ++i)
-					fast_table[i] = i * 31 / 255;
+				{
+					table_5bit[i] = i * 31 / 255;
+					table_6bit[i] = i * 63 / 255;
+				}
 
 				std::size_t length = width * height;
 
@@ -342,7 +346,7 @@ namespace nana{	namespace paint
 				{
 					for(auto i = raw_pixel_buffer, end = raw_pixel_buffer + length; i != end; ++i)
 					{
-						*(pixbuf_16bits++) = (fast_table[i->element.red] << 11) | ( (i->element.green * 63 / 255) << 6) | fast_table[i->element.blue];
+						*(pixbuf_16bits++) = (table_5bit[i->element.red] << 11) | ( (table_6bit[i->element.green] << 5) | table_5bit[i->element.blue]);
 					}
 				}
 				else if(height)
@@ -355,7 +359,7 @@ namespace nana{	namespace paint
 					{
 						for(auto i = sp, end = sp + width; i != end; ++i)
 						{
-							*(pixbuf_16bits++) = (fast_table[i->element.red] << 11) | ((i->element.green * 63 / 255) << 6) | fast_table[i->element.blue];
+							*(pixbuf_16bits++) = (table_5bit[i->element.red] << 11) | (table_6bit[i->element.green] << 5) | table_5bit[i->element.blue];
 						}
 
 						if(++top < height)
@@ -511,10 +515,14 @@ namespace nana{	namespace paint
 		else if(16 == image->depth)
 		{
 			//The format of Xorg 16bits depth is 565
-			std::unique_ptr<unsigned[]> table_holder(new unsigned[32]);
-			unsigned * const fast_table = table_holder.get();
-			for(unsigned i = 0; i < 32; ++i)
-				fast_table[i] = (i * 255 / 31);
+			std::unique_ptr<unsigned[]> table_holder{new unsigned[96]};
+			auto * const table_5bit = table_holder.get();
+			for(std::size_t i = 0; i < 32; ++i)
+				table_5bit[i] = (i * 255 / 31);
+
+			auto * const table_6bit = table_holder.get() + 32;
+			for(std::size_t i = 0; i < 64; ++i)
+				table_6bit[i] = (i* 255 / 63); 
 
 			pixbuf += (r.x - want_r.x);
 			pixbuf += (r.y - want_r.y) * want_r.width;
@@ -525,9 +533,9 @@ namespace nana{	namespace paint
 
 				for(int x = 0; x < image->width; ++x)
 				{
-					pixbuf[x].element.red		= fast_table[(px_data[x] >> 11) & 0x1F];
-					pixbuf[x].element.green	= (px_data[x] >> 5) & 0x3F;
-					pixbuf[x].element.blue	= fast_table[px_data[x] & 0x1F];
+					pixbuf[x].element.red	= table_5bit[(px_data[x] >> 11) & 0x1F];
+					pixbuf[x].element.green	= table_6bit[(px_data[x] >> 5) & 0x3F];
+					pixbuf[x].element.blue	= table_5bit[px_data[x] & 0x1F];
 					pixbuf[x].element.alpha_channel = 0;
 				}
 				img_data += image->bytes_per_line;

@@ -591,21 +591,21 @@ namespace nana
 			return *this;
 		}
 
-		/*
-		rectangle& rectangle::set_size(const size& sz)
-		{
-			width = sz.width;
-			height = sz.height;
-			return *this;
-		}
-		*/
-
 		rectangle& rectangle::pare_off(int pixels)
 		{
 			x += pixels;
 			y += pixels;
-			width -= (pixels << 1);
-			height -= (pixels << 1);
+			auto const px_twice = (pixels << 1);
+			if (px_twice > static_cast<int>(width))
+				width = 0;
+			else
+				width -= px_twice;
+
+			if (px_twice > static_cast<int>(height))
+				height = 0;
+			else
+				height -= px_twice;
+
 			return *this;
 		}
 

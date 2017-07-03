@@ -445,7 +445,13 @@ namespace nana
 		size dimension() const noexcept;
 		rectangle& dimension(const size&) noexcept;
 
-		rectangle& pare_off(int pixels);	 ///<Pares the specified pixels off the rectangle. It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
+		/// Pares the specified pixels off the rectangle.
+		/**
+		 * It's equal to x += pixels; y + pixels; width -= (pixels << 1); height -= (pixels << 1);
+		 * @param pixels The number of pixels to be pared. If the number that multiples pixels twice is larger than width/height, the width/height will be zero. If the pixels is a negative number, the width/height is add the number that multiple pixels twice.
+		 * @return The reference of *this.
+		 */
+		rectangle& pare_off(int pixels);
 
 		int right() const noexcept;
 		int bottom() const noexcept;
