@@ -186,7 +186,7 @@
 #include <iosfwd>
 
 //Detects std::make_unique
-#if (!defined(_MSC_VER)) && (__cplusplus < 201402L)
+#if (!defined(_MSC_VER)) && (__cplusplus >= 201300)
 #	if !defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304)
 #		ifndef _enable_std_make_unique
 #			define _enable_std_make_unique
