@@ -22,9 +22,9 @@
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4099.html     --- in html format
 // http://article.gmane.org/gmane.comp.lib.boost.devel/256220             --- The filesystem TS unanimously approved by ISO.
 // http://theboostcpplibraries.com/boost.filesystem                       --- Boost docs
-// http://www.boost.org/doc/libs/1_58_0/libs/filesystem/doc/index.htm     --- 
+// http://www.boost.org/doc/libs/1_58_0/libs/filesystem/doc/index.htm     ---
 // http://www.boost.org/doc/libs/1_34_0/libs/filesystem/doc/index.htm
-// http://www.boost.org/doc/libs/1_58_0/boost/filesystem.hpp 
+// http://www.boost.org/doc/libs/1_58_0/boost/filesystem.hpp
 // https://gcc.gnu.org/onlinedocs/libstdc++/manual/status.html#status.iso.200x --- Table 1.4. g++ C++ Technical Specifications Implementation Status
 
 #ifndef NANA_FILESYSTEM_HPP
@@ -46,10 +46,10 @@
 
 #if (defined(NANA_FILESYSTEM_FORCE) || ( (defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(BOOST_FILESYSTEM_AVAILABLE)) && !(defined(BOOST_FILESYSTEM_FORCE) || defined(STD_FILESYSTEM_FORCE)) ) )
 
-#undef  NANA_USING_NANA_FILESYSTEM 
+#undef  NANA_USING_NANA_FILESYSTEM
 #define NANA_USING_NANA_FILESYSTEM  1
 
-#elif (defined(BOOST_FILESYSTEM_AVAILABLE) && ( defined(BOOST_FILESYSTEM_FORCE) || ( defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(STD_FILESYSTEM_FORCE) ) )) 
+#elif (defined(BOOST_FILESYSTEM_AVAILABLE) && ( defined(BOOST_FILESYSTEM_FORCE) || ( defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(STD_FILESYSTEM_FORCE) ) ))
 
 #undef  NANA_USING_BOOST_FILESYSTEM
 #define NANA_USING_BOOST_FILESYSTEM 1
@@ -65,14 +65,14 @@ namespace std {
 } // std
 
 #else
-
-#undef NANA_USING_STD_FILESYSTEM 
-#define NANA_USING_STD_FILESYSTEM 1
-#    include <experimental/filesystem>
+#   undef NANA_USING_STD_FILESYSTEM
+#   define NANA_USING_STD_FILESYSTEM 1
+#   include <experimental/filesystem>
 #endif
 
+
 #ifndef __cpp_lib_experimental_filesystem
-#   define __cpp_lib_experimental_filesystem 1
+#   define __cpp_lib_experimental_filesystem 201406
 #endif
 
 #if NANA_USING_NANA_FILESYSTEM
@@ -96,7 +96,7 @@ namespace nana  { namespace experimental { namespace filesystem
 #endif
 
 	enum class file_type
-	{ 
+	{
 		none = 0,   ///< has not been determined or an error occurred while trying to determine
 		not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error
 		regular = 1,
@@ -108,11 +108,11 @@ namespace nana  { namespace experimental { namespace filesystem
 		socket =7,
 		unknown= 8  ///< The file does exist, but is of an operating system dependent type not covered by any of the other
 	};
-    
-	enum class perms 
+
+	enum class perms
 	{
 		none = 0,		///< There are no permissions set for the file.
-		all = 0x1FF,		///< owner_all | group_all | others_all 
+		all = 0x1FF,		///< owner_all | group_all | others_all
 		mask = 0xFFF,		///< all | set_uid | set_gid | sticky_bit.
 		unknown = 0xFFFF	///<  not known, such as when a file_status object is created without specifying the permissions
 	};
@@ -147,13 +147,13 @@ namespace nana  { namespace experimental { namespace filesystem
 		file_type	value_;
 		perms		perms_;
 	};
-    
+
     /// concerned only with lexical and syntactic aspects and does not necessarily exist in
-    /// external storage, and the pathname is not necessarily valid for the current operating system 
-    /// or for a particular file system 
-    /// A sequence of elements that identify the location of a file within a filesystem. 
+    /// external storage, and the pathname is not necessarily valid for the current operating system
+    /// or for a particular file system
+    /// A sequence of elements that identify the location of a file within a filesystem.
     /// The elements are the:
-    /// rootname (opt), root-directory (opt), and an optional sequence of filenames. 
+    /// rootname (opt), root-directory (opt), and an optional sequence of filenames.
     /// The maximum number of elements in the sequence is operating system dependent.
 	class path
 	{
@@ -177,7 +177,7 @@ namespace nana  { namespace experimental { namespace filesystem
 
 		// modifiers
 		//void clear() noexcept;
-		path& make_preferred();   
+		path& make_preferred();
 		path& remove_filename();
 		//path& replace_filename(const path& replacement);
 		//path& replace_extension(const path& replacement = path());
@@ -188,13 +188,13 @@ namespace nana  { namespace experimental { namespace filesystem
 		//path root_directory() const;
 		//path root_path() const;
 		//path relative_path() const;
-		path parent_path() const;    
-		path filename() const;        
+		path parent_path() const;
+		path filename() const;
 		//path stem() const;
-		path extension() const;   
+		path extension() const;
 
 		// query
-		bool empty() const noexcept; 
+		bool empty() const noexcept;
 		//bool has_root_name() const;
 		//bool has_root_directory() const;
 		//bool has_root_path() const;
@@ -228,7 +228,7 @@ namespace nana  { namespace experimental { namespace filesystem
 
 		//appends
 		path& operator/=(const path& other);
-		
+
 		template<typename Source>
 		path& operator/=(const Source& source)
 		{
@@ -265,8 +265,8 @@ namespace nana  { namespace experimental { namespace filesystem
 		filesystem_error(const std::string& msg, const path& path1, std::error_code err);
 		filesystem_error(const std::string& msg, const path& path1, const path& path2, std::error_code err);
 
-		const path& path1() const noexcept;  
-		const path& path2() const noexcept;  
+		const path& path1() const noexcept;
+		const path& path2() const noexcept;
 		// const char* what() const noexcept;
 	private:
 		path path1_;
@@ -307,8 +307,8 @@ namespace nana  { namespace experimental { namespace filesystem
 		directory_iterator& operator++();
 		directory_iterator operator++(int);  ///< extention
 
-		bool equal(const directory_iterator& x) const; 
-    
+		bool equal(const directory_iterator& x) const;
+
 	private:
 		template<typename Char>
 		static bool _m_ignore(const Char * p)
@@ -330,12 +330,12 @@ namespace nana  { namespace experimental { namespace filesystem
 	};
 	/// enable directory_iterator range-based for statements
 	inline directory_iterator begin( directory_iterator iter) noexcept
-	{	
+	{
 		return iter;
 	}
 
 	inline directory_iterator end(	const directory_iterator&) noexcept
-	{	
+	{
 		return {};
 	}
 
@@ -388,7 +388,7 @@ namespace nana  { namespace experimental { namespace filesystem
 
 		if (is_directory(fs))
 			return (directory_iterator() == directory_iterator(p));
-		
+
 		return (file_size(p) == 0);
     }
     // bool is_empty(const path& p, error_code& ec) noexcept;
@@ -400,7 +400,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	//bool create_directory(const path& p, error_code& ec) noexcept;
 	bool create_directory(const path& p, const path& attributes);
 	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
-	
+
 
 	/// The time of last data modification of p, determined as if by the value of the POSIX
     /// stat structure member st_mtime obtained as if by POSIX stat().
@@ -412,7 +412,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	path current_path();
 	//path current_path(error_code& ec);
 	void current_path(const path& p);   ///< chdir
-	//void current_path(const path& p, error_code& ec) noexcept;    
+	//void current_path(const path& p, error_code& ec) noexcept;
 
 	bool remove(const path& p);
 	bool remove(const path& p, std::error_code& ec); // noexcept;
@@ -422,7 +422,7 @@ namespace nana  { namespace experimental { namespace filesystem
 
 	template<typename CharType>
 	std::basic_string<CharType> parent_path(const std::basic_string<CharType>& path)
-	{	
+	{
 		auto index = path.size();
 
 		if (index)
