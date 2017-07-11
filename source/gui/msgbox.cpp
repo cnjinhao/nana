@@ -1,7 +1,7 @@
 /*
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -18,7 +18,6 @@
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/panel.hpp>
 #include <nana/gui/widgets/picture.hpp>
-#include <nana/gui/place.hpp>
 #include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
 #include <nana/gui/filebox.hpp>
@@ -511,7 +510,6 @@ namespace nana
 
 			unsigned height = 20 + desc_extent.height + 10 + 38;
 
-			place_.bind(*this);
 			std::stringstream ss_content;
 			ss_content << "<margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
 
@@ -598,9 +596,10 @@ namespace nana
 			std::stringstream ss;
 			ss << "vert<img_top weight="<<img_sz[0].height<<"><<img_left weight="<<img_sz[2].width<<">"<<ss_content.str()<<"<img_right weight="<<img_sz[3].width<<">><img_bottom weight="<<img_sz[1].height<<">";
 
-			place_.div(ss.str().data());
-			place_["desc"] << desc_;
-			place_["buttons"] << btn_ok_ << btn_cancel_;
+			auto& place = this->get_place();
+			place.div(ss.str().c_str());
+			place["desc"] << desc_;
+			place["buttons"] << btn_ok_ << btn_cancel_;
 
 			const char * img_fields[4] = {"img_top", "img_bottom", "img_left", "img_right"};
 
@@ -611,11 +610,10 @@ namespace nana
 					images_[i].create(*this, true);
 					images_[i].load(imgs[i], valid_areas[i]);
 					images_[i].stretchable(0, 0, 0, 0);
-					place_[img_fields[i]] << images_[i];
-					place_.field_display(img_fields[i], true);
+					place[img_fields[i]] << images_[i];
 				}
-				else
-					place_.field_display(img_fields[i], false);
+
+				place.field_display(img_fields[i], imgs[i]);
 			}
 
 			move(API::make_center(this->owner(), desc_extent.width, height));
@@ -626,14 +624,14 @@ namespace nana
 		{
 			verifier_ = std::move(verifier);
 
-			std::size_t index = 0;
+			unsigned index = 0;
 			for (auto wd : inputs)
 			{
 				std::stringstream ss;
 				ss << "input_" << index++;
-				place_[ss.str().data()] << wd;
+				this->operator[](ss.str().data()) << wd;
 			}
-			place_.collocate();
+			this->collocate();
 			show();
 		}
 
@@ -646,7 +644,6 @@ namespace nana
 		::nana::button	btn_ok_;
 		::nana::button	btn_cancel_;
 		bool	valid_input_{ false };
-		::nana::place	place_;
 		std::function<bool(window)> verifier_;
 		::nana::picture	images_[4];
 	};
