@@ -143,6 +143,12 @@ namespace drawerbase {
 				API::dev::lazy_refresh();
 		}
 
+		void drawer::dbl_click(graph_reference, const arg_mouse& arg)
+		{
+			if(editor_->select_word(arg))
+				API::dev::lazy_refresh();
+		}
+
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
 		{
 			editor_->respond_key(arg);
