@@ -1434,7 +1434,8 @@ namespace nana
 
 				bool expand(size_type cat, bool exp) noexcept
 				{
-					if(good(cat) && cat)
+					//It is allowed to expand the 1st category.
+					if(good(cat) && (cat || exp))
 					{
 						auto & expanded = get(cat)->expand;
 						if(expanded != exp)
@@ -2849,7 +2850,32 @@ namespace nana
 					ess_->calc_content_size();
 				}
 
-				ess_->content_view->turn_page(to_bottom, false);
+				auto origin = ess_->content_view->origin();
+				origin.y = 0;
+
+				auto off = this->distance(this->first(), pos) * ess_->item_height();
+
+				auto screen_px = ess_->content_view->view_area().height;
+
+				if (to_bottom)
+				{
+					off += ess_->item_height();
+					if (off >= screen_px)
+						origin.y = static_cast<int>(off - screen_px);
+				}
+				else
+				{
+					auto last_off = this->distance(this->first(), this->last()) * ess_->item_height();
+					if (last_off - off >= screen_px)
+						origin.y = static_cast<int>(off);
+					else if (last_off >= screen_px)
+						origin.y = static_cast<int>(last_off - screen_px);
+				}
+
+				auto off_origin = origin - ess_->content_view->origin();
+				ess_->content_view->move_origin(origin - ess_->content_view->origin());
+
+				ess_->content_view->sync(false);
 			}
 
 			void es_lister::erase(const index_pair& pos)
@@ -4488,8 +4514,10 @@ namespace nana
 
 					//pos_ never represents a category if this item_proxy is available.
 					auto & m = cat_->items.at(pos_.item);       // a ref to the real item
+
+					//ignore if no change
 					if(m.flags.selected == s)
-						return *this;     // ignore if no change
+						return *this;
 
 					m.flags.selected = s;                       // actually change selection
 
@@ -4503,14 +4531,8 @@ namespace nana
 					else if (ess_->lister.latest_selected_abs == pos_)
 						ess_->lister.latest_selected_abs.set_both(npos);
 
-					if (scroll_view)
-					{
-						if (ess_->lister.get(pos_.cat)->expand)
-							ess_->lister.get(pos_.cat)->expand = false;
-
-						if (!this->displayed())
-							ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
-					}
+					if (scroll_view && (!this->displayed()))
+						ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
 
 					ess_->update();
 					return *this;
