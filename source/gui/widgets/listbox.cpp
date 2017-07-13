@@ -2849,6 +2849,12 @@ namespace nana
 					this->expand(pos.cat, true);
 					ess_->calc_content_size();
 				}
+				else if (!ess_->auto_draw)
+				{
+					//force a update of content size and scrollbar status when auto_draw is false to make
+					//sure that the scroll function works fine.
+					ess_->calc_content_size();
+				}
 
 				auto origin = ess_->content_view->origin();
 				origin.y = 0;
