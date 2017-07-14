@@ -211,6 +211,7 @@ namespace nana{	namespace widgets
 			bool mouse_enter(bool entering);
 			bool mouse_move(bool left_button, const point& screen_pos);
 			void mouse_pressed(const arg_mouse& arg);
+                        bool select_word(const arg_mouse& arg);
 
 			skeletons::textbase<char_type>& textbase();
 			const skeletons::textbase<char_type>& textbase() const;
