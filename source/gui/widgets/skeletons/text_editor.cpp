@@ -8,7 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/skeletons/text_editor.cpp
- *	@contributors: Ariel Vina-Rodriguez
+ *	@contributors: Ariel Vina-Rodriguez, Oleg Smolsky
  */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
@@ -1580,6 +1580,8 @@ namespace nana{	namespace widgets
 			}
 		}
 
+		//Added Windows-style mouse double-click to the textbox(https://github.com/cnjinhao/nana/pull/229)
+		//Oleg Smolsky
 		bool text_editor::select_word(const arg_mouse& arg)
 		{
 			if(!attributes_.enable_caret)
