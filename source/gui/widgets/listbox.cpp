@@ -2878,10 +2878,8 @@ namespace nana
 						origin.y = static_cast<int>(last_off - screen_px);
 				}
 
-				auto off_origin = origin - ess_->content_view->origin();
-				ess_->content_view->move_origin(origin - ess_->content_view->origin());
-
-				ess_->content_view->sync(false);
+				if(ess_->content_view->move_origin(origin - ess_->content_view->origin()))
+					ess_->content_view->sync(false);
 			}
 
 			void es_lister::erase(const index_pair& pos)
