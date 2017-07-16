@@ -1677,6 +1677,7 @@ namespace nana{	namespace widgets
 
 					//_m_put calcs the lines
 					_m_reset_content_size(false);
+					impl_->cview->sync(false);
 				}
 			}
 			else
@@ -1998,7 +1999,8 @@ namespace nana{	namespace widgets
 
 			if(graph_)
 			{
-				this->_m_adjust_view();
+				if(this->_m_adjust_view())
+					impl_->cview->sync(false);
 
 				reset_caret();
 				impl_->try_refresh = sync_graph::refresh;

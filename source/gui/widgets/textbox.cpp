@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/textbox.hpp
+ *	@contributors: Oleg Smolsky
  */
 
 #include <nana/gui/widgets/textbox.hpp>
@@ -143,6 +144,8 @@ namespace drawerbase {
 				API::dev::lazy_refresh();
 		}
 
+		//Added Windows-style mouse double-click to the textbox(https://github.com/cnjinhao/nana/pull/229)
+		//Oleg Smolsky
 		void drawer::dbl_click(graph_reference, const arg_mouse& arg)
 		{
 			if(editor_->select_word(arg))
