@@ -1708,7 +1708,7 @@ namespace nana{	namespace widgets
 				//Check and make the crtpos available
 				if (crtpos.y < impl_->textbase.lines())
 				{
-					crtpos.x = (std::min)(impl_->textbase.getline(crtpos.y).size(), crtpos.x);
+					crtpos.x = (std::min)(static_cast<decltype(crtpos.x)>(impl_->textbase.getline(crtpos.y).size()), crtpos.x);
 				}
 				else
 				{
