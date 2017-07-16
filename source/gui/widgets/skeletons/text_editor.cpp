@@ -234,7 +234,7 @@ namespace nana{	namespace widgets
 					}
 				}
 
-				editor_.move_caret(editor_.points_.caret);
+				editor_.reset_caret();
 			}
 		};
 
@@ -302,7 +302,7 @@ namespace nana{	namespace widgets
 						editor_.select_.b = sel_b_;
 					}
 				}
-				editor_.move_caret(editor_.points_.caret);
+				editor_.reset_caret();
 			}
 		private:
 			std::wstring text_;
@@ -1273,7 +1273,7 @@ namespace nana{	namespace widgets
 			if (impl_->cview->content_size().empty() || this->attributes_.line_wrapped)
 				_m_reset_content_size(true);
 
-			move_caret(points_.caret);
+			reset_caret();
 			return true;
 		}
 
@@ -1564,7 +1564,6 @@ namespace nana{	namespace widgets
 					{
 						//no move occurs
 						select(false);
-
 						move_caret(_m_coordinate_to_caret(arg.pos));
 					}
 
@@ -1700,9 +1699,28 @@ namespace nana{	namespace widgets
 			return str;
 		}
 
-		bool text_editor::move_caret(const upoint& crtpos, bool reset_caret)
+		bool text_editor::move_caret(upoint crtpos, bool stay_in_view)
 		{
 			const unsigned line_pixels = line_height();
+
+			if (crtpos != points_.caret)
+			{
+				//Check and make the crtpos available
+				if (crtpos.y < impl_->textbase.lines())
+				{
+					crtpos.x = (std::min)(impl_->textbase.getline(crtpos.y).size(), crtpos.x);
+				}
+				else
+				{
+					crtpos.y = impl_->textbase.lines();
+					if (crtpos.y > 0)
+						--crtpos.y;
+
+					crtpos.x = impl_->textbase.getline(crtpos.y).size();
+				}
+
+				points_.caret = crtpos;
+			}
 
 			//The coordinate of caret
 			auto coord = _m_caret_to_coordinate(crtpos);
@@ -1734,9 +1752,11 @@ namespace nana{	namespace widgets
 				caret->position(coord);
 
 			//Adjust the caret into screen when the caret position is modified by this function
-			if (reset_caret && (!hit_text_area(coord)))
+			if (stay_in_view && (!hit_text_area(coord)))
 			{
-				this->_m_adjust_view();
+				if (_m_adjust_view())
+					impl_->cview->sync(false);
+
 				impl_->try_refresh = sync_graph::refresh;
 				caret->visible(true);
 				return true;
@@ -1751,7 +1771,7 @@ namespace nana{	namespace widgets
 			points_.caret.x = static_cast<unsigned>(impl_->textbase.getline(points_.caret.y).size());
 
 			if (update)
-				this->move_caret(points_.caret, false);
+				this->reset_caret();
 		}
 
 		void text_editor::reset_caret_pixels() const
@@ -2465,7 +2485,7 @@ namespace nana{	namespace widgets
 			if (stay_in_view && this->_m_adjust_view())
 				impl_->try_refresh = sync_graph::refresh;
 
-			move_caret(points_.caret);
+			reset_caret();
 			return points_.caret;
 		}
 

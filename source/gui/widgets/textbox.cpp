@@ -390,6 +390,16 @@ namespace drawerbase {
 			return editor->hit_text_area(scr_pos);
 		}
 
+		upoint textbox::caret_pos() const
+		{
+			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (editor)
+				return editor->caret();
+
+			return{};
+		}
+
 		textbox& textbox::caret_pos(const upoint& pos)
 		{
 			auto editor = get_drawer_trigger().editor();

@@ -149,12 +149,13 @@ namespace nana{	namespace widgets
 			void text(std::wstring, bool end_caret);
 			std::wstring text() const;
 
-			/// Sets caret position through text coordinate.
+			/// Moves the caret at specified position
 			/**
 			 * @param pos the text position
-			 * @param reset indicates whether to reset the text position by the pos. If this parameter is true, the text position is set by pos. If the parameter is false, it only moves the UI caret to the specified position. 
+			 * @param stay_in_view Indicates whether to adjust the view to make the caret in view. This parameter is ignored if the caret is already in view.
+			 * @return true indicates a refresh is required.
 			 */
-			bool move_caret(const upoint& pos, bool reset = false);
+			bool move_caret(upoint pos, bool stay_in_view = false);
 			void move_caret_end(bool update);
 			void reset_caret_pixels() const;
 			void reset_caret(bool stay_in_view = false);

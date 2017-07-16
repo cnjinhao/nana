@@ -175,6 +175,9 @@ namespace nana
 		/// Returns true if the caret is in the area of display, false otherwise.
 		bool caret_pos(point& pos, bool text_coordinate) const;
 
+		/// Gets the caret position, in text coordinate
+		upoint caret_pos() const;
+
 		/// Sets the caret position with a text position
 		textbox& caret_pos(const upoint&);
 
