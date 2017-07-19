@@ -140,6 +140,7 @@ namespace nana
 			private:
 				//Overrides drawer_trigger methods
 				void attached(widget_reference, graph_reference)		override;
+				void detached() override;
 				void refresh(graph_reference)	override;
 				void dbl_click(graph_reference, const arg_mouse&)	override;
 				void mouse_down(graph_reference, const arg_mouse&)	override;
