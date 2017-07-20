@@ -40,6 +40,11 @@ namespace skeletons
 	public:
 		using graph_reference = paint::graphics&;
 
+		enum class scrolls
+		{
+			none, horz, vert, both
+		};
+
 		struct events_type
 		{
 			::std::function<void(const point&)> hover_outside;
@@ -50,6 +55,8 @@ namespace skeletons
 		~content_view();
 
 		events_type& events();
+
+		bool enable_scrolls(scrolls which);
 
 		void step(unsigned step_value, bool horz);
 		bool scroll(bool forwards, bool horz);

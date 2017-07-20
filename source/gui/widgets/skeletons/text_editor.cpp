@@ -1337,6 +1337,10 @@ namespace nana{	namespace widgets
 				line_wrapped(false);
 
 			_m_reset_content_size();
+			impl_->cview->enable_scrolls(ml ? content_view::scrolls::both : content_view::scrolls::none);
+			impl_->cview->move_origin(point{} -impl_->cview->origin());
+
+			impl_->try_refresh = sync_graph::refresh;
 			return true;
 		}
 
