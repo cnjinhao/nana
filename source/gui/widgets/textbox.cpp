@@ -8,6 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/textbox.hpp
+ *	@contributors: Oleg Smolsky
  */
 
 #include <nana/gui/widgets/textbox.hpp>
@@ -140,6 +141,14 @@ namespace drawerbase {
 		void drawer::mouse_leave(graph_reference, const arg_mouse&)
 		{
 			if(editor_->mouse_enter(false))
+				API::dev::lazy_refresh();
+		}
+
+		//Added Windows-style mouse double-click to the textbox(https://github.com/cnjinhao/nana/pull/229)
+		//Oleg Smolsky
+		void drawer::dbl_click(graph_reference, const arg_mouse& arg)
+		{
+			if(editor_->select_word(arg))
 				API::dev::lazy_refresh();
 		}
 
@@ -379,6 +388,16 @@ namespace drawerbase {
 				pos = scr_pos;
 
 			return editor->hit_text_area(scr_pos);
+		}
+
+		upoint textbox::caret_pos() const
+		{
+			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (editor)
+				return editor->caret();
+
+			return{};
 		}
 
 		textbox& textbox::caret_pos(const upoint& pos)

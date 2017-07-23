@@ -80,6 +80,7 @@ namespace nana
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 				void mouse_enter(graph_reference, const arg_mouse&)	override;
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
+				void dbl_click(graph_reference, const arg_mouse&)	override;
 				void key_press(graph_reference, const arg_keyboard&)override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 				void mouse_wheel(graph_reference, const arg_wheel&)	override;
@@ -173,6 +174,9 @@ namespace nana
 		/// Gets the caret position
 		/// Returns true if the caret is in the area of display, false otherwise.
 		bool caret_pos(point& pos, bool text_coordinate) const;
+
+		/// Gets the caret position, in text coordinate
+		upoint caret_pos() const;
 
 		/// Sets the caret position with a text position
 		textbox& caret_pos(const upoint&);

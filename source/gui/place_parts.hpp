@@ -557,7 +557,10 @@ namespace nana
 			}value_;
 		};//end class number_t
 
-
+		/// Margin attribute
+		/**
+		 * Definition at https://github.com/cnjinhao/nana/wiki/Div-Text#margin
+		 */
 		class margin
 		{
 		public:
@@ -598,7 +601,7 @@ namespace nana
 				{
 				case 0:	break;
 				case 1:	//top
-					il = ir = it = ib = 0;
+					it = 0;
 					break;
 				case 2://top,bottom and left,right
 					it = ib = 0;
@@ -624,7 +627,7 @@ namespace nana
 				case 3: //left
 					pos = il; break;
 				default:
-					return number_t{};
+					return {};
 				}
 
 				return (-1 == pos ? number_t{} : margins_[pos]);
@@ -652,7 +655,7 @@ namespace nana
 					{
 					case 0:	break;
 					case 1:	//top
-						il = ir = it = ib = 0;
+						it = 0;
 						break;
 					case 2://top,bottom and left,right
 						it = ib = 0;

@@ -1,7 +1,7 @@
 /*
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -14,11 +14,11 @@
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/widgets/button.hpp>
 #include <nana/gui/widgets/spinbox.hpp>
+#include <nana/gui/widgets/checkbox.hpp>
 #include <nana/gui/widgets/combox.hpp>
 #include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/panel.hpp>
 #include <nana/gui/widgets/picture.hpp>
-#include <nana/gui/place.hpp>
 #include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
 #include <nana/gui/filebox.hpp>
@@ -511,7 +511,6 @@ namespace nana
 
 			unsigned height = 20 + desc_extent.height + 10 + 38;
 
-			place_.bind(*this);
 			std::stringstream ss_content;
 			ss_content << "<margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
 
@@ -528,8 +527,8 @@ namespace nana
 
 			ss_content << "><margin=[15] weight=38<><buttons arrange=80 gap=10 weight=170>>>";
 
-			if (desc_extent.width < 170)
-				desc_extent.width = 170;
+			if (desc_extent.width < 200)
+				desc_extent.width = 200;
 
 			//Make sure the complete display of input extent
 			if (desc_extent.width < fixed_pixels)
@@ -598,9 +597,10 @@ namespace nana
 			std::stringstream ss;
 			ss << "vert<img_top weight="<<img_sz[0].height<<"><<img_left weight="<<img_sz[2].width<<">"<<ss_content.str()<<"<img_right weight="<<img_sz[3].width<<">><img_bottom weight="<<img_sz[1].height<<">";
 
-			place_.div(ss.str().data());
-			place_["desc"] << desc_;
-			place_["buttons"] << btn_ok_ << btn_cancel_;
+			auto& place = this->get_place();
+			place.div(ss.str().c_str());
+			place["desc"] << desc_;
+			place["buttons"] << btn_ok_ << btn_cancel_;
 
 			const char * img_fields[4] = {"img_top", "img_bottom", "img_left", "img_right"};
 
@@ -611,11 +611,10 @@ namespace nana
 					images_[i].create(*this, true);
 					images_[i].load(imgs[i], valid_areas[i]);
 					images_[i].stretchable(0, 0, 0, 0);
-					place_[img_fields[i]] << images_[i];
-					place_.field_display(img_fields[i], true);
+					place[img_fields[i]] << images_[i];
 				}
-				else
-					place_.field_display(img_fields[i], false);
+
+				place.field_display(img_fields[i], imgs[i]);
 			}
 
 			move(API::make_center(this->owner(), desc_extent.width, height));
@@ -626,14 +625,14 @@ namespace nana
 		{
 			verifier_ = std::move(verifier);
 
-			std::size_t index = 0;
+			unsigned index = 0;
 			for (auto wd : inputs)
 			{
 				std::stringstream ss;
 				ss << "input_" << index++;
-				place_[ss.str().data()] << wd;
+				this->operator[](ss.str().data()) << wd;
 			}
-			place_.collocate();
+			this->collocate();
 			show();
 		}
 
@@ -646,7 +645,6 @@ namespace nana
 		::nana::button	btn_ok_;
 		::nana::button	btn_cancel_;
 		bool	valid_input_{ false };
-		::nana::place	place_;
 		std::function<bool(window)> verifier_;
 		::nana::picture	images_[4];
 	};
@@ -654,6 +652,70 @@ namespace nana
 	unsigned inputbox::abstract_content::fixed_pixels() const
 	{
 		return 0;
+	}
+
+	//class boolean
+	struct inputbox::boolean::implement
+	{
+		bool value;
+		::std::string empty_label_text;
+		::std::string label_text;
+		::nana::panel<false> dock;
+		::nana::checkbox checkbox;
+	};
+
+	inputbox::boolean::boolean(::std::string label, bool initial_value)
+		: impl_(new implement)
+	{
+		impl_->value = initial_value;
+		impl_->label_text = std::move(label);
+		impl_->empty_label_text = "   ";
+	}
+
+	inputbox::boolean::~boolean()
+	{}
+
+	bool inputbox::boolean::value() const
+	{
+		return (impl_->checkbox.empty() ? impl_->value : impl_->checkbox.checked());
+	}
+
+	//Implementation of abstract_content
+	const ::std::string& inputbox::boolean::label() const
+	{
+		return impl_->empty_label_text;
+	}
+	
+	window inputbox::boolean::create(window owner, unsigned label_px)
+	{
+		auto impl = impl_.get();
+
+		impl->dock.create(owner);
+
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		auto value_px = graph.text_extent_size(impl->label_text).width + 20;
+
+		impl->checkbox.create(impl->dock, rectangle{ (std::max)(static_cast<int>(label_px) - 18, 0), 0, value_px, 0 });
+		impl->checkbox.check(impl->value);
+		impl->checkbox.caption(impl->label_text);
+
+		impl->dock.events().resized.connect_unignorable([impl, value_px](const ::nana::arg_resized&)
+		{
+			impl->checkbox.size({ value_px, 24 });
+		});
+
+		impl->checkbox.events().destroy.connect_unignorable([impl](const arg_destroy&)
+		{
+			impl->value = impl->checkbox.checked();
+		});
+
+		return impl->dock;
+	}
+
+	unsigned inputbox::boolean::fixed_pixels() const
+	{
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		return graph.text_extent_size(impl_->label_text).width;
 	}
 
 	//class integer
@@ -708,10 +770,7 @@ namespace nana
 		impl->label.caption(impl->label_text);
 		impl->label.format(true);
 
-		//get the longest value
-		int longest = (std::abs(static_cast<int>(impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(static_cast<int>(impl->last < 0 ? impl->last * 10 : impl->last)) ? impl->last : impl->begin);
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
-		auto value_px = graph.text_extent_size(std::to_wstring(longest)).width + 34;
+		auto const value_px = fixed_pixels();
 
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
@@ -730,6 +789,14 @@ namespace nana
 		});
 
 		return impl->dock;
+	}
+
+	unsigned inputbox::integer::fixed_pixels() const
+	{
+		//get the longest value
+		int longest = (std::abs(static_cast<int>(impl_->begin < 0 ? impl_->begin * 10 : impl_->begin)) < std::abs(static_cast<int>(impl_->last < 0 ? impl_->last * 10 : impl_->last)) ? impl_->last : impl_->begin);
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		return graph.text_extent_size(std::to_wstring(longest)).width + 34;
 	}
 	//end class integer
 
@@ -786,10 +853,7 @@ namespace nana
 		impl->label.caption(impl->label_text);
 		impl->label.format(true);
 
-		//get the longest value
-		auto longest = (std::abs(static_cast<int>(impl->begin < 0 ? impl->begin * 10 : impl->begin)) < std::abs(static_cast<int>(impl->last < 0 ? impl->last * 10 : impl->last)) ? impl->last : impl->begin);
-		paint::graphics graph{ ::nana::size{ 10, 10 } };
-		auto value_px = graph.text_extent_size(std::to_wstring(longest)).width + 34;
+		auto value_px = fixed_pixels();
 
 		impl->spinbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 		impl->spinbox.range(impl->begin, impl->last, impl->step);
@@ -808,6 +872,14 @@ namespace nana
 		});
 
 		return impl->dock;
+	}
+
+	unsigned inputbox::real::fixed_pixels() const
+	{
+		//get the longest value
+		auto longest = (std::abs(static_cast<int>(impl_->begin < 0 ? impl_->begin * 10 : impl_->begin)) < std::abs(static_cast<int>(impl_->last < 0 ? impl_->last * 10 : impl_->last)) ? impl_->last : impl_->begin);
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		return graph.text_extent_size(std::to_wstring(longest)).width + 34;
 	}
 	//end class real
 
@@ -890,7 +962,7 @@ namespace nana
 		impl->label.caption(impl->label_text);
 		impl->label.format(true);
 
-		unsigned value_px = 0;
+		unsigned const value_px = fixed_pixels();
 		if (impl->options.empty())
 		{
 			impl->textbox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, 0, 0 });
@@ -901,16 +973,6 @@ namespace nana
 		}
 		else
 		{
-			//get the longest value
-			paint::graphics graph{ ::nana::size{ 10, 10 } };
-			for (auto & s : impl->options)
-			{
-				auto px = graph.text_extent_size(s).width;
-				if (px > value_px)
-					value_px = px;
-			}
-			value_px += 34;
-
 			impl->combox.create(impl->dock, rectangle{ static_cast<int>(label_px + 10), 0, value_px, 0 });
 
 			for (auto & s : impl->options)
@@ -922,7 +984,7 @@ namespace nana
 		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
-			if (value_px)
+			if (impl->textbox.empty())
 				impl->combox.size({ value_px, 24 });
 			else
 				impl->textbox.size({arg.width - label_px - 10, 24});
@@ -934,6 +996,24 @@ namespace nana
 			impl->value = wdg.caption();
 		});
 		return impl->dock;
+	}
+
+	unsigned inputbox::text::fixed_pixels() const
+	{
+		if (impl_->options.empty())
+			return 0;
+
+		paint::graphics graph{ ::nana::size{ 10, 10 } };
+		unsigned long_px = 0;
+		//get the longest value
+		for (auto & s : impl_->options)
+		{
+			auto px = graph.text_extent_size(s).width;
+			if (px > long_px)
+				long_px = px;
+		}
+
+		return long_px + 34;
 	}
 	//end class text
 
@@ -1214,6 +1294,9 @@ namespace nana
 
 			each_pixels.push_back(px.height);
 		}
+
+		//if (fixed_px < 150)
+		//	fixed_px = 150;
 
 		inputbox_window input_wd(owner_, images_, valid_areas_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
 

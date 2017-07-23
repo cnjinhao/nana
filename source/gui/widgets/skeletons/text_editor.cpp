@@ -8,7 +8,7 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/skeletons/text_editor.cpp
- *	@contributors: Ariel Vina-Rodriguez
+ *	@contributors: Ariel Vina-Rodriguez, Oleg Smolsky
  */
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/widgets/skeletons/textbase_export_interface.hpp>
@@ -234,7 +234,7 @@ namespace nana{	namespace widgets
 					}
 				}
 
-				editor_.move_caret(editor_.points_.caret);
+				editor_.reset_caret();
 			}
 		};
 
@@ -302,7 +302,7 @@ namespace nana{	namespace widgets
 						editor_.select_.b = sel_b_;
 					}
 				}
-				editor_.move_caret(editor_.points_.caret);
+				editor_.reset_caret();
 			}
 		private:
 			std::wstring text_;
@@ -440,7 +440,7 @@ namespace nana{	namespace widgets
 						break;
 				}
 
-				return *colored_areas_.emplace(i, 
+				return *colored_areas_.emplace(i,
 						std::make_shared<colored_area_type>(colored_area_type{line_pos, 1, color{}, color{}})
 					);
 			}
@@ -1129,7 +1129,7 @@ namespace nana{	namespace widgets
 				}
 			}
 		}
-		
+
 		colored_area_access_interface& text_editor::colored_area()
 		{
 			return impl_->colored_area;
@@ -1273,7 +1273,7 @@ namespace nana{	namespace widgets
 			if (impl_->cview->content_size().empty() || this->attributes_.line_wrapped)
 				_m_reset_content_size(true);
 
-			move_caret(points_.caret);
+			reset_caret();
 			return true;
 		}
 
@@ -1337,6 +1337,10 @@ namespace nana{	namespace widgets
 				line_wrapped(false);
 
 			_m_reset_content_size();
+			impl_->cview->enable_scrolls(ml ? content_view::scrolls::both : content_view::scrolls::none);
+			impl_->cview->move_origin(point{} -impl_->cview->origin());
+
+			impl_->try_refresh = sync_graph::refresh;
 			return true;
 		}
 
@@ -1564,7 +1568,6 @@ namespace nana{	namespace widgets
 					{
 						//no move occurs
 						select(false);
-
 						move_caret(_m_coordinate_to_caret(arg.pos));
 					}
 
@@ -1578,6 +1581,45 @@ namespace nana{	namespace widgets
 				if (hit_text_area(arg.pos) == false)
 					API::window_cursor(window_, nana::cursor::arrow);
 			}
+		}
+
+		//Added Windows-style mouse double-click to the textbox(https://github.com/cnjinhao/nana/pull/229)
+		//Oleg Smolsky
+		bool text_editor::select_word(const arg_mouse& arg)
+		{
+			if(!attributes_.enable_caret)
+				return false;
+
+			auto is_whitespace = [](wchar_t c) {
+				switch (c) {
+				case L' ':
+				case L'\t':
+				case L'\n':
+				case L'\r':
+				    return true;
+				default:
+				    return false;
+				}
+			};
+
+			// Set caret pos by screen point and get the caret pos.
+			mouse_caret(arg.pos, true);
+
+			// Set the initial selection: it is an empty range.
+			select_.a = select_.b = points_.caret;
+			const auto& line = impl_->textbase.getline(select_.b.y);
+
+			// Expand the selection forward to the word's end.
+			while (select_.b.x < line.size() && !is_whitespace(line[select_.b.x]))
+				++select_.b.x;
+
+			// Expand the selection backward to the word's start.
+			while (select_.a.x > 0 && !is_whitespace(line[select_.a.x - 1]))
+				--select_.a.x;
+
+			select_.mode_selection = selection::mode::method_selected;
+			impl_->try_refresh = sync_graph::refresh;
+			return true;
 		}
 
 		textbase<text_editor::char_type> & text_editor::textbase()
@@ -1638,6 +1680,7 @@ namespace nana{	namespace widgets
 
 					//_m_put calcs the lines
 					_m_reset_content_size(false);
+					impl_->cview->sync(false);
 				}
 			}
 			else
@@ -1660,9 +1703,28 @@ namespace nana{	namespace widgets
 			return str;
 		}
 
-		bool text_editor::move_caret(const upoint& crtpos, bool reset_caret)
-		{	
+		bool text_editor::move_caret(upoint crtpos, bool stay_in_view)
+		{
 			const unsigned line_pixels = line_height();
+
+			if (crtpos != points_.caret)
+			{
+				//Check and make the crtpos available
+				if (crtpos.y < impl_->textbase.lines())
+				{
+					crtpos.x = (std::min)(static_cast<decltype(crtpos.x)>(impl_->textbase.getline(crtpos.y).size()), crtpos.x);
+				}
+				else
+				{
+					crtpos.y = impl_->textbase.lines();
+					if (crtpos.y > 0)
+						--crtpos.y;
+
+					crtpos.x = impl_->textbase.getline(crtpos.y).size();
+				}
+
+				points_.caret = crtpos;
+			}
 
 			//The coordinate of caret
 			auto coord = _m_caret_to_coordinate(crtpos);
@@ -1694,9 +1756,11 @@ namespace nana{	namespace widgets
 				caret->position(coord);
 
 			//Adjust the caret into screen when the caret position is modified by this function
-			if (reset_caret && (!hit_text_area(coord)))
+			if (stay_in_view && (!hit_text_area(coord)))
 			{
-				this->_m_adjust_view();
+				if (_m_adjust_view())
+					impl_->cview->sync(false);
+
 				impl_->try_refresh = sync_graph::refresh;
 				caret->visible(true);
 				return true;
@@ -1711,7 +1775,7 @@ namespace nana{	namespace widgets
 			points_.caret.x = static_cast<unsigned>(impl_->textbase.getline(points_.caret.y).size());
 
 			if (update)
-				this->move_caret(points_.caret, false);
+				this->reset_caret();
 		}
 
 		void text_editor::reset_caret_pixels() const
@@ -1766,7 +1830,7 @@ namespace nana{	namespace widgets
 				impl_->try_refresh = sync_graph::refresh;
 				return true;
 			}
-			
+
 			select_.mode_selection = selection::mode::no_selected;
 			if (_m_cancel_select(0))
 			{
@@ -1914,10 +1978,10 @@ namespace nana{	namespace widgets
 			if ((false == textbase().empty()) || has_focus)
 			{
 				auto text_pos = _m_render_text(fgcolor);
-				
+
 				if (text_pos.empty())
 					text_pos.emplace_back(upoint{});
-				
+
 				if (text_pos != impl_->text_position)
 				{
 					impl_->text_position.swap(text_pos);
@@ -1959,7 +2023,8 @@ namespace nana{	namespace widgets
 
 			if(graph_)
 			{
-				this->_m_adjust_view();
+				if(this->_m_adjust_view())
+					impl_->cview->sync(false);
 
 				reset_caret();
 				impl_->try_refresh = sync_graph::refresh;
@@ -2276,7 +2341,7 @@ namespace nana{	namespace widgets
 			//The number of charecters in the line of caret
 			auto const text_length = textbase().getline(points_.caret.y).size();
 
-			
+
 			switch (key) {
 			case keyboard::os_arrow_left:
 				if (select_.move_to_end && (select_.a != select_.b) && (!arg.shift))
@@ -2424,7 +2489,7 @@ namespace nana{	namespace widgets
 			if (stay_in_view && this->_m_adjust_view())
 				impl_->try_refresh = sync_graph::refresh;
 
-			move_caret(points_.caret);
+			reset_caret();
 			return points_.caret;
 		}
 
@@ -2460,7 +2525,7 @@ namespace nana{	namespace widgets
 						lines = impl_->capacities.behavior->take_lines(row.first);
 					else
 						top += static_cast<int>(height * row.second);
-					
+
 					const rectangle area_r = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(height * lines) };
 
 					if (API::is_transparent_background(this->window_))
@@ -2757,7 +2822,7 @@ namespace nana{	namespace widgets
 
 				const unsigned pixels = line_height();
 				const rectangle update_area = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(pixels * secondary_count_before) };
-				
+
 				if (!API::dev::copy_transparent_background(window_, update_area, graph_, update_area.position()))
 				{
 					_m_draw_colored_area(graph_, { pos, 0 }, true);
@@ -3047,7 +3112,7 @@ namespace nana{	namespace widgets
 					this->points_.caret = (1 == align ? a : b);
 					this->_m_adjust_view();
 				}
-				
+
 				select_.a = select_.b = points_.caret;
 				reset_caret();
 				return true;
@@ -3195,7 +3260,7 @@ namespace nana{	namespace widgets
 			auto px = static_cast<int>(line_height());
 			return (px ? (impl_->cview->origin().y / px) : px);
 		}
-		
+
 		int text_editor::_m_text_x(const text_section& sct) const
 		{
 			auto const behavior = impl_->capacities.behavior;
@@ -3289,17 +3354,23 @@ namespace nana{	namespace widgets
 				line_px_( editor.line_height() )
 			{}
 
+			color selection_text_color(bool has_focused) const
+			{
+				return (has_focused ? editor_.scheme_->selection_text : editor_.scheme_->foreground).get_color();
+			}
+
 			void write_selection(const point& text_pos, unsigned text_px, const wchar_t* text, std::size_t len, bool has_focused)
 			{
-				graph_.palette(true, editor_.scheme_->selection_text.get_color());
-				graph_.rectangle(::nana::rectangle{ text_pos, { text_px, line_px_ } }, true, 
+				graph_.palette(true, selection_text_color(has_focused));
+
+				graph_.rectangle(::nana::rectangle{ text_pos, { text_px, line_px_ } }, true,
 					has_focused ? editor_.scheme_->selection.get_color() : editor_.scheme_->selection_unfocused.get_color());
 				graph_.string(text_pos, text, len);
 			}
 
 			void rtl_string(point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected, bool has_focused)
 			{
-				editor_._m_draw_parse_string(parser_, true, strpos, editor_.scheme_->selection_text.get_color(), str, len);
+				editor_._m_draw_parse_string(parser_, true, strpos, selection_text_color(has_focused), str, len);
 
 				//Draw selected part
 				paint::graphics graph({ glyph_selected, line_px_ });
@@ -3308,7 +3379,7 @@ namespace nana{	namespace widgets
 
 				int sel_xpos = static_cast<int>(str_px - (glyph_front + glyph_selected));
 
-				graph.palette(true, editor_.scheme_->selection_text.get_color());
+				graph.palette(true, selection_text_color(has_focused));
 				graph.string({ -sel_xpos, 0 }, str, len);
 				graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_px_), graph);
 			};
@@ -3345,7 +3416,7 @@ namespace nana{	namespace widgets
 			const auto line_h_pixels = line_height();
 
 			helper_pencil pencil(graph_, *this, parser);
-			
+
 			graph_.palette(true, clr);
 			graph_.palette(false, scheme_->selection.get_color());
 
@@ -3396,9 +3467,11 @@ namespace nana{	namespace widgets
 			//A text editor feature, it draws an extra block at end of line if the end of line is in range of selection.
 			bool extra_space = false;
 
+			//Create a flag for indicating whether the whole line is selected
 			const bool text_selected = (sbegin == text_ptr && send == text_ptr+ text_len);
+
 			//The text is not selected or the whole line text is selected
-			if (!focused || (!sbegin || !send) || text_selected || !attributes_.enable_caret)
+			if ((!sbegin || !send) || text_selected)
 			{
 				for (auto & ent : reordered)
 				{
@@ -3567,7 +3640,7 @@ namespace nana{	namespace widgets
 				return 0;
 
 			auto const reordered = unicode_reorder(lnstr.c_str(), lnstr.size());
-				
+
 			auto target = lnstr.c_str() + pos;
 
 			unsigned text_w = 0;
