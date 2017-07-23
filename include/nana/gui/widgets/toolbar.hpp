@@ -94,6 +94,7 @@ namespace nana
 		void enable(size_type index, bool enable_state);
 		void scale(unsigned s);   ///< Sets the scale of control button.
 
+		/// Enable to place buttons at right part. After calling it, every new button is right aligned.
 		void go_right();
 
 		bool detached() { return detached_; };
