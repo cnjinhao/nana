@@ -1288,6 +1288,8 @@ namespace nana
 		std::vector<unsigned> each_pixels;
 		unsigned label_px = 0, fixed_px = 0;
 		paint::graphics graph({ 5, 5 });
+
+		bool has_0_fixed_px = false;
 		for (auto p : contents)
 		{
 			auto px = label::measure(graph, p->label(), 150, true, align::right, align_v::center);
@@ -1295,13 +1297,15 @@ namespace nana
 				label_px = px.width;
 
 			px.width = p->fixed_pixels();
+			has_0_fixed_px |= (px.width == 0);
 			if (px.width > fixed_px)
 				fixed_px = px.width;
 
 			each_pixels.push_back(px.height);
 		}
 
-		if (fixed_px < 100)
+		//Adjust the fixed_px for good looking
+		if (has_0_fixed_px && (fixed_px < 100))
 			fixed_px = 100;
 
 		inputbox_window input_wd(owner_, images_, valid_areas_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
