@@ -269,6 +269,15 @@ namespace drawerbase {
 			return nullptr;
 		}
 
+		point textbox::content_origin() const
+		{
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->content_origin();
+
+			return{};
+		}
+
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
 		textbox& textbox::indention(bool enb, std::function<std::string()> generator)

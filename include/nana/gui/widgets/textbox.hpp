@@ -140,6 +140,8 @@ namespace nana
 
 		colored_area_access_interface* colored_area_access();
 
+		point content_origin() const;
+
 		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
 		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
 		textbox& indention(bool, std::function<std::string()> generator = {});
