@@ -41,6 +41,9 @@
     <Filter Include="Sources\threads">
       <UniqueIdentifier>{c1cdf46a-519f-422a-947f-39e173045414}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{d87c71b7-71e7-4221-953e-783325beffe4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\any.cpp">
