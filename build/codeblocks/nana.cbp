@@ -40,15 +40,6 @@
 				</Linker>
 			</Target>
 		</Build>
-		<Compiler>
-			<Add option="-std=c++11" />
-			<Add option="-D_enable_std_make_unique" />
-			<Add option="-D_WIN32_WINNT=0x0501" />
-			<Add option="-D_WIN32_WINNT_WINXP=0x0501" />
-			<Add option="-D_WIN32_WINNT_VISTA=0x0600" />
-			<Add option="-D_WIN32_WINNT_WIN7=0x0601" />
-			<Add directory="$(#boost.include)" />
-		</Compiler>
 		<Unit filename="../../source/any.cpp" />
 		<Unit filename="../../source/audio/detail/audio_device.cpp" />
 		<Unit filename="../../source/audio/detail/audio_stream.cpp" />
