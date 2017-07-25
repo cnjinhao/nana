@@ -520,7 +520,7 @@ namespace nana
 				if (each_height[i] > 27)
 					px = each_height[i];
 
-				ss_content << "<weight=" << px << " margin=[3] input_" << i << ">";
+				ss_content << "<weight=" << (px + 3) << " margin=[3] input_" << i << ">";
 
 				height += px + 1;
 			}
@@ -777,10 +777,10 @@ namespace nana
 
 		impl->spinbox.value(std::to_string(impl->value));
 
-		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized&)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
-			impl->label.size({ label_px, 24 });
-			impl->spinbox.size({ value_px, 24 });
+			impl->label.size({ label_px, arg.height });
+			impl->spinbox.move({static_cast<int>(label_px + 10), (static_cast<int>(arg.height) - 25) / 2, value_px, 24 });
 		});
 
 		impl->spinbox.events().destroy.connect_unignorable([impl](const arg_destroy&)
@@ -860,10 +860,10 @@ namespace nana
 
 		impl->spinbox.value(std::to_string(impl->value));
 
-		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized&)
+		impl->dock.events().resized.connect_unignorable([impl, label_px, value_px](const ::nana::arg_resized& arg)
 		{
-			impl->label.size(::nana::size{ label_px, 24 });
-			impl->spinbox.size(::nana::size{ value_px, 24 });
+			impl->label.size({ label_px, arg.height });
+			impl->spinbox.move({ static_cast<int>(label_px + 10), (static_cast<int>(arg.height) - 25) / 2, value_px, 24 });
 		});
 
 		impl->spinbox.events().destroy.connect_unignorable([impl](const arg_destroy&)
@@ -985,9 +985,9 @@ namespace nana
 		{
 			impl->label.size({ label_px, arg.height });
 			if (impl->textbox.empty())
-				impl->combox.size({ value_px, 24 });
+				impl->combox.move({static_cast<int>(label_px + 10), (static_cast<int>(arg.height) - 25) / 2, value_px, 24 });
 			else
-				impl->textbox.size({arg.width - label_px - 10, 24});
+				impl->textbox.move({ static_cast<int>(label_px + 10), (static_cast<int>(arg.height) - 25) / 2, arg.width - label_px - 10, 24 });
 		});
 
 		auto & wdg = (value_px ? static_cast<widget&>(impl->combox) : static_cast<widget&>(impl->textbox));
@@ -1111,17 +1111,18 @@ namespace nana
 		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
-			auto sz = impl->wdg_month.size();
-			sz.height = 24;
-			impl->wdg_month.size(sz);
 
-			sz = impl->wdg_day.size();
-			sz.height = 24;
-			impl->wdg_day.size(sz);
+			rectangle rt{static_cast<int>(label_px + 10), (static_cast<int>(arg.height) - 25) / 2, 94, 24};
 
-			sz = impl->wdg_year.size();
-			sz.height = 24;
-			impl->wdg_year.size(sz);
+			impl->wdg_month.move(rt);
+
+			rt.x += 104;
+			rt.width = 38;
+			impl->wdg_day.move(rt);
+
+			rt.x += 48;
+			rt.width = 50;
+			impl->wdg_year.move(rt);
 		});
 
 		auto destroy_fn = [impl](const arg_destroy& arg)
@@ -1235,8 +1236,13 @@ namespace nana
 		impl->dock.events().resized.connect_unignorable([impl, label_px](const ::nana::arg_resized& arg)
 		{
 			impl->label.size({ label_px, arg.height });
-			impl->path_edit.size({arg.width - label_px - 75, arg.height});
-			impl->browse.move({static_cast<int>(arg.width - 60), 0, 60, arg.height});
+
+			rectangle rt{ static_cast<int>(label_px)+10, (static_cast<int>(arg.height) - 25), arg.width - label_px - 75, 24};
+			impl->path_edit.move(rt);
+
+			rt.x = static_cast<int>(arg.width - 60);
+			rt.width = 60;
+			impl->browse.move(rt);
 		});
 
 		impl->path_edit.events().destroy.connect_unignorable([impl](const arg_destroy&)
@@ -1282,6 +1288,8 @@ namespace nana
 		std::vector<unsigned> each_pixels;
 		unsigned label_px = 0, fixed_px = 0;
 		paint::graphics graph({ 5, 5 });
+
+		bool has_0_fixed_px = false;
 		for (auto p : contents)
 		{
 			auto px = label::measure(graph, p->label(), 150, true, align::right, align_v::center);
@@ -1289,14 +1297,16 @@ namespace nana
 				label_px = px.width;
 
 			px.width = p->fixed_pixels();
+			has_0_fixed_px |= (px.width == 0);
 			if (px.width > fixed_px)
 				fixed_px = px.width;
 
 			each_pixels.push_back(px.height);
 		}
 
-		//if (fixed_px < 150)
-		//	fixed_px = 150;
+		//Adjust the fixed_px for good looking
+		if (has_0_fixed_px && (fixed_px < 100))
+			fixed_px = 100;
 
 		inputbox_window input_wd(owner_, images_, valid_areas_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
 

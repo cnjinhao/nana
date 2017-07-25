@@ -497,6 +497,7 @@ namespace nana{	namespace widgets
 			undoable<command>	undo;			//undo command
 			renderers			customized_renderers;
 			std::vector<upoint> text_position;	//positions of text since last rendering.
+			int text_position_origin{ -1 };	//origin when last text_exposed
 
 			skeletons::textbase<wchar_t> textbase;
 
@@ -1081,6 +1082,11 @@ namespace nana{	namespace widgets
 		size text_editor::caret_size() const
 		{
 			return { 1, line_height() };
+		}
+
+		const point& text_editor::content_origin() const
+		{
+			return impl_->cview->origin();
 		}
 
 		void text_editor::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
@@ -1982,8 +1988,9 @@ namespace nana{	namespace widgets
 				if (text_pos.empty())
 					text_pos.emplace_back(upoint{});
 
-				if (text_pos != impl_->text_position)
+				if ((impl_->text_position_origin != impl_->cview->origin().y) || (text_pos != impl_->text_position))
 				{
+					impl_->text_position_origin = impl_->cview->origin().y;
 					impl_->text_position.swap(text_pos);
 					if (event_handler_)
 						event_handler_->text_exposed(impl_->text_position);
@@ -3354,32 +3361,37 @@ namespace nana{	namespace widgets
 				line_px_( editor.line_height() )
 			{}
 
-			color selection_text_color(bool has_focused) const
+			color selection_color(bool fgcolor, bool focused) const
 			{
-				return (has_focused ? editor_.scheme_->selection_text : editor_.scheme_->foreground).get_color();
+				if (fgcolor)
+					return (focused ? editor_.scheme_->selection_text : editor_.scheme_->foreground).get_color();
+				
+				return (focused ? editor_.scheme_->selection : editor_.scheme_->selection_unfocused).get_color();
 			}
 
 			void write_selection(const point& text_pos, unsigned text_px, const wchar_t* text, std::size_t len, bool has_focused)
 			{
-				graph_.palette(true, selection_text_color(has_focused));
+				graph_.palette(true, selection_color(true, has_focused));
 
 				graph_.rectangle(::nana::rectangle{ text_pos, { text_px, line_px_ } }, true,
-					has_focused ? editor_.scheme_->selection.get_color() : editor_.scheme_->selection_unfocused.get_color());
+					selection_color(false, has_focused));
+
 				graph_.string(text_pos, text, len);
 			}
 
 			void rtl_string(point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected, bool has_focused)
 			{
-				editor_._m_draw_parse_string(parser_, true, strpos, selection_text_color(has_focused), str, len);
+				editor_._m_draw_parse_string(parser_, true, strpos, selection_color(true, has_focused), str, len);
 
 				//Draw selected part
 				paint::graphics graph({ glyph_selected, line_px_ });
 				graph.typeface(this->graph_.typeface());
-				graph.rectangle(true, (has_focused ? editor_.scheme_->selection.get_color() : editor_.scheme_->selection_unfocused.get_color()));
+				graph.rectangle(true, selection_color(false, has_focused));
 
 				int sel_xpos = static_cast<int>(str_px - (glyph_front + glyph_selected));
 
-				graph.palette(true, selection_text_color(has_focused));
+				graph.palette(true, selection_color(true, has_focused));
+
 				graph.string({ -sel_xpos, 0 }, str, len);
 				graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_px_), graph);
 			};
