@@ -86,6 +86,7 @@ namespace nana{	namespace widgets
 			~text_editor();
 
 			size caret_size() const;
+			const point& content_origin() const;
 
 			void set_highlight(const ::std::string& name, const ::nana::color&, const ::nana::color&);
 			void erase_highlight(const ::std::string& name);

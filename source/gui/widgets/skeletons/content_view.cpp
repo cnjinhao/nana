@@ -35,6 +35,7 @@ namespace nana {
 				bool	drag_started{ false };
 				point origin;
 
+				scrolls enabled_scrolls{scrolls::both};
 				nana::scroll<false>	horz;
 				nana::scroll<true>	vert;
 
@@ -193,7 +194,10 @@ namespace nana {
 
 					this->passive = passive;
 
-					if (imd_area.width != disp_area.width)
+					bool const vert_allowed = (enabled_scrolls == scrolls::vert || enabled_scrolls == scrolls::both);
+					bool const horz_allowed = (enabled_scrolls == scrolls::horz || enabled_scrolls == scrolls::both);
+
+					if ((imd_area.width != disp_area.width) && vert_allowed)
 					{
 						if (vert.empty())
 						{
@@ -217,10 +221,14 @@ namespace nana {
 					else
 					{
 						vert.close();
-						origin.y = 0;
+
+						//If vert is allowed, it indicates the vertical origin is not moved
+						//Make sure the v origin is zero
+						if (vert_allowed)
+							origin.y = 0;
 					}
 
-					if (imd_area.height != disp_area.height)
+					if ((imd_area.height != disp_area.height) && horz_allowed)
 					{
 						if (horz.empty())
 						{
@@ -244,7 +252,10 @@ namespace nana {
 					else
 					{
 						horz.close();
-						origin.x = 0;
+						//If horz is allowed, it indicates the horzontal origin is not moved
+						//Make sure the x origin is zero
+						if (horz_allowed)
+							origin.x = 0;
 					}
 
 					this->passive = true;
@@ -264,6 +275,16 @@ namespace nana {
 			content_view::events_type& content_view::events()
 			{
 				return impl_->events;
+			}
+
+			bool content_view::enable_scrolls(scrolls which)
+			{
+				if (impl_->enabled_scrolls == which)
+					return false;
+
+				impl_->enabled_scrolls = which;
+				impl_->size_changed(false);
+				return true;
 			}
 
 			void content_view::step(unsigned step_value, bool horz)
@@ -383,7 +404,7 @@ namespace nana {
 			void content_view::draw_corner(graph_reference graph)
 			{
 				auto r = corner();
-				if(!r.empty())
+				if ((!r.empty()) && (scrolls::both == impl_->enabled_scrolls))
 					graph.rectangle(r, true, colors::button_face);
 			}
 
@@ -394,8 +415,11 @@ namespace nana {
 
 			rectangle content_view::view_area(const size& alt_content_size) const
 			{
-				unsigned extra_horz = (impl_->disp_area.width < alt_content_size.width ? space() : 0);
-				unsigned extra_vert = (impl_->disp_area.height < alt_content_size.height + extra_horz ? space() : 0);
+				bool const vert_allowed = (impl_->enabled_scrolls == scrolls::vert || impl_->enabled_scrolls == scrolls::both);
+				bool const horz_allowed = (impl_->enabled_scrolls == scrolls::horz || impl_->enabled_scrolls == scrolls::both);
+
+				unsigned extra_horz = (horz_allowed && (impl_->disp_area.width < alt_content_size.width) ? space() : 0);
+				unsigned extra_vert = (vert_allowed && (impl_->disp_area.height < alt_content_size.height + extra_horz) ? space() : 0);
 
 				if ((0 == extra_horz) && extra_vert)
 					extra_horz = (impl_->disp_area.width < alt_content_size.width + extra_vert ? space() : 0);
