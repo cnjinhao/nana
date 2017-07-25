@@ -3361,32 +3361,37 @@ namespace nana{	namespace widgets
 				line_px_( editor.line_height() )
 			{}
 
-			color selection_text_color(bool has_focused) const
+			color selection_color(bool fgcolor, bool focused) const
 			{
-				return (has_focused ? editor_.scheme_->selection_text : editor_.scheme_->foreground).get_color();
+				if (fgcolor)
+					return (focused ? editor_.scheme_->selection_text : editor_.scheme_->foreground).get_color();
+				
+				return (focused ? editor_.scheme_->selection : editor_.scheme_->selection_unfocused).get_color();
 			}
 
 			void write_selection(const point& text_pos, unsigned text_px, const wchar_t* text, std::size_t len, bool has_focused)
 			{
-				graph_.palette(true, selection_text_color(has_focused));
+				graph_.palette(true, selection_color(true, has_focused));
 
 				graph_.rectangle(::nana::rectangle{ text_pos, { text_px, line_px_ } }, true,
-					has_focused ? editor_.scheme_->selection.get_color() : editor_.scheme_->selection_unfocused.get_color());
+					selection_color(false, has_focused));
+
 				graph_.string(text_pos, text, len);
 			}
 
 			void rtl_string(point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected, bool has_focused)
 			{
-				editor_._m_draw_parse_string(parser_, true, strpos, selection_text_color(has_focused), str, len);
+				editor_._m_draw_parse_string(parser_, true, strpos, selection_color(true, has_focused), str, len);
 
 				//Draw selected part
 				paint::graphics graph({ glyph_selected, line_px_ });
 				graph.typeface(this->graph_.typeface());
-				graph.rectangle(true, (has_focused ? editor_.scheme_->selection.get_color() : editor_.scheme_->selection_unfocused.get_color()));
+				graph.rectangle(true, selection_color(false, has_focused));
 
 				int sel_xpos = static_cast<int>(str_px - (glyph_front + glyph_selected));
 
-				graph.palette(true, selection_text_color(has_focused));
+				graph.palette(true, selection_color(true, has_focused));
+
 				graph.string({ -sel_xpos, 0 }, str, len);
 				graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_px_), graph);
 			};
