@@ -3,6 +3,11 @@
 #include "../paint/truetype.hpp"
 
 #ifdef NANA_WINDOWS
+
+#	ifndef _WIN32_WINNT
+#		define _WIN32_WINNT  0x0501
+#	endif
+
 #	include <windows.h>
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -49,6 +54,19 @@ IsWindowsVersionOrGreater(WORD wMajorVersion, WORD wMinorVersion, WORD wServiceP
 
 	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
 }
+
+#ifndef _WIN32_WINNT_WINXP
+#	define _WIN32_WINNT_WINXP                  0x0501
+#endif // _WIN32_WINNT_WINXP
+
+#ifndef _WIN32_WINNT_VISTA
+#	define _WIN32_WINNT_VISTA                  0x0600
+#endif // _WIN32_WINNT_VISTA
+
+#ifndef _WIN32_WINNT_WIN7
+#	define _WIN32_WINNT_WIN7                   0x0601
+#endif // _WIN32_WINNT_WIN7
+
 
 VERSIONHELPERAPI
 IsWindowsXPOrGreater()
@@ -115,24 +133,10 @@ IsWindows8OrGreater()
 	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8), 0);
 }
 
-#ifndef	_WIN32_WINNT_WINBLUE   // (0x0602)    
+#ifndef	_WIN32_WINNT_WINBLUE   // (0x0602)
 #define	_WIN32_WINNT_WINBLUE (0x0602)
 #endif  //	_WIN32_WINNT_WINBLUE (0x0602)
 
-VERSIONHELPERAPI
-IsWindows8Point1OrGreater()
-{
-	return IsWindowsVersionOrGreater(HIBYTE(_WIN32_WINNT_WINBLUE), LOBYTE(_WIN32_WINNT_WINBLUE), 0);
-}
-
-VERSIONHELPERAPI
-IsWindowsServer()
-{
-	OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, { 0 }, 0, 0, 0, VER_NT_WORKSTATION };
-	DWORDLONG        const dwlConditionMask = VerSetConditionMask(0, VER_PRODUCT_TYPE, VER_EQUAL);
-
-	return !VerifyVersionInfoW(&osvi, VER_PRODUCT_TYPE, dwlConditionMask);
-}
 
 #endif // NTDDI_VERSION
 
@@ -398,7 +402,7 @@ namespace nana
 			{
 				if(0 == --(i->second))
 					fc.erase(i);
-				
+
 				if(0 == fc.size())
 					::FcConfigAppFontClear(nullptr);
 			}

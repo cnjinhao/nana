@@ -1052,6 +1052,19 @@ namespace nana
 				cat_proxy & select(bool);
 				bool selected() const;
 
+				/// Enables/disables the number of items in the category to be displayed behind the category title
+				cat_proxy& display_number(bool display);
+
+				/// Determines whether the category is expanded.
+				bool expanded() const;
+
+				/// Expands/collapses the category
+				/**
+				 * @param expand Indicates whether to expand or collapse the category. If this parameter is true, it expands the category. If the parameter is false, it collapses the category.
+				 * @return the reference of *this.
+				 */
+				cat_proxy& expanded(bool expand);
+
 				/// Behavior of a container
 				void push_back(std::string text_utf8);
 
@@ -1484,6 +1497,22 @@ the nana::detail::basic_window member pointer scheme
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
 		export_options& def_export_options();
+
+
+		/// Sets a renderer for category icon
+		/**
+		 * @param icon_renderer The renderer of category icon
+		 * @return the reference of *this.
+		 */
+		listbox& category_icon(std::function<void(paint::graphics& graph, const rectangle& rt_icon, bool expanded)> icon_renderer);
+
+		/// Sets category icons
+		/**
+		 * @param img_expanded An icon displayed in front of category title when the category is expanded.
+		 * @param img_collapsed An icon displayed in front of category title when the category is collapsed.
+		 * @return the reference of *this.
+		 */
+		listbox& category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed);
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;

@@ -659,7 +659,8 @@ namespace nana
 
 				std::unique_ptr<model_interface> model_ptr;
 
-				bool expand{true};
+				bool expand{ true };
+				bool display_number{ true };
 
 				//A cat may have a key object to identify the category
 				std::shared_ptr<nana::detail::key_interface> key_ptr;
@@ -1434,7 +1435,8 @@ namespace nana
 
 				bool expand(size_type cat, bool exp) noexcept
 				{
-					if(good(cat) && cat)
+					//It is allowed to expand the 1st category.
+					if(good(cat) && (cat || exp))
 					{
 						auto & expanded = get(cat)->expand;
 						if(expanded != exp)
@@ -1936,6 +1938,8 @@ namespace nana
 																//if where == unknown, 'second' ignored.
 
 				std::unique_ptr<widgets::skeletons::content_view> content_view;
+
+				std::function<void(paint::graphics&, const rectangle&, bool)> ctg_icon_renderer;	///< Renderer for the category icon
 
 				struct mouse_selection_part
 				{
@@ -2848,8 +2852,37 @@ namespace nana
 					this->expand(pos.cat, true);
 					ess_->calc_content_size();
 				}
+				else if (!ess_->auto_draw)
+				{
+					//force a update of content size and scrollbar status when auto_draw is false to make
+					//sure that the scroll function works fine.
+					ess_->calc_content_size();
+				}
 
-				ess_->content_view->turn_page(to_bottom, false);
+				auto origin = ess_->content_view->origin();
+				origin.y = 0;
+
+				auto off = this->distance(this->first(), pos) * ess_->item_height();
+
+				auto screen_px = ess_->content_view->view_area().height;
+
+				if (to_bottom)
+				{
+					off += ess_->item_height();
+					if (off >= screen_px)
+						origin.y = static_cast<int>(off - screen_px);
+				}
+				else
+				{
+					auto last_off = this->distance(this->first(), this->last()) * ess_->item_height();
+					if (last_off - off >= screen_px)
+						origin.y = static_cast<int>(off);
+					else if (last_off >= screen_px)
+						origin.y = static_cast<int>(last_off - screen_px);
+				}
+
+				if(ess_->content_view->move_origin(origin - ess_->content_view->origin()))
+					ess_->content_view->sync(false);
 			}
 
 			void es_lister::erase(const index_pair& pos)
@@ -3514,27 +3547,36 @@ namespace nana
 
 					color txt_color{ static_cast<color_rgb>(0x3399) };
 
-					facade<element::arrow> arrow("double");
-					arrow.direction(categ.expand ? ::nana::direction::north : ::nana::direction::south);
-					arrow.draw(	*graph, {}, txt_color,
-								{ x + 5, y + static_cast<int>(item_height - 16) / 2, 16, 16 },
-								element_state::normal);
+					//Area of category icon
+					rectangle rt_ctg_icon{ x + 5, y + static_cast<int>(item_height - 16) / 2, 16, 16 };
+
+					if (essence_->ctg_icon_renderer)
+					{
+						essence_->ctg_icon_renderer(*graph, rt_ctg_icon, categ.expand);
+					}
+					else
+					{
+						facade<element::arrow> arrow("double");
+						arrow.direction(categ.expand ? ::nana::direction::south : ::nana::direction::east);
+						arrow.draw(*graph, {}, txt_color, rt_ctg_icon, element_state::normal);
+					}
 
 					graph->string({ x + 20, y + txtoff }, categ.text, txt_color);
 
-					native_string_type str = to_nstring('(' + std::to_string(categ.items.size()) + ')');
-
-					auto text_s = graph->text_extent_size(categ.text).width;
-					auto extend_text_w = text_s + graph->text_extent_size(str).width;
-
-					graph->string({ x + 25 + static_cast<int>(text_s), y + txtoff }, str);
-
-					if (35 + extend_text_w < width)
+					auto text_px = graph->text_extent_size(categ.text).width;
+					if (categ.display_number)
 					{
-						::nana::point pos{ x + 30 + static_cast<int>(extend_text_w), y + static_cast<int>(item_height) / 2 };
+						//Display the number of items in the category
+						native_string_type str = to_nstring('(' + std::to_string(categ.items.size()) + ')');
+						graph->string({ x + 25 + static_cast<int>(text_px), y + txtoff }, str);
+						text_px += graph->text_extent_size(str).width;
+					}
 
-						graph->line(pos, { x + static_cast<int>(width) - 5, pos.y },
-									txt_color);
+					if (35 + text_px < width)
+					{
+						::nana::point pos{ x + 30 + static_cast<int>(text_px), y + static_cast<int>(item_height) / 2 };
+
+						graph->line(pos, { x + static_cast<int>(width) - 5, pos.y }, txt_color);
 					}
 
 					//Draw selecting inner rectangle
@@ -4488,8 +4530,10 @@ namespace nana
 
 					//pos_ never represents a category if this item_proxy is available.
 					auto & m = cat_->items.at(pos_.item);       // a ref to the real item
+
+					//ignore if no change
 					if(m.flags.selected == s)
-						return *this;     // ignore if no change
+						return *this;
 
 					m.flags.selected = s;                       // actually change selection
 
@@ -4503,14 +4547,8 @@ namespace nana
 					else if (ess_->lister.latest_selected_abs == pos_)
 						ess_->lister.latest_selected_abs.set_both(npos);
 
-					if (scroll_view)
-					{
-						if (ess_->lister.get(pos_.cat)->expand)
-							ess_->lister.get(pos_.cat)->expand = false;
-
-						if (!this->displayed())
-							ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
-					}
+					if (scroll_view && (!this->displayed()))
+						ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
 
 					ess_->update();
 					return *this;
@@ -4787,6 +4825,32 @@ namespace nana
                             return false;
                     return true;
                 }
+
+				cat_proxy& cat_proxy::display_number(bool display)
+				{
+					if (cat_->display_number != display)
+					{
+						cat_->display_number = display;
+						ess_->update();
+					}
+					return *this;
+				}
+
+				bool cat_proxy::expanded() const
+				{
+					return cat_->expand;
+				}
+
+				cat_proxy& cat_proxy::expanded(bool expand)
+				{
+					//The first category isn't allowed to be collapsed
+					if ((expand != cat_->expand) && pos_)
+					{
+						cat_->expand = expand;
+						ess_->update();
+					}
+					return *this;
+				}
 
 				auto cat_proxy::columns() const -> size_type
 				{
@@ -5558,6 +5622,32 @@ namespace nana
         {
 			return _m_ess().def_exp_options;
         }
+
+		listbox& listbox::category_icon(std::function<void(paint::graphics& graph, const rectangle& rt_icon, bool expanded)> icon_renderer)
+		{
+			_m_ess().ctg_icon_renderer.swap(icon_renderer);
+			_m_ess().update();
+			return *this;
+		}
+
+		listbox& listbox::category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed)
+		{
+			_m_ess().ctg_icon_renderer = [img_expanded, img_collapsed](paint::graphics& graph, const rectangle& rt_icon, bool expanded)
+			{
+				if (expanded)
+				{
+					img_expanded.stretch(rectangle{ img_expanded.size() }, graph, rt_icon);
+				}
+				else
+				{
+					img_collapsed.stretch(rectangle{ img_collapsed.size() }, graph, rt_icon);
+				}
+			};
+
+			_m_ess().update();
+			return *this;
+		}
+
 
 		drawerbase::listbox::essence & listbox::_m_ess() const
 		{

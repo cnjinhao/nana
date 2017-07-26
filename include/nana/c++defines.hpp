@@ -36,7 +36,7 @@
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
  *	- STD_FILESYSTEM_NOT_SUPPORTED (GCC < 5.3) ....
  *	- CXX_NO_INLINE_NAMESPACE (Visual C++ < 2015)
- *	- _enable_std_make_unique (GCC < 4.9)
+ *	- _enable_std_make_unique (__cpluscplus < 201402)
  *	- _enable_std_put_time (GCC < 5)
  *  - _enable_std_clamp (Visual C++ < 2017)
   */
@@ -118,13 +118,6 @@
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
-
-		#if !defined(__cpp_lib_make_unique) || (__cpp_lib_make_unique != 201304)
-			#ifndef _enable_std_make_unique
-				#define _enable_std_make_unique
-			#endif
-		#endif
-
 	#endif
 #elif defined(__GNUC__) //GCC
 
@@ -149,18 +142,13 @@
 #		define _enable_std_put_time
 #	endif
 
-	#if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
-	#	undef STD_FILESYSTEM_NOT_SUPPORTED
-    /// \todo define the namespace ????
-	#endif
+#   if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
+#	    undef STD_FILESYSTEM_NOT_SUPPORTED
+#   endif
 
 	#if (__GNUC__ == 4)
 		#if ((__GNUC_MINOR__ < 8) || (__GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 1))
 			#define STD_THREAD_NOT_SUPPORTED
-		#endif
-
-		#if (__GNUC_MINOR__ < 9)
-			#define _enable_std_make_unique
 		#endif
 
 		#if defined(NANA_MINGW)
@@ -191,20 +179,23 @@
 #	endif
 #endif
 
+
+//Detects the feature std::make_unique
+//std::make_unique has been provided by Visual C++ 2013 and later
+#undef _enable_std_make_unique
+#if (defined(__clang__) && (__cplusplus < 201305L || (__cplusplus == 201305L && (__clang_major__ * 100 + __clang_minor__ < 304 )))) \
+	|| ((!defined(__clang__)) && defined(__GNUC__) && __cplusplus < 201300L)
+#	define _enable_std_make_unique
+#endif
+
+
 //Detects the feature std::clamp
-
 //Visual C++ 2017 with /std:c++latest provides the std::clamp
-#if !defined(_MSVC_LANG) || (_MSVC_LANG < 201403L)
-
-// std::clamp's feature test macro is defined inside <algorithm>
-// But nana still avoids introducing <algorithm> on MSVC.
-#	ifndef _MSC_VER
-#		include <algorithm>
-#	endif
-
-#	if ((!defined(__cpp_lib_clamp)) || (__cpp_lib_clamp < 201603)) && (!defined(_enable_std_clamp))
-#		define _enable_std_clamp
-#	endif
+#undef _enable_std_clamp
+#if (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || _MSVC_LANG < 201403L))	\
+	|| (defined(__clang__) && (__cplusplus < 201406L))						\
+	|| (defined(__GNUC__) && (!defined(__clang__)) && (__cplusplus < 201703))
+#	define _enable_std_clamp
 #endif
 
 

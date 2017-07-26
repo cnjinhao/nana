@@ -100,14 +100,14 @@ namespace nana
 			tmp.swap(displays);
 		}
 
-		static BOOL __stdcall enum_proc(HMONITOR handle, HDC context, LPRECT r, LPARAM self_ptr)
+		static BOOL __stdcall enum_proc(HMONITOR handle, HDC /*context*/, LPRECT /*r*/, LPARAM self_ptr)
 		{
 			auto disp_cont = reinterpret_cast<std::vector<real_display>*>(self_ptr);
 			MONITORINFOEX mi;
 			mi.cbSize = sizeof(MONITORINFOEX);
 			if (::GetMonitorInfo(handle, &mi))
 				disp_cont->emplace_back(disp_cont->size(), mi);
-			
+
 			return TRUE;
 		}
 #else

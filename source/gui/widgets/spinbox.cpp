@@ -282,8 +282,10 @@ namespace nana
 
 					reset_text();
 
+					//Spinbox doesn't process the tabstop unlike other text editors.
+					//Otherwise it would bring a weird user experience.
+					//Issued by jk.
 					API::tabstop(wd);
-					API::eat_tabstop(wd, true);
 					API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 					API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
 					reset_text_area();

@@ -1,7 +1,7 @@
 /*
 *	A Message Box Class
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -109,6 +109,24 @@ namespace nana
 			virtual unsigned fixed_pixels() const;
 		};
 	public:
+		class boolean
+			: public abstract_content
+		{
+			struct implement;
+		public:
+			boolean(::std::string label, bool initial_value);
+			~boolean();
+
+			bool value() const;
+		private:
+			//Implementation of abstract_content
+			const ::std::string& label() const override;
+			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
+		private:
+			std::unique_ptr<implement> impl_;
+		};
+
 		class integer
 			: public abstract_content
 		{
@@ -122,6 +140,7 @@ namespace nana
 			//Implementation of abstract_content
 			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};
@@ -139,6 +158,7 @@ namespace nana
 			//Implementation of abstract_content
 			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};
@@ -166,6 +186,7 @@ namespace nana
 			//Implementation of abstract_content
 			const ::std::string& label() const override;
 			window create(window, unsigned label_px) override;
+			unsigned fixed_pixels() const override;
 		private:
 			std::unique_ptr<implement> impl_;
 		};

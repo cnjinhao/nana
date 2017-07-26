@@ -15,6 +15,8 @@
 //Implement workarounds for GCC/MinGW which version is below 4.8.2
 #if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
 #include <sstream>
+#include <cstdlib>
+#include <stdexcept>
 namespace std
 {
 	int stoi(const std::string& str, std::size_t * pos, int base)
@@ -449,14 +451,14 @@ namespace std
 	//{
 	//	unsigned sz = 200;
 	//	std::wstring str(sz, L'\0');
-	//	sz = std::wcsftime(&str[0], str.size() - 1, fmt, tmb); 
+	//	sz = std::wcsftime(&str[0], str.size() - 1, fmt, tmb);
 	//	str.resize(sz);
 	//	return str;
 	//}
 	// http://en.cppreference.com/w/cpp/chrono/c/wcsftime
 	// Defined in header <cwchar>
 	//	std::size_t wcsftime(wchar_t* str, std::size_t count, const wchar_t* format, const std::tm* time);
-	// Converts the date and time information from a given calendar time time to a null - terminated 
+	// Converts the date and time information from a given calendar time time to a null - terminated
 	// wide character string str according to format string format.Up to count bytes are written.
 	//	Parameters
 	//	str - pointer to the first element of the wchar_t array for output

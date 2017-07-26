@@ -91,7 +91,11 @@ namespace nana
 			const void* pixmap() const;
 			const void* context() const;
 
-			void make(const ::nana::size&);					///< Creates a bitmap resource that size is width by height in pixel
+			/// Creates a graphics/drawable resource
+			/**
+			 * @param sz The dimension of the graphics to be requested. If sz is empty, it performs as release().
+			 */
+			void make(const ::nana::size& sz);
 			void resize(const ::nana::size&);
 			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;

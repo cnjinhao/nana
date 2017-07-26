@@ -1,7 +1,7 @@
 /*
 *	Window Layout Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -266,8 +266,6 @@ namespace nana
 					wd->effect.bground->take_effect(reinterpret_cast<window>(wd), glass_buffer);
 			}
 
-			//_m_paste_children
-			//@brief:paste children window to the root graphics directly. just paste the visual rectangle
 			void window_layout::_m_paste_children(core_window_t* wd, bool have_refreshed, bool req_refresh_children, const nana::rectangle& parent_rect, nana::paint::graphics& graph, const nana::point& graph_rpos)
 			{
 				nana::rectangle rect;
@@ -287,12 +285,10 @@ namespace nana
 					{
 						if (overlap(nana::rectangle{ child->pos_root, child->dimension }, parent_rect, rect))
 						{
-							bool have_child_refreshed = false;
 							if (category::flags::lite_widget != child->other.category)
 							{
 								if (req_refresh_children && (false == child->flags.refreshing))
 								{
-									have_child_refreshed = true;
 									child->flags.refreshing = true;
 									child->drawer.refresh();
 									child->flags.refreshing = false;
@@ -301,7 +297,9 @@ namespace nana
 								graph.bitblt(nana::rectangle(rect.x - graph_rpos.x, rect.y - graph_rpos.y, rect.width, rect.height),
 									child->drawer.graphics, nana::point(rect.x - child->pos_root.x, rect.y - child->pos_root.y));
 							}
-							_m_paste_children(child, req_refresh_children, have_child_refreshed, rect, graph, graph_rpos);
+							//req_refresh_children determines whether the child has been refreshed, and also determines whether
+							//the children of child to be refreshed.
+							_m_paste_children(child, req_refresh_children, req_refresh_children, rect, graph, graph_rpos);
 						}
 					}
 					else
