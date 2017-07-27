@@ -685,7 +685,7 @@ namespace nana
 	{
 		return impl_->empty_label_text;
 	}
-	
+
 	window inputbox::boolean::create(window owner, unsigned label_px)
 	{
 		auto impl = impl_.get();
@@ -1258,7 +1258,8 @@ namespace nana
 	inputbox::inputbox(window owner, ::std::string desc, ::std::string title)
 		:	owner_{ owner },
 			description_(std::move(desc)),
-			title_(std::move(title))
+			title_(std::move(title)),
+			min_width_entry_field_pixels_( 100 )
 	{}
 
 	void inputbox::image(::nana::paint::image img, bool is_left, const rectangle& valid_area)
@@ -1278,6 +1279,15 @@ namespace nana
 	void inputbox::verify(std::function<bool(window)> verifier)
 	{
 		verifier_ = std::move(verifier);
+	}
+
+	void inputbox::min_width_entry_field( int pixels )
+	{
+	    // don't let the entry fields vanish entirely
+	    if( pixels < 10 )
+            pixels = 10;
+
+        min_width_entry_field_pixels_ = pixels;
 	}
 
 	void inputbox::_m_fetch_args(std::vector<abstract_content*>&)
@@ -1304,9 +1314,9 @@ namespace nana
 			each_pixels.push_back(px.height);
 		}
 
-		//Adjust the fixed_px for good looking
-		if (has_0_fixed_px && (fixed_px < 100))
-			fixed_px = 100;
+		//Ensure that the entry fields are at least as wide as the minimum
+		if (has_0_fixed_px && (fixed_px < min_width_entry_field_pixels_ ))
+			fixed_px = min_width_entry_field_pixels_;
 
 		inputbox_window input_wd(owner_, images_, valid_areas_, description_, title_, contents.size(), label_px + 10 + fixed_px, each_pixels);
 
