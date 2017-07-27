@@ -1722,11 +1722,11 @@ namespace nana{	namespace widgets
 				}
 				else
 				{
-					crtpos.y = impl_->textbase.lines();
+					crtpos.y = static_cast<unsigned>(impl_->textbase.lines());
 					if (crtpos.y > 0)
 						--crtpos.y;
 
-					crtpos.x = impl_->textbase.getline(crtpos.y).size();
+					crtpos.x = static_cast<unsigned>(impl_->textbase.getline(crtpos.y).size());
 				}
 
 				points_.caret = crtpos;
