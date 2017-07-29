@@ -8,6 +8,8 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/msgbox.hpp
+ *	@Contributors
+ *		James Bremner
  */
 
 #include <nana/gui.hpp>
@@ -1281,6 +1283,8 @@ namespace nana
 		verifier_ = std::move(verifier);
 	}
 
+	//Inputbox set minimum width entry field(https://github.com/cnjinhao/nana/pull/234)
+	//Contributed by James Bremner
 	void inputbox::min_width_entry_field( int pixels )
 	{
 	    // don't let the entry fields vanish entirely
