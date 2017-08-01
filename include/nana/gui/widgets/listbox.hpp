@@ -535,7 +535,7 @@ namespace nana
 						throw std::invalid_argument("invalid listbox model container type");
 
 					if (nullptr == p->pointer())
-						throw std::runtime_error("the modal is immutable");
+						throw std::runtime_error("the modal is immutable, please declare model_guard with const");
 
 					return *static_cast<stlcontainer*>(p->pointer());
 				}
