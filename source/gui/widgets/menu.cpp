@@ -624,10 +624,14 @@ namespace nana
 							}
 							else if (item_ptr->flags.enabled)
 							{
+								//A pointer refers to a menu object which owns the menu window.
+								//After fn_close_tree_(), *this is an invalid object.
+								auto owner = menu_->owner;
+
 								fn_close_tree_();
 								if (item_ptr->event_handler)
 								{
-									item_proxy ip{ index, menu_->owner };
+									item_proxy ip{ index, owner };
 									item_ptr->event_handler.operator()(ip);
 								}
 								return 1;
@@ -1019,13 +1023,18 @@ namespace nana
 							close();
 						break;
 					default:
-						if (2 != send_shortkey(arg.key))
+						switch (send_shortkey(arg.key))
 						{
-							if (API::empty_window(*this) == false)
+						case 0:
+							if (this->empty() == false)
 								close();
-						}
-						else
+							break;
+						case 1:	//The menu has been closed
+							break;
+						case 2:
 							this->submenu(true);
+							break;
+						}
 					}
 				}
 
