@@ -1,7 +1,7 @@
 /**
  *	A Progress Indicator Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -20,42 +20,37 @@ namespace nana
 	{
 		namespace progress
 		{
-			class trigger: public drawer_trigger
+			struct scheme
+				: public widget_geometrics
+			{
+				scheme();
+
+				color_proxy gradient_bgcolor{ colors::button_face_shadow_start };
+				color_proxy gradient_fgcolor{ static_cast<color_rgb>(0x6FFFA8) };
+			};
+
+			class substance;
+
+			class trigger
+				: public drawer_trigger
 			{
 			public:
-				unsigned value() const;
-				unsigned value(unsigned);
-				unsigned inc();
-				unsigned Max() const;
-				unsigned Max(unsigned);
-				void unknown(bool);
-				bool unknown() const;
-				bool stop(bool s = true);
-				bool stopped() const;
-			private:
-				void attached(widget_reference, graph_reference)	override;
-				void refresh(graph_reference)	override;
-			private:
-				void _m_draw_box(graph_reference);
-				void _m_draw_progress(graph_reference);
-				bool _m_check_changing(unsigned) const;
-			private:
-				static const unsigned border = 2;
+				trigger();
+				~trigger();
 
-				widget * widget_{nullptr};
-				nana::paint::graphics* graph_{nullptr};
-				unsigned draw_width_{static_cast<unsigned>(-1)};
-				bool unknown_{false};
-				bool stop_{false};
-				unsigned max_{100};
-				unsigned value_{0};
-			}; //end class drawer
+				substance* progress() const;
+			private:
+				void attached(widget_reference, graph_reference) override;
+				void refresh(graph_reference) override;
+			private:
+				substance* const progress_;
+			};
 		}
 	}//end namespace drawerbase
        /// \brief A progressbar widget with two styles: know, and unknow amount value (goal). 
        /// In unknow style the amount is ignored and the bar is scrolled when value change.
-	class progress 
-		: public widget_object<category::widget_tag, drawerbase::progress::trigger>
+	class progress
+		: public widget_object<category::widget_tag, drawerbase::progress::trigger, ::nana::general_events, drawerbase::progress::scheme>
 	{
 	public:
 		progress();
@@ -69,8 +64,6 @@ namespace nana
 		unsigned amount(unsigned value);
 		void unknown(bool);
 		bool unknown() const;
-		bool stop(bool s=true);  ///< request stop or cancel and return previus stop status
-		bool stopped() const;  
 	};
 }//end namespace nana
 #endif
