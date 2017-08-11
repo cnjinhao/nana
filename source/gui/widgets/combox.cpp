@@ -143,6 +143,7 @@ namespace nana
 
 					auto scheme = dynamic_cast< ::nana::widgets::skeletons::text_editor_scheme*>(API::dev::get_scheme(wd));
 					editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph, scheme);
+					_m_text_area(graph.size());
 					editor_->multi_lines(false);
 					editable(false);
 					graph_ = &graph;
@@ -175,21 +176,6 @@ namespace nana
 					if (allocate_if_empty && (nullptr == any_ptr))
 						any_ptr = std::make_shared<nana::any>();
 					return any_ptr.get();
-				}
-
-				void text_area(const nana::size& s)
-				{
-					auto extension = measurer_->extension();
-
-					nana::rectangle r(2, 2, s.width > extension.width ? s.width - extension.width : 0, s.height > extension.height ? s.height - extension.height : 0);
-					if(image_enabled_)
-					{
-						unsigned place = image_pixels_ + 2;
-						r.x += place;
-						if(r.width > place)	r.width -= place;
-					}
-					editor_->text_area(r);
-					editor_->render(state_.focused);
 				}
 
 				widgets::skeletons::text_editor * editor() const
@@ -364,12 +350,13 @@ namespace nana
 				void draw()
 				{
 					bool enb = widget_->enabled();
-					if(editor_)
-					{
-						text_area(widget_->size());
-					}
+
+					_m_text_area(widget_->size());
+					editor_->render(state_.focused);
+					
 					_m_draw_push_button(enb);
 					_m_draw_image();
+
 				}
 
 				std::size_t the_number_of_options() const
@@ -496,6 +483,20 @@ namespace nana
 					return true;
 				}
 			private:
+				void _m_text_area(const nana::size& s)
+				{
+					auto extension = measurer_->extension();
+
+					nana::rectangle r(2, 2, s.width > extension.width ? s.width - extension.width : 0, s.height > extension.height ? s.height - extension.height : 0);
+					if (image_enabled_)
+					{
+						unsigned place = image_pixels_ + 2;
+						r.x += place;
+						if (r.width > place)	r.width -= place;
+					}
+					editor_->text_area(r);
+				}
+
 				void _m_draw_push_button(bool enabled)
 				{
 					::nana::rectangle r{graph_->size()};
