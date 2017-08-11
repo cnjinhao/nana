@@ -267,7 +267,7 @@ namespace nana
 
             If not called, the default is 100 pixels
         */
-		void min_width_entry_field( int pixels );
+		void min_width_entry_field( unsigned pixels );
 
 	private:
 		void _m_fetch_args(std::vector<abstract_content*>&);

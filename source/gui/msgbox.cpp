@@ -1285,7 +1285,7 @@ namespace nana
 
 	//Inputbox set minimum width entry field(https://github.com/cnjinhao/nana/pull/234)
 	//Contributed by James Bremner
-	void inputbox::min_width_entry_field( int pixels )
+	void inputbox::min_width_entry_field( unsigned pixels )
 	{
 	    // don't let the entry fields vanish entirely
 	    if( pixels < 10 )
