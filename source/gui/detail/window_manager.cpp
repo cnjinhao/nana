@@ -1820,6 +1820,9 @@ namespace detail
 
 			if(wd->other.category != category::flags::root)	//Not a root window
 				impl_->wd_register.remove(wd);
+
+			//Release graphics immediately.
+			wd->drawer.graphics.release();
 		}
 
 		void window_manager::_m_move_core(core_window_t* wd, const point& delta)
