@@ -3661,6 +3661,7 @@ namespace nana
 					rectangle bground_r{ content_r.x + static_cast<int>(essence_->header.margin()), coord.y, show_w, essence_->item_height() };
 					auto const state_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
+					//The position of column in x-axis.
 					int column_x = coord.x;
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
@@ -3670,7 +3671,9 @@ namespace nana
 
 						if (col.width_px > essence_->scheme_ptr->text_margin)
 						{
+							//The column text position, it is a offset to column_x.
 							int content_pos = 0;
+
 							element_state estate = element_state::normal;
 							nana::rectangle img_r;
 
@@ -3721,7 +3724,7 @@ namespace nana
 									//Make sure the user-define inline widgets is in the right visible rectangle.
 									rectangle pane_r;
 
-									const auto wdg_x = coord.x + content_pos;
+									const auto wdg_x = column_x + content_pos;
 									const auto wdg_w = col.width_px - static_cast<unsigned>(content_pos);
 
 									bool visible_state = true;
