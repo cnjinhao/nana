@@ -215,7 +215,7 @@ namespace nana
 						if (hotkey)
 						{
 							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
-							auto hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
+							auto hotkey_size = graph.text_extent_size(nana::to_wstring(text.c_str() + hotkey_pos), 1);
 
 							unsigned ascent, descent, inleading;
 							graph.text_metrics(ascent, descent, inleading);
