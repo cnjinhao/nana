@@ -535,7 +535,7 @@ namespace nana
 						throw std::invalid_argument("invalid listbox model container type");
 
 					if (nullptr == p->pointer())
-						throw std::runtime_error("the modal is immutable");
+						throw std::runtime_error("the modal is immutable, please declare model_guard with const");
 
 					return *static_cast<stlcontainer*>(p->pointer());
 				}
@@ -1254,8 +1254,9 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 			}
 			return false;
 		}
-		listbox.anyobj(0, 0, 10); //the type of customer's object is int.
-		listbox.anyobj(0, 0, 20);
+		auto cat = listbox.at(0);
+		cat.at(0).value(10); //10 is custom data.
+		cat.at(1).value(20); //20 is custom data.
 5. listbox is a widget_object, with template parameters drawerbase::listbox::trigger and drawerbase::listbox::scheme 
 amon others.
 That means that listbox have a member trigger_ constructed first and accecible with get_drawer_trigger() and

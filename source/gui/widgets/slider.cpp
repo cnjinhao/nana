@@ -524,14 +524,16 @@ namespace nana
 					if((::nana::mouse_action::pressed == slider_state_.mouse_state) && (API::capture_window() == this->other_.wd))
 						return false;
 
+					auto state_changed = ((slider_state_.mouse_state != ::nana::mouse_action::normal)
+										|| (attr_.adorn_pos != attr_.slider.pos));
+
 					slider_state_.mouse_state = ::nana::mouse_action::normal;
 					attr_.is_draw_adorn = false;
-					if(attr_.adorn_pos != attr_.slider.pos)
-					{
-						attr_.adorn_pos = attr_.slider.pos;
-						return true;
-					}
-					return false;
+
+					attr_.adorn_pos = attr_.slider.pos;
+					slider_state_.mouse_state = ::nana::mouse_action::normal;
+
+					return state_changed;
 				}
 
 			private:
