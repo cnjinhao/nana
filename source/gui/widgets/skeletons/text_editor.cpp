@@ -948,10 +948,12 @@ namespace nana{	namespace widgets
 		class text_editor::keyword_parser
 		{
 		public:
-			void parse(const std::wstring& text, const implementation::inner_keywords& keywords)
+			void parse(const wchar_t* c_str, std::size_t len, implementation::inner_keywords& keywords) //need string_view
 			{
-				if ( keywords.base.empty() || text.empty() )
+				if ( keywords.base.empty() || (0 == len) || (*c_str == 0) )
 					return;
+
+				std::wstring text{ c_str, len };
 
 				using index = std::wstring::size_type;
 
@@ -987,7 +989,7 @@ namespace nana{	namespace widgets
 					    {
 							entities.emplace_back();
 							auto & last = entities.back();
-							last.begin = text.c_str() + pos;
+							last.begin = c_str + pos;
 							last.end = last.begin + ds.text.size();
 							last.scheme = ki->second.get();
 					    }
@@ -3411,7 +3413,7 @@ namespace nana{	namespace widgets
 
 			//Parse highlight keywords
 			keyword_parser parser;
-			parser.parse({ text_ptr, text_len }, impl_->keywords);
+			parser.parse(text_ptr, text_len, impl_->keywords);
 
 			const auto line_h_pixels = line_height();
 
