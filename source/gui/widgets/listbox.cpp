@@ -963,7 +963,7 @@ namespace nana
 					return prstatus;
 				}
 
-				void scroll(const index_pair& pos, bool to_bottom);
+				void scroll(const index_pair& abs_pos, bool to_bottom);
 
 				/// Append a new category with a specified name and return a pointer to it.
 				category_t* create_cat(native_string_type&& text)
@@ -2840,16 +2840,16 @@ namespace nana
 				std::vector<std::pair<index_type, inline_pane*>> panes_;
 			};
 
-			void es_lister::scroll(const index_pair& pos, bool to_bottom)
+			void es_lister::scroll(const index_pair& abs_pos, bool to_bottom)
 			{
-				auto& cat = *get(pos.cat);
+				auto& cat = *get(abs_pos.cat);
 
-				if ((pos.item != nana::npos) && (pos.item >= cat.items.size()))
+				if ((abs_pos.item != nana::npos) && (abs_pos.item >= cat.items.size()))
 					throw std::invalid_argument("listbox: invalid pos to scroll");
 
 				if (!cat.expand)
 				{
-					this->expand(pos.cat, true);
+					this->expand(abs_pos.cat, true);
 					ess_->calc_content_size();
 				}
 				else if (!ess_->auto_draw)
@@ -2862,7 +2862,7 @@ namespace nana
 				auto origin = ess_->content_view->origin();
 				origin.y = 0;
 
-				auto off = this->distance(this->first(), pos) * ess_->item_height();
+				auto off = this->distance(this->first(), this->index_cast(abs_pos, false)) * ess_->item_height();
 
 				auto screen_px = ess_->content_view->view_area().height;
 
@@ -5222,9 +5222,9 @@ namespace nana
 			ess.update();
 		}
 
-		void listbox::scroll(bool to_bottom, const index_pair& pos)
+		void listbox::scroll(bool to_bottom, const index_pair& abs_pos)
 		{
-			_m_ess().lister.scroll(pos, to_bottom);
+			_m_ess().lister.scroll(abs_pos, to_bottom);
 			_m_ess().update();
 		}
 
