@@ -212,17 +212,7 @@ namespace nana
 						int text_top_off = (item_s.height - text_s.height) / 2;
 						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, to_nstring(text));
 
-						if (hotkey)
-						{
-							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
-							auto hotkey_size = graph.text_extent_size(nana::to_wstring(text.c_str() + hotkey_pos), 1);
-
-							unsigned ascent, descent, inleading;
-							graph.text_metrics(ascent, descent, inleading);
-							int x = item_pos.x + 8 + off_w;
-							int y = item_pos.y + text_top_off + ascent + 1;
-							graph.line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, ird.scheme_ptr()->text_fgcolor);
-						}
+						API::dev::draw_shortkey_underline(graph, text, hotkey, hotkey_pos, { item_pos.x + 8, item_pos.y + text_top_off }, ird.scheme_ptr()->text_fgcolor);
 
 						item_pos.x += i->size.width;
 						++index;

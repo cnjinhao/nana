@@ -34,12 +34,7 @@ namespace nana{	namespace drawerbase
 					return{};
 
 				wchar_t shortkey;
-				std::string::size_type shortkey_pos;
-				
-				auto str = to_wstring(API::transform_shortkey_text(trigger_->wdg_->caption(), shortkey, &shortkey_pos));
-				auto text_sz = graph.text_extent_size(str);
-
-				return size{ text_sz.width, text_sz.height };
+				return graph.text_extent_size(API::transform_shortkey_text(trigger_->wdg_->caption(), shortkey, nullptr));
 			}
 
 			size extension() const override
@@ -261,28 +256,15 @@ namespace nana{	namespace drawerbase
 						++pos.y;
 					}
 
-					graph.palette(true, attr_.focus_color && attr_.focused ? ::nana::color(colors::blue) : attr_.fgcolor);
+					auto text_color = (attr_.focus_color && attr_.focused ? ::nana::color(colors::blue) : attr_.fgcolor);
+					graph.palette(true, text_color);
 
 					if (attr_.omitted)
 						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
 					else
 						graph.bidi_string(pos, txtptr, txtlen);
 
-					if(shortkey)
-					{
-						unsigned off_w = (shortkey_pos ? graph.text_extent_size(mbstr.c_str(), shortkey_pos).width : 0);
-
-						wchar_t keystr[2] = {nana::utf::char_at(mbstr.c_str() + shortkey_pos, 0, 0), 0};
-						auto shortkey_size = graph.text_extent_size(keystr, 1);
-
-						unsigned ascent, descent, inleading;
-						graph.text_metrics(ascent, descent, inleading);
-
-						pos.x += off_w;
-						pos.y += static_cast<int>(ascent + 2);
-
-						graph.line(pos, point{ pos.x + static_cast<int>(shortkey_size.width) - 1, pos.y }, colors::black);
-					}
+					API::dev::draw_shortkey_underline(graph, mbstr, shortkey, shortkey_pos, pos, text_color);
 				}
 				else
 				{

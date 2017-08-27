@@ -365,6 +365,24 @@ namespace API
 		{
 			restrict::bedrock.thread_context_lazy_refresh();
 		}
+
+		void draw_shortkey_underline(paint::graphics& graph, const std::string& text, wchar_t shortkey, std::size_t shortkey_position, const point& text_pos, const color& line_color)
+		{
+			if (shortkey)
+			{
+				auto off_x = (shortkey_position ? graph.text_extent_size(text.c_str(), shortkey_position).width : 0);
+				auto key_px = static_cast<int>(graph.text_extent_size(&shortkey, 1).width);
+
+				unsigned ascent, descent, inleading;
+				graph.text_metrics(ascent, descent, inleading);
+
+				int x = text_pos.x + static_cast<int>(off_x);
+				int y = text_pos.y + static_cast<int>(ascent + 2);
+
+				graph.line({ x, y }, {x + key_px - 1, y}, line_color);
+
+			}
+		}
 	}//end namespace dev
 
 

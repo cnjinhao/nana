@@ -106,6 +106,8 @@ namespace API
 		 * This function will copy the drawer surface into system window after the event process finished.
 		 */
 		void lazy_refresh();
+
+		void draw_shortkey_underline(paint::graphics&, const std::string& text, wchar_t shortkey, std::size_t shortkey_position, const point& text_pos, const color&);
 	}//end namespace dev
 
 	/// Returns the widget pointer of the specified window.
