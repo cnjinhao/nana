@@ -1076,13 +1076,12 @@ namespace paint
 #if defined(NANA_WINDOWS)
 			if (pos1 != pos2)
 			{
-				auto pen = ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color()));
-				::DeleteObject(::SelectObject(impl_->handle->context, pen));
+				auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
 
 				::MoveToEx(impl_->handle->context, pos1.x, pos1.y, 0);
 				::LineTo(impl_->handle->context, pos2.x, pos2.y);
 
-				DeleteObject(pen);
+				::DeleteObject(::SelectObject(impl_->handle->context, prv_pen));
 			}
 			::SetPixel(impl_->handle->context, pos2.x, pos2.y, NANA_RGB(impl_->handle->get_color()));
 #elif defined(NANA_X11)
@@ -1110,12 +1109,11 @@ namespace paint
 		{
 			if (!impl_->handle)	return;
 #if defined(NANA_WINDOWS)
-			auto pen = ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color()));
-			::DeleteObject(::SelectObject(impl_->handle->context, pen));
+			auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
 
 			::LineTo(impl_->handle->context, pos.x, pos.y);
 
-			DeleteObject(pen);
+			::DeleteObject(::SelectObject(impl_->handle->context, prv_pen));
 #elif defined(NANA_X11)
 			Display* disp = nana::detail::platform_spec::instance().open_display();
 			impl_->handle->update_color();
@@ -1278,17 +1276,13 @@ namespace paint
 
 				if (solid)
 				{
-					auto pen = ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color()));
-					::DeleteObject(::SelectObject(impl_->handle->context, pen));
-
-					auto brush = ::CreateSolidBrush(solid_clr.px_color().value);
-					auto pr_brush = ::SelectObject(impl_->handle->context, brush);
+					auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
+					auto prv_brush = ::SelectObject(impl_->handle->context, ::CreateSolidBrush(NANA_RGB(solid_clr.px_color().value)));
 
 					::RoundRect(impl_->handle->context, r.x, r.y, r.right(), r.bottom(), static_cast<int>(radius_x * 2), static_cast<int>(radius_y * 2));
 
-					::DeleteObject(::SelectObject(impl_->handle->context, pr_brush));
-
-					DeleteObject(pen);
+					::DeleteObject(::SelectObject(impl_->handle->context, prv_brush));
+					::DeleteObject(::SelectObject(impl_->handle->context, prv_pen));
 				}
 				else
 				{
