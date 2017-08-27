@@ -252,6 +252,32 @@
     <ClCompile Include="..\..\source\threads\pool.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\nana\any.hpp" />
+    <ClInclude Include="..\..\include\nana\basic_types.hpp" />
+    <ClInclude Include="..\..\include\nana\c++defines.hpp" />
+    <ClInclude Include="..\..\include\nana\charset.hpp" />
+    <ClInclude Include="..\..\include\nana\concepts.hpp" />
+    <ClInclude Include="..\..\include\nana\config.hpp" />
+    <ClInclude Include="..\..\include\nana\datetime.hpp" />
+    <ClInclude Include="..\..\include\nana\deploy.hpp" />
+    <ClInclude Include="..\..\include\nana\fwd.hpp" />
+    <ClInclude Include="..\..\include\nana\gui.hpp" />
+    <ClInclude Include="..\..\include\nana\internationalization.hpp" />
+    <ClInclude Include="..\..\include\nana\key_type.hpp" />
+    <ClInclude Include="..\..\include\nana\optional.hpp" />
+    <ClInclude Include="..\..\include\nana\stdc++.hpp" />
+    <ClInclude Include="..\..\include\nana\std_condition_variable.hpp" />
+    <ClInclude Include="..\..\include\nana\std_mutex.hpp" />
+    <ClInclude Include="..\..\include\nana\std_thread.hpp" />
+    <ClInclude Include="..\..\include\nana\traits.hpp" />
+    <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
+    <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\include\nana\pop_ignore_diagnostic" />
+    <None Include="..\..\include\nana\push_ignore_diagnostic" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
