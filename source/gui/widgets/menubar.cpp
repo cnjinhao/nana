@@ -165,6 +165,15 @@ namespace nana
 					return items_->cont().size();
 				}
 
+				bool trigger::cancel()
+				{
+					if (nana::npos == state_.active)
+						return false;
+
+					_m_total_close();
+					return true;
+				}
+
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
 					graph_ = &graph;
@@ -623,6 +632,37 @@ namespace nana
 		std::size_t menubar::length() const
 		{
 			return get_drawer_trigger().size();
+		}
+
+		bool menubar::cancel()
+		{
+			return get_drawer_trigger().cancel();
+		}
+
+		bool menubar::hovered() const
+		{
+			auto const native_handle = API::root(this->handle());
+			if (native_handle)
+			{
+				auto wd = API::find_window(API::cursor_position());
+				if (wd == this->handle())
+					return true;
+
+				while (wd)
+				{
+					auto owner = API::get_owner_window(wd);
+					if (API::root(owner) == native_handle)
+					{
+						for (std::size_t i = 0; i < get_drawer_trigger().size(); ++i)
+						{
+							if(get_drawer_trigger().at(i)->handle() == wd)
+								return true;
+						}
+					}
+					wd = owner;
+				}
+			}
+			return false;
 		}
 	//end class menubar
 }//end namespace nana

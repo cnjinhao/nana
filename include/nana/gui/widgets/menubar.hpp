@@ -64,6 +64,7 @@ namespace nana
 				nana::menu* push_back(const std::string&);
 				nana::menu* at(size_t) const;
 				std::size_t size() const;
+				bool cancel();
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
@@ -126,6 +127,16 @@ namespace nana
 		menu& push_back(const std::string&);	///< Appends a new (empty) menu.
 		menu& at(size_t index) const;		    ///< Gets the menu specified by index.
 		std::size_t length() const;		        ///< Number of menus.
+		
+		/// Deselects the menu
+		/**
+		 * If a menu is popped up, the menu deselects the item and close the popuped menu.
+		 * @return true if an item is deselected, false otherwise.
+		 */
+		bool cancel();
+
+		/// Determines the mouse is hovered on the menubar or its popped menu.
+		bool hovered() const;
 	private:
 		::nana::event_handle evt_resized_{nullptr};
 	};//end class menubar
