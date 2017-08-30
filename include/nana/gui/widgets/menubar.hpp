@@ -1,7 +1,7 @@
 /*
  *	A Menubar implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -58,13 +58,12 @@ namespace nana
 				: public drawer_trigger
 			{
 				class itembase;
+
+				struct essence;
 			public:
 				trigger();
 				~trigger();
-				nana::menu* push_back(const std::string&);
-				nana::menu* at(size_t) const;
-				std::size_t size() const;
-				bool cancel();
+				essence& ess() const;
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void refresh(graph_reference)	override;
@@ -77,38 +76,9 @@ namespace nana
 				void key_release(graph_reference, const arg_keyboard&)	override;
 				void shortkey(graph_reference, const arg_keyboard&)	override;
 			private:
-				void _m_move(bool to_left);
-				bool _m_popup_menu();
-				void _m_total_close();
-				bool _m_close_menu();
-				std::size_t _m_item_by_pos(const ::nana::point&);
-				bool _m_track_mouse(const ::nana::point&);
+				void _m_move(graph_reference, bool to_left);
 			private:
-				widget *widget_;
-				paint::graphics	*graph_;
-				
-				itembase*	items_;
-
-				struct state_type
-				{
-					enum behavior_t
-					{
-						behavior_none, behavior_focus, behavior_menu,
-					};
-
-					state_type();
-
-					std::size_t active;
-					behavior_t behavior;
-
-					bool menu_active;
-					bool passive_close;
-
-					bool nullify_mouse;
-
-					nana::menu *menu;
-					nana::point mouse_pos;
-				}state_;
+				essence * const ess_;
 			};
 		}//end namespace menubar
 	}//end namespace drawerbase
