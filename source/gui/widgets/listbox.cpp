@@ -433,8 +433,16 @@ namespace nana
 				{
 					check_range(pos, cont_.size());
 
+					//The order of cont_'s elements is the display order.
 					if (!disp_order)
-						pos = this->cast(pos, false);
+					{
+						/// It always match the item with pos, otherwise a bug occurs.
+						for (auto & m : cont_)
+						{
+							if (m.index == pos)
+								return m;
+						}
+					}
 					
 					return cont_[pos];
 				}
