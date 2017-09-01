@@ -120,7 +120,12 @@ namespace API
 	namespace detail
 	{
 		general_events* get_general_events(window);
+
+		// emits both internal and external event (internal event can be filtered)
 		bool emit_event(event_code, window, const ::nana::event_arg&);
+
+		// explicitly emits internal event (internal event not to be filtered)
+		bool emit_internal_event(event_code, window, const ::nana::event_arg&);
 
 		class enum_widgets_function_base
 		{
@@ -253,6 +258,12 @@ namespace API
 	bool emit_event(event_code evt_code, window wd, const EventArg& arg)
 	{
 		return detail::emit_event(evt_code, wd, arg);
+	}
+
+	template<typename EventArg, typename std::enable_if<std::is_base_of< ::nana::event_arg, EventArg>::value>::type* = nullptr>
+	bool emit_internal_event(event_code evt_code, window wd, const EventArg& arg)
+	{
+		return detail::emit_internal_event(evt_code, wd, arg);
 	}
 
 	void umake_event(event_handle);

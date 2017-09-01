@@ -17,6 +17,7 @@
 #include "general_events.hpp"
 #include <nana/paint/graphics.hpp>
 #include <functional>
+#include <vector>
 
 namespace nana
 {
@@ -26,6 +27,25 @@ namespace nana
 	{
 		class drawer;
 	}
+
+	class drawer_trigger;
+	class event_filter_status
+	{
+	public:
+		event_filter_status();
+		event_filter_status(const event_filter_status& rOther);
+		event_filter_status(const unsigned evt_disabled_);
+		const event_filter_status& operator=(const event_filter_status& rOther);
+		const event_filter_status& operator=(const unsigned evt_disabled_);
+
+		bool operator[](const nana::event_code evt_code) const;
+		bool operator==(const event_filter_status& rOther) const;
+		bool operator!=(const event_filter_status& rOther) const;
+
+	private:
+		unsigned evt_disabled_;
+		friend class drawer_trigger;
+	};
 
 	class drawer_trigger
 	{
@@ -70,11 +90,19 @@ namespace nana
 		virtual void key_release(graph_reference, const arg_keyboard&);
 		virtual void shortkey(graph_reference, const arg_keyboard&);
 
+		void filter_event(const event_code evt_code, const bool bDisabled);
+		void filter_event(const std::vector<event_code> evt_codes, const bool bDisabled);
+		void filter_event(const event_filter_status& evt_all_states);
+		bool filter_event(const event_code evt_code);
+		event_filter_status filter_event();
+		void clear_filter();
+
 	private:
 		void _m_reset_overrided();
 		bool _m_overrided(event_code) const;
 	private:
 		unsigned overrided_{ 0xFFFFFFFF };
+		unsigned evt_disabled_{ 0 }; // bit set if event is filtered
 	};
 
 	namespace detail
@@ -99,23 +127,23 @@ namespace nana
 			void bind(basic_window*);
 
 			void typeface_changed();
-			void click(const arg_click&);
-			void dbl_click(const arg_mouse&);
-			void mouse_enter(const arg_mouse&);
-			void mouse_move(const arg_mouse&);
-			void mouse_leave(const arg_mouse&);
-			void mouse_down(const arg_mouse&);
-			void mouse_up(const arg_mouse&);
-			void mouse_wheel(const arg_wheel&);
-			void mouse_dropfiles(const arg_dropfiles&);
-			void resizing(const arg_resizing&);
-			void resized(const arg_resized&);
-			void move(const arg_move&);
-			void focus(const arg_focus&);
-			void key_press(const arg_keyboard&);
-			void key_char(const arg_keyboard&);
-			void key_release(const arg_keyboard&);
-			void shortkey(const arg_keyboard&);
+			void click(const arg_click&, const bool);
+			void dbl_click(const arg_mouse&, const bool);
+			void mouse_enter(const arg_mouse&, const bool);
+			void mouse_move(const arg_mouse&, const bool);
+			void mouse_leave(const arg_mouse&, const bool);
+			void mouse_down(const arg_mouse&, const bool);
+			void mouse_up(const arg_mouse&, const bool);
+			void mouse_wheel(const arg_wheel&, const bool);
+			void mouse_dropfiles(const arg_dropfiles&, const bool);
+			void resizing(const arg_resizing&, const bool);
+			void resized(const arg_resized&, const bool);
+			void move(const arg_move&, const bool);
+			void focus(const arg_focus&, const bool);
+			void key_press(const arg_keyboard&, const bool);
+			void key_char(const arg_keyboard&, const bool);
+			void key_release(const arg_keyboard&, const bool);
+			void shortkey(const arg_keyboard&, const bool);
 			void map(window, bool forced, const rectangle* update_area = nullptr);	//Copy the root buffer to screen
 			void refresh();
 			drawer_trigger* realizer() const;
@@ -130,7 +158,7 @@ namespace nana
 			method_state& _m_mth_state(int pos);
 
 			template<typename Arg, typename Mfptr>
-			void _m_emit(event_code evt_code, const Arg& arg, Mfptr mfptr)
+			void _m_emit(event_code evt_code, const Arg& arg, Mfptr mfptr, const bool bForce__EmitInternal)
 			{
 				const int pos = static_cast<int>(evt_code);
 
@@ -139,17 +167,22 @@ namespace nana
 
 				if (realizer && (method_state::not_overrided != mth_state))
 				{
+					const bool bFiltered = !bForce__EmitInternal && realizer->filter_event(evt_code);
 					if (method_state::pending == mth_state)
 					{
-						(realizer->*mfptr)(graphics, arg);
-						
+						if (!bFiltered)
+							(realizer->*mfptr)(graphics, arg);
+
 						//Check realizer, when the window is closed in that event handler, the drawer will be
 						//detached and realizer will be a nullptr
 						if (realizer)
 							mth_state = (realizer->_m_overrided(evt_code) ? method_state::overrided : method_state::not_overrided);
 					}
 					else
-						(realizer->*mfptr)(graphics, arg);
+					{
+						if (!bFiltered)
+							(realizer->*mfptr)(graphics, arg);
+					}
 
 					_m_effect_bground_subsequent();
 				}
