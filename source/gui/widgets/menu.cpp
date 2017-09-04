@@ -1355,6 +1355,11 @@ namespace nana
 			impl_->mbuilder.renderer(rd);
 		}
 
+		window menu::handle() const
+		{
+			return (impl_->window_ptr ? impl_->window_ptr->handle() : nullptr);
+		}
+
 		void menu::_m_popup(window wd, const point& pos, bool called_by_menubar)
 		{
 			if (impl_->mbuilder.data().items.size())

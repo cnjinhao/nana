@@ -62,7 +62,12 @@ namespace API
 
 		bool emit_event(event_code evt_code, window wd, const ::nana::event_arg& arg)
 		{
-			return restrict::bedrock.emit(evt_code, reinterpret_cast<::nana::detail::basic_window*>(wd), arg, true, restrict::bedrock.get_thread_context());
+			return restrict::bedrock.emit(evt_code, reinterpret_cast<::nana::detail::basic_window*>(wd), arg, true, restrict::bedrock.get_thread_context(), false);
+		}
+
+		bool emit_internal_event(event_code evt_code, window wd, const ::nana::event_arg& arg)
+		{
+			return restrict::bedrock.emit(evt_code, reinterpret_cast<::nana::detail::basic_window*>(wd), arg, true, restrict::bedrock.get_thread_context(), true);
 		}
 
 		void enum_widgets_function_base::enum_widgets(window wd, bool recursive)

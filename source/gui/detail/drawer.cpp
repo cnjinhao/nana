@@ -128,7 +128,87 @@ namespace nana
 			return 0 != (overrided_ & (1 << static_cast<int>(evt_code)));
 		}
 
+		void drawer_trigger::filter_event(const event_code evt_code, const bool bDisabled)
+		{
+			if (bDisabled)
+				evt_disabled_ |= 1 << static_cast<int>(evt_code); // set
+			else
+				evt_disabled_ &= ~(1 << static_cast<int>(evt_code)); // clear
+		}
+
+		void drawer_trigger::filter_event(const std::vector<event_code> evt_codes, const bool bDisabled)
+		{
+			const auto it_end = evt_codes.end();
+			for (auto it = evt_codes.begin(); it != it_end; it++)
+				filter_event(*it, bDisabled);
+		}
+
+		void drawer_trigger::filter_event(const event_filter_status& evt_all_states)
+		{
+			evt_disabled_ = evt_all_states.evt_disabled_;
+		}
+
+		bool drawer_trigger::filter_event(const event_code evt_code)
+		{
+			return static_cast<bool>((evt_disabled_ >> static_cast<int>(evt_code)) & 1);
+		}
+
+		event_filter_status drawer_trigger::filter_event()
+		{
+			return event_filter_status(evt_disabled_);
+		}
+
+		void drawer_trigger::clear_filter()
+		{
+			for (int i = 0; i < static_cast<int>(nana::event_code::end); i++)
+				filter_event(static_cast<nana::event_code>(i), false);
+		}
+
 	//end class drawer_trigger
+
+	//class event_filter_status
+	event_filter_status::event_filter_status()
+	{
+		evt_disabled_ = 0;
+	}
+
+	event_filter_status::event_filter_status(const event_filter_status& rOther)
+	{
+		this->evt_disabled_ = rOther.evt_disabled_;
+	}
+
+	event_filter_status::event_filter_status(const unsigned evt_disabled_)
+	{
+		this->evt_disabled_ = evt_disabled_;
+	}
+
+	bool event_filter_status::operator[](const nana::event_code evt_code) const
+	{
+		return static_cast<bool>((evt_disabled_ >> static_cast<int>(evt_code)) & 1);
+	}
+
+	bool event_filter_status::operator==(const event_filter_status& rOther) const
+	{
+		return evt_disabled_ == rOther.evt_disabled_;
+	}
+
+	bool event_filter_status::operator!=(const event_filter_status& rOther) const
+	{
+		return evt_disabled_ != rOther.evt_disabled_;
+	}
+
+	const event_filter_status& event_filter_status::operator=(const event_filter_status& rOther)
+	{
+		evt_disabled_ = rOther.evt_disabled_;
+		return *this;
+	}
+
+	const event_filter_status& event_filter_status::operator=(const unsigned evt_disabled_)
+	{
+		this->evt_disabled_ = evt_disabled_;
+		return *this;
+	}
+	//end of class event_filter_status
 
 	namespace detail
 	{
@@ -174,89 +254,89 @@ namespace nana
 				data_impl_->realizer->typeface_changed(graphics);
 		}
 
-		void drawer::click(const arg_click& arg)
+		void drawer::click(const arg_click& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::click, arg, &drawer_trigger::click);
+			_m_emit(event_code::click, arg, &drawer_trigger::click, bForce__EmitInternal);
 		}
 
-		void drawer::dbl_click(const arg_mouse& arg)
+		void drawer::dbl_click(const arg_mouse& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::dbl_click, arg, &drawer_trigger::dbl_click);
+			_m_emit(event_code::dbl_click, arg, &drawer_trigger::dbl_click, bForce__EmitInternal);
 		}
 
-		void drawer::mouse_enter(const arg_mouse& arg)
+		void drawer::mouse_enter(const arg_mouse& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::mouse_enter, arg, &drawer_trigger::mouse_enter);
+			_m_emit(event_code::mouse_enter, arg, &drawer_trigger::mouse_enter, bForce__EmitInternal);
 		}
 
-		void drawer::mouse_move(const arg_mouse& arg)
+		void drawer::mouse_move(const arg_mouse& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::mouse_move, arg, &drawer_trigger::mouse_move);
+			_m_emit(event_code::mouse_move, arg, &drawer_trigger::mouse_move, bForce__EmitInternal);
 		}
 
-		void drawer::mouse_leave(const arg_mouse& arg)
+		void drawer::mouse_leave(const arg_mouse& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::mouse_leave, arg, &drawer_trigger::mouse_leave);
+			_m_emit(event_code::mouse_leave, arg, &drawer_trigger::mouse_leave, bForce__EmitInternal);
 		}
 
-		void drawer::mouse_down(const arg_mouse& arg)
+		void drawer::mouse_down(const arg_mouse& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::mouse_down, arg, &drawer_trigger::mouse_down);
+			_m_emit(event_code::mouse_down, arg, &drawer_trigger::mouse_down, bForce__EmitInternal);
 		}
 
-		void drawer::mouse_up(const arg_mouse& arg)
+		void drawer::mouse_up(const arg_mouse& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::mouse_up, arg, &drawer_trigger::mouse_up);
+			_m_emit(event_code::mouse_up, arg, &drawer_trigger::mouse_up, bForce__EmitInternal);
 		}
 
-		void drawer::mouse_wheel(const arg_wheel& arg)
+		void drawer::mouse_wheel(const arg_wheel& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::mouse_wheel, arg, &drawer_trigger::mouse_wheel);
+			_m_emit(event_code::mouse_wheel, arg, &drawer_trigger::mouse_wheel, bForce__EmitInternal);
 		}
 
-		void drawer::mouse_dropfiles(const arg_dropfiles& arg)
+		void drawer::mouse_dropfiles(const arg_dropfiles& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::mouse_drop, arg, &drawer_trigger::mouse_dropfiles);
+			_m_emit(event_code::mouse_drop, arg, &drawer_trigger::mouse_dropfiles, bForce__EmitInternal);
 		}
 
-		void drawer::resizing(const arg_resizing& arg)
+		void drawer::resizing(const arg_resizing& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::resizing, arg, &drawer_trigger::resizing);
+			_m_emit(event_code::resizing, arg, &drawer_trigger::resizing, bForce__EmitInternal);
 		}
 
-		void drawer::resized(const arg_resized& arg)
+		void drawer::resized(const arg_resized& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::resized, arg, &drawer_trigger::resized);
+			_m_emit(event_code::resized, arg, &drawer_trigger::resized, bForce__EmitInternal);
 		}
 
-		void drawer::move(const arg_move& arg)
+		void drawer::move(const arg_move& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::move, arg, &drawer_trigger::move);
+			_m_emit(event_code::move, arg, &drawer_trigger::move, bForce__EmitInternal);
 		}
 
-		void drawer::focus(const arg_focus& arg)
+		void drawer::focus(const arg_focus& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::focus, arg, &drawer_trigger::focus);
+			_m_emit(event_code::focus, arg, &drawer_trigger::focus, bForce__EmitInternal);
 		}
 
-		void drawer::key_press(const arg_keyboard& arg)
+		void drawer::key_press(const arg_keyboard& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::key_press, arg, &drawer_trigger::key_press);
+			_m_emit(event_code::key_press, arg, &drawer_trigger::key_press, bForce__EmitInternal);
 		}
 
-		void drawer::key_char(const arg_keyboard& arg)
+		void drawer::key_char(const arg_keyboard& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::key_char, arg, &drawer_trigger::key_char);
+			_m_emit(event_code::key_char, arg, &drawer_trigger::key_char, bForce__EmitInternal);
 		}
 
-		void drawer::key_release(const arg_keyboard& arg)
+		void drawer::key_release(const arg_keyboard& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::key_release, arg, &drawer_trigger::key_release);
+			_m_emit(event_code::key_release, arg, &drawer_trigger::key_release, bForce__EmitInternal);
 		}
 
-		void drawer::shortkey(const arg_keyboard& arg)
+		void drawer::shortkey(const arg_keyboard& arg, const bool bForce__EmitInternal)
 		{
-			_m_emit(event_code::shortkey, arg, &drawer_trigger::shortkey);
+			_m_emit(event_code::shortkey, arg, &drawer_trigger::shortkey, bForce__EmitInternal);
 		}
 
 		void drawer::map(window wd, bool forced, const rectangle* update_area)	//Copy the root buffer to screen

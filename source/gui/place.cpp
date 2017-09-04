@@ -3058,7 +3058,7 @@ namespace nana
 			throw std::runtime_error("place.bind: it has already bound to a window.");
 
 		impl_->window_handle = wd;
-		impl_->event_size_handle = API::events(wd).resized.connect([this](const arg_resized& arg)
+		impl_->event_size_handle = API::events(wd).resized.connect_unignorable([this](const arg_resized& arg)
 		{
 			if (impl_->root_division)
 			{
