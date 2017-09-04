@@ -57,8 +57,6 @@ namespace nana
 			class trigger
 				: public drawer_trigger
 			{
-				class itembase;
-
 				struct essence;
 			public:
 				trigger();
