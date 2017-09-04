@@ -1403,7 +1403,9 @@ the nana::detail::basic_window member pointer scheme
 
 		/// Scrolls the view to the first or last item of a specified category
 		void scroll(bool to_bottom, size_type cat_pos = ::nana::npos);
-		void scroll(bool to_bottom, const index_pair& pos);
+
+		/// Scrolls the view to show an item sepcified by absolute position at top/bottom of the listbox.
+		void scroll(bool to_bottom, const index_pair& abs_pos);
 
 		/// Appends a new column with a header text and the specified width at the end, and return it position
 		size_type append_header(std::string text_utf8, unsigned width = 120);

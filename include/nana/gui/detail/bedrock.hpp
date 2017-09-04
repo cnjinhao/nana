@@ -91,9 +91,10 @@ namespace detail
 
 		void manage_form_loader(core_window_t*, bool insert_or_remove);
 	public:
-		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*);
+		// if 'bForce__EmitInternal', then ONLY internal (widget's) events are processed (even through explicit filtering)
+		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*, const bool bForce__EmitInternal = false);
 	private:
-		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg&);
+		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg&, const bool bForce__EmitInternal);
 		void _m_event_filter(event_code, core_window_t*, thread_context*);
 	private:
 		static bedrock bedrock_object;

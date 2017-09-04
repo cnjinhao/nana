@@ -441,23 +441,9 @@ namespace nana
 
 						renderer->item_text(graph, nana::point(item_r.x + 40, item_r.y + text_top_off), text, strpixels, attr);
 
-						if (hotkey)
-						{
-							item_ptr->hotkey = hotkey;
-							if (item_ptr->flags.enabled)
-							{
-								auto off_px = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
-								auto hotkey_px = graph.text_extent_size(text.c_str() + hotkey_pos, 1).width;
-
-								unsigned ascent, descent, inleading;
-								graph.text_metrics(ascent, descent, inleading);
-
-								int x = item_r.x + 40 + off_px;
-								int y = item_r.y + text_top_off + ascent + 1;
-
-								graph_->line({ x, y }, { x + static_cast<int>(hotkey_px)-1, y }, colors::black);
-							}
-						}
+						item_ptr->hotkey = hotkey;
+						if (hotkey && item_ptr->flags.enabled)
+								API::dev::draw_shortkey_underline(*graph_, text, hotkey, hotkey_pos, {item_r.x + 40, item_r.y + text_top_off}, colors::black);
 
 						if (item_ptr->linked.menu_ptr)
 							renderer->sub_arrow(graph, nana::point(graph_->width() - 20, item_r.y), item_h_px, attr);
@@ -1367,6 +1353,11 @@ namespace nana
 		void menu::renderer(const pat::cloneable<renderer_interface>& rd)
 		{
 			impl_->mbuilder.renderer(rd);
+		}
+
+		window menu::handle() const
+		{
+			return (impl_->window_ptr ? impl_->window_ptr->handle() : nullptr);
 		}
 
 		void menu::_m_popup(window wd, const point& pos, bool called_by_menubar)

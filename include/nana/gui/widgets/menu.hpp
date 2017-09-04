@@ -181,6 +181,11 @@ namespace nana
 		void renderer(const pat::cloneable<renderer_interface>&);	///< Sets a user-defined renderer. 
 		const pat::cloneable<renderer_interface>& renderer() const;
 
+		/// Returns the handle of menu window
+		/**
+		 * @return handle of menu window, nullptr if the menu hasn't been popped up.
+		 */
+		window handle() const;
 	private:
 		void _m_popup(window, const point& position, bool called_by_menubar);
 	private:

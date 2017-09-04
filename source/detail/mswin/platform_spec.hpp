@@ -100,37 +100,6 @@ namespace detail
 
 		font_type font;
 
-		struct pen_spec
-		{
-			HPEN	handle;
-			unsigned color;
-			int style;
-			int width;
-
-			void set(HDC context, int style, int width,unsigned color);
-		}pen;
-
-		struct brush_spec
-		{
-			enum t{Solid, HatchBDiagonal};
-
-			HBRUSH handle;
-			t style;
-			unsigned color;
-
-			void set(HDC context, t style, unsigned color);
-		}brush;
-
-		struct round_region_spec
-		{
-			HRGN handle;
-			nana::rectangle r;
-			unsigned radius_x;
-			unsigned radius_y;
-
-			void set(const nana::rectangle& r, unsigned radius_x, unsigned radius_y);
-		}round_region;
-
 		struct string_spec
 		{
 			unsigned tab_length;
@@ -148,9 +117,6 @@ namespace detail
 		unsigned get_text_color() const;
 		void set_color(const ::nana::color&);
 		void set_text_color(const ::nana::color&);
-
-		void update_pen();
-		void update_brush();
 	private:
 		unsigned color_{ 0xffffffff };
 		unsigned text_color_{0xffffffff};

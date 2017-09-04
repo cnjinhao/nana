@@ -433,8 +433,16 @@ namespace nana
 				{
 					check_range(pos, cont_.size());
 
+					//The order of cont_'s elements is the display order.
 					if (!disp_order)
-						pos = this->cast(pos, false);
+					{
+						/// It always match the item with pos, otherwise a bug occurs.
+						for (auto & m : cont_)
+						{
+							if (m.index == pos)
+								return m;
+						}
+					}
 					
 					return cont_[pos];
 				}
@@ -963,7 +971,7 @@ namespace nana
 					return prstatus;
 				}
 
-				void scroll(const index_pair& pos, bool to_bottom);
+				void scroll(const index_pair& abs_pos, bool to_bottom);
 
 				/// Append a new category with a specified name and return a pointer to it.
 				category_t* create_cat(native_string_type&& text)
@@ -2840,16 +2848,16 @@ namespace nana
 				std::vector<std::pair<index_type, inline_pane*>> panes_;
 			};
 
-			void es_lister::scroll(const index_pair& pos, bool to_bottom)
+			void es_lister::scroll(const index_pair& abs_pos, bool to_bottom)
 			{
-				auto& cat = *get(pos.cat);
+				auto& cat = *get(abs_pos.cat);
 
-				if ((pos.item != nana::npos) && (pos.item >= cat.items.size()))
+				if ((abs_pos.item != nana::npos) && (abs_pos.item >= cat.items.size()))
 					throw std::invalid_argument("listbox: invalid pos to scroll");
 
 				if (!cat.expand)
 				{
-					this->expand(pos.cat, true);
+					this->expand(abs_pos.cat, true);
 					ess_->calc_content_size();
 				}
 				else if (!ess_->auto_draw)
@@ -2862,7 +2870,7 @@ namespace nana
 				auto origin = ess_->content_view->origin();
 				origin.y = 0;
 
-				auto off = this->distance(this->first(), pos) * ess_->item_height();
+				auto off = this->distance(this->first(), this->index_cast(abs_pos, false)) * ess_->item_height();
 
 				auto screen_px = ess_->content_view->view_area().height;
 
@@ -3661,6 +3669,7 @@ namespace nana
 					rectangle bground_r{ content_r.x + static_cast<int>(essence_->header.margin()), coord.y, show_w, essence_->item_height() };
 					auto const state_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
+					//The position of column in x-axis.
 					int column_x = coord.x;
 
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
@@ -3670,7 +3679,9 @@ namespace nana
 
 						if (col.width_px > essence_->scheme_ptr->text_margin)
 						{
+							//The column text position, it is a offset to column_x.
 							int content_pos = 0;
+
 							element_state estate = element_state::normal;
 							nana::rectangle img_r;
 
@@ -3721,7 +3732,7 @@ namespace nana
 									//Make sure the user-define inline widgets is in the right visible rectangle.
 									rectangle pane_r;
 
-									const auto wdg_x = coord.x + content_pos;
+									const auto wdg_x = column_x + content_pos;
 									const auto wdg_w = col.width_px - static_cast<unsigned>(content_pos);
 
 									bool visible_state = true;
@@ -5219,9 +5230,9 @@ namespace nana
 			ess.update();
 		}
 
-		void listbox::scroll(bool to_bottom, const index_pair& pos)
+		void listbox::scroll(bool to_bottom, const index_pair& abs_pos)
 		{
-			_m_ess().lister.scroll(pos, to_bottom);
+			_m_ess().lister.scroll(abs_pos, to_bottom);
 			_m_ess().update();
 		}
 
