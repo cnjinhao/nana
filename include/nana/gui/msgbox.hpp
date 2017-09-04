@@ -287,7 +287,7 @@ namespace nana
 		std::function<bool(window)> verifier_;
 		::nana::paint::image images_[4];
 		::nana::rectangle valid_areas_[4];
-        int min_width_entry_field_pixels_;
+        unsigned min_width_entry_field_pixels_;
 	};
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>

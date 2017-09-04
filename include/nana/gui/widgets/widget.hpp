@@ -206,7 +206,7 @@ namespace nana
 				API::dev::attach_drawer(*this, trigger_);
 				if(visible)
 					API::show_window(handle_, true);
-				
+
 				this->_m_complete_creation();
 			}
 			return (this->empty() == false);
@@ -227,6 +227,39 @@ namespace nana
 		{
 			return *scheme_;
 		}
+
+		// disables or re-enables internal handling of event within base-widget
+		void filter_event(const event_code evt_code, const bool bDisabled)
+		{
+			trigger_.filter_event(evt_code, bDisabled);
+		}
+
+		void filter_event(const std::vector<event_code> evt_codes, const bool bDisabled)
+		{
+			trigger_.filter_event(evt_codes, bDisabled);
+		}
+
+		void filter_event(const event_filter_status& evt_all_states)
+		{
+			trigger_.filter_event(evt_all_states);
+		}
+
+		void clear_filter()
+		{
+			trigger_.clear_filter();
+		}
+
+		// reads status of if event is filtered
+		bool filter_event(const event_code evt_code)
+		{
+			return trigger_.filter_event(evt_code);
+		}
+
+		event_filter_status filter_event()
+		{
+			return trigger_.filter_event();
+		}
+
 	protected:
 		DrawerTrigger& get_drawer_trigger()
 		{

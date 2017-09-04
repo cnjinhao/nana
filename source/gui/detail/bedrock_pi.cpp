@@ -379,11 +379,13 @@ namespace nana
 			return pi_data_->scheme;
 		}
 
-		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::event_arg& event_arg)
+		void bedrock::_m_emit_core(event_code evt_code, core_window_t* wd, bool draw_only, const ::nana::event_arg& event_arg, const bool bForce__EmitInternal)
 		{
 			auto retain = wd->annex.events_ptr;
 			auto evts_ptr = retain.get();
 
+			// if 'bForce__EmitInternal', omit user defined events
+			const bool bProcess__External_event = !draw_only && !bForce__EmitInternal;
 			switch (evt_code)
 			{
 			case event_code::click:
@@ -394,9 +396,9 @@ namespace nana
 						{
 							//enable refreshing flag, this is a RAII class for exception-safe
 							flag_guard fguard(this, wd);
-							wd->drawer.click(*arg);
+							wd->drawer.click(*arg, bForce__EmitInternal);
 						}
-						if (!draw_only)
+						if (bProcess__External_event)
 							evts_ptr->click.emit(*arg, reinterpret_cast<window>(wd));
 					}
 				}
@@ -412,7 +414,7 @@ namespace nana
 				if (nullptr == arg)
 					return;
 
-				void(::nana::detail::drawer::*drawer_event_fn)(const arg_mouse&);
+				void(::nana::detail::drawer::*drawer_event_fn)(const arg_mouse&, const bool);
 				::nana::basic_event<arg_mouse>* evt_addr;
 
 				switch (evt_code)
@@ -448,10 +450,10 @@ namespace nana
 				{
 					//enable refreshing flag, this is a RAII class for exception-safe
 					flag_guard fguard(this, wd);
-					(wd->drawer.*drawer_event_fn)(*arg);
+					(wd->drawer.*drawer_event_fn)(*arg, bForce__EmitInternal);
 				}
 				
-				if (!draw_only)
+				if (bProcess__External_event)
 					evt_addr->emit(*arg, reinterpret_cast<window>(wd));
 				break;
 			}
@@ -463,10 +465,10 @@ namespace nana
 					{
 						//enable refreshing flag, this is a RAII class for exception-safe
 						flag_guard fguard(this, wd);
-						wd->drawer.mouse_wheel(*arg);
+						wd->drawer.mouse_wheel(*arg, bForce__EmitInternal);
 					}
 
-					if (!draw_only)
+					if (bProcess__External_event)
 						evts_ptr->mouse_wheel.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
@@ -480,7 +482,7 @@ namespace nana
 				if (nullptr == arg)
 					return;
 
-				void(::nana::detail::drawer::*drawer_event_fn)(const arg_keyboard&);
+				void(::nana::detail::drawer::*drawer_event_fn)(const arg_keyboard&, const bool);
 				::nana::basic_event<arg_keyboard>* evt_addr;
 
 				switch (evt_code)
@@ -507,15 +509,15 @@ namespace nana
 				{
 					//enable refreshing flag, this is a RAII class for exception-safe
 					flag_guard fguard(this, wd);
-					(wd->drawer.*drawer_event_fn)(*arg);
+					(wd->drawer.*drawer_event_fn)(*arg, bForce__EmitInternal);
 				}
 
-				if (!draw_only)
+				if (bProcess__External_event)
 					evt_addr->emit(*arg, reinterpret_cast<window>(wd));
 				break;
 			}
 			case event_code::expose:
-				if (!draw_only)
+				if (bProcess__External_event)
 				{
 					auto arg = dynamic_cast<const arg_expose*>(&event_arg);
 					if (arg)
@@ -530,9 +532,9 @@ namespace nana
 					{
 						//enable refreshing flag, this is a RAII class for exception-safe
 						flag_guard fguard(this, wd);
-						wd->drawer.focus(*arg);
+						wd->drawer.focus(*arg, bForce__EmitInternal);
 					}
-					if (!draw_only)
+					if (bProcess__External_event)
 						evts_ptr->focus.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
@@ -545,9 +547,9 @@ namespace nana
 					{
 						//enable refreshing flag, this is a RAII class for exception-safe
 						flag_guard fguard(this, wd);
-						wd->drawer.move(*arg);
+						wd->drawer.move(*arg, bForce__EmitInternal);
 					}
-					if (!draw_only)
+					if (bProcess__External_event)
 						evts_ptr->move.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
@@ -560,9 +562,9 @@ namespace nana
 					{
 						//enable refreshing flag, this is a RAII class for exception-safe
 						flag_guard fguard(this, wd);
-						wd->drawer.resizing(*arg);
+						wd->drawer.resizing(*arg, bForce__EmitInternal);
 					}
-					if (!draw_only)
+					if (bProcess__External_event)
 						evts_ptr->resizing.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
@@ -575,15 +577,15 @@ namespace nana
 					{
 						//enable refreshing flag, this is a RAII class for exception-safe
 						flag_guard fguard(this, wd);
-						wd->drawer.resized(*arg);
+						wd->drawer.resized(*arg, bForce__EmitInternal);
 					}
-					if (!draw_only)
+					if (bProcess__External_event)
 						evts_ptr->resized.emit(*arg, reinterpret_cast<window>(wd));
 				}
 				break;
 			}
 			case event_code::unload:
-				if (!draw_only)
+				if (bProcess__External_event)
 				{
 					auto arg = dynamic_cast<const arg_unload*>(&event_arg);
 					if (arg && (wd->other.category == category::flags::root))
@@ -595,7 +597,7 @@ namespace nana
 				}
 				break;
 			case event_code::destroy:
-				if (!draw_only)
+				if (bProcess__External_event)
 				{
 					auto arg = dynamic_cast<const arg_destroy*>(&event_arg);
 					if (arg)
