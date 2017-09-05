@@ -136,10 +136,8 @@ namespace nana
 			{	
 				const unsigned border_px = substance::border_px;
 
-				unsigned width = graph.width() - border_px * 2;
-				unsigned height = graph.height() - border_px * 2;
-
 				rectangle rt_val{ graph.size() };
+				auto const width = rt_val.width - border_px * 2;
 
 				rt_val.pare_off(static_cast<int>(border_px));
 

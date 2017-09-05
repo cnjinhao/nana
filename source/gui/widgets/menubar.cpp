@@ -169,7 +169,7 @@ namespace nana
 				}
 
 
-				std::size_t find(unsigned long shortkey) const
+				std::size_t find(wchar_t shortkey) const
 				{
 					if (shortkey)
 					{
@@ -262,7 +262,7 @@ namespace nana
 					return *ess_;
 				}
 
-				void trigger::attached(widget_reference widget, graph_reference graph)
+				void trigger::attached(widget_reference widget, graph_reference)
 				{
 					ess_->widget_ptr = &widget;
 				}
