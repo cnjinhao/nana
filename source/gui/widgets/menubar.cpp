@@ -30,44 +30,155 @@ namespace nana
 		{
 			struct item_type
 			{
-				item_type(const native_string_type text, unsigned long shortkey)
-					: text(text), shortkey(shortkey)
+				item_type(std::string&& text, wchar_t shortkey, std::size_t shortkey_pos):
+					text(std::move(text)),
+					shortkey(shortkey),
+					shortkey_pos(shortkey_pos)
 				{}
 
-				native_string_type	text;
-				unsigned long	shortkey;
+				std::string		text;	///< Transformed text, the shortkey charactor has been proccessed.
+				wchar_t			shortkey;
+				std::size_t		shortkey_pos;
 				::nana::menu	menu_obj;
 				::nana::point	pos;
 				::nana::size	size;
 			};
 
-			class trigger::itembase
+			struct trigger::essence
 			{
-			public:
-				using container = std::vector<item_type*>;
-
-				~itembase()
+				enum class behavior
 				{
-					for(auto i : cont_)
-						delete i;
+					none, focus, menu,
+				};
+
+
+				widget *widget_ptr{ nullptr };
+				std::vector<item_type*> items;
+
+				struct state_type
+				{
+					std::size_t active{ nana::npos };
+					behavior behave{ behavior::none };
+
+					bool menu_active{ false };
+					bool passive_close{ true };
+
+					bool nullify_mouse{ false };
+
+					nana::menu *menu{ nullptr };
+					nana::point mouse_pos;
+				}state;
+
+				//functions
+
+				~essence()
+				{
+					for (auto p : items)
+						delete p;
 				}
 
-				void append(const native_string_type& text, unsigned long shortkey)
+				nana::menu& push_back(const std::string& text)
 				{
-					if(shortkey && shortkey < 0x61) shortkey += (0x61 - 0x41);
-					cont_.emplace_back(new item_type(text, shortkey));
+					wchar_t shortkey;
+					std::size_t shortkey_pos;
+					auto transformed_text = API::transform_shortkey_text(text, shortkey, &shortkey_pos);
+
+					if (shortkey)
+						API::register_shortkey(*widget_ptr, shortkey);
+
+
+					if (shortkey && shortkey < 0x61)
+						shortkey += (0x61 - 0x41);
+					items.emplace_back(new item_type{ std::move(transformed_text), shortkey, shortkey_pos });
+
+					API::refresh_window(*widget_ptr);
+
+					return this->items.back()->menu_obj;
+				}
+				
+				bool cancel()
+				{
+					if (nana::npos == state.active)
+						return false;
+
+					this->close_menu();
+					state.behave = behavior::none;
+
+					auto pos = API::cursor_position();
+					API::calc_window_point(widget_ptr->handle(), pos);
+					state.active = find(pos);
+
+					return true;
 				}
 
-				std::size_t find(unsigned long shortkey) const
+
+				bool open_menu(bool activate_menu = false)
 				{
-					if(shortkey)
+					if (activate_menu)
+						state.menu_active = true;
+
+					auto pos = state.active;
+
+					if (pos >= items.size())
+						return false;
+
+					auto item_ptr = items[pos];
+
+					if (state.menu_active && (state.menu != &(item_ptr->menu_obj)))
 					{
-						if(shortkey < 0x61) shortkey += (0x61 - 0x41);
+						API::dev::delay_restore(true);
+						this->close_menu();
+						API::dev::delay_restore(false);
+						state.active = pos;
+
+						//Resets this flag, because close_menu() deactivates the menu
+						state.menu_active = true;
+
+						state.menu = &(item_ptr->menu_obj);
+						state.menu->destroy_answer([this]
+						{
+							state.menu = nullptr;
+							if (state.passive_close)
+							{
+								cancel();
+								API::refresh_window(*widget_ptr);
+							}
+						});
+
+						if (API::focus_window() != this->widget_ptr->handle())
+							API::focus_window(widget_ptr->handle());
+						menu_accessor::popup(*state.menu, *widget_ptr, item_ptr->pos.x, item_ptr->pos.y + static_cast<int>(item_ptr->size.height));
+						return true;
+					}
+					return false;
+				}
+
+				bool close_menu()
+				{
+					state.menu_active = false;
+
+					if (state.menu)
+					{
+						state.passive_close = false;
+						state.menu->close();
+						state.passive_close = true;
+						state.menu = nullptr;
+						return true;
+					}
+					return false;
+				}
+
+
+				std::size_t find(wchar_t shortkey) const
+				{
+					if (shortkey)
+					{
+						if (shortkey < 0x61) shortkey += (0x61 - 0x41);
 
 						std::size_t index = 0;
-						for(auto i : cont_)
+						for (auto item_ptr : items)
 						{
-							if(i->shortkey == shortkey)
+							if (item_ptr->shortkey == shortkey)
 								return index;
 							++index;
 						}
@@ -75,12 +186,25 @@ namespace nana
 					return npos;
 				}
 
-				const container& cont() const
+				std::size_t find(const ::nana::point& pos)
 				{
-					return cont_;
+					if ((2 <= pos.x) && (2 <= pos.y) && (pos.y < 25))
+					{
+						int item_x = 2;
+						std::size_t index = 0;
+
+						for (auto item_ptr : items)
+						{
+							if ((item_x <= pos.x) && (pos.x < item_x + static_cast<int>(item_ptr->size.width)))
+								return index;
+
+							item_x += static_cast<int>(item_ptr->size.width);
+							++index;
+						}
+					}
+
+					return npos;
 				}
-			private:
-				container cont_;
 			};
 
 			//class item_renderer
@@ -91,19 +215,17 @@ namespace nana
 				void item_renderer::background(const nana::point& pos, const nana::size& size, state item_state)
 				{
 					auto bground = scheme_ptr_->text_fgcolor;
-					::nana::color border, body, corner;
+					::nana::color border, body;
 
 					switch (item_state)
 					{
 					case state::highlighted:
 						border = scheme_ptr_->border_highlight;
 						body = scheme_ptr_->body_highlight;
-						corner = body.blend(bground, 0.5);
 						break;
 					case state::selected:
 						border = scheme_ptr_->border_selected;
 						body = scheme_ptr_->body_selected;
-						corner = body.blend(bground, 0.5);
 						break;
 					default:	//Don't process other states.
 						return;
@@ -112,7 +234,7 @@ namespace nana
 					nana::rectangle r(pos, size);
 					graph_.rectangle(r, false, border);
 
-					graph_.palette(false, corner);
+					graph_.palette(false, body.blend(bground, 0.5));
 
 					paint::draw{ graph_ }.corner(r, 1);
 					graph_.rectangle(r.pare_off(1), true, body);
@@ -127,77 +249,47 @@ namespace nana
 
 			//class trigger
 				trigger::trigger()
-					: widget_(nullptr)
-					, graph_(nullptr)
-					, items_(new itembase) {}
+					: ess_(new essence)
+				{}
 
 				trigger::~trigger()
 				{
-					delete items_;
+					delete ess_;
 				}
 
-				nana::menu* trigger::push_back(const std::string& text)
+				auto trigger::ess() const -> essence&
 				{
-					wchar_t shkey;
-					API::transform_shortkey_text(text, shkey, nullptr);
-
-					if(shkey)
-						API::register_shortkey(widget_->handle(), shkey);
-
-					auto pos = items_->cont().size();
-					items_->append(to_nstring(text), shkey);
-					refresh(*graph_);
-					API::update_window(*widget_);
-
-					return at(pos);
+					return *ess_;
 				}
 
-				nana::menu* trigger::at(std::size_t pos) const
+				void trigger::attached(widget_reference widget, graph_reference)
 				{
-					if (pos < items_->cont().size())
-						return &(items_->cont()[pos]->menu_obj);
-
-					return nullptr;
-				}
-
-				std::size_t trigger::size() const
-				{
-					return items_->cont().size();
-				}
-
-				void trigger::attached(widget_reference widget, graph_reference graph)
-				{
-					graph_ = &graph;
-					widget_ = &widget;
+					ess_->widget_ptr = &widget;
 				}
 
 				void trigger::refresh(graph_reference graph)
 				{
-					auto bgcolor = API::bgcolor(*widget_);
-					graph_->rectangle(true, bgcolor);
+					auto bgcolor = API::bgcolor(*ess_->widget_ptr);
 
-					item_renderer ird(*widget_, graph);
+					graph.rectangle(true, bgcolor);
+
+					item_renderer ird{ *ess_->widget_ptr, graph };
 
 					nana::point item_pos(2, 2);
 					nana::size item_s(0, 23);
 
 					unsigned long index = 0;
-					for (auto i : items_->cont())
+
+					for (auto pm : ess_->items)
 					{
-						//Transform the text if it contains the hotkey character
-						wchar_t hotkey;
-						::std::wstring::size_type hotkey_pos;
-						auto text = API::transform_shortkey_text(to_utf8(i->text), hotkey, &hotkey_pos);
-
-						nana::size text_s = graph.text_extent_size(text);
-
+						auto text_s = graph.text_extent_size(pm->text);
 						item_s.width = text_s.width + 16;
 
-						i->pos = item_pos;
-						i->size = item_s;
+						pm->pos = item_pos;
+						pm->size = item_s;
 
 						using state = item_renderer::state;
-						state item_state = (index != state_.active ? state::normal : (state_.menu_active ? state::selected : state::highlighted));
+						state item_state = (index != ess_->state.active ? state::normal : (ess_->state.menu_active ? state::selected : state::highlighted));
 						ird.background(item_pos, item_s, item_state);
 
 						if (state::selected == item_state)
@@ -210,73 +302,66 @@ namespace nana
 
 						//Draw text, the text is transformed from orignal for hotkey character
 						int text_top_off = (item_s.height - text_s.height) / 2;
-						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, to_nstring(text));
+						ird.caption({ item_pos.x + 8, item_pos.y + text_top_off }, to_nstring(pm->text));
 
-						if (hotkey)
-						{
-							unsigned off_w = (hotkey_pos ? graph.text_extent_size(text.c_str(), hotkey_pos).width : 0);
-							auto hotkey_size = graph.text_extent_size(text.c_str() + hotkey_pos, 1);
+						API::dev::draw_shortkey_underline(graph, pm->text, pm->shortkey, pm->shortkey_pos, { item_pos.x + 8, item_pos.y + text_top_off }, ird.scheme_ptr()->text_fgcolor);
 
-							unsigned ascent, descent, inleading;
-							graph.text_metrics(ascent, descent, inleading);
-							int x = item_pos.x + 8 + off_w;
-							int y = item_pos.y + text_top_off + ascent + 1;
-							graph.line({ x, y }, { x + static_cast<int>(hotkey_size.width) - 1, y }, ird.scheme_ptr()->text_fgcolor);
-						}
-
-						item_pos.x += i->size.width;
+						item_pos.x += pm->size.width;
 						++index;
 					}
 				}
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
-					if (arg.pos != state_.mouse_pos)
-						state_.nullify_mouse = false;
+					
+					if (arg.pos != ess_->state.mouse_pos)
+						ess_->state.nullify_mouse = false;
 
 					bool popup = false;
-					if(state_.behavior == state_type::behavior_focus)
+					if(essence::behavior::focus == ess_->state.behave)
 					{
-						auto index = _m_item_by_pos(arg.pos);
-						if(index != npos && state_.active != index)
+						auto index = ess_->find(arg.pos);
+						if(index != npos && ess_->state.active != index)
 						{
-							state_.active = index;
+							ess_->state.active = index;
 							popup = true;
 						}
 					}
-					else
-						popup = _m_track_mouse(arg.pos);
+					else if (!ess_->state.nullify_mouse)
+					{
+						auto which = ess_->find(arg.pos);
+						if ((which != ess_->state.active) && (which != npos || (false == ess_->state.menu_active)))
+						{
+							ess_->state.active = which;
+							popup = true;
+						}
+					}
 
 					if(popup)
 					{
-						_m_popup_menu();
+						ess_->open_menu();
 						refresh(graph);
 						API::dev::lazy_refresh();
 					}
 
-					state_.mouse_pos = arg.pos;
+					ess_->state.mouse_pos = arg.pos;
 				}
 
 				void trigger::mouse_leave(graph_reference graph, const arg_mouse& arg)
 				{
-					state_.nullify_mouse = false;
+					ess_->state.nullify_mouse = false;
 					mouse_move(graph, arg);
 				}
 
 				void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
 				{
-					state_.nullify_mouse = false;
-					state_.active = _m_item_by_pos(arg.pos);
+					ess_->state.nullify_mouse = false;
+					ess_->state.active = ess_->find(arg.pos);
 
-					if (npos != state_.active)
-					{
-						if (!state_.menu_active)
-							state_.menu_active = true;
-
-						_m_popup_menu();
-					}
+					if (npos != ess_->state.active)
+						ess_->open_menu(true);
 					else
-						_m_total_close();
+						ess_->cancel();
 
 					refresh(graph);
 					API::dev::lazy_refresh();
@@ -284,17 +369,17 @@ namespace nana
 
 				void trigger::mouse_up(graph_reference graph, const arg_mouse&)
 				{
-					state_.nullify_mouse = false;
+					ess_->state.nullify_mouse = false;
 
-					if(state_.behavior != state_.behavior_menu)
+					if(ess_->state.behave != essence::behavior::menu)
 					{
-						if(state_.menu_active)
-							state_.behavior = state_.behavior_menu;
+						if(ess_->state.menu_active)
+							ess_->state.behave = essence::behavior::menu;
 					}
 					else
 					{
-						state_.behavior = state_.behavior_none;
-						_m_total_close();
+						ess_->state.behave = essence::behavior::none;
+						ess_->cancel();
 						refresh(graph);
 						API::dev::lazy_refresh();
 					}
@@ -302,13 +387,12 @@ namespace nana
 
 				void trigger::focus(graph_reference graph, const arg_focus& arg)
 				{
-					if((arg.getting == false) && (state_.active != npos))
+					if((arg.getting == false) && (ess_->state.active != npos))
 					{
-						state_.behavior = state_type::behavior_none;
-						state_.nullify_mouse = true;
-						state_.menu_active = false;
-						_m_close_menu();
-						state_.active = npos;
+						ess_->state.behave = essence::behavior::none;
+						ess_->state.nullify_mouse = true;
+						ess_->close_menu();
+						ess_->state.active = npos;
 						refresh(graph);
 						API::dev::lazy_refresh();
 					}
@@ -316,53 +400,54 @@ namespace nana
 
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
-					state_.nullify_mouse = true;
-					if(state_.menu)
+					ess_->state.nullify_mouse = true;
+
+					auto & menu_ptr = ess_->state.menu;
+					if(ess_->state.menu)
 					{
 						switch(arg.key)
 						{
 						case keyboard::os_arrow_down:
 						case keyboard::backspace:
 						case keyboard::os_arrow_up:
-							state_.menu->goto_next(keyboard::os_arrow_down == arg.key);
+							menu_ptr->goto_next(keyboard::os_arrow_down == arg.key);
 							break;
 						case keyboard::os_arrow_right:
-							if(state_.menu->goto_submen() == false)
-								_m_move(false);
+							if(menu_ptr->goto_submen() == false)
+								_m_move(graph, false);
 							break;
 						case keyboard::os_arrow_left:
-							if(state_.menu->exit_submenu() == false)
-								_m_move(true);
+							if(menu_ptr->exit_submenu() == false)
+								_m_move(graph, true);
 							break;
 						case keyboard::escape:
-							if(state_.menu->exit_submenu() == false)
+							if(menu_ptr->exit_submenu() == false)
 							{
-								_m_close_menu();
-								state_.behavior = state_.behavior_focus;
-								state_.menu_active = false;
+								ess_->close_menu();
+								ess_->state.behave = essence::behavior::focus;
 							}
 							break;
 						case keyboard::enter:
-							state_.menu->pick();
+							menu_ptr->pick();
 							break;
 						default:
 							//Katsuhisa Yuasa: menubar key_press improvements
 							//send_shortkey has 3 states, 0 = UNKNOWN KEY, 1 = ITEM, 2 = GOTO SUBMENU
-							int sk_state = state_.menu->send_shortkey(arg.key);
+							int sk_state = menu_ptr->send_shortkey(arg.key);
 							switch(sk_state)
 							{
 							case 0: //UNKNOWN KEY
 								break;
 							case 1: //ITEM
-								if (state_.active != npos)
+								if (ess_->state.active != npos)
 								{
-									_m_total_close();
+									ess_->cancel();
 									if (arg.key == 18) //ALT
-										state_.behavior = state_.behavior_focus;
+										ess_->state.behave = essence::behavior::focus;
 								}
 								break;
 							case 2: //GOTO SUBMENU
-								state_.menu->goto_submen();
+								menu_ptr->goto_submen();
 								break;
 							default: break;
 							}
@@ -376,30 +461,28 @@ namespace nana
 						case keyboard::os_arrow_right:
 						case keyboard::backspace:
 						case keyboard::os_arrow_left:
-							_m_move(keyboard::os_arrow_right != arg.key);
+							_m_move(graph, keyboard::os_arrow_right != arg.key);
 							break;
 						case keyboard::os_arrow_up:
 						case keyboard::os_arrow_down:
 						case keyboard::enter:
-							state_.menu_active = true;
-							if(_m_popup_menu())
-								state_.menu->goto_next(true);
+							if(ess_->open_menu(true))
+								menu_ptr->goto_next(true);
 							break;
 						case keyboard::escape:
-							if(state_.behavior == state_.behavior_focus)
+							if(essence::behavior::focus == ess_->state.behave)
 							{
-								state_.active= npos;
-								state_.behavior = state_.behavior_none;
+								ess_->state.active= npos;
+								ess_->state.behave = essence::behavior::none;
 							}
 							break;
 						default:
-							auto index = items_->find(arg.key);
+							auto index = ess_->find(arg.key);
 							if(index != npos)
 							{
-								state_.active = index;
-								state_.menu_active = true;
-								if(_m_popup_menu())
-									state_.menu->goto_next(true);
+								ess_->state.active = index;
+								if(ess_->open_menu(true))
+									menu_ptr->goto_next(true);
 							}
 							break;
 						}
@@ -413,20 +496,20 @@ namespace nana
 				{
 					if(arg.key == 18)
 					{
-						if(state_.behavior == state_type::behavior_none)
+						if(essence::behavior::none == ess_->state.behave)
 						{
-							state_.behavior = state_type::behavior_focus;
-							state_.active = 0;
+							ess_->state.behave = essence::behavior::focus;
+							ess_->state.active = 0;
 						}
 						else
 						{
-							state_.behavior = state_type::behavior_none;
+							ess_->state.behave = essence::behavior::none;
 							auto pos = API::cursor_position();
-							API::calc_window_point(widget_->handle(), pos);
-							state_.active = _m_item_by_pos(pos);
+							API::calc_window_point(ess_->widget_ptr->handle(), pos);
+							ess_->state.active = ess_->find(pos);
 						}
 
-						state_.menu_active = false;
+						ess_->state.menu_active = false;
 						refresh(graph);
 						API::dev::lazy_refresh();
 					}
@@ -434,31 +517,31 @@ namespace nana
 
 				void trigger::shortkey(graph_reference graph, const arg_keyboard& arg)
 				{
-					API::focus_window(widget_->handle());
+					API::focus_window(ess_->widget_ptr->handle());
 
-					auto index = items_->find(arg.key);
-					if(index != npos && (index != state_.active || nullptr == state_.menu))
+					auto index = ess_->find(arg.key);
+					if(index != npos && (index != ess_->state.active || nullptr == ess_->state.menu))
 					{
-						_m_close_menu();
-						state_.menu_active = true;
-						state_.nullify_mouse = true;
-						state_.active = index;
+						ess_->close_menu();
+						ess_->state.nullify_mouse = true;
+						ess_->state.active = index;
 
-						if(_m_popup_menu())
-							state_.menu->goto_next(true);
+						if(ess_->open_menu(true))
+							ess_->state.menu->goto_next(true);
 
 						refresh(graph);
 						API::dev::lazy_refresh();
-						state_.behavior = state_.behavior_menu;
+						ess_->state.behave = essence::behavior::menu;
 					}
 				}
 
-				void trigger::_m_move(bool to_left)
+				void trigger::_m_move(graph_reference graph, bool to_left)
 				{
-					if(items_->cont().empty()) return;
+					if (ess_->items.empty()) return;
 
-					const std::size_t last_pos = items_->cont().size() - 1;
-					auto index = state_.active;
+					const std::size_t last_pos = ess_->items.size() - 1;
+
+					auto index = ess_->state.active;
 					if(to_left)
 					{
 						--index;
@@ -472,121 +555,16 @@ namespace nana
 							index = 0;
 					}
 
-					if(index != state_.active)
+					if(index != ess_->state.active)
 					{
-						state_.active = index;
-						refresh(*graph_);
+						ess_->state.active = index;
+						refresh(graph);
 						API::dev::lazy_refresh();
 
-						if(_m_popup_menu())
-							state_.menu->goto_next(true);
+						if(ess_->open_menu())
+							ess_->state.menu->goto_next(true);
 					}
 				}
-
-				bool trigger::_m_popup_menu()
-				{
-					auto& items = items_->cont();
-
-					auto pos = state_.active;
-					if (pos >= items.size())
-						return false;
-
-					if(state_.menu_active && (state_.menu != &(items[pos]->menu_obj)))
-					{
-						API::dev::delay_restore(true);
-						_m_close_menu();
-						API::dev::delay_restore(false);
-						state_.active = pos;
-
-						auto & m = items[pos];
-						state_.menu = &(m->menu_obj);
-						state_.menu->destroy_answer([this]
-						{
-							state_.menu = nullptr;
-							if (state_.passive_close)
-							{
-								_m_total_close();
-
-								refresh(*graph_);
-								API::update_window(widget_->handle());
-							}
-						});
-
-						if (API::focus_window() != this->widget_->handle())
-							API::focus_window(widget_->handle());
-						menu_accessor::popup(*state_.menu, *widget_, m->pos.x, m->pos.y + static_cast<int>(m->size.height));
-						return true;
-					}
-					return false;
-				}
-
-				void trigger::_m_total_close()
-				{
-					_m_close_menu();
-					state_.menu_active = false;
-					state_.behavior = state_.behavior_none;
-
-					auto pos = API::cursor_position();
-					API::calc_window_point(widget_->handle(), pos);
-					state_.active = _m_item_by_pos(pos);
-				}
-
-				bool trigger::_m_close_menu()
-				{
-					if(state_.menu)
-					{
-						state_.passive_close = false;
-						state_.menu->close();
-						state_.passive_close = true;
-						state_.menu = nullptr;
-						return true;
-					}
-					return false;
-				}
-
-				std::size_t trigger::_m_item_by_pos(const ::nana::point& pos)
-				{
-					if((2 <= pos.x) && (2 <= pos.y) && (pos.y < 25))
-					{
-						int item_x = 2;
-						std::size_t index = 0;
-						for(auto i : items_->cont())
-						{
-							if(item_x <= pos.x && pos.x < item_x + static_cast<int>(i->size.width))
-								return index;
-
-							item_x += i->size.width;
-							++index;
-						}
-					}
-
-					return npos;
-				}
-
-				bool trigger::_m_track_mouse(const ::nana::point& pos)
-				{
-					if(state_.nullify_mouse == false)
-					{
-						auto which = _m_item_by_pos(pos);
-						if((which != state_.active) && (which != npos || (false == state_.menu_active)))
-						{
-							state_.active = which;
-							return true;
-						}
-					}
-					return false;
-				}
-
-				//struct state_type
-					trigger::state_type::state_type()
-						:	active(npos),
-							behavior(behavior_none),
-							menu_active(false),
-							passive_close(true),
-							nullify_mouse(false),
-							menu(nullptr)
-					{}
-				//end struct state_type
 			//end class trigger
 		}//end namespace menubar
 	}//end namespace drawerbase
@@ -609,7 +587,7 @@ namespace nana
 				::create(wd, rectangle(nana::size(API::window_size(wd).width, 28)));
 
 			API::dev::set_menubar(handle(), true);
-			evt_resized_ = API::events(wd).resized.connect([this](const ::nana::arg_resized& arg)
+			evt_resized_ = API::events(wd).resized.connect_unignorable([this](const ::nana::arg_resized& arg)
 			{
 				auto sz = this->size();
 				sz.width = arg.width;
@@ -619,20 +597,49 @@ namespace nana
 
 		menu& menubar::push_back(const std::string& text)
 		{
-			return *(get_drawer_trigger().push_back(text));
+			return get_drawer_trigger().ess().push_back(text);
 		}
 
-		menu& menubar::at(std::size_t index) const
+		menu& menubar::at(std::size_t pos) const
 		{
-			auto p = get_drawer_trigger().at(index);
-			if(nullptr == p)
-				throw std::out_of_range("menubar::at, out of range");
-			return *p;
+			return get_drawer_trigger().ess().items.at(pos)->menu_obj;
 		}
 
 		std::size_t menubar::length() const
 		{
-			return get_drawer_trigger().size();
+			return get_drawer_trigger().ess().items.size();
+		}
+
+		bool menubar::cancel()
+		{
+			return get_drawer_trigger().ess().cancel();
+		}
+
+		bool menubar::hovered() const
+		{
+			auto const native_handle = API::root(this->handle());
+			if (native_handle)
+			{
+				auto wd = API::find_window(API::cursor_position());
+				if (wd == this->handle())
+					return true;
+
+				auto & items = get_drawer_trigger().ess().items;
+				while (wd)
+				{
+					auto owner = API::get_owner_window(wd);
+					if (API::root(owner) == native_handle)
+					{
+						for (auto p : items)
+						{
+							if (p->menu_obj.handle() == wd)
+								return true;
+						}
+					}
+					wd = owner;
+				}
+			}
+			return false;
 		}
 	//end class menubar
 }//end namespace nana

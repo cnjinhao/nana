@@ -1,6 +1,6 @@
 /*
  *	A Progress Indicator Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,136 +17,185 @@ namespace nana
 	{
 		namespace progress
 		{
-			//class trigger
-			void trigger::attached(widget_reference wd, graph_reference graph)
+			scheme::scheme()
 			{
-				widget_	= &wd;
-				graph_	= &graph;
+				foreground = static_cast<color_rgb>(0x107515);
 			}
 
-			unsigned trigger::value() const
+			class substance
 			{
-				return value_;
-			}
+			public:
+				static const unsigned border_px = 1;
 
-			unsigned trigger::value(unsigned v)
-			{
-				internal_scope_guard isg;
-				if(false == unknown_)
+				void set_widget(widget& wdg)
 				{
-					if(value_ != v)
-						value_ = v > max_?max_:v;
+					widget_ = static_cast<nana::progress*>(&wdg);
 				}
-				else
-					value_ += (v?10:v);
 
-				if(_m_check_changing(value_))
+				nana::progress* widget_ptr() const
 				{
-					refresh(*graph_);
-					API::update_window(widget_->handle());
+					return widget_;
 				}
-				return v;
-			}
 
-			unsigned trigger::inc()
-			{
-				internal_scope_guard isg;
-				if(false == unknown_)
+				unsigned inc()
 				{
-					if(value_ < max_)
-						++value_;
+					auto val = value(nullptr) + 1;
+					return value(&val);
 				}
-				else
-					value_ += 5;
 
-				if(_m_check_changing(value_))
-					API::refresh_window(widget_->handle());
-				return value_;
+				unsigned value(const unsigned* value_ptr)
+				{
+					//Sets new value if value_ptr is not a nullptr
+					if (value_ptr)
+					{
+						if (unknown_)
+							value_ += (*value_ptr ? 5 : 0);
+						else
+							value_ = (std::min)(max_, *value_ptr);
+
+						_m_try_refresh();
+					}
+					return value_;
+				}
+
+				void reset_value()
+				{
+					value_ = 0;
+				}
+
+				unsigned maximum(const unsigned * value_ptr)
+				{
+					//Sets new maximum if value_ptr is not a nullptr
+					if (value_ptr)
+					{
+						max_ = (*value_ptr > 0 ? *value_ptr : 1);
+						_m_try_refresh();
+					}
+					return max_;
+				}
+
+				bool unknown(const bool* state_ptr)
+				{
+					if (state_ptr)
+					{
+						unknown_ = *state_ptr;
+						if (unknown_)
+							value_px_ = 0;
+						else
+							value_ = (std::min)(value_, max_);
+					}
+					return unknown_;
+				}
+
+				unsigned value_px() const
+				{
+					return value_px_;
+				}
+			private:
+				void _m_try_refresh()
+				{
+					if (nullptr == widget_)
+						return;
+
+					auto value_px = (widget_->size().width - border_px * 2) * value_ / max_;
+
+					if (value_px != value_px_)
+					{
+						value_px_ = value_px;
+						API::refresh_window(*widget_);
+					}
+				}
+			private:
+				nana::progress * widget_{ nullptr };
+				unsigned max_{ 100 };
+				unsigned value_{ 0 };
+				unsigned value_px_{ 0 };
+				bool unknown_{ false };
+			};
+
+			trigger::trigger()
+				: progress_(new substance)
+			{}
+
+			trigger::~trigger()
+			{
+				delete progress_;
 			}
 
-			unsigned trigger::Max() const
+			substance* trigger::progress() const
 			{
-				return max_;
+				return progress_;
 			}
-
-			unsigned trigger::Max(unsigned value)
+			
+			void trigger::attached(widget_reference wdg, graph_reference)
 			{
-				max_ = value;
-				if(max_ == 0)	++max_;
-
-				API::refresh_window(widget_->handle());
-				return max_;
-			}
-
-			void trigger::unknown(bool enb)
-			{
-				unknown_ = enb;
-				if(enb)
-					draw_width_ = static_cast<unsigned>(-1);
-			}
-
-			bool trigger::unknown() const
-			{
-				return unknown_;
-			}
-			bool trigger::stopped() const
-			{
-				return stop_;
-			}
-			bool trigger::stop(bool s)
-			{
-				std::swap(s,stop_);
-				return s;
+				progress_->set_widget(wdg);
 			}
 
 			void trigger::refresh(graph_reference graph)
-			{
-				if (false == unknown_)
-					draw_width_ = static_cast<unsigned>((graph.width() - border * 2) * (double(value_) / max_));
+			{	
+				const unsigned border_px = substance::border_px;
 
-				_m_draw_box(graph);
-				_m_draw_progress(graph);
-			}
+				rectangle rt_val{ graph.size() };
+				auto const width = rt_val.width - border_px * 2;
 
-			void trigger::_m_draw_box(graph_reference graph)
-			{
-				rectangle r{ graph.size() };
-				graph.gradual_rectangle(r, colors::button_face_shadow_end, colors::button_face_shadow_start, true);
-				::nana::color lt{ colors::gray }, rb{colors::white};
-				graph.frame_rectangle(r, lt, lt, rb, rb);
-			}
+				rt_val.pare_off(static_cast<int>(border_px));
 
-			void trigger::_m_draw_progress(graph_reference graph)
-			{
-				unsigned width = graph.width() - border * 2;
-				unsigned height = graph.height() - border * 2;
-
-				if(false == unknown_)
+				auto rt_bground = rt_val;
+				if (false == progress_->unknown(nullptr))
 				{
-					if(draw_width_)
-						graph.gradual_rectangle({ static_cast<int>(border), static_cast<int>(border), draw_width_, height }, { 0x6F, 0xFF, 0xA8 }, { 0x10, 0x75, 0x15 }, true);
+					rt_bground.x = static_cast<int>(progress_->value_px()) + static_cast<int>(border_px);
+					rt_bground.width -= progress_->value_px();
+
+					rt_val.width = progress_->value_px();
 				}
 				else
 				{
-					unsigned block = width / 3;
+					auto const block = width / 3;
 
-					int left = (value_ < block ? 0 : value_ - block) + border;
-					int right = (value_ >= width - 1 + border? width - 1 + border: value_);
+					auto const value = progress_->value(nullptr);
 
-					if(right >= left)
-						graph.gradual_rectangle({ left, static_cast<int>(border), static_cast<unsigned>(right - left + 1), height }, { 0x6F, 0xFF, 0xA8 }, { 0x10, 0x75, 0x15 }, true);
+					auto left = (std::max)(0, static_cast<int>(value - block)) + static_cast<int>(border_px);
+					auto right = static_cast<int>((std::min)(value, width + border_px -1));
 
-					if(value_ >= width + block)	value_ = 0;
+					if (right > left)
+					{
+						rt_val.x = left;
+						rt_val.width = static_cast<unsigned>(right - left + 1);
+					}
+					else
+						rt_val.width = 0;
+
+					if (value >= width + block)
+						progress_->reset_value();
 				}
-			}
 
-			bool trigger::_m_check_changing(unsigned newvalue) const
-			{
-				if(graph_)
-					return (((graph_->width() - border * 2) * newvalue / max_) != draw_width_);
-				return false;
+				auto & sch = progress_->widget_ptr()->scheme();
+
+				//Draw the gradient background if gradient_bgcolor is available.
+
+				auto bgcolor = sch.background.get_color();
+				if (bgcolor.invisible())
+					bgcolor = colors::button_face;
+
+				if (sch.gradient_bgcolor.get_color().invisible())
+					graph.rectangle(rt_bground, true, bgcolor);
+				else
+					graph.gradual_rectangle(rt_bground, bgcolor, sch.gradient_bgcolor.get_color(), true);
+
+				//Draw the gradient fgcolor if gradient_fgcolor is available.
+
+				auto fgcolor = sch.foreground.get_color();
+				if (fgcolor.invisible())
+					fgcolor = static_cast<color_rgb>(0x107515);
+
+				if (sch.gradient_fgcolor.get_color().invisible())
+					graph.rectangle(rt_val, true, fgcolor);
+				else
+					graph.gradual_rectangle(rt_val, sch.gradient_fgcolor.get_color(), fgcolor, true);
+
+				graph.frame_rectangle(rectangle{ graph.size() }, colors::gray, colors::gray, colors::white, colors::white);
 			}
-			//end class drawer
 		}//end namespace progress
 	}//end namespace drawerbase
 
@@ -165,49 +214,42 @@ namespace nana
 
 		unsigned progress::value() const
 		{
-			return get_drawer_trigger().value();
+			return get_drawer_trigger().progress()->value(nullptr);
 		}
 
 		unsigned progress::value(unsigned val)
 		{
-			internal_scope_guard isg;
+			internal_scope_guard lock;
 			if(API::empty_window(this->handle()) == false)
-				return get_drawer_trigger().value(val);
+				return get_drawer_trigger().progress()->value(&val);
 			return 0;
 		}
 
 		unsigned progress::inc()
 		{
-			internal_scope_guard isg;
-			return get_drawer_trigger().inc();
+			internal_scope_guard lock;
+			return get_drawer_trigger().progress()->inc();
 		}
 
 		unsigned progress::amount() const
 		{
-			return get_drawer_trigger().Max();
+			return get_drawer_trigger().progress()->maximum(nullptr);
 		}
 
 		unsigned progress::amount(unsigned value)
 		{
-			return get_drawer_trigger().Max(value);
+			return get_drawer_trigger().progress()->maximum(&value);
 		}
 
 		void progress::unknown(bool enb)
 		{
-			get_drawer_trigger().unknown(enb);
+			internal_scope_guard lock;
+			get_drawer_trigger().progress()->unknown(&enb);
 		}
 
 		bool progress::unknown() const
 		{
-			return get_drawer_trigger().unknown();
-		}
-		bool progress::stop(bool s)  
-		{
-			return get_drawer_trigger().stop(s);
-		}
-		bool progress::stopped() const
-		{
-			return get_drawer_trigger().stopped();
+			return get_drawer_trigger().progress()->unknown(nullptr);
 		}
 	//end class progress
 }//end namespace nana

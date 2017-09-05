@@ -332,7 +332,6 @@ namespace paint
 					dw->context = cdc;
 					dw->pixmap = bmp;
 					::SetBkMode(cdc, TRANSPARENT);
-					dw->brush.set(cdc, dw->brush.Solid, 0xFFFFFF);
 				}
 				else
 				{
@@ -1075,13 +1074,16 @@ namespace paint
 		{
 			if (!impl_->handle)	return;
 #if defined(NANA_WINDOWS)
-			impl_->handle->update_pen();
 			if (pos1 != pos2)
 			{
+				auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
+
 				::MoveToEx(impl_->handle->context, pos1.x, pos1.y, 0);
 				::LineTo(impl_->handle->context, pos2.x, pos2.y);
+
+				::DeleteObject(::SelectObject(impl_->handle->context, prv_pen));
 			}
-			::SetPixel(impl_->handle->context, pos2.x, pos2.y, NANA_RGB(impl_->handle->pen.color));
+			::SetPixel(impl_->handle->context, pos2.x, pos2.y, NANA_RGB(impl_->handle->get_color()));
 #elif defined(NANA_X11)
 			Display* disp = nana::detail::platform_spec::instance().open_display();
 			impl_->handle->update_color();
@@ -1107,8 +1109,11 @@ namespace paint
 		{
 			if (!impl_->handle)	return;
 #if defined(NANA_WINDOWS)
-			impl_->handle->update_pen();
+			auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
+
 			::LineTo(impl_->handle->context, pos.x, pos.y);
+
+			::DeleteObject(::SelectObject(impl_->handle->context, prv_pen));
 #elif defined(NANA_X11)
 			Display* disp = nana::detail::platform_spec::instance().open_display();
 			impl_->handle->update_color();
@@ -1136,9 +1141,14 @@ namespace paint
 			if (r.width && r.height && impl_->handle && r.right() > 0 && r.bottom() > 0)
 			{
 #if defined(NANA_WINDOWS)
+
+				auto brush = ::CreateSolidBrush(NANA_RGB(impl_->handle->get_color()));
+
 				::RECT native_r = { r.x, r.y, r.right(), r.bottom()};
-				impl_->handle->update_brush();
-				(solid ? ::FillRect : ::FrameRect)(impl_->handle->context, &native_r, impl_->handle->brush.handle);
+
+				(solid ? ::FillRect : ::FrameRect)(impl_->handle->context, &native_r, brush);
+
+				::DeleteObject(brush);
 #elif defined(NANA_X11)
 				Display* disp = nana::detail::platform_spec::instance().open_display();
 				impl_->handle->update_color();
@@ -1263,17 +1273,27 @@ namespace paint
 			{
 #if defined(NANA_WINDOWS)
 				impl_->handle->set_color(clr);
+
 				if (solid)
 				{
-					impl_->handle->update_pen();
-					impl_->handle->brush.set(impl_->handle->context, impl_->handle->brush.Solid, solid_clr.px_color().value);
+					auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
+					auto prv_brush = ::SelectObject(impl_->handle->context, ::CreateSolidBrush(NANA_RGB(solid_clr.px_color().value)));
+
 					::RoundRect(impl_->handle->context, r.x, r.y, r.right(), r.bottom(), static_cast<int>(radius_x * 2), static_cast<int>(radius_y * 2));
+
+					::DeleteObject(::SelectObject(impl_->handle->context, prv_brush));
+					::DeleteObject(::SelectObject(impl_->handle->context, prv_pen));
 				}
 				else
 				{
-					impl_->handle->update_brush();
-					impl_->handle->round_region.set(r, radius_x, radius_y);
-					::FrameRgn(impl_->handle->context, impl_->handle->round_region.handle, impl_->handle->brush.handle, 1, 1);
+					auto brush = ::CreateSolidBrush(NANA_RGB(impl_->handle->get_color()));
+
+					auto region = ::CreateRoundRectRgn(r.x, r.y, r.x + static_cast<int>(r.width) + 1, r.y + static_cast<int>(r.height) + 1, static_cast<int>(radius_x + 1), static_cast<int>(radius_y + 1));
+
+					::FrameRgn(impl_->handle->context, region, brush, 1, 1);
+
+					::DeleteObject(region);
+					::DeleteObject(brush);
 				}
 
 				if (impl_->changed == false) impl_->changed = true;

@@ -260,7 +260,7 @@ namespace nana
 					notifier_->request_close();
 				});
 
-				this->events().resized.connect([this](const arg_resized& arg)
+				this->events().resized.connect_unignorable([this](const arg_resized& arg)
 				{
 					rectangle r{ 0, 0, arg.width, 20 };
 					caption_.move(r);
@@ -360,7 +360,7 @@ namespace nana
 				API::set_parent_window(handle(), container_->handle());
 				this->move({ 1, 1 });
 
-				container_->events().resized.connect([this](const arg_resized& arg)
+				container_->events().resized.connect_unignorable([this](const arg_resized& arg)
 				{
 					this->size({arg.width - 2, arg.height - 2});
 				});

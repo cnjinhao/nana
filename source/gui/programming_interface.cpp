@@ -62,7 +62,12 @@ namespace API
 
 		bool emit_event(event_code evt_code, window wd, const ::nana::event_arg& arg)
 		{
-			return restrict::bedrock.emit(evt_code, reinterpret_cast<::nana::detail::basic_window*>(wd), arg, true, restrict::bedrock.get_thread_context());
+			return restrict::bedrock.emit(evt_code, reinterpret_cast<::nana::detail::basic_window*>(wd), arg, true, restrict::bedrock.get_thread_context(), false);
+		}
+
+		bool emit_internal_event(event_code evt_code, window wd, const ::nana::event_arg& arg)
+		{
+			return restrict::bedrock.emit(evt_code, reinterpret_cast<::nana::detail::basic_window*>(wd), arg, true, restrict::bedrock.get_thread_context(), true);
 		}
 
 		void enum_widgets_function_base::enum_widgets(window wd, bool recursive)
@@ -364,6 +369,24 @@ namespace API
 		void lazy_refresh()
 		{
 			restrict::bedrock.thread_context_lazy_refresh();
+		}
+
+		void draw_shortkey_underline(paint::graphics& graph, const std::string& text, wchar_t shortkey, std::size_t shortkey_position, const point& text_pos, const color& line_color)
+		{
+			if (shortkey)
+			{
+				auto off_x = (shortkey_position ? graph.text_extent_size(text.c_str(), shortkey_position).width : 0);
+				auto key_px = static_cast<int>(graph.text_extent_size(&shortkey, 1).width);
+
+				unsigned ascent, descent, inleading;
+				graph.text_metrics(ascent, descent, inleading);
+
+				int x = text_pos.x + static_cast<int>(off_x);
+				int y = text_pos.y + static_cast<int>(ascent + 2);
+
+				graph.line({ x, y }, {x + key_px - 1, y}, line_color);
+
+			}
 		}
 	}//end namespace dev
 

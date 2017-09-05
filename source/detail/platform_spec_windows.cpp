@@ -1,7 +1,7 @@
 /**
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -31,18 +31,6 @@ namespace detail
 {
 	drawable_impl_type::drawable_impl_type()
 	{
-		pen.handle = nullptr;
-		pen.color = 0xffffffff;
-		pen.style = -1;
-		pen.width = -1;
-
-		brush.handle = nullptr;
-		brush.style = brush_spec::Solid;
-		brush.color = 0xffffffff;
-
-		round_region.handle = nullptr;
-		round_region.radius_x = round_region.radius_y = 0;
-
 		string.tab_length = 4;
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
@@ -52,9 +40,6 @@ namespace detail
 	{
 		::DeleteDC(context);
 		::DeleteObject(pixmap);
-		::DeleteObject(pen.handle);
-		::DeleteObject(brush.handle);
-		::DeleteObject(round_region.handle);
 	}
 
 	unsigned drawable_impl_type::get_color() const
@@ -79,68 +64,6 @@ namespace detail
 		{
 			::SetTextColor(context, NANA_RGB(rgb));
 			text_color_ = rgb;
-		}
-	}
-
-	void drawable_impl_type::update_pen()
-	{
-		if (pen.color != color_)
-		{
-			pen.handle = ::CreatePen(PS_SOLID, 1, NANA_RGB(color_));
-			::DeleteObject(::SelectObject(context, pen.handle));
-			pen.color = color_;
-		}
-	}
-
-	void drawable_impl_type::update_brush()
-	{
-		if (brush.color != color_)
-			brush.set(context, brush.style, color_);
-	}
-
-	void drawable_impl_type::pen_spec::set(HDC context, int style, int width, unsigned clr)
-	{
-		if (this->color != clr || this->width != width || this->style != style)
-		{
-			this->color = clr;
-			this->width = width;
-			this->style = style;
-			this->handle = ::CreatePen(style, width, NANA_RGB(clr));
-			::DeleteObject(::SelectObject(context, this->handle));
-		}
-	}
-
-	void drawable_impl_type::brush_spec::set(HDC context, drawable_impl_type::brush_spec::t style, unsigned rgb)
-	{
-		if (this->color != rgb || this->style != style)
-		{
-			this->color = rgb;
-			this->style = style;
-			switch(style)
-			{
-			case brush_spec::HatchBDiagonal:
-				this->handle = ::CreateHatchBrush(HS_BDIAGONAL, NANA_RGB(rgb));
-				break;
-			case brush_spec::Solid:
-			default:
-				this->style = brush_spec::Solid;
-				this->handle = ::CreateSolidBrush(NANA_RGB(color));
-				break;
-			}
-			::DeleteObject(::SelectObject(context, this->handle));
-		}
-	}
-
-	void drawable_impl_type::round_region_spec::set(const nana::rectangle& r, unsigned radius_x, unsigned radius_y)
-	{
-		if(this->r != r || this->radius_x != radius_x || this->radius_y != radius_y)
-		{
-			if(handle)
-				::DeleteObject(this->handle);
-			this->r = r;
-			this->radius_x = radius_x;
-			this->radius_y = radius_y;
-			handle = ::CreateRoundRectRgn(r.x, r.y, r.x + static_cast<int>(r.width) + 1, r.y + static_cast<int>(r.height) + 1, static_cast<int>(radius_x + 1), static_cast<int>(radius_y + 1));
 		}
 	}
 

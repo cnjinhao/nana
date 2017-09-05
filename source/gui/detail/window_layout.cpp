@@ -114,8 +114,30 @@ namespace nana
 						return false;
 				}
 
-				for (auto* parent = wd->parent; parent; parent = parent->parent)
+				for (auto parent = wd->parent; parent; parent = parent->parent)
 				{
+					if (category::flags::root == parent->other.category)
+					{
+						//visual rectangle of wd's parent
+						rectangle vrt_parent{parent->pos_root, parent->dimension};
+
+						point pos_root;
+						while (parent->parent)
+						{
+							pos_root -= native_interface::window_position(parent->root);
+
+							if (!overlap(rectangle{ pos_root, parent->parent->root_widget->dimension }, vrt_parent, vrt_parent))
+								return false;
+
+							parent = parent->parent->root_widget;
+						}
+
+						if (!overlap(vrt_parent, visual, visual))
+							return false;
+						
+						return true;
+					}
+
 					if (!overlap(rectangle{ parent->pos_root, parent->dimension }, visual, visual))
 						return false;
 				}

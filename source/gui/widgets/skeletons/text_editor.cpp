@@ -887,6 +887,7 @@ namespace nana{	namespace widgets
 				return (pos < linemtr_.size() ? linemtr_[pos].take_lines : 0);
 			}
 		private:
+			/// Split a text into multiple sections, a section indicates an english word or a CKJ character
 			void _m_text_section(const std::wstring& str, std::vector<text_section>& tsec)
 			{
 				if (str.empty())
@@ -947,10 +948,12 @@ namespace nana{	namespace widgets
 		class text_editor::keyword_parser
 		{
 		public:
-			void parse(const std::wstring& text, const implementation::inner_keywords& keywords)
+			void parse(const wchar_t* c_str, std::size_t len, implementation::inner_keywords& keywords) //need string_view
 			{
-				if ( keywords.base.empty() || text.empty() )
+				if ( keywords.base.empty() || (0 == len) || (*c_str == 0) )
 					return;
+
+				std::wstring text{ c_str, len };
 
 				using index = std::wstring::size_type;
 
@@ -986,7 +989,7 @@ namespace nana{	namespace widgets
 					    {
 							entities.emplace_back();
 							auto & last = entities.back();
-							last.begin = text.c_str() + pos;
+							last.begin = c_str + pos;
 							last.end = last.begin + ds.text.size();
 							last.scheme = ki->second.get();
 					    }
@@ -1025,14 +1028,14 @@ namespace nana{	namespace widgets
 				if (pos)
 				{
 					auto chr = text[pos - 1];
-					if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
+					if ((std::iswalpha(chr) && !std::iswspace(chr)) || chr == '_')
 						return false;
 				}
 
 				if (pos + len < text.size())
 				{
 					auto chr = text[pos + len];
-					if ((std::iswalpha(chr) && !std::isspace(chr)) || chr == '_')
+					if ((std::iswalpha(chr) && !std::iswspace(chr)) || chr == '_')
 						return false;
 				}
 
@@ -1596,18 +1599,6 @@ namespace nana{	namespace widgets
 			if(!attributes_.enable_caret)
 				return false;
 
-			auto is_whitespace = [](wchar_t c) {
-				switch (c) {
-				case L' ':
-				case L'\t':
-				case L'\n':
-				case L'\r':
-				    return true;
-				default:
-				    return false;
-				}
-			};
-
 			// Set caret pos by screen point and get the caret pos.
 			mouse_caret(arg.pos, true);
 
@@ -1616,11 +1607,11 @@ namespace nana{	namespace widgets
 			const auto& line = impl_->textbase.getline(select_.b.y);
 
 			// Expand the selection forward to the word's end.
-			while (select_.b.x < line.size() && !is_whitespace(line[select_.b.x]))
+			while (select_.b.x < line.size() && !std::iswspace(line[select_.b.x]))
 				++select_.b.x;
 
 			// Expand the selection backward to the word's start.
-			while (select_.a.x > 0 && !is_whitespace(line[select_.a.x - 1]))
+			while (select_.a.x > 0 && !std::iswspace(line[select_.a.x - 1]))
 				--select_.a.x;
 
 			select_.mode_selection = selection::mode::method_selected;
@@ -2876,7 +2867,6 @@ namespace nana{	namespace widgets
 			return ('0' <= ch && ch <= '9');
 		}
 
-
 		::nana::color text_editor::_m_bgcolor() const
 		{
 			return (!API::window_enabled(window_) ? static_cast<color_rgb>(0xE0E0E0) : API::bgcolor(window_));
@@ -3423,7 +3413,7 @@ namespace nana{	namespace widgets
 
 			//Parse highlight keywords
 			keyword_parser parser;
-			parser.parse({ text_ptr, text_len }, impl_->keywords);
+			parser.parse(text_ptr, text_len, impl_->keywords);
 
 			const auto line_h_pixels = line_height();
 

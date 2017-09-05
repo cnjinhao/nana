@@ -232,7 +232,7 @@ namespace detail
 		//No implementation for Linux
 	}
 
-	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd)
+	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd, const bool bForce__EmitInternal)
 	{
 		if(wd_manager().available(wd) == false)
 			return false;
@@ -248,7 +248,7 @@ namespace detail
 		if(wd->other.upd_state == core_window_t::update_state::none)
 			wd->other.upd_state = core_window_t::update_state::lazy;
 
-		_m_emit_core(evt_code, wd, false, arg);
+		_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
 
 		//A child of wd may not be drawn if it was out of wd's range before wd resized,
 		//so refresh all children of wd when a resized occurs.
@@ -396,7 +396,7 @@ namespace detail
 	}
 
 	template<typename Arg>
-	void draw_invoker(void(::nana::detail::drawer::*event_ptr)(const Arg&), basic_window* wd, const Arg& arg, bedrock::thread_context* thrd)
+	void draw_invoker(void(::nana::detail::drawer::*event_ptr)(const Arg&, const bool), basic_window* wd, const Arg& arg, bedrock::thread_context* thrd)
 	{
 		if(bedrock::instance().wd_manager().available(wd) == false)
 			return;
@@ -410,7 +410,7 @@ namespace detail
 		if(wd->other.upd_state == basic_window::update_state::none)
 			wd->other.upd_state = basic_window::update_state::lazy;
 
-		(wd->drawer.*event_ptr)(arg);
+		(wd->drawer.*event_ptr)(arg, false);
 		if(thrd) thrd->event_window = pre_wd;
 	}
 
