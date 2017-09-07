@@ -14,7 +14,7 @@ NANAINC	= $(NANAPATH)/include
 NANALIB = $(NANAPATH)/build/bin
 
 INCS	= -I$(NANAINC)
-LIBS	= -L$(NANALIB) -lnana -lX11 -lpthread -lrt -lXft -lpng -lasound
+LIBS	= -L$(NANALIB) -lnana -lX11 -lpthread -lrt -lXft -lpng -lasound -lfontconfig
 
 LINKOBJ	= $(SOURCES:.cpp=.o)
 
