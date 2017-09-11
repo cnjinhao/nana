@@ -569,28 +569,63 @@ namespace nana
 			if(cat_path.size() && cat_path[cat_path.size() - 1] != '/')
 				cat_path += '/';
 
+		
 			auto beg = head.size();
 			while(true)
 			{
 				auto pos = path.find('/', beg);
 				auto folder = path.substr(beg, pos != path.npos ? pos - beg: path.npos);
-				if(folder.size() == 0) break;
+				
+				if(folder.empty())
+					break;
+				
 				(cat_path += folder) += '/';
 				(head += folder) += '/';
 				path_.caption(cat_path);
 				
-				for(fs::directory_iterator i(head); i != end; ++i)
+				try
 				{
-					if (is_directory(*i))
-						path_.childset(i->path().filename().native(), 0);
+					for(fs::directory_iterator i(head); i != end; ++i)
+					{
+						if (is_directory(*i))
+							path_.childset(i->path().filename().native(), 0);
+					}
+				}
+				catch(fs::filesystem_error&)
+				{
+					//The directory iterator may throw filesystem_error when
+					//the user doesn't have permission to access the directory.
+
+					//It just loads the sub-directories
+					//to the category path.
 				}
 
 				if(pos == path.npos)
 					break;
 				beg = pos + 1;
 			}
-			_m_load_path(path);
-			_m_list_fs();
+
+			try
+			{
+				_m_load_path(path);
+				_m_list_fs();
+			}
+			catch(fs::filesystem_error&)
+			{
+				file_container_.clear();
+
+				drawing dw{ls_file_};
+				dw.clear();
+				dw.draw([](paint::graphics& graph){
+					std::string text = "Permission denied to access the directory";
+					auto txt_sz = graph.text_extent_size(text);
+					auto sz = graph.size();
+
+					graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
+				});
+
+				ls_file_.clear();
+			}
 		}
 
 		bool _m_filter_allowed(const std::string& name, bool is_dir, const std::string& filter, const std::vector<std::string>* extension) const
@@ -611,6 +646,8 @@ namespace nana
 
 		void _m_list_fs()
 		{
+			drawing{ls_file_}.clear();
+
 			auto filter = filter_.caption();
 			ls_file_.auto_draw(false);
 
@@ -829,14 +866,28 @@ namespace nana
 					auto child = node.append(name, name, kind::filesystem);
 					if(!child.empty())
 					{
-						for(fs::directory_iterator u(i->path()); u != end; ++u)
+						//The try-catch can be eleminated by using
+						//directory_iterator( const std::filesystem::path& p, std::error_code& ec ) noexcept;
+						//in C++17
+						try
 						{
-							auto uname = u->path().filename().native();
-							if ((!is_directory(*u)) || (uname.size() && uname[0] == '.'))
-								continue;
+							for(fs::directory_iterator u(i->path()); u != end; ++u)
+							{
+								auto uname = u->path().filename().native();
+								if ((!is_directory(*u)) || (uname.size() && uname[0] == '.'))
+									continue;
 
-							child.append(uname, uname, kind::filesystem);
-							break;
+								child.append(uname, uname, kind::filesystem);
+								break;
+							}
+						}
+						catch(fs::filesystem_error&)
+						{
+							//The directory iterator may throw filesystem_error when
+							//the user doesn't have permission to access the directory.
+
+							//Catch the error without any process, because the loop is just
+							//to peak whether the directory(i->path) has a sub-directory.
 						}
 					}
 				}
