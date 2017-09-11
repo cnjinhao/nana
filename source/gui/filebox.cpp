@@ -435,20 +435,20 @@ namespace nana
 			nodes_.filesystem = tree_.insert("FS.ROOT", "Filesystem");
 			nodes_.filesystem.value(kind::filesystem);
 
-			std::vector<std::string> paths;
-			paths.emplace_back(fs_ext::path_user().native());
-			paths.emplace_back("/");
+			std::vector<std::pair<std::string, treebox::item_proxy>> paths;
+			paths.emplace_back(fs_ext::path_user().native(), nodes_.home);
+			paths.emplace_back("/", nodes_.filesystem);
 
 			fs::directory_iterator end;
 			for (auto & p : paths)
 			{
-				for (fs::directory_iterator i(p); i != end; ++i)
+				for (fs::directory_iterator i{p.first}; i != end; ++i)
 				{
 					auto name = i->path().filename().native();
 					if (!is_directory(i->status()) || (name.size() && name[0] == '.'))
 						continue;
 
-					item_proxy node = tree_.insert(nodes_.filesystem, name, name);
+					item_proxy node = tree_.insert(p.second, name, name);
 					if (false == node.empty())
 					{
 						node.value(kind::filesystem);
@@ -831,8 +831,8 @@ namespace nana
 					{
 						for(fs::directory_iterator u(i->path()); u != end; ++u)
 						{
-							auto uname = i->path().filename().native();
-							if ((!is_directory(*i)) || (uname.size() && uname[0] == '.'))
+							auto uname = u->path().filename().native();
+							if ((!is_directory(*u)) || (uname.size() && uname[0] == '.'))
 								continue;
 
 							child.append(uname, uname, kind::filesystem);
