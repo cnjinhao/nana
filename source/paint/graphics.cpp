@@ -240,12 +240,16 @@ namespace paint
 		graphics::graphics(graphics&& other)
 			: impl_(std::move(other.impl_))
 		{
+			other.impl_.reset(new implementation);
 		}
 
 		graphics& graphics::operator=(graphics&& other)
 		{
 			if (this != &other)
+			{
 				impl_ = std::move(other.impl_);
+				other.impl_.reset(new implementation);
+			}
 
 			return *this;
 		}
