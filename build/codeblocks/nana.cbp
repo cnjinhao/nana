@@ -50,6 +50,7 @@
 		<Unit filename="../../source/datetime.cpp" />
 		<Unit filename="../../source/deploy.cpp" />
 		<Unit filename="../../source/detail/platform_abstraction.cpp" />
+		<Unit filename="../../source/detail/platform_spec_posix.cpp" />
 		<Unit filename="../../source/detail/platform_spec_windows.cpp" />
 		<Unit filename="../../source/filesystem/filesystem.cpp" />
 		<Unit filename="../../source/gui/animation.cpp" />
