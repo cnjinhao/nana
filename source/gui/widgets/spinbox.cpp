@@ -605,7 +605,10 @@ namespace nana
 			{
 				impl_->editor()->respond_char(arg);
 				if (impl_->editor()->try_refresh())
+				{
+					impl_->draw_spins();
 					API::dev::lazy_refresh();
+				}
 			}
 
 			void drawer::resized(graph_reference, const arg_resized&)
