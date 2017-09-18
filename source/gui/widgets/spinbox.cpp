@@ -560,6 +560,12 @@ namespace nana
 				impl_->editor()->reset_caret();
 				API::dev::lazy_refresh();
 			}
+			
+			void drawer::dbl_click(graph_reference, const arg_mouse& arg)
+			{
+				if (impl_->mouse_button(arg, true))
+					API::dev::lazy_refresh();
+			}
 
 			void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 			{
