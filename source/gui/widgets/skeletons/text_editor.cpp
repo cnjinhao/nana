@@ -1689,7 +1689,7 @@ namespace nana{	namespace widgets
 					impl_->try_refresh = sync_graph::refresh;
 
 					//_m_put calcs the lines
-					_m_reset_content_size(false);
+					_m_reset_content_size(true);
 					impl_->cview->sync(false);
 				}
 			}
