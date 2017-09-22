@@ -403,8 +403,15 @@ namespace nana
 					ess_->state.nullify_mouse = true;
 
 					auto & menu_ptr = ess_->state.menu;
+
+					//menu_wd will be assigned with the handle of a menu window,
+					//It is used for checking whether the menu is closed. A menu handler
+					//may close the form, checking with the data member of this trigger
+					//is invalid, because the form is closed, the object of menubar may not exist.
+					window menu_wd = nullptr;
 					if(ess_->state.menu)
 					{
+						menu_wd = menu_ptr->handle();
 						switch(arg.key)
 						{
 						case keyboard::os_arrow_down:
@@ -466,8 +473,11 @@ namespace nana
 						case keyboard::os_arrow_up:
 						case keyboard::os_arrow_down:
 						case keyboard::enter:
-							if(ess_->open_menu(true))
+							if (ess_->open_menu(true))
+							{
+								menu_wd = menu_ptr->handle();
 								menu_ptr->goto_next(true);
+							}
 							break;
 						case keyboard::escape:
 							if(essence::behavior::focus == ess_->state.behave)
@@ -481,15 +491,21 @@ namespace nana
 							if(index != npos)
 							{
 								ess_->state.active = index;
-								if(ess_->open_menu(true))
+								if (ess_->open_menu(true))
+								{
+									menu_wd = menu_ptr->handle();
 									menu_ptr->goto_next(true);
+								}
 							}
 							break;
 						}
 					}
 
-					refresh(graph);
-					API::dev::lazy_refresh();
+					if (API::is_window(menu_wd))
+					{
+						refresh(graph);
+						API::dev::lazy_refresh();
+					}
 				}
 
 				void trigger::key_release(graph_reference graph, const arg_keyboard& arg)
