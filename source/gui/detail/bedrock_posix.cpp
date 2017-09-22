@@ -438,8 +438,8 @@ namespace detail
 			keysym = keyboard::os_arrow_left + (keysym - XK_Left); break;
 		case XK_Insert:
 			keysym = keyboard::os_insert; break;
-		case XK_Delete:
-			keysym = keyboard::os_del; break;
+		case XK_Delete: case XK_KP_Delete:
+			keysym = keyboard::del; break;
 		case XK_Shift_L: case XK_Shift_R:	//shift
 			keysym = keyboard::os_shift; break;
 		case XK_Control_L: case XK_Control_R: //ctrl
