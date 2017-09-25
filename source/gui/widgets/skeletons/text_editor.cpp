@@ -556,6 +556,7 @@ namespace nana{	namespace widgets
 			virtual void merge_lines(std::size_t first, std::size_t second) = 0;
 			//Calculates how many lines the specified line of text takes with a specified pixels of width.
 			virtual void add_lines(std::size_t pos, std::size_t lines) = 0;
+			virtual void prepare() = 0;
 			virtual void pre_calc_line(std::size_t line, unsigned pixels) = 0;
 			virtual void pre_calc_lines(unsigned pixels) = 0;
 			virtual std::size_t take_lines() const = 0;
@@ -666,6 +667,12 @@ namespace nana{	namespace widgets
 						++line;
 					}
 				}
+			}
+
+			void prepare() override
+			{
+				auto const line_count = editor_.textbase().lines();
+				this->sections_.resize(line_count);
 			}
 
 			void pre_calc_line(std::size_t pos, unsigned) override
@@ -779,6 +786,12 @@ namespace nana{	namespace widgets
 						++line;
 					}
 				}
+			}
+
+			void prepare() override
+			{
+				auto const lines = editor_.textbase().lines();
+				linemtr_.resize(lines);
 			}
 
 			void pre_calc_line(std::size_t line, unsigned pixels) override
@@ -1220,7 +1233,7 @@ namespace nana{	namespace widgets
 			case keyboard::os_pagedown:
 				_m_handle_move_key(arg);
 				break;
-			case keyboard::os_del:
+			case keyboard::del:
 				// send delete to set_accept function
 				if (this->attr().editable && (!impl_->capacities.pred_acceptive || impl_->capacities.pred_acceptive(key)))
 					del();
@@ -1234,7 +1247,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::typeface_changed()
 		{
-			impl_->capacities.behavior->pre_calc_lines(width_pixels());
+			_m_reset_content_size(true);
 		}
 
 		void text_editor::indent(bool enb, std::function<std::string()> generator)
@@ -1676,7 +1689,7 @@ namespace nana{	namespace widgets
 					impl_->try_refresh = sync_graph::refresh;
 
 					//_m_put calcs the lines
-					_m_reset_content_size(false);
+					_m_reset_content_size(true);
 					impl_->cview->sync(false);
 				}
 			}
@@ -2886,10 +2899,14 @@ namespace nana{	namespace widgets
 					auto text_lines = textbase().lines();
 					if (text_lines <= max_lines)
 					{
+						impl_->capacities.behavior->prepare();
+
+						auto const width_px = _m_width_px(true);
+
 						std::size_t lines = 0;
 						for (std::size_t i = 0; i < text_lines; ++i)
 						{
-							impl_->capacities.behavior->pre_calc_line(i, csize.width);
+							impl_->capacities.behavior->pre_calc_line(i, width_px);
 							lines += impl_->capacities.behavior->take_lines(i);
 
 							if (lines > max_lines)

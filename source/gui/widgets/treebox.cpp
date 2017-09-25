@@ -1825,7 +1825,6 @@ namespace nana
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
-					bool has_redraw = false;
 
 					auto & node_state = impl_->node_state;
 					node_state.pressed_node = nl.node();
@@ -1834,21 +1833,17 @@ namespace nana
 					{
 						if(impl_->set_expanded(node_state.pressed_node, !node_state.pressed_node->value.second.expanded))
 							impl_->make_adjust(node_state.pressed_node, 0);
-
-						has_redraw = true;	//btw, don't select the node
 					}
-					
-					if ((!has_redraw) && (node_state.selected != node_state.pressed_node))
+					else if (node_state.selected != node_state.pressed_node)
 					{
 						impl_->set_selected(node_state.pressed_node);
-						has_redraw = true;
 					}
+					else
+						return;
 
-					if(has_redraw)
-					{
-						impl_->draw(true);
-						API::dev::lazy_refresh();
-					}
+					
+					impl_->draw(true);
+					API::dev::lazy_refresh();
 				}
 
 				void trigger::mouse_up(graph_reference, const arg_mouse& arg)

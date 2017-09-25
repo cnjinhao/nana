@@ -775,6 +775,19 @@ namespace detail
 		if (thrd) thrd->event_window = prev_event_wd;
 	}
 
+	//Translate OS Virtual-Key into ASCII code
+	wchar_t translate_virtual_key(WPARAM vkey)
+	{
+		switch (vkey)
+		{
+		case VK_DELETE:
+			return 127;
+		case VK_DECIMAL:
+			return 46;
+		}
+		return static_cast<wchar_t>(vkey);
+	}
+
 	LRESULT CALLBACK Bedrock_WIN32_WindowProc(HWND root_window, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		LRESULT window_proc_value = 0;
@@ -1436,7 +1449,7 @@ namespace detail
 							arg.evt_code = event_code::key_press;
 							arg.window_handle = reinterpret_cast<window>(msgwnd);
 							arg.ignore = false;
-							arg.key = static_cast<wchar_t>(wParam);
+							arg.key = translate_virtual_key(wParam);
 							brock.get_key_state(arg);
 							brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
@@ -1522,7 +1535,7 @@ namespace detail
 								arg_keyboard arg;
 								arg.evt_code = event_code::key_release;
 								arg.window_handle = reinterpret_cast<window>(msgwnd);
-								arg.key = static_cast<wchar_t>(wParam);
+								arg.key = translate_virtual_key(wParam);
 								brock.get_key_state(arg);
 								arg.ignore = false;
 								brock.emit(event_code::key_release, msgwnd, arg, true, &context);
