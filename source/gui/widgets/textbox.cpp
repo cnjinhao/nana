@@ -435,7 +435,23 @@ namespace drawerbase {
 			}
 			return *this;
 		}
+        //a native wstring version textbox::append
+        textbox& textbox::append(const std::wstring& text, bool at_caret)
+        {
+            internal_scope_guard lock;
+            auto editor = get_drawer_trigger().editor();
+            if(editor)
+            {
+                if(at_caret == false)
+                    editor->move_caret_end(false);
 
+                editor->put(text);
+
+                editor->try_refresh();
+                API::update_window(this->handle());
+            }
+            return *this;
+        }
 		/// Determine wheter the text is auto-line changed.
 		bool textbox::line_wrapped() const
 		{
