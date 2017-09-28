@@ -601,40 +601,6 @@ namespace detail
 				::HeapFree(::GetProcessHeap(), 0, stru);
 			}
 			return true;
-		case nana::detail::messages::remote_thread_move_window:
-			{
-				auto * mw = reinterpret_cast<nana::detail::messages::move_window*>(wParam);
-
-				::RECT r;
-				::GetWindowRect(wd, &r);
-				if(mw->ignore & mw->Pos)
-				{
-					mw->x = r.left;
-					mw->y = r.top;
-				}
-				else
-				{
-					HWND owner = ::GetWindow(wd, GW_OWNER);
-					if(owner)
-					{
-						::RECT owr;
-						::GetWindowRect(owner, &owr);
-						::POINT pos = {owr.left, owr.top};
-						::ScreenToClient(owner, &pos);
-						mw->x += (owr.left - pos.x);
-						mw->y += (owr.top - pos.y);
-					}
-				}
-
-				if(mw->ignore & mw->Size)
-				{
-					mw->width = r.right - r.left;
-					mw->height = r.bottom - r.top;
-				}
-				::MoveWindow(wd, mw->x, mw->y, mw->width, mw->height, true);
-				delete mw;
-			}
-			return true;
 		case nana::detail::messages::remote_thread_set_window_pos:
 			::SetWindowPos(wd, reinterpret_cast<HWND>(wParam), 0, 0, 0, 0, static_cast<UINT>(lParam));
 			return true;
@@ -1652,18 +1618,21 @@ namespace detail
 			_m_event_filter(evt_code, wd, thrd);
 		}
 
-		if (wd->other.upd_state == core_window_t::update_state::none)
-			wd->other.upd_state = core_window_t::update_state::lazy;
+		using update_state = basic_window::update_state;
+
+		if (update_state::none == wd->other.upd_state)
+			wd->other.upd_state = update_state::lazy;
 
 		_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
 
 		bool good_wd = false;
 		if (wd_manager().available(wd))
 		{
-			if (ask_update)
+			//Ignore ask_update if update state is refreshed.
+			if (ask_update || (update_state::refreshed == wd->other.upd_state))
 				wd_manager().do_lazy_refresh(wd, false);
 			else
-				wd->other.upd_state = basic_window::update_state::none;
+				wd->other.upd_state = update_state::none;
 
 			good_wd = true;
 		}

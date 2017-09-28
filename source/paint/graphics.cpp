@@ -291,6 +291,12 @@ namespace paint
 			return (impl_->handle ? impl_->handle->context : nullptr);
 		}
 
+		void graphics::swap(graphics& other)
+		{
+			if (context() != other.context())
+				impl_.swap(other.impl_);
+		}
+
 		void graphics::make(const ::nana::size& sz)
 		{
 			if (impl_->handle == nullptr || impl_->size != sz)

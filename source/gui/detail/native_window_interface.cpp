@@ -863,30 +863,27 @@ namespace nana{
 		void native_interface::move_window(native_window_type wd, int x, int y)
 		{
 #if defined(NANA_WINDOWS)
-			if(::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
+			::RECT r;
+			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
+			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
+			if(owner)
 			{
-				nana::detail::messages::move_window * mw = new nana::detail::messages::move_window;
-				mw->x = x;
-				mw->y = y;
-				mw->ignore = mw->Size;
-				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_move_window, reinterpret_cast<WPARAM>(mw), 0);
+				::RECT owner_rect;
+				::GetWindowRect(owner, &owner_rect);
+				::POINT pos = {owner_rect.left, owner_rect.top};
+				::ScreenToClient(owner, &pos);
+				x += (owner_rect.left - pos.x);
+				y += (owner_rect.top - pos.y);
 			}
-			else
+
+			
+			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
-				::RECT r;
-				::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
-				HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
-				if(owner)
-				{
-					::RECT owner_rect;
-					::GetWindowRect(owner, &owner_rect);
-					::POINT pos = {owner_rect.left, owner_rect.top};
-					::ScreenToClient(owner, &pos);
-					x += (owner_rect.left - pos.x);
-					y += (owner_rect.top - pos.y);
-				}
+				nana::internal_revert_guard irg;
 				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.right - r.left, r.bottom - r.top, true);
 			}
+			else
+				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.right - r.left, r.bottom - r.top, true);
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
 
@@ -908,41 +905,36 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::move_window(native_window_type wd, const rectangle& r)
+		bool native_interface::move_window(native_window_type wd, const rectangle& r)
 		{
 #if defined(NANA_WINDOWS)
-			if(::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
+			
+			int x = r.x;
+			int y = r.y;
+			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
+			if(owner)
 			{
-				auto * mw = new nana::detail::messages::move_window;
-				mw->x = r.x;
-				mw->y = r.y;
-				mw->width = r.width;
-				mw->height = r.height;
-				mw->ignore = 0;
-				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_move_window, reinterpret_cast<WPARAM>(mw), 0);
+				::RECT owner_rect;
+				::GetWindowRect(owner, &owner_rect);
+				::POINT pos = {owner_rect.left, owner_rect.top};
+				::ScreenToClient(owner, &pos);
+				x += (owner_rect.left - pos.x);
+				y += (owner_rect.top - pos.y);
 			}
-			else
-			{
-				int x = r.x;
-				int y = r.y;
-				HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
-				if(owner)
-				{
-					::RECT owner_rect;
-					::GetWindowRect(owner, &owner_rect);
-					::POINT pos = {owner_rect.left, owner_rect.top};
-					::ScreenToClient(owner, &pos);
-					x += (owner_rect.left - pos.x);
-					y += (owner_rect.top - pos.y);
-				}
 
-				RECT client, wd_area;
-				::GetClientRect(reinterpret_cast<HWND>(wd), &client);
-				::GetWindowRect(reinterpret_cast<HWND>(wd), &wd_area);
-				unsigned ext_w = (wd_area.right - wd_area.left) - client.right;
-				unsigned ext_h = (wd_area.bottom - wd_area.top) - client.bottom;
-				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.width + ext_w, r.height + ext_h, true);
+			RECT client, wd_area;
+			::GetClientRect(reinterpret_cast<HWND>(wd), &client);
+			::GetWindowRect(reinterpret_cast<HWND>(wd), &wd_area);
+			unsigned ext_w = (wd_area.right - wd_area.left) - client.right;
+			unsigned ext_h = (wd_area.bottom - wd_area.top) - client.bottom;
+			
+			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
+			{
+				nana::internal_revert_guard irg;
+				return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.width + ext_w, r.height + ext_h, true));
 			}
+			
+			return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.width + ext_w, r.height + ext_h, true));
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
 			long supplied;
@@ -984,6 +976,7 @@ namespace nana{
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);
+			return true;
 #endif
 		}
 
@@ -1062,32 +1055,28 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::window_size(native_window_type wd, const size& sz)
+		bool native_interface::window_size(native_window_type wd, const size& sz)
 		{
 #if defined(NANA_WINDOWS)
-			if(::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
+			::RECT r;
+			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
+			HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
+			HWND parent = ::GetParent(reinterpret_cast<HWND>(wd));
+			if(parent && (parent != owner))
 			{
-				auto * mw = new nana::detail::messages::move_window;
-				mw->width = sz.width;
-				mw->height = sz.height;
-				mw->ignore = mw->Pos;
-				::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_move_window, reinterpret_cast<WPARAM>(mw), 0);
+				::POINT pos = {r.left, r.top};
+				::ScreenToClient(parent, &pos);
+				r.left = pos.x;
+				r.top = pos.y;
 			}
-			else
+
+			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
-				::RECT r;
-				::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
-				HWND owner = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
-				HWND parent = ::GetParent(reinterpret_cast<HWND>(wd));
-				if(parent && (parent != owner))
-				{
-					::POINT pos = {r.left, r.top};
-					::ScreenToClient(parent, &pos);
-					r.left = pos.x;
-					r.top = pos.y;
-				}
-				::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(sz.width), static_cast<int>(sz.height), true);
+				nana::internal_revert_guard irg;
+				return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(sz.width), static_cast<int>(sz.height), true));
 			}
+
+			return (FALSE != ::MoveWindow(reinterpret_cast<HWND>(wd), r.left, r.top, static_cast<int>(sz.width), static_cast<int>(sz.height), true));
 #elif defined(NANA_X11)
 			auto disp = restrict::spec.open_display();
 			nana::detail::platform_scope_guard psg;
@@ -1104,6 +1093,7 @@ namespace nana{
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 			}
 			::XResizeWindow(disp, reinterpret_cast<Window>(wd), sz.width, sz.height);
+			return true;
 #endif
 		}
 

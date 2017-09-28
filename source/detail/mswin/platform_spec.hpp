@@ -47,16 +47,6 @@ namespace detail
 			bool visible;
 		};
 
-		struct move_window
-		{
-			enum { Pos = 1, Size = 2};
-			int x;
-			int y;
-			unsigned width;
-			unsigned height;
-			unsigned ignore; //determinate that pos or size would be ignored.
-		};
-
 		struct map_thread
 		{
 			rectangle update_area;
@@ -77,7 +67,6 @@ namespace detail
 			async_set_focus,
 			remote_flush_surface,
 			remote_thread_destroy_window,
-			remote_thread_move_window,
 			operate_caret,	//wParam: 1=Destroy, 2=SetPos
 			remote_thread_set_window_pos,
 			remote_thread_set_window_text,

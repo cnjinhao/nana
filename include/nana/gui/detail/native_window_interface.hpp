@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -66,11 +66,11 @@ namespace detail
 
 		static nana::point	window_position(native_window_type);
 		static void	move_window(native_window_type, int x, int y);
-		static void	move_window(native_window_type, const rectangle&);
+		static bool	move_window(native_window_type, const rectangle&);
 		static void bring_top(native_window_type, bool activated);
 		static void	set_window_z_order(native_window_type, native_window_type wd_after, z_order_action action_if_no_wd_after);
 
-		static void	window_size(native_window_type, const size&);
+		static bool	window_size(native_window_type, const size&);
 		static void	get_window_rect(native_window_type, rectangle&);
 		static void	window_caption(native_window_type, const native_string_type&);
 		static native_string_type	window_caption(native_window_type);

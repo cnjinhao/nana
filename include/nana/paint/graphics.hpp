@@ -91,6 +91,8 @@ namespace nana
 			const void* pixmap() const;
 			const void* context() const;
 
+			void swap(graphics& other);
+
 			/// Creates a graphics/drawable resource
 			/**
 			 * @param sz The dimension of the graphics to be requested. If sz is empty, it performs as release().
