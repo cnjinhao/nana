@@ -245,8 +245,10 @@ namespace detail
 			_m_event_filter(evt_code, wd, thrd);
 		}
 
-		if(wd->other.upd_state == core_window_t::update_state::none)
-			wd->other.upd_state = core_window_t::update_state::lazy;
+		using update_state = basic_window::update_state;
+
+		if(wd->other.upd_state == update_state::none)
+			wd->other.upd_state = update_state::lazy;
 
 		_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
 
