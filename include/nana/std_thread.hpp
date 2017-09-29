@@ -6,7 +6,11 @@
 
 #if defined(NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
 
-#include <mingw.thread.h>
+#ifdef _GLIBCXX_HAS_GTHREADS
+#    include <thread>
+#else
+#    include <mingw.thread.h>
+#endif
 #else
 #include <boost/thread.hpp>
 namespace std
