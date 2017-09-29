@@ -269,7 +269,7 @@ namespace paint
 			return (!impl_->handle);
 		}
 
-		graphics::operator bool() const
+		graphics::operator bool() const noexcept
 		{
 			return impl_->handle;
 		}
@@ -291,7 +291,7 @@ namespace paint
 			return (impl_->handle ? impl_->handle->context : nullptr);
 		}
 
-		void graphics::swap(graphics& other)
+		void graphics::swap(graphics& other) noexcept
 		{
 			if (context() != other.context())
 				impl_.swap(other.impl_);
