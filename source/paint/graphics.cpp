@@ -269,7 +269,7 @@ namespace paint
 			return (!impl_->handle);
 		}
 
-		graphics::operator const void *() const
+		graphics::operator bool() const
 		{
 			return impl_->handle;
 		}
