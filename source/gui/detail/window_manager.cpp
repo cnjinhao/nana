@@ -953,24 +953,45 @@ namespace detail
 			if (wd->dimension == sz)
 				return false;
 
+			//Before resiz the window, creates the new graphics
+			paint::graphics graph;
+			paint::graphics root_graph;
+			if (category::flags::lite_widget != wd->other.category)
+			{
+				//If allocation fails, here throws std::bad_alloc.
+				graph.make(sz);
+				if (category::flags::root == wd->other.category)
+					root_graph.make(sz);
+			}
+
+			auto pre_sz = wd->dimension;
+
 			wd->dimension = sz;
 
 			if(category::flags::lite_widget != wd->other.category)
 			{
 				bool graph_state = wd->drawer.graphics.empty();
-				wd->drawer.graphics.make(sz);
+				wd->drawer.graphics.swap(graph);
 
 				//It shall make a typeface_changed() call when the graphics state is changing.
-				//Because when a widget is created with zero-size, it may get some wrong result in typeface_changed() call
+				//Because when a widget is created with zero-size, it may get some wrong results in typeface_changed() call
 				//due to the invaliable graphics object.
 				if(graph_state != wd->drawer.graphics.empty())
 					wd->drawer.typeface_changed();
 
 				if(category::flags::root == wd->other.category)
 				{
-					wd->root_graph->make(sz);
+					//wd->root_graph->make(sz);
+					wd->root_graph->swap(root_graph);
 					if(false == passive)
-						native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height));
+						if (!native_interface::window_size(wd->root, sz + nana::size(wd->extra_width, wd->extra_height)))
+						{
+							wd->dimension = pre_sz;
+							wd->drawer.graphics.swap(graph);
+							wd->root_graph->swap(root_graph);
+							wd->drawer.typeface_changed();
+							return false;
+						}
 				}
 #ifndef WIDGET_FRAME_DEPRECATED
 				else if(category::flags::frame == wd->other.category)

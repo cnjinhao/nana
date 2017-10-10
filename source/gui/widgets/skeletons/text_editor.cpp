@@ -1233,7 +1233,7 @@ namespace nana{	namespace widgets
 			case keyboard::os_pagedown:
 				_m_handle_move_key(arg);
 				break;
-			case keyboard::os_del:
+			case keyboard::del:
 				// send delete to set_accept function
 				if (this->attr().editable && (!impl_->capacities.pred_acceptive || impl_->capacities.pred_acceptive(key)))
 					del();
@@ -1689,7 +1689,7 @@ namespace nana{	namespace widgets
 					impl_->try_refresh = sync_graph::refresh;
 
 					//_m_put calcs the lines
-					_m_reset_content_size(false);
+					_m_reset_content_size(true);
 					impl_->cview->sync(false);
 				}
 			}

@@ -85,11 +85,13 @@ namespace nana
 
 			bool changed() const;           ///< Returns true if the graphics object is operated
 			bool empty() const;             ///< Returns true if the graphics object does not refer to any resource.
-			operator const void*() const;
+			explicit operator bool() const noexcept;
 
 			drawable_type handle() const;
 			const void* pixmap() const;
 			const void* context() const;
+
+			void swap(graphics& other) noexcept;
 
 			/// Creates a graphics/drawable resource
 			/**
