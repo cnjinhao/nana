@@ -4166,16 +4166,16 @@ namespace nana
 								{
 									if (item_ptr->flags.selected != sel)
 									{
-										item_ptr->flags.selected = sel;
-										lister.emit_cs(abs_item_pos, true);
-
-										if (item_ptr->flags.selected)
+										if (sel)
 										{
 											lister.cancel_others_if_single_enabled(true, abs_item_pos);
 											essence_->lister.latest_selected_abs = abs_item_pos;
 										}
 										else if (essence_->lister.latest_selected_abs == abs_item_pos)
 											essence_->lister.latest_selected_abs.set_both(npos);
+
+										item_ptr->flags.selected = sel;
+										lister.emit_cs(abs_item_pos, true);
 									}
 								}
 								else
