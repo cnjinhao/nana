@@ -271,7 +271,7 @@ namespace paint
 
 		graphics::operator bool() const noexcept
 		{
-			return impl_->handle;
+			return (impl_->handle != nullptr);
 		}
 
 		drawable_type graphics::handle() const

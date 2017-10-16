@@ -219,8 +219,6 @@ namespace detail
 			Key first;
 			Value second;
 
-			key_value_rep() = default;
-
 			key_value_rep(const Key& k)
 				: first(k), second{}
 			{
@@ -258,15 +256,7 @@ namespace detail
 		std::vector<key_value_rep> table_;
 	};
 
-	//class window_manager
-			struct window_handle_deleter
-			{
-				void operator()(basic_window* wd) const
-				{
-					delete wd;
-				}
-			};
-			
+	//class window_manager			
 			//struct wdm_private_impl
 			struct window_manager::wdm_private_impl
 			{
@@ -506,7 +496,7 @@ namespace detail
 				if (impl_->wd_register.available(owner))
 				{
 					if (owner->flags.destroying)
-						throw std::runtime_error("the specified owner is destory");
+						throw std::runtime_error("the specified owner is destoryed");
 
 #ifndef WIDGET_FRAME_DEPRECATED
 					native = (category::flags::frame == owner->other.category ?
