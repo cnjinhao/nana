@@ -38,9 +38,9 @@ namespace nana
 			{
 				std::vector<std::shared_ptr<item_interface>> items;
 
-				std::size_t max_items{10};			// the number of items display.
-				mutable std::size_t index{::nana::npos};		// the result of the selection.
-				mutable bool have_selected;
+				std::size_t max_items{ 10 };				// the number of items display.
+				mutable std::size_t index{ ::nana::npos };	// the result of the selection.
+				mutable bool have_selected{ false };
 			};
 
 			class item_renderer

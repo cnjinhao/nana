@@ -4168,6 +4168,7 @@ namespace nana
 									{
 										if (sel)
 										{
+											//Deselects the previously selected item.
 											lister.cancel_others_if_single_enabled(true, abs_item_pos);
 											essence_->lister.latest_selected_abs = abs_item_pos;
 										}
