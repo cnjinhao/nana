@@ -61,6 +61,7 @@ namespace nana
 
 				void focus(graph_reference, const arg_focus&)	override;
 				void mouse_wheel(graph_reference, const arg_wheel&) override;
+				void dbl_click(graph_reference, const arg_mouse&) override;
 				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse& arg)	override;

@@ -149,33 +149,34 @@ namespace nana
 			//	reads the overlaps that are overlapped a rectangular block
 			bool window_layout::read_overlaps(core_window_t* wd, const nana::rectangle& vis_rect, std::vector<wd_rectangle>& blocks)
 			{
+				auto const is_wd_root = (category::flags::root == wd->other.category);
 				wd_rectangle block;
 				while (wd->parent)
 				{
-					auto & siblings = wd->parent->children;
-					//It should be checked that whether the window is still a chlid of its parent.
-					if (siblings.size())
+					auto i = std::find(wd->parent->children.cbegin(), wd->parent->children.cend(), wd);
+					if (i != wd->parent->children.cend())
 					{
-						auto i = &(siblings[0]);
-						auto *end = i + siblings.size();
-						i = std::find(i, end, wd);
-						if (i != end)
+						for (++i; i != wd->parent->children.cend(); ++i)
 						{
-							//find the widget that next to wd.
-							for (++i; i < end; ++i)
+							core_window_t* cover = *i;
+
+							if (!cover->visible)
+								continue;
+
+							if (is_wd_root ? 
+								(category::flags::root == cover->other.category)
+								:
+								((category::flags::root != cover->other.category) && (nullptr == cover->effect.bground)))
 							{
-								core_window_t* cover = *i;
-								if ((category::flags::root != cover->other.category) && cover->visible && (nullptr == cover->effect.bground))
+								if (overlap(vis_rect, rectangle{ cover->pos_root, cover->dimension }, block.r))
 								{
-									if (overlap(vis_rect, rectangle{ cover->pos_root, cover->dimension }, block.r))
-									{
-										block.window = cover;
-										blocks.push_back(block);
-									}
+									block.window = cover;
+									blocks.push_back(block);
 								}
 							}
 						}
 					}
+
 					wd = wd->parent;
 				}
 				return (!blocks.empty());

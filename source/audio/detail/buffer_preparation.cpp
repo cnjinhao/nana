@@ -78,7 +78,7 @@ namespace nana{	namespace audio
 			void buffer_preparation::revert(meta * m)
 			{
 				std::lock_guard<decltype(token_prepared_)> lock(token_prepared_);
-				bool if_signal = prepared_.empty();
+				auto const if_signal = prepared_.empty();
 				prepared_.emplace_back(m);
 				if(if_signal)
 					cond_prepared_.notify_one();

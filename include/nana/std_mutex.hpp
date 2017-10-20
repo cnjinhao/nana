@@ -14,8 +14,12 @@
 #include <cstdio>
 // http://lxr.free-electrons.com/source/include/uapi/asm-generic/errno.h#L53
 //#define EPROTO          71      /* Protocol error */
+#ifdef _GLIBCXX_HAS_GTHREADS
+#    include <thread>
+#else
 #include <mingw.thread.h>
 #include <mingw.mutex.h>
+#endif
 #else
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
