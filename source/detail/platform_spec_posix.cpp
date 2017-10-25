@@ -836,9 +836,9 @@ namespace detail
 			i->second->pos = pos;
 		}
 		auto addr = i->second;
-		XPoint spot;
-		XVaNestedList list;
-		if(addr->input_context) {
+		if(addr && addr->input_context) {
+			XPoint spot;
+			XVaNestedList list;
 			spot.x = pos.x;
 			spot.y = pos.y + addr->size.height;
 			list = ::XVaCreateNestedList(0, XNSpotLocation, &spot,
