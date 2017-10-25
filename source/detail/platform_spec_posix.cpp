@@ -835,19 +835,19 @@ namespace detail
 			i->second->reinstate();
 			i->second->pos = pos;
 		}
-        auto addr = i->second;
-        XPoint spot;
-        XVaNestedList list;
-        if(addr->input_context) {
-            spot.x = pos.x;
-            spot.y = pos.y + addr->size.height;
-            list = ::XVaCreateNestedList(0, XNSpotLocation, &spot,
-                        XNForeground, 0,
-                        XNBackground, 0,
-                        (void *)0);
-            ::XSetICValues(addr->input_context, XNPreeditAttributes, list, NULL);
-            ::XFree(list);
-        }
+		auto addr = i->second;
+		XPoint spot;
+		XVaNestedList list;
+		if(addr->input_context) {
+			spot.x = pos.x;
+			spot.y = pos.y + addr->size.height;
+			list = ::XVaCreateNestedList(0, XNSpotLocation, &spot,
+					XNForeground, 0,
+					XNBackground, 0,
+					(void *)0);
+			::XSetICValues(addr->input_context, XNPreeditAttributes, list, NULL);
+			::XFree(list);
+		}
 	}
 
 	void platform_spec::caret_visible(native_window_type wd, bool vis)
