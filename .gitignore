@@ -39,6 +39,7 @@ lib/
 *.ninja*
 CMakeCache.txt
 CMakeFiles/
+cmake-build-debug/
 .idea/
 cmake_install.cmake
 *.DS_Store
