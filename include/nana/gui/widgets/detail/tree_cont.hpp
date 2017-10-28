@@ -1,12 +1,12 @@
-/*
+/**
  *	A Tree Container class implementation
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
- *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	(See accompanying file LICENSE or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/detail/tree_cont.hpp
+ *	@file nana/gui/widgets/detail/tree_cont.hpp
  */
 
 #ifndef NANA_GUI_WIDGETS_DETAIL_TREE_CONT_HPP

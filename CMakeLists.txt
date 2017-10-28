@@ -33,6 +33,7 @@ option(NANA_CMAKE_ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
 option(NANA_CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." ON)
 option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." OFF)
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
+option(NANA_CLION "Activate some CLion specific workarounds" OFF)
 
 # The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
@@ -62,11 +63,12 @@ if(POLICY CMP0004)    # ignore leading space
   cmake_policy(SET CMP0004 OLD)
 endif()
 
+set(CMAKE_DEBUG_POSTFIX "_d")
+
 ########### OS
 
 if(WIN32)
     add_definitions(-DWIN32)
-    set(CMAKE_DEBUG_POSTFIX "_d")
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
         option(MSVC_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
@@ -121,9 +123,14 @@ endif(UNIX)
 ########### Compilers
 #
 # Using gcc: gcc 4.8 don't support C++14 and make_unique. You may want to update at least to 4.9.
-# In Windows, the gcc which come with CLion was 4.8 from MinGW. You may want to install MinGW-w64 from the
-# TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
 # gcc 5.3 and 5.4 include filesytem, but you need to add the link flag: -lstdc++fs
+#
+# In Windows, the gcc which come with CLion was 4.8 from MinGW.
+# CLion was updated to MinGW with gcc 6.3 ? Allways check this in File/Settings.../toolchains
+# You could install MinGW-w64 from the TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
+# It is posible to follow https://computingabdn.com/softech/mingw-howto-install-gcc-for-windows/
+# and install MinGW with gcc 7.1 with has STD_THREADS and fs, from: https://sourceforge.net/projects/mingw-w64/files/
+#
 #
 # see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")    # Clang || GNU
@@ -275,8 +282,19 @@ target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
 # Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
 # and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
+# unfortunatelly install() is still ignored by CLion:
+# https://intellij-support.jetbrains.com/hc/en-us/community/posts/205822949-CMake-install-isn-t-supported-
 install(TARGETS ${PROJECT_NAME}   ARCHIVE DESTINATION lib
                                   LIBRARY DESTINATION lib)
+
+# http://stackoverflow.com/questions/33788729/how-do-i-get-clion-to-run-an-install-target
+if(NANA_CLION) # the Clion IDE don't reconize the install target
+    add_custom_target(install_${PROJECT_NAME}
+            $(MAKE) install
+            DEPENDS ${PROJECT_NAME}
+            COMMENT "Installing ${PROJECT_NAME}")
+endif()
+
 message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
 # Install the include directories too.
 if(NANA_CMAKE_INSTALL_INCLUDES)
@@ -299,6 +317,9 @@ message ( "CMAKE_INSTALL_PREFIX    = "  ${CMAKE_INSTALL_PREFIX})
 message ( "NANA_INCLUDE_DIR        = "  ${NANA_INCLUDE_DIR})
 message ( "CMAKE_CURRENT_SOURCE_DIR= "  ${CMAKE_CURRENT_SOURCE_DIR})
 message ( "NANA_CMAKE_ENABLE_AUDIO = "  ${NANA_CMAKE_ENABLE_AUDIO})
+message ( "NANA_CLION              = "  ${NANA_CLION})
+message ( "CMAKE_MAKE_PROGRAM      = "  ${CMAKE_MAKE_PROGRAM})
+
 message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = "  ${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT})
