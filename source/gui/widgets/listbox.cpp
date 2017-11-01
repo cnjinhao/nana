@@ -3931,6 +3931,11 @@ namespace nana
 					essence_->content_view.reset(new widgets::skeletons::content_view{ widget.handle() });
 					essence_->resize_disp_area();
 
+					//Set the content_view wheel speed with the listbox scheme.
+					essence_->content_view->set_wheel_speed([this] {
+						return essence_->scheme_ptr->mouse_wheel.lines;
+					});
+
 					essence_->content_view->events().hover_outside = [this](const point& cur_pos) {
 						essence_->update_mouse_selection(cur_pos);
 					};
