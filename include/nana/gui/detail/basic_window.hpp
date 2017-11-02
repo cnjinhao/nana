@@ -55,6 +55,7 @@ namespace detail
 		void dimension(const size& s) override;
 		void visible(bool visibility) override;
 		bool visible() const override;
+		bool activated() const override;
 	private:
 		basic_window * owner_;
 		point	position_;

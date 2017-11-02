@@ -151,7 +151,8 @@ namespace nana
 			arg.window_handle = reinterpret_cast<window>(wd);
 			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
 			{
-				const core_window_t * caret_wd = (wd->annex.caret_ptr ? wd : wd->child_caret());
+				//Get the window who has the activated caret
+				const core_window_t * caret_wd = ((wd->annex.caret_ptr && wd->annex.caret_ptr->activated()) ? wd : wd->child_caret());
 				if (caret_wd)
 				{
 					if (exposed)

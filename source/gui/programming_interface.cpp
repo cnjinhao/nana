@@ -1183,6 +1183,13 @@ namespace API
 			auto caret = _m_caret();
 			return (caret && caret->visible());
 		}
+
+		bool activated() const override
+		{
+			internal_scope_guard lock;
+			auto caret = _m_caret();
+			return (caret && caret->activated());
+		}
 	private:
 		caret_interface* _m_caret() const
 		{
