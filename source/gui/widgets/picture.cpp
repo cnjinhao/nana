@@ -29,7 +29,6 @@ namespace nana
 			struct implement
 			{
 				widget* wdg_ptr{nullptr};
-				paint::graphics* graph_ptr{nullptr};
 				std::unique_ptr<content_measurer> measurer;
 
 				struct gradual_bground_tag
@@ -49,18 +48,19 @@ namespace nana
 					bool			stretchable{ false };		//If it is true, the widget is stretchable mode without changing aspect ratio.
 				}backimg;
 
-				void draw_background(const size& dimension)
+				void draw_background(paint::graphics& graph, const size& dimension)
 				{
-					if (graph_ptr && (!API::dev::copy_transparent_background(*wdg_ptr, *graph_ptr)))
+					if (!API::dev::copy_transparent_background(*wdg_ptr, graph))
 					{
-						if (dimension.width < graph_ptr->size().width || dimension.height < graph_ptr->size().height || backimg.image.alpha())
+						auto const graph_size = graph.size();
+						if (dimension.width < graph_size.width || dimension.height < graph_size.height || backimg.image.alpha())
 						{
 							if (gradual_bground.gradual_from.invisible() || gradual_bground.gradual_to.invisible())
-								graph_ptr->rectangle(true, wdg_ptr->bgcolor());
+								graph.rectangle(true, wdg_ptr->bgcolor());
 							else if (gradual_bground.gradual_from == gradual_bground.gradual_to)
-								graph_ptr->rectangle(true, gradual_bground.gradual_from);
+								graph.rectangle(true, gradual_bground.gradual_from);
 							else
-								graph_ptr->gradual_rectangle(::nana::rectangle{ graph_ptr->size() }, gradual_bground.gradual_from, gradual_bground.gradual_to, !gradual_bground.horizontal);
+								graph.gradual_rectangle(::nana::rectangle{graph_size }, gradual_bground.gradual_from, gradual_bground.gradual_to, !gradual_bground.horizontal);
 						}
 					}
 				}
@@ -104,19 +104,15 @@ namespace nana
 				delete impl_;
 			}
 
-			void drawer::attached(widget_reference& wdg, graph_reference graph)
+			void drawer::attached(widget_reference& wdg, graph_reference)
 			{
 				impl_->wdg_ptr = &wdg;
-				impl_->graph_ptr = &graph;
 				API::dev::set_measurer(wdg, impl_->measurer.get());
 			}
 
 			void drawer::refresh(graph_reference graph)
 			{
-				if (!graph.changed())
-					return;
-
-				auto graphsize = graph.size();
+				auto const graphsize = graph.size();
 
 				auto & backimg = impl_->backimg;
 
@@ -124,8 +120,7 @@ namespace nana
 				{
 					if (backimg.image.empty())
 					{
-						impl_->draw_background({});
-						graph.setsta();
+						impl_->draw_background(graph, {});
 						return;
 					}
 
@@ -133,10 +128,12 @@ namespace nana
 					if (valid_area.empty())
 						valid_area.dimension(backimg.image.size());
 
+					//The position where the image to be drawn. 
+					::nana::point pos;
+
 					if (backimg.stretchable)
 					{
-						auto fit_size = fit_zoom({ valid_area.width, valid_area.height }, graphsize);
-						::nana::point pos;
+						auto fit_size = fit_zoom(valid_area.dimension(), graphsize);
 
 						if (fit_size.width != graphsize.width)
 						{
@@ -165,15 +162,12 @@ namespace nana
 							}
 						}
 
-						impl_->draw_background(fit_size);
+						impl_->draw_background(graph, fit_size);
 
 						backimg.image.stretch(valid_area, graph, ::nana::rectangle{ pos, fit_size });
 					}
 					else
 					{
-						//The point in which position the image to be drawn. 
-						::nana::point pos;
-
 						switch (backimg.align_horz)
 						{
 						case ::nana::align::left: break;
@@ -196,15 +190,14 @@ namespace nana
 							break;
 						}
 
-						impl_->draw_background(valid_area.dimension());
+						impl_->draw_background(graph, valid_area.dimension());
 
-						if ( ! backimg.image.empty())
-							backimg.image.paste(valid_area, graph, pos);
+						backimg.image.paste(valid_area, graph, pos);
 					}
 				}
 				else
 				{
-					impl_->draw_background(graphsize);
+					impl_->draw_background(graph, graphsize);
 
 					color invalid_clr_for_call;
 					backimg.bground->draw(graph, invalid_clr_for_call, invalid_clr_for_call, rectangle{ graphsize }, element_state::normal);
@@ -237,11 +230,7 @@ namespace nana
 			if (backimg.bground)
 				backimg.bground->image(backimg.image, true, valid_area);
 
-			if (handle())
-			{
-				get_drawer_trigger().impl_->graph_ptr->set_changed();
-				API::refresh_window(*this);
-			}
+			API::refresh_window(*this);
 		}
 
 		void picture::align(::nana::align horz, align_v vert)
@@ -256,18 +245,11 @@ namespace nana
 			backimg.align_horz = horz;
 			backimg.align_vert = vert;
 
-			if (handle())
-			{
-				get_drawer_trigger().impl_->graph_ptr->set_changed();
-				API::refresh_window(*this);
-			}
+			API::refresh_window(*this);
 		}
 
 		void picture::stretchable(unsigned left, unsigned top, unsigned right, unsigned bottom)
 		{
-			if (!handle())
-				return;
-
 			internal_scope_guard lock;
 			auto & backimg = get_drawer_trigger().impl_->backimg;
 			if (!backimg.bground)
@@ -279,11 +261,8 @@ namespace nana
 
 			backimg.bground->stretch_parts(left, top, right, bottom);
 			backimg.stretchable = false;
-			if (handle())
-			{
-				get_drawer_trigger().impl_->graph_ptr->set_changed();
-				API::refresh_window(*this);
-			}
+
+			API::refresh_window(*this);
 		}
 
 		void picture::stretchable(bool enables)
@@ -294,11 +273,7 @@ namespace nana
 			backimg.bground.reset();
 
 			backimg.stretchable = enables;
-			if (handle())
-			{
-				get_drawer_trigger().impl_->graph_ptr->set_changed();
-				API::refresh_window(*this);
-			}
+			API::refresh_window(*this);
 		}
 
 		void picture::set_gradual_background(const ::nana::color& from, const ::nana::color& to, bool horizontal)
@@ -307,11 +282,8 @@ namespace nana
 			bground.gradual_from = from;
 			bground.gradual_to = to;
 			bground.horizontal = horizontal;
-			if (handle())
-			{
-				get_drawer_trigger().impl_->graph_ptr->set_changed();
-				API::refresh_window(*this);
-			}
+
+			API::refresh_window(*this);
 		}
 
 		void picture::transparent(bool enabled)
