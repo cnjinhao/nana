@@ -55,16 +55,6 @@ option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boos
 option(NANA_CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
 option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
 
-########### Compatibility with CMake 3.1
-if(POLICY CMP0054)
-  # http://www.cmake.org/cmake/help/v3.1/policy/CMP0054.html
-  cmake_policy(SET CMP0054 OLD)
-endif()
-if(POLICY CMP0004)    # ignore leading space
-  # http://www.cmake.org/cmake/help/v3.0/policy/CMP0004.html
-  cmake_policy(SET CMP0004 OLD)
-endif()
-
 set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 #    collect all source sub-directories in a list to avoid duplication here
