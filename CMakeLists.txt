@@ -22,6 +22,7 @@
 #  https://bbs.archlinux.org/viewtopic.php?id=84967
 
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 project(nana VERSION 1.5.5 LANGUAGES CXX)
 
 option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
@@ -64,6 +65,34 @@ if(POLICY CMP0004)    # ignore leading space
   cmake_policy(SET CMP0004 OLD)
 endif()
 
+set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
+set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+#    collect all source sub-directories in a list to avoid duplication here
+set(NANA_SOURCE_SUBDIRS              /.
+                                     /detail
+                                     /filesystem
+                                     /gui
+                                     /gui/detail
+                                     /gui/widgets
+                                     /gui/widgets/skeletons
+                                     /paint
+                                     /paint/detail
+                                     /system
+                                     /threads      )
+if(NANA_CMAKE_ENABLE_AUDIO)
+    list(APPEND NANA_SOURCE_SUBDIRS
+                                     /audio
+                                     /audio/detail  )
+endif(NANA_CMAKE_ENABLE_AUDIO)
+# collect all source files in the source-sub-dir
+# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
+# and Use SOURCE_GROUP if all your sources are in the same directory
+foreach(subdir ${NANA_SOURCE_SUBDIRS})
+    aux_source_directory(${NANA_SOURCE_DIR}${subdir} sources)
+        # message("Subir:  ${subdir}") # message("Files:  ${sources}")
+endforeach(subdir ${NANA_SOURCE_SUBDIRS})
+
+add_library(${PROJECT_NAME} ${sources} )
 ########### OS
 
 if(WIN32)
@@ -120,6 +149,7 @@ if(APPLE)
     add_definitions(-DAPPLE)
     include_directories(/opt/X11/include/)
     list(APPEND NANA_LINKS -L/opt/X11/lib/ -liconv)
+    target_link_libraries(${PROJECT_NAME} PRIVATE iconv)
     set(ENABLE_AUDIO OFF)
 elseif(UNIX)
     add_definitions(-Dlinux)
@@ -127,11 +157,28 @@ elseif(UNIX)
 endif(APPLE)
 
 if(UNIX)
-    list(APPEND NANA_LINKS -lX11)
+    find_package(X11 REQUIRED)
+    list(APPEND NANA_LINKS ${X11_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE ${X11_LIBRARIES}
+        PRIVATE ${X11_Xft_LIB}
+    )
+    target_include_directories(${PROJECT_NAME} SYSTEM
+        PRIVATE ${X11_Xft_INCLUDE_PATH}
+        PRIVATE ${X11_INCLUDE_DIR}
+    )
     find_package(Freetype)
     if (FREETYPE_FOUND)
-        include_directories( ${FREETYPE_INCLUDE_DIRS})
-        list(APPEND NANA_LINKS -lXft)
+        find_package(Fontconfig REQUIRED)
+        target_include_directories(${PROJECT_NAME} SYSTEM
+            PRIVATE ${FREETYPE_INCLUDE_DIRS}
+            PRIVATE ${FONTCONFIG_INCLUDE_DIR}
+        )
+        list(APPEND NANA_LINKS ${FREETYPE_LIBRARIES})
+        target_link_libraries(${PROJECT_NAME}
+            PRIVATE ${FREETYPE_LIBRARIES}
+            PRIVATE ${FONTCONFIG_LIBRARIES}
+        )
     endif(FREETYPE_FOUND)
 endif(UNIX)
 
@@ -156,11 +203,14 @@ endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 # enable static linkage     # GNU || CLang not MinGW
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
     if(NANA_CMAKE_SHARED_LIB)
-        list(APPEND NANA_LINKS -lgcc -lstdc++ -pthread)
+        list(APPEND NANA_LINKS -lgcc -lstdc++)
     else()
-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
+        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
         # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
     endif(NANA_CMAKE_SHARED_LIB)
 
@@ -168,9 +218,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
                                                                          # IS_GNUCXX < 5.3
     else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
 
-        # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
-        list(APPEND NANA_LINKS -lstdc++fs)
-
+       target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
     endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
@@ -189,10 +237,9 @@ if(NANA_CMAKE_ENABLE_PNG)
     if(NANA_CMAKE_LIBPNG_FROM_OS)
         find_package(PNG)
         if (PNG_FOUND)
-            include_directories( ${PNG_INCLUDE_DIRS})
             list(APPEND NANA_LINKS ${PNG_LIBRARIES})
-            add_definitions("-DNANA_ENABLE_PNG"
-                            "-DUSE_LIBPNG_FROM_OS")
+            target_include_directories(${PROJECT_NAME} PRIVATE PNG::PNG)
+            target_compile_definitions(${PROJECT_NAME} PUBLIC USE_LIBPNG_FROM_OS)
         endif(PNG_FOUND)
     else()
         add_definitions(-DNANA_ENABLE_PNG)
@@ -205,10 +252,10 @@ if(NANA_CMAKE_ENABLE_JPEG)
     if(NANA_CMAKE_LIBJPEG_FROM_OS)
         find_package(JPEG)
         if (JPEG_FOUND)
-            include_directories( ${JPEG_INCLUDE_DIR})
-            list(APPEND NANA_LINKS ${JPEG_LIBRARY})
-            add_definitions("-DNANA_ENABLE_JPEG"
-                            "-DUSE_LIBJPEG_FROM_OS")
+            target_include_directories(${PROJECT_NAME PRIVATE ${JPEG_INCLUDE_DIR})
+            list(APPEND NANA_LINKS ${JPEG_LIBRARIES})
+            target_include_directories(${PROJECT_NAME} PRIVATE ${JPEG_LIBRARIES})
+            target_compile_definitions(${PROJECT_NAME} PUBLIC USE_LIBJPEG_FROM_OS)
         endif(JPEG_FOUND)
     else()
         add_definitions(-DNANA_ENABLE_JPEG)
@@ -221,8 +268,9 @@ if(NANA_CMAKE_ENABLE_AUDIO)
     if(UNIX)
         find_package(ASOUND)
         if (ASOUND_FOUND)
-            include_directories( ${ASOUND_INCLUDE_DIRS})
+            target_include_directories(${PROJECT_NAME PRIVATE ${ASOUND_INCLUDE_DIRS})
             list(APPEND NANA_LINKS -lasound)
+            target_link_libraries(${PROJECT_NAME} PRIVATE ${ASOUND_LIBRARIES})
         else(ASOUND_FOUND)
             message(FATAL_ERROR "libasound is not found")
         endif(ASOUND_FOUND)
@@ -245,8 +293,8 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     find_package(Boost COMPONENTS filesystem)
     if (Boost_FOUND)
         add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
-        include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
         list(APPEND NANA_LINKS ${Boost_LIBRARIES})    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
+        target_link_libraries(${PROJECT_NAME} PUBLIC Boost::Boost)
     endif (Boost_FOUND)
     set(Boost_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC_RUNTIME ON)  # ??
@@ -267,33 +315,6 @@ endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
 #######################     Main setting of Nana sources, targets and install
 
-set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
-set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-#    collect all source sub-directories in a list to avoid duplication here
-set(NANA_SOURCE_SUBDIRS              /.
-                                     /detail
-                                     /filesystem
-                                     /gui
-                                     /gui/detail
-                                     /gui/widgets
-                                     /gui/widgets/skeletons
-                                     /paint
-                                     /paint/detail
-                                     /system
-                                     /threads      )
-if(NANA_CMAKE_ENABLE_AUDIO)
-    list(APPEND NANA_SOURCE_SUBDIRS
-                                     /audio
-                                     /audio/detail  )
-endif(NANA_CMAKE_ENABLE_AUDIO)
-# collect all source files in the source-sub-dir
-# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
-# and Use SOURCE_GROUP if all your sources are in the same directory
-foreach(subdir ${NANA_SOURCE_SUBDIRS})
-    aux_source_directory(${NANA_SOURCE_DIR}${subdir} sources)
-        # message("Subir:  ${subdir}") # message("Files:  ${sources}")
-endforeach(subdir ${NANA_SOURCE_SUBDIRS})
-
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     add_definitions(-fmax-errors=3)
 endif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
@@ -305,7 +326,6 @@ else()
 endif(NANA_CMAKE_SHARED_LIB)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
 
  #  Headers: use INCLUDE_DIRECTORIES
  #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
