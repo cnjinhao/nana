@@ -373,17 +373,17 @@ if(NANA_CMAKE_INSTALL_INCLUDES)
 endif(NANA_CMAKE_INSTALL_INCLUDES)
 
 target_compile_features(${PROJECT_NAME}
-	PUBLIC cxx_nullptr
-	PUBLIC cxx_range_for
-	PUBLIC cxx_lambdas
-	PUBLIC cxx_decltype_auto
-	PUBLIC cxx_defaulted_functions
-	PUBLIC cxx_deleted_functions
-	PUBLIC cxx_auto_type
-	PUBLIC cxx_decltype_incomplete_return_types
-	PUBLIC cxx_defaulted_move_initializers
-	PUBLIC cxx_noexcept
-	PUBLIC cxx_rvalue_references
+    PUBLIC cxx_nullptr
+    PUBLIC cxx_range_for
+    PUBLIC cxx_lambdas
+    PUBLIC cxx_decltype_auto
+    PUBLIC cxx_defaulted_functions
+    PUBLIC cxx_deleted_functions
+    PUBLIC cxx_auto_type
+    PUBLIC cxx_decltype_incomplete_return_types
+    PUBLIC cxx_defaulted_move_initializers
+    PUBLIC cxx_noexcept
+    PUBLIC cxx_rvalue_references
 )
 
 # Just for information:
