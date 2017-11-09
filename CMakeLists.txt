@@ -96,7 +96,7 @@ add_library(${PROJECT_NAME} ${sources} )
 ########### OS
 
 if(WIN32)
-    add_definitions(-DWIN32)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC WIN32)
     set(CMAKE_DEBUG_POSTFIX "_d")
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
@@ -123,8 +123,10 @@ if(WIN32)
 
     if(MINGW)
         if(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
-            add_definitions(-DSTD_THREAD_NOT_SUPPORTED)
-            add_definitions(-DNANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
+            target_compile_definitions(${PROJECT_NAME}
+                PUBLIC STD_THREAD_NOT_SUPPORTED
+                PUBLIC NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ
+            )
         endif(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
     endif(MINGW)
 
@@ -146,12 +148,12 @@ endif(WIN32)
 
 
 if(APPLE)
-    add_definitions(-DAPPLE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC APPLE)
     include_directories(/opt/X11/include/)
     target_link_libraries(${PROJECT_NAME} PRIVATE iconv)
     set(ENABLE_AUDIO OFF)
 elseif(UNIX)
-    add_definitions(-Dlinux)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC linux)
     message("added -D linux")
 endif(APPLE)
 
@@ -236,13 +238,13 @@ if(NANA_CMAKE_ENABLE_PNG)
             target_compile_definitions(${PROJECT_NAME} PUBLIC USE_LIBPNG_FROM_OS)
         endif(PNG_FOUND)
     else()
-        add_definitions(-DNANA_ENABLE_PNG)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC NANA_ENABLE_PNG)
     endif(NANA_CMAKE_LIBPNG_FROM_OS)
 endif(NANA_CMAKE_ENABLE_PNG)
 
 # Find JPEG
 if(NANA_CMAKE_ENABLE_JPEG)
-    add_definitions(-DNANA_ENABLE_JPEG)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC NANA_ENABLE_JPEG)
     if(NANA_CMAKE_LIBJPEG_FROM_OS)
         find_package(JPEG)
         if (JPEG_FOUND)
@@ -257,7 +259,7 @@ endif(NANA_CMAKE_ENABLE_JPEG)
 
 # Find ASOUND
 if(NANA_CMAKE_ENABLE_AUDIO)
-    add_definitions(-DNANA_ENABLE_AUDIO)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC NANA_ENABLE_AUDIO)
     if(UNIX)
         find_package(ASOUND)
         if (ASOUND_FOUND)
@@ -271,12 +273,12 @@ endif(NANA_CMAKE_ENABLE_AUDIO)
 
 # Find/Select filesystem
 if (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
-    add_definitions(-DNANA_FILESYSTEM_FORCE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC NANA_FILESYSTEM_FORCE)
 elseif (NANA_CMAKE_STD_FILESYSTEM_FORCE)
-    add_definitions(-DSTD_FILESYSTEM_FORCE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC STD_FILESYSTEM_FORCE)
 elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     if (NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-        add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC NANA_BOOST_FILESYSTEM_FORCE)
     endif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     # https://cmake.org/cmake/help/git-master/module/FindBoost.html
     # Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied,
@@ -284,7 +286,7 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     # If using Boost::thread, then Thread::Thread will also be added automatically.
     find_package(Boost COMPONENTS filesystem)
     if (Boost_FOUND)
-        add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC NANA_BOOST_FILESYSTEM_AVAILABLE)
         target_link_libraries(${PROJECT_NAME} PUBLIC Boost::Boost)
     endif (Boost_FOUND)
     set(Boost_USE_STATIC_LIBS ON)
@@ -294,13 +296,13 @@ endif (NANA_CMAKE_NANA_FILESYSTEM_FORCE)
 
 ######## Nana options
 
-add_definitions(-DNANA_IGNORE_CONF)
+target_compile_definitions(${PROJECT_NAME} PUBLIC NANA_IGNORE_CONF)
 if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
-    add_definitions(-DVERBOSE_PREPROCESSOR)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC VERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-     add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
-     enable_testing ()
+    target_compile_definitions(${PROJECT_NAME} PRIVATE NANA_AUTOMATIC_GUI_TESTING)
+    enable_testing ()
 endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
 
