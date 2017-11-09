@@ -21,8 +21,8 @@
 #  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
 #  https://bbs.archlinux.org/viewtopic.php?id=84967
 
-project(nana)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+project(nana VERSION 1.5.5 LANGUAGES CXX)
 
 option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
@@ -147,11 +147,9 @@ endif(UNIX)
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")    # Clang || GNU
 
     if  ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -g")       # Clang
-
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")       # Clang
     else ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall -g")       # GNU
-
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")       # GNU
     endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -354,6 +352,19 @@ if(NANA_CMAKE_INSTALL_INCLUDES)
     message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
 endif(NANA_CMAKE_INSTALL_INCLUDES)
 
+target_compile_features(${PROJECT_NAME}
+	PUBLIC cxx_nullptr
+	PUBLIC cxx_range_for
+	PUBLIC cxx_lambdas
+	PUBLIC cxx_decltype_auto
+	PUBLIC cxx_defaulted_functions
+	PUBLIC cxx_deleted_functions
+	PUBLIC cxx_auto_type
+	PUBLIC cxx_decltype_incomplete_return_types
+	PUBLIC cxx_defaulted_move_initializers
+	PUBLIC cxx_noexcept
+	PUBLIC cxx_rvalue_references
+)
 
 # Just for information:
 message ("")
