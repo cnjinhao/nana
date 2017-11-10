@@ -82,7 +82,11 @@ foreach(subdir ${NANA_SOURCE_SUBDIRS})
         # message("Subir:  ${subdir}") # message("Files:  ${sources}")
 endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
-add_library(${PROJECT_NAME} ${sources} )
+if(NANA_CMAKE_SHARED_LIB)
+    add_library(${PROJECT_NAME} SHARED ${sources} )
+else()
+    add_library(${PROJECT_NAME} STATIC ${sources} )
+endif(NANA_CMAKE_SHARED_LIB)
 ########### OS
 
 if(WIN32)
@@ -196,8 +200,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
     find_package(Threads REQUIRED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
-    if(NANA_CMAKE_SHARED_LIB)
-    else()
+    if(NOT NANA_CMAKE_SHARED_LIB)
         set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
     endif(NANA_CMAKE_SHARED_LIB)
 
@@ -301,12 +304,6 @@ endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     add_definitions(-fmax-errors=3)
 endif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-
-if(NANA_CMAKE_SHARED_LIB)
-    add_library(${PROJECT_NAME} SHARED ${sources} )
-else()
-    add_library(${PROJECT_NAME} STATIC ${sources} )
-endif(NANA_CMAKE_SHARED_LIB)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
 
