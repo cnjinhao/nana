@@ -202,7 +202,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
 
     if(NOT NANA_CMAKE_SHARED_LIB)
         set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
-    endif(NANA_CMAKE_SHARED_LIB)
+    endif(NOT NANA_CMAKE_SHARED_LIB)
 
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
                                                                          # IS_GNUCXX < 5.3
