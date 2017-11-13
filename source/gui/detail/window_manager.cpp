@@ -950,6 +950,7 @@ namespace detail
 			{
 				//If allocation fails, here throws std::bad_alloc.
 				graph.make(sz);
+				graph.typeface(wd->drawer.graphics.typeface());
 				if (category::flags::root == wd->other.category)
 					root_graph.make(sz);
 			}
