@@ -316,7 +316,7 @@ namespace nana
                     return cont_.back().index;
 				}
 
-				unsigned pixels() const noexcept  ///< the visible width of the whole header
+				unsigned width_px() const noexcept  ///< the visible width of the whole header
 				{
 					unsigned pixels = 0;
 					for(auto & col : cont_)
@@ -2064,7 +2064,7 @@ namespace nana
 						return{};
 
 					auto origin = content_view->origin();
-					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.pixels()) };
+					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.width_px()) };
 				}
 
 				void start_mouse_selection(const arg_mouse& arg)
@@ -2104,7 +2104,7 @@ namespace nana
 
 					auto content_x = coordinate_cast({ columns_range().first, 0 }, true).x;
 					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x &&
-						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) < content_x + static_cast<int>(header.pixels()))
+						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) < content_x + static_cast<int>(header.width_px()))
 					{
 						auto const begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
 
@@ -2217,7 +2217,7 @@ namespace nana
 				::nana::size calc_content_size(bool try_update = true)
 				{
 					size ctt_size(
-						this->header.pixels() + this->header.margin(),
+						this->header.width_px() + this->header.margin(),
 						static_cast<size::value_type>(this->lister.the_number_of_expanded()) * this->item_height()
 					);
 
@@ -2268,7 +2268,7 @@ namespace nana
 							new_where.first = parts::header;
 							new_where.second = this->column_from_pos(pos.x);
 						}
-						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.pixels()))
+						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.width_px()))
 						{
 							// detect if cursor is in the area of header margin
 							if (pos.x < area.x - origin.x + static_cast<int>(header.margin()))
@@ -3466,7 +3466,7 @@ namespace nana
 
 					essence_->graph->palette(false, bgcolor);
 
-					auto const header_w = essence_->header.pixels();
+					auto const header_w = essence_->header.width_px();
 					auto const item_height_px = essence_->item_height();
 
 					auto const origin = essence_->content_view->origin();
@@ -3955,21 +3955,11 @@ namespace nana
 				void _m_draw_item_border(int item_top) const
 				{
 					//Draw selecting inner rectangle
-					/*
-					rectangle r{ x, y, width, essence_->item_height() };
-
-					essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
-
-					essence_->graph->palette(false, colors::white);
-					paint::draw(*essence_->graph).corner(r, 1);
-
-					essence_->graph->rectangle(r.pare_off(1), false);
-					*/
 
 					rectangle r{
 						essence_->content_area().x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin()),
 						item_top,
-						essence_->header.pixels(),
+						essence_->header.width_px(),
 						essence_->item_height()
 					};
 
