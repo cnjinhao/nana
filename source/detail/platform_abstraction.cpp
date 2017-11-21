@@ -255,6 +255,35 @@ namespace nana
 		data::storage = nullptr;
 	}
 
+	double platform_abstraction::font_default_pt()
+	{
+#ifdef NANA_WINDOWS
+		//Create default font object.
+		NONCLIENTMETRICS metrics = {};
+		metrics.cbSize = sizeof metrics;
+#if(WINVER >= 0x0600)
+#if defined(NANA_MINGW)
+		OSVERSIONINFO osvi = {};
+		osvi.dwOSVersionInfoSize = sizeof(osvi);
+		::GetVersionEx(&osvi);
+		if (osvi.dwMajorVersion < 6)
+			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
+#else
+		if (!IsWindowsVistaOrGreater())
+			metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
+#endif
+#endif
+		::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
+
+		auto desktop = ::GetDC(nullptr);
+		auto pt = std::abs(metrics.lfMessageFont.lfHeight) * 72.0 / ::GetDeviceCaps(desktop, LOGPIXELSY);
+		::ReleaseDC(nullptr, desktop);
+		return pt;
+#else
+		return 10;
+#endif
+	}
+
 	::std::shared_ptr<platform_abstraction::font> platform_abstraction::default_font(const ::std::shared_ptr<font>& new_font)
 	{
 		auto & r = platform_storage();
@@ -337,7 +366,7 @@ namespace nana
 		if(font_family.empty())
 			font_family = '*';
 
-		std::string pat_str = font_family + '-' + std::to_string(size_pt ? size_pt : 10);
+		std::string pat_str = font_family + '-' + std::to_string(size_pt ? size_pt : font_default_pt());
 		auto pat = ::XftNameParse(pat_str.c_str());
 		XftResult res;
 		auto match_pat = ::XftFontMatch(disp, ::XDefaultScreen(disp), pat, &res);
@@ -407,6 +436,31 @@ namespace nana
 					::FcConfigAppFontClear(nullptr);
 			}
 		}
+#endif
+	}
+
+	unsigned platform_abstraction::screen_dpi(bool x_requested)
+	{
+#ifdef NANA_WINDOWS
+		auto hdc = ::GetDC(nullptr);
+		auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, (x_requested ? LOGPIXELSX : LOGPIXELSY)));
+		::ReleaseDC(nullptr, hdc);
+		return dots;
+#else
+		auto & spec = ::nana::detail::platform_spec::instance();
+		auto disp = spec.open_display();
+		auto screen = ::XDefaultScreen(disp);
+
+		double dots;
+
+		if (x_requested)
+			dots += ((((double)DisplayWidth(disp, screen)) * 25.4) /
+			((double)DisplayWidthMM(disp, screen)));
+		else
+			dots += ((((double)DisplayHeight(disp, screen)) * 25.4) /
+			((double)DisplayHeightMM(disp, screen)));
+
+		return static_cast<unsigned>(dots + 0.5);
 #endif
 	}
 }

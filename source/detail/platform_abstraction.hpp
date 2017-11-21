@@ -33,10 +33,13 @@ namespace nana
 		static void initialize();
 		/// Shutdown before destruction of platform_spec 
 		static void shutdown();
+		static double font_default_pt();
 		static ::std::shared_ptr<font> default_font(const ::std::shared_ptr<font>&);
 		static ::std::shared_ptr<font> make_font(const ::std::string& font_family, double size_pt, const font::font_style& fs);
 		static ::std::shared_ptr<font> make_font_from_ttf(const path_type& ttf, double size_pt, const font::font_style& fs);
 		static void font_resource(bool try_add, const path_type& ttf);
+
+		static unsigned screen_dpi(bool x_requested);
 	};
 }
 

@@ -20,6 +20,8 @@
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/detail/events_operation.hpp>
 
+#include "../../source/detail/platform_abstraction.hpp"
+
 namespace nana
 {
 	//restrict
@@ -1465,6 +1467,11 @@ namespace API
 		}
 		
 		return{};
+	}
+
+	unsigned screen_dpi(bool x_requested)
+	{
+		return ::nana::platform_abstraction::screen_dpi(x_requested);
 	}
 }//end namespace API
 }//end namespace nana

@@ -134,6 +134,7 @@ namespace nana
 
 					std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> weak_ordering;
 
+					std::shared_ptr<paint::font> font;	///< The exclusive column font
 
 					column() = default;
 					
@@ -150,11 +151,12 @@ namespace nana
 							index = other.index;
 							alignment = other.alignment;
 							weak_ordering = other.weak_ordering;
+							font = other.font;
 						}
 						return *this;
 					
 					}
-
+					
 					column(column&& other):
 						caption(std::move(other.caption)),
 						width_px(other.width_px),
@@ -163,6 +165,7 @@ namespace nana
 						index(other.index),
 						alignment(other.alignment),
 						weak_ordering(std::move(other.weak_ordering)),
+						font(std::move(other.font)),
 						ess_(other.ess_)
 					{
 					}
@@ -236,6 +239,12 @@ namespace nana
 
 					//Definition is provided after essence
 					void fit_content(unsigned maximize = 100000) noexcept override;
+
+					/// Sets an exclusive font for the column
+					void typeface(const paint::font& column_font) override;
+
+					/// Returns a font
+					paint::font typeface() const noexcept override;
 
 					bool visible() const noexcept override
 					{
@@ -2254,7 +2263,7 @@ namespace nana
 					{   /// we are inside
 						auto const origin = content_view->origin();
 
-						if(header.visible() && (pos.y < static_cast<int>(scheme_ptr->header_height) + area.y))
+						if (header.visible() && (pos.y < static_cast<int>(header_visible_px()) + area.y))
 						{   /// we are in the header
 							new_where.first = parts::header;
 							new_where.second = this->column_from_pos(pos.x);
@@ -2339,9 +2348,32 @@ namespace nana
 					return r;
 				}
 
+				double header_font_px() const
+				{
+					unsigned max_font_px = 0;
+
+					paint::graphics graph{ size{ 1, 1 } };
+					for (auto & col : this->header.cont())
+					{
+						if (!col.visible())
+							continue;
+
+						graph.typeface(col.typeface());
+
+						unsigned as, ds, ileading;
+						graph.text_metrics(as, ds, ileading);
+
+						max_font_px = (std::max)(as + ds, max_font_px);
+					}
+					return max_font_px;
+				}
+
 				unsigned header_visible_px() const
 				{
-					return (header.visible() ? scheme_ptr->header_height : 0);
+					if (!header.visible())
+						return 0;
+
+					return scheme_ptr->header_padding_top + scheme_ptr->header_padding_bottom + static_cast<unsigned>(header_font_px());
 				}
 
 				bool rect_header(nana::rectangle& r) const
@@ -2350,7 +2382,7 @@ namespace nana
 					{
 						r = this->content_area();
 
-						r.height = scheme_ptr->header_height;
+						r.height = header_visible_px();
 
 						if (lister.wd_ptr()->borderless())
 							return !r.empty();
@@ -2760,6 +2792,29 @@ namespace nana
 
 				_m_refresh();
 			}
+
+			/// Sets an exclusive font for the column
+			void es_header::column::typeface(const paint::font& column_font)
+			{
+				this->font.reset(new paint::font{ column_font });
+
+				API::refresh_window(*ess_->listbox_ptr);
+			}
+
+			/// Returns a font
+			paint::font es_header::column::typeface() const noexcept
+			{
+				//Returns the exclusive font if it is not empty
+				if (this->font && !this->font->empty())
+				return *this->font;
+
+				//Returns the column font if it is not empty
+				if (ess_->scheme_ptr->column_font && !ess_->scheme_ptr->column_font)
+					return *(ess_->scheme_ptr->column_font);
+
+				//If all above fonts are invalid, returns the widget font.
+				return ess_->listbox_ptr->typeface();
+			}
 			//end es_header::column functions
 
 			class inline_indicator
@@ -3064,6 +3119,14 @@ namespace nana
 				using item_state = essence::item_state;
 				using parts = essence::parts;
 
+				struct column_rendering_parameter
+				{
+					unsigned margin;
+					unsigned height;
+					double max_font_px;
+					paint::font wdg_font;
+				};
+
 				drawer_header_impl(essence* es) noexcept: essence_(es){}
 
 				size_type splitter() const noexcept
@@ -3175,25 +3238,31 @@ namespace nana
 						0, r.height - 1
 					};
 
+					column_rendering_parameter crp;
+
 					//The first item includes the margin
-					unsigned margin = essence_->header.margin();
+					crp.margin = essence_->header.margin();
+
+					crp.height = essence_->header_visible_px();
+					crp.max_font_px = essence_->header_font_px();
+					crp.wdg_font = graph.typeface();
 
 					for (auto & col : essence_->header.cont())
 					{
 						if (col.visible_state)
 						{
-							column_r.width = col.width_px + margin;
+							column_r.width = col.width_px + crp.margin;
 
 							const auto right_pos = column_r.right();
 
 							//Make sure the column is in the display area.
 							if (right_pos > r.x)
 							{
-								_m_draw_header_item(graph, margin, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
+								_m_draw_header_item(graph, crp, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
 								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, border_color);
 							}
 
-							margin = 0;
+							crp.margin = 0;
 
 							column_r.x = right_pos;
 							if (right_pos > r.right())
@@ -3258,7 +3327,7 @@ namespace nana
 					return npos;
 				}
 
-				void _m_draw_header_item(graph_reference graph, unsigned margin, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
+				void _m_draw_header_item(graph_reference graph, const column_rendering_parameter& crp, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
 				{
 					::nana::color bgcolor;
 
@@ -3289,7 +3358,16 @@ namespace nana
 					{
 						graph.palette(true, fgcolor);
 
-						point text_pos{ column_r.x + static_cast<int>(margin), (static_cast<int>(essence_->scheme_ptr->header_height) - static_cast<int>(essence_->text_height)) / 2 };
+						//Set column font
+						graph.typeface(column.typeface());
+
+						unsigned ascent, descent, ileading;
+						graph.text_metrics(ascent, descent, ileading);
+
+						point text_pos{
+							column_r.x + static_cast<int>(crp.margin),
+							column_r.bottom() - static_cast<int>(crp.height + ascent + descent) / 2
+						};
 
 						if (align::left == column.alignment)
 							text_pos.x += text_margin;
@@ -3297,6 +3375,9 @@ namespace nana
 							text_margin = 0;
 
 						text_aligner.draw(column.caption, text_pos, column_r.width - text_margin);
+
+						//Restores widget font
+						graph.typeface(crp.wdg_font);
 					}
 
 					auto & sort = essence_->lister.sort_attrs();
@@ -3313,16 +3394,20 @@ namespace nana
 				{
 					const auto & col = essence_->header.at(essence_->pointer_where.second);
 
-					auto margin = 0;
-					
-					if (&essence_->header.at(0, true) == &col)
-						margin = essence_->header.margin();
+					column_rendering_parameter crp;
+					crp.margin = 0;
+					crp.height = essence_->header_visible_px();
+					crp.max_font_px = essence_->header_font_px();
+					crp.wdg_font = essence_->listbox_ptr->typeface();
 
-					paint::graphics fl_graph({ col.width_px + margin, essence_->scheme_ptr->header_height });
+					if (&essence_->header.at(0, true) == &col)
+						crp.margin = essence_->header.margin();
+
+					paint::graphics fl_graph({ col.width_px + crp.margin, crp.height });
 
 					fl_graph.typeface(essence_->graph->typeface());
 
-					_m_draw_header_item(fl_graph, margin, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
+					_m_draw_header_item(fl_graph, crp, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
 
 					auto xpos = essence_->header.range(col.index).first + pos.x - grabs_.start_pos;
 					essence_->graph->blend(rectangle{ point{ xpos - essence_->content_view->origin().x + rect.x, rect.y } , fl_graph.size() }, fl_graph, {}, 0.5);
@@ -3944,8 +4029,6 @@ namespace nana
 
 				void trigger::typeface_changed(graph_reference graph)
 				{
-					//essence_->text_height = graph.text_extent_size(L"jHWn0123456789/<?'{[|\\_").height;
-
 					essence_->text_height = 0;
 					unsigned as, ds, il;
 					if (graph.text_metrics(as, ds, il))

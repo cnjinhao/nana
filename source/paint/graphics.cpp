@@ -127,11 +127,14 @@ namespace paint
 			return impl_->real_font->family();
 		}
 
-		double font::size() const
+		double font::size(bool fixed) const
 		{
-			if(empty()) return 0;
+			double size_pt = (empty() ? 0.0 : impl_->real_font->size());
 
-			return impl_->real_font->size();
+			if (fixed && (0.0 == size_pt))
+				return platform_abstraction::font_default_pt();
+
+			return size_pt;
 		}
 
 		bool font::bold() const
