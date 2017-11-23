@@ -366,7 +366,7 @@ namespace nana
 		if(font_family.empty())
 			font_family = '*';
 
-		std::string pat_str = font_family + '-' + std::to_string(size_pt ? size_pt : font_default_pt());
+		std::string pat_str = font_family + '-' + std::to_string(size_pt ? size_pt : platform_abstraction::font_default_pt());
 		auto pat = ::XftNameParse(pat_str.c_str());
 		XftResult res;
 		auto match_pat = ::XftFontMatch(disp, ::XDefaultScreen(disp), pat, &res);
