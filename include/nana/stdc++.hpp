@@ -12,6 +12,9 @@
  *	@brief Implement the lack support of standard library.
  */
 
+#ifndef NANA_STDCXX_INCLUDED
+#define NANA_STDCXX_INCLUDED
+
 #include "c++defines.hpp"
 
 //Implement workarounds for GCC/MinGW which version is below 4.8.2
@@ -154,3 +157,5 @@ namespace std
 	}
 }
 #endif
+
+#endif // NANA_STDCXX_INCLUDED
