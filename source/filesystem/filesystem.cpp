@@ -14,7 +14,13 @@
 #include <nana/filesystem/filesystem_ext.hpp>
 #include <vector>
 #include <sstream>
-#include <iomanip>	//put_time
+
+#include <nana/config.hpp>
+#ifdef _enable_std_put_time
+	#include <nana/stdc++.hpp>
+#else
+	#include <iomanip>
+#endif
 
 #if defined(NANA_WINDOWS)
     #include <windows.h>
@@ -97,7 +103,13 @@ namespace nana
 		std::string pretty_file_date(const fs::path& path) // todo: move to .cpp
 		{
 			try {
+#if NANA_USING_BOOST_FILESYSTEM
+				// The return type of boost::filesystem::last_write_time isn't
+				// the same as in nana and std implementations of this function
+				auto ftime = std::chrono::system_clock::from_time_t(fs::last_write_time(path));
+#else
 				auto ftime = fs::last_write_time(path);
+#endif
 
 				// crash: VS2015 will not read the time for some files (for example: C:/hiberfil.sys)
 				//   and will return file_time_type(-1) without throwing
