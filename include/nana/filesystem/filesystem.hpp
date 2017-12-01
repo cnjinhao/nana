@@ -53,6 +53,7 @@
 
 #undef  NANA_USING_BOOST_FILESYSTEM
 #define NANA_USING_BOOST_FILESYSTEM 1
+#   include <chrono>
 #   include <boost/filesystem.hpp>
 
 // add boost::filesystem into std::experimental::filesystem
@@ -60,6 +61,20 @@ namespace std {
 	namespace experimental {
 		namespace filesystem {
 			using namespace boost::filesystem;
+			using file_time_type = std::chrono::time_point<std::chrono::system_clock>;
+
+			enum class file_type {
+				none = boost::filesystem::file_type::status_unknown,
+				not_found = boost::filesystem::file_type::file_not_found,
+				regular = boost::filesystem::file_type::regular_file,
+				directory = boost::filesystem::file_type::directory_file,
+				symlink = boost::filesystem::file_type::symlink_file,
+				block = boost::filesystem::file_type::block_file,
+				character = boost::filesystem::file_type::character_file,
+				fifo = boost::filesystem::file_type::fifo_file,
+				socket = boost::filesystem::file_type::socket_file,
+				unknown = boost::filesystem::file_type::type_unknown,
+			};
 		} // filesystem
 	} // experimental
 } // std
