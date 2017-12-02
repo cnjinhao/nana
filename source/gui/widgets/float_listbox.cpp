@@ -14,6 +14,7 @@
 #include <nana/gui/widgets/scroll.hpp>
 
 #include <nana/gui/layout_utility.hpp>
+#include <nana/gui/screen.hpp>
 
 namespace nana
 {
@@ -198,16 +199,14 @@ namespace nana
 					return widget_;
 				}
 
-				void attach(widget* wd, nana::paint::graphics* graph)
+				void attach(widget& wd, nana::paint::graphics& graph)
 				{
-					if(wd)
-					{
-						widget_ = wd;
-						wd->events().mouse_wheel.connect_unignorable([this](const arg_wheel& arg){
-							scroll_items(arg.upwards);
-						});
-					}
-					if(graph) graph_ = graph;
+					widget_ = &wd;
+					wd.events().mouse_wheel.connect_unignorable([this](const arg_wheel& arg){
+						scroll_items(arg.upwards);
+					});
+
+					graph_ = &graph;
 				}
 
 				void detach()
@@ -219,9 +218,46 @@ namespace nana
 				{
 					if(module_)
 					{
-						std::size_t items = (module_->max_items <= module_->items.size() ? module_->max_items : module_->items.size());
-						std::size_t h = items * state_.renderer->item_pixels(*graph_);
-						widget_->size(size{ widget_->size().width, static_cast<unsigned>(h + 4) });
+						
+						auto const items = (module_->max_items <= module_->items.size() ? module_->max_items : module_->items.size());
+
+						rectangle list_r{
+							0, 0,
+							widget_->size().width,
+							static_cast<unsigned>(items * state_.renderer->item_pixels(*graph_)) + 4
+						};
+
+						//Test if the listbox excesses the screen
+
+						screen scr;
+						auto & disp = scr.from_window(*widget_);
+
+						auto disp_r = disp.area();
+
+						point pos;
+						API::calc_screen_point(*widget_, pos);
+						list_r.position(pos);
+
+						if (widget_->size().width >= disp_r.width)
+						{
+							pos.x = 0;
+							list_r.width = disp_r.width;
+						}
+						else if (list_r.right() > disp_r.right())
+							pos.x = disp_r.right() - static_cast<int>(list_r.width);
+
+						if (list_r.height >= disp_r.height)
+						{
+							pos.y = 0;
+							list_r.height = disp_r.height;
+						}
+						else if (list_r.bottom() > disp_r.bottom())
+							pos.y = disp_r.bottom() - static_cast<int>(list_r.height);
+
+						API::calc_window_point(API::get_owner_window(*widget_), pos);
+						list_r.position(pos);
+
+						widget_->move(list_r);
 					}
 				}
 
@@ -312,36 +348,37 @@ namespace nana
 
 				void _m_open_scrollbar(widget_reference wd, bool v)
 				{
-					if(v)
+					if (!v)
 					{
-						if(scrollbar_.empty() && module_)
-						{
-							scrollbar_.create(wd, rectangle(static_cast<int>(wd.size().width - 18), 2, 16, wd.size().height - 4));
-							scrollbar_.amount(module_->items.size());
-							scrollbar_.range(module_->max_items);
-							scrollbar_.value(state_.offset_y);
-
-							auto & events = scrollbar_.events();
-							events.mouse_wheel.connect([this](const arg_wheel& arg)
-							{
-								scroll_items(arg.upwards);
-							});
-
-							auto fn = [this](const arg_mouse& arg)
-							{
-								if (arg.is_left_button() && (scrollbar_.value() != state_.offset_y))
-								{
-									state_.offset_y = static_cast<unsigned>(scrollbar_.value());
-									draw();
-									API::update_window(*widget_);
-								}
-							};
-							events.mouse_move.connect(fn);
-							events.mouse_up.connect(fn);
-						}
-					}
-					else
 						scrollbar_.close();
+						return;
+					}
+
+					if(scrollbar_.empty() && module_)
+					{
+						scrollbar_.create(wd, rectangle(static_cast<int>(wd.size().width - 18), 2, 16, wd.size().height - 4));
+						scrollbar_.amount(module_->items.size());
+						scrollbar_.range(module_->max_items);
+						scrollbar_.value(state_.offset_y);
+
+						auto & events = scrollbar_.events();
+						events.mouse_wheel.connect([this](const arg_wheel& arg)
+						{
+							scroll_items(arg.upwards);
+						});
+
+						auto fn = [this](const arg_mouse& arg)
+						{
+							if (arg.is_left_button() && (scrollbar_.value() != state_.offset_y))
+							{
+								state_.offset_y = static_cast<unsigned>(scrollbar_.value());
+								draw();
+								API::update_window(*widget_);
+							}
+						};
+						events.mouse_move.connect(fn);
+						events.mouse_up.connect(fn);
+					}
 				}
 			private:
 				widget * widget_{nullptr};
@@ -393,7 +430,7 @@ namespace nana
 
 				void trigger::attached(widget_reference widget, graph_reference graph)
 				{
-					drawer_->attach(&widget, &graph);
+					drawer_->attach(widget, graph);
 				}
 
 				void trigger::detached()

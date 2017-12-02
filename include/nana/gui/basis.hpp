@@ -273,6 +273,7 @@ that return a corresponding nana::appearance with predefined values.
 	public:
 		virtual ~caret_interface() = default;
 
+		virtual bool activated() const = 0;
 		virtual void disable_throw() noexcept = 0;
 
 		virtual void effective_range(const rectangle& range) = 0;

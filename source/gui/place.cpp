@@ -58,7 +58,7 @@ namespace nana
 			{
 				div_start, div_end, splitter,
 				identifier, dock, fit, hfit, vfit, vert, grid, number, array, reparray,
-				weight, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom, undisplayed, invisible,
+				weight, width, height, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom, undisplayed, invisible,
 				collapse, parameters,
 				equal,
 				eof, error
@@ -235,15 +235,21 @@ namespace nana
 
 					idstr_.assign(idstart, sp_);
 
-					if ("weight" == idstr_ || "min" == idstr_ || "max" == idstr_)
+					if (    "weight" == idstr_ 
+					     || "min" == idstr_ 
+					     || "max" == idstr_
+					     || "width" == idstr_ 
+					     || "height" == idstr_
+						)
 					{
-						auto ch = idstr_[1];
+						auto c3 = idstr_[2], c1 =idstr_[0];
 						_m_attr_number_value();
-						switch (ch)
+						switch (c3)
 						{
-						case 'e': return token::weight;
-						case 'i': return token::min_px;
-						case 'a': return token::max_px;
+						case 'i': return c1=='w'? token::weight : token::height;
+						case 'n': return token::min_px;
+						case 'x': return token::max_px;
+						case 'd': return token::width;
 						}
 					}
 					else if ("dock" == idstr_)
@@ -742,6 +748,7 @@ namespace nana
 	{
 	public:
 		enum class kind{ arrange, vertical_arrange, grid, splitter, dock, dockpane};
+		using token = place_parts::tokenizer::token;
 
 		division(kind k, std::string&& n) noexcept
 			: kind_of_division(k),
@@ -1082,6 +1089,7 @@ namespace nana
 
 		::nana::rectangle field_area;
 		number_t weight;
+		token    weigth_type=token::weight;
 		number_t min_px, max_px;
 
 		place_parts::margin	margin;
@@ -2616,10 +2624,10 @@ namespace nana
 
 	auto place::implement::scan_div(place_parts::tokenizer& tknizer) -> std::unique_ptr<division>
 	{
-		typedef place_parts::tokenizer::token token;
+		using token = place_parts::tokenizer::token ;
 
 		std::unique_ptr<division> div;
-		token div_type = token::eof;
+		token div_type = token::eof , weight_type=token::weight;
 		auto fit = fit_policy::none;
 		place_parts::repeated_array fit_parameters;
 
@@ -2726,7 +2734,7 @@ namespace nana
 					}
 				}
 				break;
-			case token::weight: case token::min_px: case token::max_px:
+			case token::weight: case token::min_px: case token::max_px: case token::width: case token::height:
 				{
 					auto n = tknizer.number();
 					//If n is the type of real, convert it to integer.
@@ -2736,7 +2744,9 @@ namespace nana
 
 					switch (tk)
 					{
-					case token::weight: weight = n; break;
+					case token::weight: weight = n; weight_type = token::weight; break;  // we could detect errors here (redefinitions and duplicates)
+					case token::width : weight = n; weight_type = token::width ; break;
+					case token::height: weight = n; weight_type = token::height; break;
 					case token::min_px: min_px = n; break;
 					case token::max_px: max_px = n; break;
 					default: break;	//Useless
@@ -2805,10 +2815,16 @@ namespace nana
 			}
 		}
 
+		token unmatch = token::width;
 		switch (div_type)
 		{
-		case token::eof:
-		case token::vert:
+		case token::eof:  unmatch = token::height;  // "horitontal" div
+		case token::vert:                           // "vertical" div
+			for (auto& ch : children)
+				if (ch->weigth_type == unmatch)
+					throw std::invalid_argument("nana.place: unmatch vertical-heigth/horizontal-width betwen division '"
+						                         +name+"' and children division '" + ch->name);
+
 			div.reset(new div_arrange(token::vert == div_type, std::move(name), std::move(arrange)));
 			break;
 		case token::grid:
@@ -2837,6 +2853,7 @@ namespace nana
 		default:
 			throw std::invalid_argument("nana.place: invalid division type.");
 		}
+		div->weigth_type = weight_type;
 
 		//Requirements for min/max
 		//1, min and max != negative
