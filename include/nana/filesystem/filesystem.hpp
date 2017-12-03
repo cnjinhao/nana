@@ -75,6 +75,16 @@ namespace std {
 				socket = boost::filesystem::file_type::socket_file,
 				unknown = boost::filesystem::file_type::type_unknown,
 			};
+			/// enable directory_iterator range-based for statements
+			inline directory_iterator begin(directory_iterator iter) noexcept
+			{
+				return iter;
+			}
+
+			inline directory_iterator end(const directory_iterator&) noexcept
+			{
+				return {};
+			}
 		} // filesystem
 	} // experimental
 } // std
