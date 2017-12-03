@@ -435,20 +435,20 @@ namespace nana
 			nodes_.filesystem = tree_.insert("FS.ROOT", "Filesystem");
 			nodes_.filesystem.value(kind::filesystem);
 
-			std::vector<std::string> paths;
-			paths.emplace_back(fs_ext::path_user().native());
-			paths.emplace_back("/");
+			std::vector<std::pair<std::string, treebox::item_proxy>> paths;
+			paths.emplace_back(fs_ext::path_user().native(), nodes_.home);
+			paths.emplace_back("/", nodes_.filesystem);
 
 			fs::directory_iterator end;
 			for (auto & p : paths)
 			{
-				for (fs::directory_iterator i(p); i != end; ++i)
+				for (fs::directory_iterator i{p.first}; i != end; ++i)
 				{
 					auto name = i->path().filename().native();
 					if (!is_directory(i->status()) || (name.size() && name[0] == '.'))
 						continue;
 
-					item_proxy node = tree_.insert(nodes_.filesystem, name, name);
+					item_proxy node = tree_.insert(p.second, name, name);
 					if (false == node.empty())
 					{
 						node.value(kind::filesystem);
@@ -505,21 +505,18 @@ namespace nana
 
 				auto fpath = i->path().native();
 				auto fattr = fs::status(fpath);
+				auto ftype = static_cast<fs::file_type>(fattr.type());
 
 				item_fs m;
 				m.name = name;
 				m.directory = fs::is_directory(fattr);
 
-				switch(fattr.type())
-				{
-				case fs::file_type::not_found:
-				case fs::file_type::unknown:
-				case fs::file_type::directory:
+				if (ftype == fs::file_type::not_found ||
+					ftype == fs::file_type::unknown ||
+					ftype == fs::file_type::directory)
 					m.bytes = 0;
-					break;
-				default:
+				else
 					m.bytes = fs::file_size(fpath);
-				}
 
 				fs_ext::modified_file_time(fpath, m.modified_time);
 				
@@ -569,28 +566,63 @@ namespace nana
 			if(cat_path.size() && cat_path[cat_path.size() - 1] != '/')
 				cat_path += '/';
 
+		
 			auto beg = head.size();
 			while(true)
 			{
 				auto pos = path.find('/', beg);
 				auto folder = path.substr(beg, pos != path.npos ? pos - beg: path.npos);
-				if(folder.size() == 0) break;
+				
+				if(folder.empty())
+					break;
+				
 				(cat_path += folder) += '/';
 				(head += folder) += '/';
 				path_.caption(cat_path);
 				
-				for(fs::directory_iterator i(head); i != end; ++i)
+				try
 				{
-					if (is_directory(*i))
-						path_.childset(i->path().filename().native(), 0);
+					for(fs::directory_iterator i(head); i != end; ++i)
+					{
+						if (is_directory(*i))
+							path_.childset(i->path().filename().native(), 0);
+					}
+				}
+				catch(fs::filesystem_error&)
+				{
+					//The directory iterator may throw filesystem_error when
+					//the user doesn't have permission to access the directory.
+
+					//It just loads the sub-directories
+					//to the category path.
 				}
 
 				if(pos == path.npos)
 					break;
 				beg = pos + 1;
 			}
-			_m_load_path(path);
-			_m_list_fs();
+
+			try
+			{
+				_m_load_path(path);
+				_m_list_fs();
+			}
+			catch(fs::filesystem_error&)
+			{
+				file_container_.clear();
+
+				drawing dw{ls_file_};
+				dw.clear();
+				dw.draw([](paint::graphics& graph){
+					std::string text = "Permission denied to access the directory";
+					auto txt_sz = graph.text_extent_size(text);
+					auto sz = graph.size();
+
+					graph.string({static_cast<int>(sz.width - txt_sz.width) / 2, static_cast<int>(sz.height - txt_sz.height) / 2}, text, colors::dark_gray);
+				});
+
+				ls_file_.clear();
+			}
 		}
 
 		bool _m_filter_allowed(const std::string& name, bool is_dir, const std::string& filter, const std::vector<std::string>* extension) const
@@ -611,6 +643,8 @@ namespace nana
 
 		void _m_list_fs()
 		{
+			drawing{ls_file_}.clear();
+
 			auto filter = filter_.caption();
 			ls_file_.auto_draw(false);
 
@@ -655,13 +689,12 @@ namespace nana
 					return;
 				}
 
-				using file_type = fs::file_type;
-
 				fs::path fspath(fb_.addr_.filesystem + path);
 
-				auto fst = fs::status(fspath);
+				auto fattr = fs::status(fspath);
+				auto ftype = static_cast<fs::file_type>(fattr.type());
 
-				if(fst.type() != file_type::not_found && fst.type() != file_type::none)
+				if(ftype != fs::file_type::not_found && ftype != fs::file_type::none)
 				{
 					mb<<i18n("NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_EXISTING");
 					mb();
@@ -763,6 +796,7 @@ namespace nana
 						tar = addr_.filesystem + file;
 
 					auto fattr = fs::status(tar);
+					auto ftype = static_cast<fs::file_type>(fattr.type());
 
 					//Check if the selected name is a directory
 					auto is_dir = fs::is_directory(fattr);
@@ -771,6 +805,7 @@ namespace nana
 					{
 						//Add the extension, then check if it is a directory again.
 						fattr = fs::status(tar);
+						ftype = static_cast<fs::file_type>(fattr.type());
 						is_dir = fs::is_directory(fattr);
 					}
 					
@@ -783,7 +818,7 @@ namespace nana
 
 					if(io_read_)
 					{
-						if(fs::file_type::not_found == fattr.type())
+						if(fs::file_type::not_found == ftype)
 						{
 							msgbox mb(*this, caption());
 							mb.icon(msgbox::icon_information);
@@ -795,7 +830,7 @@ namespace nana
 					}
 					else
 					{
-						if(fs::file_type::not_found != fattr.type())
+						if(fs::file_type::not_found != ftype)
 						{
 							msgbox mb(*this, caption(), msgbox::yes_no);
 							mb.icon(msgbox::icon_question);
@@ -829,14 +864,28 @@ namespace nana
 					auto child = node.append(name, name, kind::filesystem);
 					if(!child.empty())
 					{
-						for(fs::directory_iterator u(i->path()); u != end; ++u)
+						//The try-catch can be eleminated by using
+						//directory_iterator( const std::filesystem::path& p, std::error_code& ec ) noexcept;
+						//in C++17
+						try
 						{
-							auto uname = i->path().filename().native();
-							if ((!is_directory(*i)) || (uname.size() && uname[0] == '.'))
-								continue;
+							for(fs::directory_iterator u(i->path()); u != end; ++u)
+							{
+								auto uname = u->path().filename().native();
+								if ((!is_directory(*u)) || (uname.size() && uname[0] == '.'))
+									continue;
 
-							child.append(uname, uname, kind::filesystem);
-							break;
+								child.append(uname, uname, kind::filesystem);
+								break;
+							}
+						}
+						catch(fs::filesystem_error&)
+						{
+							//The directory iterator may throw filesystem_error when
+							//the user doesn't have permission to access the directory.
+
+							//Catch the error without any process, because the loop is just
+							//to peak whether the directory(i->path) has a sub-directory.
 						}
 					}
 				}

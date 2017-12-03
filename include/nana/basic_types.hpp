@@ -312,7 +312,14 @@ namespace nana
 		/// @param lightness  in range of [0, 1]
 		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
 
-		color blend(const color& blending_color, double alpha) const;
+		/// Blends color
+		/**
+		 * Returns a color which is blended as this * (1 - fade_rate) + blending_color * fade_rate
+		 * @param blending_color Color to blend
+		 * @param fade_rate Blending rate for blending_color
+		 * @return a blended color
+		 */
+		color blend(const color& blending_color, double fade_rate) const;
 
 		/// Determines whether the color is completely transparent.
 		bool invisible() const;

@@ -204,6 +204,11 @@ namespace nana
 			{
 				return (visible_state::invisible != visibility_);
 			}
+
+			bool caret::activated() const
+			{
+				return (visible_state::displayed == visibility_);
+			}
 		//end class caret
 
 		//struct basic_window
@@ -329,24 +334,18 @@ namespace nana
 				return false;
 			}
 
-			const basic_window* get_child_caret(const basic_window* wd, bool this_is_a_child)
-			{
-				if (this_is_a_child && wd->annex.caret_ptr)
-					return wd;
-
-				for (auto child : wd->children)
-				{
-					auto caret_wd = get_child_caret(child, true);
-					if (caret_wd)
-						return caret_wd;
-				}
-
-				return nullptr;
-			}
-
 			const basic_window * basic_window::child_caret() const
 			{
-				return get_child_caret(this, false);
+				for (auto child : children) {
+					//Only return the child who has activated caret.
+					if (child->annex.caret_ptr && child->annex.caret_ptr->activated())
+						return child;
+
+					auto caret = child->child_caret();
+					if (caret)
+						return caret;
+				}
+				return nullptr;
 			}
 
 			bool basic_window::is_draw_through() const

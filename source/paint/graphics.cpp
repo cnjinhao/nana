@@ -240,12 +240,16 @@ namespace paint
 		graphics::graphics(graphics&& other)
 			: impl_(std::move(other.impl_))
 		{
+			other.impl_.reset(new implementation);
 		}
 
 		graphics& graphics::operator=(graphics&& other)
 		{
 			if (this != &other)
+			{
 				impl_ = std::move(other.impl_);
+				other.impl_.reset(new implementation);
+			}
 
 			return *this;
 		}
@@ -265,9 +269,9 @@ namespace paint
 			return (!impl_->handle);
 		}
 
-		graphics::operator const void *() const
+		graphics::operator bool() const noexcept
 		{
-			return impl_->handle;
+			return (impl_->handle != nullptr);
 		}
 
 		drawable_type graphics::handle() const
@@ -287,9 +291,15 @@ namespace paint
 			return (impl_->handle ? impl_->handle->context : nullptr);
 		}
 
+		void graphics::swap(graphics& other) noexcept
+		{
+			if (context() != other.context())
+				impl_.swap(other.impl_);
+		}
+
 		void graphics::make(const ::nana::size& sz)
 		{
-			if(impl_->handle == nullptr || impl_->size != sz)
+			if (impl_->handle == nullptr || impl_->size != sz)
 			{
 				if (sz.empty())
 				{
@@ -298,9 +308,10 @@ namespace paint
 				}
 
 				//The object will be delete while dwptr_ is performing a release.
-				drawable_type dw = new nana::detail::drawable_impl_type;
+				std::shared_ptr<nana::detail::drawable_impl_type> dw{ new nana::detail::drawable_impl_type, detail::drawable_deleter{} };
+
 				//Reuse the old font
-				if(impl_->platform_drawable)
+				if (impl_->platform_drawable)
 				{
 					drawable_type reuse = impl_->platform_drawable.get();
 					dw->font = reuse->font;
@@ -310,8 +321,13 @@ namespace paint
 					dw->font = impl_->font_shadow.impl_->real_font;
 
 #if defined(NANA_WINDOWS)
-				HDC hdc = ::GetDC(0);
+				HDC hdc = ::GetDC(nullptr);
 				HDC cdc = ::CreateCompatibleDC(hdc);
+				if (nullptr == cdc)
+				{
+					::ReleaseDC(nullptr, hdc);
+					throw std::bad_alloc{};
+				}
 
 				BITMAPINFO bmi;
 				bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -324,34 +340,60 @@ namespace paint
 
 				HBITMAP bmp = ::CreateDIBSection(cdc, &bmi, DIB_RGB_COLORS, reinterpret_cast<void**>(&(dw->pixbuf_ptr)), 0, 0);
 
-				if(bmp)
-				{
-					::DeleteObject((HBITMAP)::SelectObject(cdc, bmp));
-					::DeleteObject(::SelectObject(cdc, dw->font->native_handle()));
-
-					dw->context = cdc;
-					dw->pixmap = bmp;
-					::SetBkMode(cdc, TRANSPARENT);
-				}
-				else
+				if (nullptr == bmp)
 				{
 					::DeleteDC(cdc);
-					delete dw;
-					dw = nullptr;
-					release();
+					::ReleaseDC(nullptr, hdc);
+					throw std::bad_alloc{};
 				}
+
+				::DeleteObject((HBITMAP)::SelectObject(cdc, bmp));
+				::DeleteObject(::SelectObject(cdc, dw->font->native_handle()));
+
+				dw->context = cdc;
+				dw->pixmap = bmp;
+				::SetBkMode(cdc, TRANSPARENT);
 
 				::ReleaseDC(0, hdc);
 #elif defined(NANA_X11)
 				auto & spec = nana::detail::platform_spec::instance();
-				Display* disp = spec.open_display();
-				int screen = DefaultScreen(disp);
-				Window root = ::XRootWindow(disp, screen);
-				dw->pixmap = ::XCreatePixmap(disp, root, sz.width, sz.height, DefaultDepth(disp, screen));
-				dw->context = ::XCreateGC(disp, dw->pixmap, 0, 0);
-	#if defined(NANA_USE_XFT)
-				dw->xftdraw = ::XftDrawCreate(disp, dw->pixmap, spec.screen_visual(), spec.colormap());
-	#endif
+				{
+					nana::detail::platform_scope_guard psg;
+
+					spec.set_error_handler();
+
+					Display* disp = spec.open_display();
+					int screen = DefaultScreen(disp);
+					Window root = ::XRootWindow(disp, screen);
+					auto pixmap = ::XCreatePixmap(disp, root, sz.width, sz.height, DefaultDepth(disp, screen));
+					if(spec.error_code)
+					{
+						spec.rev_error_handler();
+						throw std::bad_alloc();
+					}
+					auto context = ::XCreateGC(disp, pixmap, 0, 0);
+					if (spec.error_code)
+					{
+						::XFreePixmap(disp, pixmap);
+						spec.rev_error_handler();
+						throw std::bad_alloc();
+					}
+#	if defined(NANA_USE_XFT)
+					auto xftdraw = ::XftDrawCreate(disp, pixmap, spec.screen_visual(), spec.colormap());
+					if (spec.error_code)
+					{
+						::XFreeGC(disp, context);
+						::XFreePixmap(disp, pixmap);
+
+						spec.rev_error_handler();
+						throw std::bad_alloc();
+					}
+
+					dw->xftdraw = xftdraw;
+#	endif
+					dw->pixmap = pixmap;
+					dw->context = context;
+				}
 #endif
 				if(dw)
 				{
@@ -362,8 +404,8 @@ namespace paint
 #else
 					dw->update_text_color();
 #endif
-					impl_->platform_drawable.reset(dw, detail::drawable_deleter{});
-					impl_->handle = dw;
+					impl_->platform_drawable = dw;
+					impl_->handle = dw.get();
 					impl_->size = sz;
 
 					impl_->handle->string.tab_pixels = detail::raw_text_extent_size(impl_->handle, L"\t", 1).width;

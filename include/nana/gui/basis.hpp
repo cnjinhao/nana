@@ -91,6 +91,8 @@ namespace nana
 			substitute = 0x1A,	//Ctrl+Z
 			escape = 0x1B,
 			space = 0x20,	//Space
+			del = 0x7F,		//Delete
+			os_del = del,	//Deprecated
 
 			//The following names are intuitive name of ASCII control codes
 			select_all = start_of_headline,
@@ -106,8 +108,8 @@ namespace nana
 			os_ctrl = 0x11,
 			os_pageup = 0x21, os_pagedown,
 			os_arrow_left = 0x25, os_arrow_up, os_arrow_right, os_arrow_down,
-			os_insert = 0x2D, os_del ,
-            os_end = 0x23   , os_home //Pos 1
+			os_insert = 0x2D,
+            os_end = 0x23, os_home //Pos 1
 		};
 	};
 
@@ -271,6 +273,7 @@ that return a corresponding nana::appearance with predefined values.
 	public:
 		virtual ~caret_interface() = default;
 
+		virtual bool activated() const = 0;
 		virtual void disable_throw() noexcept = 0;
 
 		virtual void effective_range(const rectangle& range) = 0;

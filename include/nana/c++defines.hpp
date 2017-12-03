@@ -173,6 +173,7 @@
 
 //Assume the std::thread is not implement on MinGW
 //But some toolchains may implement std::thread.
+// it seems that MinGW 6.3 and 7.1 have std::thread
 #ifdef NANA_MINGW
 #	ifndef STD_THREAD_NOT_SUPPORTED
 #		define STD_THREAD_NOT_SUPPORTED
@@ -219,6 +220,9 @@
 #ifdef __has_include
 #  if __has_include(<filesystem>)
 #    undef STD_FILESYSTEM_NOT_SUPPORTED
+#  endif
+#  if __has_include(<mutex>)
+#    undef STD_THREAD_NOT_SUPPORTED
 #  endif
 #endif
 

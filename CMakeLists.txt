@@ -1,10 +1,12 @@
 ﻿# CMake configuration for Nana
 # Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributors:
-#   Jinhao	
+#   Jinhao
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
-#   Ariel Vina-Rodriguez (qPCR4vir) 
+#   Ariel Vina-Rodriguez (qPCR4vir)
+#	Pavel O. - fix compilation with boost::filesystem (#281)
+#   Frostbane - Add option for compiling a shared library (#263,#265)
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
 # In the future CMake could be the prefered, and maybe will be used to generate the others and the central nana repo
@@ -30,9 +32,11 @@ option(NANA_CMAKE_LIBPNG_FROM_OS "Use libpng from operating system." ON)
 option(NANA_CMAKE_ENABLE_JPEG "Enable the use of JPEG" OFF)
 option(NANA_CMAKE_LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
 option(NANA_CMAKE_ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
+option(NANA_CMAKE_SHARED_LIB "Compile nana as a shared library." OFF)
 option(NANA_CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." ON)
 option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." OFF)
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
+option(NANA_CLION "Activate some CLion specific workarounds" OFF)
 
 # The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
 #              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
@@ -45,7 +49,7 @@ option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
 # By default Nana will try to use the STD. If STD is not available and NANA_CMAKE_FIND_BOOST_FILESYSTEM
 # is set to ON nana will try to use boost if available. Nana own implementation will be use if none of
 # the previus were selected or available.
-# You can change that default if you change one of the following 
+# You can change that default if you change one of the following
 # (please don't define more than one of the _XX_FORCE options):
 option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" OFF)
 option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
@@ -62,11 +66,12 @@ if(POLICY CMP0004)    # ignore leading space
   cmake_policy(SET CMP0004 OLD)
 endif()
 
+set(CMAKE_DEBUG_POSTFIX "_d")
+
 ########### OS
 
 if(WIN32)
     add_definitions(-DWIN32)
-    set(CMAKE_DEBUG_POSTFIX "_d")
     #Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
         option(MSVC_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
@@ -96,7 +101,23 @@ if(WIN32)
             add_definitions(-DNANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
         endif(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
     endif(MINGW)
+
+    if (MSVC)
+        set (DLLTOOL OFF)
+    else ()
+        # mingw: If dlltool is found the def and lib file will be created
+        message (STATUS "Detecting dlltool")
+        find_program (DLLTOOL dlltool)
+        if (DLLTOOL)
+            message (STATUS "Found dlltool: ${DLLTOOL}")
+        else ()
+            message (WARNING "dlltool not found. Skipping import library generation.")
+        endif (DLLTOOL)
+    endif (MSVC)
+
 endif(WIN32)
+
+
 
 if(APPLE)
     add_definitions(-DAPPLE)
@@ -105,7 +126,7 @@ if(APPLE)
     set(ENABLE_AUDIO OFF)
 elseif(UNIX)
     add_definitions(-Dlinux)
-	message("added -D linux")
+    message("added -D linux")
 endif(APPLE)
 
 if(UNIX)
@@ -121,35 +142,47 @@ endif(UNIX)
 ########### Compilers
 #
 # Using gcc: gcc 4.8 don't support C++14 and make_unique. You may want to update at least to 4.9.
-# In Windows, the gcc which come with CLion was 4.8 from MinGW. You may want to install MinGW-w64 from the
-# TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
 # gcc 5.3 and 5.4 include filesytem, but you need to add the link flag: -lstdc++fs
+#
+# In Windows, the gcc which come with CLion was 4.8 from MinGW.
+# CLion was updated to MinGW with gcc 6.3 ? Allways check this in File/Settings.../toolchains
+# You could install MinGW-w64 from the TDM-GCC Compiler Suite for Windows which will update you to gcc 5.1.
+# It is posible to follow https://computingabdn.com/softech/mingw-howto-install-gcc-for-windows/
+# and install MinGW with gcc 7.1 with has STD_THREADS and fs, from: https://sourceforge.net/projects/mingw-w64/files/
+#
 #
 # see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")    # Clang || GNU
 
     if  ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -g")       # Clang
-	
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Wall -g")       # Clang
+
     else ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall -g")       # GNU 
-          
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14  -Wall -g")       # GNU
+
     endif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 # enable static linkage     # GNU || CLang not MinGW
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
-    # set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
-    list(APPEND NANA_LINKS -static-libgcc -static-libstdc++ -pthread)
-    # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
+
+    if(NANA_CMAKE_SHARED_LIB)
+        list(APPEND NANA_LINKS -lgcc -lstdc++ -pthread)
+    else()
+        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
+        # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
+    endif(NANA_CMAKE_SHARED_LIB)
+
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-	                                                                     # IS_GNUCXX < 5.3
+                                                                         # IS_GNUCXX < 5.3
     else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-       # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
-       list(APPEND NANA_LINKS -lstdc++fs)
+
+        # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
+        list(APPEND NANA_LINKS -lstdc++fs)
+
     endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-    
+
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
 
 
@@ -163,14 +196,16 @@ endif ()
 
 # Find PNG
 if(NANA_CMAKE_ENABLE_PNG)
-    add_definitions(-DNANA_ENABLE_PNG)
     if(NANA_CMAKE_LIBPNG_FROM_OS)
         find_package(PNG)
         if (PNG_FOUND)
             include_directories( ${PNG_INCLUDE_DIRS})
             list(APPEND NANA_LINKS ${PNG_LIBRARIES})
-            add_definitions(-DUSE_LIBPNG_FROM_OS)
+            add_definitions("-DNANA_ENABLE_PNG"
+                            "-DUSE_LIBPNG_FROM_OS")
         endif(PNG_FOUND)
+    else()
+        add_definitions(-DNANA_ENABLE_PNG)
     endif(NANA_CMAKE_LIBPNG_FROM_OS)
 endif(NANA_CMAKE_ENABLE_PNG)
 
@@ -182,8 +217,11 @@ if(NANA_CMAKE_ENABLE_JPEG)
         if (JPEG_FOUND)
             include_directories( ${JPEG_INCLUDE_DIR})
             list(APPEND NANA_LINKS ${JPEG_LIBRARY})
-            add_definitions(-DUSE_LIBJPEG_FROM_OS)
+            add_definitions("-DNANA_ENABLE_JPEG"
+                            "-DUSE_LIBJPEG_FROM_OS")
         endif(JPEG_FOUND)
+    else()
+        add_definitions(-DNANA_ENABLE_JPEG)
     endif(NANA_CMAKE_LIBJPEG_FROM_OS)
 endif(NANA_CMAKE_ENABLE_JPEG)
 
@@ -208,7 +246,7 @@ elseif (NANA_CMAKE_STD_FILESYSTEM_FORCE)
     add_definitions(-DSTD_FILESYSTEM_FORCE)
 elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     if (NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-        add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
+        add_definitions(-DBOOST_FILESYSTEM_FORCE)
     endif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     # https://cmake.org/cmake/help/git-master/module/FindBoost.html
     # Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied,
@@ -216,7 +254,7 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     # If using Boost::thread, then Thread::Thread will also be added automatically.
     find_package(Boost COMPONENTS filesystem)
     if (Boost_FOUND)
-        add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
+        add_definitions(-DBOOST_FILESYSTEM_AVAILABLE)
         include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
         list(APPEND NANA_LINKS ${Boost_LIBRARIES})    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
     endif (Boost_FOUND)
@@ -232,8 +270,8 @@ if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     add_definitions(-DVERBOSE_PREPROCESSOR)
 endif(NANA_CMAKE_VERBOSE_PREPROCESSOR)
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
-	 add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
-	 enable_testing ()
+     add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
+     enable_testing ()
 endif(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 
 
@@ -266,7 +304,16 @@ foreach(subdir ${NANA_SOURCE_SUBDIRS})
         # message("Subir:  ${subdir}") # message("Files:  ${sources}")
 endforeach(subdir ${NANA_SOURCE_SUBDIRS})
 
-add_library(${PROJECT_NAME} ${sources} )
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    add_definitions(-fmax-errors=3)
+endif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+
+if(NANA_CMAKE_SHARED_LIB)
+    add_library(${PROJECT_NAME} SHARED ${sources} )
+else()
+    add_library(${PROJECT_NAME} STATIC ${sources} )
+endif(NANA_CMAKE_SHARED_LIB)
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} ${NANA_LINKS}) 
 
@@ -275,30 +322,76 @@ target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
 # Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
 # and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
+# unfortunatelly install() is still ignored by CLion:
+# https://intellij-support.jetbrains.com/hc/en-us/community/posts/205822949-CMake-install-isn-t-supported-
 install(TARGETS ${PROJECT_NAME}   ARCHIVE DESTINATION lib
-                                  LIBRARY DESTINATION lib)
-message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
-# Install the include directories too.
-if(NANA_CMAKE_INSTALL_INCLUDES)
-	install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include )
-    message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
-endif(NANA_CMAKE_INSTALL_INCLUDES)
+                                  LIBRARY DESTINATION lib
+                                  RUNTIME DESTINATION bin)
+
+# http://stackoverflow.com/questions/33788729/how-do-i-get-clion-to-run-an-install-target
+if(NANA_CLION) # the Clion IDE don't reconize the install target
+    add_custom_target(install_${PROJECT_NAME}
+            $(MAKE) install
+            DEPENDS ${PROJECT_NAME}
+            COMMENT "Installing ${PROJECT_NAME}")
+endif()
 
 set_property( TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14 )
 
+if (NANA_CMAKE_SHARED_LIB)
+    if (WIN32)
+        set (CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+        if (DLLTOOL)
+            #message(STATUS "CMAKE_CURRENT_BINARY_DIR = ${CMAKE_CURRENT_BINARY_DIR}")
+
+            #generate the lib and def files needed by msvc
+            set_target_properties (${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}"
+                                                   ARCHIVE_OUTPUT_NAME    "${PROJECT_NAME}"
+                                                   LINK_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--output-def=${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def")
+
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                               WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                               COMMAND echo "       Generating import library"
+                               COMMAND "${DLLTOOL}" --dllname    "lib${PROJECT_NAME}.dll"
+                                                    --input-def  "lib${PROJECT_NAME}.def"
+                                                    --output-lib "lib${PROJECT_NAME}.lib")
+
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def"
+                          "${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.lib" DESTINATION lib)
+        endif ()
+
+    endif (WIN32)
+endif (NANA_CMAKE_SHARED_LIB)
+
+message ("")
+
+message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
+# Install the include directories too.
+if(NANA_CMAKE_INSTALL_INCLUDES)
+    install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include )
+    message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
+endif(NANA_CMAKE_INSTALL_INCLUDES)
+
+
 # Just for information:
-message ( "CMAKE_CXX_COMPILER_ID   = "  ${CMAKE_CXX_COMPILER_ID})
-message ( "COMPILER_IS_CLANG       = "  ${COMPILER_IS_CLANG})
-message ( "CMAKE_COMPILER_IS_GNUCXX= "  ${CMAKE_COMPILER_IS_GNUCXX})
-message ( "CMAKE_CXX_FLAGS         = "  ${CMAKE_CXX_FLAGS})
-message ( "CMAKE_EXE_LINKER_FLAGS  = "  ${CMAKE_EXE_LINKER_FLAGS})
-message ( "CMAKE_STATIC_LINKER_FLAGS="  ${CMAKE_STATIC_LINKER_FLAGS})
-message ( "NANA_LINKS              = "  ${NANA_LINKS})
-message ( "DESTDIR                 = "  ${DESTDIR})
-message ( "CMAKE_INSTALL_PREFIX    = "  ${CMAKE_INSTALL_PREFIX})
-message ( "NANA_INCLUDE_DIR        = "  ${NANA_INCLUDE_DIR})
-message ( "CMAKE_CURRENT_SOURCE_DIR= "  ${CMAKE_CURRENT_SOURCE_DIR})
-message ( "NANA_CMAKE_ENABLE_AUDIO = "  ${NANA_CMAKE_ENABLE_AUDIO})
+message ("")
+message ( "CMAKE_CXX_COMPILER_ID     = "  ${CMAKE_CXX_COMPILER_ID})
+message ( "COMPILER_IS_CLANG         = "  ${COMPILER_IS_CLANG})
+message ( "CMAKE_COMPILER_IS_GNUCXX  = "  ${CMAKE_COMPILER_IS_GNUCXX})
+message ( "CMAKE_CXX_FLAGS           = "  ${CMAKE_CXX_FLAGS})
+message ( "CMAKE_EXE_LINKER_FLAGS    = "  ${CMAKE_EXE_LINKER_FLAGS})
+message ( "CMAKE_STATIC_LINKER_FLAGS = "  ${CMAKE_STATIC_LINKER_FLAGS})
+message ( "NANA_LINKS                = "  ${NANA_LINKS})
+message ( "DESTDIR                   = "  ${DESTDIR})
+message ( "CMAKE_INSTALL_PREFIX      = "  ${CMAKE_INSTALL_PREFIX})
+message ( "NANA_INCLUDE_DIR          = "  ${NANA_INCLUDE_DIR})
+message ( "CMAKE_CURRENT_SOURCE_DIR  = "  ${CMAKE_CURRENT_SOURCE_DIR})
+message ( "NANA_CMAKE_ENABLE_AUDIO   = "  ${NANA_CMAKE_ENABLE_AUDIO})
+message ( "NANA_CMAKE_SHARED_LIB     = "  ${NANA_CMAKE_SHARED_LIB})
+message ( "NANA_CLION              = "  ${NANA_CLION})
+message ( "CMAKE_MAKE_PROGRAM      = "  ${CMAKE_MAKE_PROGRAM})
+
 message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = "  ${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT})

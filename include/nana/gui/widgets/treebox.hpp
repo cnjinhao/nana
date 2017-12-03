@@ -4,10 +4,10 @@
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	(See accompanying file LICENSE or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *   @file:   nana/gui/widgets/treebox.hpp
+ *   @file   nana/gui/widgets/treebox.hpp
  *	 @brief
  *		The treebox organizes the nodes by a key string. 
  *		The treebox would have a vertical scrollbar if there are too many nodes
@@ -344,7 +344,7 @@ namespace nana
 	}//end namespace drawerbase
 
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
-    /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
+    /// See also in [documentation](http://nanapro.org/en-us/documentation/widgets/treebox.htm)
     class treebox
 		:public widget_object < category::widget_tag, drawerbase::treebox::trigger, drawerbase::treebox::treebox_events>
 	{
@@ -372,7 +372,7 @@ namespace nana
 		/// \brief  The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param r  the size and position of the widget in its parent window coordinate.
-		/// @param visible  specifying the visible after creating.
+		/// @param visible  specifying if visible after creating.
 		treebox(window, const nana::rectangle& = rectangle(), bool visible = true);
 
 		template<typename ItemRenderer>
@@ -397,18 +397,18 @@ namespace nana
         ///
         /// The treebox automatically redraws after certain operations, but, 
         /// under some circumstances, it is good to disable the automatic drawing mode, 
-        /// for example, before adding nodes in a loop, disable the mode to avoiding 
+        /// for example, before adding nodes in a loop, disable the mode avoiding 
         /// frequent and useless refresh for better performance, and then, after 
         /// the operations, enable the automatic redraw mode again.
-		/// @param bool  whether to enable.
-		void auto_draw(bool);
+		/// @param enable bool  whether to enable.
+		void auto_draw(bool enable);
 
 		/// \brief  Enable the checkboxs for each item of the widget.
-		/// @param bool  indicates whether to show or hide the checkboxs.
+		/// @param enable bool  indicates whether to show or hide the checkboxs.
 		treebox & checkable(bool enable);
 
 		
-		bool checkable() const; ///< Determinte whether the checkboxs are enabled.
+		bool checkable() const; ///< Are the checkboxs are enabled?
 
 		/// Clears the contents
 		void clear();
@@ -424,26 +424,30 @@ namespace nana
 
 		void icon_erase(const ::std::string& id);
 
-		item_proxy find(const ::std::string& keypath);  ///< Find an item though a specified keypath.
+		item_proxy find(const ::std::string& keypath);  ///< Find an item through a specified keypath.
 
-        /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
+        /// Inserts a new node to treebox, but if the keypath exists change and returns the existing node.
 		item_proxy insert(const ::std::string& path_key,   ///< specifies the node hierarchy
                            ::std::string title      ///< used for displaying
                            ); 
 
-        /// Inserts a new node to treebox, but if the keypath exists returns the existing node.
+        /// Inserts a new node to treebox, but if the keypath exists change and returns the existing node.
 		item_proxy insert( item_proxy pos,             ///< the parent item node
                            const ::std::string& key,    ///< specifies the new node
                            ::std::string title   ///< title used for displaying in the new node.
                            );
-		item_proxy erase(item_proxy i); ///< Removes the node at pos and return the Item proxy following the removed node
+
+		item_proxy erase(item_proxy i); ///< Removes the node at i and return the Item proxy following the removed node
 
 		void erase(const ::std::string& keypath); ///< Removes the node by the key path. 
 
 		::std::string make_key_path(item_proxy i, const ::std::string& splitter) const;///<returns the key path
+
 		item_proxy selected() const; ///< returns the selected node
+
 	};//end class treebox
 }//end namespace nana
+
 #include <nana/pop_ignore_diagnostic>
 
 #endif

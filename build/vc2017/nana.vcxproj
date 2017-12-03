@@ -101,6 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -113,6 +114,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,6 +129,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -143,6 +146,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -231,6 +235,73 @@
     <ClCompile Include="..\..\source\system\timepiece.cpp" />
     <ClCompile Include="..\..\source\threads\pool.cpp" />
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\nana\any.hpp" />
+    <ClInclude Include="..\..\include\nana\basic_types.hpp" />
+    <ClInclude Include="..\..\include\nana\c++defines.hpp" />
+    <ClInclude Include="..\..\include\nana\charset.hpp" />
+    <ClInclude Include="..\..\include\nana\concepts.hpp" />
+    <ClInclude Include="..\..\include\nana\config.hpp" />
+    <ClInclude Include="..\..\include\nana\datetime.hpp" />
+    <ClInclude Include="..\..\include\nana\deploy.hpp" />
+    <ClInclude Include="..\..\include\nana\fwd.hpp" />
+    <ClInclude Include="..\..\include\nana\gui.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\animation.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\basis.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\dragger.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\drawing.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\effects.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\element.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\filebox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\layout_utility.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\msgbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\notifier.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\place.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\programming_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\screen.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\state_cursor.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\timer.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\tooltip.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\button.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\categorize.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\checkbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\combox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\date_chooser.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\float_listbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\form.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\frame.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\group.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\label.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\listbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\menu.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\menubar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\panel.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\picture.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\progress.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\scroll.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\slider.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\spinbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\tabbar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\textbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\toolbar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\treebox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\widget.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\wvl.hpp" />
+    <ClInclude Include="..\..\include\nana\internationalization.hpp" />
+    <ClInclude Include="..\..\include\nana\key_type.hpp" />
+    <ClInclude Include="..\..\include\nana\optional.hpp" />
+    <ClInclude Include="..\..\include\nana\stdc++.hpp" />
+    <ClInclude Include="..\..\include\nana\std_condition_variable.hpp" />
+    <ClInclude Include="..\..\include\nana\std_mutex.hpp" />
+    <ClInclude Include="..\..\include\nana\std_thread.hpp" />
+    <ClInclude Include="..\..\include\nana\traits.hpp" />
+    <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
+    <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\include\nana\pop_ignore_diagnostic" />
+    <None Include="..\..\include\nana\push_ignore_diagnostic" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
