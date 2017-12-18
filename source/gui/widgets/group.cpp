@@ -239,7 +239,7 @@ namespace nana{
 		_m_init();
 	}
 
-	auto group::_m_caption() const throw() -> native_string_type
+	auto group::_m_caption() const noexcept -> native_string_type
 	{
 		return impl_->caption.caption_native();
 	}

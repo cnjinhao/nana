@@ -63,8 +63,8 @@ namespace nana{
 
 		group& enable_format_caption(bool format);
 
-		group& collocate() throw();
-		group& div(const char* div_str) throw();
+		group& collocate() noexcept;
+		group& div(const char* div_str) noexcept;
 		field_reference operator[](const char* field);
 		
 		template<typename Widget, typename ...Args>
@@ -78,7 +78,7 @@ namespace nana{
 		void _m_add_child(const char* field, widget*);
 		void _m_init();
 		void _m_complete_creation() override;
-		native_string_type _m_caption() const throw() override;
+		native_string_type _m_caption() const noexcept override;
 		void _m_caption(native_string_type&&) override;
 	private:
 		std::unique_ptr<implement> impl_;

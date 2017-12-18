@@ -1037,7 +1037,7 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		auto combox::_m_caption() const throw() -> native_string_type
+		auto combox::_m_caption() const noexcept -> native_string_type
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();

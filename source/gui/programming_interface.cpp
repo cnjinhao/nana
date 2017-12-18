@@ -242,7 +242,7 @@ namespace API
 			}
 		}
 
-		::nana::detail::native_string_type window_caption(window wd) throw()
+		::nana::detail::native_string_type window_caption(window wd) noexcept
 		{
 			auto const iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard isg;

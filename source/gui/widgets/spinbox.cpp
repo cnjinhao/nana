@@ -764,7 +764,7 @@ namespace nana
 		modifier(to_utf8(prefix), to_utf8(suffix));
 	}
 
-	auto spinbox::_m_caption() const throw() -> native_string_type
+	auto spinbox::_m_caption() const noexcept -> native_string_type
 	{
 		internal_scope_guard lock;
 		auto editor = get_drawer_trigger().impl()->editor();

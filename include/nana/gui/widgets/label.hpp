@@ -62,12 +62,12 @@ namespace nana
 		label(window parent, const char* text, bool visible = true) :label(parent, std::string(text),visible) {};
 		label(window, const rectangle& = {}, bool visible = true);
 		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
-		bool transparent() const throw();
+		bool transparent() const noexcept;
 		label& format(bool);		///< Switches the format mode of the widget.
 		label& add_format_listener(std::function<void(command, const std::string&)>);
 
 		/// as same as the HTML "for" attribute of a label
-		label& click_for(window associated_window) throw();
+		label& click_for(window associated_window) noexcept;
 
 		/// Returns the size of the text. If *allowed_width_in_pixel* is not zero, returns a 
 		/// "corrected" size that changes lines to fit the text into the specified width

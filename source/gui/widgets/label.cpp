@@ -825,7 +825,7 @@ namespace nana
 			return *this;
 		}
 
-		bool label::transparent() const throw()
+		bool label::transparent() const noexcept
 		{
 			return API::is_transparent_background(*this);
 		}
@@ -849,7 +849,7 @@ namespace nana
 			return *this;
 		}
 
-		label& label::click_for(window associated_window) throw()
+		label& label::click_for(window associated_window) noexcept
 		{
 			get_drawer_trigger().impl()->for_associated_wd = associated_window;
 			return *this;

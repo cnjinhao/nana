@@ -1533,7 +1533,7 @@ namespace nana
 						delete model_;
 					}
 
-					model* driver::get_model() const throw()
+					model* driver::get_model() const noexcept
 					{
 						return model_;
 					}

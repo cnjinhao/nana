@@ -80,7 +80,7 @@ namespace API
 		void set_measurer(window, ::nana::dev::widget_content_measurer_interface*);
 
 		void attach_drawer(widget&, drawer_trigger&);
-		::nana::detail::native_string_type window_caption(window) throw();
+		::nana::detail::native_string_type window_caption(window) noexcept;
 		void window_caption(window, ::nana::detail::native_string_type);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
