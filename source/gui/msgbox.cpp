@@ -1294,8 +1294,10 @@ namespace nana
         min_width_entry_field_pixels_ = pixels;
 	}
 
+#ifndef _nana_cxx_folding_expression
 	void inputbox::_m_fetch_args(std::vector<abstract_content*>&)
 	{}
+#endif
 
 	bool inputbox::_m_open(std::vector<abstract_content*>& contents, bool modal)
 	{
