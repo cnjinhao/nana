@@ -203,6 +203,7 @@
 #if (defined(_MSC_VER) && (_MSC_VER >= 1912) && defined(_MSVC_LANG) && _MSVC_LANG>= 201703)
 #	define _nana_cxx_constexpr_if
 #	define _nana_cxx_folding_expression
+#	define _nana_cxx_nested_namespace_definition
 #endif
 
 

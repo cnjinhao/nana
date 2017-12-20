@@ -23,6 +23,7 @@
 
 #include "widget.hpp"
 #include "detail/inline_widget.hpp"
+#include "detail/widget_iterator.hpp"
 #include <nana/pat/abstract_factory.hpp>
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
@@ -802,7 +803,8 @@ namespace nana
 			/// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
 			/// item_proxy self, it references and iterators are not invalidated by sort()
 			class item_proxy
-				: public std::iterator<std::input_iterator_tag, item_proxy>
+				//: public std::iterator<std::input_iterator_tag, item_proxy>	//deprecated
+				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
 				item_proxy(essence*, const index_pair& = index_pair{npos, npos});
@@ -976,7 +978,8 @@ namespace nana
 			};
 
 			class cat_proxy
-				: public std::iterator < std::input_iterator_tag, cat_proxy >
+				//: public std::iterator<std::input_iterator_tag, cat_proxy>	//deprecated
+				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, cat_proxy>
 			{
 			public:
 				using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
