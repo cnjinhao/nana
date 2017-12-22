@@ -461,7 +461,7 @@ namespace API
 	 * @return if optional has a value, the first size indicates the content extent, the second size indicates the size of
 	 * widget by the content extent. 
 	 */
-	optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
+	std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 }//end namespace API
 
 }//end namespace nana

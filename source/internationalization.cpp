@@ -414,45 +414,47 @@ namespace nana
 		}
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>&) const
+#ifndef _nana_cxx_folding_expression
+	void internationalization::_m_fetch_args(std::vector<std::string>&)
 	{}
+#endif
 	
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, const char* arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const char* arg)
 	{
 		v.emplace_back(arg);
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, const std::string& arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const std::string& arg)
 	{
 		v.emplace_back(arg);
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::string& arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::string& arg)
 	{
 		v.emplace_back(arg);
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::string&& arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::string&& arg)
 	{
 		v.emplace_back(std::move(arg));
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, const wchar_t* arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const wchar_t* arg)
 	{
 		v.emplace_back(to_utf8(arg));
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, const std::wstring& arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, const std::wstring& arg)
 	{
 		v.emplace_back(to_utf8(arg));
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::wstring& arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::wstring& arg)
 	{
 		v.emplace_back(to_utf8(arg));
 	}
 
-	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::wstring&& arg) const
+	void internationalization::_m_fetch_args(std::vector<std::string>& v, std::wstring&& arg)
 	{
 		v.emplace_back(to_utf8(arg));
 	}

@@ -15,8 +15,11 @@
 #ifndef NANA_STD_OPTIONAL_HEADER_INCLUDED
 #define NANA_STD_OPTIONAL_HEADER_INCLUDED
 
-#include <stdexcept>
 #include <nana/c++defines.hpp>
+
+#ifndef _nana_std_optional
+#include <stdexcept>
+
 namespace nana
 {
 	namespace detail
@@ -361,4 +364,9 @@ namespace nana
 	};
 }
 
+namespace std
+{
+	using nana::optional;
+}
+#endif	//_nana_std_optional
 #endif

@@ -1450,7 +1450,7 @@ namespace API
 		restrict::wd_manager().set_safe_place(reinterpret_cast<basic_window*>(wd), std::move(fn));
 	}
 
-	optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
+	std::optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;

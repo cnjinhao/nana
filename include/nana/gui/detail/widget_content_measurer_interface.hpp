@@ -14,7 +14,11 @@
 #define NANA_WIDGET_CONTENT_MEASURER_INTERFACE_HEADER_INCLUDED
 
 #include <nana/basic_types.hpp>
-#include <nana/optional.hpp>
+#ifdef _nana_std_optional
+#	include <optional>
+#else
+#	include <nana/optional.hpp>
+#endif
 #include <nana/paint/graphics.hpp>
 
 namespace nana
@@ -35,7 +39,7 @@ namespace nana
 			 * @param limit_width True if limits the width, false if limits the height.
 			 * @return the size of content.
 			 */
-			virtual optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const = 0;
+			virtual ::std::optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const = 0;
 
 			/// Returns the extension to the size of widget from content extent
 			/**

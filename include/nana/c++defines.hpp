@@ -204,6 +204,7 @@
 #	define _nana_cxx_constexpr_if
 #	define _nana_cxx_folding_expression
 #	define _nana_cxx_nested_namespace_definition
+#	define _nana_std_optional
 #endif
 
 

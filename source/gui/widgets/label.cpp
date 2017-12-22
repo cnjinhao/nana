@@ -653,7 +653,7 @@ namespace nana
 						: impl_{ impl }
 					{}
 
-					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+					std::optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
 					{
 						//Label now doesn't support to measure content with a specified height.
 						if (graph && ((0 == limit_pixels) || limit_width))
