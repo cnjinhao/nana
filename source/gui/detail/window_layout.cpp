@@ -1,7 +1,7 @@
 /*
 *	Window Layout Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -386,6 +386,13 @@ namespace nana
 				nana::rectangle r_of_sigwd(sigwd->pos_root, sigwd->dimension);
 				for (auto wd : data_sect.effects_bground_windows)
 				{
+					//Don't notify the window if both native root windows are not same(e.g. wd and sigwd have
+					//a some parent). Otherwise, _m_paint_glass_window() recursively paints sigwd to make stack overflow.
+					//On the other hand, a nested root window is always floating on its parent's child widgets, it's unnecessary to
+					//notify the wd if they haven't a same native root window.
+					if (sigwd->root != wd->root)
+						continue;
+
 					if (wd == sigwd || !wd->displayed() ||
 						(false == overlapped(nana::rectangle{ wd->pos_root, wd->dimension }, r_of_sigwd)))
 						continue;
