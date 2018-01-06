@@ -505,21 +505,18 @@ namespace nana
 
 				auto fpath = i->path().native();
 				auto fattr = fs::status(fpath);
+				auto ftype = static_cast<fs::file_type>(fattr.type());
 
 				item_fs m;
 				m.name = name;
 				m.directory = fs::is_directory(fattr);
 
-				switch(fattr.type())
-				{
-				case fs::file_type::not_found:
-				case fs::file_type::unknown:
-				case fs::file_type::directory:
+				if (ftype == fs::file_type::not_found ||
+					ftype == fs::file_type::unknown ||
+					ftype == fs::file_type::directory)
 					m.bytes = 0;
-					break;
-				default:
+				else
 					m.bytes = fs::file_size(fpath);
-				}
 
 				fs_ext::modified_file_time(fpath, m.modified_time);
 				
@@ -692,13 +689,12 @@ namespace nana
 					return;
 				}
 
-				using file_type = fs::file_type;
-
 				fs::path fspath(fb_.addr_.filesystem + path);
 
-				auto fst = fs::status(fspath);
+				auto fattr = fs::status(fspath);
+				auto ftype = static_cast<fs::file_type>(fattr.type());
 
-				if(fst.type() != file_type::not_found && fst.type() != file_type::none)
+				if(ftype != fs::file_type::not_found && ftype != fs::file_type::none)
 				{
 					mb<<i18n("NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_EXISTING");
 					mb();
@@ -800,6 +796,7 @@ namespace nana
 						tar = addr_.filesystem + file;
 
 					auto fattr = fs::status(tar);
+					auto ftype = static_cast<fs::file_type>(fattr.type());
 
 					//Check if the selected name is a directory
 					auto is_dir = fs::is_directory(fattr);
@@ -808,6 +805,7 @@ namespace nana
 					{
 						//Add the extension, then check if it is a directory again.
 						fattr = fs::status(tar);
+						ftype = static_cast<fs::file_type>(fattr.type());
 						is_dir = fs::is_directory(fattr);
 					}
 					
@@ -820,7 +818,7 @@ namespace nana
 
 					if(io_read_)
 					{
-						if(fs::file_type::not_found == fattr.type())
+						if(fs::file_type::not_found == ftype)
 						{
 							msgbox mb(*this, caption());
 							mb.icon(msgbox::icon_information);
@@ -832,7 +830,7 @@ namespace nana
 					}
 					else
 					{
-						if(fs::file_type::not_found != fattr.type())
+						if(fs::file_type::not_found != ftype)
 						{
 							msgbox mb(*this, caption(), msgbox::yes_no);
 							mb.icon(msgbox::icon_question);

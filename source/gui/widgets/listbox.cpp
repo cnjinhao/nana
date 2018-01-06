@@ -4735,12 +4735,12 @@ namespace nana
 
 				bool item_proxy::operator==(const std::string& s) const
 				{
-					return (text(pos_.item) == s);
+					return (text(0) == s);
 				}
 
 				bool item_proxy::operator==(const std::wstring& s) const
 				{
-					return (text(pos_.item) == to_utf8(s));
+					return (text(0) == to_utf8(s));
 				}
 
 				item_proxy & item_proxy::operator=(const item_proxy& rhs)

@@ -15,7 +15,12 @@
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/std_thread.hpp>
 #include <iostream> 
-#include <chrono>
+
+#ifdef STD_THREAD_NOT_SUPPORTED
+#	include <boost/chrono.hpp>
+#else
+#	include <chrono>
+#endif
 
 //#define NANA_AUTOMATIC_GUI_TESTING
 namespace nana

@@ -5,7 +5,8 @@
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 #   Ariel Vina-Rodriguez (qPCR4vir)
-#   Frostbane - Add option for compiling a shared library
+#	Pavel O. - fix compilation with boost::filesystem (#281)
+#   Frostbane - Add option for compiling a shared library (#263,#265)
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
 # In the future CMake could be the prefered, and maybe will be used to generate the others and the central nana repo
@@ -245,7 +246,7 @@ elseif (NANA_CMAKE_STD_FILESYSTEM_FORCE)
     add_definitions(-DSTD_FILESYSTEM_FORCE)
 elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     if (NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-        add_definitions(-DNANA_BOOST_FILESYSTEM_FORCE)
+        add_definitions(-DBOOST_FILESYSTEM_FORCE)
     endif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     # https://cmake.org/cmake/help/git-master/module/FindBoost.html
     # Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied,
@@ -253,7 +254,7 @@ elseif (NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     # If using Boost::thread, then Thread::Thread will also be added automatically.
     find_package(Boost COMPONENTS filesystem)
     if (Boost_FOUND)
-        add_definitions(-DNANA_BOOST_FILESYSTEM_AVAILABLE)
+        add_definitions(-DBOOST_FILESYSTEM_AVAILABLE)
         include_directories(SYSTEM "${Boost_INCLUDE_DIR}")
         list(APPEND NANA_LINKS ${Boost_LIBRARIES})    ######  FIRST !!!!!!!!!!!!!!!!!    add   is not first
     endif (Boost_FOUND)
