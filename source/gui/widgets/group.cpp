@@ -235,7 +235,7 @@ namespace nana{
 			{
 				rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width, static_cast<unsigned>(top_round_line - opt_r->y) } };
 
-				grad_r.y += top_round_line / 2;
+				grad_r.y += top_round_line*2  / 3;
 				grad_r.x -= 2;
 				grad_r.width += 4;
 
