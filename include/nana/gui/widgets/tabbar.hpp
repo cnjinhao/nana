@@ -277,7 +277,7 @@ namespace nana
 			this->get_drawer_trigger().insert(::nana::npos, to_nstring(std::move(text)), std::move(value));
 			if (attach_wd)
 				this->attach(this->get_drawer_trigger().length() - 1, attach_wd);
-			
+
 			API::update_window(*this);
 			return *this;
 		}
@@ -293,7 +293,7 @@ namespace nana
 			if (pos > length())
 				throw std::out_of_range("tabbar::insert invalid position");
 
-			this->get_drawer_trigger().insert(pos, to_nstring(text), std::move(value));
+			this->get_drawer_trigger().insert(pos, to_nstring(std::move(text)), std::move(value));
 			API::update_window(*this);
 		}
 
@@ -306,7 +306,7 @@ namespace nana
 			API::update_window(*this);
 		}
 
-		/// Attach a window to a specified tab. When the tab is activated, tabbar shows the attached window. 
+		/// Attach a window to a specified tab. When the tab is activated, tabbar shows the attached window.
 		/**
 		 * @param pos The position of tab to set the attached window.
 		 * @param attach_wd A handle to the window to be set.
@@ -364,7 +364,7 @@ namespace nana
 
 
 namespace nana
-{	
+{
 		namespace drawerbase
 		{
 			namespace tabbar_lite
