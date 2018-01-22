@@ -93,13 +93,13 @@ namespace detail
 		{
 			struct thread_context_cache
 			{
-				unsigned tid{ 0 };
+				thread_t tid{ 0 };
 				thread_context *object{ nullptr };
 			}tcontext;
 		}cache;
 	};
 
-	void timer_proc(unsigned);
+	void timer_proc(thread_t);
 	void window_proc_dispatcher(Display*, nana::detail::msg_packet_tag&);
 	void window_proc_for_packet(Display *, nana::detail::msg_packet_tag&);
 	void window_proc_for_xevent(Display*, XEvent&);
@@ -352,7 +352,7 @@ namespace detail
 
 	}
 
-	void timer_proc(unsigned tid)
+	void timer_proc(thread_t tid)
 	{
 		nana::detail::platform_spec::instance().timer_proc(tid);
 	}

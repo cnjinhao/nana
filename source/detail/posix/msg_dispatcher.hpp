@@ -35,7 +35,7 @@ namespace detail
 	{
 		struct thread_binder
 		{
-			unsigned tid;
+			thread_t tid;
 			std::mutex	mutex;
 			std::condition_variable	cond;
 			std::list<msg_packet_tag>	msg_queue;
@@ -44,7 +44,7 @@ namespace detail
 
 	public:
 		typedef msg_packet_tag	msg_packet;
-		typedef void (*timer_proc_type)(unsigned tid);
+		typedef void (*timer_proc_type)(thread_t tid);
 		typedef void (*event_proc_type)(Display*, msg_packet_tag&);
 		typedef int (*event_filter_type)(XEvent&, msg_packet_tag&);
 
@@ -87,7 +87,7 @@ namespace detail
 				start_driver = (0 == table_.thr_table.size());
 				thread_binder * thr;
 
-				std::map<unsigned, thread_binder*>::iterator i = table_.thr_table.find(tid);
+				std::map<thread_t, thread_binder*>::iterator i = table_.thr_table.find(tid);
 				if(i == table_.thr_table.end())
 				{
 					thr = new thread_binder;
@@ -270,7 +270,7 @@ namespace detail
 		//_m_read_queue
 		//@brief:Read the event from a specified thread queue.
 		//@return: 0 = exit the queue, 1 = fetch the msg, -1 = no msg
-		int _m_read_queue(unsigned tid, msg_packet_tag& msg, Window modal)
+		int _m_read_queue(thread_t tid, msg_packet_tag& msg, Window modal)
 		{
 			bool stop_driver = false;
 
@@ -317,7 +317,7 @@ namespace detail
 		//_m_wait_for_queue
 		//	wait for the insertion of queue.
 		//return@ it returns true if the queue is not empty, otherwise the wait is timeout.
-		bool _m_wait_for_queue(unsigned tid)
+		bool _m_wait_for_queue(thread_t tid)
 		{
 			thread_binder * thr = nullptr;
 			{
@@ -344,7 +344,7 @@ namespace detail
 		struct table_tag
 		{
 			std::recursive_mutex mutex;
-			std::map<unsigned, thread_binder*> thr_table;
+			std::map<thread_t, thread_binder*> thr_table;
 			std::map<Window, thread_binder*> wnd_table;
 		}table_;
 

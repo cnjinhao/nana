@@ -26,6 +26,27 @@
 	#include <pthread.h>
 	#include <sys/stat.h>
 	#include <spawn.h>
+
+static void posix_open_url(const char *url_utf8)
+{
+    extern char **environ;
+    const char *home = getenv("HOME");
+    std::string cheat(home);
+    cheat += "/.mozilla";
+    struct stat exists{};
+    // Look for $HOME/.mozilla directory as
+    // strong evidence they use firefox.
+    if ( stat(cheat.c_str(), &exists) == 0 && S_ISDIR(exists.st_mode))
+    {
+        pid_t pid = 0;
+        static const char firefox[] = "firefox";
+        char name[sizeof firefox]{};
+        // argv does not like const-literals so make a copy.
+        strcpy(name, firefox);
+        char *argv[3] = {name, const_cast<char *>(url_utf8), nullptr};
+        posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
+    }
+}
 #endif
 
 namespace nana
@@ -120,23 +141,7 @@ namespace system
 			::ShellExecute(0, L"open", url.c_str(), 0, 0, SW_SHOWNORMAL);
 		}
 #elif defined(NANA_POSIX)
-        const char *home = getenv("HOME");
-        std::string cheat(home);
-        cheat += "/.mozilla";
-        struct stat exists{};
-        // Look for $HOME/.mozilla directory as
-        // strong evidence they use firefox.
-        if ( stat(cheat.c_str(), &exists) == 0 && S_ISDIR(exists.st_mode))
-        {
-            extern char **environ;
-            pid_t pid = 0;
-            static const char firefox[] = "firefox";
-            char name[sizeof firefox]{};
-            // argv does not like const-literals so make a copy.
-            strcpy(name, firefox);
-            char *argv[3] = {name, const_cast<char *>(url_utf8.c_str()), nullptr};
-            posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
-        }
+        posix_open_url(url_utf8.c_str());
 #endif
     }
 }//end namespace system

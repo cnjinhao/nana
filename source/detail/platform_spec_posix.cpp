@@ -214,7 +214,7 @@ namespace detail
 		struct timer_tag
 		{
 			std::size_t id;
-			unsigned tid;
+			thread_t tid;
 			std::size_t interval;
 			std::size_t timestamp;
 			timer_proc_t proc;
@@ -295,7 +295,7 @@ namespace detail
 			return (holder_.empty());
 		}
 
-		void timer_proc(unsigned tid)
+		void timer_proc(thread_t tid)
 		{
 			is_proc_handling_ = true;
 			auto i = threadmap_.find(tid);
@@ -329,7 +329,7 @@ namespace detail
 		}
 	private:
 		bool is_proc_handling_;
-		std::map<unsigned, timer_group> threadmap_;
+		std::map<thread_t, timer_group> threadmap_;
 		std::map<std::size_t, timer_tag> holder_;
 	};
 
@@ -966,7 +966,7 @@ namespace detail
 		}
 	}
 
-	void platform_spec::timer_proc(unsigned tid)
+	void platform_spec::timer_proc(thread_t tid)
 	{
 		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
 		if(timer_.runner)

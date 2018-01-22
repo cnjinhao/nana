@@ -273,10 +273,10 @@ namespace detail
 			//class revertible_mutex
 			struct thread_refcount
 			{
-				unsigned tid;	//Thread ID
+				thread_t tid;	//Thread ID
 				std::vector<unsigned> callstack_refs;
 
-				thread_refcount(unsigned thread_id, unsigned refs)
+				thread_refcount(thread_t thread_id, unsigned refs)
 					: tid(thread_id)
 				{
 					callstack_refs.push_back(refs);
@@ -287,7 +287,7 @@ namespace detail
 			{
 				std::recursive_mutex mutex;
 
-				unsigned thread_id;	//Thread ID
+				thread_t thread_id;	//Thread ID
 				unsigned refs;	//Ref count
 
 				std::vector<thread_refcount> records;
@@ -1442,7 +1442,7 @@ namespace detail
 			return nullptr;
 		}
 
-		void window_manager::remove_trash_handle(unsigned tid)
+		void window_manager::remove_trash_handle(thread_t tid)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);

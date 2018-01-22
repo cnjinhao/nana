@@ -139,7 +139,7 @@ namespace detail
 		void enable_tabstop(core_window_t*);
 		core_window_t* tabstop(core_window_t*, bool forward) const;	//forward means move to next in logic.
 
-		void remove_trash_handle(unsigned tid);
+		void remove_trash_handle(thread_t tid);
 
 		bool enable_effects_bground(core_window_t*, bool);
 
