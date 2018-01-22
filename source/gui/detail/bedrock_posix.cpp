@@ -981,7 +981,7 @@ namespace detail
 							{
 								const wchar_t* charbuf;
 
-								nana::detail::charset_conv charset("UTF-32", "UTF-8");
+								nana::detail::charset_conv charset(NANA_UNICODE, "UTF-8");
 								const std::string& str = charset.charset(std::string(keybuf, keybuf + len));
 								charbuf = reinterpret_cast<const wchar_t*>(str.c_str()) + 1;
 								len = str.size() / sizeof(wchar_t) - 1;

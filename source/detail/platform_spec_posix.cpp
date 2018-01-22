@@ -339,8 +339,8 @@ namespace detail
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
 #if defined(NANA_USE_XFT)
-		conv_.handle = ::iconv_open("UTF-8", "UTF-32");
-		conv_.code = "UTF-32";
+		conv_.handle = ::iconv_open("UTF-8", NANA_UNICODE);
+		conv_.code = NANA_UNICODE;
 #endif
 	}
 
