@@ -983,14 +983,17 @@ namespace detail
 
 								nana::detail::charset_conv charset(NANA_UNICODE, "UTF-8");
 								const std::string& str = charset.charset(std::string(keybuf, keybuf + len));
-								charbuf = reinterpret_cast<const wchar_t*>(str.c_str()) + 1;
-								len = str.size() / sizeof(wchar_t) - 1;
+								charbuf = reinterpret_cast<const wchar_t*>(str.c_str());
+								len = str.size() / sizeof(wchar_t);
 
 								for(int i = 0; i < len; ++i)
 								{
 									arg_keyboard arg;
 									arg.ignore = false;
 									arg.key = charbuf[i];
+
+									// ignore Unicode BOM (it may or may not appear)
+                                    if (arg.key == 0xFEFF) continue;
 
 									//Only accept tab when it is not ignored.
 									if ((keyboard::tab == arg.key) && root_runtime->condition.ignore_tab)
