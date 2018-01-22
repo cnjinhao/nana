@@ -28,7 +28,7 @@
 
 #include "../detail/platform_spec_selector.hpp"
 
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 #include <nana/system/platform.hpp>
 #include <iostream>
 #endif

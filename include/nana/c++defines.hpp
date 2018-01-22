@@ -68,9 +68,16 @@
 #	endif
 #endif
 
+// Set this to "UTF-32" at the command-line for big endian.
+#ifndef NANA_UNICODE
+    // much of the world runs intel compatible processors so default to LE.
+	#define NANA_UNICODE "UTF-32LE"
+#endif
+
 // Select platform  ......
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)	//Microsoft Windows
 	#define NANA_WINDOWS
+	typedef DWORD_PTR thread_t;
 
 	// MINGW ...
 	#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
@@ -79,23 +86,22 @@
 
 #elif defined(APPLE)	//Mac OS X
 	//Symbols for MACOS
-
 	#define NANA_MACOS
+	#define NANA_POSIX
 	#define NANA_X11
-
+	typedef long long thread_t;
+#elif defined(__FreeBSD__)
+	#define NANA_POSIX
+	#define NANA_X11
+	typedef long long thread_t;
 #elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)	//Linux
 	#define NANA_LINUX
-	#define NANA_X11
-#else
-	static_assert(false, "Only Windows and Unix are supported now (Mac OS is experimental)");
-#endif
-
-//Define a symbol for POSIX operating system.
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
 	#define NANA_POSIX
+	#define NANA_X11
+	typedef long long thread_t;
+#else
+	static_assert(false, "Only Windows and Linux are supported now (Mac OS and BSD are experimental)");
 #endif
-
-
 
 // Select compiler ...
 #if defined(_MSC_VER)	//Microsoft Visual C++

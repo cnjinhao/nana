@@ -33,7 +33,7 @@ namespace nana{	namespace audio{
 					unsigned short	wBitsPerSample;
 				};
 			#pragma pack()
-		#elif defined(NANA_LINUX)
+		#elif defined(NANA_POSIX)
 			struct master_riff_chunk
 			{
 				unsigned	ckID;	//"RIFF"

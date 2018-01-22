@@ -13,7 +13,7 @@
  *	This file should not be included by any header files.
  */
 
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 
 #ifndef NANA_DETAIL_PLATFORM_SPEC_HPP
 #define NANA_DETAIL_PLATFORM_SPEC_HPP
@@ -319,6 +319,5 @@ namespace detail
 // .h ward
 #endif
 
-//#if defined(NANA_LINUX) || defined(NANA_MACOS)
 #endif
 

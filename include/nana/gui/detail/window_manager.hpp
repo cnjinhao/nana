@@ -154,7 +154,7 @@ namespace detail
 		core_window_t* find_shortkey(native_window_type, unsigned long key);
 
 		void set_safe_place(core_window_t* wd, std::function<void()>&& fn);
-		void call_safe_place(unsigned thread_id);
+		void call_safe_place(thread_t thread_id);
 	private:
 		void _m_disengage(core_window_t*, core_window_t* for_new);
 		void _m_destroy(core_window_t*);

@@ -16,6 +16,6 @@
 
 #if defined(NANA_WINDOWS)
 #include "mswin/platform_spec.hpp"
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 #include "posix/platform_spec.hpp"
 #endif

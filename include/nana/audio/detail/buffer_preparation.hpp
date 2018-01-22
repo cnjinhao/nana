@@ -32,7 +32,7 @@ namespace nana{	namespace audio
 		public:
 #if defined(NANA_WINDOWS)
 			typedef WAVEHDR meta;
-#elif defined(NANA_LINUX)
+#elif defined(NANA_POSIX)
 			struct meta
 			{
 				char * buf;

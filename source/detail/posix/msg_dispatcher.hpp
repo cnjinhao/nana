@@ -2,8 +2,8 @@
  *	Message Dispatcher Implementation
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/detail/msg_dispatcher.hpp
@@ -76,7 +76,7 @@ namespace detail
 
 		void insert(Window wd)
 		{
-			unsigned tid = nana::system::this_thread_id();
+			auto tid = nana::system::this_thread_id();
 
 			bool start_driver;
 
@@ -100,7 +100,7 @@ namespace detail
 				thr->mutex.lock();
 				thr->window.insert(wd);
 				thr->mutex.unlock();
-			
+
 				table_.wnd_table[wd] = thr;
 			}
 
@@ -120,7 +120,7 @@ namespace detail
 		void erase(Window wd)
 		{
 			std::lock_guard<decltype(table_.mutex)> lock(table_.mutex);
-			
+
 			auto i = table_.wnd_table.find(wd);
 			if(i != table_.wnd_table.end())
 			{
@@ -136,7 +136,7 @@ namespace detail
 
 				table_.wnd_table.erase(i);
 				thr->window.erase(wd);
-				
+
 				//There still is at least one window alive.
 				if(thr->window.size())
 				{
@@ -151,10 +151,10 @@ namespace detail
 
 		void dispatch(Window modal)
 		{
-			unsigned tid = nana::system::this_thread_id();
+			auto tid = nana::system::this_thread_id();
 			msg_packet_tag msg;
 			int qstate;
-			
+
 			//Test whether the thread is registered for window, and retrieve the queue state for event
 			while((qstate = _m_read_queue(tid, msg, modal)))
 			{
@@ -186,7 +186,7 @@ namespace detail
 					if(pending)
 					{
 						::XNextEvent(display_, &event);
-						
+
 						if(KeyRelease == event.type)
 						{
 							//Check whether the key is pressed, because X will send KeyRelease when pressing and
@@ -260,7 +260,7 @@ namespace detail
 			if(i != table_.wnd_table.end())
 			{
 				thread_binder * const thr = i->second;
-				
+
 				std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
 				thr->msg_queue.push_back(msg);
 				thr->cond.notify_one();
@@ -330,12 +330,12 @@ namespace detail
 					thr = i->second;
 				}
 			}
-			
+
 			//Waits for notifying the condition variable, it indicates a new msg is pushing into the queue.
 			std::unique_lock<decltype(thr->mutex)> lock(thr->mutex);
 			return (thr->cond.wait_for(lock, std::chrono::milliseconds(10)) != std::cv_status::timeout);
 		}
-		
+
 	private:
 		Display * display_;
 		volatile bool is_work_{ false };
