@@ -34,17 +34,29 @@ static void posix_open_url(const char *url_utf8)
     std::string cheat(home);
     cheat += "/.mozilla";
     struct stat exists{};
-    // Look for $HOME/.mozilla directory as
-    // strong evidence they use firefox.
+
+    // TODO: generalize this for chromium, opera, waterfox, etc.
+    // Most desktop environments (KDE, Gnome, Lumina etc.) provide a way to set
+    // your preferred browser - but there are more desktops than browsers.
+
+    // Look for $HOME/.mozilla directory as strong evidence they use firefox.
     if ( stat(cheat.c_str(), &exists) == 0 && S_ISDIR(exists.st_mode))
     {
+        const char *path = "";
+        static const char *likely[2] = { "/usr/local/bin/firefox", "/usr/bin/firefox"};
+        if ( stat(likely[0], &exists) == 0 && S_ISREG(exists.st_mode))
+            path = likely[0];
+        else if ( stat(likely[1], &exists) == 0 && S_ISREG(exists.st_mode) )
+            path = likely[1];
+        else return;
+
         pid_t pid = 0;
         static const char firefox[] = "firefox";
         char name[sizeof firefox]{};
         // argv does not like const-literals so make a copy.
         strcpy(name, firefox);
         char *argv[3] = {name, const_cast<char *>(url_utf8), nullptr};
-        posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
+        posix_spawn(&pid, path, NULL, NULL, argv, environ);
     }
 }
 #endif
