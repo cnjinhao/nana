@@ -9,10 +9,10 @@
 #include <vector>
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
-#elif defined(NANA_POSIX)
-    #include <sys/soundcard.h>
 #elif defined(NANA_LINUX)
 	#include <alsa/asoundlib.h>
+#elif defined(NANA_POSIX)
+    #include <sys/soundcard.h>
 #endif
 
 namespace nana{	namespace audio
