@@ -234,7 +234,7 @@ namespace nana
 		};
 
 		/// convert wchar C string from ? ANSI code page CP_ACP (windows) or LC_CTYPE c locale (-nix) into utf8 std::string
-		bool wc2mb(std::string& mbstr, const wchar_t * s)
+		static bool wc2mb(std::string& mbstr, const wchar_t * s)
 		{
 			if(nullptr == s || *s == 0)
 			{
@@ -268,7 +268,7 @@ namespace nana
 		}
 
 		/// convert a char C-string from The system default Windows ANSI code page CP_ACP or from LC_CTYPE c locale (-nix) into utf16 std::wstring
-		bool mb2wc(std::wstring& wcstr, const char* s)
+		static bool mb2wc(std::wstring& wcstr, const char* s)
 		{
 			if(nullptr == s || *s == 0)
 			{
