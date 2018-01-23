@@ -89,16 +89,16 @@
 	#define NANA_MACOS
 	#define NANA_POSIX
 	#define NANA_X11
-	typedef long long thread_t;
+	typedef unsigned long thread_t;
 #elif defined(__FreeBSD__)
 	#define NANA_POSIX
 	#define NANA_X11
-	typedef long long thread_t;
+	typedef unsigned long thread_t;
 #elif (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)	//Linux
 	#define NANA_LINUX
 	#define NANA_POSIX
 	#define NANA_X11
-	typedef long long thread_t;
+	typedef unsigned long thread_t;
 #else
 	static_assert(false, "Only Windows and Linux are supported now (Mac OS and BSD are experimental)");
 #endif
