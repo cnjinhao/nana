@@ -26,6 +26,7 @@
 	#include <pthread.h>
 	#include <sys/stat.h>
 	#include <spawn.h>
+	#include <string.h>
 
 static void posix_open_url(const char *url_utf8)
 {
