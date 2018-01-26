@@ -5,7 +5,8 @@
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 #   Ariel Vina-Rodriguez (qPCR4vir)
-#   Frostbane - Add option for compiling a shared library
+#	Pavel O. - fix compilation with boost::filesystem (#281)
+#   Frostbane - Add option for compiling a shared library (#263,#265)
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
 # In the future CMake could be the prefered, and maybe will be used to generate the others and the central nana repo
