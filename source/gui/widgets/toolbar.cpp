@@ -421,7 +421,7 @@ namespace nana
 			//class drawer
 
 			// Item Proxy
-			void item_proxy::enable(bool enable_state) const
+			void item_proxy::enable(bool enable_state)
 			{
 				widget.enable(button, enable_state);
 			}

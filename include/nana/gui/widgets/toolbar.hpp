@@ -38,7 +38,7 @@ namespace nana
 				nana::toolbar& widget;
 				std::size_t button;
 
-				void enable(bool enable_state) const;
+				void enable(bool enable_state);
 		    };
 
 			struct toolbar_events
