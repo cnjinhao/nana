@@ -35,10 +35,10 @@ namespace nana
 		{
 		    struct item_proxy
 		    {
-                nana::toolbar& widget;
-                std::size_t button;
+				nana::toolbar& widget;
+				std::size_t button;
 
-                void enable(bool enable_state) const;
+				void enable(bool enable_state) const;
 		    };
 
 			struct toolbar_events
