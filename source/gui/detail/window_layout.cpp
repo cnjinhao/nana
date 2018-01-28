@@ -106,43 +106,46 @@ namespace nana
 
 				visual = rectangle{ wd->pos_root, wd->dimension };
 
-				if (wd->root_widget != wd)
+				if (category::flags::root != wd->other.category)
 				{
 					//Test if the root widget is overlapped the specified widget
 					//the pos of root widget is (0, 0)
 					if (overlapped(visual, rectangle{ wd->root_widget->pos_owner, wd->root_widget->dimension }) == false)
 						return false;
-				}
 
-				for (auto parent = wd->parent; parent; parent = parent->parent)
-				{
-					if (category::flags::root == parent->other.category)
+					for (auto parent = wd->parent; parent; parent = parent->parent)
 					{
-						//visual rectangle of wd's parent
-						rectangle vrt_parent{parent->pos_root, parent->dimension};
-
-						point pos_root;
-						while (parent->parent)
+						if (category::flags::root == parent->other.category)
 						{
-							pos_root -= native_interface::window_position(parent->root);
-
-							if (!overlap(rectangle{ pos_root, parent->parent->root_widget->dimension }, vrt_parent, vrt_parent))
-								return false;
-
-							parent = parent->parent->root_widget;
+							wd = parent;
+							break;
 						}
 
-						if (!overlap(vrt_parent, visual, visual))
+						if (!overlap(rectangle{ parent->pos_root, parent->dimension }, visual, visual))
 							return false;
-						
-						return true;
 					}
-
-					if (!overlap(rectangle{ parent->pos_root, parent->dimension }, visual, visual))
-						return false;
 				}
 
-				return true;
+				//Now, wd actually is the root widget of original parameter wd
+				if (nullptr == wd->parent)
+					return true;
+				
+				auto parent_rw = wd->parent->root_widget;
+				//visual rectangle of wd's parent
+				rectangle vrt_parent{ parent_rw->pos_root, parent_rw->dimension };
+
+				point pos_root;
+				while (parent_rw->parent)
+				{
+					pos_root -= native_interface::window_position(parent_rw->root);
+
+					if (!overlap(rectangle{ pos_root, parent_rw->parent->root_widget->dimension }, vrt_parent, vrt_parent))
+						return false;
+
+					parent_rw = parent_rw->parent->root_widget;
+				}
+
+				return overlap(vrt_parent, visual, visual);
 			}
 
 			//read_overlaps
