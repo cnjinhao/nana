@@ -5158,7 +5158,8 @@ namespace nana
 						cat_->make_sort_order();
 						ess_->lister.sort();
 
-						ess_->update(true);
+						//Don't ignore the auto-draw flag for performance enhancement.
+						ess_->update();
 					}
 				}
 			//end class cat_proxy
