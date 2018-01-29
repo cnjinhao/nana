@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1586,7 +1586,7 @@ namespace nana
 					return pairs;
 				}
 
-				bool select_for_all(bool sel, const index_pair& except = index_pair{npos, npos})
+				bool select_for_all(bool sel, const index_pair& except_abs = index_pair{npos, npos})
 				{
 					bool changed = false;
 					index_pair pos;
@@ -1595,7 +1595,7 @@ namespace nana
 						pos.item = 0;
 						for(auto & m : cat.items)
 						{
-							if (except != pos)
+							if (except_abs != pos)
 							{
 								if (m.flags.selected != sel)
 								{
@@ -4150,12 +4150,12 @@ namespace nana
 											//Unselects all selected items if the current item is not selected before selecting.
 											auto selected = lister.pick_items(true);
 											if (selected.cend() == std::find(selected.cbegin(), selected.cend(), item_pos))
-												lister.select_for_all(false, item_pos);
+												lister.select_for_all(false, abs_item_pos);
 										}
 										else
 										{
 											//Unselects all selected items except current item if right button clicked.
-											lister.select_for_all(false, item_pos);	//cancel all selections
+											lister.select_for_all(false, abs_item_pos);	//cancel all selections
 										}
 									}
 								}
@@ -4662,12 +4662,12 @@ namespace nana
 
 				bool item_proxy::operator==(const std::string& s) const
 				{
-					return (text(pos_.item) == s);
+					return (text(0) == s);
 				}
 
 				bool item_proxy::operator==(const std::wstring& s) const
 				{
-					return (text(pos_.item) == to_utf8(s));
+					return (text(0) == to_utf8(s));
 				}
 
 				item_proxy & item_proxy::operator=(const item_proxy& rhs)
@@ -5158,7 +5158,8 @@ namespace nana
 						cat_->make_sort_order();
 						ess_->lister.sort();
 
-						ess_->update(true);
+						//Don't ignore the auto-draw flag for performance enhancement.
+						ess_->update();
 					}
 				}
 			//end class cat_proxy

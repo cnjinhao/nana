@@ -1,6 +1,6 @@
 /*
  *	A Progress Indicator Implementation
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -96,7 +96,11 @@ namespace nana
 				{
 					if (widget_)
 					{
-						auto value_px = (widget_->size().width - border_px * 2) * value_ / max_;
+						auto value_px = (widget_->size().width - border_px * 2);
+
+						//avoid overflow
+						if (value_ < max_)
+							value_px = static_cast<unsigned>(value_px * (double(value_) / double(max_)));
 
 						if (value_px != value_px_)
 						{

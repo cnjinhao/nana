@@ -821,6 +821,15 @@ namespace API
 		}
 	}
 
+	nana::optional<rectangle> window_rectangle(window wd)
+	{
+		auto iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::wd_manager().available(iwd))
+			return rectangle(iwd->pos_owner, iwd->dimension);
+		return{};
+	}
+
 	bool get_window_rectangle(window wd, rectangle& r)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);

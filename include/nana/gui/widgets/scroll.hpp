@@ -398,7 +398,7 @@ namespace nana
 		/// \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param visible  specify the visibility after creation.
-		scroll(window wd, bool visible)
+		scroll(window wd, bool visible = true)
 		{
 			this->create(wd, rectangle(), visible);   // add a widget scheme? and take some colors from these wd?
 		}

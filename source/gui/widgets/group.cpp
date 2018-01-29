@@ -208,8 +208,8 @@ namespace nana{
 		outter[field_title] << impl_->caption;
 		outter.collocate();
 
+		impl_->caption.transparent(true);
 		color pbg = API::bgcolor(this->parent());
-
 		impl_->caption.bgcolor(pbg.blend(colors::black, 0.025));
 
 		this->bgcolor(pbg.blend(colors::black, 0.05));
@@ -222,10 +222,27 @@ namespace nana{
 			auto gap_px = impl_->gap - 1;
 
 			graph.rectangle(true, API::bgcolor(this->parent()));
-			graph.round_rectangle(rectangle(point(gap_px, impl_->caption_dimension.height / 2),
-				nana::size(graph.width() - 2 * gap_px, graph.height() - impl_->caption_dimension.height / 2 - gap_px)
+
+			auto const top_round_line = static_cast<int>(impl_->caption_dimension.height) / 2;
+
+			graph.round_rectangle(rectangle(point(gap_px, top_round_line),
+				nana::size(graph.width() - 2 * gap_px, graph.height() - top_round_line - gap_px)
 				),
 				3, 3, colors::gray_border, true, this->bgcolor());
+
+			auto opt_r = API::window_rectangle(impl_->caption);
+			if (opt_r)
+			{
+				rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width, static_cast<unsigned>(top_round_line - opt_r->y) } };
+
+				grad_r.y += top_round_line*2  / 3;
+				grad_r.x -= 2;
+				grad_r.width += 4;
+
+				graph.gradual_rectangle(grad_r,
+					API::bgcolor(this->parent()), this->bgcolor(), true
+					);
+			}
 		});
 	}
 
