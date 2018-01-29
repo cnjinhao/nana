@@ -16,6 +16,7 @@
 #define NANA_FILESYSTEM_EXT_HPP
 
 #include <nana/filesystem/filesystem.hpp>
+#include <nana/deploy.hpp>
 
 namespace nana 
 {
@@ -33,6 +34,16 @@ namespace filesystem_ext
 #endif
  
 std::experimental::filesystem::path path_user();    ///< extention ?
+
+													/// workaround Boost not having path.generic_u8string() - a good point for http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0251r0.pdf
+inline std::string generic_u8string(const std::experimental::filesystem::path& p)
+{
+#if NANA_USING_BOOST_FILESYSTEM
+	return nana::to_utf8(p.generic_wstring());
+#else
+	return p.generic_u8string();
+#endif
+}
 
 inline bool is_directory(const std::experimental::filesystem::directory_entry& dir) noexcept
 {
