@@ -1,7 +1,7 @@
 /*
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -20,9 +20,15 @@ namespace nana
 		namespace scroll
 		{
 		//struct metrics_type
-			metrics_type::metrics_type()
-				:peak(1), range(1), step(1), value(0),
-				what(buttons::none), pressed(false), scroll_length(0), scroll_pos(0)
+			metrics_type::metrics_type():
+				peak(1),
+				range(1),
+				step(1),
+				value(0),
+				what(buttons::none),
+				pressed(false),
+				scroll_length(0),
+				scroll_pos(0)
 			{}
 		//end struct metrics_type
 
