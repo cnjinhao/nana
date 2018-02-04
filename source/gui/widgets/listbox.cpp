@@ -1520,8 +1520,6 @@ namespace nana
 				template<typename Pred>
 				std::vector<std::pair<index_pair, bool>> select_display_range_if(const index_pair& fr_abs, index_pair to_dpl, bool deselect_others, Pred pred)
 				{
-					const index_pairs already_selected = (deselect_others ? this->pick_items(true) : index_pairs{});
-
 					if (to_dpl.empty())
 					{
 						if (fr_abs.empty())
@@ -1533,6 +1531,11 @@ namespace nana
 					auto fr_dpl = (fr_abs.is_category() ? fr_abs : this->index_cast(fr_abs, false));	//Converts an absolute position to display position
                     if (fr_dpl > to_dpl)
 						std::swap(fr_dpl, to_dpl);
+
+					if (to_dpl.is_category() && this->size_item(to_dpl.cat) > 0)
+						to_dpl.item = this->size_item(to_dpl.cat) - 1;
+
+					const index_pairs already_selected = (deselect_others ? this->pick_items(true) : index_pairs{});
 
 					const auto begin = fr_dpl;
 					const auto last = to_dpl;
@@ -1981,6 +1984,15 @@ namespace nana
 					{
 						return header.at(pos).weak_ordering;
 					};
+				}
+
+				bool cs_status(index_pair abs_pos, bool for_selection) const
+				{
+					if (abs_pos.is_category())
+						return lister.cat_status(abs_pos.cat, for_selection);
+					
+					auto & flags = lister.get(abs_pos.cat)->items.at(abs_pos.item).flags;
+					return (for_selection ? flags.selected : flags.checked);
 				}
 
 				void resize_disp_area()
@@ -4122,17 +4134,16 @@ namespace nana
 									essence_->content_view->sync(false);
 								}
 
-								bool sel = true;
+								bool new_selected_status = true;
 
-								//no single selected
-								if (!lister.single_status(true))
+								if (!lister.single_status(true))	//multiply selection enabled
 								{
 									if (arg.shift)
 									{
 										//Set the first item as the begin of selected item if there
 										//is not a latest selected item.(#154 reported by RenaudAlpes)
-										if (lister.latest_selected_abs.empty() || lister.latest_selected_abs.is_category())
-											lister.latest_selected_abs.set_both(0);
+										if (lister.latest_selected_abs.empty())
+											lister.latest_selected_abs = lister.first();
 
 										auto before = lister.latest_selected_abs;
 
@@ -4146,7 +4157,7 @@ namespace nana
 									else if (arg.ctrl)
 									{
 										essence_->mouse_selection.reverse_selection = true;
-										sel = !item_proxy(essence_, abs_item_pos).selected();
+										new_selected_status = !essence_->cs_status(abs_item_pos, true);
 									}
 									else
 									{
@@ -4169,14 +4180,14 @@ namespace nana
 									//Clicking on a category is ignored when single selection is enabled.
 									//Fixed by Greentwip(issue #121)
 									if (item_ptr)
-										sel = !item_proxy(essence_, abs_item_pos).selected();
+										new_selected_status = !item_proxy(essence_, abs_item_pos).selected();
 								}
 
 								if(item_ptr)
 								{
-									if (item_ptr->flags.selected != sel)
+									if (item_ptr->flags.selected != new_selected_status)
 									{
-										if (sel)
+										if (new_selected_status)
 										{
 											//Deselects the previously selected item.
 											lister.cancel_others_if_single_enabled(true, abs_item_pos);
@@ -4185,13 +4196,15 @@ namespace nana
 										else if (essence_->lister.latest_selected_abs == abs_item_pos)
 											essence_->lister.latest_selected_abs.set_both(npos);
 
-										item_ptr->flags.selected = sel;
+										item_ptr->flags.selected = new_selected_status;
 										lister.emit_cs(abs_item_pos, true);
 									}
 								}
 								else
 								{
-									lister.cat_status(item_pos.cat, true, true);
+									//A category was clicked. Sets all child items to be selected only if multiply selection is enabled.
+									if(!lister.single_status(true))
+										lister.cat_status(item_pos.cat, true, true);
 								}
 							}
 							else
