@@ -3433,6 +3433,8 @@ namespace nana
 						rect.y - static_cast<int>(origin.y % item_height_px)
 					};
 
+					essence_->inline_buffered_table.swap(essence_->inline_table);
+
 					// The first display is empty when the listbox is empty.
 					if (!first_disp.empty())
 					{
@@ -3454,8 +3456,6 @@ namespace nana
 						auto i_categ = lister.get(first_disp.cat);
 
 						auto idx = first_disp;
-
-						essence_->inline_buffered_table.swap(essence_->inline_table);
 
 						for (auto & cat : lister.cat_container())
 							for (auto & ind : cat.indicators)
@@ -3526,9 +3526,9 @@ namespace nana
 								++idx.item;
 							}
 						}
-
-						essence_->inline_buffered_table.clear();
 					}
+
+					essence_->inline_buffered_table.clear();
 
 					if (item_coord.y < rect.bottom())
 					{
