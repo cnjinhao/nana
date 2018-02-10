@@ -1282,6 +1282,7 @@ namespace nana
 					}
 					
 					//Backward
+					n = -n;
 					dpos = pos;
 					if (good(dpos.cat))
 					{
@@ -1528,8 +1529,6 @@ namespace nana
 				template<typename Pred>
 				std::vector<std::pair<index_pair, bool>> select_display_range_if(const index_pair& fr_abs, index_pair to_dpl, bool deselect_others, Pred pred)
 				{
-					const index_pairs already_selected = (deselect_others ? this->pick_items(true) : index_pairs{});
-
 					if (to_dpl.empty())
 					{
 						if (fr_abs.empty())
@@ -1541,6 +1540,11 @@ namespace nana
 					auto fr_dpl = (fr_abs.is_category() ? fr_abs : this->index_cast(fr_abs, false));	//Converts an absolute position to display position
                     if (fr_dpl > to_dpl)
 						std::swap(fr_dpl, to_dpl);
+
+					if (to_dpl.is_category() && this->size_item(to_dpl.cat) > 0)
+						to_dpl.item = this->size_item(to_dpl.cat) - 1;
+
+					const index_pairs already_selected = (deselect_others ? this->pick_items(true) : index_pairs{});
 
 					const auto begin = fr_dpl;
 					const auto last = to_dpl;
@@ -1627,7 +1631,7 @@ namespace nana
 				}
 
 				/// return absolute positions, no relative to display
-				index_pairs pick_items(bool for_selection) const
+				index_pairs pick_items(bool for_selection, bool find_first = false) const
 				{
 					index_pairs results;
 					index_pair id;
@@ -1638,7 +1642,11 @@ namespace nana
 						for (auto & m : cat.items)
 						{
 							if (for_selection ? m.flags.selected : m.flags.checked)
+							{
 								results.push_back(id);  // absolute positions, no relative to display
+								if (find_first)
+									return results;
+							}
 							++id.item;
 						}
 						++id.cat;
@@ -1985,6 +1993,15 @@ namespace nana
 					{
 						return header.at(pos).weak_ordering;
 					};
+				}
+
+				bool cs_status(index_pair abs_pos, bool for_selection) const
+				{
+					if (abs_pos.is_category())
+						return lister.cat_status(abs_pos.cat, for_selection);
+					
+					auto & flags = lister.get(abs_pos.cat)->items.at(abs_pos.item).flags;
+					return (for_selection ? flags.selected : flags.checked);
 				}
 
 				void resize_disp_area()
@@ -3501,6 +3518,8 @@ namespace nana
 						rect.y - static_cast<int>(origin.y % item_height_px)
 					};
 
+					essence_->inline_buffered_table.swap(essence_->inline_table);
+
 					// The first display is empty when the listbox is empty.
 					if (!first_disp.empty())
 					{
@@ -3522,8 +3541,6 @@ namespace nana
 						auto i_categ = lister.get(first_disp.cat);
 
 						auto idx = first_disp;
-
-						essence_->inline_buffered_table.swap(essence_->inline_table);
 
 						for (auto & cat : lister.cat_container())
 							for (auto & ind : cat.indicators)
@@ -3594,9 +3611,9 @@ namespace nana
 								++idx.item;
 							}
 						}
-
-						essence_->inline_buffered_table.clear();
 					}
+
+					essence_->inline_buffered_table.clear();
 
 					if (item_coord.y < rect.bottom())
 					{
@@ -4190,17 +4207,16 @@ namespace nana
 									essence_->content_view->sync(false);
 								}
 
-								bool sel = true;
+								bool new_selected_status = true;
 
-								//no single selected
-								if (!lister.single_status(true))
+								if (!lister.single_status(true))	//multiply selection enabled
 								{
 									if (arg.shift)
 									{
 										//Set the first item as the begin of selected item if there
 										//is not a latest selected item.(#154 reported by RenaudAlpes)
-										if (lister.latest_selected_abs.empty() || lister.latest_selected_abs.is_category())
-											lister.latest_selected_abs.set_both(0);
+										if (lister.latest_selected_abs.empty())
+											lister.latest_selected_abs = lister.first();
 
 										auto before = lister.latest_selected_abs;
 
@@ -4214,7 +4230,7 @@ namespace nana
 									else if (arg.ctrl)
 									{
 										essence_->mouse_selection.reverse_selection = true;
-										sel = !item_proxy(essence_, abs_item_pos).selected();
+										new_selected_status = !essence_->cs_status(abs_item_pos, true);
 									}
 									else
 									{
@@ -4237,14 +4253,14 @@ namespace nana
 									//Clicking on a category is ignored when single selection is enabled.
 									//Fixed by Greentwip(issue #121)
 									if (item_ptr)
-										sel = !item_proxy(essence_, abs_item_pos).selected();
+										new_selected_status = !item_proxy(essence_, abs_item_pos).selected();
 								}
 
 								if(item_ptr)
 								{
-									if (item_ptr->flags.selected != sel)
+									if (item_ptr->flags.selected != new_selected_status)
 									{
-										if (sel)
+										if (new_selected_status)
 										{
 											//Deselects the previously selected item.
 											lister.cancel_others_if_single_enabled(true, abs_item_pos);
@@ -4253,13 +4269,15 @@ namespace nana
 										else if (essence_->lister.latest_selected_abs == abs_item_pos)
 											essence_->lister.latest_selected_abs.set_both(npos);
 
-										item_ptr->flags.selected = sel;
+										item_ptr->flags.selected = new_selected_status;
 										lister.emit_cs(abs_item_pos, true);
 									}
 								}
 								else
 								{
-									lister.cat_status(item_pos.cat, true, true);
+									//A category was clicked. Sets all child items to be selected only if multiply selection is enabled.
+									if(!lister.single_status(true))
+										lister.cat_status(item_pos.cat, true, true);
 								}
 							}
 							else
@@ -4409,8 +4427,9 @@ namespace nana
 
 				void trigger::key_press(graph_reference graph, const arg_keyboard& arg)
 				{
+					auto & list = essence_->lister;
 					// Exit if list is empty
-					if (essence_->lister.first().empty())
+					if (list.first().empty())
 						return;
 
 					bool upward = false;
@@ -4420,12 +4439,12 @@ namespace nana
 					case keyboard::os_arrow_up:
 						upward = true;
 					case keyboard::os_arrow_down:
-						essence_->lister.move_select(upward, !arg.shift, true);
+						list.move_select(upward, !arg.shift, true);
 						break;
 					case L' ':
 						{
 							index_pairs s;
-							bool ck = ! essence_->lister.item_selected_all_checked(s);
+							bool ck = ! list.item_selected_all_checked(s);
 							for(auto i : s)
 								item_proxy(essence_, i).check(ck);
 						}
@@ -4434,30 +4453,69 @@ namespace nana
 						upward = true;
 					case keyboard::os_pagedown:
 						{
-							//Turns page, then returns if no change occurs
-							if (!essence_->content_view->turn_page(!upward, false))
-								return;
+							auto const item_px = essence_->item_height();
+							auto picked_items = list.pick_items(true, true);
+							index_pair init_idx = (picked_items.empty() ? list.first() : picked_items[0]);
 
 							essence_->lister.select_for_all(false);
 
-							auto idx = essence_->first_display();
+							//Get the pixels between the init item and top edge or bottom edge
+							auto logic_top = static_cast<int>(list.distance(list.first(), init_idx) * item_px);
 
-							if (!upward)
-								idx = essence_->lister.advance(idx, static_cast<int>(essence_->count_of_exposed(false)) - 1);
+							auto const screen_top = essence_->content_view->origin().y;
+							auto const screen_bottom = screen_top + essence_->content_view->view_area().height;
+							index_pair target_idx;
 
-							if (!idx.is_category())
-								item_proxy::from_display(essence_, idx).select(true);
-							else if (!essence_->lister.single_status(true))	//not selected
-								essence_->lister.cat_status(idx.cat, true, true);
+							//Check if it scrolls in current screen window
+							//condition: top of target item is not less than top edge of content view and
+							//the bottom of target item is not greater than bottom edge of content view.
+							if ((screen_top + item_px <= logic_top) && (logic_top + item_px + item_px <= screen_bottom))
+							{
+								int offset = (static_cast<int>(upward ? screen_top : screen_bottom - item_px) - logic_top) / static_cast<int>(item_px);
+								target_idx = list.advance(init_idx, offset);
+							}
+							else
+							{
+								//turn page
+								auto page_item_count = (std::max)(1, static_cast<int>(essence_->count_of_exposed(false)));
 
-							break;
+								auto origin = essence_->content_view->origin();
+								if (upward)
+								{
+									target_idx = list.advance(init_idx, -page_item_count);
+									if (target_idx.empty())
+										target_idx = list.first();
+
+									origin.y = list.distance(list.first(), target_idx) * item_px;
+								}
+								else
+								{
+									target_idx = list.advance(init_idx, page_item_count);
+									if (target_idx.empty())
+										target_idx = list.last();
+
+									origin.y = list.distance(list.first(), target_idx) * item_px + item_px;
+									if (origin.y >= (screen_bottom - screen_top))
+										origin.y -= (screen_bottom - screen_top);
+									else
+										origin.y = 0;
+								}
+
+								essence_->content_view->move_origin(origin - essence_->content_view->origin());
+							}
+						
+							if (!target_idx.is_category())
+								item_proxy::from_display(essence_, target_idx).select(true);
+							else if (!list.single_status(true))	//not selected
+								list.cat_status(target_idx.cat, true, true);
 						}
+						break;
 					case keyboard::os_home:
 					case keyboard::os_end:
 						{
-							essence_->lister.select_for_all(false);
+							list.select_for_all(false);
 
-							auto pos = (keyboard::os_home == arg.key ? essence_->lister.first() : essence_->lister.last());
+							auto pos = (keyboard::os_home == arg.key ? list.first() : list.last());
 							if (!pos.empty())
 							{
 								//When the pos indicates an empty category, then search forwards/backwards(depending on arg.key whether it is Home or End) for a non empty category.
@@ -4466,9 +4524,9 @@ namespace nana
 								{
 									if (keyboard::os_home == arg.key)
 									{
-										while (0 == essence_->lister.size_item(pos.cat))
+										while (0 == list.size_item(pos.cat))
 										{
-											if (++pos.cat >= essence_->lister.cat_container().size())
+											if (++pos.cat >= list.cat_container().size())
 											{
 												pos = index_pair{ npos, npos };
 												break;
@@ -4477,7 +4535,7 @@ namespace nana
 									}
 									else
 									{
-										while (0 == essence_->lister.size_item(pos.cat))
+										while (0 == list.size_item(pos.cat))
 										{
 											if (pos.cat-- == 0)
 											{
@@ -4489,7 +4547,7 @@ namespace nana
 
 									if (!pos.empty())
 									{
-										if (essence_->lister.expand(pos.cat))
+										if (list.expand(pos.cat))
 											pos.item = 0;
 									}
 								}
@@ -4498,8 +4556,8 @@ namespace nana
 								{
 									if (pos.is_category())
 									{
-										if (!essence_->lister.single_status(true)) //multiple selection is not enabled
-											essence_->lister.cat_status(pos.cat, true, true);
+										if (!list.single_status(true)) //multiple selection is not enabled
+											list.cat_status(pos.cat, true, true);
 									}
 									else
 										item_proxy::from_display(essence_, pos).select(true);
