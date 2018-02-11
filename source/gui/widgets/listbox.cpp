@@ -725,6 +725,13 @@ namespace nana
 				std::size_t	column_pos;
 			};
 
+			enum class view_action
+			{
+				auto_view,
+				top_view,
+				bottom_view,
+			};
+
 			class es_lister
 			{
 			public:
@@ -980,7 +987,12 @@ namespace nana
 					return prstatus;
 				}
 
-				void scroll(const index_pair& abs_pos, bool to_bottom);
+#if 0
+				void scroll(const index_pair& abs_pos, bool to_bottom);	//deprecated
+#endif
+
+				/// Scroll the selected item into the view
+				void scroll_into_view(const index_pair& abs_pos, view_action vw_act);
 
 				/// Append a new category with a specified name and return a pointer to it.
 				category_t* create_cat(native_string_type&& text)
@@ -1681,7 +1693,7 @@ namespace nana
 
                 ///<Selects an item besides the current selected item in the display.
                 /// we are moving in display, but the selection ocurre in abs position
-                void move_select(bool upwards=true, bool unselect_previous=true, bool trace_selected=false) noexcept;
+                void move_select(bool upwards=true, bool unselect_previous=true, bool into_view=false) noexcept;
 
 				struct pred_cancel
 				{
@@ -2382,6 +2394,16 @@ namespace nana
 
 						max_font_px = (std::max)(as + ds, max_font_px);
 					}
+
+					if (0 == max_font_px)
+					{
+						graph.typeface(listbox_ptr->typeface());
+						unsigned as, ds, ileading;
+						graph.text_metrics(as, ds, ileading);
+
+						max_font_px = (std::max)(as + ds, max_font_px);
+					}
+
 					return max_font_px;
 				}
 
@@ -2920,7 +2942,8 @@ namespace nana
 				std::vector<std::pair<index_type, inline_pane*>> panes_;
 			};
 
-			void es_lister::scroll(const index_pair& abs_pos, bool to_bottom)
+#if 0
+			void es_lister::scroll(const index_pair& abs_pos, bool to_bottom)	//deprecated
 			{
 				auto& cat = *get(abs_pos.cat);
 
@@ -2964,6 +2987,63 @@ namespace nana
 				if(ess_->content_view->move_origin(origin - ess_->content_view->origin()))
 					ess_->content_view->sync(false);
 			}
+#endif
+
+			void es_lister::scroll_into_view(const index_pair& abs_pos, view_action vw_act)
+			{
+				auto& cat = *get(abs_pos.cat);
+
+				if ((abs_pos.item != nana::npos) && (abs_pos.item >= cat.items.size()))
+					throw std::invalid_argument("listbox: invalid pos to scroll");
+
+				if (!cat.expand)
+				{
+					this->expand(abs_pos.cat, true);
+					ess_->calc_content_size();
+				}
+				else if (!ess_->auto_draw)
+				{
+					//force a update of content size and scrollbar status when auto_draw is false to make
+					//sure that the scroll function works fine.
+					ess_->calc_content_size();
+				}
+
+				auto origin = ess_->content_view->origin();
+
+				auto off = this->distance(this->first(), this->index_cast(abs_pos, false)) * ess_->item_height();
+
+				auto screen_px = ess_->content_view->view_area().height;
+
+				if (view_action::auto_view == vw_act)
+				{
+					if (static_cast<int>(off) < origin.y)
+						vw_act = view_action::top_view;
+					else if (static_cast<int>(off) >= static_cast<int>(origin.y + ess_->content_view->view_area().height))
+						vw_act = view_action::bottom_view;
+					else
+						return;
+				}
+
+				origin.y = 0;
+
+				if (view_action::bottom_view == vw_act)
+				{
+					off += ess_->item_height();
+					if (off >= screen_px)
+						origin.y = static_cast<int>(off - screen_px);
+				}
+				else
+				{
+					auto last_off = this->distance(this->first(), this->last()) * ess_->item_height();
+					if (last_off - off >= screen_px)
+						origin.y = static_cast<int>(off);
+					else if (last_off >= screen_px)
+						origin.y = static_cast<int>(last_off - screen_px);
+				}
+
+				if (ess_->content_view->move_origin(origin - ess_->content_view->origin()))
+					ess_->content_view->sync(false);
+			}
 
 			void es_lister::erase(const index_pair& pos)
 			{
@@ -2983,7 +3063,7 @@ namespace nana
 				}
 			}
 
-			void es_lister::move_select(bool upwards, bool unselect_previous, bool /*trace_selected*/) noexcept
+			void es_lister::move_select(bool upwards, bool unselect_previous, bool into_view) noexcept
 			{
 				auto next_selected_dpl = index_cast_noexcpt(latest_selected_abs, false);	//convert absolute position to display position
 
@@ -3063,6 +3143,9 @@ namespace nana
 					}
 					else break;
 				}
+
+				if (into_view && !latest_selected_abs.empty())
+					this->scroll_into_view(latest_selected_abs, view_action::auto_view);
 			}
 
 			std::string es_lister::to_string(const export_options& exp_opt) const
@@ -4469,7 +4552,7 @@ namespace nana
 							//Check if it scrolls in current screen window
 							//condition: top of target item is not less than top edge of content view and
 							//the bottom of target item is not greater than bottom edge of content view.
-							if ((screen_top + item_px <= logic_top) && (logic_top + item_px + item_px <= screen_bottom))
+							if ((screen_top + static_cast<int>(item_px) <= logic_top) && (logic_top + static_cast<int>(item_px) + static_cast<int>(item_px) <= screen_bottom))
 							{
 								int offset = (static_cast<int>(upward ? screen_top : screen_bottom - item_px) - logic_top) / static_cast<int>(item_px);
 								target_idx = list.advance(init_idx, offset);
@@ -4561,8 +4644,11 @@ namespace nana
 									}
 									else
 										item_proxy::from_display(essence_, pos).select(true);
+
+									list.scroll_into_view(pos, view_action::auto_view);
 								}
 							}
+							
 						}
 						break;
 					default:
@@ -4658,7 +4744,7 @@ namespace nana
 								ess_->lister.get(pos_.cat)->expand = false;
 
 							if (!this->displayed())
-								ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
+								ess_->lister.scroll_into_view(pos_, (ess_->first_display() > this->to_display() ? view_action::top_view : view_action::bottom_view));
 						}
 
 						ess_->update();
@@ -4696,7 +4782,7 @@ namespace nana
 						ess_->lister.latest_selected_abs.set_both(npos);
 
 					if (scroll_view && (!this->displayed()))
-						ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
+						ess_->lister.scroll_into_view(pos_, (ess_->first_display() > this->to_display() ? view_action::top_view : view_action::bottom_view));
 
 					ess_->update();
 					return *this;
@@ -5364,13 +5450,13 @@ namespace nana
 			else
 				pos.item = ess.lister.size_item(cat_pos) ? 0 : ::nana::npos;
 
-			ess.lister.scroll(pos, to_bottom);
-			ess.update();
+			this->scroll(to_bottom, pos);
 		}
 
 		void listbox::scroll(bool to_bottom, const index_pair& abs_pos)
 		{
-			_m_ess().lister.scroll(abs_pos, to_bottom);
+			using view_action = drawerbase::listbox::view_action;
+			_m_ess().lister.scroll_into_view(abs_pos, (to_bottom ? view_action::bottom_view : view_action::top_view));
 			_m_ess().update();
 		}
 
@@ -5742,7 +5828,7 @@ namespace nana
 
 		void listbox::move_select(bool upwards)  ///<Selects an item besides the current selected item in the display.
 		{
-			_m_ess().lister.move_select(upwards);
+			_m_ess().lister.move_select(upwards, true, true);
 			_m_ess().update();
 		}
 
