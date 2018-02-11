@@ -26,6 +26,7 @@ namespace nana{	namespace audio
 					memset(m, 0, sizeof(meta));
 					m->dwBufferLength = static_cast<unsigned long>(block_size_);
 					m->lpData = rawbuf + sizeof(meta);
+#elif defined(__FreeBSD__)
 #elif defined(NANA_LINUX)
 					m->bufsize = ck.nAvgBytesPerSec;
 					m->buf = rawbuf + sizeof(meta);
@@ -124,6 +125,7 @@ namespace nana{	namespace audio
 						{
 #if defined(NANA_WINDOWS)
 							memcpy(m->lpData + buffered, buf, read_bytes);
+#elif defined(__FreeBSD__)
 #elif defined(NANA_LINUX)
 							memcpy(m->buf + buffered, buf, read_bytes);
 #endif
@@ -144,6 +146,7 @@ namespace nana{	namespace audio
 					}
 #if defined(NANA_WINDOWS)
 					m->dwBufferLength = static_cast<unsigned long>(buffered);
+#elif defined(__FreeBSD__)
 #elif defined(NANA_LINUX)
 					m->bufsize = buffered;
 #endif

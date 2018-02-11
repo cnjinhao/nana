@@ -22,24 +22,6 @@ matrix:
             - libxft-dev
           sources: 
             - ubuntu-toolchain-r-test
-    - env: CXX=g++-4.9 CC=gcc-4.9
-      addons:
-        apt:
-          packages:
-            - g++-4.9
-            - libjpeg8-dev
-            - libpng-dev
-            - libasound2-dev
-            - alsa-utils
-            - alsa-oss
-            - libx11-dev
-            - libxft-dev
-            - libboost-filesystem-dev
-            - libboost-system-dev
-            - libboost-thread-dev
-            - libboost-chrono-dev
-          sources: 
-            - ubuntu-toolchain-r-test
             
   allow_failures:		
     - env: CXX=clang++-3.8 CC=clang-3.8

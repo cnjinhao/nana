@@ -174,14 +174,18 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
         # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
     endif(NANA_CMAKE_SHARED_LIB)
 
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+									# GCC 4.9
+        list(APPEND NANA_LINKS "-lboost_system -lboost_thread")
+
+    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
                                                                          # IS_GNUCXX < 5.3
-    else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
+    else()
 
         # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs")    # IS_GNUCXX 5.3 or more
         list(APPEND NANA_LINKS -lstdc++fs)
 
-    endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
+    endif()
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
 
@@ -391,6 +395,7 @@ message ( "NANA_CMAKE_ENABLE_AUDIO   = "  ${NANA_CMAKE_ENABLE_AUDIO})
 message ( "NANA_CMAKE_SHARED_LIB     = "  ${NANA_CMAKE_SHARED_LIB})
 message ( "NANA_CLION              = "  ${NANA_CLION})
 message ( "CMAKE_MAKE_PROGRAM      = "  ${CMAKE_MAKE_PROGRAM})
+message ( "CMAKE_CXX_COMPILER_VERSION = " ${CMAKE_CXX_COMPILER_VERSION})
 
 message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
 message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
