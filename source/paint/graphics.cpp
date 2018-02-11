@@ -437,7 +437,7 @@ namespace paint
 #endif
 				impl_->handle->string.tab_pixels = detail::raw_text_extent_size(impl_->handle, L"\t", 1).width;
 				impl_->handle->string.whitespace_pixels = detail::raw_text_extent_size(impl_->handle, L" ", 1).width;
-				
+
 				if (impl_->changed == false)
 					impl_->changed = true;
 			}
@@ -830,11 +830,11 @@ namespace paint
 				}
 #elif defined(NANA_X11)
 				auto & spec = nana::detail::platform_spec::instance();
-				
+
 				Display * display = spec.open_display();
-				
+
 				nana::detail::platform_scope_guard lock;
-				
+
 				::XCopyArea(display,
 					impl_->handle->pixmap, reinterpret_cast<Window>(dst), impl_->handle->context,
 						sx, sy, width, height, dx, dy);
@@ -844,7 +844,7 @@ namespace paint
 				::XGetWindowAttributes(display, reinterpret_cast<Window>(dst), &attr);
 				if(BadWindow != spec.rev_error_handler() && attr.map_state != IsUnmapped)
 					::XMapWindow(display, reinterpret_cast<Window>(dst));
-					
+
 				::XFlush(display);
 #endif
 			}
@@ -1060,7 +1060,7 @@ namespace paint
 			{
 				auto const end = str + len;
 				auto i = std::find(str, end, '\t');
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 				impl_->handle->update_text_color();
 #endif
 				if (i != end)

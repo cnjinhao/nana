@@ -19,21 +19,21 @@
 #include <nana/deploy.hpp>
 
 
-namespace nana 
+namespace nana
 {
-namespace filesystem_ext 
+namespace filesystem_ext
 {
 
 #if defined(NANA_WINDOWS)
     constexpr auto const def_root = "C:";
     constexpr auto const def_rootstr = "C:\\";
     constexpr auto const def_rootname = "Local Drive(C:)";
-#elif defined(NANA_LINUX)
+#elif defined(NANA_POSIX)
     constexpr auto const def_root = "/";
     constexpr auto const def_rootstr = "/";
     constexpr auto const def_rootname = "Root/";
 #endif
- 
+
 std::experimental::filesystem::path path_user();    ///< extention ?
 
 /// workaround Boost not having path.generic_u8string() - a good point for http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0251r0.pdf
@@ -53,7 +53,7 @@ inline bool is_directory(const std::experimental::filesystem::directory_entry& d
 
 //template<class DI> // DI = directory_iterator from std, boost, or nana : return directory_entry
 class directory_only_iterator : public std::experimental::filesystem::directory_iterator
-{ 
+{
 	using directory_iterator = std::experimental::filesystem::directory_iterator;
 
 	directory_only_iterator& find_first()
@@ -61,7 +61,7 @@ class directory_only_iterator : public std::experimental::filesystem::directory_
 		auto end = directory_only_iterator{};
 		while (*this != end)
 		{
-			if (is_directory((**this).status())) 
+			if (is_directory((**this).status()))
 				return *this;
 			this->directory_iterator::operator++();
 		}
@@ -111,7 +111,7 @@ public:
 	{
 		find_first();
 	}
-	
+
 	regular_file_only_iterator& operator++()
 	{
 		this->directory_iterator::operator++();
