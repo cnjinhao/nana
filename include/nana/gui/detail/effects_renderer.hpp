@@ -1,3 +1,15 @@
+/*
+*	Effects Renderer
+*	Nana C++ Library(http://www.nanapro.org)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*
+*	Distributed under the Boost Software License, Version 1.0.
+*	(See accompanying file LICENSE_1_0.txt or copy at
+*	http://www.boost.org/LICENSE_1_0.txt)
+*
+*	@file: nana/gui/detail/effects_renderer.cpp
+*/
+
 #ifndef NANA_GUI_DETAIL_EFFECTS_RENDERER_HPP
 #define NANA_GUI_DETAIL_EFFECTS_RENDERER_HPP
 #include <nana/gui/effects.hpp>
@@ -76,7 +88,7 @@ namespace nana{
 					nana::rectangle r;
 					for(auto & action : nimbus)
 					{
-						if(_m_edge_nimbus(focused, action.window) && window_layer::read_visual_rectangle(action.window, r))
+						if(_m_edge_nimbus(action.window, focused) && window_layer::read_visual_rectangle(action.window, r))
 						{
 							if (action.window == wd)
 							{
@@ -140,12 +152,17 @@ namespace nana{
 				}
 			}
 		private:
-			static bool _m_edge_nimbus(core_window_t * focused_wd, core_window_t * wd)
+			/// Determines whether the effect will be rendered for the given window.
+			static bool _m_edge_nimbus(core_window_t * const wd, core_window_t * const focused_wd)
 			{
-				if((focused_wd == wd) && (static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::active)))
-					return true;
-				else if((static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::over)) && (wd->flags.action == mouse_action::hovered))
-					return true;
+				// Don't render the effect if the window is disabled.
+				if (wd->flags.enabled)
+				{
+					if ((focused_wd == wd) && (static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::active)))
+						return true;
+					else if ((static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::over)) && (wd->flags.action == mouse_action::hovered))
+						return true;
+				}
 				return false;
 			}
 
