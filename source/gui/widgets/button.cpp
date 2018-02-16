@@ -379,7 +379,7 @@ namespace nana{	namespace drawerbase
 }//end namespace drawerbase
 
 		//button
-		//@brief: Defaine a button widget and it provides the interfaces to be operational
+		//@brief: Define a button widget and it provides the interfaces to be operational
 			button::button(){}
 
 			button::button(window wd, bool visible)
