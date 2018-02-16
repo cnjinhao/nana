@@ -1041,7 +1041,8 @@ namespace nana
 		bool filebox::show() const
 		{
 #if defined(NANA_WINDOWS)
-			std::wstring wfile;
+			auto winitfile = to_wstring(impl_->file);
+			std::wstring wfile(winitfile);
 			wfile.resize(520);
 
 			OPENFILENAME ofn;
