@@ -47,8 +47,6 @@ namespace nana
 				{}
 			};
 
-
-
 			class item_container
 			{
 			public:
@@ -155,7 +153,7 @@ namespace nana
 						if (imgsize.height > scale) imgsize.height = scale;
 
 						nana::point pos(
-							x + static_cast<int>(scale + extra_size - imgsize.width) / 2, 
+							x + static_cast<int>(scale + extra_size - imgsize.width) / 2,
 							y + static_cast<int>(height - imgsize.height) / 2);
 
 						item.image.paste(::nana::rectangle{ imgsize }, graph, pos);
@@ -421,6 +419,12 @@ namespace nana
 					}
 				}
 			//class drawer
+
+			// Item Proxy
+			void item_proxy::enable(bool enable_state)
+			{
+				widget.enable(button, enable_state);
+			}
 		}//end namespace toolbar
 	}//end namespace drawerbase
 
@@ -449,16 +453,18 @@ namespace nana
 			API::refresh_window(handle());
 		}
 
-		void toolbar::append(const std::string& text, const nana::paint::image& img)
+		drawerbase::toolbar::item_proxy toolbar::append(const std::string& text, const nana::paint::image& img)
 		{
 			get_drawer_trigger().items().push_back(text, img);
 			API::refresh_window(handle());
+			return {*this, get_drawer_trigger().items().size() - 1u};
 		}
 
-		void toolbar::append(const std::string& text)
+		drawerbase::toolbar::item_proxy toolbar::append(const std::string& text)
 		{
 			get_drawer_trigger().items().push_back(text, {});
 			API::refresh_window(this->handle());
+			return {*this, get_drawer_trigger().items().size() - 1u};
 		}
 
 		bool toolbar::enable(size_type pos) const
