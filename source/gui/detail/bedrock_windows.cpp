@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -20,11 +20,11 @@
 #include <nana/system/platform.hpp>
 #include <nana/system/timepiece.hpp>
 #include <nana/gui.hpp>
-#include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/gui/detail/color_schemes.hpp>
+#include "inner_fwd_implement.hpp"
 
 #include <iostream>	//use std::cerr
 
@@ -180,6 +180,12 @@ namespace detail
 				thread_context *object{ nullptr };
 			}tcontext;
 		}cache;
+	};
+
+	struct window_platform_assoc
+	{
+		HACCEL accel{ nullptr };	///< A handle to a Windows keyboard accelerator object.
+		std::map<int, std::function<void()>> accel_commands;
 	};
 
 	//class bedrock defines a static object itself to implement a static singleton
@@ -345,6 +351,20 @@ namespace detail
 		}
 	}
 
+	void process_msg(bedrock* brock, MSG& msg)
+	{
+		auto misc = brock->wd_manager().root_runtime(reinterpret_cast<native_window_type>(msg.hwnd));
+
+		if (misc && misc->wpassoc->accel && ::TranslateAccelerator(msg.hwnd, misc->wpassoc->accel, &msg))
+			return;
+		
+		auto menu_wd = brock->get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
+		if (menu_wd) interior_helper_for_menu(msg, menu_wd);
+
+		::TranslateMessage(&msg);
+		::DispatchMessage(&msg);
+	}
+
 	void bedrock::pump_event(window condition_wd, bool is_modal)
 	{
 		const unsigned tid = ::GetCurrentThreadId();
@@ -383,11 +403,15 @@ namespace detail
 							if (msg.message == WM_QUIT)   break;
 							if ((WM_KEYFIRST <= msg.message && msg.message <= WM_KEYLAST) || !::IsDialogMessage(native_handle, &msg))
 							{
+#if 0
 								auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
 								if (menu_wd) interior_helper_for_menu(msg, menu_wd);
 
-								::TranslateMessage(&msg);
+								::TranslateMessage(&msg);	//deprecated
 								::DispatchMessage(&msg);
+#else
+								process_msg(this, msg);
+#endif
 
 								wd_manager().remove_trash_handle(tid);
 							}
@@ -400,11 +424,15 @@ namespace detail
 					{
 						if (-1 != ::GetMessage(&msg, 0, 0, 0))
 						{
+#if 0
 							auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
 							if (menu_wd) interior_helper_for_menu(msg, menu_wd);
 
 							::TranslateMessage(&msg);
 							::DispatchMessage(&msg);
+#else
+							process_msg(this, msg);
+#endif
 						}
 
 						wd_manager().call_safe_place(tid);
@@ -420,11 +448,15 @@ namespace detail
 				{
 					if(-1 != ::GetMessage(&msg, 0, 0, 0))
 					{
+#if 0
 						auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
 						if(menu_wd) interior_helper_for_menu(msg, menu_wd);
 
 						::TranslateMessage(&msg);
 						::DispatchMessage(&msg);
+#else
+						process_msg(this, msg);
+#endif
 					}
 
 					wd_manager().call_safe_place(tid);
@@ -635,6 +667,7 @@ namespace detail
 
 		switch(msg)
 		{
+		case WM_COMMAND:
 		case WM_DESTROY:
 		case WM_SHOWWINDOW:
 		case WM_SIZING:
@@ -786,6 +819,17 @@ namespace detail
 
 			switch (message)
 			{
+			case WM_COMMAND:
+				if ((1 == HIWORD(wParam)) && root_runtime->wpassoc)
+				{
+					auto i = root_runtime->wpassoc->accel_commands.find(LOWORD(wParam));
+					if (i != root_runtime->wpassoc->accel_commands.end())
+					{
+						auto fn = i->second;
+						fn();
+					}
+				}
+				break;
 			case WM_IME_STARTCOMPOSITION:
 				if (msgwnd->other.attribute.root->ime_enabled)
 				{
@@ -1580,6 +1624,54 @@ namespace detail
 	{
 		kb.ctrl = (0 != (::GetKeyState(VK_CONTROL) & 0x80));
 		kb.shift = (0 != (::GetKeyState(VK_SHIFT) & 0x80));
+	}
+
+	void bedrock::delete_platform_assoc(window_platform_assoc* passoc)
+	{
+		delete passoc;
+	}
+
+	//Generates an identitifer for an accel key.
+	std::pair<int, WORD> id_accel_key(const accel_key& key)
+	{
+		std::pair<int, WORD> ret;
+
+		//Use virt-key for non-case sensitive
+		if (!key.case_sensitive)
+			ret.second = static_cast<WORD>(std::tolower(key.key) - 'a' + 0x41);
+
+		ret.first = ret.second | int(key.case_sensitive ? (1 << 8) : 0) | int(key.alt ? (1 << 9) : 0) | int(key.ctrl ? (1 << 10) : 0) | int(key.shift ? (1 << 11) : 0);
+		return ret;
+	}
+
+	void bedrock::keyboard_accelerator(native_window_type wd, const accel_key& key, const std::function<void()>& fn)
+	{
+		auto misc = wd_manager().root_runtime(wd);
+		if (nullptr == misc)
+			return;
+
+		auto wpassoc = misc->wpassoc;
+		if (!misc->wpassoc)
+			misc->wpassoc = new window_platform_assoc;
+
+		auto idkey = id_accel_key(key);
+
+		misc->wpassoc->accel_commands[idkey.first] = fn;
+
+		auto accel_size = ::CopyAcceleratorTable(misc->wpassoc->accel, nullptr, 0);
+
+		std::unique_ptr<ACCEL[]> accels(new ACCEL[accel_size + 1]);
+		
+		if (accel_size)
+			::CopyAcceleratorTable(misc->wpassoc->accel, accels.get(), accel_size);
+
+		auto p = accels.get() + accel_size;
+		p->cmd = idkey.first;
+		p->fVirt = (key.case_sensitive ? 0 : FVIRTKEY) | (key.alt ? FALT : 0) | (key.ctrl ? FCONTROL : 0) | (key.shift ? FSHIFT : 0);
+		p->key = idkey.second;
+
+		::DestroyAcceleratorTable(misc->wpassoc->accel);
+		misc->wpassoc->accel = ::CreateAcceleratorTable(accels.get(), accel_size + 1);
 	}
 
 	element_store& bedrock::get_element_store() const

@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -27,6 +27,7 @@ namespace detail
 	struct	basic_window;
 	class	window_manager;
 
+	struct window_platform_assoc;
 	
 	/// @brief	fundamental core component, it provides an abstraction to the OS platform and some basic functions.
 	class bedrock
@@ -73,6 +74,11 @@ namespace detail
 
 		//Closes the windows which are associated with the specified thread. If the given thread_id is 0, it closes all windows
 		void close_thread_window(unsigned thread_id);
+
+	public:
+		//Platform-dependent functions
+		static void delete_platform_assoc(window_platform_assoc*);
+		void keyboard_accelerator(native_window_type, const accel_key&, const std::function<void()>&);
 	public:
 		void event_expose(core_window_t *, bool exposed);
 		void event_move(core_window_t*, int x, int y);

@@ -4,7 +4,7 @@
  *
  *	Basis Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -29,6 +29,15 @@ namespace nana
 		struct event_handle_impl{};
 		struct native_drawable_impl{};
 	}
+
+	struct accel_key
+	{
+		char key;
+		bool case_sensitive{ false };
+		bool alt{ false };
+		bool ctrl{ false };
+		bool shift{ false };
+	};
 
 	enum class checkstate
 	{
