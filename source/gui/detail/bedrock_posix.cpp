@@ -104,6 +104,11 @@ namespace detail
 	void window_proc_for_packet(Display *, nana::detail::msg_packet_tag&);
 	void window_proc_for_xevent(Display*, XEvent&);
 
+	struct window_platform_assoc
+	{
+		//Wait...
+	};
+
 	//class bedrock defines a static object itself to implement a static singleton
 	//here is the definition of this object
 	bedrock bedrock::bedrock_object;
@@ -220,6 +225,11 @@ namespace detail
 		nana::detail::platform_spec::instance().read_keystate(xkey);
 		arg.ctrl = (xkey.state & ControlMask);
 		arg.shift = (xkey.state & ShiftMask);
+	}
+
+	void bedrock::delete_platform_assoc(window_platform_assoc* passoc)
+	{
+		delete passoc;
 	}
 
 	void bedrock::keyboard_accelerator(native_window_type, const accel_key&, const std::function<void()>& fn)
