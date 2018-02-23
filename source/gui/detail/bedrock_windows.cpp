@@ -1622,6 +1622,7 @@ namespace detail
 
 	void bedrock::get_key_state(arg_keyboard& kb)
 	{
+		kb.alt = (0 != (::GetKeyState(VK_MENU) & 0x80));
 		kb.ctrl = (0 != (::GetKeyState(VK_CONTROL) & 0x80));
 		kb.shift = (0 != (::GetKeyState(VK_SHIFT) & 0x80));
 	}

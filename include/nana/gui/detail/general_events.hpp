@@ -1,7 +1,7 @@
 /**
 *	Definition of General Events
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -460,8 +460,9 @@ namespace nana
 		::nana::window window_handle;	///< A handle to the event window
 		mutable wchar_t key;	///< the key corresponding to the key pressed
 		mutable bool ignore;	    ///< this member is only available for key_char event, set 'true' to ignore the input.
-		bool ctrl;	                ///< keyboard Ctrl is pressed?
-		bool shift;	                ///< keyboard Shift is pressed
+		bool alt;					///< it is set to indicate the modifier key Alt just prior to the event.
+		bool ctrl;	                ///< it is set to indicate the modifier key Ctrl just prior to the event.
+		bool shift;	                ///< it is set to indicate the modifier key Shift just prior to the event.
 	};
 
 	struct arg_move : public event_arg

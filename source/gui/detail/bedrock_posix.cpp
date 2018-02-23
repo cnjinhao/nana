@@ -223,6 +223,7 @@ namespace detail
 	{
 		XKeyEvent xkey;
 		nana::detail::platform_spec::instance().read_keystate(xkey);
+		arg.alt = (xkey.state & Mod1Mask);
 		arg.ctrl = (xkey.state & ControlMask);
 		arg.shift = (xkey.state & ShiftMask);
 	}
