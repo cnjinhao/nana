@@ -1650,8 +1650,7 @@ namespace detail
 		auto misc = wd_manager().root_runtime(wd);
 		if (nullptr == misc)
 			return;
-
-		auto wpassoc = misc->wpassoc;
+		
 		if (!misc->wpassoc)
 			misc->wpassoc = new window_platform_assoc;
 
