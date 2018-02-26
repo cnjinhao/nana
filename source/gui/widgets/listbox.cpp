@@ -5328,6 +5328,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			auto & ess = _m_ess();
+			ess.lister.erase();
 			ess.header.clear();
 			ess.update();
 		}
