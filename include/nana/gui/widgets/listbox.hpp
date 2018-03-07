@@ -1411,6 +1411,8 @@ the nana::detail::basic_window member pointer scheme
 		size_type append_header(std::string text_utf8, unsigned width = 120);
 		size_type append_header(std::wstring text, unsigned width = 120);
 
+		void clear_headers();					///< Removes all the columns.
+
 		cat_proxy append(std::string category);		///< Appends a new category to the end
 		cat_proxy append(std::wstring category);		///< Appends a new category to the end
 		void append(std::initializer_list<std::string> categories); ///< Appends categories to the end
