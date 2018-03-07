@@ -353,11 +353,16 @@ namespace detail
 
 	void process_msg(bedrock* brock, MSG& msg)
 	{
-		auto misc = brock->wd_manager().root_runtime(reinterpret_cast<native_window_type>(msg.hwnd));
+		if (WM_KEYFIRST <= msg.message && msg.message <= WM_KEYLAST)
+		{
+			auto misc = brock->wd_manager().root_runtime(reinterpret_cast<native_window_type>(msg.hwnd));
+			if (misc && misc->wpassoc && misc->wpassoc->accel)
+			{
+				if (::TranslateAccelerator(msg.hwnd, misc->wpassoc->accel, &msg))
+					return;
+			}
+		}
 
-		if (misc && misc->wpassoc->accel && ::TranslateAccelerator(msg.hwnd, misc->wpassoc->accel, &msg))
-			return;
-		
 		auto menu_wd = brock->get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
 		if (menu_wd) interior_helper_for_menu(msg, menu_wd);
 
