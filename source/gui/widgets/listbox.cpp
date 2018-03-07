@@ -307,6 +307,11 @@ namespace nana
                     return cont_.back().index;
 				}
 
+				void clear()
+				{
+					cont_.clear();
+				}
+
 				unsigned pixels() const noexcept  ///< the visible width of the whole header
 				{
 					unsigned pixels = 0;
@@ -5317,6 +5322,15 @@ namespace nana
 			auto pos = ess.header.create(&ess, to_nstring(std::move(s)), width);
 			ess.update();
 			return pos;
+		}
+
+		void listbox::clear_headers()
+		{
+			internal_scope_guard lock;
+			auto & ess = _m_ess();
+			ess.lister.erase();
+			ess.header.clear();
+			ess.update();
 		}
 
 		listbox::cat_proxy listbox::append(std::string s)

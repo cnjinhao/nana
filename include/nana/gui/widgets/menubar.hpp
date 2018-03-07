@@ -95,6 +95,7 @@ namespace nana
 		menu& push_back(const std::string&);	///< Appends a new (empty) menu.
 		menu& at(size_t index) const;		    ///< Gets the menu specified by index.
 		std::size_t length() const;		        ///< Number of menus.
+		void clear();							///< Removes all the menus.
 		
 		/// Deselects the menu
 		/**
