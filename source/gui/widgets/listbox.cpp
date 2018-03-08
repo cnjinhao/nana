@@ -134,6 +134,7 @@ namespace nana
 
 					std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> weak_ordering;
 
+					std::shared_ptr<paint::font> font;	///< The exclusive column font
 
 					column() = default;
 					
@@ -150,11 +151,12 @@ namespace nana
 							index = other.index;
 							alignment = other.alignment;
 							weak_ordering = other.weak_ordering;
+							font = other.font;
 						}
 						return *this;
 					
 					}
-
+					
 					column(column&& other):
 						caption(std::move(other.caption)),
 						width_px(other.width_px),
@@ -163,6 +165,7 @@ namespace nana
 						index(other.index),
 						alignment(other.alignment),
 						weak_ordering(std::move(other.weak_ordering)),
+						font(std::move(other.font)),
 						ess_(other.ess_)
 					{
 					}
@@ -237,6 +240,12 @@ namespace nana
 					//Definition is provided after essence
 					void fit_content(unsigned maximize = 100000) noexcept override;
 
+					/// Sets an exclusive font for the column
+					void typeface(const paint::font& column_font) override;
+
+					/// Returns a font
+					paint::font typeface() const noexcept override;
+
 					bool visible() const noexcept override
 					{
 						return visible_state;
@@ -307,7 +316,7 @@ namespace nana
                     return cont_.back().index;
 				}
 
-				unsigned pixels() const noexcept  ///< the visible width of the whole header
+				unsigned width_px() const noexcept  ///< the visible width of the whole header
 				{
 					unsigned pixels = 0;
 					for(auto & col : cont_)
@@ -716,6 +725,13 @@ namespace nana
 				std::size_t	column_pos;
 			};
 
+			enum class view_action
+			{
+				auto_view,
+				top_view,
+				bottom_view,
+			};
+
 			class es_lister
 			{
 			public:
@@ -971,7 +987,12 @@ namespace nana
 					return prstatus;
 				}
 
-				void scroll(const index_pair& abs_pos, bool to_bottom);
+#if 0
+				void scroll(const index_pair& abs_pos, bool to_bottom);	//deprecated
+#endif
+
+				/// Scroll the selected item into the view
+				void scroll_into_view(const index_pair& abs_pos, view_action vw_act);
 
 				/// Append a new category with a specified name and return a pointer to it.
 				category_t* create_cat(native_string_type&& text)
@@ -1672,7 +1693,7 @@ namespace nana
 
                 ///<Selects an item besides the current selected item in the display.
                 /// we are moving in display, but the selection ocurre in abs position
-                void move_select(bool upwards=true, bool unselect_previous=true, bool trace_selected=false) noexcept;
+                void move_select(bool upwards=true, bool unselect_previous=true, bool into_view=false) noexcept;
 
 				struct pred_cancel
 				{
@@ -2072,7 +2093,7 @@ namespace nana
 						return{};
 
 					auto origin = content_view->origin();
-					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.pixels()) };
+					return{ r.x - origin.x, r.x - origin.x + static_cast<int>(header.width_px()) };
 				}
 
 				void start_mouse_selection(const arg_mouse& arg)
@@ -2112,7 +2133,7 @@ namespace nana
 
 					auto content_x = coordinate_cast({ columns_range().first, 0 }, true).x;
 					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x &&
-						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) < content_x + static_cast<int>(header.pixels()))
+						(std::min)(mouse_selection.end_position.x, mouse_selection.begin_position.x) < content_x + static_cast<int>(header.width_px()))
 					{
 						auto const begin_off = (std::max)((std::min)(mouse_selection.begin_position.y, mouse_selection.end_position.y), 0) / item_height();
 
@@ -2225,7 +2246,7 @@ namespace nana
 				::nana::size calc_content_size(bool try_update = true)
 				{
 					size ctt_size(
-						this->header.pixels() + this->header.margin(),
+						this->header.width_px() + this->header.margin(),
 						static_cast<size::value_type>(this->lister.the_number_of_expanded()) * this->item_height()
 					);
 
@@ -2271,12 +2292,12 @@ namespace nana
 					{   /// we are inside
 						auto const origin = content_view->origin();
 
-						if(header.visible() && (pos.y < static_cast<int>(scheme_ptr->header_height) + area.y))
+						if (header.visible() && (pos.y < static_cast<int>(header_visible_px()) + area.y))
 						{   /// we are in the header
 							new_where.first = parts::header;
 							new_where.second = this->column_from_pos(pos.x);
 						}
-						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.pixels()))
+						else if (area.x <= pos.x + origin.x && pos.x + origin.x < area.x + static_cast<int>(header.width_px()))
 						{
 							// detect if cursor is in the area of header margin
 							if (pos.x < area.x - origin.x + static_cast<int>(header.margin()))
@@ -2356,9 +2377,42 @@ namespace nana
 					return r;
 				}
 
+				double header_font_px() const
+				{
+					unsigned max_font_px = 0;
+
+					paint::graphics graph{ size{ 1, 1 } };
+					for (auto & col : this->header.cont())
+					{
+						if (!col.visible())
+							continue;
+
+						graph.typeface(col.typeface());
+
+						unsigned as, ds, ileading;
+						graph.text_metrics(as, ds, ileading);
+
+						max_font_px = (std::max)(as + ds, max_font_px);
+					}
+
+					if (0 == max_font_px)
+					{
+						graph.typeface(listbox_ptr->typeface());
+						unsigned as, ds, ileading;
+						graph.text_metrics(as, ds, ileading);
+
+						max_font_px = (std::max)(as + ds, max_font_px);
+					}
+
+					return max_font_px;
+				}
+
 				unsigned header_visible_px() const
 				{
-					return (header.visible() ? scheme_ptr->header_height : 0);
+					if (!header.visible())
+						return 0;
+
+					return scheme_ptr->header_padding_top + scheme_ptr->header_padding_bottom + static_cast<unsigned>(header_font_px());
 				}
 
 				bool rect_header(nana::rectangle& r) const
@@ -2367,7 +2421,7 @@ namespace nana
 					{
 						r = this->content_area();
 
-						r.height = scheme_ptr->header_height;
+						r.height = header_visible_px();
 
 						if (lister.wd_ptr()->borderless())
 							return !r.empty();
@@ -2777,6 +2831,29 @@ namespace nana
 
 				_m_refresh();
 			}
+
+			/// Sets an exclusive font for the column
+			void es_header::column::typeface(const paint::font& column_font)
+			{
+				this->font.reset(new paint::font{ column_font });
+
+				API::refresh_window(*ess_->listbox_ptr);
+			}
+
+			/// Returns a font
+			paint::font es_header::column::typeface() const noexcept
+			{
+				//Returns the exclusive font if it is not empty
+				if (this->font && !this->font->empty())
+				return *this->font;
+
+				//Returns the column font if it is not empty
+				if (ess_->scheme_ptr->column_font && !ess_->scheme_ptr->column_font)
+					return *(ess_->scheme_ptr->column_font);
+
+				//If all above fonts are invalid, returns the widget font.
+				return ess_->listbox_ptr->typeface();
+			}
 			//end es_header::column functions
 
 			class inline_indicator
@@ -2865,7 +2942,8 @@ namespace nana
 				std::vector<std::pair<index_type, inline_pane*>> panes_;
 			};
 
-			void es_lister::scroll(const index_pair& abs_pos, bool to_bottom)
+#if 0
+			void es_lister::scroll(const index_pair& abs_pos, bool to_bottom)	//deprecated
 			{
 				auto& cat = *get(abs_pos.cat);
 
@@ -2909,6 +2987,63 @@ namespace nana
 				if(ess_->content_view->move_origin(origin - ess_->content_view->origin()))
 					ess_->content_view->sync(false);
 			}
+#endif
+
+			void es_lister::scroll_into_view(const index_pair& abs_pos, view_action vw_act)
+			{
+				auto& cat = *get(abs_pos.cat);
+
+				if ((abs_pos.item != nana::npos) && (abs_pos.item >= cat.items.size()))
+					throw std::invalid_argument("listbox: invalid pos to scroll");
+
+				if (!cat.expand)
+				{
+					this->expand(abs_pos.cat, true);
+					ess_->calc_content_size();
+				}
+				else if (!ess_->auto_draw)
+				{
+					//force a update of content size and scrollbar status when auto_draw is false to make
+					//sure that the scroll function works fine.
+					ess_->calc_content_size();
+				}
+
+				auto origin = ess_->content_view->origin();
+
+				auto off = this->distance(this->first(), this->index_cast(abs_pos, false)) * ess_->item_height();
+
+				auto screen_px = ess_->content_view->view_area().height;
+
+				if (view_action::auto_view == vw_act)
+				{
+					if (static_cast<int>(off) < origin.y)
+						vw_act = view_action::top_view;
+					else if (static_cast<int>(off) >= static_cast<int>(origin.y + ess_->content_view->view_area().height))
+						vw_act = view_action::bottom_view;
+					else
+						return;
+				}
+
+				origin.y = 0;
+
+				if (view_action::bottom_view == vw_act)
+				{
+					off += ess_->item_height();
+					if (off >= screen_px)
+						origin.y = static_cast<int>(off - screen_px);
+				}
+				else
+				{
+					auto last_off = this->distance(this->first(), this->last()) * ess_->item_height();
+					if (last_off - off >= screen_px)
+						origin.y = static_cast<int>(off);
+					else if (last_off >= screen_px)
+						origin.y = static_cast<int>(last_off - screen_px);
+				}
+
+				if (ess_->content_view->move_origin(origin - ess_->content_view->origin()))
+					ess_->content_view->sync(false);
+			}
 
 			void es_lister::erase(const index_pair& pos)
 			{
@@ -2928,7 +3063,7 @@ namespace nana
 				}
 			}
 
-			void es_lister::move_select(bool upwards, bool unselect_previous, bool /*trace_selected*/) noexcept
+			void es_lister::move_select(bool upwards, bool unselect_previous, bool into_view) noexcept
 			{
 				auto next_selected_dpl = index_cast_noexcpt(latest_selected_abs, false);	//convert absolute position to display position
 
@@ -3008,6 +3143,9 @@ namespace nana
 					}
 					else break;
 				}
+
+				if (into_view && !latest_selected_abs.empty())
+					this->scroll_into_view(latest_selected_abs, view_action::auto_view);
 			}
 
 			std::string es_lister::to_string(const export_options& exp_opt) const
@@ -3080,6 +3218,14 @@ namespace nana
 				using graph_reference = nana::paint::graphics&;
 				using item_state = essence::item_state;
 				using parts = essence::parts;
+
+				struct column_rendering_parameter
+				{
+					unsigned margin;
+					unsigned height;
+					double max_font_px;
+					paint::font wdg_font;
+				};
 
 				drawer_header_impl(essence* es) noexcept: essence_(es){}
 
@@ -3192,25 +3338,31 @@ namespace nana
 						0, r.height - 1
 					};
 
+					column_rendering_parameter crp;
+
 					//The first item includes the margin
-					unsigned margin = essence_->header.margin();
+					crp.margin = essence_->header.margin();
+
+					crp.height = essence_->header_visible_px();
+					crp.max_font_px = essence_->header_font_px();
+					crp.wdg_font = graph.typeface();
 
 					for (auto & col : essence_->header.cont())
 					{
 						if (col.visible_state)
 						{
-							column_r.width = col.width_px + margin;
+							column_r.width = col.width_px + crp.margin;
 
 							const auto right_pos = column_r.right();
 
 							//Make sure the column is in the display area.
 							if (right_pos > r.x)
 							{
-								_m_draw_header_item(graph, margin, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
+								_m_draw_header_item(graph, crp, column_r, text_color, col, (col.index == essence_->pointer_where.second ? state : item_state::normal));
 								graph.line({ right_pos - 1, r.y }, { right_pos - 1, r.bottom() - 2 }, border_color);
 							}
 
-							margin = 0;
+							crp.margin = 0;
 
 							column_r.x = right_pos;
 							if (right_pos > r.right())
@@ -3275,7 +3427,7 @@ namespace nana
 					return npos;
 				}
 
-				void _m_draw_header_item(graph_reference graph, unsigned margin, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
+				void _m_draw_header_item(graph_reference graph, const column_rendering_parameter& crp, const rectangle& column_r, const ::nana::color& fgcolor, const es_header::column& column, item_state state)
 				{
 					::nana::color bgcolor;
 
@@ -3306,7 +3458,16 @@ namespace nana
 					{
 						graph.palette(true, fgcolor);
 
-						point text_pos{ column_r.x + static_cast<int>(margin), (static_cast<int>(essence_->scheme_ptr->header_height) - static_cast<int>(essence_->text_height)) / 2 };
+						//Set column font
+						graph.typeface(column.typeface());
+
+						unsigned ascent, descent, ileading;
+						graph.text_metrics(ascent, descent, ileading);
+
+						point text_pos{
+							column_r.x + static_cast<int>(crp.margin),
+							column_r.bottom() - static_cast<int>(crp.height + ascent + descent) / 2
+						};
 
 						if (align::left == column.alignment)
 							text_pos.x += text_margin;
@@ -3314,6 +3475,9 @@ namespace nana
 							text_margin = 0;
 
 						text_aligner.draw(column.caption, text_pos, column_r.width - text_margin);
+
+						//Restores widget font
+						graph.typeface(crp.wdg_font);
 					}
 
 					auto & sort = essence_->lister.sort_attrs();
@@ -3330,16 +3494,20 @@ namespace nana
 				{
 					const auto & col = essence_->header.at(essence_->pointer_where.second);
 
-					auto margin = 0;
-					
-					if (&essence_->header.at(0, true) == &col)
-						margin = essence_->header.margin();
+					column_rendering_parameter crp;
+					crp.margin = 0;
+					crp.height = essence_->header_visible_px();
+					crp.max_font_px = essence_->header_font_px();
+					crp.wdg_font = essence_->listbox_ptr->typeface();
 
-					paint::graphics fl_graph({ col.width_px + margin, essence_->scheme_ptr->header_height });
+					if (&essence_->header.at(0, true) == &col)
+						crp.margin = essence_->header.margin();
+
+					paint::graphics fl_graph({ col.width_px + crp.margin, crp.height });
 
 					fl_graph.typeface(essence_->graph->typeface());
 
-					_m_draw_header_item(fl_graph, margin, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
+					_m_draw_header_item(fl_graph, crp, rectangle{ fl_graph.size()}, colors::white, col, item_state::floated);
 
 					auto xpos = essence_->header.range(col.index).first + pos.x - grabs_.start_pos;
 					essence_->graph->blend(rectangle{ point{ xpos - essence_->content_view->origin().x + rect.x, rect.y } , fl_graph.size() }, fl_graph, {}, 0.5);
@@ -3398,7 +3566,7 @@ namespace nana
 
 					essence_->graph->palette(false, bgcolor);
 
-					auto const header_w = essence_->header.pixels();
+					auto const header_w = essence_->header.width_px();
 					auto const item_height_px = essence_->item_height();
 
 					auto const origin = essence_->content_view->origin();
@@ -3887,21 +4055,11 @@ namespace nana
 				void _m_draw_item_border(int item_top) const
 				{
 					//Draw selecting inner rectangle
-					/*
-					rectangle r{ x, y, width, essence_->item_height() };
-
-					essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
-
-					essence_->graph->palette(false, colors::white);
-					paint::draw(*essence_->graph).corner(r, 1);
-
-					essence_->graph->rectangle(r.pare_off(1), false);
-					*/
 
 					rectangle r{
 						essence_->content_area().x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin()),
 						item_top,
-						essence_->header.pixels(),
+						essence_->header.width_px(),
 						essence_->item_height()
 					};
 
@@ -3966,8 +4124,6 @@ namespace nana
 
 				void trigger::typeface_changed(graph_reference graph)
 				{
-					//essence_->text_height = graph.text_extent_size(L"jHWn0123456789/<?'{[|\\_").height;
-
 					essence_->text_height = 0;
 					unsigned as, ds, il;
 					if (graph.text_metrics(as, ds, il))
@@ -4396,7 +4552,7 @@ namespace nana
 							//Check if it scrolls in current screen window
 							//condition: top of target item is not less than top edge of content view and
 							//the bottom of target item is not greater than bottom edge of content view.
-							if ((screen_top + item_px <= logic_top) && (logic_top + item_px + item_px <= screen_bottom))
+							if ((screen_top + static_cast<int>(item_px) <= logic_top) && (logic_top + static_cast<int>(item_px) + static_cast<int>(item_px) <= screen_bottom))
 							{
 								int offset = (static_cast<int>(upward ? screen_top : screen_bottom - item_px) - logic_top) / static_cast<int>(item_px);
 								target_idx = list.advance(init_idx, offset);
@@ -4488,8 +4644,11 @@ namespace nana
 									}
 									else
 										item_proxy::from_display(essence_, pos).select(true);
+
+									list.scroll_into_view(pos, view_action::auto_view);
 								}
 							}
+							
 						}
 						break;
 					default:
@@ -4585,7 +4744,7 @@ namespace nana
 								ess_->lister.get(pos_.cat)->expand = false;
 
 							if (!this->displayed())
-								ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
+								ess_->lister.scroll_into_view(pos_, (ess_->first_display() > this->to_display() ? view_action::top_view : view_action::bottom_view));
 						}
 
 						ess_->update();
@@ -4623,7 +4782,7 @@ namespace nana
 						ess_->lister.latest_selected_abs.set_both(npos);
 
 					if (scroll_view && (!this->displayed()))
-						ess_->lister.scroll(pos_, !(ess_->first_display() > this->to_display()));
+						ess_->lister.scroll_into_view(pos_, (ess_->first_display() > this->to_display() ? view_action::top_view : view_action::bottom_view));
 
 					ess_->update();
 					return *this;
@@ -5291,13 +5450,13 @@ namespace nana
 			else
 				pos.item = ess.lister.size_item(cat_pos) ? 0 : ::nana::npos;
 
-			ess.lister.scroll(pos, to_bottom);
-			ess.update();
+			this->scroll(to_bottom, pos);
 		}
 
 		void listbox::scroll(bool to_bottom, const index_pair& abs_pos)
 		{
-			_m_ess().lister.scroll(abs_pos, to_bottom);
+			using view_action = drawerbase::listbox::view_action;
+			_m_ess().lister.scroll_into_view(abs_pos, (to_bottom ? view_action::bottom_view : view_action::top_view));
 			_m_ess().update();
 		}
 
@@ -5669,7 +5828,7 @@ namespace nana
 
 		void listbox::move_select(bool upwards)  ///<Selects an item besides the current selected item in the display.
 		{
-			_m_ess().lister.move_select(upwards);
+			_m_ess().lister.move_select(upwards, true, true);
 			_m_ess().update();
 		}
 

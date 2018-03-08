@@ -436,6 +436,8 @@ namespace API
 	 * widget by the content extent. 
 	 */
 	optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
+
+	unsigned screen_dpi(bool x_requested);
 }//end namespace API
 
 }//end namespace nana

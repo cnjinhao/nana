@@ -38,14 +38,21 @@ namespace nana
 			font(const font&);
 
 			font(const ::std::string& name, double size_pt, const font_style& fs = {});
-			font(double size_pt, const path_type& truetype, const font_style& ft = {});
+			font(double size_pt, const path_type& truetype, const font_style& fs = {});
 
 			~font();
 			bool empty() const;
 
 			void set_default() const;
 			::std::string name() const;
-			double size() const;
+
+			/// Returns font size, in point.
+			/**
+			* @param fixed Indicates whether to return a fixed font size. If this parameter is false, the method may return zero for default system font size. If the parameter is true, the method returns a fixed size of default font size if the font size that assigned by constructor is zero.
+			* @return The font size, in point.
+			*/
+			double size(bool fixed = false) const;
+
 			bool bold() const;
 			unsigned weight() const;
 			bool italic() const;
