@@ -131,7 +131,7 @@ endif(APPLE)
 
 if(UNIX)
     list(APPEND NANA_LINKS -lX11)
-    find_package(Freetype)
+    include(FindFreetype)
     if (FREETYPE_FOUND)
         include_directories( ${FREETYPE_INCLUDE_DIRS})
         list(APPEND NANA_LINKS -lXft)

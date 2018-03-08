@@ -1,7 +1,7 @@
 /**
  *	A ISO C++ filesystem Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -72,13 +72,12 @@ namespace boost
 		//  begin() and end() are only used by a range-based for statement in the context of
 		//  auto - thus the top-level const is stripped - so returning const is harmless and
 		//  emphasizes begin() is just a pass through.
-		inline
-		const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
+		inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
 		{
 			return iter;
 		}
-		inline
-		directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
+
+		inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
 		{
 			return directory_iterator();
 		}

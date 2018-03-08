@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,10 +15,10 @@
 #include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
-#include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
+#include "inner_fwd_implement.hpp"
 #include <errno.h>
 #include <algorithm>
 
@@ -103,6 +103,42 @@ namespace detail
 	void window_proc_dispatcher(Display*, nana::detail::msg_packet_tag&);
 	void window_proc_for_packet(Display *, nana::detail::msg_packet_tag&);
 	void window_proc_for_xevent(Display*, XEvent&);
+
+	class accel_key_comparer
+	{
+	public:
+		bool operator()(const accel_key& a, const accel_key& b) const
+		{
+			auto va = a.case_sensitive ? a.key : std::tolower(a.key);
+			auto vb = b.case_sensitive ? b.key : std::tolower(b.key);
+
+			if(va < vb)
+				return true;
+			else if(va > vb)
+				return false;
+
+			if (a.case_sensitive != b.case_sensitive)
+				return b.case_sensitive;
+
+			if (a.alt != b.alt)
+				return b.alt;
+
+			if (a.ctrl != b.ctrl)
+				return b.ctrl;
+
+			return ((a.shift != b.shift) && b.shift);
+		}
+	};
+
+	struct accel_key_value
+	{
+		std::function<void()> command;
+	};
+
+	struct window_platform_assoc
+	{
+		std::map<accel_key, accel_key_value, accel_key_comparer> accel_commands;
+	};
 
 	//class bedrock defines a static object itself to implement a static singleton
 	//here is the definition of this object
@@ -218,8 +254,26 @@ namespace detail
 	{
 		XKeyEvent xkey;
 		nana::detail::platform_spec::instance().read_keystate(xkey);
+		arg.alt = (xkey.state & Mod1Mask);
 		arg.ctrl = (xkey.state & ControlMask);
 		arg.shift = (xkey.state & ShiftMask);
+	}
+
+	void bedrock::delete_platform_assoc(window_platform_assoc* passoc)
+	{
+		delete passoc;
+	}
+
+	void bedrock::keyboard_accelerator(native_window_type wd, const accel_key& ackey, const std::function<void()>& fn)
+	{
+		auto misc = wd_manager().root_runtime(wd);
+		if (nullptr == misc)
+			return;
+
+		if (!misc->wpassoc)
+			misc->wpassoc = new window_platform_assoc;
+
+		misc->wpassoc->accel_commands[ackey].command = fn;
 	}
 
 	element_store& bedrock::get_element_store() const
@@ -488,6 +542,34 @@ namespace detail
 			}while(false);
 		}
 		return wchar_t(keysym);
+	}
+
+	bool translate_keyboard_accelerator(root_misc* misc, char os_code, const arg_keyboard& modifiers)
+	{
+		if(!misc->wpassoc)
+			return false;
+
+		auto lower_oc = std::tolower(os_code);
+
+		std::function<void()> command;
+
+		for(auto & accel : misc->wpassoc->accel_commands)
+		{
+			if(accel.first.key != (accel.first.case_sensitive ? os_code : lower_oc))
+				continue;
+
+			if(accel.first.alt == modifiers.alt && accel.first.ctrl == modifiers.ctrl && accel.first.shift == modifiers.shift)
+			{
+				command = accel.second.command;
+				break;
+			}
+		}
+
+		if(!command)
+			return false;
+		
+		command();
+		return true;
 	}
 
 	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
@@ -849,6 +931,9 @@ namespace detail
 
 					if(msgwnd)
 					{
+						arg_keyboard modifiers_status;
+						brock.get_key_state(modifiers_status);
+
 						KeySym keysym;
 						Status status;
 						char fixbuf[33];
@@ -883,16 +968,20 @@ namespace detail
 
 						keybuf[len] = 0;
 						wchar_t os_code = 0;
+						bool accel_translated = false;
+
 						switch(status)
 						{
 						case XLookupKeySym:
 						case XLookupBoth:
 							os_code = os_code_from_keysym(keysym);
+							accel_translated = translate_keyboard_accelerator(root_runtime, os_code, modifiers_status);
+							if(accel_translated)
+								break;
+
 							if(os_code == keyboard::tab && (false == (msgwnd->flags.tab & detail::tab_type::eating))) //Tab
 							{
-								arg_keyboard argkey;
-								brock.get_key_state(argkey);
-								auto tstop_wd = wd_manager.tabstop(msgwnd, !argkey.shift);
+								auto tstop_wd = wd_manager.tabstop(msgwnd, !modifiers_status.shift);
 								if (tstop_wd)
 								{
                                     root_runtime->condition.ignore_tab = true;
@@ -907,9 +996,9 @@ namespace detail
 								if((nullptr == pressed_wd) && (nullptr == pressed_wd_space))
 								{
 									arg_mouse arg;
-									arg.alt = false;
+									arg.alt = modifiers_status.alt;
 									arg.button = ::nana::mouse::left_button;
-									arg.ctrl = false;
+									arg.ctrl = modifiers_status.ctrl;
 									arg.evt_code = event_code::mouse_down;
 									arg.left_button = true;
 									arg.mid_button = false;
@@ -955,11 +1044,10 @@ namespace detail
 								if(keyboard::os_ctrl == os_code)
 									context.is_ctrl_pressed = true;
 
-								arg_keyboard arg;
+								arg_keyboard arg = modifiers_status;
 								arg.ignore = false;
 								arg.key = os_code;
 								arg.evt_code = event_code::key_press;
-								brock.get_key_state(arg);
 								arg.window_handle = reinterpret_cast<window>(msgwnd);
 
 								brock.emit(event_code::key_press, msgwnd, arg, true, &context);
@@ -988,7 +1076,7 @@ namespace detail
 
 								for(int i = 0; i < len; ++i)
 								{
-									arg_keyboard arg;
+									arg_keyboard arg = modifiers_status;
 									arg.ignore = false;
 									arg.key = charbuf[i];
 
@@ -1011,7 +1099,6 @@ namespace detail
 									}
 									arg.evt_code = event_code::key_char;
 									arg.window_handle = reinterpret_cast<window>(msgwnd);
-									brock.get_key_state(arg);
 									msgwnd->annex.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
 									if(arg.ignore == false && wd_manager.available(msgwnd))
 										draw_invoker(&drawer::key_char, msgwnd, arg, &context);

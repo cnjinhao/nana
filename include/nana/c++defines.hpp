@@ -1,7 +1,7 @@
 /**
  *	Predefined Symbols for C++
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2016-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2016-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -171,9 +171,9 @@
 	#endif
 #endif
 
-//Assume the std::thread is not implement on MinGW
+//Assume the std::thread is not implemented on MinGW,
+//unless it was compiled with POSIX threading support.
 //But some toolchains may implement std::thread.
-// it seems that MinGW 6.3 and 7.1 have std::thread
 #ifdef NANA_MINGW
 #	ifndef STD_THREAD_NOT_SUPPORTED
 #		define STD_THREAD_NOT_SUPPORTED
@@ -221,8 +221,11 @@
 #  if __has_include(<filesystem>)
 #    undef STD_FILESYSTEM_NOT_SUPPORTED
 #  endif
-#  if __has_include(<mutex>)
-#    undef STD_THREAD_NOT_SUPPORTED
+#  if __has_include(<mutex>) 
+#    if !(defined(NANA_MINGW) && !defined(_GLIBCXX_HAS_GTHREADS))
+//See the comment above regarding MinGW's threading support
+#      undef STD_THREAD_NOT_SUPPORTED
+#    endif
 #  endif
 #endif
 

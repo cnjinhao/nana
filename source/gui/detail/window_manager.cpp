@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,11 +16,11 @@
 #include <nana/gui/detail/events_operation.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 #include <nana/gui/detail/window_layout.hpp>
-#include "window_register.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
-#include <nana/gui/detail/inner_fwd_implement.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/effects_renderer.hpp>
+#include "window_register.hpp"
+#include "inner_fwd_implement.hpp"
 
 #include <stdexcept>
 #include <algorithm>
@@ -140,10 +140,12 @@ namespace nana
 		//struct root_misc
 		root_misc::root_misc(root_misc&& other):
 			window(other.window),
+			wpassoc(other.wpassoc),
 			root_graph(std::move(other.root_graph)),
 			shortkeys(std::move(other.shortkeys)),
 			condition(std::move(other.condition))
 		{
+			other.wpassoc = nullptr;	//moved-from
 		}
 
 		root_misc::root_misc(basic_window * wd, unsigned width, unsigned height)
@@ -154,6 +156,11 @@ namespace nana
 			condition.pressed = nullptr;
 			condition.pressed_by_space = nullptr;
 			condition.hovered = nullptr;
+		}
+
+		root_misc::~root_misc()
+		{
+			bedrock::delete_platform_assoc(wpassoc);
 		}
 		//end struct root_misc
 

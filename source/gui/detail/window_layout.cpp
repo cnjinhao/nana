@@ -1,7 +1,7 @@
 /*
 *	Window Layout Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -106,43 +106,46 @@ namespace nana
 
 				visual = rectangle{ wd->pos_root, wd->dimension };
 
-				if (wd->root_widget != wd)
+				if (category::flags::root != wd->other.category)
 				{
 					//Test if the root widget is overlapped the specified widget
 					//the pos of root widget is (0, 0)
 					if (overlapped(visual, rectangle{ wd->root_widget->pos_owner, wd->root_widget->dimension }) == false)
 						return false;
-				}
 
-				for (auto parent = wd->parent; parent; parent = parent->parent)
-				{
-					if (category::flags::root == parent->other.category)
+					for (auto parent = wd->parent; parent; parent = parent->parent)
 					{
-						//visual rectangle of wd's parent
-						rectangle vrt_parent{parent->pos_root, parent->dimension};
-
-						point pos_root;
-						while (parent->parent)
+						if (category::flags::root == parent->other.category)
 						{
-							pos_root -= native_interface::window_position(parent->root);
-
-							if (!overlap(rectangle{ pos_root, parent->parent->root_widget->dimension }, vrt_parent, vrt_parent))
-								return false;
-
-							parent = parent->parent->root_widget;
+							wd = parent;
+							break;
 						}
 
-						if (!overlap(vrt_parent, visual, visual))
+						if (!overlap(rectangle{ parent->pos_root, parent->dimension }, visual, visual))
 							return false;
-						
-						return true;
 					}
-
-					if (!overlap(rectangle{ parent->pos_root, parent->dimension }, visual, visual))
-						return false;
 				}
 
-				return true;
+				//Now, wd actually is the root widget of original parameter wd
+				if (nullptr == wd->parent)
+					return true;
+				
+				auto parent_rw = wd->parent->root_widget;
+				//visual rectangle of wd's parent
+				rectangle vrt_parent{ parent_rw->pos_root, parent_rw->dimension };
+
+				point pos_root;
+				while (parent_rw->parent)
+				{
+					pos_root -= native_interface::window_position(parent_rw->root);
+
+					if (!overlap(rectangle{ pos_root, parent_rw->parent->root_widget->dimension }, vrt_parent, vrt_parent))
+						return false;
+
+					parent_rw = parent_rw->parent->root_widget;
+				}
+
+				return overlap(vrt_parent, visual, visual);
 			}
 
 			//read_overlaps
@@ -386,6 +389,13 @@ namespace nana
 				nana::rectangle r_of_sigwd(sigwd->pos_root, sigwd->dimension);
 				for (auto wd : data_sect.effects_bground_windows)
 				{
+					//Don't notify the window if both native root windows are not same(e.g. wd and sigwd have
+					//a some parent). Otherwise, _m_paint_glass_window() recursively paints sigwd to make stack overflow.
+					//On the other hand, a nested root window is always floating on its parent's child widgets, it's unnecessary to
+					//notify the wd if they haven't a same native root window.
+					if (sigwd->root != wd->root)
+						continue;
+
 					if (wd == sigwd || !wd->displayed() ||
 						(false == overlapped(nana::rectangle{ wd->pos_root, wd->dimension }, r_of_sigwd)))
 						continue;

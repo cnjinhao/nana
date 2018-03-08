@@ -1,7 +1,7 @@
 /**
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -147,7 +147,7 @@ namespace nana
 
 				void step(size_type s)
 				{
-					metrics_.step = s;
+					metrics_.step = (s ? s : 1);
 				}
 
 				bool make_step(bool forward, unsigned multiple)
@@ -398,7 +398,7 @@ namespace nana
 		/// \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param visible  specify the visibility after creation.
-		scroll(window wd, bool visible)
+		scroll(window wd, bool visible = true)
 		{
 			this->create(wd, rectangle(), visible);   // add a widget scheme? and take some colors from these wd?
 		}
@@ -501,7 +501,8 @@ namespace nana
 		/// @return true if the vlaue is changed.
 		bool make_page_scroll(bool forward)
 		{
-			return this->make_step(forward, static_cast<unsigned>(range() - 1));
+			auto const count = range() / step();
+			return this->make_step(forward, (count > 2 ? count - 1 : 1));
 		}
 	};//end class scroll
 }//end namespace nana
