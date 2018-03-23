@@ -1873,12 +1873,13 @@ namespace nana
                 /// can be used as the absolute position of the first absolute item, or as the display pos of the first displayed item
                 index_pair first() const noexcept
                 {
-					auto i = categories_.cbegin();
-					if (i->items.size())
-						return index_pair{ 0, 0 };
-
-					if (categories_.size() > 1)
-						return index_pair{ 1, npos };
+					if (categories_.size() > 0)
+					{
+						auto i = categories_.cbegin();
+						if (i->items.size())
+							return index_pair{ 0, 0 };
+						return index_pair{ 0, npos };
+                                        }
 
 					return index_pair{ npos, npos };
                 }
