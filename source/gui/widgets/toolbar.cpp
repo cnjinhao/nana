@@ -57,8 +57,7 @@ namespace nana
 
 				~item_container()
 				{
-					for(auto ptr : cont_)
-						delete ptr;
+					clear();
 				}
 
 				void insert(size_type pos, std::string text, const nana::paint::image& img, item_type::kind type)
@@ -120,6 +119,15 @@ namespace nana
 				{
 					return cont_.at(pos);
 				}
+
+				void clear()
+				{
+					for(auto ptr : cont_)
+						delete ptr;
+
+					cont_.clear();
+				}
+
 			private:
 				container_type cont_;
 				size_t    right_{ npos };
@@ -458,6 +466,12 @@ namespace nana
 		void toolbar::append(const std::string& text)
 		{
 			get_drawer_trigger().items().push_back(text, {});
+			API::refresh_window(this->handle());
+		}
+
+		void toolbar::clear()
+		{
+			get_drawer_trigger().items().clear();
 			API::refresh_window(this->handle());
 		}
 
