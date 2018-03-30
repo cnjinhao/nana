@@ -170,8 +170,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
     if(NANA_CMAKE_SHARED_LIB)
         list(APPEND NANA_LINKS -lgcc -lstdc++ -pthread)
     else()
-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
-        # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
+        set(CMAKE_EXE_LINKER_FLAGS "-static -pthread")
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s")
+        # message("Setting NANA_LINKS to -static -pthread or ${NANA_LINKS}")
     endif(NANA_CMAKE_SHARED_LIB)
 
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
