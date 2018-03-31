@@ -1,7 +1,7 @@
 /*
  *	A Treebox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -958,10 +958,14 @@ namespace nana
 					return *this;
 				}
 
+
 				std::size_t item_proxy::size() const
 				{
 					std::size_t n = 0;
-					for(auto child = node_->child; child; child = child->child)
+
+					//Fixed by ErrorFlynn
+					//this method incorrectly returned the number of levels beneath the nodes using child = child->child
+					for(auto child = node_->child; child; child = child->next)
 						++n;
 
 					return n;
