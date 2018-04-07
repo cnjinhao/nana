@@ -128,7 +128,7 @@ if(UNIX)
     include(FindFreetype)
     if(FREETYPE_FOUND)
         include_directories( ${FREETYPE_INCLUDE_DIRS})
-        list(APPEND NANA_LINKS -lXft)
+        list(APPEND NANA_LINKS -lXft -lfontconfig)
     endif()
 endif()
 
