@@ -1,4 +1,4 @@
-﻿# CMake configuration for Nana
+# CMake configuration for Nana
 # Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributors:
 #   Jinhao
@@ -59,14 +59,8 @@ option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if avail
 ########### Compatibility with CMake 3.1
 if(POLICY CMP0054)
   # http://www.cmake.org/cmake/help/v3.1/policy/CMP0054.html
-  cmake_policy(SET CMP0054 OLD)
+  cmake_policy(SET CMP0054 NEW)
 endif()
-if(POLICY CMP0004)    # ignore leading space
-  # http://www.cmake.org/cmake/help/v3.0/policy/CMP0004.html
-  cmake_policy(SET CMP0004 OLD)
-endif()
-
-set(CMAKE_DEBUG_POSTFIX "_d")
 
 ########### OS
 
@@ -112,7 +106,6 @@ if(WIN32)
         endif()
     endif()
 endif()
-
 
 if(APPLE)
     add_definitions(-DAPPLE)
@@ -286,6 +279,8 @@ endforeach()
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     add_definitions(-fmax-errors=3)
 endif()
+
+set(CMAKE_DEBUG_POSTFIX "_d")
 
 if(NANA_CMAKE_SHARED_LIB)
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
