@@ -4552,7 +4552,7 @@ namespace nana
 							//Check if it scrolls in current screen window
 							//condition: top of target item is not less than top edge of content view and
 							//the bottom of target item is not greater than bottom edge of content view.
-							if ((screen_top + static_cast<int>(item_px) <= logic_top) && (logic_top + static_cast<int>(item_px) + static_cast<int>(item_px) <= screen_bottom))
+							if ((screen_top + static_cast<int>(item_px) <= logic_top) && (logic_top + static_cast<int>(item_px) + static_cast<int>(item_px) <= static_cast<int>(screen_bottom)))
 							{
 								int offset = (static_cast<int>(upward ? screen_top : screen_bottom - item_px) - logic_top) / static_cast<int>(item_px);
 								target_idx = list.advance(init_idx, offset);
@@ -4578,8 +4578,8 @@ namespace nana
 										target_idx = list.last();
 
 									origin.y = list.distance(list.first(), target_idx) * item_px + item_px;
-									if (origin.y >= (screen_bottom - screen_top))
-										origin.y -= (screen_bottom - screen_top);
+									if (origin.y >= static_cast<int>(screen_bottom - screen_top))
+										origin.y -= static_cast<int>(screen_bottom - screen_top);
 									else
 										origin.y = 0;
 								}

@@ -1,4 +1,4 @@
-﻿# CMake configuration for Nana
+# CMake configuration for Nana
 # Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributors:
 #   Jinhao
@@ -59,14 +59,8 @@ option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if avail
 ########### Compatibility with CMake 3.1
 if(POLICY CMP0054)
   # http://www.cmake.org/cmake/help/v3.1/policy/CMP0054.html
-  cmake_policy(SET CMP0054 OLD)
+  cmake_policy(SET CMP0054 NEW)
 endif()
-if(POLICY CMP0004)    # ignore leading space
-  # http://www.cmake.org/cmake/help/v3.0/policy/CMP0004.html
-  cmake_policy(SET CMP0004 OLD)
-endif()
-
-set(CMAKE_DEBUG_POSTFIX "_d")
 
 ########### OS
 
@@ -113,7 +107,6 @@ if(WIN32)
     endif()
 endif()
 
-
 if(APPLE)
     add_definitions(-DAPPLE)
     include_directories(/opt/X11/include/)
@@ -146,27 +139,27 @@ endif()
 #
 #
 # see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
+#
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-        set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall -g")
+        set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall")
     else()
-        set(CMAKE_CXX_FLAGS "-std=c++14 -Wall -g")
+        set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
     endif()
 endif()
 
-# enable static linkage     # GNU || CLang not MinGW
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if(NANA_CMAKE_SHARED_LIB)
         list(APPEND NANA_LINKS -lgcc -lstdc++ -pthread)
     else()
-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -pthread")
+        set(CMAKE_EXE_LINKER_FLAGS "-static -pthread")
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s")
     endif()
 
     if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
         list(APPEND NANA_LINKS -lstdc++fs)
     endif()
 endif()
-
 
 if(APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     list(APPEND NANA_LINKS -stdlib=libstdc++)
@@ -287,6 +280,8 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     add_definitions(-fmax-errors=3)
 endif()
 
+set(CMAKE_DEBUG_POSTFIX "_d")
+
 if(NANA_CMAKE_SHARED_LIB)
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
 else()
@@ -314,8 +309,6 @@ if(NANA_CLION) # the Clion IDE don't reconize the install target
                       DEPENDS ${PROJECT_NAME}
                       COMMENT "Installing ${PROJECT_NAME}")
 endif()
-
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 
 if(NANA_CMAKE_SHARED_LIB)
     if(WIN32)
