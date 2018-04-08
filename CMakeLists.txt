@@ -139,6 +139,7 @@ endif()
 #
 #
 # see at end of:  https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html
+#
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
         set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall -g")
@@ -147,19 +148,18 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     endif()
 endif()
 
-# enable static linkage     # GNU || CLang not MinGW
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if(NANA_CMAKE_SHARED_LIB)
         list(APPEND NANA_LINKS -lgcc -lstdc++ -pthread)
     else()
-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -pthread")
+        set(CMAKE_EXE_LINKER_FLAGS "-static -pthread")
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s")
     endif()
 
     if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
         list(APPEND NANA_LINKS -lstdc++fs)
     endif()
 endif()
-
 
 if(APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     list(APPEND NANA_LINKS -stdlib=libstdc++)
