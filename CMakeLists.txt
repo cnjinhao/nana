@@ -142,9 +142,9 @@ endif()
 #
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-        set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall -g")
+        set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall")
     else()
-        set(CMAKE_CXX_FLAGS "-std=c++14 -Wall -g")
+        set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
     endif()
 endif()
 
@@ -309,8 +309,6 @@ if(NANA_CLION) # the Clion IDE don't reconize the install target
                       DEPENDS ${PROJECT_NAME}
                       COMMENT "Installing ${PROJECT_NAME}")
 endif()
-
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 
 if(NANA_CMAKE_SHARED_LIB)
     if(WIN32)
