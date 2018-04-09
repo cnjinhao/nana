@@ -502,7 +502,7 @@ namespace nana
 		bool make_page_scroll(bool forward)
 		{
 			auto const count = range() / step();
-			return this->make_step(forward, (count > 2 ? count - 1 : 1));
+			return this->make_step(forward, static_cast<unsigned>(count > 2 ? count - 1 : 1));
 		}
 	};//end class scroll
 }//end namespace nana

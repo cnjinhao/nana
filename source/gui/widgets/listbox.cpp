@@ -1934,10 +1934,10 @@ namespace nana
 				nana::listbox * widget_{nullptr};
 
 				sort_attributes sort_attrs_;	//Attributes of sort
+				container categories_;
 
 				bool	ordered_categories_{false};	///< A switch indicates whether the categories are ordered.
 												/// The ordered categories always creates a new category at a proper position(before the first one which is larger than it).
-				container categories_;
 
 				bool single_selection_{ false };
 				bool single_selection_category_limited_{ false };
@@ -2049,7 +2049,7 @@ namespace nana
 				index_pair first_display() const noexcept
 				{
 					auto offset_display = content_view->origin().y / item_height();
-					return lister.advance(lister.first(), offset_display);
+					return lister.advance(lister.first(), static_cast<int>(content_view->origin().y / item_height()));
 				}
 
 				unsigned item_height() const noexcept
@@ -4569,7 +4569,7 @@ namespace nana
 									if (target_idx.empty())
 										target_idx = list.first();
 
-									origin.y = list.distance(list.first(), target_idx) * item_px;
+									origin.y = static_cast<int>(list.distance(list.first(), target_idx) * item_px);
 								}
 								else
 								{
@@ -4577,7 +4577,7 @@ namespace nana
 									if (target_idx.empty())
 										target_idx = list.last();
 
-									origin.y = list.distance(list.first(), target_idx) * item_px + item_px;
+									origin.y = static_cast<int>((list.distance(list.first(), target_idx) + 1) * item_px);
 									if (origin.y >= static_cast<int>(screen_bottom - screen_top))
 										origin.y -= static_cast<int>(screen_bottom - screen_top);
 									else
