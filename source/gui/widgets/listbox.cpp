@@ -2048,7 +2048,6 @@ namespace nana
 
 				index_pair first_display() const noexcept
 				{
-					auto offset_display = content_view->origin().y / item_height();
 					return lister.advance(lister.first(), static_cast<int>(content_view->origin().y / item_height()));
 				}
 
@@ -2072,19 +2071,6 @@ namespace nana
 
 					return from + orignal.position() - origin;
 				}
-
-				struct pred_mouse_selection
-				{
-					index_pair pos_;
-					pred_mouse_selection(index_pair pos) noexcept
-						: pos_(pos)
-					{}
-
-					bool operator()(const std::pair<index_pair, bool>& m) const noexcept
-					{
-						return (pos_ == m.first);
-					}
-				};
 
 				std::pair<int, int> columns_range() const
 				{
@@ -2179,9 +2165,12 @@ namespace nana
 
 #endif
 								{
-									if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), pred_mouse_selection{ *i }))
+									auto & selpos = *i;
+									if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), /*pred_mouse_selection{ *i }*/[&selpos](const std::pair<index_pair, bool>& m){
+										return (selpos == m.first);
+									}))
 									{
-										item_proxy{ this, *i }.select(false);
+										item_proxy{ this, selpos }.select(false);
 										i = mouse_selection.selections.erase(i);
 									}
 									else
