@@ -1,7 +1,7 @@
 /**
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -98,6 +98,8 @@ namespace nana
 		void separate();                      ///< Adds a separator.
 		drawerbase::toolbar::item_proxy append(const ::std::string& text, const nana::paint::image& img);   ///< Adds a control button.
 		drawerbase::toolbar::item_proxy append(const ::std::string& text);   ///< Adds a control button.
+		void clear();   ///< Removes all control buttons and separators.
+		
 		bool enable(size_type index) const;
 		void enable(size_type index, bool enable_state);
 		void scale(unsigned s);   ///< Sets the scale of control button.

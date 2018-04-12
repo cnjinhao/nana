@@ -316,6 +316,11 @@ namespace nana
                     return cont_.back().index;
 				}
 
+				void clear()
+				{
+					cont_.clear();
+				}
+
 				unsigned width_px() const noexcept  ///< the visible width of the whole header
 				{
 					unsigned pixels = 0;
@@ -1538,9 +1543,37 @@ namespace nana
 					return n;
 				}
 
-				template<typename Pred>
-				std::vector<std::pair<index_pair, bool>> select_display_range_if(const index_pair& fr_abs, index_pair to_dpl, bool deselect_others, Pred pred)
+				/// Finds a good item or category if an item specified by pos is invaild
+				index_pair find_next_good(index_pair pos, bool ignore_category) const noexcept
 				{
+					//Return the pos if it is good
+					if (this->good(pos))
+						return pos;
+					
+					while(pos.cat < this->categories_.size())
+					{
+						if ((pos.npos == pos.item) && !ignore_category)
+							return pos;
+
+						auto cat_item_size = this->get(pos.cat)->items.size();
+
+						if (pos.item < cat_item_size)
+							return pos;
+
+						if ((pos.npos == pos.item) && (cat_item_size > 0) && ignore_category)
+							return index_pair{ pos.cat, 0 };
+
+						++pos.cat;
+						pos.item = pos.npos;
+					}
+					return index_pair{};
+				}
+
+				template<typename Pred>
+				std::vector<std::pair<index_pair, bool>> select_display_range_if(index_pair fr_abs, index_pair to_dpl, bool deselect_others, Pred pred)
+				{
+					fr_abs = find_next_good(fr_abs, true);
+					
 					if (to_dpl.empty())
 					{
 						if (fr_abs.empty())
@@ -1548,6 +1581,7 @@ namespace nana
 
 						to_dpl = this->last();
 					}
+					
 
 					auto fr_dpl = (fr_abs.is_category() ? fr_abs : this->index_cast(fr_abs, false));	//Converts an absolute position to display position
                     if (fr_dpl > to_dpl)
@@ -5465,6 +5499,15 @@ namespace nana
 			auto pos = ess.header.create(&ess, to_nstring(std::move(s)), width);
 			ess.update();
 			return pos;
+		}
+
+		void listbox::clear_headers()
+		{
+			internal_scope_guard lock;
+			auto & ess = _m_ess();
+			ess.lister.erase();
+			ess.header.clear();
+			ess.update();
 		}
 
 		listbox::cat_proxy listbox::append(std::string s)

@@ -1,7 +1,7 @@
 /*
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -55,8 +55,7 @@ namespace nana
 
 				~item_container()
 				{
-					for(auto ptr : cont_)
-						delete ptr;
+					clear();
 				}
 
 				void insert(size_type pos, std::string text, const nana::paint::image& img, item_type::kind type)
@@ -118,6 +117,15 @@ namespace nana
 				{
 					return cont_.at(pos);
 				}
+
+				void clear()
+				{
+					for(auto ptr : cont_)
+						delete ptr;
+
+					cont_.clear();
+				}
+
 			private:
 				container_type cont_;
 				size_t    right_{ npos };
@@ -465,6 +473,12 @@ namespace nana
 			get_drawer_trigger().items().push_back(text, {});
 			API::refresh_window(this->handle());
 			return {*this, get_drawer_trigger().items().size() - 1u};
+		}
+
+		void toolbar::clear()
+		{
+			get_drawer_trigger().items().clear();
+			API::refresh_window(this->handle());
 		}
 
 		bool toolbar::enable(size_type pos) const

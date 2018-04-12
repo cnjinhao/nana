@@ -3271,6 +3271,22 @@ namespace nana
 
 			modified_ptr->div_owner = div_owner;
 			modified_ptr->div_next = div_next;
+
+			if (div_owner)
+			{
+				implement::division * pv_div = nullptr;
+				//Updates the div_next of the div at front of modified one.
+				for (auto & div : div_owner->children)
+				{
+					if (div.get() == modified_ptr)
+					{
+						if (pv_div)
+							pv_div->div_next = modified_ptr;
+						break;
+					}
+					pv_div = div.get();
+				}
+			}
 		}
 		catch (...)
 		{

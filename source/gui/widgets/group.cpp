@@ -194,6 +194,21 @@ namespace nana{
 		return impl_->place_content.field(field);
 	}
 
+	void group::field_display(const char* field_name, bool display)
+	{
+		impl_->place_content.field_display(field_name, display);
+	}
+
+	bool group::field_display(const char* field_name) const
+	{
+		return impl_->place_content.field_display(field_name);
+	}
+
+	void group::erase(window handle)
+	{
+		impl_->place_content.erase(handle);
+	}
+
 	void group::_m_add_child(const char* field, widget* wdg)
 	{
 		impl_->place_content[field] << wdg->handle();
