@@ -208,20 +208,20 @@ namespace nana{ namespace system{
 					memcpy(addr, buf, size);
 					::GlobalUnlock(g);
 
-					unsigned data_format;
+					unsigned data_format = CF_MAX;
 					switch(fmt)
 					{
 					case format::text:		data_format = CF_UNICODETEXT;	break;
 					case format::pixmap:	data_format = CF_BITMAP;		break;
 					}
-					
+
 					res = (nullptr != ::SetClipboardData(data_format, g));
 				}
 				::CloseClipboard();
 			}
 #elif defined(NANA_X11)
 			auto & spec = ::nana::detail::platform_spec::instance();
-			
+
 			Atom atom_type;
 			switch(fmt)
 			{
@@ -232,7 +232,7 @@ namespace nana{ namespace system{
 
 			spec.write_selection(owner, atom_type, buf, size);
 			return true;
-			
+
 #endif
 			return res;
 		}
@@ -244,7 +244,7 @@ namespace nana{ namespace system{
 #if defined(NANA_WINDOWS)
 			if(::OpenClipboard(::GetFocus()))
 			{
-				unsigned data_format;
+				unsigned data_format = CF_MAX;
 				switch(fmt)
 				{
 				case format::text:		data_format = CF_UNICODETEXT;	break;
