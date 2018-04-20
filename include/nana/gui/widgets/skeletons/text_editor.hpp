@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -219,6 +219,8 @@ namespace nana{	namespace widgets
 			const skeletons::textbase<char_type>& textbase() const;
 
 			bool try_refresh();
+
+			std::shared_ptr<scroll_operation_interface> scroll_operation() const;
 		private:
 			nana::color _m_draw_colored_area(paint::graphics& graph, const std::pair<std::size_t,std::size_t>& row, bool whole_line);
 			std::vector<upoint> _m_render_text(const ::nana::color& text_color);

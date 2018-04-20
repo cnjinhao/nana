@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -815,6 +815,16 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			if(editor)
 				editor->reset_caret_pixels();
+		}
+
+		std::shared_ptr<scroll_operation_interface> textbox::_m_scroll_operation() const
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				return editor->scroll_operation();
+
+			return {};
 		}
 	//end class textbox
 }//end namespace nana

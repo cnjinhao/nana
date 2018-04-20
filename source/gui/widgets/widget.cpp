@@ -1,6 +1,6 @@
 /*
  *	The fundamental widget class implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -156,6 +156,11 @@ namespace nana
 		bool widget::focused() const
 		{
 			return (API::focus_window() == handle());
+		}
+
+		std::shared_ptr<scroll_operation_interface> widget::scroll_operation()
+		{
+			return _m_scroll_operation();
 		}
 
 		void widget::show()
@@ -315,6 +320,11 @@ namespace nana
 		void widget::_m_enabled(bool value)
 		{
 			API::window_enabled(handle(), value);
+		}
+
+		std::shared_ptr<scroll_operation_interface> widget::_m_scroll_operation()
+		{
+			return {};
 		}
 
 		bool widget::_m_show(bool visible)

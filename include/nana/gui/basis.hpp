@@ -297,6 +297,19 @@ that return a corresponding nana::appearance with predefined values.
 		virtual bool visible() const = 0;
 	};//end class caret_interface
 
+	/// Interface for scroll operations
+	/**
+	 * This interface provides methods to operate the scrollbars that are contained
+	 * in a specific widget, such as listbox and treebox
+	 */
+	class scroll_operation_interface
+	{
+	public:
+		virtual ~scroll_operation_interface() = default;
+
+		virtual bool visible(bool vert) const = 0;
+	};
+
 	namespace parameters
 	{
 		/// The system-wide parameters for mouse wheel

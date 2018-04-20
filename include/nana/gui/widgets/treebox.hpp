@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE or copy at 
@@ -444,6 +444,9 @@ namespace nana
 		::std::string make_key_path(item_proxy i, const ::std::string& splitter) const;///<returns the key path
 
 		item_proxy selected() const; ///< returns the selected node
+
+	private:
+		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() const;
 
 	};//end class treebox
 }//end namespace nana

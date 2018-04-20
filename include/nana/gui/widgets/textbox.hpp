@@ -1,7 +1,7 @@
 /**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -279,6 +279,7 @@ namespace nana
 		native_string_type _m_caption() const throw() override;
 		void _m_caption(native_string_type&&) override;
 		void _m_typeface(const paint::font&) override;
+		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() const;
 	};
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>

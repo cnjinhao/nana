@@ -1,7 +1,7 @@
 /*
 *	A Content View Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2017-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,6 +19,39 @@ namespace nana {
 	namespace widgets {
 		namespace skeletons
 		{
+			struct cv_scroll_rep
+			{
+				content_view::scrolls enabled_scrolls{ content_view::scrolls::both };
+				nana::scroll<false>	horz;
+				nana::scroll<true>	vert;
+
+				scroll_interface* scroll(arg_wheel::wheel whl)
+				{
+					if (arg_wheel::wheel::horizontal == whl)
+						return &horz;
+					else if (arg_wheel::wheel::vertical == whl)
+						return &vert;
+					return nullptr;
+				}
+			};
+
+			class scroll_operation
+				: public scroll_operation_interface
+			{
+			public:
+				scroll_operation(std::shared_ptr<cv_scroll_rep>& impl)
+					: cv_scroll_(impl)
+				{
+				}
+			private:
+				bool visible(bool vert) const override
+				{
+					return !(vert ? cv_scroll_->vert.empty() : cv_scroll_->horz.empty());
+				}
+			private:
+				std::shared_ptr<cv_scroll_rep> const cv_scroll_;
+			};
+
 			struct content_view::implementation
 			{
 				content_view&	view;
@@ -35,9 +68,13 @@ namespace nana {
 				bool	drag_started{ false };
 				point origin;
 
-				scrolls enabled_scrolls{scrolls::both};
+				/*
+				scrolls enabled_scrolls{scrolls::both};	//deprecated
 				nana::scroll<false>	horz;
 				nana::scroll<true>	vert;
+				*/
+
+				std::shared_ptr<cv_scroll_rep> cv_scroll;
 
 				timer tmr;
 
@@ -50,9 +87,11 @@ namespace nana {
 
 				implementation(content_view& v, window handle) :
 					view(v),
-					window_handle(handle)
+					window_handle(handle),
+					cv_scroll(std::make_shared<cv_scroll_rep>())
 				{
 					API::events(handle).mouse_wheel.connect_unignorable([this](const arg_wheel& arg) {
+#if 0
 						scroll_interface * scroll = nullptr;
 						switch (arg.which)
 						{
@@ -66,6 +105,11 @@ namespace nana {
 							//Other button is not unsupported.
 							return;
 						}
+#else
+						auto const scroll = cv_scroll->scroll(arg.which);
+						if (nullptr == scroll)
+							return;
+#endif
 
 						if (!API::empty_window(arg.window_handle))
 						{
@@ -159,11 +203,11 @@ namespace nana {
 
 					auto speed_horz = 0;
 					if (skew.x)
-						speed_horz = skew.x / (std::max)(1, static_cast<int>(horz.step())) + (skew.x < 0 ? -1 : 1);
+						speed_horz = skew.x / (std::max)(1, static_cast<int>(cv_scroll->horz.step())) + (skew.x < 0 ? -1 : 1);
 
 					auto speed_vert = 0;
 					if (skew.y)
-						speed_vert = skew.y / (std::max)(1, static_cast<int>(vert.step())) + (skew.y < 0 ? -1 : 1);
+						speed_vert = skew.y / (std::max)(1, static_cast<int>(cv_scroll->vert.step())) + (skew.y < 0 ? -1 : 1);
 
 					speed_horz = (std::min)(5, (std::max)(speed_horz, -5));
 					speed_vert = (std::min)(5, (std::max)(speed_vert, -5));
@@ -180,10 +224,10 @@ namespace nana {
 					//event hander for scrollbars
 					auto event_fn = [this](const arg_scroll& arg)
 					{
-						if (arg.window_handle == this->vert.handle())
-							origin.y = static_cast<int>(this->vert.value());
+						if (arg.window_handle == cv_scroll->vert.handle())
+							origin.y = static_cast<int>(cv_scroll->vert.value());
 						else
-							origin.x = static_cast<int>(this->horz.value());
+							origin.x = static_cast<int>(cv_scroll->horz.value());
 
 						if (this->events.scrolled)
 							this->events.scrolled();
@@ -194,33 +238,33 @@ namespace nana {
 
 					this->passive = passive;
 
-					bool const vert_allowed = (enabled_scrolls == scrolls::vert || enabled_scrolls == scrolls::both);
-					bool const horz_allowed = (enabled_scrolls == scrolls::horz || enabled_scrolls == scrolls::both);
+					bool const vert_allowed = (cv_scroll->enabled_scrolls == scrolls::vert || cv_scroll->enabled_scrolls == scrolls::both);
+					bool const horz_allowed = (cv_scroll->enabled_scrolls == scrolls::horz || cv_scroll->enabled_scrolls == scrolls::both);
 
 					if ((imd_area.width != disp_area.width) && vert_allowed)
 					{
-						if (vert.empty())
+						if (cv_scroll->vert.empty())
 						{
-							vert.create(window_handle);
-							vert.events().value_changed.connect_unignorable(event_fn);
-							API::take_active(vert, false, window_handle);
+							cv_scroll->vert.create(window_handle);
+							cv_scroll->vert.events().value_changed.connect_unignorable(event_fn);
+							API::take_active(cv_scroll->vert, false, window_handle);
 							this->passive = false;
 						}
 						
-						vert.move({
+						cv_scroll->vert.move({
 							disp_area.x + static_cast<int>(imd_area.width) + skew_vert.x,
 							disp_area.y + skew_vert.y,
 							space(),
 							imd_area.height + extra_px.height
 						});
 
-						vert.amount(content_size.height);
-						vert.range(imd_area.height);
-						vert.value(origin.y);
+						cv_scroll->vert.amount(content_size.height);
+						cv_scroll->vert.range(imd_area.height);
+						cv_scroll->vert.value(origin.y);
 					}
 					else
 					{
-						vert.close();
+						cv_scroll->vert.close();
 
 						//If vert is allowed, it indicates the vertical origin is not moved
 						//Make sure the v origin is zero
@@ -230,28 +274,28 @@ namespace nana {
 
 					if ((imd_area.height != disp_area.height) && horz_allowed)
 					{
-						if (horz.empty())
+						if (cv_scroll->horz.empty())
 						{
-							horz.create(window_handle);
-							horz.events().value_changed.connect_unignorable(event_fn);
-							API::take_active(horz, false, window_handle);
+							cv_scroll->horz.create(window_handle);
+							cv_scroll->horz.events().value_changed.connect_unignorable(event_fn);
+							API::take_active(cv_scroll->horz, false, window_handle);
 							this->passive = false;
 						}
 
-						horz.move({
+						cv_scroll->horz.move({
 							disp_area.x + skew_horz.x,
 							disp_area.y + static_cast<int>(imd_area.height) + skew_horz.y,
 							imd_area.width + extra_px.width,
 							space()
 						});
 
-						horz.amount(content_size.width);
-						horz.range(imd_area.width);
-						horz.value(origin.x);
+						cv_scroll->horz.amount(content_size.width);
+						cv_scroll->horz.range(imd_area.width);
+						cv_scroll->horz.value(origin.x);
 					}
 					else
 					{
-						horz.close();
+						cv_scroll->horz.close();
 						//If horz is allowed, it indicates the horzontal origin is not moved
 						//Make sure the x origin is zero
 						if (horz_allowed)
@@ -279,20 +323,25 @@ namespace nana {
 
 			bool content_view::enable_scrolls(scrolls which)
 			{
-				if (impl_->enabled_scrolls == which)
+				if (impl_->cv_scroll->enabled_scrolls == which)
 					return false;
 
-				impl_->enabled_scrolls = which;
+				impl_->cv_scroll->enabled_scrolls = which;
 				impl_->size_changed(false);
 				return true;
+			}
+
+			std::shared_ptr<scroll_operation_interface> content_view::scroll_operation() const
+			{
+				return std::make_shared<skeletons::scroll_operation>(impl_->cv_scroll);
 			}
 
 			void content_view::step(unsigned step_value, bool horz)
 			{
 				if (horz)
-					impl_->horz.step(step_value);
+					impl_->cv_scroll->horz.step(step_value);
 				else
-					impl_->vert.step(step_value);
+					impl_->cv_scroll->vert.step(step_value);
 			}
 
 			bool content_view::scroll(bool forwards, bool horz)
@@ -306,17 +355,17 @@ namespace nana {
 				}
 
 				if (horz)
-					return impl_->horz.make_step(forwards, speed);
+					return impl_->cv_scroll->horz.make_step(forwards, speed);
 				
-				return impl_->vert.make_step(forwards, speed);
+				return impl_->cv_scroll->vert.make_step(forwards, speed);
 			}
 
 			bool content_view::turn_page(bool forwards, bool horz)
 			{
 				if (horz)
-					return impl_->horz.make_page_scroll(forwards);
+					return impl_->cv_scroll->horz.make_page_scroll(forwards);
 				else
-					return impl_->vert.make_page_scroll(forwards);
+					return impl_->cv_scroll->vert.make_page_scroll(forwards);
 			}
 
 			void content_view::disp_area(const rectangle& da, const point& skew_horz, const point& skew_vert, const size& extra_px, bool try_update)
@@ -404,7 +453,7 @@ namespace nana {
 			void content_view::draw_corner(graph_reference graph)
 			{
 				auto r = corner();
-				if ((!r.empty()) && (scrolls::both == impl_->enabled_scrolls))
+				if ((!r.empty()) && (scrolls::both == impl_->cv_scroll->enabled_scrolls))
 					graph.rectangle(r, true, colors::button_face);
 			}
 
@@ -415,8 +464,8 @@ namespace nana {
 
 			rectangle content_view::view_area(const size& alt_content_size) const
 			{
-				bool const vert_allowed = (impl_->enabled_scrolls == scrolls::vert || impl_->enabled_scrolls == scrolls::both);
-				bool const horz_allowed = (impl_->enabled_scrolls == scrolls::horz || impl_->enabled_scrolls == scrolls::both);
+				bool const vert_allowed = (impl_->cv_scroll->enabled_scrolls == scrolls::vert || impl_->cv_scroll->enabled_scrolls == scrolls::both);
+				bool const horz_allowed = (impl_->cv_scroll->enabled_scrolls == scrolls::horz || impl_->cv_scroll->enabled_scrolls == scrolls::both);
 
 				unsigned extra_horz = (horz_allowed && (impl_->disp_area.width < alt_content_size.width) ? space() : 0);
 				unsigned extra_vert = (vert_allowed && (impl_->disp_area.height < alt_content_size.height + extra_horz) ? space() : 0);
@@ -435,13 +484,13 @@ namespace nana {
 
 			unsigned content_view::extra_space(bool horz) const
 			{
-				return ((horz ? impl_->horz.empty() : impl_->vert.empty()) ? 0 : space());
+				return ((horz ? impl_->cv_scroll->horz.empty() : impl_->cv_scroll->vert.empty()) ? 0 : space());
 			}
 
 			void content_view::change_position(int pos, bool aligned, bool horz)
 			{
 				if (aligned)
-					pos -= (pos % static_cast<int>(horz ? impl_->horz.step() : impl_->vert.step()));
+					pos -= (pos % static_cast<int>(horz ? impl_->cv_scroll->horz.step() : impl_->cv_scroll->vert.step()));
 
 				auto imd_size = this->view_area();
 
@@ -490,8 +539,8 @@ namespace nana {
 			void content_view::sync(bool passive)
 			{
 				impl_->passive = passive;
-				impl_->horz.value(impl_->origin.x);
-				impl_->vert.value(impl_->origin.y);
+				impl_->cv_scroll->horz.value(impl_->origin.x);
+				impl_->cv_scroll->vert.value(impl_->origin.y);
 				impl_->passive = true;
 			}
 
@@ -520,15 +569,15 @@ namespace nana {
 					impl_->origin.y = 0;
 
 				bool changed = false;
-				if (!impl_->horz.empty() && (static_cast<long long>(impl_->horz.value()) != impl_->origin.x))
+				if (!impl_->cv_scroll->horz.empty() && (static_cast<long long>(impl_->cv_scroll->horz.value()) != impl_->origin.x))
 				{
-					impl_->horz.value(impl_->origin.x);
+					impl_->cv_scroll->horz.value(impl_->origin.x);
 					changed = true;
 				}
 
-				if ((!impl_->vert.empty()) && (static_cast<long long>(impl_->vert.value()) != impl_->origin.y))
+				if ((!impl_->cv_scroll->vert.empty()) && (static_cast<long long>(impl_->cv_scroll->vert.value()) != impl_->origin.y))
 				{
-					impl_->vert.value(impl_->origin.y);
+					impl_->cv_scroll->vert.value(impl_->origin.y);
 					changed = true;
 				}
 

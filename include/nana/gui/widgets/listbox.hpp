@@ -1541,6 +1541,7 @@ the nana::detail::basic_window member pointer scheme
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;
 		drawerbase::listbox::category_t* _m_assoc(std::shared_ptr<nana::detail::key_interface>, bool create_if_not_exists);
 		void _m_erase_key(nana::detail::key_interface*) noexcept;
+		std::shared_ptr<scroll_operation_interface> _m_scroll_operation();
 	};
 }//end namespace nana
 
