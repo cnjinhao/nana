@@ -451,7 +451,7 @@ namespace nana
 		auto disp = spec.open_display();
 		auto screen = ::XDefaultScreen(disp);
 
-		double dots;
+		double dots = 0.5;
 
 		if (x_requested)
 			dots += ((((double)DisplayWidth(disp, screen)) * 25.4) /
@@ -460,7 +460,7 @@ namespace nana
 			dots += ((((double)DisplayHeight(disp, screen)) * 25.4) /
 			((double)DisplayHeightMM(disp, screen)));
 
-		return static_cast<unsigned>(dots + 0.5);
+		return static_cast<unsigned>(dots);
 #endif
 	}
 }
