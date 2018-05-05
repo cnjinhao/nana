@@ -549,7 +549,7 @@ namespace nana{
 			{
 				nana::detail::platform_spec::instance().keep_window_icon(wd, sml_icon, big_icon);
 				if (sml_handle)
-					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_SMALL, reinterpret_cast<WPARAM>(sml_handle));
+					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(sml_handle));
 
 				if (big_handle)
 					::SendMessage(reinterpret_cast<HWND>(wd), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(big_handle));
