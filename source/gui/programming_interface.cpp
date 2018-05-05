@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -19,6 +19,8 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/detail/events_operation.hpp>
+
+#include "../../source/detail/platform_abstraction.hpp"
 
 namespace nana
 {
@@ -821,6 +823,15 @@ namespace API
 		}
 	}
 
+	nana::optional<rectangle> window_rectangle(window wd)
+	{
+		auto iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::wd_manager().available(iwd))
+			return rectangle(iwd->pos_owner, iwd->dimension);
+		return{};
+	}
+
 	bool get_window_rectangle(window wd, rectangle& r)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
@@ -1472,6 +1483,11 @@ namespace API
 		}
 		
 		return{};
+	}
+
+	unsigned screen_dpi(bool x_requested)
+	{
+		return ::nana::platform_abstraction::screen_dpi(x_requested);
 	}
 }//end namespace API
 }//end namespace nana

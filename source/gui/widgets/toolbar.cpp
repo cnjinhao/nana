@@ -1,7 +1,7 @@
 /*
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -47,8 +47,6 @@ namespace nana
 				{}
 			};
 
-
-
 			class item_container
 			{
 			public:
@@ -57,8 +55,7 @@ namespace nana
 
 				~item_container()
 				{
-					for(auto ptr : cont_)
-						delete ptr;
+					clear();
 				}
 
 				void insert(size_type pos, std::string text, const nana::paint::image& img, item_type::kind type)
@@ -120,6 +117,15 @@ namespace nana
 				{
 					return cont_.at(pos);
 				}
+
+				void clear()
+				{
+					for(auto ptr : cont_)
+						delete ptr;
+
+					cont_.clear();
+				}
+
 			private:
 				container_type cont_;
 				size_t    right_{ npos };
@@ -155,7 +161,7 @@ namespace nana
 						if (imgsize.height > scale) imgsize.height = scale;
 
 						nana::point pos(
-							x + static_cast<int>(scale + extra_size - imgsize.width) / 2, 
+							x + static_cast<int>(scale + extra_size - imgsize.width) / 2,
 							y + static_cast<int>(height - imgsize.height) / 2);
 
 						item.image.paste(::nana::rectangle{ imgsize }, graph, pos);
@@ -421,6 +427,12 @@ namespace nana
 					}
 				}
 			//class drawer
+
+			// Item Proxy
+			void item_proxy::enable(bool enable_state)
+			{
+				widget.enable(button, enable_state);
+			}
 		}//end namespace toolbar
 	}//end namespace drawerbase
 
@@ -449,15 +461,23 @@ namespace nana
 			API::refresh_window(handle());
 		}
 
-		void toolbar::append(const std::string& text, const nana::paint::image& img)
+		drawerbase::toolbar::item_proxy toolbar::append(const std::string& text, const nana::paint::image& img)
 		{
 			get_drawer_trigger().items().push_back(text, img);
 			API::refresh_window(handle());
+			return {*this, get_drawer_trigger().items().size() - 1u};
 		}
 
-		void toolbar::append(const std::string& text)
+		drawerbase::toolbar::item_proxy toolbar::append(const std::string& text)
 		{
 			get_drawer_trigger().items().push_back(text, {});
+			API::refresh_window(this->handle());
+			return {*this, get_drawer_trigger().items().size() - 1u};
+		}
+
+		void toolbar::clear()
+		{
+			get_drawer_trigger().items().clear();
 			API::refresh_window(this->handle());
 		}
 

@@ -1,6 +1,6 @@
 /*
  *	A Form Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -10,6 +10,7 @@
  */
 
 #include <nana/gui/widgets/form.hpp>
+#include <nana/gui/detail/bedrock.hpp>
 
 namespace nana
 {
@@ -93,6 +94,11 @@ namespace nana
 		void form::wait_for_this()
 		{
 			API::wait_for(handle());
+		}
+
+		void form::keyboard_accelerator(const accel_key& key, const std::function<void()>& fn)
+		{
+			nana::detail::bedrock::instance().keyboard_accelerator(this->native_handle(), key, fn);
 		}
 	//end class form
 

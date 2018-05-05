@@ -1,7 +1,7 @@
 /*
  *	A Content View Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2017-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,6 +16,7 @@
 
 #include <nana/gui/basis.hpp>
 #include <functional>
+#include <memory>
 
 namespace nana
 {
@@ -58,6 +59,8 @@ namespace skeletons
 
 		bool enable_scrolls(scrolls which);
 
+		std::shared_ptr<scroll_operation_interface> scroll_operation() const;
+
 		void step(unsigned step_value, bool horz);
 		bool scroll(bool forwards, bool horz);
 		bool turn_page(bool forwards, bool horz);
@@ -92,7 +95,7 @@ namespace skeletons
 			return 16;
 		}
 	private:
-		implementation * const impl_;
+		implementation* const impl_;
 	};
 }
 }

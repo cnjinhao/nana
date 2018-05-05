@@ -1,7 +1,7 @@
 /**
  *	The fundamental widget class implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -83,6 +83,8 @@ namespace nana
 		void focus();
 		bool focused() const;
 
+		std::shared_ptr<scroll_operation_interface> scroll_operation();
+
 		void show();						///< Sets the window visible.
 		void hide();						///< Sets the window invisible.
 		bool visible() const;
@@ -137,6 +139,7 @@ namespace nana
 		virtual void _m_close();
 		virtual bool _m_enabled() const;
 		virtual void _m_enabled(bool);
+		virtual std::shared_ptr<scroll_operation_interface> _m_scroll_operation();
 		virtual bool _m_show(bool);
 		virtual bool _m_visible() const;
 		virtual void _m_size(const nana::size&);

@@ -1,7 +1,7 @@
 /*
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -58,7 +58,7 @@ namespace nana
 			{
 				div_start, div_end, splitter,
 				identifier, dock, fit, hfit, vfit, vert, grid, number, array, reparray,
-				weight, width, height, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom, undisplayed, invisible,
+				weight, width, height, gap, margin, arrange, variable, repeated, min_px, max_px, left, right, top, bottom, undisplayed, invisible, switchable,
 				collapse, parameters,
 				equal,
 				eof, error
@@ -252,14 +252,6 @@ namespace nana
 						case 'd': return token::width;
 						}
 					}
-					else if ("dock" == idstr_)
-						return token::dock;
-					else if ("fit" == idstr_)
-						return token::fit;
-					else if ("vertical" == idstr_ || "vert" == idstr_)
-						return token::vert;
-					else if ("variable" == idstr_ || "repeated" == idstr_)
-						return ('v' == idstr_[0] ? token::variable : token::repeated);
 					else if ("arrange" == idstr_ || "hfit" == idstr_ || "vfit" == idstr_ || "gap" == idstr_)
 					{
 						auto ch = idstr_[0];
@@ -287,16 +279,54 @@ namespace nana
 							_m_throw_error("a parameter list is required after 'collapse'");
 						return token::collapse;
 					}
-					else if ("left" == idstr_ || "right" == idstr_ || "top" == idstr_ || "bottom" == idstr_ || "undisplayed" == idstr_ || "invisible" == idstr_)
+					else if (!idstr_.empty())
 					{
 						switch (idstr_.front())
 						{
-						case 'l': return token::left;
-						case 'r': return token::right;
-						case 't': return token::top;
-						case 'b': return token::bottom;
-						case 'u': return token::undisplayed;
-						case 'i': return token::invisible;
+						case 'b':
+							if ("bottom" == idstr_)
+								return token::bottom;
+							break;
+						case 'd':
+							if ("dock" == idstr_)
+								return token::dock;
+							break;
+						case 'f':
+							if ("fit" == idstr_)
+								return token::fit;
+							break;
+						case 'i':
+							if ("invisible" == idstr_)
+								return token::invisible;
+							break;
+						case 'l':
+							if ("left" == idstr_)
+								return token::left;
+							break;
+						case 'r':
+							if ("repeated" == idstr_)
+								return token::repeated;
+							else if ("right" == idstr_)
+								return token::right;
+							break;
+						case 's':
+							if ("switchable" == idstr_)
+								return token::switchable;
+							break;
+						case 't':
+							if ("top" == idstr_)
+								return token::top;
+							break;
+						case 'u':
+							if ("undisplayed" == idstr_)
+								return token::undisplayed;
+							break;
+						case 'v':
+							if ("vertical" == idstr_ || "vert" == idstr_)
+								return token::vert;
+							else if ("variable" == idstr_)
+								return token::variable;
+							break;
 						}
 					}
 
@@ -579,6 +609,7 @@ namespace nana
 		class div_splitter;
 		class div_dock;
 		class div_dockpane;
+		class div_switchable;
 
 		window window_handle{nullptr};
 		event_handle event_size_handle{nullptr};
@@ -747,7 +778,7 @@ namespace nana
 	class place::implement::division
 	{
 	public:
-		enum class kind{ arrange, vertical_arrange, grid, splitter, dock, dockpane};
+		enum class kind{ arrange, vertical_arrange, grid, splitter, dock, dockpane, switchable};
 		using token = place_parts::tokenizer::token;
 
 		division(kind k, std::string&& n) noexcept
@@ -979,6 +1010,19 @@ namespace nana
 					//Right field of splitterbar
 					if (div_next && !div_next->display)
 						div_next->set_display(true);
+				}
+			}
+
+			if (display)
+			{
+				//If the field is a child of switchable field, hides other child fields.
+				if (this->div_owner && (kind::switchable == this->div_owner->kind_of_division))
+				{
+					for (auto & child : this->div_owner->children)
+					{
+						if (child.get() != this)
+							child->set_display(false);
+					}
 				}
 			}
 		}
@@ -2539,6 +2583,43 @@ namespace nana
 		implement * const impl_;
 	};
 
+	class place::implement::div_switchable
+		: public division
+	{
+	public:
+		div_switchable(std::string && name, implement* impl) noexcept
+			: division(kind::switchable, std::move(name)), impl_(impl)
+		{}
+	private:
+		void collocate(window wd) override
+		{
+			division * div = nullptr;
+			for (auto & child : children)
+			{
+				if (child->display)
+				{
+					div = child.get();
+					div->field_area = this->margin_area();
+					div->collocate(wd);
+					break;
+				}
+			}
+
+			//Hide other child fields.
+			rectangle empty_r{ this->margin_area().position() , size{ 0, 0 } };
+			for (auto & child : children)
+			{
+				if (child.get() != div)
+				{
+					child->field_area = empty_r;
+					child->collocate(wd);
+				}
+			}
+		}
+	private:
+		implement * const impl_;
+	};
+
 	place::implement::~implement()
 	{
 		API::umake_event(event_size_handle);
@@ -2679,6 +2760,9 @@ namespace nana
 
 				children.emplace_back(std::move(div));
 			}
+				break;
+			case token::switchable:
+				div_type = token::switchable;
 				break;
 			case token::vert:
 				div_type = tk;
@@ -2849,6 +2933,9 @@ namespace nana
 			break;
 		case token::dock:
 			div.reset(new div_dock(std::move(name), this));
+			break;
+		case token::switchable:
+			div.reset(new div_switchable(std::move(name), this));
 			break;
 		default:
 			throw std::invalid_argument("nana.place: invalid division type.");
@@ -3184,6 +3271,22 @@ namespace nana
 
 			modified_ptr->div_owner = div_owner;
 			modified_ptr->div_next = div_next;
+
+			if (div_owner)
+			{
+				implement::division * pv_div = nullptr;
+				//Updates the div_next of the div at front of modified one.
+				for (auto & div : div_owner->children)
+				{
+					if (div.get() == modified_ptr)
+					{
+						if (pv_div)
+							pv_div->div_next = modified_ptr;
+						break;
+					}
+					pv_div = div.get();
+				}
+			}
 		}
 		catch (...)
 		{

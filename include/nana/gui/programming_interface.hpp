@@ -301,6 +301,8 @@ namespace API
 	void window_size(window, const size&);
 	size window_outline_size(window);
 	void window_outline_size(window, const size&);
+
+	nana::optional<rectangle> window_rectangle(window);
 	bool get_window_rectangle(window, rectangle&);
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
 	void window_enabled(window, bool);
@@ -434,6 +436,8 @@ namespace API
 	 * widget by the content extent. 
 	 */
 	optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
+
+	unsigned screen_dpi(bool x_requested);
 }//end namespace API
 
 }//end namespace nana

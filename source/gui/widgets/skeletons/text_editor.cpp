@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1952,6 +1952,11 @@ namespace nana{	namespace widgets
 				return textbase().lines();
 
 			return impl_->capacities.behavior->take_lines();
+		}
+
+		std::shared_ptr<scroll_operation_interface> text_editor::scroll_operation() const
+		{
+			return impl_->cview->scroll_operation();
 		}
 
 		void text_editor::draw_corner()

@@ -1,10 +1,10 @@
 /**
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/toolbar.hpp
@@ -33,6 +33,14 @@ namespace nana
 	{
 		namespace toolbar
 		{
+		    struct item_proxy
+		    {
+				nana::toolbar& widget;
+				std::size_t button;
+
+				void enable(bool enable_state);
+		    };
+
 			struct toolbar_events
 				: public general_events
 			{
@@ -72,7 +80,7 @@ namespace nana
 				::nana::toolbar*	widget_;
 				drawer_impl_type*	impl_;
 			};
-		
+
 		}//end namespace toolbar
 	}//end namespace drawerbase
 
@@ -88,8 +96,10 @@ namespace nana
 		toolbar(window, const rectangle& = rectangle(), bool visible = true, bool detached = false);
 
 		void separate();                      ///< Adds a separator.
-		void append(const ::std::string& text, const nana::paint::image& img);   ///< Adds a control button.
-		void append(const ::std::string& text);   ///< Adds a control button.
+		drawerbase::toolbar::item_proxy append(const ::std::string& text, const nana::paint::image& img);   ///< Adds a control button.
+		drawerbase::toolbar::item_proxy append(const ::std::string& text);   ///< Adds a control button.
+		void clear();   ///< Removes all control buttons and separators.
+		
 		bool enable(size_type index) const;
 		void enable(size_type index, bool enable_state);
 		void scale(unsigned s);   ///< Sets the scale of control button.

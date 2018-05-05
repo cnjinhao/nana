@@ -1,7 +1,7 @@
 /**
  *	A Form Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -68,6 +68,8 @@ namespace nana
 
 		void modality() const;
 		void wait_for_this();
+
+		void keyboard_accelerator(const accel_key&, const std::function<void()>& fn);
 	};
 
 	class nested_form

@@ -625,6 +625,13 @@ namespace nana
 		{
 			return get_drawer_trigger().ess().items.size();
 		}
+		
+		void menubar::clear()
+		{
+			internal_scope_guard lock;
+			get_drawer_trigger().ess().items.clear();
+			API::refresh_window(handle());
+		}
 
 		bool menubar::cancel()
 		{

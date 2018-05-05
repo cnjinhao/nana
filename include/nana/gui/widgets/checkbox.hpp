@@ -1,7 +1,7 @@
 /**
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -100,6 +100,7 @@ namespace drawerbase
 			event_handle eh_keyboard;
 		};
 	public:
+		constexpr static const std::size_t npos = static_cast<std::size_t>(-1);
 		~radio_group();
 		void add(checkbox&);
 		std::size_t checked() const;       ///< Retrieves the index of the checkbox which is checked.

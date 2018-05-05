@@ -1,7 +1,7 @@
 /**
  *	A group widget implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2015-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2015-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -172,13 +172,13 @@ namespace nana{
 		return *this;
 	}
 
-	group& group::collocate() throw ()
+	group& group::collocate() noexcept
 	{
 		impl_->place_content.collocate();
 		return *this;
 	}
 
-	group& group::div(const char* div_str) throw ()
+	group& group::div(const char* div_str) noexcept
 	{
 		if (div_str)
 			impl_->usr_div_str = div_str;
@@ -192,6 +192,21 @@ namespace nana{
 	group::field_reference group::operator[](const char* field)
 	{
 		return impl_->place_content.field(field);
+	}
+
+	void group::field_display(const char* field_name, bool display)
+	{
+		impl_->place_content.field_display(field_name, display);
+	}
+
+	bool group::field_display(const char* field_name) const
+	{
+		return impl_->place_content.field_display(field_name);
+	}
+
+	void group::erase(window handle)
+	{
+		impl_->place_content.erase(handle);
 	}
 
 	void group::_m_add_child(const char* field, widget* wdg)
@@ -208,8 +223,8 @@ namespace nana{
 		outter[field_title] << impl_->caption;
 		outter.collocate();
 
+		impl_->caption.transparent(true);
 		color pbg = API::bgcolor(this->parent());
-
 		impl_->caption.bgcolor(pbg.blend(colors::black, 0.025));
 
 		this->bgcolor(pbg.blend(colors::black, 0.05));
@@ -222,10 +237,27 @@ namespace nana{
 			auto gap_px = impl_->gap - 1;
 
 			graph.rectangle(true, API::bgcolor(this->parent()));
-			graph.round_rectangle(rectangle(point(gap_px, impl_->caption_dimension.height / 2),
-				nana::size(graph.width() - 2 * gap_px, graph.height() - impl_->caption_dimension.height / 2 - gap_px)
+
+			auto const top_round_line = static_cast<int>(impl_->caption_dimension.height) / 2;
+
+			graph.round_rectangle(rectangle(point(gap_px, top_round_line),
+				nana::size(graph.width() - 2 * gap_px, graph.height() - top_round_line - gap_px)
 				),
 				3, 3, colors::gray_border, true, this->bgcolor());
+
+			auto opt_r = API::window_rectangle(impl_->caption);
+			if (opt_r)
+			{
+				rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width, static_cast<unsigned>(top_round_line - opt_r->y) } };
+
+				grad_r.y += top_round_line*2  / 3;
+				grad_r.x -= 2;
+				grad_r.width += 4;
+
+				graph.gradual_rectangle(grad_r,
+					API::bgcolor(this->parent()), this->bgcolor(), true
+					);
+			}
 		});
 	}
 

@@ -91,7 +91,7 @@ namespace nana
 				{
 					::jpeg_create_decompress(&jdstru);
 
-					::jpeg_mem_src(&jdstru, const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(data)), bytes);
+					::jpeg_mem_src(&jdstru, const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(data)), static_cast<unsigned long>(bytes));
 					_m_read_jpg(jdstru);
 
 					jpeg_finish_decompress(&jdstru);

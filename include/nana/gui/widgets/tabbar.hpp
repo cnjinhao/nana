@@ -1,7 +1,7 @@
 /**
  *	A Tabbar implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,9 +42,8 @@ namespace nana
 			: arg_tabbar<T>({wdg, v})
 		{}
 
-		bool remove = true;					///< determines whether to remove the item
-		bool close_attach_window = true;	///< determines whether to close the attached window. It is ignored if remove is false
-
+		mutable bool remove = true;					///< determines whether to remove the item
+		mutable bool close_attach_window = true;	///< determines whether to close the attached window. It is ignored if remove is false
 	};
 
 	namespace drawerbase
@@ -293,7 +292,7 @@ namespace nana
 			if (pos > length())
 				throw std::out_of_range("tabbar::insert invalid position");
 
-			this->get_drawer_trigger().insert(pos, to_nstring(text), std::move(value));
+			this->get_drawer_trigger().insert(pos, to_nstring(std::move(text)), std::move(value));
 			API::update_window(*this);
 		}
 

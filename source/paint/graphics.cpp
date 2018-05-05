@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -127,11 +127,14 @@ namespace paint
 			return impl_->real_font->family();
 		}
 
-		double font::size() const
+		double font::size(bool fixed) const
 		{
-			if(empty()) return 0;
+			double size_pt = (empty() ? 0.0 : impl_->real_font->size());
 
-			return impl_->real_font->size();
+			if (fixed && (0.0 == size_pt))
+				return platform_abstraction::font_default_pt();
+
+			return size_pt;
 		}
 
 		bool font::bold() const
