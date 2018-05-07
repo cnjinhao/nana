@@ -157,16 +157,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     endif(NANA_CMAKE_SHARED_LIB)
 
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-									# GCC 4.9
+		# GCC 4.9
         list(APPEND NANA_LINKS "-lboost_system -lboost_thread")
 
     elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-                                                                         # IS_GNUCXX < 5.3
+    	# IS_GNUCXX < 5.3
     else()
-
-    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
         list(APPEND NANA_LINKS -lstdc++fs)
-    endif()
+	endif()
 
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
 
