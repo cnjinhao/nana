@@ -5,11 +5,14 @@
 
 #include <nana/system/platform.hpp>
 
-#if defined(NANA_LINUX)
+#if defined(NANA_POSIX)
 	#include <pthread.h>
 	#include <unistd.h>
 	#include <sys/time.h>
 	#include <errno.h>
+	#include <fcntl.h>
+
+    static bool get_default_audio(std::string &, bool);
 #endif
 
 namespace nana{namespace audio
@@ -47,6 +50,8 @@ namespace nana{namespace audio
 			audio_device::audio_device()
 #if defined(NANA_WINDOWS)
 				: handle_(nullptr), buf_prep_(nullptr)
+#elif defined(NANA_POSIX)
+				: handle_(-1), buf_prep_(nullptr)
 #elif defined(NANA_LINUX)
 				: handle_(nullptr), buf_prep_(nullptr)
 #endif
@@ -59,7 +64,11 @@ namespace nana{namespace audio
 
 			bool audio_device::empty() const
 			{
+			    #ifdef NANA_POSIX
+				return (-1 == handle_);
+			    #else
 				return (nullptr == handle_);
+				#endif
 			}
 
 			bool audio_device::open(std::size_t channels, std::size_t rate, std::size_t bits_per_sample)
@@ -80,6 +89,7 @@ namespace nana{namespace audio
 				MMRESULT mmr = wave_native_if.out_open(&handle_, WAVE_MAPPER, &wfx, reinterpret_cast<DWORD_PTR>(&audio_device::_m_dev_callback), reinterpret_cast<DWORD_PTR>(this), CALLBACK_FUNCTION);
 				return (mmr == MMSYSERR_NOERROR);
 #elif defined(NANA_LINUX)
+                // assumes ALSA sub-system
 				if(nullptr == handle_)
 				{
 					if(::snd_pcm_open(&handle_, "plughw:0,0", SND_PCM_STREAM_PLAYBACK, 0) < 0)
@@ -158,7 +168,52 @@ namespace nana{namespace audio
 					::snd_pcm_prepare(handle_);
 					return true;
 				}
-				return false;
+                return false;
+#elif defined(NANA_POSIX)
+                std::string dsp;
+                if ( !get_default_audio(dsp, true) )
+                    return false;
+                handle_ = ::open(dsp.c_str(), O_WRONLY);
+                if (handle_ == -1)
+                    return false;
+
+                int zero = 0;
+                int caps = 0;
+                int fragment = 0x200008L;
+                int ok;
+                ok = ioctl(handle_, SNDCTL_DSP_COOKEDMODE, &zero);
+                if (ok >= 0)
+                {
+                    ok = ioctl(handle_, SNDCTL_DSP_SETFRAGMENT, &fragment);
+                    if (ok >= 0)
+                    {
+                        ok = ioctl(handle_, SNDCTL_DSP_GETCAPS, &caps);
+                        if (ok >= 0)
+                        {
+                            ok = ioctl(handle_, SNDCTL_DSP_SETFMT, &bits_per_sample);
+                            if (ok >= 0)
+                            {
+                                ok = ioctl(handle_, SNDCTL_DSP_CHANNELS, &channels);
+                                if (ok >= 0)
+                                {
+                                    ok = ioctl(handle_, SNDCTL_DSP_SPEED, &rate);
+                                    if (ok >= 0)
+                                    {
+                                        channels_ = channels;
+                                        rate_ = rate;
+                                        bytes_per_sample_ = ( (bits_per_sample + 7) >> 3 );
+                                        bytes_per_frame_ = bytes_per_sample_ * channels;
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // failure so close handle.
+                ::close(handle_);
+                handle_ = -1;
+                return false;
 #endif
 			}
 
@@ -168,10 +223,14 @@ namespace nana{namespace audio
 				{
 #if defined(NANA_WINDOWS)
 					wave_native_if.out_close(handle_);
+					handle_ = nullptr;
+#elif defined(__FreeBSD__)
+                    ::close(handle_);
+					handle_ = 0;
 #elif defined(NANA_LINUX)
 					::snd_pcm_close(handle_);
-#endif
 					handle_ = nullptr;
+#endif
 				}
 			}
 
@@ -190,6 +249,11 @@ namespace nana{namespace audio
 
 				wave_native_if.out_prepare(handle_, m, sizeof(WAVEHDR));
 				wave_native_if.out_write(handle_, m, sizeof(WAVEHDR));
+#elif defined(NANA_POSIX)
+                // consider moving this to a background thread.
+                // currently this blocks calling thread.
+                ::write(handle_, m->buf, m->bufsize);
+				buf_prep_->revert(m);
 #elif defined(NANA_LINUX)
 				std::size_t frames = m->bufsize / bytes_per_frame_;
 				std::size_t buffered = 0; //in bytes
@@ -239,5 +303,145 @@ namespace nana{namespace audio
 	}//end namespace detail
 }//end namespace audio
 }//end namespace nana
+
+#ifdef NANA_POSIX
+// parse input securely, no-overruns or overflows.
+static bool match(char *&cursor, const char *pattern, const char *tail)
+{
+	char *skim = cursor;
+	while (*skim != '\n' && *pattern != 0 && cursor != tail)
+	{
+		if (*pattern != *skim)
+			return false;
+		pattern++;
+		skim++;
+	}
+	if (*pattern == 0)
+	{
+		cursor = skim;
+		return true;
+	}
+	return false;
+}
+
+// parse input securely, no-overruns or overflows.
+static bool skip(char *&cursor, const char stop, const char *tail)
+{
+	char *skim = cursor;
+	while (*skim != '\n' && cursor != tail)
+	{
+		if (stop == *skim)
+		{
+			cursor = skim;
+			return true;
+		}
+		skim++;
+	}
+	return false;
+}
+
+struct audio_device
+{
+    // pcm name
+    std::string device;
+    // /dev/dsp
+    std::string path;
+    // terse description
+    std::string description;
+    // can record eg. microphone or line-in.
+    bool rec;
+    // can play - speaker, headphone or line-out.
+    bool play;
+    // is the default device.
+    bool chosen;
+};
+
+static bool get_audio_devices(std::vector<audio_device> &list)
+{
+	// read the sndstat device to get a list of audio devices.
+	// mostly OSS but some ALSA installs mimic this.
+	FILE *cat = fopen("/dev/sndstat", "r");
+	if (cat != 0)
+	{
+		char line[128] = {0};
+		const char *last = line + sizeof line;
+		while ( fgets(line, sizeof line, cat) != 0 )
+		{
+			// extract five things about a device: name, description, play, rec, and default.
+		    audio_device next;
+			char *cursor = line;
+			// ignore these lines
+			if ( match(cursor, "Installed", last) || match(cursor, "No devices", last) )
+				continue;
+
+			const char *device = cursor;
+			if ( !skip(cursor, ':', last) )
+				continue;
+			// nul terminate device name.
+			*cursor++ = 0;
+			next.device = device;
+
+			if ( !skip(cursor, '<', last) )
+				continue;
+
+			const char *description = ++cursor;
+			if ( !skip(cursor, '>', last) )
+				continue;
+			// nul terminate description.
+			*cursor++ = 0;
+			next.description = description;
+
+			if ( !skip(cursor, '(', last) )
+				continue;
+
+			cursor++;
+			// supports play?
+			next.play = match(cursor, "play", last);
+			if (next.play)
+				match(cursor, "/", last);
+
+			// supports record?
+			next.rec = match(cursor, "rec", last);
+			if ( !skip(cursor, ')', last) )
+				continue;
+
+			cursor++;
+			// default ?
+			if ( match(cursor, " ", last) )
+				next.chosen = match(cursor, "default", last);
+
+            if (next.device.compare(0, 3, "pcm") == 0)
+            {
+                // proper dev path with number appended.
+                next.path = "/dev/dsp";
+                next.path += next.device.c_str() + 3;
+            }
+
+            list.push_back(next);
+		}
+		fclose(cat);
+	}
+	return list.size() > 0;
+}
+
+static bool get_default_audio(std::string &dsp, bool play)
+{
+    std::vector<audio_device> list;
+    if ( !get_audio_devices(list) )
+        return false;
+    for (auto it = list.begin(); it != list.end(); it++)
+    {
+        if ( (it->play && play) || (it->rec && !play) )
+        {
+            if (it->chosen)
+            {
+                dsp = it->path;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+#endif //NANA_POSIX
 
 #endif //NANA_ENABLE_AUDIO

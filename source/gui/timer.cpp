@@ -27,7 +27,7 @@
 
 #if defined(NANA_WINDOWS)
 #include <windows.h>
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 #include "../detail/platform_spec_selector.hpp"
 #include <nana/system/platform.hpp>
 #endif

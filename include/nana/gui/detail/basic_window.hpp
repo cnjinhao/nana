@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file nana/gui/detail/basic_window.hpp
@@ -79,7 +79,7 @@ namespace detail
 	};
 
 
-	/// a window data structure descriptor 
+	/// a window data structure descriptor
 	struct basic_window
 		: public events_holder
 	{
@@ -139,7 +139,7 @@ namespace detail
 		void _m_init_pos_and_size(basic_window* parent, const rectangle&);
 		void _m_initialize(basic_window* parent);
 	public:
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 		point	pos_native;
 #endif
 		point	pos_root;	///< coordinates of the root window
@@ -202,7 +202,7 @@ namespace detail
 			effects::bground_interface * bground;
 			double	bground_fade_rate;
 		}effect;
-		
+
 		struct other_tag
 		{
 #ifndef WIDGET_FRAME_DEPRECATED
@@ -248,7 +248,7 @@ namespace detail
 		}other;
 
 		native_window_type	root;		    ///< root Window handle
-		unsigned			thread_id;		///< the identifier of the thread that created the window.
+		thread_t			thread_id;		///< the identifier of the thread that created the window.
 		unsigned			index;
 		container			children;
 	};

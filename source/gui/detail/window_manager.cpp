@@ -263,7 +263,7 @@ namespace detail
 		std::vector<key_value_rep> table_;
 	};
 
-	//class window_manager			
+	//class window_manager
 			//struct wdm_private_impl
 			struct window_manager::wdm_private_impl
 			{
@@ -280,10 +280,10 @@ namespace detail
 			//class revertible_mutex
 			struct thread_refcount
 			{
-				unsigned tid;	//Thread ID
+				thread_t tid;	//Thread ID
 				std::vector<unsigned> callstack_refs;
 
-				thread_refcount(unsigned thread_id, unsigned refs)
+				thread_refcount(thread_t thread_id, unsigned refs)
 					: tid(thread_id)
 				{
 					callstack_refs.push_back(refs);
@@ -294,7 +294,7 @@ namespace detail
 			{
 				std::recursive_mutex mutex;
 
-				unsigned thread_id;	//Thread ID
+				thread_t thread_id;	//Thread ID
 				unsigned refs;	//Ref count
 
 				std::vector<thread_refcount> records;
@@ -842,7 +842,7 @@ namespace detail
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return false;
-				
+
 			auto & brock = bedrock::instance();
 			bool moved = false;
 			const bool size_changed = (r.width != wd->dimension.width || r.height != wd->dimension.height);
@@ -913,12 +913,12 @@ namespace detail
 		//			window again, otherwise, it causes an infinite loop, because when a root_widget is resized,
 		//			window_manager will call the function.
 		bool window_manager::size(core_window_t* wd, nana::size sz, bool passive, bool ask_update)
-		{	
+		{
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
 				return false;
-			
+
 			auto & brock = bedrock::instance();
 			if (sz != wd->dimension)
 			{
@@ -1175,7 +1175,7 @@ namespace detail
 		}
 
 		bool window_manager::set_parent(core_window_t* wd, core_window_t* newpa)
-		{	
+		{
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (!impl_->wd_register.available(wd))
@@ -1255,7 +1255,7 @@ namespace detail
 			//The menubar token window will be redirected to the prev focus window when the new
 			//focus window is a menubar.
 			//The focus window will be restored to the prev focus which losts the focus becuase of
-			//memberbar. 
+			//memberbar.
 			if (prev_focus && (wd == wd->root_widget->other.attribute.root->menubar))
 				wd = prev_focus;
 
@@ -1403,7 +1403,7 @@ namespace detail
 						return tabs.front();
 				}
 			}
-			else if (tabs.size() > 1)	//at least 2 elments in tabs are required when moving backward. 
+			else if (tabs.size() > 1)	//at least 2 elments in tabs are required when moving backward.
 			{
 				auto i = std::find(tabs.begin(), end, wd);
 				if (i != end)
@@ -1449,7 +1449,7 @@ namespace detail
 			return nullptr;
 		}
 
-		void window_manager::remove_trash_handle(unsigned tid)
+		void window_manager::remove_trash_handle(thread_t tid)
 		{
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
@@ -1571,7 +1571,7 @@ namespace detail
 			}
 		}
 
-		void window_manager::call_safe_place(unsigned thread_id)
+		void window_manager::call_safe_place(thread_t thread_id)
 		{
 			std::lock_guard<mutex_type> lock(mutex_);
 
@@ -1608,7 +1608,7 @@ namespace detail
 
 			bool established = (for_new && (wdpa != for_new));
 			decltype(for_new->root_widget->other.attribute.root) pa_root_attr = nullptr;
-			
+
 			if (established)
 				pa_root_attr = for_new->root_widget->other.attribute.root;
 
@@ -1743,7 +1743,7 @@ namespace detail
 				wd->root = for_new->root;
 				wd->root_graph = for_new->root_graph;
 				wd->root_widget = for_new->root_widget;
-				
+
 				wd->pos_owner.x = wd->pos_owner.y = 0;
 
 				auto delta_pos = wd->pos_root - for_new->pos_root;

@@ -2,8 +2,8 @@
  *	Message Dispatcher Implementation
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/detail/msg_dispatcher.hpp
@@ -35,7 +35,7 @@ namespace detail
 	{
 		struct thread_binder
 		{
-			unsigned tid;
+			thread_t tid;
 			std::mutex	mutex;
 			std::condition_variable	cond;
 			std::list<msg_packet_tag>	msg_queue;
@@ -44,7 +44,7 @@ namespace detail
 
 	public:
 		typedef msg_packet_tag	msg_packet;
-		typedef void (*timer_proc_type)(unsigned tid);
+		typedef void (*timer_proc_type)(thread_t tid);
 		typedef void (*event_proc_type)(Display*, msg_packet_tag&);
 		typedef int (*event_filter_type)(XEvent&, msg_packet_tag&);
 
@@ -76,7 +76,7 @@ namespace detail
 
 		void insert(Window wd)
 		{
-			unsigned tid = nana::system::this_thread_id();
+			auto tid = nana::system::this_thread_id();
 
 			bool start_driver;
 
@@ -87,7 +87,7 @@ namespace detail
 				start_driver = (0 == table_.thr_table.size());
 				thread_binder * thr;
 
-				std::map<unsigned, thread_binder*>::iterator i = table_.thr_table.find(tid);
+				std::map<thread_t, thread_binder*>::iterator i = table_.thr_table.find(tid);
 				if(i == table_.thr_table.end())
 				{
 					thr = new thread_binder;
@@ -100,7 +100,7 @@ namespace detail
 				thr->mutex.lock();
 				thr->window.insert(wd);
 				thr->mutex.unlock();
-			
+
 				table_.wnd_table[wd] = thr;
 			}
 
@@ -120,7 +120,7 @@ namespace detail
 		void erase(Window wd)
 		{
 			std::lock_guard<decltype(table_.mutex)> lock(table_.mutex);
-			
+
 			auto i = table_.wnd_table.find(wd);
 			if(i != table_.wnd_table.end())
 			{
@@ -136,7 +136,7 @@ namespace detail
 
 				table_.wnd_table.erase(i);
 				thr->window.erase(wd);
-				
+
 				//There still is at least one window alive.
 				if(thr->window.size())
 				{
@@ -151,10 +151,10 @@ namespace detail
 
 		void dispatch(Window modal)
 		{
-			unsigned tid = nana::system::this_thread_id();
+			auto tid = nana::system::this_thread_id();
 			msg_packet_tag msg;
 			int qstate;
-			
+
 			//Test whether the thread is registered for window, and retrieve the queue state for event
 			while((qstate = _m_read_queue(tid, msg, modal)))
 			{
@@ -186,7 +186,7 @@ namespace detail
 					if(pending)
 					{
 						::XNextEvent(display_, &event);
-						
+
 						if(KeyRelease == event.type)
 						{
 							//Check whether the key is pressed, because X will send KeyRelease when pressing and
@@ -260,7 +260,7 @@ namespace detail
 			if(i != table_.wnd_table.end())
 			{
 				thread_binder * const thr = i->second;
-				
+
 				std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
 				thr->msg_queue.push_back(msg);
 				thr->cond.notify_one();
@@ -270,7 +270,7 @@ namespace detail
 		//_m_read_queue
 		//@brief:Read the event from a specified thread queue.
 		//@return: 0 = exit the queue, 1 = fetch the msg, -1 = no msg
-		int _m_read_queue(unsigned tid, msg_packet_tag& msg, Window modal)
+		int _m_read_queue(thread_t tid, msg_packet_tag& msg, Window modal)
 		{
 			bool stop_driver = false;
 
@@ -317,7 +317,7 @@ namespace detail
 		//_m_wait_for_queue
 		//	wait for the insertion of queue.
 		//return@ it returns true if the queue is not empty, otherwise the wait is timeout.
-		bool _m_wait_for_queue(unsigned tid)
+		bool _m_wait_for_queue(thread_t tid)
 		{
 			thread_binder * thr = nullptr;
 			{
@@ -330,12 +330,12 @@ namespace detail
 					thr = i->second;
 				}
 			}
-			
+
 			//Waits for notifying the condition variable, it indicates a new msg is pushing into the queue.
 			std::unique_lock<decltype(thr->mutex)> lock(thr->mutex);
 			return (thr->cond.wait_for(lock, std::chrono::milliseconds(10)) != std::cv_status::timeout);
 		}
-		
+
 	private:
 		Display * display_;
 		volatile bool is_work_{ false };
@@ -344,7 +344,7 @@ namespace detail
 		struct table_tag
 		{
 			std::recursive_mutex mutex;
-			std::map<unsigned, thread_binder*> thr_table;
+			std::map<thread_t, thread_binder*> thr_table;
 			std::map<Window, thread_binder*> wnd_table;
 		}table_;
 
