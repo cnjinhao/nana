@@ -144,14 +144,14 @@ namespace system
 			return;
 
 #if defined(NANA_WINDOWS)
-		if(::ShellExecute(0, L"open", url.c_str(), 0, 0, SW_SHOWNORMAL) < reinterpret_cast<HINSTANCE>(32))
+		if(::ShellExecute(0, L"open", nana::to_wstring(url_utf8).c_str(), 0, 0, SW_SHOWNORMAL) < reinterpret_cast<HINSTANCE>(32))
 		{
 			//Because ShellExecute can delegate execution to Shell extensions (data sources, context menu handlers,
 			//verb implementations) that are activated using Component Object Model (COM), COM should be initialized
 			//before ShellExecute is called. Some Shell extensions require the COM single-threaded apartment (STA) type.
 			//In that case, COM should be initialized under WinXP.
 			nana::detail::platform_spec::co_initializer co_init;
-			::ShellExecute(0, L"open", url.c_str(), 0, 0, SW_SHOWNORMAL);
+			::ShellExecute(0, L"open", nana::to_wstring(url_utf8).c_str(), 0, 0, SW_SHOWNORMAL);
 		}
 #elif defined(NANA_POSIX)
         posix_open_url(url_utf8.c_str());

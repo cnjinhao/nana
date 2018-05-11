@@ -77,7 +77,7 @@
 // Select platform  ......
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)	//Microsoft Windows
 	#define NANA_WINDOWS
-	typedef DWORD_PTR thread_t;
+	typedef unsigned long thread_t;
 
 	// MINGW ...
 	#if defined(__MINGW32__) || defined(__MINGW64__) || defined(MINGW)
