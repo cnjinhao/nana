@@ -1,6 +1,6 @@
 /*
  *	Operation System Shared Linkage Library Wrapper Implementation
- *	Copyright(C) 2003 Jinhao
+ *	Copyright(C) 2003-2018 Jinhao
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
