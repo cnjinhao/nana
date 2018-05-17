@@ -476,8 +476,9 @@ namespace nana
 		return text.npos;
 	}
 
-	//Find the text bound of a field. The parameter start_pos is one of bound characters of the field whose bound will be returned
-	static std::pair<std::size_t, std::size_t> get_field_bound(const std::string& div, std::size_t start_pos)
+	//Find the text boundary of a field. The parameter start_pos is one of bound characters of the field whose bound will be returned.
+	//The boundary doesn't include the tag characters.
+	static std::pair<std::size_t, std::size_t> get_field_boundary(const std::string& div, std::size_t start_pos)
 	{
 		int depth = 0;
 		if ('<' == div[start_pos])
@@ -497,7 +498,7 @@ namespace nana
 				}
 
 				if (0 == depth)
-					return{ start_pos, pos + 1 };
+					return{ start_pos + 1, pos };
 
 				--depth;
 				off = pos + 1;
@@ -522,7 +523,7 @@ namespace nana
 				}
 
 				if (0 == depth)
-					return{ pos, start_pos + 1 };
+					return{ pos + 1, start_pos};
 
 				if (0 == pos)
 					break;
@@ -534,7 +535,8 @@ namespace nana
 		return{};
 	}
 
-	static std::pair<std::size_t, std::size_t> get_field_bound(const std::string& div, const char* idstr, int depth)
+	// Returns the bound of a specified field excluding tag characters.
+	static std::pair<std::size_t, std::size_t> get_field_boundary(const std::string& div, const char* idstr, int depth)
 	{
 		auto start_pos = find_idstr(div, idstr);
 
@@ -545,26 +547,20 @@ namespace nana
 		{
 			auto pos = div.find_last_of("<>", start_pos);
 			if (div.npos == pos)
-				return{};
+				return {0, div.length()};
 
+			start_pos = pos - 1;
 			if (div[pos] == '>')
 			{
 				++depth;
-				start_pos = pos - 1;
 				continue;
 			}
 
-			if (0 == depth)
-			{
-				start_pos = pos;
-				break;
-			}
-
 			--depth;
-			start_pos = pos - 1;
 		}
 
-		return get_field_bound(div, start_pos + 1);
+		//The second parameter is the index of a tag character
+		return get_field_boundary(div, start_pos + 1);
 	}
 
 	//struct implement
@@ -1849,7 +1845,7 @@ namespace nana
 			if (div.npos == attr_pos)
 				return;
 
-			std::size_t off = 1;
+			std::size_t off = 0;
 			while (true)
 			{
 				auto pos = div.find('<', off);
@@ -1898,8 +1894,10 @@ namespace nana
 			if (div.npos != endpos && div[endpos] == '=')
 			{
 				endpos = div.find_first_not_of(" 0123456789.%", endpos + 1);
+
+				//endpos is a npos if the div doesn't contain the boundary tags
 				if (div.npos == endpos)
-					throw std::runtime_error("please report an issue if throws");
+					endpos = div.length();
 			}
 			else
 				endpos = attr_pos + len;
@@ -1927,18 +1925,18 @@ namespace nana
 			}
 
 			//Get the bound of field div-text through reverse recursion.
-			auto bound = get_field_bound(div, name.c_str(), depth);
+			auto bound = get_field_boundary(div, name.c_str(), depth);
 			if (bound.first == bound.second)
 				return;
 
 			auto fieldstr = div.substr(bound.first, bound.second - bound.first);
 			_m_remove_attr(fieldstr, "weight");
 
-			std::string::size_type tag_pos{ left ? div.find('<', bound.second + 1) : div.rfind('>', bound.first - 1) };
+			std::string::size_type tag_pos{ left ? div.find('<', bound.second + 2) : div.rfind('>', bound.first - 2) };
 			if (div.npos == tag_pos)
 				throw std::runtime_error("place report an issue if it throws");
 
-			auto other_bound = get_field_bound(div, tag_pos);
+			auto other_bound = get_field_boundary(div, tag_pos);
 
 			auto other_fieldstr = div.substr(other_bound.first, other_bound.second - other_bound.first);
 			_m_remove_attr(other_fieldstr, "weight");
@@ -1951,9 +1949,7 @@ namespace nana
 
 			double percent = double((left ? r_left : r_right).w()) / double(r_owner.w());
 
-			std::string weight = "weight=" + std::to_string(percent * 100) + "% ";
-
-			fieldstr.insert(1, weight);
+			fieldstr += " weight=" + std::to_string(percent * 100) + "%";
 
 			//Replaces the 'right' field before 'left' in order to make the bound consistent
 			if (left)
@@ -3246,9 +3242,9 @@ namespace nana
 		if (div.npos == fieldname_pos)
 			return;
 
-		auto bound = get_field_bound(div, field, 0);
+		auto const bound = get_field_boundary(div, field, 0);
 
-		auto fieldstr = div.substr(bound.first + 1, bound.second - bound.first - 2);
+		auto fieldstr = div.substr(bound.first, bound.second - bound.first);
 		//Search the attribute
 		std::size_t pos = 0;
 		int depth = 0;
@@ -3287,20 +3283,21 @@ namespace nana
 			if (operation == update_operation::insert)
 				div.insert(fieldname_pos + std::strlen(field), " " + std::string(attr));
 			else if (operation == update_operation::replace)
-			{
-				div.erase(bound.first + 1, fieldstr.length());
-				div.insert(bound.first + 1, std::string(attr) + " " + std::string(field));
-			}
+				div.replace(bound.first, bound.second - bound.first, std::string(attr) + " " + std::string(field));
 		}
 		else
 		{
 			//There is an attribute
 			if (operation == update_operation::erase)
 			{
-				div.erase(bound.first + pos + 1, std::strlen(attr));
+				div.erase(bound.first + pos, std::strlen(attr));
 
-				if ((div[bound.first + pos] == div[bound.first + pos + 1]) && (' ' == div[bound.first + pos]))
-					div.erase(bound.first + pos, 1);
+				if (bound.first + pos > 0)
+				{
+					//erases a whitespace if there are 2 whitespaces after erasing the attr
+					if ((div[bound.first + pos] == div[bound.first + pos - 1]) && (' ' == div[bound.first + pos]))
+						div.erase(bound.first + pos, 1);
+				}
 			}
 		}
 	}
