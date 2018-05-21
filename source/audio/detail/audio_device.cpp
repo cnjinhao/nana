@@ -12,7 +12,9 @@
 	#include <errno.h>
 	#include <fcntl.h>
 
-    static bool get_default_audio(std::string &, bool);
+#	ifndef NANA_LINUX
+    	static bool get_default_audio(std::string &, bool);
+#	endif
 #endif
 
 namespace nana{namespace audio
@@ -47,14 +49,13 @@ namespace nana{namespace audio
 		}wave_native_if;
 #endif
 		//class audio_device
-			audio_device::audio_device()
-#if defined(NANA_WINDOWS)
-				: handle_(nullptr), buf_prep_(nullptr)
+			audio_device::audio_device():
+#if defined(NANA_WINDOWS) || defined(NANA_LINUX)
+				handle_(nullptr),
 #elif defined(NANA_POSIX)
-				: handle_(-1), buf_prep_(nullptr)
-#elif defined(NANA_LINUX)
-				: handle_(nullptr), buf_prep_(nullptr)
+				handle_(-1),
 #endif
+				buf_prep_(nullptr)
 			{}
 
 			audio_device::~audio_device()
@@ -64,11 +65,11 @@ namespace nana{namespace audio
 
 			bool audio_device::empty() const
 			{
-			    #ifdef NANA_POSIX
+#if defined(NANA_POSIX) && not defined(NANA_LINUX)
 				return (-1 == handle_);
-			    #else
+#else
 				return (nullptr == handle_);
-				#endif
+#endif
 			}
 
 			bool audio_device::open(std::size_t channels, std::size_t rate, std::size_t bits_per_sample)
@@ -249,11 +250,6 @@ namespace nana{namespace audio
 
 				wave_native_if.out_prepare(handle_, m, sizeof(WAVEHDR));
 				wave_native_if.out_write(handle_, m, sizeof(WAVEHDR));
-#elif defined(NANA_POSIX)
-                // consider moving this to a background thread.
-                // currently this blocks calling thread.
-                ::write(handle_, m->buf, m->bufsize);
-				buf_prep_->revert(m);
 #elif defined(NANA_LINUX)
 				std::size_t frames = m->bufsize / bytes_per_frame_;
 				std::size_t buffered = 0; //in bytes
@@ -268,6 +264,11 @@ namespace nana{namespace audio
 					else if(-EPIPE == err)
 						::snd_pcm_prepare(handle_);
 				}
+				buf_prep_->revert(m);
+#elif defined(NANA_POSIX)
+                // consider moving this to a background thread.
+                // currently this blocks calling thread.
+                ::write(handle_, m->buf, m->bufsize);
 				buf_prep_->revert(m);
 #endif
 			}
@@ -304,7 +305,7 @@ namespace nana{namespace audio
 }//end namespace audio
 }//end namespace nana
 
-#ifdef NANA_POSIX
+#if defined(NANA_POSIX) && not defined(NANA_LINUX)
 // parse input securely, no-overruns or overflows.
 static bool match(char *&cursor, const char *pattern, const char *tail)
 {
