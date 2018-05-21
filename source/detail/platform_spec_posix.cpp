@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -206,7 +206,7 @@ namespace detail
 			}
 		}
 	};
-	
+
 	class timer_runner
 	{
 		typedef void (*timer_proc_t)(std::size_t id);
@@ -214,7 +214,7 @@ namespace detail
 		struct timer_tag
 		{
 			std::size_t id;
-			unsigned tid;
+			thread_t tid;
 			std::size_t interval;
 			std::size_t timestamp;
 			timer_proc_t proc;
@@ -250,7 +250,7 @@ namespace detail
 				i->second.proc = proc;
 				return;
 			}
-			unsigned tid = nana::system::this_thread_id();
+			auto tid = nana::system::this_thread_id();
 			threadmap_[tid].timers.insert(id);
 
 			timer_tag & tag = holder_[id];
@@ -272,7 +272,7 @@ namespace detail
 			if(i != holder_.end())
 			{
 				auto tid = i->second.tid;
-				
+
 				auto ig = threadmap_.find(tid);
 				if(ig != threadmap_.end())	//Generally, the ig should not be the end of threadmap_
 				{
@@ -295,7 +295,7 @@ namespace detail
 			return (holder_.empty());
 		}
 
-		void timer_proc(unsigned tid)
+		void timer_proc(thread_t tid)
 		{
 			is_proc_handling_ = true;
 			auto i = threadmap_.find(tid);
@@ -329,7 +329,7 @@ namespace detail
 		}
 	private:
 		bool is_proc_handling_;
-		std::map<unsigned, timer_group> threadmap_;
+		std::map<thread_t, timer_group> threadmap_;
 		std::map<std::size_t, timer_tag> holder_;
 	};
 
@@ -339,8 +339,8 @@ namespace detail
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
 #if defined(NANA_USE_XFT)
-		conv_.handle = ::iconv_open("UTF-8", "UTF-32");
-		conv_.code = "UTF-32";
+		conv_.handle = ::iconv_open("UTF-8", NANA_UNICODE);
+		conv_.code = NANA_UNICODE;
 #endif
 	}
 
@@ -723,7 +723,7 @@ namespace detail
 							::XFree(attr);
 						}
 						else
-							addr->input_context = ::XCreateIC(addr->input_method, 
+							addr->input_context = ::XCreateIC(addr->input_method,
 											XNInputStyle, (XIMPreeditNothing | XIMStatusNothing),
 											XNClientWindow, reinterpret_cast<Window>(wd),
 											XNFocusWindow, reinterpret_cast<Window>(wd), nullptr);
@@ -794,7 +794,7 @@ namespace detail
 							XSetWindowAttributes new_attr;
 
 							//Don't remove the KeyPress and KeyRelease mask(0x3), otherwise the window will not receive
-							//Keyboard events after destroying caret 
+							//Keyboard events after destroying caret
 							new_attr.event_mask = (attr.your_event_mask & ~(addr->input_context_event_mask & (~0x3)));
 							::XChangeWindowAttributes(display_, reinterpret_cast<Window>(wd), CWEventMask, &new_attr);
 						}
@@ -966,7 +966,7 @@ namespace detail
 		}
 	}
 
-	void platform_spec::timer_proc(unsigned tid)
+	void platform_spec::timer_proc(thread_t tid)
 	{
 		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
 		if(timer_.runner)
@@ -1066,7 +1066,7 @@ namespace detail
 	//		2 = msg_dispatcher should ignore the msg, because the XEvent is processed by _m_msg_filter
 	int platform_spec::_m_msg_filter(XEvent& evt, msg_packet_tag& msg)
 	{
-		auto & bedrock = detail::bedrock::instance();	
+		auto & bedrock = detail::bedrock::instance();
 
 		platform_spec & self = instance();
 		if(KeyPress == evt.type || KeyRelease == evt.type)

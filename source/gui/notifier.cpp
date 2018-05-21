@@ -1,7 +1,7 @@
 /*
  *	Implementation of Notifier
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,7 +28,7 @@
 
 #include "../detail/platform_spec_selector.hpp"
 
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 #include <nana/system/platform.hpp>
 #include <iostream>
 #endif

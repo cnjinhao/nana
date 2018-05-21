@@ -1,6 +1,6 @@
 /*
  *	A Thread Pool Implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -29,7 +29,7 @@
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 	#include <process.h>
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 	#include <pthread.h>
 #endif
 

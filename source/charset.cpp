@@ -1,7 +1,7 @@
 /**
  *	A Character Encoding Set Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,7 +42,7 @@ namespace nana
 		{
 			auto ustr = reinterpret_cast<const unsigned char*>(text);
 			auto const end = ustr + std::strlen(text);
-			
+
 			for (unsigned i = 0; i != pos; ++i)
 			{
 				const auto uch = *ustr;
@@ -55,7 +55,7 @@ namespace nana
 				if (uch < 0xC0)        // use police ?
 					return nullptr;
 
-				if ((uch < 0xE0) && (ustr + 1 < end)) //? *(ustr + 1) < 0xE0 
+				if ((uch < 0xE0) && (ustr + 1 < end)) //? *(ustr + 1) < 0xE0
 					ustr += 2;
 				else if (uch < 0xF0 && (ustr + 2 <= end))
 					ustr += 3;
@@ -217,7 +217,7 @@ namespace nana
 	}
 
 	namespace detail
-	{   
+	{
 		/// candidate to be more general??
 		class locale_initializer
 		{
@@ -226,7 +226,7 @@ namespace nana
 			{
 				static bool initialized = false;
 				if (initialized) return;
-				
+
 				initialized = true;
 				//Only set the C library locale
 				std::setlocale(LC_CTYPE, "");
@@ -234,7 +234,7 @@ namespace nana
 		};
 
 		/// convert wchar C string from ? ANSI code page CP_ACP (windows) or LC_CTYPE c locale (-nix) into utf8 std::string
-		bool wc2mb(std::string& mbstr, const wchar_t * s)
+		static bool wc2mb(std::string& mbstr, const wchar_t * s)
 		{
 			if(nullptr == s || *s == 0)
 			{
@@ -268,7 +268,7 @@ namespace nana
 		}
 
 		/// convert a char C-string from The system default Windows ANSI code page CP_ACP or from LC_CTYPE c locale (-nix) into utf16 std::wstring
-		bool mb2wc(std::wstring& wcstr, const char* s)
+		static bool mb2wc(std::wstring& wcstr, const char* s)
 		{
 			if(nullptr == s || *s == 0)
 			{
@@ -288,7 +288,7 @@ namespace nana
 			std::size_t len = std::mbsrtowcs(nullptr, &s, 0, &mbstate);
 			if(len == static_cast<std::size_t>(-1))
 				return false;
-			
+
 			if(len)
 			{
 				wcstr.resize(len);
@@ -322,7 +322,7 @@ namespace nana
 			std::size_t len = std::mbsrtowcs(nullptr, &s, 0, &mbstate);
 			if(len == static_cast<std::size_t>(-1))
 				return false;
-			
+
 			if(len)
 			{
 				wcstr.resize(sizeof(wchar_t) * len);
@@ -367,7 +367,7 @@ namespace nana
 
 		};
 
-		/// 
+		///
 		struct utf8_error_police_def_char : public encoding_error_police
 		{
 			static unsigned long def_error_mark ;
@@ -386,13 +386,13 @@ namespace nana
 
 		unsigned long utf8_error_police_def_char::def_error_mark{ '*' };
 
-		///  
+		///
 		struct utf8_error_police_throw : public encoding_error_police
 		{
 			unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) override
 			{
 				//utf8_Error::use_throw = true;
-				utf8_Error(std::string("The text is not encoded in UTF8: ") + 
+				utf8_Error(std::string("The text is not encoded in UTF8: ") +
 					reinterpret_cast<const char*>( current_code_unit) ).emit();;
 				current_code_unit = end;
 				return 0;
@@ -561,7 +561,7 @@ namespace nana
 							std::u32string utf32str = std::wstring_convert<std::codecvt_utf16<char32_t>, char32_t>().from_bytes(bytes, bytes + sizeof(wchar_t) * wcstr.size());
 							return std::string(reinterpret_cast<const char*>(utf32str.c_str()), sizeof(char32_t) * utf32str.size());
 						}
-	#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+	#elif defined(NANA_POSIX)
 						return std::string(reinterpret_cast<const char*>(wcstr.c_str()), sizeof(wchar_t) * wcstr.size());
 	#else
 						throw std::runtime_error("Bad charset");
@@ -653,7 +653,7 @@ namespace nana
 						std::u32string utf32str = std::wstring_convert<std::codecvt_utf16<char32_t>, char32_t>().from_bytes(bytes, bytes + sizeof(wchar_t) * data_.size());
 						return std::string(reinterpret_cast<const char*>(utf32str.c_str()), sizeof(char32_t) * utf32str.size());
 					}
-	#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+	#elif defined(NANA_POSIX)
 					return std::string(reinterpret_cast<const char*>(data_.c_str()), data_.size() * sizeof(wchar_t));
 	#else
 					throw std::runtime_error("Bad charset");
@@ -689,7 +689,7 @@ namespace nana
 				}
 				unsigned ch = *p;
 				unsigned long code;
-				if(ch < 0xC0)       // error? - move to end. Posible ANSI or ISO code-page 
+				if(ch < 0xC0)       // error? - move to end. Posible ANSI or ISO code-page
 				{
 					//return *(p++); // temp: assume equal
 					//p = end;
@@ -809,7 +809,7 @@ namespace nana
 				s += static_cast<char>(0x80 | ((code >> 12) & 0x3F));
 				s += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
 				s += static_cast<char>(0x80 | (code & 0x3F));
-			}		
+			}
 		}
 
 		//le_or_be, true = le, false = be

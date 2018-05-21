@@ -2,7 +2,7 @@
 #include <nana/config.hpp>
 #ifdef NANA_WINDOWS
 	#include <windows.h>
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 	#include <sys/time.h>
 #endif
 
@@ -15,7 +15,7 @@ namespace system
 		{
 #if defined(NANA_WINDOWS)
 			LARGE_INTEGER beg_timestamp;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 			struct timeval beg_timestamp;
 #endif
 		};
@@ -45,7 +45,7 @@ namespace system
 		{
 #if defined(NANA_WINDOWS)
 			::QueryPerformanceCounter(&impl_->beg_timestamp);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 			struct timezone tz;
 			::gettimeofday(&impl_->beg_timestamp, &tz);
 #endif
@@ -63,7 +63,7 @@ namespace system
 			::QueryPerformanceFrequency(&freq);
 
 			return double(diff)/double(freq.QuadPart) * 1000;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 			struct timeval tv;
 			struct timezone tz;
 			gettimeofday(&tv, &tz);

@@ -3345,7 +3345,7 @@ namespace nana{	namespace widgets
 
 					canvas.rectangle(true);
 
-					ent_pos.x += ent_off;
+					ent_pos.x = pos.x + ent_off;
 
 
 					if (rtl)

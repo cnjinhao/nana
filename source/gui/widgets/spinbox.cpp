@@ -696,6 +696,16 @@ namespace nana
 		return range->range();
 	}
 
+	void spinbox::select(bool sel)
+	{
+		internal_scope_guard lock;
+		if (handle())
+		{
+			get_drawer_trigger().impl()->editor()->select(sel);
+			API::refresh_window(*this);
+		}
+	}
+
 	::std::string spinbox::value() const
 	{
 		internal_scope_guard lock;

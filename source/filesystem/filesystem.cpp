@@ -1,6 +1,6 @@
 /*
  *	A ISO C++ FileSystem Implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -58,7 +58,7 @@ namespace nana
 			wchar_t pstr[MAX_PATH];
 			if (SUCCEEDED(SHGetFolderPath(0, CSIDL_PROFILE, 0, SHGFP_TYPE_CURRENT, pstr)))
 				return pstr;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 			const char * pstr = ::getenv("HOME");
 			if (pstr)
 				return pstr;
@@ -66,7 +66,7 @@ namespace nana
 			return fs::path();
 		}
 
-		std::string pretty_file_size(const fs::path& path)  
+		std::string pretty_file_size(const fs::path& path)
 		{
 			try {
 				auto bytes = fs::file_size(path);
@@ -118,7 +118,7 @@ namespace nana
 				if (ftime == ((fs::file_time_type::min)())) return{};
 
 				//std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
-				
+
 				//A workaround for VC2013
 				using time_point = decltype(ftime);
 
@@ -169,7 +169,7 @@ namespace nana
 	}
 }
 
-#if NANA_USING_NANA_FILESYSTEM 
+#if NANA_USING_NANA_FILESYSTEM
 
 namespace nana_fs = nana::experimental::filesystem;
 
@@ -208,7 +208,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 
 		//Because of No wide character version of POSIX
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 		const char* splstr = "/";
 #else
 		const wchar_t* splstr = L"/\\";
@@ -251,7 +251,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 		{
 #if defined(NANA_WINDOWS)
 			return (::GetFileAttributes(pathstr_.c_str()) == INVALID_FILE_ATTRIBUTES);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 			struct stat sta;
 			return (::stat(pathstr_.c_str(), &sta) == -1);
 #endif
@@ -293,7 +293,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				return file_type::directory;
 
 			return file_type::regular;
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
+#elif defined(NANA_POSIX)
 			struct stat sta;
 			if (-1 == ::stat(pathstr_.c_str(), &sta))
 				return file_type::not_found; //??
@@ -372,7 +372,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 		{
 			return pathstr_;
 		}
-			
+
 		path::operator string_type() const
 		{
 			return native();
@@ -392,7 +392,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 		{
 			return to_utf8(pathstr_);
 		}
-		std::string path::generic_string() const  
+		std::string path::generic_string() const
 		{
 			auto str = string();
 			std::replace(str.begin(), str.end(), '\\', '/');
@@ -404,7 +404,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			std::replace(str.begin(), str.end(), L'\\', L'/');
 			return str;
 		}
-		std::string path::generic_u8string() const // uppss ...   
+		std::string path::generic_u8string() const // uppss ...
 		{
 			auto str = pathstr_;
 			std::replace(str.begin(), str.end(), '\\', '/');  // uppss ...  revise this !!!!!
@@ -447,7 +447,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		void path::_m_assign(const std::wstring& source)
 		{
-			pathstr_ = to_nstring(source);	
+			pathstr_ = to_nstring(source);
 		}
 		//end class path
 
@@ -517,9 +517,9 @@ namespace nana {	namespace experimental {	namespace filesystem
 				void operator()(void** handle)
 				{
 #if defined(NANA_WINDOWS)
-						::FindClose(*handle);
-#elif defined(NANA_LINUX) || defined(NANA_MACOS)
-						::closedir(*reinterpret_cast<DIR**>(handle));
+                    ::FindClose(*handle);
+#elif defined(NANA_POSIX)
+                    ::closedir(*reinterpret_cast<DIR**>(handle));
 #endif
 				}
 			};
@@ -554,7 +554,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				bool directory_iterator::equal(const directory_iterator& x) const
 				{
 					if (end_ && (end_ == x.end_)) return true;
-					return (value_.path().filename() == x.value_.path().filename()); 
+					return (value_.path().filename() == x.value_.path().filename());
 				}
 
 
@@ -695,11 +695,11 @@ namespace nana {	namespace experimental {	namespace filesystem
 			{
 				if (p.empty())
 					return false;
-#if defined(NANA_WINDOWS)	
+#if defined(NANA_WINDOWS)
 				return (FALSE != ::DeleteFileW(p.c_str()));
 #elif defined(NANA_POSIX)
 				return (!std::remove(p.c_str()));
-#endif			
+#endif
 			}
 
 			bool rm_dir(const path& p)
@@ -708,7 +708,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				return (FALSE != ::RemoveDirectoryW(p.c_str())) || not_found_error(static_cast<int>(::GetLastError()));
 #elif defined(NANA_POSIX)
 				return (!::rmdir(p.c_str())) || not_found_error(errno);
-#endif			
+#endif
 			}
 
 			bool rm_dir(const path& p, bool fails_if_not_empty);
@@ -841,7 +841,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				return file_status{ file_type::socket, prms };
 
 			return file_status{ file_type::unknown };
-#endif		
+#endif
 		}
 
 		bool is_directory(const path& p)
@@ -877,7 +877,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 #	if defined(NANA_LINUX)
 				fseeko64(stream, 0, SEEK_END);
 				size = ftello64(stream);
-#	elif defined(NANA_MACOS)
+#	elif defined(NANA_POSIX)
 				fseeko(stream, 0, SEEK_END);
 				size = ftello(stream);
 #	endif
@@ -891,7 +891,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 		file_time_type last_write_time(const path& p)
 		{
 			struct tm t;
-			nana::filesystem_ext::modified_file_time(p, t);   
+			nana::filesystem_ext::modified_file_time(p, t);
 			std::chrono::system_clock::time_point dateTime =std::chrono::system_clock::from_time_t( mktime(&t) );
 			return 	dateTime;
 		}
@@ -946,7 +946,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				auto pstr = ::getcwd(buf, 260);
 				if (pstr)
 					return pstr;
-				
+
 				int bytes = 260 + 260;
 				while (ERANGE == errno)
 				{

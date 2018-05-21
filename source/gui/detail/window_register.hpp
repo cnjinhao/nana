@@ -153,7 +153,7 @@ namespace nana
 				}
 			}
 
-			void delete_trash(unsigned thread_id)
+			void delete_trash(thread_t thread_id)
 			{
 				if (0 == thread_id)
 				{

@@ -1,9 +1,9 @@
 /*
  *	Operation System Shared Linkage Library Wrapper Implementation
- *	Copyright(C) 2003 Jinhao
+ *	Copyright(C) 2003-2018 Jinhao
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/system/shared_wrapper.cpp
@@ -12,7 +12,7 @@
 #include <nana/system/shared_wrapper.hpp>
 #include <algorithm>
 #include <iterator>
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 #include <dlfcn.h>
 #else
 #include <windows.h>
@@ -30,7 +30,7 @@ namespace system
 
 			module_t open(const char* filename)
 			{
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 				return ::dlopen(filename, RTLD_LAZY);
 #else
 				return ::LoadLibraryA(filename);
@@ -39,7 +39,7 @@ namespace system
 
 			void* symbols(module_t handle, const char* symbol)
 			{
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 				return ::dlsym(handle, const_cast<char*>(symbol));
 #else
 				return (void*)(::GetProcAddress(reinterpret_cast<HMODULE>(handle), symbol));
@@ -48,7 +48,7 @@ namespace system
 
 			void close(module_t handle)
 			{
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 				::dlclose(handle);
 #else
 				::FreeLibrary(reinterpret_cast<HMODULE>(handle));
@@ -90,7 +90,7 @@ namespace system
 					std::transform(filename + length - 13, filename + length , std::back_inserter(file), tolower);
 					if(file == ".nana_shared")
 					{
-#if defined(NANA_LINUX) || defined(NANA_MACOS)
+#if defined(NANA_POSIX)
 						ofn.replace(length - 13, 13, ".so");
 #else
 						ofn.replace(length - 13, 13, ".DLL");

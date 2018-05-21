@@ -46,10 +46,10 @@ namespace detail
 		~bedrock();
 		void pump_event(window, bool is_modal);
 		void flush_surface(core_window_t*, bool forced, const rectangle* update_area = nullptr);
-		static int inc_window(unsigned tid = 0);
-		thread_context* open_thread_context(unsigned tid = 0);
-		thread_context* get_thread_context(unsigned tid = 0);
-		void remove_thread_context(unsigned tid = 0);
+		static int inc_window(thread_t tid = 0);
+		thread_context* open_thread_context(thread_t tid = 0);
+		thread_context* get_thread_context(thread_t tid = 0);
+		void remove_thread_context(thread_t tid = 0);
 		static bedrock& instance();
 
 		core_window_t* focus();
@@ -73,7 +73,7 @@ namespace detail
 		void map_through_widgets(core_window_t*, native_drawable_type);
 
 		//Closes the windows which are associated with the specified thread. If the given thread_id is 0, it closes all windows
-		void close_thread_window(unsigned thread_id);
+		void close_thread_window(thread_t thread_id);
 
 	public:
 		//Platform-dependent functions

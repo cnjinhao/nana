@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -37,7 +37,7 @@ namespace nana
 			detail::bedrock::instance().wd_manager().internal_lock().unlock();
 		}
 	//end class internal_scope_guard
-	
+
 	//class internal_revert_guard
 		internal_revert_guard::internal_revert_guard()
 		{
@@ -55,7 +55,7 @@ namespace nana
 	{
 		stop_propagation_ = true;
 	}
-	
+
 	bool event_arg::propagation_stopped() const
 	{
 		return stop_propagation_;
@@ -111,7 +111,7 @@ namespace nana
 				pi_data_->auto_form_set.insert(wd);
 				return;
 			}
-			
+
 			if (pi_data_->auto_form_set.erase(wd))
 			{
 				auto p = wd->widget_notifier->widget_ptr();
@@ -119,7 +119,7 @@ namespace nana
 			}
 		}
 
-		void bedrock::close_thread_window(unsigned thread_id)
+		void bedrock::close_thread_window(thread_t thread_id)
 		{
 			std::vector<core_window_t*> v;
 			wd_manager().all_handles(v);
@@ -321,7 +321,7 @@ namespace nana
 			}
 			return false;
 		}
-		
+
 		void bedrock::set_menu(native_window_type menu_wd, bool has_keyboard)
 		{
 			if(menu_wd && pi_data_->menu.window != menu_wd)
@@ -453,7 +453,7 @@ namespace nana
 					flag_guard fguard(this, wd);
 					(wd->drawer.*drawer_event_fn)(*arg, bForce__EmitInternal);
 				}
-				
+
 				if (bProcess__External_event)
 					evt_addr->emit(*arg, reinterpret_cast<window>(wd));
 				break;
