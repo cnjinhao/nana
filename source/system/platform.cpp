@@ -34,7 +34,7 @@ static void posix_open_url(const char *url_utf8)
     const char *home = getenv("HOME");
     std::string cheat(home);
     cheat += "/.mozilla";
-    struct stat exists{};
+    struct stat exists;
 
     // TODO: generalize this for chromium, opera, waterfox, etc.
     // Most desktop environments (KDE, Gnome, Lumina etc.) provide a way to set

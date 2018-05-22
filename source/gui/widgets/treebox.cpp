@@ -2234,7 +2234,7 @@ namespace nana
 			return item_proxy(const_cast<drawer_trigger_t*>(&get_drawer_trigger()), get_drawer_trigger().selected());
 		}
 
-		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation() const
+		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()
 		{
 			internal_scope_guard lock;
 			return std::make_shared<drawerbase::treebox::exclusive_scroll_operation>(get_drawer_trigger().impl()->shape.scroll);
