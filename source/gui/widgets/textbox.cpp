@@ -817,7 +817,7 @@ namespace drawerbase {
 				editor->reset_caret_pixels();
 		}
 
-		std::shared_ptr<scroll_operation_interface> textbox::_m_scroll_operation() const
+		std::shared_ptr<scroll_operation_interface> textbox::_m_scroll_operation()
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();

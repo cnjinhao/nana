@@ -279,7 +279,7 @@ namespace nana
 		native_string_type _m_caption() const throw() override;
 		void _m_caption(native_string_type&&) override;
 		void _m_typeface(const paint::font&) override;
-		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() const;
+		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
 	};
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>

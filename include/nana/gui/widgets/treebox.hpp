@@ -446,7 +446,7 @@ namespace nana
 		item_proxy selected() const; ///< returns the selected node
 
 	private:
-		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() const;
+		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
 
 	};//end class treebox
 }//end namespace nana
