@@ -68,12 +68,6 @@ namespace nana {
 				bool	drag_started{ false };
 				point origin;
 
-				/*
-				scrolls enabled_scrolls{scrolls::both};	//deprecated
-				nana::scroll<false>	horz;
-				nana::scroll<true>	vert;
-				*/
-
 				std::shared_ptr<cv_scroll_rep> cv_scroll;
 
 				timer tmr;

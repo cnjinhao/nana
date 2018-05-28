@@ -1215,9 +1215,6 @@ namespace nana
 				unsigned suspension_width{ 8 };  ///<  def= . the trigger will set this to the width if ("...")
 				unsigned text_margin{ 5 };  ///<  def= 5. Additional or extended with added (before) to the text width to determine the cell width. cell_w = text_w + ext_w +1
 
-				//deprecated
-				//unsigned header_height		{ 25   };  ///<  def=25 . header height   header_size
-
 				unsigned item_height_ex{ 6 };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
 				unsigned header_splitter_area_before{ 2 }; ///< def=2. But 4 is better... IMO
 				unsigned header_splitter_area_after{ 3 }; ///< def=3. But 4 is better...

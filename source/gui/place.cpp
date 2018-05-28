@@ -2583,9 +2583,8 @@ namespace nana
 		: public division
 	{
 	public:
-		div_switchable(std::string && name, implement* /*impl*/) noexcept:
-			division(kind::switchable, std::move(name))//,
-			//impl_(impl) 	//deprecated
+		div_switchable(std::string && name, implement*) noexcept:
+			division(kind::switchable, std::move(name))
 		{}
 	private:
 		void collocate(window wd) override
@@ -2613,8 +2612,6 @@ namespace nana
 				}
 			}
 		}
-	private:
-		//implement * const impl_; //deprecated
 	};
 
 	place::implement::~implement()
