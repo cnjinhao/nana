@@ -911,11 +911,18 @@ namespace detail
 			case Expose:
 				if(msgwnd->visible && (msgwnd->root_graph->empty() == false))
 				{
-					nana::detail::platform_scope_guard psg;
-					//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
-					::nana::rectangle update_area(xevent.xexpose.x, xevent.xexpose.y, xevent.xexpose.width, xevent.xexpose.height);
-					if (!update_area.empty())
-						msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+					nana::detail::platform_scope_guard lock;
+					if(msgwnd->is_draw_through())
+					{
+						msgwnd->other.attribute.root->draw_through();
+					}
+					else
+					{
+						//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
+						::nana::rectangle update_area(xevent.xexpose.x, xevent.xexpose.y, xevent.xexpose.width, xevent.xexpose.height);
+						if (!update_area.empty())
+							msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+					}
 				}
 				break;
 			case KeyPress:

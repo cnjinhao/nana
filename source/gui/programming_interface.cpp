@@ -21,6 +21,9 @@
 #include <nana/gui/detail/events_operation.hpp>
 
 #include "../../source/detail/platform_abstraction.hpp"
+#ifdef NANA_X11
+#	include "../../source/detail/posix/platform_spec.hpp"
+#endif
 
 namespace nana
 {
@@ -52,6 +55,19 @@ namespace nana
 	}
 namespace API
 {
+#ifdef NANA_X11
+	//Some platform specific functions for X11
+	namespace x11
+	{
+		/// Returns the connection to the X server
+		const void* get_display()
+		{
+			auto & spec = nana::detail::platform_spec::instance();
+			return spec.open_display();			
+		}
+	}
+#endif
+
 	using basic_window = ::nana::detail::basic_window;
 	using interface_type = ::nana::detail::native_interface;
 
@@ -391,7 +407,6 @@ namespace API
 			}
 		}
 	}//end namespace dev
-
 
 	widget* get_widget(window wd)
 	{

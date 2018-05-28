@@ -45,6 +45,15 @@ namespace nana
 
 namespace API
 {
+#ifdef NANA_X11
+	//Some platform specific functions for X11
+	namespace x11
+	{
+		/// Returns the connection to the X server
+		const void* get_display();
+	}
+#endif
+
 	namespace detail
 	{
 		::nana::widget_geometrics* make_scheme(::nana::detail::scheme_factory_interface&&);
@@ -109,6 +118,7 @@ namespace API
 
 		void draw_shortkey_underline(paint::graphics&, const std::string& text, wchar_t shortkey, std::size_t shortkey_position, const point& text_pos, const color&);
 	}//end namespace dev
+
 
 	/// Returns the widget pointer of the specified window.
 	/*
