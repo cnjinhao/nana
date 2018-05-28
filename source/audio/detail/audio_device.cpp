@@ -65,7 +65,7 @@ namespace nana{namespace audio
 
 			bool audio_device::empty() const
 			{
-#if defined(NANA_POSIX) && not defined(NANA_LINUX)
+#if defined(NANA_POSIX) && !defined(NANA_LINUX)
 				return (-1 == handle_);
 #else
 				return (nullptr == handle_);
@@ -305,7 +305,7 @@ namespace nana{namespace audio
 }//end namespace audio
 }//end namespace nana
 
-#if defined(NANA_POSIX) && not defined(NANA_LINUX)
+#if defined(NANA_POSIX) && !defined(NANA_LINUX)
 // parse input securely, no-overruns or overflows.
 static bool match(char *&cursor, const char *pattern, const char *tail)
 {
