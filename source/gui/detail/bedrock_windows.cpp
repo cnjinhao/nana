@@ -408,16 +408,7 @@ namespace detail
 							if (msg.message == WM_QUIT)   break;
 							if ((WM_KEYFIRST <= msg.message && msg.message <= WM_KEYLAST) || !::IsDialogMessage(native_handle, &msg))
 							{
-#if 0
-								auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
-								if (menu_wd) interior_helper_for_menu(msg, menu_wd);
-
-								::TranslateMessage(&msg);	//deprecated
-								::DispatchMessage(&msg);
-#else
 								process_msg(this, msg);
-#endif
-
 								wd_manager().remove_trash_handle(tid);
 							}
 						}
@@ -429,15 +420,7 @@ namespace detail
 					{
 						if (-1 != ::GetMessage(&msg, 0, 0, 0))
 						{
-#if 0
-							auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
-							if (menu_wd) interior_helper_for_menu(msg, menu_wd);
-
-							::TranslateMessage(&msg);
-							::DispatchMessage(&msg);
-#else
 							process_msg(this, msg);
-#endif
 						}
 
 						wd_manager().call_safe_place(tid);
@@ -452,17 +435,7 @@ namespace detail
 				while(context->window_count)
 				{
 					if(-1 != ::GetMessage(&msg, 0, 0, 0))
-					{
-#if 0
-						auto menu_wd = get_menu(reinterpret_cast<native_window_type>(msg.hwnd), true);
-						if(menu_wd) interior_helper_for_menu(msg, menu_wd);
-
-						::TranslateMessage(&msg);
-						::DispatchMessage(&msg);
-#else
 						process_msg(this, msg);
-#endif
-					}
 
 					wd_manager().call_safe_place(tid);
 					wd_manager().remove_trash_handle(tid);
