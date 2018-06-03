@@ -156,7 +156,7 @@ namespace nana
 
 			/// Saves images as a windows bitmap file
 			/// @param file_utf8 A UTF-8 string to a filename
-			void save_as_file(const char* file_utf8) const throw();
+			void save_as_file(const char* file_utf8) const noexcept;
 
 			::nana::color	palette(bool for_text) const;
 			graphics&		palette(bool for_text, const ::nana::color&);

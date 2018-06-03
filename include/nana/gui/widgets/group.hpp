@@ -83,7 +83,7 @@ namespace nana{
 		void _m_add_child(const char* field, widget*);
 		void _m_init();
 		void _m_complete_creation() override;
-		native_string_type _m_caption() const throw() override;
+		native_string_type _m_caption() const noexcept override;
 		void _m_caption(native_string_type&&) override;
 	private:
 		std::unique_ptr<implement> impl_;

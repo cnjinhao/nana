@@ -426,7 +426,7 @@ namespace std
 }
 #endif
 
-#ifdef _enable_std_put_time
+#ifdef _nana_std_put_time
 #include <cwchar>
 namespace std
 {

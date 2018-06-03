@@ -276,7 +276,7 @@ namespace nana
 		std::size_t text_line_count() const noexcept;
 	protected:
 		//Overrides widget's virtual functions
-		native_string_type _m_caption() const throw() override;
+		native_string_type _m_caption() const noexcept override;
 		void _m_caption(native_string_type&&) override;
 		void _m_typeface(const paint::font&) override;
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;

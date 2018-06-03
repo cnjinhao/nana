@@ -260,7 +260,7 @@ namespace API
 			}
 		}
 
-		::nana::detail::native_string_type window_caption(window wd) throw()
+		::nana::detail::native_string_type window_caption(window wd) noexcept
 		{
 			auto const iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard isg;
@@ -838,7 +838,7 @@ namespace API
 		}
 	}
 
-	nana::optional<rectangle> window_rectangle(window wd)
+	std::optional<rectangle> window_rectangle(window wd)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
@@ -1476,7 +1476,7 @@ namespace API
 		restrict::wd_manager().set_safe_place(reinterpret_cast<basic_window*>(wd), std::move(fn));
 	}
 
-	optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
+	std::optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;

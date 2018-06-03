@@ -89,7 +89,7 @@ namespace API
 		void set_measurer(window, ::nana::dev::widget_content_measurer_interface*);
 
 		void attach_drawer(widget&, drawer_trigger&);
-		::nana::detail::native_string_type window_caption(window) throw();
+		::nana::detail::native_string_type window_caption(window) noexcept;
 		void window_caption(window, ::nana::detail::native_string_type);
 
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
@@ -255,6 +255,19 @@ namespace API
 		if (nullptr == general_evt)
 			throw std::invalid_argument("API::events(): bad parameter window handle, no events object or invalid window handle.");
 
+#ifdef __cpp_if_constexpr
+		if constexpr(std::is_same_v<event_type, ::nana::general_events>)
+		{
+			return *general_evt;
+		}
+		else
+		{
+			auto * widget_evt = dynamic_cast<event_type*>(general_evt);
+			if (nullptr == widget_evt)
+				throw std::invalid_argument("API::events(): bad template parameter Widget, the widget type and window handle do not match.");
+			return *widget_evt;
+		}
+#else
 		if (std::is_same<::nana::general_events, event_type>::value)
 			return *static_cast<event_type*>(general_evt);
 
@@ -262,6 +275,7 @@ namespace API
 		if (nullptr == widget_evt)
 			throw std::invalid_argument("API::events(): bad template parameter Widget, the widget type and window handle do not match.");
 		return *widget_evt;
+#endif
 	}
 
 	template<typename EventArg, typename std::enable_if<std::is_base_of< ::nana::event_arg, EventArg>::value>::type* = nullptr>
@@ -288,6 +302,19 @@ namespace API
 		if (nullptr == wdg_colors)
 			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
 
+#ifdef __cpp_if_constexpr
+		if constexpr(std::is_same<::nana::widget_geometrics, scheme_type>::value)
+		{
+			return *static_cast<scheme_type*>(wdg_colors);
+		}
+		else
+		{
+			auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
+			if (nullptr == comp_wdg_colors)
+				throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
+			return *comp_wdg_colors;
+		}
+#else
 		if (std::is_same<::nana::widget_geometrics, scheme_type>::value)
 			return *static_cast<scheme_type*>(wdg_colors);
 
@@ -295,6 +322,7 @@ namespace API
 		if (nullptr == comp_wdg_colors)
 			throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
 		return *comp_wdg_colors;
+#endif
 	}
 
 	point window_position(window);
@@ -312,7 +340,7 @@ namespace API
 	size window_outline_size(window);
 	void window_outline_size(window, const size&);
 
-	nana::optional<rectangle> window_rectangle(window);
+	::std::optional<rectangle> window_rectangle(window);
 	bool get_window_rectangle(window, rectangle&);
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
 	void window_enabled(window, bool);
@@ -434,7 +462,7 @@ namespace API
 	bool ignore_mouse_focus(window, bool ignore);	///< Enables/disables the mouse focus, it returns the previous state
 	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 
-	void at_safe_place(window, std::function<void()>);
+	void at_safe_place(window, ::std::function<void()>);
 
 	/// Returns a widget content extent size
 	/**
@@ -445,7 +473,7 @@ namespace API
 	 * @return if optional has a value, the first size indicates the content extent, the second size indicates the size of
 	 * widget by the content extent. 
 	 */
-	optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
+	::std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 
 	unsigned screen_dpi(bool x_requested);
 }//end namespace API

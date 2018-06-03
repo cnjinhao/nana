@@ -54,9 +54,9 @@ namespace nana
 
 		window parent() const;
 
-		::std::string caption() const throw();
-		::std::wstring caption_wstring() const throw();
-		native_string_type caption_native() const throw();
+		::std::string caption() const noexcept;
+		::std::wstring caption_wstring() const noexcept;
+		native_string_type caption_native() const noexcept;
 
 		widget& caption(std::string utf8);
 		widget& caption(std::wstring);
@@ -132,7 +132,7 @@ namespace nana
 		virtual void _m_complete_creation();
 
 		virtual general_events& _m_get_general_events() const = 0;
-		virtual native_string_type _m_caption() const throw();
+		virtual native_string_type _m_caption() const noexcept;
 		virtual void _m_caption(native_string_type&&);
 		virtual nana::cursor _m_cursor() const;
 		virtual void _m_cursor(nana::cursor);

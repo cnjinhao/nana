@@ -937,7 +937,7 @@ namespace paint
 			impl_->size.width = impl_->size.height = 0;
 		}
 
-		void graphics::save_as_file(const char* file_utf8) const throw()
+		void graphics::save_as_file(const char* file_utf8) const noexcept
 		{
 			if(impl_->handle)
 			{

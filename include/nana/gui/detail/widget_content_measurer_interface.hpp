@@ -35,7 +35,7 @@ namespace nana
 			 * @param limit_width True if limits the width, false if limits the height.
 			 * @return the size of content.
 			 */
-			virtual optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const = 0;
+			virtual ::std::optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const = 0;
 
 			/// Returns the extension to the size of widget from content extent
 			/**
