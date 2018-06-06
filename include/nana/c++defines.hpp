@@ -36,10 +36,15 @@
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
  *	- STD_FILESYSTEM_NOT_SUPPORTED (GCC < 5.3) ....
  *	- CXX_NO_INLINE_NAMESPACE (Visual C++ < 2015)
+ *
+ *	There are two kinds of flags:
+ *	* _nana_std_xxx indicates that nana provides a standard-like class for workaround of lack of C++ support.
+ *  * _nana_std_has_xxx indicates that nana detects whether a C++ feature is supported. Nana doesn't provide a standard-like class for this missing feature.
+ *
  *	- _nana_std_make_unique (__cpluscplus < 201402)
  *	- _nana_std_put_time (GCC < 5)
  *  - _nana_std_clamp (Visual C++ < 2017)
-  */
+ */
 
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
@@ -195,7 +200,6 @@
 #	define _nana_std_make_unique
 #endif
 
-
 //Detects the feature std::clamp
 //Visual C++ 2017 with /std:c++latest provides the std::clamp
 #undef _nana_std_clamp
@@ -207,10 +211,21 @@
 
 
 #undef _nana_std_optional
-#if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && defined(_MSVC_LANG) && _MSVC_LANG>= 201703)) ||	\
-	(defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ >= 400)) ||						\
-	(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 701)
+#if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && ((!defined(_MSVC_LANG)) || _MSVC_LANG < 201703))) ||	\
+	((__cplusplus < 201703L) || \
+		(defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ < 400)) ||				\
+		(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 701))	\
+	)
 #	define _nana_std_optional
+#endif
+
+#undef _nana_std_has_string_view
+#if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && defined(_MSVC_LANG) && _MSVC_LANG >= 201703)) ||				\
+	((__cplusplus >= 201703L) && \
+		(defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ >= 400) ||		\
+		(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 701))) \
+	)
+#	define _nana_std_has_string_view
 #endif
 
 
