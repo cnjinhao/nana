@@ -64,8 +64,8 @@ namespace nana
 				eof, error
 			};
 
-			tokenizer(const char* p) noexcept
-				: divstr_(p), sp_(p)
+			tokenizer(const char* div_text) noexcept
+				: divstr_(div_text), sp_(div_text)
 			{}
 
 			const std::string& idstr() const noexcept
@@ -3180,9 +3180,9 @@ namespace nana
 			sp->set_renderer(impl_->split_renderer, true);
 	}
 
-	void place::div(const char* s)
+	void place::div(std::string div_text)
 	{
-		place_parts::tokenizer tknizer(s);
+		place_parts::tokenizer tknizer(div_text.c_str());
 		impl_->disconnect();
 		auto div = impl_->scan_div(tknizer);
 		try
@@ -3190,7 +3190,7 @@ namespace nana
 			impl_->connect(div.get());		//throws if there is a redefined name of field.
 			impl_->root_division.reset();	//clear atachments div-fields
 			impl_->root_division.swap(div);
-			impl_->div_text.assign(s);
+			impl_->div_text.swap(div_text);
 		}
 		catch (...)
 		{
@@ -3321,7 +3321,7 @@ namespace nana
 		return *p;
 	}
 
-	void update_div(std::string& div, const char* field, const char* attr, update_operation operation)
+	static void update_div(std::string& div, const char* field, const char* attr, update_operation operation)
 	{
 		const auto fieldname_pos = find_idstr(div, field);
 		if (div.npos == fieldname_pos)
