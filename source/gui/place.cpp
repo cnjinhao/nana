@@ -3207,7 +3207,7 @@ namespace nana
 	//Contributed by dankan1890(PR#156)
 	enum class update_operation { erase = 0, insert, replace };
 
-	void update_div(std::string& div, const char* field, const char* attr, update_operation operation);
+	static void update_div(std::string& div, const char* field, const char* attr, update_operation operation);
 
 	void place::modify(const char* name, const char* div_text)
 	{
