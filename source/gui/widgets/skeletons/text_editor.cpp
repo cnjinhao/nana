@@ -3147,7 +3147,11 @@ namespace nana{	namespace widgets
 				maskstr.append(n, mask_char_);
 				return graph_.text_extent_size(maskstr);
 			}
+#ifdef _nana_std_has_string_view
+			return graph_.text_extent_size(std::basic_string_view<char_type>(str, n));
+#else
 			return graph_.text_extent_size(str, static_cast<unsigned>(n));
+#endif
 		}
 
 		bool text_editor::_m_adjust_view()
@@ -3500,7 +3504,12 @@ namespace nana{	namespace widgets
 				for (auto & ent : reordered)
 				{
 					std::size_t len = ent.end - ent.begin;
+
+#ifdef _nana_std_has_string_view
+					unsigned str_w = graph_.text_extent_size(std::wstring_view{ ent.begin, len }).width;
+#else
 					unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
+#endif
 
 					if ((text_draw_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_draw_pos.x < text_right))
 					{
@@ -3519,7 +3528,11 @@ namespace nana{	namespace widgets
 				for (auto & ent : reordered)
 				{
 					const auto len = ent.end - ent.begin;
+#ifdef _nana_std_has_string_view
+					auto ent_px = graph_.text_extent_size(std::wstring_view(ent.begin, len)).width;
+#else
 					auto ent_px = graph_.text_extent_size(ent.begin, len).width;
+#endif
 
 					extra_space = false;
 
@@ -3589,7 +3602,11 @@ namespace nana{	namespace widgets
 				auto pos = text_coord.x + text_len;
 				if (b.x != pos || text_coord.y != b.y)
 				{
+#ifdef _nana_std_has_string_view
+					auto whitespace_w = graph_.text_extent_size(std::wstring_view{ L" ", 1 }).width;
+#else
 					auto whitespace_w = graph_.text_extent_size(L" ", 1).width;
+#endif
 					graph_.rectangle(::nana::rectangle{ text_draw_pos, { whitespace_w, line_h_pixels } }, true);
 				}
 			}

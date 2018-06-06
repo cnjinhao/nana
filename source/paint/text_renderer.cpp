@@ -52,6 +52,7 @@ namespace nana
 						{
 							std::size_t len = ent.end - ent.begin;
 							nana::size ts = detail::text_extent_size(dw, ent.begin, len);
+
 							if(ts.height > pixels)	pixels = ts.height;
 						
 							if(pos.x + static_cast<int>(ts.width) > 0)
@@ -128,7 +129,11 @@ namespace nana
 				draw_string_omitted(graphics& graph, int x, int endpos, bool omitted)
 					: graph(graph), x(x), endpos(endpos)
 				{
+#ifdef _nana_std_has_string_view
+					omitted_pixels = (omitted ? graph.text_extent_size(std::string_view{ "...", 3 }).width : 0);
+#else
 					omitted_pixels = (omitted ? graph.text_extent_size("...", 3).width : 0);
+#endif
 					if (endpos - x > static_cast<int>(omitted_pixels))
 						this->endpos -= omitted_pixels;
 					else
@@ -629,7 +634,11 @@ namespace nana
 				return;
 			}
 
+#ifdef _nana_std_has_string_view
+			const auto ellipsis = graph_.text_extent_size(std::string_view{ "...", 3 }).width;
+#else
 			const auto ellipsis = graph_.text_extent_size("...", 3).width;
+#endif
 
 			std::unique_ptr<unsigned[]> pixels(new unsigned[text.size()]);
 			graph_.glyph_pixels(text.c_str(), text.size(), pixels.get());

@@ -411,8 +411,8 @@ namespace paint
 					impl_->handle = dw.get();
 					impl_->size = sz;
 
-					impl_->handle->string.tab_pixels = detail::raw_text_extent_size(impl_->handle, L"\t", 1).width;
-					impl_->handle->string.whitespace_pixels = detail::raw_text_extent_size(impl_->handle, L" ", 1).width;
+					impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
+					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
 				}
 			}
 
@@ -438,8 +438,9 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				::SelectObject(impl_->handle->context, reinterpret_cast<HFONT>(f.impl_->real_font->native_handle()));
 #endif
-				impl_->handle->string.tab_pixels = detail::raw_text_extent_size(impl_->handle, L"\t", 1).width;
-				impl_->handle->string.whitespace_pixels = detail::raw_text_extent_size(impl_->handle, L" ", 1).width;
+
+				impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
+				impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
 
 				if (impl_->changed == false)
 					impl_->changed = true;
@@ -453,6 +454,20 @@ namespace paint
 			return (impl_->handle ? font(impl_->handle) : impl_->font_shadow);
 		}
 
+#ifdef _nana_std_has_string_view
+		size graphics::text_extent_size(std::string_view text) const
+		{
+			throw_not_utf8(text);
+			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+		}
+
+		size graphics::text_extent_size(std::wstring_view text) const
+		{
+			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+		}
+
+		
+#else
 		::nana::size graphics::text_extent_size(const ::std::string& text) const
 		{
 			throw_not_utf8(text);
@@ -483,6 +498,7 @@ namespace paint
 		{
 			return detail::text_extent_size(impl_->handle, str.c_str(), len);
 		}
+#endif
 
 		nana::size graphics::glyph_extent_size(const wchar_t * str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
@@ -562,7 +578,11 @@ namespace paint
 				auto const reordered = unicode_reorder(str.c_str(), str.size());
 				for(auto & i: reordered)
 				{
+#ifdef _nana_std_has_string_view
+					nana::size t = text_extent_size(std::wstring_view( i.begin, i.end - i.begin ));
+#else
 					nana::size t = text_extent_size(i.begin, i.end - i.begin);
+#endif
 					sz.width += t.width;
 					if(sz.height < t.height)
 						sz.height = t.height;
@@ -1011,7 +1031,11 @@ namespace paint
 			for (auto & i : reordered)
 			{
 				string(moved_pos, i.begin, i.end - i.begin);
+#ifdef _nana_std_has_string_view
+				moved_pos.x += static_cast<int>(text_extent_size(std::wstring_view( i.begin, i.end - i.begin )).width);
+#else
 				moved_pos.x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
+#endif
 			}
 			return static_cast<unsigned>(moved_pos.x - pos.x);
 		}
@@ -1076,7 +1100,7 @@ namespace paint
 						{
 							//Render a part that does not contains a tab
 							detail::draw_string(impl_->handle, pos, str, len);
-							pos.x += detail::raw_text_extent_size(impl_->handle, str, len).width;
+							pos.x += detail::real_text_extent_size(impl_->handle, str, len).width;
 						}
 
 						str = i;

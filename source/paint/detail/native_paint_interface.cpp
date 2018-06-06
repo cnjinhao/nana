@@ -134,29 +134,80 @@ namespace detail
 		pixbuf.paste(nana::rectangle(r.x, 0, r.width, r.height), dw, point{r.x, r.y});
 	}
 
-	nana::size raw_text_extent_size(drawable_type dw, const wchar_t* text, std::size_t len)
+	nana::size real_text_extent_size(drawable_type dw, const wchar_t* text, std::size_t len)
 	{
-		if(nullptr == dw || nullptr == text || 0 == len) return nana::size();
+		if (dw && text && len)
+		{
+
 #if defined(NANA_WINDOWS)
-		::SIZE size;
-		if(::GetTextExtentPoint32(dw->context, text, static_cast<int>(len), &size))
-			return nana::size(size.cx, size.cy);
+			::SIZE size;
+			if (::GetTextExtentPoint32(dw->context, text, static_cast<int>(len), &size))
+				return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
-	#if defined(NANA_USE_XFT)
-		std::string utf8str = to_utf8(std::wstring(text, len));
-		XGlyphInfo ext;
-		XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
-		::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
-								reinterpret_cast<XftChar8*>(const_cast<char*>(utf8str.c_str())), utf8str.size(), &ext);
-		return nana::size(ext.xOff, fs->ascent + fs->descent);
-	#else
-		XRectangle ink;
-		XRectangle logic;
-		::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), text, len, &ink, &logic);
-		return nana::size(logic.width, logic.height);
-	#endif
+			std::string utf8str = to_utf8(std::wstring(text, len));
+#if defined(NANA_USE_XFT)
+			XGlyphInfo ext;
+			XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
+			::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
+				reinterpret_cast<XftChar8*>(const_cast<char*>(utf8text.data())), utf8text.size(), &ext);
+			return nana::size(ext.xOff, fs->ascent + fs->descent);
+#else
+			XRectangle ink;
+			XRectangle logic;
+			::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), utf8str.c_str(), utf8str.size(), &ink, &logic);
+			return nana::size(logic.width, logic.height);
 #endif
-		return nana::size();
+#endif
+		}
+		return {};
+	}
+
+	nana::size real_text_extent_size(drawable_type dw, const char* text, std::size_t len)
+	{
+		if (dw && text && len)
+		{
+
+#if defined(NANA_WINDOWS)
+			auto wstr = to_wstring(std::string(text,len));
+			::SIZE size;
+			if (::GetTextExtentPoint32(dw->context, wstr.c_str(), static_cast<int>(wstr.size()), &size))
+				return nana::size(size.cx, size.cy);
+#elif defined(NANA_X11)
+#if defined(NANA_USE_XFT)
+			XGlyphInfo ext;
+			XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
+			::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
+				reinterpret_cast<XftChar8*>(const_cast<char*>(text)), len, &ext);
+			return nana::size(ext.xOff, fs->ascent + fs->descent);
+#else
+			XRectangle ink;
+			XRectangle logic;
+			::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), text, len, &ink, &logic);
+			return nana::size(logic.width, logic.height);
+#endif
+#endif
+		}
+		return {};
+	}
+
+
+	nana::size text_extent_size(drawable_type dw, const char * text, std::size_t len)
+	{
+		if (nullptr == dw || nullptr == text || 0 == len)
+			return{};
+
+		nana::size extents = real_text_extent_size(dw, text, len);
+
+		auto const end = text + len;
+		int tabs = 0;
+		for (; text != end; ++text)
+		{
+			if (*text == '\t')
+				++tabs;
+		}
+		if (tabs)
+			extents.width = static_cast<int>(extents.width) - tabs * static_cast<int>(dw->string.tab_pixels - dw->string.whitespace_pixels * dw->string.tab_length);
+		return extents;
 	}
 
 	nana::size text_extent_size(drawable_type dw, const wchar_t * text, std::size_t len)
@@ -164,7 +215,7 @@ namespace detail
 		if (nullptr == dw || nullptr == text || 0 == len)
 			return{};
 
-		nana::size extents = raw_text_extent_size(dw, text, len);
+		nana::size extents = real_text_extent_size(dw, text, len);
 
 		const wchar_t* const end = text + len;
 		int tabs = 0;

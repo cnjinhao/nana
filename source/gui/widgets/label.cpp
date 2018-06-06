@@ -83,7 +83,11 @@ namespace nana
 
 					auto pre_font = graph.typeface();	//used for restoring the font
 
+#ifdef _nana_std_has_string_view
+					const unsigned def_line_pixels = graph.text_extent_size(std::wstring_view{ L" ", 1 }).height;
+#else
 					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
+#endif
 
 					font_ = pre_font;
 					fblock_ = nullptr;
@@ -170,7 +174,11 @@ namespace nana
 
 					auto ft = graph.typeface();	//used for restoring the font
 
+#ifdef _nana_std_has_string_view
+					const unsigned def_line_pixels = graph.text_extent_size(std::wstring_view(L" ", 1)).height;
+#else
 					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
+#endif
 
 					font_ = ft;
 					fblock_ = nullptr;

@@ -393,8 +393,13 @@ namespace API
 		{
 			if (shortkey)
 			{
+#ifdef _nana_std_has_string_view
+				auto off_x = (shortkey_position ? graph.text_extent_size(std::string_view{ text.c_str(), shortkey_position }).width : 0);
+				auto key_px = static_cast<int>(graph.text_extent_size(std::wstring_view{ &shortkey, 1 }).width);
+#else
 				auto off_x = (shortkey_position ? graph.text_extent_size(text.c_str(), shortkey_position).width : 0);
 				auto key_px = static_cast<int>(graph.text_extent_size(&shortkey, 1).width);
+#endif
 
 				unsigned ascent, descent, inleading;
 				graph.text_metrics(ascent, descent, inleading);

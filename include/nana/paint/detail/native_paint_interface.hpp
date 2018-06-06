@@ -1,6 +1,6 @@
 /*
  *	Platform Implementation
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -32,8 +32,11 @@ namespace detail
 	//dw color = dw color * fade_rate + bdcolor * (1 - fade_rate)
 	void blend(drawable_type dw, const nana::rectangle& r, pixel_color_t bdcolor, double fade_rate);
 
-	nana::size raw_text_extent_size(drawable_type, const wchar_t*, std::size_t len);
+	nana::size real_text_extent_size(drawable_type, const char*, std::size_t len);
+	nana::size real_text_extent_size(drawable_type, const wchar_t*, std::size_t len);
+	nana::size text_extent_size(drawable_type, const char*, std::size_t len);
 	nana::size text_extent_size(drawable_type, const wchar_t*, std::size_t len);
+
 	void draw_string(drawable_type, const nana::point&, const wchar_t *, std::size_t len);
 }//end namespace detail
 }//end namespace paint

@@ -78,7 +78,11 @@ namespace nana{ namespace drawerbase
 				}
 
 				//draw crook
+#ifdef _nana_std_has_string_view
+				auto txt_px = graph.text_extent_size(std::wstring_view( L"jN", 2 )).height + 2;
+#else
 				auto txt_px = graph.text_extent_size(L"jN", 2).height + 2;
+#endif
 				impl_->crook.draw(graph, wdg->bgcolor(), wdg->fgcolor(), rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), API::element_state(*wdg));
 			}
 
