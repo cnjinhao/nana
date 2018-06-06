@@ -17,7 +17,7 @@
 
 #include <nana/c++defines.hpp>
 
-#ifdef _nana_std_optional
+#ifndef _nana_std_optional
 #include <optional>
 #else
 #include <stdexcept>
