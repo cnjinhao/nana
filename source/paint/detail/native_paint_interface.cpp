@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -144,7 +144,7 @@ namespace detail
 			if (::GetTextExtentPoint32(dw->context, text, static_cast<int>(len), &size))
 				return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
-			std::string utf8str = to_utf8(std::wstring(text, len));
+			std::string utf8text = to_utf8(std::wstring(text, len));
 #if defined(NANA_USE_XFT)
 			XGlyphInfo ext;
 			XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
@@ -154,7 +154,7 @@ namespace detail
 #else
 			XRectangle ink;
 			XRectangle logic;
-			::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), utf8str.c_str(), utf8str.size(), &ink, &logic);
+			::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), utf8text.c_str(), utf8text.size(), &ink, &logic);
 			return nana::size(logic.width, logic.height);
 #endif
 #endif
