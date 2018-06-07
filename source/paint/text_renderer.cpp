@@ -236,7 +236,12 @@ namespace nana
 									std::unique_ptr<unsigned[]> pixel_buf(new unsigned[len]);
 
 									//Find the char that should be splitted
+#ifdef _nana_std_has_string_view
+									graph.glyph_pixels({ i.begin, len }, pixel_buf.get());
+#else
 									graph.glyph_pixels(i.begin, len, pixel_buf.get());
+#endif
+
 									std::size_t idx_head = 0, idx_splitted;
 
 									do
@@ -456,7 +461,11 @@ namespace nana
 									std::unique_ptr<unsigned[]> scope_res(new unsigned[len]);
 									auto pxbuf = scope_res.get();
 									//Find the char that should be splitted
+#ifdef _nana_std_has_string_view
+									graph.glyph_pixels({ i.begin, len }, pxbuf);
+#else
 									graph.glyph_pixels(i.begin, len, pxbuf);
+#endif
 									std::size_t idx_head = 0, idx_splitted;
 
 									do
@@ -636,12 +645,15 @@ namespace nana
 
 #ifdef _nana_std_has_string_view
 			const auto ellipsis = graph_.text_extent_size(std::string_view{ "...", 3 }).width;
+
+			std::unique_ptr<unsigned[]> pixels(new unsigned[text.size()]);
+			graph_.glyph_pixels({ text.c_str(), text.size() }, pixels.get());
 #else
 			const auto ellipsis = graph_.text_extent_size("...", 3).width;
-#endif
 
 			std::unique_ptr<unsigned[]> pixels(new unsigned[text.size()]);
 			graph_.glyph_pixels(text.c_str(), text.size(), pixels.get());
+#endif
 
 			std::size_t substr_len = 0;
 			unsigned substr_px = 0;

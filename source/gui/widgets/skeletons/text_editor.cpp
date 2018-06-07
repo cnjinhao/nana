@@ -834,8 +834,12 @@ namespace nana{	namespace widgets
 						if (str_w > pixels)	//Indicates the splitting of ts string
 						{
 							std::size_t len = ts.end - ts.begin;
+#ifdef _nana_std_has_string_view
+							auto pxbuf = editor_.graph_.glyph_pixels({ts.begin, len});
+#else
 							std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 							editor_.graph_.glyph_pixels(ts.begin, len, pxbuf.get());
+#endif
 
 							auto pxptr = pxbuf.get();
 							auto pxend = pxptr + len;
@@ -3310,8 +3314,12 @@ namespace nana{	namespace widgets
 			if (parser.entities().empty())
 				return;
 
+#ifdef _nana_std_has_string_view
+			auto glyph_px = graph_.glyph_pixels({ str, len });
+#else
 			std::unique_ptr<unsigned[]> glyph_px(new unsigned[len]);
 			graph_.glyph_pixels(str, len, glyph_px.get());
+#endif
 			auto glyphs = glyph_px.get();
 
 			auto px_h = line_height();
@@ -3561,8 +3569,12 @@ namespace nana{	namespace widgets
 							unsigned select_pos = static_cast<unsigned>(ent_sbegin != ent.begin ? ent_sbegin - ent.begin : 0);
 							unsigned select_len = static_cast<unsigned>(ent_send - ent_sbegin);
 
+#ifdef _nana_std_has_string_view
+							auto pxbuf = graph_.glyph_pixels({ ent.begin, static_cast<std::size_t>(len) });
+#else
 							std::unique_ptr<unsigned[]> pxbuf{ new unsigned[len] };
 							graph_.glyph_pixels(ent.begin, len, pxbuf.get());
+#endif
 
 							auto head_px = std::accumulate(pxbuf.get(), pxbuf.get() + select_pos, unsigned{});
 							auto select_px = std::accumulate(pxbuf.get() + select_pos, pxbuf.get() + select_pos + select_len, unsigned{});
@@ -3636,7 +3648,11 @@ namespace nana{	namespace widgets
 			auto len = static_cast<std::size_t>(ent.end - ent.begin);
 
 			std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
+#ifdef _nana_std_has_string_view
+			if (graph_.glyph_pixels({ent.begin, len}, pxbuf.get()))
+#else
 			if (graph_.glyph_pixels(ent.begin, len, pxbuf.get()))
+#endif
 			{
 				const auto px_end = pxbuf.get() + len;
 
@@ -3695,7 +3711,11 @@ namespace nana{	namespace widgets
 						//Characters of some bidi languages may transform in a word.
 						//RTL
 						std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
+#ifdef _nana_std_has_string_view
+						graph_.glyph_pixels({ent.begin, len}, pxbuf.get());
+#else
 						graph_.glyph_pixels(ent.begin, len, pxbuf.get());
+#endif
 						return std::accumulate(pxbuf.get() + (target - ent.begin), pxbuf.get() + len, text_w);
 					}
 					//LTR

@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -116,6 +116,12 @@ namespace nana
 #ifdef _nana_std_has_string_view
 			::nana::size text_extent_size(std::string_view text) const;
 			::nana::size text_extent_size(std::wstring_view text) const;
+
+			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
+			::nana::size glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const;
+
+			bool glyph_pixels(std::wstring_view text, unsigned* pxbuf) const;
+			std::unique_ptr<unsigned[]> glyph_pixels(std::wstring_view text) const;
 #else
 			::nana::size	text_extent_size(const ::std::string&) const;
 			::nana::size	text_extent_size(const char*, std::size_t len) const;
@@ -124,11 +130,12 @@ namespace nana
 			::nana::size	text_extent_size(const ::std::wstring&) const;    ///< Computes the width and height of the specified string of text.
 			::nana::size	text_extent_size(const wchar_t*, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
 			::nana::size	text_extent_size(const ::std::wstring&, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-#endif
 
 			::nana::size	glyph_extent_size(const wchar_t*, std::size_t length, std::size_t begin, std::size_t end) const;
 			::nana::size	glyph_extent_size(const ::std::wstring&, std::size_t length, std::size_t begin, std::size_t end) const;
+
 			bool glyph_pixels(const wchar_t *, std::size_t length, unsigned* pxbuf) const;
+#endif
 			::nana::size	bidi_extent_size(const std::wstring&) const;
 			::nana::size	bidi_extent_size(const std::string&) const;
 

@@ -465,8 +465,116 @@ namespace paint
 		{
 			return detail::text_extent_size(impl_->handle, text.data(), text.length());
 		}
-
 		
+		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const
+		{
+			end = std::clamp(end, static_cast<std::size_t>(0), static_cast<std::size_t>(text.size()));
+
+			if (nullptr == impl_->handle || text.empty() || begin >= end) return{};
+
+			nana::size sz;
+#if defined(NANA_WINDOWS)
+			int * dx = new int[text.size()];
+
+			SIZE extents;
+			::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
+			sz.width = dx[end - 1] - (begin ? dx[begin - 1] : 0);
+			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
+			const wchar_t * pend = text.data() + end;
+			for (const wchar_t * p = text.data() + begin; p != pend; ++p)
+			{
+				if (*p == '\t')
+					sz.width += tab_pixels;
+			}
+			sz.height = extents.cy;
+			delete[] dx;
+#elif defined(NANA_X11)
+			sz = text_extent_size(text.substr(begin, end - begin));
+#endif
+			return sz;
+		}
+
+		bool graphics::glyph_pixels(std::wstring_view text, unsigned* pxbuf) const
+		{
+			if (nullptr == impl_->handle || nullptr == impl_->handle->context || nullptr == pxbuf) return false;
+
+			if (text.empty()) return true;
+
+			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
+#if defined(NANA_WINDOWS)
+			int * dx = new int[text.size()];
+			SIZE extents;
+			::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
+
+			pxbuf[0] = (text[0] == '\t' ? tab_pixels : dx[0]);
+
+			for (std::size_t i = 1; i < text.size(); ++i)
+			{
+				pxbuf[i] = (text[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
+			}
+			delete[] dx;
+#elif defined(NANA_X11) && defined(NANA_USE_XFT)
+
+			auto disp = nana::detail::platform_spec::instance().open_display();
+			auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
+
+			XGlyphInfo extents;
+			for (std::size_t i = 0; i < len; ++i)
+			{
+				if (text[i] != '\t')
+				{
+					FT_UInt glyphs = ::XftCharIndex(disp, xft, text[i]);
+					::XftGlyphExtents(disp, xft, &glyphs, 1, &extents);
+					pxbuf[i] = extents.xOff;
+				}
+				else
+					pxbuf[i] = tab_pixels;
+			}
+#endif
+			return true;
+		}
+
+		std::unique_ptr<unsigned[]> graphics::glyph_pixels(std::wstring_view text) const
+		{
+			if (nullptr == impl_->handle || nullptr == impl_->handle->context) return {};
+
+			if (text.empty()) return std::unique_ptr<unsigned[]>{new unsigned[1]};
+
+			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
+#if defined(NANA_WINDOWS)
+			int * dx = new int[text.size()];
+			SIZE extents;
+			::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
+
+			auto pxbuf = std::unique_ptr<unsigned[]>{ new unsigned[text.size()] };
+
+			pxbuf[0] = (text[0] == '\t' ? tab_pixels : dx[0]);
+
+			for (std::size_t i = 1; i < text.size(); ++i)
+			{
+				pxbuf[i] = (text[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
+			}
+			delete[] dx;
+#elif defined(NANA_X11) && defined(NANA_USE_XFT)
+
+			auto disp = nana::detail::platform_spec::instance().open_display();
+			auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
+
+			XGlyphInfo extents;
+			for (std::size_t i = 0; i < len; ++i)
+			{
+				if (text[i] != '\t')
+				{
+					FT_UInt glyphs = ::XftCharIndex(disp, xft, text[i]);
+					::XftGlyphExtents(disp, xft, &glyphs, 1, &extents);
+					pxbuf[i] = extents.xOff;
+				}
+				else
+					pxbuf[i] = tab_pixels;
+			}
+#endif
+			return pxbuf;
+		}
 #else
 		::nana::size graphics::text_extent_size(const ::std::string& text) const
 		{
@@ -498,11 +606,10 @@ namespace paint
 		{
 			return detail::text_extent_size(impl_->handle, str.c_str(), len);
 		}
-#endif
 
 		nana::size graphics::glyph_extent_size(const wchar_t * str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
-			if(len < end) end = len;
+			if (len < end) end = len;
 			if (nullptr == impl_->handle || nullptr == str || 0 == len || begin >= end) return{};
 
 			nana::size sz;
@@ -513,13 +620,13 @@ namespace paint
 			sz.width = dx[end - 1] - (begin ? dx[begin - 1] : 0);
 			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 			const wchar_t * pend = str + end;
-			for(const wchar_t * p = str + begin; p != pend; ++p)
+			for (const wchar_t * p = str + begin; p != pend; ++p)
 			{
-				if(*p == '\t')
+				if (*p == '\t')
 					sz.width += tab_pixels;
 			}
 			sz.height = extents.cy;
-			delete [] dx;
+			delete[] dx;
 #elif defined(NANA_X11)
 			sz = text_extent_size(str + begin, end - begin);
 #endif
@@ -533,8 +640,8 @@ namespace paint
 
 		bool graphics::glyph_pixels(const wchar_t * str, std::size_t len, unsigned* pxbuf) const
 		{
-			if(nullptr == impl_->handle || nullptr == impl_->handle->context || nullptr == str || nullptr == pxbuf) return false;
-			if(len == 0) return true;
+			if (nullptr == impl_->handle || nullptr == impl_->handle->context || nullptr == str || nullptr == pxbuf) return false;
+			if (len == 0) return true;
 
 			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 #if defined(NANA_WINDOWS)
@@ -542,22 +649,22 @@ namespace paint
 			SIZE extents;
 			::GetTextExtentExPoint(impl_->handle->context, str, static_cast<int>(len), 0, 0, dx, &extents);
 
-			pxbuf[0] = (str[0] == '\t' ? tab_pixels  : dx[0]);
+			pxbuf[0] = (str[0] == '\t' ? tab_pixels : dx[0]);
 
-			for(std::size_t i = 1; i < len; ++i)
+			for (std::size_t i = 1; i < len; ++i)
 			{
 				pxbuf[i] = (str[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
 			}
-			delete [] dx;
+			delete[] dx;
 #elif defined(NANA_X11) && defined(NANA_USE_XFT)
 
 			auto disp = nana::detail::platform_spec::instance().open_display();
 			auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
 
 			XGlyphInfo extents;
-			for(std::size_t i = 0; i < len; ++i)
+			for (std::size_t i = 0; i < len; ++i)
 			{
-				if(str[i] != '\t')
+				if (str[i] != '\t')
 				{
 					FT_UInt glyphs = ::XftCharIndex(disp, xft, str[i]);
 					::XftGlyphExtents(disp, xft, &glyphs, 1, &extents);
@@ -569,6 +676,9 @@ namespace paint
 #endif
 			return true;
 		}
+
+#endif
+
 
 		nana::size	graphics::bidi_extent_size(const std::wstring& str) const
 		{
