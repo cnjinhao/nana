@@ -3309,8 +3309,12 @@ namespace nana{	namespace widgets
 
 		void text_editor::_m_draw_parse_string(const keyword_parser& parser, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const wchar_t* str, std::size_t len) const
 		{
+#ifdef _nana_std_has_string_view
+			graph_.string(pos, { str, len }, fgcolor);
+#else
 			graph_.palette(true, fgcolor);
 			graph_.string(pos, str, len);
+#endif
 			if (parser.entities().empty())
 				return;
 
@@ -3359,7 +3363,20 @@ namespace nana{	namespace widgets
 
 					ent_pos.x = pos.x + ent_off;
 
-
+#ifdef _nana_std_has_string_view
+					std::wstring_view ent_sv;
+					if (rtl)
+					{
+						//draw the whole text if it is a RTL text, because Arbic language is transformable.
+						ent_sv = { str, len };
+					}
+					else
+					{
+						ent_sv = { ent_begin, static_cast<std::wstring_view::size_type>(ent_end - ent_begin) };
+						ent_off = 0;
+					}
+					canvas.string({}, ent_sv);
+#else
 					if (rtl)
 					{
 						//draw the whole text if it is a RTL text, because Arbic language is transformable.
@@ -3370,6 +3387,7 @@ namespace nana{	namespace widgets
 						canvas.string({}, ent_begin, ent_end - ent_begin);
 						ent_off = 0;
 					}
+#endif
 					graph_.bitblt(rectangle{ ent_pos, size{ ent_pixels, canvas.height() } }, canvas, point{ ent_off, 0 });
 				}
 			}
@@ -3395,12 +3413,19 @@ namespace nana{	namespace widgets
 
 			void write_selection(const point& text_pos, unsigned text_px, const wchar_t* text, std::size_t len, bool has_focused)
 			{
+#ifdef _nana_std_has_string_view
+				graph_.rectangle(::nana::rectangle{ text_pos,{ text_px, line_px_ } }, true,
+					selection_color(false, has_focused));
+
+				graph_.string(text_pos, { text, len }, selection_color(true, has_focused));
+#else
 				graph_.palette(true, selection_color(true, has_focused));
 
 				graph_.rectangle(::nana::rectangle{ text_pos, { text_px, line_px_ } }, true,
 					selection_color(false, has_focused));
 
 				graph_.string(text_pos, text, len);
+#endif
 			}
 
 			void rtl_string(point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected, bool has_focused)
@@ -3414,9 +3439,12 @@ namespace nana{	namespace widgets
 
 				int sel_xpos = static_cast<int>(str_px - (glyph_front + glyph_selected));
 
+#ifdef _nana_std_has_string_view
+				graph.string({ -sel_xpos, 0 }, { str, len }, selection_color(true, has_focused));
+#else
 				graph.palette(true, selection_color(true, has_focused));
-
 				graph.string({ -sel_xpos, 0 }, str, len);
+#endif
 				graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_px_), graph);
 			};
 		private:
@@ -3646,11 +3674,11 @@ namespace nana{	namespace widgets
 		unsigned text_editor::_m_char_by_pixels(const unicode_bidi::entity& ent, unsigned pos) const
 		{
 			auto len = static_cast<std::size_t>(ent.end - ent.begin);
-
-			std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 #ifdef _nana_std_has_string_view
-			if (graph_.glyph_pixels({ent.begin, len}, pxbuf.get()))
+			auto pxbuf = graph_.glyph_pixels({ ent.begin, len });
+			if (pxbuf)
 #else
+			std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 			if (graph_.glyph_pixels(ent.begin, len, pxbuf.get()))
 #endif
 			{
@@ -3710,10 +3738,10 @@ namespace nana{	namespace widgets
 					{
 						//Characters of some bidi languages may transform in a word.
 						//RTL
-						std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 #ifdef _nana_std_has_string_view
-						graph_.glyph_pixels({ent.begin, len}, pxbuf.get());
+						auto pxbuf = graph_.glyph_pixels({ent.begin, len});
 #else
+						std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
 						graph_.glyph_pixels(ent.begin, len, pxbuf.get());
 #endif
 						return std::accumulate(pxbuf.get() + (target - ent.begin), pxbuf.get() + len, text_w);

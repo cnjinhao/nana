@@ -120,8 +120,17 @@ namespace nana
 			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
 			::nana::size glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const;
 
-			bool glyph_pixels(std::wstring_view text, unsigned* pxbuf) const;
+			//bool glyph_pixels(std::wstring_view text, unsigned* pxbuf) const;	//deprecated
+
+			/// Returns a buffer which stores the pixel of each charater stored in text.
+			/**
+			 * @param text The text to be requested.
+			 * @return A buffer which stores the pixel of each character stored in text, its length is same with text's length. If text is empty, it returns a buffer with a senseless value.
+			 */
 			std::unique_ptr<unsigned[]> glyph_pixels(std::wstring_view text) const;
+
+			::nana::size	bidi_extent_size(std::string_view utf8_text) const;
+			::nana::size	bidi_extent_size(std::wstring_view text) const;
 #else
 			::nana::size	text_extent_size(const ::std::string&) const;
 			::nana::size	text_extent_size(const char*, std::size_t len) const;
@@ -135,9 +144,10 @@ namespace nana
 			::nana::size	glyph_extent_size(const ::std::wstring&, std::size_t length, std::size_t begin, std::size_t end) const;
 
 			bool glyph_pixels(const wchar_t *, std::size_t length, unsigned* pxbuf) const;
-#endif
+
 			::nana::size	bidi_extent_size(const std::wstring&) const;
 			::nana::size	bidi_extent_size(const std::string&) const;
+#endif
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
 
@@ -180,11 +190,21 @@ namespace nana
 			::nana::color	palette(bool for_text) const;
 			graphics&		palette(bool for_text, const ::nana::color&);
 
-			unsigned bidi_string(const nana::point&, const wchar_t *, std::size_t len);
-			unsigned bidi_string(const point& pos, const char*, std::size_t len);
-
 			void set_pixel(int x, int y, const ::nana::color&);
 			void set_pixel(int x, int y);
+
+#ifdef _nana_std_has_string_view
+			unsigned bidi_string(const point&, std::string_view utf8str);
+			unsigned bidi_string(const point& pos, std::wstring_view str);
+
+			void string(const point&, std::string_view utf8str);
+			void string(const point&, std::string_view utf8str, const nana::color&);
+
+			void string(const point&, std::wstring_view str);
+			void string(const point&, std::wstring_view str, const nana::color&);
+#else
+			unsigned bidi_string(const nana::point&, const wchar_t *, std::size_t len);
+			unsigned bidi_string(const point& pos, const char*, std::size_t len);
 
 			void string(const point&, const std::string& text_utf8);
 			void string(const point&, const std::string& text_utf8, const color&);
@@ -193,6 +213,7 @@ namespace nana
 			void string(const point&, const wchar_t*);
 			void string(const point&, const ::std::wstring&);
 			void string(const point&, const ::std::wstring&, const color&);
+#endif
 
 			void line(const point&, const point&);
 			void line(const point&, const point&, const color&);
