@@ -35,6 +35,7 @@ namespace nana{
 	struct group::implement
 	{
 		label	caption;
+		align	caption_align{ align::left };
 		place	place_content;
 		unsigned gap{2};
 		std::string usr_div_str;
@@ -65,10 +66,30 @@ namespace nana{
 
 		void update_div()
 		{
+			const std::size_t padding = 10;
 			caption_dimension = caption.measure(1000);
+			caption_dimension.width += 1;
 
 			std::string div = "vert margin=[0," + std::to_string(gap) + "," + std::to_string(gap + 5) + "," + std::to_string(gap) + "]";
+#if 0
 			div += "<weight=" + std::to_string(caption_dimension.height) + " <weight=5><" + field_title + " weight=" + std::to_string(caption_dimension.width + 1) + ">>";
+#else
+			div += "<weight=" + std::to_string(caption_dimension.height) + " ";
+
+			if (align::left == caption_align)
+				div += "<weight=" + std::to_string(padding) + ">";
+			else
+				div += "<>";	//right or center
+
+			div += "<" + std::string{ field_title } + " weight=" + std::to_string(caption_dimension.width) + ">";
+
+			if (align::right == caption_align)
+				div += "<weight=" + std::to_string(padding) + ">";
+			else if (align::center == caption_align)
+				div += "<>";
+
+			div += ">";
+#endif
 			div += "<<vert margin=5 " + std::string(field_options) + ">";
 
 			if (!usr_div_str.empty())
@@ -97,10 +118,15 @@ namespace nana{
 		create(parent, r, vsb);
 	}
 
+	using groupbase_type = widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>;
+
 	group::group(window parent, ::std::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
-		: panel(parent, r, vsb),
-		  impl_(new implement(*this, std::move(titel), vsb, gap))
 	{
+		this->create(parent, r, vsb);
+		this->bgcolor(API::bgcolor(parent));
+
+		impl_.reset(new implement(*this, std::move(titel), vsb, gap));
+
 		impl_->caption.format(formatted);
 		_m_init();
 	}
@@ -126,6 +152,17 @@ namespace nana{
 			impl_->radio_logic->add(*opt);
 
 		return *impl_->options.back();
+	}
+
+	void group::caption_align(align position)
+	{
+		if (position != impl_->caption_align)
+		{
+			impl_->caption_align = position;
+			impl_->update_div();
+			impl_->place_content.collocate();
+			API::refresh_window(*this);
+		}
 	}
 
 	group& group::radio_mode(bool enable)
@@ -243,7 +280,7 @@ namespace nana{
 			graph.round_rectangle(rectangle(point(gap_px, top_round_line),
 				nana::size(graph.width() - 2 * gap_px, graph.height() - top_round_line - gap_px)
 				),
-				3, 3, colors::gray_border, true, this->bgcolor());
+				3, 3, this->scheme().border, true, this->bgcolor());
 
 			auto opt_r = API::window_rectangle(impl_->caption);
 			if (opt_r)
@@ -263,11 +300,8 @@ namespace nana{
 
 	void group::_m_complete_creation()
 	{
-		panel::_m_complete_creation();
-
+		widget::_m_complete_creation();
 		impl_->create(handle());
-
-
 		_m_init();
 	}
 
