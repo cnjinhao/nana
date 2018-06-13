@@ -121,8 +121,8 @@ namespace nana{
 	using groupbase_type = widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>;
 
 	group::group(window parent, ::std::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
+		: group(parent, r, vsb)
 	{
-		this->create(parent, r, vsb);
 		this->bgcolor(API::bgcolor(parent));
 
 		impl_.reset(new implement(*this, std::move(titel), vsb, gap));
