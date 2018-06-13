@@ -2470,10 +2470,10 @@ namespace nana
 						x += col.width_px;
 						if (x > 0)
 						{
+							seqs.push_back(col.index);
+
 							if (x >= static_cast<int>(lister_w))
 								break;
-
-							seqs.push_back(col.index);
 						}
 					}
 					return seqs;
