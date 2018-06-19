@@ -1,7 +1,7 @@
 /*
 *	Filebox
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,18 +15,19 @@
 #include <nana/filesystem/filesystem_ext.hpp>
 
 #if defined(NANA_WINDOWS)
-	#include <windows.h>
+#	include <windows.h>
+#	include <Shobjidl.h>
 #elif defined(NANA_POSIX)
-	#include <nana/gui/widgets/label.hpp>
-	#include <nana/gui/widgets/button.hpp>
-	#include <nana/gui/widgets/listbox.hpp>
-	#include <nana/gui/widgets/categorize.hpp>
-	#include <nana/gui/widgets/textbox.hpp>
-	#include <nana/gui/widgets/treebox.hpp>
-	#include <nana/gui/widgets/combox.hpp>
-	#include <nana/gui/place.hpp>
-	#include <stdexcept>
-	#include <algorithm>
+#	include <nana/gui/widgets/label.hpp>
+#	include <nana/gui/widgets/button.hpp>
+#	include <nana/gui/widgets/listbox.hpp>
+#	include <nana/gui/widgets/categorize.hpp>
+#	include <nana/gui/widgets/textbox.hpp>
+#	include <nana/gui/widgets/treebox.hpp>
+#	include <nana/gui/widgets/combox.hpp>
+#	include <nana/gui/place.hpp>
+#	include <stdexcept>
+#	include <algorithm>
 #endif
 
 namespace fs = std::experimental::filesystem;
@@ -130,6 +131,13 @@ namespace nana
 			}
 		};
 	public:
+		enum class mode
+		{
+			open_file,	//choose an existing file.
+			write_file, //choose a filename, it can be specified a new filename which doesn't exist.
+			open_directory, //choose an existing directory.
+		};
+
 		struct kind
 		{
 			enum t{none, filesystem};
@@ -138,8 +146,10 @@ namespace nana
 		typedef treebox::item_proxy item_proxy;
 	public:
 
-		filebox_implement(window owner, bool io_read, const std::string& title)
-			: form(owner, API::make_center(owner, 630, 440)), io_read_(io_read)
+		filebox_implement(window owner, mode dialog_mode, const std::string& title, bool pick_directory = false):
+			form(owner, API::make_center(owner, 630, 440)),
+			pick_directory_(pick_directory),
+			mode_(dialog_mode)
 		{
 			internationalization i18n;
 			path_.create(*this);
@@ -158,6 +168,7 @@ namespace nana
 				if(path.size() == 0) path = "/";    /// \todo : use nana::filesystem_ext::def_rootstr?
 				_m_load_cat_path(path);
 			});
+
 
 			filter_.create(*this);
 			filter_.multi_lines(false);
@@ -203,7 +214,7 @@ namespace nana
 			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_SIZE"), 70);
 
 			auto fn_sel_file = [this](const arg_mouse& arg){
-				_m_sel_file(arg);
+				_m_select_file(arg);
 			};
 			ls_file_.events().dbl_click.connect_unignorable(fn_sel_file);
 			ls_file_.events().mouse_down.connect_unignorable(fn_sel_file);
@@ -278,7 +289,11 @@ namespace nana
 				});
 
 			lb_file_.create(*this);
-			lb_file_.i18n(i18n_eval("NANA_FILEBOX_FILE_COLON"));
+
+			const char* idstr = (mode::open_directory == dialog_mode? "NANA_FILEBOX_DIRECTORY_COLON" : "NANA_FILEBOX_FILE_COLON");
+			lb_file_.i18n(i18n_eval(idstr));
+			lb_file_.text_align(align::right, align_v::center);
+
 			
 			tb_file_.create(*this);
 			tb_file_.multi_lines(false);
@@ -289,9 +304,13 @@ namespace nana
 					_m_ok();
 			});
 
-			cb_types_.create(*this);
-			cb_types_.editable(false);
-			cb_types_.events().selected.connect_unignorable([this](const arg_combox&){ _m_list_fs(); });
+			//Don't create the combox for choose a file extension if the dialog is used for picking a directory.
+			if(!pick_directory)
+			{
+				cb_types_.create(*this);
+				cb_types_.editable(false);
+				cb_types_.events().selected.connect_unignorable([this](const arg_combox&){ _m_list_fs(); });
+			}
 
 			btn_ok_.create(*this);
 			btn_ok_.i18n(i18n_eval("NANA_BUTTON_OK_SHORTKEY"));
@@ -313,10 +332,25 @@ namespace nana
 			_m_layout();
 			_m_init_tree();
 
-			if(0 == title.size())
-				this->i18n(i18n_eval(io_read ? "NANA_FILEBOX_OPEN" : "NANA_FILEBOX_SAVE_AS"));
+			if(title.empty())
+			{
+				const char* idstr{ nullptr };
+				switch(dialog_mode)
+				{
+				case mode::open_file:
+					idstr = "NANA_FILEBOX_OPEN";
+					break;
+				case mode::write_file:
+					idstr = "NANA_FILEBOX_SAVE_AS";
+					break;
+				case mode::open_directory:
+					idstr = "NANA_FILEBOX_OPEN_DIRECTORY";
+					break;
+				}
+				this->i18n(i18n_eval(idstr));
+			}
 			else
-				caption(title);
+				caption(title);			
 		}
 
 		void def_extension(const std::string& ext)
@@ -412,16 +446,21 @@ namespace nana
 					"<weight=34 margin=5 path arrange=[variable,200] gap=5>"
 					"<weight=30 margin=[0,0,5,10] new_folder arrange=[100]>"
 					"<content arrange=[180] gap=[5]><weight=8>"
-					"<weight=26<weight=100><vert weight=60 label margin=[0,0,0,5]>"
+					"<weight=26<weight=100><vert weight=80 label margin=[0,5,0,0]>"
 					"<file margin=[0,18,0,5] arrange=[variable,variable,190] gap=[10]>>"
 					"<weight=48 margin=[8,0,14]<>"
 					"<buttons weight=208 margin=[0,18,0] gap=[14]>>");
 
 			place_.field("path")<<path_<<filter_;
+
 			place_.field("new_folder")<<btn_folder_;
 			place_.field("content")<<tree_<<ls_file_;
 			place_.field("label")<<lb_file_;
-			place_.field("file")<<tb_file_<<cb_types_;
+			place_.field("file")<<tb_file_;
+
+			if(!pick_directory_)
+				place_.field("file")<<cb_types_;
+
 			place_.field("buttons")<<btn_ok_<<btn_cancel_;
 			place_.collocate();
 		}
@@ -630,6 +669,9 @@ namespace nana
 			if(filter.size() && (name.find(filter) == filter.npos))
 				return false;
 
+			if(pick_directory_)
+				return is_dir;
+
 			if((is_dir || 0 == extension) || (0 == extension->size())) return true;
 
 			for(auto & extstr : *extension)
@@ -744,7 +786,7 @@ namespace nana
 			return true;
 		}
 	private:
-		void _m_sel_file(const arg_mouse& arg)
+		void _m_select_file(const arg_mouse& arg)
 		{
 			auto sel = ls_file_.selected();
 			if(sel.empty())
@@ -763,7 +805,7 @@ namespace nana
 			}
 			else
 			{
-				if(false == m.directory)
+				if((mode::open_directory == mode_) || (false == m.directory))
 				{
 					selection_.target = addr_.filesystem + m.name;
 					tb_file_.caption(m.name);
@@ -816,13 +858,16 @@ namespace nana
 						return;
 					}
 
-					if(io_read_)
+					if(mode::write_file != mode_)
 					{
 						if(fs::file_type::not_found == ftype)
 						{
 							msgbox mb(*this, caption());
 							mb.icon(msgbox::icon_information);
-							mb << i18n("NANA_FILEBOX_ERROR_NOT_EXISTING_AND_RETRY", tar);
+							if(mode::open_file != mode_)
+								mb << i18n("NANA_FILEBOX_ERROR_NOT_EXISTING_AND_RETRY", tar);
+							else
+								mb << i18n("NANA_FILEBOX_ERROR_DIRECTORY_NOT_EXISTING_AND_RETRY", tar);
 							mb();
 
 							return;
@@ -892,7 +937,8 @@ namespace nana
 			}
 		}
 	private:
-		bool io_read_;
+		bool const pick_directory_;
+		mode mode_;
 		std::string def_ext_;
 
 		place	place_;
@@ -933,224 +979,298 @@ namespace nana
 
 #endif
 	//class filebox
-		struct filebox::implement
+	struct filebox::implement
+	{
+		struct filter
 		{
-			struct filter
-			{
-				std::string des;
-				std::string type;
-			};
-
-			window owner;
-			bool open_or_save;
-
-			std::string file;
-			std::string title;
-			std::string path;
-			std::vector<filter> filters;
+			std::string des;
+			std::string type;
 		};
 
-		filebox::filebox(bool is_openmode)
-			: filebox(nullptr, is_openmode)
-		{
-		}
+		window owner;
+		bool open_or_save;
 
-		filebox::filebox(window owner, bool open)
-			: impl_(new implement)
-		{
-			impl_->owner = owner;
-			impl_->open_or_save = open;
+		std::string file;
+		std::string title;
+		std::string path;
+		std::vector<filter> filters;
+	};
+
+	filebox::filebox(bool is_openmode)
+		: filebox(nullptr, is_openmode)
+	{
+	}
+
+	filebox::filebox(window owner, bool open)
+		: impl_(new implement)
+	{
+		impl_->owner = owner;
+		impl_->open_or_save = open;
 #if defined(NANA_WINDOWS)
-			auto len = ::GetCurrentDirectory(0, nullptr);
-			if(len)
-			{
-				std::wstring path;
-				path.resize(len + 1);
-				::GetCurrentDirectory(len, &(path[0]));
-				path.resize(len);
+		auto len = ::GetCurrentDirectory(0, nullptr);
+		if(len)
+		{
+			std::wstring path;
+			path.resize(len + 1);
+			::GetCurrentDirectory(len, &(path[0]));
+			path.resize(len);
 
-				impl_->path = to_utf8(path);
-			}
+			impl_->path = to_utf8(path);
+		}
 #endif
-		}
+	}
 
-		filebox::filebox(const filebox& other)
-			: impl_(new implement(*other.impl_))
-		{}
+	filebox::filebox(const filebox& other)
+		: impl_(new implement(*other.impl_))
+	{}
 
-		filebox::~filebox()
+	filebox::~filebox()
+	{
+		delete impl_;
+	}
+
+	filebox& filebox::operator=(const filebox& other)
+	{
+		if (this != &other)
+			*impl_ = *other.impl_;
+		return *this;
+	}
+
+	void filebox::owner(window wd)
+	{
+		impl_->owner = wd;
+	}
+
+	std::string filebox::title(std::string s)
+	{
+		impl_->title.swap(s);
+		return s;
+	}
+
+	filebox& filebox::init_path(const std::string& ipstr)
+	{
+		if(ipstr.empty())
 		{
-			delete impl_;
+			impl_->path.clear();
 		}
-
-		filebox& filebox::operator=(const filebox& other)
+		else
 		{
-			if (this != &other)
-				*impl_ = *other.impl_;
-			return *this;
+			if (fs::is_directory(ipstr))
+				impl_->path = ipstr;
 		}
+		return *this;
+	}
 
-		void filebox::owner(window wd)
-		{
-			impl_->owner = wd;
-		}
+	filebox& filebox::init_file(const std::string& ifstr)
+	{
+		impl_->file = ifstr;
+		return *this;
+	}
 
-		std::string filebox::title(std::string s)
-		{
-			impl_->title.swap(s);
-			return s;
-		}
+	filebox& filebox::add_filter(const std::string& description, const std::string& filetype)
+	{
+		implement::filter flt = {description, filetype};
+		impl_->filters.push_back(flt);
+		return *this;
+	}
 
-		filebox& filebox::init_path(const std::string& ipstr)
-		{
-			if(ipstr.empty())
-			{
-				impl_->path.clear();
-			}
-			else
-			{
-				if (fs::is_directory(ipstr))
-					impl_->path = ipstr;
-			}
-			return *this;
-		}
-
-		filebox& filebox::init_file(const std::string& ifstr)
-		{
-			impl_->file = ifstr;
-			return *this;
-		}
-
-		filebox& filebox::add_filter(const std::string& description, const std::string& filetype)
-		{
-			implement::filter flt = {description, filetype};
-			impl_->filters.push_back(flt);
-			return *this;
-		}
-
-		std::string filebox::path() const
-		{
-			return impl_->path;
-		}
+	std::string filebox::path() const
+	{
+		return impl_->path;
+	}
 		
-		std::string filebox::file() const
-		{
-			return impl_->file;
-		}
+	std::string filebox::file() const
+	{
+		return impl_->file;
+	}
 
-		bool filebox::show() const
-		{
+	bool filebox::show() const
+	{
 #if defined(NANA_WINDOWS)
-			auto winitfile = to_wstring(impl_->file);
-			std::wstring wfile(winitfile);
-			wfile.resize(520);
+		auto winitfile = to_wstring(impl_->file);
+		std::wstring wfile(winitfile);
+		wfile.resize(520);
 
-			OPENFILENAME ofn;
-			memset(&ofn, 0, sizeof ofn);
+		OPENFILENAME ofn;
+		memset(&ofn, 0, sizeof ofn);
 
-			internal_scope_guard lock;
+		internal_scope_guard lock;
 
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
-			ofn.lpstrFile = &(wfile[0]);
-			ofn.nMaxFile = static_cast<DWORD>(wfile.size() - 1);
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
+		ofn.lpstrFile = &(wfile[0]);
+		ofn.nMaxFile = static_cast<DWORD>(wfile.size() - 1);
 
-			const wchar_t * filter;
-			std::wstring filter_holder;
-			std::wstring default_extension;
-			if(impl_->filters.size())
+		const wchar_t * filter;
+		std::wstring filter_holder;
+		std::wstring default_extension;
+		if(impl_->filters.size())
+		{
+			for(auto & f : impl_->filters)
 			{
-				for(auto & f : impl_->filters)
+				filter_holder += to_wstring(f.des);
+				filter_holder += static_cast<std::wstring::value_type>('\0');
+				std::wstring fs = to_wstring(f.type);
+				std::size_t pos = 0;
+				while(true)
 				{
-					filter_holder += to_wstring(f.des);
-					filter_holder += static_cast<std::wstring::value_type>('\0');
-					std::wstring fs = to_wstring(f.type);
-					std::size_t pos = 0;
-					while(true)
-					{
-						pos = fs.find(L" ", pos);
-						if(pos == fs.npos)
-							break;
-						fs.erase(pos);
-					}
-					filter_holder += fs;
-					filter_holder += static_cast<std::wstring::value_type>('\0');
+					pos = fs.find(L" ", pos);
+					if(pos == fs.npos)
+						break;
+					fs.erase(pos);
+				}
+				filter_holder += fs;
+				filter_holder += static_cast<std::wstring::value_type>('\0');
 
-					//Get the default file extentsion
-					if (default_extension.empty())
+				//Get the default file extentsion
+				if (default_extension.empty())
+				{
+					pos = fs.find_last_of('.');
+					if (pos != fs.npos)
 					{
-						pos = fs.find_last_of('.');
-						if (pos != fs.npos)
+						fs = fs.substr(pos + 1);
+						if (fs != L"*")
 						{
-							fs = fs.substr(pos + 1);
-							if (fs != L"*")
-							{
-								default_extension = fs;
-								ofn.lpstrDefExt = default_extension.data();
-							}
+							default_extension = fs;
+							ofn.lpstrDefExt = default_extension.data();
 						}
 					}
 				}
-				filter = filter_holder.data();
 			}
-			else
-				filter = L"All Files\0*.*\0";
+			filter = filter_holder.data();
+		}
+		else
+			filter = L"All Files\0*.*\0";
 
-			auto wtitle = to_wstring(impl_->title);
-			auto wpath = to_wstring(impl_->path);
-			ofn.lpstrFilter = filter;
-			ofn.lpstrTitle = (wtitle.empty() ? nullptr : wtitle.c_str());
-			ofn.nFilterIndex = 0;
-			ofn.lpstrFileTitle = nullptr;
-			ofn.nMaxFileTitle = 0;
-			ofn.lpstrInitialDir = (wpath.empty() ? nullptr : wpath.c_str());
-			
-			if (!impl_->open_or_save)
-				ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
-			ofn.Flags |= OFN_NOCHANGEDIR;
+		auto wtitle = to_wstring(impl_->title);
+		auto wpath = to_wstring(impl_->path);
+		ofn.lpstrFilter = filter;
+		ofn.lpstrTitle = (wtitle.empty() ? nullptr : wtitle.c_str());
+		ofn.nFilterIndex = 0;
+		ofn.lpstrFileTitle = nullptr;
+		ofn.nMaxFileTitle = 0;
+		ofn.lpstrInitialDir = (wpath.empty() ? nullptr : wpath.c_str());
+		
+		if (!impl_->open_or_save)
+			ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
+		ofn.Flags |= OFN_NOCHANGEDIR;
 
-			{
-				internal_revert_guard revert;
-				if (FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
-					return false;
-			}
-
-			wfile.resize(std::wcslen(wfile.data()));
-			impl_->file = to_utf8(wfile);
-#elif defined(NANA_POSIX)
-			filebox_implement fb(impl_->owner, impl_->open_or_save, impl_->title);
-			
-			if(impl_->filters.size())
-			{
-				for(auto & f: impl_->filters)
-				{
-					std::string fs = f.type;
-					std::size_t pos = 0;
-					while(true)
-					{
-						pos = fs.find(" ", pos);
-						if(pos == fs.npos)
-							break;
-						fs.erase(pos);
-					}
-					fb.add_filter(f.des, fs);
-				}
-			}
-			else
-				fb.add_filter("All Files", "*.*");
-
-			fb.load_fs(impl_->path, impl_->file);
-
-			API::modal_window(fb);
-			if(false == fb.file(impl_->file))
+		{
+			internal_revert_guard revert;
+			if (FALSE == (impl_->open_or_save ? ::GetOpenFileName(&ofn) : ::GetSaveFileName(&ofn)))
 				return false;
-#endif
-			auto tpos = impl_->file.find_last_of("\\/");
-			if(tpos != impl_->file.npos)
-				impl_->path = impl_->file.substr(0, tpos);
-			else
-				impl_->path.clear();
+		}
 
-			return true;
-		}//end class filebox
+		wfile.resize(std::wcslen(wfile.data()));
+		impl_->file = to_utf8(wfile);
+#elif defined(NANA_POSIX)
+		using mode = filebox_implement::mode;
+		filebox_implement fb(impl_->owner, (impl_->open_or_save ? mode::open_file : mode::write_file), impl_->title);
+		
+		if(impl_->filters.size())
+		{
+			for(auto & f: impl_->filters)
+			{
+				std::string fs = f.type;
+				std::size_t pos = 0;
+				while(true)
+				{
+					pos = fs.find(" ", pos);
+					if(pos == fs.npos)
+						break;
+					fs.erase(pos);
+				}
+				fb.add_filter(f.des, fs);
+			}
+		}
+		else
+			fb.add_filter("All Files", "*.*");
+
+		fb.load_fs(impl_->path, impl_->file);
+
+		API::modal_window(fb);
+		if(false == fb.file(impl_->file))
+			return false;
+#endif
+		auto tpos = impl_->file.find_last_of("\\/");
+		if(tpos != impl_->file.npos)
+			impl_->path = impl_->file.substr(0, tpos);
+		else
+			impl_->path.clear();
+
+		return true;
+	}//end class filebox
+
+
+	//class directory_picker
+	struct folderbox::implement
+	{
+		window owner;
+		path_type init_path;
+	};
+
+	folderbox::folderbox(window owner, const path_type& init_path)
+		: impl_(new implement)
+	{
+		impl_->owner = owner;
+		impl_->init_path = init_path;
+	}
+
+	folderbox::~folderbox()
+	{
+		delete impl_;
+	}
+
+	std::optional<folderbox::path_type> folderbox::show() const
+	{
+#ifdef NANA_WINDOWS
+		path_type target;
+
+		CoInitialize(NULL);
+		IFileDialog *fd(nullptr);
+		HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&fd));
+		if (SUCCEEDED(hr))
+		{
+			IShellItem *init_path{ nullptr };
+			hr = SHCreateItemFromParsingName(impl_->init_path.wstring().c_str(), nullptr, IID_PPV_ARGS(&init_path));
+			if (SUCCEEDED(hr))
+				fd->SetDefaultFolder(init_path);
+
+			fd->SetOptions(FOS_PICKFOLDERS);
+			fd->Show(reinterpret_cast<HWND>(API::root(impl_->owner))); // the native handle of the parent nana form goes here
+			IShellItem *si;
+			hr = fd->GetResult(&si); // fails if user cancelled
+			if (SUCCEEDED(hr))
+			{
+				PWSTR pwstr(nullptr);
+				hr = si->GetDisplayName(SIGDN_FILESYSPATH, &pwstr);
+				if (SUCCEEDED(hr))
+				{
+					target = pwstr;
+					// use the c-string pointed to by pwstr here
+					CoTaskMemFree(pwstr);
+				}
+				si->Release();
+			}
+			fd->Release();
+		}
+		CoUninitialize();
+
+		return target;
+
+#elif defined(NANA_POSIX)
+		using mode = filebox_implement::mode;
+		filebox_implement fb(impl_->owner, mode::open_directory, {}, true);
+
+		fb.load_fs(impl_->init_path, "");
+
+		API::modal_window(fb);
+
+		std::string path_directory;
+		if(false == fb.file(path_directory))
+			return {};
+
+		return path_type{path_directory};
+#endif
+	}
 }//end namespace nana

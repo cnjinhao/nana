@@ -1,7 +1,7 @@
 /**
  *	Filebox
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,6 +15,7 @@
 #ifndef NANA_GUI_FILEBOX_HPP
 #define NANA_GUI_FILEBOX_HPP
 #include <nana/gui/basis.hpp>
+#include <nana/filesystem/filesystem.hpp>
 #include <vector>
 #include <utility>
 
@@ -79,6 +80,30 @@ namespace nana
 		}
 	private:
 		implement * impl_;
+	};
+
+	class folderbox
+	{
+		struct implement;
+
+		folderbox(const folderbox&) = delete;
+		folderbox& operator=(const folderbox&) = delete;
+		folderbox(folderbox&&) = delete;
+		folderbox& operator=(folderbox&&) = delete;
+	public:
+		using path_type = std::experimental::filesystem::path;
+
+		folderbox(window owner = nullptr, const path_type& init_path = {});
+		~folderbox();
+
+		std::optional<path_type> show() const;
+
+		std::optional<path_type> operator()() const
+		{
+			return show();
+		}
+	private:
+		implement* impl_;
 	};
 }//end namespace nana
 #endif
