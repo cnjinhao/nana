@@ -1149,28 +1149,29 @@ namespace detail
 							    {
 									msgwnd->set_action(mouse_action::normal);
 
-								    arg_click click_arg;
-								    click_arg.mouse_args = nullptr;
-								    click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+									auto retain = msgwnd->annex.events_ptr;
 
-								    auto retain = msgwnd->annex.events_ptr;
-								    if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
-							    	{
-									    arg_mouse arg;
-									    arg.alt = false;
-									    arg.button = ::nana::mouse::left_button;
-									    arg.ctrl = false;
-									    arg.evt_code = event_code::mouse_up;
-									    arg.left_button = true;
-									    arg.mid_button = false;
-									    arg.pos.x = 0;
-								    	arg.pos.y = 0;
-									    arg.window_handle = reinterpret_cast<window>(msgwnd);
+									arg_click click_arg;
+									click_arg.mouse_args = nullptr;
+									click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-										draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
-									    wd_manager.do_lazy_refresh(msgwnd, false);
-								    }
-							    	pressed_wd_space = nullptr;
+									arg_mouse arg;
+									arg.alt = false;
+									arg.button = ::nana::mouse::left_button;
+									arg.ctrl = false;
+									arg.evt_code = event_code::mouse_up;
+									arg.left_button = true;
+									arg.mid_button = false;
+									arg.pos.x = 0;
+									arg.pos.y = 0;
+									arg.window_handle = reinterpret_cast<window>(msgwnd);
+
+									draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
+
+									if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
+										wd_manager.do_lazy_refresh(msgwnd, false);
+									
+									pressed_wd_space = nullptr;
 							    }
 							    else
 							    {

@@ -167,12 +167,12 @@ namespace nana{ namespace drawerbase
 			return (get_drawer_trigger().impl()->crook.checked() != drawerbase::checkbox::crook_state::unchecked);
 		}
 
-		void checkbox::check(bool chk)
+		void checkbox::check(bool state)
 		{
 			using crook_state = drawerbase::checkbox::crook_state;
-			if (checked() != chk)
+			if (checked() != state)
 			{
-				get_drawer_trigger().impl()->crook.check(chk ? crook_state::checked : crook_state::unchecked);
+				get_drawer_trigger().impl()->crook.check(state ? crook_state::checked : crook_state::unchecked);
 				API::refresh_window(handle());
 
 				arg_checkbox arg(this);

@@ -1495,38 +1495,40 @@ namespace detail
 							{
 								msgwnd->set_action(mouse_action::normal);
 
+								auto retain = msgwnd->annex.events_ptr;
+
 								arg_click click_arg;
 								click_arg.mouse_args = nullptr;
 								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-								auto retain = msgwnd->annex.events_ptr;
-								if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
-								{
-									arg_mouse arg;
-									arg.alt = false;
-									arg.button = ::nana::mouse::left_button;
-									arg.ctrl = false;
-									arg.evt_code = event_code::mouse_up;
-									arg.left_button = true;
-									arg.mid_button = false;
-									arg.pos.x = 0;
-									arg.pos.y = 0;
-									arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg_mouse arg;
+								arg.alt = false;
+								arg.button = ::nana::mouse::left_button;
+								arg.ctrl = false;
+								arg.evt_code = event_code::mouse_up;
+								arg.left_button = true;
+								arg.mid_button = false;
+								arg.pos.x = 0;
+								arg.pos.y = 0;
+								arg.window_handle = reinterpret_cast<window>(msgwnd);
 
-									draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
+								draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
+
+								if (brock.emit(event_code::click, msgwnd, click_arg, true, &context))
 									wd_manager.do_lazy_refresh(msgwnd, false);
-								}
+								
 								pressed_wd_space = nullptr;
 							}
 							else
 							{
-								arg_keyboard arg;
-								arg.evt_code = event_code::key_release;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
-								arg.key = translate_virtual_key(wParam);
-								brock.get_key_state(arg);
-								arg.ignore = false;
-								brock.emit(event_code::key_release, msgwnd, arg, true, &context);
+								arg_keyboard keyboard_arg;
+								keyboard_arg.evt_code = event_code::key_release;
+								keyboard_arg.window_handle = reinterpret_cast<window>(msgwnd);
+								keyboard_arg.key = translate_virtual_key(wParam);
+								brock.get_key_state(keyboard_arg);
+								keyboard_arg.ignore = false;
+
+								brock.emit(event_code::key_release, msgwnd, keyboard_arg, true, &context);
 							}
 						}
 					}

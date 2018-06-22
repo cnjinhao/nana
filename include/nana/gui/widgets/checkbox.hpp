@@ -79,7 +79,9 @@ namespace drawerbase
 		void element_set(const char* name);
 		void react(bool want);		///< Enables the reverse check while clicking on the checkbox.
 		bool checked() const;
-		void check(bool chk);
+
+		/// Checks/unchecks the checkbox
+		void check(bool state);
 
 		/// \brief With the radio mode, users make a choice among a set of mutually exclusive, 
 		/// related options. Users can choose one and only one option. 
