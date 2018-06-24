@@ -5,7 +5,7 @@
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 #   Ariel Vina-Rodriguez (qPCR4vir)
-#	Pavel O. - fix compilation with boost::filesystem (#281)
+#   Pavel O. - fix compilation with boost::filesystem (#281)
 #   Frostbane - Add option for compiling a shared library (#263,#265)
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
@@ -142,11 +142,11 @@ endif()
 #
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
+        if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
             set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall -I/usr/local/include")
-	else()
-	    set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall")
-	endif()
+        else()
+            set(CMAKE_CXX_FLAGS "-std=gnu++14 -Wall")
+        endif()
     else()
         set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
     endif()
@@ -156,27 +156,26 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if(NANA_CMAKE_SHARED_LIB)
         list(APPEND NANA_LINKS -lgcc -lstdc++ -pthread)
     else()
-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
-        # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
-    endif(NANA_CMAKE_SHARED_LIB)
+        if(MINGW)
+            set(CMAKE_EXE_LINKER_FLAGS "-static -pthread")
+        else()
+            set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -pthread")
+        endif()
+    endif()
 
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-		# GCC 4.9
+        # GCC 4.9
         list(APPEND NANA_LINKS "-lboost_system -lboost_thread")
-
     elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-    	# IS_GNUCXX < 5.3
+        # IS_GNUCXX < 5.3
     else()
         list(APPEND NANA_LINKS -lstdc++fs)
-	endif()
+    endif()
+endif()
 
-endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
-
-
-if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
-  # set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
-  list(APPEND NANA_LINKS -stdlib=libstdc++)
-endif ()
+if(APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    list(APPEND NANA_LINKS -stdlib=libstdc++)
+endif()
 
 
 ############# Optional libraries
@@ -355,27 +354,26 @@ endif()
 
 
 # Just for information:
-message ("")
-message ( "CMAKE_CXX_COMPILER_ID     = "  ${CMAKE_CXX_COMPILER_ID})
-message ( "COMPILER_IS_CLANG         = "  ${COMPILER_IS_CLANG})
-message ( "CMAKE_COMPILER_IS_GNUCXX  = "  ${CMAKE_COMPILER_IS_GNUCXX})
-message ( "CMAKE_CXX_FLAGS           = "  ${CMAKE_CXX_FLAGS})
-message ( "CMAKE_EXE_LINKER_FLAGS    = "  ${CMAKE_EXE_LINKER_FLAGS})
-message ( "CMAKE_STATIC_LINKER_FLAGS = "  ${CMAKE_STATIC_LINKER_FLAGS})
-message ( "NANA_LINKS                = "  ${NANA_LINKS})
-message ( "DESTDIR                   = "  ${DESTDIR})
-message ( "CMAKE_INSTALL_PREFIX      = "  ${CMAKE_INSTALL_PREFIX})
-message ( "NANA_INCLUDE_DIR          = "  ${NANA_INCLUDE_DIR})
-message ( "CMAKE_CURRENT_SOURCE_DIR  = "  ${CMAKE_CURRENT_SOURCE_DIR})
-message ( "NANA_CMAKE_ENABLE_AUDIO   = "  ${NANA_CMAKE_ENABLE_AUDIO})
-message ( "NANA_CMAKE_SHARED_LIB     = "  ${NANA_CMAKE_SHARED_LIB})
-message ( "NANA_CLION              = "  ${NANA_CLION})
-message ( "CMAKE_MAKE_PROGRAM      = "  ${CMAKE_MAKE_PROGRAM})
-message ( "CMAKE_CXX_COMPILER_VERSION = " ${CMAKE_CXX_COMPILER_VERSION})
+message("")
+message("CMAKE_CXX_COMPILER_ID     = " ${CMAKE_CXX_COMPILER_ID})
+message("COMPILER_IS_CLANG         = " ${COMPILER_IS_CLANG})
+message("CMAKE_COMPILER_IS_GNUCXX  = " ${CMAKE_COMPILER_IS_GNUCXX})
+message("CMAKE_CXX_FLAGS           = " ${CMAKE_CXX_FLAGS})
+message("CMAKE_EXE_LINKER_FLAGS    = " ${CMAKE_EXE_LINKER_FLAGS})
+message("CMAKE_STATIC_LINKER_FLAGS = " ${CMAKE_STATIC_LINKER_FLAGS})
+message("NANA_LINKS                = " ${NANA_LINKS})
+message("DESTDIR                   = " ${DESTDIR})
+message("CMAKE_INSTALL_PREFIX      = " ${CMAKE_INSTALL_PREFIX})
+message("NANA_INCLUDE_DIR          = " ${NANA_INCLUDE_DIR})
+message("CMAKE_CURRENT_SOURCE_DIR  = " ${CMAKE_CURRENT_SOURCE_DIR})
+message("NANA_CMAKE_ENABLE_AUDIO   = " ${NANA_CMAKE_ENABLE_AUDIO})
+message("NANA_CMAKE_SHARED_LIB     = " ${NANA_CMAKE_SHARED_LIB})
+message("NANA_CLION                = " ${NANA_CLION})
+message("CMAKE_MAKE_PROGRAM        = " ${CMAKE_MAKE_PROGRAM})
 
-message ( "NANA_CMAKE_FIND_BOOST_FILESYSTEM         = "  ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
-message ( "NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = "  ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
-message ( "NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = "  ${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT})
-message ( "NANA_CMAKE_BOOST_FILESYSTEM_LIB          = "  ${NANA_CMAKE_BOOST_FILESYSTEM_LIB})
-message ( "NANA_CMAKE_AUTOMATIC_GUI_TESTING         = "  ${NANA_CMAKE_AUTOMATIC_GUI_TESTING})
-message ( "NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING = "  ${NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING})
+message("NANA_CMAKE_FIND_BOOST_FILESYSTEM         = " ${NANA_CMAKE_FIND_BOOST_FILESYSTEM})
+message("NANA_CMAKE_BOOST_FILESYSTEM_FORCE        = " ${NANA_CMAKE_BOOST_FILESYSTEM_FORCE})
+message("NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT = " ${NANA_CMAKE_BOOST_FILESYSTEM_INCLUDE_ROOT})
+message("NANA_CMAKE_BOOST_FILESYSTEM_LIB          = " ${NANA_CMAKE_BOOST_FILESYSTEM_LIB})
+message("NANA_CMAKE_AUTOMATIC_GUI_TESTING         = " ${NANA_CMAKE_AUTOMATIC_GUI_TESTING})
+message("NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING = " ${NANA_CMAKE_ADD_DEF_AUTOMATIC_GUI_TESTING})
