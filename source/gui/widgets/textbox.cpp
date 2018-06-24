@@ -785,7 +785,7 @@ namespace drawerbase {
 		}
 
 		//Override _m_caption for caption()
-		auto textbox::_m_caption() const throw() -> native_string_type
+		auto textbox::_m_caption() const noexcept -> native_string_type
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();

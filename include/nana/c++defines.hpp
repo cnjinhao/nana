@@ -36,10 +36,15 @@
  *	- STD_TO_STRING_NOT_SUPPORTED (MinGW with GCC < 4.8)
  *	- STD_FILESYSTEM_NOT_SUPPORTED (GCC < 5.3) ....
  *	- CXX_NO_INLINE_NAMESPACE (Visual C++ < 2015)
- *	- _enable_std_make_unique (__cpluscplus < 201402)
- *	- _enable_std_put_time (GCC < 5)
- *  - _enable_std_clamp (Visual C++ < 2017)
-  */
+ *
+ *	There are two kinds of flags:
+ *	* _nana_std_xxx indicates that nana provides a standard-like class for workaround of lack of C++ support.
+ *  * _nana_std_has_xxx indicates that nana detects whether a C++ feature is supported. Nana doesn't provide a standard-like class for this missing feature.
+ *
+ *	- _nana_std_make_unique (__cpluscplus < 201402)
+ *	- _nana_std_put_time (GCC < 5)
+ *  - _nana_std_clamp (Visual C++ < 2017)
+ */
 
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
@@ -145,7 +150,7 @@
 
 
 #	if ((__GNUC__ < 5)   )
-#		define _enable_std_put_time
+#		define _nana_std_put_time
 #	endif
 
 #   if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
@@ -189,20 +194,38 @@
 
 //Detects the feature std::make_unique
 //std::make_unique has been provided by Visual C++ 2013 and later
-#undef _enable_std_make_unique
+#undef _nana_std_make_unique
 #if (defined(__clang__) && (__cplusplus < 201305L || (__cplusplus == 201305L && (__clang_major__ * 100 + __clang_minor__ < 304 )))) \
 	|| ((!defined(__clang__)) && defined(__GNUC__) && __cplusplus < 201300L)
-#	define _enable_std_make_unique
+#	define _nana_std_make_unique
 #endif
-
 
 //Detects the feature std::clamp
 //Visual C++ 2017 with /std:c++latest provides the std::clamp
-#undef _enable_std_clamp
+#undef _nana_std_clamp
 #if (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || _MSVC_LANG < 201403L))	\
 	|| (defined(__clang__) && (__cplusplus < 201406L))						\
 	|| (defined(__GNUC__) && (!defined(__clang__)) && (__cplusplus < 201703))
-#	define _enable_std_clamp
+#	define _nana_std_clamp
+#endif
+
+
+#undef _nana_std_optional
+#if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && ((!defined(_MSVC_LANG)) || _MSVC_LANG < 201703))) ||	\
+	((__cplusplus < 201703L) || \
+		(defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ < 400)) ||				\
+		(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 701))	\
+	)
+#	define _nana_std_optional
+#endif
+
+#undef _nana_std_has_string_view
+#if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && defined(_MSVC_LANG) && _MSVC_LANG >= 201703)) ||				\
+	((__cplusplus >= 201703L) && \
+		(defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ >= 400) ||		\
+		(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 701))) \
+	)
+#	define _nana_std_has_string_view
 #endif
 
 

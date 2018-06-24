@@ -90,7 +90,7 @@ namespace nana
 						: drw_{ drwimpl }
 					{}
 
-					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool /*limit_width*/) const override
+					std::optional<size> measure(graph_reference graph, unsigned limit_pixels, bool /*limit_width*/) const override
 					{
 						//Combox doesn't provide a support of vfit and hfit
 						if (limit_pixels)
@@ -1037,7 +1037,7 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
-		auto combox::_m_caption() const throw() -> native_string_type
+		auto combox::_m_caption() const noexcept -> native_string_type
 		{
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();

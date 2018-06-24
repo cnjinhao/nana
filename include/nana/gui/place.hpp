@@ -1,7 +1,7 @@
 /*
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2014 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -119,7 +119,7 @@ namespace nana
 
 		void splitter_renderer(std::function<void(window, paint::graphics&, mouse_action)> fn);
         
-		void div(const char* s);			///< Divides the attached widget into fields.
+		void div(std::string div_text);			///< Divides the attached widget into fields.
 		const std::string& div() const noexcept;	///< Returns div-text that depends on fields status.
 		void modify(const char* field_name, const char* div_text);	///< Modifies a specified field.
 

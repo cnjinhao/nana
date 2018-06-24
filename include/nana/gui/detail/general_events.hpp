@@ -133,11 +133,25 @@ namespace nana
 		/// Creates an event handler at the beginning of event chain
 		template<typename Function>
 		event_handle connect_front(Function && fn)
-		{	
+		{
+#ifdef __cpp_if_constexpr
+			if constexpr(std::is_invocable_v<Function, arg_reference>)
+			{
+				return _m_emplace(new docker{ this, fn, false }, true);
+			}
+			else if constexpr(std::is_invocable_v<Function>)
+			{
+				return _m_emplace(new docker{ this, [fn](arg_reference) {
+					fn();
+				}, false }, true);
+			}
+#else
 			using prototype = typename std::remove_reference<Function>::type;
 			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), true);
+#endif
 		}
 
+#ifndef __cpp_if_constexpr
 		/// It will not get called if stop_propagation() was called.
 		event_handle connect(void (*fn)(arg_reference))
 		{
@@ -145,13 +159,27 @@ namespace nana
 				fn(arg);
 			});
 		}
+#endif
 
 		/// It will not get called if stop_propagation() was called, because it is set at the end of the chain..
 		template<typename Function>
 		event_handle connect(Function && fn)
 		{
+#ifdef __cpp_if_constexpr
+			if constexpr(std::is_invocable_v<Function, arg_reference>)
+			{
+				return _m_emplace(new docker{ this, fn, false }, false);
+			}
+			else if constexpr(std::is_invocable_v<Function>)
+			{
+				return _m_emplace(new docker{ this, [fn](arg_reference){
+					fn();
+				}, false }, false);
+			}
+#else
 			using prototype = typename std::remove_reference<Function>::type;
 			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), false);
+#endif
 		}
 
 		/// It will not get called if stop_propagation() was called.
@@ -164,10 +192,22 @@ namespace nana
 		/// It will get called because it is unignorable.
         template<typename Function>
 		event_handle connect_unignorable(Function && fn, bool in_front = false)
-		{			
+		{
+#ifdef __cpp_if_constexpr
+			if constexpr(std::is_invocable_v<Function, arg_reference>)
+			{
+				return _m_emplace(new docker{ this, fn, true }, in_front);
+			}
+			else if constexpr(std::is_invocable_v<Function>)
+			{
+				return _m_emplace(new docker{ this, [fn](arg_reference) {
+					fn();
+				}, true }, in_front);
+			}
+#else
 			using prototype = typename std::remove_reference<Function>::type;
-
 			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true), in_front);
+#endif
 		}
 
 		void emit(arg_reference& arg, window window_handle)
@@ -210,6 +250,8 @@ namespace nana
 			}
 		}
 	private:
+
+#ifndef __cpp_if_constexpr
 		template<typename Fn, bool IsBind>
 		struct factory
 		{
@@ -385,6 +427,7 @@ namespace nana
 				};
 			}
 		};
+#endif
 	};
  
 	struct arg_mouse

@@ -240,7 +240,11 @@ namespace nana
 		bool show(Args&& ... args)
 		{
 			std::vector<abstract_content*> contents;
+#ifdef __cpp_fold_expressions
+			(contents.emplace_back(&args), ...);
+#else
 			_m_fetch_args(contents, std::forward<Args>(args)...);
+#endif
 			if (contents.empty())
 				return false;
 
@@ -270,6 +274,7 @@ namespace nana
 		void min_width_entry_field( unsigned pixels );
 
 	private:
+#ifndef __cpp_fold_expressions
 		void _m_fetch_args(std::vector<abstract_content*>&);
 
 		template<typename ...Args>
@@ -278,6 +283,7 @@ namespace nana
 			contents.push_back(&content);
 			_m_fetch_args(contents, std::forward<Args>(args)...);
 		}
+#endif
 
 		bool _m_open(std::vector<abstract_content*>&, bool modal);
 	private:

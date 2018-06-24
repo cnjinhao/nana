@@ -2470,10 +2470,10 @@ namespace nana
 						x += col.width_px;
 						if (x > 0)
 						{
+							seqs.push_back(col.index);
+
 							if (x >= static_cast<int>(lister_w))
 								break;
-
-							seqs.push_back(col.index);
 						}
 					}
 					return seqs;
@@ -2757,6 +2757,17 @@ namespace nana
 			unsigned es_lister::column_content_pixels(size_type pos) const
 			{
 				unsigned max_px = 0;
+				
+				std::unique_ptr<paint::graphics> graph_helper;
+				auto graph = ess_->graph;
+				if (graph->empty())
+				{
+					//Creates a helper if widget graph is empty(when its size is 0).
+					graph_helper.reset(new paint::graphics{ nana::size{ 5, 5 } });
+					graph_helper->typeface(ess_->graph->typeface());
+					graph = graph_helper.get();
+				}
+
 				for (auto & cat : categories_)
 				{
 					for (std::size_t i = 0; i < cat.items.size(); ++i)
@@ -2768,14 +2779,14 @@ namespace nana
 							if (pos >= model_cells.size())
 								continue;
 
-							content_px = ess_->graph->text_extent_size(model_cells[pos].text).width;
+							content_px = graph->text_extent_size(model_cells[pos].text).width;
 						}
 						else
 						{
 							if (pos >= cat.items[i].cells->size())
 								continue;
 
-							content_px = ess_->graph->text_extent_size((*cat.items[i].cells)[pos].text).width;
+							content_px = graph->text_extent_size((*cat.items[i].cells)[pos].text).width;
 						}
 
 						if (content_px > max_px)

@@ -52,6 +52,7 @@ namespace nana
 						{
 							std::size_t len = ent.end - ent.begin;
 							nana::size ts = detail::text_extent_size(dw, ent.begin, len);
+
 							if(ts.height > pixels)	pixels = ts.height;
 						
 							if(pos.x + static_cast<int>(ts.width) > 0)
@@ -128,7 +129,11 @@ namespace nana
 				draw_string_omitted(graphics& graph, int x, int endpos, bool omitted)
 					: graph(graph), x(x), endpos(endpos)
 				{
+#ifdef _nana_std_has_string_view
+					omitted_pixels = (omitted ? graph.text_extent_size(std::string_view{ "...", 3 }).width : 0);
+#else
 					omitted_pixels = (omitted ? graph.text_extent_size("...", 3).width : 0);
+#endif
 					if (endpos - x > static_cast<int>(omitted_pixels))
 						this->endpos -= omitted_pixels;
 					else
@@ -164,8 +169,12 @@ namespace nana
 
 							dum_graph.bitblt(r, graph, pos);
 
+#ifdef _nana_std_has_string_view
+							dum_graph.string({}, { i.begin, len }, graph.palette(true));
+#else
 							dum_graph.palette(true, graph.palette(true));
 							dum_graph.string({}, i.begin, len);
+#endif
 
 							r.x = pos.x;
 							r.y = top;
@@ -228,10 +237,14 @@ namespace nana
 								const std::size_t len = i.end - i.begin;
 								if(len > 1)
 								{
-									std::unique_ptr<unsigned[]> pixel_buf(new unsigned[len]);
-
 									//Find the char that should be splitted
+#ifdef _nana_std_has_string_view
+									auto pixel_buf = graph.glyph_pixels({ i.begin, len });
+#else
+									std::unique_ptr<unsigned[]> pixel_buf(new unsigned[len]);
 									graph.glyph_pixels(i.begin, len, pixel_buf.get());
+#endif
+
 									std::size_t idx_head = 0, idx_splitted;
 
 									do
@@ -448,10 +461,16 @@ namespace nana
 								std::size_t len = i.end - i.begin;
 								if(len > 1)
 								{
+									//Find the char that should be splitted
+#ifdef _nana_std_has_string_view
+									auto scope_res = graph.glyph_pixels({ i.begin, len });
+									auto pxbuf = scope_res.get();
+#else
 									std::unique_ptr<unsigned[]> scope_res(new unsigned[len]);
 									auto pxbuf = scope_res.get();
-									//Find the char that should be splitted
 									graph.glyph_pixels(i.begin, len, pxbuf);
+#endif
+
 									std::size_t idx_head = 0, idx_splitted;
 
 									do
@@ -625,14 +644,23 @@ namespace nana
 					break;
 				}
 
+#ifdef _nana_std_has_string_view
+				graph_.bidi_string(pos, text);
+#else
 				graph_.bidi_string(pos, text.c_str(), text.size());
+#endif
 				return;
 			}
 
+#ifdef _nana_std_has_string_view
+			const auto ellipsis = graph_.text_extent_size(std::string_view{ "...", 3 }).width;
+			auto pixels = graph_.glyph_pixels({ text.c_str(), text.size() });
+#else
 			const auto ellipsis = graph_.text_extent_size("...", 3).width;
 
 			std::unique_ptr<unsigned[]> pixels(new unsigned[text.size()]);
 			graph_.glyph_pixels(text.c_str(), text.size(), pixels.get());
+#endif
 
 			std::size_t substr_len = 0;
 			unsigned substr_px = 0;
@@ -653,7 +681,11 @@ namespace nana
 				} while (p != end);
 
 				pos.x += static_cast<int>(width - ellipsis - substr_px) + ellipsis;
+#ifdef _nana_std_has_string_view
+				graph_.bidi_string(pos, { text.c_str() + substr_len, text.size() - substr_len });
+#else
 				graph_.bidi_string(pos, text.c_str() + substr_len, text.size() - substr_len);
+#endif
 				pos.x -= ellipsis;
 			}
 			else
@@ -670,8 +702,11 @@ namespace nana
 
 				if (align::center == text_align_ex_)
 					pos.x += (width - substr_px - ellipsis) / 2;
-
+#ifdef _nana_std_has_string_view
+				graph_.bidi_string(pos, { text.c_str(), substr_len });
+#else
 				graph_.bidi_string(pos, text.c_str(), substr_len);
+#endif
 
 				pos.x += substr_px;
 			}

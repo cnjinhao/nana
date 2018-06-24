@@ -54,12 +54,12 @@ namespace nana
 			widget& wdg_;
 		};
 
-		std::string widget::caption() const throw()
+		std::string widget::caption() const noexcept
 		{
 			return to_utf8(_m_caption());
 		}
 
-		std::wstring widget::caption_wstring() const throw()
+		std::wstring widget::caption_wstring() const noexcept
 		{
 #if defined(NANA_WINDOWS)
 			return _m_caption();
@@ -68,7 +68,7 @@ namespace nana
 #endif
 		}
 
-		auto widget::caption_native() const throw() -> native_string_type
+		auto widget::caption_native() const noexcept -> native_string_type
 		{
 			return _m_caption();
 		}
@@ -287,7 +287,7 @@ namespace nana
 		void widget::_m_complete_creation()
 		{}
 
-		auto widget::_m_caption() const throw() -> native_string_type
+		auto widget::_m_caption() const noexcept -> native_string_type
 		{
 			return API::dev::window_caption(handle());
 		}

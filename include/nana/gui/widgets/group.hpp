@@ -22,8 +22,20 @@
 #include <nana/gui/widgets/checkbox.hpp>
 
 namespace nana{
+
+	namespace drawerbase
+	{
+		namespace group
+		{
+			struct scheme : public nana::widget_geometrics
+			{
+				color_proxy border{ colors::gray_border };
+			};
+		}// end namespace panel
+	}//end namespace drawerbase
+
 	class group
-		: public panel<true>
+		: public widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>
 	{
 		struct implement;
 	public:
@@ -52,6 +64,9 @@ namespace nana{
 
 		/// Adds an option for user selection
 		checkbox& add_option(::std::string);
+
+		/// Modifies the alignment of the title
+		void caption_align(align position);
 
 		/// Enables/disables the radio mode which is single selection
 		group& radio_mode(bool);
@@ -83,7 +98,7 @@ namespace nana{
 		void _m_add_child(const char* field, widget*);
 		void _m_init();
 		void _m_complete_creation() override;
-		native_string_type _m_caption() const throw() override;
+		native_string_type _m_caption() const noexcept override;
 		void _m_caption(native_string_type&&) override;
 	private:
 		std::unique_ptr<implement> impl_;

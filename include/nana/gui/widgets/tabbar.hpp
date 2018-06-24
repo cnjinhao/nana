@@ -383,7 +383,7 @@ namespace nana
 					driver();
 					~driver();
 
-					model* get_model() const throw();
+					model* get_model() const noexcept;
 				private:
 					//Overrides drawer_trigger's method
 					void attached(widget_reference, graph_reference)	override;

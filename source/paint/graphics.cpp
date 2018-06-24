@@ -411,8 +411,8 @@ namespace paint
 					impl_->handle = dw.get();
 					impl_->size = sz;
 
-					impl_->handle->string.tab_pixels = detail::raw_text_extent_size(impl_->handle, L"\t", 1).width;
-					impl_->handle->string.whitespace_pixels = detail::raw_text_extent_size(impl_->handle, L" ", 1).width;
+					impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
+					impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
 				}
 			}
 
@@ -438,8 +438,9 @@ namespace paint
 #if defined(NANA_WINDOWS)
 				::SelectObject(impl_->handle->context, reinterpret_cast<HFONT>(f.impl_->real_font->native_handle()));
 #endif
-				impl_->handle->string.tab_pixels = detail::raw_text_extent_size(impl_->handle, L"\t", 1).width;
-				impl_->handle->string.whitespace_pixels = detail::raw_text_extent_size(impl_->handle, L" ", 1).width;
+
+				impl_->handle->string.tab_pixels = detail::real_text_extent_size(impl_->handle, L"\t", 1).width;
+				impl_->handle->string.whitespace_pixels = detail::real_text_extent_size(impl_->handle, L" ", 1).width;
 
 				if (impl_->changed == false)
 					impl_->changed = true;
@@ -453,6 +454,114 @@ namespace paint
 			return (impl_->handle ? font(impl_->handle) : impl_->font_shadow);
 		}
 
+#ifdef _nana_std_has_string_view
+		size graphics::text_extent_size(std::string_view text) const
+		{
+			throw_not_utf8(text);
+			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+		}
+
+		size graphics::text_extent_size(std::wstring_view text) const
+		{
+			return detail::text_extent_size(impl_->handle, text.data(), text.length());
+		}
+		
+		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const
+		{
+			end = std::clamp(end, static_cast<std::size_t>(0), static_cast<std::size_t>(text.size()));
+
+			if (nullptr == impl_->handle || text.empty() || begin >= end) return{};
+
+			nana::size sz;
+#if defined(NANA_WINDOWS)
+			int * dx = new int[text.size()];
+
+			SIZE extents;
+			::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
+			sz.width = dx[end - 1] - (begin ? dx[begin - 1] : 0);
+			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
+			const wchar_t * pend = text.data() + end;
+			for (const wchar_t * p = text.data() + begin; p != pend; ++p)
+			{
+				if (*p == '\t')
+					sz.width += tab_pixels;
+			}
+			sz.height = extents.cy;
+			delete[] dx;
+#elif defined(NANA_X11)
+			sz = text_extent_size(text.substr(begin, end - begin));
+#endif
+			return sz;
+		}
+
+		std::unique_ptr<unsigned[]> graphics::glyph_pixels(std::wstring_view text) const
+		{
+			if (nullptr == impl_->handle || nullptr == impl_->handle->context) return {};
+
+			if (text.empty()) return std::unique_ptr<unsigned[]>{new unsigned[1]};
+
+			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
+#if defined(NANA_WINDOWS)
+			int * dx = new int[text.size()];
+			SIZE extents;
+			::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
+
+			auto pxbuf = std::unique_ptr<unsigned[]>{ new unsigned[text.size()] };
+
+			pxbuf[0] = (text[0] == '\t' ? tab_pixels : dx[0]);
+
+			for (std::size_t i = 1; i < text.size(); ++i)
+			{
+				pxbuf[i] = (text[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
+			}
+			delete[] dx;
+#elif defined(NANA_X11) && defined(NANA_USE_XFT)
+
+			auto disp = nana::detail::platform_spec::instance().open_display();
+			auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
+
+			XGlyphInfo extents;
+			for (std::size_t i = 0; i < len; ++i)
+			{
+				if (text[i] != '\t')
+				{
+					FT_UInt glyphs = ::XftCharIndex(disp, xft, text[i]);
+					::XftGlyphExtents(disp, xft, &glyphs, 1, &extents);
+					pxbuf[i] = extents.xOff;
+				}
+				else
+					pxbuf[i] = tab_pixels;
+			}
+#endif
+			return pxbuf;
+		}
+
+		::nana::size graphics::bidi_extent_size(std::string_view utf8str) const
+		{
+			return bidi_extent_size(to_wstring(utf8str));
+		}
+
+		nana::size	graphics::bidi_extent_size(std::wstring_view text) const
+		{
+			nana::size sz;
+			if (impl_->handle && impl_->handle->context && text.size())
+			{
+				auto const reordered = unicode_reorder(text.data(), text.size());
+				for (auto & i : reordered)
+				{
+#ifdef _nana_std_has_string_view
+					nana::size t = text_extent_size(std::wstring_view(i.begin, i.end - i.begin));
+#else
+					nana::size t = text_extent_size(i.begin, i.end - i.begin);
+#endif
+					sz.width += t.width;
+					if (sz.height < t.height)
+						sz.height = t.height;
+				}
+			}
+			return sz;
+		}
+#else
 		::nana::size graphics::text_extent_size(const ::std::string& text) const
 		{
 			throw_not_utf8(text);
@@ -486,7 +595,7 @@ namespace paint
 
 		nana::size graphics::glyph_extent_size(const wchar_t * str, std::size_t len, std::size_t begin, std::size_t end) const
 		{
-			if(len < end) end = len;
+			if (len < end) end = len;
 			if (nullptr == impl_->handle || nullptr == str || 0 == len || begin >= end) return{};
 
 			nana::size sz;
@@ -497,13 +606,13 @@ namespace paint
 			sz.width = dx[end - 1] - (begin ? dx[begin - 1] : 0);
 			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 			const wchar_t * pend = str + end;
-			for(const wchar_t * p = str + begin; p != pend; ++p)
+			for (const wchar_t * p = str + begin; p != pend; ++p)
 			{
-				if(*p == '\t')
+				if (*p == '\t')
 					sz.width += tab_pixels;
 			}
 			sz.height = extents.cy;
-			delete [] dx;
+			delete[] dx;
 #elif defined(NANA_X11)
 			sz = text_extent_size(str + begin, end - begin);
 #endif
@@ -517,8 +626,8 @@ namespace paint
 
 		bool graphics::glyph_pixels(const wchar_t * str, std::size_t len, unsigned* pxbuf) const
 		{
-			if(nullptr == impl_->handle || nullptr == impl_->handle->context || nullptr == str || nullptr == pxbuf) return false;
-			if(len == 0) return true;
+			if (nullptr == impl_->handle || nullptr == impl_->handle->context || nullptr == str || nullptr == pxbuf) return false;
+			if (len == 0) return true;
 
 			unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 #if defined(NANA_WINDOWS)
@@ -526,22 +635,22 @@ namespace paint
 			SIZE extents;
 			::GetTextExtentExPoint(impl_->handle->context, str, static_cast<int>(len), 0, 0, dx, &extents);
 
-			pxbuf[0] = (str[0] == '\t' ? tab_pixels  : dx[0]);
+			pxbuf[0] = (str[0] == '\t' ? tab_pixels : dx[0]);
 
-			for(std::size_t i = 1; i < len; ++i)
+			for (std::size_t i = 1; i < len; ++i)
 			{
 				pxbuf[i] = (str[i] == '\t' ? tab_pixels : dx[i] - dx[i - 1]);
 			}
-			delete [] dx;
+			delete[] dx;
 #elif defined(NANA_X11) && defined(NANA_USE_XFT)
 
 			auto disp = nana::detail::platform_spec::instance().open_display();
 			auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
 
 			XGlyphInfo extents;
-			for(std::size_t i = 0; i < len; ++i)
+			for (std::size_t i = 0; i < len; ++i)
 			{
-				if(str[i] != '\t')
+				if (str[i] != '\t')
 				{
 					FT_UInt glyphs = ::XftCharIndex(disp, xft, str[i]);
 					::XftGlyphExtents(disp, xft, &glyphs, 1, &extents);
@@ -557,14 +666,18 @@ namespace paint
 		nana::size	graphics::bidi_extent_size(const std::wstring& str) const
 		{
 			nana::size sz;
-			if(impl_->handle && impl_->handle->context && str.size())
+			if (impl_->handle && impl_->handle->context && str.size())
 			{
 				auto const reordered = unicode_reorder(str.c_str(), str.size());
-				for(auto & i: reordered)
+				for (auto & i : reordered)
 				{
+#ifdef _nana_std_has_string_view
+					nana::size t = text_extent_size(std::wstring_view(i.begin, i.end - i.begin));
+#else
 					nana::size t = text_extent_size(i.begin, i.end - i.begin);
+#endif
 					sz.width += t.width;
-					if(sz.height < t.height)
+					if (sz.height < t.height)
 						sz.height = t.height;
 				}
 			}
@@ -575,6 +688,7 @@ namespace paint
 		{
 			return bidi_extent_size(static_cast<std::wstring>(::nana::charset(str, ::nana::unicode::utf8)));
 		}
+#endif	//end _nana_std_has_string_view
 
 		bool graphics::text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const
 		{
@@ -937,7 +1051,7 @@ namespace paint
 			impl_->size.width = impl_->size.height = 0;
 		}
 
-		void graphics::save_as_file(const char* file_utf8) const throw()
+		void graphics::save_as_file(const char* file_utf8) const noexcept
 		{
 			if(impl_->handle)
 			{
@@ -1003,25 +1117,6 @@ namespace paint
 			return *this;
 		}
 
-		unsigned graphics::bidi_string(const nana::point& pos, const wchar_t * str, std::size_t len)
-		{
-			auto moved_pos = pos;
-
-			auto const reordered = unicode_reorder(str, len);
-			for (auto & i : reordered)
-			{
-				string(moved_pos, i.begin, i.end - i.begin);
-				moved_pos.x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
-			}
-			return static_cast<unsigned>(moved_pos.x - pos.x);
-		}
-
-		unsigned graphics::bidi_string(const point& pos, const char* str, std::size_t len)
-		{
-			std::wstring wstr = ::nana::charset(std::string(str, str + len), ::nana::unicode::utf8);
-			return bidi_string(pos, wstr.data(), wstr.size());
-		}
-
 		void graphics::set_pixel(int x, int y, const ::nana::color& clr)
 		{
 			if (impl_->handle)
@@ -1044,6 +1139,116 @@ namespace paint
 #endif
 				if (impl_->changed == false) impl_->changed = true;
 			}
+		}
+
+#ifdef _nana_std_has_string_view
+		unsigned graphics::bidi_string(const point& pos, std::string_view utf8str)
+		{
+			return bidi_string(pos, to_wstring(utf8str));
+		}
+
+		unsigned graphics::bidi_string(const nana::point& pos, std::wstring_view str)
+		{
+			auto moved_pos = pos;
+
+			auto const reordered = unicode_reorder(str.data(), str.size());
+			for (auto & i : reordered)
+			{
+				
+#ifdef _nana_std_has_string_view
+				this->string(moved_pos, std::wstring_view{ i.begin, static_cast<std::wstring_view::size_type>(i.end - i.begin) });
+				moved_pos.x += static_cast<int>(text_extent_size(std::wstring_view(i.begin, i.end - i.begin)).width);
+#else
+				this->string(moved_pos, i.begin, i.end - i.begin);
+				moved_pos.x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
+#endif
+			}
+			return static_cast<unsigned>(moved_pos.x - pos.x);
+		}
+
+		void graphics::string(const point& pos, std::string_view utf8str)
+		{
+			this->string(pos, to_wstring(utf8str));
+		}
+
+		void graphics::string(const point& pos, std::string_view utf8str, const nana::color& text_color)
+		{
+			palette(true, text_color);
+			string(pos, utf8str);
+		}
+
+		void graphics::string(const nana::point& text_pos, std::wstring_view str)
+		{
+			if (impl_->handle && !str.empty())
+			{
+#if defined(NANA_POSIX)
+				impl_->handle->update_text_color();
+#endif
+				auto begin = str.data();
+				auto const end = begin + str.size();
+				auto i = std::find(begin, end, '\t');
+
+				if (i != end)
+				{
+					auto pos = text_pos;
+					std::size_t tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.tab_pixels;
+					while (true)
+					{
+						auto len = i - begin;
+						if (len)
+						{
+							//Render a part that does not contains a tab
+							detail::draw_string(impl_->handle, pos, begin, len);
+							pos.x += detail::real_text_extent_size(impl_->handle, begin, len).width;
+						}
+
+						begin = i;
+						while (begin != end && (*begin == '\t'))
+							++begin;
+
+						if (begin != end)
+						{
+							//Now i_tab is not a tab, but a non-tab character following the previous tabs
+							pos.x += static_cast<int>(tab_pixels * (begin - i));
+							i = std::find(begin, end, '\t');
+						}
+						else
+							break;
+					}
+				}
+				else
+					detail::draw_string(impl_->handle, text_pos, str.data(), str.size());
+				if (impl_->changed == false) impl_->changed = true;
+			}
+		}
+
+		void graphics::string(const point& pos, std::wstring_view str, const nana::color& text_color)
+		{
+			palette(true, text_color);
+			string(pos, str);
+		}
+#else
+		unsigned graphics::bidi_string(const nana::point& pos, const wchar_t * str, std::size_t len)
+		{
+			auto moved_pos = pos;
+
+			auto const reordered = unicode_reorder(str, len);
+			for (auto & i : reordered)
+			{
+				string(moved_pos, i.begin, i.end - i.begin);
+#ifdef _nana_std_has_string_view
+				moved_pos.x += static_cast<int>(text_extent_size(std::wstring_view(i.begin, i.end - i.begin)).width);
+#else
+				moved_pos.x += static_cast<int>(text_extent_size(i.begin, i.end - i.begin).width);
+#endif
+			}
+			return static_cast<unsigned>(moved_pos.x - pos.x);
+		}
+
+		unsigned graphics::bidi_string(const point& pos, const char* str, std::size_t len)
+		{
+			std::wstring wstr = ::nana::charset(std::string(str, str + len), ::nana::unicode::utf8);
+			return bidi_string(pos, wstr.data(), wstr.size());
 		}
 
 		void graphics::string(const point& pos, const std::string& text_utf8)
@@ -1076,7 +1281,7 @@ namespace paint
 						{
 							//Render a part that does not contains a tab
 							detail::draw_string(impl_->handle, pos, str, len);
-							pos.x += detail::raw_text_extent_size(impl_->handle, str, len).width;
+							pos.x += detail::real_text_extent_size(impl_->handle, str, len).width;
 						}
 
 						str = i;
@@ -1114,6 +1319,7 @@ namespace paint
 			palette(true, clr);
 			string(pos, text.data(), text.size());
 		}
+#endif //_nana_std_has_string_view
 
 		void graphics::line(const nana::point& pos1, const nana::point& pos2)
 		{

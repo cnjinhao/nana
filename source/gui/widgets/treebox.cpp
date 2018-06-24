@@ -1163,7 +1163,11 @@ namespace nana
 
 				virtual unsigned item_height(graph_reference graph) const override
 				{
+#ifdef _nana_std_has_string_view
+					return graph.text_extent_size(std::wstring_view{ L"jH{", 3 }).height + 8;
+#else
 					return graph.text_extent_size(L"jH{", 3).height + 8;
+#endif
 				}
 
 				virtual unsigned item_width(graph_reference graph, const item_attribute_t& attr) const override

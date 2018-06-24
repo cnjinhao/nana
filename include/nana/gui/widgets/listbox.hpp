@@ -23,6 +23,7 @@
 
 #include "widget.hpp"
 #include "detail/inline_widget.hpp"
+#include "detail/widget_iterator.hpp"
 #include <nana/pat/abstract_factory.hpp>
 #include <nana/concepts.hpp>
 #include <nana/key_type.hpp>
@@ -808,7 +809,8 @@ namespace nana
 			/// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
 			/// item_proxy self, it references and iterators are not invalidated by sort()
 			class item_proxy
-				: public std::iterator<std::input_iterator_tag, item_proxy>
+				//: public std::iterator<std::input_iterator_tag, item_proxy>	//deprecated
+				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
 				item_proxy(essence*, const index_pair& = index_pair{npos, npos});
@@ -982,7 +984,8 @@ namespace nana
 			};
 
 			class cat_proxy
-				: public std::iterator < std::input_iterator_tag, cat_proxy >
+				//: public std::iterator<std::input_iterator_tag, cat_proxy>	//deprecated
+				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, cat_proxy>
 			{
 			public:
 				using inline_notifier_interface = drawerbase::listbox::inline_notifier_interface;
@@ -1214,9 +1217,6 @@ namespace nana
 
 				unsigned suspension_width{ 8 };  ///<  def= . the trigger will set this to the width if ("...")
 				unsigned text_margin{ 5 };  ///<  def= 5. Additional or extended with added (before) to the text width to determine the cell width. cell_w = text_w + ext_w +1
-
-				//deprecated
-				//unsigned header_height		{ 25   };  ///<  def=25 . header height   header_size
 
 				unsigned item_height_ex{ 6 };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
 				unsigned header_splitter_area_before{ 2 }; ///< def=2. But 4 is better... IMO

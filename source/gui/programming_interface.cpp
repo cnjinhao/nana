@@ -21,6 +21,9 @@
 #include <nana/gui/detail/events_operation.hpp>
 
 #include "../../source/detail/platform_abstraction.hpp"
+#ifdef NANA_X11
+#	include "../../source/detail/posix/platform_spec.hpp"
+#endif
 
 namespace nana
 {
@@ -52,6 +55,19 @@ namespace nana
 	}
 namespace API
 {
+#ifdef NANA_X11
+	//Some platform specific functions for X11
+	namespace x11
+	{
+		/// Returns the connection to the X server
+		const void* get_display()
+		{
+			auto & spec = nana::detail::platform_spec::instance();
+			return spec.open_display();			
+		}
+	}
+#endif
+
 	using basic_window = ::nana::detail::basic_window;
 	using interface_type = ::nana::detail::native_interface;
 
@@ -244,7 +260,7 @@ namespace API
 			}
 		}
 
-		::nana::detail::native_string_type window_caption(window wd) throw()
+		::nana::detail::native_string_type window_caption(window wd) noexcept
 		{
 			auto const iwd = reinterpret_cast<basic_window*>(wd);
 			internal_scope_guard isg;
@@ -377,8 +393,13 @@ namespace API
 		{
 			if (shortkey)
 			{
+#ifdef _nana_std_has_string_view
+				auto off_x = (shortkey_position ? graph.text_extent_size(std::string_view{ text.c_str(), shortkey_position }).width : 0);
+				auto key_px = static_cast<int>(graph.text_extent_size(std::wstring_view{ &shortkey, 1 }).width);
+#else
 				auto off_x = (shortkey_position ? graph.text_extent_size(text.c_str(), shortkey_position).width : 0);
 				auto key_px = static_cast<int>(graph.text_extent_size(&shortkey, 1).width);
+#endif
 
 				unsigned ascent, descent, inleading;
 				graph.text_metrics(ascent, descent, inleading);
@@ -391,7 +412,6 @@ namespace API
 			}
 		}
 	}//end namespace dev
-
 
 	widget* get_widget(window wd)
 	{
@@ -823,7 +843,7 @@ namespace API
 		}
 	}
 
-	nana::optional<rectangle> window_rectangle(window wd)
+	std::optional<rectangle> window_rectangle(window wd)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
@@ -1461,7 +1481,7 @@ namespace API
 		restrict::wd_manager().set_safe_place(reinterpret_cast<basic_window*>(wd), std::move(fn));
 	}
 
-	optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
+	std::optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)
 	{
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;

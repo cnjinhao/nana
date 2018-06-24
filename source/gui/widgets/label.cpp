@@ -1,7 +1,7 @@
 /*
  *	A Label Control Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -83,7 +83,11 @@ namespace nana
 
 					auto pre_font = graph.typeface();	//used for restoring the font
 
+#ifdef _nana_std_has_string_view
+					const unsigned def_line_pixels = graph.text_extent_size(std::wstring_view{ L" ", 1 }).height;
+#else
 					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
+#endif
 
 					font_ = pre_font;
 					fblock_ = nullptr;
@@ -170,7 +174,11 @@ namespace nana
 
 					auto ft = graph.typeface();	//used for restoring the font
 
+#ifdef _nana_std_has_string_view
+					const unsigned def_line_pixels = graph.text_extent_size(std::wstring_view(L" ", 1)).height;
+#else
 					const unsigned def_line_pixels = graph.text_extent_size(L" ", 1).height;
+#endif
 
 					font_ = ft;
 					fblock_ = nullptr;
@@ -556,6 +564,16 @@ namespace nana
 
 							_m_change_font(graph, fblock_ptr);
 
+#ifdef _nana_std_has_string_view
+							std::wstring_view text_sv{ data_ptr->text() };
+							if (text_range.second != text_sv.size())
+							{
+								text_sv = text_sv.substr(text_range.first, text_range.second);
+								sz = graph.text_extent_size(text_sv);
+							}
+
+							graph.string({ rs.pos.x, y }, text_sv, _m_fgcolor(fblock_ptr));
+#else
 							if (text_range.second == data_ptr->text().length())
 							{
 								graph.string({ rs.pos.x, y }, data_ptr->text(), _m_fgcolor(fblock_ptr));
@@ -567,6 +585,7 @@ namespace nana
 
 								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 							}
+#endif
 
 
 							_m_insert_if_traceable(rs.pos.x, y, sz, fblock_ptr);
@@ -653,7 +672,7 @@ namespace nana
 						: impl_{ impl }
 					{}
 
-					optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
+					std::optional<size> measure(graph_reference graph, unsigned limit_pixels, bool limit_width) const override
 					{
 						//Label now doesn't support to measure content with a specified height.
 						if (graph && ((0 == limit_pixels) || limit_width))
@@ -825,7 +844,7 @@ namespace nana
 			return *this;
 		}
 
-		bool label::transparent() const throw()
+		bool label::transparent() const noexcept
 		{
 			return API::is_transparent_background(*this);
 		}
@@ -849,7 +868,7 @@ namespace nana
 			return *this;
 		}
 
-		label& label::click_for(window associated_window) throw()
+		label& label::click_for(window associated_window) noexcept
 		{
 			get_drawer_trigger().impl()->for_associated_wd = associated_window;
 			return *this;
