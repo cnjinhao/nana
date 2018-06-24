@@ -120,8 +120,6 @@ namespace nana
 			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
 			::nana::size glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const;
 
-			//bool glyph_pixels(std::wstring_view text, unsigned* pxbuf) const;	//deprecated
-
 			/// Returns a buffer which stores the pixel of each charater stored in text.
 			/**
 			 * @param text The text to be requested.

@@ -85,27 +85,10 @@ namespace nana {
 					cv_scroll(std::make_shared<cv_scroll_rep>())
 				{
 					API::events(handle).mouse_wheel.connect_unignorable([this](const arg_wheel& arg) {
-#if 0
-						scroll_interface * scroll = nullptr;
-						switch (arg.which)
-						{
-						case arg_wheel::wheel::vertical:
-							scroll = &vert;
-							break;
-						case arg_wheel::wheel::horizontal:
-							scroll = &horz;
-							break;
-						default:
-							//Other button is not unsupported.
-							return;
-						}
-#else
-						auto const scroll = cv_scroll->scroll(arg.which);
-						if (nullptr == scroll)
-							return;
-#endif
 
-						if (!API::empty_window(arg.window_handle))
+						auto const scroll = cv_scroll->scroll(arg.which);
+
+						if (scroll && (!API::empty_window(arg.window_handle)))
 						{
 							auto align_px = (scroll->value() % scroll->step());
 							if (align_px)

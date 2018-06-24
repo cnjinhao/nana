@@ -71,9 +71,7 @@ namespace nana{
 			caption_dimension.width += 1;
 
 			std::string div = "vert margin=[0," + std::to_string(gap) + "," + std::to_string(gap + 5) + "," + std::to_string(gap) + "]";
-#if 0
-			div += "<weight=" + std::to_string(caption_dimension.height) + " <weight=5><" + field_title + " weight=" + std::to_string(caption_dimension.width + 1) + ">>";
-#else
+
 			div += "<weight=" + std::to_string(caption_dimension.height) + " ";
 
 			if (align::left == caption_align)
@@ -88,9 +86,7 @@ namespace nana{
 			else if (align::center == caption_align)
 				div += "<>";
 
-			div += ">";
-#endif
-			div += "<<vert margin=5 " + std::string(field_options) + ">";
+			div += "><<vert margin=5 " + std::string(field_options) + ">";
 
 			if (!usr_div_str.empty())
 				div += "<" + usr_div_str + ">>";
