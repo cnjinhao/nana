@@ -1224,7 +1224,7 @@ namespace nana
 	std::optional<folderbox::path_type> folderbox::show() const
 	{
 #ifdef NANA_WINDOWS
-		path_type target;
+		std::optional<folderbox::path_type> target;
 
 		CoInitialize(NULL);
 		IFileDialog *fd(nullptr);
@@ -1246,7 +1246,7 @@ namespace nana
 				hr = si->GetDisplayName(SIGDN_FILESYSPATH, &pwstr);
 				if (SUCCEEDED(hr))
 				{
-					target = pwstr;
+					target = path_type{ pwstr };
 					// use the c-string pointed to by pwstr here
 					CoTaskMemFree(pwstr);
 				}
