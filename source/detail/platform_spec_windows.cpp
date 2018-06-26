@@ -100,6 +100,18 @@ namespace detail
 		}
 	}
 
+	void platform_spec::co_initializer::task_mem_free(void* p)
+	{
+		if (ole32_)
+		{
+			using CoTaskMemFree_t = void (__stdcall *)(LPVOID pv);
+
+			CoTaskMemFree_t free_fn = reinterpret_cast<CoTaskMemFree_t>(::GetProcAddress(ole32_, "CoTaskMemFree"));
+			if (free_fn)
+				free_fn(p);
+		}
+	}
+
 	struct platform_spec::implementation
 	{
 		std::map<native_window_type, window_icons> iconbase;
