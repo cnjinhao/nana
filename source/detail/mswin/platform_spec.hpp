@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/detail/platform_spec.hpp
@@ -128,6 +128,8 @@ namespace detail
 		public:
 			co_initializer();
 			~co_initializer();
+
+			void task_mem_free(void* p);
 		private:
 			HMODULE ole32_;
 		};

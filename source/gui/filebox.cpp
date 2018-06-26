@@ -16,6 +16,7 @@
 
 #if defined(NANA_WINDOWS)
 #	include <windows.h>
+#	include "../detail/mswin/platform_spec.hpp"
 #	ifndef NANA_MINGW	//<Shobjidl.h> isn't supported well on MinGW
 #		include <Shobjidl.h>
 #	else
@@ -1247,7 +1248,7 @@ namespace nana
 #ifdef NANA_WINDOWS
 		std::optional<folderbox::path_type> target;
 
-		::CoInitialize(nullptr);
+		nana::detail::platform_spec::co_initializer co_init;
 #ifndef NANA_MINGW
 		IFileDialog *fd(nullptr);
 		HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&fd));
@@ -1294,11 +1295,9 @@ namespace nana
 			if (FALSE != SHGetPathFromIDList(pidl, folder_path))
 				target = folder_path;
 
-			CoTaskMemFree(pidl);
+			co_init.task_mem_free(pidl);
 		}
 #endif
-		::CoUninitialize();
-
 		return target;
 
 #elif defined(NANA_POSIX)
