@@ -16,7 +16,11 @@
 
 #if defined(NANA_WINDOWS)
 #	include <windows.h>
-#	include <Shobjidl.h>
+#	ifndef NANA_MINGW	//<Shobjidl.h> isn't supported well on MinGW
+#		include <Shobjidl.h>
+#	else
+#		include <Shlobj.h>
+#	endif
 #elif defined(NANA_POSIX)
 #	include <nana/gui/widgets/label.hpp>
 #	include <nana/gui/widgets/button.hpp>
@@ -243,10 +247,10 @@ namespace nana
 
 							std::size_t end_a = a.find_first_not_of("0123456789", pos_a + 1);
 							std::size_t end_b = b.find_first_not_of("0123456789", pos_b + 1);
-			
+
 							auto num_a = a.substr(pos_a, end_a != a.npos ? end_a - pos_a : a.npos);
 							auto num_b = b.substr(pos_b, end_b != b.npos ? end_b - pos_b : b.npos);
-			
+
 							if(num_a != num_b)
 							{
 								double ai = std::stod(num_a, 0);
@@ -294,7 +298,7 @@ namespace nana
 			lb_file_.i18n(i18n_eval(idstr));
 			lb_file_.text_align(align::right, align_v::center);
 
-			
+
 			tb_file_.create(*this);
 			tb_file_.multi_lines(false);
 
@@ -350,7 +354,7 @@ namespace nana
 				this->i18n(i18n_eval(idstr));
 			}
 			else
-				caption(title);			
+				caption(title);
 		}
 
 		void def_extension(const std::string& ext)
@@ -390,7 +394,7 @@ namespace nana
 
 			tb_file_.caption(file_with_path_removed);
 		}
-		
+
 		void add_filter(const std::string& desc, const std::string& type)
 		{
 			std::size_t i = cb_types_.the_number_of_options();
@@ -558,7 +562,7 @@ namespace nana
 					m.bytes = fs::file_size(fpath);
 
 				fs_ext::modified_file_time(fpath, m.modified_time);
-				
+
 				file_container_.push_back(m);
 
 				if(m.directory)
@@ -575,7 +579,7 @@ namespace nana
 			auto beg_node = tree_.selected();
 			while(!beg_node.empty() && (beg_node != nodes_.home) && (beg_node != nodes_.filesystem))
 				beg_node = beg_node.owner();
-			
+
 			auto head = fs_ext::path_user().native();
 			if(path.size() >= head.size() && (path.substr(0, head.size()) == head))
 			{//This is HOME
@@ -605,20 +609,20 @@ namespace nana
 			if(cat_path.size() && cat_path[cat_path.size() - 1] != '/')
 				cat_path += '/';
 
-		
+
 			auto beg = head.size();
 			while(true)
 			{
 				auto pos = path.find('/', beg);
 				auto folder = path.substr(beg, pos != path.npos ? pos - beg: path.npos);
-				
+
 				if(folder.empty())
 					break;
-				
+
 				(cat_path += folder) += '/';
 				(head += folder) += '/';
 				path_.caption(cat_path);
-				
+
 				try
 				{
 					for(fs::directory_iterator i(head); i != end; ++i)
@@ -748,7 +752,7 @@ namespace nana
 					mb<<i18n("NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_FAILED_CREATION");
 					mb();
 					return;
-				}			
+				}
 
 				fb_._m_load_cat_path(fb_.addr_.filesystem);
 				fm_.close();
@@ -778,7 +782,7 @@ namespace nana
 
 			auto exts = cb_types_.anyobj<std::vector<std::string> >(cb_types_.option());
 			if(0 == exts || exts->size() == 0)	return false;
-			
+
 			auto & ext = exts->at(0);
 			if(def_ext_[0] != '.')
 				tar += '.';
@@ -791,7 +795,7 @@ namespace nana
 			auto sel = ls_file_.selected();
 			if(sel.empty())
 				return;
-			
+
 			auto index = sel[0];
 			item_fs m;
 			ls_file_.at(index).resolve_to(m);
@@ -831,7 +835,7 @@ namespace nana
 						mb();
 						return;
 					}
-					
+
 					if(file[0] == '/')
 						tar = file;
 					else
@@ -850,7 +854,7 @@ namespace nana
 						ftype = static_cast<fs::file_type>(fattr.type());
 						is_dir = fs::is_directory(fattr);
 					}
-					
+
 					if(is_dir)
 					{
 						_m_load_cat_path(tar);
@@ -1078,7 +1082,7 @@ namespace nana
 	{
 		return impl_->path;
 	}
-		
+
 	std::string filebox::file() const
 	{
 		return impl_->file;
@@ -1150,7 +1154,7 @@ namespace nana
 		ofn.lpstrFileTitle = nullptr;
 		ofn.nMaxFileTitle = 0;
 		ofn.lpstrInitialDir = (wpath.empty() ? nullptr : wpath.c_str());
-		
+
 		if (!impl_->open_or_save)
 			ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
 		ofn.Flags |= OFN_NOCHANGEDIR;
@@ -1166,7 +1170,7 @@ namespace nana
 #elif defined(NANA_POSIX)
 		using mode = filebox_implement::mode;
 		filebox_implement fb(impl_->owner, (impl_->open_or_save ? mode::open_file : mode::write_file), impl_->title);
-		
+
 		if(impl_->filters.size())
 		{
 			for(auto & f: impl_->filters)
@@ -1221,12 +1225,30 @@ namespace nana
 		delete impl_;
 	}
 
+#ifdef NANA_MINGW
+	static int CALLBACK browse_folder_callback(HWND hwnd, UINT msg, LPARAM lparam, LPARAM data)
+	{
+		// If the BFFM_INITIALIZED message is received
+		// set the path to the start path.
+		switch (msg)
+		{
+		case BFFM_INITIALIZED:
+			if (data)
+				SendMessage(hwnd, BFFM_SETSELECTION, TRUE, data);
+			break;
+		}
+
+		return 0; // The function should always return 0.
+	}
+#endif
+
 	std::optional<folderbox::path_type> folderbox::show() const
 	{
 #ifdef NANA_WINDOWS
 		std::optional<folderbox::path_type> target;
 
-		CoInitialize(NULL);
+		::CoInitialize(nullptr);
+#ifndef NANA_MINGW
 		IFileDialog *fd(nullptr);
 		HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&fd));
 		if (SUCCEEDED(hr))
@@ -1254,7 +1276,28 @@ namespace nana
 			}
 			fd->Release();
 		}
-		CoUninitialize();
+#else
+		BROWSEINFO brw = { 0 };
+		wchar_t	display_text[MAX_PATH];
+		brw.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
+		brw.pszDisplayName = display_text;
+		brw.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+		brw.lpfn = browse_folder_callback;
+
+		std::wstring init_path = impl_->init_path.wstring();
+		brw.lParam = reinterpret_cast<LPARAM>(init_path.c_str());
+		auto pidl = ::SHBrowseForFolder(&brw);
+
+		if (pidl)
+		{
+			wchar_t folder_path[MAX_PATH];
+			if (FALSE != SHGetPathFromIDList(pidl, folder_path))
+				target = folder_path;
+
+			CoTaskMemFree(pidl);
+		}
+#endif
+		::CoUninitialize();
 
 		return target;
 
