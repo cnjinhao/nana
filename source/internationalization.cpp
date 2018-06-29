@@ -417,7 +417,7 @@ namespace nana
 		}
 	}
 
-#ifndef _nana_cxx_folding_expression
+#ifndef __cpp_fold_expressions
 	void internationalization::_m_fetch_args(std::vector<std::string>&)
 	{}
 #endif

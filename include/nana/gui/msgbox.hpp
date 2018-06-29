@@ -255,7 +255,11 @@ namespace nana
 		bool show_modal(Args&& ... args)
 		{
 			std::vector<abstract_content*> contents;
+#ifdef __cpp_fold_expressions
+			(contents.emplace_back(&args), ...);
+#else
 			_m_fetch_args(contents, std::forward<Args>(args)...);
+#endif
 
 			if (contents.empty())
 				return false;
