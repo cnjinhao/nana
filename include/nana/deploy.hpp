@@ -65,11 +65,12 @@ namespace nana
 	bool review_utf8(std::string& text);
 
 	const std::string& to_utf8(const std::string&);
-	std::string to_utf8(const std::wstring&);
 
 #ifdef _nana_std_has_string_view
+	std::string to_utf8(std::wstring_view sv);
 	std::wstring to_wstring(std::string_view utf8_str);
 #else
+	std::string to_utf8(const std::wstring&);
 	std::wstring to_wstring(const std::string& utf8_str);
 #endif
 

@@ -1,7 +1,7 @@
 /**
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -77,6 +77,7 @@ namespace nana
 			public:
 				item_proxy(drawer_impl*, std::size_t pos);
 				item_proxy&		text(const ::std::string&);
+
 				::std::string	text() const;
 				item_proxy&	select();
 				bool		selected() const;
@@ -103,22 +104,19 @@ namespace nana
 				}
 
 				template<typename T>
-				item_proxy& value(const T& t)
+				item_proxy& value(T&& val)
 				{
-					*_m_anyobj(true) = t;
-					return *this;
-				}
-
-				template<typename T>
-				item_proxy& value(T&& t)
-				{
-					*_m_anyobj(true) = ::std::move(t);
+					*_m_anyobj(true) = ::std::forward<T>(val);
 					return *this;
 				}
 			public:
 				/// Behavior of Iterator's value_type
+#ifdef _nana_std_has_string_view
+				bool operator==(::std::string_view) const;
+#else
 				bool operator==(const ::std::string&) const;
 				bool operator==(const char*) const;
+#endif
 
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
@@ -193,18 +191,10 @@ namespace nana
 		}
 
 		template<typename Key>
-		void erase_key(const Key& kv)
-		{
-			typedef typename nana::detail::type_escape<Key>::type key_t;
-			std::unique_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t> >(kv));
-			_m_erase(p.get());
-		}
-
-		template<typename Key>
 		void erase_key(Key&& kv)
 		{
 			typedef typename nana::detail::type_escape<Key>::type key_t;
-			std::unique_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t> >(std::move(kv)));
+			std::unique_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t> >(std::forward<Key>(kv)));
 			_m_erase(p.get());
 		}
 

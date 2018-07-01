@@ -933,15 +933,20 @@ namespace nana
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
-					*_m_value(true) = std::forward<T>(t);
+					*_m_value(true) = ::std::forward<T>(t);
 					return *this;
 				}
 
 				/// Behavior of Iterator's value_type
+#ifdef _nana_std_has_string_view
+				bool operator==(::std::string_view sv) const;
+				bool operator==(::std::wstring_view sv) const;
+#else
 				bool operator==(const char * s) const;
 				bool operator==(const wchar_t * s) const;
 				bool operator==(const ::std::string& s) const;
 				bool operator==(const ::std::wstring& s) const;
+#endif
 
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
