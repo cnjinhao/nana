@@ -2996,11 +2996,11 @@ namespace nana
 				}
 				else
 				{
-					auto last_off = this->distance(this->first(), this->last()) * ess_->item_height();
-					if (last_off - off >= screen_px)
+					auto const content_px = ess_->content_view->content_size().height;
+					if (content_px - off >= screen_px)
 						origin.y = static_cast<int>(off);
-					else if (last_off >= screen_px)
-						origin.y = static_cast<int>(last_off - screen_px);
+					else if (content_px >= screen_px)
+						origin.y = static_cast<int>(content_px - screen_px);
 				}
 
 				if (ess_->content_view->move_origin(origin - ess_->content_view->origin()))
