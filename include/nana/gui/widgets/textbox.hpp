@@ -17,6 +17,8 @@
 #include "skeletons/textbase_export_interface.hpp"
 #include "skeletons/text_editor_part.hpp"
 
+#include <nana/optional.hpp>
+
 namespace nana
 {
 	class textbox;
@@ -172,6 +174,13 @@ namespace nana
 
 		/// Read the text from a specified line with a set offset. It returns true for success.
 		bool getline(std::size_t line_index,std::size_t offset,std::string& text) const;
+
+		/// Read the text from a specified line; returns an empty optional on failure
+		std::optional<std::string> getline(std::size_t pos) const;
+
+		///Read the text from a specified line with a set offset. Returns an empty optional for
+		/// failure.
+		std::optional<std::string> getline(std::size_t line_index, std::size_t offset) const;
 
 		/// Gets the caret position
 		/// Returns true if the caret is in the area of display, false otherwise.
