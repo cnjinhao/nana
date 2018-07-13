@@ -264,15 +264,22 @@ namespace nana{
 
 		drawing dw(*this);
 
+		//When the group is resized, the drawing is called before moving the caption, but
+		//the drawing of group requires the lastest position of caption for gradual rectangle.
+		//For the requirement, a move event handler is required for listning the change of caption's position.
+		impl_->caption.events().move([this](const arg_move& arg){
+			if (align::left != impl_->caption_align)
+				API::refresh_window(*this);
+		});
+
 		// This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
 		dw.draw([this](paint::graphics& graph)
 		{
 			auto gap_px = impl_->gap - 1;
 
-			graph.rectangle(true, API::bgcolor(this->parent()));
-
 			auto const top_round_line = static_cast<int>(impl_->caption_dimension.height) / 2;
 
+			graph.rectangle(true, API::bgcolor(this->parent()));
 			graph.round_rectangle(rectangle(point(gap_px, top_round_line),
 				nana::size(graph.width() - 2 * gap_px, graph.height() - top_round_line - gap_px)
 				),
@@ -281,11 +288,10 @@ namespace nana{
 			auto opt_r = API::window_rectangle(impl_->caption);
 			if (opt_r)
 			{
-				rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width, static_cast<unsigned>(top_round_line - opt_r->y) } };
+				rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width + 4, static_cast<unsigned>(top_round_line - opt_r->y) } };
 
 				grad_r.y += top_round_line*2  / 3;
 				grad_r.x -= 2;
-				grad_r.width += 4;
 
 				graph.gradual_rectangle(grad_r,
 					API::bgcolor(this->parent()), this->bgcolor(), true

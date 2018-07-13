@@ -950,6 +950,19 @@ namespace detail
 			if (wd->dimension == sz)
 				return false;
 
+			std::vector<core_window_t*> presence;
+
+			if (wd->dimension.width < sz.width || wd->dimension.height < sz.height)
+			{
+				auto wd_r = rectangle{ wd->dimension };
+				for (auto child : wd->children)
+				{
+					auto child_r = rectangle{ child->pos_owner, child->dimension };
+					if (!overlapped(wd_r, child_r))
+						presence.push_back(child);
+				}
+			}
+
 			//Before resiz the window, creates the new graphics
 			paint::graphics graph;
 			paint::graphics root_graph;
@@ -1008,6 +1021,11 @@ namespace detail
 						window_layer::make_bground(wd);
 					}
 				}
+			}
+
+			for (auto child : presence)
+			{
+				refresh_tree(child);
 			}
 
 			arg_resized arg;
