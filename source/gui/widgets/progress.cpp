@@ -49,7 +49,7 @@ namespace nana
 					if (value_ptr)
 					{
 						if (unknown_)
-							value_ += (*value_ptr ? 5 : 0);
+							value_ += 5;
 						else
 							value_ = (std::min)(max_, *value_ptr);
 
@@ -99,7 +99,7 @@ namespace nana
 						auto value_px = (widget_->size().width - border_px * 2);
 
 						//avoid overflow
-						if (value_ < max_)
+						if (unknown_ || (value_ < max_))
 							value_px = static_cast<unsigned>(value_px * (double(value_) / double(max_)));
 
 						if (value_px != value_px_)
