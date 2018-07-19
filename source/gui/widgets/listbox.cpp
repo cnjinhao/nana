@@ -4378,9 +4378,11 @@ namespace nana
 					essence_->ptr_state = item_state::highlighted;
 
 					bool need_refresh = false;
-					//Do sort
-					if (essence_->header.sortable() && essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
+
+					//Don't sort the column when the mouse is due to released for stopping resizing column.
+					if ((drawer_header_->splitter() == npos) && essence_->header.sortable() && essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
 					{
+						//Try to sort the column
 						if(essence_->pointer_where.second < essence_->header.cont().size())
 							need_refresh = essence_->lister.sort_column(essence_->pointer_where.second, nullptr);
 					}
