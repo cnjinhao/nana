@@ -2934,9 +2934,9 @@ namespace nana
 					cat_proxy(ess_, pos.cat).at(pos.item).select(true);
 				}
 
-				void hovered(index_type /*pos*/) override
+				void hovered(index_type pos) override
 				{
-					auto offset = ess_->content_view->origin().y / ess_->item_height();
+					auto offset = ess_->lister.distance(ess_->first_display(), ess_->lister.index_cast(pos, false));
 
 					if (ess_->pointer_where.first != parts::list || ess_->pointer_where.second != offset)
 					{
