@@ -588,16 +588,59 @@ namespace detail
 	}
 
 	//There are three members make_owner(), get_owner() and remove(),
-	//they are maintain a table to discribe the owner of windows because the feature in X11, the
+	//they are maintain a table to discribe the owner of windows because of the feature in X11, the
 	//owner of top level window must be RootWindow.
 	void platform_spec::make_owner(native_window_type owner, native_window_type wd)
 	{
-		platform_scope_guard psg;
+		platform_scope_guard lock;
 		wincontext_[wd].owner = owner;
-		window_context_t & context = wincontext_[owner];
-		if(context.owned == 0)
-			context.owned = new std::vector<native_window_type>;
-		context.owned->push_back(wd);
+		
+		auto& owner_ctx = wincontext_[owner];
+		if(!owner_ctx.owned)
+			owner_ctx.owned = new std::vector<native_window_type>;
+		owner_ctx.owned->push_back(wd);
+	}
+
+	bool platform_spec::umake_owner(native_window_type child)
+	{
+		platform_scope_guard lock;
+
+		auto i = wincontext_.find(child);
+		if(i == wincontext_.end())
+			return false;
+
+		if(i->second.owner)
+		{
+			auto u = wincontext_.find(i->second.owner);
+			if(u != wincontext_.end())
+			{
+				auto * owned = u->second.owned;
+				if(owned)
+				{
+					auto j = std::find(owned->begin(), owned->end(), child);
+					if(j != owned->end())
+						owned->erase(j);
+
+					if(owned->empty())
+					{
+						delete owned;
+						u->second.owned = nullptr;
+						//The owner owns no child. If it is not a child of other owners,
+						//remove it.
+						if(nullptr == u->second.owner)
+							wincontext_.erase(u);
+					}
+				}
+			}
+
+			i->second.owner = nullptr;
+		}
+
+		//Don't remove the ownerships which the child is a owner window.
+		if(nullptr == i->second.owned)
+			wincontext_.erase(i);
+
+		return true;
 	}
 
 	native_window_type platform_spec::get_owner(native_window_type wd) const
@@ -610,7 +653,9 @@ namespace detail
 	void platform_spec::remove(native_window_type wd)
 	{
 		msg_dispatcher_->erase(reinterpret_cast<Window>(wd));
-		platform_scope_guard psg;
+
+		platform_scope_guard lock;
+#if 0
 		auto i = wincontext_.find(wd);
 		if(i == wincontext_.end()) return;
 
@@ -641,6 +686,28 @@ namespace detail
 		}
 		delete vec;
 		wincontext_.erase(i);
+#else
+		if(umake_owner(wd))
+		{
+			auto i = wincontext_.find(wd);
+			if(i != wincontext_.end())
+			{
+				if(i->second.owned)
+				{
+					set_error_handler();
+					auto & wd_manager = detail::bedrock::instance().wd_manager();
+					for(auto u = i->second.owned->rbegin(); u != i->second.owned->rend(); ++u)
+						wd_manager.close(wd_manager.root(*u));
+
+					rev_error_handler();
+
+					delete i->second.owned;
+				}
+
+				wincontext_.erase(i);
+			}
+		}
+#endif
 		iconbase_.erase(wd);
 	}
 

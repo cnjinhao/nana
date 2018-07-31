@@ -296,6 +296,8 @@ namespace nana{
 				win_attr.save_under = True;
 				attr_mask |= CWSaveUnder;
 
+				///The parameter of XCreateWindow to create a top level window must be root.
+				///But after creation, the real parent is the reparenting frame window.
 				parent = restrict::spec.root_window();
 				calc_screen_point(owner, pos);
 			}
@@ -309,9 +311,10 @@ namespace nana{
 			if(handle)
 			{
 				//make owner if it is a popup window
-				if((!nested) && owner)
+				if(!nested)
 				{
-					restrict::spec.make_owner(owner, reinterpret_cast<native_window_type>(handle));
+					auto origin_owner = (owner ? owner : reinterpret_cast<native_window_type>(restrict::spec.root_window()));
+					restrict::spec.make_owner(origin_owner, reinterpret_cast<native_window_type>(handle));
 					exposed_positions[handle] = pos;
 				}
 
@@ -1222,7 +1225,7 @@ namespace nana{
 			Window drop_wd;
 			int x, y;
 			unsigned mask;
-			nana::detail::platform_scope_guard psg;
+			nana::detail::platform_scope_guard lock;
 			::XQueryPointer(restrict::spec.open_display(), restrict::spec.root_window(), &drop_wd, &drop_wd,  &pos.x, &pos.y, &x, &y, &mask);
 			return pos;
 #endif
@@ -1278,9 +1281,19 @@ namespace nana{
 			if(returns_previous)
 				prev = parent_window(child);
 
+			if(native_window_type{} == new_parent)
+				new_parent = reinterpret_cast<native_window_type>(restrict::spec.root_window());
+
 			::XReparentWindow(restrict::spec.open_display(),
 				reinterpret_cast<Window>(child), reinterpret_cast<Window>(new_parent),
 				0, 0);
+
+
+			// If umake_owner returns true, it indicates the child windows is a popup window.
+			// So make the ownership of new_parent and child.
+			if(restrict::spec.umake_owner(child))
+				restrict::spec.make_owner(new_parent, child);
+
 			return prev;
 #endif
 		}

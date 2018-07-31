@@ -99,7 +99,7 @@ namespace nana
 
 					//Check scroll_area to avoiding division by zero.
 					if (scroll_area)
-						metrics_.value = pos * (static_cast<double>(value_max) / scroll_area);	//converting to double to avoid overflow.
+						metrics_.value = static_cast<std::size_t>(pos * (static_cast<double>(value_max) / scroll_area));	//converting to double to avoid overflow.
 
 					if (metrics_.value < value_max)
 					{
