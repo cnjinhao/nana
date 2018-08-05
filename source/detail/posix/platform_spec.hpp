@@ -132,6 +132,7 @@ namespace detail
 		Atom wm_change_state;
 		Atom wm_delete_window;
 		//ext
+		Atom net_frame_extents;
 		Atom net_wm_state;
 		Atom net_wm_state_skip_taskbar;
 		Atom net_wm_state_fullscreen;

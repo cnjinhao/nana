@@ -486,6 +486,7 @@ namespace detail
 		atombase_.wm_protocols = ::XInternAtom(display_, "WM_PROTOCOLS", False);
 		atombase_.wm_change_state = ::XInternAtom(display_, "WM_CHANGE_STATE", False);
 		atombase_.wm_delete_window = ::XInternAtom(display_, "WM_DELETE_WINDOW", False);
+		atombase_.net_frame_extents = ::XInternAtom(display_, "_NET_FRAME_EXTENTS", False);
 		atombase_.net_wm_state = ::XInternAtom(display_, "_NET_WM_STATE", False);
 		atombase_.net_wm_state_skip_taskbar = ::XInternAtom(display_, "_NET_WM_STATE_SKIP_TASKBAR", False);
 		atombase_.net_wm_state_fullscreen = ::XInternAtom(display_, "_NET_WM_STATE_FULLSCREEN", False);

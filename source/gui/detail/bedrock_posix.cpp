@@ -26,6 +26,9 @@ namespace nana
 {
 namespace detail
 {
+	//Declarations of helper functions defined in native_window_interface.cpp
+	void x11_apply_exposed_position(native_window_type wd);
+
 #pragma pack(1)
 		union event_mask
 		{
@@ -905,6 +908,9 @@ namespace detail
 				break;
 			case MapNotify:
 			case UnmapNotify:
+				if(xevent.type == MapNotify)
+					x11_apply_exposed_position(native_window);
+
 				brock.event_expose(msgwnd, (xevent.type == MapNotify));
 				context.platform.motion_window = nullptr;
 				break;
@@ -1281,7 +1287,7 @@ namespace detail
 		if(condition_wd && is_modal)
 		{
 			native_window_type modal = reinterpret_cast<core_window_t*>(condition_wd)->root;
-			owner_native = native_interface::get_owner_window(modal);
+			owner_native = native_interface::get_window(modal, window_relationship::owner);
 			if(owner_native)
 			{
 				native_interface::enable_window(owner_native, false);

@@ -51,6 +51,13 @@ namespace nana
 		top_left, top_right, bottom_left, bottom_right
 	};
 
+	enum class window_relationship
+	{
+		owner,		///< Owner window.
+		parent,		///< Parent window.
+		either_po 	///< One between owner and parent.
+	};
+
 	enum class bground_mode
 	{
 		none,

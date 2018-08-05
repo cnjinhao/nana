@@ -669,7 +669,7 @@ namespace API
 		internal_scope_guard lock;
 		if(restrict::wd_manager().available(iwd) && (iwd->other.category == category::flags::root))
 		{
-			auto owner = interface_type::get_owner_window(iwd->root);
+			auto owner = interface_type::get_window(iwd->root, window_relationship::owner);
 			if(owner)
 				return reinterpret_cast<window>(restrict::wd_manager().root(owner));
 		}

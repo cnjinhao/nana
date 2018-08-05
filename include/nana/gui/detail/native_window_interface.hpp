@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -76,8 +76,8 @@ namespace detail
 		static native_string_type	window_caption(native_window_type);
 		static void	capture_window(native_window_type, bool);
 		static nana::point	cursor_position();
-		static native_window_type get_owner_window(native_window_type);
-		static native_window_type parent_window(native_window_type);
+
+		static native_window_type get_window(native_window_type wd, window_relationship);
 		static native_window_type parent_window(native_window_type child, native_window_type new_parent, bool returns_previous);
 		//For Caret
 		static void caret_create(native_window_type, const ::nana::size&);
