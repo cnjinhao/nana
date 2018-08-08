@@ -1384,9 +1384,10 @@ namespace nana{
 			}
 			else if(window_relationship::owner == rsp)
 				return owner;
-
-			return x11_parent_window(wd);
+			else if(window_relationship::parent == rsp)
+				return x11_parent_window(wd);
 #endif
+			return nullptr;
 		}
 
 		native_window_type native_interface::parent_window(native_window_type child, native_window_type new_parent, bool returns_previous)

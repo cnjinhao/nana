@@ -172,7 +172,7 @@ namespace nana
 			}
 			else if constexpr(std::is_invocable_v<Function>)
 			{
-				return _m_emplace(new docker{ this, [fn](arg_reference){
+				return _m_emplace(new docker{ this, [fn](arg_reference) mutable{
 					fn();
 				}, false }, false);
 			}
@@ -200,7 +200,7 @@ namespace nana
 			}
 			else if constexpr(std::is_invocable_v<Function>)
 			{
-				return _m_emplace(new docker{ this, [fn](arg_reference) {
+				return _m_emplace(new docker{ this, [fn](arg_reference) mutable{
 					fn();
 				}, true }, in_front);
 			}
