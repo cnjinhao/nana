@@ -130,39 +130,6 @@ namespace nana{
 		nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
 	}
 
-	struct frame_extents
-	{
-		long left;
-		long right;
-		long top;
-		long bottom;
-	};
-
-	frame_extents x11_frame_extents(Window wd)
-	{
-		frame_extents fm_extents;
-		Atom type;
-		int format;
-		unsigned long len, bytes_left = 0;
-		unsigned char *data;
-
-		if(Success == ::XGetWindowProperty(restrict::spec.open_display(), wd, 
-								restrict::spec.atombase().net_frame_extents, 0, 16, 0,
-								XA_CARDINAL, &type, &format,
-								&len, &bytes_left, &data))
-		{
-			if(type != None && len == 4)
-			{
-				fm_extents.left = ((long*)data)[0];
-				fm_extents.right = ((long*)data)[1];
-				fm_extents.top = ((long*)data)[2];
-				fm_extents.bottom = ((long*)data)[3];
-			}
-			::XFree(data);
-		}
-
-		return fm_extents;
-	}
 
 		//The XMoveWindow and XMoveResizeWindow don't take effect if the specified window is
 		//unmapped, and the members x and y of XSetSizeHints is obsoluted. So the position that
@@ -1184,6 +1151,46 @@ namespace nana{
 				::XReconfigureWMWindow(disp, reinterpret_cast<Window>(wd), ::XDefaultScreen(disp), CWSibling | CWStackMode, &values);
 			}
 #endif
+		}
+
+		native_interface::frame_extents native_interface::window_frame_extents(native_window_type wd)
+		{
+			frame_extents fm_extents{0, 0, 0, 0};
+
+	#if defined(NANA_WINDOWS)
+			::RECT client;
+			::GetClientRect(reinterpret_cast<HWND>(wd), &client);	//The right and bottom of client by GetClientRect indicate the width and height of the area
+			::RECT wd_area;
+			::GetWindowRect(reinterpret_cast<HWND>(wd), &wd_area);
+
+			fm_extents.left = client.left - wd_area.left;
+			fm_extents.right = wd_area.right - client.right;
+			fm_extents.top = client.top - wd_area.top;
+			fm_extents.bottom = wd_area.bottom - client.bottom;
+	#elif defined(NANA_X11)
+			Atom type;
+			int format;
+			unsigned long len, bytes_left = 0;
+			unsigned char *data;
+
+			nana::detail::platform_scope_guard lock;
+			if(Success == ::XGetWindowProperty(restrict::spec.open_display(), reinterpret_cast<Window>(wd), 
+									restrict::spec.atombase().net_frame_extents, 0, 16, 0,
+									XA_CARDINAL, &type, &format,
+									&len, &bytes_left, &data))
+			{
+				if(type != None && len == 4)
+				{
+					fm_extents.left = ((long*)data)[0];
+					fm_extents.right = ((long*)data)[1];
+					fm_extents.top = ((long*)data)[2];
+					fm_extents.bottom = ((long*)data)[3];
+				}
+				::XFree(data);
+			}
+	#endif
+
+			return fm_extents;
 		}
 
 		bool native_interface::window_size(native_window_type wd, const size& sz)
