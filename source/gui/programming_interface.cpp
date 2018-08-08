@@ -812,8 +812,14 @@ namespace API
 			return{};
 
 		auto sz = window_size(wd);
-		sz.width += iwd->extra_width;
-		sz.height += iwd->extra_height;
+
+		if(category::flags::root == iwd->other.category)
+		{
+			auto fm_extents = interface_type::window_frame_extents(iwd->root);
+			sz.width += fm_extents.left + fm_extents.right;
+			sz.height += fm_extents.top + fm_extents.bottom;
+		}
+
 		return sz;
 	}
 
@@ -825,7 +831,11 @@ namespace API
 		{
 			if (category::flags::root == iwd->other.category)
 			{
+				auto fm_extents = interface_type::window_frame_extents(iwd->root);
+
 				size inner_size = sz;
+
+#if 0
 				if (inner_size.width < iwd->extra_width)
 					inner_size.width = 0;
 				else
@@ -835,6 +845,17 @@ namespace API
 					inner_size.height = 0;
 				else
 					inner_size.height -= iwd->extra_height;
+#else
+				if (inner_size.width < static_cast<unsigned>(fm_extents.left + fm_extents.right))
+					inner_size.width = 0;
+				else
+					inner_size.width -= static_cast<unsigned>(fm_extents.left + fm_extents.right);
+
+				if (inner_size.height < static_cast<unsigned>(fm_extents.top + fm_extents.bottom))
+					inner_size.height = 0;
+				else
+					inner_size.height -= static_cast<unsigned>(fm_extents.top + fm_extents.bottom);			
+#endif
 
 				window_size(wd, inner_size);
 			}

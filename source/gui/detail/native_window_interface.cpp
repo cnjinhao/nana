@@ -157,42 +157,113 @@ namespace nana{
 			return nullptr;
 		}
 
+		native_window_type x11_decoration_frame(native_window_type wd)
+		{
+			auto const owner = restrict::spec.get_owner(wd);
+			auto const root_wd = restrict::spec.root_window();
+
+			if(owner)
+			{
+				auto test_wd = wd;
+				while(true)
+				{
+					auto upper = x11_parent_window(test_wd);
+					if((reinterpret_cast<Window>(upper) != root_wd) && (upper != owner))
+					{
+						test_wd = upper;
+					}
+					else if(wd != test_wd)
+						return test_wd;
+					else
+						return nullptr;
+				}
+			}
+
+			return nullptr;
+		}
+
 		// Revise the position for moving window. Because the window is moved depending on
 		//implementation of Window Manager. A reparenting window may not be moved the origin to
 		//the specified location. it may be moved the left-top corner to the specified location.
-		void x11_revise_position(native_window_type wd, int &x, int& y)
+
+#if 0
+		void x11_revise_position(native_window_type wd, int &x, int& y, bool written)
 		{
 			auto const disp = restrict::spec.open_display();
 			auto const owner = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
 			auto const root_wd = restrict::spec.root_window();
 
-			Window decoration_wd = 0;
-			if(owner)
+			if(written)
 			{
-				Window child;
-
-				if(owner != root_wd)
+				Window decoration_wd = 0;
+				if(owner)
 				{
-					::XTranslateCoordinates(disp, owner, root_wd,
-							x, y, &x, &y, &child);
+					Window child;
+
+					if(owner != root_wd)
+					{
+						::XTranslateCoordinates(disp, owner, root_wd,
+								x, y, &x, &y, &child);
+					}
+
+					decoration_wd = reinterpret_cast<Window>(x11_parent_window(wd));
+					if((decoration_wd == owner) || (decoration_wd == root_wd))
+						decoration_wd = 0;	
 				}
 
-				decoration_wd = reinterpret_cast<Window>(x11_parent_window(wd));
-				if((decoration_wd == owner) || (decoration_wd == root_wd))
-					decoration_wd = 0;	
-			}
+				if(decoration_wd)
+				{
+					auto fm_extents = native_interface::window_frame_extents(wd);
 
-			if(decoration_wd)
-			{
-				auto fm_extents = x11_frame_extents(reinterpret_cast<Window>(wd));
+					XWindowAttributes attr;
+					::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 
-				XWindowAttributes attr;
-				::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
-
-				x += attr.x - fm_extents.left;
-				y += attr.y - fm_extents.top;
+					x += attr.x - fm_extents.left;
+					y += attr.y - fm_extents.top;
+				}
 			}
 		}
+#else
+		void x11_revise_position(native_window_type wd, int &x, int& y, bool written)
+		{
+			return;
+			auto const disp = restrict::spec.open_display();
+			auto const root_wd = restrict::spec.root_window();
+
+			if(written)
+			{
+				auto decoration_wd = x11_decoration_frame(wd);
+
+
+				if(decoration_wd)
+				{
+					auto const owner = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
+					Window child;
+					::XTranslateCoordinates(disp, owner, root_wd,
+							x, y, &x, &y, &child);
+
+
+					auto fm_extents = native_interface::window_frame_extents(wd);
+
+					XWindowAttributes attr;
+					::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
+
+					point client_pos{0, 0};
+					::XTranslateCoordinates(disp, reinterpret_cast<Window>(wd), root_wd, 0, 0, &client_pos.x, &client_pos.y, &child);
+
+					point decoration_pos{0, 0};
+					::XTranslateCoordinates(disp, reinterpret_cast<Window>(decoration_wd), root_wd, 0, 0, &decoration_pos.x, &decoration_pos.y, &child);
+
+					auto x1 = (client_pos.x - decoration_pos.x - fm_extents.left);
+					auto y1 = (client_pos.y - decoration_pos.y - fm_extents.top);
+
+					return;
+					x -= (client_pos.x - decoration_pos.x - fm_extents.left);
+					y -= (client_pos.y - decoration_pos.y - fm_extents.top);
+				}
+			}
+		}		
+#endif
 
 		void x11_apply_exposed_position(native_window_type wd)
 		{
@@ -939,6 +1010,7 @@ namespace nana{
 			point scr_pos;
 			nana::detail::platform_scope_guard lock;
 
+#if 0
 			auto coord_wd = restrict::spec.get_owner(wd);
 			if(coord_wd)
 			{
@@ -952,6 +1024,32 @@ namespace nana{
 
 			Window child;
 			::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), reinterpret_cast<Window>(coord_wd), 0, 0, &scr_pos.x, &scr_pos.y, &child);
+
+			x11_revise_position(wd, scr_pos.x, scr_pos.y, false);
+#else
+			point origin{};
+
+			auto coord_wd = restrict::spec.get_owner(wd);
+			if(coord_wd)
+			{
+				auto fm_extents = window_frame_extents(wd);
+				origin.x = -fm_extents.left;
+				origin.y = -fm_extents.top;
+
+				if(reinterpret_cast<Window>(coord_wd) != restrict::spec.root_window())
+				{
+					fm_extents = window_frame_extents(coord_wd);
+					origin.x += fm_extents.left;
+					origin.y += fm_extents.top;
+				}
+			}
+			else
+				coord_wd = get_window(wd, window_relationship::parent);
+
+			Window child;
+			::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), reinterpret_cast<Window>(coord_wd), origin.x, origin.y, &scr_pos.x, &scr_pos.y, &child);
+
+#endif
 
 			return scr_pos;
 #endif
@@ -991,8 +1089,16 @@ namespace nana{
 			if(attr.map_state == IsUnmapped)
 				exposed_positions[reinterpret_cast<Window>(wd)] = ::nana::point{x, y};
 
+			auto const owner = restrict::spec.get_owner(wd);
+			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
+			{
+				auto fm_extents = window_frame_extents(owner);
+				auto origin = window_position(owner);
+				x += origin.x;
+				y += origin.y;
+			}
 
-			x11_revise_position(wd, x, y);
+			x11_revise_position(wd, x, y, true);
 
 			::XMoveWindow(disp, reinterpret_cast<Window>(wd), x, y);
 
@@ -1064,7 +1170,16 @@ namespace nana{
 
 			int x = r.x;
 			int y = r.y;
-			x11_revise_position(wd, x, y);
+
+			auto const owner = restrict::spec.get_owner(wd);
+			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
+			{
+				auto origin = window_position(owner);
+				x += origin.x;
+				y += origin.y;
+			}
+
+			x11_revise_position(wd, x, y, true);
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);
 
 			//Wait for the configuration notify to update the local attribute of position so that
