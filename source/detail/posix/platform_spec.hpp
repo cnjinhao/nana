@@ -20,6 +20,7 @@
 
 #include <nana/push_ignore_diagnostic>
 
+#include <atomic>
 #include <thread>
 #include <mutex>
 #include <memory>
@@ -268,7 +269,7 @@ namespace detail
 		std::recursive_mutex xlib_locker_;
 		struct caret_holder_tag
 		{
-			volatile bool exit_thread;
+			std::atomic<bool> exit_thread;
 			std::unique_ptr<std::thread> thr;
 			std::map<native_window_type, caret_rep*> carets;
 		}caret_holder_;

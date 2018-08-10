@@ -26,6 +26,7 @@
 #include <condition_variable>
 #include <memory>
 #include <thread>
+#include <atomic>
 
 namespace nana
 {
@@ -340,7 +341,7 @@ namespace detail
 
 	private:
 		Display * display_;
-		volatile bool is_work_{ false };
+		std::atomic<bool> is_work_{ false };
 		std::unique_ptr<std::thread> thrd_;
 
 		struct table_tag

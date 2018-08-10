@@ -23,6 +23,8 @@
 	#include <windows.h>
 #endif
 
+#include <atomic>
+
 namespace nana{	namespace audio
 {
 	namespace detail
@@ -52,8 +54,8 @@ namespace nana{	namespace audio
 		private:
 			void _m_prepare_routine();
 		private:
-			volatile bool running_;
-			volatile bool wait_for_buffer_;
+			std::atomic<bool> running_;
+			std::atomic<bool> wait_for_buffer_;
 			std::thread thr_;
 			mutable std::mutex token_buffer_, token_prepared_;
 			mutable std::condition_variable	cond_buffer_, cond_prepared_;

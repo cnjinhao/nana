@@ -24,7 +24,7 @@ namespace system
 			: impl_(new impl_t)
 		{}
 
-		timepiece::timepiece(const volatile timepiece& rhs)
+		timepiece::timepiece(const timepiece& rhs)
 			: impl_(new impl_t(*rhs.impl_))
 		{}
 
@@ -33,7 +33,7 @@ namespace system
 			delete impl_;
 		}
 
-		timepiece & timepiece::operator=(const volatile timepiece & rhs)
+		timepiece & timepiece::operator=(const timepiece & rhs)
 		{
 			if(this != &rhs)
 				*impl_ = *rhs.impl_;
@@ -41,7 +41,7 @@ namespace system
 			return *this;
 		}
 
-		void timepiece::start() volatile
+		void timepiece::start() noexcept
 		{
 #if defined(NANA_WINDOWS)
 			::QueryPerformanceCounter(&impl_->beg_timestamp);
@@ -51,7 +51,7 @@ namespace system
 #endif
 		}
 
-		double timepiece::calc() const volatile
+		double timepiece::calc() const noexcept
 		{
 #if defined(NANA_WINDOWS)
 			LARGE_INTEGER li;
