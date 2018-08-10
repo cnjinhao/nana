@@ -575,6 +575,62 @@ namespace detail
 		return true;
 	}
 
+	void x_lookup_chars(const root_misc* rruntime, basic_window * msgwd, char* keybuf, std::size_t keybuf_len, const arg_keyboard& modifiers_status)
+	{
+		if (!msgwd->flags.enabled)
+			return;
+
+		static auto& brock = detail::bedrock::instance();
+		auto & wd_manager = brock.wd_manager();
+
+		auto& context = *brock.get_thread_context(msgwd->thread_id);
+
+		auto const native_window = rruntime->window->root;
+		
+
+		nana::detail::charset_conv charset(NANA_UNICODE, "UTF-8");
+		const std::string& str = charset.charset(std::string(keybuf, keybuf + keybuf_len));
+		auto const charbuf = reinterpret_cast<const wchar_t*>(str.c_str());
+		auto const len = str.size() / sizeof(wchar_t);
+
+		for(std::size_t i = 0; i < len; ++i)
+		{
+			arg_keyboard arg = modifiers_status;
+			arg.ignore = false;
+			arg.key = charbuf[i];
+
+			// ignore Unicode BOM (it may or may not appear)
+			if (arg.key == 0xFEFF) continue;
+
+			//Only accept tab when it is not ignored.
+			if ((keyboard::tab == arg.key) && rruntime->condition.ignore_tab)
+				continue;
+
+			if(context.is_alt_pressed)
+			{
+				arg.ctrl = arg.shift = false;
+				arg.evt_code = event_code::shortkey;
+				brock.shortkey_occurred(true);
+				auto shr_wd = wd_manager.find_shortkey(native_window, arg.key);
+				if(shr_wd)
+				{
+					arg.window_handle = reinterpret_cast<window>(shr_wd);
+					brock.emit(event_code::shortkey, shr_wd, arg, true, &context);
+				}
+				continue;
+			}
+			
+			arg.evt_code = event_code::key_char;
+			arg.window_handle = reinterpret_cast<window>(msgwd);
+			msgwd->annex.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwd));
+			if(arg.ignore == false && wd_manager.available(msgwd))
+				draw_invoker(&drawer::key_char, msgwd, arg, &context);
+		}
+
+		if(brock.shortkey_occurred(false))
+			context.is_alt_pressed = false;
+	}
+
 	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
 	{
 		typedef detail::bedrock::core_window_t core_window_t;
@@ -1077,6 +1133,8 @@ namespace detail
 								wd_manager.do_lazy_refresh(msgwnd, false);
 								break;
 							}
+#if 0
+							//Fall through
 						case XLookupChars:
 							if (msgwnd->flags.enabled)
 							{
@@ -1124,6 +1182,13 @@ namespace detail
 									context.is_alt_pressed = false;
 							}
 							break;
+#else
+							x_lookup_chars(root_runtime, msgwnd, keybuf, len, modifiers_status);
+							break;
+						case XLookupChars:
+							x_lookup_chars(root_runtime, msgwnd, keybuf, len, modifiers_status);
+							break;
+#endif
 						}
 
 						wd_manager.do_lazy_refresh(msgwnd, false);

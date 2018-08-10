@@ -4477,14 +4477,11 @@ namespace nana
 					if (list.first().empty())
 						return;
 
-					bool upward = false;
-
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_up:
-						upward = true;
 					case keyboard::os_arrow_down:
-						list.move_select(upward, !arg.shift, true);
+						list.move_select((keyboard::os_arrow_up == arg.key), !arg.shift, true);
 						break;
 					case L' ':
 						{
@@ -4496,9 +4493,9 @@ namespace nana
 						}
 						break;
 					case keyboard::os_pageup :
-						upward = true;
 					case keyboard::os_pagedown:
 						{
+							auto const upward = (keyboard::os_pageup == arg.key);
 							auto const item_px = essence_->item_height();
 							auto picked_items = list.pick_items(true, true);
 							index_pair init_idx = (picked_items.empty() ? list.first() : picked_items[0]);

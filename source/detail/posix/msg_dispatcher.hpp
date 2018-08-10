@@ -1,6 +1,6 @@
 /*
  *	Message Dispatcher Implementation
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -221,6 +221,8 @@ namespace detail
 					case 0:
 						msg_pack.kind = msg_pack.kind_xevent;
 						msg_pack.u.xevent = event;
+						_m_msg_dispatch(msg_pack);
+						break;
 					case 1:
 						_m_msg_dispatch(msg_pack);
 					}
