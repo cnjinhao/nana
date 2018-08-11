@@ -13,6 +13,8 @@
 #ifndef NANA_SYSTEM_TIMEPIECE_HPP
 #define NANA_SYSTEM_TIMEPIECE_HPP
 
+#include "../c++defines.hpp"
+
 namespace nana
 {
 namespace system
