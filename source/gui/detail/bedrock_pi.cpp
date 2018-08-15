@@ -308,11 +308,11 @@ namespace nana
 		{
 			if (pi_data_->menu.window && (pi_data_->menu.window != wd))
 			{
-				wd = native_interface::get_owner_window(wd);
+				wd = native_interface::get_window(wd, window_relationship::owner);
 				while (wd)
 				{
 					if (wd != pi_data_->menu.window)
-						wd = native_interface::get_owner_window(wd);
+						wd = native_interface::get_window(wd, window_relationship::owner);
 					else
 						return false;
 				}
@@ -329,7 +329,7 @@ namespace nana
 				erase_menu(true);
 
 				pi_data_->menu.window = menu_wd;
-				pi_data_->menu.owner = native_interface::get_owner_window(menu_wd);
+				pi_data_->menu.owner = native_interface::get_window(menu_wd, window_relationship::owner);
 				pi_data_->menu.has_keyboard = has_keyboard;
 			}
 		}

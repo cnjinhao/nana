@@ -267,7 +267,7 @@ namespace nana{
 		//When the group is resized, the drawing is called before moving the caption, but
 		//the drawing of group requires the lastest position of caption for gradual rectangle.
 		//For the requirement, a move event handler is required for listning the change of caption's position.
-		impl_->caption.events().move([this](const arg_move& arg){
+		impl_->caption.events().move([this](const arg_move&){
 			if (align::left != impl_->caption_align)
 				API::refresh_window(*this);
 		});

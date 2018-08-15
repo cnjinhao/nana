@@ -1853,7 +1853,6 @@ namespace nana
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
-
 					auto & node_state = impl_->node_state;
 					node_state.pressed_node = nl.node();
 
@@ -1869,7 +1868,6 @@ namespace nana
 					else
 						return;
 
-					
 					impl_->draw(true);
 					API::dev::lazy_refresh();
 				}

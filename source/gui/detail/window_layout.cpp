@@ -166,10 +166,18 @@ namespace nana
 							if (!cover->visible)
 								continue;
 
-							if (is_wd_root ? 
-								(category::flags::root == cover->other.category)
-								:
-								((category::flags::root != cover->other.category) && (nullptr == cover->effect.bground)))
+							if (is_wd_root)
+							{
+								if(category::flags::root == cover->other.category)
+								{
+									if (overlap(vis_rect, rectangle{ native_interface::window_position(cover->root), cover->dimension }, block.r))
+									{
+										block.window = cover;
+										blocks.push_back(block);
+									}
+								}
+							}
+							else if((category::flags::root != cover->other.category) && (nullptr == cover->effect.bground))
 							{
 								if (overlap(vis_rect, rectangle{ cover->pos_root, cover->dimension }, block.r))
 								{

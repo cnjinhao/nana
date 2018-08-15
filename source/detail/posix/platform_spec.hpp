@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -20,6 +20,7 @@
 
 #include <nana/push_ignore_diagnostic>
 
+#include <atomic>
 #include <thread>
 #include <mutex>
 #include <memory>
@@ -132,6 +133,7 @@ namespace detail
 		Atom wm_change_state;
 		Atom wm_delete_window;
 		//ext
+		Atom net_frame_extents;
 		Atom net_wm_state;
 		Atom net_wm_state_skip_taskbar;
 		Atom net_wm_state_fullscreen;
@@ -213,6 +215,9 @@ namespace detail
 		const atombase_tag & atombase() const;
 
 		void make_owner(native_window_type owner, native_window_type wd);
+
+		// Cancel the ownership
+		bool umake_owner(native_window_type child);
 		native_window_type get_owner(native_window_type) const;
 		void remove(native_window_type);
 
@@ -264,7 +269,7 @@ namespace detail
 		std::recursive_mutex xlib_locker_;
 		struct caret_holder_tag
 		{
-			volatile bool exit_thread;
+			std::atomic<bool> exit_thread;
 			std::unique_ptr<std::thread> thr;
 			std::map<native_window_type, caret_rep*> carets;
 		}caret_holder_;
