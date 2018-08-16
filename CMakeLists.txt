@@ -1,29 +1,33 @@
 # CMake configuration for Nana
-# Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributors:
+#   Andrew Kornilov (ierofant) - original version
 #   Jinhao
-#   Robert Hauck - Enable support for PNG/Freetype
-#   Qiangqiang Wu - Add biicode support
 #   Ariel Vina-Rodriguez (qPCR4vir)
+#   Robert Hauck - Enable support for PNG/Freetype
 #	Pavel O. - fix compilation with boost::filesystem (#281)
 #   Frostbane - Add option for compiling a shared library (#263,#265)
+#   Qiangqiang Wu - Add biicode support
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
-# In the future CMake could be the prefered, and maybe will be used to generate the others and the central nana repo
-# will distribute all of them. But by now CMake is just one of them and all the other distributed build system
-# files/projects are manually write. This current CMakeList.txt reflect this fact and that is why we don't
+# Maybe CMake will be used in the future to generate some of them in the central nana repository.
+# But by now CMake is just one option and all the other distributed build system
+# files/projects are manually writen. This current CMakeList.txt reflect this fact and that is why we don't
 # generate here configurated *.h files or explicitly enumerate the sources files: anyway this CM-list
 # will be "touched" to force a re-run of cmake.
 
-#https://cmake.org/cmake-tutorial/
-#https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
+# https://cliutils.gitlab.io/modern-cmake/
+# https://cmake.org/cmake-tutorial/
+# https://cmake.org/cmake/help/v3.3/module/CMakeDependentOption.html?highlight=cmakedependentoption
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
 #  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
 #  https://bbs.archlinux.org/viewtopic.php?id=84967
 
-project(nana)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.12)
+project(nana VERSION      1.6.1
+             DESCRIPTION "C++ GUI library"
+             HOMEPAGE_URL http://nanapro.org
+             LANGUAGES CXX         )
 
 option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
@@ -302,6 +306,7 @@ else()
 endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)     #
 target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
  #  Headers: use INCLUDE_DIRECTORIES
