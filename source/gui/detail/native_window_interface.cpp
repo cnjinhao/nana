@@ -984,6 +984,15 @@ namespace nana{
 
 			nana::detail::platform_scope_guard lock;
 
+			if(point{x, y} == window_position(wd))
+			{
+				//Returns if the requested position is same with the current position.
+				//In some X-Server versions/implementations, XMoveWindow() doesn't generate
+				//a ConfigureNotify if the requested position is same with the current position.
+				//It causes that x11_wait_for always waiting for the ConfigureNotify.
+				return;
+			}
+
 			XWindowAttributes attr;
 			::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 			if(attr.map_state == IsUnmapped)
