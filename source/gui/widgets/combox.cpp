@@ -821,6 +821,14 @@ namespace nana
 				}
 
 				/// Behavior of Iterator's value_type
+#ifdef _nana_std_has_string_view
+				bool item_proxy::operator == (::std::string_view s) const
+				{
+					if (pos_ == nana::npos)
+						return false;
+					return (impl_->at(pos_).item_text == s);
+				}
+#else
 				bool item_proxy::operator == (const ::std::string& s) const
 				{
 					if (pos_ == nana::npos)
@@ -834,6 +842,7 @@ namespace nana
 						return false;
 					return (impl_->at(pos_).item_text == s);
 				}
+#endif
 
 
 				/// Behavior of Iterator

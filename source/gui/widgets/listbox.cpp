@@ -4824,6 +4824,17 @@ namespace nana
 				}
 
 				//Behavior of Iterator's value_type
+#ifdef _nana_std_has_string_view
+				bool item_proxy::operator==(std::string_view sv) const
+				{
+					return (text(0) == sv);
+				}
+
+				bool item_proxy::operator==(std::wstring_view sv) const
+				{
+					return (text(0) == to_utf8(sv));
+				}
+#else
 				bool item_proxy::operator==(const char * s) const
 				{
 					return this->operator==(std::string(s));
@@ -4843,6 +4854,7 @@ namespace nana
 				{
 					return (text(0) == to_utf8(s));
 				}
+#endif
 
 				item_proxy & item_proxy::operator=(const item_proxy& rhs)
 				{

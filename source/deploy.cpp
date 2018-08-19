@@ -175,12 +175,12 @@ namespace nana
 		return str;
 	}
 
-	std::string to_utf8(const std::wstring& text)
+#ifdef _nana_std_has_string_view
+	std::string to_utf8(std::wstring_view text)
 	{
-		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+		return ::nana::charset(std::wstring{text}).to_bytes(::nana::unicode::utf8);
 	}
 
-#ifdef _nana_std_has_string_view
 	std::wstring to_wstring(std::string_view utf8_str)
 	{
 		if (utf8_str.empty())
@@ -189,6 +189,11 @@ namespace nana
 		return ::nana::charset(std::string{ utf8_str.data(), utf8_str.size() }, unicode::utf8);
 	}
 #else
+	std::string to_utf8(const std::wstring& text)
+	{
+		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+	}
+
 	std::wstring to_wstring(const std::string& utf8_str)
 	{
 		return ::nana::charset(utf8_str, ::nana::unicode::utf8);
