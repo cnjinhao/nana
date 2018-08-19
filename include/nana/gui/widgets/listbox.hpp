@@ -1033,6 +1033,7 @@ namespace nana
 				template<typename T>
 				void append_model(const T& t)
 				{
+					nana::internal_scope_guard lock;
 					_m_try_append_model(const_virtual_pointer{ &t });
 					_m_update();
 				}

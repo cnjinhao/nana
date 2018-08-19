@@ -71,6 +71,8 @@ namespace nana
 
 	std::vector<unicode_bidi::entity> unicode_reorder(const wchar_t* text, std::size_t length);
 
+	bool unicode_wordbreak(wchar_t left, wchar_t right);
+
 }
 #include <nana/pop_ignore_diagnostic>
 

@@ -732,7 +732,6 @@ namespace nana
 				bool call_other_keys = false;
 				if(drawer_->editable())
 				{
-					bool is_move_up = false;
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_left:
@@ -741,9 +740,8 @@ namespace nana
 						drawer_->editor()->reset_caret();
 						break;
 					case keyboard::os_arrow_up:
-						is_move_up = true;
 					case keyboard::os_arrow_down:
-						drawer_->move_items(is_move_up, true);
+						drawer_->move_items((keyboard::os_arrow_up == arg.key), true);
 						break;
 					default:
 						call_other_keys = true;
@@ -751,15 +749,15 @@ namespace nana
 				}
 				else
 				{
-					bool is_move_up = false;
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_left:
 					case keyboard::os_arrow_up:
-						is_move_up = true;
+						drawer_->move_items(true, true);
+						break;
 					case keyboard::os_arrow_right:
 					case keyboard::os_arrow_down:
-						drawer_->move_items(is_move_up, true);
+						drawer_->move_items(false, true);
 						break;
 					default:
 						call_other_keys = true;

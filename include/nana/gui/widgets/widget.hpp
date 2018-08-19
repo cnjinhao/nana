@@ -170,7 +170,8 @@ namespace nana
 	}
 
             /// Base class of all the classes defined as a widget window. Defaultly a widget_tag
-	template<typename Category, typename DrawerTrigger, typename Events = ::nana::general_events, typename Scheme = ::nana::widget_geometrics>
+	template<typename Category, typename DrawerTrigger, typename Events = ::nana::general_events, typename Scheme = ::nana::widget_geometrics,
+			typename = typename std::enable_if<std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value>::type> //type DrawerTrigger must be derived from nana::drawer_trigger
 	class widget_object: public detail::widget_base
 	{
 	protected:
@@ -182,7 +183,9 @@ namespace nana
 		widget_object()
 			:	events_{ std::make_shared<Events>() },
 				scheme_{ API::dev::make_scheme<Scheme>() }
-		{}
+		{
+			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
+		}
 
 		~widget_object()
 		{
@@ -291,7 +294,7 @@ namespace nana
 	};//end class widget_object
 
 	        /// Base class of all the classes defined as a non-graphics-buffer widget window. The second template parameter DrawerTrigger is always ignored.\see nana::panel
-	template<typename DrawerTrigger, typename Events, typename Scheme>
+	template<typename DrawerTrigger, typename Events, typename Scheme> //type DrawerTrigger must be derived from nana::drawer_trigger
 	class widget_object<category::lite_widget_tag, DrawerTrigger, Events, Scheme>: public detail::widget_base
 	{
 	protected:
@@ -302,7 +305,9 @@ namespace nana
 
 		widget_object()
 			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
-		{}
+		{
+			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
+		}
 
 		~widget_object()
 		{
@@ -355,7 +360,7 @@ namespace nana
 
 
 	        /// Base class of all the classes defined as a root window. \see nana::form
-	template<typename DrawerTrigger, typename Events, typename Scheme>
+	template<typename DrawerTrigger, typename Events, typename Scheme> //type DrawerTrigger must be derived from nana::drawer_trigger
 	class widget_object<category::root_tag, DrawerTrigger, Events, Scheme>: public detail::widget_base
 	{
 	protected:
@@ -367,10 +372,12 @@ namespace nana
 		widget_object()
 			: widget_object(nullptr, false, API::make_center(300, 150), appearance(), this)
 		{
+			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
 		}
 
 		widget_object(window owner, bool nested, const rectangle& r = {}, const appearance& apr = {})
 		{
+			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
 			handle_ = API::dev::create_window(owner, nested, r, apr, this);
 			_m_bind_and_attach();
 		}

@@ -99,12 +99,14 @@ namespace nana
 
 					//Check scroll_area to avoiding division by zero.
 					if (scroll_area)
-						metrics_.value = pos * value_max / scroll_area;
+						metrics_.value = static_cast<std::size_t>(pos * (static_cast<double>(value_max) / scroll_area));	//converting to double to avoid overflow.
 
-					if(metrics_.value < value_max)
+					if (metrics_.value < value_max)
 					{
-						int selfpos = static_cast<int>(metrics_.value * scroll_area / value_max);
-						int nextpos = static_cast<int>((metrics_.value + 1) * scroll_area / value_max);
+						//converting to double to avoid overflow.
+						auto const px_per_value = static_cast<double>(scroll_area) / value_max;
+						int selfpos = static_cast<int>(metrics_.value * px_per_value);
+						int nextpos = static_cast<int>((metrics_.value + 1) * px_per_value);
 
 						if(selfpos != nextpos && (pos - selfpos > nextpos - pos))
 							++metrics_.value;

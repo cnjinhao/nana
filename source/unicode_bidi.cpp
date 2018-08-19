@@ -946,4 +946,68 @@ namespace nana
 	{
 		return unicode_bidi{}.reorder(text, length);
 	}
+
+	enum class unicode_character_type
+	{
+		format,
+		katakana,
+		aletter,
+		midletter,
+		midnumlet,
+		midnum,
+		numeric,
+		other
+	};
+
+	//http://www.unicode.org/reports/tr29/WordBreakTest.html
+	unicode_character_type unicode_char_type(unsigned long ch)
+	{
+		if ((0x0600 <= ch && ch <= 0x0603) || (0x06DD == ch || 0x070F == ch || 0x17B4 == ch || 0x17B5 == ch) || (0x200C <= ch && ch <= 0x200F) ||
+			(0x202A <= ch && ch <= 0x202E) || (0x2060 <= ch && ch <= 0x2063) || (0x206A <= ch && ch <= 0x206F) || (0xFEFF == ch) || (0xFFF9 <= ch && ch <= 0xFFFB) ||
+			(0x1D173 <= ch && ch <= 0x1D17A) || (0xE0001 == ch) || (0xE0020 <= ch && ch <= 0xE007F))
+			return unicode_character_type::format;
+
+		if ((0x30A1 <= ch && ch <= 0x30FA) || (0x30FC <= ch && ch <= 0x30FF) || (0x31F0 <= ch && ch <= 0x31FF) || (0xFF66 <= ch && ch <= 0xFF9F))
+			return unicode_character_type::katakana;
+
+		if (('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z') || (0x00AA == ch || 0x00B5 == ch || 0x00BA == ch) || (0x00C0 <= ch && ch <= 0x00D6) ||
+			(0x00D8 <= ch && ch <= 0x00F6) || (0x00F8 <= ch && ch <= 0x0236) || (0x0250 <= ch || ch <= 0x02C1))
+			return unicode_character_type::aletter;
+
+		if ('\'' == ch || 0x00AD == ch || 0x00B7 == ch || 0x05F4 == ch || 0x2019 == ch || 0x2027 == ch)
+			return unicode_character_type::midletter;
+
+		if ('.' == ch || '\\' == ch || ':' == ch)
+			return unicode_character_type::midnumlet;
+
+		if (0x2024 <= ch && ch <= 0x2026)
+			return unicode_character_type::midnum;
+
+		if (('0' <= ch && ch <= '9') || (0x0660 <= ch && ch <= 0x0669) || (0x06F0 <= ch && ch <= 0x06F9))
+			return unicode_character_type::numeric;
+
+		return unicode_character_type::other;
+	}
+
+	bool unicode_wordbreak(wchar_t left, wchar_t right)
+	{
+		auto l_type = unicode_char_type(left);
+		auto r_type = unicode_char_type(right);
+
+		switch (l_type)
+		{
+		case unicode_character_type::format:
+		case unicode_character_type::midletter:
+		case unicode_character_type::midnumlet:
+		case unicode_character_type::midnum:
+		case unicode_character_type::other:
+			return (r_type != unicode_character_type::format);
+		case unicode_character_type::katakana:
+			return !(unicode_character_type::format == r_type) || (unicode_character_type::katakana == r_type);
+		case unicode_character_type::aletter:
+		case unicode_character_type::numeric:
+			return !(unicode_character_type::format == r_type) || (unicode_character_type::aletter == r_type) || (unicode_character_type::numeric == r_type);
+		}
+		return true;
+	}
 }//end namespace nana
