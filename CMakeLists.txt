@@ -29,6 +29,54 @@ project(nana VERSION      1.6.1
              HOMEPAGE_URL http://nanapro.org
              LANGUAGES CXX         )
 
+
+
+#######################     Main setting of Nana sources, targets and install
+
+set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
+set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+#    collect all source sub-directories in a list to avoid duplication here
+set(NANA_SOURCE_SUBDIRS             /.
+        /detail
+        /filesystem
+        /gui
+        /gui/detail
+        /gui/widgets
+        /gui/widgets/skeletons
+        /paint
+        /paint/detail
+        /system
+        /threads
+        )
+if(NANA_CMAKE_ENABLE_AUDIO)
+    list(APPEND NANA_SOURCE_SUBDIRS /audio
+            /audio/detail
+            )
+endif()
+# collect all source files in the source-sub-dir
+# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
+# and Use SOURCE_GROUP if all your sources are in the same directory
+foreach(subdir ${NANA_SOURCE_SUBDIRS})
+    aux_source_directory(${NANA_SOURCE_DIR}${subdir} SOURCES)
+endforeach()
+
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    add_definitions(-fmax-errors=3)
+endif()
+
+set(CMAKE_DEBUG_POSTFIX "_d")
+
+if(NANA_CMAKE_SHARED_LIB)
+    add_library(${PROJECT_NAME} SHARED ${SOURCES})
+else()
+    add_library(${PROJECT_NAME} STATIC ${SOURCES})
+endif()
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)     #
+target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
+
+
 option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
 option(NANA_CMAKE_ENABLE_PNG "Enable the use of PNG" OFF)
@@ -260,51 +308,6 @@ if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
     enable_testing()
 endif()
 
-
-#######################     Main setting of Nana sources, targets and install
-
-set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
-set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-#    collect all source sub-directories in a list to avoid duplication here
-set(NANA_SOURCE_SUBDIRS             /.
-                                    /detail
-                                    /filesystem
-                                    /gui
-                                    /gui/detail
-                                    /gui/widgets
-                                    /gui/widgets/skeletons
-                                    /paint
-                                    /paint/detail
-                                    /system
-                                    /threads
-                                    )
-if(NANA_CMAKE_ENABLE_AUDIO)
-    list(APPEND NANA_SOURCE_SUBDIRS /audio
-                                    /audio/detail
-                                    )
-endif()
-# collect all source files in the source-sub-dir
-# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
-# and Use SOURCE_GROUP if all your sources are in the same directory
-foreach(subdir ${NANA_SOURCE_SUBDIRS})
-    aux_source_directory(${NANA_SOURCE_DIR}${subdir} SOURCES)
-endforeach()
-
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-    add_definitions(-fmax-errors=3)
-endif()
-
-set(CMAKE_DEBUG_POSTFIX "_d")
-
-if(NANA_CMAKE_SHARED_LIB)
-    add_library(${PROJECT_NAME} SHARED ${SOURCES})
-else()
-    add_library(${PROJECT_NAME} STATIC ${SOURCES})
-endif()
-
-target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)     #
-target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
  #  Headers: use INCLUDE_DIRECTORIES
  #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
