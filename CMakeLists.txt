@@ -73,6 +73,60 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)     #
 target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
+#  Headers: use INCLUDE_DIRECTORIES
+#  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
+
+# Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
+# and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
+# unfortunatelly install() is still ignored by CLion:
+# https://intellij-support.jetbrains.com/hc/en-us/community/posts/205822949-CMake-install-isn-t-supported-
+install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)
+
+if(NANA_CMAKE_SHARED_LIB)
+    if(WIN32)
+        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+        if(DLLTOOL)
+            #generate the lib and def files needed by msvc
+            set_target_properties (${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}"
+                    ARCHIVE_OUTPUT_NAME    "${PROJECT_NAME}"
+                    LINK_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--output-def=${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def")
+
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                    COMMAND echo "       Generating import library"
+                    COMMAND "${DLLTOOL}" --dllname    "lib${PROJECT_NAME}.dll"
+                    --input-def  "lib${PROJECT_NAME}.def"
+                    --output-lib "lib${PROJECT_NAME}.lib")
+
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def"
+                    "${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.lib" DESTINATION lib)
+        endif()
+    endif()
+endif()
+
+message("")
+message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
+# Install the include directories too.
+if(NANA_CMAKE_INSTALL_INCLUDES)
+    install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
+    message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
+endif()
+
+
+######## Nana options
+
+add_definitions(-DNANA_IGNORE_CONF)
+if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
+    add_definitions(-DVERBOSE_PREPROCESSOR)
+endif()
+if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
+    add_definitions(-DNANA_AUTOMATIC_GUI_TESTING)
+    enable_testing()
+endif()
+
+
 
 option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
@@ -102,12 +156,6 @@ option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?"
 option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
 option(NANA_CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
 option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
-
-########### Compatibility with CMake 3.1
-if(POLICY CMP0054)
-  # http://www.cmake.org/cmake/help/v3.1/policy/CMP0054.html
-  cmake_policy(SET CMP0054 NEW)
-endif()
 
 ########### OS
 
@@ -299,43 +347,6 @@ endif()
 
 set(CMAKE_DEBUG_POSTFIX "_d")
 
-# Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
-# and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
-# unfortunatelly install() is still ignored by CLion:
-# https://intellij-support.jetbrains.com/hc/en-us/community/posts/205822949-CMake-install-isn-t-supported-
-install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib
-                                LIBRARY DESTINATION lib
-                                RUNTIME DESTINATION bin)
-
-if(NANA_CMAKE_SHARED_LIB)
-    if(WIN32)
-        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-        if(DLLTOOL)
-            #generate the lib and def files needed by msvc
-            set_target_properties (${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}"
-                                                   ARCHIVE_OUTPUT_NAME    "${PROJECT_NAME}"
-                                                   LINK_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--output-def=${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def")
-
-            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                               WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-                               COMMAND echo "       Generating import library"
-                               COMMAND "${DLLTOOL}" --dllname    "lib${PROJECT_NAME}.dll"
-                                                    --input-def  "lib${PROJECT_NAME}.def"
-                                                    --output-lib "lib${PROJECT_NAME}.lib")
-
-            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def"
-                          "${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.lib" DESTINATION lib)
-        endif()
-    endif()
-endif()
-
-message("")
-message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
-# Install the include directories too.
-if(NANA_CMAKE_INSTALL_INCLUDES)
-    install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
-    message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
-endif()
 
 
 # Just for information:
