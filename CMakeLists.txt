@@ -30,18 +30,18 @@ project(nana VERSION      1.6.1
         LANGUAGES CXX         )
 
 
-
+# instead of option(NANA_CMAKE_SHARED_LIB "Compile nana as a shared library." OFF)  ??
 option(BUILD_SHARED_LIBS "Compile nana as a shared library." OFF)
+set(NANA_CMAKE_SHARED_LIB ${BUILD_SHARED_LIBS})
+
 
 #######################     Main setting of Nana targets, sources and installs
 
-
 add_library(${PROJECT_NAME}  )
 
-
+###    collect all source sub-directories in a list to avoid duplication here
 set(NANA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
-set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-#    collect all source sub-directories in a list to avoid duplication here
+
 set(NANA_SOURCE_SUBDIRS
         /.
         /detail
@@ -61,37 +61,85 @@ if(NANA_CMAKE_ENABLE_AUDIO)
             /audio/detail
             )
 endif()
+
 # collect all source files in the source-sub-dir
-# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library
-# and Use SOURCE_GROUP if all your sources are in the same directory
 foreach(subdir ${NANA_SOURCE_SUBDIRS})
     aux_source_directory(${NANA_SOURCE_DIR}${subdir} SOURCES)
 endforeach()
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${NANA_INCLUDE_DIR})
+
+
+###    collect all headers sub-directories in a list to avoid duplication here
+# To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library / target_sources
+# and Use SOURCE_GROUP if all your sources are in the same directory
+set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${NANA_INCLUDE_DIR})
+
+set(NANA_INCLUDE_SUBDIRS
+        /.
+        /filesystem
+        /gui
+        /gui/detail
+        /gui/widgets
+        /gui/widgets/skeletons
+        /paint
+        /paint/detail
+        /pat
+        /system
+        /threads
+        )
+if(NANA_CMAKE_ENABLE_AUDIO)
+    list(APPEND NANA_INCLUDE_SUBDIRS
+            /audio
+            /audio/detail
+            )
+endif()
+
+foreach(subdir ${NANA_INCLUDE_SUBDIRS})
+    aux_source_directory(${NANA_INCLUDE_DIR}/nana${subdir} HEADERS)
+endforeach()
+
+# Install the include directories too.
+if(NANA_CMAKE_INSTALL_INCLUDES)
+    target_sources(${PROJECT_NAME} PRIVATE ${HEADERS})
+    install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
+    foreach(subdir ${NANA_INCLUDE_SUBDIRS})
+        aux_source_directory($<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/nana${subdir}> PUBLIC_HEADERS)
+    endforeach()
+    target_sources(${PROJECT_NAME} INTERFACE ${PUBLIC_HEADERS})
+    message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
+else()
+    target_sources(${PROJECT_NAME} PUBLIC ${HEADERS})
+endif()
+
+
+
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)     #
 target_link_libraries(${PROJECT_NAME} ${NANA_LINKS})
 
 #  Headers: use INCLUDE_DIRECTORIES
 #  Libraries: use FIND_LIBRARY and link with the result of it (try to avoid LINK_DIRECTORIES)
 
-# Installing: the static "nana lib" will be in DESTDIR/CMAKE_INSTALL_PREFIX/lib/
-# and the includes files "include/nana/" in DESTDIR/CMAKE_INSTALL_PREFIX/include/nana/
-# unfortunatelly install() is still ignored by CLion:
-# https://intellij-support.jetbrains.com/hc/en-us/community/posts/205822949-CMake-install-isn-t-supported-
-install(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib
+message("")
+message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
+# Actually in DESTDIR/CMAKE_INSTALL_PREFIX/lib but in windows there is no DESTDIR/ part.
+install(TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin)
 
+# test BUILD_SHARED_LIBS directly?
 if(NANA_CMAKE_SHARED_LIB)
     if(WIN32)
         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
         if(DLLTOOL)
             #generate the lib and def files needed by msvc
-            set_target_properties (${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}"
-                    ARCHIVE_OUTPUT_NAME    "${PROJECT_NAME}"
-                    LINK_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--output-def=${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def")
+            set_target_properties (${PROJECT_NAME}
+                    PROPERTIES OUTPUT_NAME            "${PROJECT_NAME}"
+                               ARCHIVE_OUTPUT_NAME    "${PROJECT_NAME}"
+                    LINK_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--output-def=${CMAKE_CURRENT_BINARY_DIR}/lib${PROJECT_NAME}.def"
+                    )
 
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -106,8 +154,6 @@ if(NANA_CMAKE_SHARED_LIB)
     endif()
 endif()
 
-message("")
-message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
 # Install the include directories too.
 if(NANA_CMAKE_INSTALL_INCLUDES)
     install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include)
@@ -354,6 +400,8 @@ include(CMakePrintHelpers)
 
 message ("")
 cmake_print_variables(SOURCES)
+cmake_print_variables(HEADERS)
+cmake_print_variables(PUBLIC_HEADERS)
 
 
 message ( "CMAKE_CXX_COMPILER_ID     = "  ${CMAKE_CXX_COMPILER_ID})
