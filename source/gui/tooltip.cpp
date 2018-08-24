@@ -1,7 +1,7 @@
 /*
  *	A Tooltip Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,6 +15,7 @@
 #include <nana/gui/timer.hpp>
 #include <nana/gui/screen.hpp>
 #include <memory>
+#include <map>
 
 namespace nana
 {
@@ -157,7 +158,14 @@ namespace nana
 
 			class controller
 			{
-				typedef std::pair<window, std::string> pair_t;
+				struct tip_value
+				{
+					std::string text;
+					event_handle evt_msenter;
+					event_handle evt_msleave;
+					event_handle evt_msdown;
+					event_handle evt_destroy;
+				};
 
 				typedef std::function<void(tooltip_interface*)> deleter_type;
 
@@ -207,7 +215,7 @@ namespace nana
 					if (str.empty())
 						_m_untip(wd);
 					else
-						_m_get(wd).second = str;
+						_m_get(wd).text = str;
 				}
 
 				void show(const std::string& text, const point* pos, std::size_t duration)
@@ -236,35 +244,35 @@ namespace nana
 					window_.reset();
 
 					//Destroy the tooltip controller when there are not tooltips.
-					if (cont_.empty())
+					if (table_.empty())
 						instance(true);
 				}
 			private:
 				void _m_untip(window wd)
 				{
-					for (auto i = cont_.begin(); i != cont_.end(); ++i)
+					auto i = table_.find(wd);
+					if(i != table_.end())
 					{
-						if (i->first == wd)
-						{
-							cont_.erase(i);
+						API::umake_event(i->second.evt_msdown);
+						API::umake_event(i->second.evt_msenter);
+						API::umake_event(i->second.evt_msleave);
+						API::umake_event(i->second.evt_destroy);
 
-							if (cont_.empty())
-							{
-								window_.reset();
-								instance(true);
-							}
-							return;
-						}
+						table_.erase(i);
+					}
+
+					if (table_.empty())
+					{
+						window_.reset();
+						instance(true);
 					}
 				}
 			private:
-				pair_t& _m_get(window wd)
+				tip_value& _m_get(window wd)
 				{
-					for (auto & pr : cont_)
-					{
-						if (pr.first == wd)
-							return pr;
-					}
+					auto i = table_.find(wd);
+					if (i != table_.end())
+						return i->second;
 
 					auto & events = API::events(wd);
 
@@ -272,28 +280,29 @@ namespace nana
 					{
 						if (event_code::mouse_enter == arg.evt_code)
 						{
-							auto & pr = _m_get(arg.window_handle);
-							if (pr.second.size())
-								this->show(pr.second, nullptr, 0);
+							auto & value = _m_get(arg.window_handle);
+							if (value.text.size())
+								this->show(value.text, nullptr, 0);
 						}
 						else
 							this->close();
 					};
 
-					events.mouse_enter.connect(mouse_fn);
-					events.mouse_leave.connect(mouse_fn);
-					events.mouse_down.connect(mouse_fn);
+					auto & value = table_[wd];
 
-					events.destroy.connect([this](const arg_destroy& arg){
+					value.evt_msenter = events.mouse_enter.connect(mouse_fn);
+					value.evt_msleave = events.mouse_leave.connect(mouse_fn);
+					value.evt_msdown = events.mouse_down.connect(mouse_fn);
+
+					value.evt_destroy = events.destroy.connect([this](const arg_destroy& arg){
 						_m_untip(arg.window_handle);
 					});
 
-					cont_.emplace_back(wd, std::string());
-					return cont_.back();
+					return value;
 				}
 			private:
 				std::unique_ptr<tooltip_interface, deleter_type> window_;
-				std::vector<pair_t> cont_;
+				std::map<window, tip_value> table_;
 			};
 		}//namespace tooltip
 	}//namespace drawerbase
