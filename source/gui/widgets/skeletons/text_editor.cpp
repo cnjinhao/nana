@@ -2086,7 +2086,7 @@ namespace nana{	namespace widgets
 
 		void text_editor::copy() const
 		{
-			//Stops copying text if the text_editor is masked.
+			//Disallows copying text if the text_editor is masked.
 			if (mask_char_)
 				return;
 
