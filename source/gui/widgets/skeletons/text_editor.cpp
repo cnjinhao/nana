@@ -1009,8 +1009,12 @@ namespace nana{	namespace widgets
 					    auto ki = keywords.schemes.find(ds.scheme);
 					    if ((ki != keywords.schemes.end()) && ki->second)
 					    {
+#ifdef _nana_std_has_emplace_return_type
+							auto & last = entities.emplace_back();
+#else
 							entities.emplace_back();
 							auto & last = entities.back();
+#endif
 							last.begin = c_str + pos;
 							last.end = last.begin + ds.text.size();
 							last.scheme = ki->second.get();

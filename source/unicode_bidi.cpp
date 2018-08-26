@@ -1,4 +1,5 @@
 #include <nana/unicode_bidi.hpp>
+#include <nana/c++defines.hpp>
 
 namespace nana
 {
@@ -611,8 +612,12 @@ namespace nana
 
 		void unicode_bidi::_m_push_entity(const char_type * begin, const char_type *end, unsigned level, bidi_char bidi_char_type)
 		{
+#ifdef _nana_std_has_emplace_return_type
+			auto & e = levels_.emplace_back();
+#else
 			levels_.emplace_back();
 			auto & e = levels_.back();
+#endif
 			e.begin = begin;
 			e.end = end;
 			e.level = level;

@@ -226,8 +226,12 @@ namespace nana
 				{
 					if(fbp->target.size() || fbp->url.size())
 					{
+#ifdef _nana_std_has_emplace_return_type
+						auto & tr = traceable_.emplace_back();
+#else
 						traceable_.emplace_back();
 						auto & tr = traceable_.back();
+#endif
 						tr.r.x = x;
 						tr.r.y = y;
 						tr.r.dimension(sz);
@@ -398,7 +402,7 @@ namespace nana
 						//make a visual line for existing vsline elements
 						if (text_pos)
 						{
-#ifdef _nana_std_has_returnable_emplace_back
+#ifdef _nana_std_has_emplace_return_type
 							auto & vsline = rs.vslines.emplace_back();
 #else
 							rs.vslines.emplace_back();
@@ -449,7 +453,7 @@ namespace nana
 								if (text_begin + sub_text_len < data->text().size())
 								{
 									//make a new visual line
-#ifdef _nana_std_has_returnable_emplace_back
+#ifdef _nana_std_has_emplace_return_type
 									auto & vsline = rs.vslines.emplace_back();
 #else
 									rs.vslines.emplace_back();
@@ -483,7 +487,7 @@ namespace nana
 
 					if (!vsline_elements.empty())
 					{
-#ifdef _nana_std_has_returnable_emplace_back
+#ifdef _nana_std_has_emplace_return_type
 						auto & vsline = rs.vslines.emplace_back();
 #else
 						rs.vslines.emplace_back();
@@ -515,14 +519,14 @@ namespace nana
 #endif
 
 					text_px = 0;
-					for (std::size_t i = 0; i < text.size(); ++i)
+					for (unsigned i = 0; i < text.size(); ++i)
 					{
 						if (text_px + pxbuf[i] > limited_width_px)
 							return i;
 
 						text_px += pxbuf[i];
 					}
-					return text.size();
+					return static_cast<unsigned>(text.size());
 				}
 
 				bool _m_foreach_visual_line(graph_reference graph, render_status& rs)
@@ -542,7 +546,7 @@ namespace nana
 						}
 
 						++rs.index;	//next line index
-						rs.pos.y += vsline.extent_height_px;
+						rs.pos.y += static_cast<int>(vsline.extent_height_px);
 
 						if (rs.pos.y > bottom)
 							return false;
