@@ -1,6 +1,6 @@
 /*
  *	A Widget Iterator Template
- *	Copyright(C) 2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2017-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -23,6 +23,7 @@ namespace nana {
 			template<typename Category, typename T>
 			class widget_iterator
 			{
+			public:
 				using iterator_category = Category;
 				using value_type = T;
 				using difference_type = std::ptrdiff_t;

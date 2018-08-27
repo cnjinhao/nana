@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -34,6 +34,14 @@ namespace detail
 
 			unsigned extra_width;	//extra border size, it is useful in Windows, ignore in X11 always 0
 			unsigned extra_height;	//extra border size, it is useful in Windows, ignore in X11 always 0
+		};
+
+		struct frame_extents
+		{
+			int left;
+			int right;
+			int top;
+			int bottom;
 		};
 
 		using native_string_type = ::nana::detail::native_string_type;
@@ -70,14 +78,15 @@ namespace detail
 		static void bring_top(native_window_type, bool activated);
 		static void	set_window_z_order(native_window_type, native_window_type wd_after, z_order_action action_if_no_wd_after);
 
+		static frame_extents window_frame_extents(native_window_type);
 		static bool	window_size(native_window_type, const size&);
 		static void	get_window_rect(native_window_type, rectangle&);
 		static void	window_caption(native_window_type, const native_string_type&);
 		static native_string_type	window_caption(native_window_type);
 		static void	capture_window(native_window_type, bool);
 		static nana::point	cursor_position();
-		static native_window_type get_owner_window(native_window_type);
-		static native_window_type parent_window(native_window_type);
+
+		static native_window_type get_window(native_window_type wd, window_relationship);
 		static native_window_type parent_window(native_window_type child, native_window_type new_parent, bool returns_previous);
 		//For Caret
 		static void caret_create(native_window_type, const ::nana::size&);

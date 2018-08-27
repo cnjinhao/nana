@@ -1,6 +1,6 @@
 /*
  *	Message Dispatcher Implementation
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -26,6 +26,7 @@
 #include <condition_variable>
 #include <memory>
 #include <thread>
+#include <atomic>
 
 namespace nana
 {
@@ -221,6 +222,8 @@ namespace detail
 					case 0:
 						msg_pack.kind = msg_pack.kind_xevent;
 						msg_pack.u.xevent = event;
+						_m_msg_dispatch(msg_pack);
+						break;
 					case 1:
 						_m_msg_dispatch(msg_pack);
 					}
@@ -338,7 +341,7 @@ namespace detail
 
 	private:
 		Display * display_;
-		volatile bool is_work_{ false };
+		std::atomic<bool> is_work_{ false };
 		std::unique_ptr<std::thread> thrd_;
 
 		struct table_tag

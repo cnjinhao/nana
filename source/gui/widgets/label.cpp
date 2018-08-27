@@ -20,6 +20,8 @@
 #include <stdexcept>
 #include <sstream>
 
+#define VISUAL_LINES
+
 namespace nana
 {
 	namespace drawerbase
@@ -28,6 +30,7 @@ namespace nana
 		{
 			class renderer
 			{
+#ifndef VISUAL_LINES
 				typedef widgets::skeletons::dstream::linecontainer::iterator iterator;
 
 				struct pixel_tag
@@ -37,6 +40,32 @@ namespace nana
 					std::size_t baseline;	//The baseline for drawing text.
 					std::vector<iterator> values;	//line values
 				};
+#else
+				//Iterator of content element in a line.
+				using content_element_iterator = widgets::skeletons::dstream::linecontainer::const_iterator; //subsitute for member type iterator
+
+				struct visual_line //subsitute of pixel_tag
+				{
+					struct element
+					{
+						content_element_iterator content_element;
+						std::pair<std::size_t, std::size_t> range; //A part of text in a text element. first: text begin, second: text length
+
+						element(const content_element_iterator& iterator, std::size_t range_begin, std::size_t range_end):
+							content_element(iterator),
+							range(range_begin, range_end)
+						{
+						}
+					};
+
+					int x_base;	//The x position where this line starts.
+
+					std::size_t extent_height_px;
+					std::size_t baseline; //The baseline for rendering text.
+					std::vector<element> elements; //description of text element in this rendering line.
+				};
+
+#endif
 
 				//this is a helper variable, it just keeps the status while drawing.
 				struct render_status
@@ -46,8 +75,12 @@ namespace nana
 					align_v text_align_v;
 
 					nana::point pos;
+#ifndef VISUAL_LINES
 					std::vector<pixel_tag> pixels;
-					std::size_t index;
+#else
+					std::vector<visual_line> vslines; //The lines description of a line of text. substitute of member pixels.
+#endif
+					std::size_t index;	//indicates the current rendering visual line.
 				};
 
 				struct traceable
@@ -102,18 +135,32 @@ namespace nana
 					rs.text_align = th;
 					rs.text_align_v = tv;
 
+#ifndef VISUAL_LINES
 					std::deque<std::vector<pixel_tag> > pixel_lines;
+#else
+					//All visual lines data of whole text.
+					std::deque<std::vector<visual_line>> content_lines;
+#endif
 
 					std::size_t extent_v_pixels = 0;	//the pixels, in height, that text will be painted.
 
 					for (auto & line : dstream_)
 					{
+#ifndef VISUAL_LINES
 						_m_line_pixels(line, def_line_pixels, rs);
 
 						for (auto & m : rs.pixels)
 							extent_v_pixels += m.pixels;
 
 						pixel_lines.emplace_back(std::move(rs.pixels));
+#else
+						_m_prepare_visual_lines(graph, line, def_line_pixels, rs);
+
+						for (auto & vsline : rs.vslines)
+							extent_v_pixels += vsline.extent_height_px;
+
+						content_lines.emplace_back(std::move(rs.vslines));
+#endif
 
 						if(extent_v_pixels >= graph.height())
 							break;
@@ -129,13 +176,17 @@ namespace nana
 					else
 						rs.pos.y = 0;
 
+#ifndef VISUAL_LINES
 					auto pixels_iterator = pixel_lines.begin();
-
+#else
+					auto vsline_iterator = content_lines.begin();
+#endif
 					for (auto & line : dstream_)
 					{
 						if (rs.pos.y >= static_cast<int>(graph.height()))
 							break;
 
+#ifndef VISUAL_LINES
 						rs.index = 0;
 						rs.pixels.clear();
 
@@ -148,6 +199,17 @@ namespace nana
 							break;
 
 						rs.pos.y += static_cast<int>(rs.pixels.back().pixels);
+#else
+						rs.index = 0;
+						rs.vslines.clear();
+						rs.vslines.swap(*vsline_iterator++);
+						rs.pos.x = rs.vslines.front().x_base;
+
+						if (!_m_foreach_visual_line(graph, rs))
+							break;
+
+						rs.pos.y += static_cast<int>(rs.vslines.back().extent_height_px);
+#endif
 					}
 
 					graph.typeface(pre_font);
@@ -194,8 +256,13 @@ namespace nana
 
 					for(auto & line: dstream_)
 					{
+#ifndef VISUAL_LINES
 						rs.pixels.clear();
 						unsigned w = _m_line_pixels(line, def_line_pixels, rs);
+#else
+						rs.vslines.clear();
+						auto w = _m_prepare_visual_lines(graph, line, def_line_pixels, rs);
+#endif
 
 						if(limited && (w > limited))
 							w = limited;
@@ -203,8 +270,13 @@ namespace nana
 						if(retsize.width < w)
 							retsize.width = w;
 
+#ifndef VISUAL_LINES
 						for (auto & px : rs.pixels)
 							retsize.height += static_cast<unsigned>(px.pixels);
+#else
+						for (auto& vsline : rs.vslines)
+							retsize.height += static_cast<unsigned>(vsline.extent_height_px);
+#endif
 					}
 
 					return retsize;
@@ -315,6 +387,7 @@ namespace nana
 					}
 				}
 
+#ifndef VISUAL_LINES
 				void _m_align_x_base(const render_status& rs, pixel_tag & px, unsigned w) noexcept
 				{
 					switch(rs.text_align)
@@ -330,7 +403,209 @@ namespace nana
 						break;
 					}
 				}
+#else
+				void _m_prepare_x(const render_status& rs, visual_line & vsline, unsigned w) noexcept
+				{
+					switch (rs.text_align)
+					{
+					case align::left:
+						vsline.x_base = 0;
+						break;
+					case align::center:
+						vsline.x_base = (static_cast<int>(rs.allowed_width - w) >> 1);
+						break;
+					case align::right:
+						vsline.x_base = static_cast<int>(rs.allowed_width - w);
+						break;
+					}
+				}
+#endif
 
+#ifdef VISUAL_LINES
+
+				/**
+				 * prepare data for rendering a line of text.
+				 */
+				unsigned _m_prepare_visual_lines(graph_reference graph, dstream::linecontainer& line, unsigned def_line_px, render_status& rs)
+				{
+					unsigned abs_text_px = 0;
+					unsigned max_ascent = 0;
+					unsigned max_descent = 0;
+					unsigned max_content_height = 0;
+
+					int text_pos = 0;
+
+					std::vector<visual_line::element> vsline_elements;
+
+					for (auto i = line.cbegin(); i != line.cend(); ++i)
+					{
+						auto const data = i->data_ptr;
+						auto fblock = i->fblock_ptr;
+
+						abs_text_px += data->size().width;
+
+						unsigned ascent = 0;
+						unsigned descent = 0;
+
+
+						auto extent_size = data->size();
+
+						//Check if the content is displayed in current line.
+						if ((0 == rs.allowed_width) || (text_pos + extent_size.width <= rs.allowed_width))
+						{
+							text_pos += static_cast<int>(extent_size.width);
+
+							//Adjust height of extent_size for special text alignement.
+							if (fblock::aligns::baseline == fblock->text_align)
+							{
+								ascent = static_cast<unsigned>(data->ascent());
+								descent = static_cast<unsigned>(extent_size.height - ascent);
+
+								if (max_descent < descent)
+									max_descent = descent;
+
+								if ((false == data->is_text()) && (extent_size.height < max_ascent + max_descent))
+									extent_size.height = max_ascent + max_descent;
+							}
+
+							if (max_ascent < ascent)	max_ascent = ascent;
+							if (max_descent < descent)	max_descent = descent;
+							if (max_content_height < extent_size.height)	max_content_height = extent_size.height;
+							vsline_elements.emplace_back(i, 0, data->text().size());
+
+							continue;
+						}
+
+						//make a visual line for existing vsline elements
+						if (text_pos)
+						{
+#ifdef _nana_std_has_returnable_emplace_back
+							auto & vsline = rs.vslines.emplace_back();
+#else
+							rs.vslines.emplace_back();
+							auto & vsline = rs.vslines.back();
+#endif
+							_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos));
+
+							if (max_ascent + max_descent > max_content_height)
+								max_content_height = max_descent + max_ascent;
+							else
+								max_ascent = max_content_height - max_descent;
+
+							vsline.extent_height_px = max_content_height;
+							vsline.baseline = max_ascent;
+							vsline.elements.swap(vsline_elements);
+						}
+
+						text_pos = 0;
+						max_content_height = max_ascent = max_descent = 0;
+						//Adjust height of extent_size for special text alignement.
+						if (fblock::aligns::baseline == fblock->text_align)
+						{
+							ascent = static_cast<unsigned>(data->ascent());
+							descent = static_cast<unsigned>(extent_size.height - ascent);
+
+							if (max_descent < descent)
+								max_descent = descent;
+
+							if ((false == data->is_text()) && (extent_size.height < max_ascent + max_descent))
+								extent_size.height = max_ascent + max_descent;
+						}
+
+						if (max_ascent < ascent)	max_ascent = ascent;
+						if (max_descent < descent)	max_descent = descent;
+						if (max_content_height < extent_size.height)	max_content_height = extent_size.height;
+
+						if (data->is_text())
+						{
+							_m_change_font(graph, fblock);
+							//Split a text into multiple lines
+							auto rest_extent_size = extent_size.width;
+							std::size_t text_begin = 0;
+							while (text_begin < data->text().size())
+							{
+								unsigned sub_text_px = 0;
+								auto sub_text_len = _m_fit_text(graph, data->text().substr(text_begin), rs.allowed_width, sub_text_px);
+
+								if (text_begin + sub_text_len < data->text().size())
+								{
+									//make a new visual line
+#ifdef _nana_std_has_returnable_emplace_back
+									auto & vsline = rs.vslines.emplace_back();
+#else
+									rs.vslines.emplace_back();
+									auto & vsline = rs.vslines.back();
+#endif
+									_m_prepare_x(rs, vsline, sub_text_px);
+
+									vsline.extent_height_px = max_content_height;
+									vsline.baseline = max_ascent;
+									vsline.elements.emplace_back(i, text_begin, sub_text_len);
+								}
+								else
+								{
+									//the last part, write it to vsline_elements to keep the status for next line element(next i)
+									vsline_elements.emplace_back(i, text_begin, sub_text_len);
+
+									text_pos = sub_text_px;
+								}
+
+								text_begin += sub_text_len;
+							}
+						}
+						else
+						{
+							//the last part, write it to vsline_elements to keep the status for next line element(next i)
+							vsline_elements.emplace_back(i, 0, 0);
+
+							text_pos = static_cast<int>(i->data_ptr->size().width);
+						}
+					}
+
+					if (!vsline_elements.empty())
+					{
+#ifdef _nana_std_has_returnable_emplace_back
+						auto & vsline = rs.vslines.emplace_back();
+#else
+						rs.vslines.emplace_back();
+						auto & vsline = rs.vslines.back();
+#endif
+						_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos));
+
+						if (max_ascent + max_descent > max_content_height)
+							max_content_height = max_descent + max_ascent;
+						else
+							max_ascent = max_content_height - max_descent;
+
+						vsline.extent_height_px = max_content_height;
+						vsline.baseline = max_ascent;
+						vsline.elements.swap(vsline_elements);
+					}
+
+					return abs_text_px;
+				}
+
+				//Get the length of characters in a text whose length in pixels doesn't beyond the limited width.
+				static unsigned _m_fit_text(graph_reference graph, const std::wstring& text, unsigned limited_width_px, unsigned& text_px) noexcept
+				{
+#ifdef _nana_std_has_string_view
+					auto pxbuf = graph.glyph_pixels(text);
+#else
+					std::unique_ptr<unsigned[]> pxbuf(new unsigned[text.size()]);
+					graph.glyph_pixels(text.c_str(), text.size(), pxbuf.get());
+#endif
+
+					text_px = 0;
+					for (std::size_t i = 0; i < text.size(); ++i)
+					{
+						if (text_px + pxbuf[i] > limited_width_px)
+							return i;
+
+						text_px += pxbuf[i];
+					}
+					return text.size();
+				}
+#else
 				unsigned _m_line_pixels(dstream::linecontainer& line, unsigned def_line_pixels, render_status & rs)
 				{
 					if (line.empty())
@@ -441,7 +716,9 @@ namespace nana
 					}
 					return total_w;
 				}
+#endif
 
+#ifndef VISUAL_LINES
 				bool _m_each_line(graph_reference graph, dstream::linecontainer&, render_status& rs)
 				{
 					std::wstring text;
@@ -501,7 +778,36 @@ namespace nana
 					}
 					return (rs.pos.y <= lastpos);
 				}
+#else
+				bool _m_foreach_visual_line(graph_reference graph, render_status& rs)
+				{
+					std::wstring text;
+					
+					content_element_iterator block_start;
 
+					auto const bottom = static_cast<int>(graph.height()) - 1;
+
+					for (auto & vsline : rs.vslines)
+					{
+						rs.pos.x = vsline.x_base;
+						for (auto& content_elm : vsline.elements)
+						{
+							_m_draw_vsline_element(graph, content_elm, rs);
+						}
+
+						++rs.index;	//next line index
+						rs.pos.y += vsline.extent_height_px;
+
+						if (rs.pos.y > bottom)
+							return false;
+					}
+
+					return (rs.pos.y <= bottom);
+				}
+#endif
+
+
+#if 0 //deprecated
 				static bool _m_overline(const render_status& rs, int right, bool equal_required) noexcept
 				{
 					if(align::left == rs.text_align)
@@ -509,7 +815,24 @@ namespace nana
 
 					return (equal_required ? rs.pixels[rs.index].x_base <= 0 : rs.pixels[rs.index].x_base < 0);
 				}
+#endif
 
+#ifdef VISUAL_LINES
+				static int _m_vsline_element_top(const visual_line& vsline, fblock* fblock_ptr, const data* data_ptr) noexcept
+				{
+					switch (fblock_ptr->text_align)
+					{
+					case fblock::aligns::center:
+						return static_cast<int>(vsline.extent_height_px - data_ptr->size().height) / 2;
+					case fblock::aligns::bottom:
+						return static_cast<int>(vsline.extent_height_px - data_ptr->size().height);
+					case fblock::aligns::baseline:
+						return static_cast<int>(vsline.baseline - (data_ptr->is_text() ? data_ptr->ascent() : data_ptr->size().height));
+					default:	break;
+					}
+					return 0;
+				}
+#else
 				static int _m_text_top(const pixel_tag& px, fblock* fblock_ptr, const data* data_ptr)
 				{
 					switch(fblock_ptr->text_align)
@@ -524,7 +847,52 @@ namespace nana
 					}
 					return 0;
 				}
+#endif
 
+#ifdef VISUAL_LINES
+				void _m_draw_vsline_element(graph_reference graph, const visual_line::element& vsline_elm, render_status& rs)
+				{
+					auto data = vsline_elm.content_element->data_ptr;
+					auto fblock = vsline_elm.content_element->fblock_ptr;
+
+					if (data->is_text())
+					{
+						auto const text = data->text().c_str() + vsline_elm.range.first;
+						auto const reordered = unicode_reorder(text, vsline_elm.range.second);
+
+						_m_change_font(graph, fblock);
+						for (auto & bidi : reordered)
+						{
+							auto extent_size = data->size();
+#ifdef _nana_std_has_string_view
+							std::wstring_view text_sv{ bidi.begin, static_cast<std::size_t>(bidi.end - bidi.begin) };
+							if (data->text().size() != text_sv.size())
+								extent_size = graph.text_extent_size(text_sv);
+
+							const int y = rs.pos.y + _m_vsline_element_top(rs.vslines[rs.index], fblock, data);
+							graph.string({ rs.pos.x, y }, text_sv, _m_fgcolor(fblock));
+#else
+							std::wstring text{ bidi.begin, static_cast<std::size_t>(bidi.end - bidi.begin) };
+							if (data->text().size() != text.size())
+								extent_size = graph.text_extent_size(text);
+
+							const int y = rs.pos.y + _m_vsline_element_top(rs.vslines[rs.index], fblock, data);
+							graph.string({ rs.pos.x, y }, text, _m_fgcolor(fblock));
+#endif
+							_m_insert_if_traceable(rs.pos.x, y, extent_size, fblock);
+							rs.pos.x += static_cast<int>(extent_size.width);
+						}
+					}
+					else
+					{
+						int y = rs.pos.y + _m_vsline_element_top(rs.vslines[rs.index], fblock, data);
+
+						data->nontext_render(graph, rs.pos.x, y);
+						_m_insert_if_traceable(rs.pos.x, y, data->size(), fblock);
+						rs.pos.x += static_cast<int>(data->size().width);
+					}
+				}
+#else
 				void _m_draw_block(graph_reference graph, const std::wstring& s, dstream::linecontainer::iterator block_start, render_status& rs)
 				{
 					auto const reordered = unicode_reorder(s.data(), s.length());
@@ -550,9 +918,35 @@ namespace nana
 							fblock * fblock_ptr = i->fblock_ptr;
 							data * data_ptr = i->data_ptr;
 
+#if 1
+							const int range_text_area = static_cast<int>(rs.allowed_width) - rs.pos.x;
+
+							_m_change_font(graph, fblock_ptr);
+
+							auto text_extent_size = data_ptr->size();
+#ifndef _nana_std_has_string_view
+							std::wstring_view text_sv{ data_ptr->text().c_str() + text_range.first, text_range.second };
+							if (data_ptr->text().size() != text_sv.size())
+								text_extent_size = graph.text_extent_size(text_sv);
+#else
+							auto text_sv = data_ptr->text().substr(text_range.first, text_range.second);
+							if (data_ptr->text().size() != text_sv.size())
+								text_extent_size = graph.text_extent_size(text_sv);
+#endif
+							if ((static_cast<int>(text_extent_size.width) > range_text_area) && (rs.pos.x != px.x_base))
+							{
+								//Change a new line
+								rs.pos.y += static_cast<int>(px.pixels);
+								px = rs.pixels[++rs.index];
+								rs.pos.x = px.x_base;
+							}
+
+							const int y = rs.pos.y + _m_text_top(px, fblock_ptr, data_ptr);
+							graph.string({ rs.pos.x, y }, text_sv, _m_fgcolor(fblock_ptr));
+#else
 							const int w = static_cast<int>(rs.allowed_width) - rs.pos.x;
-							nana::size sz = data_ptr->size();
-							if ((static_cast<int>(sz.width) > w) && (rs.pos.x != px.x_base))
+							nana::size text_extent_size = data_ptr->size();
+							if ((static_cast<int>(text_extent_size.width) > w) && (rs.pos.x != px.x_base))
 							{
 								//Change a new line
 								rs.pos.y += static_cast<int>(px.pixels);
@@ -569,7 +963,7 @@ namespace nana
 							if (text_range.second != text_sv.size())
 							{
 								text_sv = text_sv.substr(text_range.first, text_range.second);
-								sz = graph.text_extent_size(text_sv);
+								text_extent_size = graph.text_extent_size(text_sv);
 							}
 
 							graph.string({ rs.pos.x, y }, text_sv, _m_fgcolor(fblock_ptr));
@@ -581,15 +975,15 @@ namespace nana
 							else
 							{
 								auto str = data_ptr->text().substr(text_range.first, text_range.second);
-								sz = graph.text_extent_size(str);
+								text_extent_size = graph.text_extent_size(str);
 
 								graph.string({ rs.pos.x, y }, str, _m_fgcolor(fblock_ptr));
 							}
 #endif
+#endif //#if 0
 
-
-							_m_insert_if_traceable(rs.pos.x, y, sz, fblock_ptr);
-							rs.pos.x += static_cast<int>(sz.width);
+							_m_insert_if_traceable(rs.pos.x, y, text_extent_size, fblock_ptr);
+							rs.pos.x += static_cast<int>(text_extent_size.width);
 
 							if(text_range.second < len)
 							{
@@ -601,6 +995,7 @@ namespace nana
 						}
 					}
 				}
+#endif //VISUAL_LINES
 
 				static std::pair<std::size_t, std::size_t> _m_locate(dstream::linecontainer::iterator& i, std::size_t pos)
 				{

@@ -193,7 +193,7 @@ namespace nana{ namespace pat{
 			cwrapper_.reset();
 		}
 
-		operator operator_bool_t() const volatile noexcept
+		operator operator_bool_t() const noexcept
 		{
 			return (fast_ptr_ ? &inner_bool::true_stand : nullptr);
 		}
