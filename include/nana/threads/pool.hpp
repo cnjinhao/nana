@@ -1,6 +1,6 @@
 /*
  *	A Thread Pool Implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,10 +13,14 @@
 #ifndef NANA_THREADS_POOL_HPP
 #define NANA_THREADS_POOL_HPP
 
+#include <nana/c++defines.hpp>
 #include <nana/traits.hpp>
 #include <functional>
 #include <cstddef>
 
+#ifndef STD_THREAD_NOT_SUPPORTED
+#	include <thread>
+#endif
 
 namespace nana{
    /// Some mutex classes for synchronizing.
@@ -58,9 +62,12 @@ namespace threads
 		pool(const pool&) = delete;
 		pool& operator=(const pool&) = delete;
 	public:
-		pool();                             ///< Creates a group of threads.
+#ifndef STD_THREAD_NOT_SUPPORTED
+		pool(unsigned thread_number = std::thread::hardware_concurrency());    ///< Creates a group of threads.
+#else
+		pool(unsigned thread_number = 0);
+#endif
 		pool(pool&&);
-		pool(std::size_t thread_number);    ///< Creates a number of threads specifed by thread_number.
 		~pool();    ///< waits for the all running tasks till they are finished and skips all the queued tasks.
 
 		pool& operator=(pool&&);

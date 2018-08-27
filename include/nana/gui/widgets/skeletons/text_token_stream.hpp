@@ -96,13 +96,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return std::stoi(idstr_, nullptr, 0);
 		}
 	private:
-		/*
-		static bool _m_unicode_word_breakable(wchar_t ch)	//deprecated
-		{
-			return ((0x4E00 <= ch) && (ch <= 0x9FFF));
-		}
-		*/
-
 		static bool _m_unicode_word_breakable(const wchar_t* ch) noexcept
 		{
 			if (*ch)

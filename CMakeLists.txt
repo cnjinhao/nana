@@ -5,7 +5,7 @@
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Qiangqiang Wu - Add biicode support
 #   Ariel Vina-Rodriguez (qPCR4vir)
-#	Pavel O. - fix compilation with boost::filesystem (#281)
+#   Pavel O. - fix compilation with boost::filesystem (#281)
 #   Frostbane - Add option for compiling a shared library (#263,#265)
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
@@ -156,25 +156,25 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     if(NANA_CMAKE_SHARED_LIB)
         list(APPEND NANA_LINKS -lgcc -lstdc++ -pthread)
     else()
-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++  -pthread")
-        # message("Setting NANA_LINKS to -static-libgcc -static-libstdc++  -pthread or ${NANA_LINKS}")
+        if(MINGW)
+            set(CMAKE_EXE_LINKER_FLAGS "-static -pthread")
+        else()
+            set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -pthread")
+        endif()
     endif(NANA_CMAKE_SHARED_LIB)
 
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-		# GCC 4.9
+        # GCC 4.9
         list(APPEND NANA_LINKS "-lboost_system -lboost_thread")
-
     elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.3)
-    	# IS_GNUCXX < 5.3
+        # IS_GNUCXX < 5.3
     else()
         list(APPEND NANA_LINKS -lstdc++fs)
-	endif()
-
-endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW
+    endif()
+endif()
 
 
 if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
-  # set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
   list(APPEND NANA_LINKS -stdlib=libstdc++)
 endif ()
 

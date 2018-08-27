@@ -191,14 +191,14 @@ namespace nana{	namespace widgets
 			void draw_corner();
 			void render(bool focused);
 		public:
-			void put(std::wstring);
+			void put(std::wstring, bool perform_event);
 			void put(wchar_t);
 			void copy() const;
 			void cut();
 			void paste();
-			void enter(bool record_undo = true);
+			void enter(bool record_undo, bool perform_event);
 			void del();
-			void backspace(bool record_undo = true);
+			void backspace(bool record_undo, bool perform_event);
 			void undo(bool reverse);
 			void set_undo_queue_length(std::size_t len);
 			void move_ns(bool to_north);	//Moves up and down
@@ -243,9 +243,9 @@ namespace nana{	namespace widgets
 			void _m_reset();
 
 			//Inserts text at position where the caret is
-			::nana::upoint _m_put(::std::wstring);
+			::nana::upoint _m_put(::std::wstring, bool perform_event);
 
-			::nana::upoint _m_erase_select();
+			::nana::upoint _m_erase_select(bool perform_event);
 
 			::std::wstring _m_make_select_string() const;
 			static bool _m_resolve_text(const ::std::wstring&, std::vector<std::pair<std::size_t, std::size_t>> & lines);

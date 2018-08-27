@@ -742,8 +742,14 @@ namespace nana
 
 		void _m_add_agent(const detail::place_agent& ag) override
 		{
+#ifdef _nana_std_has_emplace_return_type
+			this->operator<<(
+					widgets_.emplace_back(ag.create(place_ptr_->window_handle()))->handle()
+				);
+#else
 			widgets_.emplace_back(ag.create(place_ptr_->window_handle()));
 			this->operator<<(widgets_.back()->handle());
+#endif
 		}
 	public:
 		division* attached{ nullptr };

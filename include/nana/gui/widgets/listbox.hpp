@@ -809,7 +809,6 @@ namespace nana
 			/// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
 			/// item_proxy self, it references and iterators are not invalidated by sort()
 			class item_proxy
-				//: public std::iterator<std::input_iterator_tag, item_proxy>	//deprecated
 				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
@@ -989,7 +988,6 @@ namespace nana
 			};
 
 			class cat_proxy
-				//: public std::iterator<std::input_iterator_tag, cat_proxy>	//deprecated
 				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, cat_proxy>
 			{
 			public:

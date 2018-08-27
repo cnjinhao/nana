@@ -1,7 +1,7 @@
 /*
  *	A textbase class implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -301,6 +301,29 @@ namespace skeletons
 			}
 		}
 
+		//Triggers the text_changed event.
+		//It is exposed for outter classes. For a outter class(eg. text_editor), a changing text content operation
+		//may contains multiple textbase operations, therefore, the outter class determines when an event should be triggered.
+		//
+		//Addtional, using text_changed() method, it is possible to allow a outter class performing some updating operations
+		//before triggering text_changed event.
+		void text_changed()
+		{
+			if (!changed_)
+			{
+				_m_first_change();
+				changed_ = true;
+			}
+
+			if (edited_)
+			{
+				if (evt_agent_)
+					evt_agent_->text_changed();
+
+				edited_ = false;
+			}
+		}
+
 		size_type lines() const
 		{
 			return text_cont_.size();
@@ -330,7 +353,7 @@ namespace skeletons
 				_m_at(pos).swap(text);
 
 			_m_make_max(pos);
-			_m_edited();
+			edited_ = true;
 		}
 
 		void insert(upoint pos, string_type && str)
@@ -351,7 +374,7 @@ namespace skeletons
 			}
 
 			_m_make_max(pos.y);
-			_m_edited();
+			edited_ = true;
 		}
 
 		void insertln(size_type pos, string_type&& str)
@@ -362,7 +385,7 @@ namespace skeletons
 				text_cont_.emplace_back(new string_type(std::move(str)));
 
 			_m_make_max(pos);
-			_m_edited();
+			edited_ = true;
 		}
 
 		void erase(size_type line, size_type pos, size_type count)
@@ -378,7 +401,7 @@ namespace skeletons
 				if (attr_max_.line == line)
 					_m_scan_for_max();
 
-				_m_edited();
+				edited_ = true;
 			}
 		}
 
@@ -398,7 +421,7 @@ namespace skeletons
 			else if (pos < attr_max_.line)
 				attr_max_.line -= n;
 
-			_m_edited();
+			edited_ = true;
 			return true;
 		}
 
@@ -426,7 +449,7 @@ namespace skeletons
 				if(pos < attr_max_.line)
 					--attr_max_.line;
 
-				_m_edited();
+				edited_ = true;
 			}
 		}
 
@@ -514,23 +537,12 @@ namespace skeletons
 
 			changed_ = false;
 		}
-
-		void _m_edited()
-		{
-			if(!changed_)
-			{
-				_m_first_change();
-				changed_ = true;
-			}
-
-			if (evt_agent_)
-				evt_agent_->text_changed();
-		}
 	private:
 		std::deque<std::unique_ptr<string_type>>	text_cont_;
 		textbase_event_agent_interface* evt_agent_{ nullptr };
 
-		mutable bool			changed_{ false };
+		mutable bool		changed_{ false };
+		mutable bool		edited_{ false };
 		mutable std::string	filename_;	//A string for the saved filename.
 		const string_type nullstr_;
 
