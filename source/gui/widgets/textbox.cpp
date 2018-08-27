@@ -449,7 +449,7 @@ namespace drawerbase {
 				if(at_caret == false)
 					editor->move_caret_end(false);
 
-				editor->put(to_wstring(text));
+				editor->put(to_wstring(text), true);
 
 				editor->try_refresh();
 				API::update_window(this->handle());
@@ -466,7 +466,7 @@ namespace drawerbase {
                 if(at_caret == false)
                     editor->move_caret_end(false);
 
-                editor->put(text);
+                editor->put(text, true);
 
                 editor->try_refresh();
                 API::update_window(this->handle());

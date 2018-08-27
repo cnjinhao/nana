@@ -136,8 +136,12 @@ namespace nana{
 	{
 		_THROW_IF_EMPTY()
 
+#ifdef _nana_std_has_emplace_return_type
+		auto & opt = impl_->options.emplace_back(new checkbox{ handle() });
+#else
 		impl_->options.emplace_back(new checkbox(handle()));
 		auto & opt = impl_->options.back();
+#endif
 		opt->transparent(true);
 		opt->caption(std::move(text));
 		impl_->place_content[field_options] << *opt;

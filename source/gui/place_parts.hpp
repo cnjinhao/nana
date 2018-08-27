@@ -436,10 +436,13 @@ namespace nana
 						caption_.caption(wdg->caption());
 					}
 
-					panels_.emplace_back();
 					auto wdg_ptr = wdg.get();
+#ifdef _nana_std_has_emplace_return_type
+					panels_.emplace_back().widget_ptr = std::move(wdg);
+#else
+					panels_.emplace_back();
 					panels_.back().widget_ptr.swap(wdg);
-
+#endif
 					for (auto & pn : panels_)
 					{
 						if (pn.widget_ptr)
