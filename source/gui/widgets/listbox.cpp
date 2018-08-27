@@ -312,8 +312,12 @@ namespace nana
 
 				size_type create(essence* ess, native_string_type&& text, unsigned pixels)
 				{
+#ifdef _nana_std_has_emplace_return_type
+					return cont_.emplace_back(ess, std::move(text), pixels, static_cast<size_type>(cont_.size())).index;
+#else
 					cont_.emplace_back(ess, std::move(text), pixels, static_cast<size_type>(cont_.size()));
                     return cont_.back().index;
+#endif
 				}
 
 				void clear()
@@ -1023,9 +1027,15 @@ namespace nana
 						}
 					}
 
+#ifdef _nana_std_has_emplace_return_type
+					auto & last_cat = categories_.emplace_back();
+					last_cat.key_ptr = ptr;
+					return &last_cat;
+#else
 					categories_.emplace_back();
 					categories_.back().key_ptr = ptr;
 					return &(categories_.back());
+#endif
 				}
                 
 				/// Inserts a new category at position specified by pos
@@ -1033,8 +1043,12 @@ namespace nana
 				{
 					if (::nana::npos == pos)
 					{
+#ifdef _nana_std_has_emplace_return_type
+						return &categories_.emplace_back(std::move(text));
+#else
 						categories_.emplace_back(std::move(text));
 						return &categories_.back();
+#endif
 					}
 
 					return &(*categories_.emplace(this->get(pos), std::move(text)));
@@ -2622,8 +2636,12 @@ namespace nana
 
 			oresolver& oresolver::operator<<(std::nullptr_t)
 			{
+#ifdef _nana_std_has_emplace_return_type
+				cells_.emplace_back().text.assign(1, wchar_t{});
+#else
 				cells_.emplace_back();
 				cells_.back().text.assign(1, wchar_t(0));	//means invalid cell
+#endif
 				return *this;
 			}
 
