@@ -835,17 +835,6 @@ namespace API
 
 				size inner_size = sz;
 
-#if 0
-				if (inner_size.width < iwd->extra_width)
-					inner_size.width = 0;
-				else
-					inner_size.width -= iwd->extra_width;
-
-				if (inner_size.height < iwd->extra_height)
-					inner_size.height = 0;
-				else
-					inner_size.height -= iwd->extra_height;
-#else
 				if (inner_size.width < static_cast<unsigned>(fm_extents.left + fm_extents.right))
 					inner_size.width = 0;
 				else
@@ -855,7 +844,6 @@ namespace API
 					inner_size.height = 0;
 				else
 					inner_size.height -= static_cast<unsigned>(fm_extents.top + fm_extents.bottom);			
-#endif
 
 				window_size(wd, inner_size);
 			}

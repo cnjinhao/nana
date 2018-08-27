@@ -745,6 +745,14 @@ namespace nana{
 			{
 				nana::detail::platform_scope_guard psg;
 				Display* disp = restrict::spec.open_display();
+
+				//Returns if the requested visibility is same with the current status.
+				//In some X-Server versions/implementations, XMapWindow() doesn't generate
+				//a ConfigureNotify if the requested visibility is same with the current status.
+				//It causes that x11_wait_for always waiting for the ConfigureNotify.
+				if(show == is_window_visible(wd))
+					return;
+
 				if(show)
 				{
 					::XMapWindow(disp, reinterpret_cast<Window>(wd));
@@ -984,6 +992,15 @@ namespace nana{
 
 			nana::detail::platform_scope_guard lock;
 
+			if(point{x, y} == window_position(wd))
+			{
+				//Returns if the requested position is same with the current position.
+				//In some X-Server versions/implementations, XMoveWindow() doesn't generate
+				//a ConfigureNotify if the requested position is same with the current position.
+				//It causes that x11_wait_for always waiting for the ConfigureNotify.
+				return;
+			}
+
 			XWindowAttributes attr;
 			::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 			if(attr.map_state == IsUnmapped)
@@ -1040,6 +1057,16 @@ namespace nana{
 			long supplied;
 			XSizeHints hints;
 			nana::detail::platform_scope_guard psg;
+
+
+			//Returns if the requested rectangle is same with the current rectangle.
+			//In some X-Server versions/implementations, XMapWindow() doesn't generate
+			//a ConfigureNotify if the requested rectangle is same with the current rectangle.
+			//It causes that x11_wait_for always waiting for the ConfigureNotify.
+			rectangle current_r;
+			get_window_rect(wd, current_r);
+			if(r == current_r)
+				return true;
 
 			::XGetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints, &supplied);
 			if((hints.flags & (PMinSize | PMaxSize)) && (hints.min_width == hints.max_width) && (hints.min_height == hints.max_height))
@@ -1230,6 +1257,15 @@ namespace nana{
 			auto disp = restrict::spec.open_display();
 			nana::detail::platform_scope_guard psg;
 
+			//Returns if the requested size is same with the current size.
+			//In some X-Server versions/implementations, XMapWindow() doesn't generate
+			//a ConfigureNotify if the requested size is same with the current size.
+			//It causes that x11_wait_for always waiting for the ConfigureNotify.
+			rectangle current_r;
+			get_window_rect(wd, current_r);
+			if(current_r.dimension() == sz)
+				return true;
+
 			//Check the XSizeHints for testing whether the window is sizable.
 			XSizeHints hints;
 			long supplied;
@@ -1265,6 +1301,9 @@ namespace nana{
 			unsigned border, depth;
 			nana::detail::platform_scope_guard psg;
 			::XGetGeometry(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &root, &x, &y, &r.width, &r.height, &border, &depth);
+
+			auto pos = window_position(wd);
+			r.position(pos);
 #endif
 		}
 

@@ -1133,62 +1133,11 @@ namespace detail
 								wd_manager.do_lazy_refresh(msgwnd, false);
 								break;
 							}
-#if 0
-							//Fall through
-						case XLookupChars:
-							if (msgwnd->flags.enabled)
-							{
-								const wchar_t* charbuf;
-
-								nana::detail::charset_conv charset(NANA_UNICODE, "UTF-8");
-								const std::string& str = charset.charset(std::string(keybuf, keybuf + len));
-								charbuf = reinterpret_cast<const wchar_t*>(str.c_str());
-								len = str.size() / sizeof(wchar_t);
-
-								for(int i = 0; i < len; ++i)
-								{
-									arg_keyboard arg = modifiers_status;
-									arg.ignore = false;
-									arg.key = charbuf[i];
-
-									// ignore Unicode BOM (it may or may not appear)
-                                    if (arg.key == 0xFEFF) continue;
-
-									//Only accept tab when it is not ignored.
-									if ((keyboard::tab == arg.key) && root_runtime->condition.ignore_tab)
-										continue;
-
-									if(context.is_alt_pressed)
-									{
-										arg.ctrl = arg.shift = false;
-										arg.evt_code = event_code::shortkey;
-										brock.shortkey_occurred(true);
-										auto shr_wd = wd_manager.find_shortkey(native_window, arg.key);
-										if(shr_wd)
-										{
-											arg.window_handle = reinterpret_cast<window>(shr_wd);
-											brock.emit(event_code::shortkey, shr_wd, arg, true, &context);
-										}
-										continue;
-									}
-									arg.evt_code = event_code::key_char;
-									arg.window_handle = reinterpret_cast<window>(msgwnd);
-									msgwnd->annex.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
-									if(arg.ignore == false && wd_manager.available(msgwnd))
-										draw_invoker(&drawer::key_char, msgwnd, arg, &context);
-								}
-
-								if(brock.shortkey_occurred(false))
-									context.is_alt_pressed = false;
-							}
-							break;
-#else
 							x_lookup_chars(root_runtime, msgwnd, keybuf, len, modifiers_status);
 							break;
 						case XLookupChars:
 							x_lookup_chars(root_runtime, msgwnd, keybuf, len, modifiers_status);
 							break;
-#endif
 						}
 
 						wd_manager.do_lazy_refresh(msgwnd, false);

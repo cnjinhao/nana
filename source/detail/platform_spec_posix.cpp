@@ -656,38 +656,6 @@ namespace detail
 		msg_dispatcher_->erase(reinterpret_cast<Window>(wd));
 
 		platform_scope_guard lock;
-#if 0
-		auto i = wincontext_.find(wd);
-		if(i == wincontext_.end()) return;
-
-		if(i->second.owner)
-		{
-			auto u = wincontext_.find(i->second.owner);
-			if(u != wincontext_.end())
-			{
-				auto * vec = u->second.owned;
-				if(vec)
-				{
-					auto j = std::find(vec->begin(), vec->end(), i->first);
-					if(j != vec->end())
-						vec->erase(j);
-				}
-			}
-		}
-
-		auto * vec = i->second.owned;
-		if(vec)
-		{
-			set_error_handler();
-			auto & wd_manager = detail::bedrock::instance().wd_manager();
-			for(auto u = vec->rbegin(); u != vec->rend(); ++u)
-				wd_manager.close(wd_manager.root(*u));
-
-			rev_error_handler();
-		}
-		delete vec;
-		wincontext_.erase(i);
-#else
 		if(umake_owner(wd))
 		{
 			auto i = wincontext_.find(wd);
@@ -708,7 +676,6 @@ namespace detail
 				wincontext_.erase(i);
 			}
 		}
-#endif
 		iconbase_.erase(wd);
 	}
 

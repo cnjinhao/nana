@@ -1,7 +1,7 @@
 /*
  *	Text Token Stream
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -22,6 +22,7 @@
 #include <stdexcept>
 
 #include <nana/push_ignore_diagnostic>
+#include <nana/unicode_bidi.hpp>
 
 namespace nana{ namespace widgets{	namespace skeletons
 {
@@ -95,9 +96,11 @@ namespace nana{ namespace widgets{	namespace skeletons
 			return std::stoi(idstr_, nullptr, 0);
 		}
 	private:
-		static bool _m_unicode_word_breakable(wchar_t ch)
+		static bool _m_unicode_word_breakable(const wchar_t* ch) noexcept
 		{
-			return ((0x4E00 <= ch) && (ch <= 0x9FFF));
+			if (*ch)
+				return unicode_wordbreak(*ch, ch[1]);
+			return true;
 		}
 
 		//Read the data token
@@ -112,14 +115,14 @@ namespace nana{ namespace widgets{	namespace skeletons
 				idstr_.clear();
 				idstr_.append(1, ch);
 
-				if(_m_unicode_word_breakable(ch))
+				if (_m_unicode_word_breakable(iptr_))
 				{
 					++iptr_;
 					return token::data;
 				}
 
 				ch = *++iptr_;
-				while((iptr_ != endptr_) && (ch > 0xFF) && (false == _m_unicode_word_breakable(ch)))
+				while((iptr_ != endptr_) && (ch > 0xFF) && (false == _m_unicode_word_breakable(iptr_)))
 				{
 					idstr_.append(1, ch);
 
