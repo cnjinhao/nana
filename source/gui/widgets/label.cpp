@@ -351,6 +351,22 @@ namespace nana
 				 */
 				unsigned _m_prepare_visual_lines(graph_reference graph, dstream::linecontainer& line, unsigned def_line_px, render_status& rs)
 				{
+					if (line.empty())
+					{
+						//Insert an empty visual line for empty content.
+#ifdef _nana_std_has_emplace_return_type
+						auto & vsline = rs.vslines.emplace_back();
+#else
+						rs.vslines.emplace_back();
+						auto & vsline = rs.vslines.back();
+
+						vsline.baseline = 0;
+						vsline.extent_height_px = def_line_px;
+						vsline.x_base = 0;
+#endif
+						return 0;
+					}
+
 					unsigned abs_text_px = 0;
 					unsigned max_ascent = 0;
 					unsigned max_descent = 0;
