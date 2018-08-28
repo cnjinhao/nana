@@ -750,8 +750,8 @@ namespace nana
 				{
 					if((pos == npos) || (pos >= list_.size()))
 					{
+						pos = list_.size();
 						this->list_.emplace_back();
-						pos = list_.size() - 1;
 					}
 					else
 						list_.emplace(iterator_at(pos));

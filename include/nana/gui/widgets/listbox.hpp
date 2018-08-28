@@ -809,7 +809,6 @@ namespace nana
 			/// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
 			/// item_proxy self, it references and iterators are not invalidated by sort()
 			class item_proxy
-				//: public std::iterator<std::input_iterator_tag, item_proxy>	//deprecated
 				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, item_proxy>
 			{
 			public:
@@ -933,15 +932,20 @@ namespace nana
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
-					*_m_value(true) = std::forward<T>(t);
+					*_m_value(true) = ::std::forward<T>(t);
 					return *this;
 				}
 
 				/// Behavior of Iterator's value_type
+#ifdef _nana_std_has_string_view
+				bool operator==(::std::string_view sv) const;
+				bool operator==(::std::wstring_view sv) const;
+#else
 				bool operator==(const char * s) const;
 				bool operator==(const wchar_t * s) const;
 				bool operator==(const ::std::string& s) const;
 				bool operator==(const ::std::wstring& s) const;
+#endif
 
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
@@ -984,7 +988,6 @@ namespace nana
 			};
 
 			class cat_proxy
-				//: public std::iterator<std::input_iterator_tag, cat_proxy>	//deprecated
 				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, cat_proxy>
 			{
 			public:
@@ -1028,6 +1031,7 @@ namespace nana
 				template<typename T>
 				void append_model(const T& t)
 				{
+					nana::internal_scope_guard lock;
 					_m_try_append_model(const_virtual_pointer{ &t });
 					_m_update();
 				}

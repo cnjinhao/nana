@@ -1,7 +1,7 @@
 /*
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -436,10 +436,13 @@ namespace nana
 						caption_.caption(wdg->caption());
 					}
 
-					panels_.emplace_back();
 					auto wdg_ptr = wdg.get();
+#ifdef _nana_std_has_emplace_return_type
+					panels_.emplace_back().widget_ptr = std::move(wdg);
+#else
+					panels_.emplace_back();
 					panels_.back().widget_ptr.swap(wdg);
-
+#endif
 					for (auto & pn : panels_)
 					{
 						if (pn.widget_ptr)
@@ -607,12 +610,16 @@ namespace nana
 					it = ib = 0;
 					il = ir = 1;
 					break;
-				default:
-					il = 3;	//left
 				case 3:	//top, right, bottom
 					it = 0;
 					ir = 1;
 					ib = 2;
+					break;
+				default: //left, top, right, bottom, left
+					it = 0;
+					ir = 1;
+					ib = 2;
+					il = 3;
 				}
 
 				int pos = 0;
@@ -661,12 +668,16 @@ namespace nana
 						it = ib = 0;
 						il = ir = 1;
 						break;
-					default:
-						il = 3;	//left
 					case 3:	//top, right, bottom
 						it = 0;
 						ir = 1;
 						ib = 2;
+						break;
+					default: //left, top, right, bottom, left
+						it = 0;
+						ir = 1;
+						ib = 2;
+						il = 3;
 					}
 
 					using px_type = decltype(r.height);

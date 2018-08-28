@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -129,6 +129,96 @@ namespace nana{
 	{
 		nana::detail::platform_spec & spec = nana::detail::platform_spec::instance();
 	}
+
+
+		//The XMoveWindow and XMoveResizeWindow don't take effect if the specified window is
+		//unmapped, and the members x and y of XSetSizeHints is obsoluted. So the position that
+		//set to a unmapped windows should be kept and use the position when the window is mapped.
+		std::map<Window, ::nana::point> exposed_positions;	//locked by platform_scope_guard
+
+		//Returns the parent window.
+		//It may return a decoration frame window if the requested window is a top level and WM is a
+		//reparenting window manager.
+		native_window_type x11_parent_window(native_window_type wd)
+		{
+			Window root;
+			Window parent;
+			Window * children;
+			unsigned size;
+
+			platform_scope_guard lock;
+
+			if(0 != ::XQueryTree(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
+				&root, &parent, &children, &size))
+			{
+				::XFree(children);
+				return reinterpret_cast<native_window_type>(parent);
+			}
+			return nullptr;
+		}
+
+		native_window_type x11_decoration_frame(native_window_type wd)
+		{
+			auto const owner = restrict::spec.get_owner(wd);
+			auto const root_wd = restrict::spec.root_window();
+
+			if(owner)
+			{
+				auto test_wd = wd;
+				while(true)
+				{
+					auto upper = x11_parent_window(test_wd);
+					if((reinterpret_cast<Window>(upper) != root_wd) && (upper != owner))
+					{
+						test_wd = upper;
+					}
+					else if(wd != test_wd)
+						return test_wd;
+					else
+						return nullptr;
+				}
+			}
+
+			return nullptr;
+		}
+
+
+		void x11_apply_exposed_position(native_window_type wd)
+		{
+			nana::detail::platform_scope_guard lock;
+
+			auto i = exposed_positions.find(reinterpret_cast<Window>(wd));
+			if(i == exposed_positions.cend())
+				return;
+
+			native_interface::move_window(wd, i->second.x, i->second.y);
+
+			exposed_positions.erase(i);
+		}
+
+		namespace x11_wait
+		{
+			static Bool configure(Display *disp, XEvent *evt, char *arg)
+			{    
+			    return disp && evt && arg && (evt->type == ConfigureNotify) && (evt->xconfigure.window == *reinterpret_cast<Window*>(arg));
+			}
+
+			static Bool map(Display *disp, XEvent *evt, char *arg)
+			{    
+			    return disp && evt && arg && (evt->type == MapNotify) && (evt->xmap.window == *reinterpret_cast<Window*>(arg));
+			}
+
+			static Bool unmap(Display *disp, XEvent *evt, char *arg)
+			{    
+			    return disp && evt && arg && (evt->type == MapNotify) && (evt->xunmap.window == *reinterpret_cast<Window*>(arg));
+			}
+		}
+
+		static void x11_wait_for(Window wd, Bool(*pred_fn)(Display*, XEvent*, char*))
+		{
+			XEvent dummy;
+			::XPeekIfEvent(restrict::spec.open_display(), &dummy, pred_fn, reinterpret_cast<XPointer>(&wd));
+		}
 #endif
 
 	//struct native_interface
@@ -196,13 +286,6 @@ namespace nana{
 			return rectangle{ primary_monitor_size() };
 		}
 
-#ifdef NANA_X11
-		//The XMoveWindow and XMoveResizeWindow don't take effect if the specified window is
-		//unmapped, and the members x and y of XSetSizeHints is obsoluted. So the position that
-		//set to a unmapped windows should be kept and use the position when the window is mapped.
-		std::map<Window, ::nana::point> exposed_positions;	//locked by platform_scope_guard
-#endif
-
 		//platform-dependent
 		native_interface::window_result native_interface::create_window(native_window_type owner, bool nested, const rectangle& r, const appearance& app)
 		{
@@ -267,7 +350,7 @@ namespace nana{
 
 			XSetWindowAttributes win_attr;
 			unsigned long attr_mask = CWBackPixmap | CWBackPixel | CWBorderPixel |
-							CWWinGravity | CWBitGravity | CWColormap | CWEventMask;
+							 CWColormap | CWEventMask;
 
 			Display * disp = restrict::spec.open_display();
 			win_attr.colormap = restrict::spec.colormap();
@@ -276,8 +359,6 @@ namespace nana{
 			win_attr.background_pixel = 0xFFFFFF;
 			win_attr.border_pixmap = None;
 			win_attr.border_pixel = 0x0;
-			win_attr.bit_gravity = 0;
-			win_attr.win_gravity = NorthWestGravity;
 			win_attr.backing_store = 0;
 			win_attr.backing_planes = 0;
 			win_attr.backing_pixel = 0;
@@ -296,6 +377,8 @@ namespace nana{
 				win_attr.save_under = True;
 				attr_mask |= CWSaveUnder;
 
+				///The parameter of XCreateWindow to create a top level window must be root.
+				///But after creation, the real parent is the reparenting frame window.
 				parent = restrict::spec.root_window();
 				calc_screen_point(owner, pos);
 			}
@@ -309,9 +392,10 @@ namespace nana{
 			if(handle)
 			{
 				//make owner if it is a popup window
-				if((!nested) && owner)
+				if(!nested)
 				{
-					restrict::spec.make_owner(owner, reinterpret_cast<native_window_type>(handle));
+					auto origin_owner = (owner ? owner : reinterpret_cast<native_window_type>(restrict::spec.root_window()));
+					restrict::spec.make_owner(origin_owner, reinterpret_cast<native_window_type>(handle));
 					exposed_positions[handle] = pos;
 				}
 
@@ -421,7 +505,7 @@ namespace nana{
 
 			XSetWindowAttributes win_attr;
 			unsigned long attr_mask = CWBackPixmap | CWBackPixel | CWBorderPixel |
-							CWWinGravity | CWBitGravity | CWColormap | CWEventMask;
+							 CWColormap | CWEventMask | CWOverrideRedirect;
 
 			Display * disp = restrict::spec.open_display();
 			win_attr.colormap = restrict::spec.colormap();
@@ -430,15 +514,12 @@ namespace nana{
 			win_attr.background_pixel = 0xFFFFFF;
 			win_attr.border_pixmap = None;
 			win_attr.border_pixel = 0x0;
-			win_attr.bit_gravity = 0;
-			win_attr.win_gravity = NorthWestGravity;
 			win_attr.backing_store = 0;
 			win_attr.backing_planes = 0;
 			win_attr.backing_pixel = 0;
 			win_attr.colormap = restrict::spec.colormap();
 
 			win_attr.override_redirect = True;
-			attr_mask |= CWOverrideRedirect;
 
 			nana::point pos(r.x, r.y);
 			win_attr.event_mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | KeyPressMask | KeyReleaseMask | ExposureMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask;
@@ -664,25 +745,33 @@ namespace nana{
 			{
 				nana::detail::platform_scope_guard psg;
 				Display* disp = restrict::spec.open_display();
+
+				//Returns if the requested visibility is same with the current status.
+				//In some X-Server versions/implementations, XMapWindow() doesn't generate
+				//a ConfigureNotify if the requested visibility is same with the current status.
+				//It causes that x11_wait_for always waiting for the ConfigureNotify.
+				if(show == is_window_visible(wd))
+					return;
+
 				if(show)
 				{
 					::XMapWindow(disp, reinterpret_cast<Window>(wd));
 
-					auto i = exposed_positions.find(reinterpret_cast<Window>(wd));
-					if(i != exposed_positions.end())
-					{
-						::XMoveWindow(disp, reinterpret_cast<Window>(wd), i->second.x, i->second.y);
-						exposed_positions.erase(i);
-					}
+					//Wait for the mapping notify to update the local attribute of visibility so that
+					//the followed window_visible() call can return the updated visibility value.
+					x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::map);
 					
 					Window grab = restrict::spec.grab(0);
 					if(grab == reinterpret_cast<Window>(wd))
 						capture_window(wd, true);
 				}
 				else
+				{
 					::XUnmapWindow(disp, reinterpret_cast<Window>(wd));
-
-				::XFlush(disp);
+					//Wait for the mapping notify to update the local attribute of visibility so that
+					//the followed window_visible() call can return the updated visibility value.
+					x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::unmap);
+				}
 			}
 			static_cast<void>(active);	//eliminate unused parameter compiler warning.
 #endif
@@ -844,19 +933,33 @@ namespace nana{
 			}
 			return nana::point(r.left, r.top);
 #elif defined(NANA_X11)
-			int x, y;
-			nana::detail::platform_scope_guard psg;
-			Window coord_wd = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
-			if(!coord_wd)
+			point scr_pos;
+			nana::detail::platform_scope_guard lock;
+
+
+			point origin{};
+
+			auto coord_wd = restrict::spec.get_owner(wd);
+			if(coord_wd)
 			{
-				coord_wd = reinterpret_cast<Window>(parent_window(wd));
-				if(!coord_wd)
-					coord_wd = restrict::spec.root_window();
+				auto fm_extents = window_frame_extents(wd);
+				origin.x = -fm_extents.left;
+				origin.y = -fm_extents.top;
+
+				if(reinterpret_cast<Window>(coord_wd) != restrict::spec.root_window())
+				{
+					fm_extents = window_frame_extents(coord_wd);
+					origin.x += fm_extents.left;
+					origin.y += fm_extents.top;
+				}
 			}
+			else
+				coord_wd = get_window(wd, window_relationship::parent);
+
 			Window child;
-			if(True == ::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), coord_wd, 0, 0, &x, &y, &child))
-				return nana::point(x, y);
-			return nana::point(0, 0);
+			::XTranslateCoordinates(restrict::spec.open_display(), reinterpret_cast<Window>(wd), reinterpret_cast<Window>(coord_wd), origin.x, origin.y, &scr_pos.x, &scr_pos.y, &child);
+
+			return scr_pos;
 #endif
 		}
 
@@ -887,13 +990,15 @@ namespace nana{
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
 
-			nana::detail::platform_scope_guard psg;
-			Window owner = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
-			if(owner)
+			nana::detail::platform_scope_guard lock;
+
+			if(point{x, y} == window_position(wd))
 			{
-				Window child;
-				::XTranslateCoordinates(disp, owner, restrict::spec.root_window(),
-										x, y, &x, &y, &child);
+				//Returns if the requested position is same with the current position.
+				//In some X-Server versions/implementations, XMoveWindow() doesn't generate
+				//a ConfigureNotify if the requested position is same with the current position.
+				//It causes that x11_wait_for always waiting for the ConfigureNotify.
+				return;
 			}
 
 			XWindowAttributes attr;
@@ -901,7 +1006,19 @@ namespace nana{
 			if(attr.map_state == IsUnmapped)
 				exposed_positions[reinterpret_cast<Window>(wd)] = ::nana::point{x, y};
 
+			auto const owner = restrict::spec.get_owner(wd);
+			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
+			{
+				auto origin = window_position(owner);
+				x += origin.x;
+				y += origin.y;
+			}
+
 			::XMoveWindow(disp, reinterpret_cast<Window>(wd), x, y);
+
+			//Wait for the configuration notify to update the local attribute of position so that
+			//the followed window_position() call can return the updated position value.
+			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure);
 #endif
 		}
 
@@ -941,6 +1058,16 @@ namespace nana{
 			XSizeHints hints;
 			nana::detail::platform_scope_guard psg;
 
+
+			//Returns if the requested rectangle is same with the current rectangle.
+			//In some X-Server versions/implementations, XMapWindow() doesn't generate
+			//a ConfigureNotify if the requested rectangle is same with the current rectangle.
+			//It causes that x11_wait_for always waiting for the ConfigureNotify.
+			rectangle current_r;
+			get_window_rect(wd, current_r);
+			if(r == current_r)
+				return true;
+
 			::XGetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints, &supplied);
 			if((hints.flags & (PMinSize | PMaxSize)) && (hints.min_width == hints.max_width) && (hints.min_height == hints.max_height))
 			{
@@ -951,16 +1078,6 @@ namespace nana{
 			else
 				hints.flags = 0;
 
-			Window owner = reinterpret_cast<Window>(restrict::spec.get_owner(wd));
-			int x = r.x;
-			int y = r.y;
-			if(owner)
-			{
-				Window child;
-				::XTranslateCoordinates(disp, owner, restrict::spec.root_window(),
-										r.x, r.y, &x, &y, &child);
-			}
-
 			XWindowAttributes attr;
 			::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 			if(attr.map_state == IsUnmapped)
@@ -969,13 +1086,32 @@ namespace nana{
 				hints.width = r.width;
 				hints.height = r.height;
 
-				exposed_positions[reinterpret_cast<Window>(wd)] = point{x, y};
+				exposed_positions[reinterpret_cast<Window>(wd)] = r.position();
 			}
 
 			if(hints.flags)
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 
+			int x = r.x;
+			int y = r.y;
+
+			auto const owner = restrict::spec.get_owner(wd);
+			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
+			{
+				auto origin = window_position(owner);
+				x += origin.x;
+				y += origin.y;
+			}
+
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);
+
+			//Wait for the configuration notify to update the local attribute of position so that
+			//the followed window_position() call can return the updated position value.
+
+			//It seems that XMoveResizeWindow doesn't need x11_wait_for. But x11_wait_for is still called
+			//to make sure the local attribute is updated.
+			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure);
+
 			return true;
 #endif
 		}
@@ -1055,6 +1191,46 @@ namespace nana{
 #endif
 		}
 
+		native_interface::frame_extents native_interface::window_frame_extents(native_window_type wd)
+		{
+			frame_extents fm_extents{0, 0, 0, 0};
+
+	#if defined(NANA_WINDOWS)
+			::RECT client;
+			::GetClientRect(reinterpret_cast<HWND>(wd), &client);	//The right and bottom of client by GetClientRect indicate the width and height of the area
+			::RECT wd_area;
+			::GetWindowRect(reinterpret_cast<HWND>(wd), &wd_area);
+
+			fm_extents.left = client.left - wd_area.left;
+			fm_extents.right = wd_area.right - client.right;
+			fm_extents.top = client.top - wd_area.top;
+			fm_extents.bottom = wd_area.bottom - client.bottom;
+	#elif defined(NANA_X11)
+			Atom type;
+			int format;
+			unsigned long len, bytes_left = 0;
+			unsigned char *data;
+
+			nana::detail::platform_scope_guard lock;
+			if(Success == ::XGetWindowProperty(restrict::spec.open_display(), reinterpret_cast<Window>(wd), 
+									restrict::spec.atombase().net_frame_extents, 0, 16, 0,
+									XA_CARDINAL, &type, &format,
+									&len, &bytes_left, &data))
+			{
+				if(type != None && len == 4)
+				{
+					fm_extents.left = ((long*)data)[0];
+					fm_extents.right = ((long*)data)[1];
+					fm_extents.top = ((long*)data)[2];
+					fm_extents.bottom = ((long*)data)[3];
+				}
+				::XFree(data);
+			}
+	#endif
+
+			return fm_extents;
+		}
+
 		bool native_interface::window_size(native_window_type wd, const size& sz)
 		{
 #if defined(NANA_WINDOWS)
@@ -1081,6 +1257,15 @@ namespace nana{
 			auto disp = restrict::spec.open_display();
 			nana::detail::platform_scope_guard psg;
 
+			//Returns if the requested size is same with the current size.
+			//In some X-Server versions/implementations, XMapWindow() doesn't generate
+			//a ConfigureNotify if the requested size is same with the current size.
+			//It causes that x11_wait_for always waiting for the ConfigureNotify.
+			rectangle current_r;
+			get_window_rect(wd, current_r);
+			if(current_r.dimension() == sz)
+				return true;
+
 			//Check the XSizeHints for testing whether the window is sizable.
 			XSizeHints hints;
 			long supplied;
@@ -1093,6 +1278,10 @@ namespace nana{
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 			}
 			::XResizeWindow(disp, reinterpret_cast<Window>(wd), sz.width, sz.height);
+			
+			//It seems that XResizeWindow doesn't need x11_wait_for. But x11_wait_for is still called
+			//to make sure the local attribute is updated.
+			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure);
 			return true;
 #endif
 		}
@@ -1112,6 +1301,9 @@ namespace nana{
 			unsigned border, depth;
 			nana::detail::platform_scope_guard psg;
 			::XGetGeometry(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &root, &x, &y, &r.width, &r.height, &border, &depth);
+
+			auto pos = window_position(wd);
+			r.position(pos);
 #endif
 		}
 
@@ -1222,41 +1414,37 @@ namespace nana{
 			Window drop_wd;
 			int x, y;
 			unsigned mask;
-			nana::detail::platform_scope_guard psg;
+			nana::detail::platform_scope_guard lock;
 			::XQueryPointer(restrict::spec.open_display(), restrict::spec.root_window(), &drop_wd, &drop_wd,  &pos.x, &pos.y, &x, &y, &mask);
 			return pos;
 #endif
 		}
 
-		native_window_type native_interface::get_owner_window(native_window_type wd)
-		{
-#if defined(NANA_WINDOWS)
-			return reinterpret_cast<native_window_type>(::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER));
-#elif defined(NANA_X11)
-			return restrict::spec.get_owner(wd);
-#endif
-		}
-
-		native_window_type native_interface::parent_window(native_window_type wd)
+		native_window_type native_interface::get_window(native_window_type wd, window_relationship rsp)
 		{
 #ifdef NANA_WINDOWS
-			return reinterpret_cast<native_window_type>(::GetParent(reinterpret_cast<HWND>(wd)));
+			if(window_relationship::either_po == rsp)
+				return reinterpret_cast<native_window_type>(::GetParent(reinterpret_cast<HWND>(wd)));
+			else if(window_relationship::parent == rsp)
+				return reinterpret_cast<native_window_type>(::GetAncestor(reinterpret_cast<HWND>(wd), GA_PARENT));
+			else if(window_relationship::owner == rsp)
+				return reinterpret_cast<native_window_type>(::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER));
 #elif defined(NANA_X11)
-			Window root;
-			Window parent;
-			Window * children;
-			unsigned size;
-
 			platform_scope_guard lock;
 
-			if(0 != ::XQueryTree(restrict::spec.open_display(), reinterpret_cast<Window>(wd),
-				&root, &parent, &children, &size))
+			auto owner = restrict::spec.get_owner(wd);
+
+			if(window_relationship::either_po == rsp)
 			{
-				::XFree(children);
-				return reinterpret_cast<native_window_type>(parent);
+				if(owner)
+					return owner;
 			}
-			return nullptr;
+			else if(window_relationship::owner == rsp)
+				return owner;
+			else if(window_relationship::parent == rsp)
+				return x11_parent_window(wd);
 #endif
+			return nullptr;
 		}
 
 		native_window_type native_interface::parent_window(native_window_type child, native_window_type new_parent, bool returns_previous)
@@ -1276,11 +1464,21 @@ namespace nana{
 			platform_scope_guard lock;
 
 			if(returns_previous)
-				prev = parent_window(child);
+				prev = get_window(child, window_relationship::either_po);
+
+			if(native_window_type{} == new_parent)
+				new_parent = reinterpret_cast<native_window_type>(restrict::spec.root_window());
 
 			::XReparentWindow(restrict::spec.open_display(),
 				reinterpret_cast<Window>(child), reinterpret_cast<Window>(new_parent),
 				0, 0);
+
+
+			// If umake_owner returns true, it indicates the child windows is a popup window.
+			// So make the ownership of new_parent and child.
+			if(restrict::spec.umake_owner(child))
+				restrict::spec.make_owner(new_parent, child);
+
 			return prev;
 #endif
 		}

@@ -377,6 +377,27 @@ namespace drawerbase {
 			return false;
 		}
 
+		std::optional<std::string> textbox::getline(std::size_t pos) const
+		{
+			auto result = std::string{};
+			if ( getline(pos, result) )
+			{
+				return { std::move(result) };
+			}
+			return {};
+		}
+
+		std::optional<std::string> textbox::getline(std::size_t line_index, std::size_t offset) const
+		{
+			auto result = std::string{};
+			if ( getline(line_index, offset, result) )
+			{
+				return { std::move(result) };
+			}
+			return {};
+		}
+
+
 		/// Gets the caret position
 		bool textbox::caret_pos(point& pos, bool text_coordinate) const
 		{
@@ -428,7 +449,7 @@ namespace drawerbase {
 				if(at_caret == false)
 					editor->move_caret_end(false);
 
-				editor->put(to_wstring(text));
+				editor->put(to_wstring(text), true);
 
 				editor->try_refresh();
 				API::update_window(this->handle());
@@ -445,7 +466,7 @@ namespace drawerbase {
                 if(at_caret == false)
                     editor->move_caret_end(false);
 
-                editor->put(text);
+                editor->put(text, true);
 
                 editor->try_refresh();
                 API::update_window(this->handle());

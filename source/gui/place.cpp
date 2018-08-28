@@ -742,8 +742,14 @@ namespace nana
 
 		void _m_add_agent(const detail::place_agent& ag) override
 		{
+#ifdef _nana_std_has_emplace_return_type
+			this->operator<<(
+					widgets_.emplace_back(ag.create(place_ptr_->window_handle()))->handle()
+				);
+#else
 			widgets_.emplace_back(ag.create(place_ptr_->window_handle()));
 			this->operator<<(widgets_.back()->handle());
+#endif
 		}
 	public:
 		division* attached{ nullptr };
@@ -798,17 +804,20 @@ namespace nana
 			case number_t::kind::real:
 				return static_cast<unsigned>(number.real());
 			case number_t::kind::percent:
-				adjustable_px = area_px * number.real();
 			case number_t::kind::none:
-				{
-					auto fpx = adjustable_px + precise_px;
-					auto px = static_cast<unsigned>(fpx);
-					precise_px = fpx - px;
-					return px;
-				}
 				break;
+			default:
+				return 0; //Useless
 			}
-			return 0; //Useless
+
+			if(number_t::kind::percent == number.kind_of())
+				adjustable_px = area_px * number.real() + precise_px;
+			else
+				adjustable_px += precise_px;
+
+			auto const px = static_cast<unsigned>(adjustable_px);
+			precise_px = adjustable_px - px;
+			return px;
 		}
 
 		std::pair<double, double> calc_weight_floor()
@@ -2879,25 +2888,26 @@ namespace nana
 		}
 
 		field_gather * attached_field = nullptr;
-		if (name.size())
+
+		//find the field with specified name.
+		//the field may not be created.
+		auto i = fields.find(name);
+		if (fields.end() != i)
 		{
-			//find the field with specified name.
-			//the field may not be created.
-			auto i = fields.find(name);
-			if (fields.end() != i)
-			{
-				attached_field = i->second;
-				//the field is attached to a division, it means there is another division with same name.
-				if (attached_field->attached)
-					throw std::runtime_error("place, the name '" + name + "' is redefined.");
-			}
+			attached_field = i->second;
+			//the field is attached to a division, it means there is another division with same name.
+			if (attached_field->attached)
+				throw std::runtime_error("place, the name '" + name + "' is redefined.");
 		}
 
 		token unmatch = token::width;
 		switch (div_type)
 		{
-		case token::eof:  unmatch = token::height;  // "horitontal" div
-		case token::vert:                           // "vertical" div
+		case token::eof:	// "horitontal" div
+		case token::vert:   // "vertical" div
+			if(token::eof == div_type)
+				unmatch = token::height;
+
 			for (auto& ch : children)
 				if (ch->weigth_type == unmatch)
 					throw std::invalid_argument("nana.place: unmatch vertical-heigth/horizontal-width betwen division '"

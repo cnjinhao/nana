@@ -351,20 +351,22 @@ namespace threads
 			}container_;
 		};//end class impl
 
-		pool::pool()
-			: impl_(new impl(4))
+#ifndef STD_THREAD_NOT_SUPPORTED
+		pool::pool(unsigned thread_number)
+			: impl_(new impl(thread_number ? thread_number : std::thread::hardware_concurrency()))
 		{
 		}
+#else
+		pool::pool(unsigned thread_number)
+			: impl_(new impl(0))
+		{
+		}
+#endif
 
 		pool::pool(pool&& other)
 			: pool()
 		{
 			std::swap(impl_, other.impl_);
-		}
-
-		pool::pool(std::size_t thread_number)
-			: impl_(new impl(thread_number))
-		{
 		}
 
 		pool& pool::operator=(pool&& other)

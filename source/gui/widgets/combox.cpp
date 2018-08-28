@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -732,7 +732,6 @@ namespace nana
 				bool call_other_keys = false;
 				if(drawer_->editable())
 				{
-					bool is_move_up = false;
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_left:
@@ -741,9 +740,8 @@ namespace nana
 						drawer_->editor()->reset_caret();
 						break;
 					case keyboard::os_arrow_up:
-						is_move_up = true;
 					case keyboard::os_arrow_down:
-						drawer_->move_items(is_move_up, true);
+						drawer_->move_items((keyboard::os_arrow_up == arg.key), true);
 						break;
 					default:
 						call_other_keys = true;
@@ -751,15 +749,15 @@ namespace nana
 				}
 				else
 				{
-					bool is_move_up = false;
 					switch(arg.key)
 					{
 					case keyboard::os_arrow_left:
 					case keyboard::os_arrow_up:
-						is_move_up = true;
+						drawer_->move_items(true, true);
+						break;
 					case keyboard::os_arrow_right:
 					case keyboard::os_arrow_down:
-						drawer_->move_items(is_move_up, true);
+						drawer_->move_items(false, true);
 						break;
 					default:
 						call_other_keys = true;
@@ -823,6 +821,14 @@ namespace nana
 				}
 
 				/// Behavior of Iterator's value_type
+#ifdef _nana_std_has_string_view
+				bool item_proxy::operator == (::std::string_view s) const
+				{
+					if (pos_ == nana::npos)
+						return false;
+					return (impl_->at(pos_).item_text == s);
+				}
+#else
 				bool item_proxy::operator == (const ::std::string& s) const
 				{
 					if (pos_ == nana::npos)
@@ -836,6 +842,7 @@ namespace nana
 						return false;
 					return (impl_->at(pos_).item_text == s);
 				}
+#endif
 
 
 				/// Behavior of Iterator

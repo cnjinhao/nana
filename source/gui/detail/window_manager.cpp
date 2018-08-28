@@ -85,8 +85,12 @@ namespace nana
 				}
 			}
 
+#ifdef _nana_std_has_emplace_return_type
+			auto & rep = impl_->base.emplace_back();
+#else
 			impl_->base.emplace_back();
 			auto & rep = impl_->base.back();
+#endif
 			rep.handle = wd;
 			rep.keys.emplace_back(key);
 
@@ -242,8 +246,12 @@ namespace detail
 					return kv.second;
 			}
 
+#ifdef _nana_std_has_emplace_return_type
+			return table_.emplace_back(key).second;
+#else
 			table_.emplace_back(key);
 			return table_.back().second;
+#endif
 		}
 
 		iterator find(const Key& key)
@@ -950,6 +958,19 @@ namespace detail
 			if (wd->dimension == sz)
 				return false;
 
+			std::vector<core_window_t*> presence;
+
+			if (wd->dimension.width < sz.width || wd->dimension.height < sz.height)
+			{
+				auto wd_r = rectangle{ wd->dimension };
+				for (auto child : wd->children)
+				{
+					auto child_r = rectangle{ child->pos_owner, child->dimension };
+					if (!overlapped(wd_r, child_r))
+						presence.push_back(child);
+				}
+			}
+
 			//Before resiz the window, creates the new graphics
 			paint::graphics graph;
 			paint::graphics root_graph;
@@ -1008,6 +1029,11 @@ namespace detail
 						window_layer::make_bground(wd);
 					}
 				}
+			}
+
+			for (auto child : presence)
+			{
+				refresh_tree(child);
 			}
 
 			arg_resized arg;
