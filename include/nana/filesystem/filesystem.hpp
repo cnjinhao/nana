@@ -13,7 +13,7 @@
  *  and need VC2015 or a C++11 compiler. With a few correction can be compiler by VC2013
  */
 
-// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf      --- last pdf of std draft N4100 <filesystem> 2014-07-04
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf      --- pdf of std draft N4100 <filesystem> 2014-07-04
 // http://en.cppreference.com/w/cpp/experimental/fs
 // http://cpprocks.com/introduction-to-tr2-filesystem-library-in-vs2012/  --- TR2 filesystem in VS2012
 // https://msdn.microsoft.com/en-us/library/hh874694%28v=vs.140%29.aspx   ---  C++ 14, the <filesystem> header VS2015
@@ -55,36 +55,6 @@
 #define NANA_USING_BOOST_FILESYSTEM 1
 #   include <chrono>
 #   include <boost/filesystem.hpp>
-// dont include generic_u8string
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
-// enable directory_iterator C++11 range-base for 
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
-// but travis come with an oooold version of boost
-// NOT enable directory_iterator C++11 range-base for
-// http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
-namespace boost
-{
-	namespace filesystem
-	{
-
-		//  enable directory_iterator C++11 range-base for statement use  --------------------//
-
-		//  begin() and end() are only used by a range-based for statement in the context of
-		//  auto - thus the top-level const is stripped - so returning const is harmless and
-		//  emphasizes begin() is just a pass through.
-		inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
-		{
-			return iter;
-		}
-
-		inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
-		{
-			return directory_iterator();
-		}
-
-	}  // namespace filesystem
-}   
-
 
 // add boost::filesystem into std::experimental::filesystem
 namespace std {
@@ -105,16 +75,32 @@ namespace std {
 				socket = boost::filesystem::file_type::socket_file,
 				unknown = boost::filesystem::file_type::type_unknown,
 			};
-			/// enable directory_iterator range-based for statements
-			//inline directory_iterator begin(directory_iterator iter) noexcept
-			//{
-			//	return iter;
-			//}
+// Boost dont include generic_u8string
+// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
+//
+// Boost versions: 1.67.0, 1.66.0, ... 1.56.0 enable directory_iterator C++11 range-base for
+// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
+// but travis come with an oooold version of boost
+// 1.55.0 NOT enable directory_iterator C++11 range-base for
+// http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
+#if BOOST_VERSION < 105600
+            namespace boost
+        //  enable directory_iterator C++11 range-base for statement use  --------------------//
 
-			//inline directory_iterator end(const directory_iterator&) noexcept
-			//{
-			//	return {};
-			//}
+		//  begin() and end() are only used by a range-based for statement in the context of
+		//  auto - thus the top-level const is stripped - so returning const is harmless and
+		//  emphasizes begin() is just a pass through.
+		inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
+		{
+			return iter;
+		}
+
+		inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
+		{
+			return directory_iterator();
+		}
+#endif
+
 		} // filesystem
 	} // experimental
 } // std
