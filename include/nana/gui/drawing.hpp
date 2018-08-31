@@ -23,9 +23,10 @@ namespace nana
 	class drawing
 		:private nana::noncopyable
 	{
+		struct draw_fn_handle;
 	public:
-		typedef struct{}* diehard_t;                                ///< A handle to a drawing method
-		typedef std::function<void(paint::graphics&)> draw_fn_t;    ///< A function to draw
+		using diehard_t = draw_fn_handle * ;						///< A handle to a drawing method
+		using draw_fn_t = std::function<void(paint::graphics&)>;    ///< A function to draw
 
 		drawing(window w);              ///< Create a drawing object for a widget w
 		
