@@ -682,7 +682,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			return lines_.end();
 		}
-
 	private:
 		void _m_parse_format(tokenizer & tknizer, std::stack<fblock*> & fbstack)
 		{
