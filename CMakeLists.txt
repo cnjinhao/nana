@@ -17,7 +17,7 @@
 
 # https://cliutils.gitlab.io/modern-cmake/
 # https://cmake.org/cmake-tutorial/
-# https://cmake.org/cmake/help/v3.13/module/CMakeDependentOption.html?highlight=cmakedependentoption
+# https://cmake.org/cmake/help/v3.12/module/CMakeDependentOption.html?highlight=cmakedependentoption
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
 #  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
@@ -312,7 +312,7 @@ if(NANA_CMAKE_ENABLE_PNG)
         if(PNG_FOUND)
             target_include_directories(nana PRIVATE ${PNG_INCLUDE_DIRS})
             target_compile_options    (nana PRIVATE ${PNG_LIBRARIES})
-            target_compile_definitions(nana PRIVATE NANA_ENABLE_PNG USE_LIBPNG_FROM_OS)
+            target_compile_definitions(nana PUBLIC NANA_ENABLE_PNG USE_LIBPNG_FROM_OS)
         endif()
     else()
         target_compile_definitions(nana PRIVATE NANA_ENABLE_PNG)
@@ -326,7 +326,7 @@ if(NANA_CMAKE_ENABLE_JPEG)
         if(JPEG_FOUND)
             target_include_directories(nana PRIVATE  ${JPEG_INCLUDE_DIR})
             target_compile_options    (nana PRIVATE  ${JPEG_LIBRARY})
-            target_compile_definitions(nana PRIVATE NANA_ENABLE_JPEG USE_LIBJPEG_FROM_OS)
+            target_compile_definitions(nana PUBLIC NANA_ENABLE_JPEG USE_LIBJPEG_FROM_OS)
         endif()
     else()
         target_compile_definitions(nana PRIVATE NANA_ENABLE_JPEG)
@@ -335,7 +335,7 @@ endif()
 
 # Find ASOUND
 if(NANA_CMAKE_ENABLE_AUDIO)
-    target_compile_definitions(nana PRIVATE NANA_ENABLE_AUDIO)
+    target_compile_definitions(nana PUBLIC NANA_ENABLE_AUDIO)
     if(UNIX)
         find_package(ASOUND)
         if(ASOUND_FOUND)
