@@ -106,7 +106,8 @@ endforeach()
 # Install the include directories too.
 if(NANA_CMAKE_INSTALL_INCLUDES)
     target_sources(nana PRIVATE ${HEADERS})
-    target_include_directories(nana PRIVATE ${NANA_INCLUDE_DIR})
+    target_include_directories(nana PRIVATE ${NANA_INCLUDE_DIR}
+                                    INTERFACE  ${CMAKE_INSTALL_PREFIX}/include)
     install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include) # in ${CMAKE_INSTALL_PREFIX}/include/nana
     foreach(subdir ${NANA_INCLUDE_SUBDIRS})                         # this works?
         aux_source_directory($<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/nana${subdir}> PUBLIC_HEADERS)
