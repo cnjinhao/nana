@@ -180,13 +180,13 @@ namespace nana
 				}
 			};//end class tooltip_window
 
-			//item_locator should be defined before the definition of basic_implement
+			//item_locator should be defined before the definition of implementation
 			class trigger::item_locator
 			{
 			public:
 				using node_type = tree_cont_type::node_type;
 
-				item_locator(implement * impl, int item_pos, int x, int y);
+				item_locator(implementation * impl, int item_pos, int x, int y);
 				int operator()(node_type &node, int affect);
 				node_type * node() const;
 				component what() const;
@@ -194,7 +194,7 @@ namespace nana
 
 				nana::rectangle text_pos() const;
 			private:
-				trigger::implement * impl_;
+				implementation * const impl_;
 				nana::point item_pos_;
 				const nana::point pos_;		//Mouse pointer position
 				component	what_;
@@ -212,11 +212,89 @@ namespace nana
 				}
 			};
 
-			//struct implement
+			//struct implementation
 			//@brief:	some data for treebox trigger
-			template<typename Renderer>
-			struct trigger::basic_implement
+			class trigger::implementation
 			{
+				class item_rendering_director
+					: public compset_interface
+				{
+				public:
+					using node_type = tree_cont_type::node_type;
+
+					item_rendering_director(implementation * impl, const nana::point& pos):
+						impl_(impl),
+						pos_(pos)
+					{
+					}
+
+					//affect
+					//0 = Sibling, the last is a sibling of node
+					//1 = Owner, the last is the owner of node
+					//>=2 = Children, the last is a child of a node that before this node.
+					int operator()(const node_type& node, int affect)
+					{
+						iterated_node_ = &node;
+						switch (affect)
+						{
+						case 1:
+							pos_.x += impl_->shape.indent_pixels;
+							break;
+						default:
+							if (affect >= 2)
+								pos_.x -= impl_->shape.indent_pixels * (affect - 1);
+						}
+
+						auto & comp_placer = impl_->data.comp_placer;
+
+						impl_->assign_node_attr(node_attr_, iterated_node_);
+						node_r_.x = node_r_.y = 0;
+						node_r_.width = comp_placer->item_width(*impl_->data.graph, node_attr_);
+						node_r_.height = comp_placer->item_height(*impl_->data.graph);
+
+						auto renderer = impl_->data.renderer;
+						renderer->begin_paint(*impl_->data.widget_ptr);
+						renderer->bground(*impl_->data.graph, this);
+						renderer->expander(*impl_->data.graph, this);
+						renderer->crook(*impl_->data.graph, this);
+						renderer->icon(*impl_->data.graph, this);
+						renderer->text(*impl_->data.graph, this);
+
+						pos_.y += node_r_.height;
+
+						if (pos_.y > static_cast<int>(impl_->data.graph->height()))
+							return 0;
+
+						return (node.child && node.value.second.expanded ? 1 : 2);
+					}
+				private:
+					//Overrides compset_interface
+					virtual const item_attribute_t& item_attribute() const override
+					{
+						return node_attr_;
+					}
+
+					virtual bool comp_attribute(component_t comp, comp_attribute_t& attr) const override
+					{
+						attr.area = node_r_;
+						if (impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
+						{
+							attr.mouse_pointed = node_attr_.mouse_pointed;
+							attr.area.x += pos_.x;
+							attr.area.y += pos_.y;
+							return true;
+						}
+						return false;
+					}
+				private:
+					implementation * const impl_;
+					::nana::point pos_;
+					const node_type * iterated_node_;
+					item_attribute_t node_attr_;
+					::nana::rectangle node_r_;
+				};
+
+			public:
 				using node_type = trigger::node_type;
 
 				struct rep_tag
@@ -271,7 +349,7 @@ namespace nana
 					nana::timer timer;
 				}adjust;
 			public:
-				basic_implement()
+				implementation()
 				{
 					data.graph			= nullptr;
 					data.widget_ptr		= nullptr;
@@ -353,6 +431,11 @@ namespace nana
 					return true;
 				}
 
+				static constexpr unsigned margin_top_bottom()
+				{
+					return 1;
+				}
+
 				bool draw(bool reset_scroll, bool ignore_update = false, bool ignore_auto_draw = false)
 				{
 					if(data.graph && (false == data.stop_drawing))
@@ -368,7 +451,7 @@ namespace nana
 								data.graph->rectangle(true, data.widget_ptr->bgcolor());
 
 							//Draw tree
-							attr.tree_cont.for_each(shape.first, Renderer(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, 1)));
+							attr.tree_cont.for_each(shape.first, item_rendering_director(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, margin_top_bottom())));
 
 							if (!ignore_update)
 								API::update_window(data.widget_ptr->handle());
@@ -458,6 +541,41 @@ namespace nana
 						}
 					}
 					return nullptr;
+				}
+
+				node_type* last(bool ignore_folded_children) const
+				{
+					auto p = attr.tree_cont.get_root();
+
+					while (true)
+					{
+						while (p->next)
+							p = p->next;
+
+						if (p->child)
+						{
+							if (p->value.second.expanded || !ignore_folded_children)
+							{
+								p = p->child;
+								continue;
+							}
+						}
+
+						break;
+					}
+
+					return p;
+				}
+
+				std::size_t screen_capacity(bool completed) const
+				{
+					auto const item_px = data.comp_placer->item_height(*data.graph);
+					auto screen_px = data.graph->size().height - (margin_top_bottom() << 1);
+					
+					if (completed || ((screen_px % item_px) == 0))
+						return screen_px / item_px;
+
+					return screen_px / item_px + 1;
 				}
 
 				bool make_adjust(node_type * node, int reason)
@@ -1356,7 +1474,7 @@ namespace nana
 
 
 			//class trigger::item_locator
-				trigger::item_locator::item_locator(implement * impl, int item_pos, int x, int y)
+				trigger::item_locator::item_locator(implementation * impl, int item_pos, int x, int y)
 					:	impl_(impl),
 						item_pos_(item_pos, 1),
 						pos_(x, y),
@@ -1439,86 +1557,6 @@ namespace nana
 					return{node_text_r_.x + item_pos_.x, node_text_r_.y + item_pos_.y, node_text_r_.width, node_text_r_.height};
 				}
 			//end class item_locator
-
-			class trigger::item_renderer
-				: public compset_interface
-			{
-			public:
-				typedef tree_cont_type::node_type node_type;
-
-				item_renderer(implement * impl, const nana::point& pos)
-					:	impl_(impl),
-						pos_(pos)
-				{
-				}
-
-				//affect
-				//0 = Sibling, the last is a sibling of node
-				//1 = Owner, the last is the owner of node
-				//>=2 = Children, the last is a child of a node that before this node.
-				int operator()(const node_type& node, int affect)
-				{
-					implement * draw_impl = impl_;
-
-					iterated_node_ = &node;
-					switch(affect)
-					{
-					case 1:
-						pos_.x += draw_impl->shape.indent_pixels;
-						break;
-					default:
-						if(affect >= 2)
-							pos_.x -= draw_impl->shape.indent_pixels * (affect - 1);
-					}
-
-					auto & comp_placer = impl_->data.comp_placer;
-
-					impl_->assign_node_attr(node_attr_, iterated_node_);
-					node_r_.x = node_r_.y = 0;
-					node_r_.width = comp_placer->item_width(*impl_->data.graph, node_attr_);
-					node_r_.height = comp_placer->item_height(*impl_->data.graph);
-
-					auto renderer = draw_impl->data.renderer;
-					renderer->begin_paint(*draw_impl->data.widget_ptr);
-					renderer->bground(*draw_impl->data.graph, this);
-					renderer->expander(*draw_impl->data.graph, this);
-					renderer->crook(*draw_impl->data.graph, this);
-					renderer->icon(*draw_impl->data.graph, this);
-					renderer->text(*draw_impl->data.graph, this);
-
-					pos_.y += node_r_.height;
-
-					if(pos_.y > static_cast<int>(draw_impl->data.graph->height()))
-						return 0;
-
-					return (node.child && node.value.second.expanded ? 1 : 2);
-				}
-			private:
-				//Overrides compset_interface
-				virtual const item_attribute_t& item_attribute() const override
-				{
-					return node_attr_;
-				}
-
-				virtual bool comp_attribute(component_t comp, comp_attribute_t& attr) const override
-				{
-					attr.area = node_r_;
-					if (impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
-					{
-						attr.mouse_pointed = node_attr_.mouse_pointed;
-						attr.area.x += pos_.x;
-						attr.area.y += pos_.y;
-						return true;
-					}
-					return false;
-				}
-			private:
-				trigger::implement * impl_;
-				::nana::point pos_;
-				const node_type * iterated_node_;
-				item_attribute_t node_attr_;
-				::nana::rectangle node_r_;
-			};
 		}
 
 		//Treebox Implementation
@@ -1548,7 +1586,7 @@ namespace nana
 				//end struct treebox_node_type
 
 				trigger::trigger()
-					:	impl_(new implement)
+					:	impl_(new implementation)
 				{
 					impl_->data.trigger_ptr = this;
 					impl_->data.renderer = nana::pat::cloneable<renderer_interface>(internal_renderer());
@@ -1615,7 +1653,7 @@ namespace nana
 					delete impl_;
 				}
 
-				trigger::implement * trigger::impl() const
+				trigger::implementation * trigger::impl() const
 				{
 					return impl_;
 				}
@@ -1687,12 +1725,19 @@ namespace nana
 					}
 				}
 
+				/*	//deprecated
 				void trigger::renderer(::nana::pat::cloneable<renderer_interface>&& r)
 				{
 					impl_->data.renderer = std::move(r);
 				}
 
 				const ::nana::pat::cloneable<renderer_interface>& trigger::renderer() const
+				{
+					return impl_->data.renderer;
+				}
+				*/
+
+				::nana::pat::cloneable<renderer_interface>& trigger::renderer() const
 				{
 					return impl_->data.renderer;
 				}
@@ -1729,16 +1774,20 @@ namespace nana
 					return x;
 				}
 
-				trigger::node_type* trigger::selected() const
+				/*
+				trigger::node_type* trigger::selected() const	//deprecated
 				{
 					return impl_->node_state.selected;
 				}
+				*/
 
-				void trigger::selected(node_type* node)
+				/*
+				void trigger::selected(node_type* node)	//deprecated
 				{
 					if(impl_->attr.tree_cont.verify(node) && impl_->set_selected(node))
 						impl_->draw(true);
 				}
+				*/
 
 				node_image_tag& trigger::icon(const std::string& id) const
 				{
@@ -2233,7 +2282,84 @@ namespace nana
 
 		treebox::item_proxy treebox::selected() const
 		{
-			return item_proxy(const_cast<drawer_trigger_t*>(&get_drawer_trigger()), get_drawer_trigger().selected());
+			//return item_proxy(const_cast<drawer_trigger_t*>(&get_drawer_trigger()), get_drawer_trigger().selected());	//deprecated
+			auto dw = &get_drawer_trigger();
+			return item_proxy(const_cast<drawer_trigger_t*>(dw), dw->impl()->node_state.selected);
+		}
+
+		void treebox::scroll_into_view(item_proxy item, align_v align)
+		{
+			auto node = item._m_node();
+			internal_scope_guard lock;
+			auto impl = get_drawer_trigger().impl();
+
+			auto & tree = impl->attr.tree_cont;
+
+			auto parent = node->owner;
+
+			std::vector<drawerbase::treebox::node_type*> parent_path;
+			while (parent)
+			{
+				parent_path.push_back(parent);
+				parent = parent->owner;
+			}
+
+			//Expands the shrinked nodes which are ancestors of node
+			for (auto i = parent_path.rbegin(); i != parent_path.rend(); ++i)
+			{
+				if (!(*i)->value.second.expanded)
+				{
+					(*i)->value.second.expanded = true;
+					item_proxy iprx(impl->data.trigger_ptr, *i);
+					impl->data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *impl->data.widget_ptr, iprx, true }, impl->data.widget_ptr->handle());
+				}
+			}
+
+			auto pos = tree.distance_if(node, drawerbase::treebox::pred_allow_child{});
+			auto last_pos = tree.distance_if(impl->last(true), drawerbase::treebox::pred_allow_child{});
+
+			auto const capacity = impl->screen_capacity(false);
+			auto const item_px = impl->data.comp_placer->item_height(*impl->data.graph);
+
+			if (align_v::top == align)
+			{
+				if (last_pos - pos + 1 < capacity)
+				{
+					if (last_pos + 1 >= capacity)
+						pos = last_pos + 1 - capacity;
+					else
+						pos = 0;
+				}
+			}
+			else if (align_v::center == align)
+			{
+				auto const short_side = (std::min)(pos, last_pos - pos);
+				if (short_side >= capacity / 2)
+				{
+					pos -= short_side;
+				}
+				else
+				{
+					if (short_side == pos || (last_pos + 1 < capacity))
+						pos = 0;
+					else
+						pos = last_pos + 1 - capacity;
+				}
+			}
+			else if (align_v::bottom == align)
+			{
+				if (pos + 1 >= capacity)
+					pos = pos + 1 - capacity;
+				else
+					pos = 0;
+			}
+
+			impl->shape.first = impl->attr.tree_cont.advance_if(nullptr, pos, drawerbase::treebox::pred_allow_child{});
+
+			impl->draw(true, false, true);
+
+			API::update_window(*this);
+
 		}
 
 		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()
