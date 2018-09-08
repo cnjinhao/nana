@@ -578,6 +578,96 @@ namespace nana
 					return screen_px / item_px + 1;
 				}
 
+				bool scroll_into_view(node_type* node, bool use_bearing, align_v bearing)
+				{
+					auto & tree = attr.tree_cont;
+
+					auto parent = node->owner;
+
+					std::vector<node_type*> parent_path;
+					while (parent)
+					{
+						parent_path.push_back(parent);
+						parent = parent->owner;
+					}
+
+					bool has_expanded = false;
+
+					//Expands the shrinked nodes which are ancestors of node
+					for (auto i = parent_path.rbegin(); i != parent_path.rend(); ++i)
+					{
+						if (!(*i)->value.second.expanded)
+						{
+							has_expanded = true;
+							(*i)->value.second.expanded = true;
+							item_proxy iprx(data.trigger_ptr, *i);
+							data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
+						}
+					}
+
+					auto pos = tree.distance_if(node, pred_allow_child{});
+					auto last_pos = tree.distance_if(last(true), pred_allow_child{});
+
+					auto const capacity = screen_capacity(true);
+					auto const item_px = data.comp_placer->item_height(*data.graph);
+
+					//If use_bearing is false, it calculates a bearing depending on the current
+					//position of the requested item.
+					if (!use_bearing)
+					{
+						auto first_pos = tree.distance_if(shape.first, pred_allow_child{});
+
+						if (pos < first_pos)
+							bearing = align_v::top;
+						else if (pos >= first_pos + capacity)
+							bearing = align_v::bottom;
+						else
+						{
+							//The item is already in the view.
+							//Returns true if a draw operation is needed
+							return has_expanded;
+						}
+					}
+
+					if (align_v::top == bearing)
+					{
+						if (last_pos - pos + 1 < capacity)
+						{
+							if (last_pos + 1 >= capacity)
+								pos = last_pos + 1 - capacity;
+							else
+								pos = 0;
+						}
+					}
+					else if (align_v::center == bearing)
+					{
+						auto const short_side = (std::min)(pos, last_pos - pos);
+						if (short_side >= capacity / 2)
+						{
+							pos -= short_side;
+						}
+						else
+						{
+							if (short_side == pos || (last_pos + 1 < capacity))
+								pos = 0;
+							else
+								pos = last_pos + 1 - capacity;
+						}
+					}
+					else if (align_v::bottom == bearing)
+					{
+						if (pos + 1 >= capacity)
+							pos = pos + 1 - capacity;
+						else
+							pos = 0;
+					}
+
+					auto prv_first = shape.first;
+					shape.first = attr.tree_cont.advance_if(nullptr, pos, drawerbase::treebox::pred_allow_child{});
+					
+					return has_expanded || (prv_first != shape.first);
+				}
+
 				bool make_adjust(node_type * node, int reason)
 				{
 					if(!node) return false;
@@ -2287,79 +2377,19 @@ namespace nana
 			return item_proxy(const_cast<drawer_trigger_t*>(dw), dw->impl()->node_state.selected);
 		}
 
-		void treebox::scroll_into_view(item_proxy item, align_v align)
+		void treebox::scroll_into_view(item_proxy item, align_v bearing)
 		{
-			auto node = item._m_node();
 			internal_scope_guard lock;
-			auto impl = get_drawer_trigger().impl();
+			if(get_drawer_trigger().impl()->scroll_into_view(item._m_node(), true, bearing))
+				API::refresh_window(*this);
+		}
 
-			auto & tree = impl->attr.tree_cont;
-
-			auto parent = node->owner;
-
-			std::vector<drawerbase::treebox::node_type*> parent_path;
-			while (parent)
-			{
-				parent_path.push_back(parent);
-				parent = parent->owner;
-			}
-
-			//Expands the shrinked nodes which are ancestors of node
-			for (auto i = parent_path.rbegin(); i != parent_path.rend(); ++i)
-			{
-				if (!(*i)->value.second.expanded)
-				{
-					(*i)->value.second.expanded = true;
-					item_proxy iprx(impl->data.trigger_ptr, *i);
-					impl->data.widget_ptr->events().expanded.emit(::nana::arg_treebox{ *impl->data.widget_ptr, iprx, true }, impl->data.widget_ptr->handle());
-				}
-			}
-
-			auto pos = tree.distance_if(node, drawerbase::treebox::pred_allow_child{});
-			auto last_pos = tree.distance_if(impl->last(true), drawerbase::treebox::pred_allow_child{});
-
-			auto const capacity = impl->screen_capacity(false);
-			auto const item_px = impl->data.comp_placer->item_height(*impl->data.graph);
-
-			if (align_v::top == align)
-			{
-				if (last_pos - pos + 1 < capacity)
-				{
-					if (last_pos + 1 >= capacity)
-						pos = last_pos + 1 - capacity;
-					else
-						pos = 0;
-				}
-			}
-			else if (align_v::center == align)
-			{
-				auto const short_side = (std::min)(pos, last_pos - pos);
-				if (short_side >= capacity / 2)
-				{
-					pos -= short_side;
-				}
-				else
-				{
-					if (short_side == pos || (last_pos + 1 < capacity))
-						pos = 0;
-					else
-						pos = last_pos + 1 - capacity;
-				}
-			}
-			else if (align_v::bottom == align)
-			{
-				if (pos + 1 >= capacity)
-					pos = pos + 1 - capacity;
-				else
-					pos = 0;
-			}
-
-			impl->shape.first = impl->attr.tree_cont.advance_if(nullptr, pos, drawerbase::treebox::pred_allow_child{});
-
-			impl->draw(true, false, true);
-
-			API::update_window(*this);
-
+		void treebox::scroll_into_view(item_proxy item)
+		{
+			internal_scope_guard lock;
+			//The third argument for scroll_into_view is ignored if the second argument is false.
+			if(get_drawer_trigger().impl()->scroll_into_view(item._m_node(), false, align_v::center))
+				API::refresh_window(*this);
 		}
 
 		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()

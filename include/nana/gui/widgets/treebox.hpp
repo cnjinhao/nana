@@ -450,8 +450,18 @@ namespace nana
 
 		item_proxy selected() const; ///< returns the selected node
 
-		/// Scrolls a specified item into view
-		void scroll_into_view(item_proxy item, align_v);
+		/// Scrolls a specified item into view.
+		/**
+		 * @param item An item to be requested.
+		 * @param bearing The position where the item to be positioned in the view.
+		 */
+		void scroll_into_view(item_proxy item, align_v bearing);
+
+		/// Scrolls a specified item into view.
+		/**
+		 * @param item An item to be requested.
+		 */
+		void scroll_into_view(item_proxy item);
 
 	private:
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
