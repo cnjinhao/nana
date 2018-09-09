@@ -10,8 +10,8 @@
 #
 # Nana uses some build systems: MS-VS solution, MAKE, bakefile, codeblock, etc. manually optimized.
 # Maybe CMake will be used in the future to generate some of them in the central nana repository.
-# But by now CMake is just one option and all the other distributed build system
-# files/projects are manually writen. This current CMakeList.txt reflect this fact and that is why we don't
+# But by now CMake is just one option and all the other build system
+# files/projects distributed are manually writen. This current CMakeList.txt reflect this fact and that is why we don't
 # generate here configurated *.h files or explicitly enumerate the sources files: anyway this CM-list
 # will be "touched" to force a re-run of cmake.
 
@@ -20,9 +20,9 @@
 # https://cmake.org/cmake/help/v3.12/module/CMakeDependentOption.html?highlight=cmakedependentoption
 # use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
 # if your changes don't execute
+
 #  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
 #  https://bbs.archlinux.org/viewtopic.php?id=84967
-
 cmake_minimum_required(VERSION 3.12)
 project(nana VERSION      1.6.2
         DESCRIPTION "C++ GUI library"
@@ -40,7 +40,7 @@ target_compile_features(nana PUBLIC cxx_std_14)
 ###    collect all source sub-directories in a list to avoid duplication here
 
 # By using CMAKE_CURRENT_LIST_DIR here you can compile and consume nana by just:
-# include(path/to/nana/CMakeLists.txt)
+# add_subdirectory(../nana ../cmake-nana-build-${CONFIG} ) or simmilar
 # in your own CMakeLists.txt, and them :
 # target_link_libraries(yourApp PRIVATE nana )
 
@@ -104,31 +104,26 @@ foreach(subdir ${NANA_INCLUDE_SUBDIRS})
 endforeach()
 
 # Install the include directories too.
-if(NANA_CMAKE_INSTALL_INCLUDES)
+if(NANA_CMAKE_INSTALL)
+    # this is the prefered method to consume nana directly with some specific bulid system
+    # Is your responsability to ensure all compiler options are compatible with the compilation
+    # of the project linking to the nana lib here generated
     target_sources(nana PRIVATE ${HEADERS})
-    target_include_directories(nana PRIVATE ${NANA_INCLUDE_DIR}
-                                    INTERFACE  ${CMAKE_INSTALL_PREFIX}/include)
+    target_include_directories(nana PRIVATE ${NANA_INCLUDE_DIR})
+    message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
+    # Actually in DESTDIR/CMAKE_INSTALL_PREFIX/lib but in windows there is no DESTDIR/ part.
+    install(TARGETS nana
+            ARCHIVE DESTINATION lib
+            LIBRARY DESTINATION lib
+            RUNTIME DESTINATION bin)
     install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include) # in ${CMAKE_INSTALL_PREFIX}/include/nana
-    foreach(subdir ${NANA_INCLUDE_SUBDIRS})                         # this works?
-        aux_source_directory($<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/nana${subdir}> PUBLIC_HEADERS)
-    endforeach()                                                    # todo: use GLOB to add headers too !!!!!!!
-    target_sources(nana INTERFACE ${PUBLIC_HEADERS})
     message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
 else()
+    # this is the prefered method to consume nana with cmake
     target_sources(nana PUBLIC ${HEADERS})
     target_include_directories(nana PUBLIC ${NANA_INCLUDE_DIR})
 endif()
 
-
-
-
-message("")
-message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
-# Actually in DESTDIR/CMAKE_INSTALL_PREFIX/lib but in windows there is no DESTDIR/ part.
-install(TARGETS nana
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin)
 
 if(BUILD_SHARED_LIBS)    # ??
     if(WIN32)
@@ -167,7 +162,7 @@ endif()
 
 
 
-option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
+option(NANA_CMAKE_INSTALL "Install nana when compile the library" OFF)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
 option(NANA_CMAKE_ENABLE_PNG "Enable the use of PNG" OFF)
 option(NANA_CMAKE_LIBPNG_FROM_OS "Use libpng from operating system." ON)
