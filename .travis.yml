@@ -65,8 +65,6 @@ script:
   - make install
   - ls
   - cd ..
-  - ls
-  - cd ..
   - mkdir  nana_demo_bin
   - ls
   - cd nana_demo_bin
