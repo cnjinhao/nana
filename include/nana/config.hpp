@@ -71,7 +71,7 @@
 ///////////////////
 //  Support of PCM playback
 //
-#define NANA_ENABLE_AUDIO
+//#define NANA_ENABLE_AUDIO
 
 ///////////////////
 //  Support for PNG

@@ -103,6 +103,14 @@ foreach(subdir ${NANA_INCLUDE_SUBDIRS})
     aux_source_directory(${NANA_INCLUDE_DIR}/nana${subdir} HEADERS)  # todo: use GLOB to add headers too !!!!!!!
 endforeach()
 
+
+option(NANA_CMAKE_INSTALL "Install nana when compile the library" OFF)
+option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
+option(NANA_CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." ON)
+option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." OFF)
+option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
+
+
 # Install the include directories too.
 if(NANA_CMAKE_INSTALL)
     # this is the prefered method to consume nana directly with some specific bulid system
@@ -126,70 +134,19 @@ endif()
 
 
 if(BUILD_SHARED_LIBS)    # ??
-    if(WIN32)
-        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-        if(DLLTOOL)
-            #generate the lib and def files needed by msvc
-            set_target_properties (nana   PROPERTIES
-                    OUTPUT_NAME         nana
-                    ARCHIVE_OUTPUT_NAME nana
-                    LINK_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--output-def=${CMAKE_CURRENT_BINARY_DIR}/libnana.def"
-                    )
-
-            add_custom_command(TARGET nana POST_BUILD
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-                    COMMAND echo "       Generating import library"
-                    COMMAND "${DLLTOOL}" --dllname    "libnana.dll"
-                    --input-def  "libnana.def"
-                    --output-lib "libnana.lib")
-
-            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libnana.def"
-                    "${CMAKE_CURRENT_BINARY_DIR}/libnana.lib" DESTINATION lib)
-        endif()
-    endif()
+    include(build/cmake/shared_libs.cmake)
 endif()
 
 ######## Nana options
 
-target_compile_definitions(nana PRIVATE NANA_IGNORE_CONF)
+target_compile_definitions(nana PRIVATE NANA_IGNORE_CONF)    # really ?
 if(NANA_CMAKE_VERBOSE_PREPROCESSOR)
     target_compile_definitions(nana PRIVATE VERBOSE_PREPROCESSOR)
 endif()
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
     target_compile_definitions(nana PUBLIC NANA_AUTOMATIC_GUI_TESTING)
-    enable_testing()       #  ??
+    # todo: enable_testing()       #  ??
 endif()
-
-
-
-option(NANA_CMAKE_INSTALL "Install nana when compile the library" OFF)
-option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
-option(NANA_CMAKE_ENABLE_PNG "Enable the use of PNG" OFF)
-option(NANA_CMAKE_LIBPNG_FROM_OS "Use libpng from operating system." ON)
-option(NANA_CMAKE_ENABLE_JPEG "Enable the use of JPEG" OFF)
-option(NANA_CMAKE_LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
-option(NANA_CMAKE_ENABLE_AUDIO "Enable class audio::play for PCM playback." OFF)
-option(NANA_CMAKE_VERBOSE_PREPROCESSOR "Show annoying debug messages during compilation." ON)
-option(NANA_CMAKE_STOP_VERBOSE_PREPROCESSOR "Stop compilation after showing the annoying debug messages." OFF)
-option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
-
-# The ISO C++ File System Technical Specification (ISO-TS, or STD) is optional.
-#              http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf
-# This is not a workaround, but an user option.
-# The library maybe available in the std library in use or from Boost (almost compatible)
-#              http://www.boost.org/doc/libs/1_60_0/libs/filesystem/doc/index.htm
-# or you can choose to use the (partial, but functional) implementation provided by nana.
-# If you include the file <nana/filesystem/filesystem.hpp> or <nana/filesystem/filesystem_ext.hpp>
-# the selected option will be set by nana into std::experimental::filesystem
-# By default Nana will try to use the STD. If STD is not available and NANA_CMAKE_FIND_BOOST_FILESYSTEM
-# is set to ON nana will try to use boost if available. Nana own implementation will be use if none of
-# the previus were selected or available.
-# You can change that default if you change one of the following
-# (please don't define more than one of the _XX_FORCE options):
-option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" OFF)
-option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
-option(NANA_CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
-option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
 
 ########### OS
 # https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
@@ -224,16 +181,6 @@ if(WIN32)
         if(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)      # deprecated ?????
             target_compile_definitions(nana PUBLIC STD_THREAD_NOT_SUPPORTED)
             target_compile_definitions(nana PUBLIC NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)
-        endif()
-    endif()
-
-    if(MSVC)
-        set(DLLTOOL OFF)
-    else()
-        # mingw: If dlltool is found the def and lib file will be created
-        find_program (DLLTOOL dlltool)
-        if(NOT DLLTOOL)
-            message(WARNING "dlltool not found. Skipping import library generation.")
         endif()
     endif()
 endif()
@@ -274,107 +221,36 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     target_compile_options(nana PRIVATE  -Wall)
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
         if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
-            target_compile_options(nana PRIVATE -I/usr/local/include)
+            target_compile_options(nana PUBLIC -I/usr/local/include)
         endif()
     endif()
 
     if(BUILD_SHARED_LIBS)
-        target_compile_options(nana PRIVATE  -lgcc -lstdc++)
+        target_compile_options(nana PUBLIC  -lgcc -lstdc++)
     else()
 
         if(MINGW)
-            target_compile_options(nana PRIVATE -static)     #  -static ?? cmake knows BUILD_SHARED_LIBS
+            target_compile_options(nana PUBLIC -static)     #  -static ?? cmake knows BUILD_SHARED_LIBS
         else()
-            target_compile_options(nana PRIVATE -static-libgcc -static-libstdc++)
+            target_compile_options(nana PUBLIC -static-libgcc -static-libstdc++)
         endif()
     endif(BUILD_SHARED_LIBS)
 
-    target_compile_options(nana PRIVATE -pthread)
+    target_compile_options(nana PUBLIC -pthread)
 
 endif()
 
 
 if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
-    target_compile_options(nana PRIVATE -stdlib=libstdc++)
+    target_compile_options(nana PUBLIC -stdlib=libstdc++)
 endif ()
 
 
 ############# Optional libraries
-
-# Find PNG
-if(NANA_CMAKE_ENABLE_PNG)
-    if(NANA_CMAKE_LIBPNG_FROM_OS)
-        find_package(PNG)
-        if(PNG_FOUND)
-            target_include_directories(nana PRIVATE ${PNG_INCLUDE_DIRS})
-            target_compile_options    (nana PRIVATE ${PNG_LIBRARIES})
-            target_compile_definitions(nana PUBLIC NANA_ENABLE_PNG USE_LIBPNG_FROM_OS)
-        endif()
-    else()
-        target_compile_definitions(nana PRIVATE NANA_ENABLE_PNG)
-    endif()
-endif()
-
-# Find JPEG
-if(NANA_CMAKE_ENABLE_JPEG)
-    if(NANA_CMAKE_LIBJPEG_FROM_OS)
-        find_package(JPEG)
-        if(JPEG_FOUND)
-            target_include_directories(nana PRIVATE  ${JPEG_INCLUDE_DIR})
-            target_compile_options    (nana PRIVATE  ${JPEG_LIBRARY})
-            target_compile_definitions(nana PUBLIC NANA_ENABLE_JPEG USE_LIBJPEG_FROM_OS)
-        endif()
-    else()
-        target_compile_definitions(nana PRIVATE NANA_ENABLE_JPEG)
-    endif()
-endif()
-
-# Find ASOUND
-if(NANA_CMAKE_ENABLE_AUDIO)
-    target_compile_definitions(nana PUBLIC NANA_ENABLE_AUDIO)
-    if(UNIX)
-        find_package(ASOUND)
-        if(ASOUND_FOUND)
-            target_include_directories(nana PRIVATE ${ASOUND_INCLUDE_DIRS})
-            target_compile_options(nana PRIVATE  -lasound)
-        else()
-            message(FATAL_ERROR "libasound is not found")
-        endif()
-    endif()
-endif()
-
-# Find/Select filesystem
-
-
-if(NANA_CMAKE_NANA_FILESYSTEM_FORCE)
-    target_compile_definitions(nana PUBLIC NANA_FILESYSTEM_FORCE)
-
-elseif(NANA_CMAKE_STD_FILESYSTEM_FORCE)
-    target_compile_definitions(nana PUBLIC STD_FILESYSTEM_FORCE)
-    target_compile_options    (nana PUBLIC -lstdc++fs)
-
-elseif(NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-    if(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-        target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_FORCE)
-    else()
-        target_compile_options    (nana PUBLIC -lstdc++fs)
-    endif()
-
-    # https://cmake.org/cmake/help/git-master/module/FindBoost.html
-    # Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied,
-    # even if system is not specified when using find_package and if Boost::system is not added to target_link_libraries.
-    # If using Boost::thread, then Thread::Thread will also be added automatically.
-    find_package(Boost COMPONENTS filesystem)
-    if(Boost_FOUND)
-        target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_AVAILABLE)
-        target_include_directories(nana PUBLIC "${Boost_INCLUDE_DIR}")    # ?? SYSTEM
-        target_link_libraries     (nana PUBLIC ${Boost_LIBRARIES})
-    endif()
-    set(Boost_USE_STATIC_LIBS ON)
-    set(Boost_USE_STATIC_RUNTIME ON)
-endif()
-
-
+include(build/cmake/enable_png.cmake)
+include(build/cmake/enable_jpeg.cmake)
+include(build/cmake/enable_audio.cmake)
+include(build/cmake/select_filesystem.cmake)
 
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
@@ -388,7 +264,7 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 include(CMakePrintHelpers)
 
 message ("")
-cmake_print_variables(SOURCES)
+# cmake_print_variables(SOURCES)
 cmake_print_variables(HEADERS)
 cmake_print_variables(PUBLIC_HEADERS)
 
