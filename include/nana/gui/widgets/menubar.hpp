@@ -1,7 +1,7 @@
 /*
  *	A Menubar implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -32,26 +32,6 @@ namespace nana
 				color_proxy body_selected{ colors::white };
 				color_proxy border_selected{ colors::dark_border };
 				color_proxy border_highlight{ colors::highlight };
-			};
-
-			class item_renderer
-			{
-			public:
-				enum class state
-				{
-					normal, highlighted, selected
-				};
-
-				using graph_reference = paint::graphics&;
-				using scheme = ::nana::drawerbase::menubar::scheme;
-
-				item_renderer(window, graph_reference);
-				virtual void background(const point&, const ::nana::size&, state);
-				virtual void caption(const point&, const native_string_type&);
-				scheme *scheme_ptr() const { return scheme_ptr_; };
-			private:
-				graph_reference graph_;
-				scheme *scheme_ptr_;
 			};
 
 			class trigger
