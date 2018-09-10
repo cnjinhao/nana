@@ -658,21 +658,31 @@ namespace detail
 		platform_scope_guard lock;
 		if(umake_owner(wd))
 		{
+			auto & wd_manager = detail::bedrock::instance().wd_manager();
+
+			std::vector<native_window_type> owned_children;
+
 			auto i = wincontext_.find(wd);
 			if(i != wincontext_.end())
 			{
 				if(i->second.owned)
 				{
-					set_error_handler();
-					auto & wd_manager = detail::bedrock::instance().wd_manager();
-					for(auto u = i->second.owned->rbegin(); u != i->second.owned->rend(); ++u)
-						wd_manager.close(wd_manager.root(*u));
-
-					rev_error_handler();
-
-					delete i->second.owned;
+					for(auto child : *i->second.owned)
+						owned_children.push_back(child);
 				}
+			}
 
+			//Closing a child will erase the wd from the table wincontext_, so the 
+			//iterator i can't be reused after children closed.
+			set_error_handler();
+			for(auto u = owned_children.rbegin(); u != owned_children.rend(); ++u)
+				wd_manager.close(wd_manager.root(*u));
+			rev_error_handler();
+
+			i = wincontext_.find(wd);
+			if(i != wincontext_.end())
+			{
+				delete i->second.owned;
 				wincontext_.erase(i);
 			}
 		}
