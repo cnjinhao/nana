@@ -267,7 +267,7 @@ message ("")
 # cmake_print_variables(SOURCES)
 cmake_print_variables(HEADERS)
 cmake_print_variables(PUBLIC_HEADERS)
-
+cmake_print_variables(NANA_CMAKE_INSTALL)
 
 message ( "CMAKE_CXX_COMPILER_ID     = "  ${CMAKE_CXX_COMPILER_ID})
 message ( "COMPILER_IS_CLANG         = "  ${COMPILER_IS_CLANG})
