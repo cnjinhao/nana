@@ -1,7 +1,7 @@
 /*
  *	An Animation Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -49,24 +49,18 @@ namespace nana
 		
 		struct impl;
 		class performance_manager;
+
+		/// Non-copyable
+		animation(const animation&) = delete;
+		animation& operator=(const animation&) = delete;
 	public:
 		animation(std::size_t fps = 23);
 		~animation();
 
-		void push_back(frameset frms);
-		/*
-		void branch(const std::string& name, const frameset& frms)
-		{
-			impl_->branches[name].frames = frms;
-		}
+		animation(animation&&);
+		animation& operator=(animation&&);
 
-		void branch(const std::string& name, const frameset& frms, std::function<std::size_t(const std::string&, std::size_t, std::size_t&)> condition)
-		{
-			auto & br = impl_->branches[name];
-			br.frames = frms;
-			br.condition = condition;
-		}
-		*/
+		void push_back(frameset frms);
 
 		void looped(bool enable);       ///< Enables or disables the animation repeating playback.
 
