@@ -311,7 +311,8 @@ namespace nana
 							break;
 					}
 
-					if (allowed_width_px < extent_size.width)
+					//The width is not restricted if the allowed_width_px is zero.
+					if (allowed_width_px && (allowed_width_px < extent_size.width))
 						extent_size.width = allowed_width_px;
 
 					if (transient_.current_font != pre_font)
@@ -444,6 +445,10 @@ namespace nana
 							{
 								unsigned sub_text_px = 0;
 								auto sub_text_len = _m_fit_text(graph, data->text().substr(text_begin), rs.allowed_width, sub_text_px);
+
+								//At least one character must be displayed no matter whether the width is enough or not.
+								if (0 == sub_text_len)
+									sub_text_len = 1;
 
 								if (text_begin + sub_text_len < data->text().size())
 								{
