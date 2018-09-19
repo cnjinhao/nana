@@ -644,7 +644,7 @@ namespace nana
 						auto const short_side = (std::min)(pos, last_pos - pos);
 						if (short_side >= capacity / 2)
 						{
-							pos -= short_side;
+							pos = short_side - capacity / 2;
 						}
 						else
 						{
@@ -664,7 +664,10 @@ namespace nana
 
 					auto prv_first = shape.first;
 					shape.first = attr.tree_cont.advance_if(nullptr, pos, drawerbase::treebox::pred_allow_child{});
-					
+
+					//Update the position of scroll
+					show_scroll();
+
 					return has_expanded || (prv_first != shape.first);
 				}
 
