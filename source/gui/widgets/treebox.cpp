@@ -643,16 +643,11 @@ namespace nana
 					{
 						auto const short_side = (std::min)(pos, last_pos - pos);
 						if (short_side >= capacity / 2)
-						{
-							pos = short_side - capacity / 2;
-						}
+							pos -= capacity / 2;
+						else if (short_side == pos || (last_pos + 1 < capacity))
+							pos = 0;
 						else
-						{
-							if (short_side == pos || (last_pos + 1 < capacity))
-								pos = 0;
-							else
-								pos = last_pos + 1 - capacity;
-						}
+							pos = last_pos + 1 - capacity;
 					}
 					else if (align_v::bottom == bearing)
 					{
