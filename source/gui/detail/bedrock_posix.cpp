@@ -973,7 +973,12 @@ namespace detail
 			case Expose:
 				if(msgwnd->visible && (msgwnd->root_graph->empty() == false))
 				{
-					nana::detail::platform_scope_guard lock;
+					nana::internal_scope_guard lock;
+					//Don't lock this scope using platform-scope-guard. Because it would cause the platform-scope-lock to be locked
+					//before the internal-scope-guard, and the order of locking would cause dead-lock.
+					//
+					//Locks this scope using internal-scope-guard is correct and safe. In the scope, the Xlib functions aren't called
+					//directly.
 					if(msgwnd->is_draw_through())
 					{
 						msgwnd->other.attribute.root->draw_through();
