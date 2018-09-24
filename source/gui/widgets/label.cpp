@@ -303,7 +303,7 @@ namespace nana
 							extent_size.width = width_px;
 
 						for (auto & vsline : rs.vslines)
-							extent_size.height += vsline.extent_height_px;
+							extent_size.height += static_cast<size::value_type>(vsline.extent_height_px);
 
 						content_lines.emplace_back(std::move(rs.vslines));
 
