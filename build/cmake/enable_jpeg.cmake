@@ -1,6 +1,6 @@
 option(NANA_CMAKE_ENABLE_JPEG "Enable the use of JPEG" OFF)
 option(NANA_CMAKE_LIBJPEG_FROM_OS "Use libjpeg from operating system." ON)
-option(JPEG_HAVE_BOOLEAN "Defining HAVE_BOOLEAN before including jpeglib.h" ON)
+option(JPEG_HAVE_BOOLEAN "Defining HAVE_BOOLEAN before including jpeglib.h" OFF)
 
 # todo: decide - PUBLIC vs PRIVATE
 
