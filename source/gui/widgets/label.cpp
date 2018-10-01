@@ -303,7 +303,7 @@ namespace nana
 							extent_size.width = width_px;
 
 						for (auto & vsline : rs.vslines)
-							extent_size.height += vsline.extent_height_px;
+							extent_size.height += static_cast<size::value_type>(vsline.extent_height_px);
 
 						content_lines.emplace_back(std::move(rs.vslines));
 
@@ -891,7 +891,8 @@ namespace nana
 			if(graph_ptr->empty())
 			{
 				graph_ptr = &substitute;
-				graph_ptr->make({ 10, 10 });
+				substitute.make({ 10, 10 });
+				substitute.typeface(this->typeface());
 			}
 
 			return impl->renderer.measure(*graph_ptr, limited, impl->text_align, impl->text_align_v);
