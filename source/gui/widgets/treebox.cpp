@@ -1877,7 +1877,7 @@ namespace nana
 				}
 				*/
 
-				node_image_tag& trigger::icon(const std::string& id) const
+				node_image_tag& trigger::icon(const std::string& id)
 				{
 					auto i = impl_->shape.image_table.find(id);
 					if(i != impl_->shape.image_table.end())
@@ -2304,7 +2304,7 @@ namespace nana
 				impl->draw(true);
 		}
 
-		treebox::node_image_type& treebox::icon(const std::string& id) const
+		treebox::node_image_type& treebox::icon(const std::string& id)
 		{
 			return get_drawer_trigger().icon(id);
 		}

@@ -135,7 +135,7 @@ namespace nana
 				//node_type * selected() const;	//deprecated
 				//void selected(node_type*);
 
-				node_image_tag& icon(const ::std::string&) const;
+				node_image_tag& icon(const ::std::string&);
 				void icon_erase(const ::std::string&);
 				void node_icon(node_type*, const ::std::string& id);
 				unsigned node_width(const node_type*) const;
@@ -176,11 +176,11 @@ namespace nana
 
 				/// Append a child with a specified value (user object.).
 				template<typename T>
-				item_proxy append(const ::std::string& key, ::std::string name, const T&t)
+				item_proxy append(const ::std::string& key, ::std::string name, T&& t)
 				{
 					item_proxy ip = append(key, std::move(name));
 					if(false == ip.empty())
-						ip.value(t);
+						ip.value(std::forward<T>(t));
 					return ip;
 				}
 
@@ -296,17 +296,19 @@ namespace nana
 					return *p;
 				}
 
+				/*
 				template<typename T>
-				item_proxy & value(const T& t)
+				item_proxy & value(const T& t)	//deprecated
 				{
 					_m_value() = t;
 					return *this;
 				}
+				*/
 
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
-					_m_value() = std::move(t);
+					_m_value() = std::forward<T>(t);
 					return *this;
 				}
 
@@ -408,6 +410,23 @@ namespace nana
 		/// @param enable bool  whether to enable.
 		void auto_draw(bool enable);
 
+		/// Prevents drawing during execution.
+		template<typename Function>
+		void avoid_drawing(Function fn)
+		{
+			this->auto_draw(false);
+			try
+			{
+				fn();
+			}
+			catch (...)
+			{
+				this->auto_draw(true);
+				throw;
+			}
+			this->auto_draw(true);
+		}
+
 		/// \brief  Enable the checkboxs for each item of the widget.
 		/// @param enable bool  indicates whether to show or hide the checkboxs.
 		treebox & checkable(bool enable);
@@ -424,8 +443,9 @@ namespace nana
         /// These states are 'normal', 'hovered' and 'expanded'. 
         /// If 'hovered' or 'expanded' are not set, it uses 'normal' state image for these 2 states.
         /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
-		node_image_type& icon(const ::std::string& id ///< the name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
-                               ) const;
+		/// @param id The name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
+		/// @return The reference of node image scheme correspending with the specified id.
+		node_image_type& icon(const ::std::string& id);
 
 		void icon_erase(const ::std::string& id);
 
