@@ -87,13 +87,15 @@ namespace nana
 			class trigger
 				:public drawer_trigger
 			{
-				template<typename Renderer>
-				struct basic_implement;
+				//template<typename Renderer>
+				//struct basic_implement;	//deprecated
 
-				class item_renderer;
+				class implementation;
+
+				//class item_renderer;	//deprecated
 				class item_locator;
 
-				typedef basic_implement<item_renderer> implement;
+				//typedef basic_implement<item_renderer> implement;	//deprecated
 			public:
 				struct treebox_node_type
 				{
@@ -116,27 +118,30 @@ namespace nana
 				trigger();
 				~trigger();
 
-				implement * impl() const;
+				implementation * impl() const;
 
 				void check(node_type*, checkstate);
 
-				void renderer(::nana::pat::cloneable<renderer_interface>&&);
-				const ::nana::pat::cloneable<renderer_interface>& renderer() const;
+				pat::cloneable<renderer_interface>& renderer() const;
+
+				//void renderer(::nana::pat::cloneable<renderer_interface>&&);
+				//const ::nana::pat::cloneable<renderer_interface>& renderer() const;	//deprecated
 				void placer(::nana::pat::cloneable<compset_placer_interface>&&);
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
 				node_type* insert(node_type*, const std::string& key, std::string&&);
 				node_type* insert(const std::string& path, std::string&&);
 
-				node_type * selected() const;
-				void selected(node_type*);
+				//node_type * selected() const;	//deprecated
+				//void selected(node_type*);
 
-				node_image_tag& icon(const ::std::string&) const;
+				node_image_tag& icon(const ::std::string&);
 				void icon_erase(const ::std::string&);
 				void node_icon(node_type*, const ::std::string& id);
 				unsigned node_width(const node_type*) const;
 
 				bool rename(node_type*, const char* key, const char* name);
+
 			private:
 				//Overrides drawer_trigger methods
 				void attached(widget_reference, graph_reference)		override;
@@ -152,7 +157,7 @@ namespace nana
 				void key_press(graph_reference, const arg_keyboard&)	override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
 			private:
-				implement * const impl_;
+				implementation * const impl_;
 			}; //end class trigger
 
 
@@ -171,11 +176,11 @@ namespace nana
 
 				/// Append a child with a specified value (user object.).
 				template<typename T>
-				item_proxy append(const ::std::string& key, ::std::string name, const T&t)
+				item_proxy append(const ::std::string& key, ::std::string name, T&& t)
 				{
 					item_proxy ip = append(key, std::move(name));
 					if(false == ip.empty())
-						ip.value(t);
+						ip.value(std::forward<T>(t));
 					return ip;
 				}
 
@@ -291,17 +296,19 @@ namespace nana
 					return *p;
 				}
 
+				/*
 				template<typename T>
-				item_proxy & value(const T& t)
+				item_proxy & value(const T& t)	//deprecated
 				{
 					_m_value() = t;
 					return *this;
 				}
+				*/
 
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
-					_m_value() = std::move(t);
+					_m_value() = std::forward<T>(t);
 					return *this;
 				}
 
@@ -378,7 +385,7 @@ namespace nana
 		template<typename ItemRenderer>
 		treebox & renderer(const ItemRenderer & rd) ///< set user-defined node renderer
 		{
-			get_drawer_trigger().renderer(::nana::pat::cloneable<renderer_interface>(rd));
+			get_drawer_trigger().renderer() = ::nana::pat::cloneable<renderer_interface>{rd};
 			return *this;
 		}
 
@@ -403,6 +410,23 @@ namespace nana
 		/// @param enable bool  whether to enable.
 		void auto_draw(bool enable);
 
+		/// Prevents drawing during execution.
+		template<typename Function>
+		void avoid_drawing(Function fn)
+		{
+			this->auto_draw(false);
+			try
+			{
+				fn();
+			}
+			catch (...)
+			{
+				this->auto_draw(true);
+				throw;
+			}
+			this->auto_draw(true);
+		}
+
 		/// \brief  Enable the checkboxs for each item of the widget.
 		/// @param enable bool  indicates whether to show or hide the checkboxs.
 		treebox & checkable(bool enable);
@@ -419,8 +443,9 @@ namespace nana
         /// These states are 'normal', 'hovered' and 'expanded'. 
         /// If 'hovered' or 'expanded' are not set, it uses 'normal' state image for these 2 states.
         /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
-		node_image_type& icon(const ::std::string& id ///< the name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
-                               ) const;
+		/// @param id The name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
+		/// @return The reference of node image scheme correspending with the specified id.
+		node_image_type& icon(const ::std::string& id);
 
 		void icon_erase(const ::std::string& id);
 
@@ -444,6 +469,19 @@ namespace nana
 		::std::string make_key_path(item_proxy i, const ::std::string& splitter) const;///<returns the key path
 
 		item_proxy selected() const; ///< returns the selected node
+
+		/// Scrolls a specified item into view.
+		/**
+		 * @param item An item to be requested.
+		 * @param bearing The position where the item to be positioned in the view.
+		 */
+		void scroll_into_view(item_proxy item, align_v bearing);
+
+		/// Scrolls a specified item into view.
+		/**
+		 * @param item An item to be requested.
+		 */
+		void scroll_into_view(item_proxy item);
 
 	private:
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;

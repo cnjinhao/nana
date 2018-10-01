@@ -211,10 +211,10 @@
 
 
 #undef _nana_std_optional
-#if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && ((!defined(_MSVC_LANG)) || _MSVC_LANG < 201703))) ||	\
-	((__cplusplus < 201703L) || \
+#if ((defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || _MSVC_LANG < 201703))) ||	\
+	((!defined(_MSC_VER)) && ((__cplusplus < 201703L) || \
 		(defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ < 400)) ||				\
-		(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 701))	\
+		(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 701)))	\
 	)
 #	define _nana_std_optional
 #endif

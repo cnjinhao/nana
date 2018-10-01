@@ -371,6 +371,8 @@ namespace nana{
 			}
 
 			Window parent = (owner ? reinterpret_cast<Window>(owner) : restrict::spec.root_window());
+
+			//The position passed to XCreateWindow is a screen coordinate.
 			nana::point pos(r.x, r.y);
 			if((false == nested) && owner)
 			{
@@ -396,7 +398,9 @@ namespace nana{
 				{
 					auto origin_owner = (owner ? owner : reinterpret_cast<native_window_type>(restrict::spec.root_window()));
 					restrict::spec.make_owner(origin_owner, reinterpret_cast<native_window_type>(handle));
-					exposed_positions[handle] = pos;
+
+					//The exposed_position is a relative position to its owner/parent.
+					exposed_positions[handle] = r.position();
 				}
 
 				XChangeWindowAttributes(disp, handle, attr_mask, &win_attr);
@@ -945,13 +949,14 @@ namespace nana{
 				auto fm_extents = window_frame_extents(wd);
 				origin.x = -fm_extents.left;
 				origin.y = -fm_extents.top;
-
+#if 0	//deprecated
 				if(reinterpret_cast<Window>(coord_wd) != restrict::spec.root_window())
 				{
 					fm_extents = window_frame_extents(coord_wd);
 					origin.x += fm_extents.left;
 					origin.y += fm_extents.top;
 				}
+#endif
 			}
 			else
 				coord_wd = get_window(wd, window_relationship::parent);
@@ -1010,8 +1015,14 @@ namespace nana{
 			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
 			{
 				auto origin = window_position(owner);
+#if 0
 				x += origin.x;
 				y += origin.y;
+#else
+				auto owner_extents = window_frame_extents(owner);
+				x += origin.x + owner_extents.left;
+				y += origin.y + owner_extents.top;
+#endif
 			}
 
 			::XMoveWindow(disp, reinterpret_cast<Window>(wd), x, y);
@@ -1099,8 +1110,14 @@ namespace nana{
 			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
 			{
 				auto origin = window_position(owner);
+#if 0
 				x += origin.x;
 				y += origin.y;
+#else
+				auto owner_extents = window_frame_extents(owner);
+				x += origin.x + owner_extents.left;
+				y += origin.y + owner_extents.top;
+#endif
 			}
 
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);
@@ -1580,14 +1597,21 @@ namespace nana{
 				pos.y = point.y;
 				return true;
 			}
-			return false;
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 			int x = pos.x, y = pos.y;
 			Window child;
-			return (True == ::XTranslateCoordinates(restrict::spec.open_display(),
-													reinterpret_cast<Window>(wd), restrict::spec.root_window(), x, y, &pos.x, &pos.y, &child));
+			if(True == ::XTranslateCoordinates(restrict::spec.open_display(),
+													reinterpret_cast<Window>(wd), restrict::spec.root_window(), x, y, &pos.x, &pos.y, &child))
+			{
+				//deprecated
+				//auto fm_extents = window_frame_extents(wd);
+				//pos.x += fm_extents.left;
+				//pos.y += fm_extents.top;
+				return true;
+			}
 #endif
+			return false;
 		}
 
 		bool native_interface::calc_window_point(native_window_type wd, nana::point& pos)
@@ -1600,14 +1624,21 @@ namespace nana{
 				pos.y = point.y;
 				return true;
 			}
-			return false;
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 			int x = pos.x, y = pos.y;
 			Window child;
-			return (True == ::XTranslateCoordinates(restrict::spec.open_display(),
-													restrict::spec.root_window(), reinterpret_cast<Window>(wd), x, y, &pos.x, &pos.y, &child));
+			if(True == ::XTranslateCoordinates(restrict::spec.open_display(), restrict::spec.root_window(), reinterpret_cast<Window>(wd), x, y, &pos.x, &pos.y, &child))
+			{
+				//deprecated
+				//Now the origin of pos is the left-top corner of the window(including titlebar and border)
+				//auto fm_extents = window_frame_extents(wd);
+				//pos.x += fm_extents.left;
+				//pos.y += fm_extents.top;
+				return true;
+			}
 #endif
+			return false;
 		}
 
 		native_window_type native_interface::find_window(int x, int y)
