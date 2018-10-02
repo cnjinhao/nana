@@ -1,8 +1,10 @@
 # CMake configuration for Nana
+# Author: Andrew Kornilov(https://github.com/ierofant)
 # Contributors:
 #   Andrew Kornilov (ierofant) - original version
 #   Jinhao
 #   Ariel Vina-Rodriguez (qPCR4vir)
+#   (King_DuckZ)
 #   Robert Hauck - Enable support for PNG/Freetype
 #   Pavel O. - fix compilation with boost::filesystem (#281)
 #   Frostbane - Add option for compiling a shared library (#263,#265)
@@ -18,12 +20,8 @@
 # https://cliutils.gitlab.io/modern-cmake/
 # https://cmake.org/cmake-tutorial/
 # https://cmake.org/cmake/help/v3.12/module/CMakeDependentOption.html?highlight=cmakedependentoption
-# use CACHE FORCE  or set(ENABLE_MINGW_STD_THREADS_WITH_MEGANZ ON) or delete CMakecache.txt or the entirely build dir
-# if your changes don't execute
 
-#  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
-#  https://bbs.archlinux.org/viewtopic.php?id=84967
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.12  FATAL_ERROR)
 project(nana VERSION      1.6.2
         DESCRIPTION "C++ GUI library"
         HOMEPAGE_URL http://nanapro.org
@@ -154,6 +152,7 @@ endif()
 
 if(WIN32)
     target_compile_definitions(nana PUBLIC WIN32)    # todo: why not simple test for _WIN32 in code??
+    set(CMAKE_DEBUG_POSTFIX "_d")
     # Global MSVC definitions. You may prefer the hand-tuned sln and projects from the nana repository.
     if(MSVC)
         option(MSVC_USE_MP "Set to ON to build nana with the /MP option (Visual Studio 2005 and above)." ON)
@@ -188,20 +187,35 @@ endif()
 if(APPLE)
     target_compile_definitions(nana PUBLIC APPLE)      # ??? not added by compilers? use  __APPLE__  ?
     target_include_directories(nana PUBLIC /opt/X11/include/)
-    target_compile_options(nana PUBLIC  -L/opt/X11/lib/ -liconv)
+    target_link_libraries(nana PRIVATE iconv)
     set(ENABLE_AUDIO OFF)
 elseif(UNIX)
     target_compile_definitions(nana PUBLIC linux)      # todo: eliminate. Added by compilers. Also __linux posible
 endif()
 
 if(UNIX)
-    target_compile_options(nana PUBLIC  -lX11)
-    include(FindFreetype)
-    if(FREETYPE_FOUND)
-        target_include_directories(nana PUBLIC  ${FREETYPE_INCLUDE_DIRS})
-        target_compile_options(nana PUBLIC  -lXft -lfontconfig)
-    endif()
-endif()
+    find_package(X11 REQUIRED)
+    target_link_libraries(nana
+        PUBLIC ${X11_LIBRARIES}
+        PUBLIC ${X11_Xft_LIB}
+    )
+    target_include_directories(nana SYSTEM
+        PUBLIC ${X11_Xft_INCLUDE_PATH}
+        PUBLIC ${X11_INCLUDE_DIR}
+    )
+    find_package(Freetype)
+    if (FREETYPE_FOUND)
+        find_package(Fontconfig REQUIRED)
+        target_include_directories(nana SYSTEM
+            PUBLIC ${FREETYPE_INCLUDE_DIRS}
+            PUBLIC ${FONTCONFIG_INCLUDE_DIR}
+        )
+        target_link_libraries(nana
+            PUBLIC ${FREETYPE_LIBRARIES}
+            PUBLIC ${FONTCONFIG_LIBRARIES}
+        )
+    endif(FREETYPE_FOUND)
+endif(UNIX)
 
 
 ########### Compilers
@@ -224,6 +238,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
             target_compile_options(nana PUBLIC -I/usr/local/include)
         endif()
     endif()
+#    set(THREADS_PREFER_PTHREAD_FLAG ON)
+#    find_package(Threads REQUIRED)
+#    target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 
     if(BUILD_SHARED_LIBS)
         target_compile_options(nana PUBLIC  -lgcc -lstdc++)
@@ -235,6 +252,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
             target_compile_options(nana PUBLIC -static-libgcc -static-libstdc++)
         endif()
     endif(BUILD_SHARED_LIBS)
+       # target_link_libraries(nana PRIVATE stdc++fs)    # ??
 
     target_compile_options(nana PUBLIC -pthread)
 
@@ -257,8 +275,21 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     target_compile_options(nana PRIVATE -fmax-errors=3)
 endif()
 
-set(CMAKE_DEBUG_POSTFIX "_d")
 
+
+target_compile_features(${PROJECT_NAME}
+    PUBLIC cxx_nullptr
+    PUBLIC cxx_range_for
+    PUBLIC cxx_lambdas
+    PUBLIC cxx_decltype_auto
+    PUBLIC cxx_defaulted_functions
+    PUBLIC cxx_deleted_functions
+    PUBLIC cxx_auto_type
+    PUBLIC cxx_decltype_incomplete_return_types
+    PUBLIC cxx_defaulted_move_initializers
+    PUBLIC cxx_noexcept
+    PUBLIC cxx_rvalue_references
+)
 
 # Just for information:
 include(CMakePrintHelpers)
