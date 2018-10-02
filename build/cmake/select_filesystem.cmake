@@ -21,27 +21,33 @@ if(NANA_CMAKE_NANA_FILESYSTEM_FORCE)
 
 elseif(NANA_CMAKE_STD_FILESYSTEM_FORCE)
     target_compile_definitions(nana PUBLIC STD_FILESYSTEM_FORCE)
-    target_compile_options    (nana PUBLIC -lstdc++fs)
+    target_link_libraries     (nana PUBLIC stdc++fs)
 
-elseif(NANA_CMAKE_FIND_BOOST_FILESYSTEM OR NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-    if(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
-        target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_FORCE)
-    else()
-        target_compile_options    (nana PUBLIC -lstdc++fs)
-    endif()
-
+elseif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
+    target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_FORCE)
     # https://cmake.org/cmake/help/git-master/module/FindBoost.html
     # Implicit dependencies such as Boost::filesystem requiring Boost::system will be automatically detected and satisfied,
     # even if system is not specified when using find_package and if Boost::system is not added to target_link_libraries.
     # If using Boost::thread, then Thread::Thread will also be added automatically.
-    find_package(Boost COMPONENTS filesystem)
+    find_package(Boost REQUIRED COMPONENTS filesystem)
     if(Boost_FOUND)
         target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_AVAILABLE)
         target_include_directories(nana PUBLIC "${Boost_INCLUDE_DIR}")    # ?? SYSTEM
         target_link_libraries     (nana PUBLIC ${Boost_LIBRARIES})
+        # target_link_libraries     (nana PUBLIC Boost::Boost)
     endif()
     set(Boost_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC_RUNTIME ON)
+
+else()
+    # todo   test for std    (for now just force nana or boost if there no std)
+    target_link_libraries     (nana PUBLIC stdc++fs)
+
+    # todo if not test for boost
+    # if not add nana filesystem
 endif()
+
+
+
 
 

@@ -11,8 +11,10 @@ if(NANA_CMAKE_ENABLE_PNG)
             target_include_directories(nana PUBLIC ${PNG_INCLUDE_DIRS})
             target_link_libraries     (nana PUBLIC ${PNG_LIBRARIES})
             target_compile_definitions(nana PUBLIC USE_LIBPNG_FROM_OS ${PNG_DEFINITIONS})
+            # target_include_directories  (nana SYSTEM   PUBLIC PNG::PNG)    # ??
+            # target_compile_definitions  (nana          PUBLIC USE_LIBPNG_FROM_OS)
         endif()
     else()
-        target_compile_definitions(nana PUBLIC -lpng)
+        target_link_libraries(nana PUBLIC png)  # provided by nana?
     endif()
 endif()

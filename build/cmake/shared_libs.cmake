@@ -1,3 +1,8 @@
+
+option(BUILD_SHARED_LIBS "Compile nana as a shared library." OFF)
+
+if(BUILD_SHARED_LIBS)   # todo test
+
     if(WIN32)
         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
         if(MSVC)
@@ -25,6 +30,22 @@
                     --output-lib "libnana.lib")
 
             install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libnana.def"
-                    "${CMAKE_CURRENT_BINARY_DIR}/libnana.lib" DESTINATION lib)
+                          "${CMAKE_CURRENT_BINARY_DIR}/libnana.lib" DESTINATION lib)
         endif()
     endif()
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW??
+
+    if(BUILD_SHARED_LIBS)
+        target_compile_options(nana PUBLIC  -lgcc -lstdc++)
+    else()
+
+        if(MINGW)
+            target_compile_options(nana PUBLIC -static)     #  -static ?? cmake knows BUILD_SHARED_LIBS
+        else()
+            target_compile_options(nana PUBLIC -static-libgcc -static-libstdc++)
+        endif()
+    endif(BUILD_SHARED_LIBS)
+
+endif()
