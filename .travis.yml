@@ -65,7 +65,7 @@ script:
   - make install
   # todo: separate resources from sources (a directory for images)
   - ls
-  - cd ../bin
+  - cd ../nana-test/bin
   - ls
   - ./a_group_impl
   - ./animate-bmp
