@@ -130,16 +130,16 @@ if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
 endif()
 
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/build/cmake/Modules)
-include(build/cmake/install_nana.cmake)   # includes and libs, or just expose the nana target
-include(build/cmake/OS.cmake)             # windows, unix, linux, apple, ...
-include(build/cmake/shared_libs.cmake)    # static and shared
-include(build/cmake/compilers.cmake)      # VC, gcc, clang
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/install_nana.cmake)   # includes and libs, or just expose the nana target
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/OS.cmake)             # windows, unix, linux, apple, ...
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/shared_libs.cmake)    # static and shared
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/compilers.cmake)      # VC, gcc, clang
 
 ############# Optional libraries    #####################
-include(build/cmake/enable_png.cmake)
-include(build/cmake/enable_jpeg.cmake)
-include(build/cmake/enable_audio.cmake)
-include(build/cmake/select_filesystem.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/enable_png.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/enable_jpeg.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/enable_audio.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/build/cmake/select_filesystem.cmake)
 
 
 if (NANA_CMAKE_VERBOSE_PREPROCESSOR)
