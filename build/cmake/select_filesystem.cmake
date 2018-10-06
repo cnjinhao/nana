@@ -32,9 +32,11 @@ elseif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     find_package(Boost REQUIRED COMPONENTS filesystem)
     if(Boost_FOUND)
         target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_AVAILABLE)
-        target_include_directories(nana PUBLIC "${Boost_INCLUDE_DIR}")    # ?? SYSTEM
+            # SYSTEM - ignore warnings from here
+        target_include_directories(nana SYSTEM PUBLIC "${Boost_INCLUDE_DIR}")    # ?? SYSTEM
         target_link_libraries     (nana PUBLIC ${Boost_LIBRARIES})
-        # target_link_libraries     (nana PUBLIC Boost::Boost)
+        # target_include_directories  (nana SYSTEM PUBLIC Boost::Boost)
+        # message("boost found true")
     endif()
     set(Boost_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC_RUNTIME ON)
