@@ -1497,6 +1497,9 @@ the nana::detail::basic_window member pointer scheme
 		void erase(index_pairs indexes);	///<Erases specified items.
 		item_proxy erase(item_proxy);
 
+		/// Returns the item which is hovered
+		index_pair hovered() const;
+
 		bool sortable() const;
 		void sortable(bool enable);
 		

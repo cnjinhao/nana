@@ -1,7 +1,7 @@
 /*
 *	A Basic Window Widget Definition
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -410,6 +410,7 @@ namespace nana
 				flags.enabled = true;
 				flags.modal = false;
 				flags.take_active = true;
+				flags.draggable = false;
 				flags.dropable = false;
 				flags.fullscreen = false;
 				flags.tab = nana::detail::tab_type::none;

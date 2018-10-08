@@ -65,6 +65,13 @@ namespace nana
 		blend
 	};
 
+	enum class dragdrop_status
+	{
+		not_ready,
+		ready,
+		in_progress
+	};
+
 	namespace category
 	{
 		enum class flags
