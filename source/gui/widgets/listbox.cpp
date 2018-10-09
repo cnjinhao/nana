@@ -1968,6 +1968,12 @@ namespace nana
 				std::vector<inline_pane*> active_panes_;
 			};//end class es_lister
 
+			enum class operation_states
+			{
+				none,
+				msup_deselect
+			};
+
 
 			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member funcions, therefore all data members are public.
 			struct essence
@@ -1981,7 +1987,9 @@ namespace nana
 				bool auto_draw{true};
 				bool checkable{false};
 				bool if_image{false};
+#if 0 //deprecated
 				bool deselect_deferred{ false };	//deselects items when mouse button is released.
+#endif
 				unsigned text_height;
 
                 ::nana::listbox::export_options def_exp_options;
@@ -1998,6 +2006,12 @@ namespace nana
 				std::unique_ptr<widgets::skeletons::content_view> content_view;
 
 				std::function<void(paint::graphics&, const rectangle&, bool)> ctg_icon_renderer;	///< Renderer for the category icon
+
+				struct operation_rep
+				{
+					operation_states state{operation_states::none};
+					index_pair item;
+				}operation;
 
 				struct mouse_selection_part
 				{
@@ -2121,6 +2135,10 @@ namespace nana
 
 				void update_mouse_selection(const point& screen_pos)
 				{
+					//Don't update if it is not started
+					if (!mouse_selection.started)
+						return;
+
 					mouse_selection.screen_pos = screen_pos;
 
 					auto logic_pos = coordinate_cast(screen_pos, true);
@@ -4132,8 +4150,13 @@ namespace nana
 					using item_state = essence::item_state;
 					using parts = essence::parts;
 
+#if 0	//deprecated
 					//Cancel deferred deselection operation when mouse moves.
 					essence_->deselect_deferred = false;
+#else
+					if (operation_states::msup_deselect == essence_->operation.state)
+						essence_->operation.state = operation_states::none;
+#endif
 
 					bool need_refresh = false;
 
@@ -4293,21 +4316,44 @@ namespace nana
 										essence_->mouse_selection.reverse_selection = true;
 										new_selected_status = !essence_->cs_status(abs_item_pos, true);
 									}
+#if 0 //deprecated
+									else if (nana::mouse::right_button == arg.button)
+									{
+										//Unselects all selected items if the current item is not selected before selecting.
+										auto selected = lister.pick_items(true);
+										if (selected.cend() == std::find(selected.cbegin(), selected.cend(), item_pos))
+											lister.select_for_all(false, abs_item_pos);
+									}
 									else
 									{
-										if (nana::mouse::right_button == arg.button)
+										//Unselects all selected items except current item if right button clicked.
+										lister.select_for_all(false, abs_item_pos);	//cancel all selections
+									}
+#else
+									else
+									{
+										auto selected = lister.pick_items(true);
+										if (selected.cend() != std::find(selected.cbegin(), selected.cend(), item_pos))
 										{
-											//Unselects all selected items if the current item is not selected before selecting.
-											auto selected = lister.pick_items(true);
-											if (selected.cend() == std::find(selected.cbegin(), selected.cend(), item_pos))
-												lister.select_for_all(false, abs_item_pos);
+											//If the current selected one has been selected before selecting, remains the selection states for all
+											//selected items. But these items will be unselected when the mouse is released.
+
+											//Other items will be unselected if multiple items are selected.
+											if (selected.size() > 1)
+											{
+												essence_->operation.item = abs_item_pos;
+
+												//Don't deselect the selections if the listbox is draggable.
+												//It should remain the selections for drag-and-drop
+
+												if (!API::dev::window_draggable(arg.window_handle))
+													essence_->operation.state = operation_states::msup_deselect;
+											}
 										}
 										else
-										{
-											//Unselects all selected items except current item if right button clicked.
-											lister.select_for_all(false, abs_item_pos);	//cancel all selections
-										}
+											lister.select_for_all(false, abs_item_pos);
 									}
+#endif
 								}
 								else
 								{
@@ -4377,7 +4423,15 @@ namespace nana
 
 						//Deselection of all items is deferred to the mouse up event when ctrl or shift is not pressed
 						//Pressing ctrl or shift is to selects other items without deselecting current selections.
+#if 0 //deprecated
 						essence_->deselect_deferred = !(arg.ctrl || arg.shift);
+#else
+						if (!(arg.ctrl || arg.shift))
+						{
+							essence_->operation.state = operation_states::msup_deselect;
+							essence_->operation.item = index_pair{nana::npos, nana::npos};
+						}
+#endif
 					}
 
 					if(update)
@@ -4419,10 +4473,18 @@ namespace nana
 						need_refresh = true;
 					}
 
+#if 0	//deprecated
 					if (essence_->deselect_deferred)
 					{
 						essence_->deselect_deferred = false;
 						need_refresh |= (essence_->lister.select_for_all(false));
+					}
+#endif
+
+					if (operation_states::msup_deselect == essence_->operation.state)
+					{
+						essence_->operation.state = operation_states::none;
+						need_refresh |= essence_->lister.select_for_all(false, essence_->operation.item);
 					}
 
 					if (need_refresh)
@@ -5788,6 +5850,18 @@ namespace nana
 			if(_where.item < ess->lister.size_item(_where.cat))
 				return ip;
 			return item_proxy(ess);
+		}
+
+		listbox::index_pair listbox::hovered() const
+		{
+			internal_scope_guard lock;
+			using parts = drawerbase::listbox::essence::parts;
+
+			auto & ptr_where = _m_ess().pointer_where;
+			if ((ptr_where.first == parts::list || ptr_where.first == parts::checker) && ptr_where.second != npos)
+				return _m_ess().lister.advance(_m_ess().first_display(), static_cast<int>(ptr_where.second));
+			
+			return index_pair{ npos, npos };
 		}
 
 		bool listbox::sortable() const

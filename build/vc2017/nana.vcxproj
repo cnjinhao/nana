@@ -179,6 +179,7 @@
     <ClCompile Include="..\..\source\gui\detail\native_window_interface.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_layout.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_manager.cpp" />
+    <ClCompile Include="..\..\source\gui\dragdrop.cpp" />
     <ClCompile Include="..\..\source\gui\dragger.cpp" />
     <ClCompile Include="..\..\source\gui\drawing.cpp" />
     <ClCompile Include="..\..\source\gui\effects.cpp" />
