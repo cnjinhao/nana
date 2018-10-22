@@ -36,6 +36,7 @@
 
 #include <vector>
 #include <map>
+#include <functional>
 #include "msg_packet.hpp"
 #include "../platform_abstraction_types.hpp"
 
@@ -176,6 +177,12 @@ namespace detail
 		~platform_scope_guard();
 	};
 
+	class dragdrop_interface
+	{
+	public:
+		virtual ~dragdrop_interface() = default;
+	};
+
 	class platform_spec
 	{
 		typedef platform_spec self_type;
@@ -246,6 +253,7 @@ namespace detail
 		void msg_insert(native_window_type);
 		void msg_set(timer_proc_type, event_proc_type);
 		void msg_dispatch(native_window_type modal);
+		void msg_dispatch(std::function<bool(const msg_packet_tag&)>);
 
 		//X Selections
 		void* request_selection(native_window_type requester, Atom type, size_t & bufsize);
@@ -255,6 +263,9 @@ namespace detail
 		//@biref: The image object should be kept for a long time till the window is closed,
 		//			the image object is release in remove() method.
 		const nana::paint::graphics& keep_window_icon(native_window_type, const nana::paint::image&);
+
+		bool register_dragdrop(native_window_type, dragdrop_interface*);
+		dragdrop_interface* remove_dragdrop(native_window_type);
 	private:
 		static int _m_msg_filter(XEvent&, msg_packet_tag&);
 		void _m_caret_routine();
@@ -311,6 +322,14 @@ namespace detail
 			int timestamp;
 			Window wd_src;
 			nana::point pos;
+
+			struct refcount_dragdrop
+			{
+				dragdrop_interface* dragdrop{nullptr};
+				std::size_t ref_count{0};
+			};
+
+			std::map<native_window_type, refcount_dragdrop> dragdrop;
 		}xdnd_;
 
 		msg_dispatcher * msg_dispatcher_;
