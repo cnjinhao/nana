@@ -20,6 +20,7 @@ matrix:
             - alsa-oss
             - libx11-dev
             - libxft-dev
+            - libxcursor-dev
           sources: 
             - ubuntu-toolchain-r-test
             
@@ -36,6 +37,7 @@ matrix:
             - alsa-oss
             - libx11-dev
             - libxft-dev
+            - libxcursor-dev
           sources: 
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise 

@@ -10,6 +10,7 @@
 *	@file: nana/gui/dragdrop.cpp
 *	@author: Jinhao(cnjinhao@hotmail.com)
 */
+
 #include <nana/gui/dragdrop.hpp>
 #include <nana/gui/programming_interface.hpp>
 
@@ -24,6 +25,11 @@
 #	include <oleidl.h>
 #	include <comdef.h>
 #	include <Shlobj.h>
+#elif defined(NANA_X11)
+#	include "../detail/posix/platform_spec.hpp"
+#	include <nana/gui/detail/native_window_interface.hpp>
+#	include <X11/Xcursor/Xcursor.h>
+#	include <fstream>
 #endif
 
 namespace nana
@@ -367,6 +373,60 @@ namespace nana
 	private:
 		std::vector<medium> mediums_;
 	};
+#elif defined(NANA_X11)
+	class x11_dragdrop: public detail::dragdrop_interface
+	{
+
+	};
+
+	class shared_icons
+	{
+	public:
+		shared_icons()
+		{
+			path_ = "/usr/share/icons/";
+			ifs_.open(path_ + "default/index.theme");
+		}
+
+		std::string cursor(const std::string& name)
+		{
+			auto theme = _m_read("Icon Theme", "Inherits");
+
+			return path_ + theme + "/cursors/" + name;
+		}
+	private:
+		std::string _m_read(const std::string& category, const std::string& key)
+		{
+			ifs_.seekg(0, std::ios::beg);
+
+			bool found_cat = false;
+			while(ifs_.good())
+			{
+				std::string text;
+				std::getline(ifs_, text);
+
+				if(0 == text.find('['))
+				{
+					if(found_cat)
+						break;
+
+					if(text.find(category + "]") != text.npos)
+					{
+						found_cat = true;
+					}
+				}
+				else if(found_cat && (text.find(key + "=") == 0))
+				{
+					return text.substr(key.size() + 1);
+				}
+			}
+
+			return {};
+		}
+	private:
+		std::string path_;
+		std::ifstream ifs_;
+	};
 #endif
 
 	class dragdrop_service
@@ -385,6 +445,7 @@ namespace nana
 			if (nullptr == native_wd)
 				return;
 
+#ifdef NANA_WINDOWS
 			if(table_.empty())
 				::OleInitialize(nullptr);
 
@@ -403,22 +464,33 @@ namespace nana
 				drop_target = i->second;
 				drop_target->AddRef();
 			}
+#elif defined(NANA_X11)
+			auto ddrop = new x11_dragdrop;
+			if(!_m_spec().register_dragdrop(native_wd, ddrop))
+				delete ddrop;
+#endif
 		}
 
 		void remove(window wd)
 		{
+#ifdef NANA_WINDOWS
 			auto i = table_.find(API::root(wd));
 			if (i != table_.end())
 			{
 				if (0 == i->second->Release())
 					table_.erase(i);
 			}
-
+#elif defined(NANA_X11)
+			auto ddrop = _m_spec().remove_dragdrop(API::root(wd));
+			delete ddrop;
+#endif
 			drop_assoc_.erase(wd);
+
 		}
 
 		bool dragdrop(window drag_wd)
 		{
+#ifdef NANA_WINDOWS
 			auto i = table_.find(API::root(drag_wd));
 			if (table_.end() == i)
 				return false;
@@ -438,17 +510,156 @@ namespace nana
 			auto status = ::DoDragDrop(drop_dat, drop_src, DROPEFFECT_COPY, &eff);
 
 			i->second->set_source(nullptr);
+
 			return true;
+#elif defined(NANA_X11)
+			auto const native_wd = reinterpret_cast<Window>(API::root(drag_wd));
+
+			{
+				detail::platform_scope_guard lock;
+				::XSetSelectionOwner(_m_spec().open_display(), _m_spec().atombase().xdnd_selection, native_wd, CurrentTime);
+			}
+
+
+			hovered_.window_handle = nullptr;
+			hovered_.native_wd = 0;
+			window target_wd = 0;
+			auto& atombase = _m_spec().atombase();
+			//while(true)
+			{
+
+				_m_spec().msg_dispatch([this, drag_wd, native_wd, &target_wd, &atombase](const detail::msg_packet_tag& msg_pkt) mutable{
+					if(detail::msg_packet_tag::pkt_family::xevent == msg_pkt.kind)
+					{
+						auto const disp = _m_spec().open_display();
+						if (MotionNotify == msg_pkt.u.xevent.type)
+						{
+							auto pos = API::cursor_position();
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
+
+							if(hovered_.native_wd != native_cur_wd)
+							{
+								if(hovered_.native_wd)
+								{
+									_m_free_cursor();
+									::XUndefineCursor(disp, hovered_.native_wd);
+								}
+
+								_m_client_msg(native_cur_wd, native_wd, atombase.xdnd_enter, atombase.text_uri_list, XA_STRING);
+								hovered_.native_wd = native_cur_wd;
+							}
+
+							auto cur_wd = API::find_window(API::cursor_position());
+
+							if(hovered_.window_handle != cur_wd)
+							{
+								_m_free_cursor();
+
+								hovered_.window_handle = cur_wd;
+
+								if((drag_wd == cur_wd) || drop_assoc_.has(drag_wd, cur_wd))
+									hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor("dnd-move").c_str());
+								else
+									hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor("dnd-none").c_str());
+								::XDefineCursor(disp, native_cur_wd, hovered_.cursor);								
+							}
+						}
+						else if(msg_pkt.u.xevent.type == ButtonRelease)
+						{
+							target_wd = API::find_window(API::cursor_position());
+							::XUndefineCursor(disp, hovered_.native_wd);
+							_m_free_cursor();
+							return true;
+						}
+						
+					}
+					return false;
+				});
+			}
+
+			return (nullptr != target_wd);
+#endif
+			return false;
 		}
 
 		drop_association& drop_assoc()
 		{
 			return drop_assoc_;
 		}
+#ifdef NANA_X11
 	private:
-		std::map<native_window_type, win32com_drop_target*> table_;
+		static nana::detail::platform_spec & _m_spec()
+		{
+			return nana::detail::platform_spec::instance();
+		}
+
+		//dndversion<<24, fl_XdndURIList, XA_STRING, 0
+		static void _m_client_msg(Window wd_target, Window wd_src, Atom xdnd_atom, Atom data, Atom data_type)
+		{
+			auto const display = _m_spec().open_display();
+			XEvent evt;
+			::memset(&evt, 0, sizeof evt);
+			evt.xany.type = ClientMessage;
+			evt.xany.display = display;
+			evt.xclient.window = wd_target;
+			evt.xclient.message_type = xdnd_atom;
+			evt.xclient.format = 32;
+
+			//Target window
+			evt.xclient.data.l[0] = wd_src;
+			//Accept set
+			evt.xclient.data.l[1] = 1;
+			evt.xclient.data.l[2] = data;
+			evt.xclient.data.l[3] = data_type;
+			evt.xclient.data.l[4] = 0;
+
+			::XSendEvent(display, wd_target, True, NoEventMask, &evt);
+
+		}
+
+		static int _m_xdnd_aware(Window wd)
+		{
+			Atom actual; int format; unsigned long count, remaining;
+			unsigned char *data = 0;
+			XGetWindowProperty(_m_spec().open_display(), wd, _m_spec().atombase().xdnd_aware, 
+				0, 4, False, XA_ATOM, &actual, &format, &count, &remaining, &data);
+
+			int version = 0;
+			if ((actual == XA_ATOM) && (format==32) && count && data)
+				version = int(*(Atom*)data);
+
+			if (data)
+				::XFree(data);
+			return version;
+		}
+
+		void _m_free_cursor()
+		{
+			if(hovered_.cursor)
+			{
+				::XFreeCursor(_m_spec().open_display(), hovered_.cursor);
+				hovered_.cursor = 0;
+			}
+
+		}
+#endif
+	private:
 		drop_association drop_assoc_;
+#ifdef NANA_WINDOWS
+		std::map<native_window_type, win32com_drop_target*> table_;
+#elif defined (NANA_X11)
+		shared_icons icons_;
+		struct hovered_status
+		{
+			Window native_wd{0};
+			window window_handle{nullptr};
+
+			unsigned shape{0};
+			Cursor cursor{0};
+		}hovered_;
+#endif
 	};
+
 
 
 	struct simple_dragdrop::implementation
@@ -459,7 +670,7 @@ namespace nana
 
 		bool dragging{ false };
 
-#if 0
+#ifdef NANA_X11
 		bool cancel()
 		{
 			if (!dragging)
@@ -499,11 +710,15 @@ namespace nana
 
 		auto & events = API::events<>(drag_wd);
 
-#ifdef NANA_WINDOWS
+#if 1 //#ifdef NANA_WINDOWS
 		events.mouse_down.connect_unignorable([this](const arg_mouse& arg){
 			if (arg.is_left_button() && API::is_window(impl_->window_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
+
+				using basic_window = ::nana::detail::basic_window;
+				auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(impl_->window_handle);
+				real_wd->other.dnd_state = dragdrop_status::ready;
 			}
 		});
 
@@ -528,11 +743,11 @@ namespace nana
 					i->second();
 			}
 		});
-#else
+#elif 1
 		events.mouse_down.connect_unignorable([drag_wd](const arg_mouse& arg){
 			if (arg.is_left_button() && API::is_window(drag_wd))
 			{
-				API::set_capture(drag_wd, true);
+				//API::set_capture(drag_wd, true);
 
 				using basic_window = ::nana::detail::basic_window;
 				auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(drag_wd);
@@ -566,7 +781,7 @@ namespace nana
 					}
 				}
 
-				API::release_capture(impl_->window_handle);
+				//API::release_capture(impl_->window_handle);
 			}
 			
 		});

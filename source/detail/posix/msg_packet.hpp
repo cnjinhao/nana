@@ -10,8 +10,8 @@ namespace detail
 {
 	struct msg_packet_tag
 	{
-		enum kind_t{kind_xevent, kind_mouse_drop, kind_cleanup};
-		kind_t kind;
+		enum class pkt_family{xevent, mouse_drop, cleanup};
+		pkt_family kind;
 		union
 		{
 			XEvent xevent;
