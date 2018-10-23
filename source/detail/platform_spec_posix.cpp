@@ -1041,6 +1041,12 @@ namespace detail
 		msg_dispatcher_->dispatch(reinterpret_cast<Window>(modal));
 	}
 
+	void platform_spec::msg_dispatch(std::function<bool(const msg_packet_tag&)> msg_filter_fn)
+	{
+		msg_dispatcher_->dispatch(msg_filter_fn);
+
+	}
+
 	void* platform_spec::request_selection(native_window_type requestor, Atom type, size_t& size)
 	{
 		if(requestor)
@@ -1104,6 +1110,40 @@ namespace detail
 		return graph;
 	}
 
+
+	bool platform_spec::register_dragdrop(native_window_type wd, dragdrop_interface* ddrop)
+	{
+		platform_scope_guard lock;
+		if(0 != xdnd_.dragdrop.count(wd))
+			return false;
+
+		int dndver = 4;
+		::XChangeProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware, XA_ATOM, sizeof(int) * 8,
+			PropModeReplace, reinterpret_cast<unsigned char*>(&dndver), 1);
+
+		auto & ref_drop = xdnd_.dragdrop[wd];
+		ref_drop.dragdrop = ddrop;
+		ref_drop.ref_count = 1;
+		return true;
+	}
+
+	dragdrop_interface* platform_spec::remove_dragdrop(native_window_type wd)
+	{
+		platform_scope_guard lock;
+		auto i = xdnd_.dragdrop.find(wd);
+		if(i == xdnd_.dragdrop.end())
+			return nullptr;
+
+		auto ddrop = i->second;
+		if(ddrop.ref_count <= 1)
+		{
+			xdnd_.dragdrop.erase(i);
+			return ddrop.dragdrop;
+		}
+		--ddrop.ref_count;
+		return nullptr;
+	}
+
 	//_m_msg_filter
 	//@return:	_m_msg_filter returns three states
 	//		0 = msg_dispatcher dispatches the XEvent
@@ -1163,7 +1203,7 @@ namespace detail
 				else if(evt.xselection.property == self.atombase_.xdnd_selection)
 				{
 					bool accepted = false;
-					msg.kind = msg.kind_mouse_drop;
+					msg.kind = msg_packet_tag::pkt_family::mouse_drop;
 					msg.u.mouse_drop.window = 0;
 					if(bytes_left > 0 && type == self.xdnd_.good_type)
 					{

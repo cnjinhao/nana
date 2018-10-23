@@ -418,10 +418,10 @@ namespace detail
 	{
 		switch(msg.kind)
 		{
-		case nana::detail::msg_packet_tag::kind_xevent:
+		case nana::detail::msg_packet_tag::pkt_family::xevent:
 			window_proc_for_xevent(display, msg.u.xevent);
 			break;
-		case nana::detail::msg_packet_tag::kind_mouse_drop:
+		case nana::detail::msg_packet_tag::pkt_family::mouse_drop:
 			window_proc_for_packet(display, msg);
 			break;
 		default: break;
@@ -441,7 +441,7 @@ namespace detail
 
 			switch(msg.kind)
 			{
-			case nana::detail::msg_packet_tag::kind_mouse_drop:
+			case nana::detail::msg_packet_tag::pkt_family::mouse_drop:
 				msgwd = brock.wd_manager().find_window(native_window, {msg.u.mouse_drop.x, msg.u.mouse_drop.y});
 				if(msgwd)
 				{

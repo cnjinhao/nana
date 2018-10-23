@@ -411,6 +411,26 @@ namespace API
 
 			}
 		}
+
+		void window_draggable(window wd, bool enabled)
+		{
+			auto real_wd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(real_wd))
+				real_wd->flags.draggable = enabled;
+		}
+
+		bool window_draggable(window wd)
+		{
+			auto real_wd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(real_wd))
+				return real_wd->flags.draggable;
+
+			return false;
+		}
+
+
 	}//end namespace dev
 
 	widget* get_widget(window wd)
@@ -1517,6 +1537,17 @@ namespace API
 	unsigned screen_dpi(bool x_requested)
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
+	}
+
+	dragdrop_status window_dragdrop_status(::nana::window wd)
+	{
+		auto real_wd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+
+		if (restrict::wd_manager().available(real_wd))
+			return real_wd->other.dnd_state;
+
+		return dragdrop_status::not_ready;
 	}
 }//end namespace API
 }//end namespace nana

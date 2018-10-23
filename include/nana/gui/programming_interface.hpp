@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -117,6 +117,9 @@ namespace API
 		void lazy_refresh();
 
 		void draw_shortkey_underline(paint::graphics&, const std::string& text, wchar_t shortkey, std::size_t shortkey_position, const point& text_pos, const color&);
+
+		void window_draggable(window, bool enabled);
+		bool window_draggable(window);
 	}//end namespace dev
 
 
@@ -476,6 +479,8 @@ namespace API
 	::std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 
 	unsigned screen_dpi(bool x_requested);
+
+	dragdrop_status window_dragdrop_status(::nana::window);
 }//end namespace API
 
 }//end namespace nana

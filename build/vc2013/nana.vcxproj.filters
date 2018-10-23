@@ -333,6 +333,9 @@
     <ClCompile Include="..\..\source\detail\platform_abstraction.cpp">
       <Filter>Source Files\nana\detail</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\dragdrop.cpp">
+      <Filter>Source Files\nana\gui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\gui\widgets\group.cpp">
