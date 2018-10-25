@@ -9,7 +9,7 @@
  *
  *	@file nana/gui/filebox.hpp
  *  @author Jinhao
- *  @brief a dialog to chose file(s), implemented "native" in windows but using nana for X11 
+ *  @brief dialogs to chose file(s) or a directory, implemented "native" in windows but using nana for X11
  */
 
 #ifndef NANA_GUI_FILEBOX_HPP
@@ -31,7 +31,7 @@ namespace nana
 	public:
 		using filters = std::vector<std::pair< ::std::string, ::std::string>>;
 
-		filebox(bool is_open_mode);
+		explicit filebox(bool is_open_mode);
 		filebox(window owner, bool is_open_mode);
 		filebox(const filebox&);
 		~filebox();
@@ -56,8 +56,8 @@ namespace nana
         
 		/// \brief Add a filetype filter. 
         /// To specify multiple filter in a single description, use a semicolon to separate the patterns(for example,"*.TXT;*.DOC;*.BAK").
-		filebox& add_filter(const ::std::string& description,  ///< for example. "Text File"
-                            const ::std::string& filetype      ///< filter pattern(for example, "*.TXT")
+		filebox& add_filter(const ::std::string& description,  ///< for example: "Text File"
+                            const ::std::string& filetype      ///< filter pattern(for example: "*.TXT")
                             );
 
         filebox& add_filter(const filters &ftres)
@@ -94,7 +94,7 @@ namespace nana
 	public:
 		using path_type = std::experimental::filesystem::path;
 
-		folderbox(window owner = nullptr, const path_type& init_path = {});
+		explicit folderbox(window owner = nullptr, const path_type& init_path = {}, std::string title={});
 		~folderbox();
 
 		std::optional<path_type> show() const;
@@ -103,6 +103,11 @@ namespace nana
 		{
 			return show();
 		}
+
+		/// Set a new title for the dialog
+		/// @param	string	a text for title
+		/// @return the old title.
+		::std::string title( ::std::string new_title);
 	private:
 		implement* impl_;
 	};
