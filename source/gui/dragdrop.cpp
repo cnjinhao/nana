@@ -32,38 +32,65 @@
 #	include <fstream>
 #endif
 
+
 namespace nana
 {
-	/// drop_association
-	/**
-	 * This class is used for querying whether tow windows have a connection of drag and drop
-	 */
-	class drop_association
+	class dragdrop_session
 	{
 	public:
-		void add(window source, window target)
+		virtual ~dragdrop_session() = default;
+
+		void insert(window source, window target)
 		{
-			assoc_[source].insert(target);
+			table_[source].insert(target);
 		}
 
-		void erase(window wd)
+		void erase(window source, window target)
 		{
-			assoc_.erase(wd);
+			auto i = table_.find(source);
+			if (table_.end() == i)
+				return;
 
-			for (auto & assoc : assoc_)
-				assoc.second.erase(wd);
+			i->second.erase(target);
+
+			if ((nullptr == target) || i->second.empty())
+				table_.erase(i);
 		}
 
 		bool has(window source, window target) const
 		{
-			auto i = assoc_.find(source);
-			if (i != assoc_.end())
+			auto i = table_.find(source);
+			if (i != table_.end())
 				return (0 != i->second.count(target));
-			
+
 			return false;
 		}
+
+		bool has_source(window source) const
+		{
+			return (table_.count(source) != 0);
+		}
+
+		bool empty() const
+		{
+			return table_.empty();
+		}
+
+		void set_current_source(window source)
+		{
+			if (table_.count(source))
+				current_source_ = source;
+			else
+				current_source_ = nullptr;
+		}
+
+		window current_source() const
+		{
+			return current_source_;
+		}
 	private:
-		std::map<window, std::set<window>> assoc_;
+		std::map<window, std::set<window>> table_;
+		window current_source_{ nullptr };
 	};
 
 #ifdef NANA_WINDOWS
@@ -98,18 +125,8 @@ namespace nana
 		LONG ref_count_{ 1 };
 	};
 
-
-	class win32com_drop_target : public IDropTarget
+	class win32com_drop_target : public IDropTarget, public dragdrop_session
 	{
-	public:
-		win32com_drop_target(const drop_association& drop_assoc) :
-			drop_assoc_(drop_assoc)
-		{}
-
-		void set_source(window wd)
-		{
-			source_window_ = wd;
-		}
 	public:
 		//Implements IUnknown
 		STDMETHODIMP QueryInterface(REFIID riid, void **ppv)
@@ -146,11 +163,11 @@ namespace nana
 		STDMETHODIMP DragOver(DWORD grfKeyState, POINTL pt, DWORD* pdwEffect)
 		{
 			auto hovered_wd = API::find_window(point(pt.x, pt.y));
-			if ((hovered_wd && (hovered_wd == source_window_)) || drop_assoc_.has(source_window_, hovered_wd))
+
+			if ((hovered_wd && (hovered_wd == this->current_source())) || this->has(this->current_source(), hovered_wd))
 				*pdwEffect &= DROPEFFECT_COPY;
 			else
 				*pdwEffect = DROPEFFECT_NONE;
-
 			return S_OK;
 		}
 
@@ -165,9 +182,6 @@ namespace nana
 		}
 	private:
 		LONG ref_count_{ 1 };
-
-		window source_window_{ nullptr };
-		const drop_association& drop_assoc_;
 	};
 
 	class drop_source : public win32com_iunknown<IDropSource, IID_IDropSource>
@@ -374,9 +388,25 @@ namespace nana
 		std::vector<medium> mediums_;
 	};
 #elif defined(NANA_X11)
-	class x11_dragdrop: public detail::dragdrop_interface
+	class x11_dragdrop: public detail::x11_dragdrop_interface, public dragdrop_session
 	{
+	public:
+		//Implement x11_dragdrop_interface
+		void add_ref() override
+		{
+			++ref_count_;
+		}
+		
+		std::size_t release() override
+		{
+			std::size_t val = --ref_count_;
+			if(0 == val)
+				delete this;
 
+			return val;
+		}
+	private:
+		std::atomic<std::size_t> ref_count_{ 1 };
 	};
 
 	class shared_icons
@@ -433,68 +463,89 @@ namespace nana
 	{
 		dragdrop_service() = default;
 	public:
+#ifdef NANA_WINDOWS
+			using dragdrop_target = win32com_drop_target;
+#else
+			using dragdrop_target = x11_dragdrop;
+#endif
+
 		static dragdrop_service& instance()
 		{
 			static dragdrop_service serv;
 			return serv;
 		}
 
-		void create_dragdrop(window wd)
+		dragdrop_session* create_dragdrop(window wd)
 		{
 			auto native_wd = API::root(wd);
 			if (nullptr == native_wd)
-				return;
+				return nullptr;
 
-#ifdef NANA_WINDOWS
-			if(table_.empty())
-				::OleInitialize(nullptr);
-
-			win32com_drop_target* drop_target = nullptr;
+			dragdrop_target * ddrop = nullptr;
 
 			auto i = table_.find(native_wd);
-			if (i == table_.end())
+			if(table_.end() == i)
 			{
-				drop_target = new win32com_drop_target{drop_assoc_};
-				::RegisterDragDrop(reinterpret_cast<HWND>(native_wd), drop_target);
+				ddrop = new dragdrop_target;
+#ifdef NANA_WINDOWS
+				if (table_.empty())
+					::OleInitialize(nullptr);
 
-				table_[native_wd] = drop_target;
+				::RegisterDragDrop(reinterpret_cast<HWND>(native_wd), ddrop);
+#else
+				if(!_m_spec().register_dragdrop(native_wd, ddrop))
+				{
+					delete ddrop;
+					return nullptr;
+				}
+#endif
+				table_[native_wd] = ddrop;
 			}
 			else
 			{
-				drop_target = i->second;
-				drop_target->AddRef();
-			}
-#elif defined(NANA_X11)
-			auto ddrop = new x11_dragdrop;
-			if(!_m_spec().register_dragdrop(native_wd, ddrop))
-				delete ddrop;
+				ddrop = dynamic_cast<dragdrop_target*>(i->second);
+
+#ifdef NANA_WINDOWS
+				ddrop->AddRef();
+#else
+				ddrop->add_ref();
 #endif
+			}
+
+			return ddrop;
 		}
 
-		void remove(window wd)
+		void remove(window source)
 		{
-#ifdef NANA_WINDOWS
-			auto i = table_.find(API::root(wd));
-			if (i != table_.end())
-			{
-				if (0 == i->second->Release())
-					table_.erase(i);
-			}
-#elif defined(NANA_X11)
-			auto ddrop = _m_spec().remove_dragdrop(API::root(wd));
-			delete ddrop;
-#endif
-			drop_assoc_.erase(wd);
+			auto native_src = API::root(source);
 
+			auto i = table_.find(API::root(source));
+			if (i == table_.end())
+				return;
+
+			i->second->erase(source, nullptr);
+
+			if (i->second->empty())
+			{
+				auto ddrop = dynamic_cast<dragdrop_target*>(i->second);
+				table_.erase(i);
+#ifdef NANA_WINDOWS
+				::RevokeDragDrop(reinterpret_cast<HWND>(native_src));
+				ddrop->Release();
+#elif defined(NANA_X11)
+				_m_spec().remove_dragdrop(native_src);
+				ddrop->release();
+#endif
+			}
 		}
 
 		bool dragdrop(window drag_wd)
 		{
-#ifdef NANA_WINDOWS
 			auto i = table_.find(API::root(drag_wd));
 			if (table_.end() == i)
 				return false;
 
+#ifdef NANA_WINDOWS
 			auto drop_src = new drop_source{ drag_wd };
 			auto drop_dat = new (std::nothrow) drop_data;
 			if (!drop_dat)
@@ -503,21 +554,25 @@ namespace nana
 				return false;
 			}
 
-			i->second->set_source(drag_wd);
-
+			i->second->set_current_source(drag_wd);
 
 			DWORD eff;
 			auto status = ::DoDragDrop(drop_dat, drop_src, DROPEFFECT_COPY, &eff);
 
-			i->second->set_source(nullptr);
+			i->second->set_current_source(nullptr);
+
+			delete drop_src;
+			delete drop_dat;
 
 			return true;
 #elif defined(NANA_X11)
-			auto const native_wd = reinterpret_cast<Window>(API::root(drag_wd));
+			auto ddrop = dynamic_cast<x11_dragdrop*>(i->second);
+			
+			auto const native_source = reinterpret_cast<Window>(API::root(drag_wd));
 
 			{
 				detail::platform_scope_guard lock;
-				::XSetSelectionOwner(_m_spec().open_display(), _m_spec().atombase().xdnd_selection, native_wd, CurrentTime);
+				::XSetSelectionOwner(_m_spec().open_display(), _m_spec().atombase().xdnd_selection, native_source, CurrentTime);
 			}
 
 
@@ -528,7 +583,7 @@ namespace nana
 			//while(true)
 			{
 
-				_m_spec().msg_dispatch([this, drag_wd, native_wd, &target_wd, &atombase](const detail::msg_packet_tag& msg_pkt) mutable{
+				_m_spec().msg_dispatch([this, ddrop, drag_wd, native_source, &target_wd, &atombase](const detail::msg_packet_tag& msg_pkt) mutable{
 					if(detail::msg_packet_tag::pkt_family::xevent == msg_pkt.kind)
 					{
 						auto const disp = _m_spec().open_display();
@@ -545,23 +600,22 @@ namespace nana
 									::XUndefineCursor(disp, hovered_.native_wd);
 								}
 
-								_m_client_msg(native_cur_wd, native_wd, atombase.xdnd_enter, atombase.text_uri_list, XA_STRING);
+								_m_client_msg(native_cur_wd, native_source, atombase.xdnd_enter, atombase.text_uri_list, XA_STRING);
 								hovered_.native_wd = native_cur_wd;
 							}
 
-							auto cur_wd = API::find_window(API::cursor_position());
 
+
+							auto cur_wd = API::find_window(API::cursor_position());
 							if(hovered_.window_handle != cur_wd)
 							{
 								_m_free_cursor();
 
 								hovered_.window_handle = cur_wd;
 
-								if((drag_wd == cur_wd) || drop_assoc_.has(drag_wd, cur_wd))
-									hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor("dnd-move").c_str());
-								else
-									hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor("dnd-none").c_str());
-								::XDefineCursor(disp, native_cur_wd, hovered_.cursor);								
+								const char* icon = (((drag_wd == cur_wd) || ddrop->has(drag_wd, cur_wd)) ? "dnd-move" : "dnd-none");
+								hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor(icon).c_str());							
+								::XDefineCursor(disp, native_cur_wd, hovered_.cursor);							
 							}
 						}
 						else if(msg_pkt.u.xevent.type == ButtonRelease)
@@ -582,10 +636,6 @@ namespace nana
 			return false;
 		}
 
-		drop_association& drop_assoc()
-		{
-			return drop_assoc_;
-		}
 #ifdef NANA_X11
 	private:
 		static nana::detail::platform_spec & _m_spec()
@@ -640,13 +690,12 @@ namespace nana
 				::XFreeCursor(_m_spec().open_display(), hovered_.cursor);
 				hovered_.cursor = 0;
 			}
-
 		}
 #endif
 	private:
-		drop_association drop_assoc_;
+		std::map<native_window_type, dragdrop_session*> table_;
+
 #ifdef NANA_WINDOWS
-		std::map<native_window_type, win32com_drop_target*> table_;
 #elif defined (NANA_X11)
 		shared_icons icons_;
 		struct hovered_status
@@ -664,11 +713,19 @@ namespace nana
 
 	struct simple_dragdrop::implementation
 	{
-		window window_handle;
+		window window_handle{ nullptr };
+		dragdrop_session * ddrop{ nullptr };
 		std::function<bool()> predicate;
 		std::map<window, std::function<void()>> targets;
 
 		bool dragging{ false };
+
+		struct event_handlers
+		{
+			nana::event_handle destroy;
+			nana::event_handle mouse_move;
+			nana::event_handle mouse_down;
+		}events;
 
 #ifdef NANA_X11
 		bool cancel()
@@ -697,13 +754,13 @@ namespace nana
 	simple_dragdrop::simple_dragdrop(window drag_wd) :
 		impl_(new implementation)
 	{
-		dragdrop_service::instance().create_dragdrop(drag_wd);
-
 		if (!API::is_window(drag_wd))
 		{
 			delete impl_;
 			throw std::invalid_argument("simple_dragdrop: invalid window handle");
 		}
+
+		impl_->ddrop = dragdrop_service::instance().create_dragdrop(drag_wd);
 
 		impl_->window_handle = drag_wd;
 		API::dev::window_draggable(drag_wd, true);
@@ -711,7 +768,12 @@ namespace nana
 		auto & events = API::events<>(drag_wd);
 
 #if 1 //#ifdef NANA_WINDOWS
-		events.mouse_down.connect_unignorable([this](const arg_mouse& arg){
+		impl_->events.destroy = events.destroy.connect_unignorable([this](const arg_destroy&) {
+			dragdrop_service::instance().remove(impl_->window_handle);
+			API::dev::window_draggable(impl_->window_handle, false);
+		});
+
+		impl_->events.mouse_down = events.mouse_down.connect_unignorable([this](const arg_mouse& arg){
 			if (arg.is_left_button() && API::is_window(impl_->window_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
@@ -722,7 +784,7 @@ namespace nana
 			}
 		});
 
-		events.mouse_move.connect_unignorable([this](const arg_mouse& arg) {
+		impl_->events.mouse_move = events.mouse_move.connect_unignorable([this](const arg_mouse& arg) {
 			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
 				return;
 
@@ -806,19 +868,33 @@ namespace nana
 
 	simple_dragdrop::~simple_dragdrop()
 	{
-		dragdrop_service::instance().remove(impl_->window_handle);
-		API::dev::window_draggable(impl_->window_handle, false);
+		if (impl_->window_handle)
+		{
+			dragdrop_service::instance().remove(impl_->window_handle);
+			API::dev::window_draggable(impl_->window_handle, false);
+
+			API::umake_event(impl_->events.destroy);
+			API::umake_event(impl_->events.mouse_down);
+			API::umake_event(impl_->events.mouse_move);
+		}
+
 		delete impl_;
 	}
 
 	void simple_dragdrop::condition(std::function<bool()> predicate_fn)
 	{
+		if (nullptr == impl_)
+			throw std::logic_error("simple_dragdrop is empty");
+
 		impl_->predicate.swap(predicate_fn);
 	}
 
 	void simple_dragdrop::make_drop(window target, std::function<void()> drop_fn)
 	{
-		dragdrop_service::instance().drop_assoc().add(impl_->window_handle, target);
+		if (nullptr == impl_)
+			throw std::logic_error("simple_dragdrop is empty");
+
+		impl_->ddrop->insert(impl_->window_handle, target);
 		impl_->targets[target].swap(drop_fn);
 	}
 }
