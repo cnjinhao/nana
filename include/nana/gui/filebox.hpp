@@ -68,8 +68,12 @@ namespace nana
         };
 
 
-		::std::string path() const;
-		::std::string file() const;
+		const ::std::string& path() const;
+		const ::std::string& file() const;
+#if defined(NANA_WINDOWS)
+		const ::std::vector<::std::string>& files() const;
+		void allow_multi_select(bool allow);
+#endif
 
 		/// Display the filebox dialog
 		bool show() const;
