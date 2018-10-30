@@ -177,10 +177,13 @@ namespace detail
 		~platform_scope_guard();
 	};
 
-	class dragdrop_interface
+	class x11_dragdrop_interface
 	{
 	public:
-		virtual ~dragdrop_interface() = default;
+		virtual ~x11_dragdrop_interface() = default;
+
+		virtual void add_ref() = 0;
+		virtual std::size_t release() = 0;
 	};
 
 	class platform_spec
@@ -264,8 +267,8 @@ namespace detail
 		//			the image object is release in remove() method.
 		const nana::paint::graphics& keep_window_icon(native_window_type, const nana::paint::image&);
 
-		bool register_dragdrop(native_window_type, dragdrop_interface*);
-		dragdrop_interface* remove_dragdrop(native_window_type);
+		bool register_dragdrop(native_window_type, x11_dragdrop_interface*);
+		x11_dragdrop_interface* remove_dragdrop(native_window_type);
 	private:
 		static int _m_msg_filter(XEvent&, msg_packet_tag&);
 		void _m_caret_routine();
@@ -323,13 +326,7 @@ namespace detail
 			Window wd_src;
 			nana::point pos;
 
-			struct refcount_dragdrop
-			{
-				dragdrop_interface* dragdrop{nullptr};
-				std::size_t ref_count{0};
-			};
-
-			std::map<native_window_type, refcount_dragdrop> dragdrop;
+			std::map<native_window_type, x11_dragdrop_interface*> dragdrop;
 		}xdnd_;
 
 		msg_dispatcher * msg_dispatcher_;
