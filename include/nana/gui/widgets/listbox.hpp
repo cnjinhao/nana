@@ -1481,8 +1481,18 @@ the nana::detail::basic_window member pointer scheme
 		 */
 		void insert_item(const index_pair& abs_pos, const ::std::wstring& text);
 
+
+		void insert_item(index_pair abs_pos, const listbox& rhs, const index_pairs& indexes);
+
 		/// Returns an index of item which contains the specified point.
 		index_pair cast(const point & screen_pos) const;
+
+		/// Returns the item which is hovered
+		/**
+		 * @param return_end Indicates whether to return an end position instead of empty position if an item is not hovered.
+		 * @return The position of the hovered item. If return_end is true, it returns the position next to the last item of last category if an item is not hovered.
+		 */
+		index_pair hovered(bool return_end) const;
 
 		/// Returns the absolute position of column which contains the specified point.
 		size_type column_from_pos(const point & pos) const;
@@ -1496,9 +1506,6 @@ the nana::detail::basic_window member pointer scheme
 		void erase();						///<Erases all categories.
 		void erase(index_pairs indexes);	///<Erases specified items.
 		item_proxy erase(item_proxy);
-
-		/// Returns the item which is hovered
-		index_pair hovered() const;
 
 		bool sortable() const;
 		void sortable(bool enable);
