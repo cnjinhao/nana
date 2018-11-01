@@ -5624,6 +5624,35 @@ namespace nana
 			insert_item(pos, to_utf8(text));
 		}
 
+		void listbox::insert_item(index_pair abs_pos, const listbox& rhs, const index_pairs& indexes)
+		{
+			auto const columns = (std::min)(this->column_size(), rhs.column_size());
+
+			if (0 == columns)
+				return;
+
+			item_proxy it_new = this->at(abs_pos.cat).end();
+			for (auto & idx : indexes)
+			{
+				auto it_src = rhs.at(idx.cat).at(idx.item);
+
+				if (abs_pos.item < this->at(abs_pos.cat).size())
+				{
+					this->insert_item(abs_pos, it_src.text(0));
+					it_new = this->at(abs_pos);
+				}
+				else
+				{
+					it_new = this->at(abs_pos.cat).append(it_src.text(0));
+				}
+
+				for (std::size_t col = 1; col < columns; ++col)
+					it_new.text(col, it_src.text(col));
+
+				++abs_pos.item;
+			}
+		}
+
 		listbox::cat_proxy listbox::at(size_type pos)
 		{
 			internal_scope_guard lock;
@@ -5660,6 +5689,35 @@ namespace nana
 			if (drawerbase::listbox::essence::parts::list == _where.first)
 				return ess.lister.advance(ess.first_display(), static_cast<int>(_where.second));
 	
+			return index_pair{ npos, npos };
+		}
+
+		listbox::index_pair listbox::hovered(bool return_end) const
+		{
+			using parts = drawerbase::listbox::essence::parts;
+
+			internal_scope_guard lock;
+
+			auto cur_pos = API::cursor_position();
+			API::calc_window_point(handle(), cur_pos);
+
+			auto pt_where = _m_ess().where(cur_pos);
+
+			if ((pt_where.first == parts::list || pt_where.first == parts::checker) && pt_where.second != npos)
+			{
+				auto pos = _m_ess().lister.advance(_m_ess().first_display(), static_cast<int>(pt_where.second));
+				if (return_end && pos.is_category())
+				{
+					if (0 < pos.cat)
+						--pos.cat;
+					pos.item = this->size_item(pos.cat);
+				}
+				return pos;
+
+			}
+			else if (return_end)
+				return index_pair{ this->size_categ() - 1, this->size_item(this->size_categ() - 1) };
+
 			return index_pair{ npos, npos };
 		}
 
@@ -5850,18 +5908,6 @@ namespace nana
 			if(_where.item < ess->lister.size_item(_where.cat))
 				return ip;
 			return item_proxy(ess);
-		}
-
-		listbox::index_pair listbox::hovered() const
-		{
-			internal_scope_guard lock;
-			using parts = drawerbase::listbox::essence::parts;
-
-			auto & ptr_where = _m_ess().pointer_where;
-			if ((ptr_where.first == parts::list || ptr_where.first == parts::checker) && ptr_where.second != npos)
-				return _m_ess().lister.advance(_m_ess().first_display(), static_cast<int>(ptr_where.second));
-			
-			return index_pair{ npos, npos };
 		}
 
 		bool listbox::sortable() const

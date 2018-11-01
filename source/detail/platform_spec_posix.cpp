@@ -1111,7 +1111,7 @@ namespace detail
 	}
 
 
-	bool platform_spec::register_dragdrop(native_window_type wd, dragdrop_interface* ddrop)
+	bool platform_spec::register_dragdrop(native_window_type wd, x11_dragdrop_interface* ddrop)
 	{
 		platform_scope_guard lock;
 		if(0 != xdnd_.dragdrop.count(wd))
@@ -1121,13 +1121,11 @@ namespace detail
 		::XChangeProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware, XA_ATOM, sizeof(int) * 8,
 			PropModeReplace, reinterpret_cast<unsigned char*>(&dndver), 1);
 
-		auto & ref_drop = xdnd_.dragdrop[wd];
-		ref_drop.dragdrop = ddrop;
-		ref_drop.ref_count = 1;
+		xdnd_.dragdrop[wd] = ddrop;
 		return true;
 	}
 
-	dragdrop_interface* platform_spec::remove_dragdrop(native_window_type wd)
+	x11_dragdrop_interface* platform_spec::remove_dragdrop(native_window_type wd)
 	{
 		platform_scope_guard lock;
 		auto i = xdnd_.dragdrop.find(wd);
@@ -1135,13 +1133,9 @@ namespace detail
 			return nullptr;
 
 		auto ddrop = i->second;
-		if(ddrop.ref_count <= 1)
-		{
-			xdnd_.dragdrop.erase(i);
-			return ddrop.dragdrop;
-		}
-		--ddrop.ref_count;
-		return nullptr;
+		xdnd_.dragdrop.erase(i);
+
+		return ddrop;
 	}
 
 	//_m_msg_filter
