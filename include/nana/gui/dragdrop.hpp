@@ -31,7 +31,16 @@ namespace nana
 		simple_dragdrop(simple_dragdrop&&) = delete;
 		simple_dragdrop& operator=(simple_dragdrop&&) = delete;
 	public:
-		simple_dragdrop(window drag_wd);
+		explicit simple_dragdrop(window drag_wd);
+		simple_dragdrop(window                drag_origin,
+						std::function<bool()> when,
+						window                drop_target,
+						std::function<void()> how)
+		: simple_dragdrop{drag_origin}
+		{
+			condition(when);
+			make_drop(drop_target, how);
+		}
 		~simple_dragdrop();
 
 		/// Sets a condition that determines whether the drag&drop can start
