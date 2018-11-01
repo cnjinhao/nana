@@ -124,13 +124,16 @@ namespace nana {
 						}
 						else if (event_code::mouse_move == arg.evt_code)
 						{
-							if (this->drag_view_move && (dragdrop_status::not_ready == API::window_dragdrop_status(this->window_handle)))
+							if (dragdrop_status::not_ready != API::window_dragdrop_status(this->window_handle))
 							{
-								if (this->drive(arg.pos))
-								{
-									tmr.interval(16);
-									tmr.start();
-								}
+								//When dnd is in progress, it cancels the move_view operation.
+								this->drag_view_move = false;
+								tmr.stop();
+							}
+							else if (this->drag_view_move && this->drive(arg.pos))
+							{
+								tmr.interval(16);
+								tmr.start();
 							}
 						}
 						else if (event_code::mouse_up == arg.evt_code)
