@@ -224,6 +224,8 @@ namespace nana
         /// Selects/unselects all text.
 		void select(bool);
 
+		void select_points(nana::upoint arg_a, nana::upoint arg_b);
+
 		/// Returns the bounds of a text selection
 		/**
 		 * @return no selection if pair.first == pair.second.
