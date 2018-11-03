@@ -167,6 +167,8 @@ namespace nana{	namespace widgets
 
 			bool select(bool);
 
+			bool select_points(nana::upoint arg_a, nana::upoint arg_b);
+
 			/// Sets the end position of a selected string.
 			void set_end_caret(bool stay_in_view);
 			

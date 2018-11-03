@@ -584,7 +584,16 @@ namespace drawerbase {
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->select(yes))
+			if (editor && editor->select(yes))
+				API::refresh_window(*this);
+		}
+
+
+		void textbox::select_points(nana::upoint arg_a, nana::upoint arg_b)
+		{
+			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (editor && editor->select_points(arg_a, arg_b))
 				API::refresh_window(*this);
 		}
 

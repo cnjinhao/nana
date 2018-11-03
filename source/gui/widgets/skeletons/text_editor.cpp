@@ -1845,11 +1845,11 @@ namespace nana{	namespace widgets
 
 		bool text_editor::select(bool yes)
 		{
-			if(yes)
+			if (yes)
 			{
 				select_.a.x = select_.a.y = 0;
 				select_.b.y = static_cast<unsigned>(impl_->textbase.lines());
-				if(select_.b.y) --select_.b.y;
+				if (select_.b.y) --select_.b.y;
 				select_.b.x = static_cast<unsigned>(impl_->textbase.getline(select_.b.y).size());
 				select_.mode_selection = selection::mode::method_selected;
 				impl_->try_refresh = sync_graph::refresh;
@@ -1863,6 +1863,15 @@ namespace nana{	namespace widgets
 				return true;
 			}
 			return false;
+		}
+
+		bool text_editor::select_points(nana::upoint arg_a, nana::upoint arg_b)
+		{
+			select_.a = arg_a;
+			select_.b = arg_b;
+			select_.mode_selection = selection::mode::method_selected;
+			impl_->try_refresh = sync_graph::refresh;
+			return true;
 		}
 
 		void text_editor::set_end_caret(bool stay_in_view)
