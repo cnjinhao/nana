@@ -61,6 +61,8 @@ namespace detail
 
 			bool is_ancestor_of(const tree_node* child) const
 			{
+				if (child == this)
+					return true;
 				while (child)
 				{
 					if (child->owner == this)
