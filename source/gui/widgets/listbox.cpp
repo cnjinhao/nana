@@ -1974,7 +1974,6 @@ namespace nana
 				msup_deselect
 			};
 
-
 			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member funcions, therefore all data members are public.
 			struct essence
 			{
@@ -2295,16 +2294,16 @@ namespace nana
 					return header.range(seq.front()).first + r.x - this->content_view->origin().x;
 				}
 
-				//Returns the absolute coordinate of the specified item in the window
-				point item_coordinate(const index_pair& pos) const
+				//Returns the top of the specified item in listbox window.
+				int item_window_top(const index_pair& pos) const
 				{
-					auto top = static_cast<int>(this->lister.distance(index_pair{}, pos) * item_height()) - content_view->origin().y;
+					int top = static_cast<int>(this->lister.distance(index_pair{}, pos) * item_height()) - content_view->origin().y;
 
 					rectangle r;
 					if (rect_lister(r))
 						top += r.y;
 
-					return{ top, top + static_cast<int>(item_height()) };
+					return top;
 				}
 
 				std::pair<parts, size_t> where(const nana::point& pos) const noexcept
@@ -4247,13 +4246,21 @@ namespace nana
 								//adjust the display of selected into the list rectangle if the part of the item is beyond the top/bottom edge
 								if (good_list_r)
 								{
-									auto item_coord = this->essence_->item_coordinate(abs_item_pos);	//item_coord.x = top, item_coord.y = bottom
-									if (item_coord.x < list_r.y && list_r.y < item_coord.y)
-										essence_->content_view->move_origin({ 0, item_coord.x - list_r.y });
-									else if (item_coord.x < list_r.bottom() && list_r.bottom() < item_coord.y)
-										essence_->content_view->move_origin({ 0, item_coord.y - list_r.bottom() });
+									auto const item_top = this->essence_->item_window_top(abs_item_pos);
+									auto const item_bottom = item_top + static_cast<int>(essence_->item_height());
 
-									essence_->content_view->sync(false);
+									int move_top = 0;
+
+									if (item_top < list_r.y && list_r.y < item_bottom)
+										move_top = item_top - list_r.y;
+									else if (item_top < list_r.bottom() && list_r.bottom() < item_bottom)
+										move_top = item_bottom - list_r.bottom();
+
+									if (0 != move_top)
+									{
+										essence_->content_view->move_origin({ 0, move_top });
+										essence_->content_view->sync(false);
+									}
 								}
 
 								bool new_selected_status = true;
