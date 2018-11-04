@@ -1257,7 +1257,7 @@ namespace nana
 			IShellItem *init_path{ nullptr };
 			hr = SHCreateItemFromParsingName(impl_->init_path.wstring().c_str(), nullptr, IID_PPV_ARGS(&init_path));
 			if (SUCCEEDED(hr))
-				fd->SetDefaultFolder(init_path);
+				fd->SetFolder(init_path);
 
 			fd->SetOptions(FOS_PICKFOLDERS);
 			fd->Show(reinterpret_cast<HWND>(API::root(impl_->owner))); // the native handle of the parent nana form goes here
