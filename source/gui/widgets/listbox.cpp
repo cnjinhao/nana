@@ -119,6 +119,14 @@ namespace nana
 			class es_header
 			{
 			public:
+				struct attributes
+				{
+					bool movable{true};
+					bool resizable{true};
+					bool sortable{true};
+					bool visible{true};
+				};
+
 				struct column
 					: public column_interface
 				{
@@ -286,28 +294,14 @@ namespace nana
 					return head_str;
 				}
 
-				bool visible() const noexcept
+				const attributes& attrib() const noexcept
 				{
-					return visible_;
+					return attrib_;
 				}
 
-				bool visible(bool v) noexcept
+				attributes& attrib() noexcept
 				{
-					if (visible_ == v)
-						return false;
-
-					visible_ = v;
-					return true;
-				}
-
-				bool sortable() const noexcept
-				{
-					return sortable_;
-				}
-
-				void sortable(bool enable) noexcept
-				{
-					sortable_ = enable;
+					return attrib_;
 				}
 
 				size_type create(essence* ess, native_string_type&& text, unsigned pixels)
@@ -584,8 +578,7 @@ namespace nana
 					}
 				}
 			private:
-				bool visible_{true};
-				bool sortable_{true};
+				attributes attrib_;
 				unsigned	margin_{ 5 };
 				container cont_;
 			};
@@ -2316,7 +2309,7 @@ namespace nana
 					{   /// we are inside
 						auto const origin = content_view->origin();
 
-						if (header.visible() && (pos.y < static_cast<int>(header_visible_px()) + area.y))
+						if (header.attrib().visible && (pos.y < static_cast<int>(header_visible_px()) + area.y))
 						{   /// we are in the header
 							new_where.first = parts::header;
 							new_where.second = this->column_from_pos(pos.x);
@@ -2433,15 +2426,15 @@ namespace nana
 
 				unsigned header_visible_px() const
 				{
-					if (!header.visible())
-						return 0;
+					if(header.attrib().visible)
+						return scheme_ptr->header_padding_top + scheme_ptr->header_padding_bottom + static_cast<unsigned>(header_font_px());
 
-					return scheme_ptr->header_padding_top + scheme_ptr->header_padding_bottom + static_cast<unsigned>(header_font_px());
+					return 0;
 				}
 
 				bool rect_header(nana::rectangle& r) const
 				{
-					if(header.visible())
+					if(header.attrib().visible)
 					{
 						r = this->content_area();
 
@@ -3234,12 +3227,15 @@ namespace nana
 				}
 
 				// Detects a header spliter, return true if x is in the splitter area after that header item (column)
-				bool detect_splitter(const nana::rectangle& r, int x) noexcept
+				bool detect_splitter(int x) noexcept
 				{
+					nana::rectangle r;
+					if (!essence_->rect_header(r))
+						return false;
+
 					if(essence_->ptr_state == item_state::highlighted)
 					{
 						x -= r.x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin());
-
 
 						for(auto & col : essence_->header.cont()) // in current order
 						{
@@ -4108,7 +4104,7 @@ namespace nana
 					if (essence_->rect_lister(r))
 						drawer_lister_->draw(r);
 
-					if (essence_->header.visible() && essence_->rect_header(r))
+					if (essence_->header.attrib().visible && essence_->rect_header(r))
 						drawer_header_->draw(graph, r);
 
 					essence_->draw_peripheral();
@@ -4129,7 +4125,7 @@ namespace nana
 
 					if(essence_->ptr_state == item_state::pressed)
 					{
-						if(essence_->pointer_where.first == parts::header)
+						if((essence_->pointer_where.first == parts::header) && essence_->header.attrib().movable)
 						{   // moving a pressed header : grab it
 							essence_->ptr_state = item_state::grabbed;
 
@@ -4152,21 +4148,14 @@ namespace nana
 						need_refresh = true;
 					}
 
-					bool set_splitter = false;
-					if(essence_->pointer_where.first == parts::header)
+					//Detects column splitter
+					if(essence_->header.attrib().resizable &&
+						(essence_->pointer_where.first == parts::header) &&
+						drawer_header_->detect_splitter(arg.pos.x))
 					{
-						nana::rectangle r;
-						if(essence_->rect_header(r))
-						{
-							if(drawer_header_->detect_splitter(r, arg.pos.x))
-							{
-								set_splitter = true;
-								essence_->lister.wd_ptr()->cursor(cursor::size_we);
-							}
-						}
+						essence_->lister.wd_ptr()->cursor(cursor::size_we);
 					}
-
-					if((!set_splitter) && (essence_->ptr_state != item_state::grabbed))
+					else if(essence_->ptr_state != item_state::grabbed)
 					{
 						if((drawer_header_->splitter() != npos) || (essence_->lister.wd_ptr()->cursor() == cursor::size_we))
 						{
@@ -4402,7 +4391,7 @@ namespace nana
 					bool need_refresh = false;
 
 					//Don't sort the column when the mouse is due to released for stopping resizing column.
-					if ((drawer_header_->splitter() == npos) && essence_->header.sortable() && essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
+					if ((drawer_header_->splitter() == npos) && essence_->header.attrib().sortable && essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
 					{
 						//Try to sort the column
 						if(essence_->pointer_where.second < essence_->header.cont().size())
@@ -5681,6 +5670,31 @@ namespace nana
 			return _m_ess().header.cont().size();
 		}
 
+
+		void listbox::column_resizable(bool resizable)
+		{
+			internal_scope_guard lock;
+			_m_ess().header.attrib().resizable = resizable;
+		}
+
+		bool listbox::column_resizable() const
+		{
+			internal_scope_guard lock;
+			return _m_ess().header.attrib().resizable;
+		}
+
+		void listbox::column_movable(bool movable)
+		{
+			internal_scope_guard lock;
+			_m_ess().header.attrib().movable = movable;
+		}
+
+		bool listbox::column_movable() const
+		{
+			internal_scope_guard lock;
+			return _m_ess().header.attrib().movable;
+		}
+
 		//Contributed by leobackes(pr#97)
 		listbox::size_type listbox::column_from_pos ( const point& pos ) const
 		{
@@ -5855,13 +5869,13 @@ namespace nana
 		bool listbox::sortable() const
 		{
 			internal_scope_guard lock;
-			return _m_ess().header.sortable();
+			return _m_ess().header.attrib().sortable;
 		}
 
 		void listbox::sortable(bool enable)
 		{
 			internal_scope_guard lock;
-			_m_ess().header.sortable(enable);
+			_m_ess().header.attrib().sortable = enable;
 		}
 
 		void listbox::set_sort_compare(size_type col, std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> strick_ordering)
@@ -5905,13 +5919,14 @@ namespace nana
 		void listbox::show_header(bool sh)
 		{
 			internal_scope_guard lock;
-			_m_ess().header.visible(sh);
+			_m_ess().header.attrib().visible = sh;
 			_m_ess().update();
 		}
 
 		bool listbox::visible_header() const
 		{
-			return _m_ess().header.visible();
+			internal_scope_guard lock;
+			return _m_ess().header.attrib().visible;
 		}
 
 		void listbox::move_select(bool upwards)  ///<Selects an item besides the current selected item in the display.
