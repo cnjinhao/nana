@@ -36,6 +36,19 @@ namespace nana
 	};
 
 	template<typename T>
+	struct arg_tabbar_adding
+		: public event_arg
+	{
+		arg_tabbar_adding(tabbar<T>& wdg, std::size_t pos)
+			: widget(wdg), where(pos)
+		{}
+
+		tabbar<T> & widget;
+		mutable bool add = true;					///< determines whether to add the item
+		std::size_t where;							///< position where to add the item
+	};
+
+	template<typename T>
 	struct arg_tabbar_removed : public arg_tabbar<T>
 	{
 		arg_tabbar_removed(tabbar<T>& wdg, T& v)
@@ -56,6 +69,7 @@ namespace nana
 			{
 				using value_type = T;
 
+				basic_event<arg_tabbar_adding<value_type>> adding;
 				basic_event<arg_tabbar<value_type>> added;
 				basic_event<arg_tabbar<value_type>> activated;
 				basic_event<arg_tabbar_removed<value_type>> removed;
@@ -65,6 +79,7 @@ namespace nana
 			{
 			public:
 				virtual ~event_agent_interface() = default;
+				virtual bool adding(std::size_t) = 0;
 				virtual void added(std::size_t) = 0;
 				virtual void activated(std::size_t) = 0;
 				virtual bool removed(std::size_t, bool & close_attached) = 0;
@@ -106,6 +121,13 @@ namespace nana
 				event_agent(::nana::tabbar<T>& tb, DrawerTrigger & dtr)
 					: tabbar_(tb), drawer_trigger_(dtr)
 				{}
+
+				bool adding(std::size_t pos) override
+				{
+					::nana::arg_tabbar_adding<T> arg(tabbar_, pos);
+					tabbar_.events().adding.emit(arg, tabbar_);
+					return arg.add;
+				}
 
 				void added(std::size_t pos) override
 				{
