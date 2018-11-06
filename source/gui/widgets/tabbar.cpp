@@ -751,15 +751,27 @@ namespace nana
 					if((pos == npos) || (pos >= list_.size()))
 					{
 						pos = list_.size();
+						
+						if(evt_agent_)
+							if(!evt_agent_->adding(pos))
+								return false;
+
 						this->list_.emplace_back();
 					}
 					else
+					{
+						if(evt_agent_)
+							if(!evt_agent_->adding(pos))
+								return false;
+
 						list_.emplace(iterator_at(pos));
+					}
 
 					basis_.active = pos;
 					if(evt_agent_)
 					{
 						evt_agent_->added(pos);
+						erase(pos);
 						evt_agent_->activated(pos);
 					}
 					return true;
