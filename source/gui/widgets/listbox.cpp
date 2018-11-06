@@ -1974,7 +1974,6 @@ namespace nana
 				msup_deselect
 			};
 
-
 			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member funcions, therefore all data members are public.
 			struct essence
 			{
@@ -1987,9 +1986,6 @@ namespace nana
 				bool auto_draw{true};
 				bool checkable{false};
 				bool if_image{false};
-#if 0 //deprecated
-				bool deselect_deferred{ false };	//deselects items when mouse button is released.
-#endif
 				unsigned text_height;
 
                 ::nana::listbox::export_options def_exp_options;
@@ -2298,16 +2294,16 @@ namespace nana
 					return header.range(seq.front()).first + r.x - this->content_view->origin().x;
 				}
 
-				//Returns the absolute coordinate of the specified item in the window
-				point item_coordinate(const index_pair& pos) const
+				//Returns the top of the specified item in listbox window.
+				int item_window_top(const index_pair& pos) const
 				{
-					auto top = static_cast<int>(this->lister.distance(index_pair{}, pos) * item_height()) - content_view->origin().y;
+					int top = static_cast<int>(this->lister.distance(index_pair{}, pos) * item_height()) - content_view->origin().y;
 
 					rectangle r;
 					if (rect_lister(r))
 						top += r.y;
 
-					return{ top, top + static_cast<int>(item_height()) };
+					return top;
 				}
 
 				std::pair<parts, size_t> where(const nana::point& pos) const noexcept
@@ -3544,7 +3540,7 @@ namespace nana
 					:essence_(es)
 				{}
 
-				void draw(const nana::rectangle& rect)
+				void draw(const nana::rectangle& visual_r)
 				{
                     internal_scope_guard lock;
 
@@ -3568,10 +3564,10 @@ namespace nana
 					auto const origin = essence_->content_view->origin();
 
 					auto const header_margin = essence_->header.margin();
-					if (header_w + header_margin < origin.x + rect.width)
+					if (header_w + header_margin < origin.x + visual_r.width)
 					{
-						rectangle r{ point{ rect.x + static_cast<int>(header_w + header_margin) - origin.x, rect.y },
-							size{ rect.width + origin.x - header_w, rect.height } };
+						rectangle r{ point{ visual_r.x + static_cast<int>(header_w + header_margin) - origin.x, visual_r.y },
+							size{ visual_r.width + origin.x - header_w, visual_r.height } };
 						
 						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), r, *essence_->graph, r.position()))
 							essence_->graph->rectangle(r, true);
@@ -3579,7 +3575,7 @@ namespace nana
 
 					if (header_margin > 0)
 					{
-						rectangle r = rect;
+						rectangle r = visual_r;
 						r.width = header_margin;
 
 						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), r, *essence_->graph, r.position()))
@@ -3593,8 +3589,8 @@ namespace nana
 					auto first_disp = essence_->first_display();
 
 					point item_coord{
-						essence_->item_xpos(rect),
-						rect.y - static_cast<int>(origin.y % item_height_px)
+						essence_->item_xpos(visual_r),
+						visual_r.y - static_cast<int>(origin.y % item_height_px)
 					};
 
 					essence_->inline_buffered_table.swap(essence_->inline_table);
@@ -3610,16 +3606,12 @@ namespace nana
 							hoverred_pos = lister.advance(first_disp, static_cast<int>(ptr_where.second));
 						}
 
-						auto const columns = essence_->ordered_columns(rect.width);
+						auto const columns = essence_->ordered_columns(visual_r.width);
 
 						if (columns.empty())
 							return;
 
 						auto const txtoff = static_cast<int>(essence_->scheme_ptr->item_height_ex) / 2;
-
-						auto i_categ = lister.get(first_disp.cat);
-
-						auto idx = first_disp;
 
 						for (auto & cat : lister.cat_container())
 							for (auto & ind : cat.indicators)
@@ -3628,75 +3620,49 @@ namespace nana
 									ind->detach();
 							}
 
-						//Here we draw the root categ (0) or a first item if the first drawing is not a categ.(item!=npos))
-						if (idx.cat == 0 || !idx.is_category())
+						auto idx = first_disp;
+						for (auto i_categ = lister.get(first_disp.cat); i_categ != lister.cat_container().end(); ++i_categ)
 						{
-							if (idx.cat == 0 && idx.is_category())  // the 0 cat
+							if (item_coord.y > visual_r.bottom())
+								break;
+
+							if (idx.cat > 0 && idx.is_category())
 							{
-								first_disp.item = 0;
+								_m_draw_categ(*i_categ, visual_r.x - origin.x, item_coord.y, txtoff, header_w, bgcolor,
+									(hoverred_pos.is_category() && (idx.cat == hoverred_pos.cat) ? item_state::highlighted : item_state::normal)
+									);
+								item_coord.y += static_cast<int>(item_height_px);
 								idx.item = 0;
 							}
 
-							std::size_t size = i_categ->items.size();
-							for (std::size_t offs = first_disp.item; offs < size; ++offs, ++idx.item)
+							if (i_categ->expand)
 							{
-								if (item_coord.y >= rect.bottom())
-									break;
+								auto size = i_categ->items.size();
+								for (; idx.item < size; ++idx.item)
+								{
+									if (item_coord.y > visual_r.bottom())
+										break;
 
-								auto item_pos = lister.index_cast(index_pair{ idx.cat, offs }, true);	//convert display position to absolute position
+									auto item_pos = lister.index_cast(index_pair{ idx.cat, idx.item }, true);	//convert display position to absolute position
 
-								_m_draw_item(*i_categ, item_pos, item_coord, txtoff, header_w, rect, columns, bgcolor, fgcolor,
-									(hoverred_pos == idx ? item_state::highlighted : item_state::normal)
-								);
+									_m_draw_item(*i_categ, item_pos, item_coord, txtoff, header_w, visual_r, columns, bgcolor, fgcolor,
+										(idx == hoverred_pos ? item_state::highlighted : item_state::normal)
+										);
 
-								item_coord.y += static_cast<int>(item_height_px);
+									item_coord.y += static_cast<int>(item_height_px);
+								}
 							}
 
-							++i_categ;
 							++idx.cat;
-						}
-
-						for (; i_categ != lister.cat_container().end(); ++i_categ, ++idx.cat)
-						{
-							if (item_coord.y > rect.bottom())
-								break;
-
-							idx.item = 0;
-
-							_m_draw_categ(*i_categ, rect.x - origin.x, item_coord.y, txtoff, header_w, bgcolor, 
-									(hoverred_pos.is_category() && (idx.cat == hoverred_pos.cat) ? item_state::highlighted : item_state::normal)
-								);
-							item_coord.y += static_cast<int>(item_height_px);
-
-							if (false == i_categ->expand)
-								continue;
-
-							auto size = i_categ->items.size();
-							for (decltype(size) pos = 0; pos < size; ++pos)
-							{
-								if (item_coord.y > rect.bottom())
-									break;
-
-								auto item_pos = lister.index_cast(index_pair{ idx.cat, pos }, true);	//convert display position to absolute position
-
-								_m_draw_item(*i_categ, item_pos, item_coord, txtoff, header_w, rect, columns, bgcolor, fgcolor,
-									(idx == hoverred_pos ? item_state::highlighted : item_state::normal)
-								);
-
-								item_coord.y += static_cast<int>(item_height_px);
-								if (item_coord.y >= rect.bottom())
-									break;
-
-								++idx.item;
-							}
+							idx.item = nana::npos;
 						}
 					}
 
 					essence_->inline_buffered_table.clear();
 
-					if (item_coord.y < rect.bottom())
+					if (item_coord.y < visual_r.bottom())
 					{
-						rectangle bground_r{ rect.x, item_coord.y, rect.width, static_cast<unsigned>(rect.bottom() - item_coord.y) };
+						rectangle bground_r{ visual_r.x, item_coord.y, visual_r.width, static_cast<unsigned>(visual_r.bottom() - item_coord.y) };
 						if (!API::dev::copy_transparent_background(essence_->listbox_ptr->handle(), bground_r, *essence_->graph, bground_r.position()))
 							essence_->graph->rectangle(bground_r, true, bgcolor);
 					}
@@ -3820,10 +3786,10 @@ namespace nana
 				void _m_draw_item(const category_t& cat,
 					              const index_pair& item_pos, 
 								  const point& coord,
-					              const int txtoff,                      ///< below y to print the text
-					              unsigned width, 
-					              const nana::rectangle& content_r,      ///< the rectangle where the full list content have to be drawn
-					              const std::vector<size_type>& seqs,    ///< columns to print
+					              const int txtoff,						///< below y to print the text
+					              unsigned header_width,				///< width of all visible columns, in pixel 
+					              const nana::rectangle& content_r,		///< the rectangle where the full list content have to be drawn
+					              const std::vector<size_type>& seqs,	///< columns to print
 					              nana::color bgcolor, 
 					              nana::color fgcolor, 
 					              item_state state
@@ -3842,12 +3808,16 @@ namespace nana
 					if(!item.fgcolor.invisible())
 						fgcolor = item.fgcolor;
 
-					const unsigned show_w = (std::min)(content_r.width, width - essence_->content_view->origin().x);
+					const unsigned columns_shown_width = (std::min)(content_r.width, header_width - essence_->content_view->origin().x);
 
 					auto graph = essence_->graph;
 
 					//draw the background for the whole item
-					rectangle bground_r{ content_r.x + static_cast<int>(essence_->header.margin()), coord.y, show_w, essence_->item_height() };
+					rectangle bground_r{
+						content_r.x + static_cast<int>(essence_->header.margin()) - essence_->content_view->origin().x,
+						coord.y,
+						columns_shown_width + essence_->content_view->origin().x,
+						essence_->item_height() };
 					auto const state_bgcolor = this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
 					//The position of column in x-axis.
@@ -4051,7 +4021,6 @@ namespace nana
 				void _m_draw_item_border(int item_top) const
 				{
 					//Draw selecting inner rectangle
-
 					rectangle r{
 						essence_->content_area().x - essence_->content_view->origin().x + static_cast<int>(essence_->header.margin()),
 						item_top,
@@ -4150,13 +4119,8 @@ namespace nana
 					using item_state = essence::item_state;
 					using parts = essence::parts;
 
-#if 0	//deprecated
-					//Cancel deferred deselection operation when mouse moves.
-					essence_->deselect_deferred = false;
-#else
-					if (operation_states::msup_deselect == essence_->operation.state)
+					if ((operation_states::msup_deselect == essence_->operation.state) && API::dev::window_draggable(arg.window_handle))
 						essence_->operation.state = operation_states::none;
-#endif
 
 					bool need_refresh = false;
 
@@ -4282,13 +4246,21 @@ namespace nana
 								//adjust the display of selected into the list rectangle if the part of the item is beyond the top/bottom edge
 								if (good_list_r)
 								{
-									auto item_coord = this->essence_->item_coordinate(abs_item_pos);	//item_coord.x = top, item_coord.y = bottom
-									if (item_coord.x < list_r.y && list_r.y < item_coord.y)
-										essence_->content_view->move_origin({ 0, item_coord.x - list_r.y });
-									else if (item_coord.x < list_r.bottom() && list_r.bottom() < item_coord.y)
-										essence_->content_view->move_origin({ 0, item_coord.y - list_r.bottom() });
+									auto const item_top = this->essence_->item_window_top(abs_item_pos);
+									auto const item_bottom = item_top + static_cast<int>(essence_->item_height());
 
-									essence_->content_view->sync(false);
+									int move_top = 0;
+
+									if (item_top < list_r.y && list_r.y < item_bottom)
+										move_top = item_top - list_r.y;
+									else if (item_top < list_r.bottom() && list_r.bottom() < item_bottom)
+										move_top = item_bottom - list_r.bottom();
+
+									if (0 != move_top)
+									{
+										essence_->content_view->move_origin({ 0, move_top });
+										essence_->content_view->sync(false);
+									}
 								}
 
 								bool new_selected_status = true;
@@ -4316,20 +4288,6 @@ namespace nana
 										essence_->mouse_selection.reverse_selection = true;
 										new_selected_status = !essence_->cs_status(abs_item_pos, true);
 									}
-#if 0 //deprecated
-									else if (nana::mouse::right_button == arg.button)
-									{
-										//Unselects all selected items if the current item is not selected before selecting.
-										auto selected = lister.pick_items(true);
-										if (selected.cend() == std::find(selected.cbegin(), selected.cend(), item_pos))
-											lister.select_for_all(false, abs_item_pos);
-									}
-									else
-									{
-										//Unselects all selected items except current item if right button clicked.
-										lister.select_for_all(false, abs_item_pos);	//cancel all selections
-									}
-#else
 									else
 									{
 										auto selected = lister.pick_items(true);
@@ -4343,17 +4301,13 @@ namespace nana
 											{
 												essence_->operation.item = abs_item_pos;
 
-												//Don't deselect the selections if the listbox is draggable.
-												//It should remain the selections for drag-and-drop
-
-												if (!API::dev::window_draggable(arg.window_handle))
-													essence_->operation.state = operation_states::msup_deselect;
+												//Don't deselect the selections, let it determine in mouse_move event depending on whether dnd is enabled.
+												essence_->operation.state = operation_states::msup_deselect;
 											}
 										}
 										else
 											lister.select_for_all(false, abs_item_pos);
 									}
-#endif
 								}
 								else
 								{
@@ -4423,15 +4377,11 @@ namespace nana
 
 						//Deselection of all items is deferred to the mouse up event when ctrl or shift is not pressed
 						//Pressing ctrl or shift is to selects other items without deselecting current selections.
-#if 0 //deprecated
-						essence_->deselect_deferred = !(arg.ctrl || arg.shift);
-#else
 						if (!(arg.ctrl || arg.shift))
 						{
 							essence_->operation.state = operation_states::msup_deselect;
 							essence_->operation.item = index_pair{nana::npos, nana::npos};
 						}
-#endif
 					}
 
 					if(update)
@@ -4472,14 +4422,6 @@ namespace nana
 						essence_->stop_mouse_selection();
 						need_refresh = true;
 					}
-
-#if 0	//deprecated
-					if (essence_->deselect_deferred)
-					{
-						essence_->deselect_deferred = false;
-						need_refresh |= (essence_->lister.select_for_all(false));
-					}
-#endif
 
 					if (operation_states::msup_deselect == essence_->operation.state)
 					{
