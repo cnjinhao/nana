@@ -1461,6 +1461,11 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the number of columns
 		size_type column_size() const;
 
+		void column_resizable(bool resizable);
+		bool column_resizable() const;
+		void column_movable(bool);
+		bool column_movable() const;
+
 		/// Returns a rectangle in where the content is drawn.
 		rectangle content_area() const;
 
