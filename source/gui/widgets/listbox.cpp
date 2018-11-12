@@ -130,17 +130,18 @@ namespace nana
 				struct column
 					: public column_interface
 				{
-					native_string_type caption;
-					unsigned width_px;
-					std::pair<unsigned, unsigned> range_width_px;
+					native_string_type caption;                     //< header title
+					unsigned width_px;                              //< column width in pixels
+					std::pair<unsigned, unsigned> range_width_px;   //< allowed witdh
 					bool visible_state{ true };
 
-					/// Absolute position of column when it was creating
-					size_type index;
+
+					size_type index;                          /// Absolute position of column when it was created
 
 					nana::align alignment{ nana::align::left };
 
-					std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> weak_ordering;
+					std::function<bool(const std::string&,  nana::any*,
+							           const std::string&,  nana::any*,        bool reverse)> weak_ordering;
 
 					std::shared_ptr<paint::font> font;	///< The exclusive column font
 
@@ -186,18 +187,18 @@ namespace nana
 					{
 					}
 				private:
-					//The definition is provided after essence
+					///The definition is provided after essence
 					void _m_refresh() noexcept;
 				private:
 					essence* const ess_;
 				public:
-					//Implementation of column_interface
+					///Implementation of column_interface
 					unsigned width() const noexcept override
 					{
 						return width_px;
 					}
 
-					// Sets the width and overrides the ranged width
+					/// Sets the width and overrides the ranged width
 					void width(unsigned pixels) noexcept override
 					{
 						width_px = pixels;
@@ -223,7 +224,7 @@ namespace nana
 						}
 					}
 
-					size_type position(bool disp_order) const noexcept override;	//The definition is provided after essence
+					size_type position(bool disp_order) const noexcept override;	//< The definition is provided after essence
 
 					std::string text() const noexcept override
 					{
@@ -6049,5 +6050,40 @@ namespace nana
 			internal_scope_guard lock;
 			return _m_ess().content_view->scroll_operation();
 		}
+
+		/// Move column to view_position
+		void listbox::move_column(size_type abs_pos, size_type view_pos)
+		{
+			internal_scope_guard lock;
+			return _m_ess().header.move(abs_pos, view_pos, true);
+		}
+
+		/// Sort columns in range first_col to last_col inclusive using a row
+		template<typename Val>
+		void listbox::order_col(size_type first_col,
+					   size_type last_col,
+					   index_pair row,  bool reverse ,
+					   std::function<bool(const std::string& cell1, size_type col1,
+										  const std::string& cell2, size_type col2, const Val& rowval, bool reverse)> comp)
+		{
+			if (first_col<0 || last_col<=first_col)
+				return;
+			if (last_col >= column_size())
+				return;
+
+			std::vector<size_type> new_idx;
+			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
+			const item_proxy & ip_row=this->at(row);
+
+			std::sort(new_idx.begin(), new_idx.end(), [&](size_type col1,
+														  size_type col2)
+			{
+				return comp(ip_row.text(col1), col1,
+						    ip_row.text(col2), col2, ip_row.value<Val>(), reverse);
+			});
+			for(size_type i=first_col; i<=last_col; ++i)
+				move_column(i,new_idx[i]);
+		}
+
 	//end class listbox
 }//end namespace nana
