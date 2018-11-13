@@ -6069,11 +6069,43 @@ namespace nana
 			return _m_ess().content_view->scroll_operation();
 		}
 
-        /// Move column to view_position
-        void listbox::move_column(size_type abs_pos, size_type view_pos)
-        {
-            internal_scope_guard lock;
-            return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
-        }
+		/// Move column to view_position
+		void listbox::move_column(size_type abs_pos, size_type view_pos)
+		{
+			internal_scope_guard lock;
+			return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
+		}
+
+		/// Sort columns in range first_col to last_col inclusive using a row
+		void listbox::reorder_columns(size_type first_col,
+									  size_type last_col,
+									  index_pair row, bool reverse,
+									  std::function<bool(const std::string &cell1, size_type col1,
+														 const std::string &cell2, size_type col2,
+														 const nana::any *rowval,
+														 bool reverse)> comp)
+		{
+			if (first_col<0 || last_col<=first_col)
+				return;
+			if (last_col >= column_size())
+				return;
+			std::vector<size_type> new_idx;
+			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
+			const item_proxy & ip_row=this->at(row);
+			internal_scope_guard lock;
+			const nana::any *pnany=_m_ess().lister.anyobj(row,false);
+			std::sort(new_idx.begin(), new_idx.end(), [&](size_type col1,
+														  size_type col2)
+			{
+				return comp(ip_row.text(col1), col1,
+						    ip_row.text(col2), col2,
+						    pnany, reverse);
+			});
+			for(size_t i=0; i<new_idx.size(); ++i)
+			{
+				move_column(new_idx[i],i+first_col);
+			}
+		}
+
 	//end class listbox
 }//end namespace nana
