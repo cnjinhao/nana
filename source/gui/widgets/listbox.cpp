@@ -17,6 +17,12 @@
  *		dankan1890(pr#158)
  *
  */
+#include <algorithm>
+#include <list>
+#include <deque>
+#include <stdexcept>
+#include <map>
+#include <iostream>
 
 #include <nana/gui/widgets/listbox.hpp>
 #include <nana/gui/widgets/panel.hpp>	//for inline widget
@@ -27,12 +33,6 @@
 #include <nana/system/dataexch.hpp>
 #include <nana/system/platform.hpp>
 #include "skeletons/content_view.hpp"
-
-#include <algorithm>
-#include <list>
-#include <deque>
-#include <stdexcept>
-#include <map>
 
 namespace nana
 {
@@ -130,17 +130,18 @@ namespace nana
 				struct column
 					: public column_interface
 				{
-					native_string_type caption;
-					unsigned width_px;
-					std::pair<unsigned, unsigned> range_width_px;
+					native_string_type caption;                     //< header title
+					unsigned width_px;                              //< column width in pixels
+					std::pair<unsigned, unsigned> range_width_px;   //< allowed witdh
 					bool visible_state{ true };
 
-					/// Absolute position of column when it was creating
-					size_type index;
+
+					size_type index;                          //< Absolute position of column when it was created
 
 					nana::align alignment{ nana::align::left };
 
-					std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> weak_ordering;
+					std::function<bool(const std::string&,  nana::any*,
+							           const std::string&,  nana::any*,        bool reverse)> weak_ordering;
 
 					std::shared_ptr<paint::font> font;	///< The exclusive column font
 
@@ -186,18 +187,18 @@ namespace nana
 					{
 					}
 				private:
-					//The definition is provided after essence
+					/// The definition is provided after essence
 					void _m_refresh() noexcept;
 				private:
 					essence* const ess_;
 				public:
-					//Implementation of column_interface
+					/// Implementation of column_interface
 					unsigned width() const noexcept override
 					{
 						return width_px;
 					}
 
-					// Sets the width and overrides the ranged width
+					/// Sets the width and overrides the ranged width
 					void width(unsigned pixels) noexcept override
 					{
 						width_px = pixels;
@@ -223,7 +224,7 @@ namespace nana
 						}
 					}
 
-					size_type position(bool disp_order) const noexcept override;	//The definition is provided after essence
+					size_type position(bool disp_order) const noexcept override;	//< The definition is provided after essence
 
 					std::string text() const noexcept override
 					{
@@ -542,6 +543,24 @@ namespace nana
 					return pos;
 				}
                 
+
+				/// move col to view pos
+				void move_to_view_pos (size_type col, size_type view, bool front) noexcept
+				{
+					if (!front) view++;
+					if (view >= cont_.size() )		return;
+
+					auto i = std::find_if( cont_.begin(),
+							               cont_.end(),
+							               [&](const column& c){return col==c.index;});
+
+					if (i==cont_.end()) return;
+
+					auto col_from = *i;
+					cont_.erase(i);
+					cont_.insert(cont_.begin()+ view, col_from);
+
+				}
 				/// move the col originaly at "from" to the position currently in front (or after) the col originaly at index "to" invalidating some current index
 				void move(size_type from, size_type to, bool front) noexcept
 				{
@@ -6049,5 +6068,12 @@ namespace nana
 			internal_scope_guard lock;
 			return _m_ess().content_view->scroll_operation();
 		}
+
+        /// Move column to view_position
+        void listbox::move_column(size_type abs_pos, size_type view_pos)
+        {
+            internal_scope_guard lock;
+            return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
+        }
 	//end class listbox
 }//end namespace nana

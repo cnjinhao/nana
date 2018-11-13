@@ -1461,6 +1461,9 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the number of columns
 		size_type column_size() const;
 
+		/// Move column to view_position
+		void move_column(size_type abs_pos, size_type view_pos);
+
 		void column_resizable(bool resizable);
 		bool column_resizable() const;
 		void column_movable(bool);
@@ -1517,7 +1520,8 @@ the nana::detail::basic_window member pointer scheme
 		
 		///Sets a strict weak ordering comparer for a column
 		void set_sort_compare(	size_type col,
-								std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> strick_ordering);
+								std::function<bool(const std::string&, nana::any*,
+								                   const std::string&, nana::any*, bool reverse)> strick_ordering);
 
 		/// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
 		void sort_col(size_type col, bool reverse = false);
