@@ -6074,6 +6074,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
+			_m_ess().update();
 		}
 
 		/// Sort columns in range first_col to last_col inclusive using a row
@@ -6105,6 +6106,7 @@ namespace nana
 			{
 				move_column(new_idx[i],i+first_col);
 			}
+			_m_ess().update();
 		}
 
 	//end class listbox
