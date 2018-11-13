@@ -1464,13 +1464,14 @@ the nana::detail::basic_window member pointer scheme
 		/// Move column to view_position
         void move_column(size_type abs_pos, size_type view_pos);
 
-        /// Sort columns in range first_col to last_col inclusive using a row
-        template<typename Val>
-        void order_col(size_type first_col,
-                       size_type last_col,
-                       index_pair row, bool reverse ,
-                       std::function<bool(const std::string& cell1, size_type col1,
-                                          const std::string& cell2, size_type col2, const Val& rowval, bool reverse)> comp);
+        /// Sort columns in range first_col to last_col inclusive using the values from a row
+        void reorder_columns(size_type first_col,
+							 size_type last_col,
+							 index_pair row, bool reverse,
+							 std::function<bool(const std::string &cell1, size_type col1,
+												const std::string &cell2, size_type col2,
+												const nana::any *rowval,
+												bool reverse)> comp);
 
         void column_resizable(bool resizable);
 		bool column_resizable() const;

@@ -17,6 +17,12 @@
  *		dankan1890(pr#158)
  *
  */
+#include <algorithm>
+#include <list>
+#include <deque>
+#include <stdexcept>
+#include <map>
+#include <iostream>
 
 #include <nana/gui/widgets/listbox.hpp>
 #include <nana/gui/widgets/panel.hpp>	//for inline widget
@@ -27,12 +33,6 @@
 #include <nana/system/dataexch.hpp>
 #include <nana/system/platform.hpp>
 #include "skeletons/content_view.hpp"
-
-#include <algorithm>
-#include <list>
-#include <deque>
-#include <stdexcept>
-#include <map>
 
 namespace nana
 {
@@ -6077,30 +6077,45 @@ namespace nana
 		}
 
 		/// Sort columns in range first_col to last_col inclusive using a row
-		template<typename Val>
-		void listbox::order_col(size_type first_col,
-					   size_type last_col,
-					   index_pair row,  bool reverse ,
-					   std::function<bool(const std::string& cell1, size_type col1,
-										  const std::string& cell2, size_type col2, const Val& rowval, bool reverse)> comp)
+		void listbox::reorder_columns(size_type first_col,
+									  size_type last_col,
+									  index_pair row, bool reverse,
+									  std::function<bool(const std::string &cell1, size_type col1,
+														 const std::string &cell2, size_type col2,
+														 const nana::any *rowval,
+														 bool reverse)> comp)
 		{
+			std::cout<<"\n Column order from "<<first_col<<" to "<<last_col;
 			if (first_col<0 || last_col<=first_col)
 				return;
 			if (last_col >= column_size())
 				return;
+			std::cout<<"\n Column order from "<<first_col<<" to "<<last_col;
 
 			std::vector<size_type> new_idx;
 			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
+			for (auto n:new_idx) std::cout<<", "<<n;
 			const item_proxy & ip_row=this->at(row);
-
+			internal_scope_guard lock;
+			const nana::any *pnany=_m_ess().lister.anyobj(row,false);
 			std::sort(new_idx.begin(), new_idx.end(), [&](size_type col1,
 														  size_type col2)
 			{
+				std::cout<<"\nComparing "<< col1 <<" ("<< ip_row.text(col1)<<") with "
+				                         << col2 <<" ("<< ip_row.text(col2)<<") ";
+
 				return comp(ip_row.text(col1), col1,
-						    ip_row.text(col2), col2, ip_row.value<Val>(), reverse);
+						    ip_row.text(col2), col2,
+						    pnany, reverse);
 			});
-			for(size_type i=first_col; i<=last_col; ++i)
-				move_column(i,new_idx[i]);
+			std::cout<<"\n";
+			for (auto n:new_idx) std::cout<<", "<<n;
+			for(size_t i=0; i<new_idx.size(); ++i)
+			{
+				std::cout<<"\nMoving col "<< new_idx[i] <<" to pos "<< i+first_col ;
+				move_column(new_idx[i],i+first_col);
+
+			}
 		}
 
 	//end class listbox
