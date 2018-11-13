@@ -543,6 +543,24 @@ namespace nana
 					return pos;
 				}
                 
+
+				/// move col to view pos
+				void move_to_view_pos (size_type col, size_type view, bool front) noexcept
+				{
+					if (!front) view++;
+					if (view >= cont_.size() )		return;
+
+					auto i = std::find_if(   cont_.begin(),
+							              cont_.end(),
+							              [&](const column& c){return col==c.index;});
+
+					if (i==cont_.end()) return;
+
+					auto col_from = *i;
+					cont_.erase(i);
+					cont_.insert(cont_.begin()+ view, col_from);
+
+				}
 				/// move the col originaly at "from" to the position currently in front (or after) the col originaly at index "to" invalidating some current index
 				void move(size_type from, size_type to, bool front) noexcept
 				{
@@ -6055,7 +6073,7 @@ namespace nana
 		void listbox::move_column(size_type abs_pos, size_type view_pos)
 		{
 			internal_scope_guard lock;
-			return _m_ess().header.move(abs_pos, view_pos, true);
+			return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
 		}
 
 		/// Sort columns in range first_col to last_col inclusive using a row
