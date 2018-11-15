@@ -562,18 +562,18 @@ namespace detail
 				int large_edge = (w > h ? w : h);
 				const int div_256 = div * 256;
 
-				std::unique_ptr<int[]> all_table(new int[(wh << 1) + wh + (large_edge << 1) + div_256]);
+				std::unique_ptr<int[]> table_rgb(new int[(wh << 1) + wh + (large_edge << 1) + div_256]);
 
 
-				int * r = all_table.get();
-				int * g = r + wh;
-				int * b = g + wh;
+				int * tbl_r = table_rgb.get();
+				int * tbl_g = tbl_r + wh;
+				int * tbl_b = tbl_g + wh;
 
-				int * vmin = b + wh;
+				int * vmin = tbl_b + wh;
 				int * vmax = vmin + large_edge;
 
 				int * dv = vmax + large_edge;
-				int end_div = div - 1;
+				const int end_div = div - 1;
 				for(int i = 0, *dv_block = dv; i < 256; ++i)
 				{
 					for(int u = 0; u < end_div; u += 2)
@@ -614,9 +614,9 @@ namespace detail
 
 					for(int x = 0; x < w; ++x)
 					{
-						r[yi] = dv[sum_r];
-						g[yi] = dv[sum_g];
-						b[yi] = dv[sum_b];
+						tbl_r[yi] = dv[sum_r];
+						tbl_g[yi] = dv[sum_g];
+						tbl_b[yi] = dv[sum_b];
 
 						if(0 == y)
 						{
@@ -647,21 +647,21 @@ namespace detail
 					{
 						if(yp < 1)
 						{
-							sum_r += r[x];
-							sum_g += g[x];
-							sum_b += b[x];
+							sum_r += tbl_r[x];
+							sum_g += tbl_g[x];
+							sum_b += tbl_b[x];
 						}
 						else
 						{
 							int yi = yp + x;
-							sum_r += r[yi];
-							sum_g += g[yi];
-							sum_b += b[yi];
+							sum_r += tbl_r[yi];
+							sum_g += tbl_g[yi];
+							sum_b += tbl_b[yi];
 						}
 						yp += w;
 					}
 
-					linepix = pixbuf.raw_ptr(area.y) + x;
+					linepix = pixbuf.raw_ptr(area.y) + x + area.x;
 
 					for(int y = 0; y < h; ++y)
 					{
@@ -675,9 +675,9 @@ namespace detail
 						int pt1 = x + vmin[y];
 						int pt2 = x + vmax[y];
 
-						sum_r += r[pt1] - r[pt2];
-						sum_g += g[pt1] - g[pt2];
-						sum_b += b[pt1] - b[pt2];
+						sum_r += tbl_r[pt1] - tbl_r[pt2];
+						sum_g += tbl_g[pt1] - tbl_g[pt2];
+						sum_b += tbl_b[pt1] - tbl_b[pt2];
 
 						linepix = pixel_at(linepix, bytes_pl);
 					}
