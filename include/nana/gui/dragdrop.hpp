@@ -31,7 +31,7 @@ namespace nana
 		simple_dragdrop(simple_dragdrop&&) = delete;
 		simple_dragdrop& operator=(simple_dragdrop&&) = delete;
 	public:
-		explicit simple_dragdrop(window drag_wd);
+		explicit simple_dragdrop(window source);
 		simple_dragdrop(window                drag_origin,
 						std::function<bool()> when,
 						window                drop_target,
@@ -46,6 +46,26 @@ namespace nana
 		/// Sets a condition that determines whether the drag&drop can start
 		void condition(std::function<bool()> predicate_fn);
 		void make_drop(window target, std::function<void()> drop_fn);
+	private:
+		implementation* const impl_;
+	};
+
+	class dragdrop
+	{
+		struct implementation;
+
+		dragdrop(const dragdrop&) = delete;
+		dragdrop& operator=(const dragdrop&) = delete;
+
+		dragdrop(dragdrop&&) = delete;
+		dragdrop& operator=(dragdrop&&) = delete;
+	public:
+		dragdrop(window source);
+		~dragdrop();
+
+		void condition(std::function<bool()> predicate_fn);
+
+		void make_data(std::function<void()> generator);
 	private:
 		implementation* const impl_;
 	};

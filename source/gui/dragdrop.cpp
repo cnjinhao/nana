@@ -225,6 +225,36 @@ namespace nana
 			FORMATETC * format;
 		};
 	public:
+		~drop_data()
+		{
+			if(hglobal_)
+				::GlobalFree(hglobal_);
+		}
+
+		void assign(const std::vector<std::wstring>& files)
+		{
+			std::size_t bytes = 0;
+			for (auto & f : files)
+				bytes += (f.size() + 1) * sizeof(f.front());
+
+			hglobal_ = ::GlobalAlloc(GHND | GMEM_SHARE, sizeof(DROPFILES) + bytes);
+
+			auto dropfiles = reinterpret_cast<DROPFILES*>(::GlobalLock(hglobal_));
+			dropfiles->pFiles = sizeof(DROPFILES);
+			dropfiles->fWide = true;
+
+			auto file_buf = reinterpret_cast<char*>(dropfiles) + sizeof(DROPFILES);
+
+			for (auto & f : files)
+			{
+				std::memcpy(file_buf, f.data(), (f.size() + 1) * sizeof(f.front()));
+				file_buf += f.size() + 1;
+			}
+
+			::GlobalUnlock(hglobal_);
+		}
+	public:
+		// Implement IDataObject
 		STDMETHODIMP GetData(FORMATETC *request_format, STGMEDIUM *pmedium) override
 		{
 			if (!(request_format && pmedium))
@@ -385,8 +415,11 @@ namespace nana
 			return S_OK;
 		}
 	private:
+		HGLOBAL hglobal_{nullptr};
 		std::vector<medium> mediums_;
 	};
+
+
 #elif defined(NANA_X11)
 	class x11_dragdrop: public detail::x11_dragdrop_interface, public dragdrop_session
 	{
@@ -897,4 +930,122 @@ namespace nana
 		impl_->ddrop->insert(impl_->window_handle, target);
 		impl_->targets[target].swap(drop_fn);
 	}
-}
+
+
+
+
+
+
+
+	//This is class dragdrop
+	struct dragdrop::implementation
+	{
+		window source_handle;
+		bool dragging{ false };
+		std::function<bool()> predicate;
+
+		std::function<void()> generator;
+
+
+		struct event_handlers
+		{
+			nana::event_handle destroy;
+			nana::event_handle mouse_move;
+			nana::event_handle mouse_down;
+		}events;
+
+		void make_data()
+		{
+			//https://www.codeproject.com/Articles/840/How-to-Implement-Drag-and-Drop-Between-Your-Progra
+
+			std::vector<std::wstring> files;
+			files.push_back(L"D:\\universal_access");
+			files.push_back(L"D:\\新建文本文档.cpp");
+
+			std::size_t bytes = 0;
+			for (auto & f : files)
+				bytes += (f.size() + 1) * sizeof(f.front());
+
+			auto data_handle = ::GlobalAlloc(GHND | GMEM_SHARE, sizeof(DROPFILES) + bytes);
+
+			auto dropfiles = reinterpret_cast<DROPFILES*>(::GlobalLock(data_handle));
+			dropfiles->pFiles = sizeof(DROPFILES);
+			dropfiles->fWide = true;
+
+			auto file_buf = reinterpret_cast<char*>(dropfiles) + sizeof(DROPFILES);
+
+			for (auto & f : files)
+			{
+				std::memcpy(file_buf, f.data(), (f.size() + 1) * sizeof(f.front()));
+				file_buf += f.size() + 1;
+			}
+
+			::GlobalUnlock(data_handle);
+
+
+			generator();
+		}
+	};
+	
+	dragdrop::dragdrop(window source) :
+		impl_(new implementation)
+	{
+		impl_->source_handle = source;
+		
+		auto & events = API::events(source);
+		impl_->events.destroy = events.destroy.connect_unignorable([this](const arg_destroy&) {
+			dragdrop_service::instance().remove(impl_->source_handle);
+			API::dev::window_draggable(impl_->source_handle, false);
+		});
+
+		impl_->events.mouse_down = events.mouse_down.connect_unignorable([this](const arg_mouse& arg) {
+			if (arg.is_left_button() && API::is_window(impl_->source_handle))
+			{
+				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
+
+				using basic_window = ::nana::detail::basic_window;
+				auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(impl_->source_handle);
+				real_wd->other.dnd_state = dragdrop_status::ready;
+			}
+		});
+
+		impl_->events.mouse_move = events.mouse_move.connect_unignorable([this](const arg_mouse& arg) {
+			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
+				return;
+
+			using basic_window = ::nana::detail::basic_window;
+			auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(arg.window_handle);
+			real_wd->other.dnd_state = dragdrop_status::in_progress;
+
+			impl_->make_data();
+
+			auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle);
+
+			real_wd->other.dnd_state = dragdrop_status::not_ready;
+			impl_->dragging = false;
+
+			if (has_dropped)
+			{
+				auto drop_wd = API::find_window(API::cursor_position());
+				//auto i = impl_->targets.find(drop_wd);
+				//if ((impl_->targets.end() != i) && i->second)
+				//	i->second();
+			}
+		});
+	}
+
+	dragdrop::~dragdrop()
+	{
+		delete impl_;
+	}
+	
+	void dragdrop::condition(std::function<bool()> predicate_fn)
+	{
+	
+	}
+
+	void dragdrop::make_data(std::function<void()> generator)
+	{
+		impl_->generator = generator;
+	}
+}//end namespace nana
