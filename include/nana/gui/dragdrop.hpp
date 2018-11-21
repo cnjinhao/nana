@@ -49,6 +49,26 @@ namespace nana
 	private:
 		implementation* const impl_;
 	};
+
+	class dragdrop
+	{
+		struct implementation;
+
+		dragdrop(const dragdrop&) = delete;
+		dragdrop& operator=(const dragdrop&) = delete;
+
+		dragdrop(dragdrop&&) = delete;
+		dragdrop& operator=(dragdrop&&) = delete;
+	public:
+		dragdrop(window source);
+		~dragdrop();
+
+		void condition(std::function<bool()> predicate_fn);
+
+		void make_data(std::function<void()> generator);
+	private:
+		implementation* const impl_;
+	};
 }
 
 #endif
