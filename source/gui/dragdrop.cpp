@@ -960,7 +960,7 @@ namespace nana
 
 			std::vector<std::wstring> files;
 			files.push_back(L"D:\\universal_access");
-			files.push_back(L"D:\\新建文本文档.cpp");
+			files.push_back(L"D:\\examplexxxx.cpp");
 
 			std::size_t bytes = 0;
 			for (auto & f : files)

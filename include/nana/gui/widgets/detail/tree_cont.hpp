@@ -357,12 +357,12 @@ namespace detail
 			}
 
 			template<typename PredAllowChild>
-			unsigned distance_if(const node_type * node, PredAllowChild pac) const
+			std::size_t distance_if(const node_type * node, PredAllowChild pac) const
 			{
 				if(nullptr == node)	return 0;
 				const node_type * iterator = root_.child;
 
-				unsigned off = 0;
+				std::size_t off = 0;
 				std::stack<const node_type* > stack;
 
 				while(iterator && iterator != node)
