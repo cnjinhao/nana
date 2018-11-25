@@ -74,6 +74,10 @@ namespace nana{
 		group& div(const char* div_str) throw();
 		field_reference operator[](const char* field);
 
+        void field_display(const char* field_name, bool display); ///<Displays/Discards an existing field.
+		bool field_display(const char* field_name) const;	///<Determines whether the specified field is displayed.
+		void erase(window handle);				///< Erases a window from field.
+
 		template<typename Widget, typename ...Args>
 		Widget* create_child(const char* field, Args && ... args)
 		{
