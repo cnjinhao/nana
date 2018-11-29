@@ -29,10 +29,10 @@ namespace nana
 	{
 		tabbar<T> & widget;
 		T & value;
-		std::size_t pos;							///< position of the item
+		std::size_t item_pos;						///< position of the item
 
 		arg_tabbar(tabbar<T>& wdg, T& v, std::size_t p)
-			: widget(wdg), value{ v }, pos(p)
+			: widget(wdg), value{ v }, item_pos(p)
 		{}
 	};
 
@@ -53,12 +53,12 @@ namespace nana
 		: public arg_mouse
 	{
 		arg_tabbar_mouse(const arg_mouse& arg, tabbar<T>& wdg, T& v, std::size_t p)
-			: arg_mouse{ arg }, widget(wdg), value{ v }, pos(p)
+			: arg_mouse{ arg }, widget(wdg), value{ v }, item_pos(p)
 		{}
 
 		tabbar<T> & widget;
 		T & value;
-		std::size_t pos;							///< position of the item
+		std::size_t item_pos;						///< position of the item
 	};
 
 	template<typename T>
