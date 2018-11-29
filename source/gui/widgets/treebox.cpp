@@ -609,7 +609,6 @@ namespace nana
 					auto last_pos = tree.distance_if(last(true), pred_allow_child{});
 
 					auto const capacity = screen_capacity(true);
-					auto const item_px = data.comp_placer->item_height(*data.graph);
 
 					//If use_bearing is false, it calculates a bearing depending on the current
 					//position of the requested item.

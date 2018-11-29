@@ -18,6 +18,7 @@
 #include "basis.hpp"
 
 #include <memory>
+#include <nana/filesystem/filesystem.hpp>
 
 namespace nana
 {
@@ -41,22 +42,48 @@ namespace nana
 		implementation* const impl_;
 	};
 
+	namespace detail
+	{
+		struct dragdrop_data;
+	}
+
 	class dragdrop
 	{
 		struct implementation;
 
+		/// Non-copyable
 		dragdrop(const dragdrop&) = delete;
 		dragdrop& operator=(const dragdrop&) = delete;
 
+		/// Non-movable
 		dragdrop(dragdrop&&) = delete;
 		dragdrop& operator=(dragdrop&&) = delete;
 	public:
+		class data
+		{
+			friend struct dragdrop::implementation;
+
+			/// Non-copyable
+			data(const data&) = delete;
+			data& operator=(const data&) = delete;
+		public:
+			data();
+			data(data&&);
+			~data();
+
+			data& operator=(data&& rhs);
+
+			void insert(std::filesystem::path);
+		private:
+			detail::dragdrop_data* real_data_;
+		};
+
 		dragdrop(window source);
 		~dragdrop();
 
 		void condition(std::function<bool()> predicate_fn);
-
-		void make_data(std::function<void()> generator);
+		void prepare_data(std::function<data()> generator);
+		void drop_finished(std::function<void(bool)> finish_fn);
 	private:
 		implementation* const impl_;
 	};

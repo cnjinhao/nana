@@ -162,6 +162,7 @@ namespace detail
 		Atom xdnd_drop;
 		Atom xdnd_selection;
 		Atom xdnd_typelist;
+		Atom xdnd_leave;
 		Atom xdnd_finished;
 	};
 
@@ -256,7 +257,7 @@ namespace detail
 		void msg_insert(native_window_type);
 		void msg_set(timer_proc_type, event_proc_type);
 		void msg_dispatch(native_window_type modal);
-		void msg_dispatch(std::function<bool(const msg_packet_tag&)>);
+		void msg_dispatch(std::function<propagation_chain(const msg_packet_tag&)>);
 
 		//X Selections
 		void* request_selection(native_window_type requester, Atom type, size_t & bufsize);
@@ -268,6 +269,7 @@ namespace detail
 		const nana::paint::graphics& keep_window_icon(native_window_type, const nana::paint::image&);
 
 		bool register_dragdrop(native_window_type, x11_dragdrop_interface*);
+		std::size_t dragdrop_target(native_window_type, bool insert, std::size_t count);
 		x11_dragdrop_interface* remove_dragdrop(native_window_type);
 	private:
 		static int _m_msg_filter(XEvent&, msg_packet_tag&);
@@ -327,6 +329,7 @@ namespace detail
 			nana::point pos;
 
 			std::map<native_window_type, x11_dragdrop_interface*> dragdrop;
+			std::map<native_window_type, std::size_t> targets;
 		}xdnd_;
 
 		msg_dispatcher * msg_dispatcher_;

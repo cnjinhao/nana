@@ -21,6 +21,7 @@
 #include "inner_fwd_implement.hpp"
 #include <errno.h>
 #include <algorithm>
+#include <iostream> //debug
 
 namespace nana
 {
@@ -443,6 +444,8 @@ namespace detail
 			{
 			case nana::detail::msg_packet_tag::pkt_family::mouse_drop:
 				msgwd = brock.wd_manager().find_window(native_window, {msg.u.mouse_drop.x, msg.u.mouse_drop.y});
+
+				std::cout<<"   MouseDrop msgwd="<<msgwd<<", ("<<msg.u.mouse_drop.x<<","<<msg.u.mouse_drop.y<<")"<<std::endl;
 				if(msgwd)
 				{
 					arg_dropfiles arg;
@@ -1248,10 +1251,12 @@ namespace detail
 			default:
 				if(message == ClientMessage)
 				{
-					auto & atoms = nana::detail::platform_spec::instance().atombase();
-					if(atoms.wm_protocols == xevent.xclient.message_type)
+					auto & spec = ::nana::detail::platform_spec::instance();
+					auto & xclient = xevent.xclient;
+					auto & atoms = spec.atombase();
+					if(atoms.wm_protocols == xclient.message_type)
 					{
-						if(msgwnd->flags.enabled && (atoms.wm_delete_window == static_cast<Atom>(xevent.xclient.data.l[0])))
+						if(msgwnd->flags.enabled && (atoms.wm_delete_window == static_cast<Atom>(xclient.data.l[0])))
 						{
 							arg_unload arg;
 							arg.window_handle = reinterpret_cast<window>(msgwnd);

@@ -26,23 +26,52 @@
 #	include <comdef.h>
 #	include <Shlobj.h>
 #elif defined(NANA_X11)
-#	include "../detail/posix/platform_spec.hpp"
+#	include "../detail/posix/xdnd_protocol.hpp"
 #	include <nana/gui/detail/native_window_interface.hpp>
 #	include <X11/Xcursor/Xcursor.h>
 #	include <fstream>
 #endif
 
-
 namespace nana
 {
+	namespace detail
+	{
+		struct dragdrop_data
+		{
+			std::vector<std::filesystem::path> files;
+		};
+
+#ifdef NANA_X11
+		xdnd_data to_xdnd_data(const dragdrop_data& data)
+		{
+			xdnd_data xdata;
+			xdata.files = data.files;
+			return xdata;
+		}
+#endif
+	}
+
+
 	class dragdrop_session
 	{
 	public:
+		struct target_rep
+		{
+			std::set<window> target;
+			std::map<native_window_type, std::size_t> native_target_count;
+		};
+
 		virtual ~dragdrop_session() = default;
 
 		void insert(window source, window target)
 		{
-			table_[source].insert(target);
+			auto &rep = table_[source];
+			rep.target.insert(target);
+#ifdef NANA_X11
+			auto native_wd = API::root(target);
+			rep.native_target_count[native_wd] += 1;
+			nana::detail::platform_spec::instance().dragdrop_target(native_wd, true, 1);
+#endif
 		}
 
 		void erase(window source, window target)
@@ -51,17 +80,36 @@ namespace nana
 			if (table_.end() == i)
 				return;
 
-			i->second.erase(target);
+			i->second.target.erase(target);
 
-			if ((nullptr == target) || i->second.empty())
+#ifdef NANA_WINDOWS
+			if ((nullptr == target) || i->second.target.empty())
 				table_.erase(i);
+#else
+			if(nullptr == target)
+			{
+				//remove all targets of source
+				for(auto & native : i->second.native_target_count)
+				{
+					nana::detail::platform_spec::instance().dragdrop_target(native.first, false, native.second);
+				}
+
+				table_.erase(i);
+			}
+			else
+			{
+				nana::detail::platform_spec::instance().dragdrop_target(API::root(target), false, 1);
+				if(i->second.target.empty())
+					table_.erase(i);
+			}
+#endif
 		}
 
 		bool has(window source, window target) const
 		{
 			auto i = table_.find(source);
 			if (i != table_.end())
-				return (0 != i->second.count(target));
+				return (0 != i->second.target.count(target));
 
 			return false;
 		}
@@ -89,7 +137,7 @@ namespace nana
 			return current_source_;
 		}
 	private:
-		std::map<window, std::set<window>> table_;
+		std::map<window, target_rep> table_;
 		window current_source_{ nullptr };
 	};
 
@@ -128,6 +176,12 @@ namespace nana
 	class win32com_drop_target : public IDropTarget, public dragdrop_session
 	{
 	public:
+		win32com_drop_target(bool simple_mode):
+			simple_mode_(simple_mode)
+		{
+		
+		}
+
 		//Implements IUnknown
 		STDMETHODIMP QueryInterface(REFIID riid, void **ppv)
 		{
@@ -154,26 +208,44 @@ namespace nana
 
 	private:
 		// IDropTarget
-		STDMETHODIMP DragEnter(IDataObject* pDataObj, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect)
+		STDMETHODIMP DragEnter(IDataObject* data, DWORD grfKeyState, POINTL pt, DWORD* req_effect)
 		{
-			*pdwEffect &= DROPEFFECT_COPY;
+			*req_effect &= DROPEFFECT_COPY;
+
+			FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+			STGMEDIUM medium;
+			if (S_OK == data->GetData(&fmt, &medium))
+			{
+				::ReleaseStgMedium(&medium);
+				effect_ = DROPEFFECT_COPY;
+			}
+
 			return S_OK;
 		}
 
-		STDMETHODIMP DragOver(DWORD grfKeyState, POINTL pt, DWORD* pdwEffect)
+		STDMETHODIMP DragOver(DWORD grfKeyState, POINTL pt, DWORD* req_effect)
 		{
-			auto hovered_wd = API::find_window(point(pt.x, pt.y));
+			//bool found_data = false;
+			if (simple_mode_)
+			{
+				auto hovered_wd = API::find_window(point(pt.x, pt.y));
 
-			if ((hovered_wd && (hovered_wd == this->current_source())) || this->has(this->current_source(), hovered_wd))
-				*pdwEffect &= DROPEFFECT_COPY;
+				if ((hovered_wd && (hovered_wd == this->current_source())) || this->has(this->current_source(), hovered_wd))
+					*req_effect &= DROPEFFECT_COPY;
+				else
+					*req_effect = DROPEFFECT_NONE;
+			}
 			else
-				*pdwEffect = DROPEFFECT_NONE;
+			{
+				*req_effect = effect_;
+			}
 			return S_OK;
 		}
 
 		STDMETHODIMP DragLeave()
 		{
-			return E_NOTIMPL;
+			effect_ = DROPEFFECT_NONE;
+			return S_OK;
 		}
 
 		STDMETHODIMP Drop(IDataObject* pDataObj, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect)
@@ -182,6 +254,8 @@ namespace nana
 		}
 	private:
 		LONG ref_count_{ 1 };
+		bool const simple_mode_;		//Simple mode behaves the simple_dragdrop.
+		DWORD effect_{ DROPEFFECT_NONE };
 	};
 
 	class drop_source : public win32com_iunknown<IDropSource, IID_IDropSource>
@@ -217,41 +291,170 @@ namespace nana
 		window const window_handle_;
 	};
 
-	class drop_data : public win32com_iunknown<IDataObject, IID_IDataObject>
+	class win32_dropdata : public win32com_iunknown<IDataObject, IID_IDataObject>
 	{
-		struct medium
+#if 0 //deprecated
+		class enumer : public win32com_iunknown<IEnumFORMATETC, IID_IEnumFORMATETC>
 		{
-			STGMEDIUM * stgmedium;
-			FORMATETC * format;
-		};
-	public:
-		~drop_data()
-		{
-			if(hglobal_)
-				::GlobalFree(hglobal_);
-		}
+		public:
+			enumer(drop_data& data) :
+				data_(data)
+			{}
 
-		void assign(const std::vector<std::wstring>& files)
-		{
-			std::size_t bytes = 0;
-			for (auto & f : files)
-				bytes += (f.size() + 1) * sizeof(f.front());
-
-			hglobal_ = ::GlobalAlloc(GHND | GMEM_SHARE, sizeof(DROPFILES) + bytes);
-
-			auto dropfiles = reinterpret_cast<DROPFILES*>(::GlobalLock(hglobal_));
-			dropfiles->pFiles = sizeof(DROPFILES);
-			dropfiles->fWide = true;
-
-			auto file_buf = reinterpret_cast<char*>(dropfiles) + sizeof(DROPFILES);
-
-			for (auto & f : files)
+			enumer(const enumer& rhs):
+				data_(rhs.data_),
+				cursor_(rhs.cursor_)
 			{
-				std::memcpy(file_buf, f.data(), (f.size() + 1) * sizeof(f.front()));
-				file_buf += f.size() + 1;
+			}
+		private:
+			// Implement IEnumFORMATETC
+			HRESULT Clone(IEnumFORMATETC **ppenum) override
+			{
+				*ppenum = new enumer{ *this };
+				return S_OK;
 			}
 
-			::GlobalUnlock(hglobal_);
+			HRESULT Next(ULONG celt, FORMATETC *rgelt, ULONG *pceltFetched) override
+			{
+				HRESULT result = (cursor_ + celt <= data_.entries_.size() ? S_OK : S_FALSE);
+
+				auto const fetched = (std::min)(std::size_t(celt), data_.entries_.size() - cursor_);
+
+				for (std::size_t i = 0; i < fetched; ++i)
+					*rgelt++ = data_.entries_[cursor_++]->format;
+
+				if (pceltFetched)
+					*pceltFetched = static_cast<ULONG>(fetched);
+				else if (celt > 1)
+					return S_FALSE;
+
+				return (celt == fetched ? S_OK : S_FALSE);
+			}
+
+			HRESULT Reset() override
+			{
+				cursor_ = 0;
+				return S_OK;
+			}
+
+			HRESULT Skip(ULONG celt) override
+			{
+				if (cursor_ + celt < data_.entries_.size())
+				{
+					cursor_ += celt;
+					return S_OK;
+				}
+
+				cursor_ = data_.entries_.size();
+				return S_FALSE;
+			}
+		private:
+			drop_data & data_;
+			std::size_t cursor_;
+		};
+#endif
+	public:
+		struct data_entry
+		{
+			FORMATETC	format;
+			STGMEDIUM	medium;
+			bool		read_from; //Indicates the data which is used for reading.
+
+			~data_entry()
+			{
+				::CoTaskMemFree(format.ptd);
+				::ReleaseStgMedium(&medium);
+			}
+
+			bool compare(const FORMATETC& fmt, bool rdfrom) const
+			{
+				return (format.cfFormat == fmt.cfFormat &&
+					(format.tymed & fmt.tymed) != 0 &&
+					(format.dwAspect == DVASPECT_THUMBNAIL || format.dwAspect == DVASPECT_ICON || medium.tymed == TYMED_NULL || format.lindex == fmt.lindex || (format.lindex == 0 && fmt.lindex == -1) || (format.lindex == -1 && fmt.lindex == 0)) &&
+					format.dwAspect == fmt.dwAspect && read_from == rdfrom);
+			}
+		};
+
+		data_entry * find(const FORMATETC& fmt, bool read_from) const
+		{
+			data_entry * last_weak_match = nullptr;
+
+			for (auto & entry : entries_)
+			{
+				if (entry->compare(fmt, read_from))
+				{
+					auto entry_ptd = entry->format.ptd;
+					if (entry_ptd && fmt.ptd && entry_ptd->tdSize == fmt.ptd->tdSize && (0 == std::memcmp(entry_ptd, fmt.ptd, fmt.ptd->tdSize)))
+						return entry.get();
+					else if (nullptr == entry_ptd && nullptr == fmt.ptd)
+						return entry.get();
+
+					last_weak_match = entry.get();
+				}
+			}
+			return last_weak_match;
+		}
+
+		void assign(const detail::dragdrop_data& data)
+		{
+			if (!data.files.empty())
+			{
+				std::size_t bytes = sizeof(wchar_t);
+				for (auto & file : data.files)
+				{
+					auto file_s = file.wstring();
+					bytes += (file_s.size() + 1) * sizeof(file_s.front());
+				}
+
+				auto hglobal = ::GlobalAlloc(GHND | GMEM_SHARE, sizeof(DROPFILES) + bytes);
+
+				auto dropfiles = reinterpret_cast<DROPFILES*>(::GlobalLock(hglobal));
+				dropfiles->pFiles = sizeof(DROPFILES);
+				dropfiles->fWide = true;
+
+				auto file_buf = reinterpret_cast<char*>(dropfiles) + sizeof(DROPFILES);
+
+				for (auto & file : data.files)
+				{
+					auto file_s = file.wstring();
+					std::memcpy(file_buf, file_s.data(), (file_s.size() + 1) * sizeof(file_s.front()));
+					file_buf += (file_s.size() + 1) * sizeof(file_s.front());
+				}
+				*reinterpret_cast<wchar_t*>(file_buf) = 0;
+
+				::GlobalUnlock(hglobal);
+
+				assign(hglobal);
+			}
+		}
+
+		data_entry* assign(HGLOBAL hglobal)
+		{
+			FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+			auto entry = find(fmt, true);
+			if (entry)
+			{
+				//Free the current entry for reuse
+				::CoTaskMemFree(entry->format.ptd);
+				::ReleaseStgMedium(&entry->medium);
+			}
+			else
+			{
+				//Create a new entry
+				entries_.emplace_back(new data_entry);
+				entry = entries_.back().get();
+			}
+
+			//Assign the format to the entry.
+			entry->read_from = true;
+			entry->format = fmt;
+
+			//Assign the stgMedium
+			entry->medium.tymed = TYMED_HGLOBAL;
+			entry->medium.hGlobal = hglobal;
+			entry->medium.pUnkForRelease = nullptr;
+
+			return entry;
 		}
 	public:
 		// Implement IDataObject
@@ -262,15 +465,9 @@ namespace nana
 
 			pmedium->hGlobal = nullptr;
 
-			for (auto & med : mediums_)
-			{
-				if ((request_format->tymed & med.format->tymed) &&
-					(request_format->dwAspect == med.format->dwAspect) &&
-					(request_format->cfFormat == med.format->cfFormat))
-				{
-					return _m_copy_medium(pmedium, med.stgmedium, med.format);
-				}
-			}
+			auto entry = find(*request_format, true);
+			if (entry)
+				return _m_copy_medium(pmedium, &entry->medium, &entry->format);
 			
 			return DV_E_FORMATETC;
 		}
@@ -290,13 +487,13 @@ namespace nana
 			
 			HRESULT result = DV_E_TYMED;
 
-			for(auto & med : mediums_)
+			for (auto & entry : entries_)
 			{
-				if (med.format->tymed & pformatetc->tymed)
+				if (entry->format.tymed & pformatetc->tymed)
 				{
-					if (med.format->cfFormat == pformatetc->cfFormat)
+					if (entry->format.cfFormat == pformatetc->cfFormat)
 						return S_OK;
-					
+
 					result = DV_E_FORMATETC;
 				}
 			}
@@ -316,26 +513,16 @@ namespace nana
 			if (pformatetc->tymed != pmedium->tymed)
 				return E_FAIL;
 
-			medium retain;
-			retain.format = new FORMATETC;
-			retain.stgmedium = new (std::nothrow) STGMEDIUM;
-			if (nullptr == retain.stgmedium)
-			{
-				delete retain.format;
-				return E_FAIL;
-			}
+			entries_.emplace_back(new data_entry);
+			auto entry = entries_.back().get();
 
-			std::memset(retain.format, 0, sizeof(FORMATETC));
-			std::memset(retain.stgmedium, 0, sizeof(STGMEDIUM));
+			entry->format = *pformatetc;
 
-			*retain.format = *pformatetc;
-
-			_m_copy_medium(retain.stgmedium, pmedium, pformatetc);
+			_m_copy_medium(&entry->medium, pmedium, pformatetc);
 
 			if (TRUE == fRelease)
 				::ReleaseStgMedium(pmedium);
 
-			mediums_.emplace_back(retain);
 			return S_OK;
 		}
 
@@ -347,11 +534,12 @@ namespace nana
 			if (DATADIR_GET != dwDirection)
 				return E_NOTIMPL;
 
-			*ppenumFormatEtc = NULL;
+			*ppenumFormatEtc = nullptr;
 
 			FORMATETC rgfmtetc[] =
 			{
-				{ CF_UNICODETEXT, NULL, DVASPECT_CONTENT, 0, TYMED_HGLOBAL },
+				//{ CF_UNICODETEXT, nullptr, DVASPECT_CONTENT, 0, TYMED_HGLOBAL }
+				{ CF_HDROP, nullptr, DVASPECT_CONTENT, 0, TYMED_HGLOBAL }
 			};
 			return ::SHCreateStdEnumFmtEtc(ARRAYSIZE(rgfmtetc), rgfmtetc, ppenumFormatEtc);
 		}
@@ -382,13 +570,15 @@ namespace nana
 				stgmed_dst->hGlobal = (HGLOBAL)OleDuplicateData(stgmed_src->hGlobal, fmt_src->cfFormat, 0);
 				break;
 			case TYMED_GDI:
-				stgmed_dst->hBitmap = (HBITMAP)OleDuplicateData(stgmed_src->hBitmap, fmt_src->cfFormat, 0);
+			case TYMED_ENHMF:
+				//GDI object can't be copied to an existing HANDLE
+				if (stgmed_dst->hGlobal)
+					return E_INVALIDARG;
+
+				stgmed_dst->hGlobal = (HBITMAP)OleDuplicateData(stgmed_src->hGlobal, fmt_src->cfFormat, 0);
 				break;
 			case TYMED_MFPICT:
 				stgmed_dst->hMetaFilePict = (HMETAFILEPICT)OleDuplicateData(stgmed_src->hMetaFilePict, fmt_src->cfFormat, 0);
-				break;
-			case TYMED_ENHMF:
-				stgmed_dst->hEnhMetaFile = (HENHMETAFILE)OleDuplicateData(stgmed_src->hEnhMetaFile, fmt_src->cfFormat, 0);
 				break;
 			case TYMED_FILE:
 				stgmed_dst->lpszFileName = (LPOLESTR)OleDuplicateData(stgmed_src->lpszFileName, fmt_src->cfFormat, 0);
@@ -415,14 +605,41 @@ namespace nana
 			return S_OK;
 		}
 	private:
-		HGLOBAL hglobal_{nullptr};
-		std::vector<medium> mediums_;
+		std::vector<std::unique_ptr<data_entry>> entries_;
 	};
 
 
 #elif defined(NANA_X11)
+	constexpr int xdnd_version = 5;
+
+	class x11_dropdata
+	{
+	public:
+		void assign(const detail::dragdrop_data& data)
+		{
+			data_ = &data;
+		}
+
+		const detail::dragdrop_data* data() const
+		{
+			return data_;
+		}
+	private:
+		const detail::dragdrop_data* data_{nullptr};
+	};
+
 	class x11_dragdrop: public detail::x11_dragdrop_interface, public dragdrop_session
 	{
+	public:
+		x11_dragdrop(bool simple_mode):
+			simple_mode_(simple_mode)
+		{
+		}
+
+		bool simple_mode() const noexcept
+		{
+			return simple_mode_;
+		}
 	public:
 		//Implement x11_dragdrop_interface
 		void add_ref() override
@@ -439,6 +656,7 @@ namespace nana
 			return val;
 		}
 	private:
+		bool const simple_mode_;
 		std::atomic<std::size_t> ref_count_{ 1 };
 	};
 
@@ -497,9 +715,11 @@ namespace nana
 		dragdrop_service() = default;
 	public:
 #ifdef NANA_WINDOWS
-			using dragdrop_target = win32com_drop_target;
+		using dragdrop_target = win32com_drop_target;
+		using dropdata_type = win32_dropdata;
 #else
-			using dragdrop_target = x11_dragdrop;
+		using dragdrop_target = x11_dragdrop;
+		using dropdata_type = x11_dropdata;
 #endif
 
 		static dragdrop_service& instance()
@@ -508,7 +728,7 @@ namespace nana
 			return serv;
 		}
 
-		dragdrop_session* create_dragdrop(window wd)
+		dragdrop_session* create_dragdrop(window wd, bool simple_mode)
 		{
 			auto native_wd = API::root(wd);
 			if (nullptr == native_wd)
@@ -519,7 +739,7 @@ namespace nana
 			auto i = table_.find(native_wd);
 			if(table_.end() == i)
 			{
-				ddrop = new dragdrop_target;
+				ddrop = new dragdrop_target{simple_mode};
 #ifdef NANA_WINDOWS
 				if (table_.empty())
 					::OleInitialize(nullptr);
@@ -572,48 +792,45 @@ namespace nana
 			}
 		}
 
-		bool dragdrop(window drag_wd)
+		bool dragdrop(window drag_wd, dropdata_type* dropdata)
 		{
 			auto i = table_.find(API::root(drag_wd));
-			if (table_.end() == i)
+			if ((!dropdata) && table_.end() == i)
 				return false;
+
+			internal_revert_guard rvt_lock;
 
 #ifdef NANA_WINDOWS
 			auto drop_src = new drop_source{ drag_wd };
-			auto drop_dat = new (std::nothrow) drop_data;
-			if (!drop_dat)
-			{
-				delete drop_src;
-				return false;
-			}
 
 			i->second->set_current_source(drag_wd);
 
-			DWORD eff;
-			auto status = ::DoDragDrop(drop_dat, drop_src, DROPEFFECT_COPY, &eff);
+			DWORD result_effect{ DROPEFFECT_NONE };
+			auto status = ::DoDragDrop(dropdata, drop_src, DROPEFFECT_COPY, &result_effect);
 
 			i->second->set_current_source(nullptr);
 
 			delete drop_src;
-			delete drop_dat;
 
-			return true;
+			return (DROPEFFECT_NONE != result_effect);
 #elif defined(NANA_X11)
-			auto ddrop = dynamic_cast<x11_dragdrop*>(i->second);
+			auto& atombase = _m_spec().atombase();
+
+			auto ddrop = dynamic_cast<dragdrop_target*>(i->second);
 			
 			auto const native_source = reinterpret_cast<Window>(API::root(drag_wd));
 
 			{
 				detail::platform_scope_guard lock;
-				::XSetSelectionOwner(_m_spec().open_display(), _m_spec().atombase().xdnd_selection, native_source, CurrentTime);
+				::XSetSelectionOwner(_m_spec().open_display(), atombase.xdnd_selection, native_source, CurrentTime);
 			}
 
 
 			hovered_.window_handle = nullptr;
 			hovered_.native_wd = 0;
 			window target_wd = 0;
-			auto& atombase = _m_spec().atombase();
-			//while(true)
+			
+			if(ddrop->simple_mode())
 			{
 
 				_m_spec().msg_dispatch([this, ddrop, drag_wd, native_source, &target_wd, &atombase](const detail::msg_packet_tag& msg_pkt) mutable{
@@ -624,7 +841,8 @@ namespace nana
 						{
 							auto pos = API::cursor_position();
 							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
-
+#if 0
+							const char* icon = nullptr;
 							if(hovered_.native_wd != native_cur_wd)
 							{
 								if(hovered_.native_wd)
@@ -633,35 +851,125 @@ namespace nana
 									::XUndefineCursor(disp, hovered_.native_wd);
 								}
 
-								_m_client_msg(native_cur_wd, native_source, atombase.xdnd_enter, atombase.text_uri_list, XA_STRING);
+								_m_client_msg(native_cur_wd, native_source, 1, atombase.xdnd_enter, atombase.text_uri_list, XA_STRING);
+								hovered_.native_wd = native_cur_wd;
+
+								if(!ddrop->simple_mode())
+									icon = "dnd-move";
+							}
+
+							if(ddrop->simple_mode())
+							{
+								auto cur_wd = API::find_window(API::cursor_position());
+								if(hovered_.window_handle != cur_wd)
+								{
+									hovered_.window_handle = cur_wd;
+
+									icon = (((drag_wd == cur_wd) || ddrop->has(drag_wd, cur_wd)) ? "dnd-move" : "dnd-none");						
+								}
+							}
+
+#else
+							const char* icon = nullptr;
+							if(hovered_.native_wd != native_cur_wd)
+							{
+								if(hovered_.native_wd)
+								{
+									_m_free_cursor();
+									::XUndefineCursor(disp, hovered_.native_wd);
+								}
+
+								_m_client_msg(native_cur_wd, native_source, 1, atombase.xdnd_enter, atombase.text_uri_list, XA_STRING);
 								hovered_.native_wd = native_cur_wd;
 							}
 
+							if(ddrop->simple_mode())
+							{
+								auto cur_wd = API::find_window(API::cursor_position());
 
+								std::cout<<"    Hovered="<<cur_wd;
+								if(hovered_.window_handle != cur_wd)
+								{
+									hovered_.window_handle = cur_wd;
 
-							auto cur_wd = API::find_window(API::cursor_position());
-							if(hovered_.window_handle != cur_wd)
+									icon = (((drag_wd == cur_wd) || ddrop->has(drag_wd, cur_wd)) ? "dnd-move" : "dnd-none");
+									std::cout<<"    ICON="<<icon;
+								}
+
+								std::cout<<std::endl;
+							}
+							else
+								icon = "dnd-move";
+
+							if(icon)
 							{
 								_m_free_cursor();
-
-								hovered_.window_handle = cur_wd;
-
-								const char* icon = (((drag_wd == cur_wd) || ddrop->has(drag_wd, cur_wd)) ? "dnd-move" : "dnd-none");
 								hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor(icon).c_str());							
-								::XDefineCursor(disp, native_cur_wd, hovered_.cursor);							
-							}
+								::XDefineCursor(disp, native_cur_wd, hovered_.cursor);	
+							}					
+#endif
 						}
 						else if(msg_pkt.u.xevent.type == ButtonRelease)
 						{
 							target_wd = API::find_window(API::cursor_position());
 							::XUndefineCursor(disp, hovered_.native_wd);
 							_m_free_cursor();
-							return true;
+							API::release_capture(drag_wd);
+							return detail::propagation_chain::exit;
 						}
 						
 					}
-					return false;
+					return detail::propagation_chain::stop;
 				});
+			}
+			else
+			{
+				auto data = detail::to_xdnd_data(*dropdata->data());
+
+				API::set_capture(drag_wd, true);
+				nana::detail::xdnd_protocol xdnd_proto{native_source};
+
+				//Not simple mode
+				_m_spec().msg_dispatch([this, ddrop, &data, drag_wd, xdnd_proto, native_source, &target_wd, &atombase](const detail::msg_packet_tag& msg_pkt) mutable{
+					if(detail::msg_packet_tag::pkt_family::xevent == msg_pkt.kind)
+					{
+						auto const disp = _m_spec().open_display();
+						if (MotionNotify == msg_pkt.u.xevent.type)
+						{
+							auto pos = API::cursor_position();
+							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
+
+							xdnd_proto.mouse_move(native_cur_wd, pos);
+						}
+						else if(ClientMessage == msg_pkt.u.xevent.type)
+						{
+							auto & xclient = msg_pkt.u.xevent.xclient;
+							if(xdnd_proto.client_message(xclient))
+							{
+								API::release_capture(drag_wd);
+								return detail::propagation_chain::exit;
+							}
+						}
+						else if(SelectionRequest == msg_pkt.u.xevent.type)
+						{
+							xdnd_proto.selection_request(msg_pkt.u.xevent.xselectionrequest, data);
+						}
+						else if(msg_pkt.u.xevent.type == ButtonRelease)
+						{
+							std::cout<<"ButtonRelease"<<std::endl;
+							API::release_capture(drag_wd);
+							
+							xdnd_proto.mouse_release();
+							std::cout<<"mouse_release"<<std::endl;
+							target_wd = API::find_window(API::cursor_position());
+							_m_free_cursor();
+						}
+
+						return detail::propagation_chain::stop;
+					}
+					return detail::propagation_chain::pass;
+				});
+
 			}
 
 			return (nullptr != target_wd);
@@ -677,10 +985,10 @@ namespace nana
 		}
 
 		//dndversion<<24, fl_XdndURIList, XA_STRING, 0
-		static void _m_client_msg(Window wd_target, Window wd_src, Atom xdnd_atom, Atom data, Atom data_type)
+		static void _m_client_msg(Window wd_target, Window wd_src, int flag, Atom xdnd_atom, Atom data, Atom data_type)
 		{
 			auto const display = _m_spec().open_display();
-			XEvent evt;
+			::XEvent evt;
 			::memset(&evt, 0, sizeof evt);
 			evt.xany.type = ClientMessage;
 			evt.xany.display = display;
@@ -691,29 +999,13 @@ namespace nana
 			//Target window
 			evt.xclient.data.l[0] = wd_src;
 			//Accept set
-			evt.xclient.data.l[1] = 1;
+			evt.xclient.data.l[1] = flag;
 			evt.xclient.data.l[2] = data;
 			evt.xclient.data.l[3] = data_type;
 			evt.xclient.data.l[4] = 0;
 
 			::XSendEvent(display, wd_target, True, NoEventMask, &evt);
 
-		}
-
-		static int _m_xdnd_aware(Window wd)
-		{
-			Atom actual; int format; unsigned long count, remaining;
-			unsigned char *data = 0;
-			XGetWindowProperty(_m_spec().open_display(), wd, _m_spec().atombase().xdnd_aware, 
-				0, 4, False, XA_ATOM, &actual, &format, &count, &remaining, &data);
-
-			int version = 0;
-			if ((actual == XA_ATOM) && (format==32) && count && data)
-				version = int(*(Atom*)data);
-
-			if (data)
-				::XFree(data);
-			return version;
 		}
 
 		void _m_free_cursor()
@@ -793,14 +1085,13 @@ namespace nana
 			throw std::invalid_argument("simple_dragdrop: invalid window handle");
 		}
 
-		impl_->ddrop = dragdrop_service::instance().create_dragdrop(drag_wd);
+		impl_->ddrop = dragdrop_service::instance().create_dragdrop(drag_wd, true);
 
 		impl_->window_handle = drag_wd;
 		API::dev::window_draggable(drag_wd, true);
 
 		auto & events = API::events<>(drag_wd);
 
-#if 1 //#ifdef NANA_WINDOWS
 		impl_->events.destroy = events.destroy.connect_unignorable([this](const arg_destroy&) {
 			dragdrop_service::instance().remove(impl_->window_handle);
 			API::dev::window_draggable(impl_->window_handle, false);
@@ -825,7 +1116,9 @@ namespace nana
 			auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(arg.window_handle);
 			real_wd->other.dnd_state = dragdrop_status::in_progress;
 
-			auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle);
+			std::unique_ptr<dragdrop_service::dropdata_type> dropdata{new dragdrop_service::dropdata_type};
+
+			auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle, dropdata.get());
 
 			real_wd->other.dnd_state = dragdrop_status::not_ready;
 			impl_->dragging = false;
@@ -838,65 +1131,6 @@ namespace nana
 					i->second();
 			}
 		});
-#elif 1
-		events.mouse_down.connect_unignorable([drag_wd](const arg_mouse& arg){
-			if (arg.is_left_button() && API::is_window(drag_wd))
-			{
-				//API::set_capture(drag_wd, true);
-
-				using basic_window = ::nana::detail::basic_window;
-				auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(drag_wd);
-				real_wd->other.dnd_state = dragdrop_status::ready;
-			}
-		});
-
-		events.mouse_move.connect_unignorable([this](const arg_mouse& arg){
-			if (!arg.is_left_button())
-				return;
-
-			if (impl_->dragging)
-			{
-				auto drop_wd = API::find_window(API::cursor_position());
-				auto i = impl_->targets.find(drop_wd);
-
-			}
-			else
-			{
-				if ((!impl_->predicate) || impl_->predicate())
-				{
-					if (API::is_window(arg.window_handle))
-					{
-						impl_->dragging = true;
-						using basic_window = ::nana::detail::basic_window;
-						auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(arg.window_handle);
-						real_wd->other.dnd_state = dragdrop_status::in_progress;
-
-						dragdrop_service::instance().dragdrop(arg.window_handle);
-						return;
-					}
-				}
-
-				//API::release_capture(impl_->window_handle);
-			}
-			
-		});
-
-		events.mouse_up.connect_unignorable([this]{
-			if (impl_->cancel())
-			{
-				auto drop_wd = API::find_window(API::cursor_position());
-				auto i = impl_->targets.find(drop_wd);
-				if (impl_->targets.end() == i || !i->second)
-					return;
-
-				i->second();
-			}
-		});
-
-		events.key_press.connect_unignorable([this]{
-			impl_->cancel();
-		});
-#endif
 	}
 
 	simple_dragdrop::~simple_dragdrop()
@@ -931,21 +1165,15 @@ namespace nana
 		impl_->targets[target].swap(drop_fn);
 	}
 
-
-
-
-
-
-
 	//This is class dragdrop
 	struct dragdrop::implementation
 	{
-		window source_handle;
+		window const source_handle;
 		bool dragging{ false };
+		dragdrop_session * ddrop{nullptr};
 		std::function<bool()> predicate;
-
-		std::function<void()> generator;
-
+		std::function<data()> generator;
+		std::function<void(bool)> drop_finished;
 
 		struct event_handlers
 		{
@@ -954,44 +1182,43 @@ namespace nana
 			nana::event_handle mouse_down;
 		}events;
 
-		void make_data()
+		implementation(window source):
+			source_handle(source)
 		{
-			//https://www.codeproject.com/Articles/840/How-to-Implement-Drag-and-Drop-Between-Your-Progra
+			ddrop = dragdrop_service::instance().create_dragdrop(source, false);
+			API::dev::window_draggable(source, true);
+		}
 
-			std::vector<std::wstring> files;
-			files.push_back(L"D:\\universal_access");
-			files.push_back(L"D:\\新建文本文档.cpp");
+		void make_drop()
+		{
+			auto transf_data = generator();
+			dragdrop_service::dropdata_type dropdata;
+			dropdata.assign(*transf_data.real_data_);
+/*	//deprecated
+#ifdef NANA_WINDOWS
+			drop_source drop_src{ source_handle };
+			DWORD result_effect = DROPEFFECT_NONE;
+			auto status = ::DoDragDrop(&dropdata, &drop_src, DROPEFFECT_COPY | DROPEFFECT_MOVE, &result_effect);
 
-			std::size_t bytes = 0;
-			for (auto & f : files)
-				bytes += (f.size() + 1) * sizeof(f.front());
-
-			auto data_handle = ::GlobalAlloc(GHND | GMEM_SHARE, sizeof(DROPFILES) + bytes);
-
-			auto dropfiles = reinterpret_cast<DROPFILES*>(::GlobalLock(data_handle));
-			dropfiles->pFiles = sizeof(DROPFILES);
-			dropfiles->fWide = true;
-
-			auto file_buf = reinterpret_cast<char*>(dropfiles) + sizeof(DROPFILES);
-
-			for (auto & f : files)
+			if (DROPEFFECT_NONE == result_effect)
 			{
-				std::memcpy(file_buf, f.data(), (f.size() + 1) * sizeof(f.front()));
-				file_buf += f.size() + 1;
 			}
 
-			::GlobalUnlock(data_handle);
+			if (drop_finished)
+				drop_finished(DROPEFFECT_NONE != result_effect);
+#else
+#endif
+*/
+			auto has_dropped = dragdrop_service::instance().dragdrop(source_handle, &dropdata);
 
-
-			generator();
+			if(drop_finished)
+				drop_finished(has_dropped);
 		}
 	};
 	
 	dragdrop::dragdrop(window source) :
-		impl_(new implementation)
+		impl_(new implementation(source))
 	{
-		impl_->source_handle = source;
-		
 		auto & events = API::events(source);
 		impl_->events.destroy = events.destroy.connect_unignorable([this](const arg_destroy&) {
 			dragdrop_service::instance().remove(impl_->source_handle);
@@ -1017,13 +1244,15 @@ namespace nana
 			auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(arg.window_handle);
 			real_wd->other.dnd_state = dragdrop_status::in_progress;
 
-			impl_->make_data();
+			impl_->make_drop();
 
-			auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle);
+			//deprecated
+			//auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle);
 
 			real_wd->other.dnd_state = dragdrop_status::not_ready;
 			impl_->dragging = false;
 
+			/* //deprecated
 			if (has_dropped)
 			{
 				auto drop_wd = API::find_window(API::cursor_position());
@@ -1031,21 +1260,70 @@ namespace nana
 				//if ((impl_->targets.end() != i) && i->second)
 				//	i->second();
 			}
+			*/
 		});
 	}
 
 	dragdrop::~dragdrop()
 	{
+		if (impl_->source_handle)
+		{
+			dragdrop_service::instance().remove(impl_->source_handle);
+			API::dev::window_draggable(impl_->source_handle, false);
+
+			API::umake_event(impl_->events.destroy);
+			API::umake_event(impl_->events.mouse_down);
+			API::umake_event(impl_->events.mouse_move);
+		}
 		delete impl_;
 	}
 	
 	void dragdrop::condition(std::function<bool()> predicate_fn)
 	{
-	
+		impl_->predicate = predicate_fn;
 	}
 
-	void dragdrop::make_data(std::function<void()> generator)
+	void dragdrop::prepare_data(std::function<data()> generator)
 	{
 		impl_->generator = generator;
+	}
+
+	void dragdrop::drop_finished(std::function<void(bool)> finish_fn)
+	{
+		impl_->drop_finished = finish_fn;
+	}
+
+
+	dragdrop::data::data():
+		real_data_(new detail::dragdrop_data)
+	{
+	}
+
+	dragdrop::data::~data()
+	{
+		delete real_data_;
+	}
+
+	dragdrop::data::data(data&& rhs):
+		real_data_(new detail::dragdrop_data)
+	{
+		std::swap(real_data_, rhs.real_data_);
+	}
+
+	dragdrop::data& dragdrop::data::operator=(data&& rhs)
+	{
+		if (this != &rhs)
+		{
+			auto moved_data = new detail::dragdrop_data;
+			delete real_data_;
+			real_data_ = rhs.real_data_;
+			rhs.real_data_ = moved_data;
+		}
+		return *this;
+	}
+
+	void dragdrop::data::insert(std::filesystem::path path)
+	{
+		real_data_->files.emplace_back(std::move(path));
 	}
 }//end namespace nana

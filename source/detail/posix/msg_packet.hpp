@@ -8,6 +8,13 @@ namespace nana
 {
 namespace detail
 {
+	enum class propagation_chain
+	{
+		exit,	//Exit the chain 
+		stop,	//Stop propagating
+		pass 	//propagate
+	};
+
 	struct msg_packet_tag
 	{
 		enum class pkt_family{xevent, mouse_drop, cleanup};
