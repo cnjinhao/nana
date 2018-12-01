@@ -5989,6 +5989,54 @@ namespace nana
 			return *this;
 		}
 
+		auto listbox::first_visible() const ->index_pair
+		{
+			return _m_ess().first_display();
+		}
+
+		auto listbox::last_visible() const -> index_pair
+		{
+			return _m_ess().lister.advance(_m_ess().first_display(), _m_ess().count_of_exposed(true));
+		}
+
+		auto listbox::visibles() const -> index_pairs
+		{
+			index_pairs indexes;
+
+			auto idx = _m_ess().first_display();
+
+			auto n = _m_ess().count_of_exposed(true);
+			while (n > 0)
+			{
+				if (idx.empty())
+					break;
+
+				if (idx.is_category())
+				{
+					indexes.push_back(idx);
+					--n;
+				}
+				else
+				{
+					auto const count = (std::min)(_m_ess().lister.size_item(idx.cat) - idx.item, n);
+					for (std::size_t i = 0; i < count; ++i)
+					{
+						indexes.push_back(idx);
+						++idx.item;
+					}
+					if (count)
+					{
+						n -= count;
+						--idx.item;
+					}
+				}
+
+				idx = _m_ess().lister.advance(idx, 1);
+			}
+
+			return indexes;
+		}
+
 		drawerbase::listbox::essence & listbox::_m_ess() const
 		{
 			return get_drawer_trigger().ess();
