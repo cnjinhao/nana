@@ -1,7 +1,7 @@
 /*
 *	Widget Geometrics
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -22,12 +22,17 @@ namespace nana
 	public:
 		color_proxy(const color_proxy&);
 		color_proxy(color_rgb);
+		color_proxy(color_argb);
+		color_proxy(color_rgba);
 		color_proxy(colors);
 		color_proxy& operator=(const color_proxy&);
 		color_proxy& operator=(const ::nana::color&);
 		color_proxy& operator=(color_rgb);
+		color_proxy& operator=(color_argb);
+		color_proxy& operator=(color_rgba);
 		color_proxy& operator=(colors);
 		color get_color() const;
+		color get(const color& default_color) const;
 		operator color() const;
 	private:
 		std::shared_ptr<color> color_;
