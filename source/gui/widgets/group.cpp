@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanaro.org)
  *	Copyright(C) 2015-2018 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/group.cpp
@@ -14,7 +14,7 @@
  *	@brief group is a widget used to visually group and layout other widgets.
  *
  * 	@contributor:
- *		dankan1890(https://github.com/dankan1890) 
+ *		dankan1890(https://github.com/dankan1890)
  */
 
 
@@ -196,6 +196,12 @@ namespace nana{
 
 		throw std::logic_error("the radio_mode of the group is disabled");
 	}
+
+    void group::option_check( std::size_t pos, bool check )
+    {
+ 		_THROW_IF_EMPTY();
+		return impl_->options.at(pos)->check( check );
+    }
 
 	bool group::option_checked(std::size_t pos) const
 	{
