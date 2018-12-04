@@ -1568,6 +1568,27 @@ the nana::detail::basic_window member pointer scheme
 		 * @return the reference of *this.
 		 */
 		listbox& category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed);
+
+		/// Returns first visible element
+		/**
+		 * It may return an item or a category item.
+		 * @return the index of first visible element.
+		 */
+		index_pair first_visible() const;
+
+		/// Returns last visible element
+		/**
+		 * It may return an item or a category item.
+		 * @return the index of last visible element.
+		 */
+		index_pair last_visible() const;
+
+		/// Returns all visible items
+		/**
+		 * It returns all visible items that are displayed in listbox window.
+		 * @return index_pairs containing all visible items.
+		 */
+		index_pairs visibles() const;
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;

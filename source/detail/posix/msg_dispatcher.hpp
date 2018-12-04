@@ -28,6 +28,8 @@
 #include <thread>
 #include <atomic>
 
+#include <iostream> //debug
+
 namespace nana
 {
 namespace detail
@@ -190,8 +192,15 @@ namespace detail
 				}
 				else
 				{
-					if(msg_filter_fn(msg))
+					switch(msg_filter_fn(msg))
+					{
+					case propagation_chain::exit:
 						return;
+					case propagation_chain::stop:
+						break;
+					case propagation_chain::pass:
+						proc_.event_proc(display_, msg);
+					}
 				}
 			}
 		}
@@ -221,6 +230,10 @@ namespace detail
 
 							if(keymap[event.xkey.keycode / 8] & (1 << (event.xkey.keycode % 8)))
 								continue;
+						}
+						else if(SelectionRequest == event.type)
+						{
+							std::cout<<"Dispatcher SelectionRequest"<<std::endl; //debug
 						}
 
 						if(::XFilterEvent(&event, None))

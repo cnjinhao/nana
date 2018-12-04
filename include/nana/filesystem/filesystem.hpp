@@ -103,12 +103,29 @@ namespace std {
 
 		} // filesystem
 	} // experimental
+
+	namespace filesystem
+	{
+		using namespace experimental::filesystem;
+	}
 } // std
 
 #else
 #   undef NANA_USING_STD_FILESYSTEM
 #   define NANA_USING_STD_FILESYSTEM 1
-#   include <experimental/filesystem>
+#	if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && defined(_MSVC_LANG) && _MSVC_LANG >= 201703)) ||				\
+		((__cplusplus >= 201703L) && \
+			(defined(__clang__) && (__clang_major__ >= 7) ||		\
+			(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ >= 8))) )
+#   	include <filesystem>
+#	else
+#   	include <experimental/filesystem>
+		namespace std{
+			namespace filesystem{
+				using namespace std::experimental::filesystem;
+			}
+		}
+#	endif
 #endif
 
 
@@ -508,7 +525,12 @@ namespace std {
 #       endif
 		} // filesystem
 	} // experimental
+
+	namespace filesystem {
+		using namespace std::experimental::filesystem;
+	}
 } // std
+
 
 #endif	//NANA_USING_NANA_FILESYSTEM
 
