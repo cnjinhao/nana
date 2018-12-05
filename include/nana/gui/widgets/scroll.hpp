@@ -190,6 +190,9 @@ namespace nana
 					widget_ = static_cast< ::nana::scroll<Vertical>*>(&widget);
 					widget.caption("nana scroll");
 
+					//scroll doesn't want the keyboard focus.
+					API::take_active(widget, false, widget.parent());
+
 					timer_.stop();
 					timer_.elapse(std::bind(&trigger::_m_tick, this));
 				}
