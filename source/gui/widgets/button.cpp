@@ -381,11 +381,8 @@ namespace nana{	namespace drawerbase
 		{
 			if(img.empty())
 			{
-				if(attr_.icon)
-				{
-					delete attr_.icon;
-					attr_.icon = 0;
-				}
+				delete attr_.icon;
+				attr_.icon = nullptr;
 				return;
 			}
 
