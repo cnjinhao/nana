@@ -24,6 +24,7 @@ namespace nana{ namespace drawerbase
 		struct drawer::implement
 		{
 			widget * widget_ptr;
+			scheme * scheme_ptr;
 			bool react;
 			bool radio;
 			facade<element::crook> crook;
@@ -47,6 +48,7 @@ namespace nana{ namespace drawerbase
 			void drawer::attached(widget_reference widget, graph_reference)
 			{
 				impl_->widget_ptr = &widget;
+				impl_->scheme_ptr =static_cast<scheme*>(API::dev::get_scheme(widget));
 				API::dev::enable_space_click(widget, true);
 			}
 
@@ -78,12 +80,14 @@ namespace nana{ namespace drawerbase
 				}
 
 				//draw crook
-#ifdef _nana_std_has_string_view
-				auto txt_px = graph.text_extent_size(std::wstring_view( L"jN", 2 )).height + 2;
-#else
-				auto txt_px = graph.text_extent_size(L"jN", 2).height + 2;
-#endif
-				impl_->crook.draw(graph, wdg->bgcolor(), wdg->fgcolor(), rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), API::element_state(*wdg));
+
+				unsigned txt_px = 0, descent = 0, ileading = 0;
+				graph.text_metrics(txt_px, descent, ileading);
+				txt_px += (descent + 2);
+
+				impl_->crook.draw(graph,
+					impl_->scheme_ptr->square_bgcolor.get(wdg->bgcolor()), impl_->scheme_ptr->square_border_color.get(wdg->fgcolor()),
+					rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), API::element_state(*wdg));
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)

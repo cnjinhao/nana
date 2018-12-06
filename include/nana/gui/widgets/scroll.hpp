@@ -67,30 +67,30 @@ namespace nana
 			class drawer
 			{
 			public:
-				struct states
+				enum class states
 				{
-					enum{ none, highlight, actived, selected };
+					none, highlight, actived, selected
 				};
 
 				using graph_reference = paint::graphics&;
 				const static unsigned fixedsize = 16; // make it part of a new "metric" in the widget_scheme
 
-				drawer(metrics_type& m);
-				void set_vertical(bool);
+				drawer(bool vert);
 				buttons what(graph_reference, const point&);
 				void scroll_delta_pos(graph_reference, int);
 				void auto_scroll();
-				void draw(graph_reference, buttons);
+				void draw(graph_reference);
+
 			private:
 				bool _m_check() const;
 				void _m_adjust_scroll(graph_reference);
 				void _m_background(graph_reference);
-				void _m_button_frame(graph_reference, ::nana::rectangle, int state);
-				void _m_draw_scroll(graph_reference, int state);
-				void _m_draw_button(graph_reference, ::nana::rectangle, buttons what, int state);
-			private:
-				metrics_type &metrics_;
-				bool	vertical_;
+				void _m_button_frame(graph_reference, ::nana::rectangle, states state);
+				void _m_draw_scroll(graph_reference, states state);
+				void _m_draw_button(graph_reference, ::nana::rectangle, buttons what, states state);
+			public:
+				metrics_type	metrics;
+				bool const		vert;
 			};
 
 			template<bool Vertical>
@@ -101,35 +101,34 @@ namespace nana
 				typedef metrics_type::size_type size_type;
 
 				trigger()
-					: graph_(nullptr), drawer_(metrics_)
+					: graph_(nullptr), drawer_(Vertical)
 				{
-					drawer_.set_vertical(Vertical);
 				}
 
 				const metrics_type& metrics() const
 				{
-					return metrics_;
+					return drawer_.metrics;
 				}
 
 				void peak(size_type s)
 				{
-					if (graph_ && (metrics_.peak != s))
+					if (graph_ && (drawer_.metrics.peak != s))
 					{
-						metrics_.peak = s;
+						drawer_.metrics.peak = s;
 						API::refresh_window(widget_->handle());
 					}
 				}
 
 				void value(size_type s)
 				{
-					if (metrics_.range > metrics_.peak)
+					if (drawer_.metrics.range > drawer_.metrics.peak)
 						s = 0;
-					else if (s + metrics_.range > metrics_.peak)
-						s = metrics_.peak - metrics_.range;
+					else if (s + drawer_.metrics.range > drawer_.metrics.peak)
+						s = drawer_.metrics.peak - drawer_.metrics.range;
 
-					if (graph_ && (metrics_.value != s))
+					if (graph_ && (drawer_.metrics.value != s))
 					{
-						metrics_.value = s;
+						drawer_.metrics.value = s;
 						_m_emit_value_changed();
 
 						API::refresh_window(*widget_);
@@ -138,16 +137,16 @@ namespace nana
 
 				void range(size_type s)
 				{
-					if (graph_ && (metrics_.range != s))
+					if (graph_ && (drawer_.metrics.range != s))
 					{
-						metrics_.range = s;
+						drawer_.metrics.range = s;
 						API::refresh_window(widget_->handle());
 					}
 				}
 
 				void step(size_type s)
 				{
-					metrics_.step = (s ? s : 1);
+					drawer_.metrics.step = (s ? s : 1);
 				}
 
 				bool make_step(bool forward, unsigned multiple)
@@ -155,12 +154,12 @@ namespace nana
 					if (!graph_)
 						return false;
 					
-					size_type step = (multiple > 1 ? metrics_.step * multiple : metrics_.step);
-					size_type value = metrics_.value;
+					size_type step = (multiple > 1 ? drawer_.metrics.step * multiple : drawer_.metrics.step);
+					size_type value = drawer_.metrics.value;
 					if (forward)
 					{
-						size_type maxv = metrics_.peak - metrics_.range;
-						if (metrics_.peak > metrics_.range && value < maxv)
+						size_type maxv = drawer_.metrics.peak - drawer_.metrics.range;
+						if (drawer_.metrics.peak > drawer_.metrics.range && value < maxv)
 						{
 							if (maxv - value >= step)
 								value += step;
@@ -175,8 +174,8 @@ namespace nana
 						else
 							value = 0;
 					}
-					size_type cmpvalue = metrics_.value;
-					metrics_.value = value;
+					size_type cmpvalue = drawer_.metrics.value;
+					drawer_.metrics.value = value;
 					if (value != cmpvalue)
 					{
 						_m_emit_value_changed();
@@ -191,6 +190,9 @@ namespace nana
 					widget_ = static_cast< ::nana::scroll<Vertical>*>(&widget);
 					widget.caption("nana scroll");
 
+					//scroll doesn't want the keyboard focus.
+					API::take_active(widget, false, widget.parent());
+
 					timer_.stop();
 					timer_.elapse(std::bind(&trigger::_m_tick, this));
 				}
@@ -202,47 +204,42 @@ namespace nana
 
 				void refresh(graph_reference graph) override
 				{
-					drawer_.draw(graph, metrics_.what);
+					drawer_.draw(graph);
 				}
 
 				void resized(graph_reference graph, const ::nana::arg_resized&) override
 				{
-					drawer_.draw(graph, metrics_.what);
+					drawer_.draw(graph);
 					API::dev::lazy_refresh();
 				}
 
 				void mouse_enter(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
-					metrics_.what = drawer_.what(graph, arg.pos);
-					drawer_.draw(graph, metrics_.what);
+					drawer_.metrics.what = drawer_.what(graph, arg.pos);
+					drawer_.draw(graph);
 					API::dev::lazy_refresh();
 				}
 
 				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
-					bool redraw = false;
-					if (metrics_.pressed && (metrics_.what == buttons::scroll))
+					if (drawer_.metrics.pressed && (drawer_.metrics.what == buttons::scroll))
 					{
-						size_type cmpvalue = metrics_.value;
+						size_type cmpvalue = drawer_.metrics.value;
 						drawer_.scroll_delta_pos(graph, (Vertical ? arg.pos.y : arg.pos.x));
-						if (cmpvalue != metrics_.value)
+						if (cmpvalue != drawer_.metrics.value)
 							_m_emit_value_changed();
-						redraw = true;
 					}
 					else
 					{
 						buttons what = drawer_.what(graph, arg.pos);
-						if (metrics_.what != what)
-						{
-							redraw = true;
-							metrics_.what = what;
-						}
+						if (drawer_.metrics.what == what)
+							return; //no change, don't redraw
+
+						drawer_.metrics.what = what;
 					}
-					if (redraw)
-					{
-						drawer_.draw(graph, metrics_.what);
-						API::dev::lazy_refresh();
-					}
+
+					drawer_.draw(graph);
+					API::dev::lazy_refresh();
 				}
 
 				void dbl_click(graph_reference graph, const arg_mouse& arg) override
@@ -254,33 +251,33 @@ namespace nana
 				{
 					if (arg.left_button)
 					{
-						metrics_.pressed = true;
-						metrics_.what = drawer_.what(graph, arg.pos);
-						switch (metrics_.what)
+						drawer_.metrics.pressed = true;
+						drawer_.metrics.what = drawer_.what(graph, arg.pos);
+						switch (drawer_.metrics.what)
 						{
 						case buttons::first:
 						case buttons::second:
-							make_step(metrics_.what == buttons::second, 1);
+							make_step(drawer_.metrics.what == buttons::second, 1);
 							timer_.interval(1000);
 							timer_.start();
 							break;
 						case buttons::scroll:
 							widget_->set_capture(true);
-							metrics_.scroll_mouse_offset = (Vertical ? arg.pos.y : arg.pos.x) - metrics_.scroll_pos;
+							drawer_.metrics.scroll_mouse_offset = (Vertical ? arg.pos.y : arg.pos.x) - drawer_.metrics.scroll_pos;
 							break;
 						case buttons::forward:
 						case buttons::backward:
 						{
-							size_type cmpvalue = metrics_.value;
+							size_type cmpvalue = drawer_.metrics.value;
 							drawer_.auto_scroll();
-							if (cmpvalue != metrics_.value)
+							if (cmpvalue != drawer_.metrics.value)
 								_m_emit_value_changed();
 						}
 						break;
 						default:	//Ignore buttons::none
 							break;
 						}
-						drawer_.draw(graph, metrics_.what);
+						drawer_.draw(graph);
 						API::dev::lazy_refresh();
 					}
 				}
@@ -291,18 +288,18 @@ namespace nana
 
 					widget_->release_capture();
 
-					metrics_.pressed = false;
-					metrics_.what = drawer_.what(graph, arg.pos);
-					drawer_.draw(graph, metrics_.what);
+					drawer_.metrics.pressed = false;
+					drawer_.metrics.what = drawer_.what(graph, arg.pos);
+					drawer_.draw(graph);
 					API::dev::lazy_refresh();
 				}
 
 				void mouse_leave(graph_reference graph, const arg_mouse&) override
 				{
-					if (metrics_.pressed) return;
+					if (drawer_.metrics.pressed) return;
 
-					metrics_.what = buttons::none;
-					drawer_.draw(graph, buttons::none);
+					drawer_.metrics.what = buttons::none;
+					drawer_.draw(graph);
 					API::dev::lazy_refresh();
 				}
 
@@ -310,7 +307,7 @@ namespace nana
 				{
 					if (make_step(arg.upwards == false, 3))
 					{
-						drawer_.draw(graph, metrics_.what);
+						drawer_.draw(graph);
 						API::dev::lazy_refresh();
 					}
 				}
@@ -322,14 +319,13 @@ namespace nana
 
 				void _m_tick()
 				{
-					make_step(metrics_.what == buttons::second, 1);
+					make_step(drawer_.metrics.what == buttons::second, 1);
 					API::refresh_window(widget_->handle());
 					timer_.interval(100);
 				}
 			private:
 				::nana::scroll<Vertical> * widget_;
 				nana::paint::graphics * graph_;
-				metrics_type metrics_;
 				drawer	drawer_;
 				timer timer_;
 			};
