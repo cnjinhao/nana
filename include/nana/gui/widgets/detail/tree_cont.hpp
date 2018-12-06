@@ -63,7 +63,7 @@ namespace detail
 			{
 				while (child)
 				{
-					if (child->owner == this)
+					if (child == this)
 						return true;
 
 					child = child->owner;
