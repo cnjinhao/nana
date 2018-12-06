@@ -11,10 +11,10 @@
 # the previus were selected or available.
 # You can change that default if you change one of the following
 # (please don't define more than one of the _XX_FORCE options):
-option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" OFF)
 option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
 option(NANA_CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
 option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
+option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" OFF)
 
 if(NANA_CMAKE_NANA_FILESYSTEM_FORCE)
     target_compile_definitions(nana PUBLIC NANA_FILESYSTEM_FORCE)
@@ -32,9 +32,11 @@ elseif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     find_package(Boost REQUIRED COMPONENTS filesystem)
     if(Boost_FOUND)
         target_compile_definitions(nana PUBLIC BOOST_FILESYSTEM_AVAILABLE)
-        target_include_directories(nana PUBLIC "${Boost_INCLUDE_DIR}")    # ?? SYSTEM
+            # SYSTEM - ignore warnings from here
+        target_include_directories(nana SYSTEM PUBLIC "${Boost_INCLUDE_DIR}")    # ?? SYSTEM
         target_link_libraries     (nana PUBLIC ${Boost_LIBRARIES})
-        # target_link_libraries     (nana PUBLIC Boost::Boost)
+        # target_include_directories  (nana SYSTEM PUBLIC Boost::Boost)
+        # message("boost found true")
     endif()
     set(Boost_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC_RUNTIME ON)

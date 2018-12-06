@@ -10,6 +10,8 @@
 *	@file: nana/gui/filebox.cpp
 */
 
+#include <iostream>
+
 #include <nana/gui.hpp>
 #include <nana/gui/filebox.hpp>
 #include <nana/filesystem/filesystem_ext.hpp>
@@ -1114,29 +1116,29 @@ namespace nana
 			for(auto & f : impl_->filters)
 			{
 				filter_holder += to_wstring(f.des);
-				filter_holder += static_cast<std::wstring::value_type>('\0');
-				std::wstring fs = to_wstring(f.type);
+				filter_holder += static_cast<std::wstring::value_type>('\0'); // separator
+				std::wstring ff = to_wstring(f.type);
 				std::size_t pos = 0;
-				while(true)
+				while(true)   // eliminate spaces
 				{
-					pos = fs.find(L" ", pos);
-					if(pos == fs.npos)
+					pos = ff.find(L" ", pos);
+					if(pos == ff.npos)
 						break;
-					fs.erase(pos);
+					ff.erase(pos);
 				}
-				filter_holder += fs;
-				filter_holder += static_cast<std::wstring::value_type>('\0');
+				filter_holder += ff;
+				filter_holder += static_cast<std::wstring::value_type>('\0'); // separator
 
-				//Get the default file extentsion
+				//Get the default file extension
 				if (default_extension.empty())
 				{
-					pos = fs.find_last_of('.');
-					if (pos != fs.npos)
+					pos = ff.find_last_of('.');
+					if (pos != ff.npos)
 					{
-						fs = fs.substr(pos + 1);
-						if (fs != L"*")
+						ff = ff.substr(pos + 1);
+						if (ff != L"*")
 						{
-							default_extension = fs;
+							default_extension = ff;
 							ofn.lpstrDefExt = default_extension.data();
 						}
 					}
@@ -1207,24 +1209,32 @@ namespace nana
 	}//end class filebox
 
 
-	//class directory_picker
+	//class directory picker
 	struct folderbox::implement
 	{
 		window owner;
 		path_type init_path;
+		std::string title;
+
 	};
 
-	folderbox::folderbox(window owner, const path_type& init_path)
-		: impl_(new implement)
-	{
-		impl_->owner = owner;
-		impl_->init_path = init_path;
-	}
+	folderbox::folderbox(window owner, const path_type& init_path, std::string title)
+		: impl_(new implement{ owner, fs::canonical(init_path).make_preferred(), title	})
+	{}
+
 
 	folderbox::~folderbox()
 	{
 		delete impl_;
 	}
+
+
+	std::string folderbox::title(std::string s)
+	{
+		impl_->title.swap(s);
+		return s;
+	}
+
 
 #ifdef NANA_MINGW
 	static int CALLBACK browse_folder_callback(HWND hwnd, UINT msg, LPARAM lparam, LPARAM data)
@@ -1235,7 +1245,9 @@ namespace nana
 		{
 		case BFFM_INITIALIZED:
 			if (data)
+			{
 				SendMessage(hwnd, BFFM_SETSELECTION, TRUE, data);
+			}
 			break;
 		}
 
@@ -1278,17 +1290,22 @@ namespace nana
 			fd->Release();
 		}
 #else
-		BROWSEINFO brw = { 0 };
 		wchar_t	display_text[MAX_PATH];
-		brw.hwndOwner = reinterpret_cast<HWND>(API::root(impl_->owner));
-		brw.pszDisplayName = display_text;
-		brw.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-		brw.lpfn = browse_folder_callback;
-
+		auto title = to_wstring( impl_->title ) ;
 		std::wstring init_path = impl_->init_path.wstring();
-		brw.lParam = reinterpret_cast<LPARAM>(init_path.c_str());
-		auto pidl = ::SHBrowseForFolder(&brw);
 
+		// https://docs.microsoft.com/en-us/windows/desktop/api/shlobj_core/ns-shlobj_core-_browseinfoa
+        BROWSEINFO brw       = { 0 };
+		brw.hwndOwner        = reinterpret_cast<HWND>(API::root(impl_->owner));
+		//brw.pidlRoot;                      // specifies the location of the root folder from which to start browsing.
+		brw.pszDisplayName   = display_text; // buffer to receive the display name of the folder selected by the user.
+		brw.lpszTitle        = title.data();
+		brw.ulFlags          = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE; // | BIF_EDITBOX;
+		brw.lpfn             = browse_folder_callback;
+		brw.lParam           = reinterpret_cast<LPARAM>(init_path.c_str());
+		//brw.iImage;                        //
+
+		auto pidl = ::SHBrowseForFolder(&brw);
 		if (pidl)
 		{
 			wchar_t folder_path[MAX_PATH];
