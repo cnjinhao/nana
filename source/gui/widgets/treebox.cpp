@@ -1863,7 +1863,7 @@ namespace nana
 					}
 					else if (node_state.selected != node_state.pressed_node)
 					{
-						impl_->set_selected(node_state.pressed_node);
+						//impl_->set_selected(node_state.pressed_node);  // todo: emit selected after checked
 					}
 					else
 						return;
@@ -1886,27 +1886,23 @@ namespace nana
 					if(!nl.node())
 						return;
 
-					if (pressed_node == nl.node())
-					{
-						if ((impl_->node_state.selected != nl.node()) && nl.item_body())
-						{
-							impl_->set_selected(nl.node());
-							if (impl_->make_adjust(impl_->node_state.selected, 1))
-								impl_->adjust.scroll_timestamp = 1;
-						}
-						else if (nl.what() == component::crook)
-						{
-							checkstate cs = checkstate::unchecked;
-							if (checkstate::unchecked == nl.node()->value.second.checked)
-								cs = checkstate::checked;
+					if (pressed_node != nl.node())
+						return;	//Do not refresh
 
-							check(nl.node(), cs);
-						}
-						else
-							return;	//Do not refresh
+					if (nl.what() == component::crook)
+					{
+						checkstate cs = checkstate::unchecked;
+						if (checkstate::unchecked == nl.node()->value.second.checked)
+							cs = checkstate::checked;
+
+						check(nl.node(), cs);
 					}
-					else
-						return; //Don't refresh
+					if ((impl_->node_state.selected != nl.node()) && (nl.item_body() || nl.what() == component::crook))
+					{
+						impl_->set_selected(nl.node());
+						if (impl_->make_adjust(impl_->node_state.selected, 1))
+							impl_->adjust.scroll_timestamp = 1;
+					}
 
 					impl_->draw(true);
 					API::dev::lazy_refresh();
