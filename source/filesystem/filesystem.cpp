@@ -45,7 +45,7 @@
 	#include <stdlib.h>
 #endif
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 namespace nana
 {
@@ -117,12 +117,7 @@ namespace nana
 
 				if (ftime == ((fs::file_time_type::min)())) return{};
 
-				//std::time_t cftime = decltype(ftime)::clock::to_time_t(ftime);
-
-				//A workaround for VC2013
-				using time_point = decltype(ftime);
-
-				auto cftime = time_point::clock::to_time_t(ftime);
+				auto cftime = static_cast<std::time_t>(ftime.time_since_epoch().count());
 
 				std::stringstream tm;
 				tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
@@ -209,9 +204,9 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		//Because of No wide character version of POSIX
 #if defined(NANA_POSIX)
-		const char* splstr = "/";
+		const char* separators = "/";
 #else
-		const wchar_t* splstr = L"/\\";
+		const wchar_t* separators = L"/\\";
 #endif
 
 	//class file_status
@@ -249,12 +244,21 @@ namespace nana {	namespace experimental {	namespace filesystem
 		/// true if the path is empty, false otherwise. ??
 		bool path::empty() const noexcept
 		{
-#if defined(NANA_WINDOWS)
-			return (::GetFileAttributes(pathstr_.c_str()) == INVALID_FILE_ATTRIBUTES);
-#elif defined(NANA_POSIX)
-			struct stat sta;
-			return (::stat(pathstr_.c_str(), &sta) == -1);
+			return pathstr_.empty();
+		}
+
+		bool path::is_absolute() const
+		{
+#ifdef NANA_WINDOWS
+			return has_root_name() && has_root_directory();
+#else
+			return has_root_directory();
 #endif
+		}
+		
+		bool path::is_relative() const
+		{
+			return !is_absolute();
 		}
 
 		path path::extension() const
@@ -275,6 +279,107 @@ namespace nana {	namespace experimental {	namespace filesystem
 			   return path();
 
 			return path(pathstr_.substr(pos));
+		}
+
+		bool is_directory_separator(path::value_type ch)
+		{
+			return (ch == '/')
+#ifdef NANA_WINDOWS
+				|| (ch == path::preferred_separator)
+#endif
+				;
+		}
+
+		
+
+		path path::root_name() const
+		{
+			auto pos = pathstr_.find_first_not_of(separators);
+			if (pathstr_.npos != pos)
+			{
+				pos = pathstr_.find_first_of(separators, pos + 1);
+				if (pathstr_.npos != pos)
+				{
+					if ((is_directory_separator(pathstr_[0]) && is_directory_separator(pathstr_[1]))
+#ifdef NANA_WINDOWS
+						|| (pathstr_[pos - 1] == ':')
+#endif
+						)
+						return pathstr_.substr(0, pos);
+				}
+			}
+
+			return path{};
+		}
+
+		std::size_t root_directory_pos(const path::string_type& str)
+		{
+#ifdef NANA_WINDOWS
+			// case "c:/"
+			if (str.size() > 2
+				&& str[1] == ':'
+				&& is_directory_separator(str[2])) return 2;
+#endif
+
+			// case "//"
+			if (str.size() == 2
+				&& is_directory_separator(str[0])
+				&& is_directory_separator(str[1])) return path::string_type::npos;
+
+#ifdef NANA_WINDOWS
+			// case "\\?\"
+			if (str.size() > 4
+				&& is_directory_separator(str[0])
+				&& is_directory_separator(str[1])
+				&& str[2] == '?'
+				&& is_directory_separator(str[3]))
+			{
+				auto pos = str.find_first_of(separators, 4);
+				return pos < str.size() ? pos : str.npos;
+			}
+#endif
+
+			// case "//net {/}"
+			if (str.size() > 3
+				&& is_directory_separator(str[0])
+				&& is_directory_separator(str[1])
+				&& !is_directory_separator(str[2]))
+			{
+				auto pos = str.find_first_of(separators, 2);
+				return pos < str.size() ? pos : str.npos;
+			}
+
+			// case "/"
+			if (str.size() > 0 && is_directory_separator(str[0])) return 0;
+
+			return str.npos;
+		}
+
+		path path::root_directory() const
+		{
+			auto pos = root_directory_pos(pathstr_);
+
+			return pos == string_type::npos
+				? path()
+				: path(pathstr_.substr(pos, 1));
+		}
+
+		path path::root_path() const
+		{
+			return root_name().pathstr_ + root_directory().pathstr_;
+		}
+
+		path path::relative_path() const
+		{
+			if (!empty())
+			{
+				auto pos = root_directory_pos(pathstr_);
+
+				pos = pathstr_.find_first_not_of(separators, pos);
+				if (pathstr_.npos != pos)
+					return path{ pathstr_.substr(pos) };
+			}
+			return{};
 		}
 
 		path path::parent_path() const
@@ -310,14 +415,14 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		path path::filename() const
 		{
-			auto pos = pathstr_.find_last_of(splstr);
+			auto pos = pathstr_.find_last_of(separators);
 			if (pos != pathstr_.npos)
 			{
 				if (pos + 1 == pathstr_.size())
 				{
 					value_type tmp[2] = {preferred_separator, 0};
 
-					if (pathstr_.npos != pathstr_.find_last_not_of(splstr, pos))
+					if (pathstr_.npos != pathstr_.find_last_not_of(separators, pos))
 						tmp[0] = '.';
 
 					return{ tmp };
@@ -326,6 +431,19 @@ namespace nana {	namespace experimental {	namespace filesystem
 			}
 
 			return{ pathstr_ };
+		}
+
+		void path::clear() noexcept
+		{
+			pathstr_.clear();
+		}
+
+		path& path::make_preferred()
+		{
+#ifdef NANA_WINDOWS
+			std::replace(pathstr_.begin(), pathstr_.end(), L'/', L'\\');
+#endif
+			return *this;
 		}
 
 		path& path::remove_filename()
@@ -418,10 +536,10 @@ namespace nana {	namespace experimental {	namespace filesystem
 			if (this == &p)
 			{
 				auto other = p.pathstr_;
-				if ((other.front() != '/') && (other.front() == path::preferred_separator))
+				if (!is_directory_separator(other.front()))
 				{
-					if (!this->pathstr_.empty() && (pathstr_.back() != '/' && pathstr_.back() == path::preferred_separator))
-						pathstr_.append(path::preferred_separator, 1);
+					if (!pathstr_.empty() && !is_directory_separator(pathstr_.back()))
+						pathstr_.append(1, path::preferred_separator);
 				}
 
 				pathstr_ += other;
@@ -429,10 +547,10 @@ namespace nana {	namespace experimental {	namespace filesystem
 			else
 			{
 				auto & other = p.pathstr_;
-				if ((other.front() != '/') && (other.front() == path::preferred_separator))
+				if (!is_directory_separator(other.front()))
 				{
-					if (!this->pathstr_.empty() && (pathstr_.back() != '/' && pathstr_.back() == path::preferred_separator))
-						pathstr_.append(path::preferred_separator, 1);
+					if (!pathstr_.empty() && !is_directory_separator(pathstr_.back()))
+						pathstr_.append(1, path::preferred_separator);
 				}
 
 				pathstr_ += p.pathstr_;
@@ -976,5 +1094,123 @@ namespace nana {	namespace experimental {	namespace filesystem
 		}//end namespace filesystem
 	} //end namespace experimental
 }//end namespace nana
+
+#if (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
+namespace std
+{
+	namespace filesystem
+	{
+		path absolute(const path& p)
+		{
+			if (p.empty())
+				return p;
+
+			auto abs_base = current_path();
+
+			//  store expensive to compute values that are needed multiple times
+			path p_root_name(p.root_name());
+			path base_root_name(abs_base.root_name());
+			path p_root_directory(p.root_directory());
+
+			if (!p_root_name.empty())  // p.has_root_name()
+			{
+				if (p_root_directory.empty())  // !p.has_root_directory()
+					return p_root_name / abs_base.root_directory()
+					/ abs_base.relative_path() / p.relative_path();
+				// p is absolute, so fall through to return p at end of block
+			}
+			else if (!p_root_directory.empty())  // p.has_root_directory()
+			{
+#ifdef NANA_POSIX
+				// POSIX can have root name it it is a network path
+				if (base_root_name.empty())   // !abs_base.has_root_name()
+					return p;
+#endif
+				return base_root_name / p;
+			}
+			else
+				return abs_base / p;
+
+			return p;  // p.is_absolute() is true
+		}
+
+		path absolute(const path& p, std::error_code& err)
+		{
+			return absolute(p);
+		}
+
+		path canonical(const path& p, std::error_code* err)
+		{
+			path source(p.is_absolute() ? p : absolute(p));
+			path root(source.root_path());
+			path result;
+
+			std::error_code local_ec;
+			file_status stat(status(source, local_ec));
+
+			if (stat.type() == file_type::not_found)
+			{
+				if (nullptr == err)
+					throw (filesystem_error(
+					"nana::filesystem::canonical", source,
+					error_code(static_cast<int>(errc::no_such_file_or_directory), generic_category())));
+				err->assign(static_cast<int>(errc::no_such_file_or_directory), generic_category());
+				return result;
+			}
+			else if (local_ec)
+			{
+				if (nullptr == err)
+					throw (filesystem_error(
+					"nana::filesystem::canonical", source, local_ec));
+				*err = local_ec;
+				return result;
+			}
+
+
+			auto tmp_p = source;
+
+			std::vector<path> source_elements;
+			while (tmp_p != root)
+			{
+				source_elements.emplace(source_elements.begin(), tmp_p.filename());
+				tmp_p.remove_filename();
+			}
+
+			result = root;
+
+			for(auto & e : source_elements)
+			{
+				auto str = e.string();
+				if("." == str)
+					continue;
+				else if(".." == str)
+				{
+					if(result != root)
+						result.remove_filename();
+					continue;
+				}
+
+				result /= e;
+			}
+
+			if (err)
+				err->clear();
+
+			return result;
+		}
+
+		path canonical(const path& p)
+		{
+			return canonical(p, nullptr);
+		}
+
+		path canonical(const path& p, std::error_code& err)
+		{
+			return canonical(p, &err);
+		}
+	}//end namespace filesystem
+}//end namespace std
+#endif
+
 #endif
 

@@ -5996,7 +5996,7 @@ namespace nana
 
 		auto listbox::last_visible() const -> index_pair
 		{
-			return _m_ess().lister.advance(_m_ess().first_display(), _m_ess().count_of_exposed(true));
+			return _m_ess().lister.advance(_m_ess().first_display(), static_cast<int>(_m_ess().count_of_exposed(true)));
 		}
 
 		auto listbox::visibles() const -> index_pairs

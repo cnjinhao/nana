@@ -33,10 +33,10 @@ namespace filesystem_ext
     constexpr auto const def_rootname = "Root/";
 #endif
 
-std::experimental::filesystem::path path_user();    ///< extention ?
+std::filesystem::path path_user();    ///< extention ?
 
 													/// workaround Boost not having path.generic_u8string() - a good point for http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0251r0.pdf
-inline std::string generic_u8string(const std::experimental::filesystem::path& p)
+inline std::string generic_u8string(const std::filesystem::path& p)
 {
 #if NANA_USING_BOOST_FILESYSTEM
 	return nana::to_utf8(p.generic_wstring());
@@ -45,15 +45,15 @@ inline std::string generic_u8string(const std::experimental::filesystem::path& p
 #endif
 }
 
-inline bool is_directory(const std::experimental::filesystem::directory_entry& dir) noexcept
+inline bool is_directory(const std::filesystem::directory_entry& dir) noexcept
 {
     return is_directory(dir.status());
 }
 
 //template<class DI> // DI = directory_iterator from std, boost, or nana : return directory_entry
-class directory_only_iterator : public std::experimental::filesystem::directory_iterator
+class directory_only_iterator : public std::filesystem::directory_iterator
 {
-	using directory_iterator = std::experimental::filesystem::directory_iterator;
+	using directory_iterator = std::filesystem::directory_iterator;
 
 	directory_only_iterator& find_first()
 	{
@@ -93,9 +93,9 @@ inline directory_only_iterator end(const directory_only_iterator&) noexcept
 }
 
 //template<class DI> // DI = directory_iterator from std, boost, or nana : value_type directory_entry
-class regular_file_only_iterator : public std::experimental::filesystem::directory_iterator
+class regular_file_only_iterator : public std::filesystem::directory_iterator
 {
-	using directory_iterator = std::experimental::filesystem::directory_iterator;
+	using directory_iterator = std::filesystem::directory_iterator;
 	regular_file_only_iterator& find_first()
 	{
 		while (((*this) != directory_iterator{}) && !is_regular_file((**this).status()))
@@ -128,11 +128,11 @@ inline regular_file_only_iterator end(const regular_file_only_iterator&) noexcep
 	return{};
 }
 
-std::string pretty_file_size(const std::experimental::filesystem::path& path);
+std::string pretty_file_size(const std::filesystem::path& path);
 
-std::string pretty_file_date(const std::experimental::filesystem::path& path);
+std::string pretty_file_date(const std::filesystem::path& path);
 
-bool modified_file_time(const std::experimental::filesystem::path& p, struct tm&);    ///< extention ?
+bool modified_file_time(const std::filesystem::path& p, struct tm&);    ///< extention ?
 
 }  // filesystem_ext
 }  // nana
