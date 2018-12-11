@@ -175,7 +175,13 @@ namespace nana  { namespace experimental { namespace filesystem
 		unknown = 0xFFFF	///<  not known, such as when a file_status object is created without specifying the permissions
 	};
     //enum class copy_options;
-    //enum class directory_options;
+    
+    enum class directory_options
+    {
+    	none,
+    	follow_directory_symlink,
+    	skip_permission_denied
+    };
 
     struct space_info
     {
@@ -234,7 +240,7 @@ namespace nana  { namespace experimental { namespace filesystem
 		}
 
 		// modifiers
-		//void clear() noexcept;
+		void clear() noexcept;
 		path& make_preferred();
 		path& remove_filename();
 		//path& replace_filename(const path& replacement);
@@ -242,10 +248,10 @@ namespace nana  { namespace experimental { namespace filesystem
 		//void swap(path& rhs) noexcept;
 
 		// decomposition
-		//path root_name() const;
-		//path root_directory() const;
-		//path root_path() const;
-		//path relative_path() const;
+		path root_name() const;
+		path root_directory() const;
+		path root_path() const;
+		path relative_path() const;
 		path parent_path() const;
 		path filename() const;
 		//path stem() const;
@@ -253,16 +259,16 @@ namespace nana  { namespace experimental { namespace filesystem
 
 		// query
 		bool empty() const noexcept;
-		//bool has_root_name() const;
-		//bool has_root_directory() const;
-		//bool has_root_path() const;
-		//bool has_relative_path() const;
-		bool has_parent_path() const { return !parent_path().string().empty(); };   // temp;;
-		bool has_filename() const    { return !filename().string().empty(); };   // temp;
+		bool has_root_name() const { return !root_name().empty();  }
+		bool has_root_directory() const { return !root_directory().empty();  }
+		bool has_root_path() const { return !root_path().empty();  }
+		bool has_relative_path() const { return !relative_path().empty(); }
+		bool has_parent_path() const { return !parent_path().empty(); };   // temp;;
+		bool has_filename() const    { return !filename().empty(); };   // temp;
 		//bool has_stem() const;
-		bool has_extension() const   { return !extension().string().empty(); };   // temp
-		//bool is_absolute() const;
-		//bool is_relative() const;
+		bool has_extension() const   { return !extension().empty(); };   // temp
+		bool is_absolute() const;
+		bool is_relative() const;
 
 		int compare(const path& other) const;
 
@@ -357,7 +363,8 @@ namespace nana  { namespace experimental { namespace filesystem
 	public:
 
 		directory_iterator() noexcept;
-		explicit directory_iterator(const path& dir);
+		explicit directory_iterator(const path& p);
+		directory_iterator(const path& p, directory_options opt);
 
 		const value_type& operator*() const;
 		const value_type* operator->() const;
@@ -381,6 +388,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	private:
 		bool	end_{false};
 		path::string_type path_;
+		directory_options option_{ directory_options::none };
 
 		std::shared_ptr<find_handle> find_ptr_;
 		find_handle	handle_{nullptr};
@@ -523,11 +531,20 @@ namespace std {
 #       else
 			using namespace nana::experimental::filesystem::v1;
 #       endif
+
 		} // filesystem
 	} // experimental
 
 	namespace filesystem {
 		using namespace std::experimental::filesystem;
+
+#if (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
+		path absolute(const path& p);
+		path absolute(const path& p, std::error_code& err);
+
+		path canonical(const path& p);
+		path canonical(const path& p, std::error_code& err);
+#endif
 	}
 } // std
 

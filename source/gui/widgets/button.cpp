@@ -379,7 +379,12 @@ namespace nana{	namespace drawerbase
 
 		void trigger::icon(const nana::paint::image& img)
 		{
-			if(img.empty())	return;
+			if(img.empty())
+			{
+				delete attr_.icon;
+				attr_.icon = nullptr;
+				return;
+			}
 
 			if(nullptr == attr_.icon)
 				attr_.icon = new paint::image;

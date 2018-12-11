@@ -18,12 +18,64 @@
 #include <nana/filesystem/filesystem.hpp>
 #include <vector>
 
+#include <X11/Xcursor/Xcursor.h>
+
 
 #include <iostream> //debug
 
 namespace nana{
 	namespace detail
 	{
+
+
+	class shared_icons
+	{
+	public:
+		shared_icons()
+		{
+			path_ = "/usr/share/icons/";
+			ifs_.open(path_ + "default/index.theme");
+		}
+
+		std::string cursor(const std::string& name)
+		{
+			auto theme = _m_read("Icon Theme", "Inherits");
+
+			return path_ + theme + "/cursors/" + name;
+		}
+	private:
+		std::string _m_read(const std::string& category, const std::string& key)
+		{
+			ifs_.seekg(0, std::ios::beg);
+
+			bool found_cat = false;
+			while(ifs_.good())
+			{
+				std::string text;
+				std::getline(ifs_, text);
+
+				if(0 == text.find('['))
+				{
+					if(found_cat)
+						break;
+
+					if(text.find(category + "]") != text.npos)
+					{
+						found_cat = true;
+					}
+				}
+				else if(found_cat && (text.find(key + "=") == 0))
+				{
+					return text.substr(key.size() + 1);
+				}
+			}
+
+			return {};
+		}
+	private:
+		std::string path_;
+		std::ifstream ifs_;
+	};
 
 	struct xdnd_data
 	{
@@ -36,7 +88,8 @@ namespace nana{
 		enum class xdnd_status_state
 		{
 			normal,
-			position_sent,
+			position,
+			drop,		//Use the 'accept' flag of XdndStatus when mouse has released(XdndDrop has been sent).
 			status_ignore
 		};
 
@@ -44,9 +97,21 @@ namespace nana{
 			spec_(nana::detail::platform_spec::instance()),
 			source_(source)
 		{
+			auto disp = spec_.open_display();
 			detail::platform_scope_guard lock;
-			::XSetSelectionOwner(spec_.open_display(), spec_.atombase().xdnd_selection, source, CurrentTime);
+			::XSetSelectionOwner(disp, spec_.atombase().xdnd_selection, source, CurrentTime);
 			std::cout<<"XSetSelectionOwner "<<source<<std::endl;
+
+			shared_icons icons;
+			cursor_.dnd_move = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-move").c_str());
+			cursor_.dnd_none = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-none").c_str());	
+		}
+
+		~xdnd_protocol()
+		{
+			auto disp = spec_.open_display();
+			::XFreeCursor(disp, cursor_.dnd_move);
+			::XFreeCursor(disp, cursor_.dnd_none);
 		}
 
 		void mouse_move(Window wd, const nana::point& pos)
@@ -81,13 +146,13 @@ namespace nana{
 			{
 				std::cout<<"Event: XdndStatus"<<std::endl;
 
-				if(xdnd_status_state::position_sent != xstate_)
+				if(xdnd_status_state::position != xstate_ && xdnd_status_state::drop != xstate_)
 					return false;
 
 				Window target_wd = static_cast<Window>(xclient.data.l[0]);
 				bool is_accepted_by_target = (xclient.data.l[1] & 1);
 
-				std::cout<<"XdndStatus: Accepted="<<is_accepted_by_target<<std::endl;
+				std::cout<<"XdndStatus: Accepted="<<is_accepted_by_target<<", target="<<is_accepted_by_target<<std::endl;
 
 				if(xclient.data.l[1] & 0x2)
 				{
@@ -106,13 +171,17 @@ namespace nana{
 				}
 				std::cout<<std::endl;
 
-				xstate_ = xdnd_status_state::normal;
+				_m_cursor(is_accepted_by_target);
 
-				if(!is_accepted_by_target)
+
+
+				if((!is_accepted_by_target) && (xdnd_status_state::drop == xstate_))
 				{
 					_m_xdnd_leave();
 					return true;
 				}
+
+				xstate_ = xdnd_status_state::normal;
 			}
 			else if(atombase.xdnd_finished == xclient.message_type)
 				return true;
@@ -211,7 +280,7 @@ namespace nana{
 
 			std::cout<<"Send: XdndPosition"<<std::endl;
 
-			xstate_ = xdnd_status_state::position_sent;
+			xstate_ = xdnd_status_state::position;
 			//Send XdndPosition
 			long position = (pos.x << 16 | pos.y);
 			_m_client_msg(spec_.atombase().xdnd_position, 0, position, CurrentTime, spec_.atombase().xdnd_action_copy);
@@ -219,6 +288,8 @@ namespace nana{
 
 		void _m_xdnd_leave()
 		{
+			::XUndefineCursor(spec_.open_display(), source_);
+
 			if(target_)
 			{
 				std::cout<<"Send: XdndLeave"<<std::endl;
@@ -229,6 +300,8 @@ namespace nana{
 
 		void _m_xdnd_drop()
 		{
+			::XUndefineCursor(spec_.open_display(), source_);
+			xstate_ = xdnd_status_state::drop;
 			std::cout<<"Send: XdndDrop"<<std::endl;
 			_m_client_msg(spec_.atombase().xdnd_drop, 0, CurrentTime, 0);
 			target_ = 0;
@@ -278,6 +351,11 @@ namespace nana{
 			return version;
 		}
 
+		void _m_cursor(bool accepted)
+		{
+			::XDefineCursor(spec_.open_display(), source_, (accepted ? cursor_.dnd_move : cursor_.dnd_none));
+		}
+
 #if 0 //deprecated
 		//Check if window has a property
 		static bool _m_has_property(Window wd, Atom atom, unsigned char** data)
@@ -307,6 +385,12 @@ namespace nana{
 		Window target_{ 0 };
 		xdnd_status_state xstate_{xdnd_status_state::normal};
 		std::map<Window, nana::rectangle> mvout_table_;
+
+		struct cursor_rep
+		{
+			Cursor dnd_move{ 0 };
+			Cursor dnd_none{ 0 };
+		}cursor_;
 	}; //end class xdnd_protocol
 	}
 }
