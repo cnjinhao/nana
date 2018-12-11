@@ -388,7 +388,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	private:
 		bool	end_{false};
 		path::string_type path_;
-		directory_options option_{ directory_options::opt };
+		directory_options option_{ directory_options::none };
 
 		std::shared_ptr<find_handle> find_ptr_;
 		find_handle	handle_{nullptr};
