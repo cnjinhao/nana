@@ -35,6 +35,7 @@
 #	include <nana/gui/place.hpp>
 #	include <stdexcept>
 #	include <algorithm>
+#	include "../detail/posix/shared_icons.hpp"
 #endif
 
 namespace fs = std::filesystem;

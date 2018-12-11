@@ -197,6 +197,7 @@ namespace nana
 					clr.from_rgb(0x86, 0xD5, 0xFD); break;
 				case states::selected:
 					clr.from_rgb(0x3C, 0x7F, 0xB1); break;
+				default: break;
 				}
 				
 				graph.rectangle(r, false, clr);

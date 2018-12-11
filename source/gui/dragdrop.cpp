@@ -659,55 +659,6 @@ namespace nana
 		bool const simple_mode_;
 		std::atomic<std::size_t> ref_count_{ 1 };
 	};
-
-	class shared_icons
-	{
-	public:
-		shared_icons()
-		{
-			path_ = "/usr/share/icons/";
-			ifs_.open(path_ + "default/index.theme");
-		}
-
-		std::string cursor(const std::string& name)
-		{
-			auto theme = _m_read("Icon Theme", "Inherits");
-
-			return path_ + theme + "/cursors/" + name;
-		}
-	private:
-		std::string _m_read(const std::string& category, const std::string& key)
-		{
-			ifs_.seekg(0, std::ios::beg);
-
-			bool found_cat = false;
-			while(ifs_.good())
-			{
-				std::string text;
-				std::getline(ifs_, text);
-
-				if(0 == text.find('['))
-				{
-					if(found_cat)
-						break;
-
-					if(text.find(category + "]") != text.npos)
-					{
-						found_cat = true;
-					}
-				}
-				else if(found_cat && (text.find(key + "=") == 0))
-				{
-					return text.substr(key.size() + 1);
-				}
-			}
-
-			return {};
-		}
-	private:
-		std::string path_;
-		std::ifstream ifs_;
-	};
 #endif
 
 	class dragdrop_service
@@ -1022,7 +973,7 @@ namespace nana
 
 #ifdef NANA_WINDOWS
 #elif defined (NANA_X11)
-		shared_icons icons_;
+		nana::detail::shared_icons icons_;
 		struct hovered_status
 		{
 			Window native_wd{0};
