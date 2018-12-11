@@ -338,11 +338,11 @@ namespace nana
 #else
 						rs.vslines.emplace_back();
 						auto & vsline = rs.vslines.back();
-
+#endif
 						vsline.baseline = 0;
 						vsline.extent_height_px = def_line_px;
 						vsline.x_base = 0;
-#endif
+
 						return 0;
 					}
 
