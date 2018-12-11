@@ -175,7 +175,13 @@ namespace nana  { namespace experimental { namespace filesystem
 		unknown = 0xFFFF	///<  not known, such as when a file_status object is created without specifying the permissions
 	};
     //enum class copy_options;
-    //enum class directory_options;
+    
+    enum class directory_options
+    {
+    	none,
+    	follow_directory_symlink,
+    	skip_permission_denied
+    };
 
     struct space_info
     {
@@ -357,7 +363,8 @@ namespace nana  { namespace experimental { namespace filesystem
 	public:
 
 		directory_iterator() noexcept;
-		explicit directory_iterator(const path& dir);
+		explicit directory_iterator(const path& p);
+		directory_iterator(const path& p, directory_options opt);
 
 		const value_type& operator*() const;
 		const value_type* operator->() const;
@@ -381,6 +388,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	private:
 		bool	end_{false};
 		path::string_type path_;
+		directory_options option_{ directory_options::opt };
 
 		std::shared_ptr<find_handle> find_ptr_;
 		find_handle	handle_{nullptr};

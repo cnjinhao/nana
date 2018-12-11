@@ -102,6 +102,22 @@ namespace nana
 
 		std::string pretty_file_date(const fs::path& path) // todo: move to .cpp
 		{
+			struct tm t;
+			if (modified_file_time(path, t))
+			{
+				std::stringstream tm;
+				tm << std::put_time(&t, "%Y-%m-%d, %H:%M:%S");
+				return tm.str();
+			}
+			return {};
+
+/*
+			// Deprecated
+			//Windows stores file times using the FILETIME structure, which is a 64 bit value of 100ns intervals from January 1, 1601.
+			//What's worse is that this 1601 date is fairly common to see given that it's the all zeroes value, and it is far before the
+			//earliest date representable with time_t.std::filesystem can't change the reality of the underlying platform.
+			
+
 			try {
 #if NANA_USING_BOOST_FILESYSTEM
 				// The return type of boost::filesystem::last_write_time isn't
@@ -117,7 +133,9 @@ namespace nana
 
 				if (ftime == ((fs::file_time_type::min)())) return{};
 
-				auto cftime = static_cast<std::time_t>(ftime.time_since_epoch().count());
+				//A workaround for VC2013
+				using time_point = decltype(ftime);
+				auto cftime = time_point::clock::to_time_t(ftime);
 
 				std::stringstream tm;
 				tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
@@ -126,6 +144,8 @@ namespace nana
 			catch (...) {
 				return{};
 			}
+#endif
+*/
 		}
 
 		bool modified_file_time(const fs::path& p, struct tm& t)
@@ -442,6 +462,8 @@ namespace nana {	namespace experimental {	namespace filesystem
 		{
 #ifdef NANA_WINDOWS
 			std::replace(pathstr_.begin(), pathstr_.end(), L'/', L'\\');
+#else
+			std::replace(pathstr_.begin(), pathstr_.end(), '\\', '/');
 #endif
 			return *this;
 		}
@@ -650,6 +672,12 @@ namespace nana {	namespace experimental {	namespace filesystem
 				directory_iterator::directory_iterator(const path& file_path)
 				{
 					_m_prepare(file_path);
+				}
+
+				directory_iterator::directory_iterator(const path& p, directory_options opt):
+					option_(opt)
+				{
+					_m_prepare(p);
 				}
 
 				const directory_iterator::value_type& directory_iterator::operator*() const { return value_; }
