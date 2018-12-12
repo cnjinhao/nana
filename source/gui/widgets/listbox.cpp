@@ -3862,7 +3862,7 @@ namespace nana
 									{
 										nana::rectangle imgt(item.img_show_size);
 										img_r = imgt;
-										img_r.x = content_pos + coord.x + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
+										img_r.x = content_pos + coord.x + 2 + (16 - static_cast<int>(item.img_show_size.width)) / 2;  // center in 16 - geom scheme?
 										img_r.y = coord.y + (static_cast<int>(essence_->item_height()) - static_cast<int>(item.img_show_size.height)) / 2; // center
 									}
 									content_pos += 18;  // image width, geom scheme?

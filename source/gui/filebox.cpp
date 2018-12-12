@@ -35,12 +35,11 @@
 #	include <nana/gui/place.hpp>
 #	include <stdexcept>
 #	include <algorithm>
-#	include "../detail/posix/shared_icons.hpp"
+#	include "../detail/posix/theme.hpp"
 #endif
 
 namespace fs = std::filesystem;
 namespace fs_ext = nana::filesystem_ext;
-
 
 namespace nana
 {
@@ -159,6 +158,15 @@ namespace nana
 			pick_directory_(pick_directory),
 			mode_(dialog_mode)
 		{
+			images_.folder.open(theme_.icon("folder", 16));
+			images_.file.open(theme_.icon("empty", 16));
+			images_.exec.open(theme_.icon("exec", 16));
+			images_.package.open(theme_.icon("package", 16));
+			images_.text.open(theme_.icon("text", 16));
+			images_.xml.open(theme_.icon("text-xml", 16));
+			images_.image.open(theme_.icon("image", 16));
+			images_.pdf.open(theme_.icon("application-pdf", 16));
+
 			internationalization i18n;
 			path_.create(*this);
 			path_.splitstr("/");
@@ -214,6 +222,16 @@ namespace nana
 			});
 
 			tree_.create(*this);
+
+			//Configure treebox icons
+			auto & fs_icons = tree_.icon("icon-fs");
+			fs_icons.normal.open(theme_.icon("drive-harddisk", 16));
+
+			auto & folder_icons = tree_.icon("icon-folder");
+			folder_icons.normal.open(theme_.icon("folder", 16));
+			folder_icons.expanded.open(theme_.icon("folder-open", 16));
+
+			tree_.icon("icon-home").normal.open(theme_.icon("folder_home", 16));
 
 			ls_file_.create(*this);
 			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_NAME"), 190);
@@ -449,9 +467,13 @@ namespace nana
 	private:
 		void _m_layout()
 		{
+			unsigned ascent, desent, ileading;
+			paint::graphics{nana::size{1, 1}}.text_metrics(ascent, desent, ileading);
+
+			auto text_height = ascent + desent + 16;
 			place_.bind(*this);
 			place_.div(	"vert"
-					"<weight=34 margin=5 path arrange=[variable,200] gap=5>"
+					"<weight=" + std::to_string(text_height) +" margin=5 path arrange=[variable,200] gap=5>"
 					"<weight=30 margin=[0,0,5,10] new_folder arrange=[100]>"
 					"<content arrange=[180] gap=[5]><weight=8>"
 					"<weight=26<weight=100><vert weight=80 label margin=[0,5,0,0]>"
@@ -479,8 +501,10 @@ namespace nana
 			//"FS.HOME", "FS.ROOT". Because a key of the tree widget should not be '/'
 			nodes_.home = tree_.insert("FS.HOME", "Home");
 			nodes_.home.value(kind::filesystem);
+			nodes_.home.icon("icon-home");
 			nodes_.filesystem = tree_.insert("FS.ROOT", "Filesystem");
 			nodes_.filesystem.value(kind::filesystem);
+			nodes_.filesystem.icon("icon-fs");
 
 			std::vector<std::pair<std::string, treebox::item_proxy>> paths;
 			paths.emplace_back(fs_ext::path_user().native(), nodes_.home);
@@ -496,7 +520,7 @@ namespace nana
 						continue;
 
 					item_proxy node = tree_.insert(p.second, name, name);
-					if (false == node.empty())
+					if (!node.empty())
 					{
 						node.value(kind::filesystem);
 						break;
@@ -706,7 +730,70 @@ namespace nana
 			{
 				if(_m_filter_allowed(fs.name, fs.directory, filter, ext_types))
 				{
-					cat.append(fs).value(fs);
+					auto m = cat.append(fs);
+					m.value(fs);
+	
+					if(fs.directory)
+						m.icon(images_.folder);
+					else
+					{
+						std::string filename = fs.name;
+						for(auto ch : fs.name)
+						{
+							if('A' <= ch && ch <= 'Z')
+								ch = ch - 'A' + 'a';
+
+							filename += ch;
+						}
+
+						auto size = filename.size();
+						paint::image use_image;
+
+						if(size > 3)
+						{
+							auto ext3 = filename.substr(size - 3);
+							if((".7z" == ext3) || (".ar" == ext3) || (".gz" == ext3) || (".xz" == ext3))
+								use_image = images_.package;
+						}
+
+						if(use_image.empty() && (size > 4))
+						{
+							auto ext4 = filename.substr(size - 4);
+
+							if( (".exe" == ext4) || 
+								(".dll" == ext4))
+								use_image = images_.exec;
+							else if((".zip" == ext4) || (".rar" == ext4) ||
+									(".bz2" == ext4) || (".tar" == ext4))
+								use_image = images_.package;
+							else if(".txt" == ext4)
+								use_image = images_.text;
+							else if ((".xml" == ext4) || (".htm" == ext4))
+								use_image = images_.xml;
+							else if((".jpg" == ext4) ||
+									(".png" == ext4) ||
+									(".gif" == ext4) ||
+									(".bmp" == ext4))
+								use_image = images_.image;
+							else if(".pdf" == ext4)
+								use_image = images_.pdf;
+						}
+
+						if(use_image.empty() && (size > 5))
+						{
+							auto ext5 = filename.substr(size - 5);
+							if(".lzma" == ext5)
+								use_image = images_.package;
+							else if(".html" == ext5)
+								use_image = images_.xml;
+						}
+				
+						if(use_image.empty())
+							m.icon(images_.file);
+						else
+							m.icon(use_image);
+
+					}
 				}
 			}
 			ls_file_.auto_draw(true);
@@ -917,6 +1004,7 @@ namespace nana
 					auto child = node.append(name, name, kind::filesystem);
 					if(!child.empty())
 					{
+						child->icon("icon-folder");
 						//The try-catch can be eleminated by using
 						//directory_iterator( const std::filesystem::path& p, std::error_code& ec ) noexcept;
 						//in C++17
@@ -981,6 +1069,19 @@ namespace nana
 
 		static std::string saved_init_path;
 		static std::string saved_selected_path;
+		nana::detail::theme theme_;
+
+		struct images
+		{
+			paint::image folder;
+			paint::image file;
+			paint::image exec;
+			paint::image package;
+			paint::image text;
+			paint::image xml;
+			paint::image image;
+			paint::image pdf;
+		}images_;
 	};//end class filebox_implement
 	std::string filebox_implement::saved_init_path;
 	std::string filebox_implement::saved_selected_path;
