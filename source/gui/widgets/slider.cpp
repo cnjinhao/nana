@@ -758,6 +758,10 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
+					// check if slider is disabled
+					if(!API::get_widget(arg.window_handle)->enabled()) 
+						return;		// do nothing
+					
 					bool updated = false;
 					if (model_ptr_->if_trace_slider())
 					{
