@@ -85,9 +85,13 @@ namespace nana{ namespace drawerbase
 				graph.text_metrics(txt_px, descent, ileading);
 				txt_px += (descent + 2);
 
+				auto e_state = API::element_state(*wdg);
+				if(!wdg->enabled())
+					e_state = element_state::disabled;
+
 				impl_->crook.draw(graph,
 					impl_->scheme_ptr->square_bgcolor.get(wdg->bgcolor()), impl_->scheme_ptr->square_border_color.get(wdg->fgcolor()),
-					rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), API::element_state(*wdg));
+					rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), e_state);
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
