@@ -38,7 +38,7 @@
 #include "detail/image_ico_resource.hpp"
 #include "detail/image_ico.hpp"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 namespace nana
 {

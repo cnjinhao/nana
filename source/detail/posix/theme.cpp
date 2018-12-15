@@ -1,3 +1,5 @@
+#include <nana/c++defines.hpp>
+#if defined(NANA_POSIX) && defined(NANA_X11)
 #include "theme.hpp"
 #include <nana/filesystem/filesystem.hpp>
 #include <algorithm>
@@ -296,3 +298,4 @@ namespace nana
 	}
 
 }
+#endif

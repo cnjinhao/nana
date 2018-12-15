@@ -33,7 +33,7 @@ namespace nana
 		{
 			friend class graphics;
 		public:
-			using path_type = ::std::experimental::filesystem::path;
+			using path_type = ::std::filesystem::path;
 
 			using font_style = ::nana::detail::font_style;
 

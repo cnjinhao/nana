@@ -19,6 +19,7 @@
 
 #include <map>
 #include <set>
+#include <cstring>
 
 #ifdef NANA_WINDOWS
 #	include <windows.h>
@@ -179,7 +180,7 @@ namespace nana
 		win32com_drop_target(bool simple_mode):
 			simple_mode_(simple_mode)
 		{
-		
+
 		}
 
 		//Implements IUnknown
@@ -279,7 +280,7 @@ namespace nana
 			//Drop the object if left button is released.
 			if (0 == (key_state & (MK_LBUTTON)))
 				return DRAGDROP_S_DROP;
-			
+
 			return S_OK;
 		}
 
@@ -468,7 +469,7 @@ namespace nana
 			auto entry = find(*request_format, true);
 			if (entry)
 				return _m_copy_medium(pmedium, &entry->medium, &entry->format);
-			
+
 			return DV_E_FORMATETC;
 		}
 
@@ -481,10 +482,10 @@ namespace nana
 		{
 			if (NULL == pformatetc)
 				return E_INVALIDARG;
-			
+
 			if (!(DVASPECT_CONTENT & pformatetc->dwAspect))
 				return DV_E_DVASPECT;
-			
+
 			HRESULT result = DV_E_TYMED;
 
 			for (auto & entry : entries_)
@@ -563,7 +564,7 @@ namespace nana
 		{
 			if (!(stgmed_dst && stgmed_src && fmt_src))
 				return E_INVALIDARG;
-			
+
 			switch (stgmed_src->tymed)
 			{
 			case TYMED_HGLOBAL:
@@ -646,7 +647,7 @@ namespace nana
 		{
 			++ref_count_;
 		}
-		
+
 		std::size_t release() override
 		{
 			std::size_t val = --ref_count_;
@@ -768,7 +769,7 @@ namespace nana
 			auto& atombase = _m_spec().atombase();
 
 			auto ddrop = dynamic_cast<dragdrop_target*>(i->second);
-			
+
 			auto const native_source = reinterpret_cast<Window>(API::root(drag_wd));
 
 			{
@@ -780,7 +781,7 @@ namespace nana
 			hovered_.window_handle = nullptr;
 			hovered_.native_wd = 0;
 			window target_wd = 0;
-			
+
 			if(ddrop->simple_mode())
 			{
 
@@ -816,7 +817,7 @@ namespace nana
 								{
 									hovered_.window_handle = cur_wd;
 
-									icon = (((drag_wd == cur_wd) || ddrop->has(drag_wd, cur_wd)) ? "dnd-move" : "dnd-none");						
+									icon = (((drag_wd == cur_wd) || ddrop->has(drag_wd, cur_wd)) ? "dnd-move" : "dnd-none");
 								}
 							}
 
@@ -855,9 +856,9 @@ namespace nana
 							if(icon)
 							{
 								_m_free_cursor();
-								hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor(icon).c_str());							
-								::XDefineCursor(disp, native_cur_wd, hovered_.cursor);	
-							}					
+								hovered_.cursor = ::XcursorFilenameLoadCursor(disp, icons_.cursor(icon).c_str());
+								::XDefineCursor(disp, native_cur_wd, hovered_.cursor);
+							}
 #endif
 						}
 						else if(msg_pkt.u.xevent.type == ButtonRelease)
@@ -868,7 +869,7 @@ namespace nana
 							API::release_capture(drag_wd);
 							return detail::propagation_chain::exit;
 						}
-						
+
 					}
 					return detail::propagation_chain::stop;
 				});
@@ -909,7 +910,7 @@ namespace nana
 						{
 							std::cout<<"ButtonRelease"<<std::endl;
 							API::release_capture(drag_wd);
-							
+
 							xdnd_proto.mouse_release();
 							std::cout<<"mouse_release"<<std::endl;
 							target_wd = API::find_window(API::cursor_position());
@@ -1166,7 +1167,7 @@ namespace nana
 				drop_finished(has_dropped);
 		}
 	};
-	
+
 	dragdrop::dragdrop(window source) :
 		impl_(new implementation(source))
 	{
@@ -1228,7 +1229,7 @@ namespace nana
 		}
 		delete impl_;
 	}
-	
+
 	void dragdrop::condition(std::function<bool()> predicate_fn)
 	{
 		impl_->predicate = predicate_fn;
