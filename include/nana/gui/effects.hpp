@@ -45,7 +45,7 @@ namespace nana
 			: public bground_factory_interface
 		{
 		public:
-			bground_transparent(std::size_t percent);
+			explicit bground_transparent(std::size_t percent);
 		private:
 			bground_interface* create() const override;
 		private:
