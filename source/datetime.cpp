@@ -244,7 +244,7 @@ namespace nana
 		{
 			if (month != 2)
 			{
-				const std::array<unsigned, 12> days_in_month = { 31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+				constexpr std::array<unsigned, 12> days_in_month = { 31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 				return days_in_month[month - 1];
 			}
 
