@@ -116,7 +116,7 @@ namespace nana
 			//Windows stores file times using the FILETIME structure, which is a 64 bit value of 100ns intervals from January 1, 1601.
 			//What's worse is that this 1601 date is fairly common to see given that it's the all zeroes value, and it is far before the
 			//earliest date representable with time_t.std::filesystem can't change the reality of the underlying platform.
-			
+
 
 			try {
 #if NANA_USING_BOOST_FILESYSTEM
@@ -275,7 +275,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			return has_root_directory();
 #endif
 		}
-		
+
 		bool path::is_relative() const
 		{
 			return !is_absolute();
@@ -310,7 +310,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				;
 		}
 
-		
+
 
 		path path::root_name() const
 		{
@@ -1123,11 +1123,12 @@ namespace nana {	namespace experimental {	namespace filesystem
 	} //end namespace experimental
 }//end namespace nana
 
-#if (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
 namespace std
 {
 	namespace filesystem
 	{
+#if defined(NANA_FILESYSTEM_FORCE) || \
+    (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
 		path absolute(const path& p)
 		{
 			if (p.empty())
@@ -1236,9 +1237,26 @@ namespace std
 		{
 			return canonical(p, &err);
 		}
+#endif
+
+#if defined(NANA_FILESYSTEM_FORCE) || defined(NANA_MINGW)
+    bool exists( std::filesystem::file_status s ) noexcept
+    {
+        return s.type() != file_type::not_found;
+    }
+
+    bool exists( const std::filesystem::path& p )
+    {
+        return exists(status(p));
+    }
+
+    bool exists( const std::filesystem::path& p, std::error_code& ec ) noexcept
+    {
+        return exists(status(p, ec));
+    }
+#endif
 	}//end namespace filesystem
 }//end namespace std
-#endif
 
 #endif
 

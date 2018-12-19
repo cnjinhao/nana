@@ -241,7 +241,7 @@ public:
 #endif
 	}
 
-	bool open(const std::experimental::filesystem::path& ico_file) override
+	bool open(const std::filesystem::path& ico_file) override
 	{
 		std::ifstream file(ico_file.string(), std::ios::binary);
 		if (!file.is_open()) return false;
@@ -290,7 +290,7 @@ public:
 #endif
 	}
 private:
-	std::experimental::filesystem::path path_;
+	std::filesystem::path path_;
 #if defined(NANA_WINDOWS)
 	void* native_handle_{nullptr};
 #endif
