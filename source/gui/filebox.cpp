@@ -35,9 +35,10 @@
 #	include <nana/gui/place.hpp>
 #	include <stdexcept>
 #	include <algorithm>
+#	include "../detail/posix/shared_icons.hpp"
 #endif
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 namespace fs_ext = nana::filesystem_ext;
 
 
@@ -1295,15 +1296,13 @@ namespace nana
 		std::wstring init_path = impl_->init_path.wstring();
 
 		// https://docs.microsoft.com/en-us/windows/desktop/api/shlobj_core/ns-shlobj_core-_browseinfoa
-        BROWSEINFO brw       = { 0 };
+		BROWSEINFO brw       = { 0 };
 		brw.hwndOwner        = reinterpret_cast<HWND>(API::root(impl_->owner));
-		//brw.pidlRoot;                      // specifies the location of the root folder from which to start browsing.
 		brw.pszDisplayName   = display_text; // buffer to receive the display name of the folder selected by the user.
 		brw.lpszTitle        = title.data();
 		brw.ulFlags          = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE; // | BIF_EDITBOX;
 		brw.lpfn             = browse_folder_callback;
 		brw.lParam           = reinterpret_cast<LPARAM>(init_path.c_str());
-		//brw.iImage;                        //
 
 		auto pidl = ::SHBrowseForFolder(&brw);
 		if (pidl)

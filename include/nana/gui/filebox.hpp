@@ -92,7 +92,7 @@ namespace nana
 		folderbox(folderbox&&) = delete;
 		folderbox& operator=(folderbox&&) = delete;
 	public:
-		using path_type = std::experimental::filesystem::path;
+		using path_type = std::filesystem::path;
 
 		explicit folderbox(window owner = nullptr, const path_type& init_path = {}, std::string title={});
 		~folderbox();

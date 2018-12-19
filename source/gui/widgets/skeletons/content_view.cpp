@@ -230,7 +230,6 @@ namespace nana {
 						{
 							cv_scroll->vert.create(window_handle);
 							cv_scroll->vert.events().value_changed.connect_unignorable(event_fn);
-							API::take_active(cv_scroll->vert, false, window_handle);
 							this->passive = false;
 						}
 						
@@ -261,7 +260,6 @@ namespace nana {
 						{
 							cv_scroll->horz.create(window_handle);
 							cv_scroll->horz.events().value_changed.connect_unignorable(event_fn);
-							API::take_active(cv_scroll->horz, false, window_handle);
 							this->passive = false;
 						}
 
