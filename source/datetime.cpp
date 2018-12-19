@@ -15,6 +15,7 @@
 	#include <windows.h>
 #endif
 #include <cassert>
+#include <array>
 
 namespace {
 	std::tm localtime()
@@ -239,18 +240,20 @@ namespace nana
 			return days + d;
 		}
 
-		unsigned date::month_days(unsigned year, unsigned month)
+		unsigned date::month_days(const unsigned year, const unsigned month)
 		{
-			unsigned num[] = {31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-			if(month != 2)
-				return num[month - 1];
+			if (month != 2)
+			{
+				constexpr std::array<unsigned, 12> days_in_month = { 31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+				return days_in_month[month - 1];
+			}
 
 			if(((year % 4 == 0) && (year % 100)) || (year % 400 == 0))
 				return 29;
 			return 28;
 		}
 
-		unsigned date::year_days(unsigned year)
+		unsigned date::year_days(const unsigned year)
 		{
 			if(((year % 4 == 0) && (year % 100)) || (year % 400 == 0))
 				return 366;

@@ -91,7 +91,7 @@ namespace nana
 		virtual void shortkey(graph_reference, const arg_keyboard&);
 
 		void filter_event(const event_code evt_code, const bool bDisabled);
-		void filter_event(const std::vector<event_code> evt_codes, const bool bDisabled);
+		void filter_event(const std::vector<event_code>& evt_codes, const bool bDisabled);
 		void filter_event(const event_filter_status& evt_all_states);
 		bool filter_event(const event_code evt_code);
 		event_filter_status filter_event();
