@@ -21,7 +21,7 @@ matrix:
             - libx11-dev
             - libxft-dev
             - libxcursor-dev
-          sources: 
+          sources:
             - ubuntu-toolchain-r-test
             
   allow_failures:		
@@ -38,7 +38,7 @@ matrix:
             - libx11-dev
             - libxft-dev
             - libxcursor-dev
-          sources: 
+          sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise 
 

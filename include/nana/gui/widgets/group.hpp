@@ -49,11 +49,10 @@ namespace nana{
 		group(window parent, const rectangle& = {}, bool visible = true);
 
 		///  The construction that creates the widget and set the titel or caption
-
-		group(window			parent,		///< a handle to the parent
-			  ::std::string	titel,		///< caption of the group
+		group(window			parent,		        ///< a handle to the parent
+			  ::std::string	    titel,		        ///< caption of the group
 			  bool				formatted = false,  ///< Enable/disable the formatted text for the title
-			  unsigned			gap = 2,			///< betwen the content  and the external limit
+			  unsigned			gap = 2,			///< betwen the content and the external limit
 			  const rectangle&	r = {} ,
 			  bool				visible = true
 		     );
