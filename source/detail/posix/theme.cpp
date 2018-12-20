@@ -85,9 +85,9 @@ namespace nana
 			return values;
 		}
 
+		namespace fs = std::filesystem;
 		std::string find_gnome_theme_name()
 		{
-			namespace fs = std::filesystem;
 			try
 			{
 				//Searches all the gschema override files
@@ -153,6 +153,41 @@ namespace nana
 			catch(...){}
 
 			return {};
+		}
+
+
+		std::string find_kde_theme_name()
+		{
+			auto home = getenv("HOME");
+			if(home)
+			{
+				fs::path kdeglobals{home};
+				kdeglobals /= ".kde/share/config/kdeglobals";
+
+				std::error_code err;
+				if(fs::exists(kdeglobals, err))
+				{
+					std::ifstream ifs{kdeglobals};
+					return find_value(ifs, "Icons", "Theme");
+				}
+			}
+			return {};
+		}
+
+		std::string find_theme_name()
+		{
+			auto name = find_kde_theme_name();
+
+			if(name.empty())
+			{
+				name = find_gnome_theme_name();
+				std::cout<<"GNOME:"<<name<<std::endl;
+				return find_gnome_theme_name();
+			}
+
+			std::cout<<"KDE:"<<name<<std::endl;
+
+			return name;
 		}
 
 
@@ -243,6 +278,10 @@ namespace nana
 							return dir;
 					}
 
+					//Avoid recursively traverse directory for hicolor if current theme name is hicolor
+					if("hicolor" == theme_name_)
+						return {};
+
 					return icon_theme{"hicolor"}.find(name, size_wanted);
 				}
 				
@@ -288,7 +327,7 @@ namespace nana
 			}
 
 			//Cache is missed.
-			auto file = icon_theme{find_gnome_theme_name()}.find(name, size_wanted);
+			auto file = icon_theme{find_theme_name()}.find(name, size_wanted);
 			if(!file.empty())
 				iconcache_[name].emplace_back(size_wanted, file);
 
