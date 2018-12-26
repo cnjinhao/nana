@@ -513,6 +513,8 @@ namespace detail
 		atombase_.xdnd_position = ::XInternAtom(display_, "XdndPosition", False);
 		atombase_.xdnd_status	= ::XInternAtom(display_, "XdndStatus", False);
 		atombase_.xdnd_action_copy = ::XInternAtom(display_, "XdndActionCopy", False);
+		atombase_.xdnd_action_move = ::XInternAtom(display_, "XdndActionMove", False);
+		atombase_.xdnd_action_link = ::XInternAtom(display_, "XdndActionLink", False);
 		atombase_.xdnd_drop = ::XInternAtom(display_, "XdndDrop", False);
 		atombase_.xdnd_selection = ::XInternAtom(display_, "XdndSelection", False);
 		atombase_.xdnd_typelist = ::XInternAtom(display_, "XdndTypeList", False);
