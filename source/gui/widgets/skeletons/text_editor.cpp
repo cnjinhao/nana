@@ -2002,7 +2002,7 @@ namespace nana {
 
 				auto fgcolor = scheme_->foreground.get_color();
 				if (!API::window_enabled(window_))
-					fgcolor.blend(bgcolor, 0.5);
+					fgcolor = fgcolor.blend(bgcolor, 0.5); //Thank to besh81 for getting the fgcolor to be changed
 
 				if (API::widget_borderless(window_))
 					graph_.rectangle(false, bgcolor);
