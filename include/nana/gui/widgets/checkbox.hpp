@@ -104,6 +104,7 @@ namespace drawerbase
 		struct element_tag
 		{
 			checkbox * uiobj;
+			event_handle eh_clicked;
 			event_handle eh_checked;
 			event_handle eh_destroy;
 			event_handle eh_keyboard;
