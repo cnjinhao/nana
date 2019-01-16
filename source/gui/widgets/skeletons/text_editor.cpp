@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1728,7 +1728,7 @@ namespace nana {
 					str = impl_->textbase.getline(0);
 					for (std::size_t i = 1; i < lines; ++i)
 					{
-						str += L"\n\r";
+						str += L"\r\n";
 						str += impl_->textbase.getline(i);
 					}
 				}
@@ -2002,7 +2002,7 @@ namespace nana {
 
 				auto fgcolor = scheme_->foreground.get_color();
 				if (!API::window_enabled(window_))
-					fgcolor.blend(bgcolor, 0.5);
+					fgcolor = fgcolor.blend(bgcolor, 0.5); //Thank to besh81 for getting the fgcolor to be changed
 
 				if (API::widget_borderless(window_))
 					graph_.rectangle(false, bgcolor);

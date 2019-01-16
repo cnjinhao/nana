@@ -33,13 +33,14 @@ namespace nana
 static const char* field_title = "__nana_group_title__";
 static const char* field_options = "__nana_group_options__";
 
-struct group::implement
-{
-    label	caption;
-    align	caption_align{ align::left };
-    place	place_content;
-    unsigned gap{2};
-    std::string usr_div_str;
+	struct group::implement
+	{
+		label	caption;
+		align	caption_align{ align::left };
+		background_mode caption_mode{ background_mode::blending };
+		place	place_content;
+		unsigned gap{2};
+		std::string usr_div_str;
 
     nana::size caption_dimension;
 
@@ -143,200 +144,216 @@ checkbox& group::add_option(std::string text)
     impl_->options.emplace_back(new checkbox(handle()));
     auto & opt = impl_->options.back();
 #endif
-    opt->transparent(true);
-    opt->caption(std::move(text));
-    impl_->place_content[field_options] << *opt;
-    impl_->place_content.field_display(field_options, true);
-    impl_->place_content.collocate();
 
-    if (impl_->radio_logic)
-        impl_->radio_logic->add(*opt);
+		opt->transparent(true);
+		opt->caption(std::move(text));
+		impl_->place_content[field_options] << *opt;
+		impl_->place_content.field_display(field_options, true);
+		impl_->place_content.collocate();
 
-    return *impl_->options.back();
-}
+		if (impl_->radio_logic)
+			impl_->radio_logic->add(*opt);
 
-void group::caption_align(align position)
-{
-    if (position != impl_->caption_align)
-    {
-        impl_->caption_align = position;
-        impl_->update_div();
-        impl_->place_content.collocate();
-        API::refresh_window(*this);
-    }
-}
+		return *impl_->options.back();
+	}
 
-group& group::radio_mode(bool enable)
-{
-    _THROW_IF_EMPTY()
+	group& group::caption_align(align position)
+	{
+		if (position != impl_->caption_align)
+		{
+			impl_->caption_align = position;
+			impl_->update_div();
+			impl_->place_content.collocate();
+			API::refresh_window(*this);
+		}
+		return *this;
+	}
 
-    if (enable)
-    {
-        //Create radio_group if it is null
-        if (!impl_->radio_logic)
-            impl_->radio_logic = new ::nana::radio_group;
+	group&  group::caption_background_mode(background_mode mode)
+	{
+		if (mode != impl_->caption_mode)
+		{
+			impl_->caption_mode = mode;
+			switch (mode)
+			{
+			case background_mode::none:
+				impl_->caption.bgcolor(this->bgcolor());
+				impl_->caption.transparent(false);
+				break;
+			case background_mode::blending:
+				impl_->caption.transparent(true);
+				impl_->caption.bgcolor(API::bgcolor(this->parent()).blend(colors::black, 0.025));
+				break;
+			case background_mode::transparent:
+				impl_->caption.transparent(true);
+				impl_->caption.bgcolor(API::bgcolor(this->parent()).blend(colors::black, 0.025));
+				break;
+			}
+			API::refresh_window(*this);
+		}
+		return *this;
+	}
 
-        //add all options into the radio_group
-        for (auto & opt : impl_->options)
-            impl_->radio_logic->add(*opt);
-    }
-    else
-    {
-        delete impl_->radio_logic;
-        impl_->radio_logic = nullptr;
-    }
-    return *this;
-}
+	group& group::radio_mode(bool enable)
+	{
+		_THROW_IF_EMPTY()
 
-std::size_t group::option() const
-{
-    _THROW_IF_EMPTY();
+		if (enable)
+		{
+			//Create radio_group if it is null
+			if (!impl_->radio_logic)
+				impl_->radio_logic = new ::nana::radio_group;
 
-    if (impl_->radio_logic)
-        return impl_->radio_logic->checked();
+			//add all options into the radio_group
+			for (auto & opt : impl_->options)
+				impl_->radio_logic->add(*opt);
+		}
+		else
+		{
+			delete impl_->radio_logic;
+			impl_->radio_logic = nullptr;
+		}
+		return *this;
+	}
 
-    throw std::logic_error("the radio_mode of the group is disabled");
-}
+	std::size_t group::option() const
+	{
+		_THROW_IF_EMPTY();
 
-bool group::option_checked(std::size_t pos) const
-{
-    _THROW_IF_EMPTY();
-    return impl_->options.at(pos)->checked();
-}
+		if (impl_->radio_logic)
+			return impl_->radio_logic->checked();
 
-void group::typeface( const nana::paint::font& font )
-{
-    // change typeface of caption label
-    impl_->caption.typeface( font );
+		throw std::logic_error("the radio_mode of the group is disabled");
+	}
 
-    /* change size of caption label
+	bool group::option_checked(std::size_t pos) const
+	{
+		_THROW_IF_EMPTY();
+		return impl_->options.at(pos)->checked();
+	}
 
-    The caption may be changed AFTER this call
-    so the neccessary label size is unknown
-    set it to 80% of the current widget width and 50 pixels
-    */
-    impl_->caption.move( rectangle(0,0,size().width * 0.8,50));
-}
+	group& group::enable_format_caption(bool format)
+	{
+		impl_->caption.format(format);
+		return *this;
+	}
 
-group& group::enable_format_caption(bool format)
-{
-    impl_->caption.format(format);
-    return *this;
-}
+	group& group::collocate() noexcept
+	{
+		impl_->place_content.collocate();
+		return *this;
+	}
 
-group& group::collocate() noexcept
-{
-    impl_->place_content.collocate();
-    return *this;
-}
+	group& group::div(const char* div_str) noexcept
+	{
+		if (div_str)
+			impl_->usr_div_str = div_str;
+		else
+			impl_->usr_div_str.clear();
 
-group& group::div(const char* div_str) noexcept
-{
-    if (div_str)
-        impl_->usr_div_str = div_str;
-    else
-        impl_->usr_div_str.clear();
+		impl_->update_div();
+		return *this;
+	}
 
-    impl_->update_div();
-    return *this;
-}
+	group::field_reference group::operator[](const char* field)
+	{
+		return impl_->place_content.field(field);
+	}
 
-group::field_reference group::operator[](const char* field)
-{
-    return impl_->place_content.field(field);
-}
+	void group::field_display(const char* field_name, bool display)
+	{
+		impl_->place_content.field_display(field_name, display);
+	}
 
-void group::field_display(const char* field_name, bool display)
-{
-    impl_->place_content.field_display(field_name, display);
-}
+	bool group::field_display(const char* field_name) const
+	{
+		return impl_->place_content.field_display(field_name);
+	}
 
-bool group::field_display(const char* field_name) const
-{
-    return impl_->place_content.field_display(field_name);
-}
+	void group::erase(window handle)
+	{
+		impl_->place_content.erase(handle);
+	}
 
-void group::erase(window handle)
-{
-    impl_->place_content.erase(handle);
-}
+	void group::_m_add_child(const char* field, widget* wdg)
+	{
+		impl_->place_content[field] << wdg->handle();
+	}
 
-void group::_m_add_child(const char* field, widget* wdg)
-{
-    impl_->place_content[field] << wdg->handle();
-}
+	void group::_m_init()
+	{
+		this->div(nullptr);
 
-void group::_m_init()
-{
-    this->div(nullptr);
+		auto & outter = impl_->place_content;
 
-    auto & outter = impl_->place_content;
+		outter[field_title] << impl_->caption;
+		outter.collocate();
 
-    outter[field_title] << impl_->caption;
-    outter.collocate();
+		impl_->caption.transparent(true);
+		color pbg = API::bgcolor(this->parent());
+		impl_->caption.bgcolor(pbg.blend(colors::black, 0.025));
 
-    impl_->caption.transparent(true);
-    color pbg = API::bgcolor(this->parent());
-    impl_->caption.bgcolor(pbg.blend(colors::black, 0.025));
+		this->bgcolor(pbg.blend(colors::black, 0.05));
 
-    this->bgcolor(pbg.blend(colors::black, 0.05));
+		drawing dw(*this);
 
-    drawing dw(*this);
+		//When the group is resized, the drawing is called before moving the caption, but
+		//the drawing of group requires the lastest position of caption for gradual rectangle.
+		//For the requirement, a move event handler is required for listning the change of caption's position.
+		impl_->caption.events().move([this](const arg_move&){
+			if (align::left != impl_->caption_align)
+				API::refresh_window(*this);
+		});
 
-    //When the group is resized, the drawing is called before moving the caption, but
-    //the drawing of group requires the lastest position of caption for gradual rectangle.
-    //For the requirement, a move event handler is required for listning the change of caption's position.
-    impl_->caption.events().move([this](const arg_move&)
-    {
-        if (align::left != impl_->caption_align)
-            API::refresh_window(*this);
-    });
+		// This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
+		dw.draw([this](paint::graphics& graph)
+		{
+			auto gap_px = impl_->gap - 1;
 
-    // This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
-    dw.draw([this](paint::graphics& graph)
-    {
-        auto gap_px = impl_->gap - 1;
+			auto const top_round_line = static_cast<int>(impl_->caption_dimension.height) / 2;
 
-        auto const top_round_line = static_cast<int>(impl_->caption_dimension.height) / 2;
+			graph.rectangle(true, API::bgcolor(this->parent()));
+			graph.round_rectangle(rectangle(point(gap_px, top_round_line),
+				nana::size(graph.width() - 2 * gap_px, graph.height() - top_round_line - gap_px)
+				),
+				3, 3, this->scheme().border, true, this->bgcolor());
 
-        graph.rectangle(true, API::bgcolor(this->parent()));
-        graph.round_rectangle(rectangle(point(gap_px, top_round_line),
-                                        nana::size(graph.width() - 2 * gap_px, graph.height() - top_round_line - gap_px)
-                                       ),
-                              3, 3, this->scheme().border, true, this->bgcolor());
+			if (background_mode::blending == impl_->caption_mode)
+			{
+				auto opt_r = API::window_rectangle(impl_->caption);
+				if (opt_r)
+				{
+					rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width + 4, static_cast<unsigned>(top_round_line - opt_r->y) } };
 
-        auto opt_r = API::window_rectangle(impl_->caption);
-        if (opt_r)
-        {
-            rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width + 4, static_cast<unsigned>(top_round_line - opt_r->y) } };
+					grad_r.y += top_round_line * 2 / 3;
+					grad_r.x -= 2;
 
-            grad_r.y += top_round_line*2  / 3;
-            grad_r.x -= 2;
+					graph.gradual_rectangle(grad_r,
+						API::bgcolor(this->parent()), this->bgcolor(), true
+						);
+				}
+			}
+		});
+	}
 
-            graph.gradual_rectangle(grad_r,
-                                    API::bgcolor(this->parent()), this->bgcolor(), true
-                                   );
-        }
-    });
-}
+	void group::_m_complete_creation()
+	{
+		widget::_m_complete_creation();
+		impl_->create(handle());
+		_m_init();
+	}
 
-void group::_m_complete_creation()
-{
-    widget::_m_complete_creation();
-    impl_->create(handle());
-    _m_init();
-}
+	auto group::_m_caption() const noexcept -> native_string_type
+	{
+		return impl_->caption.caption_native();
+	}
 
-auto group::_m_caption() const noexcept -> native_string_type
-{
-    return impl_->caption.caption_native();
-}
+	void group::_m_caption(native_string_type&& str)
+	{
+		impl_->caption.caption(std::move(str));
+		impl_->update_div();
+		impl_->place_content.collocate();
+	}
 
-void group::_m_caption(native_string_type&& str)
-{
-    impl_->caption.caption(std::move(str));
-    impl_->update_div();
-    impl_->place_content.collocate();
-}
 }//end namespace nana
 
