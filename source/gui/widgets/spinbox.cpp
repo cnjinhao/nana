@@ -467,7 +467,7 @@ namespace nana
 
 					std::wstring text;
 
-					if (API::is_focus_ready(editor_->window_handle()))
+					if (API::is_focus_ready(editor_->window_handle()) && editor_->attr().editable)
 						text = to_wstring(range_->value());
 					else
 						text = to_wstring(modifier_.prefix + range_->value() + modifier_.suffix);
