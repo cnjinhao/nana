@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanaro.org)
  *	Copyright(C) 2015-2018 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/group.cpp
@@ -14,7 +14,7 @@
  *	@brief group is a widget used to visually group and layout other widgets.
  *
  * 	@contributor:
- *		dankan1890(https://github.com/dankan1890) 
+ *		dankan1890(https://github.com/dankan1890)
  */
 
 
@@ -27,10 +27,11 @@
 	if(empty())	\
 		throw std::logic_error("the group is invalid");
 
-namespace nana{
+namespace nana
+{
 
-	static const char* field_title = "__nana_group_title__";
-	static const char* field_options = "__nana_group_options__";
+static const char* field_title = "__nana_group_title__";
+static const char* field_options = "__nana_group_options__";
 
 	struct group::implement
 	{
@@ -41,108 +42,109 @@ namespace nana{
 		unsigned gap{2};
 		std::string usr_div_str;
 
-		nana::size caption_dimension;
+    nana::size caption_dimension;
 
-		std::vector<std::unique_ptr<checkbox>> options;
-		radio_group * radio_logic{nullptr};
+    std::vector<std::unique_ptr<checkbox>> options;
+    radio_group * radio_logic{nullptr};
 
-		implement() = default;
+    implement() = default;
 
-		implement(window grp_panel, ::std::string titel, bool vsb, unsigned gap=2)
-			: caption (grp_panel, std::move(titel), vsb),
-			  place_content{grp_panel},
-			  gap{gap}
-		{
-		}
+    implement(window grp_panel, ::std::string titel, bool vsb, unsigned gap=2)
+        : caption (grp_panel, std::move(titel), vsb),
+          place_content{grp_panel},
+          gap{gap}
+    {
+    }
 
-		void create(window pnl)
-		{
-			caption.create(pnl);
-			caption.caption("");
-			place_content.bind(pnl);
+    void create(window pnl)
+    {
+        caption.create(pnl);
+        caption.caption("");
+        place_content.bind(pnl);
 
-			if (!radio_logic)
-				radio_logic = new radio_group;
-		}
+        if (!radio_logic)
+            radio_logic = new radio_group;
+    }
 
-		void update_div()
-		{
-			const std::size_t padding = 10;
-			caption_dimension = caption.measure(1000);
-			caption_dimension.width += 1;
+    void update_div()
+    {
+        const std::size_t padding = 10;
+        caption_dimension = caption.measure(1000);
+        caption_dimension.width += 1;
 
-			std::string div = "vert margin=[0," + std::to_string(gap) + "," + std::to_string(gap + 5) + "," + std::to_string(gap) + "]";
+        std::string div = "vert margin=[0," + std::to_string(gap) + "," + std::to_string(gap + 5) + "," + std::to_string(gap) + "]";
 
-			div += "<weight=" + std::to_string(caption_dimension.height) + " ";
+        div += "<weight=" + std::to_string(caption_dimension.height) + " ";
 
-			if (align::left == caption_align)
-				div += "<weight=" + std::to_string(padding) + ">";
-			else
-				div += "<>";	//right or center
+        if (align::left == caption_align)
+            div += "<weight=" + std::to_string(padding) + ">";
+        else
+            div += "<>";	//right or center
 
-			div += "<" + std::string{ field_title } + " weight=" + std::to_string(caption_dimension.width) + ">";
+        div += "<" + std::string{ field_title } + " weight=" + std::to_string(caption_dimension.width) + ">";
 
-			if (align::right == caption_align)
-				div += "<weight=" + std::to_string(padding) + ">";
-			else if (align::center == caption_align)
-				div += "<>";
+        if (align::right == caption_align)
+            div += "<weight=" + std::to_string(padding) + ">";
+        else if (align::center == caption_align)
+            div += "<>";
 
-			div += "><<vert margin=5 " + std::string(field_options) + ">";
+        div += "><<vert margin=5 " + std::string(field_options) + ">";
 
-			if (!usr_div_str.empty())
-				div += "<" + usr_div_str + ">>";
-			else
-				div += ">";
+        if (!usr_div_str.empty())
+            div += "<" + usr_div_str + ">>";
+        else
+            div += ">";
 
-			place_content.div(div.c_str());
+        place_content.div(div.c_str());
 
-			if (options.empty())
-				place_content.field_display(field_options, false);
+        if (options.empty())
+            place_content.field_display(field_options, false);
 
-			if (caption.caption().empty())
-				place_content.field_display(field_title, false);
-		}
-	};
+        if (caption.caption().empty())
+            place_content.field_display(field_title, false);
+    }
+};
 
-	group::group()
-		: impl_(new implement)
-	{
-	}
+group::group()
+    : impl_(new implement)
+{
+}
 
-	group::group(window parent, const rectangle& r, bool vsb)
-		: group()
-	{
-		create(parent, r, vsb);
-	}
+group::group(window parent, const rectangle& r, bool vsb)
+    : group()
+{
+    create(parent, r, vsb);
+}
 
-	using groupbase_type = widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>;
+using groupbase_type = widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>;
 
-	group::group(window parent, ::std::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
-		: group(parent, r, vsb)
-	{
-		this->bgcolor(API::bgcolor(parent));
+group::group(window parent, ::std::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
+    : group(parent, r, vsb)
+{
+    this->bgcolor(API::bgcolor(parent));
 
-		impl_.reset(new implement(*this, std::move(titel), vsb, gap));
+    impl_.reset(new implement(*this, std::move(titel), vsb, gap));
 
-		impl_->caption.format(formatted);
-		_m_init();
-	}
+    impl_->caption.format(formatted);
+    _m_init();
+}
 
-	group::~group()
-	{
-		delete impl_->radio_logic;
-	}
+group::~group()
+{
+    delete impl_->radio_logic;
+}
 
-	checkbox& group::add_option(std::string text)
-	{
-		_THROW_IF_EMPTY()
+checkbox& group::add_option(std::string text)
+{
+    _THROW_IF_EMPTY()
 
 #ifdef _nana_std_has_emplace_return_type
-		auto & opt = impl_->options.emplace_back(new checkbox{ handle() });
+    auto & opt = impl_->options.emplace_back(new checkbox { handle() });
 #else
-		impl_->options.emplace_back(new checkbox(handle()));
-		auto & opt = impl_->options.back();
+    impl_->options.emplace_back(new checkbox(handle()));
+    auto & opt = impl_->options.back();
 #endif
+
 		opt->transparent(true);
 		opt->caption(std::move(text));
 		impl_->place_content[field_options] << *opt;
@@ -352,5 +354,6 @@ namespace nana{
 		impl_->update_div();
 		impl_->place_content.collocate();
 	}
+
 }//end namespace nana
 
