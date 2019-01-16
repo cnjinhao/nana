@@ -962,7 +962,6 @@ namespace API
 		restrict::wd_manager().update(reinterpret_cast<basic_window*>(wd), false, true);
 	}
 
-
 	void window_caption(window wd, const std::string& title_utf8)
 	{
 		throw_not_utf8(title_utf8);

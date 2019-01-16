@@ -848,12 +848,17 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::refresh_window(native_window_type wd)
+		void native_interface::refresh_window(native_window_type native_wd)
 		{
 #if defined(NANA_WINDOWS)
-			::InvalidateRect(reinterpret_cast<HWND>(wd), nullptr, true);
+			auto wd = reinterpret_cast<HWND>(native_wd);
+			RECT r;
+			::GetClientRect(wd, &r);
+			::InvalidateRect(wd, &r, FALSE);
 #elif defined(NANA_X11)
-			static_cast<void>(wd); //eliminate unused parameter compiler warning.
+			Display * disp = restrict::spec.open_display();
+			::XClearArea(disp, reinterpret_cast<Window>(native_wd), 0, 0, 1, 1, true);
+			::XFlush(disp);
 #endif
 		}
 
@@ -1110,14 +1115,10 @@ namespace nana{
 			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
 			{
 				auto origin = window_position(owner);
-#if 0
-				x += origin.x;
-				y += origin.y;
-#else
+
 				auto owner_extents = window_frame_extents(owner);
 				x += origin.x + owner_extents.left;
 				y += origin.y + owner_extents.top;
-#endif
 			}
 
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);
