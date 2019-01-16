@@ -15,8 +15,8 @@
 
 #ifndef NANA_PAINT_DETAIL_IMAGE_PROCESSOR_HPP
 #define NANA_PAINT_DETAIL_IMAGE_PROCESSOR_HPP
-#include "../image_process_interface.hpp"
 #include <nana/paint/pixel_buffer.hpp>
+#include <nana/paint/image_process_interface.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <algorithm>
 
@@ -421,15 +421,19 @@ namespace detail
 		{
 			virtual void process(paint::pixel_buffer & pixbuf, const nana::point& pos_beg, const nana::point& pos_end, const ::nana::color& clr, double fade_rate) const
 			{
+				//Return if it is completely transparent
+				if (fade_rate <= 0)
+					return;
+
 				auto rgb_color = clr.px_color().value;
 				const std::size_t bytes_pl = pixbuf.bytes_per_line();
 				
 				unsigned char * fade_table = nullptr;
 				std::unique_ptr<unsigned char[]> autoptr;
 				nana::pixel_argb_t rgb_imd = {};
-				if(fade_rate != 0.0)
+				if(fade_rate < 1)
 				{
-					autoptr = detail::alloc_fade_table(1 - fade_rate);
+					autoptr = detail::alloc_fade_table(1.0 - fade_rate);
 					fade_table = autoptr.get();
 					rgb_imd.value = rgb_color;
 					rgb_imd = detail::fade_color_intermedia(rgb_imd, fade_table);

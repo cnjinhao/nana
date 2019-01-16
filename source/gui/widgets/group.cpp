@@ -36,6 +36,7 @@ namespace nana{
 	{
 		label	caption;
 		align	caption_align{ align::left };
+		background_mode caption_mode{ background_mode::blending };
 		place	place_content;
 		unsigned gap{2};
 		std::string usr_div_str;
@@ -154,7 +155,7 @@ namespace nana{
 		return *impl_->options.back();
 	}
 
-	void group::caption_align(align position)
+	group& group::caption_align(align position)
 	{
 		if (position != impl_->caption_align)
 		{
@@ -163,6 +164,32 @@ namespace nana{
 			impl_->place_content.collocate();
 			API::refresh_window(*this);
 		}
+		return *this;
+	}
+
+	group&  group::caption_background_mode(background_mode mode)
+	{
+		if (mode != impl_->caption_mode)
+		{
+			impl_->caption_mode = mode;
+			switch (mode)
+			{
+			case background_mode::none:
+				impl_->caption.bgcolor(this->bgcolor());
+				impl_->caption.transparent(false);
+				break;
+			case background_mode::blending:
+				impl_->caption.transparent(true);
+				impl_->caption.bgcolor(API::bgcolor(this->parent()).blend(colors::black, 0.025));
+				break;
+			case background_mode::transparent:
+				impl_->caption.transparent(true);
+				impl_->caption.bgcolor(API::bgcolor(this->parent()).blend(colors::black, 0.025));
+				break;
+			}
+			API::refresh_window(*this);
+		}
+		return *this;
 	}
 
 	group& group::radio_mode(bool enable)
@@ -295,17 +322,20 @@ namespace nana{
 				),
 				3, 3, this->scheme().border, true, this->bgcolor());
 
-			auto opt_r = API::window_rectangle(impl_->caption);
-			if (opt_r)
+			if (background_mode::blending == impl_->caption_mode)
 			{
-				rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width + 4, static_cast<unsigned>(top_round_line - opt_r->y) } };
+				auto opt_r = API::window_rectangle(impl_->caption);
+				if (opt_r)
+				{
+					rectangle grad_r{ opt_r->position(), nana::size{ opt_r->width + 4, static_cast<unsigned>(top_round_line - opt_r->y) } };
 
-				grad_r.y += top_round_line*2  / 3;
-				grad_r.x -= 2;
+					grad_r.y += top_round_line * 2 / 3;
+					grad_r.x -= 2;
 
-				graph.gradual_rectangle(grad_r,
-					API::bgcolor(this->parent()), this->bgcolor(), true
-					);
+					graph.gradual_rectangle(grad_r,
+						API::bgcolor(this->parent()), this->bgcolor(), true
+						);
+				}
 			}
 		});
 	}

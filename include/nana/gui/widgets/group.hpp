@@ -42,6 +42,13 @@ namespace nana{
 		using field_reference = place::field_reference;
 		constexpr static const std::size_t npos = static_cast<std::size_t>(-1);
 
+		enum class background_mode
+		{
+			none,
+			transparent,
+			blending
+		};
+
 		/// The default construction
 		group();
 
@@ -65,7 +72,8 @@ namespace nana{
 		checkbox& add_option(::std::string);
 
 		/// Modifies the alignment of the title
-		void caption_align(align position);
+		group& caption_align(align position);
+		group& caption_background_mode(background_mode mode);
 
 		/// Enables/disables the radio mode which is single selection
 		group& radio_mode(bool);
