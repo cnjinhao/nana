@@ -35,7 +35,10 @@ namespace nana{
 	}//end namespace drawerbase
 
 	class group
-		: public widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>
+		: public widget_object<category::widget_tag,
+		                       drawerbase::panel::drawer,
+		                       general_events,
+		                       drawerbase::group::scheme>
 	{
 		struct implement;
 	public:
