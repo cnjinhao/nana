@@ -132,7 +132,7 @@ namespace nana
 				{
 					native_string_type caption;                     //< header title
 					unsigned width_px;                              //< column width in pixels
-					std::pair<unsigned, unsigned> range_width_px;   //< allowed witdh
+					std::pair<unsigned, unsigned> range_width_px;   //< allowed width
 					bool visible_state{ true };
 
 
@@ -441,7 +441,7 @@ namespace nana
 					throw std::invalid_argument("listbox: invalid header index");
 				}
 
-                /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
+                /// find and return a ref to the column that originally was at position "pos" previous to any list reorganization.
 				column& at(size_type pos, bool disp_order = false)
 				{
 					check_range(pos, cont_.size());
@@ -508,7 +508,7 @@ namespace nana
 					return{ left, 0 };
 				}
 
-				/// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
+				/// return the original index of the visible col currently before(in front of) or after the col originally at index "index"
 				size_type next(size_type index) const noexcept
 				{
 					bool found_me = false;
@@ -561,7 +561,7 @@ namespace nana
 					cont_.insert(cont_.begin()+ view, col_from);
 
 				}
-				/// move the col originaly at "from" to the position currently in front (or after) the col originaly at index "to" invalidating some current index
+				/// move the col originally at "from" to the position currently in front (or after) the col originally at index "to" invalidating some current index
 				void move(size_type from, size_type to, bool front) noexcept
 				{
 					if ((from == to) || (from >= cont_.size()) || (to >= cont_.size()))
