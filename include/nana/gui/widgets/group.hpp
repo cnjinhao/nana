@@ -94,6 +94,9 @@ namespace nana{
 		/// Determines whether a specified option is checked, it throws an out_of_range if !(pos < number of options)
 		bool option_checked(std::size_t pos) const;
 
+		/// Change typeface of caption label ( does not effect child widgets )
+		void typeface( const nana::paint::font& font );
+
 		group& enable_format_caption(bool format);
 
 		group& collocate() noexcept;
@@ -103,7 +106,7 @@ namespace nana{
 		void field_display(const char* field_name, bool display); ///<Displays/Discards an existing field.
 		bool field_display(const char* field_name) const;	///<Determines whether the specified field is displayed.
 		void erase(window handle);				///< Erases a window from field.
-		
+
 		template<typename Widget, typename ...Args>
 		Widget* create_child(const char* field, Args && ... args)
 		{
