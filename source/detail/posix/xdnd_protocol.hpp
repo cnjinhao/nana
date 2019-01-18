@@ -16,69 +16,26 @@
 
 #include "platform_spec.hpp"
 #include <nana/filesystem/filesystem.hpp>
-#include <vector>
 
+#include "theme.hpp"
 #include <X11/Xcursor/Xcursor.h>
 
+#include <vector>
 
+
+#define DEBUG_XDND_PROTOCOL
+
+#ifdef DEBUG_XDND_PROTOCOL
 #include <iostream> //debug
+#endif
 
 namespace nana{
 	namespace detail
 	{
 
-
-	class shared_icons
-	{
-	public:
-		shared_icons()
-		{
-			path_ = "/usr/share/icons/";
-			ifs_.open(path_ + "default/index.theme");
-		}
-
-		std::string cursor(const std::string& name)
-		{
-			auto theme = _m_read("Icon Theme", "Inherits");
-
-			return path_ + theme + "/cursors/" + name;
-		}
-	private:
-		std::string _m_read(const std::string& category, const std::string& key)
-		{
-			ifs_.seekg(0, std::ios::beg);
-
-			bool found_cat = false;
-			while(ifs_.good())
-			{
-				std::string text;
-				std::getline(ifs_, text);
-
-				if(0 == text.find('['))
-				{
-					if(found_cat)
-						break;
-
-					if(text.find(category + "]") != text.npos)
-					{
-						found_cat = true;
-					}
-				}
-				else if(found_cat && (text.find(key + "=") == 0))
-				{
-					return text.substr(key.size() + 1);
-				}
-			}
-
-			return {};
-		}
-	private:
-		std::string path_;
-		std::ifstream ifs_;
-	};
-
 	struct xdnd_data
 	{
+		Atom requested_action;
 		std::vector<std::filesystem::path> files;
 	};
 
@@ -100,31 +57,40 @@ namespace nana{
 			auto disp = spec_.open_display();
 			detail::platform_scope_guard lock;
 			::XSetSelectionOwner(disp, spec_.atombase().xdnd_selection, source, CurrentTime);
-			std::cout<<"XSetSelectionOwner "<<source<<std::endl;
 
-			shared_icons icons;
+#ifdef DEBUG_XDND_PROTOCOL
+			std::cout<<"XSetSelectionOwner "<<source<<std::endl;
+#endif
+/*			//deprecated
+			theme icons;
+			cursor_.dnd_copy = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-copy").c_str());
 			cursor_.dnd_move = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-move").c_str());
-			cursor_.dnd_none = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-none").c_str());	
+			cursor_.dnd_none = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-none").c_str());
+*/
+			cursor_.dnd_copy = ::XcursorLibraryLoadCursor(disp, "dnd-copy");
+			cursor_.dnd_move = ::XcursorLibraryLoadCursor(disp, "dnd-move");
+			cursor_.dnd_none = ::XcursorLibraryLoadCursor(disp, "dnd-none");
 		}
 
 		~xdnd_protocol()
 		{
 			auto disp = spec_.open_display();
+			::XFreeCursor(disp, cursor_.dnd_copy);
 			::XFreeCursor(disp, cursor_.dnd_move);
 			::XFreeCursor(disp, cursor_.dnd_none);
 		}
 
-		void mouse_move(Window wd, const nana::point& pos)
+		void mouse_move(Window wd, const nana::point& pos, Atom requested_action)
 		{
 			if(wd != target_)
 			{
 				_m_xdnd_leave();
 			
 				if(_m_xdnd_enter(wd))
-					_m_xdnd_position(pos);
+					_m_xdnd_position(pos, requested_action);
 			}
 			else
-				_m_xdnd_position(pos);
+				_m_xdnd_position(pos, requested_action);
 		}
 
 		void mouse_leave()
@@ -132,9 +98,14 @@ namespace nana{
 			_m_xdnd_leave();
 		}
 
-		void mouse_release()
+		bool mouse_release()
 		{
-			_m_xdnd_drop();
+			return _m_xdnd_drop();
+		}
+
+		Atom executed_action() const
+		{
+			return executed_action_;
 		}
 
 		//Return true to exit xdnd_protocol event handler
@@ -144,16 +115,18 @@ namespace nana{
 
 			if(atombase.xdnd_status == xclient.message_type)
 			{
+#ifdef DEBUG_XDND_PROTOCOL
 				std::cout<<"Event: XdndStatus"<<std::endl;
-
+#endif
 				if(xdnd_status_state::position != xstate_ && xdnd_status_state::drop != xstate_)
 					return false;
 
 				Window target_wd = static_cast<Window>(xclient.data.l[0]);
 				bool is_accepted_by_target = (xclient.data.l[1] & 1);
 
-				std::cout<<"XdndStatus: Accepted="<<is_accepted_by_target<<", target="<<is_accepted_by_target<<std::endl;
-
+#ifdef DEBUG_XDND_PROTOCOL
+				std::cout<<"XdndStatus: Accepted="<<is_accepted_by_target<<", target="<<target_wd<<std::endl;
+#endif
 				if(xclient.data.l[1] & 0x2)
 				{
 					rectangle rct{
@@ -166,20 +139,27 @@ namespace nana{
 					if(!rct.empty())
 					{
 						mvout_table_[target_wd] = rct;
+#ifdef DEBUG_XDND_PROTOCOL
 						std::cout<<". rct=("<<rct.x<<","<<rct.y<<","<<rct.width<<","<<rct.height<<")";
+#endif
 					}
 				}
+#ifdef DEBUG_XDND_PROTOCOL
 				std::cout<<std::endl;
-
+#endif
 				_m_cursor(is_accepted_by_target);
-
-
 
 				if((!is_accepted_by_target) && (xdnd_status_state::drop == xstate_))
 				{
 					_m_xdnd_leave();
 					return true;
 				}
+
+				executed_action_ = xclient.data.l[4];
+
+#ifdef DEBUG_XDND_PROTOCOL
+				std::cout<<"    Assign ExecutedAction = "<<static_cast<int>(executed_action_)<<std::endl;
+#endif
 
 				xstate_ = xdnd_status_state::normal;
 			}
@@ -193,8 +173,9 @@ namespace nana{
 		{
 			if(spec_.atombase().xdnd_selection == xselectionrequest.selection)
 			{
+#ifdef DEBUG_XDND_PROTOCOL
 				std::cout<<"Event SelectionRequest: XdndSelection"<<std::endl;
-
+#endif
 			    ::XEvent evt;
 			    evt.xselection.type = SelectionNotify;
 			    evt.xselection.display = xselectionrequest.display;
@@ -204,6 +185,7 @@ namespace nana{
 			    evt.xselection.property = 0;
 			    evt.xselection.time = xselectionrequest.time;
 
+#ifdef DEBUG_XDND_PROTOCOL
 			    auto property_name = ::XGetAtomName(spec_.open_display(), xselectionrequest.property); //debug
 
 			    std::cout<<"SelectionRequest"<<std::endl;
@@ -213,11 +195,13 @@ namespace nana{
 			    std::cout<<"    property ="<<xselectionrequest.property<<", name="<<property_name<<std::endl;
 			    std::cout<<"    target   ="<<xselectionrequest.target<<std::endl;
 			    ::XFree(property_name);
+#endif
 
 			    if(xselectionrequest.target == spec_.atombase().text_uri_list)
 			    {
+#ifdef DEBUG_XDND_PROTOCOL
 			    	std::cout<<"SelectionRequest target = text_uri_list";
-
+#endif
 				    if(data.files.size())
 				    {
 				    	std::string uri_list;
@@ -227,9 +211,9 @@ namespace nana{
 				    		uri_list += file.u8string();
 				    		uri_list += "\r\n";
 				    	}
-
+#ifdef DEBUG_XDND_PROTOCOL
 				    	std::cout<<". URIs="<<uri_list<<std::endl;
-
+#endif
 				    	::XChangeProperty (spec_.open_display(),
 				    			xselectionrequest.requestor,
 				    			xselectionrequest.property, 
@@ -242,9 +226,10 @@ namespace nana{
 
 				    }
 			    }
+#ifdef DEBUG_XDND_PROTOCOL
 			    else
 			    	std::cout<<"SelectionRequest target = "<<xselectionrequest.target<<std::endl;
-
+#endif
 			    platform_scope_guard lock;
 			    ::XSendEvent(spec_.open_display(), xselectionrequest.requestor, False, 0, &evt);
 			    ::XFlush(spec_.open_display());
@@ -254,7 +239,6 @@ namespace nana{
 			}
 		}
 	private:
-
 		bool _m_xdnd_enter(Window wd)
 		{
 			//xdnd version of the window
@@ -263,13 +247,15 @@ namespace nana{
 				return false;
 
 			target_ = wd;
+#ifdef DEBUG_XDND_PROTOCOL
 			std::cout<<"Send XdndEnter, text/uri-list="<<spec_.atombase().text_uri_list<<std::endl;
+#endif
 			_m_client_msg(spec_.atombase().xdnd_enter, (xdnd_ver << 24), spec_.atombase().text_uri_list, XA_STRING);
 
 			return true;
 		}
 
-		void _m_xdnd_position(const nana::point& pos)
+		void _m_xdnd_position(const nana::point& pos, Atom requested_action)
 		{
 			if(xdnd_status_state::normal != xstate_)
 				return;
@@ -278,12 +264,13 @@ namespace nana{
 			if(i != mvout_table_.end() && i->second.is_hit(pos))
 				return;
 
-			std::cout<<"Send: XdndPosition"<<std::endl;
-
+#ifdef DEBUG_XDND_PROTOCOL
+			std::cout<<"Send: XdndPosition, RequestedAction="<<requested_action<<", XdndActionCopy="<<spec_.atombase().xdnd_action_copy<<std::endl;
+#endif
 			xstate_ = xdnd_status_state::position;
 			//Send XdndPosition
 			long position = (pos.x << 16 | pos.y);
-			_m_client_msg(spec_.atombase().xdnd_position, 0, position, CurrentTime, spec_.atombase().xdnd_action_copy);
+			_m_client_msg(spec_.atombase().xdnd_position, 0, position, CurrentTime, requested_action);
 		}
 
 		void _m_xdnd_leave()
@@ -292,19 +279,30 @@ namespace nana{
 
 			if(target_)
 			{
-				std::cout<<"Send: XdndLeave"<<std::endl;
+#ifdef DEBUG_XDND_PROTOCOL
+				std::cout<<"Send: XdndLeave, reset ExecutedAction"<<std::endl;
+#endif
 				_m_client_msg(spec_.atombase().xdnd_leave, 0, 0, 0);
 				target_ = 0;
+				executed_action_ = 0;
 			}
 		}
 
-		void _m_xdnd_drop()
+		bool _m_xdnd_drop()
 		{
 			::XUndefineCursor(spec_.open_display(), source_);
 			xstate_ = xdnd_status_state::drop;
-			std::cout<<"Send: XdndDrop"<<std::endl;
-			_m_client_msg(spec_.atombase().xdnd_drop, 0, CurrentTime, 0);
+
+			if(executed_action_)
+			{
+#ifdef DEBUG_XDND_PROTOCOL
+				std::cout<<"Send: XdndDrop"<<std::endl;
+#endif
+				_m_client_msg(spec_.atombase().xdnd_drop, 0, CurrentTime, 0);
+			}
 			target_ = 0;
+
+			return (executed_action_ != 0);
 		}
 	private:
 		//dndversion<<24, fl_XdndURIList, XA_STRING, 0
@@ -343,7 +341,9 @@ namespace nana{
 			if ((actual == XA_ATOM) && (format==32) && count && data)
 			{
 				version = int(*(Atom*)data);
+#ifdef DEBUG_XDND_PROTOCOL
 				std::cout<<"Get:XdndAware version:"<<version<<std::endl;
+#endif				
 			}
 
 			if (data)
@@ -355,39 +355,17 @@ namespace nana{
 		{
 			::XDefineCursor(spec_.open_display(), source_, (accepted ? cursor_.dnd_move : cursor_.dnd_none));
 		}
-
-#if 0 //deprecated
-		//Check if window has a property
-		static bool _m_has_property(Window wd, Atom atom, unsigned char** data)
-		{
-	        Atom type = 0;
-	        int f;
-	        unsigned long n, a;
-
-	        unsigned char * data_back = nullptr;
-	        if(nullptr == data)
-	        	data = &data_back;
-
-	        if (::XGetWindowProperty(spec_.open_display(), wd, atom, 0, 0, False, AnyPropertyType, &type, &f,&n,&a,data) == Success)
-	        {
-	        	//release the *data if failed to get the property or unspecified output buffer
-	        	if((0 == type) || data_back)
-	        		::XFree(*data);
-
-			    return (0 != type);
-	        }
-	        return false;
-		}
-#endif
 	private:
 		nana::detail::platform_spec& spec_;
-		Window const source_;
-		Window target_{ 0 };
+		Window 	const source_;
+		Window 	target_{ 0 };
+		Atom 	executed_action_{ 0 };
 		xdnd_status_state xstate_{xdnd_status_state::normal};
 		std::map<Window, nana::rectangle> mvout_table_;
 
 		struct cursor_rep
 		{
+			Cursor dnd_copy{ 0 };
 			Cursor dnd_move{ 0 };
 			Cursor dnd_none{ 0 };
 		}cursor_;

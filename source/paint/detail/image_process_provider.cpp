@@ -1,7 +1,7 @@
 #include <nana/push_ignore_diagnostic>
 #include <nana/paint/detail/image_process_provider.hpp>
 
-#include <nana/paint/detail/image_processor.hpp>
+#include "image_processor.hpp"
 
 namespace nana
 {

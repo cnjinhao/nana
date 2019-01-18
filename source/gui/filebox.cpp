@@ -1099,7 +1099,12 @@ namespace nana
 		window owner;
 		bool open_or_save;
 
+#if defined(NANA_WINDOWS)
+		bool allow_multi_select;
+		std::vector<std::string> files;
+#else
 		std::string file;
+#endif
 		std::string title;
 		std::string path;
 		std::vector<filter> filters;
@@ -1116,6 +1121,7 @@ namespace nana
 		impl_->owner = owner;
 		impl_->open_or_save = open;
 #if defined(NANA_WINDOWS)
+		impl_->allow_multi_select = false;
 		auto len = ::GetCurrentDirectory(0, nullptr);
 		if(len)
 		{
@@ -1172,7 +1178,11 @@ namespace nana
 
 	filebox& filebox::init_file(const std::string& ifstr)
 	{
+#if defined(NANA_WINDOWS)
+		impl_->files = {ifstr};
+#else
 		impl_->file = ifstr;
+#endif
 		return *this;
 	}
 
@@ -1183,22 +1193,41 @@ namespace nana
 		return *this;
 	}
 
-	std::string filebox::path() const
+	const std::string& filebox::path() const
 	{
 		return impl_->path;
 	}
 
-	std::string filebox::file() const
+#if defined(NANA_WINDOWS)
+	const std::string& filebox::file() const
+	{
+		if(impl_->files.empty())
+		{
+			static const std::string empty = "";
+			return empty;
+		}
+		else
+		{
+			return impl_->files.front();
+		}
+	}
+
+	const std::vector<std::string>& filebox::files() const
+	{
+		return impl_->files;
+	}
+#else
+	const std::string& filebox::file() const
 	{
 		return impl_->file;
 	}
+#endif
 
 	bool filebox::show() const
 	{
 #if defined(NANA_WINDOWS)
-		auto winitfile = to_wstring(impl_->file);
-		std::wstring wfile(winitfile);
-		wfile.resize(520);
+		std::wstring wfile(impl_->files.empty() ? L"" : to_wstring(impl_->files.front()));
+		wfile.resize(impl_->allow_multi_select ? (520 + 32*256) : 520);
 
 		OPENFILENAME ofn;
 		memset(&ofn, 0, sizeof ofn);
@@ -1263,6 +1292,10 @@ namespace nana
 		if (!impl_->open_or_save)
 			ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
 		ofn.Flags |= OFN_NOCHANGEDIR;
+		if(impl_->allow_multi_select)
+		{
+			ofn.Flags |= (OFN_ALLOWMULTISELECT | OFN_EXPLORER);
+		}
 
 		{
 			internal_revert_guard revert;
@@ -1270,8 +1303,33 @@ namespace nana
 				return false;
 		}
 
-		wfile.resize(std::wcslen(wfile.data()));
-		impl_->file = to_utf8(wfile);
+		if(impl_->allow_multi_select)
+		{
+			wchar_t* str = ofn.lpstrFile;
+			std::wstring dir = str;
+			str += (dir.length() + 1);
+			impl_->files.clear();
+			while(*str)
+			{
+				std::wstring filename = str;
+				std::wstring file_path = dir + L"\\" + filename;
+				impl_->files.emplace_back(to_utf8(file_path));
+				str += (filename.length() + 1);
+			}
+			impl_->path = to_utf8(dir);
+		}
+		else
+		{
+			wfile.resize(std::wcslen(wfile.data()));
+			auto file = to_utf8(wfile);
+			impl_->files = {file};
+			auto tpos = file.find_last_of("\\/");
+			if(tpos != file.npos)
+				impl_->path = file.substr(0, tpos);
+			else
+				impl_->path.clear();
+		}
+
 #elif defined(NANA_POSIX)
 		using mode = filebox_implement::mode;
 		filebox_implement fb(impl_->owner, (impl_->open_or_save ? mode::open_file : mode::write_file), impl_->title);
@@ -1300,16 +1358,23 @@ namespace nana
 		API::modal_window(fb);
 		if(false == fb.file(impl_->file))
 			return false;
-#endif
 		auto tpos = impl_->file.find_last_of("\\/");
 		if(tpos != impl_->file.npos)
 			impl_->path = impl_->file.substr(0, tpos);
 		else
 			impl_->path.clear();
+#endif
 
 		return true;
-	}//end class filebox
-
+	}
+	
+#if defined(NANA_WINDOWS)
+	void filebox::allow_multi_select(bool allow)
+	{
+		impl_->allow_multi_select = allow;
+	}
+#endif
+	//end class filebox
 
 	//class directory picker
 	struct folderbox::implement

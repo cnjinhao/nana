@@ -1091,6 +1091,12 @@ namespace detail
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false) return false;
 
+			if ((wd->other.category == category::flags::root) && wd->is_draw_through())
+			{
+				native_interface::refresh_window(wd->root);
+				return true;
+			}
+
 			if (wd->displayed())
 			{
 				using paint_operation = window_layer::paint_operation;
