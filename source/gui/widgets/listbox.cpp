@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -4110,11 +4110,13 @@ namespace nana
 					essence_->draw_peripheral();
 				}
 
+				// In mouse move event, it cancels the msup_deselect if the listbox is draggable or it started the mouse selection.
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
 					using item_state = essence::item_state;
 					using parts = essence::parts;
 
+					//Don't deselect the items if the listbox is draggable
 					if ((operation_states::msup_deselect == essence_->operation.state) && API::dev::window_draggable(arg.window_handle))
 						essence_->operation.state = operation_states::none;
 
@@ -4168,6 +4170,9 @@ namespace nana
 					if (essence_->mouse_selection.started)
 					{
 						essence_->update_mouse_selection(arg.pos);
+
+						//Don't deselect items if the mouse selection is started
+						essence_->operation.state = operation_states::none;
 						need_refresh = true;
 					}
 
@@ -4411,7 +4416,7 @@ namespace nana
 						essence_->stop_mouse_selection();
 						need_refresh = true;
 					}
-
+					
 					if (operation_states::msup_deselect == essence_->operation.state)
 					{
 						essence_->operation.state = operation_states::none;
