@@ -130,7 +130,7 @@ namespace nana
 						if (!_m_foreach_visual_line(graph, rs))
 							break;
 
-						rs.pos.y += static_cast<int>(rs.vslines.back().extent_height_px);
+						//Now the y-position of rs has been modified to next line.
 					}
 
 					if (transient_.current_font != pre_font)
@@ -531,10 +531,6 @@ namespace nana
 
 				bool _m_foreach_visual_line(graph_reference graph, render_status& rs)
 				{
-					std::wstring text;
-					
-					content_element_iterator block_start;
-
 					auto const bottom = static_cast<int>(graph.height()) - 1;
 
 					for (auto & vsline : rs.vslines)

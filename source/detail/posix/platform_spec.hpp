@@ -159,6 +159,8 @@ namespace detail
 		Atom xdnd_position;
 		Atom xdnd_status;
 		Atom xdnd_action_copy;
+		Atom xdnd_action_move;
+		Atom xdnd_action_link;
 		Atom xdnd_drop;
 		Atom xdnd_selection;
 		Atom xdnd_typelist;

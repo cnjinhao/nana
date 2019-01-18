@@ -35,12 +35,22 @@ namespace nana{
 	}//end namespace drawerbase
 
 	class group
-		: public widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>
+		: public widget_object<category::widget_tag,
+		                       drawerbase::panel::drawer,
+		                       general_events,
+		                       drawerbase::group::scheme>
 	{
 		struct implement;
 	public:
 		using field_reference = place::field_reference;
 		constexpr static const std::size_t npos = static_cast<std::size_t>(-1);
+
+		enum class background_mode
+		{
+			none,
+			transparent,
+			blending
+		};
 
 		/// The default construction
 		group();
@@ -49,11 +59,10 @@ namespace nana{
 		group(window parent, const rectangle& = {}, bool visible = true);
 
 		///  The construction that creates the widget and set the titel or caption
-
-		group(window			parent,		///< a handle to the parent
-			  ::std::string	titel,		///< caption of the group
+		group(window			parent,		        ///< a handle to the parent
+			  ::std::string	    titel,		        ///< caption of the group
 			  bool				formatted = false,  ///< Enable/disable the formatted text for the title
-			  unsigned			gap = 2,			///< betwen the content  and the external limit
+			  unsigned			gap = 2,			///< betwen the content and the external limit
 			  const rectangle&	r = {} ,
 			  bool				visible = true
 		     );
@@ -66,7 +75,8 @@ namespace nana{
 		checkbox& add_option(::std::string);
 
 		/// Modifies the alignment of the title
-		void caption_align(align position);
+		group& caption_align(align position);
+		group& caption_background_mode(background_mode mode);
 
 		/// Enables/disables the radio mode which is single selection
 		group& radio_mode(bool);

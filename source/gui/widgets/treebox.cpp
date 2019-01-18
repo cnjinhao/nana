@@ -1522,11 +1522,12 @@ namespace nana
 					{
 						const nana::paint::image * img = nullptr;
 						auto & item_attr = compset->item_attribute();
-						if (item_attr.mouse_pointed)
-							img = &(item_attr.icon_hover);
-						else if (item_attr.expended)
-							img = &(item_attr.icon_expanded);
 
+						if (item_attr.expended)
+							img = &(item_attr.icon_expanded);
+						else if (item_attr.mouse_pointed)
+							img = &(item_attr.icon_hover);
+			
 						if((nullptr == img) || img->empty())
 							img = &(item_attr.icon_normal);
 

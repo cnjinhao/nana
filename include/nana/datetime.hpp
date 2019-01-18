@@ -27,7 +27,7 @@ namespace nana
 		};
 
 		date();					///< the initialized date is today.
-		date(const std::tm&);
+		explicit date(const std::tm&);
 		date(int year, int month, int day);
 
 		date operator - (int off) const;
@@ -44,8 +44,8 @@ namespace nana
 		void set(const std::tm&);
 
 		static int day_of_week(int year, int month, int day);
-		static unsigned year_days(unsigned year);	///< the number of days in the specified year.
-		static unsigned month_days(unsigned year, unsigned month);	///< the number of days in the specified month.
+		static unsigned year_days(const unsigned year);	///< the number of days in the specified year.
+		static unsigned month_days(const unsigned year, const unsigned month);	///< the number of days in the specified month.
 		static unsigned day_in_year(unsigned y, unsigned m, unsigned d);	///< Returns the index of the specified day in this year, at range[1, 365] or [1, 366]
 	private:
 		date _m_add(unsigned x) const;

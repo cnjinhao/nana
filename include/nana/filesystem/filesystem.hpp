@@ -175,7 +175,7 @@ namespace nana  { namespace experimental { namespace filesystem
 		unknown = 0xFFFF	///<  not known, such as when a file_status object is created without specifying the permissions
 	};
     //enum class copy_options;
-    
+
     enum class directory_options
     {
     	none,
@@ -538,12 +538,19 @@ namespace std {
 	namespace filesystem {
 		using namespace std::experimental::filesystem;
 
-#if (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
+#if defined(NANA_FILESYSTEM_FORCE) || \
+    (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
 		path absolute(const path& p);
 		path absolute(const path& p, std::error_code& err);
 
 		path canonical(const path& p);
 		path canonical(const path& p, std::error_code& err);
+#endif
+
+#if defined(NANA_FILESYSTEM_FORCE) || defined(NANA_MINGW)
+        bool exists( std::filesystem::file_status s ) noexcept;
+        bool exists( const std::filesystem::path& p );
+        bool exists( const std::filesystem::path& p, std::error_code& ec ) noexcept;
 #endif
 	}
 } // std

@@ -1292,7 +1292,10 @@ the nana::detail::basic_window member pointer scheme
 \example listbox_Resolver.cpp
 */
 	class listbox
-		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
+		:	public widget_object<category::widget_tag,
+		                         drawerbase::listbox::trigger,
+		                         drawerbase::listbox::listbox_events,
+		                         drawerbase::listbox::scheme>,
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:

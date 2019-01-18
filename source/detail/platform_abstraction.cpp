@@ -158,7 +158,7 @@ namespace nana
 		: public font_interface
 	{
 	public:
-		using path_type = std::experimental::filesystem::path;
+		using path_type = std::filesystem::path;
 
 		internal_font(const path_type& ttf, const std::string& font_family, double font_size, const font_style& fs, native_font_type native_font):
 			ttf_(ttf),
