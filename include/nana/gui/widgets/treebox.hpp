@@ -347,13 +347,30 @@ namespace nana
 				basic_event<arg_treebox> selected; ///< a user selects or unselects a node
 				basic_event<arg_treebox> hovered;  ///< a user moves the cursor over a node
 			};
+
+
+			struct scheme
+				: public widget_geometrics
+			{
+				color_proxy item_bg_selected{ static_cast<color_rgb>(0xD5EFFC) };  ///< item selected: background color
+				color_proxy item_fg_selected{ static_cast<color_rgb>(0x99DEFD) };  ///< item selected: foreground color
+				color_proxy item_bg_highlighted{ static_cast<color_rgb>(0xE8F5FD) };  ///< item highlighted: background color
+				color_proxy item_fg_highlighted{ static_cast<color_rgb>(0xD8F0FA) };  ///< item highlighted: foreground color
+				color_proxy item_bg_selected_and_highlighted{ static_cast<color_rgb>(0xC4E8FA) };  ///< item selected and highlighted: background color
+				color_proxy item_fg_selected_and_highlighted{ static_cast<color_rgb>(0xB6E6FB) };  ///< item selected and highlighted: foreground color
+
+
+				unsigned item_offset{ 16 };
+				unsigned text_offset{ 4 };
+				unsigned indent_displacement{ 18 }; ///< children position displacement in pixels (def=18 (before was 10))
+			};
 		}//end namespace treebox
 	}//end namespace drawerbase
 
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
     /// See also in [documentation](http://nanapro.org/en-us/documentation/widgets/treebox.htm)
     class treebox
-		:public widget_object < category::widget_tag, drawerbase::treebox::trigger, drawerbase::treebox::treebox_events>
+		:public widget_object <category::widget_tag, drawerbase::treebox::trigger, drawerbase::treebox::treebox_events, drawerbase::treebox::scheme>
 	{
 	public:
         /// A type refers to the item and is also used to iterate through the nodes.

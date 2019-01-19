@@ -238,11 +238,11 @@ namespace nana
 						switch (affect)
 						{
 						case 1:
-							pos_.x += impl_->shape.indent_pixels;
+							pos_.x += impl_->data.scheme_ptr->indent_displacement;
 							break;
 						default:
 							if (affect >= 2)
-								pos_.x -= impl_->shape.indent_pixels * (affect - 1);
+								pos_.x -= impl_->data.scheme_ptr->indent_displacement * (affect - 1);
 						}
 
 						auto & comp_placer = impl_->data.comp_placer;
@@ -301,6 +301,7 @@ namespace nana
 				{
 					nana::paint::graphics * graph;
 					::nana::treebox * widget_ptr;
+					::nana::treebox::scheme_type* scheme_ptr;
 					trigger * trigger_ptr;
 
 					pat::cloneable<compset_placer_interface> comp_placer;
@@ -310,13 +311,11 @@ namespace nana
 
 				struct shape_tag
 				{
-					nana::upoint border;
 					std::shared_ptr<nana::scroll<true>> scroll;
 
 					mutable std::map<std::string, node_image_tag> image_table;
 
 					tree_cont_type::node_type * first; //The node at the top of screen
-					int indent_pixels;
 					int offset_x;
 				}shape;
 
@@ -356,7 +355,6 @@ namespace nana
 					data.stop_drawing	= false;
 
 					shape.first = nullptr;
-					shape.indent_pixels = 10;
 					shape.offset_x = 0;
 					shape.scroll = std::make_shared<nana::scroll<true>>();
 
@@ -451,7 +449,7 @@ namespace nana
 								data.graph->rectangle(true, data.widget_ptr->bgcolor());
 
 							//Draw tree
-							attr.tree_cont.for_each(shape.first, item_rendering_director(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, margin_top_bottom())));
+							attr.tree_cont.for_each(shape.first, item_rendering_director(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * data.scheme_ptr->indent_displacement) - shape.offset_x, margin_top_bottom())));
 
 							if (!ignore_update)
 								API::update_window(data.widget_ptr->handle());
@@ -711,7 +709,7 @@ namespace nana
 					case 3:
 						//param is the begin pos of an item in absolute.
 						{
-							int beg = static_cast<int>(tree.indent_size(node) * shape.indent_pixels) - shape.offset_x;
+							int beg = static_cast<int>(tree.indent_size(node) * data.scheme_ptr->indent_displacement) - shape.offset_x;
 							int end = beg + static_cast<int>(node_w_pixels(node));
 
 							bool take_adjust = false;
@@ -910,7 +908,7 @@ namespace nana
 
 				bool track_mouse(int x, int y)
 				{
-					int xpos = attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = attr.tree_cont.indent_size(shape.first) * data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(this, xpos, x, y);
 					attr.tree_cont.template for_each<item_locator&>(shape.first, nl);
 
@@ -1449,37 +1447,42 @@ namespace nana
 
 					if(compset->comp_attribute(component::bground, attr))
 					{
-						const ::nana::color color_table[][2] = { { { 0xE8, 0xF5, 0xFD }, { 0xD8, 0xF0, 0xFA } }, //highlighted
-						{ { 0xC4, 0xE8, 0xFA }, { 0xB6, 0xE6, 0xFB } }, //Selected and highlighted
-						{ { 0xD5, 0xEF, 0xFC }, {0x99, 0xDE, 0xFD } }  //Selected but not highlighted
-														};
+						auto scheme_ptr = static_cast<::nana::treebox::scheme_type*>(API::dev::get_scheme(window_handle_));
 
-						const ::nana::color *clrptr = nullptr;
+						const ::nana::color_proxy *bg_ptr = nullptr, *fg_ptr = nullptr;
 						if(compset->item_attribute().mouse_pointed)
 						{
 							if(compset->item_attribute().selected)
-								clrptr = color_table[1];
+							{
+								bg_ptr = &scheme_ptr->item_bg_selected_and_highlighted;
+								fg_ptr = &scheme_ptr->item_fg_selected_and_highlighted;
+							}
 							else
-								clrptr = color_table[0];
+							{
+								bg_ptr = &scheme_ptr->item_bg_highlighted;
+								fg_ptr = &scheme_ptr->item_fg_highlighted;
+							}
 						}
 						else if(compset->item_attribute().selected)
-							clrptr = color_table[2];
+						{
+							bg_ptr = &scheme_ptr->item_bg_selected;
+							fg_ptr = &scheme_ptr->item_fg_selected;
+						}
 
-						if (clrptr)
+						if(bg_ptr)
 						{
 							if (API::is_transparent_background(window_handle_))
 							{
 								paint::graphics item_graph{ attr.area.dimension() };
-								item_graph.rectangle(false, clrptr[1]);
-								item_graph.rectangle(rectangle{attr.area.dimension()}.pare_off(1), true, *clrptr);
-
+								item_graph.rectangle(false, *fg_ptr);
+								item_graph.rectangle(rectangle{ attr.area.dimension() }.pare_off(1), true, *bg_ptr);
 
 								graph.blend(attr.area, item_graph, attr.area.position(), 0.5);
 							}
 							else
 							{
-								graph.rectangle(attr.area, false, clrptr[1]);
-								graph.rectangle(attr.area.pare_off(1), true, *clrptr);
+								graph.rectangle(attr.area, false, *fg_ptr);
+								graph.rectangle(attr.area.pare_off(1), true, *bg_ptr);
 							}
 						}
 					}
@@ -1577,10 +1580,10 @@ namespace nana
 					switch(affect)
 					{
 					case 0: break;
-					case 1: item_pos_.x += static_cast<int>(node_desc.indent_pixels); break;
+					case 1: item_pos_.x += static_cast<int>(impl_->data.scheme_ptr->indent_displacement); break;
 					default:
 						if(affect >= 2)
-							item_pos_.x -= static_cast<int>(node_desc.indent_pixels) * (affect - 1);
+							item_pos_.x -= static_cast<int>(impl_->data.scheme_ptr->indent_displacement) * (affect - 1);
 					}
 
 					impl_->assign_node_attr(node_attr_, &node);
@@ -1942,7 +1945,8 @@ namespace nana
 					impl_->data.graph = &graph;
 
 					widget.bgcolor(colors::white);
-					impl_->data.widget_ptr = static_cast< ::nana::treebox*>(&widget);
+					impl_->data.widget_ptr = static_cast<::nana::treebox*>(&widget);
+					impl_->data.scheme_ptr = static_cast<::nana::treebox::scheme_type*>(API::dev::get_scheme(widget));
 					widget.caption("nana treebox");
 				}
 
@@ -1961,7 +1965,7 @@ namespace nana
 				{
 					auto & shape = impl_->shape;
 
-					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * impl_->data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
@@ -1986,7 +1990,7 @@ namespace nana
 				{
 					auto & shape = impl_->shape;
 
-					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * impl_->data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
@@ -2013,7 +2017,7 @@ namespace nana
 				{
 					auto & shape = impl_->shape;
 
-					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * impl_->data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
