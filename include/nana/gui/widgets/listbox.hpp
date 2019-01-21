@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -1538,6 +1538,7 @@ the nana::detail::basic_window member pointer scheme
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
+		bool is_single_enabled(bool for_selection) const noexcept;	///< Determines whether the single selection/check is enabled.
 		export_options& def_export_options();
 
 

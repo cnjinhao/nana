@@ -1850,6 +1850,11 @@ namespace nana
 					(for_selection ? single_selection_ : single_check_) = false;
 				}
 
+				bool is_single_enabled(bool for_selection) const noexcept
+				{
+					return (for_selection ? single_selection_ : single_check_);
+				}
+
 				size_type size_item(size_type cat) const
 				{
 					return get(cat)->items.size();
@@ -5959,7 +5964,14 @@ namespace nana
 
 		void listbox::disable_single(bool for_selection)
 		{
+			internal_scope_guard lock;
 			_m_ess().lister.disable_single(for_selection);
+		}
+
+		bool listbox::is_single_enabled(bool for_selection) const noexcept
+		{
+			internal_scope_guard lock;
+			return _m_ess().lister.is_single_enabled(for_selection);
 		}
 
         listbox::export_options& listbox::def_export_options()
