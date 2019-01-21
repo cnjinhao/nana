@@ -60,8 +60,26 @@ namespace nana
 				::std::string text;
 			};
 
+			struct scheme
+				: public widget_geometrics
+			{
+				color_proxy item_bg_selected{ static_cast<color_rgb>(0xD5EFFC) };  ///< item selected: background color
+				color_proxy item_fg_selected{ static_cast<color_rgb>(0x99DEFD) };  ///< item selected: foreground color
+				color_proxy item_bg_highlighted{ static_cast<color_rgb>(0xE8F5FD) };  ///< item highlighted: background color
+				color_proxy item_fg_highlighted{ static_cast<color_rgb>(0xD8F0FA) };  ///< item highlighted: foreground color
+				color_proxy item_bg_selected_and_highlighted{ static_cast<color_rgb>(0xC4E8FA) };  ///< item selected and highlighted: background color
+				color_proxy item_fg_selected_and_highlighted{ static_cast<color_rgb>(0xB6E6FB) };  ///< item selected and highlighted: foreground color
+
+				unsigned item_offset{ 16 }; ///< item position displacement in pixels
+				unsigned text_offset{ 4 }; ///< text position displacement in pixels
+				unsigned icon_size{ 16 }; ///< icon size in pixels
+				unsigned crook_size{ 16 }; ///< crook size in pixels (TODO: the function that draw the crook doesn't scale the shape)
+
+				unsigned indent_displacement{ 18 }; ///< children position displacement in pixels (def=18 (before was 10))
+			};
+
 			typedef widgets::detail::compset<component, node_attribute> compset_interface;
-			typedef widgets::detail::compset_placer<component, node_attribute> compset_placer_interface;
+			typedef widgets::detail::compset_placer<component, node_attribute, scheme> compset_placer_interface;
 			
 			class renderer_interface
 			{
@@ -346,23 +364,6 @@ namespace nana
 				basic_event<arg_treebox> checked;  ///< a user checks or unchecks a node
 				basic_event<arg_treebox> selected; ///< a user selects or unselects a node
 				basic_event<arg_treebox> hovered;  ///< a user moves the cursor over a node
-			};
-
-
-			struct scheme
-				: public widget_geometrics
-			{
-				color_proxy item_bg_selected{ static_cast<color_rgb>(0xD5EFFC) };  ///< item selected: background color
-				color_proxy item_fg_selected{ static_cast<color_rgb>(0x99DEFD) };  ///< item selected: foreground color
-				color_proxy item_bg_highlighted{ static_cast<color_rgb>(0xE8F5FD) };  ///< item highlighted: background color
-				color_proxy item_fg_highlighted{ static_cast<color_rgb>(0xD8F0FA) };  ///< item highlighted: foreground color
-				color_proxy item_bg_selected_and_highlighted{ static_cast<color_rgb>(0xC4E8FA) };  ///< item selected and highlighted: background color
-				color_proxy item_fg_selected_and_highlighted{ static_cast<color_rgb>(0xB6E6FB) };  ///< item selected and highlighted: foreground color
-
-
-				unsigned item_offset{ 16 };
-				unsigned text_offset{ 4 };
-				unsigned indent_displacement{ 18 }; ///< children position displacement in pixels (def=18 (before was 10))
 			};
 		}//end namespace treebox
 	}//end namespace drawerbase
