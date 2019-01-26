@@ -2011,6 +2011,8 @@ namespace nana
 				{
 					bool	started{ false };
 					bool	reverse_selection{ false };
+					bool	scroll_direction;
+					bool	deselect_when_start_to_move;
 
 					point	screen_pos;
 					point	begin_position;	///< Logical position to the 
@@ -2018,9 +2020,18 @@ namespace nana
 					index_pairs already_selected;
 					index_pairs selections;
 
-					bool scroll_direction;
 					unsigned scroll_step{ 1 };
 					unsigned mouse_move_timestamp{ 0 };
+
+					bool is_already_selected(const index_pair& abs_pos) const noexcept
+					{
+						return (already_selected.cend() != std::find(already_selected.cbegin(), already_selected.cend(), abs_pos));
+					}
+
+					bool is_selected(const index_pair& abs_pos) const noexcept
+					{
+						return (selections.cend() != std::find(selections.cbegin(), selections.cend(), abs_pos));
+					}
 				}mouse_selection;
 
 
@@ -2118,6 +2129,7 @@ namespace nana
 					mouse_selection.started = true;
 					mouse_selection.begin_position = logic_pos;
 					mouse_selection.end_position = logic_pos;
+					mouse_selection.deselect_when_start_to_move = true;
 
 					if (arg.ctrl || arg.shift)
 					{
@@ -2132,6 +2144,17 @@ namespace nana
 					//Don't update if it is not started
 					if (!mouse_selection.started)
 						return;
+
+					// When the button is pressed and start to move the mouse, the listbox should deselect all items.
+					// But when ctrl is clicked
+					if (mouse_selection.deselect_when_start_to_move)
+					{
+						mouse_selection.deselect_when_start_to_move = false;
+						if (mouse_selection.already_selected.empty())
+							lister.select_for_all(false);
+
+						mouse_selection.selections.clear();
+					}
 
 					mouse_selection.screen_pos = screen_pos;
 
@@ -2148,7 +2171,7 @@ namespace nana
 
 					mouse_selection.end_position = logic_pos;
 
-					bool cancel_selections = true;
+					std::vector<std::pair<index_pair, bool>> selections;
 
 					auto content_x = coordinate_cast({ columns_range().first, 0 }, true).x;
 					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x &&
@@ -2159,18 +2182,18 @@ namespace nana
 						auto begin = lister.advance(lister.first(), begin_off);
 						if (!begin.empty())
 						{
-							std::vector<std::pair<index_pair, bool>> selections;
-
 							if ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off))
 							{
 								//The range [begin_off, last_off] is a range of box selection
 								auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
 								auto last = lister.advance(lister.first(), last_off);
 
+								//Tries to select the items in the box, then returns the items with their previous selected states
 								selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
-									if (this->mouse_selection.reverse_selection)
+									if (mouse_selection.reverse_selection)
 									{
-										if (mouse_selection.already_selected.cend() != std::find(mouse_selection.already_selected.cbegin(), mouse_selection.already_selected.cend(), abs_pos))
+										//Deselects the items in the box which has been already selected
+										if(mouse_selection.is_already_selected(abs_pos))
 										{
 											item_proxy{ this, abs_pos }.select(false);
 											return false;
@@ -2181,21 +2204,21 @@ namespace nana
 
 								for (auto & pair : selections)
 								{
+									//Continue if the previous state is selected. It indicates the item now is not selected.
 									if (pair.second)
 										continue;
 
-									if (mouse_selection.selections.cend() ==
-										std::find(mouse_selection.selections.cbegin(), mouse_selection.selections.cend(), pair.first))
-									{
+									//Add the item to selections container.
+									if(!mouse_selection.is_selected(pair.first))
 										mouse_selection.selections.push_back(pair.first);
-									}
 								}
 
+								//Deselects the items which are in mouse_selection.selections but not in selections.
+								//Eq to mouse_selection.selections = selections
 #ifdef _MSC_VER
 								for (auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
 #else
 								for(auto i = mouse_selection.selections.begin(); i != mouse_selection.selections.end();)
-
 #endif
 								{
 									auto & selpos = *i;
@@ -2209,30 +2232,45 @@ namespace nana
 									else
 										++i;
 								}
-
-								cancel_selections = false;
 							}
 						}
 					}
 
-					if (cancel_selections)
+					//Restores an already selected item if it is not in selections.
+					for (auto& abs_pos : mouse_selection.already_selected)
 					{
-						if (!mouse_selection.already_selected.empty())
+						if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), [abs_pos](const std::pair<index_pair, bool>& rhs) {
+							return (abs_pos == rhs.first);
+							}))
 						{
-							for (auto & pos : mouse_selection.selections)
-								item_proxy(this, pos).select(false);
-
-							//Don't restore the already selections if it is reverse selection(pressing shift). Behaves like Windows Explorer.
-							if (!mouse_selection.reverse_selection)
+							item_proxy m{ this, abs_pos };
+							if (!m.selected())
 							{
-								for (auto & abs_pos : mouse_selection.already_selected)
-									item_proxy(this, abs_pos).select(true);
+								m.select(true);
+								//Add the item to selections container.
+								if(!mouse_selection.is_selected(abs_pos))
+									mouse_selection.selections.push_back(abs_pos);
 							}
 						}
-						else
-							lister.select_for_all(false);
+					}
 
-						mouse_selection.selections.clear();
+					//Deselects the item which is not in already_selected and selections but in mouse_selection.selections
+					for(auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
+					{
+						auto abs_pos = *i;
+
+						bool is_box_selected = (selections.cend() != std::find_if(selections.cbegin(), selections.cend(), [abs_pos](const std::pair<index_pair, bool>& rhs) {
+							return (abs_pos == rhs.first);
+							}));
+
+						if (is_box_selected || mouse_selection.is_already_selected(abs_pos))
+						{
+							++i;
+							continue;
+						}
+
+						item_proxy{ this, abs_pos }.select(false);
+						i = mouse_selection.selections.erase(i);
 					}
 				}
 
@@ -4374,7 +4412,7 @@ namespace nana
 						if (arg.is_left_button() && (!lister.single_status(true)))
 							essence_->start_mouse_selection(arg);
 
-						//Deselection of all items is deferred to the mouse up event when ctrl or shift is not pressed
+						//Deselecting all items is deferred to the mouse up event when ctrl or shift is not pressed
 						//Pressing ctrl or shift is to selects other items without deselecting current selections.
 						if (!(arg.ctrl || arg.shift))
 						{
