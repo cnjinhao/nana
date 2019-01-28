@@ -46,7 +46,7 @@ namespace nana{	namespace widgets{ namespace detail
 	};
 
 	/// A component set placer used for specifying component position and size.
-	template<typename Component, typename ItemAttribute>
+	template<typename Component, typename ItemAttribute, typename WidgetScheme>
 	class compset_placer
 	{
 	public:
@@ -56,9 +56,21 @@ namespace nana{	namespace widgets{ namespace detail
 
 		/// A type of widget-defined item attribute.
 		typedef ItemAttribute item_attribute_t;
+
+		/// Widget scheme.
+		typedef WidgetScheme widget_scheme_t;
+
+		widget_scheme_t * wdg_scheme_ptr_{ nullptr };
+
 	public:
-		/// The destrcutor.
+		/// The destructor.
 		virtual ~compset_placer(){}
+
+		/// Init the scheme pointer
+		void init_scheme(widget_scheme_t* wdg_scheme_ptr)
+		{
+			wdg_scheme_ptr_ = wdg_scheme_ptr;
+		}
 
 		/// Enable/Disable the specified component.
 		virtual void enable(component_t, bool) = 0;
