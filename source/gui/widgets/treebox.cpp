@@ -1,7 +1,7 @@
 /*
  *	A Treebox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1330,6 +1330,10 @@ namespace nana
 			class internal_placer
 				: public compset_placer_interface
 			{
+			public:
+				internal_placer(const scheme& schm):
+					scheme_(schm)
+				{}
 			private:
 				//Implement the compset_locator_interface
 
@@ -1364,17 +1368,24 @@ namespace nana
 
 				virtual unsigned item_height(graph_reference graph) const override
 				{
-					auto m = std::max((enable_crook_ ? wdg_scheme_ptr_->crook_size : 0), (enable_icon_ ? wdg_scheme_ptr_->icon_size : 0));
+					auto m = std::max((enable_crook_ ? scheme_.crook_size : 0), (enable_icon_ ? scheme_.icon_size : 0));
+
+#if 1
+					unsigned as = 0, ds = 0, il;
+					graph.text_metrics(as, ds, il);
+					return std::max(as + ds + 8, m);
+#else
 #ifdef _nana_std_has_string_view
 					return std::max(m, graph.text_extent_size(std::wstring_view{ L"jH{", 3 }).height + 8);
 #else
 					return std::max(m, graph.text_extent_size(L"jH{", 3).height + 8);
 #endif
+#endif
 				}
 
 				virtual unsigned item_width(graph_reference graph, const item_attribute_t& attr) const override
 				{
-					return graph.text_extent_size(attr.text).width + (enable_crook_ ? wdg_scheme_ptr_->crook_size : 0) + (enable_icon_ ? wdg_scheme_ptr_ ->icon_size: 0) + (wdg_scheme_ptr_->text_offset << 1) + wdg_scheme_ptr_->item_offset;
+					return graph.text_extent_size(attr.text).width + (enable_crook_ ? scheme_.crook_size : 0) + (enable_icon_ ? scheme_.icon_size : 0) + (scheme_.text_offset << 1) + scheme_.item_offset;
 				}
 
 				// Locate a component through the specified coordinate.
@@ -1389,7 +1400,7 @@ namespace nana
 					case component_t::expander:
 						if(attr.has_children)
 						{
-							r->width = wdg_scheme_ptr_->item_offset;
+							r->width = scheme_.item_offset;
 							return true;
 						}
 						return false;
@@ -1398,26 +1409,26 @@ namespace nana
 					case component_t::crook:
 						if(enable_crook_)
 						{
-							r->x += wdg_scheme_ptr_->item_offset;
-							r->width = wdg_scheme_ptr_->crook_size;
+							r->x += scheme_.item_offset;
+							r->width = scheme_.crook_size;
 							return true;
 						}
 						return false;
 					case component_t::icon:
 						if(enable_icon_)
 						{
-							r->x += wdg_scheme_ptr_->item_offset + (enable_crook_ ? wdg_scheme_ptr_->crook_size : 0);
+							r->x += scheme_.item_offset + (enable_crook_ ? scheme_.crook_size : 0);
 							r->y = 2;
-							r->width = wdg_scheme_ptr_->icon_size;
+							r->width = scheme_.icon_size;
 							r->height -= 2;
 							return true;
 						}
 						return false;
 					case component_t::text:
 						{
-							auto text_pos = wdg_scheme_ptr_->item_offset + (enable_crook_ ? wdg_scheme_ptr_->crook_size : 0) + (enable_icon_ ? wdg_scheme_ptr_->icon_size : 0) + wdg_scheme_ptr_->text_offset;
+							auto text_pos = scheme_.item_offset + (enable_crook_ ? scheme_.crook_size : 0) + (enable_icon_ ? scheme_.icon_size : 0) + scheme_.text_offset;
 							r->x += text_pos;
-							r->width -= (text_pos + wdg_scheme_ptr_->text_offset);
+							r->width -= (text_pos + scheme_.text_offset);
 						};
 						return true;
 					default:
@@ -1426,6 +1437,7 @@ namespace nana
 					return false;
 				}
 			private:
+				const scheme& scheme_;
 				bool enable_crook_{ false };
 				bool enable_icon_{ false };
 			};
@@ -1680,7 +1692,7 @@ namespace nana
 				{
 					impl_->data.trigger_ptr = this;
 					impl_->data.renderer = nana::pat::cloneable<renderer_interface>(internal_renderer());
-					impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer());
+					//impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer());	//deprecated
 
 					impl_->adjust.timer.elapse([this]
 					{
@@ -1946,7 +1958,8 @@ namespace nana
 					widget.bgcolor(colors::white);
 					impl_->data.widget_ptr = static_cast<::nana::treebox*>(&widget);
 					impl_->data.scheme_ptr = static_cast<::nana::treebox::scheme_type*>(API::dev::get_scheme(widget));
-					impl_->data.comp_placer->init_scheme(impl_->data.scheme_ptr);
+					//impl_->data.comp_placer->init_scheme(impl_->data.scheme_ptr);	//deprecated
+					impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer{ *impl_->data.scheme_ptr });
 
 					widget.caption("nana treebox");
 				}

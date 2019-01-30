@@ -6195,8 +6195,9 @@ namespace nana
 				return;
 			std::vector<size_type> new_idx;
 			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
-			const item_proxy & ip_row=this->at(row);
+			
 			internal_scope_guard lock;
+			const item_proxy ip_row = this->at(row);
 			const nana::any *pnany=_m_ess().lister.anyobj(row,false);
 			std::sort(new_idx.begin(), new_idx.end(), [&](size_type col1,
 														  size_type col2)
@@ -6205,6 +6206,8 @@ namespace nana
 						    ip_row.text(col2), col2,
 						    pnany, reverse);
 			});
+
+			//Only change the view position of columns
 			for(size_t i=0; i<new_idx.size(); ++i)
 			{
 				move_column(new_idx[i],i+first_col);
