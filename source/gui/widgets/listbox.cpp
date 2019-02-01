@@ -6197,8 +6197,8 @@ namespace nana
 			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
 			
 			internal_scope_guard lock;
-			const item_proxy ip_row = this->at(row);
-			const nana::any *pnany=_m_ess().lister.anyobj(row,false);
+			auto ip_row = this->at(row);
+			auto pnany=_m_ess().lister.anyobj(row,false);
 			std::sort(new_idx.begin(), new_idx.end(), [&](size_type col1,
 														  size_type col2)
 			{

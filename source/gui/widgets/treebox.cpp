@@ -1966,6 +1966,8 @@ namespace nana
 
 				void trigger::detached()
 				{
+					//Reset the comp_placer, because after deteching, the scheme refered by comp_placer will be released
+					impl_->data.comp_placer.reset();
 					impl_->data.graph = nullptr;
 				}
 
