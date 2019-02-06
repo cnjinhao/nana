@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,6 +17,12 @@
  *		dankan1890(pr#158)
  *
  */
+#include <algorithm>
+#include <list>
+#include <deque>
+#include <stdexcept>
+#include <map>
+#include <iostream>
 
 #include <nana/gui/widgets/listbox.hpp>
 #include <nana/gui/widgets/panel.hpp>	//for inline widget
@@ -27,12 +33,6 @@
 #include <nana/system/dataexch.hpp>
 #include <nana/system/platform.hpp>
 #include "skeletons/content_view.hpp"
-
-#include <algorithm>
-#include <list>
-#include <deque>
-#include <stdexcept>
-#include <map>
 
 namespace nana
 {
@@ -130,17 +130,18 @@ namespace nana
 				struct column
 					: public column_interface
 				{
-					native_string_type caption;
-					unsigned width_px;
-					std::pair<unsigned, unsigned> range_width_px;
+					native_string_type caption;                     //< header title
+					unsigned width_px;                              //< column width in pixels
+					std::pair<unsigned, unsigned> range_width_px;   //< allowed width
 					bool visible_state{ true };
 
-					/// Absolute position of column when it was creating
-					size_type index;
+
+					size_type index;                          //< Absolute position of column when it was created
 
 					nana::align alignment{ nana::align::left };
 
-					std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> weak_ordering;
+					std::function<bool(const std::string&,  nana::any*,
+							           const std::string&,  nana::any*,        bool reverse)> weak_ordering;
 
 					std::shared_ptr<paint::font> font;	///< The exclusive column font
 
@@ -186,18 +187,18 @@ namespace nana
 					{
 					}
 				private:
-					//The definition is provided after essence
+					/// The definition is provided after essence
 					void _m_refresh() noexcept;
 				private:
 					essence* const ess_;
 				public:
-					//Implementation of column_interface
+					/// Implementation of column_interface
 					unsigned width() const noexcept override
 					{
 						return width_px;
 					}
 
-					// Sets the width and overrides the ranged width
+					/// Sets the width and overrides the ranged width
 					void width(unsigned pixels) noexcept override
 					{
 						width_px = pixels;
@@ -223,7 +224,7 @@ namespace nana
 						}
 					}
 
-					size_type position(bool disp_order) const noexcept override;	//The definition is provided after essence
+					size_type position(bool disp_order) const noexcept override;	//< The definition is provided after essence
 
 					std::string text() const noexcept override
 					{
@@ -440,7 +441,7 @@ namespace nana
 					throw std::invalid_argument("listbox: invalid header index");
 				}
 
-                /// find and return a ref to the column that originaly was at position "pos" previous to any list reorganization.
+                /// find and return a ref to the column that originally was at position "pos" previous to any list reorganization.
 				column& at(size_type pos, bool disp_order = false)
 				{
 					check_range(pos, cont_.size());
@@ -507,7 +508,7 @@ namespace nana
 					return{ left, 0 };
 				}
 
-				/// return the original index of the visible col currently before(in front of) or after the col originaly at index "index"
+				/// return the original index of the visible col currently before(in front of) or after the col originally at index "index"
 				size_type next(size_type index) const noexcept
 				{
 					bool found_me = false;
@@ -542,7 +543,25 @@ namespace nana
 					return pos;
 				}
                 
-				/// move the col originaly at "from" to the position currently in front (or after) the col originaly at index "to" invalidating some current index
+
+				/// move col to view pos
+				void move_to_view_pos (size_type col, size_type view, bool front) noexcept
+				{
+					if (!front) view++;
+					if (view >= cont_.size() )		return;
+
+					auto i = std::find_if( cont_.begin(),
+							               cont_.end(),
+							               [&](const column& c){return col==c.index;});
+
+					if (i==cont_.end()) return;
+
+					auto col_from = *i;
+					cont_.erase(i);
+					cont_.insert(cont_.begin()+ view, col_from);
+
+				}
+				/// move the col originally at "from" to the position currently in front (or after) the col originally at index "to" invalidating some current index
 				void move(size_type from, size_type to, bool front) noexcept
 				{
 					if ((from == to) || (from >= cont_.size()) || (to >= cont_.size()))
@@ -1850,6 +1869,11 @@ namespace nana
 					(for_selection ? single_selection_ : single_check_) = false;
 				}
 
+				bool is_single_enabled(bool for_selection) const noexcept
+				{
+					return (for_selection ? single_selection_ : single_check_);
+				}
+
 				size_type size_item(size_type cat) const
 				{
 					return get(cat)->items.size();
@@ -2006,6 +2030,8 @@ namespace nana
 				{
 					bool	started{ false };
 					bool	reverse_selection{ false };
+					bool	scroll_direction;
+					bool	deselect_when_start_to_move;
 
 					point	screen_pos;
 					point	begin_position;	///< Logical position to the 
@@ -2013,9 +2039,18 @@ namespace nana
 					index_pairs already_selected;
 					index_pairs selections;
 
-					bool scroll_direction;
 					unsigned scroll_step{ 1 };
 					unsigned mouse_move_timestamp{ 0 };
+
+					bool is_already_selected(const index_pair& abs_pos) const noexcept
+					{
+						return (already_selected.cend() != std::find(already_selected.cbegin(), already_selected.cend(), abs_pos));
+					}
+
+					bool is_selected(const index_pair& abs_pos) const noexcept
+					{
+						return (selections.cend() != std::find(selections.cbegin(), selections.cend(), abs_pos));
+					}
 				}mouse_selection;
 
 
@@ -2113,6 +2148,7 @@ namespace nana
 					mouse_selection.started = true;
 					mouse_selection.begin_position = logic_pos;
 					mouse_selection.end_position = logic_pos;
+					mouse_selection.deselect_when_start_to_move = true;
 
 					if (arg.ctrl || arg.shift)
 					{
@@ -2127,6 +2163,17 @@ namespace nana
 					//Don't update if it is not started
 					if (!mouse_selection.started)
 						return;
+
+					// When the button is pressed and start to move the mouse, the listbox should deselect all items.
+					// But when ctrl is clicked
+					if (mouse_selection.deselect_when_start_to_move)
+					{
+						mouse_selection.deselect_when_start_to_move = false;
+						if (mouse_selection.already_selected.empty())
+							lister.select_for_all(false);
+
+						mouse_selection.selections.clear();
+					}
 
 					mouse_selection.screen_pos = screen_pos;
 
@@ -2143,7 +2190,7 @@ namespace nana
 
 					mouse_selection.end_position = logic_pos;
 
-					bool cancel_selections = true;
+					std::vector<std::pair<index_pair, bool>> selections;
 
 					auto content_x = coordinate_cast({ columns_range().first, 0 }, true).x;
 					if ((std::max)(mouse_selection.end_position.x, mouse_selection.begin_position.x) >= content_x &&
@@ -2154,18 +2201,18 @@ namespace nana
 						auto begin = lister.advance(lister.first(), begin_off);
 						if (!begin.empty())
 						{
-							std::vector<std::pair<index_pair, bool>> selections;
-
 							if ((mouse_selection.end_position.y < 0) || (lister.distance(lister.first(), begin) == begin_off))
 							{
 								//The range [begin_off, last_off] is a range of box selection
 								auto last_off = (std::max)(mouse_selection.begin_position.y, mouse_selection.end_position.y) / item_height();
 								auto last = lister.advance(lister.first(), last_off);
 
+								//Tries to select the items in the box, then returns the items with their previous selected states
 								selections = lister.select_display_range_if(begin, last, false, [this](const index_pair& abs_pos) {
-									if (this->mouse_selection.reverse_selection)
+									if (mouse_selection.reverse_selection)
 									{
-										if (mouse_selection.already_selected.cend() != std::find(mouse_selection.already_selected.cbegin(), mouse_selection.already_selected.cend(), abs_pos))
+										//Deselects the items in the box which has been already selected
+										if(mouse_selection.is_already_selected(abs_pos))
 										{
 											item_proxy{ this, abs_pos }.select(false);
 											return false;
@@ -2176,21 +2223,21 @@ namespace nana
 
 								for (auto & pair : selections)
 								{
+									//Continue if the previous state is selected. It indicates the item now is not selected.
 									if (pair.second)
 										continue;
 
-									if (mouse_selection.selections.cend() ==
-										std::find(mouse_selection.selections.cbegin(), mouse_selection.selections.cend(), pair.first))
-									{
+									//Add the item to selections container.
+									if(!mouse_selection.is_selected(pair.first))
 										mouse_selection.selections.push_back(pair.first);
-									}
 								}
 
+								//Deselects the items which are in mouse_selection.selections but not in selections.
+								//Eq to mouse_selection.selections = selections
 #ifdef _MSC_VER
 								for (auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
 #else
 								for(auto i = mouse_selection.selections.begin(); i != mouse_selection.selections.end();)
-
 #endif
 								{
 									auto & selpos = *i;
@@ -2204,30 +2251,45 @@ namespace nana
 									else
 										++i;
 								}
-
-								cancel_selections = false;
 							}
 						}
 					}
 
-					if (cancel_selections)
+					//Restores an already selected item if it is not in selections.
+					for (auto& abs_pos : mouse_selection.already_selected)
 					{
-						if (!mouse_selection.already_selected.empty())
+						if (selections.cend() == std::find_if(selections.cbegin(), selections.cend(), [abs_pos](const std::pair<index_pair, bool>& rhs) {
+							return (abs_pos == rhs.first);
+							}))
 						{
-							for (auto & pos : mouse_selection.selections)
-								item_proxy(this, pos).select(false);
-
-							//Don't restore the already selections if it is reverse selection(pressing shift). Behaves like Windows Explorer.
-							if (!mouse_selection.reverse_selection)
+							item_proxy m{ this, abs_pos };
+							if (!m.selected())
 							{
-								for (auto & abs_pos : mouse_selection.already_selected)
-									item_proxy(this, abs_pos).select(true);
+								m.select(true);
+								//Add the item to selections container.
+								if(!mouse_selection.is_selected(abs_pos))
+									mouse_selection.selections.push_back(abs_pos);
 							}
 						}
-						else
-							lister.select_for_all(false);
+					}
 
-						mouse_selection.selections.clear();
+					//Deselects the item which is not in already_selected and selections but in mouse_selection.selections
+					for(auto i = mouse_selection.selections.cbegin(); i != mouse_selection.selections.cend();)
+					{
+						auto abs_pos = *i;
+
+						bool is_box_selected = (selections.cend() != std::find_if(selections.cbegin(), selections.cend(), [abs_pos](const std::pair<index_pair, bool>& rhs) {
+							return (abs_pos == rhs.first);
+							}));
+
+						if (is_box_selected || mouse_selection.is_already_selected(abs_pos))
+						{
+							++i;
+							continue;
+						}
+
+						item_proxy{ this, abs_pos }.select(false);
+						i = mouse_selection.selections.erase(i);
 					}
 				}
 
@@ -4110,11 +4172,13 @@ namespace nana
 					essence_->draw_peripheral();
 				}
 
+				// In mouse move event, it cancels the msup_deselect if the listbox is draggable or it started the mouse selection.
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
 					using item_state = essence::item_state;
 					using parts = essence::parts;
 
+					//Don't deselect the items if the listbox is draggable
 					if ((operation_states::msup_deselect == essence_->operation.state) && API::dev::window_draggable(arg.window_handle))
 						essence_->operation.state = operation_states::none;
 
@@ -4168,6 +4232,9 @@ namespace nana
 					if (essence_->mouse_selection.started)
 					{
 						essence_->update_mouse_selection(arg.pos);
+
+						//Don't deselect items if the mouse selection is started
+						essence_->operation.state = operation_states::none;
 						need_refresh = true;
 					}
 
@@ -4364,7 +4431,7 @@ namespace nana
 						if (arg.is_left_button() && (!lister.single_status(true)))
 							essence_->start_mouse_selection(arg);
 
-						//Deselection of all items is deferred to the mouse up event when ctrl or shift is not pressed
+						//Deselecting all items is deferred to the mouse up event when ctrl or shift is not pressed
 						//Pressing ctrl or shift is to selects other items without deselecting current selections.
 						if (!(arg.ctrl || arg.shift))
 						{
@@ -4411,7 +4478,7 @@ namespace nana
 						essence_->stop_mouse_selection();
 						need_refresh = true;
 					}
-
+					
 					if (operation_states::msup_deselect == essence_->operation.state)
 					{
 						essence_->operation.state = operation_states::none;
@@ -5954,7 +6021,14 @@ namespace nana
 
 		void listbox::disable_single(bool for_selection)
 		{
+			internal_scope_guard lock;
 			_m_ess().lister.disable_single(for_selection);
+		}
+
+		bool listbox::is_single_enabled(bool for_selection) const noexcept
+		{
+			internal_scope_guard lock;
+			return _m_ess().lister.is_single_enabled(for_selection);
 		}
 
         listbox::export_options& listbox::def_export_options()
@@ -6097,5 +6171,49 @@ namespace nana
 			internal_scope_guard lock;
 			return _m_ess().content_view->scroll_operation();
 		}
+
+		/// Move column to view_position
+		void listbox::move_column(size_type abs_pos, size_type view_pos)
+		{
+			internal_scope_guard lock;
+			return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
+			_m_ess().update();
+		}
+
+		/// Sort columns in range first_col to last_col inclusive using a row
+		void listbox::reorder_columns(size_type first_col,
+									  size_type last_col,
+									  index_pair row, bool reverse,
+									  std::function<bool(const std::string &cell1, size_type col1,
+														 const std::string &cell2, size_type col2,
+														 const nana::any *rowval,
+														 bool reverse)> comp)
+		{
+			if (first_col<0 || last_col<=first_col)
+				return;
+			if (last_col >= column_size())
+				return;
+			std::vector<size_type> new_idx;
+			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
+			
+			internal_scope_guard lock;
+			auto ip_row = this->at(row);
+			auto pnany=_m_ess().lister.anyobj(row,false);
+			std::sort(new_idx.begin(), new_idx.end(), [&](size_type col1,
+														  size_type col2)
+			{
+				return comp(ip_row.text(col1), col1,
+						    ip_row.text(col2), col2,
+						    pnany, reverse);
+			});
+
+			//Only change the view position of columns
+			for(size_t i=0; i<new_idx.size(); ++i)
+			{
+				move_column(new_idx[i],i+first_col);
+			}
+			_m_ess().update();
+		}
+
 	//end class listbox
 }//end namespace nana

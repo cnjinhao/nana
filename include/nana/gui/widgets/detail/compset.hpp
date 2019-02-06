@@ -1,6 +1,6 @@
 /*
  *	Concept of Component Set
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -60,17 +60,19 @@ namespace nana{	namespace widgets{ namespace detail
 		/// Widget scheme.
 		typedef WidgetScheme widget_scheme_t;
 
-		widget_scheme_t * wdg_scheme_ptr_{ nullptr };
+		//widget_scheme_t * wdg_scheme_ptr_{ nullptr };	//deprecated
 
 	public:
 		/// The destructor.
 		virtual ~compset_placer(){}
 
+		/*
 		/// Init the scheme pointer
-		void init_scheme(widget_scheme_t* wdg_scheme_ptr)
+		void init_scheme(widget_scheme_t* wdg_scheme_ptr)	//deprecated
 		{
 			wdg_scheme_ptr_ = wdg_scheme_ptr;
 		}
+		*/
 
 		/// Enable/Disable the specified component.
 		virtual void enable(component_t, bool) = 0;

@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -1461,7 +1461,19 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the number of columns
 		size_type column_size() const;
 
-		void column_resizable(bool resizable);
+		/// Move column to view_position
+		void move_column(size_type abs_pos, size_type view_pos);
+
+        /// Sort columns in range first_col to last_col inclusive using the values from a row
+        void reorder_columns(size_type first_col,
+							 size_type last_col,
+							 index_pair row, bool reverse,
+							 std::function<bool(const std::string &cell1, size_type col1,
+												const std::string &cell2, size_type col2,
+												const nana::any *rowval,
+												bool reverse)> comp);
+
+        void column_resizable(bool resizable);
 		bool column_resizable() const;
 		void column_movable(bool);
 		bool column_movable() const;
@@ -1517,7 +1529,8 @@ the nana::detail::basic_window member pointer scheme
 		
 		///Sets a strict weak ordering comparer for a column
 		void set_sort_compare(	size_type col,
-								std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> strick_ordering);
+								std::function<bool(const std::string&, nana::any*,
+								                   const std::string&, nana::any*, bool reverse)> strick_ordering);
 
 		/// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
 		void sort_col(size_type col, bool reverse = false);
@@ -1538,6 +1551,7 @@ the nana::detail::basic_window member pointer scheme
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
+		bool is_single_enabled(bool for_selection) const noexcept;	///< Determines whether the single selection/check is enabled.
 		export_options& def_export_options();
 
 

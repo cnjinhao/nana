@@ -1,7 +1,7 @@
 /*
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -216,6 +216,7 @@ namespace nana{ namespace drawerbase
 			{
 				e.uiobj->radio(false);
 				e.uiobj->react(true);
+				API::umake_event(e.eh_clicked);
 				API::umake_event(e.eh_checked);
 				API::umake_event(e.eh_destroy);
 				API::umake_event(e.eh_keyboard);
@@ -232,7 +233,7 @@ namespace nana{ namespace drawerbase
 
 			el.uiobj = &uiobj;
 
-			uiobj.events().checked.connect_unignorable([this](const arg_checkbox& arg)
+			el.eh_checked = uiobj.events().checked.connect_unignorable([this](const arg_checkbox& arg)
 			{
 				if (arg.widget->checked())
 				{
@@ -244,7 +245,7 @@ namespace nana{ namespace drawerbase
 				}
 			}, true);
 
-			el.eh_checked = uiobj.events().click.connect_unignorable([this](const arg_click& arg)
+			el.eh_clicked = uiobj.events().click.connect_unignorable([this](const arg_click& arg)
 			{
 				for (auto & i : ui_container_)
 					i.uiobj->check(arg.window_handle == i.uiobj->handle());
