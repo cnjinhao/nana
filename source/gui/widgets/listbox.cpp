@@ -3511,12 +3511,9 @@ namespace nana
 						//Set column font
 						graph.typeface(column.typeface());
 
-						unsigned ascent, descent, ileading;
-						graph.text_metrics(ascent, descent, ileading);
-
 						point text_pos{
 							column_r.x + static_cast<int>(crp.margin),
-							column_r.bottom() - static_cast<int>(crp.height + ascent + descent) / 2
+							static_cast<int>(essence_->scheme_ptr->header_padding_top)
 						};
 
 						if (align::left == column.alignment)
