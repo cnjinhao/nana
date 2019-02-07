@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,6 +28,7 @@
 #endif
 
 #include "../../paint/image_accessor.hpp"
+
 
 namespace nana{
 	namespace detail{
@@ -199,7 +200,7 @@ namespace nana{
 		namespace x11_wait
 		{
 			static Bool configure(Display *disp, XEvent *evt, char *arg)
-			{    
+			{
 			    return disp && evt && arg && (evt->type == ConfigureNotify) && (evt->xconfigure.window == *reinterpret_cast<Window*>(arg));
 			}
 
@@ -848,12 +849,17 @@ namespace nana{
 #endif
 		}
 
-		void native_interface::refresh_window(native_window_type wd)
+		void native_interface::refresh_window(native_window_type native_wd)
 		{
 #if defined(NANA_WINDOWS)
-			::InvalidateRect(reinterpret_cast<HWND>(wd), nullptr, true);
+			auto wd = reinterpret_cast<HWND>(native_wd);
+			RECT r;
+			::GetClientRect(wd, &r);
+			::InvalidateRect(wd, &r, FALSE);
 #elif defined(NANA_X11)
-			static_cast<void>(wd); //eliminate unused parameter compiler warning.
+			Display * disp = restrict::spec.open_display();
+			::XClearArea(disp, reinterpret_cast<Window>(native_wd), 0, 0, 1, 1, true);
+			::XFlush(disp);
 #endif
 		}
 
@@ -1014,15 +1020,11 @@ namespace nana{
 			auto const owner = restrict::spec.get_owner(wd);
 			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
 			{
-				auto origin = window_position(owner);
-#if 0
-				x += origin.x;
-				y += origin.y;
-#else
-				auto owner_extents = window_frame_extents(owner);
-				x += origin.x + owner_extents.left;
-				y += origin.y + owner_extents.top;
-#endif
+				int origin_x, origin_y;
+				Window child_useless_for_API;
+				::XTranslateCoordinates(disp, reinterpret_cast<Window>(owner), restrict::spec.root_window(), 0, 0, &origin_x, &origin_y, &child_useless_for_API);
+				x += origin_x;
+				y += origin_y;
 			}
 
 			::XMoveWindow(disp, reinterpret_cast<Window>(wd), x, y);
@@ -1069,7 +1071,6 @@ namespace nana{
 			XSizeHints hints;
 			nana::detail::platform_scope_guard psg;
 
-
 			//Returns if the requested rectangle is same with the current rectangle.
 			//In some X-Server versions/implementations, XMapWindow() doesn't generate
 			//a ConfigureNotify if the requested rectangle is same with the current rectangle.
@@ -1109,15 +1110,11 @@ namespace nana{
 			auto const owner = restrict::spec.get_owner(wd);
 			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
 			{
-				auto origin = window_position(owner);
-#if 0
-				x += origin.x;
-				y += origin.y;
-#else
-				auto owner_extents = window_frame_extents(owner);
-				x += origin.x + owner_extents.left;
-				y += origin.y + owner_extents.top;
-#endif
+				int origin_x, origin_y;
+				Window child_useless_for_API;
+				::XTranslateCoordinates(disp, reinterpret_cast<Window>(owner), restrict::spec.root_window(), 0, 0, &origin_x, &origin_y, &child_useless_for_API);
+				x += origin_x;
+				y += origin_y;
 			}
 
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);

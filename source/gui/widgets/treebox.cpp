@@ -1,7 +1,7 @@
 /*
  *	A Treebox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -238,11 +238,11 @@ namespace nana
 						switch (affect)
 						{
 						case 1:
-							pos_.x += impl_->shape.indent_pixels;
+							pos_.x += impl_->data.scheme_ptr->indent_displacement;
 							break;
 						default:
 							if (affect >= 2)
-								pos_.x -= impl_->shape.indent_pixels * (affect - 1);
+								pos_.x -= impl_->data.scheme_ptr->indent_displacement * (affect - 1);
 						}
 
 						auto & comp_placer = impl_->data.comp_placer;
@@ -301,6 +301,7 @@ namespace nana
 				{
 					nana::paint::graphics * graph;
 					::nana::treebox * widget_ptr;
+					::nana::treebox::scheme_type* scheme_ptr;
 					trigger * trigger_ptr;
 
 					pat::cloneable<compset_placer_interface> comp_placer;
@@ -310,13 +311,11 @@ namespace nana
 
 				struct shape_tag
 				{
-					nana::upoint border;
 					std::shared_ptr<nana::scroll<true>> scroll;
 
 					mutable std::map<std::string, node_image_tag> image_table;
 
 					tree_cont_type::node_type * first; //The node at the top of screen
-					int indent_pixels;
 					int offset_x;
 				}shape;
 
@@ -356,7 +355,6 @@ namespace nana
 					data.stop_drawing	= false;
 
 					shape.first = nullptr;
-					shape.indent_pixels = 10;
 					shape.offset_x = 0;
 					shape.scroll = std::make_shared<nana::scroll<true>>();
 
@@ -451,7 +449,7 @@ namespace nana
 								data.graph->rectangle(true, data.widget_ptr->bgcolor());
 
 							//Draw tree
-							attr.tree_cont.for_each(shape.first, item_rendering_director(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * shape.indent_pixels) - shape.offset_x, margin_top_bottom())));
+							attr.tree_cont.for_each(shape.first, item_rendering_director(this, nana::point(static_cast<int>(attr.tree_cont.indent_size(shape.first) * data.scheme_ptr->indent_displacement) - shape.offset_x, margin_top_bottom())));
 
 							if (!ignore_update)
 								API::update_window(data.widget_ptr->handle());
@@ -711,7 +709,7 @@ namespace nana
 					case 3:
 						//param is the begin pos of an item in absolute.
 						{
-							int beg = static_cast<int>(tree.indent_size(node) * shape.indent_pixels) - shape.offset_x;
+							int beg = static_cast<int>(tree.indent_size(node) * data.scheme_ptr->indent_displacement) - shape.offset_x;
 							int end = beg + static_cast<int>(node_w_pixels(node));
 
 							bool take_adjust = false;
@@ -910,7 +908,7 @@ namespace nana
 
 				bool track_mouse(int x, int y)
 				{
-					int xpos = attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = attr.tree_cont.indent_size(shape.first) * data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(this, xpos, x, y);
 					attr.tree_cont.template for_each<item_locator&>(shape.first, nl);
 
@@ -1332,8 +1330,10 @@ namespace nana
 			class internal_placer
 				: public compset_placer_interface
 			{
-				static const unsigned item_offset = 16;
-				static const unsigned text_offset = 4;
+			public:
+				internal_placer(const scheme& schm):
+					scheme_(schm)
+				{}
 			private:
 				//Implement the compset_locator_interface
 
@@ -1342,10 +1342,10 @@ namespace nana
 					switch(comp)
 					{
 					case component_t::crook:
-						pixels_crook_ = (enabled ? 16 : 0);
+						enable_crook_ = enabled;
 						break;
 					case component_t::icon:
-						pixels_icon_ = (enabled ? 16 : 0);
+						enable_icon_ = enabled;
 						break;
 					default:
 						break;
@@ -1357,9 +1357,9 @@ namespace nana
 					switch(comp)
 					{
 					case component_t::crook:
-						return (0 != pixels_crook_);
+						return enable_crook_;
 					case component_t::icon:
-						return (0 != pixels_icon_);
+						return enable_icon_;
 					default:
 						break;
 					}
@@ -1368,16 +1368,24 @@ namespace nana
 
 				virtual unsigned item_height(graph_reference graph) const override
 				{
-#ifdef _nana_std_has_string_view
-					return graph.text_extent_size(std::wstring_view{ L"jH{", 3 }).height + 8;
+					auto m = std::max((enable_crook_ ? scheme_.crook_size : 0), (enable_icon_ ? scheme_.icon_size : 0));
+
+#if 1
+					unsigned as = 0, ds = 0, il;
+					graph.text_metrics(as, ds, il);
+					return std::max(as + ds + 8, m);
 #else
-					return graph.text_extent_size(L"jH{", 3).height + 8;
+#ifdef _nana_std_has_string_view
+					return std::max(m, graph.text_extent_size(std::wstring_view{ L"jH{", 3 }).height + 8);
+#else
+					return std::max(m, graph.text_extent_size(L"jH{", 3).height + 8);
+#endif
 #endif
 				}
 
 				virtual unsigned item_width(graph_reference graph, const item_attribute_t& attr) const override
 				{
-					return graph.text_extent_size(attr.text).width + pixels_crook_ + pixels_icon_ + (text_offset << 1) + item_offset;
+					return graph.text_extent_size(attr.text).width + (enable_crook_ ? scheme_.crook_size : 0) + (enable_icon_ ? scheme_.icon_size : 0) + (scheme_.text_offset << 1) + scheme_.item_offset;
 				}
 
 				// Locate a component through the specified coordinate.
@@ -1392,35 +1400,35 @@ namespace nana
 					case component_t::expander:
 						if(attr.has_children)
 						{
-							r->width = item_offset;
+							r->width = scheme_.item_offset;
 							return true;
 						}
 						return false;
 					case component_t::bground:
 						return true;
 					case component_t::crook:
-						if(pixels_crook_)
+						if(enable_crook_)
 						{
-							r->x += item_offset;
-							r->width = pixels_crook_;
+							r->x += scheme_.item_offset;
+							r->width = scheme_.crook_size;
 							return true;
 						}
 						return false;
 					case component_t::icon:
-						if(pixels_icon_)
+						if(enable_icon_)
 						{
-							r->x += item_offset + pixels_crook_;
+							r->x += scheme_.item_offset + (enable_crook_ ? scheme_.crook_size : 0);
 							r->y = 2;
-							r->width = pixels_icon_;
+							r->width = scheme_.icon_size;
 							r->height -= 2;
 							return true;
 						}
 						return false;
 					case component_t::text:
 						{
-							auto text_pos = item_offset + pixels_crook_ + pixels_icon_ + text_offset;
+							auto text_pos = scheme_.item_offset + (enable_crook_ ? scheme_.crook_size : 0) + (enable_icon_ ? scheme_.icon_size : 0) + scheme_.text_offset;
 							r->x += text_pos;
-							r->width -= (text_pos + text_offset);
+							r->width -= (text_pos + scheme_.text_offset);
 						};
 						return true;
 					default:
@@ -1429,8 +1437,9 @@ namespace nana
 					return false;
 				}
 			private:
-				unsigned pixels_crook_{0};
-				unsigned pixels_icon_{0};
+				const scheme& scheme_;
+				bool enable_crook_{ false };
+				bool enable_icon_{ false };
 			};
 
 			class internal_renderer
@@ -1449,37 +1458,42 @@ namespace nana
 
 					if(compset->comp_attribute(component::bground, attr))
 					{
-						const ::nana::color color_table[][2] = { { { 0xE8, 0xF5, 0xFD }, { 0xD8, 0xF0, 0xFA } }, //highlighted
-						{ { 0xC4, 0xE8, 0xFA }, { 0xB6, 0xE6, 0xFB } }, //Selected and highlighted
-						{ { 0xD5, 0xEF, 0xFC }, {0x99, 0xDE, 0xFD } }  //Selected but not highlighted
-														};
+						auto scheme_ptr = static_cast<::nana::treebox::scheme_type*>(API::dev::get_scheme(window_handle_));
 
-						const ::nana::color *clrptr = nullptr;
+						const ::nana::color_proxy *bg_ptr = nullptr, *fg_ptr = nullptr;
 						if(compset->item_attribute().mouse_pointed)
 						{
 							if(compset->item_attribute().selected)
-								clrptr = color_table[1];
+							{
+								bg_ptr = &scheme_ptr->item_bg_selected_and_highlighted;
+								fg_ptr = &scheme_ptr->item_fg_selected_and_highlighted;
+							}
 							else
-								clrptr = color_table[0];
+							{
+								bg_ptr = &scheme_ptr->item_bg_highlighted;
+								fg_ptr = &scheme_ptr->item_fg_highlighted;
+							}
 						}
 						else if(compset->item_attribute().selected)
-							clrptr = color_table[2];
+						{
+							bg_ptr = &scheme_ptr->item_bg_selected;
+							fg_ptr = &scheme_ptr->item_fg_selected;
+						}
 
-						if (clrptr)
+						if(bg_ptr)
 						{
 							if (API::is_transparent_background(window_handle_))
 							{
 								paint::graphics item_graph{ attr.area.dimension() };
-								item_graph.rectangle(false, clrptr[1]);
-								item_graph.rectangle(rectangle{attr.area.dimension()}.pare_off(1), true, *clrptr);
-
+								item_graph.rectangle(false, *fg_ptr);
+								item_graph.rectangle(rectangle{ attr.area.dimension() }.pare_off(1), true, *bg_ptr);
 
 								graph.blend(attr.area, item_graph, attr.area.position(), 0.5);
 							}
 							else
 							{
-								graph.rectangle(attr.area, false, clrptr[1]);
-								graph.rectangle(attr.area.pare_off(1), true, *clrptr);
+								graph.rectangle(attr.area, false, *fg_ptr);
+								graph.rectangle(attr.area.pare_off(1), true, *bg_ptr);
 							}
 						}
 					}
@@ -1531,7 +1545,7 @@ namespace nana
 						if((nullptr == img) || img->empty())
 							img = &(item_attr.icon_normal);
 
-						if(! img->empty())
+						if(!img->empty())
 						{
 							auto size = img->size();
 							if(size.width > attr.area.width || size.height > attr.area.height)
@@ -1577,10 +1591,10 @@ namespace nana
 					switch(affect)
 					{
 					case 0: break;
-					case 1: item_pos_.x += static_cast<int>(node_desc.indent_pixels); break;
+					case 1: item_pos_.x += static_cast<int>(impl_->data.scheme_ptr->indent_displacement); break;
 					default:
 						if(affect >= 2)
-							item_pos_.x -= static_cast<int>(node_desc.indent_pixels) * (affect - 1);
+							item_pos_.x -= static_cast<int>(impl_->data.scheme_ptr->indent_displacement) * (affect - 1);
 					}
 
 					impl_->assign_node_attr(node_attr_, &node);
@@ -1678,7 +1692,7 @@ namespace nana
 				{
 					impl_->data.trigger_ptr = this;
 					impl_->data.renderer = nana::pat::cloneable<renderer_interface>(internal_renderer());
-					impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer());
+					//impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer());	//deprecated
 
 					impl_->adjust.timer.elapse([this]
 					{
@@ -1942,12 +1956,18 @@ namespace nana
 					impl_->data.graph = &graph;
 
 					widget.bgcolor(colors::white);
-					impl_->data.widget_ptr = static_cast< ::nana::treebox*>(&widget);
+					impl_->data.widget_ptr = static_cast<::nana::treebox*>(&widget);
+					impl_->data.scheme_ptr = static_cast<::nana::treebox::scheme_type*>(API::dev::get_scheme(widget));
+					//impl_->data.comp_placer->init_scheme(impl_->data.scheme_ptr);	//deprecated
+					impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer{ *impl_->data.scheme_ptr });
+
 					widget.caption("nana treebox");
 				}
 
 				void trigger::detached()
 				{
+					//Reset the comp_placer, because after deteching, the scheme refered by comp_placer will be released
+					impl_->data.comp_placer.reset();
 					impl_->data.graph = nullptr;
 				}
 
@@ -1961,7 +1981,7 @@ namespace nana
 				{
 					auto & shape = impl_->shape;
 
-					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * impl_->data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
@@ -1986,7 +2006,7 @@ namespace nana
 				{
 					auto & shape = impl_->shape;
 
-					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * impl_->data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
@@ -2013,7 +2033,7 @@ namespace nana
 				{
 					auto & shape = impl_->shape;
 
-					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * shape.indent_pixels - shape.offset_x;
+					int xpos = impl_->attr.tree_cont.indent_size(shape.first) * impl_->data.scheme_ptr->indent_displacement - shape.offset_x;
 					item_locator nl(impl_, xpos, arg.pos.x, arg.pos.y);
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
