@@ -3382,7 +3382,6 @@ namespace nana {
 				::nana::paint::graphics canvas;
 				canvas.make({ px_w, px_h });
 				canvas.typeface(graph_.typeface());
-				::nana::point canvas_text_pos;
 
 				auto ent_pos = pos;
 				const auto str_end = str + len;

@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <vector>
 
-#include <iostream> //debug
 namespace nana
 {
 	namespace detail
@@ -179,13 +178,7 @@ namespace nana
 			auto name = find_kde_theme_name();
 
 			if(name.empty())
-			{
-				name = find_gnome_theme_name();
-				std::cout<<"GNOME:"<<name<<std::endl;
 				return find_gnome_theme_name();
-			}
-
-			std::cout<<"KDE:"<<name<<std::endl;
 
 			return name;
 		}
@@ -293,13 +286,6 @@ namespace nana
 			std::vector<std::string> inherits_;
 			std::vector<std::string> directories_;
 		};
-
-		void test()
-		{
-			theme thm;
-			auto png = thm.icon("folder", 30);
-			std::cout<<"Icon Theme="<<png<<std::endl;
-		}
 
 		theme::theme():
 			path_("/usr/share/icons/"),

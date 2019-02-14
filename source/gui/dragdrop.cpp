@@ -308,66 +308,6 @@ namespace nana
 
 	class win32_dropdata : public win32com_iunknown<IDataObject, IID_IDataObject>
 	{
-#if 0 //deprecated
-		class enumer : public win32com_iunknown<IEnumFORMATETC, IID_IEnumFORMATETC>
-		{
-		public:
-			enumer(drop_data& data) :
-				data_(data)
-			{}
-
-			enumer(const enumer& rhs):
-				data_(rhs.data_),
-				cursor_(rhs.cursor_)
-			{
-			}
-		private:
-			// Implement IEnumFORMATETC
-			HRESULT Clone(IEnumFORMATETC **ppenum) override
-			{
-				*ppenum = new enumer{ *this };
-				return S_OK;
-			}
-
-			HRESULT Next(ULONG celt, FORMATETC *rgelt, ULONG *pceltFetched) override
-			{
-				HRESULT result = (cursor_ + celt <= data_.entries_.size() ? S_OK : S_FALSE);
-
-				auto const fetched = (std::min)(std::size_t(celt), data_.entries_.size() - cursor_);
-
-				for (std::size_t i = 0; i < fetched; ++i)
-					*rgelt++ = data_.entries_[cursor_++]->format;
-
-				if (pceltFetched)
-					*pceltFetched = static_cast<ULONG>(fetched);
-				else if (celt > 1)
-					return S_FALSE;
-
-				return (celt == fetched ? S_OK : S_FALSE);
-			}
-
-			HRESULT Reset() override
-			{
-				cursor_ = 0;
-				return S_OK;
-			}
-
-			HRESULT Skip(ULONG celt) override
-			{
-				if (cursor_ + celt < data_.entries_.size())
-				{
-					cursor_ += celt;
-					return S_OK;
-				}
-
-				cursor_ = data_.entries_.size();
-				return S_FALSE;
-			}
-		private:
-			drop_data & data_;
-			std::size_t cursor_;
-		};
-#endif
 	public:
 		struct data_entry
 		{
@@ -625,8 +565,6 @@ namespace nana
 
 
 #elif defined(NANA_X11)
-	constexpr int xdnd_version = 5;
-
 	class x11_dropdata
 	{
 	public:
@@ -839,16 +777,12 @@ namespace nana
 
 							auto cur_wd = API::find_window(API::cursor_position());
 
-							std::cout<<"    Hovered="<<cur_wd;
 							if(hovered_.window_handle != cur_wd)
 							{
 								hovered_.window_handle = cur_wd;
 
 								icon = (((drag_wd == cur_wd) || ddrop->has(drag_wd, cur_wd)) ? "dnd-move" : "dnd-none");
-								std::cout<<"    ICON="<<icon;
 							}
-
-							std::cout<<std::endl;
 
 							if(icon)
 							{
@@ -880,10 +814,9 @@ namespace nana
 				nana::detail::xdnd_protocol xdnd_proto{native_source};
 
 				//Not simple mode
-				_m_spec().msg_dispatch([this, ddrop, &data, drag_wd, &xdnd_proto, native_source, &atombase](const detail::msg_packet_tag& msg_pkt) mutable{
+				_m_spec().msg_dispatch([this, &data, drag_wd, &xdnd_proto](const detail::msg_packet_tag& msg_pkt) mutable{
 					if(detail::msg_packet_tag::pkt_family::xevent == msg_pkt.kind)
 					{
-						auto const disp = _m_spec().open_display();
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
 							auto pos = API::cursor_position();
@@ -906,10 +839,7 @@ namespace nana
 						}
 						else if(msg_pkt.u.xevent.type == ButtonRelease)
 						{
-							std::cout<<"ButtonRelease"<<std::endl;
 							API::release_capture(drag_wd);
-
-							std::cout<<"mouse_release"<<std::endl;
 							_m_free_cursor();
 
 							//Exits the msg loop if xdnd_proto doesn't send the XdndDrop because of refusal of the DND
@@ -1031,8 +961,7 @@ namespace nana
 			if (API::is_window(window_handle))
 			{
 				dragging = true;
-				using basic_window = ::nana::detail::basic_window;
-				auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(window_handle);
+				auto real_wd = reinterpret_cast<detail::basic_window*>(window_handle);
 				real_wd->other.dnd_state = dragdrop_status::not_ready;
 			}
 
@@ -1072,8 +1001,7 @@ namespace nana
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
 
-				using basic_window = ::nana::detail::basic_window;
-				auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(impl_->window_handle);
+				auto real_wd = reinterpret_cast<detail::basic_window*>(impl_->window_handle);
 				real_wd->other.dnd_state = dragdrop_status::ready;
 			}
 		});
@@ -1082,8 +1010,7 @@ namespace nana
 			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
 				return;
 
-			using basic_window = ::nana::detail::basic_window;
-			auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(arg.window_handle);
+			auto real_wd = reinterpret_cast<detail::basic_window*>(arg.window_handle);
 			real_wd->other.dnd_state = dragdrop_status::in_progress;
 
 			std::unique_ptr<dragdrop_service::dropdata_type> dropdata{new dragdrop_service::dropdata_type};
@@ -1190,8 +1117,7 @@ namespace nana
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
 
-				using basic_window = ::nana::detail::basic_window;
-				auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(impl_->source_handle);
+				auto real_wd = reinterpret_cast<detail::basic_window*>(impl_->source_handle);
 				real_wd->other.dnd_state = dragdrop_status::ready;
 			}
 		});
@@ -1200,27 +1126,14 @@ namespace nana
 			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
 				return;
 
-			using basic_window = ::nana::detail::basic_window;
-			auto real_wd = reinterpret_cast<::nana::detail::basic_window*>(arg.window_handle);
+			auto real_wd = reinterpret_cast<detail::basic_window*>(arg.window_handle);
 			real_wd->other.dnd_state = dragdrop_status::in_progress;
 
 			impl_->make_drop();
 
-			//deprecated
-			//auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle);
 
 			real_wd->other.dnd_state = dragdrop_status::not_ready;
 			impl_->dragging = false;
-
-			/* //deprecated
-			if (has_dropped)
-			{
-				auto drop_wd = API::find_window(API::cursor_position());
-				//auto i = impl_->targets.find(drop_wd);
-				//if ((impl_->targets.end() != i) && i->second)
-				//	i->second();
-			}
-			*/
 		});
 	}
 

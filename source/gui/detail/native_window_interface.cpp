@@ -955,14 +955,6 @@ namespace nana{
 				auto fm_extents = window_frame_extents(wd);
 				origin.x = -fm_extents.left;
 				origin.y = -fm_extents.top;
-#if 0	//deprecated
-				if(reinterpret_cast<Window>(coord_wd) != restrict::spec.root_window())
-				{
-					fm_extents = window_frame_extents(coord_wd);
-					origin.x += fm_extents.left;
-					origin.y += fm_extents.top;
-				}
-#endif
 			}
 			else
 				coord_wd = get_window(wd, window_relationship::parent);
@@ -1601,10 +1593,6 @@ namespace nana{
 			if(True == ::XTranslateCoordinates(restrict::spec.open_display(),
 													reinterpret_cast<Window>(wd), restrict::spec.root_window(), x, y, &pos.x, &pos.y, &child))
 			{
-				//deprecated
-				//auto fm_extents = window_frame_extents(wd);
-				//pos.x += fm_extents.left;
-				//pos.y += fm_extents.top;
 				return true;
 			}
 #endif
@@ -1627,11 +1615,6 @@ namespace nana{
 			Window child;
 			if(True == ::XTranslateCoordinates(restrict::spec.open_display(), restrict::spec.root_window(), reinterpret_cast<Window>(wd), x, y, &pos.x, &pos.y, &child))
 			{
-				//deprecated
-				//Now the origin of pos is the left-top corner of the window(including titlebar and border)
-				//auto fm_extents = window_frame_extents(wd);
-				//pos.x += fm_extents.left;
-				//pos.y += fm_extents.top;
 				return true;
 			}
 #endif

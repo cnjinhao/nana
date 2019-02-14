@@ -105,15 +105,8 @@ namespace nana
 			class trigger
 				:public drawer_trigger
 			{
-				//template<typename Renderer>
-				//struct basic_implement;	//deprecated
-
 				class implementation;
-
-				//class item_renderer;	//deprecated
 				class item_locator;
-
-				//typedef basic_implement<item_renderer> implement;	//deprecated
 			public:
 				struct treebox_node_type
 				{
@@ -142,16 +135,11 @@ namespace nana
 
 				pat::cloneable<renderer_interface>& renderer() const;
 
-				//void renderer(::nana::pat::cloneable<renderer_interface>&&);
-				//const ::nana::pat::cloneable<renderer_interface>& renderer() const;	//deprecated
 				void placer(::nana::pat::cloneable<compset_placer_interface>&&);
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
 				node_type* insert(node_type*, const std::string& key, std::string&&);
 				node_type* insert(const std::string& path, std::string&&);
-
-				//node_type * selected() const;	//deprecated
-				//void selected(node_type*);
 
 				node_image_tag& icon(const ::std::string&);
 				void icon_erase(const ::std::string&);
@@ -313,15 +301,6 @@ namespace nana
 						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
 					return *p;
 				}
-
-				/*
-				template<typename T>
-				item_proxy & value(const T& t)	//deprecated
-				{
-					_m_value() = t;
-					return *this;
-				}
-				*/
 
 				template<typename T>
 				item_proxy & value(T&& t)

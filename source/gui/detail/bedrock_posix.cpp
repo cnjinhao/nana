@@ -21,7 +21,6 @@
 #include "inner_fwd_implement.hpp"
 #include <errno.h>
 #include <algorithm>
-#include <iostream> //debug
 
 namespace nana
 {
@@ -445,7 +444,6 @@ namespace detail
 			case nana::detail::msg_packet_tag::pkt_family::mouse_drop:
 				msgwd = brock.wd_manager().find_window(native_window, {msg.u.mouse_drop.x, msg.u.mouse_drop.y});
 
-				std::cout<<"   MouseDrop msgwd="<<msgwd<<", ("<<msg.u.mouse_drop.x<<","<<msg.u.mouse_drop.y<<")"<<std::endl;
 				if(msgwd)
 				{
 					arg_dropfiles arg;
