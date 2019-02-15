@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -303,13 +303,6 @@ namespace API
 			return reinterpret_cast<window>(restrict::wd_manager().create_widget(reinterpret_cast<basic_window*>(parent), r, true, wdg));
 		}
 
-#ifndef WIDGET_FRAME_DEPRECATED
-		window create_frame(window parent, const rectangle& r, widget* wdg)
-		{
-			return reinterpret_cast<window>(restrict::wd_manager().create_frame(reinterpret_cast<basic_window*>(parent), r, wdg));
-		}
-#endif
-
 		paint::graphics* window_graphics(window wd)
 		{
 			internal_scope_guard isg;
@@ -599,34 +592,6 @@ namespace API
 		if(restrict::wd_manager().available(reinterpret_cast<basic_window*>(wd)))
 			reinterpret_cast<basic_window*>(wd)->flags.fullscreen = v;
 	}
-
-#ifndef WIDGET_FRAME_DEPRECATED
-	bool insert_frame(window frame, native_window_type native_window)
-	{
-		return restrict::wd_manager().insert_frame(reinterpret_cast<basic_window*>(frame), native_window);
-	}
-
-	native_window_type frame_container(window frame)
-	{
-		auto frm = reinterpret_cast<basic_window*>(frame);
-		internal_scope_guard lock;
-		if (restrict::wd_manager().available(frm) && (frm->other.category == category::flags::frame))
-			return frm->other.attribute.frame->container;
-		return nullptr;
-	}
-
-	native_window_type frame_element(window frame, unsigned index)
-	{
-		auto frm = reinterpret_cast<basic_window*>(frame);
-		internal_scope_guard lock;
-		if (restrict::wd_manager().available(frm) && (frm->other.category == category::flags::frame))
-		{
-			if (index < frm->other.attribute.frame->attach.size())
-				return frm->other.attribute.frame->attach.at(index);
-		}
-		return nullptr;
-	}
-#endif
 
 	void close_window(window wd)
 	{

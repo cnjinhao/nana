@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -14,8 +14,8 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
-#include <nana/gui/detail/bedrock.hpp>
-#include <nana/gui/detail/bedrock_pi_data.hpp>
+//#include <nana/gui/detail/bedrock.hpp>	//deprecated
+#include "bedrock_types.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/system/timepiece.hpp>
@@ -35,6 +35,8 @@
 #ifndef WM_MOUSEHWHEEL
 #define WM_MOUSEHWHEEL	0x020E
 #endif
+
+#include "bedrock_types.hpp"
 
 typedef void (CALLBACK *win_event_proc_t)(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
 
@@ -135,6 +137,7 @@ namespace detail
 	};
 #pragma pack()
 
+#if 0 //deprecated
 	struct bedrock::thread_context
 	{
 		unsigned	event_pump_ref_count{0};
@@ -162,6 +165,7 @@ namespace detail
 			cursor.handle = nullptr;
 		}
 	};
+#endif
 
 	struct bedrock::private_impl
 	{
@@ -1594,11 +1598,13 @@ namespace detail
 		return ::DefWindowProc(root_window, message, wParam, lParam);
 	}
 
+#if 0 //deprecated
 	auto bedrock::focus() ->core_window_t*
 	{
 		core_window_t* wd = wd_manager().root(native_interface::get_focus_window());
 		return (wd ? wd->other.attribute.root->focus : nullptr);
 	}
+#endif
 
 	void bedrock::get_key_state(arg_keyboard& kb)
 	{
@@ -1677,6 +1683,7 @@ namespace detail
 		}
 	}
 
+#if 0 //deprecated
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd, const bool bForce__EmitInternal)
 	{
 		if (wd_manager().available(wd) == false)
@@ -1695,16 +1702,27 @@ namespace detail
 		if (update_state::none == wd->other.upd_state)
 			wd->other.upd_state = update_state::lazy;
 
+		auto ignore_mapping_value = wd->flags.ignore_child_mapping;
+		wd->flags.ignore_child_mapping = true;
+
 		_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
+
+		wd->flags.ignore_child_mapping = ignore_mapping_value;
 
 		bool good_wd = false;
 		if (wd_manager().available(wd))
 		{
-			//Ignore ask_update if update state is refreshed.
-			if (ask_update || (update_state::refreshed == wd->other.upd_state))
-				wd_manager().do_lazy_refresh(wd, false);
+			//A child of wd may not be drawn if it was out of wd's range before wd resized,
+			//so refresh all children of wd when a resized occurs.
+			if(ask_update || (event_code::resized == evt_code) || (update_state::refreshed == wd->other.upd_state))
+			{
+				wd_manager().do_lazy_refresh(wd, false, (event_code::resized == evt_code));
+			}
 			else
+			{
+				wd_manager().map_requester(wd);
 				wd->other.upd_state = update_state::none;
+			}
 
 			good_wd = true;
 		}
@@ -1712,6 +1730,7 @@ namespace detail
 		if (thrd)	thrd->event_window = prev_event_wd;
 		return good_wd;
 	}
+#endif
 
 	const wchar_t* translate(cursor id)
 	{
@@ -1740,7 +1759,7 @@ namespace detail
 		}
 		return name;
 	}
-
+#if 0 //deprecated
 	void bedrock::thread_context_destroy(core_window_t * wd)
 	{
 		auto * thr = get_thread_context(0);
@@ -1754,7 +1773,7 @@ namespace detail
 		if (thrd && thrd->event_window)
 			thrd->event_window->other.upd_state = core_window_t::update_state::refreshed;
 	}
-
+#endif
 	//Dynamically set a cursor for a window
 	void bedrock::set_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
 	{
@@ -1847,7 +1866,7 @@ namespace detail
 		::ShowCursor(FALSE);
 		::SetCursor(rev_handle);
 	}
-
+#if 0 //deprecated
 	void bedrock::_m_event_filter(event_code event_id, core_window_t * wd, thread_context * thrd)
 	{
 		auto not_state_cur = (wd->root_widget->other.attribute.root->state_cursor == nana::cursor::arrow);
@@ -1873,6 +1892,7 @@ namespace detail
             break;
 		}
 	}
+#endif
 }//end namespace detail
 }//end namespace nana
 #endif //NANA_WINDOWS

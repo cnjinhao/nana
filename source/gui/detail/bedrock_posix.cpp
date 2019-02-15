@@ -1,7 +1,7 @@
 /*
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,6 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_POSIX) && defined(NANA_X11)
-#include <nana/gui/detail/bedrock_pi_data.hpp>
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
@@ -21,6 +20,8 @@
 #include "inner_fwd_implement.hpp"
 #include <errno.h>
 #include <algorithm>
+
+#include "bedrock_types.hpp"
 
 namespace nana
 {
@@ -52,6 +53,7 @@ namespace detail
 		};
 #pragma pack()
 
+#if 0	//deprecated
 	struct bedrock::thread_context
 	{
 		unsigned event_pump_ref_count{0};
@@ -83,6 +85,7 @@ namespace detail
 			cursor.handle = 0;
 		}
 	};
+#endif
 
 	struct bedrock::private_impl
 	{
@@ -247,12 +250,14 @@ namespace detail
 		return bedrock_object;
 	}
 
+#if 0 //deprecated
 	bedrock::core_window_t* bedrock::focus()
 	{
 		core_window_t* wd = wd_manager().root(native_interface::get_focus_window());
 		return (wd ? wd->other.attribute.root->focus : 0);
 	}
-
+#endif
+	
 	void bedrock::get_key_state(arg_keyboard& arg)
 	{
 		XKeyEvent xkey;
@@ -289,6 +294,7 @@ namespace detail
 		//No implementation for Linux
 	}
 
+#if 0 //deprecated
 	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd, const bool bForce__EmitInternal)
 	{
 		if(wd_manager().available(wd) == false)
@@ -304,10 +310,15 @@ namespace detail
 
 		using update_state = basic_window::update_state;
 
-		if(wd->other.upd_state == update_state::none)
+		if (update_state::none == wd->other.upd_state)
 			wd->other.upd_state = update_state::lazy;
 
+		auto ignore_mapping_value = wd->flags.ignore_child_mapping;
+		wd->flags.ignore_child_mapping = true;
+
 		_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
+
+		wd->flags.ignore_child_mapping = ignore_mapping_value;
 
 		bool good_wd = false;
 		if(wd_manager().available(wd))
@@ -319,7 +330,10 @@ namespace detail
 				wd_manager().do_lazy_refresh(wd, false, (event_code::resized == evt_code));
 			}
 			else
+			{
+				wd_manager().map_requester(wd);
 				wd->other.upd_state = update_state::none;
+			}
 
 			good_wd = true;
 		}
@@ -328,6 +342,7 @@ namespace detail
 		if(thrd) thrd->event_window = prev_wd;
 		return good_wd;
 	}
+#endif
 
 	void assign_arg(arg_mouse& arg, basic_window* wd, unsigned msg, const XEvent& evt)
 	{
@@ -1346,6 +1361,7 @@ namespace detail
 
 	}//end bedrock::event_loop
 
+#if 0 //deprecated
 	void bedrock::thread_context_destroy(core_window_t * wd)
 	{
 		bedrock::thread_context * thr = get_thread_context(0);
@@ -1359,6 +1375,7 @@ namespace detail
 		if(thrd && thrd->event_window)
 			thrd->event_window->other.upd_state = core_window_t::update_state::refreshed;
 	}
+#endif
 
 	//Dynamically set a cursor for a window
 	void bedrock::set_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
@@ -1430,6 +1447,7 @@ namespace detail
 			set_cursor(rev_wd, rev_wd->predef_cursor, thrd);
 	}
 
+#if 0 //deprecated
 	void bedrock::_m_event_filter(event_code event_id, core_window_t * wd, thread_context * thrd)
 	{
 		auto not_state_cur = (wd->root_widget->other.attribute.root->state_cursor == nana::cursor::arrow);
@@ -1455,6 +1473,7 @@ namespace detail
 			break;
 		}
 	}
+#endif
 }//end namespace detail
 }//end namespace nana
 #endif //NANA_POSIX && NANA_X11
