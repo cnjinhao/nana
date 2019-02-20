@@ -1,7 +1,7 @@
 /**
 *	Drag and Drop Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2018-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -43,7 +43,11 @@ namespace nana
 		simple_dragdrop(window source);
 		~simple_dragdrop();
 
-		/// Sets a condition that determines whether the drag&drop can start
+		/// Condition checker
+		/**
+		 * Sets a condition checker that determines whether the drag-and-drop operation can start. If a condition checker is not set, it always start drag-and-drop operation.
+		 * @param predicate_fn Unary predicate which returns #true# for starting drag-and-drop operation.
+		 */
 		void condition(std::function<bool()> predicate_fn);
 		void make_drop(window target, std::function<void()> drop_fn);
 	private:
@@ -94,9 +98,9 @@ namespace nana
 		dragdrop(window source);
 		~dragdrop();
 
-		/// Condition of dragging
+		/// Condition checker
 		/***
-		 * The preciate function is called when press mouse button on the source window, it returns true to indicate the start of dragging. If the predicate is not set, it always start to drag.
+		 * Sets a condition checker that determines whether the drag-and-drop operation can start. If a condition checker is not set, it always start drag-and-drop operation.
 		 * @param predicate_fn A predicate function to be set.
 		 */
 		void condition(std::function<bool()> predicate_fn);
