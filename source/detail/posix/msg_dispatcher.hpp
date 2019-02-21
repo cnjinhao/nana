@@ -28,8 +28,6 @@
 #include <thread>
 #include <atomic>
 
-#include <iostream> //debug
-
 namespace nana
 {
 namespace detail
@@ -230,10 +228,6 @@ namespace detail
 
 							if(keymap[event.xkey.keycode / 8] & (1 << (event.xkey.keycode % 8)))
 								continue;
-						}
-						else if(SelectionRequest == event.type)
-						{
-							std::cout<<"Dispatcher SelectionRequest"<<std::endl; //debug
 						}
 
 						if(::XFilterEvent(&event, None))

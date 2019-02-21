@@ -141,9 +141,6 @@
     <ClCompile Include="..\..\source\gui\widgets\form.cpp">
       <Filter>Source Files\gui\widgets</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\gui\widgets\frame.cpp">
-      <Filter>Source Files\gui\widgets</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\gui\widgets\group.cpp">
       <Filter>Source Files\gui\widgets</Filter>
     </ClCompile>

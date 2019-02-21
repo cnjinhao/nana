@@ -144,8 +144,6 @@ namespace nana
 							           const std::string&,  nana::any*,        bool reverse)> weak_ordering;
 
 					std::shared_ptr<paint::font> font;	///< The exclusive column font
-
-					column() = default;
 					
 					column(const column&) = default;
 
@@ -6186,10 +6184,9 @@ namespace nana
 														 const nana::any *rowval,
 														 bool reverse)> comp)
 		{
-			if (first_col<0 || last_col<=first_col)
+			if (last_col <= first_col || last_col >= column_size())
 				return;
-			if (last_col >= column_size())
-				return;
+			
 			std::vector<size_type> new_idx;
 			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
 
@@ -6207,7 +6204,7 @@ namespace nana
 			//Only change the view position of columns
 			for(size_t i=0; i<new_idx.size(); ++i)
 			{
-				move_column(new_idx[i],i+first_col);
+				_m_ess().header.move_to_view_pos(new_idx[i], i + first_col, true);
 			}
 			_m_ess().update();
 		}

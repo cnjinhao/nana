@@ -147,9 +147,6 @@
     <ClCompile Include="..\..\source\gui\widgets\form.cpp">
       <Filter>Source Files\nana\gui\widgets</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\gui\widgets\frame.cpp">
-      <Filter>Source Files\nana\gui\widgets</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\gui\widgets\label.cpp">
       <Filter>Source Files\nana\gui\widgets</Filter>
     </ClCompile>
@@ -362,9 +359,6 @@
       <Filter>Header Files\gui\widgets</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\gui\widgets\form.hpp">
-      <Filter>Header Files\gui\widgets</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\gui\widgets\frame.hpp">
       <Filter>Header Files\gui\widgets</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\gui\widgets\label.hpp">

@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -513,12 +513,7 @@ namespace detail
 					if (owner->flags.destroying)
 						throw std::runtime_error("the specified owner is destoryed");
 
-#ifndef WIDGET_FRAME_DEPRECATED
-					native = (category::flags::frame == owner->other.category ?
-										owner->other.attribute.frame->container : owner->root_widget->root);
-#else
 					native = owner->root_widget->root;
-#endif
 					r.x += owner->pos_root.x;
 					r.y += owner->pos_root.y;
 				}
@@ -550,67 +545,12 @@ namespace detail
 				wd->bind_native_window(result.native_handle, result.width, result.height, result.extra_width, result.extra_height, value->root_graph);
 				impl_->wd_register.insert(wd);
 
-#ifndef WIDGET_FRAME_DEPRECATED
-				if (owner && (category::flags::frame == owner->other.category))
-					insert_frame(owner, wd);
-#endif
-
 				bedrock::inc_window(wd->thread_id);
 				this->icon(wd, impl_->default_icon_small, impl_->default_icon_big);
 				return wd;
 			}
 			return nullptr;
 		}
-
-#ifndef WIDGET_FRAME_DEPRECATED
-		window_manager::core_window_t* window_manager::create_frame(core_window_t* parent, const rectangle& r, widget* wdg)
-		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-
-			if (impl_->wd_register.available(parent) == false)	return nullptr;
-
-			core_window_t * wd = new core_window_t(parent, widget_notifier_interface::get_notifier(wdg), r, (category::frame_tag**)nullptr);
-			wd->frame_window(native_interface::create_child_window(parent->root, rectangle(wd->pos_root.x, wd->pos_root.y, r.width, r.height)));
-			impl_->wd_register.insert(wd, wd->thread_id);
-
-			//Insert the frame_widget into its root frames container.
-			wd->root_widget->other.attribute.root->frames.push_back(wd);
-			return (wd);
-		}
-
-
-		bool window_manager::insert_frame(core_window_t* frame, native_window wd)
-		{
-			if(frame)
-			{
-				//Thread-Safe Required!
-				std::lock_guard<mutex_type> lock(mutex_);
-				if(category::flags::frame == frame->other.category)
-					frame->other.attribute.frame->attach.push_back(wd);
-				return true;
-			}
-			return false;
-		}
-
-		bool window_manager::insert_frame(core_window_t* frame, core_window_t* wd)
-		{
-			if(frame)
-			{
-				//Thread-Safe Required!
-				std::lock_guard<mutex_type> lock(mutex_);
-				if(category::flags::frame == frame->other.category)
-				{
-					if (impl_->wd_register.available(wd) && (category::flags::root == wd->other.category) && wd->root != frame->root)
-					{
-						frame->other.attribute.frame->attach.push_back(wd->root);
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-#endif
 
 		window_manager::core_window_t* window_manager::create_widget(core_window_t* parent, const rectangle& r, bool is_lite, widget* wdg)
 		{
@@ -706,11 +646,7 @@ namespace detail
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) == false)	return;
 
-#ifndef WIDGET_FRAME_DEPRECATED
-			if((category::flags::root == wd->other.category) || (category::flags::frame != wd->other.category))
-#else
 			if (category::flags::root == wd->other.category)
-#endif
 			{
 				impl_->misc_register.erase(wd->root);
 				impl_->wd_register.remove(wd);
@@ -749,20 +685,7 @@ namespace detail
 
 			if(visible != wd->visible)
 			{
-#ifndef WIDGET_FRAME_DEPRECATED
-				native_window_type nv = nullptr;
-				switch(wd->other.category)
-				{
-				case category::flags::root:
-					nv = wd->root; break;
-				case category::flags::frame:
-					nv = wd->other.attribute.frame->container; break;
-				default:	//category::widget_tag, category::lite_widget_tag
-					break;
-				}
-#else
 				auto nv = (category::flags::root == wd->other.category ? wd->root : nullptr);
-#endif
 
 				if(visible && wd->effect.bground)
 					window_layer::make_bground(wd);
@@ -1012,22 +935,11 @@ namespace detail
 							return false;
 						}
 				}
-#ifndef WIDGET_FRAME_DEPRECATED
-				else if(category::flags::frame == wd->other.category)
-				{
-					native_interface::window_size(wd->other.attribute.frame->container, sz);
-					for(auto natwd : wd->other.attribute.frame->attach)
-						native_interface::window_size(natwd, sz);
-				}
-#endif
-				else
+				else if(wd->effect.bground && wd->parent)
 				{
 					//update the bground buffer of glass window.
-					if(wd->effect.bground && wd->parent)
-					{
-						wd->other.glass_buffer.make(sz);
-						window_layer::make_bground(wd);
-					}
+					wd->other.glass_buffer.make(sz);
+					window_layer::make_bground(wd);
 				}
 			}
 
@@ -1072,8 +984,19 @@ namespace detail
 				auto parent = wd->parent;
 				while (parent)
 				{
-					if (parent->flags.refreshing)
+					if(parent->flags.ignore_child_mapping || parent->flags.refreshing)
+					{
+						auto top = parent;
+						while(parent->parent)
+						{
+							parent = parent->parent;
+							if(parent->flags.ignore_child_mapping || parent->flags.refreshing)
+								top = parent;
+						}
+
+						top->other.mapping_requester.push_back(wd);
 						return;
+					}
 					parent = parent->parent;
 				}
 
@@ -1168,7 +1091,24 @@ namespace detail
 					window_layer::paint(wd, paint_operation::try_refresh, refresh_tree);	//only refreshing if it has an invisible parent
 			}
 			wd->other.upd_state = core_window_t::update_state::none;
-			return;
+			wd->other.mapping_requester.clear();
+		}
+
+		void window_manager::map_requester(core_window_t* wd)
+		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+
+			if (false == impl_->wd_register.available(wd))
+				return;
+
+			if (wd->visible_parents())
+			{
+				for(auto requestor : wd->other.mapping_requester)
+					this->map(requestor, true);
+			}
+
+			wd->other.mapping_requester.clear();
 		}
 
 		//get_graphics
@@ -1758,17 +1698,6 @@ namespace detail
 				}
 			}
 
-#ifndef WIDGET_FRAME_DEPRECATED
-			if (category::flags::frame == wd->other.category)
-			{
-				//remove the frame handle from the WM frames manager.
-				utl::erase(root_attr->frames, wd);
-
-				if (established)
-					pa_root_attr->frames.push_back(wd);
-			}
-#endif
-
 			if (established)
 			{
 				wd->parent = for_new;
@@ -1857,18 +1786,6 @@ namespace detail
 			wd->drawer.detached();
 			wd->widget_notifier->destroy();
 
-#ifndef WIDGET_FRAME_DEPRECATED
-			if(category::flags::frame == wd->other.category)
-			{
-				//The frame widget does not have an owner, and close their element windows without activating owner.
-				//close the frame container window, it's a native window.
-				for(auto i : wd->other.attribute.frame->attach)
-					native_interface::close_window(i);
-
-				native_interface::close_window(wd->other.attribute.frame->container);
-			}
-#endif
-
 			if(wd->other.category != category::flags::root)	//Not a root window
 				impl_->wd_register.remove(wd);
 
@@ -1881,18 +1798,9 @@ namespace detail
 			if(category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its childs are not to be changed
 			{
 				wd->pos_root += delta;
-#ifndef WIDGET_FRAME_DEPRECATED
-				if (category::flags::frame != wd->other.category)
-				{
-					if (wd->annex.caret_ptr && wd->annex.caret_ptr->visible())
-						wd->annex.caret_ptr->update();
-				}
-				else
-					native_interface::move_window(wd->other.attribute.frame->container, wd->pos_root.x, wd->pos_root.y);
-#else
+
 				if (wd->annex.caret_ptr && wd->annex.caret_ptr->visible())
 					wd->annex.caret_ptr->update();
-#endif
 
 				if (wd->displayed() && wd->effect.bground)
 					window_layer::make_bground(wd);

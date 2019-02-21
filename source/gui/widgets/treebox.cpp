@@ -1370,17 +1370,9 @@ namespace nana
 				{
 					auto m = std::max((enable_crook_ ? scheme_.crook_size : 0), (enable_icon_ ? scheme_.icon_size : 0));
 
-#if 1
 					unsigned as = 0, ds = 0, il;
 					graph.text_metrics(as, ds, il);
 					return std::max(as + ds + 8, m);
-#else
-#ifdef _nana_std_has_string_view
-					return std::max(m, graph.text_extent_size(std::wstring_view{ L"jH{", 3 }).height + 8);
-#else
-					return std::max(m, graph.text_extent_size(L"jH{", 3).height + 8);
-#endif
-#endif
 				}
 
 				virtual unsigned item_width(graph_reference graph, const item_attribute_t& attr) const override
@@ -1586,8 +1578,6 @@ namespace nana
 
 				int trigger::item_locator::operator()(node_type &node, int affect)
 				{
-					auto & node_desc = impl_->shape;
-
 					switch(affect)
 					{
 					case 0: break;
@@ -1692,7 +1682,6 @@ namespace nana
 				{
 					impl_->data.trigger_ptr = this;
 					impl_->data.renderer = nana::pat::cloneable<renderer_interface>(internal_renderer());
-					//impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer());	//deprecated
 
 					impl_->adjust.timer.elapse([this]
 					{
@@ -1827,18 +1816,6 @@ namespace nana
 					}
 				}
 
-				/*	//deprecated
-				void trigger::renderer(::nana::pat::cloneable<renderer_interface>&& r)
-				{
-					impl_->data.renderer = std::move(r);
-				}
-
-				const ::nana::pat::cloneable<renderer_interface>& trigger::renderer() const
-				{
-					return impl_->data.renderer;
-				}
-				*/
-
 				::nana::pat::cloneable<renderer_interface>& trigger::renderer() const
 				{
 					return impl_->data.renderer;
@@ -1875,21 +1852,6 @@ namespace nana
 						impl_->draw(true);
 					return x;
 				}
-
-				/*
-				trigger::node_type* trigger::selected() const	//deprecated
-				{
-					return impl_->node_state.selected;
-				}
-				*/
-
-				/*
-				void trigger::selected(node_type* node)	//deprecated
-				{
-					if(impl_->attr.tree_cont.verify(node) && impl_->set_selected(node))
-						impl_->draw(true);
-				}
-				*/
 
 				node_image_tag& trigger::icon(const std::string& id)
 				{
@@ -1958,7 +1920,6 @@ namespace nana
 					widget.bgcolor(colors::white);
 					impl_->data.widget_ptr = static_cast<::nana::treebox*>(&widget);
 					impl_->data.scheme_ptr = static_cast<::nana::treebox::scheme_type*>(API::dev::get_scheme(widget));
-					//impl_->data.comp_placer->init_scheme(impl_->data.scheme_ptr);	//deprecated
 					impl_->data.comp_placer = nana::pat::cloneable<compset_placer_interface>(internal_placer{ *impl_->data.scheme_ptr });
 
 					widget.caption("nana treebox");
@@ -2386,7 +2347,6 @@ namespace nana
 
 		treebox::item_proxy treebox::selected() const
 		{
-			//return item_proxy(const_cast<drawer_trigger_t*>(&get_drawer_trigger()), get_drawer_trigger().selected());	//deprecated
 			auto dw = &get_drawer_trigger();
 			return item_proxy(const_cast<drawer_trigger_t*>(dw), dw->impl()->node_state.selected);
 		}

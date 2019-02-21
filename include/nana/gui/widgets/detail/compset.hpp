@@ -59,20 +59,9 @@ namespace nana{	namespace widgets{ namespace detail
 
 		/// Widget scheme.
 		typedef WidgetScheme widget_scheme_t;
-
-		//widget_scheme_t * wdg_scheme_ptr_{ nullptr };	//deprecated
-
 	public:
 		/// The destructor.
 		virtual ~compset_placer(){}
-
-		/*
-		/// Init the scheme pointer
-		void init_scheme(widget_scheme_t* wdg_scheme_ptr)	//deprecated
-		{
-			wdg_scheme_ptr_ = wdg_scheme_ptr;
-		}
-		*/
 
 		/// Enable/Disable the specified component.
 		virtual void enable(component_t, bool) = 0;
