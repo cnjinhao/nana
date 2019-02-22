@@ -1,6 +1,6 @@
 /*
  *	A ISO C++ FileSystem Implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -993,6 +993,11 @@ namespace nana {	namespace experimental {	namespace filesystem
 		bool is_directory(const path& p)
 		{
 			return (status(p).type() == file_type::directory);
+		}
+
+		bool is_directory(const path& p, std::error_code& ec) noexcept
+		{
+			return (status(p, ec).type() == file_type::directory);
 		}
 
 		std::uintmax_t file_size(const path& p)
