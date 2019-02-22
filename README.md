@@ -3,7 +3,7 @@
 
 [Windows (Microsoft (R) Build Engine version 14.0.24720.0) ![AppVeyor build status](https://ci.appveyor.com/api/projects/status/5j79p9fi887usv7h?svg=true)](https://ci.appveyor.com/project/qPCR4vir/nana) 
 
-[![Licence](https://img.shields.io/badge/license-BSL-blue.svg?style=flat)](LICENSE_1_0.txt)
+[![Licence](https://img.shields.io/badge/license-BSL-blue.svg?style=flat)](LICENSE)
 
 
 Nana is a C++ library designed to allow developers to easily create cross-platform GUI applications with modern C++11 style. Currently it can work on Linux(X11) and Windows. The [nana repository](https://github.com/cnjinhao/nana) contains the entire source of the library. You can browse the source code and submit your pull request for contributing.
