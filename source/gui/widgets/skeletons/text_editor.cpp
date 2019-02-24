@@ -2456,7 +2456,7 @@ namespace nana {
 					if (arg.ctrl) {
 						coord.y = static_cast<unsigned>((line_count - 1) * line_px);
 						//The number of charecters of the bottom line
-						auto const text_length = textbase().getline(std::max(0u, line_count - 1)).size();
+						auto const text_length = textbase().getline(std::max<size_t>(0, line_count - 1)).size();
 						//move the caret to the end of the line
 						pos.x = static_cast<decltype(pos.x)>(text_length);
 					}
