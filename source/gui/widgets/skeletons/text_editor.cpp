@@ -2394,6 +2394,7 @@ namespace nana {
 				auto origin = impl_->cview->origin();
 				auto pos = points_.caret;
 				auto coord = _m_caret_to_coordinate(points_.caret, false);
+				auto coord_org = coord;
 
 				wchar_t key = arg.key;
 
@@ -2404,7 +2405,6 @@ namespace nana {
 
 				//The number of charecters in the line of caret
 				auto const text_length = textbase().getline(points_.caret.y).size();
-
 
 				switch (key) {
 				case keyboard::os_arrow_left:
@@ -2451,12 +2451,19 @@ namespace nana {
 						pos.y = 0;
 					break;
 				case keyboard::os_end:
-					//move the caret to the end of the line
-					pos.x = static_cast<decltype(pos.x)>(text_length);
 
 					//move the caret to the end of the text if Ctrl is pressed
-					if (arg.ctrl)
-						pos.y = static_cast<unsigned>((line_count - 1) * line_px);
+					if (arg.ctrl) {
+						coord.y = static_cast<unsigned>((line_count - 1) * line_px);
+						//The number of charecters of the bottom line
+						auto const text_length = textbase().getline(std::max(0u, line_count - 1)).size();
+						//move the caret to the end of the line
+						pos.x = static_cast<decltype(pos.x)>(text_length);
+					}
+					else {
+						//move the caret to the end of the line
+						pos.x = static_cast<decltype(pos.x)>(text_length);
+					}
 					break;
 				case keyboard::os_pageup:
 					if (origin.y > 0)
@@ -2476,10 +2483,12 @@ namespace nana {
 					break;
 				}
 
-				if (pos == points_.caret)
+				if (coord != coord_org)
 				{
+					auto pos_x = pos.x;
 					impl_->cview->move_origin(origin - impl_->cview->origin());
 					pos = _m_coordinate_to_caret(coord, false);
+					pos.x = pos_x;
 				}
 
 				if (pos != points_.caret) {
