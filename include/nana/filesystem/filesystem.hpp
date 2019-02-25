@@ -1,7 +1,7 @@
 /**
  *	A ISO C++ filesystem Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -434,8 +434,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	{ return s.type() == file_type::directory ;}
 
 	bool is_directory(const path& p);
-
-    //bool is_directory(const path& p, error_code& ec) noexcept;
+    bool is_directory(const path& p, std::error_code& ec) noexcept;
 
 	inline bool is_regular_file(file_status s) noexcept
 	{

@@ -1,7 +1,7 @@
 /*
 *	Color Schemes
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -80,14 +80,14 @@ namespace nana
 
 		color color_proxy::get(const color& default_color) const
 		{
-			if (color_->invisible())
-				return default_color;
-			return *color_;
+			if (color_ && !color_->invisible())
+				return *color_;
+			return default_color;
 		}
 
 		color_proxy::operator color() const
 		{
-			return *color_;
+			return (color_ ? *color_ : color{});
 		}
 	//end class color_proxy
 
