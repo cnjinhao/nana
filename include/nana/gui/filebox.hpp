@@ -16,7 +16,6 @@
 #define NANA_GUI_FILEBOX_HPP
 #include <nana/gui/basis.hpp>
 #include <nana/filesystem/filesystem.hpp>
-#include <nana/optional.hpp>
 #include <vector>
 #include <utility>
 
@@ -30,6 +29,7 @@ namespace nana
 		filebox& operator=(filebox&&) = delete;
 	public:
 		using filters = std::vector<std::pair< ::std::string, ::std::string>>;
+		using path_type = std::filesystem::path;
 
 		explicit filebox(bool is_open_mode);
 		filebox(window owner, bool is_open_mode);
@@ -69,16 +69,14 @@ namespace nana
 
 
 		const ::std::string& path() const;
-		::std::string file() const;
-
-		const ::std::vector<::std::string>& files() const;
+		
 		void allow_multi_select(bool allow);
 
 		/// Display the filebox dialog
-		bool show() const;
-		
+		std::vector<path_type> show() const;
+
 		/// a function object method alternative to show() to display the filebox dialog, 
-		bool operator()() const
+		std::vector<path_type> operator()() const
 		{
 			return show();
 		}
@@ -100,9 +98,12 @@ namespace nana
 		explicit folderbox(window owner = nullptr, const path_type& init_path = {}, std::string title={});
 		~folderbox();
 
-		std::optional<path_type> show() const;
+		/// Enables/disables multi select
+		void allow_multi_select(bool allow);
 
-		std::optional<path_type> operator()() const
+		std::vector<path_type> show() const;
+
+		std::vector<path_type> operator()() const
 		{
 			return show();
 		}
