@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE or copy at 
@@ -60,8 +60,26 @@ namespace nana
 				::std::string text;
 			};
 
+			struct scheme
+				: public widget_geometrics
+			{
+				color_proxy item_bg_selected{ static_cast<color_rgb>(0xD5EFFC) };  ///< item selected: background color
+				color_proxy item_fg_selected{ static_cast<color_rgb>(0x99DEFD) };  ///< item selected: foreground color
+				color_proxy item_bg_highlighted{ static_cast<color_rgb>(0xE8F5FD) };  ///< item highlighted: background color
+				color_proxy item_fg_highlighted{ static_cast<color_rgb>(0xD8F0FA) };  ///< item highlighted: foreground color
+				color_proxy item_bg_selected_and_highlighted{ static_cast<color_rgb>(0xC4E8FA) };  ///< item selected and highlighted: background color
+				color_proxy item_fg_selected_and_highlighted{ static_cast<color_rgb>(0xB6E6FB) };  ///< item selected and highlighted: foreground color
+
+				unsigned item_offset{ 16 }; ///< item position displacement in pixels
+				unsigned text_offset{ 4 }; ///< text position displacement in pixels
+				unsigned icon_size{ 16 }; ///< icon size in pixels
+				unsigned crook_size{ 16 }; ///< crook size in pixels (TODO: the function that draw the crook doesn't scale the shape)
+
+				unsigned indent_displacement{ 18 }; ///< children position displacement in pixels (def=18 (before was 10))
+			};
+
 			typedef widgets::detail::compset<component, node_attribute> compset_interface;
-			typedef widgets::detail::compset_placer<component, node_attribute> compset_placer_interface;
+			typedef widgets::detail::compset_placer<component, node_attribute, scheme> compset_placer_interface;
 			
 			class renderer_interface
 			{
@@ -87,15 +105,8 @@ namespace nana
 			class trigger
 				:public drawer_trigger
 			{
-				//template<typename Renderer>
-				//struct basic_implement;	//deprecated
-
 				class implementation;
-
-				//class item_renderer;	//deprecated
 				class item_locator;
-
-				//typedef basic_implement<item_renderer> implement;	//deprecated
 			public:
 				struct treebox_node_type
 				{
@@ -124,16 +135,11 @@ namespace nana
 
 				pat::cloneable<renderer_interface>& renderer() const;
 
-				//void renderer(::nana::pat::cloneable<renderer_interface>&&);
-				//const ::nana::pat::cloneable<renderer_interface>& renderer() const;	//deprecated
 				void placer(::nana::pat::cloneable<compset_placer_interface>&&);
 				const ::nana::pat::cloneable<compset_placer_interface>& placer() const;
 
 				node_type* insert(node_type*, const std::string& key, std::string&&);
 				node_type* insert(const std::string& path, std::string&&);
-
-				//node_type * selected() const;	//deprecated
-				//void selected(node_type*);
 
 				node_image_tag& icon(const ::std::string&);
 				void icon_erase(const ::std::string&);
@@ -296,15 +302,6 @@ namespace nana
 					return *p;
 				}
 
-				/*
-				template<typename T>
-				item_proxy & value(const T& t)	//deprecated
-				{
-					_m_value() = t;
-					return *this;
-				}
-				*/
-
 				template<typename T>
 				item_proxy & value(T&& t)
 				{
@@ -353,9 +350,9 @@ namespace nana
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
     /// See also in [documentation](http://nanapro.org/en-us/documentation/widgets/treebox.htm)
     class treebox
-		:public widget_object < category::widget_tag,
+		:public widget_object <category::widget_tag,
 		                        drawerbase::treebox::trigger,
-		                        drawerbase::treebox::treebox_events>
+		                        drawerbase::treebox::treebox_events, drawerbase::treebox::scheme>
 	{
 	public:
         /// A type refers to the item and is also used to iterate through the nodes.

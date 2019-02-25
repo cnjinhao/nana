@@ -151,9 +151,6 @@
     <ClCompile Include="..\..\source\gui\widgets\form.cpp">
       <Filter>Sources\gui\widgets</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\gui\widgets\frame.cpp">
-      <Filter>Sources\gui\widgets</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\gui\widgets\group.cpp">
       <Filter>Sources\gui\widgets</Filter>
     </ClCompile>
@@ -364,9 +361,6 @@
       <Filter>Include\gui\widgets</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\gui\widgets\form.hpp">
-      <Filter>Include\gui\widgets</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\nana\gui\widgets\frame.hpp">
       <Filter>Include\gui\widgets</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\nana\gui\animation.hpp">

@@ -1,7 +1,7 @@
 /*
  *	X-Window XDND Protocol Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2018-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -22,12 +22,6 @@
 
 #include <vector>
 
-
-#define DEBUG_XDND_PROTOCOL
-
-#ifdef DEBUG_XDND_PROTOCOL
-#include <iostream> //debug
-#endif
 
 namespace nana{
 	namespace detail
@@ -58,15 +52,6 @@ namespace nana{
 			detail::platform_scope_guard lock;
 			::XSetSelectionOwner(disp, spec_.atombase().xdnd_selection, source, CurrentTime);
 
-#ifdef DEBUG_XDND_PROTOCOL
-			std::cout<<"XSetSelectionOwner "<<source<<std::endl;
-#endif
-/*			//deprecated
-			theme icons;
-			cursor_.dnd_copy = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-copy").c_str());
-			cursor_.dnd_move = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-move").c_str());
-			cursor_.dnd_none = ::XcursorFilenameLoadCursor(disp, icons.cursor("dnd-none").c_str());
-*/
 			cursor_.dnd_copy = ::XcursorLibraryLoadCursor(disp, "dnd-copy");
 			cursor_.dnd_move = ::XcursorLibraryLoadCursor(disp, "dnd-move");
 			cursor_.dnd_none = ::XcursorLibraryLoadCursor(disp, "dnd-none");
@@ -115,18 +100,12 @@ namespace nana{
 
 			if(atombase.xdnd_status == xclient.message_type)
 			{
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<"Event: XdndStatus"<<std::endl;
-#endif
 				if(xdnd_status_state::position != xstate_ && xdnd_status_state::drop != xstate_)
 					return false;
 
 				Window target_wd = static_cast<Window>(xclient.data.l[0]);
 				bool is_accepted_by_target = (xclient.data.l[1] & 1);
 
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<"XdndStatus: Accepted="<<is_accepted_by_target<<", target="<<target_wd<<std::endl;
-#endif
 				if(xclient.data.l[1] & 0x2)
 				{
 					rectangle rct{
@@ -137,16 +116,8 @@ namespace nana{
 					};
 					
 					if(!rct.empty())
-					{
 						mvout_table_[target_wd] = rct;
-#ifdef DEBUG_XDND_PROTOCOL
-						std::cout<<". rct=("<<rct.x<<","<<rct.y<<","<<rct.width<<","<<rct.height<<")";
-#endif
-					}
 				}
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<std::endl;
-#endif
 				_m_cursor(is_accepted_by_target);
 
 				if((!is_accepted_by_target) && (xdnd_status_state::drop == xstate_))
@@ -156,11 +127,6 @@ namespace nana{
 				}
 
 				executed_action_ = xclient.data.l[4];
-
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<"    Assign ExecutedAction = "<<static_cast<int>(executed_action_)<<std::endl;
-#endif
-
 				xstate_ = xdnd_status_state::normal;
 			}
 			else if(atombase.xdnd_finished == xclient.message_type)
@@ -173,9 +139,6 @@ namespace nana{
 		{
 			if(spec_.atombase().xdnd_selection == xselectionrequest.selection)
 			{
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<"Event SelectionRequest: XdndSelection"<<std::endl;
-#endif
 			    ::XEvent evt;
 			    evt.xselection.type = SelectionNotify;
 			    evt.xselection.display = xselectionrequest.display;
@@ -185,23 +148,8 @@ namespace nana{
 			    evt.xselection.property = 0;
 			    evt.xselection.time = xselectionrequest.time;
 
-#ifdef DEBUG_XDND_PROTOCOL
-			    auto property_name = ::XGetAtomName(spec_.open_display(), xselectionrequest.property); //debug
-
-			    std::cout<<"SelectionRequest"<<std::endl;
-			    std::cout<<"    xdnd_selection:"<<spec_.atombase().xdnd_selection<<std::endl;
-			    std::cout<<"    text_uri_list :"<<spec_.atombase().text_uri_list<<std::endl;
-			    std::cout<<"    selection="<<xselectionrequest.selection<<std::endl;
-			    std::cout<<"    property ="<<xselectionrequest.property<<", name="<<property_name<<std::endl;
-			    std::cout<<"    target   ="<<xselectionrequest.target<<std::endl;
-			    ::XFree(property_name);
-#endif
-
 			    if(xselectionrequest.target == spec_.atombase().text_uri_list)
 			    {
-#ifdef DEBUG_XDND_PROTOCOL
-			    	std::cout<<"SelectionRequest target = text_uri_list";
-#endif
 				    if(data.files.size())
 				    {
 				    	std::string uri_list;
@@ -211,9 +159,7 @@ namespace nana{
 				    		uri_list += file.u8string();
 				    		uri_list += "\r\n";
 				    	}
-#ifdef DEBUG_XDND_PROTOCOL
-				    	std::cout<<". URIs="<<uri_list<<std::endl;
-#endif
+
 				    	::XChangeProperty (spec_.open_display(),
 				    			xselectionrequest.requestor,
 				    			xselectionrequest.property, 
@@ -226,10 +172,7 @@ namespace nana{
 
 				    }
 			    }
-#ifdef DEBUG_XDND_PROTOCOL
-			    else
-			    	std::cout<<"SelectionRequest target = "<<xselectionrequest.target<<std::endl;
-#endif
+
 			    platform_scope_guard lock;
 			    ::XSendEvent(spec_.open_display(), xselectionrequest.requestor, False, 0, &evt);
 			    ::XFlush(spec_.open_display());
@@ -247,9 +190,6 @@ namespace nana{
 				return false;
 
 			target_ = wd;
-#ifdef DEBUG_XDND_PROTOCOL
-			std::cout<<"Send XdndEnter, text/uri-list="<<spec_.atombase().text_uri_list<<std::endl;
-#endif
 			_m_client_msg(spec_.atombase().xdnd_enter, (xdnd_ver << 24), spec_.atombase().text_uri_list, XA_STRING);
 
 			return true;
@@ -264,9 +204,6 @@ namespace nana{
 			if(i != mvout_table_.end() && i->second.is_hit(pos))
 				return;
 
-#ifdef DEBUG_XDND_PROTOCOL
-			std::cout<<"Send: XdndPosition, RequestedAction="<<requested_action<<", XdndActionCopy="<<spec_.atombase().xdnd_action_copy<<std::endl;
-#endif
 			xstate_ = xdnd_status_state::position;
 			//Send XdndPosition
 			long position = (pos.x << 16 | pos.y);
@@ -279,9 +216,6 @@ namespace nana{
 
 			if(target_)
 			{
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<"Send: XdndLeave, reset ExecutedAction"<<std::endl;
-#endif
 				_m_client_msg(spec_.atombase().xdnd_leave, 0, 0, 0);
 				target_ = 0;
 				executed_action_ = 0;
@@ -294,12 +228,8 @@ namespace nana{
 			xstate_ = xdnd_status_state::drop;
 
 			if(executed_action_)
-			{
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<"Send: XdndDrop"<<std::endl;
-#endif
 				_m_client_msg(spec_.atombase().xdnd_drop, 0, CurrentTime, 0);
-			}
+			
 			target_ = 0;
 
 			return (executed_action_ != 0);
@@ -338,16 +268,13 @@ namespace nana{
 				0, 4, False, XA_ATOM, &actual, &format, &count, &remaining, &data);
 
 			int version = 0;
-			if ((actual == XA_ATOM) && (format==32) && count && data)
-			{
-				version = int(*(Atom*)data);
-#ifdef DEBUG_XDND_PROTOCOL
-				std::cout<<"Get:XdndAware version:"<<version<<std::endl;
-#endif				
-			}
-
 			if (data)
+			{
+				if ((actual == XA_ATOM) && (format==32) && count)
+					version = int(*(Atom*)data);
+
 				::XFree(data);
+			}
 			return version;
 		}
 

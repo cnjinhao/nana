@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -95,9 +95,7 @@ namespace API
 		window create_window(window, bool nested, const rectangle&, const appearance&, widget* attached);
 		window create_widget(window, const rectangle&, widget* attached);
 		window create_lite_widget(window, const rectangle&, widget* attached);
-#ifndef WIDGET_FRAME_DEPRECATED
-		window create_frame(window, const rectangle&, widget* attached);
-#endif
+
 		paint::graphics* window_graphics(window);
 
 		void delay_restore(bool);
@@ -234,11 +232,6 @@ namespace API
 	void fullscreen(window, bool);
 	bool enabled_double_click(window, bool);
 
-#ifndef WIDGET_FRAME_DEPRECATED
-	bool insert_frame(window frame, native_window_type);
-	native_window_type frame_container(window frame);
-	native_window_type frame_element(window frame, unsigned index);
-#endif
 	void close_window(window);
 	void show_window(window, bool show);                  ///< Sets a window visible state.
 	void restore_window(window);

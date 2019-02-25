@@ -36,8 +36,6 @@
 
 #include "posix/msg_dispatcher.hpp"
 
-#include <iostream> //debug
-
 namespace nana
 {
 namespace detail
@@ -1121,12 +1119,7 @@ namespace detail
 		platform_scope_guard lock;
 		if(0 != xdnd_.dragdrop.count(wd))
 			return false;
-#if 0 //deprecated
-		std::cout<<"ChangeProperty XdndAware"<<std::endl;
-		int dndver = 4;
-		::XChangeProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware, XA_ATOM, sizeof(int) * 8,
-			PropModeReplace, reinterpret_cast<unsigned char*>(&dndver), 1);
-#endif
+
 		xdnd_.dragdrop[wd] = ddrop;
 		return true;
 	}
@@ -1140,7 +1133,6 @@ namespace detail
 			new_val = (xdnd_.targets[wd] += count);
 			if(1 == new_val)
 			{
-				std::cout<<"ChangeProperty XdndAware"<<std::endl;
 				int dndver = 5;
 				::XChangeProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware, XA_ATOM, sizeof(int) * 8,
 					PropModeReplace, reinterpret_cast<unsigned char*>(&dndver), 1);
@@ -1235,7 +1227,6 @@ namespace detail
 				}
 				else if(evt.xselection.property == self.atombase_.xdnd_selection)
 				{
-					std::cout<<"Platform SelectionNotfy by XdndSelection, type="<<type<<", good_type="<<self.xdnd_.good_type<<", bytes_left="<<bytes_left<<std::endl;
 					bool accepted = false;
 					msg.kind = msg_packet_tag::pkt_family::mouse_drop;
 					msg.u.mouse_drop.window = 0;
@@ -1250,7 +1241,6 @@ namespace detail
 							auto files = new std::vector<std::string>;
 							std::stringstream ss(reinterpret_cast<char*>(data));
 
-							std::cout<<"    data:["<<ss.str()<<"]"<<std::endl;
 							while(true)
 							{
 								std::string file;
@@ -1271,7 +1261,6 @@ namespace detail
 								files->push_back(file);
 							}
 
-							std::cout<<"    file size:"<<files->size()<<std::endl;
 							if(files->size())
 							{
 								msg.u.mouse_drop.window = evt.xselection.requestor;
@@ -1285,8 +1274,6 @@ namespace detail
 							accepted = true;
 							::XFree(data);
 						}
-						else
-							std::cout<<"    invalid property"<<std::endl;
 					}
 					::XEvent respond;
 					::memset(respond.xclient.data.l, 0, sizeof(respond.xclient.data.l));
@@ -1313,15 +1300,9 @@ namespace detail
 		}
 		else if(SelectionRequest == evt.type)
 		{
-			std::cout<<"Event SelectionRequest in platform spec";
 			//Skip if it is requested by XDND, it will be processed by dragdrop's xdnd_protocol
 			if(self.atombase_.xdnd_selection == evt.xselectionrequest.selection)
-			{
-				std::cout<<", xdnd_selection"<<std::endl;
-				return 0; //
-			}
-
-			std::cout<<std::endl;
+				return 0;
 
 			auto disp = evt.xselectionrequest.display;
 			XEvent respond;
@@ -1368,7 +1349,6 @@ namespace detail
 		{
 			if(self.atombase_.xdnd_enter == evt.xclient.message_type)
 			{
-				std::cout<<"Platform: XdndEnter";
 				const Atom * atoms = reinterpret_cast<const Atom*>(&(evt.xclient.data.l[2]));
 				unsigned long len = 3;
 				unsigned char * data = 0;
@@ -1380,32 +1360,19 @@ namespace detail
 					Atom type;
 					int format;
 					unsigned long bytes_left;
-					auto status = ::XGetWindowProperty(self.display_, self.xdnd_.wd_src, self.atombase_.xdnd_typelist, 0, 0, False,
+					::XGetWindowProperty(self.display_, self.xdnd_.wd_src, self.atombase_.xdnd_typelist, 0, 0, False,
 										XA_ATOM, &type, &format, &len, &bytes_left, &data);
-
-					std::cout<<", XGetWindowProperty xdnd_typelist = "<<status<<" bytes_left="<<bytes_left<<std::endl;
 
 					if(bytes_left > 0)
 					{
 						::XGetWindowProperty(self.display_, self.xdnd_.wd_src, self.atombase_.xdnd_typelist,
 											0, bytes_left, False, XA_ATOM,
 											&type, &format, &len, &bytes_left, &data);
-
-						std::cout<<"    format="<<format<<" len="<<len<<" bytes_left="<<bytes_left;
-						auto type_name = ::XGetAtomName(self.display_, type);
-						if(type_name)
-						{
-							std::cout<<" type="<<type_name;
-							::XFree(type_name);
-						}
-						std::cout<<std::endl;
 						
 						if(XA_ATOM == type && len > 0)
 							atoms = reinterpret_cast<const Atom*>(data);
 					}
 				}
-				else
-					std::cout<<", less than 3 types"<<std::endl;
 
 #define DEBUG_XdndDirectSave
 #ifdef DEBUG_XdndDirectSave
@@ -1417,15 +1384,12 @@ namespace detail
 					auto name = XGetAtomName(self.display_, atoms[i]); //debug
 					if(name)
 					{
-						std::cout<<"    Supported type: "<<name<<std::endl;
 #ifdef DEBUG_XdndDirectSave
 						if(strstr(name, "XdndDirectSave"))
 							XdndDirectSave = atoms[i];
 #endif
 						::XFree(name);
 					}
-					else
-						std::cout<<"    Supported type: no name("<<atoms[i]<<")"<<std::endl;
 
 					if(atoms[i] == self.atombase_.text_uri_list)
 					{
@@ -1444,24 +1408,13 @@ namespace detail
 					int format;
 					unsigned long bytes_left;
 
-					auto status = ::XGetWindowProperty(self.display_, self.xdnd_.wd_src, XdndDirectSave, 0, 0, False, XA_ATOM, &type, &format, &len, &bytes_left, &data);
-					auto name = XGetAtomName(self.display_, type); //debug
-					if(name)
-					{
-						std::cout<<"    XdndDirectSave text/plain Atom: "<<name<<std::endl;
-						::XFree(name);
-					}
-
-					std::cout<<", XGetWindowProperty XdndDirectSave = "<<status<<" bytes_left="<<bytes_left<<std::endl;
+					::XGetWindowProperty(self.display_, self.xdnd_.wd_src, XdndDirectSave, 0, 0, False, XA_ATOM, &type, &format, &len, &bytes_left, &data);
 
 					if(bytes_left > 0)
 					{
 						::XGetWindowProperty(self.display_, self.xdnd_.wd_src, XdndDirectSave,
 											0, bytes_left, False, type,
 											&type, &format, &len, &bytes_left, &data);
-
-						std::cout<<"    XdndDirectSave Data:["<<(char*)data<<"]"<<std::endl;
-						std::system("cp xds.txt /home/jinhao/xds.txt");
 					}
 				}
 #endif
@@ -1469,8 +1422,6 @@ namespace detail
 			}
 			else if(self.atombase_.xdnd_position == evt.xclient.message_type)
 			{
-				std::cout<<"Platform: XdndPosition"<<std::endl;
-
 				Window wd_src = evt.xclient.data.l[0];
 				int x = (evt.xclient.data.l[2] >> 16);
 				int y = (evt.xclient.data.l[2] & 0xFFFF);
@@ -1482,7 +1433,6 @@ namespace detail
 					Window child;
 					::XTranslateCoordinates(self.display_, self.root_window(), evt.xclient.window, x, y, &self.xdnd_.pos.x, &self.xdnd_.pos.y, &child);
 
-					std::cout<<"    find_window"<<std::endl;
 					auto wd = bedrock.wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window), self.xdnd_.pos);
 					if(wd && wd->flags.dropable)
 					{
@@ -1491,8 +1441,6 @@ namespace detail
 						self.xdnd_.pos = wd->pos_root;
 						accepted = 1;
 					}
-
-					std::cout<<"        return,"<<wd<<std::endl;
 				}
 
 				XEvent respond;
@@ -1511,24 +1459,17 @@ namespace detail
 				respond.xclient.data.l[3] = 0;
 				respond.xclient.data.l[4] = self.atombase_.xdnd_action_copy;
 
-				std::cout<<"    Target XdndStatus begin to send. Accepted"<<accepted<<std::endl;
 				::XSendEvent(self.display_, wd_src, True, NoEventMask, &respond);
-				std::cout<<"    Target XdndStatus ed"<<std::endl;
 				return 2;
 			}
 			else if(self.atombase_.xdnd_status == evt.xclient.message_type)
 			{
-				std::cout<<"Platform Recv XdndStatus"<<std::endl;
+				//Platform Recv XdndStatus
 			}
 			else if(self.atombase_.xdnd_drop == evt.xclient.message_type)
 			{
-				Window owner = ::XGetSelectionOwner(self.display_, self.atombase_.xdnd_selection);
-				std::cout<<"Platform XdndDrop: XdndSelectionOwner = "<<owner<<std::endl;
-
 				::XConvertSelection(self.display_, self.atombase_.xdnd_selection, self.xdnd_.good_type, self.atombase_.xdnd_selection,
 									evt.xclient.window, self.xdnd_.timestamp);
-
-				std::cout<<"    XConvertSelection ed"<<std::endl;
 
 				//The XdndDrop should send a XdndFinished to source window.
 				//This operation is implemented in SelectionNotify, because

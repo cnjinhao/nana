@@ -1,7 +1,7 @@
 /*
 *	Filebox
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -37,6 +37,8 @@
 #	include <algorithm>
 #	include "../detail/posix/theme.hpp"
 #endif
+
+#include <iostream> //debug
 
 namespace fs = std::filesystem;
 namespace fs_ext = nana::filesystem_ext;
@@ -153,7 +155,7 @@ namespace nana
 		typedef treebox::item_proxy item_proxy;
 	public:
 
-		filebox_implement(window owner, mode dialog_mode, const std::string& title, bool pick_directory = false):
+		filebox_implement(window owner, mode dialog_mode, const std::string& title, bool pick_directory, bool allow_multi_select):
 			form(owner, API::make_center(owner, 630, 440)),
 			pick_directory_(pick_directory),
 			mode_(dialog_mode)
@@ -239,11 +241,37 @@ namespace nana
 			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_TYPE"), 80);
 			ls_file_.append_header(i18n("NANA_FILEBOX_HEADER_SIZE"), 70);
 
-			auto fn_sel_file = [this](const arg_mouse& arg){
-				_m_select_file(arg);
+
+			auto fn_list_handler = [this](const arg_mouse& arg){
+				if(event_code::mouse_down == arg.evt_code)
+				{
+					selection_.is_deselect_delayed = true;
+				}
+				else if(event_code::mouse_up == arg.evt_code)
+				{
+					selection_.is_deselect_delayed = false;
+
+					if(_m_sync_with_selection())
+						_m_display_target_filenames();
+				}
+				else if(event_code::mouse_move == arg.evt_code)
+				{
+					if(arg.left_button)
+						selection_.is_deselect_delayed = false;
+				}
+				else if(event_code::dbl_click == arg.evt_code)
+					_m_click_select_file(arg);
 			};
-			ls_file_.events().dbl_click.connect_unignorable(fn_sel_file);
-			ls_file_.events().mouse_down.connect_unignorable(fn_sel_file);
+
+			ls_file_.events().dbl_click.connect_unignorable(fn_list_handler);
+			ls_file_.events().mouse_down.connect_unignorable(fn_list_handler);
+			ls_file_.events().mouse_up.connect_unignorable(fn_list_handler);
+			ls_file_.events().mouse_move.connect_unignorable(fn_list_handler);
+
+			ls_file_.events().selected.connect_unignorable([this](const arg_listbox& arg){
+				_m_select_file(arg.item);
+			});
+
 			ls_file_.set_sort_compare(0, [](const std::string& a, nana::any* fs_a, const std::string& b, nana::any* fs_b, bool reverse) -> bool
 				{
 					int dira = any_cast<item_fs>(fs_a)->directory ? 1 : 0;
@@ -327,7 +355,7 @@ namespace nana
 			tb_file_.events().key_char.connect_unignorable([this](const arg_keyboard& arg)
 			{
 				if(arg.key == nana::keyboard::enter)
-					_m_ok();
+					_m_try_select(tb_file_.caption());
 			});
 
 			//Don't create the combox for choose a file extension if the dialog is used for picking a directory.
@@ -341,11 +369,11 @@ namespace nana
 			btn_ok_.create(*this);
 			btn_ok_.i18n(i18n_eval("NANA_BUTTON_OK_SHORTKEY"));
 
-
 			btn_ok_.events().click.connect_unignorable([this](const arg_click&)
 			{
-				_m_ok();
+				_m_try_select(tb_file_.caption());
 			});
+
 			btn_cancel_.create(*this);
 			btn_cancel_.i18n(i18n_eval("NANA_BUTTON_CANCEL_SHORTKEY"));
 
@@ -377,6 +405,10 @@ namespace nana
 			}
 			else
 				caption(title);
+
+
+			if(!allow_multi_select)
+				ls_file_.enable_single(true, true);
 		}
 
 		void def_extension(const std::string& ext)
@@ -392,7 +424,7 @@ namespace nana
 			std::string dir;
 
 			auto pos = init_file.find_last_of("\\/");
-			auto file_with_path_removed = (pos != init_file.npos ? init_file.substr(pos + 1) : init_file);
+			auto filename = (pos != init_file.npos ? init_file.substr(pos + 1) : init_file);
 
 			if(saved_init_path != init_path)
 			{
@@ -400,7 +432,7 @@ namespace nana
 					saved_init_path = init_path;
 
 				//Phase 2: Check whether init_file contains a path
-				if(file_with_path_removed == init_file)
+				if(filename == init_file)
 				{
 					//Phase 3: Check whether init_path is empty
 					if(init_path.size())
@@ -414,7 +446,7 @@ namespace nana
 
 			_m_load_cat_path(dir.size() ? dir : fs_ext::path_user().native());
 
-			tb_file_.caption(file_with_path_removed);
+			tb_file_.caption(filename);
 		}
 
 		void add_filter(const std::string& desc, const std::string& type)
@@ -450,19 +482,18 @@ namespace nana
 				cb_types_.anyobj(i, v);
 		}
 
-		bool file(std::string& fs) const
+		std::vector<std::string> files() const
 		{
-			if(selection_.type == kind::none)
-				return false;
+			if(kind::none == selection_.type)
+				return {};
 
-			auto pos = selection_.target.find_last_of("\\/");
-			if(pos != selection_.target.npos)
-				saved_selected_path = selection_.target.substr(0, pos);
+			auto pos = selection_.targets.front().find_last_of("\\/");
+			if(pos != selection_.targets.front().npos)
+				saved_selected_path = selection_.targets.front().substr(0, pos);
 			else
 				saved_selected_path.clear();
 
-			fs = selection_.target;
-			return true;
+			return selection_.targets;
 		}
 	private:
 		void _m_layout()
@@ -704,7 +735,7 @@ namespace nana
 			if(pick_directory_)
 				return is_dir;
 
-			if((is_dir || 0 == extension) || (0 == extension->size())) return true;
+			if(is_dir || (nullptr == extension) || extension->empty()) return true;
 
 			for(auto & extstr : *extension)
 			{
@@ -799,9 +830,8 @@ namespace nana
 			ls_file_.auto_draw(true);
 		}
 
-		void _m_finish(kind::t type, const std::string& tar)
+		void _m_finish(kind::t type)
 		{
-			selection_.target = tar;
 			selection_.type = type;
 			close();
 		}
@@ -881,108 +911,269 @@ namespace nana
 			return true;
 		}
 	private:
-		void _m_select_file(const arg_mouse& arg)
+		void _m_insert_filename(const std::string& name)
 		{
-			auto sel = ls_file_.selected();
-			if(sel.empty())
+			if(selection_.targets.cend() == std::find(selection_.targets.cbegin(), selection_.targets.cend(), name))
+				selection_.targets.push_back(name);
+		}
+
+		bool _m_hovered_good() const
+		{
+			auto pos = ls_file_.hovered(false);
+			if(!pos.empty())
+			{
+				item_fs mfs;
+				ls_file_.at(pos).resolve_to(mfs);
+				return !mfs.directory;
+			}
+			return false;
+		}
+
+		bool _m_has_good_select() const
+		{
+			auto selected_items = ls_file_.selected();
+			if(selected_items.size())
+			{
+				for(auto & pos : selected_items)
+				{
+					item_fs mfs;
+					ls_file_.at(pos).resolve_to(mfs);
+
+					if((mode::open_directory == mode_) || (false == mfs.directory))
+						return true;
+				}
+			}
+			return false;
+		}
+
+		bool _m_sync_with_selection()
+		{
+			if(_m_has_good_select())
+			{
+				auto selected_items = ls_file_.selected();
+				if(selected_items.size() && (selected_items.size() < selection_.targets.size()))
+				{
+					selection_.targets.clear();
+					for(auto & pos : selected_items)
+					{
+						item_fs mfs;
+						ls_file_.at(pos).resolve_to(mfs);
+
+						if((mode::open_directory == mode_) || (false == mfs.directory))
+							selection_.targets.push_back(mfs.name);
+					}
+					return true;
+				}
+			}
+			return false;
+		}
+
+		void _m_click_select_file(const arg_mouse& arg)
+		{
+			auto selected_item = ls_file_.hovered(false);
+			if(selected_item.empty())
 				return;
 
-			auto index = sel[0];
 			item_fs m;
-			ls_file_.at(index).resolve_to(m);
+			ls_file_.at(selected_item).resolve_to(m);
 
 			if(event_code::dbl_click == arg.evt_code)
 			{
-				if(m.directory)
-					_m_load_cat_path(addr_.filesystem + m.name + "/");
+				if(!m.directory)
+					_m_try_select(m.name);
 				else
-					_m_finish(kind::filesystem, addr_.filesystem + m.name);
-			}
-			else
-			{
-				if((mode::open_directory == mode_) || (false == m.directory))
-				{
-					selection_.target = addr_.filesystem + m.name;
-					tb_file_.caption(m.name);
-				}
+					_m_load_cat_path(addr_.filesystem + m.name + "/");
 			}
 		}
 
-		void _m_ok()
+		void _m_select_file(const listbox::item_proxy& item)
 		{
-			std::string tar = selection_.target;
+			item_fs mfs;
+			ls_file_.at(item.pos()).resolve_to(mfs);
 
-			if(selection_.target.empty())
+			if(item.selected())
 			{
-				auto file = tb_file_.caption();
-				if(file.size())
+				if((mode::open_directory == mode_) || (false == mfs.directory))
 				{
-					internationalization i18n;
-					if(file[0] == '.')
+					if(ls_file_.selected().size() < 2)
+						selection_.targets.clear();
+
+					_m_insert_filename(mfs.name);
+				}
+			}
+			else if(_m_hovered_good() || _m_has_good_select())
+			{
+				for(auto i = selection_.targets.cbegin(); i != selection_.targets.cend();)
+				{
+					std::filesystem::path p{*i};
+					if(p.filename().u8string() == mfs.name)
 					{
-						msgbox mb(*this, caption());
-						mb.icon(msgbox::icon_warning);
-						mb<<file<<std::endl<<i18n("NANA_FILEBOX_ERROR_INVALID_FILENAME");
-						mb();
-						return;
+						if(!selection_.is_deselect_delayed)
+						{
+							i = selection_.targets.erase(i);
+							continue;
+						}
+					}
+					++i;
+				}
+			}
+			_m_display_target_filenames();
+		}
+
+		void _m_display_target_filenames()
+		{
+			std::string filename_string;
+			if(selection_.targets.size() == 1)
+			{
+				filename_string = selection_.targets.front();
+			}
+			else
+			{
+				for(auto i = selection_.targets.crbegin(); i != selection_.targets.crend(); ++i)
+				{
+					std::filesystem::path p{*i};
+					if(!filename_string.empty())
+						filename_string += ' ';
+
+					filename_string += "\"" + p.filename().u8string() + "\"";
+				}
+			}
+
+			tb_file_.caption(filename_string);
+		}
+
+		std::vector<std::string> _m_strip_files(const std::string& text)
+		{
+			std::vector<std::string> files;
+			std::size_t start_pos = 0;
+			while(true)
+			{
+				while(true)
+				{
+					auto pos = text.find_first_of(" \"", start_pos);
+					if(text.npos == pos)
+					{
+						if(text.length() == start_pos)
+							return files;
+
+						return {};
 					}
 
-					if(file[0] == '/')
-						tar = file;
-					else
-						tar = addr_.filesystem + file;
+					start_pos = pos + 1;
 
-					auto fattr = fs::status(tar);
-					auto ftype = static_cast<fs::file_type>(fattr.type());
+					if(text[pos] == '"')
+						break;
+				}
 
-					//Check if the selected name is a directory
-					auto is_dir = fs::is_directory(fattr);
+				auto pos = text.find('"', start_pos);
+				if(text.npos == pos)
+					return {};
 
-					if(!is_dir && _m_append_def_extension(tar))
-					{
-						//Add the extension, then check if it is a directory again.
-						fattr = fs::status(tar);
-						ftype = static_cast<fs::file_type>(fattr.type());
-						is_dir = fs::is_directory(fattr);
-					}
+				if(pos - start_pos > 0)
+					files.push_back(text.substr(start_pos, pos - start_pos));
 
-					if(is_dir)
+				start_pos = pos + 1;
+			}
+
+			return files;
+
+		}
+
+		void _m_try_select(const std::string& files_text)
+		{
+			selection_.targets.clear();
+			//auto file = tb_file_.caption();
+			auto targets = _m_strip_files(files_text);
+
+			if(targets.empty())
+			{
+				//No file is selected
+				if(files_text.empty())
+					return;
+
+				targets.push_back(files_text);
+			}
+
+			internationalization i18n;
+
+			//the position of tar in targets
+			int tar_idx = -1;
+
+			//Check whether the selected files are valid.
+			for(auto tar : targets)
+			{
+				++tar_idx;
+				if(tar[0] == '.')
+				{
+					msgbox mb(*this, caption());
+					mb.icon(msgbox::icon_warning);
+					mb<<tar<<std::endl<<i18n("NANA_FILEBOX_ERROR_INVALID_FILENAME");
+					mb();
+					return;
+				}
+
+				if(tar[0] != '/')
+					tar = addr_.filesystem + tar;
+
+				auto fattr = fs::status(tar);
+				auto ftype = static_cast<fs::file_type>(fattr.type());
+
+				//Check if the selected name is a directory
+				auto is_dir = fs::is_directory(fattr);
+
+				if(!is_dir && _m_append_def_extension(tar))
+				{
+					//Add the extension, then check if it is a directory again.
+					fattr = fs::status(tar);
+					ftype = static_cast<fs::file_type>(fattr.type());
+					is_dir = fs::is_directory(fattr);
+				}
+
+				if(is_dir)
+				{
+					//Enter the directory if this is the first tar.
+					if(0 == tar_idx)
 					{
 						_m_load_cat_path(tar);
 						tb_file_.caption(std::string{});
 						return;
 					}
 
-					if(mode::write_file != mode_)
-					{
-						if(fs::file_type::not_found == ftype)
-						{
-							msgbox mb(*this, caption());
-							mb.icon(msgbox::icon_information);
-							if(mode::open_file != mode_)
-								mb << i18n("NANA_FILEBOX_ERROR_NOT_EXISTING_AND_RETRY", tar);
-							else
-								mb << i18n("NANA_FILEBOX_ERROR_DIRECTORY_NOT_EXISTING_AND_RETRY", tar);
-							mb();
+					//Other folders are ignored
+					continue;
+				}
 
-							return;
-						}
-					}
-					else
+				if(mode::write_file != mode_)
+				{
+					if(fs::file_type::not_found == ftype)
 					{
-						if(fs::file_type::not_found != ftype)
-						{
-							msgbox mb(*this, caption(), msgbox::yes_no);
-							mb.icon(msgbox::icon_question);
-							mb<<i18n("NANA_FILEBOX_ERROR_QUERY_REWRITE_BECAUSE_OF_EXISTING");
-							if(msgbox::pick_no == mb())
-								return;
-						}
+						msgbox mb(*this, caption());
+						mb.icon(msgbox::icon_information);
+						if(mode::open_file == mode_)
+							mb << i18n("NANA_FILEBOX_ERROR_NOT_EXISTING_AND_RETRY", tar);
+						else
+							mb << i18n("NANA_FILEBOX_ERROR_DIRECTORY_NOT_EXISTING_AND_RETRY", tar);
+						mb();
+
+						return;
 					}
 				}
+				else
+				{
+					if(fs::file_type::not_found != ftype)
+					{
+						msgbox mb(*this, caption(), msgbox::yes_no);
+						mb.icon(msgbox::icon_question);
+						mb<<i18n("NANA_FILEBOX_ERROR_QUERY_REWRITE_BECAUSE_OF_EXISTING");
+						if(msgbox::pick_no == mb())
+							return;
+					}
+				}
+
+				selection_.targets.push_back(tar);
 			}
 
-			_m_finish(kind::filesystem, tar);
+			_m_finish(kind::filesystem);			
 		}
 
 		void _m_tr_expand(item_proxy node, bool exp)
@@ -1064,7 +1255,8 @@ namespace nana
 		struct selection_rep
 		{
 			kind::t type;
-			std::string target;
+			std::vector<std::string> targets;
+			bool is_deselect_delayed{ false };
 		}selection_;
 
 		static std::string saved_init_path;
@@ -1099,12 +1291,9 @@ namespace nana
 		window owner;
 		bool open_or_save;
 
-#if defined(NANA_WINDOWS)
 		bool allow_multi_select;
 		std::vector<std::string> files;
-#else
-		std::string file;
-#endif
+
 		std::string title;
 		std::string path;
 		std::vector<filter> filters;
@@ -1120,8 +1309,8 @@ namespace nana
 	{
 		impl_->owner = owner;
 		impl_->open_or_save = open;
-#if defined(NANA_WINDOWS)
 		impl_->allow_multi_select = false;
+#if defined(NANA_WINDOWS)
 		auto len = ::GetCurrentDirectory(0, nullptr);
 		if(len)
 		{
@@ -1178,11 +1367,7 @@ namespace nana
 
 	filebox& filebox::init_file(const std::string& ifstr)
 	{
-#if defined(NANA_WINDOWS)
 		impl_->files = {ifstr};
-#else
-		impl_->file = ifstr;
-#endif
 		return *this;
 	}
 
@@ -1198,30 +1383,18 @@ namespace nana
 		return impl_->path;
 	}
 
-#if defined(NANA_WINDOWS)
-	const std::string& filebox::file() const
+	std::string filebox::file() const
 	{
 		if(impl_->files.empty())
-		{
-			static const std::string empty = "";
-			return empty;
-		}
-		else
-		{
-			return impl_->files.front();
-		}
+			return {};
+
+		return impl_->files.front();
 	}
 
 	const std::vector<std::string>& filebox::files() const
 	{
 		return impl_->files;
 	}
-#else
-	const std::string& filebox::file() const
-	{
-		return impl_->file;
-	}
-#endif
 
 	bool filebox::show() const
 	{
@@ -1332,7 +1505,7 @@ namespace nana
 
 #elif defined(NANA_POSIX)
 		using mode = filebox_implement::mode;
-		filebox_implement fb(impl_->owner, (impl_->open_or_save ? mode::open_file : mode::write_file), impl_->title);
+		filebox_implement fb(impl_->owner, (impl_->open_or_save ? mode::open_file : mode::write_file), impl_->title, false, impl_->allow_multi_select);
 
 		if(impl_->filters.size())
 		{
@@ -1353,27 +1526,28 @@ namespace nana
 		else
 			fb.add_filter("All Files", "*.*");
 
-		fb.load_fs(impl_->path, impl_->file);
+		fb.load_fs(impl_->path, this->file());
 
 		API::modal_window(fb);
-		if(false == fb.file(impl_->file))
+
+		fb.files().swap(impl_->files);
+		if(impl_->files.empty())
 			return false;
-		auto tpos = impl_->file.find_last_of("\\/");
-		if(tpos != impl_->file.npos)
-			impl_->path = impl_->file.substr(0, tpos);
+
+		auto tpos = impl_->files.front().find_last_of("\\/");
+		if(tpos != impl_->files.front().npos)
+			impl_->path = impl_->files.front().substr(0, tpos);
 		else
 			impl_->path.clear();
 #endif
-
 		return true;
 	}
 	
-#if defined(NANA_WINDOWS)
+
 	void filebox::allow_multi_select(bool allow)
 	{
 		impl_->allow_multi_select = allow;
 	}
-#endif
 	//end class filebox
 
 	//class directory picker
@@ -1484,17 +1658,18 @@ namespace nana
 
 #elif defined(NANA_POSIX)
 		using mode = filebox_implement::mode;
-		filebox_implement fb(impl_->owner, mode::open_directory, {}, true);
+		filebox_implement fb(impl_->owner, mode::open_directory, {}, true, false/*single select*/);
 
 		fb.load_fs(impl_->init_path, "");
 
 		API::modal_window(fb);
 
 		std::string path_directory;
-		if(false == fb.file(path_directory))
+		auto path_dir = fb.files();
+		if(path_dir.empty())
 			return {};
 
-		return path_type{path_directory};
+		return path_type{path_dir.front()};
 #endif
 	}
 }//end namespace nana

@@ -1,7 +1,7 @@
 /**
  *	Filebox
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -69,11 +69,10 @@ namespace nana
 
 
 		const ::std::string& path() const;
-		const ::std::string& file() const;
-#if defined(NANA_WINDOWS)
+		::std::string file() const;
+
 		const ::std::vector<::std::string>& files() const;
 		void allow_multi_select(bool allow);
-#endif
 
 		/// Display the filebox dialog
 		bool show() const;

@@ -23,7 +23,7 @@
     <ProjectGuid>{42D0520F-EFA5-4831-84FE-2B9085301C5D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>nana</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -201,7 +201,6 @@
     <ClCompile Include="..\..\source\gui\widgets\date_chooser.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\float_listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\form.cpp" />
-    <ClCompile Include="..\..\source\gui\widgets\frame.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\group.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\label.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\listbox.cpp" />
@@ -272,7 +271,6 @@
     <ClInclude Include="..\..\include\nana\gui\widgets\date_chooser.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\float_listbox.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\form.hpp" />
-    <ClInclude Include="..\..\include\nana\gui\widgets\frame.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\group.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\label.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\listbox.hpp" />

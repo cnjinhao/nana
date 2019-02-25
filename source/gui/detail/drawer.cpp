@@ -138,7 +138,7 @@ namespace nana
 
 		void drawer_trigger::filter_event(const std::vector<event_code>& evt_codes, const bool bDisabled)
 		{
-			for (const auto& evt_code : evt_codes) 
+			for (auto evt_code : evt_codes) 
 			{
 				filter_event(evt_code, bDisabled);
 			}
