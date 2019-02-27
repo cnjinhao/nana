@@ -1339,14 +1339,9 @@ namespace nana
 		std::string init_file;
 
 		std::string title;
-		std::string path;
+		path_type path;
 		std::vector<filter> filters;
 	};
-
-	filebox::filebox(bool is_openmode)
-		: filebox(nullptr, is_openmode)
-	{
-	}
 
 	filebox::filebox(window owner, bool open)
 		: impl_(new implement)
@@ -1389,23 +1384,17 @@ namespace nana
 		impl_->owner = wd;
 	}
 
-	std::string filebox::title(std::string s)
+	void filebox::title(std::string s)
 	{
 		impl_->title.swap(s);
-		return s;
 	}
 
-	filebox& filebox::init_path(const std::string& ipstr)
+	filebox& filebox::init_path(const path_type& p)
 	{
-		if(ipstr.empty())
-		{
-			impl_->path.clear();
-		}
-		else
-		{
-			if (fs::is_directory(ipstr))
-				impl_->path = ipstr;
-		}
+		std::error_code err;
+		if (p.empty() || is_directory(p, err))
+			impl_->path = p;
+		
 		return *this;
 	}
 
@@ -1422,7 +1411,14 @@ namespace nana
 		return *this;
 	}
 
-	const std::string& filebox::path() const
+	filebox& filebox::add_filter(const std::vector<std::pair<std::string, std::string>> &filters)
+	{
+		for (auto &f : filters)
+			add_filter(f.first, f.second);
+		return *this;
+	}
+
+	const filebox::path_type& filebox::path() const
 	{
 		return impl_->path;
 	}
@@ -1574,9 +1570,10 @@ namespace nana
 	}
 
 
-	void filebox::allow_multi_select(bool allow)
+	filebox& filebox::allow_multi_select(bool allow)
 	{
 		impl_->allow_multi_select = allow;
+		return *this;
 	}
 	//end class filebox
 
@@ -1600,10 +1597,10 @@ namespace nana
 	}
 
 
-	std::string folderbox::title(std::string s)
+	folderbox& folderbox::title(std::string s)
 	{
 		impl_->title.swap(s);
-		return s;
+		return *this;
 	}
 
 
@@ -1626,9 +1623,10 @@ namespace nana
 	}
 #endif
 
-	void folderbox::allow_multi_select(bool allow)
+	folderbox& folderbox::allow_multi_select(bool allow)
 	{
 		impl_->allow_multi_select = allow;
+		return *this;
 	}
 
 	std::vector<folderbox::path_type> folderbox::show() const
