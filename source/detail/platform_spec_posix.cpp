@@ -1238,7 +1238,7 @@ namespace detail
 															0, AnyPropertyType, &type, &format, &len,
 															&dummy_bytes_left, &data))
 						{
-							auto files = new std::vector<std::string>;
+							auto files = new std::vector<std::filesystem::path>;
 							std::stringstream ss(reinterpret_cast<char*>(data));
 
 							while(true)
@@ -1258,7 +1258,7 @@ namespace detail
 										break;
 								}
 
-								files->push_back(file);
+								files->emplace_back(file);
 							}
 
 							if(files->size())

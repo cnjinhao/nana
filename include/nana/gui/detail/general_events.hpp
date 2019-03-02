@@ -1,7 +1,7 @@
 /**
 *	Definition of General Events
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,6 +17,7 @@
 #include <nana/gui/basis.hpp>
 #include "event_code.hpp"
 #include "internal_scope_guard.hpp"
+#include "../../filesystem/filesystem.hpp"
 #include <type_traits>
 #include <functional>
 #include <vector>
@@ -470,9 +471,9 @@ namespace nana
 
 	struct arg_dropfiles : public event_arg  
 	{
-		::nana::window	window_handle;	    ///<  A handle to the event window
-		::nana::point	pos;	            ///<  cursor position in the event window
-		std::vector<std::string>	files;	///<  external filenames
+		::nana::window	window_handle;				///<  A handle to the event window
+		::nana::point	pos;						///<  cursor position in the event window
+		std::vector<std::filesystem::path>	files;	///<  external filenames
 	};
 
 	struct arg_expose : public event_arg
