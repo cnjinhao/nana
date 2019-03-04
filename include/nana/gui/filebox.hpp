@@ -47,8 +47,9 @@ namespace nana
 		/**
 		 * Changes the title. When #show()/operator()# are invoked, the dialog of filebox will be created with the specified title.
 		 * @param text Text of title
+		 * @return the reference of *this.
 		 */
-		void title( ::std::string text);  
+		filebox& title( ::std::string text);  
 
 		/// Sets a initial path
 		/**	

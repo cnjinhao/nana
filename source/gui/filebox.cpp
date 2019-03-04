@@ -1384,9 +1384,10 @@ namespace nana
 		impl_->owner = wd;
 	}
 
-	void filebox::title(std::string s)
+	filebox& filebox::title(std::string s)
 	{
 		impl_->title.swap(s);
+		return *this;
 	}
 
 	filebox& filebox::init_path(const path_type& p)
