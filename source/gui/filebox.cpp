@@ -1494,6 +1494,7 @@ namespace nana
 
 		if (!impl_->open_or_save)
 			ofn.Flags = OFN_OVERWRITEPROMPT;	//Overwrite prompt if it is save mode
+		else ofn.Flags = OFN_FILEMUSTEXIST;	//In open mode, user can't type name of nonexistent file
 		ofn.Flags |= OFN_NOCHANGEDIR;
 		if(impl_->allow_multi_select)
 		{
