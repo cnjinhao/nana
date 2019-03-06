@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -66,6 +66,7 @@ namespace nana{	namespace widgets
 			using char_type = wchar_t;
 			using size_type = textbase<char_type>::size_type;
 			using string_type = textbase<char_type>::string_type;
+			using path_type = std::filesystem::path;
 
 			using event_interface = text_editor_event_interface;
 
@@ -105,7 +106,7 @@ namespace nana{	namespace widgets
 			void indent(bool, std::function<std::string()> generator);
 			void set_event(event_interface*);
 
-			bool load(const char*);
+			bool load(const path_type& file);
 
 			void text_align(::nana::align alignment);
 

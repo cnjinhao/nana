@@ -1275,7 +1275,7 @@ namespace nana {
 				event_handler_ = ptr;
 			}
 
-			bool text_editor::load(const char* fs)
+			bool text_editor::load(const path_type& fs)
 			{
 				if (!impl_->textbase.load(fs))
 					return false;

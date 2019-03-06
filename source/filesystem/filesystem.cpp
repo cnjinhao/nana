@@ -936,7 +936,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			auto stat = status(p, err);
 
 			if (err != std::error_code())
-				throw filesystem_error("nana::experimental::filesystem::status", p, err);
+				throw filesystem_error("nana::filesystem::status", p, err);
 
 			return stat;
 		}
@@ -1002,6 +1002,16 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		std::uintmax_t file_size(const path& p)
 		{
+			std::error_code err;
+			auto bytes = file_size(p, err);
+			if (err)
+				throw filesystem_error("nana::filesystem::status", p, err);
+
+			return bytes;
+		}
+
+		std::uintmax_t file_size(const path& p, std::error_code& ec)
+		{
 #if defined(NANA_WINDOWS)
 			//Some compilation environment may fail to link to GetFileSizeEx
 			typedef BOOL(__stdcall *GetFileSizeEx_fptr_t)(HANDLE, PLARGE_INTEGER);
@@ -1019,23 +1029,25 @@ namespace nana {	namespace experimental {	namespace filesystem
 					return li.QuadPart;
 				}
 			}
-			return 0;
+			ec.assign(static_cast<int>(::GetLastError()), std::generic_category());
 #elif defined(NANA_POSIX)
 			FILE * stream = ::fopen(p.c_str(), "rb");
-			long long size = 0;
 			if (stream)
 			{
+				long long bytes = 0;
 #	if defined(NANA_LINUX)
 				fseeko64(stream, 0, SEEK_END);
-				size = ftello64(stream);
+				bytes = ftello64(stream);
 #	elif defined(NANA_POSIX)
 				fseeko(stream, 0, SEEK_END);
-				size = ftello(stream);
+				bytes = ftello(stream);
 #	endif
 				::fclose(stream);
+				return bytes;
 			}
-			return size;
+			ec.assign(static_cast<int>(::errno), std::generic_category());
 #endif
+			return static_cast<std::uintmax_t>(-1);
 		}
 
 
