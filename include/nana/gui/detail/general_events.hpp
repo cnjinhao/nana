@@ -298,34 +298,16 @@ namespace nana
 				};
 			}
 
-			static std::function<void(arg_reference)> build_second(fn_type&& fn, void(fn_type::*)(arg_reference))
+			template<typename Tfn, typename Ret>
+			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(arg_reference))
 			{
-				return std::move(fn);
+				return std::forward<Tfn>(fn);
 			}
 
-			static std::function<void(arg_reference)> build_second(fn_type&& fn, void(fn_type::*)(arg_reference) const)
+			template<typename Tfn, typename Ret>
+			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(arg_reference)const)
 			{
-				return std::move(fn);
-			}
-
-			static std::function<void(arg_reference)> build_second(fn_type& fn, void(fn_type::*)(arg_reference))
-			{
-				return fn;
-			}
-
-			static std::function<void(arg_reference)> build_second(fn_type& fn, void(fn_type::*)(arg_reference) const)
-			{
-				return fn;
-			}
-		
-			static std::function<void(arg_reference)> build_second(const fn_type& fn, void(fn_type::*)(arg_reference))
-			{
-				return fn;
-			}
-
-			static std::function<void(arg_reference)> build_second(const fn_type& fn, void(fn_type::*)(arg_reference) const)
-			{
-				return fn;
+				return std::forward<Tfn>(fn);
 			}
 
 			template<typename Tfn, typename Ret, typename Arg2>
@@ -421,7 +403,7 @@ namespace nana
 			typedef typename std::remove_reference<arg_reference>::type arg_type;
 			static_assert(std::is_convertible<arg_type, Arg2>::value, "The parameter type is not allowed, please check the function parameter type where you connected the event function.");
 
-			static std::function<void(arg_reference)> build(Ret(*fn)(Arg))
+			static std::function<void(arg_reference)> build(Ret(*fn)(Arg2))
 			{
 				return[fn](arg_reference arg){
 					fn(arg);

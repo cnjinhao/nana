@@ -49,7 +49,7 @@ namespace nana {
 				using command = EnumCommand;
 				using container = std::deque<std::unique_ptr<undoable_command_interface<command>>>;
 
-				void clear()
+				void clear() noexcept
 				{
 					commands_.clear();
 					pos_ = 0;
@@ -67,21 +67,9 @@ namespace nana {
 					return max_steps_;
 				}
 
-				void enable(bool enb)
-				{
-					enabled_ = enb;
-					if (!enb)
-						clear();
-				}
-
-				bool enabled() const
-				{
-					return enabled_;
-				}
-
 				void push(std::unique_ptr<undoable_command_interface<command>> && ptr)
 				{
-					if (!ptr || !enabled_)
+					if (!ptr)
 						return;
 
 					if (pos_ < commands_.size())
@@ -100,7 +88,7 @@ namespace nana {
 					++pos_;
 				}
 
-				std::size_t count(bool is_undo) const
+				std::size_t count(bool is_undo) const noexcept
 				{
 					return (is_undo ? pos_ : commands_.size() - pos_);
 				}
@@ -108,10 +96,7 @@ namespace nana {
 				void undo()
 				{
 					if (pos_ > 0)
-					{
-						--pos_;
-						commands_[pos_].get()->execute(false);
-					}
+						commands_[--pos_].get()->execute(false);
 				}
 
 				void redo()
@@ -122,7 +107,6 @@ namespace nana {
 
 			private:
 				container commands_;
-				bool		enabled_{ true };
 				std::size_t max_steps_{ 30 };
 				std::size_t pos_{ 0 };
 			};
@@ -763,9 +747,7 @@ namespace nana {
 					if (second < linemtr_.size())
 						linemtr_.erase(linemtr_.begin() + first + 1, linemtr_.begin() + second + 1);
 
-					auto const width_px = editor_.width_pixels();
-
-					pre_calc_line(first, width_px);
+					pre_calc_line(first, editor_.width_pixels());
 				}
 
 				void add_lines(std::size_t pos, std::size_t lines) override
@@ -1074,8 +1056,8 @@ namespace nana {
 
 			//class text_editor
 
-			text_editor::text_editor(window wd, graph_reference graph, const text_editor_scheme* schm)
-				: impl_(new implementation),
+			text_editor::text_editor(window wd, graph_reference graph, const text_editor_scheme* schm):
+				impl_(new implementation),
 				window_(wd),
 				graph_(graph),
 				scheme_(schm)
@@ -1400,14 +1382,11 @@ namespace nana {
 					impl_->counterpart.buffer.release();
 			}
 
-			void text_editor::undo_enabled(bool enb)
+			void text_editor::undo_clear()
 			{
-				impl_->undo.enable(enb);
-			}
-
-			bool text_editor::undo_enabled() const
-			{
-				return impl_->undo.enabled();
+				auto size = this->undo_max_steps();
+				impl_->undo.max_steps(0);
+				impl_->undo.max_steps(size);
 			}
 
 			void text_editor::undo_max_steps(std::size_t maxs)
@@ -1420,13 +1399,6 @@ namespace nana {
 				return impl_->undo.max_steps();
 			}
 
-			void text_editor::clear_undo()
-			{
-				auto size = impl_->undo.max_steps();
-				impl_->undo.max_steps(0);
-				impl_->undo.max_steps(size);
-			}
-
 			auto text_editor::customized_renderers() -> renderers&
 			{
 				return impl_->customized_renderers;
@@ -1435,12 +1407,11 @@ namespace nana {
 			unsigned text_editor::line_height() const
 			{
 				unsigned ascent, descent, internal_leading;
-				unsigned px = 0;
-				if (graph_.text_metrics(ascent, descent, internal_leading))
-					px = ascent + descent;
+				if (!graph_.text_metrics(ascent, descent, internal_leading))
+					return 0;
 
-				impl_->cview->step(px, false);
-				return px;
+				impl_->cview->step(ascent + descent, false);
+				return ascent + descent;
 			}
 
 			unsigned text_editor::screen_lines(bool completed_line) const
@@ -1449,13 +1420,7 @@ namespace nana {
 				if (line_px)
 				{
 					auto h = impl_->cview->view_area().height;
-					if (graph_ && h)
-					{
-						if (completed_line)
-							return (h / line_px);
-
-						return (h / line_px + (h % line_px ? 1 : 0));
-					}
+					return (h / line_px) + ((completed_line || !(h % line_px)) ? 0 : 1);
 				}
 				return 0;
 			}
@@ -1652,12 +1617,12 @@ namespace nana {
 				return true;
 			}
 
-			textbase<text_editor::char_type> & text_editor::textbase()
+			textbase<text_editor::char_type> & text_editor::textbase() noexcept
 			{
 				return impl_->textbase;
 			}
 
-			const textbase<text_editor::char_type> & text_editor::textbase() const
+			const textbase<text_editor::char_type> & text_editor::textbase() const noexcept
 			{
 				return impl_->textbase;
 			}
@@ -2327,11 +2292,6 @@ namespace nana {
 				impl_->try_refresh = sync_graph::refresh;
 			}
 
-			void text_editor::set_undo_queue_length(std::size_t len)
-			{
-				impl_->undo.max_steps(len);
-			}
-
 			void text_editor::move_ns(bool to_north)
 			{
 				const bool redraw_required = _m_cancel_select(0);
@@ -2566,7 +2526,7 @@ namespace nana {
 				return points_.caret;
 			}
 
-			const upoint& text_editor::caret() const
+			const upoint& text_editor::caret() const noexcept
 			{
 				return points_.caret;
 			}
@@ -3344,7 +3304,7 @@ namespace nana {
 			int text_editor::_m_text_topline() const
 			{
 				auto px = static_cast<int>(line_height());
-				return (px ? (impl_->cview->origin().y / px) : px);
+				return (px ? (impl_->cview->origin().y / px) : 0);
 			}
 
 			int text_editor::_m_text_x(const text_section& sct) const

@@ -671,7 +671,7 @@ namespace drawerbase {
 
 		void textbox::clear_undo()
 		{
-			get_drawer_trigger().editor()->clear_undo();
+			get_drawer_trigger().editor()->undo_clear();
 		}
 
 		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
@@ -792,7 +792,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->set_undo_queue_length(len);
+				editor->undo_max_steps(len);
 		}
 
 		std::size_t textbox::display_line_count() const noexcept

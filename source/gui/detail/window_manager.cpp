@@ -111,17 +111,17 @@ namespace nana
 			}
 		}
 
-		std::vector<unsigned long> shortkey_container::keys(window wd) const
+		const std::vector<unsigned long>* shortkey_container::keys(window wd) const
 		{
 			if (wd)
 			{
 				for (auto & m : impl_->base)
 				{
 					if (m.handle == wd)
-						return m.keys;
+						return &m.keys;
 				}
 			}
-			return{};
+			return nullptr;
 		}
 
 		window shortkey_container::find(unsigned long key) const
@@ -1111,41 +1111,6 @@ namespace detail
 			wd->other.mapping_requester.clear();
 		}
 
-		//get_graphics
-		//@brief: Get a copy of the graphics object of a window.
-		//	the copy of the graphics object has a same buf handle with the graphics object's, they are count-refered
-		//	here returns a reference that because the framework does not guarantee the wnd's
-		//	graphics object available after a get_graphics call.
-		bool window_manager::get_graphics(core_window_t* wd, nana::paint::graphics& result)
-		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-			if (!impl_->wd_register.available(wd))
-				return false;
-
-			result.make(wd->drawer.graphics.size());
-			result.bitblt(0, 0, wd->drawer.graphics);
-			window_layer::paste_children_to_graphics(wd, result);
-			return true;
-		}
-
-		bool window_manager::get_visual_rectangle(core_window_t* wd, nana::rectangle& r)
-		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-			return (impl_->wd_register.available(wd) ?
-				window_layer::read_visual_rectangle(wd, r) :
-				false);
-		}
-
-		std::vector<window_manager::core_window_t*> window_manager::get_children(core_window_t* wd) const
-		{
-			std::lock_guard<mutex_type> lock(mutex_);
-			if (impl_->wd_register.available(wd))
-				return wd->children;
-			return{};
-		}
-
 		bool window_manager::set_parent(core_window_t* wd, core_window_t* newpa)
 		{
 			//Thread-Safe Required!
@@ -1351,7 +1316,6 @@ namespace detail
 			}
 		}
 
-
 		// preconditions of get_tabstop: tabstop is not empty and at least one window is visible
 		window_manager::core_window_t* get_tabstop(window_manager::core_window_t* wd, bool forward)
 		{
@@ -1464,9 +1428,8 @@ namespace detail
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd))
 			{
-				auto object = root_runtime(wd->root);
-				if(object)
-					return object->shortkeys.make(reinterpret_cast<window>(wd), key);
+				//the root runtime must exist, because the wd is valid. Otherse, it's bug of library
+				return root_runtime(wd->root)->shortkeys.make(reinterpret_cast<window>(wd), key);
 			}
 			return false;
 		}
@@ -1487,35 +1450,6 @@ namespace detail
 						unregister_shortkey(child, true);
 				}
 			}
-		}
-
-		auto window_manager::shortkeys(core_window_t* wd, bool with_children) -> std::vector<std::pair<core_window_t*, unsigned long>>
-		{
-			std::vector<std::pair<core_window_t*, unsigned long>> result;
-
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-			if (impl_->wd_register.available(wd))
-			{
-				auto root_rt = root_runtime(wd->root);
-				if (root_rt)
-				{
-					auto keys = root_rt->shortkeys.keys(reinterpret_cast<window>(wd));
-					for (auto key : keys)
-						result.emplace_back(wd, key);
-
-					if (with_children)
-					{
-						for (auto child : wd->children)
-						{
-							auto child_keys = shortkeys(child, true);
-							std::copy(child_keys.begin(), child_keys.end(), std::back_inserter(result));
-						}
-					}
-				}
-			}
-
-			return result;
 		}
 
 		window_manager::core_window_t* window_manager::find_shortkey(native_window_type native_window, unsigned long key)
@@ -1577,7 +1511,6 @@ namespace detail
 		{
 			auto * const wdpa = wd->parent;
 
-
 			bool established = (for_new && (wdpa != for_new));
 			decltype(for_new->root_widget->other.attribute.root) pa_root_attr = nullptr;
 
@@ -1603,7 +1536,7 @@ namespace detail
 					if (root_attr->menubar && check_tree(wd, root_attr->menubar))
 						root_attr->menubar = nullptr;
 
-					sk_holder = shortkeys(wd, true);
+					_m_shortkeys(wd, true, sk_holder);
 				}
 				else
 				{
@@ -1812,6 +1745,28 @@ namespace detail
 			{
 				auto pos = native_interface::window_position(wd->root) + delta;
 				native_interface::move_window(wd->root, pos.x, pos.y);
+			}
+		}
+
+		void window_manager::_m_shortkeys(core_window_t* wd, bool with_children, std::vector<std::pair<core_window_t*, unsigned long>>& keys) const
+		{
+			if (impl_->wd_register.available(wd))
+			{
+				//The root_rt must exist, because wd is valid. Otherwise, it's a bug of the library.
+				auto root_rt = root_runtime(wd->root);
+
+				auto pkeys = root_rt->shortkeys.keys(reinterpret_cast<window>(wd));
+				if (pkeys)
+				{
+					for (auto key : *pkeys)
+						keys.emplace_back(wd, key);
+				}
+
+				if (with_children)
+				{
+					for (auto child : wd->children)
+						_m_shortkeys(child, true, keys);
+				}
 			}
 		}
 

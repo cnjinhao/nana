@@ -15,6 +15,7 @@
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/window_manager.hpp>
+#include <nana/gui/detail/window_layout.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
@@ -90,16 +91,21 @@ namespace API
 
 		void enum_widgets_function_base::enum_widgets(window wd, bool recursive)
 		{
-			using basic_window = ::nana::detail::basic_window;
+			auto iwd = reinterpret_cast<nana::detail::basic_window*>(wd);
 
 			internal_scope_guard lock;
-
-			auto children = restrict::wd_manager().get_children(reinterpret_cast<basic_window*>(wd));
-			for (auto child : children)
+			if (restrict::wd_manager().available(iwd))
 			{
-				auto widget_ptr = API::get_widget(reinterpret_cast<window>(child));
-				if (widget_ptr)
+				//Use a copy, because enum function may close a child window and the original children container would be changed,
+				//in the situation, the walking thorugh directly to the iwd->children would cause error. 
+				auto children = iwd->children;
+
+				for (auto child : children)
 				{
+					auto widget_ptr = API::get_widget(reinterpret_cast<window>(child));
+					if (!widget_ptr)
+						continue;
+
 					_m_enum_fn(widget_ptr);
 					if (recursive)
 						enum_widgets(reinterpret_cast<window>(child), recursive);
@@ -643,7 +649,15 @@ namespace API
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
+		{
+			if (category::flags::root == iwd->other.category)
+			{
+				return reinterpret_cast<window>(restrict::wd_manager().root(
+					interface_type::get_window(iwd->root, window_relationship::parent)
+				));
+			}
 			return reinterpret_cast<window>(iwd->parent);
+		}
 
 		return nullptr;
 	}
@@ -1308,7 +1322,16 @@ namespace API
 
 	bool window_graphics(window wd, nana::paint::graphics& graph)
 	{
-		return restrict::wd_manager().get_graphics(reinterpret_cast<basic_window*>(wd), graph);
+		auto iwd = reinterpret_cast<basic_window*>(wd);
+
+		internal_scope_guard lock;
+		if (!restrict::wd_manager().available(iwd))
+			return false;
+
+		graph.make(iwd->drawer.graphics.size());
+		graph.bitblt(0, 0, iwd->drawer.graphics);
+		nana::detail::window_layout::paste_children_to_graphics(iwd, graph);
+		return true;
 	}
 
 	bool root_graphics(window wd, nana::paint::graphics& graph)
@@ -1325,7 +1348,12 @@ namespace API
 
 	bool get_visual_rectangle(window wd, nana::rectangle& r)
 	{
-		return restrict::wd_manager().get_visual_rectangle(reinterpret_cast<basic_window*>(wd), r);
+		auto iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::wd_manager().available(iwd))
+			return nana::detail::window_layout::read_visual_rectangle(iwd, r);
+		
+		return false;
 	}
 
 	void typeface(window wd, const nana::paint::font& font)

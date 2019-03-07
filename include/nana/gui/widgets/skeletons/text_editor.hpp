@@ -136,13 +136,11 @@ namespace nana{	namespace widgets
 			void enable_background(bool);
 			void enable_background_counterpart(bool);
 
-			void undo_enabled(bool);
-			bool undo_enabled() const;
+			void undo_clear();
 			void undo_max_steps(std::size_t);
 			std::size_t undo_max_steps() const;
 
 			renderers& customized_renderers();
-			void clear_undo();	///< same with undo_max_steps(0)
 
 			unsigned line_height() const;
 			unsigned screen_lines(bool completed_line = false) const;
@@ -203,12 +201,11 @@ namespace nana{	namespace widgets
 			void del();
 			void backspace(bool record_undo, bool perform_event);
 			void undo(bool reverse);
-			void set_undo_queue_length(std::size_t len);
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
 			const upoint& mouse_caret(const point& screen_pos, bool stay_in_view);
-			const upoint& caret() const;
+			const upoint& caret() const noexcept;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
 
@@ -218,8 +215,8 @@ namespace nana{	namespace widgets
 			void mouse_pressed(const arg_mouse& arg);
 			bool select_word(const arg_mouse& arg);
 
-			skeletons::textbase<char_type>& textbase();
-			const skeletons::textbase<char_type>& textbase() const;
+			skeletons::textbase<char_type>& textbase() noexcept;
+			const skeletons::textbase<char_type>& textbase() const noexcept;
 
 			bool try_refresh();
 
