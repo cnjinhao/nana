@@ -1,0 +1,7 @@
+set(PKGCONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
+
+set(NANA_PKGCONFIG ${CMAKE_CURRENT_BINARY_DIR}/nana.pc)
+
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/nana.pc.in "${NANA_PKGCONFIG}" @ONLY)
+
+install(FILES "${NANA_PKGCONFIG}" DESTINATION "${PKGCONFIG_INSTALL_DIR}")

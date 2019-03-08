@@ -22,8 +22,9 @@
 #  It seems that project() defines essential system variables like CMAKE_FIND_LIBRARY_PREFIXES.
 #  https://bbs.archlinux.org/viewtopic.php?id=84967
 
-project(nana)
 cmake_minimum_required(VERSION 2.8)
+cmake_policy(SET CMP0048 NEW)
+project("nana" VERSION 1.6.2)
 
 option(NANA_CMAKE_INSTALL_INCLUDES "Install nana includes when compile the library" ON)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF)
@@ -353,6 +354,7 @@ if(NANA_CMAKE_INSTALL_INCLUDES)
     message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
 endif()
 
+add_subdirectory("pkg_config")
 
 # Just for information:
 message ("")
