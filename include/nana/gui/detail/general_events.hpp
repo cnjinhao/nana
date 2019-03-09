@@ -47,12 +47,11 @@ namespace nana
 		struct docker_base
 			: public docker_interface
 		{
-			event_interface * event_ptr;
-			bool flag_deleted{ false };
+			event_interface * const event_ptr;
+			bool flag_deleted;
 			const bool unignorable;
 
 			docker_base(event_interface*, bool unignorable_flag);
-
 			detail::event_interface * get_event() const override;
 		};
 
@@ -118,7 +117,7 @@ namespace nana
 	private:
 		struct docker
 			: public detail::docker_base
-		{	
+		{
 			/// the callback/response function taking the typed argument
 			std::function<void(arg_reference)> invoke;
 
@@ -221,33 +220,16 @@ namespace nana
 
 			//The dockers may resize when a new event handler is created by a calling handler.
 			//Traverses with position can avaid crash error which caused by a iterator which becomes invalid.
-
-			auto i = dockers_->data();
-			auto const end = i + dockers_->size();
-
-			for (; i != end; ++i)
+			for (std::size_t i = 0; i < dockers_->size(); ++i)
 			{
-				if (static_cast<docker*>(*i)->flag_deleted)
+				auto d = static_cast<docker*>(dockers_->data()[i]);
+				if (d->flag_deleted || (arg.propagation_stopped() && !d->unignorable))
 					continue;
 
-				static_cast<docker*>(*i)->invoke(arg);
+				d->invoke(arg);
 
 				if (window_handle && (!detail::check_window(window_handle)))
 					break;
-
-				if (arg.propagation_stopped())
-				{
-					for (++i; i != end; ++i)
-					{
-						if (!static_cast<docker*>(*i)->unignorable || static_cast<docker*>(*i)->flag_deleted)
-							continue;
-
-						static_cast<docker*>(*i)->invoke(arg);
-						if (window_handle && (!detail::check_window(window_handle)))
-							break;
-					}
-					break;
-				}
 			}
 		}
 	private:
