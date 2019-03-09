@@ -241,6 +241,14 @@ checkbox& group::add_option(std::string text)
 	group& group::enable_format_caption(bool format)
 	{
 		impl_->caption.format(format);
+
+		// if the caption is already set, make sure the layout is updated
+		if(!caption().empty())
+		{
+			impl_->update_div();
+			impl_->place_content.collocate();
+			API::refresh_window(*this);
+		}
 		return *this;
 	}
 
