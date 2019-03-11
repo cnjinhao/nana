@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -11,7 +11,7 @@
 */
 
 #include "../../detail/platform_spec_selector.hpp"
-#include <nana/gui/detail/bedrock_pi_data.hpp>
+#include "bedrock_types.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
@@ -94,6 +94,12 @@ namespace nana
 
 		};
 
+		bedrock::core_window_t* bedrock::focus()
+		{
+			auto wd = wd_manager().root(native_interface::get_focus_window());
+			return (wd ? wd->other.attribute.root->focus : nullptr);
+		}
+
 		events_operation& bedrock::evt_operation()
 		{
 			return pi_data_->evt_operation;
@@ -164,17 +170,10 @@ namespace nana
 						caret_wd->annex.caret_ptr->visible(false);
 				}
 
-				if (!exposed)
+				if ((!exposed) && (category::flags::root != wd->other.category))
 				{
-					if (category::flags::root != wd->other.category)
-					{
-						//find an ancestor until it is not a lite_widget
-						wd = wd->seek_non_lite_widget_ancestor();
-					}
-#ifndef WIDGET_FRAME_DEPRECATED
-					else if (category::flags::frame == wd->other.category)
-						wd = wd_manager().find_window(wd->root, wd->pos_root.x, wd->pos_root.y);
-#endif
+					//find an ancestor until it is not a lite_widget
+					wd = wd->seek_non_lite_widget_ancestor();
 				}
 
 				wd_manager().refresh_tree(wd);
@@ -607,6 +606,94 @@ namespace nana
 				break;
 			default:
 				throw std::runtime_error("Invalid event code");
+			}
+		}
+
+		void bedrock::thread_context_destroy(core_window_t * wd)
+		{
+			auto ctx = get_thread_context(0);
+			if(ctx && ctx->event_window == wd)
+				ctx->event_window = nullptr;
+		}
+
+		void bedrock::thread_context_lazy_refresh()
+		{
+			auto ctx = get_thread_context(0);
+			if(ctx && ctx->event_window)
+				ctx->event_window->other.upd_state = core_window_t::update_state::refreshed;
+		}
+
+		bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd, const bool bForce__EmitInternal)
+		{
+			if(wd_manager().available(wd) == false)
+				return false;
+
+			core_window_t * prev_wd = nullptr;
+			if(thrd)
+			{
+				prev_wd = thrd->event_window;
+				thrd->event_window = wd;
+				_m_event_filter(evt_code, wd, thrd);
+			}
+
+			using update_state = basic_window::update_state;
+
+			if (update_state::none == wd->other.upd_state)
+				wd->other.upd_state = update_state::lazy;
+
+			auto ignore_mapping_value = wd->flags.ignore_child_mapping;
+			wd->flags.ignore_child_mapping = true;
+
+			_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
+
+			wd->flags.ignore_child_mapping = ignore_mapping_value;
+
+			bool good_wd = false;
+			if(wd_manager().available(wd))
+			{
+				//A child of wd may not be drawn if it was out of wd's range before wd resized,
+				//so refresh all children of wd when a resized occurs.
+				if(ask_update || (event_code::resized == evt_code) || (update_state::refreshed == wd->other.upd_state))
+				{
+					wd_manager().do_lazy_refresh(wd, false, (event_code::resized == evt_code));
+				}
+				else
+				{
+					wd_manager().map_requester(wd);
+					wd->other.upd_state = update_state::none;
+				}
+
+				good_wd = true;
+			}
+
+
+			if(thrd) thrd->event_window = prev_wd;
+			return good_wd;
+		}
+
+		void bedrock::_m_event_filter(event_code event_id, core_window_t * wd, thread_context * thrd)
+		{
+			auto not_state_cur = (wd->root_widget->other.attribute.root->state_cursor == nana::cursor::arrow);
+
+			switch(event_id)
+			{
+			case event_code::mouse_enter:
+				if (not_state_cur)
+					set_cursor(wd, wd->predef_cursor, thrd);
+				break;
+			case event_code::mouse_leave:
+				if (not_state_cur && (wd->predef_cursor != cursor::arrow))
+					set_cursor(wd, nana::cursor::arrow, thrd);
+				break;
+			case event_code::destroy:
+				if (wd->root_widget->other.attribute.root->state_cursor_window == wd)
+					undefine_state_cursor(wd, thrd);
+
+				if(wd == thrd->cursor.window)
+					set_cursor(wd, cursor::arrow, thrd);
+				break;
+			default:
+				break;
 			}
 		}
 	}//end namespace detail

@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -233,31 +233,31 @@ namespace drawerbase {
 			create(wd, r, visible);
 		}
 
-		void textbox::load(std::string file)
+		void textbox::load(const std::filesystem::path& file)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if (editor && editor->load(file.data()))
+			if (editor && editor->load(file))
 			{
 				if (editor->try_refresh())
 					API::update_window(handle());
 			}
 		}
 
-		void textbox::store(std::string file)
+		void textbox::store(const std::filesystem::path& file)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->textbase().store(std::move(file), false, nana::unicode::utf8);	//3rd parameter is just for syntax, it will be ignored
+				editor->textbase().store(file, false, nana::unicode::utf8);	//3rd parameter is just for syntax, it will be ignored
 		}
 
-		void textbox::store(std::string file, nana::unicode encoding)
+		void textbox::store(const std::filesystem::path& file, nana::unicode encoding)
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->textbase().store(std::move(file), true, encoding);
+				editor->textbase().store(file, true, encoding);
 		}
 
 		textbox::colored_area_access_interface* textbox::colored_area_access()
@@ -300,7 +300,8 @@ namespace drawerbase {
 				if (end_caret)
 					editor->move_caret_end(true);
 
-				editor->textbase().reset();
+				//Reset the edited status and the saved filename
+				editor->textbase().reset_status(false);
 
 				if (editor->try_refresh())
 					API::update_window(this->handle());
@@ -308,7 +309,7 @@ namespace drawerbase {
 			return *this;
 		}
 
-		std::string textbox::filename() const
+		textbox::path_type textbox::filename() const
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
@@ -330,7 +331,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->textbase().edited_reset();
+				editor->textbase().reset_status(true);
 
 			return *this;
 		}
@@ -584,7 +585,16 @@ namespace drawerbase {
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->select(yes))
+			if (editor && editor->select(yes))
+				API::refresh_window(*this);
+		}
+
+
+		void textbox::select_points(nana::upoint arg_a, nana::upoint arg_b)
+		{
+			auto editor = get_drawer_trigger().editor();
+			internal_scope_guard lock;
+			if (editor && editor->select_points(arg_a, arg_b))
 				API::refresh_window(*this);
 		}
 
@@ -661,7 +671,7 @@ namespace drawerbase {
 
 		void textbox::clear_undo()
 		{
-			get_drawer_trigger().editor()->clear_undo();
+			get_drawer_trigger().editor()->undo_clear();
 		}
 
 		void textbox::set_highlight(const std::string& name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
@@ -782,7 +792,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				editor->set_undo_queue_length(len);
+				editor->undo_max_steps(len);
 		}
 
 		std::size_t textbox::display_line_count() const noexcept

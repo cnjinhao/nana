@@ -62,7 +62,6 @@ library nana {
         gui/widgets/date_chooser.cpp
         gui/widgets/float_listbox.cpp
         gui/widgets/form.cpp
-        gui/widgets/frame.cpp
         gui/widgets/label.cpp
         gui/widgets/listbox.cpp
         gui/widgets/menubar.cpp

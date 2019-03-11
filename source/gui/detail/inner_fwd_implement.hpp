@@ -46,7 +46,7 @@ namespace nana{
 
 			void umake(window wd);
 
-			std::vector<unsigned long> keys(window wd) const;
+			const std::vector<unsigned long>* keys(window wd) const;
 
 			window find(unsigned long key) const;
 		private:

@@ -1228,9 +1228,10 @@ namespace nana
 		impl->browse.events().click.connect_unignorable([wd, impl](const arg_click&)
 		{
 			impl->fbox.owner(wd);
-			if (impl->fbox.show())
+			auto files = impl->fbox.show();
+			if(!files.empty())
 			{
-				impl->value = impl->fbox.file();
+				impl->value = files.front().u8string();
 				impl->path_edit.caption(impl->value);
 			}
 		});

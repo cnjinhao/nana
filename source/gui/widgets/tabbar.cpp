@@ -492,9 +492,17 @@ namespace nana
 					return (trace_.what != trace_.null);
 				}
 
-				bool active_by_trace()
+				bool active_by_trace(const arg_mouse& arg)
 				{
-					return ((trace_.what == trace_.item) && (trace_.item_part != trace_.close)? activate(trace_.u.index) : false);
+					if((trace_.what == trace_.item) && (trace_.item_part != trace_.close))
+					{
+						if(false == evt_agent_->click(arg, trace_.u.index))
+							return activate(trace_.u.index);
+
+						return true;
+					}
+					
+					return false;
 				}
 
 				bool release()
@@ -751,15 +759,27 @@ namespace nana
 					if((pos == npos) || (pos >= list_.size()))
 					{
 						pos = list_.size();
+						
+						if(evt_agent_)
+							if(!evt_agent_->adding(pos))
+								return false;
+
 						this->list_.emplace_back();
 					}
 					else
+					{
+						if(evt_agent_)
+							if(!evt_agent_->adding(pos))
+								return false;
+
 						list_.emplace(iterator_at(pos));
+					}
 
 					basis_.active = pos;
 					if(evt_agent_)
 					{
 						evt_agent_->added(pos);
+						erase(pos);
 						evt_agent_->activated(pos);
 					}
 					return true;
@@ -1273,7 +1293,7 @@ namespace nana
 				{
 					if(layouter_->press())
 					{
-						if(false == layouter_->active_by_trace())
+						if(false == layouter_->active_by_trace(arg))
 							layouter_->toolbox_answer(arg);
 						layouter_->render();
 						API::dev::lazy_refresh();

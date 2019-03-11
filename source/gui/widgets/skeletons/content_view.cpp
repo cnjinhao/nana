@@ -65,7 +65,7 @@ namespace nana {
 
 				bool	passive{ true }; //The passive mode determines whether to update if scrollbar changes. It updates the client window if passive is true.
 
-				bool	drag_started{ false };
+				bool	drag_view_move{ false };	//indicates the status of the content-view if it moves origin by dragging
 				point origin;
 
 				std::shared_ptr<cv_scroll_rep> cv_scroll;
@@ -120,11 +120,17 @@ namespace nana {
 							if (!arg.is_left_button())
 								return;
 
-							this->drag_started = this->view.view_area().is_hit(arg.pos);
+							this->drag_view_move = this->view.view_area().is_hit(arg.pos);
 						}
 						else if (event_code::mouse_move == arg.evt_code)
 						{
-							if (this->drag_started && this->drive(arg.pos))
+							if (dragdrop_status::not_ready != API::window_dragdrop_status(this->window_handle))
+							{
+								//When dnd is in progress, it cancels the move_view operation.
+								this->drag_view_move = false;
+								tmr.stop();
+							}
+							else if (this->drag_view_move && this->drive(arg.pos))
 							{
 								tmr.interval(16);
 								tmr.start();
@@ -132,7 +138,7 @@ namespace nana {
 						}
 						else if (event_code::mouse_up == arg.evt_code)
 						{
-							this->drag_started = false;
+							this->drag_view_move = false;
 							tmr.stop();
 						}
 					};
@@ -224,7 +230,6 @@ namespace nana {
 						{
 							cv_scroll->vert.create(window_handle);
 							cv_scroll->vert.events().value_changed.connect_unignorable(event_fn);
-							API::take_active(cv_scroll->vert, false, window_handle);
 							this->passive = false;
 						}
 						
@@ -255,7 +260,6 @@ namespace nana {
 						{
 							cv_scroll->horz.create(window_handle);
 							cv_scroll->horz.events().value_changed.connect_unignorable(event_fn);
-							API::take_active(cv_scroll->horz, false, window_handle);
 							this->passive = false;
 						}
 

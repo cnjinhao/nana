@@ -1,7 +1,7 @@
 /**
  *	A Basic Window Widget Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -116,10 +116,6 @@ namespace detail
 		/// bind a native window and baisc_window
 		void bind_native_window(native_window_type, unsigned width, unsigned height, unsigned extra_width, unsigned extra_height, paint::graphics&);
 
-#ifndef WIDGET_FRAME_DEPRECATED
-		void frame_window(native_window_type);
-#endif
-
 		bool is_ancestor_of(const basic_window* wd) const;
 		bool visible_parents() const;
 		bool displayed() const;
@@ -179,7 +175,9 @@ namespace detail
 			bool ignore_menubar_focus	: 1;	///< A flag indicates whether the menubar sets the focus.
 			bool ignore_mouse_focus		: 1;	///< A flag indicates whether the widget accepts focus when clicking on it
 			bool space_click_enabled : 1;		///< A flag indicates whether enable mouse_down/click/mouse_up when pressing and releasing whitespace key.
-			unsigned Reserved	:18;
+			bool draggable : 1;
+			bool ignore_child_mapping : 1;
+			unsigned Reserved	:16;
 			unsigned char tab;		///< indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 			mouse_action	action_before;
@@ -205,19 +203,8 @@ namespace detail
 
 		struct other_tag
 		{
-#ifndef WIDGET_FRAME_DEPRECATED
-			struct	attr_frame_tag
-			{
-				native_window_type container{nullptr};
-				std::vector<native_window_type> attach;
-			};
-#endif
-
 			struct	attr_root_tag
 			{
-#ifndef WIDGET_FRAME_DEPRECATED
-				container	frames;	///< initialization is null, it will be created while creating a frame widget. Refer to WindowManager::create_frame
-#endif
 				container	tabstop;
 				std::vector<edge_nimbus_action> effects_edge_nimbus;
 				basic_window*	focus{nullptr};
@@ -234,13 +221,13 @@ namespace detail
 											///< if the active_window is null, the parent of this window keeps focus.
 			paint::graphics glass_buffer;	///< if effect.bground is avaiable. Refer to window_layout::make_bground.
 			update_state	upd_state;
+			dragdrop_status	dnd_state{ dragdrop_status::not_ready };
+
+			container mapping_requester;	///< Children which are ignored to mapping
 
 			union
 			{
 				attr_root_tag * root;
-#ifndef WIDGET_FRAME_DEPRECATED
-				attr_frame_tag * frame;
-#endif
 			}attribute;
 
 			other_tag(category::flags);

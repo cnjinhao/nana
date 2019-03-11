@@ -1,7 +1,7 @@
 /**
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -83,12 +83,6 @@ namespace detail
 
 		core_window_t* create_root(core_window_t*, bool nested, rectangle, const appearance&, widget*);
 		core_window_t* create_widget(core_window_t*, const rectangle&, bool is_lite, widget*);
-#ifndef WIDGET_FRAME_DEPRECATED
-		core_window_t* create_frame(core_window_t*, const rectangle&, widget*);
-
-		bool insert_frame(core_window_t* frame, native_window);
-		bool insert_frame(core_window_t* frame, core_window_t*);
-#endif
 		void close(core_window_t*);
 
 		//destroy
@@ -122,11 +116,8 @@ namespace detail
 		void refresh_tree(core_window_t*);
 
 		void do_lazy_refresh(core_window_t*, bool force_copy_to_screen, bool refresh_tree = false);
+		void map_requester(core_window_t*);
 
-		bool get_graphics(core_window_t*, nana::paint::graphics&);
-		bool get_visual_rectangle(core_window_t*, nana::rectangle&);
-
-		std::vector<core_window_t*> get_children(core_window_t*) const;
 		bool set_parent(core_window_t* wd, core_window_t* new_parent);
 		core_window_t* set_focus(core_window_t*, bool root_has_been_focused, arg_focus::reason);
 
@@ -149,7 +140,6 @@ namespace detail
 
 		bool register_shortkey(core_window_t*, unsigned long key);
 		void unregister_shortkey(core_window_t*, bool with_children);
-		std::vector<std::pair<core_window_t*, unsigned long>> shortkeys(core_window_t*, bool with_children);
 
 		core_window_t* find_shortkey(native_window_type, unsigned long key);
 
@@ -159,6 +149,7 @@ namespace detail
 		void _m_disengage(core_window_t*, core_window_t* for_new);
 		void _m_destroy(core_window_t*);
 		void _m_move_core(core_window_t*, const point& delta);
+		void _m_shortkeys(core_window_t*, bool with_chlidren, std::vector<std::pair<core_window_t*, unsigned long>>& keys) const;
 		core_window_t* _m_find(core_window_t*, const point&);
 		static bool _m_effective(core_window_t*, const point& root_pos);
 	private:

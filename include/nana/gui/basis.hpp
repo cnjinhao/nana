@@ -4,7 +4,7 @@
  *
  *	Basis Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -65,6 +65,13 @@ namespace nana
 		blend
 	};
 
+	enum class dragdrop_status
+	{
+		not_ready,
+		ready,
+		in_progress
+	};
+
 	namespace category
 	{
 		enum class flags
@@ -73,17 +80,11 @@ namespace nana
 			widget = 0x1,
 			lite_widget = 0x3,
 			root = 0x5
-#ifndef WIDGET_FRAME_DEPRECATED
-			,frame = 0x9
-#endif
 		};
 		//wait for constexpr
 		struct widget_tag{ static const flags value = flags::widget; };
 		struct lite_widget_tag : public widget_tag{ static const flags value = flags::lite_widget;  };
 		struct root_tag : public widget_tag{ static const flags value = flags::root;  };
-#ifndef WIDGET_FRAME_DEPRECATED
-		struct frame_tag : public widget_tag{ static const flags value = flags::frame;  };
-#endif
 	}// end namespace category
 
 	using native_window_type = detail::native_window_handle_impl*;

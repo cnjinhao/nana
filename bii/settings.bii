@@ -1,2 +1,0 @@
-cmake: {generator: MinGW Makefiles}
-os: {arch: 32bit, family: Windows, subfamily: '7', version: 6.1.7601}

@@ -151,7 +151,13 @@ namespace nana
 		bool vertical() const;
 		void maximum(unsigned);
 		unsigned maximum() const;
-		void value(unsigned);
+
+		/** Set slider value
+            @param[in] v new value for slider.
+            v will be clipped to the range 0 to maximum
+        */
+		void value(int );
+
 		unsigned value() const;
 		unsigned move_step(bool forward);                         ///< Increase or decrease the value of slider.
 		unsigned adorn() const;

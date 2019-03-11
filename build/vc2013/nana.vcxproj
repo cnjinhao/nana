@@ -202,6 +202,7 @@
     <ClCompile Include="..\..\source\gui\detail\native_window_interface.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_layout.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_manager.cpp" />
+    <ClCompile Include="..\..\source\gui\dragdrop.cpp" />
     <ClCompile Include="..\..\source\gui\dragger.cpp" />
     <ClCompile Include="..\..\source\gui\drawing.cpp" />
     <ClCompile Include="..\..\source\gui\effects.cpp" />
@@ -223,7 +224,6 @@
     <ClCompile Include="..\..\source\gui\widgets\date_chooser.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\float_listbox.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\form.cpp" />
-    <ClCompile Include="..\..\source\gui\widgets\frame.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\group.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\label.cpp" />
     <ClCompile Include="..\..\source\gui\widgets\listbox.cpp" />
@@ -324,7 +324,6 @@
     <ClInclude Include="..\..\include\nana\gui\widgets\detail\tree_cont.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\float_listbox.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\form.hpp" />
-    <ClInclude Include="..\..\include\nana\gui\widgets\frame.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\group.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\label.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\listbox.hpp" />

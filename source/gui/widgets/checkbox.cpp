@@ -1,7 +1,7 @@
 /*
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,6 +24,7 @@ namespace nana{ namespace drawerbase
 		struct drawer::implement
 		{
 			widget * widget_ptr;
+			scheme * scheme_ptr;
 			bool react;
 			bool radio;
 			facade<element::crook> crook;
@@ -47,6 +48,7 @@ namespace nana{ namespace drawerbase
 			void drawer::attached(widget_reference widget, graph_reference)
 			{
 				impl_->widget_ptr = &widget;
+				impl_->scheme_ptr =static_cast<scheme*>(API::dev::get_scheme(widget));
 				API::dev::enable_space_click(widget, true);
 			}
 
@@ -78,12 +80,18 @@ namespace nana{ namespace drawerbase
 				}
 
 				//draw crook
-#ifdef _nana_std_has_string_view
-				auto txt_px = graph.text_extent_size(std::wstring_view( L"jN", 2 )).height + 2;
-#else
-				auto txt_px = graph.text_extent_size(L"jN", 2).height + 2;
-#endif
-				impl_->crook.draw(graph, wdg->bgcolor(), wdg->fgcolor(), rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), API::element_state(*wdg));
+
+				unsigned txt_px = 0, descent = 0, ileading = 0;
+				graph.text_metrics(txt_px, descent, ileading);
+				txt_px += (descent + 2);
+
+				auto e_state = API::element_state(*wdg);
+				if(!wdg->enabled())
+					e_state = element_state::disabled;
+
+				impl_->crook.draw(graph,
+					impl_->scheme_ptr->square_bgcolor.get(wdg->bgcolor()), impl_->scheme_ptr->square_border_color.get(wdg->fgcolor()),
+					rectangle(0, txt_px > 16 ? (txt_px - 16) / 2 : 0, 16, 16), e_state);
 			}
 
 			void drawer::mouse_down(graph_reference graph, const arg_mouse&)
@@ -208,6 +216,7 @@ namespace nana{ namespace drawerbase
 			{
 				e.uiobj->radio(false);
 				e.uiobj->react(true);
+				API::umake_event(e.eh_clicked);
 				API::umake_event(e.eh_checked);
 				API::umake_event(e.eh_destroy);
 				API::umake_event(e.eh_keyboard);
@@ -224,7 +233,7 @@ namespace nana{ namespace drawerbase
 
 			el.uiobj = &uiobj;
 
-			uiobj.events().checked.connect_unignorable([this](const arg_checkbox& arg)
+			el.eh_checked = uiobj.events().checked.connect_unignorable([this](const arg_checkbox& arg)
 			{
 				if (arg.widget->checked())
 				{
@@ -236,7 +245,7 @@ namespace nana{ namespace drawerbase
 				}
 			}, true);
 
-			el.eh_checked = uiobj.events().click.connect_unignorable([this](const arg_click& arg)
+			el.eh_clicked = uiobj.events().click.connect_unignorable([this](const arg_click& arg)
 			{
 				for (auto & i : ui_container_)
 					i.uiobj->check(arg.window_handle == i.uiobj->handle());

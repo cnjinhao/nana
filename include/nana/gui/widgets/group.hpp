@@ -3,8 +3,8 @@
  *	Nana C++ Library(http://www.nanaro.org)
  *	Copyright(C) 2015-2018 Jinhao(cnjinhao@hotmail.com)
  *
- *	Distributed under the Boost Software License, Version 1.0. 
- *	(See accompanying file LICENSE_1_0.txt or copy at 
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/widgets/group.hpp
@@ -42,6 +42,13 @@ namespace nana{
 		using field_reference = place::field_reference;
 		constexpr static const std::size_t npos = static_cast<std::size_t>(-1);
 
+		enum class background_mode
+		{
+			none,
+			transparent,
+			blending
+		};
+
 		/// The default construction
 		group();
 
@@ -66,16 +73,27 @@ namespace nana{
 		checkbox& add_option(::std::string);
 
 		/// Modifies the alignment of the title
-		void caption_align(align position);
+		group& caption_align(align position);
+		group& caption_background_mode(background_mode mode);
 
 		/// Enables/disables the radio mode which is single selection
 		group& radio_mode(bool);
 
-		/// Returns the index of option in radio_mode, it throws a logic_error if radio_mode is false.
+		/// Returns the index of selected option in radio_mode, it throws a logic_error if radio_mode is false.
 		std::size_t option() const;
+
+        /** Set check/unchecked status of specified option
+            @param[in] pos zero-based index of option to set
+            @param[in] check status required, defaults to checked
+            throws an out_of_range if !(pos < number of options)
+        */
+        void option_check( std::size_t pos, bool check = true );
 
 		/// Determines whether a specified option is checked, it throws an out_of_range if !(pos < number of options)
 		bool option_checked(std::size_t pos) const;
+
+		/// Change typeface of caption label ( does not effect child widgets )
+		void typeface( const nana::paint::font& font );
 
 		group& enable_format_caption(bool format);
 
@@ -86,7 +104,7 @@ namespace nana{
 		void field_display(const char* field_name, bool display); ///<Displays/Discards an existing field.
 		bool field_display(const char* field_name) const;	///<Determines whether the specified field is displayed.
 		void erase(window handle);				///< Erases a window from field.
-		
+
 		template<typename Widget, typename ...Args>
 		Widget* create_child(const char* field, Args && ... args)
 		{

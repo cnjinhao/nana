@@ -141,9 +141,6 @@
     <ClCompile Include="..\..\source\gui\widgets\form.cpp">
       <Filter>Source Files\gui\widgets</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\gui\widgets\frame.cpp">
-      <Filter>Source Files\gui\widgets</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\gui\widgets\group.cpp">
       <Filter>Source Files\gui\widgets</Filter>
     </ClCompile>
@@ -290,6 +287,9 @@
     </ClCompile>
     <ClCompile Include="..\..\source\detail\platform_abstraction.cpp">
       <Filter>Source Files\detail</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\gui\dragdrop.cpp">
+      <Filter>Source Files\gui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 /*
  *	A Tree Container class implementation
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -63,7 +63,7 @@ namespace detail
 			{
 				while (child)
 				{
-					if (child->owner == this)
+					if (child == this)
 						return true;
 
 					child = child->owner;
@@ -357,12 +357,12 @@ namespace detail
 			}
 
 			template<typename PredAllowChild>
-			unsigned distance_if(const node_type * node, PredAllowChild pac) const
+			std::size_t distance_if(const node_type * node, PredAllowChild pac) const
 			{
 				if(nullptr == node)	return 0;
 				const node_type * iterator = root_.child;
 
-				unsigned off = 0;
+				std::size_t off = 0;
 				std::stack<const node_type* > stack;
 
 				while(iterator && iterator != node)
@@ -479,6 +479,8 @@ namespace detail
 				return nullptr;
 			}
 
+			// foreach elements of key.
+			// the root name "/" and "\\" are treated as a node. This is a feature that can easily support the UNIX-like path.
 			template<typename Function>
 			void _m_for_each(const ::std::string& key, Function function) const
 			{
@@ -491,18 +493,24 @@ namespace detail
 					{
 						if(beg != end)
 						{
-							if(function(key.substr(beg, end - beg)) == false)
+							if(!function(key.substr(beg, end - beg)))
 								return;
 						}
 
 						auto next = key.find_first_not_of("\\/", end);
-						if(next != ::std::string::npos)
-						{
-							beg = next;
-							end = key.find_first_of("\\/", beg);
-						}
-						else
+
+						if ((next == ::std::string::npos) && end)
 							return;
+
+						if (0 == end)
+						{
+							if ((!function(key.substr(0, 1))) || (next == ::std::string::npos))
+								return;
+						}
+
+						beg = next;
+						end = key.find_first_of("\\/", beg);
+
 					}
 
 					function(key.substr(beg, key.size() - beg));

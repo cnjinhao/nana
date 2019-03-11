@@ -500,20 +500,23 @@ namespace detail
 		atombase_.net_wm_window_type_dialog = ::XInternAtom(display_, "_NET_WM_WINDOW_TYPE_DIALOG", False);
 		atombase_.motif_wm_hints = ::XInternAtom(display_, "_MOTIF_WM_HINTS", False);
 
-		atombase_.clipboard = ::XInternAtom(display_, "CLIPBOARD", True);
-		atombase_.text = ::XInternAtom(display_, "TEXT", True);
-		atombase_.text_uri_list = ::XInternAtom(display_, "text/uri-list", True);
-		atombase_.utf8_string = ::XInternAtom(display_, "UTF8_STRING", True);
-		atombase_.targets = ::XInternAtom(display_, "TARGETS", True);
+		atombase_.clipboard = ::XInternAtom(display_, "CLIPBOARD", False);
+		atombase_.text = ::XInternAtom(display_, "TEXT", False);
+		atombase_.text_uri_list = ::XInternAtom(display_, "text/uri-list", False);
+		atombase_.utf8_string = ::XInternAtom(display_, "UTF8_STRING", False);
+		atombase_.targets = ::XInternAtom(display_, "TARGETS", False);
 
 		atombase_.xdnd_aware = ::XInternAtom(display_, "XdndAware", False);
 		atombase_.xdnd_enter = ::XInternAtom(display_, "XdndEnter", False);
 		atombase_.xdnd_position = ::XInternAtom(display_, "XdndPosition", False);
 		atombase_.xdnd_status	= ::XInternAtom(display_, "XdndStatus", False);
 		atombase_.xdnd_action_copy = ::XInternAtom(display_, "XdndActionCopy", False);
+		atombase_.xdnd_action_move = ::XInternAtom(display_, "XdndActionMove", False);
+		atombase_.xdnd_action_link = ::XInternAtom(display_, "XdndActionLink", False);
 		atombase_.xdnd_drop = ::XInternAtom(display_, "XdndDrop", False);
 		atombase_.xdnd_selection = ::XInternAtom(display_, "XdndSelection", False);
 		atombase_.xdnd_typelist = ::XInternAtom(display_, "XdndTypeList", False);
+		atombase_.xdnd_leave = ::XInternAtom(display_, "XdndLeave", False);
 		atombase_.xdnd_finished = ::XInternAtom(display_, "XdndFinished", False);
 
 		msg_dispatcher_ = new msg_dispatcher(display_);
@@ -658,21 +661,31 @@ namespace detail
 		platform_scope_guard lock;
 		if(umake_owner(wd))
 		{
+			auto & wd_manager = detail::bedrock::instance().wd_manager();
+
+			std::vector<native_window_type> owned_children;
+
 			auto i = wincontext_.find(wd);
 			if(i != wincontext_.end())
 			{
 				if(i->second.owned)
 				{
-					set_error_handler();
-					auto & wd_manager = detail::bedrock::instance().wd_manager();
-					for(auto u = i->second.owned->rbegin(); u != i->second.owned->rend(); ++u)
-						wd_manager.close(wd_manager.root(*u));
-
-					rev_error_handler();
-
-					delete i->second.owned;
+					for(auto child : *i->second.owned)
+						owned_children.push_back(child);
 				}
+			}
 
+			//Closing a child will erase the wd from the table wincontext_, so the 
+			//iterator i can't be reused after children closed.
+			set_error_handler();
+			for(auto u = owned_children.rbegin(); u != owned_children.rend(); ++u)
+				wd_manager.close(wd_manager.root(*u));
+			rev_error_handler();
+
+			i = wincontext_.find(wd);
+			if(i != wincontext_.end())
+			{
+				delete i->second.owned;
 				wincontext_.erase(i);
 			}
 		}
@@ -1031,6 +1044,12 @@ namespace detail
 		msg_dispatcher_->dispatch(reinterpret_cast<Window>(modal));
 	}
 
+	void platform_spec::msg_dispatch(std::function<propagation_chain(const msg_packet_tag&)> msg_filter_fn)
+	{
+		msg_dispatcher_->dispatch(msg_filter_fn);
+
+	}
+
 	void* platform_spec::request_selection(native_window_type requestor, Atom type, size_t& size)
 	{
 		if(requestor)
@@ -1094,6 +1113,62 @@ namespace detail
 		return graph;
 	}
 
+
+	bool platform_spec::register_dragdrop(native_window_type wd, x11_dragdrop_interface* ddrop)
+	{
+		platform_scope_guard lock;
+		if(0 != xdnd_.dragdrop.count(wd))
+			return false;
+
+		xdnd_.dragdrop[wd] = ddrop;
+		return true;
+	}
+
+	std::size_t platform_spec::dragdrop_target(native_window_type wd, bool insert, std::size_t count)
+	{
+		std::size_t new_val = 0;
+		platform_scope_guard lock;
+		if(insert)
+		{
+			new_val = (xdnd_.targets[wd] += count);
+			if(1 == new_val)
+			{
+				int dndver = 5;
+				::XChangeProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware, XA_ATOM, sizeof(int) * 8,
+					PropModeReplace, reinterpret_cast<unsigned char*>(&dndver), 1);
+			}
+		}
+		else
+		{
+			auto i = xdnd_.targets.find(wd);
+			if(i == xdnd_.targets.end())
+				return 0;
+
+			new_val = (i->second > count ? i->second - count : 0);
+			if(0 == new_val)
+			{
+				xdnd_.targets.erase(wd);
+				::XDeleteProperty(display_, reinterpret_cast<Window>(wd), atombase_.xdnd_aware);
+			}
+			else
+				i->second = new_val;
+		}
+		return new_val;
+	}
+
+	x11_dragdrop_interface* platform_spec::remove_dragdrop(native_window_type wd)
+	{
+		platform_scope_guard lock;
+		auto i = xdnd_.dragdrop.find(wd);
+		if(i == xdnd_.dragdrop.end())
+			return nullptr;
+
+		auto ddrop = i->second;
+		xdnd_.dragdrop.erase(i);
+
+		return ddrop;
+	}
+
 	//_m_msg_filter
 	//@return:	_m_msg_filter returns three states
 	//		0 = msg_dispatcher dispatches the XEvent
@@ -1153,7 +1228,7 @@ namespace detail
 				else if(evt.xselection.property == self.atombase_.xdnd_selection)
 				{
 					bool accepted = false;
-					msg.kind = msg.kind_mouse_drop;
+					msg.kind = msg_packet_tag::pkt_family::mouse_drop;
 					msg.u.mouse_drop.window = 0;
 					if(bytes_left > 0 && type == self.xdnd_.good_type)
 					{
@@ -1163,8 +1238,9 @@ namespace detail
 															0, AnyPropertyType, &type, &format, &len,
 															&dummy_bytes_left, &data))
 						{
-							auto files = new std::vector<std::string>;
+							auto files = new std::vector<std::filesystem::path>;
 							std::stringstream ss(reinterpret_cast<char*>(data));
+
 							while(true)
 							{
 								std::string file;
@@ -1182,8 +1258,9 @@ namespace detail
 										break;
 								}
 
-								files->push_back(file);
+								files->emplace_back(file);
 							}
+
 							if(files->size())
 							{
 								msg.u.mouse_drop.window = evt.xselection.requestor;
@@ -1198,8 +1275,9 @@ namespace detail
 							::XFree(data);
 						}
 					}
-					XEvent respond;
+					::XEvent respond;
 					::memset(respond.xclient.data.l, 0, sizeof(respond.xclient.data.l));
+					respond.xany.type = ClientMessage;
 					respond.xclient.display = self.display_;
 					respond.xclient.window = self.xdnd_.wd_src;
 					respond.xclient.message_type = self.atombase_.xdnd_finished;
@@ -1222,6 +1300,10 @@ namespace detail
 		}
 		else if(SelectionRequest == evt.type)
 		{
+			//Skip if it is requested by XDND, it will be processed by dragdrop's xdnd_protocol
+			if(self.atombase_.xdnd_selection == evt.xselectionrequest.selection)
+				return 0;
+
 			auto disp = evt.xselectionrequest.display;
 			XEvent respond;
 
@@ -1286,24 +1368,56 @@ namespace detail
 						::XGetWindowProperty(self.display_, self.xdnd_.wd_src, self.atombase_.xdnd_typelist,
 											0, bytes_left, False, XA_ATOM,
 											&type, &format, &len, &bytes_left, &data);
+						
 						if(XA_ATOM == type && len > 0)
 							atoms = reinterpret_cast<const Atom*>(data);
 					}
 				}
 
+#define DEBUG_XdndDirectSave
+#ifdef DEBUG_XdndDirectSave
+				Atom XdndDirectSave = 0;
+#endif
 				self.xdnd_.good_type = None;
 				for(unsigned long i = 0; i < len; ++i)
 				{
+					auto name = XGetAtomName(self.display_, atoms[i]); //debug
+					if(name)
+					{
+#ifdef DEBUG_XdndDirectSave
+						if(strstr(name, "XdndDirectSave"))
+							XdndDirectSave = atoms[i];
+#endif
+						::XFree(name);
+					}
+
 					if(atoms[i] == self.atombase_.text_uri_list)
 					{
 						self.xdnd_.good_type = self.atombase_.text_uri_list;
-						break;
+						//break;
 					}
 				}
 
 				if(data)
 					::XFree(data);
 
+#ifdef DEBUG_XdndDirectSave	//debug
+				if(XdndDirectSave)
+				{
+					Atom type;
+					int format;
+					unsigned long bytes_left;
+
+					::XGetWindowProperty(self.display_, self.xdnd_.wd_src, XdndDirectSave, 0, 0, False, XA_ATOM, &type, &format, &len, &bytes_left, &data);
+
+					if(bytes_left > 0)
+					{
+						::XGetWindowProperty(self.display_, self.xdnd_.wd_src, XdndDirectSave,
+											0, bytes_left, False, type,
+											&type, &format, &len, &bytes_left, &data);
+					}
+				}
+#endif
 				return 2;
 			}
 			else if(self.atombase_.xdnd_position == evt.xclient.message_type)
@@ -1312,7 +1426,7 @@ namespace detail
 				int x = (evt.xclient.data.l[2] >> 16);
 				int y = (evt.xclient.data.l[2] & 0xFFFF);
 
-				bool accepted = false;
+				int accepted = 0; //0 means refusing, 1 means accpeting
 				//We have got the type what we want.
 				if(self.xdnd_.good_type != None)
 				{
@@ -1322,9 +1436,10 @@ namespace detail
 					auto wd = bedrock.wd_manager().find_window(reinterpret_cast<native_window_type>(evt.xclient.window), self.xdnd_.pos);
 					if(wd && wd->flags.dropable)
 					{
-						accepted = true;
+						//Cache the time stamp in XdndPosition, and the time stamp must be passed to XConvertSelection for requesting selection
 						self.xdnd_.timestamp = evt.xclient.data.l[3];
 						self.xdnd_.pos = wd->pos_root;
+						accepted = 1;
 					}
 				}
 
@@ -1339,7 +1454,7 @@ namespace detail
 				//Target window
 				respond.xclient.data.l[0] = evt.xclient.window;
 				//Accept set
-				respond.xclient.data.l[1] = (accepted ? 1 : 0);
+				respond.xclient.data.l[1] = accepted;
 				respond.xclient.data.l[2] = 0;
 				respond.xclient.data.l[3] = 0;
 				respond.xclient.data.l[4] = self.atombase_.xdnd_action_copy;
@@ -1347,10 +1462,15 @@ namespace detail
 				::XSendEvent(self.display_, wd_src, True, NoEventMask, &respond);
 				return 2;
 			}
+			else if(self.atombase_.xdnd_status == evt.xclient.message_type)
+			{
+				//Platform Recv XdndStatus
+			}
 			else if(self.atombase_.xdnd_drop == evt.xclient.message_type)
 			{
 				::XConvertSelection(self.display_, self.atombase_.xdnd_selection, self.xdnd_.good_type, self.atombase_.xdnd_selection,
 									evt.xclient.window, self.xdnd_.timestamp);
+
 				//The XdndDrop should send a XdndFinished to source window.
 				//This operation is implemented in SelectionNotify, because
 				//XdndFinished should be sent after retrieving data.

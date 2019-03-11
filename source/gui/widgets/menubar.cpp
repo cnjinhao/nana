@@ -1,7 +1,7 @@
 /*
 *	A Menubar implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2018 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -215,12 +215,32 @@ namespace nana
 			};
 
 			//class item_renderer
-				item_renderer::item_renderer(window wd, graph_reference graph)
-					:graph_(graph), scheme_ptr_(static_cast<scheme*>(API::dev::get_scheme(wd)))
-				{}
-
-				void item_renderer::background(const nana::point& pos, const nana::size& size, state item_state)
+			class item_renderer
+			{
+			public:
+				enum class state
 				{
+					normal, highlighted, selected
+				};
+
+				using graph_reference = paint::graphics&;
+				using scheme = ::nana::drawerbase::menubar::scheme;
+
+				item_renderer(window, graph_reference);
+				virtual void background(const point&, const ::nana::size&, state);
+				virtual void caption(const point&, const native_string_type&);
+				scheme *scheme_ptr() const { return scheme_ptr_; };
+			private:
+				graph_reference graph_;
+				scheme *scheme_ptr_;
+			};
+
+			item_renderer::item_renderer(window wd, graph_reference graph)
+				:graph_(graph), scheme_ptr_(static_cast<scheme*>(API::dev::get_scheme(wd)))
+			{}
+
+			void item_renderer::background(const nana::point& pos, const nana::size& size, state item_state)
+			{
 					auto bground = scheme_ptr_->text_fgcolor;
 					::nana::color border, body;
 
@@ -245,13 +265,12 @@ namespace nana
 
 					paint::draw{ graph_ }.corner(r, 1);
 					graph_.rectangle(r.pare_off(1), true, body);
-				}
+			}
 
-				void item_renderer::caption(const point& pos, const native_string_type& text)
-				{
-					graph_.string(pos, text, scheme_ptr_->text_fgcolor);
-
-				}
+			void item_renderer::caption(const point& pos, const native_string_type& text)
+			{
+				graph_.string(pos, text, scheme_ptr_->text_fgcolor);
+			}
 			//end class item_renderer
 
 			//class trigger

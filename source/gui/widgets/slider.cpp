@@ -245,7 +245,7 @@ namespace nana
 				};
 			public:
 				enum class parts{none, bar, slider};
-				
+
 				using graph_reference = drawer_trigger::graph_reference;
 
 				model()
@@ -256,7 +256,7 @@ namespace nana
 					proto_.renderer = pat::cloneable<renderer_interface>{interior_renderer{}};
 
 					attr_.seek_dir = seekdir::bilateral;
-					
+
 					attr_.is_draw_adorn = false;
 					attr_.vcur = 0;
 					attr_.vmax = 10;
@@ -361,7 +361,7 @@ namespace nana
 				parts seek_where(::nana::point pos) const
 				{
 					nana::rectangle r = _m_bar_area();
-					
+
 					if (attr_.slider.vert)
 					{
 						std::swap(pos.x, pos.y);
@@ -373,7 +373,7 @@ namespace nana
 						return parts::slider;
 
 					sdpos = static_cast<int>(attr_.slider.weight) / 2;
-					
+
 					if (sdpos <= pos.x && pos.x < sdpos + static_cast<int>(r.width))
 					{
 						if(pos.y < r.bottom())
@@ -446,7 +446,7 @@ namespace nana
 				bool move_slider(const ::nana::point& pos)
 				{
 					int adorn_pos = slider_state_.snap_pos + (attr_.slider.vert ? pos.y : pos.x) - slider_state_.refpos.x;
-					
+
 					if (adorn_pos > 0)
 					{
 						int range = static_cast<int>(_m_range());
@@ -691,7 +691,7 @@ namespace nana
 					window wd;
 					nana::slider * widget;
 				}other_;
-				
+
 				struct prototype_tag
 				{
 					pat::cloneable<slider::renderer_interface> renderer;
@@ -758,6 +758,10 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
+					// check if slider is disabled
+					if(!API::get_widget(arg.window_handle)->enabled())
+						return;		// do nothing
+
 					bool updated = false;
 					if (model_ptr_->if_trace_slider())
 					{
@@ -800,7 +804,7 @@ namespace nana
 
 	//class slider
 		slider::slider(){}
-		
+
 		slider::slider(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);
@@ -840,10 +844,14 @@ namespace nana
 			return get_drawer_trigger().get_model()->attribute().vmax;
 		}
 
-		void slider::value(unsigned v)
+		void slider::value(int v)
 		{
 			if(handle())
 			{
+			    // limit to positive values, vcur expects unsigned
+			    if( v < 0 )
+                    v = 0;
+
 				if(get_drawer_trigger().get_model()->vcur(v))
 					API::refresh_window(handle());
 			}

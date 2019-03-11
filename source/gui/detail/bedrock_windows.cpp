@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -14,8 +14,7 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
-#include <nana/gui/detail/bedrock.hpp>
-#include <nana/gui/detail/bedrock_pi_data.hpp>
+#include "bedrock_types.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/system/timepiece.hpp>
@@ -35,6 +34,8 @@
 #ifndef WM_MOUSEHWHEEL
 #define WM_MOUSEHWHEEL	0x020E
 #endif
+
+#include "bedrock_types.hpp"
 
 typedef void (CALLBACK *win_event_proc_t)(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
 
@@ -134,34 +135,6 @@ namespace detail
 		param_size<sizeof(LPARAM)> size;
 	};
 #pragma pack()
-
-	struct bedrock::thread_context
-	{
-		unsigned	event_pump_ref_count{0};
-		int			window_count{0};	//The number of windows
-		core_window_t* event_window{nullptr};
-
-		struct platform_detail_tag
-		{
-			wchar_t keychar;
-		}platform;
-
-		struct cursor_tag
-		{
-			core_window_t * window;
-			native_window_type native_handle;
-			nana::cursor	predef_cursor;
-			HCURSOR			handle;
-		}cursor;
-
-		thread_context()
-		{
-			cursor.window = nullptr;
-			cursor.native_handle = nullptr;
-			cursor.predef_cursor = nana::cursor::arrow;
-			cursor.handle = nullptr;
-		}
-	};
 
 	struct bedrock::private_impl
 	{
@@ -1176,10 +1149,10 @@ namespace detail
 						std::unique_ptr<wchar_t[]> varbuf;
 						std::size_t bufsize = 0;
 
-						unsigned size = ::DragQueryFile(drop, 0xFFFFFFFF, 0, 0);
+						unsigned size = ::DragQueryFile(drop, 0xFFFFFFFF, nullptr, 0);
 						for(unsigned i = 0; i < size; ++i)
 						{
-							unsigned reqlen = ::DragQueryFile(drop, i, 0, 0) + 1;
+							unsigned reqlen = ::DragQueryFile(drop, i, nullptr, 0) + 1;
 							if(bufsize < reqlen)
 							{
 								varbuf.reset(new wchar_t[reqlen]);
@@ -1187,8 +1160,7 @@ namespace detail
 							}
 
 							::DragQueryFile(drop, i, varbuf.get(), reqlen);
-
-							dropfiles.files.emplace_back(to_utf8(varbuf.get()));
+							dropfiles.files.emplace_back(varbuf.get());
 						}
 
 						while(msgwnd && (msgwnd->flags.dropable == false))
@@ -1594,12 +1566,6 @@ namespace detail
 		return ::DefWindowProc(root_window, message, wParam, lParam);
 	}
 
-	auto bedrock::focus() ->core_window_t*
-	{
-		core_window_t* wd = wd_manager().root(native_interface::get_focus_window());
-		return (wd ? wd->other.attribute.root->focus : nullptr);
-	}
-
 	void bedrock::get_key_state(arg_keyboard& kb)
 	{
 		kb.alt = (0 != (::GetKeyState(VK_MENU) & 0x80));
@@ -1677,42 +1643,6 @@ namespace detail
 		}
 	}
 
-	bool bedrock::emit(event_code evt_code, core_window_t* wd, const ::nana::event_arg& arg, bool ask_update, thread_context* thrd, const bool bForce__EmitInternal)
-	{
-		if (wd_manager().available(wd) == false)
-			return false;
-
-		basic_window* prev_event_wd = nullptr;
-		if (thrd)
-		{
-			prev_event_wd = thrd->event_window;
-			thrd->event_window = wd;
-			_m_event_filter(evt_code, wd, thrd);
-		}
-
-		using update_state = basic_window::update_state;
-
-		if (update_state::none == wd->other.upd_state)
-			wd->other.upd_state = update_state::lazy;
-
-		_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
-
-		bool good_wd = false;
-		if (wd_manager().available(wd))
-		{
-			//Ignore ask_update if update state is refreshed.
-			if (ask_update || (update_state::refreshed == wd->other.upd_state))
-				wd_manager().do_lazy_refresh(wd, false);
-			else
-				wd->other.upd_state = update_state::none;
-
-			good_wd = true;
-		}
-
-		if (thrd)	thrd->event_window = prev_event_wd;
-		return good_wd;
-	}
-
 	const wchar_t* translate(cursor id)
 	{
 		const wchar_t* name = IDC_ARROW;
@@ -1739,20 +1669,6 @@ namespace detail
 			name = IDC_IBEAM;	break;
 		}
 		return name;
-	}
-
-	void bedrock::thread_context_destroy(core_window_t * wd)
-	{
-		auto * thr = get_thread_context(0);
-		if (thr && thr->event_window == wd)
-			thr->event_window = nullptr;
-	}
-
-	void bedrock::thread_context_lazy_refresh()
-	{
-		auto* thrd = get_thread_context(0);
-		if (thrd && thrd->event_window)
-			thrd->event_window->other.upd_state = core_window_t::update_state::refreshed;
 	}
 
 	//Dynamically set a cursor for a window
@@ -1846,32 +1762,6 @@ namespace detail
 		}
 		::ShowCursor(FALSE);
 		::SetCursor(rev_handle);
-	}
-
-	void bedrock::_m_event_filter(event_code event_id, core_window_t * wd, thread_context * thrd)
-	{
-		auto not_state_cur = (wd->root_widget->other.attribute.root->state_cursor == nana::cursor::arrow);
-
-		switch(event_id)
-		{
-		case event_code::mouse_enter:
-			if (not_state_cur)
-				set_cursor(wd, wd->predef_cursor, thrd);
-			break;
-		case event_code::mouse_leave:
-			if (not_state_cur && (wd->predef_cursor != cursor::arrow))
-				set_cursor(wd, cursor::arrow, thrd);
-			break;
-		case event_code::destroy:
-			if (wd->root_widget->other.attribute.root->state_cursor_window == wd)
-				undefine_state_cursor(wd, thrd);
-
-			if(wd == thrd->cursor.window)
-				set_cursor(wd, cursor::arrow, thrd);
-			break;
-        default:
-            break;
-		}
 	}
 }//end namespace detail
 }//end namespace nana
