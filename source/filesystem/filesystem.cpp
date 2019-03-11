@@ -1010,7 +1010,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 			return bytes;
 		}
 
-		std::uintmax_t file_size(const path& p, std::error_code& ec)
+		std::uintmax_t file_size(const path& p, std::error_code& ec) noexcept
 		{
 #if defined(NANA_WINDOWS)
 			//Some compilation environment may fail to link to GetFileSizeEx
