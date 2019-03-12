@@ -1,6 +1,6 @@
 /*
  *	Concept of Component Set
- *	Copyright(C) 2003-2013 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -46,7 +46,7 @@ namespace nana{	namespace widgets{ namespace detail
 	};
 
 	/// A component set placer used for specifying component position and size.
-	template<typename Component, typename ItemAttribute>
+	template<typename Component, typename ItemAttribute, typename WidgetScheme>
 	class compset_placer
 	{
 	public:
@@ -56,8 +56,11 @@ namespace nana{	namespace widgets{ namespace detail
 
 		/// A type of widget-defined item attribute.
 		typedef ItemAttribute item_attribute_t;
+
+		/// Widget scheme.
+		typedef WidgetScheme widget_scheme_t;
 	public:
-		/// The destrcutor.
+		/// The destructor.
 		virtual ~compset_placer(){}
 
 		/// Enable/Disable the specified component.

@@ -66,6 +66,7 @@
 		<Unit filename="../../source/gui/detail/native_window_interface.cpp" />
 		<Unit filename="../../source/gui/detail/window_layout.cpp" />
 		<Unit filename="../../source/gui/detail/window_manager.cpp" />
+		<Unit filename="../../source/gui/dragdrop.cpp" />
 		<Unit filename="../../source/gui/dragger.cpp" />
 		<Unit filename="../../source/gui/drawing.cpp" />
 		<Unit filename="../../source/gui/effects.cpp" />
@@ -87,7 +88,6 @@
 		<Unit filename="../../source/gui/widgets/date_chooser.cpp" />
 		<Unit filename="../../source/gui/widgets/float_listbox.cpp" />
 		<Unit filename="../../source/gui/widgets/form.cpp" />
-		<Unit filename="../../source/gui/widgets/frame.cpp" />
 		<Unit filename="../../source/gui/widgets/group.cpp" />
 		<Unit filename="../../source/gui/widgets/label.cpp" />
 		<Unit filename="../../source/gui/widgets/listbox.cpp" />

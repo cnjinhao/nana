@@ -1,7 +1,7 @@
 /*
 *	Color Schemes
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,6 +21,14 @@ namespace nana
 		{}
 
 		color_proxy::color_proxy(color_rgb clr)
+			: color_(std::make_shared<color>(clr))
+		{}
+
+		color_proxy::color_proxy(color_argb clr)
+			: color_(std::make_shared<color>(clr))
+		{}
+
+		color_proxy::color_proxy(color_rgba clr)
 			: color_(std::make_shared<color>(clr))
 		{}
 
@@ -47,6 +55,18 @@ namespace nana
 			return *this;
 		}
 
+		color_proxy& color_proxy::operator = (color_argb clr)
+		{
+			color_ = std::make_shared<::nana::color>(clr);
+			return *this;
+		}
+
+		color_proxy& color_proxy::operator = (color_rgba clr)
+		{
+			color_ = std::make_shared<::nana::color>(clr);
+			return *this;
+		}
+
 		color_proxy& color_proxy::operator = (colors clr)
 		{
 			color_ = std::make_shared<::nana::color>(clr);
@@ -58,9 +78,16 @@ namespace nana
 			return *color_;
 		}
 
+		color color_proxy::get(const color& default_color) const
+		{
+			if (color_ && !color_->invisible())
+				return *color_;
+			return default_color;
+		}
+
 		color_proxy::operator color() const
 		{
-			return *color_;
+			return (color_ ? *color_ : color{});
 		}
 	//end class color_proxy
 

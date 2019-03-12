@@ -1,7 +1,7 @@
 /**
  *	Nana Configuration
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,10 +24,6 @@
 #define NANA_CONFIG_HPP
 
 #include "c++defines.hpp"
-
-//This marco is defined since 1.4 and until 1.5 for deprecating frame widget.
-//This marco and class frame will be removed in version 1.5
-#define WIDGET_FRAME_DEPRECATED
 
 //The following basic configurations are ignored when NANA_IGNORE_CONF is defined.
 //The NANA_IGNORE_CONF may be specified by CMake generated makefile.
@@ -71,7 +67,7 @@
 ///////////////////
 //  Support of PCM playback
 //
-#define NANA_ENABLE_AUDIO
+//#define NANA_ENABLE_AUDIO
 
 ///////////////////
 //  Support for PNG

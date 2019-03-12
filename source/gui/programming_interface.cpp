@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,6 +15,7 @@
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/window_manager.hpp>
+#include <nana/gui/detail/window_layout.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
@@ -90,16 +91,21 @@ namespace API
 
 		void enum_widgets_function_base::enum_widgets(window wd, bool recursive)
 		{
-			using basic_window = ::nana::detail::basic_window;
+			auto iwd = reinterpret_cast<nana::detail::basic_window*>(wd);
 
 			internal_scope_guard lock;
-
-			auto children = restrict::wd_manager().get_children(reinterpret_cast<basic_window*>(wd));
-			for (auto child : children)
+			if (restrict::wd_manager().available(iwd))
 			{
-				auto widget_ptr = API::get_widget(reinterpret_cast<window>(child));
-				if (widget_ptr)
+				//Use a copy, because enum function may close a child window and the original children container would be changed,
+				//in the situation, the walking thorugh directly to the iwd->children would cause error. 
+				auto children = iwd->children;
+
+				for (auto child : children)
 				{
+					auto widget_ptr = API::get_widget(reinterpret_cast<window>(child));
+					if (!widget_ptr)
+						continue;
+
 					_m_enum_fn(widget_ptr);
 					if (recursive)
 						enum_widgets(reinterpret_cast<window>(child), recursive);
@@ -303,13 +309,6 @@ namespace API
 			return reinterpret_cast<window>(restrict::wd_manager().create_widget(reinterpret_cast<basic_window*>(parent), r, true, wdg));
 		}
 
-#ifndef WIDGET_FRAME_DEPRECATED
-		window create_frame(window parent, const rectangle& r, widget* wdg)
-		{
-			return reinterpret_cast<window>(restrict::wd_manager().create_frame(reinterpret_cast<basic_window*>(parent), r, wdg));
-		}
-#endif
-
 		paint::graphics* window_graphics(window wd)
 		{
 			internal_scope_guard isg;
@@ -411,6 +410,26 @@ namespace API
 
 			}
 		}
+
+		void window_draggable(window wd, bool enabled)
+		{
+			auto real_wd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(real_wd))
+				real_wd->flags.draggable = enabled;
+		}
+
+		bool window_draggable(window wd)
+		{
+			auto real_wd = reinterpret_cast<basic_window*>(wd);
+			internal_scope_guard lock;
+			if (restrict::wd_manager().available(real_wd))
+				return real_wd->flags.draggable;
+
+			return false;
+		}
+
+
 	}//end namespace dev
 
 	widget* get_widget(window wd)
@@ -580,34 +599,6 @@ namespace API
 			reinterpret_cast<basic_window*>(wd)->flags.fullscreen = v;
 	}
 
-#ifndef WIDGET_FRAME_DEPRECATED
-	bool insert_frame(window frame, native_window_type native_window)
-	{
-		return restrict::wd_manager().insert_frame(reinterpret_cast<basic_window*>(frame), native_window);
-	}
-
-	native_window_type frame_container(window frame)
-	{
-		auto frm = reinterpret_cast<basic_window*>(frame);
-		internal_scope_guard lock;
-		if (restrict::wd_manager().available(frm) && (frm->other.category == category::flags::frame))
-			return frm->other.attribute.frame->container;
-		return nullptr;
-	}
-
-	native_window_type frame_element(window frame, unsigned index)
-	{
-		auto frm = reinterpret_cast<basic_window*>(frame);
-		internal_scope_guard lock;
-		if (restrict::wd_manager().available(frm) && (frm->other.category == category::flags::frame))
-		{
-			if (index < frm->other.attribute.frame->attach.size())
-				return frm->other.attribute.frame->attach.at(index);
-		}
-		return nullptr;
-	}
-#endif
-
 	void close_window(window wd)
 	{
 		restrict::wd_manager().close(reinterpret_cast<basic_window*>(wd));
@@ -658,7 +649,15 @@ namespace API
 		auto iwd = reinterpret_cast<basic_window*>(wd);
 		internal_scope_guard lock;
 		if (restrict::wd_manager().available(iwd))
+		{
+			if (category::flags::root == iwd->other.category)
+			{
+				return reinterpret_cast<window>(restrict::wd_manager().root(
+					interface_type::get_window(iwd->root, window_relationship::parent)
+				));
+			}
 			return reinterpret_cast<window>(iwd->parent);
+		}
 
 		return nullptr;
 	}
@@ -941,7 +940,6 @@ namespace API
 	{
 		restrict::wd_manager().update(reinterpret_cast<basic_window*>(wd), false, true);
 	}
-
 
 	void window_caption(window wd, const std::string& title_utf8)
 	{
@@ -1324,7 +1322,16 @@ namespace API
 
 	bool window_graphics(window wd, nana::paint::graphics& graph)
 	{
-		return restrict::wd_manager().get_graphics(reinterpret_cast<basic_window*>(wd), graph);
+		auto iwd = reinterpret_cast<basic_window*>(wd);
+
+		internal_scope_guard lock;
+		if (!restrict::wd_manager().available(iwd))
+			return false;
+
+		graph.make(iwd->drawer.graphics.size());
+		graph.bitblt(0, 0, iwd->drawer.graphics);
+		nana::detail::window_layout::paste_children_to_graphics(iwd, graph);
+		return true;
 	}
 
 	bool root_graphics(window wd, nana::paint::graphics& graph)
@@ -1341,7 +1348,12 @@ namespace API
 
 	bool get_visual_rectangle(window wd, nana::rectangle& r)
 	{
-		return restrict::wd_manager().get_visual_rectangle(reinterpret_cast<basic_window*>(wd), r);
+		auto iwd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+		if (restrict::wd_manager().available(iwd))
+			return nana::detail::window_layout::read_visual_rectangle(iwd, r);
+		
+		return false;
 	}
 
 	void typeface(window wd, const nana::paint::font& font)
@@ -1517,6 +1529,17 @@ namespace API
 	unsigned screen_dpi(bool x_requested)
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
+	}
+
+	dragdrop_status window_dragdrop_status(::nana::window wd)
+	{
+		auto real_wd = reinterpret_cast<basic_window*>(wd);
+		internal_scope_guard lock;
+
+		if (restrict::wd_manager().available(real_wd))
+			return real_wd->other.dnd_state;
+
+		return dragdrop_status::not_ready;
 	}
 }//end namespace API
 }//end namespace nana

@@ -1,7 +1,7 @@
 /*
 *	Window Layout Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -66,20 +66,9 @@ namespace nana
 							nana::point p_src;
 							for (auto & el : blocks)
 							{
-#ifndef WIDGET_FRAME_DEPRECATED
-								if (category::flags::frame == el.window->other.category)
-								{
-									native_window_type container = el.window->other.attribute.frame->container;
-									native_interface::refresh_window(container);
-									graph.bitblt(el.r, container);
-								}
-								else
-#endif
-								{
-									p_src.x = el.r.x - el.window->pos_root.x;
-									p_src.y = el.r.y - el.window->pos_root.y;
-									graph.bitblt(el.r, (el.window->drawer.graphics), p_src);
-								}
+								p_src.x = el.r.x - el.window->pos_root.x;
+								p_src.y = el.r.y - el.window->pos_root.y;
+								graph.bitblt(el.r, (el.window->drawer.graphics), p_src);
 
 								_m_paste_children(el.window, false, req_refresh_children, el.r, graph, nana::point{});
 							}

@@ -1,4 +1,4 @@
-/*
+/**
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/detail/platform_spec.hpp
+ *	@file nana/detail/platform_spec.hpp
  *
  *	This file provides basis class and data structrue that required by nana
  *	This file should not be included by any header files.

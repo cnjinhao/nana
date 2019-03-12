@@ -1,7 +1,7 @@
 /*
  *	A Spin box widget
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -467,7 +467,7 @@ namespace nana
 
 					std::wstring text;
 
-					if (API::is_focus_ready(editor_->window_handle()))
+					if (API::is_focus_ready(editor_->window_handle()) && editor_->attr().editable)
 						text = to_wstring(range_->value());
 					else
 						text = to_wstring(modifier_.prefix + range_->value() + modifier_.suffix);

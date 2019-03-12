@@ -1,7 +1,7 @@
 /*
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -38,7 +38,7 @@
 #include "detail/image_ico_resource.hpp"
 #include "detail/image_ico.hpp"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 namespace nana
 {
@@ -225,11 +225,16 @@ namespace paint
 					else
 					{
 #if defined(NANA_ENABLE_JPEG)
-						//JFIF
-						if (bytes > 11 && (0xe0ffd8ff == *reinterpret_cast<const unsigned*>(data)) && 0x4649464A == *reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+6))
-							ptr = std::make_shared<detail::image_jpeg>();
-						else if (bytes > 9 && (0x66697845 == *reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+5))) //Exif
-							ptr = std::make_shared<detail::image_jpeg>();
+						if ((bytes > 11) && (0xd8ff == *reinterpret_cast<const unsigned short*>(data)))
+						{
+							switch(*reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+6))
+							{
+							case 0x4649464A:	//JFIF
+							case 0x66697845:	//Exif
+								ptr = std::make_shared<detail::image_jpeg>();
+							}
+						}
+						else
 #endif
 						if ((!ptr) && (bytes > 40))
 						{

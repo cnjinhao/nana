@@ -1,7 +1,7 @@
 /**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -109,6 +109,8 @@ namespace nana
 		using text_focus_behavior = widgets::skeletons::text_focus_behavior;
 		using text_positions = std::vector<upoint>;
 
+		using path_type = std::filesystem::path;
+
 		/// The default constructor without creating the widget.
 		textbox();
 
@@ -136,9 +138,9 @@ namespace nana
 		textbox(window, const rectangle& = rectangle(), bool visible = true);
 
         ///  \brief Loads a text file. When attempt to load a unicode encoded text file, be sure the file have a BOM header.
-		void load(std::string file);
-		void store(std::string file);
-		void store(std::string file, nana::unicode encoding);
+		void load(const path_type& file);
+		void store(const path_type& file);
+		void store(const path_type& file, nana::unicode encoding);
 
 		colored_area_access_interface* colored_area_access();
 
@@ -158,7 +160,7 @@ namespace nana
 		textbox& reset(const std::string& text = std::string(), bool end_caret = true);      ///< discard the old text and set a new text
 
 		/// The file of last store operation.
-		std::string filename() const;
+		path_type filename() const;
 
 		/// Determine whether the text was edited.
 		bool edited() const;
@@ -223,6 +225,8 @@ namespace nana
 
         /// Selects/unselects all text.
 		void select(bool);
+
+		void select_points(nana::upoint arg_a, nana::upoint arg_b);
 
 		/// Returns the bounds of a text selection
 		/**

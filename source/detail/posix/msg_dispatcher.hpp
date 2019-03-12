@@ -143,7 +143,7 @@ namespace detail
 				{
 					//Make a cleanup msg packet to infor the dispatcher the window is closed.
 					msg_packet_tag msg;
-					msg.kind = msg.kind_cleanup;
+					msg.kind = msg_packet_tag::pkt_family::cleanup;
 					msg.u.packet_window = wd;
 					thr->msg_queue.push_back(msg);
 				}
@@ -168,6 +168,37 @@ namespace detail
 				else
 				{
 					proc_.event_proc(display_, msg);
+				}
+			}
+		}
+
+		template<typename MsgFilter>
+		void dispatch(MsgFilter msg_filter_fn)
+		{
+			auto tid = nana::system::this_thread_id();
+			msg_packet_tag msg;
+			int qstate;
+
+			//Test whether the thread is registered for window, and retrieve the queue state for event
+			while((qstate = _m_read_queue(tid, msg, 0)))
+			{
+				//the queue is empty
+				if(-1 == qstate)
+				{
+					if(false == _m_wait_for_queue(tid))
+						proc_.timer_proc(tid);
+				}
+				else
+				{
+					switch(msg_filter_fn(msg))
+					{
+					case propagation_chain::exit:
+						return;
+					case propagation_chain::stop:
+						break;
+					case propagation_chain::pass:
+						proc_.event_proc(display_, msg);
+					}
 				}
 			}
 		}
@@ -220,7 +251,7 @@ namespace detail
 					switch(proc_.filter_proc(event, msg_pack))
 					{
 					case 0:
-						msg_pack.kind = msg_pack.kind_xevent;
+						msg_pack.kind = msg_packet_tag::pkt_family::xevent;
 						msg_pack.u.xevent = event;
 						_m_msg_dispatch(msg_pack);
 						break;
@@ -246,9 +277,9 @@ namespace detail
 		{
 			switch(pack.kind)
 			{
-			case msg_packet_tag::kind_xevent:
+			case msg_packet_tag::pkt_family::xevent:
 				return _m_event_window(pack.u.xevent);
-			case msg_packet_tag::kind_mouse_drop:
+			case msg_packet_tag::pkt_family::mouse_drop:
 				return pack.u.mouse_drop.window;
 			default:
 				break;
@@ -294,7 +325,7 @@ namespace detail
 							//Check whether the event dispatcher is used for the modal window
 							//and when the modal window is closing, the event dispatcher would
 							//stop event pumping.
-							if((modal == msg.u.packet_window) && (msg.kind == msg.kind_cleanup))
+							if((modal == msg.u.packet_window) && (msg.kind == msg_packet_tag::pkt_family::cleanup))
 								return 0;
 
 							return 1;

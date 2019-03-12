@@ -47,7 +47,7 @@ namespace nana
 				std::uint16_t string_offset; //from start of storage area
 			};
 		public:
-			using path_type = ::std::experimental::filesystem::path;
+			using path_type = ::std::filesystem::path;
 
 			truetype(const path_type& filename)
 			{

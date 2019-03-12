@@ -37,6 +37,13 @@ namespace drawerbase
 {
 	namespace checkbox
 	{
+		struct scheme
+			: public widget_geometrics
+		{
+			color_proxy square_bgcolor{ static_cast<color_argb>(0x0) };
+			color_proxy square_border_color{ colors::black };
+		};
+
 		struct events_type
 			: public general_events
 		{
@@ -67,7 +74,7 @@ namespace drawerbase
 
 	
     class checkbox
-		: public widget_object<category::widget_tag, drawerbase::checkbox::drawer, drawerbase::checkbox::events_type>
+		: public widget_object<category::widget_tag, drawerbase::checkbox::drawer, drawerbase::checkbox::events_type, drawerbase::checkbox::scheme>
 	{
 	public:
 		checkbox();
@@ -97,6 +104,7 @@ namespace drawerbase
 		struct element_tag
 		{
 			checkbox * uiobj;
+			event_handle eh_clicked;
 			event_handle eh_checked;
 			event_handle eh_destroy;
 			event_handle eh_keyboard;

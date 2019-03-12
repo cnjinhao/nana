@@ -1,7 +1,7 @@
 /*
  *	Image Processor Algorithm Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,8 +15,8 @@
 
 #ifndef NANA_PAINT_DETAIL_IMAGE_PROCESSOR_HPP
 #define NANA_PAINT_DETAIL_IMAGE_PROCESSOR_HPP
-#include "../image_process_interface.hpp"
 #include <nana/paint/pixel_buffer.hpp>
+#include <nana/paint/image_process_interface.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <algorithm>
 
@@ -421,15 +421,19 @@ namespace detail
 		{
 			virtual void process(paint::pixel_buffer & pixbuf, const nana::point& pos_beg, const nana::point& pos_end, const ::nana::color& clr, double fade_rate) const
 			{
+				//Return if it is completely transparent
+				if (fade_rate <= 0)
+					return;
+
 				auto rgb_color = clr.px_color().value;
 				const std::size_t bytes_pl = pixbuf.bytes_per_line();
 				
 				unsigned char * fade_table = nullptr;
 				std::unique_ptr<unsigned char[]> autoptr;
 				nana::pixel_argb_t rgb_imd = {};
-				if(fade_rate != 0.0)
+				if(fade_rate < 1)
 				{
-					autoptr = detail::alloc_fade_table(1 - fade_rate);
+					autoptr = detail::alloc_fade_table(1.0 - fade_rate);
 					fade_table = autoptr.get();
 					rgb_imd.value = rgb_color;
 					rgb_imd = detail::fade_color_intermedia(rgb_imd, fade_table);
@@ -551,55 +555,65 @@ namespace detail
 		{
 			void process(pixel_buffer& pixbuf, const nana::rectangle& area, std::size_t u_radius) const
 			{
-				int radius = static_cast<int>(u_radius);
-				int w = area.width;
-				int h = area.height;
-				int wm = w - 1;
-				int hm = h - 1;
-				int wh = w * h;
-				int div = (radius << 1) + 1;
+				const int radius = static_cast<int>(u_radius);
+				const int safe_radius = std::min(radius, static_cast<int>(area.height) - 2);
+				const int radius_plus_one = radius + 1;
 
-				int large_edge = (w > h ? w : h);
-				const int div_256 = div * 256;
+				const int width_3times = static_cast<int>(area.width * 3);
+				const int wm = area.width - 1;
+				const int hm = area.height - 1;
+				const int wh = area.width * area.height;
+				const int div = (radius << 1) + 1;
 
-				std::unique_ptr<int[]> all_table(new int[(wh << 1) + wh + (large_edge << 1) + div_256]);
+				const int large_edge = std::max(area.width, area.height);
 
+				std::unique_ptr<int[]> table_rgb(new int[wh * 3 + (large_edge << 1) + div * 256]);
 
-				int * r = all_table.get();
-				int * g = r + wh;
-				int * b = g + wh;
+				int * tbl_rgb = table_rgb.get();
+				int * const vmin = tbl_rgb + 3 * wh;
 
-				int * vmin = b + wh;
-				int * vmax = vmin + large_edge;
-
+				int * const vmax = vmin + large_edge;
 				int * dv = vmax + large_edge;
-				int end_div = div - 1;
-				for(int i = 0, *dv_block = dv; i < 256; ++i)
+
+				for (int i = 0; i < 256; ++i)
 				{
-					for(int u = 0; u < end_div; u += 2)
+					dv[0] = i;
+					for (int u = 1; u < div; u += 2)
 					{
-						dv_block[u] = i;
-						dv_block[u + 1] = i;
+						dv[u] = i;
+						dv[u + 1] = i;
 					}
-					dv_block[div - 1] = i;
-					dv_block += div;
+					dv += div;
 				}
+
+				dv = vmax + large_edge;
 
 				auto linepix = pixbuf.raw_ptr(area.y) + area.x;
 
-				int yi = 0;
-				for(int y = 0; y < h; ++y)
+				for(int x = 0; x < static_cast<int>(area.width); ++x)
+				{
+					vmin[x] = std::min(x + radius_plus_one, wm);
+					vmax[x] = std::max(x - radius, 0);
+				}
+
+				for(int y = 0; y < static_cast<int>(area.height); ++y)
 				{
 					int sum_r = 0, sum_g = 0, sum_b = 0;
 					if(radius <= wm)
 					{
-						for(int i = - radius; i <= radius; ++i)
+						auto px = linepix;
+
+						sum_r = int(px->element.red) * radius_plus_one;
+						sum_g = int(px->element.blue) * radius_plus_one;
+						sum_b = int(px->element.blue) * radius_plus_one;
+
+						auto radius_px_end = px + radius_plus_one;
+						for (++px; px < radius_px_end; ++px)
 						{
-							auto px = linepix[(i > 0 ? i : 0)];
-							sum_r += px.element.red;
-							sum_g += px.element.green;
-							sum_b += px.element.blue;
-						}					
+							sum_r += px->element.red;
+							sum_g += px->element.green;
+							sum_b += px->element.blue;
+						}
 					}
 					else
 					{
@@ -612,75 +626,62 @@ namespace detail
 						}
 					}
 
-					for(int x = 0; x < w; ++x)
+					for(int x = 0; x < static_cast<int>(area.width); ++x)
 					{
-						r[yi] = dv[sum_r];
-						g[yi] = dv[sum_g];
-						b[yi] = dv[sum_b];
+						tbl_rgb[0] = dv[sum_r];
+						tbl_rgb[1] = dv[sum_g];
+						tbl_rgb[2] = dv[sum_b];
+						tbl_rgb += 3;
 
-						if(0 == y)
-						{
-							vmin[x] = std::min(x + radius + 1, wm);
-							vmax[x] = std::max(x - radius, 0);
-						}
-
-						auto p1 = linepix[vmin[x]];
-						auto p2 = linepix[vmax[x]];
+						auto& p1 = linepix[vmin[x]];
+						auto& p2 = linepix[vmax[x]];
 
 						sum_r += p1.element.red - p2.element.red;
 						sum_g += p1.element.green - p2.element.green;
 						sum_b += p1.element.blue - p2.element.blue;
-						++yi;
 					}
 					linepix = pixbuf.raw_ptr(area.y + y) + area.x;
 				}
 
-				const int yp_init = -radius * w;
-
 				const std::size_t bytes_pl = pixbuf.bytes_per_line();
-				for(int x = 0; x < w; ++x)
-				{
-					int sum_r = 0, sum_g = 0, sum_b = 0;
 
-					int yp = yp_init;
-					for(int i = -radius; i <= radius; ++i)
+				tbl_rgb = table_rgb.get();
+
+				for (int y = 0; y < static_cast<int>(area.height); ++y)
+				{
+					vmin[y] = std::min(y + radius_plus_one, hm) * width_3times;
+					vmax[y] = std::max(y - radius, 0) * width_3times;
+				}
+
+				for(int x = 0; x < static_cast<int>(area.width); ++x)
+				{
+					int sum_r = int(tbl_rgb[0]) * radius_plus_one;
+					int sum_g = int(tbl_rgb[1]) * radius_plus_one;
+					int sum_b = int(tbl_rgb[2]) * radius_plus_one;
+
+					int nextln = width_3times;
+					for (int i = 0; i < safe_radius; ++i)
 					{
-						if(yp < 1)
-						{
-							sum_r += r[x];
-							sum_g += g[x];
-							sum_b += b[x];
-						}
-						else
-						{
-							int yi = yp + x;
-							sum_r += r[yi];
-							sum_g += g[yi];
-							sum_b += b[yi];
-						}
-						yp += w;
+						sum_r += tbl_rgb[nextln];
+						sum_g += tbl_rgb[nextln + 1];
+						sum_b += tbl_rgb[nextln + 2];
+						nextln += width_3times;
 					}
 
-					linepix = pixbuf.raw_ptr(area.y) + x;
-
-					for(int y = 0; y < h; ++y)
+					linepix = pixbuf.raw_ptr(area.y) + x + area.x;
+					for(int y = 0; y < static_cast<int>(area.height); ++y)
 					{
 						linepix->value = 0xFF000000 | (dv[sum_r] << 16) | (dv[sum_g] << 8) | dv[sum_b];
-						if(x == 0)
-						{
-							vmin[y] = std::min(y + radius + 1, hm) * w;
-							vmax[y] = std::max(y - radius, 0) * w;
-						}
 
-						int pt1 = x + vmin[y];
-						int pt2 = x + vmax[y];
+						int pt1 = vmin[y];
+						int pt2 = vmax[y];
 
-						sum_r += r[pt1] - r[pt2];
-						sum_g += g[pt1] - g[pt2];
-						sum_b += b[pt1] - b[pt2];
-
+						sum_r += tbl_rgb[pt1] - tbl_rgb[pt2];
+						sum_g += tbl_rgb[pt1 + 1] - tbl_rgb[pt2 + 1];
+						sum_b += tbl_rgb[pt1 + 2] - tbl_rgb[pt2 + 2];
 						linepix = pixel_at(linepix, bytes_pl);
 					}
+					tbl_rgb += 3;
 				}
 			}
 		};//end class superfast_blur

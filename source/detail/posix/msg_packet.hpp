@@ -3,15 +3,23 @@
 #include <X11/Xlib.h>
 #include <vector>
 #include <nana/deploy.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 namespace nana
 {
 namespace detail
 {
+	enum class propagation_chain
+	{
+		exit,	//Exit the chain 
+		stop,	//Stop propagating
+		pass 	//propagate
+	};
+
 	struct msg_packet_tag
 	{
-		enum kind_t{kind_xevent, kind_mouse_drop, kind_cleanup};
-		kind_t kind;
+		enum class pkt_family{xevent, mouse_drop, cleanup};
+		pkt_family kind;
 		union
 		{
 			XEvent xevent;
@@ -22,7 +30,7 @@ namespace detail
 				Window window;
 				int x;
 				int y;
-				std::vector<std::string> * files;
+				std::vector<std::filesystem::path> * files;
 			}mouse_drop;
 		}u;
 	};

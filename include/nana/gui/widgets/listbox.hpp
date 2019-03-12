@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -1461,6 +1461,23 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the number of columns
 		size_type column_size() const;
 
+		/// Move column to view_position
+		void move_column(size_type abs_pos, size_type view_pos);
+
+        /// Sort columns in range first_col to last_col inclusive using the values from a row
+        void reorder_columns(size_type first_col,
+							 size_type last_col,
+							 index_pair row, bool reverse,
+							 std::function<bool(const std::string &cell1, size_type col1,
+												const std::string &cell2, size_type col2,
+												const nana::any *rowval,
+												bool reverse)> comp);
+
+        void column_resizable(bool resizable);
+		bool column_resizable() const;
+		void column_movable(bool);
+		bool column_movable() const;
+
 		/// Returns a rectangle in where the content is drawn.
 		rectangle content_area() const;
 
@@ -1481,8 +1498,18 @@ the nana::detail::basic_window member pointer scheme
 		 */
 		void insert_item(const index_pair& abs_pos, const ::std::wstring& text);
 
+
+		void insert_item(index_pair abs_pos, const listbox& rhs, const index_pairs& indexes);
+
 		/// Returns an index of item which contains the specified point.
 		index_pair cast(const point & screen_pos) const;
+
+		/// Returns the item which is hovered
+		/**
+		 * @param return_end Indicates whether to return an end position instead of empty position if an item is not hovered.
+		 * @return The position of the hovered item. If return_end is true, it returns the position next to the last item of last category if an item is not hovered.
+		 */
+		index_pair hovered(bool return_end) const;
 
 		/// Returns the absolute position of column which contains the specified point.
 		size_type column_from_pos(const point & pos) const;
@@ -1502,7 +1529,8 @@ the nana::detail::basic_window member pointer scheme
 		
 		///Sets a strict weak ordering comparer for a column
 		void set_sort_compare(	size_type col,
-								std::function<bool(const std::string&, nana::any*, const std::string&, nana::any*, bool reverse)> strick_ordering);
+								std::function<bool(const std::string&, nana::any*,
+								                   const std::string&, nana::any*, bool reverse)> strick_ordering);
 
 		/// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
 		void sort_col(size_type col, bool reverse = false);
@@ -1523,6 +1551,7 @@ the nana::detail::basic_window member pointer scheme
 
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
+		bool is_single_enabled(bool for_selection) const noexcept;	///< Determines whether the single selection/check is enabled.
 		export_options& def_export_options();
 
 
@@ -1540,6 +1569,27 @@ the nana::detail::basic_window member pointer scheme
 		 * @return the reference of *this.
 		 */
 		listbox& category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed);
+
+		/// Returns first visible element
+		/**
+		 * It may return an item or a category item.
+		 * @return the index of first visible element.
+		 */
+		index_pair first_visible() const;
+
+		/// Returns last visible element
+		/**
+		 * It may return an item or a category item.
+		 * @return the index of last visible element.
+		 */
+		index_pair last_visible() const;
+
+		/// Returns all visible items
+		/**
+		 * It returns all visible items that are displayed in listbox window.
+		 * @return index_pairs containing all visible items.
+		 */
+		index_pairs visibles() const;
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;

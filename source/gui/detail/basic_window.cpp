@@ -1,7 +1,7 @@
 /*
 *	A Basic Window Widget Definition
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -216,40 +216,14 @@ namespace nana
 				basic_window::other_tag::other_tag(category::flags categ)
 					: category(categ), active_window(nullptr), upd_state(update_state::none)
 				{
-#ifndef WIDGET_FRAME_DEPRECATED
-					switch(categ)
-					{
-					case category::flags::root:
-						attribute.root = new attr_root_tag;
-						break;
-					case category::flags::frame:
-						attribute.frame = new attr_frame_tag;
-						break;
-					default:
-						attribute.root = nullptr;
-					}
-#else
 					if (category::flags::root == categ)
 						attribute.root = new attr_root_tag;
 					else
 						attribute.root = nullptr;
-#endif
 				}
 
 				basic_window::other_tag::~other_tag()
 				{
-#ifndef WIDGET_FRAME_DEPRECATED
-					switch(category)
-					{
-					case category::flags::root:
-						delete attribute.root;
-						break;
-					case category::flags::frame:
-						delete attribute.frame;
-						break;
-					default: break;
-					}
-#endif
 					if (category::flags::root == category)
 						delete attribute.root;
 				}
@@ -289,14 +263,6 @@ namespace nana
 					this->root_graph = &graphics;
 				}
 			}
-
-#ifndef WIDGET_FRAME_DEPRECATED
-			void basic_window::frame_window(native_window_type wd)
-			{
-				if(category::flags::frame == this->other.category)
-					other.attribute.frame->container = wd;
-			}
-#endif
 
 			bool basic_window::is_ancestor_of(const basic_window* wd) const
 			{
@@ -410,6 +376,7 @@ namespace nana
 				flags.enabled = true;
 				flags.modal = false;
 				flags.take_active = true;
+				flags.draggable = false;
 				flags.dropable = false;
 				flags.fullscreen = false;
 				flags.tab = nana::detail::tab_type::none;
@@ -423,6 +390,7 @@ namespace nana
 				flags.ignore_menubar_focus	= false;
 				flags.ignore_mouse_focus	= false;
 				flags.space_click_enabled = false;
+				flags.ignore_child_mapping = false;
 
 				visible = false;
 

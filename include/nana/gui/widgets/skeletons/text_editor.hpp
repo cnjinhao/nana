@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -66,6 +66,7 @@ namespace nana{	namespace widgets
 			using char_type = wchar_t;
 			using size_type = textbase<char_type>::size_type;
 			using string_type = textbase<char_type>::string_type;
+			using path_type = std::filesystem::path;
 
 			using event_interface = text_editor_event_interface;
 
@@ -105,7 +106,7 @@ namespace nana{	namespace widgets
 			void indent(bool, std::function<std::string()> generator);
 			void set_event(event_interface*);
 
-			bool load(const char*);
+			bool load(const path_type& file);
 
 			void text_align(::nana::align alignment);
 
@@ -135,13 +136,11 @@ namespace nana{	namespace widgets
 			void enable_background(bool);
 			void enable_background_counterpart(bool);
 
-			void undo_enabled(bool);
-			bool undo_enabled() const;
+			void undo_clear();
 			void undo_max_steps(std::size_t);
 			std::size_t undo_max_steps() const;
 
 			renderers& customized_renderers();
-			void clear_undo();	///< same with undo_max_steps(0)
 
 			unsigned line_height() const;
 			unsigned screen_lines(bool completed_line = false) const;
@@ -166,6 +165,8 @@ namespace nana{	namespace widgets
 			bool get_selected_points(nana::upoint&, nana::upoint&) const;
 
 			bool select(bool);
+
+			bool select_points(nana::upoint arg_a, nana::upoint arg_b);
 
 			/// Sets the end position of a selected string.
 			void set_end_caret(bool stay_in_view);
@@ -200,12 +201,11 @@ namespace nana{	namespace widgets
 			void del();
 			void backspace(bool record_undo, bool perform_event);
 			void undo(bool reverse);
-			void set_undo_queue_length(std::size_t len);
 			void move_ns(bool to_north);	//Moves up and down
 			void move_left();
 			void move_right();
 			const upoint& mouse_caret(const point& screen_pos, bool stay_in_view);
-			const upoint& caret() const;
+			const upoint& caret() const noexcept;
 			point caret_screen_pos() const;
 			bool scroll(bool upwards, bool vertical);
 
@@ -215,8 +215,8 @@ namespace nana{	namespace widgets
 			void mouse_pressed(const arg_mouse& arg);
 			bool select_word(const arg_mouse& arg);
 
-			skeletons::textbase<char_type>& textbase();
-			const skeletons::textbase<char_type>& textbase() const;
+			skeletons::textbase<char_type>& textbase() noexcept;
+			const skeletons::textbase<char_type>& textbase() const noexcept;
 
 			bool try_refresh();
 

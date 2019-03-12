@@ -42,6 +42,7 @@ lib/
 CMakeCache.txt
 CMakeFiles/
 cmake-build-debug/
+cmake-build-*/
 .idea/
 cmake_install.cmake
 *.DS_Store

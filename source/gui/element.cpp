@@ -163,7 +163,8 @@ namespace nana
 						bld_fgcolor = fgcolor.blend(highlighted, 0.6);
 						break;
 					case element_state::disabled:
-						bld_bgcolor = bld_fgcolor = static_cast<color_rgb>(0xb2b7bc);
+						bld_bgcolor = static_cast<color_rgb>(0xE0E0E0);
+						bld_fgcolor = static_cast<color_rgb>(0x999A9E);
 						break;
 					default:
 						//Leave things as they are

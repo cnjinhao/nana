@@ -29,17 +29,56 @@ namespace nana
 	{
 		tabbar<T> & widget;
 		T & value;
+		std::size_t item_pos;						///< position of the item
 
-		arg_tabbar(tabbar<T>& wdg, T& v)
-			: widget(wdg), value{ v }
+		arg_tabbar(tabbar<T>& wdg, T& v, std::size_t p)
+			: widget(wdg), value{ v }, item_pos(p)
 		{}
+	};
+
+	template<typename T>
+	struct arg_tabbar_click : public arg_tabbar<T>
+	{
+		arg_tabbar_click(tabbar<T>& wdg, T& v, std::size_t p)
+			: arg_tabbar<T>({wdg, v, p})
+		{}
+
+		bool left_button = false;					///< true if mouse left button is pressed
+		bool mid_button = false;					///< true if mouse middle button is pressed
+		bool right_button = false;					///< true if mouse right button is pressed
+	};
+
+	template<typename T>
+	struct arg_tabbar_mouse
+		: public arg_mouse
+	{
+		arg_tabbar_mouse(const arg_mouse& arg, tabbar<T>& wdg, T& v, std::size_t p)
+			: arg_mouse{ arg }, widget(wdg), value{ v }, item_pos(p)
+		{}
+
+		tabbar<T> & widget;
+		T & value;
+		std::size_t item_pos;						///< position of the item
+	};
+
+	template<typename T>
+	struct arg_tabbar_adding
+		: public event_arg
+	{
+		arg_tabbar_adding(tabbar<T>& wdg, std::size_t p)
+			: widget(wdg), where(p)
+		{}
+
+		tabbar<T> & widget;
+		mutable bool add = true;					///< determines whether to add the item
+		std::size_t where;							///< position where to add the item
 	};
 
 	template<typename T>
 	struct arg_tabbar_removed : public arg_tabbar<T>
 	{
-		arg_tabbar_removed(tabbar<T>& wdg, T& v)
-			: arg_tabbar<T>({wdg, v})
+		arg_tabbar_removed(tabbar<T>& wdg, T& v, std::size_t p)
+			: arg_tabbar<T>({wdg, v, p})
 		{}
 
 		mutable bool remove = true;					///< determines whether to remove the item
@@ -56,7 +95,9 @@ namespace nana
 			{
 				using value_type = T;
 
+				basic_event<arg_tabbar_adding<value_type>> adding;
 				basic_event<arg_tabbar<value_type>> added;
+				basic_event<arg_tabbar_mouse<value_type>> tab_click;
 				basic_event<arg_tabbar<value_type>> activated;
 				basic_event<arg_tabbar_removed<value_type>> removed;
 			};
@@ -65,7 +106,9 @@ namespace nana
 			{
 			public:
 				virtual ~event_agent_interface() = default;
+				virtual bool adding(std::size_t) = 0;
 				virtual void added(std::size_t) = 0;
+				virtual bool click(const arg_mouse&, std::size_t) = 0;
 				virtual void activated(std::size_t) = 0;
 				virtual bool removed(std::size_t, bool & close_attached) = 0;
 			};
@@ -107,26 +150,40 @@ namespace nana
 					: tabbar_(tb), drawer_trigger_(dtr)
 				{}
 
+				bool adding(std::size_t pos) override
+				{
+					::nana::arg_tabbar_adding<T> arg_ta(tabbar_, pos);
+					tabbar_.events().adding.emit(arg_ta, tabbar_);
+					return arg_ta.add;
+				}
+
 				void added(std::size_t pos) override
 				{
 					if(pos != npos)
 					{
 						drawer_trigger_.at_no_bound_check(pos) = T();
-						tabbar_.events().added.emit(arg_tabbar({ tabbar_, tabbar_[pos] }), tabbar_);
+						tabbar_.events().added.emit(arg_tabbar({ tabbar_, tabbar_[pos], pos }), tabbar_);
 					}
+				}
+
+				bool click(const arg_mouse& arg, std::size_t pos) override
+				{
+					::nana::arg_tabbar_mouse<T> arg_tm(arg, tabbar_, tabbar_[pos], pos);
+					tabbar_.events().tab_click.emit(arg_tm, tabbar_);
+					return arg_tm.propagation_stopped();
 				}
 
 				void activated(std::size_t pos) override
 				{
 					if(pos != npos)
-						tabbar_.events().activated.emit(arg_tabbar({ tabbar_, tabbar_[pos]}), tabbar_);
+						tabbar_.events().activated.emit(arg_tabbar({ tabbar_, tabbar_[pos], pos}), tabbar_);
 				}
 
 				bool removed(std::size_t pos, bool & close_attach) override
 				{
-					if (pos != npos)
+					if(pos != npos)
 					{
-						::nana::arg_tabbar_removed<T> arg(tabbar_, tabbar_[pos]);
+						::nana::arg_tabbar_removed<T> arg(tabbar_, tabbar_[pos], pos);
 						tabbar_.events().removed.emit(arg, tabbar_);
 						close_attach = arg.close_attach_window;
 						return arg.remove;

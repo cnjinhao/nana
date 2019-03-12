@@ -136,11 +136,12 @@ namespace nana
 				evt_disabled_ &= ~(1 << static_cast<int>(evt_code)); // clear
 		}
 
-		void drawer_trigger::filter_event(const std::vector<event_code> evt_codes, const bool bDisabled)
+		void drawer_trigger::filter_event(const std::vector<event_code>& evt_codes, const bool bDisabled)
 		{
-			const auto it_end = evt_codes.end();
-			for (auto it = evt_codes.begin(); it != it_end; it++)
-				filter_event(*it, bDisabled);
+			for (auto evt_code : evt_codes) 
+			{
+				filter_event(evt_code, bDisabled);
+			}
 		}
 
 		void drawer_trigger::filter_event(const event_filter_status& evt_all_states)

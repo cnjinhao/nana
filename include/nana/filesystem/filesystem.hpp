@@ -1,7 +1,7 @@
 /**
  *	A ISO C++ filesystem Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,7 +13,7 @@
  *  and need VC2015 or a C++11 compiler. With a few correction can be compiler by VC2013
  */
 
-// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf      --- last pdf of std draft N4100 <filesystem> 2014-07-04
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4100.pdf      --- pdf of std draft N4100 <filesystem> 2014-07-04
 // http://en.cppreference.com/w/cpp/experimental/fs
 // http://cpprocks.com/introduction-to-tr2-filesystem-library-in-vs2012/  --- TR2 filesystem in VS2012
 // https://msdn.microsoft.com/en-us/library/hh874694%28v=vs.140%29.aspx   ---  C++ 14, the <filesystem> header VS2015
@@ -55,36 +55,6 @@
 #define NANA_USING_BOOST_FILESYSTEM 1
 #   include <chrono>
 #   include <boost/filesystem.hpp>
-// dont include generic_u8string
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
-// enable directory_iterator C++11 range-base for 
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
-// but travis come with an oooold version of boost
-// NOT enable directory_iterator C++11 range-base for
-// http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
-namespace boost
-{
-	namespace filesystem
-	{
-
-		//  enable directory_iterator C++11 range-base for statement use  --------------------//
-
-		//  begin() and end() are only used by a range-based for statement in the context of
-		//  auto - thus the top-level const is stripped - so returning const is harmless and
-		//  emphasizes begin() is just a pass through.
-		inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
-		{
-			return iter;
-		}
-
-		inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
-		{
-			return directory_iterator();
-		}
-
-	}  // namespace filesystem
-}   
-
 
 // add boost::filesystem into std::experimental::filesystem
 namespace std {
@@ -105,24 +75,57 @@ namespace std {
 				socket = boost::filesystem::file_type::socket_file,
 				unknown = boost::filesystem::file_type::type_unknown,
 			};
-			/// enable directory_iterator range-based for statements
-			//inline directory_iterator begin(directory_iterator iter) noexcept
-			//{
-			//	return iter;
-			//}
+// Boost dont include generic_u8string
+// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
+//
+// Boost versions: 1.67.0, 1.66.0, ... 1.56.0 enable directory_iterator C++11 range-base for
+// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
+// but travis come with an oooold version of boost
+// 1.55.0 NOT enable directory_iterator C++11 range-base for
+// http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
+#if BOOST_VERSION < 105600
+            namespace boost
+        //  enable directory_iterator C++11 range-base for statement use  --------------------//
 
-			//inline directory_iterator end(const directory_iterator&) noexcept
-			//{
-			//	return {};
-			//}
+		//  begin() and end() are only used by a range-based for statement in the context of
+		//  auto - thus the top-level const is stripped - so returning const is harmless and
+		//  emphasizes begin() is just a pass through.
+		inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
+		{
+			return iter;
+		}
+
+		inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
+		{
+			return directory_iterator();
+		}
+#endif
+
 		} // filesystem
 	} // experimental
+
+	namespace filesystem
+	{
+		using namespace experimental::filesystem;
+	}
 } // std
 
 #else
 #   undef NANA_USING_STD_FILESYSTEM
 #   define NANA_USING_STD_FILESYSTEM 1
-#   include <experimental/filesystem>
+#	if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && defined(_MSVC_LANG) && _MSVC_LANG >= 201703)) ||				\
+		((__cplusplus >= 201703L) && \
+			(defined(__clang__) && (__clang_major__ >= 7) ||		\
+			(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ >= 8))) )
+#   	include <filesystem>
+#	else
+#   	include <experimental/filesystem>
+		namespace std{
+			namespace filesystem{
+				using namespace std::experimental::filesystem;
+			}
+		}
+#	endif
 #endif
 
 
@@ -172,7 +175,13 @@ namespace nana  { namespace experimental { namespace filesystem
 		unknown = 0xFFFF	///<  not known, such as when a file_status object is created without specifying the permissions
 	};
     //enum class copy_options;
-    //enum class directory_options;
+
+    enum class directory_options
+    {
+    	none,
+    	follow_directory_symlink,
+    	skip_permission_denied
+    };
 
     struct space_info
     {
@@ -231,7 +240,7 @@ namespace nana  { namespace experimental { namespace filesystem
 		}
 
 		// modifiers
-		//void clear() noexcept;
+		void clear() noexcept;
 		path& make_preferred();
 		path& remove_filename();
 		//path& replace_filename(const path& replacement);
@@ -239,10 +248,10 @@ namespace nana  { namespace experimental { namespace filesystem
 		//void swap(path& rhs) noexcept;
 
 		// decomposition
-		//path root_name() const;
-		//path root_directory() const;
-		//path root_path() const;
-		//path relative_path() const;
+		path root_name() const;
+		path root_directory() const;
+		path root_path() const;
+		path relative_path() const;
 		path parent_path() const;
 		path filename() const;
 		//path stem() const;
@@ -250,16 +259,16 @@ namespace nana  { namespace experimental { namespace filesystem
 
 		// query
 		bool empty() const noexcept;
-		//bool has_root_name() const;
-		//bool has_root_directory() const;
-		//bool has_root_path() const;
-		//bool has_relative_path() const;
-		bool has_parent_path() const { return !parent_path().string().empty(); };   // temp;;
-		bool has_filename() const    { return !filename().string().empty(); };   // temp;
+		bool has_root_name() const { return !root_name().empty();  }
+		bool has_root_directory() const { return !root_directory().empty();  }
+		bool has_root_path() const { return !root_path().empty();  }
+		bool has_relative_path() const { return !relative_path().empty(); }
+		bool has_parent_path() const { return !parent_path().empty(); };   // temp;;
+		bool has_filename() const    { return !filename().empty(); };   // temp;
 		//bool has_stem() const;
-		bool has_extension() const   { return !extension().string().empty(); };   // temp
-		//bool is_absolute() const;
-		//bool is_relative() const;
+		bool has_extension() const   { return !extension().empty(); };   // temp
+		bool is_absolute() const;
+		bool is_relative() const;
 
 		int compare(const path& other) const;
 
@@ -354,7 +363,8 @@ namespace nana  { namespace experimental { namespace filesystem
 	public:
 
 		directory_iterator() noexcept;
-		explicit directory_iterator(const path& dir);
+		explicit directory_iterator(const path& p);
+		directory_iterator(const path& p, directory_options opt);
 
 		const value_type& operator*() const;
 		const value_type* operator->() const;
@@ -378,6 +388,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	private:
 		bool	end_{false};
 		path::string_type path_;
+		directory_options option_{ directory_options::none };
 
 		std::shared_ptr<find_handle> find_ptr_;
 		find_handle	handle_{nullptr};
@@ -417,14 +428,13 @@ namespace nana  { namespace experimental { namespace filesystem
 	file_status status(const path& p, std::error_code&);
 
 	std::uintmax_t file_size(const path& p);
-	//uintmax_t file_size(const path& p, error_code& ec) noexcept;
+	std::uintmax_t file_size(const path& p, std::error_code& ec) noexcept;
 
 	inline bool is_directory(file_status s) noexcept
 	{ return s.type() == file_type::directory ;}
 
 	bool is_directory(const path& p);
-
-    //bool is_directory(const path& p, error_code& ec) noexcept;
+    bool is_directory(const path& p, std::error_code& ec) noexcept;
 
 	inline bool is_regular_file(file_status s) noexcept
 	{
@@ -520,9 +530,30 @@ namespace std {
 #       else
 			using namespace nana::experimental::filesystem::v1;
 #       endif
+
 		} // filesystem
 	} // experimental
+
+	namespace filesystem {
+		using namespace std::experimental::filesystem;
+
+#if defined(NANA_FILESYSTEM_FORCE) || \
+    (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
+		path absolute(const path& p);
+		path absolute(const path& p, std::error_code& err);
+
+		path canonical(const path& p);
+		path canonical(const path& p, std::error_code& err);
+#endif
+
+#if defined(NANA_FILESYSTEM_FORCE) || defined(NANA_MINGW)
+        bool exists( std::filesystem::file_status s ) noexcept;
+        bool exists( const std::filesystem::path& p );
+        bool exists( const std::filesystem::path& p, std::error_code& ec ) noexcept;
+#endif
+	}
 } // std
+
 
 #endif	//NANA_USING_NANA_FILESYSTEM
 
