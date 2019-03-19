@@ -8,11 +8,11 @@ cache:
 
 matrix:
   include:
-    - env: CXX=g++-5 CC=gcc-5
+    - env: CXX=g++-8
       addons:
         apt:
           packages:
-            - g++-5
+            - g++-8
             - libjpeg8-dev
             - libpng-dev
             - libasound2-dev
@@ -21,7 +21,7 @@ matrix:
             - libx11-dev
             - libxft-dev
             - libxcursor-dev
-          sources: 
+          sources:
             - ubuntu-toolchain-r-test
             
   allow_failures:		
