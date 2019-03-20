@@ -30,6 +30,8 @@ if (NANA_CMAKE_VERBOSE_PREPROCESSOR)
 
     cmake_print_variables(CMAKE_BUILD_TYPE)
     cmake_print_variables(CMAKE_CONFIGURATION_TYPES)
+    cmake_print_variables(CMAKE_CXX_FLAGS_RELEASE)
+
     message ( "CMAKE_CXX_COMPILER_ID     = "  ${CMAKE_CXX_COMPILER_ID})
     message ( "COMPILER_IS_CLANG         = "  ${COMPILER_IS_CLANG})
     message ( "CMAKE_COMPILER_IS_GNUCXX  = "  ${CMAKE_COMPILER_IS_GNUCXX})
