@@ -44,7 +44,7 @@ matrix:
 
 before_install:
   - cd ..
-  - git clone --depth=1 --branch=cmake-dev https://github.com/qPCR4vir/nana-demo.git nana-demo
+  - git clone --depth=1 --branch=hotfix https://github.com/qPCR4vir/nana-demo.git nana-demo
   - export PATH="$HOME/bin:$PATH"
 
   #- mkdir ~/bin #it seemd that a bin already exists from 20170901 
