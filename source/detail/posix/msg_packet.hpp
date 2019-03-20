@@ -3,6 +3,7 @@
 #include <X11/Xlib.h>
 #include <vector>
 #include <nana/deploy.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 namespace nana
 {
@@ -29,7 +30,7 @@ namespace detail
 				Window window;
 				int x;
 				int y;
-				std::vector<std::string> * files;
+				std::vector<std::filesystem::path> * files;
 			}mouse_drop;
 		}u;
 	};

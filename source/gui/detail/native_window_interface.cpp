@@ -1444,6 +1444,8 @@ namespace nana{
 			{
 				if(owner)
 					return owner;
+
+				return x11_parent_window(wd);
 			}
 			else if(window_relationship::owner == rsp)
 				return owner;

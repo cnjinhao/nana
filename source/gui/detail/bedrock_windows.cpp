@@ -1149,10 +1149,10 @@ namespace detail
 						std::unique_ptr<wchar_t[]> varbuf;
 						std::size_t bufsize = 0;
 
-						unsigned size = ::DragQueryFile(drop, 0xFFFFFFFF, 0, 0);
+						unsigned size = ::DragQueryFile(drop, 0xFFFFFFFF, nullptr, 0);
 						for(unsigned i = 0; i < size; ++i)
 						{
-							unsigned reqlen = ::DragQueryFile(drop, i, 0, 0) + 1;
+							unsigned reqlen = ::DragQueryFile(drop, i, nullptr, 0) + 1;
 							if(bufsize < reqlen)
 							{
 								varbuf.reset(new wchar_t[reqlen]);
@@ -1160,8 +1160,7 @@ namespace detail
 							}
 
 							::DragQueryFile(drop, i, varbuf.get(), reqlen);
-
-							dropfiles.files.emplace_back(to_utf8(varbuf.get()));
+							dropfiles.files.emplace_back(varbuf.get());
 						}
 
 						while(msgwnd && (msgwnd->flags.dropable == false))

@@ -230,7 +230,6 @@ namespace API
 	window	root(native_window_type);                     ///< Retrieves the native window of a Nana.GUI window.
 
 	void fullscreen(window, bool);
-	bool enabled_double_click(window, bool);
 
 	void close_window(window);
 	void show_window(window, bool show);                  ///< Sets a window visible state.
@@ -239,6 +238,7 @@ namespace API
 	bool visible(window);
 	window	get_parent_window(window);
 	window	get_owner_window(window);
+
 	bool	set_parent_window(window, window new_parent);
 
 	template<typename Widget=::nana::widget>
@@ -435,6 +435,7 @@ namespace API
 	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
 
+	/// Copies the graphics of a specified to a new graphics object.
 	bool window_graphics(window, nana::paint::graphics&);
 	bool root_graphics(window, nana::paint::graphics&);
 	bool get_visual_rectangle(window, nana::rectangle&);

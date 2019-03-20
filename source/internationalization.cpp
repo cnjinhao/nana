@@ -193,9 +193,10 @@ namespace nana
 				table["NANA_FILEBOX_ERROR_INVALID_FOLDER_NAME"] = "Please input a valid name for the new folder.";
 				table["NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_EXISTING"] = "The folder is existing, please rename it.";
 				table["NANA_FILEBOX_ERROR_RENAME_FOLDER_BECAUSE_OF_FAILED_CREATION"] = "Failed to create the folder, please rename it.";
-				table["NANA_FILEBOX_ERROR_INVALID_FILENAME"] = "The filename is invalid.";
+				table["NANA_FILEBOX_ERROR_INVALID_FILENAME"] = "\"%arg0\"\nThe filename is invalid.";
 				table["NANA_FILEBOX_ERROR_NOT_EXISTING_AND_RETRY"] = "The file \"%arg0\"\n is not existing. Please check and retry.";
 				table["NANA_FILEBOX_ERROR_DIRECTORY_NOT_EXISTING_AND_RETRY"] = "The directory \"%arg0\"\n is not existing. Please check and retry.";
+				table["NANA_FILEBOX_ERROR_DIRECTORY_INVALID"] = "The directory \"%arg0\"\n is invalid. Please check and retry.";
 				table["NANA_FILEBOX_ERROR_QUERY_REWRITE_BECAUSE_OF_EXISTING"] = "The input file is existing, do you want to overwrite it?";
 			}
 		};

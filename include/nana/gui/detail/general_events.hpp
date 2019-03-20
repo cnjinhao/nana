@@ -1,7 +1,7 @@
 /**
 *	Definition of General Events
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,6 +17,7 @@
 #include <nana/gui/basis.hpp>
 #include "event_code.hpp"
 #include "internal_scope_guard.hpp"
+#include "../../filesystem/filesystem.hpp"
 #include <type_traits>
 #include <functional>
 #include <vector>
@@ -46,12 +47,11 @@ namespace nana
 		struct docker_base
 			: public docker_interface
 		{
-			event_interface * event_ptr;
-			bool flag_deleted{ false };
+			event_interface * const event_ptr;
+			bool flag_deleted;
 			const bool unignorable;
 
 			docker_base(event_interface*, bool unignorable_flag);
-
 			detail::event_interface * get_event() const override;
 		};
 
@@ -117,7 +117,7 @@ namespace nana
 	private:
 		struct docker
 			: public detail::docker_base
-		{	
+		{
 			/// the callback/response function taking the typed argument
 			std::function<void(arg_reference)> invoke;
 
@@ -220,33 +220,16 @@ namespace nana
 
 			//The dockers may resize when a new event handler is created by a calling handler.
 			//Traverses with position can avaid crash error which caused by a iterator which becomes invalid.
-
-			auto i = dockers_->data();
-			auto const end = i + dockers_->size();
-
-			for (; i != end; ++i)
+			for (std::size_t i = 0; i < dockers_->size(); ++i)
 			{
-				if (static_cast<docker*>(*i)->flag_deleted)
+				auto d = static_cast<docker*>(dockers_->data()[i]);
+				if (d->flag_deleted || (arg.propagation_stopped() && !d->unignorable))
 					continue;
 
-				static_cast<docker*>(*i)->invoke(arg);
+				d->invoke(arg);
 
 				if (window_handle && (!detail::check_window(window_handle)))
 					break;
-
-				if (arg.propagation_stopped())
-				{
-					for (++i; i != end; ++i)
-					{
-						if (!static_cast<docker*>(*i)->unignorable || static_cast<docker*>(*i)->flag_deleted)
-							continue;
-
-						static_cast<docker*>(*i)->invoke(arg);
-						if (window_handle && (!detail::check_window(window_handle)))
-							break;
-					}
-					break;
-				}
 			}
 		}
 	private:
@@ -297,34 +280,16 @@ namespace nana
 				};
 			}
 
-			static std::function<void(arg_reference)> build_second(fn_type&& fn, void(fn_type::*)(arg_reference))
+			template<typename Tfn, typename Ret>
+			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(arg_reference))
 			{
-				return std::move(fn);
+				return std::forward<Tfn>(fn);
 			}
 
-			static std::function<void(arg_reference)> build_second(fn_type&& fn, void(fn_type::*)(arg_reference) const)
+			template<typename Tfn, typename Ret>
+			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(arg_reference)const)
 			{
-				return std::move(fn);
-			}
-
-			static std::function<void(arg_reference)> build_second(fn_type& fn, void(fn_type::*)(arg_reference))
-			{
-				return fn;
-			}
-
-			static std::function<void(arg_reference)> build_second(fn_type& fn, void(fn_type::*)(arg_reference) const)
-			{
-				return fn;
-			}
-		
-			static std::function<void(arg_reference)> build_second(const fn_type& fn, void(fn_type::*)(arg_reference))
-			{
-				return fn;
-			}
-
-			static std::function<void(arg_reference)> build_second(const fn_type& fn, void(fn_type::*)(arg_reference) const)
-			{
-				return fn;
+				return std::forward<Tfn>(fn);
 			}
 
 			template<typename Tfn, typename Ret, typename Arg2>
@@ -420,7 +385,7 @@ namespace nana
 			typedef typename std::remove_reference<arg_reference>::type arg_type;
 			static_assert(std::is_convertible<arg_type, Arg2>::value, "The parameter type is not allowed, please check the function parameter type where you connected the event function.");
 
-			static std::function<void(arg_reference)> build(Ret(*fn)(Arg))
+			static std::function<void(arg_reference)> build(Ret(*fn)(Arg2))
 			{
 				return[fn](arg_reference arg){
 					fn(arg);
@@ -470,9 +435,9 @@ namespace nana
 
 	struct arg_dropfiles : public event_arg  
 	{
-		::nana::window	window_handle;	    ///<  A handle to the event window
-		::nana::point	pos;	            ///<  cursor position in the event window
-		std::vector<std::string>	files;	///<  external filenames
+		::nana::window	window_handle;				///<  A handle to the event window
+		::nana::point	pos;						///<  cursor position in the event window
+		std::vector<std::filesystem::path>	files;	///<  external filenames
 	};
 
 	struct arg_expose : public event_arg

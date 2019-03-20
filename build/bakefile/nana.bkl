@@ -30,6 +30,7 @@ library nana {
         detail/platform_spec_selector.cpp
         gui/animation.cpp
         gui/basis.cpp
+        gui/dragdrop.cpp
         gui/dragger.cpp
         gui/drawing.cpp
         gui/effects.cpp

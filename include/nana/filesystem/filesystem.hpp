@@ -428,7 +428,7 @@ namespace nana  { namespace experimental { namespace filesystem
 	file_status status(const path& p, std::error_code&);
 
 	std::uintmax_t file_size(const path& p);
-	//uintmax_t file_size(const path& p, error_code& ec) noexcept;
+	std::uintmax_t file_size(const path& p, std::error_code& ec) noexcept;
 
 	inline bool is_directory(file_status s) noexcept
 	{ return s.type() == file_type::directory ;}

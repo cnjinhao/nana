@@ -34,8 +34,10 @@ namespace nana
 
 
 		//class docker_base
-			docker_base::docker_base(event_interface* evt, bool unignorable_flag)
-				: event_ptr(evt), unignorable(unignorable_flag)
+			docker_base::docker_base(event_interface* evt, bool unignorable_flag):
+				event_ptr(evt),
+				flag_deleted(false),
+				unignorable(unignorable_flag)
 			{}
 
 			detail::event_interface * docker_base::get_event() const
