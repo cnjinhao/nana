@@ -225,8 +225,10 @@ namespace nana {	namespace experimental {	namespace filesystem
 		//Because of No wide character version of POSIX
 #if defined(NANA_POSIX)
 		const char* separators = "/";
+		const char* punt = ".";
 #else
 		const wchar_t* separators = L"/\\";
+		const wchar_t* punt = L".";
 #endif
 
 	//class file_status
@@ -452,6 +454,22 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 			return{ pathstr_ };
 		}
+
+        path path::stem() const
+        {
+            auto pos = pathstr_.find_last_of(separators);
+            auto ext = pathstr_.find_last_of(punt);
+
+            if (pos == pathstr_.npos)
+                pos = 0;
+            else
+                pos++;
+
+            if (ext == pathstr_.npos || ext < pos)
+                return path(pathstr_.substr(pos));
+            else
+                return path(pathstr_.substr(pos, ext-pos));
+        }
 
 		void path::clear() noexcept
 		{

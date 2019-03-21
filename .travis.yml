@@ -8,11 +8,11 @@ cache:
 
 matrix:
   include:
-    - env: CXX=g++-5 CC=gcc-5
+    - env: CXX=g++-8
       addons:
         apt:
           packages:
-            - g++-5
+            - g++-8
             - libjpeg8-dev
             - libpng-dev
             - libasound2-dev
@@ -21,7 +21,7 @@ matrix:
             - libx11-dev
             - libxft-dev
             - libxcursor-dev
-          sources: 
+          sources:
             - ubuntu-toolchain-r-test
             
   allow_failures:		
@@ -44,7 +44,7 @@ matrix:
 
 before_install:
   - cd ..
-  - git clone --depth=1 --branch=cmake-dev https://github.com/qPCR4vir/nana-demo.git nana-demo
+  - git clone --depth=1 --branch=hotfix https://github.com/qPCR4vir/nana-demo.git nana-demo
   - export PATH="$HOME/bin:$PATH"
 
   #- mkdir ~/bin #it seemd that a bin already exists from 20170901 

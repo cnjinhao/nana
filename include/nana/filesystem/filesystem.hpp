@@ -254,7 +254,7 @@ namespace nana  { namespace experimental { namespace filesystem
 		path relative_path() const;
 		path parent_path() const;
 		path filename() const;
-		//path stem() const;
+		path stem() const;
 		path extension() const;
 
 		// query
