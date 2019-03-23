@@ -79,7 +79,7 @@ namespace nana
 		
 		/// Deselects the menu
 		/**
-		 * If a menu is popped up, the menu deselects the item and close the popuped menu.
+		 * If a menu is popped up, the menu deselects the item and close the pop-upped menu.
 		 * @return true if an item is deselected, false otherwise.
 		 */
 		bool cancel();

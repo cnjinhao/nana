@@ -57,8 +57,8 @@ namespace nana
 
 				buttons what;
 				bool pressed;
-				size_type	scroll_length;       ///< the lenght in pixels of the central button show how many of the total (peak) is shonw (range)
-				int			scroll_pos;          ///< in pixels, and correspond to the offsset from the very beginning (value)
+				size_type	scroll_length;       ///< the length in pixels of the central button show how many of the total (peak) is shonw (range)
+				int			scroll_pos;          ///< in pixels, and correspond to the offset from the very beginning (value)
 				int			scroll_mouse_offset;
 
 				metrics_type();

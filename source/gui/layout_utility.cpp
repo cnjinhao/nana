@@ -15,7 +15,7 @@
 
 namespace nana
 {
-	//overlap test if overlaped between r1 and r2
+	//overlap test if overlapped between r1 and r2
 	bool overlapped(const rectangle& r1, const rectangle& r2)
 	{
 		if (r1.y + (long long)(r1.height) <= r2.y) return false;
