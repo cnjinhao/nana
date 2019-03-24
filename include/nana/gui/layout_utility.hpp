@@ -17,10 +17,10 @@
 
 namespace nana
 {
-	//overlap test if overlaped between r1 and r2
+	//overlap test if overlapped between r1 and r2
 	bool overlapped(const rectangle& r1, const rectangle& r2);
 
-	// overlap, compute the overlap area between r1 and r2. the r is for root
+	// overlap, compute the overlapping area between r1 and r2. the r is for root
 	bool overlap(const rectangle& r1, const rectangle& r2, rectangle& r);
 
 	bool overlap(const rectangle& ir, const size& valid_input_area, const rectangle & dr, const size& valid_dst_area, rectangle& output_src_r, rectangle& output_dst_r);
@@ -37,7 +37,7 @@ namespace nana
 
 	//covered
 	//@brief:	Tests a rectangle whether it is wholly covered by another.
-	bool covered(const rectangle& underlying, //Rectangle 1 is must under rectangle 2
+	bool covered(const rectangle& underlying, // 1st rectangle must be placed under 2nd rectangle
 						const rectangle& cover);
 }//end namespace nana
 #endif
