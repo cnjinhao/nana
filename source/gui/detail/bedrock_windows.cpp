@@ -1092,7 +1092,9 @@ namespace detail
 					//The focus window receives the message in Windows system, it should be redirected to the hovered window
                     ::POINT scr_pos{ pmdec.mouse.x, pmdec.mouse.y};  //Screen position
 					auto pointer_wd = ::WindowFromPoint(scr_pos);
-					if (pointer_wd == root_window)
+
+					//Ignore the message if the window is disabled.
+					if ((pointer_wd == root_window) && ::IsWindowEnabled(root_window))
 					{
 						::ScreenToClient(pointer_wd, &scr_pos);
 						auto scrolled_wd = wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), { scr_pos.x, scr_pos.y });
@@ -1124,7 +1126,7 @@ namespace detail
 							wd_manager.do_lazy_refresh(scrolled_wd, false);
 						}
 					}
-					else
+					else if (pointer_wd != root_window)
 					{
 						DWORD pid = 0;
 						::GetWindowThreadProcessId(pointer_wd, &pid);
