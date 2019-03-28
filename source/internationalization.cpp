@@ -41,18 +41,21 @@ namespace nana
 		class tokenizer
 		{
 		public:
-			tokenizer(const std::string& file, bool utf8)
+			tokenizer(const std::string& file, bool utf8) : tokenizer(std::ifstream(file.data(), std::ios::binary), utf8)
 			{
-				std::ifstream ifs(file.data(), std::ios::binary);
-				if (ifs)
+			}
+
+			tokenizer(std::ifstream& inputFileStream, bool utf8)
+			{
+				if (inputFileStream)
 				{
-					ifs.seekg(0, std::ios::end);
-					auto len = static_cast<unsigned>(ifs.tellg());
-					ifs.seekg(0, std::ios::beg);
+					inputFileStream.seekg(0, std::ios::end);
+					auto len = static_cast<unsigned>(inputFileStream.tellg());
+					inputFileStream.seekg(0, std::ios::beg);
 					if (len > 0)
 					{
 						data_.reset(new char[len]);
-						ifs.read(data_.get(), len);
+						inputFileStream.read(data_.get(), len);
 						read_ptr_ = data_.get();
 						if (utf8 && len > 3)
 						{
@@ -210,11 +213,10 @@ namespace nana
 			return data_ptr;
 		}
 
-		void load(const std::string& file, bool utf8)
+		void load_impl(tokenizer& tknizer, bool utf8)
 		{
 			auto impl = std::make_shared<data>();
 
-			tokenizer tknizer(file, utf8);
 			while (true)
 			{
 				if (token::msgid != tknizer.read())
@@ -285,6 +287,17 @@ namespace nana
 			use_eval();
 		}
 
+		void load(const std::string& file, bool utf8)
+		{
+			tokenizer tknizer(file, utf8);
+			load_impl(tknizer, utf8);
+		}
+
+		void load(std::ifstream& inputFileStream, bool utf8)
+		{
+			tokenizer tknizer(inputFileStream, utf8);
+			load_impl(tknizer, utf8);
+		}
 
 		struct eval_window
 		{
@@ -353,6 +366,16 @@ namespace nana
 	void internationalization::load_utf8(const std::string& file)
 	{
 		internationalization_parts::load(file, true);
+	}
+
+	void internationalization::load(std::ifstream& inputFileStream)
+	{
+		internationalization_parts::load(inputFileStream, false);
+	}
+
+	void internationalization::load_utf8(std::ifstream& inputFileStream)
+	{
+		internationalization_parts::load(inputFileStream, false);
 	}
 
 	std::string internationalization::get(std::string msgid) const

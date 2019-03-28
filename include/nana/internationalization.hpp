@@ -30,6 +30,9 @@ namespace nana
 		void load(const std::string& file);
 		void load_utf8(const std::string& file);
 
+		void load(std::ifstream& inputFileStream);
+		void load_utf8(std::ifstream& inputFileStream);
+
 		template<typename ...Args>
 		::std::string get(std::string msgid_utf8, Args&&... args) const
 		{
