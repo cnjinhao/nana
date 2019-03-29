@@ -76,7 +76,7 @@ namespace nana
 
 		bool chose() const;
 		nana::date read() const;
-		void weekstr(unsigned index, ::std::string);///<Set the week strings which will be displayed for day, index is in range of [0, 6]
+		void weekstr(unsigned index, ::std::string);///<Set the week strings which will be displayed for day, index is in the range of [0, 6]
 	};
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>

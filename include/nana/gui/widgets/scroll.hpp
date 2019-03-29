@@ -51,14 +51,14 @@ namespace nana
 				using size_type = std::size_t;
 
 				size_type peak;   ///< the whole total
-				size_type range;  ///< how many is shonw on a page, that is, How many to scroll after click on first or second
+				size_type range;  ///< how many is shown on a page, that is, How many to scroll after click on first or second
 				size_type step;   ///< how many to scroll by click in forward  or backward
 				size_type value;  ///< current offset calculated from the very beginnig
 
 				buttons what;
 				bool pressed;
-				size_type	scroll_length;       ///< the lenght in pixels of the central button show how many of the total (peak) is shonw (range)
-				int			scroll_pos;          ///< in pixels, and correspond to the offsset from the very beginning (value)
+				size_type	scroll_length;       ///< the length in pixels of the central button show how many of the total (peak) is shown (range)
+				int			scroll_pos;          ///< in pixels, and correspond to the offset from the very beginning (value)
 				int			scroll_mouse_offset;
 
 				metrics_type();
@@ -348,7 +348,7 @@ namespace nana
 
 		virtual void amount(size_type peak) = 0;
 
-		/// Get the range of the widget (how many is shonw on a page, that is, How many to scroll after click on first or second)
+		/// Get the range of the widget (how many is shown on a page, that is, How many to scroll after click on first or second)
 		virtual size_type range() const = 0;
 
 		/// Set the range of the widget.
@@ -426,7 +426,7 @@ namespace nana
 			return this->get_drawer_trigger().peak(peak);
 		}
 
-		/// Get the range of the widget (how many is shonw on a page, that is, How many to scroll after click on first or second)
+		/// Get the range of the widget (how many is shown on a page, that is, How many to scroll after click on first or second)
 		size_type range() const override
 		{
 			return this->get_drawer_trigger().metrics().range;

@@ -89,7 +89,7 @@ namespace nana
 		spinbox(window, const nana::rectangle& = {}, bool visible = true);
 
 		/// Sets the widget whether it accepts user keyboard input.
-		/// @param accept Set to indicate whether it accepts uesr keyboard input.
+		/// @param accept Set to indicate whether it accepts user keyboard input.   
 		void editable(bool accept);
 
 		/// Determines whether the widget accepts user keyboard input.
@@ -109,7 +109,7 @@ namespace nana
 		/// Selects/unselects the text
 		void select(bool);
 
-		/// Gets the spined value
+		/// Gets the spinned value
 		::std::string value() const;
 		void value(const ::std::string&);
 		int to_int() const;
