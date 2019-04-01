@@ -1086,12 +1086,12 @@ namespace detail
 						if (wd->flags.action != wd->flags.action_before)
 							this->map(wd, true);
 					}
+
+					//Map the requested children.
+					this->map_requester(wd);
 				}
 				else
 					window_layer::paint(wd, paint_operation::try_refresh, refresh_tree);	//only refreshing if it has an invisible parent
-
-				//Map the requested children.
-				this->map_requester(wd);
 			}
 			else
 				wd->other.mapping_requester.clear();
