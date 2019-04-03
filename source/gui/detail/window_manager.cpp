@@ -701,19 +701,40 @@ namespace detail
 			return true;
 		}
 
-		window_manager::core_window_t* window_manager::find_window(native_window_type root, const point& pos)
+		window_manager::core_window_t* window_manager::find_window(native_window_type root, const point& pos, bool ignore_captured)
 		{
 			if (nullptr == root)
 				return nullptr;
 
-			if((false == attr_.capture.ignore_children) || (nullptr == attr_.capture.window) || (attr_.capture.window->root != root))
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+
+			if (ignore_captured || (nullptr == attr_.capture.window))
 			{
-				//Thread-Safe Required!
-				std::lock_guard<mutex_type> lock(mutex_);
 				auto rrt = root_runtime(root);
 				if (rrt && _m_effective(rrt->window, pos))
 					return _m_find(rrt->window, pos);
+
+				return nullptr;
 			}
+		
+			if (attr_.capture.ignore_children)
+				return attr_.capture.window;
+
+			auto rrt = root_runtime(root);
+			if (rrt && _m_effective(rrt->window, pos))
+			{
+				auto target = _m_find(rrt->window, pos);
+
+				auto p = target;
+				while (p)
+				{
+					if (p == attr_.capture.window)
+						return target;
+					p = p->parent;
+				}
+			}
+
 			return attr_.capture.window;
 		}
 
