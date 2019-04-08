@@ -38,6 +38,9 @@ namespace nana
 		timer& operator=(timer&&) = delete;
 	public:
 		timer();
+		timer(unsigned int ms) : timer{} { interval(ms); } /// Accepts an initial interval in ms
+		template <typename Rep, typename Period> /// Accepts an initial interval in any chrono unit
+		explicit timer(std::chrono::duration<Rep, Period> const & time) : timer{} { interval(time); }
 
 		~timer();
 
