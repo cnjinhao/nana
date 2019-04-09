@@ -99,7 +99,11 @@ namespace detail
 
 		bool show(core_window_t* wd, bool visible);
 
-		core_window_t* find_window(native_window_type root, const point& pos);
+		//find a widget window at specified position
+		//@param root A root window
+		//@param pos Position
+		//@param ignore_captured A flag indicates whether to ignore redirecting the result to its captured window. If this paramter is true, it returns the window at the position, if the parameter is false, it returns the captured window if the captured window don't ignore children.
+		core_window_t* find_window(native_window_type root, const point& pos, bool ignore_captured = false);
 
 		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
 		bool move(core_window_t*, int x, int y, bool passive);

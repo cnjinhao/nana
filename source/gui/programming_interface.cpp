@@ -1403,7 +1403,7 @@ namespace API
 			::nana::point clipos{pos};
 			interface_type::calc_window_point(wd, clipos);
 			return reinterpret_cast<window>(
-						restrict::wd_manager().find_window(wd, clipos));
+						restrict::wd_manager().find_window(wd, clipos, true));
 		}
 		return nullptr;
 	}
