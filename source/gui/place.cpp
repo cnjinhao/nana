@@ -631,7 +631,7 @@ namespace nana
 
 		static division * search_div_name(division* start, const std::string&) noexcept;
 
-		std::unique_ptr<division> scan_div(place_parts::tokenizer&, const std::string& ignore_duplicate = {});
+		std::unique_ptr<division> scan_div(place_parts::tokenizer&, bool implicitly_started, const std::string& ignore_duplicate = {});
 		void check_unique(const division*) const;
 
 		//connect the field/dock with div object
@@ -1988,7 +1988,7 @@ namespace nana
 
 			std::string::size_type tag_pos{ left ? div.find('<', bound.second + 2) : div.rfind('>', bound.first - 2) };
 			if (div.npos == tag_pos)
-				throw std::runtime_error("place report an issue if it throws");
+				throw std::invalid_argument("please report an issue if it throws");
 
 			auto other_bound = get_field_boundary(div, tag_pos);
 
@@ -2707,8 +2707,9 @@ namespace nana
 		throw std::invalid_argument("nana.place: the type of the " + std::string{pos_strs[pos]} +"th parameter for collapse should be integer.");
 	}
 
+	//implicitly_started indicates whether the field in div-text starts without < mark. 
 	//ignore_duplicate A field is allowed to have same name if its has an ancestor which name is same with ignore_duplicate.
-	auto place::implement::scan_div(place_parts::tokenizer& tknizer, const std::string& ignore_duplicate) -> std::unique_ptr<division>
+	auto place::implement::scan_div(place_parts::tokenizer& tknizer, bool implicitly_started, const std::string& ignore_duplicate) -> std::unique_ptr<division>
 	{
 		using token = place_parts::tokenizer::token ;
 
@@ -2730,7 +2731,8 @@ namespace nana
 		bool undisplayed = false;
 		bool invisible = false;
 
-		for (token tk = tknizer.read(); (tk != token::eof && tk != token::div_end); tk = tknizer.read())
+		token tk = token::eof;
+		for (tk = tknizer.read(); (tk != token::eof && tk != token::div_end); tk = tknizer.read())
 		{
 			switch (tk)
 			{
@@ -2759,7 +2761,7 @@ namespace nana
 				break;
 			case token::div_start:
 			{
-				auto div = scan_div(tknizer, ignore_duplicate);
+				auto div = scan_div(tknizer, false, ignore_duplicate);
 				if (!children.empty())
 					children.back()->div_next = div.get();
 
@@ -2888,6 +2890,9 @@ namespace nana
 			default:	break;
 			}
 		}
+
+		if (implicitly_started && (tk == token::div_end))
+			throw std::invalid_argument("nana.place: the div-text ends prematurely at " + std::to_string(tknizer.pos()));
 
 		field_gather * attached_field = nullptr;
 
@@ -3228,7 +3233,7 @@ namespace nana
 	{
 		place_parts::tokenizer tknizer(div_text.c_str());
 		impl_->disconnect();
-		auto div = impl_->scan_div(tknizer);
+		auto div = impl_->scan_div(tknizer, true);
 		try
 		{
 			impl_->connect(div.get());		//throws if there is a redefined name of field.
