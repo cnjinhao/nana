@@ -1,7 +1,7 @@
 /*
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,7 +42,7 @@ namespace nana
 		void check_field_name(const char* name)
 		{
 			if (*name && (*name != '_' && !(('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z'))))
-				throw std::invalid_argument("nana.place: bad field name");
+				throw std::invalid_argument(std::string("nana.place: bad field name '")+name+"'.");
 		}
 	}//end namespace place_parts
 
@@ -630,7 +630,8 @@ namespace nana
 		void collocate();
 
 		static division * search_div_name(division* start, const std::string&) noexcept;
-		std::unique_ptr<division> scan_div(place_parts::tokenizer&);
+
+		std::unique_ptr<division> scan_div(place_parts::tokenizer&, const std::string& ignore_duplicate = {});
 		void check_unique(const division*) const;
 
 		//connect the field/dock with div object
@@ -2706,7 +2707,8 @@ namespace nana
 		throw std::invalid_argument("nana.place: the type of the " + std::string{pos_strs[pos]} +"th parameter for collapse should be integer.");
 	}
 
-	auto place::implement::scan_div(place_parts::tokenizer& tknizer) -> std::unique_ptr<division>
+	//ignore_duplicate A field is allowed to have same name if its has an ancestor which name is same with ignore_duplicate.
+	auto place::implement::scan_div(place_parts::tokenizer& tknizer, const std::string& ignore_duplicate) -> std::unique_ptr<division>
 	{
 		using token = place_parts::tokenizer::token ;
 
@@ -2757,7 +2759,7 @@ namespace nana
 				break;
 			case token::div_start:
 			{
-				auto div = scan_div(tknizer);
+				auto div = scan_div(tknizer, ignore_duplicate);
 				if (!children.empty())
 					children.back()->div_next = div.get();
 
@@ -2897,7 +2899,30 @@ namespace nana
 			attached_field = i->second;
 			//the field is attached to a division, it means there is another division with same name.
 			if (attached_field->attached)
-				throw std::runtime_error("place, the name '" + name + "' is redefined.");
+			{
+				//The fields are allowed to have a same name. E.g.
+				//place.div("A <B><C>");
+				//place.modify("A", "<B>");  Here the same name B must be allowed, otherwise it throws runtime error.
+
+				bool allow_same_name = false;
+				if (!ignore_duplicate.empty())
+				{
+					auto f = attached_field->attached->div_owner;
+					while (f)
+					{
+						if (f->name == ignore_duplicate)
+						{
+							allow_same_name = true;
+							break;
+						}
+
+						f = f->div_owner;
+					}
+				}
+
+				if (!allow_same_name)
+					throw std::runtime_error("place, the name '" + name + "' is redefined.");
+			}
 		}
 
 		token unmatch = token::width;
@@ -2977,7 +3002,16 @@ namespace nana
 		//attach the field to the division
 		div->field = attached_field;
 		if (attached_field)
+		{
+			//Replaces the previous div with the new div which is allowed to have a same name.
+
+			//Detaches the field from the previous div. 
+			if (attached_field->attached)
+				attached_field->attached->field = nullptr;
+
+			//Attaches new div
 			attached_field->attached = div.get();
+		}
 
 		if (children.size())
 		{
@@ -3263,7 +3297,7 @@ namespace nana
 		try
 		{
 			place_parts::tokenizer tknizer(div_text);
-			auto modified = impl_->scan_div(tknizer);
+			auto modified = impl_->scan_div(tknizer, name);
 			auto modified_ptr = modified.get();
 			modified_ptr->name = name;
 
@@ -3308,7 +3342,7 @@ namespace nana
 		//if name violate the naming convention.
 		place_parts::check_field_name(name);
 
-		//get the field with specified name, if no such field with specified name
+		//get the field with the specified name. If no such field with specified name
 		//then create one.
 		auto & p = impl_->fields[name];
 		if (nullptr == p)
@@ -3317,12 +3351,12 @@ namespace nana
 		if ((!p->attached) && impl_->root_division)
 		{
 			//search the division with the specified name,
-			//and attached the division to the field
+			//and attaches the division to the field
 			auto div = implement::search_div_name(impl_->root_division.get(), name);
 			if (div)
 			{
 				if (div->field && (div->field != p))
-					throw std::runtime_error("nana.place: unexpected error, the division attachs a unexpected field.");
+					throw std::runtime_error(std::string("nana.place: unexpected error, the division attaches an unexpected field: ") + name);
 
 				div->field = p;
 				p->attached = div;

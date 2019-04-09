@@ -60,7 +60,7 @@ namespace nana{
 
 		///  The construction that creates the widget and set the title or caption
 		group(window			parent,		        ///< a handle to the parent
-			  ::std::string		title,		        ///< caption of the group
+			  ::std::string	    title,		        ///< caption of the group
 			  bool				formatted = false,  ///< Enable/disable the formatted text for the title
 			  unsigned			gap = 2,			///< between the content and the external limit
 			  const rectangle&	r = {} ,
