@@ -51,7 +51,7 @@ namespace nana
 		}//end namespace form
 	}//end namespace drawerbase
 
-	/// \brief Pop-up window. Is different from other window widgets: its default  constructor create the window.
+	/// \brief Pop-up window. Is different from other window widgets: its default constructor creates the window.
 	/// \see nana::appearance
 	class form
 		: public drawerbase::form::form_base

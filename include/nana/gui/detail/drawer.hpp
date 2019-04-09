@@ -98,10 +98,10 @@ namespace nana
 		void clear_filter();
 
 	private:
-		void _m_reset_overrided();
-		bool _m_overrided(event_code) const;
+		void _m_reset_overridden();
+		bool _m_overridden(event_code) const;
 	private:
-		unsigned overrided_{ 0xFFFFFFFF };
+		unsigned overridden_{ 0xFFFFFFFF };
 		unsigned evt_disabled_{ 0 }; // bit set if event is filtered
 	};
 
@@ -117,8 +117,8 @@ namespace nana
 			enum class method_state
 			{
 				pending,
-				overrided,
-				not_overrided
+				overridden,
+				not_overridden
 			};
 		public:
 			drawer();
@@ -165,7 +165,7 @@ namespace nana
 				auto realizer = this->realizer();
 				auto & mth_state = _m_mth_state(pos);
 
-				if (realizer && (method_state::not_overrided != mth_state))
+				if (realizer && (method_state::not_overridden != mth_state))
 				{
 					const bool bFiltered = !bForce__EmitInternal && realizer->filter_event(evt_code);
 					if (method_state::pending == mth_state)
@@ -176,7 +176,7 @@ namespace nana
 						//Check realizer, when the window is closed in that event handler, the drawer will be
 						//detached and realizer will be a nullptr
 						if (realizer)
-							mth_state = (realizer->_m_overrided(evt_code) ? method_state::overrided : method_state::not_overrided);
+							mth_state = (realizer->_m_overridden(evt_code) ? method_state::overridden : method_state::not_overridden);
 					}
 					else
 					{
