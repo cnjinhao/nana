@@ -38,6 +38,9 @@ namespace nana
 		timer& operator=(timer&&) = delete;
 	public:
 		timer();
+		timer(unsigned int ms) : timer{} { interval(ms); } /// Accepts an initial interval in ms
+		template <typename Rep, typename Period> /// Accepts an initial interval in any chrono unit
+		explicit timer(std::chrono::duration<Rep, Period> const & time) : timer{} { interval(time); }
 
 		~timer();
 
@@ -53,7 +56,17 @@ namespace nana
 		void stop();
 
 		void interval(unsigned milliseconds);   ///< Set the duration between calls (millisec ??)
+		template <typename Rep, typename Period>
+		inline void interval(std::chrono::duration<Rep, Period> const & time_interval) ///< Set the duration between calls, accepts std::chrono
+		{
+		    interval(std::chrono::duration_cast<std::chrono::milliseconds>(time_interval).count());
+		}
 		unsigned interval() const;
+		template <typename Duration = std::chrono::milliseconds>
+		inline Duration interval() const
+		{
+		    return std::chrono::duration_cast<Duration>(std::chrono::milliseconds(interval));
+		}
 	private:
 		nana::basic_event<arg_elapse> elapse_;
 		implement * const impl_;
