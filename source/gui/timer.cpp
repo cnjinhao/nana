@@ -220,7 +220,7 @@ namespace nana
 			timer_driver::instance().destroy(tmid);
 		}
 
-		void timer::interval(unsigned ms)
+		void timer::interval_(unsigned ms)
 		{
 			if (ms != impl_->interval)
 			{
