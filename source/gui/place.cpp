@@ -42,7 +42,7 @@ namespace nana
 		void check_field_name(const char* name)
 		{
 			if (*name && (*name != '_' && !(('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z'))))
-				throw std::invalid_argument("nana.place: bad field name");
+				throw std::invalid_argument(std::string("nana.place: bad field name '")+name+"'.");
 		}
 	}//end namespace place_parts
 
@@ -3308,7 +3308,7 @@ namespace nana
 		//if name violate the naming convention.
 		place_parts::check_field_name(name);
 
-		//get the field with specified name, if no such field with specified name
+		//get the field with the specified name. If no such field with specified name
 		//then create one.
 		auto & p = impl_->fields[name];
 		if (nullptr == p)
@@ -3317,12 +3317,12 @@ namespace nana
 		if ((!p->attached) && impl_->root_division)
 		{
 			//search the division with the specified name,
-			//and attached the division to the field
+			//and attaches the division to the field
 			auto div = implement::search_div_name(impl_->root_division.get(), name);
 			if (div)
 			{
 				if (div->field && (div->field != p))
-					throw std::runtime_error("nana.place: unexpected error, the division attachs a unexpected field.");
+					throw std::runtime_error(std::string("nana.place: unexpected error, the division attaches an unexpected field: ") + name);
 
 				div->field = p;
 				p->attached = div;
