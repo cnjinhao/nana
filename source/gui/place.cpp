@@ -3302,7 +3302,7 @@ namespace nana
 		try
 		{
 			place_parts::tokenizer tknizer(div_text);
-			auto modified = impl_->scan_div(tknizer, name);
+			auto modified = impl_->scan_div(tknizer, true, name);
 			auto modified_ptr = modified.get();
 			modified_ptr->name = name;
 
