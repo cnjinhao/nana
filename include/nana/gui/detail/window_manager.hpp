@@ -120,7 +120,6 @@ namespace detail
 		void refresh_tree(core_window_t*);
 
 		void do_lazy_refresh(core_window_t*, bool force_copy_to_screen, bool refresh_tree = false);
-		void map_requester(core_window_t*);
 
 		bool set_parent(core_window_t* wd, core_window_t* new_parent);
 		core_window_t* set_focus(core_window_t*, bool root_has_been_focused, arg_focus::reason);

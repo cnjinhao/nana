@@ -16,6 +16,7 @@
 #include <nana/system/platform.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
+#include <nana/gui/detail/window_layout.hpp>
 #include <nana/gui/detail/element_store.hpp>
 #include "inner_fwd_implement.hpp"
 #include <errno.h>
@@ -555,6 +556,27 @@ namespace detail
 			context.is_alt_pressed = false;
 	}
 
+	class window_proc_guard
+	{
+	public:
+		window_proc_guard(detail::basic_window* wd) :
+			root_wd_(wd)
+		{
+			root_wd_->other.attribute.root->lazy_update = true;
+		}
+
+		~window_proc_guard()
+		{
+			if (!bedrock::instance().wd_manager().available(root_wd_))
+				return;
+
+			root_wd_->other.attribute.root->lazy_update = false;
+			root_wd_->other.attribute.root->update_requesters.clear();
+		}
+	private:
+		detail::basic_window* const root_wd_;
+	};
+
 	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
 	{
 		typedef detail::bedrock::core_window_t core_window_t;
@@ -569,10 +591,13 @@ namespace detail
 
 		if(root_runtime)
 		{
-			auto msgwnd = root_runtime->window;
+			auto const root_wd = root_runtime->window;
+			auto msgwnd = root_wd;
+			window_proc_guard wp_guard{ root_wd };
+
 			auto& context = *brock.get_thread_context(msgwnd->thread_id);
 
-			auto pre_event_window = context.event_window;
+			auto const pre_event_window = context.event_window;
 			auto pressed_wd = root_runtime->condition.pressed;
 			auto pressed_wd_space = root_runtime->condition.pressed_by_space;
 			auto hovered_wd = root_runtime->condition.hovered;
@@ -1187,6 +1212,15 @@ namespace detail
 								native_interface::close_window(native_window);
 						}
 					}
+				}
+			}
+
+			if (wd_manager.available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
+			{
+				for (auto wd : root_wd->other.attribute.root->update_requesters)
+				{
+					window_layout::paint(wd, window_layout::paint_operation::have_refreshed, false);
+					wd_manager.map(wd, true);
 				}
 			}
 

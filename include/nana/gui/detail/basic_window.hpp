@@ -127,6 +127,9 @@ namespace detail
 		basic_window * seek_non_lite_widget_ancestor() const;
 
 		void set_action(mouse_action);
+
+		/// Only refresh when the root of window is in lazy-updating mode
+		bool try_lazy_update(bool try_refresh);
 	public:
 		/// Override event_holder
 		bool set_events(const std::shared_ptr<general_events>&) override;
@@ -176,8 +179,7 @@ namespace detail
 			bool ignore_mouse_focus		: 1;	///< A flag indicates whether the widget accepts focus when clicking on it
 			bool space_click_enabled : 1;		///< A flag indicates whether enable mouse_down/click/mouse_up when pressing and releasing whitespace key.
 			bool draggable : 1;
-			bool ignore_child_mapping : 1;
-			unsigned Reserved	:16;
+			unsigned Reserved : 17;
 			unsigned char tab;		///< indicate a window that can receive the keyboard TAB
 			mouse_action	action;
 			mouse_action	action_before;
@@ -205,11 +207,14 @@ namespace detail
 		{
 			struct	attr_root_tag
 			{
+				bool ime_enabled{ false };
+				bool lazy_update{ false };	///< Indicates whether the window is in lazy-updating mode.
+
+				container	update_requesters;	///< Container for lazy-updating requesting windows.
 				container	tabstop;
 				std::vector<edge_nimbus_action> effects_edge_nimbus;
 				basic_window*	focus{nullptr};
 				basic_window*	menubar{nullptr};
-				bool			ime_enabled{false};
 				cursor			state_cursor{nana::cursor::arrow};
 				basic_window*	state_cursor_window{ nullptr };
 
@@ -222,8 +227,6 @@ namespace detail
 			paint::graphics glass_buffer;	///< if effect.bground is avaiable. Refer to window_layout::make_bground.
 			update_state	upd_state;
 			dragdrop_status	dnd_state{ dragdrop_status::not_ready };
-
-			container mapping_requester;	///< Children which are ignored to mapping
 
 			union
 			{

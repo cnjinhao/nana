@@ -39,10 +39,6 @@ namespace nana
 				}
 				else
 					_m_paint_glass_window(wd, (paint_operation::try_refresh == operation), req_refresh_children, false, true);
-
-				//maproot and _m_paint_glass_window always copy the children graphics, therefore the mapping requester should
-				//be cleared to avoid redundant copying
-				wd->other.mapping_requester.clear();
 			}
 
 			bool window_layout::maproot(core_window_t* wd, bool have_refreshed, bool req_refresh_children)
