@@ -2756,6 +2756,11 @@ namespace nana
 				{
 					auto splitter = new div_splitter(tknizer.number(), this);
 					children.back()->div_next = splitter;
+
+					//Hides the splitter if its left leaf is undisplayed.
+					if (!children.back()->display)
+						splitter->display = false;
+
 					children.emplace_back(std::unique_ptr<division>{ splitter });
 				}
 				break;
@@ -2763,7 +2768,13 @@ namespace nana
 			{
 				auto div = scan_div(tknizer, false, ignore_duplicate);
 				if (!children.empty())
+				{
+					//Hides the splitter if its right leaf is undisplayed.
+					if ((children.back()->kind_of_division == division::kind::splitter) && !div->display)
+						children.back()->display = false;
+
 					children.back()->div_next = div.get();
+				}
 
 				children.emplace_back(std::move(div));
 			}
@@ -3302,7 +3313,7 @@ namespace nana
 		try
 		{
 			place_parts::tokenizer tknizer(div_text);
-			auto modified = impl_->scan_div(tknizer, name);
+			auto modified = impl_->scan_div(tknizer, true, name);
 			auto modified_ptr = modified.get();
 			modified_ptr->name = name;
 
