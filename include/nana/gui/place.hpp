@@ -79,6 +79,7 @@ namespace nana
 	{
 		struct implement;
 
+
 		class field_interface
 		{
 			field_interface(const field_interface&) = delete;
@@ -103,6 +104,25 @@ namespace nana
 			virtual void _m_add_agent(const detail::place_agent&) = 0;
 		};
 	public:
+		class error :public ::std::invalid_argument
+		{
+		public:
+			error(::std::string           what,
+				   const place&           plc,
+				   std::string            field = "unknown",
+				   std::string::size_type pos = std::string::npos)
+
+				: std::invalid_argument(what),
+				owner_caption{ API::window_caption(plc.window_handle()).substr(0,80) },
+				field{ field },
+				div_text{ plc.div() },
+				pos{ pos }
+			{}
+			std::string owner_caption; ///< truncate caption (title) of the "placed" widget
+			std::string div_text;
+			std::string field;   ///< posible field where the error ocurred.  
+			std::string::size_type pos; ///< posible position in the div_text where the error ocurred. npos if unknown
+		};
         ///  reference to a field manipulator which refers to a field object created by place 
 		using field_reference = field_interface &;
 
@@ -121,6 +141,10 @@ namespace nana
         
 		void div(std::string div_text);			///< Divides the attached widget into fields.
 		const std::string& div() const noexcept;	///< Returns div-text that depends on fields status.
+		static bool check_field_name(const char* name)  ///< must begin with _a-zA-Z
+		{
+			return name && (*name == '_' || (('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z')));
+		}
 		void modify(const char* field_name, const char* div_text);	///< Modifies a specified field.
 
 		field_reference field(const char* name);///< Returns a field with the specified name.
@@ -152,6 +176,8 @@ namespace nana
 	private:
 		implement * impl_;
 	};
+
+	
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>
 

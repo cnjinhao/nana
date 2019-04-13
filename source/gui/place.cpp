@@ -36,16 +36,16 @@
 
 namespace nana
 {
-	namespace place_parts
+	struct badname: place::error
 	{
-		//check the name
-		void check_field_name(const char* name)
-		{
-			if (*name && (*name != '_' && !(('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z'))))
-				throw std::invalid_argument(std::string("nana.place: bad field name '")+name+"'.");
-		}
-	}//end namespace place_parts
-
+		explicit badname(  ::std::string           what,
+							const place&           plc,
+							const char*            name   = "unknown",
+							std::string::size_type pos    = std::string::npos)
+			:place::error(what + ": bad field name '" + (name ? name : "nullptr") + "'.",
+				          plc, (name ? name : "nullptr"), pos)
+		{}
+	};
 	typedef place_parts::number_t number_t;
 	typedef place_parts::repeated_array repeated_array;
 
@@ -73,7 +73,7 @@ namespace nana
 				return idstr_;
 			}
 
-			const number_t& number() const
+			const number_t& number() const noexcept
 			{
 				return number_;
 			}
@@ -3272,22 +3272,18 @@ namespace nana
 	void place::modify(const char* name, const char* div_text)
 	{
 		if (nullptr == div_text)
-			throw std::invalid_argument("nana.place: invalid div-text");
+			throw error("nana::place.modify(): invalid div-text (nullptr)", *this);
 
-		if (nullptr == name) name = "";
-
-		//check the name, it throws std::invalid_argument
-		//if name violate the naming convention.
-		place_parts::check_field_name(name);
+		if (! place::check_field_name(name) )
+			throw badname("nana::place.modify()", *this, name);
 
 		auto div_ptr = impl_->search_div_name(impl_->root_division.get(), name);
 		if (!div_ptr)
 		{
-			std::string what = "nana::place: field '";
+			std::string what = "nana::place.modify(): field '";
 			what += name;
-			what += "' is not found.";
-
-			throw std::invalid_argument(what);
+			what += "' was not found.";
+			throw error(what, *this, name);
 		}
 
 		std::unique_ptr<implement::division>* replaced = nullptr;
@@ -3342,7 +3338,7 @@ namespace nana
 				}
 			}
 		}
-		catch (...)
+		catch (...)            /// todo throw error   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		{
 			replaced->swap(impl_->tmp_replaced);
 			throw;
@@ -3351,12 +3347,8 @@ namespace nana
 
 	place::field_reference place::field(const char* name)
 	{
-		if (nullptr == name)
-			name = "";
-
-		//check the name, it throws std::invalid_argument
-		//if name violate the naming convention.
-		place_parts::check_field_name(name);
+		if (!place::check_field_name(name))
+			throw badname("nana::place.field()", *this, name);
 
 		//get the field with the specified name. If no such field with specified name
 		//then create one.
@@ -3372,7 +3364,8 @@ namespace nana
 			if (div)
 			{
 				if (div->field && (div->field != p))
-					throw std::runtime_error(std::string("nana.place: unexpected error, the division attaches an unexpected field: ") + name);
+					throw error(std::string("nana::place.field(): unexpected error, the division attaches an unexpected field: ") + name,
+						        *this, name);
 
 				div->field = p;
 				p->attached = div;
@@ -3449,10 +3442,8 @@ namespace nana
 
 	void place::field_visible(const char* name, bool vsb)
 	{
-		if (!name)	name = "";
-
-		//May throw std::invalid_argument
-		place_parts::check_field_name(name);
+		if (!place::check_field_name(name))
+			throw badname("set nana::place.field_visible()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		if (div)
@@ -3464,10 +3455,8 @@ namespace nana
 
 	bool place::field_visible(const char* name) const
 	{
-		if (!name)	name = "";
-
-		//May throw std::invalid_argument
-		place_parts::check_field_name(name);
+		if (!place::check_field_name(name))
+			throw badname("get nana::place.field_visible()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		return (div && div->visible);
@@ -3475,10 +3464,8 @@ namespace nana
 
 	void place::field_display(const char* name, bool dsp)
 	{
-		if (!name)	name = "";
-
-		//May throw std::invalid_argument
-		place_parts::check_field_name(name);
+		if (!place::check_field_name(name))
+			throw badname("set nana::place.field_display()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		if (div)
@@ -3491,10 +3478,8 @@ namespace nana
 
 	bool place::field_display(const char* name) const
 	{
-		if (!name)	name = "";
-
-		//May throw std::invalid_argument
-		place_parts::check_field_name(name);
+		if (!place::check_field_name(name))
+			throw badname("get nana::place.field_display()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
 		return (div && div->display);
@@ -3531,9 +3516,8 @@ namespace nana
 
 	place& place::dock(const std::string& name, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory)
 	{
-		//check the name, it throws std::invalid_argument
-		//if name violate the naming convention.
-		place_parts::check_field_name(name.data());
+		if (!place::check_field_name(name.data()))
+			throw badname("get nana::place.field_display()", *this, name.data());
 
 		auto & dock_ptr = impl_->docks[name];
 		if (!dock_ptr)
@@ -3601,6 +3585,9 @@ namespace nana
 		return nullptr;
 	}
 	//end class place
+
+	//class place::error
+
 }//end namespace nana
 
 #include <nana/pop_ignore_diagnostic>
