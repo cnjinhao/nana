@@ -3274,7 +3274,7 @@ namespace nana
 		if (nullptr == div_text)
 			throw error("nana::place.modify(): invalid div-text (nullptr)", *this);
 
-		if (! place::check_field_name(name) )
+		if (! valid_field_name(name) )
 			throw badname("nana::place.modify()", *this, name);
 
 		auto div_ptr = impl_->search_div_name(impl_->root_division.get(), name);
@@ -3347,7 +3347,7 @@ namespace nana
 
 	place::field_reference place::field(const char* name)
 	{
-		if (!place::check_field_name(name))
+		if (!valid_field_name(name))
 			throw badname("nana::place.field()", *this, name);
 
 		//get the field with the specified name. If no such field with specified name
@@ -3442,7 +3442,7 @@ namespace nana
 
 	void place::field_visible(const char* name, bool vsb)
 	{
-		if (!place::check_field_name(name))
+		if (!valid_field_name(name))
 			throw badname("set nana::place.field_visible()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
@@ -3455,7 +3455,7 @@ namespace nana
 
 	bool place::field_visible(const char* name) const
 	{
-		if (!place::check_field_name(name))
+		if (!valid_field_name(name))
 			throw badname("get nana::place.field_visible()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
@@ -3464,7 +3464,7 @@ namespace nana
 
 	void place::field_display(const char* name, bool dsp)
 	{
-		if (!place::check_field_name(name))
+		if (!valid_field_name(name))
 			throw badname("set nana::place.field_display()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
@@ -3478,7 +3478,7 @@ namespace nana
 
 	bool place::field_display(const char* name) const
 	{
-		if (!place::check_field_name(name))
+		if (!valid_field_name(name))
 			throw badname("get nana::place.field_display()", *this, name);
 
 		auto div = impl_->search_div_name(impl_->root_division.get(), name);
@@ -3516,7 +3516,7 @@ namespace nana
 
 	place& place::dock(const std::string& name, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory)
 	{
-		if (!place::check_field_name(name.data()))
+		if (!valid_field_name(name.data()))
 			throw badname("get nana::place.field_display()", *this, name.data());
 
 		auto & dock_ptr = impl_->docks[name];

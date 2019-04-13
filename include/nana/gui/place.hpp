@@ -141,7 +141,7 @@ namespace nana
         
 		void div(std::string div_text);			///< Divides the attached widget into fields.
 		const std::string& div() const noexcept;	///< Returns div-text that depends on fields status.
-		static bool check_field_name(const char* name)  ///< must begin with _a-zA-Z
+		static bool valid_field_name(const char* name)  ///< must begin with _a-zA-Z
 		{
 			return name && (*name == '_' || (('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z')));
 		}
