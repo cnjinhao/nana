@@ -1001,28 +1001,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
-			{
-				auto parent = wd->parent;
-				while (parent)
-				{
-					if(parent->flags.ignore_child_mapping || parent->flags.refreshing)
-					{
-						auto top = parent;
-						while(parent->parent)
-						{
-							parent = parent->parent;
-							if(parent->flags.ignore_child_mapping || parent->flags.refreshing)
-								top = parent;
-						}
-
-						top->other.mapping_requester.push_back(wd);
-						return;
-					}
-					parent = parent->parent;
-				}
-
 				bedrock::instance().flush_surface(wd, forced, update_area);
-			}
 		}
 
 		//update
@@ -1049,8 +1028,11 @@ namespace detail
 				{
 					if (!wd->flags.refreshing)
 					{
-						window_layer::paint(wd, (redraw ? paint_operation::try_refresh : paint_operation::none), false);
-						this->map(wd, forced, update_area);
+						if (!wd->try_lazy_update(redraw))
+						{
+							window_layer::paint(wd, (redraw ? paint_operation::try_refresh : paint_operation::none), false);
+							this->map(wd, forced, update_area);
+						}
 						return true;
 					}
 					else if (forced)
@@ -1097,44 +1079,28 @@ namespace detail
 				{
 					if ((wd->other.upd_state == core_window_t::update_state::refreshed) || (wd->other.upd_state == core_window_t::update_state::request_refresh) || force_copy_to_screen)
 					{
-						window_layer::paint(wd, (wd->other.upd_state == core_window_t::update_state::request_refresh ? paint_operation::try_refresh : paint_operation::have_refreshed), refresh_tree);
-						this->map(wd, force_copy_to_screen);
+						if (!wd->try_lazy_update(wd->other.upd_state == core_window_t::update_state::request_refresh))
+						{
+							window_layer::paint(wd, (wd->other.upd_state == core_window_t::update_state::request_refresh ? paint_operation::try_refresh : paint_operation::have_refreshed), refresh_tree);
+							this->map(wd, force_copy_to_screen);
+						}
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
 						//The window is still mapped because of edge nimbus effect.
 						//Avoid duplicate copy if action state is not changed and the window is not focused.
 						if (wd->flags.action != wd->flags.action_before)
-							this->map(wd, true);
+						{
+							if (!wd->try_lazy_update(false))
+								this->map(wd, true);
+						}
 					}
-
-					//Map the requested children.
-					this->map_requester(wd);
 				}
 				else
 					window_layer::paint(wd, paint_operation::try_refresh, refresh_tree);	//only refreshing if it has an invisible parent
 			}
-			else
-				wd->other.mapping_requester.clear();
 
 			wd->other.upd_state = core_window_t::update_state::none;
-		}
-
-		void window_manager::map_requester(core_window_t* wd)
-		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-
-			if (false == impl_->wd_register.available(wd))
-				return;
-
-			if (wd->visible_parents())
-			{
-				for(auto requestor : wd->other.mapping_requester)
-					this->map(requestor, true);
-			}
-
-			wd->other.mapping_requester.clear();
 		}
 
 		bool window_manager::set_parent(core_window_t* wd, core_window_t* newpa)
