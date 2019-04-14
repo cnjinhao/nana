@@ -148,9 +148,13 @@ namespace nana
 						while (true)
 						{
 							sp_ = _m_eat_whitespace(sp_);
-							auto tk = read();
-							if (token::number != tk && token::variable != tk && token::repeated != tk)
-								_m_throw_error("invalid array element");
+							auto tk = read();   // try ??
+
+							if (   token::number   != tk 
+								&& token::variable != tk 
+								&& token::repeated != tk)
+
+								throw error("invalid array element. Expected a number, variable or repaet", *this);
 
 							if (!repeated)
 							{
@@ -176,7 +180,7 @@ namespace nana
 								return (repeated ? token::reparray : token::array);
 
 							if (ch != ',')
-								_m_throw_error("invalid array");
+								throw error("invalid array", *this);
 						}
 					}
 					break;
@@ -194,7 +198,7 @@ namespace nana
 						if (token::number == read())
 							parameters_.push_back(number_);
 						else
-							_m_throw_error("invalid parameter.");
+							throw error("invalid parameter. Expected a number", *this);
 
 						sp_ = _m_eat_whitespace(sp_);
 						char ch = *sp_++;
@@ -203,7 +207,7 @@ namespace nana
 							return token::parameters;
 
 						if (ch != ',')
-							_m_throw_error("invalid parameter.");
+							throw error("invalid parameter. Expected a ','", *this);
 					}
 					break;
 				case '.': case '-':
@@ -222,7 +226,7 @@ namespace nana
 						return token::number;
 					}
 					else
-						_m_throw_error("invalid character '" + std::string(1, *sp_) + "'");
+						throw("invalid character '" + std::string(1, *sp_) + "'", *this);
 					break;
 				default:
 					if ('0' <= *sp_ && *sp_ <= '9')
@@ -280,14 +284,14 @@ namespace nana
 					{
 						auto idstr = idstr_;
 						if (token::equal != read())
-							_m_throw_error("an equal sign is required after '" + idstr + "'");
+							throw error("an equal sign is required after '" + idstr + "'", *this);
 
 						return ('g' == idstr[0] ? token::grid : token::margin);
 					}
 					else if ("collapse" == idstr_)
 					{
 						if (token::parameters != read())
-							_m_throw_error("a parameter list is required after 'collapse'");
+							throw error("a parameter list is required after 'collapse'", *this);
 						return token::collapse;
 					}
 					else if (!idstr_.empty())
@@ -344,22 +348,14 @@ namespace nana
 					return token::identifier;
 				}
 
-				std::string err = "an invalid character '";
-				err += *sp_;
-				err += "'";
-				_m_throw_error(err);
+				throw("invalid character '" + std::string(1, *sp_) + "'", *this);
 				return token::error;	//Useless, just for syntax correction.
 			}
 		private:
-			void _m_throw_error(const std::string& err)
-			{
-				throw std::runtime_error("nana::place: " + err + " at " + std::to_string(static_cast<unsigned>(sp_ - divstr_)));
-			}
-
 			void _m_attr_number_value()
 			{
 				if (token::equal != read())
-					_m_throw_error("an equal sign is required after '" + idstr_ + "'");
+					throw error("an equal sign is required after '" + idstr_ + "'", *this);
 
 				auto p = _m_eat_whitespace(sp_);
 
@@ -369,7 +365,7 @@ namespace nana
 
 				auto len = _m_number(p, neg_ptr != p);
 				if (0 == len)
-					_m_throw_error("the '" + idstr_ + "' requires a number(integer or real or percent)");
+					throw error("the '" + idstr_ + "' requires a number (integer, real or percent)", *this);
 
 				sp_ += len + (p - sp_);
 			}
@@ -378,7 +374,7 @@ namespace nana
 			{
 				auto idstr = idstr_;
 				if (token::equal != read())
-					_m_throw_error("an equal sign is required after '" + idstr + "'");
+					throw error("an equal sign is required after '" + idstr + "'", *this);
 
 				sp_ = _m_eat_whitespace(sp_);
 
@@ -396,19 +392,21 @@ namespace nana
 				case token::reparray:
 					break;
 				default:
-					_m_throw_error("a (repeated) array is required after '" + idstr + "'");
+					throw error("a (repeated) array is required after '" + idstr + "'", *this);
 				}
 			}
 
 			static const char* _m_eat_whitespace(const char* sp) noexcept
 			{
-				while (*sp && !std::isgraph(*sp))
+				while (*sp && !std::isgraph(int(*sp)))
 					++sp;
 				return sp;
 			}
 
 			std::size_t _m_number(const char* sp, bool negative) noexcept
 			{
+				/// \todo use std::from_char<int>() etc.
+
 				const char* allstart = sp;
 				sp = _m_eat_whitespace(sp);
 
