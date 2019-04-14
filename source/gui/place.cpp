@@ -490,8 +490,7 @@ namespace nana
 	{
 		return (vert ? pos.y : pos.x);
 	}
-
-
+	
 	static bool is_idchar(int ch) noexcept
 	{
 		return ('_' == ch || std::isalnum(ch));
@@ -499,6 +498,7 @@ namespace nana
 
 	static std::size_t find_idstr(const std::string& text, const char* idstr, std::size_t off = 0)
 	{
+		if (!idstr) return text.npos;   /// ??
 		const auto len = std::strlen(idstr);
 
 		size_t pos;
@@ -652,6 +652,8 @@ namespace nana
 		: public place::field_interface
 	{
 	public:
+
+        /// \todo introduce a place::implement::field_gather::error ??
 		struct element_t
 		{
 			window handle;
@@ -701,13 +703,13 @@ namespace nana
 			return nullptr;
 		}
 	private:
-		void _m_insert_widget(window wd, bool to_fasten)
+		void _m_insert_widget(window wd, bool to_fasten)  /// \todo better errors caption of failed windows, field
 		{
 			if (API::empty_window(wd))
-				throw std::invalid_argument("Place: An invalid window handle.");
+				throw place::error("Failed to insert an invalid window handle.", *place_ptr_);
 
 			if (API::get_parent_window(wd) != place_ptr_->window_handle())
-				throw std::invalid_argument("Place: the window is not a child of place bind window");
+				throw place::error("Failed to insert a window which is not a child of the place-binded window", *place_ptr_);
 
 			//Listen to destroy of a window
 			//It will delete the element and recollocate when the window destroyed.	
