@@ -54,6 +54,18 @@ namespace nana
 		class tokenizer
 		{
 		public:
+			struct error : std::invalid_argument
+			{
+				error(std::string           what,
+					  const tokenizer&      tok)
+
+					: std::invalid_argument{ what + " from tokenizer at position " 
+					                        + std::to_string(static_cast<unsigned>(tok.sp_ - tok.divstr_)) },
+					  pos{static_cast<std::string::size_type>(tok.sp_ - tok.divstr_)}
+				{}	
+				std::string::size_type pos;
+		    };
+
 			enum class token
 			{
 				div_start, div_end, splitter,
@@ -462,8 +474,8 @@ namespace nana
 				return 0;
 			}
 		private:
-			const char* divstr_;
-			const char* sp_;
+			const char* divstr_{};
+			const char* sp_{};
 			std::string idstr_;
 			number_t number_;
 			std::vector<number_t> array_;
