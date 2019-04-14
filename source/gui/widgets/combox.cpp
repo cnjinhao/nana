@@ -293,7 +293,7 @@ namespace nana
 
 						//The lister window closes by itself. I just take care about the destroy event.
 						//The event should be destroy rather than unload. Because the unload event is invoked while
-						//the lister is not closed, if popuping a message box, the lister will cover the message box.
+						//the lister is not closed, if pop-upping a message box, the lister will cover the message box.
 						state_.lister->events().destroy.connect_unignorable([this](const arg_destroy&)
 						{
 							state_.lister = nullptr;	//The lister closes by itself.

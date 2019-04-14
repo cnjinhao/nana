@@ -214,7 +214,7 @@ namespace detail
 		if(wd_manager().number_of_core_window())
 		{
 			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().number_of_core_window()) + " window(s) are not uninstalled.";
-			std::cerr << msg;  /// \todo add list of cations of open windows and if aut testin GUI do auto Ok after 2 sec.
+			std::cerr << msg;  /// \todo add list of cations of opening windows and if auto testing GUI do auto OK after 2 seconds.
 			::MessageBoxA(0, msg.c_str(), ("Nana C++ Library"), MB_OK);
 		}
 
@@ -223,7 +223,7 @@ namespace detail
 	}
 
 
-	/// @brief increament the number of windows in the thread id
+	/// @brief increment the number of windows in the thread id
 	int bedrock::inc_window(thread_t tid)
 	{
 		//impl refers to the object of private_impl, the object is created when bedrock is creating.
@@ -592,7 +592,7 @@ namespace detail
 			delete [] reinterpret_cast<wchar_t*>(wParam);
 			return true;
 		case nana::detail::messages::remote_thread_destroy_window:
-			detail::native_interface::close_window(reinterpret_cast<native_window_type>(wd));	//The owner would be actived before the message has posted in current thread.
+			detail::native_interface::close_window(reinterpret_cast<native_window_type>(wd));	//The owner would be activated before the message has posted in current thread.
 			{
 				internal_scope_guard sg;
 				auto * thrd = bedrock.get_thread_context();
@@ -896,8 +896,8 @@ namespace detail
 
 				//Don't take care about whether msgwnd is equal to the pressed_wd.
 				//
-				//pressed_wd will remains when opens a no-actived window in an mouse_down event(like combox popups the drop-list).
-				//After the no-actived window is closed, the window doesn't respond to the mouse click other than pressed_wd.
+				//pressed_wd will remain when opens a non-activated window in an mouse_down event(like combox popups the drop-list).
+				//After the non-activated window is closed, the window doesn't respond to the mouse click other than pressed_wd.
 				pressed_wd = nullptr;
 				if (nullptr == msgwnd)
 					break;
@@ -1330,7 +1330,7 @@ namespace detail
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 					if(msgwnd)
 					{
-						//Don't call default window proc to avoid popuping system menu.
+						//Don't call default window proc to avoid pop-upping system menu.
 						def_window_proc = false;
 
 						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
@@ -1416,8 +1416,8 @@ namespace detail
 							if (msgwnd->root_widget->other.attribute.root->menubar == msgwnd)
 							{
 								//In order to keep the focus on the menubar, cancel the delay_restore
-								//when pressing ESC to close the menu which is popuped by the menubar.
-								//If no menu popuped by the menubar, it should enable delay restore to
+								//when pressing ESC to close the menu which is pop-upped by the menubar.
+								//If no menu pop-upped by the menubar, it should enable delay restore to
 								//restore the focus for taken window.
 
 								int cmd = (menu_wd && (keyboard::escape == static_cast<wchar_t>(wParam)) ? 1 : 0);
@@ -1522,7 +1522,7 @@ namespace detail
 				if (!arg.cancel)
 				{
 					def_window_proc = true;
-					//Activate is owner, refer to the window_manager::close for the explaination
+					//Activates its owner, refer to the window_manager::close for the explanation
 					if (msgwnd->flags.modal || (msgwnd->owner == 0) || msgwnd->owner->flags.take_active)
 						native_interface::activate_owner(msgwnd->root);
 				}
@@ -1532,7 +1532,7 @@ namespace detail
 				if (msgwnd->root == brock.get_menu())
 				{
 					brock.erase_menu(false);
-					brock.delay_restore(3);	//Restores if delay_restore not decleared
+					brock.delay_restore(3);	//Restores if delay_restore not declared
 				}
 				wd_manager.destroy(msgwnd);
 				nana::detail::platform_spec::instance().release_window_icon(msgwnd->root);
@@ -1578,7 +1578,7 @@ namespace detail
 		delete passoc;
 	}
 
-	//Generates an identitifer for an accel key.
+	//Generates an identifier for an accel key.
 	std::pair<int, WORD> id_accel_key(const accel_key& key)
 	{
 		std::pair<int, WORD> ret;

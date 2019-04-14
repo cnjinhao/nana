@@ -401,7 +401,7 @@ namespace nana
 				extra_width = extra_height = 0;
 
 				//The window must keep its thread_id same as its parent if it is a child.
-				//Otherwise, its root buffer would be mapped repeatly if it is in its parent thread.
+				//Otherwise, its root buffer would be mapped repeatedly if it is in its parent thread.
 				thread_id = nana::system::this_thread_id();
 				if(agrparent && (thread_id != agrparent->thread_id))
 					thread_id = agrparent->thread_id;

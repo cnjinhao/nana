@@ -745,7 +745,7 @@ namespace nana
 		impl->label_text = std::move(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::integer::~integer(){}
 
 	int inputbox::integer::value() const
@@ -828,7 +828,7 @@ namespace nana
 		impl->label_text = std::move(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::real::~real(){}
 
 	double inputbox::real::value() const
@@ -920,7 +920,7 @@ namespace nana
 		impl_->label_text.swap(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::text::~text(){}
 
 	void inputbox::text::tip_string(std::wstring tip)
@@ -1041,7 +1041,7 @@ namespace nana
 		impl_->label_text.swap(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::date::~date(){}
 
 	::std::string inputbox::date::value() const
@@ -1192,7 +1192,7 @@ namespace nana
 	{
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::path::~path(){}
 
 	::std::string inputbox::path::value() const

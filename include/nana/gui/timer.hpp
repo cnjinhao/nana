@@ -9,7 +9,7 @@
  *	@file: nana/gui/timer.hpp
  *	@description:
  *		A timer can repeatedly call a piece of code. The duration between 
- *	calls is specified in milliseconds. Timer is defferent from other graphics
+ *	calls is specified in milliseconds. Timer is different from other graphics
  *	controls, it has no graphics interface.
  */
 

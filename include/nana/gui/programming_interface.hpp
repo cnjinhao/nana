@@ -108,7 +108,7 @@ namespace API
 		bool copy_transparent_background(window, paint::graphics&);
 		bool copy_transparent_background(window, const rectangle& src_r, paint::graphics&, const point& dst_pt);
 
-		/// Refreshs a widget surface
+		/// Refreshes a widget surface
 		/*
 		 * This function will copy the drawer surface into system window after the event process finished.
 		 */
@@ -187,12 +187,12 @@ namespace API
 	void exit_all();	///< close all windows
 
 	/// @brief	Searches whether the text contains a '&' and removes the character for transforming.
-	///			If the text contains more than one '&' charachers, the others are ignored. e.g
+	///			If the text contains more than one '&' characters, the others are ignored. e.g
 	///			text = "&&a&bcd&ef", the result should be "&abcdef", shortkey = 'b', and pos = 2.
 	std::string transform_shortkey_text
 					( std::string text,      ///< the text is transformed
 					  wchar_t &shortkey,     ///<  the character which indicates a short key.
-					  std::string::size_type *skpos ///< retrives the shortkey position if it is not a null_ptr;
+					  std::string::size_type *skpos ///< retrieves the shortkey position if it is not a null_ptr;
 					);
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
@@ -432,7 +432,7 @@ namespace API
 	 */
 	window move_tabstop(window window_handle, bool forward);
 
-	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
+	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it which will be obtained by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
 
 	/// Copies the graphics of a specified to a new graphics object.

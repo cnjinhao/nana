@@ -748,7 +748,7 @@ namespace nana
 					}
 					return false;
 				}
-			private: //Fundation
+			private: //Foundation
 				bool _m_nextable() const
 				{
 					return (basis_.scroll_pixels + _m_itembar_right() < basis_.item_pixels * list_.size());

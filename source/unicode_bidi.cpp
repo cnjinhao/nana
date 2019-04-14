@@ -661,7 +661,7 @@ namespace nana
 			//W1. Examine each nonspacing mark, and change the type of the NSM to the type of the previous
 			//character.
 			//W2. Search backward from each instance of a European number until the first strong type(R, L, AL, or sor) is found
-			//If an AL is found, change the type of the European Number to arbic number.
+			//If an AL is found, change the type of the European Number to Arabic number.
 			//W3. Change all ALs to R.
 
 			//The three phases could be combined as one process. Because these phases are standalone.
@@ -702,7 +702,7 @@ namespace nana
 			}
 
 
-			//W4. A single european separator between two european numbers changes to a european number.
+			//W4. A single European separator between two European numbers changes to a European number.
 			//A single common separator between two numbers of the same type changes to that type.
 			//
 			//W5. A sequence of European terminators adjacent to European numbers changes to all European numbers.

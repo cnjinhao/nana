@@ -856,7 +856,7 @@ namespace paint
 		{
 			if(impl_->handle)
 			{
-				//Create the color table for perfermance
+				//Create the color table for performance
 				float* tablebuf = new float[0x100 * 3];
 				float* table_red = tablebuf;
 				float* table_green = tablebuf + 0x100;

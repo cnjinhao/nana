@@ -133,7 +133,7 @@ namespace nana{
 
 
 		//The XMoveWindow and XMoveResizeWindow don't take effect if the specified window is
-		//unmapped, and the members x and y of XSetSizeHints is obsoluted. So the position that
+		//unmapped, and the members x and y of XSetSizeHints is obsoleted. So the position that
 		//set to a unmapped windows should be kept and use the position when the window is mapped.
 		std::map<Window, ::nana::point> exposed_positions;	//locked by platform_scope_guard
 
@@ -498,7 +498,7 @@ namespace nana{
 		{
 			if(nullptr == parent) return nullptr;
 #if defined(NANA_WINDOWS)
-			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilites for variation
+			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilities for variation
 										L"NanaWindowInternal",
 										L"Nana Child Window",	// Title Text
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
@@ -703,7 +703,7 @@ namespace nana{
 					::PostMessage(reinterpret_cast<HWND>(wd), nana::detail::messages::remote_thread_destroy_window, 0, 0);
 			}
 #elif defined(NANA_X11)
-			//Under X, XDestroyWindow destroys the specified window and generats a DestroyNotify
+			//Under X, XDestroyWindow destroys the specified window and generates a DestroyNotify
 			//event, when the client receives the event, the specified window has been already
 			//destroyed. This is a feature which is different from Windows. So the following
 			//works should be handled before calling XDestroyWindow.
@@ -711,7 +711,7 @@ namespace nana{
 			if(wd == brock.get_menu())
 			{
 				brock.erase_menu(false);
-				brock.delay_restore(3);	//Restores if delay_restore is not decleard
+				brock.delay_restore(3);	//Restores if delay_restore is not declared
 			}
 
 			Display* disp = restrict::spec.open_display();

@@ -61,7 +61,7 @@ namespace nana
 				return new holder(value);
 			}
 		public:
-			Value value;	//representation accessable for friend of any
+			Value value;	//representation accessible for friend of any
 		};
 	public:
 		//constructors and destructor

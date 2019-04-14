@@ -100,7 +100,7 @@ namespace nana
 	//Initializes the color with a CSS-like string
 	//contributor: BigDave(mortis2007 at hotmail co uk)
 	//date: February 3, 2015
-	//maintainor: Jinhao, extended the support of CSS-spec
+	//maintainer: Jinhao, extended the support of CSS-spec
 
 	color::color(std::string css_color)
 		: a_(1.0)

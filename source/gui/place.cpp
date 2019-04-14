@@ -2666,7 +2666,7 @@ namespace nana
 					}
 				}
 
-				//Collocate doesn't sync the visiblity of fastened windows.
+				//Collocate doesn't sync the visibility of fastened windows.
 				//This is a feature that allows tabbar panels to be fastened to a same field, the collocate()
 				//shouldn't break the visibility of panels that are maintained by tabbar.
 				field.second->visible(is_show, false);
@@ -2903,14 +2903,14 @@ namespace nana
 		token unmatch = token::width;
 		switch (div_type)
 		{
-		case token::eof:	// "horitontal" div
+		case token::eof:	// "horizontal" div
 		case token::vert:   // "vertical" div
 			if(token::eof == div_type)
 				unmatch = token::height;
 
 			for (auto& ch : children)
 				if (ch->weigth_type == unmatch)
-					throw std::invalid_argument("nana.place: unmatch vertical-heigth/horizontal-width betwen division '"
+					throw std::invalid_argument("nana.place: unmatch vertical-height/horizontal-width between division '"
 						                         +name+"' and children division '" + ch->name);
 
 			div.reset(new div_arrange(token::vert == div_type, std::move(name), std::move(arrange)));
@@ -3033,7 +3033,7 @@ namespace nana
 	void place::implement::check_unique(const division* div) const
 	{
 		//The second field_impl is useless. Reuse the map type in order to
-		//reduce the size of the generated code, becuase std::set<std::string>
+		//reduce the size of the generated code, because std::set<std::string>
 		//will create a new template class.
 		std::map<std::string, field_gather*> unique;
 		field_gather tmp(nullptr);
@@ -3198,7 +3198,7 @@ namespace nana
 		try
 		{
 			impl_->connect(div.get());		//throws if there is a redefined name of field.
-			impl_->root_division.reset();	//clear atachments div-fields
+			impl_->root_division.reset();	//clear attachments div-fields
 			impl_->root_division.swap(div);
 			impl_->div_text.swap(div_text);
 		}
@@ -3322,7 +3322,7 @@ namespace nana
 			if (div)
 			{
 				if (div->field && (div->field != p))
-					throw std::runtime_error("nana.place: unexpected error, the division attachs a unexpected field.");
+					throw std::runtime_error("nana.place: unexpected error, the division attaches an unexpected field.");
 
 				div->field = p;
 				p->attached = div;

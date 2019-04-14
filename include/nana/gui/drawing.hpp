@@ -17,7 +17,7 @@
 #include "../traits.hpp"
 namespace nana
 {
-	/// \brief Draw pictures on a widget by specifying a drawing method that will be employed everytime the widget refreshes. 
+	/// \brief Draw pictures on a widget by specifying a drawing method that will be employed every time the widget refreshes. 
     /// By the end of drawing, the picture may not be displayed immediately. 
     /// If a picture need to be displayed immediately call nana::gui::API::refresh_window() .
 	class drawing

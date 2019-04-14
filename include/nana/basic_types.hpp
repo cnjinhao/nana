@@ -74,7 +74,7 @@ namespace nana
 
 	namespace detail
 	{
-		struct drawable_impl_type;	//declearation, defined in platform_spec.hpp
+		struct drawable_impl_type;	//declaration, defined in platform_spec.hpp
 	}
 
 	namespace paint
@@ -275,7 +275,7 @@ namespace nana
 		yellow	= 0xFFFF00,
 		yellow_green = 0x9acd32,
 
-		//temporary defintions, these will be replaced by color schema
+		//temporary definitions, these will be replaced by color schema
 		button_face_shadow_start = 0xF5F4F2,
 		button_face_shadow_end = 0xD5D2CA,
 		button_face = 0xD4D0C8 , //,light_cyan
@@ -425,7 +425,7 @@ namespace nana
 		size(value_type width, value_type height);
 
 		bool empty() const;		///< true if width * height == 0
-		bool is_hit(const point&) const;	///< Assume it is a rectangle at (0,0), and check whether a specified position is in the rectange.
+		bool is_hit(const point&) const;	///< Assume it is a rectangle at (0,0), and check whether a specified position is in the rectangle.
 		size& shift();
 
 		bool operator==(const size& rhs) const;

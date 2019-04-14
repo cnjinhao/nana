@@ -46,7 +46,7 @@ namespace drawerbase {
 			}
 		//end class event_agent
 
-	//class draweer
+	//class drawer
 		drawer::drawer()
 			: widget_(nullptr), editor_(nullptr)
 		{
@@ -278,8 +278,8 @@ namespace drawerbase {
 			return{};
 		}
 
-		/// Enables/disables the textbox to indent a line. Idents a new line when it is created by pressing enter.
-		/// @param generator generates text for identing a line. If it is empty, textbox indents the line according to last line.
+		/// Enables/disables the textbox to indent a line. Indents a new line when it is created by pressing enter.
+		/// @param generator generates text for indenting a line. If it is empty, textbox indents the line according to last line.
 		textbox& textbox::indention(bool enb, std::function<std::string()> generator)
 		{
 			internal_scope_guard lock;
@@ -474,7 +474,7 @@ namespace drawerbase {
             }
             return *this;
         }
-		/// Determine wheter the text is auto-line changed.
+		/// Determine whether the text is auto-line changed.
 		bool textbox::line_wrapped() const
 		{
 			internal_scope_guard lock;

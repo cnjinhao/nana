@@ -21,35 +21,35 @@
 #if defined(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)
 namespace std
 {
-	//Workaround for no implemenation of std::stoi in MinGW.
+	//Workaround for no implementation of std::stoi in MinGW.
 	int stoi(const std::string&, std::size_t * pos = nullptr, int base = 10);
 	int stoi(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
 
-	//Workaround for no implemenation of std::stof in MinGW.
+	//Workaround for no implementation of std::stof in MinGW.
 	float stof(const std::string&, std::size_t * pos = nullptr);
 	float stof(const std::wstring&, std::size_t* pos = nullptr);
 
-	//Workaround for no implemenation of std::stod in MinGW.
+	//Workaround for no implementation of std::stod in MinGW.
 	double stod(const std::string&, std::size_t * pos = nullptr);
 	double stod(const std::wstring&, std::size_t* pos = nullptr);
 
-	//Workaround for no implemenation of std::stold in MinGW.
+	//Workaround for no implementation of std::stold in MinGW.
 	long double stold(const std::string&, std::size_t * pos = nullptr);
 	long double stold(const std::wstring&, std::size_t* pos = nullptr);
 
-	//Workaround for no implemenation of std::stol in MinGW.
+	//Workaround for no implementation of std::stol in MinGW.
 	long stol(const std::string&, std::size_t* pos = nullptr, int base = 10);
 	long stol(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
 
-	//Workaround for no implemenation of std::stoll in MinGW.
+	//Workaround for no implementation of std::stoll in MinGW.
 	long long stoll(const std::string&, std::size_t* pos = nullptr, int base = 10);
 	long long stoll(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
 
-	//Workaround for no implemenation of std::stoul in MinGW.
+	//Workaround for no implementation of std::stoul in MinGW.
 	unsigned long stoul(const std::string&, std::size_t* pos = nullptr, int base = 10);
 	unsigned long stoul(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
 
-	//Workaround for no implemenation of std::stoull in MinGW.
+	//Workaround for no implementation of std::stoull in MinGW.
 	unsigned long long stoull(const std::string&, std::size_t* pos = nullptr, int base = 10);
 	unsigned long long stoull(const std::wstring&, std::size_t* pos = nullptr, int base = 10);
 }
@@ -58,7 +58,7 @@ namespace std
 #ifdef STD_TO_STRING_NOT_SUPPORTED
 namespace std
 {
-	//Workaround for no implemenation of std::to_string/std::to_wstring in MinGW.
+	//Workaround for no implementation of std::to_string/std::to_wstring in MinGW.
 	std::string to_string(long double);
 	std::string to_string(double);
 	std::string to_string(unsigned);
@@ -131,7 +131,7 @@ namespace std {
 #include <string>
 namespace std
 {
-	//Workaround for no implemenation of std::put_time in gcc < 5.
+	//Workaround for no implementation of std::put_time in gcc < 5.
 	/* std unspecified return type */
 	//template< class CharT, class RTSTR >// let fail for CharT != char / wchar_t
 	//RTSTR put_time(const std::tm* tmb, const CharT* fmt);
