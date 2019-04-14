@@ -59,8 +59,7 @@ namespace nana
 				error(std::string           what,
 					  const tokenizer&      tok)
 
-					: std::invalid_argument{ what + " from tokenizer at position " 
-					                        + std::to_string(static_cast<unsigned>(tok.sp_ - tok.divstr_)) },
+					: std::invalid_argument{ what + " from tokenizer "  },
 					  pos{static_cast<std::string::size_type>(tok.sp_ - tok.divstr_)}
 				{}	
 				std::string::size_type pos;
