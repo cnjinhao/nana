@@ -963,6 +963,11 @@ namespace nana
 					if(text_r.right() > visible_w_pixels())
 					{
 						node_state.tooltip = new tooltip_window(data.widget_ptr->handle(), text_r);
+						
+						//PR#406 Error Flynn's contribution
+						//fix: tooltip window doesn't have tree scheme & typeface 
+						API::dev::set_scheme(node_state.tooltip->handle(), API::dev::get_scheme(data.widget_ptr->handle()));
+						node_state.tooltip->typeface(data.widget_ptr->typeface());
 
 						node_attribute node_attr;
 						assign_node_attr(node_attr, node_state.pointed);

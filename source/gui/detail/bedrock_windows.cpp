@@ -21,6 +21,7 @@
 #include <nana/gui.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
+#include <nana/gui/detail/window_layout.hpp>
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/gui/detail/color_schemes.hpp>
 #include "inner_fwd_implement.hpp"
@@ -36,6 +37,7 @@
 #endif
 
 #include "bedrock_types.hpp"
+
 
 typedef void (CALLBACK *win_event_proc_t)(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
 
@@ -738,6 +740,27 @@ namespace detail
 		return static_cast<wchar_t>(vkey);
 	}
 
+	class window_proc_guard
+	{
+	public:
+		window_proc_guard(detail::basic_window* wd) :
+			root_wd_(wd)
+		{
+			root_wd_->other.attribute.root->lazy_update = true;
+		}
+
+		~window_proc_guard()
+		{
+			if (!bedrock::instance().wd_manager().available(root_wd_))
+				return;
+
+			root_wd_->other.attribute.root->lazy_update = false;
+			root_wd_->other.attribute.root->update_requesters.clear();
+		}
+	private:
+		detail::basic_window* const root_wd_;
+	};
+
 	LRESULT CALLBACK Bedrock_WIN32_WindowProc(HWND root_window, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		LRESULT window_proc_value = 0;
@@ -757,6 +780,7 @@ namespace detail
 			bool def_window_proc = false;
 			auto& context = *brock.get_thread_context();
 
+			auto const pre_event_window = context.event_window;
 			auto pressed_wd = root_runtime->condition.pressed;
 			auto pressed_wd_space = root_runtime->condition.pressed_by_space;
 			auto hovered_wd = root_runtime->condition.hovered;
@@ -766,7 +790,10 @@ namespace detail
 			pmdec.raw_param.wparam = wParam;
 
 			internal_scope_guard lock;
-			auto msgwnd = root_runtime->window;
+			auto const root_wd = root_runtime->window;
+			auto msgwnd = root_wd;
+
+			window_proc_guard wp_guard{ root_wd };
 
 			switch (message)
 			{
@@ -775,10 +802,7 @@ namespace detail
 				{
 					auto i = root_runtime->wpassoc->accel_commands.find(LOWORD(wParam));
 					if (i != root_runtime->wpassoc->accel_commands.end())
-					{
-						auto fn = i->second;
-						fn();
-					}
+						i->second();
 				}
 				break;
 			case WM_IME_STARTCOMPOSITION:
@@ -1092,7 +1116,9 @@ namespace detail
 					//The focus window receives the message in Windows system, it should be redirected to the hovered window
                     ::POINT scr_pos{ pmdec.mouse.x, pmdec.mouse.y};  //Screen position
 					auto pointer_wd = ::WindowFromPoint(scr_pos);
-					if (pointer_wd == root_window)
+
+					//Ignore the message if the window is disabled.
+					if ((pointer_wd == root_window) && ::IsWindowEnabled(root_window))
 					{
 						::ScreenToClient(pointer_wd, &scr_pos);
 						auto scrolled_wd = wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), { scr_pos.x, scr_pos.y });
@@ -1124,7 +1150,7 @@ namespace detail
 							wd_manager.do_lazy_refresh(scrolled_wd, false);
 						}
 					}
-					else
+					else if (pointer_wd != root_window)
 					{
 						DWORD pid = 0;
 						::GetWindowThreadProcessId(pointer_wd, &pid);
@@ -1450,7 +1476,7 @@ namespace detail
 						wd_manager.do_lazy_refresh(msgwnd, false);
 					}
 				}
-				return 0;
+				break;
 			case WM_KEYUP:
 				if(wParam != VK_MENU) //MUST NOT BE AN ALT
 				{
@@ -1551,12 +1577,27 @@ namespace detail
 				def_window_proc = true;
 			}
 
+			if (wd_manager.available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
+			{
+				for (auto wd : root_wd->other.attribute.root->update_requesters)
+				{
+					window_layout::paint(wd, window_layout::paint_operation::have_refreshed, false);
+					wd_manager.map(wd, true);
+				}
+			}
+
 			root_runtime = wd_manager.root_runtime(native_window);
 			if(root_runtime)
 			{
+				context.event_window = pre_event_window;
 				root_runtime->condition.pressed = pressed_wd;
 				root_runtime->condition.hovered = hovered_wd;
 				root_runtime->condition.pressed_by_space = pressed_wd_space;
+			}
+			else
+			{
+				auto context = brock.get_thread_context();
+				if(context) context->event_window = pre_event_window;
 			}
 
 			if (!def_window_proc)

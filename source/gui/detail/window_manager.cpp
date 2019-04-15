@@ -701,19 +701,40 @@ namespace detail
 			return true;
 		}
 
-		window_manager::core_window_t* window_manager::find_window(native_window_type root, const point& pos)
+		window_manager::core_window_t* window_manager::find_window(native_window_type root, const point& pos, bool ignore_captured)
 		{
 			if (nullptr == root)
 				return nullptr;
 
-			if((false == attr_.capture.ignore_children) || (nullptr == attr_.capture.window) || (attr_.capture.window->root != root))
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+
+			if (ignore_captured || (nullptr == attr_.capture.window))
 			{
-				//Thread-Safe Required!
-				std::lock_guard<mutex_type> lock(mutex_);
 				auto rrt = root_runtime(root);
 				if (rrt && _m_effective(rrt->window, pos))
 					return _m_find(rrt->window, pos);
+
+				return nullptr;
 			}
+		
+			if (attr_.capture.ignore_children)
+				return attr_.capture.window;
+
+			auto rrt = root_runtime(root);
+			if (rrt && _m_effective(rrt->window, pos))
+			{
+				auto target = _m_find(rrt->window, pos);
+
+				auto p = target;
+				while (p)
+				{
+					if (p == attr_.capture.window)
+						return target;
+					p = p->parent;
+				}
+			}
+
 			return attr_.capture.window;
 		}
 
@@ -980,28 +1001,7 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
-			{
-				auto parent = wd->parent;
-				while (parent)
-				{
-					if(parent->flags.ignore_child_mapping || parent->flags.refreshing)
-					{
-						auto top = parent;
-						while(parent->parent)
-						{
-							parent = parent->parent;
-							if(parent->flags.ignore_child_mapping || parent->flags.refreshing)
-								top = parent;
-						}
-
-						top->other.mapping_requester.push_back(wd);
-						return;
-					}
-					parent = parent->parent;
-				}
-
 				bedrock::instance().flush_surface(wd, forced, update_area);
-			}
 		}
 
 		//update
@@ -1028,8 +1028,11 @@ namespace detail
 				{
 					if (!wd->flags.refreshing)
 					{
-						window_layer::paint(wd, (redraw ? paint_operation::try_refresh : paint_operation::none), false);
-						this->map(wd, forced, update_area);
+						if (!wd->try_lazy_update(redraw))
+						{
+							window_layer::paint(wd, (redraw ? paint_operation::try_refresh : paint_operation::none), false);
+							this->map(wd, forced, update_area);
+						}
 						return true;
 					}
 					else if (forced)
@@ -1076,39 +1079,28 @@ namespace detail
 				{
 					if ((wd->other.upd_state == core_window_t::update_state::refreshed) || (wd->other.upd_state == core_window_t::update_state::request_refresh) || force_copy_to_screen)
 					{
-						window_layer::paint(wd, (wd->other.upd_state == core_window_t::update_state::request_refresh ? paint_operation::try_refresh : paint_operation::have_refreshed), refresh_tree);
-						this->map(wd, force_copy_to_screen);
+						if (!wd->try_lazy_update(wd->other.upd_state == core_window_t::update_state::request_refresh))
+						{
+							window_layer::paint(wd, (wd->other.upd_state == core_window_t::update_state::request_refresh ? paint_operation::try_refresh : paint_operation::have_refreshed), refresh_tree);
+							this->map(wd, force_copy_to_screen);
+						}
 					}
 					else if (effects::edge_nimbus::none != wd->effect.edge_nimbus)
 					{
 						//The window is still mapped because of edge nimbus effect.
 						//Avoid duplicate copy if action state is not changed and the window is not focused.
 						if (wd->flags.action != wd->flags.action_before)
-							this->map(wd, true);
+						{
+							if (!wd->try_lazy_update(false))
+								this->map(wd, true);
+						}
 					}
 				}
 				else
 					window_layer::paint(wd, paint_operation::try_refresh, refresh_tree);	//only refreshing if it has an invisible parent
 			}
+
 			wd->other.upd_state = core_window_t::update_state::none;
-			wd->other.mapping_requester.clear();
-		}
-
-		void window_manager::map_requester(core_window_t* wd)
-		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-
-			if (false == impl_->wd_register.available(wd))
-				return;
-
-			if (wd->visible_parents())
-			{
-				for(auto requestor : wd->other.mapping_requester)
-					this->map(requestor, true);
-			}
-
-			wd->other.mapping_requester.clear();
 		}
 
 		bool window_manager::set_parent(core_window_t* wd, core_window_t* newpa)
