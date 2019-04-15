@@ -5455,9 +5455,12 @@ namespace nana
 			internal_scope_guard lock;
 
 			if (_m_ess().lister.enable_ordered(enable))
+			{
 				_m_ess().update();
+				return true;
+			}
 
-			return true;
+			return false;
 		}
 
 		void listbox::auto_draw(bool enabled) noexcept
