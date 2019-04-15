@@ -641,12 +641,7 @@ namespace nana
 			if (update_state::none == wd->other.upd_state)
 				wd->other.upd_state = update_state::lazy;
 
-			auto ignore_mapping_value = wd->flags.ignore_child_mapping;
-			wd->flags.ignore_child_mapping = true;
-
 			_m_emit_core(evt_code, wd, false, arg, bForce__EmitInternal);
-
-			wd->flags.ignore_child_mapping = ignore_mapping_value;
 
 			bool good_wd = false;
 			if(wd_manager().available(wd))
@@ -658,10 +653,7 @@ namespace nana
 					wd_manager().do_lazy_refresh(wd, false, (event_code::resized == evt_code));
 				}
 				else
-				{
-					wd_manager().map_requester(wd);
 					wd->other.upd_state = update_state::none;
-				}
 
 				good_wd = true;
 			}

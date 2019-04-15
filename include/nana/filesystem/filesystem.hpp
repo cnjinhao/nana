@@ -254,7 +254,7 @@ namespace nana  { namespace experimental { namespace filesystem
 		path relative_path() const;
 		path parent_path() const;
 		path filename() const;
-		//path stem() const;
+		path stem() const;
 		path extension() const;
 
 		// query
@@ -289,6 +289,8 @@ namespace nana  { namespace experimental { namespace filesystem
 		std::string generic_u8string() const;
 		// std::u16string generic_u16string() const;
 		// std::u32string generic_u32string() const;
+
+		path lexically_normal() const;
 
 		//appends
 		path& operator/=(const path& other);
@@ -544,6 +546,9 @@ namespace std {
 
 		path canonical(const path& p);
 		path canonical(const path& p, std::error_code& err);
+
+		path weakly_canonical(const path& p);
+		path weakly_canonical(const path& p, std::error_code& err);
 #endif
 
 #if defined(NANA_FILESYSTEM_FORCE) || defined(NANA_MINGW)

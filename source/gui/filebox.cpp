@@ -1359,7 +1359,7 @@ namespace nana
 			path.resize(len);
 
 			impl_->path = to_utf8(path);
-		}
+        }
 #endif
 	}
 
@@ -1589,7 +1589,7 @@ namespace nana
 	};
 
 	folderbox::folderbox(window owner, const path_type& init_path, std::string title)
-		: impl_(new implement{ owner, fs::canonical(init_path).make_preferred(), title, false})
+		: impl_(new implement{ owner, fs::weakly_canonical(init_path).make_preferred(), title, false})
 	{}
 
 
