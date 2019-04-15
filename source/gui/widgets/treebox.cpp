@@ -1735,7 +1735,7 @@ namespace nana
 						}
 					});
 
-					impl_->adjust.timer.interval(16);
+					impl_->adjust.timer.interval(std::chrono::milliseconds{ 16 });
 					impl_->adjust.timer.start();
 				}
 

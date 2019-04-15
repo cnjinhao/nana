@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -819,7 +819,7 @@ namespace nana
 					events.mouse_down.connect_unignorable(fn);
 					events.mouse_up.connect_unignorable(fn);
 
-					timer_.interval(100);
+					timer_.interval(std::chrono::milliseconds{ 100 });
 					timer_.elapse([this]{
 						this->_m_open_sub(500);	//Try to open submenu
 					});

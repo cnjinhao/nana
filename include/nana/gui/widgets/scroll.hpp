@@ -1,7 +1,7 @@
 /**
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -258,7 +258,7 @@ namespace nana
 						case buttons::first:
 						case buttons::second:
 							make_step(drawer_.metrics.what == buttons::second, 1);
-							timer_.interval(1000);
+							timer_.interval(std::chrono::seconds{1});
 							timer_.start();
 							break;
 						case buttons::scroll:
@@ -321,7 +321,7 @@ namespace nana
 				{
 					make_step(drawer_.metrics.what == buttons::second, 1);
 					API::refresh_window(widget_->handle());
-					timer_.interval(100);
+					timer_.interval(std::chrono::milliseconds{ 100 });
 				}
 			private:
 				::nana::scroll<Vertical> * widget_;
