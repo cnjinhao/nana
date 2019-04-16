@@ -305,7 +305,7 @@ namespace nana{	namespace paint
 		}
 
 #if defined(NANA_X11)
-		//The implementation of attach in X11 is same with non-attach's, because the image buffer of drawable can't be refered indirectly
+		//The implementation of attach in X11 is same with non-attach's, because the image buffer of drawable can't be referred indirectly
 		//so the pixel_buffer::open() method may call the attached version of pixel_buffer_storage construction.
 		void detach()
 		{
@@ -371,7 +371,7 @@ namespace nana{	namespace paint
 				::XPutImage(disp, dw, gc,
 					img, src_x, src_y, x, y, width, height);
 			}
-			img->data = nullptr;	//Set null pointer to avoid XDestroyImage destroyes the buffer.
+			img->data = nullptr;	//Set null pointer to avoid XDestroyImage destroys the buffer.
 			XDestroyImage(img);
 		}
 #endif
@@ -787,7 +787,7 @@ namespace nana{	namespace paint
 		auto sp = storage_.get();
 		if(nullptr == sp) return;
 
-		//Test if the line intersects the rectangle, and retrive the two points that
+		//Test if the line intersects the rectangle, and retrieve the two points that
 		//are always in the area of rectangle, good_pos_beg is left point, good_pos_end is right.
 		nana::point good_pos_beg, good_pos_end;
 		if(intersection(nana::rectangle(sp->pixel_size), pos_beg, pos_end, good_pos_beg, good_pos_end))

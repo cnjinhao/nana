@@ -103,10 +103,10 @@ namespace nana
 		std::pair<int, int> range_int() const;
 		std::pair<double, double> range_double() const;
 
-		/// Selects/unselects the text
+		/// Selects/Deselects the text
 		void select(bool);
 
-		/// Gets the spinned value
+		/// Gets the spun value
 		::std::string value() const;
 		void value(const ::std::string&);
 		int to_int() const;

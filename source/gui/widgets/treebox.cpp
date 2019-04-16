@@ -342,7 +342,7 @@ namespace nana
 
 				struct adjust_tag
 				{
-					int offset_x_adjust;	//It is a new value of offset_x, and offset_x will be djusted to the new value
+					int offset_x_adjust;	//It is a new value of offset_x, and offset_x will be adjusted to the new value
 					tree_cont_type::node_type * node;
 					std::size_t scroll_timestamp;
 					nana::timer timer;
@@ -1067,7 +1067,7 @@ namespace nana
 				item_proxy::item_proxy(trigger* trg, trigger::node_type* node)
 					: trigger_(trg), node_(node)
 				{
-					//Make it an end itertor if one of them is a nullptr
+					//Make it an end iterator if one of them is a nullptr
 					if(nullptr == trg || nullptr == node)
 					{
 						trigger_ = nullptr;
@@ -1325,7 +1325,7 @@ namespace nana
 					return node_->value.second.value;
 				}
 
-				//Undocumentated methods for internal use.
+				//Undocumented methods for internal use.
 				trigger::node_type * item_proxy::_m_node() const
 				{
 					return node_;
@@ -1932,7 +1932,7 @@ namespace nana
 
 				void trigger::detached()
 				{
-					//Reset the comp_placer, because after deteching, the scheme refered by comp_placer will be released
+					//Reset the comp_placer, because after detaching, the scheme referred by comp_placer will be released
 					impl_->data.comp_placer.reset();
 					impl_->data.graph = nullptr;
 				}

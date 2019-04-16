@@ -36,7 +36,7 @@ namespace nana
 					shortkey_pos(shortkey_pos)
 				{}
 
-				std::string		text;	///< Transformed text, the shortkey charactor has been proccessed.
+				std::string		text;	///< Transformed text, the shortkey character has been processed.
 				wchar_t			shortkey;
 				std::size_t		shortkey_pos;
 				::nana::menu	menu_obj;

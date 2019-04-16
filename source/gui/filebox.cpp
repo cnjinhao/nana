@@ -1239,7 +1239,7 @@ namespace nana
 					if(!child.empty())
 					{
 						child->icon("icon-folder");
-						//The try-catch can be eleminated by using
+						//The try-catch can be eliminated by using
 						//directory_iterator( const std::filesystem::path& p, std::error_code& ec ) noexcept;
 						//in C++17
 						try

@@ -180,7 +180,7 @@ namespace nana
 		//struct frameset::impl
 		struct frameset::impl
 		{
-			//Only list whos iterator would not invalided after a insertion.
+			//Only list whose iterator would not be invalidated after an insertion.
 			std::list<frame> frames;
 			std::list<frame>::iterator this_frame;
 			std::size_t pos_in_this_frame{ 0 };

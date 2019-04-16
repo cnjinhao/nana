@@ -223,7 +223,7 @@ namespace nana
 		bool selected() const;
 		bool get_selected_points(nana::upoint &a, nana::upoint &b) const;
 
-        /// Selects/unselects all text.
+        /// Selects/Deselects all text.
 		void select(bool);
 
 		void select_points(nana::upoint arg_a, nana::upoint arg_b);

@@ -18,7 +18,7 @@ namespace nana
 {
 	namespace utf
 	{
-		/// Attempt to get a pointer to a character of UTF-8 string by a specifed character index.
+		/// Attempt to get a pointer to a character of UTF-8 string by a specified character index.
 		/// @param text_utf8 A string encoded as UTF-8.
 		/// @param pos The unicode character index.
 		/// @returns A pointer to the unicode character. It returns a null if pos is out of range. 

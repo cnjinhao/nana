@@ -651,7 +651,7 @@ namespace nana
 			};
 
 
-			/// usefull for both absolute and display (sorted) positions
+			/// useful for both absolute and display (sorted) positions
 			struct index_pair
 			{
 				constexpr static const size_type npos = ::nana::npos;
@@ -712,7 +712,7 @@ namespace nana
 
 			// struct essence
 			//@brief:	this struct gives many data for listbox,
-			//			the state of the struct does not effect on member funcions, therefore all data members are public.
+			//			the state of the struct does not effect on member functions, therefore all data members are public.
 			struct essence;
 
 			class oresolver
@@ -806,7 +806,7 @@ namespace nana
 				drawer_lister_impl *drawer_lister_;
 			};//end class trigger
 
-			/// operate with absolute positions and contain only the position but montain pointers to parts of the real items 
+			/// operate with absolute positions and contain only the position but maintain pointers to parts of the real items 
 			/// item_proxy self, it references and iterators are not invalidated by sort()
 			class item_proxy
 				: public ::nana::widgets::detail::widget_iterator<std::input_iterator_tag, item_proxy>
@@ -814,11 +814,11 @@ namespace nana
 			public:
 				item_proxy(essence*, const index_pair& = index_pair{npos, npos});
 
-				/// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
+				/// the main purpose of this it to make obvious that item_proxy operate with absolute positions, and don't get moved during sort()
 				static item_proxy from_display(essence *, const index_pair &relative) ;
 				item_proxy from_display(const index_pair &relative) const;
 
-				/// posible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
+				/// possible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
 				index_pair to_display() const;
 
 				/// Determines whether the item is displayed on the screen
@@ -837,9 +837,9 @@ namespace nana
 				/// Determines whether the item is checked
 				bool checked() const;
 
-				/// Selects/unselects the item
+				/// Selects/deselects the item
 				/**
-				 * @param sel Indicates whether to select or unselect the item
+				 * @param sel Indicates whether to select or deselect the item
 				 * @param scroll_view Indicates whether to scroll the view to the item. It is ignored if the item is displayed.
 				 * @return the reference of *this.
 				 */
@@ -1176,7 +1176,7 @@ namespace nana
 	{
 		drawerbase::listbox::cat_proxy category;
 
-		/// A flag that indicates whether or not to block expension/shrink of category when it is double clicking.
+		/// A flag that indicates whether or not to block expansion/shrink of category when it is double clicked.
 		mutable bool block_operation{ false };
 
 		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
@@ -1189,7 +1189,7 @@ namespace nana
 			struct listbox_events
 				: public general_events
 			{
-				/// An envent occurs when the toggle of a listbox item is checked.
+				/// An event occurs when the toggle of a listbox item is checked.
 				basic_event<arg_listbox> checked;
 
 				/// An event occurs when a listbox item is clicked.
@@ -1244,8 +1244,8 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 
 1. The resolver is used to resolute an object of the specified type into (or back from) a listbox item.
 3. nana::listbox creates the category 0 by default. 
-   This is an special category, becouse it is invisible, while the associated items are visible. 
-   The optional, user-created categories begin at index 1 and are visibles.
+   This is an special category, because it is invisible, while the associated items are visible. 
+   The optional, user-created categories begin at index 1 and are visible.
    The member functions without the categ parameter operate the items that belong to category 0.
 4. A sort compare is used for sorting the items. It is a strict weak ordering comparer that must meet the requirement:
 		Irreflexivity (comp(x, x) returns false) 
@@ -1276,15 +1276,15 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 		cat.at(0).value(10); //10 is custom data.
 		cat.at(1).value(20); //20 is custom data.
 5. listbox is a widget_object, with template parameters drawerbase::listbox::trigger and drawerbase::listbox::scheme 
-amon others.
-That means that listbox have a member trigger_ constructed first and accecible with get_drawer_trigger() and
-a member (unique pointer to) scheme_ accesible with scheme_type& scheme() created in the constructor 
+among others.
+That means that listbox have a member trigger_ constructed first and accessible with get_drawer_trigger() and
+a member (unique pointer to) scheme_ accessible with scheme_type& scheme() created in the constructor 
 with API::dev::make_scheme<Scheme>() which call API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>())
 which call restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_base&&>(factory));
 which call pi_data_->scheme.create(std::move(factory));
 which call factory.create(scheme_template(std::move(factory)));
 which call (new Scheme(static_cast<Scheme&>(other)));
-and which in create is setted with: API::dev::set_scheme(handle_, scheme_.get()); which save the scheme pointer in 
+and which in create is set with: API::dev::set_scheme(handle_, scheme_.get()); which save the scheme pointer in 
 the nana::detail::basic_window member pointer scheme
 \todo doc: actualize this example listbox.at(0)...
 \see nana::drawerbase::listbox::cat_proxy
@@ -1426,7 +1426,7 @@ the nana::detail::basic_window member pointer scheme
 		/// Scrolls the view to the first or last item of a specified category
 		void scroll(bool to_bottom, size_type cat_pos = ::nana::npos);
 
-		/// Scrolls the view to show an item sepcified by absolute position at top/bottom of the listbox.
+		/// Scrolls the view to show an item specified by absolute position at top/bottom of the listbox.
 		void scroll(bool to_bottom, const index_pair& abs_pos);
 
 		/// Appends a new column with a header text and the specified width at the end, and return it position
@@ -1532,11 +1532,11 @@ the nana::detail::basic_window member pointer scheme
 								std::function<bool(const std::string&, nana::any*,
 								                   const std::string&, nana::any*, bool reverse)> strick_ordering);
 
-		/// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+		/// sort() and invalidates any existing reference from display position to absolute item, that is: after sort() display offset point to different items
 		void sort_col(size_type col, bool reverse = false);
 		size_type sort_col() const;
 
-		/// potencially ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+		/// potentially invalidates any existing reference from display position to absolute item, that is: after sort() display offset point to different items
 		void unsort();
 		bool freeze_sort(bool freeze);
 
