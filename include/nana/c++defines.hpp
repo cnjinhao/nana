@@ -164,7 +164,7 @@
 
 		#if defined(NANA_MINGW)
 			#ifndef __MINGW64_VERSION_MAJOR
-				//It's a knonwn issue under MinGW(except MinGW-W64)
+				//It's a known issue under MinGW(except MinGW-W64)
 				#define STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED
 			#endif
 		#endif

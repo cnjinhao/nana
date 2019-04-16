@@ -61,7 +61,7 @@ namespace nana
 
 #ifdef NANA_AUTOMATIC_GUI_TESTING
 
-	/// @brief  Take control of the GUI and optionaly automaticaly tests it.
+	/// @brief  Take control of the GUI and optionally automatically tests it.
 	///
 	/// @detail It transfers to nana the program flow control, which begin pumping messages 
 	///         from the underlying OS, interpreting and sending it with suitable arguments 
@@ -71,10 +71,10 @@ namespace nana
 	void exec(
 		      unsigned wait = 1,         ///< for the GUI to be constructed, in seconds  
 		      unsigned wait_end = 1,     ///< for the GUI to be destructed, in seconds
-		      std::function<void()> = {} ///< emit events to mimics user actions and may asert results
+		      std::function<void()> = {} ///< emit events to mimics user actions and may assert results
 	         );
 
-	/// send a click message to this widget - useffull in GUI testing
+	/// send a click message to this widget - useful in GUI testing
 	void click(widget& w);
 
 	/// in seconds

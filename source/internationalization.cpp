@@ -520,7 +520,7 @@ namespace nana
 			args_.emplace_back(arg->clone());
 	}
 
-	//Workaround for VC2013, becuase it can't specified a default explicit move-constructor
+	//Workaround for VC2013, because it can't specify a default explicit move-constructor
 	i18n_eval::i18n_eval(i18n_eval&& other)
 		: msgid_(std::move(other.msgid_)), args_(std::move(other.args_))
 	{

@@ -46,7 +46,7 @@ namespace nana
 		/// Constructor that creates a message box with a specified title and default button.
 		msgbox(const ::std::string&);
 
-		/// Constructor that creates a message box with an owner windoow, a specified title and buttons.
+		/// Constructor that creates a message box with an owner window, a specified title and buttons.
 		msgbox(window, const ::std::string&, button_t = ok);
 
 		/// Sets an icon for informing user.
@@ -73,7 +73,7 @@ namespace nana
 		// Calls a manipulator to the stream.
 		msgbox & operator<<(std::ostream& (*)(std::ostream&));
 
-		/// Write a streamizable object to the buffer.
+		/// Write a streamable object to the buffer.
 		template<typename T>
 		msgbox & operator<<(const T& t)
 		{

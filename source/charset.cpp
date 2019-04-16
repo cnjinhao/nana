@@ -349,7 +349,7 @@ namespace nana
 			virtual std::wstring&& wstr_move() = 0;
 		};
 
-		/// playing with the idea - we need a mechanisme to set a user selected police - Testing an abtract interphase
+		/// playing with the idea - we need a mechanism to set a user selected police - Testing an abstract interface
 		struct encoding_error_police
 		{
 			virtual unsigned long next_code_point(const unsigned char*& current_code_unit, const unsigned char* end) = 0;
@@ -689,14 +689,14 @@ namespace nana
 				}
 				unsigned ch = *p;
 				unsigned long code;
-				if(ch < 0xC0)       // error? - move to end. Posible ANSI or ISO code-page
+				if(ch < 0xC0)       // error? - move to end. Possible ANSI or ISO code-page
 				{
 					//return *(p++); // temp: assume equal
 					//p = end;
 					//return 0;
 					return def_encoding_error_police->next_code_point(p, end);
 				}
-				else if(ch < 0xE0 && (p + 1 <= end))      // two byte chararcter
+				else if(ch < 0xE0 && (p + 1 <= end))      // two byte character
 				{
 					code = ((ch & 0x1F) << 6) | (p[1] & 0x3F);
 					p += 2;

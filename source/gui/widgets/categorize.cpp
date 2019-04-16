@@ -446,7 +446,7 @@ namespace nana
 						{
 							r.width = i->value.second.pixels;
 							//If the item is over the right border of widget, the item would be painted at
-							//the begining of the next line.
+							//the beginning of the next line.
 							if(r.right() > xend)
 							{
 								r.x = xbase;
@@ -573,7 +573,7 @@ namespace nana
 
 					style_.listbox->events().destroy.connect_unignorable([this](const arg_destroy&)
 					{
-						//Close list when listbox is destoryed
+						//Close list when listbox is destroyed
 						style_.mode = mode::normal;
 						style_.state = mouse_action::normal;
 
@@ -646,7 +646,7 @@ namespace nana
 							}
 							else
 							{
-								//Too many items, so some of items cann't be displayed
+								//Too many items, so some of items can't be displayed
 								r.x += 16;
 								r.width -= 16;
 								return r;
@@ -918,5 +918,5 @@ namespace nana
 				}
 			//end class trigger
 		}//end namespace categorize
-	}//end namespace draerbase
+	}//end namespace drawerbase
 }//end namespace nana

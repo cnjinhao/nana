@@ -8,7 +8,7 @@
  *
  *	@file: nana/filesystem/filesystem.cpp
  *	@description:
- *		provide some interface for file managment
+ *		provide some interface for file management
  */
 
 #include <nana/filesystem/filesystem_ext.hpp>
@@ -287,7 +287,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		path path::extension() const
 		{
-			// todo: make more globlal
+			// todo: make more global
 #if defined(NANA_WINDOWS)
             auto SLorP=L"\\/.";
 			auto P=L'.';

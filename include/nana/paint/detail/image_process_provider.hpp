@@ -99,7 +99,7 @@ namespace nana
 
 				//add
 				//@brief:	The add operation is successful if the name does not exist.
-				//			it does not replace the existing object by new object, becuase this
+				//			it does not replace the existing object by new object, because this
 				//			feature is thread safe and efficiency.
 				template<typename ImageProcessor, typename Tag>
 				void add(Tag & tag, const std::string& name)

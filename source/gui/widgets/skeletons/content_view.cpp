@@ -277,7 +277,7 @@ namespace nana {
 					else
 					{
 						cv_scroll->horz.close();
-						//If horz is allowed, it indicates the horzontal origin is not moved
+						//If horz is allowed, it indicates the horizontal origin is not moved
 						//Make sure the x origin is zero
 						if (horz_allowed)
 							origin.x = 0;
