@@ -6042,7 +6042,7 @@ namespace nana
 			return *this;
 		}
 
-		listbox& listbox::category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed)
+		listbox& listbox::category_icon(const paint::image& img_expanded, const paint::image& img_collapsed)
 		{
 			internal_scope_guard lock;
 			_m_ess().ctg_icon_renderer = [img_expanded, img_collapsed](paint::graphics& graph, const rectangle& rt_icon, bool expanded)
