@@ -54,6 +54,7 @@ namespace nana
 		class tokenizer
 		{
 		public:
+			/// \todo add member full_what and overrider what() in internal exeptions
 			struct error : std::invalid_argument
 			{
 				error(std::string           what,
@@ -605,6 +606,17 @@ namespace nana
 	//struct implement
 	struct place::implement
 	{
+		/// usefull ??
+		struct error : std::invalid_argument
+		{
+			error(std::string           what,
+				  const implement&      impl)
+
+				: std::invalid_argument{ what + " from implementation " }/*,
+				pos{ static_cast<std::string::size_type>(tok.sp_ - tok.divstr_) }*/
+			{}
+			std::string::size_type pos;
+		};
 		class field_gather;
 		class field_dock;
 
@@ -1999,7 +2011,7 @@ namespace nana
 
 			std::string::size_type tag_pos{ left ? div.find('<', bound.second + 2) : div.rfind('>', bound.first - 2) };
 			if (div.npos == tag_pos)
-				throw std::invalid_argument("please report an issue if it throws");
+				throw place::error("please report an issue: unable to update division " + div, impl_-> );
 
 			auto other_bound = get_field_boundary(div, tag_pos);
 
@@ -3263,7 +3275,7 @@ namespace nana
 			impl_->root_division.swap(div);
 			impl_->div_text.swap(div_text);
 		}
-		catch (...)
+		catch (...) // tokenizer error
 		{
 			//redefined a name of field
 			throw;
