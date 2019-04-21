@@ -1,6 +1,6 @@
 /*
  *	A Tree Container class implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -193,6 +193,11 @@ namespace detail
 			node_type* insert(const std::string& key, const element_type& elem)
 			{
 				auto node = _m_locate<true>(key);
+
+				//Doesn't return the root node
+				if (node == &root_)
+					return nullptr;
+
 				if(node)
 					node->value.second = elem;
 				return node;
@@ -206,12 +211,14 @@ namespace detail
 
 			node_type* find(const std::string& path) const
 			{
-				return _m_locate(path);
+				auto p = _m_locate(path);
+				return (&root_ == p ? nullptr : p);
 			}
 
 			node_type* ref(const std::string& path)
 			{
-				return _m_locate<true>(path);
+				auto p = _m_locate<true>(path);
+				return (&root_ == p ? nullptr : p);
 			}
 
 			unsigned indent_size(const node_type* node) const
@@ -479,42 +486,42 @@ namespace detail
 				return nullptr;
 			}
 
-			// foreach elements of key.
-			// the root name "/" and "\\" are treated as a node. This is a feature that can easily support the UNIX-like path.
 			template<typename Function>
 			void _m_for_each(const ::std::string& key, Function function) const
 			{
-				if(key.size())
+				//Ignores separaters at the begin of key.
+				::std::string::size_type beg = key.find_first_not_of("\\/");
+				if (key.npos == beg)
+					return;
+
+				auto end = key.find_first_of("\\/", beg);
+
+
+				while(end != ::std::string::npos)
 				{
-					::std::string::size_type beg = 0;
-					auto end = key.find_first_of("\\/");
-
-					while(end != ::std::string::npos)
+					if(beg != end)
 					{
-						if(beg != end)
-						{
-							if(!function(key.substr(beg, end - beg)))
-								return;
-						}
-
-						auto next = key.find_first_not_of("\\/", end);
-
-						if ((next == ::std::string::npos) && end)
+						if(!function(key.substr(beg, end - beg)))
 							return;
-
-						if (0 == end)
-						{
-							if ((!function(key.substr(0, 1))) || (next == ::std::string::npos))
-								return;
-						}
-
-						beg = next;
-						end = key.find_first_of("\\/", beg);
-
 					}
 
-					function(key.substr(beg, key.size() - beg));
+					auto next = key.find_first_not_of("\\/", end);
+
+					if ((next == ::std::string::npos) && end)
+						return;
+
+					if (0 == end)
+					{
+						if ((!function(key.substr(0, 1))) || (next == ::std::string::npos))
+							return;
+					}
+
+					beg = next;
+					end = key.find_first_of("\\/", beg);
+
 				}
+
+				function(key.substr(beg, key.size() - beg));
 			}
 
 			template<bool CreateIfNotExists>

@@ -15,6 +15,7 @@
  *		Benjamin Navarro(pr#81)
  *		besh81(pr#130)
  *		dankan1890(pr#158)
+ *		ErrorFlynn(pr#418)
  *
  */
 #include <algorithm>
@@ -5455,9 +5456,12 @@ namespace nana
 			internal_scope_guard lock;
 
 			if (_m_ess().lister.enable_ordered(enable))
+			{
 				_m_ess().update();
+				return true;
+			}
 
-			return true;
+			return false;
 		}
 
 		void listbox::auto_draw(bool enabled) noexcept

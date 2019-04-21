@@ -480,6 +480,8 @@ namespace nana
 		 */
 		void scroll_into_view(item_proxy item);
 
+		/// Gets the current hovered node.
+		item_proxy hovered(bool exclude_expander) const;
 	private:
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
 

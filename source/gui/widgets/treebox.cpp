@@ -2371,6 +2371,19 @@ namespace nana
 				API::refresh_window(*this);
 		}
 
+		treebox::item_proxy treebox::hovered(bool exclude_expander) const
+		{
+			internal_scope_guard lock;
+			auto dw = &get_drawer_trigger();
+			if (dw->impl()->node_state.pointed)
+			{
+				//Returns empty item_proxy if the mouse is on expander and exclude_expander is required.
+				if (exclude_expander && (dw->impl()->node_state.comp_pointed == drawerbase::treebox::component::expander))
+					return item_proxy{};
+			}
+			return item_proxy(const_cast<drawer_trigger_t*>(dw), dw->impl()->node_state.pointed);
+		}
+
 		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()
 		{
 			internal_scope_guard lock;

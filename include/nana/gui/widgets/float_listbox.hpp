@@ -1,7 +1,7 @@
 /**
  *	A float_listbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -46,8 +46,10 @@ namespace nana
 			class item_renderer
 			{
 			public:
-				typedef widget&	widget_reference;
-				typedef paint::graphics& graph_reference;
+				using widget_reference = widget&;
+				using graph_reference = paint::graphics&;
+				using item_interface = float_listbox::item_interface;
+
 				enum state_t{StateNone, StateHighlighted};
 
 				virtual ~item_renderer() = default;
