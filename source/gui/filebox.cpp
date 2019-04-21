@@ -1239,7 +1239,7 @@ namespace nana
 					if(!child.empty())
 					{
 						child->icon("icon-folder");
-						//The try-catch can be eleminated by using
+						//The try-catch can be eliminated by using
 						//directory_iterator( const std::filesystem::path& p, std::error_code& ec ) noexcept;
 						//in C++17
 						try
@@ -1359,7 +1359,7 @@ namespace nana
 			path.resize(len);
 
 			impl_->path = to_utf8(path);
-		}
+        }
 #endif
 	}
 
@@ -1589,7 +1589,7 @@ namespace nana
 	};
 
 	folderbox::folderbox(window owner, const path_type& init_path, std::string title)
-		: impl_(new implement{ owner, fs::canonical(init_path).make_preferred(), title, false})
+		: impl_(new implement{ owner, fs::weakly_canonical(init_path).make_preferred(), title, false})
 	{}
 
 

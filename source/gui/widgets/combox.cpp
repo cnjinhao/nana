@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -293,7 +293,7 @@ namespace nana
 
 						//The lister window closes by itself. I just take care about the destroy event.
 						//The event should be destroy rather than unload. Because the unload event is invoked while
-						//the lister is not closed, if popuping a message box, the lister will cover the message box.
+						//the lister is not closed, if pop-upping a message box, the lister will cover the message box.
 						state_.lister->events().destroy.connect_unignorable([this](const arg_destroy&)
 						{
 							state_.lister = nullptr;	//The lister closes by itself.
@@ -676,7 +676,10 @@ namespace nana
 				{
 					auto * editor = drawer_->editor();
 					editor->mouse_pressed(arg);
-					drawer_->open_lister_if_push_button_positioned();
+
+					//Pops up the droplist only if left button is clicked
+					if(arg.is_left_button())
+						drawer_->open_lister_if_push_button_positioned();
 
 					drawer_->draw();
 					if(editor->attr().editable)

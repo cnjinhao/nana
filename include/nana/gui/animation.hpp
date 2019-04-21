@@ -34,7 +34,7 @@ namespace nana
 	public:
 		frameset();
 		void push_back(paint::image);        ///< Inserts frames at the end.
-		void push_back(framebuilder fb, std::size_t length);  ///< Insters a framebuilder and the number of frames that it generates.
+		void push_back(framebuilder fb, std::size_t length);  ///< Inserts a framebuilder and the number of frames that it generates.
 	private:
 		std::shared_ptr<impl> impl_;
 	};

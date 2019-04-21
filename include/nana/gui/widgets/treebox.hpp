@@ -194,7 +194,7 @@ namespace nana
 				bool empty() const;
 
 				/// \brief Return the distance between the ROOT node and this node.
-				/// @return  only available when emtpy() is false.
+				/// @return  only available when empty() is false.
 				std::size_t level() const;
 
 				/// Return the check state
@@ -309,7 +309,7 @@ namespace nana
 					return *this;
 				}
 
-				// Undocumentated methods for internal use
+				// Undocumented methods for internal use
 				trigger::node_type * _m_node() const;
 			private:
 				nana::any& _m_value();
@@ -397,7 +397,7 @@ namespace nana
 
 		const nana::pat::cloneable<compset_placer_interface> & placer() const;
 
-		/// \brief  Eanble the widget to be draws automatically when it is operated.
+		/// \brief  Enable the widget to be draws automatically when it is operated.
         ///
         /// The treebox automatically redraws after certain operations, but, 
         /// under some circumstances, it is good to disable the automatic drawing mode, 
@@ -441,7 +441,7 @@ namespace nana
         /// If 'hovered' or 'expanded' are not set, it uses 'normal' state image for these 2 states.
         /// See also in [documentation](http://nanapro.org/en-us/help/widgets/treebox.htm)
 		/// @param id The name of an icon scheme. If the name is not existing, it creates a new scheme for the name.
-		/// @return The reference of node image scheme correspending with the specified id.
+		/// @return The reference of node image scheme corresponding with the specified id.
 		node_image_type& icon(const ::std::string& id);
 
 		void icon_erase(const ::std::string& id);
@@ -480,6 +480,8 @@ namespace nana
 		 */
 		void scroll_into_view(item_proxy item);
 
+		/// Gets the current hovered node.
+		item_proxy hovered(bool exclude_expander) const;
 	private:
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
 

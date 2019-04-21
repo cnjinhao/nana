@@ -9,7 +9,7 @@
  *
  *	@file: nana/depoly.cpp
  *
- *	What follow are dependented on what defined in nana/config.hpp
+ *	What follows is dependent on what defined in nana/config.hpp
  */
 
 #include <nana/deploy.hpp>

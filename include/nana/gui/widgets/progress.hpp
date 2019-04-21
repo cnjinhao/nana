@@ -47,8 +47,8 @@ namespace nana
 			};
 		}
 	}//end namespace drawerbase
-       /// \brief A progressbar widget with two styles: know, and unknow amount value (goal). 
-       /// In unknow style the amount is ignored and the bar is scrolled when value change.
+       /// \brief A progressbar widget with two styles: know, and unknown amount value (goal). 
+       /// In unknown style the amount is ignored and the bar is scrolled when value change.
 	class progress
 		: public widget_object<category::widget_tag, drawerbase::progress::trigger, ::nana::general_events, drawerbase::progress::scheme>
 	{

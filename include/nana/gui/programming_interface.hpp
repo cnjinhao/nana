@@ -108,7 +108,7 @@ namespace API
 		bool copy_transparent_background(window, paint::graphics&);
 		bool copy_transparent_background(window, const rectangle& src_r, paint::graphics&, const point& dst_pt);
 
-		/// Refreshs a widget surface
+		/// Refreshes a widget surface
 		/*
 		 * This function will copy the drawer surface into system window after the event process finished.
 		 */
@@ -186,13 +186,13 @@ namespace API
 	void exit();	    ///< close all windows in current thread
 	void exit_all();	///< close all windows
 
-	/// @brief	Searchs whether the text contains a '&' and removes the character for transforming.
-	///			If the text contains more than one '&' charachers, the others are ignored. e.g
+	/// @brief	Searches whether the text contains a '&' and removes the character for transforming.
+	///			If the text contains more than one '&' characters, the others are ignored. e.g
 	///			text = "&&a&bcd&ef", the result should be "&abcdef", shortkey = 'b', and pos = 2.
 	std::string transform_shortkey_text
 					( std::string text,      ///< the text is transformed
 					  wchar_t &shortkey,     ///<  the character which indicates a short key.
-					  std::string::size_type *skpos ///< retrives the shortkey position if it is not a null_ptr;
+					  std::string::size_type *skpos ///< retrieves the shortkey position if it is not a null_ptr;
 					);
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
@@ -344,11 +344,11 @@ namespace API
 
 	/// Refresh the window and display it immediately calling the refresh function of its drawer_trigger.
 	/*
-	 * The drawer::refresh() will be called. If the currently state is lazy_refrsh, the window is delayed to update the graphics until an event is finished.
+	 * The drawer::refresh() will be called. If the current state is lazy_refrsh, the window is delayed to update the graphics until an event is finished.
 	 * @param window_handle A handle to the window to be refreshed.
 	 */
 	void refresh_window(window window_handle);
-	void refresh_window_tree(window);      ///< Refreshes the specified window and all its children windows, then display it immediately
+	void refresh_window_tree(window);      ///< Refreshes the specified window and all its children windows, then displays it immediately
 	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
@@ -418,8 +418,8 @@ namespace API
 	/// Enables or disables a window to receive a key_char event for pressing TAB key.
 	/*
 	 * @param window_handle A handle to the window to catch TAB key through key_char event.
-	 * @param enable Indicates whether to enable or disable catch of TAB key. If this parameter is *true*, the window is
-	 * received a key_char when pressing TAB key, and the input focus is not changed. If this parameter is *false*, the
+	 * @param enable Indicates whether to enable or disable catch of TAB key. If this parameter is *true*, the window
+	 * receives a key_char event when pressing TAB key, and the input focus is not changed. If this parameter is *false*, the
 	 * input focus is changed to the next tabstop window.
 	 */
 	void eat_tabstop(window window_handle, bool enable);
@@ -432,7 +432,7 @@ namespace API
 	 */
 	window move_tabstop(window window_handle, bool forward);
 
-	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it wich will be obteined by take_if_has_active_false.
+	/// Sets the window active state. If a window active state is false, the window will not obtain the focus when a mouse clicks on it which will be obtained by take_if_has_active_false.
 	void take_active(window, bool has_active, window take_if_has_active_false);
 
 	/// Copies the graphics of a specified to a new graphics object.

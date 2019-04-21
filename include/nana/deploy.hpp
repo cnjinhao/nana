@@ -9,7 +9,7 @@
  *
  *	@file: nana/deploy.hpp
  *
- *	What follow are dependented on what defined in nana/config.hpp
+ *	What follows is dependent on what defined in nana/config.hpp
  */
 
 #ifndef NANA_DEPLOY_HPP

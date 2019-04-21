@@ -34,7 +34,7 @@ namespace nana
 			};
 		}// end namespace panel
 	}//end namespace drawerbase
-    /// For placing other widgets, where the bool template parameter determinte if it is  widget or lite_widget, wich in actual use make no difference.
+    /// For placing other widgets, where the bool template parameter determines if it is widget or lite_widget, which in actual use makes no difference.
 	template<bool HasBackground>
 	class panel
 		: public widget_object<typename std::conditional<HasBackground, category::widget_tag, category::lite_widget_tag>::type,

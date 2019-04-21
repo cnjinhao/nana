@@ -61,7 +61,7 @@ namespace nana
 		}//end namespace menubar
 	}//end namespace drawerbase
 
-	  /// \brief A toolbar at the top of window for popuping menus.
+	  /// \brief A toolbar at the top of window for pop-upping menus.
 	  ///
 	  /// The widget sets as shortkey the character behind the first of & in the text, for the item. e.g. "File(&F)" or "&File".
 	class menubar
@@ -79,7 +79,7 @@ namespace nana
 		
 		/// Deselects the menu
 		/**
-		 * If a menu is popped up, the menu deselects the item and close the popuped menu.
+		 * If a menu is popped up, the menu deselects the item and close the pop-upped menu.
 		 * @return true if an item is deselected, false otherwise.
 		 */
 		bool cancel();

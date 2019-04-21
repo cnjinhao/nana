@@ -262,7 +262,7 @@ namespace API
 				iwd->drawer.graphics.make(iwd->dimension);
 				iwd->drawer.graphics.rectangle(true, iwd->annex.scheme->background.get_color());
 				iwd->drawer.attached(wd, dr);
-				iwd->drawer.refresh();	//Always redrawe no matter it is visible or invisible. This can make the graphics data correctly.
+				iwd->drawer.refresh();	//Always redraw no matter it is visible or invisible. This can make the graphics data correctly.
 			}
 		}
 
@@ -456,12 +456,12 @@ namespace API
 	}
 
 	//transform_shortkey_text
-	//@brief:	This function searchs whether the text contains a '&' and removes the character for transforming.
-	//			If the text contains more than one '&' charachers, the others are ignored. e.g
+	//@brief:	This function searches whether the text contains a '&' and removes the character for transforming.
+	//			If the text contains more than one '&' character, the others are ignored. e.g
 	//			text = "&&a&bcd&ef", the result should be "&abcdef", shortkey = 'b', and pos = 2.
 	//@param, text: the text is transformed.
 	//@param, shortkey: the character which indicates a short key.
-	//@param, skpos: retrives the shortkey position if it is not a null_ptr;
+	//@param, skpos: retrieves the shortkey position if it is not a null_ptr;
 	std::string transform_shortkey_text(std::string text, wchar_t &shortkey, std::string::size_type *skpos)
 	{
 		shortkey = 0;
@@ -1057,7 +1057,7 @@ namespace API
 		else
 			return;
 
-		//modal has to guarantee that does not lock the mutex of window_manager before invokeing the pump_event,
+		//modal has to guarantee that does not lock the mutex of window_manager before invoking the pump_event,
 		//otherwise, the modal will prevent the other thread access the window.
 		restrict::bedrock.pump_event(wd, true);
 	}
@@ -1403,7 +1403,7 @@ namespace API
 			::nana::point clipos{pos};
 			interface_type::calc_window_point(wd, clipos);
 			return reinterpret_cast<window>(
-						restrict::wd_manager().find_window(wd, clipos));
+						restrict::wd_manager().find_window(wd, clipos, true));
 		}
 		return nullptr;
 	}

@@ -1,7 +1,7 @@
 /*
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -453,7 +453,20 @@ namespace nana
         default:    break;
 		}
 
-		auto bt = ::MessageBoxW(reinterpret_cast<HWND>(API::root(wd_)), to_wstring(sstream_.str()).c_str(), to_wstring(title_).c_str(), type);
+		//Disables the owner window to prevent the owner window processing mouse wheel event
+		//when the message box is showing and scroll the wheel on the owner window.
+		auto native = reinterpret_cast<HWND>(API::root(wd_));
+		BOOL enabled = FALSE;
+		if (native)
+		{
+			enabled = ::IsWindowEnabled(native);
+			if (enabled)
+				::EnableWindow(native, FALSE);
+		}
+		auto bt = ::MessageBoxW(native, to_wstring(sstream_.str()).c_str(), to_wstring(title_).c_str(), type);
+
+		if (native && enabled)
+			::EnableWindow(native, TRUE);
 
 		switch(bt)
 		{
@@ -745,7 +758,7 @@ namespace nana
 		impl->label_text = std::move(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::integer::~integer(){}
 
 	int inputbox::integer::value() const
@@ -828,7 +841,7 @@ namespace nana
 		impl->label_text = std::move(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::real::~real(){}
 
 	double inputbox::real::value() const
@@ -920,7 +933,7 @@ namespace nana
 		impl_->label_text.swap(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::text::~text(){}
 
 	void inputbox::text::tip_string(std::wstring tip)
@@ -1041,7 +1054,7 @@ namespace nana
 		impl_->label_text.swap(label);
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::date::~date(){}
 
 	::std::string inputbox::date::value() const
@@ -1192,7 +1205,7 @@ namespace nana
 	{
 	}
 
-	//Instance for impl_ because implmenet is incomplete type at the point of declaration
+	//Instance for impl_ because implement is incomplete type at the point of declaration
 	inputbox::path::~path(){}
 
 	::std::string inputbox::path::value() const

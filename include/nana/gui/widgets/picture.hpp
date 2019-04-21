@@ -59,10 +59,10 @@ namespace nana
 		/// Enables the image to be stretched to the widget size.
 		void stretchable(unsigned left, unsigned top, unsigned right, unsigned bottom);
 
-		/// Enables/disable the image to be stretched without changing aspect ratio.
+		/// Enables/disables the image to be stretched without changing aspect ratio.
 		void stretchable(bool);
 
-        /// Fills a gradual-change color in background. If One of colors is invisible or clr_from is equal to clr_to, it draws background in bgcolor.
+        /// Fills a gradual-change color in background. If one of colors is invisible or clr_from is equal to clr_to, it draws background in bgcolor.
 		void set_gradual_background(const color& clr_from, const color& clr_to, bool horizontal);
 		void transparent(bool);
 		bool transparent() const;

@@ -108,11 +108,16 @@ namespace std {
 	{
 		using namespace experimental::filesystem;
 	}
+
+#ifndef __cpp_lib_experimental_filesystem
+#   define __cpp_lib_experimental_filesystem 201406
+#endif
 } // std
 
 #else
 #   undef NANA_USING_STD_FILESYSTEM
 #   define NANA_USING_STD_FILESYSTEM 1
+	//Detects whether the compiler supports std::filesystem under current options
 #	if ((defined(_MSC_VER) && (_MSC_VER >= 1912) && defined(_MSVC_LANG) && _MSVC_LANG >= 201703)) ||				\
 		((__cplusplus >= 201703L) && \
 			(defined(__clang__) && (__clang_major__ >= 7) ||		\
@@ -125,12 +130,9 @@ namespace std {
 				using namespace std::experimental::filesystem;
 			}
 		}
+#		undef NANA_USING_STD_EXPERIMENTAL_FILESYSTEM
+#		define NANA_USING_STD_EXPERIMENTAL_FILESYSTEM
 #	endif
-#endif
-
-
-#ifndef __cpp_lib_experimental_filesystem
-#   define __cpp_lib_experimental_filesystem 201406
 #endif
 
 #if NANA_USING_NANA_FILESYSTEM
@@ -254,7 +256,7 @@ namespace nana  { namespace experimental { namespace filesystem
 		path relative_path() const;
 		path parent_path() const;
 		path filename() const;
-		//path stem() const;
+		path stem() const;
 		path extension() const;
 
 		// query
@@ -289,6 +291,8 @@ namespace nana  { namespace experimental { namespace filesystem
 		std::string generic_u8string() const;
 		// std::u16string generic_u16string() const;
 		// std::u32string generic_u32string() const;
+
+		path lexically_normal() const;
 
 		//appends
 		path& operator/=(const path& other);
@@ -544,6 +548,9 @@ namespace std {
 
 		path canonical(const path& p);
 		path canonical(const path& p, std::error_code& err);
+
+		path weakly_canonical(const path& p);
+		path weakly_canonical(const path& p, std::error_code& err);
 #endif
 
 #if defined(NANA_FILESYSTEM_FORCE) || defined(NANA_MINGW)
@@ -553,7 +560,23 @@ namespace std {
 #endif
 	}
 } // std
+#else
 
+//Implements the missing functions for various version of experimental/filesystem
+#	if defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM)
+	namespace std
+	{
+		namespace filesystem
+		{
+			//Visual Studio 2017
+			#if (defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
+				(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 801))
+			path weakly_canonical(const path& p);
+			path weakly_canonical(const path& p, std::error_code& err);
+			#endif
+		}
+	}
+#	endif
 
 #endif	//NANA_USING_NANA_FILESYSTEM
 

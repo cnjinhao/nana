@@ -21,7 +21,7 @@ namespace nana
 	//Forward declaration of filebox for msgbox
 	class filebox;
 
-	/// Prefabricated modal dialog box (with text, icon and actions buttons) that inform and instruct the user.
+	/// Prefabricated modal dialog box (with text, icon and actions buttons) that informs and instructs the user.
 	class msgbox
 	{
 	public:
@@ -34,19 +34,19 @@ namespace nana
 		/// Identifiers of buttons that a user clicked.
 		enum pick_t{pick_ok, pick_yes, pick_no, pick_cancel};
 
-		/// Default construct that creates a message box with default title and default button, the default button is OK.
+		/// Default constructor that creates a message box with default title and default button, the default button is OK.
 		msgbox();
 
-		/// Copy construct from an existing msgbox object.
+		/// Copy constructor from an existing msgbox object.
 		msgbox(const msgbox&);
 
 		/// Assign from an existing msgbox object.
 		msgbox& operator=(const msgbox&);
 
-		/// Construct that creates a message box with a specified title and default button.
+		/// Constructor that creates a message box with a specified title and default button.
 		msgbox(const ::std::string&);
 
-		/// Construct that creates a message box with an owner windoow, a specified title and buttons.
+		/// Constructor that creates a message box with an owner window, a specified title and buttons.
 		msgbox(window, const ::std::string&, button_t = ok);
 
 		/// Sets an icon for informing user.
@@ -73,7 +73,7 @@ namespace nana
 		// Calls a manipulator to the stream.
 		msgbox & operator<<(std::ostream& (*)(std::ostream&));
 
-		/// Write a streamizable object to the buffer.
+		/// Write a streamable object to the buffer.
 		template<typename T>
 		msgbox & operator<<(const T& t)
 		{

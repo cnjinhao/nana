@@ -1,7 +1,7 @@
 /*
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -630,7 +630,8 @@ namespace nana
 		void collocate();
 
 		static division * search_div_name(division* start, const std::string&) noexcept;
-		std::unique_ptr<division> scan_div(place_parts::tokenizer&);
+
+		std::unique_ptr<division> scan_div(place_parts::tokenizer&, bool implicitly_started, const std::string& ignore_duplicate = {});
 		void check_unique(const division*) const;
 
 		//connect the field/dock with div object
@@ -1987,7 +1988,7 @@ namespace nana
 
 			std::string::size_type tag_pos{ left ? div.find('<', bound.second + 2) : div.rfind('>', bound.first - 2) };
 			if (div.npos == tag_pos)
-				throw std::runtime_error("place report an issue if it throws");
+				throw std::invalid_argument("please report an issue if it throws");
 
 			auto other_bound = get_field_boundary(div, tag_pos);
 
@@ -2666,7 +2667,7 @@ namespace nana
 					}
 				}
 
-				//Collocate doesn't sync the visiblity of fastened windows.
+				//Collocate doesn't sync the visibility of fastened windows.
 				//This is a feature that allows tabbar panels to be fastened to a same field, the collocate()
 				//shouldn't break the visibility of panels that are maintained by tabbar.
 				field.second->visible(is_show, false);
@@ -2706,7 +2707,9 @@ namespace nana
 		throw std::invalid_argument("nana.place: the type of the " + std::string{pos_strs[pos]} +"th parameter for collapse should be integer.");
 	}
 
-	auto place::implement::scan_div(place_parts::tokenizer& tknizer) -> std::unique_ptr<division>
+	//implicitly_started indicates whether the field in div-text starts without < mark. 
+	//ignore_duplicate A field is allowed to have same name if its has an ancestor which name is same with ignore_duplicate.
+	auto place::implement::scan_div(place_parts::tokenizer& tknizer, bool implicitly_started, const std::string& ignore_duplicate) -> std::unique_ptr<division>
 	{
 		using token = place_parts::tokenizer::token ;
 
@@ -2728,7 +2731,8 @@ namespace nana
 		bool undisplayed = false;
 		bool invisible = false;
 
-		for (token tk = tknizer.read(); (tk != token::eof && tk != token::div_end); tk = tknizer.read())
+		token tk = token::eof;
+		for (tk = tknizer.read(); (tk != token::eof && tk != token::div_end); tk = tknizer.read())
 		{
 			switch (tk)
 			{
@@ -2752,14 +2756,25 @@ namespace nana
 				{
 					auto splitter = new div_splitter(tknizer.number(), this);
 					children.back()->div_next = splitter;
+
+					//Hides the splitter if its left leaf is undisplayed.
+					if (!children.back()->display)
+						splitter->display = false;
+
 					children.emplace_back(std::unique_ptr<division>{ splitter });
 				}
 				break;
 			case token::div_start:
 			{
-				auto div = scan_div(tknizer);
+				auto div = scan_div(tknizer, false, ignore_duplicate);
 				if (!children.empty())
+				{
+					//Hides the splitter if its right leaf is undisplayed.
+					if ((children.back()->kind_of_division == division::kind::splitter) && !div->display)
+						children.back()->display = false;
+
 					children.back()->div_next = div.get();
+				}
 
 				children.emplace_back(std::move(div));
 			}
@@ -2887,6 +2902,9 @@ namespace nana
 			}
 		}
 
+		if (implicitly_started && (tk == token::div_end))
+			throw std::invalid_argument("nana.place: the div-text ends prematurely at " + std::to_string(tknizer.pos()));
+
 		field_gather * attached_field = nullptr;
 
 		//find the field with specified name.
@@ -2897,20 +2915,43 @@ namespace nana
 			attached_field = i->second;
 			//the field is attached to a division, it means there is another division with same name.
 			if (attached_field->attached)
-				throw std::runtime_error("place, the name '" + name + "' is redefined.");
+			{
+				//The fields are allowed to have a same name. E.g.
+				//place.div("A <B><C>");
+				//place.modify("A", "<B>");  Here the same name B must be allowed, otherwise it throws runtime error.
+
+				bool allow_same_name = false;
+				if (!ignore_duplicate.empty())
+				{
+					auto f = attached_field->attached->div_owner;
+					while (f)
+					{
+						if (f->name == ignore_duplicate)
+						{
+							allow_same_name = true;
+							break;
+						}
+
+						f = f->div_owner;
+					}
+				}
+
+				if (!allow_same_name)
+					throw std::runtime_error("place, the name '" + name + "' is redefined.");
+			}
 		}
 
 		token unmatch = token::width;
 		switch (div_type)
 		{
-		case token::eof:	// "horitontal" div
+		case token::eof:	// "horizontal" div
 		case token::vert:   // "vertical" div
 			if(token::eof == div_type)
 				unmatch = token::height;
 
 			for (auto& ch : children)
 				if (ch->weigth_type == unmatch)
-					throw std::invalid_argument("nana.place: unmatch vertical-heigth/horizontal-width betwen division '"
+					throw std::invalid_argument("nana.place: unmatch vertical-height/horizontal-width between division '"
 						                         +name+"' and children division '" + ch->name);
 
 			div.reset(new div_arrange(token::vert == div_type, std::move(name), std::move(arrange)));
@@ -2977,7 +3018,16 @@ namespace nana
 		//attach the field to the division
 		div->field = attached_field;
 		if (attached_field)
+		{
+			//Replaces the previous div with the new div which is allowed to have a same name.
+
+			//Detaches the field from the previous div. 
+			if (attached_field->attached)
+				attached_field->attached->field = nullptr;
+
+			//Attaches new div
 			attached_field->attached = div.get();
+		}
 
 		if (children.size())
 		{
@@ -3033,7 +3083,7 @@ namespace nana
 	void place::implement::check_unique(const division* div) const
 	{
 		//The second field_impl is useless. Reuse the map type in order to
-		//reduce the size of the generated code, becuase std::set<std::string>
+		//reduce the size of the generated code, because std::set<std::string>
 		//will create a new template class.
 		std::map<std::string, field_gather*> unique;
 		field_gather tmp(nullptr);
@@ -3194,11 +3244,11 @@ namespace nana
 	{
 		place_parts::tokenizer tknizer(div_text.c_str());
 		impl_->disconnect();
-		auto div = impl_->scan_div(tknizer);
+		auto div = impl_->scan_div(tknizer, true);
 		try
 		{
 			impl_->connect(div.get());		//throws if there is a redefined name of field.
-			impl_->root_division.reset();	//clear atachments div-fields
+			impl_->root_division.reset();	//clear attachments div-fields
 			impl_->root_division.swap(div);
 			impl_->div_text.swap(div_text);
 		}
@@ -3263,7 +3313,7 @@ namespace nana
 		try
 		{
 			place_parts::tokenizer tknizer(div_text);
-			auto modified = impl_->scan_div(tknizer);
+			auto modified = impl_->scan_div(tknizer, true, name);
 			auto modified_ptr = modified.get();
 			modified_ptr->name = name;
 
@@ -3322,7 +3372,7 @@ namespace nana
 			if (div)
 			{
 				if (div->field && (div->field != p))
-					throw std::runtime_error("nana.place: unexpected error, the division attachs a unexpected field.");
+					throw std::runtime_error("nana.place: unexpected error, the division attaches an unexpected field.");
 
 				div->field = p;
 				p->attached = div;

@@ -115,7 +115,7 @@ namespace nana
 				bool clear();
 
 				//splitstr
-				//@brief: Sets the splitstr. If the parameter will be ingored if it is an empty string.
+				//@brief: Sets the splitstr. If the parameter will be ignored if it is an empty string.
 				void splitstr(const ::std::string&);
 				const ::std::string& splitstr() const;
 				

@@ -1,7 +1,7 @@
 /*
  *	Definition of Notifier
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -59,7 +59,11 @@ namespace nana
 		void text(const ::std::string&);
 		void icon(const ::std::string& icon_file);
 		void insert_icon(const ::std::string& icon_file);
+#if 0 //deprecated
 		void period(unsigned millisecond);
+#else
+		void period(std::chrono::milliseconds time);
+#endif
 		detail::notifier_events& events();
 		window handle() const;
 	private:

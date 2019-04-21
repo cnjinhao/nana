@@ -1018,7 +1018,7 @@ namespace nana {
 						for (++i; i != entities.end(); )
 						{
 							if (bound > i->begin)
-								i = entities.erase(i);  // erase overlaping. Left only the first.
+								i = entities.erase(i);  // erase overlapping. Left only the first.
 							else
 								++i;
 						}
@@ -2363,7 +2363,7 @@ namespace nana {
 				//The number of text lines
 				auto const line_count = textbase().lines();
 
-				//The number of charecters in the line of caret
+				//The number of characters in the line of caret
 				auto const text_length = textbase().getline(points_.caret.y).size();
 
 				switch (key) {
@@ -2403,10 +2403,10 @@ namespace nana {
 					coord.y += static_cast<int>(line_px);
 					break;
 				case keyboard::os_home:
-					//move the caret to the begining of the line
+					//move the caret to the beginning of the line
 					pos.x = 0;
 
-					//move the caret to the begining of the text if Ctrl is pressed
+					//move the caret to the beginning of the text if Ctrl is pressed
 					if (arg.ctrl)
 						pos.y = 0;
 					break;
@@ -2415,7 +2415,7 @@ namespace nana {
 					//move the caret to the end of the text if Ctrl is pressed
 					if (arg.ctrl) {
 						coord.y = static_cast<unsigned>((line_count - 1) * line_px);
-						//The number of charecters of the bottom line
+						//The number of characters of the bottom line
 						auto const text_length = textbase().getline(std::max<size_t>(0, line_count - 1)).size();
 						//move the caret to the end of the line
 						pos.x = static_cast<decltype(pos.x)>(text_length);
@@ -3385,7 +3385,7 @@ namespace nana {
 						std::wstring_view ent_sv;
 						if (rtl)
 						{
-							//draw the whole text if it is a RTL text, because Arbic language is transformable.
+							//draw the whole text if it is a RTL text, because Arabic language is transformable.
 							ent_sv = { str, len };
 						}
 						else
@@ -3397,7 +3397,7 @@ namespace nana {
 #else
 						if (rtl)
 						{
-							//draw the whole text if it is a RTL text, because Arbic language is transformable.
+							//draw the whole text if it is a RTL text, because Arabic language is transformable.
 							canvas.string({}, str, len);
 						}
 						else

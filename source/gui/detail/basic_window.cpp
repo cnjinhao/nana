@@ -336,6 +336,43 @@ namespace nana
 				flags.action = act;
 			}
 
+
+			bool basic_window::try_lazy_update(bool try_refresh)
+			{
+				if (drawer.graphics.empty())
+					return true;
+
+				if (!this->root_widget->other.attribute.root->lazy_update)
+					return false;
+				
+				if (nullptr == effect.bground)
+				{
+					if (try_refresh)
+					{
+						flags.refreshing = true;
+						drawer.refresh();
+						flags.refreshing = false;
+					}
+				}
+
+				for (auto i = this->root_widget->other.attribute.root->update_requesters.cbegin(); i != this->root_widget->other.attribute.root->update_requesters.cend();)
+				{
+					auto req = *i;
+					//Avoid redundancy, don't insert the window if it or its ancestor window already exist in the container.
+					if ((req == this) || req->is_ancestor_of(this))
+						return true;
+
+					//If there is a window which is a child or child's child of the window, remove it.
+					if (this->is_ancestor_of(req))
+						i = this->root_widget->other.attribute.root->update_requesters.erase(i);
+					else
+						++i;
+				}
+
+				this->root_widget->other.attribute.root->update_requesters.push_back(this);
+				return true;
+			}
+
 			void basic_window::_m_init_pos_and_size(basic_window* parent, const rectangle& r)
 			{
 				pos_owner = pos_root = r.position();
@@ -390,7 +427,6 @@ namespace nana
 				flags.ignore_menubar_focus	= false;
 				flags.ignore_mouse_focus	= false;
 				flags.space_click_enabled = false;
-				flags.ignore_child_mapping = false;
 
 				visible = false;
 
@@ -401,7 +437,7 @@ namespace nana
 				extra_width = extra_height = 0;
 
 				//The window must keep its thread_id same as its parent if it is a child.
-				//Otherwise, its root buffer would be mapped repeatly if it is in its parent thread.
+				//Otherwise, its root buffer would be mapped repeatedly if it is in its parent thread.
 				thread_id = nana::system::this_thread_id();
 				if(agrparent && (thread_id != agrparent->thread_id))
 					thread_id = agrparent->thread_id;

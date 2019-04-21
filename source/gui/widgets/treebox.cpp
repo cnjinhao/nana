@@ -342,7 +342,7 @@ namespace nana
 
 				struct adjust_tag
 				{
-					int offset_x_adjust;	//It is a new value of offset_x, and offset_x will be djusted to the new value
+					int offset_x_adjust;	//It is a new value of offset_x, and offset_x will be adjusted to the new value
 					tree_cont_type::node_type * node;
 					std::size_t scroll_timestamp;
 					nana::timer timer;
@@ -963,6 +963,11 @@ namespace nana
 					if(text_r.right() > visible_w_pixels())
 					{
 						node_state.tooltip = new tooltip_window(data.widget_ptr->handle(), text_r);
+						
+						//PR#406 Error Flynn's contribution
+						//fix: tooltip window doesn't have tree scheme & typeface 
+						API::dev::set_scheme(node_state.tooltip->handle(), API::dev::get_scheme(data.widget_ptr->handle()));
+						node_state.tooltip->typeface(data.widget_ptr->typeface());
 
 						node_attribute node_attr;
 						assign_node_attr(node_attr, node_state.pointed);
@@ -1062,7 +1067,7 @@ namespace nana
 				item_proxy::item_proxy(trigger* trg, trigger::node_type* node)
 					: trigger_(trg), node_(node)
 				{
-					//Make it an end itertor if one of them is a nullptr
+					//Make it an end iterator if one of them is a nullptr
 					if(nullptr == trg || nullptr == node)
 					{
 						trigger_ = nullptr;
@@ -1320,7 +1325,7 @@ namespace nana
 					return node_->value.second.value;
 				}
 
-				//Undocumentated methods for internal use.
+				//Undocumented methods for internal use.
 				trigger::node_type * item_proxy::_m_node() const
 				{
 					return node_;
@@ -1735,7 +1740,7 @@ namespace nana
 						}
 					});
 
-					impl_->adjust.timer.interval(16);
+					impl_->adjust.timer.interval(std::chrono::milliseconds{ 16 });
 					impl_->adjust.timer.start();
 				}
 
@@ -1927,7 +1932,7 @@ namespace nana
 
 				void trigger::detached()
 				{
-					//Reset the comp_placer, because after deteching, the scheme refered by comp_placer will be released
+					//Reset the comp_placer, because after detaching, the scheme referred by comp_placer will be released
 					impl_->data.comp_placer.reset();
 					impl_->data.graph = nullptr;
 				}
@@ -2364,6 +2369,19 @@ namespace nana
 			//The third argument for scroll_into_view is ignored if the second argument is false.
 			if(get_drawer_trigger().impl()->scroll_into_view(item._m_node(), false, align_v::center))
 				API::refresh_window(*this);
+		}
+
+		treebox::item_proxy treebox::hovered(bool exclude_expander) const
+		{
+			internal_scope_guard lock;
+			auto dw = &get_drawer_trigger();
+			if (dw->impl()->node_state.pointed)
+			{
+				//Returns empty item_proxy if the mouse is on expander and exclude_expander is required.
+				if (exclude_expander && (dw->impl()->node_state.comp_pointed == drawerbase::treebox::component::expander))
+					return item_proxy{};
+			}
+			return item_proxy(const_cast<drawer_trigger_t*>(dw), dw->impl()->node_state.pointed);
 		}
 
 		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()

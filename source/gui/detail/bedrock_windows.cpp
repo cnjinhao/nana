@@ -21,6 +21,7 @@
 #include <nana/gui.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
+#include <nana/gui/detail/window_layout.hpp>
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/gui/detail/color_schemes.hpp>
 #include "inner_fwd_implement.hpp"
@@ -36,6 +37,7 @@
 #endif
 
 #include "bedrock_types.hpp"
+
 
 typedef void (CALLBACK *win_event_proc_t)(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
 
@@ -214,7 +216,7 @@ namespace detail
 		if(wd_manager().number_of_core_window())
 		{
 			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().number_of_core_window()) + " window(s) are not uninstalled.";
-			std::cerr << msg;  /// \todo add list of cations of open windows and if aut testin GUI do auto Ok after 2 sec.
+			std::cerr << msg;  /// \todo add list of cations of opening windows and if auto testing GUI do auto OK after 2 seconds.
 			::MessageBoxA(0, msg.c_str(), ("Nana C++ Library"), MB_OK);
 		}
 
@@ -223,7 +225,7 @@ namespace detail
 	}
 
 
-	/// @brief increament the number of windows in the thread id
+	/// @brief increment the number of windows in the thread id
 	int bedrock::inc_window(thread_t tid)
 	{
 		//impl refers to the object of private_impl, the object is created when bedrock is creating.
@@ -592,7 +594,7 @@ namespace detail
 			delete [] reinterpret_cast<wchar_t*>(wParam);
 			return true;
 		case nana::detail::messages::remote_thread_destroy_window:
-			detail::native_interface::close_window(reinterpret_cast<native_window_type>(wd));	//The owner would be actived before the message has posted in current thread.
+			detail::native_interface::close_window(reinterpret_cast<native_window_type>(wd));	//The owner would be activated before the message has posted in current thread.
 			{
 				internal_scope_guard sg;
 				auto * thrd = bedrock.get_thread_context();
@@ -738,6 +740,27 @@ namespace detail
 		return static_cast<wchar_t>(vkey);
 	}
 
+	class window_proc_guard
+	{
+	public:
+		window_proc_guard(detail::basic_window* wd) :
+			root_wd_(wd)
+		{
+			root_wd_->other.attribute.root->lazy_update = true;
+		}
+
+		~window_proc_guard()
+		{
+			if (!bedrock::instance().wd_manager().available(root_wd_))
+				return;
+
+			root_wd_->other.attribute.root->lazy_update = false;
+			root_wd_->other.attribute.root->update_requesters.clear();
+		}
+	private:
+		detail::basic_window* const root_wd_;
+	};
+
 	LRESULT CALLBACK Bedrock_WIN32_WindowProc(HWND root_window, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		LRESULT window_proc_value = 0;
@@ -757,6 +780,7 @@ namespace detail
 			bool def_window_proc = false;
 			auto& context = *brock.get_thread_context();
 
+			auto const pre_event_window = context.event_window;
 			auto pressed_wd = root_runtime->condition.pressed;
 			auto pressed_wd_space = root_runtime->condition.pressed_by_space;
 			auto hovered_wd = root_runtime->condition.hovered;
@@ -766,7 +790,10 @@ namespace detail
 			pmdec.raw_param.wparam = wParam;
 
 			internal_scope_guard lock;
-			auto msgwnd = root_runtime->window;
+			auto const root_wd = root_runtime->window;
+			auto msgwnd = root_wd;
+
+			window_proc_guard wp_guard{ root_wd };
 
 			switch (message)
 			{
@@ -775,10 +802,7 @@ namespace detail
 				{
 					auto i = root_runtime->wpassoc->accel_commands.find(LOWORD(wParam));
 					if (i != root_runtime->wpassoc->accel_commands.end())
-					{
-						auto fn = i->second;
-						fn();
-					}
+						i->second();
 				}
 				break;
 			case WM_IME_STARTCOMPOSITION:
@@ -896,8 +920,8 @@ namespace detail
 
 				//Don't take care about whether msgwnd is equal to the pressed_wd.
 				//
-				//pressed_wd will remains when opens a no-actived window in an mouse_down event(like combox popups the drop-list).
-				//After the no-actived window is closed, the window doesn't respond to the mouse click other than pressed_wd.
+				//pressed_wd will remain when opens a non-activated window in an mouse_down event(like combox popups the drop-list).
+				//After the non-activated window is closed, the window doesn't respond to the mouse click other than pressed_wd.
 				pressed_wd = nullptr;
 				if (nullptr == msgwnd)
 					break;
@@ -1092,7 +1116,9 @@ namespace detail
 					//The focus window receives the message in Windows system, it should be redirected to the hovered window
                     ::POINT scr_pos{ pmdec.mouse.x, pmdec.mouse.y};  //Screen position
 					auto pointer_wd = ::WindowFromPoint(scr_pos);
-					if (pointer_wd == root_window)
+
+					//Ignore the message if the window is disabled.
+					if ((pointer_wd == root_window) && ::IsWindowEnabled(root_window))
 					{
 						::ScreenToClient(pointer_wd, &scr_pos);
 						auto scrolled_wd = wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), { scr_pos.x, scr_pos.y });
@@ -1124,7 +1150,7 @@ namespace detail
 							wd_manager.do_lazy_refresh(scrolled_wd, false);
 						}
 					}
-					else
+					else if (pointer_wd != root_window)
 					{
 						DWORD pid = 0;
 						::GetWindowThreadProcessId(pointer_wd, &pid);
@@ -1330,7 +1356,7 @@ namespace detail
 					msgwnd = msgwnd->root_widget->other.attribute.root->menubar;
 					if(msgwnd)
 					{
-						//Don't call default window proc to avoid popuping system menu.
+						//Don't call default window proc to avoid pop-upping system menu.
 						def_window_proc = false;
 
 						bool set_focus = (brock.focus() != msgwnd) && (!msgwnd->root_widget->flags.ignore_menubar_focus);
@@ -1416,8 +1442,8 @@ namespace detail
 							if (msgwnd->root_widget->other.attribute.root->menubar == msgwnd)
 							{
 								//In order to keep the focus on the menubar, cancel the delay_restore
-								//when pressing ESC to close the menu which is popuped by the menubar.
-								//If no menu popuped by the menubar, it should enable delay restore to
+								//when pressing ESC to close the menu which is pop-upped by the menubar.
+								//If no menu pop-upped by the menubar, it should enable delay restore to
 								//restore the focus for taken window.
 
 								int cmd = (menu_wd && (keyboard::escape == static_cast<wchar_t>(wParam)) ? 1 : 0);
@@ -1450,7 +1476,7 @@ namespace detail
 						wd_manager.do_lazy_refresh(msgwnd, false);
 					}
 				}
-				return 0;
+				break;
 			case WM_KEYUP:
 				if(wParam != VK_MENU) //MUST NOT BE AN ALT
 				{
@@ -1522,7 +1548,7 @@ namespace detail
 				if (!arg.cancel)
 				{
 					def_window_proc = true;
-					//Activate is owner, refer to the window_manager::close for the explaination
+					//Activates its owner, refer to the window_manager::close for the explanation
 					if (msgwnd->flags.modal || (msgwnd->owner == 0) || msgwnd->owner->flags.take_active)
 						native_interface::activate_owner(msgwnd->root);
 				}
@@ -1532,7 +1558,7 @@ namespace detail
 				if (msgwnd->root == brock.get_menu())
 				{
 					brock.erase_menu(false);
-					brock.delay_restore(3);	//Restores if delay_restore not decleared
+					brock.delay_restore(3);	//Restores if delay_restore not declared
 				}
 				wd_manager.destroy(msgwnd);
 				nana::detail::platform_spec::instance().release_window_icon(msgwnd->root);
@@ -1551,12 +1577,27 @@ namespace detail
 				def_window_proc = true;
 			}
 
+			if (wd_manager.available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
+			{
+				for (auto wd : root_wd->other.attribute.root->update_requesters)
+				{
+					window_layout::paint(wd, window_layout::paint_operation::have_refreshed, false);
+					wd_manager.map(wd, true);
+				}
+			}
+
 			root_runtime = wd_manager.root_runtime(native_window);
 			if(root_runtime)
 			{
+				context.event_window = pre_event_window;
 				root_runtime->condition.pressed = pressed_wd;
 				root_runtime->condition.hovered = hovered_wd;
 				root_runtime->condition.pressed_by_space = pressed_wd_space;
+			}
+			else
+			{
+				auto context = brock.get_thread_context();
+				if(context) context->event_window = pre_event_window;
 			}
 
 			if (!def_window_proc)
@@ -1578,7 +1619,7 @@ namespace detail
 		delete passoc;
 	}
 
-	//Generates an identitifer for an accel key.
+	//Generates an identifier for an accel key.
 	std::pair<int, WORD> id_accel_key(const accel_key& key)
 	{
 		std::pair<int, WORD> ret;

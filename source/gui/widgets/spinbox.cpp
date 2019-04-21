@@ -275,11 +275,11 @@ namespace nana
 						API::update_window(editor_->window_handle());
 
 						auto intv = timer_.interval();
-						if (intv > 50)
+						if (intv.count() > 50)
 							timer_.interval(intv / 2);
 					});
 
-					timer_.interval(600);
+					timer_.interval(std::chrono::milliseconds{ 600 });
 				}
 
 				void attach(::nana::widget& wdg, ::nana::paint::graphics& graph)
@@ -396,7 +396,7 @@ namespace nana
 						API::release_capture(editor_->window_handle());
 
 						timer_.stop();
-						timer_.interval(600);
+						timer_.interval(std::chrono::milliseconds{ 600 });
 					}
 
 					if (buttons::none != spin_stated_)

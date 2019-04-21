@@ -285,7 +285,7 @@ namespace paint
 		const void* graphics::pixmap() const
 		{
 			//The reinterpret_cast is used for same platform. Under Windows, the type
-			//of pixmap can be conversed into void* directly, but under X11, the type is not a pointer.
+			//of pixmap can be converted into void* directly, but under X11, the type is not a pointer.
 			return (impl_->handle ? reinterpret_cast<void*>(impl_->handle->pixmap) : nullptr);
 		}
 
@@ -310,7 +310,7 @@ namespace paint
 					return;
 				}
 
-				//The object will be delete while dwptr_ is performing a release.
+				//The object will be deleted while dwptr_ is performing a release.
 				std::shared_ptr<nana::detail::drawable_impl_type> dw{ new nana::detail::drawable_impl_type, detail::drawable_deleter{} };
 
 				//Reuse the old font
@@ -856,7 +856,7 @@ namespace paint
 		{
 			if(impl_->handle)
 			{
-				//Create the color table for perfermance
+				//Create the color table for performance
 				float* tablebuf = new float[0x100 * 3];
 				float* table_red = tablebuf;
 				float* table_green = tablebuf + 0x100;

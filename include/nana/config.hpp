@@ -54,7 +54,7 @@
 //
 //#define BOOST_FILESYSTEM_AVAILABLE // "Is Boost filesystem available?"
 //#define BOOST_FILESYSTEM_FORCE     // "Force use of Boost filesystem if available (over ISO and nana)
-//#define STD_FILESYSTEM_FORCE       // "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
+//#define STD_FILESYSTEM_FORCE       // "Use of STD filesystem?(a compilation error will occur if not available)" OFF)
 //#define NANA_FILESYSTEM_FORCE      // "Force nana filesystem over ISO and boost?" OFF)
 //
 //	Make sure you (cmake?) provide the following where correspond (please find the correct values):

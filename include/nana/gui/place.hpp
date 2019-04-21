@@ -73,7 +73,7 @@ namespace nana
 		std::function<void(Widget&)> init_;
 	};
 
-    ///  Layout managment - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
+    ///  Layout management - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
 	class place
 		: ::nana::noncopyable
 	{

@@ -1,6 +1,6 @@
 /*
  *	A Tabbar Implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -748,7 +748,7 @@ namespace nana
 					}
 					return false;
 				}
-			private: //Fundation
+			private: //Foundation
 				bool _m_nextable() const
 				{
 					return (basis_.scroll_pixels + _m_itembar_right() < basis_.item_pixels * list_.size());
@@ -1291,7 +1291,8 @@ namespace nana
 
 				void trigger::mouse_down(graph_reference, const arg_mouse& arg)
 				{
-					if(layouter_->press())
+					//Activates the tab only if left button is clicked.
+					if(arg.is_left_button() && layouter_->press())
 					{
 						if(false == layouter_->active_by_trace(arg))
 							layouter_->toolbox_answer(arg);
@@ -1593,10 +1594,10 @@ namespace nana
 						API::dev::lazy_refresh();
 					}
 
-					void driver::mouse_down(graph_reference graph, const arg_mouse&)
+					void driver::mouse_down(graph_reference graph, const arg_mouse& arg)
 					{
 						auto & indexes = model_->get_indexes();
-						if ((indexes.hovered_pos == model_->npos) || (indexes.active_pos == indexes.hovered_pos))
+						if ((indexes.hovered_pos == model_->npos) || (indexes.active_pos == indexes.hovered_pos) || !arg.is_left_button())
 							return;
 
 						if (indexes.active_pos != indexes.hovered_pos)

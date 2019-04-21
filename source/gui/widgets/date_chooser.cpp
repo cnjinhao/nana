@@ -532,7 +532,7 @@ namespace nana
 					perf_transform_helper(window_handle, transf, graph, dirtybuf, gbuf, refpos);
 				}
 			private:
-				//renderring functions
+				//rendering functions
 
 				void _m_calc_basis(graph_reference graph, const nana::point& refpos)
 				{

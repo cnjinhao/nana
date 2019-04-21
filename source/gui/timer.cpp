@@ -1,7 +1,7 @@
 /*
  *	A Timer Implementation
  *  Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,7 +10,7 @@
  *	@file: nana/gui/timer.hpp
  *	@description:
  *		A timer can repeatedly call a piece of code. The duration between
- *	calls is specified in milliseconds. Timer is defferent from other graphics
+ *	calls is specified in milliseconds. Timer is different from other graphics
  *	controls, it has no graphics interface.
  *	@contributors: Benjamin Navarro(pr#81)
  */
@@ -174,6 +174,12 @@ namespace nana
 			: impl_(new implement)
 		{
 		}
+		
+		timer::timer(std::chrono::milliseconds ms):
+			timer()
+		{
+			this->interval(ms);
+		}
 
 		timer::~timer()
 		{
@@ -220,17 +226,17 @@ namespace nana
 			timer_driver::instance().destroy(tmid);
 		}
 
-		void timer::interval(unsigned ms)
+		void timer::interval(std::chrono::milliseconds ms)
 		{
-			if (ms != impl_->interval)
+			if (ms.count() != static_cast<long long>(impl_->interval))
 			{
-				impl_->interval = ms;
+				impl_->interval = static_cast<unsigned>(ms.count());
 				if (impl_->tm_core)
-					impl_->tm_core->interval(ms);
+					impl_->tm_core->interval(impl_->interval);
 			}
 		}
 
-		unsigned timer::interval() const
+		unsigned timer::_m_interval() const
 		{
 			return impl_->interval;
 		}

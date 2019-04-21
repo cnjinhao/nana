@@ -49,8 +49,8 @@ static const char* field_options = "__nana_group_options__";
 
     implement() = default;
 
-    implement(window grp_panel, ::std::string titel, bool vsb, unsigned gap=2)
-        : caption (grp_panel, std::move(titel), vsb),
+    implement(window grp_panel, ::std::string title, bool vsb, unsigned gap=2)
+        : caption (grp_panel, std::move(title), vsb),
           place_content{grp_panel},
           gap{gap}
     {
@@ -118,12 +118,12 @@ group::group(window parent, const rectangle& r, bool vsb)
 
 using groupbase_type = widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>;
 
-group::group(window parent, ::std::string titel, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
+group::group(window parent, ::std::string title, bool formatted, unsigned  gap, const rectangle& r, bool vsb)
     : group(parent, r, vsb)
 {
     this->bgcolor(API::bgcolor(parent));
 
-    impl_.reset(new implement(*this, std::move(titel), vsb, gap));
+    impl_.reset(new implement(*this, std::move(title), vsb, gap));
 
     impl_->caption.format(formatted);
     _m_init();
@@ -312,14 +312,14 @@ checkbox& group::add_option(std::string text)
 		drawing dw(*this);
 
 		//When the group is resized, the drawing is called before moving the caption, but
-		//the drawing of group requires the lastest position of caption for gradual rectangle.
-		//For the requirement, a move event handler is required for listning the change of caption's position.
+		//the drawing of group requires the latest position of caption for gradual rectangle.
+		//For the requirement, a move event handler is required for listening the change of caption's position.
 		impl_->caption.events().move([this](const arg_move&){
 			if (align::left != impl_->caption_align)
 				API::refresh_window(*this);
 		});
 
-		// This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
+		// This drawing function is owner by the owner of dw (the outer panel of the group widget), not by dw !!
 		dw.draw([this](paint::graphics& graph)
 		{
 			auto gap_px = impl_->gap - 1;

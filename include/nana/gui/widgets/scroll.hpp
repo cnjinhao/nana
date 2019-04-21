@@ -1,7 +1,7 @@
 /**
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -51,14 +51,14 @@ namespace nana
 				using size_type = std::size_t;
 
 				size_type peak;   ///< the whole total
-				size_type range;  ///< how many is shonw on a page, that is, How many to scroll after click on first or second
+				size_type range;  ///< how many is shown on a page, that is, How many to scroll after click on first or second
 				size_type step;   ///< how many to scroll by click in forward  or backward
-				size_type value;  ///< current offset calculated from the very beginnig
+				size_type value;  ///< current offset calculated from the very beginning
 
 				buttons what;
 				bool pressed;
-				size_type	scroll_length;       ///< the lenght in pixels of the central button show how many of the total (peak) is shonw (range)
-				int			scroll_pos;          ///< in pixels, and correspond to the offsset from the very beginning (value)
+				size_type	scroll_length;       ///< the length in pixels of the central button show how many of the total (peak) is shown (range)
+				int			scroll_pos;          ///< in pixels, and correspond to the offset from the very beginning (value)
 				int			scroll_mouse_offset;
 
 				metrics_type();
@@ -258,7 +258,7 @@ namespace nana
 						case buttons::first:
 						case buttons::second:
 							make_step(drawer_.metrics.what == buttons::second, 1);
-							timer_.interval(1000);
+							timer_.interval(std::chrono::seconds{1});
 							timer_.start();
 							break;
 						case buttons::scroll:
@@ -321,7 +321,7 @@ namespace nana
 				{
 					make_step(drawer_.metrics.what == buttons::second, 1);
 					API::refresh_window(widget_->handle());
-					timer_.interval(100);
+					timer_.interval(std::chrono::milliseconds{ 100 });
 				}
 			private:
 				::nana::scroll<Vertical> * widget_;
@@ -348,13 +348,13 @@ namespace nana
 
 		virtual void amount(size_type peak) = 0;
 
-		/// Get the range of the widget (how many is shonw on a page, that is, How many to scroll after click on first or second)
+		/// Get the range of the widget (how many is shown on a page, that is, How many to scroll after click on first or second)
 		virtual size_type range() const = 0;
 
 		/// Set the range of the widget.
 		virtual void range(size_type r) = 0;
 
-		///  \brief Get the value (current offset calculated from the very beginnig)
+		///  \brief Get the value (current offset calculated from the very beginning)
 		/// @return the value.
 		virtual size_type value() const = 0;
 
@@ -371,7 +371,7 @@ namespace nana
 		/// @param s  a value for step.
 		virtual void step(size_type s) = 0;
 
-		///  \brief Increase/decrease values by a step (alternativelly by some number of steps).
+		///  \brief Increase/decrease values by a step (alternatively by some number of steps).
 		/// @param forward  it determines whether increase or decrease.
 		/// @return true if the value is changed.
 		virtual bool make_step(bool forward, unsigned steps = 1) = 0;
@@ -426,7 +426,7 @@ namespace nana
 			return this->get_drawer_trigger().peak(peak);
 		}
 
-		/// Get the range of the widget (how many is shonw on a page, that is, How many to scroll after click on first or second)
+		/// Get the range of the widget (how many is shown on a page, that is, How many to scroll after click on first or second)
 		size_type range() const override
 		{
 			return this->get_drawer_trigger().metrics().range;
@@ -438,7 +438,7 @@ namespace nana
 			return this->get_drawer_trigger().range(r);
 		}
 
-		///  \brief Get the value (current offset calculated from the very beginnig)
+		///  \brief Get the value (current offset calculated from the very beginning)
 		/// @return the value.
 		size_type value() const override
 		{
@@ -466,7 +466,7 @@ namespace nana
 			return this->get_drawer_trigger().step(s);
 		}
 
-		///  \brief Increase/decrease values by a step (alternativelly by some number of steps).
+		///  \brief Increase/decrease values by a step (alternatively by some number of steps).
 		/// @param forward  it determines whether increase or decrease.
 		/// @return true if the value is changed.
 		bool make_step(bool forward, unsigned steps = 1) override
@@ -486,7 +486,7 @@ namespace nana
 
 		///  \brief Increase/decrease values by steps as if it is scrolled through mouse wheel.
 		/// @param forward  it determines whether increase or decrease.
-		/// @return true if the vlaue is changed.
+		/// @return true if the value is changed.
 		bool make_scroll(bool forward)
 		{
 			return this->make_step(forward, 3);	// set this 3 in the metrics of the widget scheme ?
@@ -494,7 +494,7 @@ namespace nana
 
 		///  \brief Increase/decrease values by a page as if it is scrolled page up.
 		/// @param forward  it determines whether increase or decrease.
-		/// @return true if the vlaue is changed.
+		/// @return true if the value is changed.
 		bool make_page_scroll(bool forward)
 		{
 			auto const count = range() / step();
