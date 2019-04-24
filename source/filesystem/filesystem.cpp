@@ -8,7 +8,7 @@
  *
  *	@file: nana/filesystem/filesystem.cpp
  *	@description:
- *		provide some interface for file managment
+ *		provide some interface for file management
  */
 
 #include <nana/filesystem/filesystem_ext.hpp>
@@ -287,7 +287,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 
 		path path::extension() const
 		{
-			// todo: make more globlal
+			// todo: make more global
 #if defined(NANA_WINDOWS)
             auto SLorP=L"\\/.";
 			auto P=L'.';
@@ -1130,7 +1130,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 				::fclose(stream);
 				return bytes;
 			}
-			ec.assign(static_cast<int>(::errno), std::generic_category());
+			ec.assign(static_cast<int>(errno), std::generic_category());
 #endif
 			return static_cast<std::uintmax_t>(-1);
 		}
@@ -1265,7 +1265,7 @@ namespace std
 			return p;  // p.is_absolute() is true
 		}
 
-		path absolute(const path& p, std::error_code& err)
+		path absolute(const path& p, std::error_code& /*err*/)
 		{
 			return absolute(p);
 		}
@@ -1350,7 +1350,7 @@ namespace std
 			{	//error
 				if (nullptr == ec)
 					throw (filesystem_error(
-						"nana::filesystem::canonical", p,
+						message, p,
 						error_code(err_val, generic_category())));
 				else
 					ec->assign(err_val, system_category());
@@ -1435,5 +1435,162 @@ namespace std
 	}//end namespace filesystem
 }//end namespace std
 
-#endif
+#else 	//NANA_USING_NANA_FILESYSTEM
+#	if defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM)
+
+	//Defines the functions that are not provided by experimental/filesystem
+	namespace std
+	{
+		namespace filesystem
+		{
+			#if (defined(_MSC_VER) && (_MSC_VER > 1912)) || \
+				(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 801))
+
+			namespace detail
+			{
+				bool try_throw(int err_val, const path& p, std::error_code* ec, const char* message)
+				{
+					if (0 == err_val)
+					{
+						if (ec) ec->clear();
+					}
+					else
+					{	//error
+						if (nullptr == ec)
+							throw (filesystem_error(
+								message, p,
+								error_code(err_val, generic_category())));
+						else
+							ec->assign(err_val, system_category());
+					}
+					return err_val != 0;
+				}
+
+				path lexically_normal(path p)
+				{
+					if (p.empty())
+						return p;
+
+					std::vector<path> elements;
+
+					while (!p.empty())
+					{
+						elements.emplace_back(p.filename());
+						p.remove_filename();
+					}
+
+					auto start = elements.begin();
+					auto last = elements.end();
+					auto stop = last--;
+					for (auto itr(start); itr != stop; ++itr)
+					{
+						// ignore "." except at start and last
+						if (itr->native().size() == 1
+							&& (itr->native())[0] == '.'
+							&& itr != start
+							&& itr != last) continue;
+
+						// ignore a name and following ".."
+						if (!p.empty()
+							&& itr->native().size() == 2
+							&& (itr->native())[0] == '.'
+							&& (itr->native())[1] == '.') // dot dot
+						{
+							auto lf(p.filename().native());
+							if (lf.size() > 0
+								&& (lf.size() != 1
+									|| (lf[0] != '.'
+										&& (lf[0] != '/' && lf[0] != '\\')))
+								&& (lf.size() != 2
+									|| (lf[0] != '.'
+										&& lf[1] != '.'
+	#             ifdef NANA_WINDOWS
+										&& lf[1] != ':'
+	#             endif
+										)
+									)
+								)
+							{
+								p.remove_filename();
+								auto next = itr;
+								if (p.empty() && ++next != stop
+									&& next == last && last->string() == ".")
+								{
+									p /= ".";
+								}
+								continue;
+							}
+						}
+
+						p /= *itr;
+					};
+
+					if (p.empty())
+						p = ".";
+					return p;
+				}
+			}
+
+			path weakly_canonical(const path& p, std::error_code* err)
+			{
+				path head{ p };
+
+				std::error_code tmp_err;
+				std::vector<path> elements;
+				while (!head.empty())
+				{
+					auto head_status = status(head, tmp_err);
+
+					if (head_status.type() == file_type::unknown)
+					{
+						if (detail::try_throw(static_cast<int>(errc::invalid_argument), head, err, "nana::filesystem::weakly_canonical"))
+							return path{};
+					}
+					if (head_status.type() != file_type::not_found)
+						break;
+
+					elements.emplace_back(head.filename());
+					head.remove_filename();
+				}
+
+				bool tail_has_dots = false;
+				path tail;
+
+				for (auto & e : elements)
+				{
+					tail /= e;
+					// for a later optimization, track if any dot or dot-dot elements are present
+					if (e.native().size() <= 2
+						&& e.native()[0] == '.'
+						&& (e.native().size() == 1 || e.native()[1] == '.'))
+						tail_has_dots = true;
+				}
+
+				if (head.empty())
+					return detail::lexically_normal(p);
+				head = canonical(head, tmp_err);
+				if (detail::try_throw(tmp_err.value(), head, err, "nana::filesystem::weakly_canonical"))
+					return path();
+				return tail.empty()
+					? head
+					: (tail_has_dots  // optimization: only normalize if tail had dot or dot-dot element
+						? detail::lexically_normal(head / tail)
+						: head / tail);
+			}
+
+			path weakly_canonical(const path& p)
+			{
+				return weakly_canonical(p, nullptr);
+			}
+
+			path weakly_canonical(const path& p, std::error_code& err)
+			{
+				return weakly_canonical(p, &err);
+			}
+			#endif
+		}
+	}
+#	endif
+
+#endif //NANA_USING_NANA_FILESYSTEM
 

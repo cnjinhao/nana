@@ -88,7 +88,7 @@ namespace nana
 			//read_visual_rectangle
 			///@brief 	Reads the visual rectangle of a window, the visual rectangle's reference frame is to root widget,
 			///			the visual rectangle is a rectangular block that a window should be displayed on screen.
-			///			The result is a rectangle that is a visible area for its ancesters.
+			///			The result is a rectangle that is a visible area for its ancestors.
 			bool window_layout::read_visual_rectangle(core_window_t* wd, nana::rectangle& visual)
 			{
 				if (! wd->displayed())	return false;

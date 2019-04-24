@@ -61,7 +61,7 @@ namespace nana
 		}//end namespace menubar
 	}//end namespace drawerbase
 
-	  /// \brief A toolbar at the top of window for popuping menus.
+	  /// \brief A toolbar at the top of window for pop-upping menus.
 	  ///
 	  /// The widget sets as shortkey the character behind the first of & in the text, for the item. e.g. "File(&F)" or "&File".
 	class menubar

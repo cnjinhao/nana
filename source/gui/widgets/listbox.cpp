@@ -15,6 +15,7 @@
  *		Benjamin Navarro(pr#81)
  *		besh81(pr#130)
  *		dankan1890(pr#158)
+ *		ErrorFlynn(pr#418)
  *
  */
 #include <algorithm>
@@ -675,7 +676,7 @@ namespace nana
 						else
 							item_str += exp_opt.sep;
 
-						//Use the model cells instead if model cells is avaiable
+						//Use the model cells instead if model cells is available
 						item_str += (model_cells ? model_cells : cells.get())->operator[](col).text;
 					}
 
@@ -842,7 +843,7 @@ namespace nana
 					return sort_attrs_;
 				}
 
-                /// each sort() ivalidate any existing reference from display position to absolute item, that is after sort() display offset point to different items
+                /// each sort() invalidates any existing reference from display position to absolute item, that is after sort() display offset point to different items
                 void sort()
 				{
 					if((npos == sort_attrs_.column) || (!sort_attrs_.resort))
@@ -1554,7 +1555,7 @@ namespace nana
 					return n;
 				}
 
-				/// Finds a good item or category if an item specified by pos is invaild
+				/// Finds a good item or category if an item specified by pos is invalid
 				index_pair find_next_good(index_pair pos, bool ignore_category) const noexcept
 				{
 					//Return the pos if it is good
@@ -1691,7 +1692,7 @@ namespace nana
 				/**
 				 * @param for_selection Indicates whether the selected items or checked items to be returned.
 				 * @param find_first Indicates whether or not to return the first item which
-				 * @param items_status a pointer refers to a bool object to receive the status whethe the picked items are all selected or all checked, in contrast to for_selection
+				 * @param items_status a pointer refers to a bool object to receive the status whether the picked items are all selected or all checked, in contrast to for_selection
 				 */
 				index_pairs pick_items(bool for_selection, bool find_first = false, bool * items_status = nullptr) const
 				{
@@ -1989,7 +1990,7 @@ namespace nana
 				msup_deselect
 			};
 
-			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member funcions, therefore all data members are public.
+			/// created and live by the trigger, holds data for listbox: the state of the struct does not effect on member functions, therefore all data members are public.
 			struct essence
 			{
 				enum class item_state{normal, highlighted, pressed, grabbed, floated};
@@ -2006,7 +2007,7 @@ namespace nana
                 ::nana::listbox::export_options def_exp_options;
 
 				es_header header;
-				es_lister lister;  // we have at least one emty cat. the #0
+				es_lister lister;  // we have at least one empty cat. the #0
 
 				item_state ptr_state{ item_state::normal };
 				std::pair<parts, std::size_t> pointer_where;	//The 'first' stands for which object, such as header and lister, 'second' stands for item
@@ -3114,7 +3115,7 @@ namespace nana
 			{
 				auto next_selected_dpl = index_cast_noexcept(latest_selected_abs, false);	//convert absolute position to display position
 
-				if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => beging from first cat
+				if (next_selected_dpl.empty())  // has no cat ? (cat == npos) => begins from first cat
 				{
 					bool good = false;
 					for (size_type i = 0, size = categories_.size(); i < size; ++i) // run all cat
@@ -3377,7 +3378,7 @@ namespace nana
 					auto text_color = essence_->scheme_ptr->header_fgcolor.get_color();
 
 					auto state = item_state::normal;
-					//check whether grabing an item, if item_spliter_ != npos, that indicates the grab item is a spliter.
+					//check whether grabbing an item, if item_spliter_ != npos, that indicates the grabbed item is a splitter.
 					if ((parts::header == essence_->pointer_where.first) && (npos == grabs_.splitter))
 						state = essence_->ptr_state;
 
@@ -3651,7 +3652,7 @@ namespace nana
 					// The first display is empty when the listbox is empty.
 					if (!first_disp.empty())
 					{
-						index_pair hoverred_pos(npos, npos);	//the hoverred item.
+						index_pair hoverred_pos(npos, npos);	//the hovered item.
 
 						//if where == lister || where == checker, 'second' indicates the offset to the  relative display-order pos of the scroll offset_y which stands for the first item to be displayed in lister.
 						if ((ptr_where.first == parts::list || ptr_where.first == parts::checker) && ptr_where.second != npos)
@@ -3879,7 +3880,7 @@ namespace nana
 					for (size_type display_order{ 0 }; display_order < seqs.size(); ++display_order)  // get the cell (column) index in the order headers are displayed
 					{
 						const auto column_pos = seqs[display_order];
-						const auto & col = essence_->header.at(column_pos);     // deduce the corresponding header which is in a kind of dislay order
+						const auto & col = essence_->header.at(column_pos);     // deduce the corresponding header which is in a kind of display order
 
 						if (col.width_px > essence_->scheme_ptr->text_margin)
 						{
@@ -4724,7 +4725,7 @@ namespace nana
 						cat_ = &(*ess->lister.get(pos.cat));
 				}
 
-				/// the main porpose of this it to make obvious that item_proxy operate with absolute positions, and dont get moved during sort()
+				/// the main purpose of this it to make obvious that item_proxy operate with absolute positions, and don't get moved during sort()
 				item_proxy item_proxy::from_display(essence *ess, const index_pair &relative)
 				{
 					return item_proxy{ ess, ess->lister.index_cast(relative, true) };
@@ -4735,7 +4736,7 @@ namespace nana
 					return item_proxy{ess_, ess_->lister.index_cast(relative, true)};
 				}
 
-				/// posible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
+				/// possible use: last_selected_display = last_selected.to_display().item; use with caution, it get invalidated after a sort()
 				index_pair item_proxy::to_display() const
 				{
 					return ess_->lister.index_cast(pos_, false);	//convert absolute position to display position
@@ -5455,9 +5456,12 @@ namespace nana
 			internal_scope_guard lock;
 
 			if (_m_ess().lister.enable_ordered(enable))
+			{
 				_m_ess().update();
+				return true;
+			}
 
-			return true;
+			return false;
 		}
 
 		void listbox::auto_draw(bool enabled) noexcept
@@ -5811,7 +5815,7 @@ namespace nana
 			auto & ess = _m_ess();
 
 			ess.lister.clear();
-            unsort();   // apperar to be espected
+            unsort();   // appear to be expected
 
 			ess.calc_content_size(false);
 			ess.content_view->change_position(0, false, false);
@@ -5946,7 +5950,7 @@ namespace nana
 			_m_ess().header.at(col).weak_ordering = std::move(strick_ordering);
 		}
 
-        /// sort() and ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+        /// sort() and invalidates any existing reference from display position to absolute item, that is: after sort() display offset point to different items
         void listbox::sort_col(size_type col, bool reverse)
 		{
 			internal_scope_guard lock;
@@ -5959,7 +5963,7 @@ namespace nana
 			return _m_ess().lister.sort_attrs().column;
 		}
 
-        /// potencially ivalidate any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+        /// potentially invalidates any existing reference from display position to absolute item, that is: after sort() display offset point to different items
 		void listbox::unsort()
 		{
 			internal_scope_guard lock;

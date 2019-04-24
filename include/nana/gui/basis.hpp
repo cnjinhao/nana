@@ -183,7 +183,7 @@ namespace nana
  
 A window has an appearance. This appearance can be specified when a window is being created. 
 To determine the appearance of a window there is a structure named nana::appearance with 
-a bool member for each feature with can be included or excluded in the "apereance" of the windows form. 
+a bool member for each feature with can be included or excluded in the "appearance" of the windows form. 
 But in practical development is hard to describe the style of the appearance using the struct nana::appearance.
 If a form would to be defined without min/max button and sizable border, then
 
@@ -282,7 +282,7 @@ that return a corresponding nana::appearance with predefined values.
 									set_type::template count<sizable>::value);
 			}
 		};
-	};//end namespace apper
+	};//end namespace appear
 
 	/// Interface for caret operations
 	class caret_interface

@@ -65,7 +65,7 @@ namespace nana
 	void exec(
 		unsigned wait,         // = 1,      ///< for the GUI to be constructed, in seconds  
 		unsigned wait_end,     // = 1,      ///< for the GUI to be destructed, in seconds
-		std::function<void()>f // = {}      ///< emit events to mimics user actions and may asert results
+		std::function<void()>f // = {}      ///< emit events to mimics user actions and may assert results
 	)
 	{
 			

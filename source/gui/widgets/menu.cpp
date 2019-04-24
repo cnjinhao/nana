@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -84,7 +84,7 @@ namespace nana
 					crook_.check(facade<element::crook>::state::checked);
 				}
 			private:
-				//Impelement renderer_interface
+				//Implements renderer_interface
 				void background(graph_reference graph, window)
 				{
 					nana::size sz = graph.size();
@@ -133,7 +133,7 @@ namespace nana
 						return;
 					}
 					
-					//Stretchs menu icon only when it doesn't fit, center it otherwise.
+					//Stretches menu icon only when it doesn't fit, center it otherwise.
 					//Contributed by kmribti(pr#102)
 					img.paste(graph, {
 						pos.x + static_cast<int>(image_px - img.size().width) / 2,
@@ -740,7 +740,7 @@ namespace nana
 
 				struct widget_detail
 				{
-					nana::point	monitor_pos;	//It is used for determinating the monitor.
+					nana::point	monitor_pos;	//It is used for determining the monitor.
 					nana::upoint border;
 				}detail_;
 			};//end class menu_drawer
@@ -819,7 +819,7 @@ namespace nana
 					events.mouse_down.connect_unignorable(fn);
 					events.mouse_up.connect_unignorable(fn);
 
-					timer_.interval(100);
+					timer_.interval(std::chrono::milliseconds{ 100 });
 					timer_.elapse([this]{
 						this->_m_open_sub(500);	//Try to open submenu
 					});
@@ -927,7 +927,7 @@ namespace nana
 					this->_m_close_all();	//means deleting this;
 					//The deleting operation has moved here, because item.event_handler.operator()(ip)
 					//may create a window, which make a killing focus for menu window, if so the close_all
-					//operation preformences after item.event_handler.operator()(ip), that would be deleting this object twice!
+					//operation performs after item.event_handler.operator()(ip), that would be deleting this object twice!
 
 					if (item.event_handler)
 					{

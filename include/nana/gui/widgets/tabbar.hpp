@@ -328,7 +328,7 @@ namespace nana
 		tabbar& append(std::wstring text, window attach_wd, value_type value = {})
 		{
 			if (attach_wd && API::empty_window(attach_wd))
-				throw std::invalid_argument("Appening a tab to a tabbar - error: tabbar.attach: invalid window handle");
+				throw std::invalid_argument("Appending a tab to a tabbar - error: tabbar.attach: invalid window handle");
 
 			this->get_drawer_trigger().insert(::nana::npos, to_nstring(std::move(text)), std::move(value));
 			if (attach_wd)
@@ -409,7 +409,7 @@ namespace nana
 			this->get_drawer_trigger().text(pos, to_nstring(str));
 		}
 
-		std::string text(std::size_t pos) const /// Returns a title of a specified item, If pos is invalid, the method trhows a std::out_of_range object.
+		std::string text(std::size_t pos) const /// Returns a title of a specified item, If pos is invalid, the method throws a std::out_of_range object.
 		{
 			return to_utf8(this->get_drawer_trigger().text(pos));
 		}

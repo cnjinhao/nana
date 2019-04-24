@@ -86,12 +86,12 @@ namespace nana
 					timer_.reset();
 					if (duration_)
 					{
-						timer_.interval(static_cast<unsigned>(duration_));
+						timer_.interval(std::chrono::milliseconds{ duration_ });
 						timer_.elapse(std::bind(&tip_form::_m_tick_duration, this));
 					}
 					else
 					{
-						timer_.interval(500);
+						timer_.interval(std::chrono::milliseconds{ 500 });
 						timer_.elapse(std::bind(&tip_form::_m_tick, this));
 					}
 					timer_.start();

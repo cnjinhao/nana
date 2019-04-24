@@ -376,7 +376,7 @@ namespace nana
 						{
 							text_pos += static_cast<int>(extent_size.width);
 
-							//Adjust height of extent_size for special text alignement.
+							//Adjust height of extent_size for special text alignment.
 							if (fblock::aligns::baseline == fblock->text_align)
 							{
 								ascent = static_cast<unsigned>(data->ascent());
@@ -420,7 +420,7 @@ namespace nana
 
 						text_pos = 0;
 						max_content_height = max_ascent = max_descent = 0;
-						//Adjust height of extent_size for special text alignement.
+						//Adjust height of extent_size for special text alignment.
 						if (fblock::aligns::baseline == fblock->text_align)
 						{
 							ascent = static_cast<unsigned>(data->ascent());

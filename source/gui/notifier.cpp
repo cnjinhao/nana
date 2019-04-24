@@ -1,7 +1,7 @@
 /*
  *	Implementation of Notifier
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -351,13 +351,14 @@ namespace nana
 #endif
 	}
 
-	void notifier::period(unsigned ms)
+	void notifier::period(std::chrono::milliseconds ms)
 	{
 #if defined(NANA_WINDOWS)
-		if (ms && impl_->icons.size())
+		if (ms.count() && impl_->icons.size())
 		{
-			ms /= static_cast<unsigned>(impl_->icons.size());
-			impl_->ani_timer.interval(ms < 16 ? 16 : ms);
+			auto frame_ms = (std::max)(ms.count() / static_cast<long long>(impl_->icons.size()), static_cast<long long>(16));
+
+			impl_->ani_timer.interval(std::chrono::milliseconds{frame_ms});
 			impl_->ani_timer.start();
 		}
 		else

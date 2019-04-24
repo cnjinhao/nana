@@ -312,14 +312,14 @@ checkbox& group::add_option(std::string text)
 		drawing dw(*this);
 
 		//When the group is resized, the drawing is called before moving the caption, but
-		//the drawing of group requires the lastest position of caption for gradual rectangle.
-		//For the requirement, a move event handler is required for listning the change of caption's position.
+		//the drawing of group requires the latest position of caption for gradual rectangle.
+		//For the requirement, a move event handler is required for listening the change of caption's position.
 		impl_->caption.events().move([this](const arg_move&){
 			if (align::left != impl_->caption_align)
 				API::refresh_window(*this);
 		});
 
-		// This drawing function is owner by the onwer of dw (the outer panel of the group widget), not by dw !!
+		// This drawing function is owner by the owner of dw (the outer panel of the group widget), not by dw !!
 		dw.draw([this](paint::graphics& graph)
 		{
 			auto gap_px = impl_->gap - 1;

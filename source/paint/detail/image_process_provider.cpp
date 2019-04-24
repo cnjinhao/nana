@@ -18,8 +18,8 @@ namespace paint
 
 		image_process_provider::image_process_provider()
 		{
-			add<paint::detail::algorithms::bilinear_interoplation>(stretch_, "bilinear interoplation");
-			add<paint::detail::algorithms::proximal_interoplation>(stretch_, "proximal interoplation");
+			add<paint::detail::algorithms::bilinear_interoplation>(stretch_, "bilinear interpolation");
+			add<paint::detail::algorithms::proximal_interoplation>(stretch_, "proximal interpolation");
 			add<paint::detail::algorithms::alpha_blend>(alpha_blend_, "alpha_blend");
 			add<paint::detail::algorithms::blend>(blend_, "blend");
 			add<paint::detail::algorithms::bresenham_line>(line_, "bresenham_line");

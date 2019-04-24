@@ -1,7 +1,7 @@
 /**
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -98,6 +98,7 @@ namespace drawerbase
 		void transparent(bool value);
 		bool transparent() const;
 	};//end class checkbox
+
     /// for managing checkboxs in radio mode
 	class radio_group
 	{
@@ -113,8 +114,28 @@ namespace drawerbase
 		constexpr static const std::size_t npos = static_cast<std::size_t>(-1);
 		~radio_group();
 		void add(checkbox&);
-		std::size_t checked() const;       ///< Retrieves the index of the checkbox which is checked.
+
+		///< Retrieves the index of checked option. It returns radio_group::npos if no checkbox is checked.
+		std::size_t checked() const;
 		std::size_t size() const;
+
+		template<typename Function>
+		void on_clicked(Function&& click_fn)
+		{
+			for (auto & e : ui_container_)
+			{
+				e.uiobj->events().click(std::move(click_fn));
+			}
+		}
+
+		template<typename Function>
+		void on_checked(Function&& check_fn)
+		{
+			for (auto & e : ui_container_)
+			{
+				e.uiobj->events().checked(std::move(check_fn));
+			}
+		}
 	private:
 		std::vector<element_tag> ui_container_;
 	};

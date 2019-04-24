@@ -511,7 +511,7 @@ namespace detail
 				if (impl_->wd_register.available(owner))
 				{
 					if (owner->flags.destroying)
-						throw std::runtime_error("the specified owner is destoryed");
+						throw std::runtime_error("the specified owner is destroyed");
 
 					native = owner->root_widget->root;
 					r.x += owner->pos_root.x;
@@ -592,7 +592,7 @@ namespace detail
 				brock.emit(event_code::unload, wd, arg, true, brock.get_thread_context());
 				if (false == arg.cancel)
 				{
-					//Before close the window, its owner window should be actived, otherwise other window will be
+					//Before close the window, its owner window should be activated, otherwise other window will be
 					//activated due to the owner window is not enabled.
 					if(wd->flags.modal || (wd->owner == nullptr) || wd->owner->flags.take_active)
 						native_interface::activate_owner(wd->root);
@@ -601,7 +601,7 @@ namespace detail
 					{
 						//Close should detach the drawer and send destroy signal to widget object.
 						//Otherwise, when a widget object is been deleting in other thread by delete operator, the object will be destroyed
-						//before the window_manager destroyes the window, and then, window_manager detaches the
+						//before the window_manager destroys the window, and then, window_manager detaches the
 						//non-existing drawer_trigger which is destroyed by destruction of widget. Crash!
 						wd->drawer.detached();
 						wd->widget_notifier->destroy();
@@ -915,7 +915,7 @@ namespace detail
 				}
 			}
 
-			//Before resiz the window, creates the new graphics
+			//Before resizing the window, creates the new graphics
 			paint::graphics graph;
 			paint::graphics root_graph;
 			if (category::flags::lite_widget != wd->other.category)
@@ -1183,7 +1183,7 @@ namespace detail
 			//A fix by Katsuhisa Yuasa
 			//The menubar token window will be redirected to the prev focus window when the new
 			//focus window is a menubar.
-			//The focus window will be restored to the prev focus which losts the focus becuase of
+			//The focus window will be restored to the prev focus which losts the focus because of
 			//memberbar.
 			if (prev_focus && (wd == wd->root_widget->other.attribute.root->menubar))
 				wd = prev_focus;
@@ -1294,7 +1294,7 @@ namespace detail
 
 		//enable_tabstop
 		//@brief: when users press a TAB, the focus should move to the next widget.
-		//	this method insert a window which catchs an user TAB into a TAB window container
+		//	this method insert a window which catches an user TAB into a TAB window container
 		//	the TAB window container is held by a wd's root widget. Not every widget has a TAB window container,
 		//	the container is created while a first Tab Window is setting
 		void window_manager::enable_tabstop(core_window_t* wd)
@@ -1720,7 +1720,7 @@ namespace detail
 
 		void window_manager::_m_move_core(core_window_t* wd, const point& delta)
 		{
-			if(category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its childs are not to be changed
+			if(category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its children are not to be changed
 			{
 				wd->pos_root += delta;
 

@@ -1,7 +1,7 @@
 /*
 *	A Content View Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2017-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2017-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -132,7 +132,7 @@ namespace nana {
 							}
 							else if (this->drag_view_move && this->drive(arg.pos))
 							{
-								tmr.interval(16);
+								tmr.interval(std::chrono::milliseconds{ 16 });
 								tmr.start();
 							}
 						}
@@ -277,7 +277,7 @@ namespace nana {
 					else
 					{
 						cv_scroll->horz.close();
-						//If horz is allowed, it indicates the horzontal origin is not moved
+						//If horz is allowed, it indicates the horizontal origin is not moved
 						//Make sure the x origin is zero
 						if (horz_allowed)
 							origin.x = 0;
