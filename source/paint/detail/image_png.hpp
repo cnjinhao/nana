@@ -30,15 +30,20 @@ namespace nana
 				png_byte color_type = ::png_get_color_type(png_ptr, info_ptr);
 				const auto bit_depth = ::png_get_bit_depth(png_ptr, info_ptr);
 
+				pixbuf_.open(png_width, png_height);
+
 				//do some extra work for palette/gray color type
 				if (PNG_COLOR_TYPE_PALETTE == color_type)
 					::png_set_palette_to_rgb(png_ptr);
-				else if ((PNG_COLOR_TYPE_GRAY == color_type) && (bit_depth < 8))
+				else if ((PNG_COLOR_TYPE_GRAY == color_type) || (PNG_COLOR_TYPE_GRAY_ALPHA == color_type))
 					::png_set_gray_to_rgb(png_ptr);
 
 				auto is_alpha_enabled = (::png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS) != 0);
 				if (is_alpha_enabled)
 					::png_set_tRNS_to_alpha(png_ptr);
+
+				is_alpha_enabled |= ((PNG_COLOR_MASK_ALPHA & color_type) != 0);
+				pixbuf_.alpha_channel(is_alpha_enabled);
 
 				//make sure 8-bit per channel
 				if (16 == bit_depth)
@@ -51,11 +56,6 @@ namespace nana
 				png_bytep * row_ptrs = new png_bytep[png_height];
 				const std::size_t png_rowbytes = ::png_get_rowbytes(png_ptr, info_ptr);
 
-				pixbuf_.open(png_width, png_height);
-
-				is_alpha_enabled |= ((PNG_COLOR_MASK_ALPHA & color_type) != 0);
-				pixbuf_.alpha_channel(is_alpha_enabled);
-
 				if (is_alpha_enabled && (png_rowbytes == png_width * sizeof(pixel_argb_t)))
 				{
 					for (int i = 0; i < png_height; ++i)
@@ -63,14 +63,17 @@ namespace nana
 
 					::png_read_image(png_ptr, row_ptrs);
 
-					for (int i = 0; i < png_height; ++i)
+					if (std::is_same<pixel_argb_t, pixel_color_t>::value)
 					{
-						auto p = pixbuf_.raw_ptr(i);
-						for (int u = 0; u < png_width; ++u)
+						for (int i = 0; i < png_height; ++i)
 						{
-							auto t = p[u].element.red;
-							p[u].element.red = p[u].element.blue;
-							p[u].element.blue = t;
+							auto p = pixbuf_.raw_ptr(i);
+							for (int u = 0; u < png_width; ++u)
+							{
+								auto t = p[u].element.red;
+								p[u].element.red = p[u].element.blue;
+								p[u].element.blue = t;
+							}
 						}
 					}
 				}
@@ -82,7 +85,6 @@ namespace nana
 						row_ptrs[i] = reinterpret_cast<png_bytep>(png_pixbuf + png_rowbytes * i);
 
 					::png_read_image(png_ptr, row_ptrs);
-					//::png_destroy_read_struct(&png_ptr, &info_ptr, 0);
 
 					std::size_t png_pixel_bytes = png_rowbytes / png_width;
 
