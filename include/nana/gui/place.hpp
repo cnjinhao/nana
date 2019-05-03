@@ -107,22 +107,10 @@ namespace nana
 		class error :public std::invalid_argument
 		{
 		public:
-			error( const std::string&     what,
-				   const place&           plc,
-				   std::string            field = "unknown",
-				   std::string::size_type pos = std::string::npos)
-
-				: std::invalid_argument{ "Place error  " + what 
-				                        + " from widget " + API::window_caption(plc.window_handle()).substr(0,80)
-				                        + " in fleld " + field
-						                + ( pos == std::string::npos ? "" : "at  at position " + std::to_string(pos)  )
-						                + "in div_text:\n" + plc.div()},
-				  base_what    { what }, 
-				  owner_caption{ API::window_caption(plc.window_handle()).substr(0,80) },
-				  field        { field },
-				  div_text     { plc.div() },
-				  pos          { pos }
-			{}
+			error(	const std::string& what,
+					const place& plc,
+					std::string            field = "unknown",
+					std::string::size_type pos = std::string::npos);
 			std::string base_what;
 			std::string owner_caption;  ///< truncate caption (title) of the "placed" widget
 			std::string div_text;       ///< involved div_text
