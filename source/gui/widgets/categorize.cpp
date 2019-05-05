@@ -1,4 +1,4 @@
-/*
+/**
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/categorize.cpp
+ *	@file nana/gui/widgets/categorize.cpp
  */
 
 #include <nana/gui/wvl.hpp>

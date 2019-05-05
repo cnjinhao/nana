@@ -1,19 +1,19 @@
 /**
  *	A group widget implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2015-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2015-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
- *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	(See accompanying file LICENSE or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/group.cpp
+ *	@file nana/gui/widgets/group.cpp
  *
- *	@Author: Stefan Pfeifer(st-321), Ariel Vina-Rodriguez (qPCR4vir)
+ *	@author Stefan Pfeifer(st-321), Ariel Vina-Rodriguez (qPCR4vir)
  *
  *	@brief group is a widget used to visually group and layout other widgets.
  *
- * 	@contributor:
+ * 	@contributor
  *		dankan1890(https://github.com/dankan1890)
  */
 

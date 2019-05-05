@@ -1,14 +1,14 @@
-/*
+/**
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
- *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	(See accompanying file LICENSE or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/place.cpp
- *	@contributors:	Ariel Vina-Rodriguez
+ *	@file nana/gui/place.cpp
+ *	@contributors	Ariel Vina-Rodriguez
  *					dankan1890(PR#156)
  */
 
@@ -3674,10 +3674,12 @@ namespace nana
 						std::string field,
 						std::string::size_type pos)
 
-		: std::invalid_argument{ "nana::place error  " + what
-								+ " from widget '" + API::window_caption(plc.window_handle()).substr(0,80)
-								+ "' in fleld '" + field
-								+ (pos == std::string::npos ? "' " : "' at  at position " + std::to_string(pos))
+		: std::invalid_argument{  "from widget '" 
+		                        + API::window_caption(plc.window_handle()).substr(0,80)
+								+ "'; nana::place error "
+		                        + what 
+		                        + "' in field '" + field
+								+ (pos == std::string::npos ? "' " : "' at position " + std::to_string(pos))
 								+ " in div_text:\n" + plc.div() },
 		base_what{ what },
 		owner_caption{ API::window_caption(plc.window_handle()).substr(0,80) },

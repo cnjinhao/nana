@@ -139,7 +139,7 @@ namespace nana
 		{
 			return name && (*name == '_' || (('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z')));
 		}
-		void modify(const char* field_name, const char* div_text);	///< Modifies a specified field.
+		void modify(const char* field_name, const char* div_text);	///< Modifies a specified field. May throw placa::error
 
 		field_reference field(const char* name);///< Returns a field with the specified name.
 

@@ -1,13 +1,13 @@
-/*
+/**
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
- *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	(See accompanying file LICENSE or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/place_parts.hpp
+ *	@file nana/gui/place_parts.hpp
  */
 #ifndef NANA_GUI_PLACE_PARTS_HPP
 #define NANA_GUI_PLACE_PARTS_HPP
