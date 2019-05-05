@@ -3106,8 +3106,8 @@ namespace nana
 			div->fit = fit;
 			div->fit_parameters = std::move(fit_parameters);
 		}
-		catch (place::error& e) { throw; }
-		catch (       error& e) { throw; }
+		catch (place::error& ) { throw; }
+		catch (       error& ) { throw; }
 		catch (place_parts::tokenizer::error& e)
 		{
 			throw error(e.what(), name, e.pos);
@@ -3260,7 +3260,8 @@ namespace nana
 	void place::bind(window wd)
 	{
 		if (impl_->window_handle)
-			throw std::runtime_error("place.bind: it has already bound to a window.");
+			throw error(" bind('"+ API::window_caption(wd).substr(0, 80)
+			                + "'): it was already bound to another window.", *this);
 
 		impl_->window_handle = wd;
 		impl_->event_size_handle = API::events(wd).resized.connect_unignorable([this](const arg_resized& arg)
@@ -3299,14 +3300,26 @@ namespace nana
 			impl_->root_division.swap(div);
 			impl_->div_text.swap(div_text);
 		}
+		catch (place::error & ) { throw; }
 		catch (place::implement::error & e)
 		{
-			throw place::error("failed to set div('"+div_text+"'): " + e.what(), *this, e.field, e.pos);
+			throw error("failed to set div('" + div_text + "'): " + e.what(), *this, e.field, e.pos);
 		}
-		catch (...) // tokenizer error
+		catch (place_parts::tokenizer::error & e)
 		{
-			//redefined a name of field
-			throw;
+			throw error("failed to set div('" + div_text + "'): " + e.what(), *this, "", e.pos);
+		}
+		catch (std::invalid_argument & e)
+		{
+			throw error("failed to set div('" + div_text + "'): " + e.what(), *this);
+		}
+		catch (std::exception & e)
+		{
+			throw error("failed to set div('"+div_text+"'): unexpected error: " +e.what(), *this );
+		}
+		catch (...)
+		{
+			throw error("failed to set div('" + div_text + "'): unknonw error", *this);
 		}
 	}
 
@@ -3385,15 +3398,35 @@ namespace nana
 				}
 			}
 		}
-		catch (std::exception&e)        
+		catch (place::error & ) 
 		{
 			replaced->swap(impl_->tmp_replaced);
-			throw error( std::string("modify()")+e.what(), *this, name);
+			throw; 
 		}
-		catch (...)           
+		catch (place::implement::error & e)
 		{
 			replaced->swap(impl_->tmp_replaced);
-			throw error("modify() unknonw error", *this, name);
+			throw error("failed to modify('"+std::string(name) +", "+ div_text + "'): " + e.what(), *this, e.field, e.pos);
+		}
+		catch (place_parts::tokenizer::error & e)
+		{
+			replaced->swap(impl_->tmp_replaced);
+			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): " + e.what(), *this, "", e.pos);
+		}
+		catch (std::invalid_argument & e)
+		{
+			replaced->swap(impl_->tmp_replaced);
+			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): " + e.what(), *this);
+		}
+		catch (std::exception & e)
+		{
+			replaced->swap(impl_->tmp_replaced);
+			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): unexpected error: " + e.what(), *this);
+		}
+		catch (...)
+		{
+			replaced->swap(impl_->tmp_replaced);
+			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): unknonw error", *this);
 		}
 	}
 
