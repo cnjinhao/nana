@@ -3648,8 +3648,8 @@ namespace nana
 								+ " in div_text:\n" + plc.div() },
 		base_what{ what },
 		owner_caption{ API::window_caption(plc.window_handle()).substr(0,80) },
-		field{ field },
 		div_text{ plc.div() },
+		field{ field },
 		pos{ pos }
 	{}
 	//end class place
