@@ -1465,7 +1465,7 @@ the nana::detail::basic_window member pointer scheme
 		size_type column_size() const;
 
 		/// Move column to view_position
-		void move_column(size_type abs_pos, size_type view_pos);
+        void move_column(size_type abs_pos, size_type view_pos);
 
         /// Sort columns in range first_col to last_col inclusive using the values from a row
         void reorder_columns(size_type first_col,

@@ -256,6 +256,7 @@
     <ClInclude Include="..\..\include\nana\gui.hpp" />
     <ClInclude Include="..\..\include\nana\gui\animation.hpp" />
     <ClInclude Include="..\..\include\nana\gui\basis.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\dragdrop.hpp" />
     <ClInclude Include="..\..\include\nana\gui\dragger.hpp" />
     <ClInclude Include="..\..\include\nana\gui\drawing.hpp" />
     <ClInclude Include="..\..\include\nana\gui\effects.hpp" />
