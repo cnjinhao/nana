@@ -549,9 +549,9 @@ namespace nana
 					if (!front) view++;
 					if (view >= cont_.size() )		return;
 
-					auto i = std::find_if( cont_.begin(),
-							               cont_.end(),
-							               [&](const column& c){return col==c.index;});
+					auto i = std::find_if(   cont_.begin(),
+							              cont_.end(),
+							              [&](const column& c){return col==c.index;});
 
 					if (i==cont_.end()) return;
 
@@ -4474,7 +4474,7 @@ namespace nana
 						essence_->stop_mouse_selection();
 						need_refresh = true;
 					}
-					
+
 					if (operation_states::msup_deselect == essence_->operation.state)
 					{
 						essence_->operation.state = operation_states::none;
@@ -6193,7 +6193,7 @@ namespace nana
 			
 			std::vector<size_type> new_idx;
 			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
-			
+
 			internal_scope_guard lock;
 			auto ip_row = this->at(row);
 			auto pnany=_m_ess().lister.anyobj(row,false);

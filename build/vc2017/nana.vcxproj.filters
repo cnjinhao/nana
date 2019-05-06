@@ -474,6 +474,9 @@
     <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\nana\gui\dragdrop.hpp">
+      <Filter>Include\gui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\nana\pop_ignore_diagnostic">

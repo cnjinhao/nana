@@ -17,6 +17,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
     target_compile_options(nana PRIVATE  -Wall
                                  PUBLIC  -g   )
 
+        # todo: set in target property of nana
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native -DNDEBUG")
+
     set(THREADS_PREFER_PTHREAD_FLAG ON)               #  todo - test this
     find_package(Threads REQUIRED)
     target_link_libraries(nana PRIVATE Threads::Threads)

@@ -35,7 +35,10 @@ namespace nana{
 	}//end namespace drawerbase
 
 	class group
-		: public widget_object<category::widget_tag, drawerbase::panel::drawer, general_events, drawerbase::group::scheme>
+		: public widget_object<category::widget_tag,
+		                       drawerbase::panel::drawer,
+		                       general_events,
+		                       drawerbase::group::scheme>
 	{
 		struct implement;
 	public:
@@ -56,9 +59,8 @@ namespace nana{
 		group(window parent, const rectangle& = {}, bool visible = true);
 
 		///  The construction that creates the widget and set the title or caption
-
-		group(window			parent,		///< a handle to the parent
-			  ::std::string		title,		///< caption of the group
+		group(window			parent,		        ///< a handle to the parent
+			  ::std::string	    title,		        ///< caption of the group
 			  bool				formatted = false,  ///< Enable/disable the formatted text for the title
 			  unsigned			gap = 2,			///< between the content and the external limit
 			  const rectangle&	r = {} ,

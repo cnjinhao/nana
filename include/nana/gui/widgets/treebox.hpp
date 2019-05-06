@@ -350,7 +350,9 @@ namespace nana
     /// \brief  Displays a hierarchical list of items, such as the files and directories on a disk.
     /// See also in [documentation](http://nanapro.org/en-us/documentation/widgets/treebox.htm)
     class treebox
-		:public widget_object <category::widget_tag, drawerbase::treebox::trigger, drawerbase::treebox::treebox_events, drawerbase::treebox::scheme>
+		:public widget_object <category::widget_tag,
+		                        drawerbase::treebox::trigger,
+		                        drawerbase::treebox::treebox_events, drawerbase::treebox::scheme>
 	{
 	public:
         /// A type refers to the item and is also used to iterate through the nodes.
