@@ -33,13 +33,54 @@ namespace nana
 	{
 		namespace toolbar
 		{
-		    struct item_proxy
-		    {
-				nana::toolbar& widget;
-				std::size_t button;
+			enum class tool_type
+			{
+				button,
+				toggle
+			};
 
-				void enable(bool enable_state);
+		    class item_proxy
+		    {
+			public:
+				item_proxy(::nana::toolbar*, std::size_t pos);
+
+				bool enable() const;
+				item_proxy& enable(bool enable_state);
+
+				item_proxy& tooltype(tool_type type); ///< Sets the tool style.
+
+				bool istoggle() const; ///< Returns true if the tool style is toggle.
+				bool toggle() const; ///< Gets the tool toggle state (only if tool style is toggle).
+				item_proxy& toggle(bool toggle_state); ///< Sets the tool toggle state (only if tool style is toggle).
+				std::string toggle_group() const;	///< Returns the toggle group associated with the tool (only if tool style is toggle).
+				item_proxy& toggle_group(const ::std::string& group);	///< Adds the tool to a toggle group (only if tool style is toggle).
+
+				item_proxy& textout(bool show); ///< Show/Hide the text inside the button
+
+			private:
+				nana::toolbar* const tb_;
+				std::size_t const pos_;
 		    };
+
+			struct item_type
+			{
+				std::string text;
+				nana::paint::image image;
+				unsigned	pixels{ 0 };
+				unsigned	position{ 0 }; // last item position.
+				nana::size	textsize;
+				bool		enable{ true };
+
+				tool_type	type{ tool_type::button };
+				bool		toggle{ false };
+				std::string group;
+
+				bool		textout{ false };
+
+				item_type(const std::string& text, const nana::paint::image& img, tool_type type)
+					:text(text), image(img), type(type)
+				{}
+			};
 
 			struct toolbar_events
 				: public general_events
@@ -49,7 +90,6 @@ namespace nana
 				basic_event<arg_toolbar> leave;		///< The mouse leaves a control button.
 			};
 
-			struct item_type;
 			class item_container;
 
 			class drawer
@@ -90,6 +130,7 @@ namespace nana
 	{
 	public:
 		using size_type = std::size_t;      ///< A type to count the number of elements.
+		using tool_type = drawerbase::toolbar::tool_type;
 
 		toolbar() = default;
 		toolbar(window, bool visible, bool detached=false);
@@ -102,6 +143,17 @@ namespace nana
 		
 		bool enable(size_type index) const;
 		void enable(size_type index, bool enable_state);
+
+		void tooltype(size_type index, tool_type type); ///< Sets the tool style.
+
+		bool istoggle(size_type index) const; ///< Returns true if the tool style is toggle.
+		bool toggle(size_type index) const; ///< Gets the tool toggle state (only if tool style is toggle).
+		void toggle(size_type index, bool toggle_state); ///< Sets the tool toggle state (only if tool style is toggle).
+		std::string toggle_group(size_type index) const;	///< Returns the toggle group associated with the tool (only if tool style is toggle).
+		void toggle_group(size_type index, const ::std::string& group);	///< Adds the tool to a toggle group (only if tool style is toggle).
+
+		void textout(size_type index, bool show); ///< Show/Hide the text inside the button
+
 		void scale(unsigned s);   ///< Sets the scale of control button.
 
 		/// Enable to place buttons at right part. After calling it, every new button is right aligned.
