@@ -156,8 +156,8 @@ namespace nana
 				enum class state_t{normal, highlighted, selected};
 				const static unsigned extra_size = 6;
 
-				item_renderer(nana::paint::graphics& graph, bool textout, unsigned scale, const ::nana::color& bgcolor)
-					:graph(graph), textout(textout), scale(scale), bgcolor(bgcolor)
+				item_renderer(nana::paint::graphics& graph, unsigned scale, const ::nana::color& bgcolor, const ::nana::color& fgcolor)
+					:graph(graph), scale(scale), bgcolor(bgcolor), fgcolor(fgcolor)
 				{}
 
 				void operator()(int x, int y, unsigned width, unsigned height, item_type& item, state_t state)
@@ -207,17 +207,17 @@ namespace nana
 						width -= scale;
 					}
 
-					if(textout)
+					if(item.textout)
 					{
-						graph.string({ x + static_cast<int>(width - item.textsize.width) / 2, y + static_cast<int>(height - item.textsize.height) / 2 }, item.text);
+						graph.string({ x + static_cast<int>(width - item.textsize.width) / 2, y + static_cast<int>(height - item.textsize.height) / 2 }, item.text, fgcolor );
 					}
 				}
 
 			protected:
 				nana::paint::graphics& graph;
-				bool textout;
 				unsigned scale;
 				::nana::color bgcolor;
+				::nana::color fgcolor;
 			};
 
 			struct drawer::drawer_impl_type
@@ -226,7 +226,6 @@ namespace nana
 				paint::graphics* graph_ptr{ nullptr };
 
 				unsigned scale{16};
-				bool textout{false};
 				size_type which{npos};
 				item_renderer::state_t state{item_renderer::state_t::normal};
 
@@ -263,10 +262,11 @@ namespace nana
 					int x = 2, y = 2;
 
 					auto bgcolor = API::bgcolor(widget_->handle());
+					auto fgcolor = API::fgcolor(widget_->handle());
 					graph.palette(true, bgcolor);
 					graph.gradual_rectangle(rectangle{ graph.size() }, bgcolor.blend(colors::white, 0.1), bgcolor.blend(colors::black, 0.05), true);
 
-					item_renderer ir(graph, impl_->textout, impl_->scale, bgcolor);
+					item_renderer ir(graph, impl_->scale, bgcolor, fgcolor);
 					size_type index = 0;
 
 					for (auto item : impl_->items.container())
@@ -449,11 +449,19 @@ namespace nana
 						if (item->text.size())
 							item->textsize = impl_->graph_ptr->text_extent_size(item->text);
 
-						if (item->image.empty() == false)
+						if(item->image.empty())
+						{
+							if(item->textsize.width && item->textout)
+								item->pixels = item->textsize.width + 8;
+							else
+								item->pixels = impl_->scale + item_renderer::extra_size;
+						}
+						else
+						{
 							item->pixels = impl_->scale + item_renderer::extra_size;
-
-						if (item->textsize.width && impl_->textout)
-							item->pixels += item->textsize.width + 8;
+							if(item->textsize.width && item->textout)
+								item->pixels += item->textsize.width + 8;
+						}
 					}
 				}
 			//class drawer
@@ -499,6 +507,12 @@ namespace nana
 			std::string item_proxy::toggle_group() const
 			{
 				return tb_->toggle_group(pos_);
+			}
+
+			item_proxy& item_proxy::textout(bool show)
+			{
+				tb_->textout(pos_, show);
+				return *this;
 			}
 
 			item_proxy& item_proxy::toggle_group(const ::std::string& group)
@@ -654,7 +668,22 @@ namespace nana
 				if(m && (m->group != group))
 				{
 					m->group = group;
-					API::refresh_window(this->handle()); //XXX
+					API::refresh_window(this->handle());
+				}
+			}
+		}
+
+		void toolbar::textout(size_type index, bool show)
+		{
+			auto & items = get_drawer_trigger().items();
+
+			if(items.size() > index)
+			{
+				auto m = items.at(index);
+				if(m && (m->textout != show))
+				{
+					m->textout = show;
+					API::refresh_window(this->handle());
 				}
 			}
 		}
