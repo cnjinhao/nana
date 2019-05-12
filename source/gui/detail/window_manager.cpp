@@ -1051,6 +1051,29 @@ namespace detail
 			return true;
 		}
 
+		void window_manager::update_requesters(core_window_t* root_wd)
+		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+
+			if (this->available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
+			{
+				for (auto wd : root_wd->other.attribute.root->update_requesters)
+				{
+					using paint_operation = window_layer::paint_operation;
+					if (!this->available(wd))
+						continue;
+
+					//#431
+					//Redraws the widget when it has beground effect.
+					//Because the widget just redraw if it didn't have bground effect when it was inserted to the update_requesters queue
+					window_layer::paint(wd, (wd->effect.bground ? paint_operation::try_refresh : paint_operation::have_refreshed), false);
+					this->map(wd, true);
+				}
+			}
+
+		}
+
 		void window_manager::refresh_tree(core_window_t* wd)
 		{
 			//Thread-Safe Required!

@@ -117,6 +117,7 @@ namespace detail
 		void map(core_window_t*, bool forced, const rectangle* update_area = nullptr);
 
 		bool update(core_window_t*, bool redraw, bool force, const rectangle* update_area = nullptr);
+		void update_requesters(core_window_t* root_wd);
 		void refresh_tree(core_window_t*);
 
 		void do_lazy_refresh(core_window_t*, bool force_copy_to_screen, bool refresh_tree = false);

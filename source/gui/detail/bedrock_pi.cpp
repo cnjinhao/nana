@@ -91,8 +91,25 @@ namespace nana
 		private:
 			bedrock			*const brock_;
 			core_window_t	*const wd_;
-
 		};
+
+		//class root_guard
+		bedrock::root_guard::root_guard(bedrock& brock, basic_window* root_wd):
+			brock_(brock),
+			root_wd_(root_wd)
+		{
+			root_wd_->other.attribute.root->lazy_update = true;
+		}
+
+		bedrock::root_guard::~root_guard()
+		{
+			if (!brock_.wd_manager().available(root_wd_))
+				return;
+
+			root_wd_->other.attribute.root->lazy_update = false;
+			root_wd_->other.attribute.root->update_requesters.clear();
+		}
+		//end class root_guard
 
 		bedrock::core_window_t* bedrock::focus()
 		{
