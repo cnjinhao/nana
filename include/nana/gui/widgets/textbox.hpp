@@ -1,4 +1,4 @@
-/**
+﻿/**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
@@ -176,6 +176,10 @@ namespace nana
 
 		/// Read the text from a specified line with a set offset. It returns true for success.
 		bool getline(std::size_t line_index,std::size_t offset,std::string& text) const;
+
+    // Get all text from textbox.
+    // It returns a empty string if failed or the textbox is empty.
+    std::string text() const { return caption(); }
 
 		/// Read the text from a specified line; returns an empty optional on failure
 		std::optional<std::string> getline(std::size_t pos) const;
