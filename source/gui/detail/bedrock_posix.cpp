@@ -556,6 +556,7 @@ namespace detail
 			context.is_alt_pressed = false;
 	}
 
+#if 0
 	class window_proc_guard
 	{
 	public:
@@ -576,6 +577,7 @@ namespace detail
 	private:
 		detail::basic_window* const root_wd_;
 	};
+#endif
 
 	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
 	{
@@ -593,7 +595,8 @@ namespace detail
 		{
 			auto const root_wd = root_runtime->window;
 			auto msgwnd = root_wd;
-			window_proc_guard wp_guard{ root_wd };
+
+			detail::bedrock::root_guard rw_guard{ brock, root_wd };
 
 			auto& context = *brock.get_thread_context(msgwnd->thread_id);
 
@@ -1215,14 +1218,8 @@ namespace detail
 				}
 			}
 
-			if (wd_manager.available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
-			{
-				for (auto wd : root_wd->other.attribute.root->update_requesters)
-				{
-					window_layout::paint(wd, window_layout::paint_operation::have_refreshed, false);
-					wd_manager.map(wd, true);
-				}
-			}
+
+			wd_manager.update_requesters(root_wd);
 
 			root_runtime = wd_manager.root_runtime(native_window);
 			if(root_runtime)

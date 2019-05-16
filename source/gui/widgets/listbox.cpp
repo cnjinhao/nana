@@ -1199,23 +1199,15 @@ namespace nana
 					return{};
 				}
 
-                /// return a ref to the real item object at display!!! position pos using current sorting only if it is active, and at absolute position if no sorting is currently active.
+				/// return a ref to the real item object at display position
 				category_t::container::value_type& at(const index_pair& pos)
 				{
-					auto acc_pos = pos.item;
-					if (npos != sort_attrs_.column)
-						acc_pos = index_cast(pos, true).item;	//convert display position to absolute position
-
-					return get(pos.cat)->items.at(acc_pos);
+					return get(pos.cat)->items.at(index_cast(pos, true).item);
 				}
 
 				const category_t::container::value_type& at(const index_pair& pos) const
 				{
-					auto acc_pos = pos.item;
-					if (npos != sort_attrs_.column)
-						acc_pos = index_cast(pos, true).item;	//convert display position to absolute position
-
-					return get(pos.cat)->items.at(acc_pos);
+					return get(pos.cat)->items.at(index_cast(pos, true).item);
 				}
 
 				std::vector<cell> at_model(const index_pair& pos) const
@@ -6043,7 +6035,7 @@ namespace nana
 			return *this;
 		}
 
-		listbox& listbox::category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed)
+		listbox& listbox::category_icon(const paint::image& img_expanded, const paint::image& img_collapsed)
 		{
 			internal_scope_guard lock;
 			_m_ess().ctg_icon_renderer = [img_expanded, img_collapsed](paint::graphics& graph, const rectangle& rt_icon, bool expanded)

@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,6 +42,20 @@ namespace detail
 		struct thread_context;
 
 		class flag_guard;
+
+		/// RAII class for window message processing
+		class root_guard
+		{
+		public:
+			/// Enables lazy_update
+			root_guard(bedrock& brock, basic_window* root_wd);
+
+			/// Disables lazy-update and clears update requesters queue.
+			~root_guard();
+		private:
+			bedrock& brock_;
+			basic_window* const root_wd_;
+		};
 
 		~bedrock();
 		void pump_event(window, bool is_modal);

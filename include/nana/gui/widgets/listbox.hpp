@@ -1571,7 +1571,7 @@ the nana::detail::basic_window member pointer scheme
 		 * @param img_collapsed An icon displayed in front of category title when the category is collapsed.
 		 * @return the reference of *this.
 		 */
-		listbox& category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed);
+		listbox& category_icon(const paint::image& img_expanded, const paint::image& img_collapsed);
 
 		/// Returns first visible element
 		/**
