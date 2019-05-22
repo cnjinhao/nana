@@ -1593,6 +1593,16 @@ the nana::detail::basic_window member pointer scheme
 		 * @return index_pairs containing all visible items.
 		 */
 		index_pairs visibles() const;
+
+		/// Sets a predicate that indicates whether to deselect items when mouse_up is triggered.
+		/**
+		 * The predicate is called before the listbox attempts to deselect the selected items in the mouse_up event. Other situations,
+		 * the predicates isn't called, for example, releasing mouse button after user performed a box selection, because listbox doesn't deselect the items during this operation.
+		 * @param predicate Decides to deselect the items.
+		 *	The paramater of predicate indicates the mouse button which is releasing.
+		 *	It returns true to deselect the selected items. It returns false to cancel to deselect the selected items.
+		 */
+		void set_deselect(std::function<bool(nana::mouse)> predicate);
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;

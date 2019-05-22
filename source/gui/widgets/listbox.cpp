@@ -2011,6 +2011,8 @@ namespace nana
 
 				std::function<void(paint::graphics&, const rectangle&, bool)> ctg_icon_renderer;	///< Renderer for the category icon
 
+				std::function<bool(nana::mouse)> pred_msup_deselect;
+
 				struct operation_rep
 				{
 					operation_states state{operation_states::none};
@@ -4470,7 +4472,10 @@ namespace nana
 					if (operation_states::msup_deselect == essence_->operation.state)
 					{
 						essence_->operation.state = operation_states::none;
-						need_refresh |= essence_->lister.select_for_all(false, essence_->operation.item);
+
+						//Don't deselect if the predicate returns false
+						if(!(essence_->pred_msup_deselect && !essence_->pred_msup_deselect(arg.button)))
+							need_refresh |= essence_->lister.select_for_all(false, essence_->operation.item);
 					}
 
 					if (need_refresh)
@@ -6100,6 +6105,11 @@ namespace nana
 			}
 
 			return indexes;
+		}
+
+		void listbox::set_deselect(std::function<bool(nana::mouse)> predicate)
+		{
+			_m_ess().pred_msup_deselect = std::move(predicate);
 		}
 
 		drawerbase::listbox::essence & listbox::_m_ess() const
