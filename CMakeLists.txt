@@ -54,27 +54,25 @@ target_compile_features(nana
 # in your own CMakeLists.txt, and them :
 # target_link_libraries(yourApp PRIVATE nana )
 
-set(NANA_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/source)
-
-set(NANA_SOURCE_SUBDIRS
-        /.
-        /detail
-        /detail/posix
-        /filesystem
-        /gui
-        /gui/detail
-        /gui/widgets
-        /gui/widgets/skeletons
-        /paint
-        /paint/detail
-        /system
-        /threads
-        )
+set(NANA_SOURCE_DIR         ${CMAKE_CURRENT_LIST_DIR}/source)
+set(NANA_SOURCE_SUBDIRS     /.
+                            /detail
+                            /detail/posix
+                            /filesystem
+                            /gui
+                            /gui/detail
+                            /gui/widgets
+                            /gui/widgets/skeletons
+                            /paint
+                            /paint/detail
+                            /system
+                            /threads
+                            )
 if(NANA_CMAKE_ENABLE_AUDIO)
     list(APPEND NANA_SOURCE_SUBDIRS
-            /audio
-            /audio/detail
-            )
+                            /audio
+                            /audio/detail
+                            )
 endif()
 
 # collect all source files in the source-sub-dir
@@ -87,26 +85,24 @@ target_sources(nana PRIVATE ${SOURCES})
 ###    collect all headers sub-directories in a list to avoid duplication   ###
 # To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library / target_sources
 # and Use SOURCE_GROUP if all your sources are in the same directory
-set(NANA_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-
-set(NANA_INCLUDE_SUBDIRS
-        /.
-        /filesystem
-        /gui
-        /gui/detail
-        /gui/widgets
-        /gui/widgets/skeletons
-        /paint
-        /paint/detail
-        /pat
-        /system
-        /threads
-        )
+set(NANA_INCLUDE_DIR        ${CMAKE_CURRENT_LIST_DIR}/include)
+set(NANA_INCLUDE_SUBDIRS    /.
+                            /filesystem
+                            /gui
+                            /gui/detail
+                            /gui/widgets
+                            /gui/widgets/skeletons
+                            /paint
+                            /paint/detail
+                            /pat
+                            /system
+                            /threads
+                            )
 if(NANA_CMAKE_ENABLE_AUDIO)
     list(APPEND NANA_INCLUDE_SUBDIRS
-            /audio
-            /audio/detail
-            )
+                            /audio
+                            /audio/detail
+                            )
 endif()
 
 foreach(subdir ${NANA_INCLUDE_SUBDIRS})
