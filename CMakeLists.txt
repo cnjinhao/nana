@@ -30,6 +30,7 @@ project(nana VERSION      1.6.2
 #######################     Main setting of Nana targets, sources and installs    #####################
 
 add_library(nana)
+add_library(nana::nana ALIAS nana)
 target_compile_features(nana PUBLIC cxx_std_17)
 
 #  need after cxx_std_14 or cxx_std_17 ??
