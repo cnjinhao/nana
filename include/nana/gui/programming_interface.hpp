@@ -183,6 +183,13 @@ namespace API
 		};
 	}//end namespace detail
 
+	///Sets languages
+	/**
+	 * Specifies the languages in order to make the program display multi-languages correctly
+	 * Under Windows, the pragram can display multi-languages correctly, so this function is useless for Windows.
+	 */
+	void font_languages(const std::string& langs);
+
 	void exit();	    ///< close all windows in current thread
 	void exit_all();	///< close all windows
 

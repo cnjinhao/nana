@@ -1,4 +1,5 @@
 #include "platform_abstraction.hpp"
+#include <set>
 #include <nana/deploy.hpp>
 #include "../paint/truetype.hpp"
 
@@ -153,6 +154,389 @@ IsWindows8OrGreater()
 
 namespace nana
 {
+#ifdef NANA_USE_XFT
+	//A fallback fontset provides the multiple languages support.
+	class fallback_fontset
+	{
+	public:
+		fallback_fontset():
+			disp_(::nana::detail::platform_spec::instance().open_display())
+		{
+		}
+
+		~fallback_fontset()
+		{
+			for(auto xft: xftset_)
+				::XftFontClose(disp_, xft);
+		}
+
+		void open(const std::string& font_desc, const std::set<std::string>& langs)
+		{
+			for(auto xft: xftset_)
+				::XftFontClose(disp_, xft);
+
+			xftset_.clear();
+
+			std::set<std::string> loaded;
+			for(auto & lang : langs)
+			{
+				std::string patstr = "*" + font_desc + ":lang=" + lang;
+
+				auto pat = ::XftNameParse(patstr.c_str());
+				XftResult res;
+				auto match_pat = ::XftFontMatch(disp_, ::XDefaultScreen(disp_), pat, &res);
+
+				if (match_pat)
+				{
+					char * sf;
+					if(XftResultTypeMismatch != ::XftPatternGetString(match_pat, "family", 0, &sf))
+					{
+						//Avoid loading a some font repeatedly
+						if(loaded.count(sf))
+							continue;
+					}
+
+					auto xft = ::XftFontOpenPattern(disp_, match_pat);
+					if(xft)
+						xftset_.push_back(xft);
+				}				
+			}
+		}
+
+		int draw(::XftDraw* xftdraw, ::XftColor * xftcolor, ::XftFont* xft, int x, int y, const wchar_t* str, std::size_t len)
+		{
+			if(nullptr == str || 0 == len)
+				return 0;
+
+			int const init_x = x;
+			std::unique_ptr<FT_UInt[]> glyph_indexes(new FT_UInt[len]);
+
+			while(true)
+			{
+				auto preferred = _m_scan_fonts(xft, str, len, glyph_indexes.get());
+				x += _m_draw(xftdraw, xftcolor, preferred.first, x, y, str, preferred.second, glyph_indexes.get());
+
+				if(len == preferred.second)
+					break;
+
+				len -= preferred.second;
+				str += preferred.second;
+			}
+
+			return x - init_x;
+		}
+
+		std::unique_ptr<unsigned[]> glyph_pixels(::XftFont* xft, const wchar_t* str, std::size_t len)
+		{
+			if(nullptr == xft || nullptr == str || 0 == len)
+				return {};
+
+			std::unique_ptr<FT_UInt[]> glyph_indexes{new FT_UInt[len]};
+
+			std::unique_ptr<unsigned[]> pxbuf{new unsigned[len]};
+
+			auto pbuf = pxbuf.get();
+			auto pstr = str;
+			auto size = len;
+
+			while(true)
+			{
+				auto preferred = _m_scan_fonts(xft, pstr, size, glyph_indexes.get());
+
+				_m_glyph_px(preferred.first, pstr, preferred.second, glyph_indexes.get(), pbuf);
+
+				if(size == preferred.second)
+					break;
+
+				size -= preferred.second;
+				pstr += preferred.second;
+				pbuf += preferred.second;
+			}
+
+			return pxbuf;
+		}
+
+		nana::size extents(::XftFont* xft, const wchar_t* str, std::size_t len)
+		{
+			nana::size extent;
+
+			if(nullptr == str || 0 == len)
+				return extent;
+
+			std::unique_ptr<FT_UInt[]> glyph_indexes(new FT_UInt[len]);
+
+			while(len > 0)
+			{
+				auto preferred = _m_scan_fonts(xft, str, len, glyph_indexes.get());
+
+				extent.width += _m_extents(preferred.first, str, preferred.second, glyph_indexes.get());
+
+				if(preferred.first->ascent + preferred.first->descent > static_cast<int>(extent.height))
+					extent.height = preferred.first->ascent + preferred.first->descent;
+
+				len -= preferred.second;
+				str += preferred.second;
+			}
+			return extent;
+		}
+	private:
+		//Tab is a invisible character
+		int _m_draw(::XftDraw* xftdraw, ::XftColor* xftcolor, ::XftFont* xft, int x, int y, const wchar_t* str, std::size_t len, const FT_UInt* glyph_indexes)
+		{
+			int const init_x = x;
+
+			auto p = str;
+			auto const end = str + len;
+
+			y += xft->ascent;
+
+			::XGlyphInfo ext;
+			while(p < end)
+			{
+				auto off = p - str;
+				auto ptab = _m_find_tab(p, end);
+				if(ptab == p)
+				{
+					++p;
+					//x += static_cast<int>(tab_pixels_);
+					continue;
+				}
+
+				auto const size = ptab - p;
+				::XftDrawGlyphs(xftdraw, xftcolor, xft, x, y, glyph_indexes + off, size);
+				::XftGlyphExtents(disp_, xft, glyph_indexes + off, size, &ext);
+
+				x += ext.xOff;
+
+				if(ptab == end)
+					break;
+
+				p = ptab + 1;
+			}
+
+			return x - init_x;
+		}
+
+		//Tab is a invisible character
+		unsigned _m_extents(::XftFont* xft, const wchar_t* const str, const std::size_t len, const FT_UInt* glyph_indexes)
+		{
+			unsigned pixels = 0;
+			auto p = str;
+			auto const end = str + len;
+
+			::XGlyphInfo ext;
+			while(p < end)
+			{
+				auto off = p - str;
+				auto ptab = _m_find_tab(p, end);
+				if(ptab == p)
+				{
+					++p;
+					//extents->xOff += tab_pixels_;
+					continue;
+				}
+
+				::XftGlyphExtents(disp_, xft, glyph_indexes + off, ptab - p, &ext);
+
+				pixels += ext.xOff;
+
+				if(end == ptab)
+					break;
+				p = ptab + 1;
+			}
+
+			return pixels;
+		}
+
+		//Tab is a invisible character
+		void _m_glyph_px(::XftFont* xft, const wchar_t* str, std::size_t len, const FT_UInt* glyph_indexes, unsigned* pxbuf)
+		{
+			auto const end = str + len;
+
+			::XGlyphInfo extent;
+			for(auto p = str; p < end; ++p)
+			{
+				if('\t' != *p)
+				{
+					::XftGlyphExtents(disp_, xft, glyph_indexes, 1, &extent);
+					*pxbuf = extent.xOff;
+				}
+				else
+					*pxbuf = 0;//tab_pixels_;
+
+				++glyph_indexes;
+			}
+		}
+
+		static const wchar_t* _m_find_tab(const wchar_t* begin, const wchar_t* end)
+		{
+			while(begin < end)
+			{
+				if('\t' == *begin)
+					return begin;
+
+				++begin;
+			}
+			return end;
+		}
+
+		std::pair<::XftFont*, std::size_t> _m_scan_fonts(::XftFont* xft, const wchar_t* str, std::size_t len, FT_UInt* const glyphs) const
+		{
+			auto preferred = xft;
+			auto idx = ::XftCharIndex(disp_, xft, *str);
+			if(0 == idx)
+			{
+				for(auto ft : xftset_)
+				{
+					idx = ::XftCharIndex(disp_, ft, *str);
+					if(idx)
+					{
+						preferred = ft;
+						break;
+					}
+				}				
+			}
+
+			*glyphs = idx;
+
+			if(0 == idx)
+			{
+				//scan the str with all fonts until a char index is found.
+				for(std::size_t i = 1; i < len; ++i)
+				{
+					if(::XftCharIndex(disp_, xft, str[i]))
+						return {preferred, i};
+
+					for(auto ft : xftset_)
+					{
+						if(::XftCharIndex(disp_, ft, str[i]))
+							return {preferred, i};
+					}
+					glyphs[i] = 0;
+				}
+
+				return {preferred, len};
+			}
+
+			//scan the str with preferred font until a char index is invalid.
+			for(std::size_t i = 1; i < len; ++i)
+			{
+				idx = ::XftCharIndex(disp_, preferred, str[i]);
+				if(0 == idx)
+					return {preferred, i};
+
+				glyphs[i] = idx;
+			}
+
+			return {preferred, len};
+		}
+	private:
+		Display* const disp_;
+		std::vector<::XftFont*> xftset_;
+	};
+
+	/// Fallback fontset manager
+	class fallback_manager
+	{
+	public:
+		fallback_manager():
+			langs_(_m_split_lang("ar,hi,zh-cn,zh-tw,ja,ko,th"))
+		{
+		}
+
+		void languages(const std::string& lang)
+		{
+			langs_ = _m_split_lang(lang);
+
+			for(auto & xft : xft_table_)
+			{
+				xft.second->open(xft.first, langs_);
+			}
+		}
+
+		std::shared_ptr<fallback_fontset> make_fallback(const std::string& font_desc)
+		{
+			auto i = xft_table_.find(font_desc);
+			if(i != xft_table_.end())
+				return i->second;
+			
+			auto fb = std::make_shared<fallback_fontset>();
+
+			fb->open(font_desc, langs_);
+
+			xft_table_[font_desc] = fb;
+
+			return fb;
+		}
+
+		void release_fallback(std::shared_ptr<fallback_fontset>& p)
+		{
+			for(auto i = xft_table_.cbegin(); i != xft_table_.cend(); ++i)
+			{
+				if(i->second == p)
+				{
+					if(p.use_count() <= 2)
+						xft_table_.erase(i);
+					break;
+				}
+			}
+		}
+
+	private:
+		static std::set<std::string> _m_split_lang(const std::string& lang)
+		{
+			std::set<std::string> langs;
+			std::size_t start_pos = 0;
+			while(true)
+			{
+				auto pos = lang.find(',', start_pos);
+				auto l = lang.substr(start_pos, lang.npos == pos? lang.npos : pos - start_pos);
+
+				if(!l.empty())
+					langs.insert(l);
+
+				if(lang.npos == pos)
+					break;
+
+				start_pos = pos + 1;
+			}
+
+			return langs;
+		}
+	private:
+		std::set<std::string> langs_;
+		std::map<std::string, std::shared_ptr<fallback_fontset>> xft_table_;
+	};
+#endif
+
+	struct platform_runtime
+	{
+		std::shared_ptr<font_interface> font;
+
+#ifdef NANA_X11
+		std::map<std::string, std::size_t> fontconfig_counts;
+#endif
+#ifdef NANA_USE_XFT
+		fallback_manager fb_manager;
+#endif
+	};
+
+	namespace
+	{
+		namespace data
+		{
+			static platform_runtime* storage;
+		}
+	}
+
+	static platform_runtime& platform_storage()
+	{
+		if (nullptr == data::storage)
+			throw std::runtime_error("platform_abstraction is empty");
+
+		return *data::storage;
+	}
+
 
 	class internal_font
 		: public font_interface
@@ -160,13 +544,24 @@ namespace nana
 	public:
 		using path_type = std::filesystem::path;
 
+#ifdef NANA_USE_XFT
+		internal_font(const path_type& ttf, const std::string& font_family, double font_size, const font_style& fs, native_font_type native_font, std::shared_ptr<fallback_fontset> fallback):
+			ttf_(ttf),
+			family_(font_family),
+			size_(font_size),
+			style_(fs),
+			native_handle_(native_font),
+			fallback_(fallback)
+		{}
+#else
 		internal_font(const path_type& ttf, const std::string& font_family, double font_size, const font_style& fs, native_font_type native_font):
 			ttf_(ttf),
 			family_(font_family),
 			size_(font_size),
 			style_(fs),
 			native_handle_(native_font)
-		{}
+		{}		
+#endif
 
 		~internal_font()
 		{
@@ -175,6 +570,7 @@ namespace nana
 #elif defined(NANA_X11)
 			auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
+			platform_storage().fb_manager.release_fallback(fallback_);
 			::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
 #	else
 			::XFreeFontSet(disp, reinterpret_cast<XFontSet>(native_handle_));
@@ -203,38 +599,57 @@ namespace nana
 		{
 			return native_handle_;
 		}
+
+#ifdef NANA_USE_XFT
+		fallback_fontset* fallback() const
+		{
+			return fallback_.get();
+		}
+#endif
 	private:
 		path_type	const ttf_;
 		std::string	const family_;
 		double		const size_;
 		font_style	const style_;
 		native_font_type const native_handle_;
-	};
-
-	struct platform_runtime
-	{
-		std::shared_ptr<font_interface> font;
-
-#ifdef NANA_X11
-		std::map<std::string, std::size_t> fontconfig_counts;
+#ifdef NANA_USE_XFT
+		std::shared_ptr<fallback_fontset> fallback_;
 #endif
 	};
 
-	namespace
+#ifdef NANA_USE_XFT
+	void nana_xft_draw_string(::XftDraw* xftdraw, ::XftColor* xftcolor, font_interface* ft, const nana::point& pos, const wchar_t * str, std::size_t len)
 	{
-		namespace data
-		{
-			static platform_runtime* storage;
-		}
+		auto fallback = static_cast<internal_font*>(ft)->fallback();
+		if(nullptr == fallback)
+			return;
+
+		auto xft = reinterpret_cast<XftFont*>(static_cast<internal_font*>(ft)->native_handle());
+		fallback->draw(xftdraw, xftcolor, xft, pos.x, pos.y, str, len);
 	}
 
-	static platform_runtime& platform_storage()
-	{
-		if (nullptr == data::storage)
-			throw std::runtime_error("platform_abstraction is empty");
 
-		return *data::storage;
+	nana::size nana_xft_extents(font_interface* ft, const wchar_t* str, std::size_t len)
+	{
+		auto fallback = static_cast<internal_font*>(ft)->fallback();
+		if(nullptr == fallback)
+			return {};
+
+		auto xft = reinterpret_cast<XftFont*>(static_cast<internal_font*>(ft)->native_handle());
+		return fallback->extents(xft, str, len);
 	}
+
+	std::unique_ptr<unsigned[]> nana_xft_glyph_pixels(font_interface* ft, const wchar_t* str, std::size_t len)
+	{
+		auto fallback = static_cast<internal_font*>(ft)->fallback();
+		if(nullptr == fallback)
+			return {};
+
+		auto xft = reinterpret_cast<XftFont*>(static_cast<internal_font*>(ft)->native_handle());
+		return fallback->glyph_pixels(xft, str, len);
+	}
+#endif
+
 
 	void platform_abstraction::initialize()
 	{
@@ -281,6 +696,13 @@ namespace nana
 		return pt;
 #else
 		return 10;
+#endif
+	}
+
+	void platform_abstraction::font_languages(const std::string& langs)
+	{
+#ifdef NANA_USE_XFT
+		platform_storage().fb_manager.languages(langs);
 #endif
 	}
 
@@ -364,10 +786,22 @@ namespace nana
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
 		if(font_family.empty())
-			font_family = '*';
+			font_family = "*";
 
-		std::string pat_str = font_family + '-' + std::to_string(size_pt ? size_pt : platform_abstraction::font_default_pt());
-		auto pat = ::XftNameParse(pat_str.c_str());
+		std::string pat_str = '-' + std::to_string(size_pt ? size_pt : platform_abstraction::font_default_pt());
+		if(fs.weight < 400)
+			pat_str += ":light";
+		else if(400 == fs.weight)
+			pat_str += ":medium";
+		else if(fs.weight < 700)
+			pat_str += ":demibold";
+		else
+			pat_str += (700 == fs.weight ? ":bold": ":black"); 
+
+		if(fs.italic)
+			pat_str += ":slant=italic";
+
+		auto pat = ::XftNameParse((font_family + pat_str).c_str());
 		XftResult res;
 		auto match_pat = ::XftFontMatch(disp, ::XDefaultScreen(disp), pat, &res);
 
@@ -387,8 +821,16 @@ namespace nana
 		XFontSet fd = ::XCreateFontSet(display_, const_cast<char*>(pat_str.c_str()), &missing_list, &missing_count, &defstr);
 #	endif
 #endif
+
 		if (fd)
+		{
+#ifdef NANA_USE_XFT
+			auto fallback = platform_storage().fb_manager.make_fallback(pat_str);
+			return std::make_shared<internal_font>(std::move(ttf), std::move(font_family), size_pt, fs, reinterpret_cast<native_font_type>(fd), fallback);
+#else
 			return std::make_shared<internal_font>(std::move(ttf), std::move(font_family), size_pt, fs, reinterpret_cast<native_font_type>(fd));
+#endif
+		}
 		return{};
 	}
 

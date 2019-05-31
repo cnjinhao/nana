@@ -441,6 +441,11 @@ namespace API
 		return nullptr;
 	}
 
+	void font_languages(const std::string& langs)
+	{
+		::nana::platform_abstraction::font_languages(langs);
+	}
+
 	//close all windows in current thread
 	void exit()
 	{

@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,6 +28,10 @@
 
 namespace nana
 {
+	//Forward-declarations
+	//These names are defined platform_abstraction.cpp
+	std::unique_ptr<unsigned[]> nana_xft_glyph_pixels(font_interface*, const wchar_t* str, std::size_t len);
+
 	namespace detail
 	{
 		font_style::font_style(unsigned weight, bool italic, bool underline, bool strike_out) :
@@ -517,6 +521,7 @@ namespace paint
 				delete[] dx;
 #elif defined(NANA_X11) && defined(NANA_USE_XFT)
 
+				#if 0
 				auto disp = nana::detail::platform_spec::instance().open_display();
 				auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
 
@@ -532,6 +537,9 @@ namespace paint
 					else
 						pxbuf[i] = tab_pixels;
 				}
+				#else
+				return nana_xft_glyph_pixels(impl_->handle->font.get(), text.data(), text.size());
+				#endif
 #endif
 			}
 			return pxbuf;
