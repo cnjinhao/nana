@@ -4350,6 +4350,8 @@ namespace nana
 										}
 										else
 											lister.select_for_all(false, abs_item_pos);
+
+										lister.latest_selected_abs = abs_item_pos;
 									}
 								}
 								else
