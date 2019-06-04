@@ -24,11 +24,13 @@
 
 namespace nana
 {
+#ifdef NANA_USE_XFT
 	//Forward-declarations
 	//These names are defined platform_abstraction.cpp
 	class font_interface;
 	void nana_xft_draw_string(::XftDraw* xftdraw, ::XftColor* xftcolor, font_interface* ft, const nana::point& pos, const wchar_t * str, std::size_t len);
 	nana::size nana_xft_extents(font_interface* ft, const wchar_t* str, std::size_t len);
+#endif
 
 namespace paint
 {
