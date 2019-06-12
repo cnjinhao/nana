@@ -1,4 +1,4 @@
 version: 1.0.{build}
 build:
-  project: build\vc2015\nana.sln
+  project: build\vc2017\nana.sln
   verbosity: minimal
