@@ -40,7 +40,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
     if(BUILD_SHARED_LIBS)
         target_compile_options(nana PUBLIC  -lgcc -lstdc++)
     else()
-        target_link_libraries(nana PUBLIC -static -static-libstdc++)
+        target_link_libraries(nana PUBLIC  -static-libgcc -static-libstdc++)
     endif(BUILD_SHARED_LIBS)
 
 endif()
