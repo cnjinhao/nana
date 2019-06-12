@@ -63,7 +63,7 @@ before_script :
   - cd demo-build
 
 script:
-  - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
+  - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON -DNANA_CMAKE_INSTALL=OFF
   - make install
   # todo: separate resources from sources (a directory for images)
   - ls
