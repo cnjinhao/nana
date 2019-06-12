@@ -100,6 +100,10 @@ namespace nana{
 		group& enable_format_caption(bool format);
 
 		group& collocate() noexcept;
+
+		/// this will set the `usr_div_str` for an internal field, called the "user field".
+		/// The "full" `place` of a `group` widget is internally divided into a field for the title,
+		/// a field for the added "options" and a field for "user" widgets.
 		group& div(const char* div_str) noexcept;
 		field_reference operator[](const char* field);
 

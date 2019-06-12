@@ -1,8 +1,8 @@
-option(NANA_CMAKE_INSTALL "Install nana when compile the library (to be consumed without cmake)" OFF)
+option(NANA_CMAKE_INSTALL "Install nana when compile the library (to be consumed without cmake)" ON)
 
 # Install the include directories too.
 if(NANA_CMAKE_INSTALL)
-    # this is the prefered method to consume nana directly with some specific bulid system
+    # This is a method to consume nana with a bulid system not directly supported by nana.
     # Is your responsability to ensure all compiler options are compatible with the compilation
     # of the project linking to the nana lib here generated
     target_sources(nana PRIVATE ${HEADERS})
