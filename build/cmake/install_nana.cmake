@@ -1,4 +1,4 @@
-option(NANA_CMAKE_INSTALL "Install nana when compile the library (to be consumed without cmake)" OFF)
+option(NANA_CMAKE_INSTALL "Install nana when compile the library (to be consumed without cmake)" ON)
 
 # Install the include directories too.
 if(NANA_CMAKE_INSTALL)
