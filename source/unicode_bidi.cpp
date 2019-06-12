@@ -976,7 +976,7 @@ namespace nana
 			return unicode_character_type::katakana;
 
 		if (('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z') || (0x00AA == ch || 0x00B5 == ch || 0x00BA == ch) || (0x00C0 <= ch && ch <= 0x00D6) ||
-			(0x00D8 <= ch && ch <= 0x00F6) || (0x00F8 <= ch && ch <= 0x0236) || (0x0250 <= ch || ch <= 0x02C1))
+			(0x00D8 <= ch && ch <= 0x00F6) || (0x00F8 <= ch && ch <= 0x0236) || (0x0250 <= ch && ch <= 0x02C1))
 			return unicode_character_type::aletter;
 
 		if ('\'' == ch || 0x00AD == ch || 0x00B7 == ch || 0x05F4 == ch || 0x2019 == ch || 0x2027 == ch)

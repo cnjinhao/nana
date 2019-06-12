@@ -1,7 +1,7 @@
 /*
  *	Platform Abstraction
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2017-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -34,6 +34,7 @@ namespace nana
 		/// Shutdown before destruction of platform_spec 
 		static void shutdown();
 		static double font_default_pt();
+		static void font_languages(const std::string&);
 		static ::std::shared_ptr<font> default_font(const ::std::shared_ptr<font>&);
 		static ::std::shared_ptr<font> make_font(const ::std::string& font_family, double size_pt, const font::font_style& fs);
 		static ::std::shared_ptr<font> make_font_from_ttf(const path_type& ttf, double size_pt, const font::font_style& fs);
