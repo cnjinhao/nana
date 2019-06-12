@@ -44,7 +44,7 @@ matrix:
 
 before_install:
   - cd ..
-  - git clone --depth=1 --branch=hotfix https://github.com/qPCR4vir/nana-demo.git nana-demo
+  - git clone --depth=1 --branch=develop https://github.com/qPCR4vir/nana-demo.git nana-demo
   - export PATH="$HOME/bin:$PATH"
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.12/cmake-3.12.0-rc3-Linux-x86_64.sh || true
   - chmod -R +x /tmp/tools
@@ -63,7 +63,7 @@ before_script :
   - cd demo-build
 
 script:
-  - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON
+  - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON -DNANA_CMAKE_INSTALL=OFF
   - make install
   # todo: separate resources from sources (a directory for images)
   - ls
