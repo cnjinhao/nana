@@ -15,7 +15,6 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <vector>
-#include <cassert>
 #include <cstring>
 
 #if defined(NANA_WINDOWS)
@@ -71,7 +70,6 @@ namespace nana{ namespace system{
 			bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 			HDC hDC = ::GetDC(NULL);
 			if (::GetDIBits(hDC, (HBITMAP)g.pixmap(), 0, 1, NULL, (BITMAPINFO *)&bmi, DIB_RGB_COLORS) == 0) {
-				assert(false);
 				::ReleaseDC(NULL, hDC);
 				return false;
 			}
@@ -109,7 +107,6 @@ namespace nana{ namespace system{
 						::CloseClipboard();
 					}
 			}
-			assert(false);
 			::GlobalFree(h_gmem);
 			return false;
 

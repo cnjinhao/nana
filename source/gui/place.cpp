@@ -617,7 +617,7 @@ namespace nana
 
 				: std::invalid_argument{ what + " from place implementation " },
 				  pos{ pos },
-				  field { field.empty() ? "unnamed" : field }
+				  field(field.empty() ? "unnamed" : field)
 			{}
 			std::string::size_type pos;
 			std::string            field;
@@ -3674,18 +3674,18 @@ namespace nana
 						std::string field,
 						std::string::size_type pos)
 
-		: std::invalid_argument{  "from widget '" 
+		: std::invalid_argument(  "from widget '" 
 		                        + API::window_caption(plc.window_handle()).substr(0,80)
 								+ "'; nana::place error "
 		                        + what 
 		                        + "' in field '" + field
 								+ (pos == std::string::npos ? "' " : "' at position " + std::to_string(pos))
-								+ " in div_text:\n" + plc.div() },
-		base_what{ what },
-		owner_caption{ API::window_caption(plc.window_handle()).substr(0,80) },
-		div_text{ plc.div() },
-		field{ field },
-		pos{ pos }
+								+ " in div_text:\n" + plc.div() ),
+		base_what( what ),
+		owner_caption( API::window_caption(plc.window_handle()).substr(0,80) ),
+		div_text( plc.div() ),
+		field( field ),
+		pos( pos )
 	{}
 	//end class place
 
