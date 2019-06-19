@@ -1019,7 +1019,7 @@ namespace detail
 							else if((keyboard::space == os_code) && msgwnd->flags.space_click_enabled)
 							{
 								//Clicked by spacebar
-								if((nullptr == pressed_wd) && (nullptr == pressed_wd_space))
+								if((nullptr == pressed_wd) && (nullptr == pressed_wd_space) && msgwnd->flags.enabled)
 								{
 									arg_mouse arg;
 									arg.alt = modifiers_status.alt;
@@ -1122,7 +1122,7 @@ namespace detail
 						    msgwnd = brock.focus();
 						    if(msgwnd)
 						    {
-							    if(msgwnd == pressed_wd_space)
+							    if((msgwnd == pressed_wd_space) && msgwnd->flags.enabled)
 							    {
 									msgwnd->set_action(mouse_action::normal);
 
