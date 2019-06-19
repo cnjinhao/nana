@@ -70,13 +70,13 @@ namespace nana{ namespace drawerbase
 					if (!wdg->enabled())
 					{
 						graph.palette(true, colors::white);
-						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels);
+						tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels, paint::text_renderer::mode::word_wrap);
 						graph.palette(true, static_cast<color_rgb>(0x808080));
 					}
 					else
 						graph.palette(true, wdg->fgcolor());
 
-					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels);
+					tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels, paint::text_renderer::mode::word_wrap);
 				}
 
 				//draw crook

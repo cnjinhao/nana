@@ -2059,6 +2059,11 @@ namespace nana
 					};
 				}
 
+				unsigned suspension_width() const
+				{
+					return (graph ? graph->text_extent_size(L"...").width : 0);
+				}
+
 				bool cs_status(index_pair abs_pos, bool for_selection) const
 				{
 					if (abs_pos.is_category())
@@ -3352,7 +3357,7 @@ namespace nana
 						else
 						{
 							//Default scheme
-							new_w = (std::max)(new_w, essence_->scheme_ptr->suspension_width + essence_->scheme_ptr->min_column_width);
+							new_w = (std::max)(new_w, essence_->suspension_width() + essence_->scheme_ptr->min_column_width);
 						}
 
 						if(col.width_px != new_w)
@@ -3997,6 +4002,7 @@ namespace nana
 
 								if (draw_column)
 								{
+									//Draw item text
 									paint::aligner text_aligner{*graph, col.alignment};
 
 									unsigned text_margin_right = 0;
@@ -4142,7 +4148,6 @@ namespace nana
 					if (graph.text_metrics(as, ds, il))
 						essence_->text_height = as + ds;
 
-					essence_->scheme_ptr->suspension_width = graph.text_extent_size("...").width;
 					essence_->calc_content_size(true);
 				}
 
@@ -6112,6 +6117,12 @@ namespace nana
 		void listbox::set_deselect(std::function<bool(nana::mouse)> predicate)
 		{
 			_m_ess().pred_msup_deselect = std::move(predicate);
+		}
+
+		unsigned listbox::suspension_width() const
+		{
+			nana::internal_scope_guard lock;
+			return _m_ess().suspension_width();
 		}
 
 		drawerbase::listbox::essence & listbox::_m_ess() const
