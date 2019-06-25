@@ -11,8 +11,8 @@
 *
 */
 
+#include "basic_window.hpp"
 #include <nana/gui/detail/window_layout.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <algorithm>
@@ -286,7 +286,7 @@ namespace nana
 				}
 
 				if (wd->effect.bground)
-					wd->effect.bground->take_effect(reinterpret_cast<window>(wd), glass_buffer);
+					wd->effect.bground->take_effect(wd, glass_buffer);
 			}
 
 			void window_layout::_m_paste_children(core_window_t* wd, bool have_refreshed, bool req_refresh_children, const nana::rectangle& parent_rect, nana::paint::graphics& graph, const nana::point& graph_rpos)

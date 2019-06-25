@@ -11,16 +11,17 @@
 */
 
 #include "../../detail/platform_spec_selector.hpp"
+#include "basic_window.hpp"
 #include "bedrock_types.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
-#include <sstream>
 #include <nana/system/timepiece.hpp>
 #include <nana/gui/wvl.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/element_store.hpp>
+
+#include <sstream>
 #include <algorithm>
 
 namespace nana
@@ -64,11 +65,6 @@ namespace nana
 
 	namespace detail
 	{
-		bool check_window(window wd)
-		{
-			return bedrock::instance().wd_manager().available(reinterpret_cast<window_manager::core_window_t*>(wd));
-		}
-
 		void events_operation_register(event_handle evt)
 		{
 			bedrock::instance().evt_operation().register_evt(evt);
@@ -171,7 +167,7 @@ namespace nana
 
 			arg_expose arg;
 			arg.exposed = exposed;
-			arg.window_handle = reinterpret_cast<window>(wd);
+			arg.window_handle = wd;
 			if (emit(event_code::expose, wd, arg, false, get_thread_context()))
 			{
 				//Get the window who has the activated caret
@@ -203,7 +199,7 @@ namespace nana
 			if (wd)
 			{
 				arg_move arg;
-				arg.window_handle = reinterpret_cast<window>(wd);
+				arg.window_handle = wd;
 				arg.x = x;
 				arg.y = y;
 				emit(event_code::move, wd, arg, true, get_thread_context());
@@ -218,7 +214,7 @@ namespace nana
 
 				arg_mouse arg;
 				arg.evt_code = event_code::mouse_leave;
-				arg.window_handle = reinterpret_cast<window>(hovered);
+				arg.window_handle = hovered;
 				arg.pos.x = arg.pos.y = 0;
 				arg.left_button = arg.right_button = arg.mid_button = false;
 				arg.ctrl = arg.shift = false;
@@ -234,7 +230,7 @@ namespace nana
 			auto focused = root_wd->other.attribute.root->focus;
 
 			arg_focus arg;
-			arg.window_handle = reinterpret_cast<window>(focused);
+			arg.window_handle = focused;
 			arg.getting = getting;
 			arg.receiver = receiver;
 
@@ -416,7 +412,7 @@ namespace nana
 							wd->drawer.click(*arg, bForce__EmitInternal);
 						}
 						if (bProcess__External_event)
-							evts_ptr->click.emit(*arg, reinterpret_cast<window>(wd));
+							evts_ptr->click.emit(*arg, wd);
 					}
 				}
 				break;
@@ -471,7 +467,7 @@ namespace nana
 				}
 
 				if (bProcess__External_event)
-					evt_addr->emit(*arg, reinterpret_cast<window>(wd));
+					evt_addr->emit(*arg, wd);
 				break;
 			}
 			case event_code::mouse_wheel:
@@ -486,7 +482,7 @@ namespace nana
 					}
 
 					if (bProcess__External_event)
-						evts_ptr->mouse_wheel.emit(*arg, reinterpret_cast<window>(wd));
+						evts_ptr->mouse_wheel.emit(*arg, wd);
 				}
 				break;
 			}
@@ -530,7 +526,7 @@ namespace nana
 				}
 
 				if (bProcess__External_event)
-					evt_addr->emit(*arg, reinterpret_cast<window>(wd));
+					evt_addr->emit(*arg, wd);
 				break;
 			}
 			case event_code::expose:
@@ -538,7 +534,7 @@ namespace nana
 				{
 					auto arg = dynamic_cast<const arg_expose*>(&event_arg);
 					if (arg)
-						evts_ptr->expose.emit(*arg, reinterpret_cast<window>(wd));
+						evts_ptr->expose.emit(*arg, wd);
 				}
 				break;
 			case event_code::focus:
@@ -552,7 +548,7 @@ namespace nana
 						wd->drawer.focus(*arg, bForce__EmitInternal);
 					}
 					if (bProcess__External_event)
-						evts_ptr->focus.emit(*arg, reinterpret_cast<window>(wd));
+						evts_ptr->focus.emit(*arg, wd);
 				}
 				break;
 			}
@@ -567,7 +563,7 @@ namespace nana
 						wd->drawer.move(*arg, bForce__EmitInternal);
 					}
 					if (bProcess__External_event)
-						evts_ptr->move.emit(*arg, reinterpret_cast<window>(wd));
+						evts_ptr->move.emit(*arg, wd);
 				}
 				break;
 			}
@@ -582,7 +578,7 @@ namespace nana
 						wd->drawer.resizing(*arg, bForce__EmitInternal);
 					}
 					if (bProcess__External_event)
-						evts_ptr->resizing.emit(*arg, reinterpret_cast<window>(wd));
+						evts_ptr->resizing.emit(*arg, wd);
 				}
 				break;
 			}
@@ -597,7 +593,7 @@ namespace nana
 						wd->drawer.resized(*arg, bForce__EmitInternal);
 					}
 					if (bProcess__External_event)
-						evts_ptr->resized.emit(*arg, reinterpret_cast<window>(wd));
+						evts_ptr->resized.emit(*arg, wd);
 				}
 				break;
 			}
@@ -609,7 +605,7 @@ namespace nana
 					{
 						auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
 						if (evt_root)
-							evt_root->unload.emit(*arg, reinterpret_cast<window>(wd));
+							evt_root->unload.emit(*arg, wd);
 					}
 				}
 				break;
@@ -618,7 +614,7 @@ namespace nana
 				{
 					auto arg = dynamic_cast<const arg_destroy*>(&event_arg);
 					if (arg)
-						evts_ptr->destroy.emit(*arg, reinterpret_cast<window>(wd));
+						evts_ptr->destroy.emit(*arg, wd);
 				}
 				break;
 			default:

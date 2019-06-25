@@ -29,7 +29,7 @@ namespace nana
 	{
 		void form_loader_private::insert_form(::nana::widget* p)
 		{
-			bedrock::instance().manage_form_loader(reinterpret_cast<basic_window*>(p->handle()), true);
+			bedrock::instance().manage_form_loader(p->handle(), true);
 		}
 	}
 

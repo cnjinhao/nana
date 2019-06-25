@@ -311,7 +311,7 @@ namespace detail
 			}
 		}
 		else
-			wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
+			wd->drawer.map(wd, forced, update_area);
 	}
 
 	void interior_helper_for_menu(MSG& msg, native_window_type menu_window)
@@ -367,7 +367,7 @@ namespace detail
 			MSG msg;
 			if (condition_wd)
 			{
-				HWND native_handle = reinterpret_cast<HWND>(reinterpret_cast<core_window_t*>(condition_wd)->root);
+				HWND native_handle = reinterpret_cast<HWND>(condition_wd->root);
 				if (is_modal)
 				{
 					HWND owner = ::GetWindow(native_handle, GW_OWNER);
@@ -466,7 +466,7 @@ namespace detail
 
 	void assign_arg(nana::arg_mouse& arg, basic_window* wd, unsigned msg, const parameter_decoder& pmdec)
 	{
-		arg.window_handle = reinterpret_cast<window>(wd);
+		arg.window_handle = wd;
 
 		bool set_key_state = true;
 		switch (msg)
@@ -530,7 +530,7 @@ namespace detail
 
 	void assign_arg(arg_wheel& arg, basic_window* wd, const parameter_decoder& pmdec)
 	{
-		arg.window_handle = reinterpret_cast<window>(wd);
+		arg.window_handle = wd;
 		arg.evt_code = event_code::mouse_wheel;
 
 		POINT point = { pmdec.mouse.x, pmdec.mouse.y };
@@ -985,7 +985,7 @@ namespace detail
 						msgwnd->set_action(mouse_action::hovered);
 						if ((::nana::mouse::left_button == arg.button) && (pressed_wd == msgwnd))
 						{
-							click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+							click_arg.window_handle = msgwnd;
 							draw_invoker(&drawer::click, msgwnd, click_arg, &context);
 						}
 					}
@@ -997,16 +997,16 @@ namespace detail
 						draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 
 						if (click_arg.window_handle)
-							retain->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
+							retain->click.emit(click_arg, msgwnd);
 
 						if (wd_manager.available(msgwnd))
 						{
 							arg.evt_code = event_code::mouse_up;
-							retain->mouse_up.emit(arg, reinterpret_cast<window>(msgwnd));
+							retain->mouse_up.emit(arg, msgwnd);
 						}
 					}
 					else if (click_arg.window_handle)
-						retain->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
+						retain->click.emit(click_arg, msgwnd);
 
 					wd_manager.do_lazy_refresh(msgwnd, false);
 				}
@@ -1176,9 +1176,9 @@ namespace detail
 							dropfiles.pos = pos;
 
 							wd_manager.calc_window_point(msgwnd, dropfiles.pos);
-							dropfiles.window_handle = reinterpret_cast<window>(msgwnd);
+							dropfiles.window_handle = msgwnd;
 
-							msgwnd->annex.events_ptr->mouse_dropfiles.emit(dropfiles, reinterpret_cast<window>(msgwnd));
+							msgwnd->annex.events_ptr->mouse_dropfiles.emit(dropfiles, msgwnd);
 							wd_manager.do_lazy_refresh(msgwnd, false);
 						}
 					}
@@ -1232,7 +1232,7 @@ namespace detail
 											static_cast<unsigned>(r->bottom - r->top - msgwnd->extra_height));
 
 					arg_resizing arg;
-					arg.window_handle = reinterpret_cast<window>(msgwnd);
+					arg.window_handle = msgwnd;
 					arg.width = size_before.width;
 					arg.height = size_before.height;
 
@@ -1285,7 +1285,7 @@ namespace detail
 						//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
 						::nana::rectangle update_area(ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top);
 						if (!update_area.empty())
-							msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+							msgwnd->drawer.map(msgwnd, true, &update_area);
 					}
 					::EndPaint(root_window, &ps);
 			    }
@@ -1300,7 +1300,7 @@ namespace detail
 					arg.evt_code = event_code::shortkey;
 					arg.key = static_cast<wchar_t>(wParam < 0x61 ? wParam + 0x61 - 0x41 : wParam);
 					arg.ctrl = arg.shift = false;
-					arg.window_handle = reinterpret_cast<window>(msgwnd);
+					arg.window_handle = msgwnd;
 					arg.ignore = false;
 					brock.emit(event_code::shortkey, msgwnd, arg, true, &context);
 					def_window_proc = false;
@@ -1316,7 +1316,7 @@ namespace detail
 						bool focused = (brock.focus() == msgwnd);
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_press;
-						arg.window_handle = reinterpret_cast<window>(msgwnd);
+						arg.window_handle = msgwnd;
 						arg.ignore = false;
 						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
@@ -1344,7 +1344,7 @@ namespace detail
 
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_release;
-						arg.window_handle = reinterpret_cast<window>(msgwnd);
+						arg.window_handle = msgwnd;
 						arg.ignore = false;
 						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
@@ -1397,7 +1397,7 @@ namespace detail
 								arg.mid_button = false;
 								arg.pos.x = 0;
 								arg.pos.y = 0;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.window_handle = msgwnd;
 
 								msgwnd->set_action(mouse_action::pressed);
 
@@ -1412,7 +1412,7 @@ namespace detail
 						{
 							arg_keyboard arg;
 							arg.evt_code = event_code::key_press;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.window_handle = msgwnd;
 							arg.ignore = false;
 							arg.key = translate_virtual_key(wParam);
 							brock.get_key_state(arg);
@@ -1443,12 +1443,12 @@ namespace detail
 					{
 						arg_keyboard arg;
 						arg.evt_code = event_code::key_char;
-						arg.window_handle = reinterpret_cast<window>(msgwnd);
+						arg.window_handle = msgwnd;
 						arg.key = static_cast<wchar_t>(wParam);
 						brock.get_key_state(arg);
 						arg.ignore = false;
 
-						msgwnd->annex.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwnd));
+						msgwnd->annex.events_ptr->key_char.emit(arg, msgwnd);
 						if ((false == arg.ignore) && wd_manager.available(msgwnd))
 							draw_invoker(&drawer::key_char, msgwnd, arg, &context);
 
@@ -1476,7 +1476,7 @@ namespace detail
 
 								arg_click click_arg;
 								click_arg.mouse_args = nullptr;
-								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+								click_arg.window_handle = msgwnd;
 
 								arg_mouse arg;
 								arg.alt = false;
@@ -1487,7 +1487,7 @@ namespace detail
 								arg.mid_button = false;
 								arg.pos.x = 0;
 								arg.pos.y = 0;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.window_handle = msgwnd;
 
 								draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 
@@ -1500,7 +1500,7 @@ namespace detail
 							{
 								arg_keyboard keyboard_arg;
 								keyboard_arg.evt_code = event_code::key_release;
-								keyboard_arg.window_handle = reinterpret_cast<window>(msgwnd);
+								keyboard_arg.window_handle = msgwnd;
 								keyboard_arg.key = translate_virtual_key(wParam);
 								brock.get_key_state(keyboard_arg);
 								keyboard_arg.ignore = false;
@@ -1521,7 +1521,7 @@ namespace detail
 			case WM_CLOSE:
 			{
 				arg_unload arg;
-				arg.window_handle = reinterpret_cast<window>(msgwnd);
+				arg.window_handle = msgwnd;
 				arg.cancel = false;
 				brock.emit(event_code::unload, msgwnd, arg, true, &context);
 				if (!arg.cancel)
@@ -1742,9 +1742,6 @@ namespace detail
 
 	void bedrock::undefine_state_cursor(core_window_t * wd, thread_context* thrd)
 	{
-		if (nullptr == thrd)
-			thrd = get_thread_context(wd->thread_id);
-
 		HCURSOR rev_handle = ::LoadCursor(nullptr, IDC_ARROW);
 		if (!wd_manager().available(wd))
 		{
@@ -1752,6 +1749,9 @@ namespace detail
 			::SetCursor(rev_handle);
 			return;
 		}
+
+		if (nullptr == thrd)
+			thrd = get_thread_context(wd->thread_id);
 
 		wd->root_widget->other.attribute.root->state_cursor = nana::cursor::arrow;
 		wd->root_widget->other.attribute.root->state_cursor_window = nullptr;

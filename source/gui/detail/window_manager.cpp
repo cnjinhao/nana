@@ -18,7 +18,8 @@
 #include <nana/gui/detail/window_layout.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
-#include <nana/gui/detail/effects_renderer.hpp>
+
+#include "effects_renderer.hpp"
 #include "window_register.hpp"
 #include "inner_fwd_implement.hpp"
 
@@ -587,7 +588,7 @@ namespace detail
 			{
 				auto &brock = bedrock::instance();
 				arg_unload arg;
-				arg.window_handle = reinterpret_cast<window>(wd);
+				arg.window_handle = wd;
 				arg.cancel = false;
 				brock.emit(event_code::unload, wd, arg, true, brock.get_thread_context());
 				if (false == arg.cancel)
@@ -758,7 +759,7 @@ namespace detail
 
 						auto &brock = bedrock::instance();
 						arg_move arg;
-						arg.window_handle = reinterpret_cast<window>(wd);
+						arg.window_handle = wd;
 						arg.x = x;
 						arg.y = y;
 
@@ -812,7 +813,7 @@ namespace detail
 						wd->other.upd_state = basic_window::update_state::request_refresh;
 
 					arg_move arg;
-					arg.window_handle = reinterpret_cast<window>(wd);
+					arg.window_handle = wd;
 					arg.x = r.x;
 					arg.y = r.y;
 					brock.emit(event_code::move, wd, arg, true, brock.get_thread_context());
@@ -846,7 +847,7 @@ namespace detail
 					native_interface::move_window(wd->root, root_r);
 
 					arg_resized arg;
-					arg.window_handle = reinterpret_cast<window>(wd);
+					arg.window_handle = wd;
 					arg.width = root_r.width;
 					arg.height = root_r.height;
 					brock.emit(event_code::resized, wd, arg, true, brock.get_thread_context());
@@ -875,7 +876,7 @@ namespace detail
 			if (sz != wd->dimension)
 			{
 				arg_resizing arg;
-				arg.window_handle = reinterpret_cast<window>(wd);
+				arg.window_handle = wd;
 				arg.border = window_border::none;
 				arg.width = sz.width;
 				arg.height = sz.height;
@@ -970,7 +971,7 @@ namespace detail
 			}
 
 			arg_resized arg;
-			arg.window_handle = reinterpret_cast<window>(wd);
+			arg.window_handle = wd;
 			arg.width = sz.width;
 			arg.height = sz.height;
 			brock.emit(event_code::resized, wd, arg, ask_update, brock.get_thread_context());
@@ -1177,7 +1178,7 @@ namespace detail
 						prev_focus->annex.caret_ptr->activate(false);
 
 					arg.getting = false;
-					arg.window_handle = reinterpret_cast<window>(prev_focus);
+					arg.window_handle = prev_focus;
 					arg.receiver = wd->root;
 					arg.focus_reason = arg_focus::reason::general;
 					brock.emit(event_code::focus, prev_focus, arg, true, brock.get_thread_context());
@@ -1194,7 +1195,7 @@ namespace detail
 			if(wd->annex.caret_ptr)
 				wd->annex.caret_ptr->activate(true);
 
-			arg.window_handle = reinterpret_cast<window>(wd);
+			arg.window_handle = wd;
 			arg.getting = true;
 			arg.receiver = wd->root;
 			arg.focus_reason = reason;
@@ -1444,7 +1445,7 @@ namespace detail
 			if (impl_->wd_register.available(wd))
 			{
 				//the root runtime must exist, because the wd is valid. Otherse, it's bug of library
-				return root_runtime(wd->root)->shortkeys.make(reinterpret_cast<window>(wd), key);
+				return root_runtime(wd->root)->shortkeys.make(wd, key);
 			}
 			return false;
 		}
@@ -1458,7 +1459,7 @@ namespace detail
 			auto root_rt = root_runtime(wd->root);
 			if (root_rt)
 			{
-				root_rt->shortkeys.umake(reinterpret_cast<window>(wd));
+				root_rt->shortkeys.umake(wd);
 				if (with_children)
 				{
 					for (auto child : wd->children)
@@ -1475,7 +1476,7 @@ namespace detail
 				std::lock_guard<mutex_type> lock(mutex_);
 				auto object = root_runtime(native_window);
 				if(object)
-					return reinterpret_cast<core_window_t*>(object->shortkeys.find(key));
+					return object->shortkeys.find(key);
 			}
 			return nullptr;
 		}
@@ -1598,10 +1599,8 @@ namespace detail
 
 			if (!established)
 			{
-				using effect_renderer = detail::edge_nimbus_renderer<basic_window>;
-
 				//remove the window from edge nimbus effect when it is destroying
-				effect_renderer::instance().erase(wd);
+				edge_nimbus_renderer::instance().erase(wd);
 			}
 			else if (pa_root_attr != root_attr)
 			{
@@ -1705,13 +1704,11 @@ namespace detail
 				wd->annex.caret_ptr = nullptr;
 			}
 
-			using effect_renderer = detail::edge_nimbus_renderer<basic_window>;
-
 			//remove the window from edge nimbus effect when it is destroying
-			effect_renderer::instance().erase(wd);
+			edge_nimbus_renderer::instance().erase(wd);
 
 			arg_destroy arg;
-			arg.window_handle = reinterpret_cast<window>(wd);
+			arg.window_handle = wd;
 			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
 
 			//Delete the children widgets.
@@ -1770,7 +1767,7 @@ namespace detail
 				//The root_rt must exist, because wd is valid. Otherwise, it's a bug of the library.
 				auto root_rt = root_runtime(wd->root);
 
-				auto pkeys = root_rt->shortkeys.keys(reinterpret_cast<window>(wd));
+				auto pkeys = root_rt->shortkeys.keys(wd);
 				if (pkeys)
 				{
 					for (auto key : *pkeys)

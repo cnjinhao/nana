@@ -13,9 +13,9 @@
 
 #include <nana/gui/dragdrop.hpp>
 #include <nana/gui/programming_interface.hpp>
-
 #include <nana/gui/detail/bedrock.hpp>
-#include <nana/gui/detail/basic_window.hpp>
+
+#include "detail/basic_window.hpp"
 
 #include <map>
 #include <set>
@@ -961,8 +961,7 @@ namespace nana
 			if (API::is_window(window_handle))
 			{
 				dragging = true;
-				auto real_wd = reinterpret_cast<detail::basic_window*>(window_handle);
-				real_wd->other.dnd_state = dragdrop_status::not_ready;
+				window_handle->other.dnd_state = dragdrop_status::not_ready;
 			}
 
 			API::release_capture(window_handle);
@@ -1000,9 +999,7 @@ namespace nana
 			if (arg.is_left_button() && API::is_window(impl_->window_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
-
-				auto real_wd = reinterpret_cast<detail::basic_window*>(impl_->window_handle);
-				real_wd->other.dnd_state = dragdrop_status::ready;
+				impl_->window_handle->other.dnd_state = dragdrop_status::ready;
 			}
 		});
 
@@ -1010,14 +1007,13 @@ namespace nana
 			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
 				return;
 
-			auto real_wd = reinterpret_cast<detail::basic_window*>(arg.window_handle);
-			real_wd->other.dnd_state = dragdrop_status::in_progress;
+			arg.window_handle->other.dnd_state = dragdrop_status::in_progress;
 
 			std::unique_ptr<dragdrop_service::dropdata_type> dropdata{new dragdrop_service::dropdata_type};
 
 			auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle, dropdata.get(), nullptr);
 
-			real_wd->other.dnd_state = dragdrop_status::not_ready;
+			arg.window_handle->other.dnd_state = dragdrop_status::not_ready;
 			impl_->dragging = false;
 
 			if (has_dropped)
@@ -1116,9 +1112,7 @@ namespace nana
 			if (arg.is_left_button() && API::is_window(impl_->source_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
-
-				auto real_wd = reinterpret_cast<detail::basic_window*>(impl_->source_handle);
-				real_wd->other.dnd_state = dragdrop_status::ready;
+				impl_->source_handle->other.dnd_state = dragdrop_status::ready;
 			}
 		});
 
@@ -1126,13 +1120,9 @@ namespace nana
 			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
 				return;
 
-			auto real_wd = reinterpret_cast<detail::basic_window*>(arg.window_handle);
-			real_wd->other.dnd_state = dragdrop_status::in_progress;
-
+			arg.window_handle->other.dnd_state = dragdrop_status::in_progress;
 			impl_->make_drop();
-
-
-			real_wd->other.dnd_state = dragdrop_status::not_ready;
+			arg.window_handle->other.dnd_state = dragdrop_status::not_ready;
 			impl_->dragging = false;
 		});
 	}

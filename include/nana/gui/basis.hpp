@@ -24,10 +24,11 @@ namespace nana
 {
 	namespace detail
 	{
-		struct native_window_handle_impl{};
-		struct window_handle_impl{};
-		struct event_handle_impl{};
-		struct native_drawable_impl{};
+		struct basic_window;
+
+		struct native_window_handle_impl;
+		struct native_drawable_impl;
+		struct event_handle_impl;
 	}
 
 	struct accel_key
@@ -87,10 +88,11 @@ namespace nana
 		struct root_tag : public widget_tag{ static const flags value = flags::root;  };
 	}// end namespace category
 
-	using native_window_type = detail::native_window_handle_impl*;
-	using window = detail::window_handle_impl*; ///< \see [What is window class ](https://sourceforge.net/p/nanapro/discussion/general/thread/bd0fabfb/) 
-	using event_handle = detail::event_handle_impl*;
-	using native_drawable_type = detail::native_drawable_impl*;
+	using window = detail::basic_window*;							///< The window handle type representing nana window objects
+	using native_window_type = detail::native_window_handle_impl*;	///< The native window handle type representing system native windows. E.g, HWND in windows, Window in X11
+
+	using event_handle = detail::event_handle_impl*;				///< The event handle type representing nana window events
+	using native_drawable_type = detail::native_drawable_impl*;		///< The drawable handle type representing system native drawable objects.	E.g. HDC in windows, Drawable in X11
 
 
 	struct keyboard

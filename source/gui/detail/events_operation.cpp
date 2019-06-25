@@ -26,9 +26,7 @@ namespace nana
 
 				auto i = handles_.find(evt);
 				if (i != handles_.end())
-				{
-					reinterpret_cast<detail::docker_interface*>(evt)->get_event()->remove(evt);
-				}
+					reinterpret_cast<detail::event_docker_interface*>(evt)->get_event()->remove(evt);
 			}
 		//end namespace events_operation
 
@@ -80,35 +78,33 @@ namespace nana
 			void event_base::remove(event_handle evt)
 			{
 				internal_scope_guard lock;
-				if (dockers_)
+
+				for (auto i = dockers_->begin(), end = dockers_->end(); i != end; ++i)
 				{
-					for (auto i = dockers_->begin(), end = dockers_->end(); i != end; ++i)
+					if (reinterpret_cast<detail::event_docker_interface*>(evt) == *i)
 					{
-						if (reinterpret_cast<detail::docker_interface*>(evt) == *i)
+						//Checks whether this event is working now.
+						if (emitting_count_)
 						{
-							//Checks whether this event is working now.
-							if (emitting_count_)
-							{
-								static_cast<docker_base*>(*i)->flag_deleted = true;
-								deleted_flags_ = true;
-							}
-							else
-							{
-								bedrock::instance().evt_operation().cancel(evt);
-								dockers_->erase(i);
-								delete reinterpret_cast<detail::docker_interface*>(evt);
-							}
-							break;
+							static_cast<docker_base*>(*i)->flag_deleted = true;
+							deleted_flags_ = true;
 						}
+						else
+						{
+							bedrock::instance().evt_operation().cancel(evt);
+							dockers_->erase(i);
+							delete reinterpret_cast<detail::event_docker_interface*>(evt);
+						}
+						return;
 					}
 				}
 			}
 
-			event_handle event_base::_m_emplace(detail::docker_interface* docker_ptr, bool in_front)
+			event_handle event_base::_m_emplace(detail::event_docker_interface* docker_ptr, bool in_front)
 			{
 				internal_scope_guard lock;
 				if (nullptr == dockers_)
-					dockers_ = new std::vector<detail::docker_interface*>;
+					dockers_ = new std::vector<detail::event_docker_interface*>;
 
 				auto evt = reinterpret_cast<event_handle>(docker_ptr);
 
