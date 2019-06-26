@@ -42,7 +42,7 @@
 
 #if defined(NANA_USE_XFT)
 	#include <X11/Xft/Xft.h>
-	#include <iconv.h>
+//	#include <iconv.h>	//deprecated
 	#include <fstream>
 #endif
 
@@ -63,6 +63,7 @@ namespace detail
 		std::ifstream ifs_;
 	};
 
+#if 0 //deprecated
 	class charset_conv
 	{
 		charset_conv(const charset_conv&) = delete;
@@ -75,6 +76,7 @@ namespace detail
 	private:
 		iconv_t handle_;
 	};
+#endif
 #endif
 
 	struct drawable_impl_type
@@ -118,12 +120,14 @@ namespace detail
 		unsigned color_{ 0xFFFFFFFF };
 		unsigned text_color_{ 0xFFFFFFFF };
 
+#if 0 //deprecated
 #if defined(NANA_USE_XFT)
 		struct conv_tag
 		{
 			iconv_t handle;
 			std::string code;
 		}conv_;
+#endif
 #endif
 	};
 

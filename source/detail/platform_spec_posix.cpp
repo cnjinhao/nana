@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/paint/pixel_buffer.hpp>
@@ -35,6 +34,7 @@
 #include <sstream>
 
 #include "posix/msg_dispatcher.hpp"
+#include "../gui/detail/basic_window.hpp"
 
 namespace nana
 {
@@ -95,7 +95,7 @@ namespace detail
 			return std::string();
 		}
 	//end class conf
-
+#if 0
 	//class charset_conv
 		charset_conv::charset_conv(const char* tocode, const char* fromcode)
 		{
@@ -140,6 +140,7 @@ namespace detail
 			return rstr;
 		}
 	//end class charset_conv
+#endif
 #endif
 
 	//Caret implementation
@@ -338,16 +339,21 @@ namespace detail
 		string.tab_length = 4;
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
+
+#if 0 //deprecated
 #if defined(NANA_USE_XFT)
 		conv_.handle = ::iconv_open("UTF-8", NANA_UNICODE);
 		conv_.code = NANA_UNICODE;
+#endif
 #endif
 	}
 
 	drawable_impl_type::~drawable_impl_type()
 	{
+#if 0	//deprecated
 #if defined(NANA_USE_XFT)
 		::iconv_close(conv_.handle);
+#endif
 #endif
 	}
 
