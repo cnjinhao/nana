@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,7 +42,6 @@
 
 #if defined(NANA_USE_XFT)
 	#include <X11/Xft/Xft.h>
-//	#include <iconv.h>	//deprecated
 	#include <fstream>
 #endif
 
@@ -62,21 +61,6 @@ namespace detail
 	private:
 		std::ifstream ifs_;
 	};
-
-#if 0 //deprecated
-	class charset_conv
-	{
-		charset_conv(const charset_conv&) = delete;
-		charset_conv& operator=(const charset_conv*) = delete;
-	public:
-		charset_conv(const char* tocode, const char* fromcode);
-		~charset_conv();
-		std::string charset(const std::string& str) const;
-		std::string charset(const char * buf, std::size_t len) const;
-	private:
-		iconv_t handle_;
-	};
-#endif
 #endif
 
 	struct drawable_impl_type
@@ -97,16 +81,19 @@ namespace detail
 			unsigned whitespace_pixels;
 		}string;
 
+		unsigned fgcolor_rgb{ 0xFFFFFFFF };
+		unsigned bgcolor_rgb{ 0xFFFFFFFF };
+
 #if defined(NANA_USE_XFT)
 		XftDraw * xftdraw{nullptr};
 		XftColor	xft_fgcolor;
-		const std::string charset(const std::wstring& str, const std::string& strcode);
 #endif
 		drawable_impl_type();
-		~drawable_impl_type();
 
+#if 0	//deprecated
 		unsigned get_color() const;
 		unsigned get_text_color() const;
+#endif
 		void set_color(const ::nana::color&);
 		void set_text_color(const ::nana::color&);
 
@@ -117,17 +104,9 @@ namespace detail
 		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
 
 		unsigned current_color_{ 0xFFFFFF };
+#if 0	//deprecated		
 		unsigned color_{ 0xFFFFFFFF };
 		unsigned text_color_{ 0xFFFFFFFF };
-
-#if 0 //deprecated
-#if defined(NANA_USE_XFT)
-		struct conv_tag
-		{
-			iconv_t handle;
-			std::string code;
-		}conv_;
-#endif
 #endif
 	};
 

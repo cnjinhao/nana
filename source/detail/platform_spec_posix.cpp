@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -339,24 +339,9 @@ namespace detail
 		string.tab_length = 4;
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
-
-#if 0 //deprecated
-#if defined(NANA_USE_XFT)
-		conv_.handle = ::iconv_open("UTF-8", NANA_UNICODE);
-		conv_.code = NANA_UNICODE;
-#endif
-#endif
 	}
 
-	drawable_impl_type::~drawable_impl_type()
-	{
 #if 0	//deprecated
-#if defined(NANA_USE_XFT)
-		::iconv_close(conv_.handle);
-#endif
-#endif
-	}
-
 	unsigned drawable_impl_type::get_color() const
 	{
 		return color_;
@@ -366,27 +351,28 @@ namespace detail
 	{
 		return text_color_;
 	}
+#endif
 
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
-		color_ = (clr.px_color().value & 0xFFFFFF);
+		bgcolor_rgb = (clr.px_color().value & 0xFFFFFF);
 	}
 
 	void drawable_impl_type::set_text_color(const ::nana::color& clr)
 	{
-		text_color_ = (clr.px_color().value & 0xFFFFFF);
+		fgcolor_rgb = (clr.px_color().value & 0xFFFFFF);
 		update_text_color();
 	}
 
 	void drawable_impl_type::update_color()
 	{
-		if (color_ != current_color_)
+		if (bgcolor_rgb != current_color_)
 		{
 			auto & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard lock;
 
-			current_color_ = color_;
-			auto col = color_;
+			current_color_ = bgcolor_rgb;
+			auto col = bgcolor_rgb;
 			switch (spec.screen_depth())
 			{
 			case 16:
@@ -397,18 +383,32 @@ namespace detail
 			}
 			::XSetForeground(spec.open_display(), context, col);
 			::XSetBackground(spec.open_display(), context, col);
+
+#if defined(NANA_USE_XFT)
+			//xft_fgcolor also needs to be assigned.
+			//assumes the xft_fgcolor is not assigned in update_color. There is a situation that causes a bug.
+			//
+			//update_text_color ( if fgcolor_rgb = A, then current_color = A and xft_fgcolor = A)
+			//update_color (if bgcolor_rgb = B, then current_color = B and xft_fgcolor is still A)
+			//update_text_color ( if fgcolor_rgb = B, then current_color = B, xft_fgcolor is still A)
+
+			xft_fgcolor.color.red = ((0xFF0000 & col) >> 16) * 0x101;
+			xft_fgcolor.color.green = ((0xFF00 & col) >> 8) * 0x101;
+			xft_fgcolor.color.blue = (0xFF & col) * 0x101;
+			xft_fgcolor.color.alpha = 0xFFFF;
+#endif
 		}
 	}
 
 	void drawable_impl_type::update_text_color()
 	{
-		if (text_color_ != current_color_)
+		if (fgcolor_rgb != current_color_)
 		{
 			auto & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard lock;
 
-			current_color_ = text_color_;
-			auto col = text_color_;
+			current_color_ = fgcolor_rgb;
+			auto col = fgcolor_rgb;
 			switch (spec.screen_depth())
 			{
 			case 16:

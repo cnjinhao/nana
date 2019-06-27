@@ -512,16 +512,9 @@ namespace detail
 
 		auto const native_window = rruntime->window->root;
 		
-#if 0	//deprecated
-		nana::detail::charset_conv charset(NANA_UNICODE, "UTF-8");
-		const std::string& str = charset.charset(std::string(keybuf, keybuf + keybuf_len));
-		auto const charbuf = reinterpret_cast<const wchar_t*>(str.c_str());
-		auto const len = str.size() / sizeof(wchar_t);
-#else
 		auto wstr = nana::to_wstring(std::string{keybuf, keybuf + keybuf_len});
 		auto const charbuf = wstr.c_str();
 		auto const len = wstr.length();
-#endif
 
 		for(std::size_t i = 0; i < len; ++i)
 		{

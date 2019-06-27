@@ -110,42 +110,6 @@ namespace nana
 				return tm.str();
 			}
 			return {};
-
-/*
-			// Deprecated
-			//Windows stores file times using the FILETIME structure, which is a 64 bit value of 100ns intervals from January 1, 1601.
-			//What's worse is that this 1601 date is fairly common to see given that it's the all zeroes value, and it is far before the
-			//earliest date representable with time_t.std::filesystem can't change the reality of the underlying platform.
-
-
-			try {
-#if NANA_USING_BOOST_FILESYSTEM
-				// The return type of boost::filesystem::last_write_time isn't
-				// the same as in nana and std implementations of this function
-				auto ftime = std::chrono::system_clock::from_time_t(fs::last_write_time(path));
-#else
-				auto ftime = fs::last_write_time(path);
-#endif
-
-				// crash: VS2015 will not read the time for some files (for example: C:/hiberfil.sys)
-				//   and will return file_time_type(-1) without throwing
-				//   https://msdn.microsoft.com/en-us/library/dn823784.aspx
-
-				if (ftime == ((fs::file_time_type::min)())) return{};
-
-				//A workaround for VC2013
-				using time_point = decltype(ftime);
-				auto cftime = time_point::clock::to_time_t(ftime);
-
-				std::stringstream tm;
-				tm << std::put_time(std::localtime(&cftime), "%Y-%m-%d, %H:%M:%S");
-				return tm.str();
-			}
-			catch (...) {
-				return{};
-			}
-#endif
-*/
 		}
 
 		bool modified_file_time(const fs::path& p, struct tm& t)

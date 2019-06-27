@@ -1,7 +1,7 @@
 /**
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,6 +42,7 @@ namespace detail
 		::DeleteObject(pixmap);
 	}
 
+#if 0	//deprecated
 	unsigned drawable_impl_type::get_color() const
 	{
 		return color_;
@@ -51,19 +52,24 @@ namespace detail
 	{
 		return text_color_;
 	}
+#endif
+
+#define NANA_WINDOWS_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
 
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
-		color_ = (clr.px_color().value & 0xFFFFFF);
+		bgcolor_rgb = (clr.px_color().value & 0xFFFFFF);
+		bgcolor_native = NANA_WINDOWS_RGB(bgcolor_rgb);
 	}
 
 	void drawable_impl_type::set_text_color(const ::nana::color& clr)
 	{
 		auto rgb = (clr.px_color().value & 0xFFFFFF);
-		if (text_color_ != rgb)
+		if (fgcolor_rgb != rgb)
 		{
-			::SetTextColor(context, NANA_RGB(rgb));
-			text_color_ = rgb;
+			fgcolor_rgb = rgb;
+			fgcolor_native = NANA_WINDOWS_RGB(rgb);
+			::SetTextColor(context, fgcolor_native);
 		}
 	}
 
