@@ -554,29 +554,6 @@ namespace detail
 			context.is_alt_pressed = false;
 	}
 
-#if 0
-	class window_proc_guard
-	{
-	public:
-		window_proc_guard(detail::basic_window* wd) :
-			root_wd_(wd)
-		{
-			root_wd_->other.attribute.root->lazy_update = true;
-		}
-
-		~window_proc_guard()
-		{
-			if (!bedrock::instance().wd_manager().available(root_wd_))
-				return;
-
-			root_wd_->other.attribute.root->lazy_update = false;
-			root_wd_->other.attribute.root->update_requesters.clear();
-		}
-	private:
-		detail::basic_window* const root_wd_;
-	};
-#endif
-
 	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
 	{
 		static auto& brock = detail::bedrock::instance();
