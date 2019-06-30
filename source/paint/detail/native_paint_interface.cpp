@@ -260,24 +260,8 @@ namespace detail
 #if defined(NANA_WINDOWS)
 		::TextOut(dw->context, pos.x, pos.y, str, static_cast<int>(len));
 #elif defined(NANA_X11)
-		auto disp = ::nana::detail::platform_spec::instance().open_display();
 	#if defined(NANA_USE_XFT)
-
-		#if 0
-		auto fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
-
-		//Fixed missing array declaration by dareg
-		std::unique_ptr<FT_UInt[]> glyphs_ptr(new FT_UInt[len]);
-		auto glyphs = glyphs_ptr.get();
-		const auto endstr = str + len;
-		for(auto chr = str; chr != endstr; ++chr)
-		{
-			(*glyphs++) = XftCharIndex(disp, fs, *chr);
-		}
-		XftDrawGlyphs(dw->xftdraw, &(dw->xft_fgcolor), fs, pos.x, pos.y + fs->ascent, glyphs_ptr.get(), len);
-		#else
 		nana_xft_draw_string(dw->xftdraw, &(dw->xft_fgcolor), dw->font.get(), pos, str, len);
-		#endif
 	#else
 		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->native_handle());
 		XFontSetExtents * ext = ::XExtentsOfFontSet(fs);

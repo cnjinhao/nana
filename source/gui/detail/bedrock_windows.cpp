@@ -213,9 +213,9 @@ namespace detail
 
 	bedrock::~bedrock()
 	{
-		if(wd_manager().number_of_core_window())
+		if(wd_manager().window_count())
 		{
-			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().number_of_core_window()) + " window(s) are not uninstalled.";
+			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().window_count()) + " window(s) are not uninstalled.";
 			std::cerr << msg;  /// \todo add list of cations of opening windows and if auto testing GUI do auto OK after 2 seconds.
 			::MessageBoxA(0, msg.c_str(), ("Nana C++ Library"), MB_OK);
 		}
@@ -290,7 +290,7 @@ namespace detail
 		return bedrock_object;
 	}
 
-	void bedrock::flush_surface(core_window_t* wd, bool forced, const rectangle* update_area)
+	void bedrock::flush_surface(basic_window* wd, bool forced, const rectangle* update_area)
 	{
 		if (nana::system::this_thread_id() != wd->thread_id)
 		{
@@ -581,7 +581,7 @@ namespace detail
 		case nana::detail::messages::remote_flush_surface:
 			{
 				auto stru = reinterpret_cast<detail::messages::map_thread*>(lParam);
-				bedrock.wd_manager().map(reinterpret_cast<bedrock::core_window_t*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
+				bedrock.wd_manager().map(reinterpret_cast<basic_window*>(wParam), stru->forced, (stru->ignore_update_area ? nullptr : &stru->update_area));
 				::UpdateWindow(wd);
 				::HeapFree(::GetProcessHeap(), 0, stru);
 			}
@@ -652,7 +652,7 @@ namespace detail
 		return true;
 	}
 
-	void adjust_sizing(bedrock::core_window_t* wd, ::RECT * const r, int edge, unsigned req_width, unsigned req_height)
+	void adjust_sizing(basic_window* wd, ::RECT * const r, int edge, unsigned req_width, unsigned req_height)
 	{
 		unsigned width = static_cast<unsigned>(r->right - r->left) - wd->extra_width;
 		unsigned height = static_cast<unsigned>(r->bottom - r->top) - wd->extra_height;
@@ -1638,7 +1638,7 @@ namespace detail
 		return impl_->estore;
 	}
 
-	void bedrock::map_through_widgets(core_window_t* wd, native_drawable_type drawable)
+	void bedrock::map_through_widgets(basic_window* wd, native_drawable_type drawable)
 	{
 		auto graph_context = reinterpret_cast<HDC>(wd->root_graph->handle()->context);
 
@@ -1685,7 +1685,7 @@ namespace detail
 	}
 
 	//Dynamically set a cursor for a window
-	void bedrock::set_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
+	void bedrock::set_cursor(basic_window* wd, nana::cursor cur, thread_context* thrd)
 	{
 		if (nullptr == thrd)
 			thrd = get_thread_context(wd->thread_id);
@@ -1730,7 +1730,7 @@ namespace detail
 		}
 	}
 
-	void bedrock::define_state_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
+	void bedrock::define_state_cursor(basic_window* wd, nana::cursor cur, thread_context* thrd)
 	{
 		wd->root_widget->other.attribute.root->state_cursor = cur;
 		wd->root_widget->other.attribute.root->state_cursor_window = wd;
@@ -1740,7 +1740,7 @@ namespace detail
 		::ShowCursor(TRUE);
 	}
 
-	void bedrock::undefine_state_cursor(core_window_t * wd, thread_context* thrd)
+	void bedrock::undefine_state_cursor(basic_window * wd, thread_context* thrd)
 	{
 		HCURSOR rev_handle = ::LoadCursor(nullptr, IDC_ARROW);
 		if (!wd_manager().available(wd))

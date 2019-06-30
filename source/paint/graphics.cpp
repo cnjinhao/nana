@@ -506,8 +506,8 @@ namespace paint
 
 			if (!text.empty())
 			{
-				unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 #if defined(NANA_WINDOWS)
+				unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 				int * dx = new int[text.size()];
 				SIZE extents;
 				::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
@@ -520,26 +520,7 @@ namespace paint
 				}
 				delete[] dx;
 #elif defined(NANA_X11) && defined(NANA_USE_XFT)
-
-				#if 0
-				auto disp = nana::detail::platform_spec::instance().open_display();
-				auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
-
-				XGlyphInfo extents;
-				for (std::size_t i = 0; i < text.size(); ++i)
-				{
-					if (text[i] != '\t')
-					{
-						FT_UInt glyphs = ::XftCharIndex(disp, xft, text[i]);
-						::XftGlyphExtents(disp, xft, &glyphs, 1, &extents);
-						pxbuf[i] = extents.xOff;
-					}
-					else
-						pxbuf[i] = tab_pixels;
-				}
-				#else
 				return nana_xft_glyph_pixels(impl_->handle->font.get(), text.data(), text.size());
-				#endif
 #endif
 			}
 			return pxbuf;

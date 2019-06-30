@@ -141,7 +141,7 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::flush_surface(core_window_t* wd, bool forced, const rectangle* update_area)
+	void bedrock::flush_surface(basic_window* wd, bool forced, const rectangle* update_area)
 	{
 		wd->drawer.map(wd, forced, update_area);
 	}
@@ -248,7 +248,7 @@ namespace detail
 		return impl_->estore;
 	}
 
-	void bedrock::map_through_widgets(core_window_t*, native_drawable_type)
+	void bedrock::map_through_widgets(basic_window*, native_drawable_type)
 	{
 		//No implementation for Linux
 	}
@@ -579,11 +579,9 @@ namespace detail
 
 	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
 	{
-		typedef detail::bedrock::core_window_t core_window_t;
-
 		static auto& brock = detail::bedrock::instance();
 		static unsigned long	last_mouse_down_time;
-		static core_window_t*	last_mouse_down_window;
+		static basic_window*	last_mouse_down_window;
 
 		auto native_window = reinterpret_cast<native_window_type>(event_window(xevent));
 		auto & wd_manager = brock.wd_manager();
@@ -1257,7 +1255,7 @@ namespace detail
 		lock.revert();
 
 		native_window_type owner_native{};
-		core_window_t * owner = 0;
+		basic_window * owner = nullptr;
 		if(condition_wd && is_modal)
 		{
 			native_window_type modal = condition_wd->root;
@@ -1299,7 +1297,7 @@ namespace detail
 	}//end bedrock::event_loop
 
 	//Dynamically set a cursor for a window
-	void bedrock::set_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
+	void bedrock::set_cursor(basic_window* wd, nana::cursor cur, thread_context* thrd)
 	{
 		if (nullptr == thrd)
 			thrd = get_thread_context(wd->thread_id);
@@ -1342,14 +1340,14 @@ namespace detail
 		}
 	}
 
-	void bedrock::define_state_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
+	void bedrock::define_state_cursor(basic_window* wd, nana::cursor cur, thread_context* thrd)
 	{
 		wd->root_widget->other.attribute.root->state_cursor = cur;
 		wd->root_widget->other.attribute.root->state_cursor_window = wd;
 		set_cursor(wd, cur, thrd);
 	}
 
-	void bedrock::undefine_state_cursor(core_window_t * wd, thread_context* thrd)
+	void bedrock::undefine_state_cursor(basic_window * wd, thread_context* thrd)
 	{
 		if (!wd_manager().available(wd))
 			return;

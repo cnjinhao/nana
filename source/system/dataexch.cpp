@@ -263,8 +263,8 @@ namespace nana{ namespace system{
 			spec.lock_xlib();
 
 			{
-				internal_scope_guard isg;
-				detail::bedrock::core_window_t * wd = detail::bedrock::instance().focus();
+				internal_scope_guard lock;
+				auto wd = detail::bedrock::instance().focus();
 				if(wd)	requester = wd->root;
 			}
 			spec.unlock_xlib();

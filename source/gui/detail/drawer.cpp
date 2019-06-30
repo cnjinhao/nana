@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -342,8 +342,7 @@ namespace nana
 		{
 			if(wd)
 			{
-				auto iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
-				bool owns_caret = (iwd->annex.caret_ptr) && (iwd->annex.caret_ptr->visible());
+				bool owns_caret = (wd->annex.caret_ptr) && (wd->annex.caret_ptr->visible());
 
 				//The caret in X11 is implemented by Nana, it is different from Windows'
 				//the caret in X11 is asynchronous, it is hard to hide and show the caret
@@ -352,20 +351,20 @@ namespace nana
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					iwd->annex.caret_ptr->visible(false);
+					wd->annex.caret_ptr->visible(false);
 #else
-					owns_caret = nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, false);
+					owns_caret = nana::detail::platform_spec::instance().caret_update(wd->root, *wd->root_graph, false);
 #endif
 				}
 
-				edge_nimbus_renderer::instance().render(iwd, forced, update_area);
+				edge_nimbus_renderer::instance().render(wd, forced, update_area);
 
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					iwd->annex.caret_ptr->visible(true);
+					wd->annex.caret_ptr->visible(true);
 #else
-					nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, true);
+					nana::detail::platform_spec::instance().caret_update(wd->root, *wd->root_graph, true);
 #endif
 				}
 			}
