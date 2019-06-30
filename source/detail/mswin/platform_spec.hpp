@@ -107,17 +107,8 @@ namespace detail
 		drawable_impl_type();
 		~drawable_impl_type();
 
-#if 0	//deprecated
-		unsigned get_color() const;
-		unsigned get_text_color() const;
-#endif
 		void set_color(const ::nana::color&);
 		void set_text_color(const ::nana::color&);
-#if 0	//deprecated
-	private:
-		unsigned color_{ 0xffffffff };
-		unsigned text_color_{0xffffffff};
-#endif
 	};
 
 	class platform_spec

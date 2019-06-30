@@ -90,10 +90,6 @@ namespace detail
 #endif
 		drawable_impl_type();
 
-#if 0	//deprecated
-		unsigned get_color() const;
-		unsigned get_text_color() const;
-#endif
 		void set_color(const ::nana::color&);
 		void set_text_color(const ::nana::color&);
 
@@ -104,10 +100,6 @@ namespace detail
 		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
 
 		unsigned current_color_{ 0xFFFFFF };
-#if 0	//deprecated		
-		unsigned color_{ 0xFFFFFFFF };
-		unsigned text_color_{ 0xFFFFFFFF };
-#endif
 	};
 
 	struct atombase_tag

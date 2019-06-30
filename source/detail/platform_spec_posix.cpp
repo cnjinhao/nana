@@ -341,18 +341,6 @@ namespace detail
 		string.whitespace_pixels = 0;
 	}
 
-#if 0	//deprecated
-	unsigned drawable_impl_type::get_color() const
-	{
-		return color_;
-	}
-
-	unsigned drawable_impl_type::get_text_color() const
-	{
-		return text_color_;
-	}
-#endif
-
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
 		bgcolor_rgb = (clr.px_color().value & 0xFFFFFF);

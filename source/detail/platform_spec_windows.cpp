@@ -42,18 +42,6 @@ namespace detail
 		::DeleteObject(pixmap);
 	}
 
-#if 0	//deprecated
-	unsigned drawable_impl_type::get_color() const
-	{
-		return color_;
-	}
-
-	unsigned drawable_impl_type::get_text_color() const
-	{
-		return text_color_;
-	}
-#endif
-
 #define NANA_WINDOWS_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
 
 	void drawable_impl_type::set_color(const ::nana::color& clr)
