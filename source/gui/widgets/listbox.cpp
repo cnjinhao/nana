@@ -4335,7 +4335,7 @@ namespace nana
 									else
 									{
 										auto selected = lister.pick_items(true);
-										if (selected.cend() != std::find(selected.cbegin(), selected.cend(), item_pos))
+										if (selected.cend() != std::find(selected.cbegin(), selected.cend(), abs_item_pos))
 										{
 											//If the current selected one has been selected before selecting, remains the selection states for all
 											//selected items. But these items will be unselected when the mouse is released.
