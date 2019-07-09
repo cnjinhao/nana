@@ -15,7 +15,7 @@
  *		Benjamin Navarro(pr#81)
  *		besh81(pr#130)
  *		dankan1890(pr#158)
- *		ErrorFlynn(pr#418)
+ *		ErrorFlynn(pr#418,pr#448,pr#454)
  *
  */
 #include <algorithm>

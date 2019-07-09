@@ -18,7 +18,8 @@
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/system/timepiece.hpp>
-#include <nana/gui.hpp>
+#include <nana/gui/compact.hpp>
+#include <nana/gui/msgbox.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/gui/detail/window_layout.hpp>

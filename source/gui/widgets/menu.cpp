@@ -13,12 +13,13 @@
 *		dankan1890(pr#158)
 */
 
+#include <nana/gui/compact.hpp>
+#include <nana/gui/screen.hpp>
 #include <nana/gui/widgets/menu.hpp>
 #include <nana/gui/timer.hpp>
 
 #include <nana/system/platform.hpp>
 #include <nana/gui/element.hpp>
-#include <nana/gui/wvl.hpp>
 #include <nana/paint/text_renderer.hpp>
 #include <cctype>	//introduces tolower
 #include <vector>

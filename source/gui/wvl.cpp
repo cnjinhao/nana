@@ -1,6 +1,6 @@
 /*
  *	Nana GUI Library Definition
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -11,7 +11,8 @@
  *		the file contains the files required for running of Nana.GUI 
  */
 
-#include <nana/gui/wvl.hpp>
+#include <nana/gui/compact.hpp>
+#include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/std_thread.hpp>
 #include <iostream> 

@@ -43,8 +43,6 @@ namespace nana
 
 	class timer_driver
 	{
-		typedef std::lock_guard<std::recursive_mutex> lock_guard;
-
 		friend class timer_core;
 
 		timer_driver() = default;
@@ -70,7 +68,7 @@ namespace nana
 				auto tmid = p;
 				::nana::detail::platform_spec::instance().set_timer(reinterpret_cast<std::size_t>(tmid), ms, &timer_driver::_m_timer_proc);
 #endif
-				lock_guard lock(mutex_);
+				::nana::internal_scope_guard lock;
 				timer_table_[tmid].reset(p);
 				return p;
 			}
@@ -82,7 +80,8 @@ namespace nana
 
 		void destroy(timer_identifier tid)
 		{
-			lock_guard lock(mutex_);
+			::nana::internal_scope_guard lock;
+
 			auto i = timer_table_.find(tid);
 			if (i != timer_table_.end())
 			{
@@ -101,7 +100,6 @@ namespace nana
 		static void _m_timer_proc(std::size_t id);
 #endif
 	private:
-		std::recursive_mutex	mutex_;
 		std::map<timer_identifier, std::unique_ptr<timer_core>>	timer_table_;
 	};
 
@@ -141,21 +139,19 @@ namespace nana
 		nana::basic_event<arg_elapse> & evt_elapse_;
 	}; //end class timer_core
 
+
 #if defined(NANA_WINDOWS)
 	void __stdcall timer_driver::_m_timer_proc(HWND /*hwnd*/, UINT /*uMsg*/, UINT_PTR id, DWORD /*dwTime*/)
 #else
 	void timer_driver::_m_timer_proc(std::size_t id)
 #endif
 	{
-		auto & driver = instance();
+		auto & time_tbl = instance().timer_table_;
 
-		lock_guard lock(driver.mutex_);
-#if defined(NANA_WINDOWS)
-		auto i = driver.timer_table_.find(id);
-#else
-		auto i = driver.timer_table_.find(reinterpret_cast<timer_identifier>(id));
-#endif
-		if (i == driver.timer_table_.end())
+		::nana::internal_scope_guard lock;
+
+		auto i = time_tbl.find(id);
+		if (i == time_tbl.end())
 			return;
 
 		arg_elapse arg;
@@ -183,8 +179,7 @@ namespace nana
 
 		timer::~timer()
 		{
-			if (impl_->tm_core)
-				timer_driver::instance().destroy(impl_->tm_core->id());
+			stop();
 			delete impl_;
 		}
 
