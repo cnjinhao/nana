@@ -126,6 +126,12 @@ namespace nana
 			{
 				close_fn_ = std::move(fn);
 			}
+
+			bool hit_close()
+			{
+				return x_pointed_;
+			}
+
 		private:
 			virtual void attached(widget_reference wdg, graph_reference graph) override
 			{
@@ -310,7 +316,9 @@ namespace nana
 							{
 								move_pos += moves_.start_container_pos;
 								API::move_window(container_->handle(), move_pos);
-								notifier_->notify_move();
+
+								if(!caption_.get_drawer_trigger().hit_close())
+									notifier_->notify_move();
 							}
 						}
 					}
