@@ -210,15 +210,15 @@ namespace detail
 
 	class timer_runner
 	{
-		typedef void (*timer_proc_t)(std::size_t id);
+		using handler_type = void(*)(const timer_core*);
 
 		struct timer_tag
 		{
-			std::size_t id;
-			thread_t tid;
+			const timer_core* handle;
+			thread_t	thread_id;
 			std::size_t interval;
 			std::size_t timestamp;
-			timer_proc_t proc;
+			handler_type handler;
 		};
 
 		//timer_group
@@ -234,32 +234,32 @@ namespace detail
 		struct timer_group
 		{
 			bool proc_entered{false};	//This flag indicates whether the timers are going to do event.
-			std::set<std::size_t> timers;
-			std::vector<std::size_t> delay_deleted;
+			std::set<const timer_core*> timers;
+			std::vector<const timer_core*> delay_deleted;
 		};
 	public:
 		timer_runner()
 			: is_proc_handling_(false)
 		{}
 
-		void set(std::size_t id, std::size_t interval, timer_proc_t proc)
+		void set(const timer_core* handle, std::size_t interval, handler_type handler)
 		{
-			auto i = holder_.find(id);
+			auto i = holder_.find(handle);
 			if(i != holder_.end())
 			{
 				i->second.interval = interval;
-				i->second.proc = proc;
+				i->second.handler = handler;
 				return;
 			}
 			auto tid = nana::system::this_thread_id();
-			threadmap_[tid].timers.insert(id);
+			threadmap_[tid].timers.insert(handle);
 
-			timer_tag & tag = holder_[id];
-			tag.id = id;
-			tag.tid = tid;
+			timer_tag & tag = holder_[handle];
+			tag.handle = handle;
+			tag.thread_id = tid;
 			tag.interval = interval;
 			tag.timestamp = 0;
-			tag.proc = proc;
+			tag.handler = handler;
 		}
 
 		bool is_proc_handling() const
@@ -267,12 +267,12 @@ namespace detail
 			return is_proc_handling_;
 		}
 
-		void kill(std::size_t id)
+		bool kill(const timer_core* handle)
 		{
-			auto i = holder_.find(id);
+			auto i = holder_.find(handle);
 			if(i != holder_.end())
 			{
-				auto tid = i->second.tid;
+				auto tid = i->second.thread_id;
 
 				auto ig = threadmap_.find(tid);
 				if(ig != threadmap_.end())	//Generally, the ig should not be the end of threadmap_
@@ -280,20 +280,16 @@ namespace detail
 					auto & group = ig->second;
 					if(!group.proc_entered)
 					{
-						group.timers.erase(id);
+						group.timers.erase(handle);
 						if(group.timers.empty())
 							threadmap_.erase(ig);
 					}
 					else
-						group.delay_deleted.push_back(id);
+						group.delay_deleted.push_back(handle);
 				}
 				holder_.erase(i);
 			}
-		}
-
-		bool empty() const
-		{
-			return (holder_.empty());
+			return holder_.empty();
 		}
 
 		void timer_proc(thread_t tid)
@@ -315,7 +311,7 @@ namespace detail
 							tag.timestamp = ticks;
 							try
 							{
-								tag.proc(tag.id);
+								tag.handler(tag.handle);
 							}catch(...){}	//nothrow
 						}
 					}
@@ -331,7 +327,7 @@ namespace detail
 	private:
 		bool is_proc_handling_;
 		std::map<thread_t, timer_group> threadmap_;
-		std::map<std::size_t, timer_tag> holder_;
+		std::map<const timer_core*, timer_tag> holder_;
 	};
 
 	drawable_impl_type::drawable_impl_type()
@@ -439,7 +435,7 @@ namespace detail
 	}
 
 	platform_spec::timer_runner_tag::timer_runner_tag()
-		: runner(0), delete_declared(false)
+		: runner(nullptr), delete_declared(false)
 	{}
 
 	platform_spec::platform_spec()
@@ -981,30 +977,32 @@ namespace detail
 		return r;
 	}
 
-	void platform_spec::set_timer(std::size_t id, std::size_t interval, void (*timer_proc)(std::size_t))
+	void platform_spec::set_timer(const timer_core* handle, std::size_t interval, void (*timer_proc)(const timer_core*))
 	{
 		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
-		if(0 == timer_.runner)
+		if(!timer_.runner)
 			timer_.runner = new timer_runner;
-		timer_.runner->set(id, interval, timer_proc);
+
+		timer_.runner->set(handle, interval, timer_proc);
 		timer_.delete_declared = false;
 	}
 
-	void platform_spec::kill_timer(std::size_t id)
+	void platform_spec::kill_timer(const timer_core* handle)
 	{
-		if(timer_.runner == 0) return;
-
 		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
-		timer_.runner->kill(id);
-		if(timer_.runner->empty())
+		if(timer_.runner)
 		{
-			if(timer_.runner->is_proc_handling() == false)
+			// Test if there is not a timer after killing
+			if(timer_.runner->kill(handle))
 			{
-				delete timer_.runner;
-				timer_.runner = 0;
+				if(timer_.runner->is_proc_handling() == false)
+				{
+					delete timer_.runner;
+					timer_.runner = nullptr;
+				}
+				else
+					timer_.delete_declared = true;
 			}
-			else
-				timer_.delete_declared = true;
 		}
 	}
 
@@ -1017,7 +1015,7 @@ namespace detail
 			if(timer_.delete_declared)
 			{
 				delete timer_.runner;
-				timer_.runner = 0;
+				timer_.runner = nullptr;
 				timer_.delete_declared = false;
 			}
 		}

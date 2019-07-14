@@ -146,6 +146,13 @@ namespace detail
 	//A forward declaration of caret data
 	struct caret_rep;
 
+	/// class timer_core
+	/**
+	 * Platform-spec only provides the declaration for intrducing a handle type, the definition
+	 * of timer_core is given by gui/timer.cpp
+	 */
+	class timer_core;
+
 	class timer_runner;
 
 	class platform_scope_guard
@@ -226,8 +233,8 @@ namespace detail
 		//when native_interface::show a window that is registered as a grab
 		//window, the native_interface grabs the window.
 		Window grab(Window);
-		void set_timer(std::size_t id, std::size_t interval, void (*timer_proc)(std::size_t id));
-		void kill_timer(std::size_t id);
+		void set_timer(const timer_core*, std::size_t interval, void (*timer_proc)(const timer_core* tm));
+		void kill_timer(const timer_core*);
 		void timer_proc(thread_t tid);
 
 		//Message dispatcher

@@ -22,14 +22,16 @@
 
 namespace nana
 {  
-       /// Can repeatedly call a piece of code.
+
+	class timer;
 
 	struct arg_elapse
 		: public event_arg
 	{
-		long long id;	//timer identifier;
+		timer*	sender; //indicates which timer emitted this notification
 	};
 
+	/// Can repeatedly call a piece of code.
 	class timer
 	{
 		struct implement;

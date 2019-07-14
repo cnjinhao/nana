@@ -14,6 +14,7 @@
 
 #include <nana/gui/compact.hpp>
 #include <nana/gui/msgbox.hpp>
+#include <nana/gui/drawing.hpp>
 #include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/label.hpp>
 #include <nana/gui/widgets/button.hpp>
