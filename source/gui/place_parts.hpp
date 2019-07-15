@@ -127,7 +127,7 @@ namespace nana
 				close_fn_ = std::move(fn);
 			}
 
-			bool hit_close()
+			bool hit_close() const
 			{
 				return x_pointed_;
 			}
