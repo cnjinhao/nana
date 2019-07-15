@@ -1,0 +1,316 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{42D0520F-EFA5-4831-84FE-2B9085301C5D}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>nana</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <OutDir>../bin/</OutDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+    <OutDir>../bin/</OutDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>../bin/</OutDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>../bin/</OutDir>
+    <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
+    <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
+    <IncludePath>..\..\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\any.cpp" />
+    <ClCompile Include="..\..\source\audio\detail\audio_device.cpp" />
+    <ClCompile Include="..\..\source\audio\detail\audio_stream.cpp" />
+    <ClCompile Include="..\..\source\audio\detail\buffer_preparation.cpp" />
+    <ClCompile Include="..\..\source\audio\player.cpp" />
+    <ClCompile Include="..\..\source\basic_types.cpp" />
+    <ClCompile Include="..\..\source\charset.cpp" />
+    <ClCompile Include="..\..\source\datetime.cpp" />
+    <ClCompile Include="..\..\source\deploy.cpp" />
+    <ClCompile Include="..\..\source\detail\platform_abstraction.cpp" />
+    <ClCompile Include="..\..\source\detail\platform_spec_windows.cpp" />
+    <ClCompile Include="..\..\source\filesystem\filesystem.cpp" />
+    <ClCompile Include="..\..\source\gui\animation.cpp" />
+    <ClCompile Include="..\..\source\gui\basis.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\basic_window.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\bedrock_pi.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\color_schemes.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\drawer.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\element_store.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\events_operation.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\native_window_interface.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\window_layout.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\window_manager.cpp" />
+    <ClCompile Include="..\..\source\gui\dragdrop.cpp" />
+    <ClCompile Include="..\..\source\gui\dragger.cpp" />
+    <ClCompile Include="..\..\source\gui\drawing.cpp" />
+    <ClCompile Include="..\..\source\gui\effects.cpp" />
+    <ClCompile Include="..\..\source\gui\element.cpp" />
+    <ClCompile Include="..\..\source\gui\filebox.cpp" />
+    <ClCompile Include="..\..\source\gui\layout_utility.cpp" />
+    <ClCompile Include="..\..\source\gui\msgbox.cpp" />
+    <ClCompile Include="..\..\source\gui\notifier.cpp" />
+    <ClCompile Include="..\..\source\gui\place.cpp" />
+    <ClCompile Include="..\..\source\gui\programming_interface.cpp" />
+    <ClCompile Include="..\..\source\gui\screen.cpp" />
+    <ClCompile Include="..\..\source\gui\state_cursor.cpp" />
+    <ClCompile Include="..\..\source\gui\timer.cpp" />
+    <ClCompile Include="..\..\source\gui\tooltip.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\button.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\categorize.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\checkbox.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\combox.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\date_chooser.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\float_listbox.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\form.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\group.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\label.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\listbox.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\menu.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\menubar.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\panel.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\picture.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\progress.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\scroll.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\content_view.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\skeletons\text_editor.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\slider.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\spinbox.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\tabbar.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\textbox.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\toolbar.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\treebox.cpp" />
+    <ClCompile Include="..\..\source\gui\widgets\widget.cpp" />
+    <ClCompile Include="..\..\source\gui\wvl.cpp" />
+    <ClCompile Include="..\..\source\internationalization.cpp" />
+    <ClCompile Include="..\..\source\paint\detail\image_process_provider.cpp" />
+    <ClCompile Include="..\..\source\paint\detail\native_paint_interface.cpp" />
+    <ClCompile Include="..\..\source\paint\graphics.cpp" />
+    <ClCompile Include="..\..\source\paint\image.cpp" />
+    <ClCompile Include="..\..\source\paint\image_process_selector.cpp" />
+    <ClCompile Include="..\..\source\paint\pixel_buffer.cpp" />
+    <ClCompile Include="..\..\source\paint\text_renderer.cpp" />
+    <ClCompile Include="..\..\source\stdc++.cpp" />
+    <ClCompile Include="..\..\source\system\dataexch.cpp" />
+    <ClCompile Include="..\..\source\system\platform.cpp" />
+    <ClCompile Include="..\..\source\system\shared_wrapper.cpp" />
+    <ClCompile Include="..\..\source\system\timepiece.cpp" />
+    <ClCompile Include="..\..\source\threads\pool.cpp" />
+    <ClCompile Include="..\..\source\unicode_bidi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\nana\any.hpp" />
+    <ClInclude Include="..\..\include\nana\basic_types.hpp" />
+    <ClInclude Include="..\..\include\nana\c++defines.hpp" />
+    <ClInclude Include="..\..\include\nana\charset.hpp" />
+    <ClInclude Include="..\..\include\nana\concepts.hpp" />
+    <ClInclude Include="..\..\include\nana\config.hpp" />
+    <ClInclude Include="..\..\include\nana\datetime.hpp" />
+    <ClInclude Include="..\..\include\nana\deploy.hpp" />
+    <ClInclude Include="..\..\include\nana\fwd.hpp" />
+    <ClInclude Include="..\..\include\nana\gui.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\animation.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\basis.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\dragdrop.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\dragger.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\drawing.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\effects.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\element.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\filebox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\layout_utility.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\msgbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\notifier.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\place.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\programming_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\screen.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\state_cursor.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\timer.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\tooltip.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\button.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\categorize.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\checkbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\combox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\date_chooser.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\float_listbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\form.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\group.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\label.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\listbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\menu.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\menubar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\panel.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\picture.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\progress.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\scroll.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\slider.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\spinbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\tabbar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\textbox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\toolbar.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\treebox.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\widgets\widget.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\wvl.hpp" />
+    <ClInclude Include="..\..\include\nana\internationalization.hpp" />
+    <ClInclude Include="..\..\include\nana\key_type.hpp" />
+    <ClInclude Include="..\..\include\nana\optional.hpp" />
+    <ClInclude Include="..\..\include\nana\stdc++.hpp" />
+    <ClInclude Include="..\..\include\nana\std_condition_variable.hpp" />
+    <ClInclude Include="..\..\include\nana\std_mutex.hpp" />
+    <ClInclude Include="..\..\include\nana\std_thread.hpp" />
+    <ClInclude Include="..\..\include\nana\traits.hpp" />
+    <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
+    <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\include\nana\pop_ignore_diagnostic" />
+    <None Include="..\..\include\nana\push_ignore_diagnostic" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
