@@ -1050,7 +1050,7 @@ namespace nana
 
 								std::wstring wtext = to_wstring(item.text);
 								tr.render({ m.r.x + 24, m.r.y + static_cast<int>(m.r.height - ts.height) / 2 },
-											wtext.c_str(), wtext.length(), basis_.item_pixels - 24 - 18, true);
+											wtext.c_str(), wtext.length(), basis_.item_pixels - 24 - 18, paint::text_renderer::mode::truncate_with_ellipsis);
 							}
 						}
 

@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -37,24 +37,36 @@ namespace detail
 		bedrock(const bedrock&) = delete;
 		bedrock& operator=(const bedrock&) = delete;
 	public:
-		using core_window_t = basic_window;
-
 		struct thread_context;
 
 		class flag_guard;
 
+		/// RAII class for window message processing
+		class root_guard
+		{
+		public:
+			/// Enables lazy_update
+			root_guard(bedrock& brock, basic_window* root_wd);
+
+			/// Disables lazy-update and clears update requesters queue.
+			~root_guard();
+		private:
+			bedrock& brock_;
+			basic_window* const root_wd_;
+		};
+
 		~bedrock();
 		void pump_event(window, bool is_modal);
-		void flush_surface(core_window_t*, bool forced, const rectangle* update_area = nullptr);
+		void flush_surface(basic_window*, bool forced, const rectangle* update_area = nullptr);
 		static int inc_window(thread_t tid = 0);
 		thread_context* open_thread_context(thread_t tid = 0);
 		thread_context* get_thread_context(thread_t tid = 0);
 		void remove_thread_context(thread_t tid = 0);
 		static bedrock& instance();
 
-		core_window_t* focus();
+		basic_window* focus();
 
-		void set_menubar_taken(core_window_t*);
+		void set_menubar_taken(basic_window*);
 
 		//Delay Restores focus when a menu which attached to menubar is closed
 		void delay_restore(int);
@@ -70,7 +82,7 @@ namespace detail
 		bool shortkey_occurred() const;
 
 		element_store& get_element_store() const;
-		void map_through_widgets(core_window_t*, native_drawable_type);
+		void map_through_widgets(basic_window*, native_drawable_type);
 
 		//Closes the windows which are associated with the specified thread. If the given thread_id is 0, it closes all windows
 		void close_thread_window(thread_t thread_id);
@@ -80,28 +92,28 @@ namespace detail
 		static void delete_platform_assoc(window_platform_assoc*);
 		void keyboard_accelerator(native_window_type, const accel_key&, const std::function<void()>&);
 	public:
-		void event_expose(core_window_t *, bool exposed);
-		void event_move(core_window_t*, int x, int y);
-		bool event_msleave(core_window_t*);
-		void event_focus_changed(core_window_t* root_wd, native_window_type receiver, bool getting);
-		void thread_context_destroy(core_window_t*);
+		void event_expose(basic_window *, bool exposed);
+		void event_move(basic_window*, int x, int y);
+		bool event_msleave(basic_window*);
+		void event_focus_changed(basic_window* root_wd, native_window_type receiver, bool getting);
+		void thread_context_destroy(basic_window*);
 		void thread_context_lazy_refresh();
-		void update_cursor(core_window_t*);
-		void set_cursor(core_window_t*, nana::cursor, thread_context*);
-		void define_state_cursor(core_window_t*, nana::cursor, thread_context*);
-		void undefine_state_cursor(core_window_t*, thread_context*);
+		void update_cursor(basic_window*);
+		void set_cursor(basic_window*, nana::cursor, thread_context*);
+		void define_state_cursor(basic_window*, nana::cursor, thread_context*);
+		void undefine_state_cursor(basic_window*, thread_context*);
 
 		color_schemes& scheme();
 		events_operation&	evt_operation();
 		window_manager&		wd_manager();
 
-		void manage_form_loader(core_window_t*, bool insert_or_remove);
+		void manage_form_loader(basic_window*, bool insert_or_remove);
 	public:
 		// if 'bForce__EmitInternal', then ONLY internal (widget's) events are processed (even through explicit filtering)
-		bool emit(event_code, core_window_t*, const event_arg&, bool ask_update, thread_context*, const bool bForce__EmitInternal = false);
+		bool emit(event_code, basic_window*, const event_arg&, bool ask_update, thread_context*, const bool bForce__EmitInternal = false);
 	private:
-		void _m_emit_core(event_code, core_window_t*, bool draw_only, const event_arg&, const bool bForce__EmitInternal);
-		void _m_event_filter(event_code, core_window_t*, thread_context*);
+		void _m_emit_core(event_code, basic_window*, bool draw_only, const event_arg&, const bool bForce__EmitInternal);
+		void _m_event_filter(event_code, basic_window*, thread_context*);
 	private:
 		static bedrock bedrock_object;
 

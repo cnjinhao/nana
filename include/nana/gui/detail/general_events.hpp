@@ -24,9 +24,13 @@
 
 namespace nana
 {
+	namespace API
+	{
+		bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
+	}
+
 	namespace detail
 	{
-		bool check_window(window);
 		void events_operation_register(event_handle);
 
 		class event_interface
@@ -36,16 +40,16 @@ namespace nana
 			virtual void remove(event_handle) = 0;
 		};
 
-		class docker_interface
+		class event_docker_interface
 		{
 		public:
-			virtual ~docker_interface() = default;
+			virtual ~event_docker_interface() = default;
 			virtual event_interface*	get_event() const = 0;
 		};
 
 
 		struct docker_base
-			: public docker_interface
+			: public event_docker_interface
 		{
 			event_interface * const event_ptr;
 			bool flag_deleted;
@@ -78,11 +82,11 @@ namespace nana
 				event_base * const evt_;
 			};
 			
-			event_handle _m_emplace(detail::docker_interface*, bool in_front);
+			event_handle _m_emplace(detail::event_docker_interface*, bool in_front);
 		protected:
 			unsigned emitting_count_{ 0 };
 			bool deleted_flags_{ false };
-			std::vector<detail::docker_interface*> * dockers_{ nullptr };
+			std::vector<detail::event_docker_interface*> * dockers_{ nullptr };
 		};
 	}//end namespace detail
 
@@ -228,7 +232,7 @@ namespace nana
 
 				d->invoke(arg);
 
-				if (window_handle && (!detail::check_window(window_handle)))
+				if (window_handle && (!::nana::API::is_window(window_handle)))
 					break;
 			}
 		}

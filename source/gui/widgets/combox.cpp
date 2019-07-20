@@ -10,9 +10,9 @@
  *	@file: nana/gui/widgets/combox.cpp
  */
 
-#include <nana/gui.hpp>
-#include <nana/gui/widgets/combox.hpp>
+#include <nana/gui/compact.hpp>
 #include <nana/gui/element.hpp>
+#include <nana/gui/widgets/combox.hpp>
 #include <nana/system/dataexch.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/widgets/skeletons/text_editor.hpp>

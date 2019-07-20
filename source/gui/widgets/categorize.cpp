@@ -1,16 +1,16 @@
-/*
+/**
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/categorize.cpp
+ *	@file nana/gui/widgets/categorize.cpp
  */
 
-#include <nana/gui/wvl.hpp>
+#include <nana/gui/compact.hpp>
 #include <nana/gui/widgets/categorize.hpp>
 #include <nana/gui/widgets/float_listbox.hpp>
 #include <nana/gui/element.hpp>

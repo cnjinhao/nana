@@ -15,7 +15,7 @@
  *		Benjamin Navarro(pr#81)
  *		besh81(pr#130)
  *		dankan1890(pr#158)
- *		ErrorFlynn(pr#418)
+ *		ErrorFlynn(pr#418,pr#448,pr#454)
  *
  */
 #include <algorithm>
@@ -549,9 +549,9 @@ namespace nana
 					if (!front) view++;
 					if (view >= cont_.size() )		return;
 
-					auto i = std::find_if( cont_.begin(),
-							               cont_.end(),
-							               [&](const column& c){return col==c.index;});
+					auto i = std::find_if(   cont_.begin(),
+							              cont_.end(),
+							              [&](const column& c){return col==c.index;});
 
 					if (i==cont_.end()) return;
 
@@ -1199,23 +1199,15 @@ namespace nana
 					return{};
 				}
 
-                /// return a ref to the real item object at display!!! position pos using current sorting only if it is active, and at absolute position if no sorting is currently active.
+				/// return a ref to the real item object at display position
 				category_t::container::value_type& at(const index_pair& pos)
 				{
-					auto acc_pos = pos.item;
-					if (npos != sort_attrs_.column)
-						acc_pos = index_cast(pos, true).item;	//convert display position to absolute position
-
-					return get(pos.cat)->items.at(acc_pos);
+					return get(pos.cat)->items.at(index_cast(pos, true).item);
 				}
 
 				const category_t::container::value_type& at(const index_pair& pos) const
 				{
-					auto acc_pos = pos.item;
-					if (npos != sort_attrs_.column)
-						acc_pos = index_cast(pos, true).item;	//convert display position to absolute position
-
-					return get(pos.cat)->items.at(acc_pos);
+					return get(pos.cat)->items.at(index_cast(pos, true).item);
 				}
 
 				std::vector<cell> at_model(const index_pair& pos) const
@@ -2019,6 +2011,8 @@ namespace nana
 
 				std::function<void(paint::graphics&, const rectangle&, bool)> ctg_icon_renderer;	///< Renderer for the category icon
 
+				std::function<bool(nana::mouse)> pred_msup_deselect;
+
 				struct operation_rep
 				{
 					operation_states state{operation_states::none};
@@ -2063,6 +2057,11 @@ namespace nana
 					{
 						return header.at(pos).weak_ordering;
 					};
+				}
+
+				unsigned suspension_width() const
+				{
+					return (graph ? graph->text_extent_size(L"...").width : 0);
 				}
 
 				bool cs_status(index_pair abs_pos, bool for_selection) const
@@ -3358,7 +3357,7 @@ namespace nana
 						else
 						{
 							//Default scheme
-							new_w = (std::max)(new_w, essence_->scheme_ptr->suspension_width + essence_->scheme_ptr->min_column_width);
+							new_w = (std::max)(new_w, essence_->suspension_width() + essence_->scheme_ptr->min_column_width);
 						}
 
 						if(col.width_px != new_w)
@@ -4003,6 +4002,7 @@ namespace nana
 
 								if (draw_column)
 								{
+									//Draw item text
 									paint::aligner text_aligner{*graph, col.alignment};
 
 									unsigned text_margin_right = 0;
@@ -4148,7 +4148,6 @@ namespace nana
 					if (graph.text_metrics(as, ds, il))
 						essence_->text_height = as + ds;
 
-					essence_->scheme_ptr->suspension_width = graph.text_extent_size("...").width;
 					essence_->calc_content_size(true);
 				}
 
@@ -4343,7 +4342,7 @@ namespace nana
 									else
 									{
 										auto selected = lister.pick_items(true);
-										if (selected.cend() != std::find(selected.cbegin(), selected.cend(), item_pos))
+										if (selected.cend() != std::find(selected.cbegin(), selected.cend(), abs_item_pos))
 										{
 											//If the current selected one has been selected before selecting, remains the selection states for all
 											//selected items. But these items will be unselected when the mouse is released.
@@ -4359,6 +4358,8 @@ namespace nana
 										}
 										else
 											lister.select_for_all(false, abs_item_pos);
+
+										lister.latest_selected_abs = abs_item_pos;
 									}
 								}
 								else
@@ -4474,11 +4475,14 @@ namespace nana
 						essence_->stop_mouse_selection();
 						need_refresh = true;
 					}
-					
+
 					if (operation_states::msup_deselect == essence_->operation.state)
 					{
 						essence_->operation.state = operation_states::none;
-						need_refresh |= essence_->lister.select_for_all(false, essence_->operation.item);
+
+						//Don't deselect if the predicate returns false
+						if(!(essence_->pred_msup_deselect && !essence_->pred_msup_deselect(arg.button)))
+							need_refresh |= essence_->lister.select_for_all(false, essence_->operation.item);
 					}
 
 					if (need_refresh)
@@ -6043,7 +6047,7 @@ namespace nana
 			return *this;
 		}
 
-		listbox& listbox::category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed)
+		listbox& listbox::category_icon(const paint::image& img_expanded, const paint::image& img_collapsed)
 		{
 			internal_scope_guard lock;
 			_m_ess().ctg_icon_renderer = [img_expanded, img_collapsed](paint::graphics& graph, const rectangle& rt_icon, bool expanded)
@@ -6108,6 +6112,17 @@ namespace nana
 			}
 
 			return indexes;
+		}
+
+		void listbox::set_deselect(std::function<bool(nana::mouse)> predicate)
+		{
+			_m_ess().pred_msup_deselect = std::move(predicate);
+		}
+
+		unsigned listbox::suspension_width() const
+		{
+			nana::internal_scope_guard lock;
+			return _m_ess().suspension_width();
 		}
 
 		drawerbase::listbox::essence & listbox::_m_ess() const
@@ -6193,7 +6208,7 @@ namespace nana
 			
 			std::vector<size_type> new_idx;
 			for(size_type i=first_col; i<=last_col; ++i) new_idx.push_back(i);
-			
+
 			internal_scope_guard lock;
 			auto ip_row = this->at(row);
 			auto pnany=_m_ess().lister.anyobj(row,false);

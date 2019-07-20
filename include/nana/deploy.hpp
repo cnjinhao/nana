@@ -118,7 +118,5 @@ namespace nana
 	}
 }
 
-#define NANA_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
-
 #include <nana/pop_ignore_diagnostic>
 #endif //NANA_DEPLOY_HPP

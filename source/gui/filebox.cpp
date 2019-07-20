@@ -1062,6 +1062,8 @@ namespace nana
 					{
 						if(text.length() == start_pos)
 							return files;
+						else if(0 == start_pos) //single selection
+							return {text};
 
 						return {};
 					}

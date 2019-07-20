@@ -10,9 +10,9 @@
  *	@file: nana/gui/drawing.cpp
  */
 
+#include "detail/basic_window.hpp"
 #include <nana/gui/drawing.hpp>
 #include <nana/gui/programming_interface.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 
 namespace nana
 {
@@ -22,11 +22,9 @@ namespace nana
 	{
 		namespace
 		{
-			using core_window_t = detail::basic_window;
-
 			inline detail::drawer& get_drawer(window wd)
 			{
-				return reinterpret_cast<core_window_t*>(wd)->drawer;
+				return wd->drawer;
 			}
 		}
 	}
@@ -38,7 +36,7 @@ namespace nana
 			if (!API::is_window(wd))
 				throw std::invalid_argument("drawing: invalid window parameter");
 
-			if (reinterpret_cast<restrict::core_window_t*>(wd)->is_draw_through())
+			if (wd->is_draw_through())
 				throw std::invalid_argument("drawing: the window is draw_through enabled");
 		}
   		
@@ -46,7 +44,7 @@ namespace nana
 
 		bool drawing::empty() const
 		{
-			return API::empty_window(handle_) ||  reinterpret_cast<restrict::core_window_t*>(handle_)->root_graph->empty();
+			return API::empty_window(handle_) ||  handle_->root_graph->empty();
 		}
 
 		void drawing::update() const

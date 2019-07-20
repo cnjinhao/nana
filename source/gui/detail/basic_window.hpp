@@ -14,11 +14,11 @@
 #ifndef NANA_GUI_DETAIL_BASIC_WINDOW_HPP
 #define NANA_GUI_DETAIL_BASIC_WINDOW_HPP
 #include <nana/push_ignore_diagnostic>
-#include "drawer.hpp"
-#include "events_holder.hpp"
-#include "widget_geometrics.hpp"
-#include "widget_content_measurer_interface.hpp"
-#include "widget_notifier_interface.hpp"
+#include <nana/gui/detail/drawer.hpp>
+#include <nana/gui/detail/events_holder.hpp>
+#include <nana/gui/detail/widget_geometrics.hpp>
+#include <nana/gui/detail/widget_content_measurer_interface.hpp>
+#include <nana/gui/detail/widget_notifier_interface.hpp>
 #include <nana/basic_types.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>

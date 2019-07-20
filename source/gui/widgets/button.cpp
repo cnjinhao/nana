@@ -261,7 +261,7 @@ namespace nana{	namespace drawerbase
 					graph.palette(true, text_color);
 
 					if (attr_.omitted)
-						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
+						tr.render(pos, txtptr, txtlen, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 					else
 #ifdef _nana_std_has_string_view
 						graph.bidi_string(pos, { txtptr, txtlen });
@@ -276,9 +276,9 @@ namespace nana{	namespace drawerbase
 					graph.palette(true, color{ colors::white });
 					if(attr_.omitted)
 					{
-						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, true);
+						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 						graph.palette(true, color{ colors::gray });
-						tr.render(pos, txtptr, txtlen, omitted_pixels, true);
+						tr.render(pos, txtptr, txtlen, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 					}
 					else
 					{

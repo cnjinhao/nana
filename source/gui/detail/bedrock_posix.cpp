@@ -141,9 +141,9 @@ namespace detail
 		delete impl_;
 	}
 
-	void bedrock::flush_surface(core_window_t* wd, bool forced, const rectangle* update_area)
+	void bedrock::flush_surface(basic_window* wd, bool forced, const rectangle* update_area)
 	{
-		wd->drawer.map(reinterpret_cast<window>(wd), forced, update_area);
+		wd->drawer.map(wd, forced, update_area);
 	}
 
 	//inc_window
@@ -248,14 +248,14 @@ namespace detail
 		return impl_->estore;
 	}
 
-	void bedrock::map_through_widgets(core_window_t*, native_drawable_type)
+	void bedrock::map_through_widgets(basic_window*, native_drawable_type)
 	{
 		//No implementation for Linux
 	}
 
 	void assign_arg(arg_mouse& arg, basic_window* wd, unsigned msg, const XEvent& evt)
 	{
-		arg.window_handle = reinterpret_cast<window>(wd);
+		arg.window_handle = wd;
 		arg.button = ::nana::mouse::any_button;
 
 		int mask_state = 0;
@@ -308,7 +308,7 @@ namespace detail
 
 	void assign_arg(arg_focus& arg, basic_window* wd, native_window_type recv, bool getting)
 	{
-		arg.window_handle = reinterpret_cast<window>(wd);
+		arg.window_handle = wd;
 		arg.receiver = recv;
 		arg.getting = getting;
         arg.focus_reason = arg_focus::reason::general;
@@ -317,7 +317,7 @@ namespace detail
 	void assign_arg(arg_wheel& arg, basic_window* wd, const XEvent& evt)
 	{
 		arg.evt_code = event_code::mouse_wheel;
-		arg.window_handle = reinterpret_cast<window>(wd);
+		arg.window_handle = wd;
 		if (ButtonRelease == evt.type && (evt.xbutton.button == Button4 || evt.xbutton.button == Button5))
 		{
 			arg.evt_code = event_code::mouse_wheel;
@@ -371,12 +371,12 @@ namespace detail
 				if(msgwd)
 				{
 					arg_dropfiles arg;
-					arg.window_handle = reinterpret_cast<window>(msgwd);
+					arg.window_handle = msgwd;
 					arg.files.swap(*msg.u.mouse_drop.files);
 					delete msg.u.mouse_drop.files;
 					arg.pos.x = msg.u.mouse_drop.x - msgwd->pos_root.x;
 					arg.pos.y = msg.u.mouse_drop.y - msgwd->pos_root.y;
-					msgwd->annex.events_ptr->mouse_dropfiles.emit(arg, reinterpret_cast<window>(msgwd));
+					msgwd->annex.events_ptr->mouse_dropfiles.emit(arg, msgwd);
 					brock.wd_manager().do_lazy_refresh(msgwd, false);
 				}
 				break;
@@ -512,11 +512,9 @@ namespace detail
 
 		auto const native_window = rruntime->window->root;
 		
-
-		nana::detail::charset_conv charset(NANA_UNICODE, "UTF-8");
-		const std::string& str = charset.charset(std::string(keybuf, keybuf + keybuf_len));
-		auto const charbuf = reinterpret_cast<const wchar_t*>(str.c_str());
-		auto const len = str.size() / sizeof(wchar_t);
+		auto wstr = nana::to_wstring(std::string{keybuf, keybuf + keybuf_len});
+		auto const charbuf = wstr.c_str();
+		auto const len = wstr.length();
 
 		for(std::size_t i = 0; i < len; ++i)
 		{
@@ -539,15 +537,15 @@ namespace detail
 				auto shr_wd = wd_manager.find_shortkey(native_window, arg.key);
 				if(shr_wd)
 				{
-					arg.window_handle = reinterpret_cast<window>(shr_wd);
+					arg.window_handle = shr_wd;
 					brock.emit(event_code::shortkey, shr_wd, arg, true, &context);
 				}
 				continue;
 			}
 			
 			arg.evt_code = event_code::key_char;
-			arg.window_handle = reinterpret_cast<window>(msgwd);
-			msgwd->annex.events_ptr->key_char.emit(arg, reinterpret_cast<window>(msgwd));
+			arg.window_handle = msgwd;
+			msgwd->annex.events_ptr->key_char.emit(arg, msgwd);
 			if(arg.ignore == false && wd_manager.available(msgwd))
 				draw_invoker(&drawer::key_char, msgwd, arg, &context);
 		}
@@ -556,34 +554,11 @@ namespace detail
 			context.is_alt_pressed = false;
 	}
 
-	class window_proc_guard
-	{
-	public:
-		window_proc_guard(detail::basic_window* wd) :
-			root_wd_(wd)
-		{
-			root_wd_->other.attribute.root->lazy_update = true;
-		}
-
-		~window_proc_guard()
-		{
-			if (!bedrock::instance().wd_manager().available(root_wd_))
-				return;
-
-			root_wd_->other.attribute.root->lazy_update = false;
-			root_wd_->other.attribute.root->update_requesters.clear();
-		}
-	private:
-		detail::basic_window* const root_wd_;
-	};
-
 	void window_proc_for_xevent(Display* /*display*/, XEvent& xevent)
 	{
-		typedef detail::bedrock::core_window_t core_window_t;
-
 		static auto& brock = detail::bedrock::instance();
 		static unsigned long	last_mouse_down_time;
-		static core_window_t*	last_mouse_down_window;
+		static basic_window*	last_mouse_down_window;
 
 		auto native_window = reinterpret_cast<native_window_type>(event_window(xevent));
 		auto & wd_manager = brock.wd_manager();
@@ -593,7 +568,8 @@ namespace detail
 		{
 			auto const root_wd = root_runtime->window;
 			auto msgwnd = root_wd;
-			window_proc_guard wp_guard{ root_wd };
+
+			detail::bedrock::root_guard rw_guard{ brock, root_wd };
 
 			auto& context = *brock.get_thread_context(msgwnd->thread_id);
 
@@ -786,7 +762,7 @@ namespace detail
 							{
 								msgwnd->set_action(mouse_action::hovered);
 
-								click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+								click_arg.window_handle = msgwnd;
 								draw_invoker(&drawer::click, msgwnd, click_arg, &context);
 							}
 						}
@@ -804,16 +780,16 @@ namespace detail
 							draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 
 							if(click_arg.window_handle)
-								evt_ptr->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
+								evt_ptr->click.emit(click_arg, msgwnd);
 
 							if (wd_manager.available(msgwnd))
 							{
 								arg.evt_code = event_code::mouse_up;
-								evt_ptr->mouse_up.emit(arg, reinterpret_cast<window>(msgwnd));
+								evt_ptr->mouse_up.emit(arg, msgwnd);
 							}
 						}
 						else if(click_arg.window_handle)
-							msgwnd->annex.events_ptr->click.emit(click_arg, reinterpret_cast<window>(msgwnd));
+							msgwnd->annex.events_ptr->click.emit(click_arg, msgwnd);
 
 						wd_manager.do_lazy_refresh(msgwnd, false);
 					}
@@ -937,7 +913,7 @@ namespace detail
 						//Don't copy root_graph to the window directly, otherwise the edge nimbus effect will be missed.
 						::nana::rectangle update_area(xevent.xexpose.x, xevent.xexpose.y, xevent.xexpose.width, xevent.xexpose.height);
 						if (!update_area.empty())
-							msgwnd->drawer.map(reinterpret_cast<window>(msgwnd), true, &update_area);
+							msgwnd->drawer.map(msgwnd, true, &update_area);
 					}
 				}
 				break;
@@ -1016,7 +992,7 @@ namespace detail
 							else if((keyboard::space == os_code) && msgwnd->flags.space_click_enabled)
 							{
 								//Clicked by spacebar
-								if((nullptr == pressed_wd) && (nullptr == pressed_wd_space))
+								if((nullptr == pressed_wd) && (nullptr == pressed_wd_space) && msgwnd->flags.enabled)
 								{
 									arg_mouse arg;
 									arg.alt = modifiers_status.alt;
@@ -1027,7 +1003,7 @@ namespace detail
 									arg.mid_button = false;
 									arg.pos.x = 0;
 									arg.pos.y = 0;
-									arg.window_handle = reinterpret_cast<window>(msgwnd);
+									arg.window_handle = msgwnd;
 
 									msgwnd->set_action(mouse_action::pressed);
 
@@ -1049,7 +1025,7 @@ namespace detail
 										bool focused = (brock.focus() == msgwnd);
 										arg_keyboard arg;
 										arg.evt_code = event_code::key_press;
-										arg.window_handle = reinterpret_cast<window>(msgwnd);
+										arg.window_handle = msgwnd;
 										arg.ignore = false;
 										arg.key = os_code;
 										brock.get_key_state(arg);
@@ -1071,7 +1047,7 @@ namespace detail
 								arg.ignore = false;
 								arg.key = os_code;
 								arg.evt_code = event_code::key_press;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.window_handle = msgwnd;
 
 								brock.emit(event_code::key_press, msgwnd, arg, true, &context);
 
@@ -1119,7 +1095,7 @@ namespace detail
 						    msgwnd = brock.focus();
 						    if(msgwnd)
 						    {
-							    if(msgwnd == pressed_wd_space)
+							    if((msgwnd == pressed_wd_space) && msgwnd->flags.enabled)
 							    {
 									msgwnd->set_action(mouse_action::normal);
 
@@ -1127,7 +1103,7 @@ namespace detail
 
 									arg_click click_arg;
 									click_arg.mouse_args = nullptr;
-									click_arg.window_handle = reinterpret_cast<window>(msgwnd);
+									click_arg.window_handle = msgwnd;
 
 									arg_mouse arg;
 									arg.alt = false;
@@ -1138,7 +1114,7 @@ namespace detail
 									arg.mid_button = false;
 									arg.pos.x = 0;
 									arg.pos.y = 0;
-									arg.window_handle = reinterpret_cast<window>(msgwnd);
+									arg.window_handle = msgwnd;
 
 									draw_invoker(&drawer::mouse_up, msgwnd, arg, &context);
 
@@ -1152,7 +1128,7 @@ namespace detail
 								    arg_keyboard arg;
 
 								    arg.evt_code = event_code::key_release;
-								    arg.window_handle = reinterpret_cast<window>(msgwnd);
+								    arg.window_handle = msgwnd;
 								    arg.ignore = false;
 								    arg.key = os_code;
 								    brock.get_key_state(arg);
@@ -1178,7 +1154,7 @@ namespace detail
 
 								arg_keyboard arg;
 								arg.evt_code = event_code::key_release;
-								arg.window_handle = reinterpret_cast<window>(msgwnd);
+								arg.window_handle = msgwnd;
 								arg.ignore = false;
 								arg.key = os_code;
 								brock.get_key_state(arg);
@@ -1205,7 +1181,7 @@ namespace detail
 						if(msgwnd->flags.enabled && (atoms.wm_delete_window == static_cast<Atom>(xclient.data.l[0])))
 						{
 							arg_unload arg;
-							arg.window_handle = reinterpret_cast<window>(msgwnd);
+							arg.window_handle = msgwnd;
 							arg.cancel = false;
 							brock.emit(event_code::unload, msgwnd, arg, true, &context);
 							if(false == arg.cancel)
@@ -1215,14 +1191,8 @@ namespace detail
 				}
 			}
 
-			if (wd_manager.available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
-			{
-				for (auto wd : root_wd->other.attribute.root->update_requesters)
-				{
-					window_layout::paint(wd, window_layout::paint_operation::have_refreshed, false);
-					wd_manager.map(wd, true);
-				}
-			}
+
+			wd_manager.update_requesters(root_wd);
 
 			root_runtime = wd_manager.root_runtime(native_window);
 			if(root_runtime)
@@ -1262,10 +1232,10 @@ namespace detail
 		lock.revert();
 
 		native_window_type owner_native{};
-		core_window_t * owner = 0;
+		basic_window * owner = nullptr;
 		if(condition_wd && is_modal)
 		{
-			native_window_type modal = reinterpret_cast<core_window_t*>(condition_wd)->root;
+			native_window_type modal = condition_wd->root;
 			owner_native = native_interface::get_window(modal, window_relationship::owner);
 			if(owner_native)
 			{
@@ -1276,7 +1246,7 @@ namespace detail
 			}
 		}
 
-		nana::detail::platform_spec::instance().msg_dispatch(condition_wd ? reinterpret_cast<core_window_t*>(condition_wd)->root : 0);
+		nana::detail::platform_spec::instance().msg_dispatch(condition_wd ? condition_wd->root : 0);
 
 		if(owner_native)
 		{
@@ -1304,7 +1274,7 @@ namespace detail
 	}//end bedrock::event_loop
 
 	//Dynamically set a cursor for a window
-	void bedrock::set_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
+	void bedrock::set_cursor(basic_window* wd, nana::cursor cur, thread_context* thrd)
 	{
 		if (nullptr == thrd)
 			thrd = get_thread_context(wd->thread_id);
@@ -1347,14 +1317,14 @@ namespace detail
 		}
 	}
 
-	void bedrock::define_state_cursor(core_window_t* wd, nana::cursor cur, thread_context* thrd)
+	void bedrock::define_state_cursor(basic_window* wd, nana::cursor cur, thread_context* thrd)
 	{
 		wd->root_widget->other.attribute.root->state_cursor = cur;
 		wd->root_widget->other.attribute.root->state_cursor_window = wd;
 		set_cursor(wd, cur, thrd);
 	}
 
-	void bedrock::undefine_state_cursor(core_window_t * wd, thread_context* thrd)
+	void bedrock::undefine_state_cursor(basic_window * wd, thread_context* thrd)
 	{
 		if (!wd_manager().available(wd))
 			return;

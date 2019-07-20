@@ -18,12 +18,12 @@ namespace nana
 			color_schemes				scheme;
 			events_operation			evt_operation;
 			window_manager				wd_manager;
-			std::set<core_window_t*>	auto_form_set;
+			std::set<basic_window*>	auto_form_set;
 			bool shortkey_occurred{ false };
 
 			struct menu_rep
 			{
-				core_window_t*	taken_window{ nullptr };
+				basic_window*	taken_window{ nullptr };
 				bool			delay_restore{ false };
 				native_window_type window{ nullptr };
 				native_window_type owner{ nullptr };
@@ -37,7 +37,7 @@ namespace nana
 		{
 			unsigned	event_pump_ref_count{0};
 			int			window_count{0};	//The number of windows
-			core_window_t* event_window{nullptr};
+			basic_window* event_window{nullptr};
 
 			struct platform_detail_tag
 			{
@@ -46,7 +46,7 @@ namespace nana
 
 			struct cursor_tag
 			{
-				core_window_t * window;
+				basic_window * window;
 				native_window_type native_handle;
 				nana::cursor	predef_cursor;
 				HCURSOR			handle;
@@ -66,7 +66,7 @@ namespace nana
 			unsigned event_pump_ref_count{0};
 
 			int		window_count{0};	//The number of windows
-			core_window_t* event_window{nullptr};
+			basic_window* event_window{nullptr};
 			bool	is_alt_pressed{false};
 			bool	is_ctrl_pressed{false};
 
@@ -78,7 +78,7 @@ namespace nana
 
 			struct cursor_tag
 			{
-				core_window_t * window;
+				basic_window * window;
 				native_window_type native_handle;
 				nana::cursor predef_cursor;
 				Cursor handle;

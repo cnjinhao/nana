@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -24,6 +24,14 @@
 
 namespace nana
 {
+#ifdef NANA_USE_XFT
+	//Forward-declarations
+	//These names are defined platform_abstraction.cpp
+	class font_interface;
+	void nana_xft_draw_string(::XftDraw* xftdraw, ::XftColor* xftcolor, font_interface* ft, const nana::point& pos, const wchar_t * str, std::size_t len);
+	nana::size nana_xft_extents(font_interface* ft, const wchar_t* str, std::size_t len);
+#endif
+
 namespace paint
 {
 namespace detail
@@ -144,14 +152,19 @@ namespace detail
 			if (::GetTextExtentPoint32(dw->context, text, static_cast<int>(len), &size))
 				return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
-			std::string utf8text = to_utf8(std::wstring(text, len));
 #if defined(NANA_USE_XFT)
+			#if 0
+			std::string utf8text = to_utf8(std::wstring(text, len));
 			XGlyphInfo ext;
 			XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
 			::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
 				reinterpret_cast<XftChar8*>(const_cast<char*>(utf8text.data())), utf8text.size(), &ext);
 			return nana::size(ext.xOff, fs->ascent + fs->descent);
+			#else
+			return nana_xft_extents(dw->font.get(), text, len);
+			#endif
 #else
+			std::string utf8text = to_utf8(std::wstring(text, len));
 			XRectangle ink;
 			XRectangle logic;
 			::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), utf8text.c_str(), utf8text.size(), &ink, &logic);
@@ -178,11 +191,20 @@ namespace detail
 				return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
 #if defined(NANA_USE_XFT)
+			#if 0
 			XGlyphInfo ext;
 			XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
 			::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
 				reinterpret_cast<XftChar8*>(const_cast<char*>(text)), len, &ext);
 			return nana::size(ext.xOff, fs->ascent + fs->descent);
+			#else
+#ifdef _nana_std_has_string_view
+			auto wstr = to_wstring(std::string_view(text, len));
+#else
+			auto wstr = to_wstring(std::string(text,len));
+#endif
+			return nana_xft_extents(dw->font.get(), wstr.data(), wstr.size());
+			#endif
 #else
 			XRectangle ink;
 			XRectangle logic;
@@ -238,19 +260,8 @@ namespace detail
 #if defined(NANA_WINDOWS)
 		::TextOut(dw->context, pos.x, pos.y, str, static_cast<int>(len));
 #elif defined(NANA_X11)
-		auto disp = ::nana::detail::platform_spec::instance().open_display();
 	#if defined(NANA_USE_XFT)
-		auto fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
-
-		//Fixed missing array declaration by dareg
-		std::unique_ptr<FT_UInt[]> glyphs_ptr(new FT_UInt[len]);
-		auto glyphs = glyphs_ptr.get();
-		const auto endstr = str + len;
-		for(auto chr = str; chr != endstr; ++chr)
-		{
-			(*glyphs++) = XftCharIndex(disp, fs, *chr);
-		}
-		XftDrawGlyphs(dw->xftdraw, &(dw->xft_fgcolor), fs, pos.x, pos.y + fs->ascent, glyphs_ptr.get(), len);
+		nana_xft_draw_string(dw->xftdraw, &(dw->xft_fgcolor), dw->font.get(), pos, str, len);
 	#else
 		XFontSet fs = reinterpret_cast<XFontSet>(dw->font->native_handle());
 		XFontSetExtents * ext = ::XExtentsOfFontSet(fs);

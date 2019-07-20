@@ -15,8 +15,8 @@
 #define NANA_GUI_INNER_FWD_IMPLEMENT_HPP
 
 #include <nana/push_ignore_diagnostic>
+#include "basic_window.hpp"
 #include <nana/gui/detail/inner_fwd.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include <nana/paint/graphics.hpp>
 
 #include <map>

@@ -59,11 +59,7 @@ namespace nana
 		void text(const ::std::string&);
 		void icon(const ::std::string& icon_file);
 		void insert_icon(const ::std::string& icon_file);
-#if 0 //deprecated
-		void period(unsigned millisecond);
-#else
 		void period(std::chrono::milliseconds time);
-#endif
 		detail::notifier_events& events();
 		window handle() const;
 	private:

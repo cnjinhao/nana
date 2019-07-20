@@ -9,18 +9,18 @@
  *
  *	@file: nana/gui/state_cursor.cpp
  */
+
+#include "detail/basic_window.hpp"
 #include <nana/gui/state_cursor.hpp>
 #include <nana/gui/detail/bedrock.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 
 namespace nana
 {
-	state_cursor::state_cursor(window handle, cursor cur)
-		: handle_(handle)
+	state_cursor::state_cursor(window wd, cursor cur)
+		: handle_(wd)
 	{
 		auto & brock = detail::bedrock::instance();
-		auto wd = reinterpret_cast<detail::basic_window*>(handle);
 		if (brock.wd_manager().available(wd))
 			brock.define_state_cursor(wd, cur, nullptr);
 		else
@@ -39,10 +39,9 @@ namespace nana
 		{
 			if (handle_)
 			{
+				nana::internal_scope_guard lock;
 				auto & brock = detail::bedrock::instance();
-				auto wd = reinterpret_cast<detail::basic_window*>(handle_);
-				if (brock.wd_manager().available(wd))
-					brock.undefine_state_cursor(wd, nullptr);
+				brock.undefine_state_cursor(handle_, nullptr);
 			}
 			handle_ = rhs.handle_;
 			rhs.handle_ = nullptr;
@@ -54,10 +53,9 @@ namespace nana
 	{
 		if (handle_)
 		{
+			nana::internal_scope_guard lock;
 			auto & brock = detail::bedrock::instance();
-			auto wd = reinterpret_cast<detail::basic_window*>(handle_);
-			if (brock.wd_manager().available(wd))
-				brock.undefine_state_cursor(wd, nullptr);
+			brock.undefine_state_cursor(handle_, nullptr);
 		}
 	}
 }

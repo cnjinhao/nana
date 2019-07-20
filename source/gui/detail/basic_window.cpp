@@ -10,7 +10,7 @@
 *	@file: nana/gui/detail/basic_window.cpp
 */
 
-#include <nana/gui/detail/basic_window.hpp>
+#include "basic_window.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 
 namespace nana

@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,6 +28,10 @@
 
 namespace nana
 {
+	//Forward-declarations
+	//These names are defined platform_abstraction.cpp
+	std::unique_ptr<unsigned[]> nana_xft_glyph_pixels(font_interface*, const wchar_t* str, std::size_t len);
+
 	namespace detail
 	{
 		font_style::font_style(unsigned weight, bool italic, bool underline, bool strike_out) :
@@ -502,8 +506,8 @@ namespace paint
 
 			if (!text.empty())
 			{
-				unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 #if defined(NANA_WINDOWS)
+				unsigned tab_pixels = impl_->handle->string.tab_length * impl_->handle->string.whitespace_pixels;
 				int * dx = new int[text.size()];
 				SIZE extents;
 				::GetTextExtentExPoint(impl_->handle->context, text.data(), static_cast<int>(text.size()), 0, 0, dx, &extents);
@@ -516,22 +520,7 @@ namespace paint
 				}
 				delete[] dx;
 #elif defined(NANA_X11) && defined(NANA_USE_XFT)
-
-				auto disp = nana::detail::platform_spec::instance().open_display();
-				auto xft = reinterpret_cast<XftFont*>(impl_->handle->font->native_handle());
-
-				XGlyphInfo extents;
-				for (std::size_t i = 0; i < text.size(); ++i)
-				{
-					if (text[i] != '\t')
-					{
-						FT_UInt glyphs = ::XftCharIndex(disp, xft, text[i]);
-						::XftGlyphExtents(disp, xft, &glyphs, 1, &extents);
-						pxbuf[i] = extents.xOff;
-					}
-					else
-						pxbuf[i] = tab_pixels;
-				}
+				return nana_xft_glyph_pixels(impl_->handle->font.get(), text.data(), text.size());
 #endif
 			}
 			return pxbuf;
@@ -1100,7 +1089,7 @@ namespace paint
 		::nana::color graphics::palette(bool for_text) const
 		{
 			if (impl_->handle)
-				return static_cast<color_rgb>(for_text ? impl_->handle->get_text_color() : impl_->handle->get_color());
+				return static_cast<color_rgb>(for_text ? impl_->handle->fgcolor_rgb : impl_->handle->bgcolor_rgb);
 
 			return{};
 		}
@@ -1132,7 +1121,7 @@ namespace paint
 			if (impl_->handle)
 			{
 #if defined(NANA_WINDOWS)
-				::SetPixel(impl_->handle->context, x, y, NANA_RGB(impl_->handle->get_color()));
+				::SetPixel(impl_->handle->context, x, y, impl_->handle->bgcolor_native);
 #elif defined(NANA_X11)
 				Display* disp = nana::detail::platform_spec::instance().open_display();
 				impl_->handle->update_color();
@@ -1328,14 +1317,14 @@ namespace paint
 #if defined(NANA_WINDOWS)
 			if (pos1 != pos2)
 			{
-				auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
+				auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, impl_->handle->bgcolor_native));
 
 				::MoveToEx(impl_->handle->context, pos1.x, pos1.y, 0);
 				::LineTo(impl_->handle->context, pos2.x, pos2.y);
 
 				::DeleteObject(::SelectObject(impl_->handle->context, prv_pen));
 			}
-			::SetPixel(impl_->handle->context, pos2.x, pos2.y, NANA_RGB(impl_->handle->get_color()));
+			::SetPixel(impl_->handle->context, pos2.x, pos2.y, impl_->handle->bgcolor_native);
 #elif defined(NANA_X11)
 			Display* disp = nana::detail::platform_spec::instance().open_display();
 			impl_->handle->update_color();
@@ -1361,7 +1350,7 @@ namespace paint
 		{
 			if (!impl_->handle)	return;
 #if defined(NANA_WINDOWS)
-			auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
+			auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, impl_->handle->bgcolor_native));
 
 			::LineTo(impl_->handle->context, pos.x, pos.y);
 
@@ -1394,7 +1383,7 @@ namespace paint
 			{
 #if defined(NANA_WINDOWS)
 
-				auto brush = ::CreateSolidBrush(NANA_RGB(impl_->handle->get_color()));
+				auto brush = ::CreateSolidBrush(impl_->handle->bgcolor_native);
 
 				::RECT native_r = { r.x, r.y, r.right(), r.bottom()};
 
@@ -1519,6 +1508,7 @@ namespace paint
 			if (impl_->changed == false) impl_->changed = true;
 		}
 
+#define NANA_WINDOWS_RGB(a)	(((DWORD)(a) & 0xFF)<<16) |  ((DWORD)(a) & 0xFF00) | (((DWORD)(a) & 0xFF0000) >> 16 )
 		void graphics::round_rectangle(const ::nana::rectangle& r, unsigned radius_x, unsigned radius_y, const color& clr, bool solid, const color& solid_clr)
 		{
 			if (impl_->handle)
@@ -1528,8 +1518,8 @@ namespace paint
 
 				if (solid)
 				{
-					auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, NANA_RGB(impl_->handle->get_color())));
-					auto prv_brush = ::SelectObject(impl_->handle->context, ::CreateSolidBrush(NANA_RGB(solid_clr.px_color().value)));
+					auto prv_pen = ::SelectObject(impl_->handle->context, ::CreatePen(PS_SOLID, 1, impl_->handle->bgcolor_native));
+					auto prv_brush = ::SelectObject(impl_->handle->context, ::CreateSolidBrush(NANA_WINDOWS_RGB(solid_clr.px_color().value)));
 
 					::RoundRect(impl_->handle->context, r.x, r.y, r.right(), r.bottom(), static_cast<int>(radius_x * 2), static_cast<int>(radius_y * 2));
 
@@ -1538,7 +1528,7 @@ namespace paint
 				}
 				else
 				{
-					auto brush = ::CreateSolidBrush(NANA_RGB(impl_->handle->get_color()));
+					auto brush = ::CreateSolidBrush(impl_->handle->bgcolor_native);
 
 					auto region = ::CreateRoundRectRgn(r.x, r.y, r.x + static_cast<int>(r.width) + 1, r.y + static_cast<int>(r.height) + 1, static_cast<int>(radius_x + 1), static_cast<int>(radius_y + 1));
 

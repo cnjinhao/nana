@@ -141,6 +141,7 @@ namespace threads
 					::pthread_join(thr->handle, 0);
 					::pthread_detach(thr->handle);
 #endif
+					delete thr;
 				}
 
 				std::lock_guard<decltype(mutex_)> lock(mutex_);

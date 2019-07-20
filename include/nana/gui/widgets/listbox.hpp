@@ -1219,7 +1219,6 @@ namespace nana
 
 				unsigned min_column_width{ 20 };  ///< def=20 . non counting suspension_width
 
-				unsigned suspension_width{ 8 };  ///<  def= . the trigger will set this to the width if ("...")
 				unsigned text_margin{ 5 };  ///<  def= 5. Additional or extended with added (before) to the text width to determine the cell width. cell_w = text_w + ext_w +1
 
 				unsigned item_height_ex{ 6 };  ///< Set !=0 !!!!  def=6. item_height = text_height + item_height_ex
@@ -1292,7 +1291,10 @@ the nana::detail::basic_window member pointer scheme
 \example listbox_Resolver.cpp
 */
 	class listbox
-		:	public widget_object<category::widget_tag, drawerbase::listbox::trigger, drawerbase::listbox::listbox_events, drawerbase::listbox::scheme>,
+		:	public widget_object<category::widget_tag,
+		                         drawerbase::listbox::trigger,
+		                         drawerbase::listbox::listbox_events,
+		                         drawerbase::listbox::scheme>,
 			public concepts::any_objective<drawerbase::listbox::size_type, 2>
 	{
 	public:
@@ -1462,7 +1464,7 @@ the nana::detail::basic_window member pointer scheme
 		size_type column_size() const;
 
 		/// Move column to view_position
-		void move_column(size_type abs_pos, size_type view_pos);
+        void move_column(size_type abs_pos, size_type view_pos);
 
         /// Sort columns in range first_col to last_col inclusive using the values from a row
         void reorder_columns(size_type first_col,
@@ -1568,7 +1570,7 @@ the nana::detail::basic_window member pointer scheme
 		 * @param img_collapsed An icon displayed in front of category title when the category is collapsed.
 		 * @return the reference of *this.
 		 */
-		listbox& category_icon(const paint::image& img_expanded, const paint::image&& img_collapsed);
+		listbox& category_icon(const paint::image& img_expanded, const paint::image& img_collapsed);
 
 		/// Returns first visible element
 		/**
@@ -1590,6 +1592,18 @@ the nana::detail::basic_window member pointer scheme
 		 * @return index_pairs containing all visible items.
 		 */
 		index_pairs visibles() const;
+
+		/// Sets a predicate that indicates whether to deselect items when mouse_up is triggered.
+		/**
+		 * The predicate is called before the listbox attempts to deselect the selected items in the mouse_up event. Other situations,
+		 * the predicates isn't called, for example, releasing mouse button after user performed a box selection, because listbox doesn't deselect the items during this operation.
+		 * @param predicate Decides to deselect the items.
+		 *	The paramater of predicate indicates the mouse button which is releasing.
+		 *	It returns true to deselect the selected items. It returns false to cancel to deselect the selected items.
+		 */
+		void set_deselect(std::function<bool(nana::mouse)> predicate);
+
+		unsigned suspension_width() const;
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
 		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;

@@ -1,16 +1,16 @@
-/*
+/**
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/place.cpp
+ *	@file nana/gui/place.cpp
  *
- *	@contributions:
- *	min/max and splitter bar initial weight by Ariel Vina-Rodriguez.
+ *	@contributions
+ *	error, width/height, min/max and splitter bar initial weight by Ariel Vina-Rodriguez.
  */
 
 #ifndef NANA_GUI_PLACE_HPP
@@ -79,6 +79,7 @@ namespace nana
 	{
 		struct implement;
 
+
 		class field_interface
 		{
 			field_interface(const field_interface&) = delete;
@@ -103,6 +104,19 @@ namespace nana
 			virtual void _m_add_agent(const detail::place_agent&) = 0;
 		};
 	public:
+		class error :public std::invalid_argument
+		{
+		public:
+			error(	const std::string& what,
+					const place& plc,
+					std::string            field = "unknown",
+					std::string::size_type pos = std::string::npos);
+			std::string base_what;
+			std::string owner_caption;  ///< truncate caption (title) of the "placed" widget
+			std::string div_text;       ///< involved div_text
+			std::string field;          ///< posible field where the error ocurred.  
+			std::string::size_type pos; ///< posible position in the div_text where the error ocurred. npos if unknown
+		};
         ///  reference to a field manipulator which refers to a field object created by place 
 		using field_reference = field_interface &;
 
@@ -119,9 +133,13 @@ namespace nana
 
 		void splitter_renderer(std::function<void(window, paint::graphics&, mouse_action)> fn);
         
-		void div(std::string div_text);			///< Divides the attached widget into fields.
-		const std::string& div() const noexcept;	///< Returns div-text that depends on fields status.
-		void modify(const char* field_name, const char* div_text);	///< Modifies a specified field.
+		void div(std::string div_text);			  ///< Divides the attached widget into fields. May throw placa::error
+		const std::string& div() const noexcept;  ///< Returns div-text that depends on fields status.
+		static bool valid_field_name(const char* name)  ///< must begin with _a-zA-Z
+		{
+			return name && (*name == '_' || (('a' <= *name && *name <= 'z') || ('A' <= *name && *name <= 'Z')));
+		}
+		void modify(const char* field_name, const char* div_text);	///< Modifies a specified field. May throw placa::error
 
 		field_reference field(const char* name);///< Returns a field with the specified name.
 
@@ -152,6 +170,8 @@ namespace nana
 	private:
 		implement * impl_;
 	};
+
+	
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>
 
