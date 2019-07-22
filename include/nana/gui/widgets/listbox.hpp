@@ -824,6 +824,10 @@ namespace nana
 				/// Determines whether the item is displayed on the screen
 				bool displayed() const;
 
+				/// Determines whether the item_proxy refers to invalid item.
+				/**
+				 * @return true if the item_proxy refers to an invalid item, false otherwise.
+				 */
 				bool empty() const noexcept;
 
 				/// Checks/unchecks the item
