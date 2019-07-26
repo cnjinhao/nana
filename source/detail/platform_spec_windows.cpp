@@ -114,12 +114,11 @@ namespace detail
 	platform_spec::platform_spec()
 		: impl_{ new implementation}
 	{
-		platform_abstraction::initialize();
+		platform_runtime_instance(); // force initialization
 	}
 
 	platform_spec::~platform_spec()
 	{
-		platform_abstraction::shutdown();
 		delete impl_;
 	}
 

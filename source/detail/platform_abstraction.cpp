@@ -511,6 +511,7 @@ namespace nana
 
 	struct platform_runtime
 	{
+
 		std::shared_ptr<font_interface> font;
 
 #ifdef NANA_X11
@@ -521,22 +522,11 @@ namespace nana
 #endif
 	};
 
-	namespace
+	platform_runtime& platform_runtime_instance()
 	{
-		namespace data
-		{
-			static platform_runtime* storage;
-		}
+		static platform_runtime runtime;
+		return runtime;
 	}
-
-	static platform_runtime& platform_storage()
-	{
-		if (nullptr == data::storage)
-			throw std::runtime_error("platform_abstraction is empty");
-
-		return *data::storage;
-	}
-
 
 	class internal_font
 		: public font_interface
@@ -570,7 +560,7 @@ namespace nana
 #elif defined(NANA_X11)
 			auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
-			platform_storage().fb_manager.release_fallback(fallback_);
+			platform_runtime_instance().fb_manager.release_fallback(fallback_);
 			::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
 #	else
 			::XFreeFontSet(disp, reinterpret_cast<XFontSet>(native_handle_));
@@ -650,26 +640,6 @@ namespace nana
 	}
 #endif
 
-
-	void platform_abstraction::initialize()
-	{
-		if (nullptr == data::storage)
-			data::storage = new platform_runtime;
-	}
-
-	void platform_abstraction::shutdown()
-	{
-		auto & r = platform_storage();
-
-		if (r.font.use_count() > 1)
-			throw std::runtime_error("platform_abstraction is disallowed to shutdown");
-
-		r.font.reset();
-
-		delete data::storage;
-		data::storage = nullptr;
-	}
-
 	double platform_abstraction::font_default_pt()
 	{
 #ifdef NANA_WINDOWS
@@ -702,13 +672,13 @@ namespace nana
 	void platform_abstraction::font_languages(const std::string& langs)
 	{
 #ifdef NANA_USE_XFT
-		platform_storage().fb_manager.languages(langs);
+		platform_runtime_instance().fb_manager.languages(langs);
 #endif
 	}
 
 	::std::shared_ptr<platform_abstraction::font> platform_abstraction::default_font(const ::std::shared_ptr<font>& new_font)
 	{
-		auto & r = platform_storage();
+		auto& r = platform_runtime_instance();
 		if (new_font)
 		{
 			auto f = r.font;
@@ -825,7 +795,7 @@ namespace nana
 		if (fd)
 		{
 #ifdef NANA_USE_XFT
-			auto fallback = platform_storage().fb_manager.make_fallback(pat_str);
+			auto fallback = platform_runtime_instance().fb_manager.make_fallback(pat_str);
 			return std::make_shared<internal_font>(std::move(ttf), std::move(font_family), size_pt, fs, reinterpret_cast<native_font_type>(fd), fallback);
 #else
 			return std::make_shared<internal_font>(std::move(ttf), std::move(font_family), size_pt, fs, reinterpret_cast<native_font_type>(fd));
@@ -858,7 +828,7 @@ namespace nana
 		else
 			::RemoveFontResourceEx(ttf.wstring().c_str(), FR_PRIVATE, nullptr);
 #else
-		auto & fc = platform_storage().fontconfig_counts;
+		auto& fc = platform_runtime_instance().fontconfig_counts;
 		if(try_add)
 		{
 			if(1 == ++(fc[ttf.string()]))

@@ -22,6 +22,8 @@
 namespace nana
 {
 
+	struct platform_runtime;
+	platform_runtime& platform_runtime_instance();
 
 	class platform_abstraction
 	{
@@ -30,9 +32,6 @@ namespace nana
 
 		using path_type = ::std::filesystem::path;
 
-		static void initialize();
-		/// Shutdown before destruction of platform_spec 
-		static void shutdown();
 		static double font_default_pt();
 		static void font_languages(const std::string&);
 		static ::std::shared_ptr<font> default_font(const ::std::shared_ptr<font>&);
