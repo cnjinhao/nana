@@ -87,6 +87,7 @@ target_sources(nana PRIVATE ${SOURCES})
 # To show .h files in Visual Studio, add them to the list of sources in add_executable / add_library / target_sources
 # and Use SOURCE_GROUP if all your sources are in the same directory
 set(NANA_INCLUDE_DIR        ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(nana PUBLIC ${NANA_INCLUDE_DIR})
 set(NANA_INCLUDE_SUBDIRS    /.
                             /filesystem
                             /gui
