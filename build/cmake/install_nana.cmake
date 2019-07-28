@@ -6,7 +6,7 @@ if(NANA_CMAKE_INSTALL)
     # Is your responsability to ensure all compiler options are compatible with the compilation
     # of the project linking to the nana lib here generated
     target_sources(nana PRIVATE ${HEADERS})
-    target_include_directories(nana PRIVATE ${NANA_INCLUDE_DIR})
+    # target_include_directories(nana PRIVATE ${NANA_INCLUDE_DIR})
     message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
     # Actually in DESTDIR/CMAKE_INSTALL_PREFIX/lib but in windows there is no DESTDIR/ part.
     install(TARGETS nana
@@ -15,6 +15,8 @@ if(NANA_CMAKE_INSTALL)
             RUNTIME DESTINATION bin)
     install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include) # in ${CMAKE_INSTALL_PREFIX}/include/nana
     message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
+    target_include_directories(nana PUBLIC $<BUILD_INTERFACE:${NANA_INCLUDE_DIR}>
+                                           $<INSTALL_INTERFACE:include>  )
 else()
     # this is the prefered method to consume nana with cmake
     target_sources(nana PUBLIC ${HEADERS})
