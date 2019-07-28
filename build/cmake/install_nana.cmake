@@ -6,7 +6,6 @@ if(NANA_CMAKE_INSTALL)
     # Is your responsability to ensure all compiler options are compatible with the compilation
     # of the project linking to the nana lib here generated
     target_sources(nana PRIVATE ${HEADERS})
-    # target_include_directories(nana PRIVATE ${NANA_INCLUDE_DIR})
     message("The compiled Nana library will be installed in ${CMAKE_INSTALL_PREFIX}/lib")
     # Actually in DESTDIR/CMAKE_INSTALL_PREFIX/lib but in windows there is no DESTDIR/ part.
     install(TARGETS nana
