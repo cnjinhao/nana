@@ -15,6 +15,7 @@ if(NANA_CMAKE_INSTALL)
             RUNTIME DESTINATION bin)
     install(DIRECTORY ${NANA_INCLUDE_DIR}/nana DESTINATION include) # in ${CMAKE_INSTALL_PREFIX}/include/nana
     message("The Nana include files will be installed in ${CMAKE_INSTALL_PREFIX}/include")
+    target_include_directories(nana PUBLIC  ${CMAKE_INSTALL_PREFIX}/include) # assume you dont move nana
 else()
     # this is the prefered method to consume nana with cmake
     target_sources(nana PUBLIC ${HEADERS})
