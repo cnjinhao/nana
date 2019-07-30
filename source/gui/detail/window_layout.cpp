@@ -11,8 +11,8 @@
 *
 */
 
+#include "basic_window.hpp"
 #include <nana/gui/detail/window_layout.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <algorithm>
@@ -22,7 +22,7 @@ namespace nana
 	namespace detail
 	{
 		//class window_layout
-			void window_layout::paint(core_window_t* wd, paint_operation operation, bool req_refresh_children)
+			void window_layout::paint(basic_window* wd, paint_operation operation, bool req_refresh_children)
 			{
 				if (wd->flags.refreshing && (paint_operation::try_refresh == operation))
 					return;
@@ -41,7 +41,7 @@ namespace nana
 					_m_paint_glass_window(wd, (paint_operation::try_refresh == operation), req_refresh_children, false, true);
 			}
 
-			bool window_layout::maproot(core_window_t* wd, bool have_refreshed, bool req_refresh_children)
+			bool window_layout::maproot(basic_window* wd, bool have_refreshed, bool req_refresh_children)
 			{
 				auto check_opaque = wd->seek_non_lite_widget_ancestor();
 				if (check_opaque && check_opaque->flags.refreshing)
@@ -80,7 +80,7 @@ namespace nana
 				return false;
 			}
 
-			void window_layout::paste_children_to_graphics(core_window_t* wd, nana::paint::graphics& graph)
+			void window_layout::paste_children_to_graphics(basic_window* wd, nana::paint::graphics& graph)
 			{
 				_m_paste_children(wd, false, false, rectangle{ wd->pos_root, wd->dimension }, graph, wd->pos_root);
 			}
@@ -89,7 +89,7 @@ namespace nana
 			///@brief 	Reads the visual rectangle of a window, the visual rectangle's reference frame is to root widget,
 			///			the visual rectangle is a rectangular block that a window should be displayed on screen.
 			///			The result is a rectangle that is a visible area for its ancestors.
-			bool window_layout::read_visual_rectangle(core_window_t* wd, nana::rectangle& visual)
+			bool window_layout::read_visual_rectangle(basic_window* wd, nana::rectangle& visual)
 			{
 				if (! wd->displayed())	return false;
 
@@ -139,7 +139,7 @@ namespace nana
 
 			//read_overlaps
 			//	reads the overlaps that are overlapped a rectangular block
-			bool window_layout::read_overlaps(core_window_t* wd, const nana::rectangle& vis_rect, std::vector<wd_rectangle>& blocks)
+			bool window_layout::read_overlaps(basic_window* wd, const nana::rectangle& vis_rect, std::vector<wd_rectangle>& blocks)
 			{
 				auto const is_wd_root = (category::flags::root == wd->other.category);
 				wd_rectangle block;
@@ -150,7 +150,7 @@ namespace nana
 					{
 						for (++i; i != wd->parent->children.cend(); ++i)
 						{
-							core_window_t* cover = *i;
+							basic_window* cover = *i;
 
 							if (!cover->visible)
 								continue;
@@ -182,7 +182,7 @@ namespace nana
 				return (!blocks.empty());
 			}
 
-			bool window_layout::enable_effects_bground(core_window_t * wd, bool enabled)
+			bool window_layout::enable_effects_bground(basic_window * wd, bool enabled)
 			{
 				if (category::flags::widget != wd->other.category)
 					return false;
@@ -220,15 +220,15 @@ namespace nana
 
 			//make_bground
 			//		update the glass buffer of a glass window.
-			void window_layout::make_bground(core_window_t* const wd)
+			void window_layout::make_bground(basic_window* const wd)
 			{
 				nana::point rpos{ wd->pos_root };
 				auto & glass_buffer = wd->other.glass_buffer;
 
 				if (category::flags::lite_widget == wd->parent->other.category)
 				{
-					std::vector<core_window_t*> layers;
-					core_window_t * beg = wd->parent;
+					std::vector<basic_window*> layers;
+					auto beg = wd->parent;
 					while (beg && (category::flags::lite_widget == beg->other.category))
 					{
 						layers.push_back(beg);
@@ -240,11 +240,11 @@ namespace nana
 					nana::rectangle r(wd->pos_owner, wd->dimension);
 					for (auto i = layers.rbegin(), layers_rend = layers.rend(); i != layers_rend; ++i)
 					{
-						core_window_t * pre = *i;
+						auto pre = *i;
 						if (false == pre->visible)
 							continue;
 
-						core_window_t * term = ((i + 1 != layers_rend) ? *(i + 1) : wd);
+						auto term = ((i + 1 != layers_rend) ? *(i + 1) : wd);
 						r.position(wd->pos_root - pre->pos_root);
 
 						for (auto child : pre->children)
@@ -286,10 +286,10 @@ namespace nana
 				}
 
 				if (wd->effect.bground)
-					wd->effect.bground->take_effect(reinterpret_cast<window>(wd), glass_buffer);
+					wd->effect.bground->take_effect(wd, glass_buffer);
 			}
 
-			void window_layout::_m_paste_children(core_window_t* wd, bool have_refreshed, bool req_refresh_children, const nana::rectangle& parent_rect, nana::paint::graphics& graph, const nana::point& graph_rpos)
+			void window_layout::_m_paste_children(basic_window* wd, bool have_refreshed, bool req_refresh_children, const nana::rectangle& parent_rect, nana::paint::graphics& graph, const nana::point& graph_rpos)
 			{
 				nana::rectangle rect;
 				for (auto child : wd->children)
@@ -333,7 +333,7 @@ namespace nana
 				}
 			}
 
-			void window_layout::_m_paint_glass_window(core_window_t* wd, bool is_redraw, bool is_child_refreshed, bool called_by_notify, bool notify_other)
+			void window_layout::_m_paint_glass_window(basic_window* wd, bool is_redraw, bool is_child_refreshed, bool called_by_notify, bool notify_other)
 			{
 				//A window which has an empty graphics(and lite-widget) does not notify
 				//glass windows for updating their background.
@@ -381,7 +381,7 @@ namespace nana
 
 			/// Notify the glass windows that are overlapped with the specified visual rectangle.
 			/// If a child window of sigwd is a glass window, it doesn't to be notified.
-			void window_layout::_m_notify_glasses(core_window_t* const sigwd)
+			void window_layout::_m_notify_glasses(basic_window* const sigwd)
 			{
 				nana::rectangle r_of_sigwd(sigwd->pos_root, sigwd->dimension);
 				for (auto wd : data_sect.effects_bground_windows)
@@ -420,7 +420,7 @@ namespace nana
 						else
 						{
 							//test if sigwnd is a parent of glass window x, or a slibing of the glass window, or a child of the slibing of the glass window.
-							core_window_t *p = wd->parent, *signode = sigwd;
+							basic_window *p = wd->parent, *signode = sigwd;
 							while (signode->parent && (signode->parent != p))
 								signode = signode->parent;
 

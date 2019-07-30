@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,11 +10,11 @@
  *	@file: nana/gui/detail/drawer.cpp
  */
 
+#include "basic_window.hpp"
+#include "effects_renderer.hpp"
 #include <nana/config.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/drawer.hpp>
-#include <nana/gui/detail/effects_renderer.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include "dynamic_drawing_object.hpp"
 
 #if defined(NANA_X11)
@@ -23,8 +23,6 @@
 
 namespace nana
 {
-	typedef detail::edge_nimbus_renderer<detail::bedrock::core_window_t> edge_nimbus_renderer_t;
-
 	//class drawer_trigger
 		void drawer_trigger::attached(widget_reference, graph_reference){}
 		void drawer_trigger::detached(){}	//none-const
@@ -344,8 +342,7 @@ namespace nana
 		{
 			if(wd)
 			{
-				auto iwd = reinterpret_cast<bedrock_type::core_window_t*>(wd);
-				bool owns_caret = (iwd->annex.caret_ptr) && (iwd->annex.caret_ptr->visible());
+				bool owns_caret = (wd->annex.caret_ptr) && (wd->annex.caret_ptr->visible());
 
 				//The caret in X11 is implemented by Nana, it is different from Windows'
 				//the caret in X11 is asynchronous, it is hard to hide and show the caret
@@ -354,20 +351,20 @@ namespace nana
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					iwd->annex.caret_ptr->visible(false);
+					wd->annex.caret_ptr->visible(false);
 #else
-					owns_caret = nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, false);
+					owns_caret = nana::detail::platform_spec::instance().caret_update(wd->root, *wd->root_graph, false);
 #endif
 				}
 
-				edge_nimbus_renderer_t::instance().render(iwd, forced, update_area);
+				edge_nimbus_renderer::instance().render(wd, forced, update_area);
 
 				if(owns_caret)
 				{
 #ifndef NANA_X11
-					iwd->annex.caret_ptr->visible(true);
+					wd->annex.caret_ptr->visible(true);
 #else
-					nana::detail::platform_spec::instance().caret_update(iwd->root, *iwd->root_graph, true);
+					nana::detail::platform_spec::instance().caret_update(wd->root, *wd->root_graph, true);
 #endif
 				}
 			}
@@ -474,5 +471,193 @@ namespace nana
 		{
 			return data_impl_->mth_state[pos];
 		}
+	}//end namespace detail
+
+	namespace detail
+	{
+		//class edge_nimbus_renderer
+		edge_nimbus_renderer& edge_nimbus_renderer::instance()
+		{
+			static edge_nimbus_renderer object;
+			return object;
+		}
+
+		void edge_nimbus_renderer::erase(basic_window* wd)
+		{
+			if (effects::edge_nimbus::none == wd->effect.edge_nimbus)
+				return;
+
+			auto root_wd = wd->root_widget;
+			auto & nimbus = root_wd->other.attribute.root->effects_edge_nimbus;
+
+			for (auto i = nimbus.begin(); i != nimbus.end(); ++i)
+			{
+				if (i->window == wd)
+				{
+					auto pixels = weight();
+					rectangle r{ wd->pos_root, wd->dimension };
+					r.x -= static_cast<int>(pixels);
+					r.y -= static_cast<int>(pixels);
+					r.width += static_cast<unsigned>(pixels << 1);
+					r.height += static_cast<unsigned>(pixels << 1);
+
+					root_wd->root_graph->paste(root_wd->root, r, r.x, r.y);
+
+					nimbus.erase(i);
+					break;
+				}
+			}
+		}
+
+		void edge_nimbus_renderer::render(basic_window* wd, bool forced, const rectangle* update_area)
+		{
+			bool copy_separately = true;
+			std::vector<std::pair<rectangle, basic_window*>> rd_set;
+
+			if (wd->root_widget->other.attribute.root->effects_edge_nimbus.size())
+			{
+				auto root_wd = wd->root_widget;
+
+				auto & nimbus = root_wd->other.attribute.root->effects_edge_nimbus;
+
+				auto focused = root_wd->other.attribute.root->focus;
+
+				const unsigned pixels = weight();
+
+				auto graph = root_wd->root_graph;
+
+				nana::rectangle r;
+				for (auto & action : nimbus)
+				{
+					if (_m_edge_nimbus(action.window, focused) && window_layer::read_visual_rectangle(action.window, r))
+					{
+						if (action.window == wd)
+						{
+							if (update_area)
+								::nana::overlap(*update_area, rectangle(r), r);
+							copy_separately = false;
+						}
+
+						//Avoiding duplicated rendering. If the window is declared to lazy refresh, it should be rendered.
+						if ((forced && (action.window == wd)) || (focused == action.window) || !action.rendered || (action.window->other.upd_state == basic_window::update_state::refreshed))
+						{
+							rd_set.emplace_back(r, action.window);
+							action.rendered = true;
+						}
+					}
+					else if (action.rendered)
+					{
+						action.rendered = false;
+
+						if (action.window == wd)
+							copy_separately = false;
+
+						::nana::rectangle erase_r(
+							action.window->pos_root.x - static_cast<int>(pixels),
+							action.window->pos_root.y - static_cast<int>(pixels),
+							static_cast<unsigned>(action.window->dimension.width + (pixels << 1)),
+							static_cast<unsigned>(action.window->dimension.height + (pixels << 1))
+						);
+
+						graph->paste(root_wd->root, erase_r, erase_r.x, erase_r.y);
+					}
+				}
+			}
+
+			if (copy_separately)
+			{
+				rectangle vr;
+				if (window_layer::read_visual_rectangle(wd, vr))
+				{
+					if (update_area)
+						::nana::overlap(*update_area, rectangle(vr), vr);
+					wd->root_graph->paste(wd->root, vr, vr.x, vr.y);
+				}
+			}
+
+			rectangle wd_r{ wd->pos_root, wd->dimension };
+			wd_r.pare_off(-static_cast<int>(this->weight()));
+			//Render
+			for (auto & rd : rd_set)
+			{
+				auto other_wd = rd.second;
+
+				if (other_wd != wd)
+				{
+					rectangle other_r{ other_wd->pos_root, other_wd->dimension };
+					other_r.pare_off(-static_cast<int>(this->weight()));
+					if (!overlapped(wd_r, other_r))
+						continue;
+				}
+				_m_render_edge_nimbus(other_wd, rd.first);
+			}
+		}
+		
+		/// Determines whether the effect will be rendered for the given window.
+		bool edge_nimbus_renderer::_m_edge_nimbus(basic_window * const wd, basic_window * const focused_wd)
+		{
+			// Don't render the effect if the window is disabled.
+			if (wd->flags.enabled)
+			{
+				if ((focused_wd == wd) && (static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::active)))
+					return true;
+				else if ((static_cast<unsigned>(wd->effect.edge_nimbus) & static_cast<unsigned>(effects::edge_nimbus::over)) && (wd->flags.action == mouse_action::hovered))
+					return true;
+			}
+			return false;
+		}
+
+		void edge_nimbus_renderer::_m_render_edge_nimbus(basic_window* wd, const nana::rectangle & visual)
+		{
+			wd->flags.action_before = wd->flags.action;
+
+			auto r = visual;
+			r.pare_off(-static_cast<int>(weight()));
+			rectangle good_r;
+			if (overlap(r, rectangle{ wd->root_graph->size() }, good_r))
+			{
+				if ((good_r.x < wd->pos_root.x) || (good_r.y < wd->pos_root.y) ||
+					(good_r.right() > visual.right()) || (good_r.bottom() > visual.bottom()))
+				{
+					auto graph = wd->root_graph;
+					nana::paint::pixel_buffer pixbuf(graph->handle(), r);
+
+					pixel_argb_t px0, px1, px2, px3;
+
+					px0 = pixbuf.pixel(0, 0);
+					px1 = pixbuf.pixel(r.width - 1, 0);
+					px2 = pixbuf.pixel(0, r.height - 1);
+					px3 = pixbuf.pixel(r.width - 1, r.height - 1);
+
+					good_r.x = good_r.y = 1;
+					good_r.width = r.width - 2;
+					good_r.height = r.height - 2;
+					pixbuf.rectangle(good_r, wd->annex.scheme->activated.get_color(), 0.95, false);
+
+					good_r.x = good_r.y = 0;
+					good_r.width = r.width;
+					good_r.height = r.height;
+					pixbuf.rectangle(good_r, wd->annex.scheme->activated.get_color(), 0.4, false);
+
+					pixbuf.pixel(0, 0, px0);
+					pixbuf.pixel(r.width - 1, 0, px1);
+					pixbuf.pixel(0, r.height - 1, px2);
+					pixbuf.pixel(r.width - 1, r.height - 1, px3);
+
+					pixbuf.paste(wd->root, { r.x, r.y });
+
+					std::vector<typename window_layer::wd_rectangle> overlaps;
+					if (window_layer::read_overlaps(wd, visual, overlaps))
+					{
+						for (auto & wdr : overlaps)
+							graph->paste(wd->root, wdr.r, wdr.r.x, wdr.r.y);
+					}
+				}
+				else
+					wd->root_graph->paste(wd->root, visual, visual.x, visual.y);
+			}
+		}
+
+		//end class edge_nimbus_renderer
 	}//end namespace detail
 }//end namespace nana

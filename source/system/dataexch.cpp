@@ -15,15 +15,14 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/pixel_buffer.hpp>
 #include <vector>
-#include <cassert>
 #include <cstring>
 
 #if defined(NANA_WINDOWS)
 #	include <windows.h>
 #elif defined(NANA_X11)
-#	include "../detail/platform_spec_selector.hpp"
 #	include <nana/gui/detail/bedrock.hpp>
-#	include <nana/gui/detail/basic_window.hpp>
+#	include "../detail/platform_spec_selector.hpp"
+#	include "../gui/detail/basic_window.hpp"
 #endif
 
 namespace nana{ namespace system{
@@ -71,7 +70,6 @@ namespace nana{ namespace system{
 			bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 			HDC hDC = ::GetDC(NULL);
 			if (::GetDIBits(hDC, (HBITMAP)g.pixmap(), 0, 1, NULL, (BITMAPINFO *)&bmi, DIB_RGB_COLORS) == 0) {
-				assert(false);
 				::ReleaseDC(NULL, hDC);
 				return false;
 			}
@@ -109,7 +107,6 @@ namespace nana{ namespace system{
 						::CloseClipboard();
 					}
 			}
-			assert(false);
 			::GlobalFree(h_gmem);
 			return false;
 
@@ -266,8 +263,8 @@ namespace nana{ namespace system{
 			spec.lock_xlib();
 
 			{
-				internal_scope_guard isg;
-				detail::bedrock::core_window_t * wd = detail::bedrock::instance().focus();
+				internal_scope_guard lock;
+				auto wd = detail::bedrock::instance().focus();
 				if(wd)	requester = wd->root;
 			}
 			spec.unlock_xlib();

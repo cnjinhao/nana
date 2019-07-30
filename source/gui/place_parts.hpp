@@ -126,6 +126,12 @@ namespace nana
 			{
 				close_fn_ = std::move(fn);
 			}
+
+			bool hit_close() const
+			{
+				return x_pointed_;
+			}
+
 		private:
 			virtual void attached(widget_reference wdg, graph_reference graph) override
 			{
@@ -140,7 +146,7 @@ namespace nana
 
 				//draw caption
 				auto text = to_wstring(API::window_caption(window_handle_));
-				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, true);
+				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
 				//draw x button
 				auto r = _m_button_area();
@@ -310,7 +316,9 @@ namespace nana
 							{
 								move_pos += moves_.start_container_pos;
 								API::move_window(container_->handle(), move_pos);
-								notifier_->notify_move();
+
+								if(!caption_.get_drawer_trigger().hit_close())
+									notifier_->notify_move();
 							}
 						}
 					}

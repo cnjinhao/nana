@@ -1,7 +1,7 @@
 /**
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -96,19 +96,19 @@ namespace detail
 			unsigned whitespace_pixels;
 		}string;
 
+		unsigned fgcolor_rgb{ 0xFFFFFFFF };
+		unsigned bgcolor_rgb{ 0xFFFFFFFF };
+		unsigned fgcolor_native{ 0xFFFFFFFF };	//Windows RGB format: 0xBBGGRR
+		unsigned bgcolor_native{ 0xFFFFFFFF };	//Windows RGB format
+
 		drawable_impl_type(const drawable_impl_type&) = delete;
 		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
 
 		drawable_impl_type();
 		~drawable_impl_type();
 
-		unsigned get_color() const;
-		unsigned get_text_color() const;
 		void set_color(const ::nana::color&);
 		void set_text_color(const ::nana::color&);
-	private:
-		unsigned color_{ 0xffffffff };
-		unsigned text_color_{0xffffffff};
 	};
 
 	class platform_spec

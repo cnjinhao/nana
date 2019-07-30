@@ -14,29 +14,28 @@
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #endif
-#include <cassert>
 #include <array>
 
 namespace {
 	std::tm localtime()
 	{
 #if defined(NANA_WINDOWS) && !defined(NANA_MINGW)
-		time_t t;
-		::time(&t);
+		std::time_t t = std::time(nullptr);
 		std::tm tm;
-		if(localtime_s(&tm, &t) != 0)
-			assert(false);
+		if (localtime_s(&tm, &t) != 0)
+			throw std::runtime_error("invalid local time");
 
 		return tm;
 #else
 		time_t t = std::time(nullptr);
 		struct tm * tm_addr = std::localtime(&t);
-		assert(tm_addr);
-		
+		if(nullptr == tm_addr)
+			throw std::runtime_error("invalid local time");
+
 		return *tm_addr;
 #endif
 	}
-	
+
 	::nana::date::value to_dateval(const std::tm& t)
 	{
 		return {static_cast<unsigned>(t.tm_year + 1900), static_cast<unsigned>(t.tm_mon + 1), static_cast<unsigned>(t.tm_mday)};
@@ -51,7 +50,7 @@ namespace {
 
 namespace nana
 {
-	//class date		
+	//class date
 		void date::set(const std::tm& t)
 		{
 			value_ = to_dateval(t);

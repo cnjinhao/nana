@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
-#include <nana/gui/detail/basic_window.hpp>
 #include <nana/gui/detail/window_manager.hpp>
 #include <nana/system/platform.hpp>
 #include <nana/paint/pixel_buffer.hpp>
@@ -35,6 +34,7 @@
 #include <sstream>
 
 #include "posix/msg_dispatcher.hpp"
+#include "../gui/detail/basic_window.hpp"
 
 namespace nana
 {
@@ -95,7 +95,7 @@ namespace detail
 			return std::string();
 		}
 	//end class conf
-
+#if 0
 	//class charset_conv
 		charset_conv::charset_conv(const char* tocode, const char* fromcode)
 		{
@@ -140,6 +140,7 @@ namespace detail
 			return rstr;
 		}
 	//end class charset_conv
+#endif
 #endif
 
 	//Caret implementation
@@ -209,15 +210,15 @@ namespace detail
 
 	class timer_runner
 	{
-		typedef void (*timer_proc_t)(std::size_t id);
+		using handler_type = void(*)(const timer_core*);
 
 		struct timer_tag
 		{
-			std::size_t id;
-			thread_t tid;
+			const timer_core* handle;
+			thread_t	thread_id;
 			std::size_t interval;
 			std::size_t timestamp;
-			timer_proc_t proc;
+			handler_type handler;
 		};
 
 		//timer_group
@@ -233,32 +234,32 @@ namespace detail
 		struct timer_group
 		{
 			bool proc_entered{false};	//This flag indicates whether the timers are going to do event.
-			std::set<std::size_t> timers;
-			std::vector<std::size_t> delay_deleted;
+			std::set<const timer_core*> timers;
+			std::vector<const timer_core*> delay_deleted;
 		};
 	public:
 		timer_runner()
 			: is_proc_handling_(false)
 		{}
 
-		void set(std::size_t id, std::size_t interval, timer_proc_t proc)
+		void set(const timer_core* handle, std::size_t interval, handler_type handler)
 		{
-			auto i = holder_.find(id);
+			auto i = holder_.find(handle);
 			if(i != holder_.end())
 			{
 				i->second.interval = interval;
-				i->second.proc = proc;
+				i->second.handler = handler;
 				return;
 			}
 			auto tid = nana::system::this_thread_id();
-			threadmap_[tid].timers.insert(id);
+			threadmap_[tid].timers.insert(handle);
 
-			timer_tag & tag = holder_[id];
-			tag.id = id;
-			tag.tid = tid;
+			timer_tag & tag = holder_[handle];
+			tag.handle = handle;
+			tag.thread_id = tid;
 			tag.interval = interval;
 			tag.timestamp = 0;
-			tag.proc = proc;
+			tag.handler = handler;
 		}
 
 		bool is_proc_handling() const
@@ -266,12 +267,12 @@ namespace detail
 			return is_proc_handling_;
 		}
 
-		void kill(std::size_t id)
+		bool kill(const timer_core* handle)
 		{
-			auto i = holder_.find(id);
+			auto i = holder_.find(handle);
 			if(i != holder_.end())
 			{
-				auto tid = i->second.tid;
+				auto tid = i->second.thread_id;
 
 				auto ig = threadmap_.find(tid);
 				if(ig != threadmap_.end())	//Generally, the ig should not be the end of threadmap_
@@ -279,20 +280,16 @@ namespace detail
 					auto & group = ig->second;
 					if(!group.proc_entered)
 					{
-						group.timers.erase(id);
+						group.timers.erase(handle);
 						if(group.timers.empty())
 							threadmap_.erase(ig);
 					}
 					else
-						group.delay_deleted.push_back(id);
+						group.delay_deleted.push_back(handle);
 				}
 				holder_.erase(i);
 			}
-		}
-
-		bool empty() const
-		{
-			return (holder_.empty());
+			return holder_.empty();
 		}
 
 		void timer_proc(thread_t tid)
@@ -314,7 +311,7 @@ namespace detail
 							tag.timestamp = ticks;
 							try
 							{
-								tag.proc(tag.id);
+								tag.handler(tag.handle);
 							}catch(...){}	//nothrow
 						}
 					}
@@ -330,7 +327,7 @@ namespace detail
 	private:
 		bool is_proc_handling_;
 		std::map<thread_t, timer_group> threadmap_;
-		std::map<std::size_t, timer_tag> holder_;
+		std::map<const timer_core*, timer_tag> holder_;
 	};
 
 	drawable_impl_type::drawable_impl_type()
@@ -338,49 +335,28 @@ namespace detail
 		string.tab_length = 4;
 		string.tab_pixels = 0;
 		string.whitespace_pixels = 0;
-#if defined(NANA_USE_XFT)
-		conv_.handle = ::iconv_open("UTF-8", NANA_UNICODE);
-		conv_.code = NANA_UNICODE;
-#endif
-	}
-
-	drawable_impl_type::~drawable_impl_type()
-	{
-#if defined(NANA_USE_XFT)
-		::iconv_close(conv_.handle);
-#endif
-	}
-
-	unsigned drawable_impl_type::get_color() const
-	{
-		return color_;
-	}
-
-	unsigned drawable_impl_type::get_text_color() const
-	{
-		return text_color_;
 	}
 
 	void drawable_impl_type::set_color(const ::nana::color& clr)
 	{
-		color_ = (clr.px_color().value & 0xFFFFFF);
+		bgcolor_rgb = (clr.px_color().value & 0xFFFFFF);
 	}
 
 	void drawable_impl_type::set_text_color(const ::nana::color& clr)
 	{
-		text_color_ = (clr.px_color().value & 0xFFFFFF);
+		fgcolor_rgb = (clr.px_color().value & 0xFFFFFF);
 		update_text_color();
 	}
 
 	void drawable_impl_type::update_color()
 	{
-		if (color_ != current_color_)
+		if (bgcolor_rgb != current_color_)
 		{
 			auto & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard lock;
 
-			current_color_ = color_;
-			auto col = color_;
+			current_color_ = bgcolor_rgb;
+			auto col = bgcolor_rgb;
 			switch (spec.screen_depth())
 			{
 			case 16:
@@ -391,18 +367,32 @@ namespace detail
 			}
 			::XSetForeground(spec.open_display(), context, col);
 			::XSetBackground(spec.open_display(), context, col);
+
+#if defined(NANA_USE_XFT)
+			//xft_fgcolor also needs to be assigned.
+			//assumes the xft_fgcolor is not assigned in update_color. There is a situation that causes a bug.
+			//
+			//update_text_color ( if fgcolor_rgb = A, then current_color = A and xft_fgcolor = A)
+			//update_color (if bgcolor_rgb = B, then current_color = B and xft_fgcolor is still A)
+			//update_text_color ( if fgcolor_rgb = B, then current_color = B, xft_fgcolor is still A)
+
+			xft_fgcolor.color.red = ((0xFF0000 & col) >> 16) * 0x101;
+			xft_fgcolor.color.green = ((0xFF00 & col) >> 8) * 0x101;
+			xft_fgcolor.color.blue = (0xFF & col) * 0x101;
+			xft_fgcolor.color.alpha = 0xFFFF;
+#endif
 		}
 	}
 
 	void drawable_impl_type::update_text_color()
 	{
-		if (text_color_ != current_color_)
+		if (fgcolor_rgb != current_color_)
 		{
 			auto & spec = nana::detail::platform_spec::instance();
 			platform_scope_guard lock;
 
-			current_color_ = text_color_;
-			auto col = text_color_;
+			current_color_ = fgcolor_rgb;
+			auto col = fgcolor_rgb;
 			switch (spec.screen_depth())
 			{
 			case 16:
@@ -445,7 +435,7 @@ namespace detail
 	}
 
 	platform_spec::timer_runner_tag::timer_runner_tag()
-		: runner(0), delete_declared(false)
+		: runner(nullptr), delete_declared(false)
 	{}
 
 	platform_spec::platform_spec()
@@ -987,30 +977,32 @@ namespace detail
 		return r;
 	}
 
-	void platform_spec::set_timer(std::size_t id, std::size_t interval, void (*timer_proc)(std::size_t))
+	void platform_spec::set_timer(const timer_core* handle, std::size_t interval, void (*timer_proc)(const timer_core*))
 	{
 		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
-		if(0 == timer_.runner)
+		if(!timer_.runner)
 			timer_.runner = new timer_runner;
-		timer_.runner->set(id, interval, timer_proc);
+
+		timer_.runner->set(handle, interval, timer_proc);
 		timer_.delete_declared = false;
 	}
 
-	void platform_spec::kill_timer(std::size_t id)
+	void platform_spec::kill_timer(const timer_core* handle)
 	{
-		if(timer_.runner == 0) return;
-
 		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
-		timer_.runner->kill(id);
-		if(timer_.runner->empty())
+		if(timer_.runner)
 		{
-			if(timer_.runner->is_proc_handling() == false)
+			// Test if there is not a timer after killing
+			if(timer_.runner->kill(handle))
 			{
-				delete timer_.runner;
-				timer_.runner = 0;
+				if(timer_.runner->is_proc_handling() == false)
+				{
+					delete timer_.runner;
+					timer_.runner = nullptr;
+				}
+				else
+					timer_.delete_declared = true;
 			}
-			else
-				timer_.delete_declared = true;
 		}
 	}
 
@@ -1023,7 +1015,7 @@ namespace detail
 			if(timer_.delete_declared)
 			{
 				delete timer_.runner;
-				timer_.runner = 0;
+				timer_.runner = nullptr;
 				timer_.delete_declared = false;
 			}
 		}

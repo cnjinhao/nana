@@ -1,7 +1,7 @@
 /**
 *	Drag and Drop Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,9 +13,9 @@
 
 #include <nana/gui/dragdrop.hpp>
 #include <nana/gui/programming_interface.hpp>
-
 #include <nana/gui/detail/bedrock.hpp>
-#include <nana/gui/detail/basic_window.hpp>
+
+#include "detail/basic_window.hpp"
 
 #include <map>
 #include <set>
@@ -157,10 +157,16 @@ namespace nana
 	};
 
 #ifdef NANA_WINDOWS
+
 	template<typename Interface, const IID& iid>
-	class win32com_iunknown : public Interface
+	class win32com_iunknown final: public Interface
 	{
 	public:
+		template<typename ...Args>
+		win32com_iunknown(Args&& ... args) :
+			Interface(std::forward<Args>(args)...)
+		{}
+
 		//Implements IUnknown
 		STDMETHODIMP QueryInterface(REFIID riid, void **ppv)
 		{
@@ -187,6 +193,7 @@ namespace nana
 	private:
 		LONG ref_count_{ 1 };
 	};
+
 
 	class win32com_drop_target : public IDropTarget, public dragdrop_session
 	{
@@ -273,295 +280,299 @@ namespace nana
 		DWORD effect_{ DROPEFFECT_NONE };
 	};
 
-	class drop_source : public win32com_iunknown<IDropSource, IID_IDropSource>
+class drop_source_impl : public IDropSource
+{
+public:
+	drop_source_impl(window wd) :
+		window_handle_(wd)
+	{}
+
+	window source() const
 	{
-	public:
-		drop_source(window wd) :
-			window_handle_(wd)
-		{}
-
-		window source() const
-		{
-			return window_handle_;
-		}
-	private:
-		// IDropSource
-		STDMETHODIMP QueryContinueDrag(BOOL esc_pressed, DWORD key_state) override
-		{
-			if (esc_pressed)
-				return DRAGDROP_S_CANCEL;
-
-			//Drop the object if left button is released.
-			if (0 == (key_state & (MK_LBUTTON)))
-				return DRAGDROP_S_DROP;
-
-			return S_OK;
-		}
-
-		STDMETHODIMP GiveFeedback(DWORD effect) override
-		{
-			return DRAGDROP_S_USEDEFAULTCURSORS;
-		}
-	private:
-		window const window_handle_;
-	};
-
-	class win32_dropdata : public win32com_iunknown<IDataObject, IID_IDataObject>
+		return window_handle_;
+	}
+private:
+	// IDropSource
+	STDMETHODIMP QueryContinueDrag(BOOL esc_pressed, DWORD key_state) override
 	{
-	public:
-		struct data_entry
+		if (esc_pressed)
+			return DRAGDROP_S_CANCEL;
+
+		//Drop the object if left button is released.
+		if (0 == (key_state & (MK_LBUTTON)))
+			return DRAGDROP_S_DROP;
+
+		return S_OK;
+	}
+
+	STDMETHODIMP GiveFeedback(DWORD effect) override
+	{
+		return DRAGDROP_S_USEDEFAULTCURSORS;
+	}
+private:
+	window const window_handle_;
+};
+using drop_source = win32com_iunknown<drop_source_impl, IID_IDropSource>;
+
+
+class win32_dropdata_impl: public IDataObject
+{
+public:
+	struct data_entry
+	{
+		FORMATETC	format;
+		STGMEDIUM	medium;
+		bool		read_from; //Indicates the data which is used for reading.
+
+		~data_entry()
 		{
-			FORMATETC	format;
-			STGMEDIUM	medium;
-			bool		read_from; //Indicates the data which is used for reading.
+			::CoTaskMemFree(format.ptd);
+			::ReleaseStgMedium(&medium);
+		}
 
-			~data_entry()
-			{
-				::CoTaskMemFree(format.ptd);
-				::ReleaseStgMedium(&medium);
-			}
-
-			bool compare(const FORMATETC& fmt, bool rdfrom) const
-			{
-				return (format.cfFormat == fmt.cfFormat &&
-					(format.tymed & fmt.tymed) != 0 &&
-					(format.dwAspect == DVASPECT_THUMBNAIL || format.dwAspect == DVASPECT_ICON || medium.tymed == TYMED_NULL || format.lindex == fmt.lindex || (format.lindex == 0 && fmt.lindex == -1) || (format.lindex == -1 && fmt.lindex == 0)) &&
-					format.dwAspect == fmt.dwAspect && read_from == rdfrom);
-			}
+		bool compare(const FORMATETC& fmt, bool rdfrom) const
+		{
+			return (format.cfFormat == fmt.cfFormat &&
+				(format.tymed & fmt.tymed) != 0 &&
+				(format.dwAspect == DVASPECT_THUMBNAIL || format.dwAspect == DVASPECT_ICON || medium.tymed == TYMED_NULL || format.lindex == fmt.lindex || (format.lindex == 0 && fmt.lindex == -1) || (format.lindex == -1 && fmt.lindex == 0)) &&
+				format.dwAspect == fmt.dwAspect && read_from == rdfrom);
+}
 		};
 
-		data_entry * find(const FORMATETC& fmt, bool read_from) const
+	data_entry * find(const FORMATETC& fmt, bool read_from) const
+	{
+		data_entry * last_weak_match = nullptr;
+
+		for (auto & entry : entries_)
 		{
-			data_entry * last_weak_match = nullptr;
-
-			for (auto & entry : entries_)
+			if (entry->compare(fmt, read_from))
 			{
-				if (entry->compare(fmt, read_from))
-				{
-					auto entry_ptd = entry->format.ptd;
-					if (entry_ptd && fmt.ptd && entry_ptd->tdSize == fmt.ptd->tdSize && (0 == std::memcmp(entry_ptd, fmt.ptd, fmt.ptd->tdSize)))
-						return entry.get();
-					else if (nullptr == entry_ptd && nullptr == fmt.ptd)
-						return entry.get();
+				auto entry_ptd = entry->format.ptd;
+				if (entry_ptd && fmt.ptd && entry_ptd->tdSize == fmt.ptd->tdSize && (0 == std::memcmp(entry_ptd, fmt.ptd, fmt.ptd->tdSize)))
+					return entry.get();
+				else if (nullptr == entry_ptd && nullptr == fmt.ptd)
+					return entry.get();
 
-					last_weak_match = entry.get();
-				}
-			}
-			return last_weak_match;
-		}
-
-		void assign(const detail::dragdrop_data& data)
-		{
-			if (!data.files.empty())
-			{
-				std::size_t bytes = sizeof(wchar_t);
-				for (auto & file : data.files)
-				{
-					auto file_s = file.wstring();
-					bytes += (file_s.size() + 1) * sizeof(file_s.front());
-				}
-
-				auto hglobal = ::GlobalAlloc(GHND | GMEM_SHARE, sizeof(DROPFILES) + bytes);
-
-				auto dropfiles = reinterpret_cast<DROPFILES*>(::GlobalLock(hglobal));
-				dropfiles->pFiles = sizeof(DROPFILES);
-				dropfiles->fWide = true;
-
-				auto file_buf = reinterpret_cast<char*>(dropfiles) + sizeof(DROPFILES);
-
-				for (auto & file : data.files)
-				{
-					auto file_s = file.wstring();
-					std::memcpy(file_buf, file_s.data(), (file_s.size() + 1) * sizeof(file_s.front()));
-					file_buf += (file_s.size() + 1) * sizeof(file_s.front());
-				}
-				*reinterpret_cast<wchar_t*>(file_buf) = 0;
-
-				::GlobalUnlock(hglobal);
-
-				assign(hglobal);
+				last_weak_match = entry.get();
 			}
 		}
+		return last_weak_match;
+	}
 
-		data_entry* assign(HGLOBAL hglobal)
+	void assign(const detail::dragdrop_data& data)
+	{
+		if (!data.files.empty())
 		{
-			FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-			auto entry = find(fmt, true);
-			if (entry)
+			std::size_t bytes = sizeof(wchar_t);
+			for (auto & file : data.files)
 			{
-				//Free the current entry for reuse
-				::CoTaskMemFree(entry->format.ptd);
-				::ReleaseStgMedium(&entry->medium);
-			}
-			else
-			{
-				//Create a new entry
-				entries_.emplace_back(new data_entry);
-				entry = entries_.back().get();
+				auto file_s = file.wstring();
+				bytes += (file_s.size() + 1) * sizeof(file_s.front());
 			}
 
-			//Assign the format to the entry.
-			entry->read_from = true;
-			entry->format = fmt;
+			auto hglobal = ::GlobalAlloc(GHND | GMEM_SHARE, sizeof(DROPFILES) + bytes);
 
-			//Assign the stgMedium
-			entry->medium.tymed = TYMED_HGLOBAL;
-			entry->medium.hGlobal = hglobal;
-			entry->medium.pUnkForRelease = nullptr;
+			auto dropfiles = reinterpret_cast<DROPFILES*>(::GlobalLock(hglobal));
+			dropfiles->pFiles = sizeof(DROPFILES);
+			dropfiles->fWide = true;
 
-			return entry;
-		}
-	public:
-		// Implement IDataObject
-		STDMETHODIMP GetData(FORMATETC *request_format, STGMEDIUM *pmedium) override
-		{
-			if (!(request_format && pmedium))
-				return E_INVALIDARG;
+			auto file_buf = reinterpret_cast<char*>(dropfiles)+sizeof(DROPFILES);
 
-			pmedium->hGlobal = nullptr;
-
-			auto entry = find(*request_format, true);
-			if (entry)
-				return _m_copy_medium(pmedium, &entry->medium, &entry->format);
-
-			return DV_E_FORMATETC;
-		}
-
-		STDMETHODIMP GetDataHere(FORMATETC *pformatetc, STGMEDIUM *pmedium) override
-		{
-			return E_NOTIMPL;
-		}
-
-		STDMETHODIMP QueryGetData(FORMATETC *pformatetc) override
-		{
-			if (NULL == pformatetc)
-				return E_INVALIDARG;
-
-			if (!(DVASPECT_CONTENT & pformatetc->dwAspect))
-				return DV_E_DVASPECT;
-
-			HRESULT result = DV_E_TYMED;
-
-			for (auto & entry : entries_)
+			for (auto & file : data.files)
 			{
-				if (entry->format.tymed & pformatetc->tymed)
-				{
-					if (entry->format.cfFormat == pformatetc->cfFormat)
-						return S_OK;
-
-					result = DV_E_FORMATETC;
-				}
+				auto file_s = file.wstring();
+				std::memcpy(file_buf, file_s.data(), (file_s.size() + 1) * sizeof(file_s.front()));
+				file_buf += (file_s.size() + 1) * sizeof(file_s.front());
 			}
-			return result;
+			*reinterpret_cast<wchar_t*>(file_buf) = 0;
+
+			::GlobalUnlock(hglobal);
+
+			assign(hglobal);
 		}
+	}
 
-		STDMETHODIMP GetCanonicalFormatEtc(FORMATETC *pformatectIn, FORMATETC *pformatetcOut) override
+	data_entry* assign(HGLOBAL hglobal)
+	{
+		FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+		auto entry = find(fmt, true);
+		if (entry)
 		{
-			return E_NOTIMPL;
+			//Free the current entry for reuse
+			::CoTaskMemFree(entry->format.ptd);
+			::ReleaseStgMedium(&entry->medium);
 		}
-
-		STDMETHODIMP SetData(FORMATETC *pformatetc, STGMEDIUM *pmedium, BOOL fRelease) override
+		else
 		{
-			if (!(pformatetc && pmedium))
-				return E_INVALIDARG;
-
-			if (pformatetc->tymed != pmedium->tymed)
-				return E_FAIL;
-
+			//Create a new entry
 			entries_.emplace_back(new data_entry);
-			auto entry = entries_.back().get();
-
-			entry->format = *pformatetc;
-
-			_m_copy_medium(&entry->medium, pmedium, pformatetc);
-
-			if (TRUE == fRelease)
-				::ReleaseStgMedium(pmedium);
-
-			return S_OK;
+			entry = entries_.back().get();
 		}
 
-		STDMETHODIMP EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppenumFormatEtc) override
+		//Assign the format to the entry.
+		entry->read_from = true;
+		entry->format = fmt;
+
+		//Assign the stgMedium
+		entry->medium.tymed = TYMED_HGLOBAL;
+		entry->medium.hGlobal = hglobal;
+		entry->medium.pUnkForRelease = nullptr;
+
+		return entry;
+	}
+public:
+	// Implement IDataObject
+	STDMETHODIMP GetData(FORMATETC *request_format, STGMEDIUM *pmedium) override
+	{
+		if (!(request_format && pmedium))
+			return E_INVALIDARG;
+
+		pmedium->hGlobal = nullptr;
+
+		auto entry = find(*request_format, true);
+		if (entry)
+			return _m_copy_medium(pmedium, &entry->medium, &entry->format);
+
+		return DV_E_FORMATETC;
+	}
+
+	STDMETHODIMP GetDataHere(FORMATETC *pformatetc, STGMEDIUM *pmedium) override
+	{
+		return E_NOTIMPL;
+	}
+
+	STDMETHODIMP QueryGetData(FORMATETC *pformatetc) override
+	{
+		if (NULL == pformatetc)
+			return E_INVALIDARG;
+
+		if (!(DVASPECT_CONTENT & pformatetc->dwAspect))
+			return DV_E_DVASPECT;
+
+		HRESULT result = DV_E_TYMED;
+
+		for (auto & entry : entries_)
 		{
-			if (NULL == ppenumFormatEtc)
+			if (entry->format.tymed & pformatetc->tymed)
+			{
+				if (entry->format.cfFormat == pformatetc->cfFormat)
+					return S_OK;
+
+				result = DV_E_FORMATETC;
+			}
+		}
+		return result;
+	}
+
+	STDMETHODIMP GetCanonicalFormatEtc(FORMATETC *pformatectIn, FORMATETC *pformatetcOut) override
+	{
+		return E_NOTIMPL;
+	}
+
+	STDMETHODIMP SetData(FORMATETC *pformatetc, STGMEDIUM *pmedium, BOOL fRelease) override
+	{
+		if (!(pformatetc && pmedium))
+			return E_INVALIDARG;
+
+		if (pformatetc->tymed != pmedium->tymed)
+			return E_FAIL;
+
+		entries_.emplace_back(new data_entry);
+		auto entry = entries_.back().get();
+
+		entry->format = *pformatetc;
+
+		_m_copy_medium(&entry->medium, pmedium, pformatetc);
+
+		if (TRUE == fRelease)
+			::ReleaseStgMedium(pmedium);
+
+		return S_OK;
+	}
+
+	STDMETHODIMP EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppenumFormatEtc) override
+	{
+		if (NULL == ppenumFormatEtc)
+			return E_INVALIDARG;
+
+		if (DATADIR_GET != dwDirection)
+			return E_NOTIMPL;
+
+		*ppenumFormatEtc = nullptr;
+
+		FORMATETC rgfmtetc[] =
+		{
+			//{ CF_UNICODETEXT, nullptr, DVASPECT_CONTENT, 0, TYMED_HGLOBAL }
+			{ CF_HDROP, nullptr, DVASPECT_CONTENT, 0, TYMED_HGLOBAL }
+		};
+		return ::SHCreateStdEnumFmtEtc(ARRAYSIZE(rgfmtetc), rgfmtetc, ppenumFormatEtc);
+	}
+
+	STDMETHODIMP DAdvise(FORMATETC *pformatetc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection) override
+	{
+		return OLE_E_ADVISENOTSUPPORTED;
+	}
+
+	STDMETHODIMP DUnadvise(DWORD dwConnection) override
+	{
+		return OLE_E_ADVISENOTSUPPORTED;
+	}
+
+	STDMETHODIMP EnumDAdvise(IEnumSTATDATA **ppenumAdvise) override
+	{
+		return OLE_E_ADVISENOTSUPPORTED;
+	}
+private:
+	static HRESULT _m_copy_medium(STGMEDIUM* stgmed_dst, STGMEDIUM* stgmed_src, FORMATETC* fmt_src)
+	{
+		if (!(stgmed_dst && stgmed_src && fmt_src))
+			return E_INVALIDARG;
+
+		switch (stgmed_src->tymed)
+		{
+		case TYMED_HGLOBAL:
+			stgmed_dst->hGlobal = (HGLOBAL)OleDuplicateData(stgmed_src->hGlobal, fmt_src->cfFormat, 0);
+			break;
+		case TYMED_GDI:
+		case TYMED_ENHMF:
+			//GDI object can't be copied to an existing HANDLE
+			if (stgmed_dst->hGlobal)
 				return E_INVALIDARG;
 
-			if (DATADIR_GET != dwDirection)
-				return E_NOTIMPL;
-
-			*ppenumFormatEtc = nullptr;
-
-			FORMATETC rgfmtetc[] =
-			{
-				//{ CF_UNICODETEXT, nullptr, DVASPECT_CONTENT, 0, TYMED_HGLOBAL }
-				{ CF_HDROP, nullptr, DVASPECT_CONTENT, 0, TYMED_HGLOBAL }
-			};
-			return ::SHCreateStdEnumFmtEtc(ARRAYSIZE(rgfmtetc), rgfmtetc, ppenumFormatEtc);
+			stgmed_dst->hGlobal = (HBITMAP)OleDuplicateData(stgmed_src->hGlobal, fmt_src->cfFormat, 0);
+			break;
+		case TYMED_MFPICT:
+			stgmed_dst->hMetaFilePict = (HMETAFILEPICT)OleDuplicateData(stgmed_src->hMetaFilePict, fmt_src->cfFormat, 0);
+			break;
+		case TYMED_FILE:
+			stgmed_dst->lpszFileName = (LPOLESTR)OleDuplicateData(stgmed_src->lpszFileName, fmt_src->cfFormat, 0);
+			break;
+		case TYMED_ISTREAM:
+			stgmed_dst->pstm = stgmed_src->pstm;
+			stgmed_src->pstm->AddRef();
+			break;
+		case TYMED_ISTORAGE:
+			stgmed_dst->pstg = stgmed_src->pstg;
+			stgmed_src->pstg->AddRef();
+			break;
+		case TYMED_NULL:
+		default:
+			break;
 		}
-
-		STDMETHODIMP DAdvise(FORMATETC *pformatetc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection) override
+		stgmed_dst->tymed = stgmed_src->tymed;
+		stgmed_dst->pUnkForRelease = nullptr;
+		if (stgmed_src->pUnkForRelease)
 		{
-			return OLE_E_ADVISENOTSUPPORTED;
+			stgmed_dst->pUnkForRelease = stgmed_src->pUnkForRelease;
+			stgmed_src->pUnkForRelease->AddRef();
 		}
-
-		STDMETHODIMP DUnadvise(DWORD dwConnection) override
-		{
-			return OLE_E_ADVISENOTSUPPORTED;
-		}
-
-		STDMETHODIMP EnumDAdvise(IEnumSTATDATA **ppenumAdvise) override
-		{
-			return OLE_E_ADVISENOTSUPPORTED;
-		}
-	private:
-		static HRESULT _m_copy_medium(STGMEDIUM* stgmed_dst, STGMEDIUM* stgmed_src, FORMATETC* fmt_src)
-		{
-			if (!(stgmed_dst && stgmed_src && fmt_src))
-				return E_INVALIDARG;
-
-			switch (stgmed_src->tymed)
-			{
-			case TYMED_HGLOBAL:
-				stgmed_dst->hGlobal = (HGLOBAL)OleDuplicateData(stgmed_src->hGlobal, fmt_src->cfFormat, 0);
-				break;
-			case TYMED_GDI:
-			case TYMED_ENHMF:
-				//GDI object can't be copied to an existing HANDLE
-				if (stgmed_dst->hGlobal)
-					return E_INVALIDARG;
-
-				stgmed_dst->hGlobal = (HBITMAP)OleDuplicateData(stgmed_src->hGlobal, fmt_src->cfFormat, 0);
-				break;
-			case TYMED_MFPICT:
-				stgmed_dst->hMetaFilePict = (HMETAFILEPICT)OleDuplicateData(stgmed_src->hMetaFilePict, fmt_src->cfFormat, 0);
-				break;
-			case TYMED_FILE:
-				stgmed_dst->lpszFileName = (LPOLESTR)OleDuplicateData(stgmed_src->lpszFileName, fmt_src->cfFormat, 0);
-				break;
-			case TYMED_ISTREAM:
-				stgmed_dst->pstm = stgmed_src->pstm;
-				stgmed_src->pstm->AddRef();
-				break;
-			case TYMED_ISTORAGE:
-				stgmed_dst->pstg = stgmed_src->pstg;
-				stgmed_src->pstg->AddRef();
-				break;
-			case TYMED_NULL:
-			default:
-				break;
-			}
-			stgmed_dst->tymed = stgmed_src->tymed;
-			stgmed_dst->pUnkForRelease = nullptr;
-			if (stgmed_src->pUnkForRelease)
-			{
-				stgmed_dst->pUnkForRelease = stgmed_src->pUnkForRelease;
-				stgmed_src->pUnkForRelease->AddRef();
-			}
-			return S_OK;
-		}
-	private:
-		std::vector<std::unique_ptr<data_entry>> entries_;
+		return S_OK;
+	}
+private:
+	std::vector<std::unique_ptr<data_entry>> entries_;
 	};
+
+using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 
 #elif defined(NANA_X11)
@@ -710,7 +721,7 @@ namespace nana
 			i->second->set_current_source(drag_wd);
 
 			DWORD result_effect{ DROPEFFECT_NONE };
-			auto status = ::DoDragDrop(dropdata, drop_src, DROPEFFECT_COPY, &result_effect);
+			::DoDragDrop(dropdata, drop_src, DROPEFFECT_COPY, &result_effect);
 
 			i->second->set_current_source(nullptr);
 
@@ -961,8 +972,7 @@ namespace nana
 			if (API::is_window(window_handle))
 			{
 				dragging = true;
-				auto real_wd = reinterpret_cast<detail::basic_window*>(window_handle);
-				real_wd->other.dnd_state = dragdrop_status::not_ready;
+				window_handle->other.dnd_state = dragdrop_status::not_ready;
 			}
 
 			API::release_capture(window_handle);
@@ -1000,9 +1010,7 @@ namespace nana
 			if (arg.is_left_button() && API::is_window(impl_->window_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
-
-				auto real_wd = reinterpret_cast<detail::basic_window*>(impl_->window_handle);
-				real_wd->other.dnd_state = dragdrop_status::ready;
+				impl_->window_handle->other.dnd_state = dragdrop_status::ready;
 			}
 		});
 
@@ -1010,14 +1018,13 @@ namespace nana
 			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
 				return;
 
-			auto real_wd = reinterpret_cast<detail::basic_window*>(arg.window_handle);
-			real_wd->other.dnd_state = dragdrop_status::in_progress;
+			arg.window_handle->other.dnd_state = dragdrop_status::in_progress;
 
 			std::unique_ptr<dragdrop_service::dropdata_type> dropdata{new dragdrop_service::dropdata_type};
 
 			auto has_dropped = dragdrop_service::instance().dragdrop(arg.window_handle, dropdata.get(), nullptr);
 
-			real_wd->other.dnd_state = dragdrop_status::not_ready;
+			arg.window_handle->other.dnd_state = dragdrop_status::not_ready;
 			impl_->dragging = false;
 
 			if (has_dropped)
@@ -1116,9 +1123,7 @@ namespace nana
 			if (arg.is_left_button() && API::is_window(impl_->source_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
-
-				auto real_wd = reinterpret_cast<detail::basic_window*>(impl_->source_handle);
-				real_wd->other.dnd_state = dragdrop_status::ready;
+				impl_->source_handle->other.dnd_state = dragdrop_status::ready;
 			}
 		});
 
@@ -1126,13 +1131,9 @@ namespace nana
 			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
 				return;
 
-			auto real_wd = reinterpret_cast<detail::basic_window*>(arg.window_handle);
-			real_wd->other.dnd_state = dragdrop_status::in_progress;
-
+			arg.window_handle->other.dnd_state = dragdrop_status::in_progress;
 			impl_->make_drop();
-
-
-			real_wd->other.dnd_state = dragdrop_status::not_ready;
+			arg.window_handle->other.dnd_state = dragdrop_status::not_ready;
 			impl_->dragging = false;
 		});
 	}

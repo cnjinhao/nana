@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,7 +42,6 @@
 
 #if defined(NANA_USE_XFT)
 	#include <X11/Xft/Xft.h>
-	#include <iconv.h>
 	#include <fstream>
 #endif
 
@@ -61,19 +60,6 @@ namespace detail
 		std::string value(const char* key);
 	private:
 		std::ifstream ifs_;
-	};
-
-	class charset_conv
-	{
-		charset_conv(const charset_conv&) = delete;
-		charset_conv& operator=(const charset_conv*) = delete;
-	public:
-		charset_conv(const char* tocode, const char* fromcode);
-		~charset_conv();
-		std::string charset(const std::string& str) const;
-		std::string charset(const char * buf, std::size_t len) const;
-	private:
-		iconv_t handle_;
 	};
 #endif
 
@@ -95,16 +81,15 @@ namespace detail
 			unsigned whitespace_pixels;
 		}string;
 
+		unsigned fgcolor_rgb{ 0xFFFFFFFF };
+		unsigned bgcolor_rgb{ 0xFFFFFFFF };
+
 #if defined(NANA_USE_XFT)
 		XftDraw * xftdraw{nullptr};
 		XftColor	xft_fgcolor;
-		const std::string charset(const std::wstring& str, const std::string& strcode);
 #endif
 		drawable_impl_type();
-		~drawable_impl_type();
 
-		unsigned get_color() const;
-		unsigned get_text_color() const;
 		void set_color(const ::nana::color&);
 		void set_text_color(const ::nana::color&);
 
@@ -115,16 +100,6 @@ namespace detail
 		drawable_impl_type& operator=(const drawable_impl_type&) = delete;
 
 		unsigned current_color_{ 0xFFFFFF };
-		unsigned color_{ 0xFFFFFFFF };
-		unsigned text_color_{ 0xFFFFFFFF };
-
-#if defined(NANA_USE_XFT)
-		struct conv_tag
-		{
-			iconv_t handle;
-			std::string code;
-		}conv_;
-#endif
 	};
 
 	struct atombase_tag
@@ -170,6 +145,13 @@ namespace detail
 
 	//A forward declaration of caret data
 	struct caret_rep;
+
+	/// class timer_core
+	/**
+	 * Platform-spec only provides the declaration for intrducing a handle type, the definition
+	 * of timer_core is given by gui/timer.cpp
+	 */
+	class timer_core;
 
 	class timer_runner;
 
@@ -251,8 +233,8 @@ namespace detail
 		//when native_interface::show a window that is registered as a grab
 		//window, the native_interface grabs the window.
 		Window grab(Window);
-		void set_timer(std::size_t id, std::size_t interval, void (*timer_proc)(std::size_t id));
-		void kill_timer(std::size_t id);
+		void set_timer(const timer_core*, std::size_t interval, void (*timer_proc)(const timer_core* tm));
+		void kill_timer(const timer_core*);
 		void timer_proc(thread_t tid);
 
 		//Message dispatcher

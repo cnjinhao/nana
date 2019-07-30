@@ -10,14 +10,20 @@ namespace nana
 		{
 		public:
 			using graph_reference = graphics &;
+
+			enum class mode
+			{
+				truncate_with_ellipsis,
+				truncate_letter_with_ellipsis,
+				word_wrap
+			};
 			
 			text_renderer(graph_reference graph, align = align::left);
 
-			nana::size extent_size(int x, int y, const wchar_t*, std::size_t len, unsigned restricted_pixels) const;
+			nana::size extent_size(int x, int y, const wchar_t*, std::size_t len, unsigned space_pixels) const;
 
 			void render(const point&, const wchar_t*, std::size_t len);
-			void render(const point&, const wchar_t*, std::size_t len, unsigned restricted_pixels, bool omitted);
-			void render(const point&, const wchar_t*, std::size_t len, unsigned restricted_pixels);
+			void render(const point&, const wchar_t*, std::size_t len, unsigned space_pixels, mode);
 		private:
 			graph_reference graph_;
 			align text_align_;

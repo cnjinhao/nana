@@ -28,24 +28,26 @@
 #if defined(NANA_WINDOWS)
 #include <windows.h>
 #elif defined(NANA_POSIX)
-#include "../detail/platform_spec_selector.hpp"
+#include "../detail/posix/platform_spec.hpp"
 #include <nana/system/platform.hpp>
 #endif
 
 namespace nana
 {
-    class timer_core;
+	namespace detail
+	{
+    	class timer_core;
+    }
+
 #if defined(NANA_WINDOWS)
 	typedef UINT_PTR timer_identifier;
 #else
-	typedef timer_core* timer_identifier;
+	typedef const detail::timer_core* timer_identifier;
 #endif
 
 	class timer_driver
 	{
-		typedef std::lock_guard<std::recursive_mutex> lock_guard;
-
-		friend class timer_core;
+		friend class detail::timer_core;
 
 		timer_driver() = default;
 	public:
@@ -56,7 +58,7 @@ namespace nana
 		}
 
 		template<typename Factory>
-		timer_core* create(unsigned ms, Factory && factory)
+		detail::timer_core* create(unsigned ms, Factory && factory)
 		{
 #if defined(NANA_WINDOWS)
 			auto tmid = ::SetTimer(nullptr, 0, ms, &timer_driver::_m_timer_proc);
@@ -68,9 +70,9 @@ namespace nana
 #else
 				auto p = factory();
 				auto tmid = p;
-				::nana::detail::platform_spec::instance().set_timer(reinterpret_cast<std::size_t>(tmid), ms, &timer_driver::_m_timer_proc);
+				::nana::detail::platform_spec::instance().set_timer(tmid, ms, &timer_driver::_m_timer_proc);
 #endif
-				lock_guard lock(mutex_);
+				::nana::internal_scope_guard lock;
 				timer_table_[tmid].reset(p);
 				return p;
 			}
@@ -80,16 +82,17 @@ namespace nana
 			return nullptr;
 		}
 
-		void destroy(timer_identifier tid)
+		void destroy(timer_identifier handle)
 		{
-			lock_guard lock(mutex_);
-			auto i = timer_table_.find(tid);
+			::nana::internal_scope_guard lock;
+
+			auto i = timer_table_.find(handle);
 			if (i != timer_table_.end())
 			{
 #if defined(NANA_WINDOWS)
-				::KillTimer(nullptr, tid);
+				::KillTimer(nullptr, handle);
 #else
-				::nana::detail::platform_spec::instance().kill_timer(reinterpret_cast<std::size_t>(tid));
+				::nana::detail::platform_spec::instance().kill_timer(handle);
 #endif
 				timer_table_.erase(i);
 			}
@@ -98,23 +101,26 @@ namespace nana
 #if defined(NANA_WINDOWS)
 		static void __stdcall _m_timer_proc(HWND hwnd, UINT uMsg, UINT_PTR id, DWORD dwTime);
 #else
-		static void _m_timer_proc(std::size_t id);
+		static void _m_timer_proc(timer_identifier id);
 #endif
 	private:
-		std::recursive_mutex	mutex_;
-		std::map<timer_identifier, std::unique_ptr<timer_core>>	timer_table_;
+		std::map<timer_identifier, std::unique_ptr<detail::timer_core>>	timer_table_;
 	};
 
-	class timer_core
+	class detail::timer_core
 	{
 	public:
 #if defined(NANA_WINDOWS)
-		timer_core(timer_identifier tmid, basic_event<arg_elapse>& evt_elapse)
-			: timer_(tmid), evt_elapse_(evt_elapse)
+		timer_core(timer* sender, timer_identifier tmid, basic_event<arg_elapse>& evt_elapse):
+			sender_(sender),
+			timer_(tmid),
+			evt_elapse_(evt_elapse)
 		{}
 #else
-		timer_core(basic_event<arg_elapse>& evt_elapse)
-			: timer_(this), evt_elapse_(evt_elapse)
+		timer_core(timer* sender, basic_event<arg_elapse>& evt_elapse):
+			sender_(sender),
+			timer_(this),
+			evt_elapse_(evt_elapse)
 		{}
 #endif
 
@@ -128,45 +134,44 @@ namespace nana
 #if defined(NANA_WINDOWS)
 			::SetTimer(nullptr, timer_, ms, &timer_driver::_m_timer_proc);
 #else
-			::nana::detail::platform_spec::instance().set_timer(reinterpret_cast<std::size_t>(timer_), ms, &timer_driver::_m_timer_proc);
+			::nana::detail::platform_spec::instance().set_timer(timer_, ms, &timer_driver::_m_timer_proc);
 #endif
 		}
 
-		void emit(const arg_elapse& arg)
+		void emit()
 		{
+			arg_elapse arg;
+			arg.sender = sender_;
 			evt_elapse_.emit(arg, nullptr);
 		}
 	private:
+		timer * const sender_;
 		const timer_identifier timer_;
 		nana::basic_event<arg_elapse> & evt_elapse_;
 	}; //end class timer_core
 
+
 #if defined(NANA_WINDOWS)
-	void __stdcall timer_driver::_m_timer_proc(HWND /*hwnd*/, UINT /*uMsg*/, UINT_PTR id, DWORD /*dwTime*/)
+	void __stdcall timer_driver::_m_timer_proc(HWND /*hwnd*/, UINT /*uMsg*/, UINT_PTR handle, DWORD /*dwTime*/)
 #else
-	void timer_driver::_m_timer_proc(std::size_t id)
+	void timer_driver::_m_timer_proc(timer_identifier handle)
 #endif
 	{
-		auto & driver = instance();
+		auto & time_tbl = instance().timer_table_;
 
-		lock_guard lock(driver.mutex_);
-#if defined(NANA_WINDOWS)
-		auto i = driver.timer_table_.find(id);
-#else
-		auto i = driver.timer_table_.find(reinterpret_cast<timer_identifier>(id));
-#endif
-		if (i == driver.timer_table_.end())
+		::nana::internal_scope_guard lock;
+
+		auto i = time_tbl.find(handle);
+		if (i == time_tbl.end())
 			return;
 
-		arg_elapse arg;
-		arg.id = id;
-		i->second->emit(arg);
+		i->second->emit();
 	}
 
 	struct timer::implement
 	{
-		unsigned interval		= 1000; //Defaultly 1 second.
-		timer_core * tm_core	= nullptr;
+		unsigned interval{ 1000 }; //1 second in default
+		detail::timer_core * tm_core{ nullptr };
 	};
 
 	//class timer
@@ -183,8 +188,7 @@ namespace nana
 
 		timer::~timer()
 		{
-			if (impl_->tm_core)
-				timer_driver::instance().destroy(impl_->tm_core->id());
+			stop();
 			delete impl_;
 		}
 
@@ -201,12 +205,12 @@ namespace nana
 #if defined(NANA_WINDOWS)
 			impl_->tm_core = timer_driver::instance().create(impl_->interval, [this](timer_identifier id)
 			{
-				return new timer_core(id, elapse_);
+				return new detail::timer_core(this, id, elapse_);
 			});
 #else
 			impl_->tm_core = timer_driver::instance().create(impl_->interval, [this]
 			{
-				return new timer_core(elapse_);
+				return new detail::timer_core(this, elapse_);
 			});
 #endif
 		}
