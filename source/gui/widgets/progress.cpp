@@ -96,11 +96,11 @@ namespace nana
 				{
 					if (widget_)
 					{
-						auto value_px = (widget_->size().width - border_px * 2);
+                        unsigned value_px = (widget_->size().width - border_px * 2);
 
 						//avoid overflow
 						if (unknown_ || (value_ < max_))
-							value_px = static_cast<unsigned>(value_px * (double(value_) / double(max_)));
+							value_px = unsigned(double(value_px) * (double(value_) / double(max_)));
 
 						if (value_px != value_px_)
 						{
