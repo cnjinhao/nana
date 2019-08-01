@@ -1,5 +1,6 @@
 
 option(BUILD_SHARED_LIBS "Compile nana as a shared library." OFF)
+option(NANA_STATIC_STDLIB "Link nana statically to C++ standard library" ON)
 
 if(BUILD_SHARED_LIBS)   # todo test
 
@@ -35,12 +36,8 @@ if(BUILD_SHARED_LIBS)   # todo test
     endif()
 endif()
 
-if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AND NOT MINGW??
-
-    if(BUILD_SHARED_LIBS)
-        target_compile_options(nana PUBLIC  -lgcc -lstdc++)
-    else()
-        target_link_libraries(nana PUBLIC  -static-libgcc -static-libstdc++)
-    endif(BUILD_SHARED_LIBS)
-
+if(NANA_STATIC_STDLIB)
+    target_compile_options(nana
+        PUBLIC $<$<OR:$<CXX_COMPILER_ID:GNU>, $<CXX_COMPILER_ID:Clang>>: -static-libgcc -static-libstdc++>)
 endif()
+
