@@ -1163,6 +1163,43 @@ namespace nana {
 				impl_->capacities.acceptive = acceptive;
 			}
 
+			bool text_editor::respond_ime(const arg_ime& arg)
+			{
+				if (!API::window_enabled(window_))
+					return false;
+
+				if (select_.a != select_.b)
+				{
+					points_.caret = _m_erase_select(false);
+				}
+
+				for (size_t i = 0; i < composition_size_; ++i)
+				{
+					backspace(false, false);
+				}
+
+				if (arg.ime_reason == arg_ime::reason::composition)
+				{
+					composition_size_ = arg.composition_string.length();
+					points_.caret = _m_put(std::move(arg.composition_string), false);
+
+					_m_reset_content_size(true);
+					textbase().text_changed();
+
+					if (this->_m_adjust_view())
+						impl_->cview->sync(false);
+
+					reset_caret();
+					impl_->try_refresh = sync_graph::refresh;
+				}
+				else
+				{
+					composition_size_ = 0;
+				}
+
+				return true;
+			}
+
 			bool text_editor::respond_char(const arg_keyboard& arg)	//key is a character of ASCII code
 			{
 				if (!API::window_enabled(window_))

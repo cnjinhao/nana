@@ -34,6 +34,7 @@ namespace nana
 		unload,				///< A form is closed by clicking the X button, only works for root widget.
 		destroy,			///< A widget is about to be destroyed.
 		focus,				///< A widget's focus is changed.
+		key_ime,
 		key_press,			///< A keyboard is pressed on a focus widget.
 		key_char,			///< The focus widget received a character.
 		key_release,		///< A keyboard is released on a focus widget.
