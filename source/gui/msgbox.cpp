@@ -12,7 +12,7 @@
  *		James Bremner
  *		Ariel Vina-Rodriguez
  */
-
+#define NOMINMAX
 #include <algorithm>  // max
 #include <functional>
 #include <cstdlib>    //include std::abs
