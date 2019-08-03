@@ -98,6 +98,7 @@ namespace nana{	namespace widgets
 
 			void set_accept(std::function<bool(char_type)>);
 			void set_accept(accepts);
+			bool respond_ime(const arg_ime& arg);
 			bool respond_char(const arg_keyboard& arg);
 			bool respond_key(const arg_keyboard& arg);
 
@@ -328,6 +329,8 @@ namespace nana{	namespace widgets
 				nana::upoint	caret;	//position of caret by text, it specifies the position of a new character
 				nana::upoint	shift_begin_caret;
 			}points_;
+
+			size_t composition_size_ { 0 };
 		};
 	}//end namespace skeletons
 }//end namespace widgets

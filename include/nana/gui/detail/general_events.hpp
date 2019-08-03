@@ -466,6 +466,19 @@ namespace nana
 		reason	focus_reason;					///< determines how the widget receives keyboard focus, it is ignored when 'getting' is equal to false
 	};
 
+	struct arg_ime: public event_arg
+	{
+		enum class reason
+		{
+			composition,
+			result
+		};
+
+		::nana::window window_handle;	///< A handle to the event window
+		reason ime_reason;
+		std::wstring composition_string;
+	};
+
 	struct arg_keyboard : public event_arg
 	{
 		event_code evt_code;	    ///< it is event_code::key_press in current event

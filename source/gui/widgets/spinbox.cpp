@@ -621,6 +621,13 @@ namespace nana
 				API::dev::lazy_refresh();
 			}
 
+			void drawer::key_ime(graph_reference, const arg_ime& arg)
+			{
+				impl_->editor()->respond_ime(arg);
+				if (impl_->editor()->try_refresh())
+					API::dev::lazy_refresh();
+			}
+
 			void drawer::key_press(graph_reference, const arg_keyboard& arg)
 			{
 				if (impl_->editor()->respond_key(arg))
