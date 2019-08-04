@@ -561,22 +561,19 @@ namespace std {
 	}
 } // std
 #else
-
 //Implements the missing functions for various version of experimental/filesystem
-#	if defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM)
 	namespace std
 	{
 		namespace filesystem
 		{
 			//Visual Studio 2017
-			#if (defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
-				(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 801))
+#if			(defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM) && defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
+				(!defined(__clang__) && defined(__GNUC__) && (__cplusplus < 201603))
 			path weakly_canonical(const path& p);
 			path weakly_canonical(const path& p, std::error_code& err);
-			#endif
+#endif
 		}
 	}
-#	endif
 
 #endif	//NANA_USING_NANA_FILESYSTEM
 
