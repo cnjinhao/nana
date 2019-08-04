@@ -53,14 +53,14 @@ install:
   - /tmp/tools/cmake --prefix="$HOME" --exclude-subdir
 
 before_script :
-  # travis don't have a physical monitor. We need to install an emulator: https://docs.travis-ci.com/user/gui-and-headless-browsers/
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3 # give xvfb some time to start
   # we have:  qPCR4vir/nana/../nana-demo and  now we are in: qPCR4vir/nana/  our executable tests will access: ../nana-demo/Examples/*.bmp etc.(need to be in parallel with nana-demo/Examples)
   #- cd ../nana-demo
   - mkdir  demo-build
   - cd demo-build
+
+services:
+  - # travis don't have a physical monitor. We need to install an emulator: https://docs.travis-ci.com/user/gui-and-headless-browsers/
+  - xvfb
 
 script:
   - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON -DNANA_CMAKE_INSTALL=OFF
