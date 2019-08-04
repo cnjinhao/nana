@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/widget.hpp
+ *	@file nana/gui/widgets/widget.hpp
  */
 
 #ifndef NANA_GUI_WIDGET_HPP
@@ -48,8 +48,8 @@ namespace nana
 		widget() = default;
 
 		virtual ~widget() = default;
-		virtual window handle() const = 0;			///< Returns the handle of window, returns 0 if window is not created.
-		bool empty() const;							///< Determines whether the manipulator is handling a window.
+		virtual window handle() const = 0;		///< Returns the handle of window, returns 0 if window is not created.
+		bool empty() const;						///< Determines whether the manipulator is handling a window.
 		void close();
 
 		window parent() const;
@@ -169,9 +169,17 @@ namespace nana
 		};
 	}
 
-            /// Base class of all the classes defined as a widget window. Defaultly a widget_tag
-	template<typename Category, typename DrawerTrigger, typename Events = ::nana::general_events, typename Scheme = ::nana::widget_geometrics,
-			typename = typename std::enable_if<std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value>::type> //type DrawerTrigger must be derived from nana::drawer_trigger
+    /// Base class of all the classes defined as a widget window. Defaultly a widget_tag
+    ///
+    /// \tparam Category
+    /// \tparam DrawerTrigger must be derived from nana::drawer_trigger
+    /// \tparam Events
+    /// \tparam Scheme
+	template<typename Category,
+	         typename DrawerTrigger,
+	         typename Events = ::nana::general_events,
+	         typename Scheme = ::nana::widget_geometrics,
+			 typename = typename std::enable_if<std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value>::type>
 	class widget_object: public detail::widget_base
 	{
 	protected:
@@ -293,8 +301,13 @@ namespace nana
 		std::unique_ptr<scheme_type> scheme_;
 	};//end class widget_object
 
-	        /// Base class of all the classes defined as a non-graphics-buffer widget window. The second template parameter DrawerTrigger is always ignored.\see nana::panel
-	template<typename DrawerTrigger, typename Events, typename Scheme> //type DrawerTrigger must be derived from nana::drawer_trigger
+	/// Base class of all the classes defined as a non-graphics-buffer widget window.
+	///
+	/// The second template parameter DrawerTrigger is always ignored.\see nana::panel
+	/// type DrawerTrigger must be derived from nana::drawer_trigger
+	template<typename DrawerTrigger,
+	         typename Events,
+	         typename Scheme>
 	class widget_object<category::lite_widget_tag, DrawerTrigger, Events, Scheme>: public detail::widget_base
 	{
 	protected:
@@ -359,8 +372,14 @@ namespace nana
 	};//end class widget_object
 
 
-	        /// Base class of all the classes defined as a root window. \see nana::form
-	template<typename DrawerTrigger, typename Events, typename Scheme> //type DrawerTrigger must be derived from nana::drawer_trigger
+	/// Base class of all the classes defined as a root window. \see nana::form
+	///
+	/// \tparam DrawerTrigger must be derived from nana::drawer_trigger
+	/// \tparam Events
+	/// \tparam Scheme
+	template<typename DrawerTrigger,
+	         typename Events,
+	         typename Scheme>
 	class widget_object<category::root_tag, DrawerTrigger, Events, Scheme>: public detail::widget_base
 	{
 	protected:

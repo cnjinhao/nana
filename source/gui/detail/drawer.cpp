@@ -96,6 +96,11 @@ namespace nana
 			overridden_ &= ~(1 << static_cast<int>(event_code::focus));
 		}
 
+		void drawer_trigger::key_ime(graph_reference, const arg_ime&)
+		{
+			overridden_ &= ~(1 << static_cast<int>(event_code::key_ime));
+		}
+
 		void drawer_trigger::key_press(graph_reference, const arg_keyboard&)
 		{
 			overridden_ &= ~(1 << static_cast<int>(event_code::key_press));
@@ -316,6 +321,11 @@ namespace nana
 		void drawer::focus(const arg_focus& arg, const bool bForce__EmitInternal)
 		{
 			_m_emit(event_code::focus, arg, &drawer_trigger::focus, bForce__EmitInternal);
+		}
+
+		void drawer::key_ime(const arg_ime& arg, const bool bForce__EmitInternal)
+		{
+			_m_emit(event_code::key_ime, arg, &drawer_trigger::key_ime, bForce__EmitInternal);
 		}
 
 		void drawer::key_press(const arg_keyboard& arg, const bool bForce__EmitInternal)

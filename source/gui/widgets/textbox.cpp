@@ -152,6 +152,13 @@ namespace drawerbase {
 				API::dev::lazy_refresh();
 		}
 
+		void drawer::key_ime(graph_reference, const arg_ime& arg)
+		{
+			editor_->respond_ime(arg);
+			if (editor_->try_refresh())
+				API::dev::lazy_refresh();
+		}
+
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
 		{
 			editor_->respond_key(arg);

@@ -1399,16 +1399,15 @@ namespace std
 	}//end namespace filesystem
 }//end namespace std
 
-#else 	//NANA_USING_NANA_FILESYSTEM
-#	if defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM)
+#else 	//else NANA_USING_NANA_FILESYSTEM
 
 	//Defines the functions that are not provided by experimental/filesystem
 	namespace std
 	{
 		namespace filesystem
 		{
-			#if (defined(_MSC_VER) && (_MSC_VER > 1912)) || \
-				(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 801))
+#if		(defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM) && defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
+			(!defined(__clang__) && defined(__GNUC__) && (__cplusplus < 201603))
 
 			namespace detail
 			{
@@ -1551,10 +1550,9 @@ namespace std
 			{
 				return weakly_canonical(p, &err);
 			}
-			#endif
+#endif
 		}
 	}
-#	endif
 
 #endif //NANA_USING_NANA_FILESYSTEM
 

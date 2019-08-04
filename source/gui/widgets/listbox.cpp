@@ -4762,7 +4762,7 @@ namespace nana
 
 				bool item_proxy::empty() const noexcept
 				{
-					return !ess_;
+					return !(ess_ && ess_->lister.good(pos_));
 				}
 
 				item_proxy & item_proxy::check(bool ck, bool scroll_view)
