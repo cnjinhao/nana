@@ -2308,7 +2308,8 @@ namespace nana
 				size_type count_of_exposed(bool with_rest) const
 				{
 					auto lister_s = this->content_view->view_area().height;
-					return (lister_s / item_height()) + (with_rest && (lister_s % item_height()) ? 1 : 0);
+					return (lister_s / item_height()) + (with_rest && 
+						listbox_ptr->scroll_operation()->visible(true) && (lister_s % item_height()) ? 1 : 0);
 				}
 
 				void update(bool ignore_auto_draw = false) noexcept
@@ -6073,7 +6074,15 @@ namespace nana
 
 		auto listbox::last_visible() const -> index_pair
 		{
-			return _m_ess().lister.advance(_m_ess().first_display(), static_cast<int>(_m_ess().count_of_exposed(true)));
+			if(!const_cast<listbox*>(this)->scroll_operation()->visible(true))
+			{
+				auto last_cat = size_categ()-1;
+				index_pair ip(last_cat, at(last_cat).size()-1);
+				if(last_cat == 0 && ip.item == npos) // if the listbox is empty
+					ip.cat = npos; // return empty index_pair
+				return ip;
+			}
+			return _m_ess().lister.advance(_m_ess().first_display(), static_cast<int>(_m_ess().count_of_exposed(true)-1));
 		}
 
 		auto listbox::visibles() const -> index_pairs
