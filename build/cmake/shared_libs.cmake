@@ -37,7 +37,7 @@ if(BUILD_SHARED_LIBS)   # todo test
 endif()
 
 if(NANA_STATIC_STDLIB)
-    target_compile_options(nana
+    target_link_libraries(nana
         PUBLIC $<$<OR:$<CXX_COMPILER_ID:GNU>, $<CXX_COMPILER_ID:Clang>>: -static-libgcc -static-libstdc++>)
 endif()
 
