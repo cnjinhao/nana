@@ -38,13 +38,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
 endif()
 
 
-if (APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")                    # APPLE Clang
-    target_compile_options(nana PUBLIC -stdlib=libstdc++)
-endif ()
-
-
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     target_compile_options(nana PRIVATE -fmax-errors=3)
 endif()
-
