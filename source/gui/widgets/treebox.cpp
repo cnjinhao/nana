@@ -1952,7 +1952,7 @@ namespace nana
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
 					auto const node = nl.node();
-					if (!node)
+					if (!node || !node->child)
 						return;
 
 					switch (nl.what())
