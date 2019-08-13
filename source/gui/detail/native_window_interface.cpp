@@ -34,6 +34,10 @@ namespace nana{
 	namespace detail{
 
 #if defined(NANA_WINDOWS)
+
+		//This function is defined in bedrock_windows.cpp
+	HINSTANCE windows_module_handle();
+
 	class tray_manager
 	{
 		struct window_extra_t
@@ -315,7 +319,7 @@ namespace nana{
 			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
-											reinterpret_cast<HWND>(owner), 0, ::GetModuleHandle(0), 0);
+											reinterpret_cast<HWND>(owner), 0, windows_module_handle(), 0);
 
 			//A window may have a border, this should be adjusted the client area fit for the specified size.
 			::RECT client;
@@ -504,7 +508,7 @@ namespace nana{
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
 										r.x, r.y, r.width, r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
-										0, ::GetModuleHandle(0), 0);
+										0, windows_module_handle(), 0);
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
