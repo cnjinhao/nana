@@ -5949,6 +5949,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			_m_ess().lister.sort_column(col, &reverse);
+			_m_ess().update();
 		}
 
 		auto listbox::sort_col() const -> size_type
