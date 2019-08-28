@@ -246,7 +246,7 @@ namespace nana
 			if(bytes > 1)
 			{
 				mbstr.resize(bytes - 1);
-				::WideCharToMultiByte(CP_ACP, 0, s, -1, &(mbstr[0]), bytes - 1, 0, 0);
+				::WideCharToMultiByte(CP_ACP, 0, s, -1, &(mbstr[0]), bytes, 0, 0);
 			}
 			return true;
 #else
