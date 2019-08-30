@@ -280,7 +280,7 @@ namespace nana
 			if(chars > 1)
 			{
 				wcstr.resize(chars - 1);
-				::MultiByteToWideChar(CP_ACP, 0, s, -1, &wcstr[0], chars - 1);
+				::MultiByteToWideChar(CP_ACP, 0, s, -1, &wcstr[0], chars);
 			}
 #else
 			locale_initializer::init();
