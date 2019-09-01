@@ -89,7 +89,7 @@
 		#define NANA_MINGW
 	#endif // MINGW
 
-#elif defined(APPLE)	//Mac OS X
+#elif defined(__APPLE__) || defined(APPLE)	//Mac OS X
 	//Symbols for MACOS
 	#define NANA_MACOS
 	#define NANA_POSIX
@@ -252,7 +252,7 @@
 #  if __has_include(<filesystem>)
 #    undef STD_FILESYSTEM_NOT_SUPPORTED
 #  endif
-#  if __has_include(<mutex>) 
+#  if __has_include(<mutex>)
 #    if !(defined(NANA_MINGW) && !defined(_GLIBCXX_HAS_GTHREADS))
 //See the comment above regarding MinGW's threading support
 #      undef STD_THREAD_NOT_SUPPORTED
