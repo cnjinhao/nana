@@ -146,7 +146,8 @@ namespace nana
 
 				//draw caption
 				auto text = to_wstring(API::window_caption(window_handle_));
-				text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
+				if((graph.size().width > 20) && (graph.size().width - 20 > 10))
+					text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
 				//draw x button
 				auto r = _m_button_area();
