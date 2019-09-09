@@ -3317,16 +3317,27 @@ namespace nana
 					return false;
 				}
 
+                // init ir end to grab a header
 				void grab(const nana::point& pos, bool is_grab)
 				{
-					if(is_grab)
+					if(is_grab)                                      // init grabbing the header
 					{
 						grabs_.start_pos = pos.x;
-						if(grabs_.splitter != npos)  // resize header item, not move it
-							grabs_.item_width = essence_->header.at(grabs_.splitter).width_px;
+						if(grabs_.splitter == npos)                // No splitter,  no resize header, just moving
+						    return;
+
+						                                   // splitter grabbed - resize the header: take initial width
+						grabs_.item_width = essence_->header.at(grabs_.splitter).width_px;
 					}
-					else if((grab_terminal_.index != npos) && (grab_terminal_.index != essence_->pointer_where.second))
-						essence_->header.move(essence_->pointer_where.second, grab_terminal_.index, grab_terminal_.place_front);
+					else                                           // end to grab the header
+					    if (grabs_.splitter != npos)           // some Splitter grab, just resizing, no need to move
+					        return;
+					    else if(    (grab_terminal_.index != npos)
+					             && (grab_terminal_.index != essence_->pointer_where.second) )
+                                // move header to terminal position
+                                essence_->header.move(essence_->pointer_where.second,          // from
+                                                      grab_terminal_.index,                    // to
+                                                      grab_terminal_.place_front);
 				}
 
 				//grab_move
@@ -4274,7 +4285,10 @@ namespace nana
 					auto const good_list_r = essence_->rect_lister(list_r);
 
 					auto & ptr_where = essence_->pointer_where;
-					if((ptr_where.first == parts::header) && (ptr_where.second != npos || (drawer_header_->splitter() != npos)))
+
+					if(    (ptr_where.first == parts::header)             // click on header
+					    && (    ptr_where.second != npos                  // in ..
+					        || (drawer_header_->splitter() != npos)))     // or splitter
 					{
 						essence_->ptr_state = item_state::pressed;
 						if(good_head_r)
@@ -4283,7 +4297,8 @@ namespace nana
 							update = true;
 						}
 					}
-					else if(ptr_where.first == parts::list || ptr_where.first == parts::checker)
+					else if(   ptr_where.first == parts::list             // click on list
+					        || ptr_where.first == parts::checker)         // on a checker
 					{
 						index_pair item_pos = lister.advance(essence_->first_display(), static_cast<int>(ptr_where.second));
 
@@ -4456,13 +4471,16 @@ namespace nana
 					bool need_refresh = false;
 
 					//Don't sort the column when the mouse is due to released for stopping resizing column.
-					if ((drawer_header_->splitter() == npos) && essence_->header.attrib().sortable && essence_->pointer_where.first == parts::header && prev_state == item_state::pressed)
+					if (    (drawer_header_->splitter() == npos)              // no header splitter was selected
+					     && essence_->header.attrib().sortable
+					     && essence_->pointer_where.first == parts::header
+					     && prev_state == item_state::pressed)
 					{
 						//Try to sort the column
 						if(essence_->pointer_where.second < essence_->header.cont().size())
 							need_refresh = essence_->lister.sort_column(essence_->pointer_where.second, nullptr);
 					}
-					else if (item_state::grabbed == prev_state)
+					else if (item_state::grabbed == prev_state)       // selected splitter and grabbed
 					{
 						nana::point pos = arg.pos;
 						essence_->widget_to_header(pos);
