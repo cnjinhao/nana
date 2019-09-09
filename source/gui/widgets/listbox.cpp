@@ -167,7 +167,7 @@ namespace nana
 					
 					column(column&& other):
 						caption(std::move(other.caption)),
-						width_px(other.width_px),
+                        width_px(other.width_px),
 						range_width_px(other.range_width_px),
 						visible_state(other.visible_state),
 						index(other.index),
@@ -184,7 +184,13 @@ namespace nana
 						index(pos),
 						ess_(ess)
 					{
+					    if (px == 0)
+                        {
+					        fit_width_to_header();
+                        }
 					}
+
+					void fit_width_to_header();
 				private:
 					/// The definition is provided after essence
 					void _m_refresh() noexcept;
@@ -2880,6 +2886,23 @@ namespace nana
 				}
 				return max_px;
 			}
+
+			void es_header::column::fit_width_to_header()
+            {
+			    std::cout<< "Column: " << to_utf8(caption) ;
+                std::unique_ptr<paint::graphics> graph_helper;
+                auto graph = ess_->graph;
+                if (graph->empty())
+                {
+                    //Creates a helper if widget graph is empty(when its size is 0).
+                    graph_helper.reset(new paint::graphics{ nana::size{ 5, 5 } });
+                    graph_helper->typeface(ess_->graph->typeface());
+                    graph = graph_helper.get();
+                }
+                width_px = ess_->scheme_ptr->text_margin * 2;	    //margin at left/right end.
+
+                width_px += graph->text_extent_size(caption).width;
+            }
 
 			//es_header::column member functions
 			void es_header::column::_m_refresh() noexcept
