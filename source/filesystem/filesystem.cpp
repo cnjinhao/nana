@@ -1407,7 +1407,7 @@ namespace std
 		namespace filesystem
 		{
 #if		(defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM) && defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
-			(!defined(__clang__) && defined(__GNUC__) && (__cplusplus < 201603))
+			(!defined(__clang__) && defined(__GNUC__) && (__cplusplus < 201603 || (__GNUC__* 100 + __GNUC_MINOR__ < 801)))
 
 			namespace detail
 			{
