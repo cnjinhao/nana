@@ -173,15 +173,22 @@ namespace detail
 
 	static LRESULT WINAPI Bedrock_WIN32_WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+	HINSTANCE windows_module_handle()
+	{
+		MEMORY_BASIC_INFORMATION mbi;
+		static int dummy;
+		VirtualQuery(&dummy, &mbi, sizeof(mbi));
+		return reinterpret_cast<HINSTANCE>(mbi.AllocationBase);
+	}
+
 	bedrock::bedrock()
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
-
 		WNDCLASSEX wincl;
-		wincl.hInstance = ::GetModuleHandle(0);
+		wincl.hInstance = windows_module_handle();
 		wincl.lpszClassName = L"NanaWindowInternal";
 		wincl.lpfnWndProc = &Bedrock_WIN32_WindowProc;
 		wincl.style = CS_DBLCLKS | CS_OWNDC;
@@ -229,6 +236,8 @@ namespace detail
 
 		delete impl_;
 		delete pi_data_;
+
+		::UnregisterClass(L"NanaWindowInternal", windows_module_handle());
 	}
 
 

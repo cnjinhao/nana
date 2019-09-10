@@ -111,13 +111,13 @@ namespace nana
 	{
 	public:
 #if defined(NANA_WINDOWS)
-		timer_core(timer* sender, timer_identifier tmid, basic_event<arg_elapse>& evt_elapse):
+		timer_core(timer* sender, timer_identifier tmid, std::shared_ptr<basic_event<arg_elapse>> evt_elapse):
 			sender_(sender),
 			timer_(tmid),
 			evt_elapse_(evt_elapse)
 		{}
 #else
-		timer_core(timer* sender, basic_event<arg_elapse>& evt_elapse):
+		timer_core(timer* sender, std::shared_ptr<basic_event<arg_elapse>> evt_elapse):
 			sender_(sender),
 			timer_(this),
 			evt_elapse_(evt_elapse)
@@ -142,12 +142,15 @@ namespace nana
 		{
 			arg_elapse arg;
 			arg.sender = sender_;
-			evt_elapse_.emit(arg, nullptr);
+
+			//retain the object to avoid it to be deleted during calling of emit
+			auto retain = evt_elapse_;
+			retain->emit(arg, nullptr);
 		}
 	private:
 		timer * const sender_;
 		const timer_identifier timer_;
-		nana::basic_event<arg_elapse> & evt_elapse_;
+		std::shared_ptr<nana::basic_event<arg_elapse>> evt_elapse_;
 	}; //end class timer_core
 
 
@@ -175,8 +178,9 @@ namespace nana
 	};
 
 	//class timer
-		timer::timer()
-			: impl_(new implement)
+		timer::timer():
+			elapse_(std::make_shared<nana::basic_event<arg_elapse>>()),
+			impl_(new implement)
 		{
 		}
 		
@@ -195,7 +199,7 @@ namespace nana
 		void timer::reset()
 		{
 			stop();
-			elapse_.clear();
+			elapse_->clear();
 		}
 
 		void timer::start()
