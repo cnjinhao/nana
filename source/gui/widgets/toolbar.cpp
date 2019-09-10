@@ -104,6 +104,7 @@ namespace nana
 						delete ptr;
 
 					cont_.clear();
+					right_ = npos;
 				}
 
 
@@ -683,6 +684,7 @@ namespace nana
 				if(m && (m->textout != show))
 				{
 					m->textout = show;
+					m->pixels = 0; //force width calculation
 					API::refresh_window(this->handle());
 				}
 			}
