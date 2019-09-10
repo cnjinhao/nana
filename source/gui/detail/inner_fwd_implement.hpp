@@ -21,6 +21,10 @@
 
 #include <map>
 
+#ifdef NANA_X11
+#	include <atomic>
+#endif
+
 namespace nana{
 	namespace detail
 	{
@@ -75,6 +79,15 @@ namespace nana{
 			root_misc(root_misc&&);
 			root_misc(basic_window * wd, unsigned width, unsigned height);
 			~root_misc();
+
+#ifdef NANA_X11
+			struct x11msg_confirm
+			{
+				std::atomic<std::size_t> config{ 0 };
+				std::atomic<std::size_t> map{ 0 };
+				std::atomic<std::size_t> unmap{ 0 };
+			}x11msg;
+#endif
 		private:
 			root_misc(const root_misc&) = delete;
 			root_misc& operator=(const root_misc&) = delete;
