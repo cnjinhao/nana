@@ -47,10 +47,10 @@ namespace nana
 			class column_interface
 			{
 			public:
-				/// Destructor
+				// Destructor
 				virtual ~column_interface() = default;
 
-				/// Returns the width of column, in pixel
+				/// Returns the width of the column, in pixel
 				virtual unsigned width() const noexcept = 0;
 
 				/// Sets width
@@ -1323,10 +1323,10 @@ the nana::detail::basic_window member pointer scheme
 		/// The output resolver that converts an item to an object
 		using oresolver = drawerbase::listbox::oresolver;
 
-		/// The representation of an item
+		/// The representation of an item cell
 		using cell		= drawerbase::listbox::cell;
 
-		/// The options of exporting items into a string variable
+		/// The options for exporting items into a string variable
 		using export_options = drawerbase::listbox::export_options;
 
 		/// The interface for user-defined inline widgets
@@ -1336,12 +1336,12 @@ the nana::detail::basic_window member pointer scheme
 		using column_interface = drawerbase::listbox::column_interface;
 	public:
 
-		/// Constructors
+	// Constructors
 		listbox() = default;
 		listbox(window, bool visible);
 		listbox(window, const rectangle& = {}, bool visible = true);
 
-	//Element access
+	// Element access
 
 		/// Returns the category at specified location pos, with bounds checking.
 		cat_proxy at(size_type pos);
@@ -1360,7 +1360,7 @@ the nana::detail::basic_window member pointer scheme
 		item_proxy operator[](const index_pair& abs_pos);
 		const item_proxy operator[](const index_pair &abs_pos) const;
 
-	//Associative category access
+	// Associative category access
 
 		/// Returns a proxy to the category of the key or create a new one in the right order
 		/**
@@ -1395,7 +1395,7 @@ the nana::detail::basic_window member pointer scheme
 			return cat_proxy(&_m_ess(), categ);
 		}
 
-		/// Removes a category which is associated with the specified key
+		/// Removes the category associated with the specified key
 		/**
 		* @param key The key of category to remove
 		*/
@@ -1409,7 +1409,6 @@ the nana::detail::basic_window member pointer scheme
 		}
 
 		bool assoc_ordered(bool);
-
 
 		void auto_draw(bool) noexcept;		///< Set state: Redraw automatically after an operation
 
@@ -1436,15 +1435,17 @@ the nana::detail::basic_window member pointer scheme
 		void scroll(bool to_bottom, const index_pair& abs_pos);
 
 		/// Appends a new column with a header text and the specified width at the end, and return it position
+		///
+		/// If a width of 0 is passed the width will be set to fit the header text.
 		size_type append_header(std::string text_utf8, unsigned width = 120);
 		size_type append_header(std::wstring text, unsigned width = 120);
 
-		void clear_headers();					///< Removes all the columns.
+		void clear_headers();                                                   ///< Removes all the columns.
 
-		cat_proxy append(std::string category);		///< Appends a new category to the end
-		cat_proxy append(std::wstring category);		///< Appends a new category to the end
-		void append(std::initializer_list<std::string> categories); ///< Appends categories to the end
-		void append(std::initializer_list<std::wstring> categories); ///< Appends categories to the end
+		cat_proxy append(std::string category);                                 ///< Appends a new category to the end
+		cat_proxy append(std::wstring category);                                ///< Appends a new category to the end
+		void append(std::initializer_list<std::string> categories);             ///< Appends categories to the end
+		void append(std::initializer_list<std::wstring> categories);            ///< Appends categories to the end
 
 		/// Access a column at specified position
 		/**
@@ -1484,7 +1485,7 @@ the nana::detail::basic_window member pointer scheme
 		void column_movable(bool);
 		bool column_movable() const;
 
-		/// Returns a rectangle in where the content is drawn.
+		/// Returns the rectangle where the content is drawn.
 		rectangle content_area() const;
 
 		cat_proxy insert(cat_proxy, ::std::string);
@@ -1493,7 +1494,7 @@ the nana::detail::basic_window member pointer scheme
 		/// Inserts an item before a specified position
 		/**
 		 * @param abs_pos The absolute position before which an item will be inserted.
-		 * @param text Text of the first column, in UTF-8 encoded.
+		 * @param text Text of the first column, UTF-8 encoded.
 		 */
 		void insert_item(const index_pair& abs_pos, ::std::string text);
 
@@ -1507,46 +1508,54 @@ the nana::detail::basic_window member pointer scheme
 
 		void insert_item(index_pair abs_pos, const listbox& rhs, const index_pairs& indexes);
 
-		/// Returns an index of item which contains the specified point.
+		/// Returns the index pair of the item which contains the specified "screen" point.
 		index_pair cast(const point & screen_pos) const;
 
 		/// Returns the item which is hovered
 		/**
-		 * @param return_end Indicates whether to return an end position instead of empty position if an item is not hovered.
-		 * @return The position of the hovered item. If return_end is true, it returns the position next to the last item of last category if an item is not hovered.
+		 * @param return_end Indicates whether to return an end position instead of an empty position if no item is hovered.
+		 * @return The position of the hovered item. If return_end is true and no item is hovered it returns the position next to the last item of last category.
 		 */
 		index_pair hovered(bool return_end) const;
 
-		/// Returns the absolute position of column which contains the specified point.
-		size_type column_from_pos(const point & pos) const;
+		/// Returns the absolute position of the column which contains the specified "screen" point.
+		size_type column_from_pos(const point & screen_pos) const;
 
-		void checkable(bool);
-		index_pairs checked() const;                         ///<Returns the items which are checked.
+		void checkable(bool make_checkeable);  ///< Display a checkbox at te links of each item if make_checkeable=true
+		index_pairs checked() const;           ///< Returns all the items which are checked.
 
-		void clear(size_type cat);			///<Removes all the items from the specified category
-		void clear();						///<Removes all the items from all categories
-		void erase(size_type cat);			///<Erases a category
-		void erase();						///<Erases all categories.
-		void erase(index_pairs indexes);	///<Erases specified items.
-		item_proxy erase(item_proxy);
+		void clear(size_type cat);			///< Removes all the items from the specified category
+		void clear();						///< Removes all the items from all categories
+		void erase(size_type cat);			///< Erases a category
+		void erase();						///< Erases all categories.
+		void erase(index_pairs indexes);	///< Erases specified items.
+		item_proxy erase(item_proxy indx);  ///< Erases specified item.
 
-		bool sortable() const;
-		void sortable(bool enable);
+		bool sortable() const;              ///< return whether the listbox is set to be sortable
+		void sortable(bool enable);         ///< set the listbox to be or not to be sortable
 		
 		///Sets a strict weak ordering comparer for a column
 		void set_sort_compare(	size_type col,
 								std::function<bool(const std::string&, nana::any*,
 								                   const std::string&, nana::any*, bool reverse)> strick_ordering);
 
-		/// sort() and invalidates any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+		/// Sort the items using the specified column.
+		///
+		/// Invalidates any existing reference from display position to absolute item,
+		/// that is: after sort() display offset point to different items
 		void sort_col(size_type col, bool reverse = false);
-		size_type sort_col() const;
+		size_type sort_col() const;                  ///< return the column currently used to sort items
 
-		/// potentially invalidates any existing reference from display position to absolute item, that is: after sort() display offset point to different items
+		/// Eliminate any "column sorting", effectively setting the items in the order of creation.
+		///
+		/// Potentially invalidates any existing reference from display position to absolute item,
+		/// that is: after unsort() display offset may point to different items
 		void unsort();
+
+		///< Prevent sorting until `freeze` is set to false.
 		bool freeze_sort(bool freeze);
 
-		index_pairs selected() const;		///<Get the absolute indexs of all the selected items
+		index_pairs selected() const;		///<Get the absolute indexes of all the selected items
 
 		void show_header(bool);
 		bool visible_header() const;
@@ -1558,7 +1567,7 @@ the nana::detail::basic_window member pointer scheme
 		void enable_single(bool for_selection, bool category_limited);
 		void disable_single(bool for_selection);
 		bool is_single_enabled(bool for_selection) const noexcept;	///< Determines whether the single selection/check is enabled.
-		export_options& def_export_options();
+		export_options& def_export_options();     ///< return a modifiable reference to the export options in use
 
 
 		/// Sets a renderer for category icon

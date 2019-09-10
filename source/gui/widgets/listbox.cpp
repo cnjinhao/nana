@@ -2889,8 +2889,7 @@ namespace nana
 
 			void es_header::column::fit_width_to_header()
             {
-			    std::cout<< "Column: " << to_utf8(caption) ;
-                std::unique_ptr<paint::graphics> graph_helper;
+			    std::unique_ptr<paint::graphics> graph_helper;
                 auto graph = ess_->graph;
                 if (graph->empty())
                 {
