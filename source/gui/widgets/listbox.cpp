@@ -2909,7 +2909,7 @@ namespace nana
 			//es_header::column member functions
 			void es_header::column::_m_refresh() noexcept
 			{
-				ess_->update(true);
+				ess_->update(false);
 			}
 
 			size_type es_header::column::position(bool disp_order) const noexcept
