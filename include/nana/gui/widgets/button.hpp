@@ -87,10 +87,10 @@ namespace nana{
 			typedef widget_object<category::widget_tag, drawerbase::button::trigger> base_type;
 		public:
 			button();
-			button(window, bool visible);
-			button(window, const ::std::string& caption, bool visible = true);
-			button(window, const char* caption, bool visible = true);
-			button(window, const nana::rectangle& = rectangle(), bool visible = true);
+			button(window parent, bool visible);
+			button(window parent, const ::std::string& caption, bool visible = true);
+			button(window parent, const char* caption, bool visible = true);
+			button(window parent, const nana::rectangle& = rectangle(), bool visible = true);
 
 			/// Shows an icon in front of caption
 			/**
