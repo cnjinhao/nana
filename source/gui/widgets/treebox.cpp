@@ -1274,7 +1274,10 @@ namespace nana
 
 				item_proxy	item_proxy::operator++(int)
 				{
-					return sibling();
+					item_proxy ip(*this);
+					if(trigger_ && node_)
+						node_ = node_->next;
+					return ip;
 				}
 
 				item_proxy& item_proxy::operator*()
