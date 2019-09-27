@@ -1473,7 +1473,7 @@ namespace paint
 			{
 				if (vertical)
 				{
-					int x1 = good_rct.x, x2 = good_rct.right();
+					int x1 = good_rct.x, x2 = good_rct.right() - 1;
 					auto y = good_rct.y;
 					for (; y < endpos; ++y)
 					{
@@ -1489,7 +1489,7 @@ namespace paint
 				}
 				else
 				{
-					int y1 = good_rct.y, y2 = good_rct.bottom();
+					int y1 = good_rct.y, y2 = good_rct.bottom() - 1;
 					auto x = good_rct.x;
 					for (; x < endpos; ++x)
 					{
