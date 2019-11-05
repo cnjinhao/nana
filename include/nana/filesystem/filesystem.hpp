@@ -38,6 +38,8 @@
 #define NANA_USING_STD_FILESYSTEM   0
 #define NANA_USING_BOOST_FILESYSTEM 0
 
+#define NANA_FILESYSTEM_FORCE 1
+
 #if (defined(NANA_FILESYSTEM_FORCE) || ( (defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(BOOST_FILESYSTEM_AVAILABLE)) && !(defined(BOOST_FILESYSTEM_FORCE) || defined(STD_FILESYSTEM_FORCE)) ) )
 
 #undef  NANA_USING_NANA_FILESYSTEM
@@ -132,12 +134,8 @@ namespace std {
 
 #include <nana/deploy.hpp>
 
-namespace nana  { namespace experimental { namespace filesystem
-{
-#ifndef CXX_NO_INLINE_NAMESPACE
-			inline namespace v1
-			{
-#endif
+namespace nana {
+    namespace filesystem {
 
 	enum class file_type
 	{
@@ -264,17 +262,21 @@ namespace nana  { namespace experimental { namespace filesystem
 		const string_type& native() const;
 		operator string_type() const;
 
-		std::string string() const;
-		std::wstring wstring() const;
-		std::string u8string() const;
-		// std::u16string u16string() const;
-		// std::u32string u32string() const;
+            std::string string() const;
 
-		std::string generic_string() const ;
-		std::wstring generic_wstring() const;
-		std::string generic_u8string() const;
-		// std::u16string generic_u16string() const;
-		// std::u32string generic_u32string() const;
+            std::wstring wstring() const;
+
+            // std::string u8string() const;
+            // std::u16string u16string() const;
+            // std::u32string u32string() const;
+
+            std::string generic_string() const;
+
+            std::wstring generic_wstring() const;
+
+            // std::string generic_u8string() const;
+            // std::u16string generic_u16string() const;
+            // std::u32string generic_u32string() const;
 
 		path lexically_normal() const;
 
@@ -424,16 +426,17 @@ namespace nana  { namespace experimental { namespace filesystem
 	bool is_directory(const path& p);
     bool is_directory(const path& p, std::error_code& ec) noexcept;
 
-	inline bool is_regular_file(file_status s) noexcept
-	{
-		return s.type() == file_type::regular;
-	}
-	inline bool is_regular_file(const path& p)
-	{
-		return is_regular_file(status(p));
-	}
-	// bool is_regular_file(const path& p, error_code& ec) noexcept;
-    // Returns: is_regular_file(status(p, ec)).Returns false if an error occurs.
+        inline bool is_regular_file(file_status s) noexcept
+        {
+            return s.type() == file_type::regular;
+        }
+
+        inline bool is_regular_file(const path &p)
+        {
+            return is_regular_file(status(p));
+        }
+        // bool is_regular_file(const path& p, error_code& ec) noexcept;  // todo:
+        // Returns: is_regular_file(status(p, ec)).Returns false if an error occurs. // todo:
 
 	inline bool is_empty(const path& p)
     {
@@ -497,38 +500,34 @@ namespace nana  { namespace experimental { namespace filesystem
 			}
 		}
 
-		return index ? path.substr(0, index + 1) : std::basic_string<CharType>();
-	}
-#ifndef CXX_NO_INLINE_NAMESPACE
-} //end namespace v1
-#endif
-} //end namespace filesystem
-} //end namespace experimental
+            return index ? path.substr(0, index + 1) : std::basic_string<CharType>();
+        }
 
-  //namespace filesystem = experimental::filesystem;
+        path absolute(const path& p);
+        path absolute(const path& p, std::error_code& err);
+
+        path canonical(const path& p);
+        path canonical(const path& p, std::error_code& err);
+
+        path weakly_canonical(const path& p);
+        path weakly_canonical(const path& p, std::error_code& err);
+
+        bool exists( file_status s ) noexcept;
+        bool exists( const path& p );
+        bool exists( const path& p, std::error_code& ec ) noexcept;
+    } //end namespace filesystem
 } //end namespace nana
 
-
-namespace std {
-	namespace experimental {
-		namespace filesystem {
-
-#       ifdef CXX_NO_INLINE_NAMESPACE
-			using namespace nana::experimental::filesystem;
-#       else
-			using namespace nana::experimental::filesystem::v1;
-#       endif
-
-		} // filesystem
-	} // experimental
-
-	namespace filesystem {
-		using namespace std::experimental::filesystem;
-
-#if defined(NANA_FILESYSTEM_FORCE) || \
-    (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
-		path absolute(const path& p);
-		path absolute(const path& p, std::error_code& err);
+namespace std
+{
+    namespace filesystem
+    {
+        inline namespace nana_filesystem
+        {
+            using namespace ::nana::filesystem;
+        }
+    }
+}
 
 		path canonical(const path& p);
 		path canonical(const path& p, std::error_code& err);

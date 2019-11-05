@@ -1,4 +1,4 @@
-/*
+/**
  *	A ISO C++ FileSystem Implementation
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
@@ -14,6 +14,7 @@
 #include <nana/filesystem/filesystem_ext.hpp>
 #include <vector>
 #include <sstream>
+#include <string>
 
 #include <nana/config.hpp>
 #ifdef _nana_std_put_time
@@ -150,14 +151,11 @@ namespace nana
 
 #if NANA_USING_NANA_FILESYSTEM
 
-namespace nana_fs = nana::experimental::filesystem;
-
-namespace nana {	namespace experimental {	namespace filesystem
-	{
-#ifndef CXX_NO_INLINE_NAMESPACE
-			inline namespace v1 {
-#endif
-
+namespace nana_fs = nana::filesystem;
+namespace nana
+{
+namespace filesystem
+{
 		//class filesystem_error
 			filesystem_error::filesystem_error(const std::string& msg, std::error_code err)
 				: std::system_error(err, msg)
@@ -667,7 +665,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 		}
 
 		//class directory_entry
-			directory_entry::directory_entry(const nana_fs::path& p)
+			directory_entry::directory_entry(const filesystem::path& p)
 				:path_{ p }
 			{}
 
