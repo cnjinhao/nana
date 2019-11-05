@@ -1736,9 +1736,9 @@ namespace std
 			{
 				return weakly_canonical(p, &err);
 			}
-#endif
 		}
 	}
+#endif
 
 #endif //NANA_USING_NANA_FILESYSTEM
 
