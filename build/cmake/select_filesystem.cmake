@@ -13,7 +13,8 @@
 option(NANA_CMAKE_NANA_FILESYSTEM_FORCE "Force nana filesystem over ISO and boost?" OFF)
 option(NANA_CMAKE_STD_FILESYSTEM_FORCE "Use of STD filesystem?(a compilation error will ocurre if not available)" OFF)
 option(NANA_CMAKE_BOOST_FILESYSTEM_FORCE "Force use of Boost filesystem if available (over STD)?" OFF)
-option(NANA_CMAKE_FIND_BOOST_FILESYSTEM "Search: Is Boost filesystem available?" OFF)
+set (TEST_FS_LIB OFF)
+
 
 if(NANA_CMAKE_NANA_FILESYSTEM_FORCE)
     if(NANA_CMAKE_STD_FILESYSTEM_FORCE)
@@ -48,11 +49,101 @@ elseif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     set(Boost_USE_STATIC_RUNTIME ON)
 
 else()
-    # todo   test for std    (for now just force nana or boost if there no std)
-    target_link_libraries     (nana PUBLIC stdc++fs)
 
-    # todo if not test for boost
-    # if not add nana filesystem
+    if(NANA_CMAKE_STD_FILESYSTEM_FORCE)
+        target_compile_definitions(nana PUBLIC STD_FILESYSTEM_FORCE)
+    endif()
+
+    check_include_file_cxx (filesystem              NANA_HAVE_FILESYSTEM)
+    check_include_file_cxx (experimental/filesystem NANA_HAVE_EXP_FILESYSTEM)
+
+    if (NANA_HAVE_FILESYSTEM)
+        message (STATUS "C++ Filesystem header:      <filesystem>")
+        set (TEST_FS_LIB ON)
+        set (CXXSTD_TEST_SOURCE
+           "#include <filesystem>
+            int main()
+            {
+                std::filesystem::path p{\"\tmp/\"};
+                throw std::filesystem::filesystem_error(\"Empty file name!\", std::make_error_code(std::errc::invalid_argument));
+            }")
+    elseif (NANA_HAVE_EXP_FILESYSTEM)
+        message (STATUS "C++ Filesystem header:      <experimental/filesystem>")
+        set (TEST_FS_LIB ON)
+        set (CXXSTD_TEST_SOURCE
+           "#include <experimental/filesystem>
+            int main()
+            {
+                std::experimental::filesystem::path p{\"/tmp/\"};
+                throw std::experimental::filesystem::filesystem_error(\"Empty file name!\", std::make_error_code(std::errc::invalid_argument));
+            }")
+    else ()
+        message (WARNING "No std::filesystem found: nana::filesystem will be used.
+                          Set NANA_CMAKE_NANA_FILESYSTEM_FORCE to ON to avoid this warning.")
+        target_compile_definitions(nana PUBLIC STD_FILESYSTEM_NOT_SUPPORTED)
+        set (TEST_FS_LIB OFF)
+    endif ()
+
+    if (TEST_FS_LIB)
+        include (FindPackageMessage)
+        include (CheckIncludeFileCXX)
+        include (CheckCXXSourceCompiles)
+        # CMAKE_REQUIRED_FLAGS = string of compile command line flags
+        # CMAKE_REQUIRED_DEFINITIONS = list of macros to define (-DFOO=bar)
+        # CMAKE_REQUIRED_INCLUDES = list of include directories
+        set (CMAKE_REQUIRED_INCLUDES    ${CMAKE_INCLUDE_PATH})
+        set (CMAKE_REQUIRED_FLAGS       ${CMAKE_CXX_FLAGS})
+        set (CMAKE_REQUIRED_FLAGS_ORIGINAL ${CMAKE_REQUIRED_FLAGS})
+
+        set (CXXSTD_TEST_SOURCE
+                "#if !defined (__cplusplus) || (__cplusplus < 201703L)
+                #error NOCXX17
+                #endif
+                int main() {}")
+
+        check_cxx_source_compiles ("${CXXSTD_TEST_SOURCE}" CXX17_BUILTIN)
+
+        if (CXX17_BUILTIN)
+            message (STATUS "C++ Standard-17 support:    builtin")
+        else ()
+            set (CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS_ORIGINAL} -std=c++17")
+            check_cxx_source_compiles ("${CXXSTD_TEST_SOURCE}" CXX17_FLAG)
+            if (CXX17_FLAG)
+                message (STATUS "C++ Standard-17 support:    via -std=c++17")
+            else ()
+                message (WARNING "nana requires C++17??, but your compiler does not support it.")
+            endif ()
+        endif ()
+
+        set (CMAKE_REQUIRED_LIBRARIES_ORIGINAL ${CMAKE_REQUIRED_LIBRARIES})
+        check_cxx_source_compiles ("${CXXSTD_TEST_SOURCE}" C++17FS_BUILTIN)
+
+        if (C++17FS_BUILTIN)
+            message (STATUS "C++ Filesystem library:     builtin")
+        else ()
+            set (C++17FS_LIB "")
+            foreach (_LIB stdc++fs)
+                set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_ORIGINAL} ${_LIB})
+                check_cxx_source_compiles ("${CXXSTD_TEST_SOURCE}" C++17FS_LIB-l${_LIB})
+                message (STATUS "C++ Filesystem library:    testing -l${_LIB}")
+                if (C++17FS_LIB-l${_LIB})
+                    target_link_libraries     (nana PUBLIC ${_LIB})
+                    message (STATUS "C++ Filesystem library:     via -l${_LIB}")
+                    set (C++17FS_LIB ${_LIB})
+                    break ()
+                endif ()
+                set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_ORIGINAL})
+            endforeach ()
+
+            if (C++17FS_LIB)
+                message (STATUS "C++ Filesystem library:     via -l${C++17FS_LIB}")
+            else ()
+                message (WARNING "No std::filesystem library found: nana::filesystem will be used.
+                          Set NANA_CMAKE_NANA_FILESYSTEM_FORCE to ON to avoid this warning.")
+                target_compile_definitions(nana PUBLIC STD_FILESYSTEM_NOT_SUPPORTED)
+            endif ()
+        endif ()
+    endif ()
 endif()
 
 
