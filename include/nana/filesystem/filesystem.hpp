@@ -9,7 +9,7 @@
  *
  *	@file nana/filesystem/filesystem.hpp
  *  @author Ariel Vina-Rodriguez, Jinhao
- *  @brief Mimic std::experimental::filesystem::v1   (boost v3)
+ *  @brief Mimic std::filesystem
  *  and need VC2015 or a C++11 compiler. With a few correction can be compiler by VC2013
  */
 
@@ -34,12 +34,6 @@
 //Filesystem Selection
 #include <nana/config.hpp>
 
-#if defined(NANA_USING_NANA_FILESYSTEM) || defined(NANA_USING_STD_FILESYSTEM) || defined(NANA_USING_BOOST_FILESYSTEM)
-#undef NANA_USING_NANA_FILESYSTEM
-#undef NANA_USING_STD_FILESYSTEM
-#undef NANA_USING_BOOST_FILESYSTEM
-#endif
-
 #define NANA_USING_NANA_FILESYSTEM  0
 #define NANA_USING_STD_FILESYSTEM   0
 #define NANA_USING_BOOST_FILESYSTEM 0
@@ -50,16 +44,15 @@
 #define NANA_USING_NANA_FILESYSTEM  1
 
 #elif (defined(BOOST_FILESYSTEM_AVAILABLE) && ( defined(BOOST_FILESYSTEM_FORCE) || ( defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(STD_FILESYSTEM_FORCE) ) ))
-
 #undef  NANA_USING_BOOST_FILESYSTEM
 #define NANA_USING_BOOST_FILESYSTEM 1
 #   include <chrono>
 #   include <boost/filesystem.hpp>
 
-// add boost::filesystem into std::experimental::filesystem
+// inline boost::filesystem into std::filesystem
 namespace std {
-	namespace experimental {
-		namespace filesystem {
+	namespace filesystem {
+	    inline namespace boost_filesystem {
 			using namespace boost::filesystem;
 			using file_time_type = std::chrono::time_point<std::chrono::system_clock>;
 
@@ -75,43 +68,34 @@ namespace std {
 				socket = boost::filesystem::file_type::socket_file,
 				unknown = boost::filesystem::file_type::type_unknown,
 			};
-// Boost dont include generic_u8string
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
-//
-// Boost versions: 1.67.0, 1.66.0, ... 1.56.0 enable directory_iterator C++11 range-base for
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
-// but travis come with an oooold version of boost
-// 1.55.0 NOT enable directory_iterator C++11 range-base for
-// http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
-#if BOOST_VERSION < 105600
-            namespace boost
-        //  enable directory_iterator C++11 range-base for statement use  --------------------//
+            // Boost dont include generic_u8string
+            // http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
+            //
+            // Boost versions: 1.67.0, 1.66.0, ... 1.56.0 enable directory_iterator C++11 range-base for
+            // http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
+            // but travis come with an oooold version of boost
+            // 1.55.0 NOT enable directory_iterator C++11 range-base for
+            // http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
+            #if BOOST_VERSION < 105600
+                namespace boost {      // todo  ??
+                    //  enable directory_iterator C++11 range-base for statement use  --------------------//
 
-		//  begin() and end() are only used by a range-based for statement in the context of
-		//  auto - thus the top-level const is stripped - so returning const is harmless and
-		//  emphasizes begin() is just a pass through.
-		inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
-		{
-			return iter;
-		}
+                    //  begin() and end() are only used by a range-based for statement in the context of
+                    //  auto - thus the top-level const is stripped - so returning const is harmless and
+                    //  emphasizes begin() is just a pass through.
+                    inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
+                    {
+                        return iter;
+                    }
 
-		inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
-		{
-			return directory_iterator();
-		}
-#endif
-
-		} // filesystem
-	} // experimental
-
-	namespace filesystem
-	{
-		using namespace experimental::filesystem;
-	}
-
-#ifndef __cpp_lib_experimental_filesystem
-#   define __cpp_lib_experimental_filesystem 201406
-#endif
+                    inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
+                    {
+                        return directory_iterator();
+                    }
+                }
+            #endif
+		} // boost_filesystem
+	} // filesystem
 } // std
 
 #else
