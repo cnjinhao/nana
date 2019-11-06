@@ -60,7 +60,7 @@ else()
     if (NANA_HAVE_FILESYSTEM)
         message (STATUS "C++ Filesystem header:      <filesystem>")
         set (TEST_FS_LIB ON)
-        set (CXXSTD_TEST_SOURCE
+        set (CXXSTD_FS_TEST_SOURCE
            "#include <filesystem>
             int main()
             {
@@ -70,7 +70,7 @@ else()
     elseif (NANA_HAVE_EXP_FILESYSTEM)
         message (STATUS "C++ Filesystem header:      <experimental/filesystem>")
         set (TEST_FS_LIB ON)
-        set (CXXSTD_TEST_SOURCE
+        set (CXXSTD_FS_TEST_SOURCE
            "#include <experimental/filesystem>
             int main()
             {
@@ -78,7 +78,7 @@ else()
                 throw std::experimental::filesystem::filesystem_error(\"Empty file name!\", std::make_error_code(std::errc::invalid_argument));
             }")
     else ()
-        message (WARNING "No std::filesystem found: nana::filesystem will be used.
+        message (WARNING "No std::filesystem include file found: nana::filesystem will be used.
                           Set NANA_CMAKE_NANA_FILESYSTEM_FORCE to ON to avoid this warning.")
         target_compile_definitions(nana PUBLIC STD_FILESYSTEM_NOT_SUPPORTED)
         set (TEST_FS_LIB OFF)
@@ -116,15 +116,15 @@ else()
         endif ()
 
         set (CMAKE_REQUIRED_LIBRARIES_ORIGINAL ${CMAKE_REQUIRED_LIBRARIES})
-        check_cxx_source_compiles ("${CXXSTD_TEST_SOURCE}" C++17FS_BUILTIN)
+        check_cxx_source_compiles ("${CXXSTD_TEST_SOURCE}" C++17FS_FLAG)
 
-        if (C++17FS_BUILTIN)
+        if (C++17FS_FLAG)
             message (STATUS "C++ Filesystem library:     builtin")
         else ()
             set (C++17FS_LIB "")
             foreach (_LIB stdc++fs)
                 set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_ORIGINAL} ${_LIB})
-                check_cxx_source_compiles ("${CXXSTD_TEST_SOURCE}" C++17FS_LIB-l${_LIB})
+                check_cxx_source_compiles ("${CXXSTD_FS_TEST_SOURCE}" C++17FS_LIB-l${_LIB})
                 message (STATUS "C++ Filesystem library:    testing -l${_LIB}")
                 if (C++17FS_LIB-l${_LIB})
                     target_link_libraries     (nana PUBLIC ${_LIB})
