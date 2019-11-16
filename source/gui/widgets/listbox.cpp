@@ -2395,7 +2395,9 @@ namespace nana
 								nana::rectangle r;
 								if (rect_lister(r))
 								{
-									auto top = new_where.second * item_h + header_visible_px();
+									//potential displacement due to partially visible first visible item
+									auto disp = origin.y - first_display().item * item_h;
+									auto top = new_where.second * item_h + header_visible_px() - disp;
 									if (checkarea(item_xpos(r), static_cast<int>(top)).is_hit(pos))
 										new_where.first = parts::checker;
 								}
@@ -5978,6 +5980,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			_m_ess().lister.sort_column(col, &reverse);
+			_m_ess().update();
 		}
 
 		auto listbox::sort_col() const -> size_type
