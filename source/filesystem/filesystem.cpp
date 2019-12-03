@@ -1,4 +1,4 @@
-/*
+/**
  *	A ISO C++ FileSystem Implementation
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
@@ -6,14 +6,15 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/filesystem/filesystem.cpp
- *	@description:
+ *	@file  nana/filesystem/filesystem.cpp
+ *	@description
  *		provide some interface for file management
  */
 
 #include <nana/filesystem/filesystem_ext.hpp>
 #include <vector>
 #include <sstream>
+#include <string>
 
 #include <nana/config.hpp>
 #ifdef _nana_std_put_time
@@ -150,43 +151,39 @@ namespace nana
 
 #if NANA_USING_NANA_FILESYSTEM
 
-namespace nana_fs = nana::experimental::filesystem;
+namespace nana_fs = nana::filesystem;
+namespace nana
+{
+namespace filesystem
+{
+    //class filesystem_error
+        filesystem_error::filesystem_error(const std::string& msg, std::error_code err)
+            : std::system_error(err, msg)
+        {}
 
-namespace nana {	namespace experimental {	namespace filesystem
-	{
-#ifndef CXX_NO_INLINE_NAMESPACE
-			inline namespace v1 {
-#endif
+        filesystem_error::filesystem_error(const std::string& msg, const path& path1, std::error_code err)
+            :	std::system_error(err, msg),
+                path1_(path1)
+        {}
 
-		//class filesystem_error
-			filesystem_error::filesystem_error(const std::string& msg, std::error_code err)
-				: std::system_error(err, msg)
-			{}
+        filesystem_error::filesystem_error(const std::string& msg, const path& path1, const path& path2, std::error_code err)
+            :	std::system_error(err, msg),
+                path1_(path1),
+                path2_(path2)
+        {}
 
-			filesystem_error::filesystem_error(const std::string& msg, const path& path1, std::error_code err)
-				:	std::system_error(err, msg),
-					path1_(path1)
-			{}
+        const path& filesystem_error::path1() const noexcept
+        {
+            return path1_;
+        }
 
-			filesystem_error::filesystem_error(const std::string& msg, const path& path1, const path& path2, std::error_code err)
-				:	std::system_error(err, msg),
-					path1_(path1),
-					path2_(path2)
-			{}
+        const path& filesystem_error::path2() const noexcept
+        {
+            return path2_;
+        }
+    //end class filesystem_error
 
-			const path& filesystem_error::path1() const noexcept
-			{
-				return path1_;
-			}
-
-			const path& filesystem_error::path2() const noexcept
-			{
-				return path2_;
-			}
-		//end class filesystem_error
-
-
-		//Because of No wide character version of POSIX
+    //Because of No wide character version of POSIX
 #if defined(NANA_POSIX)
 		const char* separators = "/";
 		const char	separator = '/';
@@ -512,10 +509,10 @@ namespace nana {	namespace experimental {	namespace filesystem
 			return to_wstring(pathstr_);
 		}
 
-		std::string path::u8string() const
+		/*std::string path::u8string() const
 		{
 			return to_utf8(pathstr_);
-		}
+		}*/
 		std::string path::generic_string() const
 		{
 			auto str = string();
@@ -528,12 +525,12 @@ namespace nana {	namespace experimental {	namespace filesystem
 			std::replace(str.begin(), str.end(), L'\\', L'/');
 			return str;
 		}
-		std::string path::generic_u8string() const // uppss ...
+		/*std::string path::generic_u8string() const // uppss ...
 		{
 			auto str = pathstr_;
 			std::replace(str.begin(), str.end(), '\\', '/');  // uppss ...  revise this !!!!!
 			return to_utf8(str);
-		}
+		}*/
 
 		path path::lexically_normal() const
 		{
@@ -667,7 +664,7 @@ namespace nana {	namespace experimental {	namespace filesystem
 		}
 
 		//class directory_entry
-			directory_entry::directory_entry(const nana_fs::path& p)
+			directory_entry::directory_entry(const filesystem::path& p)
 				:path_{ p }
 			{}
 
@@ -713,112 +710,112 @@ namespace nana {	namespace experimental {	namespace filesystem
 				}
 			};
 
-				directory_iterator::directory_iterator() noexcept
-					:	end_(true),
-						handle_(nullptr)
-				{}
+            directory_iterator::directory_iterator() noexcept
+                :	end_(true),
+                    handle_(nullptr)
+            {}
 
-				directory_iterator::directory_iterator(const path& file_path)
-				{
-					_m_prepare(file_path);
-				}
+            directory_iterator::directory_iterator(const path& file_path)
+            {
+                _m_prepare(file_path);
+            }
 
-				directory_iterator::directory_iterator(const path& p, directory_options opt):
-					option_(opt)
-				{
-					_m_prepare(p);
-				}
+            directory_iterator::directory_iterator(const path& p, directory_options opt):
+                option_(opt)
+            {
+                _m_prepare(p);
+            }
 
-				const directory_iterator::value_type& directory_iterator::operator*() const { return value_; }
+            const directory_iterator::value_type& directory_iterator::operator*() const { return value_; }
 
-				const directory_iterator::value_type*
-					directory_iterator::operator->() const { return &(operator*()); }
+            const directory_iterator::value_type*
+                directory_iterator::operator->() const { return &(operator*()); }
 
-				directory_iterator& directory_iterator::operator++()
-				{
-					_m_read(); return *this;
-				}
+            directory_iterator& directory_iterator::operator++()
+            {
+                _m_read(); return *this;
+            }
 
-				directory_iterator directory_iterator::operator++(int)
-				{
-					directory_iterator tmp = *this;
-					_m_read();
-					return tmp;
-				}
+            directory_iterator directory_iterator::operator++(int)
+            {
+                directory_iterator tmp = *this;
+                _m_read();
+                return tmp;
+            }
 
-				bool directory_iterator::equal(const directory_iterator& x) const
-				{
-					if (end_ && (end_ == x.end_)) return true;
-					return (value_.path().filename() == x.value_.path().filename());
-				}
+            bool directory_iterator::equal(const directory_iterator& x) const
+            {
+                if (end_ && (end_ == x.end_)) return true;
+                return (value_.path().filename() == x.value_.path().filename());
+            }
 
 
-				void directory_iterator::_m_prepare(const path& file_path)
-				{
-					path_ = file_path.native();
+            void directory_iterator::_m_prepare(const path& file_path)
+            {
+                path_ = file_path.native();
 #if defined(NANA_WINDOWS)
-					if (!path_.empty() && (path_.back() != L'/' && path_.back() != L'\\'))
-						path_ += L'\\';
+                if (!path_.empty() && (path_.back() != L'/' && path_.back() != L'\\'))
+                    path_ += L'\\';
 
-					auto pat = path_;
-					DWORD attr = ::GetFileAttributes(pat.data());
-					if ((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY))
-						pat += L"*";
+                auto pat = path_;
+                DWORD attr = ::GetFileAttributes(pat.data());
+                if ((attr != INVALID_FILE_ATTRIBUTES) && (attr & FILE_ATTRIBUTE_DIRECTORY))
+                    pat += L"*";
 
-					WIN32_FIND_DATAW wfd;
-					::HANDLE handle = ::FindFirstFile(pat.data(), &wfd);
+                WIN32_FIND_DATAW wfd;
+                ::HANDLE handle = ::FindFirstFile(pat.data(), &wfd);
 
-					if (handle == INVALID_HANDLE_VALUE)
-					{
-						end_ = true;
-						return;
-					}
+                if (handle == INVALID_HANDLE_VALUE)
+                {
+                    end_ = true;
+                    return;
+                }
 
-					while (_m_ignore(wfd.cFileName))
-					{
-						if (::FindNextFile(handle, &wfd) == 0)
-						{
-							end_ = true;
-							::FindClose(handle);
-							return;
-						}
-					}
+                while (_m_ignore(wfd.cFileName))
+                {
+                    if (::FindNextFile(handle, &wfd) == 0)
+                    {
+                        end_ = true;
+                        ::FindClose(handle);
+                        return;
+                    }
+                }
 
-					value_ = value_type(path(path_ + wfd.cFileName));
+                value_ = value_type(path(path_ + wfd.cFileName));
 
 #elif defined(NANA_POSIX)
-					if (path_.size() && (path_.back() != '/'))
-						path_ += '/';
-					auto handle = opendir(path_.c_str());
-					end_ = true;
-					if (handle)
-					{
-						struct dirent * dnt = readdir(handle);
-						if (dnt)
-						{
-							while (_m_ignore(dnt->d_name))
-							{
-								dnt = readdir(handle);
-								if (dnt == 0)
-								{
-									closedir(handle);
-									return;
-								}
-							}
+                if (path_.size() && (path_.back() != '/'))
+                    path_ += '/';
+                auto handle = opendir(path_.c_str());
+                end_ = true;
+                if (handle)
+                {
+                    struct dirent * dnt = readdir(handle);
+                    if (dnt)
+                    {
+                        while (_m_ignore(dnt->d_name))
+                        {
+                            dnt = readdir(handle);
+                            if (dnt == 0)
+                            {
+                                closedir(handle);
+                                return;
+                            }
+                        }
 
-							value_ = value_type(path_ + dnt->d_name);
-							end_ = false;
-						}
-					}
+                        value_ = value_type(path_ + dnt->d_name);
+                        end_ = false;
+                    }
+                }
 #endif
-					if (false == end_)
-					{
-						find_ptr_ = std::shared_ptr<find_handle>(new find_handle(handle), inner_handle_deleter());
-						handle_ = handle;
-					}
-				}
+                if (false == end_)
+                {
+                    find_ptr_ = std::shared_ptr<find_handle>(new find_handle(handle), inner_handle_deleter());
+                    handle_ = handle;
+                }
+            }
 
-				void directory_iterator::_m_read()
+            void directory_iterator::_m_read()
 				{
 					if (handle_)
 					{
@@ -978,7 +975,6 @@ namespace nana {	namespace experimental {	namespace filesystem
 #endif
 		}//end namespace detail
 
-
 		file_status status(const path& p)
 		{
 			std::error_code err;
@@ -1108,93 +1104,290 @@ namespace nana {	namespace experimental {	namespace filesystem
 			return 	dateTime;
 		}
 
-			bool create_directory(const path& p)
-			{
+        bool create_directory(const path& p)
+        {
 #if defined(NANA_WINDOWS)
-				return (FALSE != ::CreateDirectoryW(p.c_str(), 0));
+            return (FALSE != ::CreateDirectoryW(p.c_str(), 0));
 #elif defined(NANA_POSIX)
-				return (0 == ::mkdir(p.c_str(), static_cast<int>(perms::all)));
+            return (0 == ::mkdir(p.c_str(), static_cast<int>(perms::all)));
 #endif
-			}
+        }
 
-			bool remove(const path& p)
-			{
-				auto stat = status(p);
-				if (stat.type() == file_type::directory)
-					return detail::rm_dir(p);
+        bool remove(const path& p)
+        {
+            auto stat = status(p);
+            if (stat.type() == file_type::directory)
+                return detail::rm_dir(p);
 
-				return detail::rm_file(p);
-			}
+            return detail::rm_file(p);
+        }
 
-			bool remove(const path& p, std::error_code & ec)
-			{
-				ec.clear();
-				auto stat = status(p);
-				if (stat.type() == file_type::directory)
-					return detail::rm_dir(p);
+        bool remove(const path& p, std::error_code & ec)
+        {
+            ec.clear();
+            auto stat = status(p);
+            if (stat.type() == file_type::directory)
+                return detail::rm_dir(p);
 
-				return detail::rm_file(p);
-			}
+            return detail::rm_file(p);
+        }
 
-			path current_path()
-			{
+        path current_path()
+        {
 #if defined(NANA_WINDOWS)
-				wchar_t buf[MAX_PATH];
-				DWORD len = ::GetCurrentDirectoryW(MAX_PATH, buf);
-				if (len)
-				{
-					if (len > MAX_PATH)
-					{
-						wchar_t * p = new wchar_t[len + 1];
-						::GetCurrentDirectoryW(len + 1, p);
-						std::wstring s = p;
-						delete[] p;
-						return s;
-					}
-					return buf;
-				}
+            wchar_t buf[MAX_PATH];
+            DWORD len = ::GetCurrentDirectoryW(MAX_PATH, buf);
+            if (len)
+            {
+                if (len > MAX_PATH)
+                {
+                    wchar_t * p = new wchar_t[len + 1];
+                    ::GetCurrentDirectoryW(len + 1, p);
+                    std::wstring s = p;
+                    delete[] p;
+                    return s;
+                }
+                return buf;
+            }
 #elif defined(NANA_POSIX)
-				char buf[260];
-				auto pstr = ::getcwd(buf, 260);
-				if (pstr)
-					return pstr;
+            char buf[260];
+            auto pstr = ::getcwd(buf, 260);
+            if (pstr)
+                return pstr;
 
-				int bytes = 260 + 260;
-				while (ERANGE == errno)
-				{
-					std::unique_ptr<char[]> buf(new char[bytes]);
-					auto pstr = ::getcwd(buf.get(), bytes);
-					if (pstr)
-						return path(pstr);
+            int bytes = 260 + 260;
+            while (ERANGE == errno)
+            {
+                std::unique_ptr<char[]> buf(new char[bytes]);
+                auto pstr = ::getcwd(buf.get(), bytes);
+                if (pstr)
+                    return path(pstr);
 
-					bytes += 260;
-				}
+                bytes += 260;
+            }
 #endif
-				return path();
-			}
+            return path();
+        }
 
-			void current_path(const path& p)
-			{
+        void current_path(const path& p)
+        {
 #if defined(NANA_WINDOWS)
-				::SetCurrentDirectoryW(p.c_str());
+            ::SetCurrentDirectoryW(p.c_str());
 #elif defined(NANA_POSIX)
-				::chdir(p.c_str());
+            ::chdir(p.c_str());
 #endif
-			}
+        }
 
-#ifndef CXX_NO_INLINE_NAMESPACE
-		} //end namespace v1
+        path absolute(const path& p)
+        {
+            if (p.empty())
+                return p;
+
+            auto abs_base = current_path();
+
+            //  store expensive to compute values that are needed multiple times
+            path p_root_name(p.root_name());
+            path base_root_name(abs_base.root_name());
+            path p_root_directory(p.root_directory());
+
+            if (!p_root_name.empty())  // p.has_root_name()
+            {
+                if (p_root_directory.empty())  // !p.has_root_directory()
+                    return p_root_name / abs_base.root_directory()
+                           / abs_base.relative_path() / p.relative_path();
+                // p is absolute, so fall through to return p at end of block
+            }
+            else if (!p_root_directory.empty())  // p.has_root_directory()
+            {
+#ifdef NANA_POSIX
+                // POSIX can have root name it it is a network path
+                if (base_root_name.empty())   // !abs_base.has_root_name()
+                    return p;
 #endif
-		}//end namespace filesystem
-	} //end namespace experimental
+                return base_root_name / p;
+            }
+            else
+                return abs_base / p;
+
+            return p;  // p.is_absolute() is true
+        }
+
+        path absolute(const path& p, std::error_code& /*err*/)
+        {
+            return absolute(p);
+        }
+
+        path canonical(const path& p, std::error_code* err)
+        {
+            path source(p.is_absolute() ? p : absolute(p));
+            path root(source.root_path());
+            path result;
+
+            std::error_code local_ec;
+            file_status stat(status(source, local_ec));
+
+            if (stat.type() == file_type::not_found)
+            {
+                if (nullptr == err)
+                    throw (filesystem_error(
+                            "nana::filesystem::canonical", source,
+                            std::error_code(static_cast<int>(std::errc::no_such_file_or_directory), std::generic_category())));
+                err->assign(static_cast<int>(std::errc::no_such_file_or_directory), std::generic_category());
+                return result;
+            }
+            else if (local_ec)
+            {
+                if (nullptr == err)
+                    throw (filesystem_error(
+                            "nana::filesystem::canonical", source, local_ec));
+                *err = local_ec;
+                return result;
+            }
+
+
+            auto tmp_p = source;
+
+            std::vector<path> source_elements;
+            while (tmp_p != root)
+            {
+                source_elements.emplace(source_elements.begin(), tmp_p.filename());
+                tmp_p.remove_filename();
+            }
+
+            result = root;
+
+            for(auto & e : source_elements)
+            {
+                auto str = e.string();
+                if("." == str)
+                    continue;
+                else if(".." == str)
+                {
+                    if(result != root)
+                        result.remove_filename();
+                    continue;
+                }
+
+                result /= e;
+            }
+
+            if (err)
+                err->clear();
+
+            return result;
+        }
+
+        path canonical(const path& p)
+        {
+            return canonical(p, nullptr);
+        }
+
+        path canonical(const path& p, std::error_code& err)
+        {
+            return canonical(p, &err);
+        }
+
+        bool try_throw(int err_val, const path& p, std::error_code* ec, const char* message)
+        {
+            if (0 == err_val)
+            {
+                if (ec) ec->clear();
+            }
+            else
+            {	//error
+                if (nullptr == ec)
+                    throw (filesystem_error(
+                            message, p,
+                            std::error_code(err_val, std::generic_category())));
+                else
+                    ec->assign(err_val, std::system_category());
+            }
+            return err_val != 0;
+        }
+
+        path weakly_canonical(const path& p, std::error_code* err)
+        {
+            path head{ p };
+
+            std::error_code tmp_err;
+            std::vector<path> elements;
+            while (!head.empty())
+            {
+                auto head_status = status(head, tmp_err);
+
+                if (head_status.type() == file_type::unknown)
+                {
+                    if (try_throw(static_cast<int>(std::errc::invalid_argument), head, err, "nana::filesystem::weakly_canonical"))
+                        return path{};
+                }
+                if (head_status.type() != file_type::not_found)
+                    break;
+
+                elements.emplace_back(head.filename());
+                head.remove_filename();
+            }
+
+            bool tail_has_dots = false;
+            path tail;
+
+            for (auto & e : elements)
+            {
+                tail /= e;
+                // for a later optimization, track if any dot or dot-dot elements are present
+                if (e.native().size() <= 2
+                    && e.native()[0] == '.'
+                    && (e.native().size() == 1 || e.native()[1] == '.'))
+                    tail_has_dots = true;
+            }
+
+            if (head.empty())
+                return p.lexically_normal();
+            head = canonical(head, tmp_err);
+            if (try_throw(tmp_err.value(), head, err, "nana::filesystem::weakly_canonical"))
+                return path();
+            return tail.empty()
+                   ? head
+                   : (tail_has_dots  // optimization: only normalize if tail had dot or dot-dot element
+                      ? (head / tail).lexically_normal()
+                      : head / tail);
+        }
+
+        path weakly_canonical(const path& p)
+        {
+            return weakly_canonical(p, nullptr);
+        }
+
+        path weakly_canonical(const path& p, std::error_code& err)
+        {
+            return weakly_canonical(p, &err);
+        }
+
+        bool exists( std::filesystem::file_status s ) noexcept
+    {
+        return s.type() != file_type::not_found;
+    }
+
+        bool exists( const std::filesystem::path& p )
+    {
+        return exists(status(p));
+    }
+
+        bool exists( const std::filesystem::path& p, std::error_code& ec ) noexcept
+    {
+        return exists(status(p, ec));
+    }
+
+
+		} //end namespace filesystem
 }//end namespace nana
+#else
 
 namespace std
 {
 	namespace filesystem
 	{
-#if defined(NANA_FILESYSTEM_FORCE) || \
-    (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
+#if defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703))
+
 		path absolute(const path& p)
 		{
 			if (p.empty())
@@ -1379,8 +1572,8 @@ namespace std
 			return weakly_canonical(p, &err);
 		}
 #endif
-
-#if defined(NANA_FILESYSTEM_FORCE) || defined(NANA_MINGW)
+/*
+#if defined(NANA_MINGW)
     bool exists( std::filesystem::file_status s ) noexcept
     {
         return s.type() != file_type::not_found;
@@ -1395,17 +1588,10 @@ namespace std
     {
         return exists(status(p, ec));
     }
-#endif
-	}//end namespace filesystem
+*/
+ }//end namespace filesystem
 }//end namespace std
 
-#else 	//else NANA_USING_NANA_FILESYSTEM
-
-	//Defines the functions that are not provided by experimental/filesystem
-	namespace std
-	{
-		namespace filesystem
-		{
 #if		(defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM) && defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
 			(!defined(__clang__) && defined(__GNUC__) && (__cplusplus < 201603 || (__GNUC__* 100 + __GNUC_MINOR__ < 801)))
 
@@ -1550,9 +1736,9 @@ namespace std
 			{
 				return weakly_canonical(p, &err);
 			}
-#endif
 		}
 	}
+#endif
 
 #endif //NANA_USING_NANA_FILESYSTEM
 

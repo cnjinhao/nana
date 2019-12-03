@@ -1267,7 +1267,7 @@ namespace nana
 			auto files = impl->fbox.show();
 			if(!files.empty())
 			{
-				impl->value = files.front().u8string();
+				impl->value = files.front().string();
 				impl->path_edit.caption(impl->value);
 			}
 		});
