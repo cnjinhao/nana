@@ -1522,7 +1522,7 @@ namespace nana
 			if (!*str)
 			{
 				targets.emplace_back(parent_path);
-				impl_->path = parent_path.parent_path().u8string();
+				impl_->path = parent_path.parent_path().string();
 			}
 			else
 			{
@@ -1532,7 +1532,7 @@ namespace nana
 					targets.emplace_back(parent_path / path_type{str});
 					str += (len + 1);
 				}
-				impl_->path = parent_path.u8string();
+				impl_->path = parent_path.string();
 			}
 		}
 		else
@@ -1540,7 +1540,7 @@ namespace nana
 			wfile.resize(std::wcslen(wfile.data()));
 
 			targets.emplace_back(wfile);
-			impl_->path = targets.front().parent_path().u8string();
+			impl_->path = targets.front().parent_path().string();
 		}
 
 #elif defined(NANA_POSIX)

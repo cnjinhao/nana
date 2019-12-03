@@ -9,7 +9,7 @@
  *
  *	@file nana/filesystem/filesystem.hpp
  *  @author Ariel Vina-Rodriguez, Jinhao
- *  @brief Mimic std::experimental::filesystem::v1   (boost v3)
+ *  @brief Mimic std::filesystem
  *  and need VC2015 or a C++11 compiler. With a few correction can be compiler by VC2013
  */
 
@@ -34,32 +34,26 @@
 //Filesystem Selection
 #include <nana/config.hpp>
 
-#if defined(NANA_USING_NANA_FILESYSTEM) || defined(NANA_USING_STD_FILESYSTEM) || defined(NANA_USING_BOOST_FILESYSTEM)
-#undef NANA_USING_NANA_FILESYSTEM
-#undef NANA_USING_STD_FILESYSTEM
-#undef NANA_USING_BOOST_FILESYSTEM
-#endif
-
 #define NANA_USING_NANA_FILESYSTEM  0
 #define NANA_USING_STD_FILESYSTEM   0
 #define NANA_USING_BOOST_FILESYSTEM 0
 
-#if (defined(NANA_FILESYSTEM_FORCE) || ( (defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(BOOST_FILESYSTEM_AVAILABLE)) && !(defined(BOOST_FILESYSTEM_FORCE) || defined(STD_FILESYSTEM_FORCE)) ) )
+//#define NANA_FILESYSTEM_FORCE 1
 
+#if (defined(NANA_FILESYSTEM_FORCE) || ( (defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(BOOST_FILESYSTEM_AVAILABLE)) && !(defined(BOOST_FILESYSTEM_FORCE) || defined(STD_FILESYSTEM_FORCE)) ) )
 #undef  NANA_USING_NANA_FILESYSTEM
 #define NANA_USING_NANA_FILESYSTEM  1
 
 #elif (defined(BOOST_FILESYSTEM_AVAILABLE) && ( defined(BOOST_FILESYSTEM_FORCE) || ( defined(STD_FILESYSTEM_NOT_SUPPORTED) && !defined(STD_FILESYSTEM_FORCE) ) ))
-
 #undef  NANA_USING_BOOST_FILESYSTEM
 #define NANA_USING_BOOST_FILESYSTEM 1
 #   include <chrono>
 #   include <boost/filesystem.hpp>
 
-// add boost::filesystem into std::experimental::filesystem
+// inline boost::filesystem into std::filesystem
 namespace std {
-	namespace experimental {
-		namespace filesystem {
+	namespace filesystem {
+	    inline namespace boost_filesystem {
 			using namespace boost::filesystem;
 			using file_time_type = std::chrono::time_point<std::chrono::system_clock>;
 
@@ -75,43 +69,34 @@ namespace std {
 				socket = boost::filesystem::file_type::socket_file,
 				unknown = boost::filesystem::file_type::type_unknown,
 			};
-// Boost dont include generic_u8string
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
-//
-// Boost versions: 1.67.0, 1.66.0, ... 1.56.0 enable directory_iterator C++11 range-base for
-// http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
-// but travis come with an oooold version of boost
-// 1.55.0 NOT enable directory_iterator C++11 range-base for
-// http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
-#if BOOST_VERSION < 105600
-            namespace boost
-        //  enable directory_iterator C++11 range-base for statement use  --------------------//
+            // Boost dont include generic_u8string
+            // http://www.boost.org/doc/libs/1_66_0/boost/filesystem/path.hpp
+            //
+            // Boost versions: 1.67.0, 1.66.0, ... 1.56.0 enable directory_iterator C++11 range-base for
+            // http://www.boost.org/doc/libs/1_66_0/boost/filesystem/operations.hpp
+            // but travis come with an oooold version of boost
+            // 1.55.0 NOT enable directory_iterator C++11 range-base for
+            // http://www.boost.org/doc/libs/1_54_0/boost/filesystem/operations.hpp
+            #if BOOST_VERSION < 105600
+                namespace boost {      // todo  ??
+                    //  enable directory_iterator C++11 range-base for statement use  --------------------//
 
-		//  begin() and end() are only used by a range-based for statement in the context of
-		//  auto - thus the top-level const is stripped - so returning const is harmless and
-		//  emphasizes begin() is just a pass through.
-		inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
-		{
-			return iter;
-		}
+                    //  begin() and end() are only used by a range-based for statement in the context of
+                    //  auto - thus the top-level const is stripped - so returning const is harmless and
+                    //  emphasizes begin() is just a pass through.
+                    inline const directory_iterator& begin(const directory_iterator& iter) BOOST_NOEXCEPT
+                    {
+                        return iter;
+                    }
 
-		inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
-		{
-			return directory_iterator();
-		}
-#endif
-
-		} // filesystem
-	} // experimental
-
-	namespace filesystem
-	{
-		using namespace experimental::filesystem;
-	}
-
-#ifndef __cpp_lib_experimental_filesystem
-#   define __cpp_lib_experimental_filesystem 201406
-#endif
+                    inline directory_iterator end(const directory_iterator&) BOOST_NOEXCEPT
+                    {
+                        return directory_iterator();
+                    }
+                }
+            #endif
+		} // boost_filesystem
+	} // filesystem
 } // std
 
 #else
@@ -148,426 +133,483 @@ namespace std {
 
 #include <nana/deploy.hpp>
 
-namespace nana  { namespace experimental { namespace filesystem
-{
-#ifndef CXX_NO_INLINE_NAMESPACE
-			inline namespace v1
-			{
-#endif
+namespace nana {
+    namespace filesystem {
 
-	enum class file_type
-	{
-		none = 0,   ///< has not been determined or an error occurred while trying to determine
-		not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error
-		regular = 1,
-		directory = 2  ,
-		symlink =3, ///< Symbolic link file
-		block =4,  ///< Block special file
-		character= 5 ,  ///< Character special file
-		fifo = 6 ,  ///< FIFO or pipe file
-		socket =7,
-		unknown= 8  ///< The file does exist, but is of an operating system dependent type not covered by any of the other
-	};
+        enum class file_type
+        {
+            none      = 0,   ///< has not been determined or an error occurred while trying to determine
+            not_found = -1, ///< Pseudo-type: file was not found. Is not considered an error
+            regular   = 1,
+            directory = 2,
+            symlink   = 3, ///< Symbolic link file
+            block     = 4,  ///< Block special file
+            character = 5,  ///< Character special file
+            fifo      = 6,  ///< FIFO or pipe file
+            socket    = 7,
+            unknown   = 8  ///< The file does exist, but is of an operating system dependent type not covered by any of the other
+        };
 
-	enum class perms
-	{
-		none = 0,		///< There are no permissions set for the file.
-		all = 0x1FF,		///< owner_all | group_all | others_all
-		mask = 0xFFF,		///< all | set_uid | set_gid | sticky_bit.
-		unknown = 0xFFFF	///<  not known, such as when a file_status object is created without specifying the permissions
-	};
-    //enum class copy_options;
+        enum class perms
+        {
+            none    = 0,        ///< There are no permissions set for the file.
+            all     = 0x1FF,        ///< owner_all | group_all | others_all
+            mask    = 0xFFF,        ///< all | set_uid | set_gid | sticky_bit.
+            unknown = 0xFFFF    ///<  not known, such as when a file_status object is created without specifying the permissions
+        };
+        //enum class copy_options;
 
-    enum class directory_options
-    {
-    	none,
-    	follow_directory_symlink,
-    	skip_permission_denied
-    };
+        enum class directory_options
+        {
+            none,
+            follow_directory_symlink,
+            skip_permission_denied
+        };
 
-    struct space_info
-    {
-        uintmax_t capacity;
-        uintmax_t free;
-        uintmax_t available;
-    };
+        struct space_info
+        {
+            uintmax_t capacity;
+            uintmax_t free;
+            uintmax_t available;
+        };
 
-	using file_time_type = std::chrono::time_point<std::chrono::system_clock>; ///< trivial-clock> ;
+        using file_time_type = std::chrono::time_point<std::chrono::system_clock>; ///< trivial-clock> ;
 
-	class file_status
-	{
-		file_type m_ft = file_type::none;
-		perms     m_prms = perms::unknown;
+        class file_status
+        {
+            file_type m_ft   = file_type::none;
+            perms     m_prms = perms::unknown;
 
-	public:
-		explicit file_status(file_type ft = file_type::none, perms prms = perms::unknown);
+          public:
+            explicit file_status(file_type ft = file_type::none, perms prms = perms::unknown);
 
-		// observers
-		file_type type() const;
-		perms permissions() const;
+            // observers
+            file_type type() const;
 
-		// modifiers
-		void type(file_type ft);
-		void permissions(perms prms);
-	private:
-		file_type	value_;
-		perms		perms_;
-	};
+            perms permissions() const;
 
-    /// concerned only with lexical and syntactic aspects and does not necessarily exist in
-    /// external storage, and the pathname is not necessarily valid for the current operating system
-    /// or for a particular file system
-    /// A sequence of elements that identify the location of a file within a filesystem.
-    /// The elements are the:
-    /// rootname (opt), root-directory (opt), and an optional sequence of filenames.
-    /// The maximum number of elements in the sequence is operating system dependent.
-	class path
-	{
-	public:
+            // modifiers
+            void type(file_type ft);
+
+            void permissions(perms prms);
+
+          private:
+            file_type value_;
+            perms     perms_;
+        };
+
+        /// concerned only with lexical and syntactic aspects and does not necessarily exist in
+        /// external storage, and the pathname is not necessarily valid for the current operating system
+        /// or for a particular file system
+        /// A sequence of elements that identify the location of a file within a filesystem.
+        /// The elements are the:
+        /// rootname (opt), root-directory (opt), and an optional sequence of filenames.
+        /// The maximum number of elements in the sequence is operating system dependent.
+        class path
+        {
+          public:
 #if defined(NANA_WINDOWS)
-		using value_type = wchar_t;
-		const static value_type preferred_separator = L'\\';
+            using value_type = wchar_t;
+            const static value_type preferred_separator = L'\\';
 #else
-		using value_type = char;
-		const static value_type preferred_separator = '/';
+            using value_type = char;
+            const static value_type preferred_separator = '/';
 #endif
-		using string_type = std::basic_string<value_type>;
+            using string_type = std::basic_string<value_type>;
 
-		path() = default;
+            path() = default;
 
-		template<typename Source>
-		path(const Source& source)
-		{
-			_m_assign(source);
-		}
+            template<typename Source>
+            path(const Source &source)
+            {
+                _m_assign(source);
+            }
 
-		// modifiers
-		void clear() noexcept;
-		path& make_preferred();
-		path& remove_filename();
-		//path& replace_filename(const path& replacement);
-		//path& replace_extension(const path& replacement = path());
-		//void swap(path& rhs) noexcept;
+            // modifiers
+            void clear() noexcept;
 
-		// decomposition
-		path root_name() const;
-		path root_directory() const;
-		path root_path() const;
-		path relative_path() const;
-		path parent_path() const;
-		path filename() const;
-		path stem() const;
-		path extension() const;
+            path &make_preferred();
 
-		// query
-		bool empty() const noexcept;
-		bool has_root_name() const { return !root_name().empty();  }
-		bool has_root_directory() const { return !root_directory().empty();  }
-		bool has_root_path() const { return !root_path().empty();  }
-		bool has_relative_path() const { return !relative_path().empty(); }
-		bool has_parent_path() const { return !parent_path().empty(); };   // temp;;
-		bool has_filename() const    { return !filename().empty(); };   // temp;
-		//bool has_stem() const;
-		bool has_extension() const   { return !extension().empty(); };   // temp
-		bool is_absolute() const;
-		bool is_relative() const;
+            path &remove_filename();
+            //path& replace_filename(const path& replacement);
+            //path& replace_extension(const path& replacement = path());
+            //void swap(path& rhs) noexcept;
 
-		int compare(const path& other) const;
+            // decomposition
+            path root_name() const;
 
-		file_type what() const;
+            path root_directory() const;
 
-		const value_type*c_str() const;
-		const string_type& native() const;
-		operator string_type() const;
+            path root_path() const;
 
-		std::string string() const;
-		std::wstring wstring() const;
-		std::string u8string() const;
-		// std::u16string u16string() const;
-		// std::u32string u32string() const;
+            path relative_path() const;
 
-		std::string generic_string() const ;
-		std::wstring generic_wstring() const;
-		std::string generic_u8string() const;
-		// std::u16string generic_u16string() const;
-		// std::u32string generic_u32string() const;
+            path parent_path() const;
 
-		path lexically_normal() const;
+            path filename() const;
 
-		//appends
-		path& operator/=(const path& other);
+            path stem() const;
 
-		template<typename Source>
-		path& operator/=(const Source& source)
-		{
-			path other(source);
-			return this->operator/=(other);
-		}
+            path extension() const;
 
-		template<typename Source>
-		path& append(const Source& source)
-		{
-			path other(source);
-			return this->operator/=(other);
-		}
-	private:
-		void _m_assign(const std::string& source_utf8);
-		void _m_assign(const std::wstring& source);
-	private:
-		string_type pathstr_;
-	};
+            // query
+            bool empty() const noexcept;
 
-	bool operator==(const path& lhs, const path& rhs);
-	bool operator!=(const path& lhs, const path& rhs);
-	bool operator<(const path& lhs, const path& rhs);
-	bool operator>(const path& lhs, const path& rhs);
-	path operator/(const path& lhs, const path& rhs);
+            bool has_root_name() const
+            { return !root_name().empty(); }
 
+            bool has_root_directory() const
+            { return !root_directory().empty(); }
 
-	class filesystem_error
-		: public std::system_error
-	{
-	public:
-		explicit filesystem_error(const std::string& msg, std::error_code);
+            bool has_root_path() const
+            { return !root_path().empty(); }
 
-		filesystem_error(const std::string& msg, const path& path1, std::error_code err);
-		filesystem_error(const std::string& msg, const path& path1, const path& path2, std::error_code err);
+            bool has_relative_path() const
+            { return !relative_path().empty(); }
 
-		const path& path1() const noexcept;
-		const path& path2() const noexcept;
-		// const char* what() const noexcept;
-	private:
-		path path1_;
-		path path2_;
-	};
+            bool has_parent_path() const
+            { return !parent_path().empty(); };   // temp;;
+            bool has_filename() const
+            { return !filename().empty(); };   // temp;
+            //bool has_stem() const;
+            bool has_extension() const
+            { return !extension().empty(); };   // temp
+            bool is_absolute() const;
 
+            bool is_relative() const;
 
-	class directory_entry
-	{
-	public:
-		directory_entry() = default;
-		explicit directory_entry(const ::nana::experimental::filesystem::path&);
+            int compare(const path &other) const;
 
-		//modifiers
-		void assign(const ::nana::experimental::filesystem::path&);
-		void replace_filename(const ::nana::experimental::filesystem::path&);
+            file_type what() const;
 
-		//observers
-		file_status status() const;
-		operator const filesystem::path&() const {	return path_;	};
-		const filesystem::path& path() const;
-	private:
-		::nana::experimental::filesystem::path path_;
-	};
+            const value_type *c_str() const;
 
-    /// InputIterator that iterate over the sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
-	class directory_iterator 		:public std::iterator<std::input_iterator_tag, directory_entry>
-	{
-		using find_handle = void*;
-	public:
+            const string_type &native() const;
 
-		directory_iterator() noexcept;
-		explicit directory_iterator(const path& p);
-		directory_iterator(const path& p, directory_options opt);
+            operator string_type() const;
 
-		const value_type& operator*() const;
-		const value_type* operator->() const;
+            std::string string() const;
 
-		directory_iterator& operator++();
-		directory_iterator operator++(int);  ///< extention
+            std::wstring wstring() const;
 
-		bool equal(const directory_iterator& x) const;
+            // std::string u8string() const;
+            // std::u16string u16string() const;
+            // std::u32string u32string() const;
 
-	private:
-		template<typename Char>
-		static bool _m_ignore(const Char * p)
-		{
-			while(*p == '.')
-				++p;
-			return (*p == 0);
-		}
+            std::string generic_string() const;
 
-		void _m_prepare(const path& file_path);
-		void _m_read();
-	private:
-		bool	end_{false};
-		path::string_type path_;
-		directory_options option_{ directory_options::none };
+            std::wstring generic_wstring() const;
 
-		std::shared_ptr<find_handle> find_ptr_;
-		find_handle	handle_{nullptr};
-		value_type	value_;
-	};
-	/// enable directory_iterator range-based for statements
-	inline directory_iterator begin( directory_iterator iter) noexcept
-	{
-		return iter;
-	}
+            // std::string generic_u8string() const;
+            // std::u16string generic_u16string() const;
+            // std::u32string generic_u32string() const;
 
-	inline directory_iterator end(	const directory_iterator&) noexcept
-	{
-		return {};
-	}
+            path lexically_normal() const;
+
+            //appends
+            path &operator/=(const path &other);
+
+            template<typename Source>
+            path &operator/=(const Source &source)
+            {
+                path other(source);
+                return this->operator/=(other);
+            }
+
+            template<typename Source>
+            path &append(const Source &source)
+            {
+                path other(source);
+                return this->operator/=(other);
+            }
+
+          private:
+            void _m_assign(const std::string &source_utf8);
+
+            void _m_assign(const std::wstring &source);
+
+          private:
+            string_type pathstr_;
+        };
+
+        bool operator==(const path &lhs, const path &rhs);
+
+        bool operator!=(const path &lhs, const path &rhs);
+
+        bool operator<(const path &lhs, const path &rhs);
+
+        bool operator>(const path &lhs, const path &rhs);
+
+        path operator/(const path &lhs, const path &rhs);
 
 
-    //class recursive_directory_iterator;
-    //// enable recursive_directory_iterator range-based for statements
-    //recursive_directory_iterator begin(recursive_directory_iterator iter) noexcept;
-    //recursive_directory_iterator end(const recursive_directory_iterator&) noexcept;
+        class filesystem_error
+                : public std::system_error
+        {
+          public:
+            explicit filesystem_error(const std::string &msg, std::error_code);
 
-	//template<typename Value_Type>
-	inline bool operator==(const directory_iterator/*<Value_Type>*/ & x, const directory_iterator/*<Value_Type>*/ & y)
-	{
-	   return x.equal(y);
-	}
+            filesystem_error(const std::string &msg, const path &path1, std::error_code err);
 
-	//template<typename Value_Type>
-	inline bool operator!=(const directory_iterator/*<Value_Type>*/ & x, const directory_iterator/*<Value_Type>*/ & y)
-	{
-	   return !x.equal(y);
-	}
+            filesystem_error(const std::string &msg, const path &path1, const path &path2, std::error_code err);
 
+            const path &path1() const noexcept;
 
-	file_status status(const path& p);
-	file_status status(const path& p, std::error_code&);
-
-	std::uintmax_t file_size(const path& p);
-	std::uintmax_t file_size(const path& p, std::error_code& ec) noexcept;
-
-	inline bool is_directory(file_status s) noexcept
-	{ return s.type() == file_type::directory ;}
-
-	bool is_directory(const path& p);
-    bool is_directory(const path& p, std::error_code& ec) noexcept;
-
-	inline bool is_regular_file(file_status s) noexcept
-	{
-		return s.type() == file_type::regular;
-	}
-	inline bool is_regular_file(const path& p)
-	{
-		return is_regular_file(status(p));
-	}
-	// bool is_regular_file(const path& p, error_code& ec) noexcept;
-    // Returns: is_regular_file(status(p, ec)).Returns false if an error occurs.
-
-	inline bool is_empty(const path& p)
-    {
-		auto fs = status(p);
-
-		if (is_directory(fs))
-			return (directory_iterator() == directory_iterator(p));
-
-		return (file_size(p) == 0);
-    }
-    // bool is_empty(const path& p, error_code& ec) noexcept;
+            const path &path2() const noexcept;
+            // const char* what() const noexcept;
+          private:
+            path path1_;
+            path path2_;
+        };
 
 
-	bool create_directories(const path& p);
-	//bool create_directories(const path& p, error_code& ec) noexcept;
-	bool create_directory(const path& p);
-	//bool create_directory(const path& p, error_code& ec) noexcept;
-	bool create_directory(const path& p, const path& attributes);
-	//bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
+        class directory_entry
+        {
+          public:
+            directory_entry() = default;
+
+            explicit directory_entry(const filesystem::path &);
+
+            //modifiers
+            void assign(const filesystem::path &);
+
+            void replace_filename(const filesystem::path &);
+
+            //observers
+            file_status status() const;
+
+            operator const filesystem::path &() const
+            { return path_; };
+
+            const filesystem::path &path() const;
+
+          private:
+            filesystem::path path_;
+        };
+
+        /// InputIterator that iterate over the sequence of directory_entry elements representing the files in a directory, not an recursive_directory_iterator
+        class directory_iterator : public std::iterator<std::input_iterator_tag, directory_entry>
+        {
+            using find_handle = void *;
+          public:
+
+            directory_iterator() noexcept;
+
+            explicit directory_iterator(const path &p);
+
+            directory_iterator(const path &p, directory_options opt);
+
+            const value_type &operator*() const;
+
+            const value_type *operator->() const;
+
+            directory_iterator &operator++();
+
+            directory_iterator operator++(int);  ///< extention
+
+            bool equal(const directory_iterator &x) const;
+
+          private:
+            template<typename Char>
+            static bool _m_ignore(const Char *p)
+            {
+                while (*p == '.')
+                    ++p;
+                return (*p == 0);
+            }
+
+            void _m_prepare(const path &file_path);
+
+            void _m_read();
+
+          private:
+            bool              end_{false};
+            path::string_type path_;
+            directory_options option_{directory_options::none};
+
+            std::shared_ptr<find_handle> find_ptr_;
+            find_handle                  handle_{nullptr};
+            value_type                   value_;
+        };
+
+        /// enable directory_iterator range-based for statements
+        inline directory_iterator begin(directory_iterator iter) noexcept
+        {
+            return iter;
+        }
+
+        inline directory_iterator end(const directory_iterator &) noexcept
+        {
+            return {};
+        }
 
 
-	/// The time of last data modification of p, determined as if by the value of the POSIX
-    /// stat structure member st_mtime obtained as if by POSIX stat().
-	file_time_type last_write_time(const path& p);
-	/// returns file_time_type::min() if an error occurs
-	//file_time_type last_write_time(const path& p, error_code& ec) noexcept;
+        //class recursive_directory_iterator;
+        //// enable recursive_directory_iterator range-based for statements
+        //recursive_directory_iterator begin(recursive_directory_iterator iter) noexcept;
+        //recursive_directory_iterator end(const recursive_directory_iterator&) noexcept;
+
+        //template<typename Value_Type>
+        inline bool operator==(const directory_iterator/*<Value_Type>*/ &x, const directory_iterator/*<Value_Type>*/ &y)
+        {
+            return x.equal(y);
+        }
+
+        //template<typename Value_Type>
+        inline bool operator!=(const directory_iterator/*<Value_Type>*/ &x, const directory_iterator/*<Value_Type>*/ &y)
+        {
+            return !x.equal(y);
+        }
 
 
-	path current_path();
-	//path current_path(error_code& ec);
-	void current_path(const path& p);   ///< chdir
-	//void current_path(const path& p, error_code& ec) noexcept;
+        file_status status(const path &p);
 
-	bool remove(const path& p);
-	bool remove(const path& p, std::error_code& ec); // noexcept;
+        file_status status(const path &p, std::error_code &);
 
-	//uintmax_t remove_all(const path& p);
-	//uintmax_t remove_all(const path& p, error_code& ec) noexcept;
+        std::uintmax_t file_size(const path &p);
 
-	template<typename CharType>
-	std::basic_string<CharType> parent_path(const std::basic_string<CharType>& path)
-	{
-		auto index = path.size();
+        std::uintmax_t file_size(const path &p, std::error_code &ec) noexcept;
 
-		if (index)
-		{
-			auto str = path.c_str();
+        inline bool is_directory(file_status s) noexcept
+        { return s.type() == file_type::directory; }
 
-			for (--index; index > 0; --index)
-			{
-				auto c = str[index];
-				if (c != '\\' && c != '/')
-					break;
-			}
+        bool is_directory(const path &p);
 
-			for (--index; index > 0; --index)
-			{
-				auto c = str[index];
-				if (c == '\\' || c == '/')
-					break;
-			}
-		}
+        bool is_directory(const path &p, std::error_code &ec) noexcept;
 
-		return index ? path.substr(0, index + 1) : std::basic_string<CharType>();
-	}
-#ifndef CXX_NO_INLINE_NAMESPACE
-} //end namespace v1
-#endif
-} //end namespace filesystem
-} //end namespace experimental
+        inline bool is_regular_file(file_status s) noexcept
+        {
+            return s.type() == file_type::regular;
+        }
 
-  //namespace filesystem = experimental::filesystem;
+        inline bool is_regular_file(const path &p)
+        {
+            return is_regular_file(status(p));
+        }
+        // bool is_regular_file(const path& p, error_code& ec) noexcept;  // todo:
+        // Returns: is_regular_file(status(p, ec)).Returns false if an error occurs. // todo:
+
+        inline bool is_empty(const path &p)
+        {
+            auto fs = status(p);
+
+            if (is_directory(fs))
+                return (directory_iterator() == directory_iterator(p));
+
+            return (file_size(p) == 0);
+        }
+        // bool is_empty(const path& p, error_code& ec) noexcept;
+
+
+        bool create_directories(const path &p);
+
+        //bool create_directories(const path& p, error_code& ec) noexcept;
+        bool create_directory(const path &p);
+
+        //bool create_directory(const path& p, error_code& ec) noexcept;
+        bool create_directory(const path &p, const path &attributes);
+        //bool create_directory(const path& p, const path& attributes,     error_code& ec) noexcept;
+
+
+        /// The time of last data modification of p, determined as if by the value of the POSIX
+        /// stat structure member st_mtime obtained as if by POSIX stat().
+        file_time_type last_write_time(const path &p);
+        /// returns file_time_type::min() if an error occurs
+        //file_time_type last_write_time(const path& p, error_code& ec) noexcept;
+
+
+        path current_path();
+
+        //path current_path(error_code& ec);
+        void current_path(const path &p);   ///< chdir
+        //void current_path(const path& p, error_code& ec) noexcept;
+
+        bool remove(const path &p);
+
+        bool remove(const path &p, std::error_code &ec); // noexcept;
+
+        //uintmax_t remove_all(const path& p);
+        //uintmax_t remove_all(const path& p, error_code& ec) noexcept;
+
+        template<typename CharType>
+        std::basic_string<CharType> parent_path(const std::basic_string<CharType> &path)
+        {
+            auto index = path.size();
+
+            if (index)
+            {
+                auto str = path.c_str();
+
+                for (--index; index > 0; --index)
+                {
+                    auto c = str[index];
+                    if (c != '\\' && c != '/')
+                        break;
+                }
+
+                for (--index; index > 0; --index)
+                {
+                    auto c = str[index];
+                    if (c == '\\' || c == '/')
+                        break;
+                }
+            }
+
+            return index ? path.substr(0, index + 1) : std::basic_string<CharType>();
+        }
+
+        path absolute(const path& p);
+        path absolute(const path& p, std::error_code& err);
+
+        path canonical(const path& p);
+        path canonical(const path& p, std::error_code& err);
+
+        path weakly_canonical(const path& p);
+        path weakly_canonical(const path& p, std::error_code& err);
+
+        bool exists( file_status s ) noexcept;
+        bool exists( const path& p );
+        bool exists( const path& p, std::error_code& ec ) noexcept;
+    } //end namespace filesystem
 } //end namespace nana
 
+namespace std
+{
+    namespace filesystem
+    {
+        inline namespace nana_filesystem
+        {
+            using namespace ::nana::filesystem;
+        }
+    }
+}
 
-namespace std {
-	namespace experimental {
-		namespace filesystem {
 
-#       ifdef CXX_NO_INLINE_NAMESPACE
-			using namespace nana::experimental::filesystem;
-#       else
-			using namespace nana::experimental::filesystem::v1;
-#       endif
-
-		} // filesystem
-	} // experimental
-
-	namespace filesystem {
-		using namespace std::experimental::filesystem;
-
-#if defined(NANA_FILESYSTEM_FORCE) || \
-    (defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
-		path absolute(const path& p);
-		path absolute(const path& p, std::error_code& err);
-
-		path canonical(const path& p);
-		path canonical(const path& p, std::error_code& err);
-
-		path weakly_canonical(const path& p);
-		path weakly_canonical(const path& p, std::error_code& err);
-#endif
-
-#if defined(NANA_FILESYSTEM_FORCE) || defined(NANA_MINGW)
-        bool exists( std::filesystem::file_status s ) noexcept;
-        bool exists( const std::filesystem::path& p );
-        bool exists( const std::filesystem::path& p, std::error_code& ec ) noexcept;
-#endif
-	}
-} // std
 #else //#if NANA_USING_NANA_FILESYSTEM
 //Implements the missing functions for various version of experimental/filesystem
 	namespace std
 	{
 		namespace filesystem
 		{
-			//Visual Studio 2017
-#if			(defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM) && defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
+#if defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703))
+        path absolute(const path& p);
+        path absolute(const path& p, std::error_code& err);
+
+        path canonical(const path& p);
+        path canonical(const path& p, std::error_code& err);
+
+        path weakly_canonical(const path& p);
+        path weakly_canonical(const path& p, std::error_code& err);
+#endif
+
+#if defined(NANA_MINGW)   // todo ??
+        bool exists( std::filesystem::file_status s ) noexcept;
+        bool exists( const std::filesystem::path& p );
+        bool exists( const std::filesystem::path& p, std::error_code& ec ) noexcept;
+#endif
+
+		    //Visual Studio 2017
+#if	(defined(NANA_USING_STD_EXPERIMENTAL_FILESYSTEM) && defined(_MSC_VER) && (_MSC_VER > 1912)) ||	\
 				(!defined(__clang__) && defined(__GNUC__) && (__cplusplus < 201603 || (__GNUC__* 100 + __GNUC_MINOR__ < 801)))
 			path weakly_canonical(const path& p);
 			path weakly_canonical(const path& p, std::error_code& err);

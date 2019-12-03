@@ -1274,7 +1274,10 @@ namespace nana
 
 				item_proxy	item_proxy::operator++(int)
 				{
-					return sibling();
+					item_proxy ip(*this);
+					if(trigger_ && node_)
+						node_ = node_->next;
+					return ip;
 				}
 
 				item_proxy& item_proxy::operator*()
@@ -1952,7 +1955,7 @@ namespace nana
 					impl_->attr.tree_cont.for_each<item_locator&>(shape.first, nl);
 
 					auto const node = nl.node();
-					if (!node)
+					if (!node || !node->child)
 						return;
 
 					switch (nl.what())
