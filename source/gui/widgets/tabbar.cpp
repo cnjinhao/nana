@@ -1229,7 +1229,8 @@ namespace nana
 
 				void trigger::erase(std::size_t pos)
 				{
-					layouter_->erase(pos);
+					if (layouter_->erase(pos))
+						API::refresh_window(layouter_->widget_handle());
 				}
 
 				void trigger::tab_color(std::size_t i, bool is_bgcolor, const ::nana::color& clr)
