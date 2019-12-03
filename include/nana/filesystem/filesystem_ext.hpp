@@ -1,13 +1,13 @@
 /**
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
 *	@file nana\filesystem\filesystem_ext.hpp
-*   @autor by Ariel Vina-Rodriguez:
+*   @autor Ariel Vina-Rodriguez:
 *	@brief Some convenient extensions to the filesystem library.
 *
 */
@@ -35,16 +35,6 @@ namespace filesystem_ext
 
 std::filesystem::path path_user();    ///< extention ?
 
-													/// workaround Boost not having path.generic_u8string() - a good point for http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0251r0.pdf
-inline std::string generic_u8string(const std::filesystem::path& p)
-{
-#if NANA_USING_BOOST_FILESYSTEM
-	return nana::to_utf8(p.generic_wstring());
-#else
-	return p.generic_u8string();
-#endif
-}
-
 inline bool is_directory(const std::filesystem::directory_entry& dir) noexcept
 {
     return is_directory(dir.status());
@@ -57,10 +47,10 @@ class directory_only_iterator : public std::filesystem::directory_iterator
 
 	directory_only_iterator& find_first()
 	{
-		auto end = directory_only_iterator{};
+        directory_only_iterator end{};
 		while (*this != end)
 		{
-			if (is_directory((**this).status()))
+			if (is_directory((*(*this)).status()))
 				return *this;
 			this->directory_iterator::operator++();
 		}
