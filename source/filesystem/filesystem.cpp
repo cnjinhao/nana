@@ -11,12 +11,12 @@
  *		provide some interface for file management
  */
 
+#include <nana/config.hpp>
 #include <nana/filesystem/filesystem_ext.hpp>
 #include <vector>
 #include <sstream>
 #include <string>
 
-#include <nana/config.hpp>
 #ifdef _nana_std_put_time
 	#include <nana/stdc++.hpp>
 #else
@@ -149,7 +149,7 @@ namespace nana
 	}
 }
 
-#if NANA_USING_NANA_FILESYSTEM
+#if NANA_USING_NANA_FILESYSTEM  // and BOOST ?
 
 namespace nana_fs = nana::filesystem;
 namespace nana

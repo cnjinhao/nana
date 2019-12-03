@@ -15,8 +15,8 @@
 #ifndef NANA_FILESYSTEM_EXT_HPP
 #define NANA_FILESYSTEM_EXT_HPP
 
-#include <nana/filesystem/filesystem.hpp>
 #include <nana/deploy.hpp>
+#include <nana/filesystem/filesystem.hpp>
 
 namespace nana 
 {
