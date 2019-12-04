@@ -1,7 +1,7 @@
 /**
  *	Predefined Symbols for C++
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2016-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2016-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -48,14 +48,15 @@
 
 #ifndef NANA_CXX_DEFINES_INCLUDED
 #define NANA_CXX_DEFINES_INCLUDED
-#define STD_FILESYSTEM_NOT_SUPPORTED
+// #define STD_FILESYSTEM_NOT_SUPPORTED
 
 //C++ language
 #if defined(_MSC_VER)
-#	if (_MSC_VER < 1900)
+#	if (_MSC_VER < 1900)  // VC2013
 #		//About std.experimental.filesystem.
 #		//Through VC2013 has provided <filesystem>, but all the names are given in namespace std. It's hard to alias these names into std::experimental,
 #		//So Nana use nana.filesystem implement instead for VC2013
+#       define STD_FILESYSTEM_NOT_SUPPORTED
 #
 #		//Nana defines some macros for lack of support of keywords
 #		define _ALLOW_KEYWORD_MACROS
@@ -64,8 +65,6 @@
 #		define noexcept		//no support of noexcept until Visual C++ 2015
 
 #		define constexpr	//no support of constexpr until Visual C++ 2015 ? const ??
-#	else
-#		undef STD_FILESYSTEM_NOT_SUPPORTED
 #	endif
 #elif defined(__GNUC__) && not defined(__clang__)
 #	if (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
@@ -125,16 +124,16 @@
 
 #elif defined(__clang__)	//Clang
 
-	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
+	#include <iosfwd>	// Introduces some implement-specific flags of ISO C++ Library
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
 		//<codecvt> is a known issue on libstdc++, it works on libc++
 		#define STD_CODECVT_NOT_SUPPORTED
 	#endif
-#elif defined(__GNUC__) //GCC
+#elif defined(__GNUC__) // GCC
 
-	#include <iosfwd>	//Introduces some implement-specific flags of ISO C++ Library
+	#include <iosfwd>	// Introduces some implementation-specific flags of ISO C++ Library
 	#if defined(__GLIBCPP__) || defined(__GLIBCXX__)
-		//<codecvt> is a known issue on libstdc++, it works on libc++
+		//<codecvt> is a known issue on libstdc++, it works on libc++ todo review !
 		#define STD_CODECVT_NOT_SUPPORTED
 
 		//It's a known issue of libstdc++ on MinGW
@@ -155,6 +154,8 @@
 
 #   if ((__GNUC__ > 5) || ((__GNUC__ == 5) && (__GNUC_MINOR__ >= 3 ) ) )
 #	    undef STD_FILESYSTEM_NOT_SUPPORTED
+#   else
+#       define STD_FILESYSTEM_NOT_SUPPORTED
 #   endif
 
 	#if (__GNUC__ == 4)
