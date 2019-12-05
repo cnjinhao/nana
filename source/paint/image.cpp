@@ -1,4 +1,4 @@
-/*
+/**
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
@@ -7,9 +7,8 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/paint/image.cpp
- *	@contributors:
- *		nabijaczleweli(pr#106)
+ *	@file nana/paint/image.cpp
+ *	@contributors nabijaczleweli(pr#106)
  */
 
 #include <nana/push_ignore_diagnostic>
