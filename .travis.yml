@@ -79,7 +79,7 @@ script:
   - ./animate-bmp
   - ./audio_player
   - ./background-effects
-  - ./calculator          # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1159
+  - ./calculator          # COOL !!! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L924
   - ./categ
   - ./clicked
   - ./decore
@@ -87,11 +87,11 @@ script:
   - ./drag-button
   - ./draw
   - ./file_explorer
-  - ./example_menu        # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1348
+  - ./example_menu        # OK ! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1022
   - ./example_listbox
-  - ./example_combox      # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1378
+  - ./example_combox      # OK ! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1044
   - ./example.button
-  - ./filebox-txt         # https://travis-ci.org/qPCR4vir/nana/jobs/140250744#L1393
+  # - ./filebox-txt       # https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1068
   - ./folder_tree
   - ./folder_tree_nana    # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1408
   - ./folder_tree_std     # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1421
