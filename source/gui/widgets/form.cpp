@@ -39,7 +39,7 @@ namespace nana
 				place & form_base::get_place()
 				{
 					if (this->empty())
-						throw std::runtime_error("form::get_plac: the form has destroyed.");
+						throw std::runtime_error("form::get_place(): the form has been destroyed.");
 
 					if (!place_)
 						place_.reset(new place{ *this });
@@ -47,9 +47,9 @@ namespace nana
 					return *place_;
 				}
 
-				void form_base::div(const char* div_text)
+				void form_base::div(std::string div_text)
 				{
-					get_place().div(div_text);
+					get_place().div(std::move(div_text));
 				}
 
 				place::field_reference form_base::operator[](const char* field_name)

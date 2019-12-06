@@ -395,7 +395,7 @@ namespace API
 	/// Blocks the execution and other windows' messages until the specified window is closed.
 	void modal_window(window);
 
-	/// Blocks the execution until the specified window is closesd.
+	/// Blocks the execution until the specified window is closed.
 	void wait_for(window);
 
 	color fgcolor(window);
