@@ -39,8 +39,8 @@ endif()
 if(NANA_STATIC_STDLIB)
     target_link_libraries(nana
         PUBLIC
-            $<$<CXX_COMPILER_ID:GNU>:-static-libgcc>
-            $<$<CXX_COMPILER_ID:Clang>:-static-libstdc++>
+            $<$<CXX_COMPILER_ID:GNU>:-static-libgcc -static-libstdc++>
+            $<$<CXX_COMPILER_ID:Clang>:-static-libgcc -static-libstdc++>
             )
 endif()
 

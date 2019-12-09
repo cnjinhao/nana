@@ -32,6 +32,7 @@ project(nana VERSION      1.7.2
 add_library(nana)
 add_library(nana::nana ALIAS nana)
 target_compile_features(nana PUBLIC cxx_std_17)
+# set(CMAKE_CXX_STANDARD 17)
 
 #  need after cxx_std_14 or cxx_std_17 ??
 target_compile_features(nana

@@ -43,8 +43,12 @@ matrix:
             - llvm-toolchain-precise 
 
 before_install:
+  # donwload nana-demo first
+  # we are in:  'user'/nana/
   - cd ..
-  - git clone --depth=1 --branch=hotfix https://github.com/qPCR4vir/nana-demo.git nana-demo
+  # we are in:   'user'/
+  - git clone --depth=1 --branch=master https://github.com/qPCR4vir/nana-demo.git nana-demo
+  # now we have 'user'/nana-demo, 'user'/nana/  and we are in: 'user'/
   - export PATH="$HOME/bin:$PATH"
   - wget --no-check-certificate --no-clobber -O /tmp/tools/cmake https://cmake.org/files/v3.12/cmake-3.12.0-rc3-Linux-x86_64.sh || true
   - chmod -R +x /tmp/tools
@@ -53,27 +57,29 @@ install:
   - /tmp/tools/cmake --prefix="$HOME" --exclude-subdir
 
 before_script :
-  # we have:  qPCR4vir/nana/../nana-demo and  now we are in: qPCR4vir/nana/  our executable tests will access: ../nana-demo/Examples/*.bmp etc.(need to be in parallel with nana-demo/Examples)
-  #- cd ../nana-demo
-  - mkdir  demo-build
+  - mkdir demo-build
   - cd demo-build
+  # now we have 'user'/nana-demo, 'user'/nana/ , 'user'/demo-build/ and we are in: 'user'/demo-build/
 
 services:
-  - # travis don't have a physical monitor. We need to install an emulator: https://docs.travis-ci.com/user/gui-and-headless-browsers/
+  # travis don't have a physical monitor. We need to install an emulator:
+  # https://docs.travis-ci.com/user/gui-and-headless-browsers/
   - xvfb
 
 script:
   - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON -DNANA_CMAKE_INSTALL=OFF
   - make install
+  # we have installed in 'user'/ ('user'/demo-build/..), and cmake created 'user'/nana-test/
   # todo: separate resources from sources (a directory for images)
   - ls
+  # we were still in: 'user'/demo-build/
   - cd ../nana-test/bin
-  - ls
+  - ls -lh
   - ./a_group_impl
   - ./animate-bmp
   - ./audio_player
   - ./background-effects
-  #- ./calculator   # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1159
+  - ./calculator          # COOL !!! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L924
   - ./categ
   - ./clicked
   - ./decore
@@ -81,48 +87,45 @@ script:
   - ./drag-button
   - ./draw
   - ./file_explorer
-  #- ./example_menu   # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1348
+  - ./example_menu        # OK ! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1022
   - ./example_listbox
-  #- ./example_combox    # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1378
+  - ./example_combox      # OK ! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1044
   - ./example.button
-  #- ./filebox-txt    # https://travis-ci.org/qPCR4vir/nana/jobs/140250744#L1393
-  - ./folder_tree
-  #- ./folder_tree_nana   # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1408
-  #- ./folder_tree_std     # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1421
+  # - ./filebox-txt       # https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1068
+  - ./folder_tree_nana    # todo failed https://travis-ci.org/qPCR4vir/nana/builds/621116812#L1193
+  - ./folder_tree_std     # todo failed https://travis-ci.org/qPCR4vir/nana/builds/621116812#L1200
   - ./framework_design_1
   - ./framework_design_2
   - ./framework_design_3
   - ./group
   - ./HelloWord
-  #- ./helloword_quit      # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1572
-  #- ./inputbox         # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1585
+  - ./helloword_quit      # ok
+  - ./inputbox            # ok
   - ./label_listener  
   - ./lambda_event.Cpp11  
   - ./listbox_inline_widget  
   - ./listbox_Resolver  
   - ./loader_1  
-  #- ./loader_2      # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1732
+  - ./loader_2            # ok
   - ./mbox  
   - ./main
   - ./menu_debug  
-  #- ./modal_form     # https://travis-ci.org/qPCR4vir/nana/jobs/140250744#L1736
-  #- ./MontiHall             # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1775
-  #- ./helloworld_demo           # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1786
-  #- ./notepad      # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1799
-  - ./menu_debug  
-  - ./menu_popuper  
-  #- ./modal_form       # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1846
-  #- ./widget_show2    # https://travis-ci.org/qPCR4vir/nana/jobs/140245437#L1730
-  #- ./widget_show           # https://travis-ci.org/qPCR4vir/nana/jobs/140245437#L1740
+  - ./modal_form          # ok
+  - ./MontiHall           # ok
+  - ./helloworld_demo     # ok
+  - ./notepad             # ok !!
+  - ./menu_popuper
+  - ./widget_show2        # ok !!
+  - ./widget_show         # ok !!
   - ./place_login  
   - ./png  
-  #- ./screen       # https://travis-ci.org/qPCR4vir/nana/jobs/140238537#L1909
-  - ./stretch_image  
-  #- ./threading     # https://travis-ci.org/qPCR4vir/nana/jobs/140245437#L1826   ?
-  #- ./thread-pool  # https://travis-ci.org/qPCR4vir/nana/jobs/140247564#L1782
-  - ./various_events  
-  #- ./window-dragger    # https://travis-ci.org/qPCR4vir/nana/jobs/140245438#L1820
-  - ./windows-subclassing   
+  - ./screen              # ok
+  - ./stretch_image
   - ./textbox_line_number
+  - ./threading            # ok
+  - ./thread-pool          # ok
+  - ./various_events  
+  - ./window-dragger      # ok
+  - ./windows-subclassing   
 
 
