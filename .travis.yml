@@ -69,65 +69,12 @@ services:
 script:
   - cmake -G"Unix Makefiles" ../nana-demo -DCMAKE_INSTALL_PREFIX=.. -DNANA_CMAKE_ENABLE_JPEG=ON -DNANA_CMAKE_FIND_BOOST_FILESYSTEM=OFF -DNANA_CMAKE_AUTOMATIC_GUI_TESTING=ON -DNANA_CMAKE_INSTALL=OFF
   - make install
-  # - ctest   # todo set correct working directory, and show output
+  - ctest --verbose  # todo set correct working directory, and show output
   # we have installed in 'user'/ ('user'/demo-build/..), and cmake created 'user'/nana-test/
   # todo: separate resources from sources (a directory for images)
   - ls
   # we were still in: 'user'/demo-build/
   - cd ../nana-test/bin
   - ls -lh
-  - ./a_group_impl
-  - ./animate-bmp
-  - ./audio_player
-  # - ./audio_player_simple   # just play music too long
-  - ./background-effects
-  - ./calculator          # COOL !!! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L924
-  - ./categ
-  - ./clicked
-  - ./decore
-  - ./dock
-  - ./drag-button
-  - ./draw
-  - ./file_explorer
-  - ./example.button
-  - ./example_combox      # OK ! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1044
-  - ./example_listbox
-  - ./example_menu        # OK ! https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1022
-  - ./filebox-txt         # https://travis-ci.org/qPCR4vir/nana/builds/621103509#L1068
-  - ./folder_tree_nana    # todo ok but failed https://travis-ci.org/qPCR4vir/nana/builds/621116812#L1193
-  - ./folder_tree_std     # todo ok but failed https://travis-ci.org/qPCR4vir/nana/builds/621116812#L1200
-  - ./framework_design_1
-  - ./framework_design_2
-  - ./framework_design_3
-  - ./group
-  - ./HelloWord
-  - ./helloword_quit      # ok
-  - ./inputbox            # ok
-  - ./label_listener
-  - ./lambda_event.Cpp11
-  - ./listbox_inline_widget
-  - ./listbox_Resolver
-  - ./loader_1
-  - ./loader_2            # ok
-  - ./main
-  - ./mbox
-  - ./menu_debug
-  - ./menu_popuper
-  - ./modal_form          # ok
-  - ./MontiHall           # ok
-  - ./place_login
-  - ./helloworld_demo     # ok
-  - ./notepad             # ok !!
-  - ./widget_show2        # ok !!
-  - ./widget_show         # ok !!
-  - ./png
-  - ./screen              # ok
-  - ./stretch_image
-  - ./textbox_line_number
-  - ./thread-pool          # ok
-  - ./threading            # ok
-  - ./various_events
-  - ./window-dragger       # ok
-  - ./windows-subclassing
 
 
