@@ -577,10 +577,14 @@ namespace std
 {
     namespace filesystem
     {
-        inline namespace nana_filesystem
+#if defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || _MSVC_LANG < 201703)
+		using namespace ::nana::filesystem;
+#else
+		inline namespace nana_filesystem
         {
             using namespace ::nana::filesystem;
         }
+#endif
     }
 }
 
