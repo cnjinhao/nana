@@ -117,6 +117,7 @@ namespace nana
 					::std::string text;
 					nana::any value;
 					bool expanded;
+					bool hidden;
 					checkstate checked;
 					::std::string img_idstr;
 				};
@@ -217,6 +218,12 @@ namespace nana
 
 				/// Select the node, and returns itself..
 				item_proxy& select(bool);
+
+				/// Return true when the node is hidden.
+				bool hidden() const;
+
+				/// Hide the node, and returns itself.
+				item_proxy& hide(bool);
 
 				/// Return the icon.
 				const ::std::string& icon() const;
@@ -343,6 +350,7 @@ namespace nana
 				basic_event<arg_treebox> checked;  ///< a user checks or unchecks a node
 				basic_event<arg_treebox> selected; ///< a user selects or unselects a node
 				basic_event<arg_treebox> hovered;  ///< a user moves the cursor over a node
+				basic_event<arg_treebox> hidden;   ///< a user hides or shows a node
 			};
 		}//end namespace treebox
 	}//end namespace drawerbase

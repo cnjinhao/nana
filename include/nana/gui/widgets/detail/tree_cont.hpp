@@ -340,31 +340,37 @@ namespace detail
 				}
 			}
 
-			template<typename PredAllowChild>
-			unsigned child_size_if(const ::std::string& key, PredAllowChild pac) const
+			template<typename PredAllowChild, typename PredAllowNode>
+			unsigned child_size_if(const ::std::string& key, PredAllowChild pac, PredAllowNode pan) const
 			{
 				auto node = _m_locate(key);
-				return (node ? child_size_if<PredAllowChild>(*node, pac) : 0);
+				return (node ? child_size_if<PredAllowChild, PredAllowNode>(*node, pac, pan) : 0);
 			}
 
-			template<typename PredAllowChild>
-			unsigned child_size_if(const node_type& node, PredAllowChild pac) const
+			template<typename PredAllowChild, typename PredAllowNode>
+			unsigned child_size_if(const node_type& node, PredAllowChild pac, PredAllowNode pan) const
 			{
 				unsigned size = 0;
 				const node_type* pnode = node.child;
 				while(pnode)
 				{
+					if (!pan(*pnode))
+					{
+						pnode = pnode->next;
+						continue;
+					}
+
 					++size;
 					if(pnode->child && pac(*pnode))
-						size += child_size_if<PredAllowChild>(*pnode, pac);
+						size += child_size_if<PredAllowChild>(*pnode, pac, pan);
 
 					pnode = pnode->next;
 				}
 				return size;
 			}
 
-			template<typename PredAllowChild>
-			std::size_t distance_if(const node_type * node, PredAllowChild pac) const
+			template<typename PredAllowChild, typename PredAllowNode>
+			std::size_t distance_if(const node_type * node, PredAllowChild pac, PredAllowNode pan) const
 			{
 				if(nullptr == node)	return 0;
 				const node_type * iterator = root_.child;
@@ -374,6 +380,12 @@ namespace detail
 
 				while(iterator && iterator != node)
 				{
+					if (!pan(*iterator))
+					{
+						iterator = iterator->next;
+						continue;
+					}
+
 					++off;
 
 					if(iterator->child && pac(*iterator))
@@ -393,8 +405,8 @@ namespace detail
 				return off;
 			}
 
-			template<typename PredAllowChild>
-			node_type* advance_if(node_type* node, std::size_t off, PredAllowChild pac)
+			template<typename PredAllowChild, typename PredAllowNode>
+			node_type* advance_if(node_type* node, std::size_t off, PredAllowChild pac, PredAllowNode pan)
 			{
 				if(nullptr == node)	node = root_.child;
 
@@ -402,6 +414,12 @@ namespace detail
 
 				while(node && off)
 				{
+					if (!pan(*node))
+					{
+						node = node->next;
+						continue;
+					}
+
 					--off;
 					if(node->child && pac(*node))
 					{
