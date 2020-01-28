@@ -70,7 +70,7 @@ namespace nana
 
 			const node_type* find_track_child_node(const node_type* node, const node_type * end, const char* pattern, std::size_t len, bool &finish)
 			{
-				if(node->value.second.expanded)
+				if(node->value.second.expanded && !node->value.second.hidden)
 				{
 					node = node->child;
 					while(node)
@@ -79,7 +79,7 @@ namespace nana
 
 						if(node == end) break;
 
-						if(node->value.second.expanded)
+						if(node->value.second.expanded && !node->value.second.hidden)
 						{
 							auto t = find_track_child_node(node, end, pattern, len, finish);
 							if(t || finish)
@@ -212,6 +212,14 @@ namespace nana
 				}
 			};
 
+			struct pred_allow_node
+			{
+				bool operator()(const trigger::tree_cont_type::node_type& node)
+				{
+					return !node.value.second.hidden;
+				}
+			};
+
 			//struct implementation
 			//@brief:	some data for treebox trigger
 			class trigger::implementation
@@ -235,6 +243,7 @@ namespace nana
 					int operator()(const node_type& node, int affect)
 					{
 						iterated_node_ = &node;
+
 						switch (affect)
 						{
 						case 1:
@@ -244,6 +253,9 @@ namespace nana
 							if (affect >= 2)
 								pos_.x -= impl_->data.scheme_ptr->indent_displacement * (affect - 1);
 						}
+
+						if (iterated_node_->value.second.hidden)  // Skip drawing if the node is hidden
+							return 2;
 
 						auto & comp_placer = impl_->data.comp_placer;
 
@@ -552,7 +564,7 @@ namespace nana
 
 						if (p->child)
 						{
-							if (p->value.second.expanded || !ignore_folded_children)
+							if ((p->value.second.expanded || !ignore_folded_children) && !p->value.second.hidden)
 							{
 								p = p->child;
 								continue;
@@ -603,8 +615,8 @@ namespace nana
 						}
 					}
 
-					auto pos = tree.distance_if(node, pred_allow_child{});
-					auto last_pos = tree.distance_if(last(true), pred_allow_child{});
+					auto pos = tree.distance_if(node, pred_allow_child{}, pred_allow_node{});
+					auto last_pos = tree.distance_if(last(true), pred_allow_child{}, pred_allow_node{});
 
 					auto const capacity = screen_capacity(true);
 
@@ -612,7 +624,7 @@ namespace nana
 					//position of the requested item.
 					if (!use_bearing)
 					{
-						auto first_pos = tree.distance_if(shape.first, pred_allow_child{});
+						auto first_pos = tree.distance_if(shape.first, pred_allow_child{}, pred_allow_node{});
 
 						if (pos < first_pos)
 							bearing = align_v::top;
@@ -655,7 +667,7 @@ namespace nana
 					}
 
 					auto prv_first = shape.first;
-					shape.first = attr.tree_cont.advance_if(nullptr, pos, drawerbase::treebox::pred_allow_child{});
+					shape.first = attr.tree_cont.advance_if(nullptr, pos, drawerbase::treebox::pred_allow_child{}, pred_allow_node{});
 
 					//Update the position of scroll
 					show_scroll();
@@ -669,8 +681,8 @@ namespace nana
 
 					auto & tree = attr.tree_cont;
 
-					auto const first_pos = tree.distance_if(shape.first, pred_allow_child{});
-					auto const node_pos = tree.distance_if(node, pred_allow_child{});
+					auto const first_pos = tree.distance_if(shape.first, pred_allow_child{}, pred_allow_node{});
+					auto const node_pos = tree.distance_if(node, pred_allow_child{}, pred_allow_node{});
 					auto const max_allow = max_allowed();
 					switch(reason)
 					{
@@ -680,12 +692,12 @@ namespace nana
 							//adjust if the number of its children are over the max number allowed
 							if (shape.first != node)
 							{
-								auto child_size = tree.child_size_if(*node, pred_allow_child());
+								auto child_size = tree.child_size_if(*node, pred_allow_child(), pred_allow_node{});
 								if (child_size < max_allow)
 								{
 									auto const size = node_pos - first_pos + child_size + 1;
 									if (size > max_allow)
-										shape.first = tree.advance_if(shape.first, size - max_allow, pred_allow_child{});
+										shape.first = tree.advance_if(shape.first, size - max_allow, pred_allow_child{}, pred_allow_node{});
 								}
 								else
 									shape.first = node;
@@ -698,7 +710,7 @@ namespace nana
 							if (visual_size > max_allow)
 							{
 								if (first_pos + max_allow > visual_size)
-									shape.first = tree.advance_if(nullptr, visual_size - max_allow, pred_allow_child{});
+									shape.first = tree.advance_if(nullptr, visual_size - max_allow, pred_allow_child{}, pred_allow_node{});
 							}
 							else
 								shape.first = nullptr;
@@ -739,7 +751,7 @@ namespace nana
 							}
 							else if (node_pos - first_pos > max_allow)
 							{
-								shape.first = tree.advance_if(nullptr, node_pos - max_allow + 1, pred_allow_child{});
+								shape.first = tree.advance_if(nullptr, node_pos - max_allow + 1, pred_allow_child{}, pred_allow_node{});
 								return true;
 							}
 						}
@@ -814,6 +826,27 @@ namespace nana
 					return false;
 				}
 
+				bool set_hidden(node_type* node, bool value)
+				{
+					if (node && node->value.second.hidden != value)
+					{
+						if (value == false)
+						{
+							//if hiding a parent of the selected node or the selected node itself - select nothing.
+							if (node->is_ancestor_of(node_state.selected) || node_state.selected == node)
+								set_selected(nullptr);
+						}
+
+						node->value.second.hidden = value;
+						data.stop_drawing = true;
+						item_proxy iprx(data.trigger_ptr, node);
+						data.widget_ptr->events().hidden.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, value }, data.widget_ptr->handle());
+						data.stop_drawing = false;
+						return true;
+					}
+					return false;
+				}
+
 				void show_scroll()
 				{
 					if(nullptr == data.graph) return;
@@ -841,7 +874,7 @@ namespace nana
 								adjust.scroll_timestamp = nana::system::timestamp();
 								adjust.timer.start();
 
-								shape.first = attr.tree_cont.advance_if(nullptr, shape.scroll->value(), pred_allow_child{});
+								shape.first = attr.tree_cont.advance_if(nullptr, shape.scroll->value(), pred_allow_child{}, pred_allow_node{});
 								draw(false, false, true);
 							});
 						}
@@ -850,13 +883,13 @@ namespace nana
 						scroll.range(max_allow);
 					}
 
-					auto pos = attr.tree_cont.distance_if(shape.first, pred_allow_child{});
+					auto pos = attr.tree_cont.distance_if(shape.first, pred_allow_child{}, pred_allow_node{});
 					scroll.value(pos);
 				}
 
 				std::size_t visual_item_size() const
 				{
-					return attr.tree_cont.child_size_if(std::string(), pred_allow_child{});
+					return attr.tree_cont.child_size_if(std::string(), pred_allow_child{}, pred_allow_node{});
 				}
 
 				int visible_w_pixels() const
@@ -1148,6 +1181,20 @@ namespace nana
 				{
 					auto * impl = trigger_->impl();
 					if(impl->set_selected(s ? node_ : nullptr))
+						impl->draw(true);
+
+					return *this;
+				}
+
+				bool item_proxy::hidden() const
+				{
+					return node_->value.second.hidden;
+				}
+
+				item_proxy& item_proxy::hide(bool h)
+				{
+					auto* impl = trigger_->impl();
+					if (impl->set_hidden(node_, h))
 						impl->draw(true);
 
 					return *this;
@@ -1595,6 +1642,9 @@ namespace nana
 							item_pos_.x -= static_cast<int>(impl_->data.scheme_ptr->indent_displacement) * (affect - 1);
 					}
 
+					if (node.value.second.hidden) // Do not account for hidden nodes
+						return 2;
+
 					impl_->assign_node_attr(node_attr_, &node);
 					nana::rectangle node_r;
 					auto & comp_placer = impl_->data.comp_placer;
@@ -1665,11 +1715,11 @@ namespace nana
 			//class trigger
 				//struct treebox_node_type
 					trigger::treebox_node_type::treebox_node_type()
-						:expanded(false), checked(checkstate::unchecked)
+						:expanded(false), checked(checkstate::unchecked), hidden(false)
 					{}
 
 					trigger::treebox_node_type::treebox_node_type(std::string text)
-						:text(std::move(text)), expanded(false), checked(checkstate::unchecked)
+						:text(std::move(text)), expanded(false), checked(checkstate::unchecked), hidden(false)
 					{}
 
 					trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
