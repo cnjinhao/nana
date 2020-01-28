@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE or copy at 
@@ -49,7 +49,7 @@ namespace nana
 
 			struct node_attribute
 			{
-				bool has_children;
+				bool has_children;	///< Determines whether the node has visible children
 				bool expended;
 				checkstate checked;
 				bool selected;

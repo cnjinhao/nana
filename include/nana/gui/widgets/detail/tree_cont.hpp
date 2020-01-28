@@ -1,6 +1,6 @@
 /*
  *	A Tree Container class implementation
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -508,7 +508,7 @@ namespace detail
 			void _m_for_each(const ::std::string& key, Function function) const
 			{
 				//Ignores separaters at the begin of key.
-				::std::string::size_type beg = key.find_first_not_of("\\/");
+				auto beg = key.find_first_not_of("\\/");
 				if (key.npos == beg)
 					return;
 

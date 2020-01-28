@@ -1,7 +1,7 @@
 /*
  *	A Treebox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2010 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -387,7 +387,18 @@ namespace nana
 
 				void assign_node_attr(node_attribute& ndattr, const node_type* node) const
 				{
-					ndattr.has_children = (nullptr != node->child);
+					// Check if there is a visible child that node has.
+					// This is an improvement based on a new feature that allows treebox node to be hidden(PR#500)
+					ndattr.has_children = false;
+					for (auto p = node->child; p; p = p->next)
+					{
+						if (!p->value.second.hidden)
+						{
+							ndattr.has_children = true;
+							break;
+						}
+					}
+
 					ndattr.expended = node->value.second.expanded;
 					ndattr.text = node->value.second.text;
 					ndattr.checked = node->value.second.checked;
@@ -1445,7 +1456,7 @@ namespace nana
 					switch(comp)
 					{
 					case component_t::expander:
-						if(attr.has_children)
+						if (attr.has_children)
 						{
 							r->width = scheme_.item_offset;
 							return true;
