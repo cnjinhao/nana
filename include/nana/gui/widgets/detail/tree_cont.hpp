@@ -95,6 +95,13 @@ namespace detail
 			typedef tree_node<element_type> node_type;
 			typedef typename node_type::value_type	value_type;
 
+			enum class enum_order
+			{
+				stop,		//Stop enumeration
+				proceed_with_children,	
+				proceed
+			};
+
 			tree_cont()
 				:root_(nullptr)
 			{}
@@ -235,59 +242,6 @@ namespace detail
 			}
 
 			template<typename Functor>
-			void for_each(node_type* node, Functor f)
-			{
-				if(nullptr == node) node = root_.child;
-				int state = 0;	//0: Sibling, the last is a sibling of node
-								//1: Owner, the last is the owner of node
-								//>= 2: Children, the last is is a child of the node that before this node.
-				while(node)
-				{
-					switch(f(*node, state))
-					{
-					case 0: return;
-					case 1:
-						{
-							if(node->child)
-							{
-								node = node->child;
-								state = 1;
-							}
-							else
-								return;
-							continue;
-						}
-						break;
-					}
-
-					if(node->next)
-					{
-						node = node->next;
-						state = 0;
-					}
-					else
-					{
-						state = 1;
-						if(node == &root_)	return;
-
-						while(true)
-						{
-							++state;
-							if(node->owner->next)
-							{
-								node = node->owner->next;
-								break;
-							}
-							else
-								node = node->owner;
-
-							if(node == &root_)	return;
-						}
-					}
-				}
-			}
-
-			template<typename Functor>
 			void for_each(node_type* node, Functor f) const
 			{
 				if(nullptr == node) node = root_.child;
@@ -296,24 +250,18 @@ namespace detail
 								//>= 2: Children, the last is is a child of the node that before this node.
 				while(node)
 				{
-					switch(f(*node, state))
-					{
-					case 0: return;
-					case 1:
-						{
-							if(node->child)
-							{
-								node = node->child;
-								state = 1;
-							}
-							else
-								return;
-							continue;
-						}
-						break;
-					}
+					enum_order order = f(*node, state);
 
-					if(node->next)
+					if (enum_order::stop == order)
+					{
+						return;
+					}
+					else if (node->child && (enum_order::proceed_with_children == order))
+					{
+						node = node->child;
+						state = 1;
+					}
+					else if(node->next)
 					{
 						node = node->next;
 						state = 0;

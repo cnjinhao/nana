@@ -1,7 +1,7 @@
 /*
  *	A Treebox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2010 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -184,10 +184,11 @@ namespace nana
 			class trigger::item_locator
 			{
 			public:
+				using enum_order = tree_cont_type::enum_order;
 				using node_type = tree_cont_type::node_type;
 
 				item_locator(implementation * impl, int item_pos, int x, int y);
-				int operator()(node_type &node, int affect);
+				enum_order operator()(node_type &node, int affect);
 				node_type * node() const;
 				component what() const;
 				bool item_body() const;
@@ -228,6 +229,7 @@ namespace nana
 					: public compset_interface
 				{
 				public:
+					using enum_order = tree_cont_type::enum_order;
 					using node_type = tree_cont_type::node_type;
 
 					item_rendering_director(implementation * impl, const nana::point& pos):
@@ -240,10 +242,11 @@ namespace nana
 					//0 = Sibling, the last is a sibling of node
 					//1 = Owner, the last is the owner of node
 					//>=2 = Children, the last is a child of a node that before this node.
-					int operator()(const node_type& node, int affect)
+					enum_order operator()(const node_type& node, int affect)
 					{
 						iterated_node_ = &node;
 
+						// Increase/decrease indent
 						switch (affect)
 						{
 						case 1:
@@ -255,7 +258,7 @@ namespace nana
 						}
 
 						if (iterated_node_->value.second.hidden)  // Skip drawing if the node is hidden
-							return 2;
+							return enum_order::proceed;
 
 						auto & comp_placer = impl_->data.comp_placer;
 
@@ -275,9 +278,9 @@ namespace nana
 						pos_.y += node_r_.height;
 
 						if (pos_.y > static_cast<int>(impl_->data.graph->height()))
-							return 0;
+							return enum_order::stop;
 
-						return (node.child && node.value.second.expanded ? 1 : 2);
+						return ((node.child && node.value.second.expanded) ? enum_order::proceed_with_children : enum_order::proceed);
 					}
 				private:
 					//Overrides compset_interface
@@ -1642,7 +1645,7 @@ namespace nana
 						node_(nullptr)
 				{}
 
-				int trigger::item_locator::operator()(node_type &node, int affect)
+				auto trigger::item_locator::operator()(node_type &node, int affect) -> enum_order
 				{
 					switch(affect)
 					{
@@ -1654,7 +1657,7 @@ namespace nana
 					}
 
 					if (node.value.second.hidden) // Do not account for hidden nodes
-						return 2;
+						return enum_order::proceed;
 
 					impl_->assign_node_attr(node_attr_, &node);
 					nana::rectangle node_r;
@@ -1687,15 +1690,12 @@ namespace nana
 							}
 						}
 
-						return 0; //Stop iterating
+						return enum_order::stop; //Stop iterating
 					}
 
 					item_pos_.y += node_r.height;
 
-					if(node.value.second.expanded && node.child)
-						return 1;
-
-					return 2;
+					return ((node.child && node.value.second.expanded) ? enum_order::proceed_with_children : enum_order::proceed);
 				}
 
 				trigger::item_locator::node_type * trigger::item_locator::node() const
