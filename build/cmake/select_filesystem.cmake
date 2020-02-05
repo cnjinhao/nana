@@ -53,7 +53,7 @@ else()
     if(NANA_CMAKE_STD_FILESYSTEM_FORCE)
         target_compile_definitions(nana PUBLIC STD_FILESYSTEM_FORCE)
     endif()
-
+    include (CheckIncludeFileCXX)
     check_include_file_cxx (filesystem              NANA_HAVE_FILESYSTEM)
     if (NANA_HAVE_FILESYSTEM)
         message (STATUS "C++ Filesystem header:      <filesystem>")
@@ -87,7 +87,6 @@ else()
 
     if (TEST_FS_LIB)
         include (FindPackageMessage)
-        include (CheckIncludeFileCXX)
         include (CheckCXXSourceCompiles)
         # CMAKE_REQUIRED_FLAGS = string of compile command line flags
         # CMAKE_REQUIRED_DEFINITIONS = list of macros to define (-DFOO=bar)
