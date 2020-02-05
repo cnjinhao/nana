@@ -922,7 +922,25 @@ namespace nana
 					}
 					else if (checks::option == item.style)
 					{
-						get_drawer_trigger().mbuilder().checked(active, true);
+						if(active > 0)
+						{
+							do {
+								if(menu->items[--active]->flags.splitter)
+								{
+									++active;
+									break;
+								}
+							} while(active > 0);
+						}
+						while(active < menu->items.size())
+						{
+							menu_item_type &el = *(menu->items[active++]);
+							if(el.flags.splitter)
+								break;
+							if(checks::option == el.style)
+								el.flags.checked = false;
+						}
+						item.flags.checked = true;
 					}
 
 					this->_m_close_all();	//means deleting this;
