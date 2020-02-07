@@ -492,6 +492,14 @@ namespace nana
 
 		/// Gets the current hovered node.
 		item_proxy hovered(bool exclude_expander) const;
+
+
+		/// Enable/disable the interactions (selection, click, ...) on the entire line of the treebox.
+		/**
+		 * @param enable bool  whether to enable.
+		 */
+		void use_entire_line(bool enable);
+
 	private:
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
 
