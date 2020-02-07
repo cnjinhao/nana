@@ -295,7 +295,12 @@ namespace nana
 						if (impl_->data.comp_placer->locate(comp, node_attr_, &attr.area))
 						{
 							attr.mouse_pointed = node_attr_.mouse_pointed;
-							attr.area.x += pos_.x;
+
+							if(comp == component_t::bground && impl_->use_entire_line)
+								attr.area.width = impl_->visible_w_pixels();
+							else
+								attr.area.x += pos_.x;
+
 							attr.area.y += pos_.y;
 							return true;
 						}
@@ -362,6 +367,9 @@ namespace nana
 					std::size_t scroll_timestamp;
 					nana::timer timer;
 				}adjust;
+
+				bool use_entire_line;
+
 			public:
 				implementation()
 				{
@@ -386,6 +394,8 @@ namespace nana
 					adjust.offset_x_adjust = 0;
 					adjust.node = nullptr;
 					adjust.scroll_timestamp = 0;
+
+					use_entire_line = false;
 				}
 
 				void assign_node_attr(node_attribute& ndattr, const node_type* node) const
@@ -1675,8 +1685,8 @@ namespace nana
 							nana::rectangle r = node_r;
 							if (!comp_placer->locate(static_cast<component>(comp), node_attr_, &r))
 								continue;
-							
-							if (r.is_hit(logic_pos))
+
+							if((comp == static_cast<int>(component::bground) && impl_->use_entire_line) || r.is_hit(logic_pos))
 							{
 								node_ = &node;
 								what_ = static_cast<component>(comp);
@@ -2023,6 +2033,7 @@ namespace nana
 					{
 					case component::icon:
 					case component::text:
+					case component::bground:
 						impl_->set_expanded(node, !node->value.second.expanded);
 						impl_->draw(true, true, false);
 						API::dev::lazy_refresh();
@@ -2446,6 +2457,12 @@ namespace nana
 					return item_proxy{};
 			}
 			return item_proxy(const_cast<drawer_trigger_t*>(dw), dw->impl()->node_state.pointed);
+		}
+
+		void treebox::use_entire_line(bool enable)
+		{
+			auto dw = &get_drawer_trigger();
+			dw->impl()->use_entire_line = enable;
 		}
 
 		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()
