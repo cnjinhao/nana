@@ -1,13 +1,13 @@
 /**
  *	A Form Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/form.hpp
+ *	@file nana/gui/widgets/form.hpp
  */
 
 #ifndef NANA_GUI_WIDGET_FORM_HPP
@@ -42,7 +42,7 @@ namespace nana
 				//place methods
 
 				place & get_place();
-				void div(const char* div_text);
+				void div(std::string div_text);
 				place::field_reference operator[](const char* field_name);
 				void collocate() noexcept;
 			private:
@@ -51,23 +51,30 @@ namespace nana
 		}//end namespace form
 	}//end namespace drawerbase
 
-	/// \brief Pop-up window. Is different from other window widgets: its default constructor creates the window.
+	/// The form widget represents a popup window.
+	///
+	/// Overall it is a root widget (\see: Overview of widgets) which attaches the OS/Windowing system's native window.
+	/// It is different from other window widgets in that its default constructor creates the window.
 	/// \see nana::appearance
 	class form
 		: public drawerbase::form::form_base
 	{
 	public:
+	    /// helper template class for creating the appearance of the form.
 		using appear = ::nana::appear;
 
-		/// Creates a window at the point and size specified by rect, and with the specified appearance. Creates a form owned by the desktop.
-		form(const rectangle& = API::make_center(300, 200), const appearance& = {});	//Default constructor
-		form(const form&, const ::nana::size& = { 300, 200 }, const appearance& = {});	//Copy constructor
-		form(window, const ::nana::size& = { 300, 200 }, const appearance& = {});
-        /// Creates a window at the point and size specified by rect, with the specified appearance. This window is always floating above its owner.
-		form(window, const rectangle&, const appearance& = {});
+		/// Creates a window form owned by the desktop, at the point and size specified by rect, and with the specified appearance.
+		explicit form(const rectangle& = API::make_center(300, 200), const appearance& = {});	//Default constructor
+        /// Creates a window always floating above its owner at the point and size specified by rect, with the specified appearance. This window is always floating above its owner.
+        explicit form(window owner, const ::nana::size& = { 300, 200 }, const appearance& = {});
+        explicit form(window owner, const rectangle&, const appearance& = {});
+        form(const form&, const ::nana::size& = { 300, 200 }, const appearance& = {});	//Copy constructor
 
-		void modality() const;
-		void wait_for_this();
+        /// Blocks the execution and other windows' messages until this window is closed.
+        void modality() const;
+
+        /// Blocks the execution until this window is closed.
+        void wait_for_this();
 
 		void keyboard_accelerator(const accel_key&, const std::function<void()>& fn);
 	};

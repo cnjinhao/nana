@@ -1,13 +1,13 @@
-/*
+/**
 *	A Message Box Class
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
-*	@file: nana/gui/msgbox.hpp
+*	@file nana/gui/msgbox.hpp
 */
 
 #ifndef NANA_GUI_MSGBOX_HPP
@@ -81,8 +81,8 @@ namespace nana
 			return *this;
 		}
 
-		/// \brief Displays the message that buffered in the stream.
-		/// @return, the button that user clicked.
+		/// \brief Displays the message buffered in the stream.
+		/// @return, the button the user clicked.
 		pick_t show() const;
 
 		/// A function object method alternative to show()
@@ -98,6 +98,9 @@ namespace nana
 		icon_t icon_;
 	};
 
+	/// Simple convenience dialog to get values from the user.
+	///
+	/// The input value can be a boolean, string, a number, an option from a dropdown list or a date.
 	class inputbox
 	{
 		struct abstract_content
@@ -110,6 +113,8 @@ namespace nana
 		};
 
 	public:
+
+	    /// Shows a checkbox for boolean input
 		class boolean
 			: public abstract_content
 		{
@@ -128,6 +133,7 @@ namespace nana
 			std::unique_ptr<implement> impl_;
 		};
 
+	    /// Integer input
 		class integer
 			: public abstract_content
 		{
@@ -146,6 +152,7 @@ namespace nana
 			std::unique_ptr<implement> impl_;
 		};
 
+		/// Floating-point number input.
 		class real
 			: public abstract_content
 		{
@@ -164,6 +171,7 @@ namespace nana
 			std::unique_ptr<implement> impl_;
 		};
 
+		/// String input or an option from a dropdown list.
 		class text
 			: public abstract_content
 		{
@@ -192,6 +200,7 @@ namespace nana
 			std::unique_ptr<implement> impl_;
 		};
 
+		/// Date input
 		class date
 			: public abstract_content
 		{
@@ -214,6 +223,10 @@ namespace nana
 			std::unique_ptr<implement> impl_;
 		};
 
+		/// Path of a file.
+		///
+		/// The path requires an object of filebox. When the user clicks the `Browse` button,
+		/// it invokes the filebox with proper configurations to query a filename.
 		class path
 			: public abstract_content
 		{
@@ -231,11 +244,26 @@ namespace nana
 			std::unique_ptr<implement> impl_;
 		};
 
-		inputbox(window, ::std::string description, ::std::string title = ::std::string());
+		inputbox(window owner,     ///< A handle to an owner window (just a parent form or widget works)
+		         ::std::string description,   ///< tells users what the purpose for the input. It can be a formatted-text.
+                 ::std::string title = ::std::string()  ///< The title for the inputbox.
+        );
 
-		void image(::nana::paint::image, bool is_left, const rectangle& valid_area = {});
-		void image_v(::nana::paint::image, bool is_top, const rectangle& valid_area = {});
+		/// shows images at left/right side of inputbox
+		void image(::nana::paint::image image,      ///< The image
+		           bool is_left,      ///< true to place the image at left side, false to the right side
+		           const rectangle& valid_area = {} ///< The area of the image to be displayed
+        );
 
+		/// shows images at top/bottom side of inputbox
+		void image_v(::nana::paint::image,     ///< The image
+		              bool is_top,    ///< `true` to place the image at top side, `false` at bottom side
+		              const rectangle& valid_area = {}    ///< The area of the image to be displayed
+        );
+
+		/// Shows the inputbox and wait for the user input.
+		///
+		/// This method shows the inputbox without preventing the user interacts with other windows.
 		template<typename ...Args>
 		bool show(Args&& ... args)
 		{
@@ -251,7 +279,11 @@ namespace nana
 			return _m_open(contents, false);
 		}
 
-		template<typename ...Args>
+        /// Shows the inputbox and wait for the user input blocking other windows.
+        ///
+        /// This method blocks the execution and prevents user interaction with other
+        /// windows until the inputbox is closed.
+        template<typename ...Args>
 		bool show_modal(Args&& ... args)
 		{
 			std::vector<abstract_content*> contents;
@@ -267,7 +299,7 @@ namespace nana
 			return _m_open(contents, true);
 		}
 
-		/// Sets a verifier to verify the user input.
+		/// Sets a verifier to verify the user input, taking a handle to the inputbox.
 		void verify(std::function<bool(window)> verifier);
 
 		/** Sets the minimum width for the entry fields

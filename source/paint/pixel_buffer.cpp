@@ -238,10 +238,18 @@ namespace nana{	namespace paint
 				auto d = rawptr;
 				const unsigned char* s;
 
+				int src_line_bytes;
+
 				if (is_negative)
+				{
 					s = rawbits;
+					src_line_bytes = -static_cast<int>(bytes_per_line);
+				}
 				else
+				{
 					s = rawbits + bytes_per_line * (height - 1);
+					src_line_bytes = static_cast<int>(bytes_per_line);
+				}
 
 				for(std::size_t i = 0; i < height; ++i)
 				{
@@ -256,7 +264,7 @@ namespace nana{	namespace paint
 						s_p += 3;
 					}
 					d += pixel_size.width;
-					s -= bytes_per_line;
+					s -= src_line_bytes;
 				}
 			}
 			else if(16 == bits_per_pixel)

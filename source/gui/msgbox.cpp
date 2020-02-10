@@ -1,4 +1,4 @@
-/*
+/**
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
@@ -7,10 +7,15 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/msgbox.hpp
+ *	@file nana/gui/msgbox.hpp
  *	@Contributors
  *		James Bremner
+ *		Ariel Vina-Rodriguez
  */
+#define NOMINMAX
+#include <algorithm>  // max
+#include <functional>
+#include <cstdlib>    //include std::abs
 
 #include <nana/gui/compact.hpp>
 #include <nana/gui/msgbox.hpp>
@@ -27,8 +32,7 @@
 #include <nana/datetime.hpp>
 #include <nana/internationalization.hpp>
 #include <nana/gui/filebox.hpp>
-#include <functional>
-#include <cstdlib>  //include std::abs
+
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
 #elif defined(NANA_X11)
@@ -494,21 +498,29 @@ namespace nana
 	//end class msgbox
 
 
-	//class inputbox
+	//class inputbox todo: add schema
 
 	class inputbox_window
 		: public ::nana::form
 	{
 	public:
-		inputbox_window(window owner, paint::image (&imgs)[4], ::nana::rectangle (&valid_areas)[4], const ::std::string & desc, const ::std::string& title, std::size_t contents, unsigned fixed_pixels, const std::vector<unsigned>& each_height)
+		inputbox_window(window owner,
+		                paint::image (&imgs)[4],             ///< 4 ref to images
+		                ::nana::rectangle (&valid_areas)[4],
+		                const ::std::string & description,
+		                const ::std::string& title,
+		                std::size_t contents,
+		                unsigned fixed_pixels,
+		                const std::vector<unsigned>& each_height)
+
 			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
 		{
-			throw_not_utf8(desc);
+			throw_not_utf8(description);
 			throw_not_utf8(title);
 
-			desc_.create(*this);
-			desc_.format(true).caption(desc);
-			auto desc_extent = desc_.measure(470);
+			description_.create(*this);
+			description_.format(true).caption(description);
+			auto description_size = description_.measure(470);
 
 			btn_ok_.create(*this);
 			btn_ok_.i18n(i18n_eval("NANA_BUTTON_OK"));
@@ -527,32 +539,26 @@ namespace nana
 				close();
 			});
 
-			unsigned height = 20 + desc_extent.height + 10 + 38;
-
+			unsigned height = 20 + description_size.height + 10 + 38;
 			std::stringstream ss_content;
-			ss_content << "<margin=10 vert <desc weight=" << desc_extent.height << "><vert margin=[10]";
 
 			for (std::size_t i = 0; i < contents; ++i)
 			{
-				unsigned px = 27;
-				if (each_height[i] > 27)
-					px = each_height[i];
+				unsigned px = std::max(27u, each_height[i]);
 
-				ss_content << "<weight=" << (px + 3) << " margin=[3] input_" << i << ">";
+				ss_content << "<height=" << (px + 3) << " margin=[3] input_" << i << ">";
 
-				height += px + 1;
+				height += px + 3;
 			}
 
-			ss_content << "><margin=[15] weight=38<><buttons arrange=80 gap=10 weight=170>>>";
-
-			if (desc_extent.width < 200)
-				desc_extent.width = 200;
+			if (description_size.width < 200)
+				description_size.width = 200;
 
 			//Make sure the complete display of input extent
-			if (desc_extent.width < fixed_pixels)
-				desc_extent.width = fixed_pixels;
+			if (description_size.width < fixed_pixels)
+				description_size.width = fixed_pixels;
 
-			desc_extent.width += 20;
+			description_size.width += 20;  // 2x margin 10
 
 			::nana::size img_sz[4];
 
@@ -566,8 +572,9 @@ namespace nana
 				}
 				else
 					sz = imgs[2].size();
-				sz.width = static_cast<size::value_type>(double(sz.width) * (double(height) / double(sz.height)));
-				desc_extent.width += sz.width;
+				const double scale_factor = double(height) / double(sz.height);
+				sz.width = static_cast<size::value_type>(double(sz.width) * scale_factor);
+				description_size.width += sz.width;
 			}
 
 			if (imgs[3])	//Right
@@ -581,7 +588,7 @@ namespace nana
 				else
 					sz = imgs[3].size();
 				sz.width = static_cast<size::value_type>(double(sz.width) * (double(height) / double(sz.height)));
-				desc_extent.width += sz.width;
+				description_size.width += sz.width;
 			}
 
 			if (imgs[0])	//Top
@@ -594,7 +601,8 @@ namespace nana
 				}
 				else
 					sz = imgs[0].size();
-				sz.height = static_cast<size::value_type>(double(sz.height) * (double(desc_extent.width) / double(sz.width)));
+                const double scale_factor = double(description_size.width) / double(sz.width);
+				sz.height = static_cast<size::value_type>(double(sz.height) * scale_factor );
 				height += sz.height;
 			}
 
@@ -608,16 +616,28 @@ namespace nana
 				}
 				else
 					sz = imgs[1].size();
-				sz.height = static_cast<size::value_type>(double(sz.height) * (double(desc_extent.width) / double(sz.width)));
+                const double scale_factor = double(description_size.width) / double(sz.width);
+                sz.height = static_cast<size::value_type>(double(sz.height) * scale_factor);
 				height += sz.height;
 			}
 
 			std::stringstream ss;
-			ss << "vert<img_top weight="<<img_sz[0].height<<"><<img_left weight="<<img_sz[2].width<<">"<<ss_content.str()<<"<img_right weight="<<img_sz[3].width<<">><img_bottom weight="<<img_sz[1].height<<">";
+			ss << "vert<  img_top    height="<<img_sz[0].height<<">"
+			   <<"     << img_left   width=" <<img_sz[2].width <<">"
+               <<"      <margin=10 vert <description height=" << description_size.height << ">"  // added height: 2x10
+               <<"                      <vert margin=[10]"                                       // added height: 10
+			   <<                                          ss_content.str()
+			   <<"                      >"
+			   <<"                      <height=38 margin=[15] <><width=170 buttons arrange=80 gap=10>"
+               <<"      >>"                                                    // added height: 38
+			   <<"      < img_right  width=" <<img_sz[3].width
+			   <<"    >>< img_bottom height="<<img_sz[1].height<<">";
+
+			// added height: 10 x3 = 30 + 38
 
 			auto& place = this->get_place();
 			place.div(ss.str().c_str());
-			place["desc"] << desc_;
+			place["description"] << description_;
 			place["buttons"] << btn_ok_ << btn_cancel_;
 
 			const char * img_fields[4] = {"img_top", "img_bottom", "img_left", "img_right"};
@@ -635,7 +655,7 @@ namespace nana
 				place.field_display(img_fields[i], imgs[i]);
 			}
 
-			move(API::make_center(this->owner(), desc_extent.width, height));
+			move(API::make_center(this->owner(), description_size.width, height));
 			caption(title);
 		}
 
@@ -659,7 +679,7 @@ namespace nana
 			return valid_input_;
 		}
 	private:
-		::nana::label	desc_;
+		::nana::label	description_;
 		::nana::button	btn_ok_;
 		::nana::button	btn_cancel_;
 		bool	valid_input_{ false };
@@ -1247,7 +1267,7 @@ namespace nana
 			auto files = impl->fbox.show();
 			if(!files.empty())
 			{
-				impl->value = files.front().u8string();
+				impl->value = files.front().string();
 				impl->path_edit.caption(impl->value);
 			}
 		});

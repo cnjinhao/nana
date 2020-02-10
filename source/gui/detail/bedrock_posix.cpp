@@ -622,6 +622,7 @@ namespace detail
 				}
 				break;
 			case ConfigureNotify:
+				++(root_runtime->x11msg.config);
 				if(msgwnd->dimension.width != static_cast<unsigned>(xevent.xconfigure.width) || msgwnd->dimension.height != static_cast<unsigned>(xevent.xconfigure.height))
 				{
 					auto & cf = xevent.xconfigure;
@@ -890,7 +891,12 @@ namespace detail
 			case MapNotify:
 			case UnmapNotify:
 				if(xevent.type == MapNotify)
+				{
+					++(root_runtime->x11msg.map);
 					x11_apply_exposed_position(native_window);
+				}
+				else
+					++(root_runtime->x11msg.unmap);
 
 				brock.event_expose(msgwnd, (xevent.type == MapNotify));
 				context.platform.motion_window = nullptr;

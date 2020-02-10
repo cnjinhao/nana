@@ -1,7 +1,7 @@
 /**
  *	A Character Encoding Set Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -245,8 +245,12 @@ namespace nana
 			int bytes = ::WideCharToMultiByte(CP_ACP, 0, s, -1, 0, 0, 0, 0);
 			if(bytes > 1)
 			{
-				mbstr.resize(bytes - 1);
-				::WideCharToMultiByte(CP_ACP, 0, s, -1, &(mbstr[0]), bytes - 1, 0, 0);
+				// the bytes is the length of the string with null character.
+				mbstr.resize(bytes);
+				::WideCharToMultiByte(CP_ACP, 0, s, -1, &(mbstr[0]), bytes, 0, 0);
+
+				//Remove the null character written by WideCharToMultiByte
+				mbstr.pop_back();
 			}
 			return true;
 #else
@@ -279,8 +283,12 @@ namespace nana
 			int chars = ::MultiByteToWideChar(CP_ACP, 0, s, -1, 0, 0);
 			if(chars > 1)
 			{
-				wcstr.resize(chars - 1);
-				::MultiByteToWideChar(CP_ACP, 0, s, -1, &wcstr[0], chars - 1);
+				// the length of the string with null character.
+				wcstr.resize(chars);
+				::MultiByteToWideChar(CP_ACP, 0, s, -1, &wcstr[0], chars);
+
+				// remove the null character written by MultiByteToWideChar
+				wcstr.pop_back();
 			}
 #else
 			locale_initializer::init();

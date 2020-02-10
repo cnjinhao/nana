@@ -77,6 +77,9 @@ namespace detail
 
 		typedef BOOL (__stdcall* imm_set_composition_window_type)(HIMC, LPCOMPOSITIONFORM);
 		imm_set_composition_window_type imm_set_composition_window;
+
+		typedef LONG(__stdcall* imm_get_composition_string_type)(HIMC, DWORD, LPVOID, DWORD);
+		imm_get_composition_string_type imm_get_composition_string;
 	}
 #pragma pack(1)
 	//Decoder of WPARAM and LPARAM
@@ -170,15 +173,22 @@ namespace detail
 
 	static LRESULT WINAPI Bedrock_WIN32_WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+	HINSTANCE windows_module_handle()
+	{
+		MEMORY_BASIC_INFORMATION mbi;
+		static int dummy;
+		VirtualQuery(&dummy, &mbi, sizeof(mbi));
+		return reinterpret_cast<HINSTANCE>(mbi.AllocationBase);
+	}
+
 	bedrock::bedrock()
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
-
 		WNDCLASSEX wincl;
-		wincl.hInstance = ::GetModuleHandle(0);
+		wincl.hInstance = windows_module_handle();
 		wincl.lpszClassName = L"NanaWindowInternal";
 		wincl.lpfnWndProc = &Bedrock_WIN32_WindowProc;
 		wincl.style = CS_DBLCLKS | CS_OWNDC;
@@ -210,6 +220,9 @@ namespace detail
 
 		restrict::imm_set_composition_window = reinterpret_cast<restrict::imm_set_composition_window_type>(
 				::GetProcAddress(imm32, "ImmSetCompositionWindow"));
+
+		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
+				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
 	}
 
 	bedrock::~bedrock()
@@ -223,6 +236,8 @@ namespace detail
 
 		delete impl_;
 		delete pi_data_;
+
+		::UnregisterClass(L"NanaWindowInternal", windows_module_handle());
 	}
 
 
@@ -639,6 +654,8 @@ namespace detail
 		case WM_NCRBUTTONDOWN:
 		case WM_NCMBUTTONDOWN:
 		case WM_IME_STARTCOMPOSITION:
+		case WM_IME_COMPOSITION:
+		case WM_IME_CHAR:
 		case WM_DROPFILES:
 		case WM_MOUSELEAVE:
 		case WM_MOUSEWHEEL:	//The WM_MOUSELAST may not include the WM_MOUSEWHEEL/WM_MOUSEHWHEEL when the version of SDK is low.
@@ -786,24 +803,66 @@ namespace detail
 				}
 				break;
 			case WM_IME_STARTCOMPOSITION:
-				if (msgwnd->other.attribute.root->ime_enabled)
+				break;
+			case WM_IME_COMPOSITION:
+				if (lParam & (GCS_COMPSTR | GCS_RESULTSTR))
 				{
-					auto native_font = msgwnd->drawer.graphics.typeface().handle();
-					LOGFONTW logfont;
-					::GetObjectW(reinterpret_cast<HFONT>(native_font), sizeof logfont, &logfont);
+					msgwnd = brock.focus();
+					if (msgwnd && msgwnd->flags.enabled)
+					{
+						auto & wd_manager = brock.wd_manager();
+						auto composition_index = static_cast<DWORD>(lParam & (GCS_COMPSTR | GCS_RESULTSTR));
 
-					HIMC imc = restrict::imm_get_context(root_window);
-					restrict::imm_set_composition_font(imc, &logfont);
+						arg_ime arg;
+						arg.window_handle = msgwnd;
+						if (lParam & GCS_COMPSTR)
+						{
+							arg.ime_reason = arg_ime::reason::composition;
+						}
+						if (lParam & GCS_RESULTSTR)
+						{
+							arg.ime_reason = arg_ime::reason::result;
+						}
 
-					POINT pos;
-					::GetCaretPos(&pos);
+						HIMC imc = restrict::imm_get_context(root_window);
+						auto size = restrict::imm_get_composition_string(imc, composition_index, nullptr, 0);
+						if (size > 0)
+						{
+							wchar_t * buffer = new wchar_t[100 / sizeof(wchar_t) + 1];
+							size = restrict::imm_get_composition_string(imc, composition_index, buffer, size + sizeof(wchar_t));
+							buffer[size / sizeof(wchar_t)] = '\0';
+							arg.composition_string = std::move(buffer);
+							delete[] buffer;
+						}
+						restrict::imm_release_context(root_window, imc);
 
-					COMPOSITIONFORM cf = { CFS_POINT };
-					cf.ptCurrentPos = pos;
-					restrict::imm_set_composition_window(imc, &cf);
-					restrict::imm_release_context(root_window, imc);
+						if (wd_manager.available(msgwnd))
+							draw_invoker(&drawer::key_ime, msgwnd, arg, &context);
+
+						wd_manager.do_lazy_refresh(msgwnd, false);
+					}
 				}
 				def_window_proc = true;
+				break;
+			case WM_IME_CHAR:
+				msgwnd = brock.focus();
+				if (msgwnd && msgwnd->flags.enabled)
+				{
+					auto & wd_manager = brock.wd_manager();
+
+					arg_keyboard arg;
+					arg.evt_code = event_code::key_char;
+					arg.window_handle = msgwnd;
+					arg.key = static_cast<wchar_t>(wParam);
+					brock.get_key_state(arg);
+					arg.ignore = false;
+
+					msgwnd->annex.events_ptr->key_char.emit(arg, msgwnd);
+					if ((false == arg.ignore) && wd_manager.available(msgwnd))
+						draw_invoker(&drawer::key_char, msgwnd, arg, &context);
+
+					wd_manager.do_lazy_refresh(msgwnd, false);
+				}
 				break;
 			case WM_GETMINMAXINFO:
 			{

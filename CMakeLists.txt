@@ -22,7 +22,7 @@
 # cmake 3.12 have more better modern c++ support
 
 cmake_minimum_required(VERSION 3.12  FATAL_ERROR)
-project(nana VERSION      1.7.1
+project(nana VERSION      1.7.3
         DESCRIPTION "C++ GUI library"
         HOMEPAGE_URL http://nanapro.org
         LANGUAGES CXX         )
@@ -32,6 +32,7 @@ project(nana VERSION      1.7.1
 add_library(nana)
 add_library(nana::nana ALIAS nana)
 target_compile_features(nana PUBLIC cxx_std_17)
+# set(CMAKE_CXX_STANDARD 17)
 
 #  need after cxx_std_14 or cxx_std_17 ??
 target_compile_features(nana
@@ -116,7 +117,7 @@ option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread wi
 
 ######## Nana options
 
-target_compile_definitions(nana PRIVATE NANA_IGNORE_CONF)    # really ?
+target_compile_definitions(nana PRIVATE NANA_IGNORE_CONF)    # really ??
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
     target_compile_definitions(nana PUBLIC NANA_AUTOMATIC_GUI_TESTING)
     # todo: enable_testing()       #  ??

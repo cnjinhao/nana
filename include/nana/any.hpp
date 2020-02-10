@@ -16,6 +16,7 @@
 #define NANA_ANY_HPP
 #include <typeinfo>
 #include <type_traits>
+#include <utility>
 
 #include "c++defines.hpp"
 
@@ -74,7 +75,7 @@ namespace nana
 		any(Value && value,
 				typename std::enable_if<!std::is_same<any&, Value>::value>::type * = nullptr,
 				typename std::enable_if<!std::is_const<Value>::value>::type* = nullptr)
-			: content_(new holder<typename std::decay<Value>::type>(static_cast<Value&&>(value)))
+			: content_(new holder<typename std::decay<Value>::type>(std::forward<Value>(value)))
 		{
 		}
 
@@ -87,7 +88,7 @@ namespace nana
 		template<class Value>
 		any& operator=(Value&& other)
 		{
-			any(other).swap(*this);
+			any(std::forward<Value>(other)).swap(*this);
 			return *this;
 		}
 

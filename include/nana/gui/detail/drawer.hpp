@@ -85,6 +85,7 @@ namespace nana
 		virtual void mouse_dropfiles(graph_reference, const arg_dropfiles&);
 
 		virtual void focus(graph_reference, const arg_focus&);
+		virtual void key_ime(graph_reference, const arg_ime&);
 		virtual void key_press(graph_reference, const arg_keyboard&);
 		virtual void key_char(graph_reference, const arg_keyboard&);
 		virtual void key_release(graph_reference, const arg_keyboard&);
@@ -140,6 +141,7 @@ namespace nana
 			void resized(const arg_resized&, const bool);
 			void move(const arg_move&, const bool);
 			void focus(const arg_focus&, const bool);
+			void key_ime(const arg_ime& arg, const bool bForce__EmitInternal);
 			void key_press(const arg_keyboard&, const bool);
 			void key_char(const arg_keyboard&, const bool);
 			void key_release(const arg_keyboard&, const bool);

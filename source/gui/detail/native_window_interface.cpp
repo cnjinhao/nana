@@ -17,14 +17,15 @@
 #include <nana/gui/detail/window_manager.hpp>
 
 #if defined(NANA_WINDOWS)
-	#if defined(STD_THREAD_NOT_SUPPORTED)
-        #include <nana/std_mutex.hpp>
-    #else
-        #include <mutex>
-	#endif
-	#include <map>
+#	if defined(STD_THREAD_NOT_SUPPORTED)
+#		include <nana/std_mutex.hpp>
+#	else
+#		include <mutex>
+#	endif
+#	include <map>
 #elif defined(NANA_X11)
-	#include <nana/system/platform.hpp>
+#	include <nana/system/platform.hpp>
+#	include "inner_fwd_implement.hpp"
 #endif
 
 #include "../../paint/image_accessor.hpp"
@@ -34,6 +35,10 @@ namespace nana{
 	namespace detail{
 
 #if defined(NANA_WINDOWS)
+
+		//This function is defined in bedrock_windows.cpp
+	HINSTANCE windows_module_handle();
+
 	class tray_manager
 	{
 		struct window_extra_t
@@ -199,26 +204,87 @@ namespace nana{
 
 		namespace x11_wait
 		{
+			struct param
+			{
+				Window handle;
+				root_misc * misc;
+				std::size_t comp_value;
+			};
+
 			static Bool configure(Display *disp, XEvent *evt, char *arg)
 			{
-			    return disp && evt && arg && (evt->type == ConfigureNotify) && (evt->xconfigure.window == *reinterpret_cast<Window*>(arg));
+				auto p = reinterpret_cast<param*>(arg);
+				if(p)
+				{
+					if(p->misc->x11msg.config != p->comp_value)
+						return true;
+
+					if(disp && evt && (evt->type == ConfigureNotify))
+					{
+						if(evt->xconfigure.window == p->handle)
+							return true;
+					}
+				}
+				return false;
 			}
 
 			static Bool map(Display *disp, XEvent *evt, char *arg)
-			{    
-			    return disp && evt && arg && (evt->type == MapNotify) && (evt->xmap.window == *reinterpret_cast<Window*>(arg));
+			{
+				auto p = reinterpret_cast<param*>(arg);
+				if(p)
+				{
+					if(p->misc->x11msg.map != p->comp_value)
+						return true;
+
+					if(disp && evt && (evt->type == MapNotify))
+					{
+						if(evt->xmap.window == p->handle)
+							return true;
+					}
+				}
+				return false;
 			}
 
 			static Bool unmap(Display *disp, XEvent *evt, char *arg)
-			{    
-			    return disp && evt && arg && (evt->type == MapNotify) && (evt->xunmap.window == *reinterpret_cast<Window*>(arg));
+			{
+				auto p = reinterpret_cast<param*>(arg);
+				if(p)
+				{
+					if(p->misc->x11msg.unmap != p->comp_value)
+						return true;
+
+					if(disp && evt && (evt->type == UnmapNotify))
+					{
+						if(evt->xunmap.window == p->handle)
+							return true;
+					}
+				}
+				return false;
 			}
 		}
 
-		static void x11_wait_for(Window wd, Bool(*pred_fn)(Display*, XEvent*, char*))
+		static void x11_wait_for(Window wd, Bool(*pred_fn)(Display*, XEvent*, char*), std::size_t comp_value)
 		{
+			auto misc = bedrock::instance().wd_manager().root_runtime(reinterpret_cast<native_window_type>(wd));
+			x11_wait::param p;
+			p.handle = wd;
+			p.misc = misc;
+
+			if(pred_fn == &x11_wait::configure)
+				p.comp_value = misc->x11msg.config;
+			else if(pred_fn == &x11_wait::map)
+				p.comp_value = misc->x11msg.map;
+			else if(pred_fn == &x11_wait::unmap)
+				p.comp_value = misc->x11msg.unmap;
+
+			//Checks whether the msg is received.
+			if(p.comp_value != comp_value)
+				return;
+
+			p.comp_value = comp_value;
+
 			XEvent dummy;
-			::XPeekIfEvent(restrict::spec.open_display(), &dummy, pred_fn, reinterpret_cast<XPointer>(&wd));
+			::XPeekIfEvent(restrict::spec.open_display(), &dummy, pred_fn, reinterpret_cast<XPointer>(&p));
 		}
 #endif
 
@@ -315,7 +381,7 @@ namespace nana{
 			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
-											reinterpret_cast<HWND>(owner), 0, ::GetModuleHandle(0), 0);
+											reinterpret_cast<HWND>(owner), 0, windows_module_handle(), 0);
 
 			//A window may have a border, this should be adjusted the client area fit for the specified size.
 			::RECT client;
@@ -504,7 +570,7 @@ namespace nana{
 										WS_CHILD | WS_VISIBLE | WS_TABSTOP  | WS_CLIPSIBLINGS,
 										r.x, r.y, r.width, r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
-										0, ::GetModuleHandle(0), 0);
+										0, windows_module_handle(), 0);
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
@@ -758,13 +824,17 @@ namespace nana{
 				if(show == is_window_visible(wd))
 					return;
 
+				auto misc = bedrock::instance().wd_manager().root_runtime(wd);
+
 				if(show)
 				{
+					std::size_t cmp_value = misc->x11msg.map;
+
 					::XMapWindow(disp, reinterpret_cast<Window>(wd));
 
 					//Wait for the mapping notify to update the local attribute of visibility so that
 					//the followed window_visible() call can return the updated visibility value.
-					x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::map);
+					x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::map, cmp_value);
 					
 					Window grab = restrict::spec.grab(0);
 					if(grab == reinterpret_cast<Window>(wd))
@@ -772,10 +842,12 @@ namespace nana{
 				}
 				else
 				{
+					std::size_t cmp_value = misc->x11msg.unmap;
 					::XUnmapWindow(disp, reinterpret_cast<Window>(wd));
+
 					//Wait for the mapping notify to update the local attribute of visibility so that
 					//the followed window_visible() call can return the updated visibility value.
-					x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::unmap);
+					x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::unmap, cmp_value);
 				}
 			}
 			static_cast<void>(active);	//eliminate unused parameter compiler warning.
@@ -1019,11 +1091,15 @@ namespace nana{
 				y += origin_y;
 			}
 
+			auto misc = bedrock::instance().wd_manager().root_runtime(reinterpret_cast<native_window_type>(wd));
+			std::size_t cmp_value = misc->x11msg.config;
+
 			::XMoveWindow(disp, reinterpret_cast<Window>(wd), x, y);
 
 			//Wait for the configuration notify to update the local attribute of position so that
 			//the followed window_position() call can return the updated position value.
-			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure);
+
+			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure, cmp_value);
 #endif
 		}
 
@@ -1109,6 +1185,9 @@ namespace nana{
 				y += origin_y;
 			}
 
+			auto misc = bedrock::instance().wd_manager().root_runtime(reinterpret_cast<native_window_type>(wd));
+			std::size_t cmp_value = misc->x11msg.config;
+
 			::XMoveResizeWindow(disp, reinterpret_cast<Window>(wd), x, y, r.width, r.height);
 
 			//Wait for the configuration notify to update the local attribute of position so that
@@ -1116,7 +1195,7 @@ namespace nana{
 
 			//It seems that XMoveResizeWindow doesn't need x11_wait_for. But x11_wait_for is still called
 			//to make sure the local attribute is updated.
-			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure);
+			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure, cmp_value);
 
 			return true;
 #endif
@@ -1283,11 +1362,15 @@ namespace nana{
 				hints.min_height = hints.max_height = sz.height;
 				::XSetWMNormalHints(disp, reinterpret_cast<Window>(wd), &hints);
 			}
+
+			auto misc = bedrock::instance().wd_manager().root_runtime(reinterpret_cast<native_window_type>(wd));
+			std::size_t cmp_value = misc->x11msg.config;
+
 			::XResizeWindow(disp, reinterpret_cast<Window>(wd), sz.width, sz.height);
 			
 			//It seems that XResizeWindow doesn't need x11_wait_for. But x11_wait_for is still called
 			//to make sure the local attribute is updated.
-			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure);
+			x11_wait_for(reinterpret_cast<Window>(wd), x11_wait::configure, cmp_value);
 			return true;
 #endif
 		}

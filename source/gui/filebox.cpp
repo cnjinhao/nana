@@ -1516,21 +1516,31 @@ namespace nana
 
 			path_type parent_path{ str };
 			str += (len + 1);
-
-			while(*str)
+			
+			// if only one file was selected, the ofn.lpstrFile
+			// is returning only that file, without any parent
+			if (!*str)
 			{
-				len = ::wcslen(str);
-				targets.emplace_back(parent_path / path_type{str});
-				str += (len + 1);
+				targets.emplace_back(parent_path);
+				impl_->path = parent_path.parent_path().string();
 			}
-			impl_->path = parent_path.u8string();
+			else
+			{
+				while(*str)
+				{
+					len = ::wcslen(str);
+					targets.emplace_back(parent_path / path_type{str});
+					str += (len + 1);
+				}
+				impl_->path = parent_path.string();
+			}
 		}
 		else
 		{
 			wfile.resize(std::wcslen(wfile.data()));
 
 			targets.emplace_back(wfile);
-			impl_->path = targets.front().parent_path().u8string();
+			impl_->path = targets.front().parent_path().string();
 		}
 
 #elif defined(NANA_POSIX)

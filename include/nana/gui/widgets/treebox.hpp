@@ -1,7 +1,7 @@
 /**
  *	A Tree Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE or copy at 
@@ -49,7 +49,7 @@ namespace nana
 
 			struct node_attribute
 			{
-				bool has_children;
+				bool has_children;	///< Determines whether the node has visible children
 				bool expended;
 				checkstate checked;
 				bool selected;
@@ -117,6 +117,7 @@ namespace nana
 					::std::string text;
 					nana::any value;
 					bool expanded;
+					bool hidden;
 					checkstate checked;
 					::std::string img_idstr;
 				};
@@ -217,6 +218,12 @@ namespace nana
 
 				/// Select the node, and returns itself..
 				item_proxy& select(bool);
+
+				/// Return true when the node is hidden.
+				bool hidden() const;
+
+				/// Hide the node, and returns itself.
+				item_proxy& hide(bool);
 
 				/// Return the icon.
 				const ::std::string& icon() const;
@@ -343,6 +350,7 @@ namespace nana
 				basic_event<arg_treebox> checked;  ///< a user checks or unchecks a node
 				basic_event<arg_treebox> selected; ///< a user selects or unselects a node
 				basic_event<arg_treebox> hovered;  ///< a user moves the cursor over a node
+				basic_event<arg_treebox> hidden;   ///< a user hides or shows a node
 			};
 		}//end namespace treebox
 	}//end namespace drawerbase
@@ -484,6 +492,14 @@ namespace nana
 
 		/// Gets the current hovered node.
 		item_proxy hovered(bool exclude_expander) const;
+
+
+		/// Enable/disable the interactions (selection, click, ...) on the entire line of the treebox.
+		/**
+		 * @param enable bool  whether to enable.
+		 */
+		void use_entire_line(bool enable);
+
 	private:
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
 

@@ -66,6 +66,7 @@ namespace nana
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse& arg)	override;
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
+				void key_ime(graph_reference, const arg_ime& arg) override;
 				void key_press(graph_reference, const arg_keyboard&) override;
 				void key_char(graph_reference, const arg_keyboard&) override;
 				void resized(graph_reference, const arg_resized&) override;

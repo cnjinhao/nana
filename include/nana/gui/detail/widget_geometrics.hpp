@@ -17,7 +17,8 @@
 #include <memory>
 namespace nana
 {
-	class color_proxy
+	/// a tool to share and set a color common to many uses
+    class color_proxy
 	{
 	public:
 		color_proxy(const color_proxy&);
@@ -38,6 +39,7 @@ namespace nana
 		std::shared_ptr<color> color_;
 	};//end namespace color_proxy
 
+	/// define common color and geometrical properties
 	struct widget_geometrics
 	{
 		virtual ~widget_geometrics() = default;
