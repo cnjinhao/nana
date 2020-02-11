@@ -1386,7 +1386,7 @@ namespace std
 {
 	namespace filesystem
 	{
-#if defined(_MSC_VER) && ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703))
+#if defined(_MSC_VER) && ((_MSC_VER < 1900) || ((!defined(_MSVC_LANG)) || (_MSVC_LANG < 201703)))
 
 		path absolute(const path& p)
 		{
