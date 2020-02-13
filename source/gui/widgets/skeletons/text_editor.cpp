@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -2482,10 +2482,8 @@ namespace nana {
 
 				if (coord != coord_org)
 				{
-					auto pos_x = pos.x;
 					impl_->cview->move_origin(origin - impl_->cview->origin());
 					pos = _m_coordinate_to_caret(coord, false);
-					pos.x = pos_x;
 				}
 
 				if (pos != points_.caret) {
