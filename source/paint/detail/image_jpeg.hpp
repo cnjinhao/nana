@@ -3,7 +3,7 @@
 
 #include "image_pixbuf.hpp"
 
-//Separate the libpng from the package that system provides.
+//Separate the libjpeg from the package that system provides.
 #if defined(NANA_LIBJPEG)
 	#include <nana_extrlib/jpeglib.h>
 #else
