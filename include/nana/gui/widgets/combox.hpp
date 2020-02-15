@@ -1,7 +1,7 @@
 /**
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -88,7 +88,7 @@ namespace nana
 				template<typename T>
 				T * value_ptr() const
 				{
-					return any_cast<T>(_m_anyobj(false));
+					return std::any_cast<T>(_m_anyobj(false));
 				}
 
 				template<typename T>
@@ -98,7 +98,7 @@ namespace nana
 					if (nullptr == pany)
 						throw std::runtime_error("combox::item_proxy.value<T>() is empty");
 
-					T * p = any_cast<T>(pany);
+					T * p = std::any_cast<T>(pany);
 					if (nullptr == p)
 						throw std::runtime_error("combox::item_proxy.value<T>() invalid type of value");
 					return *p;
@@ -112,12 +112,7 @@ namespace nana
 				}
 			public:
 				/// Behavior of Iterator's value_type
-#ifdef _nana_std_has_string_view
 				bool operator==(::std::string_view) const;
-#else
-				bool operator==(const ::std::string&) const;
-				bool operator==(const char*) const;
-#endif
 
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
@@ -146,7 +141,7 @@ namespace nana
 				/// Behavior of Iterator
 				bool operator!=(const item_proxy&) const;
 			private:
-				nana::any * _m_anyobj(bool alloc_if_empty) const;
+				std::any * _m_anyobj(bool alloc_if_empty) const;
 			private:
 				drawer_impl * impl_;
 				std::size_t pos_;
@@ -216,7 +211,7 @@ namespace nana
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const noexcept override;
 		void _m_caption(native_string_type&&) override;
-		nana::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
+		std::any * _m_anyobj(std::size_t pos, bool alloc_if_empty) const override;
 	};
 }
 #include <nana/pop_ignore_diagnostic>

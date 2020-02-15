@@ -61,7 +61,7 @@ namespace nana
 				refresh(graph);
 				API::dev::lazy_refresh();
 			}
-			
+
 			void mouse_leave(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
@@ -83,7 +83,7 @@ namespace nana
 			window window_handle_{nullptr};
 			std::function<void(window, paint::graphics&, mouse_action)> renderer_;
 		};
-		
+
 		class splitter
 			: public widget_object<category::widget_tag, drawer_splitter>,
 			public splitter_interface
@@ -446,12 +446,9 @@ namespace nana
 					}
 
 					auto wdg_ptr = wdg.get();
-#ifdef _nana_std_has_emplace_return_type
+
 					panels_.emplace_back().widget_ptr = std::move(wdg);
-#else
-					panels_.emplace_back();
-					panels_.back().widget_ptr.swap(wdg);
-#endif
+
 					for (auto & pn : panels_)
 					{
 						if (pn.widget_ptr)
@@ -591,7 +588,7 @@ namespace nana
 				all_edges_ = true;
 				margins_.clear();
 			}
-			
+
 			void push(const number_t& v, bool reset = false)
 			{
 				if (reset)

@@ -1,7 +1,7 @@
 /*
 *	A Menubar implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -90,19 +90,11 @@ namespace nana
 					if (shortkey && shortkey < 0x61)
 						shortkey += (0x61 - 0x41);
 
-#ifdef _nana_std_has_emplace_return_type
 					auto & last = items.emplace_back(new item_type{std::move(transformed_text), shortkey, shortkey_pos});
 					API::refresh_window(*widget_ptr);
 					return last->menu_obj;
-#else
-					items.emplace_back(new item_type{ std::move(transformed_text), shortkey, shortkey_pos });
-
-					API::refresh_window(*widget_ptr);
-
-					return this->items.back()->menu_obj;
-#endif
 				}
-				
+
 				bool cancel()
 				{
 					if (nana::npos == state.active)
@@ -339,7 +331,7 @@ namespace nana
 
 				void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 				{
-					
+
 					if (arg.pos != ess_->state.mouse_pos)
 						ess_->state.nullify_mouse = false;
 
@@ -651,7 +643,7 @@ namespace nana
 		{
 			return get_drawer_trigger().ess().items.size();
 		}
-		
+
 		void menubar::clear()
 		{
 			internal_scope_guard lock;

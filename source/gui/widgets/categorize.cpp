@@ -1,7 +1,7 @@
 /**
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -25,7 +25,7 @@ namespace nana
 		{
 			struct event_agent_holder
 			{
-				std::function<void(nana::any&)> selected;
+				std::function<void(std::any&)> selected;
 			};
 
 			struct item
@@ -54,7 +54,7 @@ namespace nana
 			{
 				nana::size	scale;
 				unsigned	pixels;
-				nana::any	value;
+				std::any	value;
 			};
 
 			//class renderer
@@ -295,7 +295,7 @@ namespace nana
 					cur_ = node;
 				}
 
-				void insert(const std::string& name, const nana::any& value)
+				void insert(const std::string& name, const std::any& value)
 				{
 					item_tag m;
 					m.pixels = 0;
@@ -303,7 +303,7 @@ namespace nana
 					cur_ = tree_.insert(cur_, name, m);
 				}
 
-				bool childset(const std::string& name, const nana::any& value)
+				bool childset(const std::string& name, const std::any& value)
 				{
 					if(cur_)
 					{
@@ -783,7 +783,7 @@ namespace nana
 					delete scheme_;
 				}
 
-				void trigger::insert(const std::string& str, nana::any value)
+				void trigger::insert(const std::string& str, std::any value)
 				{
 					throw_not_utf8(str);
 					scheme_->tree().insert(str, value);
@@ -791,7 +791,7 @@ namespace nana
 					API::refresh_window(this->scheme_->window_handle());
 				}
 
-				bool trigger::childset(const std::string& str, nana::any value)
+				bool trigger::childset(const std::string& str, std::any value)
 				{
 					if(scheme_->tree().childset(str, value))
 					{
@@ -841,7 +841,7 @@ namespace nana
 					return scheme_->tree().path();
 				}
 
-				nana::any& trigger::value() const
+				std::any& trigger::value() const
 				{
 					auto node = scheme_->tree().cur();
 					if(node)
@@ -853,7 +853,7 @@ namespace nana
 				void trigger::_m_event_agent_ready() const
 				{
 					auto evt_agent = event_agent_.get();
-					scheme_->evt_holder().selected = [evt_agent](::nana::any& val){
+					scheme_->evt_holder().selected = [evt_agent](std::any& val){
 						evt_agent->selected(val);
 					};
 				}

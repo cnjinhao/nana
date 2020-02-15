@@ -20,11 +20,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#if defined(STD_THREAD_NOT_SUPPORTED)
-#include <nana/std_mutex.hpp>
-#else
 #include <mutex>
-#endif
 
 #include "../detail/platform_spec_selector.hpp"
 

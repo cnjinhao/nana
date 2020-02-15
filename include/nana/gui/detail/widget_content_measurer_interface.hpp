@@ -1,7 +1,7 @@
 /*
 *	Widget Content Measurer Interface
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -14,8 +14,8 @@
 #define NANA_WIDGET_CONTENT_MEASURER_INTERFACE_HEADER_INCLUDED
 
 #include <nana/basic_types.hpp>
-#include <nana/optional.hpp>
 #include <nana/paint/graphics.hpp>
+#include <optional>
 
 namespace nana
 {

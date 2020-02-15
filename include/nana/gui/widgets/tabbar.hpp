@@ -1,7 +1,7 @@
 /**
  *	A Tabbar implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,7 +17,7 @@
 
 #include "widget.hpp"
 #include <nana/pat/cloneable.hpp>
-#include <nana/any.hpp>
+#include <any>
 
 namespace nana
 {
@@ -216,12 +216,12 @@ namespace nana
 				~trigger();
 				void activate(std::size_t);
 				std::size_t activated() const;
-				nana::any& at(std::size_t) const;
-				nana::any& at_no_bound_check(std::size_t) const;
+				std::any& at(std::size_t) const;
+				std::any& at_no_bound_check(std::size_t) const;
 				const pat::cloneable<item_renderer> & ext_renderer() const;
 				void ext_renderer(const pat::cloneable<item_renderer>&);
 				void set_event_agent(event_agent_interface*);
-				void insert(std::size_t, native_string_type&&, nana::any&&);
+				void insert(std::size_t, native_string_type&&, std::any&&);
 				std::size_t length() const;
 				bool close_fly(bool);
 				window attach(std::size_t, window, bool drop_other);
@@ -280,7 +280,7 @@ namespace nana
 
 		value_type & operator[](std::size_t pos) const
 		{
-			return any_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
+			return std::any_cast<value_type&>(this->get_drawer_trigger().at_no_bound_check(pos));
 		}
 
 		void activated(std::size_t pos)                  /// Activates a tab specified by pos.
@@ -295,7 +295,7 @@ namespace nana
 
 		value_type const & at(std::size_t pos) const        /// Returns pos'th element
 		{
-			return any_cast<value_type&>(this->get_drawer_trigger().at(pos));
+			return std::any_cast<value_type&>(this->get_drawer_trigger().at(pos));
 		}
 
 		void close_fly(bool fly)                    /// Draw or not a close button in each tab.
@@ -468,8 +468,8 @@ namespace nana
 		void attach(std::size_t pos, window);
 		window attach(std::size_t pos) const;
 
-		void push_back(std::string text, ::nana::any par = {});
-		void push_front(std::string text, ::nana::any par = {});
+		void push_back(std::string text, std::any par = {});
+		void push_front(std::string text, std::any par = {});
 
 		std::size_t selected() const;
 		void erase(std::size_t pos, bool close_attached = true);

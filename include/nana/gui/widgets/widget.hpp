@@ -59,6 +59,9 @@ namespace nana
 		native_string_type caption_native() const noexcept;
 
 		widget& caption(std::string utf8);
+#ifdef __cpp_char8_t
+		widget& caption(std::u8string_view text);
+#endif
 		widget& caption(std::wstring);
 
 		template<typename ...Args>

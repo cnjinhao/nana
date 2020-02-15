@@ -63,7 +63,7 @@ namespace nana
 					: std::invalid_argument{ what + " from tokenizer "  },
 					  pos{tok.pos()},
 					  div_str(tok.divstr_)
-				{}	
+				{}
 				std::string::size_type pos;
 				std::string            div_str;
 		    };
@@ -153,8 +153,8 @@ namespace nana
 							sp_ = _m_eat_whitespace(sp_);
 							auto tk = read();   // try ??
 
-							if (   token::number   != tk 
-								&& token::variable != tk 
+							if (   token::number   != tk
+								&& token::variable != tk
 								&& token::repeated != tk)
 
 								throw error("invalid array element. Expected a number, variable or repaet", *this);
@@ -253,10 +253,10 @@ namespace nana
 
 					idstr_.assign(idstart, sp_);
 
-					if (    "weight" == idstr_ 
-					     || "min" == idstr_ 
+					if (    "weight" == idstr_
+					     || "min" == idstr_
 					     || "max" == idstr_
-					     || "width" == idstr_ 
+					     || "width" == idstr_
 					     || "height" == idstr_
 						)
 					{
@@ -455,7 +455,7 @@ namespace nana
 					sp = _m_eat_whitespace(sp);
 					if ('%' != *sp)
 						return sp - allstart;
-					
+
 					switch (number_.kind_of())
 					{
 					case number_t::kind::integer:
@@ -474,7 +474,7 @@ namespace nana
 				return 0;
 			}
 		private:
-			const char* divstr_{};   
+			const char* divstr_{};
 			const char* sp_{};
 			std::string idstr_;
 			number_t number_;
@@ -493,7 +493,7 @@ namespace nana
 	{
 		return (vert ? pos.y : pos.x);
 	}
-	
+
 	static bool is_idchar(int ch) noexcept
 	{
 		return ('_' == ch || std::isalnum(ch));
@@ -729,7 +729,7 @@ namespace nana
 				throw place::error("Failed to insert a window which is not a child of the place-binded window", *place_ptr_);
 
 			//Listen to destroy of a window
-			//It will delete the element and recollocate when the window destroyed.	
+			//It will delete the element and recollocate when the window destroyed.
 			auto evt = API::events(wd).destroy.connect([this, to_fasten](const arg_destroy& arg)
 			{
 				if (!to_fasten)
@@ -771,14 +771,9 @@ namespace nana
 
 		void _m_add_agent(const detail::place_agent& ag) override
 		{
-#ifdef _nana_std_has_emplace_return_type
 			this->operator<<(
 					widgets_.emplace_back(ag.create(place_ptr_->window_handle()))->handle()
 				);
-#else
-			widgets_.emplace_back(ag.create(place_ptr_->window_handle()));
-			this->operator<<(widgets_.back()->handle());
-#endif
 		}
 	public:
 		division* attached{ nullptr };
@@ -874,7 +869,7 @@ namespace nana
 						floor.second += child_floor.second;
 					}
 				}
-				
+
 				auto const vert_fields = (kind::vertical_arrange == this->kind_of_division);
 				auto const vert_div = (this->div_owner && (kind::vertical_arrange == this->div_owner->kind_of_division));
 				double& fv = (vert_div ? floor.second : floor.first);
@@ -967,7 +962,7 @@ namespace nana
 					if (margin_per < 1)
 						floor.first /= (1 - margin_per);
 				}
-				
+
 				if (!this->weight.empty())
 				{
 					if (!this->is_percent())
@@ -982,7 +977,7 @@ namespace nana
 					this->weight.assign(static_cast<int>(fv));
 
 				run_.weight_floor = floor;
-				
+
 			}
 
 			return floor;
@@ -1457,7 +1452,7 @@ namespace nana
 				if(!child->min_px.empty() || (weight_floor > 0))
 				{
 					sum_min_px += min_px;
-					++min_count;					
+					++min_count;
 				}
 
 				if (!child->max_px.empty())
@@ -1803,7 +1798,7 @@ namespace nana
 
 						left_pixels_ = area_left.*px_ptr;
 						right_pixels_ = area_right.*px_ptr;
-						
+
 						grabbed_ = true;
 					}
 					else if(event_code::mouse_up == arg.evt_code)
@@ -1815,7 +1810,7 @@ namespace nana
 					{
 						if(!grabbed_)
 							return;
-							
+
 						auto const vert = (::nana::cursor::size_we != splitter_cursor_);
 						auto const delta = horz_point(vert, splitter_.pos() - begin_point_);
 
@@ -1945,7 +1940,7 @@ namespace nana
 					endpos = div.find_first_of("<>", off);
 					if (div.npos == endpos)
 						return;
-					
+
 					if ('<' == div[endpos])
 					{
 						++depth;
@@ -2073,7 +2068,7 @@ namespace nana
 
 			if (!leaf_left->min_px.empty())
 				pos += static_cast<int>(leaf_left->min_px.get_value(area.w()));
-	
+
 			if (!leaf_left->max_px.empty())
 				endpos = left_base + static_cast<int>(leaf_left->max_px.get_value(area.w()));
 
@@ -2735,7 +2730,7 @@ namespace nana
 		throw place_parts::tokenizer::error("the type of the " + std::string{pos_strs[pos]} +" parameter for collapse should be integer.", tknizer);
 	}
 
-	//implicitly_started indicates whether the field in div-text starts without < mark. 
+	//implicitly_started indicates whether the field in div-text starts without < mark.
 	//ignore_duplicate A field is allowed to have same name if its has an ancestor which name is same with ignore_duplicate.
 	auto place::implement::scan_div(place_parts::tokenizer& tknizer, bool implicitly_started, const std::string& ignore_duplicate) -> std::unique_ptr<division>
 	{
@@ -3050,7 +3045,7 @@ namespace nana
 			{
 				//Replaces the previous div with the new div which is allowed to have a same name.
 
-				//Detaches the field from the previous div. 
+				//Detaches the field from the previous div.
 				if (attached_field->attached)
 					attached_field->attached->field = nullptr;
 
@@ -3344,7 +3339,7 @@ namespace nana
 		auto div_ptr = impl_->search_div_name(impl_->root_division.get(), name);
 		if (!div_ptr)
 		   throw error("modify(): field was not found", *this, name);
-		
+
 
 		std::unique_ptr<implement::division>* replaced = nullptr;
 
@@ -3398,10 +3393,10 @@ namespace nana
 				}
 			}
 		}
-		catch (place::error & ) 
+		catch (place::error & )
 		{
 			replaced->swap(impl_->tmp_replaced);
-			throw; 
+			throw;
 		}
 		catch (place::implement::error & e)
 		{
@@ -3668,16 +3663,16 @@ namespace nana
 
 		return nullptr;
 	}
-	
+
 	place::error::error(const std::string& what,
 						const place& plc,
 						std::string field,
 						std::string::size_type pos)
 
-		: std::invalid_argument(  "from widget '" 
+		: std::invalid_argument(  "from widget '"
 		                        + API::window_caption(plc.window_handle()).substr(0,80)
 								+ "'; nana::place error "
-		                        + what 
+		                        + what
 		                        + "' in field '" + field
 								+ (pos == std::string::npos ? "' " : "' at position " + std::to_string(pos))
 								+ " in div_text:\n" + plc.div() ),

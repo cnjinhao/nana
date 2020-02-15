@@ -605,7 +605,7 @@ namespace nana
 				{
 					auto const item_px = data.comp_placer->item_height(*data.graph);
 					auto screen_px = data.graph->size().height - (margin_top_bottom() << 1);
-					
+
 					if (completed || ((screen_px % item_px) == 0))
 						return screen_px / item_px;
 
@@ -1020,9 +1020,9 @@ namespace nana
 					if(text_r.right() > visible_w_pixels())
 					{
 						node_state.tooltip = new tooltip_window(data.widget_ptr->handle(), text_r);
-						
+
 						//PR#406 Error Flynn's contribution
-						//fix: tooltip window doesn't have tree scheme & typeface 
+						//fix: tooltip window doesn't have tree scheme & typeface
 						API::dev::set_scheme(node_state.tooltip->handle(), API::dev::get_scheme(data.widget_ptr->handle()));
 						node_state.tooltip->typeface(data.widget_ptr->typeface());
 
@@ -1389,12 +1389,12 @@ namespace nana
 					return !(this->operator==(rhs));
 				}
 
-				nana::any& item_proxy::_m_value()
+				std::any& item_proxy::_m_value()
 				{
 					return node_->value.second.value;
 				}
 
-				const nana::any& item_proxy::_m_value() const
+				const std::any& item_proxy::_m_value() const
 				{
 					return node_->value.second.value;
 				}
@@ -1612,7 +1612,7 @@ namespace nana
 							img = &(item_attr.icon_expanded);
 						else if (item_attr.mouse_pointed)
 							img = &(item_attr.icon_hover);
-			
+
 						if((nullptr == img) || img->empty())
 							img = &(item_attr.icon_normal);
 
@@ -1736,11 +1736,11 @@ namespace nana
 			//class trigger
 				//struct treebox_node_type
 					trigger::treebox_node_type::treebox_node_type()
-						:expanded(false), checked(checkstate::unchecked), hidden(false)
+						:expanded(false), hidden(false), checked(checkstate::unchecked)
 					{}
 
 					trigger::treebox_node_type::treebox_node_type(std::string text)
-						:text(std::move(text)), expanded(false), checked(checkstate::unchecked), hidden(false)
+						:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked)
 					{}
 
 					trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)

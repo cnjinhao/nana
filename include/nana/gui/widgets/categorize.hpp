@@ -1,7 +1,7 @@
 /**
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -15,8 +15,8 @@
 
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/pat/cloneable.hpp>
-#include <nana/any.hpp>
 #include <nana/push_ignore_diagnostic>
+#include <any>
 
 namespace nana
 {
@@ -49,7 +49,7 @@ namespace nana
 			{
 			public:
 				virtual ~event_agent_interface(){}
-				virtual void selected(::nana::any&) = 0;
+				virtual void selected(::std::any&) = 0;
 			};
 
 			template<typename T>
@@ -61,9 +61,9 @@ namespace nana
 					: widget_(wdg)
 				{}
 
-				void selected(::nana::any & var)
+				void selected(::std::any & var)
 				{
-					auto vp = any_cast<T>(&var);
+					auto vp = std::any_cast<T>(&var);
 
 					T null_val;
 					arg_categorize<T> arg(widget_, vp ? *vp : null_val);
@@ -109,9 +109,9 @@ namespace nana
 				trigger();
 				~trigger();
 
-				void insert(const ::std::string&, nana::any);
-				bool childset(const ::std::string&, nana::any);
-				bool childset_erase(const ::std::string&);
+				void insert(const std::string&, std::any);
+				bool childset(const std::string&, std::any);
+				bool childset_erase(const std::string&);
 				bool clear();
 
 				//splitstr
@@ -129,7 +129,7 @@ namespace nana
 					_m_event_agent_ready();
 				}
 
-				nana::any & value() const;
+				std::any & value() const;
 			private:
 				void _m_event_agent_ready() const;
 			private:

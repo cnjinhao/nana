@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -822,12 +822,7 @@ namespace nana {
 							if (str_w > pixels)	//Indicates the splitting of ts string
 							{
 								std::size_t len = ts.end - ts.begin;
-#ifdef _nana_std_has_string_view
 								auto pxbuf = editor_.graph_.glyph_pixels({ ts.begin, len });
-#else
-								std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
-								editor_.graph_.glyph_pixels(ts.begin, len, pxbuf.get());
-#endif
 
 								auto pxptr = pxbuf.get();
 								auto pxend = pxptr + len;
@@ -992,12 +987,8 @@ namespace nana {
 							auto ki = keywords.schemes.find(ds.scheme);
 							if ((ki != keywords.schemes.end()) && ki->second)
 							{
-#ifdef _nana_std_has_emplace_return_type
 								auto & last = entities.emplace_back();
-#else
-								entities.emplace_back();
-								auto & last = entities.back();
-#endif
+
 								last.begin = c_str + pos;
 								last.end = last.begin + ds.text.size();
 								last.scheme = ki->second.get();
@@ -3207,11 +3198,8 @@ namespace nana {
 					maskstr.append(n, mask_char_);
 					return graph_.text_extent_size(maskstr);
 				}
-#ifdef _nana_std_has_string_view
+
 				return graph_.text_extent_size(std::basic_string_view<char_type>(str, n));
-#else
-				return graph_.text_extent_size(str, static_cast<unsigned>(n));
-#endif
 			}
 
 			bool text_editor::_m_adjust_view()
@@ -3365,21 +3353,11 @@ namespace nana {
 
 			void text_editor::_m_draw_parse_string(const keyword_parser& parser, bool rtl, ::nana::point pos, const ::nana::color& fgcolor, const wchar_t* str, std::size_t len) const
 			{
-#ifdef _nana_std_has_string_view
 				graph_.string(pos, { str, len }, fgcolor);
-#else
-				graph_.palette(true, fgcolor);
-				graph_.string(pos, str, len);
-#endif
 				if (parser.entities().empty())
 					return;
 
-#ifdef _nana_std_has_string_view
 				auto glyph_px = graph_.glyph_pixels({ str, len });
-#else
-				std::unique_ptr<unsigned[]> glyph_px(new unsigned[len]);
-				graph_.glyph_pixels(str, len, glyph_px.get());
-#endif
 				auto glyphs = glyph_px.get();
 
 				auto px_h = line_height();
@@ -3418,7 +3396,6 @@ namespace nana {
 
 						ent_pos.x = pos.x + ent_off;
 
-#ifdef _nana_std_has_string_view
 						std::wstring_view ent_sv;
 						if (rtl)
 						{
@@ -3431,18 +3408,7 @@ namespace nana {
 							ent_off = 0;
 						}
 						canvas.string({}, ent_sv);
-#else
-						if (rtl)
-						{
-							//draw the whole text if it is a RTL text, because Arabic language is transformable.
-							canvas.string({}, str, len);
-						}
-						else
-						{
-							canvas.string({}, ent_begin, ent_end - ent_begin);
-							ent_off = 0;
-						}
-#endif
+
 						graph_.bitblt(rectangle{ ent_pos, size{ ent_pixels, canvas.height() } }, canvas, point{ ent_off, 0 });
 					}
 				}
@@ -3468,19 +3434,10 @@ namespace nana {
 
 				void write_selection(const point& text_pos, unsigned text_px, const wchar_t* text, std::size_t len, bool has_focused)
 				{
-#ifdef _nana_std_has_string_view
 					graph_.rectangle(::nana::rectangle{ text_pos,{ text_px, line_px_ } }, true,
 						selection_color(false, has_focused));
 
 					graph_.string(text_pos, { text, len }, selection_color(true, has_focused));
-#else
-					graph_.palette(true, selection_color(true, has_focused));
-
-					graph_.rectangle(::nana::rectangle{ text_pos,{ text_px, line_px_ } }, true,
-						selection_color(false, has_focused));
-
-					graph_.string(text_pos, text, len);
-#endif
 				}
 
 				void rtl_string(point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected, bool has_focused)
@@ -3494,12 +3451,7 @@ namespace nana {
 
 					int sel_xpos = static_cast<int>(str_px - (glyph_front + glyph_selected));
 
-#ifdef _nana_std_has_string_view
 					graph.string({ -sel_xpos, 0 }, { str, len }, selection_color(true, has_focused));
-#else
-					graph.palette(true, selection_color(true, has_focused));
-					graph.string({ -sel_xpos, 0 }, str, len);
-#endif
 					graph_.bitblt(nana::rectangle(strpos.x + sel_xpos, strpos.y, glyph_selected, line_px_), graph);
 				};
 			private:
@@ -3596,11 +3548,7 @@ namespace nana {
 					{
 						std::size_t len = ent.end - ent.begin;
 
-#ifdef _nana_std_has_string_view
 						unsigned str_w = graph_.text_extent_size(std::wstring_view{ ent.begin, len }).width;
-#else
-						unsigned str_w = graph_.text_extent_size(ent.begin, len).width;
-#endif
 
 						if ((text_draw_pos.x + static_cast<int>(str_w) > text_area_.area.x) && (text_draw_pos.x < text_right))
 						{
@@ -3619,11 +3567,7 @@ namespace nana {
 					for (auto & ent : reordered)
 					{
 						const auto len = ent.end - ent.begin;
-#ifdef _nana_std_has_string_view
 						auto ent_px = graph_.text_extent_size(std::wstring_view(ent.begin, len)).width;
-#else
-						auto ent_px = graph_.text_extent_size(ent.begin, len).width;
-#endif
 
 						extra_space = false;
 
@@ -3652,12 +3596,7 @@ namespace nana {
 								unsigned select_pos = static_cast<unsigned>(ent_sbegin != ent.begin ? ent_sbegin - ent.begin : 0);
 								unsigned select_len = static_cast<unsigned>(ent_send - ent_sbegin);
 
-#ifdef _nana_std_has_string_view
 								auto pxbuf = graph_.glyph_pixels({ ent.begin, static_cast<std::size_t>(len) });
-#else
-								std::unique_ptr<unsigned[]> pxbuf{ new unsigned[len] };
-								graph_.glyph_pixels(ent.begin, len, pxbuf.get());
-#endif
 
 								auto head_px = std::accumulate(pxbuf.get(), pxbuf.get() + select_pos, unsigned{});
 								auto select_px = std::accumulate(pxbuf.get() + select_pos, pxbuf.get() + select_pos + select_len, unsigned{});
@@ -3697,11 +3636,7 @@ namespace nana {
 					auto pos = text_coord.x + text_len;
 					if (b.x != pos || text_coord.y != b.y)
 					{
-#ifdef _nana_std_has_string_view
 						auto whitespace_w = graph_.text_extent_size(std::wstring_view{ L" ", 1 }).width;
-#else
-						auto whitespace_w = graph_.text_extent_size(L" ", 1).width;
-#endif
 						graph_.rectangle(::nana::rectangle{ text_draw_pos,{ whitespace_w, line_h_pixels } }, true);
 					}
 				}
@@ -3729,13 +3664,9 @@ namespace nana {
 			unsigned text_editor::_m_char_by_pixels(const unicode_bidi::entity& ent, unsigned pos) const
 			{
 				auto len = static_cast<std::size_t>(ent.end - ent.begin);
-#ifdef _nana_std_has_string_view
+
 				auto pxbuf = graph_.glyph_pixels({ ent.begin, len });
 				if (pxbuf)
-#else
-				std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
-				if (graph_.glyph_pixels(ent.begin, len, pxbuf.get()))
-#endif
 				{
 					const auto px_end = pxbuf.get() + len;
 
@@ -3793,12 +3724,7 @@ namespace nana {
 						{
 							//Characters of some bidi languages may transform in a word.
 							//RTL
-#ifdef _nana_std_has_string_view
 							auto pxbuf = graph_.glyph_pixels({ ent.begin, len });
-#else
-							std::unique_ptr<unsigned[]> pxbuf(new unsigned[len]);
-							graph_.glyph_pixels(ent.begin, len, pxbuf.get());
-#endif
 							return std::accumulate(pxbuf.get() + (target - ent.begin), pxbuf.get() + len, text_w);
 						}
 						//LTR

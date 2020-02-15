@@ -17,13 +17,10 @@
 
 #include "../basic_types.hpp"
 #include "../gui/basis.hpp"
-#include <nana/filesystem/filesystem.hpp>
-
+#include <filesystem>
+#include <string_view>
 #include "detail/ptdefs.hpp"
 
-#ifdef _nana_std_has_string_view
-#include <string_view>
-#endif
 
 namespace nana
 {
@@ -113,7 +110,6 @@ namespace nana
 			void typeface(const font&);						///< Selects a specified font type into the graphics object.
 			font typeface() const;
 
-#ifdef _nana_std_has_string_view
 			::nana::size text_extent_size(std::string_view text) const;
 			::nana::size text_extent_size(std::wstring_view text) const;
 
@@ -129,23 +125,6 @@ namespace nana
 
 			::nana::size	bidi_extent_size(std::string_view utf8_text) const;
 			::nana::size	bidi_extent_size(std::wstring_view text) const;
-#else
-			::nana::size	text_extent_size(const ::std::string&) const;
-			::nana::size	text_extent_size(const char*, std::size_t len) const;
-
-			::nana::size	text_extent_size(const wchar_t*) const;    ///< Computes the width and height of the specified string of text.
-			::nana::size	text_extent_size(const ::std::wstring&) const;    ///< Computes the width and height of the specified string of text.
-			::nana::size	text_extent_size(const wchar_t*, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-			::nana::size	text_extent_size(const ::std::wstring&, std::size_t length) const;    ///< Computes the width and height of the specified string of text with the specified length.
-
-			::nana::size	glyph_extent_size(const wchar_t*, std::size_t length, std::size_t begin, std::size_t end) const;
-			::nana::size	glyph_extent_size(const ::std::wstring&, std::size_t length, std::size_t begin, std::size_t end) const;
-
-			bool glyph_pixels(const wchar_t *, std::size_t length, unsigned* pxbuf) const;
-
-			::nana::size	bidi_extent_size(const std::wstring&) const;
-			::nana::size	bidi_extent_size(const std::string&) const;
-#endif
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
 
@@ -191,7 +170,6 @@ namespace nana
 			void set_pixel(int x, int y, const ::nana::color&);
 			void set_pixel(int x, int y);
 
-#ifdef _nana_std_has_string_view
 			unsigned bidi_string(const point&, std::string_view utf8str);
 			unsigned bidi_string(const point& pos, std::wstring_view str);
 
@@ -200,18 +178,6 @@ namespace nana
 
 			void string(const point&, std::wstring_view str);
 			void string(const point&, std::wstring_view str, const nana::color&);
-#else
-			unsigned bidi_string(const nana::point&, const wchar_t *, std::size_t len);
-			unsigned bidi_string(const point& pos, const char*, std::size_t len);
-
-			void string(const point&, const std::string& text_utf8);
-			void string(const point&, const std::string& text_utf8, const color&);
-
-			void string(point, const wchar_t*, std::size_t len);
-			void string(const point&, const wchar_t*);
-			void string(const point&, const ::std::wstring&);
-			void string(const point&, const ::std::wstring&, const color&);
-#endif
 
 			void line(const point&, const point&);
 			void line(const point&, const point&, const color&);

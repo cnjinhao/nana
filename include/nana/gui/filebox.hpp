@@ -15,7 +15,7 @@
 #ifndef NANA_GUI_FILEBOX_HPP
 #define NANA_GUI_FILEBOX_HPP
 #include <nana/gui/basis.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <filesystem>
 #include <vector>
 #include <utility>
 

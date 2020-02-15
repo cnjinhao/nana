@@ -16,14 +16,7 @@
 #include <nana/gui/programming_interface.hpp>
 #include <unordered_map>
 #include <fstream>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-#include <nana/std_mutex.hpp>
-#else
 #include <mutex>
-#endif
-
-
 #include <map>
 
 namespace nana

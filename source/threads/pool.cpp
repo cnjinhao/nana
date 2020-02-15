@@ -16,15 +16,8 @@
 #include <deque>
 #include <vector>
 #include <atomic>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-    #include <nana/std_mutex.hpp>
-    #include <nana/std_condition_variable.hpp>
-
-#else
-    #include <condition_variable>
-    #include <mutex>
-#endif
+#include <condition_variable>
+#include <mutex>
 
 #if defined(NANA_WINDOWS)
 	#include <windows.h>
@@ -352,17 +345,10 @@ namespace threads
 			}container_;
 		};//end class impl
 
-#ifndef STD_THREAD_NOT_SUPPORTED
 		pool::pool(unsigned thread_number)
 			: impl_(new impl(thread_number ? thread_number : std::thread::hardware_concurrency()))
 		{
 		}
-#else
-		pool::pool(unsigned thread_number)
-			: impl_(new impl(0))
-		{
-		}
-#endif
 
 		pool::pool(pool&& other)
 			: pool()

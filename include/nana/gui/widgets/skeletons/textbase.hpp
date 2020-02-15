@@ -18,7 +18,7 @@
 #include <nana/charset.hpp>
 #include <nana/basic_types.hpp>
 #include <nana/traits.hpp>
-#include <nana/filesystem/filesystem.hpp>
+#include <filesystem>
 
 #include "textbase_export_interface.hpp"
 

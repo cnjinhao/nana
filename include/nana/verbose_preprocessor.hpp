@@ -1,7 +1,7 @@
 /**
  *	Nana Verbose preprocessor
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -72,44 +72,6 @@
 	#pragma message (  SHOW_VALUE(__GLIBCXX__)  )
 
     #pragma message ( "\n -----> STD:  " )
-	#pragma message (  SHOW_VALUE(STD_CODECVT_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(STD_THREAD_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(STD_NUMERIC_CONVERSIONS_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(STD_TO_STRING_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(STD_TO_WSTRING_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(USE_github_com_meganz_mingw_std_threads)  )
-	#pragma message (  SHOW_VALUE(NANA_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ)  )
-	#pragma message (  SHOW_VALUE(STD_THREAD_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(_nana_std_put_time)  )
-	#pragma message (  SHOW_VALUE(STD_MAKE_UNIQUE_NOT_SUPPORTED)  )
-
-	#pragma message (  SHOW_VALUE(STD_FILESYSTEM_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(BOOST_FILESYSTEM_AVAILABLE)  )
-	#pragma message (  SHOW_VALUE(BOOST_FILESYSTEM_FORCE)  )
-	#pragma message (  SHOW_VALUE(STD_FILESYSTEM_FORCE)  )
-	#pragma message (  SHOW_VALUE(NANA_FILESYSTEM_FORCE)  )
-	#pragma message (  SHOW_VALUE(CXX_NO_INLINE_NAMESPACE)  )
-	//#pragma message (  SHOW_VALUE(__has_include)  )
-	#pragma message (  SHOW_VALUE(__cpp_lib_experimental_filesystem)  )
-	#pragma message (  SHOW_VALUE(NANA_USING_NANA_FILESYSTEM)  )
-	#pragma message (  SHOW_VALUE(NANA_USING_STD_FILESYSTEM)  )
-	#pragma message (  SHOW_VALUE(NANA_USING_BOOST_FILESYSTEM)  )
-
-    #pragma message ( "\n#include <nana/filesystem/filesystem.hpp> " )
-    #include <nana/filesystem/filesystem.hpp>
-
-	#pragma message (  SHOW_VALUE(STD_MAKE_UNIQUE_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(STD_FILESYSTEM_NOT_SUPPORTED)  )
-	#pragma message (  SHOW_VALUE(BOOST_FILESYSTEM_AVAILABLE)  )
-	#pragma message (  SHOW_VALUE(BOOST_FILESYSTEM_FORCE)  )
-	#pragma message (  SHOW_VALUE(STD_FILESYSTEM_FORCE)  )
-	#pragma message (  SHOW_VALUE(NANA_FILESYSTEM_FORCE)  )
-	#pragma message (  SHOW_VALUE(CXX_NO_INLINE_NAMESPACE)  )
-	//#pragma message (  SHOW_VALUE(__has_include)  )
-	#pragma message (  SHOW_VALUE(__cpp_lib_experimental_filesystem)  )
-	#pragma message (  SHOW_VALUE(NANA_USING_NANA_FILESYSTEM)  )
-	#pragma message (  SHOW_VALUE(NANA_USING_STD_FILESYSTEM)  )
-	#pragma message (  SHOW_VALUE(NANA_USING_BOOST_FILESYSTEM)  )
 
 	#pragma message (  SHOW_VALUE(NANA_UNICODE)  )
 	#pragma message (  SHOW_VALUE(_UNICODE)  )

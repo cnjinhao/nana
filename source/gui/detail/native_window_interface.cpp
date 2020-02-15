@@ -17,11 +17,7 @@
 #include <nana/gui/detail/window_manager.hpp>
 
 #if defined(NANA_WINDOWS)
-#	if defined(STD_THREAD_NOT_SUPPORTED)
-#		include <nana/std_mutex.hpp>
-#	else
-#		include <mutex>
-#	endif
+#	include <mutex>
 #	include <map>
 #elif defined(NANA_X11)
 #	include <nana/system/platform.hpp>

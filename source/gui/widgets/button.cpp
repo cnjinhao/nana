@@ -263,11 +263,7 @@ namespace nana{	namespace drawerbase
 					if (attr_.omitted)
 						tr.render(pos, txtptr, txtlen, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 					else
-#ifdef _nana_std_has_string_view
 						graph.bidi_string(pos, { txtptr, txtlen });
-#else
-						graph.bidi_string(pos, txtptr, txtlen);
-#endif
 
 					API::dev::draw_shortkey_underline(graph, mbstr, shortkey, shortkey_pos, pos, text_color);
 				}
@@ -282,15 +278,9 @@ namespace nana{	namespace drawerbase
 					}
 					else
 					{
-#ifdef _nana_std_has_string_view
 						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, { txtptr, txtlen });
 						graph.palette(true, color{ colors::gray });
 						graph.bidi_string(pos, { txtptr, txtlen });
-#else
-						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen);
-						graph.palette(true, color{ colors::gray });
-						graph.bidi_string(pos, txtptr, txtlen);
-#endif
 					}
 				}
 			}

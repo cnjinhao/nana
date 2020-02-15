@@ -119,7 +119,7 @@ namespace nana
 			auto endpos = css_color.find_first_not_of("0123456789abcdefABCDEF", pos + 1);
 			if (endpos == css_color.npos)
 				endpos = static_cast<decltype(endpos)>(css_color.size());
-			
+
 			if ((endpos - pos != 4) && (endpos - pos != 7))
 				throw std::invalid_argument(excpt_what);
 
@@ -184,14 +184,9 @@ namespace nana
 
 			if (i == end)
 				throw std::invalid_argument(excpt_what);
-			
+
 			std::vector<std::string> rgb;
-#ifdef _nana_std_has_emplace_return_type
 			auto const is_real = (rgb.emplace_back(i->str()).back() == '%');
-#else
-			rgb.emplace_back(i->str());
-			const bool is_real = (rgb.back().back() == '%');
-#endif
 			pat.assign(is_real ? "(\\d*\\.)?\\d+\\%" : "\\d+");
 
 			for (++i; i != end; ++i)
@@ -277,13 +272,7 @@ namespace nana
 		{
 			std::vector<std::string> rgb;
 
-#ifdef _nana_std_has_emplace_return_type
 			auto const is_real = (rgb.emplace_back(std::move(str)).back() == '%');
-#else
-			rgb.emplace_back(std::move(str));
-
-			const bool is_real = (rgb.back().back() == '%');
-#endif
 
 			for (int i = 0; i < 2; ++i)
 			{

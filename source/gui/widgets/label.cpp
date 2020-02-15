@@ -87,7 +87,7 @@ namespace nana
 				{
 					if (fm == format_enabled_)
 						return false;
-					
+
 					format_enabled_ = fm;
 					return true;
 				}
@@ -169,12 +169,8 @@ namespace nana
 				{
 					if(fbp->target.size() || fbp->url.size())
 					{
-#ifdef _nana_std_has_emplace_return_type
 						auto & tr = traceable_.emplace_back();
-#else
-						traceable_.emplace_back();
-						auto & tr = traceable_.back();
-#endif
+
 						tr.r.x = x;
 						tr.r.y = y;
 						tr.r.dimension(sz);
@@ -333,12 +329,8 @@ namespace nana
 					if (line.empty())
 					{
 						//Insert an empty visual line for empty content.
-#ifdef _nana_std_has_emplace_return_type
 						auto & vsline = rs.vslines.emplace_back();
-#else
-						rs.vslines.emplace_back();
-						auto & vsline = rs.vslines.back();
-#endif
+
 						vsline.baseline = 0;
 						vsline.extent_height_px = def_line_px;
 						vsline.x_base = 0;
@@ -400,12 +392,8 @@ namespace nana
 						//make a visual line for existing vsline elements
 						if (text_pos)
 						{
-#ifdef _nana_std_has_emplace_return_type
 							auto & vsline = rs.vslines.emplace_back();
-#else
-							rs.vslines.emplace_back();
-							auto & vsline = rs.vslines.back();
-#endif
+
 							_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos));
 
 							if (max_ascent + max_descent > max_content_height)
@@ -453,12 +441,8 @@ namespace nana
 								if (text_begin + sub_text_len < data->text().size())
 								{
 									//make a new visual line
-#ifdef _nana_std_has_emplace_return_type
 									auto & vsline = rs.vslines.emplace_back();
-#else
-									rs.vslines.emplace_back();
-									auto & vsline = rs.vslines.back();
-#endif
+
 									_m_prepare_x(rs, vsline, sub_text_px);
 
 									vsline.extent_height_px = max_content_height;
@@ -487,12 +471,8 @@ namespace nana
 
 					if (!vsline_elements.empty())
 					{
-#ifdef _nana_std_has_emplace_return_type
 						auto & vsline = rs.vslines.emplace_back();
-#else
-						rs.vslines.emplace_back();
-						auto & vsline = rs.vslines.back();
-#endif
+
 						_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos));
 
 						if (max_ascent + max_descent > max_content_height)
@@ -511,12 +491,7 @@ namespace nana
 				//Get the length of characters in a text whose length in pixels doesn't beyond the limited width.
 				static unsigned _m_fit_text(graph_reference graph, const std::wstring& text, unsigned limited_width_px, unsigned& text_px) noexcept
 				{
-#ifdef _nana_std_has_string_view
 					auto pxbuf = graph.glyph_pixels(text);
-#else
-					std::unique_ptr<unsigned[]> pxbuf(new unsigned[text.size()]);
-					graph.glyph_pixels(text.c_str(), text.size(), pxbuf.get());
-#endif
 
 					text_px = 0;
 					for (unsigned i = 0; i < text.size(); ++i)
@@ -579,21 +554,14 @@ namespace nana
 						for (auto & bidi : reordered)
 						{
 							auto extent_size = data->size();
-#ifdef _nana_std_has_string_view
+
 							std::wstring_view text_sv{ bidi.begin, static_cast<std::size_t>(bidi.end - bidi.begin) };
 							if (data->text().size() != text_sv.size())
 								extent_size = graph.text_extent_size(text_sv);
 
 							const int y = rs.pos.y + _m_vsline_element_top(rs.vslines[rs.index], fblock, data);
 							graph.string({ rs.pos.x, y }, text_sv, _m_fgcolor(fblock));
-#else
-							std::wstring text{ bidi.begin, static_cast<std::size_t>(bidi.end - bidi.begin) };
-							if (data->text().size() != text.size())
-								extent_size = graph.text_extent_size(text);
 
-							const int y = rs.pos.y + _m_vsline_element_top(rs.vslines[rs.index], fblock, data);
-							graph.string({ rs.pos.x, y }, text, _m_fgcolor(fblock));
-#endif
 							_m_insert_if_traceable(rs.pos.x, y, extent_size, fblock);
 							rs.pos.x += static_cast<int>(extent_size.width);
 						}
@@ -879,7 +847,7 @@ namespace nana
 				return nana::size();
 
 			auto impl = get_drawer_trigger().impl();
-			
+
 			//First Check the graph of label
 			//Then take a substitute for graph when the graph of label is zero-sized.
 			nana::paint::graphics * graph_ptr = impl->graph;

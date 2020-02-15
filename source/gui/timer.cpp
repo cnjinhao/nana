@@ -18,12 +18,7 @@
 #include <nana/gui/timer.hpp>
 #include <map>
 #include <memory>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-    #include <nana/std_mutex.hpp>
-#else
-    #include <mutex>
-#endif
+#include <mutex>
 
 #if defined(NANA_WINDOWS)
 #include <windows.h>

@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -906,7 +906,7 @@ namespace nana
 				template<typename T>
 				T const * value_ptr() const
 				{
-					return any_cast<T>(_m_value());
+					return std::any_cast<T>(_m_value());
 				}
 
 				template<typename T>
@@ -916,7 +916,7 @@ namespace nana
 					if(nullptr == pany)
 						throw std::runtime_error("listbox::item_proxy.value<T>() is empty");
 
-					T * p = any_cast<T>(_m_value());
+					auto p = std::any_cast<T>(_m_value());
 					if(nullptr == p)
 						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
 					return *p;
@@ -928,7 +928,7 @@ namespace nana
 					if (nullptr == pany)
 						throw std::runtime_error("listbox::item_proxy.value<T>() is empty");
 
-					T * p = any_cast<T>(_m_value(false));
+					auto p = std::any_cast<T>(_m_value(false));
 					if (nullptr == p)
 						throw std::runtime_error("listbox::item_proxy.value<T>() invalid type of value");
 					return *p;
@@ -941,15 +941,8 @@ namespace nana
 				}
 
 				/// Behavior of Iterator's value_type
-#ifdef _nana_std_has_string_view
 				bool operator==(::std::string_view sv) const;
 				bool operator==(::std::wstring_view sv) const;
-#else
-				bool operator==(const char * s) const;
-				bool operator==(const wchar_t * s) const;
-				bool operator==(const ::std::string& s) const;
-				bool operator==(const ::std::wstring& s) const;
-#endif
 
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
@@ -982,8 +975,8 @@ namespace nana
 				essence * _m_ess() const noexcept;
 			private:
 				std::vector<cell> _m_cells() const;
-				nana::any		* _m_value(bool alloc_if_empty);
-				const nana::any	* _m_value() const;
+				std::any		* _m_value(bool alloc_if_empty);
+				const std::any	* _m_value() const;
 			private:
 				essence * ess_;
 				category_t*	cat_{nullptr};
@@ -1255,21 +1248,21 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 	and 
 		Antisymmetry(comp(a, b) != comp(b, a) returns true)
 	A simple example.
-		bool sort_compare( const std::string& s1, nana::any*, 
-						   const std::string& s2, nana::any*, bool reverse)
+		bool sort_compare( const std::string& s1, std::any*, 
+						   const std::string& s2, std::any*, bool reverse)
 		{
 			return (reverse ? s1 > s2 : s1 < s2);
 		}
 		listbox.set_sort_compare(0, sort_compare);
 	The listbox supports attaching a customer's object for each item, therefore the items can be 
 	sorted by comparing these customer's object.
-		bool sort_compare( const std::string&, nana::any* o1, 
-						   const std::string&, nana::any* o2, bool reverse)
+		bool sort_compare( const std::string&, std::any* o1, 
+						   const std::string&, std::any* o2, bool reverse)
 		{
 			if(o1 && o2) 	//some items may not attach a customer object.
 			{
-				int * i1 = any_cast<int>(*o1);
-				int * i2 = any_cast<int>(*o2);
+				int * i1 = std::any_cast<int>(*o1);
+				int * i2 = std::any_cast<int>(*o2);
 				return (i1 && i2 && (reverse ? *i1 > *i2 : *i1 < *i2));
  					  // ^ some types may not be int.
 			}
@@ -1477,7 +1470,7 @@ the nana::detail::basic_window member pointer scheme
 							 index_pair row, bool reverse,
 							 std::function<bool(const std::string &cell1, size_type col1,
 												const std::string &cell2, size_type col2,
-												const nana::any *rowval,
+												const std::any *rowval,
 												bool reverse)> comp);
 
         void column_resizable(bool resizable);
@@ -1536,8 +1529,8 @@ the nana::detail::basic_window member pointer scheme
 		
 		///Sets a strict weak ordering comparer for a column
 		void set_sort_compare(	size_type col,
-								std::function<bool(const std::string&, nana::any*,
-								                   const std::string&, nana::any*, bool reverse)> strick_ordering);
+								std::function<bool(const std::string&, std::any*,
+								                   const std::string&, std::any*, bool reverse)> strick_ordering);
 
 		/// Sort the items using the specified column.
 		///
@@ -1619,7 +1612,7 @@ the nana::detail::basic_window member pointer scheme
 		unsigned suspension_width() const;
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
-		nana::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;
+		std::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;
 		drawerbase::listbox::category_t* _m_assoc(std::shared_ptr<nana::detail::key_interface>, bool create_if_not_exists);
 		void _m_erase_key(nana::detail::key_interface*) noexcept;
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;

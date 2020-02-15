@@ -26,12 +26,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-#include <nana/std_mutex.hpp>
-#else
 #include <mutex>
-#endif
 
 namespace nana
 {
@@ -86,12 +81,8 @@ namespace nana
 				}
 			}
 
-#ifdef _nana_std_has_emplace_return_type
 			auto & rep = impl_->base.emplace_back();
-#else
-			impl_->base.emplace_back();
-			auto & rep = impl_->base.back();
-#endif
+
 			rep.handle = wd;
 			rep.keys.emplace_back(key);
 
@@ -247,12 +238,7 @@ namespace detail
 					return kv.second;
 			}
 
-#ifdef _nana_std_has_emplace_return_type
 			return table_.emplace_back(key).second;
-#else
-			table_.emplace_back(key);
-			return table_.back().second;
-#endif
 		}
 
 		iterator find(const Key& key)
@@ -718,7 +704,7 @@ namespace detail
 
 				return nullptr;
 			}
-		
+
 			if (attr_.capture.ignore_children)
 				return attr_.capture.window;
 

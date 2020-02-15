@@ -134,16 +134,11 @@ group::~group()
     delete impl_->radio_logic;
 }
 
-checkbox& group::add_option(std::string text)
-{
-    _THROW_IF_EMPTY()
+    checkbox& group::add_option(std::string text)
+    {
+		_THROW_IF_EMPTY()
 
-#ifdef _nana_std_has_emplace_return_type
-    auto & opt = impl_->options.emplace_back(new checkbox { handle() });
-#else
-    impl_->options.emplace_back(new checkbox(handle()));
-    auto & opt = impl_->options.back();
-#endif
+		auto & opt = impl_->options.emplace_back(new checkbox { handle() });
 
 		opt->transparent(true);
 		opt->caption(std::move(text));

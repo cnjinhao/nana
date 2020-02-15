@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -57,7 +57,7 @@ namespace nana
 
 				nana::paint::image	item_image;
 				std::string		item_text;
-				mutable std::shared_ptr<nana::any>	any_ptr;
+				mutable std::shared_ptr<std::any>	any_ptr;
 
 				item(std::shared_ptr<nana::detail::key_interface> && kv)
 					: key(std::move(kv))
@@ -167,14 +167,14 @@ namespace nana
 					API::refresh_window(widget_->handle());
 				}
 
-				nana::any * anyobj(std::size_t pos, bool allocate_if_empty) const
+				std::any * anyobj(std::size_t pos, bool allocate_if_empty) const
 				{
 					if(pos >= items_.size())
 						return nullptr;
 
 					auto & any_ptr = items_[pos]->any_ptr;
 					if (allocate_if_empty && (nullptr == any_ptr))
-						any_ptr = std::make_shared<nana::any>();
+						any_ptr = std::make_shared<std::any>();
 					return any_ptr.get();
 				}
 
@@ -831,28 +831,12 @@ namespace nana
 				}
 
 				/// Behavior of Iterator's value_type
-#ifdef _nana_std_has_string_view
 				bool item_proxy::operator == (::std::string_view s) const
 				{
 					if (pos_ == nana::npos)
 						return false;
 					return (impl_->at(pos_).item_text == s);
 				}
-#else
-				bool item_proxy::operator == (const ::std::string& s) const
-				{
-					if (pos_ == nana::npos)
-						return false;
-					return (impl_->at(pos_).item_text ==s);
-				}
-
-				bool item_proxy::operator == (const char * s) const
-				{
-					if (pos_ == nana::npos)
-						return false;
-					return (impl_->at(pos_).item_text == s);
-				}
-#endif
 
 
 				/// Behavior of Iterator
@@ -926,7 +910,7 @@ namespace nana
 					return ! this->operator==(r);
 				}
 
-				nana::any * item_proxy::_m_anyobj(bool alloc_if_empty) const
+				std::any * item_proxy::_m_anyobj(bool alloc_if_empty) const
 				{
 					return impl_->anyobj(pos_, alloc_if_empty);
 				}
@@ -1074,7 +1058,7 @@ namespace nana
 			API::refresh_window(*this);
 		}
 
-		nana::any * combox::_m_anyobj(std::size_t pos, bool alloc_if_empty) const
+		std::any * combox::_m_anyobj(std::size_t pos, bool alloc_if_empty) const
 		{
 			internal_scope_guard lock;
 			return _m_impl().anyobj(pos, alloc_if_empty);

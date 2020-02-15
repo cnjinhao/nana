@@ -81,6 +81,14 @@ namespace nana
 			return *this;
 		}
 
+#ifdef __cpp_char8_t
+		widget& widget::caption(std::u8string_view text)
+		{
+			_m_caption(to_nstring(text));
+			return *this;
+		}
+#endif
+
 		widget& widget::caption(std::wstring text)
 		{
 			native_string_type str = to_nstring(text);

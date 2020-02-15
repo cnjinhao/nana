@@ -23,8 +23,8 @@
 #include "detail/compset.hpp"
 #include "detail/tree_cont.hpp"
 #include <nana/gui/timer.hpp>
-#include <nana/any.hpp>
 #include <nana/pat/cloneable.hpp>
+#include <any>
 #include <stdexcept>
 
 namespace nana
@@ -115,7 +115,7 @@ namespace nana
 					treebox_node_type& operator=(const treebox_node_type&);
 
 					::std::string text;
-					nana::any value;
+					std::any value;
 					bool expanded;
 					bool hidden;
 					checkstate checked;
@@ -297,13 +297,13 @@ namespace nana
 				template<typename T>
 				const T * value_ptr() const
 				{
-					return any_cast<T>(&_m_value());
+					return std::any_cast<T>(&_m_value());
 				}
 
 				template<typename T>
 				const T& value() const
 				{
-					auto p = any_cast<T>(&_m_value());
+					auto p = std::any_cast<T>(&_m_value());
 					if(nullptr == p)
 						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
 					return *p;
@@ -319,8 +319,8 @@ namespace nana
 				// Undocumented methods for internal use
 				trigger::node_type * _m_node() const;
 			private:
-				nana::any& _m_value();
-				const nana::any& _m_value() const;
+				std::any& _m_value();
+				const std::any& _m_value() const;
 			private:
 				trigger * trigger_{nullptr};
 				trigger::node_type * node_{nullptr};

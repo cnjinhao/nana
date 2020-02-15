@@ -17,7 +17,7 @@
 #include "skeletons/textbase_export_interface.hpp"
 #include "skeletons/text_editor_part.hpp"
 
-#include <nana/optional.hpp>
+#include <optional>
 
 namespace nana
 {
@@ -46,7 +46,7 @@ namespace nana
 
 			class event_agent
 				:	public	widgets::skeletons::textbase_event_agent_interface,
-					public	widgets::skeletons::text_editor_event_interface 
+					public	widgets::skeletons::text_editor_event_interface
 			{
 			public:
 				event_agent(::nana::textbox&, const std::vector<upoint>&);

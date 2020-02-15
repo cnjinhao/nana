@@ -181,11 +181,8 @@ namespace detail
 		{
 
 #if defined(NANA_WINDOWS)
-#ifdef _nana_std_has_string_view
 			auto wstr = to_wstring(std::string_view(text, len));
-#else
-			auto wstr = to_wstring(std::string(text,len));
-#endif
+
 			::SIZE size;
 			if (::GetTextExtentPoint32(dw->context, wstr.c_str(), static_cast<int>(wstr.size()), &size))
 				return nana::size(size.cx, size.cy);
@@ -198,11 +195,7 @@ namespace detail
 				reinterpret_cast<XftChar8*>(const_cast<char*>(text)), len, &ext);
 			return nana::size(ext.xOff, fs->ascent + fs->descent);
 			#else
-#ifdef _nana_std_has_string_view
 			auto wstr = to_wstring(std::string_view(text, len));
-#else
-			auto wstr = to_wstring(std::string(text,len));
-#endif
 			return nana_xft_extents(dw->font.get(), wstr.data(), wstr.size());
 			#endif
 #else

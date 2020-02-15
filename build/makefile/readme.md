@@ -22,7 +22,7 @@ $(BIN): $(LINKOBJ) $(NANALIB)/libnana.a
 	$(GCC) $(LINKOBJ) $(INCS) $(LIBS) -o $(BIN) -std=c++0x
 
 .cpp.o:
-	$(GCC) -g -c $< -o $@ $(INCS) -std=c++0x
+	$(GCC) -g -c $< -o $@ $(INCS) -std=c++17
 
 $(NANALIB):
 	make -f $(NANAPATH)/build/makefile/makefile

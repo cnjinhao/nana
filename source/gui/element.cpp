@@ -15,12 +15,7 @@
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/paint/image.hpp>
 #include <map>
-
-#if defined(STD_THREAD_NOT_SUPPORTED)
-	#include <nana/std_mutex.hpp>
-#else
-	#include <mutex>
-#endif
+#include <mutex>
 
 namespace nana
 {

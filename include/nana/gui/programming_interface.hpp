@@ -360,6 +360,9 @@ namespace API
 
 	void window_caption(window, const std::string& title_utf8);
 	void window_caption(window, const std::wstring& title);
+#ifdef __cpp_char8_t
+	void window_caption(window, std::u8string_view text);
+#endif
 	::std::string window_caption(window);
 
 	void window_cursor(window, cursor);

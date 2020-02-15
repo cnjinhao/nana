@@ -1,7 +1,7 @@
 /*
 *	Filebox
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -272,10 +272,10 @@ namespace nana
 				_m_select_file(arg.item);
 			});
 
-			ls_file_.set_sort_compare(0, [](const std::string& a, nana::any* fs_a, const std::string& b, nana::any* fs_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(0, [](const std::string& a, std::any* fs_a, const std::string& b, std::any* fs_b, bool reverse) -> bool
 				{
-					int dira = any_cast<item_fs>(fs_a)->directory ? 1 : 0;
-					int dirb = any_cast<item_fs>(fs_b)->directory ? 1 : 0;
+					int dira = std::any_cast<item_fs>(fs_a)->directory ? 1 : 0;
+					int dirb = std::any_cast<item_fs>(fs_b)->directory ? 1 : 0;
 					if(dira != dirb)
 						return (reverse ? dira < dirb : dira > dirb);
 
@@ -326,19 +326,19 @@ namespace nana
 						return (reverse ? cia > cib : cia < cib);
 					return (reverse ? cia.substr(seek_a) > cib.substr(seek_b) : cia.substr(seek_a) < cib.substr(seek_b));
 				});
-			ls_file_.set_sort_compare(2, [](const std::string& a, nana::any* anyptr_a, const std::string& b, nana::any* anyptr_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(2, [](const std::string& a, std::any* anyptr_a, const std::string& b, std::any* anyptr_b, bool reverse) -> bool
 				{
-					int dir1 = any_cast<item_fs>(anyptr_a)->directory ? 1 : 0;
-					int dir2 = any_cast<item_fs>(anyptr_b)->directory ? 1 : 0;
+					int dir1 = std::any_cast<item_fs>(anyptr_a)->directory ? 1 : 0;
+					int dir2 = std::any_cast<item_fs>(anyptr_b)->directory ? 1 : 0;
 					if(dir1 != dir2)
 						return (reverse ? dir1 < dir2 : dir1 > dir2);
 
 					return (reverse ? a > b : a < b);
 				});
-			ls_file_.set_sort_compare(3, [](const std::string&, nana::any* anyptr_a, const std::string&, nana::any* anyptr_b, bool reverse) -> bool
+			ls_file_.set_sort_compare(3, [](const std::string&, std::any* anyptr_a, const std::string&, std::any* anyptr_b, bool reverse) -> bool
 				{
-					item_fs * fsa = any_cast<item_fs>(anyptr_a);
-					item_fs * fsb = any_cast<item_fs>(anyptr_b);
+					item_fs * fsa = std::any_cast<item_fs>(anyptr_a);
+					item_fs * fsb = std::any_cast<item_fs>(anyptr_b);
 					return (reverse ? fsa->bytes > fsb->bytes : fsa->bytes < fsb->bytes);
 				});
 
