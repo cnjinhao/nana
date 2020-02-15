@@ -2473,10 +2473,8 @@ namespace nana {
 
 				if (coord != coord_org)
 				{
-					auto pos_x = pos.x;
 					impl_->cview->move_origin(origin - impl_->cview->origin());
 					pos = _m_coordinate_to_caret(coord, false);
-					pos.x = pos_x;
 				}
 
 				if (pos != points_.caret) {
