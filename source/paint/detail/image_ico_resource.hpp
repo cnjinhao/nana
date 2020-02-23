@@ -1,7 +1,7 @@
 /*
  *	Icon Resource
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2017-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -113,10 +113,22 @@ namespace nana{	namespace paint
 #endif			
 			}
 
+			bool save(const std::filesystem::path& p) const override
+			{
+				paint::graphics graph{size()};
+
+				paste(rectangle{ size() }, graph, {});
+
+				graph.save_as_file(to_utf8(p.wstring()).c_str());
+				return true;
+			}
+
 			void* native_handle()
 			{
 				return native_handle_;
 			}
+
+
 		private:
 			void* native_handle_;
 		};//end class image_ico

@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -15,6 +15,7 @@
 
 #include <nana/gui/basis.hpp>
 #include <memory>
+#include <filesystem>
 
 namespace nana{	namespace paint
 {
@@ -56,6 +57,7 @@ namespace nana{	namespace paint
 		void fill_row(std::size_t row, const unsigned char* buffer, std::size_t bytes, unsigned bits_per_pixel);
 
 		void put(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bits_per_pixel, std::size_t bytes_per_line, bool is_negative);
+		void put_16bit(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bytes_per_line, bool is_negative, unsigned mask_red, unsigned mask_green, unsigned mask_blue, unsigned mask_alpha);
 		
 		void line(const std::string& name);
 		void line(const ::nana::point& pos_beg, const ::nana::point& pos_end, const ::nana::color&, double fade_rate);
@@ -76,6 +78,9 @@ namespace nana{	namespace paint
 		void blur(const nana::rectangle& r, std::size_t radius);
 
 		pixel_buffer rotate(double angle, const color& extend_color);
+
+		// Saves pixels as a Windows bitmap file.
+		bool save(std::filesystem::path) const;
 	private:
 		std::shared_ptr<pixel_buffer_storage> storage_;
 	};

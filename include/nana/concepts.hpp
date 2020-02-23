@@ -23,16 +23,7 @@ namespace nana
 		{
 		public:
 			virtual ~any_objective() = default;
-#if 0	//deprecated
-			template<typename Target>
-			void anyobj(const Target& t)
-			{
-				auto p = _m_anyobj(true);
-				if(nullptr == p)
-					throw std::runtime_error("Nana.any_objective: Object does not exist");
-				*p = t;
-			}
-#endif
+
 			template<typename Target>
 			void anyobj(Target&& t)
 			{
@@ -61,16 +52,6 @@ namespace nana
 
 			virtual ~any_objective() = default;
 
-#if 0	//deprecated
-			template<typename Target>
-			void anyobj(anyobj_index_t i, const Target& t)
-			{
-				auto p = _m_anyobj(i, true);
-				if(nullptr == p)
-					throw std::runtime_error("Nana.any_objective: Object does not exist.");
-				*p = t;
-			}
-#endif
 			template<typename Target>
 			void anyobj(anyobj_index_t i, Target&& t)
 			{
@@ -97,17 +78,7 @@ namespace nana
 			typedef IndexType anyobj_index_t;
 
 			virtual ~any_objective(){}
-#if 0 //deprecated
-			template<typename Target>
-			void anyobj(anyobj_index_t i0, anyobj_index_t i1, const Target& t)
-			{
-				auto p = _m_anyobj(i0, i1, true);
-				if(nullptr == p)
-					throw std::runtime_error("Nana.any_objective: Object does not exist");
 
-				*p = t;
-			}
-#endif
 			template<typename Target>
 			void anyobj(anyobj_index_t i0, anyobj_index_t i1, Target&& t)
 			{

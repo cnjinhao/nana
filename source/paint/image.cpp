@@ -1,7 +1,7 @@
 /**
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -274,6 +274,12 @@ namespace paint
 		void image::close() noexcept
 		{
 			image_ptr_.reset();
+		}
+
+		/// Saves the image as a Windows bitmap file
+		bool image::save(std::filesystem::path p) const
+		{
+			return image_ptr_->save(p);
 		}
 
 		//Fixed missing noexcept specifier by nabijaczleweli(pr#106)

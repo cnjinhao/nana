@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,6 +12,7 @@
  */
 
 #include "../detail/platform_spec_selector.hpp"
+#include "detail/image_format_defs.hpp"
 #include <nana/paint/pixel_buffer.hpp>
 #include <nana/gui/layout_utility.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
@@ -20,6 +21,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <cmath>
+#include <fstream>
 
 namespace nana{	namespace paint
 {
@@ -275,9 +277,13 @@ namespace nana{	namespace paint
 				if(pixel_size.height < height)
 					height = pixel_size.height;
 
+				unsigned char rgb6_table[64];
 				unsigned char rgb_table[32];
 				for(std::size_t i =0; i < 32; ++i)
 					rgb_table[i] = static_cast<unsigned char>(i * 255 / 31);
+
+				for (std::size_t i = 0; i < 64; ++i)
+					rgb6_table[i] = static_cast<unsigned char>(i * 255 / 63);
 
 				int src_bytes_per_line;
 				if (!is_negative)
@@ -297,13 +303,92 @@ namespace nana{	namespace paint
 					for (; p < end; ++p)
 					{
 						p->element.red = rgb_table[(*s_p >> 11) & 0x1F];
-#if defined(NANA_X11)
-						p->element.green = (*s_p >> 5) & 0x3F;
-						p->element.blue = rgb_table[*s_p & 0x1F];
+
+#if 1
+						//16bit 565 
+						p->element.green = rgb6_table[(*s_p >> 5) & 0x3F];
 #else
-						p->element.green = rgb_table[(*s_p >> 6) & 0x1F];
-						p->element.blue = rgb_table[(*s_p >> 1) & 0x1F];
+						//16bit 555
+						p->element.green = rgb_table[(*s_p >> 5) & 0x1F];
 #endif
+						p->element.blue = rgb_table[(*s_p >> 1) & 0x1F];
+						++s_p;
+					}
+					d += pixel_size.width;
+					rawbits -= src_bytes_per_line;
+				}
+			}
+		}
+
+		/// Assigns a 16bits image data,
+		void assign(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bytes_per_line, bool is_negative, unsigned mask_red, unsigned mask_green, unsigned mask_blue, unsigned mask_alpha)
+		{
+			if (!raw_pixel_buffer)
+				return;
+
+			if (pixel_size.width < width)
+				width = pixel_size.width;
+
+			if (pixel_size.height < height)
+				height = pixel_size.height;
+
+			int src_bytes_per_line;
+			if (!is_negative)
+			{
+				rawbits += bytes_per_line * (height - 1);
+				src_bytes_per_line = static_cast<int>(bytes_per_line);
+			}
+			else
+				src_bytes_per_line = -static_cast<int>(bytes_per_line);
+
+			unsigned char rgb_table[32];
+
+			for (std::size_t i = 0; i < 32; ++i)
+				rgb_table[i] = static_cast<unsigned char>(i * 255 / 31);
+
+
+			auto rawptr = raw_pixel_buffer;
+
+			if (mask_red == 0x7c00 && mask_green == 0x3e0 && mask_blue == 0x1f)
+			{
+				//555
+				auto d = rawptr;
+				for (std::size_t i = 0; i < height; ++i)
+				{
+					auto p = d;
+					const auto end = p + width;
+					auto s_p = reinterpret_cast<const unsigned short*>(rawbits);
+					for (; p < end; ++p)
+					{
+						p->element.red = rgb_table[(*s_p >> 10) & 0x1F];
+						p->element.green = rgb_table[(*s_p >> 5) & 0x1F];
+						p->element.blue = rgb_table[(*s_p) & 0x1F];
+
+						++s_p;
+					}
+					d += pixel_size.width;
+					rawbits -= src_bytes_per_line;
+				}
+			}
+			else
+			{
+				//565
+				unsigned char rgb6_table[64];
+				for (std::size_t i = 0; i < 64; ++i)
+					rgb6_table[i] = static_cast<unsigned char>(i * 255 / 63);
+
+				auto d = rawptr;
+				for (std::size_t i = 0; i < height; ++i)
+				{
+					auto p = d;
+					const auto end = p + width;
+					auto s_p = reinterpret_cast<const unsigned short*>(rawbits);
+					for (; p < end; ++p)
+					{
+						p->element.red = rgb_table[(*s_p >> 11) & 0x1F];
+						p->element.green = rgb6_table[(*s_p >> 5) & 0x3F];
+						p->element.blue = rgb_table[*s_p & 0x1F];
+
 						++s_p;
 					}
 					d += pixel_size.width;
@@ -698,6 +783,12 @@ namespace nana{	namespace paint
 	{
 		if(storage_)
 			storage_->assign(rawbits, width, height, bits_per_pixel, bytes_per_line, is_negative);
+	}
+
+	void pixel_buffer::put_16bit(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bytes_per_line, bool is_negative, unsigned mask_red, unsigned mask_green, unsigned mask_blue, unsigned mask_alpha)
+	{
+		if (storage_)
+			storage_->assign(rawbits, width, height, bytes_per_line, is_negative, mask_red, mask_green, mask_blue, mask_alpha);
 	}
 
 	pixel_color_t pixel_buffer::pixel(int x, int y) const
@@ -1276,6 +1367,55 @@ namespace nana{	namespace paint
 
 
 		return rotated_pxbuf;
+	}
+
+	bool pixel_buffer::save(std::filesystem::path p) const
+	{
+		std::ofstream ofs{ p, std::ios::binary };
+		if (!ofs)
+			return false;
+
+		auto const image_size = size();
+	
+		detail::bitmap_info_header bihdr = {};
+		bihdr.biSize = sizeof(bihdr);
+		bihdr.biWidth = static_cast<int>(image_size.width);
+		bihdr.biHeight = -static_cast<int>(image_size.height);
+		bihdr.biPlanes = 1;
+		bihdr.biBitCount = 24;
+
+		const std::size_t line_bytes = ((image_size.width * 3) + 3) & (~3);
+		const std::size_t image_bytes = image_size.height * line_bytes;
+
+		std::unique_ptr<unsigned char[]> data{ new unsigned char[image_bytes] };
+
+		auto const aligned_bytes = line_bytes - image_size.width * 3;
+		auto ptr = data.get();
+		auto src = storage_->raw_pixel_buffer;
+
+		for (unsigned y = 0; y < image_size.height; ++y)
+		{
+			for (unsigned x = 0; x < image_size.width; ++x)
+			{
+				ptr[0] = src->element.blue;
+				ptr[1] = src->element.green;
+				ptr[2] = src->element.red;
+				ptr += 3;
+				++src;
+			}
+			ptr += aligned_bytes;
+		}
+
+		detail::bitmap_file_header bfhdr;
+		bfhdr.bfType = 0x4d42;
+		bfhdr.bfOffBits = sizeof(bfhdr) + sizeof(bihdr);
+		bfhdr.bfSize = bfhdr.bfOffBits + static_cast<unsigned>(image_bytes);
+
+		ofs.write(reinterpret_cast<char*>(&bfhdr), sizeof(bfhdr));
+		ofs.write(reinterpret_cast<char*>(&bihdr), sizeof(bihdr));
+		ofs.write(reinterpret_cast<char*>(data.get()), image_bytes);
+
+		return true;
 	}
 }//end namespace paint
 }//end namespace nana

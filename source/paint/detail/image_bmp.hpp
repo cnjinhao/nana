@@ -1,7 +1,7 @@
 /*
  *	Bitmap Format Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,58 +15,12 @@
 
 #include <memory>
 #include "image_pixbuf.hpp"
+#include "image_format_defs.hpp"
 
 namespace nana{	namespace paint
 {
 	namespace detail
 	{
-#ifndef NANA_WINDOWS
-		struct bitmap_file_header
-		{
-			unsigned short bfType;
-			unsigned bfSize;
-			unsigned short bfReserved1;
-			unsigned short bfReserved2;
-			unsigned bfOffBits;
-		} __attribute__((packed));
-
-		struct bitmap_core_header
-		{
-			unsigned biSize;
-			unsigned short  biWidth;
-			unsigned short  biHeight;
-			unsigned short  biPlanes;
-			unsigned short  biBitCount;
-		} __attribute__((packed));
-
-		struct bitmap_info_header {
-			unsigned biSize;
-			int  biWidth;
-			int  biHeight;
-			unsigned short  biPlanes;
-			unsigned short  biBitCount;
-			unsigned		biCompression;
-			unsigned		biSizeImage;
-			int  biXPelsPerMeter;
-			int  biYPelsPerMeter;
-			unsigned	biClrUsed;
-			unsigned	biClrImportant;
-		}__attribute__((packed));
-
-		struct rgb_quad
-		{
-			unsigned char rgbBlue;
-			unsigned char rgbGreen;
-			unsigned char rgbRed;
-			unsigned char rgbReserved;
-		};
-#else
-		typedef BITMAPFILEHEADER	bitmap_file_header;
-		typedef BITMAPCOREHEADER	bitmap_core_header;
-		typedef BITMAPINFOHEADER	bitmap_info_header;
-		typedef RGBQUAD		rgb_quad;
-#endif
-
 		class image_bmp
 			:public basic_image_pixbuf
 		{
@@ -91,22 +45,32 @@ namespace nana{	namespace paint
 					//The OS/2 BITMAPCOREHEADER is not supported.
 					throw std::invalid_argument("BMP with OS/2 BITMAPCOREHEADER is not supported now.");
 				}
+				else if (header_bytes >= sizeof(bitmap_info_header))
+				{
+					auto header = reinterpret_cast<const bitmap_info_header*>(bmp_file + 1);
 
-				auto header = reinterpret_cast<const bitmap_info_header *>(bmp_file + 1);
+					const std::size_t bmp_height = std::abs(header->biHeight);
 
-				const std::size_t bmp_height = std::abs(header->biHeight);
+					//Bitmap file is 4byte-aligned for each line.
+					auto bytes_per_line = (((header->biWidth * header->biBitCount + 31) & ~31) >> 3);
 
-				//Bitmap file is 4byte-aligned for each line.
-				auto bytes_per_line = (((header->biWidth * header->biBitCount + 31) & ~31) >> 3);
+					pixbuf_.open(header->biWidth, bmp_height);
 
-				pixbuf_.open(header->biWidth, bmp_height);
+					auto bits = reinterpret_cast<const unsigned char*>(reinterpret_cast<const char*>(file_data) + bmp_file->bfOffBits);
 
-				auto bits = reinterpret_cast<const unsigned char*>(reinterpret_cast<const char*>(file_data) + bmp_file->bfOffBits);
-
-				if (16 <= header->biBitCount)
-					pixbuf_.put(bits, header->biWidth, bmp_height, header->biBitCount, bytes_per_line, (header->biHeight < 0));
-				else
-					_m_put_with_palette(header, bits, bytes_per_line);
+					if (header->biBitCount >= 16)
+					{
+						if (header_bytes >= sizeof(bitmap_info_v3_header))
+						{
+							auto v3hdr = reinterpret_cast<const bitmap_info_v3_header*>(bmp_file + 1);
+							pixbuf_.put_16bit(bits, v3hdr->head.biWidth, bmp_height, bytes_per_line, v3hdr->head.biHeight < 0, v3hdr->mask_red, v3hdr->mask_green, v3hdr->mask_blue, v3hdr->mask_alpha);
+						}
+						else
+							pixbuf_.put(bits, header->biWidth, bmp_height, header->biBitCount, bytes_per_line, (header->biHeight < 0));
+					}
+					else
+						_m_put_with_palette(header, bits, bytes_per_line);
+				}
 
 				return true;
 			}

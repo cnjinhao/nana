@@ -1,7 +1,7 @@
 /*
 *	Basic Image PixelBuffer Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2015 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -52,6 +52,11 @@ namespace nana
 			void stretch(const ::nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const override
 			{
 				pixbuf_.stretch(src_r, dst.handle(), r);
+			}
+
+			bool save(const std::filesystem::path& p) const override
+			{
+				return pixbuf_.save(p);
 			}
 		protected:
 			pixel_buffer pixbuf_;

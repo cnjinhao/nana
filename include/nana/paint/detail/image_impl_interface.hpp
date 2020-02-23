@@ -24,6 +24,7 @@ namespace nana{	namespace paint{
 		virtual nana::size size() const = 0;
 		virtual void paste(const nana::rectangle& src_r, graph_reference dst, const point& p_dst) const = 0;
 		virtual void stretch(const nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const = 0;
+		virtual bool save(const std::filesystem::path& p) const = 0;
 	};//end class image::image_impl_interface
 }//end namespace paint
 }//end namespace nana
