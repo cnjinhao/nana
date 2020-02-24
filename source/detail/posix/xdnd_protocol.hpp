@@ -15,7 +15,7 @@
 #define NANA_DETAIL_POSIX_XDND_PROTOCOL_INCLUDED
 
 #include "platform_spec.hpp"
-#include <nana/filesystem/filesystem.hpp>
+#include <filesystem>
 
 #include "theme.hpp"
 #include <X11/Xcursor/Xcursor.h>
