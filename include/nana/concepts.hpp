@@ -85,7 +85,7 @@ namespace nana
 				auto p = _m_anyobj(i0, i1, true);
 				if(nullptr == p)
 					throw std::runtime_error("Nana.any_objective: Object does not exist");
-				*p = std::forward(t);
+				*p = std::forward<Target>(t);
 			}
 
 			template<typename Target>
