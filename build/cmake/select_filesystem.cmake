@@ -49,6 +49,7 @@ elseif(NANA_CMAKE_BOOST_FILESYSTEM_FORCE)
     set(Boost_USE_STATIC_RUNTIME ON)
 
 else()
+    include (CheckIncludeFileCXX)
 
     if(NANA_CMAKE_STD_FILESYSTEM_FORCE)
         target_compile_definitions(nana PUBLIC STD_FILESYSTEM_FORCE)
@@ -87,7 +88,6 @@ else()
 
     if (TEST_FS_LIB)
         include (FindPackageMessage)
-        include (CheckIncludeFileCXX)
         include (CheckCXXSourceCompiles)
         # CMAKE_REQUIRED_FLAGS = string of compile command line flags
         # CMAKE_REQUIRED_DEFINITIONS = list of macros to define (-DFOO=bar)
