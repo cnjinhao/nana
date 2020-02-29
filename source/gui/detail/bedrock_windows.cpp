@@ -185,6 +185,8 @@ namespace detail
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
+		detail::native_interface::start_dpi_awareness();
+
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
 		WNDCLASSEX wincl;
@@ -638,6 +640,7 @@ namespace detail
 		{
 		case WM_COMMAND:
 		case WM_DESTROY:
+		case WM_DPICHANGED:
 		case WM_SHOWWINDOW:
 		case WM_SIZING:
 		case WM_MOVE:
@@ -801,6 +804,9 @@ namespace detail
 					if (i != root_runtime->wpassoc->accel_commands.end())
 						i->second();
 				}
+				break;
+			case WM_DPICHANGED:
+				def_window_proc = true;
 				break;
 			case WM_IME_STARTCOMPOSITION:
 				break;

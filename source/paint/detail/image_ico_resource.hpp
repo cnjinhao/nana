@@ -13,7 +13,7 @@
 #ifndef NANA_PAINT_DETAIL_IMAGE_ICO_RESOURCE_INCLUDED
 #define NANA_PAINT_DETAIL_IMAGE_ICO_RESOURCE_INCLUDED
 
-
+#include <filesystem>
 #include <nana/paint/detail/image_impl_interface.hpp>
 #include <nana/paint/graphics.hpp>
 

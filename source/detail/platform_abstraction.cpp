@@ -1,7 +1,9 @@
 #include "platform_abstraction.hpp"
 #include <set>
 #include <nana/deploy.hpp>
+#include <nana/paint/font_info.hpp>
 #include "../paint/truetype.hpp"
+#include <nana/gui/detail/native_window_interface.hpp>
 
 #ifdef NANA_WINDOWS
 
@@ -509,9 +511,343 @@ namespace nana
 	};
 #endif
 
+	class internal_font
+		: public font_interface
+	{
+	public:
+#ifdef NANA_WINDOWS
+		using font_height_type = LONG;
+#else
+		using font_height_type = double;
+#endif
+		using path_type = std::filesystem::path;
+
+#ifdef NANA_USE_XFT
+		internal_font(const path_type& ttf, const paint::font_info& fi, font_height_type height, native_font_type native_font, std::shared_ptr<fallback_fontset> fallback) :
+			ttf_(ttf),
+			height_(height),
+			font_info_(fi),
+			native_handle_(native_font),
+			fallback_(fallback)
+		{}
+#else
+		internal_font(const path_type& ttf, const paint::font_info& fi, font_height_type height, native_font_type native_font) :
+			ttf_(ttf),
+			height_(height),
+			font_info_(fi),
+			native_handle_(native_font)
+		{}
+#endif
+
+		~internal_font()
+		{
+#ifdef NANA_WINDOWS
+			::DeleteObject(reinterpret_cast<HFONT>(native_handle_));
+#elif defined(NANA_X11)
+			auto disp = ::nana::detail::platform_spec::instance().open_display();
+#	ifdef NANA_USE_XFT
+			platform_storage().fb_manager.release_fallback(fallback_);
+			::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
+#	else
+			::XFreeFontSet(disp, reinterpret_cast<XFontSet>(native_handle_));
+#	endif
+#endif
+			if (!ttf_.empty())
+				platform_abstraction::font_resource(false, ttf_);
+		}
+
+		font_height_type font_height() const
+		{
+			return height_;
+		}
+	public:
+		const std::string& family() const override
+		{
+			return font_info_.font_family;
+		}
+
+		double size() const override
+		{
+			return font_info_.size_pt;
+		}
+
+		font_style style() const override
+		{
+			font_style fs;
+			fs.italic = font_info_.italic;
+			fs.strike_out = font_info_.strike_out;
+			fs.underline = font_info_.underline;
+			fs.weight = font_info_.weight;
+			return fs;
+		}
+
+		native_font_type native_handle() const override
+		{
+			return native_handle_;
+		}
+
+		const paint::font_info& font_info() const override
+		{
+			return font_info_;
+		}
+
+#ifdef NANA_USE_XFT
+		fallback_fontset* fallback() const
+		{
+			return fallback_.get();
+		}
+#endif
+	private:
+		path_type	const ttf_;
+		paint::font_info const font_info_;
+		font_height_type const height_;
+		native_font_type const native_handle_;
+#ifdef NANA_USE_XFT
+		std::shared_ptr<fallback_fontset> fallback_;
+#endif
+	};
+
+
+	class font_service
+	{
+	public:
+		using font_info = paint::font_info;
+		using path_type = std::filesystem::path;
+#ifdef NANA_WINDOWS
+		using font_height_type = LONG;
+#else
+		using font_height_type = double;
+#endif
+
+		// Checks whether there is a font that still has been refered.
+		void check_fonts()
+		{
+			for (auto& font : fontbase_)
+			{
+				if(font.use_count() > 1)
+					throw std::runtime_error("There is a font has not been closed");
+			}
+		}
+
+		std::shared_ptr<font_interface> open_font(font_info fi, std::size_t dpi, const path_type& ttf)
+		{
+			if (0 == dpi)
+			{
+				dpi = platform_abstraction::current_dpi();
+				if( 0 == dpi)
+					dpi = detail::native_interface::system_dpi();
+			}
+
+			if (!ttf.empty())
+			{
+				::nana::spec::truetype truetype{ ttf };
+				if (truetype.font_family().empty())
+					return nullptr;
+
+				platform_abstraction::font_resource(true, ttf);
+
+				fi.font_family = truetype.font_family();
+			}
+
+			auto const font_height = _m_set_default_values(fi, dpi);
+
+			std::shared_ptr<font_interface> font;
+
+			for (auto& f : fontbase_)
+			{
+				//Find the matched font info and the font height of two fonts also need to be equal.
+				if (_m_compare_font_info(f->font_info(), fi))
+				{
+					// Compare font height
+					if (font_height == static_cast<internal_font*>(f.get())->font_height())
+					{
+						font = f;
+						break;
+					}
+				}
+			}
+
+			if (!font)
+			{
+				// The font is not matched, create a new font
+
+				font = _m_create(fi, dpi, ttf);
+
+				if (font)
+					fontbase_.push_back(font);
+			}
+
+			// Remove the unused fonts.
+			for (auto i = fontbase_.begin(); i != fontbase_.end();)
+			{
+				if (i->use_count() == 1)
+					i = fontbase_.erase(i);
+				else
+					++i;
+			}
+
+			return font;
+		}
+	private:
+
+		// Compares whether two font_info objects are equal
+		static bool _m_compare_font_info(const font_info& a, const font_info& b)
+		{
+			return (
+				a.font_family == b.font_family &&
+				a.weight == b.weight &&
+				a.italic == b.italic &&
+				a.strike_out == b.strike_out &&
+				a.underline == b.underline &&
+				a.size_pt == b.size_pt
+				);
+		}
+
+		static font_height_type _m_set_default_values(font_info& fi, std::size_t dpi)
+		{
+#ifdef NANA_WINDOWS
+			std::wstring wfont_family = to_nstring(fi.font_family);
+			//Make sure the length of font family less than LF_FACESIZE which is defined by Windows
+			if (wfont_family.length() + 1 > LF_FACESIZE)
+				wfont_family.clear();
+
+			//Translate pt to px
+			auto hDC = ::GetDC(nullptr);
+			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+
+			if (wfont_family.empty() || (0 == font_height))
+			{
+				//Create default font object.
+				NONCLIENTMETRICS metrics = {};
+				metrics.cbSize = sizeof metrics;
+#if(WINVER >= 0x0600)
+#if defined(NANA_MINGW)
+				OSVERSIONINFO osvi = {};
+				osvi.dwOSVersionInfoSize = sizeof(osvi);
+				::GetVersionEx(&osvi);
+				if (osvi.dwMajorVersion < 6)
+					metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
+#else
+				if (!IsWindowsVistaOrGreater())
+					metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
+#endif
+#endif
+				::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
+
+				if (wfont_family.empty())
+				{
+					wfont_family = metrics.lfMessageFont.lfFaceName;
+					fi.font_family = to_utf8(wfont_family);
+				}
+
+				if (0 == font_height)
+				{
+#if 0
+					font_height = metrics.lfMessageFont.lfHeight;
+					fi.size_pt = std::abs(metrics.lfMessageFont.lfHeight) * 72 / dpi;
+#else
+					auto correspond_dpi = detail::native_interface::system_dpi();
+					fi.size_pt = static_cast<double>(std::abs(metrics.lfMessageFont.lfHeight) * 72 / correspond_dpi);
+					font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+#endif
+				}
+			}
+
+			::ReleaseDC(nullptr, hDC);
+			return font_height;
+#else
+			return (fi.size_pt ? (fi.size_pt * dpi / 96) : platform_abstraction::font_default_pt());
+#endif
+		}
+
+		static std::shared_ptr<font_interface> _m_create(const font_info& fi, std::size_t dpi, const path_type& ttf)
+		{
+			using native_font_type = platform_abstraction::font::native_font_type;
+
+#ifdef NANA_WINDOWS
+			// The font_family and size_pt are reliable, they have been checked by _m_set_default_values
+			std::wstring wfont_family = to_nstring(fi.font_family);
+
+			//Translate pt to px
+			auto hDC = ::GetDC(nullptr);
+			auto font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
+			::ReleaseDC(nullptr, hDC);
+
+			::LOGFONT lf{};
+
+			std::wcscpy(lf.lfFaceName, wfont_family.c_str());
+			lf.lfHeight = font_height;
+			lf.lfCharSet = DEFAULT_CHARSET;
+			lf.lfWeight = fi.weight;
+			lf.lfQuality = PROOF_QUALITY;
+			lf.lfPitchAndFamily = FIXED_PITCH;
+			lf.lfItalic = fi.italic;
+			lf.lfUnderline = fi.underline;
+			lf.lfStrikeOut = fi.strike_out;
+
+			auto fd = ::CreateFontIndirect(&lf);
+#elif defined(NANA_X11)
+			auto disp = ::nana::detail::platform_spec::instance().open_display();
+#	ifdef NANA_USE_XFT
+			std::string font_family = fi.font_family;
+			if (font_family.empty())
+				font_family = "*";
+
+			auto font_height = (fi.size_pt ? (fi.size_pt * dpi / 96) : platform_abstraction::font_default_pt());
+			std::string pat_str = '-' + std::to_string(font_height);
+			if (fi.weight < 400)
+				pat_str += ":light";
+			else if (400 == fi.weight)
+				pat_str += ":medium";
+			else if (fi.weight < 700)
+				pat_str += ":demibold";
+			else
+				pat_str += (700 == fi.weight ? ":bold" : ":black");
+
+			if (fi.italic)
+				pat_str += ":slant=italic";
+
+			auto pat = ::XftNameParse((font_family + pat_str).c_str());
+			XftResult res;
+			auto match_pat = ::XftFontMatch(disp, ::XDefaultScreen(disp), pat, &res);
+
+			::XftFont* fd = nullptr;
+			if (match_pat)
+				fd = ::XftFontOpenPattern(disp, match_pat);
+#	else
+			std::string pat_str;
+			if (font_family.empty())
+				pat_str = "-misc-fixed-*";
+			else
+				pat_str = "-misc-fixed-" + font_family;
+
+			char** missing_list;
+			int missing_count;
+			char* defstr;
+			XFontSet fd = ::XCreateFontSet(display_, const_cast<char*>(pat_str.c_str()), &missing_list, &missing_count, &defstr);
+#	endif
+#endif
+
+			if (fd)
+			{
+#ifdef NANA_USE_XFT
+				auto fallback = platform_storage().fb_manager.make_fallback(pat_str);
+				return std::make_shared<internal_font>(ttf, fi, font_height, reinterpret_cast<native_font_type>(fd), fallback);
+#else
+				return std::make_shared<internal_font>(ttf, fi, font_height, reinterpret_cast<native_font_type>(fd));
+#endif
+			}
+			return{};
+		}
+	private:
+		std::vector<std::shared_ptr<font_interface>> fontbase_;
+	};
+
 	struct platform_runtime
 	{
+		std::size_t		dpi{ 0 };
 		std::shared_ptr<font_interface> font;
+		font_service font_svc;
 
 #ifdef NANA_X11
 		std::map<std::string, std::size_t> fontconfig_counts;
@@ -536,86 +872,6 @@ namespace nana
 
 		return *data::storage;
 	}
-
-
-	class internal_font
-		: public font_interface
-	{
-	public:
-		using path_type = std::filesystem::path;
-
-#ifdef NANA_USE_XFT
-		internal_font(const path_type& ttf, const std::string& font_family, double font_size, const font_style& fs, native_font_type native_font, std::shared_ptr<fallback_fontset> fallback):
-			ttf_(ttf),
-			family_(font_family),
-			size_(font_size),
-			style_(fs),
-			native_handle_(native_font),
-			fallback_(fallback)
-		{}
-#else
-		internal_font(const path_type& ttf, const std::string& font_family, double font_size, const font_style& fs, native_font_type native_font):
-			ttf_(ttf),
-			family_(font_family),
-			size_(font_size),
-			style_(fs),
-			native_handle_(native_font)
-		{}		
-#endif
-
-		~internal_font()
-		{
-#ifdef NANA_WINDOWS
-			::DeleteObject(reinterpret_cast<HFONT>(native_handle_));
-#elif defined(NANA_X11)
-			auto disp = ::nana::detail::platform_spec::instance().open_display();
-#	ifdef NANA_USE_XFT
-			platform_storage().fb_manager.release_fallback(fallback_);
-			::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
-#	else
-			::XFreeFontSet(disp, reinterpret_cast<XFontSet>(native_handle_));
-#	endif
-#endif
-			if (!ttf_.empty())
-				platform_abstraction::font_resource(false, ttf_);
-		}
-	public:
-		const std::string& family() const override
-		{
-			return family_;
-		}
-
-		double size() const override
-		{
-			return size_;
-		}
-
-		const font_style & style() const override
-		{
-			return style_;
-		}
-
-		native_font_type native_handle() const override
-		{
-			return native_handle_;
-		}
-
-#ifdef NANA_USE_XFT
-		fallback_fontset* fallback() const
-		{
-			return fallback_.get();
-		}
-#endif
-	private:
-		path_type	const ttf_;
-		std::string	const family_;
-		double		const size_;
-		font_style	const style_;
-		native_font_type const native_handle_;
-#ifdef NANA_USE_XFT
-		std::shared_ptr<fallback_fontset> fallback_;
-#endif
-	};
 
 #ifdef NANA_USE_XFT
 	void nana_xft_draw_string(::XftDraw* xftdraw, ::XftColor* xftcolor, font_interface* ft, const nana::point& pos, const wchar_t * str, std::size_t len)
@@ -661,10 +917,8 @@ namespace nana
 	{
 		auto & r = platform_storage();
 
-		if (r.font.use_count() > 1)
-			throw std::runtime_error("platform_abstraction is disallowed to shutdown");
-
 		r.font.reset();
+		r.font_svc.check_fonts();
 
 		delete data::storage;
 		data::storage = nullptr;
@@ -719,135 +973,24 @@ namespace nana
 		}
 
 		if (!r.font)
-			r.font = make_font({}, 0, {});
+			r.font = r.font_svc.open_font({}, current_dpi(), {});
 
 		return r.font;
 	}
 
-	static std::shared_ptr<platform_abstraction::font> font_factory(::std::string font_family, double size_pt, const platform_abstraction::font::font_style& fs, internal_font::path_type ttf)
+	void platform_abstraction::set_current_dpi(std::size_t dpi)
 	{
-		using native_font_type = platform_abstraction::font::native_font_type;
-#ifdef NANA_WINDOWS
-		std::wstring wfont_family = to_nstring(font_family);
-
-		//Make sure the length of font family less than LF_FACESIZE which is defined by Windows
-		if (wfont_family.length() + 1 > LF_FACESIZE)
-			wfont_family.clear();
-
-		//Translate pt to px
-		auto hDC = ::GetDC(nullptr);
-		auto font_height = -static_cast<LONG>(size_pt * ::GetDeviceCaps(hDC, LOGPIXELSY) / 72);
-		::ReleaseDC(nullptr, hDC);
-
-		if (wfont_family.empty() || (0 == font_height))
-		{
-			//Create default font object.
-			NONCLIENTMETRICS metrics = {};
-			metrics.cbSize = sizeof metrics;
-#if(WINVER >= 0x0600)
-#if defined(NANA_MINGW)
-			OSVERSIONINFO osvi = {};
-			osvi.dwOSVersionInfoSize = sizeof(osvi);
-			::GetVersionEx(&osvi);
-			if (osvi.dwMajorVersion < 6)
-				metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
-#else
-			if (!IsWindowsVistaOrGreater())
-				metrics.cbSize -= sizeof(metrics.iPaddedBorderWidth);
-#endif
-#endif
-			::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof metrics, &metrics, 0);
-
-			if (wfont_family.empty())
-			{
-				wfont_family = metrics.lfMessageFont.lfFaceName;
-				font_family = to_utf8(wfont_family);
-			}
-
-			if (0 == font_height)
-				font_height = metrics.lfMessageFont.lfHeight;
-		}
-
-
-		::LOGFONT lf{};
-
-		std::wcscpy(lf.lfFaceName, wfont_family.c_str());
-		lf.lfHeight = font_height;
-		lf.lfCharSet = DEFAULT_CHARSET;
-		lf.lfWeight = fs.weight;
-		lf.lfQuality = PROOF_QUALITY;
-		lf.lfPitchAndFamily = FIXED_PITCH;
-		lf.lfItalic = fs.italic;
-		lf.lfUnderline = fs.underline;
-		lf.lfStrikeOut = fs.strike_out;
-
-		auto fd = ::CreateFontIndirect(&lf);
-#elif defined(NANA_X11)
-		auto disp = ::nana::detail::platform_spec::instance().open_display();
-#	ifdef NANA_USE_XFT
-		if(font_family.empty())
-			font_family = "*";
-
-		std::string pat_str = '-' + std::to_string(size_pt ? size_pt : platform_abstraction::font_default_pt());
-		if(fs.weight < 400)
-			pat_str += ":light";
-		else if(400 == fs.weight)
-			pat_str += ":medium";
-		else if(fs.weight < 700)
-			pat_str += ":demibold";
-		else
-			pat_str += (700 == fs.weight ? ":bold": ":black"); 
-
-		if(fs.italic)
-			pat_str += ":slant=italic";
-
-		auto pat = ::XftNameParse((font_family + pat_str).c_str());
-		XftResult res;
-		auto match_pat = ::XftFontMatch(disp, ::XDefaultScreen(disp), pat, &res);
-
-		::XftFont* fd = nullptr;
-		if (match_pat)
-			fd = ::XftFontOpenPattern(disp, match_pat);
-#	else
-		std::string pat_str;
-		if (font_family.empty())
-			pat_str = "-misc-fixed-*";
-		else
-			pat_str = "-misc-fixed-" + font_family;
-
-		char ** missing_list;
-		int missing_count;
-		char * defstr;
-		XFontSet fd = ::XCreateFontSet(display_, const_cast<char*>(pat_str.c_str()), &missing_list, &missing_count, &defstr);
-#	endif
-#endif
-
-		if (fd)
-		{
-#ifdef NANA_USE_XFT
-			auto fallback = platform_storage().fb_manager.make_fallback(pat_str);
-			return std::make_shared<internal_font>(std::move(ttf), std::move(font_family), size_pt, fs, reinterpret_cast<native_font_type>(fd), fallback);
-#else
-			return std::make_shared<internal_font>(std::move(ttf), std::move(font_family), size_pt, fs, reinterpret_cast<native_font_type>(fd));
-#endif
-		}
-		return{};
+		platform_storage().dpi = dpi;
 	}
 
-	::std::shared_ptr<platform_abstraction::font> platform_abstraction::make_font(const std::string& font_family, double size_pt, const font::font_style& fs)
+	std::size_t platform_abstraction::current_dpi()
 	{
-		return font_factory(font_family, size_pt, fs, {});
+		return platform_storage().dpi;
 	}
 
-	::std::shared_ptr<platform_abstraction::font> platform_abstraction::make_font_from_ttf(const path_type& ttf, double size_pt, const font::font_style& fs)
+	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, std::size_t dpi, const path_type& ttf)
 	{
-		::nana::spec::truetype truetype{ ttf };
-		if (truetype.font_family().empty())
-			return nullptr;
-
-		font_resource(true, ttf);
-
-		return font_factory(truetype.font_family(), size_pt, fs, ttf);
+		return platform_storage().font_svc.open_font(fi, dpi, ttf);
 	}
 
 	void platform_abstraction::font_resource(bool try_add, const path_type& ttf)

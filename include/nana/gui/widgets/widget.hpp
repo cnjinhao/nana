@@ -1,7 +1,7 @@
 /**
  *	The fundamental widget class implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -75,7 +75,8 @@ namespace nana
 		void cursor(nana::cursor);
 		nana::cursor cursor() const;		///< Retrieves the shape of cursor
 
-		void typeface(const paint::font& font);
+		void typeface(const paint::font_info&);	///< Sets font, the font will be scaled with the DPI of the window.
+		void typeface(const paint::font& font);	///< Sets font
 		paint::font typeface() const;
 
 		bool enabled() const;				///< Determines whether the window is enabled for mouse and keyboard input.

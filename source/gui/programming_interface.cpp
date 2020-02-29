@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1298,6 +1298,18 @@ namespace API
 		return false;
 	}
 
+	void typeface(window wd, const nana::paint::font_info& fi)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd))
+		{
+			auto dpi = platform_abstraction::current_dpi();
+			if(0 == dpi)
+				dpi = interface_type::window_dpi(wd->root);
+			typeface(wd, paint::font{fi, dpi});
+		}
+	}
+
 	void typeface(window wd, const nana::paint::font& font)
 	{
 		internal_scope_guard lock;
@@ -1459,6 +1471,15 @@ namespace API
 	unsigned screen_dpi(bool x_requested)
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
+	}
+
+	std::size_t window_dpi(window wd)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd))
+			return interface_type::window_dpi(wd->root);
+		
+		return 0;
 	}
 
 	dragdrop_status window_dragdrop_status(::nana::window wd)

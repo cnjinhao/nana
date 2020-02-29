@@ -1,6 +1,6 @@
 /*
  *	The fundamental widget class implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -114,6 +114,11 @@ namespace nana
 		void widget::cursor(nana::cursor cur)
 		{
 			_m_cursor(cur);
+		}
+
+		void widget::typeface(const paint::font_info& fi)
+		{
+			API::typeface(handle(), fi);
 		}
 
 		void widget::typeface(const nana::paint::font& font)

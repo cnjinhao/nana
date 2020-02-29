@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -450,6 +450,7 @@ namespace API
 	bool root_graphics(window, nana::paint::graphics&);
 	bool get_visual_rectangle(window, nana::rectangle&);
 
+	void typeface(window, const nana::paint::font_info&);
 	void typeface(window, const nana::paint::font&);
 	paint::font typeface(window);
 
@@ -484,6 +485,7 @@ namespace API
 
 	unsigned screen_dpi(bool x_requested);
 
+	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
 }//end namespace API
 

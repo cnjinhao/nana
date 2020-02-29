@@ -1,7 +1,7 @@
 /*
  *	Platform Abstraction
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2017-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -27,6 +27,7 @@ namespace nana
 	{
 	public:
 		using font = font_interface;
+		using font_info = paint::font_info;
 
 		using path_type = ::std::filesystem::path;
 
@@ -36,8 +37,12 @@ namespace nana
 		static double font_default_pt();
 		static void font_languages(const std::string&);
 		static ::std::shared_ptr<font> default_font(const ::std::shared_ptr<font>&);
-		static ::std::shared_ptr<font> make_font(const ::std::string& font_family, double size_pt, const font::font_style& fs);
-		static ::std::shared_ptr<font> make_font_from_ttf(const path_type& ttf, double size_pt, const font::font_style& fs);
+
+		static void set_current_dpi(std::size_t dpi);
+		static std::size_t current_dpi();
+
+		/// Open the font, if ttf is specified, it ignores the font family name of font_info and creates the font using truetype file.
+		static std::shared_ptr<font> open_font(const font_info&, std::size_t dpi, const path_type& ttf);
 		static void font_resource(bool try_add, const path_type& ttf);
 
 		static unsigned screen_dpi(bool x_requested);

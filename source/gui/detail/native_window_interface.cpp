@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -31,6 +31,63 @@ namespace nana{
 	namespace detail{
 
 #if defined(NANA_WINDOWS)
+		// Dynamically load Windows DPI functions to check these APIs are supported by the SDK and OS.
+		struct dpi_function
+		{
+			enum PROCESS_DPI_AWARENESS {
+				PROCESS_DPI_UNAWARE,
+				PROCESS_SYSTEM_DPI_AWARE,
+				PROCESS_PER_MONITOR_DPI_AWARE
+			};
+
+			enum MONITOR_DPI_TYPE {
+				MDT_EFFECTIVE_DPI,
+				MDT_ANGULAR_DPI,
+				MDT_RAW_DPI,
+				MDT_DEFAULT
+			};
+
+			HRESULT(__stdcall* SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS) {nullptr};
+			UINT(__stdcall* GetDpiForWindow)(HWND) { nullptr };
+			UINT(__stdcall* GetDpiForSystem)() { nullptr };
+			HRESULT(__stdcall* GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*) { nullptr };
+			UINT(__stdcall* GetDpiFromDpiAwarenessContext)(void*) { nullptr };
+			void* (__stdcall* GetThreadDpiAwarenessContext)() { nullptr };
+
+			dpi_function()
+			{
+				auto user32 = ::GetModuleHandleW(L"User32.DLL");
+				this->GetDpiForWindow = reinterpret_cast<UINT(__stdcall*)(HWND)>(::GetProcAddress(user32, "GetDpiForWindow"));
+				this->GetDpiForSystem = reinterpret_cast<UINT(__stdcall*)()>(::GetProcAddress(user32, "GetDpiForSystem"));
+
+				this->GetDpiFromDpiAwarenessContext = reinterpret_cast<UINT(__stdcall*)(void*)>(::GetProcAddress(user32, "GetDpiFromDpiAwarenessContext"));
+				this->GetThreadDpiAwarenessContext = reinterpret_cast<void* (__stdcall*)()>(::GetProcAddress(user32, "GetThreadDpiAwarenessContext"));
+
+				auto shcore = ::GetModuleHandleW(L"Shcore.DLL");
+				if (nullptr == shcore)
+					shcore = ::LoadLibraryW(L"Shcore.DLL");
+
+				if (shcore)
+				{
+					this->SetProcessDpiAwareness = reinterpret_cast<HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS)>(
+						::GetProcAddress(shcore, "SetProcessDpiAwareness")
+						);
+					this->GetDpiForMonitor = reinterpret_cast<HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*)>(
+						::GetProcAddress(shcore, "GetDpiForMonitor"));
+				}
+			}
+
+			bool good() const
+			{
+				return this->SetProcessDpiAwareness && this->GetDpiForWindow && this->GetDpiForMonitor && this->GetDpiForSystem && this->GetThreadDpiAwarenessContext;
+			}
+		};
+
+		static dpi_function& windows_dpi_function()
+		{
+			static dpi_function df;
+			return df;
+		};
 
 		//This function is defined in bedrock_windows.cpp
 	HINSTANCE windows_module_handle();
@@ -1753,6 +1810,41 @@ namespace nana{
 			static_cast<void>(true_for_max);
 #endif
 			return sz;
+		}
+
+		void native_interface::start_dpi_awareness()
+		{
+#ifdef NANA_WINDOWS
+			auto& dpi_fn = windows_dpi_function();
+			if (dpi_fn.good())
+			{
+				dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_PER_MONITOR_DPI_AWARE);
+			}
+#endif
+		}
+
+		std::size_t native_interface::window_dpi(native_window_type wd)
+		{
+#ifdef NANA_WINDOWS
+			auto& dpi_fn = windows_dpi_function();
+			if (dpi_fn.good())
+			{
+				if (::IsWindow(reinterpret_cast<HWND>(wd)))
+					return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
+			}
+			return 0;
+#endif
+			return 96;
+		}
+
+		std::size_t native_interface::system_dpi()
+		{
+#ifdef NANA_WINDOWS
+			auto& dpi_fn = windows_dpi_function();
+			if (dpi_fn.good())
+				return dpi_fn.GetDpiForSystem();
+#endif
+			return 96;
 		}
 	//end struct native_interface
 	}//end namespace detail

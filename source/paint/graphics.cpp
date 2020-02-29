@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,6 +12,7 @@
 
 #include "../detail/platform_spec_selector.hpp"
 #include <nana/gui/detail/bedrock.hpp>
+#include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/paint/graphics.hpp>
 #include <nana/paint/detail/native_paint_interface.hpp>
 #include <nana/paint/pixel_buffer.hpp>
@@ -93,17 +94,36 @@ namespace paint
 				impl_->real_font = rhs.impl_->real_font;
 		}
 
-		font::font(const std::string& font_family, double size_pt, const font_style& fs):
+		font::font(const font_info& fi, std::size_t dpi):
 			impl_(new impl_type)
 		{
-			impl_->real_font = platform_abstraction::make_font(font_family, size_pt, fs);
+			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
+		}
+
+		font::font(const std::string& font_family, double size_pt, const font_style& fs, std::size_t dpi):
+			impl_(new impl_type)
+		{
+			font_info fi;
+			fi.font_family = font_family;
+			fi.size_pt = size_pt;
+			fi.italic = fs.italic;
+			fi.underline = fs.underline;
+			fi.strike_out = fs.strike_out;
+			fi.weight = fs.weight;
+			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
 
 
-		font::font(double size_pt, const path_type& truetype, const font_style& fs) :
+		font::font(double size_pt, const path_type& ttf, const font_style& fs, std::size_t dpi) :
 			impl_(new impl_type)
 		{
-			impl_->real_font = platform_abstraction::make_font_from_ttf(truetype, size_pt, fs);
+			font_info fi;
+			fi.size_pt = size_pt;
+			fi.italic = fs.italic;
+			fi.underline = fs.underline;
+			fi.strike_out = fs.strike_out;
+			fi.weight = fs.weight;
+			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), ttf);
 		}
 
 		font::~font()
