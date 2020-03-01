@@ -1834,6 +1834,7 @@ namespace nana{
 			}
 			return 0;
 #endif
+			static_cast<void>(wd);	//eliminate the unused warning
 			return 96;
 		}
 

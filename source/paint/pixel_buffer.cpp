@@ -323,6 +323,7 @@ namespace nana{	namespace paint
 		/// Assigns a 16bits image data,
 		void assign(const unsigned char* rawbits, std::size_t width, std::size_t height, std::size_t bytes_per_line, bool is_negative, unsigned mask_red, unsigned mask_green, unsigned mask_blue, unsigned mask_alpha)
 		{
+			static_cast<void>(mask_alpha);	//eliminate the unused warning
 			if (!raw_pixel_buffer)
 				return;
 
@@ -349,7 +350,7 @@ namespace nana{	namespace paint
 
 			auto rawptr = raw_pixel_buffer;
 
-			if (mask_red == 0x7c00 && mask_green == 0x3e0 && mask_blue == 0x1f)
+			if (0x7C00 == mask_red && 0x3E0 == mask_green && 0x1F == mask_blue)
 			{
 				//555
 				auto d = rawptr;
@@ -370,7 +371,7 @@ namespace nana{	namespace paint
 					rawbits -= src_bytes_per_line;
 				}
 			}
-			else
+			else if(0xF800 == mask_red && 0x7E0 == mask_green && 0x1F == mask_blue)
 			{
 				//565
 				unsigned char rgb6_table[64];

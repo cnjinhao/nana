@@ -525,36 +525,22 @@ namespace nana
 #ifdef NANA_USE_XFT
 		internal_font(const path_type& ttf, const paint::font_info& fi, font_height_type height, native_font_type native_font, std::shared_ptr<fallback_fontset> fallback) :
 			ttf_(ttf),
-			height_(height),
 			font_info_(fi),
+			height_(height),
 			native_handle_(native_font),
 			fallback_(fallback)
 		{}
 #else
 		internal_font(const path_type& ttf, const paint::font_info& fi, font_height_type height, native_font_type native_font) :
 			ttf_(ttf),
-			height_(height),
 			font_info_(fi),
+			height_(height),
 			native_handle_(native_font)
 		{}
 #endif
 
-		~internal_font()
-		{
-#ifdef NANA_WINDOWS
-			::DeleteObject(reinterpret_cast<HFONT>(native_handle_));
-#elif defined(NANA_X11)
-			auto disp = ::nana::detail::platform_spec::instance().open_display();
-#	ifdef NANA_USE_XFT
-			platform_storage().fb_manager.release_fallback(fallback_);
-			::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
-#	else
-			::XFreeFontSet(disp, reinterpret_cast<XFontSet>(native_handle_));
-#	endif
-#endif
-			if (!ttf_.empty())
-				platform_abstraction::font_resource(false, ttf_);
-		}
+		~internal_font();
+
 
 		font_height_type font_height() const
 		{
@@ -688,6 +674,37 @@ namespace nana
 
 			return font;
 		}
+
+#ifdef NANA_X11
+		bool fc_count(bool try_add, const std::string& path)
+		{
+			if(try_add)
+			{
+				if(1 == ++(fc_table_[path]))
+					return true;
+			}
+			else
+			{
+				auto i = fc_table_.find(path);
+				if(i != fc_table_.end())
+				{
+					if(0 == --(i->second))
+						fc_table_.erase(i);
+
+					return (0 == fc_table_.size());
+				}
+			}
+
+			return false;
+		}
+#endif
+
+#ifdef NANA_USE_XFT
+		fallback_manager& fb_manager()
+		{
+			return fb_manager_;
+		}
+#endif
 	private:
 
 		// Compares whether two font_info objects are equal
@@ -760,7 +777,7 @@ namespace nana
 #endif
 		}
 
-		static std::shared_ptr<font_interface> _m_create(const font_info& fi, std::size_t dpi, const path_type& ttf)
+		std::shared_ptr<font_interface> _m_create(const font_info& fi, std::size_t dpi, const path_type& ttf)
 		{
 			using native_font_type = platform_abstraction::font::native_font_type;
 
@@ -831,7 +848,7 @@ namespace nana
 			if (fd)
 			{
 #ifdef NANA_USE_XFT
-				auto fallback = platform_storage().fb_manager.make_fallback(pat_str);
+				auto fallback = fb_manager_.make_fallback(pat_str);
 				return std::make_shared<internal_font>(ttf, fi, font_height, reinterpret_cast<native_font_type>(fd), fallback);
 #else
 				return std::make_shared<internal_font>(ttf, fi, font_height, reinterpret_cast<native_font_type>(fd));
@@ -841,20 +858,20 @@ namespace nana
 		}
 	private:
 		std::vector<std::shared_ptr<font_interface>> fontbase_;
-	};
+
+#ifdef NANA_X11
+		std::map<std::string, std::size_t> fc_table_;
+#endif
+#ifdef NANA_USE_XFT
+		fallback_manager fb_manager_;
+#endif
+	};//end class font_service
 
 	struct platform_runtime
 	{
 		std::size_t		dpi{ 0 };
 		std::shared_ptr<font_interface> font;
 		font_service font_svc;
-
-#ifdef NANA_X11
-		std::map<std::string, std::size_t> fontconfig_counts;
-#endif
-#ifdef NANA_USE_XFT
-		fallback_manager fb_manager;
-#endif
 	};
 
 	namespace
@@ -871,6 +888,23 @@ namespace nana
 			throw std::runtime_error("platform_abstraction is empty");
 
 		return *data::storage;
+	}
+
+	internal_font::~internal_font()
+	{
+#ifdef NANA_WINDOWS
+		::DeleteObject(reinterpret_cast<HFONT>(native_handle_));
+#elif defined(NANA_X11)
+		auto disp = ::nana::detail::platform_spec::instance().open_display();
+#	ifdef NANA_USE_XFT
+		platform_storage().font_svc.fb_manager().release_fallback(fallback_);
+		::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
+#	else
+		::XFreeFontSet(disp, reinterpret_cast<XFontSet>(native_handle_));
+#	endif
+#endif
+		if (!ttf_.empty())
+			platform_abstraction::font_resource(false, ttf_);
 	}
 
 #ifdef NANA_USE_XFT
@@ -956,7 +990,7 @@ namespace nana
 	void platform_abstraction::font_languages(const std::string& langs)
 	{
 #ifdef NANA_USE_XFT
-		platform_storage().fb_manager.languages(langs);
+		platform_storage().font_svc.fb_manager().languages(langs);
 #endif
 	}
 
@@ -1001,25 +1035,13 @@ namespace nana
 		else
 			::RemoveFontResourceEx(ttf.wstring().c_str(), FR_PRIVATE, nullptr);
 #else
-		auto & fc = platform_storage().fontconfig_counts;
-		if(try_add)
+		auto p = ttf.string();
+		if(platform_storage().font_svc.fc_count(try_add, p))
 		{
-			if(1 == ++(fc[ttf.string()]))
-			{
-				::FcConfigAppFontAddFile(nullptr, reinterpret_cast<const FcChar8*>(ttf.string().c_str()));
-			}
-		}
-		else
-		{
-			auto i = fc.find(ttf.string());
-			if(i != fc.end())
-			{
-				if(0 == --(i->second))
-					fc.erase(i);
-
-				if(0 == fc.size())
-					::FcConfigAppFontClear(nullptr);
-			}
+			if(try_add)
+				::FcConfigAppFontAddFile(nullptr, reinterpret_cast<const FcChar8*>(p.c_str()));
+			else
+				::FcConfigAppFontClear(nullptr);
 		}
 #endif
 	}
