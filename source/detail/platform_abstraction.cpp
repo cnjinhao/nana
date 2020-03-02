@@ -605,6 +605,13 @@ namespace nana
 		using font_height_type = double;
 #endif
 
+		~font_service()
+		{
+			// The font destructor may usefallback_manager,
+			//therefore, all font objects must be destroyed before destroying fallback_manager
+			fontbase_.clear();
+		}
+
 		// Checks whether there is a font that still has been refered.
 		void check_fonts()
 		{
