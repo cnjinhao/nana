@@ -15,7 +15,7 @@
 	#include <windows.h>
 #endif
 #include <array>
-#include <ostream>
+#include <stdexcept>
 
 namespace {
 	std::tm localtime()
