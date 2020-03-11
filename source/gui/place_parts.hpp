@@ -1,7 +1,7 @@
 /**
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -510,12 +510,12 @@ namespace nana
 				return kind_;
 			}
 
-			double get_value(int ref_percent) const noexcept
+			double get_value(int ref_percent, std::size_t dpi) const noexcept
 			{
 				switch (kind_)
 				{
 				case kind::integer:
-					return value_.integer;
+					return static_cast<double>(value_.integer * dpi) / 96;
 				case kind::real:
 					return value_.real;
 				case kind::percent:
@@ -646,7 +646,7 @@ namespace nana
 				return (-1 == pos ? number_t{} : margins_[pos]);
 			}
 
-			nana::rectangle area(const ::nana::rectangle& field_area) const
+			nana::rectangle area(const ::nana::rectangle& field_area, std::size_t dpi) const
 			{
 				if (margins_.empty())
 					return field_area;
@@ -654,7 +654,7 @@ namespace nana
 				auto r = field_area;
 				if (all_edges_)
 				{
-					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width)));
+					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width), dpi));
 					r.x += px;
 					r.width = differ(r.width, (static_cast<unsigned>(px) << 1));
 
@@ -690,27 +690,27 @@ namespace nana
 
 					if (0 == it)	//top
 					{
-						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height)));
+						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dpi));
 						r.y += px;
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != ib)	//bottom
 					{
-						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height)));
+						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dpi));
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != il)	//left
 					{
-						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width)));
+						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dpi));
 						r.x += px;
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 
 					if (-1 != ir)	//right
 					{
-						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width)));
+						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dpi));
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 				}

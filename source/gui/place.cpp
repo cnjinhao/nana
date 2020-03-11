@@ -1,7 +1,7 @@
 /**
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -1070,7 +1070,7 @@ namespace nana
 			return (div == last);
 		}
 
-		static double limit_px(const division* div, double px, unsigned area_px) noexcept
+		static double limit_px(const division* div, double px, unsigned area_px, std::size_t dpi) noexcept
 		{
 			auto const vert = (div->div_owner && (div->div_owner->kind_of_division == kind::vertical_arrange));
 
@@ -1078,7 +1078,7 @@ namespace nana
 
 			if (!div->min_px.empty())
 			{
-				auto v = div->min_px.get_value(static_cast<int>(area_px));
+				auto v = div->min_px.get_value(static_cast<int>(area_px), dpi);
 
 				if ((weight_floor > 0) && (v < weight_floor))
 					v = weight_floor;
@@ -1091,7 +1091,7 @@ namespace nana
 
 			if (!div->max_px.empty())
 			{
-				auto v = div->max_px.get_value(static_cast<int>(area_px));
+				auto v = div->max_px.get_value(static_cast<int>(area_px), dpi);
 				if (px > v)
 					return v;
 			}
@@ -1108,9 +1108,9 @@ namespace nana
 			return (weight.kind_of() == number_t::kind::percent);
 		}
 
-		nana::rectangle margin_area() const
+		nana::rectangle margin_area(std::size_t dpi) const
 		{
-			return margin.area(field_area);
+			return margin.area(field_area, dpi);
 		}
 
 		division * previous() const noexcept
@@ -1189,15 +1189,16 @@ namespace nana
 
 		void collocate(window wd) override
 		{
+			auto const dpi = api::window_dpi(wd);
 			const bool vert = (kind::arrange != kind_of_division);
 
-			auto area_margined = margin_area();
+			auto area_margined = margin_area(dpi);
 			rectangle_rotator area(vert, area_margined);
 			auto area_px = area.w();
 
-			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px);
+			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px, dpi);
 
-			double adjustable_px = _m_revise_adjustable(fa, area_px);
+			double adjustable_px = _m_revise_adjustable(fa, area_px, dpi);
 
 			double position = area.x();
 			std::vector<division*> delay_collocates;
@@ -1221,7 +1222,7 @@ namespace nana
 					else
 						child_px = adjustable_px;
 
-					child_px = limit_px(child, child_px, area_px);
+					child_px = limit_px(child, child_px, area_px, dpi);
 
 					auto npx = static_cast<unsigned>(child_px);
 					precise_px = child_px - npx;
@@ -1229,7 +1230,8 @@ namespace nana
 				}
 				else
 				{
-					child_px = static_cast<unsigned>(child->weight.integer());
+					// the child weight is a fixed value, therefore, the value passed to 1st get_value parameter is useless.
+					child_px = static_cast<unsigned>(child->weight.get_value(0, dpi));
 				}
 
 				//Use 'endpos' to calc width is to avoid deviation
@@ -1329,7 +1331,7 @@ namespace nana
 		}
 
 		//Returns the fixed pixels and the number of adjustable items.
-		std::pair<unsigned, std::size_t> _m_fixed_and_adjustable(kind match_kind, unsigned area_px) const noexcept
+		std::pair<unsigned, std::size_t> _m_fixed_and_adjustable(kind match_kind, unsigned area_px, std::size_t dpi) const noexcept
 		{
 			std::pair<unsigned, std::size_t> result;
 			if (field && (kind_of_division == match_kind))
@@ -1373,7 +1375,7 @@ namespace nana
 					continue;
 
 				if (!child->weight.empty())
-					children_fixed_px += child->weight.get_value(area_px);
+					children_fixed_px += child->weight.get_value(area_px, dpi);
 				else
 					++result.second;
 			}
@@ -1424,7 +1426,7 @@ namespace nana
 			return reached_mins;
 		}
 
-		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, unsigned area_px)
+		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, unsigned area_px, std::size_t dpi)
 		{
 			if (fa.first >= area_px || 0 == fa.second)
 				return 0;
@@ -1443,7 +1445,7 @@ namespace nana
 				double min_px = std::numeric_limits<double>::lowest(), max_px = std::numeric_limits<double>::lowest();
 
 				if (!child->min_px.empty())
-					min_px = child->min_px.get_value(static_cast<int>(area_px));
+					min_px = child->min_px.get_value(static_cast<int>(area_px), dpi);
 
 				auto weight_floor = (this->kind_of_division == kind::arrange ? child->run_.weight_floor.first : child->run_.weight_floor.second);
 				if ((weight_floor > 0) && (min_px < weight_floor))
@@ -1456,7 +1458,7 @@ namespace nana
 				}
 
 				if (!child->max_px.empty())
-					max_px = child->max_px.get_value(static_cast<int>(area_px));
+					max_px = child->max_px.get_value(static_cast<int>(area_px), dpi);
 
 				if (min_px >= 0 && max_px >= 0 && min_px > max_px)
 				{
@@ -1561,13 +1563,14 @@ namespace nana
 			}
 		}
 
-		void collocate(window) override
+		void collocate(window wd) override
 		{
 			if (!field || !(visible && display))
 				return;
 
-			auto const area = margin_area();
-			auto const gap_size = static_cast<unsigned>(gap.at(0).get_value(area.width)); //gap_size is 0 if gap isn't specified
+			auto const dpi = api::window_dpi(wd);
+			auto const area = margin_area(dpi);
+			auto const gap_size = static_cast<unsigned>(gap.at(0).get_value(area.width, dpi)); //gap_size is 0 if gap isn't specified
 
 			auto i = field->elements.cbegin();
 			auto const end = field->elements.cend();
@@ -1610,7 +1613,7 @@ namespace nana
 							if (arr.empty())
 								value = static_cast<decltype(value)>(block_w);
 							else
-								value = static_cast<decltype(value)>(arr.get_value(static_cast<int>(area.width)));
+								value = static_cast<decltype(value)>(arr.get_value(static_cast<int>(area.width), dpi));
 
 							unsigned width = (value > uns_block_w ? uns_block_w : value);
 							if (width > gap_size)	width -= gap_size;
@@ -1813,19 +1816,20 @@ namespace nana
 
 						auto const vert = (::nana::cursor::size_we != splitter_cursor_);
 						auto const delta = horz_point(vert, splitter_.pos() - begin_point_);
+						auto const dpi = api::window_dpi(arg.window_handle);
 
 						const auto total_pixels = static_cast<int>(left_pixels_ + right_pixels_);
 
 						auto left_px = std::clamp(static_cast<int>(left_pixels_) + delta, 0, total_pixels);
 
-						auto area_px = rectangle_rotator(vert, div_owner->margin_area()).w();
+						auto area_px = rectangle_rotator(vert, div_owner->margin_area(dpi)).w();
 						double imd_rate = 100.0 / area_px;
-						left_px = static_cast<int>(limit_px(leaf_left, left_px, area_px));
+						left_px = static_cast<int>(limit_px(leaf_left, left_px, area_px, dpi));
 						leaf_left->weight.assign_percent(imd_rate * left_px);
 
 						auto right_px = std::clamp(static_cast<int>(right_pixels_) - delta, 0, total_pixels);
 
-						right_px = static_cast<int>(limit_px(leaf_right, right_px, area_px));
+						right_px = static_cast<int>(limit_px(leaf_right, right_px, area_px, dpi));
 						leaf_right->weight.assign_percent(imd_rate * right_px);
 
 						pause_move_collocate_ = true;
@@ -1845,7 +1849,8 @@ namespace nana
 				events.mouse_move.connect_unignorable(grab_fn);
 			}
 
-			auto limited_range = _m_update_splitter_range();
+			auto const dpi = api::window_dpi(wd);
+			auto limited_range = _m_update_splitter_range(dpi);
 
 			if (!init_weight_.empty())
 			{
@@ -1856,7 +1861,7 @@ namespace nana
 				rectangle_rotator left(vert, leaf_left->field_area);
 				rectangle_rotator right(vert, leaf_right->field_area);
 				auto area_px = right.right() - left.x();
-				auto right_px = static_cast<int>(limit_px(leaf_right, init_weight_.get_value(area_px), static_cast<unsigned>(area_px)));
+				auto right_px = static_cast<int>(limit_px(leaf_right, init_weight_.get_value(area_px, dpi), static_cast<unsigned>(area_px), dpi));
 
 				//New position of splitter
 				const auto pos = std::clamp(static_cast<int>(area_px - right_px - splitter_px), limited_range.x(), limited_range.right());
@@ -2050,11 +2055,11 @@ namespace nana
 			return (left ? previous() : div_next);
 		}
 
-		rectangle_rotator _m_update_splitter_range()
+		rectangle_rotator _m_update_splitter_range(std::size_t dpi)
 		{
 			const bool vert = (cursor::size_ns == splitter_cursor_);
 
-			rectangle_rotator area(vert, div_owner->margin_area());
+			rectangle_rotator area(vert, div_owner->margin_area(dpi));
 
 			auto leaf_left = _m_leaf(true);
 			auto leaf_right = _m_leaf(false);
@@ -2067,16 +2072,16 @@ namespace nana
 			int endpos = right_base;
 
 			if (!leaf_left->min_px.empty())
-				pos += static_cast<int>(leaf_left->min_px.get_value(area.w()));
+				pos += static_cast<int>(leaf_left->min_px.get_value(area.w(), dpi));
 
 			if (!leaf_left->max_px.empty())
-				endpos = left_base + static_cast<int>(leaf_left->max_px.get_value(area.w()));
+				endpos = left_base + static_cast<int>(leaf_left->max_px.get_value(area.w(), dpi));
 
 			if (!leaf_right->min_px.empty())
-				endpos = (std::min)(right_base - static_cast<int>(leaf_right->min_px.get_value(area.w())), endpos);
+				endpos = (std::min)(right_base - static_cast<int>(leaf_right->min_px.get_value(area.w(), dpi)), endpos);
 
 			if (!leaf_right->max_px.empty())
-				pos = (std::max)(right_base - static_cast<int>(leaf_right->max_px.get_value(area.w())), pos);
+				pos = (std::max)(right_base - static_cast<int>(leaf_right->max_px.get_value(area.w(), dpi)), pos);
 
 			area.x_ref() = pos;
 			area.w_ref() = unsigned(endpos - pos + splitter_px);
@@ -2433,7 +2438,8 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-			auto area = this->margin_area();
+			auto const dpi = api::window_dpi(wd);
+			auto area = this->margin_area(dpi);
 
 			unsigned vert_count = 0, horz_count = 0;
 
@@ -2492,7 +2498,7 @@ namespace nana
 				double weight;
 				if (!child->weight.empty())
 				{
-					weight = child->weight.get_value(is_vert ? room.height : room.width);
+					weight = child->weight.get_value(is_vert ? room.height : room.width, dpi);
 					if (weight > room_px)
 						weight = room_px;
 				}
@@ -2622,20 +2628,21 @@ namespace nana
 	private:
 		void collocate(window wd) override
 		{
+			auto const dpi = api::window_dpi(wd);
 			division * div = nullptr;
 			for (auto & child : children)
 			{
 				if (child->display)
 				{
 					div = child.get();
-					div->field_area = this->margin_area();
+					div->field_area = this->margin_area(dpi);
 					div->collocate(wd);
 					break;
 				}
 			}
 
 			//Hide other child fields.
-			rectangle empty_r{ this->margin_area().position() , size{ 0, 0 } };
+			rectangle empty_r{ this->margin_area(dpi).position() , size{ 0, 0 } };
 			for (auto & child : children)
 			{
 				if (child.get() != div)
@@ -3016,7 +3023,7 @@ namespace nana
 			//2, max >= min
 			if (min_px.is_negative()) min_px.reset();
 			if (max_px.is_negative()) max_px.reset();
-			if ((!min_px.empty()) && (!max_px.empty()) && (min_px.get_value(100) > max_px.get_value(100)))
+			if ((!min_px.empty()) && (!max_px.empty()) && (min_px.get_value(100, 96) > max_px.get_value(100, 96))) //use a fixed dpi value for comparing two values.
 			{
 				min_px.reset();
 				max_px.reset();
@@ -3028,10 +3035,11 @@ namespace nana
 			if (!max_px.empty())
 				div->max_px = max_px;
 
-			if ((!min_px.empty()) && (!weight.empty()) && (weight.get_value(100) < min_px.get_value(100)))
+			// use a fixed dpi for comparing values
+			if ((!min_px.empty()) && (!weight.empty()) && (weight.get_value(100, 96) < min_px.get_value(100, 96)))
 				weight.reset();
 
-			if ((!max_px.empty()) && (!weight.empty()) && (weight.get_value(100) > max_px.get_value(100)))
+			if ((!max_px.empty()) && (!weight.empty()) && (weight.get_value(100, 96) > max_px.get_value(100, 96)))
 				weight.reset();
 
 			if (!weight.empty())

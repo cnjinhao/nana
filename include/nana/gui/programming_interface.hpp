@@ -489,6 +489,8 @@ namespace API
 	dragdrop_status window_dragdrop_status(::nana::window);
 }//end namespace API
 
+namespace api = API;
+
 }//end namespace nana
 
 #endif
