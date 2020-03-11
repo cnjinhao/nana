@@ -22,6 +22,8 @@
 #include "detail/ptdefs.hpp"
 #include "font_info.hpp"
 
+#include <optional>
+
 
 namespace nana
 {
@@ -75,9 +77,13 @@ namespace nana
 			unsigned weight() const;
 			bool italic() const;
 			native_font_type handle() const;
+			
 			void release();
+			
 			bool strikeout() const;
 			bool underline() const;
+
+			std::optional<font_info> info() const;
 
 			font& operator=(const font&);
 			bool operator==(const font&) const;

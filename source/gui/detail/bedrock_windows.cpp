@@ -30,17 +30,19 @@
 #include <iostream>	//use std::cerr
 
 #ifndef WM_MOUSEWHEEL
-#define WM_MOUSEWHEEL	0x020A
+#	define WM_MOUSEWHEEL	0x020A
 #endif
 
 #ifndef WM_MOUSEHWHEEL
-#define WM_MOUSEHWHEEL	0x020E
+#	define WM_MOUSEHWHEEL	0x020E
+#endif
+
+#ifndef WM_DPICHANGED
+#	define WM_DPICHANGED 0x02E0
 #endif
 
 #include "bedrock_types.hpp"
 
-
-typedef void (CALLBACK *win_event_proc_t)(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
 
 namespace nana
 {
@@ -806,7 +808,21 @@ namespace detail
 				}
 				break;
 			case WM_DPICHANGED:
-				def_window_proc = true;
+				wd_manager.update_dpi(msgwnd);
+				{
+				
+				auto r = reinterpret_cast<const RECT*>(lParam);
+				auto dpi_x = HIWORD(wParam);
+				auto dpi_y = LOWORD(wParam);
+				
+				::SetWindowPos(root_window,
+					NULL,
+					r->left,
+					r->top,
+					r->right - r->left,
+					r->bottom - r->top,
+					SWP_NOZORDER | SWP_NOACTIVATE);
+				}
 				break;
 			case WM_IME_STARTCOMPOSITION:
 				break;

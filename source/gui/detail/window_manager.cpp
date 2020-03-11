@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1495,6 +1495,25 @@ namespace detail
 				}
 				else
 					++i;
+			}
+		}
+
+		//updates the window elements when DPI is changed.
+		void window_manager::update_dpi(basic_window* wd)
+		{
+			std::lock_guard<mutex_type> lock(mutex_);
+			if (!available(wd))
+				return;
+
+			auto info = wd->drawer.graphics.typeface().info();
+
+			nana::paint::font ft{ info.value(), native_interface::window_dpi(wd->root) };
+
+			wd->drawer.graphics.typeface(ft);
+
+			for (auto child : wd->children)
+			{
+				update_dpi(child);
 			}
 		}
 

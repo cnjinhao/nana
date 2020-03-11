@@ -197,6 +197,12 @@ namespace paint
 			return impl_->real_font->native_handle();
 		}
 
+		std::optional<font_info> font::info() const
+		{
+			if (empty()) return {};
+			return impl_->real_font->font_info();
+		}
+
 		void font::release()
 		{
 			if(impl_)
