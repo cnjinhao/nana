@@ -14,6 +14,7 @@
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 
 #include <memory>
+#include <cstring>
 #include "image_pixbuf.hpp"
 
 namespace nana{	namespace paint
@@ -132,7 +133,7 @@ namespace nana{	namespace paint
 				return false;
 			}
 		private:
-			std::unique_ptr<unsigned char[]> _m_decompress_rle8(const bitmap_info_header* header, const unsigned char* data, std::size_t data_size, std::size_t line_bytes)
+			std::unique_ptr<unsigned char[]> _m_decompress_rle8(const bitmap_info_header* header, const unsigned char* data, std::size_t data_size)
 			{
 				std::size_t const lines = std::abs(header->biHeight);
 				unsigned char* const indexes = new unsigned char[header->biWidth * lines];
@@ -222,7 +223,7 @@ namespace nana{	namespace paint
 
 					if (1 == header->biCompression)
 					{
-						indexes = _m_decompress_rle8(header, bits, length, line_bytes);
+						indexes = _m_decompress_rle8(header, bits, length);
 						line_bytes = header->biWidth;
 						bits = indexes.get();
 					}
