@@ -1808,6 +1808,12 @@ namespace nana
 					{
 						grabbed_ = false;
 						this->_m_update_div(impl_->div_text);
+
+						//revise the position of splitter window.(#512)
+						//when the splitter is dragged, the place recalculates the left/right fields the weight in percentage, then update 
+						//position of the splitter field. It may cause deviation that new splitter field position is not same with the position of
+						//splitter window after dragging a bit, because the field position is calcuated with left/right fields's weights which are float-point values.
+						splitter_.move(this->field_area);
 					}
 					else if (event_code::mouse_move == arg.evt_code)
 					{
