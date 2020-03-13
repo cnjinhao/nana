@@ -1,7 +1,7 @@
 /*
  *	A Picture Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -220,8 +220,10 @@ namespace nana
 			create(wd, r, visible);
 		}
 
-		void picture::load(::nana::paint::image img, const ::nana::rectangle& valid_area)
+		bool picture::load(::nana::paint::image img, const ::nana::rectangle& valid_area)
 		{
+			if (img.empty())
+				return false;
 			internal_scope_guard lock;
 			auto& backimg = get_drawer_trigger().impl_->backimg;
 			backimg.image = std::move(img);
@@ -231,6 +233,17 @@ namespace nana
 				backimg.bground->image(backimg.image, true, valid_area);
 
 			API::refresh_window(*this);
+			return true;
+		}
+
+		void picture::clear()
+		{
+			internal_scope_guard lock;
+			auto& backimg = get_drawer_trigger().impl_->backimg;
+			if (backimg.image.empty())
+				return;
+
+			backimg.image.close();
 		}
 
 		void picture::align(::nana::align horz, align_v vert)

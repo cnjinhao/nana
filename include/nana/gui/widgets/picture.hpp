@@ -1,7 +1,7 @@
 /**
  *	A Picture Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -51,7 +51,8 @@ namespace nana
 		picture(window, bool visible);
 		picture(window, const rectangle& ={}, bool visible = true);
 
-		void load(::nana::paint::image, const rectangle& valid_area = {});
+		bool load(::nana::paint::image, const rectangle& valid_area = {});
+		void clear();
 
 		/// Sets the align of image.
 		void align(align, align_v);

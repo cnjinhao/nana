@@ -78,14 +78,9 @@ namespace paint
 			:	image_ptr_(std::move(r.image_ptr_))
 		{}
 
-		image::image(const std::string& file)
+		image::image(const std::filesystem::path& p)
 		{
-			open(file);
-		}
-
-		image::image(const std::wstring& file)
-		{
-			open(file);
+			open(p);
 		}
 
 		image::~image()
@@ -185,18 +180,10 @@ namespace paint
 			return ptr;
 		}
 
-		bool image::open(const ::std::string& file)
+		bool image::open(const ::std::filesystem::path& p)
 		{
-			fs::path path(file);
-			image_ptr_ = create_image(path);
-			return (image_ptr_ ? image_ptr_->open(path) : false);
-		}
-
-		bool image::open(const std::wstring& file)
-		{
-			fs::path path(file);
-			image_ptr_ = create_image(path);
-			return (image_ptr_ ? image_ptr_->open(path) : false);
+			image_ptr_ = create_image(p);
+			return (image_ptr_ ? image_ptr_->open(p) : false);
 		}
 
 		bool image::open(const void* data, std::size_t bytes)

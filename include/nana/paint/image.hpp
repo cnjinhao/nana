@@ -31,14 +31,13 @@ namespace paint
 		image() noexcept;
 		image(const image&);
 		image(image&&);
-		explicit image(const ::std::string& file);
-		explicit image(const ::std::wstring& file);
+		explicit image(const std::filesystem::path&);
 
 		~image();
 		image& operator=(const image& rhs);
 		image& operator=(image&&);
-		bool open(const ::std::string& file);
-		bool open(const ::std::wstring& file);
+
+		bool open(const std::filesystem::path&);
 		
 		/// Opens an icon from a specified buffer
 		bool open(const void* data, std::size_t bytes);
