@@ -844,7 +844,7 @@ namespace nana
 			return px;
 		}
 
-		std::pair<double, double> calc_weight_floor()
+		std::pair<double, double> calc_weight_floor(window wd)
 		{
 			std::pair<double, double> floor;
 			run_.fit_extents.clear();
@@ -857,7 +857,7 @@ namespace nana
 
 				for (auto & child : children)
 				{
-					auto child_floor = child->calc_weight_floor();
+					auto child_floor = child->calc_weight_floor(wd);
 
 					if(child->is_percent())
 					{
@@ -974,7 +974,13 @@ namespace nana
 				}
 
 				if (1 == set_weight)
-					this->weight.assign(static_cast<int>(fv));
+				{
+					//avoid deviation in dpi scaling.
+					if (api::window_dpi(wd) != 96)
+						this->weight.assign(static_cast<int>(fv * 96 / api::window_dpi(wd)) + 1);
+					else
+						this->weight.assign(static_cast<int>(fv));
+				}
 
 				run_.weight_floor = floor;
 
@@ -2681,7 +2687,7 @@ namespace nana
 			if (root_division->field_area.empty())
 				return;
 
-			root_division->calc_weight_floor();
+			root_division->calc_weight_floor(window_handle);
 
 			root_division->collocate(window_handle);
 
@@ -3278,7 +3284,7 @@ namespace nana
 			if (impl_->root_division)
 			{
 				impl_->root_division->field_area.dimension({ arg.width, arg.height });
-				impl_->root_division->calc_weight_floor();
+				impl_->root_division->calc_weight_floor(arg.window_handle);
 				impl_->root_division->collocate(arg.window_handle);
 			}
 		});
