@@ -248,7 +248,7 @@ namespace nana
 		/// Retrieves a reference of the current category's value type object. If current category is empty, it throws a exception of std::runtime_error.
 		value_type& value() const
 		{
-			return this->get_drawer_trigger().value();
+			return nana::any_cast<value_type&>(this->get_drawer_trigger().value());
 		}
 	private:
 		//Overrides widget's virtual functions
