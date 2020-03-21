@@ -18,15 +18,13 @@
 	#include <windows.h>
 	#include "../detail/mswin/platform_spec.hpp"
 #elif defined(NANA_POSIX)
-	#include <time.h>
-	#include <errno.h>
 	#include <unistd.h>
 	#include <sys/time.h>
 	#include <sys/syscall.h>
 	#include <pthread.h>
 	#include <sys/stat.h>
 	#include <spawn.h>
-	#include <string.h>
+	#include <cstring>
 
 static void posix_open_url(const char *url_utf8)
 {
@@ -55,7 +53,7 @@ static void posix_open_url(const char *url_utf8)
         static const char firefox[] = "firefox";
         char name[sizeof firefox]{};
         // argv does not like const-literals so make a copy.
-        strcpy(name, firefox);
+        std::strcpy(name, firefox);
         char *argv[3] = {name, const_cast<char *>(url_utf8), nullptr};
         posix_spawn(&pid, path, NULL, NULL, argv, environ);
     }
