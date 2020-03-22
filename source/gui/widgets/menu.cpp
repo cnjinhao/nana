@@ -1342,6 +1342,28 @@ namespace nana
 				impl_->window_ptr->pick();
 		}
 
+		int menu::invoke (std::size_t pos)
+		{
+			const auto& item_ptr = impl_->mbuilder.data().items[pos];
+			if (!item_ptr->flags.splitter)
+			{
+				if (item_ptr->linked.menu_ptr)
+				{
+					return 2;
+				}
+				else if (item_ptr->flags.enabled)
+				{
+					if (item_ptr->event_handler)
+					{
+						item_proxy ip{ pos, this };
+						item_ptr->event_handler.operator()(ip);
+					}
+					return 1;
+				}
+			}
+			return 0;
+		}
+
 		menu& menu::max_pixels(unsigned px)
 		{
 			impl_->mbuilder.data().max_pixels = (px > 100 ? px : 100);

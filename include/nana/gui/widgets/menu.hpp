@@ -171,6 +171,7 @@ namespace nana
 		std::size_t size() const;					///< Return the number of items.
 		int send_shortkey(wchar_t key);
 		void pick();
+		int invoke(std::size_t pos);				//< Send click event to the given entry.
 
 		menu& max_pixels(unsigned);				    ///< Sets the max width in pixels of the item.
 		unsigned max_pixels() const;
