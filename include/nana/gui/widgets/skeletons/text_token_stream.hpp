@@ -1,7 +1,7 @@
 /*
  *	Text Token Stream
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -44,11 +44,22 @@ namespace nana{ namespace widgets{	namespace skeletons
 	class tokenizer
 	{
 	public:
-		tokenizer(const std::wstring& s, bool format_enabled)
-			:	iptr_(s.data()),
-				endptr_(s.data() + s.size()),
-				format_enabled_(format_enabled)
+		tokenizer(const std::wstring& s, bool format_enabled) :
+#if 0 //deprecated
+			iptr_(s.data()),
+			endptr_(s.data() + s.size()),
+#endif
+			format_enabled_(format_enabled)
 		{
+			entities_ = unicode_bidi{}.reorder(s.c_str(), s.size());
+			for (auto & e : entities_)
+			{
+				ptr_ = e.begin;
+				if (e.begin < e.end)
+					break;
+
+				++idx_;
+			}
 		}
 
 		void push(token tk)
@@ -59,18 +70,23 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the token.
 		token read()
 		{
-			if(revert_token_ != token::eof)
+			if (revert_token_ != token::eof)
 			{
 				token tk = revert_token_;
 				revert_token_ = token::eof;
 				return tk;
 			}
 
-			if(iptr_ == endptr_)
+#if 0	//deprecated
+			if (iptr_ == endptr_)
 				return token::eof;
+#else
+			if (_m_eof())
+				return token::eof;
+#endif
 
 			//Check whether it is a format token.
-			if(format_enabled_ && format_state_)
+			if (format_enabled_ && format_state_)
 				return _m_format_token();
 
 			return _m_token();
@@ -106,15 +122,19 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the data token
 		token _m_token()
 		{
+#if 0	//deprecated
 			wchar_t ch = *iptr_;
-
-			if(ch > 0xFF)
+#else
+			auto ch = _m_get();
+#endif
+			if (ch > 0xFF)
 			{
 				//This is the Unicode.
 
 				idstr_.clear();
 				idstr_.append(1, ch);
 
+#if 0	//deprecated
 				if (_m_unicode_word_breakable(iptr_))
 				{
 					++iptr_;
@@ -122,53 +142,89 @@ namespace nana{ namespace widgets{	namespace skeletons
 				}
 
 				ch = *++iptr_;
-				while((iptr_ != endptr_) && (ch > 0xFF) && (false == _m_unicode_word_breakable(iptr_)))
+				while ((iptr_ != endptr_) && (ch > 0xFF) && (false == _m_unicode_word_breakable(iptr_)))
 				{
 					idstr_.append(1, ch);
 
 					ch = *++iptr_;
 				}
+#else
+				if (_m_unicode_word_breakable(ptr_))
+				{
+					_m_read();
+					return token::data;
+				}
+
+				_m_read();
+				ch = _m_get();
+				while ((!_m_eof()) && (ch > 0xFF) && (false == _m_unicode_word_breakable(ptr_)))
+				{
+					idstr_.append(1, ch);
+					_m_read();
+					ch = _m_get();
+				}
+
+				//When the last _m_unicode_word_breakable returns true, it implies the ch(left character)
+				//is not the breakable character. So it belongs to the data.
+				idstr_.append(1, ch);
+				_m_read();
+#endif
 
 				return token::data;
 			}
 
-			if('\n' == ch)
+			if ('\n' == ch)
 			{
+#if 0 //deprecated
 				++iptr_;
+#else
+				_m_read();
+#endif
 				return token::endl;
 			}
 
-			if(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'))
+			if (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'))
 			{
+#if 0	//deprecated
 				auto idstr = iptr_;
 				do
 				{
 					ch = *(++iptr_);
-				}
-				while(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'));
+				} while (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'));
 
 				idstr_.assign(idstr, iptr_);
+#else
+				auto idstr = ptr_;
+				do
+				{
+					_m_read();
+					ch = _m_get();
+				} while (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'));
 
+				idstr_.assign(idstr, ptr_);
+#endif
 				return token::data;
 			}
 
-			if('0' <= ch && ch <= '9')
+			if ('0' <= ch && ch <= '9')
 			{
 				_m_read_number();
 				return token::data;
 			}
 
-			if(('<' == ch) && format_enabled_)
+			if (('<' == ch) && format_enabled_)
 			{
-				//pos keeps the current position, and it used for restring
+#if 0 //deprecated
+				//pos keeps the current position, and it used for restoring
 				//iptr_ when the search is failed.
+
 				auto pos = ++iptr_;
 				_m_eat_whitespace();
-				if(*iptr_ == '/')
+				if (*iptr_ == '/')
 				{
 					++iptr_;
 					_m_eat_whitespace();
-					if(*iptr_ == '>')
+					if (*iptr_ == '>')
 					{
 						++iptr_;
 						return token::format_end;
@@ -177,6 +233,29 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 				//Restore the iptr_;
 				iptr_ = pos;
+#else
+				//pos keeps the current position, and it used for restoring
+				//iptr_ when the search is failed.
+				_m_read();
+				auto idx = idx_;
+				auto ptr = ptr_;
+
+				_m_eat_whitespace();
+				if (_m_get() == '/')
+				{
+					_m_read();
+					_m_eat_whitespace();
+					if (_m_get() == '>')
+					{
+						_m_read();
+						return token::format_end;
+					}
+				}
+
+				//Restore the iptr_;
+				idx_ = idx;
+				ptr_ = ptr;
+#endif
 
 				format_state_ = true;
 				return token::tag_begin;
@@ -184,9 +263,10 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 
 			//Escape
-			if(this->format_enabled_ && (ch == '\\'))
+#if 0 //deprecated
+			if (this->format_enabled_ && (ch == '\\'))
 			{
-				if(iptr_ + 1 < endptr_)
+				if (iptr_ + 1 < endptr_)
 				{
 					ch = *(iptr_ + 1);
 
@@ -209,6 +289,32 @@ namespace nana{ namespace widgets{	namespace skeletons
 			}
 			else
 				++iptr_;
+#else
+			if (this->format_enabled_ && (ch == '\\'))
+			{
+				if (!_m_eof(1))
+				{
+					_m_read();
+					ch = _m_get();
+					if ('<' == ch || '>' == ch)	//two characters need to be escaped.
+					{
+						_m_read();
+					}
+					else
+					{
+						//ignore escape
+						ch = '\\';
+					}
+				}
+				else
+				{
+					_m_set_eof();
+					return token::eof;
+				}
+			}
+			else
+				_m_read();
+#endif
 
 			idstr_.clear();
 			idstr_.append(1, ch);
@@ -220,9 +326,12 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			_m_eat_whitespace();
 
+#if 0	//deprecated
 			auto ch = *iptr_++;
-
-			switch(ch)
+#else
+			auto ch = _m_read();
+#endif
+			switch (ch)
 			{
 			case ',':	return token::comma;
 			case '/':	return token::backslash;
@@ -232,40 +341,48 @@ namespace nana{ namespace widgets{	namespace skeletons
 				return token::tag_end;
 			case '"':
 				//Here is a string and all the meta characters will be ignored except "
+#if 0 //deprecated
+			{
+				auto str = iptr_;
+
+				while ((iptr_ != endptr_) && (*iptr_ != '"'))
+					++iptr_;
+
+				idstr_.assign(str, iptr_++);
+			}
+#else
+				while (!(_m_eof() || ('"' == _m_get())))
 				{
-					auto str = iptr_;
-
-					while((iptr_ != endptr_) && (*iptr_ != '"'))
-						++iptr_;
-
-					idstr_.assign(str, iptr_++);
+					idstr_ += _m_read();
 				}
+#endif
 				return token::string;
 			case '(':
 				_m_eat_whitespace();
-				if((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
+#if 0 //deprecated
+				if ((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 				{
 					auto pbegin = iptr_;
-					while((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
+					while ((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 						++iptr_;
 
 					binary_.first.assign(pbegin, iptr_);
 
 					_m_eat_whitespace();
-					if((iptr_ < endptr_) && (',' == *iptr_))
+					if ((iptr_ < endptr_) && (',' == *iptr_))
 					{
 						++iptr_;
 						_m_eat_whitespace();
-						if((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
+						if ((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 						{
 							pbegin = iptr_;
-							while((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
+							while ((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 								++iptr_;
 
 							binary_.second.assign(pbegin, iptr_);
 
 							_m_eat_whitespace();
-							if((iptr_ < endptr_) && (')' == *iptr_))
+							if ((iptr_ < endptr_) && (')' == *iptr_))
 							{
 								++iptr_;
 								return token::binary;
@@ -273,64 +390,91 @@ namespace nana{ namespace widgets{	namespace skeletons
 						}
 					}
 				}
+#else
+				if ((!_m_eof()) && _m_is_idstr_element(_m_get()))
+				{
+					while ((!_m_eof()) && _m_is_idstr_element(_m_get()))
+						binary_.first += _m_read();
+
+					_m_eat_whitespace();
+					if ((!_m_eof()) && (',' == _m_get()))
+					{
+						_m_read();
+						_m_eat_whitespace();
+						if ((!_m_eof()) && _m_is_idstr_element(_m_get()))
+						{
+							while ((!_m_eof()) && _m_is_idstr_element(_m_get()))
+								binary_.second += _m_read();
+
+							_m_eat_whitespace();
+							if ((!_m_eof()) && (')' == _m_get()))
+							{
+								_m_read();
+								return token::binary;
+							}
+						}
+					}
+				}
+#endif
 				return token::eof;
 			}
 
-			
 
-			if(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '_' == ch)
+
+			if (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '_' == ch)
 			{
-				--iptr_;
+				_m_move_back();
+
 				//Here is a identifier
 				_m_read_idstr();
 
-				if(L"font" == idstr_)
+				if (L"font" == idstr_)
 					return token::font;
-				else if(L"bold" == idstr_)
+				else if (L"bold" == idstr_)
 					return token::bold;
-				else if(L"size" == idstr_)
+				else if (L"size" == idstr_)
 					return token::size;
-				else if(L"baseline" == idstr_)
+				else if (L"baseline" == idstr_)
 					return token::baseline;
-				else if(L"top" == idstr_)
+				else if (L"top" == idstr_)
 					return token::top;
-				else if(L"center" == idstr_)
+				else if (L"center" == idstr_)
 					return token::center;
-				else if(L"bottom" == idstr_)
+				else if (L"bottom" == idstr_)
 					return token::bottom;
-				else if(L"color" == idstr_)
+				else if (L"color" == idstr_)
 					return token::color;
-				else if(L"image" == idstr_)
+				else if (L"image" == idstr_)
 					return token::image;
-				else if(L"true" == idstr_)
+				else if (L"true" == idstr_)
 					return token::_true;
-				else if(L"url" == idstr_)
+				else if (L"url" == idstr_)
 					return token::url;
-				else if(L"target" == idstr_)
+				else if (L"target" == idstr_)
 					return token::target;
-				else if(L"false" == idstr_)
+				else if (L"false" == idstr_)
 					return token::_false;
-				else if(L"red" == idstr_)
+				else if (L"red" == idstr_)
 					return token::red;
-				else if(L"green" == idstr_)
+				else if (L"green" == idstr_)
 					return token::green;
-				else if(L"blue" == idstr_)
+				else if (L"blue" == idstr_)
 					return token::blue;
-				else if(L"white" == idstr_)
+				else if (L"white" == idstr_)
 					return token::white;
-				else if(L"black" == idstr_)
+				else if (L"black" == idstr_)
 					return token::black;
-				else if(L"min_limited" == idstr_)
+				else if (L"min_limited" == idstr_)
 					return token::min_limited;
-				else if(L"max_limited" == idstr_)
+				else if (L"max_limited" == idstr_)
 					return token::max_limited;
 
 				return token::string;
 			}
 
-			if('0' <= ch && ch <= '9')
+			if ('0' <= ch && ch <= '9')
 			{
-				--iptr_;
+				_m_move_back();
 				_m_read_number();
 				return token::number;
 			}
@@ -346,16 +490,28 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the identifier.
 		void _m_read_idstr()
 		{
+#if 0 //deprecated
 			auto idstr = iptr_;
 
 			wchar_t ch;
 			do
 			{
 				ch = *(++iptr_);
-			}
-			while(('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('_' == ch) || ('0' <= ch && ch <= '9'));
+			} while (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('_' == ch) || ('0' <= ch && ch <= '9'));
 
 			idstr_.assign(idstr, iptr_);
+#else
+			auto idstr = ptr_;
+
+			wchar_t ch;
+			do
+			{
+				_m_read();
+				ch = _m_get();
+			} while (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('_' == ch) || ('0' <= ch && ch <= '9'));
+
+			idstr_.assign(idstr, ptr_);
+#endif
 		}
 
 		//Read the number
@@ -363,23 +519,24 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			idstr_.clear();
 
+#if 0 //deprecated
 			wchar_t ch = *iptr_;
 
 			idstr_ += ch;
 
 			//First check the number whether will be a hex number.
-			if('0' == ch)
+			if ('0' == ch)
 			{
 				ch = *++iptr_;
-				if((!('0' <= ch && ch <= '9')) && (ch != 'x' && ch != 'X'))
+				if ((!('0' <= ch && ch <= '9')) && (ch != 'x' && ch != 'X'))
 					return;
 
-				if(ch == 'x' || ch == 'X')
+				if (ch == 'x' || ch == 'X')
 				{
 					//Here is a hex number
 					idstr_ += 'x';
 					ch = *++iptr_;
-					while(('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F'))
+					while (('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F'))
 					{
 						idstr_ += ch;
 						ch = *++iptr_;
@@ -392,18 +549,60 @@ namespace nana{ namespace widgets{	namespace skeletons
 			}
 
 			ch = *++iptr_;
-			while('0' <= ch && ch <= '9')
+			while ('0' <= ch && ch <= '9')
 			{
 				idstr_ += ch;
 				ch = *++iptr_;
 			}
+#else
+			auto ch = _m_get();
+
+			idstr_ += ch;
+
+			//First check the number whether will be a hex number.
+			if ('0' == ch)
+			{
+				_m_read();
+				ch = _m_get();
+				if ((!('0' <= ch && ch <= '9')) && (ch != 'x' && ch != 'X'))
+					return;
+
+				if (ch == 'x' || ch == 'X')
+				{
+					//Here is a hex number
+					idstr_ += 'x';
+					_m_read();
+					ch = _m_get();
+					while (('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F'))
+					{
+						idstr_ += ch;
+						_m_read();
+						ch = _m_get();
+					}
+					return;
+				}
+
+				//Here is not a hex number
+				idstr_ += ch;
+			}
+
+			_m_read();
+			ch = _m_get();
+			while ('0' <= ch && ch <= '9')
+			{
+				idstr_ += ch;
+				_m_read();
+				ch = _m_get();
+			}
+#endif
 		}
 
 		void _m_eat_whitespace()
 		{
-			while(true)
+			while (true)
 			{
-				switch(*iptr_)
+#if 0 //deprecated
+				switch (*iptr_)
 				{
 				case ' ':
 				case '\t':
@@ -412,11 +611,126 @@ namespace nana{ namespace widgets{	namespace skeletons
 				default:
 					return;
 				}
+#else
+				switch (_m_get())
+				{
+				case ' ':
+				case '\t':
+					_m_read();
+					break;
+				default:
+					return;
+				}
+#endif
 			}
 		}
 	private:
+		wchar_t _m_get() const noexcept
+		{
+			if (idx_ < entities_.size())
+				return *ptr_;
+			return 0;
+		}
+
+		void _m_set_eof()
+		{
+			idx_ = entities_.size();
+			if (0 == idx_)
+				ptr_ = nullptr;
+			else
+				ptr_ = entities_.back().end;
+		}
+
+		bool _m_eof(std::size_t off)
+		{
+			if (0 == off)
+				return _m_eof();
+
+			bool eof = false;
+			auto idx = idx_;
+			auto ptr = ptr_;
+			while (off)
+			{
+				if (_m_eof())
+				{
+					eof = true;
+					break;
+				}
+
+				_m_read();
+			}
+
+			idx_ = idx;
+			ptr_ = ptr;
+			return eof;
+		}
+
+		bool _m_eof() noexcept
+		{
+			if (idx_ == entities_.size())
+				return true;
+
+			if (ptr_ == entities_[idx_].end)
+			{
+				auto idx = idx_;
+
+				while (++idx < entities_.size())
+				{
+					if (entities_[idx].begin != entities_[idx].end)
+						return false;
+				}
+				return true;
+			}
+
+			return false;
+		}
+
+		wchar_t _m_read() noexcept
+		{
+			if (idx_ < entities_.size())
+			{
+				if (ptr_ < entities_[idx_].end)
+				{
+					if (ptr_ + 1 < entities_[idx_].end)
+						return *(ptr_++);
+				}
+
+				auto ch = *ptr_;
+
+				while ((++idx_) < entities_.size())
+				{
+					if (entities_[idx_].begin != entities_[idx_].end)
+					{
+						ptr_ = entities_[idx_].begin;
+						return ch;
+					}
+				}
+			}
+			
+			return 0;
+		}
+
+		void _m_move_back() noexcept
+		{
+			if ((idx_ == entities_.size()) || (entities_[idx_].begin == ptr_))
+			{
+				if (0 == idx_)
+					return;
+				--idx_;
+				ptr_ = entities_[idx_].end;
+			}
+
+			--ptr_;
+		}
+	private:
+		std::vector<unicode_bidi::entity> entities_;
+		std::size_t idx_{ 0 };
+		const wchar_t* ptr_{ nullptr };
+
+#if 0 //deprecated
 		const wchar_t * iptr_;
 		const wchar_t * endptr_;
+#endif
 		const bool	format_enabled_;
 		bool	format_state_{false};
 
@@ -641,6 +955,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 			while(true)
 			{
 				token tk = tknizer.read();
+				if (token::eof == tk)
+					break;
 
 				switch(tk)
 				{
@@ -665,11 +981,37 @@ namespace nana{ namespace widgets{	namespace skeletons
 					if(fstack.size() > 1)
 						fstack.pop();
 					break;
-				case token::eof:
-					return;
 				default:
 					throw std::runtime_error("invalid token");
 				}
+			}
+
+			if (!format_enabled)
+				return;
+
+			//Reorder the sequence of line blocks for RTL languages.
+			for (auto & ln : lines_)
+			{
+				std::wstring str;
+				std::vector<std::size_t> position;
+				for (auto & b : ln)
+				{
+					position.push_back(str.size());
+					str += b.data_ptr->text();
+				}
+
+				std::remove_reference<decltype(ln)>::type dump;
+				dump.swap(ln);
+
+				auto entities = unicode_bidi{}.reorder(str.c_str(), str.size());
+				for (auto & e : entities)
+				{
+					auto pos = e.begin - str.c_str();
+
+					auto i = std::find(position.cbegin(), position.cend(), pos);
+					ln.push_back(dump[i - position.cbegin()]);
+				}
+				
 			}
 		}
 
