@@ -606,6 +606,11 @@ namespace nana
 			return reordered;
 		}
 
+		bool unicode_bidi::is_text_right(const entity& e)
+		{
+			return ((e.bidi_char_type != unicode_bidi::bidi_char::L) && (e.level & 1));
+		}
+
 		unsigned unicode_bidi::_m_paragraph_level(const char_type * begin, const char_type * end)
 		{
 			for(const char_type* i = begin; i != end; ++i)

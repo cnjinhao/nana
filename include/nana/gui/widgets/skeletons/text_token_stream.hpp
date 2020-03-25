@@ -41,11 +41,12 @@ namespace nana{ namespace widgets{	namespace skeletons
 		eof
 	};
 
+#define REORDER_TOKENSx
 	class tokenizer
 	{
 	public:
 		tokenizer(const std::wstring& s, bool format_enabled) :
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 			iptr_(s.data()),
 			endptr_(s.data() + s.size()),
 #endif
@@ -77,7 +78,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				return tk;
 			}
 
-#if 0	//deprecated
+#ifndef REORDER_TOKENS	//deprecated
 			if (iptr_ == endptr_)
 				return token::eof;
 #else
@@ -122,7 +123,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the data token
 		token _m_token()
 		{
-#if 0	//deprecated
+#ifndef REORDER_TOKENS	//deprecated
 			wchar_t ch = *iptr_;
 #else
 			auto ch = _m_get();
@@ -134,7 +135,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				idstr_.clear();
 				idstr_.append(1, ch);
 
-#if 0	//deprecated
+#ifndef REORDER_TOKENS	//deprecated
 				if (_m_unicode_word_breakable(iptr_))
 				{
 					++iptr_;
@@ -148,6 +149,11 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 					ch = *++iptr_;
 				}
+
+				//When the last _m_unicode_word_breakable returns true, it implies the ch(left character)
+				//is not the breakable character. So it belongs to the data.
+				idstr_.append(1, ch);
+				++iptr_;
 #else
 				if (_m_unicode_word_breakable(ptr_))
 				{
@@ -175,7 +181,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 			if ('\n' == ch)
 			{
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 				++iptr_;
 #else
 				_m_read();
@@ -185,7 +191,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 			if (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'))
 			{
-#if 0	//deprecated
+#ifndef REORDER_TOKENS	//deprecated
 				auto idstr = iptr_;
 				do
 				{
@@ -214,7 +220,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 			if (('<' == ch) && format_enabled_)
 			{
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 				//pos keeps the current position, and it used for restoring
 				//iptr_ when the search is failed.
 
@@ -263,7 +269,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 
 			//Escape
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 			if (this->format_enabled_ && (ch == '\\'))
 			{
 				if (iptr_ + 1 < endptr_)
@@ -326,7 +332,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			_m_eat_whitespace();
 
-#if 0	//deprecated
+#ifndef REORDER_TOKENS	//deprecated
 			auto ch = *iptr_++;
 #else
 			auto ch = _m_read();
@@ -341,7 +347,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				return token::tag_end;
 			case '"':
 				//Here is a string and all the meta characters will be ignored except "
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 			{
 				auto str = iptr_;
 
@@ -359,7 +365,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 				return token::string;
 			case '(':
 				_m_eat_whitespace();
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 				if ((iptr_ < endptr_) && _m_is_idstr_element(*iptr_))
 				{
 					auto pbegin = iptr_;
@@ -423,7 +429,11 @@ namespace nana{ namespace widgets{	namespace skeletons
 
 			if (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '_' == ch)
 			{
+#ifndef REORDER_TOKENS	//deprecated
+				--iptr_;
+#else
 				_m_move_back();
+#endif
 
 				//Here is a identifier
 				_m_read_idstr();
@@ -490,7 +500,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		//Read the identifier.
 		void _m_read_idstr()
 		{
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 			auto idstr = iptr_;
 
 			wchar_t ch;
@@ -519,7 +529,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			idstr_.clear();
 
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 			wchar_t ch = *iptr_;
 
 			idstr_ += ch;
@@ -601,7 +611,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		{
 			while (true)
 			{
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 				switch (*iptr_)
 				{
 				case ' ':
@@ -727,7 +737,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 		std::size_t idx_{ 0 };
 		const wchar_t* ptr_{ nullptr };
 
-#if 0 //deprecated
+#ifndef REORDER_TOKENS //deprecated
 		const wchar_t * iptr_;
 		const wchar_t * endptr_;
 #endif
@@ -985,9 +995,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 					throw std::runtime_error("invalid token");
 				}
 			}
-
-			if (!format_enabled)
-				return;
 
 			//Reorder the sequence of line blocks for RTL languages.
 			for (auto & ln : lines_)
