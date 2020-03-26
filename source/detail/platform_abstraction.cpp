@@ -385,10 +385,10 @@ namespace nana
 				if('\t' != *p)
 				{
 					::XftGlyphExtents(disp_, xft, glyph_indexes, 1, &extent);
-					*pxbuf = extent.xOff;
+					*pxbuf++ = extent.xOff;
 				}
 				else
-					*pxbuf = 0;//tab_pixels_;
+					*pxbuf++ = 0;//tab_pixels_;
 
 				++glyph_indexes;
 			}
