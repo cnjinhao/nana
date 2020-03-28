@@ -148,6 +148,8 @@ IsWindows8OrGreater()
 #	include "posix/platform_spec.hpp"
 #	include <fontconfig/fontconfig.h>
 #	if defined(NANA_USE_XFT)
+#		include <nana/unicode_bidi.hpp>
+#		include "text_reshaping.hpp"
 #		include <X11/Xft/Xft.h>
 #		include <iconv.h>
 #		include <fstream>
@@ -213,16 +215,40 @@ namespace nana
 			int const init_x = x;
 			std::unique_ptr<FT_UInt[]> glyph_indexes(new FT_UInt[len]);
 
-			while(true)
+			//The RTL and shaping should be handled manually, because the libXft and X doesn't support these language features.
+			std::wstring rtl;
+			auto ents = unicode_reorder(str, len);
+			for(auto & e : ents)
 			{
-				auto preferred = _m_scan_fonts(xft, str, len, glyph_indexes.get());
-				x += _m_draw(xftdraw, xftcolor, preferred.first, x, y, str, preferred.second, glyph_indexes.get());
+				auto size = static_cast<std::size_t>(e.end - e.begin);
+				auto p = e.begin;
 
-				if(len == preferred.second)
-					break;
+				if(unicode_bidi::is_text_right(e))
+				{
+					std::wstring reverse_str;
+					for(auto i = static_cast<int>(e.end - e.begin) - 1; i > -1; --i)
+						reverse_str += e.begin[i];
 
-				len -= preferred.second;
-				str += preferred.second;
+					//Process reshaping.
+					rtl = nana::reshaping::arabic::reshape(reverse_str);
+					p = rtl.c_str();
+					size = rtl.size();
+				}
+
+				while(true)
+				{
+					//Scan the string until the character which font is not same with the font of the first character where the scan begins.
+					auto preferred = _m_scan_fonts(xft, p, size, glyph_indexes.get());
+					x += _m_draw(xftdraw, xftcolor, preferred.first, x, y, p, preferred.second, glyph_indexes.get());
+
+					if(size == preferred.second)
+						break;
+
+					size -= preferred.second;
+					p += preferred.second;
+				}
+
+				rtl.clear();
 			}
 
 			return x - init_x;
@@ -300,14 +326,14 @@ namespace nana
 				if(ptab == p)
 				{
 					++p;
-					//x += static_cast<int>(tab_pixels_);
 					continue;
 				}
 
 				auto const size = ptab - p;
+
 				::XftDrawGlyphs(xftdraw, xftcolor, xft, x, y, glyph_indexes + off, size);
 				::XftGlyphExtents(disp_, xft, glyph_indexes + off, size, &ext);
-
+				
 				x += ext.xOff;
 
 				if(ptab == end)
@@ -361,10 +387,10 @@ namespace nana
 				if('\t' != *p)
 				{
 					::XftGlyphExtents(disp_, xft, glyph_indexes, 1, &extent);
-					*pxbuf = extent.xOff;
+					*pxbuf++ = extent.xOff;
 				}
 				else
-					*pxbuf = 0;//tab_pixels_;
+					*pxbuf++ = 0;//tab_pixels_;
 
 				++glyph_indexes;
 			}

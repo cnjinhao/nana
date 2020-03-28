@@ -5692,6 +5692,14 @@ namespace nana
 			return index_pair{ npos, npos };
 		}
 
+		listbox::index_pair listbox::index_cast(index_pair idx, bool from_display_order) const
+		{
+			internal_scope_guard lock;
+
+			idx.item = at(idx.cat).index_cast(idx.item, from_display_order);
+			return idx;
+		}
+
 		listbox::index_pair listbox::hovered(bool return_end) const
 		{
 			using parts = drawerbase::listbox::essence::parts;
@@ -5711,9 +5719,11 @@ namespace nana
 					if (0 < pos.cat)
 						--pos.cat;
 					pos.item = this->size_item(pos.cat);
-				}
-				return pos;
 
+					return pos;
+				}
+				
+				return index_cast(pos, true);
 			}
 			else if (return_end)
 				return index_pair{ this->size_categ() - 1, this->size_item(this->size_categ() - 1) };

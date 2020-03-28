@@ -3440,9 +3440,14 @@ namespace nana {
 
 				void rtl_string(point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected, bool has_focused)
 				{
-					editor_._m_draw_parse_string(parser_, true, strpos, selection_color(true, has_focused), str, len);
+					//Draw twices for RTL language in order to avoid character transforming.
+					//one is to draw whole string as unselected, another one is to draw whole string as selected.
+					
+					//Draw as unselected
+					editor_._m_draw_parse_string(parser_, true, strpos, editor_.scheme_->foreground, str, len);
 
-					//Draw selected part
+
+					//Draw as selected, and copy the selected part to the graph.
 					paint::graphics graph({ glyph_selected, line_px_ });
 					graph.typeface(this->graph_.typeface());
 					graph.rectangle(true, selection_color(false, has_focused));
