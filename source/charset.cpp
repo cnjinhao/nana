@@ -1,7 +1,7 @@
 /**
  *	A Character Encoding Set Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1119,6 +1119,14 @@ namespace nana
 		charset::charset(std::wstring&& s)
 			: impl_(new detail::charset_wstring(std::move(s)))
 		{}
+
+#ifdef __cpp_char8_t
+		charset::charset(std::u8string_view sv)
+		{
+			std::string str{ reinterpret_cast<const char*>(sv.data()), reinterpret_cast<const char*>(sv.data() + sv.size())};
+			impl_ = new detail::charset_string(std::move(str), unicode::utf8);
+		}
+#endif
 
 		charset::~charset()
 		{

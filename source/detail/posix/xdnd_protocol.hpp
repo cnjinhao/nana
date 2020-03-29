@@ -1,7 +1,7 @@
 /*
  *	X-Window XDND Protocol Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2018-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2018-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -152,13 +152,23 @@ namespace nana{
 			    {
 				    if(data.files.size())
 				    {
+#ifdef __cpp_char8_t
+				    	std::u8string uri_list;
+				    	for(auto& file : data.files)
+				    	{
+				    		uri_list += u8"file://";
+				    		uri_list += file.u8string();
+				    		uri_list += u8"\r\n";
+				    	}
+#else
 				    	std::string uri_list;
 				    	for(auto& file : data.files)
 				    	{
 				    		uri_list += "file://";
 				    		uri_list += file.u8string();
 				    		uri_list += "\r\n";
-				    	}
+				    	}				    	
+#endif
 
 				    	::XChangeProperty (spec_.open_display(),
 				    			xselectionrequest.requestor,

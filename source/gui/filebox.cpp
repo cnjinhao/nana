@@ -1013,7 +1013,11 @@ namespace nana
 				for(auto i = selection_.targets.cbegin(); i != selection_.targets.cend();)
 				{
 					std::filesystem::path p{*i};
+#ifdef __cpp_char8_t
+					if(p.filename().u8string() == to_u8str(mfs.name))
+#else
 					if(p.filename().u8string() == mfs.name)
+#endif
 					{
 						if(!selection_.is_deselect_delayed)
 						{
@@ -1042,7 +1046,11 @@ namespace nana
 					if(!filename_string.empty())
 						filename_string += ' ';
 
+#ifdef __cpp_char8_t
+					filename_string += "\"" + nana::to_string(p.filename().u8string()) + "\"";
+#else
 					filename_string += "\"" + p.filename().u8string() + "\"";
+#endif
 				}
 			}
 
@@ -1576,7 +1584,11 @@ namespace nana
 
 
 		if(!targets.empty())
+#ifdef __cpp_char8_t
+			impl_->path = nana::to_string(targets.front().parent_path().u8string());
+#else
 			impl_->path = targets.front().parent_path().u8string();
+#endif
 		else
 			impl_->path.clear();
 #endif

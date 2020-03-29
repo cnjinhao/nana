@@ -1,7 +1,7 @@
 /**
  *	The charset Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -13,6 +13,7 @@
 #ifndef NANA_CHARSET_HPP
 #define NANA_CHARSET_HPP
 #include <string>
+#include <string_view>
 
 namespace nana
 {
@@ -83,6 +84,9 @@ namespace nana
 		charset(std::string&&, unicode);     ///<Attempt to convert a unicode string in byte sequence.
 		charset(const std::wstring&);        ///<Attempt to convert a UCS2/UCS4 string.
 		charset(std::wstring&&);             ///<Attempt to convert a UCS2/UCS4 string.
+#ifdef __cpp_char8_t
+		charset(std::u8string_view);
+#endif
 		~charset();
 		operator std::string() const;        ///<Converts the string to multibytes string.
 		operator std::string&&();            ///<Converts the string to multibytes string.

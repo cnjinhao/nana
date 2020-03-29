@@ -60,6 +60,13 @@ namespace nana
 	const std::wstring& to_wstring(const std::wstring& wstr);
 	std::wstring&& to_wstring(std::wstring&& wstr);
 
+#ifdef __cpp_char8_t
+	std::string 	to_string(std::u8string_view);
+	std::wstring	to_wstring(std::u8string_view s);
+	std::u8string	to_u8str(std::string_view s);
+	std::u8string	to_u8str(std::wstring_view s);
+#endif
+
 #if defined(NANA_WINDOWS)
 	std::string to_osmbstr(const std::string& text_utf8);
 #else

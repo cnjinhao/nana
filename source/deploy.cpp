@@ -1,7 +1,7 @@
 /*
  *	The Deploy Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -142,6 +142,34 @@ namespace nana
 	{
 		return static_cast<std::wstring&&>(wstr);
 	}
+
+#ifdef __cpp_char8_t
+	std::string to_string(std::u8string_view s)
+	{
+		std::string str{ reinterpret_cast<const char*>(s.data()), reinterpret_cast<const char*>(s.data() + s.size()) };
+		return str;
+	}
+
+	std::wstring to_wstring(std::u8string_view s)
+	{
+		return ::nana::charset(s);
+	}
+
+	std::u8string to_u8str(std::string_view s)
+	{
+		throw_not_utf8(s);
+
+		std::u8string u8str{ reinterpret_cast<const char8_t*>(s.data()), reinterpret_cast<const char8_t*>(s.data() + s.size()) };
+		return u8str;
+	}
+
+	std::u8string to_u8str(std::wstring_view s)
+	{
+		auto u8s = to_utf8(s);
+		std::u8string u8str{ reinterpret_cast<const char8_t*>(u8s.data()), reinterpret_cast<const char8_t*>(u8s.data() + u8s.size()) };
+		return u8str;
+	}
+#endif
 
 #if defined(NANA_WINDOWS)
 	std::string to_osmbstr(const std::string& text_utf8)

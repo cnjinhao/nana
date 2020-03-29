@@ -22,7 +22,7 @@
 # cmake 3.12 have more better modern c++ support
 
 cmake_minimum_required(VERSION 3.12  FATAL_ERROR)
-project(nana VERSION      1.7.3
+project(nana VERSION      1.8
         DESCRIPTION "C++ GUI library"
         HOMEPAGE_URL http://nanapro.org
         LANGUAGES CXX         )
