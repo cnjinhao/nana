@@ -225,12 +225,9 @@ namespace nana
 
 				if(unicode_bidi::is_text_right(e))
 				{
-					std::wstring reverse_str;
-					for(auto i = static_cast<int>(e.end - e.begin) - 1; i > -1; --i)
-						reverse_str += e.begin[i];
+					auto restr = nana::reshaping::arabic::reshape(std::wstring{e.begin, e.end});
+					rtl.assign(restr.crbegin(), restr.crend());
 
-					//Process reshaping.
-					rtl = nana::reshaping::arabic::reshape(reverse_str);
 					p = rtl.c_str();
 					size = rtl.size();
 				}
@@ -264,22 +261,23 @@ namespace nana
 			std::unique_ptr<unsigned[]> pxbuf{new unsigned[len]};
 
 			auto pbuf = pxbuf.get();
-			auto pstr = str;
-			auto size = len;
 
-			while(true)
-			{
-				auto preferred = _m_scan_fonts(xft, pstr, size, glyph_indexes.get());
+			//Don't reverse the string
+			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* pstr) mutable{
+				while(true)
+				{
+					auto preferred = _m_scan_fonts(xft, p, size, glyph_indexes.get());
 
-				_m_glyph_px(preferred.first, pstr, preferred.second, glyph_indexes.get(), pbuf);
+					_m_glyph_px(preferred.first, p, preferred.second, glyph_indexes.get(), pbuf + (pstr - str));
 
-				if(size == preferred.second)
-					break;
+					if(size == preferred.second)
+						break;
 
-				size -= preferred.second;
-				pstr += preferred.second;
-				pbuf += preferred.second;
-			}
+					size -= preferred.second;
+					p += preferred.second;
+					pstr += preferred.second;
+				}				
+			});
 
 			return pxbuf;
 		}
@@ -293,21 +291,60 @@ namespace nana
 
 			std::unique_ptr<FT_UInt[]> glyph_indexes(new FT_UInt[len]);
 
-			while(len > 0)
-			{
-				auto preferred = _m_scan_fonts(xft, str, len, glyph_indexes.get());
+			//Don't reverse the string
+			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* /*pstr*/) mutable{
+				while(true)
+				{
+					auto preferred = _m_scan_fonts(xft, p, size, glyph_indexes.get());
 
-				extent.width += _m_extents(preferred.first, str, preferred.second, glyph_indexes.get());
+					extent.width += _m_extents(preferred.first, p, preferred.second, glyph_indexes.get());
 
-				if(preferred.first->ascent + preferred.first->descent > static_cast<int>(extent.height))
-					extent.height = preferred.first->ascent + preferred.first->descent;
+					if(preferred.first->ascent + preferred.first->descent > static_cast<int>(extent.height))
+						extent.height = preferred.first->ascent + preferred.first->descent;
 
-				len -= preferred.second;
-				str += preferred.second;
-			}
+					if(size == preferred.second)
+						break;
+
+					size -= preferred.second;
+					p += preferred.second;
+				}				
+			});
+
 			return extent;
 		}
 	private:
+		/// @param reverse Indicates whether to reverse the string, it only reverse the RTL language string.
+		template<typename Function>
+		void _m_reorder_reshaping(std::wstring_view str, bool reverse, Function fn)
+		{
+			//The RTL and shaping should be handled manually, because the libXft and X doesn't support these language features.
+			std::wstring rtl;
+			auto ents = unicode_reorder(str.data(), str.size());
+			for(auto & e : ents)
+			{
+				auto size = static_cast<std::size_t>(e.end - e.begin);
+				auto p = e.begin;
+
+				if(unicode_bidi::is_text_right(e))
+				{
+					//Reshape the str
+					auto restr = nana::reshaping::arabic::reshape(std::wstring{e.begin, e.end});
+					
+					if(reverse)
+						rtl.assign(restr.crbegin(), restr.crend());
+					else
+						rtl.swap(restr);
+
+					p = rtl.c_str();
+					size = rtl.size();
+				}
+
+				fn(p, size, e.begin);
+
+				rtl.clear();
+			}
+		}
+
 		//Tab is a invisible character
 		int _m_draw(::XftDraw* xftdraw, ::XftColor* xftcolor, ::XftFont* xft, int x, int y, const wchar_t* str, std::size_t len, const FT_UInt* glyph_indexes)
 		{
