@@ -73,10 +73,10 @@ namespace nana
 			return _m_caption();
 		}
 
-		widget& widget::caption(std::string utf8)
+		widget& widget::caption(std::string_view utf8)
 		{
 			::nana::throw_not_utf8(utf8);
-			native_string_type str = to_nstring(utf8);
+			native_string_type str = nana::detail::to_nstring(std::string{utf8.data(), utf8.data() + utf8.size()});
 			_m_caption(std::move(str));
 			return *this;
 		}
@@ -84,14 +84,14 @@ namespace nana
 #ifdef __cpp_char8_t
 		widget& widget::caption(std::u8string_view text)
 		{
-			_m_caption(to_nstring(text));
+			_m_caption(nana::detail::to_nstring(text));
 			return *this;
 		}
 #endif
 
-		widget& widget::caption(std::wstring text)
+		widget& widget::caption(std::wstring_view text)
 		{
-			native_string_type str = to_nstring(text);
+			native_string_type str = nana::detail::to_nstring(std::wstring{text.data(), text.data() + text.size()});
 			_m_caption(std::move(str));
 			return *this;
 		}
@@ -100,7 +100,7 @@ namespace nana
 		{
 			if (handle())
 			{
-				native_string_type str = to_nstring(eval());
+				native_string_type str = nana::detail::to_nstring(eval());
 				_m_caption(std::move(str));
 				internationalization_parts::set_eval(handle(), std::move(eval));
 			}
@@ -118,7 +118,7 @@ namespace nana
 
 		void widget::typeface(const paint::font_info& fi)
 		{
-			API::typeface(handle(), fi);
+			api::typeface(handle(), fi);
 		}
 
 		void widget::typeface(const nana::paint::font& font)
@@ -138,12 +138,12 @@ namespace nana
 
 		window widget::parent() const
 		{
-			return API::get_parent_window(handle());
+			return api::get_parent_window(handle());
 		}
 
 		bool widget::enabled() const
 		{
-			return API::window_enabled(handle());
+			return api::window_enabled(handle());
 		}
 
 		void widget::enabled(bool value)
@@ -153,7 +153,7 @@ namespace nana
 
 		void widget::enable_dropfiles(bool enb)
 		{
-			API::enable_dropfiles(handle(), enb);
+			api::enable_dropfiles(handle(), enb);
 		}
 
 		bool widget::empty() const
@@ -163,12 +163,12 @@ namespace nana
 
 		void widget::focus()
 		{
-			API::focus_window(handle());
+			api::focus_window(handle());
 		}
 
 		bool widget::focused() const
 		{
-			return (API::focus_window() == handle());
+			return (api::focus_window() == handle());
 		}
 
 		std::shared_ptr<scroll_operation_interface> widget::scroll_operation()
@@ -193,7 +193,7 @@ namespace nana
 
 		nana::size widget::size() const
 		{
-			return API::window_size(handle());
+			return api::window_size(handle());
 		}
 
 		void widget::size(const nana::size& sz)
@@ -203,17 +203,17 @@ namespace nana
 
 		void widget::set_capture(bool ignore_children)
 		{
-			API::set_capture(*this, ignore_children);
+			api::set_capture(*this, ignore_children);
 		}
 
 		void widget::release_capture()
 		{
-			API::release_capture(*this);
+			api::release_capture(*this);
 		}
 
 		nana::point widget::pos() const
 		{
-			return API::window_position(handle());
+			return api::window_position(handle());
 		}
 
 		void widget::move(int x, int y)
@@ -258,21 +258,21 @@ namespace nana
 
 		void widget::umake_event(event_handle eh) const
 		{
-			API::umake_event(eh);
+			api::umake_event(eh);
 		}
 
 		widget& widget::register_shortkey(wchar_t key)
 		{
 			if (key)
-				API::register_shortkey(handle(), static_cast<unsigned long>(key));
+				api::register_shortkey(handle(), static_cast<unsigned long>(key));
 			else
-				API::unregister_shortkey(handle());
+				api::unregister_shortkey(handle());
 			return *this;
 		}
 
 		widget& widget::take_active(bool activated, window take_if_not_activated)
 		{
-			API::take_active(handle(), activated, take_if_not_activated);
+			api::take_active(handle(), activated, take_if_not_activated);
 			return *this;
 		}
 
@@ -302,37 +302,37 @@ namespace nana
 
 		auto widget::_m_caption() const noexcept -> native_string_type
 		{
-			return API::dev::window_caption(handle());
+			return api::dev::window_caption(handle());
 		}
 
 		void widget::_m_caption(native_string_type&& str)
 		{
-			API::dev::window_caption(handle(), std::move(str));
+			api::dev::window_caption(handle(), std::move(str));
 		}
 
 		nana::cursor widget::_m_cursor() const
 		{
-			return API::window_cursor(handle());
+			return api::window_cursor(handle());
 		}
 
 		void widget::_m_cursor(nana::cursor cur)
 		{
-			API::window_cursor(handle(), cur);
+			api::window_cursor(handle(), cur);
 		}
 
 		void widget::_m_close()
 		{
-			API::close_window(handle());
+			api::close_window(handle());
 		}
 
 		bool widget::_m_enabled() const
 		{
-			return API::window_enabled(handle());
+			return api::window_enabled(handle());
 		}
 
 		void widget::_m_enabled(bool value)
 		{
-			API::window_enabled(handle(), value);
+			api::window_enabled(handle(), value);
 		}
 
 		std::shared_ptr<scroll_operation_interface> widget::_m_scroll_operation()
@@ -342,58 +342,58 @@ namespace nana
 
 		bool widget::_m_show(bool visible)
 		{
-			API::show_window(handle(), visible);
+			api::show_window(handle(), visible);
 			return visible;
 		}
 
 		bool widget::_m_visible() const
 		{
-			return API::visible(handle());
+			return api::visible(handle());
 		}
 
 		void widget::_m_size(const nana::size& sz)
 		{
-			API::window_size(handle(), sz);
+			api::window_size(handle(), sz);
 		}
 
 		void widget::_m_move(int x, int y)
 		{
-			API::move_window(handle(), { x, y });
+			api::move_window(handle(), { x, y });
 		}
 
 		void widget::_m_move(const rectangle& r)
 		{
-			API::move_window(handle(), r);
+			api::move_window(handle(), r);
 		}
 
 		void widget::_m_typeface(const paint::font& font)
 		{
-			API::typeface(handle(), font);
+			api::typeface(handle(), font);
 		}
 
 		nana::paint::font widget::_m_typeface() const
 		{
-			return API::typeface(handle());
+			return api::typeface(handle());
 		}
 
 		void widget::_m_fgcolor(const nana::color& col)
 		{
-			API::fgcolor(handle(), col);
+			api::fgcolor(handle(), col);
 		}
 
 		nana::color widget::_m_fgcolor() const
 		{
-			return API::fgcolor(handle());
+			return api::fgcolor(handle());
 		}
 
 		void widget::_m_bgcolor(const nana::color& col)
 		{
-			API::bgcolor(handle(), col);
+			api::bgcolor(handle(), col);
 		}
 
 		nana::color widget::_m_bgcolor() const
 		{
-			return API::bgcolor(handle());
+			return api::bgcolor(handle());
 		}
 	//end class widget
 

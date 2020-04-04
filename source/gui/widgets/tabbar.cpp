@@ -14,13 +14,12 @@
 #include <nana/gui/element.hpp>
 #include <stdexcept>
 #include <list>
+#include <forward_list>
 
 namespace nana
 {
-	namespace drawerbase
+	namespace drawerbase::tabbar
 	{
-		namespace tabbar
-		{
 			using native_string_type = ::nana::detail::native_string_type;
 			struct item_t
 			{
@@ -443,9 +442,9 @@ namespace nana
 						if ((nullptr == evt_agent_) || evt_agent_->removed(pos, close_attach))
 						{
 							if (close_attach)
-								API::close_window(iterator_at(pos)->relative);
+								api::close_window(iterator_at(pos)->relative);
 							else
-								API::show_window(iterator_at(pos)->relative, false);
+								api::show_window(iterator_at(pos)->relative, false);
 							list_.erase(iterator_at(pos));
 							_m_adjust();
 
@@ -471,7 +470,7 @@ namespace nana
 							}
 
 							if (basis_.active != ::nana::npos)
-								API::show_window(iterator_at(basis_.active)->relative, true);
+								api::show_window(iterator_at(basis_.active)->relative, true);
 							if(evt_agent_)
 								evt_agent_->activated(basis_.active);
 							return true;
@@ -594,7 +593,7 @@ namespace nana
 					if(pos < list_.size() && (pos != basis_.active))
 					{
 						auto & tab_act = *iterator_at(pos);
-						API::show_window(tab_act.relative, true);
+						api::show_window(tab_act.relative, true);
 						if (basis_.active < list_.size())
 						{
 							auto & tab_deact = *iterator_at(basis_.active);
@@ -602,7 +601,7 @@ namespace nana
 							//Don't hide the relative window if it is equal to active relative window.
 							//The tabbar allows a window to be attached to multiple tabs(pass false to DropOther of attach method)
 							if (tab_deact.relative != tab_act.relative)
-								API::show_window(tab_deact.relative, false);
+								api::show_window(tab_deact.relative, false);
 						}
 
 						basis_.active = pos;
@@ -638,7 +637,7 @@ namespace nana
 					}
 					
 					tab.relative = wd;
-					API::show_window(wd, basis_.active == pos);
+					api::show_window(wd, basis_.active == pos);
 					return old;
 				}
 
@@ -824,7 +823,7 @@ namespace nana
 					auto fn = [this](::nana::menu::item_proxy& ipx)
 					{
 						if (this->activate(ipx.index()))
-							API::refresh_window(basis_.wd);
+							api::refresh_window(basis_.wd);
 					};
 
 					for(auto & m : list_)
@@ -998,8 +997,8 @@ namespace nana
 					if(!basis_.renderer || (nullptr == basis_.graph))
 						return;
 
-					auto bgcolor = API::bgcolor(basis_.wd);
-					auto fgcolor = API::fgcolor(basis_.wd);
+					auto bgcolor = api::bgcolor(basis_.wd);
+					auto fgcolor = api::fgcolor(basis_.wd);
 
 					item_renderer::item_t m;
 					m.r = ::nana::rectangle{ basis_.graph->size() };
@@ -1174,7 +1173,7 @@ namespace nana
 				void trigger::activate(std::size_t pos)
 				{
 					if(layouter_->activate(pos))
-						API::refresh_window(layouter_->widget_handle());
+						api::refresh_window(layouter_->widget_handle());
 				}
 
 				std::size_t trigger::activated() const
@@ -1230,25 +1229,25 @@ namespace nana
 				void trigger::erase(std::size_t pos)
 				{
 					if (layouter_->erase(pos))
-						API::refresh_window(layouter_->widget_handle());
+						api::refresh_window(layouter_->widget_handle());
 				}
 
 				void trigger::tab_color(std::size_t i, bool is_bgcolor, const ::nana::color& clr)
 				{
 					if(layouter_->tab_color(i, is_bgcolor, clr))
-						API::refresh_window(layouter_->widget_handle());
+						api::refresh_window(layouter_->widget_handle());
 				}
 
 				void trigger::tab_image(std::size_t i, const nana::paint::image& img)
 				{
 					layouter_->tab_image(i, img);
-					API::refresh_window(layouter_->widget_handle());
+					api::refresh_window(layouter_->widget_handle());
 				}
 
 				void trigger::text(std::size_t i, const native_string_type& str)
 				{
 					if(layouter_->text(i, str))
-						API::refresh_window(layouter_->widget_handle());
+						api::refresh_window(layouter_->widget_handle());
 				}
 
 				native_string_type trigger::text(std::size_t i) const
@@ -1298,7 +1297,7 @@ namespace nana
 						if(false == layouter_->active_by_trace(arg))
 							layouter_->toolbox_answer(arg);
 						layouter_->render();
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 
@@ -1309,7 +1308,7 @@ namespace nana
 					if(rd)
 					{
 						layouter_->render();
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 
@@ -1318,7 +1317,7 @@ namespace nana
 					if(layouter_->trace(arg.pos.x, arg.pos.y))
 					{
 						layouter_->render();
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 
@@ -1327,290 +1326,282 @@ namespace nana
 					if(layouter_->leave())
 					{
 						layouter_->render();
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 			//end class trigger
-		}//end namespace tabbar
-	}//end namespace drawerbase
-}//end namespace nana
+	}//end namespace drawerbase::tabbar
 
-#include <forward_list>
-namespace nana
-{
-		namespace drawerbase
+	namespace drawerbase::tabbar_lite
+	{
+		struct item
 		{
-			namespace tabbar_lite
+			::std::string text;
+			::std::any	value;
+			::std::pair<int, int> pos_ends;
+			::nana::window attached_window{ nullptr };
+
+			item(std::string t, ::std::any v)
+				: text(std::move(t)), value(std::move(v))
+			{}
+		};
+
+		void calc_px(std::vector<unsigned>& values, unsigned limit)
+		{
+			unsigned	base = 0;
+			auto		count = values.size();
+
+			while (count)
 			{
-				struct item
+				unsigned minv = static_cast<unsigned>(-1);
+
+				unsigned minv_count = 0;
+				for (auto u : values)
 				{
-					::std::string text;
-					::std::any	value;
-					::std::pair<int, int> pos_ends;
-					::nana::window attached_window{ nullptr };
-
-					item(std::string t, ::std::any v)
-						: text(std::move(t)), value(std::move(v))
-					{}
-				};
-
-				void calc_px(std::vector<unsigned>& values, unsigned limit)
-				{
-					unsigned	base = 0;
-					auto		count = values.size();
-
-					while (count)
+					if (u >= base && u < minv)
 					{
-						unsigned minv = static_cast<unsigned>(-1);
-
-						unsigned minv_count = 0;
-						for (auto u : values)
-						{
-							if (u >= base && u < minv)
-							{
-								minv_count = 1;
-								minv = u;
-							}
-							else if (minv == u)
-								minv_count++;
-						}
-
-						count -= minv_count;
-						if (minv * count >= limit)
-						{
-							auto piece = limit / double(count);
-							double deviation = 0;
-							for (auto & u : values)
-							{
-								if (minv >= u)
-								{
-									auto px = piece + deviation;
-									u = static_cast<unsigned>(px);
-									deviation = px - u;
-								}
-							}
-							return;
-						}
-
-						base = minv;
-						limit -= minv_count * minv;
+						minv_count = 1;
+						minv = u;
 					}
+					else if (minv == u)
+						minv_count++;
 				}
 
-				class model
+				count -= minv_count;
+				if (minv * count >= limit)
 				{
-					struct indexes
+					auto piece = limit / double(count);
+					double deviation = 0;
+					for (auto & u : values)
 					{
-						std::size_t hovered_pos{ npos };
-						std::size_t active_pos{ 0 };
-					};
-				public:
-					using graph_reference = ::nana::paint::graphics&;
-					static const std::size_t npos = static_cast<std::size_t>(-1);
-
-					void set_widget(::nana::tabbar_lite& wdg)
-					{
-						widget_ = &wdg;
-					}
-
-					::nana::tabbar_lite* widget_ptr() const
-					{
-						return widget_;
-					}
-
-					std::forward_list<item>& items()
-					{
-						return items_;
-					}
-
-					void show_attached_window()
-					{
-						if (indexes_.active_pos != npos)
+						if (minv >= u)
 						{
-							auto i = items_.cbegin();
-							std::advance(i, indexes_.active_pos);
-							API::show_window(i->attached_window, true);
-
-							std::size_t pos = 0;
-							for (auto & m : items_)
-							{
-								if (pos++ != indexes_.active_pos)
-									API::show_window(m.attached_window, false);
-							}
+							auto px = piece + deviation;
+							u = static_cast<unsigned>(px);
+							deviation = px - u;
 						}
 					}
+					return;
+				}
 
-					bool track_pointer(const point& pos)
-					{
-						std::size_t item_pos = 0;
-						bool matched = false;
-						for (auto & m : items_)
-						{
-							if (m.pos_ends.first <= pos.x && pos.x < m.pos_ends.second)
-							{
-								matched = true;
-								break;
-							}
-
-							++item_pos;
-						}
-
-						if (!matched)
-							item_pos = npos;
-
-						if (indexes_.hovered_pos == item_pos)
-							return false;
-
-						indexes_.hovered_pos = item_pos;
-						return true;
-					}
-
-					indexes& get_indexes()
-					{
-						return indexes_;
-					}
-				private:
-					::nana::tabbar_lite * widget_{ nullptr };
-					std::forward_list<item> items_;
-					indexes indexes_;
-				};
-
-				class renderer
-				{
-				public:
-					using graph_reference = ::nana::paint::graphics&;
-
-					void render(graph_reference graph, model& model)
-					{
-						_m_calc_metrics(graph, model.items());
-
-						auto & scheme = model.widget_ptr()->scheme();
-
-						//draw background
-						graph.rectangle(true, scheme.background);
-
-						auto & indexes = model.get_indexes();
-						std::size_t pos = 0;
-						for (auto & m : model.items())
-						{
-							rectangle r{ m.pos_ends.first, 0, static_cast<unsigned>(m.pos_ends.second - m.pos_ends.first), graph.height() };
-							if (indexes.active_pos == pos)
-							{
-								graph.palette(false, colors::white);
-								graph.palette(true, colors::black);
-							}
-							else
-							{
-								::nana::color bgcolor(colors::coral);
-
-								if (pos == indexes.hovered_pos)
-									bgcolor = bgcolor.blend(colors::white, 0.5);
-
-								graph.palette(false, bgcolor);
-								graph.palette(true, colors::white);
-							}
-
-							graph.rectangle(r, true);
-							graph.bidi_string({ m.pos_ends.first + 5, 0 }, m.text);
-
-							++pos;
-						}
-
-					}
-				private:
-					void _m_calc_metrics(graph_reference graph, std::forward_list<item>& items)
-					{
-						std::vector<unsigned> pxs;
-
-						unsigned pixels = 0;
-						for (auto & m : items)
-						{
-							auto ts = graph.bidi_extent_size(m.text);
-							pxs.emplace_back(ts.width + 12);
-							pixels += ts.width + 12;
-						}
-
-						if (pixels > graph.width())
-							calc_px(pxs, graph.width());
-
-						auto i = pxs.cbegin();
-						int pos = 0;
-						for (auto & m : items)
-						{
-							m.pos_ends.first = pos;
-							m.pos_ends.second = (pos += static_cast<int>(*i++));
-						}
-					}
-				};
-
-
-				//class driver
-					driver::driver()
-						: model_(new model)
-					{
-					}
-
-					driver::~driver()
-					{
-						delete model_;
-					}
-
-					model* driver::get_model() const noexcept
-					{
-						return model_;
-					}
-
-					void driver::attached(widget_reference wdg, graph_reference)
-					{
-						model_->set_widget(dynamic_cast<nana::tabbar_lite&>(wdg));
-					}
-
-					//Overrides drawer_trigger's method
-					void driver::refresh(graph_reference graph)
-					{
-						renderer rd;
-						rd.render(graph, *model_);
-					}
-
-					void driver::mouse_move(graph_reference graph, const arg_mouse& arg)
-					{
-						if (!model_->track_pointer(arg.pos))
-							return;
-
-						refresh(graph);
-						API::dev::lazy_refresh();
-					}
-
-					void driver::mouse_leave(graph_reference graph, const arg_mouse&)
-					{
-						if (model_->get_indexes().hovered_pos == model_->npos)
-							return;
-
-						refresh(graph);
-						API::dev::lazy_refresh();
-					}
-
-					void driver::mouse_down(graph_reference graph, const arg_mouse& arg)
-					{
-						auto & indexes = model_->get_indexes();
-						if ((indexes.hovered_pos == model_->npos) || (indexes.active_pos == indexes.hovered_pos) || !arg.is_left_button())
-							return;
-
-						if (indexes.active_pos != indexes.hovered_pos)
-						{
-							indexes.active_pos = indexes.hovered_pos;
-							model_->show_attached_window();
-
-							refresh(graph);
-							API::dev::lazy_refresh();
-
-							event_arg arg;
-							model_->widget_ptr()->events().selected.emit(arg, model_->widget_ptr()->handle());
-						}
-					}
-				//end class driver
+				base = minv;
+				limit -= minv_count * minv;
 			}
 		}
+
+		class model
+		{
+			struct indexes
+			{
+				std::size_t hovered_pos{ npos };
+				std::size_t active_pos{ 0 };
+			};
+		public:
+			using graph_reference = ::nana::paint::graphics&;
+			static const std::size_t npos = static_cast<std::size_t>(-1);
+
+			void set_widget(::nana::tabbar_lite& wdg)
+			{
+				widget_ = &wdg;
+			}
+
+			::nana::tabbar_lite* widget_ptr() const
+			{
+				return widget_;
+			}
+
+			std::forward_list<item>& items()
+			{
+				return items_;
+			}
+
+			void show_attached_window()
+			{
+				if (indexes_.active_pos != npos)
+				{
+					auto i = items_.cbegin();
+					std::advance(i, indexes_.active_pos);
+					api::show_window(i->attached_window, true);
+
+					std::size_t pos = 0;
+					for (auto & m : items_)
+					{
+						if (pos++ != indexes_.active_pos)
+							api::show_window(m.attached_window, false);
+					}
+				}
+			}
+
+			bool track_pointer(const point& pos)
+			{
+				std::size_t item_pos = 0;
+				bool matched = false;
+				for (auto & m : items_)
+				{
+					if (m.pos_ends.first <= pos.x && pos.x < m.pos_ends.second)
+					{
+						matched = true;
+						break;
+					}
+
+					++item_pos;
+				}
+
+				if (!matched)
+					item_pos = npos;
+
+				if (indexes_.hovered_pos == item_pos)
+					return false;
+
+				indexes_.hovered_pos = item_pos;
+				return true;
+			}
+
+			indexes& get_indexes()
+			{
+				return indexes_;
+			}
+		private:
+			::nana::tabbar_lite * widget_{ nullptr };
+			std::forward_list<item> items_;
+			indexes indexes_;
+		};
+
+		class renderer
+		{
+		public:
+			using graph_reference = ::nana::paint::graphics&;
+
+			void render(graph_reference graph, model& model)
+			{
+				_m_calc_metrics(graph, model.items());
+
+				auto & scheme = model.widget_ptr()->scheme();
+
+				//draw background
+				graph.rectangle(true, scheme.background);
+
+				auto & indexes = model.get_indexes();
+				std::size_t pos = 0;
+				for (auto & m : model.items())
+				{
+					rectangle r{ m.pos_ends.first, 0, static_cast<unsigned>(m.pos_ends.second - m.pos_ends.first), graph.height() };
+					if (indexes.active_pos == pos)
+					{
+						graph.palette(false, colors::white);
+						graph.palette(true, colors::black);
+					}
+					else
+					{
+						::nana::color bgcolor(colors::coral);
+
+						if (pos == indexes.hovered_pos)
+							bgcolor = bgcolor.blend(colors::white, 0.5);
+
+						graph.palette(false, bgcolor);
+						graph.palette(true, colors::white);
+					}
+
+					graph.rectangle(r, true);
+					graph.bidi_string({ m.pos_ends.first + 5, 0 }, m.text);
+
+					++pos;
+				}
+
+			}
+		private:
+			void _m_calc_metrics(graph_reference graph, std::forward_list<item>& items)
+			{
+				std::vector<unsigned> pxs;
+
+				unsigned pixels = 0;
+				for (auto & m : items)
+				{
+					auto ts = graph.bidi_extent_size(m.text);
+					pxs.emplace_back(ts.width + 12);
+					pixels += ts.width + 12;
+				}
+
+				if (pixels > graph.width())
+					calc_px(pxs, graph.width());
+
+				auto i = pxs.cbegin();
+				int pos = 0;
+				for (auto & m : items)
+				{
+					m.pos_ends.first = pos;
+					m.pos_ends.second = (pos += static_cast<int>(*i++));
+				}
+			}
+		};
+
+
+		//class driver
+			driver::driver()
+				: model_(new model)
+			{
+			}
+
+			driver::~driver()
+			{
+				delete model_;
+			}
+
+			model* driver::get_model() const noexcept
+			{
+				return model_;
+			}
+
+			void driver::attached(widget_reference wdg, graph_reference)
+			{
+				model_->set_widget(dynamic_cast<nana::tabbar_lite&>(wdg));
+			}
+
+			//Overrides drawer_trigger's method
+			void driver::refresh(graph_reference graph)
+			{
+				renderer rd;
+				rd.render(graph, *model_);
+			}
+
+			void driver::mouse_move(graph_reference graph, const arg_mouse& arg)
+			{
+				if (!model_->track_pointer(arg.pos))
+					return;
+
+				refresh(graph);
+				api::dev::lazy_refresh();
+			}
+
+			void driver::mouse_leave(graph_reference graph, const arg_mouse&)
+			{
+				if (model_->get_indexes().hovered_pos == model_->npos)
+					return;
+
+				refresh(graph);
+				api::dev::lazy_refresh();
+			}
+
+			void driver::mouse_down(graph_reference graph, const arg_mouse& arg)
+			{
+				auto & indexes = model_->get_indexes();
+				if ((indexes.hovered_pos == model_->npos) || (indexes.active_pos == indexes.hovered_pos) || !arg.is_left_button())
+					return;
+
+				if (indexes.active_pos != indexes.hovered_pos)
+				{
+					indexes.active_pos = indexes.hovered_pos;
+					model_->show_attached_window();
+
+					refresh(graph);
+					api::dev::lazy_refresh();
+
+					event_arg arg;
+					model_->widget_ptr()->events().selected.emit(arg, model_->widget_ptr()->handle());
+				}
+			}
+		//end class driver
+	}//end namespace drawerbase::tabbar_lite
 
 		//class tabbar
 
@@ -1677,7 +1668,7 @@ namespace nana
 
 			}
 
-			API::refresh_window(handle());
+			api::refresh_window(handle());
 		}
 
 		void tabbar_lite::push_front(std::string text, ::std::any any)
@@ -1686,7 +1677,7 @@ namespace nana
 			internal_scope_guard lock;
 
 			items.emplace_front(std::move(text), std::move(any));
-			API::refresh_window(handle());
+			api::refresh_window(handle());
 		}
 
 		std::size_t tabbar_lite::selected() const
@@ -1736,10 +1727,10 @@ namespace nana
 			model->items().erase_after(i);
 
 			model->show_attached_window();
-			API::refresh_window(handle());
+			api::refresh_window(handle());
 
 			if (close_attached && attached_wd)
-				API::close_window(attached_wd);
+				api::close_window(attached_wd);
 
 			if (selection_changed && (active_pos != npos))
 			{

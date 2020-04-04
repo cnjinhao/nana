@@ -1,7 +1,7 @@
 /**
  *	A date chooser Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -30,10 +30,8 @@ namespace nana
 		{}
 	};
 
-	namespace drawerbase
+	namespace drawerbase::date_chooser
 	{
-		namespace date_chooser
-		{
 			struct date_chooser_events
 				: public general_events
 			{
@@ -60,10 +58,7 @@ namespace nana
 			private:
 				model * model_;
 			};
-		
-		}//end namespace date_chooser
-	
-	}//end namespace drawerbase
+	}//end namespace drawerbase::date_chooser
 
 	/// \see nana::date
 	class date_chooser
@@ -76,7 +71,10 @@ namespace nana
 
 		bool chose() const;
 		nana::date read() const;
-		void weekstr(unsigned index, ::std::string);///<Set the week strings which will be displayed for day, index is in the range of [0, 6]
+		void weekstr(unsigned index, std::string);///<Set the week strings which will be displayed for day, index is in the range of [0, 6]
+#ifdef __cpp_char8_t
+		void weekstr(unsigned index, std::u8string_view);
+#endif
 	};
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>

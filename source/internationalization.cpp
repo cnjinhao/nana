@@ -1,7 +1,7 @@
 /*
 *	An Implementation of i18n
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -311,7 +311,7 @@ namespace nana
 			if (i == mgr.table.end())
 			{
 				auto result = mgr.table.emplace(wd, std::move(eval));
-				result.first->second.destroy = nana::API::events(wd).destroy.connect([wd](const arg_destroy&){
+				result.first->second.destroy = nana::api::events(wd).destroy.connect([wd](const arg_destroy&){
 					auto & eval_mgr = get_eval_manager();
 					std::lock_guard<std::recursive_mutex> lockgd(eval_mgr.mutex);
 
@@ -328,7 +328,7 @@ namespace nana
 			std::lock_guard<std::recursive_mutex> lock(mgr.mutex);
 			for (auto & eval : mgr.table)
 			{
-				nana::API::window_caption(eval.first, eval.second.eval());
+				nana::api::window_caption(eval.first, eval.second.eval());
 			}
 		}
 	}//end namespace internationalization_parts

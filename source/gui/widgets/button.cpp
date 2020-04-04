@@ -1,7 +1,7 @@
 /*
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,9 +15,9 @@
 
 #include <nana/paint/text_renderer.hpp>
 
-namespace nana{	namespace drawerbase
+namespace nana
 {
-	namespace button
+	namespace drawerbase::button
 	{
 		class trigger::measurer
 			: public dev::widget_content_measurer_interface
@@ -34,7 +34,7 @@ namespace nana{	namespace drawerbase
 					return{};
 
 				wchar_t shortkey;
-				return graph.text_extent_size(API::transform_shortkey_text(trigger_->wdg_->caption(), shortkey, nullptr));
+				return graph.text_extent_size(api::transform_shortkey_text(trigger_->wdg_->caption(), shortkey, nullptr));
 			}
 
 			size extension() const override
@@ -69,11 +69,11 @@ namespace nana{	namespace drawerbase
 			wdg_ = &widget;
 			window wd = widget;
 
-			API::dev::enable_space_click(widget, true);
-			API::tabstop(wd);
-			API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
-			API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
-			API::dev::set_measurer(widget, measurer_.get());
+			api::dev::enable_space_click(widget, true);
+			api::tabstop(wd);
+			api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
+			api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
+			api::dev::set_measurer(widget, measurer_.get());
 		}
 
 		bool trigger::enable_pushed(bool eb)
@@ -89,7 +89,7 @@ namespace nana{	namespace drawerbase
 				attr_.pushed = pshd;
 				if(false == pshd)
 				{
-					if (API::find_window(API::cursor_position()) == wdg_->handle())
+					if (api::find_window(api::cursor_position()) == wdg_->handle())
 						attr_.e_state = element_state::hovered;
 					else
 						attr_.e_state = element_state::normal;
@@ -150,8 +150,8 @@ namespace nana{	namespace drawerbase
 
 			if (false == cite_.draw(graph, attr_.bgcolor, attr_.fgcolor, ::nana::rectangle{ graph.size() }, e_state))
 			{
-				if (API::is_transparent_background(*wdg_))
-					API::dev::copy_transparent_background(*wdg_, graph);
+				if (api::is_transparent_background(*wdg_))
+					api::dev::copy_transparent_background(*wdg_, graph);
 				else
 					_m_draw_background(graph);
 
@@ -165,7 +165,7 @@ namespace nana{	namespace drawerbase
 		{
 			attr_.e_state = (attr_.pushed || attr_.keep_pressed ? element_state::pressed : element_state::hovered);
 			refresh(graph);
-			API::dev::lazy_refresh();
+			api::dev::lazy_refresh();
 		}
 
 		void trigger::mouse_leave(graph_reference graph, const arg_mouse&)
@@ -175,7 +175,7 @@ namespace nana{	namespace drawerbase
 
 			attr_.e_state = element_state::normal;
 			refresh(graph);
-			API::dev::lazy_refresh();
+			api::dev::lazy_refresh();
 		}
 
 		void trigger::mouse_down(graph_reference graph, const arg_mouse& arg)
@@ -209,21 +209,21 @@ namespace nana{	namespace drawerbase
 				return;
 			}
 
-			API::move_tabstop(*wdg_, ch_tabstop_next);
+			api::move_tabstop(*wdg_, ch_tabstop_next);
 		}
 
 		void trigger::focus(graph_reference graph, const arg_focus& arg)
 		{
 			attr_.focused = arg.getting;
 			refresh(graph);
-			API::dev::lazy_refresh();
+			api::dev::lazy_refresh();
 		}
 
 		void trigger::_m_draw_title(graph_reference graph, bool enabled)
 		{
 			wchar_t shortkey;
 			std::string::size_type shortkey_pos;
-			std::string mbstr = API::transform_shortkey_text(wdg_->caption(), shortkey, &shortkey_pos);
+			std::string mbstr = api::transform_shortkey_text(wdg_->caption(), shortkey, &shortkey_pos);
 			std::wstring str = to_wstring(mbstr);
 
 			nana::size ts = graph.text_extent_size(str);
@@ -265,7 +265,7 @@ namespace nana{	namespace drawerbase
 					else
 						graph.bidi_string(pos, { txtptr, txtlen });
 
-					API::dev::draw_shortkey_underline(graph, mbstr, shortkey, shortkey_pos, pos, text_color);
+					api::dev::draw_shortkey_underline(graph, mbstr, shortkey, shortkey_pos, pos, text_color);
 				}
 				else
 				{
@@ -356,7 +356,7 @@ namespace nana{	namespace drawerbase
 			}
 
 			refresh(graph);
-			API::dev::lazy_refresh();
+			api::dev::lazy_refresh();
 		}
 
 		void trigger::emit_click()
@@ -364,7 +364,7 @@ namespace nana{	namespace drawerbase
 			arg_click arg;
 			arg.window_handle = wdg_->handle();
 			arg.mouse_args = nullptr;
-			API::emit_event(event_code::click, arg.window_handle, arg);
+			api::emit_event(event_code::click, arg.window_handle, arg);
 		}
 
 		void trigger::icon(const nana::paint::image& img)
@@ -381,140 +381,156 @@ namespace nana{	namespace drawerbase
 			*attr_.icon = img;
 		}
 		//end class trigger
-	}//end namespace button
-}//end namespace drawerbase
+	}//end namespace drawerbase::button
 
-		//button
-		//@brief: Define a button widget and it provides the interfaces to be operational
-			button::button(){}
+	//button
+	//@brief: Define a button widget and it provides the interfaces to be operational
+	button::button(){}
 
-			button::button(window wd, bool visible)
-			{
-				create(wd, rectangle(), visible);
-			}
+#if 0 //deprecated
+	button::button(window wd, const std::string& text, bool visible)
+	{
+		create(wd, rectangle(), visible);
+		caption(text);
+	}
 
-			button::button(window wd, const std::string& text, bool visible)
-			{
-				create(wd, rectangle(), visible);
-				caption(text);
-			}
+	button::button(window wd, const char* text, bool visible)
+	{
+		create(wd, rectangle(), visible);
+		caption(text);
+	}
+#else
+	button::button(window parent, std::string_view title, bool visible)
+	{
+		create(parent, rectangle(), visible);
+		caption(title);
+	}
 
-			button::button(window wd, const char* text, bool visible)
-			{
-				create(wd, rectangle(), visible);
-				caption(text);
-			}
+	button::button(window parent, std::wstring_view title, bool visible)
+	{
+		create(parent, rectangle(), visible);
+		caption(title);
+	}
+#endif
 
-			button::button(window wd, const rectangle& r, bool visible)
-			{
-				create(wd, r, visible);
-			}
+#ifdef __cpp_char8_t
+	button::button(window parent, std::u8string_view title, bool visible)
+	{
+		create(parent, rectangle(), visible);
+		caption(title);
+	}
+#endif
 
-			button& button::icon(const nana::paint::image& img)
-			{
-				internal_scope_guard isg;
-				get_drawer_trigger().icon(img);
-				API::refresh_window(handle());
-				return *this;
-			}
+	button::button(window wd, const rectangle& r, bool visible)
+	{
+		create(wd, r, visible);
+	}
 
-			button& button::enable_pushed(bool eb)
-			{
-				internal_scope_guard isg;
-				if(get_drawer_trigger().enable_pushed(eb))
-					API::refresh_window(handle());
-				return *this;
-			}
+	button& button::icon(const nana::paint::image& img)
+	{
+		internal_scope_guard isg;
+		get_drawer_trigger().icon(img);
+		api::refresh_window(handle());
+		return *this;
+	}
 
-			bool button::pushed() const
-			{
-				return get_drawer_trigger().pushed();
-			}
+	button& button::enable_pushed(bool eb)
+	{
+		internal_scope_guard isg;
+		if(get_drawer_trigger().enable_pushed(eb))
+			api::refresh_window(handle());
+		return *this;
+	}
 
-			button& button::pushed(bool psd)
-			{
-				internal_scope_guard isg;
-				if(get_drawer_trigger().pushed(psd))
-					API::refresh_window(handle());
-				return *this;
-			}
+	bool button::pushed() const
+	{
+		return get_drawer_trigger().pushed();
+	}
 
-			button& button::omitted(bool om)
-			{
-				internal_scope_guard isg;
-				get_drawer_trigger().omitted(om);
-				API::refresh_window(handle());
-				return *this;
-			}
+	button& button::pushed(bool psd)
+	{
+		internal_scope_guard isg;
+		if(get_drawer_trigger().pushed(psd))
+			api::refresh_window(handle());
+		return *this;
+	}
 
-			button& button::enable_focus_color(bool eb)
-			{
-				internal_scope_guard lock;
-				if(get_drawer_trigger().focus_color(eb))
-					API::refresh_window(handle());
-				return *this;
-			}
+	button& button::omitted(bool om)
+	{
+		internal_scope_guard isg;
+		get_drawer_trigger().omitted(om);
+		api::refresh_window(handle());
+		return *this;
+	}
 
-			button& button::set_bground(const pat::cloneable<element::element_interface>& rv)
-			{
-				internal_scope_guard lock;
-				get_drawer_trigger().cite().set(rv);
-				return *this;
-			}
+	button& button::enable_focus_color(bool eb)
+	{
+		internal_scope_guard lock;
+		if(get_drawer_trigger().focus_color(eb))
+			api::refresh_window(handle());
+		return *this;
+	}
 
-			button& button::set_bground(const std::string& name)
-			{
-				internal_scope_guard lock;
-				get_drawer_trigger().cite().set(name.data());
-				return *this;
-			}
+	button& button::set_bground(const pat::cloneable<element::element_interface>& rv)
+	{
+		internal_scope_guard lock;
+		get_drawer_trigger().cite().set(rv);
+		return *this;
+	}
 
-			button& button::transparent(bool enabled)
-			{
-				if (enabled)
-					API::effects_bground(*this, effects::bground_transparent(0), 0.0);
-				else
-					API::effects_bground_remove(*this);
-				return *this;
-			}
+	button& button::set_bground(const std::string& name)
+	{
+		internal_scope_guard lock;
+		get_drawer_trigger().cite().set(name.data());
+		return *this;
+	}
 
-			bool button::transparent() const
-			{
-				return API::is_transparent_background(*this);
-			}
+	button& button::transparent(bool enabled)
+	{
+		if (enabled)
+			api::effects_bground(*this, effects::bground_transparent(0), 0.0);
+		else
+			api::effects_bground_remove(*this);
+		return *this;
+	}
 
-			button& button::edge_effects(bool enable)
-			{
-				if (enable)
-				{
-					API::effects_edge_nimbus(*this, effects::edge_nimbus::active);
-					API::effects_edge_nimbus(*this, effects::edge_nimbus::over);
-				}
-				else
-					API::effects_edge_nimbus(*this, effects::edge_nimbus::none);
+	bool button::transparent() const
+	{
+		return api::is_transparent_background(*this);
+	}
 
-				return *this;
-			}
+	button& button::edge_effects(bool enable)
+	{
+		if (enable)
+		{
+			api::effects_edge_nimbus(*this, effects::edge_nimbus::active);
+			api::effects_edge_nimbus(*this, effects::edge_nimbus::over);
+		}
+		else
+			api::effects_edge_nimbus(*this, effects::edge_nimbus::none);
 
-			void button::_m_complete_creation()
-			{
-				events().shortkey.connect_unignorable([this](const arg_keyboard&)
-				{
-					get_drawer_trigger().emit_click();
-				});
-			}
+		return *this;
+	}
 
-			void button::_m_caption(native_string_type&& text)
-			{
-				API::unregister_shortkey(handle());
+	void button::_m_complete_creation()
+	{
+		events().shortkey.connect_unignorable([this](const arg_keyboard&)
+		{
+			get_drawer_trigger().emit_click();
+		});
+	}
 
-				wchar_t shortkey;
-				API::transform_shortkey_text(to_utf8(text), shortkey, nullptr);
-				if (shortkey)
-					API::register_shortkey(handle(), shortkey);
+	void button::_m_caption(native_string_type&& text)
+	{
+		api::unregister_shortkey(handle());
 
-				base_type::_m_caption(std::move(text));
-			}
-		//end class button
+		wchar_t shortkey;
+		api::transform_shortkey_text(to_utf8(text), shortkey, nullptr);
+		if (shortkey)
+			api::register_shortkey(handle(), shortkey);
+
+		base_type::_m_caption(std::move(text));
+	}
+	//end class button
 }//end namespace nana
 

@@ -21,10 +21,8 @@ namespace nana
 {
 	class picture;
 
-	namespace drawerbase
+	namespace drawerbase::picture
 	{
-		namespace picture
-		{
 			struct implement;
 
 			class drawer : public drawer_trigger
@@ -39,16 +37,17 @@ namespace nana
 			private:
 				implement * const impl_;
 			};
-		}//end namespace picture
 	}//end namespace drawerbase
 
-       /// Rectangle area for displaying a bitmap file
+       /// Rectangle area for displaying an image
 	class picture
 		: public widget_object<category::widget_tag, drawerbase::picture::drawer>
 	{
 	public:
 		picture() = default;
+#if 0 //deprecated
 		picture(window, bool visible);
+#endif
 		picture(window, const rectangle& ={}, bool visible = true);
 
 		bool load(::nana::paint::image, const rectangle& valid_area = {});

@@ -494,6 +494,13 @@ namespace paint
 		{
 			return detail::text_extent_size(impl_->handle, text.data(), text.length());
 		}
+
+#ifdef __cpp_char8_t
+		::nana::size graphics::text_extent_size(std::u8string_view text) const
+		{
+			return this->text_extent_size(to_wstring(text));
+		}
+#endif
 		
 		nana::size graphics::glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const
 		{
@@ -573,6 +580,12 @@ namespace paint
 			}
 			return sz;
 		}
+#ifdef __cpp_char8_t
+		::nana::size graphics::bidi_extent_size(std::u8string_view text) const
+		{
+			return this->bidi_extent_size(to_wstring(text));
+		}
+#endif
 
 		bool graphics::text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const
 		{
@@ -1105,6 +1118,18 @@ namespace paint
 			string(pos, str);
 		}
 
+#ifdef __cpp_char8_t
+		void graphics::string(const point& pos, std::u8string_view str)
+		{
+			this->string(pos, to_wstring(str));
+		}
+
+		void graphics::string(const point& pos, std::u8string_view str, const nana::color& c)
+		{
+			palette(true, c);
+			string(pos, to_wstring(str));
+		}
+#endif
 
 		void graphics::line(const nana::point& pos1, const nana::point& pos2)
 		{

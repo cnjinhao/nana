@@ -54,7 +54,7 @@ namespace nana
 			}
 		};
 	}
-namespace API
+namespace api
 {
 #ifdef NANA_X11
 	//Some platform specific functions for X11
@@ -100,7 +100,7 @@ namespace API
 
 				for (auto child : children)
 				{
-					auto widget_ptr = API::get_widget(child);
+					auto widget_ptr = api::get_widget(child);
 					if (!widget_ptr)
 						continue;
 
@@ -176,7 +176,7 @@ namespace API
 			if (fade_rate < 0.01)
 				wd->flags.make_bground_declared = true;
 
-			API::refresh_window(wd);
+			api::refresh_window(wd);
 		}
 	}
 
@@ -201,7 +201,7 @@ namespace API
 		if(is_window(wd))
 		{
 			if(restrict::wd_manager().enable_effects_bground(wd, false))
-				API::refresh_window(wd);
+				api::refresh_window(wd);
 		}
 	}
 
@@ -346,7 +346,7 @@ namespace API
 		{
 			internal_scope_guard lock;
 
-			if (bground_mode::basic != API::effects_bground_mode(wd))
+			if (bground_mode::basic != api::effects_bground_mode(wd))
 				return false;
 
 			wd->other.glass_buffer.paste(rectangle{ wd->other.glass_buffer.size() }, graph, 0, 0);
@@ -357,7 +357,7 @@ namespace API
 		{
 			internal_scope_guard lock;
 
-			if (bground_mode::basic != API::effects_bground_mode(wd))
+			if (bground_mode::basic != api::effects_bground_mode(wd))
 				return false;
 			
 			wd->other.glass_buffer.paste(src_r, graph, dst_pt.x, dst_pt.y);
@@ -420,6 +420,13 @@ namespace API
 		::nana::platform_abstraction::font_languages(langs);
 	}
 
+#ifdef __cpp_char8_t
+	void font_languages(std::u8string_view sv)
+	{
+		::nana::platform_abstraction::font_languages(to_string(sv));
+	}
+#endif
+
 	//close all windows in current thread
 	void exit()
 	{
@@ -466,6 +473,34 @@ namespace API
 		}
 		return text;
 	}
+
+#ifdef __cpp_char8_t
+	std::u8string transform_shortkey_text(std::u8string text, wchar_t &shortkey, std::u8string::size_type *skpos)
+	{
+		shortkey = 0;
+		std::u8string::size_type off = 0;
+		while(true)
+		{
+			auto pos = text.find_first_of(u8'&', off);
+			if(pos != std::u8string::npos)
+			{
+				text.erase(pos, 1);
+				if((shortkey == 0) && pos < text.length())
+				{
+					shortkey = utf::char_at(reinterpret_cast<const char*>(text.c_str()) + pos, 0, nullptr);
+					if(shortkey == u8'&')	//This indicates the text contains "&&", it means the symbol have to be ignored.
+						shortkey = 0;
+					else if(skpos)
+						*skpos = pos;
+				}
+				off = pos + 1;
+			}
+			else
+				break;
+		}
+		return text;
+	}
+#endif
 
 	bool register_shortkey(window wd, unsigned long key)
 	{
@@ -535,7 +570,7 @@ namespace API
 	void enable_dropfiles(window wd, bool enb)
 	{
 		internal_scope_guard lock;
-		auto native_handle = API::root(wd);
+		auto native_handle = api::root(wd);
 		if (native_handle)
 		{
 			wd->flags.dropable = enb;
@@ -750,7 +785,7 @@ namespace API
 	nana::size window_size(window wd)
 	{
 		nana::rectangle r;
-		API::get_window_rectangle(wd, r);
+		api::get_window_rectangle(wd, r);
 		return{ r.width, r.height };
 	}
 
@@ -902,14 +937,14 @@ namespace API
 		throw_not_utf8(title_utf8);
 		internal_scope_guard lock;
 		if (is_window(wd))
-			wd->widget_notifier->caption(to_nstring(title_utf8));
+			wd->widget_notifier->caption(nana::detail::to_nstring(title_utf8));
 	}
 
 	void window_caption(window wd, const std::wstring& title)
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
-			wd->widget_notifier->caption(to_nstring(title));
+			wd->widget_notifier->caption(nana::detail::to_nstring(title));
 	}
 
 #ifdef __cpp_char8_t
@@ -917,7 +952,7 @@ namespace API
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
-			wd->widget_notifier->caption(to_nstring(text));
+			wd->widget_notifier->caption(nana::detail::to_nstring(text));
 	}
 #endif
 
@@ -1490,5 +1525,5 @@ namespace API
 
 		return dragdrop_status::not_ready;
 	}
-}//end namespace API
+}//end namespace api
 }//end namespace nana

@@ -1,7 +1,7 @@
 /**
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -33,9 +33,7 @@ namespace nana {
 		{}
 	};
 
-namespace drawerbase
-{
-	namespace checkbox
+	namespace drawerbase::checkbox
 	{
 		struct scheme
 			: public widget_geometrics
@@ -69,8 +67,7 @@ namespace drawerbase
 			static const int interval = 4;
 			implement * impl_;
 		};
-	}//end namespace checkbox
-}//end namespace drawerbase
+	}//end namespace drawrbase::checkbox
 
 	
     class checkbox
@@ -78,9 +75,20 @@ namespace drawerbase
 	{
 	public:
 		checkbox();
+
+#if 0 //deprecated
 		checkbox(window, bool visible);
 		checkbox(window, const std::string& text, bool visible = true);
 		checkbox(window, const char* text, bool visible = true);
+#else
+		checkbox(window parent, std::string_view text, bool visible = true);
+		checkbox(window parent, std::wstring_view text, bool visible = true);
+#endif
+
+#ifdef __cpp_char8_t
+		checkbox(window parent, std::u8string_view text, bool visible = true);
+#endif
+
 		checkbox(window, const rectangle& = rectangle(), bool visible = true);
 
 		void element_set(const char* name);
@@ -97,6 +105,8 @@ namespace drawerbase
 		void radio(bool);
 		void transparent(bool value);
 		bool transparent() const;
+	private:
+		void _m_complete_creation() override;
 	};//end class checkbox
 
     /// for managing checkboxs in radio mode

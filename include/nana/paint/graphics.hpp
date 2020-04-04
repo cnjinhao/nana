@@ -135,6 +135,9 @@ namespace nana
 
 			::nana::size text_extent_size(std::string_view text) const;
 			::nana::size text_extent_size(std::wstring_view text) const;
+#ifdef __cpp_char8_t
+			::nana::size text_extent_size(std::u8string_view text) const;
+#endif
 
 			///Only supports the wide string, because it is very hard to specify the begin and end position in a UTF-8 string.
 			::nana::size glyph_extent_size(std::wstring_view text, std::size_t begin, std::size_t end) const;
@@ -148,6 +151,9 @@ namespace nana
 
 			::nana::size	bidi_extent_size(std::string_view utf8_text) const;
 			::nana::size	bidi_extent_size(std::wstring_view text) const;
+#ifdef __cpp_char8_t
+			::nana::size 	bidi_extent_size(std::u8string_view text) const;
+#endif
 
 			bool text_metrics(unsigned & ascent, unsigned& descent, unsigned& internal_leading) const;
 
@@ -201,6 +207,11 @@ namespace nana
 
 			void string(const point&, std::wstring_view str);
 			void string(const point&, std::wstring_view str, const nana::color&);
+
+#ifdef __cpp_char8_t
+			void string(const point&, std::u8string_view str);
+			void string(const point&, std::u8string_view str, const nana::color&);
+#endif
 
 			void line(const point&, const point&);
 			void line(const point&, const point&, const color&);

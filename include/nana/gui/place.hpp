@@ -66,7 +66,7 @@ namespace nana
 			ptr->caption(text_);
 			if (init_)
 				init_(*ptr);
-			return std::move(ptr);
+			return ptr;
 		}
 	private:
 		std::string text_;

@@ -176,7 +176,7 @@ namespace nana
 	display& screen::from_window(window wd)
 	{
 		::nana::point pos;
-		API::calc_screen_point(wd, pos);
+		api::calc_screen_point(wd, pos);
 		return from_point(pos);
 	}
 

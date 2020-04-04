@@ -34,10 +34,8 @@ namespace nana
 		{}
 	};
 
-	namespace drawerbase
+	namespace drawerbase::categorize
 	{
-		namespace categorize
-		{
 			template<typename T>
 			struct categorize_events
 				: public general_events
@@ -144,8 +142,7 @@ namespace nana
 				std::unique_ptr<event_agent_interface> event_agent_;
 				scheme * scheme_{nullptr};
 			};
-		}//end namespace categorize
-	}//end namespace drawerbase
+	}//end namespace drawerbase::categorize
 
 
 
@@ -176,6 +173,7 @@ namespace nana
 		{
 		}
 
+#if 0 //deprecated
 		categorize(window wd, const std::string& text_utf8, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
@@ -199,14 +197,36 @@ namespace nana
 		{
 			this->caption(text);
 		}
+#else
+		categorize(window wd, std::string_view title, bool visible = true)
+			: categorize(wd, ::nana::rectangle(), visible)
+		{
+			this->caption(title);
+		}
+
+		categorize(window wd, const std::wstring_view title, bool visible = true)
+			: categorize(wd, ::nana::rectangle(), visible)
+		{
+			this->caption(title);
+		}		
+#endif
+
+#ifdef __cpp_char8_t
+		categorize(window wd, const std::u8string_view title, bool visible = true)
+			: categorize(wd, ::nana::rectangle(), visible)
+		{
+			this->caption(title);
+		}			
+#endif
 
 		/// Insert a new category with a specified name and the object of value type. 
 		/// The new category would be inserted as a child in current category, 
 		/// and after inserting, the new category is replaced of the current category as a new current one.
 		categorize& insert(const std::string& name, const value_type& value)
 		{
+			throw_not_utf8(name);
 			this->get_drawer_trigger().insert(name, value);
-			API::update_window(*this);
+			api::update_window(*this);
 			return *this;
 		}
 
@@ -215,22 +235,51 @@ namespace nana
 		{
 			throw_not_utf8(name);
 			if(this->get_drawer_trigger().childset(name, value))
-				API::update_window(*this);
+				api::update_window(*this);
 			return *this;
 		}
 
 		/// Erases a child category with a specified name from current category.
 		categorize& childset_erase(const std::string& name)
 		{
+			throw_not_utf8(name);
 			if(this->get_drawer_trigger().childset_erase(name))
-				API::update_window(*this);
+				api::update_window(*this);
 			return *this;
 		}
+
+#ifdef __cpp_char8_t
+		/// Insert a new category with a specified name and the object of value type. 
+		/// The new category would be inserted as a child in current category, 
+		/// and after inserting, the new category is replaced of the current category as a new current one.
+		categorize& insert(std::u8string_view name, const value_type& value)
+		{
+			this->get_drawer_trigger().insert(to_string(name), value);
+			api::update_window(*this);
+			return *this;
+		}
+
+		/// Inserts a child category into current category.
+		categorize& childset(std::u8string_view name, const value_type& value)
+		{
+			if(this->get_drawer_trigger().childset(to_string(name), value))
+				api::update_window(*this);
+			return *this;
+		}
+
+		/// Erases a child category with a specified name from current category.
+		categorize& childset_erase(std::u8string_view name)
+		{
+			if(this->get_drawer_trigger().childset_erase(to_string(name)))
+				api::update_window(*this);
+			return *this;
+		}		
+#endif
 
 		void clear()
 		{
 			if(this->get_drawer_trigger().clear())
-				API::update_window(*this);
+				api::update_window(*this);
 		}
 
 		/// Sets the splitter string
@@ -239,6 +288,15 @@ namespace nana
 			this->get_drawer_trigger().splitstr(sstr);
 			return *this;
 		}
+
+#ifdef __cpp_char8_t
+		/// Sets the splitter string
+		categorize& splitstr(std::u8string_view sstr)
+		{
+			this->get_drawer_trigger().splitstr(to_string(sstr));
+			return *this;
+		}
+#endif
 
 		std::string splitstr() const
 		{
@@ -255,7 +313,7 @@ namespace nana
 		void _m_caption(native_string_type&& str) override
 		{
 			this->get_drawer_trigger().path(to_utf8(str));
-			API::dev::window_caption(*this, to_nstring(this->get_drawer_trigger().path()) );
+			api::dev::window_caption(*this, nana::detail::to_nstring(this->get_drawer_trigger().path()) );
 		}
 	};
 }//end namespace nana

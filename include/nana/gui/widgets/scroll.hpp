@@ -1,7 +1,7 @@
 /**
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -31,10 +31,8 @@ namespace nana
 		{}
 	};
 
-	namespace drawerbase
+	namespace drawerbase::scroll
 	{
-		namespace scroll
-		{
 			struct scroll_events
 				: public general_events
 			{
@@ -115,7 +113,7 @@ namespace nana
 					if (graph_ && (drawer_.metrics.peak != s))
 					{
 						drawer_.metrics.peak = s;
-						API::refresh_window(widget_->handle());
+						api::refresh_window(widget_->handle());
 					}
 				}
 
@@ -131,7 +129,7 @@ namespace nana
 						drawer_.metrics.value = s;
 						_m_emit_value_changed();
 
-						API::refresh_window(*widget_);
+						api::refresh_window(*widget_);
 					}
 				}
 
@@ -140,7 +138,7 @@ namespace nana
 					if (graph_ && (drawer_.metrics.range != s))
 					{
 						drawer_.metrics.range = s;
-						API::refresh_window(widget_->handle());
+						api::refresh_window(widget_->handle());
 					}
 				}
 
@@ -191,7 +189,7 @@ namespace nana
 					widget.caption("nana scroll");
 
 					//scroll doesn't want the keyboard focus.
-					API::take_active(widget, false, widget.parent());
+					api::take_active(widget, false, widget.parent());
 
 					timer_.stop();
 					timer_.elapse(std::bind(&trigger::_m_tick, this));
@@ -210,14 +208,14 @@ namespace nana
 				void resized(graph_reference graph, const ::nana::arg_resized&) override
 				{
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_enter(graph_reference graph, const ::nana::arg_mouse& arg) override
 				{
 					drawer_.metrics.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_move(graph_reference graph, const ::nana::arg_mouse& arg) override
@@ -239,7 +237,7 @@ namespace nana
 					}
 
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void dbl_click(graph_reference graph, const arg_mouse& arg) override
@@ -278,7 +276,7 @@ namespace nana
 							break;
 						}
 						drawer_.draw(graph);
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 
@@ -291,7 +289,7 @@ namespace nana
 					drawer_.metrics.pressed = false;
 					drawer_.metrics.what = drawer_.what(graph, arg.pos);
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_leave(graph_reference graph, const arg_mouse&) override
@@ -300,7 +298,7 @@ namespace nana
 
 					drawer_.metrics.what = buttons::none;
 					drawer_.draw(graph);
-					API::dev::lazy_refresh();
+					api::dev::lazy_refresh();
 				}
 
 				void mouse_wheel(graph_reference graph, const arg_wheel& arg) override
@@ -308,7 +306,7 @@ namespace nana
 					if (make_step(arg.upwards == false, 3))
 					{
 						drawer_.draw(graph);
-						API::dev::lazy_refresh();
+						api::dev::lazy_refresh();
 					}
 				}
 			private:
@@ -320,7 +318,7 @@ namespace nana
 				void _m_tick()
 				{
 					make_step(drawer_.metrics.what == buttons::second, 1);
-					API::refresh_window(widget_->handle());
+					api::refresh_window(widget_->handle());
 					timer_.interval(std::chrono::milliseconds{ 100 });
 				}
 			private:
@@ -329,8 +327,7 @@ namespace nana
 				drawer	drawer_;
 				timer timer_;
 			};
-		}//end namespace scroll
-	}//end namespace drawerbase
+	}//end namespace drawerbase::scroll
 
 	class scroll_interface
 	{
@@ -389,8 +386,9 @@ namespace nana
 	public:
 
 		///  \brief The default constructor without creating the widget.
-		scroll(){}
+		scroll() = default;
 
+#if 0	//deprecated
 		/// \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param visible  specify the visibility after creation.
@@ -398,7 +396,7 @@ namespace nana
 		{
 			this->create(wd, rectangle(), visible);   // add a widget scheme? and take some colors from these wd?
 		}
-
+#endif
 		///  \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param r  the size and position of the widget in its parent window coordinate.
@@ -473,7 +471,7 @@ namespace nana
 		{
 			if (this->get_drawer_trigger().make_step(forward, steps))
 			{
-				API::refresh_window(this->handle());
+				api::refresh_window(this->handle());
 				return true;
 			}
 			return false;

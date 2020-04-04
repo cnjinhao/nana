@@ -1,7 +1,7 @@
 /**
  *	A Label Control Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -18,10 +18,8 @@
 
 namespace nana
 {
-	namespace drawerbase
+	namespace drawerbase::label
 	{
-		namespace label
-		{
 			enum class command  /// Defines the event type for format listener.
 			{
 				enter, leave, click
@@ -45,9 +43,7 @@ namespace nana
 			private:
 				implement * impl_;
 			};
-
-		}//end namespace label
-	}//end namespace drawerbase
+	}//end namespace drawerbase::label
 
 	class label
 		: public widget_object<category::widget_tag, drawerbase::label::trigger>
@@ -55,11 +51,22 @@ namespace nana
 		label(const label&) = delete;
 		label(label&&) = delete;
 	public:
-		typedef drawerbase::label::command command;
+		using command = drawerbase::label::command;
 		label();
+
+#if 0 //deprecated
 		label(window, bool visible);
 		label(window, const std::string& text, bool visible = true);
 		label(window parent, const char* text, bool visible = true) :label(parent, std::string(text),visible) {};
+#else
+		label(window parent, std::string_view text, bool visible = true);
+		label(window parent, std::wstring_view text, bool visible = true);
+#endif
+
+#ifdef __cpp_char8_t
+		label(window parent, std::u8string_view text, bool visible = true);
+#endif
+
 		label(window, const rectangle& = {}, bool visible = true);
 		label& transparent(bool);		///< Switchs the label widget to the transparent background mode.
 		bool transparent() const noexcept;
@@ -74,10 +81,13 @@ namespace nana
 		nana::size measure(unsigned allowed_width_in_pixel) const;
 
 		static ::nana::size measure(::nana::paint::graphics&, const ::std::string&, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align);
-
+#ifdef __cpp_char8_t
+		static ::nana::size measure(::nana::paint::graphics&, std::u8string_view, unsigned allowed_width_in_pixel, bool format_enabled, align h_align, align_v v_align);
+#endif
 		label& text_align(align horizontal_align, align_v vertical_align= align_v::top);
 	private:
 		//Overrides widget's virtual function
+		void _m_complete_creation() override;
 		void _m_caption(native_string_type&&) override;
 	};
 }//end namespace nana

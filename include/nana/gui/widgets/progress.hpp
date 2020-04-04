@@ -1,7 +1,7 @@
 /**
  *	A Progress Indicator Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -16,10 +16,8 @@
 
 namespace nana
 {
-	namespace drawerbase
+	namespace drawerbase::progress
 	{
-		namespace progress
-		{
 			struct scheme
 				: public widget_geometrics
 			{
@@ -45,8 +43,8 @@ namespace nana
 			private:
 				substance* const progress_;
 			};
-		}
-	}//end namespace drawerbase
+	}//end namespace drawerbase::progress
+	
        /// \brief A progressbar widget with two styles: know, and unknown amount value (goal). 
        /// In unknown style the amount is ignored and the bar is scrolled when value change.
 	class progress
@@ -54,7 +52,9 @@ namespace nana
 	{
 	public:
 		progress();
+#if 0 //deprecated
 		progress(window, bool visible);
+#endif
 		progress(window, const rectangle & = rectangle(), bool visible = true);
 
 		unsigned value() const;

@@ -32,122 +32,124 @@ namespace nana
 		arg_combox(combox&);
 	};
 
-	namespace drawerbase
+	namespace drawerbase::combox
 	{
-		namespace combox
+		struct combox_events
+			: public general_events
 		{
-			struct combox_events
-				: public general_events
+			basic_event<arg_combox>	selected;
+			basic_event<arg_combox> text_changed;
+		};
+
+		class drawer_impl;
+
+		class trigger
+			: public drawer_trigger
+		{
+		public:
+			trigger();
+			~trigger();
+
+			drawer_impl& get_drawer_impl();
+			const drawer_impl& get_drawer_impl() const;
+		private:
+			void attached(widget_reference, graph_reference)	override;
+			void detached()	override;
+			void refresh(graph_reference)	override;
+			void focus(graph_reference, const arg_focus&)	override;
+			void mouse_enter(graph_reference, const arg_mouse&)	override;
+			void mouse_leave(graph_reference, const arg_mouse&)	override;
+			void mouse_down(graph_reference, const arg_mouse&)	override;
+			void mouse_up(graph_reference, const arg_mouse&)	override;
+			void mouse_move(graph_reference, const arg_mouse&)	override;
+			void mouse_wheel(graph_reference, const arg_wheel&)	override;
+			void key_ime(graph_reference, const arg_ime&)	override;
+			void key_press(graph_reference, const arg_keyboard&)	override;
+			void key_char(graph_reference, const arg_keyboard&)	override;
+		private:
+			drawer_impl * const drawer_;
+		};
+
+		class item_proxy
+			: public std::iterator<std::input_iterator_tag, item_proxy>
+		{
+		public:
+			item_proxy(const item_proxy&) = default;
+			
+			item_proxy(drawer_impl*, std::size_t pos);
+			item_proxy&		text(const ::std::string&);
+#ifdef __cpp_char8_t
+			item_proxy&		text(::std::u8string_view);
+#endif
+
+			::std::string	text() const;
+			item_proxy&	select();
+			bool		selected() const;
+			item_proxy& icon(const nana::paint::image&);
+			nana::paint::image icon() const;
+
+			template<typename T>
+			T * value_ptr() const
 			{
-				basic_event<arg_combox>	selected;
-				basic_event<arg_combox> text_changed;
-			};
+				return std::any_cast<T>(_m_anyobj(false));
+			}
 
-			class drawer_impl;
-
-			class trigger
-				: public drawer_trigger
+			template<typename T>
+			T & value() const
 			{
-			public:
-				trigger();
-				~trigger();
+				auto * pany = _m_anyobj(false);
+				if (nullptr == pany)
+					throw std::runtime_error("combox::item_proxy.value<T>() is empty");
 
-				drawer_impl& get_drawer_impl();
-				const drawer_impl& get_drawer_impl() const;
-			private:
-				void attached(widget_reference, graph_reference)	override;
-				void detached()	override;
-				void refresh(graph_reference)	override;
-				void focus(graph_reference, const arg_focus&)	override;
-				void mouse_enter(graph_reference, const arg_mouse&)	override;
-				void mouse_leave(graph_reference, const arg_mouse&)	override;
-				void mouse_down(graph_reference, const arg_mouse&)	override;
-				void mouse_up(graph_reference, const arg_mouse&)	override;
-				void mouse_move(graph_reference, const arg_mouse&)	override;
-				void mouse_wheel(graph_reference, const arg_wheel&)	override;
-				void key_ime(graph_reference, const arg_ime&)	override;
-				void key_press(graph_reference, const arg_keyboard&)	override;
-				void key_char(graph_reference, const arg_keyboard&)	override;
-			private:
-				drawer_impl * const drawer_;
-			};
+				T * p = std::any_cast<T>(pany);
+				if (nullptr == p)
+					throw std::runtime_error("combox::item_proxy.value<T>() invalid type of value");
+				return *p;
+			}
 
-			class item_proxy
-				: public std::iterator<std::input_iterator_tag, item_proxy>
+			template<typename T>
+			item_proxy& value(T&& val)
 			{
-			public:
-				item_proxy(drawer_impl*, std::size_t pos);
-				item_proxy&		text(const ::std::string&);
+				*_m_anyobj(true) = ::std::forward<T>(val);
+				return *this;
+			}
+		public:
+			/// Behavior of Iterator's value_type
+			bool operator==(::std::string_view) const;
 
-				::std::string	text() const;
-				item_proxy&	select();
-				bool		selected() const;
-				item_proxy& icon(const nana::paint::image&);
-				nana::paint::image icon() const;
+			/// Behavior of Iterator
+			item_proxy & operator=(const item_proxy&);
 
-				template<typename T>
-				T * value_ptr() const
-				{
-					return std::any_cast<T>(_m_anyobj(false));
-				}
+			/// Behavior of Iterator
+			item_proxy & operator++();
 
-				template<typename T>
-				T & value() const
-				{
-					auto * pany = _m_anyobj(false);
-					if (nullptr == pany)
-						throw std::runtime_error("combox::item_proxy.value<T>() is empty");
+			/// Behavior of Iterator
+			item_proxy	operator++(int);
 
-					T * p = std::any_cast<T>(pany);
-					if (nullptr == p)
-						throw std::runtime_error("combox::item_proxy.value<T>() invalid type of value");
-					return *p;
-				}
+			/// Behavior of Iterator
+			item_proxy& operator*();
 
-				template<typename T>
-				item_proxy& value(T&& val)
-				{
-					*_m_anyobj(true) = ::std::forward<T>(val);
-					return *this;
-				}
-			public:
-				/// Behavior of Iterator's value_type
-				bool operator==(::std::string_view) const;
+			/// Behavior of Iterator
+			const item_proxy& operator*() const;
 
-				/// Behavior of Iterator
-				item_proxy & operator=(const item_proxy&);
+			/// Behavior of Iterator
+			item_proxy* operator->();
 
-				/// Behavior of Iterator
-				item_proxy & operator++();
+			/// Behavior of Iterator
+			const item_proxy* operator->() const;
 
-				/// Behavior of Iterator
-				item_proxy	operator++(int);
+			/// Behavior of Iterator
+			bool operator==(const item_proxy&) const;
 
-				/// Behavior of Iterator
-				item_proxy& operator*();
-
-				/// Behavior of Iterator
-				const item_proxy& operator*() const;
-
-				/// Behavior of Iterator
-				item_proxy* operator->();
-
-				/// Behavior of Iterator
-				const item_proxy* operator->() const;
-
-				/// Behavior of Iterator
-				bool operator==(const item_proxy&) const;
-
-				/// Behavior of Iterator
-				bool operator!=(const item_proxy&) const;
-			private:
-				std::any * _m_anyobj(bool alloc_if_empty) const;
-			private:
-				drawer_impl * impl_;
-				std::size_t pos_;
-			};
-		}//end namespace combox
-	}//end namespace drawerbase
+			/// Behavior of Iterator
+			bool operator!=(const item_proxy&) const;
+		private:
+			std::any * _m_anyobj(bool alloc_if_empty) const;
+		private:
+			drawer_impl * impl_;
+			std::size_t pos_;
+		};
+	}//end namespace drawerbase::combox
 
 	class combox
 		:	public widget_object<category::widget_tag, drawerbase::combox::trigger, drawerbase::combox::combox_events, ::nana::widgets::skeletons::text_editor_scheme>,
@@ -158,9 +160,18 @@ namespace nana
 		typedef drawerbase::combox::item_proxy item_proxy;
 
 		combox();
+#if 0 //deprecated
 		combox(window, bool visible);
 		combox(window, ::std::string, bool visible = true);
 		combox(window, const char*, bool visible = true);
+#else
+		combox(window parent, std::string_view text, bool visible = true);
+		combox(window parent, std::wstring_view text, bool visible = true);
+#endif
+
+#ifdef __cpp_char8_t
+		combox(window parent, std::u8string_view text, bool visible = true);
+#endif
 		combox(window, const rectangle& r = rectangle(), bool visible = true);
 
 		void clear();
@@ -168,6 +179,10 @@ namespace nana
 		bool editable() const;
 		void set_accept(std::function<bool(wchar_t)>);
 		combox& push_back(std::string);
+#if __cpp_char8_t
+		combox& push_back(std::u8string_view);
+#endif
+
 		std::size_t the_number_of_options() const;
 		std::size_t option() const;   ///< Index of the last selected, from drop-down list, item.
 		void option(std::size_t);   ///< Select the text specified by index

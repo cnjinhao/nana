@@ -81,26 +81,26 @@ namespace nana
 #else	//POSIX
 		using native_string_type = std::string;
 #endif
-	}
 
 #if defined(NANA_WINDOWS)
-	const detail::native_string_type to_nstring(const std::string&);
-	const detail::native_string_type& to_nstring(const std::wstring&);
-	detail::native_string_type to_nstring(std::string&&);
-	detail::native_string_type&& to_nstring(std::wstring&&);
+		const detail::native_string_type to_nstring(const std::string&);
+		const detail::native_string_type& to_nstring(const std::wstring&);
+		detail::native_string_type to_nstring(std::string&&);
+		detail::native_string_type&& to_nstring(std::wstring&&);
 #else	//POSIX
-	const detail::native_string_type& to_nstring(const std::string&);
-	const detail::native_string_type to_nstring(const std::wstring&);
-	detail::native_string_type&& to_nstring(std::string&&);
-	detail::native_string_type to_nstring(std::wstring&&);
+		const detail::native_string_type& to_nstring(const std::string&);
+		const detail::native_string_type to_nstring(const std::wstring&);
+		detail::native_string_type&& to_nstring(std::string&&);
+		detail::native_string_type to_nstring(std::wstring&&);
 #endif
-	detail::native_string_type to_nstring(int);
-	detail::native_string_type to_nstring(double);
-	detail::native_string_type to_nstring(std::size_t);
+		detail::native_string_type to_nstring(int);
+		detail::native_string_type to_nstring(double);
+		detail::native_string_type to_nstring(std::size_t);
 
 #ifdef __cpp_char8_t
-	detail::native_string_type to_nstring(std::u8string_view);
+		detail::native_string_type to_nstring(std::u8string_view);
 #endif
+	}
 }
 
 
@@ -110,11 +110,6 @@ namespace nana
 	{
 		return ((unsigned(red) << 16)|((unsigned(green)<<8))|blue);
 	}
-
-#ifdef __cpp_char8_t
-	/// Add support of C++20
-	std::string from_u8string(std::u8string_view text);
-#endif
 }
 
 #include <nana/pop_ignore_diagnostic>

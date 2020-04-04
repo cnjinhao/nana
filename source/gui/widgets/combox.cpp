@@ -27,900 +27,905 @@ namespace nana
 	arg_combox::arg_combox(combox& wdg): widget(wdg)
 	{}
 
-	namespace drawerbase
+	namespace drawerbase::combox
 	{
-		namespace combox
+		class event_agent
+			: public widgets::skeletons::textbase_event_agent_interface
 		{
-			class event_agent
-				: public widgets::skeletons::textbase_event_agent_interface
+		public:
+			event_agent(::nana::combox& wdg)
+				: widget_(wdg)
+			{}
+
+			void first_change() override{}	//empty, because combox does not have this event.
+
+			void text_changed() override
+			{
+				widget_.events().text_changed.emit(::nana::arg_combox{ widget_ }, widget_);
+			}
+		private:
+			::nana::combox & widget_;
+		};
+
+		struct item
+			: public float_listbox::item_interface
+		{
+		public:
+			std::shared_ptr<nana::detail::key_interface> key;
+
+			nana::paint::image	item_image;
+			std::string		item_text;
+			mutable std::shared_ptr<std::any>	any_ptr;
+
+			item(std::shared_ptr<nana::detail::key_interface> && kv)
+				: key(std::move(kv))
+			{
+			}
+
+			item(std::string&& s)
+				: item_text(std::move(s))
+			{}
+		private:
+			//implement item_interface methods
+			const nana::paint::image & image() const override
+			{
+				return item_image;
+			}
+
+			const char* text() const override
+			{
+				return item_text.data();
+			}
+		};
+
+		class drawer_impl
+		{
+			class content_measurer
+				: public dev::widget_content_measurer_interface
 			{
 			public:
-				event_agent(::nana::combox& wdg)
-					: widget_(wdg)
+				content_measurer(drawer_impl* drwimpl)
+					: drw_{ drwimpl }
 				{}
 
-				void first_change() override{}	//empty, because combox does not have this event.
-
-				void text_changed() override
+				std::optional<size> measure(graph_reference graph, unsigned limit_pixels, bool /*limit_width*/) const override
 				{
-					widget_.events().text_changed.emit(::nana::arg_combox{ widget_ }, widget_);
-				}
-			private:
-				::nana::combox & widget_;
-			};
+					//Combox doesn't provide a support of vfit and hfit
+					if (limit_pixels)
+						return{};
 
-			struct item
-				: public float_listbox::item_interface
-			{
-			public:
-				std::shared_ptr<nana::detail::key_interface> key;
-
-				nana::paint::image	item_image;
-				std::string		item_text;
-				mutable std::shared_ptr<std::any>	any_ptr;
-
-				item(std::shared_ptr<nana::detail::key_interface> && kv)
-					: key(std::move(kv))
-				{
-				}
-
-				item(std::string&& s)
-					: item_text(std::move(s))
-				{}
-			private:
-				//implement item_interface methods
-				const nana::paint::image & image() const override
-				{
-					return item_image;
-				}
-
-				const char* text() const override
-				{
-					return item_text.data();
-				}
-			};
-
-			class drawer_impl
-			{
-				class content_measurer
-					: public dev::widget_content_measurer_interface
-				{
-				public:
-					content_measurer(drawer_impl* drwimpl)
-						: drw_{ drwimpl }
-					{}
-
-					std::optional<size> measure(graph_reference graph, unsigned limit_pixels, bool /*limit_width*/) const override
+					size content_size;
+					for (std::size_t i = 0; i < drw_->the_number_of_options(); ++i)
 					{
-						//Combox doesn't provide a support of vfit and hfit
-						if (limit_pixels)
-							return{};
+						auto & m = drw_->at(i);
+						auto sz = graph.text_extent_size(m.item_text);
 
-						size content_size;
-						for (std::size_t i = 0; i < drw_->the_number_of_options(); ++i)
+						content_size.width = (std::max)(content_size.width, sz.width);
+						content_size.height = (std::max)(content_size.height, sz.height);
+					}
+
+					return content_size;
+				}
+
+				size extension() const override
+				{
+					return{ 19, 4 };
+				}
+			private:
+				drawer_impl* const drw_;
+			};
+		public:
+			using graph_reference = paint::graphics&;
+			using widget_reference = widget&;
+
+			enum class parts{none, text, push_button};
+
+			drawer_impl()
+			{
+				state_.focused = false;
+				state_.button_state = element_state::normal;
+				state_.pointer_where = parts::none;
+				state_.lister = nullptr;
+
+				measurer_.reset(new content_measurer{this});
+			}
+
+			void renderer(drawerbase::float_listbox::item_renderer* ir)
+			{
+				item_renderer_ = ir;
+			}
+
+			void attached(widget_reference wd, graph_reference graph)
+			{
+				widget_ = static_cast< ::nana::combox*>(&wd);
+
+				auto scheme = dynamic_cast< ::nana::widgets::skeletons::text_editor_scheme*>(api::dev::get_scheme(wd));
+				editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph, scheme);
+				_m_text_area(graph.size());
+				editor_->multi_lines(false);
+				editable(false);
+				graph_ = &graph;
+
+				evt_agent_.reset(new event_agent{ static_cast<nana::combox&>(wd) });
+				editor_->textbase().set_event_agent(evt_agent_.get());
+
+				api::dev::set_measurer(wd, measurer_.get());
+			}
+
+			void detached()
+			{
+				delete editor_;
+				editor_ = nullptr;
+				graph_ = nullptr;
+			}
+
+			void insert(std::string&& text)
+			{
+				items_.emplace_back(std::make_shared<item>(std::move(text)));
+				api::refresh_window(widget_->handle());
+			}
+
+			std::any * anyobj(std::size_t pos, bool allocate_if_empty) const
+			{
+				if(pos >= items_.size())
+					return nullptr;
+
+				auto & any_ptr = items_[pos]->any_ptr;
+				if (allocate_if_empty && (nullptr == any_ptr))
+					any_ptr = std::make_shared<std::any>();
+				return any_ptr.get();
+			}
+
+			widgets::skeletons::text_editor * editor() const
+			{
+				return editor_;
+			}
+
+			widget* widget_ptr() const
+			{
+				return widget_;
+			}
+
+			void clear()
+			{
+				items_.clear();
+				module_.items.clear();
+				module_.index = nana::npos;
+			}
+
+			void editable(bool enb)
+			{
+				if(editor_)
+				{
+					editor_->editable(enb, false);
+					editor_->show_caret(enb);
+					if (!enb)
+					{
+						editor_->customized_renderers().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
 						{
-							auto & m = drw_->at(i);
-							auto sz = graph.text_extent_size(m.item_text);
+							auto clr_from = colors::button_face_shadow_start;
+							auto clr_to = colors::button_face_shadow_end;
 
-							content_size.width = (std::max)(content_size.width, sz.width);
-							content_size.height = (std::max)(content_size.height, sz.height);
-						}
+							int pare_off_px = 1;
+							if (element_state::pressed == state_.button_state)
+							{
+								pare_off_px = 2;
+								std::swap(clr_from, clr_to);
+							}
 
-						return content_size;
+							graph.gradual_rectangle(::nana::rectangle(graph.size()).pare_off(pare_off_px), clr_from, clr_to, true);
+							if (api::is_transparent_background(this->widget_ptr()->handle()))
+							{
+								paint::graphics trns_graph{ graph.size() };
+								if (api::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
+								{
+									graph.blend(rectangle{ trns_graph.size() }, trns_graph, {}, 0.5);
+								}
+							}
+						};
 					}
+					else
+						editor_->customized_renderers().background = nullptr;
 
-					size extension() const override
-					{
-						return{ 19, 4 };
-					}
-				private:
-					drawer_impl* const drw_;
-				};
-			public:
-				using graph_reference = paint::graphics&;
-				using widget_reference = widget&;
+					editor_->enable_background(enb);
+					editor_->enable_background_counterpart(!enb);
+					api::refresh_window(widget_->handle());
+				}
+			}
 
-				enum class parts{none, text, push_button};
+			bool editable() const
+			{
+				return (editor_ && editor_->attr().editable);
+			}
 
-				drawer_impl()
+			bool calc_where(graph_reference graph, int x, int y)
+			{
+				auto new_where = parts::none;
+				if(1 < x && x < static_cast<int>(graph.width()) - 2 && 1 < y && y < static_cast<int>(graph.height()) - 2)
 				{
-					state_.focused = false;
-					state_.button_state = element_state::normal;
+					if((editor_->attr().editable == false) || (static_cast<int>(graph.width()) - 22 <= x))
+						new_where = parts::push_button;
+					else
+						new_where = parts::text;
+				}
+
+				if (new_where == state_.pointer_where)
+					return false;
+
+				state_.pointer_where = new_where;
+				return true;
+			}
+
+			void set_button_state(element_state state, bool reset_where)
+			{
+				state_.button_state = state;
+				if (reset_where)
 					state_.pointer_where = parts::none;
-					state_.lister = nullptr;
+			}
 
-					measurer_.reset(new content_measurer{this});
-				}
-
-				void renderer(drawerbase::float_listbox::item_renderer* ir)
+			void set_focused(bool f)
+			{
+				if(editor_)
 				{
-					item_renderer_ = ir;
+					state_.focused = f;
+					if(editor_->attr().editable)
+						editor_->select(f);
 				}
+			}
 
-				void attached(widget_reference wd, graph_reference graph)
+			bool has_lister() const
+			{
+				return (state_.lister != nullptr);
+			}
+
+			void open_lister_if_push_button_positioned()
+			{
+				if((nullptr == state_.lister) && !items_.empty() && (!editor_->attr().editable || (parts::push_button == state_.pointer_where)))
 				{
-					widget_ = static_cast< ::nana::combox*>(&wd);
-
-					auto scheme = dynamic_cast< ::nana::widgets::skeletons::text_editor_scheme*>(API::dev::get_scheme(wd));
-					editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph, scheme);
-					_m_text_area(graph.size());
-					editor_->multi_lines(false);
-					editable(false);
-					graph_ = &graph;
-
-					evt_agent_.reset(new event_agent{ static_cast<nana::combox&>(wd) });
-					editor_->textbase().set_event_agent(evt_agent_.get());
-
-					API::dev::set_measurer(wd, measurer_.get());
-				}
-
-				void detached()
-				{
-					delete editor_;
-					editor_ = nullptr;
-					graph_ = nullptr;
-				}
-
-				void insert(std::string&& text)
-				{
-					items_.emplace_back(std::make_shared<item>(std::move(text)));
-					API::refresh_window(widget_->handle());
-				}
-
-				std::any * anyobj(std::size_t pos, bool allocate_if_empty) const
-				{
-					if(pos >= items_.size())
-						return nullptr;
-
-					auto & any_ptr = items_[pos]->any_ptr;
-					if (allocate_if_empty && (nullptr == any_ptr))
-						any_ptr = std::make_shared<std::any>();
-					return any_ptr.get();
-				}
-
-				widgets::skeletons::text_editor * editor() const
-				{
-					return editor_;
-				}
-
-				widget* widget_ptr() const
-				{
-					return widget_;
-				}
-
-				void clear()
-				{
-					items_.clear();
 					module_.items.clear();
-					module_.index = nana::npos;
-				}
+					std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
+					state_.lister = &form_loader<nana::float_listbox, false>()(widget_->handle(), nana::rectangle(0, widget_->size().height, widget_->size().width, 10), true);
+					state_.lister->renderer(item_renderer_);
+					state_.lister->set_module(module_, image_pixels_);
+					state_.item_index_before_selection = module_.index;
 
-				void editable(bool enb)
-				{
-					if(editor_)
+					//The lister window closes by itself. I just take care about the destroy event.
+					//The event should be destroy rather than unload. Because the unload event is invoked while
+					//the lister is not closed, if pop-upping a message box, the lister will cover the message box.
+					state_.lister->events().destroy.connect_unignorable([this](const arg_destroy&)
 					{
-						editor_->editable(enb, false);
-						editor_->show_caret(enb);
-						if (!enb)
+						state_.lister = nullptr;	//The lister closes by itself.
+						if ((module_.index != nana::npos) && (module_.index != state_.item_index_before_selection))
 						{
-							editor_->customized_renderers().background = [this](graph_reference graph, const ::nana::rectangle&, const ::nana::color&)
-							{
-								auto clr_from = colors::button_face_shadow_start;
-								auto clr_to = colors::button_face_shadow_end;
-
-								int pare_off_px = 1;
-								if (element_state::pressed == state_.button_state)
-								{
-									pare_off_px = 2;
-									std::swap(clr_from, clr_to);
-								}
-
-								graph.gradual_rectangle(::nana::rectangle(graph.size()).pare_off(pare_off_px), clr_from, clr_to, true);
-								if (API::is_transparent_background(this->widget_ptr()->handle()))
-								{
-									paint::graphics trns_graph{ graph.size() };
-									if (API::dev::copy_transparent_background(this->widget_ptr()->handle(), trns_graph))
-									{
-										graph.blend(rectangle{ trns_graph.size() }, trns_graph, {}, 0.5);
-									}
-								}
-							};
-						}
-						else
-							editor_->customized_renderers().background = nullptr;
-
-						editor_->enable_background(enb);
-						editor_->enable_background_counterpart(!enb);
-						API::refresh_window(widget_->handle());
-					}
-				}
-
-				bool editable() const
-				{
-					return (editor_ && editor_->attr().editable);
-				}
-
-				bool calc_where(graph_reference graph, int x, int y)
-				{
-					auto new_where = parts::none;
-					if(1 < x && x < static_cast<int>(graph.width()) - 2 && 1 < y && y < static_cast<int>(graph.height()) - 2)
-					{
-						if((editor_->attr().editable == false) || (static_cast<int>(graph.width()) - 22 <= x))
-							new_where = parts::push_button;
-						else
-							new_where = parts::text;
-					}
-
-					if (new_where == state_.pointer_where)
-						return false;
-
-					state_.pointer_where = new_where;
-					return true;
-				}
-
-				void set_button_state(element_state state, bool reset_where)
-				{
-					state_.button_state = state;
-					if (reset_where)
-						state_.pointer_where = parts::none;
-				}
-
-				void set_focused(bool f)
-				{
-					if(editor_)
-					{
-						state_.focused = f;
-						if(editor_->attr().editable)
-							editor_->select(f);
-					}
-				}
-
-				bool has_lister() const
-				{
-					return (state_.lister != nullptr);
-				}
-
-				void open_lister_if_push_button_positioned()
-				{
-					if((nullptr == state_.lister) && !items_.empty() && (!editor_->attr().editable || (parts::push_button == state_.pointer_where)))
-					{
-						module_.items.clear();
-						std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
-						state_.lister = &form_loader<nana::float_listbox, false>()(widget_->handle(), nana::rectangle(0, widget_->size().height, widget_->size().width, 10), true);
-						state_.lister->renderer(item_renderer_);
-						state_.lister->set_module(module_, image_pixels_);
-						state_.item_index_before_selection = module_.index;
-
-						//The lister window closes by itself. I just take care about the destroy event.
-						//The event should be destroy rather than unload. Because the unload event is invoked while
-						//the lister is not closed, if pop-upping a message box, the lister will cover the message box.
-						state_.lister->events().destroy.connect_unignorable([this](const arg_destroy&)
-						{
-							state_.lister = nullptr;	//The lister closes by itself.
-							if ((module_.index != nana::npos) && (module_.index != state_.item_index_before_selection))
-							{
-								option(module_.index, true);
-								API::update_window(*widget_);
-							}
-							else
-							{
-								//Redraw the widget even though the index has not been changed,
-								//because the push button should be updated due to the state
-								//changed from pressed to normal/hovered.
-								API::refresh_window(*widget_);
-							}
-						});
-					}
-				}
-
-				void scroll_items(bool upwards)
-				{
-					if(state_.lister)
-						state_.lister->scroll_items(upwards);
-				}
-
-				void move_items(bool upwards, bool circle)
-				{
-					if (state_.lister)
-					{
-						state_.lister->move_items(upwards, circle);
-						return;
-					}
-
-					auto pos = module_.index;
-					if (upwards)
-					{
-						if (pos && (pos < items_.size()))
-							--pos;
-						else if (circle)
-							pos = items_.size() - 1;
-					}
-					else
-					{
-						if ((pos + 1) < items_.size())
-							++pos;
-						else if (circle)
-							pos = 0;
-					}
-
-					if (pos != module_.index)
-						option(pos, false);
-				}
-
-				void draw()
-				{
-					bool enb = widget_->enabled();
-
-					_m_text_area(widget_->size());
-					editor_->render(state_.focused);
-					
-					_m_draw_push_button(enb);
-					_m_draw_image();
-
-				}
-
-				std::size_t the_number_of_options() const
-				{
-					return items_.size();
-				}
-
-				std::size_t option() const
-				{
-					return (module_.index < items_.size() ? module_.index : nana::npos);
-				}
-
-				void option(std::size_t index, bool ignore_condition)
-				{
-					if(items_.size() <= index)
-						return;
-
-					std::size_t old_index = module_.index;
-					module_.index = index;
-
-					if(nullptr == widget_)
-						return;
-
-					//Test if the current item or text is different from selected.
-					if(ignore_condition || (old_index != index) || (items_[index]->item_text != widget_->caption()))
-					{
-						auto pos = API::cursor_position();
-						API::calc_window_point(widget_->handle(), pos);
-						if (calc_where(*graph_, pos.x, pos.y))
-							state_.button_state = element_state::normal;
-
-						editor_->text(to_wstring(items_[index]->item_text), false);
-						editor_->try_refresh();
-						_m_draw_push_button(widget_->enabled());
-						_m_draw_image();
-
-						widget_->events().selected.emit(::nana::arg_combox(*widget_), widget_->handle());
-					}
-				}
-
-				std::size_t at_key(std::shared_ptr<nana::detail::key_interface>&& p)
-				{
-					std::size_t pos = 0;
-					for (auto & m : items_)
-					{
-						if (m->key && detail::pred_equal(m->key.get(), p.get()))
-							return pos;
-						++pos;
-					}
-
-					pos = items_.size();
-					items_.emplace_back(std::make_shared<item>(std::move(p)));
-
-					//Redraw, because the state of push button is changed when a first new item is created.
-					if (0 == pos)
-						API::refresh_window(*widget_);
-
-					return pos;
-				}
-
-				void erase(detail::key_interface * kv)
-				{
-					std::size_t pos = 0;
-					for (auto & m : items_)
-					{
-						if (m->key && detail::pred_equal(m->key.get(), kv))
-						{
-							erase(pos);
-							return;
-						}
-						++pos;
-					}
-				}
-
-				item& at(std::size_t pos)
-				{
-					return *items_.at(pos);
-				}
-
-				const item& at(std::size_t pos) const
-				{
-					return *items_.at(pos);
-				}
-
-				void erase(std::size_t pos)
-				{
-					if (pos >= items_.size())
-						return;
-
-					if (pos == module_.index)
-					{
-						module_.index = ::nana::npos;
-						this->widget_->caption("");
-					}
-					else if ((::nana::npos != module_.index) && (pos < module_.index))
-						--module_.index;
-
-					items_.erase(items_.begin() + pos);
-
-					//Redraw, because the state of push button is changed when the last item is removed.
-					if (items_.empty())
-						API::refresh_window(*widget_);
-				}
-
-				void image(std::size_t pos, const nana::paint::image& img)
-				{
-					if (pos < items_.size())
-					{
-						items_[pos]->item_image = img;
-						if ((false == image_enabled_) && img)
-						{
-							image_enabled_ = true;
-							draw();
-						}
-					}
-				}
-
-				bool image_pixels(unsigned px)
-				{
-					if (image_pixels_ == px)
-						return false;
-
-					image_pixels_ = px;
-					return true;
-				}
-			private:
-				void _m_text_area(const nana::size& s)
-				{
-					auto extension = measurer_->extension();
-
-					nana::rectangle r(2, 2, s.width > extension.width ? s.width - extension.width : 0, s.height > extension.height ? s.height - extension.height : 0);
-					if (image_enabled_)
-					{
-						unsigned place = image_pixels_ + 2;
-						r.x += place;
-						if (r.width > place)	r.width -= place;
-					}
-					editor_->text_area(r);
-				}
-
-				void _m_draw_push_button(bool enabled)
-				{
-					::nana::rectangle r{graph_->size()};
-					r.x = r.right() - 16;
-					r.y = 1;
-					r.width = 16;
-					r.height -= 2;
-
-					auto estate = state_.button_state;
-					if (enabled && !items_.empty())
-					{
-						if (has_lister() || (element_state::pressed == estate && state_.pointer_where == parts::push_button))
-							estate = element_state::pressed;
-					}
-					else
-						estate = element_state::disabled;
-
-					facade<element::button> button;
-					button.draw(*graph_, ::nana::color{ 3, 65, 140 }, colors::white, r, estate);
-
-					facade<element::arrow> arrow;// ("solid_triangle");
-					arrow.direction(::nana::direction::south);
-
-					r.x += 4;
-					r.y += (r.height / 2) - 7;
-					r.width = r.height = 16;
-					arrow.draw(*graph_, {}, colors::white, r, element_state::normal);
-				}
-
-				void _m_draw_image()
-				{
-					if(items_.size() <= module_.index)
-						return;
-
-					auto & img = items_[module_.index]->item_image;
-
-					if(img.empty())
-						return;
-
-					unsigned vpix = editor_->line_height();
-					nana::size imgsz = img.size();
-					if(imgsz.width > image_pixels_)
-					{
-						unsigned new_h = image_pixels_ * imgsz.height / imgsz.width;
-						if(new_h > vpix)
-						{
-							imgsz.width = vpix * imgsz.width / imgsz.height;
-							imgsz.height = vpix;
+							option(module_.index, true);
+							api::update_window(*widget_);
 						}
 						else
 						{
-							imgsz.width = image_pixels_;
-							imgsz.height = new_h;
+							//Redraw the widget even though the index has not been changed,
+							//because the push button should be updated due to the state
+							//changed from pressed to normal/hovered.
+							api::refresh_window(*widget_);
 						}
-					}
-					else if(imgsz.height > vpix)
-					{
-						unsigned new_w = vpix * imgsz.width / imgsz.height;
-						if(new_w > image_pixels_)
-						{
-							imgsz.height = image_pixels_ * imgsz.height / imgsz.width;
-							imgsz.width = image_pixels_;
-						}
-						else
-						{
-							imgsz.height = vpix;
-							imgsz.width = new_w;
-						}
-					}
-
-					nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (vpix - imgsz.height) / 2 + 2);
-					img.stretch(::nana::rectangle{ img.size() }, *graph_, nana::rectangle(pos, imgsz));
-				}
-			private:
-				std::vector<std::shared_ptr<item>> items_;
-				nana::float_listbox::module_type module_;
-				::nana::combox * widget_{ nullptr };
-				nana::paint::graphics * graph_{ nullptr };
-				drawerbase::float_listbox::item_renderer* item_renderer_{ nullptr };
-
-				bool image_enabled_{ false };
-				unsigned image_pixels_{ 16 };
-				widgets::skeletons::text_editor * editor_{ nullptr };
-				std::unique_ptr<event_agent> evt_agent_;
-
-				std::unique_ptr<content_measurer> measurer_;
-				struct state_type
-				{
-					bool	focused;
-					element_state button_state;
-					parts	pointer_where;
-
-					nana::float_listbox * lister;
-					std::size_t	item_index_before_selection;
-				}state_;
-
-
-			}; //end class drawer_impl
-
-
-			//class trigger
-			trigger::trigger() :
-				drawer_(new drawer_impl)
-			{
-			}
-
-			trigger::~trigger()
-			{
-				delete drawer_;
-			}
-
-			drawer_impl& trigger::get_drawer_impl()
-			{
-				return *drawer_;
-			}
-
-			const drawer_impl& trigger::get_drawer_impl() const
-			{
-				return *drawer_;
-			}
-
-			void trigger::attached(widget_reference wdg, graph_reference graph)
-			{
-				wdg.bgcolor(colors::white);
-				drawer_->attached(wdg, graph);
-
-				API::effects_edge_nimbus(wdg, effects::edge_nimbus::active);
-				API::effects_edge_nimbus(wdg, effects::edge_nimbus::over);
-			}
-
-			void trigger::detached()
-			{
-				drawer_->detached();
-			}
-
-			void trigger::refresh(graph_reference)
-			{
-				drawer_->draw();
-			}
-
-			void trigger::focus(graph_reference, const arg_focus& arg)
-			{
-				drawer_->set_focused(arg.getting);
-				if(drawer_->widget_ptr()->enabled())
-				{
-					drawer_->draw();
-					drawer_->editor()->reset_caret();
-					API::dev::lazy_refresh();
+					});
 				}
 			}
 
-			void trigger::mouse_enter(graph_reference, const arg_mouse&)
+			void scroll_items(bool upwards)
 			{
-				drawer_->set_button_state(element_state::hovered, true);
-				if(drawer_->widget_ptr()->enabled())
-				{
-					drawer_->draw();
-					API::dev::lazy_refresh();
-				}
+				if(state_.lister)
+					state_.lister->scroll_items(upwards);
 			}
 
-			void trigger::mouse_leave(graph_reference, const arg_mouse&)
+			void move_items(bool upwards, bool circle)
 			{
-				drawer_->set_button_state(element_state::normal, true);
-				drawer_->editor()->mouse_enter(false);
-				if(drawer_->widget_ptr()->enabled())
+				if (state_.lister)
 				{
-					drawer_->draw();
-					API::dev::lazy_refresh();
-				}
-			}
-
-			void trigger::mouse_down(graph_reference, const arg_mouse& arg)
-			{
-				drawer_->set_button_state(element_state::pressed, false);
-				if(drawer_->widget_ptr()->enabled())
-				{
-					auto * editor = drawer_->editor();
-					editor->mouse_pressed(arg);
-
-					//Pops up the droplist only if left button is clicked
-					if(arg.is_left_button())
-						drawer_->open_lister_if_push_button_positioned();
-
-					drawer_->draw();
-					if(editor->attr().editable)
-						editor->reset_caret();
-
-					API::dev::lazy_refresh();
-				}
-			}
-
-			void trigger::mouse_up(graph_reference, const arg_mouse& arg)
-			{
-				if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
-				{
-					drawer_->editor()->mouse_pressed(arg);
-					drawer_->set_button_state(element_state::hovered, false);
-					drawer_->draw();
-					API::dev::lazy_refresh();
-				}
-			}
-
-			void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
-			{
-				if(drawer_->widget_ptr()->enabled())
-				{
-					bool redraw = drawer_->calc_where(graph, arg.pos.x, arg.pos.y);
-					redraw |= drawer_->editor()->mouse_move(arg.left_button, arg.pos);
-
-					if(redraw)
-					{
-						drawer_->draw();
-						drawer_->editor()->reset_caret();
-						API::dev::lazy_refresh();
-					}
-				}
-			}
-
-			void trigger::mouse_wheel(graph_reference, const arg_wheel& arg)
-			{
-				if(drawer_->widget_ptr()->enabled())
-				{
-					if(drawer_->has_lister())
-						drawer_->scroll_items(arg.upwards);
-					else
-						drawer_->move_items(arg.upwards, false);
-				}
-			}
-
-			void trigger::key_press(graph_reference, const arg_keyboard& arg)
-			{
-				if(!drawer_->widget_ptr()->enabled())
+					state_.lister->move_items(upwards, circle);
 					return;
+				}
 
-				bool call_other_keys = false;
-				if(drawer_->editable())
+				auto pos = module_.index;
+				if (upwards)
 				{
-					switch(arg.key)
-					{
-					case keyboard::os_arrow_left:
-					case keyboard::os_arrow_right:
-						drawer_->editor()->respond_key(arg);
-						drawer_->editor()->reset_caret();
-						break;
-					case keyboard::os_arrow_up:
-					case keyboard::os_arrow_down:
-						drawer_->move_items((keyboard::os_arrow_up == arg.key), true);
-						break;
-					default:
-						call_other_keys = true;
-					}
+					if (pos && (pos < items_.size()))
+						--pos;
+					else if (circle)
+						pos = items_.size() - 1;
 				}
 				else
 				{
-					switch(arg.key)
-					{
-					case keyboard::os_arrow_left:
-					case keyboard::os_arrow_up:
-						drawer_->move_items(true, true);
-						break;
-					case keyboard::os_arrow_right:
-					case keyboard::os_arrow_down:
-						drawer_->move_items(false, true);
-						break;
-					default:
-						call_other_keys = true;
-					}
+					if ((pos + 1) < items_.size())
+						++pos;
+					else if (circle)
+						pos = 0;
 				}
-				if (call_other_keys)
-					drawer_->editor()->respond_key(arg);
 
-				drawer_->editor()->try_refresh();
-				API::dev::lazy_refresh();
+				if (pos != module_.index)
+					option(pos, false);
 			}
 
-			void trigger::key_ime(graph_reference, const arg_ime& arg)
+			void draw()
 			{
-				drawer_->editor()->respond_ime(arg);
-				if (drawer_->editor()->try_refresh())
-					API::dev::lazy_refresh();
+				bool enb = widget_->enabled();
+
+				_m_text_area(widget_->size());
+				editor_->render(state_.focused);
+				
+				_m_draw_push_button(enb);
+				_m_draw_image();
+
 			}
 
-			void trigger::key_char(graph_reference, const arg_keyboard& arg)
+			std::size_t the_number_of_options() const
 			{
-				drawer_->editor()->respond_char(arg);
-				if (drawer_->editor()->try_refresh())
-					API::dev::lazy_refresh();
+				return items_.size();
 			}
-			//end class trigger
 
-			//class item_proxy
-				item_proxy::item_proxy(drawer_impl* impl, std::size_t pos)
-					:	impl_(impl),
-						pos_(pos)
-				{}
+			std::size_t option() const
+			{
+				return (module_.index < items_.size() ? module_.index : nana::npos);
+			}
 
-				item_proxy& item_proxy::text(const ::std::string& s)
+			void option(std::size_t index, bool ignore_condition)
+			{
+				if(items_.size() <= index)
+					return;
+
+				std::size_t old_index = module_.index;
+				module_.index = index;
+
+				if(nullptr == widget_)
+					return;
+
+				//Test if the current item or text is different from selected.
+				if(ignore_condition || (old_index != index) || (items_[index]->item_text != widget_->caption()))
 				{
-					throw_not_utf8(s);
-					impl_->at(pos_).item_text = s;
-					return *this;
+					auto pos = api::cursor_position();
+					api::calc_window_point(widget_->handle(), pos);
+					if (calc_where(*graph_, pos.x, pos.y))
+						state_.button_state = element_state::normal;
+
+					editor_->text(to_wstring(items_[index]->item_text), false);
+					editor_->try_refresh();
+					_m_draw_push_button(widget_->enabled());
+					_m_draw_image();
+
+					widget_->events().selected.emit(::nana::arg_combox(*widget_), widget_->handle());
+				}
+			}
+
+			std::size_t at_key(std::shared_ptr<nana::detail::key_interface>&& p)
+			{
+				std::size_t pos = 0;
+				for (auto & m : items_)
+				{
+					if (m->key && detail::pred_equal(m->key.get(), p.get()))
+						return pos;
+					++pos;
 				}
 
-				::std::string item_proxy::text() const
-				{
-					return impl_->at(pos_).item_text;
-				}
+				pos = items_.size();
+				items_.emplace_back(std::make_shared<item>(std::move(p)));
 
-				bool	item_proxy::selected() const
-				{
-					return pos_ == impl_->option();
-				}
+				//Redraw, because the state of push button is changed when a first new item is created.
+				if (0 == pos)
+					api::refresh_window(*widget_);
 
-				item_proxy&	item_proxy::select()
-				{
-					impl_->option(pos_, false);
-					return *this;
-				}
+				return pos;
+			}
 
-				item_proxy& item_proxy::icon(const nana::paint::image& img)
+			void erase(detail::key_interface * kv)
+			{
+				std::size_t pos = 0;
+				for (auto & m : items_)
 				{
-					impl_->image(pos_, img);
-					if (pos_ == impl_->option())
-						API::refresh_window(impl_->widget_ptr()->handle());
-					return *this;
-				}
-
-				nana::paint::image item_proxy::icon() const
-				{
-					return impl_->at(pos_).item_image;
-				}
-
-				/// Behavior of Iterator's value_type
-				bool item_proxy::operator == (::std::string_view s) const
-				{
-					if (pos_ == nana::npos)
-						return false;
-					return (impl_->at(pos_).item_text == s);
-				}
-
-
-				/// Behavior of Iterator
-				item_proxy & item_proxy::operator=(const item_proxy& r)
-				{
-					if (this != &r)
+					if (m->key && detail::pred_equal(m->key.get(), kv))
 					{
-						impl_ = r.impl_;
-						pos_ = r.pos_;
+						erase(pos);
+						return;
 					}
-					return *this;
+					++pos;
 				}
+			}
 
-				/// Behavior of Iterator
-				item_proxy & item_proxy::operator++()
+			item& at(std::size_t pos)
+			{
+				return *items_.at(pos);
+			}
+
+			const item& at(std::size_t pos) const
+			{
+				return *items_.at(pos);
+			}
+
+			void erase(std::size_t pos)
+			{
+				if (pos >= items_.size())
+					return;
+
+				if (pos == module_.index)
 				{
-					if (nana::npos != pos_)
+					module_.index = ::nana::npos;
+					this->widget_->caption("");
+				}
+				else if ((::nana::npos != module_.index) && (pos < module_.index))
+					--module_.index;
+
+				items_.erase(items_.begin() + pos);
+
+				//Redraw, because the state of push button is changed when the last item is removed.
+				if (items_.empty())
+					api::refresh_window(*widget_);
+			}
+
+			void image(std::size_t pos, const nana::paint::image& img)
+			{
+				if (pos < items_.size())
+				{
+					items_[pos]->item_image = img;
+					if ((false == image_enabled_) && img)
 					{
-						if (++pos_ == impl_->the_number_of_options())
-							pos_ = nana::npos;
+						image_enabled_ = true;
+						draw();
 					}
-					return *this;
 				}
+			}
 
-				/// Behavior of Iterator
-				item_proxy	item_proxy::operator++(int)
+			bool image_pixels(unsigned px)
+			{
+				if (image_pixels_ == px)
+					return false;
+
+				image_pixels_ = px;
+				return true;
+			}
+		private:
+			void _m_text_area(const nana::size& s)
+			{
+				auto extension = measurer_->extension();
+
+				nana::rectangle r(2, 2, s.width > extension.width ? s.width - extension.width : 0, s.height > extension.height ? s.height - extension.height : 0);
+				if (image_enabled_)
 				{
-					if (pos_ == nana::npos)
-						return *this;
-
-					item_proxy tmp = *this;
-					if (++pos_ == impl_->the_number_of_options())
-						pos_ = nana::npos;
-
-					return tmp;
+					unsigned place = image_pixels_ + 2;
+					r.x += place;
+					if (r.width > place)	r.width -= place;
 				}
+				editor_->text_area(r);
+			}
 
-				/// Behavior of Iterator
-				item_proxy& item_proxy::operator*()
+			void _m_draw_push_button(bool enabled)
+			{
+				::nana::rectangle r{graph_->size()};
+				r.x = r.right() - 16;
+				r.y = 1;
+				r.width = 16;
+				r.height -= 2;
+
+				auto estate = state_.button_state;
+				if (enabled && !items_.empty())
 				{
-					return *this;
+					if (has_lister() || (element_state::pressed == estate && state_.pointer_where == parts::push_button))
+						estate = element_state::pressed;
+				}
+				else
+					estate = element_state::disabled;
+
+				facade<element::button> button;
+				button.draw(*graph_, ::nana::color{ 3, 65, 140 }, colors::white, r, estate);
+
+				facade<element::arrow> arrow;// ("solid_triangle");
+				arrow.direction(::nana::direction::south);
+
+				r.x += 4;
+				r.y += (r.height / 2) - 7;
+				r.width = r.height = 16;
+				arrow.draw(*graph_, {}, colors::white, r, element_state::normal);
+			}
+
+			void _m_draw_image()
+			{
+				if(items_.size() <= module_.index)
+					return;
+
+				auto & img = items_[module_.index]->item_image;
+
+				if(img.empty())
+					return;
+
+				unsigned vpix = editor_->line_height();
+				nana::size imgsz = img.size();
+				if(imgsz.width > image_pixels_)
+				{
+					unsigned new_h = image_pixels_ * imgsz.height / imgsz.width;
+					if(new_h > vpix)
+					{
+						imgsz.width = vpix * imgsz.width / imgsz.height;
+						imgsz.height = vpix;
+					}
+					else
+					{
+						imgsz.width = image_pixels_;
+						imgsz.height = new_h;
+					}
+				}
+				else if(imgsz.height > vpix)
+				{
+					unsigned new_w = vpix * imgsz.width / imgsz.height;
+					if(new_w > image_pixels_)
+					{
+						imgsz.height = image_pixels_ * imgsz.height / imgsz.width;
+						imgsz.width = image_pixels_;
+					}
+					else
+					{
+						imgsz.height = vpix;
+						imgsz.width = new_w;
+					}
 				}
 
-				/// Behavior of Iterator
-				const item_proxy& item_proxy::operator*() const
-				{
-					return *this;
-				}
+				nana::point pos((image_pixels_ - imgsz.width) / 2 + 2, (vpix - imgsz.height) / 2 + 2);
+				img.stretch(::nana::rectangle{ img.size() }, *graph_, nana::rectangle(pos, imgsz));
+			}
+		private:
+			std::vector<std::shared_ptr<item>> items_;
+			nana::float_listbox::module_type module_;
+			::nana::combox * widget_{ nullptr };
+			nana::paint::graphics * graph_{ nullptr };
+			drawerbase::float_listbox::item_renderer* item_renderer_{ nullptr };
 
-				/// Behavior of Iterator
-				item_proxy* item_proxy::operator->()
-				{
-					return this;
-				}
+			bool image_enabled_{ false };
+			unsigned image_pixels_{ 16 };
+			widgets::skeletons::text_editor * editor_{ nullptr };
+			std::unique_ptr<event_agent> evt_agent_;
 
-				/// Behavior of Iterator
-				const item_proxy* item_proxy::operator->() const
-				{
-					return this;
-				}
+			std::unique_ptr<content_measurer> measurer_;
+			struct state_type
+			{
+				bool	focused;
+				element_state button_state;
+				parts	pointer_where;
 
-				/// Behavior of Iterator
-				bool item_proxy::operator==(const item_proxy& r) const
-				{
-					return (impl_ == r.impl_ && pos_ == r.pos_);
-				}
+				nana::float_listbox * lister;
+				std::size_t	item_index_before_selection;
+			}state_;
 
-				/// Behavior of Iterator
-				bool item_proxy::operator!=(const item_proxy& r) const
-				{
-					return ! this->operator==(r);
-				}
 
-				std::any * item_proxy::_m_anyobj(bool alloc_if_empty) const
-				{
-					return impl_->anyobj(pos_, alloc_if_empty);
-				}
-			//end class item_proxy
+		}; //end class drawer_impl
+
+
+		//class trigger
+		trigger::trigger() :
+			drawer_(new drawer_impl)
+		{
 		}
-	}//end namespace drawerbase
+
+		trigger::~trigger()
+		{
+			delete drawer_;
+		}
+
+		drawer_impl& trigger::get_drawer_impl()
+		{
+			return *drawer_;
+		}
+
+		const drawer_impl& trigger::get_drawer_impl() const
+		{
+			return *drawer_;
+		}
+
+		void trigger::attached(widget_reference wdg, graph_reference graph)
+		{
+			wdg.bgcolor(colors::white);
+			drawer_->attached(wdg, graph);
+
+			api::effects_edge_nimbus(wdg, effects::edge_nimbus::active);
+			api::effects_edge_nimbus(wdg, effects::edge_nimbus::over);
+		}
+
+		void trigger::detached()
+		{
+			drawer_->detached();
+		}
+
+		void trigger::refresh(graph_reference)
+		{
+			drawer_->draw();
+		}
+
+		void trigger::focus(graph_reference, const arg_focus& arg)
+		{
+			drawer_->set_focused(arg.getting);
+			if(drawer_->widget_ptr()->enabled())
+			{
+				drawer_->draw();
+				drawer_->editor()->reset_caret();
+				api::dev::lazy_refresh();
+			}
+		}
+
+		void trigger::mouse_enter(graph_reference, const arg_mouse&)
+		{
+			drawer_->set_button_state(element_state::hovered, true);
+			if(drawer_->widget_ptr()->enabled())
+			{
+				drawer_->draw();
+				api::dev::lazy_refresh();
+			}
+		}
+
+		void trigger::mouse_leave(graph_reference, const arg_mouse&)
+		{
+			drawer_->set_button_state(element_state::normal, true);
+			drawer_->editor()->mouse_enter(false);
+			if(drawer_->widget_ptr()->enabled())
+			{
+				drawer_->draw();
+				api::dev::lazy_refresh();
+			}
+		}
+
+		void trigger::mouse_down(graph_reference, const arg_mouse& arg)
+		{
+			drawer_->set_button_state(element_state::pressed, false);
+			if(drawer_->widget_ptr()->enabled())
+			{
+				auto * editor = drawer_->editor();
+				editor->mouse_pressed(arg);
+
+				//Pops up the droplist only if left button is clicked
+				if(arg.is_left_button())
+					drawer_->open_lister_if_push_button_positioned();
+
+				drawer_->draw();
+				if(editor->attr().editable)
+					editor->reset_caret();
+
+				api::dev::lazy_refresh();
+			}
+		}
+
+		void trigger::mouse_up(graph_reference, const arg_mouse& arg)
+		{
+			if (drawer_->widget_ptr()->enabled() && !drawer_->has_lister())
+			{
+				drawer_->editor()->mouse_pressed(arg);
+				drawer_->set_button_state(element_state::hovered, false);
+				drawer_->draw();
+				api::dev::lazy_refresh();
+			}
+		}
+
+		void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
+		{
+			if(drawer_->widget_ptr()->enabled())
+			{
+				bool redraw = drawer_->calc_where(graph, arg.pos.x, arg.pos.y);
+				redraw |= drawer_->editor()->mouse_move(arg.left_button, arg.pos);
+
+				if(redraw)
+				{
+					drawer_->draw();
+					drawer_->editor()->reset_caret();
+					api::dev::lazy_refresh();
+				}
+			}
+		}
+
+		void trigger::mouse_wheel(graph_reference, const arg_wheel& arg)
+		{
+			if(drawer_->widget_ptr()->enabled())
+			{
+				if(drawer_->has_lister())
+					drawer_->scroll_items(arg.upwards);
+				else
+					drawer_->move_items(arg.upwards, false);
+			}
+		}
+
+		void trigger::key_press(graph_reference, const arg_keyboard& arg)
+		{
+			if(!drawer_->widget_ptr()->enabled())
+				return;
+
+			bool call_other_keys = false;
+			if(drawer_->editable())
+			{
+				switch(arg.key)
+				{
+				case keyboard::os_arrow_left:
+				case keyboard::os_arrow_right:
+					drawer_->editor()->respond_key(arg);
+					drawer_->editor()->reset_caret();
+					break;
+				case keyboard::os_arrow_up:
+				case keyboard::os_arrow_down:
+					drawer_->move_items((keyboard::os_arrow_up == arg.key), true);
+					break;
+				default:
+					call_other_keys = true;
+				}
+			}
+			else
+			{
+				switch(arg.key)
+				{
+				case keyboard::os_arrow_left:
+				case keyboard::os_arrow_up:
+					drawer_->move_items(true, true);
+					break;
+				case keyboard::os_arrow_right:
+				case keyboard::os_arrow_down:
+					drawer_->move_items(false, true);
+					break;
+				default:
+					call_other_keys = true;
+				}
+			}
+			if (call_other_keys)
+				drawer_->editor()->respond_key(arg);
+
+			drawer_->editor()->try_refresh();
+			api::dev::lazy_refresh();
+		}
+
+		void trigger::key_ime(graph_reference, const arg_ime& arg)
+		{
+			drawer_->editor()->respond_ime(arg);
+			if (drawer_->editor()->try_refresh())
+				api::dev::lazy_refresh();
+		}
+
+		void trigger::key_char(graph_reference, const arg_keyboard& arg)
+		{
+			drawer_->editor()->respond_char(arg);
+			if (drawer_->editor()->try_refresh())
+				api::dev::lazy_refresh();
+		}
+		//end class trigger
+
+		//class item_proxy
+		item_proxy::item_proxy(drawer_impl* impl, std::size_t pos):
+			impl_(impl),
+			pos_(pos)
+		{}
+
+		item_proxy& item_proxy::text(const ::std::string& s)
+		{
+			throw_not_utf8(s);
+			impl_->at(pos_).item_text = s;
+			return *this;
+		}
+#ifdef __cpp_char8_t
+		item_proxy& item_proxy::text(std::u8string_view s)
+		{
+			impl_->at(pos_).item_text = to_string(s);
+			return *this;
+		}
+#endif
+
+		::std::string item_proxy::text() const
+		{
+			return impl_->at(pos_).item_text;
+		}
+
+		bool item_proxy::selected() const
+		{
+			return pos_ == impl_->option();
+		}
+
+		item_proxy&	item_proxy::select()
+		{
+			impl_->option(pos_, false);
+			return *this;
+		}
+
+		item_proxy& item_proxy::icon(const nana::paint::image& img)
+		{
+			impl_->image(pos_, img);
+			if (pos_ == impl_->option())
+				api::refresh_window(impl_->widget_ptr()->handle());
+			return *this;
+		}
+
+		nana::paint::image item_proxy::icon() const
+		{
+			return impl_->at(pos_).item_image;
+		}
+
+		/// Behavior of Iterator's value_type
+		bool item_proxy::operator == (::std::string_view s) const
+		{
+			if (pos_ == nana::npos)
+				return false;
+			return (impl_->at(pos_).item_text == s);
+		}
+
+
+		/// Behavior of Iterator
+		item_proxy & item_proxy::operator=(const item_proxy& r)
+		{
+			if (this != &r)
+			{
+				impl_ = r.impl_;
+				pos_ = r.pos_;
+			}
+			return *this;
+		}
+
+		/// Behavior of Iterator
+		item_proxy & item_proxy::operator++()
+		{
+			if (nana::npos != pos_)
+			{
+				if (++pos_ == impl_->the_number_of_options())
+					pos_ = nana::npos;
+			}
+			return *this;
+		}
+
+		/// Behavior of Iterator
+		item_proxy	item_proxy::operator++(int)
+		{
+			if (pos_ == nana::npos)
+				return *this;
+
+			item_proxy tmp = *this;
+			if (++pos_ == impl_->the_number_of_options())
+				pos_ = nana::npos;
+
+			return tmp;
+		}
+
+		/// Behavior of Iterator
+		item_proxy& item_proxy::operator*()
+		{
+			return *this;
+		}
+
+		/// Behavior of Iterator
+		const item_proxy& item_proxy::operator*() const
+		{
+			return *this;
+		}
+
+		/// Behavior of Iterator
+		item_proxy* item_proxy::operator->()
+		{
+			return this;
+		}
+
+		/// Behavior of Iterator
+		const item_proxy* item_proxy::operator->() const
+		{
+			return this;
+		}
+
+		/// Behavior of Iterator
+		bool item_proxy::operator==(const item_proxy& r) const
+		{
+			return (impl_ == r.impl_ && pos_ == r.pos_);
+		}
+
+		/// Behavior of Iterator
+		bool item_proxy::operator!=(const item_proxy& r) const
+		{
+			return ! this->operator==(r);
+		}
+
+		std::any * item_proxy::_m_anyobj(bool alloc_if_empty) const
+		{
+			return impl_->anyobj(pos_, alloc_if_empty);
+		}
+		//end class item_proxy
+	}//end namespace drawerbase::combox
 
 	//class combox
 		combox::combox(){}
 
+#if 0 //deprecated
 		combox::combox(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);
@@ -937,7 +942,28 @@ namespace nana
 			: combox(wd, std::string(text), visible)
 		{
 		}
+#else
+		combox::combox(window wd, std::string_view text, bool visible)
+		{
+			throw_not_utf8(text);
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
 
+		combox::combox(window wd, std::wstring_view text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}		
+#endif
+
+#ifdef __cpp_char8_t
+		combox::combox(window wd, std::u8string_view text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}	
+#endif
 		combox::combox(window wd, const nana::rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
@@ -947,7 +973,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			_m_impl().clear();
-			API::refresh_window(handle());
+			api::refresh_window(handle());
 		}
 
 		void combox::editable(bool eb)
@@ -977,6 +1003,15 @@ namespace nana
 			return *this;
 		}
 
+#ifdef __cpp_char8_t
+		combox& combox::push_back(std::u8string_view text)
+		{
+			internal_scope_guard lock;
+			_m_impl().insert(to_string(text));
+			return *this;
+		}
+#endif
+
 		std::size_t combox::the_number_of_options() const
 		{
 			internal_scope_guard lock;
@@ -993,7 +1028,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			_m_impl().option(pos, false);
-			API::update_window(handle());
+			api::update_window(handle());
 		}
 
 		::std::string combox::text(std::size_t pos) const
@@ -1022,7 +1057,7 @@ namespace nana
 			auto & impl = _m_impl();
 			impl.image(i, img);
 			if(i == impl.option())
-				API::refresh_window(*this);
+				api::refresh_window(*this);
 		}
 
 		nana::paint::image combox::image(std::size_t pos) const
@@ -1035,7 +1070,7 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			if (_m_impl().image_pixels(px))
-				API::refresh_window(*this);
+				api::refresh_window(*this);
 		}
 
 		auto combox::_m_caption() const noexcept -> native_string_type
@@ -1043,7 +1078,7 @@ namespace nana
 			internal_scope_guard lock;
 			auto editor = _m_impl().editor();
 			if (editor)
-				return to_nstring(editor->text());
+				return nana::detail::to_nstring(editor->text());
 			return native_string_type();
 		}
 
@@ -1055,7 +1090,7 @@ namespace nana
 			if (editor)
 				editor->text(to_wstring(str), false);
 
-			API::refresh_window(*this);
+			api::refresh_window(*this);
 		}
 
 		std::any * combox::_m_anyobj(std::size_t pos, bool alloc_if_empty) const

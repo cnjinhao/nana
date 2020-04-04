@@ -1,7 +1,7 @@
 /**
  *	A float_listbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -20,9 +20,8 @@
 
 namespace nana
 {
-	namespace drawerbase{
-		namespace float_listbox
-		{
+	namespace drawerbase::float_listbox
+	{
 			class item_interface
 			{
 			public:
@@ -77,8 +76,7 @@ namespace nana
 			private:
 				class drawer_impl *drawer_;
 			};
-		}
-	}//end namespace drawerbase
+	}//end namespace drawerbase::float_listbox
 
 	class float_listbox
 		: public widget_object<category::root_tag, drawerbase::float_listbox::trigger>

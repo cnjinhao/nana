@@ -78,8 +78,8 @@ namespace nana
 				std::cout << "Done... \n";
 				std::cout << "Now again ";
 				Wait(wait_end);
-				std::cout << "Done... Now API::exit all ...\n";
-				API::exit_all();
+				std::cout << "Done... Now api::exit all ...\n";
+				api::exit_all();
 			});
 
 		pump();

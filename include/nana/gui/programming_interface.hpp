@@ -43,7 +43,7 @@ namespace nana
 		};
 	}
 
-namespace API
+namespace api
 {
 #ifdef NANA_X11
 	//Some platform specific functions for X11
@@ -79,7 +79,7 @@ namespace API
 		template<typename Scheme>
 		std::unique_ptr<Scheme> make_scheme()
 		{
-			return std::unique_ptr<Scheme>{static_cast<Scheme*>(API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>()))};
+			return std::unique_ptr<Scheme>{static_cast<Scheme*>(api::detail::make_scheme(::nana::detail::scheme_factory<Scheme>()))};
 		}
 
 		void set_scheme(window, widget_geometrics*);
@@ -189,6 +189,9 @@ namespace API
 	 * Under Windows, the pragram can display multi-languages correctly, so this function is useless for Windows.
 	 */
 	void font_languages(const std::string& langs);
+#ifdef __cpp_char8_t
+	void font_languages(std::u8string_view langs);
+#endif
 
 	void exit();	    ///< close all windows in current thread
 	void exit_all();	///< close all windows
@@ -201,6 +204,10 @@ namespace API
 					  wchar_t &shortkey,     ///<  the character which indicates a short key.
 					  std::string::size_type *skpos ///< retrieves the shortkey position if it is not a null_ptr;
 					);
+#ifdef __cpp_char8_t
+	std::u8string transform_shortkey_text(std::u8string text, wchar_t& shortkey, std::u8string::size_type* key_pos);
+#endif
+
 	bool register_shortkey(window, unsigned long);
 	void unregister_shortkey(window);
 
@@ -256,7 +263,7 @@ namespace API
 		internal_scope_guard lock;
 		auto * general_evt = detail::get_general_events(wd);
 		if (nullptr == general_evt)
-			throw std::invalid_argument("API::events(): bad parameter window handle, no events object or invalid window handle.");
+			throw std::invalid_argument("api::events(): bad parameter window handle, no events object or invalid window handle.");
 
 #ifdef __cpp_if_constexpr
 		if constexpr(std::is_same_v<event_type, ::nana::general_events>)
@@ -267,7 +274,7 @@ namespace API
 		{
 			auto * widget_evt = dynamic_cast<event_type*>(general_evt);
 			if (nullptr == widget_evt)
-				throw std::invalid_argument("API::events(): bad template parameter Widget, the widget type and window handle do not match.");
+				throw std::invalid_argument("api::events(): bad template parameter Widget, the widget type and window handle do not match.");
 			return *widget_evt;
 		}
 #else
@@ -276,7 +283,7 @@ namespace API
 
 		auto * widget_evt = dynamic_cast<event_type*>(general_evt);
 		if (nullptr == widget_evt)
-			throw std::invalid_argument("API::events(): bad template parameter Widget, the widget type and window handle do not match.");
+			throw std::invalid_argument("api::events(): bad template parameter Widget, the widget type and window handle do not match.");
 		return *widget_evt;
 #endif
 	}
@@ -303,7 +310,7 @@ namespace API
 		internal_scope_guard lock;
 		auto * wdg_colors = dev::get_scheme(wd);
 		if (nullptr == wdg_colors)
-			throw std::invalid_argument("API::scheme(): bad parameter window handle, no events object or invalid window handle.");
+			throw std::invalid_argument("api::scheme(): bad parameter window handle, no events object or invalid window handle.");
 
 #ifdef __cpp_if_constexpr
 		if constexpr(std::is_same<::nana::widget_geometrics, scheme_type>::value)
@@ -314,7 +321,7 @@ namespace API
 		{
 			auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
 			if (nullptr == comp_wdg_colors)
-				throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
+				throw std::invalid_argument("api::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
 			return *comp_wdg_colors;
 		}
 #else
@@ -323,7 +330,7 @@ namespace API
 
 		auto * comp_wdg_colors = dynamic_cast<scheme_type*>(wdg_colors);
 		if (nullptr == comp_wdg_colors)
-			throw std::invalid_argument("API::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
+			throw std::invalid_argument("api::scheme(): bad template parameter Widget, the widget type and window handle do not match.");
 		return *comp_wdg_colors;
 #endif
 	}
@@ -487,9 +494,9 @@ namespace API
 
 	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
-}//end namespace API
+}//end namespace api
 
-namespace api = API;
+namespace API = api;
 
 }//end namespace nana
 

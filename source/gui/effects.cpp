@@ -26,7 +26,7 @@ namespace nana
 				{
 					if(fade_rate_ < 0.001)
 						return;
-					graph.blend(::nana::rectangle{ graph.size() }, API::bgcolor(wd), fade_rate_);
+					graph.blend(::nana::rectangle{ graph.size() }, api::bgcolor(wd), fade_rate_);
 				}
 			private:
 				const double fade_rate_;

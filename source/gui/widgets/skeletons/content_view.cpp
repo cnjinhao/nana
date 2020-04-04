@@ -1,7 +1,7 @@
 /*
 *	A Content View Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2017-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2017-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -84,11 +84,11 @@ namespace nana {
 					window_handle(handle),
 					cv_scroll(std::make_shared<cv_scroll_rep>())
 				{
-					API::events(handle).mouse_wheel.connect_unignorable([this](const arg_wheel& arg) {
+					api::events(handle).mouse_wheel.connect_unignorable([this](const arg_wheel& arg) {
 
 						auto const scroll = cv_scroll->scroll(arg.which);
 
-						if (scroll && (!API::empty_window(arg.window_handle)))
+						if (scroll && (!api::empty_window(arg.window_handle)))
 						{
 							auto align_px = (scroll->value() % scroll->step());
 							if (align_px)
@@ -124,7 +124,7 @@ namespace nana {
 						}
 						else if (event_code::mouse_move == arg.evt_code)
 						{
-							if (dragdrop_status::not_ready != API::window_dragdrop_status(this->window_handle))
+							if (dragdrop_status::not_ready != api::window_dragdrop_status(this->window_handle))
 							{
 								//When dnd is in progress, it cancels the move_view operation.
 								this->drag_view_move = false;
@@ -143,21 +143,21 @@ namespace nana {
 						}
 					};
 
-					API::events(handle).mouse_down.connect_unignorable(mouse_evt);
-					API::events(handle).mouse_move.connect_unignorable(mouse_evt);
-					API::events(handle).mouse_up.connect_unignorable(mouse_evt);
+					api::events(handle).mouse_down.connect_unignorable(mouse_evt);
+					api::events(handle).mouse_move.connect_unignorable(mouse_evt);
+					api::events(handle).mouse_up.connect_unignorable(mouse_evt);
 
 					tmr.elapse([this](const arg_elapse&)
 					{
-						auto curs = ::nana::API::cursor_position();
-						::nana::API::calc_window_point(window_handle, curs);
+						auto curs = ::nana::api::cursor_position();
+						::nana::api::calc_window_point(window_handle, curs);
 
 						if (this->drive(curs))
 						{
 							if (events.hover_outside)
 								events.hover_outside(curs);
 
-							API::refresh_window(window_handle);
+							api::refresh_window(window_handle);
 							view.sync(false);
 						}
 						else
@@ -216,7 +216,7 @@ namespace nana {
 							this->events.scrolled();
 
 						if (this->passive)
-							API::refresh_window(this->window_handle);
+							api::refresh_window(this->window_handle);
 					};
 
 					this->passive = passive;
@@ -563,7 +563,7 @@ namespace nana {
 				}
 
 				if (changed)
-					API::refresh_window(impl_->window_handle);
+					api::refresh_window(impl_->window_handle);
 			}
 
 			void content_view::set_wheel_speed(std::function<unsigned()> fn)

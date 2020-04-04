@@ -1,7 +1,7 @@
 /*
  *	A Menubar implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -18,10 +18,8 @@
 
 namespace nana
 {
-	namespace drawerbase
+	namespace drawerbase::menubar
 	{
-		namespace menubar
-		{
 			using native_string_type = ::nana::detail::native_string_type;
 
 			struct scheme
@@ -58,8 +56,7 @@ namespace nana
 			private:
 				essence * const ess_;
 			};
-		}//end namespace menubar
-	}//end namespace drawerbase
+	}//end namespace drawerbase::menubar
 
 	  /// \brief A toolbar at the top of window for pop-upping menus.
 	  ///
@@ -73,6 +70,9 @@ namespace nana
 		~menubar();
 		void create(window);					///< Create a menubar at the top of the specified window.
 		menu& push_back(const std::string&);	///< Appends a new (empty) menu.
+#ifdef __cpp_char8_t
+		menu& push_back(std::u8string_view);	///< Appends a empty menu
+#endif
 		menu& at(size_t index) const;		    ///< Gets the menu specified by index.
 		std::size_t length() const;		        ///< Number of menus.
 		void clear();							///< Removes all the menus.

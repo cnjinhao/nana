@@ -249,7 +249,7 @@ namespace nana
 		: impl_(new implement)
 	{
 		impl_->handle = wd;
-		impl_->native_handle = API::root(wd);
+		impl_->native_handle = api::root(wd);
 		if (!impl_->native_handle)
 			throw std::invalid_argument("Invalid window handle");
 
@@ -267,7 +267,7 @@ namespace nana
 #endif
 		});
 
-		impl_->evt_destroy = API::events(wd).destroy.connect([this](const arg_destroy&)
+		impl_->evt_destroy = api::events(wd).destroy.connect([this](const arg_destroy&)
 		{
 			close();
 		});
@@ -293,7 +293,7 @@ namespace nana
 		icon_data.uID = impl_->id;
 		::Shell_NotifyIcon(NIM_DELETE, &icon_data);
 #endif
-		API::umake_event(impl_->evt_destroy);
+		api::umake_event(impl_->evt_destroy);
 		notifications::instance().cancel(impl_->native_handle, impl_->id);
 		impl_->native_handle = nullptr;
 	}

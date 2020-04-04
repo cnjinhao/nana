@@ -19,11 +19,8 @@
 #include <nana/push_ignore_diagnostic>
 
 
-namespace nana{
-	namespace drawerbase
-	{
-		namespace button
-		{
+namespace nana::drawerbase::button{
+
 			///	Draw the button
 			class trigger: public drawer_trigger
 			{
@@ -77,8 +74,11 @@ namespace nana{
 					::nana::color fgcolor;
 				}attr_;
 			};
-		}//end namespace button
-	}//end namespace drawerbase
+
+}//end namespace nana::drawerbase::button
+
+namespace nana
+{
 
 		/// Define a button widget and provides the interfaces to be operational
 		class button
@@ -87,9 +87,19 @@ namespace nana{
 			typedef widget_object<category::widget_tag, drawerbase::button::trigger> base_type;
 		public:
 			button();
-			button(window parent, bool visible);
+
+#if 0 //deprecated
 			button(window parent, const ::std::string& caption, bool visible = true);
 			button(window parent, const char* caption, bool visible = true);
+#else
+			button(window parent, std::string_view title, bool visible = true);
+			button(window parent, std::wstring_view title, bool visible = true);
+#endif
+
+#ifdef __cpp_char8_t
+			button(window parent, std::u8string_view title, bool visible = false);
+#endif
+
 			button(window parent, const nana::rectangle& = rectangle(), bool visible = true);
 
 			/// Shows an icon in front of caption

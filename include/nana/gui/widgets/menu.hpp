@@ -21,10 +21,8 @@ namespace nana
 {
 	class menu;
 
-	namespace drawerbase
+	namespace drawerbase::menu
 	{
-		namespace menu
-		{
 			struct menu_type; //declaration
 
 			using native_string_type = ::nana::detail::native_string_type;
@@ -51,6 +49,9 @@ namespace nana
 					bool		checked() const;
 
 					item_proxy& text(std::string title_utf8);
+#ifdef __cpp_char8_t
+					item_proxy& text(std::u8string_view title);
+#endif
 					std::string text() const;
 
 					std::size_t index() const;
@@ -109,10 +110,12 @@ namespace nana
 				virtual void item(graph_reference, const nana::rectangle&, const attr&) = 0;
 				virtual void item_image(graph_reference, const nana::point&, unsigned image_px, const paint::image&) = 0;
 				virtual void item_text(graph_reference, const nana::point&, const std::string&, unsigned text_pixels, const attr&) = 0;
+#ifdef __cpp_char8_t
+				virtual void item_text(graph_reference, const nana::point&, std::u8string_view, unsigned text_pixels, const attr&) = 0;
+#endif
 				virtual void sub_arrow(graph_reference, const nana::point&, unsigned item_pixels, const attr&) = 0;
 			};
-		}//end namespace menu
-	}//end namespace drawerbase
+	}//end namespace drawerbase::menu
 
 	class menu
 		: private noncopyable
@@ -150,6 +153,9 @@ namespace nana
 		void close();
 		void image(std::size_t pos, const paint::image& icon);
 		void text(std::size_t pos, std::string text_utf8);
+#ifdef __cpp_char8_t
+		void text(std::size_t pos, std::u8string_view text);
+#endif
 		std::string text(std::size_t pos) const;
 		void check_style(std::size_t pos, checks);
 		void checked(std::size_t pos, bool);

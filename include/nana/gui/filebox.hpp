@@ -1,7 +1,7 @@
 /**
  *	Filebox
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -49,7 +49,10 @@ namespace nana
 		 * @param text Text of title
 		 * @return the reference of *this.
 		 */
-		filebox& title( ::std::string text);  
+		filebox& title( ::std::string text);
+#ifdef __cpp_char8_t
+		filebox& title(::std::u8string_view text);
+#endif
 
 		/// Sets a initial path
 		/**	
@@ -66,7 +69,7 @@ namespace nana
 		 * @param filename a filename used for a initial filename when filebox starts.
 		 * @return reference of *this.
 		 */
-		filebox& init_file(const ::std::string& filename); ///< Init file, if it contains a path, the init path is replaced by the path of init file.
+		filebox& init_file(const path_type& filename); ///< Init file, if it contains a path, the init path is replaced by the path of init file.
         
 		/// \brief Add a filetype filter. 
         /// To specify multiple filter in a single description, use a semicolon to separate the patterns(for example,"*.TXT;*.DOC;*.BAK").
@@ -75,6 +78,12 @@ namespace nana
                             );
 
 		filebox& add_filter(const std::vector<std::pair<std::string, std::string>> &filters);
+
+#ifdef __cpp_char8_t
+		filebox& add_filter(std::u8string_view description, std::u8string_view file_type);
+		filebox& add_filter(const std::vector<std::pair<std::u8string_view, std::u8string_view>> &filters);
+
+#endif
 
 		const path_type& path() const;
 		
@@ -103,7 +112,13 @@ namespace nana
 	public:
 		using path_type = std::filesystem::path;
 
-		explicit folderbox(window owner = nullptr, const path_type& init_path = {}, std::string title={});
+		folderbox();
+
+		folderbox(window owner, const path_type& init_path, std::string title);
+#ifdef __cpp_char8_t
+		folderbox(window owner, const path_type& init_path, std::u8string_view title);
+#endif
+
 		~folderbox();
 
 		/// Enables/disables multi select
@@ -121,6 +136,10 @@ namespace nana
 		 * @param text Text of title
 		 */
 		folderbox& title(std::string text);
+#ifdef __cpp_char8_t
+		folderbox& title(std::u8string_view text);
+#endif
+
 	private:
 		implement* impl_;
 	};

@@ -1,7 +1,7 @@
 /*
  *	A Tooltip Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -64,7 +64,7 @@ namespace nana
 					:	base_type(nullptr, false, rectangle(), appear::bald<appear::floating>()),
 						duration_(0)
 				{
-					API::take_active(this->handle(), false, nullptr);
+					api::take_active(this->handle(), false, nullptr);
 					label_.create(*this);
 					label_.format(true);
 					label_.transparent(true);
@@ -124,7 +124,7 @@ namespace nana
 					nana::point pos;
 					if (ignore_pos_)
 					{
-						pos = API::cursor_position();
+						pos = api::cursor_position();
 
 						//The cursor must be stay here for half second.
 						if (pos != pos_)
@@ -236,7 +236,7 @@ namespace nana
 					if (pos)
 						window_->tooltip_move(pos_by_screen(*pos, window_->tooltip_size(), true), false);
 					else
-						window_->tooltip_move(API::cursor_position(), true);
+						window_->tooltip_move(api::cursor_position(), true);
 				}
 
 				void close()
@@ -253,10 +253,10 @@ namespace nana
 					auto i = table_.find(wd);
 					if(i != table_.end())
 					{
-						API::umake_event(i->second.evt_msdown);
-						API::umake_event(i->second.evt_msenter);
-						API::umake_event(i->second.evt_msleave);
-						API::umake_event(i->second.evt_destroy);
+						api::umake_event(i->second.evt_msdown);
+						api::umake_event(i->second.evt_msenter);
+						api::umake_event(i->second.evt_msleave);
+						api::umake_event(i->second.evt_destroy);
 
 						table_.erase(i);
 					}
@@ -274,7 +274,7 @@ namespace nana
 					if (i != table_.end())
 						return i->second;
 
-					auto & events = API::events(wd);
+					auto & events = api::events(wd);
 
 					auto mouse_fn = [this](const arg_mouse& arg)
 					{
@@ -312,7 +312,7 @@ namespace nana
 
 		void tooltip::set(window wd, const std::string& text)
 		{
-			if(false == API::empty_window(wd))
+			if(false == api::empty_window(wd))
 			{
 				internal_scope_guard lock;
 				ctrl::instance()->set(wd, text);
@@ -322,7 +322,7 @@ namespace nana
 		void tooltip::show(window wd, point pos, const std::string& text, std::size_t duration)
 		{
 			internal_scope_guard lock;
-			API::calc_screen_point(wd, pos);
+			api::calc_screen_point(wd, pos);
 			ctrl::instance()->show(text, &pos, duration);
 		}
 

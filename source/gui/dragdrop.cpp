@@ -1,7 +1,7 @@
 /**
 *	Drag and Drop Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2019-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -83,7 +83,7 @@ namespace nana
 			auto &rep = table_[source];
 			rep.target.insert(target);
 #ifdef NANA_X11
-			auto native_wd = API::root(target);
+			auto native_wd = api::root(target);
 			rep.native_target_count[native_wd] += 1;
 			nana::detail::platform_spec::instance().dragdrop_target(native_wd, true, 1);
 #endif
@@ -113,7 +113,7 @@ namespace nana
 			}
 			else
 			{
-				nana::detail::platform_spec::instance().dragdrop_target(API::root(target), false, 1);
+				nana::detail::platform_spec::instance().dragdrop_target(api::root(target), false, 1);
 				if(i->second.target.empty())
 					table_.erase(i);
 			}
@@ -250,7 +250,7 @@ namespace nana
 			//bool found_data = false;
 			if (simple_mode_)
 			{
-				auto hovered_wd = API::find_window(point(pt.x, pt.y));
+				auto hovered_wd = api::find_window(point(pt.x, pt.y));
 
 				if ((hovered_wd && (hovered_wd == this->current_source())) || this->has(this->current_source(), hovered_wd))
 					*req_effect &= DROPEFFECT_COPY;
@@ -645,7 +645,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 		dragdrop_session* create_dragdrop(window wd, bool simple_mode)
 		{
-			auto native_wd = API::root(wd);
+			auto native_wd = api::root(wd);
 			if (nullptr == native_wd)
 				return nullptr;
 
@@ -685,9 +685,9 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 		void remove(window source)
 		{
-			auto native_src = API::root(source);
+			auto native_src = api::root(source);
 
-			auto i = table_.find(API::root(source));
+			auto i = table_.find(api::root(source));
 			if (i == table_.end())
 				return;
 
@@ -709,7 +709,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 		bool dragdrop(window drag_wd, dropdata_type* dropdata, dnd_action* executed_action)
 		{
-			auto i = table_.find(API::root(drag_wd));
+			auto i = table_.find(api::root(drag_wd));
 			if ((!dropdata) && table_.end() == i)
 				return false;
 
@@ -746,7 +746,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 			auto ddrop = dynamic_cast<dragdrop_target*>(i->second);
 
-			auto const native_source = reinterpret_cast<Window>(API::root(drag_wd));
+			auto const native_source = reinterpret_cast<Window>(api::root(drag_wd));
 
 			{
 				detail::platform_scope_guard lock;
@@ -769,7 +769,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						auto const disp = _m_spec().open_display();
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
-							auto pos = API::cursor_position();
+							auto pos = api::cursor_position();
 							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
 
 							const char* icon = nullptr;
@@ -786,7 +786,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 							}
 
 
-							auto cur_wd = API::find_window(API::cursor_position());
+							auto cur_wd = api::find_window(api::cursor_position());
 
 							if(hovered_.window_handle != cur_wd)
 							{
@@ -806,7 +806,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						{
 							::XUndefineCursor(disp, hovered_.native_wd);
 							_m_free_cursor();
-							API::release_capture(drag_wd);
+							api::release_capture(drag_wd);
 							return detail::propagation_chain::exit;
 						}
 
@@ -821,7 +821,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			{
 				auto data = dropdata->data()->to_xdnd_data();
 
-				API::set_capture(drag_wd, true);
+				api::set_capture(drag_wd, true);
 				nana::detail::xdnd_protocol xdnd_proto{native_source};
 
 				//Not simple mode
@@ -830,7 +830,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 					{
 						if (MotionNotify == msg_pkt.u.xevent.type)
 						{
-							auto pos = API::cursor_position();
+							auto pos = api::cursor_position();
 							auto native_cur_wd = reinterpret_cast<Window>(detail::native_interface::find_window(pos.x, pos.y));
 
 							xdnd_proto.mouse_move(native_cur_wd, pos, data.requested_action);
@@ -840,7 +840,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 							auto & xclient = msg_pkt.u.xevent.xclient;
 							if(xdnd_proto.client_message(xclient))
 							{
-								API::release_capture(drag_wd);
+								api::release_capture(drag_wd);
 								return detail::propagation_chain::exit;
 							}
 						}
@@ -850,7 +850,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 						}
 						else if(msg_pkt.u.xevent.type == ButtonRelease)
 						{
-							API::release_capture(drag_wd);
+							api::release_capture(drag_wd);
 							_m_free_cursor();
 
 							//Exits the msg loop if xdnd_proto doesn't send the XdndDrop because of refusal of the DND
@@ -969,13 +969,13 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			if (!dragging)
 				return false;
 
-			if (API::is_window(window_handle))
+			if (api::is_window(window_handle))
 			{
 				dragging = true;
 				window_handle->other.dnd_state = dragdrop_status::not_ready;
 			}
 
-			API::release_capture(window_handle);
+			api::release_capture(window_handle);
 			dragging = false;
 
 			return true;
@@ -988,7 +988,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 	simple_dragdrop::simple_dragdrop(window drag_wd) :
 		impl_(new implementation)
 	{
-		if (!API::is_window(drag_wd))
+		if (!api::is_window(drag_wd))
 		{
 			delete impl_;
 			throw std::invalid_argument("simple_dragdrop: invalid window handle");
@@ -997,17 +997,17 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		impl_->ddrop = dragdrop_service::instance().create_dragdrop(drag_wd, true);
 
 		impl_->window_handle = drag_wd;
-		API::dev::window_draggable(drag_wd, true);
+		api::dev::window_draggable(drag_wd, true);
 
-		auto & events = API::events<>(drag_wd);
+		auto & events = api::events<>(drag_wd);
 
 		impl_->events.destroy = events.destroy.connect_unignorable([this](const arg_destroy&) {
 			dragdrop_service::instance().remove(impl_->window_handle);
-			API::dev::window_draggable(impl_->window_handle, false);
+			api::dev::window_draggable(impl_->window_handle, false);
 		});
 
 		impl_->events.mouse_down = events.mouse_down.connect_unignorable([this](const arg_mouse& arg){
-			if (arg.is_left_button() && API::is_window(impl_->window_handle))
+			if (arg.is_left_button() && api::is_window(impl_->window_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
 				impl_->window_handle->other.dnd_state = dragdrop_status::ready;
@@ -1015,7 +1015,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		});
 
 		impl_->events.mouse_move = events.mouse_move.connect_unignorable([this](const arg_mouse& arg) {
-			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
+			if (!(arg.is_left_button() && impl_->dragging && api::is_window(arg.window_handle)))
 				return;
 
 			arg.window_handle->other.dnd_state = dragdrop_status::in_progress;
@@ -1029,7 +1029,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 
 			if (has_dropped)
 			{
-				auto drop_wd = API::find_window(API::cursor_position());
+				auto drop_wd = api::find_window(api::cursor_position());
 				auto i = impl_->targets.find(drop_wd);
 				if ((impl_->targets.end() != i) && i->second)
 					i->second();
@@ -1042,11 +1042,11 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		if (impl_->window_handle)
 		{
 			dragdrop_service::instance().remove(impl_->window_handle);
-			API::dev::window_draggable(impl_->window_handle, false);
+			api::dev::window_draggable(impl_->window_handle, false);
 
-			API::umake_event(impl_->events.destroy);
-			API::umake_event(impl_->events.mouse_down);
-			API::umake_event(impl_->events.mouse_move);
+			api::umake_event(impl_->events.destroy);
+			api::umake_event(impl_->events.mouse_down);
+			api::umake_event(impl_->events.mouse_move);
 		}
 
 		delete impl_;
@@ -1090,7 +1090,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			source_handle(source)
 		{
 			ddrop = dragdrop_service::instance().create_dragdrop(source, false);
-			API::dev::window_draggable(source, true);
+			api::dev::window_draggable(source, true);
 		}
 
 		void make_drop()
@@ -1113,14 +1113,14 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 	dragdrop::dragdrop(window source) :
 		impl_(new implementation(source))
 	{
-		auto & events = API::events(source);
+		auto & events = api::events(source);
 		impl_->events.destroy = events.destroy.connect_unignorable([this](const arg_destroy&) {
 			dragdrop_service::instance().remove(impl_->source_handle);
-			API::dev::window_draggable(impl_->source_handle, false);
+			api::dev::window_draggable(impl_->source_handle, false);
 		});
 
 		impl_->events.mouse_down = events.mouse_down.connect_unignorable([this](const arg_mouse& arg) {
-			if (arg.is_left_button() && API::is_window(impl_->source_handle))
+			if (arg.is_left_button() && api::is_window(impl_->source_handle))
 			{
 				impl_->dragging = ((!impl_->predicate) || impl_->predicate());
 				impl_->source_handle->other.dnd_state = dragdrop_status::ready;
@@ -1128,7 +1128,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		});
 
 		impl_->events.mouse_move = events.mouse_move.connect_unignorable([this](const arg_mouse& arg) {
-			if (!(arg.is_left_button() && impl_->dragging && API::is_window(arg.window_handle)))
+			if (!(arg.is_left_button() && impl_->dragging && api::is_window(arg.window_handle)))
 				return;
 
 			arg.window_handle->other.dnd_state = dragdrop_status::in_progress;
@@ -1143,11 +1143,11 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		if (impl_->source_handle)
 		{
 			dragdrop_service::instance().remove(impl_->source_handle);
-			API::dev::window_draggable(impl_->source_handle, false);
+			api::dev::window_draggable(impl_->source_handle, false);
 
-			API::umake_event(impl_->events.destroy);
-			API::umake_event(impl_->events.mouse_down);
-			API::umake_event(impl_->events.mouse_move);
+			api::umake_event(impl_->events.destroy);
+			api::umake_event(impl_->events.mouse_down);
+			api::umake_event(impl_->events.mouse_move);
 		}
 		delete impl_;
 	}

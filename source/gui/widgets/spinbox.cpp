@@ -1,7 +1,7 @@
 /*
  *	A Spin box widget
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,651 +21,648 @@ namespace nana
 	arg_spinbox::arg_spinbox(spinbox& wdg): widget(wdg)
 	{}
 
-	namespace drawerbase
+	namespace drawerbase::spinbox
 	{
-		namespace spinbox
+		enum class buttons
 		{
-			enum class buttons
+			none, increase, decrease
+		};
+
+		class range_interface
+		{
+		public:
+			virtual ~range_interface() = default;
+
+			virtual std::string value() const = 0;
+
+			//sets a new value, the diff indicates whether the new value is different from the current value.
+			//returns true if the new value is acceptable.
+			virtual bool value(const std::string& new_value, bool& diff) = 0;
+
+			virtual bool check_value(const std::string&) const = 0;
+			virtual void spin(bool increase) = 0;
+		};
+
+		template<typename T>
+		class range_numeric
+			: public range_interface
+		{
+		public:
+			range_numeric(T vbegin, T vlast, T step)
+				: begin_{ vbegin }, last_{ vlast }, step_{ step }, value_{ vbegin }
+			{}
+
+			std::pair<T, T> range() const
 			{
-				none, increase, decrease
-			};
+				return std::make_pair(begin_, last_);
+			}
 
-			class range_interface
+			std::string value() const override
 			{
-			public:
-				virtual ~range_interface() = default;
+				return std::to_string(value_);
+			}
 
-				virtual std::string value() const = 0;
-
-				//sets a new value, the diff indicates whether the new value is different from the current value.
-				//returns true if the new value is acceptable.
-				virtual bool value(const std::string& new_value, bool& diff) = 0;
-
-				virtual bool check_value(const std::string&) const = 0;
-				virtual void spin(bool increase) = 0;
-			};
-
-			template<typename T>
-			class range_numeric
-				: public range_interface
+			bool value(const std::string& value_str, bool & diff) override
 			{
-			public:
-				range_numeric(T vbegin, T vlast, T step)
-					: begin_{ vbegin }, last_{ vlast }, step_{ step }, value_{ vbegin }
-				{}
+				std::stringstream ss;
+				ss << value_str;
 
-				std::pair<T, T> range() const
+				T v;
+				ss >> v;
+
+				if (ss.fail() || v < begin_ || last_ < v)
+					return false;
+
+				diff = (value_ != v);
+				value_ = v;
+				return true;
+			}
+
+			bool check_value(const std::string& str) const override
+			{
+#ifdef __cpp_if_constexpr
+				auto i = str.c_str();
+				if ('+' == *i || '-' == *i)
+					++i;
+
+				if constexpr(std::is_same<T, int>::value)
 				{
-					return std::make_pair(begin_, last_);
+					for (; 0 != *i; ++i)
+					{
+						if (*i < '0' || '9' < *i)
+							return false;
+					}
 				}
-
-				std::string value() const override
+				else
 				{
-					return std::to_string(value_);
+					bool dot = false;
+					for (; 0 != *i; ++i)
+					{
+						if (('.' == *i) && (!dot))
+						{
+							dot = true;
+							continue;
+						}
+
+						if (*i < '0' || '9' < *i)
+							return false;
+					}
 				}
+#else
+				if (str.empty())
+					return true;
 
-				bool value(const std::string& value_str, bool & diff) override
+				auto const size = str.size();
+				std::size_t pos = 0;
+				if (str[0] == '+' || str[0] == '-')
+					pos = 1;
+
+				if (std::is_same<T, int>::value)
 				{
-					std::stringstream ss;
-					ss << value_str;
+					for (; pos < size; ++pos)
+					{
+						auto ch = str[pos];
+						if (ch < '0' || '9' < ch)
+							return false;
+					}
+				}
+				else
+				{
+					bool dot = false;
+					for (; pos < size; ++pos)
+					{
+						auto ch = str[pos];
+						if (('.' == ch) && (!dot))
+						{
+							dot = true;
+							continue;
+						}
 
-					T v;
-					ss >> v;
+						if (ch < '0' || '9' < ch)
+							return false;
+					}
+				}
+#endif
+				return true;
+			}
 
-					if (ss.fail() || v < begin_ || last_ < v)
+			void spin(bool increase) override
+			{
+				if (increase)
+				{
+					value_ += step_;
+					if (value_ > last_)
+						value_ = last_;
+				}
+				else
+				{
+					value_ -= step_;
+					if (value_ < begin_)
+						value_ = begin_;
+				}
+			}
+		private:
+			T begin_;
+			T last_;
+			T step_;
+			T value_;
+		};
+
+		class range_text
+			: public range_interface
+		{
+		public:
+			range_text(std::vector<std::string>&& texts):
+				texts_(std::move(texts))
+			{
+			}
+
+			const std::vector<std::string>& range() const
+			{
+				return texts_;
+			}
+
+			std::string value() const override
+			{
+				if (texts_.empty())
+					return{};
+
+				return texts_[pos_];
+			}
+
+			bool value(const std::string& value_str, bool & diff) override
+			{
+				auto i = std::find(texts_.cbegin(), texts_.cend(), value_str);
+				if (i != texts_.cend())
+				{
+					diff = (*i == value_str);
+					pos_ = i - texts_.cbegin();
+					return true;
+				}
+				return false;
+			}
+
+			bool check_value(const std::string& str) const override
+			{
+				if (str.empty())
+					return true;
+
+				for (auto i = texts_.cbegin(); i != texts_.cend(); ++i)
+					if (i->find(str) != str.npos)
 						return false;
 
-					diff = (value_ != v);
-					value_ = v;
-					return true;
-				}
+				return true;
+			}
 
-				bool check_value(const std::string& str) const override
+			void spin(bool increase) override
+			{
+				if (texts_.empty())
+					return;
+
+				if (increase)
 				{
-#ifdef __cpp_if_constexpr
-					auto i = str.c_str();
-					if ('+' == *i || '-' == *i)
-						++i;
-
-					if constexpr(std::is_same<T, int>::value)
-					{
-						for (; 0 != *i; ++i)
-						{
-							if (*i < '0' || '9' < *i)
-								return false;
-						}
-					}
-					else
-					{
-						bool dot = false;
-						for (; 0 != *i; ++i)
-						{
-							if (('.' == *i) && (!dot))
-							{
-								dot = true;
-								continue;
-							}
-
-							if (*i < '0' || '9' < *i)
-								return false;
-						}
-					}
-#else
-					if (str.empty())
-						return true;
-
-					auto const size = str.size();
-					std::size_t pos = 0;
-					if (str[0] == '+' || str[0] == '-')
-						pos = 1;
-
-					if (std::is_same<T, int>::value)
-					{
-						for (; pos < size; ++pos)
-						{
-							auto ch = str[pos];
-							if (ch < '0' || '9' < ch)
-								return false;
-						}
-					}
-					else
-					{
-						bool dot = false;
-						for (; pos < size; ++pos)
-						{
-							auto ch = str[pos];
-							if (('.' == ch) && (!dot))
-							{
-								dot = true;
-								continue;
-							}
-
-							if (ch < '0' || '9' < ch)
-								return false;
-						}
-					}
-#endif
-					return true;
+					++pos_;
+					if (texts_.size() <= pos_)
+						pos_ = texts_.size() - 1;
 				}
-
-				void spin(bool increase) override
+				else
 				{
-					if (increase)
-					{
-						value_ += step_;
-						if (value_ > last_)
-							value_ = last_;
-					}
-					else
-					{
-						value_ -= step_;
-						if (value_ < begin_)
-							value_ = begin_;
-					}
+					--pos_;
+					if (texts_.size() <= pos_)
+						pos_ = 0;
 				}
-			private:
-				T begin_;
-				T last_;
-				T step_;
-				T value_;
-			};
+			}
+		private:
+			std::vector<std::string> texts_;
+			std::size_t pos_{0};
+		};
 
-			class range_text
-				: public range_interface
+		class implementation
+		{
+			class event_agent
+				: public widgets::skeletons::textbase_event_agent_interface
 			{
 			public:
-				range_text(std::vector<std::string>&& texts):
-					texts_(std::move(texts))
+				event_agent(implementation* impl)
+					: impl_(impl)
+				{}
+
+				void first_change() override {}	//empty, because spinbox does not have this event.
+
+				void text_changed() override
 				{
+					auto wdg = static_cast<nana::spinbox*>(api::get_widget(impl_->editor_->window_handle()));
+
+					if (!impl_->value(to_utf8(impl_->editor_->text()), false))
+						api::refresh_window(wdg->handle());
+
+					wdg->events().text_changed.emit(*wdg, wdg->handle());
 				}
+			private:
+				implementation* const impl_;
+			};
 
-				const std::vector<std::string>& range() const
+		public:
+			implementation()
+			{
+				//Sets a timer for continous spin when mouse button is pressed.
+				timer_.elapse([this]
 				{
-					return texts_;
-				}
+					range_->spin(buttons::increase == spin_stated_);
+					reset_text();
+					api::update_window(editor_->window_handle());
 
-				std::string value() const override
+					auto intv = timer_.interval();
+					if (intv.count() > 50)
+						timer_.interval(intv / 2);
+				});
+
+				timer_.interval(std::chrono::milliseconds{ 600 });
+			}
+
+			void attach(::nana::widget& wdg, ::nana::paint::graphics& graph)
+			{
+				auto wd = wdg.handle();
+				graph_ = &graph;
+				auto scheme = static_cast<::nana::widgets::skeletons::text_editor_scheme*>(api::dev::get_scheme(wd));
+				editor_ = new ::nana::widgets::skeletons::text_editor(wd, graph, scheme);
+				editor_->multi_lines(false);
+				editor_->set_accept([this](wchar_t ch)
 				{
-					if (texts_.empty())
-						return{};
-
-					return texts_[pos_];
-				}
-
-				bool value(const std::string& value_str, bool & diff) override
-				{
-					auto i = std::find(texts_.cbegin(), texts_.cend(), value_str);
-					if (i != texts_.cend())
+					auto str = editor_->text();
+					auto pos = editor_->caret().x;
+					if (ch == '\b')
 					{
-						diff = (*i == value_str);
-						pos_ = i - texts_.cbegin();
-						return true;
+						if (pos > 0)
+							str.erase(pos - 1, 1);
 					}
+					else
+						str.insert(pos, 1, ch);
+
+					return range_->check_value(to_utf8(str));
+				});
+
+				evt_agent_.reset(new event_agent{this});
+				editor_->textbase().set_event_agent(evt_agent_.get());
+
+				if (!range_)
+					range_.reset(new range_numeric<int>(0, 100, 1));
+
+				reset_text();
+
+				//Spinbox doesn't process the tabstop unlike other text editors.
+				//Otherwise it would bring a weird user experience.
+				//Issued by jk.
+				api::tabstop(wd);
+				api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
+				api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
+				reset_text_area();
+			}
+
+			void detach()
+			{
+				delete editor_;
+				editor_ = nullptr;
+			}
+
+			std::string value() const
+			{
+				return range_->value();
+			}
+
+			bool value(const ::std::string& value_str, bool reset_editor)
+			{
+				bool diff;
+				if (!range_->value(value_str, diff))
 					return false;
-				}
 
-				bool check_value(const std::string& str) const override
-				{
-					if (str.empty())
-						return true;
+				if (diff && reset_editor)
+					reset_text();
+				return true;
+			}
 
-					for (auto i = texts_.cbegin(); i != texts_.cend(); ++i)
-						if (i->find(str) != str.npos)
-							return false;
-
-					return true;
-				}
-
-				void spin(bool increase) override
-				{
-					if (texts_.empty())
-						return;
-
-					if (increase)
-					{
-						++pos_;
-						if (texts_.size() <= pos_)
-							pos_ = texts_.size() - 1;
-					}
-					else
-					{
-						--pos_;
-						if (texts_.size() <= pos_)
-							pos_ = 0;
-					}
-				}
-			private:
-				std::vector<std::string> texts_;
-				std::size_t pos_{0};
-			};
-
-			class implementation
+			void set_range(std::unique_ptr<range_interface> ptr)
 			{
-				class event_agent
-					: public widgets::skeletons::textbase_event_agent_interface
+				range_.swap(ptr);
+
+				reset_text();
+			}
+
+			const range_interface* range() const
+			{
+				return range_.get();
+			}
+
+			void modifier(std::string&& prefix, std::string&& suffix)
+			{
+				modifier_.prefix = std::move(prefix);
+				modifier_.suffix = std::move(suffix);
+
+				if (editor_)
 				{
-				public:
-					event_agent(implementation* impl)
-						: impl_(impl)
-					{}
+					reset_text();
+					api::update_window(editor_->window_handle());
+				}
+			}
 
-					void first_change() override {}	//empty, because spinbox does not have this event.
+			void draw_spins()
+			{
+				_m_draw_spins(buttons::none);
+			}
 
-					void text_changed() override
-					{
-						auto wdg = static_cast<nana::spinbox*>(API::get_widget(impl_->editor_->window_handle()));
+			void render()
+			{
+				editor_->render(api::is_focus_ready(editor_->window_handle()));
+				_m_draw_spins(spin_stated_);
+			}
 
-						if (!impl_->value(to_utf8(impl_->editor_->text()), false))
-							API::refresh_window(wdg->handle());
+			::nana::widgets::skeletons::text_editor* editor() const
+			{
+				return editor_;
+			}
 
-						wdg->events().text_changed.emit(*wdg, wdg->handle());
-					}
-				private:
-					implementation* const impl_;
-				};
+			void mouse_wheel(bool upwards)
+			{
+				range_->spin(!upwards);
+				reset_text();
+			}
 
-			public:
-				implementation()
+			bool mouse_button(const ::nana::arg_mouse& arg, bool pressed)
+			{
+				if (!pressed)
 				{
-					//Sets a timer for continous spin when mouse button is pressed.
-					timer_.elapse([this]
-					{
-						range_->spin(buttons::increase == spin_stated_);
-						reset_text();
-						API::update_window(editor_->window_handle());
+					api::release_capture(editor_->window_handle());
 
-						auto intv = timer_.interval();
-						if (intv.count() > 50)
-							timer_.interval(intv / 2);
-					});
-
+					timer_.stop();
 					timer_.interval(std::chrono::milliseconds{ 600 });
 				}
 
-				void attach(::nana::widget& wdg, ::nana::paint::graphics& graph)
+				if (buttons::none != spin_stated_)
 				{
-					auto wd = wdg.handle();
-					graph_ = &graph;
-					auto scheme = static_cast<::nana::widgets::skeletons::text_editor_scheme*>(API::dev::get_scheme(wd));
-					editor_ = new ::nana::widgets::skeletons::text_editor(wd, graph, scheme);
-					editor_->multi_lines(false);
-					editor_->set_accept([this](wchar_t ch)
+					//Spins the value when mouse button is released
+					if (pressed)
 					{
-						auto str = editor_->text();
-						auto pos = editor_->caret().x;
-						if (ch == '\b')
-						{
-							if (pos > 0)
-								str.erase(pos - 1, 1);
-						}
-						else
-							str.insert(pos, 1, ch);
-
-						return range_->check_value(to_utf8(str));
-					});
-
-					evt_agent_.reset(new event_agent{this});
-					editor_->textbase().set_event_agent(evt_agent_.get());
-
-					if (!range_)
-						range_.reset(new range_numeric<int>(0, 100, 1));
-
-					reset_text();
-
-					//Spinbox doesn't process the tabstop unlike other text editors.
-					//Otherwise it would bring a weird user experience.
-					//Issued by jk.
-					API::tabstop(wd);
-					API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
-					API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
-					reset_text_area();
-				}
-
-				void detach()
-				{
-					delete editor_;
-					editor_ = nullptr;
-				}
-
-				std::string value() const
-				{
-					return range_->value();
-				}
-
-				bool value(const ::std::string& value_str, bool reset_editor)
-				{
-					bool diff;
-					if (!range_->value(value_str, diff))
-						return false;
-
-					if (diff && reset_editor)
+						api::set_capture(editor_->window_handle(), true);
+						range_->spin(buttons::increase == spin_stated_);
 						reset_text();
+						timer_.start();
+					}
+					else
+						_m_draw_spins(spin_stated_);
 					return true;
 				}
 
-				void set_range(std::unique_ptr<range_interface> ptr)
-				{
-					range_.swap(ptr);
-
-					reset_text();
-				}
-
-				const range_interface* range() const
-				{
-					return range_.get();
-				}
-
-				void modifier(std::string&& prefix, std::string&& suffix)
-				{
-					modifier_.prefix = std::move(prefix);
-					modifier_.suffix = std::move(suffix);
-
-					if (editor_)
-					{
-						reset_text();
-						API::update_window(editor_->window_handle());
-					}
-				}
-
-				void draw_spins()
+				editor_->mouse_pressed(arg);
+				if(editor_->try_refresh())
 				{
 					_m_draw_spins(buttons::none);
+					return true;
 				}
 
-				void render()
+				return false;
+			}
+
+			bool mouse_move(bool left_button, const ::nana::point& pos)
+			{
+				editor_->mouse_move(left_button, pos);
+				if(editor_->try_refresh())
 				{
-					editor_->render(API::is_focus_ready(editor_->window_handle()));
+					editor_->reset_caret();
 					_m_draw_spins(spin_stated_);
+					return true;
 				}
 
-				::nana::widgets::skeletons::text_editor* editor() const
+				auto btn = _m_where(pos);
+				if (buttons::none != btn)
 				{
-					return editor_;
+					spin_stated_ = btn;
+					_m_draw_spins(btn);
+					return true;
+				}
+				else if (buttons::none != spin_stated_)
+				{
+					spin_stated_ = buttons::none;
+					_m_draw_spins(buttons::none);
+					return true;
 				}
 
-				void mouse_wheel(bool upwards)
-				{
-					range_->spin(!upwards);
-					reset_text();
-				}
-
-				bool mouse_button(const ::nana::arg_mouse& arg, bool pressed)
-				{
-					if (!pressed)
-					{
-						API::release_capture(editor_->window_handle());
-
-						timer_.stop();
-						timer_.interval(std::chrono::milliseconds{ 600 });
-					}
-
-					if (buttons::none != spin_stated_)
-					{
-						//Spins the value when mouse button is released
-						if (pressed)
-						{
-							API::set_capture(editor_->window_handle(), true);
-							range_->spin(buttons::increase == spin_stated_);
-							reset_text();
-							timer_.start();
-						}
-						else
-							_m_draw_spins(spin_stated_);
-						return true;
-					}
-
-					editor_->mouse_pressed(arg);
-					if(editor_->try_refresh())
-					{
-						_m_draw_spins(buttons::none);
-						return true;
-					}
-
-					return false;
-				}
-
-				bool mouse_move(bool left_button, const ::nana::point& pos)
-				{
-					editor_->mouse_move(left_button, pos);
-					if(editor_->try_refresh())
-					{
-						editor_->reset_caret();
-						_m_draw_spins(spin_stated_);
-						return true;
-					}
-
-					auto btn = _m_where(pos);
-					if (buttons::none != btn)
-					{
-						spin_stated_ = btn;
-						_m_draw_spins(btn);
-						return true;
-					}
-					else if (buttons::none != spin_stated_)
-					{
-						spin_stated_ = buttons::none;
-						_m_draw_spins(buttons::none);
-						return true;
-					}
-
-					return false;
-				}
-
-				void reset_text_area()
-				{
-					auto spins_r = _m_spins_area();
-					if (spins_r.x == 0)
-						editor_->text_area(rectangle{});
-					else
-						editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
-				}
-
-				void reset_text()
-				{
-					if (!editor_)
-						return;
-
-					std::wstring text;
-
-					if (API::is_focus_ready(editor_->window_handle()) && editor_->attr().editable)
-						text = to_wstring(range_->value());
-					else
-						text = to_wstring(modifier_.prefix + range_->value() + modifier_.suffix);
-
-					if (editor_->text() != text)
-					{
-						editor_->text(text, false);
-						editor_->try_refresh();
-					}
-
-					_m_draw_spins(spin_stated_);
-				}
-			private:
-
-				::nana::rectangle _m_spins_area() const
-				{
-					auto size = API::window_size(editor_->window_handle());
-					if (size.width > 18)
-						return{ static_cast<int>(size.width - 16), 0, 16, size.height };
-
-					return{ 0, 0, size.width, size.height };
-				}
-
-				buttons _m_where(const ::nana::point& pos) const
-				{
-					auto spins_r = _m_spins_area();
-					if (spins_r.is_hit(pos))
-					{
-						if (pos.y < spins_r.y + static_cast<int>(spins_r.height / 2))
-							return buttons::increase;
-
-						return buttons::decrease;
-					}
-					return buttons::none;
-				}
-
-				void _m_draw_spins(buttons spins)
-				{
-					auto estate = API::element_state(editor_->window_handle());
-
-					auto spin_r0 = _m_spins_area();
-					spin_r0.height /= 2;
-
-					auto spin_r1 = spin_r0;
-					spin_r1.y += static_cast<int>(spin_r0.height);
-					spin_r1.height = _m_spins_area().height - spin_r0.height;
-
-					::nana::color bgcolor{ 3, 65, 140 };
-					facade<element::arrow> arrow;
-					facade<element::button> button;
-
-					auto spin_state = (buttons::increase == spins ? estate : element_state::normal);
-					button.draw(*graph_, bgcolor, colors::white, spin_r0, spin_state);
-					spin_r0.x += 5;
-					arrow.draw(*graph_, bgcolor, colors::white, spin_r0, spin_state);
-
-					spin_state = (buttons::decrease == spins ? estate : element_state::normal);
-					button.draw(*graph_, bgcolor, colors::white, spin_r1, spin_state);
-					spin_r1.x += 5;
-					arrow.direction(direction::south);
-					arrow.draw(*graph_, bgcolor, colors::white, spin_r1, spin_state);
-				}
-			private:
-				::nana::paint::graphics * graph_{nullptr};
-				::nana::widgets::skeletons::text_editor * editor_{nullptr};
-				std::unique_ptr<event_agent> evt_agent_;
-				buttons spin_stated_{ buttons::none };
-				std::unique_ptr<range_interface> range_;
-				::nana::timer timer_;
-
-				struct modifiers
-				{
-					std::string prefix;
-					std::string suffix;
-				}modifier_;
-			};
-
-			//class drawer
-			drawer::drawer()
-				: impl_(new implementation)
-			{}
-
-			drawer::~drawer()
-			{
-				delete impl_;
+				return false;
 			}
 
-			implementation* drawer::impl() const
+			void reset_text_area()
 			{
-				return impl_;
+				auto spins_r = _m_spins_area();
+				if (spins_r.x == 0)
+					editor_->text_area(rectangle{});
+				else
+					editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
 			}
 
-			//Overrides drawer_trigger
-			void drawer::attached(widget_reference wdg, graph_reference graph)
+			void reset_text()
 			{
-				impl_->attach(wdg, graph);
+				if (!editor_)
+					return;
+
+				std::wstring text;
+
+				if (api::is_focus_ready(editor_->window_handle()) && editor_->attr().editable)
+					text = to_wstring(range_->value());
+				else
+					text = to_wstring(modifier_.prefix + range_->value() + modifier_.suffix);
+
+				if (editor_->text() != text)
+				{
+					editor_->text(text, false);
+					editor_->try_refresh();
+				}
+
+				_m_draw_spins(spin_stated_);
+			}
+		private:
+
+			::nana::rectangle _m_spins_area() const
+			{
+				auto size = api::window_size(editor_->window_handle());
+				if (size.width > 18)
+					return{ static_cast<int>(size.width - 16), 0, 16, size.height };
+
+				return{ 0, 0, size.width, size.height };
 			}
 
-			void drawer::detached()
+			buttons _m_where(const ::nana::point& pos) const
 			{
-				impl_->detach();
+				auto spins_r = _m_spins_area();
+				if (spins_r.is_hit(pos))
+				{
+					if (pos.y < spins_r.y + static_cast<int>(spins_r.height / 2))
+						return buttons::increase;
+
+					return buttons::decrease;
+				}
+				return buttons::none;
 			}
 
-			void drawer::refresh(graph_reference)
+			void _m_draw_spins(buttons spins)
 			{
-				impl_->render();
-			}
+				auto estate = api::element_state(editor_->window_handle());
 
-			void drawer::focus(graph_reference, const arg_focus&)
+				auto spin_r0 = _m_spins_area();
+				spin_r0.height /= 2;
+
+				auto spin_r1 = spin_r0;
+				spin_r1.y += static_cast<int>(spin_r0.height);
+				spin_r1.height = _m_spins_area().height - spin_r0.height;
+
+				::nana::color bgcolor{ 3, 65, 140 };
+				facade<element::arrow> arrow;
+				facade<element::button> button;
+
+				auto spin_state = (buttons::increase == spins ? estate : element_state::normal);
+				button.draw(*graph_, bgcolor, colors::white, spin_r0, spin_state);
+				spin_r0.x += 5;
+				arrow.draw(*graph_, bgcolor, colors::white, spin_r0, spin_state);
+
+				spin_state = (buttons::decrease == spins ? estate : element_state::normal);
+				button.draw(*graph_, bgcolor, colors::white, spin_r1, spin_state);
+				spin_r1.x += 5;
+				arrow.direction(direction::south);
+				arrow.draw(*graph_, bgcolor, colors::white, spin_r1, spin_state);
+			}
+		private:
+			::nana::paint::graphics * graph_{nullptr};
+			::nana::widgets::skeletons::text_editor * editor_{nullptr};
+			std::unique_ptr<event_agent> evt_agent_;
+			buttons spin_stated_{ buttons::none };
+			std::unique_ptr<range_interface> range_;
+			::nana::timer timer_;
+
+			struct modifiers
 			{
-				impl_->reset_text();
-				impl_->render();
+				std::string prefix;
+				std::string suffix;
+			}modifier_;
+		};
+
+		//class drawer
+		drawer::drawer()
+			: impl_(new implementation)
+		{}
+
+		drawer::~drawer()
+		{
+			delete impl_;
+		}
+
+		implementation* drawer::impl() const
+		{
+			return impl_;
+		}
+
+		//Overrides drawer_trigger
+		void drawer::attached(widget_reference wdg, graph_reference graph)
+		{
+			impl_->attach(wdg, graph);
+		}
+
+		void drawer::detached()
+		{
+			impl_->detach();
+		}
+
+		void drawer::refresh(graph_reference)
+		{
+			impl_->render();
+		}
+
+		void drawer::focus(graph_reference, const arg_focus&)
+		{
+			impl_->reset_text();
+			impl_->render();
+			impl_->editor()->reset_caret();
+			api::dev::lazy_refresh();
+		}
+
+		void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
+		{
+			impl_->mouse_wheel(arg.upwards);
+			impl_->editor()->reset_caret();
+			api::dev::lazy_refresh();
+		}
+		
+		void drawer::dbl_click(graph_reference, const arg_mouse& arg)
+		{
+			if (impl_->mouse_button(arg, true))
+				api::dev::lazy_refresh();
+		}
+
+		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
+		{
+			if (impl_->mouse_button(arg, true))
+				api::dev::lazy_refresh();
+		}
+
+		void drawer::mouse_up(graph_reference, const arg_mouse& arg)
+		{
+			if (impl_->mouse_button(arg, false))
+				api::dev::lazy_refresh();
+		}
+
+		void drawer::mouse_move(graph_reference, const arg_mouse& arg)
+		{
+			if (impl_->mouse_move(arg.left_button, arg.pos))
+				api::dev::lazy_refresh();
+		}
+
+		void drawer::mouse_leave(graph_reference, const arg_mouse&)
+		{
+			impl_->render();
+			api::dev::lazy_refresh();
+		}
+
+		void drawer::key_ime(graph_reference, const arg_ime& arg)
+		{
+			impl_->editor()->respond_ime(arg);
+			if (impl_->editor()->try_refresh())
+				api::dev::lazy_refresh();
+		}
+
+		void drawer::key_press(graph_reference, const arg_keyboard& arg)
+		{
+			if (impl_->editor()->respond_key(arg))
+			{
 				impl_->editor()->reset_caret();
-				API::dev::lazy_refresh();
-			}
-
-			void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
-			{
-				impl_->mouse_wheel(arg.upwards);
-				impl_->editor()->reset_caret();
-				API::dev::lazy_refresh();
-			}
-			
-			void drawer::dbl_click(graph_reference, const arg_mouse& arg)
-			{
-				if (impl_->mouse_button(arg, true))
-					API::dev::lazy_refresh();
-			}
-
-			void drawer::mouse_down(graph_reference, const arg_mouse& arg)
-			{
-				if (impl_->mouse_button(arg, true))
-					API::dev::lazy_refresh();
-			}
-
-			void drawer::mouse_up(graph_reference, const arg_mouse& arg)
-			{
-				if (impl_->mouse_button(arg, false))
-					API::dev::lazy_refresh();
-			}
-
-			void drawer::mouse_move(graph_reference, const arg_mouse& arg)
-			{
-				if (impl_->mouse_move(arg.left_button, arg.pos))
-					API::dev::lazy_refresh();
-			}
-
-			void drawer::mouse_leave(graph_reference, const arg_mouse&)
-			{
-				impl_->render();
-				API::dev::lazy_refresh();
-			}
-
-			void drawer::key_ime(graph_reference, const arg_ime& arg)
-			{
-				impl_->editor()->respond_ime(arg);
-				if (impl_->editor()->try_refresh())
-					API::dev::lazy_refresh();
-			}
-
-			void drawer::key_press(graph_reference, const arg_keyboard& arg)
-			{
-				if (impl_->editor()->respond_key(arg))
-				{
-					impl_->editor()->reset_caret();
-					impl_->draw_spins();
-					API::dev::lazy_refresh();
-				}
-			}
-
-			void drawer::key_char(graph_reference, const arg_keyboard& arg)
-			{
-				impl_->editor()->respond_char(arg);
-				if (impl_->editor()->try_refresh())
-				{
-					impl_->draw_spins();
-					API::dev::lazy_refresh();
-				}
-			}
-
-			void drawer::resized(graph_reference, const arg_resized&)
-			{
-				impl_->reset_text_area();
-				impl_->render();
-				impl_->editor()->reset_caret();
-				API::dev::lazy_refresh();
+				impl_->draw_spins();
+				api::dev::lazy_refresh();
 			}
 		}
-	}//end namespace drawerbase
+
+		void drawer::key_char(graph_reference, const arg_keyboard& arg)
+		{
+			impl_->editor()->respond_char(arg);
+			if (impl_->editor()->try_refresh())
+			{
+				impl_->draw_spins();
+				api::dev::lazy_refresh();
+			}
+		}
+
+		void drawer::resized(graph_reference, const arg_resized&)
+		{
+			impl_->reset_text_area();
+			impl_->render();
+			impl_->editor()->reset_caret();
+			api::dev::lazy_refresh();
+		}
+	}//end namespace drawerbase::spinbox
 
 	spinbox::spinbox()
 	{}
-
+#if 0	//deprecated
 	spinbox::spinbox(window wd, bool visible)
 	{
 		this->create(wd, visible);
 	}
-
+#endif
 	spinbox::spinbox(window wd, const nana::rectangle& r, bool visible)
 	{
 		this->create(wd, r, visible);
@@ -689,22 +686,33 @@ namespace nana
 	{
 		using namespace drawerbase::spinbox;
 		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_numeric<int>(begin, last, step)));
-		API::refresh_window(handle());
+		api::refresh_window(handle());
 	}
 
 	void spinbox::range(double begin, double last, double step)
 	{
 		using namespace drawerbase::spinbox;
 		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_numeric<double>(begin, last, step)));
-		API::refresh_window(handle());
+		api::refresh_window(handle());
 	}
 
 	void spinbox::range(std::vector<std::string> values)
 	{
 		using namespace drawerbase::spinbox;
 		get_drawer_trigger().impl()->set_range(std::unique_ptr<range_interface>(new range_text(std::move(values))));
-		API::refresh_window(handle());
+		api::refresh_window(handle());
 	}
+
+#ifdef __cpp_char8_t
+	void spinbox::range(std::vector<std::u8string> values)
+	{
+		std::vector<std::string> v;
+		for(auto & s : values)
+			v.emplace_back(to_string(s));
+
+		this->range(v);
+	}
+#endif
 
 	std::vector<std::string> spinbox::range_string() const
 	{
@@ -739,7 +747,7 @@ namespace nana
 		if (handle())
 		{
 			get_drawer_trigger().impl()->editor()->select(sel);
-			API::refresh_window(*this);
+			api::refresh_window(*this);
 		}
 	}
 
@@ -757,9 +765,15 @@ namespace nana
 		if (handle())
 		{
 			if (get_drawer_trigger().impl()->value(s, true))
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 		}
 	}
+#ifdef __cpp_char8_t
+	void spinbox::value(std::u8string_view s)
+	{
+		this->value(to_string(s));
+	}
+#endif
 
 	int spinbox::to_int() const
 	{
@@ -780,13 +794,19 @@ namespace nana
 	{
 		modifier(to_utf8(prefix), to_utf8(suffix));
 	}
+#ifdef __cpp_char8_t
+	void spinbox::modifier(std::u8string_view prefix, std::u8string_view suffix)
+	{
+		modifier(to_string(prefix), to_string(suffix));
+	}
+#endif
 
 	auto spinbox::_m_caption() const noexcept -> native_string_type
 	{
 		internal_scope_guard lock;
 		auto editor = get_drawer_trigger().impl()->editor();
 		if (editor)
-			return to_nstring(editor->text());
+			return nana::detail::to_nstring(editor->text());
 		return native_string_type();
 	}
 
@@ -798,7 +818,7 @@ namespace nana
 		{
 			editor->text(to_wstring(text), false);
 			if (editor->try_refresh())
-				API::update_window(*this);
+				api::update_window(*this);
 		}
 	}
 }//end namespace nana

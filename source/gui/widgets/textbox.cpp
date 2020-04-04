@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,32 +21,31 @@ namespace nana
 		: widget(wdg), text_position(text_pos)
 	{}
 
-namespace drawerbase {
-	namespace textbox
+	namespace drawerbase::textbox
 	{
 		//class event_agent
-			event_agent::event_agent(::nana::textbox& wdg, const std::vector<upoint>& text_pos)
-				:widget_(wdg), text_position_(text_pos)
-			{}
+		event_agent::event_agent(::nana::textbox& wdg, const std::vector<upoint>& text_pos)
+			:widget_(wdg), text_position_(text_pos)
+		{}
 
-			void event_agent::first_change()
-			{
-				widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
-			}
+		void event_agent::first_change()
+		{
+			widget_.events().first_change.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
+		}
 
-			void event_agent::text_changed()
-			{
-				widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
-			}
+		void event_agent::text_changed()
+		{
+			widget_.events().text_changed.emit(::nana::arg_textbox{ widget_, text_position_ }, widget_);
+		}
 
-			void event_agent::text_exposed(const std::vector<upoint>& text_pos)
-			{
-				::nana::arg_textbox arg(widget_, text_pos);
-				widget_.events().text_exposed.emit(arg, widget_);
-			}
+		void event_agent::text_exposed(const std::vector<upoint>& text_pos)
+		{
+			::nana::arg_textbox arg(widget_, text_pos);
+			widget_.events().text_exposed.emit(arg, widget_);
+		}
 		//end class event_agent
 
-	//class drawer
+		//class drawer
 		drawer::drawer()
 			: widget_(nullptr), editor_(nullptr)
 		{
@@ -67,7 +66,7 @@ namespace drawerbase {
 			auto wd = wdg.handle();
 			widget_ = &wdg;
 
-			auto scheme = API::dev::get_scheme(wdg);
+			auto scheme = api::dev::get_scheme(wdg);
 
 			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
 
@@ -77,10 +76,10 @@ namespace drawerbase {
 
 			_m_text_area(graph.width(), graph.height());
 
-			API::tabstop(wd);
-			API::eat_tabstop(wd, true);
-			API::effects_edge_nimbus(wd, effects::edge_nimbus::active);
-			API::effects_edge_nimbus(wd, effects::edge_nimbus::over);
+			api::tabstop(wd);
+			api::eat_tabstop(wd, true);
+			api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
+			api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
 		}
 
 		void drawer::detached()
@@ -91,7 +90,7 @@ namespace drawerbase {
 
 		void drawer::refresh(graph_reference)
 		{
-			editor_->render(API::is_focus_ready(*widget_));
+			editor_->render(api::is_focus_ready(*widget_));
 		}
 
 		void drawer::focus(graph_reference graph, const arg_focus& arg)
@@ -99,28 +98,28 @@ namespace drawerbase {
 			if (!editor_->focus_changed(arg))
 				refresh(graph);
 
-			API::dev::lazy_refresh();
+			api::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_down(graph_reference, const arg_mouse& arg)
 		{
 			editor_->mouse_pressed(arg);
 			if(editor_->try_refresh())
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_move(graph_reference, const arg_mouse& arg)
 		{
 			editor_->mouse_move(arg.left_button, arg.pos);
 			if(editor_->try_refresh())
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_up(graph_reference, const arg_mouse& arg)
 		{
 			editor_->mouse_pressed(arg);
 			if(editor_->try_refresh())
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
@@ -128,20 +127,20 @@ namespace drawerbase {
 			if(editor_->scroll(arg.upwards, true))
 			{
 				editor_->reset_caret();
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 		}
 
 		void drawer::mouse_enter(graph_reference, const arg_mouse&)
 		{
 			if(editor_->mouse_enter(true))
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::mouse_leave(graph_reference, const arg_mouse&)
 		{
 			if(editor_->mouse_enter(false))
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		//Added Windows-style mouse double-click to the textbox(https://github.com/cnjinhao/nana/pull/229)
@@ -149,14 +148,14 @@ namespace drawerbase {
 		void drawer::dbl_click(graph_reference, const arg_mouse& arg)
 		{
 			if(editor_->select_word(arg))
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::key_ime(graph_reference, const arg_ime& arg)
 		{
 			editor_->respond_ime(arg);
 			if (editor_->try_refresh())
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::key_press(graph_reference, const arg_keyboard& arg)
@@ -164,14 +163,14 @@ namespace drawerbase {
 			editor_->respond_key(arg);
 			editor_->reset_caret(true);
 			if(editor_->try_refresh())
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::key_char(graph_reference, const arg_keyboard& arg)
 		{
 			editor_->respond_char(arg);
 			if(editor_->try_refresh())
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 		}
 
 		void drawer::resized(graph_reference graph, const arg_resized& arg)
@@ -183,14 +182,14 @@ namespace drawerbase {
 			if (!editor_->try_refresh())
 				refresh(graph);
 
-			API::dev::lazy_refresh();
+			api::dev::lazy_refresh();
 		}
 
 		void drawer::typeface_changed(graph_reference graph)
 		{
 			editor_->typeface_changed();
 			refresh(graph);
-			API::update_window(widget_->handle());
+			api::update_window(widget_->handle());
 		}
 
 		void drawer::_m_text_area(unsigned width, unsigned height)
@@ -199,7 +198,7 @@ namespace drawerbase {
 			{
 				nana::rectangle r(0, 0, width, height);
 
-				if (!API::widget_borderless(widget_->handle()))
+				if (!api::widget_borderless(widget_->handle()))
 				{
 					r.x = r.y = 2;
 					r.width = (width > 4 ? width - 4 : 0);
@@ -208,14 +207,14 @@ namespace drawerbase {
 				editor_->text_area(r);
 			}
 		}
-	//end class drawer
-}//end namespace textbox
-}//end namespace drawerbase
+		//end class drawer
+	}//end namespace drawerbase::textbox
 
 	//class textbox
 		textbox::textbox()
 		{}
 
+#if 0	//deprecated
 		textbox::textbox(window wd, bool visible)
 		{
 			create(wd, rectangle(), visible);
@@ -234,7 +233,28 @@ namespace drawerbase {
 			create(wd, rectangle(), visible);
 			caption(text);
 		}
+#else
+		textbox::textbox(window wd, std::string_view text, bool visible)
+		{
+			throw_not_utf8(text);
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
 
+		textbox::textbox(window wd, std::wstring_view text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}		
+#endif
+
+#ifdef __cpp_char8_t
+		textbox::textbox(window wd, std::u8string_view text, bool visible)
+		{
+			create(wd, rectangle(), visible);
+			caption(text);
+		}
+#endif
 		textbox::textbox(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
@@ -247,7 +267,7 @@ namespace drawerbase {
 			if (editor && editor->load(file))
 			{
 				if (editor->try_refresh())
-					API::update_window(handle());
+					api::update_window(handle());
 			}
 		}
 
@@ -311,10 +331,32 @@ namespace drawerbase {
 				editor->textbase().reset_status(false);
 
 				if (editor->try_refresh())
-					API::update_window(this->handle());
+					api::update_window(this->handle());
 			}
 			return *this;
 		}
+
+#ifdef __cpp_char8_t
+		textbox& textbox::reset(std::u8string_view str, bool end_caret)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				editor->text(to_wstring(str), false);
+				
+				if (end_caret)
+					editor->move_caret_end(true);
+
+				//Reset the edited status and the saved filename
+				editor->textbase().reset_status(false);
+
+				if (editor->try_refresh())
+					api::update_window(this->handle());
+			}
+			return *this;
+		}
+#endif
 
 		textbox::path_type textbox::filename() const
 		{
@@ -443,7 +485,7 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			internal_scope_guard lock;
 			if (editor && editor->move_caret(pos, true))
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			
 			return *this;
 		}
@@ -460,7 +502,7 @@ namespace drawerbase {
 				editor->put(to_wstring(text), true);
 
 				editor->try_refresh();
-				API::update_window(this->handle());
+				api::update_window(this->handle());
 			}
 			return *this;
 		}
@@ -477,10 +519,29 @@ namespace drawerbase {
                 editor->put(text, true);
 
                 editor->try_refresh();
-                API::update_window(this->handle());
+                api::update_window(this->handle());
             }
             return *this;
         }
+
+#ifdef __cpp_char8_t
+        textbox& textbox::append(std::u8string_view text, bool at_caret)
+        {
+            internal_scope_guard lock;
+            auto editor = get_drawer_trigger().editor();
+            if(editor)
+            {
+                if(at_caret == false)
+                    editor->move_caret_end(false);
+
+                editor->put(to_wstring(text), true);
+
+                editor->try_refresh();
+                api::update_window(this->handle());
+            }
+            return *this;        	
+        }
+#endif
 		/// Determine whether the text is auto-line changed.
 		bool textbox::line_wrapped() const
 		{
@@ -495,7 +556,7 @@ namespace drawerbase {
 			if (editor && editor->line_wrapped(autl))
 			{
 				editor->try_refresh();
-				API::update_window(handle());
+				api::update_window(handle());
 			}
 
 			return *this;
@@ -515,10 +576,10 @@ namespace drawerbase {
 			if (editor && editor->multi_lines(ml))
 			{
 				auto wd = handle();
-				API::eat_tabstop(wd, ml);	//textbox handles the Tab pressing when it is multi-line.
+				api::eat_tabstop(wd, ml);	//textbox handles the Tab pressing when it is multi-line.
 
 				editor->try_refresh();
-				API::update_window(wd);
+				api::update_window(wd);
 			}
 			return *this;
 		}
@@ -561,7 +622,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if(editor && editor->tip_string(std::move(str)))
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			return *this;
 		}
 
@@ -570,7 +631,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if(editor && editor->mask(ch))
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			return *this;
 		}
 
@@ -593,7 +654,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor && editor->select(yes))
-				API::refresh_window(*this);
+				api::refresh_window(*this);
 		}
 
 
@@ -602,7 +663,7 @@ namespace drawerbase {
 			auto editor = get_drawer_trigger().editor();
 			internal_scope_guard lock;
 			if (editor && editor->select_points(arg_a, arg_b))
-				API::refresh_window(*this);
+				api::refresh_window(*this);
 		}
 
 		std::pair<upoint, upoint> textbox::selection() const
@@ -633,7 +694,7 @@ namespace drawerbase {
 			{
 				editor->paste();
 				if (editor->try_refresh())
-					API::update_window(*this);
+					api::update_window(*this);
 			}
 		}
 
@@ -644,7 +705,7 @@ namespace drawerbase {
 			if(editor)
 			{
 				editor->del();
-				API::refresh_window(*this);
+				api::refresh_window(*this);
 			}
 		}
 
@@ -666,13 +727,13 @@ namespace drawerbase {
 
 		textbox& textbox::from(int n)
 		{
-			_m_caption(to_nstring(n));
+			_m_caption(nana::detail::to_nstring(n));
 			return *this;
 		}
 
 		textbox& textbox::from(double d)
 		{
-			_m_caption(to_nstring(d));
+			_m_caption(nana::detail::to_nstring(d));
 			return *this;
 		}
 
@@ -688,7 +749,7 @@ namespace drawerbase {
 			if (editor)
 			{
 				editor->set_highlight(name, fgcolor, bgcolor);
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			}
 		}
 
@@ -699,7 +760,7 @@ namespace drawerbase {
 			if (editor)
 			{
 				editor->erase_highlight(name);
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			}
 		}
 
@@ -711,7 +772,7 @@ namespace drawerbase {
 			{
 				for (auto & kw : kw_list)
 					editor->set_keyword(kw, name, case_sensitive, whole_word_match);
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			}
 		}
 
@@ -722,8 +783,8 @@ namespace drawerbase {
 			if (editor)
 			{
 				for (auto & kw : kw_list_utf8)
-					editor->set_keyword(::nana::charset(kw, ::nana::unicode::utf8), name, case_sensitive, whole_word_match);
-				API::refresh_window(handle());
+					editor->set_keyword(to_wstring(kw), name, case_sensitive, whole_word_match);
+				api::refresh_window(handle());
 			}
 		}
 
@@ -734,9 +795,44 @@ namespace drawerbase {
 			if (editor)
 			{
 				editor->erase_keyword(to_wstring(kw));
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			}
 		}
+
+#ifdef __cpp_char8_t
+		void textbox::set_highlight(std::u8string_view name, const ::nana::color& fgcolor, const ::nana::color& bgcolor)
+		{
+			set_highlight(to_string(name), fgcolor, bgcolor);
+		}
+
+		void textbox::erase_highlight(std::u8string_view name)
+		{
+			erase_highlight(to_string(name));			
+		}
+
+		void textbox::set_keywords(std::u8string_view name, bool case_sensitive, bool whole_word_match, std::initializer_list<std::u8string> kw_list)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				auto name_s = to_string(name);
+				for (auto & kw : kw_list)
+					editor->set_keyword(to_wstring(kw), name_s, case_sensitive, whole_word_match);
+				api::refresh_window(handle());
+			}			
+		}
+		void textbox::erase_keyword(std::u8string_view kw)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+			{
+				editor->erase_keyword(to_wstring(kw));
+				api::refresh_window(handle());
+			}			
+		}	
+#endif
 
 		textbox& textbox::text_align(::nana::align alignment)
 		{
@@ -745,7 +841,7 @@ namespace drawerbase {
 			if (editor)
 			{
 				editor->text_align(alignment);
-				API::refresh_window(handle());
+				api::refresh_window(handle());
 			}
 
 			return *this;
@@ -828,7 +924,7 @@ namespace drawerbase {
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
 			if (editor)
-				return to_nstring(editor->text());
+				return nana::detail::to_nstring(editor->text());
 
 			return native_string_type();
 		}
@@ -842,7 +938,7 @@ namespace drawerbase {
 				editor->text(to_wstring(str), false);
 
 				if (editor->try_refresh())
-					API::update_window(this->handle());
+					api::update_window(this->handle());
 			}
 		}
 

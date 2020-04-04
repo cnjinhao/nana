@@ -1,7 +1,7 @@
 /**
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -29,10 +29,8 @@ namespace nana
 		arg_toolbar(toolbar&, std::size_t);
 	};
 
-	namespace drawerbase
+	namespace drawerbase::toolbar
 	{
-		namespace toolbar
-		{
 			enum class tool_type
 			{
 				button,
@@ -120,9 +118,7 @@ namespace nana
 				::nana::toolbar*	widget_;
 				drawer_impl_type*	impl_;
 			};
-
-		}//end namespace toolbar
-	}//end namespace drawerbase
+	}//end namespace drawerbase::toolbar
 
     /// Control bar that contains buttons for controlling
 	class toolbar
@@ -131,14 +127,19 @@ namespace nana
 	public:
 		using size_type = std::size_t;      ///< A type to count the number of elements.
 		using tool_type = drawerbase::toolbar::tool_type;
+		using item_proxy = drawerbase::toolbar::item_proxy;
 
 		toolbar() = default;
 		toolbar(window, bool visible, bool detached=false);
 		toolbar(window, const rectangle& = rectangle(), bool visible = true, bool detached = false);
 
 		void separate();                      ///< Adds a separator.
-		drawerbase::toolbar::item_proxy append(const ::std::string& text, const nana::paint::image& img);   ///< Adds a control button.
-		drawerbase::toolbar::item_proxy append(const ::std::string& text);   ///< Adds a control button.
+		item_proxy append(const ::std::string& text, const nana::paint::image& img = {});   ///< Adds a control button.
+
+#ifdef __cpp_char8_t
+		item_proxy append(std::u8string_view text, const nana::paint::image& img = {});
+#endif
+
 		void clear();   ///< Removes all control buttons and separators.
 		
 		bool enable(size_type index) const;
@@ -151,7 +152,9 @@ namespace nana
 		void toggle(size_type index, bool toggle_state); ///< Sets the tool toggle state (only if tool style is toggle).
 		std::string toggle_group(size_type index) const;	///< Returns the toggle group associated with the tool (only if tool style is toggle).
 		void toggle_group(size_type index, const ::std::string& group);	///< Adds the tool to a toggle group (only if tool style is toggle).
-
+#ifdef __cpp_char8_t
+		void toggle_group(size_type index, std::u8string_view group);
+#endif
 		void textout(size_type index, bool show); ///< Show/Hide the text inside the button
 
 		void scale(unsigned s);   ///< Sets the scale of control button.

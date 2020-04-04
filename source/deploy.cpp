@@ -183,100 +183,90 @@ namespace nana
 	}
 #endif
 
+	namespace detail
+	{
 #if defined(NANA_WINDOWS)
-	const detail::native_string_type to_nstring(const std::string& text)
-	{
-		return ::nana::charset(text, ::nana::unicode::utf8);
-	}
+		const detail::native_string_type to_nstring(const std::string& text)
+		{
+			return ::nana::charset(text, ::nana::unicode::utf8);
+		}
 
-	const detail::native_string_type& to_nstring(const std::wstring& text)
-	{
-		return text;
-	}
+		const detail::native_string_type& to_nstring(const std::wstring& text)
+		{
+			return text;
+		}
 
-	detail::native_string_type to_nstring(std::string&& text)
-	{
-		return ::nana::charset(text, ::nana::unicode::utf8);
-	}
+		detail::native_string_type to_nstring(std::string&& text)
+		{
+			return ::nana::charset(text, ::nana::unicode::utf8);
+		}
 
-	detail::native_string_type&& to_nstring(std::wstring&& text)
-	{
-		return std::move(text);
-	}
-
-	detail::native_string_type to_nstring(int n)
-	{
-		return std::to_wstring(n);
-	}
-
-	detail::native_string_type to_nstring(double d)
-	{
-		return std::to_wstring(d);
-	}
-
-	detail::native_string_type to_nstring(std::size_t d)
-	{
-		return std::to_wstring(d);
-	}
-
+		detail::native_string_type&& to_nstring(std::wstring&& text)
+		{
+			return std::move(text);
+		}
 #	ifdef __cpp_char8_t
-	detail::native_string_type to_nstring(std::u8string_view text)
-	{
-		return to_nstring(std::string{text.cbegin(), text.cend()});
-	}
+		detail::native_string_type to_nstring(std::u8string_view text)
+		{
+			return to_nstring(std::string{text.cbegin(), text.cend()});
+		}
 #	endif
 #else	//POSIX
-	const detail::native_string_type& to_nstring(const std::string& text)
-	{
-		return text;
-	}
+		const detail::native_string_type& to_nstring(const std::string& text)
+		{
+			return text;
+		}
 
-	const detail::native_string_type to_nstring(const std::wstring& text)
-	{
-		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
-	}
+		const detail::native_string_type to_nstring(const std::wstring& text)
+		{
+			return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+		}
 
-	detail::native_string_type&& to_nstring(std::string&& text)
-	{
-		return std::move(text);
-	}
+		detail::native_string_type&& to_nstring(std::string&& text)
+		{
+			return std::move(text);
+		}
 
-	detail::native_string_type to_nstring(std::wstring&& text)
-	{
-		return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
-	}
-
-	detail::native_string_type to_nstring(int n)
-	{
-		return std::to_string(n);
-	}
-
-	detail::native_string_type to_nstring(double d)
-	{
-		return std::to_string(d);
-	}
-
-	detail::native_string_type to_nstring(std::size_t d)
-	{
-		return std::to_string(d);
-	}
+		detail::native_string_type to_nstring(std::wstring&& text)
+		{
+			return ::nana::charset(text).to_bytes(::nana::unicode::utf8);
+		}
 
 #	ifdef __cpp_char8_t
-	detail::native_string_type to_nstring(std::u8string_view text)
-	{
-		return std::string{ text.cbegin(), text.cend() };
-	}
+		detail::native_string_type to_nstring(std::u8string_view text)
+		{
+			return std::string{ text.cbegin(), text.cend() };
+		}
 #	endif
 #endif
 
-
-#ifdef __cpp_char8_t
-	/// Add support of C++20
-	std::string from_u8string(std::u8string_view text)
-	{
-		return { text.cbegin(), text.cend() };
-	}
+		detail::native_string_type to_nstring(int n)
+		{
+#if defined(NANA_WINDOWS)
+			return std::to_wstring(n);
+#else
+			return std::to_string(n);
 #endif
+		}
+
+		detail::native_string_type to_nstring(double d)
+		{
+#if defined(NANA_WINDOWS)
+			return std::to_wstring(d);
+#else
+			return std::to_string(d);
+#endif
+		}
+
+		detail::native_string_type to_nstring(std::size_t d)
+		{
+#if defined(NANA_WINDOWS)
+			return std::to_wstring(d);
+#else
+			return std::to_string(d);
+#endif
+		}		
+	}
 }//end namespace nana
 
 #if defined(VERBOSE_PREPROCESSOR)

@@ -1,6 +1,6 @@
 /*
  *	A Panel Implementation
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -15,27 +15,23 @@
 
 namespace nana
 {
-	namespace drawerbase
+	namespace drawerbase::panel
 	{
-		namespace panel
-		{
 		//class drawer
-			void drawer::attached(widget_reference wdg, graph_reference)
-			{
-				wdg.caption("panel widget");
-				window_ = wdg.handle();
+		void drawer::attached(widget_reference wdg, graph_reference)
+		{
+			wdg.caption("panel widget");
+			window_ = wdg.handle();
 
-				API::ignore_mouse_focus(wdg, true);
+			api::ignore_mouse_focus(wdg, true);
 
-			}
+		}
 
-			void drawer::refresh(graph_reference graph)
-			{
-				if (!API::dev::copy_transparent_background(window_, graph))
-					graph.rectangle(true, API::bgcolor(window_));
-			}
-			//end class drawer
-		}//end namespace panel
-
-	}//end namespace drawerbase
+		void drawer::refresh(graph_reference graph)
+		{
+			if (!api::dev::copy_transparent_background(window_, graph))
+				graph.rectangle(true, api::bgcolor(window_));
+		}
+		//end class drawer
+	}//end namespace drawerbase::panel
 }//end namespace nana

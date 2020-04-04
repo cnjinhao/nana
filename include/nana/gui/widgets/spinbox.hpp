@@ -1,7 +1,7 @@
 /**
  *	A Spin box widget
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -28,10 +28,8 @@ namespace nana
 		arg_spinbox(spinbox&);
 	};
 
-	namespace drawerbase
+	namespace drawerbase::spinbox
 	{
-		namespace spinbox
-		{
 			struct spinbox_events
 				: public general_events
 			{
@@ -73,8 +71,7 @@ namespace nana
 			private:
 				implementation * const impl_;
 			};
-		}
-	}//end namespace drawerbase
+	}//end namespace drawerbase::spinbox
 
 	/// Spinbox Widget
 	class spinbox
@@ -86,7 +83,9 @@ namespace nana
 	public:
 		/// Constructs a spinbox.
 		spinbox();
+#if 0	//deprecated
 		spinbox(window, bool visible);
+#endif
 		spinbox(window, const nana::rectangle& = {}, bool visible = true);
 
 		/// Sets the widget whether it accepts user keyboard input.
@@ -102,6 +101,9 @@ namespace nana
 
 		/// Sets the string spin values.
 		void range(std::vector<std::string> values_utf8);
+#ifdef __cpp_char8_t
+		void range(std::vector<std::u8string> values);
+#endif
 
 		std::vector<std::string> range_string() const;
 		std::pair<int, int> range_int() const;
@@ -113,12 +115,19 @@ namespace nana
 		/// Gets the spun value
 		::std::string value() const;
 		void value(const ::std::string&);
+#ifdef __cpp_char8_t
+		void value(std::u8string_view);
+#endif
 		int to_int() const;
 		double to_double() const;
 
 		/// Sets the modifiers
 		void modifier(std::string prefix_utf8, std::string suffix_utf8);
 		void modifier(const std::wstring & prefix, const std::wstring& suffix);
+#ifdef __cpp_char8_t
+		void modifier(std::u8string_view prefix, std::u8string_view suffix);
+#endif
+
 	private:
 		native_string_type _m_caption() const noexcept;
 		void _m_caption(native_string_type&&);

@@ -45,39 +45,39 @@ namespace nana
 
 			void refresh(graph_reference graph) override
 			{
-				API::dev::copy_transparent_background(window_handle_, graph);
+				api::dev::copy_transparent_background(window_handle_, graph);
 				if (renderer_)
-					renderer_(window_handle_, graph, API::mouse_action(window_handle_));
+					renderer_(window_handle_, graph, api::mouse_action(window_handle_));
 			}
 
 			void mouse_enter(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_move(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_leave(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_down(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_up(graph_reference graph, const arg_mouse&) override
 			{
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 		private:
 			window window_handle_{nullptr};
@@ -99,7 +99,7 @@ namespace nana
 				this->caption("place-splitter");
 				widget_object<category::widget_tag, drawer_splitter>::_m_complete_creation();
 
-				API::effects_bground(*this, effects::bground_transparent(0), 0);
+				api::effects_bground(*this, effects::bground_transparent(0), 0);
 			}
 		};
 
@@ -145,7 +145,7 @@ namespace nana
 				graph.rectangle(true, static_cast<color_rgb>(0x83EB));
 
 				//draw caption
-				auto text = to_wstring(API::window_caption(window_handle_));
+				auto text = to_wstring(api::window_caption(window_handle_));
 				if((graph.size().width > 20) && (graph.size().width - 20 > 10))
 					text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
@@ -172,14 +172,14 @@ namespace nana
 				x_pointed_ = _m_button_area().is_hit(arg.pos);
 
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_leave(graph_reference graph, const arg_mouse&) override
 			{
 				x_pointed_ = false;
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_down(graph_reference graph, const arg_mouse&) override
@@ -190,7 +190,7 @@ namespace nana
 				x_state_ = ::nana::mouse_action::pressed;
 
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 			}
 
 			void mouse_up(graph_reference graph, const arg_mouse&) override
@@ -200,14 +200,14 @@ namespace nana
 
 				x_state_ = ::nana::mouse_action::hovered;
 				refresh(graph);
-				API::dev::lazy_refresh();
+				api::dev::lazy_refresh();
 
 				close_fn_();
 			}
 		private:
 			::nana::rectangle _m_button_area() const
 			{
-				auto sz = API::window_size(window_handle_);
+				auto sz = api::window_size(window_handle_);
 				return{static_cast<int>(sz.width) - 20, 0, 20, sz.height};
 			}
 		public:
@@ -298,7 +298,7 @@ namespace nana
 						if (::nana::mouse::left_button == arg.button)
 						{
 							moves_.started = true;
-							moves_.start_pos = API::cursor_position();
+							moves_.start_pos = api::cursor_position();
 							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
 							caption_.set_capture(true);
 						}
@@ -307,7 +307,7 @@ namespace nana
 					{
 						if (arg.left_button && moves_.started)
 						{
-							auto move_pos = API::cursor_position() - moves_.start_pos;
+							auto move_pos = api::cursor_position() - moves_.start_pos;
 							if (!floating())
 							{
 								if (std::abs(move_pos.x) > 4 || std::abs(move_pos.y) > 4)
@@ -316,7 +316,7 @@ namespace nana
 							else
 							{
 								move_pos += moves_.start_container_pos;
-								API::move_window(container_->handle(), move_pos);
+								api::move_window(container_->handle(), move_pos);
 
 								if(!caption_.get_drawer_trigger().hit_close())
 									notifier_->notify_move();
@@ -344,7 +344,7 @@ namespace nana
 			{
 				auto fn_ptr = &fn;
                 widget * w = nullptr;
-				API::dev::affinity_execute(*this, [this, fn_ptr, &w]
+				api::dev::affinity_execute(*this, [this, fn_ptr, &w]
 				{
 					w=_m_add_pane(*fn_ptr);
 				});
@@ -366,7 +366,7 @@ namespace nana
 					graph.rectangle(false, colors::coral);
 				});
 
-				API::set_parent_window(handle(), container_->handle());
+				api::set_parent_window(handle(), container_->handle());
 				this->move({ 1, 1 });
 
 				container_->events().resized.connect_unignorable([this](const arg_resized& arg)
@@ -384,7 +384,7 @@ namespace nana
 			{
 				caption_.release_capture();
 
-				API::set_parent_window(handle(), host_window_);
+				api::set_parent_window(handle(), host_window_);
 				container_.reset();
 				notifier_->notify_dock();
 			}
@@ -414,7 +414,7 @@ namespace nana
 							auto handle = tabbar_->attach(tabbar_->selected());
 							//Set caption through a caption of window specified by handle
 							//Empty if handle is null
-							caption_.caption(API::window_caption(handle));
+							caption_.caption(api::window_caption(handle));
 						});
 
 						r.height -= 20;

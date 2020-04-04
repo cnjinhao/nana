@@ -1,7 +1,7 @@
 /**
  *	A Panel Implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -21,10 +21,8 @@
 
 namespace nana
 {
-	namespace drawerbase
+	namespace drawerbase::panel
 	{
-		namespace panel
-		{
 			class drawer: public drawer_trigger
 			{
 				void attached(widget_reference, graph_reference)	override;
@@ -32,8 +30,8 @@ namespace nana
 			private:
 				window window_{nullptr};
 			};
-		}// end namespace panel
-	}//end namespace drawerbase
+	}//end namespace drawerbase::panel
+	
     /// For placing other widgets, where the bool template parameter determines if it is widget or lite_widget, which in actual use makes no difference.
 	template<bool HasBackground>
 	class panel
@@ -43,29 +41,35 @@ namespace nana
 	public:
 		panel(){}
 
+#if 0	//deprecated
 		panel(window wd, bool visible)
 		{
 			this->create(wd, rectangle(), visible);
-			this->bgcolor(API::bgcolor(wd));
 		}
+#endif
 
 		panel(window wd, const nana::rectangle& r = rectangle(), bool visible = true)
 		{
 			this->create(wd, r, visible);
-			this->bgcolor(API::bgcolor(wd));
 		}
 
 		bool transparent() const
 		{
-			return API::is_transparent_background(*this);
+			return api::is_transparent_background(*this);
 		}
 
 		void transparent(bool tr)
 		{
 			if(tr)
-				API::effects_bground(*this, effects::bground_transparent(0), 0);
+				api::effects_bground(*this, effects::bground_transparent(0), 0);
 			else
-				API::effects_bground_remove(*this);
+				api::effects_bground_remove(*this);
+		}
+	private:
+		void _m_complete_creation() override
+		{
+			if(HasBackground)
+				this->bgcolor(api::bgcolor(this->parent()));
 		}
 	};
 }//end namespace nana

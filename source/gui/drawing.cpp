@@ -33,7 +33,7 @@ namespace nana
   		drawing::drawing(window wd)
 			:handle_(wd)
   		{
-			if (!API::is_window(wd))
+			if (!api::is_window(wd))
 				throw std::invalid_argument("drawing: invalid window parameter");
 
 			if (wd->is_draw_through())
@@ -44,35 +44,35 @@ namespace nana
 
 		bool drawing::empty() const
 		{
-			return API::empty_window(handle_) ||  handle_->root_graph->empty();
+			return api::empty_window(handle_) ||  handle_->root_graph->empty();
 		}
 
 		void drawing::update() const
 		{
-			API::refresh_window(handle_);
+			api::refresh_window(handle_);
 		}
 
 		void drawing::draw(const draw_fn_t& f)
 		{
-			if(API::empty_window(handle_))	return;
+			if(api::empty_window(handle_))	return;
 			restrict::get_drawer(handle_).draw(draw_fn_t(f), false);		
 		}
 
 		void drawing::draw(draw_fn_t&& f)
 		{
-			if(API::empty_window(handle_))	return;
+			if(api::empty_window(handle_))	return;
 			restrict::get_drawer(handle_).draw(std::move(f), false);
 		}
 
 		drawing::diehard_t drawing::draw_diehard(const draw_fn_t& f)
 		{
-			if(API::empty_window(handle_)) return nullptr;
+			if(api::empty_window(handle_)) return nullptr;
 			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).draw(draw_fn_t(f), true));
 		}
 
 		drawing::diehard_t drawing::draw_diehard(draw_fn_t&& f)
 		{
-			if(API::empty_window(handle_))	return nullptr;
+			if(api::empty_window(handle_))	return nullptr;
 			return reinterpret_cast<diehard_t>(restrict::get_drawer(handle_).draw(std::move(f), true));
 		}
 
@@ -80,13 +80,13 @@ namespace nana
 		{
 			//Fixed by Tumiz
 			//https://github.com/cnjinhao/nana/issues/153
-			if(!API::empty_window(handle_))
+			if(!api::empty_window(handle_))
 				restrict::get_drawer(handle_).erase(d);
 		}
 
 		void drawing::clear()
 		{
-			if(API::empty_window(handle_))	return;
+			if(api::empty_window(handle_))	return;
 			restrict::get_drawer(handle_).clear();
 		}
 	//end class drawing

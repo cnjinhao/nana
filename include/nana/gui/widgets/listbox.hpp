@@ -36,10 +36,8 @@ namespace nana
 {
 	class listbox;
 
-	namespace drawerbase
+	namespace drawerbase::listbox
 	{
-		namespace listbox
-		{
 			using size_type = std::size_t;
 			using native_string_type = ::nana::detail::native_string_type;
 
@@ -82,6 +80,9 @@ namespace nana
 				 */
 				virtual void text(std::string text_utf8) = 0;
 
+#ifdef __cpp_char8_t
+				virtual void text(std::u8string_view text) = 0;
+#endif
 				/// Sets alignment of column text
 				/**
 				 * @param align Alignment
@@ -183,6 +184,10 @@ namespace nana
 				cell(::std::string) noexcept;
 				cell(::std::string, const format&);
 
+#ifdef __cpp_char8_t
+				cell(::std::u8string_view);
+				cell(::std::u8string_view, const format&);
+#endif
 				cell& operator=(const cell&);
 				cell& operator=(cell&&) noexcept;
 			};
@@ -813,6 +818,7 @@ namespace nana
 			{
 			public:
 				item_proxy(essence*, const index_pair& = index_pair{npos, npos});
+				item_proxy(const item_proxy&) = default;
 
 				/// the main purpose of this it to make obvious that item_proxy operate with absolute positions, and don't get moved during sort()
 				static item_proxy from_display(essence *, const index_pair &relative) ;
@@ -873,6 +879,9 @@ namespace nana
 				item_proxy&		text(size_type abs_col, cell);
 				item_proxy&		text(size_type abs_col, std::string);
 				item_proxy&		text(size_type abs_col, const std::wstring&);
+#ifdef __cpp_char8_t
+				item_proxy&		text(size_type abs_col, std::u8string_view);
+#endif
 				std::string	text(size_type abs_col) const;
 
 				void icon(const nana::paint::image&);
@@ -943,7 +952,9 @@ namespace nana
 				/// Behavior of Iterator's value_type
 				bool operator==(::std::string_view sv) const;
 				bool operator==(::std::wstring_view sv) const;
-
+#ifdef __cpp_char8_t
+				bool operator==(::std::u8string_view sv) const;
+#endif
 				/// Behavior of Iterator
 				item_proxy & operator=(const item_proxy&);
 
@@ -993,6 +1004,7 @@ namespace nana
 				template<typename Value> using cell_translator = typename container_translator<Value>::cell_translator;
 
 				cat_proxy() noexcept = default;
+				cat_proxy(const cat_proxy&) noexcept = default;
 				cat_proxy(essence*, size_type pos) noexcept;
 				cat_proxy(essence*, category_t*) noexcept;
 
@@ -1056,11 +1068,18 @@ namespace nana
 				/// Appends one item at the end of this category with the specifies texts in the column fields
 				void append(std::initializer_list<std::string> texts_utf8);
 				void append(std::initializer_list<std::wstring> texts);
+#ifdef __cpp_char8_t
+				void append(std::initializer_list<std::u8string> texts);
+#endif
 
 				size_type columns() const;
 
 				cat_proxy& text(std::string);
 				cat_proxy& text(std::wstring);
+#ifdef __cpp_char8_t
+				cat_proxy& text(std::u8string);
+#endif
+
 				std::string text() const;
 
 				cat_proxy & select(bool);
@@ -1081,6 +1100,9 @@ namespace nana
 
 				/// Behavior of a container
 				void push_back(std::string text_utf8);
+#ifdef __cpp_char8_t
+				void push_back(std::u8string_view text);
+#endif
 
 				item_proxy begin() const;
 				item_proxy end() const;
@@ -1156,8 +1178,7 @@ namespace nana
 				using columns_indexs = std::vector<size_type>;
 				columns_indexs columns_order;
 			};
-		}
-	}//end namespace drawerbase
+	}//end namespace drawerbase::listbox
 
 	struct arg_listbox
 		: public event_arg
@@ -1179,10 +1200,8 @@ namespace nana
 		arg_listbox_category(const drawerbase::listbox::cat_proxy&) noexcept;
 	};
 
-	namespace drawerbase
+	namespace drawerbase::listbox
 	{
-		namespace listbox
-		{
 			struct listbox_events
 				: public general_events
 			{
@@ -1226,8 +1245,7 @@ namespace nana
 
 				::nana::parameters::mouse_wheel mouse_wheel{}; ///< The number of lines/characters to scroll when vertical/horizontal mouse wheel is moved.
 			};
-		}
-	}//end namespace drawerbase
+	}//end namespace drawerbase::listbox
 
 /*! \class listbox
 \brief A rectangle containing a list of strings from which the user can select. 
@@ -1275,12 +1293,12 @@ By \a clicking on one header the list get \a reordered, first up, and then down 
 among others.
 That means that listbox have a member trigger_ constructed first and accessible with get_drawer_trigger() and
 a member (unique pointer to) scheme_ accessible with scheme_type& scheme() created in the constructor 
-with API::dev::make_scheme<Scheme>() which call API::detail::make_scheme(::nana::detail::scheme_factory<Scheme>())
+with api::dev::make_scheme<Scheme>() which call api::detail::make_scheme(::nana::detail::scheme_factory<Scheme>())
 which call restrict::bedrock.make_scheme(static_cast<::nana::detail::scheme_factory_base&&>(factory));
 which call pi_data_->scheme.create(std::move(factory));
 which call factory.create(scheme_template(std::move(factory)));
 which call (new Scheme(static_cast<Scheme&>(other)));
-and which in create is set with: API::dev::set_scheme(handle_, scheme_.get()); which save the scheme pointer in 
+and which in create is set with: api::dev::set_scheme(handle_, scheme_.get()); which save the scheme pointer in 
 the nana::detail::basic_window member pointer scheme
 \todo doc: actualize this example listbox.at(0)...
 \see nana::drawerbase::listbox::cat_proxy
@@ -1331,7 +1349,9 @@ the nana::detail::basic_window member pointer scheme
 
 	// Constructors
 		listbox() = default;
+#if 0 //deprecated
 		listbox(window, bool visible);
+#endif
 		listbox(window, const rectangle& = {}, bool visible = true);
 
 	// Element access
@@ -1433,12 +1453,18 @@ the nana::detail::basic_window member pointer scheme
 		size_type append_header(std::string text_utf8, unsigned width = 120);
 		size_type append_header(std::wstring text, unsigned width = 120);
 
-		void clear_headers();                                                   ///< Removes all the columns.
-
 		cat_proxy append(std::string category);                                 ///< Appends a new category to the end
 		cat_proxy append(std::wstring category);                                ///< Appends a new category to the end
 		void append(std::initializer_list<std::string> categories);             ///< Appends categories to the end
 		void append(std::initializer_list<std::wstring> categories);            ///< Appends categories to the end
+#ifdef __cpp_char8_t
+		size_type append_header(std::u8string text, unsigned width = 120);
+		cat_proxy append(std::u8string category);
+		void append(std::initializer_list<std::u8string> categories);
+#endif
+
+		/// Removes all the columns
+		void clear_headers();
 
 		/// Access a column at specified position
 		/**
@@ -1483,6 +1509,9 @@ the nana::detail::basic_window member pointer scheme
 
 		cat_proxy insert(cat_proxy, ::std::string);
 		cat_proxy insert(cat_proxy, ::std::wstring);
+#ifdef __cpp_char8_t
+		cat_proxy insert(cat_proxy, std::u8string_view);
+#endif
 
 		/// Inserts an item before a specified position
 		/**
@@ -1497,6 +1526,10 @@ the nana::detail::basic_window member pointer scheme
 		 * @param text Text of the first column.
 		 */
 		void insert_item(const index_pair& abs_pos, const ::std::wstring& text);
+
+#ifdef __cpp_char8_t
+	 	void insert_item(const index_pair& abs_pos, const ::std::u8string_view text);
+#endif
 
 
 		void insert_item(index_pair abs_pos, const listbox& rhs, const index_pairs& indexes);

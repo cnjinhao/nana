@@ -1,7 +1,7 @@
 /**
  *	A Slider Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -29,11 +29,8 @@ namespace nana
 		arg_slider(slider&);
 	};
 
-	namespace drawerbase
+	namespace drawerbase::slider
 	{
-		namespace slider
-		{
-
 			struct scheme_impl
 				: public widget_geometrics
 			{
@@ -130,8 +127,7 @@ namespace nana
 			private:
 				model * model_ptr_;
 			};
-		}//end namespace slider
-	}//end namespace drawerbase
+	}//end namespace drawerbase::slider
 
 
     /// A slider widget which the user can drag for tracking
@@ -143,7 +139,9 @@ namespace nana
 		using seekdir = drawerbase::slider::seekdir;						///< Defines the slider seek direction.
 
 		slider();
+#if 0 //deprecated
 		slider(window, bool visible);
+#endif
 		slider(window, const rectangle& = rectangle(), bool visible = true);
 
 		void seek(seekdir);                                  ///< Define the direction that user can seek by using mouse.

@@ -1,7 +1,7 @@
 /**
  *	A group widget implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2015-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2015-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -23,16 +23,13 @@
 
 namespace nana{
 
-	namespace drawerbase
+	namespace drawerbase::group
 	{
-		namespace group
+		struct scheme : public nana::widget_geometrics
 		{
-			struct scheme : public nana::widget_geometrics
-			{
-				color_proxy border{ colors::gray_border };
-			};
-		}// end namespace panel
-	}//end namespace drawerbase
+			color_proxy border{ colors::gray_border };
+		};
+	}//end namespace drawerbase::group
 
 	class group
 		: public widget_object<category::widget_tag,
@@ -67,12 +64,26 @@ namespace nana{
 			  bool				visible = true
 		     );
 
+#ifdef __cpp_char8_t
+		///  The construction that creates the widget and set the title or caption
+		group(window			parent,		        ///< a handle to the parent
+			  ::std::u8string_view	title,		    ///< caption of the group
+			  bool				formatted = false,  ///< Enable/disable the formatted text for the title
+			  unsigned			gap = 2,			///< between the content and the external limit
+			  const rectangle&	r = {} ,
+			  bool				visible = true
+		     );		
+#endif
+
 
 		/// The destruction
 		~group();
 
 		/// Adds an option for user selection
 		checkbox& add_option(::std::string);
+#ifdef __cpp_char8_t
+		checkbox& add_option(::std::u8string_view);
+#endif
 
 		/// Modifies the alignment of the title
 		group& caption_align(align position);

@@ -1,7 +1,7 @@
 /*
  *	An Animation Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -283,14 +283,14 @@ namespace nana
 			{
 				for(auto & tar: outs)
 				{
-					auto graph = API::dev::window_graphics(tar.first);
+					auto graph = api::dev::window_graphics(tar.first);
 					if(nullptr == graph)
 						continue;
 
 					for(auto & outp : tar.second.points)
 						renderer(*graph, outp);
 
-					API::update_window(tar.first);
+					api::update_window(tar.first);
 				}
 			}
 		};//end struct frameset::impl
@@ -648,7 +648,7 @@ namespace nana
 					impl_->render_this_specifically(tar, pos);
 				});
 
-				API::events(wd).destroy.connect([this](const arg_destroy& arg){
+				api::events(wd).destroy.connect([this](const arg_destroy& arg){
 					std::lock_guard<decltype(impl_->thr_variable->mutex)> lock(impl_->thr_variable->mutex);
 					impl_->outputs.erase(arg.window_handle);
 				});

@@ -58,16 +58,16 @@ namespace nana
 		::std::wstring caption_wstring() const noexcept;
 		native_string_type caption_native() const noexcept;
 
-		widget& caption(std::string utf8);
+		widget& caption(std::string_view utf8);
 #ifdef __cpp_char8_t
 		widget& caption(std::u8string_view text);
 #endif
-		widget& caption(std::wstring);
+		widget& caption(std::wstring_view text);
 
 		template<typename ...Args>
 		void i18n(std::string msgid, Args&&... args)
 		{
-			_m_caption(::nana::to_nstring(::nana::internationalization().get(msgid, std::forward<Args>(args)...)));
+			_m_caption(::nana::detail::to_nstring(::nana::internationalization().get(msgid, std::forward<Args>(args)...)));
 		}
 
 		void i18n(i18n_eval);
@@ -194,14 +194,14 @@ namespace nana
 
 		widget_object()
 			:	events_{ std::make_shared<Events>() },
-				scheme_{ API::dev::make_scheme<Scheme>() }
+				scheme_{ api::dev::make_scheme<Scheme>() }
 		{
 			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
 		}
 
 		~widget_object()
 		{
-			API::close_window(handle());
+			api::close_window(handle());
 		}
 
 		event_type& events() const
@@ -218,12 +218,12 @@ namespace nana
 		{
 			if(parent_wd && this->empty())
 			{
-				handle_ = API::dev::create_widget(parent_wd, r, this);
-				API::dev::set_events(handle_, events_);
-				API::dev::set_scheme(handle_, scheme_.get());
-				API::dev::attach_drawer(*this, trigger_);
+				handle_ = api::dev::create_widget(parent_wd, r, this);
+				api::dev::set_events(handle_, events_);
+				api::dev::set_scheme(handle_, scheme_.get());
+				api::dev::attach_drawer(*this, trigger_);
 				if(visible)
-					API::show_window(handle_, true);
+					api::show_window(handle_, true);
 
 				this->_m_complete_creation();
 			}
@@ -232,13 +232,13 @@ namespace nana
 
 		widget_object& borderless(bool enable)
 		{
-			API::widget_borderless(handle_, enable);
+			api::widget_borderless(handle_, enable);
 			return *this;
 		}
 
 		bool borderless() const
 		{
-			return API::widget_borderless(handle_);
+			return api::widget_borderless(handle_);
 		}
 
 		scheme_type& scheme() const
@@ -321,14 +321,14 @@ namespace nana
 		using event_type = Events;
 
 		widget_object()
-			: events_{ std::make_shared<Events>() }, scheme_{ API::dev::make_scheme<scheme_type>() }
+			: events_{ std::make_shared<Events>() }, scheme_{ api::dev::make_scheme<scheme_type>() }
 		{
 			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
 		}
 
 		~widget_object()
 		{
-			API::close_window(handle());
+			api::close_window(handle());
 		}
 
 		event_type& events() const
@@ -345,11 +345,11 @@ namespace nana
 		{
 			if(parent_wd && this->empty())
 			{
-				handle_ = API::dev::create_lite_widget(parent_wd, r, this);
-				API::dev::set_events(handle_, events_);
-				API::dev::set_scheme(handle_, scheme_.get());
+				handle_ = api::dev::create_lite_widget(parent_wd, r, this);
+				api::dev::set_events(handle_, events_);
+				api::dev::set_scheme(handle_, scheme_.get());
 				if(visible)
-					API::show_window(handle_, true);
+					api::show_window(handle_, true);
 				this->_m_complete_creation();
 			}
 			return (this->empty() == false);
@@ -393,7 +393,7 @@ namespace nana
 		using event_type = Events;
 
 		widget_object()
-			: widget_object(nullptr, false, API::make_center(300, 150), appearance(), this)
+			: widget_object(nullptr, false, api::make_center(300, 150), appearance(), this)
 		{
 			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
 		}
@@ -401,13 +401,13 @@ namespace nana
 		widget_object(window owner, bool nested, const rectangle& r = {}, const appearance& apr = {})
 		{
 			static_assert(std::is_base_of<::nana::drawer_trigger, DrawerTrigger>::value, "The type DrawerTrigger must be derived from nana::drawer_trigger");
-			handle_ = API::dev::create_window(owner, nested, r, apr, this);
+			handle_ = api::dev::create_window(owner, nested, r, apr, this);
 			_m_bind_and_attach();
 		}
 
 		~widget_object()
 		{
-			API::close_window(handle());
+			api::close_window(handle());
 		}
 
 		event_type& events() const
@@ -417,47 +417,47 @@ namespace nana
 
 		void activate()
 		{
-			API::activate_window(handle_);
+			api::activate_window(handle_);
 		}
 
 		native_window_type native_handle() const
 		{
-			return API::root(handle_);
+			return api::root(handle_);
 		}
 
 		void bring_top(bool activated)
 		{
-			API::bring_top(handle(), activated);
+			api::bring_top(handle(), activated);
 		}
 
 		window owner() const
 		{
-			return API::get_owner_window(handle_);
+			return api::get_owner_window(handle_);
 		}
 
 		void icon(const nana::paint::image& ico)
 		{
-			API::window_icon(handle_, ico);
+			api::window_icon(handle_, ico);
 		}
 
 		void restore()
 		{
-			API::restore_window(handle_);
+			api::restore_window(handle_);
 		}
 
 		void zoom(bool ask_for_max)
 		{
-			API::zoom_window(handle_, ask_for_max);
+			api::zoom_window(handle_, ask_for_max);
 		}
 
 		bool is_zoomed(bool check_maximized) const
 		{
-			return API::is_window_zoomed(handle_, check_maximized);
+			return api::is_window_zoomed(handle_, check_maximized);
 		}
 
 		widget_object& z_order(window wd_after, z_order_action action_if_no_wd_after)
 		{
-			API::set_window_z_order(handle_, wd_after, action_if_no_wd_after);
+			api::set_window_z_order(handle_, wd_after, action_if_no_wd_after);
 			return *this;
 		}
 
@@ -468,22 +468,22 @@ namespace nana
 
 		void draw_through(std::function<void()> draw_fn)
 		{
-			API::draw_through(handle(), draw_fn);
+			api::draw_through(handle(), draw_fn);
 		}
 
 		void map_through_widgets(native_drawable_type drawable)
 		{
-			API::map_through_widgets(handle(), drawable);
+			api::map_through_widgets(handle(), drawable);
 		}
 
 		void outline_size(const ::nana::size& sz)
 		{
-			API::window_outline_size(handle(), sz);
+			api::window_outline_size(handle(), sz);
 		}
 
 		::nana::size outline_size() const
 		{
-			return API::window_outline_size(handle());
+			return api::window_outline_size(handle());
 		}
 	protected:
 		DrawerTrigger& get_drawer_trigger()
@@ -499,11 +499,11 @@ namespace nana
 		void _m_bind_and_attach()
 		{
 			events_ = std::make_shared<Events>();
-			API::dev::set_events(handle_, events_);
+			api::dev::set_events(handle_, events_);
 
-			scheme_ = API::dev::make_scheme<scheme_type>();
-			API::dev::set_scheme(handle_, scheme_.get());
-			API::dev::attach_drawer(*this, trigger_);
+			scheme_ = api::dev::make_scheme<scheme_type>();
+			api::dev::set_scheme(handle_, scheme_.get());
+			api::dev::attach_drawer(*this, trigger_);
 		}
 
 		general_events& _m_get_general_events() const override

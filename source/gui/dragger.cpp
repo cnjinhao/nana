@@ -1,7 +1,7 @@
 /*
 *	A Dragger Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -43,11 +43,11 @@ namespace nana
 			//Clear triggers
 			for (auto & t : triggers_)
 			{
-				API::umake_event(t.press);
-				API::umake_event(t.over);
-				API::umake_event(t.release);
-				API::umake_event(t.destroy);
-				API::release_capture(t.wd);
+				api::umake_event(t.press);
+				api::umake_event(t.over);
+				api::umake_event(t.release);
+				api::umake_event(t.destroy);
+				api::release_capture(t.wd);
 			}
 		}
 
@@ -87,27 +87,27 @@ namespace nana
 				{
 				case event_code::mouse_down:
 					dragging_ = true;
-					API::set_capture(arg.window_handle, true);
+					api::set_capture(arg.window_handle, true);
 
-					origin_ = API::cursor_position();
+					origin_ = api::cursor_position();
 					for (auto & t : targets_)
 					{
-						t.origin = API::window_position(t.wd);
-						API::calc_screen_point(API::get_owner_window(t.wd), t.origin);
+						t.origin = api::window_position(t.wd);
+						api::calc_screen_point(api::get_owner_window(t.wd), t.origin);
 					}
 					break;
 				case event_code::mouse_move:
 					if (dragging_ && arg.left_button)
 					{
-						auto pos = API::cursor_position();
+						auto pos = api::cursor_position();
 						pos -= origin_;
 
 						for (auto & t : targets_)
 						{
-							if (API::is_window_zoomed(t.wd, true) == false)
+							if (api::is_window_zoomed(t.wd, true) == false)
 							{
 								auto wdps = t.origin;
-								API::calc_window_point(API::get_owner_window(t.wd), wdps);
+								api::calc_window_point(api::get_owner_window(t.wd), wdps);
 
 								switch (t.move_direction)
 								{
@@ -122,15 +122,15 @@ namespace nana
 								}
 
 								if (!t.restrict_area.empty())
-									_m_check_restrict_area(wdps, API::window_size(t.wd), t.restrict_area);
+									_m_check_restrict_area(wdps, api::window_size(t.wd), t.restrict_area);
 
-								API::move_window(t.wd, wdps);
+								api::move_window(t.wd, wdps);
 							}
 						}
 					}
 					break;
 				case event_code::mouse_up:
-					API::release_capture(arg.window_handle);
+					api::release_capture(arg.window_handle);
 
 					dragging_ = false;
 					break;
@@ -138,7 +138,7 @@ namespace nana
 					break;
 				}
 			};
-			auto & events = API::events(wd);
+			auto & events = api::events(wd);
 			tg.press	= events.mouse_down.connect(fn);
 			tg.over		= events.mouse_move.connect(fn);
 			tg.release	= events.mouse_up.connect(fn);
@@ -149,7 +149,7 @@ namespace nana
 					if (i->wd == arg.window_handle)
 					{
 						triggers_.erase(i);
-						API::release_capture(arg.window_handle);
+						api::release_capture(arg.window_handle);
 						return;
 					}
 				}

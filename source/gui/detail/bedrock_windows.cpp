@@ -443,7 +443,7 @@ namespace detail
         catch(std::exception& e)
         {
 			(msgbox(condition_wd, "An uncaptured std::exception during message pumping: ").icon(msgbox::icon_information)
-								<< "\n   in form: " << API::window_caption(condition_wd)
+								<< "\n   in form: " << api::window_caption(condition_wd)
 								<<"\n   exception : "<< e.what()
 			).show();
 
@@ -462,7 +462,7 @@ namespace detail
 		{
 			(msgbox(condition_wd, "An exception during message pumping!").icon(msgbox::icon_information)
 				<<"An uncaptured non-std exception during message pumping!"
-				<< "\n   in form: " << API::window_caption(condition_wd)
+				<< "\n   in form: " << api::window_caption(condition_wd)
 				).show();
 			internal_scope_guard lock;
 			this->close_thread_window(nana::system::this_thread_id());

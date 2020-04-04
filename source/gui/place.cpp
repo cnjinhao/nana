@@ -688,21 +688,21 @@ namespace nana
 		~field_gather() noexcept
 		{
 			for (auto & e : elements)
-				API::umake_event(e.evt_destroy);
+				api::umake_event(e.evt_destroy);
 
 			for (auto & e : fastened)
-				API::umake_event(e.evt_destroy);
+				api::umake_event(e.evt_destroy);
 		}
 
 		void visible(bool vsb, bool sync_fastened = true)
 		{
 			for (auto & e : elements)
-				API::show_window(e.handle, vsb);
+				api::show_window(e.handle, vsb);
 
 			if (sync_fastened)
 			{
 				for (auto & e : fastened)
-					API::show_window(e.handle, vsb);
+					api::show_window(e.handle, vsb);
 			}
 		}
 
@@ -722,21 +722,21 @@ namespace nana
 	private:
 		void _m_insert_widget(window wd, bool to_fasten)  /// \todo better errors caption of failed windows, field
 		{
-			if (API::empty_window(wd))
+			if (api::empty_window(wd))
 				throw place::error("Failed to insert an invalid window handle.", *place_ptr_);
 
-			if (API::get_parent_window(wd) != place_ptr_->window_handle())
+			if (api::get_parent_window(wd) != place_ptr_->window_handle())
 				throw place::error("Failed to insert a window which is not a child of the place-binded window", *place_ptr_);
 
 			//Listen to destroy of a window
 			//It will delete the element and recollocate when the window destroyed.
-			auto evt = API::events(wd).destroy.connect([this, to_fasten](const arg_destroy& arg)
+			auto evt = api::events(wd).destroy.connect([this, to_fasten](const arg_destroy& arg)
 			{
 				if (!to_fasten)
 				{
 					if (erase_element(elements, arg.window_handle))
 					{
-						if (!API::is_destroying(API::get_parent_window(arg.window_handle)))
+						if (!api::is_destroying(api::get_parent_window(arg.window_handle)))
 							place_ptr_->collocate();
 					}
 				}
@@ -902,7 +902,7 @@ namespace nana
 							edge_px = fit_val.integer();
 						}
 
-						auto extent = API::content_extent(elm.handle, edge_px, fit_horz);
+						auto extent = api::content_extent(elm.handle, edge_px, fit_horz);
 						if (extent)
 						{
 							run_.fit_extents[elm.handle] = extent->second;
@@ -1297,7 +1297,7 @@ namespace nana
 						move_r = element_r.result();
 					}
 
-					API::move_window(el.handle, move_r);
+					api::move_window(el.handle, move_r);
 
 					if (index + 1 < field->elements.size())
 						position += (px + calc_number(gap.at(index), area_px, 0, precise_px));
@@ -1306,7 +1306,7 @@ namespace nana
 				}
 
 				for (auto & fsn : field->fastened)
-					API::move_window(fsn.handle, area_margined);
+					api::move_window(fsn.handle, area_margined);
 			}
 		}
 	private:
@@ -1623,7 +1623,7 @@ namespace nana
 
 							unsigned width = (value > uns_block_w ? uns_block_w : value);
 							if (width > gap_size)	width -= gap_size;
-							API::move_window(i->handle, rectangle{ static_cast<int>(x), static_cast<int>(y), width, height });
+							api::move_window(i->handle, rectangle{ static_cast<int>(x), static_cast<int>(y), width, height });
 							x += block_w;
 						}
 						y += block_h;
@@ -1683,7 +1683,7 @@ namespace nana
 							unsigned result_w = static_cast<unsigned>(precise_w);
 							precise_w -= result_w;
 
-							API::move_window(i->handle, rectangle{ pos_x, pos_y, result_w, result_h });
+							api::move_window(i->handle, rectangle{ pos_x, pos_y, result_w, result_h });
 							++i;
 						}
 
@@ -1694,10 +1694,10 @@ namespace nana
 
 			// Empty the size of windows that are out range of grid
 			for (; i != end; ++i)
-				API::window_size(i->handle, size{});
+				api::window_size(i->handle, size{});
 
 			for (auto & fsn : field->fastened)
-				API::move_window(fsn.handle, area);
+				api::move_window(fsn.handle, area);
 		}
 	public:
 		std::pair<unsigned, unsigned> dimension;
@@ -1755,7 +1755,7 @@ namespace nana
 		{
 			this->splitter_.set_renderer(fn);
 			if (update && this->splitter_.handle())
-				API::refresh_window(this->splitter_);
+				api::refresh_window(this->splitter_);
 		}
 
 		void direction(bool horizontal) noexcept
@@ -1765,7 +1765,7 @@ namespace nana
 	private:
 		void collocate(window wd) override
 		{
-			if (API::is_destroying(wd))
+			if (api::is_destroying(wd))
 				return;
 
 			if (splitter_.empty())
@@ -2181,7 +2181,7 @@ namespace nana
 
 			if (!indicator_.docker)
 			{
-				auto host_size = API::window_size(impl_ptr_->window_handle);
+				auto host_size = api::window_size(impl_ptr_->window_handle);
 				indicator_.docker.reset(new form(impl_ptr_->window_handle, { static_cast<int>(host_size.width) / 2 - 16, static_cast<int>(host_size.height) / 2 - 16, 32, 32 }, form::appear::bald<>()));
 				drawing dw(indicator_.docker->handle());
 				dw.draw([](paint::graphics& graph)
@@ -2217,10 +2217,10 @@ namespace nana
 					set_display(true);
 					impl_ptr_->collocate();
 
-					indicator_.graph.make(API::window_size(impl_ptr_->window_handle));
-					API::window_graphics(impl_ptr_->window_handle, indicator_.graph);
+					indicator_.graph.make(api::window_size(impl_ptr_->window_handle));
+					api::window_graphics(impl_ptr_->window_handle, indicator_.graph);
 
-					indicator_.dock_area.reset(new panel<true>(impl_ptr_->window_handle, false));
+					indicator_.dock_area.reset(new panel<true>(impl_ptr_->window_handle, {}, false));
 					indicator_.dock_area->move(this->field_area);
 
 					::nana::drawing dw(indicator_.dock_area->handle());
@@ -2251,7 +2251,7 @@ namespace nana
 
 					});
 
-					API::bring_top(indicator_.dock_area->handle(), false);
+					api::bring_top(indicator_.dock_area->handle(), false);
 					indicator_.dock_area->show();
 				}
 			}
@@ -2282,7 +2282,7 @@ namespace nana
 
 			//a workaround for capture
 			auto ptr = dockable_field->dockarea.release();
-			API::at_safe_place(window_handle, [ptr]
+			api::at_safe_place(window_handle, [ptr]
 			{
 				std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
 			});
@@ -2290,7 +2290,7 @@ namespace nana
 			this->set_display(false);
 			impl_ptr_->collocate();
 
-			API::close_window(window_handle);
+			api::close_window(window_handle);
 		}
 	private:
 		bool _m_hit_test(bool try_docker) const
@@ -2307,8 +2307,8 @@ namespace nana
 				handle = impl_ptr_->window_handle;	//hit test for indicator
 
 			point pos;
-			API::calc_screen_point(handle, pos);
-			return rectangle{ pos, API::window_size(handle) }.is_hit(API::cursor_position());
+			api::calc_screen_point(handle, pos);
+			return rectangle{ pos, api::window_size(handle) }.is_hit(api::cursor_position());
 		}
 	public:
 		field_dock * dockable_field{ nullptr };
@@ -2335,7 +2335,7 @@ namespace nana
 		{
 		public:
 			splitter(window wd, ::nana::direction dir, division* dock_dv, division* pane_dv)
-				: panel<true>(wd, true), dir_(dir), dock_dv_(dock_dv), pane_dv_(pane_dv)
+				: panel<true>(wd, {}, true), dir_(dir), dock_dv_(dock_dv), pane_dv_(pane_dv)
 			{
 				this->bgcolor(colors::alice_blue);
 				this->cursor(is_vert_dir(dir_) ? ::nana::cursor::size_ns : ::nana::cursor::size_we);
@@ -2351,7 +2351,7 @@ namespace nana
 
 						this->set_capture(true);
 
-						base_pos_.x = horz_point(is_vert, API::cursor_position());
+						base_pos_.x = horz_point(is_vert, api::cursor_position());
 						base_pos_.y = horz_point(is_vert, this->pos());
 
 						base_px_ = (is_vert ? pane_dv_->field_area.height : pane_dv_->field_area.width);
@@ -2361,7 +2361,7 @@ namespace nana
 						if (!arg.is_left_button())
 							return;
 
-						auto delta = horz_point(is_vert, API::cursor_position()) - base_pos_.x;
+						auto delta = horz_point(is_vert, api::cursor_position()) - base_pos_.x;
 						int new_pos = base_pos_.y + delta;
 						if (new_pos < range_.x)
 						{
@@ -2668,7 +2668,7 @@ namespace nana
 
 	place::implement::~implement()
 	{
-		API::umake_event(event_size_handle);
+		api::umake_event(event_size_handle);
 		root_division.reset();
 
 		for (auto & pair : fields)
@@ -2682,7 +2682,7 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
-			root_division->field_area.dimension(API::window_size(window_handle));
+			root_division->field_area.dimension(api::window_size(window_handle));
 
 			if (root_division->field_area.empty())
 				return;
@@ -3275,11 +3275,11 @@ namespace nana
 	void place::bind(window wd)
 	{
 		if (impl_->window_handle)
-			throw error(" bind('"+ API::window_caption(wd).substr(0, 80)
+			throw error(" bind('"+ api::window_caption(wd).substr(0, 80)
 			                + "'): it was already bound to another window.", *this);
 
 		impl_->window_handle = wd;
-		impl_->event_size_handle = API::events(wd).resized.connect_unignorable([this](const arg_resized& arg)
+		impl_->event_size_handle = api::events(wd).resized.connect_unignorable([this](const arg_resized& arg)
 		{
 			if (impl_->root_division)
 			{
@@ -3597,11 +3597,11 @@ namespace nana
 			auto evt = fld.second->erase_element(fld.second->elements, handle);
 			if (evt)
 			{
-				API::umake_event(evt);
+				api::umake_event(evt);
 				recollocate |= (nullptr != fld.second->attached);
 			}
 
-			API::umake_event(fld.second->erase_element(fld.second->fastened, handle));
+			api::umake_event(fld.second->erase_element(fld.second->fastened, handle));
 		}
 
 		if (recollocate)
@@ -3690,14 +3690,14 @@ namespace nana
 						std::string::size_type pos)
 
 		: std::invalid_argument(  "from widget '"
-		                        + API::window_caption(plc.window_handle()).substr(0,80)
+		                        + api::window_caption(plc.window_handle()).substr(0,80)
 								+ "'; nana::place error "
 		                        + what
 		                        + "' in field '" + field
 								+ (pos == std::string::npos ? "' " : "' at position " + std::to_string(pos))
 								+ " in div_text:\n" + plc.div() ),
 		base_what( what ),
-		owner_caption( API::window_caption(plc.window_handle()).substr(0,80) ),
+		owner_caption( api::window_caption(plc.window_handle()).substr(0,80) ),
 		div_text( plc.div() ),
 		field( field ),
 		pos( pos )

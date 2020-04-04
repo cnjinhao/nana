@@ -756,7 +756,7 @@ namespace nana
 		static font_height_type _m_set_default_values(font_info& fi, std::size_t dpi)
 		{
 #ifdef NANA_WINDOWS
-			std::wstring wfont_family = to_nstring(fi.font_family);
+			std::wstring wfont_family = nana::detail::to_nstring(fi.font_family);
 			//Make sure the length of font family less than LF_FACESIZE which is defined by Windows
 			if (wfont_family.length() + 1 > LF_FACESIZE)
 				wfont_family.clear();
@@ -816,7 +816,7 @@ namespace nana
 
 #ifdef NANA_WINDOWS
 			// The font_family and size_pt are reliable, they have been checked by _m_set_default_values
-			std::wstring wfont_family = to_nstring(fi.font_family);
+			std::wstring wfont_family = nana::detail::to_nstring(fi.font_family);
 
 			//Translate pt to px
 			auto hDC = ::GetDC(nullptr);

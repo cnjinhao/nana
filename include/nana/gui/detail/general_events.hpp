@@ -1,7 +1,7 @@
 /**
 *	Definition of General Events
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,7 +24,7 @@
 
 namespace nana
 {
-	namespace API
+	namespace api
 	{
 		bool is_window(window);			///< Determines whether a window is existing, equal to !empty_window.
 	}
@@ -232,7 +232,7 @@ namespace nana
 
 				d->invoke(arg);
 
-				if (window_handle && (!::nana::API::is_window(window_handle)))
+				if (window_handle && (!api::is_window(window_handle)))
 					break;
 			}
 		}

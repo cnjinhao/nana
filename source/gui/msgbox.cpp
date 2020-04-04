@@ -1,7 +1,7 @@
 /**
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -139,11 +139,11 @@ namespace nana
 					if(sz.width < 48 + ts.width + ico_pixels)
 						sz.width = 48 + ts.width + ico_pixels;
 
-					nana::rectangle r = API::make_center(owner_, sz.width, sz.height + ts.height);
+					nana::rectangle r = api::make_center(owner_, sz.width, sz.height + ts.height);
 					this->move(r);
 				}
 
-				API::modal_window(*this);
+				api::modal_window(*this);
 			}
 
 			msgbox::pick_t pick() const
@@ -462,7 +462,7 @@ namespace nana
 
 		//Disables the owner window to prevent the owner window processing mouse wheel event
 		//when the message box is showing and scroll the wheel on the owner window.
-		auto native = reinterpret_cast<HWND>(API::root(wd_));
+		auto native = reinterpret_cast<HWND>(api::root(wd_));
 		BOOL enabled = FALSE;
 		if (native)
 		{
@@ -513,7 +513,7 @@ namespace nana
 		                unsigned fixed_pixels,
 		                const std::vector<unsigned>& each_height)
 
-			: form(owner, API::make_center(owner, 500, 300), appear::decorate<>())
+			: form(owner, api::make_center(owner, 500, 300), appear::decorate<>())
 		{
 			throw_not_utf8(description);
 			throw_not_utf8(title);
@@ -655,7 +655,7 @@ namespace nana
 				place.field_display(img_fields[i], imgs[i]);
 			}
 
-			move(API::make_center(this->owner(), description_size.width, height));
+			move(api::make_center(this->owner(), description_size.width, height));
 			caption(title);
 		}
 
@@ -1256,7 +1256,7 @@ namespace nana
 		impl->label.format(true);
 
 		impl->path_edit.create(impl->dock, rectangle{static_cast<int>(label_px + 10), 0, 0, 0});
-		impl->path_edit.caption(impl->fbox.path());
+		impl->path_edit.caption(impl->fbox.path().u8string());
 		impl->path_edit.multi_lines(false);
 
 		impl->browse.create(impl->dock);
@@ -1372,7 +1372,7 @@ namespace nana
 		if (modal)
 			input_wd.modality();
 		else
-			API::wait_for(input_wd);
+			api::wait_for(input_wd);
 
 		return input_wd.valid_input();
 	}
