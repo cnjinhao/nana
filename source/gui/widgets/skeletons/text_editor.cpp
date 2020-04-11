@@ -1637,16 +1637,16 @@ namespace nana {
 
 
 
-				if (select_.a.x < line.size() && !std::isalnum(line[select_.a.x]) && line[select_.a.x] != '_') {
+				if (select_.a.x < line.size() && !std::iswalnum(line[select_.a.x]) && line[select_.a.x] != '_') {
 					++select_.b.x;
 				}
 				else {
 					// Expand the selection forward to the word's end.
-					while (select_.b.x < line.size() && !std::iswspace(line[select_.b.x]) && (std::isalnum(line[select_.b.x]) || line[select_.b.x] == '_'))
+					while (select_.b.x < line.size() && !std::iswspace(line[select_.b.x]) && (std::iswalnum(line[select_.b.x]) || line[select_.b.x] == '_'))
 						++select_.b.x;
 
 					// Expand the selection backward to the word's start.
-					while (select_.a.x > 0 && !std::iswspace(line[select_.a.x - 1]) && (std::isalnum(line[select_.a.x - 1]) || line[select_.a.x - 1] == '_'))
+					while (select_.a.x > 0 && !std::iswspace(line[select_.a.x - 1]) && (std::iswalnum(line[select_.a.x - 1]) || line[select_.a.x - 1] == '_'))
 						--select_.a.x;
 				}
 				select_.mode_selection = selection::mode::method_selected;
