@@ -1,6 +1,6 @@
 /*
  *	A Thread Pool Implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -26,14 +26,11 @@
 	#include <pthread.h>
 #endif
 
-namespace nana
-{
-namespace threads
+namespace nana::threads
 {
 	//class pool
 		//struct task
 			pool::task::task(t k) : kind(k){}
-			pool::task::~task(){}
 		//end struct task
 
 		//struct task_signal
@@ -98,14 +95,13 @@ namespace threads
 				while(true)
 				{
 					bool all_finished = true;
+					
+					for(auto thr: container_.threads)
 					{
-						for(auto thr: container_.threads)
+						if(state::finished != thr->thr_state)
 						{
-							if(state::finished != thr->thr_state)
-							{
-								all_finished = false;
-								break;
-							}
+							all_finished = false;
+							break;
 						}
 					}
 
@@ -401,6 +397,4 @@ namespace threads
 			impl_->push(task_ptr);
 		}
 	//end class pool
-
-}//end namespace threads
-}//end namespace nana
+}//end namespace nana::threads

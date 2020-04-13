@@ -11,7 +11,7 @@ namespace nana
 		class events_holder
 		{
 		public:
-			virtual ~events_holder(){}
+			virtual ~events_holder() = default;
 			virtual bool set_events(const std::shared_ptr<general_events>&) = 0;
 			virtual general_events* get_events() const = 0;
 		};

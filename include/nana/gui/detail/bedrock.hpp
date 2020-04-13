@@ -1,7 +1,7 @@
 /**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,9 +17,7 @@
 #include "general_events.hpp"
 #include "color_schemes.hpp"
 
-namespace nana
-{
-namespace detail
+namespace nana::detail
 {
 	class	element_store;
 
@@ -122,8 +120,7 @@ namespace detail
 		struct private_impl;
 		private_impl *impl_;
 	};//end class bedrock
-}//end namespace detail
-}//end namespace nana
+}//end namespace nana::detail
 
 #endif
 

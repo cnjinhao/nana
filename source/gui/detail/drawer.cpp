@@ -1,7 +1,7 @@
 /*
  *	A Drawer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -171,9 +171,9 @@ namespace nana
 	//end class drawer_trigger
 
 	//class event_filter_status
-	event_filter_status::event_filter_status()
+	event_filter_status::event_filter_status():
+		evt_disabled_{0}
 	{
-		evt_disabled_ = 0;
 	}
 
 	event_filter_status::event_filter_status(const event_filter_status& rOther)
@@ -181,9 +181,9 @@ namespace nana
 		this->evt_disabled_ = rOther.evt_disabled_;
 	}
 
-	event_filter_status::event_filter_status(const unsigned evt_disabled_)
+	event_filter_status::event_filter_status(const unsigned evt_disabled)
 	{
-		this->evt_disabled_ = evt_disabled_;
+		this->evt_disabled_ = evt_disabled;
 	}
 
 	bool event_filter_status::operator[](const nana::event_code evt_code) const
@@ -216,8 +216,6 @@ namespace nana
 
 	namespace detail
 	{
-		typedef bedrock bedrock_type;
-
 		//class drawer
 
 		enum{

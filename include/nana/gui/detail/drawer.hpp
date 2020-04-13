@@ -36,7 +36,7 @@ namespace nana
 		event_filter_status(const event_filter_status& rOther);
 		event_filter_status(const unsigned evt_disabled_);
 		const event_filter_status& operator=(const event_filter_status& rOther);
-		const event_filter_status& operator=(const unsigned evt_disabled_);
+		const event_filter_status& operator=(const unsigned evt_disabled);
 
 		bool operator[](const nana::event_code evt_code) const;
 		bool operator==(const event_filter_status& rOther) const;
