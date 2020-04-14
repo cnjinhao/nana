@@ -30,7 +30,7 @@ namespace nana
 				void refresh(graph_reference graph)
 				{
 					graph.rectangle(false, colors::black);
-					graph.rectangle(::nana::rectangle(graph.size()).pare_off(1), true, {0xf0, 0xf0, 0xf0});
+					graph.rectangle(::nana::rectangle(graph.size()).pare_off(1), true, static_cast<color_rgb>(0xf0f0f0));
 				}
 			};
 

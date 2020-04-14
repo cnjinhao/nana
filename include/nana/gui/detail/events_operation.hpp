@@ -10,21 +10,18 @@
 #include <mutex>
 #endif
 
-namespace nana
+namespace nana::detail
 {
-	namespace detail
+	class events_operation
 	{
-		class events_operation
-		{
-		public:
-			void register_evt(event_handle);
-			void cancel(event_handle);
-			void erase(event_handle);
-		private:
-			std::recursive_mutex mutex_;
-			std::unordered_set<event_handle>	handles_;
-		};
-	}//end namespace detail
-}//end namespace nana
+	public:
+		void register_evt(event_handle);
+		void cancel(event_handle);
+		void erase(event_handle);
+	private:
+		std::recursive_mutex mutex_;
+		std::unordered_set<event_handle>	handles_;
+	};
+}//end namespace nana::detail
 
 #endif

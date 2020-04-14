@@ -1,7 +1,7 @@
 /*
 *	The Store for the Storage Of Elements
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -10,12 +10,9 @@
 *	@file: nana/gui/detail/element_store.cpp
 */
 #include <nana/gui/detail/element_store.hpp>
-
 #include <map>
 
-namespace nana
-{
-namespace detail
+namespace nana::detail
 {
 	//class element_store
 
@@ -59,5 +56,4 @@ namespace detail
 		store.entity = std::move(rv);
 		store.fast_ptr = store.entity.get();
 	}
-}//end namespace detail
-}
+}//end namespace nana::detail
