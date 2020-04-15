@@ -38,7 +38,7 @@ namespace nana
 	private:
 		std::shared_ptr<impl> impl_;
 	};
-            /// Easy way to display an animation or create an animated GUI 
+            /// Easy way to display an animation or create an animated GUI
 	class animation
 	{
 		struct branch_t
@@ -46,7 +46,7 @@ namespace nana
 			frameset frames;
 			std::function<std::size_t(const std::string&, std::size_t, std::size_t&)> condition;
 		};
-		
+
 		struct impl;
 		class performance_manager;
 
@@ -73,7 +73,7 @@ namespace nana
 		void fps(std::size_t n);
 		std::size_t fps() const;
 	private:
-		impl * impl_;
+		std::unique_ptr<impl> impl_;
 	};
 }	//end namespace nana
 #include <nana/pop_ignore_diagnostic>
