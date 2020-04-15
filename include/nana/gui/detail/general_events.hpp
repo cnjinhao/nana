@@ -138,7 +138,6 @@ namespace nana
 		template<typename Function>
 		event_handle connect_front(Function && fn)
 		{
-#ifdef __cpp_if_constexpr
 			if constexpr(std::is_invocable_v<Function, arg_reference>)
 			{
 				return _m_emplace(new docker{ this, fn, false }, true);
@@ -149,27 +148,17 @@ namespace nana
 					fn();
 				}, false }, true);
 			}
-#else
-			using prototype = typename std::remove_reference<Function>::type;
-			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), true);
-#endif
+			else
+			{
+				static_assert(!std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler must be immutable for the argument. E.g. void(Arg&) is not acceptable.");
+				static_assert(std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler doesn't match the event argument type.");
+			}
 		}
-
-#ifndef __cpp_if_constexpr
-		/// It will not get called if stop_propagation() was called.
-		event_handle connect(void (*fn)(arg_reference))
-		{
-			return connect([fn](arg_reference arg){
-				fn(arg);
-			});
-		}
-#endif
 
 		/// It will not get called if stop_propagation() was called, because it is set at the end of the chain..
 		template<typename Function>
 		event_handle connect(Function && fn)
 		{
-#ifdef __cpp_if_constexpr
 			if constexpr(std::is_invocable_v<Function, arg_reference>)
 			{
 				return _m_emplace(new docker{ this, fn, false }, false);
@@ -180,10 +169,11 @@ namespace nana
 					fn();
 				}, false }, false);
 			}
-#else
-			using prototype = typename std::remove_reference<Function>::type;
-			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), false), false);
-#endif
+			else
+			{
+				static_assert(!std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler must be immutable for the argument. E.g. void(Arg&) is not acceptable.");
+				static_assert(std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler doesn't match the event argument type.");
+			}
 		}
 
 		/// It will not get called if stop_propagation() was called.
@@ -197,7 +187,6 @@ namespace nana
         template<typename Function>
 		event_handle connect_unignorable(Function && fn, bool in_front = false)
 		{
-#ifdef __cpp_if_constexpr
 			if constexpr(std::is_invocable_v<Function, arg_reference>)
 			{
 				return _m_emplace(new docker{ this, fn, true }, in_front);
@@ -208,10 +197,11 @@ namespace nana
 					fn();
 				}, true }, in_front);
 			}
-#else
-			using prototype = typename std::remove_reference<Function>::type;
-			return _m_emplace(new docker(this, factory<prototype, std::is_bind_expression<prototype>::value>::build(std::forward<Function>(fn)), true), in_front);
-#endif
+			else
+			{
+				static_assert(!std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler must be immutable for the argument. E.g. void(Arg&) is not acceptable.");
+				static_assert(std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler doesn't match the event argument type.");
+			}
 		}
 
 		void emit(arg_reference& arg, window window_handle)
@@ -237,166 +227,6 @@ namespace nana
 			}
 		}
 	private:
-
-#ifndef __cpp_if_constexpr
-		template<typename Fn, bool IsBind>
-		struct factory
-		{
-			static std::function<void(arg_reference)> build(Fn && fn)
-			{
-				return std::move(fn);
-			}
-
-			static std::function<void(arg_reference)> build(const Fn & fn)
-			{
-				return fn;
-			}
-		};
-
-		template<typename Fn>
-		struct factory<Fn, false>
-		{
-			typedef typename std::remove_reference<arg_reference>::type arg_type;
-			typedef typename std::remove_reference<Fn>::type fn_type;
-
-			template<typename Tfn>
-			static std::function<void(arg_reference)> build(Tfn && fn)
-			{
-				typedef typename std::remove_reference<Tfn>::type type;
-				return build_second(std::forward<Tfn>(fn), &type::operator());
-			}
-
-			template<typename Tfn, typename Ret>
-			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)())
-			{
-				return [fn](arg_reference) mutable
-				{
-					fn();
-				};
-			}
-
-			template<typename Tfn, typename Ret>
-			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)()const)
-			{
-				return [fn](arg_reference) mutable
-				{
-					fn();
-				};
-			}
-
-			template<typename Tfn, typename Ret>
-			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(arg_reference))
-			{
-				return std::forward<Tfn>(fn);
-			}
-
-			template<typename Tfn, typename Ret>
-			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(arg_reference)const)
-			{
-				return std::forward<Tfn>(fn);
-			}
-
-			template<typename Tfn, typename Ret, typename Arg2>
-			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(Arg2))
-			{
-				static_assert(std::is_convertible<arg_type, Arg2>::value, "The parameter type is not allowed, please check the function parameter type where you connected the event function.");
-				return[fn](arg_reference arg) mutable
-				{
-					fn(arg);
-				};
-			}
-			
-			template<typename Tfn, typename Ret, typename Arg2>
-			static std::function<void(arg_reference)> build_second(Tfn&& fn, Ret(fn_type::*)(Arg2)const)
-			{
-				static_assert(std::is_convertible<arg_type, Arg2>::value, "The parameter type is not allowed, please check the function parameter type where you connected the event function.");
-				return [fn](arg_reference arg) mutable
-				{
-					fn(arg);
-				};
-			}
-		};
-		
-		template<typename Ret, typename Arg2>
-		struct factory < std::function<Ret(Arg2)>, false>
-		{
-			typedef typename std::remove_reference<arg_reference>::type arg_type;
-			static_assert(std::is_convertible<arg_type, Arg2>::value, "The parameter type is not allowed, please check the function parameter type where you connected the event function.");
-
-			static std::function<void(arg_reference)> build(const std::function<Ret(Arg2)>& fn)
-			{
-				return [fn](arg_reference arg) mutable{
-					fn(arg);
-				};
-			}
-
-			static std::function<void(arg_reference)> build_second(std::function<void(arg_reference)> && fn)
-			{
-				return std::move(fn);
-			}
-		};
-
-		template<typename Ret>
-		struct factory < std::function<Ret()>, false>
-		{
-			static std::function<void(arg_reference)> build(const std::function<Ret()>& fn)
-			{
-				return[fn](arg_reference) mutable{
-					fn();
-				};
-			}
-		};
-
-		template<typename Ret>
-		struct factory < Ret(*)(), false>
-		{
-			static std::function<void(arg_reference)> build(Ret(*fn)())
-			{
-				return[fn](arg_reference) mutable{
-					fn();
-				};
-			}
-		};
-
-		template<typename Ret, typename Arg2>
-		struct factory < Ret(*)(Arg2), false>
-		{
-			typedef typename std::remove_reference<arg_reference>::type arg_type;
-			static_assert(std::is_convertible<arg_type, Arg2>::value, "The parameter type is not allowed, please check the function parameter type where you connected the event function.");
-
-			static std::function<void(arg_reference)> build(Ret(*fn)(Arg2))
-			{
-				return[fn](arg_reference arg) mutable {
-					fn(arg);
-				};
-			}
-		};
-
-		template<typename Ret>
-		struct factory < Ret(), false>
-		{
-			static std::function<void(arg_reference)> build(Ret(*fn)())
-			{
-				return[fn](arg_reference){
-					fn();
-				};
-			}
-		};
-
-		template<typename Ret, typename Arg2>
-		struct factory < Ret(Arg2), false>
-		{
-			typedef typename std::remove_reference<arg_reference>::type arg_type;
-			static_assert(std::is_convertible<arg_type, Arg2>::value, "The parameter type is not allowed, please check the function parameter type where you connected the event function.");
-
-			static std::function<void(arg_reference)> build(Ret(*fn)(Arg2))
-			{
-				return[fn](arg_reference arg){
-					fn(arg);
-				};
-			}
-		};
-#endif
 	};
  
 	struct arg_mouse
