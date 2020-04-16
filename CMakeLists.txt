@@ -114,10 +114,13 @@ endforeach()
 ###  Some nana compilation options   ###
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)
 option(NANA_CMAKE_ENABLE_MINGW_STD_THREADS_WITH_MEGANZ "replaced boost.thread with meganz's mingw-std-threads." OFF) # deprecate?
+option(NANA_CMAKE_ENABLE_CONF "enable config.hpp" OFF)
 
 ######## Nana options
 
-target_compile_definitions(nana PRIVATE NANA_IGNORE_CONF)    # really ??
+if(NOT NANA_CMAKE_ENABLE_CONF)
+    target_compile_definitions(nana PRIVATE NANA_IGNORE_CONF)    # really ??
+endif()
 if(NANA_CMAKE_AUTOMATIC_GUI_TESTING)
     target_compile_definitions(nana PUBLIC NANA_AUTOMATIC_GUI_TESTING)
     # todo: enable_testing()       #  ??
