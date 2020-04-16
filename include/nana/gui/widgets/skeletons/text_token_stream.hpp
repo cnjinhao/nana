@@ -50,15 +50,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 			endptr_(s.data() + s.size()),
 			format_enabled_(format_enabled)
 		{
-			entities_ = unicode_bidi{}.reorder(s.c_str(), s.size());
-			for (auto & e : entities_)
-			{
-				ptr_ = e.begin;
-				if (e.begin < e.end)
-					break;
-
-				++idx_;
-			}
 		}
 
 		void push(token tk)
@@ -428,10 +419,6 @@ namespace nana{ namespace widgets{	namespace skeletons
 			}
 		}
 	private:
-		std::vector<unicode_bidi::entity> entities_;
-		std::size_t idx_{ 0 };
-		const wchar_t* ptr_{ nullptr };
-
 		const wchar_t * iptr_;
 		const wchar_t * endptr_;
 		const bool	format_enabled_;
@@ -722,7 +709,7 @@ namespace nana{ namespace widgets{	namespace skeletons
 					//Check whether the next position is belone to current entity.
 					while (++i != position.cend())
 					{
-						if (*i < endpos)
+						if (*i < static_cast<std::size_t>(endpos))
 						{
 							ln.push_back(dump[i - position.cbegin()]);
 						}
