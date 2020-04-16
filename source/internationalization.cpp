@@ -410,11 +410,6 @@ namespace nana
 				offset += 4;
 		}
 	}
-
-#ifndef __cpp_fold_expressions
-	void internationalization::_m_fetch_args(std::vector<std::string>&)
-	{}
-#endif
 	
 	void internationalization::_m_fetch_args(std::vector<std::string>& v, const char* arg)
 	{

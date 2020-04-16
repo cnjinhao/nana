@@ -373,6 +373,16 @@ namespace nana
 		review_utf8(title_);
 	}
 
+#ifdef __cpp_char8_t
+	msgbox::msgbox(std::u8string_view title) :
+		msgbox(to_string(title))
+	{}
+
+	msgbox::msgbox(window wd, std::u8string_view title, button_t btn) :
+		msgbox(wd, to_string(title), btn)
+	{}
+#endif
+
 	msgbox& msgbox::icon(icon_t ic)
 	{
 		icon_ = ic;
@@ -385,6 +395,7 @@ namespace nana
 		sstream_.clear();
 	}
 
+#if 0
 	msgbox & msgbox::operator<<(const std::wstring& str)
 	{
 		sstream_ << to_utf8(str);
@@ -419,7 +430,7 @@ namespace nana
 		sstream_ << str;
 		return *this;
 	}
-
+#endif
 	msgbox & msgbox::operator<<(std::ostream& (*manipulator)(std::ostream&))
 	{
 		sstream_<<manipulator;
@@ -1330,11 +1341,6 @@ namespace nana
 
         min_width_entry_field_pixels_ = pixels;
 	}
-
-#ifndef __cpp_fold_expressions
-	void inputbox::_m_fetch_args(std::vector<abstract_content*>&)
-	{}
-#endif
 
 	bool inputbox::_m_open(std::vector<abstract_content*>& contents, bool modal)
 	{

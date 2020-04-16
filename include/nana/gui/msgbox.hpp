@@ -34,6 +34,7 @@ namespace nana
 		/// Identifiers of buttons that a user clicked.
 		enum pick_t{pick_ok, pick_yes, pick_no, pick_cancel};
 
+
 		/// Default constructor that creates a message box with default title and default button, the default button is OK.
 		msgbox();
 
@@ -49,17 +50,24 @@ namespace nana
 		/// Constructor that creates a message box with an owner window, a specified title and buttons.
 		msgbox(window, const ::std::string&, button_t = ok);
 
+#ifdef __cpp_char8_t
+		msgbox(std::u8string_view);
+		msgbox(window, std::u8string_view, button_t = ok);
+#endif
+
 		/// Sets an icon for informing user.
 		msgbox& icon(icon_t);
 
 		/// Clears the text message buffer.
 		void clear();
 
+#if 0
 		/// Writes a string to the buffer.
 		msgbox & operator<<(const std::wstring&);
 
 		/// Writes a string to the buffer.
 		msgbox & operator<<(const wchar_t*);
+
 
 		/// Writes a UTF-8 string to the buffer.
 		msgbox & operator<<(const std::string&);
@@ -67,17 +75,49 @@ namespace nana
 		/// Writes a UTF-8 string to the buffer.
 		msgbox & operator<<(const char*);
 
+
 		/// Writes a string to the buffer.
 		msgbox & operator<<(const nana::charset&);
-
+#endif
 		// Calls a manipulator to the stream.
 		msgbox & operator<<(std::ostream& (*)(std::ostream&));
 
 		/// Write a streamable object to the buffer.
 		template<typename T>
-		msgbox & operator<<(const T& t)
+		msgbox & operator<<(T&& t)
 		{
-			sstream_<<t;
+			using parameter_type = std::remove_cv_t<std::remove_pointer_t<std::decay_t<T>>>;
+
+			if constexpr(std::is_same_v<parameter_type, std::wstring> || std::is_same_v<parameter_type, wchar_t> || std::is_same_v<parameter_type, std::wstring_view>)
+			{
+				if constexpr (std::is_same_v<std::remove_cv_t<T>, wchar_t>)
+					sstream_ << to_utf8(std::wstring_view{&t, 1});
+				else
+					sstream_ << to_utf8(t);
+			}
+			else if constexpr(std::is_same_v<parameter_type, std::string> || std::is_same_v<parameter_type, char> || std::is_same_v<parameter_type, std::string_view>)
+			{
+				if constexpr (!std::is_same_v<std::remove_cv_t<T>, wchar_t>)
+					review_utf8(t);
+
+				sstream_ << t;
+			}
+			else if constexpr(std::is_same_v<parameter_type, nana::charset>)
+			{
+				sstream_ << t.to_bytes(nana::unicode::utf8);
+			}
+#ifdef __cpp_char8_t
+			else if constexpr(std::is_same_v<parameter_type, std::u8string> || std::is_same_v<parameter_type, char8_t> || std::is_same_v<parameter_type, std::u8string_view>)
+			{
+				if constexpr (std::is_same_v<std::remove_cv_t<T>, wchar_t>)
+					sstream_ << static_cast<char>(t);
+				else
+					sstream_ << ::nana::to_string(t);
+			}
+#endif
+			else
+				sstream_<<t;
+
 			return *this;
 		}
 
@@ -268,11 +308,8 @@ namespace nana
 		bool show(Args&& ... args)
 		{
 			std::vector<abstract_content*> contents;
-#ifdef __cpp_fold_expressions
+
 			(contents.emplace_back(&args), ...);
-#else
-			_m_fetch_args(contents, std::forward<Args>(args)...);
-#endif
 			if (contents.empty())
 				return false;
 
@@ -287,12 +324,8 @@ namespace nana
 		bool show_modal(Args&& ... args)
 		{
 			std::vector<abstract_content*> contents;
-#ifdef __cpp_fold_expressions
-			(contents.emplace_back(&args), ...);
-#else
-			_m_fetch_args(contents, std::forward<Args>(args)...);
-#endif
 
+			(contents.emplace_back(&args), ...);
 			if (contents.empty())
 				return false;
 
@@ -310,17 +343,6 @@ namespace nana
 		void min_width_entry_field( unsigned pixels );
 
 	private:
-#ifndef __cpp_fold_expressions
-		void _m_fetch_args(std::vector<abstract_content*>&);
-
-		template<typename ...Args>
-		void _m_fetch_args(std::vector<abstract_content*>& contents, abstract_content& content, Args&&... args)
-		{
-			contents.push_back(&content);
-			_m_fetch_args(contents, std::forward<Args>(args)...);
-		}
-#endif
-
 		bool _m_open(std::vector<abstract_content*>&, bool modal);
 	private:
 		window owner_;
