@@ -8,7 +8,7 @@ cache:
 
 matrix:
   include:
-    - env: CXX=g++-8
+    - env: CXX=g++-9
       addons:
         apt:
           packages:
