@@ -320,10 +320,25 @@ namespace nana
 				}
 
 				template<typename T>
+				T * value_ptr()
+				{
+					return any_cast<T>(&_m_value());
+				}
+
+				template<typename T>
 				const T& value() const
 				{
 					auto p = std::any_cast<T>(&_m_value());
 					if(nullptr == p)
+						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
+					return *p;
+				}
+
+				template<typename T>
+				T& value()
+				{
+					auto p = any_cast<T>(&_m_value());
+					if (nullptr == p)
 						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
 					return *p;
 				}

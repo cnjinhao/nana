@@ -121,7 +121,7 @@ namespace paint
 				else if (std::strncmp("\xFF\xD8\xFF", buf, 3) == 0)
 				{
 #if defined(NANA_ENABLE_JPEG)
-					ptr = std::make_shared<detail::image_jpeg>();
+					return std::make_shared<detail::image_jpeg>();
 #endif
 				}
 				else if (*reinterpret_cast<const short*>("BM") == *reinterpret_cast<const short*>(buf))
