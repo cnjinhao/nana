@@ -2,6 +2,9 @@
 #include <set>
 #include <nana/deploy.hpp>
 #include "../paint/truetype.hpp"
+#ifdef _nana_std_has_string_view
+#	include <string_view>
+#endif
 
 #ifdef NANA_WINDOWS
 
@@ -260,8 +263,13 @@ namespace nana
 
 			auto pbuf = pxbuf.get();
 
+#ifdef _nana_std_has_string_view
+			std::wstring_view s{str, len};
+#else
+			std::wstring s{str, len};
+#endif
 			//Don't reverse the string
-			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* pstr) mutable{
+			_m_reorder_reshaping(s, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* pstr) mutable{
 				while(true)
 				{
 					auto preferred = _m_scan_fonts(xft, p, size, glyph_indexes.get());
@@ -289,8 +297,13 @@ namespace nana
 
 			std::unique_ptr<FT_UInt[]> glyph_indexes(new FT_UInt[len]);
 
+#ifdef _nana_std_has_string_view
+			std::wstring_view s{str, len};
+#else
+			std::wstring s{str, len};
+#endif
 			//Don't reverse the string
-			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* /*pstr*/) mutable{
+			_m_reorder_reshaping(s, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* /*pstr*/) mutable{
 				while(true)
 				{
 					auto preferred = _m_scan_fonts(xft, p, size, glyph_indexes.get());
@@ -313,7 +326,11 @@ namespace nana
 	private:
 		/// @param reverse Indicates whether to reverse the string, it only reverse the RTL language string.
 		template<typename Function>
+#ifdef _nana_std_has_string_view
 		void _m_reorder_reshaping(std::wstring_view str, bool reverse, Function fn)
+#else
+		void _m_reorder_reshaping(const std::wstring& str, bool reverse, Function fn)
+#endif
 		{
 			//The RTL and shaping should be handled manually, because the libXft and X doesn't support these language features.
 			std::wstring rtl;

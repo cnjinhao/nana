@@ -20,6 +20,7 @@
 #include <list>
 #include <stack>
 #include <stdexcept>
+#include <algorithm>
 
 #include <nana/push_ignore_diagnostic>
 #include <nana/unicode_bidi.hpp>
