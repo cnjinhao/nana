@@ -12,7 +12,7 @@ matrix:
       addons:
         apt:
           packages:
-            - g++-8
+            - g++-9
             - libjpeg8-dev
             - libpng-dev
             - libasound2-dev
