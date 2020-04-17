@@ -947,22 +947,13 @@ namespace detail
 						XIC input_context = nana::detail::platform_spec::instance().caret_input_context(native_window);
 						if(input_context)
 						{
-							nana::detail::platform_scope_guard psg;
-#if 1	//Utf8
+							nana::detail::platform_scope_guard lock;
 							len = ::Xutf8LookupString(input_context, &xevent.xkey, keybuf, 32, &keysym, &status);
 							if(status == XBufferOverflow)
 							{
 								keybuf = new char[len + 1];
 								len = ::Xutf8LookupString(input_context, &xevent.xkey, keybuf, len, &keysym, &status);
 							}
-#else
-							len = ::XmbLookupString(input_context, &xevent.xkey, keybuf, 32, &keysym, &status);
-							if(status == XBufferOverflow)
-							{
-								keybuf = new char[len + 1];
-								len = ::XmbLookupString(input_context, &xevent.xkey, keybuf, len, &keysym, &status);
-							}
-#endif
 						}
 						else
 						{

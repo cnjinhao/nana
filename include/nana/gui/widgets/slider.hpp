@@ -139,9 +139,6 @@ namespace nana
 		using seekdir = drawerbase::slider::seekdir;						///< Defines the slider seek direction.
 
 		slider();
-#if 0 //deprecated
-		slider(window, bool visible);
-#endif
 		slider(window, const rectangle& = rectangle(), bool visible = true);
 
 		void seek(seekdir);                                  ///< Define the direction that user can seek by using mouse.

@@ -39,14 +39,7 @@ namespace nana
 								drawerbase::panel::drawer>
 	{
 	public:
-		panel(){}
-
-#if 0	//deprecated
-		panel(window wd, bool visible)
-		{
-			this->create(wd, rectangle(), visible);
-		}
-#endif
+		panel() = default;
 
 		panel(window wd, const nana::rectangle& r = rectangle(), bool visible = true)
 		{

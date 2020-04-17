@@ -88,14 +88,8 @@ namespace nana
 		public:
 			button();
 
-#if 0 //deprecated
-			button(window parent, const ::std::string& caption, bool visible = true);
-			button(window parent, const char* caption, bool visible = true);
-#else
 			button(window parent, std::string_view title, bool visible = true);
 			button(window parent, std::wstring_view title, bool visible = true);
-#endif
-
 #ifdef __cpp_char8_t
 			button(window parent, std::u8string_view title, bool visible = false);
 #endif

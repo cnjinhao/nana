@@ -259,14 +259,6 @@ namespace nana
 			this->get_drawer_trigger().set_event_agent(evt_agent_.get());
 		}
 
-#if 0	//deprecated
-		tabbar(window wd, bool visible)
-			: tabbar()
-		{
-			this->create(wd, rectangle(), visible);
-		}
-#endif
-
 		tabbar(window wd, const rectangle& r = rectangle(), bool visible = true)
 			: tabbar()
 		{

@@ -95,52 +95,6 @@ namespace detail
 			return std::string();
 		}
 	//end class conf
-#if 0
-	//class charset_conv
-		charset_conv::charset_conv(const char* tocode, const char* fromcode)
-		{
-			handle_ = ::iconv_open(tocode, fromcode);
-		}
-
-		charset_conv::~charset_conv()
-		{
-			::iconv_close(handle_);
-		}
-
-		std::string charset_conv::charset(const std::string& str) const
-		{
-			if(reinterpret_cast<iconv_t>(-1) == handle_)
-				return std::string();
-
-			char * inbuf = const_cast<char*>(str.c_str());
-			std::size_t inleft = str.size();
-			std::size_t outlen = (inleft * 4 + 4);
-			char * strbuf = new char[outlen + 4];
-			char * outbuf = strbuf;
-			std::size_t outleft = outlen;
-			::iconv(handle_, &inbuf, &inleft, &outbuf, &outleft);
-			std::string rstr(strbuf, outbuf);
-			delete [] strbuf;
-			return rstr;
-		}
-
-		std::string charset_conv::charset(const char* buf, std::size_t len) const
-		{
-			if(reinterpret_cast<iconv_t>(-1) == handle_)
-				return std::string();
-
-			char * inbuf = const_cast<char*>(buf);
-			std::size_t outlen = (len * 4 + 4);
-			char * strbuf = new char[outlen + 4];
-			char * outbuf = strbuf;
-			std::size_t outleft = outlen;
-			::iconv(handle_, &inbuf, &len, &outbuf, &outleft);
-			std::string rstr(strbuf, outbuf);
-			delete [] strbuf;
-			return rstr;
-		}
-	//end class charset_conv
-#endif
 #endif
 
 	//Caret implementation

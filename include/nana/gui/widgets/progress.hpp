@@ -52,9 +52,6 @@ namespace nana
 	{
 	public:
 		progress();
-#if 0 //deprecated
-		progress(window, bool visible);
-#endif
 		progress(window, const rectangle & = rectangle(), bool visible = true);
 
 		unsigned value() const;

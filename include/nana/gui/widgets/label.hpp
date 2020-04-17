@@ -52,17 +52,10 @@ namespace nana
 		label(label&&) = delete;
 	public:
 		using command = drawerbase::label::command;
+		
 		label();
-
-#if 0 //deprecated
-		label(window, bool visible);
-		label(window, const std::string& text, bool visible = true);
-		label(window parent, const char* text, bool visible = true) :label(parent, std::string(text),visible) {};
-#else
 		label(window parent, std::string_view text, bool visible = true);
 		label(window parent, std::wstring_view text, bool visible = true);
-#endif
-
 #ifdef __cpp_char8_t
 		label(window parent, std::u8string_view text, bool visible = true);
 #endif

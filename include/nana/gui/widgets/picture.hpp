@@ -45,9 +45,6 @@ namespace nana
 	{
 	public:
 		picture() = default;
-#if 0 //deprecated
-		picture(window, bool visible);
-#endif
 		picture(window, const rectangle& ={}, bool visible = true);
 
 		bool load(::nana::paint::image, const rectangle& valid_area = {});

@@ -811,12 +811,7 @@ namespace nana
 
 	//class slider
 		slider::slider(){}
-#if 0	//deprecated
-		slider::slider(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-		}
-#endif
+
 		slider::slider(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);

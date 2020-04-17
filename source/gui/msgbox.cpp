@@ -395,42 +395,6 @@ namespace nana
 		sstream_.clear();
 	}
 
-#if 0
-	msgbox & msgbox::operator<<(const std::wstring& str)
-	{
-		sstream_ << to_utf8(str);
-		return *this;
-	}
-
-	msgbox & msgbox::operator<<(const wchar_t* str)
-	{
-		sstream_ << to_utf8(str);
-		return *this;
-	}
-
-
-	/// Writes a UTF-8 string to the buffer.
-	msgbox & msgbox::operator<<(const std::string& u8str)
-	{
-		review_utf8(u8str);
-		sstream_ << u8str;
-
-		return *this;
-	}
-
-	/// Writes a UTF-8 string to the buffer.
-	msgbox & msgbox::operator<<(const char* u8str)
-	{
-		return operator<<(std::string{ u8str });
-	}
-
-	msgbox & msgbox::operator<<(const nana::charset& cs)
-	{
-		std::string str = cs.to_bytes(nana::unicode::utf8);
-		sstream_ << str;
-		return *this;
-	}
-#endif
 	msgbox & msgbox::operator<<(std::ostream& (*manipulator)(std::ostream&))
 	{
 		sstream_<<manipulator;

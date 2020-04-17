@@ -207,13 +207,6 @@ namespace nana
 	}//end namespace drawerbase::picture
 
 	//class picture
-#if 0	//deprecated
-		picture::picture(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-		}
-#endif
-
 		picture::picture(window wd, const nana::rectangle& r, bool visible)
 		{
 			create(wd, r, visible);

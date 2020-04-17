@@ -622,12 +622,7 @@ namespace nana
 
 	spinbox::spinbox()
 	{}
-#if 0	//deprecated
-	spinbox::spinbox(window wd, bool visible)
-	{
-		this->create(wd, visible);
-	}
-#endif
+
 	spinbox::spinbox(window wd, const nana::rectangle& r, bool visible)
 	{
 		this->create(wd, r, visible);

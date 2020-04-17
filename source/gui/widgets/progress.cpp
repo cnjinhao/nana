@@ -212,12 +212,6 @@ namespace nana
 
 	//class progress
 		progress::progress(){}
-#if 0	//deprecated
-		progress::progress(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-		}
-#endif
 
 		progress::progress(window wd, const rectangle & r, bool visible)
 		{

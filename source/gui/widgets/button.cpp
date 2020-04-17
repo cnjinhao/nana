@@ -387,19 +387,6 @@ namespace nana
 	//@brief: Define a button widget and it provides the interfaces to be operational
 	button::button(){}
 
-#if 0 //deprecated
-	button::button(window wd, const std::string& text, bool visible)
-	{
-		create(wd, rectangle(), visible);
-		caption(text);
-	}
-
-	button::button(window wd, const char* text, bool visible)
-	{
-		create(wd, rectangle(), visible);
-		caption(text);
-	}
-#else
 	button::button(window parent, std::string_view title, bool visible)
 	{
 		create(parent, rectangle(), visible);
@@ -411,7 +398,6 @@ namespace nana
 		create(parent, rectangle(), visible);
 		caption(title);
 	}
-#endif
 
 #ifdef __cpp_char8_t
 	button::button(window parent, std::u8string_view title, bool visible)

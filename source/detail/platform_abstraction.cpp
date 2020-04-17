@@ -829,14 +829,9 @@ namespace nana
 
 				if (0 == font_height)
 				{
-#if 0
-					font_height = metrics.lfMessageFont.lfHeight;
-					fi.size_pt = std::abs(metrics.lfMessageFont.lfHeight) * 72 / dpi;
-#else
 					auto correspond_dpi = detail::native_interface::system_dpi();
 					fi.size_pt = static_cast<double>(std::abs(metrics.lfMessageFont.lfHeight) * 72 / correspond_dpi);
 					font_height = -static_cast<LONG>(fi.size_pt * dpi / 72);
-#endif
 				}
 			}
 

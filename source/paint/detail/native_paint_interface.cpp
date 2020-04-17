@@ -152,24 +152,15 @@ namespace detail
 			if (::GetTextExtentPoint32(dw->context, text, static_cast<int>(len), &size))
 				return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
-#if defined(NANA_USE_XFT)
-			#if 0
-			std::string utf8text = to_utf8(std::wstring(text, len));
-			XGlyphInfo ext;
-			XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
-			::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
-				reinterpret_cast<XftChar8*>(const_cast<char*>(utf8text.data())), utf8text.size(), &ext);
-			return nana::size(ext.xOff, fs->ascent + fs->descent);
-			#else
+#	if defined(NANA_USE_XFT)
 			return nana_xft_extents(dw->font.get(), text, len);
-			#endif
-#else
+#	else
 			std::string utf8text = to_utf8(std::wstring(text, len));
 			XRectangle ink;
 			XRectangle logic;
 			::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), utf8text.c_str(), utf8text.size(), &ink, &logic);
 			return nana::size(logic.width, logic.height);
-#endif
+#	endif
 #endif
 		}
 		return {};
@@ -187,23 +178,15 @@ namespace detail
 			if (::GetTextExtentPoint32(dw->context, wstr.c_str(), static_cast<int>(wstr.size()), &size))
 				return nana::size(size.cx, size.cy);
 #elif defined(NANA_X11)
-#if defined(NANA_USE_XFT)
-			#if 0
-			XGlyphInfo ext;
-			XftFont * fs = reinterpret_cast<XftFont*>(dw->font->native_handle());
-			::XftTextExtentsUtf8(nana::detail::platform_spec::instance().open_display(), fs,
-				reinterpret_cast<XftChar8*>(const_cast<char*>(text)), len, &ext);
-			return nana::size(ext.xOff, fs->ascent + fs->descent);
-			#else
+#	if defined(NANA_USE_XFT)
 			auto wstr = to_wstring(std::string_view(text, len));
 			return nana_xft_extents(dw->font.get(), wstr.data(), wstr.size());
-			#endif
-#else
+#	else
 			XRectangle ink;
 			XRectangle logic;
 			::XmbTextExtents(reinterpret_cast<XFontSet>(dw->font->native_handle()), text, len, &ink, &logic);
 			return nana::size(logic.width, logic.height);
-#endif
+#	endif
 #endif
 		}
 		return {};

@@ -925,24 +925,6 @@ namespace nana
 	//class combox
 		combox::combox(){}
 
-#if 0 //deprecated
-		combox::combox(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-		}
-
-		combox::combox(window wd, std::string text, bool visible)
-		{
-			throw_not_utf8(text);
-			create(wd, rectangle(), visible);
-			caption(std::move(text));
-		}
-
-		combox::combox(window wd, const char* text, bool visible)
-			: combox(wd, std::string(text), visible)
-		{
-		}
-#else
 		combox::combox(window wd, std::string_view text, bool visible)
 		{
 			throw_not_utf8(text);
@@ -954,8 +936,7 @@ namespace nana
 		{
 			create(wd, rectangle(), visible);
 			caption(text);
-		}		
-#endif
+		}
 
 #ifdef __cpp_char8_t
 		combox::combox(window wd, std::u8string_view text, bool visible)

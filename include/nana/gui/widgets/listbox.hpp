@@ -1349,9 +1349,6 @@ the nana::detail::basic_window member pointer scheme
 
 	// Constructors
 		listbox() = default;
-#if 0 //deprecated
-		listbox(window, bool visible);
-#endif
 		listbox(window, const rectangle& = {}, bool visible = true);
 
 	// Element access

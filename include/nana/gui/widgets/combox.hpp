@@ -160,15 +160,8 @@ namespace nana
 		typedef drawerbase::combox::item_proxy item_proxy;
 
 		combox();
-#if 0 //deprecated
-		combox(window, bool visible);
-		combox(window, ::std::string, bool visible = true);
-		combox(window, const char*, bool visible = true);
-#else
 		combox(window parent, std::string_view text, bool visible = true);
 		combox(window parent, std::wstring_view text, bool visible = true);
-#endif
-
 #ifdef __cpp_char8_t
 		combox(window parent, std::u8string_view text, bool visible = true);
 #endif

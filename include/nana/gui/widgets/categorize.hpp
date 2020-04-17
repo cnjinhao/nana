@@ -173,31 +173,6 @@ namespace nana
 		{
 		}
 
-#if 0 //deprecated
-		categorize(window wd, const std::string& text_utf8, bool visible = true)
-			: categorize(wd, ::nana::rectangle(), visible)
-		{
-			this->caption(text_utf8);
-		}
-
-		categorize(window wd, const char* text_utf8, bool visible = true)
-			: categorize(wd, ::nana::rectangle(), visible)
-		{
-			this->caption(text_utf8);
-		}
-
-		categorize(window wd, const std::wstring& text, bool visible = true)
-			: categorize(wd, ::nana::rectangle(), visible)
-		{
-			this->caption(text);
-		}
-
-		categorize(window wd, const wchar_t* text, bool visible = true)
-			: categorize(wd, ::nana::rectangle(), visible)
-		{
-			this->caption(text);
-		}
-#else
 		categorize(window wd, std::string_view title, bool visible = true)
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
@@ -208,8 +183,7 @@ namespace nana
 			: categorize(wd, ::nana::rectangle(), visible)
 		{
 			this->caption(title);
-		}		
-#endif
+		}
 
 #ifdef __cpp_char8_t
 		categorize(window wd, const std::u8string_view title, bool visible = true)

@@ -111,28 +111,8 @@ namespace nana
 
 		/// The default constructor without creating the widget.
 		textbox();
-
-#if 0 //deprecated
-		/// \brief The construct that creates a widget.
-		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specifying the visible after creating.
-		textbox(window, bool visible);
-
-		/// \brief The construct that creates a widget with a specified text.
-		/// @param window  A handle to the parent window of the widget being created.
-		/// @param text  the text that will be displayed.
-		/// @param visible  specifying the visible after creating.
-		textbox(window, const std::string& text, bool visible = true);
-
-		/// \brief The construct that creates a widget with a specified text.
-		/// @param window  A handle to the parent window of the widget being created.
-		/// @param text  the text that will be displayed.
-		/// @param visible  specifying the visible after creating.
-		textbox(window, const char* text, bool visible = true);
-#else
 		textbox(window parent, std::string_view text, bool visible = true);
 		textbox(window parent, std::wstring_view text, bool visible = true);
-#endif
 
 #ifdef __cpp_char8_t
 		textbox(window parent, std::u8string_view text, bool visible = true);

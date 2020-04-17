@@ -1327,22 +1327,6 @@ namespace nana
 			return end();
 		}
 
-#if 0
-		bool item_proxy::operator==(const std::string& s) const
-		{
-			return (node_ && (node_->value.second.text == s));
-		}
-
-		bool item_proxy::operator==(const char* s) const
-		{
-			return (node_ && (node_->value.second.text == s));
-		}
-
-		bool item_proxy::operator==(const wchar_t* s) const
-		{
-			return (node_ && s && (node_->value.second.text == to_utf8(s)));
-		}
-#else
 		bool item_proxy::operator==(std::string_view s) const
 		{
 			return (node_ && (node_->value.second.text == s));
@@ -1352,7 +1336,6 @@ namespace nana
 		{
 			return (node_ && (node_->value.second.text == to_utf8(s)));
 		}
-#endif
 #ifdef __cpp_char8_t
 		bool item_proxy::operator==(std::u8string_view s) const
 		{
@@ -2337,13 +2320,6 @@ namespace nana
 	using component = drawerbase::treebox::component;
 
 	treebox::treebox(){}
-
-#if 0 //deprecated
-	treebox::treebox(window wd, bool visible)
-	{
-		create(wd, rectangle(), visible);
-	}
-#endif
 
 	treebox::treebox(window wd, const rectangle& r, bool visible)
 	{

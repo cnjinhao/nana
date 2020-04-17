@@ -131,25 +131,6 @@ namespace nana
 
 		checkbox::checkbox(){}
 
-#if 0 //deprecated
-		checkbox::checkbox(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-            bgcolor(api::bgcolor(wd));
-		}
-
-		checkbox::checkbox(window wd, const std::string& text, bool visible)
-		{
-			create(wd, rectangle(), visible);
-            bgcolor(api::bgcolor(wd));
-			caption(text);
-		}
-
-		checkbox::checkbox(window wd, const char* text, bool visible)
-			: checkbox(wd, std::string(text), visible)
-		{
-		}
-#else
 		checkbox::checkbox(window parent, std::string_view text, bool visible)
 		{
 			create(parent, rectangle{}, visible);
@@ -161,7 +142,6 @@ namespace nana
 			create(parent, rectangle{}, visible);
 			caption(text);			
 		}
-#endif
 
 #ifdef __cpp_char8_t
 		checkbox::checkbox(window parent, std::u8string_view text, bool visible)

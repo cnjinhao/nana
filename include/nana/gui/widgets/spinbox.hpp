@@ -83,9 +83,6 @@ namespace nana
 	public:
 		/// Constructs a spinbox.
 		spinbox();
-#if 0	//deprecated
-		spinbox(window, bool visible);
-#endif
 		spinbox(window, const nana::rectangle& = {}, bool visible = true);
 
 		/// Sets the widget whether it accepts user keyboard input.

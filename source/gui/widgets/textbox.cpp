@@ -214,26 +214,6 @@ namespace nana
 		textbox::textbox()
 		{}
 
-#if 0	//deprecated
-		textbox::textbox(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-		}
-
-		textbox::textbox(window wd, const std::string& text, bool visible)
-		{
-			throw_not_utf8(text);
-			create(wd, rectangle(), visible);
-			caption(text);
-		}
-
-		textbox::textbox(window wd, const char* text, bool visible)
-		{
-			throw_not_utf8(text);
-			create(wd, rectangle(), visible);
-			caption(text);
-		}
-#else
 		textbox::textbox(window wd, std::string_view text, bool visible)
 		{
 			throw_not_utf8(text);
@@ -245,8 +225,7 @@ namespace nana
 		{
 			create(wd, rectangle(), visible);
 			caption(text);
-		}		
-#endif
+		}
 
 #ifdef __cpp_char8_t
 		textbox::textbox(window wd, std::u8string_view text, bool visible)

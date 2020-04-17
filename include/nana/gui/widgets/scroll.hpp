@@ -388,15 +388,6 @@ namespace nana
 		///  \brief The default constructor without creating the widget.
 		scroll() = default;
 
-#if 0	//deprecated
-		/// \brief The construct that creates a widget.
-		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specify the visibility after creation.
-		scroll(window wd, bool visible = true)
-		{
-			this->create(wd, rectangle(), visible);   // add a widget scheme? and take some colors from these wd?
-		}
-#endif
 		///  \brief The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param r  the size and position of the widget in its parent window coordinate.

@@ -75,16 +75,8 @@ namespace nana {
 	{
 	public:
 		checkbox();
-
-#if 0 //deprecated
-		checkbox(window, bool visible);
-		checkbox(window, const std::string& text, bool visible = true);
-		checkbox(window, const char* text, bool visible = true);
-#else
 		checkbox(window parent, std::string_view text, bool visible = true);
 		checkbox(window parent, std::wstring_view text, bool visible = true);
-#endif
-
 #ifdef __cpp_char8_t
 		checkbox(window parent, std::u8string_view text, bool visible = true);
 #endif

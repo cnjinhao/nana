@@ -779,21 +779,6 @@ namespace nana
 	//class label
 		label::label(){}
 
-#if 0 //deprecated
-		label::label(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-            bgcolor(api::bgcolor(wd));
-		}
-
-		label::label(window wd, const std::string& text, bool visible)
-		{
-			throw_not_utf8(text);
-			create(wd, rectangle(), visible);
-			bgcolor(api::bgcolor(wd));
-			caption(text);
-		}
-#else
 		label::label(window parent, std::string_view text, bool visible)
 		{
 			throw_not_utf8(text);
@@ -806,7 +791,6 @@ namespace nana
 			create(parent, rectangle{}, visible);
 			caption(text);
 		}
-#endif
 
 #ifdef __cpp_char8_t
 		label::label(window parent, std::u8string_view text, bool visible)

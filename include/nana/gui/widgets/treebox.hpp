@@ -271,17 +271,11 @@ namespace nana
 				/// Makes an action for each sub item recursively, returns the item that stops the action where action returns false.
 				item_proxy visit_recursively(std::function<bool(item_proxy)> action);
 
-#if 0	//deprecated
-				bool operator==(const ::std::string& s) const; ///< Compare the text of node with s.
-				bool operator==(const char* s ) const;        ///< Compare the text of node with s.
-				bool operator==(const wchar_t* s ) const;     ///< Compare the text of node with s.
-#else
 				/// Compare the text of node with a specified string
 				bool operator==(std::string_view s) const;
 
 				/// Compare the text of node with a specified string
 				bool operator==(std::wstring_view s) const;
-#endif
 #ifdef __cpp_char8_t
 				/// Compare the text of node with a specified string
 				bool operator==(std::u8string_view s) const;
@@ -322,7 +316,7 @@ namespace nana
 				template<typename T>
 				T * value_ptr()
 				{
-					return any_cast<T>(&_m_value());
+					return std::any_cast<T>(&_m_value());
 				}
 
 				template<typename T>
@@ -337,8 +331,8 @@ namespace nana
 				template<typename T>
 				T& value()
 				{
-					auto p = any_cast<T>(&_m_value());
-					if (nullptr == p)
+					auto p = std::any_cast<T>(&_m_value());
+					if(nullptr == p)
 						throw std::runtime_error("treebox::value<T>() Invalid type of value.");
 					return *p;
 				}
@@ -411,12 +405,6 @@ namespace nana
 		/// The default constructor without creating the widget.
 		treebox();
 
-#if 0 //deprecated
-		/// \brief The construct that creates a widget.
-		/// @param wd  A handle to the parent window of the widget being created.
-		/// @param visible  specifying the visibility after creating.
-		treebox(window wd, bool visible);
-#endif
 		/// \brief  The construct that creates a widget.
 		/// @param wd  A handle to the parent window of the widget being created.
 		/// @param r  the size and position of the widget in its parent window coordinate.

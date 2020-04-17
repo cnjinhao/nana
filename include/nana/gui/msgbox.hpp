@@ -61,24 +61,6 @@ namespace nana
 		/// Clears the text message buffer.
 		void clear();
 
-#if 0
-		/// Writes a string to the buffer.
-		msgbox & operator<<(const std::wstring&);
-
-		/// Writes a string to the buffer.
-		msgbox & operator<<(const wchar_t*);
-
-
-		/// Writes a UTF-8 string to the buffer.
-		msgbox & operator<<(const std::string&);
-
-		/// Writes a UTF-8 string to the buffer.
-		msgbox & operator<<(const char*);
-
-
-		/// Writes a string to the buffer.
-		msgbox & operator<<(const nana::charset&);
-#endif
 		// Calls a manipulator to the stream.
 		msgbox & operator<<(std::ostream& (*)(std::ostream&));
 

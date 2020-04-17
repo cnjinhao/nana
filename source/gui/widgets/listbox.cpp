@@ -5506,12 +5506,6 @@ namespace nana
     }
 
 	//class listbox
-#if 0	//deprecated
-		listbox::listbox(window wd, bool visible)
-		{
-			create(wd, rectangle(), visible);
-		}
-#endif
 		listbox::listbox(window wd, const rectangle& r, bool visible)
 		{
 			create(wd, r, visible);
