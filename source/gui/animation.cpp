@@ -296,7 +296,7 @@ namespace nana
 		};//end struct frameset::impl
 	//public:
 		frameset::frameset()
-			: impl_(new impl)
+			: impl_(std::make_unique<impl>())
 		{}
 
 		void frameset::push_back(paint::image img)
@@ -443,13 +443,15 @@ namespace nana
 					}
 				}
 
-				auto thr = new thread_variable;
+				auto thr = std::make_unique<thread_variable>();
 				thr->animations.push_back(p);
 				thr->performance_parameter = 0.0;
 				thr->fps = p->fps;
 				thr->interval = 1000.0 / double(p->fps);
-				thr->thread = std::make_shared<std::thread>([thr]()
+				auto pthr = thr.get();
+				thr->thread = std::make_shared<std::thread>([pthr]()
 				{
+					auto thr = pthr;
 					nana::system::timepiece tmpiece;
 					while (true)
 					{
@@ -494,8 +496,8 @@ namespace nana
 					}
 				});
 
-				threads_.push_back(thr);
-				p->thr_variable = thr;
+				threads_.push_back(thr.release());
+				p->thr_variable = threads_.back();
 			}
 
 			void animation::performance_manager::set_fps(impl* p, std::size_t new_fps)
@@ -556,30 +558,23 @@ namespace nana
 		//end class animation::performance_manager
 
 		animation::animation(std::size_t fps)
-			: impl_(new impl(fps))
+			: impl_(std::make_unique<impl>(fps))
 		{
 		}
 
-		animation::~animation()
-		{
-			delete impl_;
-		}
+		animation::~animation() = default;
 
 		animation::animation(animation&& rhs)
-			: impl_(rhs.impl_)
+			: impl_(std::move(rhs.impl_))
 		{
-			rhs.impl_ = new impl(23);
+			rhs.impl_ = std::make_unique<impl>(23);
 		}
 
 		animation& animation::operator=(animation&& rhs)
 		{
 			if (this != &rhs)
 			{
-				auto imp = new impl{ 23 };
-
-				delete impl_;
-				impl_ = rhs.impl_;
-				rhs.impl_ = imp;
+				std::swap(rhs.impl_, this->impl_);
 			}
 			return *this;
 		}
@@ -661,7 +656,7 @@ namespace nana
 			if (n == impl_->fps)
 				return;
 
-			impl::perf_manager->set_fps(impl_, n);
+			impl::perf_manager->set_fps(impl_.get(), n);
 		}
 
 		std::size_t animation::fps() const

@@ -546,6 +546,8 @@ namespace nana
 		 */
 		void use_entire_line(bool enable);
 
+		/// Return the first node of treebox
+		item_proxy first() const;
 	private:
 		std::shared_ptr<scroll_operation_interface> _m_scroll_operation() override;
 
