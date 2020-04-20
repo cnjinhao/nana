@@ -1,7 +1,7 @@
 /**
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -108,155 +108,72 @@ namespace paint
 			return *this;
 		}
 
-		std::shared_ptr<image::image_impl_interface> create_image(const fs::path & p)
+		// Check file type through file format signature
+		std::shared_ptr<image::image_impl_interface> create_image(const char* buf, std::size_t len)
 		{
-			std::shared_ptr<image::image_impl_interface> ptr;
-
-			auto ext = p.extension().native();
-			if (ext.empty())
-				return ptr;
-
-			std::transform(ext.begin(), ext.end(), ext.begin(), [](int ch)
+			if (buf && len >= 8)
 			{
-				if ('A' <= ch && ch <= 'Z')
-					ch -= ('A' - 'a');
-				return ch;
-			});
-
-#if defined(NANA_WINDOWS)
-			const wchar_t* ext_ico = L".ico";
-			const wchar_t* ext_png = L".png";
-			const wchar_t* ext_jpg = L".jpg";
-			const wchar_t* ext_jpeg = L".jpeg";
-#else
-			const char* ext_ico = ".ico";
-			const char* ext_png = ".png";
-			const char* ext_jpg = ".jpg";
-			const char* ext_jpeg = ".jpeg";
-#endif
-			do
-			{
-				if (ext_ico == ext)
+				if (std::strncmp("\x00\x00\x01\x00", buf, 4) == 0)
 				{
-					ptr = std::make_shared<detail::image_ico>();
-					break;
+					return std::make_shared<detail::image_ico>();
 				}
-
-				if (ext_png == ext)
+				else if (std::strncmp(buf, "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A", 8) == 0)
 				{
 #if defined(NANA_ENABLE_PNG)
-					ptr = std::make_shared<detail::image_png>();
-#else
-					return ptr;
+					return std::make_shared<detail::image_png>();
 #endif
-					break;
 				}
-
-				if (ext_jpg == ext || ext_jpeg == ext)
+				else if (std::strncmp("\xFF\xD8\xFF", buf, 3) == 0)
 				{
 #if defined(NANA_ENABLE_JPEG)
-					ptr = std::make_shared<detail::image_jpeg>();
-#else
-					return ptr;
+					return std::make_shared<detail::image_jpeg>();
 #endif
-					break;
 				}
-			} while (false);
+				else if (*reinterpret_cast<const short*>("BM") == *reinterpret_cast<const short*>(buf))
+					return std::make_shared<detail::image_bmp>();
+				else if (*reinterpret_cast<const short*>("MZ") == *reinterpret_cast<const short*>(buf))
+					return std::make_shared<detail::image_ico_resource>();
+				}
 
-			//Check for BMP
-			if (!ptr)
-			{
-#ifndef NANA_MINGW
-				std::ifstream ifs(p.c_str(), std::ios::binary);
-#else
-				std::ifstream ifs(to_osmbstr(to_utf8(p.native())).c_str(), std::ios::binary);
-#endif
-				if (ifs)
-				{
-					unsigned short meta = 0;
-					ifs.read(reinterpret_cast<char*>(&meta), 2);
-					if (*reinterpret_cast<const short*>("BM") == meta)
-						ptr = std::make_shared<detail::image_bmp>();
-					else if (*reinterpret_cast<const short*>("MZ") == meta)
-						ptr = std::make_shared<detail::image_ico_resource>();
-				}
+			return nullptr;
 			}
 
-			return ptr;
+		bool image::open(const ::std::string& img)
+		{
+			fs::path p(img);
+			image_ptr_.reset();
+
+			std::ifstream file{ p, std::ios::binary };
+			if (file)
+			{
+				char buf[8];
+				if (file.read(buf, 8).gcount() == 8)
+					image_ptr_ = create_image(buf, 8);
+			}
+
+			return (image_ptr_ ? image_ptr_->open(p) : false);
 		}
 
-		bool image::open(const ::std::string& file)
+		bool image::open(const std::wstring& img)
 		{
-			fs::path path(file);
-			image_ptr_ = create_image(path);
-			return (image_ptr_ ? image_ptr_->open(path) : false);
-		}
+			fs::path p(img);
+			image_ptr_.reset();
 
-		bool image::open(const std::wstring& file)
-		{
-			fs::path path(file);
-			image_ptr_ = create_image(path);
-			return (image_ptr_ ? image_ptr_->open(path) : false);
+			std::ifstream file{ p, std::ios::binary };
+			if (file)
+			{
+				char buf[8];
+				if (file.read(buf, 8).gcount() == 8)
+					image_ptr_ = create_image(buf, 8);
+			}
+
+			return (image_ptr_ ? image_ptr_->open(p) : false);
 		}
 
 		bool image::open(const void* data, std::size_t bytes)
 		{
-			close();
-
-			if (bytes > 2)
-			{
-				std::shared_ptr<image::image_impl_interface> ptr;
-
-				auto meta = *reinterpret_cast<const unsigned short*>(data);
-
-				if (*reinterpret_cast<const short*>("BM") == meta)
-					ptr = std::make_shared<detail::image_bmp>();
-				else if (*reinterpret_cast<const short*>("MZ") == meta)
-					ptr = std::make_shared<detail::image_ico_resource>();
-				else
-				{
-					if (bytes > 8 && (0x474e5089 == *reinterpret_cast<const unsigned*>(data)))
-					{
-#if defined(NANA_ENABLE_PNG)
-						ptr = std::make_shared<detail::image_png>();
-#endif
-					}
-					else
-					{
-#if defined(NANA_ENABLE_JPEG)
-						if ((bytes > 11) && (0xd8ff == *reinterpret_cast<const unsigned short*>(data)))
-						{
-							switch(*reinterpret_cast<const unsigned*>(reinterpret_cast<const char*>(data)+6))
-							{
-							case 0x4649464A:	//JFIF
-							case 0x66697845:	//Exif
-								ptr = std::make_shared<detail::image_jpeg>();
-							}
-						}
-						else
-#endif
-						if ((!ptr) && (bytes > 40))
-						{
-							switch (*reinterpret_cast<const unsigned*>(data))
-							{
-							case 40:
-							case 0x00010000:
-								if (!ptr && bytes > 40)
-									ptr = std::make_shared<detail::image_ico>();
-							}
-						}
-					}
-				}
-
-
-				if (ptr)
-				{
-					image_ptr_.swap(ptr);
-					return image_ptr_->open(data, bytes);
-				}
-			}
-
-			return false;
+			image_ptr_ = create_image(static_cast<const char*>(data), bytes);
+			return (image_ptr_ ? image_ptr_->open(data, bytes) : false);
 		}
 
 

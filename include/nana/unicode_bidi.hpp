@@ -50,6 +50,7 @@ namespace nana
 		};
 
 		std::vector<entity> reorder(const char_type*, std::size_t len);
+		static bool is_text_right(const entity&);
 	private:
 		static unsigned _m_paragraph_level(const char_type * begin, const char_type * end);
 
@@ -72,7 +73,6 @@ namespace nana
 	std::vector<unicode_bidi::entity> unicode_reorder(const wchar_t* text, std::size_t length);
 
 	bool unicode_wordbreak(wchar_t left, wchar_t right);
-
 }
 #include <nana/pop_ignore_diagnostic>
 

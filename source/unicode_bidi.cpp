@@ -1,7 +1,7 @@
 /*
  *	Unicode Bidi-Language Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -606,6 +606,11 @@ namespace nana
 			return reordered;
 		}
 
+		bool unicode_bidi::is_text_right(const entity& e)
+		{
+			return ((e.bidi_char_type != unicode_bidi::bidi_char::L) && (e.level & 1));
+		}
+
 		unsigned unicode_bidi::_m_paragraph_level(const char_type * begin, const char_type * end)
 		{
 			for(const char_type* i = begin; i != end; ++i)
@@ -990,7 +995,13 @@ namespace nana
 			return unicode_character_type::katakana;
 
 		if (('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z') || (0x00AA == ch || 0x00B5 == ch || 0x00BA == ch) || (0x00C0 <= ch && ch <= 0x00D6) ||
-			(0x00D8 <= ch && ch <= 0x00F6) || (0x00F8 <= ch && ch <= 0x0236) || (0x0250 <= ch && ch <= 0x02C1))
+			(0x00D8 <= ch && ch <= 0x00F6) || (0x00F8 <= ch && ch <= 0x0236) || (0x0250 <= ch && ch <= 0x02C1) ||
+			//Hebrew
+			(0x05BB <= ch && ch <= 0x05BD) || (0x05BF == ch) || ((0x05C1 <= ch && ch <= 0x05C4) && (0x05C3 != ch)) || (0x05D0 <= ch && ch <= 0x05EA) || (0x05F0 <= ch && ch <= 0x05F3) ||
+			//Arabic
+			(0x0610 <= ch && ch <= 0x0615) || (0x0621 <= ch && ch <= 0x063A) || (0x0640 <= ch && ch <= 0x0657) || (0x066E <= ch && ch <= 0x06D3) || (0x06D5 <= ch && ch <= 0x06DC) || (0x06E1 <= ch && ch <= 0x06E8) ||
+			(0x06ED == ch || 0x06EF == ch) || (0x06FA <= ch && ch <= 0x06FC) || (0x06FF == ch)
+			)
 			return unicode_character_type::aletter;
 
 		if ('\'' == ch || 0x00AD == ch || 0x00B7 == ch || 0x05F4 == ch || 0x2019 == ch || 0x2027 == ch)
@@ -1025,7 +1036,7 @@ namespace nana
 			return !(unicode_character_type::format == r_type) || (unicode_character_type::katakana == r_type);
 		case unicode_character_type::aletter:
 		case unicode_character_type::numeric:
-			return !(unicode_character_type::format == r_type) || (unicode_character_type::aletter == r_type) || (unicode_character_type::numeric == r_type);
+			return !((unicode_character_type::format == r_type) || (unicode_character_type::aletter == r_type) || (unicode_character_type::numeric == r_type));
 		}
 		return true;
 	}

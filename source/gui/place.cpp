@@ -1,7 +1,7 @@
 /**
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -1810,6 +1810,12 @@ namespace nana
 					{
 						grabbed_ = false;
 						this->_m_update_div(impl_->div_text);
+
+						//revise the position of splitter window.(#512)
+						//when the splitter is dragged, the place recalculates the left/right fields the weight in percentage, then update 
+						//position of the splitter field. It may cause deviation that new splitter field position is not same with the position of
+						//splitter window after dragging a bit, because the field position is calcuated with left/right fields's weights which are float-point values.
+						splitter_.move(this->field_area);
 					}
 					else if (event_code::mouse_move == arg.evt_code)
 					{

@@ -1736,11 +1736,11 @@ namespace nana
 			//class trigger
 				//struct treebox_node_type
 					trigger::treebox_node_type::treebox_node_type()
-						:expanded(false), checked(checkstate::unchecked), hidden(false)
+						:expanded(false), hidden(false), checked(checkstate::unchecked)
 					{}
 
 					trigger::treebox_node_type::treebox_node_type(std::string text)
-						:text(std::move(text)), expanded(false), checked(checkstate::unchecked), hidden(false)
+						:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked)
 					{}
 
 					trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
