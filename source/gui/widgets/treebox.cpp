@@ -2465,6 +2465,12 @@ namespace nana
 			dw->impl()->use_entire_line = enable;
 		}
 
+		auto treebox::first() const -> item_proxy
+		{
+			auto impl = get_drawer_trigger().impl();
+			return item_proxy{ const_cast<drawer_trigger_t*>(&get_drawer_trigger()), impl->attr.tree_cont.get_root()->child };
+		}
+
 		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()
 		{
 			internal_scope_guard lock;
