@@ -448,10 +448,8 @@ namespace nana
 				thr->performance_parameter = 0.0;
 				thr->fps = p->fps;
 				thr->interval = 1000.0 / double(p->fps);
-				auto pthr = thr.get();
-				thr->thread = std::make_shared<std::thread>([pthr]()
+				thr->thread = std::make_shared<std::thread>([thr = thr.get()]()
 				{
-					auto thr = pthr;
 					nana::system::timepiece tmpiece;
 					while (true)
 					{
