@@ -28,7 +28,7 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/window_manager.hpp>
-#include <nana/system/platform.hpp>
+//#include <nana/system/platform.hpp>	//deprecated
 #include <nana/paint/pixel_buffer.hpp>
 #include <errno.h>
 #include <sstream>
@@ -920,7 +920,7 @@ namespace detail
 				xlib_locker_.unlock();
 			}
 			for(int i = 0; i < 5 && (false == caret_holder_.exit_thread); ++i)
-				nana::system::sleep(100);
+				std::this_thread::sleep_for(std::chrono::milliseconds{100});
 		}
 	}
 

@@ -31,6 +31,10 @@
 	#include "detail/image_png.hpp"
 #endif
 
+#if defined(NANA_ENABLE_GIF)
+	#include "detail/image_gif.hpp"
+#endif
+
 #include "detail/image_bmp.hpp"
 
 #include "image_accessor.hpp"
@@ -122,6 +126,12 @@ namespace paint
 				{
 #if defined(NANA_ENABLE_JPEG)
 					return std::make_shared<detail::image_jpeg>();
+#endif
+				}
+				else if ((std::strncmp("GIF8", buf, 4) == 0) && 'a' == buf[5])
+				{
+#if defined(NANA_ENABLE_GIF)
+					return std::make_shared<detail::image_gif>();
 #endif
 				}
 				else if (*reinterpret_cast<const short*>("BM") == *reinterpret_cast<const short*>(buf))
@@ -218,6 +228,26 @@ namespace paint
 			}
 			else
 				throw std::runtime_error("image is empty");
+		}
+
+		std::size_t image::length() const
+		{
+			return (image_ptr_ ? image_ptr_->length() : 0);
+		}
+
+		std::size_t image::frame() const
+		{
+			return (image_ptr_ ? image_ptr_->frame() : 0);
+		}
+
+		std::size_t image::frame_duration() const
+		{
+			return (image_ptr_ ? image_ptr_->frame_duration() : 0);
+		}
+
+		bool image::set_frame(std::size_t pos)
+		{
+			return (image_ptr_ ? image_ptr_->set_frame(pos) : false);
 		}
 	//end class image
 

@@ -25,6 +25,12 @@ namespace nana{	namespace paint{
 		virtual void paste(const nana::rectangle& src_r, graph_reference dst, const point& p_dst) const = 0;
 		virtual void stretch(const nana::rectangle& src_r, graph_reference dst, const nana::rectangle& r) const = 0;
 		virtual bool save(const std::filesystem::path& p) const = 0;
+
+		// Methods for image which has multiple frames
+		virtual std::size_t length() const = 0;			///< Total frames of the image
+		virtual std::size_t frame() const = 0;			///< The index of current frame
+		virtual std::size_t frame_duration() const = 0;	///< the delay of current frame, in the number of milliseconds
+		virtual bool set_frame(std::size_t pos) = 0;	///< Set the frame
 	};//end class image::image_impl_interface
 }//end namespace paint
 }//end namespace nana

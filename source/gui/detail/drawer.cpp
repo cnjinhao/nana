@@ -434,7 +434,7 @@ namespace nana
 		{
 			if(f)
 			{
-				auto p = new std::pair(std::move(f), !diehard);
+				auto p = new std::pair<std::function<void(paint::graphics&)>, bool>(std::move(f), !diehard);
 				data_impl_->draws.emplace_back(p);
 				return p;
 			}

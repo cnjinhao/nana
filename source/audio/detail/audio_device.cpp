@@ -3,8 +3,6 @@
 
 #ifdef NANA_ENABLE_AUDIO
 
-#include <nana/system/platform.hpp>
-
 #if defined(NANA_POSIX)
 	#include <pthread.h>
 	#include <unistd.h>
@@ -277,10 +275,10 @@ namespace nana{namespace audio
 			{
 #if defined(NANA_WINDOWS)
 				while(buf_prep_->data_finished() == false)
-					nana::system::sleep(200);
+					std::this_thread::sleep_for(std::chrono::milliseconds{200});
 #elif defined(NANA_LINUX)
 				while(::snd_pcm_state(handle_) == SND_PCM_STATE_RUNNING)
-					nana::system::sleep(200);
+					std::this_thread::sleep_for(std::chrono::milliseconds{200});
 #endif
 			}
 

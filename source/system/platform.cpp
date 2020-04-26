@@ -1,6 +1,6 @@
 /*
  *	A platform API implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -66,26 +66,6 @@ namespace nana
 {
 namespace system
 {
-	//sleep
-	//@brief:	Suspend current thread for a specified milliseconds.
-	//			its precision is depended on hardware.
-	void sleep(unsigned milliseconds)
-	{
-#if defined(NANA_WINDOWS)
-		::Sleep(milliseconds);
-#elif defined(NANA_POSIX)
-		struct timespec timeOut, remains;
-		timeOut.tv_sec = milliseconds / 1000;
-		timeOut.tv_nsec = (milliseconds % 1000) * 1000000;
-		while(-1 == ::nanosleep(&timeOut, &remains))
-		{
-			if(errno == EINTR)
-				timeOut = remains;
-			else
-				break;
-		}
-#endif
-	}
 
 	//this_thread_id
 	//@brief: get the identifier of calling thread.

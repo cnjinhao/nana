@@ -116,7 +116,8 @@ namespace nana::threads
 						else
 							break;
 					}
-					nana::system::sleep(100);
+
+					std::this_thread::sleep_for(std::chrono::milliseconds{50});
 				}
 
 				std::vector<pool_throbj*> dup(std::move(container_.threads));
@@ -189,7 +190,7 @@ namespace nana::threads
 								return;
 						}
 					}
-					nana::system::sleep(100);
+					std::this_thread::sleep_for(std::chrono::milliseconds{100});
 				}
 			}
 		private:
@@ -294,7 +295,7 @@ namespace nana::threads
 
 							if(finished)
 								break;
-							nana::system::sleep(100);
+							std::this_thread::sleep_for(std::chrono::milliseconds{100});
 						}
 
 						//wait till the cond is waiting.

@@ -62,6 +62,18 @@
 #endif
 
 ///////////////////
+//  Support for GIF
+//	  Define the NANA_ENABLE_GIF to enable the support of GIF.
+//
+#define NANA_ENABLE_GIF	//!
+#define USE_LIBGIF_FROM_OS // Un-Comment it to use libgif from operating system.
+#if defined(NANA_ENABLE_GIF)
+	#if !defined(USE_LIBGIF_FROM_OS)
+		#define NANA_LIBGIF
+	#endif
+#endif
+
+///////////////////
 //  Support for NANA_AUTOMATIC_GUI_TESTING
 //	  Will cause the program to self-test the GUI. A default automatic GUI test 
 //    will be added to all programs which don't have yet one defined. This default test will simple

@@ -123,6 +123,26 @@ namespace nana{	namespace paint
 				return true;
 			}
 
+			std::size_t length() const override
+			{
+				return (native_handle_ ? 1 : 0);
+			}
+
+			std::size_t frame() const override
+			{
+				return 0;
+			}
+
+			std::size_t frame_duration() const override
+			{
+				return 0;
+			}
+
+			bool set_frame(std::size_t pos) override
+			{
+				return native_handle_ && (0 == pos);
+			}
+			
 			void* native_handle()
 			{
 				return native_handle_;

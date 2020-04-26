@@ -53,6 +53,12 @@ namespace paint
 		void paste(graphics& dst, const point& p_dst) const;
 		void paste(const nana::rectangle& r_src, graphics& dst, const point& p_dst) const;///< Paste the area of picture specified by r_src into the destination graphics specified by dst at position p_dst.
 		void stretch(const nana::rectangle& r_src, graphics& dst, const nana::rectangle& r_dst) const;///<Paste the picture into the dst, stretching or compressing the picture to fit the given area.
+
+		// Methods for multi-frame image.
+		std::size_t length() const;			///< Total frames of the image
+		std::size_t frame() const;			///< The index of current frame
+		std::size_t frame_duration() const;	///< the delay of current frame, in the number of milliseconds
+		bool set_frame(std::size_t pos);	///< Set the frame
 	private:
 		std::shared_ptr<image_impl_interface> image_ptr_;
 	};//end class image

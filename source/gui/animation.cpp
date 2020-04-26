@@ -50,18 +50,19 @@ namespace nana
 	{
 		enum class kind
 		{
-			oneshot,
+			image,
 			framebuilder
 		};
 
-		frame(paint::image img)
-			: type(kind::oneshot)
+		frame(paint::image img, std::size_t duration):
+			duration(duration),
+			type(kind::image)
 		{
-			u.oneshot = new paint::image(std::move(img));
+			u.image = new paint::image(std::move(img));
 		}
 
-		frame(std::function<bool(std::size_t, paint::graphics&, nana::size&)> frbuilder, std::size_t length)
-			: type(kind::framebuilder)
+		frame(std::function<bool(std::size_t, paint::graphics&, nana::size&)> frbuilder, std::size_t length):
+			type(kind::framebuilder)
 		{
 			u.frbuilder = new framebuilder(std::move(frbuilder), length);
 		}
@@ -71,8 +72,8 @@ namespace nana
 		{
 			switch(type)
 			{
-			case kind::oneshot:
-				u.oneshot = new paint::image(*r.u.oneshot);
+			case kind::image:
+				u.image = new paint::image(*r.u.image);
 				break;
 			case kind::framebuilder:
 				u.frbuilder = new framebuilder(*r.u.frbuilder);
@@ -84,15 +85,15 @@ namespace nana
 			: type(r.type)
 		{
 			u = r.u;
-			r.u.oneshot = nullptr;
+			r.u.image = nullptr;
 		}
 
 		~frame()
 		{
 			switch(type)
 			{
-			case kind::oneshot:
-				delete u.oneshot;
+			case kind::image:
+				delete u.image;
 				break;
 			case kind::framebuilder:
 				delete u.frbuilder;
@@ -106,8 +107,8 @@ namespace nana
 			{
 				switch(type)
 				{
-				case kind::oneshot:
-					delete u.oneshot;
+				case kind::image:
+					delete u.image;
 					break;
 				case kind::framebuilder:
 					delete u.frbuilder;
@@ -117,8 +118,8 @@ namespace nana
 				type = r.type;
 				switch(type)
 				{
-				case kind::oneshot:
-					u.oneshot = new paint::image(*r.u.oneshot);
+				case kind::image:
+					u.image = new paint::image(*r.u.image);
 					break;
 				case kind::framebuilder:
 					u.frbuilder = new framebuilder(*r.u.frbuilder);
@@ -134,8 +135,8 @@ namespace nana
 			{
 				switch(type)
 				{
-				case kind::oneshot:
-					delete u.oneshot;
+				case kind::image:
+					delete u.image;
 					break;
 				case kind::framebuilder:
 					delete u.frbuilder;
@@ -144,7 +145,7 @@ namespace nana
 
 				type = r.type;
 				u = r.u;
-				r.u.oneshot = nullptr;
+				r.u.image = nullptr;
 			}
 			return *this;
 		}
@@ -153,7 +154,7 @@ namespace nana
 		{
 			switch(type)
 			{
-			case kind::oneshot:
+			case kind::image:
 				return 1;
 			case kind::framebuilder:
 				return u.frbuilder->length;
@@ -162,10 +163,11 @@ namespace nana
 		}
 
 		//
+		std::size_t duration{0};
 		kind type;
 		union uframes
 		{
-			paint::image * oneshot;
+			paint::image * image;
 			framebuilder * frbuilder;
 		}u;
 	};
@@ -184,20 +186,22 @@ namespace nana
 				:	this_frame(frames.end())
 			{}
 
-			//Render A frame on the set of windows.
-			void render_this(std::map<window, output_t>& outs, paint::graphics& framegraph, nana::size& framegraph_dimension) const
+			//Renders a frame on the set of windows.
+			std::size_t render_this(std::map<window, output_t>& outs, paint::graphics& framegraph, nana::size& framegraph_dimension) const
 			{
 				if(this_frame == frames.end())
-					return;
+					return 0;
 
 				frame & frmobj = *this_frame;
 				switch(frmobj.type)
 				{
-				case frame::kind::oneshot:
+				case frame::kind::image:
 					_m_render(outs, [&frmobj](paint::graphics& tar, const nana::point& pos)
 					{
-						frmobj.u.oneshot->paste(tar, pos);
+						frmobj.u.image->paste(tar, pos);
 					});
+					if(0 == frmobj.duration)
+						return frmobj.u.image->frame_duration();
 					break;
 				case frame::kind::framebuilder:
 					good_frame_by_frmbuilder = frmobj.u.frbuilder->frbuilder(pos_in_this_frame, framegraph, framegraph_dimension);
@@ -213,19 +217,23 @@ namespace nana
 					}
 					break;
 				}
+
+				return frmobj.duration;
 			}
 
 			//Render a frame on a specified window graph
-			void render_this(paint::graphics& graph, const nana::point& pos, paint::graphics& framegraph, nana::size& framegraph_dimension, bool rebuild_frame) const
+			std::size_t render_this(paint::graphics& graph, const nana::point& pos, paint::graphics& framegraph, nana::size& framegraph_dimension, bool rebuild_frame) const
 			{
 				if(this_frame == frames.end())
-					return;
+					return 0;
 
 				frame & frmobj = *this_frame;
 				switch(frmobj.type)
 				{
-				case frame::kind::oneshot:
-					frmobj.u.oneshot->paste(graph, pos);
+				case frame::kind::image:
+					frmobj.u.image->paste(graph, pos);
+					if(0 == frmobj.duration)
+						return frmobj.u.image->frame_duration();
 					break;
 				case frame::kind::framebuilder:
 					if(rebuild_frame)
@@ -238,6 +246,7 @@ namespace nana
 					}
 					break;
 				}
+				return frmobj.duration;
 			}
 
 			bool eof() const
@@ -253,9 +262,13 @@ namespace nana
 				frame & frmobj = *this_frame;
 				switch(frmobj.type)
 				{
-				case frame::kind::oneshot:
-					++this_frame;
-					pos_in_this_frame = 0;
+				case frame::kind::image:
+					if(!frmobj.u.image->set_frame(++pos_in_this_frame))
+					{
+						++this_frame;
+						pos_in_this_frame = 0;
+						frmobj.u.image->set_frame(0);
+					}
 					break;
 				case frame::kind::framebuilder:
 					if(pos_in_this_frame >= frmobj.u.frbuilder->length)
@@ -299,10 +312,10 @@ namespace nana
 			: impl_(std::make_unique<impl>())
 		{}
 
-		void frameset::push_back(paint::image img)
+		void frameset::push_back(paint::image img, std::size_t duration)
 		{
 			bool located = impl_->this_frame != impl_->frames.end();
-			impl_->frames.emplace_back(std::move(img));
+			impl_->frames.emplace_back(std::move(img), duration);
 			if(false == located)
 				impl_->this_frame = impl_->frames.begin();
 		}
@@ -319,11 +332,17 @@ namespace nana
 		class animation::performance_manager
 		{
 		public:
+			struct control_block
+			{
+				impl* ani;
+				std::size_t duration_left{ 0 };
+			};
+
 			struct thread_variable
 			{
 				std::mutex mutex;
 				std::condition_variable condvar;
-				std::vector<impl*> animations;
+				std::vector<control_block> animations;
 
 				std::size_t active;				//The number of active animations
 				std::shared_ptr<std::thread> thread;
@@ -394,16 +413,20 @@ namespace nana
 				}
 			}
 
-			void render_this_specifically(paint::graphics& graph, const nana::point& pos)
+			std::size_t render_this_specifically(paint::graphics& graph, const nana::point& pos)
 			{
 				if(state.this_frameset != framesets.end())
-					state.this_frameset->impl_->render_this(graph, pos, framegraph, framegraph_dimension, false);
+					return state.this_frameset->impl_->render_this(graph, pos, framegraph, framegraph_dimension, false);
+
+				return 0;
 			}
 
-			void render_this_frame()
+			std::size_t render_this_frame()
 			{
 				if(state.this_frameset != framesets.end())
-					state.this_frameset->impl_->render_this(outputs, framegraph, framegraph_dimension);
+					return state.this_frameset->impl_->render_this(outputs, framegraph, framegraph_dimension);
+
+				return 0;
 			}
 
 			bool move_to_next()
@@ -437,14 +460,14 @@ namespace nana
 						if (thr->animations.empty() || (thr->performance_parameter * (1.0 + 1.0 / thr->animations.size()) <= 43.3))
 						{
 							p->thr_variable = thr;
-							thr->animations.push_back(p);
+							thr->animations.emplace_back(control_block{p});
 							return;
 						}
 					}
 				}
 
 				auto thr = std::make_unique<thread_variable>();
-				thr->animations.push_back(p);
+				thr->animations.emplace_back(control_block{p});
 				thr->performance_parameter = 0.0;
 				thr->fps = p->fps;
 				thr->interval = 1000.0 / double(p->fps);
@@ -453,35 +476,52 @@ namespace nana
 					nana::system::timepiece tmpiece;
 					while (true)
 					{
-						thr->active = 0;
+						std::size_t lowest_duration = std::numeric_limits<std::size_t>::max();
+
 						tmpiece.start();
 
 						{
 							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
-							for (auto ani : thr->animations)
+							thr->active = 0;
+
+							for (auto& cb : thr->animations)
 							{
-								if (ani->paused)
+								if (cb.ani->paused)
 									continue;
 
-								ani->render_this_frame();
-								if (false == ani->move_to_next())
+								++thr->active;
+
+								if(0 == cb.duration_left)
 								{
-									if (ani->looped)
+									auto dur = cb.ani->render_this_frame();
+									cb.duration_left = dur ? dur : std::size_t(thr->interval);
+
+									if (false == cb.ani->move_to_next())
 									{
-										ani->reset();
-										++thr->active;
+										if (cb.ani->looped)
+											cb.ani->reset();
+										else
+											--thr->active;
 									}
 								}
-								else
-									++thr->active;
+
+
+								if(cb.duration_left < lowest_duration)
+									lowest_duration = cb.duration_left;
+							}
+
+							for(auto & cb : thr->animations)
+							{
+								if(!cb.ani->paused)
+									cb.duration_left -= lowest_duration;
 							}
 						}
 
 						if (thr->active)
 						{
 							thr->performance_parameter = tmpiece.calc();
-							if (thr->performance_parameter < thr->interval)
-								nana::system::sleep(static_cast<unsigned>(thr->interval - thr->performance_parameter));
+							if (thr->performance_parameter < lowest_duration)
+								std::this_thread::sleep_for(std::chrono::milliseconds{static_cast<int>(lowest_duration - thr->performance_parameter)});
 						}
 						else
 						{
@@ -520,10 +560,14 @@ namespace nana
 				}
 
 				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
-				auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
-				if (u != thr->animations.end())
-					thr->animations.erase(u);
 
+				for(auto i = thr->animations.cbegin(); i != thr->animations.cend(); ++i)
+					if(i->ani == p)
+					{
+						thr->animations.erase(i);
+						break;
+					}
+				
 				p->thr_variable = nullptr;
 				insert(p);
 			}
@@ -538,9 +582,14 @@ namespace nana
 				auto thr = *i;
 				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 
-				auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
-				if(u != thr->animations.end())
-					thr->animations.erase(u);
+				for(auto i = thr->animations.cbegin(); i != thr->animations.cend(); ++i)
+					if(i->ani == p)
+					{
+						thr->animations.erase(i);
+						break;
+					}
+
+				p->thr_variable = nullptr;
 			}
 
 			bool animation::performance_manager::empty() const
@@ -583,6 +632,17 @@ namespace nana
 			if(1 == impl_->framesets.size())
 				impl_->state.this_frameset = impl_->framesets.begin();
 		}
+
+		void animation::push_back(paint::image img, std::size_t duration)
+		{
+			if(img)
+			{
+				frameset fs;
+				fs.push_back(std::move(img), duration);
+				push_back(std::move(fs));
+			}
+		}
+
 		/*
 		void branch(const std::string& name, const frameset& frms)
 		{

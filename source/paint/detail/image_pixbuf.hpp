@@ -58,6 +58,26 @@ namespace nana
 			{
 				return pixbuf_.save(p);
 			}
+
+			std::size_t length() const override
+			{
+				return (pixbuf_.empty() ? 0 : 1);
+			}
+
+			std::size_t frame() const override
+			{
+				return 0;
+			}
+
+			std::size_t frame_duration() const override
+			{
+				return 0;
+			}
+
+			bool set_frame(std::size_t pos) override
+			{
+				return (0 == pos);
+			}
 		protected:
 			pixel_buffer pixbuf_;
 		};

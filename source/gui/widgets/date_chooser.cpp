@@ -14,6 +14,7 @@
 #include <nana/gui/element.hpp>
 #include <nana/system/platform.hpp>
 #include <sstream>
+#include <thread>
 
 namespace nana
 {
@@ -45,7 +46,7 @@ namespace nana
 					graph.bitblt(nr, newbuf, nana::point(static_cast<int>(dr.width), 0));
 
 					api::update_window(window_handle);
-					nana::system::sleep(sleep_time);
+					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
 				}
 			}
 			else if (tfid == transform_action::to_left)
@@ -66,7 +67,7 @@ namespace nana
 					graph.bitblt(nr, newbuf);
 
 					api::update_window(window_handle);
-					nana::system::sleep(sleep_time);
+					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
 				}
 			}
 			else if (tfid == transform_action::to_leave)
@@ -96,7 +97,7 @@ namespace nana
 					graph.bitblt(refpos.x, refpos.y, dzbuf);
 
 					api::update_window(window_handle);
-					nana::system::sleep(sleep_time);
+					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
 				}
 			}
 			else if (tfid == transform_action::to_enter)
@@ -125,7 +126,7 @@ namespace nana
 					graph.bitblt(refpos.x, refpos.y, dzbuf);
 
 					api::update_window(window_handle);
-					nana::system::sleep(sleep_time);
+					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
 				}
 			}
 

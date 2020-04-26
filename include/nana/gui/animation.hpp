@@ -1,7 +1,7 @@
 /*
  *	An Animation Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -33,7 +33,7 @@ namespace nana
 		struct impl;
 	public:
 		frameset();
-		void push_back(paint::image);        ///< Inserts frames at the end.
+		void push_back(paint::image, std::size_t duration = 0);	///< Inserts frames at the end.
 		void push_back(framebuilder fb, std::size_t length);  ///< Inserts a framebuilder and the number of frames that it generates.
 	private:
 		std::shared_ptr<impl> impl_;
@@ -61,6 +61,7 @@ namespace nana
 		animation& operator=(animation&&);
 
 		void push_back(frameset frms);
+		void push_back(paint::image, std::size_t duration = 0);
 
 		void looped(bool enable);       ///< Enables or disables the animation repeating playback.
 
