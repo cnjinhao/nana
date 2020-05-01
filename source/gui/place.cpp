@@ -17,6 +17,14 @@
 #include <map>
 #include <set>
 #include <algorithm>
+
+#include <memory>
+#include <limits>	//numeric_limits
+#include <cstdlib>	//std::abs
+#include <cstring>	//std::memset
+#include <cctype>	//std::isalpha/std::isalnum
+#include <iostream>
+
 #include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
 #include <nana/gui/place.hpp>
@@ -25,12 +33,6 @@
 #include <nana/gui/widgets/panel.hpp>
 #include <nana/gui/dragger.hpp>
 #include <nana/gui/drawing.hpp>
-
-#include <memory>
-#include <limits>	//numeric_limits
-#include <cstdlib>	//std::abs
-#include <cstring>	//std::memset
-#include <cctype>	//std::isalpha/std::isalnum
 
 #include "place_parts.hpp"
 
