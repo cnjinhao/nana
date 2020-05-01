@@ -1197,7 +1197,7 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-			std::cout << "\n Begin child collocate: " << api::window_caption(wd) ;
+			std::cout << "\n Begin child collocate: " << api::window_caption(wd) << std::endl;
 		    auto const dpi = api::window_dpi(wd);
 			const bool vert = (kind::arrange != kind_of_division);
 
@@ -1215,7 +1215,7 @@ namespace nana
 			int ch =0;
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
-                std::cout << "\n Begin child: " << ++ch ;
+                std::cout << "\n Begin child: " << ++ch << std::endl;
                 auto child = child_ptr.get();
 				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
@@ -1259,7 +1259,10 @@ namespace nana
 					delay_collocates.emplace_back(child);
 				else
 					child->collocate(wd);	/// The child div have full position. Now we can collocate  inside it the child fields and child-div.
-			}
+
+				std::cout << "\n End child: " << ch << std::endl;
+
+            }
 
 			for (auto child : delay_collocates)
 				child->collocate(wd);
@@ -1313,7 +1316,10 @@ namespace nana
 				for (auto & fsn : field->fastened)
 					api::move_window(fsn.handle, area_margined);
 			}
-		}
+
+			std::cout << "\n End child collocate: " << api::window_caption(wd)<< std::endl;
+
+        }
 	private:
 		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px)
 		{
@@ -2705,6 +2711,7 @@ namespace nana
 					auto div = field.second->attached->div_owner;
 					while (div)
 					{
+					    std::cout<<"Field's div owner: " << div->name << std::endl;
 						if (!div->visible || !div->display)
 						{
 							is_show = false;
