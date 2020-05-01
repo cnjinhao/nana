@@ -80,7 +80,7 @@ namespace nana
 				eof, error
 			};
 
-			tokenizer(const char* div_text) noexcept
+			explicit tokenizer(const char* div_text) noexcept
 				: divstr_(div_text), sp_(div_text)
 			{}
 
@@ -613,7 +613,7 @@ namespace nana
 		/// usefull ??
 		struct error : std::invalid_argument
 		{
-			error(std::string            what,
+			explicit error(std::string    what,
 				  std::string            field = "unknown",
 			 	  std::string::size_type pos   = std::string::npos)
 
@@ -683,11 +683,11 @@ namespace nana
 			{}
 		};
 
-		field_gather(place * p) noexcept
+		explicit field_gather(place * p) noexcept
 			: place_ptr_(p)
 		{}
 
-		~field_gather() noexcept
+		~field_gather() noexcept override
 		{
 			for (auto & e : elements)
 				api::umake_event(e.evt_destroy);
