@@ -15,10 +15,12 @@
 
 #ifndef NANA_GUI_PLACE_HPP
 #define NANA_GUI_PLACE_HPP
-#include <nana/push_ignore_diagnostic>
-#include <nana/gui/basis.hpp>
+
 #include <memory>
 #include <functional>
+
+#include <nana/push_ignore_diagnostic>
+#include <nana/gui/basis.hpp>
 
 namespace nana
 {
