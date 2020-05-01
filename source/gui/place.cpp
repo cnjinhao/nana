@@ -1197,7 +1197,8 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-			auto const dpi = api::window_dpi(wd);
+			std::cout << "\n Begin child collocate: " << api::window_caption(wd) ;
+		    auto const dpi = api::window_dpi(wd);
 			const bool vert = (kind::arrange != kind_of_division);
 
 			auto area_margined = margin_area(dpi);
@@ -1211,9 +1212,11 @@ namespace nana
 			double position = area.x();
 			std::vector<division*> delay_collocates;
 			double precise_px = 0;
+			int ch =0;
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
-				auto child = child_ptr.get();
+                std::cout << "\n Begin child: " << ++ch ;
+                auto child = child_ptr.get();
 				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
 
