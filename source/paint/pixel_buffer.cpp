@@ -313,6 +313,32 @@ namespace nana{	namespace paint
 					rawbits -= src_bytes_per_line;
 				}
 			}
+			else if (8 == bits_per_pixel)
+			{
+				int src_bytes_per_line;
+				if (!is_negative)
+				{
+					rawbits += bytes_per_line * (height - 1);
+					src_bytes_per_line = -static_cast<int>(bytes_per_line);
+				}
+				else
+					src_bytes_per_line = static_cast<int>(bytes_per_line);
+
+				for (std::size_t top = 0; top < height; ++top)
+				{
+					auto dst = rawptr;
+					for (auto p = rawbits, end = rawbits + width; p < end; ++p)
+					{
+						dst->element.red = *p;
+						dst->element.green = *p;
+						dst->element.blue = *p;
+						++dst;
+					}
+
+					rawbits += src_bytes_per_line;
+					rawptr += this->bytes_per_line;
+				}
+			}
 		}
 
 		/// Assigns a 16bits image data,
@@ -390,32 +416,6 @@ namespace nana{	namespace paint
 					d += pixel_size.width;
 					rawbits -= src_bytes_per_line;
 				}
-			}
-			else if(8 == bits_per_pixel)
-			{
-				int src_bytes_per_line;
-				if(!is_negative)
-				{
-					rawbits += bytes_per_line * (height - 1);
-					src_bytes_per_line = -static_cast<int>(bytes_per_line);
-				}
-				else
-					src_bytes_per_line = static_cast<int>(bytes_per_line);
-
-				for(std::size_t top = 0; top < height; ++top)
-				{
-					auto dst = rawptr;
-					for(auto p = rawbits, end = rawbits + width; p < end; ++p)
-					{
-						dst->element.red = *p;
-						dst->element.green = *p;
-						dst->element.blue = *p;
-						++dst;
-					}
-
-					rawbits  += src_bytes_per_line;
-					rawptr += this->bytes_per_line;
-				}			
 			}
 		}
 

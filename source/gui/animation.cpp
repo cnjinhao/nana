@@ -570,9 +570,8 @@ namespace nana
 					return;
 				}
 
-				{
-					// the mutex of thread variable may be acquired by insert()
-					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
+				// the mutex of thread variable may be acquired by insert()
+				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 
 				for(auto i = thr->animations.cbegin(); i != thr->animations.cend(); ++i)
 					if(i->ani == p)
