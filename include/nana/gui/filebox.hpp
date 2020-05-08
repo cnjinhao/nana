@@ -105,16 +105,17 @@ namespace nana
 	{
 		struct implement;
 
+	public:
 		folderbox(const folderbox&) = delete;
 		folderbox& operator=(const folderbox&) = delete;
 		folderbox(folderbox&&) = delete;
 		folderbox& operator=(folderbox&&) = delete;
-	public:
+
 		using path_type = std::filesystem::path;
 
-		folderbox();
+		explicit folderbox(window owner=nullptr);
 
-		folderbox(window owner, const path_type& init_path, std::string title);
+		folderbox(window owner, const path_type& init_path, std::string title = {});
 #ifdef __cpp_char8_t
 		folderbox(window owner, const path_type& init_path, std::u8string_view title);
 #endif
