@@ -162,7 +162,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\source\any.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_stream.cpp" />
     <ClCompile Include="..\..\source\audio\detail\buffer_preparation.cpp" />
@@ -235,7 +234,6 @@
     <ClCompile Include="..\..\source\paint\image_process_selector.cpp" />
     <ClCompile Include="..\..\source\paint\pixel_buffer.cpp" />
     <ClCompile Include="..\..\source\paint\text_renderer.cpp" />
-    <ClCompile Include="..\..\source\stdc++.cpp" />
     <ClCompile Include="..\..\source\system\dataexch.cpp" />
     <ClCompile Include="..\..\source\system\platform.cpp" />
     <ClCompile Include="..\..\source\system\shared_wrapper.cpp" />
@@ -244,7 +242,6 @@
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\nana\any.hpp" />
     <ClInclude Include="..\..\include\nana\basic_types.hpp" />
     <ClInclude Include="..\..\include\nana\c++defines.hpp" />
     <ClInclude Include="..\..\include\nana\charset.hpp" />
@@ -294,17 +291,14 @@
     <ClInclude Include="..\..\include\nana\gui\widgets\toolbar.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\treebox.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\widget.hpp" />
-    <ClInclude Include="..\..\include\nana\gui\wvl.hpp" />
     <ClInclude Include="..\..\include\nana\internationalization.hpp" />
     <ClInclude Include="..\..\include\nana\key_type.hpp" />
-    <ClInclude Include="..\..\include\nana\optional.hpp" />
-    <ClInclude Include="..\..\include\nana\stdc++.hpp" />
-    <ClInclude Include="..\..\include\nana\std_condition_variable.hpp" />
-    <ClInclude Include="..\..\include\nana\std_mutex.hpp" />
-    <ClInclude Include="..\..\include\nana\std_thread.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
     <ClInclude Include="..\..\include\nana\traits.hpp" />
     <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
     <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp" />
+    <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
+    <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\nana\pop_ignore_diagnostic" />
