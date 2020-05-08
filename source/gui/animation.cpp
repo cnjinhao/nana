@@ -1,7 +1,7 @@
 /*
  *	An Animation Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -429,6 +429,14 @@ namespace nana
 				if(state.this_frameset != framesets.end())
 					state.this_frameset->impl_->reset();
 			}
+
+			bool eof() const
+			{
+				if(state.this_frameset != framesets.end())
+					return state.this_frameset->impl_->eof();
+
+				return true;
+			}
 		};//end struct animation::impl
 
 		//class animation::performance_manager
@@ -463,6 +471,9 @@ namespace nana
 						tmpiece.start();
 
 						{
+							//acquire the isg lock first to avoid deadlock that occured by an event hander which operates the animation object.
+							nana::internal_scope_guard isglock;
+
 							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
 							for (auto ani : thr->animations)
 							{
@@ -525,10 +536,13 @@ namespace nana
 					return;
 				}
 
-				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
-				auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
-				if (u != thr->animations.end())
-					thr->animations.erase(u);
+				{
+					// the mutex of thread variable may be acquired by insert()
+					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
+					auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
+					if (u != thr->animations.end())
+						thr->animations.erase(u);
+				}
 
 				p->thr_variable = nullptr;
 				insert(p);
@@ -633,6 +647,9 @@ namespace nana
 			std::unique_lock<std::mutex> lock(impl_->thr_variable->mutex);
 			if(0 == impl_->thr_variable->active)
 			{
+				if (impl_->eof())
+					impl_->reset();
+
 				impl_->thr_variable->active = 1;
 				impl_->thr_variable->condvar.notify_one();
 			}
