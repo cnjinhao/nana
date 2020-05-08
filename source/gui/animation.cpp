@@ -446,6 +446,14 @@ namespace nana
 				if(state.this_frameset != framesets.end())
 					state.this_frameset->impl_->reset();
 			}
+
+			bool eof() const
+			{
+				if(state.this_frameset != framesets.end())
+					return state.this_frameset->impl_->eof();
+
+				return true;
+			}
 		};//end struct animation::impl
 
 		//class animation::performance_manager
@@ -481,6 +489,9 @@ namespace nana
 						tmpiece.start();
 
 						{
+							//acquire the isg lock first to avoid deadlock that occured by an event hander which operates the animation object.
+							nana::internal_scope_guard isglock;
+
 							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
 							thr->active = 0;
 
@@ -559,7 +570,9 @@ namespace nana
 					return;
 				}
 
-				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
+				{
+					// the mutex of thread variable may be acquired by insert()
+					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 
 				for(auto i = thr->animations.cbegin(); i != thr->animations.cend(); ++i)
 					if(i->ani == p)
@@ -680,6 +693,9 @@ namespace nana
 			std::unique_lock<std::mutex> lock(impl_->thr_variable->mutex);
 			if(0 == impl_->thr_variable->active)
 			{
+				if (impl_->eof())
+					impl_->reset();
+
 				impl_->thr_variable->active = 1;
 				impl_->thr_variable->condvar.notify_one();
 			}
