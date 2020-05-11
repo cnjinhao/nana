@@ -548,37 +548,9 @@ namespace nana
 									continue;
 
 								ani->render_this_frame();
-#if 0	//deprecated
-								if (false == ani->next_frame())
-								{
-									if (ani->looped)
-									{
-										ani->reset();
-										++thr->active;
-									}
-								}
-								else
-									++thr->active;
-#endif
 							}
 						}
 
-#if 0	//deprecated
-						if (thr->active)
-						{
-							thr->performance_parameter = tmpiece.calc();
-							if (thr->performance_parameter < thr->interval)
-								nana::system::sleep(static_cast<unsigned>(thr->interval - thr->performance_parameter));
-						}
-						else
-						{
-							//There isn't an active frame, then let the thread
-							//wait for a signal for an active animation
-							std::unique_lock<std::mutex> lock(thr->mutex);
-							if (0 == thr->active)
-								thr->condvar.wait(lock);
-						}
-#else
 						thr->performance_parameter = tmpiece.calc();
 						if (thr->performance_parameter < thr->interval)
 							nana::system::sleep(static_cast<unsigned>(thr->interval - thr->performance_parameter));
@@ -618,7 +590,6 @@ namespace nana
 							//Restart timing for this frame when this thread is waking up.
 							tmpiece.start();
 						}
-#endif
 					}
 				});
 
