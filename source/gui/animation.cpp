@@ -40,6 +40,7 @@ namespace nana
 	{
 		drawing::diehard_t diehard{ nullptr };
 		std::vector<nana::point> points;
+		std::vector<std::function<rectangle()>> areas;
 	};
 
 	struct framebuilder
@@ -184,7 +185,7 @@ namespace nana
 			std::list<frame> frames;
 			std::list<frame>::iterator this_frame;
 			std::size_t pos_in_this_frame{ 0 };
-			mutable bool good_frame_by_frmbuilder{ false };	//It indicates the state of frame whether is valid.
+			mutable bool good_frame_by_frmbuilder{ false };	//It indicates the state of frame.
 
 			impl()
 				:	this_frame(frames.end())
@@ -200,50 +201,94 @@ namespace nana
 				switch(frmobj.type)
 				{
 				case frame::kind::oneshot:
-					_m_render(outs, [&frmobj](paint::graphics& tar, const nana::point& pos)
+					_m_render(outs, frmobj.u.oneshot->size(), [&frmobj](paint::graphics& tar, const nana::rectangle& area)
 					{
-						frmobj.u.oneshot->paste(tar, pos);
+						if(frmobj.u.oneshot->size() == area.dimension())
+							frmobj.u.oneshot->paste(tar, area.position());
+						else
+							frmobj.u.oneshot->stretch(rectangle{frmobj.u.oneshot->size()}, tar, area);
 					});
 					break;
 				case frame::kind::framebuilder:
 					good_frame_by_frmbuilder = frmobj.u.frbuilder->frbuilder(pos_in_this_frame, framegraph, framegraph_dimension);
 					if(good_frame_by_frmbuilder)
 					{
-						nana::rectangle r(framegraph_dimension);
-						_m_render(outs, [&r, &framegraph](paint::graphics& tar, const nana::point& pos) mutable
+						_m_render(outs, framegraph_dimension, [framegraph_dimension, &framegraph](paint::graphics& tar, const rectangle& area) mutable
 						{
-							r.x = pos.x;
-							r.y = pos.y;
-							tar.bitblt(r, framegraph);
+							if(framegraph_dimension == area.dimension())
+								tar.bitblt(area, framegraph);
+							else
+								framegraph.stretch(tar, area);
 						});
 					}
 					break;
 				}
 			}
 
-			//Render a frame on a specified window graph
-			void render_this(paint::graphics& graph, const nana::point& pos, paint::graphics& framegraph, nana::size& framegraph_dimension, bool rebuild_frame) const
+			//Render a frame on a specified window graph. If this frame is created by framebuilder, it doesn't rebuild the frame.
+			void render_this(paint::graphics& graph, const rectangle& area, paint::graphics& framegraph, nana::size& framegraph_dimension) const
 			{
-				if(this_frame == frames.end())
-					return;
+				// If the frame is EOF, then renders the last frame
+				std::list<nana::frame>::const_iterator pf = this_frame;
+				if (pf == frames.end())
+				{
+					if (frames.size())
+					{
+						pf = frames.begin();
+						std::advance(pf, frames.size() - 1);
+					}
+					else
+						return;
+				}
 
-				frame & frmobj = *this_frame;
-				switch(frmobj.type)
+				const frame & frmobj = *pf;
+				switch (frmobj.type)
 				{
 				case frame::kind::oneshot:
-					frmobj.u.oneshot->paste(graph, pos);
+					if (frmobj.u.oneshot->size() == area.dimension())
+						frmobj.u.oneshot->paste(graph, area.position());
+					else
+						frmobj.u.oneshot->stretch(rectangle{frmobj.u.oneshot->size()}, graph, area);
 					break;
 				case frame::kind::framebuilder:
-					if(rebuild_frame)
-						good_frame_by_frmbuilder = frmobj.u.frbuilder->frbuilder(pos_in_this_frame, framegraph, framegraph_dimension);
-
 					if(good_frame_by_frmbuilder)
 					{
-						nana::rectangle r(pos, framegraph_dimension);
-						graph.bitblt(r, framegraph);
+						if (framegraph_dimension == area.dimension())
+							graph.bitblt(area, framegraph);
+						else
+							framegraph.stretch(graph, area);
 					}
 					break;
 				}
+			}
+
+			nana::size this_frame_size(const nana::size& framegraph_dimension) const
+			{
+				// If the frame is EOF, then renders the last frame
+				std::list<nana::frame>::const_iterator pf = this_frame;
+				if (pf == frames.end())
+				{
+					if (frames.size())
+					{
+						pf = frames.begin();
+						std::advance(pf, frames.size() - 1);
+					}
+					else
+						return{};
+				}
+
+				const frame & frmobj = *pf;
+				switch (frmobj.type)
+				{
+				case frame::kind::oneshot:
+					return frmobj.u.oneshot->size();
+				case frame::kind::framebuilder:
+					if (good_frame_by_frmbuilder)
+						return framegraph_dimension;
+					break;
+				}
+
+				return{};
 			}
 
 			bool eof() const
@@ -285,8 +330,10 @@ namespace nana
 			}
 		private:
 			template<typename Renderer>
-			void _m_render(std::map<window, output_t>& outs, Renderer renderer) const
+			void _m_render(std::map<window, output_t>& outs, const nana::size& frame_size, Renderer renderer) const
 			{
+				nana::rectangle frame_area{frame_size};
+
 				for(auto & tar: outs)
 				{
 					auto graph = API::dev::window_graphics(tar.first);
@@ -294,7 +341,13 @@ namespace nana
 						continue;
 
 					for(auto & outp : tar.second.points)
-						renderer(*graph, outp);
+					{
+						frame_area.position(outp);
+						renderer(*graph, frame_area);
+					}
+
+					for(auto& area_fn: tar.second.areas)
+						renderer(*graph, area_fn());
 
 					API::update_window(tar.first);
 				}
@@ -400,19 +453,32 @@ namespace nana
 				}
 			}
 
-			void render_this_specifically(paint::graphics& graph, const nana::point& pos)
+			// Renders current frame to a specified graphics
+			void render_this_frame(paint::graphics& graph, const rectangle& area)
 			{
 				if(state.this_frameset != framesets.end())
-					state.this_frameset->impl_->render_this(graph, pos, framegraph, framegraph_dimension, false);
+					state.this_frameset->impl_->render_this(graph, area, framegraph, framegraph_dimension);
 			}
 
+			// Renders current from to all outputs graphics
 			void render_this_frame()
 			{
 				if(state.this_frameset != framesets.end())
 					state.this_frameset->impl_->render_this(outputs, framegraph, framegraph_dimension);
 			}
 
-			bool move_to_next()
+			nana::size this_frame_size() const
+			{
+				if (state.this_frameset != framesets.end())
+				{
+					return state.this_frameset->impl_->this_frame_size(framegraph_dimension);
+				}
+				return{};
+			}
+
+
+
+			bool next_frame()
 			{
 				if(state.this_frameset != framesets.end())
 				{
@@ -465,10 +531,11 @@ namespace nana
 				thr->thread = std::make_shared<std::thread>([thr]()
 				{
 					nana::system::timepiece tmpiece;
+					tmpiece.start();
+
 					while (true)
 					{
 						thr->active = 0;
-						tmpiece.start();
 
 						{
 							//acquire the isg lock first to avoid deadlock that occured by an event hander which operates the animation object.
@@ -481,7 +548,8 @@ namespace nana
 									continue;
 
 								ani->render_this_frame();
-								if (false == ani->move_to_next())
+#if 0	//deprecated
+								if (false == ani->next_frame())
 								{
 									if (ani->looped)
 									{
@@ -491,9 +559,11 @@ namespace nana
 								}
 								else
 									++thr->active;
+#endif
 							}
 						}
 
+#if 0	//deprecated
 						if (thr->active)
 						{
 							thr->performance_parameter = tmpiece.calc();
@@ -508,6 +578,47 @@ namespace nana
 							if (0 == thr->active)
 								thr->condvar.wait(lock);
 						}
+#else
+						thr->performance_parameter = tmpiece.calc();
+						if (thr->performance_parameter < thr->interval)
+							nana::system::sleep(static_cast<unsigned>(thr->interval - thr->performance_parameter));
+
+						//Restart timing this frame
+						tmpiece.start();
+
+						// Move to next frame
+						{
+							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
+							for (auto ani : thr->animations)
+							{
+								if (ani->paused)
+									continue;
+
+								if (false == ani->next_frame())
+								{
+									if (ani->looped)
+									{
+										ani->reset();
+										++thr->active;
+									}
+								}
+								else
+									++thr->active;
+							}
+						}
+
+						if (0 == thr->active)
+						{
+							//There isn't an active frame, then let the thread
+							//wait for a signal for an active animation
+							std::unique_lock<std::mutex> lock(thr->mutex);
+							if (0 == thr->active)
+								thr->condvar.wait(lock);
+
+							//Restart timing for this frame when this thread is waking up.
+							tmpiece.start();
+						}
+#endif
 					}
 				});
 
@@ -668,7 +779,7 @@ namespace nana
 			{
 				drawing dw(wd);
 				output.diehard = dw.draw_diehard([this, pos](paint::graphics& tar){
-					impl_->render_this_specifically(tar, pos);
+					impl_->render_this_frame(tar, rectangle{ pos, impl_->this_frame_size() });
 				});
 
 				API::events(wd).destroy.connect([this](const arg_destroy& arg){
@@ -677,6 +788,25 @@ namespace nana
 				});
 			}
 			output.points.push_back(pos);
+		}
+
+		void animation::output(window wd, std::function<nana::rectangle()> r)
+		{
+			auto & output = impl_->outputs[wd];
+
+			if(nullptr == output.diehard)
+			{
+				drawing dw(wd);
+				output.diehard = dw.draw_diehard([this, r](paint::graphics& tar){
+					impl_->render_this_frame(tar, r());
+				});
+
+				API::events(wd).destroy.connect([this](const arg_destroy& arg){
+					std::lock_guard<decltype(impl_->thr_variable->mutex)> lock(impl_->thr_variable->mutex);
+					impl_->outputs.erase(arg.window_handle);
+				});
+			}
+			output.areas.push_back(r);
 		}
 
 		void animation::fps(std::size_t n)
