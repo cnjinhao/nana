@@ -29,13 +29,12 @@ namespace nana
 	public:
         /// function which builds frames.
 		using framebuilder = std::function<bool(std::size_t pos, paint::graphics&, nana::size&)>;
-
-		struct impl;
 	public:
 		frameset();
 		void push_back(paint::image, std::size_t duration = 0);	///< Inserts frames at the end.
 		void push_back(framebuilder fb, std::size_t length);  ///< Inserts a framebuilder and the number of frames that it generates.
 	private:
+		struct impl;
 		std::shared_ptr<impl> impl_;
 	};
             /// Easy way to display an animation or create an animated GUI
@@ -69,7 +68,16 @@ namespace nana
 
 		void pause();
 
+		/// Renders the animation at a fixed position
 		void output(window wd, const nana::point& pos);
+
+		/// Renders the animation at a rectangle
+		/**
+		 * If the size of rectangle is not equal to the size of frame, it stretches the frame for the size of rectangle.
+		 * @param wd Output window.
+		 * @param r Generator of the rectangle. The generator gets called every time rendering occurs.
+		 */
+		void output(window wd, std::function<nana::rectangle()> r);
 
 		void fps(std::size_t n);
 		std::size_t fps() const;
