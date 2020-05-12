@@ -1428,7 +1428,7 @@ namespace nana
 			auto i = revises.begin();
 			while (i != revises.end())
 			{
-				if (i->max_px == value)
+				if (i->max_px == value) // double equality ??
 				{
 					++full_count;
 					i = revises.erase(i);
@@ -2693,6 +2693,8 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
+			std::cout << "\n Begin collocate: " << api::window_caption(window_handle) << std::endl;
+
 			root_division->field_area.dimension(api::window_size(window_handle));
 
 			if (root_division->field_area.empty())
@@ -2704,6 +2706,8 @@ namespace nana
 
 			for (auto & field : fields)
 			{
+				std::cout << "\n Begin field collocate: " << field.first << std::endl;
+
 				bool is_show = false;
 				if (field.second->attached && field.second->attached->visible && field.second->attached->display)
 				{
