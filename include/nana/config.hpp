@@ -65,8 +65,8 @@
 //  Support for GIF
 //	  Define the NANA_ENABLE_GIF to enable the support of GIF.
 //
-#define NANA_ENABLE_GIF	//!
-#define USE_LIBGIF_FROM_OS // Un-Comment it to use libgif from operating system.
+//#define NANA_ENABLE_GIF	//!
+//#define USE_LIBGIF_FROM_OS // Un-Comment it to use libgif from operating system.
 #if defined(NANA_ENABLE_GIF)
 	#if !defined(USE_LIBGIF_FROM_OS)
 		#define NANA_LIBGIF

@@ -196,13 +196,13 @@ namespace nana
 				frame & frmobj = *this_frame;
 				switch(frmobj.type)
 				{
-				case frame::kind::oneshot:
-					_m_render(outs, frmobj.u.oneshot->size(), [&frmobj](paint::graphics& tar, const nana::rectangle& area)
+				case frame::kind::image:
+					_m_render(outs, frmobj.u.image->size(), [&frmobj](paint::graphics& tar, const nana::rectangle& area)
 					{
-						if(frmobj.u.oneshot->size() == area.dimension())
-							frmobj.u.oneshot->paste(tar, area.position());
+						if(frmobj.u.image->size() == area.dimension())
+							frmobj.u.image->paste(tar, area.position());
 						else
-							frmobj.u.oneshot->stretch(rectangle{frmobj.u.oneshot->size()}, tar, area);
+							frmobj.u.image->stretch(rectangle{frmobj.u.image->size()}, tar, area);
 					});
 					if(0 == frmobj.duration)
 						return frmobj.u.image->frame_duration();
@@ -245,7 +245,6 @@ namespace nana
 				switch (frmobj.type)
 				{
 				case frame::kind::image:
-					frmobj.u.image->paste(graph, pos);
 					if (frmobj.u.image->size() == area.dimension())
 						frmobj.u.image->paste(graph, area.position());
 					else
@@ -285,8 +284,8 @@ namespace nana
 				const frame & frmobj = *pf;
 				switch (frmobj.type)
 				{
-				case frame::kind::oneshot:
-					return frmobj.u.oneshot->size();
+				case frame::kind::image:
+					return frmobj.u.image->size();
 				case frame::kind::framebuilder:
 					if (good_frame_by_frmbuilder)
 						return framegraph_dimension;
@@ -609,16 +608,16 @@ namespace nana
 						// Move to next frame
 						{
 							std::lock_guard<decltype(thr->mutex)> lock(thr->mutex);
-							for (auto ani : thr->animations)
+							for (auto & cb : thr->animations)
 							{
-								if (ani->paused)
+								if (cb.ani->paused)
 									continue;
 
-								if (false == ani->next_frame())
+								if (false == cb.ani->next_frame())
 								{
-									if (ani->looped)
+									if (cb.ani->looped)
 									{
-										ani->reset();
+										cb.ani->reset();
 										++thr->active;
 									}
 								}
@@ -678,7 +677,7 @@ namespace nana
 				{
 					// the mutex of thread variable may be acquired by insert()
 					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
-					auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
+					auto u = std::find_if(thr->animations.begin(), thr->animations.end(), [p](const control_block& cb) { return cb.ani == p;  });
 					if (u != thr->animations.end())
 						thr->animations.erase(u);
 				}
