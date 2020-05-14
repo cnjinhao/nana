@@ -33,7 +33,7 @@ namespace nana
 
 	struct accel_key
 	{
-		char key;
+		char key{ '\0' };
 		bool case_sensitive{ false };
 		bool alt{ false };
 		bool ctrl{ false };
