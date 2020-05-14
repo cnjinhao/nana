@@ -392,6 +392,8 @@ namespace nana
 				double performance_parameter;
 			};
 
+			~performance_manager();
+
 			void insert(impl* p);
 			void set_fps(impl*, std::size_t new_fps);
 			void close(impl* p);
@@ -506,6 +508,17 @@ namespace nana
 		};//end struct animation::impl
 
 		//class animation::performance_manager
+		animation::performance_manager::~performance_manager()
+		{
+			for (auto thr : threads_)
+			{
+				if (thr->thread && thr->thread->joinable())
+					thr->thread->join();
+
+				delete thr;
+			}
+		}
+
 			void animation::performance_manager::insert(impl* p)
 			{
 				std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -584,8 +597,17 @@ namespace nana
 							//There isn't an active frame, then let the thread
 							//wait for a signal for an active animation
 							std::unique_lock<std::mutex> lock(thr->mutex);
+
+							//Exit the thread if there is not an animation
+							if (thr->animations.empty())
+								return;
+
 							if (0 == thr->active)
 								thr->condvar.wait(lock);
+
+							//Exit the thread if there is not an animation
+							if (thr->animations.empty())
+								return;
 
 							//Restart timing for this frame when this thread is waking up.
 							tmpiece.start();
@@ -638,11 +660,28 @@ namespace nana
 					return;
 
 				auto thr = *i;
-				std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 
-				auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
-				if(u != thr->animations.end())
-					thr->animations.erase(u);
+				{
+					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
+
+					auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
+					if (u != thr->animations.end())
+						thr->animations.erase(u);
+
+					//If there is not an animation in the thread, wake up the thread to exit.
+					//If there is an animation in the thread, set the thr pointer to nullptr to
+					//avoid exiting the thread
+					if (thr->animations.empty())
+						thr->condvar.notify_one();
+					else
+						thr = nullptr;
+				}
+
+				threads_.erase(i);
+				if (thr && thr->thread && thr->thread->joinable())
+					thr->thread->join();
+
+				delete thr;
 			}
 
 			bool animation::performance_manager::empty() const
