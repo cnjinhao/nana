@@ -712,6 +712,8 @@ namespace nana
 						thr = nullptr;
 				}
 
+				p->thr_variable = nullptr;
+
 				threads_.erase(i);
 				if (thr && thr->thread && thr->thread->joinable())
 					thr->thread->join();
