@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -190,41 +190,42 @@ namespace nana{	namespace paint
 			if (!raw_pixel_buffer)
 				return;
 
+			if ((32 == bits_per_pixel) && (pixel_size.width == width) && (pixel_size.height == height) && (this->bytes_per_line == bytes_per_line) && is_negative)
+			{
+				memcpy(raw_pixel_buffer, rawbits, (bytes_per_line * pixel_size.height));
+				return;
+			}
+
+
+			if(pixel_size.width < width)
+				width = pixel_size.width;
+
+			if(pixel_size.height < height)
+				height = pixel_size.height;
+
 			auto rawptr = raw_pixel_buffer;
 			if(32 == bits_per_pixel)
 			{
-				if((pixel_size.width == width) && (pixel_size.height == height) && is_negative)
+				auto d = rawptr;
+				const unsigned char* s;
+				int src_line_bytes;
+
+				if (is_negative)
 				{
-					memcpy(rawptr, rawbits, (pixel_size.width * pixel_size.height) * 4);
+					s = rawbits;
+					src_line_bytes = -static_cast<int>(bytes_per_line);
 				}
 				else
 				{
-					std::size_t line_bytes = (pixel_size.width < width ? pixel_size.width : width) * sizeof(pixel_color_t);
+					s = rawbits + bytes_per_line * (height - 1);
+					src_line_bytes = static_cast<int>(bytes_per_line);
+				}
 
-					if(pixel_size.height < height)
-						height = pixel_size.height;
-
-					auto d = rawptr;
-					const unsigned char* s;
-					int src_line_bytes;
-
-					if (is_negative)
-					{
-						s = rawbits;
-						src_line_bytes = -static_cast<int>(bytes_per_line);
-					}
-					else
-					{
-						s = rawbits + bytes_per_line * (height - 1);
-						src_line_bytes = static_cast<int>(bytes_per_line);
-					}
-
-					for(std::size_t i = 0; i < height; ++i)
-					{
-						memcpy(d, s, line_bytes);
-						d += pixel_size.width;
-						s -= src_line_bytes;
-					}
+				for(std::size_t i = 0; i < height; ++i)
+				{
+					memcpy(d, s, this->bytes_per_line);
+					d += pixel_size.width;
+					s -= src_line_bytes;
 				}
 			}
 			else if(24 == bits_per_pixel)
@@ -269,12 +270,6 @@ namespace nana{	namespace paint
 			}
 			else if(16 == bits_per_pixel)
 			{
-				if(pixel_size.width < width)
-					width = pixel_size.width;
-
-				if(pixel_size.height < height)
-					height = pixel_size.height;
-
 				unsigned char rgb_table[32];
 				for(std::size_t i =0; i < 32; ++i)
 					rgb_table[i] = static_cast<unsigned char>(i * 255 / 31);
@@ -309,6 +304,32 @@ namespace nana{	namespace paint
 					d += pixel_size.width;
 					rawbits -= src_bytes_per_line;
 				}
+			}
+			else if(8 == bits_per_pixel)
+			{
+				int src_bytes_per_line;
+				if(!is_negative)
+				{
+					rawbits += bytes_per_line * (height - 1);
+					src_bytes_per_line = -static_cast<int>(bytes_per_line);
+				}
+				else
+					src_bytes_per_line = static_cast<int>(bytes_per_line);
+
+				for(std::size_t top = 0; top < height; ++top)
+				{
+					auto dst = rawptr;
+					for(auto p = rawbits, end = rawbits + width; p < end; ++p)
+					{
+						dst->element.red = *p;
+						dst->element.green = *p;
+						dst->element.blue = *p;
+						++dst;
+					}
+
+					rawbits  += src_bytes_per_line;
+					rawptr += this->bytes_per_line;
+				}			
 			}
 		}
 
@@ -690,6 +711,17 @@ namespace nana{	namespace paint
 #endif
 				++px;
 			}
+		}
+		else if(8 == bits_per_pixel)
+		{
+			//Grayscale
+			for (auto p = row_ptr, end = row_ptr + px_count; p != end; ++p)
+			{
+				p->element.red = *buffer;
+				p->element.green = *buffer;
+				p->element.blue = *buffer;
+				++buffer;
+			}			
 		}
 
 	}
