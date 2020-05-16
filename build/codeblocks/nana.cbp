@@ -119,6 +119,7 @@
 		<Unit filename="../../source/system/dataexch.cpp" />
 		<Unit filename="../../source/system/platform.cpp" />
 		<Unit filename="../../source/system/shared_wrapper.cpp" />
+		<Unit filename="../../source/system/split_string.cpp" />
 		<Unit filename="../../source/system/timepiece.cpp" />
 		<Unit filename="../../source/threads/pool.cpp" />
 		<Unit filename="../../source/unicode_bidi.cpp" />
