@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -1511,8 +1511,18 @@ the nana::detail::basic_window member pointer scheme
 		/// Returns the index pair of the item which contains the specified "screen" point.
 		index_pair cast(const point & screen_pos) const;
 
+		/// Converts the index between absolute position and display position
+		/**
+		 * @param idx	The index to be converted
+		 * @param from_display_order	If this parameter is true, the method converts a display position to an absolute position.
+		 *								If the parameter is false, the method converts an absolute position to a display position.
+		 * @return a display position or an absolute position that are depending on from_display_order.
+		 */
+		index_pair index_cast(index_pair idx, bool from_display_order) const;
+
 		/// Returns the item which is hovered
 		/**
+		 * The item position is an absolute position.
 		 * @param return_end Indicates whether to return an end position instead of an empty position if no item is hovered.
 		 * @return The position of the hovered item. If return_end is true and no item is hovered it returns the position next to the last item of last category.
 		 */

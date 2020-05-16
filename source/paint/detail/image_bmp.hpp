@@ -1,7 +1,7 @@
 /*
  *	Bitmap Format Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -14,6 +14,7 @@
 #define NANA_PAINT_DETAIL_IMAGE_BMP_HPP
 
 #include <memory>
+#include <cstring>
 #include "image_pixbuf.hpp"
 
 namespace nana{	namespace paint
@@ -106,7 +107,7 @@ namespace nana{	namespace paint
 				if (16 <= header->biBitCount)
 					pixbuf_.put(bits, header->biWidth, bmp_height, header->biBitCount, bytes_per_line, (header->biHeight < 0));
 				else
-					_m_put_with_palette(header, bits, bytes_per_line);
+					_m_put_with_palette(header, bits, bmp_file->bfSize - bmp_file->bfOffBits,  bytes_per_line);
 
 				return true;
 			}
@@ -132,7 +133,72 @@ namespace nana{	namespace paint
 				return false;
 			}
 		private:
-			void _m_put_with_palette(const bitmap_info_header* header, const unsigned char* pixel_indexes, unsigned line_bytes)
+			std::unique_ptr<unsigned char[]> _m_decompress_rle8(const bitmap_info_header* header, const unsigned char* data, std::size_t data_size)
+			{
+				std::size_t const lines = std::abs(header->biHeight);
+				unsigned char* const indexes = new unsigned char[header->biWidth * lines];
+				auto p = indexes;
+				auto p_line = p;
+				auto const p_end = indexes + header->biWidth * lines;
+
+				std::size_t line_pos = 0;
+				auto end = data + data_size;
+				while (data != end && p < p_end)
+				{
+					if (0 == data[0])
+					{
+						//escape
+						if (0 == data[1])
+						{
+							//eol
+							data += 2;
+							++line_pos;
+						}
+						else if (1 == data[1])
+						{
+							//eof
+							data += 2;
+							break;
+						}
+						else if (2 == data[1])
+						{
+							//delta
+							auto x = data[2];
+							auto y = data[3];
+
+							// Check if the delta is available
+							if ((p + x < p_line + header->biWidth) && (line_pos + y < lines))
+							{
+								p += y * header->biWidth + x;
+								line_pos += y;
+							}
+							else
+								break;
+
+							data += 4;
+						}
+						else
+						{
+							//absolute
+							std::memcpy(p, data + 2, data[1]);
+							p += data[1];
+
+							data += ((data[1] + 1) & 0xFFE) + 2;
+						}
+					}
+					else
+					{
+						std::memset(p, data[1], data[0]);
+						p += data[0];
+
+						data += 2;
+					}
+				}
+
+				return std::unique_ptr<unsigned char[]>{ indexes };
+			}
+
+			void _m_put_with_palette(const bitmap_info_header* header, const unsigned char* bits, std::size_t length, unsigned line_bytes)
 			{
 				auto const image_height = std::abs(header->biHeight);
 				const std::size_t total_pixels = header->biWidth * static_cast<std::size_t>(image_height);
@@ -152,9 +218,19 @@ namespace nana{	namespace paint
 
 				if (8 == header->biBitCount)
 				{
+					//decompressed indexes
+					std::unique_ptr<unsigned char[]> indexes;
+
+					if (1 == header->biCompression)
+					{
+						indexes = _m_decompress_rle8(header, bits, length);
+						line_bytes = header->biWidth;
+						bits = indexes.get();
+					}
+
 					while (dst_px < end_dst_px)
 					{	
-						auto px_indexes = pixel_indexes + line_bytes * line_pos;
+						auto px_indexes = bits + line_bytes * line_pos;
 						auto const line_end_dst_px = dst_px + header->biWidth;
 						while (dst_px != line_end_dst_px)
 						{
@@ -173,7 +249,7 @@ namespace nana{	namespace paint
 				{
 					while (dst_px < end_dst_px)
 					{
-						auto px_indexes = pixel_indexes + line_bytes * line_pos;
+						auto px_indexes = bits + line_bytes * line_pos;
 						auto const line_end_dst_px = dst_px + header->biWidth;
 						std::size_t pos = 0;
 						switch (header->biBitCount)

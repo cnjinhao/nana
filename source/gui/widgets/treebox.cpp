@@ -1736,11 +1736,11 @@ namespace nana
 			//class trigger
 				//struct treebox_node_type
 					trigger::treebox_node_type::treebox_node_type()
-						:expanded(false), checked(checkstate::unchecked), hidden(false)
+						:expanded(false), hidden(false), checked(checkstate::unchecked)
 					{}
 
 					trigger::treebox_node_type::treebox_node_type(std::string text)
-						:text(std::move(text)), expanded(false), checked(checkstate::unchecked), hidden(false)
+						:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked)
 					{}
 
 					trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
@@ -2463,6 +2463,12 @@ namespace nana
 		{
 			auto dw = &get_drawer_trigger();
 			dw->impl()->use_entire_line = enable;
+		}
+
+		auto treebox::first() const -> item_proxy
+		{
+			auto impl = get_drawer_trigger().impl();
+			return item_proxy{ const_cast<drawer_trigger_t*>(&get_drawer_trigger()), impl->attr.tree_cont.get_root()->child };
 		}
 
 		std::shared_ptr<scroll_operation_interface> treebox::_m_scroll_operation()

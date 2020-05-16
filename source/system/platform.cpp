@@ -18,46 +18,53 @@
 	#include <windows.h>
 	#include "../detail/mswin/platform_spec.hpp"
 #elif defined(NANA_POSIX)
-	#include <time.h>
-	#include <errno.h>
+	#include "split_string.hpp"
 	#include <unistd.h>
 	#include <sys/time.h>
 	#include <sys/syscall.h>
 	#include <pthread.h>
 	#include <sys/stat.h>
 	#include <spawn.h>
-	#include <string.h>
+	#include <cstring>
+	#include <memory>
 
 static void posix_open_url(const char *url_utf8)
 {
+    using nana::system::split_string_type;
+    using nana::system::split_string;
+
     extern char **environ;
-    const char *home = getenv("HOME");
-    std::string cheat(home);
-    cheat += "/.mozilla";
     struct stat exists;
+    const split_string_type path = getenv("PATH");
 
-    // TODO: generalize this for chromium, opera, waterfox, etc.
-    // Most desktop environments (KDE, Gnome, Lumina etc.) provide a way to set
-    // your preferred browser - but there are more desktops than browsers.
+    //see https://stackoverflow.com/questions/5116473/linux-command-to-open-url-in-default-browser
 
-    // Look for $HOME/.mozilla directory as strong evidence they use firefox.
-    if ( stat(cheat.c_str(), &exists) == 0 && S_ISDIR(exists.st_mode))
+    std::string full_path;
+    for (const auto& cur_path : split_string(path, ':')) {
+        full_path = cur_path;
+        full_path += "/xdg-open";
+        if ( stat(full_path.c_str(), &exists) == 0 && S_ISREG(exists.st_mode))
+            break;
+        else
+            full_path.clear();
+    }
+    if (full_path.empty()) {
+        //xdg-open not found sorry :( maybe print a message so users know?
+        return;
+    }
+
     {
-        const char *path = "";
-        static const char *likely[2] = { "/usr/local/bin/firefox", "/usr/bin/firefox"};
-        if ( stat(likely[0], &exists) == 0 && S_ISREG(exists.st_mode))
-            path = likely[0];
-        else if ( stat(likely[1], &exists) == 0 && S_ISREG(exists.st_mode) )
-            path = likely[1];
-        else return;
-
         pid_t pid = 0;
-        static const char firefox[] = "firefox";
-        char name[sizeof firefox]{};
         // argv does not like const-literals so make a copy.
-        strcpy(name, firefox);
-        char *argv[3] = {name, const_cast<char *>(url_utf8), nullptr};
-        posix_spawn(&pid, path, NULL, NULL, argv, environ);
+        const auto url_utf8_len = std::strlen(url_utf8);
+        auto string_cpy_buff = std::make_unique<char[]>(full_path.size() + 1 + url_utf8_len + 1);
+        char* const url_utf8_cpy = string_cpy_buff.get();
+        char* const full_path_cpy = string_cpy_buff.get() + url_utf8_len + 1;
+        std::strncpy(url_utf8_cpy, url_utf8, url_utf8_len + 1);
+        std::strncpy(full_path_cpy, full_path.c_str(), full_path.size() + 1);
+        char *argv[3] = {full_path_cpy, url_utf8_cpy, nullptr};
+        //system((full_path + " " + url_utf8).c_str());
+        posix_spawn(&pid, full_path_cpy, nullptr, nullptr, argv, environ);
     }
 }
 #endif

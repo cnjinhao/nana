@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1637,16 +1637,16 @@ namespace nana {
 
 
 
-				if (select_.a.x < line.size() && !std::isalnum(line[select_.a.x]) && line[select_.a.x] != '_') {
+				if (select_.a.x < line.size() && !std::iswalnum(line[select_.a.x]) && line[select_.a.x] != '_') {
 					++select_.b.x;
 				}
 				else {
 					// Expand the selection forward to the word's end.
-					while (select_.b.x < line.size() && !std::iswspace(line[select_.b.x]) && (std::isalnum(line[select_.b.x]) || line[select_.b.x] == '_'))
+					while (select_.b.x < line.size() && !std::iswspace(line[select_.b.x]) && (std::iswalnum(line[select_.b.x]) || line[select_.b.x] == '_'))
 						++select_.b.x;
 
 					// Expand the selection backward to the word's start.
-					while (select_.a.x > 0 && !std::iswspace(line[select_.a.x - 1]) && (std::isalnum(line[select_.a.x - 1]) || line[select_.a.x - 1] == '_'))
+					while (select_.a.x > 0 && !std::iswspace(line[select_.a.x - 1]) && (std::iswalnum(line[select_.a.x - 1]) || line[select_.a.x - 1] == '_'))
 						--select_.a.x;
 				}
 				select_.mode_selection = selection::mode::method_selected;
@@ -2482,10 +2482,8 @@ namespace nana {
 
 				if (coord != coord_org)
 				{
-					auto pos_x = pos.x;
 					impl_->cview->move_origin(origin - impl_->cview->origin());
 					pos = _m_coordinate_to_caret(coord, false);
-					pos.x = pos_x;
 				}
 
 				if (pos != points_.caret) {
@@ -3485,9 +3483,14 @@ namespace nana {
 
 				void rtl_string(point strpos, const wchar_t* str, std::size_t len, std::size_t str_px, unsigned glyph_front, unsigned glyph_selected, bool has_focused)
 				{
-					editor_._m_draw_parse_string(parser_, true, strpos, selection_color(true, has_focused), str, len);
+					//Draw twices for RTL language in order to avoid character transforming.
+					//one is to draw whole string as unselected, another one is to draw whole string as selected.
+					
+					//Draw as unselected
+					editor_._m_draw_parse_string(parser_, true, strpos, editor_.scheme_->foreground, str, len);
 
-					//Draw selected part
+
+					//Draw as selected, and copy the selected part to the graph.
 					paint::graphics graph({ glyph_selected, line_px_ });
 					graph.typeface(this->graph_.typeface());
 					graph.rectangle(true, selection_color(false, has_focused));
