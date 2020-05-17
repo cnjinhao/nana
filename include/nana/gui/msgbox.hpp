@@ -19,7 +19,7 @@
 namespace nana
 {
 	//Forward declaration of filebox for msgbox
-	class file                                                                                                                                  box;
+	class filebox;
 
 	/// Prefabricated modal dialog box (with text, icon and actions buttons) that informs and instructs the user.
 	class msgbox

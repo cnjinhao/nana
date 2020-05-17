@@ -1197,7 +1197,7 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-			std::cout << "\n Begin child collocate: " << api::window_caption(wd) << std::endl;
+			std::cout << "\n Begin div_arrange child collocate: " << api::window_caption(wd) << std::endl;
 		    auto const dpi = api::window_dpi(wd);
 			const bool vert = (kind::arrange != kind_of_division);
 
@@ -1215,7 +1215,7 @@ namespace nana
 			int ch =0;
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
-                std::cout << "\n Begin child: " << ++ch << std::endl;
+                std::cout << "\n Begin child: " << ++ch << " of " << children.size() << std::endl;
                 auto child = child_ptr.get();
 				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
@@ -1260,7 +1260,7 @@ namespace nana
 				else
 					child->collocate(wd);	/// The child div have full position. Now we can collocate  inside it the child fields and child-div.
 
-				std::cout << "\n End child: " << ch << std::endl;
+				std::cout << "\n End child: " << ch << " of " << children.size() << std::endl;
 
             }
 
@@ -2468,9 +2468,10 @@ namespace nana
 
 			bool is_first = true;
 			bool prev_attr = false;
-
+			int ch = 0;
 			for (auto & child : children)
 			{
+				std::cout << "\n Begin child: " << ++ch << " of " << children.size() << std::endl;
 				if (!child->display)
 					continue;
 
@@ -2488,6 +2489,7 @@ namespace nana
 					++horz_count;
 
 				prev_attr = is_vert;
+				std::cout << "\n End child: " << ch << " of " << children.size() << std::endl;
 			}
 			if (0 == vert_count)
 				vert_count = 1;
@@ -2693,7 +2695,7 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
-			std::cout << "\n Begin collocate: " << api::window_caption(window_handle) << std::endl;
+			std::cout << "\n Begin place collocate: " << api::window_caption(window_handle) << std::endl;
 
 			root_division->field_area.dimension(api::window_size(window_handle));
 
@@ -2703,10 +2705,11 @@ namespace nana
 			root_division->calc_weight_floor(window_handle);
 
 			root_division->collocate(window_handle);
+			int fc = 0;
 
 			for (auto & field : fields)
 			{
-				std::cout << "\n Begin field collocate: " << field.first << std::endl;
+				std::cout << "\n Begin collocate place field #" << ++fc << " of " << fields.size() << "named: " << field.first << std::endl;
 
 				bool is_show = false;
 				if (field.second->attached && field.second->attached->visible && field.second->attached->display)
@@ -2729,6 +2732,8 @@ namespace nana
 				//This is a feature that allows tabbar panels to be fastened to a same field, the collocate()
 				//shouldn't break the visibility of panels that are maintained by tabbar.
 				field.second->visible(is_show, false);
+				std::cout << "\n End collocate place field #" << fc << " of " << fields.size() << "named: " << field.first << std::endl;
+
 			}
 		}
 	}
