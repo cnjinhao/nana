@@ -196,10 +196,10 @@ namespace nana
 						{
 							nana::paint::graphics gh(imgsize);
 							gh.bitblt(::nana::rectangle{ imgsize }, graph, pos);
-							gh.rgb_to_wb();
+							gh.rgb_to_wb(true);
 							gh.paste(graph, pos.x, pos.y);
 						}
-						else if (state == state_t::normal)
+						else if(state == state_t::normal)
 						{
 							graph.blend(nana::rectangle(pos, imgsize), ::nana::color(0xc0, 0xdd, 0xfc).blend(bgcolor, 0.5), 0.25);
 						}
