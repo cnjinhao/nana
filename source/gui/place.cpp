@@ -1500,11 +1500,12 @@ namespace nana
 
 			double block_px = 0;
 			double level_px = 0;
-			auto rest_px = var_px - sum_min_px;
+			double rest_px = var_px - sum_min_px;
 			std::size_t blocks = fa.second;
 
 			while ((rest_px > 0) && blocks)
 			{
+				std::cout << "-";
 				auto lowest = _m_find_lowest_revised_division(revises, level_px);
 
 				double fill_px = 0;
@@ -2699,7 +2700,7 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
-			std::cout << "\n Begin place collocate: " << api::window_caption(window_handle) << std::endl;
+			std::cout << "\n Begin place impl collocate: " << api::window_caption(window_handle) << std::endl;
 
 			root_division->field_area.dimension(api::window_size(window_handle));
 
@@ -2713,7 +2714,7 @@ namespace nana
 
 			for (auto & field : fields)
 			{
-				std::cout << "\n Begin collocate place field #" << ++fc << " of " << fields.size() << "named: " << field.first << std::endl;
+				std::cout << "\n Begin place impl collocate field #" << ++fc << " of " << fields.size() << "named: " << field.first << std::endl;
 
 				bool is_show = false;
 				if (field.second->attached && field.second->attached->visible && field.second->attached->display)
@@ -2736,7 +2737,7 @@ namespace nana
 				//This is a feature that allows tabbar panels to be fastened to a same field, the collocate()
 				//shouldn't break the visibility of panels that are maintained by tabbar.
 				field.second->visible(is_show, false);
-				std::cout << "\n End collocate place field #" << fc << " of " << fields.size() << "named: " << field.first << std::endl;
+				std::cout << "\n End collocate place impl field #" << fc << " of " << fields.size() << "named: " << field.first << std::endl;
 
 			}
 		}
