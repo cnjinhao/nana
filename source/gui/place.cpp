@@ -1205,9 +1205,9 @@ namespace nana
 			rectangle_rotator area(vert, area_margined);
 			auto area_px = area.w();
 
-			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px, dpi);
+			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px, dpi); // fixed pixels and number of adjustable items
 
-			double adjustable_px = _m_revise_adjustable(fa, area_px, dpi);
+			double adjustable_px = _m_revise_adjustable(fa, area_px, dpi); // amount of pixels for each adjustable item 
 
 			double position = area.x();
 			std::vector<division*> delay_collocates;
@@ -1347,7 +1347,7 @@ namespace nana
 			return result;
 		}
 
-		//Returns the fixed pixels and the number of adjustable items.
+		/// Returns the fixed pixels and the number of adjustable items.
 		std::pair<unsigned, std::size_t> _m_fixed_and_adjustable(kind match_kind, unsigned area_px, std::size_t dpi) const noexcept
 		{
 			std::pair<unsigned, std::size_t> result;
@@ -1435,7 +1435,7 @@ namespace nana
 				}
 				else
 				{
-					if (i->min_px == value)
+					if (i->min_px == value) // double equality ??
 						++reached_mins;
 					++i;
 				}
@@ -1443,23 +1443,27 @@ namespace nana
 			return reached_mins;
 		}
 
-		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, unsigned area_px, std::size_t dpi)
+		/// return the amount of pixels for each adjustable item 
+		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, // fixed pixels and number of adjustable items
+			                        unsigned area_px, 
+			                        std::size_t dpi)
 		{
 			if (fa.first >= area_px || 0 == fa.second)
 				return 0;
 
-			double var_px = area_px - fa.first;
+			double var_px = area_px - fa.first;  // the adjustable items will use these variable pixels
 
 			std::size_t min_count = 0;
-			double sum_min_px = 0;
-			std::vector<revised_division> revises;
+			double sum_min_px = 0;               // some adjustable items may have min size
+			std::vector<revised_division> revises; // revise not fully adjustable fields - becouse min or max sizes
 
 			for (auto& child : children)
 			{
 				if ((!child->weight.empty()) || (!child->display))
 					continue;
 
-				double min_px = std::numeric_limits<double>::lowest(), max_px = std::numeric_limits<double>::lowest();
+				double min_px = std::numeric_limits<double>::lowest(), // -max
+					   max_px = std::numeric_limits<double>::lowest();
 
 				if (!child->min_px.empty())
 					min_px = child->min_px.get_value(static_cast<int>(area_px), dpi);
