@@ -1491,7 +1491,7 @@ namespace nana
 						max_px = std::numeric_limits<double>::lowest();
 				}
 
-				if (min_px >= 0 || max_px >= 0)
+				if (min_px > 0 || max_px >= 0)
 					revises.push_back({ child.get(), min_px, max_px });
 			}
 
