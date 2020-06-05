@@ -270,7 +270,7 @@ that return a corresponding nana::appearance with predefined values.
                    typename NoActive = null_type>
 		struct optional
 		{
-			typedef meta::fixed_type_set<Taskbar, Floating, NoActive> set_type;
+			typedef meta::fixed_type_set<Taskbar, Floating, NoActive, Sizable> set_type;
 
 			operator appearance() const
 			{
