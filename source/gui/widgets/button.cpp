@@ -242,6 +242,7 @@ namespace nana{	namespace drawerbase
 
 			if(pos.x < static_cast<int>(icon_sz.width))
 				pos.x = static_cast<int>(icon_sz.width);
+			if(attr_.icon) pos.x += icon_sz.width / 2;
 
 			unsigned omitted_pixels = gsize.width - icon_sz.width;
 			std::size_t txtlen = str.size();
@@ -296,7 +297,8 @@ namespace nana{	namespace drawerbase
 			}
 
 			if(attr_.icon)
-				attr_.icon->paste(graph, point{ 3, static_cast<int>(gsize.height - icon_sz.height) / 2 });
+				attr_.icon->paste(graph, point{ pos.x - static_cast<int>(icon_sz.width) - 1,
+					static_cast<int>(gsize.height - icon_sz.height) / 2 + (element_state::pressed == attr_.e_state) });
 		}
 
 		void trigger::_m_draw_background(graph_reference graph)
