@@ -244,7 +244,7 @@ namespace nana{	namespace drawerbase
 				pos.x = static_cast<int>(icon_sz.width);
 			if(attr_.icon) pos.x += icon_sz.width / 2;
 
-			unsigned omitted_pixels = gsize.width - icon_sz.width;
+			unsigned omitted_pixels = gsize.width - icon_sz.width - icon_sz.width / 2;
 			std::size_t txtlen = str.size();
 			const auto txtptr = str.c_str();
 			if(ts.width)
