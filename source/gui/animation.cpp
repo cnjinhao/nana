@@ -698,7 +698,7 @@ namespace nana
 				{
 					std::lock_guard<decltype(thr->mutex)> privlock(thr->mutex);
 
-					auto u = std::find(thr->animations.begin(), thr->animations.end(), p);
+					auto u = std::find_if(thr->animations.begin(), thr->animations.end(), [p](auto& cb) { return p == cb.ani; });
 					if (u != thr->animations.end())
 						thr->animations.erase(u);
 
