@@ -15,10 +15,12 @@
 
 #ifndef NANA_GUI_PLACE_HPP
 #define NANA_GUI_PLACE_HPP
-#include <nana/push_ignore_diagnostic>
-#include <nana/gui/basis.hpp>
+
 #include <memory>
 #include <functional>
+
+#include <nana/push_ignore_diagnostic>
+#include <nana/gui/basis.hpp>
 
 namespace nana
 {
@@ -43,17 +45,17 @@ namespace nana
 		: public detail::place_agent
 	{
 	public:
-		agent(std::function<void(Widget&)> initializer)
+		explicit agent(std::function<void(Widget&)> initializer)
 			: init_(std::move(initializer))
 		{}
 
-		agent(const char* text)
+		explicit agent(const char* text)
 			: text_(text)
 		{
 			throw_not_utf8(text);
 		}
 
-		agent(std::string text, std::function<void(Widget&)> initializer = {})
+		explicit agent(std::string text, std::function<void(Widget&)> initializer = {})
 			: text_(std::move(text)), init_(std::move(initializer))
 		{
 			throw_not_utf8(text_);
@@ -82,11 +84,11 @@ namespace nana
 
 		class field_interface
 		{
+        public:
 			field_interface(const field_interface&) = delete;
 			field_interface& operator=(const field_interface&) = delete;
 			field_interface(field_interface&&) = delete;
 			field_interface& operator=(field_interface&&) = delete;
-		public:
 			field_interface() = default;
 			virtual ~field_interface() = default;
 			virtual field_interface& operator<<(const char* label) = 0;

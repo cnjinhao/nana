@@ -272,12 +272,6 @@ namespace nana{	namespace paint
 			}
 			else if(16 == bits_per_pixel)
 			{
-				if(pixel_size.width < width)
-					width = pixel_size.width;
-
-				if(pixel_size.height < height)
-					height = pixel_size.height;
-
 				unsigned char rgb6_table[64];
 				unsigned char rgb_table[32];
 				for(std::size_t i =0; i < 32; ++i)

@@ -17,6 +17,14 @@
 #include <map>
 #include <set>
 #include <algorithm>
+
+#include <memory>
+#include <limits>	//numeric_limits
+#include <cstdlib>	//std::abs
+#include <cstring>	//std::memset
+#include <cctype>	//std::isalpha/std::isalnum
+#include <iostream>
+
 #include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
 #include <nana/gui/place.hpp>
@@ -25,12 +33,6 @@
 #include <nana/gui/widgets/panel.hpp>
 #include <nana/gui/dragger.hpp>
 #include <nana/gui/drawing.hpp>
-
-#include <memory>
-#include <limits>	//numeric_limits
-#include <cstdlib>	//std::abs
-#include <cstring>	//std::memset
-#include <cctype>	//std::isalpha/std::isalnum
 
 #include "place_parts.hpp"
 
@@ -78,7 +80,7 @@ namespace nana
 				eof, error
 			};
 
-			tokenizer(const char* div_text) noexcept
+			explicit tokenizer(const char* div_text) noexcept
 				: divstr_(div_text), sp_(div_text)
 			{}
 
@@ -611,7 +613,7 @@ namespace nana
 		/// usefull ??
 		struct error : std::invalid_argument
 		{
-			error(std::string            what,
+			explicit error(std::string    what,
 				  std::string            field = "unknown",
 			 	  std::string::size_type pos   = std::string::npos)
 
@@ -681,11 +683,11 @@ namespace nana
 			{}
 		};
 
-		field_gather(place * p) noexcept
+		explicit field_gather(place * p) noexcept
 			: place_ptr_(p)
 		{}
 
-		~field_gather() noexcept
+		~field_gather() noexcept override
 		{
 			for (auto & e : elements)
 				api::umake_event(e.evt_destroy);
@@ -1195,23 +1197,26 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-			auto const dpi = api::window_dpi(wd);
+			std::cout << "\n Begin div_arrange child collocate: " << api::window_caption(wd) << std::endl;
+		    auto const dpi = api::window_dpi(wd);
 			const bool vert = (kind::arrange != kind_of_division);
 
 			auto area_margined = margin_area(dpi);
 			rectangle_rotator area(vert, area_margined);
 			auto area_px = area.w();
 
-			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px, dpi);
+			auto fa = _m_fixed_and_adjustable(kind_of_division, area_px, dpi); // fixed pixels and number of adjustable items
 
-			double adjustable_px = _m_revise_adjustable(fa, area_px, dpi);
+			double adjustable_px = _m_revise_adjustable(fa, area_px, dpi); // amount of pixels for each adjustable item 
 
 			double position = area.x();
 			std::vector<division*> delay_collocates;
 			double precise_px = 0;
+			int ch =0;
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
-				auto child = child_ptr.get();
+                std::cout << "\n Begin child: " << ++ch << " of " << children.size() << std::endl;
+                auto child = child_ptr.get();
 				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
 
@@ -1254,7 +1259,10 @@ namespace nana
 					delay_collocates.emplace_back(child);
 				else
 					child->collocate(wd);	/// The child div have full position. Now we can collocate  inside it the child fields and child-div.
-			}
+
+				std::cout << "\n End child: " << ch << " of " << children.size() << std::endl;
+
+            }
 
 			for (auto child : delay_collocates)
 				child->collocate(wd);
@@ -1308,7 +1316,10 @@ namespace nana
 				for (auto & fsn : field->fastened)
 					api::move_window(fsn.handle, area_margined);
 			}
-		}
+
+			std::cout << "\n End child collocate: " << api::window_caption(wd)<< std::endl;
+
+        }
 	private:
 		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px)
 		{
@@ -1336,7 +1347,7 @@ namespace nana
 			return result;
 		}
 
-		//Returns the fixed pixels and the number of adjustable items.
+		/// Returns the fixed pixels and the number of adjustable items.
 		std::pair<unsigned, std::size_t> _m_fixed_and_adjustable(kind match_kind, unsigned area_px, std::size_t dpi) const noexcept
 		{
 			std::pair<unsigned, std::size_t> result;
@@ -1417,14 +1428,14 @@ namespace nana
 			auto i = revises.begin();
 			while (i != revises.end())
 			{
-				if (i->max_px == value)
+				if (i->max_px == value) // double equality ??
 				{
 					++full_count;
 					i = revises.erase(i);
 				}
 				else
 				{
-					if (i->min_px == value)
+					if (i->min_px == value) // double equality ??
 						++reached_mins;
 					++i;
 				}
@@ -1432,23 +1443,27 @@ namespace nana
 			return reached_mins;
 		}
 
-		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, unsigned area_px, std::size_t dpi)
+		/// return the amount of pixels for each adjustable item 
+		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, // fixed pixels and number of adjustable items
+			                        unsigned area_px, 
+			                        std::size_t dpi)
 		{
 			if (fa.first >= area_px || 0 == fa.second)
 				return 0;
 
-			double var_px = area_px - fa.first;
+			double var_px = area_px - fa.first;  // the adjustable items will use these variable pixels
 
 			std::size_t min_count = 0;
-			double sum_min_px = 0;
-			std::vector<revised_division> revises;
+			double sum_min_px = 0;               // some adjustable items may have min size
+			std::vector<revised_division> revises; // revise not fully adjustable fields - becouse min or max sizes
 
 			for (auto& child : children)
 			{
 				if ((!child->weight.empty()) || (!child->display))
 					continue;
 
-				double min_px = std::numeric_limits<double>::lowest(), max_px = std::numeric_limits<double>::lowest();
+				double min_px = std::numeric_limits<double>::lowest(), // -max
+					   max_px = std::numeric_limits<double>::lowest();
 
 				if (!child->min_px.empty())
 					min_px = child->min_px.get_value(static_cast<int>(area_px), dpi);
@@ -1476,7 +1491,7 @@ namespace nana
 						max_px = std::numeric_limits<double>::lowest();
 				}
 
-				if (min_px >= 0 || max_px >= 0)
+				if (min_px > 0 || max_px >= 0)
 					revises.push_back({ child.get(), min_px, max_px });
 			}
 
@@ -1485,11 +1500,12 @@ namespace nana
 
 			double block_px = 0;
 			double level_px = 0;
-			auto rest_px = var_px - sum_min_px;
+			double rest_px = var_px - sum_min_px;
 			std::size_t blocks = fa.second;
 
 			while ((rest_px > 0) && blocks)
 			{
+				std::cout << "-";
 				auto lowest = _m_find_lowest_revised_division(revises, level_px);
 
 				double fill_px = 0;
@@ -2457,9 +2473,10 @@ namespace nana
 
 			bool is_first = true;
 			bool prev_attr = false;
-
+			int ch = 0;
 			for (auto & child : children)
 			{
+				std::cout << "\n Begin child: " << ++ch << " of " << children.size() << std::endl;
 				if (!child->display)
 					continue;
 
@@ -2477,6 +2494,7 @@ namespace nana
 					++horz_count;
 
 				prev_attr = is_vert;
+				std::cout << "\n End child: " << ch << " of " << children.size() << std::endl;
 			}
 			if (0 == vert_count)
 				vert_count = 1;
@@ -2682,6 +2700,8 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
+			std::cout << "\n Begin place impl collocate: " << api::window_caption(window_handle) << std::endl;
+
 			root_division->field_area.dimension(api::window_size(window_handle));
 
 			if (root_division->field_area.empty())
@@ -2690,9 +2710,12 @@ namespace nana
 			root_division->calc_weight_floor(window_handle);
 
 			root_division->collocate(window_handle);
+			int fc = 0;
 
 			for (auto & field : fields)
 			{
+				std::cout << "\n Begin place impl collocate field #" << ++fc << " of " << fields.size() << "named: " << field.first << std::endl;
+
 				bool is_show = false;
 				if (field.second->attached && field.second->attached->visible && field.second->attached->display)
 				{
@@ -2700,6 +2723,7 @@ namespace nana
 					auto div = field.second->attached->div_owner;
 					while (div)
 					{
+					    std::cout<<"Field's div owner: " << div->name << std::endl;
 						if (!div->visible || !div->display)
 						{
 							is_show = false;
@@ -2713,6 +2737,8 @@ namespace nana
 				//This is a feature that allows tabbar panels to be fastened to a same field, the collocate()
 				//shouldn't break the visibility of panels that are maintained by tabbar.
 				field.second->visible(is_show, false);
+				std::cout << "\n End collocate place impl field #" << fc << " of " << fields.size() << "named: " << field.first << std::endl;
+
 			}
 		}
 	}
