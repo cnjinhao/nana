@@ -748,7 +748,7 @@ namespace paint
 			}
 		}
 
-		void graphics::rgb_to_wb()
+		void graphics::rgb_to_wb(bool skip_transparent_pixels)
 		{
 			if(impl_->handle)
 			{
@@ -778,25 +778,39 @@ namespace paint
 					const auto end = pixels + length_align4;
 					for(; pixels < end; pixels += 4)
 					{
-						unsigned char gray = static_cast<unsigned char>(table_red[pixels[0].element.red] + table_green[pixels[0].element.green] + table_blue[pixels[0].element.blue] + 0.5f);
-						pixels[0].value = gray << 16 | gray << 8| gray;
+						unsigned char gray;
 
-						gray = static_cast<unsigned char>(table_red[pixels[1].element.red] + table_green[pixels[1].element.green] + table_blue[pixels[1].element.blue] + 0.5f);
-						pixels[1].value = gray << 16 | gray << 8 | gray;
-
-						gray = static_cast<unsigned char>(table_red[pixels[2].element.red] + table_green[pixels[2].element.green] + table_blue[pixels[2].element.blue] + 0.5f);
-						pixels[2].value = gray << 16 | gray << 8 | gray;
-
-						gray = static_cast<unsigned char>(table_red[pixels[3].element.red] + table_green[pixels[3].element.green] + table_blue[pixels[3].element.blue] + 0.5f);
-						pixels[3].value = gray << 16 | gray << 8 | gray;
+						if(!skip_transparent_pixels || (skip_transparent_pixels && pixels[0].element.alpha_channel))
+						{
+							gray = static_cast<unsigned char>(table_red[pixels[0].element.red] + table_green[pixels[0].element.green] + table_blue[pixels[0].element.blue] + 0.5f);
+							pixels[0].value = gray << 16 | gray << 8 | gray;
+						}
+						if(!skip_transparent_pixels || (skip_transparent_pixels && pixels[1].element.alpha_channel))
+						{
+							gray = static_cast<unsigned char>(table_red[pixels[1].element.red] + table_green[pixels[1].element.green] + table_blue[pixels[1].element.blue] + 0.5f);
+							pixels[1].value = gray << 16 | gray << 8 | gray;
+						}
+						if(!skip_transparent_pixels || (skip_transparent_pixels && pixels[2].element.alpha_channel))
+						{
+							gray = static_cast<unsigned char>(table_red[pixels[2].element.red] + table_green[pixels[2].element.green] + table_blue[pixels[2].element.blue] + 0.5f);
+							pixels[2].value = gray << 16 | gray << 8 | gray;
+						}
+						if(!skip_transparent_pixels || (skip_transparent_pixels && pixels[3].element.alpha_channel))
+						{
+							gray = static_cast<unsigned char>(table_red[pixels[3].element.red] + table_green[pixels[3].element.green] + table_blue[pixels[3].element.blue] + 0.5f);
+							pixels[3].value = gray << 16 | gray << 8 | gray;
+						}
 					}
 
 					for(int i = 0; i < rest; ++i)
 					{
-						unsigned char gray = static_cast<unsigned char>(table_red[pixels[i].element.red] + table_green[pixels[i].element.green] + table_blue[pixels[i].element.blue] + 0.5f);
-						pixels[i].element.red = gray;
-						pixels[i].element.green = gray;
-						pixels[i].element.blue = gray;
+						if(!skip_transparent_pixels || (skip_transparent_pixels && pixels[1].element.alpha_channel))
+						{
+							unsigned char gray = static_cast<unsigned char>(table_red[pixels[i].element.red] + table_green[pixels[i].element.green] + table_blue[pixels[i].element.blue] + 0.5f);
+							pixels[i].element.red = gray;
+							pixels[i].element.green = gray;
+							pixels[i].element.blue = gray;
+						}
 					}
 
 					pixels += rest;
