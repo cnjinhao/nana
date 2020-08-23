@@ -1630,8 +1630,8 @@ namespace nana
 		bool allow_multi_select;
 	};
 
-	folderbox::folderbox():
-		impl_(new implement{ nullptr, {}, {}, false})
+	folderbox::folderbox(window owner):
+		impl_(new implement{ owner, {}, {}, false})
 	{}
 
 	folderbox::folderbox(window owner, const path_type& init_path, std::string title):
