@@ -33,7 +33,13 @@ namespace nana
 					image_pixels_ = px;
 				}
 
-				void render(widget_reference, graph_reference graph, const nana::rectangle& r, const item_interface* item, state_t state)
+				void background(widget_reference, graph_reference graph)
+				{
+					graph.rectangle(false, colors::black);
+					graph.rectangle(nana::rectangle(graph.size()).pare_off(1), false, colors::white);
+				}
+
+				void item(widget_reference, graph_reference graph, const nana::rectangle& r, const item_interface* item, state_t state)
 				{
 					if (state == StateHighlighted)
 					{
@@ -298,7 +304,17 @@ namespace nana
 							return true;
 						}
 					}
+					else if(deselect_on_mouse_leave_ && npos != state_.index)
+					{
+						state_.index = npos;
+						return true;
+					}
 					return false;
+				}
+
+				void deselect_on_mouse_leave(bool value)
+				{
+					deselect_on_mouse_leave_ = value;
 				}
 
 				void draw()
@@ -322,7 +338,7 @@ namespace nana
 							{
 								auto state = (i != state_.index ? item_renderer::StateNone : item_renderer::StateHighlighted);
 
-								state_.renderer->render(*widget_, *graph_, item_r, module_->items[i].get(), state);
+								state_.renderer->item(*widget_, *graph_, item_r, module_->items[i].get(), state);
 								item_r.y += item_pixels;
 							}
 						}	
@@ -332,8 +348,7 @@ namespace nana
 						graph_->string({ 4, 4 }, L"Empty Listbox, No Module!", static_cast<color_rgb>(0x808080));
 
 					//Draw border
-					graph_->rectangle(false, colors::black);
-					graph_->rectangle(nana::rectangle(graph_->size()).pare_off(1), false, colors::white);
+					state_.renderer->background(*widget_, *graph_);
 				}
 			private:
 				bool _m_image_enabled() const
@@ -386,6 +401,10 @@ namespace nana
 				unsigned image_pixels_{16};		//Define the width pixels of the image area
 
 				bool ignore_first_mouseup_{true};
+
+				bool deselect_on_mouse_leave_{ false }; //false: is the behaviour of the combox
+													   //true: is the behaviour of the menu
+
 				struct state_type
 				{
 					std::size_t offset_y{0};
@@ -510,6 +529,11 @@ namespace nana
 		std::size_t float_listbox::index() const
 		{
 			return get_drawer_trigger().get_drawer_impl().index();
+		}
+
+		void float_listbox::deselect_on_mouse_leave(bool value)
+		{
+			get_drawer_trigger().get_drawer_impl().deselect_on_mouse_leave(value);
 		}
 	//end class float_listbox
 }
