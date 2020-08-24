@@ -32,67 +32,73 @@ namespace nana
 				image_pixels_ = px;
 			}
 
-			void render(widget_reference, graph_reference graph, const nana::rectangle& r, const item_interface* item, state_t state)
-			{
-				if (state == StateHighlighted)
+				void background(widget_reference, graph_reference graph)
 				{
-					graph.rectangle(r, false, static_cast<color_rgb>(0xafc7e3));
-
-					graph.palette(false, colors::white);
-
-					paint::draw draw{ graph };
-					draw.corner(r, 1);
-
-					graph.palette(false, static_cast<color_rgb>(0xafc7e3));
-
-					auto inner_r = r;
-					draw.corner(inner_r.pare_off(1), 1);
-
-					graph.rectangle(inner_r, false, static_cast<color_rgb>(0xEBF4FB));
-					graph.gradual_rectangle(inner_r.pare_off(1), static_cast<color_rgb>(0xDDECFD), static_cast<color_rgb>(0xC2DCFD), true);
+					graph.rectangle(false, colors::black);
+					graph.rectangle(nana::rectangle(graph.size()).pare_off(1), false, colors::white);
 				}
-				else
-					graph.rectangle(r, true, colors::white);
-				
-				int x = r.x + 2;
-				if(image_enabled_)
+
+				void item(widget_reference, graph_reference graph, const nana::rectangle& r, const item_interface* item, state_t state)
 				{
-					unsigned vpix = (r.height - 4);
-					if(item->image())
+					if (state == StateHighlighted)
 					{
-						auto imgsz = nana::fit_zoom(item->image().size(), {image_pixels_, vpix});
+						graph.rectangle(r, false, static_cast<color_rgb>(0xafc7e3));
 
-						nana::point to_pos(x, r.y + 2);
-						to_pos.x += (image_pixels_ - imgsz.width) / 2;
-						to_pos.y += (vpix - imgsz.height) / 2;
-						item->image().stretch(::nana::rectangle{ item->image().size() }, graph, nana::rectangle(to_pos, imgsz));
+						graph.palette(false, colors::white);
+
+						paint::draw draw{ graph };
+						draw.corner(r, 1);
+
+						graph.palette(false, static_cast<color_rgb>(0xafc7e3));
+
+						auto inner_r = r;
+						draw.corner(inner_r.pare_off(1), 1);
+
+						graph.rectangle(inner_r, false, static_cast<color_rgb>(0xEBF4FB));
+						graph.gradual_rectangle(inner_r.pare_off(1), static_cast<color_rgb>(0xDDECFD), static_cast<color_rgb>(0xC2DCFD), true);
 					}
-					x += (image_pixels_ + 2);
+					else
+						graph.rectangle(r, true, colors::white);
+					
+					int x = r.x + 2;
+					if(image_enabled_)
+					{
+						unsigned vpix = (r.height - 4);
+						if(item->image())
+						{
+							auto imgsz = nana::fit_zoom(item->image().size(), {image_pixels_, vpix});
+
+							nana::point to_pos(x, r.y + 2);
+							to_pos.x += (image_pixels_ - imgsz.width) / 2;
+							to_pos.y += (vpix - imgsz.height) / 2;
+							item->image().stretch(::nana::rectangle{ item->image().size() }, graph, nana::rectangle(to_pos, imgsz));
+						}
+						x += (image_pixels_ + 2);
+					}
+
+					graph.string({ x, r.y + 2 }, item->text(), colors::black);
 				}
 
-				graph.string({ x, r.y + 2 }, item->text(), colors::black);
-			}
+				unsigned item_pixels(graph_reference graph) const
+				{
+					unsigned ascent, descent, ileading;
+					graph.text_metrics(ascent, descent, ileading);
+					return ascent + descent + 4;
+				}
+			};//end class item_renderer
 
-			unsigned item_pixels(graph_reference graph) const
+			//class drawer_impl
+			class drawer_impl
 			{
-				unsigned ascent, descent, ileading;
-				graph.text_metrics(ascent, descent, ileading);
-				return ascent + descent + 4;
-			}
-		};//end class item_renderer
+			public:
+				using widget_reference = widget&;
+				using graph_reference = paint::graphics&;
 
-		//class drawer_impl
-		class drawer_impl
-		{
-		public:
-			using widget_reference = widget&;
-			using graph_reference = paint::graphics&;
-
-			void clear_state()
-			{
-				state_.offset_y = 0;
-				state_.index = npos;
-			}
+				void clear_state()
+				{
+					state_.offset_y = 0;
+					state_.index = npos;
+				}
 
 			void ignore_first_mouse_up(bool value)
 			{
@@ -286,19 +292,29 @@ namespace nana
 					y < static_cast<int>(graph.height()) - 2);
 			}
 
-			bool set_mouse(graph_reference graph, int x, int y)
-			{
-				if(this->right_area(graph, x, y))
+				bool set_mouse(graph_reference graph, int x, int y)
 				{
-					const unsigned n = (y - 2) / state_.renderer->item_pixels(graph) + static_cast<unsigned>(state_.offset_y);
-					if(n != state_.index)
+					if(this->right_area(graph, x, y))
 					{
-						state_.index = n;
+						const unsigned n = (y - 2) / state_.renderer->item_pixels(graph) + static_cast<unsigned>(state_.offset_y);
+						if(n != state_.index)
+						{
+							state_.index = n;
+							return true;
+						}
+					}
+					else if(deselect_on_mouse_leave_ && npos != state_.index)
+					{
+						state_.index = npos;
 						return true;
 					}
+					return false;
 				}
-				return false;
-			}
+
+				void deselect_on_mouse_leave(bool value)
+				{
+					deselect_on_mouse_leave_ = value;
+				}
 
 			void draw()
 			{
@@ -321,29 +337,28 @@ namespace nana
 						{
 							auto state = (i != state_.index ? item_renderer::StateNone : item_renderer::StateHighlighted);
 
-							state_.renderer->render(*widget_, *graph_, item_r, module_->items[i].get(), state);
-							item_r.y += item_pixels;
-						}
-					}	
-					_m_open_scrollbar(*widget_, pages);
-				}
-				else
-					graph_->string({ 4, 4 }, L"Empty Listbox, No Module!", static_cast<color_rgb>(0x808080));
+								state_.renderer->item(*widget_, *graph_, item_r, module_->items[i].get(), state);
+								item_r.y += item_pixels;
+							}
+						}	
+						_m_open_scrollbar(*widget_, pages);
+					}
+					else
+						graph_->string({ 4, 4 }, L"Empty Listbox, No Module!", static_cast<color_rgb>(0x808080));
 
-				//Draw border
-				graph_->rectangle(false, colors::black);
-				graph_->rectangle(nana::rectangle(graph_->size()).pare_off(1), false, colors::white);
-			}
-		private:
-			bool _m_image_enabled() const
-			{
-				for(auto & i : module_->items)
-				{
-					if(false == i->image().empty())
-						return true;
+					//Draw border
+					state_.renderer->background(*widget_, *graph_);
 				}
-				return false;
-			}
+			private:
+				bool _m_image_enabled() const
+				{
+					for(auto & i : module_->items)
+					{
+						if(false == i->image().empty())
+							return true;
+					}
+					return false;
+				}
 
 			void _m_open_scrollbar(widget_reference wd, bool v)
 			{
@@ -384,11 +399,15 @@ namespace nana
 			nana::paint::graphics * graph_{nullptr};
 			unsigned image_pixels_{16};		//Define the width pixels of the image area
 
-			bool ignore_first_mouseup_{true};
-			struct state_type
-			{
-				std::size_t offset_y{0};
-				std::size_t index{npos};			//The index of the selected item.
+				bool ignore_first_mouseup_{true};
+
+				bool deselect_on_mouse_leave_{ false }; //false: is the behaviour of the combox
+													   //true: is the behaviour of the menu
+
+				struct state_type
+				{
+					std::size_t offset_y{0};
+					std::size_t index{npos};			//The index of the selected item.
 
 				item_renderer * const orig_renderer;
 				item_renderer * renderer;
@@ -508,6 +527,11 @@ namespace nana
 		std::size_t float_listbox::index() const
 		{
 			return get_drawer_trigger().get_drawer_impl().index();
+		}
+
+		void float_listbox::deselect_on_mouse_leave(bool value)
+		{
+			get_drawer_trigger().get_drawer_impl().deselect_on_mouse_leave(value);
 		}
 	//end class float_listbox
 }

@@ -28,26 +28,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -70,13 +70,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\..\include;..\..\extrlib\vc2019;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\..\include;..\..\extrlib\vc2019;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
@@ -85,13 +85,13 @@
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IncludePath>..\..\include;..\..\extrlib\vc2019;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>../bin/</OutDir>
     <IntDir>..\..\..\temp\$(ProjectName)\$(PlatformToolset)_$(Configuration)_$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformToolset)_$(Configuration)_$(PlatformShortName)</TargetName>
-    <IncludePath>..\..\include;..\..\extrlib\vc2019;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\include;..\..\extrlib\vc2017;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -162,6 +162,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\any.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_device.cpp" />
     <ClCompile Include="..\..\source\audio\detail\audio_stream.cpp" />
     <ClCompile Include="..\..\source\audio\detail\buffer_preparation.cpp" />
@@ -234,6 +235,7 @@
     <ClCompile Include="..\..\source\paint\image_process_selector.cpp" />
     <ClCompile Include="..\..\source\paint\pixel_buffer.cpp" />
     <ClCompile Include="..\..\source\paint\text_renderer.cpp" />
+    <ClCompile Include="..\..\source\stdc++.cpp" />
     <ClCompile Include="..\..\source\system\dataexch.cpp" />
     <ClCompile Include="..\..\source\system\platform.cpp" />
     <ClCompile Include="..\..\source\system\shared_wrapper.cpp" />
@@ -242,6 +244,7 @@
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\nana\any.hpp" />
     <ClInclude Include="..\..\include\nana\basic_types.hpp" />
     <ClInclude Include="..\..\include\nana\c++defines.hpp" />
     <ClInclude Include="..\..\include\nana\charset.hpp" />
@@ -291,14 +294,17 @@
     <ClInclude Include="..\..\include\nana\gui\widgets\toolbar.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\treebox.hpp" />
     <ClInclude Include="..\..\include\nana\gui\widgets\widget.hpp" />
+    <ClInclude Include="..\..\include\nana\gui\wvl.hpp" />
     <ClInclude Include="..\..\include\nana\internationalization.hpp" />
     <ClInclude Include="..\..\include\nana\key_type.hpp" />
-    <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
+    <ClInclude Include="..\..\include\nana\optional.hpp" />
+    <ClInclude Include="..\..\include\nana\stdc++.hpp" />
+    <ClInclude Include="..\..\include\nana\std_condition_variable.hpp" />
+    <ClInclude Include="..\..\include\nana\std_mutex.hpp" />
+    <ClInclude Include="..\..\include\nana\std_thread.hpp" />
     <ClInclude Include="..\..\include\nana\traits.hpp" />
     <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
     <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp" />
-    <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
-    <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\nana\pop_ignore_diagnostic" />
