@@ -15,6 +15,7 @@
 #include <nana/gui/element.hpp>
 #include <nana/gui/timer.hpp>
 #include <algorithm>
+#include <sstream>
 
 namespace nana
 {
@@ -59,7 +60,9 @@ namespace nana
 
 			std::string value() const override
 			{
-				return std::to_string(value_);
+				std::stringstream ss;
+				ss << value_;
+				return ss.str();
 			}
 
 			bool value(const std::string& value_str, bool & diff) override
