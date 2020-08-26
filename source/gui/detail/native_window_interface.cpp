@@ -1826,16 +1826,15 @@ namespace nana{
 		std::size_t native_interface::window_dpi(native_window_type wd)
 		{
 #ifdef NANA_WINDOWS
+			if (!::IsWindow(reinterpret_cast<HWND>(wd)))
+				return 0;
+
 			auto& dpi_fn = windows_dpi_function();
 			if (dpi_fn.good())
-			{
-				if (::IsWindow(reinterpret_cast<HWND>(wd)))
 					return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
-			}
-			return 0;
 #endif
 			static_cast<void>(wd);	//eliminate the unused warning
-			return 96;
+			return system_dpi();
 		}
 
 		std::size_t native_interface::system_dpi()
@@ -1844,6 +1843,13 @@ namespace nana{
 			auto& dpi_fn = windows_dpi_function();
 			if (dpi_fn.good())
 				return dpi_fn.GetDpiForSystem();
+
+			//When DPI-aware APIs are not supported by the running Windows, it returns
+			//the system DPI
+			auto hdc = ::GetDC(nullptr);
+			auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, LOGPIXELSX));
+			::ReleaseDC(nullptr, hdc);
+			return dots;
 #endif
 			return 96;
 		}
