@@ -45,7 +45,7 @@ namespace nana
 			unsigned item_h_{ 24 };
 			nana::color bg_{ colors::white };
 
-			void image(bool enb, unsigned px)
+			void image(bool /*enbable*/, unsigned px)
 			{
 				// always show the space for the image
 				image_pixels_ = px;
@@ -164,7 +164,7 @@ namespace nana
 			nana::size			textsize;
 
 			toolbar_item(tools type, const std::string& text, const nana::paint::image& img, const event_fn_t& fn)
-				: type(type), text(text), image(img), event_handler(fn)
+				: text(text), image(img), type(type), event_handler(fn)
 			{}
 		};
 
@@ -652,8 +652,7 @@ namespace nana
 				std::size_t index = 0;
 				for(auto m: impl_->items.container())
 				{
-					unsigned x = static_cast<unsigned>(pos.x);
-					if (m && x >= m->position.x && x <= (m->position.x+m->pixels))
+					if (m && (pos.x >= m->position.x) && (pos.x <= m->position.x + int(m->pixels)))
 						return (((!m) || (!m->enable && !want_if_disabled)) ? npos : index);
 
 					++index;
