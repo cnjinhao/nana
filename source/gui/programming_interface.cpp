@@ -517,7 +517,7 @@ namespace api
 		return interface_type::cursor_position();
 	}
 
-	::nana::rectangle make_center(unsigned width, unsigned height)
+	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
 		auto screen = interface_type::primary_monitor_size();
 		return{
@@ -527,14 +527,24 @@ namespace api
 		};
 	}
 
-	::nana::rectangle make_center(window wd, unsigned width, unsigned height)
+	::nana::rectangle make_center(window wd, unsigned width, unsigned height) noexcept
 	{
 		nana::rectangle r = make_center(width, height);
 
-		nana::point pos{ r.x, r.y };
+		auto pos = r.position();
 		calc_window_point(wd, pos);
 		r.position(pos);
 		return r;
+	}
+
+	rectangle make_center(const size & sz) noexcept
+	{
+		return make_center(sz.width, sz.height);
+	}
+
+	rectangle make_center(window wd, const size& sz) noexcept
+	{
+		return make_center(wd, sz.width, sz.height);
 	}
 
 	void window_icon_default(const paint::image& small_icon, const paint::image& big_icon)
