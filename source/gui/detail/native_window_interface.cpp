@@ -484,16 +484,10 @@ namespace nana{
 			win_attr.backing_pixel = 0;
 			win_attr.colormap = restrict::spec.colormap();
 
-			if(app.decoration == false)
-			{
-				win_attr.override_redirect = True;
-				attr_mask |= CWOverrideRedirect;
-			}
-
 			Window parent = (owner ? reinterpret_cast<Window>(owner) : restrict::spec.root_window());
 
 			//The position passed to XCreateWindow is a screen coordinate.
-			nana::point pos(r.x, r.y);
+			auto pos = r.position();
 			if((false == nested) && owner)
 			{
 				win_attr.save_under = True;
