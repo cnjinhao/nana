@@ -475,15 +475,29 @@ namespace nana
 		};//class dockarea
 
 
+		struct display_metrics
+		{
+			std::size_t dpi;
+			double font_px{ 0 };
+
+			display_metrics(window wd) :
+				dpi(api::window_dpi(wd))
+			{
+				auto font_info = api::typeface(wd).info();
+				if (font_info)
+					font_px = font_info->size_pt * dpi / 72;
+			}
+		};
+
 		//number_t is used for storing a number type variable
 		//such as integer, real and percent. Essentially, percent is a typo of real.
 		class number_t
 		{
 		public:
 			enum class kind{ none, integer, real, percent };
+			enum class units{medium, px, em};
 
 			number_t()
-				: kind_(kind::none)
 			{
 				value_.integer = 0;
 			}
@@ -510,20 +524,65 @@ namespace nana
 				return kind_;
 			}
 
-			double get_value(int ref_percent, std::size_t dpi) const noexcept
+			double get_value(int ref_percent, const display_metrics& dm, bool to_system_px = true) const noexcept
 			{
+				double val = 0;
 				switch (kind_)
 				{
 				case kind::integer:
-					return static_cast<double>(value_.integer * dpi) / 96;
+					val = value_.integer;
+					break;
 				case kind::real:
-					return value_.real;
+					val = value_.real;
+					break;
 				case kind::percent:
 					return value_.real * ref_percent;
 				default:
-					break;
+					return 0;
+				}
+				
+				if (to_system_px)
+				{
+					switch (unit_)
+					{
+					case units::medium:
+						return val * dm.dpi / 96;
+					case units::px:
+						return val;
+					case units::em:
+						return val * dm.font_px;
+					}
+				}
+				else
+				{
+					switch (unit_)
+					{
+					case units::medium:
+						return val;
+					case units::px:
+						return val * 96 / dm.dpi;
+					case units::em:
+						return val * dm.font_px * 96 / dm.dpi;
+					}
 				}
 				return 0;
+			}
+
+			double get_value(unsigned area_px, double adjustable_px, double& precise_px, const display_metrics& dm, bool to_system_px) const noexcept
+			{
+				if (number_t::kind::percent == kind_ || number_t::kind::none == kind_)
+				{
+					if (number_t::kind::percent == kind_)
+						adjustable_px = area_px * value_.real + precise_px;
+					else
+						adjustable_px += precise_px;
+
+					auto const px = static_cast<unsigned>(adjustable_px);
+					precise_px = adjustable_px - px;
+					return px;
+				}
+
+				return get_value(0, dm, to_system_px);
 			}
 
 			int integer() const noexcept
@@ -556,9 +615,24 @@ namespace nana
 			{
 				kind_ = kind::percent;
 				value_.real = d / 100;
+				unit_ = units::medium;
+			}
+
+			void unit(units u)
+			{
+				if (kind::percent == kind_)
+					throw std::invalid_argument{"a persentage value can't be assigned with the unit"};
+				unit_ = u;
+			}
+
+			units unit() const noexcept
+			{
+				return unit_;
 			}
 		private:
-			kind kind_;
+			kind	kind_{ kind::none };
+			units	unit_{ units::medium };
+
 			union valueset
 			{
 				int integer;
@@ -646,7 +720,7 @@ namespace nana
 				return (-1 == pos ? number_t{} : margins_[pos]);
 			}
 
-			nana::rectangle area(const ::nana::rectangle& field_area, std::size_t dpi) const
+			nana::rectangle area(const ::nana::rectangle& field_area, const display_metrics& dm) const
 			{
 				if (margins_.empty())
 					return field_area;
@@ -654,7 +728,7 @@ namespace nana
 				auto r = field_area;
 				if (all_edges_)
 				{
-					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width), dpi));
+					auto px = static_cast<int>(margins_.back().get_value(static_cast<int>(r.width), dm, true));
 					r.x += px;
 					r.width = differ(r.width, (static_cast<unsigned>(px) << 1));
 
@@ -690,27 +764,27 @@ namespace nana
 
 					if (0 == it)	//top
 					{
-						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dpi));
+						auto px = static_cast<int>(margins_[it].get_value(static_cast<int>(field_area.height), dm, true));
 						r.y += px;
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != ib)	//bottom
 					{
-						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dpi));
+						auto px = static_cast<int>(margins_[ib].get_value(static_cast<int>(field_area.height), dm, true));
 						r.height = differ(r.height, static_cast<px_type>(px));
 					}
 
 					if (-1 != il)	//left
 					{
-						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dpi));
+						auto px = static_cast<px_type>(margins_[il].get_value(static_cast<int>(field_area.width), dm, true));
 						r.x += px;
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 
 					if (-1 != ir)	//right
 					{
-						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dpi));
+						auto px = static_cast<int>(margins_[ir].get_value(static_cast<int>(field_area.width), dm, true));
 						r.width = differ(r.width, static_cast<px_type>(px));
 					}
 				}
