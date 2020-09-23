@@ -166,6 +166,32 @@ namespace nana
 								switch (tk)
 								{
 								case token::number:
+									//Try to parse the unit
+									if (number_.kind_of() != number_t::kind::percent)
+									{
+										auto p = sp_; //Keep the start position
+										try
+										{
+											if (token::identifier == this->read())
+											{
+												if (this->idstr() == "px")
+													number_.unit(number_t::units::px);
+												else if (this->idstr() == "em")
+													number_.unit(number_t::units::em);
+												else
+													//Restore the start position
+													sp_ = p;
+											}
+											else
+												//Restore the start position
+												sp_ = p;
+										}
+										catch (...)
+										{
+											//Restore the start position
+											sp_ = p;
+										}
+									}
 									array_.push_back(number_);
 									break;
 								case token::variable:
