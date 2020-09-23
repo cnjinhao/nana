@@ -166,32 +166,6 @@ namespace nana
 								switch (tk)
 								{
 								case token::number:
-									//Try to parse the unit
-									if (number_.kind_of() != number_t::kind::percent)
-									{
-										auto p = sp_; //Keep the start position
-										try
-										{
-											if (token::identifier == this->read())
-											{
-												if (this->idstr() == "px")
-													number_.unit(number_t::units::px);
-												else if (this->idstr() == "em")
-													number_.unit(number_t::units::em);
-												else
-													//Restore the start position
-													sp_ = p;
-											}
-											else
-												//Restore the start position
-												sp_ = p;
-										}
-										catch (...)
-										{
-											//Restore the start position
-											sp_ = p;
-										}
-									}
 									array_.push_back(number_);
 									break;
 								case token::variable:
@@ -399,25 +373,6 @@ namespace nana
 					throw error("the '" + idstr_ + "' requires a number (integer, real or percent)", *this);
 
 				sp_ += len + (p - sp_);
-
-				//Try to parse the unit
-				if (number_.kind_of() != number_t::kind::percent)
-				{
-					auto p = sp_; //Keep the start position
-					if (token::identifier == this->read())
-					{
-						if (this->idstr() == "px")
-							number_.unit(number_t::units::px);
-						else if (this->idstr() == "em")
-							number_.unit(number_t::units::em);
-						else
-							//Restore the start position
-							sp_ = p;
-					}
-					else
-						//Restore the start position
-						sp_ = p;
-				}
 			}
 
 			void _m_attr_reparray()
@@ -461,6 +416,7 @@ namespace nana
 				sp = _m_eat_whitespace(sp);
 
 				number_.assign(0);
+				number_.unit(number_t::units::medium);
 
 				bool gotcha = false;
 				int integer = 0;
@@ -501,7 +457,39 @@ namespace nana
 				{
 					sp = _m_eat_whitespace(sp);
 					if ('%' != *sp)
+					{
+						//Try to parse the unit
+						auto start_p = sp_;
+						sp_ = sp;
+
+						//Try-catch here, the next character may not be allowed for read().
+						//When parsing an array, a number is followed by a comma, e.g. "20,".
+						//Then trying to parse the unit will throw an exception from read(), because
+						//comma is not allowed for read().
+						try
+						{
+							if (token::identifier == this->read())
+							{
+								if (this->idstr() == "px")
+								{
+									number_.unit(number_t::units::px);
+									sp = sp_;
+								}
+								else if (this->idstr() == "em")
+								{
+									number_.unit(number_t::units::em);
+									sp = sp_;
+								}
+							}
+						}
+						catch (...)
+						{
+						}
+
+						sp_ = start_p;
+
 						return sp - allstart;
+					}
 
 					switch (number_.kind_of())
 					{

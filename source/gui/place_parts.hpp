@@ -505,6 +505,7 @@ namespace nana
 			void reset() noexcept
 			{
 				kind_ = kind::none;
+				unit_ = units::medium;
 				value_.integer = 0;
 			}
 
