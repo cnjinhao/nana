@@ -212,8 +212,10 @@ namespace api
 	void unregister_shortkey(window);
 
 	nana::point	cursor_position();
-	rectangle make_center(unsigned width, unsigned height);           ///< Retrieves a rectangle which is in the center of the screen.
-	rectangle make_center(window, unsigned width, unsigned height);   ///< Retrieves a rectangle which is in the center of the window
+	rectangle make_center(unsigned width, unsigned height) noexcept;           ///< Retrieves a rectangle which is in the center of the screen.
+	rectangle make_center(window, unsigned width, unsigned height) noexcept;   ///< Retrieves a rectangle which is in the center of the window
+	rectangle make_center(const size& sz) noexcept;
+	rectangle make_center(window, const size& sz) noexcept;
 
 	template<typename Widget=::nana::widget, typename EnumFunction>
 	void enum_widgets(window wd, bool recursive, EnumFunction && fn)

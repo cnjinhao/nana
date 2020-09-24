@@ -22,30 +22,30 @@ namespace nana
 
 	namespace drawerbase::form
 	{
-			class trigger: public drawer_trigger
-			{
-			public:
-				void attached(widget_reference, graph_reference)	override;
-				void refresh(graph_reference)	override;
-			private:
-				widget*	wd_{nullptr};
-			};
+		class trigger: public drawer_trigger
+		{
+		public:
+			void attached(widget_reference, graph_reference)	override;
+			void refresh(graph_reference)	override;
+		private:
+			widget*	wd_{nullptr};
+		};
 
-			class form_base
-				: public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
-			{
-			public:
-				form_base(window owner, bool nested, const rectangle&, const appearance&);
-				
-				//place methods
+		class form_base
+			: public widget_object<category::root_tag, drawerbase::form::trigger, detail::events_root_extension>
+		{
+		public:
+			form_base(window owner, bool nested, const rectangle&, const appearance&);
+			
+			//place methods
 
-				place & get_place();
-				void div(std::string div_text);
-				place::field_reference operator[](const char* field_name);
-				void collocate() noexcept;
-			private:
-				std::unique_ptr<place> place_;
-			};
+			place & get_place();
+			void div(std::string div_text);
+			place::field_reference operator[](const char* field_name);
+			void collocate() noexcept;
+		private:
+			std::unique_ptr<place> place_;
+		};
 	}//end namespace drawerbase::form
 
 	/// The form widget represents a popup window.

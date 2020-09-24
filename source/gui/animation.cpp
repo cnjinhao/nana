@@ -851,7 +851,7 @@ namespace nana
 					impl_->render_this_frame(tar, r());
 				});
 
-				API::events(wd).destroy.connect([this](const arg_destroy& arg){
+				api::events(wd).destroy.connect([this](const arg_destroy& arg){
 					std::lock_guard<decltype(impl_->thr_variable->mutex)> lock(impl_->thr_variable->mutex);
 					impl_->outputs.erase(arg.window_handle);
 				});
