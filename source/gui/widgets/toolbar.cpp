@@ -467,15 +467,6 @@ namespace nana
 
 					widget_ = static_cast<::nana::toolbar*>(&widget);
 					widget.caption("nana toolbar");
-
-					if (widget_->detached()) return;
-
-					impl_->event_size = API::events(widget.parent()).resized.connect_unignorable([this](const arg_resized& arg)
-					{
-						auto wd = widget_->handle();
-						API::window_size(wd, nana::size(arg.width, widget_->size().height));
-						API::update_window(wd);
-					});
 				}
 
 				void drawer::detached()
