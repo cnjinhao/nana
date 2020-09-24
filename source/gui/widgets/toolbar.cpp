@@ -371,7 +371,6 @@ namespace nana
 
 		struct drawer::drawer_impl_type
 		{
-			event_handle event_size{ nullptr };
 			paint::graphics* graph_ptr{ nullptr };
 
 			unsigned scale{ TOOLS_HEIGHT };
@@ -469,8 +468,6 @@ namespace nana
 
 			void drawer::detached()
 			{
-				api::umake_event(impl_->event_size);
-				impl_->event_size = nullptr;
 				impl_->graph_ptr = nullptr;
 			}
 
