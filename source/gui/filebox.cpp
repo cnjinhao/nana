@@ -158,7 +158,8 @@ namespace nana
 		filebox_implement(window owner, mode dialog_mode, const std::string& title, bool pick_directory, bool allow_multi_select):
 			form(owner, api::make_center(owner, 630, 440)),
 			pick_directory_(pick_directory),
-			mode_(dialog_mode)
+			mode_(dialog_mode),
+			allow_multi_select_(allow_multi_select)
 		{
 			images_.folder.open(theme_.icon("folder", 16));
 			images_.file.open(theme_.icon("empty", 16));
@@ -1057,13 +1058,16 @@ namespace nana
 
 		std::vector<std::string> _m_strip_files(const std::string& text)
 		{
+			if(!allow_multi_select_)
+				return {text};
+
 			std::vector<std::string> files;
 			std::size_t start_pos = 0;
 			while(true)
 			{
 				while(true)
 				{
-					auto pos = text.find_first_of(" \"", start_pos);
+					auto pos = text.find('"', start_pos);
 					if(text.npos == pos)
 					{
 						if(text.length() == start_pos)
@@ -1275,6 +1279,7 @@ namespace nana
 	private:
 		bool const pick_directory_;
 		mode mode_;
+		bool const allow_multi_select_;
 		std::string def_ext_;
 
 		place	place_;
