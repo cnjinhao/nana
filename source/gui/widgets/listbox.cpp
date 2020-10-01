@@ -3362,13 +3362,17 @@ namespace nana
 			/// @return true if refresh is needed, false otherwise
 			bool grab_move(const nana::point& pos)
 			{
+				auto const & attrib = essence_->header.attrib();
 				if(npos == grabs_.splitter)
 				{  // move column, not resize it
-					options_.grab_column = true;
-					options_.grab_column_position = pos;
-					return true;
+					if (attrib.movable)
+					{
+						options_.grab_column = true;
+						options_.grab_column_position = pos;
+						return true;
+					}
 				}
-				else
+				else if(attrib.resizable)
 				{   // resize column, not move it
 					auto& col = essence_->header.at(grabs_.splitter);
 
@@ -4213,7 +4217,7 @@ namespace nana
 
 				if(essence_->ptr_state == item_state::pressed)
 				{
-					if((essence_->pointer_where.first == parts::header) && essence_->header.attrib().movable)
+					if(essence_->pointer_where.first == parts::header)
 					{   // moving a pressed header : grab it
 						essence_->ptr_state = item_state::grabbed;
 
