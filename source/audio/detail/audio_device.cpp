@@ -22,9 +22,10 @@ namespace nana{namespace audio
 #if defined(NANA_WINDOWS)
 		class wave_native
 		{
-			typedef MMRESULT (__stdcall *out_open_t)(LPHWAVEOUT, UINT_PTR, LPWAVEFORMATEX, DWORD_PTR, DWORD_PTR, DWORD);
-			typedef MMRESULT (__stdcall *out_close_t)(HWAVEOUT);
-			typedef MMRESULT (__stdcall *out_op_header_t)(HWAVEOUT, LPWAVEHDR, UINT);
+			using out_open_t = decltype(&waveOutOpen);
+			using out_close_t = decltype(&waveOutClose);
+			using out_op_header_t = decltype(&waveOutWrite);
+
 		public:
 			out_open_t out_open = nullptr;
 			out_close_t out_close = nullptr;
