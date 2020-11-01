@@ -26,17 +26,20 @@ namespace nana{namespace audio
 			typedef MMRESULT (__stdcall *out_close_t)(HWAVEOUT);
 			typedef MMRESULT (__stdcall *out_op_header_t)(HWAVEOUT, LPWAVEHDR, UINT);
 		public:
-			out_open_t out_open;
-			out_close_t out_close;
-			out_op_header_t out_write;
-			out_op_header_t out_prepare;
-			out_op_header_t out_unprepare;
+			out_open_t out_open = nullptr;
+			out_close_t out_close = nullptr;
+			out_op_header_t out_write = nullptr;
+			out_op_header_t out_prepare = nullptr;
+			out_op_header_t out_unprepare = nullptr;
 
 			wave_native()
 			{
 				HMODULE winmm = ::GetModuleHandleA("Winmm.DLL");
-				if(0 == winmm)
-					winmm = ::LoadLibraryA("Winmm.DLL");
+
+				if(nullptr == winmm)
+					winmm_ = winmm = ::LoadLibraryA("Winmm.DLL");
+				if(nullptr == winmm)
+					return;
 
 				out_open = reinterpret_cast<out_open_t>(::GetProcAddress(winmm, "waveOutOpen"));
 				out_close = reinterpret_cast<out_close_t>(::GetProcAddress(winmm, "waveOutClose"));
@@ -44,6 +47,14 @@ namespace nana{namespace audio
 				out_prepare = reinterpret_cast<out_op_header_t>(::GetProcAddress(winmm, "waveOutPrepareHeader"));
 				out_unprepare = reinterpret_cast<out_op_header_t>(::GetProcAddress(winmm, "waveOutUnprepareHeader"));
 			}
+
+			~wave_native()
+			{
+				if(nullptr != winmm_)
+					FreeLibrary(winmm_);
+			}
+		private:
+			HMODULE winmm_ = nullptr;
 		}wave_native_if;
 #endif
 		//class audio_device
