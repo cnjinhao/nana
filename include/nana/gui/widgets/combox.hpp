@@ -183,9 +183,9 @@ namespace nana
 		item_proxy operator[](const Key& kv)
 		{
 			typedef typename nana::detail::type_escape<Key>::type key_t;
-			std::shared_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t> >(kv), [](nana::detail::key_interface*p)
+			std::shared_ptr<nana::detail::key_interface> p(new nana::key<key_t, std::less<key_t> >(kv), [](nana::detail::key_interface*pki)
 			{
-				delete p;
+				delete pki;
 			});
 
 			return _m_at_key(std::move(p));

@@ -159,9 +159,9 @@ namespace nana
 		template<typename Panel, typename ...Args>
 		place& dock(const std::string& dockname, const std::string& factory_name, Args&& ... args)
 		{
-			return dock(dockname, factory_name, std::bind([](window parent, Args & ... args)
+			return dock(dockname, factory_name, std::bind([](window parent, Args & ... dock_args)
 			{
-				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(args)...));
+				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(dock_args)...));
 			}, std::placeholders::_1, args...));
 		}
 
