@@ -59,7 +59,11 @@ namespace nana
 		void text(const ::std::string&);
 		void icon(const ::std::string& icon_file);
 		void insert_icon(const ::std::string& icon_file);
-		void period(std::chrono::milliseconds time);
+		void insert_icon(const ::std::string& animation_tag, const ::std::string& icon_file);
+		void period(const std::chrono::milliseconds time);
+		void period(const ::std::string& animation_tag, const std::chrono::milliseconds time);
+		void resume_animation();
+		void stop_animation(const bool complete_stop);
 		detail::notifier_events& events();
 		window handle() const;
 	private:
