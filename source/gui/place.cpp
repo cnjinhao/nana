@@ -23,7 +23,6 @@
 #include <cstdlib>	//std::abs
 #include <cstring>	//std::memset
 #include <cctype>	//std::isalpha/std::isalnum
-#include <iostream>
 
 #include <nana/push_ignore_diagnostic>
 #include <nana/deploy.hpp>
@@ -1205,8 +1204,6 @@ namespace nana
 
 		void collocate(window wd) override
 		{
-			std::cout << "\n Begin div_arrange child collocate: " << api::window_caption(wd) << std::endl;
-
 			const place_parts::display_metrics dm{ wd };
 			const bool vert = (kind::arrange != kind_of_division);
 
@@ -1224,7 +1221,6 @@ namespace nana
 			int ch =0;
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
-                std::cout << "\n Begin child: " << ++ch << " of " << children.size() << std::endl;
                 auto child = child_ptr.get();
 				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
@@ -1268,9 +1264,6 @@ namespace nana
 					delay_collocates.emplace_back(child);
 				else
 					child->collocate(wd);	/// The child div have full position. Now we can collocate  inside it the child fields and child-div.
-
-				std::cout << "\n End child: " << ch << " of " << children.size() << std::endl;
-
             }
 
 			for (auto child : delay_collocates)
@@ -1325,9 +1318,6 @@ namespace nana
 				for (auto & fsn : field->fastened)
 					api::move_window(fsn.handle, area_margined);
 			}
-
-			std::cout << "\n End child collocate: " << api::window_caption(wd)<< std::endl;
-
         }
 	private:
 		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px)
@@ -1514,7 +1504,6 @@ namespace nana
 
 			while ((rest_px > 0) && blocks)
 			{
-				std::cout << "-";
 				auto lowest = _m_find_lowest_revised_division(revises, level_px);
 
 				double fill_px = 0;
@@ -2487,7 +2476,6 @@ namespace nana
 			int ch = 0;
 			for (auto & child : children)
 			{
-				std::cout << "\n Begin child: " << ++ch << " of " << children.size() << std::endl;
 				if (!child->display)
 					continue;
 
@@ -2505,7 +2493,6 @@ namespace nana
 					++horz_count;
 
 				prev_attr = is_vert;
-				std::cout << "\n End child: " << ch << " of " << children.size() << std::endl;
 			}
 			if (0 == vert_count)
 				vert_count = 1;
@@ -2712,8 +2699,6 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
-			std::cout << "\n Begin place impl collocate: " << api::window_caption(window_handle) << std::endl;
-
 			root_division->field_area.dimension(api::window_size(window_handle));
 
 			if (root_division->field_area.empty())
@@ -2726,8 +2711,6 @@ namespace nana
 
 			for (auto & field : fields)
 			{
-				std::cout << "\n Begin place impl collocate field #" << ++fc << " of " << fields.size() << "named: " << field.first << std::endl;
-
 				bool is_show = false;
 				if (field.second->attached && field.second->attached->visible && field.second->attached->display)
 				{
@@ -2735,7 +2718,6 @@ namespace nana
 					auto div = field.second->attached->div_owner;
 					while (div)
 					{
-					    std::cout<<"Field's div owner: " << div->name << std::endl;
 						if (!div->visible || !div->display)
 						{
 							is_show = false;
@@ -2749,8 +2731,6 @@ namespace nana
 				//This is a feature that allows tabbar panels to be fastened to a same field, the collocate()
 				//shouldn't break the visibility of panels that are maintained by tabbar.
 				field.second->visible(is_show, false);
-				std::cout << "\n End collocate place impl field #" << fc << " of " << fields.size() << "named: " << field.first << std::endl;
-
 			}
 		}
 	}
