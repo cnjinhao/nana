@@ -457,6 +457,9 @@ namespace nana
 					sp = _m_eat_whitespace(sp);
 					if ('%' != *sp)
 					{
+						//read() may modify number_
+						auto number = number_;
+
 						//Try to parse the unit
 						auto start_p = sp_;
 						sp_ = sp;
@@ -471,12 +474,12 @@ namespace nana
 							{
 								if (this->idstr() == "px")
 								{
-									number_.unit(number_t::units::px);
+									number.unit(number_t::units::px);
 									sp = sp_;
 								}
 								else if (this->idstr() == "em")
 								{
-									number_.unit(number_t::units::em);
+									number.unit(number_t::units::em);
 									sp = sp_;
 								}
 							}
@@ -485,6 +488,7 @@ namespace nana
 						{
 						}
 
+						number_ = number;
 						sp_ = start_p;
 
 						return sp - allstart;
@@ -1218,7 +1222,7 @@ namespace nana
 			double position = area.x();
 			std::vector<division*> delay_collocates;
 			double precise_px = 0;
-			int ch =0;
+
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
                 auto child = child_ptr.get();
@@ -1246,7 +1250,7 @@ namespace nana
 				}
 				else
 				{
-					// the child weight is a fixed value, therefore, the value passed to 1st get_value parameter is useless.
+					// the child weight is a fixed value, therefore, the 1st parameter of get_value is useless.
 					child_px = static_cast<unsigned>(child->weight.get_value(0, dm));
 				}
 
