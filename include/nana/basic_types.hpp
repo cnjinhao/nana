@@ -1,7 +1,7 @@
 /**
  *	Basic Types definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -275,11 +275,13 @@ namespace nana
 		yellow	= 0xFFFF00,
 		yellow_green = 0x9acd32,
 
+		dark_dark_grey = 0x404040,
+
 		//temporary definitions, these will be replaced by color schema
 		button_face_shadow_start = 0xF5F4F2,
 		button_face_shadow_end = 0xD5D2CA,
 		button_face = 0xD4D0C8 , //,light_cyan
-		dark_border = 0x404040,
+		dark_border = dark_dark_grey,
 		gray_border = 0x808080,
 		highlight = 0x1CC4F7
 	};
