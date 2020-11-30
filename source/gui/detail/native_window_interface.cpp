@@ -484,6 +484,12 @@ namespace nana{
 			win_attr.backing_pixel = 0;
 			win_attr.colormap = restrict::spec.colormap();
 
+			if(app.floating && !app.decoration)
+			{
+				win_attr.override_redirect = True;
+				attr_mask |= CWOverrideRedirect;
+			}
+
 			Window parent = (owner ? reinterpret_cast<Window>(owner) : restrict::spec.root_window());
 
 			//The position passed to XCreateWindow is a screen coordinate.
