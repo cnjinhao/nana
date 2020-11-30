@@ -1,7 +1,7 @@
 /*
  *	Definition of Notifier
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -12,6 +12,7 @@
 
 #ifndef NANA_GUI_NOTIFIER_HPP
 #define NANA_GUI_NOTIFIER_HPP
+#include <filesystem>
 #include <nana/gui/basis.hpp>
 #include <nana/gui/detail/general_events.hpp>
 #include <nana/push_ignore_diagnostic>
@@ -57,9 +58,9 @@ namespace nana
 		~notifier();
 		void close();
 		void text(const ::std::string&);
-		void icon(const ::std::string& icon_file);
-		void insert_icon(const ::std::string& icon_file);
-		void insert_icon(const ::std::string& animation_tag, const ::std::string& icon_file);
+		void icon(const ::std::filesystem::path& file);
+		void insert_icon(const ::std::filesystem::path& file);
+		void insert_icon(const ::std::string& animation_tag, const ::std::filesystem::path& file);
 		void period(const std::chrono::milliseconds time);
 		void period(const ::std::string& animation_tag, const std::chrono::milliseconds time);
 		void resume_animation();

@@ -1,7 +1,7 @@
 /*
  *	Implementation of Notifier
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -323,10 +323,10 @@ namespace nana
 #endif
 	}
 
-	void notifier::icon(const std::string& icon_file)
+	void notifier::icon(const std::filesystem::path& file)
 	{
 #if defined(NANA_WINDOWS)
-		paint::image image_ico{ icon_file };
+		paint::image image_ico{ file };
 		auto icon_handle = paint::image_accessor::icon(image_ico);
 		if (icon_handle)
 		{
@@ -344,15 +344,15 @@ namespace nana
 #endif
 	}
 
-	void notifier::insert_icon(const std::string& icon_file)
+	void notifier::insert_icon(const std::filesystem::path& icon_file)
 	{
 		insert_icon("notifier_default", icon_file);
 	}
 
-	void notifier::insert_icon(const ::std::string& animation_tag, const ::std::string& icon_file)
+	void notifier::insert_icon(const ::std::string& animation_tag, const ::std::filesystem::path& file)
 	{
 #if defined(NANA_WINDOWS)
-		paint::image image_ico{ icon_file };
+		paint::image image_ico{ file };
 		auto icon_handle = paint::image_accessor::icon(image_ico);
 		if (icon_handle)
 		{
