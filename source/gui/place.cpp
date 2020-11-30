@@ -407,11 +407,31 @@ namespace nana
 				return sp;
 			}
 
+			//Parses unit. It returns unit string and modifies the sp to the next character of unit string if it parses successfully.
+			std::string _m_unit(const char*& sp) noexcept
+			{
+				auto const start = sp;
+				sp = _m_eat_whitespace(sp);
+				auto begin = sp;
+				while (std::isalpha(*sp))
+					++sp;
+				
+				if (sp > begin)
+				{
+					std::string_view sv{ begin, static_cast<std::string_view::size_type>(sp - begin) };
+					if ("px" == sv || "em" == sv)
+						return { sv.data(), sv.size() };
+				}
+
+				sp = start;
+				return {};
+			}
+
 			std::size_t _m_number(const char* sp, bool negative) noexcept
 			{
 				/// \todo use std::from_char<int>() etc.
 
-				const char* allstart = sp;
+				const char* const allstart = sp;
 				sp = _m_eat_whitespace(sp);
 
 				number_.assign(0);
@@ -457,39 +477,12 @@ namespace nana
 					sp = _m_eat_whitespace(sp);
 					if ('%' != *sp)
 					{
-						//read() may modify number_
-						auto number = number_;
-
-						//Try to parse the unit
-						auto start_p = sp_;
-						sp_ = sp;
-
-						//Try-catch here, the next character may not be allowed for read().
-						//When parsing an array, a number is followed by a comma, e.g. "20,".
-						//Then trying to parse the unit will throw an exception from read(), because
-						//comma is not allowed for read().
-						try
-						{
-							if (token::identifier == this->read())
-							{
-								if (this->idstr() == "px")
-								{
-									number.unit(number_t::units::px);
-									sp = sp_;
-								}
-								else if (this->idstr() == "em")
-								{
-									number.unit(number_t::units::em);
-									sp = sp_;
-								}
-							}
-						}
-						catch (...)
-						{
-						}
-
-						number_ = number;
-						sp_ = start_p;
+						//Try to parse unit
+						auto unit = _m_unit(sp);
+						if ("px" == unit)
+							number_.unit(number_t::units::px);
+						else if ("em" == unit)
+							number_.unit(number_t::units::em);
 
 						return sp - allstart;
 					}
