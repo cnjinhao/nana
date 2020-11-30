@@ -429,8 +429,6 @@ namespace nana
 
 			std::size_t _m_number(const char* sp, bool negative) noexcept
 			{
-				/// \todo use std::from_char<int>() etc.
-
 				const char* const allstart = sp;
 				sp = _m_eat_whitespace(sp);
 
@@ -439,7 +437,6 @@ namespace nana
 
 				bool gotcha = false;
 				int integer = 0;
-				double real = 0;
 				//read the integral part.
 				const char* istart = sp;
 				while ('0' <= *sp && *sp <= '9')
@@ -447,10 +444,10 @@ namespace nana
 					integer = integer * 10 + (*sp - '0');
 					++sp;
 				}
-				const char* iend = sp;
 
 				if ('.' == *sp)
 				{
+					double real = 0;
 					double div = 1;
 					const char* rstart = ++sp;
 					while ('0' <= *sp && *sp <= '9')
@@ -466,7 +463,7 @@ namespace nana
 						gotcha = true;
 					}
 				}
-				else if (istart != iend)
+				else if (istart != sp)
 				{
 					number_.assign(negative ? -integer : integer);
 					gotcha = true;
