@@ -340,7 +340,7 @@ namespace nana
 			impl_->icon = image_ico;
 		}
 #else
-		static_cast<void>(icon_file);	//eliminate unused parameter warning
+		static_cast<void>(file);	//eliminate unused parameter warning
 #endif
 	}
 
@@ -361,7 +361,7 @@ namespace nana
 		}
 #else
 		static_cast<void>(animation_tag);	//eliminate unused parameter warning
-		static_cast<void>(icon_file);	//eliminate unused parameter warning
+		static_cast<void>(file);	//eliminate unused parameter warning
 #endif
 	}
 
