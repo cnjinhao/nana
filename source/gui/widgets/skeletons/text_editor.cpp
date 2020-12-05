@@ -341,15 +341,17 @@ namespace nana::widgets::skeletons
 
 	struct text_editor::text_section
 	{
-		const wchar_t* begin{ nullptr };
-		const wchar_t* end{ nullptr };
+		std::size_t begin{ 0 };
+		std::size_t end{ 0 };
 		unsigned pixels{ 0 };
 
 		text_section() = default;
-		text_section(const wchar_t* ptr, const wchar_t* endptr, unsigned px)
-			: begin(ptr), end(endptr), pixels(px)
-		{}
-	};
+		text_section(std::size_t sbegin, std::size_t send, unsigned px) :
+			begin(sbegin),
+			end(send),
+			pixels(px)
+			{}
+		};
 
 
 	struct keyword_scheme
@@ -606,9 +608,9 @@ namespace nana::widgets::skeletons
 
 			if (second < this->sections_.size())
 #ifdef _MSC_VER
-				this->sections_.erase(this->sections_.cbegin() + (first + 1), this->sections_.cbegin() + second);
+				this->sections_.erase(this->sections_.cbegin() + (first + 1), this->sections_.cbegin() + (second + 1));
 #else
-				this->sections_.erase(this->sections_.begin() + (first + 1), this->sections_.begin() + second);
+				this->sections_.erase(this->sections_.begin() + (first + 1), this->sections_.begin() + (second + 1));
 #endif
 			pre_calc_line(first, 0);
 
@@ -620,9 +622,8 @@ namespace nana::widgets::skeletons
 			for (auto & sct : const_sections)
 			{
 				auto const& text = editor_.textbase().getline(line);
-				if (sct.begin < text.c_str() || (text.c_str() + text.size() < sct.begin))
+				if (text.size() < sct.begin)
 					pre_calc_line(line, 0);
-
 				++line;
 			}
 		}
@@ -637,23 +638,26 @@ namespace nana::widgets::skeletons
 #else
 					this->sections_.emplace(this->sections_.begin() + (pos + i));
 #endif
-				//textbase is implement by using deque, and the linemtr holds the text pointers
-				//If the textbase is changed, it will check the text pointers.
-				std::size_t line = 0;
 
-				auto const & const_sections = sections_;
-				for (auto & sct : const_sections)
-				{
-					if (line < pos || (pos + line_size) <= line)
-					{
-						auto const & text = editor_.textbase().getline(line);
-						if (sct.begin < text.c_str() || (text.c_str() + text.size() < sct.begin))
-							pre_calc_line(line, 0);
+#if 0 //deprecated	//it is useless if text_section stores the positions of texts
+						//textbase is implement by using deque, and the linemtr holds the text pointers
+						//If the textbase is changed, it will check the text pointers.
+						std::size_t line = 0;
+
+						auto const & const_sections = sections_;
+						for (auto & sct : const_sections)
+						{
+							if (line < pos || (pos + line_size) <= line)
+							{
+								auto const & text = editor_.textbase().getline(line);
+								if (text.size() < sct.begin)
+									pre_calc_line(line, 0);
+							}
+							++line;
+						}
+#endif
 					}
-					++line;
 				}
-			}
-		}
 
 		void prepare() override
 		{
@@ -665,9 +669,9 @@ namespace nana::widgets::skeletons
 		{
 			auto const & text = editor_.textbase().getline(pos);
 			auto& txt_section = this->sections_[pos];
-			txt_section.begin = text.c_str();
-			txt_section.end = txt_section.begin + text.size();
-			txt_section.pixels = editor_._m_text_extent_size(txt_section.begin, text.size()).width;
+			txt_section.begin = 0;
+			txt_section.end = text.size();
+			txt_section.pixels = editor_._m_text_extent_size(text.data(), text.size()).width;
 		}
 
 		void pre_calc_lines(unsigned) override
@@ -753,24 +757,26 @@ namespace nana::widgets::skeletons
 				for (std::size_t i = 0; i < lines; ++i)
 					linemtr_.emplace(linemtr_.begin() + pos + i);
 
-				//textbase is implement by using deque, and the linemtr holds the text pointers
-				//If the textbase is changed, it will check the text pointers.
-				std::size_t line = 0;
+#if 0	//deprecated //it is useless if text_section stores the positions of texts
+						//textbase is implement by using deque, and the linemtr holds the text pointers
+						//If the textbase is changed, it will check the text pointers.
+						std::size_t line = 0;
 
-				auto const & const_linemtr = linemtr_;
-				for (auto & mtr : const_linemtr)
-				{
-					if (line < pos || (pos + lines) <= line)
-					{
-						auto & linestr = editor_.textbase().getline(line);
-						auto p = mtr.line_sections.front().begin;
-						if (p < linestr.c_str() || (linestr.c_str() + linestr.size() < p))
-							pre_calc_line(line, editor_.width_pixels());
+						auto const & const_linemtr = linemtr_;
+						for (auto & mtr : const_linemtr)
+						{
+							if (line < pos || (pos + lines) <= line)
+							{
+								auto & linestr = editor_.textbase().getline(line);
+								auto p = mtr.line_sections.front().begin;
+								if (linestr.size() < p)
+									pre_calc_line(line, editor_.width_pixels());
+							}
+							++line;
+						}
+#endif
 					}
-					++line;
 				}
-			}
-		}
 
 		void prepare() override
 		{
@@ -785,8 +791,7 @@ namespace nana::widgets::skeletons
 			{
 				auto & mtr = linemtr_[line];
 				mtr.line_sections.clear();
-
-				mtr.line_sections.emplace_back(lnstr.c_str(), lnstr.c_str(), unsigned{});
+				mtr.line_sections.emplace_back();
 				mtr.take_lines = 1;
 				return;
 			}
@@ -796,34 +801,35 @@ namespace nana::widgets::skeletons
 
 			std::vector<text_section> line_sections;
 
+			auto const text_ptr = lnstr.data();
 			unsigned text_px = 0;
 			const wchar_t * secondary_begin = nullptr;
 			for (auto & ts : sections)
 			{
 				if (!secondary_begin)
-					secondary_begin = ts.begin;
+					secondary_begin = text_ptr + ts.begin;
 
-				const unsigned str_w = editor_._m_text_extent_size(ts.begin, ts.end - ts.begin).width;
+				const unsigned str_w = editor_._m_text_extent_size(text_ptr + ts.begin, ts.end - ts.begin).width;
 
 				text_px += str_w;
 				if (text_px >= pixels)
 				{
 					if (text_px != str_w)
 					{
-						line_sections.emplace_back(secondary_begin, ts.begin, unsigned{ text_px - str_w });
+						line_sections.emplace_back(secondary_begin - text_ptr, ts.begin, unsigned{ text_px - str_w });
+						secondary_begin = text_ptr + ts.begin;
 						text_px = str_w;
-						secondary_begin = ts.begin;
 					}
 
 					if (str_w > pixels)	//Indicates the splitting of ts string
 					{
 						std::size_t len = ts.end - ts.begin;
-						auto pxbuf = editor_.graph_.glyph_pixels({ ts.begin, len });
+						auto pxbuf = editor_.graph_.glyph_pixels({ text_ptr + ts.begin, len });
 
 						auto pxptr = pxbuf.get();
 						auto pxend = pxptr + len;
 
-						secondary_begin = ts.begin;
+						secondary_begin = text_ptr + ts.begin;
 						text_px = 0;
 						for (auto pxi = pxptr; pxi != pxend; ++pxi)
 						{
@@ -831,10 +837,9 @@ namespace nana::widgets::skeletons
 							if (text_px < pixels)
 								continue;
 
-							const wchar_t * endptr = ts.begin + (pxi - pxptr) + (text_px == pixels ? 1 : 0);
-							line_sections.emplace_back(secondary_begin, endptr, unsigned{ text_px - (text_px == pixels ? 0 : *pxi) });
-							secondary_begin = endptr;
-
+							auto const endpos = ts.begin + (pxi - pxptr) + (text_px == pixels ? 1 : 0);
+							line_sections.emplace_back(secondary_begin - text_ptr, endpos, unsigned{ text_px - (text_px == pixels ? 0 : *pxi) });
+							secondary_begin = text_ptr + endpos;
 							text_px = (text_px == pixels ? 0 : *pxi);
 						}
 					}
@@ -842,8 +847,8 @@ namespace nana::widgets::skeletons
 				}
 				else if (text_px == pixels)
 				{
-					line_sections.emplace_back(secondary_begin, ts.begin, unsigned{ text_px - str_w });
-					secondary_begin = ts.begin;
+					line_sections.emplace_back(secondary_begin - text_ptr, ts.begin, unsigned{ text_px - str_w});
+					secondary_begin = text_ptr + ts.begin;
 					text_px = str_w;
 				}
 			}
@@ -855,7 +860,7 @@ namespace nana::widgets::skeletons
 
 			if (secondary_begin)
 			{
-				mtr.line_sections.emplace_back(secondary_begin, sections.back().end, unsigned{ text_px });
+				mtr.line_sections.emplace_back(secondary_begin - text_ptr, sections.back().end, unsigned{ text_px });
 				++mtr.take_lines;
 			}
 		}
@@ -888,7 +893,7 @@ namespace nana::widgets::skeletons
 		{
 			if (str.empty())
 			{
-				tsec.emplace_back(str.c_str(), str.c_str(), unsigned{});
+				tsec.emplace_back();
 				return;
 			}
 			const auto end = str.c_str() + str.size();
@@ -903,11 +908,10 @@ namespace nana::widgets::skeletons
 				{
 					if (word)	//Record the word.
 					{
-						tsec.emplace_back(word, i, unsigned{});
+						tsec.emplace_back(word - str.c_str(), i - str.c_str(), unsigned{});
 						word = nullptr;
 					}
-
-					tsec.emplace_back(i, i + 1, unsigned{});
+					tsec.emplace_back(i - str.c_str(), i - str.c_str() + 1, unsigned{});
 					continue;
 				}
 
@@ -916,7 +920,7 @@ namespace nana::widgets::skeletons
 			}
 
 			if (word)
-				tsec.emplace_back(word, end, unsigned{});
+				tsec.emplace_back(word - str.c_str(), end - str.c_str(), unsigned{});
 		}
 
 		row_coordinate _m_textline(std::size_t scrline) const
@@ -1624,16 +1628,16 @@ namespace nana::widgets::skeletons
 
 
 
-		if (select_.a.x < line.size() && !std::isalnum(line[select_.a.x]) && line[select_.a.x] != '_') {
+		if (select_.a.x < line.size() && !std::iswalnum(line[select_.a.x]) && line[select_.a.x] != '_') {
 			++select_.b.x;
 		}
 		else {
 			// Expand the selection forward to the word's end.
-			while (select_.b.x < line.size() && !std::iswspace(line[select_.b.x]) && (std::isalnum(line[select_.b.x]) || line[select_.b.x] == '_'))
+			while (select_.b.x < line.size() && !std::iswspace(line[select_.b.x]) && (std::iswalnum(line[select_.b.x]) || line[select_.b.x] == '_'))
 				++select_.b.x;
 
 			// Expand the selection backward to the word's start.
-			while (select_.a.x > 0 && !std::iswspace(line[select_.a.x - 1]) && (std::isalnum(line[select_.a.x - 1]) || line[select_.a.x - 1] == '_'))
+			while (select_.a.x > 0 && !std::iswspace(line[select_.a.x - 1]) && (std::iswalnum(line[select_.a.x - 1]) || line[select_.a.x - 1] == '_'))
 				--select_.a.x;
 		}
 		select_.mode_selection = selection::mode::method_selected;
@@ -2609,7 +2613,7 @@ namespace nana::widgets::skeletons
 		if (row.second < sections.size())
 		{
 			nana::upoint str_pos(0, static_cast<unsigned>(row.first));
-			str_pos.x = static_cast<unsigned>(sections[row.second].begin - textbase().getline(row.first).c_str());
+			str_pos.x = static_cast<unsigned>(sections[row.second].begin);
 
 			int top = _m_text_top_base() - (impl_->cview->origin().y % line_height());
 			const unsigned pixels = line_height();
@@ -2668,6 +2672,7 @@ namespace nana::widgets::skeletons
 			lines += behavior->take_lines(i);
 		}
 
+		auto const text_ptr = textbase().getline(pos.y).c_str();
 		const text_section * sct_ptr = nullptr;
 		nana::point scrpos;
 		if (0 != pos.x)
@@ -2682,7 +2687,7 @@ namespace nana::widgets::skeletons
 				if (mask_char_)
 					str.append(chsize, mask_char_);
 				else
-					str.append(sct.begin, sct.end);
+					str.append(text_ptr + sct.begin, text_ptr + sct.end);
 
 				//In line-wrapped mode. If the caret is at the end of a line which is not the last section,
 				//the caret should be moved to the beginning of next section line.
@@ -2744,7 +2749,8 @@ namespace nana::widgets::skeletons
 		//First of all, find the text of secondary.
 		auto real_str = sections[row.second];
 
-		auto text_ptr = real_str.begin;
+		auto& textbase = this->textbase();
+		auto text_ptr = textbase.getline(row.second).data();
 		const auto text_size = real_str.end - real_str.begin;
 
 		std::wstring mask_str;
@@ -2791,8 +2797,7 @@ namespace nana::widgets::skeletons
 
 		auto const & sct = sections[secondary.y];
 
-		auto chptr = sct.begin + (std::min)(secondary.x, static_cast<unsigned>(sct.end - sct.begin));
-		pos = static_cast<unsigned>(chptr - textbase().getline(textline).c_str());
+		pos = static_cast<unsigned>((std::min)(sct.begin + secondary.x, sct.end));
 		return true;
 	}
 
@@ -2892,7 +2897,7 @@ namespace nana::widgets::skeletons
 			auto sections = behavior->line(pos);
 			for (auto & sct : sections)
 			{
-				_m_draw_string(top, fgcolor, nana::upoint(static_cast<unsigned>(sct.begin - text_ptr), points_.caret.y), sct, true);
+				_m_draw_string(top, fgcolor, nana::upoint(static_cast<unsigned>(sct.begin), points_.caret.y), sct, true);
 				top += pixels;
 			}
 
@@ -3466,7 +3471,7 @@ namespace nana::widgets::skeletons
 
 		const int text_right = text_area_.area.right();
 		auto const text_len = static_cast<unsigned>(sct.end - sct.begin);
-		auto text_ptr = sct.begin;
+		auto text_ptr = textbase().getline(text_coord.y).data() + sct.begin;
 
 		std::wstring mask_str;
 		if (if_mask && mask_char_)
@@ -3499,8 +3504,8 @@ namespace nana::widgets::skeletons
 		{
 			if (a.y < text_coord.y && text_coord.y < b.y)
 			{
-				sbegin = sct.begin;
-				send = sct.end;
+				sbegin = text_ptr;
+				send = text_ptr + (sct.end - sct.begin);
 			}
 			else if ((a.y == b.y) && a.y == text_coord.y)
 			{
