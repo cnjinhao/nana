@@ -613,19 +613,6 @@ namespace nana::widgets::skeletons
 				this->sections_.erase(this->sections_.begin() + (first + 1), this->sections_.begin() + (second + 1));
 #endif
 			pre_calc_line(first, 0);
-
-			//textbase is implement by using deque, and the linemtr holds the text pointers
-			//If the textbase is changed, it will check the text pointers.
-			std::size_t line = 0;
-
-			auto const & const_sections = sections_;
-			for (auto & sct : const_sections)
-			{
-				auto const& text = editor_.textbase().getline(line);
-				if (text.size() < sct.begin)
-					pre_calc_line(line, 0);
-				++line;
-			}
 		}
 
 		void add_lines(std::size_t pos, std::size_t line_size) override
@@ -638,26 +625,8 @@ namespace nana::widgets::skeletons
 #else
 					this->sections_.emplace(this->sections_.begin() + (pos + i));
 #endif
-
-#if 0 //deprecated	//it is useless if text_section stores the positions of texts
-						//textbase is implement by using deque, and the linemtr holds the text pointers
-						//If the textbase is changed, it will check the text pointers.
-						std::size_t line = 0;
-
-						auto const & const_sections = sections_;
-						for (auto & sct : const_sections)
-						{
-							if (line < pos || (pos + line_size) <= line)
-							{
-								auto const & text = editor_.textbase().getline(line);
-								if (text.size() < sct.begin)
-									pre_calc_line(line, 0);
-							}
-							++line;
-						}
-#endif
-					}
-				}
+			}
+		}
 
 		void prepare() override
 		{
@@ -756,27 +725,8 @@ namespace nana::widgets::skeletons
 			{
 				for (std::size_t i = 0; i < lines; ++i)
 					linemtr_.emplace(linemtr_.begin() + pos + i);
-
-#if 0	//deprecated //it is useless if text_section stores the positions of texts
-						//textbase is implement by using deque, and the linemtr holds the text pointers
-						//If the textbase is changed, it will check the text pointers.
-						std::size_t line = 0;
-
-						auto const & const_linemtr = linemtr_;
-						for (auto & mtr : const_linemtr)
-						{
-							if (line < pos || (pos + lines) <= line)
-							{
-								auto & linestr = editor_.textbase().getline(line);
-								auto p = mtr.line_sections.front().begin;
-								if (linestr.size() < p)
-									pre_calc_line(line, editor_.width_pixels());
-							}
-							++line;
-						}
-#endif
-					}
-				}
+			}
+		}
 
 		void prepare() override
 		{
