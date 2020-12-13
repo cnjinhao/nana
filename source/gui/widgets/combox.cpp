@@ -312,6 +312,29 @@ namespace nana
 				}
 			}
 
+			void try_select(std::wstring text)
+			{
+				if (!state_.lister)
+					return;
+
+				std::transform(text.cbegin(), text.cend(), text.begin(), ::tolower);
+				
+				for (std::size_t i = 0; i < state_.lister->length(); ++i)
+				{
+					auto item_txt = nana::to_wstring(state_.lister->text(i).value());
+					if (text.size() > item_txt.size())
+						continue;
+
+					std::transform(item_txt.cbegin(), item_txt.cend(), item_txt.begin(), ::tolower);
+
+					if (item_txt.npos != item_txt.find(text))
+					{
+						state_.lister->select(i);
+						break;
+					}
+				}
+			}
+
 			void scroll_items(bool upwards)
 			{
 				if(state_.lister)
@@ -782,6 +805,13 @@ namespace nana
 		void trigger::key_char(graph_reference, const arg_keyboard& arg)
 		{
 			drawer_->editor()->respond_char(arg);
+			
+			if (drawer_->has_lister() && drawer_->editable())
+			{
+				//Select the item when the combox is editable and dropdown list is shown.
+				auto text = drawer_->editor()->text();
+				drawer_->try_select(text);
+			}
 			if (drawer_->editor()->try_refresh())
 				api::dev::lazy_refresh();
 		}
