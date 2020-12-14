@@ -18,7 +18,7 @@ std::vector<split_string_type> split_string (const split_string_type& text, char
 		sep_pos = text.find(sep, sep_pos);
 		sep_pos = (text.npos == sep_pos ? text.size() : sep_pos);
 		const std::size_t end = sep_pos;
-		while (sep_pos < text.size() and sep == text[sep_pos]) {
+		while (sep_pos < text.size() && sep == text[sep_pos]) {
 			++sep_pos;
 		}
 
