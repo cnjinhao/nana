@@ -573,7 +573,12 @@ namespace nana
 				if (npos == state_.active)
 					return nullptr;
 
-				auto & items = menu_->items;
+				// if menu entry is disabled do not show the submenu
+				if(menu_->owner)
+					if(!menu_->owner->enabled(state_.active))
+						return nullptr;
+
+				auto& items = menu_->items;
 				auto sub = items.at(state_.active)->linked.menu_ptr;
 				if (sub)
 				{
