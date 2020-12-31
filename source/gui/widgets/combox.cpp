@@ -188,6 +188,9 @@ namespace nana
 
 			void clear()
 			{
+				if (editor_)
+					editor_->text({}, false);
+
 				items_.clear();
 				module_.items.clear();
 				module_.index = nana::npos;
