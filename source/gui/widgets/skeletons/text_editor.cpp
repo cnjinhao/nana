@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -2700,7 +2700,7 @@ namespace nana::widgets::skeletons
 		auto real_str = sections[row.second];
 
 		auto& textbase = this->textbase();
-		auto text_ptr = textbase.getline(row.second).data();
+		auto text_ptr = textbase.getline(row.first).data() + real_str.begin;
 		const auto text_size = real_str.end - real_str.begin;
 
 		std::wstring mask_str;
