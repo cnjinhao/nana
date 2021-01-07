@@ -6303,8 +6303,8 @@ namespace nana
 		void listbox::move_column(size_type abs_pos, size_type view_pos)
 		{
 			internal_scope_guard lock;
-			return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
 			_m_ess().update();
+			return _m_ess().header.move_to_view_pos(abs_pos, view_pos, true);
 		}
 
 		/// Sort columns in range first_col to last_col inclusive using a row

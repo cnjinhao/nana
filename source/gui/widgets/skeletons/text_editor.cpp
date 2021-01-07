@@ -2434,8 +2434,6 @@ namespace nana::widgets::skeletons
 				case keyboard::os_arrow_up:
 				case keyboard::os_home:
 				case keyboard::os_pageup:
-					select_.b = pos;
-					break;
 				case keyboard::os_arrow_right:
 				case keyboard::os_arrow_down:
 				case keyboard::os_end:
@@ -2891,11 +2889,10 @@ namespace nana::widgets::skeletons
 		if (this->attributes_.line_wrapped)
 		{
 			//detect if vertical scrollbar is required
-			auto const max_lines = screen_lines(true);
-
 			if (calc_lines)
 			{
 				auto text_lines = textbase().lines();
+				auto const max_lines = screen_lines(true);
 				if (text_lines <= max_lines)
 				{
 					impl_->capacities.behavior->prepare();

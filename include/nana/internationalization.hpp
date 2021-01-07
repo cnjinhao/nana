@@ -139,7 +139,7 @@ namespace nana
 		template<typename Return>
 		void _m_add_args(std::function<Return()> fn)
 		{
-			args_.emplace_back(new arg_function<Return>(fn));
+			args_.push_back(std::unique_ptr<arg_function>(new arg_function<Return>(fn)));
 		}
 
 		void _m_add_args(i18n_eval&);

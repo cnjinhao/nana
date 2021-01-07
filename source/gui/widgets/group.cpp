@@ -183,9 +183,6 @@ group::~group()
 				impl_->caption.transparent(false);
 				break;
 			case background_mode::blending:
-				impl_->caption.transparent(true);
-				impl_->caption.bgcolor(api::bgcolor(this->parent()).blend(colors::black, 0.025));
-				break;
 			case background_mode::transparent:
 				impl_->caption.transparent(true);
 				impl_->caption.bgcolor(api::bgcolor(this->parent()).blend(colors::black, 0.025));
