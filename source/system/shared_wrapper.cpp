@@ -110,7 +110,7 @@ namespace system
 			if(impl_.handle)
 			{
 				detail::shared_helper::close(impl_.handle);
-				impl_.symbol = "";
+				impl_.symbol.clear();
 				impl_.proc_address = 0;
 				impl_.handle = 0;
 			}

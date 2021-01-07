@@ -862,14 +862,13 @@ namespace nana
 
 				for (auto & child : children)
 				{
-					auto child_floor = child->calc_weight_floor(wd);
-
 					if (child->is_percent())
 					{
 						ratio += child->weight.real();
 					}
 					else
 					{
+						auto child_floor = child->calc_weight_floor(wd);
 						floor.first += child_floor.first;
 						floor.second += child_floor.second;
 					}
@@ -1871,7 +1870,6 @@ namespace nana
 			}
 
 			const place_parts::display_metrics dm{ wd };
-			auto limited_range = _m_update_splitter_range(dm);
 
 			if (!init_weight_.empty())
 			{
@@ -1885,6 +1883,7 @@ namespace nana
 				auto right_px = static_cast<int>(limit_px(leaf_right, init_weight_.get_value(area_px, dm), static_cast<unsigned>(area_px), dm));
 
 				//New position of splitter
+				auto limited_range = _m_update_splitter_range(dm);
 				const auto pos = std::clamp(static_cast<int>(area_px - right_px - splitter_px), limited_range.x(), limited_range.right());
 
 				rectangle_rotator sp_r(vert, field_area);

@@ -2180,13 +2180,13 @@ namespace nana
 				mouse_selection.screen_pos = screen_pos;
 
 				auto logic_pos = coordinate_cast(screen_pos, true);
-				auto imd_area = content_view->view_area();
 
 				if (logic_pos.y > mouse_selection.begin_position.y)
 				{
 					//The top of logic_pos shouldn't be less than the top of imd_area.
 					//This is a feature that listbox always shows the first displayed item on the screen as a selected item when
 					//move the cursor upwards.
+					auto imd_area = content_view->view_area();
 					logic_pos.y = (std::max)(logic_pos.y, coordinate_cast(imd_area.position(), true).y);
 				}
 
@@ -2432,13 +2432,12 @@ namespace nana
 
 			void draw_peripheral()
 			{
-				auto ctt_area = this->content_area();
-
 				if (!api::widget_borderless(*lister.wd_ptr()))
 				{
 					//Draw Border
 					graph->rectangle(false, static_cast<color_rgb>(0x9cb6c5));
 
+					auto ctt_area = this->content_area();
 					graph->line({ ctt_area.x - 1, ctt_area.y }, { ctt_area.x - 1, ctt_area.bottom() - 1 }, colors::white);
 					graph->line({ ctt_area.right(), ctt_area.y }, { ctt_area.right(), ctt_area.bottom() - 1 });
 				}
@@ -3531,12 +3530,11 @@ namespace nana
 				else
 					graph.gradual_rectangle(column_r, bgcolor.blend(colors::white, 0.1), bgcolor.blend(colors::black, 0.1), true);
 
-				paint::aligner text_aligner{ graph, column.alignment, column.alignment };
-
 				auto text_margin = essence_->scheme_ptr->text_margin;
 
 				if (text_margin < column_r.width)
 				{
+					paint::aligner text_aligner { graph, column.alignment, column.alignment };
 					graph.palette(true, fgcolor);
 
 					//Set column font
