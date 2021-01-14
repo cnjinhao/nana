@@ -943,19 +943,20 @@ namespace nana
 				}
 				else if (checks::option == item.style)
 				{
-					if(active > 0)
+					auto active_ = active;
+					if(active_ > 0)
 					{
 						do {
-							if(menu->items[--active]->flags.splitter)
+							if(menu->items[--active_]->flags.splitter)
 							{
-								++active;
+								++active_;
 								break;
 							}
-						} while(active > 0);
+						} while(active_ > 0);
 					}
-					while(active < menu->items.size())
+					while(active_ < menu->items.size())
 					{
-						menu_item_type &el = *(menu->items[active++]);
+						menu_item_type &el = *(menu->items[active_++]);
 						if(el.flags.splitter)
 							break;
 						if(checks::option == el.style)
