@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -4058,7 +4058,13 @@ namespace nana
 						}
 
 						if (display_order > 0)
-							graph->line({ column_x - 1, coord.y }, { column_x - 1, coord.y + static_cast<int>(essence_->item_height()) - 1 }, static_cast<color_rgb>(0xEBF4F9));
+						{
+							//Make the color of column separator match with the background color of the item.
+							auto col_separator_color = essence_->scheme_ptr->column_separator.get_color();
+							if (item.flags.selected || (state != item_state::normal))
+								col_separator_color = col_separator_color.blend(state_bgcolor, 0.8);
+							graph->line({ column_x - 1, coord.y }, { column_x - 1, coord.y + static_cast<int>(essence_->item_height()) - 1 }, col_separator_color);
+						}
 					}
 
 					column_x += col.width_px;
@@ -4186,9 +4192,6 @@ namespace nana
 
 			void trigger::refresh(graph_reference graph)
 			{
-				if (api::is_destroying(essence_->lister.wd_ptr()->handle()))
-					return;
-
 				nana::rectangle r;
 
 				if (essence_->rect_lister(r))
@@ -6243,6 +6246,17 @@ namespace nana
 		drawerbase::listbox::essence & listbox::_m_ess() const
 		{
 			return get_drawer_trigger().ess();
+		}
+
+		void listbox::_m_bgcolor(const nana::color& color)
+		{
+			//Update the color of column separator
+			auto r = static_cast<unsigned char>(std::max(color.r() - (0xFF - 0xEB), 0.0));
+			auto g = static_cast<unsigned char>(std::max(color.g() - (0xFF - 0xF4), 0.0));
+			auto b = static_cast<unsigned char>(std::max(color.b() - (0xFF - 0xF9), 0.0));
+			_m_ess().scheme_ptr->column_separator = nana::color(r, g, b);
+
+			widget::_m_bgcolor(color);
 		}
 
 		std::any* listbox::_m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const
