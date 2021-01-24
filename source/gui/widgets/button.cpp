@@ -320,7 +320,8 @@ namespace nana
 			::nana::color lt(static_cast<color_rgb>(0x7f7f7f)), rb(static_cast<color_rgb>(0x707070));
 			graph.frame_rectangle(r, lt, lt, rb, rb);
 
-			graph.palette(false, colors::button_face);
+			//Render the cornors of border using the color that is blended with parent's background color.
+			graph.palette(false, api::bgcolor(wdg_->parent()).blend(colors::button_face, 0.5));
 
 			paint::draw draw(graph);
 			draw.corner(r, 1);
