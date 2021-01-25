@@ -1,6 +1,6 @@
 /*
  *	A Tabbar Implementation
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1049,7 +1049,7 @@ namespace nana
 
 								std::wstring wtext = to_wstring(item.text);
 								tr.render({ m.r.x + 24, m.r.y + static_cast<int>(m.r.height - ts.height) / 2 },
-											wtext.c_str(), wtext.length(), basis_.item_pixels - 24 - 18, paint::text_renderer::mode::truncate_with_ellipsis);
+										{ wtext.c_str(), wtext.length() }, basis_.item_pixels - 24 - 18, paint::text_renderer::mode::truncate_with_ellipsis);
 							}
 						}
 

@@ -20,10 +20,10 @@ namespace nana
 			
 			text_renderer(graph_reference graph, align = align::left);
 
-			nana::size extent_size(int x, int y, const wchar_t*, std::size_t len, unsigned space_pixels) const;
+			nana::size extent_size(int x, int y, std::wstring_view, unsigned space_pixels) const;
 
-			void render(const point&, const wchar_t*, std::size_t len);
-			void render(const point&, const wchar_t*, std::size_t len, unsigned space_pixels, mode);
+			void render(const point&, std::wstring_view);
+			void render(const point&, std::wstring_view, unsigned space_pixels, mode);
 		private:
 			graph_reference graph_;
 			align text_align_;

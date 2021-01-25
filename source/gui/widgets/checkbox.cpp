@@ -1,7 +1,7 @@
 /*
  *	A CheckBox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -60,19 +60,21 @@ namespace nana
 			if (graph.width() > 16 + interval)
 			{
 				auto title = to_wstring(wdg->caption_native());
+				std::wstring_view title_sv{ title.data(), title.size() };
+
 				unsigned pixels = graph.width() - (16 + interval);
 
 				nana::paint::text_renderer tr(graph);
 				if (!wdg->enabled())
 				{
 					graph.palette(true, colors::white);
-					tr.render({ 17 + interval, 2 }, title.c_str(), title.length(), pixels, paint::text_renderer::mode::word_wrap);
+					tr.render({ 17 + interval, 2 }, title_sv, pixels, paint::text_renderer::mode::word_wrap);
 					graph.palette(true, static_cast<color_rgb>(0x808080));
 				}
 				else
 					graph.palette(true, wdg->fgcolor());
 
-				tr.render({ 16 + interval, 1 }, title.c_str(), title.length(), pixels, paint::text_renderer::mode::word_wrap);
+				tr.render({ 16 + interval, 1 }, title_sv, pixels, paint::text_renderer::mode::word_wrap);
 			}
 
 			//draw crook

@@ -249,11 +249,11 @@ namespace nana
 				pos.x += icon_sz.width / 2;
 			}
 
-			unsigned omitted_pixels = gsize.width - icon_sz.width - icon_sz.width / 2;
-			std::size_t txtlen = str.size();
-			const auto txtptr = str.c_str();
 			if(ts.width)
 			{
+				auto const omitted_pixels = gsize.width - icon_sz.width - icon_sz.width / 2;
+
+				std::wstring_view text_sv{ str.data(), str.size() };
 				nana::paint::text_renderer tr(graph);
 				if(enabled)
 				{
@@ -264,9 +264,9 @@ namespace nana
 					graph.palette(true, text_color);
 
 					if (impl_->attr.omitted)
-						tr.render(pos, txtptr, txtlen, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
+						tr.render(pos, text_sv, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 					else
-						graph.bidi_string(pos, { txtptr, txtlen });
+						graph.bidi_string(pos, text_sv);
 
 					api::dev::draw_shortkey_underline(graph, mbstr, shortkey, shortkey_pos, pos, text_color);
 				}
@@ -275,15 +275,15 @@ namespace nana
 					graph.palette(true, color{ colors::white });
 					if(impl_->attr.omitted)
 					{
-						tr.render(point{ pos.x + 1, pos.y + 1 }, txtptr, txtlen, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
+						tr.render(point{ pos.x + 1, pos.y + 1 }, text_sv, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 						graph.palette(true, color{ colors::gray });
-						tr.render(pos, txtptr, txtlen, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
+						tr.render(pos, text_sv, omitted_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 					}
 					else
 					{
-						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, { txtptr, txtlen });
+						graph.bidi_string(point{ pos.x + 1, pos.y + 1 }, text_sv);
 						graph.palette(true, color{ colors::gray });
-						graph.bidi_string(pos, { txtptr, txtlen });
+						graph.bidi_string(pos, text_sv);
 					}
 				}
 			}

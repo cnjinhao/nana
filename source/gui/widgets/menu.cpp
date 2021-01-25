@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2021 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -145,7 +145,7 @@ namespace nana
 				nana::paint::text_renderer tr(graph);
 
 				auto wstr = to_wstring(text);
-				tr.render(pos, wstr.c_str(), wstr.length(), text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
+				tr.render(pos, { wstr.c_str(), wstr.length() }, text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 			}
 #ifdef __cpp_char8_t
 			void item_text(graph_reference graph, const nana::point& pos, std::u8string_view title, unsigned text_pixels, const attr& at) override
@@ -154,7 +154,7 @@ namespace nana
 				nana::paint::text_renderer tr(graph);
 
 				auto wstr = to_wstring(title);
-				tr.render(pos, wstr.c_str(), wstr.length(), text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
+				tr.render(pos, { wstr.c_str(), wstr.length() }, text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 			}
 #endif
 
