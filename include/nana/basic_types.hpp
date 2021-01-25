@@ -1,7 +1,7 @@
 /**
  *	Basic Types definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -414,6 +414,36 @@ namespace nana
 			x += other.x;
 			y += other.y;
 			return *this;
+		}
+
+		basic_point& operator++() noexcept
+		{
+			++x;
+			++y;
+			return *this;
+		}
+
+		basic_point operator++(int) noexcept
+		{
+			auto ret = *this;
+			++x;
+			++y;
+			return ret;
+		}
+
+		basic_point& operator--() noexcept
+		{
+			--x;
+			--y;
+			return *this;
+		}
+
+		basic_point operator--(int) noexcept
+		{
+			auto ret = *this;
+			--x;
+			--y;
+			return ret;
 		}
 	};
 

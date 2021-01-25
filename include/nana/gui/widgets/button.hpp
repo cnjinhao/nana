@@ -24,20 +24,18 @@ namespace nana::drawerbase::button{
 			///	Draw the button
 			class trigger: public drawer_trigger
 			{
-				class measurer;
+				class content_measurer;
 				struct attributes;
+				struct impl;
 			public:
 				trigger();
 				~trigger();
 
 				void emit_click();
-				void icon(const nana::paint::image&);
 				bool enable_pushed(bool);
 				bool pushed(bool);
-				const attributes& attr() const;
-				attributes& attr();
-
-				element::cite_bground & cite();
+				const impl* get_impl() const;
+				impl* get_impl();
 			private:
 				void attached(widget_reference, graph_reference) override;
 				void refresh(graph_reference)	override;
@@ -53,15 +51,8 @@ namespace nana::drawerbase::button{
 				void _m_draw_border(graph_reference);
 				void _m_press(graph_reference, bool);
 			private:
-				widget* wdg_{nullptr};
-				paint::graphics* graph_{nullptr};
-
-				element::cite_bground cite_{"button"};
-
-				std::unique_ptr<attributes> attr_;
-				std::unique_ptr<measurer> measurer_;
+				std::unique_ptr<impl> impl_;
 			};
-
 }//end namespace nana::drawerbase::button
 
 namespace nana
