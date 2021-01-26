@@ -2467,7 +2467,7 @@ namespace nana
 
 			bool is_first = true;
 			bool prev_attr = false;
-			int ch = 0;
+
 			for (auto & child : children)
 			{
 				if (!child->display)
@@ -2699,9 +2699,7 @@ namespace nana
 				return;
 
 			root_division->calc_weight_floor(window_handle);
-
 			root_division->collocate(window_handle);
-			int fc = 0;
 
 			for (auto & field : fields)
 			{

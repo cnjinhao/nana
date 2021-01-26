@@ -2833,16 +2833,12 @@ namespace nana::widgets::skeletons
 			const unsigned pixels = line_height();
 			const rectangle update_area = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(pixels * secondary_count_before) };
 
-			if (!api::dev::copy_transparent_background(window_, update_area, graph_, update_area.position()))
-			{
-				_m_draw_colored_area(graph_, { pos, 0 }, true);
+			bool fill_bground = !api::dev::copy_transparent_background(window_, update_area, graph_, update_area.position());
+			_m_draw_colored_area(graph_, { pos, 0 }, true);
+			if(fill_bground)
 				graph_.rectangle(update_area, true, api::bgcolor(window_));
-			}
-			else
-				_m_draw_colored_area(graph_, { pos, 0 }, true);
 
 			auto fgcolor = api::fgcolor(window_);
-			auto text_ptr = textbase().getline(pos).c_str();
 
 			auto sections = behavior->line(pos);
 			for (auto & sct : sections)
