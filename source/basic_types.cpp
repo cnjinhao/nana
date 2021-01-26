@@ -1,7 +1,7 @@
 /*
  *	Basic Types definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -586,7 +586,7 @@ namespace nana
 			return *this;
 		}
 
-		rectangle& rectangle::pare_off(int pixels)
+		rectangle& rectangle::pare_off(int pixels) noexcept
 		{
 			x += pixels;
 			y += pixels;
@@ -614,24 +614,24 @@ namespace nana
 			return y + static_cast<int>(height);
 		}
 
-		bool rectangle::is_hit(int pos_x, int pos_y) const
+		bool rectangle::is_hit(int pos_x, int pos_y) const noexcept
 		{
 			return	(x <= pos_x && pos_x < x + static_cast<int>(width)) &&
 					(y <= pos_y && pos_y < y + static_cast<int>(height));
 		}
 
-		bool rectangle::is_hit(const point& pos) const
+		bool rectangle::is_hit(const point& pos) const noexcept
 		{
 			return	(x <= pos.x && pos.x < x + static_cast<int>(width)) &&
                     (y <= pos.y && pos.y < y + static_cast<int>(height));
 		}
 
-		bool rectangle::empty() const
+		bool rectangle::empty() const noexcept
 		{
 			return (0 == width) || (0 == height);
 		}
 
-		rectangle& rectangle::shift()
+		rectangle& rectangle::shift() noexcept
 		{
 			std::swap(x, y);
 			std::swap(width, height);

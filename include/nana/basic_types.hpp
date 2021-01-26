@@ -490,14 +490,14 @@ namespace nana
 		 * @param pixels The number of pixels to be pared. If the number that multiples pixels twice is larger than width/height, the width/height will be zero. If the pixels is a negative number, the width/height is add the number that multiple pixels twice.
 		 * @return The reference of *this.
 		 */
-		rectangle& pare_off(int pixels);
+		rectangle& pare_off(int pixels) noexcept;
 
 		int right() const noexcept;
 		int bottom() const noexcept;
-		bool is_hit(int x, int y) const;
-		bool is_hit(const point& pos) const;
-		bool empty() const;		///< true if width * height == 0.
-		rectangle& shift();	///< Swap position x and y, size width and height.
+		bool is_hit(int x, int y) const noexcept;
+		bool is_hit(const point& pos) const noexcept;
+		bool empty() const noexcept;		///< true if width * height == 0.
+		rectangle& shift() noexcept;	///< Swap position x and y, size width and height.
 
 		int x;
 		int y;

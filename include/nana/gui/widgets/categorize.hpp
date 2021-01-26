@@ -1,7 +1,7 @@
 /**
  *	A Categorize Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -74,20 +74,18 @@ namespace nana
 			class renderer
 			{
 			public:
-				typedef nana::paint::graphics & graph_reference;
+				using graph_reference = paint::graphics&;
+
+				enum class elements
+				{
+					none,	//Out of the widget
+					somewhere, item_root, item_name, item_arrow
+				};
 
 				struct ui_element
 				{
-					enum t
-					{
-						none,	//Out of the widget
-						somewhere, item_root, item_name, item_arrow
-					};
-
-					t what;
-					std::size_t index;
-
-					ui_element();
+					elements what{ elements::none };
+					std::size_t index{ 0 };
 				};
 
 				virtual ~renderer() = 0;
@@ -97,28 +95,30 @@ namespace nana
 				virtual void border(graph_reference) = 0;
 			};
 
+			class tree_wrapper;
+
 			class trigger
 				: public drawer_trigger
 			{
 				class scheme;
 			public:
-				typedef renderer::ui_element ui_element;
+				using elements = renderer::elements;
 
 				trigger();
 				~trigger();
 
 				void insert(const std::string&, std::any);
 				bool childset(const std::string&, std::any);
-				bool childset_erase(const std::string&);
-				bool clear();
+
+				//Erases the child node which specified by name. If name is empty, it clears all nodes.
+				bool erase(const std::string& name);
 
 				//splitstr
 				//@brief: Sets the splitstr. If the parameter will be ignored if it is an empty string.
 				void splitstr(const ::std::string&);
-				const ::std::string& splitstr() const;
-				
-				void path(const ::std::string&);
-				::std::string path() const;
+				const ::std::string& splitstr() const noexcept;
+
+				void set_caption(std::string);
 
 				template<typename T>
 				void create_event_agent(::nana::categorize<T>& wdg)
@@ -129,7 +129,7 @@ namespace nana
 
 				std::any & value() const;
 			private:
-				void _m_event_agent_ready() const;
+				void _m_event_agent_ready();
 			private:
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
@@ -199,6 +199,8 @@ namespace nana
 		categorize& insert(const std::string& name, const value_type& value)
 		{
 			throw_not_utf8(name);
+
+			internal_scope_guard lock;
 			this->get_drawer_trigger().insert(name, value);
 			api::update_window(*this);
 			return *this;
@@ -208,6 +210,8 @@ namespace nana
 		categorize& childset(const std::string& name, const value_type& value)
 		{
 			throw_not_utf8(name);
+
+			internal_scope_guard lock;
 			if(this->get_drawer_trigger().childset(name, value))
 				api::update_window(*this);
 			return *this;
@@ -217,7 +221,9 @@ namespace nana
 		categorize& childset_erase(const std::string& name)
 		{
 			throw_not_utf8(name);
-			if(this->get_drawer_trigger().childset_erase(name))
+
+			internal_scope_guard lock;
+			if(this->get_drawer_trigger().erase(name))
 				api::update_window(*this);
 			return *this;
 		}
@@ -228,6 +234,7 @@ namespace nana
 		/// and after inserting, the new category is replaced of the current category as a new current one.
 		categorize& insert(std::u8string_view name, const value_type& value)
 		{
+			internal_scope_guard lock;
 			this->get_drawer_trigger().insert(to_string(name), value);
 			api::update_window(*this);
 			return *this;
@@ -236,6 +243,7 @@ namespace nana
 		/// Inserts a child category into current category.
 		categorize& childset(std::u8string_view name, const value_type& value)
 		{
+			internal_scope_guard lock;
 			if(this->get_drawer_trigger().childset(to_string(name), value))
 				api::update_window(*this);
 			return *this;
@@ -244,7 +252,8 @@ namespace nana
 		/// Erases a child category with a specified name from current category.
 		categorize& childset_erase(std::u8string_view name)
 		{
-			if(this->get_drawer_trigger().childset_erase(to_string(name)))
+			internal_scope_guard lock;
+			if(this->get_drawer_trigger().erase(to_string(name)))
 				api::update_window(*this);
 			return *this;
 		}		
@@ -252,13 +261,15 @@ namespace nana
 
 		void clear()
 		{
-			if(this->get_drawer_trigger().clear())
+			internal_scope_guard lock;
+			if (this->get_drawer_trigger().erase({}))
 				api::update_window(*this);
 		}
 
 		/// Sets the splitter string
 		categorize& splitstr(const std::string& sstr)
 		{
+			internal_scope_guard lock;
 			this->get_drawer_trigger().splitstr(sstr);
 			return *this;
 		}
@@ -267,6 +278,7 @@ namespace nana
 		/// Sets the splitter string
 		categorize& splitstr(std::u8string_view sstr)
 		{
+			internal_scope_guard lock;
 			this->get_drawer_trigger().splitstr(to_string(sstr));
 			return *this;
 		}
@@ -274,20 +286,21 @@ namespace nana
 
 		std::string splitstr() const
 		{
+			internal_scope_guard lock;
 			return this->get_drawer_trigger().splitstr();
 		}
 
 		/// Retrieves a reference of the current category's value type object. If current category is empty, it throws a exception of std::runtime_error.
 		value_type& value() const
 		{
+			internal_scope_guard lock;
 			return std::any_cast<value_type&>(this->get_drawer_trigger().value());
 		}
 	private:
 		//Overrides widget's virtual functions
 		void _m_caption(native_string_type&& str) override
 		{
-			this->get_drawer_trigger().path(to_utf8(str));
-			api::dev::window_caption(*this, nana::detail::to_nstring(this->get_drawer_trigger().path()) );
+			this->get_drawer_trigger().set_caption(to_utf8(str));
 		}
 	};
 }//end namespace nana
