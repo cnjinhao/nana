@@ -122,14 +122,6 @@ namespace nana
 				api::dev::lazy_refresh();
 		}
 
-		void drawer::mouse_wheel(graph_reference, const arg_wheel& arg)
-		{
-			if(editor_->scroll(arg.upwards, true))
-			{
-				editor_->reset_caret();
-				api::dev::lazy_refresh();
-			}
-		}
 
 		void drawer::mouse_enter(graph_reference, const arg_mouse&)
 		{

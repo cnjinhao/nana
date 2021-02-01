@@ -84,7 +84,6 @@ namespace nana
 				void key_ime(graph_reference, const arg_ime&)	override;
 				void key_press(graph_reference, const arg_keyboard&)override;
 				void key_char(graph_reference, const arg_keyboard&)	override;
-				void mouse_wheel(graph_reference, const arg_wheel&)	override;
 				void resized(graph_reference, const arg_resized&)	override;
 				void typeface_changed(graph_reference)				override;
 			private:
