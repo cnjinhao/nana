@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -459,11 +459,11 @@ namespace nana
 			return{};
 		}
 
-		textbox& textbox::caret_pos(const upoint& pos)
+		textbox& textbox::caret_pos(const upoint& pos, bool scroll_to_caret)
 		{
 			auto editor = get_drawer_trigger().editor();
 			internal_scope_guard lock;
-			if (editor && editor->move_caret(pos, true))
+			if (editor && editor->move_caret(pos, scroll_to_caret))
 				api::refresh_window(handle());
 			
 			return *this;

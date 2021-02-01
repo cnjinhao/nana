@@ -1,7 +1,7 @@
 ﻿/**
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -186,7 +186,7 @@ namespace nana
 		upoint caret_pos() const;
 
 		/// Sets the caret position with a text position
-		textbox& caret_pos(const upoint&);
+		textbox& caret_pos(const upoint&, bool scroll_to_caret = true);
 
         /// Appends an string. If `at_caret` is `true`, the string is inserted at the position of caret, otherwise, it is appended at end of the textbox.
 		textbox& append(const std::string& text, bool at_caret);
