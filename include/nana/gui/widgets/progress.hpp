@@ -23,8 +23,8 @@ namespace nana
 			{
 				scheme();
 
-				color_proxy gradient_bgcolor{ colors::button_face_shadow_start };
-				color_proxy gradient_fgcolor{ static_cast<color_rgb>(0x6FFFA8) };
+				color_proxy lower_background{ colors::button_face_shadow_start };
+				color_proxy lower_foreground{ static_cast<color_rgb>(0x6FFFA8) };
 				
 				struct
 				{

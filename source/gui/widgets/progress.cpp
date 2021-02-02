@@ -190,10 +190,10 @@ namespace nana
 			if (bgcolor.invisible())
 				bgcolor = colors::button_face;
 
-			if (sch.gradient_bgcolor.get_color().invisible())
+			if (sch.lower_background.get_color().invisible())
 				graph.rectangle(rt_bground, true, bgcolor);
 			else
-				graph.gradual_rectangle(rt_bground, bgcolor, sch.gradient_bgcolor.get_color(), true);
+				graph.gradual_rectangle(rt_bground, bgcolor, sch.lower_background.get_color(), true);
 
 			//Draw the gradient fgcolor if gradient_fgcolor is available.
 
@@ -201,10 +201,10 @@ namespace nana
 			if (fgcolor.invisible())
 				fgcolor = static_cast<color_rgb>(0x107515);
 
-			if (sch.gradient_fgcolor.get_color().invisible())
+			if (sch.lower_foreground.get_color().invisible())
 				graph.rectangle(rt_val, true, fgcolor);
 			else
-				graph.gradual_rectangle(rt_val, sch.gradient_fgcolor.get_color(), fgcolor, true);
+				graph.gradual_rectangle(rt_val, sch.lower_foreground.get_color(), fgcolor, true);
 
 			if (!api::widget_borderless(*progress_->widget_ptr()))
 				graph.frame_rectangle(rectangle { graph.size() },
