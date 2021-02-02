@@ -143,7 +143,7 @@ namespace nana
 
 		void trigger::refresh(graph_reference graph)
 		{	
-			const unsigned border_px = substance::border_px;
+			const unsigned border_px = api::widget_borderless(*progress_->widget_ptr()) ? 0 : substance::border_px;
 
 			rectangle rt_val{ graph.size() };
 			auto const width = rt_val.width - border_px * 2;
@@ -206,7 +206,8 @@ namespace nana
 			else
 				graph.gradual_rectangle(rt_val, sch.gradient_fgcolor.get_color(), fgcolor, true);
 
-			graph.frame_rectangle(rectangle{ graph.size() }, colors::gray, colors::gray, colors::white, colors::white);
+			if (!api::widget_borderless(*progress_->widget_ptr()))
+				graph.frame_rectangle(rectangle{ graph.size() }, colors::gray, colors::gray, colors::white, colors::white);
 		}
 	}//end namespace drawerbase::progress
 
