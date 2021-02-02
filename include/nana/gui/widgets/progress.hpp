@@ -25,6 +25,14 @@ namespace nana
 
 				color_proxy gradient_bgcolor{ colors::button_face_shadow_start };
 				color_proxy gradient_fgcolor{ static_cast<color_rgb>(0x6FFFA8) };
+				
+				struct
+				{
+					color_proxy left { colors::gray };
+                    color_proxy top { colors::gray };
+                    color_proxy right { colors::white };
+                    color_proxy bottom { colors::white };
+				} border_colors;
 			};
 
 			class substance;

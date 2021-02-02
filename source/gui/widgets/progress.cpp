@@ -207,7 +207,11 @@ namespace nana
 				graph.gradual_rectangle(rt_val, sch.gradient_fgcolor.get_color(), fgcolor, true);
 
 			if (!api::widget_borderless(*progress_->widget_ptr()))
-				graph.frame_rectangle(rectangle{ graph.size() }, colors::gray, colors::gray, colors::white, colors::white);
+				graph.frame_rectangle(rectangle { graph.size() },
+					sch.border_colors.left.get_color(),
+					sch.border_colors.top.get_color(),
+                    sch.border_colors.right.get_color(),
+                    sch.border_colors.bottom.get_color());
 		}
 	}//end namespace drawerbase::progress
 
