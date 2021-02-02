@@ -29,9 +29,9 @@ namespace nana
 				struct
 				{
 					color_proxy left { colors::gray };
-                    color_proxy top { colors::gray };
-                    color_proxy right { colors::white };
-                    color_proxy bottom { colors::white };
+					color_proxy top { colors::gray };
+					color_proxy right { colors::white };
+					color_proxy bottom { colors::white };
 				} border_colors;
 			};
 
@@ -53,8 +53,8 @@ namespace nana
 			};
 	}//end namespace drawerbase::progress
 	
-       /// \brief A progressbar widget with two styles: know, and unknown amount value (goal). 
-       /// In unknown style the amount is ignored and the bar is scrolled when value change.
+	   /// \brief A progressbar widget with two styles: know, and unknown amount value (goal). 
+	   /// In unknown style the amount is ignored and the bar is scrolled when value change.
 	class progress
 		: public widget_object<category::widget_tag, drawerbase::progress::trigger, ::nana::general_events, drawerbase::progress::scheme>
 	{

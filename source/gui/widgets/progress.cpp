@@ -94,7 +94,7 @@ namespace nana
 			{
 				if (widget_)
 				{
-                    unsigned value_px = (widget_->size().width - border_px * 2);
+					unsigned value_px = (widget_->size().width - border_px * 2);
 
 					//avoid overflow
 					if (unknown_ || (value_ < max_))
@@ -210,8 +210,8 @@ namespace nana
 				graph.frame_rectangle(rectangle { graph.size() },
 					sch.border_colors.left.get_color(),
 					sch.border_colors.top.get_color(),
-                    sch.border_colors.right.get_color(),
-                    sch.border_colors.bottom.get_color());
+					sch.border_colors.right.get_color(),
+					sch.border_colors.bottom.get_color());
 		}
 	}//end namespace drawerbase::progress
 
