@@ -83,7 +83,7 @@ namespace nana{ namespace drawerbase
 
 				unsigned txt_px = 0, descent = 0, ileading = 0;
 				graph.text_metrics(txt_px, descent, ileading);
-				txt_px += (descent + 2);
+				txt_px += (descent + ileading);
 
 				auto e_state = API::element_state(*wdg);
 				if(!wdg->enabled())
