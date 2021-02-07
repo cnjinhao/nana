@@ -1,4 +1,4 @@
-/*
+/**
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/button.cpp
+ *	@file nana/gui/widgets/button.cpp
  */
 
 #include <nana/gui/widgets/button.hpp>

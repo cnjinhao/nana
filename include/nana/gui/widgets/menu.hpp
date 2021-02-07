@@ -1,13 +1,13 @@
 /**
  *	A Menu implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/menu.hpp
+ *	@file nana/gui/widgets/menu.hpp
  *
  */
 
@@ -59,7 +59,8 @@ namespace nana
 					std::size_t const	pos_;
 					::nana::menu* const	menu_;
 				};
-				    /// A callback functor type.  
+				    
+				/// A callback functor type.  
 				typedef std::function<void(item_proxy&)> event_fn_t;
 
 				//Default constructor initializes the item as a splitter
@@ -79,8 +80,8 @@ namespace nana
 					menu_type*		menu_ptr;
 				}linked;
 
-				std::string	text;
-				event_fn_t	event_handler;
+				std::string	    text;
+				event_fn_t	    event_handler;
 				checks			style{checks::none};
 				paint::image	image;
 				mutable wchar_t	hotkey{0};
@@ -138,13 +139,13 @@ namespace nana
 		item_proxy	append(std::string text_utf8, const event_fn_t& handler = {});
 		void		append_splitter();
 
-		/// Inserts new item at specified position
+		/// Inserts a new menu item at the specified position
 		/**
 		 * It will invalidate the existing item proxies from the specified position.
-		 * @param pos The position where new item to be inserted
-		 * @param text_utf8 The title of item
-		 * @param handler The event handler for the item.
-		 * @return the item proxy to the new inserted item.
+		 * @param pos The position where the new item will be inserted
+		 * @param text_utf8 The title (text) of item
+		 * @param handler The event handler for the item
+		 * @return the item proxy to the new inserted item
 		 */
 		item_proxy	insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler = {});
 

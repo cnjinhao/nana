@@ -219,15 +219,13 @@ namespace paint
 
 		void image::stretch(const nana::rectangle& r_src, graphics& dst, const nana::rectangle & r_dst) const
 		{
-			if (image_ptr_)
-			{
-				if (dst.empty())
-					dst.make({ r_src.width, r_src.height });	//throws if failed to create
+			if (! image_ptr_)
+				throw std::runtime_error("GUI error trying to stretch an empty image.");
 
-				image_ptr_->stretch(r_src, dst, r_dst);
-			}
-			else
-				throw std::runtime_error("image is empty");
+			if (dst.empty())
+				dst.make({ r_src.width, r_src.height });	//throws if failed to create
+
+			image_ptr_->stretch(r_src, dst, r_dst);
 		}
 
 		std::size_t image::length() const

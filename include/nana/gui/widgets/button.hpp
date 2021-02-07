@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *  @file: nana/gui/widgets/button.hpp
+ *  @file nana/gui/widgets/button.hpp
  *	@contributor
  *		besh81(pr#361)
  */
@@ -19,40 +19,41 @@
 #include <nana/push_ignore_diagnostic>
 
 
-namespace nana::drawerbase::button{
+namespace nana::drawerbase::button
+{
 
-			///	Draw the button
-			class trigger: public drawer_trigger
-			{
-				class content_measurer;
-				struct attributes;
-				struct impl;
-			public:
-				trigger();
-				~trigger();
+		///	Draw the button
+		class trigger: public drawer_trigger
+		{
+			class content_measurer;
+			struct attributes;
+			struct impl;
+		public:
+			trigger();
+			~trigger();
 
-				void emit_click();
-				bool enable_pushed(bool);
-				bool pushed(bool);
-				const impl* get_impl() const;
-				impl* get_impl();
-			private:
-				void attached(widget_reference, graph_reference) override;
-				void refresh(graph_reference)	override;
-				void mouse_enter(graph_reference, const arg_mouse&) override;
-				void mouse_leave(graph_reference, const arg_mouse&) override;
-				void mouse_down(graph_reference, const arg_mouse&)	override;
-				void mouse_up(graph_reference, const arg_mouse&)	override;
-				void key_press(graph_reference, const arg_keyboard&) override;
-				void focus(graph_reference, const arg_focus&) override;
-			private:
-				void _m_draw_title(graph_reference, bool enabled);
-				void _m_draw_background(graph_reference);
-				void _m_draw_border(graph_reference);
-				void _m_press(graph_reference, bool);
-			private:
-				std::unique_ptr<impl> impl_;
-			};
+			void emit_click();
+			bool enable_pushed(bool);
+			bool pushed(bool);
+			const impl* get_impl() const;
+			impl* get_impl();
+		private:
+			void attached(widget_reference, graph_reference) override;
+			void refresh(graph_reference)	override;
+			void mouse_enter(graph_reference, const arg_mouse&) override;
+			void mouse_leave(graph_reference, const arg_mouse&) override;
+			void mouse_down(graph_reference, const arg_mouse&)	override;
+			void mouse_up(graph_reference, const arg_mouse&)	override;
+			void key_press(graph_reference, const arg_keyboard&) override;
+			void focus(graph_reference, const arg_focus&) override;
+		private:
+			void _m_draw_title(graph_reference, bool enabled);
+			void _m_draw_background(graph_reference);
+			void _m_draw_border(graph_reference);
+			void _m_press(graph_reference, bool);
+		private:
+			std::unique_ptr<impl> impl_;
+		};
 }//end namespace nana::drawerbase::button
 
 namespace nana
