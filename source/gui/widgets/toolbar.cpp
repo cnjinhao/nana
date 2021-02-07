@@ -160,6 +160,7 @@ namespace nana
 			bool				enable{ true };
 			bool				textout{ false };
 			tools				type{ tools::button };
+			shared_command      command;
 
 			// tools::toggle
 			bool				toggle{ false };
@@ -180,6 +181,10 @@ namespace nana
 			toolbar_item(tools type, const std::string& text, const nana::paint::image& img, const event_fn_t& fn)
 				: text(text), image(img), type(type), event_handler(fn)
 			{}
+			toolbar_item(tools type, shared_command command_)
+				: command(command_), text(command_->text), image(command_->image), 
+				  type(type), event_handler([this](item_proxy& i) {this->command->event_handler(*command); })
+			{}		
 		};
 
 
@@ -204,11 +209,24 @@ namespace nana
 					cont_.push_back(m);
 			}
 
+			void insert(size_type pos, tools type, shared_command command)
+			{
+				toolbar_item* m = new toolbar_item(type, command);
+
+				if(pos < cont_.size())
+					cont_.insert(cont_.begin() + pos, m);
+				else
+					cont_.push_back(m);
+			}
 			void push_back(tools type, const std::string& text, const nana::paint::image& img, const event_fn_t& fn)
 			{
 				insert(cont_.size(), type, text, img, fn);
 			}
 
+			void push_back(tools type, shared_command command)
+			{
+				insert(cont_.size(), type, command);
+			}
 			void push_back_separator()
 			{
 				cont_.push_back(nullptr);
@@ -812,6 +830,12 @@ namespace nana
 				return dropdown_append(text, {}, handler);
 			}
 
+			item_proxy& item_proxy::dropdown_append(shared_command command)
+			{
+				item_->dropdown_items.emplace_back(std::make_shared<dropdown_item>(command));
+				return *this;
+			}
+
 			bool item_proxy::dropdown_enable(std::size_t index) const
 			{
 				if(index >= item_->dropdown_items.size())
@@ -876,6 +900,13 @@ namespace nana
 		toolbar::item_proxy toolbar::append(tools t, const std::string& text, const toolbar::event_fn_t& handler)
 		{
 			return append(t, text, {}, handler);
+		}
+
+		toolbar::item_proxy toolbar::append(tools t, shared_command command)
+		{
+			get_drawer_trigger().items().push_back(t, command);
+			api::refresh_window(handle());
+			return { get_drawer_trigger().items().back(), &get_drawer_trigger().items(), this };
 		}
 
 		void toolbar::append_separator()

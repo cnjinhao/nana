@@ -168,6 +168,7 @@ namespace nana
 
 		item_proxy append(tools t, const std::string& text, const nana::paint::image& img, const event_fn_t& handler = {});   ///< Adds a tool.
 		item_proxy append(tools t, const std::string& text, const event_fn_t& handler = {});   ///< Adds a tool.
+		item_proxy append(tools t, shared_command command);   ///< Adds a tool.
 		void append_separator();	///< Adds a separator.
 
 		size_type count() const noexcept; ///< Returns tools and separators count.
