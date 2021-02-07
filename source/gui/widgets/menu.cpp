@@ -70,6 +70,17 @@ namespace nana
 				linked.own_creation = false;
 				linked.menu_ptr = nullptr;
 			}
+			menu_item_type::menu_item_type(shared_command command_)
+				: command(command_), text(command_->text), image (command_->image),
+				  event_handler([this](item_proxy& i) {this->command->event_handler(*command); })
+			{
+				flags.enabled = command->enabled ;
+				flags.splitter = false;
+				flags.checked = command->checked;
+
+				linked.own_creation = false;
+				linked.menu_ptr = nullptr;
+			}
 		//end class menu_item_type
 
 		class internal_renderer
@@ -1201,7 +1212,8 @@ namespace nana
 		{
 			auto & items = impl_->mbuilder.data().items;
 			if (pos > items.size())
-				throw std::out_of_range("menu: a new item inserted to an invalid position");
+				throw std::out_of_range("menu: a new item inserted to an invalid position (" +
+					                     std::to_string(pos) + "): " + text_utf8);
 
 			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
 

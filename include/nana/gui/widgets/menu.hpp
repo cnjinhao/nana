@@ -14,6 +14,7 @@
 #ifndef NANA_GUI_WIDGETS_MENU_HPP
 #define NANA_GUI_WIDGETS_MENU_HPP
 #include "widget.hpp"
+#include <nana/gui/command.hpp>
 #include <nana/pat/cloneable.hpp>
 #include <nana/push_ignore_diagnostic>
 
@@ -66,6 +67,7 @@ namespace nana
 				//Default constructor initializes the item as a splitter
 				menu_item_type();
 				menu_item_type(std::string, const event_fn_t&);
+				menu_item_type(shared_command command);
 
 				struct
 				{
@@ -85,6 +87,7 @@ namespace nana
 				checks			style{checks::none};
 				paint::image	image;
 				mutable wchar_t	hotkey{0};
+				shared_command  command;
 			};
 
 			class renderer_interface
