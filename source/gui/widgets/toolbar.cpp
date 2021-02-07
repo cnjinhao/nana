@@ -45,9 +45,15 @@ namespace nana
 			std::string			text_;
 			nana::paint::image	image_;
 			event_fn_t			event_handler_;
+			shared_command      command;
 
 			dropdown_item(const std::string& txt, const nana::paint::image& img, const event_fn_t& handler)
 				: text_(txt), image_(img), event_handler_(handler)
+			{}
+
+			dropdown_item(shared_command command_)
+				: command(command_), text_(command_->text), image_(command_->image), 
+				event_handler_([this](item_proxy& i) {this->command->event_handler(*command); })
 			{}
 
 			//implement item_interface methods

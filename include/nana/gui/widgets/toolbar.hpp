@@ -12,6 +12,7 @@
 
 #ifndef NANA_GUI_WIDGET_TOOLBAR_HPP
 #define NANA_GUI_WIDGET_TOOLBAR_HPP
+#include <nana/gui/command.hpp>
 #include <nana/push_ignore_diagnostic>
 
 #include "widget.hpp"
@@ -83,6 +84,7 @@ namespace nana
 				// tools::dropdown
 				item_proxy& dropdown_append(const std::string& text, const nana::paint::image& img, const event_fn_t& handler = {});   ///< Adds an item to the dropdown menu.
 				item_proxy& dropdown_append(const std::string& text, const event_fn_t& handler = {});   ///< Adds an item to the dropdown menu.
+				item_proxy& dropdown_append(shared_command command);   ///< Adds an item to the dropdown menu.
 
 				bool dropdown_enable(std::size_t index) const; ///< Gets the dropdown menu item enable state.
 				item_proxy& dropdown_enable(std::size_t index, bool enable_state); ///< Sets the dropdown menu item enable state.
