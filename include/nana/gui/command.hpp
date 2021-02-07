@@ -19,7 +19,7 @@
 #include <string>
 #include <functional>
 
-#include <nana\paint\image.hpp>
+#include <nana/paint/image.hpp>
 
 namespace nana 
 {
