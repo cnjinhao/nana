@@ -1203,6 +1203,13 @@ namespace nana
 			return item_proxy{size() - 1, this};
 		}
 
+		auto menu::append(shared_command command)-> item_proxy
+		{
+			std::unique_ptr<item_type> item{ new item_type{ command } };
+			impl_->mbuilder.data().items.emplace_back(std::move(item));
+			return item_proxy{size() - 1, this};
+		}
+
 		void menu::append_splitter()
 		{
 			impl_->mbuilder.data().items.emplace_back(new item_type);
@@ -1216,6 +1223,26 @@ namespace nana
 					                     std::to_string(pos) + "): " + text_utf8);
 
 			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
+
+			items.emplace(
+#ifdef _MSC_VER
+				items.cbegin() + pos,
+#else
+				items.begin() + pos,
+#endif
+				std::move(item));
+
+			return item_proxy{ pos, this};
+		}
+
+		auto menu::insert(std::size_t pos, shared_command command)-> item_proxy
+		{
+			auto & items = impl_->mbuilder.data().items;
+			if (pos > items.size())
+				throw std::out_of_range("menu: a new item inserted to an invalid position (" + 
+					                     std::to_string(pos) + "): " + command->text);
+
+			std::unique_ptr<item_type> item{ new item_type{ command } };
 
 			items.emplace(
 #ifdef _MSC_VER

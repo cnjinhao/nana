@@ -140,6 +140,7 @@ namespace nana
 
 			/// Appends an item to the menu.
 		item_proxy	append(std::string text_utf8, const event_fn_t& handler = {});
+		item_proxy	append(shared_command command);
 		void		append_splitter();
 
 		/// Inserts a new menu item at the specified position
@@ -151,6 +152,7 @@ namespace nana
 		 * @return the item proxy to the new inserted item
 		 */
 		item_proxy	insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler = {});
+		item_proxy	insert(std::size_t pos, shared_command command);
 
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.
