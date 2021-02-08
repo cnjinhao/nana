@@ -89,7 +89,6 @@ namespace nana
 								sy++;
 								graph.line(point{ sx, sy }, point{ sx, sy + 3 });
 							}
-
 							for(int i = 0; i < 4; i++)
 							{
 								sx++;
@@ -117,30 +116,17 @@ namespace nana
 				if(crook_data.check_state == state::unchecked)
 					return true;
 
+				int x = r.x + (static_cast<int>(r.width) - 8) / 2;
+				int y = r.y + (static_cast<int>(r.height) - 8) / 2;
+
 				if(crook_data.radio)
 				{
-					int x = r.x + (static_cast<int>(r.width) - 8) / 2;
-					int y = r.y + (static_cast<int>(r.height) - 8) / 2;
-
 					graph.round_rectangle(rectangle{ x+1, y+1, 7, 7 }, 4, 4, fgcolor, true, fgcolor);
 				}
 				else
 				{
-					int x = r.x + (static_cast<int>(r.width) - 16) / 2;
-					int y = r.y + (static_cast<int>(r.height) - 16) / 2;
-
-					// graph.palette(false, fgcolor);
-					// graph.line(point{ x + 3, y + 7 }, point{ x + 6, y + 10 });
-					// graph.line(point{ x + 7, y + 9 }, point{ x + 12, y + 4 });
-
-					// graph.palette(false, fgcolor.blend(colors::white, 0.5));
-					// graph.line(point{ x + 3, y + 8 }, point{ x + 6, y + 11 });
-					// graph.line(point{ x + 7, y + 10 }, point{ x + 12, y + 5 });
-					// graph.line(point{ x + 4, y + 7 }, point{ x + 6, y + 9 });
-					// graph.line(point{ x + 7, y + 8 }, point{ x + 11, y + 4 });
-
-					int sx = x + 2;
-					int sy = y + 4;
+					int sx = x;
+					int sy = y + 1;
 
 					for(int i = 0; i < 3; i++)
 					{
@@ -148,7 +134,6 @@ namespace nana
 						sy++;
 						graph.line(point{ sx, sy }, point{ sx, sy + 3 }, fgcolor);
 					}
-
 					for(int i = 0; i < 4; i++)
 					{
 						sx++;
