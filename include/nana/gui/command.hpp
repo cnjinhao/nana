@@ -36,13 +36,14 @@ namespace nana
 	class command
 	{
 	public:
-		using event_fn_t = std::function<void(command& me)>;
+		using event_fn_t = std::function<void(command& me)>; // &me convenient, but risky
+		//using event_void = std::function<void()>; // simple and universal
 
-		command(std::string text,          ///<
+		command(std::string_view title,         ///<
 			    event_fn_t  event_handler, ///< 
 			    paint::image image = {}    ///<
 		) 
-			: text(text), event_handler(event_handler), image(image)
+			: title(title), short_title(title), event_handler(event_handler), image(image)
 		{}
 
 		//~command();
@@ -56,8 +57,9 @@ namespace nana
 
 		/// A callback functor type.  
 	//private:
-		std::string	    text;                   ///< always  shared
-		std::string	    tooltip;                ///< shared only at the moment of setting at the widget
+		std::string	    title;                  ///< always  shared
+		std::string	    short_title;            ///< always  shared
+		std::string	    description;            ///< shared only at the moment of setting at the widget
 		event_fn_t	    event_handler;          ///< always  shared
 		checks			style{ checks::none };  ///< always  shared
 		paint::image	image;                  ///< always  shared

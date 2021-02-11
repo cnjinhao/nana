@@ -71,8 +71,9 @@ namespace nana
 				linked.menu_ptr = nullptr;
 			}
 			menu_item_type::menu_item_type(shared_command command_)
-				: command(command_), text(command_->text), image (command_->image),
-				  event_handler([this](item_proxy& i) {this->command->event_handler(*command); })
+				: text(command_->title), image (command_->image),
+				  event_handler([this](item_proxy& i) {this->command->event_handler(*command); }),
+				  command(command_)
 			{
 				flags.enabled = command->enabled ;
 				flags.splitter = false;
@@ -741,7 +742,7 @@ namespace nana
 				api::calc_screen_point(*widget_, pos);
 
 				//get the screen coordinates of the widget pos.
-				auto scr_area = screen().from_point(detail_.monitor_pos).workarea();
+				const nana::rectangle scr_area = screen().from_point(detail_.monitor_pos).workarea();
 
 				if(pos.x + static_cast<int>(size.width) > scr_area.right())
 					pos.x = scr_area.right() - static_cast<int>(size.width);
@@ -1240,7 +1241,7 @@ namespace nana
 			auto & items = impl_->mbuilder.data().items;
 			if (pos > items.size())
 				throw std::out_of_range("menu: a new item inserted to an invalid position (" + 
-					                     std::to_string(pos) + "): " + command->text);
+					                     std::to_string(pos) + "): " + command->title);
 
 			std::unique_ptr<item_type> item{ new item_type{ command } };
 

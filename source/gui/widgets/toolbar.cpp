@@ -51,9 +51,10 @@ namespace nana
 				: text_(txt), image_(img), event_handler_(handler)
 			{}
 
-			dropdown_item(shared_command command_)
-				: command(command_), text_(command_->text), image_(command_->image), 
-				event_handler_([this](item_proxy& i) {this->command->event_handler(*command); })
+            dropdown_item(shared_command command_)
+                : text_(command_->short_title), image_(command_->image), 
+                  event_handler_([this](item_proxy& i) {this->command->event_handler(*command); }),
+                  command(command_)
 			{}
 
 			//implement item_interface methods
@@ -182,8 +183,9 @@ namespace nana
 				: text(text), image(img), type(type), event_handler(fn)
 			{}
 			toolbar_item(tools type, shared_command command_)
-				: command(command_), text(command_->text), image(command_->image), 
-				  type(type), event_handler([this](item_proxy& i) {this->command->event_handler(*command); })
+				: text(command_->short_title), image(command_->image), 
+				  type(type), event_handler([this](item_proxy& i) {this->command->event_handler(*command); }),
+				  command(command_)
 			{}		
 		};
 
