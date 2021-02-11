@@ -16,6 +16,7 @@
 #define NANA_GUI_WIDGET_BUTTON_HPP
 #include "widget.hpp"
 #include <nana/gui/element.hpp>
+#include <nana/gui/command.hpp>
 #include <nana/push_ignore_diagnostic>
 
 
@@ -65,6 +66,7 @@ namespace nana
 		{
 			typedef widget_object<category::widget_tag, drawerbase::button::trigger> base_type;
 		public:
+
 			button();
 
 			button(window parent, std::string_view title, bool visible = true);
@@ -72,7 +74,16 @@ namespace nana
 #ifdef __cpp_char8_t
 			button(window parent, std::u8string_view title, bool visible = false);
 #endif
-
+			button(window               parent,
+				   std::string_view     title,         ///<
+				   command::event_fn_t  click_handler, ///< 
+				   paint::image         image = {},     ///<
+				   bool                 visible = true
+			      );
+			button(window               parent,
+				   shared_command       scommand,     ///<
+				   bool                 visible = true
+			      );
 			button(window parent, const nana::rectangle& = rectangle(), bool visible = true);
 
 			/// Shows an icon in front of caption
@@ -96,6 +107,7 @@ namespace nana
 
 			button& edge_effects(bool enable);
 		private:
+			shared_command scommand_;
 			//Overrides widget virtual functions
 			void _m_complete_creation() override;
 			void _m_caption(native_string_type&&) override;
