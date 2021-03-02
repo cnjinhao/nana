@@ -1071,6 +1071,7 @@ namespace nana
 #ifdef __cpp_char8_t
 				void append(std::initializer_list<std::u8string> texts);
 #endif
+				void clear();
 
 				size_type columns() const;
 

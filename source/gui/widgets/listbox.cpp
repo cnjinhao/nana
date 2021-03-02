@@ -5184,6 +5184,32 @@ namespace nana
 				return *this;
 			}
 
+			void cat_proxy::clear()
+			{
+				internal_scope_guard lock;
+
+				auto origin = ess_->content_view->origin();
+
+				int new_pos = origin.y;
+
+				if (!ess_->lister.first().empty())
+				{
+					auto start_pos = static_cast<int>(ess_->lister.distance(ess_->lister.first(), index_pair{ pos_, npos }) * ess_->item_height());
+					auto count = static_cast<int>(ess_->lister.size_item(pos_) * ess_->item_height());
+					if (start_pos + count <= origin.y)
+						new_pos = origin.y - static_cast<int>(count);
+					else if (start_pos < origin.y && origin.y < start_pos + count)
+						new_pos = start_pos + ess_->item_height();
+				}
+
+				ess_->lister.clear(pos_);
+
+				ess_->calc_content_size(false);
+				ess_->content_view->change_position(new_pos, false, false);
+				ess_->content_view->sync(false);
+				ess_->update();
+			}
+
 			auto cat_proxy::columns() const -> size_type
 			{
 				return ess_->header.cont().size();
@@ -5901,25 +5927,9 @@ namespace nana
 		void listbox::clear(size_type cat)
 		{
 			internal_scope_guard lock;
-			auto & ess = _m_ess();
 
-			auto origin = ess.content_view->origin();
-
-			int new_pos = origin.y;
-
-			auto start_pos = static_cast<int>(ess.lister.distance(ess.lister.first(), index_pair{cat, npos}) * ess.item_height());
-			auto count = static_cast<int>(ess.lister.size_item(cat) * ess.item_height());
-			if (start_pos + count <= origin.y)
-				new_pos = origin.y - static_cast<int>(count);
-			else if (start_pos < origin.y && origin.y < start_pos + count)
-				new_pos = start_pos + ess.item_height();
-
-			ess.lister.clear(cat);
-
-			ess.calc_content_size(false);
-			ess.content_view->change_position(new_pos, false, false);
-			ess.content_view->sync(false);
-			ess.update();
+			cat_proxy cp{ &_m_ess(), cat };
+			cp.clear();
 		}
 
 		void listbox::clear()
