@@ -71,8 +71,19 @@ namespace nana
 			if (limit_pixels)
 				return{};
 
+			//This method is according to trigger::_m_draw_title
+
 			wchar_t shortkey;
-			return graph.text_extent_size(api::transform_shortkey_text(impl_->wdg->caption(), shortkey, nullptr));
+			auto content_size = graph.text_extent_size(api::transform_shortkey_text(impl_->wdg->caption(), shortkey, nullptr));
+
+			if (impl_->attr.icon)
+			{
+				auto icon_sz = impl_->attr.icon.size();
+				content_size.width += icon_sz.width + 5;
+				content_size.height = std::max(content_size.height, icon_sz.height);
+			}
+
+			return content_size;
 		}
 
 		trigger::trigger():
@@ -234,20 +245,22 @@ namespace nana
 			nana::size ts = graph.text_extent_size(str);
 			nana::size gsize = graph.size();
 
-			nana::point pos{
-				static_cast<int>(gsize.width - 1 - ts.width) >> 1, static_cast<int>(gsize.height - 1 - ts.height) >> 1
+			//Text position
+			auto tmp_sz = gsize - 1 - ts;
+			point pos{
+				static_cast<int>(tmp_sz.width) / 2, static_cast<int>(tmp_sz.height) / 2
 			};
 
 			auto icon_sz = impl_->attr.icon.size();
 			if (impl_->attr.icon)
 			{
 				icon_sz.width += 5;
-
-				if (pos.x < static_cast<int>(icon_sz.width))
-					pos.x = static_cast<int>(icon_sz.width);
-				
 				pos.x += icon_sz.width / 2;
 			}
+
+			if (pos.x - static_cast<int>(icon_sz.width) < 4)
+				pos.x += 4 - pos.x + icon_sz.width;
+			
 
 			if(ts.width)
 			{

@@ -539,6 +539,16 @@ namespace nana
 			return { width - sz.width, height - sz.height };
 		}
 
+		size size::operator+(value_type x) const
+		{
+			return { width + x, height + x };
+		}
+
+		size size::operator-(value_type x) const
+		{
+			return { width - x, height - x };
+		}
+
 		size size::operator/(value_type x) const
 		{
 			return { width / x, height / x };

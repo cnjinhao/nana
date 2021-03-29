@@ -464,6 +464,8 @@ namespace nana
 		bool operator!=(const size& rhs) const;
 		size operator+(const size&) const;
 		size operator-(const size&) const;
+		size operator+(value_type) const;
+		size operator-(value_type) const;
 		size operator/(value_type) const;
 		size operator*(value_type) const;
 		friend size operator*(value_type, const size&);
