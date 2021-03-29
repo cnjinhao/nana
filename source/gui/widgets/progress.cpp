@@ -94,7 +94,7 @@ namespace nana
 			{
 				if (widget_)
 				{
-                    unsigned value_px = (widget_->size().width - border_px * 2);
+					unsigned value_px = (widget_->size().width - border_px * 2);
 
 					//avoid overflow
 					if (unknown_ || (value_ < max_))
@@ -143,7 +143,7 @@ namespace nana
 
 		void trigger::refresh(graph_reference graph)
 		{	
-			const unsigned border_px = substance::border_px;
+			const unsigned border_px = api::widget_borderless(*progress_->widget_ptr()) ? 0 : substance::border_px;
 
 			rectangle rt_val{ graph.size() };
 			auto const width = rt_val.width - border_px * 2;
@@ -190,10 +190,10 @@ namespace nana
 			if (bgcolor.invisible())
 				bgcolor = colors::button_face;
 
-			if (sch.gradient_bgcolor.get_color().invisible())
+			if (sch.lower_background.get_color().invisible())
 				graph.rectangle(rt_bground, true, bgcolor);
 			else
-				graph.gradual_rectangle(rt_bground, bgcolor, sch.gradient_bgcolor.get_color(), true);
+				graph.gradual_rectangle(rt_bground, bgcolor, sch.lower_background.get_color(), true);
 
 			//Draw the gradient fgcolor if gradient_fgcolor is available.
 
@@ -201,12 +201,17 @@ namespace nana
 			if (fgcolor.invisible())
 				fgcolor = static_cast<color_rgb>(0x107515);
 
-			if (sch.gradient_fgcolor.get_color().invisible())
+			if (sch.lower_foreground.get_color().invisible())
 				graph.rectangle(rt_val, true, fgcolor);
 			else
-				graph.gradual_rectangle(rt_val, sch.gradient_fgcolor.get_color(), fgcolor, true);
+				graph.gradual_rectangle(rt_val, sch.lower_foreground.get_color(), fgcolor, true);
 
-			graph.frame_rectangle(rectangle{ graph.size() }, colors::gray, colors::gray, colors::white, colors::white);
+			if (!api::widget_borderless(*progress_->widget_ptr()))
+				graph.frame_rectangle(rectangle { graph.size() },
+					sch.border_colors.left.get_color(),
+					sch.border_colors.top.get_color(),
+					sch.border_colors.right.get_color(),
+					sch.border_colors.bottom.get_color());
 		}
 	}//end namespace drawerbase::progress
 
