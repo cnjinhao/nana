@@ -2874,6 +2874,9 @@ namespace nana
 							continue;
 
 						content_px = graph->text_extent_size((*cat.items[i].cells)[pos].text).width;
+						const auto& item = cat.items[i];
+						if (!item.img.empty())
+							content_px += item.img_show_size.width;
 					}
 
 					if (content_px > max_px)
