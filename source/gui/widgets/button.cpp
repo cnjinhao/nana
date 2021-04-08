@@ -155,7 +155,8 @@ namespace nana{	namespace drawerbase
 				else
 					_m_draw_background(graph);
 
-				_m_draw_border(graph);
+				if (false == API::widget_borderless(wdg_->handle()))
+					_m_draw_border(graph);
 			}
 			_m_draw_title(graph, eb);
 		}
