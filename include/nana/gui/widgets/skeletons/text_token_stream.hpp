@@ -1,7 +1,7 @@
 /*
  *	Text Token Stream
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -195,7 +195,8 @@ namespace nana{ namespace widgets{	namespace skeletons
 				{
 					ch = *(iptr_ + 1);
 
-					if ('<' == ch || '>' == ch)	//two characters need to be escaped.
+					//Characters should be escaped
+					if ('<' == ch || '>' == ch || '\\' == ch)
 					{
 						iptr_ += 2;
 					}

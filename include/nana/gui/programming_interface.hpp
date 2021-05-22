@@ -245,6 +245,8 @@ namespace api
 	native_window_type root(window);
 	window	root(native_window_type);                     ///< Retrieves the native window of a Nana.GUI window.
 
+	void enable_double_click(window, bool);
+
 	void fullscreen(window, bool);
 
 	void close_window(window);

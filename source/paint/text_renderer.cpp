@@ -11,9 +11,10 @@ namespace nana
 		namespace helper
 		{
 			template<typename F>
-			void for_each_line(const wchar_t * str, std::size_t len, int top, F & f)
+			void for_each_line(std::wstring_view sv, int top, F & f)
 			{
-				auto const end = str + len;
+				auto str = sv.data();
+				auto const end = str + sv.size();
 				for(auto i = str; i != end; ++i)
 				{
 					if('\n' == *i)
@@ -501,41 +502,41 @@ namespace nana
 			text_align_(ta)
 		{}
 
-		nana::size text_renderer::extent_size(int x, int y, const wchar_t* str, std::size_t len, unsigned restricted_pixels) const
+		nana::size text_renderer::extent_size(int x, int y, std::wstring_view sv, unsigned restricted_pixels) const
 		{
 			nana::size extents;
 			if(graph_)
 			{
 				helper::extent_auto_changing_lines eacl(graph_, x, x + static_cast<int>(restricted_pixels));
-				helper::for_each_line(str, len, y, eacl);
+				helper::for_each_line(sv, y, eacl);
 				extents.width = restricted_pixels;
 				extents.height = eacl.extents;
 			}
 			return extents;
 		}
 
-		void text_renderer::render(const point& pos, const wchar_t * str, std::size_t len)
+		void text_renderer::render(const point& pos, std::wstring_view sv)
 		{
 			if (graph_)
 			{
 				helper::string_drawer sd{ graph_, pos.x, pos.x + static_cast<int>(graph_.width()), text_align_, false };
-				helper::for_each_line(str, len, pos.y, sd);
+				helper::for_each_line(sv, pos.y, sd);
 			}
 		}
 
-		void text_renderer::render(const point& pos, const wchar_t* str, std::size_t len, unsigned space_pixels, mode rendering_mode)
+		void text_renderer::render(const point& pos, std::wstring_view sv, unsigned space_pixels, mode rendering_mode)
 		{
-			if (graph_ && str && len && space_pixels)
+			if (graph_ && sv.size() && space_pixels)
 			{
 				if (mode::truncate_letter_with_ellipsis == rendering_mode || mode::truncate_with_ellipsis == rendering_mode)
 				{
 					helper::string_drawer sd{ graph_, pos.x, pos.x + static_cast<int>(space_pixels), text_align_, true };
-					helper::for_each_line(str, len, pos.y, sd);
+					helper::for_each_line(sv, pos.y, sd);
 				}
 				else if (mode::word_wrap == rendering_mode)
 				{
 					helper::draw_string_auto_changing_lines dsacl(graph_, pos.x, pos.x + static_cast<int>(space_pixels), text_align_);
-					helper::for_each_line(str, len, pos.y, dsacl);
+					helper::for_each_line(sv, pos.y, dsacl);
 				}
 			}
 		}

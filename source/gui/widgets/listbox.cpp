@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -2874,6 +2874,9 @@ namespace nana
 							continue;
 
 						content_px = graph->text_extent_size((*cat.items[i].cells)[pos].text).width;
+						const auto& item = cat.items[i];
+						if (!item.img.empty())
+							content_px += item.img_show_size.width;
 					}
 
 					if (content_px > max_px)
@@ -4058,7 +4061,13 @@ namespace nana
 						}
 
 						if (display_order > 0)
-							graph->line({ column_x - 1, coord.y }, { column_x - 1, coord.y + static_cast<int>(essence_->item_height()) - 1 }, static_cast<color_rgb>(0xEBF4F9));
+						{
+							//Make the color of column separator match with the background color of the item.
+							auto col_separator_color = essence_->scheme_ptr->column_separator.get_color();
+							if (item.flags.selected || (state != item_state::normal))
+								col_separator_color = col_separator_color.blend(state_bgcolor, 0.8);
+							graph->line({ column_x - 1, coord.y }, { column_x - 1, coord.y + static_cast<int>(essence_->item_height()) - 1 }, col_separator_color);
+						}
 					}
 
 					column_x += col.width_px;
@@ -4186,9 +4195,6 @@ namespace nana
 
 			void trigger::refresh(graph_reference graph)
 			{
-				if (api::is_destroying(essence_->lister.wd_ptr()->handle()))
-					return;
-
 				nana::rectangle r;
 
 				if (essence_->rect_lister(r))
@@ -5181,6 +5187,32 @@ namespace nana
 				return *this;
 			}
 
+			void cat_proxy::clear()
+			{
+				internal_scope_guard lock;
+
+				auto origin = ess_->content_view->origin();
+
+				int new_pos = origin.y;
+
+				if (!ess_->lister.first().empty())
+				{
+					auto start_pos = static_cast<int>(ess_->lister.distance(ess_->lister.first(), index_pair{ pos_, npos }) * ess_->item_height());
+					auto count = static_cast<int>(ess_->lister.size_item(pos_) * ess_->item_height());
+					if (start_pos + count <= origin.y)
+						new_pos = origin.y - static_cast<int>(count);
+					else if (start_pos < origin.y && origin.y < start_pos + count)
+						new_pos = start_pos + ess_->item_height();
+				}
+
+				ess_->lister.clear(pos_);
+
+				ess_->calc_content_size(false);
+				ess_->content_view->change_position(new_pos, false, false);
+				ess_->content_view->sync(false);
+				ess_->update();
+			}
+
 			auto cat_proxy::columns() const -> size_type
 			{
 				return ess_->header.cont().size();
@@ -5898,25 +5930,9 @@ namespace nana
 		void listbox::clear(size_type cat)
 		{
 			internal_scope_guard lock;
-			auto & ess = _m_ess();
 
-			auto origin = ess.content_view->origin();
-
-			int new_pos = origin.y;
-
-			auto start_pos = static_cast<int>(ess.lister.distance(ess.lister.first(), index_pair{cat, npos}) * ess.item_height());
-			auto count = static_cast<int>(ess.lister.size_item(cat) * ess.item_height());
-			if (start_pos + count <= origin.y)
-				new_pos = origin.y - static_cast<int>(count);
-			else if (start_pos < origin.y && origin.y < start_pos + count)
-				new_pos = start_pos + ess.item_height();
-
-			ess.lister.clear(cat);
-
-			ess.calc_content_size(false);
-			ess.content_view->change_position(new_pos, false, false);
-			ess.content_view->sync(false);
-			ess.update();
+			cat_proxy cp{ &_m_ess(), cat };
+			cp.clear();
 		}
 
 		void listbox::clear()
@@ -6243,6 +6259,17 @@ namespace nana
 		drawerbase::listbox::essence & listbox::_m_ess() const
 		{
 			return get_drawer_trigger().ess();
+		}
+
+		void listbox::_m_bgcolor(const nana::color& color)
+		{
+			//Update the color of column separator
+			auto r = static_cast<unsigned char>(std::max(color.r() - (0xFF - 0xEB), 0.0));
+			auto g = static_cast<unsigned char>(std::max(color.g() - (0xFF - 0xF4), 0.0));
+			auto b = static_cast<unsigned char>(std::max(color.b() - (0xFF - 0xF9), 0.0));
+			_m_ess().scheme_ptr->column_separator = nana::color(r, g, b);
+
+			widget::_m_bgcolor(color);
 		}
 
 		std::any* listbox::_m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const

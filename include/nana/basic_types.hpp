@@ -1,7 +1,7 @@
 /**
  *	Basic Types definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -415,6 +415,36 @@ namespace nana
 			y += other.y;
 			return *this;
 		}
+
+		basic_point& operator++() noexcept
+		{
+			++x;
+			++y;
+			return *this;
+		}
+
+		basic_point operator++(int) noexcept
+		{
+			auto ret = *this;
+			++x;
+			++y;
+			return ret;
+		}
+
+		basic_point& operator--() noexcept
+		{
+			--x;
+			--y;
+			return *this;
+		}
+
+		basic_point operator--(int) noexcept
+		{
+			auto ret = *this;
+			--x;
+			--y;
+			return ret;
+		}
 	};
 
 	using point = basic_point<int>;
@@ -433,6 +463,12 @@ namespace nana
 		bool operator==(const size& rhs) const;
 		bool operator!=(const size& rhs) const;
 		size operator+(const size&) const;
+		size operator-(const size&) const;
+		size operator+(value_type) const;
+		size operator-(value_type) const;
+		size operator/(value_type) const;
+		size operator*(value_type) const;
+		friend size operator*(value_type, const size&);
 
 		value_type width;
 		value_type height;
@@ -460,14 +496,14 @@ namespace nana
 		 * @param pixels The number of pixels to be pared. If the number that multiples pixels twice is larger than width/height, the width/height will be zero. If the pixels is a negative number, the width/height is add the number that multiple pixels twice.
 		 * @return The reference of *this.
 		 */
-		rectangle& pare_off(int pixels);
+		rectangle& pare_off(int pixels) noexcept;
 
 		int right() const noexcept;
 		int bottom() const noexcept;
-		bool is_hit(int x, int y) const;
-		bool is_hit(const point& pos) const;
-		bool empty() const;		///< true if width * height == 0.
-		rectangle& shift();	///< Swap position x and y, size width and height.
+		bool is_hit(int x, int y) const noexcept;
+		bool is_hit(const point& pos) const noexcept;
+		bool empty() const noexcept;		///< true if width * height == 0.
+		rectangle& shift() noexcept;	///< Swap position x and y, size width and height.
 
 		int x;
 		int y;

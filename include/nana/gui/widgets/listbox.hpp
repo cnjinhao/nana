@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -1071,6 +1071,7 @@ namespace nana
 #ifdef __cpp_char8_t
 				void append(std::initializer_list<std::u8string> texts);
 #endif
+				void clear();
 
 				size_type columns() const;
 
@@ -1218,6 +1219,7 @@ namespace nana
 			struct scheme
 				: public widget_geometrics
 			{
+				color_proxy column_separator{ static_cast<color_argb>(0xEBF4F9) };	///< Color of item column separator
 				color_proxy header_bgcolor{static_cast<color_rgb>(0xf1f2f4)};
 				color_proxy header_fgcolor{ colors::black };
 				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
@@ -1652,6 +1654,7 @@ the nana::detail::basic_window member pointer scheme
 		unsigned suspension_width() const;
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
+		void _m_bgcolor(const nana::color&) override;
 		std::any* _m_anyobj(size_type cat, size_type index, bool allocate_if_empty) const override;
 		drawerbase::listbox::category_t* _m_assoc(std::shared_ptr<nana::detail::key_interface>, bool create_if_not_exists);
 		void _m_erase_key(nana::detail::key_interface*) noexcept;

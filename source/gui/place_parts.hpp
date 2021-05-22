@@ -1,7 +1,7 @@
 /**
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -147,7 +147,7 @@ namespace nana
 				//draw caption
 				auto text = to_wstring(api::window_caption(window_handle_));
 				if((graph.size().width > 20) && (graph.size().width - 20 > 10))
-					text_rd_->render({ 3, 1 }, text.data(), text.size(), graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
+					text_rd_->render({ 3, 1 }, { text.data(), text.size() }, graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
 				//draw x button
 				auto r = _m_button_area();

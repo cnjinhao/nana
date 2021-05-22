@@ -559,7 +559,7 @@ namespace nana
 		
 		void drawer::dbl_click(graph_reference, const arg_mouse& arg)
 		{
-			if (impl_->mouse_button(arg, true))
+			if (impl_->editor()->select_word(arg))
 				api::dev::lazy_refresh();
 		}
 

@@ -1,7 +1,7 @@
 /*
 *	A text editor implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1678,7 +1678,7 @@ namespace nana::widgets::skeletons
 		return str;
 	}
 
-	bool text_editor::move_caret(upoint crtpos, bool stay_in_view)
+	bool text_editor::move_caret(upoint crtpos, bool scroll_to_caret)
 	{
 		const unsigned line_pixels = line_height();
 
@@ -1706,15 +1706,15 @@ namespace nana::widgets::skeletons
 
 		const int line_bottom = coord.y + static_cast<int>(line_pixels);
 
-		if (!api::is_focus_ready(window_))
-			return false;
+		std::unique_ptr<caret_interface> caret;
 
-		auto caret = api::open_caret(window_, true);
+		if (api::is_focus_ready(window_))
+			caret = api::open_caret(window_, true);
 
 		bool visible = false;
 		auto text_area = impl_->cview->view_area();
 
-		if (text_area.is_hit(coord) && (line_bottom > text_area.y))
+		if (caret && text_area.is_hit(coord) && (line_bottom > text_area.y))
 		{
 			visible = true;
 			if (line_bottom > text_area.bottom())
@@ -1726,18 +1726,23 @@ namespace nana::widgets::skeletons
 		if (!attributes_.enable_caret)
 			visible = false;
 
-		caret->visible(visible);
-		if (visible)
-			caret->position(coord);
+		if (caret)	//new
+		{
+			caret->visible(visible);
+			if (visible)
+				caret->position(coord);
+		}
 
 		//Adjust the caret into screen when the caret position is modified by this function
-		if (stay_in_view && (!hit_text_area(coord)))
+		if (scroll_to_caret && (!hit_text_area(coord)))
 		{
 			if (_m_adjust_view())
 				impl_->cview->sync(false);
 
 			impl_->try_refresh = sync_graph::refresh;
-			caret->visible(true);
+
+			if (caret)
+				caret->visible(true);
 			return true;
 		}
 		return false;
@@ -2700,7 +2705,7 @@ namespace nana::widgets::skeletons
 		auto real_str = sections[row.second];
 
 		auto& textbase = this->textbase();
-		auto text_ptr = textbase.getline(row.second).data();
+		auto text_ptr = textbase.getline(row.first).data() + real_str.begin;
 		const auto text_size = real_str.end - real_str.begin;
 
 		std::wstring mask_str;
@@ -2833,16 +2838,12 @@ namespace nana::widgets::skeletons
 			const unsigned pixels = line_height();
 			const rectangle update_area = { text_area_.area.x, top, width_pixels(), static_cast<unsigned>(pixels * secondary_count_before) };
 
-			if (!api::dev::copy_transparent_background(window_, update_area, graph_, update_area.position()))
-			{
-				_m_draw_colored_area(graph_, { pos, 0 }, true);
+			bool fill_bground = !api::dev::copy_transparent_background(window_, update_area, graph_, update_area.position());
+			_m_draw_colored_area(graph_, { pos, 0 }, true);
+			if(fill_bground)
 				graph_.rectangle(update_area, true, api::bgcolor(window_));
-			}
-			else
-				_m_draw_colored_area(graph_, { pos, 0 }, true);
 
 			auto fgcolor = api::fgcolor(window_);
-			auto text_ptr = textbase().getline(pos).c_str();
 
 			auto sections = behavior->line(pos);
 			for (auto & sct : sections)

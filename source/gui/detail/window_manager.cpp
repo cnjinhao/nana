@@ -1714,7 +1714,7 @@ namespace detail
 
 			arg_destroy arg;
 			arg.window_handle = wd;
-			brock.emit(event_code::destroy, wd, arg, true, brock.get_thread_context());
+			brock.emit(event_code::destroy, wd, arg, false, brock.get_thread_context());
 
 			//Delete the children widgets.
 			while (!wd->children.empty())

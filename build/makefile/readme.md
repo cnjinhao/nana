@@ -2,6 +2,15 @@
 If you are using make directly, it require:
 X11, pthread, Xpm, rt, dl, freetype2, Xft, fontconfig, ALSA
 
+Example (Ubuntu):
+```
+sudo apt install libxft-dev
+sudo apt install libfreetype2-dev
+```
+Some Debian Linux distro use apt-get instead of apt. 
+These commands will install both the library and their headers. 
+
+
 Example of writing a makefile for creating applications with Nana C++ Library
 -------------------
 ```

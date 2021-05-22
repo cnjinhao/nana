@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -153,10 +153,10 @@ namespace nana{	namespace widgets
 			/// Moves the caret at specified position
 			/**
 			 * @param pos the text position
-			 * @param stay_in_view Indicates whether to adjust the view to make the caret in view. This parameter is ignored if the caret is already in view.
+			 * @param scroll_to_caret Indicates whether to adjust the view to make the caret in view. This parameter is ignored if the caret is already in view.
 			 * @return true indicates a refresh is required.
 			 */
-			bool move_caret(upoint pos, bool stay_in_view = false);
+			bool move_caret(upoint pos, bool scroll_to_caret = false);
 			void move_caret_end(bool update);
 			void reset_caret_pixels() const;
 			void reset_caret(bool stay_in_view = false);

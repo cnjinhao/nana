@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2021 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -145,7 +145,7 @@ namespace nana
 				nana::paint::text_renderer tr(graph);
 
 				auto wstr = to_wstring(text);
-				tr.render(pos, wstr.c_str(), wstr.length(), text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
+				tr.render(pos, { wstr.c_str(), wstr.length() }, text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 			}
 #ifdef __cpp_char8_t
 			void item_text(graph_reference graph, const nana::point& pos, std::u8string_view title, unsigned text_pixels, const attr& at) override
@@ -154,7 +154,7 @@ namespace nana
 				nana::paint::text_renderer tr(graph);
 
 				auto wstr = to_wstring(title);
-				tr.render(pos, wstr.c_str(), wstr.length(), text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
+				tr.render(pos, { wstr.c_str(), wstr.length() }, text_pixels, paint::text_renderer::mode::truncate_with_ellipsis);
 			}
 #endif
 
@@ -573,7 +573,12 @@ namespace nana
 				if (npos == state_.active)
 					return nullptr;
 
-				auto & items = menu_->items;
+				// if menu entry is disabled do not show the submenu
+				if(menu_->owner)
+					if(!menu_->owner->enabled(state_.active))
+						return nullptr;
+
+				auto& items = menu_->items;
 				auto sub = items.at(state_.active)->linked.menu_ptr;
 				if (sub)
 				{
@@ -938,19 +943,20 @@ namespace nana
 				}
 				else if (checks::option == item.style)
 				{
-					if(active > 0)
+					auto active_ = active;
+					if(active_ > 0)
 					{
 						do {
-							if(menu->items[--active]->flags.splitter)
+							if(menu->items[--active_]->flags.splitter)
 							{
-								++active;
+								++active_;
 								break;
 							}
-						} while(active > 0);
+						} while(active_ > 0);
 					}
-					while(active < menu->items.size())
+					while(active_ < menu->items.size())
 					{
-						menu_item_type &el = *(menu->items[active++]);
+						menu_item_type &el = *(menu->items[active_++]);
 						if(el.flags.splitter)
 							break;
 						if(checks::option == el.style)

@@ -37,6 +37,38 @@ namespace nana
 
 	namespace drawerbase::toolbar
 	{
+		struct dropdown_item
+			: public float_listbox::item_interface
+		{
+		public:
+			bool				enable_{ true };
+			std::string			text_;
+			nana::paint::image	image_;
+			event_fn_t			event_handler_;
+
+			dropdown_item(const std::string& txt, const nana::paint::image& img, const event_fn_t& handler)
+				: text_(txt), image_(img), event_handler_(handler)
+			{}
+
+			//implement item_interface methods
+			const nana::paint::image& image() const override
+			{
+				return image_;
+			}
+
+			const char* text() const override
+			{
+				return text_.data();
+			}
+
+			// own methods
+			bool enable() const
+			{
+				return enable_;
+			}
+		};
+
+
 		// dropdown item custom renderer
 		class dropdown_item_renderer
 			: public nana::float_listbox::item_renderer
@@ -61,7 +93,9 @@ namespace nana
 			{
 				graph.rectangle(r, true, bg_);
 
-				if(state == StateHighlighted)
+				const dropdown_item* dd_item = (dropdown_item*)item;
+
+				if(state == StateHighlighted && dd_item->enable())
 				{
 					graph.rectangle(r, false, static_cast<color_rgb>(0xa8d8eb));
 
@@ -74,9 +108,9 @@ namespace nana
 				int x = r.x + 4;
 
 				// image
-				if(item->image())
+				if(dd_item->image())
 				{
-					auto imgsz = item->image().size();
+					auto imgsz = dd_item->image().size();
 					if(imgsz.width > image_pixels_ || imgsz.height > image_pixels_)
 					{
 						imgsz = nana::fit_zoom(imgsz, { image_pixels_, image_pixels_ });
@@ -85,13 +119,13 @@ namespace nana
 					nana::point to_pos(x, r.y);
 					to_pos.x += (image_pixels_ - imgsz.width) / 2;
 					to_pos.y += (r.height - imgsz.height) / 2;
-					item->image().stretch(::nana::rectangle{ item->image().size() }, graph, nana::rectangle(to_pos, imgsz));
+					dd_item->image().stretch(::nana::rectangle{ dd_item->image().size() }, graph, nana::rectangle(to_pos, imgsz));
 				}
 				x += (image_pixels_ + 8);
 
 				// text
 				int text_top_off = static_cast<int>(r.height - graph.text_extent_size(L"jh({[").height) / 2;
-				graph.string({ x, r.y + text_top_off }, item->text(), colors::black);
+				graph.string({ x, r.y + text_top_off }, dd_item->text(), dd_item->enable() ? colors::black : colors::gray_border);
 			}
 
 			unsigned item_pixels(graph_reference graph) const
@@ -109,32 +143,6 @@ namespace nana
 			void item_height(unsigned px) { item_h_ = px; }
 
 			void bgcolor(const nana::color& bg) { bg_ = bg; }
-		};
-
-
-		struct dropdown_item
-			: public float_listbox::item_interface
-		{
-		public:
-			bool				enable_{ true };
-			std::string			text_;
-			nana::paint::image	image_;
-			event_fn_t			event_handler_;
-
-			dropdown_item(const std::string& txt, const nana::paint::image& img, const event_fn_t& handler)
-				: text_(txt), image_(img), event_handler_(handler)
-			{}
-
-			//implement item_interface methods
-			const nana::paint::image& image() const override
-			{
-				return image_;
-			}
-
-			const char* text() const override
-			{
-				return text_.data();
-			}
 		};
 
 

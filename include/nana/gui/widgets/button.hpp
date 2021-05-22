@@ -1,7 +1,7 @@
 /**
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -24,20 +24,18 @@ namespace nana::drawerbase::button{
 			///	Draw the button
 			class trigger: public drawer_trigger
 			{
-				class measurer;
+				class content_measurer;
+				struct attributes;
+				struct impl;
 			public:
 				trigger();
 				~trigger();
 
 				void emit_click();
-				void icon(const nana::paint::image&);
 				bool enable_pushed(bool);
 				bool pushed(bool);
-				bool pushed() const;
-				void omitted(bool);
-				bool focus_color(bool);
-
-				element::cite_bground & cite();
+				const impl* get_impl() const;
+				impl* get_impl();
 			private:
 				void attached(widget_reference, graph_reference) override;
 				void refresh(graph_reference)	override;
@@ -53,28 +51,8 @@ namespace nana::drawerbase::button{
 				void _m_draw_border(graph_reference);
 				void _m_press(graph_reference, bool);
 			private:
-				widget* wdg_{nullptr};
-				paint::graphics* graph_{nullptr};
-
-				element::cite_bground cite_{"button"};
-
-				std::unique_ptr<measurer> measurer_;
-
-				struct attr_tag
-				{
-					element_state e_state;
-					bool omitted;
-					bool focused;
-					bool pushed;
-					bool keep_pressed;
-					bool enable_pushed;
-					bool focus_color;
-					paint::image * icon;
-					::nana::color bgcolor;
-					::nana::color fgcolor;
-				}attr_;
+				std::unique_ptr<impl> impl_;
 			};
-
 }//end namespace nana::drawerbase::button
 
 namespace nana
@@ -105,8 +83,9 @@ namespace nana
 			button& enable_pushed(bool);
 			bool pushed() const;
 			button& pushed(bool);
-			button& omitted(bool);	    	               ///< Enables/Disables omitting displaying the caption if the text is too long.
-			button& enable_focus_color(bool);              ///< Enables/Disables showing the caption with a special color to indicate the button is focused.
+			button& omitted(bool);						///< Enables/Disables omitting displaying the caption if the text is too long.
+			button& enable_focus_color(bool);			///< Enables/Disables showing the caption with a special color to indicate the button is focused.
+			button& enable_gradual_background(bool);	///< Enables/Disables drawing gradual background.
 
 			button& set_bground(const pat::cloneable<element::element_interface>&);	///< Sets a user-defined background element.
 			button& set_bground(const std::string&);	///< Sets a pre-defined background element by a name.
