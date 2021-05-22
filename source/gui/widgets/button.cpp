@@ -171,7 +171,7 @@ namespace nana
 				else
 					_m_draw_background(graph);
 
-				if (false == API::widget_borderless(wdg_->handle()))
+				if (false == API::widget_borderless(*impl_->wdg))
 					_m_draw_border(graph);
 			}
 			_m_draw_title(graph, eb);
