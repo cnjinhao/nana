@@ -2934,15 +2934,11 @@ namespace nana
 				if (0 == maximize)
 					maximize = range_width_px.second;
 			}
-
-			if (0 == maximize)
+			else if (0 == maximize)
 				maximize = ess_->scheme_ptr->max_fit_content;
 
 			//maximize is only available when it > 0
-			if (maximize && (content_px > maximize))
-				content_px = maximize;
-
-			width_px = content_px;
+			width_px = (maximize && (content_px > maximize) ? maximize : content_px);
 
 			_m_refresh();
 		}
@@ -2960,7 +2956,7 @@ namespace nana
 		{
 			//Returns the exclusive font if it is not empty
 			if (this->font && !this->font->empty())
-			return *this->font;
+				return *this->font;
 
 			//Returns the column font if it is not empty
 			if (ess_->scheme_ptr->column_font && !ess_->scheme_ptr->column_font)
