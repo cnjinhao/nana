@@ -1968,6 +1968,7 @@ namespace nana::widgets::skeletons
 		if (impl_->counterpart.buffer && !text_area_.area.empty())
 			impl_->counterpart.buffer.bitblt(rectangle{ text_area_.area.dimension() }, graph_, text_area_.area.position());
 
+		const auto text_top = _m_text_top_base() - static_cast<int>(impl_->cview->origin().y % line_height());
 		//Render the content when the text isn't empty or the window has got focus,
 		//otherwise draw the tip string.
 		if ((false == textbase().empty()) || has_focus)
@@ -1985,9 +1986,10 @@ namespace nana::widgets::skeletons
 					event_handler_->text_exposed(impl_->text_position);
 			}
 		}
-		else //Draw tip string
+		else
 		{
-			graph_.string({ text_area_.area.x - impl_->cview->origin().x, text_area_.area.y }, attributes_.tip_string, static_cast<color_rgb>(0x787878));
+			//Draw the tip string vertical center if it's multi-lines mode.
+			graph_.string({ text_area_.area.x - impl_->cview->origin().x, text_top }, attributes_.tip_string, static_cast<color_rgb>(0x787878));
 		}
 
 		if (impl_->text_position.empty())
@@ -1996,7 +1998,7 @@ namespace nana::widgets::skeletons
 		_m_draw_border();
 		impl_->try_refresh = sync_graph::none;
 	}
-	//public:
+
 	void text_editor::put(std::wstring text, bool perform_event)
 	{
 		if (text.empty())
