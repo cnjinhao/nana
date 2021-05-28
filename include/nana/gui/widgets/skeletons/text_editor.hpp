@@ -189,6 +189,9 @@ namespace nana{	namespace widgets
 			void select_behavior(bool move_to_end);
 
 			std::size_t line_count(bool text_lines) const;
+
+			nana::rectangle editor_area() const;
+			void padding(unsigned top, unsigned right, unsigned bottom, unsigned left);
 		public:
 			void draw_corner();
 			void render(bool focused);
@@ -225,6 +228,7 @@ namespace nana{	namespace widgets
 		private:
 			nana::color _m_draw_colored_area(paint::graphics& graph, const std::pair<std::size_t,std::size_t>& row, bool whole_line);
 			std::vector<upoint> _m_render_text(const ::nana::color& text_color);
+			void _m_render_tip(int text_top, bool has_focus);
 			void _m_pre_calc_lines(std::size_t line_off, std::size_t lines);
 
 			//Caret to screen coordinate or context coordiate(in pixels)
@@ -310,6 +314,11 @@ namespace nana{	namespace widgets
 
 				bool		captured{ false };
 				unsigned	tab_space{ 4 };
+
+				unsigned padding_top{ 0 };
+				unsigned padding_right{ 0 };
+				unsigned padding_bottom{ 0 };
+				unsigned padding_left{ 0 };
 			}text_area_;
 
 			struct selection

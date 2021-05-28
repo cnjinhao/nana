@@ -1257,15 +1257,32 @@ namespace nana::widgets::skeletons
 
 	bool text_editor::text_area(const nana::rectangle& r)
 	{
-		if (text_area_.area == r)
+		auto area = r;
+		area.x += text_area_.padding_left;
+		if (area.width > text_area_.padding_left + text_area_.padding_right)
+			area.width -= text_area_.padding_left + text_area_.padding_right;
+		else
+			area.width = 0;
+
+		area.y += text_area_.padding_top;
+		if (area.height > text_area_.padding_top + text_area_.padding_bottom)
+			area.height -= text_area_.padding_top + text_area_.padding_bottom;
+		else
+			area.height = 0;
+
+		if (text_area_.area == area)
 			return false;
 
-		text_area_.area = r;
+		text_area_.area = area;
 
 		if (impl_->counterpart.enabled)
-			impl_->counterpart.buffer.make(r.dimension());
+			impl_->counterpart.buffer.make(area.dimension());
 
-		impl_->cview->disp_area(r, { -1, 1 }, { 1, -1 }, { 2, 2 });
+		impl_->cview->disp_area(area, 
+			{ -(1 + static_cast<int>(text_area_.padding_left)), 1 + static_cast<int>(text_area_.padding_bottom) },
+			{ 1 + static_cast<int>(text_area_.padding_top) , -(1 + static_cast<int>(text_area_.padding_right)) },
+			{ 2 + text_area_.padding_left + text_area_.padding_right, 2 + text_area_.padding_top + text_area_.padding_bottom});
+
 		if (impl_->cview->content_size().empty() || this->attributes_.line_wrapped)
 			_m_reset_content_size(true);
 
@@ -1934,6 +1951,25 @@ namespace nana::widgets::skeletons
 		return impl_->capacities.behavior->take_lines();
 	}
 
+	rectangle text_editor::editor_area() const
+	{
+		auto area = text_area_.area;
+		area.x -= text_area_.padding_left;
+		area.width += text_area_.padding_left + text_area_.padding_right;
+		area.y -= text_area_.padding_top;
+		area.height += text_area_.padding_top + text_area_.padding_bottom;
+		return area;
+	}
+
+	void text_editor::padding(unsigned top, unsigned right, unsigned bottom, unsigned left)
+	{
+		text_area_.padding_top = top;
+		text_area_.padding_right = right;
+		text_area_.padding_bottom = bottom;
+		text_area_.padding_left = left;
+		return;
+	}
+
 	std::shared_ptr<scroll_operation_interface> text_editor::scroll_operation() const
 	{
 		return impl_->cview->scroll_operation();
@@ -1946,6 +1982,9 @@ namespace nana::widgets::skeletons
 
 	void text_editor::render(bool has_focus)
 	{
+		if (!graph_)
+			return;
+
 		const auto bgcolor = _m_bgcolor();
 
 		auto fgcolor = scheme_->foreground.get_color();
@@ -1956,17 +1995,25 @@ namespace nana::widgets::skeletons
 			graph_.rectangle(false, bgcolor);
 
 		//Draw background
-		if (!api::dev::copy_transparent_background(window_, graph_))
+		auto area = editor_area();
+
+		paint::graphics canvas{graph_.size()};
+
+		if (!api::dev::copy_transparent_background(window_, canvas))
 		{
 			if (attributes_.enable_background)
-				graph_.rectangle(text_area_.area, true, bgcolor);
+				canvas.rectangle(area, true, bgcolor);
 		}
 
 		if (impl_->customized_renderers.background)
-			impl_->customized_renderers.background(graph_, text_area_.area, bgcolor);
+			impl_->customized_renderers.background(canvas, area, bgcolor);
 
 		if (impl_->counterpart.buffer && !text_area_.area.empty())
-			impl_->counterpart.buffer.bitblt(rectangle{ text_area_.area.dimension() }, graph_, text_area_.area.position());
+			impl_->counterpart.buffer.bitblt(rectangle{ text_area_.area.dimension() }, canvas, text_area_.area.position());
+
+		canvas.paste(text_area_.area, graph_, text_area_.area.x, text_area_.area.y);
+		
+		auto const editor_r = editor_area();
 
 		const auto text_top = _m_text_top_base() - static_cast<int>(impl_->cview->origin().y % line_height());
 		//Render the content when the text isn't empty or the window has got focus,
@@ -1984,17 +2031,42 @@ namespace nana::widgets::skeletons
 				impl_->text_position.swap(text_pos);
 				if (event_handler_)
 					event_handler_->text_exposed(impl_->text_position);
-			}
+			}			
 		}
 		else
 		{
 			//Draw the tip string vertical center if it's multi-lines mode.
-			graph_.string({ text_area_.area.x - impl_->cview->origin().x, text_top }, attributes_.tip_string, static_cast<color_rgb>(0x787878));
+			graph_.string({ text_area_.area.x - impl_->cview->origin().x, text_top }, attributes_.tip_string, scheme_->tip_string_color.get_color());
 		}
 
 		if (impl_->text_position.empty())
 			impl_->text_position.emplace_back();
 
+		if (text_area_.padding_top)
+		{
+			point pos{ area.x + static_cast<int>(text_area_.padding_left), area.y };
+			canvas.paste(rectangle{ pos, size{area.width - text_area_.padding_left, text_area_.padding_top} }, graph_, pos.x, pos.y);
+		}
+
+		if (text_area_.padding_bottom)
+		{
+			point pos{area.x, area.bottom() - static_cast<int>(text_area_.padding_bottom)};
+			canvas.paste(rectangle{ pos, size{area.width, text_area_.padding_bottom}}, graph_, pos.x, pos.y);
+		}
+
+		if (text_area_.padding_right)
+		{
+			point pos{area.right() - static_cast<int>(text_area_.padding_right), area.y + static_cast<int>(text_area_.padding_top)};
+			canvas.paste(rectangle{ pos, size{text_area_.padding_right, area.height - text_area_.padding_bottom - text_area_.padding_top} }, graph_, pos.x, pos.y);
+		}
+
+		_m_render_tip(text_top, has_focus);
+
+		if (text_area_.padding_left)
+			canvas.paste(rectangle{ area.position(), size{text_area_.padding_left, area.height - text_area_.padding_bottom} }, graph_, area.x, area.y);
+
+		
+		
 		_m_draw_border();
 		impl_->try_refresh = sync_graph::none;
 	}
@@ -2609,6 +2681,48 @@ namespace nana::widgets::skeletons
 		}
 
 		return line_indexes;
+	}
+
+	void text_editor::_m_render_tip(int text_top, bool has_focus)
+	{
+		if (attributes_.tip_string.empty())
+			return;
+
+		if (impl_->cview->origin().y > 0)
+			text_top = static_cast<int>(text_area_.padding_top);
+
+
+		if ((false == textbase().empty()) || has_focus)
+		{
+			const int editor_top = text_area_.area.y - text_area_.padding_top;
+
+			//Shrink the tip string on top-left of the text.
+			const int top_space_px = text_top - editor_top - static_cast<int>(scheme_->tip_string_floating_distance_px);
+
+			//Max font size depends on the top space.
+			auto max_allowed_pt = top_space_px * 0.75;	//1pt = 1px * 0.75
+
+			auto font = graph_.typeface();
+			auto fi = font.info().value();
+			fi.size_pt *= scheme_->tip_string_floating_font_factor;
+
+			if (fi.size_pt > max_allowed_pt)
+				fi.size_pt = max_allowed_pt;
+
+			if (fi.size_pt > scheme_->tip_string_floating_font_min_pt)
+			{
+				paint::font tip_font{ fi };
+
+				graph_.typeface(tip_font);
+				graph_.string({ text_area_.area.x, static_cast<int>(text_top - fi.size_pt * 1.333333 - scheme_->tip_string_floating_distance_px) }, attributes_.tip_string, scheme_->tip_string_color.get_color());
+				graph_.typeface(font);
+			}
+		}
+		else
+		{
+			//Draw the tip string vertical center if it's multi-lines mode.
+			graph_.string({ text_area_.area.x, text_top }, attributes_.tip_string, scheme_->tip_string_color.get_color());
+		}
 	}
 
 	void text_editor::_m_pre_calc_lines(std::size_t line_off, std::size_t lines)

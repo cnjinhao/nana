@@ -180,8 +180,11 @@ namespace nana
 		void drawer::typeface_changed(graph_reference graph)
 		{
 			editor_->typeface_changed();
-			refresh(graph);
-			api::update_window(widget_->handle());
+			if (graph)
+			{
+				refresh(graph);
+				api::update_window(widget_->handle());
+			}
 		}
 
 		void drawer::_m_text_area(unsigned width, unsigned height)
@@ -887,6 +890,15 @@ namespace nana
 				return editor->line_count(true);
 
 			return 0;
+		}
+
+		textbox& textbox::padding(unsigned top, unsigned right, unsigned bottom, unsigned left) noexcept
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->padding(top, right, bottom, left);
+			return *this;
 		}
 
 		//Override _m_caption for caption()

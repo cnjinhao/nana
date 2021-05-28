@@ -290,6 +290,9 @@ namespace nana
 
 		/// Returns the number of text lines.
 		std::size_t text_line_count() const noexcept;
+
+		/// Sets the padding area around the content.
+		textbox& padding(unsigned top, unsigned right, unsigned bottom, unsigned left) noexcept;
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const noexcept override;
