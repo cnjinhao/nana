@@ -111,9 +111,9 @@ namespace nana{	namespace widgets
 
 			void text_align(::nana::align alignment);
 
-			/// Sets the text area.
+			/// Sets editor area
 			/// @return true if the area is changed with the new value.
-			bool text_area(const nana::rectangle&);
+			bool editor_area(const nana::rectangle&);
 
 			/// Returns the text area
 			rectangle text_area(bool including_scroll) const;

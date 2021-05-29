@@ -1,7 +1,7 @@
 /*
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -519,7 +519,7 @@ namespace nana
 					r.x += place;
 					if (r.width > place)	r.width -= place;
 				}
-				editor_->text_area(r);
+				editor_->editor_area(r);
 			}
 
 			void _m_draw_push_button(bool enabled)

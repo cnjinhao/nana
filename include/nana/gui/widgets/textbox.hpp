@@ -87,7 +87,7 @@ namespace nana
 				void resized(graph_reference, const arg_resized&)	override;
 				void typeface_changed(graph_reference)				override;
 			private:
-				void _m_text_area(unsigned width, unsigned height);
+				void _m_editor_area(unsigned width, unsigned height);
 			private:
 				widget*	widget_;
 				widgets::skeletons::text_editor * editor_;

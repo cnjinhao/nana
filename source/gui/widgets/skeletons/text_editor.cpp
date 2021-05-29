@@ -1255,7 +1255,7 @@ namespace nana::widgets::skeletons
 		_m_reset_content_size();
 	}
 
-	bool text_editor::text_area(const nana::rectangle& r)
+	bool text_editor::editor_area(const nana::rectangle& r)
 	{
 		auto area = r;
 		area.x += text_area_.padding_left;
@@ -1963,11 +1963,13 @@ namespace nana::widgets::skeletons
 
 	void text_editor::padding(unsigned top, unsigned right, unsigned bottom, unsigned left)
 	{
+		auto area = editor_area();
 		text_area_.padding_top = top;
 		text_area_.padding_right = right;
 		text_area_.padding_bottom = bottom;
 		text_area_.padding_left = left;
-		return;
+
+		this->editor_area(area);
 	}
 
 	std::shared_ptr<scroll_operation_interface> text_editor::scroll_operation() const
@@ -2012,8 +2014,6 @@ namespace nana::widgets::skeletons
 			impl_->counterpart.buffer.bitblt(rectangle{ text_area_.area.dimension() }, canvas, text_area_.area.position());
 
 		canvas.paste(text_area_.area, graph_, text_area_.area.x, text_area_.area.y);
-		
-		auto const editor_r = editor_area();
 
 		const auto text_top = _m_text_top_base() - static_cast<int>(impl_->cview->origin().y % line_height());
 		//Render the content when the text isn't empty or the window has got focus,

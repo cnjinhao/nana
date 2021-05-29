@@ -74,7 +74,7 @@ namespace nana
 			editor_->textbase().set_event_agent(evt_agent_.get());
 			editor_->set_event(evt_agent_.get());
 
-			_m_text_area(graph.width(), graph.height());
+			_m_editor_area(graph.width(), graph.height());
 
 			api::tabstop(wd);
 			api::eat_tabstop(wd, true);
@@ -167,7 +167,7 @@ namespace nana
 
 		void drawer::resized(graph_reference graph, const arg_resized& arg)
 		{
-			_m_text_area(arg.width, arg.height);
+			_m_editor_area(arg.width, arg.height);
 			refresh(graph);
 			editor_->reset_caret();
 
@@ -187,7 +187,7 @@ namespace nana
 			}
 		}
 
-		void drawer::_m_text_area(unsigned width, unsigned height)
+		void drawer::_m_editor_area(unsigned width, unsigned height)
 		{
 			if(editor_)
 			{
@@ -199,7 +199,7 @@ namespace nana
 					r.width = (width > 4 ? width - 4 : 0);
 					r.height = (height > 4 ? height - 4 : 0);
 				}
-				editor_->text_area(r);
+				editor_->editor_area(r);
 			}
 		}
 		//end class drawer
