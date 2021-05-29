@@ -95,7 +95,7 @@ namespace nana
 		{
 		}
 
-		void trigger::attached(widget_reference wdg, graph_reference graph)
+		void trigger::attached(widget_reference wdg, graph_reference)
 		{
 			impl_->wdg = &wdg;
 			window wd = wdg;

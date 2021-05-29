@@ -790,6 +790,7 @@ namespace nana
 				);
 		}
 
+		// Returns the DPI-dependent font size, in pixels
 		static font_height_type _m_set_default_values(font_info& fi, std::size_t dpi)
 		{
 #ifdef NANA_WINDOWS
@@ -838,7 +839,10 @@ namespace nana
 			::ReleaseDC(nullptr, hDC);
 			return font_height;
 #else
-			return (fi.size_pt ? (fi.size_pt * dpi / 96) : platform_abstraction::font_default_pt());
+			if(0 == fi.size_pt)
+				fi.size_pt = platform_abstraction::font_default_pt();
+
+			return fi.size_pt * dpi / 72;
 #endif
 		}
 
@@ -875,8 +879,11 @@ namespace nana
 			if (font_family.empty())
 				font_family = "*";
 
-			auto font_height = (fi.size_pt ? (fi.size_pt * dpi / 96) : platform_abstraction::font_default_pt());
-			std::string pat_str = '-' + std::to_string(font_height);
+			//Calculate the DPI-dependent font size
+			auto dpi_size_pt = (fi.size_pt ? fi.size_pt : platform_abstraction::font_default_pt()) * dpi / 96;
+			auto font_height = dpi_size_pt / 72;
+			
+			std::string pat_str = '-' + std::to_string(dpi_size_pt);
 			if (fi.weight < 400)
 				pat_str += ":light";
 			else if (400 == fi.weight)
