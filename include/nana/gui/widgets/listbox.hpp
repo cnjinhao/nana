@@ -508,7 +508,7 @@ namespace nana
 					model->lock();
 				}
 
-				model_guard(model_guard&& other)
+				model_guard(model_guard&& other) noexcept
 					: model_(other.model_)
 				{
 					other.model_ = nullptr;

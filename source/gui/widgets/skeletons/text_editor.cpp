@@ -476,7 +476,7 @@ namespace nana::widgets::skeletons
 			return colored_areas_.at(index);
 		}
 	private:
-		window window_handle_;
+		window window_handle_{ nullptr };
 		std::vector<std::shared_ptr<colored_area_type>> colored_areas_;
 	};
 
@@ -495,7 +495,7 @@ namespace nana::widgets::skeletons
 
 		struct inner_capacities
 		{
-			editor_behavior_interface * behavior;
+			editor_behavior_interface* behavior{ nullptr };
 
 			accepts acceptive{ accepts::no_restrict };
 			std::function<bool(char_type)> pred_acceptive;
@@ -671,7 +671,7 @@ namespace nana::widgets::skeletons
 	{
 		struct line_metrics
 		{
-			std::size_t		take_lines;	//The number of lines that text of this line takes.
+			std::size_t		take_lines{ 0 };	//The number of lines that text of this line takes.
 			std::vector<text_section>	line_sections;
 		};
 	public:
@@ -1122,7 +1122,7 @@ namespace nana::widgets::skeletons
 		if (arg.ime_reason == arg_ime::reason::composition)
 		{
 			composition_size_ = arg.composition_string.length();
-			points_.caret = _m_put(std::move(arg.composition_string), false);
+			points_.caret = _m_put(arg.composition_string, false);
 
 			_m_reset_content_size(true);
 			textbase().text_changed();
