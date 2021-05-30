@@ -118,7 +118,7 @@ namespace nana{	namespace widgets
 			/// Returns the text area
 			rectangle text_area(bool including_scroll) const;
 
-			bool tip_string(::std::string&&);
+			bool tip_string(::std::wstring&&);
 
 			/// Returns the reference of listbox attributes
 			const attributes & attr() const noexcept;
@@ -297,7 +297,7 @@ namespace nana{	namespace widgets
 
 			struct attributes
 			{
-				::std::string tip_string;
+				::std::wstring tip_string;
 
 				::nana::align alignment{ ::nana::align::left };
 

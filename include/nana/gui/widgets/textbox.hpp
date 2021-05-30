@@ -212,6 +212,9 @@ namespace nana
 		void set_accept(std::function<bool(wchar_t)>);
 
 		textbox& tip_string(::std::string);
+#ifdef __cpp_char8_t
+		textbox& tip_string(std::u8string_view);
+#endif
 
         /// Set a mask character. Text is displayed as mask character if a mask character is set. This is used for hiding some special text, such as password.
 		textbox& mask(wchar_t);

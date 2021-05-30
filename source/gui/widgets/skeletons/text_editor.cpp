@@ -1295,7 +1295,7 @@ namespace nana::widgets::skeletons
 		return (including_scroll ? impl_->cview->view_area() : text_area_.area);
 	}
 
-	bool text_editor::tip_string(::std::string&& str)
+	bool text_editor::tip_string(::std::wstring&& str)
 	{
 		if (attributes_.tip_string == str)
 			return false;

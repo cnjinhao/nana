@@ -595,10 +595,21 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->tip_string(std::move(str)))
+			if(editor && editor->tip_string(to_wstring(str)))
 				api::refresh_window(handle());
 			return *this;
 		}
+
+#ifdef __cpp_char8_t
+		textbox& textbox::tip_string(std::u8string_view str)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor && editor->tip_string(to_wstring(str)))
+				api::refresh_window(handle());
+			return *this;
+		}
+#endif
 
 		textbox& textbox::mask(wchar_t ch)
 		{
