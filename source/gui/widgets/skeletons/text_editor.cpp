@@ -2696,8 +2696,10 @@ namespace nana::widgets::skeletons
 		{
 			const int editor_top = text_area_.area.y - text_area_.padding_top;
 
+			const double scale = (96.0 / api::window_dpi(window_));
+
 			//Shrink the tip string on top-left of the text.
-			const int top_space_px = text_top - editor_top - static_cast<int>(scheme_->tip_string_floating_distance_px);
+			const double top_space_px = (text_top - editor_top - static_cast<int>(scheme_->tip_string_floating_distance_px) * (96.0 / api::window_dpi(window_)));
 
 			//Max font size depends on the top space.
 			auto max_allowed_pt = top_space_px * 0.75;	//1pt = 1px * 0.75
