@@ -2696,10 +2696,9 @@ namespace nana::widgets::skeletons
 		{
 			const int editor_top = text_area_.area.y - text_area_.padding_top;
 
-			const double scale = (96.0 / api::window_dpi(window_));
-
+			double scale = 96.0 / api::window_dpi(window_);
 			//Shrink the tip string on top-left of the text.
-			const double top_space_px = (text_top - editor_top - static_cast<int>(scheme_->tip_string_floating_distance_px) * (96.0 / api::window_dpi(window_)));
+			const double top_space_px = (text_top - editor_top - static_cast<int>(scheme_->tip_string_floating_distance_px)) * scale;
 
 			//Max font size depends on the top space.
 			auto max_allowed_pt = top_space_px * 0.75;	//1pt = 1px * 0.75
@@ -2716,7 +2715,7 @@ namespace nana::widgets::skeletons
 				paint::font tip_font{ fi };
 
 				graph_.typeface(tip_font);
-				graph_.string({ text_area_.area.x, static_cast<int>(text_top - fi.size_pt * 1.333333 - scheme_->tip_string_floating_distance_px) }, attributes_.tip_string, scheme_->tip_string_color.get_color());
+				graph_.string({ text_area_.area.x, static_cast<int>(text_top - (fi.size_pt * 1.333333) / scale - scheme_->tip_string_floating_distance_px) }, attributes_.tip_string, scheme_->tip_string_color.get_color());
 				graph_.typeface(font);
 			}
 		}
