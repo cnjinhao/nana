@@ -1,4 +1,4 @@
-/**
+﻿/**
  *	Nana Configuration
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
@@ -73,7 +73,7 @@
 //  Support for PNG
 //	  Define the NANA_ENABLE_PNG to enable the support of PNG.
 //
-//#define NANA_ENABLE_PNG	//!
+#define NANA_ENABLE_PNG	//!
 //#define USE_LIBPNG_FROM_OS // Un-Comment it to use libpng from operating system.
 #if defined(NANA_ENABLE_PNG)
 	#if !defined(USE_LIBPNG_FROM_OS)
