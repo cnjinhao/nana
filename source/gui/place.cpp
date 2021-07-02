@@ -1318,16 +1318,19 @@ namespace nana
 		{
 			std::pair<unsigned, std::size_t> val;
 
-			val.first = number.get_value(area_px, dm);
+			auto px = number.get_value(area_px, dm);
 			if (number_t::kind::percent == number.kind_of())
 			{
-				val.first += precise_px;
-				auto npx = static_cast<unsigned>(val.first);
-				precise_px = val.first - npx;
-				val.first = npx;
+				px += precise_px;
+				val.first = static_cast<unsigned>(px);
+				precise_px = px - val.first;
 			}
-			else if (number_t::kind::none == number.kind_of())
-				++val.second;
+			else
+			{
+				val.first = static_cast<unsigned>(px);
+				if (number_t::kind::none == number.kind_of())
+					++val.second;
+			}
 
 			return val;
 		}
