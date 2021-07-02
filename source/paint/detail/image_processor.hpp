@@ -1,7 +1,7 @@
 /*
  *	Image Processor Algorithm Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -43,42 +43,75 @@ namespace detail
 		class proximal_interoplation
 			: public image_process::stretch_interface
 		{
-			void process(const paint::pixel_buffer& s_pixbuf, const nana::rectangle& r_src, paint::pixel_buffer & pixbuf, const nana::rectangle& r_dst) const
+			void process(const paint::pixel_buffer& s_pixbuf, const nana::rectangle& r_src, paint::pixel_buffer & pixbuf, const nana::rectangle& r_dst, alpha_methods alpha_mthd) const override
 			{
 				const auto bytes_per_line = s_pixbuf.bytes_per_line();
 
-				double rate_x = double(r_src.width) / r_dst.width;
-				double rate_y = double(r_src.height) / r_dst.height;
+				double const rate_x = double(r_src.width) / r_dst.width;
+				double const rate_y = double(r_src.height) / r_dst.height;
 
 				pixel_argb_t * s_raw_pixbuf = s_pixbuf.raw_ptr(0);
 
-				if(s_pixbuf.alpha_channel())
+				if(s_pixbuf.alpha_channel() && (alpha_methods::direct_copy != alpha_mthd))
 				{
-					for(std::size_t row = 0; row < r_dst.height; ++row)
+					//Alpha Blending
+					if (alpha_methods::straight_alpha == alpha_mthd)
 					{
-						const pixel_argb_t * s_line = pixel_at(s_raw_pixbuf, (static_cast<int>(row * rate_y) + r_src.y) * bytes_per_line);
-						pixel_argb_t * i = pixbuf.raw_ptr(r_dst.y + row);
-
-						for(std::size_t x = 0; x < r_dst.width; ++x, ++i)
+						for (std::size_t row = 0; row < r_dst.height; ++row)
 						{
-							const pixel_argb_t * s = s_line + static_cast<int>(x * rate_x) + r_src.x;
-							if(0 == s->element.alpha_channel)
-								continue;
-							
-							if(s->element.alpha_channel != 255)
+							const pixel_argb_t* s_line = pixel_at(s_raw_pixbuf, (static_cast<int>(row * rate_y) + r_src.y) * bytes_per_line);
+							pixel_argb_t* i = pixbuf.raw_ptr(r_dst.y + row);
+
+							for (std::size_t x = 0; x < r_dst.width; ++x, ++i)
 							{
-								i->element.red = unsigned(i->element.red * (255 - s->element.alpha_channel) + s->element.red * s->element.alpha_channel) / 255;
-								i->element.green = unsigned(i->element.green * (255 - s->element.alpha_channel) + s->element.green * s->element.alpha_channel) / 255;
-								i->element.blue = unsigned(i->element.blue * (255 - s->element.alpha_channel) + s->element.blue * s->element.alpha_channel) / 255;
-							}
-							else
-							{
-								unsigned alpha_chn = i->element.alpha_channel;
-								*i = *s;
-								i->element.alpha_channel = alpha_chn;
+								const pixel_argb_t* s = s_line + static_cast<int>(x * rate_x) + r_src.x;
+								if (0 == s->element.alpha_channel)
+									continue;
+
+								if (s->element.alpha_channel != 255)
+								{
+									i->element.red = unsigned(i->element.red * (255 - s->element.alpha_channel) + s->element.red * s->element.alpha_channel) / 255;
+									i->element.green = unsigned(i->element.green * (255 - s->element.alpha_channel) + s->element.green * s->element.alpha_channel) / 255;
+									i->element.blue = unsigned(i->element.blue * (255 - s->element.alpha_channel) + s->element.blue * s->element.alpha_channel) / 255;
+								}
+								else
+								{
+									unsigned alpha_chn = i->element.alpha_channel;
+									*i = *s;
+									i->element.alpha_channel = alpha_chn;
+								}
 							}
 						}
-					}				
+					}
+					else if(alpha_methods::premultiplied_alpha == alpha_mthd)
+					{
+						for (std::size_t row = 0; row < r_dst.height; ++row)
+						{
+							const pixel_argb_t* s_line = pixel_at(s_raw_pixbuf, (static_cast<int>(row * rate_y) + r_src.y) * bytes_per_line);
+							pixel_argb_t* i = pixbuf.raw_ptr(r_dst.y + row);
+
+							for (std::size_t x = 0; x < r_dst.width; ++x, ++i)
+							{
+								const pixel_argb_t* s = s_line + static_cast<int>(x * rate_x) + r_src.x;
+								if (0 == s->element.alpha_channel)
+									continue;
+
+								if (s->element.alpha_channel != 255)
+								{
+									i->element.red = unsigned(i->element.red * (255 - s->element.alpha_channel) / 255 + s->element.red);
+									i->element.green = unsigned(i->element.green * (255 - s->element.alpha_channel) / 255 + s->element.green);
+									i->element.blue = unsigned(i->element.blue * (255 - s->element.alpha_channel) / 255 + s->element.blue);
+									i->element.alpha_channel = unsigned(i->element.alpha_channel * (255 - s->element.alpha_channel) / 255 + s->element.alpha_channel);
+								}
+								else
+								{
+									unsigned alpha_chn = i->element.alpha_channel;
+									*i = *s;
+									i->element.alpha_channel = alpha_chn;
+								}
+							}
+						}
+					}
 				}
 				else
 				{
@@ -104,7 +137,7 @@ namespace detail
 				int iu_minus_coef;
 			};
 
-			void process(const paint::pixel_buffer & s_pixbuf, const nana::rectangle& r_src, paint::pixel_buffer & pixbuf, const nana::rectangle& r_dst) const
+			void process(const paint::pixel_buffer & s_pixbuf, const nana::rectangle& r_src, paint::pixel_buffer & pixbuf, const nana::rectangle& r_dst, alpha_methods alpha_mthd) const override
 			{
 				const auto s_bytes_per_line = s_pixbuf.bytes_per_line();
 
@@ -173,81 +206,126 @@ namespace detail
 					
 					pixel_argb_t * i = pixbuf.raw_ptr(row + r_dst.y) + r_dst.x;
 					
-					if(is_alpha_channel)
+					if(is_alpha_channel && (alpha_methods::direct_copy != alpha_mthd))
 					{
-						for(std::size_t x = 0; x < r_dst.width; ++x, ++i)
+						// Blends
+
+						if (alpha_methods::straight_alpha == alpha_mthd)
 						{
-							x_u_table_tag el = x_u_table[x];
-						
-							col0 = s_line[el.x];
-							col1 = next_s_line[el.x];
-
-							if(el.x < right_bound)
+							for (std::size_t x = 0; x < r_dst.width; ++x, ++i)
 							{
-								col2 = s_line[el.x + 1];
-								col3 = next_s_line[el.x + 1];
-							}
-							else
-							{
-								col2 = col0;
-								col3 = col1;
-							}
-						
-							std::size_t coef0 = el.iu_minus_coef * iv_minus_coef;
-							std::size_t coef1 = el.iu_minus_coef * iv;
-							std::size_t coef2 = el.iu * iv_minus_coef;
-							std::size_t coef3 = el.iu * iv;			
+								x_u_table_tag el = x_u_table[x];
 
-							unsigned alpha_chn = static_cast<unsigned>((coef0 * col0.element.alpha_channel + coef1 * col1.element.alpha_channel + (coef2 * col2.element.alpha_channel + coef3 * col3.element.alpha_channel)) >> double_shift_size);
-							unsigned s_red = static_cast<unsigned>((coef0 * col0.element.red + coef1 * col1.element.red + (coef2 * col2.element.red + coef3 * col3.element.red)) >> double_shift_size);
-							unsigned s_green = static_cast<unsigned>((coef0 * col0.element.green + coef1 * col1.element.green + (coef2 * col2.element.green + coef3 * col3.element.green)) >> double_shift_size);
-							unsigned s_blue = static_cast<unsigned>((coef0 * col0.element.blue + coef1 * col1.element.blue + (coef2 * col2.element.blue + coef3 * col3.element.blue)) >> double_shift_size);
+								col0 = s_line[el.x];
+								col1 = next_s_line[el.x];
 
-							if(alpha_chn)
-							{
-								if(alpha_chn != 255)
+								if (el.x < right_bound)
 								{
-									i->element.red	= unsigned(i->element.red * (255 - alpha_chn) + s_red * alpha_chn) / 255;
-									i->element.green	= unsigned(i->element.green * (255 - alpha_chn) + s_green * alpha_chn) / 255;
-									i->element.blue	= unsigned(i->element.blue * (255 - alpha_chn) + s_blue * alpha_chn) / 255;
+									col2 = s_line[el.x + 1];
+									col3 = next_s_line[el.x + 1];
 								}
 								else
 								{
-									i->element.red = s_red;
-									i->element.green = s_green;
-									i->element.blue = s_blue;
+									col2 = col0;
+									col3 = col1;
+								}
+
+								std::size_t coef0 = el.iu_minus_coef * iv_minus_coef;
+								std::size_t coef1 = el.iu_minus_coef * iv;
+								std::size_t coef2 = el.iu * iv_minus_coef;
+								std::size_t coef3 = el.iu * iv;
+
+								unsigned alpha_chn = static_cast<unsigned>((coef0 * col0.element.alpha_channel + coef1 * col1.element.alpha_channel + (coef2 * col2.element.alpha_channel + coef3 * col3.element.alpha_channel)) >> double_shift_size);
+								unsigned s_red = static_cast<unsigned>((coef0 * col0.element.red + coef1 * col1.element.red + (coef2 * col2.element.red + coef3 * col3.element.red)) >> double_shift_size);
+								unsigned s_green = static_cast<unsigned>((coef0 * col0.element.green + coef1 * col1.element.green + (coef2 * col2.element.green + coef3 * col3.element.green)) >> double_shift_size);
+								unsigned s_blue = static_cast<unsigned>((coef0 * col0.element.blue + coef1 * col1.element.blue + (coef2 * col2.element.blue + coef3 * col3.element.blue)) >> double_shift_size);
+
+								if (alpha_chn)
+								{
+									if (alpha_chn != 255)
+									{
+										i->element.red = unsigned(i->element.red * (255 - alpha_chn) + s_red * alpha_chn) / 255;
+										i->element.green = unsigned(i->element.green * (255 - alpha_chn) + s_green * alpha_chn) / 255;
+										i->element.blue = unsigned(i->element.blue * (255 - alpha_chn) + s_blue * alpha_chn) / 255;
+										i->element.alpha_channel = unsigned(i->element.alpha_channel * (255 - alpha_chn) + alpha_chn * alpha_chn) / 255;
+									}
+									else
+									{
+										i->element.red = s_red;
+										i->element.green = s_green;
+										i->element.blue = s_blue;
+										i->element.alpha_channel = alpha_chn;
+									}
 								}
 							}
-						}						
+						}
 					}
 					else
 					{
-						for(std::size_t x = 0; x < r_dst.width; ++x, ++i)
+						//Direct-Copy
+
+						if (is_alpha_channel)
 						{
-							x_u_table_tag el = x_u_table[x];
-						
-							col0 = s_line[el.x];
-							col1 = next_s_line[el.x];
 
-							if(el.x < right_bound)
+							for (std::size_t x = 0; x < r_dst.width; ++x, ++i)
 							{
-								col2 = s_line[el.x + 1];
-								col3 = next_s_line[el.x + 1];
-							}
-							else
-							{
-								col2 = col0;
-								col3 = col1;
-							}
-						
-							std::size_t coef0 = el.iu_minus_coef * iv_minus_coef;
-							std::size_t coef1 = el.iu_minus_coef * iv;
-							std::size_t coef2 = el.iu * iv_minus_coef;
-							std::size_t coef3 = el.iu * iv;			
+								x_u_table_tag el = x_u_table[x];
 
-							i->element.red = static_cast<unsigned char>((coef0 * col0.element.red + coef1 * col1.element.red + (coef2 * col2.element.red + coef3 * col3.element.red)) >> double_shift_size);
-							i->element.green = static_cast<unsigned char>((coef0 * col0.element.green + coef1 * col1.element.green + (coef2 * col2.element.green + coef3 * col3.element.green)) >> double_shift_size);
-							i->element.blue = static_cast<unsigned char>((coef0 * col0.element.blue + coef1 * col1.element.blue + (coef2 * col2.element.blue + coef3 * col3.element.blue)) >> double_shift_size);
+								col0 = s_line[el.x];
+								col1 = next_s_line[el.x];
+
+								if (el.x < right_bound)
+								{
+									col2 = s_line[el.x + 1];
+									col3 = next_s_line[el.x + 1];
+								}
+								else
+								{
+									col2 = col0;
+									col3 = col1;
+								}
+
+								std::size_t coef0 = el.iu_minus_coef * iv_minus_coef;
+								std::size_t coef1 = el.iu_minus_coef * iv;
+								std::size_t coef2 = el.iu * iv_minus_coef;
+								std::size_t coef3 = el.iu * iv;
+
+								i->element.alpha_channel = static_cast<unsigned char>((coef0 * col0.element.alpha_channel + coef1 * col1.element.alpha_channel + (coef2 * col2.element.alpha_channel + coef3 * col3.element.alpha_channel)) >> double_shift_size);
+								i->element.red = static_cast<unsigned char>((coef0 * col0.element.red + coef1 * col1.element.red + (coef2 * col2.element.red + coef3 * col3.element.red)) >> double_shift_size);
+								i->element.green = static_cast<unsigned char>((coef0 * col0.element.green + coef1 * col1.element.green + (coef2 * col2.element.green + coef3 * col3.element.green)) >> double_shift_size);
+								i->element.blue = static_cast<unsigned char>((coef0 * col0.element.blue + coef1 * col1.element.blue + (coef2 * col2.element.blue + coef3 * col3.element.blue)) >> double_shift_size);
+							}
+						}
+						else
+						{
+
+							for (std::size_t x = 0; x < r_dst.width; ++x, ++i)
+							{
+								x_u_table_tag el = x_u_table[x];
+
+								col0 = s_line[el.x];
+								col1 = next_s_line[el.x];
+
+								if (el.x < right_bound)
+								{
+									col2 = s_line[el.x + 1];
+									col3 = next_s_line[el.x + 1];
+								}
+								else
+								{
+									col2 = col0;
+									col3 = col1;
+								}
+
+								std::size_t coef0 = el.iu_minus_coef * iv_minus_coef;
+								std::size_t coef1 = el.iu_minus_coef * iv;
+								std::size_t coef2 = el.iu * iv_minus_coef;
+								std::size_t coef3 = el.iu * iv;
+
+								i->element.red = static_cast<unsigned char>((coef0 * col0.element.red + coef1 * col1.element.red + (coef2 * col2.element.red + coef3 * col3.element.red)) >> double_shift_size);
+								i->element.green = static_cast<unsigned char>((coef0 * col0.element.green + coef1 * col1.element.green + (coef2 * col2.element.green + coef3 * col3.element.green)) >> double_shift_size);
+								i->element.blue = static_cast<unsigned char>((coef0 * col0.element.blue + coef1 * col1.element.blue + (coef2 * col2.element.blue + coef3 * col3.element.blue)) >> double_shift_size);
+							}
 						}
 					}
 				}
@@ -260,86 +338,202 @@ namespace detail
 			: public image_process::alpha_blend_interface
 		{
 			//process
-			virtual void process(const paint::pixel_buffer& s_pixbuf, const nana::rectangle& s_r, paint::pixel_buffer& d_pixbuf, const nana::point& d_pos) const
+			virtual void process(const paint::pixel_buffer& s_pixbuf, const nana::rectangle& s_r, paint::pixel_buffer& d_pixbuf, const nana::point& d_pos, alpha_methods am) const override
 			{
-				auto d_rgb = d_pixbuf.at(d_pos);
+				if (s_pixbuf.alpha_channel() && (alpha_methods::direct_copy != am))
+				{
+					if (alpha_methods::straight_alpha == am)
+						_m_straight_alpha(s_pixbuf, s_r, d_pixbuf, d_pos);
+					else if (alpha_methods::premultiplied_alpha == am)
+						_m_premultiplied_alpha(s_pixbuf, s_r, d_pixbuf, d_pos);
+				}
+			}
+
+		private:
+			static void _m_straight_alpha(const paint::pixel_buffer& s_pixbuf, const nana::rectangle& s_r, paint::pixel_buffer& d_pixbuf, const nana::point& d_pos)
+			{
+				//auto d_rgb = d_pixbuf.at(d_pos);	//deprecated
+				auto d_rgb = d_pixbuf[d_pos];
 				auto s_rgb = s_pixbuf.raw_ptr(s_r.y) + s_r.x;
-				if(d_rgb && s_rgb)
+				if (d_rgb && s_rgb)
 				{
 					const unsigned rest = s_r.width & 0x3;
 					const unsigned length_align4 = s_r.width - rest;
 
 					std::size_t d_step_bytes = d_pixbuf.bytes_per_line() - (s_r.width - rest) * sizeof(pixel_argb_t);
 					std::size_t s_step_bytes = s_pixbuf.bytes_per_line() - (s_r.width - rest) * sizeof(pixel_argb_t);
-					for(unsigned line = 0; line < s_r.height; ++line)
+					for (unsigned line = 0; line < s_r.height; ++line)
 					{
 						const auto end = d_rgb + length_align4;
-						for(; d_rgb < end; d_rgb += 4, s_rgb += 4)
+						for (; d_rgb < end; d_rgb += 4, s_rgb += 4)
 						{
 							//0
-							if(s_rgb->element.alpha_channel)
+							if (s_rgb->element.alpha_channel)
 							{
-								if(s_rgb->element.alpha_channel != 255)
+								if (s_rgb->element.alpha_channel != 255)
 								{
-									d_rgb->element.red = unsigned(d_rgb->element.red * (255 - s_rgb[0].element.alpha_channel) + s_rgb[0].element.red * s_rgb[0].element.alpha_channel) / 255;
-									d_rgb->element.green = unsigned(d_rgb->element.green * (255 - s_rgb[0].element.alpha_channel) + s_rgb[0].element.green * s_rgb[0].element.alpha_channel) / 255;
-									d_rgb->element.blue = unsigned(d_rgb->element.blue * (255 - s_rgb[0].element.alpha_channel) + s_rgb[0].element.blue * s_rgb[0].element.alpha_channel) / 255;
+									d_rgb->element.red = unsigned(d_rgb->element.red * (255 - s_rgb[0].element.alpha_channel) + s_rgb[0].element.red * unsigned(s_rgb[0].element.alpha_channel)) / 255;
+									d_rgb->element.green = unsigned(d_rgb->element.green * (255 - s_rgb[0].element.alpha_channel) + s_rgb[0].element.green * unsigned(s_rgb[0].element.alpha_channel)) / 255;
+									d_rgb->element.blue = unsigned(d_rgb->element.blue * (255 - s_rgb[0].element.alpha_channel) + s_rgb[0].element.blue * unsigned(s_rgb[0].element.alpha_channel)) / 255;
+									d_rgb->element.alpha_channel = unsigned(d_rgb->element.alpha_channel * (255 - s_rgb[0].element.alpha_channel) + s_rgb[0].element.alpha_channel * unsigned(s_rgb[0].element.alpha_channel)) / 255;
 								}
 								else
 									*d_rgb = *s_rgb;
 							}
 
 							//1
-							if(s_rgb[1].element.alpha_channel)
+							if (s_rgb[1].element.alpha_channel)
 							{
-								if(s_rgb[1].element.alpha_channel != 255)
+								if (s_rgb[1].element.alpha_channel != 255)
 								{
-									d_rgb[1].element.red = unsigned(d_rgb[1].element.red * (255 - s_rgb[1].element.alpha_channel) + s_rgb[1].element.red * s_rgb[1].element.alpha_channel) / 255;
-									d_rgb[1].element.green = unsigned(d_rgb[1].element.green * (255 - s_rgb[1].element.alpha_channel) + s_rgb[1].element.green * s_rgb[1].element.alpha_channel) / 255;
-									d_rgb[1].element.blue = unsigned(d_rgb[1].element.blue * (255 - s_rgb[1].element.alpha_channel) + s_rgb[1].element.blue * s_rgb[1].element.alpha_channel) / 255;
+									d_rgb[1].element.red = unsigned(d_rgb[1].element.red * (255 - s_rgb[1].element.alpha_channel) + s_rgb[1].element.red * unsigned(s_rgb[1].element.alpha_channel)) / 255;
+									d_rgb[1].element.green = unsigned(d_rgb[1].element.green * (255 - s_rgb[1].element.alpha_channel) + s_rgb[1].element.green * unsigned(s_rgb[1].element.alpha_channel)) / 255;
+									d_rgb[1].element.blue = unsigned(d_rgb[1].element.blue * (255 - s_rgb[1].element.alpha_channel) + s_rgb[1].element.blue * unsigned(s_rgb[1].element.alpha_channel)) / 255;
+									d_rgb[1].element.alpha_channel = unsigned(d_rgb[1].element.alpha_channel * (255 - s_rgb[1].element.alpha_channel) + s_rgb[1].element.alpha_channel * unsigned(s_rgb[1].element.alpha_channel)) / 255;
 								}
 								else
 									d_rgb[1] = s_rgb[1];
 							}
 
 							//2
-							if(s_rgb[2].element.alpha_channel)
+							if (s_rgb[2].element.alpha_channel)
 							{
-								if(s_rgb[2].element.alpha_channel != 255)
+								if (s_rgb[2].element.alpha_channel != 255)
 								{
-									d_rgb[2].element.red = unsigned(d_rgb[2].element.red * (255 - s_rgb[2].element.alpha_channel) + s_rgb[2].element.red * s_rgb[2].element.alpha_channel) / 255;
-									d_rgb[2].element.green = unsigned(d_rgb[2].element.green * (255 - s_rgb[2].element.alpha_channel) + s_rgb[2].element.green * s_rgb[2].element.alpha_channel) / 255;
-									d_rgb[2].element.blue = unsigned(d_rgb[2].element.blue * (255 - s_rgb[2].element.alpha_channel) + s_rgb[2].element.blue * s_rgb[2].element.alpha_channel) / 255;
+									d_rgb[2].element.red = unsigned(d_rgb[2].element.red * (255 - s_rgb[2].element.alpha_channel) + s_rgb[2].element.red * unsigned(s_rgb[2].element.alpha_channel)) / 255;
+									d_rgb[2].element.green = unsigned(d_rgb[2].element.green * (255 - s_rgb[2].element.alpha_channel) + s_rgb[2].element.green * unsigned(s_rgb[2].element.alpha_channel)) / 255;
+									d_rgb[2].element.blue = unsigned(d_rgb[2].element.blue * (255 - s_rgb[2].element.alpha_channel) + s_rgb[2].element.blue * unsigned(s_rgb[2].element.alpha_channel)) / 255;
+									d_rgb[2].element.alpha_channel = unsigned(d_rgb[2].element.alpha_channel * (255 - s_rgb[2].element.alpha_channel) + s_rgb[2].element.alpha_channel * unsigned(s_rgb[2].element.alpha_channel)) / 255;
 								}
 								else
 									d_rgb[2] = s_rgb[2];
 							}
 
 							//3
-							if(s_rgb[3].element.alpha_channel)
+							if (s_rgb[3].element.alpha_channel)
 							{
-								if(s_rgb[3].element.alpha_channel != 255)
+								if (s_rgb[3].element.alpha_channel != 255)
 								{
-									d_rgb[3].element.red = unsigned(d_rgb[3].element.red * (255 - s_rgb[3].element.alpha_channel) + s_rgb[3].element.red * s_rgb[3].element.alpha_channel) / 255;
-									d_rgb[3].element.green = unsigned(d_rgb[3].element.green * (255 - s_rgb[3].element.alpha_channel) + s_rgb[3].element.green * s_rgb[3].element.alpha_channel) / 255;
-									d_rgb[3].element.blue = unsigned(d_rgb[3].element.blue * (255 - s_rgb[3].element.alpha_channel) + s_rgb[3].element.blue * s_rgb[3].element.alpha_channel) / 255;
+									d_rgb[3].element.red = unsigned(d_rgb[3].element.red * (255 - s_rgb[3].element.alpha_channel) + s_rgb[3].element.red * unsigned(s_rgb[3].element.alpha_channel)) / 255;
+									d_rgb[3].element.green = unsigned(d_rgb[3].element.green * (255 - s_rgb[3].element.alpha_channel) + s_rgb[3].element.green * unsigned(s_rgb[3].element.alpha_channel)) / 255;
+									d_rgb[3].element.blue = unsigned(d_rgb[3].element.blue * (255 - s_rgb[3].element.alpha_channel) + s_rgb[3].element.blue * unsigned(s_rgb[3].element.alpha_channel)) / 255;
+									d_rgb[3].element.alpha_channel = unsigned(d_rgb[3].element.alpha_channel * (255 - s_rgb[3].element.alpha_channel) + s_rgb[3].element.alpha_channel * unsigned(s_rgb[3].element.alpha_channel)) / 255;
 								}
 								else
 									d_rgb[3] = s_rgb[3];
 							}
 						}
 
-						const pixel_argb_t * s_end = s_rgb + rest;
+						const pixel_argb_t* s_end = s_rgb + rest;
 						auto rest_d_rgb = d_rgb;
-						for(auto i = s_rgb; i != s_end; ++i)
+						for (auto i = s_rgb; i != s_end; ++i)
 						{
-							if(i->element.alpha_channel)
+							if (i->element.alpha_channel)
 							{
-								if(i->element.alpha_channel != 255)
+								if (i->element.alpha_channel != 255)
 								{
-									rest_d_rgb->element.red = unsigned(rest_d_rgb->element.red * (255 - i->element.alpha_channel) + i->element.red * i->element.alpha_channel) / 255;
-									rest_d_rgb->element.green = unsigned(rest_d_rgb->element.green * (255 - i->element.alpha_channel) + i->element.green * i->element.alpha_channel) / 255;
-									rest_d_rgb->element.blue = unsigned(rest_d_rgb->element.blue * (255 - i->element.alpha_channel) + i->element.blue * i->element.alpha_channel) / 255;
+									rest_d_rgb->element.red = unsigned(rest_d_rgb->element.red * (255 - i->element.alpha_channel) + i->element.red * unsigned(i->element.alpha_channel)) / 255;
+									rest_d_rgb->element.green = unsigned(rest_d_rgb->element.green * (255 - i->element.alpha_channel) + i->element.green * unsigned(i->element.alpha_channel)) / 255;
+									rest_d_rgb->element.blue = unsigned(rest_d_rgb->element.blue * (255 - i->element.alpha_channel) + i->element.blue * unsigned(i->element.alpha_channel)) / 255;
+									rest_d_rgb->element.alpha_channel = unsigned(rest_d_rgb->element.alpha_channel * (255 - i->element.alpha_channel) + i->element.alpha_channel * unsigned(i->element.alpha_channel)) / 255;
+								}
+								else
+									*rest_d_rgb = *i;
+							}
+							++rest_d_rgb;
+						}
+						d_rgb = pixel_at(d_rgb, d_step_bytes);
+						s_rgb = pixel_at(s_rgb, s_step_bytes);
+					}
+				}
+			}
+
+			static void _m_premultiplied_alpha(const paint::pixel_buffer& s_pixbuf, const nana::rectangle& s_r, paint::pixel_buffer& d_pixbuf, const nana::point& d_pos)
+			{
+				//auto d_rgb = d_pixbuf.at(d_pos);	//deprecated
+				auto d_rgb = d_pixbuf[d_pos];
+				auto s_rgb = s_pixbuf.raw_ptr(s_r.y) + s_r.x;
+				if (d_rgb && s_rgb)
+				{
+					const unsigned rest = s_r.width & 0x3;
+					const unsigned length_align4 = s_r.width - rest;
+
+					std::size_t d_step_bytes = d_pixbuf.bytes_per_line() - (s_r.width - rest) * sizeof(pixel_argb_t);
+					std::size_t s_step_bytes = s_pixbuf.bytes_per_line() - (s_r.width - rest) * sizeof(pixel_argb_t);
+					for (unsigned line = 0; line < s_r.height; ++line)
+					{
+						const auto end = d_rgb + length_align4;
+						for (; d_rgb < end; d_rgb += 4, s_rgb += 4)
+						{
+							//0
+							if (s_rgb->element.alpha_channel)
+							{
+								if (s_rgb->element.alpha_channel != 255)
+								{
+									d_rgb->element.red = (d_rgb->element.red * (255 - s_rgb[0].element.alpha_channel) / 255 + s_rgb[0].element.red);
+									d_rgb->element.green = (d_rgb->element.green * (255 - s_rgb[0].element.alpha_channel) / 255 + s_rgb[0].element.green);
+									d_rgb->element.blue = (d_rgb->element.blue * (255 - s_rgb[0].element.alpha_channel) / 255 + s_rgb[0].element.blue);
+									d_rgb->element.alpha_channel = (d_rgb->element.alpha_channel * (255 - s_rgb[0].element.alpha_channel) / 255 + s_rgb[0].element.alpha_channel);
+								}
+								else
+									*d_rgb = *s_rgb;
+							}
+
+							//1
+							if (s_rgb[1].element.alpha_channel)
+							{
+								if (s_rgb[1].element.alpha_channel != 255)
+								{
+									d_rgb[1].element.red = unsigned(d_rgb[1].element.red * (255 - s_rgb[1].element.alpha_channel) / 255 + s_rgb[1].element.red);
+									d_rgb[1].element.green = unsigned(d_rgb[1].element.green * (255 - s_rgb[1].element.alpha_channel) / 255 + s_rgb[1].element.green);
+									d_rgb[1].element.blue = unsigned(d_rgb[1].element.blue * (255 - s_rgb[1].element.alpha_channel) / 255 + s_rgb[1].element.blue);
+									d_rgb[1].element.alpha_channel = unsigned(d_rgb[1].element.alpha_channel * (255 - s_rgb[1].element.alpha_channel) / 255 + s_rgb[1].element.alpha_channel);
+								}
+								else
+									d_rgb[1] = s_rgb[1];
+							}
+
+							//2
+							if (s_rgb[2].element.alpha_channel)
+							{
+								if (s_rgb[2].element.alpha_channel != 255)
+								{
+									d_rgb[2].element.red = unsigned(d_rgb[2].element.red * (255 - s_rgb[2].element.alpha_channel) / 255 + s_rgb[2].element.red);
+									d_rgb[2].element.green = unsigned(d_rgb[2].element.green * (255 - s_rgb[2].element.alpha_channel) / 255 + s_rgb[2].element.green);
+									d_rgb[2].element.blue = unsigned(d_rgb[2].element.blue * (255 - s_rgb[2].element.alpha_channel) / 255 + s_rgb[2].element.blue);
+									d_rgb[2].element.alpha_channel = unsigned(d_rgb[2].element.alpha_channel * (255 - s_rgb[2].element.alpha_channel) / 255 + s_rgb[2].element.alpha_channel);
+								}
+								else
+									d_rgb[2] = s_rgb[2];
+							}
+
+							//3
+							if (s_rgb[3].element.alpha_channel)
+							{
+								if (s_rgb[3].element.alpha_channel != 255)
+								{
+									d_rgb[3].element.red = unsigned(d_rgb[3].element.red * (255 - s_rgb[3].element.alpha_channel) / 255 + s_rgb[3].element.red);
+									d_rgb[3].element.green = unsigned(d_rgb[3].element.green * (255 - s_rgb[3].element.alpha_channel) /255 + s_rgb[3].element.green);
+									d_rgb[3].element.blue = unsigned(d_rgb[3].element.blue * (255 - s_rgb[3].element.alpha_channel) /255 + s_rgb[3].element.blue);
+									d_rgb[3].element.alpha_channel = unsigned(d_rgb[3].element.alpha_channel * (255 - s_rgb[3].element.alpha_channel) /255 + s_rgb[3].element.alpha_channel);
+								}
+								else
+									d_rgb[3] = s_rgb[3];
+							}
+						}
+
+						const pixel_argb_t* s_end = s_rgb + rest;
+						auto rest_d_rgb = d_rgb;
+						for (auto i = s_rgb; i != s_end; ++i)
+						{
+							if (i->element.alpha_channel)
+							{
+								if (i->element.alpha_channel != 255)
+								{
+									rest_d_rgb->element.red = unsigned(rest_d_rgb->element.red * (255 - i->element.alpha_channel) / 255 + i->element.red);
+									rest_d_rgb->element.green = unsigned(rest_d_rgb->element.green * (255 - i->element.alpha_channel) / 255 + i->element.green);
+									rest_d_rgb->element.blue = unsigned(rest_d_rgb->element.blue * (255 - i->element.alpha_channel) / 255 + i->element.blue);
+									rest_d_rgb->element.alpha_channel = unsigned(rest_d_rgb->element.alpha_channel * (255 - i->element.alpha_channel) / 255 + i->element.alpha_channel);
 								}
 								else
 									*rest_d_rgb = *i;
@@ -361,7 +555,7 @@ namespace detail
 			//process
 			virtual void process(const paint::pixel_buffer& s_pixbuf, const nana::rectangle& s_r, paint::pixel_buffer& d_pixbuf, const nana::point& d_pos, double fade_rate) const
 			{
-				auto d_rgb = d_pixbuf.raw_ptr(d_pos.y) + d_pos.x;
+				auto d_rgb = d_pixbuf[d_pos];
 				auto s_rgb = s_pixbuf.raw_ptr(s_r.y) + s_r.x;
 
 				if(d_rgb && s_rgb)

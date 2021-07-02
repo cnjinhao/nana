@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -152,7 +152,7 @@ namespace detail
 				for(int y = 0; y < static_cast<int>(pxsize.height); ++y)
 					for(int x = 0; x < static_cast<int>(pxsize.width); ++x)
 					{
-						auto px = pxbuf.at({x, y});
+						auto px = pxbuf[{x, y}];
 						px->element.red = ~px->element.red;
 						px->element.green = ~px->element.green;
 						px->element.blue = ~px->element.blue;
