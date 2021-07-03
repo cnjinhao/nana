@@ -125,6 +125,8 @@ namespace detail
 			{
 				if(node)
 				{
+					if(node == &root_)
+						return true;
 					while(node->owner)
 					{
 						if(node->owner == &root_)
