@@ -1,24 +1,24 @@
-/*
-*	A Generic Cloneable Pattern Implementation
-*	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
-*
-*	Distributed under the Boost Software License, Version 1.0.
-*	(See accompanying file LICENSE_1_0.txt or copy at
-*	http://www.boost.org/LICENSE_1_0.txt)
-*
-*	@file: nana/pat/cloneable.hpp
-*	@description: A generic easy-to-use cloneable pattern implementation
-*/
+/**
+ *	A Generic Cloneable Pattern Implementation
+ *	Nana C++ Library(http://www.nanapro.org)
+ *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *
+ *	Distributed under the Boost Software License, Version 1.0.
+ *	(See accompanying file LICENSE_1_0.txt or copy at
+ *	http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *	@file nana/pat/cloneable.hpp
+ *	@description A generic easy-to-use cloneable pattern implementation
+ */
 #ifndef NANA_PAT_CLONEABLE_HPP
 #define NANA_PAT_CLONEABLE_HPP
 
-#include <nana/push_ignore_diagnostic>
-#include <nana/c++defines.hpp>
 #include <cstddef>
 #include <type_traits>
 #include <memory>
 
+#include <nana/push_ignore_diagnostic>
+#include <nana/c++defines.hpp>
 
 namespace nana{ namespace pat{
 
@@ -59,7 +59,7 @@ namespace nana{ namespace pat{
 				:value_obj_(std::move(rv))
 			{}
 		private:
-			//Implement cloneable_interface
+			/// Implement cloneable_interface
 			virtual void* get() override
 			{
 				return &value_obj_;
@@ -98,7 +98,8 @@ namespace nana{ namespace pat{
 		typedef int inner_bool::* operator_bool_t;
 
 		template<typename U>
-		using member_enabled = std::enable_if<(!std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>;
+		using member_enabled = std::enable_if<(   !std::is_base_of<cloneable, typename std::remove_reference<U>::type>::value) 
+			                                    && std::is_base_of<base_t, typename std::remove_reference<U>::type>::value, int>;
 	public:
 		cloneable() noexcept = default;
 
@@ -162,7 +163,7 @@ namespace nana{ namespace pat{
 			return *this;
 		}
 
-		base_t& operator*()
+		base_t& operator*() noexcept
 		{
 			return *fast_ptr_;
 		}

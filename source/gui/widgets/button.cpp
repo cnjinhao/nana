@@ -1,4 +1,4 @@
-/*
+/**
  *	A Button Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
@@ -7,7 +7,7 @@
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/button.cpp
+ *	@file nana/gui/widgets/button.cpp
  */
 
 #include <nana/gui/widgets/button.hpp>
@@ -409,7 +409,28 @@ namespace nana
 		create(parent, rectangle(), visible);
 		caption(title);
 	}
+	button::button(window parent, std::string_view title, command::event_fn_t click_handler,
+		           paint::image image, bool visible)
+		: scommand_{ std::make_shared<command>(title, click_handler, image) }
+	{
+		create(parent, rectangle(), visible);
+		caption(title);
+		if (click_handler) 
+			events().click([this]() {scommand_->event_handler(*scommand_); });
+		if (!image.empty())
+			icon(image);
+	}
 
+	button::button(window parent, shared_command scommand, bool visible)
+		: scommand_{ scommand }
+	{
+		create(parent, rectangle(), visible);
+		caption(scommand_->short_title.empty() ? scommand_->title : scommand_->short_title);
+		if (scommand_->event_handler)
+			events().click([this]() {scommand_->event_handler(*scommand_); });
+		if (!scommand_->image.empty())
+			icon(scommand_->image);
+	}
 #ifdef __cpp_char8_t
 	button::button(window parent, std::u8string_view title, bool visible)
 	{

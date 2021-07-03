@@ -1,17 +1,18 @@
 /**
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/toolbar.hpp
+ *	@file nana/gui/widgets/toolbar.hpp
  */
 
 #ifndef NANA_GUI_WIDGET_TOOLBAR_HPP
 #define NANA_GUI_WIDGET_TOOLBAR_HPP
+#include <nana/gui/command.hpp>
 #include <nana/push_ignore_diagnostic>
 
 #include "widget.hpp"
@@ -83,6 +84,7 @@ namespace nana
 				// tools::dropdown
 				item_proxy& dropdown_append(const std::string& text, const nana::paint::image& img, const event_fn_t& handler = {});   ///< Adds an item to the dropdown menu.
 				item_proxy& dropdown_append(const std::string& text, const event_fn_t& handler = {});   ///< Adds an item to the dropdown menu.
+				item_proxy& dropdown_append(shared_command command);   ///< Adds an item to the dropdown menu.
 
 				bool dropdown_enable(std::size_t index) const; ///< Gets the dropdown menu item enable state.
 				item_proxy& dropdown_enable(std::size_t index, bool enable_state); ///< Sets the dropdown menu item enable state.
@@ -166,6 +168,7 @@ namespace nana
 
 		item_proxy append(tools t, const std::string& text, const nana::paint::image& img, const event_fn_t& handler = {});   ///< Adds a tool.
 		item_proxy append(tools t, const std::string& text, const event_fn_t& handler = {});   ///< Adds a tool.
+		item_proxy append(tools t, shared_command command);   ///< Adds a tool.
 		void append_separator();	///< Adds a separator.
 
 		size_type count() const noexcept; ///< Returns tools and separators count.
