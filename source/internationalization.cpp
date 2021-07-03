@@ -553,37 +553,37 @@ namespace nana
 
 	void i18n_eval::_m_add_args(i18n_eval& eval)
 	{
-		args_.emplace_back(new arg_eval(eval));
+		args_.push_back(std::unique_ptr<arg_eval>(new arg_eval(eval)));
 	}
 
 	void i18n_eval::_m_add_args(const i18n_eval& eval)
 	{
-		args_.emplace_back(new arg_eval(eval));
+		args_.push_back(std::unique_ptr<arg_eval>(new arg_eval(eval)));
 	}
 
 	void i18n_eval::_m_add_args(i18n_eval&& eval)
 	{
-		args_.emplace_back(new arg_eval(std::move(eval)));
+		args_.push_back(std::unique_ptr<arg_eval>(new arg_eval(std::move(eval))));
 	}
 
 	void i18n_eval::_m_add_args(std::string& str)
 	{
-		args_.emplace_back(new arg_string(str));
+		args_.push_back(std::unique_ptr<arg_string>(new arg_string(str)));
 	}
 
 	void i18n_eval::_m_add_args(const std::string& str)
 	{
-		args_.emplace_back(new arg_string(str));
+		args_.push_back(std::unique_ptr<arg_string>(new arg_string(str)));
 	}
 
 	void i18n_eval::_m_add_args(std::string&& str)
 	{
-		args_.emplace_back(new arg_string(std::move(str)));
+		args_.push_back(std::unique_ptr<arg_string>(new arg_string(std::move(str))));
 	}
 
 	void i18n_eval::_m_add_args(const std::wstring& str)
 	{
-		args_.emplace_back(new arg_string(to_utf8(str)));
+		args_.push_back(std::unique_ptr<arg_string>(new arg_string(to_utf8(str))));
 	}
 	//end class i18n_eval
 }

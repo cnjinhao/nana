@@ -337,7 +337,7 @@ namespace nana
 				impl_->current_animation = nullptr;
 			}
 			impl_->set_icon(image_ico);
-			impl_->icon = image_ico;
+			impl_->icon = std::move(image_ico);
 		}
 #else
 		static_cast<void>(file);	//eliminate unused parameter warning

@@ -132,10 +132,10 @@ namespace nana
 				virtual void close_fly(graph_reference graph, const nana::rectangle& r, bool active, state_t sta)
 				{
 					using namespace nana::paint;
-					::nana::color clr{ colors::black };
 
 					if (sta == item_renderer::highlight)
 					{
+						::nana::color clr { colors::black };
 						::nana::color bgcolor{ static_cast<color_rgb>(0xCCD2DD) };
 						::nana::color rect_clr{ static_cast<color_rgb>(0x9da3ab) };
 						graph.round_rectangle(r, 1, 1, rect_clr, false, {});
@@ -145,7 +145,7 @@ namespace nana
 						graph.rectangle(draw_r.pare_off(1), false, rect_clr.blend(bgcolor, 0.8));
 					}
 					else if (!active)
-						clr = static_cast<color_rgb>(0x9299a4);
+						::nana::color clr { static_cast<color_rgb>(0x9299a4) };
 
 					facade<element::x_icon> x_icon;
 					x_icon.draw(graph, {}, colors::black, { r.x + static_cast<int>(r.width - 16) / 2, r.y + static_cast<int>(r.height - 16) / 2, 16, 16 }, element_state::normal);

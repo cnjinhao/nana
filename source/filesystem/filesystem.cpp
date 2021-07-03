@@ -66,7 +66,6 @@ namespace nana
 		{
 			try {
 				auto bytes = fs::file_size(path);
-				const char * ustr[] = { " KB", " MB", " GB", " TB" };
 				std::stringstream ss;
 				if (bytes < 1024)
 					ss << bytes << " Bytes";
@@ -74,6 +73,7 @@ namespace nana
 				{
 					double cap = bytes / 1024.0;
 					std::size_t uid = 0;
+					const char * ustr[] = { " KB", " MB", " GB", " TB" };
 					while ((cap >= 1024.0) && (uid < sizeof(ustr) / sizeof(char *)))
 					{
 						cap /= 1024.0;

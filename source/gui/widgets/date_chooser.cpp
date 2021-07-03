@@ -568,13 +568,12 @@ namespace nana
 				arrow.direction(::nana::direction::east);
 				arrow.draw(graph, arrow_bgcolor, (pos_ == where::right_button ? colors_.highlighted : colors_.normal), arrow_r, element_state::normal);
 
-				const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
-
 				if (graph.width() > 32 + border_size * 2)
 				{
 					std::string str;
 					if (page_mode::date == page)
 					{
+						const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 						str = ::nana::internationalization()(monthstr[this->view_month_.month - 1]);
 						str += "  ";
 					}
@@ -716,12 +715,12 @@ namespace nana
 
 			void _m_draw_months(graph_reference graph)
 			{
-				const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 				::nana::internationalization i18n;
 
 				for (unsigned y = 0; y < 3; ++y)
 					for (upoint logic_pos{0, y}; logic_pos.x < 4; ++logic_pos.x)
 					{
+						const char * monthstr[] = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
 						int index = logic_pos.x + logic_pos.y * 4;
 						_m_draw_pos(graph, logic_pos, i18n(monthstr[index]), true, (view_month_.year == date_.year) && (index + 1 == date_.month));
 					}

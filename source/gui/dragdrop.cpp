@@ -405,7 +405,7 @@ public:
 		else
 		{
 			//Create a new entry
-			entries_.emplace_back(new data_entry);
+			entries_.push_back(std::unique_ptr<data_entry>(new data_entry));
 			entry = entries_.back().get();
 		}
 
@@ -477,7 +477,7 @@ public:
 		if (pformatetc->tymed != pmedium->tymed)
 			return E_FAIL;
 
-		entries_.emplace_back(new data_entry);
+		entries_.push_back(std::unique_ptr<data_entry>(new data_entry));
 		auto entry = entries_.back().get();
 
 		entry->format = *pformatetc;

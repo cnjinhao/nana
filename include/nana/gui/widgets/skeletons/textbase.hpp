@@ -253,7 +253,6 @@ namespace skeletons
 
 				if (is_unicode)
 				{
-					const char * le_boms[] = { "\xEF\xBB\xBF", "\xFF\xFE", "\xFF\xFE\x0\x0" };	//BOM for little-endian
 					int bytes = 0;
 					switch (encoding)
 					{
@@ -266,6 +265,7 @@ namespace skeletons
 					}
 
 					if (bytes)
+						const char * le_boms[] = { "\xEF\xBB\xBF", "\xFF\xFE", "\xFF\xFE\x0\x0" }; //BOM for little-endian
 						ofs.write(le_boms[static_cast<int>(encoding)], bytes);
 
 					for (std::size_t pos = 0; pos < count; ++pos)

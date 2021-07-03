@@ -38,8 +38,10 @@ namespace nana
                 auto p = new Form(std::forward<Args>(args)...);
 
                 if (p->empty())
+                {
+                    delete[] p;
                     throw std::runtime_error("form_loader failed to create the form");
-
+                }
 
                 detail::form_loader_private::insert_form(p);
                 if (IsVisible)
