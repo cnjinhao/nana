@@ -130,6 +130,7 @@ namespace detail
 		void capture_window(basic_window*, bool capture, bool ignore_children_if_captured);
 
 		void enable_tabstop(basic_window*);
+		void disable_tabstop(basic_window*);
 		basic_window* tabstop(basic_window*, bool forward) const;	//forward means move to next in logic.
 
 		void remove_trash_handle(thread_t tid);
