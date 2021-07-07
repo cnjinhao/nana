@@ -1270,9 +1270,12 @@ namespace api
 		return std::unique_ptr<caret_interface>{ p };
 	}
 
-	void tabstop(window wd)
+	void tabstop(window wd, const bool enable)
 	{
-		restrict::wd_manager().enable_tabstop(wd);
+		if (enable)
+			restrict::wd_manager().enable_tabstop(wd);
+		else
+			restrict::wd_manager().disable_tabstop(wd);
 	}
 
 	//eat_tabstop
