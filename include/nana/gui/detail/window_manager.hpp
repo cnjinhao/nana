@@ -137,6 +137,7 @@ namespace detail
 		bool enable_effects_bground(basic_window*, bool);
 
 		bool calc_window_point(basic_window*, nana::point&);
+		bool calc_screen_point(basic_window*, nana::point&);
 
 		root_misc* root_runtime(native_window) const;
 
