@@ -1418,6 +1418,20 @@ namespace detail
 			}
 			return false;
 		}
+		bool window_manager::calc_screen_point(basic_window* wd, nana::point& pos) 
+		{
+						//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+			if (impl_->wd_register.available(wd))
+			{
+				if(native_interface::calc_screen_point(wd->root, pos))
+				{
+					pos -= wd->pos_root;
+					return true;
+				}
+			}
+			return false;
+		}
 
 		root_misc* window_manager::root_runtime(native_window native_wd) const
 		{
