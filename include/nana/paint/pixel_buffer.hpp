@@ -86,7 +86,7 @@ namespace nana{	namespace paint
 		void paste(drawable_type, const point& p_dst) const;
 		void paste(const nana::rectangle& s_r, drawable_type, const point& p_dst, alpha_methods = alpha_methods::straight_alpha) const;
 		void paste(const nana::rectangle& s_r, pixel_buffer&, const point& p_dst, alpha_methods = alpha_methods::straight_alpha) const;
-		void paste(native_window_type, const point& p_dst, alpha_methods = alpha_methods::straight_alpha) const;
+		void paste(native_window_type, const point& p_dst) const;
 		void stretch(const std::string& name);
 		void stretch(const nana::rectangle& s_r, drawable_type, const nana::rectangle& r, alpha_methods = alpha_methods::straight_alpha) const;
 		void stretch(const nana::rectangle& s_r, pixel_buffer&, const nana::rectangle& r, alpha_methods = alpha_methods::straight_alpha) const;

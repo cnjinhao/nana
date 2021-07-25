@@ -740,16 +740,6 @@ namespace nana{	namespace paint
 		}
 	}
 
-	/*	//deprecated
-	pixel_color_t * pixel_buffer::at(const point& pos) const	
-	{
-		auto sp = storage_.get();
-		if (sp && (pos.y < static_cast<int>(sp->pixel_size.height) + sp->valid_r.y))
-			return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * (pos.y - sp->valid_r.y)) + (pos.x - sp->valid_r.x);
-		return nullptr;
-	}
-	*/
-
 	pixel_color_t * pixel_buffer::raw_ptr(std::size_t row) const
 	{
 		auto sp = storage_.get();
@@ -933,10 +923,11 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::paste(native_window_type wd, const point& p_dst, alpha_methods am) const
+	void pixel_buffer::paste(native_window_type wd, const point& p_dst) const
 	{
 		auto sp = storage_.get();
 		if(nullptr == wd || nullptr == sp)	return;
+
 #if defined(NANA_WINDOWS)
 		HDC	handle = ::GetDC(reinterpret_cast<HWND>(wd));
 		if(handle)
