@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,6 +24,7 @@ namespace nana
 {
 	class drawer_trigger;
 	class widget;
+	class coordinate_adjuster;
 
 	namespace dev
 	{
@@ -478,6 +479,10 @@ namespace api
 
 	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
+
+
+	/// Sets a screen coordinate adjuster for adjusting the coordinate of input device. E.g mouse, touchscreen.
+	void screen_coordinate_adjuster(std::shared_ptr<coordinate_adjuster>);
 }//end namespace api
 
 namespace API = api;

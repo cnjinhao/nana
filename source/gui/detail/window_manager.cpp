@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -269,6 +269,8 @@ namespace detail
 				paint::image default_icon_small;
 
 				lite_map<basic_window*, std::vector<std::function<void()>>> safe_place;
+
+				std::shared_ptr<coordinate_adjuster> coordinate_adjuster_ptr;
 			};
 		//end struct wdm_private_impl
 
@@ -688,13 +690,20 @@ namespace detail
 			return true;
 		}
 
-		basic_window* window_manager::find_window(native_window_type root, const point& pos, bool ignore_captured)
+		basic_window* window_manager::find_window(native_window_type root, point pos, bool ignore_captured, bool ignore_adjusting)
 		{
 			if (nullptr == root)
 				return nullptr;
 
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
+
+			if ((!ignore_adjusting) && impl_->coordinate_adjuster_ptr)
+			{
+				native_interface::calc_screen_point(root, pos);
+				pos = impl_->coordinate_adjuster_ptr->adjust(pos);
+				native_interface::calc_window_point(root, pos);
+			}
 
 			if (ignore_captured || (nullptr == attr_.capture.window))
 			{
@@ -723,6 +732,13 @@ namespace detail
 			}
 
 			return attr_.capture.window;
+		}
+
+		void window_manager::screen_coordinate_adjuster(std::shared_ptr<coordinate_adjuster> p)
+		{
+			//Thread-Safe Required!
+			std::lock_guard<mutex_type> lock(mutex_);
+			impl_->coordinate_adjuster_ptr = p;
 		}
 
 		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
@@ -1220,7 +1236,11 @@ namespace detail
 		{
 			if(attr_.capture.window)
 			{
-				bool inside = _m_effective(attr_.capture.window, point{ root_x, root_y });
+				point pos{ root_x, root_y };
+				if (impl_->coordinate_adjuster_ptr)
+					pos = impl_->coordinate_adjuster_ptr->adjust(pos);
+
+				bool inside = _m_effective(attr_.capture.window, pos);
 				if(inside != attr_.capture.inside)
 				{
 					prev = attr_.capture.inside;

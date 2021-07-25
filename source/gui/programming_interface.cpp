@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1534,6 +1534,11 @@ namespace api
 			return wd->other.dnd_state;
 
 		return dragdrop_status::not_ready;
+	}
+
+	void screen_coordinate_adjuster(std::shared_ptr<coordinate_adjuster> p)
+	{
+		restrict::wd_manager().screen_coordinate_adjuster(p);
 	}
 }//end namespace api
 }//end namespace nana
