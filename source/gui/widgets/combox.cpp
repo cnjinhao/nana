@@ -135,9 +135,10 @@ namespace nana
 				item_renderer_ = ir;
 			}
 
-			void attached(widget_reference wd, graph_reference graph)
+			void attached(widget_reference wd, graph_reference graph, scheme* scheme_ptr)
 			{
 				widget_ = static_cast< ::nana::combox*>(&wd);
+				scheme_ptr_ = scheme_ptr;
 
 				auto scheme = dynamic_cast< ::nana::widgets::skeletons::text_editor_scheme*>(api::dev::get_scheme(wd));
 				editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph, scheme);
@@ -289,6 +290,7 @@ namespace nana
 					module_.items.clear();
 					std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
 					state_.lister = &form_loader<nana::float_listbox, false>()(widget_->handle(), nana::rectangle(0, widget_->size().height, widget_->size().width, 10), true);
+					state_.lister->button_size(static_cast<unsigned>(scheme_ptr_->button_size));
 					state_.lister->renderer(item_renderer_);
 					state_.lister->set_module(module_, image_pixels_);
 					state_.item_index_before_selection = module_.index;
@@ -525,9 +527,9 @@ namespace nana
 			void _m_draw_push_button(bool enabled)
 			{
 				::nana::rectangle r{graph_->size()};
-				r.x = r.right() - 16;
+				r.x = r.right() - static_cast<int>(scheme_ptr_->button_size);
 				r.y = 1;
-				r.width = 16;
+				r.width = static_cast<unsigned>(scheme_ptr_->button_size);
 				r.height -= 2;
 
 				auto estate = state_.button_state;
@@ -545,8 +547,12 @@ namespace nana
 				facade<element::arrow> arrow;// ("solid_triangle");
 				arrow.direction(::nana::direction::south);
 
-				r.x += 4;
-				r.y += (r.height / 2) - 7;
+				//r.x += 4;
+				//r.y += (r.height / 2) - 7;
+
+				r.x += static_cast<int>(r.width - 8) / 2;
+				r.y += static_cast<int>(r.height - 16) / 2;
+
 				r.width = r.height = 16;
 				arrow.draw(*graph_, {}, colors::white, r, element_state::normal);
 			}
@@ -599,6 +605,7 @@ namespace nana
 			std::vector<std::shared_ptr<item>> items_;
 			nana::float_listbox::module_type module_;
 			::nana::combox * widget_{ nullptr };
+			scheme* scheme_ptr_{ nullptr };
 			nana::paint::graphics * graph_{ nullptr };
 			drawerbase::float_listbox::item_renderer* item_renderer_{ nullptr };
 
@@ -646,7 +653,7 @@ namespace nana
 		void trigger::attached(widget_reference wdg, graph_reference graph)
 		{
 			wdg.bgcolor(colors::white);
-			drawer_->attached(wdg, graph);
+			drawer_->attached(wdg, graph, static_cast<drawerbase::combox::scheme*>(api::dev::get_scheme(wdg)));
 
 			api::effects_edge_nimbus(wdg, effects::edge_nimbus::active);
 			api::effects_edge_nimbus(wdg, effects::edge_nimbus::over);
