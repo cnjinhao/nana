@@ -1,7 +1,7 @@
 /**
  *	A Basic Window Widget Definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -23,8 +23,12 @@
 #include <nana/system/platform.hpp>
 #include <nana/gui/effects.hpp>
 
-namespace nana{
-namespace detail
+namespace nana::widgets::skeletons
+{
+	class text_editor;
+}
+
+namespace nana::detail
 {
 	struct basic_window;
 
@@ -189,6 +193,8 @@ namespace detail
 		struct annex_components
 		{
 			caret* caret_ptr{ nullptr };
+			widgets::skeletons::text_editor* text_editor{ nullptr };
+
 
 			//The following pointers refer to the widget's object.
 			std::shared_ptr<general_events> events_ptr;
@@ -243,8 +249,7 @@ namespace detail
 		container			children;
 	};
 
-}//end namespace detail
-}//end namespace nana
+}//end namespace nana::detail
 #include <nana/pop_ignore_diagnostic>
 #endif
 

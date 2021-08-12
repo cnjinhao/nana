@@ -66,9 +66,7 @@ namespace nana
 			auto wd = wdg.handle();
 			widget_ = &wdg;
 
-			auto scheme = api::dev::get_scheme(wdg);
-
-			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
+			editor_ = api::dev::create_text_editor(wd);
 
 			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
 			editor_->textbase().set_event_agent(evt_agent_.get());
@@ -84,7 +82,7 @@ namespace nana
 
 		void drawer::detached()
 		{
-			delete editor_;
+			api::dev::destroy_text_editor(widget_->handle());
 			editor_ = nullptr;
 		}
 

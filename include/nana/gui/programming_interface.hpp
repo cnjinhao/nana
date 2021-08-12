@@ -26,6 +26,10 @@ namespace nana
 	class widget;
 	class coordinate_adjuster;
 
+	namespace widgets::skeletons {
+		class text_editor;
+	}
+
 	namespace dev
 	{
 		/// Traits for widget classes
@@ -69,8 +73,7 @@ namespace api
 	bground_mode effects_bground_mode(window);
 	void effects_bground_remove(window);
 
-	//namespace dev
-	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
+	//The namespace dev defines functions for internal use
 	namespace dev
 	{
 		void affinity_execute(window window_handle, const std::function<void()>&);
@@ -119,6 +122,13 @@ namespace api
 
 		void window_draggable(window, bool enabled);
 		bool window_draggable(window);
+
+		::nana::widgets::skeletons::text_editor* create_text_editor(window);
+		void destroy_text_editor(window);
+
+		std::optional<upoint> caret_position(window);
+
+		void im_input(window, const upoint& insert_pos, const upoint* move_to, const std::wstring&, bool candidate);
 	}//end namespace dev
 
 

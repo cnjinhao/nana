@@ -140,8 +140,8 @@ namespace nana
 				widget_ = static_cast< ::nana::combox*>(&wd);
 				scheme_ptr_ = scheme_ptr;
 
-				auto scheme = dynamic_cast< ::nana::widgets::skeletons::text_editor_scheme*>(api::dev::get_scheme(wd));
-				editor_ = new widgets::skeletons::text_editor(widget_->handle(), graph, scheme);
+				editor_ = api::dev::create_text_editor(wd);
+				
 				_m_text_area(graph.size());
 				editor_->multi_lines(false);
 				editable(false);
@@ -155,7 +155,8 @@ namespace nana
 
 			void detached()
 			{
-				delete editor_;
+				api::dev::destroy_text_editor(widget_->handle());
+
 				editor_ = nullptr;
 				graph_ = nullptr;
 			}
@@ -1093,6 +1094,22 @@ namespace nana
 			internal_scope_guard lock;
 			if (_m_impl().image_pixels(px))
 				api::refresh_window(*this);
+		}
+
+		void combox::put(wchar_t ch)
+		{
+			nana::arg_keyboard arg;
+			arg.evt_code = event_code::key_char;
+			arg.window_handle = *this;
+			arg.ignore = false;
+			arg.key = ch;
+			arg.ctrl = false;
+			arg.shift = false;
+			arg.alt = false;
+			
+			internal_scope_guard lock;
+			_m_impl().editor()->respond_char(arg);
+			api::refresh_window(*this);
 		}
 
 		auto combox::_m_caption() const noexcept -> native_string_type

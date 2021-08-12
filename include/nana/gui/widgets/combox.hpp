@@ -215,6 +215,8 @@ namespace nana
 		void image(std::size_t, const nana::paint::image&);
 		nana::paint::image image(std::size_t) const;
 		void image_pixels(unsigned);  ///<Sets the width of image area. Default is 16 pixels.
+
+		void put(wchar_t);
 	private:
 		item_proxy _m_at_key(std::shared_ptr<nana::detail::key_interface>&&);
 		void _m_erase(nana::detail::key_interface*);

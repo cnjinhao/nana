@@ -20,7 +20,7 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/detail/events_operation.hpp>
-
+#include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include "../../source/detail/platform_abstraction.hpp"
 #ifdef NANA_X11
 #	include "../../source/detail/posix/platform_spec.hpp"
@@ -401,6 +401,87 @@ namespace api
 				return wd->flags.draggable;
 
 			return false;
+		}
+
+		::nana::widgets::skeletons::text_editor* create_text_editor(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd))
+			{
+				delete wd->annex.text_editor;
+				wd->annex.text_editor = nullptr;
+
+				auto scheme = dynamic_cast<nana::widgets::skeletons::text_editor_scheme*>(wd->annex.scheme);
+				if (scheme)
+				{
+					wd->annex.text_editor = new widgets::skeletons::text_editor(wd, wd->drawer.graphics, scheme);
+					return wd->annex.text_editor;
+				}
+			}
+			return nullptr;
+		}
+
+		void destroy_text_editor(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd))
+			{
+				delete wd->annex.text_editor;
+				wd->annex.text_editor = nullptr;
+			}
+		}
+
+		std::optional<upoint> caret_position(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+				return wd->annex.text_editor->caret();
+			
+			return {};
+		}
+
+		void im_input(window wd, const upoint& insert_pos, const upoint* move_to, const std::wstring& str, bool candidate)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+			{
+				if (wd->annex.text_editor->selected())
+				{
+					wd->annex.text_editor->backspace(false, false);
+				}
+
+				wd->annex.text_editor->move_caret(insert_pos, true);
+
+				nana::arg_keyboard arg;
+				arg.evt_code = event_code::key_char;
+				arg.window_handle = wd;
+				arg.ignore = false;
+				arg.ctrl = false;
+				arg.shift = false;
+				arg.alt = false;
+
+				for (auto ch : str)
+				{
+					arg.key = ch;
+					wd->annex.text_editor->respond_char(arg);
+				}
+
+				auto endpos = wd->annex.text_editor->caret();
+				
+				if (move_to)
+					wd->annex.text_editor->move_caret(endpos, true);
+
+				if (candidate)
+				{
+					wd->annex.text_editor->select_points(insert_pos, endpos);
+
+					wd->annex.text_editor->im_candidate_mode(true);
+					api::refresh_window(wd);
+					wd->annex.text_editor->im_candidate_mode(false);
+				}
+				else
+					api::refresh_window(wd);
+			}
 		}
 
 

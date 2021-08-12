@@ -1846,6 +1846,11 @@ namespace nana::widgets::skeletons
 		return true;
 	}
 
+	void text_editor::im_candidate_mode(bool enable)
+	{
+		im_candidate_mode_ = enable;
+	}
+
 	void text_editor::set_end_caret(bool stay_in_view)
 	{
 		bool new_sel_end = (select_.b != points_.caret);
@@ -3493,6 +3498,14 @@ namespace nana::widgets::skeletons
 
 		color selection_color(bool fgcolor, bool focused) const
 		{
+			if (editor_.im_candidate_mode_)
+			{
+				if (fgcolor)
+					return editor_.scheme_->foreground.get_color();
+
+				return editor_.scheme_->selection_unfocused.get_color();
+			}
+
 			if (fgcolor)
 				return (focused ? editor_.scheme_->selection_text : editor_.scheme_->foreground).get_color();
 
