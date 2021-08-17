@@ -2,7 +2,6 @@
 #define NANA_DETAIL_PLATFORM_ABSTRACTION_TYPES_HEADER_INCLUDED
 #include <nana/config.hpp>
 #include <nana/paint/detail/ptdefs.hpp>
-#include <nana/paint/font_info.hpp>
 
 #include <string>
 
@@ -20,9 +19,6 @@ namespace nana
 
 		virtual ~font_interface() = default;
 
-		virtual const std::string& family() const = 0;
-		virtual double size() const = 0;
-		virtual font_style style() const = 0;
 		virtual native_font_type native_handle() const = 0;
 
 		virtual const paint::font_info& font_info() const = 0;

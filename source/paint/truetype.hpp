@@ -5,6 +5,7 @@
 #include <fstream>
 #include <nana/charset.hpp>
 #include <filesystem>
+#include <vector>
 
 namespace nana::paint::detail
 {

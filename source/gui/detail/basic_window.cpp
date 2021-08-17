@@ -11,6 +11,7 @@
 */
 
 #include "basic_window.hpp"
+#include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 
 namespace nana

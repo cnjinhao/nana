@@ -1,7 +1,7 @@
 #include "platform_abstraction.hpp"
 #include <set>
 #include <nana/deploy.hpp>
-#include <nana/paint/font_info.hpp>
+#include <nana/paint/detail/ptdefs.hpp>
 #include "../paint/truetype.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 
@@ -610,26 +610,6 @@ namespace nana
 			return height_;
 		}
 	public:
-		const std::string& family() const override
-		{
-			return font_info_.font_family;
-		}
-
-		double size() const override
-		{
-			return font_info_.size_pt;
-		}
-
-		font_style style() const override
-		{
-			font_style fs;
-			fs.italic = font_info_.italic;
-			fs.strike_out = font_info_.strike_out;
-			fs.underline = font_info_.underline;
-			fs.weight = font_info_.weight;
-			return fs;
-		}
-
 		native_font_type native_handle() const override
 		{
 			return native_handle_;
@@ -702,7 +682,7 @@ namespace nana
 
 				platform_abstraction::font_resource(true, ttf);
 
-				fi.font_family = truetype.font_family();
+				fi.family = truetype.font_family();
 			}
 
 			auto const font_height = _m_set_default_values(fi, dpi);
@@ -781,11 +761,11 @@ namespace nana
 		static bool _m_compare_font_info(const font_info& a, const font_info& b)
 		{
 			return (
-				a.font_family == b.font_family &&
-				a.weight == b.weight &&
-				a.italic == b.italic &&
-				a.strike_out == b.strike_out &&
-				a.underline == b.underline &&
+				a.family == b.family &&
+				a.style.weight == b.style.weight &&
+				a.style.italic == b.style.italic &&
+				a.style.strike_out == b.style.strike_out &&
+				a.style.underline == b.style.underline &&
 				a.size_pt == b.size_pt
 				);
 		}
@@ -794,7 +774,7 @@ namespace nana
 		static font_height_type _m_set_default_values(font_info& fi, std::size_t dpi)
 		{
 #ifdef NANA_WINDOWS
-			std::wstring wfont_family = nana::detail::to_nstring(fi.font_family);
+			std::wstring wfont_family = nana::detail::to_nstring(fi.family);
 			//Make sure the length of font family less than LF_FACESIZE which is defined by Windows
 			if (wfont_family.length() + 1 > LF_FACESIZE)
 				wfont_family.clear();
@@ -825,7 +805,7 @@ namespace nana
 				if (wfont_family.empty())
 				{
 					wfont_family = metrics.lfMessageFont.lfFaceName;
-					fi.font_family = to_utf8(wfont_family);
+					fi.family = to_utf8(wfont_family);
 				}
 
 				if (0 == font_height)
@@ -852,7 +832,7 @@ namespace nana
 
 #ifdef NANA_WINDOWS
 			// The font_family and size_pt are reliable, they have been checked by _m_set_default_values
-			std::wstring wfont_family = nana::detail::to_nstring(fi.font_family);
+			std::wstring wfont_family = nana::detail::to_nstring(fi.family);
 
 			//Translate pt to px
 			auto hDC = ::GetDC(nullptr);
@@ -864,18 +844,18 @@ namespace nana
 			std::wcscpy(lf.lfFaceName, wfont_family.c_str());
 			lf.lfHeight = font_height;
 			lf.lfCharSet = DEFAULT_CHARSET;
-			lf.lfWeight = fi.weight;
-			lf.lfQuality = PROOF_QUALITY;
+			lf.lfWeight = fi.style.weight;
+			lf.lfQuality = fi.style.antialiasing ? PROOF_QUALITY : NONANTIALIASED_QUALITY;
 			lf.lfPitchAndFamily = FIXED_PITCH;
-			lf.lfItalic = fi.italic;
-			lf.lfUnderline = fi.underline;
-			lf.lfStrikeOut = fi.strike_out;
+			lf.lfItalic = fi.style.italic;
+			lf.lfUnderline = fi.style.underline;
+			lf.lfStrikeOut = fi.style.strike_out;
 
 			auto fd = ::CreateFontIndirect(&lf);
 #elif defined(NANA_X11)
 			auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
-			std::string font_family = fi.font_family;
+			std::string font_family = fi.family;
 			if (font_family.empty())
 				font_family = "*";
 
@@ -884,17 +864,20 @@ namespace nana
 			auto font_height = dpi_size_pt / 72;
 			
 			std::string pat_str = '-' + std::to_string(dpi_size_pt);
-			if (fi.weight < 400)
+			if (fi.style.weight < 400)
 				pat_str += ":light";
-			else if (400 == fi.weight)
+			else if (400 == fi.style.weight)
 				pat_str += ":medium";
-			else if (fi.weight < 700)
+			else if (fi.style.weight < 700)
 				pat_str += ":demibold";
 			else
-				pat_str += (700 == fi.weight ? ":bold" : ":black");
+				pat_str += (700 == fi.style.weight ? ":bold" : ":black");
 
-			if (fi.italic)
+			if (fi.style.italic)
 				pat_str += ":slant=italic";
+
+			if (!fi.style.antialiasing)
+				pat_str += ":antialias=false";
 
 			auto pat = ::XftNameParse((font_family + pat_str).c_str());
 			XftResult res;
