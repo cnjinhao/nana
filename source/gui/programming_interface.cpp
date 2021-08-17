@@ -22,6 +22,7 @@
 #include <nana/gui/detail/events_operation.hpp>
 #include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include "../../source/detail/platform_abstraction.hpp"
+#include "../paint/truetype.hpp"
 #ifdef NANA_X11
 #	include "../../source/detail/posix/platform_spec.hpp"
 #endif
@@ -507,6 +508,47 @@ namespace api
 		::nana::platform_abstraction::font_languages(to_string(sv));
 	}
 #endif
+
+	std::vector<std::string> font_names(std::filesystem::path p)
+	{
+		nana::paint::detail::truetype_collection ttc{ p };
+
+		std::vector<std::string> names;
+		if (!ttc.empty())
+		{
+			for (std::size_t i = 0; i < ttc.size(); ++i)
+			{
+				auto ttc_opt = ttc.read(i);
+				if (ttc_opt)
+				{
+					auto name = ttc_opt.value().font_family();
+					if (!name.empty())
+						names.push_back(name);
+				}
+			}
+		}
+		
+		if (names.empty())
+		{
+			nana::paint::detail::truetype tt{ p };
+
+			auto name = tt.font_family();
+			if (!name.empty())
+				names.push_back(name);
+		}
+		
+		return names;
+	}
+
+	void load_font(std::filesystem::path p)
+	{
+		platform_abstraction::font_resource(true, p);
+	}
+
+	void unload_font(std::filesystem::path p)
+	{
+		platform_abstraction::font_resource(false, p);
+	}
 
 	//close all windows in current thread
 	void exit()

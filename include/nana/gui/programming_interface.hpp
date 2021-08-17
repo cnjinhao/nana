@@ -204,6 +204,11 @@ namespace api
 	void font_languages(std::u8string_view langs);
 #endif
 
+	/// Returns the font family names for the specified font file.
+	std::vector<std::string> font_names(std::filesystem::path);
+	void load_font(std::filesystem::path);
+	void unload_font(std::filesystem::path);
+
 	void exit();	    ///< close all windows in current thread
 	void exit_all();	///< close all windows
 

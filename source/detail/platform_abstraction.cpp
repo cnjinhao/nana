@@ -696,7 +696,7 @@ namespace nana
 
 			if (!ttf.empty())
 			{
-				::nana::spec::truetype truetype{ ttf };
+				::nana::paint::detail::truetype truetype{ ttf };
 				if (truetype.font_family().empty())
 					return nullptr;
 
@@ -1107,7 +1107,7 @@ namespace nana
 		else
 			::RemoveFontResourceEx(ttf.wstring().c_str(), FR_PRIVATE, nullptr);
 #else
-		auto p = ttf.string();
+		auto p = absolute(ttf).string();
 		if(platform_storage().font_svc.fc_count(try_add, p))
 		{
 			if(try_add)
