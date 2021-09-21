@@ -548,9 +548,6 @@ namespace nana
 				facade<element::arrow> arrow;// ("solid_triangle");
 				arrow.direction(::nana::direction::south);
 
-				//r.x += 4;
-				//r.y += (r.height / 2) - 7;
-
 				r.x += static_cast<int>(r.width - 8) / 2;
 				r.y += static_cast<int>(r.height - 16) / 2;
 

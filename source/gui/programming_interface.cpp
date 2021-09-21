@@ -980,6 +980,15 @@ namespace api
 		}
 	}
 
+	std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd) && wd->annex.text_editor)
+			return wd->annex.text_editor->text_area(including_scrollbars);
+
+		return {};
+	}
+
 	std::optional<rectangle> window_rectangle(window wd)
 	{
 		internal_scope_guard lock;
