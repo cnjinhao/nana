@@ -1667,10 +1667,5 @@ namespace api
 
 		return dragdrop_status::not_ready;
 	}
-
-	void screen_coordinate_adjuster(std::shared_ptr<coordinate_adjuster> p)
-	{
-		restrict::wd_manager().screen_coordinate_adjuster(p);
-	}
 }//end namespace api
 }//end namespace nana

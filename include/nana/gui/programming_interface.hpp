@@ -24,7 +24,6 @@ namespace nana
 {
 	class drawer_trigger;
 	class widget;
-	class coordinate_adjuster;
 
 	namespace widgets::skeletons {
 		class text_editor;
@@ -495,10 +494,6 @@ namespace api
 
 	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
-
-
-	/// Sets a screen coordinate adjuster for adjusting the coordinate of input device. E.g mouse, touchscreen.
-	void screen_coordinate_adjuster(std::shared_ptr<coordinate_adjuster>);
 }//end namespace api
 
 namespace API = api;
