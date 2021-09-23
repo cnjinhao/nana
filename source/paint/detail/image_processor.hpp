@@ -70,15 +70,14 @@ namespace detail
 
 								if (s->element.alpha_channel != 255)
 								{
+									i->element.alpha_channel = unsigned(i->element.alpha_channel * (255 - s->element.alpha_channel) + unsigned{ s->element.alpha_channel } *s->element.alpha_channel) / 255;
 									i->element.red = unsigned(i->element.red * (255 - s->element.alpha_channel) + s->element.red * s->element.alpha_channel) / 255;
 									i->element.green = unsigned(i->element.green * (255 - s->element.alpha_channel) + s->element.green * s->element.alpha_channel) / 255;
 									i->element.blue = unsigned(i->element.blue * (255 - s->element.alpha_channel) + s->element.blue * s->element.alpha_channel) / 255;
 								}
 								else
 								{
-									unsigned alpha_chn = i->element.alpha_channel;
 									*i = *s;
-									i->element.alpha_channel = alpha_chn;
 								}
 							}
 						}
@@ -105,9 +104,7 @@ namespace detail
 								}
 								else
 								{
-									unsigned alpha_chn = i->element.alpha_channel;
 									*i = *s;
-									i->element.alpha_channel = alpha_chn;
 								}
 							}
 						}
@@ -248,6 +245,55 @@ namespace detail
 										i->element.green = unsigned(i->element.green * (255 - alpha_chn) + s_green * alpha_chn) / 255;
 										i->element.blue = unsigned(i->element.blue * (255 - alpha_chn) + s_blue * alpha_chn) / 255;
 										i->element.alpha_channel = unsigned(i->element.alpha_channel * (255 - alpha_chn) + alpha_chn * alpha_chn) / 255;
+									}
+									else
+									{
+										i->element.red = s_red;
+										i->element.green = s_green;
+										i->element.blue = s_blue;
+										i->element.alpha_channel = alpha_chn;
+									}
+								}
+							}
+						}
+						else if (alpha_methods::premultiplied_alpha == alpha_mthd)
+						{
+							for (std::size_t x = 0; x < r_dst.width; ++x, ++i)
+							{
+								x_u_table_tag el = x_u_table[x];
+
+								col0 = s_line[el.x];
+								col1 = next_s_line[el.x];
+
+								if (el.x < right_bound)
+								{
+									col2 = s_line[el.x + 1];
+									col3 = next_s_line[el.x + 1];
+								}
+								else
+								{
+									col2 = col0;
+									col3 = col1;
+								}
+
+								std::size_t coef0 = el.iu_minus_coef * iv_minus_coef;
+								std::size_t coef1 = el.iu_minus_coef * iv;
+								std::size_t coef2 = el.iu * iv_minus_coef;
+								std::size_t coef3 = el.iu * iv;
+
+								unsigned alpha_chn = static_cast<unsigned>((coef0 * col0.element.alpha_channel + coef1 * col1.element.alpha_channel + (coef2 * col2.element.alpha_channel + coef3 * col3.element.alpha_channel)) >> double_shift_size);
+								unsigned s_red = static_cast<unsigned>((coef0 * col0.element.red + coef1 * col1.element.red + (coef2 * col2.element.red + coef3 * col3.element.red)) >> double_shift_size);
+								unsigned s_green = static_cast<unsigned>((coef0 * col0.element.green + coef1 * col1.element.green + (coef2 * col2.element.green + coef3 * col3.element.green)) >> double_shift_size);
+								unsigned s_blue = static_cast<unsigned>((coef0 * col0.element.blue + coef1 * col1.element.blue + (coef2 * col2.element.blue + coef3 * col3.element.blue)) >> double_shift_size);
+
+								if (alpha_chn)
+								{
+									if (alpha_chn != 255)
+									{
+										i->element.red = unsigned(i->element.red * (255 - alpha_chn)) / 255 + s_red;
+										i->element.green = unsigned(i->element.green * (255 - alpha_chn)) / 255 + s_green;
+										i->element.blue = unsigned(i->element.blue * (255 - alpha_chn)) / 255 + s_blue;
+										i->element.alpha_channel = unsigned(i->element.alpha_channel * (255 - alpha_chn)) / 255 + alpha_chn;
 									}
 									else
 									{

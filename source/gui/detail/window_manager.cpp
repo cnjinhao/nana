@@ -696,9 +696,10 @@ namespace detail
 			//Thread-Safe Required!
 			std::lock_guard<mutex_type> lock(mutex_);
 
+			auto rrt = root_runtime(root);
+
 			if (ignore_captured || (nullptr == attr_.capture.window))
 			{
-				auto rrt = root_runtime(root);
 				if (rrt && _m_effective(rrt->window, pos))
 					return _m_find(rrt->window, pos);
 
@@ -708,7 +709,6 @@ namespace detail
 			if (attr_.capture.ignore_children)
 				return attr_.capture.window;
 
-			auto rrt = root_runtime(root);
 			if (rrt && _m_effective(rrt->window, pos))
 			{
 				auto target = _m_find(rrt->window, pos);
