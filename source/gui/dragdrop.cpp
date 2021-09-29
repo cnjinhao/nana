@@ -1,7 +1,7 @@
 /**
 *	Drag and Drop Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2019-2020 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2019-2021 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -272,12 +272,43 @@ namespace nana
 
 		STDMETHODIMP Drop(IDataObject* pDataObj, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect)
 		{
-			return E_NOTIMPL;
+			FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+			STGMEDIUM medium;
+			auto res = pDataObj->GetData(&fmt, &medium);
+
+			HDROP hDrop = (HDROP)medium.hGlobal;
+
+			UINT count = ::DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0);
+
+			if (count < 1) return E_UNEXPECTED;
+
+			if (receive_fn)
+			{
+				dragdrop::data data{ dnd_action::copy };
+
+				wchar_t buff[MAX_PATH];
+
+				for (int i = 0; i < count; i++)
+				{
+					int length = ::DragQueryFileW(hDrop, i, buff, MAX_PATH);
+
+					data.insert(std::filesystem::path{ buff, buff + length });
+				}
+
+				receive_fn(dnd_action::copy, data);
+			}
+
+			::ReleaseStgMedium(&medium);
+
+			return S_OK;
 		}
 	private:
 		LONG ref_count_{ 1 };
 		bool const simple_mode_;		//Simple mode behaves the simple_dragdrop.
 		DWORD effect_{ DROPEFFECT_NONE };
+
+	public:
+		std::function<void(dnd_action, dragdrop::data&)> receive_fn{ nullptr };
 	};
 
 class drop_source_impl : public IDropSource
@@ -1078,6 +1109,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		std::function<bool()> predicate;
 		std::function<data()> generator;
 		std::function<void(bool, dnd_action, data&)> drop_finished;
+		std::function<void(dnd_action, data&)> receive_drop;
 
 		struct event_handlers
 		{
@@ -1157,7 +1189,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		impl_->predicate = predicate_fn;
 	}
 
-	void dragdrop::prepare_data(std::function<data()> generator)
+	void dragdrop::prepare_drop_data(std::function<data()> generator)
 	{
 		impl_->generator = generator;
 	}
@@ -1167,6 +1199,13 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		impl_->drop_finished = finish_fn;
 	}
 
+	void dragdrop::receive_drop(std::function<void(dnd_action, data&)> receive_fn)
+	{
+		impl_->receive_drop = receive_fn;
+#ifdef NANA_WINDOWS
+		dynamic_cast<win32com_drop_target*>(impl_->ddrop)->receive_fn = receive_fn;
+#endif
+	}
 
 	dragdrop::data::data(dnd_action requested_action):
 		real_data_(new detail::dragdrop_data)
@@ -1200,5 +1239,10 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 	void dragdrop::data::insert(std::filesystem::path path)
 	{
 		real_data_->files.emplace_back(std::move(path));
+	}
+
+	const std::vector<std::filesystem::path> dragdrop::data::get()
+	{
+		return real_data_->files;
 	}
 }//end namespace nana

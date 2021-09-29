@@ -1,7 +1,7 @@
 /**
 *	Drag and Drop Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2018-2019 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2018-2021 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -100,6 +100,7 @@ namespace nana
 			data& operator=(data&& rhs);
 
 			void insert(std::filesystem::path);
+			const std::vector<std::filesystem::path> get();
 		private:
 			detail::dragdrop_data* real_data_;
 		};
@@ -119,7 +120,7 @@ namespace nana
 		 * Set a data generator. When drag begins, it is called to generate a data object for transferring.
 		 * @param generator It returns the data for transferring.
 		 */
-		void prepare_data(std::function<data()> generator);
+		void prepare_drop_data(std::function<data()> generator);
 
 		/// Drop handler
 		/**
@@ -130,6 +131,13 @@ namespace nana
 		 * @param finish_fn The drop handling function.
 		 */
 		void drop_finished(std::function<void(bool dropped, dnd_action executed_action, data& data_transferred)> finish_fn);
+
+		/// Recieve Drop Handler
+		/**
+		*  The recieve drop handler is called when another application drops data into the current window.
+		*  @param recieve_fn The recieve drop handling function.
+		*/
+		void receive_drop(std::function<void(dnd_action executed_action, data& data_recieved)> receive_fn);
 	private:
 		implementation* const impl_;
 	};
