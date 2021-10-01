@@ -259,7 +259,16 @@ namespace nana
 			}
 			else
 			{
-				*req_effect = effect_;
+				auto hovered_wd = api::find_window(point(pt.x, pt.y));
+
+				if (hovered_wd && this->current_source()) // stops the dragdrop dropping onto itself
+				{
+					*req_effect = DROPEFFECT_NONE;
+				}
+				else
+				{
+					*req_effect = effect_;
+				}
 			}
 			return S_OK;
 		}
@@ -272,6 +281,20 @@ namespace nana
 
 		STDMETHODIMP Drop(IDataObject* pDataObj, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect)
 		{
+			if (simple_mode_)
+			{
+				*pdwEffect = DROPEFFECT_COPY;
+				return S_OK;
+			}
+
+			auto hovered_wd = api::find_window(point(pt.x, pt.y));
+
+			if (hovered_wd && this->current_source()) // stops the dragdrop dropping onto itself
+			{
+				*pdwEffect = DROPEFFECT_NONE;
+				return S_OK;
+			}
+
 			FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 			STGMEDIUM medium;
 			auto res = pDataObj->GetData(&fmt, &medium);
@@ -1072,7 +1095,11 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 	{
 		if (impl_->window_handle)
 		{
-			dragdrop_service::instance().remove(impl_->window_handle);
+			for (auto& p : impl_->targets)
+			{
+				dragdrop_service::instance().remove(p.first);
+			}
+
 			api::dev::window_draggable(impl_->window_handle, false);
 
 			api::umake_event(impl_->events.destroy);
@@ -1096,7 +1123,20 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 		if (nullptr == impl_)
 			throw std::logic_error("simple_dragdrop is empty");
 
-		impl_->ddrop->insert(impl_->window_handle, target);
+		auto source_root = api::root(impl_->window_handle);
+		auto target_root = api::root(target);
+		
+		if (source_root != target_root) // are source and target on different forms
+		{
+			auto target_ddrop = dragdrop_service::instance().create_dragdrop(target, true);
+			target_ddrop->insert(impl_->window_handle, target);
+			target_ddrop->set_current_source(impl_->window_handle);
+		}
+		else
+		{
+			impl_->ddrop->insert(impl_->window_handle, target);
+		}
+
 		impl_->targets[target].swap(drop_fn);
 	}
 
@@ -1145,6 +1185,8 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 	dragdrop::dragdrop(window source) :
 		impl_(new implementation(source))
 	{
+		impl_->ddrop->insert(source, nullptr);
+
 		auto & events = api::events(source);
 		impl_->events.destroy = events.destroy.connect_unignorable([this](const arg_destroy&) {
 			dragdrop_service::instance().remove(impl_->source_handle);
