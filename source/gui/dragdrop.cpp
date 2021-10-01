@@ -26,6 +26,7 @@
 #	include <oleidl.h>
 #	include <comdef.h>
 #	include <Shlobj.h>
+# include "../detail/mswin/platform_spec.hpp"
 #elif defined(NANA_X11)
 #	include "../detail/posix/xdnd_protocol.hpp"
 #	include <nana/gui/detail/native_window_interface.hpp>
@@ -204,6 +205,17 @@ namespace nana
 
 		}
 
+		void show_icons()
+		{
+			if (!simple_mode_)
+			{
+				detail::platform_spec::co_initializer co_init;
+
+				::CoCreateInstance(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER,
+					IID_IDropTargetHelper, (LPVOID*) &drop_target_helper);
+			}
+		}
+
 		//Implements IUnknown
 		STDMETHODIMP QueryInterface(REFIID riid, void **ppv)
 		{
@@ -242,6 +254,12 @@ namespace nana
 				effect_ = DROPEFFECT_COPY;
 			}
 
+			if (!simple_mode_&& drop_target_helper)
+			{
+				POINT p = { pt.x, pt.y };
+				drop_target_helper->DragEnter(NULL, data, &p, *req_effect);
+			}
+
 			return S_OK;
 		}
 
@@ -270,12 +288,25 @@ namespace nana
 					*req_effect = effect_;
 				}
 			}
+
+			if (!simple_mode_ && drop_target_helper)
+			{
+				POINT p = { pt.x, pt.y };
+				drop_target_helper->DragOver(&p, *req_effect);
+			}
+
 			return S_OK;
 		}
 
 		STDMETHODIMP DragLeave()
 		{
 			effect_ = DROPEFFECT_NONE;
+
+			if (!simple_mode_ && drop_target_helper)
+			{
+				drop_target_helper->DragLeave();
+			}
+
 			return S_OK;
 		}
 
@@ -323,12 +354,20 @@ namespace nana
 
 			::ReleaseStgMedium(&medium);
 
+			if (!simple_mode_ && drop_target_helper)
+			{
+				POINT p = { pt.x, pt.y };
+				drop_target_helper->Drop(pDataObj, &p, *pdwEffect);
+			}
+
 			return S_OK;
 		}
 	private:
 		LONG ref_count_{ 1 };
 		bool const simple_mode_;		//Simple mode behaves the simple_dragdrop.
 		DWORD effect_{ DROPEFFECT_NONE };
+		IDropTargetHelper* drop_target_helper{ nullptr };
+		
 
 	public:
 		std::function<void(dnd_action, dragdrop::data&)> receive_fn{ nullptr };
@@ -697,7 +736,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			return serv;
 		}
 
-		dragdrop_session* create_dragdrop(window wd, bool simple_mode)
+		dragdrop_session* create_dragdrop(window wd, bool simple_mode, bool show_icons = false)
 		{
 			auto native_wd = api::root(wd);
 			if (nullptr == native_wd)
@@ -710,6 +749,9 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			{
 				ddrop = new dragdrop_target{simple_mode};
 #ifdef NANA_WINDOWS
+				if (show_icons)
+					ddrop->show_icons();
+
 				if (table_.empty())
 					::OleInitialize(nullptr);
 
@@ -1158,10 +1200,10 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			nana::event_handle mouse_down;
 		}events;
 
-		implementation(window source):
+		implementation(window source, bool show_icons):
 			source_handle(source)
 		{
-			ddrop = dragdrop_service::instance().create_dragdrop(source, false);
+			ddrop = dragdrop_service::instance().create_dragdrop(source, false, show_icons);
 			api::dev::window_draggable(source, true);
 		}
 
@@ -1183,7 +1225,11 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 	};
 
 	dragdrop::dragdrop(window source) :
-		impl_(new implementation(source))
+		dragdrop(source, false)
+	{}
+
+	dragdrop::dragdrop(window source, bool show_icons) :
+		impl_(new implementation(source, show_icons))
 	{
 		impl_->ddrop->insert(source, nullptr);
 

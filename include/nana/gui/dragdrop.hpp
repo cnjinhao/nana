@@ -106,6 +106,7 @@ namespace nana
 		};
 
 		dragdrop(window source);
+		dragdrop(window source, bool show_icons);
 		~dragdrop();
 
 		/// Condition checker
