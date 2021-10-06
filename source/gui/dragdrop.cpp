@@ -240,6 +240,11 @@ namespace nana
 			return cRef;
 		}
 
+		bool simple_mode()
+		{
+			return simple_mode_;
+		}
+
 	private:
 		// IDropTarget
 		STDMETHODIMP DragEnter(IDataObject* data, DWORD grfKeyState, POINTL pt, DWORD* req_effect)
@@ -362,6 +367,7 @@ namespace nana
 
 			return S_OK;
 		}
+
 	private:
 		LONG ref_count_{ 1 };
 		bool const simple_mode_;		//Simple mode behaves the simple_dragdrop.
@@ -768,6 +774,11 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			else
 			{
 				ddrop = dynamic_cast<dragdrop_target*>(i->second);
+				
+				if (simple_mode != ddrop->simple_mode())
+				{
+					throw std::runtime_error("Cannot mix dragdrop adn simple_dragdrop targets.");
+				}
 
 #ifdef NANA_WINDOWS
 				ddrop->AddRef();
