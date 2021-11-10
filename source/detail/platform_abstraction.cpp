@@ -159,10 +159,98 @@ IsWindows8OrGreater()
 namespace nana
 {
 #ifdef NANA_USE_XFT
+
+	// Manages fallback font
+	class fallback_font_store
+	{
+	public:
+		struct font_element
+		{
+			::XftFont * handle;
+			std::string family;
+			std::vector<std::string> patterns;
+
+			~font_element()
+			{
+				auto disp = ::nana::detail::platform_spec::instance().open_display();
+				::XftFontClose(disp, handle);
+			}
+		};
+	
+		std::shared_ptr<font_element> open(Display* disp, const std::string& patstr, const std::map<std::string, std::string>& exclude)
+		{
+			{
+				auto i = store_.find(patstr);
+				if(i != store_.end())
+					return i->second;
+			}
+			
+			auto pat = ::XftNameParse(patstr.c_str());
+			XftResult res;
+			auto match_pat = ::XftFontMatch(disp, ::XDefaultScreen(disp), pat, &res);
+
+			if (match_pat)
+			{
+				std::string family_name;
+				char * sf;
+				if(XftResultTypeMismatch != ::XftPatternGetString(match_pat, "family", 0, &sf))
+				{
+					family_name = sf;
+
+					//Avoid loading the same font again
+					auto i = exclude.find(family_name);
+					if(i != exclude.cend())
+					{
+						auto & fe = store_[i->second];
+						fe->patterns.push_back(patstr);
+						store_[patstr] = fe;
+						return {};
+					}
+				}
+
+				auto xft = ::XftFontOpenPattern(disp, match_pat);
+				if(xft)
+				{
+					auto fe = std::make_shared<font_element>();
+					fe->handle = xft;
+					fe->family = family_name;
+					fe->patterns.push_back(patstr);
+					
+					store_[patstr] = fe;
+					return fe;
+				}
+			}
+			return {};
+		}
+
+		void free()
+		{
+			for(auto i = store_.cbegin(); i != store_.cend(); )
+			{
+				if(static_cast<std::size_t>(i->second.use_count()) == i->second->patterns.size())
+				{
+					i = store_.erase(i);
+				}
+				else
+					++i;
+			}
+		}
+
+		std::size_t size() const
+		{
+			return store_.size();
+		}
+	private:
+		std::map<std::string, std::shared_ptr<font_element>> store_;
+	};
+
+
 	//A fallback fontset provides the multiple languages support.
 	class fallback_fontset
 	{
 	public:
+		using font_element = fallback_font_store::font_element;
+
 		fallback_fontset():
 			disp_(::nana::detail::platform_spec::instance().open_display())
 		{
@@ -170,40 +258,26 @@ namespace nana
 
 		~fallback_fontset()
 		{
-			for(auto xft: xftset_)
-				::XftFontClose(disp_, xft);
+			_m_clear();
 		}
 
 		void open(const std::string& font_desc, const std::set<std::string>& langs)
 		{
-			for(auto xft: xftset_)
-				::XftFontClose(disp_, xft);
+			_m_clear();
 
-			xftset_.clear();
-
-			std::set<std::string> loaded;
+			std::map<std::string, std::string> exclude; //family -> pattern
 			for(auto & lang : langs)
 			{
 				std::string patstr = "*" + font_desc + ":lang=" + lang;
 
-				auto pat = ::XftNameParse(patstr.c_str());
-				XftResult res;
-				auto match_pat = ::XftFontMatch(disp_, ::XDefaultScreen(disp_), pat, &res);
-
-				if (match_pat)
+				auto fe = _m_store().open(disp_, patstr, exclude);
+				if(fe)
 				{
-					char * sf;
-					if(XftResultTypeMismatch != ::XftPatternGetString(match_pat, "family", 0, &sf))
-					{
-						//Avoid loading a some font repeatedly
-						if(loaded.count(sf))
-							continue;
-					}
+					if(!fe->family.empty())
+						exclude[fe->family] = patstr;
 
-					auto xft = ::XftFontOpenPattern(disp_, match_pat);
-					if(xft)
-						xftset_.push_back(xft);
-				}				
+					xftset_.push_back(fe);
+				}	
 			}
 		}
 
@@ -313,6 +387,18 @@ namespace nana
 			return extent;
 		}
 	private:
+		static fallback_font_store& _m_store() noexcept
+		{
+			static fallback_font_store store;
+			return store;
+		}
+
+		void _m_clear()
+		{
+			xftset_.clear();
+			_m_store().free();
+		}
+
 		/// @param reverse Indicates whether to reverse the string, it only reverse the RTL language string.
 		template<typename Function>
 		void _m_reorder_reshaping(std::wstring_view str, bool reverse, Function fn)
@@ -453,10 +539,10 @@ namespace nana
 			{
 				for(auto ft : xftset_)
 				{
-					idx = ::XftCharIndex(disp_, ft, *str);
+					idx = ::XftCharIndex(disp_, ft->handle, *str);
 					if(idx)
 					{
-						preferred = ft;
+						preferred = ft->handle;
 						break;
 					}
 				}				
@@ -474,7 +560,7 @@ namespace nana
 
 					for(auto ft : xftset_)
 					{
-						if(::XftCharIndex(disp_, ft, str[i]))
+						if(::XftCharIndex(disp_, ft->handle, str[i]))
 							return {preferred, i};
 					}
 					glyphs[i] = 0;
@@ -496,8 +582,9 @@ namespace nana
 			return {preferred, len};
 		}
 	private:
+
 		Display* const disp_;
-		std::vector<::XftFont*> xftset_;
+		std::vector<std::shared_ptr<font_element>> xftset_;
 	};
 
 	/// Fallback fontset manager
@@ -524,11 +611,9 @@ namespace nana
 			auto i = xft_table_.find(font_desc);
 			if(i != xft_table_.end())
 				return i->second;
-			
+
 			auto fb = std::make_shared<fallback_fontset>();
-
 			fb->open(font_desc, langs_);
-
 			xft_table_[font_desc] = fb;
 
 			return fb;
