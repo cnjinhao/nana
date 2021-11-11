@@ -27,7 +27,7 @@ namespace nana
 
 			struct border
 			{
-				enum flags : unsigned int /// Defines the types of borders the label can have
+				enum flag : unsigned int /// Defines the types of borders the label can have
 				{
 					left = 0x1,
 					top = 0x2,
@@ -87,9 +87,9 @@ namespace nana
 		label& click_for(window associated_window) noexcept;
 
 		label& set_border(border); // Sets the border object for the widget
-		label& add_border(border::flags); // Adds a border to the widget
-		label& remove_border(border::flags); // Removes a border from the widget
-		bool has_border(border::flags) const noexcept; // Checks wether the widget has the current border set
+		label& add_border(border::flag); // Adds a border to the widget
+		label& remove_border(border::flag); // Removes a border from the widget
+		bool has_border(border::flag) const noexcept; // Checks wether the widget has the current border set
 
 		label& border_width(unsigned int);
 		unsigned int border_width() const noexcept;

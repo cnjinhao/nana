@@ -905,21 +905,21 @@ namespace nana
 			return *this;
 		}
 
-		label& label::add_border(border::flags b)
+		label& label::add_border(border::flag b)
 		{
 			get_drawer_trigger().impl()->border_.borders |= b;
 			_m_update_place();
 			return *this;
 		}
 
-		label& label::remove_border(border::flags b)
+		label& label::remove_border(border::flag b)
 		{
 			get_drawer_trigger().impl()->border_.borders &= ~b;
 			_m_update_place();
 			return *this;
 		}
 
-		bool label::has_border(border::flags b) const noexcept
+		bool label::has_border(border::flag b) const noexcept
 		{
 			return get_drawer_trigger().impl()->border_.borders & b;
 		}
