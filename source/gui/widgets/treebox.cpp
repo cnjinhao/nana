@@ -431,6 +431,14 @@ namespace nana
 				}
 			}
 
+			void clear()
+			{
+				attr.tree_cont.clear(attr.tree_cont.get_root());
+				shape.first = nullptr;
+				node_state.pointed = nullptr;
+				node_state.selected = nullptr;
+			}
+
 			bool unlink(node_type* node, bool perf_clear)
 			{
 				if (!attr.tree_cont.verify(node))
@@ -2366,9 +2374,10 @@ namespace nana
 
 	void treebox::clear()
 	{
+		internal_scope_guard lock;
 		auto impl = get_drawer_trigger().impl();
-		if (impl->unlink(impl->attr.tree_cont.get_root(), true))
-			impl->draw(true);
+		impl->clear();
+		impl->draw(true);
 	}
 
 	treebox::node_image_type& treebox::icon(const std::string& id)
@@ -2408,27 +2417,32 @@ namespace nana
 
 	treebox::item_proxy treebox::insert(const std::string& path_key, std::string title)
 	{
+		internal_scope_guard lock;
 		return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(path_key, std::move(title)));
 	}
 
 	treebox::item_proxy treebox::insert(item_proxy i, const std::string& key, std::string title)
 	{
+		internal_scope_guard lock;
 		return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(i._m_node(), key, std::move(title)));
 	}
 #ifdef __cpp_char8_t
 	treebox::item_proxy treebox::insert(std::u8string_view path_key, std::u8string_view title)
 	{
+		internal_scope_guard lock;
 		return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(to_string(path_key), to_string(title)));
 	}
 
 	treebox::item_proxy treebox::insert(item_proxy i, std::u8string_view key, std::u8string_view title)
 	{
+		internal_scope_guard lock;
 		return item_proxy(&get_drawer_trigger(), get_drawer_trigger().insert(i._m_node(), to_string(key), to_string(title)));
 	}
 #endif
 
 	treebox::item_proxy treebox::erase(item_proxy i)
 	{
+		internal_scope_guard lock;
 		auto next = i.sibling();
 		if (get_drawer_trigger().impl()->unlink(i._m_node(), false))
 			get_drawer_trigger().impl()->draw(true);
@@ -2437,6 +2451,7 @@ namespace nana
 
 	void treebox::erase(const std::string& keypath)
 	{
+		internal_scope_guard lock;
 		auto i = find(keypath);
 		if (!i.empty())
 			this->erase(i);
@@ -2445,6 +2460,7 @@ namespace nana
 #ifdef __cpp_char8_t
 	void treebox::erase(std::u8string_view keypath)
 	{
+		internal_scope_guard lock;
 		auto i = find(keypath);
 		if (!i.empty())
 			this->erase(i);
