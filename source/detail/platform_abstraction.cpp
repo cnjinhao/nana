@@ -4,6 +4,8 @@
 #include <nana/paint/detail/ptdefs.hpp>
 #include "../paint/truetype.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
+#include <nana/gui/detail/internal_scope_guard.hpp>
+
 
 #ifdef NANA_WINDOWS
 
@@ -292,6 +294,8 @@ namespace nana
 			//The RTL and shaping should be handled manually, because the libXft and X doesn't support these language features.
 			std::wstring rtl;
 			auto ents = unicode_reorder(str, len);
+
+			nana::internal_scope_guard lock;
 			for(auto & e : ents)
 			{
 				auto size = static_cast<std::size_t>(e.end - e.begin);
@@ -1037,6 +1041,7 @@ namespace nana
 #elif defined(NANA_X11)
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
+		nana::internal_scope_guard lock;
 		platform_storage().font_svc.fb_manager().release_fallback(fallback_);
 		::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
 #	else
@@ -1130,12 +1135,14 @@ namespace nana
 	void platform_abstraction::font_languages(const std::string& langs)
 	{
 #ifdef NANA_USE_XFT
+		nana::internal_scope_guard lock;
 		platform_storage().font_svc.fb_manager().languages(langs);
 #endif
 	}
 
 	::std::shared_ptr<platform_abstraction::font> platform_abstraction::default_font(const ::std::shared_ptr<font>& new_font)
 	{
+		nana::internal_scope_guard lock;
 		auto & r = platform_storage();
 		if (new_font)
 		{
@@ -1164,6 +1171,7 @@ namespace nana
 
 	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, std::size_t dpi, const path_type& ttf)
 	{
+		nana::internal_scope_guard lock;
 		return platform_storage().font_svc.open_font(fi, dpi, ttf);
 	}
 
@@ -1176,6 +1184,9 @@ namespace nana
 			::RemoveFontResourceEx(ttf.wstring().c_str(), FR_PRIVATE, nullptr);
 #else
 		auto p = absolute(ttf).string();
+
+		nana::internal_scope_guard lock;
+
 		if(platform_storage().font_svc.fc_count(try_add, p))
 		{
 			if(try_add)
