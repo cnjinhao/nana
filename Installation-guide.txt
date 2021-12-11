@@ -1,0 +1,67 @@
+Welcome, this is the up-to-date Installation Guide for nana.
+
+READ THE FOLLOWING PART BEFORE YOU DO ANYTHING, THEY ARE NECESSARY
+You have to be aware that there is no guarantee that your system will be able to install nana successfully.
+And, due to the diffence of different of variety of system and develop enviroment, you might not be able to using nana successfully after installation.
+-----------------------------------
+
+/Space/
+
+-----------------------------------
+This is the Installation Guide for:
+
+    Windows 10+ 64-bit (Recommand)
+        MSYS2 using GCC 11.2
+            MingW64 traditional MSVCRT toolchain
+            or
+            MingW64 newer UCRT toolchain
+        MingW64 using GCC 11.2
+            traditional toolchain
+
+    Linux (note: the installation precess has been tested on VirtualBox using Debian 11 with gnome)
+        GCC using GCC 11.2
+
+General Preparation: you need those for all platform
+    cmake (with gui)
+    ninja
+-----------------------------------
+
+/Space/
+
+------------------------------------------------
+Menu:
+    1, Building and Installing on Windows using MSYS2
+        a, using MingW64 traditional MSVCRT toolchain
+        b, using MingW64 newer UCRT toolchain
+        c, install the library
+    2, Building and Installing on Windows using MingW64
+        a, choose your MingW64 distro
+        b, build using MingW64
+        c, install the library
+    3, Building and Installing on Linux using GCC
+    
+    4, FAQ
+-------------------------------------------------
+
+/Space/
+
+-------------------------------------------------
+1, Building and Installing on Windows using MSYS2
+    !! DO NOT INCLUDE SPACE FOR YOUR PATH OF EVERYTHING
+    You will use MSYS2 / MingW64 toolchain for building and installation.
+    First, you need to install MSYS2 on your Windows system.
+    (note: you will need Windows 7 or later for MSYS2, and you always want to use the 64-bit version)
+    Check out https://www.msys2.org/ to install MSYS2, follow the instruction on MSYS2 website for how to install the toolchains.
+
+a, using MingW64 traditional MSVCRT toolchain:
+    After install MSYS2 and mingw-w64-x86_64-toolchain, oepn the "MSYS2 MinGW x64" console from Start Menu.
+    You will doing rest of the progress in this console
+    In the console, type:
+        "g++ --version"
+    to ensure GCC is install properly, if you see the version info, you can proceed. Otherwise, you need to install them properly.
+    ---
+    In the console, type:
+        "pacman -S mingw-w64-x86_64-cmake"
+    Follow the instruction, after the installation is compelte, type:
+        "pacman -S mingw-w64-x86_64-qt6"
+
