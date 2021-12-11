@@ -55,8 +55,6 @@ Menu:
     !! DO NOT INCLUDE SPACE FOR YOUR PATH OF EVERYTHING
     You will use 
         MSYS2 / MingW64 toolchain 
-        or
-        MSYS2 / MingW64 UCRT toolchain 
     for building and installation.
     First, you need to install MSYS2 on your Windows system.
     (note: you will need Windows 7 or later for MSYS2, and you always want to use the 64-bit version)
@@ -64,7 +62,7 @@ Menu:
 
 a, using MingW64 traditional MSVCRT toolchain:
     After install MSYS2 and mingw-w64-x86_64-toolchain, oepn the "MSYS2 MinGW x64" console from Start Menu.
-    !! You want to keep the default path of installation, unless VS code and some text editor may not recongnize the compiler automatically
+    !! You want to keep the default path of installation, because VS code and some text editors may not recongnize the compiler automatically
     You will finish rest of the progress in this console
     In the console, type:
         "g++ --version"
