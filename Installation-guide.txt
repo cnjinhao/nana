@@ -178,7 +178,8 @@ c, build and install the library
     Click configure, select Ninja.
     If you get error about x11 libraries, install x11lib-dev package.
     Then, select installation in CMAKE_INSTALL_PREFIX and make sure the NANA_CMAKE_INSTALL box is checked.
-    Click generate, sometimes you will still get error, but this time i can't help. Because there are so many distro and TBH, it is anoying
+    Click generate, sometimes you will still get error, but this time i can't help. Because there are so many distro and TBH, it is annoying
+    If the error message never stop, then, please just try to download any possible develop package for gui and good luck
     Then, navigate to build folder, type:
         "cd build"
     Start building, type:
