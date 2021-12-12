@@ -174,15 +174,34 @@ c, build and install the library
         "cd /path/to/nana/folder"
     then open cmake-gui, type:
         "cmake-gui"
-    select the source folder for nana, and select the build folder
+    select the source folder for nana, and select the build folder.
     Click configure, select Ninja.
-
-
+    If you get error about x11 libraries, install x11lib-dev package.
+    Then, select installation in CMAKE_INSTALL_PREFIX and make sure the NANA_CMAKE_INSTALL box is checked.
+    Click generate, sometimes you will still get error, but this time i can't help. Because there are so many distro and TBH, it is anoying
+    Then, navigate to build folder, type:
+        "cd build"
+    Start building, type:
+        "ninja"
+    Install by typing;
+        "ninja install"
+        !! Sometimes you need permission, grant it by adding "sudo"
+    The installation is finished now. 
+        
+    include header
+        "#include <nana/gui.hpp>"
+        ... 
+    and libraries
+        "libnana.a"
+        "libgdi32.a"
+        "libcomdlg32.a"
+        "libz.a"
 -------------------------------------------------
 
 /Space/
         
 -------------------------------------------------
+4, FAQ
 Old instruction:
 Please refer to the Library Installation Documentation for the detailed installation instructions.
 https://github.com/qPCR4vir/nana-docs/wiki/Installation
@@ -198,3 +217,14 @@ https://github.com/qPCR4vir/nana-docs/wiki/Installation
 
 使用 Clang
 https://github.com/cnjinhao/nana/wiki/Compiling-Nana-with-Clang-8.0
+
+
+
+a, what's the different beetween MSYS2 and MingW64
+    TBH, no different in terms of performance and comand usage, but MSYS2 is more convenient than MingW64
+
+b, why should I always use 64-bit MSYS2 or MingW64 not MingW32
+    64-bit software brings you better performance and the latest Windows11 only suppot 64-bit now
+
+c, what should I do if the program I compile report "missing ****.dll" when I try to run it?
+    You need some .dll file in your folder, but the best way is to add "-static" in your compule command
