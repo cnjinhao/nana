@@ -22,7 +22,7 @@ This is the Installation Guide for:
         MingW64 using GCC 11.2
             traditional toolchain
 
-    Linux (note: the installation process has been tested using Debian 11 with gnome on VirtualBox)
+    Linux (note: the installation process has been tested using Debian 11 with KDE on VirtualBox)
         GCC using GCC 11.2
 
 Tools: you need those for all platform
@@ -40,8 +40,7 @@ Menu:
 
     2, Building and Installing on Windows using MingW64
         a, choose your MingW64 distro
-        b, configure using MingW64
-        c, build and install the library
+        b, build and install the library
 
     3, Building and Installing on Linux using GCC
 
@@ -78,7 +77,6 @@ a, using MingW64 traditional MSVCRT toolchain:
 
     /Space/
 
-b, build install the library 
     Navigate to your nana source folder, which is this folder, type:
         "cd /path/to/the/folder"
         !! You MUST type the path in Unix style, using '/' instead of '\'
@@ -91,6 +89,7 @@ b, build install the library
     Click "generate".
     Close cmake-gui
 
+c, build and install the library
     Go back to the console, navigate to the build folder, type:
         "cd build"
     Build the project by typing:
@@ -109,6 +108,76 @@ b, build install the library
         "libgdi32.a"
         "libcomdlg32.a"
         "libz.a"
+-------------------------------------------------
+
+/Space/
+        
+-------------------------------------------------
+2, Building and Installing on Windows using MingW64
+    !!This is not recommand, because using MingW enviroment on Windows system can cause lots of confusion
+    
+    a, You need to choose a MingW64 distro in order to proceed, the example shows using WinLib
+        Download from here and follow the instruction on website to install:
+        https://winlibs.com/#download-release
+    
+    b, To configure the program, you need to install cmake from https://cmake.org/. Remember to add cmake to path during installation.
+    (note: because the WinLib include ninja already, thus, you do not need to install ninja again)
+        After installation, open cmd or powershell console, type:
+            "g++ --version"
+        to check if MingW64 is install properly, if version info do not pop out, install them properly.
+        Ten configure cmake type:
+            "cmake-gui"
+        In cmake-gui, select the source folder, which is nana folder. 
+        Then select the build folder.
+        Click configure, in configure menu, select Ninja.
+        Then select the CMAKE_INSTALL_PREFIX for nana, you must select the mingw64 installation folder, it usually be "mingw64"
+        Make sure the box of NANA_CMAKE_INSTALL is checked.
+        Click "generate".
+        Close cmake-gui
+
+        Go back to the console, navigate to the build folder, type:
+            "cd \path\to\nana folder\build"
+        Build the project by typing:
+            "ninja"
+        Wait the build process to finish
+        Then install by typing:
+            "ninja install"
+        The installation is finished now. 
+        
+        include header
+            "#include <nana/gui.hpp>"
+            ... 
+        and libraries
+            "libnana.a"
+            "libgdi32.a"
+            "libcomdlg32.a"
+            "libz.a"
+-------------------------------------------------
+
+/Space/
+        
+-------------------------------------------------
+3, Building and Installing on Linux using GCC
+    Building and Installing on Linux is so easy compare to Windows system, but most people are using Windows system today.
+    To being, you also need cmake and ninja. Update all package on your system before install.
+    !! Some distro do not include build-essential group package, you need to make sure they are install.
+    Check if compiler is installed:
+        "g++ --version"
+    if you see version info pop out, you are ready to go. Otherwise, you need to install build-essential group package. Check out docs for your distro for how to install.
+    On Debian base system, install cmake-gui by typing:
+        "Sudo apt install cmake-gui"
+    then install ninja, type:
+        "Sudo apt install ninja-build"
+    You are ready to go
+
+    navigate to nana source folder, type:
+        "cd /path/to/nana/folder"
+    then open cmake-gui, type:
+        "cmake-gui"
+    select the source folder for nana, and select the build folder
+    Click configure, select Ninja for build generate.
+
+
 -------------------------------------------------
 
 /Space/
