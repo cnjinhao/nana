@@ -165,9 +165,9 @@ c, build and install the library
         "g++ --version"
     if you see version info pop out, you are ready to go. Otherwise, you need to install build-essential group package. Check out docs for your distro for how to install.
     On Debian base system, install cmake-gui by typing:
-        "Sudo apt install cmake-gui"
+        "sudo apt install cmake-gui"
     then install ninja, type:
-        "Sudo apt install ninja-build"
+        "sudo apt install ninja-build"
     You are ready to go
 
     navigate to nana source folder, type:
@@ -175,7 +175,7 @@ c, build and install the library
     then open cmake-gui, type:
         "cmake-gui"
     select the source folder for nana, and select the build folder
-    Click configure, select Ninja for build generate.
+    Click configure, select Ninja.
 
 
 -------------------------------------------------
