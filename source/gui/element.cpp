@@ -416,6 +416,27 @@ namespace nana
 						pixels -= 2;
 					}
 				}
+				break;
+				case direction::east:
+				{
+					for (int i = 0; i < 4; ++i)
+					{
+						graph.set_pixel(x, y);
+						graph.set_pixel(x + 1, y);
+						++x;
+						++y;
+					}
+
+					--x;
+					for (int i = 0; i < 3; ++i)
+					{
+						graph.set_pixel(x, y);
+						graph.set_pixel(x - 1, y);
+						--x;
+						++y;
+					}
+				}
+				break;
 				default:break;
 				}
 				return true;
