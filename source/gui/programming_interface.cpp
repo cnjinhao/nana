@@ -993,7 +993,19 @@ namespace api
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
-			return rectangle(wd->pos_owner, wd->dimension);
+		{
+			if(wd->other.category == category::flags::root)
+			{
+				nana::point pt;
+				calc_screen_point(wd, pt);
+				calc_window_point(get_parent_window(wd), pt);
+
+				return rectangle{pt, wd->dimension};
+			}
+			else
+				return rectangle(wd->pos_owner, wd->dimension);
+		}
+
 		return{};
 	}
 
@@ -1002,7 +1014,16 @@ namespace api
 		internal_scope_guard lock;
 		if(is_window(wd))
 		{
-			r = rectangle(wd->pos_owner, wd->dimension);
+			if(wd->other.category == category::flags::root)
+			{
+				nana::point pt;
+				calc_screen_point(wd, pt);
+				calc_window_point(get_parent_window(wd), pt);
+
+				r = rectangle{pt, wd->dimension};
+			}
+			else
+				r = rectangle(wd->pos_owner, wd->dimension);
 			return true;
 		}
 		return false;
