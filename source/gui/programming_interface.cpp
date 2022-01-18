@@ -830,8 +830,16 @@ namespace api
 		internal_scope_guard lock;
 		if(is_window(wd))
 		{
-			return ( (wd->other.category == category::flags::root) ?
-				interface_type::window_position(wd->root) : wd->pos_owner);
+			if(category::flags::root == wd->other.category)
+			{
+				auto pos = interface_type::window_position(wd->root);
+				if(wd->owner)
+					return pos - wd->owner->pos_root;
+
+				return pos;
+			}
+			else
+				return wd->pos_owner;
 		}
 		return nana::point{};
 	}

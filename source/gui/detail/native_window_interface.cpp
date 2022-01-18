@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -252,7 +252,9 @@ namespace nana{
 
 			native_interface::move_window(wd, i->second.x, i->second.y);
 
-			exposed_positions.erase(i);
+			//Don't remove the record with the iterator, the move_window() may remove the
+			//record, it makes the iterator invalid.
+			exposed_positions.erase(reinterpret_cast<Window>(wd));
 		}
 
 		namespace x11_wait
@@ -1133,6 +1135,12 @@ namespace nana{
 			::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 			if(attr.map_state == IsUnmapped)
 				exposed_positions[reinterpret_cast<Window>(wd)] = ::nana::point{x, y};
+			else
+			{
+				//Removes the record of position. If move_window() is called during mapping the window,
+				//the existing record will mistakenly move the window to the old position after x11_apply_exposed_position.
+				exposed_positions.erase(reinterpret_cast<Window>(wd));
+			}
 
 			auto const owner = restrict::spec.get_owner(wd);
 			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
@@ -1220,6 +1228,12 @@ namespace nana{
 				hints.height = r.height;
 
 				exposed_positions[reinterpret_cast<Window>(wd)] = r.position();
+			}
+			else
+			{
+				//Removes the record of position. If move_window() is called during mapping the window,
+				//the existing record will mistakenly move the window to the old position after x11_apply_exposed_position.
+				exposed_positions.erase(reinterpret_cast<Window>(wd));
 			}
 
 			if(hints.flags)

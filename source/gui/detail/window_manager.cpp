@@ -603,12 +603,13 @@ namespace detail
 				}
 				else if (!passive)
 				{
-					//Check if this root is a nested
-					if (wd->parent && (category::flags::root != wd->parent->other.category))
+					if(wd->owner)
 					{
-						//The parent of the window is not a root, the position should
-						//be transformed to a position based on its parent.
-
+						x += wd->owner->pos_root.x;
+						y += wd->owner->pos_root.y;
+					}
+					else if(wd->parent)
+					{
 						x += wd->parent->pos_root.x;
 						y += wd->parent->pos_root.y;
 					}
@@ -658,12 +659,13 @@ namespace detail
 				//Move event should not get called here,
 				//because the window is a root, the event will get called by system event handler.
 
-				//Check if this root is a nested
-				if (wd->parent && (category::flags::root != wd->parent->other.category))
+				if(wd->owner)
 				{
-					//The parent of the window is not a root, the position should
-					//be transformed to a position based on its parent.
-
+					root_r.x += wd->owner->pos_root.x;
+					root_r.y += wd->owner->pos_root.y;
+				}
+				else if(wd->parent)
+				{
 					root_r.x += wd->parent->pos_root.x;
 					root_r.y += wd->parent->pos_root.y;
 				}
