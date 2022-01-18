@@ -11,6 +11,7 @@
  */
 
 #include "../../detail/platform_spec_selector.hpp"
+#include "../../detail/platform_abstraction.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/screen.hpp>
 #include <nana/gui/detail/bedrock.hpp>
@@ -1492,7 +1493,8 @@ namespace nana{
 			native_string_type str;
 
 #if defined(NANA_WINDOWS)
-			auto & lock = bedrock::instance().wd_manager().internal_lock();
+			//auto & lock = bedrock::instance().wd_manager().internal_lock();
+			auto& lock = platform_abstraction::internal_mutex();
 			bool is_current_thread = (::GetCurrentThreadId() == ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), nullptr));
 
 			if (!is_current_thread)
