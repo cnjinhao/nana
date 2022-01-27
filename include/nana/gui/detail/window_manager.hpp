@@ -1,7 +1,7 @@
 /**
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -42,35 +42,14 @@ namespace nana::detail
 
 	class window_manager
 	{
-		class revertible_mutex
-		{
-			revertible_mutex(const revertible_mutex&) = delete;
-			revertible_mutex& operator=(const revertible_mutex&) = delete;
-			revertible_mutex(revertible_mutex&&) = delete;
-			revertible_mutex& operator=(revertible_mutex&&) = delete;
-		public:
-			revertible_mutex();
-			~revertible_mutex();
-
-			void lock();
-			bool try_lock();
-			void unlock();
-
-			void revert();
-			void forward();
-		private:
-			struct implementation;
-			implementation * const impl_;
-		};
 	public:
 		using native_window = native_window_type;
-		using mutex_type = revertible_mutex;
 
 		window_manager();
 		~window_manager();
 
 		std::size_t window_count() const;
-		mutex_type & internal_lock() const;
+
 		void all_handles(std::vector<basic_window*>&) const;
 
 		void event_filter(basic_window*, bool is_make, event_code);
@@ -157,8 +136,6 @@ namespace nana::detail
 		basic_window* _m_find(basic_window*, const point&);
 		static bool _m_effective(basic_window*, const point& root_pos);
 	private:
-		mutable mutex_type mutex_;
-
 		struct wdm_private_impl;
 		wdm_private_impl * const impl_;
 

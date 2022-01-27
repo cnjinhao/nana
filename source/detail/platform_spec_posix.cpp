@@ -28,7 +28,6 @@
 #include <nana/paint/graphics.hpp>
 #include <nana/gui/detail/bedrock.hpp>
 #include <nana/gui/detail/window_manager.hpp>
-//#include <nana/system/platform.hpp>	//deprecated
 #include <nana/paint/pixel_buffer.hpp>
 #include <errno.h>
 #include <sstream>

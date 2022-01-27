@@ -1,7 +1,7 @@
 /*
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -26,7 +26,6 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
-#include <mutex>
 
 namespace nana
 {
@@ -272,141 +271,6 @@ namespace detail
 			};
 		//end struct wdm_private_impl
 
-			//class revertible_mutex
-			struct thread_refcount
-			{
-				thread_t tid;	//Thread ID
-				std::vector<unsigned> callstack_refs;
-
-				thread_refcount(thread_t thread_id, unsigned refs)
-					: tid(thread_id)
-				{
-					callstack_refs.push_back(refs);
-				}
-			};
-
-			struct window_manager::revertible_mutex::implementation
-			{
-				std::recursive_mutex mutex;
-
-				thread_t thread_id;	//Thread ID
-				unsigned refs;	//Ref count
-
-				std::vector<thread_refcount> records;
-			};
-
-			window_manager::revertible_mutex::revertible_mutex()
-				: impl_(new implementation)
-			{
-				impl_->thread_id = 0;
-				impl_->refs = 0;
-			}
-
-			window_manager::revertible_mutex::~revertible_mutex()
-			{
-				delete impl_;
-			}
-
-			void window_manager::revertible_mutex::lock()
-			{
-				impl_->mutex.lock();
-
-				if (0 == impl_->thread_id)
-					impl_->thread_id = nana::system::this_thread_id();
-
-				++(impl_->refs);
-			}
-
-			bool window_manager::revertible_mutex::try_lock()
-			{
-				if (impl_->mutex.try_lock())
-				{
-					if (0 == impl_->thread_id)
-						impl_->thread_id = nana::system::this_thread_id();
-
-					++(impl_->refs);
-					return true;
-				}
-				return false;
-			}
-
-			void window_manager::revertible_mutex::unlock()
-			{
-				if (impl_->thread_id == nana::system::this_thread_id())
-					if (0 == --(impl_->refs))
-						impl_->thread_id = 0;
-
-				impl_->mutex.unlock();
-			}
-
-			void window_manager::revertible_mutex::revert()
-			{
-				if (impl_->thread_id == nana::system::this_thread_id())
-				{
-					auto const current_refs = impl_->refs;
-
-					//Check if there is a record
-					for (auto & r : impl_->records)
-					{
-						if (r.tid == impl_->thread_id)
-						{
-							r.callstack_refs.push_back(current_refs);
-							impl_->thread_id = 0;	//Indicates a record is existing
-							break;
-						}
-					}
-
-					if (impl_->thread_id)
-					{
-						//Creates a new record
-						impl_->records.emplace_back(impl_->thread_id, current_refs);
-						impl_->thread_id = 0;
-					}
-
-					impl_->refs = 0;
-
-					for (std::size_t i = 0; i < current_refs; ++i)
-						impl_->mutex.unlock();
-				}
-				else
-					throw std::runtime_error("The revert is not allowed");
-			}
-
-			void window_manager::revertible_mutex::forward()
-			{
-				impl_->mutex.lock();
-
-				if (impl_->records.size())
-				{
-					auto const this_tid = nana::system::this_thread_id();
-
-					for (auto i = impl_->records.begin(); i != impl_->records.end(); ++i)
-					{
-						if (this_tid != i->tid)
-							continue;
-
-						auto const refs = i->callstack_refs.back();
-
-						for (std::size_t u = 1; u < refs; ++u)
-							impl_->mutex.lock();
-
-						impl_->thread_id = this_tid;
-						impl_->refs = refs;
-
-						if (i->callstack_refs.size() > 1)
-							i->callstack_refs.pop_back();
-						else
-							impl_->records.erase(i);
-						return;
-					}
-
-					throw std::runtime_error("The forward is not matched. Please report this issue");
-				}
-
-				impl_->mutex.unlock();
-			}
-			//end class revertible_mutex
-
 			//Utilities in this unit.
 			namespace utl
 			{
@@ -443,21 +307,13 @@ namespace detail
 
 		std::size_t window_manager::window_count() const
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-
+			internal_scope_guard lock;
 			return impl_->wd_register.size();
-		}
-
-		window_manager::mutex_type& window_manager::internal_lock() const
-		{
-			return mutex_;
 		}
 
 		void window_manager::all_handles(std::vector<basic_window*> &v) const
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			v = impl_->wd_register.queue();
 		}
 
@@ -475,15 +331,13 @@ namespace detail
 
 		bool window_manager::available(basic_window* wd)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			return impl_->wd_register.available(wd);
 		}
 
 		bool window_manager::available(basic_window * a, basic_window* b)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			return (impl_->wd_register.available(a) && impl_->wd_register.available(b));
 		}
 
@@ -492,8 +346,7 @@ namespace detail
 			native_window_type native = nullptr;
 			if (owner)
 			{
-				//Thread-Safe Required!
-				std::lock_guard<mutex_type> lock(mutex_);
+				internal_scope_guard lock;
 
 				if (impl_->wd_register.available(owner))
 				{
@@ -523,8 +376,7 @@ namespace detail
 				wd->flags.take_active = !app.no_activate;
 				wd->title = native_interface::window_caption(result.native_handle);
 
-				//Thread-Safe Required!
-				std::lock_guard<mutex_type> lock(mutex_);
+				internal_scope_guard lock;
 
 				//create Root graphics Buffer and manage it
 				auto* value = impl_->misc_register.insert(result.native_handle, root_misc(wd, result.width, result.height));
@@ -541,8 +393,7 @@ namespace detail
 
 		basic_window* window_manager::create_widget(basic_window* parent, const rectangle& r, bool is_lite, widget* wdg)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(parent) == false)
 				throw std::invalid_argument("invalid parent/owner handle");
 
@@ -563,8 +414,7 @@ namespace detail
 
 		void window_manager::close(basic_window *wd)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false)	return;
 
 			if (wd->flags.destroying)
@@ -605,8 +455,7 @@ namespace detail
 		//@brief:	Delete the window handle
 		void window_manager::destroy(basic_window* wd)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false)	return;
 
 			rectangle update_area(wd->pos_owner, wd->dimension);
@@ -629,8 +478,7 @@ namespace detail
 
 		void window_manager::destroy_handle(basic_window* wd)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false)	return;
 
 			if (category::flags::root == wd->other.category)
@@ -651,7 +499,7 @@ namespace detail
 				}
 				else
 				{
-					std::lock_guard<mutex_type> lock(mutex_);
+					internal_scope_guard lock;
 					if (impl_->wd_register.available(wd))
 					{
 						if (category::flags::root == wd->other.category)
@@ -665,8 +513,7 @@ namespace detail
 		//@brief: show or hide a window
 		bool window_manager::show(basic_window* wd, bool visible)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (!impl_->wd_register.available(wd))
 				return false;
 
@@ -693,8 +540,7 @@ namespace detail
 			if (nullptr == root)
 				return nullptr;
 
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 
 			auto rrt = root_runtime(root);
 
@@ -728,8 +574,7 @@ namespace detail
 		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
 		bool window_manager::move(basic_window* wd, int x, int y, bool passive)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd))
 			{
 				if (category::flags::root != wd->other.category)
@@ -758,12 +603,13 @@ namespace detail
 				}
 				else if (!passive)
 				{
-					//Check if this root is a nested
-					if (wd->parent && (category::flags::root != wd->parent->other.category))
+					if(wd->owner)
 					{
-						//The parent of the window is not a root, the position should
-						//be transformed to a position based on its parent.
-
+						x += wd->owner->pos_root.x;
+						y += wd->owner->pos_root.y;
+					}
+					else if(wd->parent)
+					{
 						x += wd->parent->pos_root.x;
 						y += wd->parent->pos_root.y;
 					}
@@ -777,8 +623,7 @@ namespace detail
 
 		bool window_manager::move(basic_window* wd, const rectangle& r)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (!impl_->wd_register.available(wd))
 				return false;
 
@@ -814,12 +659,13 @@ namespace detail
 				//Move event should not get called here,
 				//because the window is a root, the event will get called by system event handler.
 
-				//Check if this root is a nested
-				if (wd->parent && (category::flags::root != wd->parent->other.category))
+				if(wd->owner)
 				{
-					//The parent of the window is not a root, the position should
-					//be transformed to a position based on its parent.
-
+					root_r.x += wd->owner->pos_root.x;
+					root_r.y += wd->owner->pos_root.y;
+				}
+				else if(wd->parent)
+				{
 					root_r.x += wd->parent->pos_root.x;
 					root_r.y += wd->parent->pos_root.y;
 				}
@@ -853,8 +699,7 @@ namespace detail
 		//			window_manager will call the function.
 		bool window_manager::size(basic_window* wd, nana::size sz, bool passive, bool ask_update)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (!impl_->wd_register.available(wd))
 				return false;
 
@@ -969,8 +814,7 @@ namespace detail
 			static std::pair<native_window_type, basic_window*> cache;
 			if(cache.first == wd) return cache.second;
 
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 
 			auto rrt = root_runtime(wd);
 			if(rrt)
@@ -985,8 +829,7 @@ namespace detail
 		//Copy the root buffer that wnd specified into DeviceContext
 		void window_manager::map(basic_window* wd, bool forced, const rectangle* update_area)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) && !wd->is_draw_through())
 				bedrock::instance().flush_surface(wd, forced, update_area);
 		}
@@ -997,8 +840,7 @@ namespace detail
 		//			same as update's, update would not map the screen-off buffer and just set the window for lazy refresh
 		bool window_manager::update(basic_window* wd, bool redraw, bool forced, const rectangle* update_area)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false) return false;
 
 			if ((wd->other.category == category::flags::root) && wd->is_draw_through())
@@ -1040,8 +882,7 @@ namespace detail
 
 		void window_manager::update_requesters(basic_window* root_wd)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 
 			if (this->available(root_wd) && root_wd->other.attribute.root->update_requesters.size())
 			{
@@ -1063,8 +904,7 @@ namespace detail
 
 		void window_manager::refresh_tree(basic_window* wd)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 
 			//It's not worthy to redraw if visible is false
 			if (impl_->wd_register.available(wd) && wd->displayed())
@@ -1075,8 +915,7 @@ namespace detail
 		//@brief: defined a behavior of flush the screen
 		void window_manager::do_lazy_refresh(basic_window* wd, bool force_copy_to_screen, bool refresh_tree)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 
 			if (false == impl_->wd_register.available(wd))
 				return;
@@ -1115,8 +954,7 @@ namespace detail
 
 		bool window_manager::set_parent(basic_window* wd, basic_window* newpa)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (!impl_->wd_register.available(wd))
 				return false;
 
@@ -1142,8 +980,7 @@ namespace detail
 		//@brief: set a keyboard focus to a window. this may fire a focus event.
 		basic_window* window_manager::set_focus(basic_window* wd, bool root_has_been_focused, arg_focus::reason reason)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 
 			if (!impl_->wd_register.available(wd))
 				return nullptr;
@@ -1249,8 +1086,7 @@ namespace detail
 			{
 				if(wd != attr_.capture.window)
 				{
-					//Thread-Safe Required!
-					std::lock_guard<mutex_type> lock(mutex_);
+					internal_scope_guard lock;
 
 					if (impl_->wd_register.available(wd))
 					{
@@ -1310,8 +1146,7 @@ namespace detail
 		//	the container is created while a first Tab Window is setting
 		void window_manager::enable_tabstop(basic_window* wd)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) && (detail::tab_type::none == wd->flags.tab))
 			{
 				wd->root_widget->other.attribute.root->tabstop.push_back(wd);
@@ -1353,8 +1188,7 @@ namespace detail
 
 		auto window_manager::tabstop(basic_window* wd, bool forward) const -> basic_window*
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (!impl_->wd_register.available(wd))
 				return nullptr;
 
@@ -1390,15 +1224,13 @@ namespace detail
 
 		void window_manager::remove_trash_handle(thread_t tid)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			impl_->wd_register.delete_trash(tid);
 		}
 
 		bool window_manager::enable_effects_bground(basic_window* wd, bool enabled)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd))
 				return window_layer::enable_effects_bground(wd, enabled);
 
@@ -1407,8 +1239,7 @@ namespace detail
 
 		bool window_manager::calc_window_point(basic_window* wd, nana::point& pos)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd))
 			{
 				if(native_interface::calc_window_point(wd->root, pos))
@@ -1427,8 +1258,7 @@ namespace detail
 
 		bool window_manager::register_shortkey(basic_window* wd, unsigned long key)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd))
 			{
 				//the root runtime must exist, because the wd is valid. Otherse, it's bug of library
@@ -1439,8 +1269,7 @@ namespace detail
 
 		void window_manager::unregister_shortkey(basic_window* wd, bool with_children)
 		{
-			//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) == false) return;
 
 			auto root_rt = root_runtime(wd->root);
@@ -1459,8 +1288,7 @@ namespace detail
 		{
 			if(native_window)
 			{
-				//Thread-Safe Required!
-				std::lock_guard<mutex_type> lock(mutex_);
+				internal_scope_guard lock;
 				auto object = root_runtime(native_window);
 				if(object)
 					return object->shortkeys.find(key);
@@ -1472,7 +1300,7 @@ namespace detail
 		{
 			if (fn)
 			{
-				std::lock_guard<mutex_type> lock(mutex_);
+				internal_scope_guard lock;
 				if (!available(wd))
 					return;
 
@@ -1482,7 +1310,7 @@ namespace detail
 
 		void window_manager::call_safe_place(thread_t thread_id)
 		{
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 
 			auto& safe_place = impl_->safe_place.table();
 			for (auto i = safe_place.begin(); i != safe_place.end();)
@@ -1502,7 +1330,7 @@ namespace detail
 		//updates the window elements when DPI is changed.
 		void window_manager::update_dpi(basic_window* wd)
 		{
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (!available(wd))
 				return;
 

@@ -4,6 +4,9 @@
 #include <nana/paint/detail/ptdefs.hpp>
 #include "../paint/truetype.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
+#include <nana/gui/detail/internal_scope_guard.hpp>
+#include <nana/system/platform.hpp>
+
 
 #ifdef NANA_WINDOWS
 
@@ -251,8 +254,9 @@ namespace nana
 	public:
 		using font_element = fallback_font_store::font_element;
 
-		fallback_fontset():
-			disp_(::nana::detail::platform_spec::instance().open_display())
+		fallback_fontset(fallback_font_store& store):
+			disp_(::nana::detail::platform_spec::instance().open_display()),
+			store_(store)
 		{
 		}
 
@@ -270,7 +274,7 @@ namespace nana
 			{
 				std::string patstr = "*" + font_desc + ":lang=" + lang;
 
-				auto fe = _m_store().open(disp_, patstr, exclude);
+				auto fe = store_.open(disp_, patstr, exclude);
 				if(fe)
 				{
 					if(!fe->family.empty())
@@ -292,6 +296,8 @@ namespace nana
 			//The RTL and shaping should be handled manually, because the libXft and X doesn't support these language features.
 			std::wstring rtl;
 			auto ents = unicode_reorder(str, len);
+
+			nana::internal_scope_guard lock;
 			for(auto & e : ents)
 			{
 				auto size = static_cast<std::size_t>(e.end - e.begin);
@@ -387,16 +393,11 @@ namespace nana
 			return extent;
 		}
 	private:
-		static fallback_font_store& _m_store() noexcept
-		{
-			static fallback_font_store store;
-			return store;
-		}
 
 		void _m_clear()
 		{
 			xftset_.clear();
-			_m_store().free();
+			store_.free();
 		}
 
 		/// @param reverse Indicates whether to reverse the string, it only reverse the RTL language string.
@@ -582,8 +583,8 @@ namespace nana
 			return {preferred, len};
 		}
 	private:
-
 		Display* const disp_;
+		fallback_font_store& store_;
 		std::vector<std::shared_ptr<font_element>> xftset_;
 	};
 
@@ -612,7 +613,7 @@ namespace nana
 			if(i != xft_table_.end())
 				return i->second;
 
-			auto fb = std::make_shared<fallback_fontset>();
+			auto fb = std::make_shared<fallback_fontset>(store_);
 			fb->open(font_desc, langs_);
 			xft_table_[font_desc] = fb;
 
@@ -655,6 +656,7 @@ namespace nana
 		}
 	private:
 		std::set<std::string> langs_;
+		fallback_font_store store_;
 		std::map<std::string, std::shared_ptr<fallback_fontset>> xft_table_;
 	};
 #endif
@@ -1007,8 +1009,156 @@ namespace nana
 #endif
 	};//end class font_service
 
+
+		class revertible_mutex
+		{
+			revertible_mutex(const revertible_mutex&) = delete;
+			revertible_mutex& operator=(const revertible_mutex&) = delete;
+			revertible_mutex(revertible_mutex&&) = delete;
+			revertible_mutex& operator=(revertible_mutex&&) = delete;
+
+			//class revertible_mutex
+			struct thread_refcount
+			{
+				thread_t tid;	//Thread ID
+				std::vector<unsigned> callstack_refs;
+
+				thread_refcount(thread_t thread_id, unsigned refs)
+					: tid(thread_id)
+				{
+					callstack_refs.push_back(refs);
+				}
+			};
+
+			struct implementation
+			{
+				std::recursive_mutex mutex;
+
+				thread_t thread_id{ 0 };	//Thread ID
+				unsigned refs{ 0 };	//Ref count
+
+				std::vector<thread_refcount> records;
+			};
+		public:
+			revertible_mutex()
+				: impl_(new implementation)
+			{
+			}
+
+			~revertible_mutex()
+			{
+				delete impl_;
+			}
+
+			void lock()
+			{
+				impl_->mutex.lock();
+
+				if (0 == impl_->thread_id)
+					impl_->thread_id = nana::system::this_thread_id();
+
+				++(impl_->refs);
+			}
+
+			bool try_lock()
+			{
+				if (impl_->mutex.try_lock())
+				{
+					if (0 == impl_->thread_id)
+						impl_->thread_id = nana::system::this_thread_id();
+
+					++(impl_->refs);
+					return true;
+				}
+				return false;
+			}
+
+			void unlock()
+			{
+				if (impl_->thread_id == nana::system::this_thread_id())
+					if (0 == --(impl_->refs))
+						impl_->thread_id = 0;
+
+				impl_->mutex.unlock();				
+			}
+
+			void revert()
+			{
+				if (impl_->thread_id == nana::system::this_thread_id())
+				{
+					auto const current_refs = impl_->refs;
+
+					//Check if there is a record
+					for (auto & r : impl_->records)
+					{
+						if (r.tid == impl_->thread_id)
+						{
+							r.callstack_refs.push_back(current_refs);
+							impl_->thread_id = 0;	//Indicates a record is existing
+							break;
+						}
+					}
+
+					if (impl_->thread_id)
+					{
+						//Creates a new record
+						impl_->records.emplace_back(impl_->thread_id, current_refs);
+						impl_->thread_id = 0;
+					}
+
+					impl_->refs = 0;
+
+					for (std::size_t i = 0; i < current_refs; ++i)
+						impl_->mutex.unlock();
+				}
+				else
+					throw std::runtime_error("The revert is not allowed");
+			}
+
+			void forward()
+			{
+				impl_->mutex.lock();
+
+				if (impl_->records.size())
+				{
+					auto const this_tid = nana::system::this_thread_id();
+
+					for (auto i = impl_->records.begin(); i != impl_->records.end(); ++i)
+					{
+						if (this_tid != i->tid)
+							continue;
+
+						auto const refs = i->callstack_refs.back();
+
+						for (std::size_t u = 1; u < refs; ++u)
+							impl_->mutex.lock();
+
+						impl_->thread_id = this_tid;
+						impl_->refs = refs;
+
+						if (i->callstack_refs.size() > 1)
+							i->callstack_refs.pop_back();
+						else
+							impl_->records.erase(i);
+						return;
+					}
+
+					throw std::runtime_error("The forward is not matched. Please report this issue");
+				}
+
+				impl_->mutex.unlock();
+			}
+		private:
+			struct implementation;
+			implementation * const impl_;
+		};
+
+		//end class revertible_mutex
+
+
 	struct platform_runtime
 	{
+		revertible_mutex mutex;
 		std::size_t		dpi{ 0 };
 		std::shared_ptr<font_interface> font;
 		font_service font_svc;
@@ -1030,6 +1180,34 @@ namespace nana
 		return *data::storage;
 	}
 
+	//class internal_scope_guard
+		internal_scope_guard::internal_scope_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.lock();
+		}
+
+		internal_scope_guard::~internal_scope_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.unlock();
+		}
+	//end class internal_scope_guard
+
+	//class internal_revert_guard
+		internal_revert_guard::internal_revert_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.revert();
+		}
+
+		internal_revert_guard::~internal_revert_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.forward();
+		}
+		//end class internal_revert_guard
+
 	internal_font::~internal_font()
 	{
 #ifdef NANA_WINDOWS
@@ -1037,6 +1215,7 @@ namespace nana
 #elif defined(NANA_X11)
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
+		nana::internal_scope_guard lock;
 		platform_storage().font_svc.fb_manager().release_fallback(fallback_);
 		::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
 #	else
@@ -1130,12 +1309,14 @@ namespace nana
 	void platform_abstraction::font_languages(const std::string& langs)
 	{
 #ifdef NANA_USE_XFT
+		nana::internal_scope_guard lock;
 		platform_storage().font_svc.fb_manager().languages(langs);
 #endif
 	}
 
 	::std::shared_ptr<platform_abstraction::font> platform_abstraction::default_font(const ::std::shared_ptr<font>& new_font)
 	{
+		nana::internal_scope_guard lock;
 		auto & r = platform_storage();
 		if (new_font)
 		{
@@ -1164,6 +1345,7 @@ namespace nana
 
 	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, std::size_t dpi, const path_type& ttf)
 	{
+		nana::internal_scope_guard lock;
 		return platform_storage().font_svc.open_font(fi, dpi, ttf);
 	}
 
@@ -1176,6 +1358,9 @@ namespace nana
 			::RemoveFontResourceEx(ttf.wstring().c_str(), FR_PRIVATE, nullptr);
 #else
 		auto p = absolute(ttf).string();
+
+		nana::internal_scope_guard lock;
+
 		if(platform_storage().font_svc.fc_count(try_add, p))
 		{
 			if(try_add)
