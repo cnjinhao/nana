@@ -1493,7 +1493,6 @@ namespace nana{
 			native_string_type str;
 
 #if defined(NANA_WINDOWS)
-			//auto & lock = bedrock::instance().wd_manager().internal_lock();
 			auto& lock = platform_abstraction::internal_mutex();
 			bool is_current_thread = (::GetCurrentThreadId() == ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), nullptr));
 

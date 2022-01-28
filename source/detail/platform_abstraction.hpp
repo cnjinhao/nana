@@ -1,7 +1,7 @@
 /*
  *	Platform Abstraction
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2017-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2017-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,10 +21,28 @@
 
 namespace nana
 {
-
-
 	class platform_abstraction
 	{
+	public:
+		class revertible_mutex
+		{
+			revertible_mutex(const revertible_mutex&) = delete;
+			revertible_mutex& operator=(const revertible_mutex&) = delete;
+			revertible_mutex(revertible_mutex&&) = delete;
+			revertible_mutex& operator=(revertible_mutex&&) = delete;
+		public:
+			revertible_mutex();
+			~revertible_mutex();
+
+			void lock();
+			bool try_lock();
+			void unlock();
+			void revert();
+			void forward();
+		private:
+			struct implementation;
+			implementation* const impl_;
+		};
 	public:
 		using font = font_interface;
 		using font_info = paint::font_info;
@@ -34,6 +52,9 @@ namespace nana
 		static void initialize();
 		/// Shutdown before destruction of platform_spec 
 		static void shutdown();
+
+		static revertible_mutex& internal_mutex();
+
 		static double font_default_pt();
 		static void font_languages(const std::string&);
 		static ::std::shared_ptr<font> default_font(const ::std::shared_ptr<font>&);

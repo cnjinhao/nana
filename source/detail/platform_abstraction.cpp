@@ -1,5 +1,7 @@
-#include "platform_abstraction.hpp"
 #include <set>
+#include <mutex>
+
+#include "platform_abstraction.hpp"
 #include <nana/deploy.hpp>
 #include <nana/paint/detail/ptdefs.hpp>
 #include "../paint/truetype.hpp"
@@ -1010,28 +1012,21 @@ namespace nana
 	};//end class font_service
 
 
-		class revertible_mutex
-		{
-			revertible_mutex(const revertible_mutex&) = delete;
-			revertible_mutex& operator=(const revertible_mutex&) = delete;
-			revertible_mutex(revertible_mutex&&) = delete;
-			revertible_mutex& operator=(revertible_mutex&&) = delete;
-
-			//class revertible_mutex
-			struct thread_refcount
+		//class revertible_mutex
+			struct platform_abstraction::revertible_mutex::implementation
 			{
-				thread_t tid;	//Thread ID
-				std::vector<unsigned> callstack_refs;
-
-				thread_refcount(thread_t thread_id, unsigned refs)
-					: tid(thread_id)
+				struct thread_refcount
 				{
-					callstack_refs.push_back(refs);
-				}
-			};
+					thread_t tid;	//Thread ID
+					std::vector<unsigned> callstack_refs;
 
-			struct implementation
-			{
+					thread_refcount(thread_t thread_id, unsigned refs)
+						: tid(thread_id)
+					{
+						callstack_refs.push_back(refs);
+					}
+				};
+
 				std::recursive_mutex mutex;
 
 				thread_t thread_id{ 0 };	//Thread ID
@@ -1039,18 +1034,18 @@ namespace nana
 
 				std::vector<thread_refcount> records;
 			};
-		public:
-			revertible_mutex()
+		//public:
+			platform_abstraction::revertible_mutex::revertible_mutex()
 				: impl_(new implementation)
 			{
 			}
 
-			~revertible_mutex()
+			platform_abstraction::revertible_mutex::~revertible_mutex()
 			{
 				delete impl_;
 			}
 
-			void lock()
+			void  platform_abstraction::revertible_mutex::lock()
 			{
 				impl_->mutex.lock();
 
@@ -1060,7 +1055,7 @@ namespace nana
 				++(impl_->refs);
 			}
 
-			bool try_lock()
+			bool  platform_abstraction::revertible_mutex::try_lock()
 			{
 				if (impl_->mutex.try_lock())
 				{
@@ -1073,7 +1068,7 @@ namespace nana
 				return false;
 			}
 
-			void unlock()
+			void  platform_abstraction::revertible_mutex::unlock()
 			{
 				if (impl_->thread_id == nana::system::this_thread_id())
 					if (0 == --(impl_->refs))
@@ -1082,7 +1077,7 @@ namespace nana
 				impl_->mutex.unlock();				
 			}
 
-			void revert()
+			void  platform_abstraction::revertible_mutex::revert()
 			{
 				if (impl_->thread_id == nana::system::this_thread_id())
 				{
@@ -1115,7 +1110,7 @@ namespace nana
 					throw std::runtime_error("The revert is not allowed");
 			}
 
-			void forward()
+			void  platform_abstraction::revertible_mutex::forward()
 			{
 				impl_->mutex.lock();
 
@@ -1148,17 +1143,13 @@ namespace nana
 
 				impl_->mutex.unlock();
 			}
-		private:
-			struct implementation;
-			implementation * const impl_;
-		};
 
 		//end class revertible_mutex
 
 
 	struct platform_runtime
 	{
-		revertible_mutex mutex;
+		platform_abstraction::revertible_mutex mutex;
 		std::size_t		dpi{ 0 };
 		std::shared_ptr<font_interface> font;
 		font_service font_svc;
@@ -1275,6 +1266,14 @@ namespace nana
 
 		delete data::storage;
 		data::storage = nullptr;
+	}
+
+	platform_abstraction::revertible_mutex& platform_abstraction::internal_mutex()
+	{
+		if (!data::storage)
+			throw std::logic_error("invalid internal mutex");
+
+		return data::storage->mutex;
 	}
 
 	double platform_abstraction::font_default_pt()
