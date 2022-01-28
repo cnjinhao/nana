@@ -807,6 +807,9 @@ namespace api
 		internal_scope_guard lock;
 		if(is_window(wd) && (wd->other.category == category::flags::root))
 		{
+			if(wd->owner)
+				return wd->owner;
+			
 			auto owner = interface_type::get_window(wd->root, window_relationship::owner);
 			if(owner)
 				return restrict::wd_manager().root(owner);
