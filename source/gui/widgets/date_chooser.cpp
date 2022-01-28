@@ -1,7 +1,7 @@
 /*
  *	A date chooser Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,6 +15,7 @@
 #include <nana/system/platform.hpp>
 #include <sstream>
 #include <thread>
+#include <chrono>
 
 namespace nana
 {
@@ -22,20 +23,25 @@ namespace nana
 	{
 		enum class transform_action{ none, to_left, to_right, to_enter, to_leave };
 
-		void perf_transform_helper(window window_handle, transform_action tfid, trigger::graph_reference graph, trigger::graph_reference dirtybuf, trigger::graph_reference newbuf, const nana::point& refpos)
+		struct duration_type
 		{
-			const int sleep_time = 15;
-			const int count = 20;
-			double delta = dirtybuf.width() / double(count);
-			double delta_h = dirtybuf.height() / double(count);
-			double fade = 1.0 / count;
+			std::size_t count;
+			std::size_t time;
+		};
+
+		void perf_transform_helper(window window_handle, transform_action tfid, trigger::graph_reference graph, trigger::graph_reference dirtybuf, trigger::graph_reference newbuf, const nana::point& refpos, const duration_type& duration)
+		{
+			double delta = dirtybuf.width() / double(duration.count);
+			double delta_h = dirtybuf.height() / double(duration.count);
+			double fade = 1.0 / duration.count;
 
 			if (tfid == transform_action::to_right)
 			{
 				nana::rectangle dr(0, refpos.y, 0, dirtybuf.height());
 				nana::rectangle nr(refpos.x, refpos.y, 0, newbuf.height());
-				for (int i = 1; i < count; ++i)
+				for (int i = 1; i < duration.count; ++i)
 				{
+					auto tm = std::chrono::high_resolution_clock::now();
 					int off_x = static_cast<int>(delta * i);
 					dr.x = refpos.x + off_x;
 					dr.width = dirtybuf.width() - off_x;
@@ -45,18 +51,24 @@ namespace nana
 					nr.width = off_x;
 					graph.bitblt(nr, newbuf, nana::point(static_cast<int>(dr.width), 0));
 
-					api::update_window(window_handle);
-					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
+					api::update_window(window_handle, true);
+
+					auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tm).count();
+
+					if(time < duration.time)
+						std::this_thread::sleep_for(std::chrono::milliseconds{duration.time - time});
 				}
 			}
 			else if (tfid == transform_action::to_left)
 			{
-				double delta = dirtybuf.width() / double(count);
+				double delta = dirtybuf.width() / double(duration.count);
 				nana::rectangle dr(refpos.x, refpos.y, 0, dirtybuf.height());
 				nana::rectangle nr(0, refpos.y, 0, newbuf.height());
 
-				for (int i = 1; i < count; ++i)
+				for (int i = 1; i < duration.count; ++i)
 				{
+					auto tm = std::chrono::high_resolution_clock::now();
+
 					int off_x = static_cast<int>(delta * i);
 					dr.width = dirtybuf.width() - off_x;
 
@@ -66,8 +78,11 @@ namespace nana
 					nr.width = off_x;
 					graph.bitblt(nr, newbuf);
 
-					api::update_window(window_handle);
-					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
+					api::update_window(window_handle, true);
+					
+					auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tm).count();
+					if (time < duration.time)
+						std::this_thread::sleep_for(std::chrono::milliseconds{ duration.time - time });
 				}
 			}
 			else if (tfid == transform_action::to_leave)
@@ -76,8 +91,10 @@ namespace nana
 				nana::paint::graphics nzbuf(newbuf.size());
 
 				nana::rectangle r;
-				for (int i = 1; i < count; ++i)
+				for (int i = 1; i < duration.count; ++i)
 				{
+					auto tm = std::chrono::high_resolution_clock::now();
+
 					r.width = static_cast<int>(newbuf.width() - delta * i);
 					r.height = static_cast<int>(newbuf.height() - delta_h * i);
 					r.x = static_cast<int>(newbuf.width() - r.width) / 2;
@@ -86,18 +103,21 @@ namespace nana
 					dzbuf.rectangle(true, colors::white);
 					dirtybuf.stretch(dzbuf, r);
 
-					r.width = static_cast<int>(newbuf.width() + delta * (count - i));
-					r.height = static_cast<int>(newbuf.height() + delta_h * (count - i));
+					r.width = static_cast<int>(newbuf.width() + delta * (duration.count - i));
+					r.height = static_cast<int>(newbuf.height() + delta_h * (duration.count - i));
 					r.x = static_cast<int>(newbuf.width() - r.width) / 2;
 					r.y = static_cast<int>(newbuf.height() - r.height) / 2;
 					newbuf.stretch(nzbuf, r);
 
-					dzbuf.blend(::nana::rectangle{ nzbuf.size() }, nzbuf, {}, 1 - fade * (count - i));
+					dzbuf.blend(::nana::rectangle{ nzbuf.size() }, nzbuf, {}, 1 - fade * (duration.count - i));
 
 					graph.bitblt(refpos.x, refpos.y, dzbuf);
 
-					api::update_window(window_handle);
-					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
+					api::update_window(window_handle, true);
+
+					auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tm).count();
+					if (time < duration.time)
+						std::this_thread::sleep_for(std::chrono::milliseconds{ duration.time - time });
 				}
 			}
 			else if (tfid == transform_action::to_enter)
@@ -106,27 +126,32 @@ namespace nana
 				nana::paint::graphics nzbuf(newbuf.size());
 
 				nana::rectangle r;
-				for (int i = 1; i < count; ++i)
+				for (int i = 1; i < duration.count; ++i)
 				{
+					auto tm = std::chrono::high_resolution_clock::now();
+
 					r.width = static_cast<int>(newbuf.width() + delta * i);
 					r.height = static_cast<int>(newbuf.height() + delta_h * i);
 					r.x = static_cast<int>(newbuf.width() - r.width) / 2;
 					r.y = static_cast<int>(newbuf.height() - r.height) / 2;
 					dirtybuf.stretch(dzbuf, r);
 
-					r.width = static_cast<int>(newbuf.width() - delta * (count - i));
-					r.height = static_cast<int>(newbuf.height() - delta_h * (count - i));
+					r.width = static_cast<int>(newbuf.width() - delta * (duration.count - i));
+					r.height = static_cast<int>(newbuf.height() - delta_h * (duration.count - i));
 					r.x = static_cast<int>(newbuf.width() - r.width) / 2;
 					r.y = static_cast<int>(newbuf.height() - r.height) / 2;
 					nzbuf.rectangle(true, colors::white);
 					newbuf.stretch(nzbuf, r);
 
-					dzbuf.blend(::nana::rectangle{ nzbuf.size() }, nzbuf, {}, 1.0 - fade * (count - i));
+					dzbuf.blend(::nana::rectangle{ nzbuf.size() }, nzbuf, {}, 1.0 - fade * (duration.count - i));
 
 					graph.bitblt(refpos.x, refpos.y, dzbuf);
 
-					api::update_window(window_handle);
-					std::this_thread::sleep_for(std::chrono::milliseconds{sleep_time});
+					api::update_window(window_handle, true);
+					
+					auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tm).count();
+					if (time < duration.time)
+						std::this_thread::sleep_for(std::chrono::milliseconds{ duration.time - time });
 				}
 			}
 
@@ -169,8 +194,13 @@ namespace nana
 			model()
 			{
 				const std::string ws[] = { "S", "M", "T", "W", "T", "F", "S" };
+				const char* i18n_weekday_ids[] = {"SUNDAY_SHORT", "MONDAY_SHORT", "TUESDAY_SHORT", "WEDNESDAY_SHORT", "THURSDAY_SHORT","FRIDAY_SHORT", "SATURDAY_SHORT" };
+				nana::internationalization i18n;
 				for (int i = 0; i < 7; ++i)
-					weekstr_[i] = ws[i];
+				{
+					auto shortname = i18n(i18n_weekday_ids[i]);
+					weekstr_[i] = (shortname == i18n_weekday_ids[i] ? ws[i] : shortname);
+				}
 
 				nana::date d;
 				date_.year = view_month_.year = d.read().year;
@@ -335,6 +365,11 @@ namespace nana
 			::nana::date read() const
 			{
 				return{date_.year, date_.month, date_.day};
+			}
+
+			void transform_duration(const duration_type& duration)
+			{
+				duration_ = duration;
 			}
 
 			void weekname(std::size_t pos, std::string&& name)
@@ -523,12 +558,13 @@ namespace nana
 				nana::paint::graphics dirtybuf({ r.width, r.height });
 				dirtybuf.bitblt(r, graph, refpos);
 
+				trace_.clear_logic_pos();
 				render(graph);
 
 				nana::paint::graphics gbuf({ r.width, r.height });
 				gbuf.bitblt(r, graph, refpos);
 
-				perf_transform_helper(window_handle, transf, graph, dirtybuf, gbuf, refpos);
+				perf_transform_helper(window_handle, transf, graph, dirtybuf, gbuf, refpos, duration_);
 			}
 		private:
 			//rendering functions
@@ -730,6 +766,7 @@ namespace nana
 			page_mode page{ page_mode::date };
 		private:
 			::std::string weekstr_[7];
+			duration_type duration_{ 10, 15 };
 
 			bool chose_{ false };	//indicates whether the date is chose
 			where pos_{ where::none };
@@ -923,6 +960,11 @@ namespace nana
 		nana::date date_chooser::read() const
 		{
 			return get_drawer_trigger().get_model()->read();
+		}
+
+		void date_chooser::transform_duration(std::size_t frame_count, std::size_t duration)
+		{
+			return get_drawer_trigger().get_model()->transform_duration(drawerbase::date_chooser::duration_type{ frame_count, duration });
 		}
 
 		void date_chooser::weekstr(unsigned index, ::std::string str)
