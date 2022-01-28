@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1509,6 +1509,43 @@ namespace nana{	namespace paint
 		ofs.write(reinterpret_cast<char*>(data.get()), image_bytes);
 
 		return true;
+	}
+
+	void pixel_buffer::to_grayscale()
+	{
+		auto sp = storage_.get();
+		if (!sp)
+			return;
+
+		std::unique_ptr<float[]> table{new float[0x100 * 3]};
+
+		auto const tbl_red = table.get();
+		auto const tbl_green = table.get() + 0x100;
+		auto const tbl_blue = table.get() + 0x200;
+
+		tbl_red[0]		= 0;
+		tbl_green[0]	= 0;
+		tbl_blue[0]		= 0;
+		for(std::size_t i = 1; i < 0x100; ++i)
+		{
+			tbl_red[i]		=  tbl_red[i - 1] + 0.3f;
+			tbl_green[i] 	=  tbl_green[i - 1] + 0.59f;
+			tbl_blue[i]		= tbl_blue[i - 1] + 0.11f;
+		}
+
+		for(std::size_t y = 0; y < sp->pixel_size.height; ++y)
+		{
+			auto p = this->raw_ptr(y);
+
+			auto end = p + sp->pixel_size.width;
+			for(; p != end; ++p)
+			{
+				auto gray = static_cast<unsigned char>(tbl_red[p->element.red] + tbl_green[p->element.green] + tbl_blue[p->element.blue] + 0.5f);
+				p->element.red = gray;
+				p->element.blue = gray;
+				p->element.green = gray;
+			}
+		}
 	}
 }//end namespace paint
 }//end namespace nana
