@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1098,9 +1098,12 @@ namespace api
 
 	//update_window
 	//@brief: it displays a window immediately without refreshing.
-	void update_window(window wd)
+	void update_window(window wd, bool now)
 	{
-		restrict::wd_manager().update(wd, false, true);
+		if (now)
+			restrict::wd_manager().update_now(wd);
+		else
+			restrict::wd_manager().update(wd, false, true);
 	}
 
 	void window_caption(window wd, const std::string& title_utf8)

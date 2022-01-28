@@ -93,6 +93,8 @@ namespace nana::detail
 		void map(basic_window*, bool forced, const rectangle* update_area = nullptr);
 
 		bool update(basic_window*, bool redraw, bool force, const rectangle* update_area = nullptr);
+		bool update_now(window, const rectangle* update_area = nullptr);
+
 		void update_requesters(basic_window* root_wd);
 		void refresh_tree(basic_window*);
 

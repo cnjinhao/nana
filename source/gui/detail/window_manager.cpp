@@ -880,6 +880,32 @@ namespace detail
 			return true;
 		}
 
+		bool window_manager::update_now(window wd, const rectangle* update_area)
+		{
+			internal_scope_guard lock;
+			if (impl_->wd_register.available(wd) == false) return false;
+
+			if ((wd->other.category == category::flags::root) && wd->is_draw_through())
+			{
+				native_interface::refresh_window(wd->root);
+				return true;
+			}
+
+			if (wd->displayed())
+			{
+				window_layer::paint(wd, window_layer::paint_operation::none, false);
+				this->map(wd, true, update_area);
+
+				auto& update_requesters = wd->root_widget->other.attribute.root->update_requesters;
+				auto i = std::find(update_requesters.cbegin(), update_requesters.cend(), wd);
+				if (i != update_requesters.end())
+					update_requesters.erase(i);
+
+				return true;
+			}
+			return true;
+		}
+
 		void window_manager::update_requesters(basic_window* root_wd)
 		{
 			internal_scope_guard lock;
@@ -893,8 +919,8 @@ namespace detail
 						continue;
 
 					//#431
-					//Redraws the widget when it has beground effect.
-					//Because the widget just redraw if it didn't have bground effect when it was inserted to the update_requesters queue
+					//If a window has bground effect, it may be a transparent. So it should be redrawn to ensure the background of transparent
+					//window gets updating.
 					window_layer::paint(wd, (wd->effect.bground ? paint_operation::try_refresh : paint_operation::have_refreshed), false);
 					this->map(wd, true);
 				}

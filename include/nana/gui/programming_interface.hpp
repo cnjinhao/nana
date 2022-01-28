@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -363,7 +363,7 @@ namespace api
 	 */
 	void refresh_window(window window_handle);
 	void refresh_window_tree(window);      ///< Refreshes the specified window and all its children windows, then displays it immediately
-	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
+	void update_window(window, bool now = false);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
 	void window_caption(window, const std::wstring& title);
