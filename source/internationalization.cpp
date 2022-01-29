@@ -1,13 +1,15 @@
 /*
 *	An Implementation of i18n
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
 *	http://www.boost.org/LICENSE_1_0.txt)
 *
 *	@file: nana/internationalization.cpp
+*	@list of contributions:
+*		AStepaniuk, Added support for comment lines in PO files(PR#619)
 */
 
 #include <nana/push_ignore_diagnostic>
@@ -63,6 +65,7 @@ namespace nana
 					return token::eof;
 				str_.clear();
 				_m_eat_ws();
+				_m_eat_comments();
 
 				if (*read_ptr_ == '"')
 				{
@@ -141,6 +144,35 @@ namespace nana
 				read_ptr_ = end_ptr_;
 			}
 
+			void _m_eat_comments()
+			{
+				while (read_ptr_ != end_ptr_ && *read_ptr_ == '#')
+				{
+					_m_eat_line();
+				}
+			}
+
+			void _m_eat_line()
+			{
+				bool line_end_reached = false;
+				for (auto i = read_ptr_; i != end_ptr_; ++i)
+				{
+					switch (*i)
+					{
+					case '\r': case '\n':
+						line_end_reached = true;
+						break;
+					default:
+						if (line_end_reached)
+						{
+							read_ptr_ = i;
+							return;
+						}
+					}
+				}
+				read_ptr_ = end_ptr_;
+			}
+
 		private:
 			std::unique_ptr<char[]> data_;
 			const char * read_ptr_{ nullptr };
@@ -164,7 +196,7 @@ namespace nana
 				table["NANA_BUTTON_CANCEL"] = "Cancel";
 				table["NANA_BUTTON_CANCEL_SHORTKEY"] = "&Cancel";
 				table["NANA_BUTTON_CREATE"] = "Create";
-		
+
 				table["NANA_FILEBOX_BYTES"] = "Bytes";
 				table["NANA_FILEBOX_FILESYSTEM"] = "FILESYSTEM";
 				table["NANA_FILEBOX_FILTER"] = "Filter";
@@ -450,7 +482,7 @@ namespace nana
 	{
 		v.emplace_back(to_utf8(arg));
 	}
-	
+
 	//end class internationalization
 
 
@@ -546,7 +578,7 @@ namespace nana
 
 		internationalization i18n;
 
-		std::string msgstr = i18n._m_get(std::string{msgid_});		
+		std::string msgstr = i18n._m_get(std::string{msgid_});
 		i18n._m_replace_args(msgstr, &arg_strs);
 		return msgstr;
 	}
