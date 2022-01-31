@@ -8,7 +8,9 @@
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file: nana/gui/detail/window_manager.cpp
- *	@contributors:	Katsuhisa Yuasa
+ *	@list of contributions:
+ *		Katsuhisa Yuasa,
+ *		wwriter, added a feature: disabling tabstop(#626)
  */
 
 #include <nana/config.hpp>
