@@ -429,8 +429,8 @@ namespace api
 	 */
 	::std::unique_ptr<caret_interface> open_caret(window window_handle, bool disable_throw = false);
 
-	/// Enables that the user can give input focus to the specified window using TAB key.
-	void tabstop(window);
+	/// Determines whether the specified window can get a focus when TAB key is pressed.
+	void tabstop(window window_handle, const bool enable);
 
 	/// Enables or disables a window to receive a key_char event for pressing TAB key.
 	/*

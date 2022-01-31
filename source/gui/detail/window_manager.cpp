@@ -1180,6 +1180,17 @@ namespace detail
 			}
 		}
 
+		void window_manager::disable_tabstop(basic_window* wd)
+		{
+			std::lock_guard<mutex_type> lock(mutex_);
+			if (impl_->wd_register.available(wd) && (wd->flags.tab & detail::tab_type::tabstop))
+			{
+				auto& tabstop_enabled_windows = wd->root_widget->other.attribute.root->tabstop;
+				tabstop_enabled_windows.erase(std::find(tabstop_enabled_windows.begin(), tabstop_enabled_windows.end(), wd));
+				wd->flags.tab &= ~detail::tab_type::tabstop;
+			}			
+		}
+
 		// preconditions of get_tabstop: tabstop is not empty and at least one window is visible
 		basic_window* get_tabstop(basic_window* wd, bool forward)
 		{
