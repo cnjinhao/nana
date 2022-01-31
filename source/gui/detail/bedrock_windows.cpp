@@ -9,7 +9,9 @@
  *
  *	@file nana/gui/detail/win32/bedrock.cpp
  *  @brief A Bedrock Implementation
- *	@contributors: Ariel Vina-Rodriguez
+ *	@list of contributions:
+ *		Ariel Vina-Rodriguez,
+ *		Lancelot 'Robin' Chen, fix mouse wheel on nested form(#621)
  */
 
 #include "../../detail/platform_spec_selector.hpp"
