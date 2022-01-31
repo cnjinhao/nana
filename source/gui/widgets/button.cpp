@@ -101,7 +101,7 @@ namespace nana
 			window wd = wdg;
 
 			api::dev::enable_space_click(wd, true);
-			api::tabstop(wd);
+			api::tabstop(wd, true);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
 			api::dev::set_measurer(wd, &impl_->measurer);

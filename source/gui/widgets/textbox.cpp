@@ -74,7 +74,7 @@ namespace nana
 
 			_m_editor_area(graph.width(), graph.height());
 
-			api::tabstop(wd);
+			api::tabstop(wd, true);
 			api::eat_tabstop(wd, true);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
