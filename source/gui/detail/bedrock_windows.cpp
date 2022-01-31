@@ -1,4 +1,4 @@
-/**
+﻿/**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
  *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
@@ -1157,7 +1157,7 @@ namespace detail
 					auto pointer_wd = ::WindowFromPoint(scr_pos);
 
 					//Ignore the message if the window is disabled.
-					if ((pointer_wd == root_window) && ::IsWindowEnabled(root_window))
+					if ((pointer_wd == root_window || root_window == ::GetAncestor(pointer_wd, GA_ROOT)) && ::IsWindowEnabled(root_window))
 					{
 						::ScreenToClient(pointer_wd, &scr_pos);
 						auto scrolled_wd = wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), { scr_pos.x, scr_pos.y });
