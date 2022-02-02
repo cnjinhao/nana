@@ -74,14 +74,14 @@ static const char* field_options = "__nana_group_options__";
 
         std::string div = "vert margin=[0," + std::to_string(gap) + "," + std::to_string(gap + 5) + "," + std::to_string(gap) + "]";
 
-        div += "<weight=" + std::to_string(caption_dimension.height) + " ";
+        div += "<weight=" + std::to_string(caption_dimension.height) + "px ";
 
         if (align::left == caption_align)
             div += "<weight=" + std::to_string(padding) + ">";
         else
             div += "<>";	//right or center
 
-        div += "<" + std::string{ field_title } + " weight=" + std::to_string(caption_dimension.width) + ">";
+        div += "<" + std::string{ field_title } + " weight=" + std::to_string(caption_dimension.width) + "px>";
 
         if (align::right == caption_align)
             div += "<weight=" + std::to_string(padding) + ">";
