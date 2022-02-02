@@ -90,30 +90,39 @@ namespace nana
 				return true;
 			}
 
-			void render(graph_reference graph, const ::nana::color& fgcolor, align th, align_v tv)
+			void render(graph_reference graph, const ::nana::color& fgcolor, align th, align_v tv, border& border_)
 			{
 				traceable_.clear();
 
+				// remove borders width from width/allowed_width
+				auto width = graph.size().width;
+
+				if (border_.borders & border::left)
+					width -= border_.width;
+
+				if (border_.borders & border::right)
+					width -= border_.width;
+
 				render_status rs;
 
-				rs.allowed_width = graph.size().width;
+				rs.allowed_width = width;
 				rs.text_align = th;
 				rs.text_align_v = tv;
 
 				::nana::size extent_size;
 
 				//All visual lines data of whole text.
-				auto content_lines = _m_measure_extent_size(graph, th, tv, true, graph.size().width, extent_size);
+				auto content_lines = _m_measure_extent_size(graph, th, tv, true, width, extent_size, border_);
 
 				if ((tv != align_v::top) && extent_size.height < graph.height())
 				{
-					rs.pos.y = static_cast<int>(graph.height() - extent_size.height);
+					rs.pos.y = static_cast<int>(graph.height() - extent_size.height) + (border_.borders & border::top ? border_.width : 0);
 
 					if (align_v::center == tv)
 						rs.pos.y >>= 1;
 				}
 				else
-					rs.pos.y = 0;
+					rs.pos.y = 0 + (border_.borders & border::top ? border_.width : 0);
 
 				auto pre_font = graph.typeface();	//used for restoring the font
 				_m_set_default(pre_font, fgcolor);
@@ -139,6 +148,30 @@ namespace nana
 				}
 			}
 
+			void draw_border(graph_reference graph, border& border_)
+			{
+				auto borders = border_.borders;
+
+				if (borders == 0)
+					return;
+
+				nana::rectangle r(graph.size());
+
+				graph.palette(false, border_.border_color);
+
+				if (borders & border::left)
+					graph.rectangle({ r.x, r.y, r.x + border_.width, r.height }, true); // left border
+
+				if (borders & border::right)
+					graph.rectangle({ static_cast<int>(r.width - border_.width), r.y, r.width, r.height }, true); // right border
+
+				if (borders & border::top)
+					graph.rectangle({ r.x, r.y, r.width, r.y + border_.width }, true); // top border
+
+				if (borders & border::bottom)
+					graph.rectangle({ r.x, static_cast<int>(r.height - border_.width), r.width, r.height }, true); // bottom border
+			}
+
 			bool find(const point& mouse_pos, std::wstring& target, std::wstring& url) const
 			{
 				for (auto & t : traceable_)
@@ -157,7 +190,8 @@ namespace nana
 			::nana::size measure(graph_reference graph, unsigned limited, align th, align_v tv)
 			{
 				::nana::size extent_size;
-				_m_measure_extent_size(graph, th, tv, false, limited, extent_size);
+				border border_;
+				_m_measure_extent_size(graph, th, tv, false, limited, extent_size, border_);
 
 				return extent_size;
 			}
@@ -251,23 +285,23 @@ namespace nana
 				}
 			}
 
-			void _m_prepare_x(const render_status& rs, visual_line & vsline, unsigned w) noexcept
+			void _m_prepare_x(const render_status& rs, visual_line & vsline, unsigned w, border& border_) noexcept
 			{
 				switch (rs.text_align)
 				{
 				case align::left:
-					vsline.x_base = 0;
+					vsline.x_base = 0 + (border_.borders & border::left ? border_.width : 0);
 					break;
 				case align::center:
-					vsline.x_base = (static_cast<int>(rs.allowed_width - w) >> 1);
+					vsline.x_base = (static_cast<int>(rs.allowed_width - w) >> 1) + (border_.borders & border::left ? border_.width : 0);
 					break;
 				case align::right:
-					vsline.x_base = static_cast<int>(rs.allowed_width - w);
+					vsline.x_base = static_cast<int>(rs.allowed_width - w) + (border_.borders & border::left ? border_.width : 0);
 					break;
 				}
 			}
 
-			std::deque<std::vector<visual_line>> _m_measure_extent_size(graph_reference graph, nana::align text_align, nana::align_v text_align_v, bool only_screen, unsigned allowed_width_px, nana::size & extent_size)
+			std::deque<std::vector<visual_line>> _m_measure_extent_size(graph_reference graph, nana::align text_align, nana::align_v text_align_v, bool only_screen, unsigned allowed_width_px, nana::size & extent_size, border& border_)
 			{
 				auto pre_font = graph.typeface();	//used for restoring the font
 
@@ -291,7 +325,7 @@ namespace nana
 
 				for (auto & line : dstream_)
 				{
-					auto width_px = _m_prepare_visual_lines(graph, line, def_line_pixels, rs);
+					auto width_px = _m_prepare_visual_lines(graph, line, def_line_pixels, rs, border_);
 
 					if (width_px > extent_size.width)
 						extent_size.width = width_px;
@@ -322,7 +356,7 @@ namespace nana
 			/**
 			 * prepare data for rendering a line of text.
 			 */
-			unsigned _m_prepare_visual_lines(graph_reference graph, dstream::linecontainer& line, unsigned def_line_px, render_status& rs)
+			unsigned _m_prepare_visual_lines(graph_reference graph, dstream::linecontainer& line, unsigned def_line_px, render_status& rs, border& border_)
 			{
 				if (line.empty())
 				{
@@ -392,7 +426,7 @@ namespace nana
 					{
 						auto & vsline = rs.vslines.emplace_back();
 
-						_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos));
+						_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos), border_);
 
 						if (max_ascent + max_descent > max_content_height)
 							max_content_height = max_descent + max_ascent;
@@ -441,7 +475,7 @@ namespace nana
 								//make a new visual line
 								auto & vsline = rs.vslines.emplace_back();
 
-								_m_prepare_x(rs, vsline, sub_text_px);
+								_m_prepare_x(rs, vsline, sub_text_px, border_);
 
 								vsline.extent_height_px = max_content_height;
 								vsline.baseline = max_ascent;
@@ -471,7 +505,7 @@ namespace nana
 				{
 					auto & vsline = rs.vslines.emplace_back();
 
-					_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos));
+					_m_prepare_x(rs, vsline, static_cast<unsigned>(text_pos), border_);
 
 					if (max_ascent + max_descent > max_content_height)
 						max_content_height = max_descent + max_ascent;
@@ -612,6 +646,8 @@ namespace nana
 			std::wstring target;	//It indicates which target is tracing.
 			std::wstring url;
 
+			border border_;
+
 			window for_associated_wd{ nullptr };
 
 			void add_listener(std::function<void(command, const std::string&)>&& fn)
@@ -649,7 +685,17 @@ namespace nana
 
 			size extension() const override
 			{
-				return{ 2, 2 };
+				unsigned int width = 2;
+				unsigned int height = 2;
+
+				if (!api::widget_borderless(*impl_->wd))
+				{
+					auto& border_ = impl_->border_;
+					width += (border_.borders & border::left ? border_.width : 0) + (border_.borders & border::right ? border_.width : 0);
+					height += (border_.borders & border::top ? border_.width : 0) + (border_.borders & border::bottom ? border_.width : 0);
+				}
+
+				return{ width, height };
 			}
 		private:
 			implement * const impl_;
@@ -768,7 +814,14 @@ namespace nana
 			if (!api::dev::copy_transparent_background(wd, graph))
 				graph.rectangle(true, api::bgcolor(wd));
 
-			impl_->renderer.render(graph, api::fgcolor(wd), impl_->text_align, impl_->text_align_v);
+			border border_ = impl_->border_;
+
+			if (api::widget_borderless(*impl_->wd))
+				border_.borders = 0;
+
+			impl_->renderer.render(graph, api::fgcolor(wd), impl_->text_align, impl_->text_align_v, border_);
+
+			impl_->renderer.draw_border(graph, border_);
 		}
 
 		//end class label_drawer
@@ -845,6 +898,57 @@ namespace nana
 			return *this;
 		}
 
+		label& label::set_border(border border_)
+		{
+			auto impl = get_drawer_trigger().impl()->border_ = border_;
+			_m_update_place();
+			return *this;
+		}
+
+		label& label::add_border(border::flag b)
+		{
+			get_drawer_trigger().impl()->border_.borders |= b;
+			_m_update_place();
+			return *this;
+		}
+
+		label& label::remove_border(border::flag b)
+		{
+			get_drawer_trigger().impl()->border_.borders &= ~b;
+			_m_update_place();
+			return *this;
+		}
+
+		bool label::has_border(border::flag b) const noexcept
+		{
+			return get_drawer_trigger().impl()->border_.borders & b;
+		}
+
+		label& label::border_width(unsigned int width)
+		{
+			get_drawer_trigger().impl()->border_.width = width;
+			_m_update_place();
+			return *this;
+		}
+
+		unsigned int label::border_width() const noexcept
+		{
+			return get_drawer_trigger().impl()->border_.width;
+		}
+
+		label& label::border_color(nana::color border_color)
+		{
+			internal_scope_guard lock;
+			get_drawer_trigger().impl()->border_.border_color = border_color;
+			api::refresh_window(*this);
+			return *this;
+		}
+
+		nana::color label::border_color() const noexcept
+		{
+			return get_drawer_trigger().impl()->border_.border_color;
+		}
+
 		nana::size label::measure(unsigned limited) const
 		{
 			if(empty())
@@ -913,6 +1017,20 @@ namespace nana
 			get_drawer_trigger().impl()->renderer.parse(to_wstring(str));
 			api::dev::window_caption(wd, std::move(str));
 			api::refresh_window(wd);
+		}
+
+		void label::_m_update_place()
+		{
+			auto parent_wd = api::get_parent_window(*this);
+
+			auto sz = api::window_size(parent_wd);
+			arg_resized arg;
+			arg.window_handle = parent_wd;
+			arg.width = sz.width;
+			arg.height = sz.height;
+
+			// sends resized event, which place listens out for, which then causes place recalculation
+			api::emit_event<arg_resized>(event_code::resized, parent_wd, arg);
 		}
 	//end class label
 }//end namespace nana
