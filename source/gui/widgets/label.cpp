@@ -900,7 +900,7 @@ namespace nana
 
 		label& label::set_border(border border_)
 		{
-			auto impl = get_drawer_trigger().impl()->border_ = border_;
+			get_drawer_trigger().impl()->border_ = border_;
 			_m_update_place();
 			return *this;
 		}
