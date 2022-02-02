@@ -1184,7 +1184,7 @@ namespace detail
 
 		void window_manager::disable_tabstop(basic_window* wd)
 		{
-			std::lock_guard<mutex_type> lock(mutex_);
+			internal_scope_guard lock;
 			if (impl_->wd_register.available(wd) && (wd->flags.tab & detail::tab_type::tabstop))
 			{
 				auto& tabstop_enabled_windows = wd->root_widget->other.attribute.root->tabstop;
@@ -1282,20 +1282,6 @@ namespace detail
 			if (impl_->wd_register.available(wd))
 			{
 				if(native_interface::calc_window_point(wd->root, pos))
-				{
-					pos -= wd->pos_root;
-					return true;
-				}
-			}
-			return false;
-		}
-		bool window_manager::calc_screen_point(basic_window* wd, nana::point& pos) 
-		{
-						//Thread-Safe Required!
-			std::lock_guard<mutex_type> lock(mutex_);
-			if (impl_->wd_register.available(wd))
-			{
-				if(native_interface::calc_screen_point(wd->root, pos))
 				{
 					pos -= wd->pos_root;
 					return true;

@@ -1254,8 +1254,7 @@ namespace detail
 							
 							// ::DragQueryPoint(drop, &mswin_pos); Returns the location of the point dragged into the file window
 							// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-dragquerypoint
-							wd_manager.calc_screen_point(root_runtime->window, dropfiles.pos);
-							wd_manager.calc_window_point(msgwnd, dropfiles.pos);
+							dropfiles.pos = pos - msgwnd->pos_root;
 							dropfiles.window_handle = msgwnd;
 
 							msgwnd->annex.events_ptr->mouse_dropfiles.emit(dropfiles, msgwnd);
