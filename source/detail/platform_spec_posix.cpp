@@ -836,7 +836,7 @@ namespace detail
 					XNForeground, 0,
 					XNBackground, 0,
 					(void *)0);
-			::XSetICValues(addr->input_context, XNPreeditAttributes, list, NULL);
+			::XSetICValues(addr->input_context, XNPreeditAttributes, list, nullptr);
 			::XFree(list);
 		}
 	}
