@@ -3785,7 +3785,7 @@ namespace nana
 
 				this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
-				color txt_color{ static_cast<color_rgb>(0x3399) };
+				color txt_color{ essence_->scheme_ptr->cat_fgcolor };
 
 				//Area of category icon
 				rectangle rt_ctg_icon{ x + 5, y + static_cast<int>(item_height - 16) / 2, 16, 16 };
@@ -4120,9 +4120,9 @@ namespace nana
 					essence_->item_height()
 				};
 
-				essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
+				essence_->graph->rectangle(r, false, essence_->scheme_ptr->item_selected_border);
 
-				essence_->graph->palette(false, colors::white);
+				essence_->graph->palette(false, essence_->scheme_ptr->background);
 				paint::draw(*essence_->graph).corner(r, 1);
 
 				essence_->graph->rectangle(r.pare_off(1), false);
