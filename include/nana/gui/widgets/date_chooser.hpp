@@ -81,7 +81,7 @@ namespace nana
 		 * @param frame_count The number of frames
 		 * @param duration The time of a frame.
 		 */
-		void transform_duration(std::size_t frame_count, std::size_t duration);
+		void transform_duration(std::size_t frame_count, std::int64_t duration);
 		nana::date read() const;
 		void weekstr(unsigned index, std::string);///<Set the week strings which will be displayed for day, index is in the range of [0, 6]
 #ifdef __cpp_char8_t

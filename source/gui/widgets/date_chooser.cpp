@@ -26,7 +26,7 @@ namespace nana
 		struct duration_type
 		{
 			std::size_t count;
-			std::size_t time;
+			std::int64_t time;
 		};
 
 		void perf_transform_helper(window window_handle, transform_action tfid, trigger::graph_reference graph, trigger::graph_reference dirtybuf, trigger::graph_reference newbuf, const nana::point& refpos, const duration_type& duration)
@@ -39,7 +39,7 @@ namespace nana
 			{
 				nana::rectangle dr(0, refpos.y, 0, dirtybuf.height());
 				nana::rectangle nr(refpos.x, refpos.y, 0, newbuf.height());
-				for (int i = 1; i < duration.count; ++i)
+				for (std::size_t i = 1; i < duration.count; ++i)
 				{
 					auto tm = std::chrono::high_resolution_clock::now();
 					int off_x = static_cast<int>(delta * i);
@@ -65,7 +65,7 @@ namespace nana
 				nana::rectangle dr(refpos.x, refpos.y, 0, dirtybuf.height());
 				nana::rectangle nr(0, refpos.y, 0, newbuf.height());
 
-				for (int i = 1; i < duration.count; ++i)
+				for (std::size_t i = 1; i < duration.count; ++i)
 				{
 					auto tm = std::chrono::high_resolution_clock::now();
 
@@ -91,7 +91,7 @@ namespace nana
 				nana::paint::graphics nzbuf(newbuf.size());
 
 				nana::rectangle r;
-				for (int i = 1; i < duration.count; ++i)
+				for (std::size_t i = 1; i < duration.count; ++i)
 				{
 					auto tm = std::chrono::high_resolution_clock::now();
 
@@ -126,7 +126,7 @@ namespace nana
 				nana::paint::graphics nzbuf(newbuf.size());
 
 				nana::rectangle r;
-				for (int i = 1; i < duration.count; ++i)
+				for (std::size_t i = 1; i < duration.count; ++i)
 				{
 					auto tm = std::chrono::high_resolution_clock::now();
 
@@ -962,7 +962,7 @@ namespace nana
 			return get_drawer_trigger().get_model()->read();
 		}
 
-		void date_chooser::transform_duration(std::size_t frame_count, std::size_t duration)
+		void date_chooser::transform_duration(std::size_t frame_count, std::intptr_t duration)
 		{
 			return get_drawer_trigger().get_model()->transform_duration(drawerbase::date_chooser::duration_type{ frame_count, duration });
 		}
