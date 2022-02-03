@@ -873,7 +873,7 @@ namespace nana
 			virtual std::string && str_move()
 			{
 				if(is_unicode_)
-					data_ = std::move(str());
+					data_ = str();
 				return std::move(data_);
 			}
 
@@ -983,7 +983,7 @@ namespace nana
 
 			virtual std::wstring&& wstr_move()
 			{
-				wdata_for_move_ = std::move(wstr());
+				wdata_for_move_ = wstr();
 				return std::move(wdata_for_move_);
 			}
 		private:
@@ -1020,7 +1020,7 @@ namespace nana
 
 			virtual std::string && str_move()
 			{
-				data_for_move_ = std::move(str());
+				data_for_move_ = str();
 				return std::move(data_for_move_);
 			}
 

@@ -374,7 +374,7 @@ namespace nana
 			std::unique_ptr<FT_UInt[]> glyph_indexes(new FT_UInt[len]);
 
 			//Don't reverse the string
-			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* /*pstr*/) mutable{
+			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft](const wchar_t* p, std::size_t size, const wchar_t* /*pstr*/) mutable{
 				while(true)
 				{
 					auto preferred = _m_scan_fonts(xft, p, size, glyph_indexes.get());
