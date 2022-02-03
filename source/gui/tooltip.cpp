@@ -1,7 +1,7 @@
 /*
  *	A Tooltip Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -118,6 +118,11 @@ namespace nana
 					duration_ = d;
 					timer_.reset();
 				}
+
+				virtual window window_handle() const override
+				{
+					return this->handle();
+				}
 			private:
 				void _m_tick()
 				{
@@ -227,6 +232,12 @@ namespace nana
 						window_ = std::unique_ptr<tooltip_interface, deleter_type>(fp->create(), [fp](tooltip_interface* ti)
 						{
 							fp->destroy(ti);
+						});
+
+						api::events(window_->window_handle()).destroy.connect([this](const arg_destroy& arg) {
+							api::at_safe_place(arg.window_handle, [this] {
+								this->close();
+								});
 						});
 					}
 
