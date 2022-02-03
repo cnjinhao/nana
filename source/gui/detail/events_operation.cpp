@@ -60,15 +60,25 @@ namespace nana::detail
 		{
 			auto & evt_operation = bedrock::instance().evt_operation();
 
-			for (auto p : *dockers_)
+			//Checks whether this event is working now.
+			if (emitting_count_)
 			{
-				evt_operation.cancel(reinterpret_cast<event_handle>(p));
-				delete p;
+				deleted_flags_ = true;
+				for (auto p : *dockers_)
+					static_cast<docker_base*>(p)->flag_deleted = true;
 			}
-			dockers_->clear();
+			else
+			{
+				for (auto p : *dockers_)
+				{
+					evt_operation.cancel(reinterpret_cast<event_handle>(p));
+					delete p;
+				}
+				dockers_->clear();
 
-			delete dockers_;
-			dockers_ = nullptr;
+				delete dockers_;
+				dockers_ = nullptr;
+			}
 		}
 	}
 
