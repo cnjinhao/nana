@@ -1,7 +1,7 @@
 /**
  *	A group widget implementation
  *	Nana C++ Library(http://www.nanaro.org)
- *	Copyright(C) 2015-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2015-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
