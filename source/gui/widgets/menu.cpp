@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2021 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2022 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -609,12 +609,12 @@ namespace nana
 			//send_shortkey has 3 states, 0 = UNKNOWN KEY, 1 = ITEM, 2 = GOTO SUBMENU
 			int send_shortkey(wchar_t key)
 			{
-				key = std::tolower(key);
+				key = static_cast<wchar_t>(std::tolower(key));
 				std::size_t index = 0;
 				for(auto & m : menu_->items)
 				{
 					auto item_ptr = m.get();
-					if (std::tolower(m->hotkey) != key)
+					if (std::tolower(m->hotkey) != static_cast<int>(key))
 					{
 						++index;
 						continue;

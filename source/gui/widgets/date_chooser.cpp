@@ -962,7 +962,7 @@ namespace nana
 			return get_drawer_trigger().get_model()->read();
 		}
 
-		void date_chooser::transform_duration(std::size_t frame_count, std::intptr_t duration)
+		void date_chooser::transform_duration(std::size_t frame_count, std::int64_t duration)
 		{
 			return get_drawer_trigger().get_model()->transform_duration(drawerbase::date_chooser::duration_type{ frame_count, duration });
 		}

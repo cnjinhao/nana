@@ -1,7 +1,7 @@
 /**
  *	Basic Types definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -60,7 +60,7 @@ namespace nana
 
 		static const char_type* find(const char_type* s, std::size_t n, const char_type& a)
 		{
-			char_type ua = std::toupper(a);
+			auto ua = std::toupper(a);
 			const char_type * end = s + n;
 			while((s != end) && (std::toupper(*s) != ua))
 				++s;
