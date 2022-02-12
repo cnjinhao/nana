@@ -225,10 +225,12 @@ namespace nana
 
 				void show(const std::string& text, const point* pos, std::size_t duration)
 				{
+					internal_scope_guard lock;
 					if (nullptr == window_ || window_->tooltip_empty())
 					{
 						auto fp = factory();
 
+						wait_for_destroy_ = true;
 						window_ = std::unique_ptr<tooltip_interface, deleter_type>(fp->create(), [fp](tooltip_interface* ti)
 						{
 							fp->destroy(ti);
@@ -236,6 +238,7 @@ namespace nana
 
 						api::events(window_->window_handle()).destroy.connect([this](const arg_destroy& arg) {
 							api::at_safe_place(arg.window_handle, [this] {
+								wait_for_destroy_ = false;
 								this->close();
 								});
 						});
@@ -255,7 +258,7 @@ namespace nana
 					window_.reset();
 
 					//Destroy the tooltip controller when there are not tooltips.
-					if (table_.empty())
+					if (table_.empty() && !wait_for_destroy_)
 						instance(true);
 				}
 			private:
@@ -312,6 +315,7 @@ namespace nana
 					return value;
 				}
 			private:
+				bool wait_for_destroy_{ false };
 				std::unique_ptr<tooltip_interface, deleter_type> window_;
 				std::map<window, tip_value> table_;
 			};
@@ -323,11 +327,9 @@ namespace nana
 
 		void tooltip::set(window wd, const std::string& text)
 		{
+			internal_scope_guard lock;
 			if(false == api::empty_window(wd))
-			{
-				internal_scope_guard lock;
 				ctrl::instance()->set(wd, text);
-			}
 		}
 
 		void tooltip::show(window wd, point pos, const std::string& text, std::size_t duration)
