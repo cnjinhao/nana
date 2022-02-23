@@ -435,6 +435,10 @@ namespace detail
 			keysym = keyboard::os_shift; break;
 		case XK_Control_L: case XK_Control_R: //ctrl
 			keysym = keyboard::os_ctrl;	break;
+		case XK_Home:
+			keysym = keyboard::os_home; break;
+		case XK_End:
+			keysym = keyboard::os_end; break;
 		default:
 			do
 			{
