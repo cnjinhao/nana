@@ -1,7 +1,7 @@
 /*
  *	Bitmap Format Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -37,7 +37,7 @@ namespace nana{	namespace paint
 				if ((bmp_file->bfType != 0x4D42) || (bmp_file->bfSize != bytes))
 					return false;
 
-				auto const header_bytes = *reinterpret_cast<const unsigned long*>(bmp_file + 1);
+				auto const header_bytes = *reinterpret_cast<const std::uint32_t*>(bmp_file + 1);
 				
 				//There are two kind of base headers. Determinate it by size of header(The first ulong of header).
 				//Only Windows Bitmap(BITMAPINFOHEADER) is supported.
