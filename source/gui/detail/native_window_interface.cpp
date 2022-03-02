@@ -1751,7 +1751,13 @@ namespace nana{
 			::XGetWindowAttributes(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &attr);
 			//Make sure the window is mapped before setting focus.
 			if(IsViewable == attr.map_state)
-				::XSetInputFocus(restrict::spec.open_display(), reinterpret_cast<Window>(wd), RevertToPointerRoot, CurrentTime);
+			{
+				//X has a very weird focus controlling. It generates a FocusOut event before FocusIn when XSetInputFocus,
+				//The FocusOut should be ignored in this situation, for precisely focus controlling.
+
+				restrict::spec.add_ignore_once(wd, FocusOut);
+				::XSetInputFocus(restrict::spec.open_display(), reinterpret_cast<Window>(wd), RevertToParent, CurrentTime);
+			}
 #endif
 		}
 

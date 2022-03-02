@@ -610,15 +610,19 @@ namespace detail
 				hovered_wd = nullptr;
 				break;
 			case FocusIn:
+				::nana::detail::platform_spec::instance().ignore_once(native_window, FocusOut);
 				brock.event_focus_changed(msgwnd, native_window, true);
 				break;
 			case FocusOut:
-				if(native_interface::is_window(msgwnd->root))
+				if(!::nana::detail::platform_spec::instance().ignore_once(native_window, FocusOut))
 				{
-					nana::point pos = native_interface::cursor_position();
-					auto recv = native_interface::find_window(pos.x, pos.y);
+					if(native_interface::is_window(msgwnd->root))
+					{
+						nana::point pos = native_interface::cursor_position();
+						auto recv = native_interface::find_window(pos.x, pos.y);
 
-					brock.event_focus_changed(msgwnd, recv, false);
+						brock.event_focus_changed(msgwnd, recv, false);
+					}
 				}
 				break;
 			case ConfigureNotify:

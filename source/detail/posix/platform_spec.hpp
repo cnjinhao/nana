@@ -256,6 +256,9 @@ namespace detail
 		bool register_dragdrop(native_window_type, x11_dragdrop_interface*);
 		std::size_t dragdrop_target(native_window_type, bool insert, std::size_t count);
 		x11_dragdrop_interface* remove_dragdrop(native_window_type);
+
+		void add_ignore_once(native_window_type, int event_type);
+		bool ignore_once(native_window_type, int event_type);
 	private:
 		static int _m_msg_filter(XEvent&, msg_packet_tag&);
 		void _m_caret_routine();
@@ -321,6 +324,8 @@ namespace detail
 			std::map<native_window_type, x11_dragdrop_interface*> dragdrop;
 			std::map<native_window_type, std::size_t> targets;
 		}xdnd_;
+
+		std::map<native_window_type, std::vector<int>> ignore_once_;
 
 		msg_dispatcher * msg_dispatcher_;
 	};//end class platform_X11

@@ -1156,6 +1156,34 @@ namespace detail
 		return ddrop;
 	}
 
+	void platform_spec::add_ignore_once(native_window_type wd, int event_type)
+	{
+		platform_scope_guard lock;
+		ignore_once_[wd].push_back(event_type);
+	}
+
+	bool platform_spec::ignore_once(native_window_type wd, int event_type)
+	{
+		bool ignored = false;
+		platform_scope_guard lock;
+
+		auto i = ignore_once_.find(wd);
+		if(i != ignore_once_.end())
+		{
+			auto u = std::find(i->second.cbegin(), i->second.cend(), event_type);
+			if(u != i->second.cend())
+			{
+				ignored = true;
+				i->second.erase(u);
+			}
+
+			if(i->second.empty())
+				ignore_once_.erase(i);
+		}
+
+		return ignored;
+	}
+
 	//_m_msg_filter
 	//@return:	_m_msg_filter returns three states
 	//		0 = msg_dispatcher dispatches the XEvent
