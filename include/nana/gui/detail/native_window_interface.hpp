@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -46,8 +46,8 @@ namespace detail
 
 		using native_string_type = ::nana::detail::native_string_type;
 
-		//Execute a function in a thread which is associated with the specified native window.
-		static void affinity_execute(native_window_type, const std::function<void()>&);
+		//Invokes a function in the thread of the specified window.
+		static void affinity_execute(native_window_type, bool post, std::function<void()>&&);
 
 		static nana::size	primary_monitor_size();
 		static rectangle screen_area_from_point(const point&);

@@ -1356,10 +1356,11 @@ namespace detail
 			{
 				if (i->first->thread_id == thread_id)
 				{
-					for (auto& fn : i->second)
-						fn();
-
+					auto functions = std::move(i->second);
 					i = safe_place.erase(i);
+
+					for (auto& fn : functions)
+						fn();
 				}
 				else
 					++i;

@@ -627,8 +627,10 @@ namespace detail
 			if (wParam)
 			{
 				auto arg = reinterpret_cast<detail::messages::arg_affinity_execute*>(wParam);
-				if (arg->function_ptr)
-					(*arg->function_ptr)();
+				if (arg->function)
+					arg->function();
+
+				delete arg;
 			}
 			break;
 		default:

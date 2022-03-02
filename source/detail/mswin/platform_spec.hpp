@@ -1,7 +1,7 @@
 /**
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -56,7 +56,7 @@ namespace detail
 
 		struct arg_affinity_execute
 		{
-			const std::function<void()> * function_ptr;
+			std::function<void()> function;
 		};
 
 		enum

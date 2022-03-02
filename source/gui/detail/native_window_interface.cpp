@@ -345,7 +345,7 @@ namespace nana{
 #endif
 
 	//struct native_interface
-		void native_interface::affinity_execute(native_window_type native_handle, const std::function<void()>& fn)
+		void native_interface::affinity_execute(native_window_type native_handle, bool post, std::function<void()>&& fn)
 		{
 			if (!fn)
 				return;
@@ -356,20 +356,59 @@ namespace nana{
 			{
 				if (::GetCurrentThreadId() != ::GetWindowThreadProcessId(mswin, nullptr))
 				{
-					detail::messages::arg_affinity_execute arg;
-					arg.function_ptr = &fn;
+					auto arg = new detail::messages::arg_affinity_execute;
 
-					internal_revert_guard revert;
-					::SendMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(&arg), 0);
+					arg->function = std::move(fn);
 
+					if(post)
+					{
+						::PostMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
+					}
+					else
+					{
+						internal_revert_guard rev;
+						::SendMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
+					}
 					return;
 				}
 			}
 
 			fn();
 #else
-			static_cast<void>(native_handle);
-			fn();
+			auto & platform_spec = nana::detail::platform_spec::instance();
+			if(post)
+			{
+				platform_spec.affinity_execute(native_handle, std::move(fn));
+				return;
+			}
+
+			auto wd = bedrock::instance().wd_manager().root(native_handle);
+
+			if(!wd)
+				return;
+
+			if(nana::system::this_thread_id() == wd->thread_id)
+			{
+				fn();
+			}
+			else
+			{
+				internal_revert_guard rev;
+
+				std::mutex mutex;
+				std::condition_variable condvar;
+
+				std::unique_lock<std::mutex> lock{mutex};
+
+				platform_spec.affinity_execute(native_handle, [fn, &mutex, &condvar] {
+					fn();
+
+					std::lock_guard<std::mutex> lock{mutex};
+					condvar.notify_one();
+				});
+
+				condvar.wait(lock);
+			}
 #endif	
 		}
 

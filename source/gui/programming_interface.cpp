@@ -208,12 +208,6 @@ namespace api
 
 	namespace dev
 	{
-
-		void affinity_execute(window window_handle, const std::function<void()>& fn)
-		{
-			interface_type::affinity_execute(root(window_handle), fn);
-		}
-
 		bool set_events(window wd, const std::shared_ptr<general_events>& gep)
 		{
 			internal_scope_guard lock;
@@ -1658,6 +1652,16 @@ namespace api
 	void at_safe_place(window wd, std::function<void()> fn)
 	{
 		restrict::wd_manager().set_safe_place(wd, std::move(fn));
+	}
+
+	bool affinity_execute(window wd, bool post, std::function<void()> fn)
+	{
+		internal_scope_guard lock;
+		if(!is_window(wd))
+			return false;
+
+		interface_type::affinity_execute(wd->root, post, std::move(fn));
+		return true;
 	}
 
 	std::optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)

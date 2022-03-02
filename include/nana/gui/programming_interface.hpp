@@ -75,8 +75,6 @@ namespace api
 	//The namespace dev defines functions for internal use
 	namespace dev
 	{
-		void affinity_execute(window window_handle, const std::function<void()>&);
-
 		bool set_events(window, const std::shared_ptr<general_events>&);
 
 		template<typename Scheme>
@@ -478,6 +476,18 @@ namespace api
 	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 
 	void at_safe_place(window, ::std::function<void()>);
+
+	/// Invokes a function in the thread of the specified window
+	/**
+	 * If the calling thread and the window thread is the same thread, it calls fn in current thread. If the calling thread and the
+	 * window thread are different threads, it posts the function to the window thread and returns immediatly.
+	 * @param window_handle The window handle to the thread
+	 * @param post	Indicates the way the invoke the function. If it is true, it posts the fn to the window thread and returns. If it is false,
+	 * 				It sends to the window thread and waits until the function is called.
+	 * @param fn The function
+	 * @return if window_handle is valid, it returns true, otherwise false.
+	 * */
+	bool affinity_execute(window window_handle, bool post, std::function<void()> fn);
 
 	/// Returns a widget content extent size
 	/**
