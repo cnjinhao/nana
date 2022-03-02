@@ -1,7 +1,7 @@
 /*
  *	A float_listbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -316,6 +316,11 @@ namespace nana
 				deselect_on_mouse_leave_ = value;
 			}
 
+			void button_size(unsigned bs)
+			{
+				button_size_ = bs;
+			}
+
 			std::size_t length() const
 			{
 				return (module_ ? module_->items.size() : 0);
@@ -400,7 +405,8 @@ namespace nana
 
 				if (scrollbar_.empty() && module_)
 				{
-					scrollbar_.create(wd, rectangle(static_cast<int>(wd.size().width - 18), 2, 16, wd.size().height - 4));
+					scrollbar_.create(wd, rectangle(static_cast<int>(wd.size().width - button_size_ - 2), 2, button_size_, wd.size().height - 4));
+					scrollbar_.scheme().button_size = button_size_;
 					scrollbar_.amount(module_->items.size());
 					scrollbar_.range(module_->max_items);
 					scrollbar_.value(state_.offset_y);
@@ -431,6 +437,7 @@ namespace nana
 
 			bool ignore_first_mouseup_{ true };
 
+			unsigned button_size_{ 16 };	//Width/height of scroll and its button
 			bool deselect_on_mouse_leave_{ false }; //false: is the behaviour of the combox
 												   //true: is the behaviour of the menu
 
@@ -562,6 +569,11 @@ namespace nana
 	void float_listbox::deselect_on_mouse_leave(bool value)
 	{
 		get_drawer_trigger().get_drawer_impl().deselect_on_mouse_leave(value);
+	}
+
+	void float_listbox::button_size(unsigned bs)
+	{
+		get_drawer_trigger().get_drawer_impl().button_size(bs);
 	}
 
 	float_listbox::size_type float_listbox::length() const

@@ -71,8 +71,19 @@ namespace nana
 			if (limit_pixels)
 				return{};
 
+			//This method is according to trigger::_m_draw_title
+
 			wchar_t shortkey;
-			return graph.text_extent_size(api::transform_shortkey_text(impl_->wdg->caption(), shortkey, nullptr));
+			auto content_size = graph.text_extent_size(api::transform_shortkey_text(impl_->wdg->caption(), shortkey, nullptr));
+
+			if (impl_->attr.icon)
+			{
+				auto icon_sz = impl_->attr.icon.size();
+				content_size.width += icon_sz.width + 5;
+				content_size.height = std::max(content_size.height, icon_sz.height);
+			}
+
+			return content_size;
 		}
 
 		trigger::trigger():
@@ -84,13 +95,13 @@ namespace nana
 		{
 		}
 
-		void trigger::attached(widget_reference wdg, graph_reference graph)
+		void trigger::attached(widget_reference wdg, graph_reference)
 		{
 			impl_->wdg = &wdg;
 			window wd = wdg;
 
 			api::dev::enable_space_click(wd, true);
-			api::tabstop(wd);
+			api::tabstop(wd, true);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
 			api::dev::set_measurer(wd, &impl_->measurer);
@@ -160,7 +171,8 @@ namespace nana
 				else
 					_m_draw_background(graph);
 
-				_m_draw_border(graph);
+				if (false == API::widget_borderless(*impl_->wdg))
+					_m_draw_border(graph);
 			}
 			_m_draw_title(graph, eb);
 		}
@@ -234,20 +246,22 @@ namespace nana
 			nana::size ts = graph.text_extent_size(str);
 			nana::size gsize = graph.size();
 
-			nana::point pos{
-				static_cast<int>(gsize.width - 1 - ts.width) >> 1, static_cast<int>(gsize.height - 1 - ts.height) >> 1
+			//Text position
+			auto tmp_sz = gsize - 1 - ts;
+			point pos{
+				static_cast<int>(tmp_sz.width) / 2, static_cast<int>(tmp_sz.height) / 2
 			};
 
 			auto icon_sz = impl_->attr.icon.size();
 			if (impl_->attr.icon)
 			{
 				icon_sz.width += 5;
-
-				if (pos.x < static_cast<int>(icon_sz.width))
-					pos.x = static_cast<int>(icon_sz.width);
-				
 				pos.x += icon_sz.width / 2;
 			}
+
+			if (pos.x - static_cast<int>(icon_sz.width) < 4)
+				pos.x += 4 - pos.x + icon_sz.width;
+			
 
 			if(ts.width)
 			{

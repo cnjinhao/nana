@@ -1,7 +1,7 @@
 /*
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -17,19 +17,6 @@ namespace nana
 {
 	namespace drawerbase::scroll
 	{
-		//struct metrics_type
-		metrics_type::metrics_type():
-			peak(1),
-			range(1),
-			step(1),
-			value(0),
-			what(buttons::none),
-			pressed(false),
-			scroll_length(0),
-			scroll_pos(0)
-		{}
-		//end struct metrics_type
-
 		//class drawer
 		drawer::drawer(bool vert) :
 			vert(vert)
@@ -51,7 +38,9 @@ namespace nana
 				pos = screen_pos.x;
 			}
 
-			const auto bound_pos = static_cast<int>(scale >= fixedsize * 2 ? fixedsize : scale / 2);
+			
+
+			const auto bound_pos = static_cast<int>(scale >= metrics.scheme_ptr->button_size * 2 ? metrics.scheme_ptr->button_size : scale / 2);
 			if (pos < bound_pos)
 				return buttons::first;
 			if (pos > static_cast<int>(scale) - bound_pos)
@@ -59,13 +48,13 @@ namespace nana
 
 			if(metrics.scroll_length)
 			{
-				if(metrics.scroll_pos + static_cast<int>(fixedsize) <= pos && pos < metrics.scroll_pos + static_cast<int>(fixedsize + metrics.scroll_length))
+				if(metrics.scroll_pos + static_cast<int>(metrics.scheme_ptr->button_size) <= pos && pos < metrics.scroll_pos + static_cast<int>(metrics.scheme_ptr->button_size + metrics.scroll_length))
 					return buttons::scroll;
 			}
 
-			if(static_cast<int>(fixedsize) <= pos && pos < metrics.scroll_pos)
+			if(static_cast<int>(metrics.scheme_ptr->button_size) <= pos && pos < metrics.scroll_pos)
 				return buttons::forward;
-			else if(metrics.scroll_pos + static_cast<int>(metrics.scroll_length) <= pos && pos < static_cast<int>(scale - fixedsize))
+			else if(metrics.scroll_pos + static_cast<int>(metrics.scroll_length) <= pos && pos < static_cast<int>(scale - metrics.scheme_ptr->button_size))
 				return buttons::backward;
 
 			return buttons::none;
@@ -77,10 +66,10 @@ namespace nana
 
 			unsigned scale = vert ? graph.height() : graph.width();
 
-			if(scale > fixedsize * 2)
+			if(scale > metrics.scheme_ptr->button_size * 2)
 			{
 				int pos = mouse_pos - metrics.scroll_mouse_offset;
-				const unsigned scroll_area = static_cast<unsigned>(scale - fixedsize * 2 - metrics.scroll_length);
+				const unsigned scroll_area = static_cast<unsigned>(scale - metrics.scheme_ptr->button_size * 2 - metrics.scroll_length);
 
 				if(pos < 0)
 					pos = 0;
@@ -138,8 +127,8 @@ namespace nana
 			_m_background(graph);
 
 			rectangle_rotator r(vert, ::nana::rectangle{ graph.size() });
-			r.x_ref() = static_cast<int>(r.w() - fixedsize);
-			r.w_ref() = fixedsize;
+			r.x_ref() = static_cast<int>(r.w() - metrics.scheme_ptr->button_size);
+			r.w_ref() = static_cast<unsigned>(metrics.scheme_ptr->button_size);
 
 			auto state = ((_m_check() == false || metrics.what == buttons::none) ? states::none : states::highlight);
 			auto moused_state = (_m_check() ? (metrics.pressed ? states::selected : states::actived) : states::none);
@@ -167,13 +156,13 @@ namespace nana
 			nana::rectangle_rotator r(vert, ::nana::rectangle{ graph.size() });
 			if(metrics.what == buttons::forward)
 			{
-				r.x_ref() = static_cast<int>(fixedsize);
+				r.x_ref() = static_cast<int>(metrics.scheme_ptr->button_size);
 				r.w_ref() = metrics.scroll_pos;
 			}
 			else if(buttons::backward == metrics.what)
 			{
-				r.x_ref() = static_cast<int>(fixedsize + metrics.scroll_pos + metrics.scroll_length);
-				r.w_ref() = static_cast<unsigned>((vert ? graph.height() : graph.width()) - (fixedsize * 2 + metrics.scroll_pos + metrics.scroll_length));
+				r.x_ref() = static_cast<int>(metrics.scheme_ptr->button_size + metrics.scroll_pos + metrics.scroll_length);
+				r.w_ref() = static_cast<unsigned>((vert ? graph.height() : graph.width()) - (metrics.scheme_ptr->button_size * 2 + metrics.scroll_pos + metrics.scroll_length));
 			}
 			else
 				return;
@@ -233,13 +222,13 @@ namespace nana
 			int pos = 0;
 			unsigned len = 0;
 
-			if(pixels > fixedsize * 2)
+			if(pixels > metrics.scheme_ptr->button_size * 2)
 			{
-				pixels -= (fixedsize * 2);
+				pixels -= static_cast<unsigned>(metrics.scheme_ptr->button_size * 2);
 				len = static_cast<unsigned>(pixels * metrics.range / metrics.peak);
 				
-				if(len < fixedsize)
-					len = fixedsize;
+				if(len < metrics.scheme_ptr->button_size)
+					len = static_cast<unsigned>(metrics.scheme_ptr->button_size);
 
 				if(metrics.value)
 				{
@@ -260,7 +249,7 @@ namespace nana
 			if(_m_check())
 			{
 				rectangle_rotator r(vert, rectangle{ graph.size() });
-				r.x_ref() = static_cast<int>(fixedsize + metrics.scroll_pos);
+				r.x_ref() = static_cast<int>(metrics.scheme_ptr->button_size + metrics.scroll_pos);
 				r.w_ref() = static_cast<unsigned>(metrics.scroll_length);
 
 				_m_button_frame(graph, r.result(), state);
@@ -275,8 +264,8 @@ namespace nana
 			if(buttons::first == what || buttons::second == what)
 			{
 				auto sz = graph.size();
-				int top = static_cast<int>(sz.height - fixedsize);
-				int left = static_cast<int>(sz.width - fixedsize);
+				int top = static_cast<int>(sz.height - metrics.scheme_ptr->button_size);
+				int left = static_cast<int>(sz.width - metrics.scheme_ptr->button_size);
 
 				direction dir;
 				if (buttons::second == what)
@@ -299,6 +288,9 @@ namespace nana
 					r.x = left / 2;
 				else
 					r.y = top / 2;
+
+				r.x += static_cast<int>(metrics.scheme_ptr->button_size - 16) / 2;
+				r.y += static_cast<int>(metrics.scheme_ptr->button_size - 16) / 2;
 
 				r.width = r.height = 16;
 

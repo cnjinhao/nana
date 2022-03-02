@@ -1,7 +1,7 @@
 /*
 *	Basic Image PixelBuffer Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -77,6 +77,16 @@ namespace nana
 			bool set_frame(std::size_t pos) override
 			{
 				return (0 == pos);
+			}
+
+			paint::pixel_buffer& pxbuf() override
+			{
+				return pixbuf_;
+			}
+
+			const paint::pixel_buffer& pxbuf() const override
+			{
+				return pixbuf_;
 			}
 		protected:
 			pixel_buffer pixbuf_;

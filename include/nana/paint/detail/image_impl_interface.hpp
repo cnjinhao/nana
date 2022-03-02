@@ -2,6 +2,7 @@
 #define NANA_PAINT_DETAIL_IMAGE_IMPL_INTERFACE_HPP
 
 #include "../image.hpp"
+#include "../pixel_buffer.hpp"
 #include <filesystem>
 
 namespace nana{	namespace paint{
@@ -31,6 +32,9 @@ namespace nana{	namespace paint{
 		virtual std::size_t frame() const = 0;			///< The index of current frame
 		virtual std::size_t frame_duration() const = 0;	///< the delay of current frame, in the number of milliseconds
 		virtual bool set_frame(std::size_t pos) = 0;	///< Set the frame
+
+		virtual paint::pixel_buffer& pxbuf() = 0;
+		virtual const paint::pixel_buffer& pxbuf() const = 0;
 	};//end class image::image_impl_interface
 }//end namespace paint
 }//end namespace nana

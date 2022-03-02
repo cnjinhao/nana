@@ -114,7 +114,7 @@ namespace nana
 		i18n_eval(std::string msgid_utf8, Args&&... args)
 			: msgid_(std::move(msgid_utf8))
 		{
-			(_m_fetch_args(std::forward<Args>(args)), ...);
+			(_m_add_args(std::forward<Args>(args)), ...);
 		}
 
 		i18n_eval(const i18n_eval&);

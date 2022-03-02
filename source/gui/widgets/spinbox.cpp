@@ -1,7 +1,7 @@
 /*
  *	A Spin box widget
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -281,7 +281,7 @@ namespace nana
 				//Spinbox doesn't process the tabstop unlike other text editors.
 				//Otherwise it would bring a weird user experience.
 				//Issued by jk.
-				api::tabstop(wd);
+				api::tabstop(wd, true);
 				api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 				api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
 				reset_text_area();
@@ -421,9 +421,9 @@ namespace nana
 			{
 				auto spins_r = _m_spins_area();
 				if (spins_r.x == 0)
-					editor_->text_area(rectangle{});
+					editor_->editor_area(rectangle{});
 				else
-					editor_->text_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
+					editor_->editor_area({ 2, 2, graph_->width() - spins_r.width - 2, spins_r.height - 2 });
 			}
 
 			void reset_text()
@@ -559,7 +559,7 @@ namespace nana
 		
 		void drawer::dbl_click(graph_reference, const arg_mouse& arg)
 		{
-			if (impl_->mouse_button(arg, true))
+			if (impl_->editor()->select_word(arg))
 				api::dev::lazy_refresh();
 		}
 

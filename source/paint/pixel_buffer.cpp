@@ -1,7 +1,7 @@
 /*
  *	Pixel Buffer Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -722,12 +722,22 @@ namespace nana{	namespace paint
 		return (storage_ ? storage_->pixel_size : nana::size());
 	}
 
-	pixel_color_t * pixel_buffer::at(const point& pos) const
+	void pixel_buffer::make_transparent(double alpha)
 	{
-		auto sp = storage_.get();
-		if (sp && (pos.y < static_cast<int>(sp->pixel_size.height) + sp->valid_r.y))
-			return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * (pos.y - sp->valid_r.y)) + (pos.x - sp->valid_r.x);
-		return nullptr;
+		if (!storage_)
+			return;
+
+		storage_->alpha_channel = true;
+		unsigned char alpha_value = static_cast<unsigned char>(255 * std::clamp(alpha, 0.0, 1.0));
+
+		auto row_ptr = storage_->raw_pixel_buffer;
+		for (std::size_t i = 0; i < storage_->pixel_size.height; ++i)
+		{
+			for (auto p = row_ptr, end = row_ptr + storage_->pixel_size.width; p < end; ++p)
+				p->element.alpha_channel = alpha_value;
+
+			row_ptr = reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(row_ptr) + storage_->bytes_per_line);
+		}
 	}
 
 	pixel_color_t * pixel_buffer::raw_ptr(std::size_t row) const
@@ -742,6 +752,12 @@ namespace nana{	namespace paint
 	{
 		auto sp = storage_.get();
 		return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * row);
+	}
+
+	pixel_color_t* pixel_buffer::operator[](const point& pt) const noexcept
+	{
+		auto sp = storage_.get();
+		return reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer) + sp->bytes_per_line * pt.y) + pt.x;
 	}
 
 	void pixel_buffer::fill_row(std::size_t row, const unsigned char* buffer, std::size_t bytes, unsigned bits_per_pixel)
@@ -846,19 +862,19 @@ namespace nana{	namespace paint
 			paste(nana::rectangle(storage_->pixel_size), drawable, p_dst);
 	}
 
-	void pixel_buffer::paste(const nana::rectangle& src_r, drawable_type drawable, const point& p_dst) const
+	void pixel_buffer::paste(const nana::rectangle& src_r, drawable_type drawable, const point& p_dst, alpha_methods am) const
 	{
 		auto sp = storage_.get();
 		if(drawable && sp)
 		{
-			if(sp->alpha_channel)
+			if(sp->alpha_channel && (alpha_methods::direct_copy != am))
 			{
 				nana::rectangle s_good_r, d_good_r;
 				if(overlap(src_r, sp->pixel_size, nana::rectangle(p_dst.x, p_dst.y, src_r.width, src_r.height), paint::detail::drawable_size(drawable), s_good_r, d_good_r))
 				{
 					pixel_buffer d_pixbuf;
 					d_pixbuf.attach(drawable, d_good_r);
-					(*(sp->img_pro.alpha_blend))->process(*this, s_good_r, d_pixbuf, nana::point(d_good_r.x, d_good_r.y));
+					(*(sp->img_pro.alpha_blend))->process(*this, s_good_r, d_pixbuf, {}, am);
 				}
 				return;
 			}
@@ -876,10 +892,42 @@ namespace nana{	namespace paint
 		}
 	}
 
+	void pixel_buffer::paste(const nana::rectangle& src_r, pixel_buffer& dst, const point& p_dst, alpha_methods am) const
+	{
+		auto sp = storage_.get();
+		if (dst && sp)
+		{
+			nana::rectangle s_good_r, d_good_r;
+			if (overlap(src_r, sp->pixel_size, nana::rectangle(p_dst.x, p_dst.y, src_r.width, src_r.height), dst.size(), s_good_r, d_good_r))
+			{
+				if (sp->alpha_channel && (alpha_methods::direct_copy != am))
+				{
+					(*(sp->img_pro.alpha_blend))->process(*this, s_good_r, dst, nana::point(d_good_r.x, d_good_r.y), am);
+				}
+				else
+				{
+					auto d_rgb = dst[d_good_r.position()];
+					auto s_rgb = this->raw_ptr(s_good_r.y) + s_good_r.x;
+
+					std::size_t d_step_bytes = dst.bytes_per_line();
+					std::size_t s_step_bytes = this->bytes_per_line();
+					for (unsigned line = 0; line < s_good_r.height; ++line)
+					{
+						std::memcpy(d_rgb, s_rgb, s_good_r.width * sizeof(pixel_argb_t));
+	
+						d_rgb = reinterpret_cast<pixel_argb_t*>(reinterpret_cast<char*>(d_rgb) + d_step_bytes);
+						s_rgb = reinterpret_cast<pixel_argb_t*>(reinterpret_cast<char*>(s_rgb) + s_step_bytes);
+					}
+				}
+			}
+		}
+	}
+
 	void pixel_buffer::paste(native_window_type wd, const point& p_dst) const
 	{
 		auto sp = storage_.get();
 		if(nullptr == wd || nullptr == sp)	return;
+
 #if defined(NANA_WINDOWS)
 		HDC	handle = ::GetDC(reinterpret_cast<HWND>(wd));
 		if(handle)
@@ -1204,7 +1252,7 @@ namespace nana{	namespace paint
 		}
 	}
 
-	void pixel_buffer::stretch(const nana::rectangle& src_r, drawable_type drawable, const nana::rectangle& r) const
+	void pixel_buffer::stretch(const nana::rectangle& src_r, drawable_type drawable, const nana::rectangle& r, alpha_methods am) const
 	{
 		auto sp = storage_.get();
 		if(nullptr == sp) return;
@@ -1214,7 +1262,19 @@ namespace nana{	namespace paint
 		{
 			pixel_buffer dst;
 			dst.attach(drawable, good_dst_r);
-			(*(sp->img_pro.stretch))->process(*this, good_src_r, dst, nana::rectangle(0, 0, good_dst_r.width, good_dst_r.height));
+			(*(sp->img_pro.stretch))->process(*this, good_src_r, dst, nana::rectangle(0, 0, good_dst_r.width, good_dst_r.height), am);
+		}
+	}
+
+	void pixel_buffer::stretch(const nana::rectangle& s_r, pixel_buffer& dst, const nana::rectangle& r, alpha_methods am) const
+	{
+		auto sp = storage_.get();
+		if (nullptr == sp) return;
+
+		nana::rectangle good_src_r, good_dst_r;
+		if (overlap(s_r, sp->pixel_size, r, dst.size(), good_src_r, good_dst_r))
+		{
+			(*(sp->img_pro.stretch))->process(*this, good_src_r, dst, good_dst_r, am);
 		}
 	}
 
@@ -1449,6 +1509,43 @@ namespace nana{	namespace paint
 		ofs.write(reinterpret_cast<char*>(data.get()), image_bytes);
 
 		return true;
+	}
+
+	void pixel_buffer::to_grayscale()
+	{
+		auto sp = storage_.get();
+		if (!sp)
+			return;
+
+		std::unique_ptr<float[]> table{new float[0x100 * 3]};
+
+		auto const tbl_red = table.get();
+		auto const tbl_green = table.get() + 0x100;
+		auto const tbl_blue = table.get() + 0x200;
+
+		tbl_red[0]		= 0;
+		tbl_green[0]	= 0;
+		tbl_blue[0]		= 0;
+		for(std::size_t i = 1; i < 0x100; ++i)
+		{
+			tbl_red[i]		=  tbl_red[i - 1] + 0.3f;
+			tbl_green[i] 	=  tbl_green[i - 1] + 0.59f;
+			tbl_blue[i]		= tbl_blue[i - 1] + 0.11f;
+		}
+
+		for(std::size_t y = 0; y < sp->pixel_size.height; ++y)
+		{
+			auto p = this->raw_ptr(y);
+
+			auto end = p + sp->pixel_size.width;
+			for(; p != end; ++p)
+			{
+				auto gray = static_cast<unsigned char>(tbl_red[p->element.red] + tbl_green[p->element.green] + tbl_blue[p->element.blue] + 0.5f);
+				p->element.red = gray;
+				p->element.blue = gray;
+				p->element.green = gray;
+			}
+		}
 	}
 }//end namespace paint
 }//end namespace nana

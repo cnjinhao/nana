@@ -1,6 +1,6 @@
 /*
  *	A Tooltip Implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -21,12 +21,12 @@ namespace nana
 	{
 	public:
 		virtual ~tooltip_interface(){}
-
 		virtual bool tooltip_empty() const = 0;
 		virtual nana::size tooltip_size() const = 0;
 		virtual void tooltip_text(const ::std::string&)	= 0;
 		virtual void tooltip_move(const nana::point& screen_pos, bool ignore_pos)	= 0;
 		virtual void duration(std::size_t) = 0;
+		virtual window window_handle() const = 0;
 	};
 
 	class tooltip

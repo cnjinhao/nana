@@ -1,7 +1,7 @@
 /**
  *	Parts of Class Place
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -344,7 +344,8 @@ namespace nana
 			{
 				auto fn_ptr = &fn;
                 widget * w = nullptr;
-				api::dev::affinity_execute(*this, [this, fn_ptr, &w]
+
+				api::affinity_execute(*this, false, [this, fn_ptr, &w]
 				{
 					w=_m_add_pane(*fn_ptr);
 				});

@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -20,8 +20,9 @@
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/widgets/widget.hpp>
 #include <nana/gui/detail/events_operation.hpp>
-
+#include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include "../../source/detail/platform_abstraction.hpp"
+#include "../paint/truetype.hpp"
 #ifdef NANA_X11
 #	include "../../source/detail/posix/platform_spec.hpp"
 #endif
@@ -207,12 +208,6 @@ namespace api
 
 	namespace dev
 	{
-
-		void affinity_execute(window window_handle, const std::function<void()>& fn)
-		{
-			interface_type::affinity_execute(root(window_handle), fn);
-		}
-
 		bool set_events(window wd, const std::shared_ptr<general_events>& gep)
 		{
 			internal_scope_guard lock;
@@ -403,6 +398,87 @@ namespace api
 			return false;
 		}
 
+		::nana::widgets::skeletons::text_editor* create_text_editor(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd))
+			{
+				delete wd->annex.text_editor;
+				wd->annex.text_editor = nullptr;
+
+				auto scheme = dynamic_cast<nana::widgets::skeletons::text_editor_scheme*>(wd->annex.scheme);
+				if (scheme)
+				{
+					wd->annex.text_editor = new widgets::skeletons::text_editor(wd, wd->drawer.graphics, scheme);
+					return wd->annex.text_editor;
+				}
+			}
+			return nullptr;
+		}
+
+		void destroy_text_editor(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd))
+			{
+				delete wd->annex.text_editor;
+				wd->annex.text_editor = nullptr;
+			}
+		}
+
+		std::optional<upoint> caret_position(window wd)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+				return wd->annex.text_editor->caret();
+			
+			return {};
+		}
+
+		void im_input(window wd, const upoint& insert_pos, const upoint* move_to, const std::wstring& str, bool candidate)
+		{
+			internal_scope_guard lock;
+			if (is_window(wd) && wd->annex.text_editor)
+			{
+				if (wd->annex.text_editor->selected())
+				{
+					wd->annex.text_editor->backspace(false, false);
+				}
+
+				wd->annex.text_editor->move_caret(insert_pos, true);
+
+				nana::arg_keyboard arg;
+				arg.evt_code = event_code::key_char;
+				arg.window_handle = wd;
+				arg.ignore = false;
+				arg.ctrl = false;
+				arg.shift = false;
+				arg.alt = false;
+
+				for (auto ch : str)
+				{
+					arg.key = ch;
+					wd->annex.text_editor->respond_char(arg);
+				}
+
+				auto endpos = wd->annex.text_editor->caret();
+				
+				if (move_to)
+					wd->annex.text_editor->move_caret(endpos, true);
+
+				if (candidate)
+				{
+					wd->annex.text_editor->select_points(insert_pos, endpos);
+
+					wd->annex.text_editor->im_candidate_mode(true);
+					api::refresh_window(wd);
+					wd->annex.text_editor->im_candidate_mode(false);
+				}
+				else
+					api::refresh_window(wd);
+			}
+		}
+
 
 	}//end namespace dev
 
@@ -426,6 +502,47 @@ namespace api
 		::nana::platform_abstraction::font_languages(to_string(sv));
 	}
 #endif
+
+	std::vector<std::string> font_names(std::filesystem::path p)
+	{
+		nana::paint::detail::truetype_collection ttc{ p };
+
+		std::vector<std::string> names;
+		if (!ttc.empty())
+		{
+			for (std::size_t i = 0; i < ttc.size(); ++i)
+			{
+				auto ttc_opt = ttc.read(i);
+				if (ttc_opt)
+				{
+					auto name = ttc_opt.value().font_family();
+					if (!name.empty())
+						names.push_back(name);
+				}
+			}
+		}
+		
+		if (names.empty())
+		{
+			nana::paint::detail::truetype tt{ p };
+
+			auto name = tt.font_family();
+			if (!name.empty())
+				names.push_back(name);
+		}
+		
+		return names;
+	}
+
+	void load_font(std::filesystem::path p)
+	{
+		platform_abstraction::font_resource(true, p);
+	}
+
+	void unload_font(std::filesystem::path p)
+	{
+		platform_abstraction::font_resource(false, p);
+	}
 
 	//close all windows in current thread
 	void exit()
@@ -684,6 +801,9 @@ namespace api
 		internal_scope_guard lock;
 		if(is_window(wd) && (wd->other.category == category::flags::root))
 		{
+			if(wd->owner)
+				return wd->owner;
+			
 			auto owner = interface_type::get_window(wd->root, window_relationship::owner);
 			if(owner)
 				return restrict::wd_manager().root(owner);
@@ -707,8 +827,16 @@ namespace api
 		internal_scope_guard lock;
 		if(is_window(wd))
 		{
-			return ( (wd->other.category == category::flags::root) ?
-				interface_type::window_position(wd->root) : wd->pos_owner);
+			if(category::flags::root == wd->other.category)
+			{
+				auto pos = interface_type::window_position(wd->root);
+				if(wd->owner)
+					return pos - wd->owner->pos_root;
+
+				return pos;
+			}
+			else
+				return wd->pos_owner;
 		}
 		return nana::point{};
 	}
@@ -857,11 +985,32 @@ namespace api
 		}
 	}
 
+	std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars)
+	{
+		internal_scope_guard lock;
+		if (is_window(wd) && wd->annex.text_editor)
+			return wd->annex.text_editor->text_area(including_scrollbars);
+
+		return {};
+	}
+
 	std::optional<rectangle> window_rectangle(window wd)
 	{
 		internal_scope_guard lock;
 		if (is_window(wd))
-			return rectangle(wd->pos_owner, wd->dimension);
+		{
+			if(wd->other.category == category::flags::root)
+			{
+				nana::point pt;
+				calc_screen_point(wd, pt);
+				calc_window_point(get_parent_window(wd), pt);
+
+				return rectangle{pt, wd->dimension};
+			}
+			else
+				return rectangle(wd->pos_owner, wd->dimension);
+		}
+
 		return{};
 	}
 
@@ -870,7 +1019,16 @@ namespace api
 		internal_scope_guard lock;
 		if(is_window(wd))
 		{
-			r = rectangle(wd->pos_owner, wd->dimension);
+			if(wd->other.category == category::flags::root)
+			{
+				nana::point pt;
+				calc_screen_point(wd, pt);
+				calc_window_point(get_parent_window(wd), pt);
+
+				r = rectangle{pt, wd->dimension};
+			}
+			else
+				r = rectangle(wd->pos_owner, wd->dimension);
 			return true;
 		}
 		return false;
@@ -937,9 +1095,12 @@ namespace api
 
 	//update_window
 	//@brief: it displays a window immediately without refreshing.
-	void update_window(window wd)
+	void update_window(window wd, bool now)
 	{
-		restrict::wd_manager().update(wd, false, true);
+		if (now)
+			restrict::wd_manager().update_now(wd);
+		else
+			restrict::wd_manager().update(wd, false, true);
 	}
 
 	void window_caption(window wd, const std::string& title_utf8)
@@ -1270,9 +1431,12 @@ namespace api
 		return std::unique_ptr<caret_interface>{ p };
 	}
 
-	void tabstop(window wd)
+	void tabstop(window wd, const bool enable)
 	{
-		restrict::wd_manager().enable_tabstop(wd);
+		if (enable)
+			restrict::wd_manager().enable_tabstop(wd);
+		else
+			restrict::wd_manager().disable_tabstop(wd);
 	}
 
 	//eat_tabstop
@@ -1488,6 +1652,16 @@ namespace api
 	void at_safe_place(window wd, std::function<void()> fn)
 	{
 		restrict::wd_manager().set_safe_place(wd, std::move(fn));
+	}
+
+	bool affinity_execute(window wd, bool post, std::function<void()> fn)
+	{
+		internal_scope_guard lock;
+		if(!is_window(wd))
+			return false;
+
+		interface_type::affinity_execute(wd->root, post, std::move(fn));
+		return true;
 	}
 
 	std::optional<std::pair<size, size>> content_extent(window wd, unsigned limited_px, bool limit_width)

@@ -87,7 +87,7 @@ namespace nana
 				void resized(graph_reference, const arg_resized&)	override;
 				void typeface_changed(graph_reference)				override;
 			private:
-				void _m_text_area(unsigned width, unsigned height);
+				void _m_editor_area(unsigned width, unsigned height);
 			private:
 				widget*	widget_;
 				widgets::skeletons::text_editor * editor_;
@@ -212,6 +212,9 @@ namespace nana
 		void set_accept(std::function<bool(wchar_t)>);
 
 		textbox& tip_string(::std::string);
+#ifdef __cpp_char8_t
+		textbox& tip_string(std::u8string_view);
+#endif
 
         /// Set a mask character. Text is displayed as mask character if a mask character is set. This is used for hiding some special text, such as password.
 		textbox& mask(wchar_t);
@@ -290,6 +293,9 @@ namespace nana
 
 		/// Returns the number of text lines.
 		std::size_t text_line_count() const noexcept;
+
+		/// Sets the padding area around the content.
+		textbox& padding(unsigned top, unsigned right, unsigned bottom, unsigned left) noexcept;
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const noexcept override;

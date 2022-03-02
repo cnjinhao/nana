@@ -1,7 +1,7 @@
 /**
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -508,7 +508,7 @@ namespace nana
 					model->lock();
 				}
 
-				model_guard(model_guard&& other)
+				model_guard(model_guard&& other) noexcept
 					: model_(other.model_)
 				{
 					other.model_ = nullptr;
@@ -1071,6 +1071,7 @@ namespace nana
 #ifdef __cpp_char8_t
 				void append(std::initializer_list<std::u8string> texts);
 #endif
+				void clear();
 
 				size_type columns() const;
 
@@ -1219,11 +1220,13 @@ namespace nana
 				: public widget_geometrics
 			{
 				color_proxy column_separator{ static_cast<color_argb>(0xEBF4F9) };	///< Color of item column separator
+				color_proxy cat_fgcolor{ static_cast<color_argb>(0x3399) };
 				color_proxy header_bgcolor{static_cast<color_rgb>(0xf1f2f4)};
 				color_proxy header_fgcolor{ colors::black };
 				color_proxy header_grabbed{ static_cast<color_rgb>(0x8BD6F6)};
 				color_proxy header_floated{ static_cast<color_rgb>(0xBABBBC)};
 				color_proxy item_selected{ static_cast<color_rgb>(0xCCE8FF) };
+				color_proxy item_selected_border{ static_cast<color_rgb>(0x99DEFD) };
 				color_proxy item_highlighted{ static_cast<color_rgb>(0xE5F3FF) };
 
 				color_proxy selection_box{ static_cast<color_rgb>(0x3399FF) };	///< Color of selection box border.

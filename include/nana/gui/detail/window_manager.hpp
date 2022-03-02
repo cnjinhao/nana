@@ -1,7 +1,7 @@
 /**
  *	Window Manager Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -34,8 +34,7 @@ namespace nana
 	}
 }
 
-namespace nana{
-namespace detail
+namespace nana::detail
 {
 	class widget_notifier_interface;	//forward declaration
 
@@ -43,35 +42,14 @@ namespace detail
 
 	class window_manager
 	{
-		class revertible_mutex
-		{
-			revertible_mutex(const revertible_mutex&) = delete;
-			revertible_mutex& operator=(const revertible_mutex&) = delete;
-			revertible_mutex(revertible_mutex&&) = delete;
-			revertible_mutex& operator=(revertible_mutex&&) = delete;
-		public:
-			revertible_mutex();
-			~revertible_mutex();
-
-			void lock();
-			bool try_lock();
-			void unlock();
-
-			void revert();
-			void forward();
-		private:
-			struct implementation;
-			implementation * const impl_;
-		};
 	public:
 		using native_window = native_window_type;
-		using mutex_type = revertible_mutex;
 
 		window_manager();
 		~window_manager();
 
 		std::size_t window_count() const;
-		mutex_type & internal_lock() const;
+
 		void all_handles(std::vector<basic_window*>&) const;
 
 		void event_filter(basic_window*, bool is_make, event_code);
@@ -101,7 +79,7 @@ namespace detail
 		//@param root A root window
 		//@param pos Position
 		//@param ignore_captured A flag indicates whether to ignore redirecting the result to its captured window. If this paramter is true, it returns the window at the position, if the parameter is false, it returns the captured window if the captured window don't ignore children.
-		basic_window* find_window(native_window_type root, const point& pos, bool ignore_captured = false);
+		basic_window* find_window(native_window_type root, point pos, bool ignore_captured = false);
 
 		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
 		bool move(basic_window*, int x, int y, bool passive);
@@ -115,6 +93,8 @@ namespace detail
 		void map(basic_window*, bool forced, const rectangle* update_area = nullptr);
 
 		bool update(basic_window*, bool redraw, bool force, const rectangle* update_area = nullptr);
+		bool update_now(window, const rectangle* update_area = nullptr);
+
 		void update_requesters(basic_window* root_wd);
 		void refresh_tree(basic_window*);
 
@@ -130,6 +110,7 @@ namespace detail
 		void capture_window(basic_window*, bool capture, bool ignore_children_if_captured);
 
 		void enable_tabstop(basic_window*);
+		void disable_tabstop(basic_window*);
 		basic_window* tabstop(basic_window*, bool forward) const;	//forward means move to next in logic.
 
 		void remove_trash_handle(thread_t tid);
@@ -158,8 +139,6 @@ namespace detail
 		basic_window* _m_find(basic_window*, const point&);
 		static bool _m_effective(basic_window*, const point& root_pos);
 	private:
-		mutable mutex_type mutex_;
-
 		struct wdm_private_impl;
 		wdm_private_impl * const impl_;
 
@@ -181,8 +160,7 @@ namespace detail
 			bool has_keyboard;
 		}menu_;
 	};//end class window_manager
-}//end namespace detail
-}//end namespace nana
+}//end namespace nana::detail
 
 #include <nana/pop_ignore_diagnostic>
 

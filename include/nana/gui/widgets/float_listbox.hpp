@@ -1,7 +1,7 @@
 /**
  *	A float_listbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -104,6 +104,8 @@ namespace nana
 		void renderer(item_renderer*);
 		size_type index() const;
 		void deselect_on_mouse_leave(bool);
+
+		void button_size(unsigned);
 
 		size_type length() const;
 		std::optional<std::string> text(size_type pos) const;

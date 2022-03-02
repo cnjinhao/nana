@@ -1,7 +1,7 @@
 /*
 *	A Basic Window Widget Definition
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -11,6 +11,7 @@
 */
 
 #include "basic_window.hpp"
+#include <nana/gui/widgets/skeletons/text_editor.hpp>
 #include <nana/gui/detail/native_window_interface.hpp>
 
 namespace nana
@@ -244,6 +245,9 @@ namespace nana
 				delete annex.caret_ptr;
 				annex.caret_ptr = nullptr;
 
+				delete annex.text_editor;
+				annex.text_editor = nullptr;
+
 				delete effect.bground;
 				effect.bground = nullptr;
 			}
@@ -382,29 +386,27 @@ namespace nana
 					pos_root += parent->pos_root;
 			}
 
-			void basic_window::_m_initialize(basic_window* agrparent)
+			void basic_window::_m_initialize(basic_window* wd)
 			{
 				if(category::flags::root == other.category)
 				{
-					if(agrparent && (nana::system::this_thread_id() != agrparent->thread_id))
-						agrparent = nullptr;
+					if(wd && (nana::system::this_thread_id() != wd->thread_id))
+						owner = nullptr;
+					else 
+						owner = wd;
 
-					while(agrparent && (category::flags::root != agrparent->other.category))
-						agrparent = agrparent->parent;
-				
-					owner = agrparent;
 					parent = nullptr;
 					index = 0;
 				}
 				else
 				{
-					parent = agrparent;
+					parent = wd;
 					owner = nullptr;
-					root_widget = agrparent->root_widget;
-					root = agrparent->root;
-					root_graph = agrparent->root_graph;
-					index = static_cast<unsigned>(agrparent->children.size());
-					agrparent->children.emplace_back(this);
+					root_widget = wd->root_widget;
+					root = wd->root;
+					root_graph = wd->root_graph;
+					index = static_cast<unsigned>(wd->children.size());
+					wd->children.emplace_back(this);
 				}
 
 				predef_cursor = cursor::arrow;
@@ -439,8 +441,8 @@ namespace nana
 				//The window must keep its thread_id same as its parent if it is a child.
 				//Otherwise, its root buffer would be mapped repeatedly if it is in its parent thread.
 				thread_id = nana::system::this_thread_id();
-				if(agrparent && (thread_id != agrparent->thread_id))
-					thread_id = agrparent->thread_id;
+				if(wd && (thread_id != wd->thread_id))
+					thread_id = wd->thread_id;
 			}
 
 			bool basic_window::set_events(const std::shared_ptr<general_events>& p)

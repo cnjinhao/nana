@@ -1,7 +1,7 @@
 /*
  *	A Textbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -66,17 +66,15 @@ namespace nana
 			auto wd = wdg.handle();
 			widget_ = &wdg;
 
-			auto scheme = api::dev::get_scheme(wdg);
-
-			editor_ = new text_editor(wd, graph, dynamic_cast<::nana::widgets::skeletons::text_editor_scheme*>(scheme));
+			editor_ = api::dev::create_text_editor(wd);
 
 			evt_agent_.reset(new event_agent(static_cast<::nana::textbox&>(wdg), editor_->text_position()));
 			editor_->textbase().set_event_agent(evt_agent_.get());
 			editor_->set_event(evt_agent_.get());
 
-			_m_text_area(graph.width(), graph.height());
+			_m_editor_area(graph.width(), graph.height());
 
-			api::tabstop(wd);
+			api::tabstop(wd, true);
 			api::eat_tabstop(wd, true);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::active);
 			api::effects_edge_nimbus(wd, effects::edge_nimbus::over);
@@ -84,7 +82,7 @@ namespace nana
 
 		void drawer::detached()
 		{
-			delete editor_;
+			api::dev::destroy_text_editor(widget_->handle());
 			editor_ = nullptr;
 		}
 
@@ -167,7 +165,7 @@ namespace nana
 
 		void drawer::resized(graph_reference graph, const arg_resized& arg)
 		{
-			_m_text_area(arg.width, arg.height);
+			_m_editor_area(arg.width, arg.height);
 			refresh(graph);
 			editor_->reset_caret();
 
@@ -180,11 +178,14 @@ namespace nana
 		void drawer::typeface_changed(graph_reference graph)
 		{
 			editor_->typeface_changed();
-			refresh(graph);
-			api::update_window(widget_->handle());
+			if (graph)
+			{
+				refresh(graph);
+				api::update_window(widget_->handle());
+			}
 		}
 
-		void drawer::_m_text_area(unsigned width, unsigned height)
+		void drawer::_m_editor_area(unsigned width, unsigned height)
 		{
 			if(editor_)
 			{
@@ -196,7 +197,7 @@ namespace nana
 					r.width = (width > 4 ? width - 4 : 0);
 					r.height = (height > 4 ? height - 4 : 0);
 				}
-				editor_->text_area(r);
+				editor_->editor_area(r);
 			}
 		}
 		//end class drawer
@@ -592,10 +593,21 @@ namespace nana
 		{
 			internal_scope_guard lock;
 			auto editor = get_drawer_trigger().editor();
-			if(editor && editor->tip_string(std::move(str)))
+			if(editor && editor->tip_string(to_wstring(str)))
 				api::refresh_window(handle());
 			return *this;
 		}
+
+#ifdef __cpp_char8_t
+		textbox& textbox::tip_string(std::u8string_view str)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor && editor->tip_string(to_wstring(str)))
+				api::refresh_window(handle());
+			return *this;
+		}
+#endif
 
 		textbox& textbox::mask(wchar_t ch)
 		{
@@ -887,6 +899,15 @@ namespace nana
 				return editor->line_count(true);
 
 			return 0;
+		}
+
+		textbox& textbox::padding(unsigned top, unsigned right, unsigned bottom, unsigned left) noexcept
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			if (editor)
+				editor->padding(top, right, bottom, left);
+			return *this;
 		}
 
 		//Override _m_caption for caption()

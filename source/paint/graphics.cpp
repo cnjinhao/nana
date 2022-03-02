@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -41,6 +41,36 @@ namespace nana
 			underline(underline),
 			strike_out(strike_out)
 		{}
+
+		font_style& font_style::change_weight(unsigned w)
+		{
+			weight = w;
+			return *this;
+		}
+
+		font_style& font_style::change_italic(bool i)
+		{
+			italic = i;
+			return *this;
+		}
+
+		font_style& font_style::change_underline(bool u)
+		{
+			underline = u;
+			return *this;
+		}
+
+		font_style& font_style::change_strikeout(bool s)
+		{
+			strike_out = s;
+			return *this;
+		}
+
+		font_style& font_style::change_antialiasing(bool a)
+		{
+			antialiasing = a;
+			return *this;
+		}
 	}
 namespace paint
 {
@@ -104,12 +134,9 @@ namespace paint
 			impl_(new impl_type)
 		{
 			font_info fi;
-			fi.font_family = font_family;
+			fi.family = font_family;
 			fi.size_pt = size_pt;
-			fi.italic = fs.italic;
-			fi.underline = fs.underline;
-			fi.strike_out = fs.strike_out;
-			fi.weight = fs.weight;
+			fi.style = fs;
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
 
@@ -119,10 +146,7 @@ namespace paint
 		{
 			font_info fi;
 			fi.size_pt = size_pt;
-			fi.italic = fs.italic;
-			fi.underline = fs.underline;
-			fi.strike_out = fs.strike_out;
-			fi.weight = fs.weight;
+			fi.style = fs;
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), ttf);
 		}
 
@@ -148,12 +172,12 @@ namespace paint
 		{
 			if(empty()) return std::string();
 
-			return impl_->real_font->family();
+			return impl_->real_font->font_info().family;
 		}
 
 		double font::size(bool fixed) const
 		{
-			double size_pt = (empty() ? 0.0 : impl_->real_font->size());
+			double size_pt = (empty() ? 0.0 : impl_->real_font->font_info().size_pt);
 
 			if (fixed && (0.0 == size_pt))
 				return platform_abstraction::font_default_pt();
@@ -164,31 +188,31 @@ namespace paint
 		bool font::bold() const
 		{
 			if(empty()) return false;
-			return (impl_->real_font->style().weight >= 700);
+			return (impl_->real_font->font_info().style.weight >= 700);
 		}
 
 		unsigned font::weight() const
 		{
 			if(empty()) return 0;
-			return impl_->real_font->style().weight;
+			return impl_->real_font->font_info().style.weight;
 		}
 
 		bool font::italic() const
 		{
 			if(empty()) return false;
-			return impl_->real_font->style().italic;
+			return impl_->real_font->font_info().style.italic;
 		}
 
 		bool font::underline() const
 		{
 			if(empty()) return false;
-			return impl_->real_font->style().underline;
+			return impl_->real_font->font_info().style.underline;
 		}
 
 		bool font::strikeout() const
 		{
 			if(empty()) return false;
-			return impl_->real_font->style().strike_out;
+			return impl_->real_font->font_info().style.strike_out;
 		}
 
 		native_font_type font::handle() const

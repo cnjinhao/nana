@@ -1,7 +1,7 @@
 /*
 *	A Menu implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2009-2021 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2009-2022 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -621,12 +621,12 @@ namespace nana
 			//send_shortkey has 3 states, 0 = UNKNOWN KEY, 1 = ITEM, 2 = GOTO SUBMENU
 			int send_shortkey(wchar_t key)
 			{
-				key = std::tolower(key);
+				key = static_cast<wchar_t>(std::tolower(key));
 				std::size_t index = 0;
 				for(auto & m : menu_->items)
 				{
 					auto item_ptr = m.get();
-					if (std::tolower(m->hotkey) != key)
+					if (std::tolower(m->hotkey) != static_cast<int>(key))
 					{
 						++index;
 						continue;
@@ -955,19 +955,20 @@ namespace nana
 				}
 				else if (checks::option == item.style)
 				{
-					if(active > 0)
+					auto active_ = active;
+					if(active_ > 0)
 					{
 						do {
-							if(menu->items[--active]->flags.splitter)
+							if(menu->items[--active_]->flags.splitter)
 							{
-								++active;
+								++active_;
 								break;
 							}
-						} while(active > 0);
+						} while(active_ > 0);
 					}
-					while(active < menu->items.size())
+					while(active_ < menu->items.size())
 					{
-						menu_item_type &el = *(menu->items[active++]);
+						menu_item_type &el = *(menu->items[active_++]);
 						if(el.flags.splitter)
 							break;
 						if(checks::option == el.style)

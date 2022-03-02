@@ -1,9 +1,14 @@
-#include "platform_abstraction.hpp"
 #include <set>
+#include <mutex>
+
+#include "platform_abstraction.hpp"
 #include <nana/deploy.hpp>
-#include <nana/paint/font_info.hpp>
+#include <nana/paint/detail/ptdefs.hpp>
 #include "../paint/truetype.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
+#include <nana/gui/detail/internal_scope_guard.hpp>
+#include <nana/system/platform.hpp>
+
 
 #ifdef NANA_WINDOWS
 
@@ -159,51 +164,126 @@ IsWindows8OrGreater()
 namespace nana
 {
 #ifdef NANA_USE_XFT
+
+	// Manages fallback font
+	class fallback_font_store
+	{
+	public:
+		struct font_element
+		{
+			::XftFont * handle;
+			std::string family;
+			std::vector<std::string> patterns;
+
+			~font_element()
+			{
+				auto disp = ::nana::detail::platform_spec::instance().open_display();
+				::XftFontClose(disp, handle);
+			}
+		};
+	
+		std::shared_ptr<font_element> open(Display* disp, const std::string& patstr, const std::map<std::string, std::string>& exclude)
+		{
+			{
+				auto i = store_.find(patstr);
+				if(i != store_.end())
+					return i->second;
+			}
+			
+			auto pat = ::XftNameParse(patstr.c_str());
+			XftResult res;
+			auto match_pat = ::XftFontMatch(disp, ::XDefaultScreen(disp), pat, &res);
+
+			if (match_pat)
+			{
+				std::string family_name;
+				char * sf;
+				if(XftResultTypeMismatch != ::XftPatternGetString(match_pat, "family", 0, &sf))
+				{
+					family_name = sf;
+
+					//Avoid loading the same font again
+					auto i = exclude.find(family_name);
+					if(i != exclude.cend())
+					{
+						auto & fe = store_[i->second];
+						fe->patterns.push_back(patstr);
+						store_[patstr] = fe;
+						return {};
+					}
+				}
+
+				auto xft = ::XftFontOpenPattern(disp, match_pat);
+				if(xft)
+				{
+					auto fe = std::make_shared<font_element>();
+					fe->handle = xft;
+					fe->family = family_name;
+					fe->patterns.push_back(patstr);
+					
+					store_[patstr] = fe;
+					return fe;
+				}
+			}
+			return {};
+		}
+
+		void free()
+		{
+			for(auto i = store_.cbegin(); i != store_.cend(); )
+			{
+				if(static_cast<std::size_t>(i->second.use_count()) == i->second->patterns.size())
+				{
+					i = store_.erase(i);
+				}
+				else
+					++i;
+			}
+		}
+
+		std::size_t size() const
+		{
+			return store_.size();
+		}
+	private:
+		std::map<std::string, std::shared_ptr<font_element>> store_;
+	};
+
+
 	//A fallback fontset provides the multiple languages support.
 	class fallback_fontset
 	{
 	public:
-		fallback_fontset():
-			disp_(::nana::detail::platform_spec::instance().open_display())
+		using font_element = fallback_font_store::font_element;
+
+		fallback_fontset(fallback_font_store& store):
+			disp_(::nana::detail::platform_spec::instance().open_display()),
+			store_(store)
 		{
 		}
 
 		~fallback_fontset()
 		{
-			for(auto xft: xftset_)
-				::XftFontClose(disp_, xft);
+			_m_clear();
 		}
 
 		void open(const std::string& font_desc, const std::set<std::string>& langs)
 		{
-			for(auto xft: xftset_)
-				::XftFontClose(disp_, xft);
+			_m_clear();
 
-			xftset_.clear();
-
-			std::set<std::string> loaded;
+			std::map<std::string, std::string> exclude; //family -> pattern
 			for(auto & lang : langs)
 			{
 				std::string patstr = "*" + font_desc + ":lang=" + lang;
 
-				auto pat = ::XftNameParse(patstr.c_str());
-				XftResult res;
-				auto match_pat = ::XftFontMatch(disp_, ::XDefaultScreen(disp_), pat, &res);
-
-				if (match_pat)
+				auto fe = store_.open(disp_, patstr, exclude);
+				if(fe)
 				{
-					char * sf;
-					if(XftResultTypeMismatch != ::XftPatternGetString(match_pat, "family", 0, &sf))
-					{
-						//Avoid loading a some font repeatedly
-						if(loaded.count(sf))
-							continue;
-					}
+					if(!fe->family.empty())
+						exclude[fe->family] = patstr;
 
-					auto xft = ::XftFontOpenPattern(disp_, match_pat);
-					if(xft)
-						xftset_.push_back(xft);
-				}				
+					xftset_.push_back(fe);
+				}	
 			}
 		}
 
@@ -218,6 +298,8 @@ namespace nana
 			//The RTL and shaping should be handled manually, because the libXft and X doesn't support these language features.
 			std::wstring rtl;
 			auto ents = unicode_reorder(str, len);
+
+			nana::internal_scope_guard lock;
 			for(auto & e : ents)
 			{
 				auto size = static_cast<std::size_t>(e.end - e.begin);
@@ -262,6 +344,8 @@ namespace nana
 
 			auto pbuf = pxbuf.get();
 
+			nana::internal_scope_guard lock;
+
 			//Don't reverse the string
 			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* pstr) mutable{
 				while(true)
@@ -291,6 +375,8 @@ namespace nana
 
 			std::unique_ptr<FT_UInt[]> glyph_indexes(new FT_UInt[len]);
 
+			nana::internal_scope_guard lock;
+
 			//Don't reverse the string
 			_m_reorder_reshaping(std::wstring_view{str, len}, false, [&,xft, str](const wchar_t* p, std::size_t size, const wchar_t* /*pstr*/) mutable{
 				while(true)
@@ -313,6 +399,13 @@ namespace nana
 			return extent;
 		}
 	private:
+
+		void _m_clear()
+		{
+			xftset_.clear();
+			store_.free();
+		}
+
 		/// @param reverse Indicates whether to reverse the string, it only reverse the RTL language string.
 		template<typename Function>
 		void _m_reorder_reshaping(std::wstring_view str, bool reverse, Function fn)
@@ -453,10 +546,10 @@ namespace nana
 			{
 				for(auto ft : xftset_)
 				{
-					idx = ::XftCharIndex(disp_, ft, *str);
+					idx = ::XftCharIndex(disp_, ft->handle, *str);
 					if(idx)
 					{
-						preferred = ft;
+						preferred = ft->handle;
 						break;
 					}
 				}				
@@ -474,7 +567,7 @@ namespace nana
 
 					for(auto ft : xftset_)
 					{
-						if(::XftCharIndex(disp_, ft, str[i]))
+						if(::XftCharIndex(disp_, ft->handle, str[i]))
 							return {preferred, i};
 					}
 					glyphs[i] = 0;
@@ -497,7 +590,8 @@ namespace nana
 		}
 	private:
 		Display* const disp_;
-		std::vector<::XftFont*> xftset_;
+		fallback_font_store& store_;
+		std::vector<std::shared_ptr<font_element>> xftset_;
 	};
 
 	/// Fallback fontset manager
@@ -524,11 +618,9 @@ namespace nana
 			auto i = xft_table_.find(font_desc);
 			if(i != xft_table_.end())
 				return i->second;
-			
-			auto fb = std::make_shared<fallback_fontset>();
 
+			auto fb = std::make_shared<fallback_fontset>(store_);
 			fb->open(font_desc, langs_);
-
 			xft_table_[font_desc] = fb;
 
 			return fb;
@@ -570,6 +662,7 @@ namespace nana
 		}
 	private:
 		std::set<std::string> langs_;
+		fallback_font_store store_;
 		std::map<std::string, std::shared_ptr<fallback_fontset>> xft_table_;
 	};
 #endif
@@ -610,26 +703,6 @@ namespace nana
 			return height_;
 		}
 	public:
-		const std::string& family() const override
-		{
-			return font_info_.font_family;
-		}
-
-		double size() const override
-		{
-			return font_info_.size_pt;
-		}
-
-		font_style style() const override
-		{
-			font_style fs;
-			fs.italic = font_info_.italic;
-			fs.strike_out = font_info_.strike_out;
-			fs.underline = font_info_.underline;
-			fs.weight = font_info_.weight;
-			return fs;
-		}
-
 		native_font_type native_handle() const override
 		{
 			return native_handle_;
@@ -696,13 +769,13 @@ namespace nana
 
 			if (!ttf.empty())
 			{
-				::nana::spec::truetype truetype{ ttf };
+				::nana::paint::detail::truetype truetype{ ttf };
 				if (truetype.font_family().empty())
 					return nullptr;
 
 				platform_abstraction::font_resource(true, ttf);
 
-				fi.font_family = truetype.font_family();
+				fi.family = truetype.font_family();
 			}
 
 			auto const font_height = _m_set_default_values(fi, dpi);
@@ -781,19 +854,20 @@ namespace nana
 		static bool _m_compare_font_info(const font_info& a, const font_info& b)
 		{
 			return (
-				a.font_family == b.font_family &&
-				a.weight == b.weight &&
-				a.italic == b.italic &&
-				a.strike_out == b.strike_out &&
-				a.underline == b.underline &&
+				a.family == b.family &&
+				a.style.weight == b.style.weight &&
+				a.style.italic == b.style.italic &&
+				a.style.strike_out == b.style.strike_out &&
+				a.style.underline == b.style.underline &&
 				a.size_pt == b.size_pt
 				);
 		}
 
+		// Returns the DPI-dependent font size, in pixels
 		static font_height_type _m_set_default_values(font_info& fi, std::size_t dpi)
 		{
 #ifdef NANA_WINDOWS
-			std::wstring wfont_family = nana::detail::to_nstring(fi.font_family);
+			std::wstring wfont_family = nana::detail::to_nstring(fi.family);
 			//Make sure the length of font family less than LF_FACESIZE which is defined by Windows
 			if (wfont_family.length() + 1 > LF_FACESIZE)
 				wfont_family.clear();
@@ -824,7 +898,7 @@ namespace nana
 				if (wfont_family.empty())
 				{
 					wfont_family = metrics.lfMessageFont.lfFaceName;
-					fi.font_family = to_utf8(wfont_family);
+					fi.family = to_utf8(wfont_family);
 				}
 
 				if (0 == font_height)
@@ -838,7 +912,10 @@ namespace nana
 			::ReleaseDC(nullptr, hDC);
 			return font_height;
 #else
-			return (fi.size_pt ? (fi.size_pt * dpi / 96) : platform_abstraction::font_default_pt());
+			if(0 == fi.size_pt)
+				fi.size_pt = platform_abstraction::font_default_pt();
+
+			return fi.size_pt * dpi / 72;
 #endif
 		}
 
@@ -848,7 +925,7 @@ namespace nana
 
 #ifdef NANA_WINDOWS
 			// The font_family and size_pt are reliable, they have been checked by _m_set_default_values
-			std::wstring wfont_family = nana::detail::to_nstring(fi.font_family);
+			std::wstring wfont_family = nana::detail::to_nstring(fi.family);
 
 			//Translate pt to px
 			auto hDC = ::GetDC(nullptr);
@@ -860,34 +937,40 @@ namespace nana
 			std::wcscpy(lf.lfFaceName, wfont_family.c_str());
 			lf.lfHeight = font_height;
 			lf.lfCharSet = DEFAULT_CHARSET;
-			lf.lfWeight = fi.weight;
-			lf.lfQuality = PROOF_QUALITY;
+			lf.lfWeight = fi.style.weight;
+			lf.lfQuality = fi.style.antialiasing ? PROOF_QUALITY : NONANTIALIASED_QUALITY;
 			lf.lfPitchAndFamily = FIXED_PITCH;
-			lf.lfItalic = fi.italic;
-			lf.lfUnderline = fi.underline;
-			lf.lfStrikeOut = fi.strike_out;
+			lf.lfItalic = fi.style.italic;
+			lf.lfUnderline = fi.style.underline;
+			lf.lfStrikeOut = fi.style.strike_out;
 
 			auto fd = ::CreateFontIndirect(&lf);
 #elif defined(NANA_X11)
 			auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
-			std::string font_family = fi.font_family;
+			std::string font_family = fi.family;
 			if (font_family.empty())
 				font_family = "*";
 
-			auto font_height = (fi.size_pt ? (fi.size_pt * dpi / 96) : platform_abstraction::font_default_pt());
-			std::string pat_str = '-' + std::to_string(font_height);
-			if (fi.weight < 400)
+			//Calculate the DPI-dependent font size
+			auto dpi_size_pt = (fi.size_pt ? fi.size_pt : platform_abstraction::font_default_pt()) * dpi / 96;
+			auto font_height = dpi_size_pt / 72;
+			
+			std::string pat_str = '-' + std::to_string(dpi_size_pt);
+			if (fi.style.weight < 400)
 				pat_str += ":light";
-			else if (400 == fi.weight)
+			else if (400 == fi.style.weight)
 				pat_str += ":medium";
-			else if (fi.weight < 700)
+			else if (fi.style.weight < 700)
 				pat_str += ":demibold";
 			else
-				pat_str += (700 == fi.weight ? ":bold" : ":black");
+				pat_str += (700 == fi.style.weight ? ":bold" : ":black");
 
-			if (fi.italic)
+			if (fi.style.italic)
 				pat_str += ":slant=italic";
+
+			if (!fi.style.antialiasing)
+				pat_str += ":antialias=false";
 
 			auto pat = ::XftNameParse((font_family + pat_str).c_str());
 			XftResult res;
@@ -932,8 +1015,145 @@ namespace nana
 #endif
 	};//end class font_service
 
+
+		//class revertible_mutex
+			struct platform_abstraction::revertible_mutex::implementation
+			{
+				struct thread_refcount
+				{
+					thread_t tid;	//Thread ID
+					std::vector<unsigned> callstack_refs;
+
+					thread_refcount(thread_t thread_id, unsigned refs)
+						: tid(thread_id)
+					{
+						callstack_refs.push_back(refs);
+					}
+				};
+
+				std::recursive_mutex mutex;
+
+				thread_t thread_id{ 0 };	//Thread ID
+				unsigned refs{ 0 };	//Ref count
+
+				std::vector<thread_refcount> records;
+			};
+		//public:
+			platform_abstraction::revertible_mutex::revertible_mutex()
+				: impl_(new implementation)
+			{
+			}
+
+			platform_abstraction::revertible_mutex::~revertible_mutex()
+			{
+				delete impl_;
+			}
+
+			void  platform_abstraction::revertible_mutex::lock()
+			{
+				impl_->mutex.lock();
+
+				if (0 == impl_->thread_id)
+					impl_->thread_id = nana::system::this_thread_id();
+
+				++(impl_->refs);
+			}
+
+			bool  platform_abstraction::revertible_mutex::try_lock()
+			{
+				if (impl_->mutex.try_lock())
+				{
+					if (0 == impl_->thread_id)
+						impl_->thread_id = nana::system::this_thread_id();
+
+					++(impl_->refs);
+					return true;
+				}
+				return false;
+			}
+
+			void  platform_abstraction::revertible_mutex::unlock()
+			{
+				if (impl_->thread_id == nana::system::this_thread_id())
+					if (0 == --(impl_->refs))
+						impl_->thread_id = 0;
+
+				impl_->mutex.unlock();				
+			}
+
+			void  platform_abstraction::revertible_mutex::revert()
+			{
+				if (impl_->thread_id == nana::system::this_thread_id())
+				{
+					auto const current_refs = impl_->refs;
+
+					//Check if there is a record
+					for (auto & r : impl_->records)
+					{
+						if (r.tid == impl_->thread_id)
+						{
+							r.callstack_refs.push_back(current_refs);
+							impl_->thread_id = 0;	//Indicates a record is existing
+							break;
+						}
+					}
+
+					if (impl_->thread_id)
+					{
+						//Creates a new record
+						impl_->records.emplace_back(impl_->thread_id, current_refs);
+						impl_->thread_id = 0;
+					}
+
+					impl_->refs = 0;
+
+					for (std::size_t i = 0; i < current_refs; ++i)
+						impl_->mutex.unlock();
+				}
+				else
+					throw std::runtime_error("The revert is not allowed");
+			}
+
+			void  platform_abstraction::revertible_mutex::forward()
+			{
+				impl_->mutex.lock();
+
+				if (impl_->records.size())
+				{
+					auto const this_tid = nana::system::this_thread_id();
+
+					for (auto i = impl_->records.begin(); i != impl_->records.end(); ++i)
+					{
+						if (this_tid != i->tid)
+							continue;
+
+						auto const refs = i->callstack_refs.back();
+
+						for (std::size_t u = 1; u < refs; ++u)
+							impl_->mutex.lock();
+
+						impl_->thread_id = this_tid;
+						impl_->refs = refs;
+
+						if (i->callstack_refs.size() > 1)
+							i->callstack_refs.pop_back();
+						else
+							impl_->records.erase(i);
+						return;
+					}
+
+					throw std::runtime_error("The forward is not matched. Please report this issue");
+				}
+
+				impl_->mutex.unlock();
+			}
+
+		//end class revertible_mutex
+
+
 	struct platform_runtime
 	{
+		platform_abstraction::revertible_mutex mutex;
 		std::size_t		dpi{ 0 };
 		std::shared_ptr<font_interface> font;
 		font_service font_svc;
@@ -955,6 +1175,34 @@ namespace nana
 		return *data::storage;
 	}
 
+	//class internal_scope_guard
+		internal_scope_guard::internal_scope_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.lock();
+		}
+
+		internal_scope_guard::~internal_scope_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.unlock();
+		}
+	//end class internal_scope_guard
+
+	//class internal_revert_guard
+		internal_revert_guard::internal_revert_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.revert();
+		}
+
+		internal_revert_guard::~internal_revert_guard()
+		{
+			if(data::storage)
+				data::storage->mutex.forward();
+		}
+		//end class internal_revert_guard
+
 	internal_font::~internal_font()
 	{
 #ifdef NANA_WINDOWS
@@ -962,6 +1210,7 @@ namespace nana
 #elif defined(NANA_X11)
 		auto disp = ::nana::detail::platform_spec::instance().open_display();
 #	ifdef NANA_USE_XFT
+		nana::internal_scope_guard lock;
 		platform_storage().font_svc.fb_manager().release_fallback(fallback_);
 		::XftFontClose(disp, reinterpret_cast<XftFont*>(native_handle_));
 #	else
@@ -1023,6 +1272,14 @@ namespace nana
 		data::storage = nullptr;
 	}
 
+	platform_abstraction::revertible_mutex& platform_abstraction::internal_mutex()
+	{
+		if (!data::storage)
+			throw std::logic_error("invalid internal mutex");
+
+		return data::storage->mutex;
+	}
+
 	double platform_abstraction::font_default_pt()
 	{
 #ifdef NANA_WINDOWS
@@ -1055,12 +1312,14 @@ namespace nana
 	void platform_abstraction::font_languages(const std::string& langs)
 	{
 #ifdef NANA_USE_XFT
+		nana::internal_scope_guard lock;
 		platform_storage().font_svc.fb_manager().languages(langs);
 #endif
 	}
 
 	::std::shared_ptr<platform_abstraction::font> platform_abstraction::default_font(const ::std::shared_ptr<font>& new_font)
 	{
+		nana::internal_scope_guard lock;
 		auto & r = platform_storage();
 		if (new_font)
 		{
@@ -1089,6 +1348,7 @@ namespace nana
 
 	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, std::size_t dpi, const path_type& ttf)
 	{
+		nana::internal_scope_guard lock;
 		return platform_storage().font_svc.open_font(fi, dpi, ttf);
 	}
 
@@ -1100,7 +1360,10 @@ namespace nana
 		else
 			::RemoveFontResourceEx(ttf.wstring().c_str(), FR_PRIVATE, nullptr);
 #else
-		auto p = ttf.string();
+		auto p = absolute(ttf).string();
+
+		nana::internal_scope_guard lock;
+
 		if(platform_storage().font_svc.fc_count(try_add, p))
 		{
 			if(try_add)

@@ -1,7 +1,7 @@
 /**
  *	A Combox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -34,6 +34,11 @@ namespace nana
 
 	namespace drawerbase::combox
 	{
+		struct scheme : public ::nana::widgets::skeletons::text_editor_scheme
+		{
+			std::size_t button_size{ 16 };
+		};
+
 		struct combox_events
 			: public general_events
 		{
@@ -152,7 +157,7 @@ namespace nana
 	}//end namespace drawerbase::combox
 
 	class combox
-		:	public widget_object<category::widget_tag, drawerbase::combox::trigger, drawerbase::combox::combox_events, ::nana::widgets::skeletons::text_editor_scheme>,
+		:	public widget_object<category::widget_tag, drawerbase::combox::trigger, drawerbase::combox::combox_events, drawerbase::combox::scheme>,
 			public nana::concepts::any_objective<std::size_t, 1>
 	{
 	public:
@@ -210,6 +215,8 @@ namespace nana
 		void image(std::size_t, const nana::paint::image&);
 		nana::paint::image image(std::size_t) const;
 		void image_pixels(unsigned);  ///<Sets the width of image area. Default is 16 pixels.
+
+		void put(wchar_t);
 	private:
 		item_proxy _m_at_key(std::shared_ptr<nana::detail::key_interface>&&);
 		void _m_erase(nana::detail::key_interface*);

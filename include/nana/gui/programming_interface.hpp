@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -24,6 +24,10 @@ namespace nana
 {
 	class drawer_trigger;
 	class widget;
+
+	namespace widgets::skeletons {
+		class text_editor;
+	}
 
 	namespace dev
 	{
@@ -68,12 +72,9 @@ namespace api
 	bground_mode effects_bground_mode(window);
 	void effects_bground_remove(window);
 
-	//namespace dev
-	//@brief: The interfaces defined in namespace dev are used for developing the nana.gui
+	//The namespace dev defines functions for internal use
 	namespace dev
 	{
-		void affinity_execute(window window_handle, const std::function<void()>&);
-
 		bool set_events(window, const std::shared_ptr<general_events>&);
 
 		template<typename Scheme>
@@ -118,6 +119,13 @@ namespace api
 
 		void window_draggable(window, bool enabled);
 		bool window_draggable(window);
+
+		::nana::widgets::skeletons::text_editor* create_text_editor(window);
+		void destroy_text_editor(window);
+
+		std::optional<upoint> caret_position(window);
+
+		void im_input(window, const upoint& insert_pos, const upoint* move_to, const std::wstring&, bool candidate);
 	}//end namespace dev
 
 
@@ -193,6 +201,11 @@ namespace api
 	void font_languages(std::u8string_view langs);
 #endif
 
+	/// Returns the font family names for the specified font file.
+	std::vector<std::string> font_names(std::filesystem::path);
+	void load_font(std::filesystem::path);
+	void unload_font(std::filesystem::path);
+
 	void exit();	    ///< close all windows in current thread
 	void exit_all();	///< close all windows
 
@@ -244,6 +257,8 @@ namespace api
     /// \return If the function succeeds, the return value is the native window handle to the Nana.GUI window. If fails return zero.
 	native_window_type root(window);
 	window	root(native_window_type);                     ///< Retrieves the native window of a Nana.GUI window.
+
+	void enable_double_click(window, bool);
 
 	void fullscreen(window, bool);
 
@@ -332,6 +347,7 @@ namespace api
 	size window_outline_size(window);
 	void window_outline_size(window, const size&);
 
+	::std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars);
 	::std::optional<rectangle> window_rectangle(window);
 	bool get_window_rectangle(window, rectangle&);
 	bool track_window_size(window, const size&, bool true_for_max);   ///< Sets the minimum or maximum tracking size of a window.
@@ -345,7 +361,7 @@ namespace api
 	 */
 	void refresh_window(window window_handle);
 	void refresh_window_tree(window);      ///< Refreshes the specified window and all its children windows, then displays it immediately
-	void update_window(window);            ///< Copies the off-screen buffer to the screen for immediate display.
+	void update_window(window, bool now = false);            ///< Copies the off-screen buffer to the screen for immediate display.
 
 	void window_caption(window, const std::string& title_utf8);
 	void window_caption(window, const std::wstring& title);
@@ -411,8 +427,8 @@ namespace api
 	 */
 	::std::unique_ptr<caret_interface> open_caret(window window_handle, bool disable_throw = false);
 
-	/// Enables that the user can give input focus to the specified window using TAB key.
-	void tabstop(window);
+	/// Determines whether the specified window can get a focus when TAB key is pressed.
+	void tabstop(window window_handle, const bool enable);
 
 	/// Enables or disables a window to receive a key_char event for pressing TAB key.
 	/*
@@ -460,6 +476,18 @@ namespace api
 	bool ignore_mouse_focus(window);				///< Determines whether the mouse focus is enabled
 
 	void at_safe_place(window, ::std::function<void()>);
+
+	/// Invokes a function in the thread of the specified window
+	/**
+	 * If the calling thread and the window thread is the same thread, it calls fn in current thread. If the calling thread and the
+	 * window thread are different threads, it posts the function to the window thread and returns immediatly.
+	 * @param window_handle The window handle to the thread
+	 * @param post	Indicates the way the invoke the function. If it is true, it posts the fn to the window thread and returns. If it is false,
+	 * 				It sends to the window thread and waits until the function is called.
+	 * @param fn The function
+	 * @return if window_handle is valid, it returns true, otherwise false.
+	 * */
+	bool affinity_execute(window window_handle, bool post, std::function<void()> fn);
 
 	/// Returns a widget content extent size
 	/**

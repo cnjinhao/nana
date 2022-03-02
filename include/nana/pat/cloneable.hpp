@@ -115,7 +115,7 @@ namespace nana{ namespace pat{
 		{
 			if(r.cwrapper_)
 			{
-				cwrapper_ = std::move(std::shared_ptr<cloneable_interface>(r.cwrapper_->clone(), detail::cloneable_interface_deleter{}));
+				cwrapper_ = std::shared_ptr<cloneable_interface>(r.cwrapper_->clone(), detail::cloneable_interface_deleter{});
 				fast_ptr_ = reinterpret_cast<base_t*>(cwrapper_->get());
 			}
 		}

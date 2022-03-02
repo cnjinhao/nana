@@ -1,7 +1,7 @@
 /*
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -15,6 +15,7 @@
 #define NANA_PAINT_IMAGE_HPP
 
 #include "graphics.hpp"
+#include "pixel_buffer.hpp"
 
 namespace nana
 {
@@ -59,6 +60,9 @@ namespace paint
 		std::size_t frame() const;			///< The index of current frame
 		std::size_t frame_duration() const;	///< the delay of current frame, in the number of milliseconds
 		bool set_frame(std::size_t pos);	///< Set the frame
+
+		pixel_buffer& pxbuf();
+		const pixel_buffer& pxbuf() const;
 	private:
 		std::shared_ptr<image_impl_interface> image_ptr_;
 	};//end class image

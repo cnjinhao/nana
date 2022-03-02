@@ -1,7 +1,7 @@
 /**
  *	Paint Image Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -246,6 +246,22 @@ namespace paint
 		bool image::set_frame(std::size_t pos)
 		{
 			return (image_ptr_ ? image_ptr_->set_frame(pos) : false);
+		}
+
+		pixel_buffer& image::pxbuf()
+		{
+			if (image_ptr_)
+				return image_ptr_->pxbuf();
+
+			throw std::runtime_error("image is empty");
+		}
+
+		const pixel_buffer& image::pxbuf() const
+		{
+			if (image_ptr_)
+				return image_ptr_->pxbuf();
+
+			throw std::runtime_error("image is empty");
 		}
 	//end class image
 

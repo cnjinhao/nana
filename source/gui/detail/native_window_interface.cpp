@@ -1,7 +1,7 @@
 /*
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -11,6 +11,7 @@
  */
 
 #include "../../detail/platform_spec_selector.hpp"
+#include "../../detail/platform_abstraction.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/screen.hpp>
 #include <nana/gui/detail/bedrock.hpp>
@@ -252,7 +253,9 @@ namespace nana{
 
 			native_interface::move_window(wd, i->second.x, i->second.y);
 
-			exposed_positions.erase(i);
+			//Don't remove the record with the iterator, the move_window() may remove the
+			//record, it makes the iterator invalid.
+			exposed_positions.erase(reinterpret_cast<Window>(wd));
 		}
 
 		namespace x11_wait
@@ -342,7 +345,7 @@ namespace nana{
 #endif
 
 	//struct native_interface
-		void native_interface::affinity_execute(native_window_type native_handle, const std::function<void()>& fn)
+		void native_interface::affinity_execute(native_window_type native_handle, bool post, std::function<void()>&& fn)
 		{
 			if (!fn)
 				return;
@@ -353,20 +356,59 @@ namespace nana{
 			{
 				if (::GetCurrentThreadId() != ::GetWindowThreadProcessId(mswin, nullptr))
 				{
-					detail::messages::arg_affinity_execute arg;
-					arg.function_ptr = &fn;
+					auto arg = new detail::messages::arg_affinity_execute;
 
-					internal_revert_guard revert;
-					::SendMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(&arg), 0);
+					arg->function = std::move(fn);
 
+					if(post)
+					{
+						::PostMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
+					}
+					else
+					{
+						internal_revert_guard rev;
+						::SendMessage(mswin, detail::messages::affinity_execute, reinterpret_cast<WPARAM>(arg), 0);
+					}
 					return;
 				}
 			}
 
 			fn();
 #else
-			static_cast<void>(native_handle);
-			fn();
+			auto & platform_spec = nana::detail::platform_spec::instance();
+			if(post)
+			{
+				platform_spec.affinity_execute(native_handle, std::move(fn));
+				return;
+			}
+
+			auto wd = bedrock::instance().wd_manager().root(native_handle);
+
+			if(!wd)
+				return;
+
+			if(nana::system::this_thread_id() == wd->thread_id)
+			{
+				fn();
+			}
+			else
+			{
+				internal_revert_guard rev;
+
+				std::mutex mutex;
+				std::condition_variable condvar;
+
+				std::unique_lock<std::mutex> lock{mutex};
+
+				platform_spec.affinity_execute(native_handle, [fn, &mutex, &condvar] {
+					fn();
+
+					std::lock_guard<std::mutex> lock{mutex};
+					condvar.notify_one();
+				});
+
+				condvar.wait(lock);
+			}
 #endif	
 		}
 
@@ -1133,6 +1175,12 @@ namespace nana{
 			::XGetWindowAttributes(disp, reinterpret_cast<Window>(wd), &attr);
 			if(attr.map_state == IsUnmapped)
 				exposed_positions[reinterpret_cast<Window>(wd)] = ::nana::point{x, y};
+			else
+			{
+				//Removes the record of position. If move_window() is called during mapping the window,
+				//the existing record will mistakenly move the window to the old position after x11_apply_exposed_position.
+				exposed_positions.erase(reinterpret_cast<Window>(wd));
+			}
 
 			auto const owner = restrict::spec.get_owner(wd);
 			if(owner && (owner != reinterpret_cast<native_window_type>(restrict::spec.root_window())))
@@ -1220,6 +1268,12 @@ namespace nana{
 				hints.height = r.height;
 
 				exposed_positions[reinterpret_cast<Window>(wd)] = r.position();
+			}
+			else
+			{
+				//Removes the record of position. If move_window() is called during mapping the window,
+				//the existing record will mistakenly move the window to the old position after x11_apply_exposed_position.
+				exposed_positions.erase(reinterpret_cast<Window>(wd));
 			}
 
 			if(hints.flags)
@@ -1478,7 +1532,7 @@ namespace nana{
 			native_string_type str;
 
 #if defined(NANA_WINDOWS)
-			auto & lock = bedrock::instance().wd_manager().internal_lock();
+			auto& lock = platform_abstraction::internal_mutex();
 			bool is_current_thread = (::GetCurrentThreadId() == ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), nullptr));
 
 			if (!is_current_thread)
@@ -1697,7 +1751,13 @@ namespace nana{
 			::XGetWindowAttributes(restrict::spec.open_display(), reinterpret_cast<Window>(wd), &attr);
 			//Make sure the window is mapped before setting focus.
 			if(IsViewable == attr.map_state)
-				::XSetInputFocus(restrict::spec.open_display(), reinterpret_cast<Window>(wd), RevertToPointerRoot, CurrentTime);
+			{
+				//X has a very weird focus controlling. It generates a FocusOut event before FocusIn when XSetInputFocus,
+				//The FocusOut should be ignored in this situation, for precisely focus controlling.
+
+				restrict::spec.add_ignore_once(wd, FocusOut);
+				::XSetInputFocus(restrict::spec.open_display(), reinterpret_cast<Window>(wd), RevertToParent, CurrentTime);
+			}
 #endif
 		}
 

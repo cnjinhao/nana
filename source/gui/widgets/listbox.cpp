@@ -1,7 +1,7 @@
 /*
  *	A List Box Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -2874,6 +2874,9 @@ namespace nana
 							continue;
 
 						content_px = graph->text_extent_size((*cat.items[i].cells)[pos].text).width;
+						const auto& item = cat.items[i];
+						if (!item.img.empty())
+							content_px += item.img_show_size.width;
 					}
 
 					if (content_px > max_px)
@@ -2931,15 +2934,11 @@ namespace nana
 				if (0 == maximize)
 					maximize = range_width_px.second;
 			}
-
-			if (0 == maximize)
+			else if (0 == maximize)
 				maximize = ess_->scheme_ptr->max_fit_content;
 
 			//maximize is only available when it > 0
-			if (maximize && (content_px > maximize))
-				content_px = maximize;
-
-			width_px = content_px;
+			width_px = (maximize && (content_px > maximize) ? maximize : content_px);
 
 			_m_refresh();
 		}
@@ -2957,7 +2956,7 @@ namespace nana
 		{
 			//Returns the exclusive font if it is not empty
 			if (this->font && !this->font->empty())
-			return *this->font;
+				return *this->font;
 
 			//Returns the column font if it is not empty
 			if (ess_->scheme_ptr->column_font && !ess_->scheme_ptr->column_font)
@@ -3786,7 +3785,7 @@ namespace nana
 
 				this->_m_draw_item_bground(bground_r, bgcolor, {}, state, item);
 
-				color txt_color{ static_cast<color_rgb>(0x3399) };
+				color txt_color{ essence_->scheme_ptr->cat_fgcolor };
 
 				//Area of category icon
 				rectangle rt_ctg_icon{ x + 5, y + static_cast<int>(item_height - 16) / 2, 16, 16 };
@@ -4121,9 +4120,9 @@ namespace nana
 					essence_->item_height()
 				};
 
-				essence_->graph->rectangle(r, false, static_cast<color_rgb>(0x99defd));
+				essence_->graph->rectangle(r, false, essence_->scheme_ptr->item_selected_border);
 
-				essence_->graph->palette(false, colors::white);
+				essence_->graph->palette(false, essence_->scheme_ptr->background);
 				paint::draw(*essence_->graph).corner(r, 1);
 
 				essence_->graph->rectangle(r.pare_off(1), false);
@@ -5184,6 +5183,32 @@ namespace nana
 				return *this;
 			}
 
+			void cat_proxy::clear()
+			{
+				internal_scope_guard lock;
+
+				auto origin = ess_->content_view->origin();
+
+				int new_pos = origin.y;
+
+				if (!ess_->lister.first().empty())
+				{
+					auto start_pos = static_cast<int>(ess_->lister.distance(ess_->lister.first(), index_pair{ pos_, npos }) * ess_->item_height());
+					auto count = static_cast<int>(ess_->lister.size_item(pos_) * ess_->item_height());
+					if (start_pos + count <= origin.y)
+						new_pos = origin.y - static_cast<int>(count);
+					else if (start_pos < origin.y && origin.y < start_pos + count)
+						new_pos = start_pos + ess_->item_height();
+				}
+
+				ess_->lister.clear(pos_);
+
+				ess_->calc_content_size(false);
+				ess_->content_view->change_position(new_pos, false, false);
+				ess_->content_view->sync(false);
+				ess_->update();
+			}
+
 			auto cat_proxy::columns() const -> size_type
 			{
 				return ess_->header.cont().size();
@@ -5901,25 +5926,9 @@ namespace nana
 		void listbox::clear(size_type cat)
 		{
 			internal_scope_guard lock;
-			auto & ess = _m_ess();
 
-			auto origin = ess.content_view->origin();
-
-			int new_pos = origin.y;
-
-			auto start_pos = static_cast<int>(ess.lister.distance(ess.lister.first(), index_pair{cat, npos}) * ess.item_height());
-			auto count = static_cast<int>(ess.lister.size_item(cat) * ess.item_height());
-			if (start_pos + count <= origin.y)
-				new_pos = origin.y - static_cast<int>(count);
-			else if (start_pos < origin.y && origin.y < start_pos + count)
-				new_pos = start_pos + ess.item_height();
-
-			ess.lister.clear(cat);
-
-			ess.calc_content_size(false);
-			ess.content_view->change_position(new_pos, false, false);
-			ess.content_view->sync(false);
-			ess.update();
+			cat_proxy cp{ &_m_ess(), cat };
+			cp.clear();
 		}
 
 		void listbox::clear()

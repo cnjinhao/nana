@@ -1,7 +1,7 @@
 /**
  *	An Implementation of Place for Layout
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE or copy at
@@ -1314,30 +1314,25 @@ namespace nana
 			}
         }
 	private:
-		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px)
+		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px, const place_parts::display_metrics& dm)
 		{
-			std::pair<unsigned, std::size_t> result;
-			switch (number.kind_of())
+			std::pair<unsigned, std::size_t> val;
+
+			auto px = number.get_value(area_px, dm);
+			if (number_t::kind::percent == number.kind_of())
 			{
-			case number_t::kind::integer:
-				result.first = static_cast<unsigned>(number.integer());
-				break;
-			case number_t::kind::real:
-				result.first = static_cast<unsigned>(number.real());
-				break;
-			case number_t::kind::percent:
-				{
-					double px = number.real() * area_px + precise_px;
-					auto npx = static_cast<unsigned>(px);
-					result.first = npx;
-					precise_px = px - npx;
-				}
-				break;
-			case number_t::kind::none:
-				++result.second;
-				break;
+				px += precise_px;
+				val.first = static_cast<unsigned>(px);
+				precise_px = px - val.first;
 			}
-			return result;
+			else
+			{
+				val.first = static_cast<unsigned>(px);
+				if (number_t::kind::none == number.kind_of())
+					++val.second;
+			}
+
+			return val;
 		}
 
 		/// Returns the fixed pixels and the number of adjustable items.
@@ -1353,7 +1348,7 @@ namespace nana
 				auto count = field->elements.size();
 				for (decltype(count) i = 0; i < count; ++i)
 				{
-					auto fa = _m_calc_fa(arrange_.at(i), area_px, precise_px);
+					auto fa = _m_calc_fa(arrange_.at(i), area_px, precise_px, dm);
 
 					//The fit-content element is like a fixed element
 					if (fit_policy::none != this->fit)
@@ -1371,7 +1366,7 @@ namespace nana
 
 					if (i + 1 < count)
 					{
-						fa = _m_calc_fa(gap.at(i), area_px, precise_px);
+						fa = _m_calc_fa(gap.at(i), area_px, precise_px, dm);
 						result.first += fa.first;
 						//fa.second is ignored for gap, because the it has not the adjustable gap.
 					}

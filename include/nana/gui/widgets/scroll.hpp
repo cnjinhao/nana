@@ -1,7 +1,7 @@
 /**
  *	A Scroll Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -33,6 +33,12 @@ namespace nana
 
 	namespace drawerbase::scroll
 	{
+		struct scheme
+			: public widget_geometrics
+		{
+			std::size_t button_size{ 16 };	///< Button's width or height, depends on whether the scroll is vertical
+		};
+
 			struct scroll_events
 				: public general_events
 			{
@@ -48,18 +54,18 @@ namespace nana
 			{
 				using size_type = std::size_t;
 
-				size_type peak;   ///< the whole total
-				size_type range;  ///< how many is shown on a page, that is, How many to scroll after click on first or second
-				size_type step;   ///< how many to scroll by click in forward  or backward
-				size_type value;  ///< current offset calculated from the very beginning
+				size_type peak{ 1 };   ///< the whole total
+				size_type range{ 1 };  ///< how many is shown on a page, that is, How many to scroll after click on first or second
+				size_type step{ 1 };   ///< how many to scroll by click in forward  or backward
+				size_type value{ 0 };  ///< current offset calculated from the very beginning
 
-				buttons what;
-				bool pressed;
-				size_type	scroll_length;       ///< the length in pixels of the central button show how many of the total (peak) is shown (range)
-				int			scroll_pos;          ///< in pixels, and correspond to the offset from the very beginning (value)
-				int			scroll_mouse_offset;
+				buttons what{ buttons::none };
+				bool pressed{ false };
+				size_type	scroll_length{ 0 };       ///< the length in pixels of the central button show how many of the total (peak) is shown (range)
+				int			scroll_pos{ 0 };          ///< in pixels, and correspond to the offset from the very beginning (value)
+				int			scroll_mouse_offset{ 0 };
 
-				metrics_type();
+				scheme* scheme_ptr{ nullptr };
 			};
 
 			class drawer
@@ -71,7 +77,9 @@ namespace nana
 				};
 
 				using graph_reference = paint::graphics&;
-				const static unsigned fixedsize = 16; // make it part of a new "metric" in the widget_scheme
+				
+				//deprecated
+				//const static unsigned fixedsize = 16; // make it part of a new "metric" in the widget_scheme
 
 				drawer(bool vert);
 				buttons what(graph_reference, const point&);
@@ -187,6 +195,8 @@ namespace nana
 					graph_ = &graph;
 					widget_ = static_cast< ::nana::scroll<Vertical>*>(&widget);
 					widget.caption("nana scroll");
+
+					drawer_.metrics.scheme_ptr = static_cast<drawerbase::scroll::scheme*>(api::dev::get_scheme(widget));
 
 					//scroll doesn't want the keyboard focus.
 					api::take_active(widget, false, widget.parent());
@@ -379,7 +389,7 @@ namespace nana
 	/// Provides a way to display an object which is larger than the window's client area.
 	template<bool Vertical>
 	class scroll    // add a widget scheme?
-		:	public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events>,
+		:	public widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical>, drawerbase::scroll::scroll_events, drawerbase::scroll::scheme>,
 			public scroll_interface
 	{
 		typedef widget_object<category::widget_tag, drawerbase::scroll::trigger<Vertical> > base_type;

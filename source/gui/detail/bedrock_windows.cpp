@@ -1,7 +1,7 @@
-/**
+﻿/**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -9,7 +9,9 @@
  *
  *	@file nana/gui/detail/win32/bedrock.cpp
  *  @brief A Bedrock Implementation
- *	@contributors: Ariel Vina-Rodriguez
+ *	@list of contributions:
+ *		Ariel Vina-Rodriguez,
+ *		Lancelot 'Robin' Chen, fix mouse wheel on nested form(#621)
  */
 
 #include "../../detail/platform_spec_selector.hpp"
@@ -26,6 +28,7 @@
 #include <nana/gui/detail/element_store.hpp>
 #include <nana/gui/detail/color_schemes.hpp>
 #include "inner_fwd_implement.hpp"
+#include "../../detail/platform_abstraction.hpp"
 
 #include <iostream>	//use std::cerr
 
@@ -379,11 +382,10 @@ namespace detail
 
 		++(context->event_pump_ref_count);
 
-		auto & intr_locker = wd_manager().internal_lock();
-		intr_locker.revert();
-
 		try
 		{
+			internal_revert_guard rvlock;
+
 			MSG msg;
 			if (condition_wd)
 			{
@@ -393,7 +395,6 @@ namespace detail
 					HWND owner = ::GetWindow(native_handle, GW_OWNER);
 					if (owner && owner != ::GetDesktopWindow())
 						::EnableWindow(owner, false);
-
 
 					while (::IsWindow(native_handle))
 					{
@@ -447,10 +448,8 @@ namespace detail
 								<<"\n   exception : "<< e.what()
 			).show();
 
-			internal_scope_guard lock;
 			this->close_thread_window(nana::system::this_thread_id());
 
-			intr_locker.forward();
 			if (0 == --(context->event_pump_ref_count))
 			{
 				if ((nullptr == condition_wd) || (0 == context->window_count))
@@ -464,10 +463,9 @@ namespace detail
 				<<"An uncaptured non-std exception during message pumping!"
 				<< "\n   in form: " << api::window_caption(condition_wd)
 				).show();
-			internal_scope_guard lock;
+
 			this->close_thread_window(nana::system::this_thread_id());
 
-			intr_locker.forward();
 			if(0 == --(context->event_pump_ref_count))
 			{
 				if ((nullptr == condition_wd) || (0 == context->window_count))
@@ -476,7 +474,6 @@ namespace detail
 			throw;
 		}
 
-		intr_locker.forward();
 		if(0 == --(context->event_pump_ref_count))
 		{
 			if ((nullptr == condition_wd) || (0 == context->window_count))
@@ -630,8 +627,10 @@ namespace detail
 			if (wParam)
 			{
 				auto arg = reinterpret_cast<detail::messages::arg_affinity_execute*>(wParam);
-				if (arg->function_ptr)
-					(*arg->function_ptr)();
+				if (arg->function)
+					arg->function();
+
+				delete arg;
 			}
 			break;
 		default:
@@ -1179,7 +1178,7 @@ namespace detail
 					auto pointer_wd = ::WindowFromPoint(scr_pos);
 
 					//Ignore the message if the window is disabled.
-					if ((pointer_wd == root_window) && ::IsWindowEnabled(root_window))
+					if ((pointer_wd == root_window || root_window == ::GetAncestor(pointer_wd, GA_ROOT)) && ::IsWindowEnabled(root_window))
 					{
 						::ScreenToClient(pointer_wd, &scr_pos);
 						auto scrolled_wd = wd_manager.find_window(reinterpret_cast<native_window_type>(pointer_wd), { scr_pos.x, scr_pos.y });
@@ -1254,8 +1253,10 @@ namespace detail
 						if(msgwnd)
 						{
 							dropfiles.pos = pos;
-
-							wd_manager.calc_window_point(msgwnd, dropfiles.pos);
+							
+							// ::DragQueryPoint(drop, &mswin_pos); Returns the location of the point dragged into the file window
+							// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-dragquerypoint
+							dropfiles.pos = pos - msgwnd->pos_root;
 							dropfiles.window_handle = msgwnd;
 
 							msgwnd->annex.events_ptr->mouse_dropfiles.emit(dropfiles, msgwnd);

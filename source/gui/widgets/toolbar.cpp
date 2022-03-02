@@ -1,7 +1,7 @@
 /*
  *	A Toolbar Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -350,16 +350,11 @@ namespace nana
 
 				if(!item.image.empty())
 				{
-					auto imgsize = item.image.size();
+					auto imgsize = nana::fit_zoom(item.image.size(), { scale, scale });
+					nana::point pos{ x + static_cast<int>(scale + extra_size - imgsize.width) / 2, y + static_cast<int>(height - imgsize.height) / 2 };
 
-					if (imgsize.width > scale) imgsize.width = scale;
-					if (imgsize.height > scale) imgsize.height = scale;
-
-					nana::point pos(
-						x + static_cast<int>(scale + extra_size - imgsize.width) / 2,
-						y + static_cast<int>(height - imgsize.height) / 2);
-
-					item.image.paste(::nana::rectangle{ imgsize }, graph, pos);
+					item.image.stretch(rectangle{ item.image.size() }, graph, rectangle{ pos, imgsize });
+					
 					if(item.enable == false)
 					{
 						nana::paint::graphics gh(imgsize);

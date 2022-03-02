@@ -78,10 +78,9 @@ namespace nana
 			}
 
 			//draw crook
-
 			unsigned txt_px = 0, descent = 0, ileading = 0;
 			graph.text_metrics(txt_px, descent, ileading);
-			txt_px += (descent + 2);
+			txt_px += (descent + ileading);
 
 			auto e_state = api::element_state(*wdg);
 			if(!wdg->enabled())
