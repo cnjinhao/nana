@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Nana Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -961,17 +961,59 @@ namespace detail
 
 	void platform_spec::timer_proc(thread_t tid)
 	{
-		std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
-		if(timer_.runner)
 		{
-			timer_.runner->timer_proc(tid);
-			if(timer_.delete_declared)
+			std::lock_guard<decltype(timer_.mutex)> lock(timer_.mutex);
+			if(timer_.runner)
 			{
-				delete timer_.runner;
-				timer_.runner = nullptr;
-				timer_.delete_declared = false;
+				timer_.runner->timer_proc(tid);
+				if(timer_.delete_declared)
+				{
+					delete timer_.runner;
+					timer_.runner = nullptr;
+					timer_.delete_declared = false;
+				}
 			}
 		}
+
+
+		std::vector<std::function<void()>> func;
+
+		{
+			platform_scope_guard lock;
+			auto i = affinity_.functions.find(tid);
+			if(i == affinity_.functions.end())
+				return;
+
+			func.swap(i->second);
+
+			affinity_.functions.erase(i);
+		}
+
+		for(auto & fn : func) try{
+			fn();
+		}
+		catch(...)
+		{
+		}
+	}
+
+	void platform_spec::affinity_execute(native_window_type native_window, std::function<void()> fn)
+	{
+		auto & wd_manager = detail::bedrock::instance().wd_manager();
+
+		auto wd = wd_manager.root(native_window);
+		if(!wd) try
+		{
+			fn();
+			return;
+		}
+		catch(...)
+		{
+			return;
+		}
+
+		platform_scope_guard lock;
+		affinity_.functions[wd->thread_id].emplace_back(std::move(fn));
 	}
 
 	void platform_spec::msg_insert(native_window_type wd)

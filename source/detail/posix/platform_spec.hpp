@@ -1,7 +1,7 @@
 /*
  *	Platform Specification Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2019 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -236,6 +236,7 @@ namespace detail
 		void set_timer(const timer_core*, std::size_t interval, void (*timer_proc)(const timer_core* tm));
 		void kill_timer(const timer_core*);
 		void timer_proc(thread_t tid);
+		void affinity_execute(native_window_type, std::function<void()>);
 
 		//Message dispatcher
 		void msg_insert(native_window_type);
@@ -284,6 +285,11 @@ namespace detail
 			bool delete_declared;
 			timer_runner_tag();
 		}timer_;
+
+		struct affinity_runner
+		{
+			std::map<thread_t, std::vector<std::function<void()>>> functions;
+		}affinity_;
 
 		struct selection_tag
 		{
