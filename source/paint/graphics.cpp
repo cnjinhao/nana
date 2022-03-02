@@ -1,7 +1,7 @@
 /*
  *	Paint Graphics Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -1026,7 +1026,8 @@ namespace paint
 				::DeleteObject(hBmp);
 				::DeleteDC(hdcMem);
 #elif defined(NANA_X11)
-				static_cast<void>(file_utf8);	//eliminate unused parameter compil warning.
+				pixel_buffer pxbuf{ this->handle(), nana::rectangle{ this->size() } };
+				pxbuf.save(std::filesystem::u8path(file_utf8));
 #endif
 			}
 		}
