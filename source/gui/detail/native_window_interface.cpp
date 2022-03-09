@@ -1411,10 +1411,10 @@ namespace nana{
 			{
 				if(type != None && len == 4)
 				{
-					fm_extents.left = ((long*)data)[0];
-					fm_extents.right = ((long*)data)[1];
-					fm_extents.top = ((long*)data)[2];
-					fm_extents.bottom = ((long*)data)[3];
+					fm_extents.left = ((std::int32_t*)data)[0];
+					fm_extents.right = ((std::int32_t*)data)[1];
+					fm_extents.top = ((std::int32_t*)data)[2];
+					fm_extents.bottom = ((std::int32_t*)data)[3];
 				}
 				::XFree(data);
 			}
