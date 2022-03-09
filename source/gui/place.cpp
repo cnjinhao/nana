@@ -663,6 +663,7 @@ namespace nana
 
 		window window_handle{nullptr};
 		event_handle event_size_handle{nullptr};
+		event_handle event_destroy_handle{ nullptr };
 
 		std::string div_text;
 		std::unique_ptr<division> root_division;
@@ -2674,6 +2675,7 @@ namespace nana
 
 	place::implement::~implement()
 	{
+		api::umake_event(event_destroy_handle);
 		api::umake_event(event_size_handle);
 		root_division.reset();
 
@@ -3297,6 +3299,16 @@ namespace nana
 				impl_->root_division->calc_weight_floor(arg.window_handle);
 				impl_->root_division->collocate(arg.window_handle);
 			}
+		});
+
+		// Though the event handlers are automatically destructed, the handles should set to null when the window
+		// is closed before the place being destructed.
+		// Because if there is a new window being created immediately after the bound window, the new handles for
+		// the new window may have same value as member event_xxx_handle, in this situation, the event handler
+		// for the new window would be mistakenly deleted when destructs the place.
+		impl_->event_destroy_handle = api::events(wd).destroy.connect_unignorable([this](const arg_destroy&){
+			impl_->event_size_handle = nullptr;
+			impl_->event_destroy_handle = nullptr;
 		});
 	}
 
