@@ -368,7 +368,6 @@ namespace nana{	namespace paint
 			for (std::size_t i = 0; i < 32; ++i)
 				rgb_table[i] = static_cast<unsigned char>(i * 255 / 31);
 
-
 			auto rawptr = raw_pixel_buffer;
 
 			if (0x7C00 == mask_red && 0x3E0 == mask_green && 0x1F == mask_blue)
