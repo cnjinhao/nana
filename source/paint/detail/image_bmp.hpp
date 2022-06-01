@@ -61,13 +61,23 @@ namespace nana{	namespace paint
 
 					if (header->biBitCount >= 16)
 					{
-						if (header_bytes >= sizeof(bitmap_info_v3_header))
+						if (header_bytes < sizeof(bitmap_info_v3_header))
 						{
-							auto v3hdr = reinterpret_cast<const bitmap_info_v3_header*>(bmp_file + 1);
-							pixbuf_.put_16bit(bits, v3hdr->head.biWidth, bmp_height, bytes_per_line, v3hdr->head.biHeight < 0, v3hdr->mask_red, v3hdr->mask_green, v3hdr->mask_blue, v3hdr->mask_alpha);
+							pixbuf_.put(bits, header->biWidth, bmp_height, header->biBitCount, bytes_per_line, (header->biHeight < 0));
+							return true;
+						}
+
+						auto v3hdr = reinterpret_cast<const bitmap_info_v3_header*>(bmp_file + 1);
+
+						if (32 == header->biBitCount)
+						{
+							if (0xff0000 == v3hdr->mask_red && 0xff00 == v3hdr->mask_green && 0xff == v3hdr->mask_blue)
+								pixbuf_.put(bits, header->biWidth, bmp_height, header->biBitCount, bytes_per_line, (header->biHeight < 0));
+							else
+								return false;
 						}
 						else
-							pixbuf_.put(bits, header->biWidth, bmp_height, header->biBitCount, bytes_per_line, (header->biHeight < 0));
+							pixbuf_.put_16bit(bits, v3hdr->head.biWidth, bmp_height, bytes_per_line, v3hdr->head.biHeight < 0, v3hdr->mask_red, v3hdr->mask_green, v3hdr->mask_blue, v3hdr->mask_alpha);
 					}
 					else
 						_m_put_with_palette(header, bits, bmp_file->bfSize - bmp_file->bfOffBits,  bytes_per_line);

@@ -930,7 +930,7 @@ namespace nana
 				editor->text(to_wstring(str), false);
 
 				if (editor->try_refresh())
-					api::update_window(this->handle());
+					api::update_window(this->handle(), true);
 			}
 		}
 

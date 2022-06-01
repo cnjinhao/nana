@@ -1,7 +1,7 @@
 /*
 *	Elements of GUI Gadgets
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2017 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -430,6 +430,27 @@ namespace nana
 						--x;
 						++y;
 					}
+				}
+				break;
+				case direction::west:
+				{
+					x += 5;
+					for(int i = 0; i < 4; ++i)
+					{
+						graph.set_pixel(x, y);
+						graph.set_pixel(x - 1, y);
+						--x;
+						++y;
+					}
+
+					for(int i = 0; i < 3; ++i)
+					{
+						graph.set_pixel(x, y);
+						graph.set_pixel(x + 1, y);
+						++x;
+						++y;
+					}
+
 				}
 				break;
 				default:break;

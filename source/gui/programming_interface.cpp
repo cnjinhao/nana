@@ -272,7 +272,7 @@ namespace api
 				if (wd->other.category == category::flags::root)
 					interface_type::window_caption(wd->root, wd->title);
 
-				refresh_window(wd);
+				restrict::wd_manager().update(wd, true, true);
 			}
 		}
 
@@ -819,6 +819,7 @@ namespace api
 
 	void umake_event(event_handle eh)
 	{
+		internal_scope_guard lock;
 		restrict::bedrock.evt_operation().erase(eh);
 	}
 
