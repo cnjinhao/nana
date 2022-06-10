@@ -484,6 +484,7 @@ namespace nana::widgets::skeletons
 	{
 		undoable<command>	undo;			//undo command
 		renderers			customized_renderers;
+		bool show_focused_border = true; ///< Whether the text_editor shows a border when it is focused via being clicked on
 		std::vector<upoint> text_position;	//positions of text since last rendering.
 		int text_position_origin{ -1 };	//origin when last text_exposed
 
@@ -1982,6 +1983,11 @@ namespace nana::widgets::skeletons
 		return impl_->cview->scroll_operation();
 	}
 
+	void text_editor::enable_focused_border(bool enable)
+	{
+		impl_->show_focused_border = enable;
+	}
+
 	void text_editor::draw_corner()
 	{
 		impl_->cview->draw_corner(graph_);
@@ -2561,7 +2567,15 @@ namespace nana::widgets::skeletons
 			else
 			{
 				::nana::facade<element::border> facade;
-				facade.draw(graph_, _m_bgcolor(), api::fgcolor(this->window_), ::nana::rectangle{ api::window_size(this->window_) }, api::element_state(this->window_));
+
+				if (this->impl_->show_focused_border)
+				{
+					facade.draw(graph_, _m_bgcolor(), api::fgcolor(this->window_), ::nana::rectangle{ api::window_size(this->window_) }, api::element_state(this->window_));
+				}
+				else
+				{
+					facade.draw(graph_, _m_bgcolor(), api::fgcolor(this->window_), ::nana::rectangle{ api::window_size(this->window_) }, element_state::normal);
+				}
 			}
 
 			if (!attributes_.line_wrapped)

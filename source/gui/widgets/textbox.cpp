@@ -910,6 +910,13 @@ namespace nana
 			return *this;
 		}
 
+		void textbox::enable_border_focused(bool enable)
+		{
+			internal_scope_guard lock;
+			auto editor = get_drawer_trigger().editor();
+			editor->enable_focused_border(enable);
+		}
+
 		//Override _m_caption for caption()
 		auto textbox::_m_caption() const noexcept -> native_string_type
 		{
