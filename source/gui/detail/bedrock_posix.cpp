@@ -117,17 +117,6 @@ namespace detail
 	//here is the definition of this object
 	bedrock bedrock::bedrock_object;
 
-	Window event_window(const XEvent& event)
-	{
-		switch(event.type)
-		{
-		case MapNotify:
-		case UnmapNotify:
-		case DestroyNotify:
-			return event.xmap.window;
-		}
-		return event.xkey.window;
-	}
 
 	bedrock::bedrock()
 		: pi_data_(new pi_data), impl_(new private_impl)
@@ -564,7 +553,9 @@ namespace detail
 		static unsigned long	last_mouse_down_time;
 		static basic_window*	last_mouse_down_window;
 
-		auto native_window = reinterpret_cast<native_window_type>(event_window(xevent));
+		auto native_window = reinterpret_cast<native_window_type>(
+				::nana::detail::platform_spec::xevent_window(xevent));
+
 		auto & wd_manager = brock.wd_manager();
 		auto root_runtime = wd_manager.root_runtime(native_window);
 

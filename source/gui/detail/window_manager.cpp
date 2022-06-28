@@ -843,7 +843,8 @@ namespace detail
 		bool window_manager::update(basic_window* wd, bool redraw, bool forced, const rectangle* update_area)
 		{
 			internal_scope_guard lock;
-			if (impl_->wd_register.available(wd) == false) return false;
+			if (impl_->wd_register.available(wd) == false)
+				return false;
 
 			if ((wd->other.category == category::flags::root) && wd->is_draw_through())
 			{

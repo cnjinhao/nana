@@ -185,8 +185,6 @@ namespace detail
 	public:
 		typedef void (*timer_proc_type)(thread_t tid);
 		typedef void (*event_proc_type)(Display*, msg_packet_tag&);
-		typedef ::nana::event_code		event_code;
-		typedef ::nana::native_window_type	native_window_type;
 
 		platform_spec(const platform_spec&) = delete;
 		platform_spec& operator=(const platform_spec&) = delete;
@@ -196,6 +194,11 @@ namespace detail
 
 		Display* open_display();
 		void close_display();
+
+		static Window xevent_window(const XEvent&);
+
+		bool install_xevent_handler(native_window_type, std::function<void(nana::x11::xevent*)> handler);
+		void erase_xevent_handler(native_window_type);
 
 		void lock_xlib();
 		void unlock_xlib();

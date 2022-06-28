@@ -67,6 +67,20 @@ namespace api
 			auto & spec = nana::detail::platform_spec::instance();
 			return spec.open_display();			
 		}
+
+		/// Register an event handler
+		bool install_xevent_handler(native_window_type wd, std::function<void(nana::x11::xevent*)> fn)
+		{
+			return nana::detail::platform_spec::instance().install_xevent_handler(wd, std::move(fn));
+		}
+
+		void erase_xevent_handler(native_window_type wd)
+		{
+			nana::detail::platform_spec::instance().erase_xevent_handler(wd);
+		}
+
+		/// Apply the specified xevent handler to a window
+		bool apply_xevent_handler(const std::string& id, native_window_type);
 	}
 #endif
 

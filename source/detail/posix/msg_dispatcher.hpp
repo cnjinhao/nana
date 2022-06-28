@@ -28,6 +28,8 @@
 #include <thread>
 #include <atomic>
 
+#include <nana/gui/basis.hpp>
+
 namespace nana
 {
 namespace detail
@@ -73,6 +75,48 @@ namespace detail
 			proc_.timer_proc = timer_proc;
 			proc_.event_proc = event_proc;
 			proc_.filter_proc = filter;
+		}
+
+		static Window xevent_window(const XEvent& evt)
+		{
+			switch(evt.type)
+			{
+			case MapNotify:
+			case UnmapNotify:
+			case CreateNotify:
+			case DestroyNotify:
+			case ReparentNotify:
+			case ConfigureNotify:
+			case MapRequest:
+			case GravityNotify:
+			case ConfigureRequest:
+			case CirculateNotify:
+			case CirculateRequest:
+				return evt.xmap.window;
+			}
+
+			return evt.xkey.window;
+		}
+
+		bool xevent_handling(Window wd, std::function<void(nana::x11::xevent*)> fn)
+		{
+			if(!(wd && fn))
+				return false;
+
+			std::lock_guard<decltype(table_.mutex)> lock(table_.mutex);
+
+			if(table_.wnd_table.count(wd))
+				return false;
+
+			table_.xevent_handlers[wd] = std::make_shared<std::function<void(nana::x11::xevent*)>>(std::move(fn));
+		
+			return true;
+		}
+
+		void erase_xevent_handling(Window wd)
+		{
+			std::lock_guard<decltype(table_.mutex)> lock(table_.mutex);
+			table_.xevent_handlers.erase(wd);
 		}
 
 		void insert(Window wd)
@@ -219,6 +263,9 @@ namespace detail
 					{
 						::XNextEvent(display_, &event);
 
+						if(_m_try_xevent_handling(event))
+							continue;
+
 						if(KeyRelease == event.type)
 						{
 							//Check whether the key is pressed, because X will send KeyRelease when pressing and
@@ -262,15 +309,26 @@ namespace detail
 			}
 		}
 	private:
-		static Window _m_event_window(const XEvent& event)
+		bool _m_try_xevent_handling(XEvent& evt)
 		{
-			switch(event.type)
+			auto wd = xevent_window(evt);
+
+			std::lock_guard<decltype(table_.mutex)> lock{ table_.mutex };
+
+			auto i = table_.xevent_handlers.find(wd);
+			if(i == table_.xevent_handlers.end())
+				return false;
+
+			if(i->second)
 			{
-			case MapNotify:
-			case UnmapNotify:
-				return event.xmap.window;
+				// Make a copy to make sure it is well when delete the handler in it's handler.
+				auto shared_fn = i->second;
+				(*shared_fn)(reinterpret_cast<nana::x11::xevent*>(&evt));
+
+				return true;
 			}
-			return event.xkey.window;
+
+			return false;
 		}
 
 		static Window _m_window(const msg_packet_tag& pack)
@@ -278,7 +336,7 @@ namespace detail
 			switch(pack.kind)
 			{
 			case msg_packet_tag::pkt_family::xevent:
-				return _m_event_window(pack.u.xevent);
+				return xevent_window(pack.u.xevent);
 			case msg_packet_tag::pkt_family::mouse_drop:
 				return pack.u.mouse_drop.window;
 			default:
@@ -380,6 +438,8 @@ namespace detail
 			std::recursive_mutex mutex;
 			std::map<thread_t, thread_binder*> thr_table;
 			std::map<Window, thread_binder*> wnd_table;
+
+			std::map<Window, std::shared_ptr<std::function<void(nana::x11::xevent*)>>> xevent_handlers;
 		}table_;
 
 		struct proc_tag
