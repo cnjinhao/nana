@@ -1,6 +1,6 @@
 /*
  *	Message Dispatcher Implementation
- *	Copyright(C) 2003-2018 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -181,16 +181,6 @@ namespace detail
 
 				table_.wnd_table.erase(i);
 				thr->window.erase(wd);
-
-				//There still is at least one window alive.
-				if(thr->window.size())
-				{
-					//Make a cleanup msg packet to infor the dispatcher the window is closed.
-					msg_packet_tag msg;
-					msg.kind = msg_packet_tag::pkt_family::cleanup;
-					msg.u.packet_window = wd;
-					thr->msg_queue.push_back(msg);
-				}
 			}
 		}
 
@@ -374,22 +364,18 @@ namespace detail
 				{
 					if(i->second->window.size())
 					{
+						//Exits the event pumping if the modal window is closed.
+						if(modal && (0 == i->second->window.count(modal)))
+							return 0;
+						
+
 						msg_queue_type & queue = i->second->msg_queue;
-						if(queue.size())
-						{
-							msg = queue.front();
-							queue.pop_front();
-
-							//Check whether the event dispatcher is used for the modal window
-							//and when the modal window is closing, the event dispatcher would
-							//stop event pumping.
-							if((modal == msg.u.packet_window) && (msg.kind == msg_packet_tag::pkt_family::cleanup))
-								return 0;
-
-							return 1;
-						}
-						else
+						if(queue.empty())
 							return -1;
+						
+						msg = queue.front();
+						queue.pop_front();
+						return 1;
 					}
 
 					delete i->second;
