@@ -1353,19 +1353,19 @@ namespace detail
 			internal_scope_guard lock;
 
 			auto& safe_place = impl_->safe_place.table();
-			for (auto i = safe_place.begin(); i != safe_place.end();)
+			int i=0;
+            while (i < safe_place.size()) 
 			{
-				if (i->first->thread_id == thread_id)
+                if (safe_place[i].first->thread_id == thread_id)
 				{
-					auto functions = std::move(i->second);
-					i = safe_place.erase(i);
+					auto functions = std::move(safe_place[i].second);
+                    safe_place.erase(safe_place.begin()+i);
 
 					for (auto& fn : functions)
 						fn();
-				}
-				else
-					++i;
-			}
+				} else
+                    ++i;
+			} 
 		}
 
 		//updates the window elements when DPI is changed.
