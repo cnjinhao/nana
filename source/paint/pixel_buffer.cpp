@@ -1565,8 +1565,8 @@ namespace nana{	namespace paint
 		    int bsq = b * b;
 		    int xa, ya;
 
-		    pixel({x, y+b}, col);
-		    pixel({x, y-b}, col);
+		    pixel(nana::point ( x, y + b ), col);
+            pixel(nana::point ( x, y - b ), col);
 
 		    wx = 0;
 		    wy = b;
@@ -1596,8 +1596,8 @@ namespace nana{	namespace paint
 		        pixel({x-wx, y+wy}, col);
 		    }
 
-		    pixel({x+a, y}, col);
-		    pixel({x-a, y}, col);
+		    pixel(nana::point ( x + a, y ), col);
+            pixel(nana::point ( x - a, y ), col);
 
 		    wx = a;
 		    wy = 0;
