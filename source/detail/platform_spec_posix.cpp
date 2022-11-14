@@ -493,6 +493,21 @@ namespace detail
 		}
 	}
 
+	Window platform_spec::xevent_window(const XEvent& evt)
+	{
+		return msg_dispatcher::xevent_window(evt);
+	}
+
+	bool platform_spec::install_xevent_handler(native_window_type wd, std::function<void(nana::x11::xevent*)> fn)
+	{
+		return msg_dispatcher_->xevent_handling(reinterpret_cast<Window>(wd), std::move(fn));
+	}
+
+	void platform_spec::erase_xevent_handler(native_window_type wd)
+	{
+		msg_dispatcher_->erase_xevent_handling(reinterpret_cast<Window>(wd));
+	}
+
 	void platform_spec::lock_xlib()
 	{
 		xlib_locker_.lock();

@@ -55,6 +55,10 @@ namespace api
 	{
 		/// Returns the connection to the X server
 		const void* get_display();
+
+		/// Register an event handler
+		bool install_xevent_handler(native_window_type, std::function<void(nana::x11::xevent*)>);
+		void erase_xevent_handler(native_window_type);
 	}
 #endif
 

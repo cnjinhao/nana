@@ -82,6 +82,7 @@ namespace nana{	namespace paint
 		
 		pixel_color_t pixel(int x, int y) const;
 		void pixel(int x, int y, pixel_color_t);
+		void pixel(const nana::point& pt, pixel_color_t);
 
 		void paste(drawable_type, const point& p_dst) const;
 		void paste(const nana::rectangle& s_r, drawable_type, const point& p_dst, alpha_methods = alpha_methods::straight_alpha) const;
@@ -100,6 +101,8 @@ namespace nana{	namespace paint
 		bool save(std::filesystem::path) const;
 
 		void to_grayscale();
+
+		void ellipse(const nana::point&, float a, float b, const color&);
 
 	private:
 		std::shared_ptr<pixel_buffer_storage> storage_;

@@ -368,6 +368,7 @@ namespace nana{	namespace paint
 			for (std::size_t i = 0; i < 32; ++i)
 				rgb_table[i] = static_cast<unsigned char>(i * 255 / 31);
 
+
 			auto rawptr = raw_pixel_buffer;
 
 			if (0x7C00 == mask_red && 0x3E0 == mask_green && 0x1F == mask_blue)
@@ -853,6 +854,11 @@ namespace nana{	namespace paint
 		auto sp = storage_.get();
 		if(sp && 0 <= x && x < static_cast<int>(sp->pixel_size.width) && 0 <= y && y < static_cast<int>(sp->pixel_size.height))
 			*reinterpret_cast<pixel_color_t*>(reinterpret_cast<char*>(sp->raw_pixel_buffer + x) + y * sp->bytes_per_line) = px;
+	}
+
+	void pixel_buffer::pixel(const nana::point& pt, pixel_color_t col)
+	{
+		pixel(pt.x, pt.y, col);
 	}
 
 	void pixel_buffer::paste(drawable_type drawable, const point& p_dst) const
@@ -1545,6 +1551,81 @@ namespace nana{	namespace paint
 				p->element.green = gray;
 			}
 		}
+	}
+
+
+	void pixel_buffer::ellipse(const nana::point& pt, float a, float b, const color& c)
+	{
+		int x = pt.x;
+		int y = pt.y;
+		auto col = c.px_color();
+
+		    int wx, wy;
+		    int asq = int(a * a);
+		    int bsq = int(b * b);
+		    int xa, ya;
+
+		    pixel({x, y + (int)b}, col);
+		    pixel({x, y - (int)b}, col);
+
+		    wx = 0;
+		    wy = (int) b;
+		    xa = 0;
+		    ya = asq * 2 * (int) b;
+		    auto thresh = asq / 4 - asq * b;
+
+		    for (;;) {
+		        thresh += xa + bsq;
+
+		        if (thresh >= 0) {
+		            ya -= asq * 2;
+		            thresh -= ya;
+		            wy--;
+		        }
+
+		        xa += bsq * 2;
+		        wx++;
+
+		        if (xa >= ya)
+		          break;
+
+
+		        pixel({x+wx, y-wy}, col);
+		        pixel({x-wx, y-wy}, col);
+		        pixel({x+wx, y+wy}, col);
+		        pixel({x-wx, y+wy}, col);
+		    }
+
+		    pixel({x + (int) a, y}, col);
+		    pixel({x - (int) a, y}, col);
+
+		    wx = (int) a;
+		    wy = 0;
+		    xa = bsq * 2 * (int) a;
+
+		    ya = 0;
+		    thresh = bsq / 4 - bsq * a;
+
+		    for (;;) {
+		        thresh += ya + asq;
+
+		        if (thresh >= 0) {
+		            xa -= bsq * 2;
+		            thresh = thresh - xa;
+		            wx--;
+		        }
+
+		        ya += asq * 2;
+		        wy++;
+
+		        if (ya > xa)
+		          break;
+
+		        pixel({x+wx, y-wy}, col);
+		        pixel({x-wx, y-wy}, col);
+		        pixel({x+wx, y+wy}, col);
+		        pixel({x-wx, y+wy}, col);
+		    }
 	}
 }//end namespace paint
 }//end namespace nana
