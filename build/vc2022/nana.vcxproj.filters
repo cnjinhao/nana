@@ -453,9 +453,6 @@
     <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
-    <ClInclude Include="..\..\..\BrunoEngine\Code\Engine\Dependencies\nana\source\gui\place_parts.hpp">
-      <Filter>Sources\gui</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\source\gui\place_parts.hpp">
       <Filter>Include\gui</Filter>
     </ClInclude>
