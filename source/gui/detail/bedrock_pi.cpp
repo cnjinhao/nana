@@ -512,6 +512,16 @@ namespace nana
 					evt_addr->emit(*arg, wd);
 				break;
 			}
+            case event_code::activate:
+                if (bProcess__External_event) {
+                    auto arg = dynamic_cast<const arg_activate*>(&event_arg);
+                    if (arg && (wd->other.category == category::flags::root)) {
+                        auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
+                        if (evt_root)
+                            evt_root->activate.emit(*arg, wd);
+                    }
+                }
+                break;
 			case event_code::expose:
 				if (bProcess__External_event)
 				{
