@@ -9,6 +9,7 @@ build/vc2013-bkl/*
 build/makefile-bkl/*
 build/compile_commands.json
 build/install_manifest.txt
+.vs/
 *.obj
 *.exe
 *.pdb
