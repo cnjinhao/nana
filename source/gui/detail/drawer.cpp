@@ -40,6 +40,16 @@ namespace nana
 		detail::bedrock::instance().thread_context_lazy_refresh();
 	}
 
+	void drawer_trigger::enter_size_move(graph_reference graph, const arg_size_move&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::enter_size_move));
+	}
+
+	void drawer_trigger::exit_size_move(graph_reference graph, const arg_size_move&)
+	{
+		overridden_ &= ~(1 << static_cast<int>(event_code::exit_size_move));
+	}
+
 	void drawer_trigger::move(graph_reference, const arg_move&)
 	{
 		overridden_ &= ~(1 << static_cast<int>(event_code::move));
@@ -308,6 +318,16 @@ namespace nana
 		{
 			_m_emit(event_code::resized, arg, &drawer_trigger::resized, bForce__EmitInternal);
 		}
+
+        void drawer::enter_size_move(const arg_size_move& arg, const bool bForce__EmitInternal)
+        {
+			_m_emit(event_code::enter_size_move, arg, &drawer_trigger::enter_size_move, bForce__EmitInternal);
+        }
+
+        void drawer::exit_size_move(const arg_size_move& arg, const bool bForce__EmitInternal)
+        {
+			_m_emit(event_code::exit_size_move, arg, &drawer_trigger::exit_size_move, bForce__EmitInternal);
+        }
 
 		void drawer::move(const arg_move& arg, const bool bForce__EmitInternal)
 		{

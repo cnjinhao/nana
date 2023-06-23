@@ -73,6 +73,8 @@ namespace detail
 		static bool is_window_zoomed(native_window_type, bool ask_for_max);
 
 		static nana::point	window_position(native_window_type);
+		static void	enter_size_move_window(native_window_type);
+		static void	exit_size_move_window(native_window_type);
 		static void	move_window(native_window_type, int x, int y);
 		static bool	move_window(native_window_type, const rectangle&);
 		static void bring_top(native_window_type, bool activated);

@@ -96,6 +96,8 @@ namespace nana::detail
 	public:
 		void event_expose(basic_window *, bool exposed);
 		void event_move(basic_window*, int x, int y);
+		void event_enter_size_move(basic_window*);
+		void event_exit_size_move(basic_window*);
 		bool event_msleave(basic_window*);
 		void event_focus_changed(basic_window* root_wd, native_window_type receiver, bool getting);
 		void thread_context_destroy(basic_window*);

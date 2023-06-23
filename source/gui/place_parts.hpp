@@ -112,6 +112,7 @@ namespace nana
 			virtual void notify_float() = 0;
 			virtual void notify_dock() = 0;
 			virtual void notify_move() = 0;
+			virtual void notify_move_started() = 0;
 			virtual void notify_move_stopped() = 0;
 
 			//a dockarea requests to close the dockpane
@@ -298,6 +299,7 @@ namespace nana
 						if (::nana::mouse::left_button == arg.button)
 						{
 							moves_.started = true;
+							moves_.hasChanged = false;
 							moves_.start_pos = api::cursor_position();
 							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
 							caption_.set_capture(true);
@@ -321,6 +323,12 @@ namespace nana
 								if(!caption_.get_drawer_trigger().hit_close())
 									notifier_->notify_move();
 							}
+
+							if (!moves_.hasChanged)
+							{
+								moves_.hasChanged = true;
+								notifier_->notify_move_started();
+							}
 						}
 					}
 					else if (event_code::mouse_up == arg.evt_code)
@@ -329,7 +337,8 @@ namespace nana
 						{
 							moves_.started = false;
 							caption_.release_capture();
-							notifier_->notify_move_stopped();
+							if (moves_.hasChanged)
+								notifier_->notify_move_stopped();
 						}
 					}
 				};
@@ -470,6 +479,7 @@ namespace nana
 			struct moves
 			{
 				bool started{ false };
+				bool hasChanged{ false };
 				::nana::point start_pos;
 				::nana::point start_container_pos;
 			}moves_;

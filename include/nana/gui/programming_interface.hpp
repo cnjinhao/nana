@@ -343,6 +343,8 @@ namespace api
 	point window_position(window);
 	void move_window(window, const point&);
 	void move_window(window wd, const rectangle&);
+	void enter_size_move_window(window wd);
+	void exit_size_move_window(window wd);
 
 	void bring_top(window, bool activated);
 	bool set_window_z_order(window wd, window wd_after, z_order_action action_if_no_wd_after);

@@ -231,6 +231,16 @@ namespace nana
 			_m_move(r);
 		}
 
+		void widget::enter_size_move()
+		{
+			_m_enter_size_move();
+		}
+
+		void widget::exit_size_move()
+		{
+			_m_exit_size_move();
+		}
+
 		void widget::fgcolor(const nana::color& col)
 		{
 			_m_fgcolor(col);
@@ -364,6 +374,16 @@ namespace nana
 		void widget::_m_move(const rectangle& r)
 		{
 			api::move_window(handle(), r);
+		}
+
+		void widget::_m_enter_size_move()
+		{
+			api::enter_size_move_window(handle());
+		}
+
+		void widget::_m_exit_size_move()
+		{
+			api::exit_size_move_window(handle());
 		}
 
 		void widget::_m_typeface(const paint::font& font)

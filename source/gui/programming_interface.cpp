@@ -857,6 +857,30 @@ namespace api
 		}
 	}
 
+	void enter_size_move_window(window wd)
+	{
+		internal_scope_guard lock;
+		if (restrict::wd_manager().enter_size_move(wd))
+		{
+			if (category::flags::root != wd->other.category)
+				wd = wd->seek_non_lite_widget_ancestor();
+
+			restrict::wd_manager().update(wd, false, false);
+		}
+	}
+
+	void exit_size_move_window(window wd)
+	{
+		internal_scope_guard lock;
+		if (restrict::wd_manager().exit_size_move(wd))
+		{
+			if (category::flags::root != wd->other.category)
+				wd = wd->seek_non_lite_widget_ancestor();
+
+			restrict::wd_manager().update(wd, false, false);
+		}
+	}
+
 	void bring_top(window wd, bool activated)
 	{
 		interface_type::bring_top(root(wd), activated);

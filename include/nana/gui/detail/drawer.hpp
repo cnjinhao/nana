@@ -73,6 +73,9 @@ namespace nana
 
 		virtual void resizing(graph_reference, const arg_resizing&);
 		virtual void resized(graph_reference, const arg_resized&);
+		virtual void enter_size_move(graph_reference graph, const arg_size_move&);
+		virtual void exit_size_move(graph_reference graph, const arg_size_move&);
+
 		virtual void move(graph_reference, const arg_move&);
 		virtual void click(graph_reference, const arg_click&);
 		virtual void dbl_click(graph_reference, const arg_mouse&);
@@ -139,6 +142,8 @@ namespace nana
 			void mouse_dropfiles(const arg_dropfiles&, const bool);
 			void resizing(const arg_resizing&, const bool);
 			void resized(const arg_resized&, const bool);
+			void enter_size_move(const arg_size_move&, const bool);
+			void exit_size_move(const arg_size_move&, const bool);
 			void move(const arg_move&, const bool);
 			void focus(const arg_focus&, const bool);
 			void key_ime(const arg_ime& arg, const bool bForce__EmitInternal);
