@@ -109,6 +109,8 @@ namespace nana
 		void move(int x, int y);
 		void move(const point&);
 		void move(const rectangle&);
+		void enter_size_move();
+		void exit_size_move();
 
 		void fgcolor(const nana::color&);
 		nana::color fgcolor() const;
@@ -149,6 +151,8 @@ namespace nana
 		virtual void _m_size(const nana::size&);
 		virtual void _m_move(int x, int y);
 		virtual void _m_move(const rectangle&);
+		virtual void _m_enter_size_move();
+		virtual void _m_exit_size_move();
 
 		virtual void _m_typeface(const nana::paint::font& font);
 		virtual nana::paint::font _m_typeface() const;

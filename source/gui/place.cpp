@@ -1157,6 +1157,10 @@ namespace nana
 				_m_visible_for_child(child.get(), vsb);
 			}
 		}
+
+		virtual void enter_size_move(window) = 0;
+		virtual void exit_size_move(window) = 0;
+
 		//Collocate the division and its children divisions,
 		//The window parameter is specified for the window which the place object binded.
 		virtual void collocate(window) = 0;
@@ -1196,6 +1200,16 @@ namespace nana
 			: division((vert ? kind::vertical_arrange : kind::arrange), std::move(name)),
 			arrange_(std::move(arr))
 		{}
+
+		void enter_size_move(window wd) override
+		{
+
+		}
+
+		void exit_size_move(window wd) override
+		{
+
+		}
 
 		void collocate(window wd) override
 		{
@@ -1536,6 +1550,16 @@ namespace nana
 			dimension.first = dimension.second = 0;
 		}
 
+		void enter_size_move(window wd) override
+		{
+
+		}
+
+		void exit_size_move(window wd) override
+		{
+
+		}
+
 		void revise_collapses() noexcept
 		{
 			if (collapses_.empty())
@@ -1766,6 +1790,17 @@ namespace nana
 		{
 			splitter_cursor_ = (horizontal ? cursor::size_we : cursor::size_ns);
 		}
+
+		void enter_size_move(window wd) override
+		{
+
+		}
+
+		void exit_size_move(window wd) override
+		{
+
+		}
+
 	private:
 		void collocate(window wd) override
 		{
@@ -2141,6 +2176,46 @@ namespace nana
 			}
 		}
 
+		void enter_size_move(window wd) override
+		{
+			if (!dockable_field)
+			{
+				if (name.empty())
+					return;
+
+				auto& dock_ptr = impl_ptr_->docks[name];
+				if (!dock_ptr)
+					dock_ptr = new field_dock;
+
+				dock_ptr->attached = this;
+				dockable_field = dock_ptr;
+			}
+
+			auto& dockarea = dockable_field->dockarea;
+			if (dockarea && !dockarea->floating())
+				dockarea->enter_size_move();
+		}
+
+		void exit_size_move(window wd) override
+		{
+			if (!dockable_field)
+			{
+				if (name.empty())
+					return;
+
+				auto& dock_ptr = impl_ptr_->docks[name];
+				if (!dock_ptr)
+					dock_ptr = new field_dock;
+
+				dock_ptr->attached = this;
+				dockable_field = dock_ptr;
+			}
+
+			auto& dockarea = dockable_field->dockarea;
+			if (dockarea && !dockarea->floating())
+				dockarea->exit_size_move();
+		}
+
 		void collocate(window) override
 		{
 			if (!dockable_field)
@@ -2272,11 +2347,20 @@ namespace nana
 			}
 		}
 
+		void notify_move_started() override
+		{
+			if (dockable_field && dockable_field->dockarea)
+				dockable_field->dockarea->enter_size_move();
+		}
+
 		void notify_move_stopped() override
 		{
 			//hit test on docker
 			if (_m_hit_test(true) && dockable_field && dockable_field->dockarea)
 				dockable_field->dockarea->dock();
+
+			if (dockable_field && dockable_field->dockarea)
+				dockable_field->dockarea->exit_size_move();
 
 			indicator_.docker.reset();
 		}
@@ -2360,6 +2444,9 @@ namespace nana
 						base_pos_.y = horz_point(is_vert, this->pos());
 
 						base_px_ = (is_vert ? pane_dv_->field_area.height : pane_dv_->field_area.width);
+						this->enter_size_move();
+
+						dock_dv_->enter_size_move(wd);
 					}
 					else if (event_code::mouse_move == arg.evt_code)	//hover
 					{
@@ -2414,7 +2501,11 @@ namespace nana
 						dock_dv_->collocate(wd);
 					}
 					else
+					{
 						this->release_capture();
+						this->exit_size_move();
+						dock_dv_->exit_size_move(wd);
+					}
 				};
 
 				auto & evt = this->events();
@@ -2451,6 +2542,22 @@ namespace nana
 			}
 
 			return nullptr;
+		}
+
+		void enter_size_move(window wd) override
+		{
+			for (auto& child : children)
+			{
+				child->enter_size_move(wd);
+			}
+		}
+
+		void exit_size_move(window wd) override
+		{
+			for (auto& child : children)
+			{
+				child->exit_size_move(wd);
+			}
 		}
 
 		void collocate(window wd) override
@@ -2643,6 +2750,17 @@ namespace nana
 		div_switchable(std::string && name, implement*) noexcept:
 			division(kind::switchable, std::move(name))
 		{}
+
+		void enter_size_move(window wd) override
+		{
+
+		}
+
+		void exit_size_move(window wd) override
+		{
+
+		}
+
 	private:
 		void collocate(window wd) override
 		{

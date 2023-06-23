@@ -84,6 +84,8 @@ namespace nana::detail
 		//move the wnd and its all children window, x and y is a relatively coordinate for wnd's parent window
 		bool move(basic_window*, int x, int y, bool passive);
 		bool move(basic_window*, const rectangle&);
+		bool enter_size_move(basic_window*);
+		bool exit_size_move(basic_window*);
 
 		bool size(basic_window*, nana::size, bool passive, bool ask_update);
 
@@ -135,6 +137,8 @@ namespace nana::detail
 		void _m_disengage(basic_window*, basic_window* for_new);
 		void _m_destroy(basic_window*);
 		void _m_move_core(basic_window*, const point& delta);
+		void _m_enter_size_move_core(basic_window*);
+		void _m_exit_size_move_core(basic_window*);
 		void _m_shortkeys(basic_window*, bool with_chlidren, std::vector<std::pair<basic_window*, unsigned long>>& keys) const;
 		basic_window* _m_find(basic_window*, const point&);
 		static bool _m_effective(basic_window*, const point& root_pos);

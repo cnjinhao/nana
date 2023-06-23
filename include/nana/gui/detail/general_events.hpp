@@ -342,6 +342,11 @@ namespace nana
 		mutable unsigned height;	    ///< new height in pixels. If it is modified, the window's height will be the modified value
 	};
 
+	struct arg_size_move : public event_arg
+	{
+		::nana::window window_handle; ///< A handle to the event window
+	};
+
     struct arg_activate : public event_arg
 	{
         ::nana::window window_handle; ///< A handle to the event window
@@ -358,6 +363,7 @@ namespace nana
 	{
 		::nana::window window_handle;	///< A handle to the event window
 	};
+
     /// a higher level event argument than just mouse down
 	struct arg_click : public event_arg
 	{
@@ -388,6 +394,9 @@ namespace nana
 		basic_event<arg_move>		move;		///< the window changes position
 		basic_event<arg_resizing>	resizing;	///< the window is changing its size
 		basic_event<arg_resized>	resized;	///< the window is changing its size
+
+		basic_event<arg_size_move>	enter_size_move;
+		basic_event<arg_size_move>	exit_size_move;
 
 		basic_event<arg_destroy>	destroy;	///< the window is destroyed, but occurs when all children have been destroyed
 	};

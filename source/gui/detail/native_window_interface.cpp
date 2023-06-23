@@ -1133,6 +1133,39 @@ namespace nana{
 #endif
 		}
 
+		void native_interface::enter_size_move_window(native_window_type wd)
+		{
+#if defined(NANA_WINDOWS)
+			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
+			{
+				nana::internal_revert_guard irg;
+				::SendMessage(reinterpret_cast<HWND>(wd), WM_ENTERSIZEMOVE, 0, 0);
+			}
+			else
+			{
+				::SendMessage(reinterpret_cast<HWND>(wd), WM_ENTERSIZEMOVE, 0, 0);
+			}
+#elif defined(NANA_X11)
+
+#endif
+		}
+		void native_interface::exit_size_move_window(native_window_type wd)
+		{
+#if defined(NANA_WINDOWS)
+			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
+			{
+				nana::internal_revert_guard irg;
+				::SendMessage(reinterpret_cast<HWND>(wd), WM_EXITSIZEMOVE, 0, 0);
+			}
+			else
+			{
+				::SendMessage(reinterpret_cast<HWND>(wd), WM_EXITSIZEMOVE, 0, 0);
+			}
+#elif defined(NANA_X11)
+
+#endif
+		}
+
 		void native_interface::move_window(native_window_type wd, int x, int y)
 		{
 #if defined(NANA_WINDOWS)
@@ -1149,7 +1182,6 @@ namespace nana{
 				y += (owner_rect.top - pos.y);
 			}
 
-			
 			if (::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0) != ::GetCurrentThreadId())
 			{
 				nana::internal_revert_guard irg;
@@ -1157,6 +1189,7 @@ namespace nana{
 			}
 			else
 				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.right - r.left, r.bottom - r.top, true);
+
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
 
