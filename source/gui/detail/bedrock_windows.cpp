@@ -1368,13 +1368,12 @@ namespace detail
 				
 			case WM_ENTERSIZEMOVE:
 				brock.event_enter_size_move(msgwnd);
-				def_window_proc = true;
 				break;
 
 			case WM_EXITSIZEMOVE:
 				brock.event_exit_size_move(msgwnd);
-				def_window_proc = true;
 				break;
+
 			case WM_PAINT:
 				{
 					::PAINTSTRUCT ps;
