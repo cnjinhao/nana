@@ -706,7 +706,8 @@ namespace detail
 			}
 			else
 			{
-				native_interface::enter_size_move_window(wd->root);
+				if (wd->visible)
+					native_interface::enter_size_move_window(wd->root);
 			}
 
 			return true;
@@ -725,7 +726,8 @@ namespace detail
 			}
 			else
 			{
-				native_interface::exit_size_move_window(wd->root);
+				if (wd->visible)
+					native_interface::exit_size_move_window(wd->root);
 			}
 
 			return true;
@@ -1685,7 +1687,8 @@ namespace detail
 			}
 			else
 			{
-				native_interface::enter_size_move_window(wd->root);
+				if (wd->visible)
+					native_interface::enter_size_move_window(wd->root);
 			}
 		}
 
@@ -1701,7 +1704,8 @@ namespace detail
 			}
 			else
 			{
-				native_interface::exit_size_move_window(wd->root);
+				if (wd->visible)
+					native_interface::exit_size_move_window(wd->root);
 			}
 		}
 
