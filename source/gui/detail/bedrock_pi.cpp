@@ -198,7 +198,11 @@ namespace nana
 				emit(event_code::enter_size_move, wd, arg, true, get_thread_context());
 				
 				for (auto& child : wd->children)
+				{
+					if (!child->visible) continue;
+
 					wd_manager().enter_size_move(child);
+				}
 			}
 		}
 
@@ -211,7 +215,11 @@ namespace nana
 				emit(event_code::exit_size_move, wd, arg, true, get_thread_context());
 
 				for (auto& child : wd->children)
+				{
+					if (!child->visible) continue;
+
 					wd_manager().exit_size_move(child);
+				}
 			}
 		}
 
