@@ -396,9 +396,6 @@ namespace nana
 		basic_event<arg_resizing>	resizing;	///< the window is changing its size
 		basic_event<arg_resized>	resized;	///< the window is changing its size
 
-		basic_event<arg_size_move>	enter_size_move;
-		basic_event<arg_size_move>	exit_size_move;
-
 		basic_event<arg_destroy>	destroy;	///< the window is destroyed, but occurs when all children have been destroyed
 	};
 
