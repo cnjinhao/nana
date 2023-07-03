@@ -628,31 +628,30 @@ namespace nana
 			}
 			case event_code::enter_size_move:
 			{
-				auto arg = dynamic_cast<const arg_size_move*>(&event_arg);
-				if (arg)
+				if (bProcess__External_event)
 				{
+					auto arg = dynamic_cast<const arg_size_move*>(&event_arg);
+					if (arg && wd->other.category == category::flags::root)
 					{
-						// enable refreshing flag, this is a RAII class for exception-safe
-						flag_guard fguard(this, wd);
-						wd->drawer.enter_size_move(*arg, bForce__EmitInternal);
+						auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
+						if (evt_root)
+							evt_root->enter_size_move.emit(*arg, wd);
 					}
-					if (bProcess__External_event)
-						evts_ptr->enter_size_move.emit(*arg, wd);
 				}
 				break;
 			}
 			case event_code::exit_size_move:
 			{
-				auto arg = dynamic_cast<const arg_size_move*>(&event_arg);
-				if (arg)
+				if (bProcess__External_event)
 				{
+					auto arg = dynamic_cast<const arg_size_move*>(&event_arg);
+					if (arg && wd->other.category == category::flags::root)
 					{
-						// enable refreshing flag, this is a RAII class for exception-safe
-						flag_guard fguard(this, wd);
-						wd->drawer.exit_size_move(*arg, bForce__EmitInternal);
+						auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
+						if (evt_root)
+							evt_root->exit_size_move.emit(*arg, wd);
+
 					}
-					if (bProcess__External_event)
-						evts_ptr->exit_size_move.emit(*arg, wd);
 				}
 				break;
 			}
