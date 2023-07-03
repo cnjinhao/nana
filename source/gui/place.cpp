@@ -2438,8 +2438,8 @@ namespace nana
 						if (arg.button != ::nana::mouse::left_button)
 							return;
 
+						grabbed_ = true;
 						this->set_capture(true);
-
 						base_pos_.x = horz_point(is_vert, api::cursor_position());
 						base_pos_.y = horz_point(is_vert, this->pos());
 
@@ -2450,7 +2450,7 @@ namespace nana
 					}
 					else if (event_code::mouse_move == arg.evt_code)	//hover
 					{
-						if (!arg.is_left_button())
+						if (!grabbed_ || !arg.is_left_button())
 							return;
 
 						auto delta = horz_point(is_vert, api::cursor_position()) - base_pos_.x;
@@ -2502,6 +2502,7 @@ namespace nana
 					}
 					else
 					{
+						grabbed_ = false;
 						this->release_capture();
 						this->exit_size_move();
 						dock_dv_->exit_size_move(wd);
@@ -2526,6 +2527,7 @@ namespace nana
 			::nana::point	range_;
 			::nana::point	base_pos_;	//x = mouse pos, y = splitter pos
 			unsigned		base_px_;	//weight of div_dockpane when mouse button is been pressing;
+			bool	grabbed_{ false };
 
 		};
 	public:
