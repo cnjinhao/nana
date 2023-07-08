@@ -2076,6 +2076,44 @@ namespace nana::widgets::skeletons
 		impl_->try_refresh = sync_graph::none;
 	}
 
+	upoint text_editor::im_input(upoint insert_pos, const std::wstring& str, bool candidate)
+	{
+		if (selected())
+		{
+			backspace(false, false);
+			insert_pos = caret();
+		}
+		else
+			move_caret(insert_pos, true);
+
+		nana::arg_keyboard arg;
+		arg.evt_code = event_code::key_char;
+		arg.window_handle = window_;
+		arg.ignore = false;
+		arg.ctrl = false;
+		arg.shift = false;
+		arg.alt = false;
+
+		for (auto ch : str)
+		{
+			arg.key = ch;
+			respond_char(arg);
+		}
+
+		if (candidate)
+		{
+			select_points(insert_pos, caret());
+
+			im_candidate_mode(true);
+			api::refresh_window(window_);
+			im_candidate_mode(false);
+		}
+		else
+			api::refresh_window(window_);
+
+		return insert_pos;
+	}
+
 	void text_editor::put(std::wstring text, bool perform_event)
 	{
 		if (text.empty())

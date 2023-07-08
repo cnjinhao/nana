@@ -194,6 +194,7 @@ namespace nana::widgets::skeletons
 		void draw_corner();
 		void render(bool focused);
 	public:
+		upoint im_input(upoint insert_pos, const std::wstring& str, bool candidate);
 		void put(std::wstring, bool perform_event);
 		void put(wchar_t);
 		void copy() const;
