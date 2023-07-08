@@ -1,7 +1,7 @@
 /**
  *	A float_listbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -73,6 +73,7 @@ namespace nana
 				void attached(widget_reference, graph_reference)	override;
 				void detached()	override;
 				void refresh(graph_reference)	override;
+				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_move(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
 			private:
