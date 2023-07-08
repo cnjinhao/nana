@@ -1565,8 +1565,8 @@ namespace nana{	namespace paint
 		    int bsq = static_cast<int>(b * b);
 		    int xa, ya;
 
-		    pixel({x, static_cast<int>(y+b)}, col);
-		    pixel({x, static_cast<int>(y-b)}, col);
+		    pixel({x, y + static_cast<int>(b)}, col);
+		    pixel({x, y - static_cast<int>(b)}, col);
 
 		    wx = 0;
 		    wy = static_cast<int>(b);
@@ -1596,8 +1596,8 @@ namespace nana{	namespace paint
 		        pixel({x-wx, y+wy}, col);
 		    }
 
-		    pixel({static_cast<int>(x+a), y}, col);
-		    pixel({static_cast<int>(x-a), y}, col);
+		    pixel({x + static_cast<int>(a), y}, col);
+		    pixel({x - static_cast<int>(a), y}, col);
 
 		    wx = static_cast<int>(a);
 		    wy = 0;
