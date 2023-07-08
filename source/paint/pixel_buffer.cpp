@@ -1561,17 +1561,17 @@ namespace nana{	namespace paint
 		auto col = c.px_color();
 
 		    int wx, wy;
-		    int asq = a * a;
-		    int bsq = b * b;
+		    int asq = static_cast<int>(a * a);
+		    int bsq = static_cast<int>(b * b);
 		    int xa, ya;
 
-		    pixel({x, y+b}, col);
-		    pixel({x, y-b}, col);
+		    pixel({x, static_cast<int>(y+b)}, col);
+		    pixel({x, static_cast<int>(y-b)}, col);
 
 		    wx = 0;
-		    wy = b;
+		    wy = static_cast<int>(b);
 		    xa = 0;
-		    ya = asq * 2 * b;
+		    ya = static_cast<int>(asq * 2 * b);
 		    auto thresh = asq / 4 - asq * b;
 
 		    for (;;) {
@@ -1596,12 +1596,12 @@ namespace nana{	namespace paint
 		        pixel({x-wx, y+wy}, col);
 		    }
 
-		    pixel({x+a, y}, col);
-		    pixel({x-a, y}, col);
+		    pixel({static_cast<int>(x+a), y}, col);
+		    pixel({static_cast<int>(x-a), y}, col);
 
-		    wx = a;
+		    wx = static_cast<int>(a);
 		    wy = 0;
-		    xa = bsq * 2 * a;
+		    xa = static_cast<int>(bsq * 2 * a);
 
 		    ya = 0;
 		    thresh = bsq / 4 - bsq * a;
