@@ -449,48 +449,13 @@ namespace api
 			return {};
 		}
 
-		void im_input(window wd, const upoint& insert_pos, const upoint* move_to, const std::wstring& str, bool candidate)
+		upoint im_input(window wd, const upoint& insert_pos, const std::wstring& str, bool candidate)
 		{
 			internal_scope_guard lock;
 			if (is_window(wd) && wd->annex.text_editor)
-			{
-				if (wd->annex.text_editor->selected())
-				{
-					wd->annex.text_editor->backspace(false, false);
-				}
 
-				wd->annex.text_editor->move_caret(insert_pos, true);
-
-				nana::arg_keyboard arg;
-				arg.evt_code = event_code::key_char;
-				arg.window_handle = wd;
-				arg.ignore = false;
-				arg.ctrl = false;
-				arg.shift = false;
-				arg.alt = false;
-
-				for (auto ch : str)
-				{
-					arg.key = ch;
-					wd->annex.text_editor->respond_char(arg);
-				}
-
-				auto endpos = wd->annex.text_editor->caret();
-				
-				if (move_to)
-					wd->annex.text_editor->move_caret(endpos, true);
-
-				if (candidate)
-				{
-					wd->annex.text_editor->select_points(insert_pos, endpos);
-
-					wd->annex.text_editor->im_candidate_mode(true);
-					api::refresh_window(wd);
-					wd->annex.text_editor->im_candidate_mode(false);
-				}
-				else
-					api::refresh_window(wd);
-			}
+				return wd->annex.text_editor->im_input(insert_pos, str, candidate);
+			return {};
 		}
 
 

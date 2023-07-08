@@ -129,7 +129,7 @@ namespace api
 
 		std::optional<upoint> caret_position(window);
 
-		void im_input(window, const upoint& insert_pos, const upoint* move_to, const std::wstring&, bool candidate);
+		upoint im_input(window, const upoint& insert_pos, const std::wstring&, bool candidate);
 	}//end namespace dev
 
 
