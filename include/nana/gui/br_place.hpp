@@ -184,7 +184,7 @@ namespace nana
 		template<typename Panel, typename ...Args>
 		Panel* add_pane(const std::string& dock_id, const std::string& caption, const std::string& relative_pane_id, dock_position dock_position, Args&& ... args)
 		{
-			return reinterpret_cast<Panel*>( add_pane(dock_id, std::bind([](window parent, Args & ... dock_args)
+			return reinterpret_cast<Panel*>(add_pane(dock_id, std::bind([](window parent, Args & ... dock_args)
 			{
 				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(dock_args)...));
 			}, std::placeholders::_1, args...), caption, relative_pane_id, dock_position));
