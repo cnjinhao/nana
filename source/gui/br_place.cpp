@@ -2314,12 +2314,12 @@ namespace nana
 			if (!_m_hit_window())
 			{
 				impl_ptr_->hide_indicators();
-				target_dock = nullptr;
+				target_dock_ = nullptr;
 				return;
 			}
 
 			auto pane = impl_ptr_->hit_panes_or_dock();
-			target_dock = pane;
+			target_dock_ = pane;
 			if (pane)
 			{
 				impl_ptr_->show_pane_indicators(pane);
@@ -2334,11 +2334,9 @@ namespace nana
 			{
 				field_area.dimension(dockable_field->dockarea->size());
 
-				target_dock_position = dockpos;
+				target_dock_position_ = dockpos;
 
 				auto debugSize = dockable_field->dockarea->size();
-				std::cout << "hit_indicators. dockposition = " << (int)dockpos<< ". dockarea = " << debugSize.width << "/ " << debugSize.height << std::endl;
-
 				//set_display(false);
 				//impl_ptr_->collocate();
 				if (impl_ptr_->tab_indicator.dock_area)
@@ -2349,13 +2347,11 @@ namespace nana
 			}
 			else
 			{
-				std::cout << "no hit_indicators." << std::endl;
 				if (pane)
 				{
-					target_dock_position = dock_position::tab;
+					target_dock_position_ = dock_position::tab;
 					//field_area.dimension(dockable_field->dockarea->size());
 
-					std::cout << "and pane name = " << pane->name << ". w = " << pane->field_area.width << "; h = " << pane->field_area.height << std::endl;
 					if (!impl_ptr_->tab_indicator.dock_area)
 					{
 						//set_display(true);
@@ -2406,7 +2402,7 @@ namespace nana
 				}
 				else
 				{
-					target_dock = nullptr;
+					target_dock_ = nullptr;
 					//set_display(false);
 					//impl_ptr_->collocate();
 					if (impl_ptr_->tab_indicator.dock_area)
@@ -2434,39 +2430,34 @@ namespace nana
 			if (dockable_field && dockable_field->dockarea)
 				dockable_field->dockarea->exit_size_move();
 
+			impl_ptr_->hide_indicators();
+
 			auto dock_fd = dockable_field;
-			if ((impl_ptr_->hit_indicators() || impl_ptr_->hit_dock()) && dockable_field && dockable_field->dockarea)
+			if ((impl_ptr_->hit_indicators() || impl_ptr_->hit_dock()) &&
+				dockable_field && dockable_field->dockarea)
 			{
-				impl_ptr_->to_dock(this, target_dock, target_dock_position);
+				bool shouldDock = impl_ptr_->to_dock(this, target_dock_, target_dock_position_);
 
-				if (target_dock_position == dock_position::tab)
+				if (!shouldDock && dock_position::tab == target_dock_position_)
 				{
-					auto wheredivDockPane = reinterpret_cast<implement::div_dockpane*>(target_dock);
-
-					dockable_field->dockarea->dock();
-					//dock_fd->dockarea->destroy();
-					//auto window_handle = dockable_field->dockarea->handle();
-
-					//a workaround for capture
-					//auto ptr = dockable_field->dockarea.release();
-					//std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
-
-					//this->set_display(false);
-					//api::close_window(window_handle);
+					impl_ptr_->collocate();
+					auto wheredivDockPane = reinterpret_cast<implement::div_dockpane*>(target_dock_);
 					
-					//dock_ptr->dockarea->move(dock_ptr->attached->field_area);
+					dockable_field->dockarea->dock(false);
+					dock_fd->dockarea.reset();
 
 					impl_ptr_->collocate();
-					//API::refresh_window(*wheredivDockPane->dockable_field->dockarea);
+					API::refresh_window(impl_ptr_->window_handle);
 				}
 				else
 				{
 					dockable_field->dockarea->dock();
+					impl_ptr_->collocate();
+					API::refresh_window(impl_ptr_->window_handle);
 				}
 			}
 
-			impl_ptr_->hide_indicators();
-			target_dock = nullptr;
+			target_dock_ = nullptr;
 		}
 
 		void request_close() override
@@ -2496,8 +2487,8 @@ namespace nana
 	public:
 		field_dock * dockable_field{ nullptr };
 
-		division* target_dock{ nullptr };
-		dock_position target_dock_position{ dock_position::tab };
+		division* target_dock_{ nullptr };
+		dock_position target_dock_position_{ dock_position::tab };
 	private:
 		implement * impl_ptr_;
 	};
@@ -2989,14 +2980,12 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
-			std::cout << "br_place collocate()" << std::endl;
 			purge();
 
 			root_division->field_area.dimension(api::window_size(window_handle));
 
 			if (root_division->field_area.empty())
 				return;
-			std::cout << "- field_area: w =" << root_division->field_area.width << "; h = " << root_division->field_area.height << "; x = " << root_division->field_area.x << "; y = " << root_division->field_area.y << std::endl;
 
 			root_division->calc_weight_floor(window_handle);
 			root_division->collocate(window_handle);
@@ -3860,7 +3849,8 @@ namespace nana
 			{
 				if (root_division->kind_of_division == implement::division::kind::dock)
 				{
-					if (root_division->children.size() == 0) {
+					if (root_division->children.size() == 0)
+					{
 						div->div_owner = root_division.get();
 						div->div_next = nullptr;
 						//div->weight.reset();
@@ -3880,6 +3870,11 @@ namespace nana
 
 							//divDockPane->dockable_field->dockarea.reset();
 							//divDockPane->dockable_field->dockarea->destroy();
+
+							floating_divs[i_div].release();
+							floating_divs.erase(floating_divs.begin() + i_div);
+
+							return false;
 						}
 						floating_divs[i_div].release();
 						floating_divs.erase(floating_divs.begin() + i_div);
@@ -4527,7 +4522,7 @@ namespace nana
 		}
 
 		impl_->to_dock(div, where_div, dock_position);
-		//dock_ptr->dockarea->update();
+		
 		return result;
 	}
 
