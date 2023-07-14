@@ -1202,8 +1202,8 @@ namespace nana
 			}
 		}
 
-		virtual void enter_size_move(window) = 0;
-		virtual void exit_size_move(window) = 0;
+		virtual void enter_size_move() = 0;
+		virtual void exit_size_move() = 0;
 
 		//Collocate the division and its children divisions,
 		//The window parameter is specified for the window which the place object binded.
@@ -1245,12 +1245,26 @@ namespace nana
 			arrange_(std::move(arr))
 		{}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
+			for (auto& child : children)
+			{
+				if (child->kind_of_division == kind::splitter) 
+					continue;
+
+				child->enter_size_move();
+			}
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
+			for (auto& child : children)
+			{
+				if (child->kind_of_division == kind::splitter)
+					continue;
+
+				child->exit_size_move();
+			}
 		}
 
 		bool is_vertical() const
@@ -1608,12 +1622,12 @@ namespace nana
 			dimension.first = dimension.second = 0;
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 
 		}
@@ -1832,6 +1846,17 @@ namespace nana
 			this->weight.assign(splitter_px);
 		}
 
+		div_splitter(implement* impl) noexcept :
+			division(kind::splitter, std::string()),
+			impl_(impl),
+			init_weight_ { }
+		{
+			impl->splitters.insert(this);
+			this->splitter_.set_renderer(impl_->split_renderer);
+
+			this->weight.assign(splitter_px);
+		}
+
 		~div_splitter()
 		{
 			impl_->splitters.erase(this);
@@ -1849,12 +1874,12 @@ namespace nana
 			splitter_cursor_ = (horizontal ? cursor::size_we : cursor::size_ns);
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 
 		}
@@ -1905,6 +1930,8 @@ namespace nana
 						left_pixels_ = area_left.*px_ptr;
 						right_pixels_ = area_right.*px_ptr;
 
+						leaf_left->enter_size_move();
+						leaf_right->enter_size_move();
 						grabbed_ = true;
 					}
 					else if(event_code::mouse_up == arg.evt_code)
@@ -1917,6 +1944,9 @@ namespace nana
 						//position of the splitter field. It may cause deviation that new splitter field position is not same with the position of
 						//splitter window after dragging a bit, because the field position is calcuated with left/right fields's weights which are float-point values.
 						splitter_.move(this->field_area);
+
+						leaf_left->exit_size_move();
+						leaf_right->exit_size_move();
 					}
 					else if (event_code::mouse_move == arg.evt_code)
 					{
@@ -2227,6 +2257,7 @@ namespace nana
 
 		~div_dockpane() noexcept
 		{
+			std::cout << "bye bye div_dockpane" << std::endl;
 			if (dockable_field)
 			{
 				dockable_field->dockarea.reset();
@@ -2234,7 +2265,7 @@ namespace nana
 			}
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 			if (!dockable_field)
 			{
@@ -2254,7 +2285,7 @@ namespace nana
 				dockarea->enter_size_move();
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 			if (!dockable_field)
 			{
@@ -2491,13 +2522,11 @@ namespace nana
 
 				if (!shouldDock && dock_position::tab == target_dock_position_)
 				{
-					impl_ptr_->collocate();
-					auto wheredivDockPane = reinterpret_cast<implement::div_dockpane*>(target_dock_);
-					
 					dockable_field->dockarea->dock(false);
 					dockable_field->dockarea.reset();
 
 					impl_ptr_->collocate();
+
 					API::refresh_window(impl_ptr_->window_handle);
 				}
 				else
@@ -2575,7 +2604,7 @@ namespace nana
 						base_px_ = (is_vert ? pane_dv_->field_area.height : pane_dv_->field_area.width);
 						this->enter_size_move();
 
-						dock_dv_->enter_size_move(wd);
+						dock_dv_->enter_size_move();
 					}
 					else if (event_code::mouse_move == arg.evt_code)	//hover
 					{
@@ -2634,7 +2663,7 @@ namespace nana
 						grabbed_ = false;
 						this->release_capture();
 						this->exit_size_move();
-						dock_dv_->exit_size_move(wd);
+						dock_dv_->exit_size_move();
 					}
 				};
 
@@ -2675,19 +2704,25 @@ namespace nana
 			return nullptr;
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 			for (auto& child : children)
 			{
-				child->enter_size_move(wd);
+				if (child->kind_of_division == kind::splitter)
+					continue;
+
+				child->enter_size_move();
 			}
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 			for (auto& child : children)
 			{
-				child->exit_size_move(wd);
+				if (child->kind_of_division == kind::splitter)
+					continue;
+
+				child->exit_size_move();
 			}
 		}
 
@@ -2882,12 +2917,12 @@ namespace nana
 			division(kind::switchable, std::move(name))
 		{}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 
 		}
@@ -3938,10 +3973,10 @@ namespace nana
 					{
 						if (where_div)
 						{
-							auto wheredivDockPane = reinterpret_cast<implement::div_dockpane*>(where_div);
-							auto divDockPane = reinterpret_cast<implement::div_dockpane*>(div);
+							auto where_dockpane = reinterpret_cast<implement::div_dockpane*>(where_div);
+							auto div_dockpane = reinterpret_cast<implement::div_dockpane*>(div);
 
-							wheredivDockPane->dockable_field->dockarea->add_pane(*divDockPane->dockable_field->dockarea);
+							where_dockpane->dockable_field->dockarea->add_pane(*div_dockpane->dockable_field->dockarea);
 
 							floating_divs[i_div].release();
 							floating_divs.erase(floating_divs.begin() + i_div);
@@ -4018,9 +4053,8 @@ namespace nana
 							arrange_ptr->weight.assign_percent(double(px) / double(dock_px) * 100);
 							*/
 						}
-						number_t numberSplitter;
 						//auto splitter_ptr = new implement::div_splitter(this, dock_position == dock_position::up || dock_position == dock_position::down);
-						auto splitter_ptr = new implement::div_splitter(numberSplitter, this);
+						auto splitter_ptr = new implement::div_splitter(this);
 						splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
 						splitter_ptr->div_owner = arrange_ptr;
 
@@ -4035,12 +4069,11 @@ namespace nana
 						//		div->weight.reset();
 						//}
 
-						auto savedArrangeNext = where_div->div_next;
 						where_uptr->div_owner = arrange_ptr;
 						/*if (!div->weight.empty())
 							where_uptr->weight.reset();*/
 
-						arrange_ptr->div_next = savedArrangeNext;
+						arrange_ptr->div_next = where_div->div_next;
 						if (position == dock_position::up ||
 							position == dock_position::left)
 						{
@@ -4051,7 +4084,6 @@ namespace nana
 
 							// append div
 							arrange_ptr->children.emplace_back(floating_divs[i_div].release());
-							//arrange_ptr->children.emplace_back(div);
 							// append splitter
 							arrange_ptr->children.emplace_back(splitter_ptr);
 							// append where
@@ -4090,8 +4122,7 @@ namespace nana
 						auto where_owner = where_div ? where_div->div_owner : root_division.get();
 						size_t i_where = where_div ? where_div->index() : std::string::npos;
 
-						number_t numberSplitter;
-						auto splitter_ptr = new implement::div_splitter(numberSplitter, this);
+						auto splitter_ptr = new implement::div_splitter(this);
 						splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
 						splitter_ptr->div_owner = where_owner;
 
@@ -4129,11 +4160,11 @@ namespace nana
 
 							//auto float_div = floating_divs[i_div].get();
 
-							/*where_owner->children[i_where]->div_next = splitter_ptr;
-							splitter_ptr->div_next = float_div;*/
+							//where_owner->children[i_where]->div_next = splitter_ptr;
+							//splitter_ptr->div_next = float_div;
 
-							/*float_div->div_next = where_owner->children[i_where + 1].get();
-							float_div->div_next->div_next = where_owner->children[i_where + 2].get();*/
+							//float_div->div_next = where_owner->children[i_where + 1].get();
+							//float_div->div_next->div_next = where_owner->children[i_where + 2].get();
 
 							// children[i_where] | DIV
 
@@ -4143,15 +4174,17 @@ namespace nana
 							where_owner->children.emplace(where_owner->children.begin() + i_where + 2, floating_divs[i_div].release());
 						}
 
-						for (size_t i = 0; i < where_owner->children.size(); i += 1)
+						for (size_t i = 0; i < where_owner->children.size(); i += 2)
+						{
+							where_owner->children[i]->weight.reset();
+						}
+
+						for (size_t i = 0; i < where_owner->children.size(); ++i)
 						{
 							if (i == where_owner->children.size() - 1)
 								where_owner->children[i]->div_next = nullptr;
 							else
 								where_owner->children[i]->div_next = where_owner->children[i + 1].get();
-
-							if (i % 2 == 0)
-								where_owner->children[i]->weight.reset();
 						}
 
 						// remove div from detached divs
