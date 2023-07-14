@@ -1158,8 +1158,8 @@ namespace nana
 			}
 		}
 
-		virtual void enter_size_move(window) = 0;
-		virtual void exit_size_move(window) = 0;
+		virtual void enter_size_move() = 0;
+		virtual void exit_size_move() = 0;
 
 		//Collocate the division and its children divisions,
 		//The window parameter is specified for the window which the place object binded.
@@ -1201,12 +1201,12 @@ namespace nana
 			arrange_(std::move(arr))
 		{}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 
 		}
@@ -1550,12 +1550,12 @@ namespace nana
 			dimension.first = dimension.second = 0;
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 
 		}
@@ -1791,12 +1791,12 @@ namespace nana
 			splitter_cursor_ = (horizontal ? cursor::size_we : cursor::size_ns);
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 
 		}
@@ -2176,7 +2176,7 @@ namespace nana
 			}
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 			if (!dockable_field)
 			{
@@ -2196,7 +2196,7 @@ namespace nana
 				dockarea->enter_size_move();
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 			if (!dockable_field)
 			{
@@ -2446,7 +2446,7 @@ namespace nana
 						base_px_ = (is_vert ? pane_dv_->field_area.height : pane_dv_->field_area.width);
 						this->enter_size_move();
 
-						dock_dv_->enter_size_move(wd);
+						dock_dv_->enter_size_move();
 					}
 					else if (event_code::mouse_move == arg.evt_code)	//hover
 					{
@@ -2505,7 +2505,7 @@ namespace nana
 						grabbed_ = false;
 						this->release_capture();
 						this->exit_size_move();
-						dock_dv_->exit_size_move(wd);
+						dock_dv_->exit_size_move();
 					}
 				};
 
@@ -2546,19 +2546,19 @@ namespace nana
 			return nullptr;
 		}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 			for (auto& child : children)
 			{
-				child->enter_size_move(wd);
+				child->enter_size_move();
 			}
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 			for (auto& child : children)
 			{
-				child->exit_size_move(wd);
+				child->exit_size_move();
 			}
 		}
 
@@ -2753,12 +2753,12 @@ namespace nana
 			division(kind::switchable, std::move(name))
 		{}
 
-		void enter_size_move(window wd) override
+		void enter_size_move() override
 		{
 
 		}
 
-		void exit_size_move(window wd) override
+		void exit_size_move() override
 		{
 
 		}
