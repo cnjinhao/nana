@@ -299,10 +299,13 @@ namespace nana
 					{
 						if (::nana::mouse::left_button == arg.button)
 						{
-							moves_.started = true;
-							moves_.hasChanged = false;
-							moves_.start_pos = api::cursor_position();
-							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
+							if (!caption_.get_drawer_trigger().hit_close())
+							{
+								moves_.started = true;
+								moves_.hasChanged = false;
+								moves_.start_pos = api::cursor_position();
+								moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
+							}
 							caption_.set_capture(true);
 						}
 					}
@@ -334,10 +337,10 @@ namespace nana
 					}
 					else if (event_code::mouse_up == arg.evt_code)
 					{
+						caption_.release_capture();
 						if ((::nana::mouse::left_button == arg.button) && moves_.started)
 						{
 							moves_.started = false;
-							caption_.release_capture();
 							if (moves_.hasChanged)
 								notifier_->notify_move_stopped();
 						}
