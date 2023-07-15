@@ -701,6 +701,7 @@ namespace nana
 
 		void purge();
 		void collocate();
+		void print_debug();
 
 		static division * search_div_name(division* start, const std::string&) noexcept;
 
@@ -723,6 +724,8 @@ namespace nana
 
 		bool to_float(division* div);
 		bool to_dock(division* div, division* where_div, dock_position position);
+
+		bool dock_to_tab_pane(division* div, division* where_div, dock_position position);
 
 		bool remove(division* div);
 	};	//end struct implement
@@ -2257,12 +2260,14 @@ namespace nana
 
 		~div_dockpane() noexcept
 		{
-			std::cout << "bye bye div_dockpane" << std::endl;
+			std::cout << "bye bye div_dockpane. ";
 			if (dockable_field)
 			{
+				std::cout << "- dockarea.reset()";
 				dockable_field->dockarea.reset();
 				dockable_field->attached = nullptr;
 			}
+			std::cout << std::endl;
 		}
 
 		void enter_size_move() override
@@ -2328,17 +2333,18 @@ namespace nana
 		//Implement dock_notifier_interface
 		void notify_float() override
 		{
-			//set_display(false);
 			impl_ptr_->to_float(this);
+
 			impl_ptr_->collocate();
+			impl_ptr_->print_debug();
 		}
 
 		void notify_dock() override
 		{
 			impl_ptr_->hide_indicators();
 
-			//set_display(true);
 			impl_ptr_->collocate();
+			impl_ptr_->print_debug();
 		}
 
 		void notify_move() override
@@ -2518,22 +2524,29 @@ namespace nana
 			if ((impl_ptr_->hit_indicators() || impl_ptr_->hit_dock()) &&
 				dockable_field && dockable_field->dockarea)
 			{
-				bool shouldDock = impl_ptr_->to_dock(this, target_dock_, target_dock_position_);
-
-				if (!shouldDock && dock_position::tab == target_dock_position_)
+				bool should_dock_to_tab = impl_ptr_->dock_to_tab_pane(this, target_dock_, target_dock_position_);
+				if (impl_ptr_->to_dock(this, target_dock_, target_dock_position_))
 				{
-					dockable_field->dockarea->dock(false);
-					dockable_field->dockarea.reset();
+					if (should_dock_to_tab)
+					{
+						dockable_field->dockarea->dock(false);
 
-					impl_ptr_->collocate();
+						auto ptr = this;
+						api::at_safe_place(impl_ptr_->window_handle, [ptr]
+						{
+							std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
+						});
 
-					API::refresh_window(impl_ptr_->window_handle);
-				}
-				else
-				{
-					dockable_field->dockarea->dock();
-					impl_ptr_->collocate();
-					API::refresh_window(impl_ptr_->window_handle);
+						impl_ptr_->collocate();
+						API::refresh_window(impl_ptr_->window_handle);
+					}
+					else
+					{
+						dockable_field->dockarea->dock();
+
+						impl_ptr_->collocate();
+						API::refresh_window(impl_ptr_->window_handle);
+					}
 				}
 			}
 
@@ -2546,16 +2559,16 @@ namespace nana
 
 			//a workaround for capture
 			auto ptr = dockable_field->dockarea.release();
-			api::at_safe_place(window_handle, [ptr]
+			auto imp = impl_ptr_;
+			api::at_safe_place(window_handle, [ptr, imp, this]
 			{
 				std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
+				imp->remove(this);
+				imp->collocate();
+				imp->print_debug();
 			});
 
-			this->set_display(false);
-			impl_ptr_->collocate();
-
 			api::close_window(window_handle);
-			impl_ptr_->remove(this);
 		}
 	private:
 		bool _m_hit_window() const
@@ -2773,13 +2786,7 @@ namespace nana
 			for (auto & child : children)
 			{
 				if (!child->display)
-				{
-					//auto child_dv = dynamic_cast<div_dockpane*>(child.get());
-					//if (child_dv)
-					//	child_dv->splitter.reset();
-
 					continue;
-				}
 
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 				const bool is_vert = is_vert_dir(child->dir);
@@ -3100,6 +3107,58 @@ namespace nana
 				field.second->visible(is_show, false);
 			}
 		}
+	}
+
+	void br_place::implement::print_debug()
+	{
+#ifdef _DEBUG
+		unsigned level = 0;
+
+		printf("\n\n - div() -\n");
+		if (!root_division)
+		{
+			printf("\t<empty>\n\n");
+			return;
+		}
+
+		auto wd = window_handle;
+		std::function<void(implement::division* div)> print_fn;
+		print_fn = [wd, &print_fn, &level](implement::division* div)
+		{
+			const br_place_parts::display_metrics dm{ wd };
+
+			for (unsigned i = 0; i < level; ++i)
+				printf("\t");
+
+			if (division::kind::splitter == div->kind_of_division)
+				printf("| splitter (%s)\n", div->kind_of_division == division::kind::vertical_arrange ? "V" : "H");
+			else
+			{
+				printf("%s [%.2f", div->name.size() ? div->name.c_str() : "empty", div->weight.get_value(100, dm));
+				if (div->is_percent())
+					printf("%%] - ");
+				else
+					printf("] - ");
+
+				if (division::kind::dock == div->kind_of_division)
+					printf("dock\n");
+				else if (division::kind::dockpane == div->kind_of_division)
+					printf("dockpane\n");
+				else if (division::kind::arrange == div->kind_of_division || division::kind::vertical_arrange == div->kind_of_division)
+					printf("arrange (%s)\n", div->kind_of_division == division::kind::vertical_arrange ? "V" : "H");
+				else
+					printf("unknown !!!\n");
+			}
+
+			++level;
+			for (auto& child : div->children)
+				print_fn(child.get());
+			--level;
+		};
+
+		print_fn(root_division.get());
+		printf("\n\n\n");
+#endif
 	}
 
 	//search_div_name
@@ -3848,7 +3907,7 @@ namespace nana
 		};
 
 		auto result = hit_fn(root_division.get());
-		if (result == nullptr && root_division && (root_division->children.size() == 0 || root_division->children[0]->children.size()==0))
+		if (result == nullptr && root_division && (root_division->children.size() == 0 || root_division->children[0]->children.size() == 0))
 		{
 			result = hit_dock();
 		}
@@ -3900,26 +3959,42 @@ namespace nana
 					{
 						// remove the splitter bar
 						owner->children.erase(owner->children.begin() + i);
+
+						if (i > 0 && i < owner->children.size())
+						{
+							owner->children[i - 1]->div_next = owner->children[i].get();
+						}
 					}
 				}
+
+				//if (owner->children.size() > 2)
+				//{
+				//	for (size_t j = 0; j < owner->children.size(); j+=2)
+				//	{
+				//		owner->children[j]->weight.reset();
+				//	}
+				//}
 
 				if (owner->children.size() == 1 &&
 					(owner->kind_of_division == division::kind::vertical_arrange || owner->kind_of_division == division::kind::arrange))
 				{
 					auto child = owner->children[0].release();
 
-					auto parentOwner = owner->div_owner;
-					if (parentOwner)
+					auto parent_owner = owner->div_owner;
+					if (parent_owner)
 					{
-						for (size_t j = 0; j < parentOwner->children.size(); j++)
+						for (size_t j = 0; j < parent_owner->children.size(); j++)
 						{
-							if (parentOwner->children[j].get() == owner)
+							if (parent_owner->children[j].get() == owner)
 							{
-								child->div_next = parentOwner->children[j]->div_next;
-								parentOwner->children[j].reset(child);
-								parentOwner->weight.reset();
+								child->div_next = parent_owner->children[j]->div_next;
+								parent_owner->children[j].reset(child);
+								if (j > 0)
+									parent_owner->children[j - 1]->div_next = child;
+
+								parent_owner->weight.reset();
 								child->weight.reset();
-								child->div_owner = parentOwner;
+								child->div_owner = parent_owner;
 								break;
 							}
 						}
@@ -3928,11 +4003,6 @@ namespace nana
 				break;
 			}
 		}
-
-		//for (size_t i = 0; i < owner->children.size(); ++i)
-		//{
-		//	//owner->children[i]->restore_weight();
-		//}
 
 		return true;
 	}
@@ -3977,11 +4047,6 @@ namespace nana
 							auto div_dockpane = reinterpret_cast<implement::div_dockpane*>(div);
 
 							where_dockpane->dockable_field->dockarea->add_pane(*div_dockpane->dockable_field->dockarea);
-
-							floating_divs[i_div].release();
-							floating_divs.erase(floating_divs.begin() + i_div);
-
-							return false;
 						}
 						floating_divs[i_div].release();
 						floating_divs.erase(floating_divs.begin() + i_div);
@@ -4115,7 +4180,14 @@ namespace nana
 							root_division.reset(arrange_ptr);
 						}
 						else
+						{
 							where_owner->children[i_where].reset(arrange_ptr);
+
+							if (i_where > 0)
+							{
+								where_owner->children[i_where - 1]->div_next = arrange_ptr;
+							}
+						}
 					}
 					else
 					{
@@ -4194,6 +4266,22 @@ namespace nana
 			}
 		}
 		return true;
+	}
+
+	bool br_place::implement::dock_to_tab_pane(division* div, division* where_div, dock_position position)
+	{
+		if (!root_division)
+		{
+			return false;
+		}
+		if (dock_position::tab == position)
+		{
+			if (implement::division::kind::dock == root_division->kind_of_division && root_division->children.size() > 0 && where_div)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	bool br_place::implement::remove(division* div)
