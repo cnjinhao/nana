@@ -2524,30 +2524,25 @@ namespace nana
 			if ((impl_ptr_->hit_indicators() || impl_ptr_->hit_dock()) &&
 				dockable_field && dockable_field->dockarea)
 			{
-				bool should_dock_to_tab = impl_ptr_->is_dock_to_tab_pane(this, target_dock_, target_dock_position_);
-				if (impl_ptr_->dock_pane(this, target_dock_, target_dock_position_))
+				if (impl_ptr_->is_dock_to_tab_pane(this, target_dock_, target_dock_position_))
 				{
-					if (should_dock_to_tab)
+					dockable_field->dockarea->dock();
+					impl_ptr_->dock_pane(this, target_dock_, target_dock_position_);
+					
+					auto ptr = this;
+					api::at_safe_place(impl_ptr_->window_handle, [ptr]
 					{
-						dockable_field->dockarea->dock(false);
-
-						auto ptr = this;
-						api::at_safe_place(impl_ptr_->window_handle, [ptr]
-						{
-							std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
-						});
-
-						impl_ptr_->collocate();
-						API::refresh_window(impl_ptr_->window_handle);
-					}
-					else
-					{
-						dockable_field->dockarea->dock();
-
-						impl_ptr_->collocate();
-						API::refresh_window(impl_ptr_->window_handle);
-					}
+						std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
+					});
 				}
+				else
+				{
+					dockable_field->dockarea->dock();
+					impl_ptr_->dock_pane(this, target_dock_, target_dock_position_);
+				}
+
+				impl_ptr_->collocate();
+				API::refresh_window(impl_ptr_->window_handle);
 			}
 
 			target_dock_ = nullptr;
@@ -3111,7 +3106,7 @@ namespace nana
 
 	void br_place::implement::print_debug()
 	{
-#ifdef _DEBUG
+#ifdef __DEBUG
 		unsigned level = 0;
 
 		printf("\n\n - div() -\n");
