@@ -1028,7 +1028,42 @@ namespace detail
 				return false;
 
 			if ((category::flags::lite_widget != wd->other.category) && (category::flags::widget != wd->other.category))
+			{
+				if (impl_->wd_register.available(newpa) && (nullptr == wd->owner) && (wd->parent != newpa) && (!wd->flags.modal))
+				{
+					if (wd->parent)
+					{
+						auto& pa_children = wd->parent->children;
+
+						if (pa_children.size() > 1)
+						{
+							for (auto i = pa_children.begin(), end = pa_children.end(); i != end; ++i)
+							{
+								if (((*i)->index) > (wd->index))
+								{
+									for (; i != end; ++i)
+										--((*i)->index);
+									break;
+								}
+							}
+						}
+
+						utl::erase(wd->parent->children, wd);
+						if (newpa->children.empty())
+							wd->index = 0;
+						else
+							wd->index = newpa->children.back()->index + 1;
+						newpa->children.push_back(wd);
+					}
+
+					auto wdpa = wd->parent;
+					wd->parent = newpa;
+					this->update(wdpa, true, true);
+					this->update(wd, false, true);
+					return true;
+				}
 				return false;
+			}
 
 			if (impl_->wd_register.available(newpa) && (nullptr == wd->owner) && (wd->parent != newpa) && (!wd->flags.modal))
 			{

@@ -532,7 +532,6 @@ namespace nana
 						}
 						
 						panels_.emplace_back().widget_ptr.reset(pn.widget_ptr.release());
-
 					}
 					other.panels_.clear();
 				}
