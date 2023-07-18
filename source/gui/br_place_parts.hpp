@@ -543,14 +543,6 @@ namespace nana
 						pn.widget_ptr->move(r);
 				}
 			}
-		public:
-			widget* panel_widget(size_t index)
-			{
-				if (panels_.size() <= index)
-					return nullptr;
-
-				return panels_[index].widget_ptr.get();
-			}
 		private:
 			window host_window_{ nullptr };
 			br_place_parts::dock_notifier_interface* notifier_{ nullptr };

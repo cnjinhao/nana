@@ -722,12 +722,12 @@ namespace nana
 		division* hit_panes_or_dock();
 		division* hit_dock();
 
-		bool to_float(division* div);
-		bool to_dock(division* div, division* where_div, dock_position position);
+		bool float_dock_pane(division* div);
+		bool dock_pane(division* div, division* where_div, dock_position position);
 
-		bool dock_to_tab_pane(division* div, division* where_div, dock_position position);
+		bool is_dock_to_tab_pane(division* div, division* where_div, dock_position position);
 
-		bool remove(division* div);
+		bool remove_dock_pane(division* div);
 	};	//end struct implement
 
 	class br_place::implement::field_gather
@@ -2333,7 +2333,7 @@ namespace nana
 		//Implement dock_notifier_interface
 		void notify_float() override
 		{
-			impl_ptr_->to_float(this);
+			impl_ptr_->float_dock_pane(this);
 
 			impl_ptr_->collocate();
 			impl_ptr_->print_debug();
@@ -2524,8 +2524,8 @@ namespace nana
 			if ((impl_ptr_->hit_indicators() || impl_ptr_->hit_dock()) &&
 				dockable_field && dockable_field->dockarea)
 			{
-				bool should_dock_to_tab = impl_ptr_->dock_to_tab_pane(this, target_dock_, target_dock_position_);
-				if (impl_ptr_->to_dock(this, target_dock_, target_dock_position_))
+				bool should_dock_to_tab = impl_ptr_->is_dock_to_tab_pane(this, target_dock_, target_dock_position_);
+				if (impl_ptr_->dock_pane(this, target_dock_, target_dock_position_))
 				{
 					if (should_dock_to_tab)
 					{
@@ -2563,7 +2563,7 @@ namespace nana
 			api::at_safe_place(window_handle, [ptr, imp, this]
 			{
 				std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
-				imp->remove(this);
+				imp->remove_dock_pane(this);
 				imp->collocate();
 				imp->print_debug();
 			});
@@ -3923,7 +3923,7 @@ namespace nana
 		return nullptr;
 	}
 
-	bool br_place::implement::to_float(division* div)
+	bool br_place::implement::float_dock_pane(division* div)
 	{
 		auto owner = div->div_owner;
 		if (!owner)
@@ -4007,7 +4007,7 @@ namespace nana
 		return true;
 	}
 
-	bool br_place::implement::to_dock(division* div, division* where_div, dock_position position)
+	bool br_place::implement::dock_pane(division* div, division* where_div, dock_position position)
 	{
 		size_t i_div = 0;
 		for (; i_div < floating_divs.size(); ++i_div)
@@ -4268,7 +4268,7 @@ namespace nana
 		return true;
 	}
 
-	bool br_place::implement::dock_to_tab_pane(division* div, division* where_div, dock_position position)
+	bool br_place::implement::is_dock_to_tab_pane(division* div, division* where_div, dock_position position)
 	{
 		if (!root_division)
 		{
@@ -4284,10 +4284,10 @@ namespace nana
 		return false;
 	}
 
-	bool br_place::implement::remove(division* div)
+	bool br_place::implement::remove_dock_pane(division* div)
 	{
 		// move div to detached divs vector
-		to_float(div);
+		float_dock_pane(div);
 
 		size_t i_div = 0;
 		for (; i_div < floating_divs.size(); ++i_div)
@@ -4297,6 +4297,7 @@ namespace nana
 		if (i_div == floating_divs.size())
 			return false;
 
+		//floating_divs[i_div].release();
 		// remove div from detached divs
 		floating_divs.erase(floating_divs.begin() + i_div);
 		return true;
@@ -4801,7 +4802,7 @@ namespace nana
 			where_div = hit_fn(impl_->root_division.get());
 		}
 
-		impl_->to_dock(div, where_div, dock_position);
+		impl_->dock_pane(div, where_div, dock_position);
 		
 		return result;
 	}
