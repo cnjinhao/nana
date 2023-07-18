@@ -1665,7 +1665,6 @@ namespace nana
 					items.emplace_after(next, std::move(text), std::move(any));
 					break;
 				}
-
 			}
 
 			api::refresh_window(handle());
