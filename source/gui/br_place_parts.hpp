@@ -261,7 +261,9 @@ namespace nana
 				{
 					if (tabbar_)
 					{
+						auto index = tabbar_->selected();
 						tabbar_->erase(tabbar_->selected());
+						panels_.erase(panels_.begin() + index);
 						if (tabbar_->length())
 							return;
 					}
