@@ -2373,7 +2373,6 @@ namespace nana
 			if (impl_ptr_->hit_indicators(&dockpos))
 			{
 				nana::rectangle indicator_area(pane->field_area);
-				//field_area.dimension(indicator_area);
 
 				target_dock_position_ = dockpos;
 
@@ -2519,9 +2518,7 @@ namespace nana
 			if (dockable_field && dockable_field->dockarea)
 				dockable_field->dockarea->exit_size_move();
 
-			impl_ptr_->hide_indicators();
-
-			if ((impl_ptr_->hit_indicators() || impl_ptr_->hit_dock()) &&
+			if ((impl_ptr_->hit_indicators() /*|| impl_ptr_->hit_dock()*/) &&
 				dockable_field && dockable_field->dockarea)
 			{
 				if (impl_ptr_->is_dock_to_tab_pane(this, target_dock_, target_dock_position_))
@@ -2545,6 +2542,7 @@ namespace nana
 				API::refresh_window(impl_ptr_->window_handle);
 			}
 
+			impl_ptr_->hide_indicators();
 			target_dock_ = nullptr;
 		}
 
@@ -3068,7 +3066,7 @@ namespace nana
 	{
 		if (root_division && window_handle)
 		{
-			purge();
+			//purge();
 
 			root_division->field_area.dimension(api::window_size(window_handle));
 
@@ -3902,7 +3900,7 @@ namespace nana
 		};
 
 		auto result = hit_fn(root_division.get());
-		if (result == nullptr && root_division && (root_division->children.size() == 0 || root_division->children[0]->children.size() == 0))
+		if (result == nullptr && root_division && (root_division->children.size() == 0 || (root_division->children[0]->kind_of_division == implement::division::kind::dock && root_division->children[0]->children.size() == 0)))
 		{
 			result = hit_dock();
 		}
@@ -4021,242 +4019,272 @@ namespace nana
 		}
 		else
 		{
-			if (dock_position::tab == position)
+			if (where_div == nullptr)
 			{
-				if (implement::division::kind::dock == root_division->kind_of_division)
+				if (dock_position::tab == position)
 				{
-					if (root_division->children.size() == 0)
-					{
-						div->div_owner = root_division.get();
-						div->div_next = nullptr;
-						//div->weight.reset();
-						root_division->children.emplace_back(std::move(floating_divs[i_div]));
-
-						floating_divs.erase(floating_divs.begin() + i_div);
-					}
-					else
-					{
-						if (where_div)
-						{
-							auto where_dockpane = reinterpret_cast<implement::div_dockpane*>(where_div);
-							auto div_dockpane = reinterpret_cast<implement::div_dockpane*>(div);
-
-							where_dockpane->dockable_field->dockarea->add_pane(*div_dockpane->dockable_field->dockarea);
-						}
-						floating_divs[i_div].release();
-						floating_divs.erase(floating_divs.begin() + i_div);
-					}
+					floating_divs[i_div].release();
+					floating_divs.erase(floating_divs.begin() + i_div);
+					return true;
 				}
-				//div->weight.reset();
-			}
-			else if (implement::division::kind::dock == root_division->kind_of_division)
-			{
-				if (root_division->children.size() == 0)
+				std::function<implement::division* (implement::division* div)> find_dock_fn;
+				find_dock_fn = [&find_dock_fn, this](implement::division* div) -> implement::division*
 				{
-					div->div_owner = root_division.get();
+					if (div == nullptr)
+						return nullptr;
+
+					if (implement::division::kind::dock == div->kind_of_division)
+						return div;
+
+					for(auto& child : div->children)
+					{
+						auto fd = find_dock_fn(child.get());
+						if (fd)
+							return fd;
+					}
+					return nullptr;
+				};
+
+				auto dock_root_div = find_dock_fn(root_division.get());
+				if (dock_root_div == nullptr)
+				{
+					throw std::exception("dock is not found");
+				}
+
+				if (dock_root_div->children.size() == 0)
+				{
+					div->div_owner = dock_root_div;
 					div->div_next = nullptr;
 					//div->weight.reset();
-					root_division->children.emplace_back(std::move(floating_divs[i_div]));
-					
+					dock_root_div->children.emplace_back(std::move(floating_divs[i_div]));
+
 					floating_divs.erase(floating_divs.begin() + i_div);
+					return true;
 				}
 				else
 				{
-					bool add_new_arrange = false;
-					if (implement::division::kind::dockpane == root_division->children[0]->kind_of_division)
+					//TODO
+					return true;
+				}
+			}
+			else
+			{
+				if (dock_position::tab == position)
+				{
+					auto where_dockpane = reinterpret_cast<implement::div_dockpane*>(where_div);
+					auto div_dockpane = reinterpret_cast<implement::div_dockpane*>(div);
+
+					where_dockpane->dockable_field->dockarea->add_pane(*div_dockpane->dockable_field->dockarea);
+
+					floating_divs[i_div].release();
+					floating_divs.erase(floating_divs.begin() + i_div);
+
+					return true;
+				}
+				
+				implement::division* dock_root_div = where_div;
+				while (dock_root_div != nullptr)
+				{
+					if (implement::division::kind::dock == dock_root_div->kind_of_division) {
+						break;
+					}
+					dock_root_div = dock_root_div->div_owner;
+				}
+				
+				bool add_new_arrange = false;
+				if (implement::division::kind::dockpane == dock_root_div->children[0]->kind_of_division)
+				{
+					add_new_arrange = true;
+				}
+				else
+				{
+					// check direction of the div_arrange where to dock
+					auto where_owner = static_cast<div_arrange*>(where_div ? where_div->div_owner : dock_root_div);
+					if (where_owner->is_vertical() != (position == dock_position::up || position == dock_position::down))
 					{
+						// owner direction is different
 						add_new_arrange = true;
 					}
-					else
+				}
+
+				if (add_new_arrange)
+				{
+					std::unique_ptr<implement::division> where_uptr;
+					auto where_owner = where_div ? where_div->div_owner : dock_root_div;
+					size_t i_where = std::string::npos;
+
+					if (where_div)
 					{
-						// check direction of the div_arrange where to dock
-						auto where_owner = static_cast<div_arrange*>(where_div ? where_div->div_owner : root_division.get());
-						if (where_owner->is_vertical() != (position == dock_position::up || position == dock_position::down))
-						{
-							// owner direction is different
-							add_new_arrange = true;
-						}
+						i_where = where_div->index();
+						if (i_where == std::string::npos)
+							// divs tree corrupted
+							return false;
+
+						where_uptr = std::move(where_div->div_owner->children[i_where]);
 					}
+					br_place_parts::repeated_array arrange;
+					auto arrange_ptr = new implement::div_arrange(position == dock_position::up || position == dock_position::down, "", std::move(arrange));
 
-					if (add_new_arrange)
+					if (where_div)
 					{
-						std::unique_ptr<implement::division> where_uptr;
-						auto where_owner = where_div ? where_div->div_owner : root_division.get();
-						size_t i_where = std::string::npos;
+						arrange_ptr->div_owner = where_div->div_owner;
 
-						if (where_div)
-						{
-							i_where = where_div->index();
-							if (i_where == std::string::npos)
-								// divs tree corrupted
-								return false;
-
-							where_uptr = std::move(where_div->div_owner->children[i_where]);
-						}
-						br_place_parts::repeated_array arrange;
-						auto arrange_ptr = new implement::div_arrange(position == dock_position::up || position == dock_position::down, "", std::move(arrange));
-
-						if (where_div)
-						{
-							arrange_ptr->div_owner = where_div->div_owner;
-
-							// if field_area width and height are both zero let the system to decide the size
-							//if (where_uptr->field_area.width || where_uptr->field_area.height)
-							//{
-							//	arrange_ptr->weight.assign(static_cast<int>((dock_position == dock_position::up || dock_position == dock_position::down) ? where_uptr->field_area.width : where_uptr->field_area.height));
-							//}
-
-							/*auto dock_px = ((dock_position == dock_position::up || dock_position == dock_position::down) ?
-								where_uptr->field_area.height :
-								where_uptr->field_area.width);
-
-							arrange_ptr->weight.assign_percent(double(px) / double(dock_px) * 100);
-							*/
-						}
-						//auto splitter_ptr = new implement::div_splitter(this, dock_position == dock_position::up || dock_position == dock_position::down);
-						auto splitter_ptr = new implement::div_splitter(this);
-						splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
-						splitter_ptr->div_owner = arrange_ptr;
-
-						div->div_owner = arrange_ptr;
-						//if (div->weight.empty())
+						// if field_area width and height are both zero let the system to decide the size
+						//if (where_uptr->field_area.width || where_uptr->field_area.height)
 						//{
-						//	div->weight.assign(static_cast<int>((dock_position == dock_position::up || dock_position == dock_position::down) ? div->field_area.height : div->field_area.width));
-
-						//	// check the available space and adjust the weight accordingly
-						//	int avail = ((dock_position == dock_position::up || dock_position == dock_position::down) ? where_uptr->field_area.height : where_uptr->field_area.width) - where_uptr->min_px.integer() - 5;//scheme.splitter_width;
-						//	if (div->weight.integer() == 0 || avail < 0 || div->weight.integer() >= avail)
-						//		div->weight.reset();
+						//	arrange_ptr->weight.assign(static_cast<int>((dock_position == dock_position::up || dock_position == dock_position::down) ? where_uptr->field_area.width : where_uptr->field_area.height));
 						//}
 
-						where_uptr->div_owner = arrange_ptr;
-						/*if (!div->weight.empty())
-							where_uptr->weight.reset();*/
+						/*auto dock_px = ((dock_position == dock_position::up || dock_position == dock_position::down) ?
+							where_uptr->field_area.height :
+							where_uptr->field_area.width);
 
-						arrange_ptr->div_next = where_div->div_next;
-						if (position == dock_position::up ||
-							position == dock_position::left)
-						{
-							// DIV | WHERE
+						arrange_ptr->weight.assign_percent(double(px) / double(dock_px) * 100);
+						*/
+					}
+					//auto splitter_ptr = new implement::div_splitter(this, dock_position == dock_position::up || dock_position == dock_position::down);
+					auto splitter_ptr = new implement::div_splitter(this);
+					splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
+					splitter_ptr->div_owner = arrange_ptr;
 
-							div->div_next = splitter_ptr;
-							splitter_ptr->div_next = where_uptr.get();
+					div->div_owner = arrange_ptr;
+					//if (div->weight.empty())
+					//{
+					//	div->weight.assign(static_cast<int>((dock_position == dock_position::up || dock_position == dock_position::down) ? div->field_area.height : div->field_area.width));
 
-							// append div
-							arrange_ptr->children.emplace_back(floating_divs[i_div].release());
-							// append splitter
-							arrange_ptr->children.emplace_back(splitter_ptr);
-							// append where
-							arrange_ptr->children.emplace_back(where_uptr.release());
-						}
-						else
-						{
-							// WHERE | DIV
+					//	// check the available space and adjust the weight accordingly
+					//	int avail = ((dock_position == dock_position::up || dock_position == dock_position::down) ? where_uptr->field_area.height : where_uptr->field_area.width) - where_uptr->min_px.integer() - 5;//scheme.splitter_width;
+					//	if (div->weight.integer() == 0 || avail < 0 || div->weight.integer() >= avail)
+					//		div->weight.reset();
+					//}
 
-							where_uptr->div_next = splitter_ptr;
-							splitter_ptr->div_next = div;
+					where_uptr->div_owner = arrange_ptr;
+					/*if (!div->weight.empty())
+						where_uptr->weight.reset();*/
 
-							// append where
-							arrange_ptr->children.emplace_back(where_uptr.release());
-							// append splitter
-							arrange_ptr->children.emplace_back(splitter_ptr);
-							// append div
-							arrange_ptr->children.emplace_back(floating_divs[i_div].release());
-							//arrange_ptr->children.emplace_back(div);
-						}
+					arrange_ptr->div_next = where_div->div_next;
+					if (position == dock_position::up ||
+						position == dock_position::left)
+					{
+						// DIV | WHERE
 
-						// remove div from detached divs
-						floating_divs.erase(floating_divs.begin() + i_div);
+						div->div_next = splitter_ptr;
+						splitter_ptr->div_next = where_uptr.get();
 
-						// append the new arrange
-						if (i_where == std::string::npos)
-						{
-							//TODO:
-							root_division.reset(arrange_ptr);
-						}
-						else
-						{
-							where_owner->children[i_where].reset(arrange_ptr);
-
-							if (i_where > 0)
-							{
-								where_owner->children[i_where - 1]->div_next = arrange_ptr;
-							}
-						}
+						// append div
+						arrange_ptr->children.emplace_back(floating_divs[i_div].release());
+						// append splitter
+						arrange_ptr->children.emplace_back(splitter_ptr);
+						// append where
+						arrange_ptr->children.emplace_back(where_uptr.release());
 					}
 					else
 					{
-						auto where_owner = where_div ? where_div->div_owner : root_division.get();
-						size_t i_where = where_div ? where_div->index() : std::string::npos;
+						// WHERE | DIV
 
-						auto splitter_ptr = new implement::div_splitter(this);
-						splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
-						splitter_ptr->div_owner = where_owner;
+						where_uptr->div_next = splitter_ptr;
+						splitter_ptr->div_next = div;
 
-						div->div_owner = where_owner;
-						int field_area_weight = static_cast<int>((position == dock_position::up || position == dock_position::down) ? div->field_area.height : div->field_area.width);
-						if (field_area_weight)
-						{
-							// NOTE: only works assumimg divs weight is percentage
-							int avail = (position == dock_position::up || position == dock_position::down) ? where_owner->field_area.height : where_owner->field_area.width;
-							// check available space
-							int splitters_px = 5; // new splitter
-							int divs_px = 0;
-							double divs_percent = 0.0;
-							for (auto& child : where_owner->children)
-							{
-							}
-						}
-
-						if (dock_position::up == position || dock_position::left == position)
-						{
-							if (i_where == std::string::npos)
-								i_where = 0;
-
-							// DIV | children[i_where]
-
-							// append div
-							where_owner->children.emplace(where_owner->children.begin() + i_where, floating_divs[i_div].release());
-							// append splitter
-							where_owner->children.emplace(where_owner->children.begin() + i_where + 1, splitter_ptr);
-						}
-						else
-						{
-							if (i_where == std::string::npos)
-								i_where = where_owner->children.size() - 1;
-
-							//auto float_div = floating_divs[i_div].get();
-
-							//where_owner->children[i_where]->div_next = splitter_ptr;
-							//splitter_ptr->div_next = float_div;
-
-							//float_div->div_next = where_owner->children[i_where + 1].get();
-							//float_div->div_next->div_next = where_owner->children[i_where + 2].get();
-
-							// children[i_where] | DIV
-
-							// append splitter
-							where_owner->children.emplace(where_owner->children.begin() + i_where + 1, splitter_ptr);
-							// append div
-							where_owner->children.emplace(where_owner->children.begin() + i_where + 2, floating_divs[i_div].release());
-						}
-
-						for (size_t i = 0; i < where_owner->children.size(); i += 2)
-						{
-							where_owner->children[i]->weight.reset();
-						}
-
-						for (size_t i = 0; i < where_owner->children.size(); ++i)
-						{
-							if (i == where_owner->children.size() - 1)
-								where_owner->children[i]->div_next = nullptr;
-							else
-								where_owner->children[i]->div_next = where_owner->children[i + 1].get();
-						}
-
-						// remove div from detached divs
-						floating_divs.erase(floating_divs.begin() + i_div);
+						// append where
+						arrange_ptr->children.emplace_back(where_uptr.release());
+						// append splitter
+						arrange_ptr->children.emplace_back(splitter_ptr);
+						// append div
+						arrange_ptr->children.emplace_back(floating_divs[i_div].release());
+						//arrange_ptr->children.emplace_back(div);
 					}
+
+					// remove div from detached divs
+					floating_divs.erase(floating_divs.begin() + i_div);
+
+					// append the new arrange
+					if (i_where == std::string::npos)
+					{
+						//TODO:
+						//root_division.reset(arrange_ptr);
+					}
+					else
+					{
+						where_owner->children[i_where].reset(arrange_ptr);
+
+						if (i_where > 0)
+						{
+							where_owner->children[i_where - 1]->div_next = arrange_ptr;
+						}
+					}
+				}
+				else
+				{
+					auto where_owner = where_div ? where_div->div_owner : dock_root_div;
+					size_t i_where = where_div ? where_div->index() : std::string::npos;
+
+					auto splitter_ptr = new implement::div_splitter(this);
+					splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
+					splitter_ptr->div_owner = where_owner;
+
+					div->div_owner = where_owner;
+					int field_area_weight = static_cast<int>((position == dock_position::up || position == dock_position::down) ? div->field_area.height : div->field_area.width);
+					if (field_area_weight)
+					{
+						// NOTE: only works assumimg divs weight is percentage
+						int avail = (position == dock_position::up || position == dock_position::down) ? where_owner->field_area.height : where_owner->field_area.width;
+						// check available space
+						int splitters_px = 5; // new splitter
+						int divs_px = 0;
+						double divs_percent = 0.0;
+						for (auto& child : where_owner->children)
+						{
+						}
+					}
+
+					if (dock_position::up == position || dock_position::left == position)
+					{
+						if (i_where == std::string::npos)
+							i_where = 0;
+
+						// DIV | children[i_where]
+
+						// append div
+						where_owner->children.emplace(where_owner->children.begin() + i_where, floating_divs[i_div].release());
+						// append splitter
+						where_owner->children.emplace(where_owner->children.begin() + i_where + 1, splitter_ptr);
+					}
+					else
+					{
+						if (i_where == std::string::npos)
+							i_where = where_owner->children.size() - 1;
+
+						//auto float_div = floating_divs[i_div].get();
+
+						//where_owner->children[i_where]->div_next = splitter_ptr;
+						//splitter_ptr->div_next = float_div;
+
+						//float_div->div_next = where_owner->children[i_where + 1].get();
+						//float_div->div_next->div_next = where_owner->children[i_where + 2].get();
+
+						// children[i_where] | DIV
+
+						// append splitter
+						where_owner->children.emplace(where_owner->children.begin() + i_where + 1, splitter_ptr);
+						// append div
+						where_owner->children.emplace(where_owner->children.begin() + i_where + 2, floating_divs[i_div].release());
+					}
+
+					for (size_t i = 0; i < where_owner->children.size(); i += 2)
+					{
+						where_owner->children[i]->weight.reset();
+					}
+
+					for (size_t i = 0; i < where_owner->children.size(); ++i)
+					{
+						if (i == where_owner->children.size() - 1)
+							where_owner->children[i]->div_next = nullptr;
+						else
+							where_owner->children[i]->div_next = where_owner->children[i + 1].get();
+					}
+
+					// remove div from detached divs
+					floating_divs.erase(floating_divs.begin() + i_div);
 				}
 			}
 		}
@@ -4736,7 +4764,7 @@ namespace nana
 		return nullptr;
 	}
 
-	widget* br_place::add_pane(std::string dock_id, std::function<std::unique_ptr<widget>(window)> factory, const std::string& caption, const std::string& relative_pane_id, dock_position dock_position)
+	widget* br_place::add_pane(std::string dock_id, std::function<std::unique_ptr<widget>(window)> factory, const std::string& relative_pane_id, dock_position dock_position)
 	{
 		widget* result{ nullptr };
 		implement::div_dockpane* div = nullptr;
@@ -4760,7 +4788,6 @@ namespace nana
 		if (dock_ptr->attached)
 		{
 			dock_ptr->attached->set_display(true);
-			//impl_->collocate();
 
 			if (!dock_ptr->dockarea)
 			{
