@@ -4055,6 +4055,19 @@ namespace nana
 			}
 			else
 			{
+				if (implement::division::kind::dock == where_div->kind_of_division)
+				{
+					if (where_div->children.size() == 0)
+					{
+						div->div_owner = where_div;
+						div->div_next = nullptr;
+						//div->weight.reset();
+						where_div->children.emplace_back(std::move(floating_divs[i_div]));
+
+						floating_divs.erase(floating_divs.begin() + i_div);
+						return true;
+					}
+				}
 				if (dock_position::tab == position)
 				{
 					auto where_dockpane = reinterpret_cast<implement::div_dockpane*>(where_div);
