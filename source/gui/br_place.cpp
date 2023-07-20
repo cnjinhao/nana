@@ -2369,12 +2369,12 @@ namespace nana
 				impl_ptr_->hide_pane_indicators();
 			}
 
-			dock_position dockpos = dock_position::tab;
-			if (impl_ptr_->hit_indicators(&dockpos))
+			dock_position dockposition = dock_position::tab;
+			if (impl_ptr_->hit_indicators(&dockposition))
 			{
 				nana::rectangle indicator_area(pane->field_area);
 
-				target_dock_position_ = dockpos;
+				target_dock_position_ = dockposition;
 
 				if (saved_target_pane != target_dock_ || saved_target_position != target_dock_position_)
 				{
@@ -2384,21 +2384,21 @@ namespace nana
 						impl_ptr_->tab_indicator.graph.release();
 					}
 
-					if (dockpos == dock_position::right)
+					if (dockposition == dock_position::right)
 					{
 						indicator_area.x += indicator_area.width >> 1;
 						indicator_area.width = indicator_area.width >> 1;
 					}
-					else if (dockpos == dock_position::left)
+					else if (dockposition == dock_position::left)
 					{
 						indicator_area.width = indicator_area.width >> 1;
 					}
-					else if (dockpos == dock_position::down)
+					else if (dockposition == dock_position::down)
 					{
 						indicator_area.y += indicator_area.height >> 1;
 						indicator_area.height = indicator_area.height >> 1;
 					}
-					else if (dockpos == dock_position::up)
+					else if (dockposition == dock_position::up)
 					{
 						indicator_area.height = indicator_area.height >> 1;
 					}
@@ -2443,66 +2443,12 @@ namespace nana
 			}
 			else
 			{
-				if (pane)
+				target_dock_ = nullptr;
+
+				if (impl_ptr_->tab_indicator.dock_area)
 				{
-					target_dock_position_ = dock_position::tab;
-					field_area.dimension(dockable_field->dockarea->size());
-
-					if (saved_target_pane != target_dock_ || saved_target_position != target_dock_position_)
-					{
-						if (impl_ptr_->tab_indicator.dock_area)
-						{
-							impl_ptr_->tab_indicator.dock_area.reset();
-							impl_ptr_->tab_indicator.graph.release();
-						}
-
-						impl_ptr_->tab_indicator.graph.make(api::window_size(impl_ptr_->window_handle));
-						api::window_graphics(impl_ptr_->window_handle, impl_ptr_->tab_indicator.graph);
-
-						impl_ptr_->tab_indicator.dock_area.reset(new panel<true>(impl_ptr_->window_handle, {}, false));
-						impl_ptr_->tab_indicator.dock_area->move(pane->field_area);
-
-						::nana::drawing dw(impl_ptr_->tab_indicator.dock_area->handle());
-						dw.draw([pane, this](paint::graphics& graph)
-						{
-							//impl_ptr_->tab_indicator.graph.paste(pane->field_area, graph, 0, 0);
-
-							const int border_px = 4;
-							rectangle r{ graph.size() };
-							int right = r.right();
-							int bottom = r.bottom();
-
-							graph.blend(r.pare_off(border_px), colors::blue, 0.3);
-
-							::nana::color clr = colors::deep_sky_blue;
-							r.y = 0;
-							r.height = border_px;
-							graph.blend(r, clr, 0.5);
-							r.y = bottom - border_px;
-							graph.blend(r, clr, 0.5);
-
-							r.x = r.y = 0;
-							r.dimension(graph.size());
-							r.width = border_px;
-							graph.blend(r, clr, 0.5);
-							r.x = right - border_px;
-							graph.blend(r, clr, 0.5);
-
-						});
-
-						api::bring_top(impl_ptr_->tab_indicator.dock_area->handle(), false);
-						impl_ptr_->tab_indicator.dock_area->show();
-					}
-				}
-				else
-				{
-					target_dock_ = nullptr;
-
-					if (impl_ptr_->tab_indicator.dock_area)
-					{
-						impl_ptr_->tab_indicator.dock_area.reset();
-						impl_ptr_->tab_indicator.graph.release();
-					}
+					impl_ptr_->tab_indicator.dock_area.reset();
+					impl_ptr_->tab_indicator.graph.release();
 				}
 			}
 		}
@@ -2963,6 +2909,7 @@ namespace nana
 		pane_indicators.emplace_back(new dock_indicator{ dock_position::down });
 		pane_indicators.emplace_back(new dock_indicator{ dock_position::left });
 		pane_indicators.emplace_back(new dock_indicator{ dock_position::right });
+		pane_indicators.emplace_back(new dock_indicator{ dock_position::tab });
 	}
 
 	br_place::implement::~implement()
@@ -3733,7 +3680,7 @@ namespace nana
 			{
 				if (dock_position::up == i->position)
 				{
-					auto pos = point(x - 16, y - 16 - 32);
+					auto pos = point(x - 16, y - 16 - 32 - 8);
 					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
 					i->delta = i->docker->pos() - pos;
 					drawing dw(i->docker->handle());
@@ -3752,7 +3699,7 @@ namespace nana
 				}
 				else if (dock_position::down == i->position)
 				{
-					auto pos = point(x - 16, y + 16);
+					auto pos = point(x - 16, y + 16 + 8);
 					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
 					i->delta = i->docker->pos() - pos;
 					drawing dw(i->docker->handle());
@@ -3771,7 +3718,7 @@ namespace nana
 				}
 				else if (dock_position::left == i->position)
 				{
-					auto pos = point(x - 16 - 32, y - 16);
+					auto pos = point(x - 16 - 32-16, y - 16);
 					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
 					i->delta = i->docker->pos() - pos;
 					drawing dw(i->docker->handle());
@@ -3790,7 +3737,7 @@ namespace nana
 				}
 				else if (dock_position::right == i->position)
 				{
-					auto pos = point(x + 16, y - 16);
+					auto pos = point(x + 16+16, y - 16);
 					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
 					i->delta = i->docker->pos() - pos;
 					drawing dw(i->docker->handle());
@@ -3805,6 +3752,21 @@ namespace nana
 
 						graph.rectangle({ 17, 4, 11, 24 }, true, colors::midnight_blue);
 						graph.rectangle({ 18, 7, 9, 20 }, true, colors::button_face);
+					});
+				}
+				else if (dock_position::tab == i->position)
+				{
+					auto pos = point(x-16, y-16);
+					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
+					i->delta = i->docker->pos() - pos;
+					drawing dw(i->docker->handle());
+					dw.draw([](paint::graphics& graph)
+					{
+						graph.rectangle(false, colors::midnight_blue);
+						graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
+
+						graph.rectangle({ 4, 4, 24, 11+12 }, true, colors::midnight_blue);
+						graph.rectangle({ 5, 7, 22, 7+12 }, true, colors::button_face);
 					});
 				}
 				else
@@ -3826,22 +3788,27 @@ namespace nana
 			{
 				if (dock_position::up == i->position)
 				{
-					auto pos = point(x - 16, y - 16 - 32);
+					auto pos = point(x - 16, y - 16 - 32 - 8);
 					i->docker->move(pos + i->delta);
 				}
 				else if (dock_position::down == i->position)
 				{
-					auto pos = point(x - 16, y + 16);
+					auto pos = point(x - 16, y + 16+8);
 					i->docker->move(pos + i->delta);
 				}
 				else if (dock_position::left == i->position)
 				{
-					auto pos = point(x - 16 - 32, y - 16);
+					auto pos = point(x - 16 - 32-16, y - 16);
 					i->docker->move(pos + i->delta);
 				}
 				else if (dock_position::right == i->position)
 				{
-					auto pos = point(x + 16, y - 16);
+					auto pos = point(x + 16+16, y - 16);
+					i->docker->move(pos + i->delta);
+				}
+				else if (dock_position::tab == i->position)
+				{
+					auto pos = point(x - 16, y - 16);
 					i->docker->move(pos + i->delta);
 				}
 				else
@@ -3900,9 +3867,28 @@ namespace nana
 		};
 
 		auto result = hit_fn(root_division.get());
-		if (result == nullptr && root_division && (root_division->children.size() == 0 || (root_division->children[0]->kind_of_division == implement::division::kind::dock && root_division->children[0]->children.size() == 0)))
+		if (result == nullptr)
 		{
-			result = hit_dock();
+			hit_fn = [&hit_fn, this](implement::division* div) -> implement::division*
+			{
+				if (division::kind::dock == div->kind_of_division)
+				{
+					point pos;
+					API::calc_screen_point(window_handle, pos);
+					if (rectangle{ pos + div->field_area.position(), div->field_area.dimension() }.is_hit(API::cursor_position()))
+						return div;
+				}
+
+				for (auto& child : div->children)
+				{
+					auto r = hit_fn(child.get());
+					if (r)
+						return r;
+				}
+
+				return nullptr;
+			};
+			result = hit_fn(root_division.get());
 		}
 		return result;
 	}
@@ -4299,10 +4285,22 @@ namespace nana
 		}
 		if (dock_position::tab == position)
 		{
-			if (implement::division::kind::dock == root_division->kind_of_division && root_division->children.size() > 0 && where_div)
+			if (where_div)
 			{
-				return true;
+				implement::division* dock_root_div = where_div;
+				while (dock_root_div != nullptr)
+				{
+					if (implement::division::kind::dock == dock_root_div->kind_of_division) {
+						break;
+					}
+					dock_root_div = dock_root_div->div_owner;
+				}
+				if (dock_root_div && implement::division::kind::dock == dock_root_div->kind_of_division && dock_root_div->children.size() > 0)
+				{
+					return true;
+				}
 			}
+			
 		}
 		return false;
 	}
