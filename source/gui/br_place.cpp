@@ -1950,6 +1950,8 @@ namespace nana
 
 						leaf_left->exit_size_move();
 						leaf_right->exit_size_move();
+
+						impl_->print_debug();
 					}
 					else if (event_code::mouse_move == arg.evt_code)
 					{
@@ -2343,8 +2345,8 @@ namespace nana
 		{
 			impl_ptr_->hide_indicators();
 
-			impl_ptr_->collocate();
-			impl_ptr_->print_debug();
+			//impl_ptr_->collocate();
+			//impl_ptr_->print_debug();
 		}
 
 		void notify_move() override
@@ -2352,14 +2354,14 @@ namespace nana
 			if (!_m_hit_window())
 			{
 				impl_ptr_->hide_indicators();
-				target_dock_ = nullptr;
+				target_pane_dock_ = nullptr;
 				return;
 			}
 
-			auto saved_target_pane = target_dock_;
-			auto saved_target_position = target_dock_position_;
+			auto previous_target_pane_dock = target_pane_dock_;
+			auto previous_target_position = target_dock_position_;
 			auto pane = impl_ptr_->hit_panes_or_dock();
-			target_dock_ = pane;
+			target_pane_dock_ = pane;
 			if (pane)
 			{
 				impl_ptr_->show_pane_indicators(pane);
@@ -2376,7 +2378,7 @@ namespace nana
 
 				target_dock_position_ = dockposition;
 
-				if (saved_target_pane != target_dock_ || saved_target_position != target_dock_position_)
+				if (previous_target_pane_dock != target_pane_dock_ || previous_target_position != target_dock_position_)
 				{
 					if (impl_ptr_->tab_indicator.dock_area)
 					{
@@ -2443,7 +2445,7 @@ namespace nana
 			}
 			else
 			{
-				target_dock_ = nullptr;
+				target_pane_dock_ = nullptr;
 
 				if (impl_ptr_->tab_indicator.dock_area)
 				{
@@ -2464,32 +2466,38 @@ namespace nana
 			if (dockable_field && dockable_field->dockarea)
 				dockable_field->dockarea->exit_size_move();
 
-			if ((impl_ptr_->hit_indicators() /*|| impl_ptr_->hit_dock()*/) &&
+			if ((impl_ptr_->hit_indicators()) &&
 				dockable_field && dockable_field->dockarea)
 			{
-				if (impl_ptr_->is_dock_to_tab_pane(this, target_dock_, target_dock_position_))
+				bool success = false;
+				if (impl_ptr_->is_dock_to_tab_pane(this, target_pane_dock_, target_dock_position_))
 				{
 					dockable_field->dockarea->dock();
-					impl_ptr_->dock_pane(this, target_dock_, target_dock_position_);
+					success = impl_ptr_->dock_pane(this, target_pane_dock_, target_dock_position_);
 					
 					auto ptr = this;
 					api::at_safe_place(impl_ptr_->window_handle, [ptr]
 					{
+						// remove this dockpane
 						std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
 					});
 				}
 				else
 				{
 					dockable_field->dockarea->dock();
-					impl_ptr_->dock_pane(this, target_dock_, target_dock_position_);
+					success = impl_ptr_->dock_pane(this, target_pane_dock_, target_dock_position_);
 				}
 
-				impl_ptr_->collocate();
-				API::refresh_window(impl_ptr_->window_handle);
+				if (success)
+				{
+					impl_ptr_->collocate();
+					impl_ptr_->print_debug();
+					API::refresh_window(impl_ptr_->window_handle);
+				}
 			}
 
 			impl_ptr_->hide_indicators();
-			target_dock_ = nullptr;
+			target_pane_dock_ = nullptr;
 		}
 
 		void request_close() override
@@ -2519,7 +2527,7 @@ namespace nana
 	public:
 		field_dock * dockable_field{ nullptr };
 
-		division* target_dock_{ nullptr };
+		division* target_pane_dock_{ nullptr };
 		dock_position target_dock_position_{ dock_position::tab };
 	private:
 		implement * impl_ptr_;
@@ -3051,7 +3059,7 @@ namespace nana
 
 	void br_place::implement::print_debug()
 	{
-#ifdef __DEBUG
+#ifdef _DEBUG
 		unsigned level = 0;
 
 		printf("\n\n - div() -\n");
@@ -3676,6 +3684,14 @@ namespace nana
 			auto x = div->field_area.x + static_cast<int>(div->field_area.width) / 2;
 			auto y = div->field_area.y + static_cast<int>(div->field_area.height) / 2;
 
+			if (implement::division::kind::dock == div->kind_of_division && dock_position::tab != i->position)
+			{
+				if (i->docker)
+					i->docker.reset();
+				
+				continue;
+			}
+
 			if (!i->docker)
 			{
 				if (dock_position::up == i->position)
@@ -3718,7 +3734,7 @@ namespace nana
 				}
 				else if (dock_position::left == i->position)
 				{
-					auto pos = point(x - 16 - 32-16, y - 16);
+					auto pos = point(x - 16 - 32 - 16, y - 16);
 					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
 					i->delta = i->docker->pos() - pos;
 					drawing dw(i->docker->handle());
@@ -3737,7 +3753,7 @@ namespace nana
 				}
 				else if (dock_position::right == i->position)
 				{
-					auto pos = point(x + 16+16, y - 16);
+					auto pos = point(x + 16 + 16, y - 16);
 					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
 					i->delta = i->docker->pos() - pos;
 					drawing dw(i->docker->handle());
@@ -3756,7 +3772,7 @@ namespace nana
 				}
 				else if (dock_position::tab == i->position)
 				{
-					auto pos = point(x-16, y-16);
+					auto pos = point(x - 16, y - 16);
 					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
 					i->delta = i->docker->pos() - pos;
 					drawing dw(i->docker->handle());
@@ -4050,6 +4066,7 @@ namespace nana
 				else
 				{
 					//TODO
+					throw std::exception("not implemented");
 					return true;
 				}
 			}
@@ -4088,6 +4105,12 @@ namespace nana
 						break;
 					}
 					dock_root_div = dock_root_div->div_owner;
+				}
+
+				if (dock_root_div == nullptr)
+				{
+					throw std::exception("invalid dock operation. missing dock");
+					return false;
 				}
 				
 				bool add_new_arrange = false;
@@ -4367,6 +4390,8 @@ namespace nana
 				impl_->root_division->field_area.dimension({ arg.width, arg.height });
 				impl_->root_division->calc_weight_floor(arg.window_handle);
 				impl_->root_division->collocate(arg.window_handle);
+
+				impl_->print_debug();
 			}
 		});
 
@@ -4806,6 +4831,10 @@ namespace nana
 				dock_ptr->dockarea->create(impl_->window_handle);
 				dock_ptr->dockarea->set_notifier(dock_ptr->attached);
 				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
+			}
+			else
+			{
+				dock_position = dock_position::tab;
 			}
 			result = dock_ptr->dockarea->add_pane(factory);
 		}
