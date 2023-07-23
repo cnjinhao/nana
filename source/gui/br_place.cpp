@@ -693,6 +693,8 @@ namespace nana
 		dock_indicator tab_indicator;
 		std::vector<std::unique_ptr<division>> floating_divs;
 
+		bool enabled_debug = true;
+
 		implement();
 
 		//The following functions are defined behind the definition of class division.
@@ -3060,9 +3062,11 @@ namespace nana
 	void br_place::implement::print_debug()
 	{
 #ifdef _DEBUG
+		if (!enabled_debug) return;
+
 		unsigned level = 0;
 
-		printf("\n\n - div() -\n");
+		printf("\n - div() -\n");
 		if (!root_division)
 		{
 			printf("\t<empty>\n\n");
@@ -3105,7 +3109,7 @@ namespace nana
 		};
 
 		print_fn(root_division.get());
-		printf("\n\n\n");
+		printf("\n\n");
 #endif
 	}
 
@@ -4722,6 +4726,16 @@ namespace nana
 
 		if (recollocate)
 			collocate();
+	}
+
+	bool br_place::is_enabled_print_debug()
+	{
+		return impl_->enabled_debug;
+	}
+
+	void br_place::enable_print_debug(bool newValue)
+	{
+		impl_->enabled_debug = newValue;
 	}
 
 	br_place::field_reference br_place::operator[](const char* name)
