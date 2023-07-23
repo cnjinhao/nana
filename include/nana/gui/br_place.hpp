@@ -165,6 +165,9 @@ namespace nana
 
  		void erase(window handle);				///< Erases a window from field.
 
+		bool is_enabled_print_debug();
+		void enable_print_debug(bool newValue);
+
 		field_reference operator[](const char* name); ///< Returns a field with the specified name. Equal to field();
 
 		/// Add a panel factory
