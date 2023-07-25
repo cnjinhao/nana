@@ -34,17 +34,18 @@
 #include <nana/gui/drawing.hpp>
 
 #include "place_parts.hpp"
+#include <iostream>
 
 namespace nana
 {
-	struct badname: place::error
+	struct badname : place::error
 	{
-		explicit badname(  ::std::string           what,
-							const place&           plc,
-							const char*            name   = "unknown",
-							std::string::size_type pos    = std::string::npos)
+		explicit badname(::std::string           what,
+			const place& plc,
+			const char* name = "unknown",
+			std::string::size_type pos = std::string::npos)
 			:place::error(what + ": bad field name '" + (name ? name : "nullptr") + "'.",
-				          plc, (name ? name : "nullptr"), pos)
+				plc, (name ? name : "nullptr"), pos)
 		{}
 	};
 	typedef place_parts::number_t number_t;
@@ -59,15 +60,15 @@ namespace nana
 			struct error : std::invalid_argument
 			{
 				error(std::string           what,
-					  const tokenizer&      tok)
+					const tokenizer& tok)
 
-					: std::invalid_argument{ what + " from tokenizer "  },
-					  pos{tok.pos()},
-					  div_str(tok.divstr_)
+					: std::invalid_argument{ what + " from tokenizer " },
+					pos{ tok.pos() },
+					div_str(tok.divstr_)
 				{}
 				std::string::size_type pos;
 				std::string            div_str;
-		    };
+			};
 
 			enum class token
 			{
@@ -154,7 +155,7 @@ namespace nana
 							sp_ = _m_eat_whitespace(sp_);
 							auto tk = read();   // try ??
 
-							if (   token::number   != tk
+							if (token::number != tk
 								&& token::variable != tk
 								&& token::repeated != tk)
 
@@ -247,25 +248,25 @@ namespace nana
 
 				if ('_' == *sp_ || std::isalpha(*sp_))
 				{
-					const char * idstart = sp_++;
+					const char* idstart = sp_++;
 
 					while ('_' == *sp_ || std::isalpha(*sp_) || std::isalnum(*sp_))
 						++sp_;
 
 					idstr_.assign(idstart, sp_);
 
-					if (    "weight" == idstr_
-					     || "min" == idstr_
-					     || "max" == idstr_
-					     || "width" == idstr_
-					     || "height" == idstr_
+					if ("weight" == idstr_
+						|| "min" == idstr_
+						|| "max" == idstr_
+						|| "width" == idstr_
+						|| "height" == idstr_
 						)
 					{
-						auto c3 = idstr_[2], c1 =idstr_[0];
+						auto c3 = idstr_[2], c1 = idstr_[0];
 						_m_attr_number_value();
 						switch (c3)
 						{
-						case 'i': return c1=='w'? token::weight : token::height;
+						case 'i': return c1 == 'w' ? token::weight : token::height;
 						case 'n': return token::min_px;
 						case 'x': return token::max_px;
 						case 'd': return token::width;
@@ -415,7 +416,7 @@ namespace nana
 				auto begin = sp;
 				while (std::isalpha(*sp))
 					++sp;
-				
+
 				if (sp > begin)
 				{
 					std::string_view sv{ begin, static_cast<std::string_view::size_type>(sp - begin) };
@@ -593,7 +594,7 @@ namespace nana
 				}
 
 				if (0 == depth)
-					return{ pos + 1, start_pos};
+					return{ pos + 1, start_pos };
 
 				if (0 == pos)
 					break;
@@ -617,7 +618,7 @@ namespace nana
 		{
 			auto pos = div.find_last_of("<>", start_pos);
 			if (div.npos == pos)
-				return {0, div.length()};
+				return { 0, div.length() };
 
 			start_pos = pos - 1;
 			if (div[pos] == '>')
@@ -640,12 +641,12 @@ namespace nana
 		struct error : std::invalid_argument
 		{
 			explicit error(std::string    what,
-				  std::string            field = "unknown",
-			 	  std::string::size_type pos   = std::string::npos)
+				std::string            field = "unknown",
+				std::string::size_type pos = std::string::npos)
 
 				: std::invalid_argument{ what + " from place implementation " },
-				  pos{ pos },
-				  field(field.empty() ? "unnamed" : field)
+				pos{ pos },
+				field(field.empty() ? "unnamed" : field)
 			{}
 			std::string::size_type pos;
 			std::string            field;
@@ -661,15 +662,14 @@ namespace nana
 		class div_dockpane;
 		class div_switchable;
 
-		window window_handle{nullptr};
-		event_handle event_size_handle{nullptr};
+		window window_handle{ nullptr };
+		event_handle event_size_handle{ nullptr };
 		event_handle event_destroy_handle{ nullptr };
 
 		std::string div_text;
 		std::unique_ptr<division> root_division;
 		std::map<std::string, field_gather*> fields;
 		std::map<std::string, field_dock*> docks;
-		std::map<std::string, field_dock*> dock_factoris;
 
 		std::function<void(window, paint::graphics&, nana::mouse_action)> split_renderer;
 		std::set<div_splitter*> splitters;
@@ -678,13 +678,33 @@ namespace nana
 		//will be deleted in modification process.
 		std::unique_ptr<division> tmp_replaced;
 
+		//
+		struct dock_indicator
+		{
+			dock_position position{ dock_position::up };
+			point delta;
+			paint::graphics graph;
+			std::unique_ptr<panel<true>> dock_area;
+			std::unique_ptr<form> docker;
+		};
+
+		std::vector<std::unique_ptr<dock_indicator>> pane_indicators;
+		dock_indicator tab_indicator;
+		std::vector<std::unique_ptr<division>> floating_divs;
+
+		bool enabled_debug = true;
+
+		implement();
+
 		//The following functions are defined behind the definition of class division.
 		//because the class division here is an incomplete type.
 		~implement();
 
+		void purge();
 		void collocate();
+		void print_debug();
 
-		static division * search_div_name(division* start, const std::string&) noexcept;
+		static division* search_div_name(division* start, const std::string&) noexcept;
 
 		std::unique_ptr<division> scan_div(place_parts::tokenizer&, bool implicitly_started, const std::string& ignore_duplicate = {});
 		void check_unique(const division*) const;
@@ -692,6 +712,23 @@ namespace nana
 		//connect the field/dock with div object
 		void connect(division* start);
 		void disconnect() noexcept;
+
+		bool is_vertical(dock_position position);
+
+		void hide_pane_indicators();
+		void hide_indicators();
+		void show_pane_indicators(division* div);
+
+		bool hit_indicators(dock_position* position = nullptr) const;
+		division* hit_panes_or_dock();
+		division* hit_dock();
+
+		bool float_dock_pane(division* div);
+		bool dock_pane(division* div, division* where_div, dock_position position);
+
+		bool is_dock_to_tab_pane(division* div, division* where_div, dock_position position);
+
+		bool remove_dock_pane(division* div);
 	};	//end struct implement
 
 	class place::implement::field_gather
@@ -699,7 +736,7 @@ namespace nana
 	{
 	public:
 
-        /// \todo introduce a place::implement::field_gather::error ??
+		/// \todo introduce a place::implement::field_gather::error ??
 		struct element_t
 		{
 			window handle;
@@ -710,27 +747,27 @@ namespace nana
 			{}
 		};
 
-		explicit field_gather(place * p) noexcept
+		explicit field_gather(place* p) noexcept
 			: place_ptr_(p)
 		{}
 
 		~field_gather() noexcept override
 		{
-			for (auto & e : elements)
+			for (auto& e : elements)
 				api::umake_event(e.evt_destroy);
 
-			for (auto & e : fastened)
+			for (auto& e : fastened)
 				api::umake_event(e.evt_destroy);
 		}
 
 		void visible(bool vsb, bool sync_fastened = true)
 		{
-			for (auto & e : elements)
+			for (auto& e : elements)
 				api::show_window(e.handle, vsb);
 
 			if (sync_fastened)
 			{
-				for (auto & e : fastened)
+				for (auto& e : fastened)
 					api::show_window(e.handle, vsb);
 			}
 		}
@@ -760,18 +797,18 @@ namespace nana
 			//Listen to destroy of a window
 			//It will delete the element and recollocate when the window destroyed.
 			auto evt = api::events(wd).destroy.connect([this, to_fasten](const arg_destroy& arg)
-			{
-				if (!to_fasten)
 				{
-					if (erase_element(elements, arg.window_handle))
+					if (!to_fasten)
 					{
-						if (!api::is_destroying(api::get_parent_window(arg.window_handle)))
-							place_ptr_->collocate();
+						if (erase_element(elements, arg.window_handle))
+						{
+							if (!api::is_destroying(api::get_parent_window(arg.window_handle)))
+								place_ptr_->collocate();
+						}
 					}
-				}
-				else
-					erase_element(fastened, arg.window_handle);
-			});
+					else
+						erase_element(fastened, arg.window_handle);
+				});
 
 			(to_fasten ? &fastened : &elements)->emplace_back(wd, evt);
 		}
@@ -798,10 +835,10 @@ namespace nana
 			return *this;
 		}
 
-		void _m_add_agent(const detail::place_agent& ag) override
+		void _m_add_agent(const detail::agent& ag) override
 		{
 			this->operator<<(
-					widgets_.emplace_back(ag.create(place_ptr_->window_handle()))->handle()
+				widgets_.emplace_back(ag.create(place_ptr_->window_handle()))->handle()
 				);
 		}
 	public:
@@ -810,13 +847,13 @@ namespace nana
 		std::vector<element_t>	elements;
 		std::vector<element_t>	fastened;
 	private:
-		place * place_ptr_;
+		place* place_ptr_;
 	};//end class field_gather
 
 	class place::implement::field_dock
 	{
 	public:
-		div_dockpane * attached{ nullptr };					//attached div object
+		div_dockpane* attached{ nullptr };					//attached div object
 		std::unique_ptr<place_parts::dockarea> dockarea;	//the dockable widget
 		std::map<std::string, std::function<std::unique_ptr<widget>(window)>> factories;	//factories for dockpane
 	};//end class field_dock
@@ -833,7 +870,7 @@ namespace nana
 	class place::implement::division
 	{
 	public:
-		enum class kind{ arrange, vertical_arrange, grid, splitter, dock, dockpane, switchable};
+		enum class kind { arrange, vertical_arrange, grid, splitter, dock, dockpane, switchable };
 		using token = place_parts::tokenizer::token;
 
 		division(kind k, std::string&& n) noexcept
@@ -848,7 +885,7 @@ namespace nana
 				field->attached = nullptr;
 		}
 
-		std::pair<double,double> calc_weight_floor(window wd)
+		std::pair<double, double> calc_weight_floor(window wd)
 		{
 			std::pair<double, double> floor;
 			run_.fit_extents.clear();
@@ -861,7 +898,7 @@ namespace nana
 
 				double ratio = 0;
 
-				for (auto & child : children)
+				for (auto& child : children)
 				{
 					auto child_floor = child->calc_weight_floor(wd);
 
@@ -880,7 +917,7 @@ namespace nana
 				auto const vert_div = (this->div_owner && (kind::vertical_arrange == this->div_owner->kind_of_division));
 				double& fv = (vert_div ? floor.second : floor.first);
 
-				if((ratio > 0.001) && (fv > 0))
+				if ((ratio > 0.001) && (fv > 0))
 					fv /= ratio;
 
 				int set_weight = 0;
@@ -894,7 +931,7 @@ namespace nana
 
 					std::size_t pos = 0;
 
-					for (auto & elm : this->field->elements)
+					for (auto& elm : this->field->elements)
 					{
 						++pos;
 
@@ -1057,7 +1094,7 @@ namespace nana
 				//If the field is a child of switchable field, hides other child fields.
 				if (this->div_owner && (kind::switchable == this->div_owner->kind_of_division))
 				{
-					for (auto & child : this->div_owner->children)
+					for (auto& child : this->div_owner->children)
 					{
 						if (child.get() != this)
 							child->set_display(false);
@@ -1068,8 +1105,8 @@ namespace nana
 
 		bool is_back(const division* div) const noexcept
 		{
-			const division * last = nullptr;
-			for (auto & p : children)
+			const division* last = nullptr;
+			for (auto& p : children)
 			{
 				if (!(p->display))
 					continue;
@@ -1084,7 +1121,7 @@ namespace nana
 		{
 			auto const vert = (div->div_owner && (div->div_owner->kind_of_division == kind::vertical_arrange));
 
-			auto weight_floor = (vert? div->run_.weight_floor.second : div->run_.weight_floor.first);
+			auto weight_floor = (vert ? div->run_.weight_floor.second : div->run_.weight_floor.first);
 
 			if (!div->min_px.empty())
 			{
@@ -1123,18 +1160,29 @@ namespace nana
 			return margin.area(field_area, dm);
 		}
 
-		division * previous() const noexcept
+		size_t index() const noexcept
 		{
 			if (div_owner)
 			{
-				for (auto & child : div_owner->children)
+				for (size_t i = 0; i < div_owner->children.size(); ++i)
+					if (div_owner->children[i].get() == this)
+						return i;
+			}
+			return std::string::npos;
+		}
+
+		division* previous() const noexcept
+		{
+			if (div_owner)
+			{
+				for (auto& child : div_owner->children)
 					if (child->div_next == this)
 						return child.get();
 			}
 			return nullptr;
 		}
 	public:
-		double _m_extend_with_margin(std::size_t edge, double & extended)
+		double _m_extend_with_margin(std::size_t edge, double& extended)
 		{
 			auto margin_edge = margin.get_edge(edge);
 			if (!margin_edge.empty())
@@ -1147,9 +1195,9 @@ namespace nana
 			return 0;
 		}
 
-		static void _m_visible_for_child(division * div, bool vsb) noexcept
+		static void _m_visible_for_child(division* div, bool vsb) noexcept
 		{
-			for (auto & child : div->children)
+			for (auto& child : div->children)
 			{
 				if (child->field && (!vsb || child->visible))
 					child->field->visible(vsb);
@@ -1170,20 +1218,20 @@ namespace nana
 		bool visible{ true };
 		fit_policy fit{ fit_policy::none };
 		repeated_array fit_parameters; //it is ignored when fit is not fit_policy::horz or fit_policy::vert
-		::nana::direction dir{::nana::direction::west};
+		::nana::direction dir{ ::nana::direction::west };
 		std::string name;
 		std::vector<std::unique_ptr<division>> children;
 
 		::nana::rectangle field_area;
 		number_t weight;
-		token    weigth_type=token::weight;
+		token    weigth_type = token::weight;
 		number_t min_px, max_px;
 
 		place_parts::margin	margin;
 		place_parts::repeated_array gap;
-		field_gather * field{ nullptr };
-		division * div_next{ nullptr };
-		division * div_owner{ nullptr };
+		field_gather* field{ nullptr };
+		division* div_next{ nullptr };
+		division* div_owner{ nullptr };
 
 		struct run_data
 		{
@@ -1203,12 +1251,29 @@ namespace nana
 
 		void enter_size_move() override
 		{
+			for (auto& child : children)
+			{
+				if (child->kind_of_division == kind::splitter)
+					continue;
 
+				child->enter_size_move();
+			}
 		}
 
 		void exit_size_move() override
 		{
+			for (auto& child : children)
+			{
+				if (child->kind_of_division == kind::splitter)
+					continue;
 
+				child->exit_size_move();
+			}
+		}
+
+		bool is_vertical() const
+		{
+			return kind::arrange != kind_of_division;
 		}
 
 		void collocate(window wd) override
@@ -1230,8 +1295,8 @@ namespace nana
 
 			for (auto& child_ptr : children)					/// First collocate child div's !!!
 			{
-                auto child = child_ptr.get();
-				if(!child->display)	//Ignore the division if the corresponding field is not displayed.
+				auto child = child_ptr.get();
+				if (!child->display)	//Ignore the division if the corresponding field is not displayed.
 					continue;
 
 				rectangle_rotator child_area(vert, child->field_area);
@@ -1272,19 +1337,30 @@ namespace nana
 				if (child->kind_of_division == kind::splitter)
 					delay_collocates.emplace_back(child);
 				else
+				{
+					if (kind::dockpane == child->kind_of_division)
+					{
+						if (child->weight.empty() || child->is_fixed())
+							child->weight.assign_percent((child_px / area_px) * 100);
+					}
 					child->collocate(wd);	/// The child div have full position. Now we can collocate  inside it the child fields and child-div.
-            }
+				}
+			}
 
 			for (auto child : delay_collocates)
 				child->collocate(wd);
 
+			if (weight.empty())
+			{
+
+			}
 			if (visible && display && field)
 			{
 				auto element_r = area;
 				std::size_t index = 0;
 				double precise_px = 0;
 
-				for (auto & el : field->elements)
+				for (auto& el : field->elements)
 				{
 					element_r.x_ref() = static_cast<int>(position);
 
@@ -1324,10 +1400,10 @@ namespace nana
 					++index;
 				}
 
-				for (auto & fsn : field->fastened)
+				for (auto& fsn : field->fastened)
 					api::move_window(fsn.handle, area_margined);
 			}
-        }
+		}
 	private:
 		static std::pair<unsigned, std::size_t> _m_calc_fa(const place_parts::number_t& number, unsigned area_px, double& precise_px, const place_parts::display_metrics& dm)
 		{
@@ -1405,7 +1481,7 @@ namespace nana
 
 		struct revised_division
 		{
-			division * div;
+			division* div;
 			double min_px;
 			double max_px;
 		};
@@ -1414,7 +1490,7 @@ namespace nana
 		{
 			double v = (std::numeric_limits<double>::max)();
 
-			for(auto & rev : revises)
+			for (auto& rev : revises)
 			{
 				if (rev.min_px >= 0 && rev.min_px < v && rev.min_px > level_px)
 					v = rev.min_px;
@@ -1448,8 +1524,8 @@ namespace nana
 
 		/// return the amount of pixels for each adjustable item 
 		double _m_revise_adjustable(std::pair<unsigned, std::size_t>& fa, // fixed pixels and number of adjustable items
-			                        unsigned area_px, 
-			                        const place_parts::display_metrics& dm)
+			unsigned area_px,
+			const place_parts::display_metrics& dm)
 		{
 			if (fa.first >= area_px || 0 == fa.second)
 				return 0;
@@ -1466,7 +1542,7 @@ namespace nana
 					continue;
 
 				double min_px = std::numeric_limits<double>::lowest(), // -max
-					   max_px = std::numeric_limits<double>::lowest();
+					max_px = std::numeric_limits<double>::lowest();
 
 				if (!child->min_px.empty())
 					min_px = child->min_px.get_value(static_cast<int>(area_px), dm);
@@ -1475,7 +1551,7 @@ namespace nana
 				if ((weight_floor > 0) && (min_px < weight_floor))
 					min_px = weight_floor;
 
-				if(!child->min_px.empty() || (weight_floor > 0))
+				if (!child->min_px.empty() || (weight_floor > 0))
 				{
 					sum_min_px += min_px;
 					++min_count;
@@ -1486,7 +1562,7 @@ namespace nana
 
 				if (min_px >= 0 && max_px >= 0 && min_px > max_px)
 				{
-					if(weight_floor > 0)
+					if (weight_floor > 0)
 						max_px = min_px;
 					else if (child->min_px.kind_of() == number_t::kind::percent)
 						min_px = std::numeric_limits<double>::lowest();
@@ -1524,7 +1600,7 @@ namespace nana
 
 				block_px = lowest;
 				if (blocks > min_count)
-					rest_px -= (lowest-level_px) * (blocks - min_count);
+					rest_px -= (lowest - level_px) * (blocks - min_count);
 
 				std::size_t full_count;
 				min_count -= _m_remove_revised(revises, lowest, full_count);
@@ -1576,10 +1652,10 @@ namespace nana
 			//Remove the overlapped collapses
 			for (std::size_t i = 0; i < collapses_.size() - 1; ++i)
 			{
-				auto & col = collapses_[i];
+				auto& col = collapses_[i];
 				for (auto u = i + 1; u != collapses_.size();)
 				{
-					auto & z = collapses_[u];
+					auto& z = collapses_[u];
 					if (col.is_hit(z.x, z.y) || col.is_hit(z.right(), z.y) || col.is_hit(z.x, z.bottom()) || col.is_hit(z.right(), z.bottom()))
 						collapses_.erase(collapses_.begin() + u);
 					else
@@ -1587,7 +1663,7 @@ namespace nana
 				}
 			}
 
-			for (auto & col : collapses_)
+			for (auto& col : collapses_)
 			{
 				if (col.right() >= static_cast<int>(dimension.first))
 					col.width = dimension.first - static_cast<unsigned>(col.x);
@@ -1663,7 +1739,7 @@ namespace nana
 					const double block_h = int(area.height - gap_size * (dimension.second - 1)) / double(dimension.second);
 
 					std::unique_ptr<char[]> table_ptr{ new char[dimension.first * dimension.second] };
-					char *table = table_ptr.get();
+					char* table = table_ptr.get();
 					std::memset(table, 0, dimension.first * dimension.second);
 
 					std::size_t lbp = 0;
@@ -1724,7 +1800,7 @@ namespace nana
 			for (; i != end; ++i)
 				api::window_size(i->handle, size{});
 
-			for (auto & fsn : field->fastened)
+			for (auto& fsn : field->fastened)
 				api::move_window(fsn.handle, area);
 		}
 	public:
@@ -1732,7 +1808,7 @@ namespace nana
 	private:
 		void _m_find_collapse(int x, int y, std::pair<unsigned, unsigned>& collapse) const noexcept
 		{
-			for (auto & col : collapses_)
+			for (auto& col : collapses_)
 			{
 				if (col.x == x && col.y == y)
 				{
@@ -1752,7 +1828,7 @@ namespace nana
 	{
 		struct div_block
 		{
-			division * div;
+			division* div;
 			int	pixels;
 			double		scale;
 
@@ -1761,12 +1837,23 @@ namespace nana
 			{}
 		};
 
-		enum{splitter_px = 4};
+		enum { splitter_px = 4 };
 	public:
-		div_splitter(const place_parts::number_t & init_weight, implement* impl) noexcept :
+		div_splitter(const place_parts::number_t& init_weight, implement* impl) noexcept :
 			division(kind::splitter, std::string()),
 			impl_(impl),
 			init_weight_(init_weight)
+		{
+			impl->splitters.insert(this);
+			this->splitter_.set_renderer(impl_->split_renderer);
+
+			this->weight.assign(splitter_px);
+		}
+
+		div_splitter(implement* impl) noexcept :
+			division(kind::splitter, std::string()),
+			impl_(impl),
+			init_weight_{ }
 		{
 			impl->splitters.insert(this);
 			this->splitter_.set_renderer(impl_->split_renderer);
@@ -1779,7 +1866,7 @@ namespace nana
 			impl_->splitters.erase(this);
 		}
 
-		void set_renderer(const std::function<void(window, paint::graphics&, mouse_action)> & fn, bool update)
+		void set_renderer(const std::function<void(window, paint::graphics&, mouse_action)>& fn, bool update)
 		{
 			this->splitter_.set_renderer(fn);
 			if (update && this->splitter_.handle())
@@ -1847,9 +1934,11 @@ namespace nana
 						left_pixels_ = area_left.*px_ptr;
 						right_pixels_ = area_right.*px_ptr;
 
+						leaf_left->enter_size_move();
+						leaf_right->enter_size_move();
 						grabbed_ = true;
 					}
-					else if(event_code::mouse_up == arg.evt_code)
+					else if (event_code::mouse_up == arg.evt_code)
 					{
 						grabbed_ = false;
 						this->_m_update_div(impl_->div_text);
@@ -1859,10 +1948,15 @@ namespace nana
 						//position of the splitter field. It may cause deviation that new splitter field position is not same with the position of
 						//splitter window after dragging a bit, because the field position is calcuated with left/right fields's weights which are float-point values.
 						splitter_.move(this->field_area);
+
+						leaf_left->exit_size_move();
+						leaf_right->exit_size_move();
+
+						impl_->print_debug();
 					}
 					else if (event_code::mouse_move == arg.evt_code)
 					{
-						if(!grabbed_)
+						if (!grabbed_)
 							return;
 
 						auto const vert = (::nana::cursor::size_we != splitter_cursor_);
@@ -1895,7 +1989,7 @@ namespace nana
 					}
 				};
 
-				auto & events = splitter_.events();
+				auto& events = splitter_.events();
 				events.mouse_down.connect_unignorable(grab_fn);
 				events.mouse_up.connect_unignorable(grab_fn);
 				events.mouse_move.connect_unignorable(grab_fn);
@@ -1957,7 +2051,7 @@ namespace nana
 				return 0;
 			}
 
-			for (auto & child : div->children)
+			for (auto& child : div->children)
 			{
 				if (child->name.size())
 				{
@@ -2102,7 +2196,7 @@ namespace nana
 			}
 		}
 
-		division * _m_leaf(bool left) const noexcept
+		division* _m_leaf(bool left) const noexcept
 		{
 			return (left ? previous() : div_next);
 		}
@@ -2144,7 +2238,7 @@ namespace nana
 		}
 	private:
 		implement* const impl_;
-		nana::cursor	splitter_cursor_{nana::cursor::arrow};
+		nana::cursor	splitter_cursor_{ nana::cursor::arrow };
 		place_parts::splitter	splitter_;
 		nana::point	begin_point_;
 		int			left_pos_, right_pos_;
@@ -2159,9 +2253,9 @@ namespace nana
 		: public division, public place_parts::dock_notifier_interface
 	{
 	public:
-		div_dockpane(std::string && name, implement* impl, direction pane_dir) noexcept
-			:	division(kind::dockpane, std::move(name)),
-				impl_ptr_{impl}
+		div_dockpane(std::string&& name, implement* impl, direction pane_dir) noexcept
+			: division(kind::dockpane, std::move(name)),
+			impl_ptr_{ impl }
 		{
 			dir = pane_dir;
 			this->display = false;
@@ -2169,11 +2263,14 @@ namespace nana
 
 		~div_dockpane() noexcept
 		{
+			std::cout << "bye bye div_dockpane. ";
 			if (dockable_field)
 			{
+				std::cout << "- dockarea.reset()";
 				dockable_field->dockarea.reset();
 				dockable_field->attached = nullptr;
 			}
+			std::cout << std::endl;
 		}
 
 		void enter_size_move() override
@@ -2223,7 +2320,7 @@ namespace nana
 				if (name.empty())
 					return;
 
-				auto &dock_ptr = impl_ptr_->docks[name];
+				auto& dock_ptr = impl_ptr_->docks[name];
 				if (!dock_ptr)
 					dock_ptr = new field_dock;
 
@@ -2231,7 +2328,7 @@ namespace nana
 				dockable_field = dock_ptr;
 			}
 
-			auto & dockarea = dockable_field->dockarea;
+			auto& dockarea = dockable_field->dockarea;
 			if (dockarea && !dockarea->floating())
 				dockarea->move(this->field_area);
 		}
@@ -2239,110 +2336,122 @@ namespace nana
 		//Implement dock_notifier_interface
 		void notify_float() override
 		{
-			set_display(false);
+			impl_ptr_->float_dock_pane(this);
+
 			impl_ptr_->collocate();
+			impl_ptr_->print_debug();
 		}
 
 		void notify_dock() override
 		{
-			indicator_.docker.reset();
+			impl_ptr_->hide_indicators();
 
-			set_display(true);
-			impl_ptr_->collocate();
+			//impl_ptr_->collocate();
+			//impl_ptr_->print_debug();
 		}
 
 		void notify_move() override
 		{
-			if (!_m_hit_test(false)) //hit test on indicator
+			if (!_m_hit_window())
 			{
-				indicator_.docker.reset();
+				impl_ptr_->hide_indicators();
+				target_pane_dock_ = nullptr;
 				return;
 			}
 
-			if (!indicator_.docker)
+			auto previous_target_pane_dock = target_pane_dock_;
+			auto previous_target_position = target_dock_position_;
+			auto pane = impl_ptr_->hit_panes_or_dock();
+			target_pane_dock_ = pane;
+			if (pane)
 			{
-				auto host_size = api::window_size(impl_ptr_->window_handle);
-				indicator_.docker.reset(new form(impl_ptr_->window_handle, { static_cast<int>(host_size.width) / 2 - 16, static_cast<int>(host_size.height) / 2 - 16, 32, 32 }, form::appear::bald<>()));
-				drawing dw(indicator_.docker->handle());
-				dw.draw([](paint::graphics& graph)
-				{
-					graph.rectangle(false, colors::midnight_blue);
-					graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
-
-					facade<element::arrow> arrow;
-					arrow.direction(::nana::direction::south);
-					arrow.draw(graph, colors::light_sky_blue, colors::midnight_blue, { 12, 0, 16, 16 }, element_state::normal);
-
-					graph.rectangle({ 4, 16, 24, 11 }, true, colors::midnight_blue);
-					graph.rectangle({ 5, 19, 22, 7 }, true, colors::button_face);
-				});
-
-				indicator_.docker->z_order(nullptr, ::nana::z_order_action::topmost);
-				indicator_.docker->show();
-
-				indicator_.docker->events().destroy.connect([this](const arg_destroy&)
-				{
-					if (indicator_.dock_area)
-					{
-						indicator_.dock_area.reset();
-						indicator_.graph.release();
-					}
-				});
+				impl_ptr_->show_pane_indicators(pane);
+			}
+			else
+			{
+				impl_ptr_->hide_pane_indicators();
 			}
 
-			if (_m_hit_test(true)) //hit test on docker
+			dock_position dockposition = dock_position::tab;
+			if (impl_ptr_->hit_indicators(&dockposition))
 			{
-				if (!indicator_.dock_area)
+				nana::rectangle indicator_area(pane->field_area);
+
+				target_dock_position_ = dockposition;
+
+				if (previous_target_pane_dock != target_pane_dock_ || previous_target_position != target_dock_position_)
 				{
-					set_display(true);
-					impl_ptr_->collocate();
-
-					indicator_.graph.make(api::window_size(impl_ptr_->window_handle));
-					api::window_graphics(impl_ptr_->window_handle, indicator_.graph);
-
-					indicator_.dock_area.reset(new panel<true>(impl_ptr_->window_handle, {}, false));
-					indicator_.dock_area->move(this->field_area);
-
-					::nana::drawing dw(indicator_.dock_area->handle());
-					dw.draw([this](paint::graphics& graph)
+					if (impl_ptr_->tab_indicator.dock_area)
 					{
-						indicator_.graph.paste(this->field_area, graph, 0, 0);
+						impl_ptr_->tab_indicator.dock_area.reset();
+						impl_ptr_->tab_indicator.graph.release();
+					}
 
-						const int border_px = 4;
-						rectangle r{ graph.size() };
-						int right = r.right();
-						int bottom = r.bottom();
+					if (dockposition == dock_position::right)
+					{
+						indicator_area.x += indicator_area.width >> 1;
+						indicator_area.width = indicator_area.width >> 1;
+					}
+					else if (dockposition == dock_position::left)
+					{
+						indicator_area.width = indicator_area.width >> 1;
+					}
+					else if (dockposition == dock_position::down)
+					{
+						indicator_area.y += indicator_area.height >> 1;
+						indicator_area.height = indicator_area.height >> 1;
+					}
+					else if (dockposition == dock_position::up)
+					{
+						indicator_area.height = indicator_area.height >> 1;
+					}
 
-						graph.blend(r.pare_off(border_px), colors::blue, 0.3);
+					impl_ptr_->tab_indicator.graph.make(api::window_size(impl_ptr_->window_handle));
+					api::window_graphics(impl_ptr_->window_handle, impl_ptr_->tab_indicator.graph);
 
-						::nana::color clr = colors::deep_sky_blue;
-						r.y = 0;
-						r.height = border_px;
-						graph.blend(r, clr, 0.5);
-						r.y = bottom - border_px;
-						graph.blend(r, clr, 0.5);
+					impl_ptr_->tab_indicator.dock_area.reset(new panel<true>(impl_ptr_->window_handle, {}, false));
+					impl_ptr_->tab_indicator.dock_area->move(indicator_area);
 
-						r.x = r.y = 0;
-						r.dimension(graph.size());
-						r.width = border_px;
-						graph.blend(r, clr, 0.5);
-						r.x = right - border_px;
-						graph.blend(r, clr, 0.5);
+					::nana::drawing dw(impl_ptr_->tab_indicator.dock_area->handle());
+					dw.draw([pane, this](paint::graphics& graph)
+						{
+							//impl_ptr_->tab_indicator.graph.paste(pane->field_area, graph, 0, 0);
 
-					});
+							const int border_px = 4;
+					rectangle r{ graph.size() };
+					int right = r.right();
+					int bottom = r.bottom();
 
-					api::bring_top(indicator_.dock_area->handle(), false);
-					indicator_.dock_area->show();
+					graph.blend(r.pare_off(border_px), colors::blue, 0.3);
+
+					::nana::color clr = colors::deep_sky_blue;
+					r.y = 0;
+					r.height = border_px;
+					graph.blend(r, clr, 0.5);
+					r.y = bottom - border_px;
+					graph.blend(r, clr, 0.5);
+
+					r.x = r.y = 0;
+					r.dimension(graph.size());
+					r.width = border_px;
+					graph.blend(r, clr, 0.5);
+					r.x = right - border_px;
+					graph.blend(r, clr, 0.5);
+
+						});
+
+					api::bring_top(impl_ptr_->tab_indicator.dock_area->handle(), false);
+					impl_ptr_->tab_indicator.dock_area->show();
 				}
 			}
 			else
 			{
-				set_display(false);
-				impl_ptr_->collocate();
-				if (indicator_.dock_area)
+				target_pane_dock_ = nullptr;
+
+				if (impl_ptr_->tab_indicator.dock_area)
 				{
-					indicator_.dock_area.reset();
-					indicator_.graph.release();
+					impl_ptr_->tab_indicator.dock_area.reset();
+					impl_ptr_->tab_indicator.graph.release();
 				}
 			}
 		}
@@ -2355,14 +2464,41 @@ namespace nana
 
 		void notify_move_stopped() override
 		{
-			//hit test on docker
-			if (_m_hit_test(true) && dockable_field && dockable_field->dockarea)
-				dockable_field->dockarea->dock();
-
 			if (dockable_field && dockable_field->dockarea)
 				dockable_field->dockarea->exit_size_move();
 
-			indicator_.docker.reset();
+			if ((impl_ptr_->hit_indicators()) &&
+				dockable_field && dockable_field->dockarea)
+			{
+				bool success = false;
+				if (impl_ptr_->is_dock_to_tab_pane(this, target_pane_dock_, target_dock_position_))
+				{
+					dockable_field->dockarea->dock();
+					success = impl_ptr_->dock_pane(this, target_pane_dock_, target_dock_position_);
+
+					auto ptr = this;
+					api::at_safe_place(impl_ptr_->window_handle, [ptr]
+						{
+							// remove this dockpane
+							std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
+						});
+				}
+				else
+				{
+					dockable_field->dockarea->dock();
+					success = impl_ptr_->dock_pane(this, target_pane_dock_, target_dock_position_);
+				}
+
+				if (success)
+				{
+					impl_ptr_->collocate();
+					impl_ptr_->print_debug();
+					API::refresh_window(impl_ptr_->window_handle);
+				}
+			}
+
+			impl_ptr_->hide_indicators();
+			target_pane_dock_ = nullptr;
 		}
 
 		void request_close() override
@@ -2371,48 +2507,31 @@ namespace nana
 
 			//a workaround for capture
 			auto ptr = dockable_field->dockarea.release();
-			api::at_safe_place(window_handle, [ptr]
-			{
-				std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
-			});
-
-			this->set_display(false);
-			impl_ptr_->collocate();
+			auto imp = impl_ptr_;
+			api::at_safe_place(window_handle, [ptr, imp, this]
+				{
+					std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
+			imp->remove_dock_pane(this);
+			imp->collocate();
+			imp->print_debug();
+				});
 
 			api::close_window(window_handle);
 		}
 	private:
-		bool _m_hit_test(bool try_docker) const
+		bool _m_hit_window() const
 		{
-			window handle = nullptr;
-			if (try_docker)
-			{
-				if (!indicator_.docker)
-					return false;
-
-				handle = indicator_.docker->handle(); //hit test for docker
-			}
-			else
-				handle = impl_ptr_->window_handle;	//hit test for indicator
-
 			point pos;
-			api::calc_screen_point(handle, pos);
-			return rectangle{ pos, api::window_size(handle) }.is_hit(api::cursor_position());
+			api::calc_screen_point(impl_ptr_->window_handle, pos);
+			return rectangle{ pos, api::window_size(impl_ptr_->window_handle) }.is_hit(api::cursor_position());
 		}
 	public:
-		field_dock * dockable_field{ nullptr };
+		field_dock* dockable_field{ nullptr };
 
-		std::unique_ptr<widget>	splitter;
+		division* target_pane_dock_{ nullptr };
+		dock_position target_dock_position_{ dock_position::tab };
 	private:
-		implement * impl_ptr_;
-
-		//
-		struct indicator_rep
-		{
-			paint::graphics graph;
-			std::unique_ptr<panel<true>> dock_area;
-			std::unique_ptr<form> docker;
-		}indicator_;
+		implement* impl_ptr_;
 	};
 
 	class place::implement::div_dock
@@ -2509,7 +2628,7 @@ namespace nana
 					}
 				};
 
-				auto & evt = this->events();
+				auto& evt = this->events();
 				evt.mouse_down.connect(grab_fn);
 				evt.mouse_up.connect(grab_fn);
 				evt.mouse_move.connect(grab_fn);
@@ -2531,13 +2650,13 @@ namespace nana
 
 		};
 	public:
-		div_dock(std::string && name, implement* impl) noexcept
+		div_dock(std::string&& name, implement* impl) noexcept
 			: division(kind::dock, std::move(name)), impl_(impl)
 		{}
 
 		division* front() const noexcept
 		{
-			for (auto & child : children)
+			for (auto& child : children)
 			{
 				if (child->display)
 					return child.get();
@@ -2550,6 +2669,9 @@ namespace nana
 		{
 			for (auto& child : children)
 			{
+				if (child->kind_of_division == kind::splitter)
+					continue;
+
 				child->enter_size_move();
 			}
 		}
@@ -2558,6 +2680,9 @@ namespace nana
 		{
 			for (auto& child : children)
 			{
+				if (child->kind_of_division == kind::splitter)
+					continue;
+
 				child->exit_size_move();
 			}
 		}
@@ -2573,7 +2698,7 @@ namespace nana
 			bool is_first = true;
 			bool prev_attr = false;
 
-			for (auto & child : children)
+			for (auto& child : children)
 			{
 				if (!child->display)
 					continue;
@@ -2606,16 +2731,10 @@ namespace nana
 			double top = area.y;
 			double bottom = area.bottom();
 
-			for (auto & child : children)
+			for (auto& child : children)
 			{
 				if (!child->display)
-				{
-					auto child_dv = dynamic_cast<div_dockpane*>(child.get());
-					if (child_dv)
-						child_dv->splitter.reset();
-
 					continue;
-				}
 
 				auto child_dv = dynamic_cast<div_dockpane*>(child.get());
 				const bool is_vert = is_vert_dir(child->dir);
@@ -2632,23 +2751,7 @@ namespace nana
 				else
 					weight = room_px / double(is_vert ? vert_count : horz_count);
 
-				splitter* split = nullptr;
-				if (_m_right(child_dv))
-				{
-					//Creates a splitbar if the 'right' leaf is not empty
-					if (!child_dv->splitter)
-					{
-						split = new splitter(impl_->window_handle, child->dir, this, child_dv);
-						child_dv->splitter.reset(split);
-					}
-					else
-						split = dynamic_cast<splitter*>(child_dv->splitter.get());
-				}
-				else
-					child_dv->splitter.reset();
-
 				::nana::rectangle child_r;
-				double split_range_begin = -1, split_range_end = 0;
 				switch (child->dir)
 				{
 				default:
@@ -2658,13 +2761,6 @@ namespace nana
 					child_r.width = static_cast<unsigned>(weight);
 					child_r.height = static_cast<unsigned>(bottom - top);
 					left += weight;
-					if (split)
-					{
-						split->move(rectangle{ child_r.right(), child_r.y, splitter_px, child_r.height });
-						split_range_begin = left - weight;
-						split_range_end = right - static_cast<int>(splitter_px);
-						left += splitter_px;
-					}
 					break;
 				case ::nana::direction::east:
 					right -= weight;
@@ -2672,13 +2768,6 @@ namespace nana
 					child_r.y = static_cast<int>(top);
 					child_r.width = static_cast<unsigned>(weight);
 					child_r.height = static_cast<unsigned>(bottom - top);
-					if (split)
-					{
-						split->move(rectangle{ child_r.x - static_cast<int>(splitter_px), child_r.y, splitter_px, child_r.height });
-						split_range_begin = left;
-						split_range_end = right - static_cast<int>(splitter_px)+weight;
-						right -= splitter_px;
-					}
 					break;
 				case ::nana::direction::north:
 					child_r.x = static_cast<int>(left);
@@ -2686,13 +2775,6 @@ namespace nana
 					child_r.width = static_cast<unsigned>(right - left);
 					child_r.height = static_cast<unsigned>(weight);
 					top += weight;
-					if (split)
-					{
-						split->move(rectangle{ child_r.x, child_r.bottom(), child_r.width, splitter_px });
-						split_range_begin = top - weight;
-						split_range_end = bottom - static_cast<int>(splitter_px);
-						top += splitter_px;
-					}
 					break;
 				case ::nana::direction::south:
 					child_r.x = static_cast<int>(left);
@@ -2700,18 +2782,8 @@ namespace nana
 					child_r.y = static_cast<int>(bottom);
 					child_r.width = static_cast<unsigned>(right - left);
 					child_r.height = static_cast<unsigned>(weight);
-					if (split)
-					{
-						bottom -= splitter_px;
-						split->move(rectangle{ child_r.x, child_r.y - static_cast<int>(splitter_px), child_r.width, splitter_px });
-						split_range_begin = top;
-						split_range_end = bottom + weight;
-					}
 					break;
 				}
-
-				if (split_range_begin > -0.5)
-					split->range(static_cast<int>(split_range_begin), static_cast<int>(split_range_end));
 
 				if (is_vert)
 				{
@@ -2742,14 +2814,14 @@ namespace nana
 			return nullptr;
 		}
 	private:
-		implement * const impl_;
+		implement* const impl_;
 	};
 
 	class place::implement::div_switchable
 		: public division
 	{
 	public:
-		div_switchable(std::string && name, implement*) noexcept:
+		div_switchable(std::string&& name, implement*) noexcept :
 			division(kind::switchable, std::move(name))
 		{}
 
@@ -2768,8 +2840,8 @@ namespace nana
 		{
 			const place_parts::display_metrics dm{ wd };
 
-			division * div = nullptr;
-			for (auto & child : children)
+			division* div = nullptr;
+			for (auto& child : children)
 			{
 				if (child->display)
 				{
@@ -2782,7 +2854,7 @@ namespace nana
 
 			//Hide other child fields.
 			rectangle empty_r{ this->margin_area(dm).position() , size{ 0, 0 } };
-			for (auto & child : children)
+			for (auto& child : children)
 			{
 				if (child.get() != div)
 				{
@@ -2793,23 +2865,118 @@ namespace nana
 		}
 	};
 
+	place::implement::implement()
+	{
+		pane_indicators.emplace_back(new dock_indicator{ dock_position::up });
+		pane_indicators.emplace_back(new dock_indicator{ dock_position::down });
+		pane_indicators.emplace_back(new dock_indicator{ dock_position::left });
+		pane_indicators.emplace_back(new dock_indicator{ dock_position::right });
+		pane_indicators.emplace_back(new dock_indicator{ dock_position::tab });
+	}
+
 	place::implement::~implement()
 	{
 		api::umake_event(event_destroy_handle);
 		api::umake_event(event_size_handle);
 		root_division.reset();
 
-		for (auto & pair : fields)
+		floating_divs.clear();
+
+		for (auto& pair : fields)
 			delete pair.second;
 
-		for (auto & dock : docks)
+		for (auto& dock : docks)
 			delete dock.second;
+	}
+
+	void place::implement::purge()
+	{
+		if (!root_division)
+			return;
+
+		std::function<void(implement::division* div)> _purge_fn;
+		_purge_fn = [&_purge_fn](implement::division* div)
+		{
+			if (!div)
+				return;
+
+			for (size_t i = 0; i < div->children.size(); ++i)
+			{
+				_purge_fn(div->children[i].get());
+
+				bool to_remove = false;
+
+				if (division::kind::dockpane == div->children[i]->kind_of_division)
+				{
+					// remove dockpane without pane
+					auto const dock = dynamic_cast<implement::div_dockpane*>(div->children[i].get());
+					if (!dock->dockable_field)
+						to_remove = true;
+				}
+				else if (division::kind::arrange == div->children[i]->kind_of_division)
+				{
+					if (div->children[i]->children.empty())
+						to_remove = true;
+					else if (div->children[i]->children.size() == 1)
+					{
+						std::unique_ptr<implement::division> child = std::move(div->children[i]->children[0]);
+
+						child->div_owner = div->children[i]->div_owner;
+						child->weight = div->children[i]->weight;
+
+						div->children[i] = std::move(child);
+					}
+				}
+
+				if (to_remove)
+				{
+					if (i == div->children.size() - 1)
+					{
+						div->children.pop_back();
+
+						// remove the splitter bar
+						if (div->children.size())
+							div->children.pop_back();
+					}
+					else
+					{
+						div->children.erase(div->children.begin() + i);
+
+						// remove the splitter bar
+						if (div->children.size())
+							div->children.erase(div->children.begin() + i);
+
+						--i;
+					}
+				}
+			}
+		};
+
+		_purge_fn(root_division.get());
+
+		//while (root_division->children.size() == 1)
+		//{
+		//	if (division::kind::arrange == root_division->kind_of_division)
+		//	{
+		//		std::unique_ptr<implement::division> child;
+		//		child.swap(root_division->children[0]);
+
+		//		child->div_owner = root_division->div_owner;
+		//		child->field_area = root_division->field_area;
+
+		//		root_division.swap(child);
+		//	}
+		//	else
+		//		break;
+		//}
 	}
 
 	void place::implement::collocate()
 	{
 		if (root_division && window_handle)
 		{
+			//purge();
+
 			root_division->field_area.dimension(api::window_size(window_handle));
 
 			if (root_division->field_area.empty())
@@ -2818,7 +2985,7 @@ namespace nana
 			root_division->calc_weight_floor(window_handle);
 			root_division->collocate(window_handle);
 
-			for (auto & field : fields)
+			for (auto& field : fields)
 			{
 				bool is_show = false;
 				if (field.second->attached && field.second->attached->visible && field.second->attached->display)
@@ -2844,9 +3011,63 @@ namespace nana
 		}
 	}
 
+	void place::implement::print_debug()
+	{
+#ifdef _DEBUG
+		if (!enabled_debug) return;
+
+		unsigned level = 0;
+
+		printf("\n - div() -\n");
+		if (!root_division)
+		{
+			printf("\t<empty>\n\n");
+			return;
+		}
+
+		auto wd = window_handle;
+		std::function<void(implement::division* div)> print_fn;
+		print_fn = [wd, &print_fn, &level](implement::division* div)
+		{
+			const place_parts::display_metrics dm{ wd };
+
+			for (unsigned i = 0; i < level; ++i)
+				printf("\t");
+
+			if (division::kind::splitter == div->kind_of_division)
+				printf("| splitter (%s)\n", div->kind_of_division == division::kind::vertical_arrange ? "V" : "H");
+			else
+			{
+				printf("%s [%.2f", div->name.size() ? div->name.c_str() : "empty", div->weight.get_value(100, dm));
+				if (div->is_percent())
+					printf("%%] - ");
+				else
+					printf("] - ");
+
+				if (division::kind::dock == div->kind_of_division)
+					printf("dock\n");
+				else if (division::kind::dockpane == div->kind_of_division)
+					printf("dockpane\n");
+				else if (division::kind::arrange == div->kind_of_division || division::kind::vertical_arrange == div->kind_of_division)
+					printf("arrange (%s)\n", div->kind_of_division == division::kind::vertical_arrange ? "V" : "H");
+				else
+					printf("unknown !!!\n");
+			}
+
+			++level;
+			for (auto& child : div->children)
+				print_fn(child.get());
+			--level;
+		};
+
+		print_fn(root_division.get());
+		printf("\n\n");
+#endif
+	}
+
 	//search_div_name
 	//search a division with the specified name.
-	place::implement::division * place::implement::search_div_name(division* start, const std::string& name) noexcept
+	place::implement::division* place::implement::search_div_name(division* start, const std::string& name) noexcept
 	{
 		if (start)
 		{
@@ -2865,7 +3086,7 @@ namespace nana
 
 	static int get_parameter(place_parts::tokenizer& tknizer, std::size_t pos)
 	{
-		auto & arg = tknizer.parameters()[pos];
+		auto& arg = tknizer.parameters()[pos];
 
 		if (arg.kind_of() == number_t::kind::integer)
 			return arg.integer();
@@ -2873,7 +3094,7 @@ namespace nana
 			return static_cast<int>(arg.real());
 
 		const char* pos_strs[] = { "1st", "2nd", "3rd", "4th" };
-		throw place_parts::tokenizer::error("the type of the " + std::string{pos_strs[pos]} +" parameter for collapse should be integer.", tknizer);
+		throw place_parts::tokenizer::error("the type of the " + std::string{ pos_strs[pos] } + " parameter for collapse should be integer.", tknizer);
 	}
 
 	/// Parse div-text
@@ -2883,10 +3104,10 @@ namespace nana
 	 */
 	auto place::implement::scan_div(place_parts::tokenizer& tknizer, bool implicitly_started, const std::string& ignore_duplicate) -> std::unique_ptr<division>
 	{
-		using token = place_parts::tokenizer::token ;
+		using token = place_parts::tokenizer::token;
 
 		std::unique_ptr<division> div;
-		token div_type = token::eof , weight_type=token::weight;
+		token div_type = token::eof, weight_type = token::weight;
 		auto fit = fit_policy::none;
 		place_parts::repeated_array fit_parameters;
 
@@ -3078,7 +3299,7 @@ namespace nana
 			if (implicitly_started && (tk == token::div_end))
 				throw std::invalid_argument("the div-text ends prematurely");
 
-			field_gather * attached_field = nullptr;
+			field_gather* attached_field = nullptr;
 
 			//find the field with specified name.
 			//the field may not be created.
@@ -3253,8 +3474,8 @@ namespace nana
 			div->fit = fit;
 			div->fit_parameters = std::move(fit_parameters);
 		}
-		catch (place::error& ) { throw; }
-		catch (       error& ) { throw; }
+		catch (place::error&) { throw; }
+		catch (error&) { throw; }
 		catch (place_parts::tokenizer::error& e)
 		{
 			throw error(e.what(), name, e.pos);
@@ -3265,7 +3486,7 @@ namespace nana
 		}
 		catch (std::exception& e)
 		{
-			throw error(std::string{"unexpected error: "}+e.what(), name, tknizer.pos());
+			throw error(std::string{ "unexpected error: " } + e.what(), name, tknizer.pos());
 		}
 		catch (...)
 		{
@@ -3287,13 +3508,13 @@ namespace nana
 		{
 			if (!div->name.empty())
 			{
-				auto & ptr = unique[div->name];
+				auto& ptr = unique[div->name];
 				if (ptr)
 					throw std::invalid_argument("place, the name '" + div->name + "' is redefined.");
 				ptr = &tmp;
 			}
 
-			for (auto & child : div->children)
+			for (auto& child : div->children)
 			{
 				check_fn(child.get());
 			}
@@ -3315,7 +3536,7 @@ namespace nana
 
 		std::map<std::string, field_dock*> docks_to_be_closed;
 		//disconnect
-		for (auto & dk : docks)
+		for (auto& dk : docks)
 		{
 			if (dk.second->attached)
 				docks_to_be_closed[dk.first] = dk.second;
@@ -3360,7 +3581,7 @@ namespace nana
 
 			}
 
-			for (auto & child : div->children)
+			for (auto& child : div->children)
 			{
 				connect_fn(child.get());
 			}
@@ -3378,7 +3599,7 @@ namespace nana
 
 	void place::implement::disconnect() noexcept
 	{
-		for (auto & fd : fields)
+		for (auto& fd : fields)
 		{
 			if (fd.second->attached)
 			{
@@ -3386,6 +3607,713 @@ namespace nana
 				fd.second->attached = nullptr;
 			}
 		}
+	}
+
+	bool place::implement::is_vertical(dock_position position)
+	{
+		return (dock_position::up == position || dock_position::down == position) ? true : false;
+	}
+
+	void place::implement::hide_pane_indicators()
+	{
+		for (auto& i : pane_indicators)
+			i->docker.reset();
+	}
+
+	void place::implement::hide_indicators()
+	{
+		hide_pane_indicators();
+		if (tab_indicator.dock_area)
+		{
+			tab_indicator.dock_area.reset();
+			tab_indicator.graph.release();
+		}
+	}
+
+	void place::implement::show_pane_indicators(division* div)
+	{
+		if (!div)
+			return;
+
+		for (auto& i : pane_indicators)
+		{
+			auto x = div->field_area.x + static_cast<int>(div->field_area.width) / 2;
+			auto y = div->field_area.y + static_cast<int>(div->field_area.height) / 2;
+
+			if (implement::division::kind::dock == div->kind_of_division && dock_position::tab != i->position)
+			{
+				if (i->docker)
+					i->docker.reset();
+
+				continue;
+			}
+
+			if (!i->docker)
+			{
+				if (dock_position::up == i->position)
+				{
+					auto pos = point(x - 16, y - 16 - 32 - 8);
+					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
+					i->delta = i->docker->pos() - pos;
+					drawing dw(i->docker->handle());
+					dw.draw([](paint::graphics& graph)
+						{
+							graph.rectangle(false, colors::midnight_blue);
+					graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
+
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(::nana::direction::north);
+					arrow.draw(graph, colors::light_sky_blue, colors::midnight_blue, { 8, 14, 16, 16 }, element_state::normal);
+
+					graph.rectangle({ 4, 5, 24, 11 }, true, colors::midnight_blue);
+					graph.rectangle({ 5, 8, 22, 7 }, true, colors::button_face);
+						});
+				}
+				else if (dock_position::down == i->position)
+				{
+					auto pos = point(x - 16, y + 16 + 8);
+					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
+					i->delta = i->docker->pos() - pos;
+					drawing dw(i->docker->handle());
+					dw.draw([](paint::graphics& graph)
+						{
+							graph.rectangle(false, colors::midnight_blue);
+					graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
+
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(::nana::direction::south);
+					arrow.draw(graph, colors::light_sky_blue, colors::midnight_blue, { 8, 1, 16, 16 }, element_state::normal);
+
+					graph.rectangle({ 4, 16, 24, 11 }, true, colors::midnight_blue);
+					graph.rectangle({ 5, 19, 22, 7 }, true, colors::button_face);
+						});
+				}
+				else if (dock_position::left == i->position)
+				{
+					auto pos = point(x - 16 - 32 - 16, y - 16);
+					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
+					i->delta = i->docker->pos() - pos;
+					drawing dw(i->docker->handle());
+					dw.draw([](paint::graphics& graph)
+						{
+							graph.rectangle(false, colors::midnight_blue);
+					graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
+
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(::nana::direction::west);
+					arrow.draw(graph, colors::light_sky_blue, colors::midnight_blue, { 16, 8, 16, 16 }, element_state::normal);
+
+					graph.rectangle({ 5, 4, 11, 24 }, true, colors::midnight_blue);
+					graph.rectangle({ 6, 7, 9, 20 }, true, colors::button_face);
+						});
+				}
+				else if (dock_position::right == i->position)
+				{
+					auto pos = point(x + 16 + 16, y - 16);
+					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
+					i->delta = i->docker->pos() - pos;
+					drawing dw(i->docker->handle());
+					dw.draw([](paint::graphics& graph)
+						{
+							graph.rectangle(false, colors::midnight_blue);
+					graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
+
+					facade<element::arrow> arrow("solid_triangle");
+					arrow.direction(::nana::direction::east);
+					arrow.draw(graph, colors::light_sky_blue, colors::midnight_blue, { 2, 8, 16, 16 }, element_state::normal);
+
+					graph.rectangle({ 17, 4, 11, 24 }, true, colors::midnight_blue);
+					graph.rectangle({ 18, 7, 9, 20 }, true, colors::button_face);
+						});
+				}
+				else if (dock_position::tab == i->position)
+				{
+					auto pos = point(x - 16, y - 16);
+					i->docker.reset(new form(window_handle, { pos.x, pos.y, 32, 32 }, form::appear::bald<>()));
+					i->delta = i->docker->pos() - pos;
+					drawing dw(i->docker->handle());
+					dw.draw([](paint::graphics& graph)
+						{
+							graph.rectangle(false, colors::midnight_blue);
+					graph.rectangle({ 1, 1, 30, 30 }, true, colors::light_sky_blue);
+
+					graph.rectangle({ 4, 4, 24, 11 + 12 }, true, colors::midnight_blue);
+					graph.rectangle({ 5, 7, 22, 7 + 12 }, true, colors::button_face);
+						});
+				}
+				else
+					continue;
+
+				i->docker->z_order(nullptr, ::nana::z_order_action::topmost);
+				i->docker->show();
+
+				i->docker->events().destroy.connect([this, &i](const arg_destroy&)
+					{
+						if (i->dock_area)
+						{
+							i->dock_area.reset();
+							i->graph.release();
+						}
+					});
+			}
+			else
+			{
+				if (dock_position::up == i->position)
+				{
+					auto pos = point(x - 16, y - 16 - 32 - 8);
+					i->docker->move(pos + i->delta);
+				}
+				else if (dock_position::down == i->position)
+				{
+					auto pos = point(x - 16, y + 16 + 8);
+					i->docker->move(pos + i->delta);
+				}
+				else if (dock_position::left == i->position)
+				{
+					auto pos = point(x - 16 - 32 - 16, y - 16);
+					i->docker->move(pos + i->delta);
+				}
+				else if (dock_position::right == i->position)
+				{
+					auto pos = point(x + 16 + 16, y - 16);
+					i->docker->move(pos + i->delta);
+				}
+				else if (dock_position::tab == i->position)
+				{
+					auto pos = point(x - 16, y - 16);
+					i->docker->move(pos + i->delta);
+				}
+				else
+					continue;
+			}
+		}
+	}
+
+	bool place::implement::hit_indicators(dock_position* position) const
+	{
+		for (auto& i : pane_indicators)
+		{
+			if (!i->docker)
+				continue;
+
+			point p;
+			API::calc_screen_point(i->docker->handle(), p);
+			if (rectangle{ p, API::window_size(i->docker->handle()) }.is_hit(API::cursor_position()))
+			{
+				if (position)
+					*position = i->position;
+				return true;
+			}
+		}
+		return false;
+
+	}
+
+	place::implement::division* place::implement::hit_panes_or_dock()
+	{
+		if (!root_division || division::kind::dockpane == root_division->kind_of_division)
+		{
+			std::cout << "null root division or kind = dockpane" << std::endl;
+			return nullptr;
+		}
+
+		std::function<implement::division* (implement::division* div)> hit_fn;
+		hit_fn = [&hit_fn, this](implement::division* div) -> implement::division*
+		{
+			if (division::kind::dockpane == div->kind_of_division)
+			{
+				point pos;
+				API::calc_screen_point(window_handle, pos);
+				if (rectangle{ pos + div->field_area.position(), div->field_area.dimension() }.is_hit(API::cursor_position()))
+					return div;
+			}
+
+			for (auto& child : div->children)
+			{
+				auto r = hit_fn(child.get());
+				if (r)
+					return r;
+			}
+
+			return nullptr;
+		};
+
+		auto result = hit_fn(root_division.get());
+		if (result == nullptr)
+		{
+			hit_fn = [&hit_fn, this](implement::division* div) -> implement::division*
+			{
+				if (division::kind::dock == div->kind_of_division)
+				{
+					point pos;
+					API::calc_screen_point(window_handle, pos);
+					if (rectangle{ pos + div->field_area.position(), div->field_area.dimension() }.is_hit(API::cursor_position()))
+						return div;
+				}
+
+				for (auto& child : div->children)
+				{
+					auto r = hit_fn(child.get());
+					if (r)
+						return r;
+				}
+
+				return nullptr;
+			};
+			result = hit_fn(root_division.get());
+		}
+		return result;
+	}
+
+	place::implement::division* place::implement::hit_dock()
+	{
+		point pos;
+		API::calc_screen_point(window_handle, pos);
+		if (rectangle{ pos + root_division->field_area.position(), root_division->field_area.dimension() }.is_hit(API::cursor_position()))
+			return root_division.get();
+		return nullptr;
+	}
+
+	bool place::implement::float_dock_pane(division* div)
+	{
+		auto owner = div->div_owner;
+		if (!owner)
+		{
+			return false;
+		}
+
+		for (size_t i = 0; i < owner->children.size(); ++i)
+		{
+			if (owner->children[i].get() == div)
+			{
+				// move the div to the support vector "floating_divs"
+				floating_divs.emplace_back(owner->children[i].release());
+				floating_divs.back()->div_owner = nullptr;
+				floating_divs.back()->div_next = nullptr;
+				floating_divs.back()->weight.reset();
+
+				// remove the children from the divs tree
+				if (i == owner->children.size() - 1)
+				{
+					owner->children.pop_back();
+
+					if (owner->children.size())
+					{
+						// remove the splitter bar
+						owner->children.pop_back();
+					}
+				}
+				else
+				{
+					owner->children.erase(owner->children.begin() + i);
+					if (owner->children.size())
+					{
+						// remove the splitter bar
+						owner->children.erase(owner->children.begin() + i);
+
+						if (i > 0 && i < owner->children.size())
+						{
+							owner->children[i - 1]->div_next = owner->children[i].get();
+						}
+					}
+				}
+
+				//if (owner->children.size() > 2)
+				//{
+				//	for (size_t j = 0; j < owner->children.size(); j+=2)
+				//	{
+				//		owner->children[j]->weight.reset();
+				//	}
+				//}
+
+				if (owner->children.size() == 1 &&
+					(owner->kind_of_division == division::kind::vertical_arrange || owner->kind_of_division == division::kind::arrange))
+				{
+					auto child = owner->children[0].release();
+
+					auto parent_owner = owner->div_owner;
+					if (parent_owner)
+					{
+						for (size_t j = 0; j < parent_owner->children.size(); j++)
+						{
+							if (parent_owner->children[j].get() == owner)
+							{
+								child->div_next = parent_owner->children[j]->div_next;
+								parent_owner->children[j].reset(child);
+								if (j > 0)
+									parent_owner->children[j - 1]->div_next = child;
+
+								parent_owner->weight.reset();
+								child->weight.reset();
+								child->div_owner = parent_owner;
+								break;
+							}
+						}
+					}
+				}
+				break;
+			}
+		}
+
+		return true;
+	}
+
+	bool place::implement::dock_pane(division* div, division* where_div, dock_position position)
+	{
+		size_t i_div = 0;
+		for (; i_div < floating_divs.size(); ++i_div)
+			if (floating_divs[i_div].get() == div)
+				break;
+
+		if (i_div == floating_divs.size())
+			return false;
+
+		if (!root_division)
+		{
+			//todo: add dock as root division first before div_dockpane
+			root_division.reset(div);
+			floating_divs.erase(floating_divs.begin() + i_div);
+			return true;
+		}
+		else
+		{
+			if (where_div == nullptr)
+			{
+				if (dock_position::tab == position)
+				{
+					floating_divs[i_div].release();
+					floating_divs.erase(floating_divs.begin() + i_div);
+					return true;
+				}
+				std::function<implement::division* (implement::division* div)> find_dock_fn;
+				find_dock_fn = [&find_dock_fn, this](implement::division* div) -> implement::division*
+				{
+					if (div == nullptr)
+						return nullptr;
+
+					if (implement::division::kind::dock == div->kind_of_division)
+						return div;
+
+					for (auto& child : div->children)
+					{
+						auto fd = find_dock_fn(child.get());
+						if (fd)
+							return fd;
+					}
+					return nullptr;
+				};
+
+				auto dock_root_div = find_dock_fn(root_division.get());
+				if (dock_root_div == nullptr)
+				{
+					throw std::exception("dock is not found");
+				}
+
+				if (dock_root_div->children.size() == 0)
+				{
+					div->div_owner = dock_root_div;
+					div->div_next = nullptr;
+					//div->weight.reset();
+					dock_root_div->children.emplace_back(std::move(floating_divs[i_div]));
+
+					floating_divs.erase(floating_divs.begin() + i_div);
+					return true;
+				}
+				else
+				{
+					//TODO
+					throw std::exception("not implemented");
+					return true;
+				}
+			}
+			else
+			{
+				if (implement::division::kind::dock == where_div->kind_of_division)
+				{
+					if (where_div->children.size() == 0)
+					{
+						div->div_owner = where_div;
+						div->div_next = nullptr;
+						//div->weight.reset();
+						where_div->children.emplace_back(std::move(floating_divs[i_div]));
+
+						floating_divs.erase(floating_divs.begin() + i_div);
+						return true;
+					}
+				}
+				if (dock_position::tab == position)
+				{
+					auto where_dockpane = reinterpret_cast<implement::div_dockpane*>(where_div);
+					auto div_dockpane = reinterpret_cast<implement::div_dockpane*>(div);
+
+					where_dockpane->dockable_field->dockarea->add_pane(*div_dockpane->dockable_field->dockarea);
+
+					floating_divs[i_div].release();
+					floating_divs.erase(floating_divs.begin() + i_div);
+
+					return true;
+				}
+
+				implement::division* dock_root_div = where_div;
+				while (dock_root_div != nullptr)
+				{
+					if (implement::division::kind::dock == dock_root_div->kind_of_division) {
+						break;
+					}
+					dock_root_div = dock_root_div->div_owner;
+				}
+
+				if (dock_root_div == nullptr)
+				{
+					throw std::exception("invalid dock operation. missing dock");
+					return false;
+				}
+
+				bool add_new_arrange = false;
+				if (implement::division::kind::dockpane == dock_root_div->children[0]->kind_of_division)
+				{
+					add_new_arrange = true;
+				}
+				else
+				{
+					// check direction of the div_arrange where to dock
+					auto where_owner = static_cast<div_arrange*>(where_div ? where_div->div_owner : dock_root_div);
+					if (where_owner->is_vertical() != (position == dock_position::up || position == dock_position::down))
+					{
+						// owner direction is different
+						add_new_arrange = true;
+					}
+				}
+
+				if (add_new_arrange)
+				{
+					std::unique_ptr<implement::division> where_uptr;
+					auto where_owner = where_div ? where_div->div_owner : dock_root_div;
+					size_t i_where = std::string::npos;
+
+					if (where_div)
+					{
+						i_where = where_div->index();
+						if (i_where == std::string::npos)
+							// divs tree corrupted
+							return false;
+
+						where_uptr = std::move(where_div->div_owner->children[i_where]);
+					}
+					place_parts::repeated_array arrange;
+					auto arrange_ptr = new implement::div_arrange(position == dock_position::up || position == dock_position::down, "", std::move(arrange));
+
+					if (where_div)
+					{
+						arrange_ptr->div_owner = where_div->div_owner;
+
+						// if field_area width and height are both zero let the system to decide the size
+						//if (where_uptr->field_area.width || where_uptr->field_area.height)
+						//{
+						//	arrange_ptr->weight.assign(static_cast<int>((dock_position == dock_position::up || dock_position == dock_position::down) ? where_uptr->field_area.width : where_uptr->field_area.height));
+						//}
+
+						/*auto dock_px = ((dock_position == dock_position::up || dock_position == dock_position::down) ?
+							where_uptr->field_area.height :
+							where_uptr->field_area.width);
+
+						arrange_ptr->weight.assign_percent(double(px) / double(dock_px) * 100);
+						*/
+					}
+					//auto splitter_ptr = new implement::div_splitter(this, dock_position == dock_position::up || dock_position == dock_position::down);
+					auto splitter_ptr = new implement::div_splitter(this);
+					splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
+					splitter_ptr->div_owner = arrange_ptr;
+
+					div->div_owner = arrange_ptr;
+					//if (div->weight.empty())
+					//{
+					//	div->weight.assign(static_cast<int>((dock_position == dock_position::up || dock_position == dock_position::down) ? div->field_area.height : div->field_area.width));
+
+					//	// check the available space and adjust the weight accordingly
+					//	int avail = ((dock_position == dock_position::up || dock_position == dock_position::down) ? where_uptr->field_area.height : where_uptr->field_area.width) - where_uptr->min_px.integer() - 5;//scheme.splitter_width;
+					//	if (div->weight.integer() == 0 || avail < 0 || div->weight.integer() >= avail)
+					//		div->weight.reset();
+					//}
+
+					where_uptr->div_owner = arrange_ptr;
+					/*if (!div->weight.empty())
+						where_uptr->weight.reset();*/
+
+					arrange_ptr->div_next = where_div->div_next;
+					if (position == dock_position::up ||
+						position == dock_position::left)
+					{
+						// DIV | WHERE
+
+						div->div_next = splitter_ptr;
+						splitter_ptr->div_next = where_uptr.get();
+
+						// append div
+						arrange_ptr->children.emplace_back(floating_divs[i_div].release());
+						// append splitter
+						arrange_ptr->children.emplace_back(splitter_ptr);
+						// append where
+						arrange_ptr->children.emplace_back(where_uptr.release());
+					}
+					else
+					{
+						// WHERE | DIV
+
+						where_uptr->div_next = splitter_ptr;
+						splitter_ptr->div_next = div;
+
+						// append where
+						arrange_ptr->children.emplace_back(where_uptr.release());
+						// append splitter
+						arrange_ptr->children.emplace_back(splitter_ptr);
+						// append div
+						arrange_ptr->children.emplace_back(floating_divs[i_div].release());
+						//arrange_ptr->children.emplace_back(div);
+					}
+
+					// remove div from detached divs
+					floating_divs.erase(floating_divs.begin() + i_div);
+
+					// append the new arrange
+					if (i_where == std::string::npos)
+					{
+						//TODO:
+						//root_division.reset(arrange_ptr);
+					}
+					else
+					{
+						where_owner->children[i_where].reset(arrange_ptr);
+
+						if (i_where > 0)
+						{
+							where_owner->children[i_where - 1]->div_next = arrange_ptr;
+						}
+					}
+				}
+				else
+				{
+					auto where_owner = where_div ? where_div->div_owner : dock_root_div;
+					size_t i_where = where_div ? where_div->index() : std::string::npos;
+
+					auto splitter_ptr = new implement::div_splitter(this);
+					splitter_ptr->direction(position == dock_position::left || position == dock_position::right);
+					splitter_ptr->div_owner = where_owner;
+
+					div->div_owner = where_owner;
+					int field_area_weight = static_cast<int>((position == dock_position::up || position == dock_position::down) ? div->field_area.height : div->field_area.width);
+					if (field_area_weight)
+					{
+						// NOTE: only works assumimg divs weight is percentage
+						int avail = (position == dock_position::up || position == dock_position::down) ? where_owner->field_area.height : where_owner->field_area.width;
+						// check available space
+						int splitters_px = 5; // new splitter
+						int divs_px = 0;
+						double divs_percent = 0.0;
+						for (auto& child : where_owner->children)
+						{
+						}
+					}
+
+					if (dock_position::up == position || dock_position::left == position)
+					{
+						if (i_where == std::string::npos)
+							i_where = 0;
+
+						// DIV | children[i_where]
+
+						// append div
+						where_owner->children.emplace(where_owner->children.begin() + i_where, floating_divs[i_div].release());
+						// append splitter
+						where_owner->children.emplace(where_owner->children.begin() + i_where + 1, splitter_ptr);
+					}
+					else
+					{
+						if (i_where == std::string::npos)
+							i_where = where_owner->children.size() - 1;
+
+						//auto float_div = floating_divs[i_div].get();
+
+						//where_owner->children[i_where]->div_next = splitter_ptr;
+						//splitter_ptr->div_next = float_div;
+
+						//float_div->div_next = where_owner->children[i_where + 1].get();
+						//float_div->div_next->div_next = where_owner->children[i_where + 2].get();
+
+						// children[i_where] | DIV
+
+						// append splitter
+						where_owner->children.emplace(where_owner->children.begin() + i_where + 1, splitter_ptr);
+						// append div
+						where_owner->children.emplace(where_owner->children.begin() + i_where + 2, floating_divs[i_div].release());
+					}
+
+					for (size_t i = 0; i < where_owner->children.size(); i += 2)
+					{
+						where_owner->children[i]->weight.reset();
+					}
+
+					for (size_t i = 0; i < where_owner->children.size(); ++i)
+					{
+						if (i == where_owner->children.size() - 1)
+							where_owner->children[i]->div_next = nullptr;
+						else
+							where_owner->children[i]->div_next = where_owner->children[i + 1].get();
+					}
+
+					// remove div from detached divs
+					floating_divs.erase(floating_divs.begin() + i_div);
+				}
+			}
+		}
+		return true;
+	}
+
+	bool place::implement::is_dock_to_tab_pane(division* div, division* where_div, dock_position position)
+	{
+		if (!root_division)
+		{
+			return false;
+		}
+		if (dock_position::tab == position)
+		{
+			if (where_div)
+			{
+				implement::division* dock_root_div = where_div;
+				while (dock_root_div != nullptr)
+				{
+					if (implement::division::kind::dock == dock_root_div->kind_of_division) {
+						break;
+					}
+					dock_root_div = dock_root_div->div_owner;
+				}
+				if (dock_root_div && implement::division::kind::dock == dock_root_div->kind_of_division && dock_root_div->children.size() > 0)
+				{
+					return true;
+				}
+			}
+
+		}
+		return false;
+	}
+
+	bool place::implement::remove_dock_pane(division* div)
+	{
+		// move div to detached divs vector
+		float_dock_pane(div);
+
+		size_t i_div = 0;
+		for (; i_div < floating_divs.size(); ++i_div)
+			if (floating_divs[i_div].get() == div)
+				break;
+
+		if (i_div == floating_divs.size())
+			return false;
+
+		//floating_divs[i_div].release();
+		// remove div from detached divs
+		floating_divs.erase(floating_divs.begin() + i_div);
+		return true;
 	}
 
 	//class place
@@ -3407,29 +4335,31 @@ namespace nana
 	void place::bind(window wd)
 	{
 		if (impl_->window_handle)
-			throw error(" bind('"+ api::window_caption(wd).substr(0, 80)
-			                + "'): it was already bound to another window.", *this);
+			throw error(" bind('" + api::window_caption(wd).substr(0, 80)
+				+ "'): it was already bound to another window.", *this);
 
 		impl_->window_handle = wd;
 		impl_->event_size_handle = api::events(wd).resized.connect_unignorable([this](const arg_resized& arg)
-		{
-			if (impl_->root_division)
 			{
-				impl_->root_division->field_area.dimension({ arg.width, arg.height });
-				impl_->root_division->calc_weight_floor(arg.window_handle);
-				impl_->root_division->collocate(arg.window_handle);
-			}
-		});
+				if (impl_->root_division)
+				{
+					impl_->root_division->field_area.dimension({ arg.width, arg.height });
+					impl_->root_division->calc_weight_floor(arg.window_handle);
+					impl_->root_division->collocate(arg.window_handle);
+
+					impl_->print_debug();
+				}
+			});
 
 		// Though the event handlers are automatically destructed, the handles should set to null when the window
 		// is closed before the place being destructed.
 		// Because if there is a new window being created immediately after the bound window, the new handles for
 		// the new window may have same value as member event_xxx_handle, in this situation, the event handler
 		// for the new window would be mistakenly deleted when destructs the place.
-		impl_->event_destroy_handle = api::events(wd).destroy.connect_unignorable([this](const arg_destroy&){
+		impl_->event_destroy_handle = api::events(wd).destroy.connect_unignorable([this](const arg_destroy&) {
 			impl_->event_size_handle = nullptr;
-			impl_->event_destroy_handle = nullptr;
-		});
+		impl_->event_destroy_handle = nullptr;
+			});
 	}
 
 	window place::window_handle() const
@@ -3457,22 +4387,22 @@ namespace nana
 			impl_->root_division.swap(div);
 			impl_->div_text.swap(div_text);
 		}
-		catch (place::error & ) { throw; }
-		catch (place::implement::error & e)
+		catch (place::error&) { throw; }
+		catch (place::implement::error& e)
 		{
 			throw error("failed to set div('" + div_text + "'): " + e.what(), *this, e.field, e.pos);
 		}
-		catch (place_parts::tokenizer::error & e)
+		catch (place_parts::tokenizer::error& e)
 		{
 			throw error("failed to set div('" + div_text + "'): " + e.what(), *this, "", e.pos);
 		}
-		catch (std::invalid_argument & e)
+		catch (std::invalid_argument& e)
 		{
 			throw error("failed to set div('" + div_text + "'): " + e.what(), *this);
 		}
-		catch (std::exception & e)
+		catch (std::exception& e)
 		{
-			throw error("failed to set div('"+div_text+"'): unexpected error: " +e.what(), *this );
+			throw error("failed to set div('" + div_text + "'): unexpected error: " + e.what(), *this);
 		}
 		catch (...)
 		{
@@ -3495,21 +4425,21 @@ namespace nana
 		if (nullptr == div_text)
 			throw error("modify(): invalid div-text (=nullptr)", *this);
 
-		if (! valid_field_name(name) )
+		if (!valid_field_name(name))
 			throw badname("modify()", *this, name);
 
 		auto div_ptr = impl_->search_div_name(impl_->root_division.get(), name);
 		if (!div_ptr)
-		   throw error("modify(): field was not found", *this, name);
+			throw error("modify(): field was not found", *this, name);
 
 
 		std::unique_ptr<implement::division>* replaced = nullptr;
 
-		implement::division * div_owner = div_ptr->div_owner;
-		implement::division * div_next = div_ptr->div_next;
+		implement::division* div_owner = div_ptr->div_owner;
+		implement::division* div_next = div_ptr->div_next;
 		if (div_owner)
 		{
-			for (auto& child: div_owner->children)
+			for (auto& child : div_owner->children)
 			{
 				if (child.get() == div_ptr)
 				{
@@ -3541,9 +4471,9 @@ namespace nana
 
 			if (div_owner)
 			{
-				implement::division * pv_div = nullptr;
+				implement::division* pv_div = nullptr;
 				//Updates the div_next of the div at front of modified one.
-				for (auto & div : div_owner->children)
+				for (auto& div : div_owner->children)
 				{
 					if (div.get() == modified_ptr)
 					{
@@ -3555,27 +4485,27 @@ namespace nana
 				}
 			}
 		}
-		catch (place::error & )
+		catch (place::error&)
 		{
 			replaced->swap(impl_->tmp_replaced);
 			throw;
 		}
-		catch (place::implement::error & e)
+		catch (place::implement::error& e)
 		{
 			replaced->swap(impl_->tmp_replaced);
-			throw error("failed to modify('"+std::string(name) +", "+ div_text + "'): " + e.what(), *this, e.field, e.pos);
+			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): " + e.what(), *this, e.field, e.pos);
 		}
-		catch (place_parts::tokenizer::error & e)
+		catch (place_parts::tokenizer::error& e)
 		{
 			replaced->swap(impl_->tmp_replaced);
 			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): " + e.what(), *this, "", e.pos);
 		}
-		catch (std::invalid_argument & e)
+		catch (std::invalid_argument& e)
 		{
 			replaced->swap(impl_->tmp_replaced);
 			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): " + e.what(), *this);
 		}
-		catch (std::exception & e)
+		catch (std::exception& e)
 		{
 			replaced->swap(impl_->tmp_replaced);
 			throw error("failed to modify('" + std::string(name) + ", " + div_text + "'): unexpected error: " + e.what(), *this);
@@ -3594,7 +4524,7 @@ namespace nana
 
 		//get the field with the specified name. If no such field with specified name
 		//then create one.
-		auto & p = impl_->fields[name];
+		auto& p = impl_->fields[name];
 		if (nullptr == p)
 			p = new implement::field_gather(this);
 
@@ -3734,7 +4664,7 @@ namespace nana
 	void place::erase(window handle)
 	{
 		bool recollocate = false;
-		for (auto & fld : impl_->fields)
+		for (auto& fld : impl_->fields)
 		{
 			auto evt = fld.second->erase_element(fld.second->elements, handle);
 			if (evt)
@@ -3750,67 +4680,45 @@ namespace nana
 			collocate();
 	}
 
+	bool place::is_enabled_print_debug()
+	{
+		return impl_->enabled_debug;
+	}
+
+	void place::enable_print_debug(bool newValue)
+	{
+		impl_->enabled_debug = newValue;
+	}
+
 	place::field_reference place::operator[](const char* name)
 	{
 		return field(name);
 	}
 
-	place& place::dock(const std::string& name, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory)
+	widget* place::add_pane(std::string dock_id, std::function<std::unique_ptr<widget>(window)> factory, const std::string& relative_pane_id, dock_position dock_position)
 	{
-		if (!valid_field_name(name.data()))
-			throw badname("dock()", *this, name.data());
+		widget* result{ nullptr };
+		implement::div_dockpane* div = nullptr;
 
-		auto & dock_ptr = impl_->docks[name];
+		auto& dock_ptr = impl_->docks[dock_id];
 		if (!dock_ptr)
+		{
 			dock_ptr = new implement::field_dock;
-
-		//Register the factory if it has a name
-		if (!factory_name.empty())
-		{
-			if (impl_->dock_factoris.find(factory_name) != impl_->dock_factoris.end())
-				throw error("dock() - the specified factory name(" + factory_name + ") already exists", *this, name);
-
-			impl_->dock_factoris[factory_name] = dock_ptr;
-			dock_ptr->factories[factory_name] = std::move(factory);
 		}
+		div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), dock_id));
 
-		auto div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), name));
-		if (div)
+		if (div == nullptr)
 		{
-			dock_ptr->attached = div;
-			div->dockable_field = dock_ptr;
+			div = new implement::div_dockpane(std::move(dock_id), impl_, nana::direction::west);
 		}
+		div->dockable_field = dock_ptr;
+		dock_ptr->attached = div;
 
-		//Create the pane if it has not a name
-		if (factory_name.empty() && dock_ptr->attached)
-		{
-			dock_ptr->attached->set_display(true);
-			impl_->collocate();
+		impl_->floating_divs.emplace_back(div);
 
-			if (!dock_ptr->dockarea)
-			{
-				dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
-				dock_ptr->dockarea->create(impl_->window_handle);
-				dock_ptr->dockarea->set_notifier(dock_ptr->attached);
-				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
-			}
-			dock_ptr->dockarea->add_pane(factory);
-		}
-
-		return *this;
-	}
-
-	widget* place::dock_create(const std::string& factory)
-	{
-		auto i = impl_->dock_factoris.find(factory);
-		if (i == impl_->dock_factoris.end())
-			throw std::invalid_argument("nana::place::dock_create - invalid factory name(" + factory + ") of dockpane");
-
-		auto dock_ptr = i->second;
 		if (dock_ptr->attached)
 		{
 			dock_ptr->attached->set_display(true);
-			impl_->collocate();
 
 			if (!dock_ptr->dockarea)
 			{
@@ -3819,30 +4727,60 @@ namespace nana
 				dock_ptr->dockarea->set_notifier(dock_ptr->attached);
 				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
 			}
-
-			return dock_ptr->dockarea->add_pane(dock_ptr->factories[factory]);
+			else
+			{
+				dock_position = dock_position::tab;
+			}
+			result = dock_ptr->dockarea->add_pane(factory);
 		}
 
-		return nullptr;
+		implement::division* where_div = nullptr;
+		if (!relative_pane_id.empty())
+		{
+			std::function<implement::division* (implement::division* div)> hit_fn;
+			hit_fn = [&hit_fn, relative_pane_id](implement::division* div) -> implement::division*
+			{
+				if (implement::division::kind::dockpane == div->kind_of_division)
+				{
+					if (div->name == relative_pane_id)
+						return div;
+				}
+
+				for (auto& child : div->children)
+				{
+					auto r = hit_fn(child.get());
+					if (r)
+						return r;
+				}
+
+				return nullptr;
+			};
+
+			where_div = hit_fn(impl_->root_division.get());
+		}
+
+		impl_->dock_pane(div, where_div, dock_position);
+
+		return result;
 	}
 
 	place::error::error(const std::string& what,
-						const place& plc,
-						std::string field,
-						std::string::size_type pos)
+		const place& plc,
+		std::string field,
+		std::string::size_type pos)
 
-		: std::invalid_argument(  "from widget '"
-		                        + api::window_caption(plc.window_handle()).substr(0,80)
-								+ "'; nana::place error "
-		                        + what
-		                        + "' in field '" + field
-								+ (pos == std::string::npos ? "' " : "' at position " + std::to_string(pos))
-								+ " in div_text:\n" + plc.div() ),
-		base_what( what ),
-		owner_caption( api::window_caption(plc.window_handle()).substr(0,80) ),
-		div_text( plc.div() ),
-		field( field ),
-		pos( pos )
+		: std::invalid_argument("from widget '"
+			+ api::window_caption(plc.window_handle()).substr(0, 80)
+			+ "'; nana::place error "
+			+ what
+			+ "' in field '" + field
+			+ (pos == std::string::npos ? "' " : "' at position " + std::to_string(pos))
+			+ " in div_text:\n" + plc.div()),
+		base_what(what),
+		owner_caption(api::window_caption(plc.window_handle()).substr(0, 80)),
+		div_text(plc.div()),
+		field(field),
+		pos(pos)
 	{}
 	//end class place
 

@@ -286,9 +286,6 @@
     <ClCompile Include="..\..\source\gui\dragdrop.cpp">
       <Filter>Sources\gui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\gui\br_place.cpp">
-      <Filter>Sources\gui</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\nana\gui\widgets\spinbox.hpp">
@@ -456,8 +453,8 @@
     <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
-    <ClInclude Include="..\..\include\nana\gui\br_place.hpp">
-      <Filter>Include\gui</Filter>
+    <ClInclude Include="..\..\..\BrunoEngine\Code\Engine\Dependencies\nana\source\gui\place_parts.hpp">
+      <Filter>Sources\gui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -176,7 +176,6 @@
     <ClCompile Include="..\..\source\filesystem\filesystem.cpp" />
     <ClCompile Include="..\..\source\gui\animation.cpp" />
     <ClCompile Include="..\..\source\gui\basis.cpp" />
-    <ClCompile Include="..\..\source\gui\br_place.cpp" />
     <ClCompile Include="..\..\source\gui\detail\basic_window.cpp" />
     <ClCompile Include="..\..\source\gui\detail\bedrock_pi.cpp" />
     <ClCompile Include="..\..\source\gui\detail\bedrock_windows.cpp" />
@@ -244,6 +243,7 @@
     <ClCompile Include="..\..\source\unicode_bidi.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\BrunoEngine\Code\Engine\Dependencies\nana\source\gui\place_parts.hpp" />
     <ClInclude Include="..\..\include\nana\basic_types.hpp" />
     <ClInclude Include="..\..\include\nana\c++defines.hpp" />
     <ClInclude Include="..\..\include\nana\charset.hpp" />
@@ -255,7 +255,6 @@
     <ClInclude Include="..\..\include\nana\gui.hpp" />
     <ClInclude Include="..\..\include\nana\gui\animation.hpp" />
     <ClInclude Include="..\..\include\nana\gui\basis.hpp" />
-    <ClInclude Include="..\..\include\nana\gui\br_place.hpp" />
     <ClInclude Include="..\..\include\nana\gui\dragdrop.hpp" />
     <ClInclude Include="..\..\include\nana\gui\dragger.hpp" />
     <ClInclude Include="..\..\include\nana\gui\drawing.hpp" />

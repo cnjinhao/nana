@@ -26,7 +26,7 @@ namespace nana
 		class splitter_interface
 		{
 		public:
-			virtual ~splitter_interface(){}
+			virtual ~splitter_interface() {}
 		};
 
 		class drawer_splitter
@@ -80,7 +80,7 @@ namespace nana
 				api::dev::lazy_refresh();
 			}
 		private:
-			window window_handle_{nullptr};
+			window window_handle_{ nullptr };
 			std::function<void(window, paint::graphics&, mouse_action)> renderer_;
 		};
 
@@ -147,7 +147,7 @@ namespace nana
 
 				//draw caption
 				auto text = to_wstring(api::window_caption(window_handle_));
-				if((graph.size().width > 20) && (graph.size().width - 20 > 10))
+				if ((graph.size().width > 20) && (graph.size().width - 20 > 10))
 					text_rd_->render({ 3, 1 }, { text.data(), text.size() }, graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
 				//draw x button
@@ -156,7 +156,7 @@ namespace nana
 				{
 					color xclr = colors::red;
 
-					if(x_state_ == ::nana::mouse_action::pressed)
+					if (x_state_ == ::nana::mouse_action::pressed)
 						xclr = xclr.blend(colors::white, 0.2);
 
 					graph.rectangle(r, true, xclr);
@@ -209,7 +209,7 @@ namespace nana
 			::nana::rectangle _m_button_area() const
 			{
 				auto sz = api::window_size(window_handle_);
-				return{static_cast<int>(sz.width) - 20, 0, 20, sz.height};
+				return{ static_cast<int>(sz.width) - 20, 0, 20, sz.height };
 			}
 		public:
 			window window_handle_;
@@ -256,41 +256,44 @@ namespace nana
 				base_type::create(parent, true);
 				this->caption("dockarea");
 				caption_.create(*this, true);
+				caption_.caption("dockarea-caption");
 				caption_.get_drawer_trigger().on_close([this]
-				{
-					if (tabbar_)
 					{
-						tabbar_->erase(tabbar_->selected());
-						if (tabbar_->length())
-							return;
-					}
-
-					notifier_->request_close();
-				});
-
-				this->events().resized.connect_unignorable([this](const arg_resized& arg)
-				{
-					rectangle r{ 0, 0, arg.width, 20 };
-					caption_.move(r);
-
-					if (arg.height > 20)
-					{
-						r.y = 20;
 						if (tabbar_)
 						{
-							tabbar_->move({ 0, int(arg.height) - 20, arg.width, 20 });
-							r.height = arg.height - 40;
+							auto index = tabbar_->selected();
+							tabbar_->erase(tabbar_->selected());
+							panels_.erase(panels_.begin() + index);
+							if (tabbar_->length())
+								return;
 						}
-						else
-							r.height = arg.height - 20;
-					}
 
-					for (auto & pn : panels_)
+				notifier_->request_close();
+					});
+
+				this->events().resized.connect_unignorable([this](const arg_resized& arg)
 					{
-						if (pn.widget_ptr)
-							pn.widget_ptr->move(r);
+						rectangle r{ 0, 0, arg.width, 20 };
+				caption_.move(r);
+
+				if (arg.height > 20)
+				{
+					r.y = 20;
+					if (tabbar_)
+					{
+						tabbar_->move({ 0, int(arg.height) - 20, arg.width, 20 });
+						r.height = arg.height - 40;
 					}
-				});
+					else
+						r.height = arg.height - 20;
+				}
+
+				for (auto& pn : panels_)
+				{
+					if (pn.widget_ptr)
+						pn.widget_ptr->move(r);
+				}
+					});
 
 				auto grab_fn = [this](const arg_mouse& arg)
 				{
@@ -298,10 +301,13 @@ namespace nana
 					{
 						if (::nana::mouse::left_button == arg.button)
 						{
-							moves_.started = true;
-							moves_.hasChanged = false;
-							moves_.start_pos = api::cursor_position();
-							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
+							if (!caption_.get_drawer_trigger().hit_close())
+							{
+								moves_.started = true;
+								moves_.hasChanged = false;
+								moves_.start_pos = api::cursor_position();
+								moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
+							}
 							caption_.set_capture(true);
 						}
 					}
@@ -320,7 +326,7 @@ namespace nana
 								move_pos += moves_.start_container_pos;
 								api::move_window(container_->handle(), move_pos);
 
-								if(!caption_.get_drawer_trigger().hit_close())
+								if (!caption_.get_drawer_trigger().hit_close())
 									notifier_->notify_move();
 							}
 
@@ -333,10 +339,10 @@ namespace nana
 					}
 					else if (event_code::mouse_up == arg.evt_code)
 					{
+						caption_.release_capture();
 						if ((::nana::mouse::left_button == arg.button) && moves_.started)
 						{
 							moves_.started = false;
-							caption_.release_capture();
 							if (moves_.hasChanged)
 								notifier_->notify_move_stopped();
 						}
@@ -346,19 +352,26 @@ namespace nana
 				caption_.events().mouse_down.connect(grab_fn);
 				caption_.events().mouse_move.connect(grab_fn);
 				caption_.events().mouse_up.connect(grab_fn);
-
 			}
 
-			widget* add_pane(factory & fn)
+			widget* add_pane(factory& fn)
 			{
 				auto fn_ptr = &fn;
-                widget * w = nullptr;
+				widget* w = nullptr;
 
 				api::affinity_execute(*this, false, [this, fn_ptr, &w]
-				{
-					w=_m_add_pane(*fn_ptr);
-				});
-                return w;
+					{
+						w = _m_add_pane(*fn_ptr);
+					});
+				return w;
+			}
+
+			void add_pane(dockarea& other)
+			{
+				api::affinity_execute(*this, false, [this, &other]
+					{
+						_m_add_pane(other);
+					});
 			}
 
 			void float_away(const ::nana::point& move_pos)
@@ -372,17 +385,17 @@ namespace nana
 				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
 				drawing dw(container_->handle());
 				dw.draw([](paint::graphics& graph)
-				{
-					graph.rectangle(false, colors::coral);
-				});
+					{
+						graph.rectangle(false, colors::coral);
+					});
 
 				api::set_parent_window(handle(), container_->handle());
 				this->move({ 1, 1 });
 
 				container_->events().resized.connect_unignorable([this](const arg_resized& arg)
-				{
-					this->size({arg.width - 2, arg.height - 2});
-				});
+					{
+						this->size({ arg.width - 2, arg.height - 2 });
+					});
 
 				container_->show();
 				caption_.set_capture(true);
@@ -390,11 +403,13 @@ namespace nana
 				notifier_->notify_float();
 			}
 
-			void dock()
+			void dock(bool set_parent_to_host = true)
 			{
 				caption_.release_capture();
 
-				api::set_parent_window(handle(), host_window_);
+				if (set_parent_to_host)
+					api::set_parent_window(handle(), host_window_);
+
 				container_.reset();
 				notifier_->notify_dock();
 			}
@@ -403,8 +418,9 @@ namespace nana
 			{
 				return (nullptr != container_);
 			}
+
 		private:
-			widget* _m_add_pane(factory & fn)
+			widget* _m_add_pane(factory& fn)
 			{
 				rectangle r{ this->size() };
 
@@ -420,18 +436,18 @@ namespace nana
 
 						tabbar_->events().selected.clear();
 						tabbar_->events().selected.connect([this](const event_arg&)
-						{
-							auto handle = tabbar_->attach(tabbar_->selected());
-							//Set caption through a caption of window specified by handle
-							//Empty if handle is null
-							caption_.caption(api::window_caption(handle));
-						});
+							{
+								auto handle = tabbar_->attach(tabbar_->selected());
+						//Set caption through a caption of window specified by handle
+						//Empty if handle is null
+						caption_.caption(api::window_caption(handle));
+							});
 
 						r.height -= 20;
 						tabbar_->move({ 0, r.bottom(), r.width, 20 });
 
 						std::size_t pos = 0;
-						for (auto & pn : panels_)
+						for (auto& pn : panels_)
 						{
 							tabbar_->push_back(pn.widget_ptr->caption());
 							tabbar_->attach(pos++, *pn.widget_ptr);
@@ -459,7 +475,7 @@ namespace nana
 
 					panels_.emplace_back().widget_ptr = std::move(wdg);
 
-					for (auto & pn : panels_)
+					for (auto& pn : panels_)
 					{
 						if (pn.widget_ptr)
 							pn.widget_ptr->move(r);
@@ -468,8 +484,68 @@ namespace nana
 				}
 				return nullptr;
 			}
+
+			void _m_add_pane(dockarea& other)
+			{
+				rectangle r{ this->size() };
+
+				//get a rectangle excluding caption
+				r.y = 20;
+				r.height = differ(r.height, 20);
+
+				if (!tabbar_)
+				{
+					if (panels_.size() > 0)
+					{
+						tabbar_.reset(new tabbar_lite(*this));
+
+						tabbar_->events().selected.clear();
+						tabbar_->events().selected.connect([this](const event_arg&)
+							{
+								auto handle = tabbar_->attach(tabbar_->selected());
+						//Set caption through a caption of window specified by handle
+						//Empty if handle is null
+						caption_.caption(api::window_caption(handle));
+							});
+
+						r.height -= 20;
+						tabbar_->move({ 0, r.bottom(), r.width, 20 });
+
+						std::size_t pos = 0;
+						for (auto& pn : panels_)
+						{
+							tabbar_->push_back(pn.widget_ptr->caption());
+							tabbar_->attach(pos++, *pn.widget_ptr);
+						}
+					}
+				}
+				else
+					r.height -= 20;
+
+				if (other.panels_.size() > 0)
+				{
+					for (auto& pn : other.panels_)
+					{
+						API::set_parent_window(pn.widget_ptr->handle(), handle());
+						if (tabbar_)
+						{
+							tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
+							tabbar_->attach(panels_.size(), pn.widget_ptr->handle());
+						}
+
+						panels_.emplace_back().widget_ptr.reset(pn.widget_ptr.release());
+					}
+					other.panels_.clear();
+				}
+
+				for (auto& pn : panels_)
+				{
+					if (pn.widget_ptr)
+						pn.widget_ptr->move(r);
+				}
+			}
 		private:
-			window host_window_{nullptr};
+			window host_window_{ nullptr };
 			place_parts::dock_notifier_interface* notifier_{ nullptr };
 			std::unique_ptr<form>	container_;
 			dockarea_caption	caption_;
@@ -505,8 +581,8 @@ namespace nana
 		class number_t
 		{
 		public:
-			enum class kind{ none, integer, real, percent };
-			enum class units{medium, px, em};
+			enum class kind { none, integer, real, percent };
+			enum class units { medium, px, em };
 
 			number_t()
 			{
@@ -552,7 +628,7 @@ namespace nana
 				default:
 					return 0;
 				}
-				
+
 				if (to_system_px)
 				{
 					switch (unit_)
@@ -633,7 +709,7 @@ namespace nana
 			void unit(units u)
 			{
 				if (kind::percent == kind_)
-					throw std::invalid_argument{"a persentage value can't be assigned with the unit"};
+					throw std::invalid_argument{ "a persentage value can't be assigned with the unit" };
 				unit_ = u;
 			}
 
@@ -813,7 +889,7 @@ namespace nana
 			//A workaround for VC2013, becuase it does not generated an implicit declared move-constructor as defaulted.
 			repeated_array() = default;
 
-			repeated_array(repeated_array && other)
+			repeated_array(repeated_array&& other)
 				: repeated_{ other.repeated_ },
 				values_(std::move(other.values_))
 			{
