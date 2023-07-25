@@ -456,6 +456,9 @@
     <ClInclude Include="..\..\..\BrunoEngine\Code\Engine\Dependencies\nana\source\gui\place_parts.hpp">
       <Filter>Sources\gui</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\gui\place_parts.hpp">
+      <Filter>Include\gui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\nana\pop_ignore_diagnostic">

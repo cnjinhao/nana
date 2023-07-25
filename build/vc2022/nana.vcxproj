@@ -300,6 +300,7 @@
     <ClInclude Include="..\..\include\nana\traits.hpp" />
     <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
     <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp" />
+    <ClInclude Include="..\..\source\gui\place_parts.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
   </ItemGroup>
