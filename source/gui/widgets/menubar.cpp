@@ -185,7 +185,8 @@ namespace nana
 
 			std::size_t find(const ::nana::point& pos)
 			{
-				if ((2 <= pos.x) && (2 <= pos.y) && (pos.y < 25))
+				auto menubar_size = widget_ptr->size();
+				if ((2 <= pos.x) && (2 <= pos.y) && (pos.y < menubar_size.height))
 				{
 					int item_x = 2;
 					std::size_t index = 0;
@@ -291,8 +292,9 @@ namespace nana
 
 				item_renderer ird{ *ess_->widget_ptr, graph };
 
+				auto menubar_size = ess_->widget_ptr->size();
 				nana::point item_pos(2, 2);
-				nana::size item_s(0, 23);
+				nana::size item_s(0, menubar_size.height - 2);
 
 				unsigned long index = 0;
 
