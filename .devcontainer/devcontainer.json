@@ -1,9 +1,0 @@
-{
-	"name": "gcc",
-	"dockerFile": "Dockerfile",
-	"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash"
-	},
-	"extensions": ["ms-vscode.cpptools","ms-vscode.cmake-tools"],
-	"containerUser": "vscode"
-}
