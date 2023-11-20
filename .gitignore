@@ -1,54 +1,29 @@
-#This .gitignore created by Ariel Vina-Rodriguez
-#ignore thumbnails created by windows
-Thumbs.db
-#Ignore files build by Visual Studio
-bii/build/*
-bii/cmake/*
-bii/deps/*
-build/vc2013-bkl/*
-build/makefile-bkl/*
-build/compile_commands.json
-build/install_manifest.txt
-.vs/
-*.obj
-*.exe
-*.pdb
-*.user
-*.aps
-*.pch
-*.vspscc
-*_i.c
-*_p.c
-*.ncb
-*.tlb
-*.tlh
-*.bak
-*.cache
-*.ilk
-*.log
-[Bb]in
-[Bb]in/
-[Dd]ebug*/
-*.lib
-*.a
-*.sbr
-obj/
-[Rr]elease*/
-_ReSharper*/
-[Tt]est[Rr]esult*
-*.suo
-*.sdf
-lib/
-*.ninja*
-CMakeCache.txt
-CMakeFiles/
-cmake-build-debug/
-cmake-build-*/
-.idea/
-cmake_install.cmake
-*.DS_Store
+# Binaries
+bin/Debug_x64
+bin/Debug_x64_tmp
+bin/Release_x64
+bin/Release_x64_tmp
 
-*.db
-*.opendb
-.vscode
-.vs
+# Visual Studio files and folder
+.vs/
+**.vcxproj.user
+**.nsight-gfxproj
+**.DotSettings
+**.user
+
+# LFS Folders
+lfs/
+hooks/
+
+# Log files
+**.log
+
+# Dumps
+*.nvdbg
+*.nv-gpudmp
+*gpudmp.json
+
+# Bruno files
+**.bruno
+
+# Exceptions

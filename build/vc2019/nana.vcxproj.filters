@@ -286,9 +286,6 @@
     <ClCompile Include="..\..\source\gui\dragdrop.cpp">
       <Filter>Sources\gui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\gui\detail\virtual_keyboard.cpp">
-      <Filter>Sources\gui\detail</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\nana\gui\widgets\spinbox.hpp">
