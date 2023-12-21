@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -134,6 +134,13 @@ namespace nana
 			for (auto i : roots)
 				native_interface::close_window(i);
 		}
+
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		virtual_keyboard& bedrock::vkeyboard()
+		{
+			return this->pi_data_->vkeybd;
+		}
+#endif
 
 		void bedrock::event_expose(basic_window * wd, bool exposed)
 		{

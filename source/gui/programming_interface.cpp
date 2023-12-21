@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -424,6 +424,9 @@ namespace api
 				if (scheme)
 				{
 					wd->annex.text_editor = new widgets::skeletons::text_editor(wd, wd->drawer.graphics, scheme);
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+					restrict::bedrock.vkeyboard().attach(wd);
+#endif
 					return wd->annex.text_editor;
 				}
 			}
@@ -1688,6 +1691,28 @@ namespace api
 			return wd->other.dnd_state;
 
 		return dragdrop_status::not_ready;
+	}
+
+	/// Configures the qwerty keyboard for a text editor
+	bool keyboard_qwerty(window wd, std::vector<std::string> langs, keyboard_behaves behave, keyboard_modes mode)
+	{
+		internal_scope_guard lock;
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		return restrict::bedrock.vkeyboard().qwerty(wd, std::move(langs), behave, mode);
+#else
+		return fales;
+#endif
+	}
+
+	/// Configures the numeric keyboard.
+	bool keyboard_numeric(window wd)
+	{
+		internal_scope_guard lock;
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		return restrict::bedrock.vkeyboard().numeric(wd);
+#else
+		return fales;
+#endif	
 	}
 }//end namespace api
 }//end namespace nana
