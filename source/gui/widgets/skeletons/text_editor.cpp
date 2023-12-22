@@ -1363,6 +1363,11 @@ namespace nana::widgets::skeletons
 		attributes_.enable_caret = (enable || enable_caret);
 	}
 
+	bool text_editor::editable() const
+	{
+		return attributes_.editable;
+	}
+
 	void text_editor::enable_background(bool enb)
 	{
 		attributes_.enable_background = enb;

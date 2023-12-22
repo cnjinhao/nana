@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -129,6 +129,7 @@ namespace nana::widgets::skeletons
 			* @param enable_cart Indicates whether to show or hide the caret when the text_editor is not editable. It is ignored if enable is false.
 			*/
 		void editable(bool enable, bool enable_caret);
+		bool editable() const;
 		void enable_background(bool);
 		void enable_background_counterpart(bool);
 

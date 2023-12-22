@@ -977,6 +977,15 @@ namespace api
 		return {};
 	}
 
+	bool window_text_editor_editable(window wd)
+	{
+		internal_scope_guard lock;
+		if(is_window(wd) && wd->annex.text_editor)
+			return wd->annex.text_editor->editable();
+
+		return false;
+	}
+
 	std::optional<rectangle> window_rectangle(window wd)
 	{
 		internal_scope_guard lock;
@@ -1700,7 +1709,11 @@ namespace api
 #ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
 		return restrict::bedrock.vkeyboard().qwerty(wd, std::move(langs), behave, mode);
 #else
-		return fales;
+		(void)wd;
+		(void)langs;
+		(void)behave;
+		(void)mode;
+		return false;
 #endif
 	}
 
@@ -1711,7 +1724,8 @@ namespace api
 #ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
 		return restrict::bedrock.vkeyboard().numeric(wd);
 #else
-		return fales;
+		(void)wd;
+		return false;
 #endif	
 	}
 }//end namespace api

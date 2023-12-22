@@ -64,9 +64,9 @@ namespace nana::detail
 
 			numeric(window wd, window host, const keyboards::images* images ):
 				panel<true>(wd),
-				images_(images),
 				window_(wd),
-				host_(host)
+				host_(host),
+				images_(images)
 			{
 				const char values[] = "\r789456123.0\b";
 				for (int i = 0; i < 13; ++i)
@@ -594,8 +594,6 @@ namespace nana::detail
 				metrics_.gap_horz = static_cast<unsigned>(r.width * 0.016);
 				metrics_.gap_vert = static_cast<unsigned>(operation_height_px * 0.0423);
 
-				int topline_keys = 12;
-
 				std::vector<int> layout = im_->layout(modes::letter_lower == mode_ || modes::letter_upper == mode_);
 
 
@@ -696,7 +694,7 @@ namespace nana::detail
 				{
 					std::wstring letters = im_->letters(modes::letter_lower == mode_);
 
-					for (int i = 0; i < letters.size(); ++i)
+					for (std::size_t i = 0; i < letters.size(); ++i)
 					{
 						keys_[i].value = letters[i];
 						keys_[i].type = key_types::character;
@@ -712,7 +710,7 @@ namespace nana::detail
 					}
 
 					auto sym = im_->digital_symbols(true);
-					for (int i = 0; i < sym.size(); ++i)
+					for (std::size_t i = 0; i < sym.size(); ++i)
 					{
 						keys_[i + 10].value = sym[i];
 						keys_[i + 10].type = key_types::symbol;
@@ -928,8 +926,6 @@ namespace nana::detail
 
 				candidate_.offset_idx = 0;
 
-				std::size_t cd_idx = 0;
-
 				for (auto& cd : candidate_.words)
 				{
 					auto ts = graph.text_extent_size(cd);
@@ -1104,7 +1100,7 @@ namespace nana::detail
 
 			api::take_active(handle(), false, host);
 
-			this->events().resized([this](const arg_resized& arg) {
+			this->events().resized([this](const arg_resized&) {
 				_m_resized();
 			});
 
@@ -1321,7 +1317,7 @@ namespace nana::detail
 				return;
 
 			auto text_area_opt = api::window_text_editor_rectangle(arg.window_handle, false);
-			if (!text_area_opt)
+			if (!text_area_opt || !api::window_text_editor_editable(arg.window_handle))
 				return;
 
 			auto pt = nana::api::cursor_position();
@@ -1335,7 +1331,7 @@ namespace nana::detail
 
 					impl_->win = &nana::form_loader<virtual_keyboard_window>{}(arg.window_handle, &(impl_->images));
 
-					impl_->win->events().destroy([this](const arg_destroy& arg) {
+					impl_->win->events().destroy([this](const arg_destroy&) {
 						impl_->win = nullptr;
 					});
 

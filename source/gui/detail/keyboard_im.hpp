@@ -84,7 +84,7 @@ namespace nana::detail
 			return {};
 		}
 
-		std::wstring pick_candidate(std::size_t idx) override
+		std::wstring pick_candidate(std::size_t) override
 		{
 			return {};
 		}
@@ -99,7 +99,7 @@ namespace nana::detail
 			return digital ? L"-/:;()$&@\".,?!|'" : L"[]{}#%^*+=_—\\|~<>€￡￥·.,?!'";
 		}
 
-		std::vector<int> layout(bool letter) const override
+		std::vector<int> layout(bool /*letter*/) const override
 		{
 			//Keyboard layout for English is 26 keys
 			return std::vector<int>{10, 9, 7};
@@ -145,7 +145,7 @@ namespace nana::detail
 			return {};
 		}
 
-		std::wstring pick_candidate(std::size_t idx) override
+		std::wstring pick_candidate(std::size_t /*idx*/) override
 		{
 			return {};
 		}
@@ -921,7 +921,7 @@ namespace nana::detail
 			return digital ? L"-/:;()$&@\".,?!|'" : L"[]{}#%^*+=_—\\|~<>€￡￥·.,?!'";
 		}
 
-		std::vector<int> layout(bool letter) const override
+		std::vector<int> layout(bool /*letter*/) const override
 		{
 			return std::vector<int>{10, 9, 7};
 		}

@@ -355,6 +355,7 @@ namespace api
 	size window_outline_size(window);
 	void window_outline_size(window, const size&);
 
+	bool window_text_editor_editable(window);
 	::std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars);
 	::std::optional<rectangle> window_rectangle(window);
 	bool get_window_rectangle(window, rectangle&);
