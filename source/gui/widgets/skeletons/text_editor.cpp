@@ -2209,7 +2209,7 @@ namespace nana::widgets::skeletons
 
 		if ((accepts::no_restrict == impl_->capacities.acceptive) || !impl_->capacities.pred_acceptive)
 		{
-			put(move(text), true);
+			put(std::move(text), true);
 			return;
 		}
 
@@ -2227,7 +2227,7 @@ namespace nana::widgets::skeletons
 			if (accepts::no_restrict != impl_->capacities.acceptive)
 			{
 				text.erase(i, text.end());
-				put(move(text), true);
+				put(std::move(text), true);
 			}
 			break;
 		}
