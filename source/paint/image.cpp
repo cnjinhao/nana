@@ -63,7 +63,7 @@ namespace paint
 		std::vector<uint8_t> pixels(size.width * size.height * 4);
 		for (std::size_t i = 0; i < pixels.size(); i += 4)
 		{
-			auto row = (size_t) std::floor((i / 4) / size.height);
+			auto row = (i / 4) / size.height;
 			auto column = (i / 4) % size.width;
 			auto color = img.pxbuf()[row][column];
 
