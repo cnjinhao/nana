@@ -4533,8 +4533,8 @@ namespace nana
 					api::dev::lazy_refresh();
 				}
 			}
-
-			void trigger::dbl_click(graph_reference graph, const arg_mouse&)
+			
+			void trigger::click_common(graph_reference graph)
 			{
 				using parts = essence::parts;
 
@@ -4580,6 +4580,16 @@ namespace nana
 						api::dev::lazy_refresh();
                     }
 				}
+			}
+			
+			void trigger::click(graph_reference graph, const arg_click&)
+			{
+				click_common(graph);
+			}
+
+			void trigger::dbl_click(graph_reference graph, const arg_mouse&)
+			{
+				click_common(graph);
 			}
 
 			void trigger::resized(graph_reference graph, const arg_resized&)
