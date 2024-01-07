@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -424,6 +424,9 @@ namespace api
 				if (scheme)
 				{
 					wd->annex.text_editor = new widgets::skeletons::text_editor(wd, wd->drawer.graphics, scheme);
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+					restrict::bedrock.vkeyboard().attach(wd);
+#endif
 					return wd->annex.text_editor;
 				}
 			}
@@ -449,48 +452,13 @@ namespace api
 			return {};
 		}
 
-		void im_input(window wd, const upoint& insert_pos, const upoint* move_to, const std::wstring& str, bool candidate)
+		upoint im_input(window wd, const upoint& insert_pos, const std::wstring& str, bool candidate)
 		{
 			internal_scope_guard lock;
 			if (is_window(wd) && wd->annex.text_editor)
-			{
-				if (wd->annex.text_editor->selected())
-				{
-					wd->annex.text_editor->backspace(false, false);
-				}
 
-				wd->annex.text_editor->move_caret(insert_pos, true);
-
-				nana::arg_keyboard arg;
-				arg.evt_code = event_code::key_char;
-				arg.window_handle = wd;
-				arg.ignore = false;
-				arg.ctrl = false;
-				arg.shift = false;
-				arg.alt = false;
-
-				for (auto ch : str)
-				{
-					arg.key = ch;
-					wd->annex.text_editor->respond_char(arg);
-				}
-
-				auto endpos = wd->annex.text_editor->caret();
-				
-				if (move_to)
-					wd->annex.text_editor->move_caret(endpos, true);
-
-				if (candidate)
-				{
-					wd->annex.text_editor->select_points(insert_pos, endpos);
-
-					wd->annex.text_editor->im_candidate_mode(true);
-					api::refresh_window(wd);
-					wd->annex.text_editor->im_candidate_mode(false);
-				}
-				else
-					api::refresh_window(wd);
-			}
+				return wd->annex.text_editor->im_input(insert_pos, str, candidate);
+			return {};
 		}
 
 
@@ -1007,6 +975,15 @@ namespace api
 			return wd->annex.text_editor->text_area(including_scrollbars);
 
 		return {};
+	}
+
+	bool window_text_editor_editable(window wd)
+	{
+		internal_scope_guard lock;
+		if(is_window(wd) && wd->annex.text_editor)
+			return wd->annex.text_editor->editable();
+
+		return false;
 	}
 
 	std::optional<rectangle> window_rectangle(window wd)
@@ -1723,6 +1700,33 @@ namespace api
 			return wd->other.dnd_state;
 
 		return dragdrop_status::not_ready;
+	}
+
+	/// Configures the qwerty keyboard for a text editor
+	bool keyboard_qwerty(window wd, std::vector<std::string> langs, keyboard_behaves behave, keyboard_modes mode)
+	{
+		internal_scope_guard lock;
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		return restrict::bedrock.vkeyboard().qwerty(wd, std::move(langs), behave, mode);
+#else
+		(void)wd;
+		(void)langs;
+		(void)behave;
+		(void)mode;
+		return false;
+#endif
+	}
+
+	/// Configures the numeric keyboard.
+	bool keyboard_numeric(window wd)
+	{
+		internal_scope_guard lock;
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		return restrict::bedrock.vkeyboard().numeric(wd);
+#else
+		(void)wd;
+		return false;
+#endif	
 	}
 }//end namespace api
 }//end namespace nana

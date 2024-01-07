@@ -183,6 +183,7 @@
     <ClCompile Include="..\..\source\gui\detail\element_store.cpp" />
     <ClCompile Include="..\..\source\gui\detail\events_operation.cpp" />
     <ClCompile Include="..\..\source\gui\detail\native_window_interface.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\virtual_keyboard.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_layout.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_manager.cpp" />
     <ClCompile Include="..\..\source\gui\dragdrop.cpp" />

@@ -1,7 +1,7 @@
 /*
  *	An Implementation of i18n
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -15,6 +15,7 @@
 #include <vector>
 #include <sstream>
 #include <functional>
+#include <filesystem>
 #include <memory>
 #include <nana/deploy.hpp>
 
@@ -27,8 +28,7 @@ namespace nana
 		/// Sets a handler to handle a msgid which hasn't been translated.
 		static void set_missing(std::function<void(const std::string& msgid_utf8)> handler);
 
-		void load(const std::string& file);
-		void load_utf8(const std::string& file);
+		void load(const std::filesystem::path&, bool utf8_format);
 
 		template<typename ...Args>
 		::std::string get(std::string msgid_utf8, Args&&... args) const

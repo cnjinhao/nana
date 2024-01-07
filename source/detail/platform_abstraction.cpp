@@ -209,7 +209,7 @@ namespace nana
 						auto & fe = store_[i->second];
 						fe->patterns.push_back(patstr);
 						store_[patstr] = fe;
-						return {};
+						return fe;
 					}
 				}
 
@@ -220,11 +220,11 @@ namespace nana
 					fe->handle = xft;
 					fe->family = family_name;
 					fe->patterns.push_back(patstr);
-					
 					store_[patstr] = fe;
 					return fe;
 				}
 			}
+			
 			return {};
 		}
 
@@ -283,7 +283,7 @@ namespace nana
 						exclude[fe->family] = patstr;
 
 					xftset_.push_back(fe);
-				}	
+				}
 			}
 		}
 
@@ -542,11 +542,13 @@ namespace nana
 		{
 			auto preferred = xft;
 			auto idx = ::XftCharIndex(disp_, xft, *str);
+
 			if(0 == idx)
 			{
 				for(auto ft : xftset_)
 				{
 					idx = ::XftCharIndex(disp_, ft->handle, *str);
+
 					if(idx)
 					{
 						preferred = ft->handle;
