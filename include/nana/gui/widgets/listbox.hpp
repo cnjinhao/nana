@@ -520,7 +520,7 @@ namespace nana
 						model_->unlock();
 				}
 
-				model_guard& operator=(model_guard&& other)
+				model_guard& operator=(model_guard&& other) noexcept
 				{
 					if (this != &other)
 					{
