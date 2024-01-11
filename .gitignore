@@ -50,3 +50,4 @@ cmake_install.cmake
 *.db
 *.opendb
 .vscode
+.vs

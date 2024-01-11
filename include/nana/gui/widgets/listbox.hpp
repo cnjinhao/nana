@@ -520,7 +520,7 @@ namespace nana
 						model_->unlock();
 				}
 
-				model_guard& operator=(model_guard&& other)
+				model_guard& operator=(model_guard&& other) noexcept
 				{
 					if (this != &other)
 					{
@@ -855,7 +855,7 @@ namespace nana
 				 */
 				item_proxy & select(bool sel, bool scroll_view = false);
 
-				/// Determines whether he item is selected
+				/// Determines whether the item is selected
 				bool selected() const;
 
 				item_proxy & bgcolor(const nana::color&);

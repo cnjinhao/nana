@@ -118,7 +118,7 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -184,6 +184,7 @@
     <ClCompile Include="..\..\source\gui\detail\element_store.cpp" />
     <ClCompile Include="..\..\source\gui\detail\events_operation.cpp" />
     <ClCompile Include="..\..\source\gui\detail\native_window_interface.cpp" />
+    <ClCompile Include="..\..\source\gui\detail\virtual_keyboard.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_layout.cpp" />
     <ClCompile Include="..\..\source\gui\detail\window_manager.cpp" />
     <ClCompile Include="..\..\source\gui\dragdrop.cpp" />
