@@ -36,6 +36,8 @@
 #include "place_parts.hpp"
 #include <iostream>
 
+#include <nana/debugger.hpp>
+
 namespace nana
 {
 	struct badname : place::error
@@ -691,8 +693,6 @@ namespace nana
 		std::vector<std::unique_ptr<dock_indicator>> pane_indicators;
 		dock_indicator tab_indicator;
 		std::vector<std::unique_ptr<division>> floating_divs;
-
-		bool enabled_debug = true;
 
 		implement();
 
@@ -2263,10 +2263,8 @@ namespace nana
 
 		~div_dockpane() noexcept
 		{
-			std::cout << "bye bye div_dockpane. ";
 			if (dockable_field)
 			{
-				std::cout << "- dockarea.reset()";
 				dockable_field->dockarea.reset();
 				dockable_field->attached = nullptr;
 			}
@@ -3014,7 +3012,7 @@ namespace nana
 	void place::implement::print_debug()
 	{
 #ifdef _DEBUG
-		if (!enabled_debug) return;
+		if (!debugger::enabled_debug) return;
 
 		unsigned level = 0;
 
@@ -4678,16 +4676,6 @@ namespace nana
 
 		if (recollocate)
 			collocate();
-	}
-
-	bool place::is_enabled_print_debug()
-	{
-		return impl_->enabled_debug;
-	}
-
-	void place::enable_print_debug(bool newValue)
-	{
-		impl_->enabled_debug = newValue;
 	}
 
 	place::field_reference place::operator[](const char* name)
