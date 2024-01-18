@@ -57,6 +57,7 @@
     <ClCompile Include="source\basic_types.cpp" />
     <ClCompile Include="source\charset.cpp" />
     <ClCompile Include="source\datetime.cpp" />
+    <ClCompile Include="source\debugger.cpp" />
     <ClCompile Include="source\deploy.cpp" />
     <ClCompile Include="source\detail\platform_abstraction.cpp">
       <Filter>detail</Filter>
@@ -276,6 +277,5 @@
       <Filter>threads</Filter>
     </ClCompile>
     <ClCompile Include="source\unicode_bidi.cpp" />
-    <ClCompile Include="source\debugger.cpp" />
   </ItemGroup>
 </Project>
