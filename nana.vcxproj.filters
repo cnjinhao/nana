@@ -276,5 +276,6 @@
       <Filter>threads</Filter>
     </ClCompile>
     <ClCompile Include="source\unicode_bidi.cpp" />
+    <ClCompile Include="source\debugger.cpp" />
   </ItemGroup>
 </Project>

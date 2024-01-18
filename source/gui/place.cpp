@@ -3012,7 +3012,7 @@ namespace nana
 	void place::implement::print_debug()
 	{
 #ifdef _DEBUG
-		if (!debugger::enabled_debug) return;
+		if (!debugger::is_enabled_print_debug()) return;
 
 		unsigned level = 0;
 
