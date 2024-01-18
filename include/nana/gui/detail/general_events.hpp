@@ -201,7 +201,6 @@ namespace nana
 			{
 				static_assert(!std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler must be immutable for the argument. E.g. void(Arg&) is not acceptable.");
 				static_assert(std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler doesn't match the event argument type.");
-				return nullptr;
 			}
 		}
 

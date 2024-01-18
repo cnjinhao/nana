@@ -1,6 +1,0 @@
-version: 1.0.{build}
-image:
-  - Visual Studio 2017
-build:
-  project: build\vc2017\nana.sln
-  verbosity: minimal

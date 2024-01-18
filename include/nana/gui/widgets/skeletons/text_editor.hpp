@@ -1,7 +1,7 @@
 /*
  *	A text editor implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -129,7 +129,6 @@ namespace nana::widgets::skeletons
 			* @param enable_cart Indicates whether to show or hide the caret when the text_editor is not editable. It is ignored if enable is false.
 			*/
 		void editable(bool enable, bool enable_caret);
-		bool editable() const;
 		void enable_background(bool);
 		void enable_background_counterpart(bool);
 
@@ -195,7 +194,6 @@ namespace nana::widgets::skeletons
 		void draw_corner();
 		void render(bool focused);
 	public:
-		upoint im_input(upoint insert_pos, const std::wstring& str, bool candidate);
 		void put(std::wstring, bool perform_event);
 		void put(wchar_t);
 		void copy() const;
@@ -225,9 +223,6 @@ namespace nana::widgets::skeletons
 		bool try_refresh();
 
 		std::shared_ptr<scroll_operation_interface> scroll_operation() const;
-
-		// sets whether the focused border is shown
-		void enable_focused_border(bool);
 	private:
 		nana::color _m_draw_colored_area(paint::graphics& graph, const std::pair<std::size_t,std::size_t>& row, bool whole_line);
 		std::vector<upoint> _m_render_text(const ::nana::color& text_color);

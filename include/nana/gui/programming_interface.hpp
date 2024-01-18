@@ -1,7 +1,7 @@
 /*
  *	Nana GUI Programming Interface Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -17,7 +17,6 @@
 #include "detail/general_events.hpp"
 #include "detail/color_schemes.hpp"
 #include "detail/widget_content_measurer_interface.hpp"
-#include "detail/virtual_keyboard.hpp"
 #include <nana/paint/image.hpp>
 #include <memory>
 
@@ -29,9 +28,6 @@ namespace nana
 	namespace widgets::skeletons {
 		class text_editor;
 	}
-
-	using keyboard_modes = detail::virtual_keyboard::modes;
-	using keyboard_behaves = detail::virtual_keyboard::behaves;
 
 	namespace dev
 	{
@@ -133,7 +129,7 @@ namespace api
 
 		std::optional<upoint> caret_position(window);
 
-		upoint im_input(window, const upoint& insert_pos, const std::wstring&, bool candidate);
+		void im_input(window, const upoint& insert_pos, const upoint* move_to, const std::wstring&, bool candidate);
 	}//end namespace dev
 
 
@@ -357,7 +353,6 @@ namespace api
 	size window_outline_size(window);
 	void window_outline_size(window, const size&);
 
-	bool window_text_editor_editable(window);
 	::std::optional<rectangle> window_text_editor_rectangle(window wd, bool including_scrollbars);
 	::std::optional<rectangle> window_rectangle(window);
 	bool get_window_rectangle(window, rectangle&);
@@ -515,20 +510,6 @@ namespace api
 
 	std::size_t window_dpi(window);
 	dragdrop_status window_dragdrop_status(::nana::window);
-
-	/// Configures the qwerty keyboard for a text editor
-	/**
-	 * @param wd The handle to a text editor window. Such as textbox and combox.
-	 * @param langs The input methods of the specified languages.
-	 * @param behave The behavior of keyboard
-	 * @param mode The mode of keyboard
-	 * @return true if virtual keyboard is enabled and the specified window is a text editor window, false otherwise.
-	 */
-	bool keyboard_qwerty(window wd, std::vector<std::string> langs, keyboard_behaves behave, keyboard_modes mode);
-
-	/// Configures the numeric keyboard. It returns true if virtual keyboard is enabled and
-	/// the specified window is a text editor window, false otherwise.
-	bool keyboard_numeric(window);
 }//end namespace api
 
 namespace API = api;

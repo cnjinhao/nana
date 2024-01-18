@@ -1,7 +1,7 @@
 /*
  *	A float_listbox Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -498,11 +498,6 @@ namespace nana
 			drawer_->draw();
 		}
 
-		void trigger::mouse_down(graph_reference, const arg_mouse&)
-		{
-			drawer_->ignore_first_mouse_up(false);
-		}
-
 		void trigger::mouse_move(graph_reference graph, const arg_mouse& arg)
 		{
 			if (drawer_->set_mouse(graph, arg.pos.x, arg.pos.y))
@@ -514,17 +509,17 @@ namespace nana
 
 		void trigger::mouse_up(graph_reference graph, const arg_mouse& arg)
 		{
-			//The mouseup event may occur unexpectedly. E.g. Click a button to popup
-			//a float_listbox. Before releasing the button, if the float_listbox shows
-			//under the mouse, we should ignore the following mouseup event, because it
-			//is not intended closing the float_listbox.
-			if(drawer_->ignore_emitting_mouseup())
-				return;
-
+			bool close_wdg = false;
 			if (drawer_->right_area(graph, arg.pos.x, arg.pos.y))
+			{
 				drawer_->set_result();
+				close_wdg = true;
+			}
+			else
+				close_wdg = (false == drawer_->ignore_emitting_mouseup());
 
-			drawer_->widget_ptr()->close();
+			if (close_wdg)
+				drawer_->widget_ptr()->close();
 		}
 		//end class trigger
 	}//end namespace drawerbase::float_listbox
