@@ -90,8 +90,10 @@ namespace skeletons
 
 		void set_wheel_speed(std::function<unsigned()> fn);
 
-		unsigned space() const;
-		void space(unsigned);
+		static constexpr unsigned space()
+		{
+			return 16;
+		}
 	private:
 		implementation* const impl_;
 	};

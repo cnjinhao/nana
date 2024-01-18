@@ -484,7 +484,6 @@ namespace nana::widgets::skeletons
 	{
 		undoable<command>	undo;			//undo command
 		renderers			customized_renderers;
-		bool show_focused_border = true; ///< Whether the text_editor shows a border when it is focused via being clicked on
 		std::vector<upoint> text_position;	//positions of text since last rendering.
 		int text_position_origin{ -1 };	//origin when last text_exposed
 
@@ -1364,11 +1363,6 @@ namespace nana::widgets::skeletons
 		attributes_.enable_caret = (enable || enable_caret);
 	}
 
-	bool text_editor::editable() const
-	{
-		return attributes_.editable;
-	}
-
 	void text_editor::enable_background(bool enb)
 	{
 		attributes_.enable_background = enb;
@@ -1988,11 +1982,6 @@ namespace nana::widgets::skeletons
 		return impl_->cview->scroll_operation();
 	}
 
-	void text_editor::enable_focused_border(bool enable)
-	{
-		impl_->show_focused_border = enable;
-	}
-
 	void text_editor::draw_corner()
 	{
 		impl_->cview->draw_corner(graph_);
@@ -2087,44 +2076,6 @@ namespace nana::widgets::skeletons
 		impl_->try_refresh = sync_graph::none;
 	}
 
-	upoint text_editor::im_input(upoint insert_pos, const std::wstring& str, bool candidate)
-	{
-		if (selected())
-		{
-			backspace(false, false);
-			insert_pos = caret();
-		}
-		else
-			move_caret(insert_pos, true);
-
-		nana::arg_keyboard arg;
-		arg.evt_code = event_code::key_char;
-		arg.window_handle = window_;
-		arg.ignore = false;
-		arg.ctrl = false;
-		arg.shift = false;
-		arg.alt = false;
-
-		for (auto ch : str)
-		{
-			arg.key = ch;
-			respond_char(arg);
-		}
-
-		if (candidate)
-		{
-			select_points(insert_pos, caret());
-
-			im_candidate_mode(true);
-			api::refresh_window(window_);
-			im_candidate_mode(false);
-		}
-		else
-			api::refresh_window(window_);
-
-		return insert_pos;
-	}
-
 	void text_editor::put(std::wstring text, bool perform_event)
 	{
 		if (text.empty())
@@ -2215,7 +2166,7 @@ namespace nana::widgets::skeletons
 
 		if ((accepts::no_restrict == impl_->capacities.acceptive) || !impl_->capacities.pred_acceptive)
 		{
-			put(std::move(text), true);
+			put(move(text), true);
 			return;
 		}
 
@@ -2233,7 +2184,7 @@ namespace nana::widgets::skeletons
 			if (accepts::no_restrict != impl_->capacities.acceptive)
 			{
 				text.erase(i, text.end());
-				put(std::move(text), true);
+				put(move(text), true);
 			}
 			break;
 		}
@@ -2610,15 +2561,7 @@ namespace nana::widgets::skeletons
 			else
 			{
 				::nana::facade<element::border> facade;
-
-				if (this->impl_->show_focused_border)
-				{
-					facade.draw(graph_, _m_bgcolor(), api::fgcolor(this->window_), ::nana::rectangle{ api::window_size(this->window_) }, api::element_state(this->window_));
-				}
-				else
-				{
-					facade.draw(graph_, _m_bgcolor(), api::fgcolor(this->window_), ::nana::rectangle{ api::window_size(this->window_) }, element_state::normal);
-				}
+				facade.draw(graph_, _m_bgcolor(), api::fgcolor(this->window_), ::nana::rectangle{ api::window_size(this->window_) }, api::element_state(this->window_));
 			}
 
 			if (!attributes_.line_wrapped)

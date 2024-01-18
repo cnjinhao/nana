@@ -520,7 +520,7 @@ namespace nana
 						model_->unlock();
 				}
 
-				model_guard& operator=(model_guard&& other) noexcept
+				model_guard& operator=(model_guard&& other)
 				{
 					if (this != &other)
 					{
@@ -855,7 +855,7 @@ namespace nana
 				 */
 				item_proxy & select(bool sel, bool scroll_view = false);
 
-				/// Determines whether the item is selected
+				/// Determines whether he item is selected
 				bool selected() const;
 
 				item_proxy & bgcolor(const nana::color&);
@@ -1246,6 +1246,7 @@ namespace nana
 				unsigned header_splitter_area_after{ 3 }; ///< def=3. But 4 is better...
 				unsigned header_padding_top{ 3 };
 				unsigned header_padding_bottom{ 3 };
+
 				::nana::parameters::mouse_wheel mouse_wheel{}; ///< The number of lines/characters to scroll when vertical/horizontal mouse wheel is moved.
 			};
 	}//end namespace drawerbase::listbox
@@ -1653,9 +1654,6 @@ the nana::detail::basic_window member pointer scheme
 		void set_deselect(std::function<bool(nana::mouse)> predicate);
 
 		unsigned suspension_width() const;
-
-		/// Set the scrollbar size
-		void scroll_space(unsigned);
 	private:
 		drawerbase::listbox::essence & _m_ess() const;
 		void _m_bgcolor(const nana::color&) override;

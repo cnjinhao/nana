@@ -168,12 +168,8 @@ namespace nana
 
 			/// \brief A proxy for accessing the node. The key string is case sensitive.
 			class item_proxy
+				: public std::iterator<std::input_iterator_tag, item_proxy>
 			{
-				using iterator_category = std::input_iterator_tag;
-				using value_type = item_proxy;
-				using difference_type = ptrdiff_t;
-				using pointer = item_proxy*;
-				using reference = item_proxy&;
 			public:
 				item_proxy() = default;           ///< The default constructor creates an end iterator.
 				item_proxy(const item_proxy&) = default;

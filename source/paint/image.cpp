@@ -50,32 +50,13 @@ namespace paint
 #if defined(NANA_WINDOWS)
 	HICON image_accessor::icon(const nana::paint::image& img)
 	{
-		if (img.empty())
-			return nullptr;
-
 		auto ico_res = dynamic_cast<paint::detail::image_ico_resource*>(img.image_ptr_.get());
 		if (ico_res)
 			return reinterpret_cast<HICON>(ico_res->native_handle());
 
-		auto size = img.size();
-		
-		//Construct pixel buffer and swap blue and red channels for CreateIcon
-		std::vector<uint8_t> pixels(size.width * size.height * 4);
-		for (std::size_t i = 0; i < pixels.size(); i += 4)
-		{
-			auto row = (i / 4) / size.height;
-			auto column = (i / 4) % size.width;
-			auto color = img.pxbuf()[row][column];
-
-			pixels[i + 0] = color.element.blue;
-			pixels[i + 1] = color.element.green;
-			pixels[i + 2] = color.element.red;
-			pixels[i + 3] = color.element.alpha_channel;
-		}
-
-		auto icon = CreateIcon(GetModuleHandle(NULL), size.width, size.height, 1, 32, NULL, &pixels[0]);
-		if (icon)
-			return icon;
+		auto ico = dynamic_cast<paint::detail::image_ico*>(img.image_ptr_.get());
+		if (ico)
+			return reinterpret_cast<HICON>(ico->native_handle());
 
 		return nullptr;
 	}

@@ -296,9 +296,6 @@ namespace nana
 
 		/// Sets the padding area around the content.
 		textbox& padding(unsigned top, unsigned right, unsigned bottom, unsigned left) noexcept;
-
-		// sets whether the focused border is shown
-		void enable_border_focused(bool);
 	protected:
 		//Overrides widget's virtual functions
 		native_string_type _m_caption() const noexcept override;

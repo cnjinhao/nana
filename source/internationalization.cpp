@@ -36,9 +36,9 @@ namespace nana
 		class tokenizer
 		{
 		public:
-			tokenizer(const std::filesystem::path& file, bool utf8)
+			tokenizer(const std::string& file, bool utf8)
 			{
-				std::ifstream ifs(file, std::ios::binary);
+				std::ifstream ifs(file.data(), std::ios::binary);
 				if (ifs)
 				{
 					ifs.seekg(0, std::ios::end);
@@ -235,11 +235,11 @@ namespace nana
 			return data_ptr;
 		}
 
-		void load(const std::filesystem::path& p, bool utf8)
+		void load(const std::string& file, bool utf8)
 		{
 			auto impl = std::make_shared<data>();
 
-			tokenizer tknizer(p, utf8);
+			tokenizer tknizer(file, utf8);
 			while (true)
 			{
 				if (token::msgid != tknizer.read())
@@ -370,9 +370,14 @@ namespace nana
 		internationalization_parts::get_data_ptr()->on_missing = std::move(handler);
 	}
 
-	void internationalization::load(const std::filesystem::path& p, bool utf8_format)
+	void internationalization::load(const std::string& file)
 	{
-		internationalization_parts::load(p, utf8_format);
+		internationalization_parts::load(file, false);
+	}
+
+	void internationalization::load_utf8(const std::string& file)
+	{
+		internationalization_parts::load(file, true);
 	}
 
 	std::string internationalization::get(std::string msgid) const
