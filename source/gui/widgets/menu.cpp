@@ -686,7 +686,9 @@ namespace nana
 
 			unsigned _m_item_height() const
 			{
-				return menu_->item_pixels;
+				double scale = api::window_dpi(widget_->handle()) / 96.0;
+
+				return static_cast<unsigned>(menu_->item_pixels * scale);
 			}
 
 			nana::size _m_client_size() const
