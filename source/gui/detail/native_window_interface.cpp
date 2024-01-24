@@ -49,11 +49,13 @@ namespace nana{
 			};
 
 			HRESULT(__stdcall* SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS) {nullptr};
+			HRESULT(__stdcall* SetProcessDpiAwarenessContext)(PROCESS_DPI_AWARENESS) {nullptr};
 			UINT(__stdcall* GetDpiForWindow)(HWND) { nullptr };
 			UINT(__stdcall* GetDpiForSystem)() { nullptr };
 			HRESULT(__stdcall* GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*) { nullptr };
 			UINT(__stdcall* GetDpiFromDpiAwarenessContext)(void*) { nullptr };
 			void* (__stdcall* GetThreadDpiAwarenessContext)() { nullptr };
+			HRESULT(__stdcall* SetThreadDpiAwarenessContext)(PROCESS_DPI_AWARENESS) { nullptr };
 
 			dpi_function()
 			{
@@ -64,6 +66,12 @@ namespace nana{
 				this->GetDpiFromDpiAwarenessContext = reinterpret_cast<UINT(__stdcall*)(void*)>(::GetProcAddress(user32, "GetDpiFromDpiAwarenessContext"));
 				this->GetThreadDpiAwarenessContext = reinterpret_cast<void* (__stdcall*)()>(::GetProcAddress(user32, "GetThreadDpiAwarenessContext"));
 
+				this->SetThreadDpiAwarenessContext = reinterpret_cast<HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS)>
+					(::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
+
+				this->SetProcessDpiAwarenessContext = reinterpret_cast<HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS)>(
+					::GetProcAddress(user32, "SetProcessDpiAwarenessContext"));
+
 				auto shcore = ::GetModuleHandleW(L"Shcore.DLL");
 				if (nullptr == shcore)
 					shcore = ::LoadLibraryW(L"Shcore.DLL");
@@ -71,8 +79,8 @@ namespace nana{
 				if (shcore)
 				{
 					this->SetProcessDpiAwareness = reinterpret_cast<HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS)>(
-						::GetProcAddress(shcore, "SetProcessDpiAwareness")
-						);
+						::GetProcAddress(shcore, "SetProcessDpiAwareness"));
+
 					this->GetDpiForMonitor = reinterpret_cast<HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*)>(
 						::GetProcAddress(shcore, "GetDpiForMonitor"));
 				}
@@ -80,7 +88,8 @@ namespace nana{
 
 			bool good() const
 			{
-				return this->SetProcessDpiAwareness && this->GetDpiForWindow && this->GetDpiForMonitor && this->GetDpiForSystem && this->GetThreadDpiAwarenessContext;
+				return this->SetProcessDpiAwareness && this->GetDpiForWindow && this->GetDpiForMonitor && this->GetDpiForSystem && this->GetThreadDpiAwarenessContext 
+					&& this->SetThreadDpiAwarenessContext && this->SetProcessDpiAwarenessContext;
 			}
 		};
 
@@ -477,6 +486,9 @@ namespace nana{
 											style,
 											pt.x, pt.y, 100, 100,
 											reinterpret_cast<HWND>(owner), 0, windows_module_handle(), 0);
+
+
+			EnableNonClientDpiScaling(native_wd);
 
 			//A window may have a border, this should be adjusted the client area fit for the specified size.
 			::RECT client;
@@ -1911,7 +1923,8 @@ namespace nana{
 			auto& dpi_fn = windows_dpi_function();
 			if (dpi_fn.good())
 			{
-				dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_PER_MONITOR_DPI_AWARE);
+				dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_SYSTEM_DPI_AWARE);
+				//dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_PER_MONITOR_DPI_AWARE);
 			}
 #endif
 		}
