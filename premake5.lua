@@ -30,6 +30,6 @@ project "nana"
 		"include" 
 	}
 	files {
-		"include/nana/**.h",
+		"include/nana/**.hpp",
 		"source/**.cpp",
 	}
