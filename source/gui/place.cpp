@@ -2343,9 +2343,6 @@ namespace nana
 		void notify_dock() override
 		{
 			impl_ptr_->hide_indicators();
-
-			//impl_ptr_->collocate();
-			//impl_ptr_->print_debug();
 		}
 
 		void notify_move() override
@@ -2412,31 +2409,31 @@ namespace nana
 
 					::nana::drawing dw(impl_ptr_->tab_indicator.dock_area->handle());
 					dw.draw([pane, this](paint::graphics& graph)
-						{
-							//impl_ptr_->tab_indicator.graph.paste(pane->field_area, graph, 0, 0);
+					{
+						//impl_ptr_->tab_indicator.graph.paste(pane->field_area, graph, 0, 0);
 
-							const int border_px = 4;
-					rectangle r{ graph.size() };
-					int right = r.right();
-					int bottom = r.bottom();
+						const int border_px = 4;
+						rectangle r{ graph.size() };
+						int right = r.right();
+						int bottom = r.bottom();
 
-					graph.blend(r.pare_off(border_px), colors::blue, 0.3);
+						graph.blend(r.pare_off(border_px), colors::blue, 0.3);
 
-					::nana::color clr = colors::deep_sky_blue;
-					r.y = 0;
-					r.height = border_px;
-					graph.blend(r, clr, 0.5);
-					r.y = bottom - border_px;
-					graph.blend(r, clr, 0.5);
+						::nana::color clr = colors::deep_sky_blue;
+						r.y = 0;
+						r.height = border_px;
+						graph.blend(r, clr, 0.5);
+						r.y = bottom - border_px;
+						graph.blend(r, clr, 0.5);
 
-					r.x = r.y = 0;
-					r.dimension(graph.size());
-					r.width = border_px;
-					graph.blend(r, clr, 0.5);
-					r.x = right - border_px;
-					graph.blend(r, clr, 0.5);
+						r.x = r.y = 0;
+						r.dimension(graph.size());
+						r.width = border_px;
+						graph.blend(r, clr, 0.5);
+						r.x = right - border_px;
+						graph.blend(r, clr, 0.5);
 
-						});
+					});
 
 					api::bring_top(impl_ptr_->tab_indicator.dock_area->handle(), false);
 					impl_ptr_->tab_indicator.dock_area->show();
@@ -2476,10 +2473,10 @@ namespace nana
 
 					auto ptr = this;
 					api::at_safe_place(impl_ptr_->window_handle, [ptr]
-						{
-							// remove this dockpane
-							std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
-						});
+					{
+						// remove this dockpane
+						std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
+					});
 				}
 				else
 				{
@@ -2507,12 +2504,12 @@ namespace nana
 			auto ptr = dockable_field->dockarea.release();
 			auto imp = impl_ptr_;
 			api::at_safe_place(window_handle, [ptr, imp, this]
-				{
-					std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
-			imp->remove_dock_pane(this);
-			imp->collocate();
-			imp->print_debug();
-				});
+			{
+				std::unique_ptr<typename std::remove_pointer<decltype(ptr)>::type> del(ptr);
+				imp->remove_dock_pane(this);
+				imp->collocate();
+				imp->print_debug();
+			});
 
 			api::close_window(window_handle);
 		}
@@ -4338,16 +4335,16 @@ namespace nana
 
 		impl_->window_handle = wd;
 		impl_->event_size_handle = api::events(wd).resized.connect_unignorable([this](const arg_resized& arg)
+		{
+			if (impl_->root_division)
 			{
-				if (impl_->root_division)
-				{
-					impl_->root_division->field_area.dimension({ arg.width, arg.height });
-					impl_->root_division->calc_weight_floor(arg.window_handle);
-					impl_->root_division->collocate(arg.window_handle);
+				impl_->root_division->field_area.dimension({ arg.width, arg.height });
+				impl_->root_division->calc_weight_floor(arg.window_handle);
+				impl_->root_division->collocate(arg.window_handle);
 
-					impl_->print_debug();
-				}
-			});
+				impl_->print_debug();
+			}
+		});
 
 		// Though the event handlers are automatically destructed, the handles should set to null when the window
 		// is closed before the place being destructed.
@@ -4749,6 +4746,43 @@ namespace nana
 
 		impl_->dock_pane(div, where_div, dock_position);
 
+		return result;
+	}
+
+	widget* place::add_float_pane(std::string dock_id, std::function<std::unique_ptr<widget>(window)> factory, const nana::size& pane_size)
+	{
+		widget* result{ nullptr };
+		implement::div_dockpane* div = nullptr;
+
+		auto& dock_ptr = impl_->docks[dock_id];
+		if (!dock_ptr)
+		{
+			dock_ptr = new implement::field_dock;
+		}
+		div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), dock_id));
+
+		if (div == nullptr)
+		{
+			div = new implement::div_dockpane(std::move(dock_id), impl_, nana::direction::west);
+		}
+		div->dockable_field = dock_ptr;
+		dock_ptr->attached = div;
+
+		impl_->floating_divs.emplace_back(div);
+
+		if (dock_ptr->attached)
+		{
+			dock_ptr->attached->set_display(true);
+
+			dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
+			dock_ptr->dockarea->create(impl_->window_handle);
+			dock_ptr->dockarea->set_notifier(dock_ptr->attached);
+			dock_ptr->dockarea->move(dock_ptr->attached->field_area);
+			
+			result = dock_ptr->dockarea->add_pane(factory);
+		}
+
+		dock_ptr->dockarea->float_away({0, 0}, pane_size);
 		return result;
 	}
 
