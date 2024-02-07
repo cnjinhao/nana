@@ -17,7 +17,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") #  AN
     target_compile_options(nana PRIVATE  -Wall)
 
         # todo: set in target property of nana
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native -DNDEBUG")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc|powerpc")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mcpu=native -mtune=native -DNDEBUG")
+    else()
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native -DNDEBUG")
+    endif()
 
     set(THREADS_PREFER_PTHREAD_FLAG ON)               #  todo - test this
     find_package(Threads REQUIRED)
