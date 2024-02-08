@@ -23,6 +23,22 @@ namespace nana
 {
 	namespace place_parts
 	{
+		struct display_metrics
+		{
+			std::size_t dpi;
+			double font_px{ 0 };
+
+			display_metrics(window wd) :
+				dpi(api::window_dpi(wd))
+			{
+				auto font_info = api::typeface(wd).info();
+				if (font_info)
+					font_px = font_info->size_pt * dpi / 72.0;
+			}
+		};
+
+		const unsigned int dockarea_caption_height = 20;
+
 		class splitter_interface
 		{
 		public:
@@ -209,7 +225,11 @@ namespace nana
 			::nana::rectangle _m_button_area() const
 			{
 				auto sz = api::window_size(window_handle_);
-				return{ static_cast<int>(sz.width) - 20, 0, 20, sz.height };
+
+				display_metrics dm{ window_handle_ };
+				double dpiScale = dm.dpi / 96.0;
+				
+				return{ static_cast<int>(sz.width) - static_cast<int>(dockarea_caption_height * dpiScale), 0, static_cast<unsigned>(dockarea_caption_height * dpiScale), sz.height };
 			}
 		public:
 			window window_handle_;
@@ -250,13 +270,14 @@ namespace nana
 				notifier_ = notifier;
 			}
 
-			void create(window parent)
+			void create(window parent, pane_info* info)
 			{
 				host_window_ = parent;
+				pane_info_ = info;
 				base_type::create(parent, true);
 				this->caption("dockarea");
 				caption_.create(*this, true);
-				caption_.caption("dockarea-caption");
+				caption_.caption(info->caption);
 				caption_.get_drawer_trigger().on_close([this]
 				{
 					if (tabbar_)
@@ -273,20 +294,29 @@ namespace nana
 
 				this->events().resized.connect_unignorable([this](const arg_resized& arg)
 				{
-					rectangle r{ 0, 0, arg.width, 20 };
-					caption_.move(r);
-
-					if (arg.height > 20)
+					rectangle r{ 0, 0, arg.width, arg.height };
+					if (pane_info_->show_caption)
 					{
-						r.y = 20;
-						if (tabbar_)
+						display_metrics dm{ this->handle() };
+						double dpiScale = dm.dpi / 96.0;
+						unsigned int caption_height_scale = static_cast<unsigned>(dockarea_caption_height * dpiScale);
+
+						r.height = caption_height_scale;
+						caption_.move(r);
+
+						if (arg.height > caption_height_scale)
 						{
-							tabbar_->move({ 0, int(arg.height) - 20, arg.width, 20 });
-							r.height = arg.height - 40;
+							r.y = caption_height_scale;
+							if (tabbar_)
+							{
+								tabbar_->move({ 0, int(arg.height) - int(caption_height_scale), arg.width, caption_height_scale });
+								r.height = arg.height - caption_height_scale * 2;
+							}
+							else
+								r.height = arg.height - caption_height_scale;
 						}
-						else
-							r.height = arg.height - 20;
 					}
+					
 
 					for (auto& pn : panels_)
 					{
@@ -449,9 +479,13 @@ namespace nana
 			{
 				rectangle r{ this->size() };
 
+				display_metrics dm{ this->handle() };
+				double dpiScale = dm.dpi / 96.0;
+				unsigned int caption_height_scale = static_cast<unsigned>(dockarea_caption_height * dpiScale);
+
 				//get a rectangle excluding caption
-				r.y = 20;
-				r.height = differ(r.height, 20);
+				r.y = caption_height_scale;
+				r.height = differ(r.height, caption_height_scale);
 
 				if (!tabbar_)
 				{
@@ -468,8 +502,8 @@ namespace nana
 							caption_.caption(api::window_caption(handle));
 						});
 
-						r.height -= 20;
-						tabbar_->move({ 0, r.bottom(), r.width, 20 });
+						r.height -= caption_height_scale;
+						tabbar_->move({ 0, r.bottom(), r.width, caption_height_scale });
 
 						std::size_t pos = 0;
 						for (auto& pn : panels_)
@@ -480,7 +514,7 @@ namespace nana
 					}
 				}
 				else
-					r.height -= 20;
+					r.height -= caption_height_scale;
 
 				auto wdg = fn(*this);
 				if (wdg)
@@ -514,9 +548,13 @@ namespace nana
 			{
 				rectangle r{ this->size() };
 
+				display_metrics dm{ this->handle() };
+				double dpiScale = dm.dpi / 96.0;
+				unsigned int caption_height_scale = static_cast<unsigned>(dockarea_caption_height * dpiScale);
+
 				//get a rectangle excluding caption
-				r.y = 20;
-				r.height = differ(r.height, 20);
+				r.y = caption_height_scale;
+				r.height = differ(r.height, caption_height_scale);
 
 				if (!tabbar_)
 				{
@@ -533,8 +571,8 @@ namespace nana
 							caption_.caption(api::window_caption(handle));
 						});
 
-						r.height -= 20;
-						tabbar_->move({ 0, r.bottom(), r.width, 20 });
+						r.height -= caption_height_scale;
+						tabbar_->move({ 0, r.bottom(), r.width, caption_height_scale });
 
 						std::size_t pos = 0;
 						for (auto& pn : panels_)
@@ -545,7 +583,7 @@ namespace nana
 					}
 				}
 				else
-					r.height -= 20;
+					r.height -= caption_height_scale;
 
 				if (other.panels_.size() > 0)
 				{
@@ -576,6 +614,7 @@ namespace nana
 			dockarea_caption	caption_;
 			std::deque<panel>	panels_;
 			std::unique_ptr<tabbar_lite> tabbar_;
+			pane_info* pane_info_;
 
 			struct moves
 			{
@@ -585,21 +624,6 @@ namespace nana
 				::nana::point start_container_pos;
 			}moves_;
 		};//class dockarea
-
-
-		struct display_metrics
-		{
-			std::size_t dpi;
-			double font_px{ 0 };
-
-			display_metrics(window wd) :
-				dpi(api::window_dpi(wd))
-			{
-				auto font_info = api::typeface(wd).info();
-				if (font_info)
-					font_px = font_info->size_pt * dpi / 72;
-			}
-		};
 
 		//number_t is used for storing a number type variable
 		//such as integer, real and percent. Essentially, percent is a typo of real.

@@ -855,7 +855,8 @@ namespace nana
 	public:
 		div_dockpane* attached{ nullptr };					//attached div object
 		std::unique_ptr<place_parts::dockarea> dockarea;	//the dockable widget
-		std::map<std::string, std::function<std::unique_ptr<widget>(window)>> factories;	//factories for dockpane
+		pane_info pane_info;
+		//std::map<std::string, std::function<std::unique_ptr<widget>(window)>> factories;	//factories for dockpane
 	};//end class field_dock
 
 
@@ -4680,17 +4681,18 @@ namespace nana
 		return field(name);
 	}
 
-	widget* place::add_pane(std::string dock_id, std::function<std::unique_ptr<widget>(window)> factory, const std::string& relative_pane_id, dock_position dock_position)
+	widget* place::add_pane(const pane_info& info, std::function<std::unique_ptr<widget>(window)> factory, const std::string& relative_pane_id, dock_position dock_position)
 	{
 		widget* result{ nullptr };
 		implement::div_dockpane* div = nullptr;
 
-		auto& dock_ptr = impl_->docks[dock_id];
+		auto dock_id = info.id;
+		auto& dock_ptr = impl_->docks[info.id];
 		if (!dock_ptr)
 		{
 			dock_ptr = new implement::field_dock;
 		}
-		div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), dock_id));
+		div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), info.id));
 
 		if (div == nullptr)
 		{
@@ -4698,6 +4700,7 @@ namespace nana
 		}
 		div->dockable_field = dock_ptr;
 		dock_ptr->attached = div;
+		dock_ptr->pane_info = info;
 
 		impl_->floating_divs.emplace_back(div);
 
@@ -4708,7 +4711,7 @@ namespace nana
 			if (!dock_ptr->dockarea)
 			{
 				dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
-				dock_ptr->dockarea->create(impl_->window_handle);
+				dock_ptr->dockarea->create(impl_->window_handle, &dock_ptr->pane_info);
 				dock_ptr->dockarea->set_notifier(dock_ptr->attached);
 				dock_ptr->dockarea->move(dock_ptr->attached->field_area);
 			}
@@ -4749,17 +4752,18 @@ namespace nana
 		return result;
 	}
 
-	widget* place::add_float_pane(std::string dock_id, std::function<std::unique_ptr<widget>(window)> factory, const nana::size& pane_size)
+	widget* place::add_float_pane(const pane_info& info, std::function<std::unique_ptr<widget>(window)> factory, const nana::size& pane_size)
 	{
 		widget* result{ nullptr };
 		implement::div_dockpane* div = nullptr;
 
-		auto& dock_ptr = impl_->docks[dock_id];
+		auto dock_id = info.id;
+		auto& dock_ptr = impl_->docks[info.id];
 		if (!dock_ptr)
 		{
 			dock_ptr = new implement::field_dock;
 		}
-		div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), dock_id));
+		div = dynamic_cast<implement::div_dockpane*>(impl_->search_div_name(impl_->root_division.get(), info.id));
 
 		if (div == nullptr)
 		{
@@ -4767,6 +4771,7 @@ namespace nana
 		}
 		div->dockable_field = dock_ptr;
 		dock_ptr->attached = div;
+		dock_ptr->pane_info = info;
 
 		impl_->floating_divs.emplace_back(div);
 
@@ -4775,7 +4780,7 @@ namespace nana
 			dock_ptr->attached->set_display(true);
 
 			dock_ptr->dockarea.reset(new ::nana::place_parts::dockarea);
-			dock_ptr->dockarea->create(impl_->window_handle);
+			dock_ptr->dockarea->create(impl_->window_handle, &dock_ptr->pane_info);
 			dock_ptr->dockarea->set_notifier(dock_ptr->attached);
 			dock_ptr->dockarea->move(dock_ptr->attached->field_area);
 			
@@ -4785,7 +4790,6 @@ namespace nana
 		dock_ptr->dockarea->float_away({0, 0}, pane_size);
 		return result;
 	}
-
 	place::error::error(const std::string& what,
 		const place& plc,
 		std::string field,
