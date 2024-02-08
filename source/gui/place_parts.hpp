@@ -144,6 +144,11 @@ namespace nana
 				close_fn_ = std::move(fn);
 			}
 
+			void set_info(pane_info* info)
+			{
+				info_ = info;
+			}
+
 			bool hit_close() const
 			{
 				return x_pointed_;
@@ -167,25 +172,31 @@ namespace nana
 					text_rd_->render({ 3, 1 }, { text.data(), text.size() }, graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
 				//draw x button
-				auto r = _m_button_area();
-				if (x_pointed_)
+				if (info_->show_close_button)
 				{
-					color xclr = colors::red;
+					auto r = _m_button_area();
+					if (x_pointed_)
+					{
+						color xclr = colors::red;
 
-					if (x_state_ == ::nana::mouse_action::pressed)
-						xclr = xclr.blend(colors::white, 0.2);
+						if (x_state_ == ::nana::mouse_action::pressed)
+							xclr = xclr.blend(colors::white, 0.2);
 
-					graph.rectangle(r, true, xclr);
+						graph.rectangle(r, true, xclr);
+					}
+
+					r.x += (r.width - 16) / 2;
+					r.y = (r.height - 16) / 2;
+
+					x_icon_.draw(graph, colors::red, colors::white, r, element_state::normal);
 				}
-
-				r.x += (r.width - 16) / 2;
-				r.y = (r.height - 16) / 2;
-
-				x_icon_.draw(graph, colors::red, colors::white, r, element_state::normal);
 			}
 
 			void mouse_move(graph_reference graph, const arg_mouse& arg) override
 			{
+				if (!info_->show_close_button)
+					return;
+
 				x_pointed_ = _m_button_area().is_hit(arg.pos);
 
 				refresh(graph);
@@ -239,6 +250,7 @@ namespace nana
 			facade<element::x_icon>	x_icon_;
 
 			std::function<void()>	close_fn_;
+			pane_info* info_{ nullptr };
 		};
 
 		class dockarea_caption
@@ -278,6 +290,7 @@ namespace nana
 				this->caption("dockarea");
 				caption_.create(*this, true);
 				caption_.caption(info->caption);
+				caption_.get_drawer_trigger().set_info(info);
 				caption_.get_drawer_trigger().on_close([this]
 				{
 					if (tabbar_)
