@@ -984,6 +984,9 @@ namespace nana{	namespace paint
 		auto sp = storage_.get();
 		if((nullptr == sp) || (fade_rate == 1.0)) return;
 
+		if (r.right() < 0 || r.x >= static_cast<int>(sp->pixel_size.width) || r.bottom() < 0 || r.y >= static_cast<int>(sp->pixel_size.height))
+			return;
+
 		bool fade = (fade_rate != 0.0);
 		unsigned char * fade_table = nullptr;
 		std::unique_ptr<unsigned char[]> autoptr;
@@ -1061,7 +1064,7 @@ namespace nana{	namespace paint
 		{
 			if(ybeg == r.y)
 			{
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 				if(fade)
 				{
@@ -1078,7 +1081,7 @@ namespace nana{	namespace paint
 			if(r.y + static_cast<int>(r.height) == yend)
 			{
 				auto p_rgb = sp->raw_pixel_buffer + (yend - 1) * sp->pixel_size.width;
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 
 				if(fade)
