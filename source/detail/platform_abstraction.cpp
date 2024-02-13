@@ -7,6 +7,7 @@
 #include "../paint/truetype.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
 #include <nana/gui/detail/internal_scope_guard.hpp>
+#include <nana/gui/programming_interface.hpp>
 #include <nana/system/platform.hpp>
 
 
@@ -1344,6 +1345,55 @@ namespace nana
 	std::size_t platform_abstraction::current_dpi()
 	{
 		return platform_storage().dpi;
+	}
+
+	int platform_abstraction::dpi_scale(int size)
+	{
+		double dpiScale = static_cast<double>(current_dpi() / 96.0);
+
+		return static_cast<int>(size * dpiScale);
+	}
+
+	nana::size platform_abstraction::dpi_scale(nana::size size)
+	{
+		double dpiScale = static_cast<double>(current_dpi() / 96.0);
+
+		return { static_cast<size::value_type>(size.width * dpiScale), static_cast<size::value_type>(size.height * dpiScale) };
+	}
+
+	nana::point platform_abstraction::dpi_scale(nana::point point)
+	{
+		double dpiScale = static_cast<double>(current_dpi() / 96.0);
+
+		return { static_cast<nana::point::value_type>(point.x * dpiScale), static_cast<nana::point::value_type>(point.y * dpiScale) };
+	}
+
+	int platform_abstraction::dpi_scale(window wd, int scalar)
+	{
+		double dpiScale = static_cast<double>(api::window_dpi(wd) / 96.0);
+
+		return static_cast<int>(scalar * dpiScale);
+	}
+
+	unsigned int platform_abstraction::dpi_scale(window wd, unsigned int scalar)
+	{
+		double dpiScale = static_cast<double>(api::window_dpi(wd) / 96.0);
+
+		return static_cast<unsigned int>(scalar * dpiScale);
+	}
+
+	nana::size platform_abstraction::dpi_scale(window wd, nana::size size)
+	{
+		double dpiScale = static_cast<double>(api::window_dpi(wd) / 96.0);
+
+		return { static_cast<size::value_type>(size.width * dpiScale), static_cast<size::value_type>(size.height * dpiScale) };
+	}
+
+	nana::point platform_abstraction::dpi_scale(window wd, nana::point point)
+	{
+		double dpiScale = static_cast<double>(api::window_dpi(wd) / 96.0);
+
+		return { static_cast<nana::point::value_type>(point.x * dpiScale), static_cast<nana::point::value_type>(point.y * dpiScale) };
 	}
 
 	std::shared_ptr<platform_abstraction::font> platform_abstraction::open_font(const font_info& fi, std::size_t dpi, const path_type& ttf)

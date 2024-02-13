@@ -4790,6 +4790,7 @@ namespace nana
 		dock_ptr->dockarea->float_away({0, 0}, pane_size);
 		return result;
 	}
+
 	place::error::error(const std::string& what,
 		const place& plc,
 		std::string field,
