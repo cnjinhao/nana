@@ -221,7 +221,7 @@ namespace nana
 				api::dev::lazy_refresh();
 			}
 
-			void mouse_up(graph_reference graph, const arg_mouse&) override
+			void mouse_up(graph_reference graph, const arg_mouse& mouse_args) override
 			{
 				if (!x_pointed_)
 					return;
@@ -230,7 +230,8 @@ namespace nana
 				refresh(graph);
 				api::dev::lazy_refresh();
 
-				close_fn_();
+				if (mouse_args.is_left_button())
+					close_fn_();
 			}
 		private:
 			::nana::rectangle _m_button_area() const

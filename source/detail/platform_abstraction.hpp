@@ -63,6 +63,7 @@ namespace nana
 
 		static void set_current_dpi(std::size_t dpi);
 		static std::size_t current_dpi();
+		
 		static int dpi_scale(int scalar);
 		static nana::size dpi_scale(nana::size size);
 		static nana::point dpi_scale(nana::point point);
