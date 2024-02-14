@@ -429,9 +429,11 @@ namespace nana
 				auto renderer = mbuilder_->renderer().get();
 				renderer->background(graph, *widget_);
 
+				auto two = platform_abstraction::dpi_scale(widget_->handle(), 2u);
+				auto splitter_h = _m_splitter_height();
 				const unsigned item_h_px = _m_item_height();
 				const unsigned image_px = item_h_px - platform_abstraction::dpi_scale(widget_->handle(), 2u);
-				nana::rectangle item_r(platform_abstraction::dpi_scale(widget_->handle(), 2u), platform_abstraction::dpi_scale(widget_->handle(), 2u), graph_->width() - platform_abstraction::dpi_scale(widget_->handle(), 4u), item_h_px);
+				nana::rectangle item_r(two, two, graph_->width() - platform_abstraction::dpi_scale(widget_->handle(), 4u), item_h_px);
 
 				unsigned strpixels = item_r.width - platform_abstraction::dpi_scale(widget_->handle(), 60u);
 
@@ -443,8 +445,9 @@ namespace nana
 					auto item_ptr = m.get();
 					if (item_ptr->flags.splitter)
 					{
-						graph_->line({ item_r.x + platform_abstraction::dpi_scale(widget_->handle(), 40), item_r.y }, { static_cast<int>(graph.width()) - 1, item_r.y }, colors::gray_border);
-						item_r.y += 2;
+						int offset = splitter_h >> 1;
+						graph_->line({ item_r.x + platform_abstraction::dpi_scale(widget_->handle(), 40), item_r.y + offset }, { static_cast<int>(graph.width()) - 1, item_r.y + offset }, colors::gray_border);
+						item_r.y += static_cast<int>(splitter_h);
 						++pos;
 						continue;
 					}
@@ -694,10 +697,14 @@ namespace nana
 				return platform_abstraction::dpi_scale(widget_->handle(), menu_->item_pixels);
 			}
 
+			unsigned int _m_splitter_height() const
+			{
+				return platform_abstraction::dpi_scale(widget_->handle(), 2u);
+			}
+
 			nana::size _m_client_size() const
 			{
 				nana::size size;
-
 				if (menu_->items.size())
 				{
 					for (auto & m : menu_->items)
@@ -713,7 +720,7 @@ namespace nana
 					}
 
 					size.width += platform_abstraction::dpi_scale(widget_->handle(), 35u + 40u);
-					size.height = static_cast<unsigned>(menu_->items.size() - size.height) * _m_item_height() + size.height + static_cast<unsigned>(menu_->items.size() - 1);
+					size.height = static_cast<unsigned>(menu_->items.size() - size.height) * _m_item_height() + size.height * _m_splitter_height() + static_cast<unsigned>(menu_->items.size() - 1);
 				}
 
 				if (size.width > menu_->max_pixels)
