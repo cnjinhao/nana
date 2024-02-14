@@ -18,6 +18,7 @@
 #include <nana/paint/text_renderer.hpp>
 #include <stdexcept>
 #include <deque>
+#include "../source/detail/platform_abstraction.hpp"
 
 namespace nana
 {
@@ -238,10 +239,7 @@ namespace nana
 			{
 				auto sz = api::window_size(window_handle_);
 
-				display_metrics dm{ window_handle_ };
-				double dpiScale = dm.dpi / 96.0;
-				
-				return{ static_cast<int>(sz.width) - static_cast<int>(dockarea_caption_height * dpiScale), 0, static_cast<unsigned>(dockarea_caption_height * dpiScale), sz.height };
+				return{ static_cast<int>(sz.width) - platform_abstraction::dpi_scale(window_handle_, (int)dockarea_caption_height), 0, platform_abstraction::dpi_scale(window_handle_, dockarea_caption_height), sz.height };
 			}
 		public:
 			window window_handle_;
@@ -311,9 +309,7 @@ namespace nana
 					rectangle r{ 0, 0, arg.width, arg.height };
 					if (pane_info_->show_caption)
 					{
-						display_metrics dm{ this->handle() };
-						double dpiScale = dm.dpi / 96.0;
-						unsigned int caption_height_scale = static_cast<unsigned>(dockarea_caption_height * dpiScale);
+						unsigned int caption_height_scale = platform_abstraction::dpi_scale(this->handle(), dockarea_caption_height);
 
 						r.height = caption_height_scale;
 						caption_.move(r);
@@ -493,9 +489,7 @@ namespace nana
 			{
 				rectangle r{ this->size() };
 
-				display_metrics dm{ this->handle() };
-				double dpiScale = dm.dpi / 96.0;
-				unsigned int caption_height_scale = static_cast<unsigned>(dockarea_caption_height * dpiScale);
+				unsigned int caption_height_scale = platform_abstraction::dpi_scale(this->handle(), dockarea_caption_height);
 
 				//get a rectangle excluding caption
 				r.y = caption_height_scale;
@@ -562,9 +556,7 @@ namespace nana
 			{
 				rectangle r{ this->size() };
 
-				display_metrics dm{ this->handle() };
-				double dpiScale = dm.dpi / 96.0;
-				unsigned int caption_height_scale = static_cast<unsigned>(dockarea_caption_height * dpiScale);
+				unsigned int caption_height_scale = platform_abstraction::dpi_scale(this->handle(), dockarea_caption_height);
 
 				//get a rectangle excluding caption
 				r.y = caption_height_scale;
