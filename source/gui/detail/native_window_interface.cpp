@@ -32,6 +32,15 @@ namespace nana{
 	namespace detail{
 
 #if defined(NANA_WINDOWS)
+
+		struct DPI_AWARENESS_CONTEXT___ { int unused; }; typedef struct DPI_AWARENESS_CONTEXT___* DPI_AWARENESS_CONTEXT_;
+
+#define DPI_AWARENESS_CONTEXT_UNAWARE_               ((DPI_AWARENESS_CONTEXT_)-1)
+#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE_          ((DPI_AWARENESS_CONTEXT_)-2)
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_     ((DPI_AWARENESS_CONTEXT_)-3)
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_  ((DPI_AWARENESS_CONTEXT_)-4)
+#define DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED_     ((DPI_AWARENESS_CONTEXT_)-5)
+
 		// Dynamically load Windows DPI functions to check these APIs are supported by the SDK and OS.
 		struct dpi_function
 		{
@@ -49,11 +58,13 @@ namespace nana{
 			};
 
 			HRESULT(__stdcall* SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS) {nullptr};
+			HRESULT(__stdcall* SetProcessDpiAwarenessContext)(DPI_AWARENESS_CONTEXT_) { nullptr };
 			UINT(__stdcall* GetDpiForWindow)(HWND) { nullptr };
 			UINT(__stdcall* GetDpiForSystem)() { nullptr };
 			HRESULT(__stdcall* GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*) { nullptr };
 			UINT(__stdcall* GetDpiFromDpiAwarenessContext)(void*) { nullptr };
 			void* (__stdcall* GetThreadDpiAwarenessContext)() { nullptr };
+			HRESULT(__stdcall* SetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT_) { nullptr };
 
 			dpi_function()
 			{
@@ -64,6 +75,9 @@ namespace nana{
 				this->GetDpiFromDpiAwarenessContext = reinterpret_cast<UINT(__stdcall*)(void*)>(::GetProcAddress(user32, "GetDpiFromDpiAwarenessContext"));
 				this->GetThreadDpiAwarenessContext = reinterpret_cast<void* (__stdcall*)()>(::GetProcAddress(user32, "GetThreadDpiAwarenessContext"));
 
+				this->SetThreadDpiAwarenessContext = reinterpret_cast<HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_)>(::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
+				this->SetProcessDpiAwarenessContext = reinterpret_cast<HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_)>(::GetProcAddress(user32, "SetProcessDpiAwarenessContext"));
+
 				auto shcore = ::GetModuleHandleW(L"Shcore.DLL");
 				if (nullptr == shcore)
 					shcore = ::LoadLibraryW(L"Shcore.DLL");
@@ -71,8 +85,8 @@ namespace nana{
 				if (shcore)
 				{
 					this->SetProcessDpiAwareness = reinterpret_cast<HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS)>(
-						::GetProcAddress(shcore, "SetProcessDpiAwareness")
-						);
+						::GetProcAddress(shcore, "SetProcessDpiAwareness"));
+
 					this->GetDpiForMonitor = reinterpret_cast<HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*)>(
 						::GetProcAddress(shcore, "GetDpiForMonitor"));
 				}
@@ -80,7 +94,8 @@ namespace nana{
 
 			bool good() const
 			{
-				return this->SetProcessDpiAwareness && this->GetDpiForWindow && this->GetDpiForMonitor && this->GetDpiForSystem && this->GetThreadDpiAwarenessContext;
+				return this->SetProcessDpiAwareness && this->GetDpiForWindow && this->GetDpiForMonitor && this->GetDpiForSystem && this->GetThreadDpiAwarenessContext
+					&& this->SetThreadDpiAwarenessContext && this->SetProcessDpiAwarenessContext;
 			}
 		};
 
@@ -1878,7 +1893,7 @@ namespace nana{
 			auto& dpi_fn = windows_dpi_function();
 			if (dpi_fn.good())
 			{
-				dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_PER_MONITOR_DPI_AWARE);
+				dpi_fn.SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_);
 			}
 #endif
 		}
@@ -1891,7 +1906,7 @@ namespace nana{
 
 			auto& dpi_fn = windows_dpi_function();
 			if (dpi_fn.good())
-					return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
+				return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
 #endif
 			static_cast<void>(wd);	//eliminate the unused warning
 			return system_dpi();
