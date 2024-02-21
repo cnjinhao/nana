@@ -230,6 +230,8 @@ namespace detail
 
 		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
 				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
+
+		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
 	bedrock::~bedrock()
