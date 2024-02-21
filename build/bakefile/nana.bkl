@@ -1,0 +1,96 @@
+srcdir ../../source;
+
+toolsets = gnu vs2013;
+
+gnu.makefile = ../build/makefile/makefile;
+vs2013.solutionfile = ../build/vc2013/nana.sln;
+
+library nana {
+    includedirs = ../include;
+
+    if ($(toolset) == gnu)
+        cxx-compiler-options = "-std=c++0x `pkg-config --cflags freetype2`";
+
+    sources {
+        any.cpp
+        basic_types.cpp
+        charset.cpp
+        datetime.cpp
+        deploy.cpp
+        exceptions.cpp
+        internationalization.cpp
+        traits.cpp
+        unicode_bidi.cpp
+        filesystem/file_iterator.cpp
+        filesystem/fs_utility.cpp
+        audio/player.cpp
+        audio/detail/audio_device.cpp
+        audio/detail/audio_stream.cpp
+        audio/detail/buffer_preparation.cpp
+        detail/platform_spec_selector.cpp
+        gui/animation.cpp
+        gui/basis.cpp
+        gui/dragdrop.cpp
+        gui/dragger.cpp
+        gui/drawing.cpp
+        gui/effects.cpp
+        gui/element.cpp
+        gui/filebox.cpp
+        gui/layout_utility.cpp
+        gui/msgbox.cpp
+        gui/notifier.cpp
+        gui/place.cpp
+        gui/programming_interface.cpp
+        gui/screen.cpp
+        gui/state_cursor.cpp
+        gui/timer.cpp
+        gui/tooltip.cpp
+        gui/wvl.cpp
+        gui/detail/basic_window.cpp
+        gui/detail/bedrock_pi.cpp
+        gui/detail/bedrock_selector.cpp
+        gui/detail/color_schemes.cpp
+        gui/detail/drawer.cpp
+        gui/detail/element_store.cpp
+        gui/detail/events_operation.cpp
+        gui/detail/native_window_interface.cpp
+        gui/detail/window_layout.cpp
+        gui/detail/window_manager.cpp
+        gui/widgets/button.cpp
+        gui/widgets/categorize.cpp
+        gui/widgets/checkbox.cpp
+        gui/widgets/combox.cpp
+        gui/widgets/date_chooser.cpp
+        gui/widgets/float_listbox.cpp
+        gui/widgets/form.cpp
+        gui/widgets/label.cpp
+        gui/widgets/listbox.cpp
+        gui/widgets/menubar.cpp
+        gui/widgets/menu.cpp
+        gui/widgets/panel.cpp
+        gui/widgets/picture.cpp
+        gui/widgets/progress.cpp
+        gui/widgets/scroll.cpp
+        gui/widgets/slider.cpp
+        gui/widgets/spinbox.cpp
+        gui/widgets/tabbar.cpp
+        gui/widgets/textbox.cpp
+        gui/widgets/toolbar.cpp
+        gui/widgets/treebox.cpp
+        gui/widgets/widget.cpp
+        gui/widgets/skeletons/text_editor.cpp
+        paint/gadget.cpp
+        paint/graphics.cpp
+        paint/image.cpp
+        paint/image_process_selector.cpp
+        paint/pixel_buffer.cpp
+        paint/text_renderer.cpp
+        paint/detail/image_process_provider.cpp
+        paint/detail/native_paint_interface.cpp
+        system/dataexch.cpp
+        system/platform.cpp
+        system/shared_wrapper.cpp
+        system/timepiece.cpp
+        threads/pool.cpp
+    }
+}

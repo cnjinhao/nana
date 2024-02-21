@@ -1,0 +1,6 @@
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+*.vcxproj.user text eol=crlf
+*.bat text eol=crlf
+Makefile text eolf=lf

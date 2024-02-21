@@ -30,38 +30,19 @@ namespace nana
 	}
 
 	class widget;
-
-	enum class dock_position
-	{
-		up,
-		down,
-		left,
-		right,
-		tab
-	};
-
-	struct pane_info
-	{
-		std::string id;
-		std::string caption;
-		bool show_caption{ true };
-		bool show_close_button{ true };
-		bool show_float_button{ true };
-	};
-
 	namespace detail
 	{
-		class agent
+		class place_agent
 		{
 		public:
-			virtual ~agent() = default;
+			virtual ~place_agent() = default;
 			virtual std::unique_ptr<nana::widget> create(nana::window) const = 0;
 		};
 	}
 
 	template<typename Widget>
 	class agent
-		: public detail::agent
+		: public detail::place_agent
 	{
 	public:
 		explicit agent(std::function<void(Widget&)> initializer)
@@ -94,7 +75,7 @@ namespace nana
 		std::function<void(Widget&)> init_;
 	};
 
-	///  Layout management - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
+    ///  Layout management - an object of class place is attached to a widget, and it automatically positions and resizes the children widgets.
 	class place
 		: ::nana::noncopyable
 	{
@@ -103,7 +84,7 @@ namespace nana
 
 		class field_interface
 		{
-		public:
+        public:
 			field_interface(const field_interface&) = delete;
 			field_interface& operator=(const field_interface&) = delete;
 			field_interface(field_interface&&) = delete;
@@ -114,7 +95,7 @@ namespace nana
 			virtual field_interface& operator<<(std::string label) = 0;
 			virtual field_interface& operator<<(window) = 0;
 			virtual field_interface& fasten(window) = 0;
-
+			
 			template<typename Widget>
 			field_interface& operator<<(const agent<Widget>& ag)
 			{
@@ -122,24 +103,24 @@ namespace nana
 				return *this;
 			}
 		private:
-			virtual void _m_add_agent(const detail::agent&) = 0;
+			virtual void _m_add_agent(const detail::place_agent&) = 0;
 		};
 	public:
 		class error :public std::invalid_argument
 		{
 		public:
-			error(const std::string& what,
-				const place& plc,
-				std::string            field = "unknown",
-				std::string::size_type pos = std::string::npos);
+			error(	const std::string& what,
+					const place& plc,
+					std::string            field = "unknown",
+					std::string::size_type pos = std::string::npos);
 			std::string base_what;
 			std::string owner_caption;  ///< truncate caption (title) of the "placed" widget
 			std::string div_text;       ///< involved div_text
 			std::string field;          ///< posible field where the error ocurred.  
 			std::string::size_type pos; ///< posible position in the div_text where the error ocurred. npos if unknown
 		};
-		///  reference to a field manipulator which refers to a field object created by place 
-		using field_reference = field_interface&;
+        ///  reference to a field manipulator which refers to a field object created by place 
+		using field_reference = field_interface &;
 
 		place();
 		place(window);///< Attaches to a specified widget.
@@ -153,7 +134,7 @@ namespace nana
 		window window_handle() const;
 
 		void splitter_renderer(std::function<void(window, paint::graphics&, mouse_action)> fn);
-
+        
 		void div(std::string div_text);			  ///< Divides the attached widget into fields. May throw placa::error
 		const std::string& div() const noexcept;  ///< Returns div-text that depends on fields status.
 		static bool valid_field_name(const char* name)  ///< must begin with _a-zA-Z
@@ -172,41 +153,27 @@ namespace nana
 
 		void collocate();                     ///< Layouts the widgets.
 
-		void erase(window handle);				///< Erases a window from field.
+ 		void erase(window handle);				///< Erases a window from field.
 
 		field_reference operator[](const char* name); ///< Returns a field with the specified name. Equal to field();
 
 		/// Add a panel factory
 		template<typename Panel, typename ...Args>
-		Panel* add_pane(const std::string& dock_id, const std::string& relative_pane_id, dock_position dock_position, Args&& ... args)
+		place& dock(const std::string& dockname, const std::string& factory_name, Args&& ... args)
 		{
-			pane_info info;
-			info.id = dock_id;
-			return reinterpret_cast<Panel*>(add_pane(info, std::bind([](window parent, Args & ... dock_args)
-				{
-					return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(dock_args)...));
-				}, std::placeholders::_1, args...), relative_pane_id, dock_position));
+			return dock(dockname, factory_name, std::bind([](window parent, Args & ... dock_args)
+			{
+				return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(dock_args)...));
+			}, std::placeholders::_1, args...));
 		}
 
-		/// Add a panel factory as float
-		template<typename Panel, typename ...Args>
-		Panel* add_float_pane(const std::string& dock_id, const nana::size& pane_size, Args&& ... args)
-		{
-			pane_info info;
-			info.id = dock_id;
-			return reinterpret_cast<Panel*>(add_float_pane(info, std::bind([](window parent, Args & ... dock_args)
-				{
-					return std::unique_ptr<widget>(new Panel(parent, std::forward<Args>(dock_args)...));
-				}, std::placeholders::_1, args...), pane_size));
-		}
-
-		widget* add_pane(const pane_info& info, std::function<std::unique_ptr<widget>(window)> factory, const std::string& relative_pane_id, dock_position dock_position);
-		widget* add_float_pane(const pane_info& info, std::function<std::unique_ptr<widget>(window)> factory, const nana::size& pane_size);
+		place& dock(const std::string& dockname, std::string factory_name, std::function<std::unique_ptr<widget>(window)> factory);
+		widget* dock_create(const std::string& factory);
 	private:
-		implement* impl_;
+		implement * impl_;
 	};
 
-
+	
 }//end namespace nana
 #include <nana/pop_ignore_diagnostic>
 

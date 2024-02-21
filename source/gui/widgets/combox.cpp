@@ -291,7 +291,7 @@ namespace nana
 					module_.items.clear();
 					std::copy(items_.cbegin(), items_.cend(), std::back_inserter(module_.items));
 					state_.lister = &form_loader<nana::float_listbox, false>()(widget_->handle(), nana::rectangle(0, widget_->size().height, widget_->size().width, 10), true);
-					state_.lister->button_size(static_cast<unsigned>(_m_button_size()));
+					state_.lister->button_size(static_cast<unsigned>(scheme_ptr_->button_size));
 					state_.lister->renderer(item_renderer_);
 					state_.lister->set_module(module_, image_pixels_);
 					state_.item_index_before_selection = module_.index;
@@ -525,22 +525,12 @@ namespace nana
 				editor_->editor_area(r);
 			}
 
-			size_t _m_button_size()
-			{
-				double dpiScale = api::window_dpi(widget_->handle()) / 96.0;
-
-				return static_cast<size_t>(scheme_ptr_->button_size * dpiScale);
-			}
-
 			void _m_draw_push_button(bool enabled)
 			{
 				::nana::rectangle r{graph_->size()};
-
-				size_t button_size = _m_button_size();
-
-				r.x = r.right() - static_cast<int>(button_size);
+				r.x = r.right() - static_cast<int>(scheme_ptr_->button_size);
 				r.y = 1;
-				r.width = static_cast<unsigned>(button_size);
+				r.width = static_cast<unsigned>(scheme_ptr_->button_size);
 				r.height -= 2;
 
 				auto estate = state_.button_state;

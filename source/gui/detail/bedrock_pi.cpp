@@ -1,7 +1,7 @@
 /*
 *	A Bedrock Platform-Independent Implementation
 *	Nana C++ Library(http://www.nanapro.org)
-*	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+*	Copyright(C) 2003-2023 Jinhao(cnjinhao@hotmail.com)
 *
 *	Distributed under the Boost Software License, Version 1.0.
 *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -135,6 +135,13 @@ namespace nana
 				native_interface::close_window(i);
 		}
 
+#ifdef NANA_ENABLE_VIRTUAL_KEYBOARD
+		virtual_keyboard& bedrock::vkeyboard()
+		{
+			return this->pi_data_->vkeybd;
+		}
+#endif
+
 		void bedrock::event_expose(basic_window * wd, bool exposed)
 		{
 			if (nullptr == wd) return;
@@ -179,40 +186,6 @@ namespace nana
 				arg.x = x;
 				arg.y = y;
 				emit(event_code::move, wd, arg, true, get_thread_context());
-			}
-		}
-
-		void bedrock::event_enter_size_move(basic_window* wd)
-		{
-			if (wd)
-			{
-				arg_size_move arg;
-				arg.window_handle = wd;
-				emit(event_code::enter_size_move, wd, arg, true, get_thread_context());
-				
-				for (auto& child : wd->children)
-				{
-					if (!child->visible) continue;
-
-					wd_manager().enter_size_move(child);
-				}
-			}
-		}
-
-		void bedrock::event_exit_size_move(basic_window* wd)
-		{
-			if (wd)
-			{
-				arg_size_move arg;
-				arg.window_handle = wd;
-				emit(event_code::exit_size_move, wd, arg, true, get_thread_context());
-
-				for (auto& child : wd->children)
-				{
-					if (!child->visible) continue;
-
-					wd_manager().exit_size_move(child);
-				}
 			}
 		}
 
@@ -539,18 +512,6 @@ namespace nana
 					evt_addr->emit(*arg, wd);
 				break;
 			}
-            case event_code::activate:
-                if (bProcess__External_event)
-				{
-                    auto arg = dynamic_cast<const arg_activate*>(&event_arg);
-                    if (arg && (wd->other.category == category::flags::root))
-					{
-                        auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
-                        if (evt_root)
-                            evt_root->activate.emit(*arg, wd);
-                    }
-                }
-                break;
 			case event_code::expose:
 				if (bProcess__External_event)
 				{
@@ -616,35 +577,6 @@ namespace nana
 					}
 					if (bProcess__External_event)
 						evts_ptr->resized.emit(*arg, wd);
-				}
-				break;
-			}
-			case event_code::enter_size_move:
-			{
-				if (bProcess__External_event)
-				{
-					auto arg = dynamic_cast<const arg_size_move*>(&event_arg);
-					if (arg && wd->other.category == category::flags::root)
-					{
-						auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
-						if (evt_root)
-							evt_root->enter_size_move.emit(*arg, wd);
-					}
-				}
-				break;
-			}
-			case event_code::exit_size_move:
-			{
-				if (bProcess__External_event)
-				{
-					auto arg = dynamic_cast<const arg_size_move*>(&event_arg);
-					if (arg && wd->other.category == category::flags::root)
-					{
-						auto evt_root = dynamic_cast<events_root_extension*>(evts_ptr);
-						if (evt_root)
-							evt_root->exit_size_move.emit(*arg, wd);
-
-					}
 				}
 				break;
 			}

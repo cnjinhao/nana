@@ -1102,7 +1102,7 @@ using win32_dropdata = win32com_iunknown<win32_dropdata_impl, IID_IDataObject>;
 			dragdrop_service::dropdata_type dropdata;
 			dropdata.assign(*transf_data.real_data_);
 
-			dnd_action executed_action;
+			dnd_action executed_action = dnd_action::copy;
 			auto has_dropped = dragdrop_service::instance().dragdrop(source_handle, &dropdata, &executed_action);
 
 			if(drop_finished)

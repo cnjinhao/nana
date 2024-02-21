@@ -693,46 +693,6 @@ namespace detail
 			return (moved || size_changed);
 		}
 
-		bool window_manager::enter_size_move(basic_window* wd)
-		{
-			internal_scope_guard lock;
-			if (!impl_->wd_register.available(wd))
-				return false;
-
-			auto& brock = bedrock::instance();
-			if (category::flags::root != wd->other.category)
-			{
-				_m_enter_size_move_core(wd);
-			}
-			else
-			{
-				if (wd->visible)
-					native_interface::enter_size_move_window(wd->root);
-			}
-
-			return true;
-		}
-
-		bool window_manager::exit_size_move(basic_window* wd)
-		{
-			internal_scope_guard lock;
-			if (!impl_->wd_register.available(wd))
-				return false;
-
-			auto& brock = bedrock::instance();
-			if (category::flags::root != wd->other.category)
-			{
-				_m_exit_size_move_core(wd);
-			}
-			else
-			{
-				if (wd->visible)
-					native_interface::exit_size_move_window(wd->root);
-			}
-
-			return true;
-		}
-
 		//size
 		//@brief: Size a window
 		//@param: passive, if it is true, the function would not change the size if wd is a root_widget.
@@ -1028,42 +988,7 @@ namespace detail
 				return false;
 
 			if ((category::flags::lite_widget != wd->other.category) && (category::flags::widget != wd->other.category))
-			{
-				if (impl_->wd_register.available(newpa) && (nullptr == wd->owner) && (wd->parent != newpa) && (!wd->flags.modal))
-				{
-					if (wd->parent)
-					{
-						auto& pa_children = wd->parent->children;
-
-						if (pa_children.size() > 1)
-						{
-							for (auto i = pa_children.begin(), end = pa_children.end(); i != end; ++i)
-							{
-								if (((*i)->index) > (wd->index))
-								{
-									for (; i != end; ++i)
-										--((*i)->index);
-									break;
-								}
-							}
-						}
-
-						utl::erase(wd->parent->children, wd);
-						if (newpa->children.empty())
-							wd->index = 0;
-						else
-							wd->index = newpa->children.back()->index + 1;
-						newpa->children.push_back(wd);
-					}
-
-					auto wdpa = wd->parent;
-					wd->parent = newpa;
-					this->update(wdpa, true, true);
-					this->update(wd, false, true);
-					return true;
-				}
 				return false;
-			}
 
 			if (impl_->wd_register.available(newpa) && (nullptr == wd->owner) && (wd->parent != newpa) && (!wd->flags.modal))
 			{
@@ -1707,40 +1632,6 @@ namespace detail
 			{
 				auto pos = native_interface::window_position(wd->root) + delta;
 				native_interface::move_window(wd->root, pos.x, pos.y);
-			}
-		}
-
-		void window_manager::_m_enter_size_move_core(basic_window* wd)
-		{
-			if (category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its children are not to be changed
-			{
-				if (wd->displayed() && wd->effect.bground)
-					window_layer::make_bground(wd);
-
-				for (auto child : wd->children)
-					_m_enter_size_move_core(child);
-			}
-			else
-			{
-				if (wd->visible)
-					native_interface::enter_size_move_window(wd->root);
-			}
-		}
-
-		void window_manager::_m_exit_size_move_core(basic_window* wd)
-		{
-			if (category::flags::root != wd->other.category)	//A root widget always starts at (0, 0) and its children are not to be changed
-			{
-				if (wd->displayed() && wd->effect.bground)
-					window_layer::make_bground(wd);
-
-				for (auto child : wd->children)
-					_m_exit_size_move_core(child);
-			}
-			else
-			{
-				if (wd->visible)
-					native_interface::exit_size_move_window(wd->root);
 			}
 		}
 

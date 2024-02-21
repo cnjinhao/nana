@@ -201,6 +201,7 @@ namespace nana
 			{
 				static_assert(!std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler must be immutable for the argument. E.g. void(Arg&) is not acceptable.");
 				static_assert(std::is_invocable_v<Function, Arg&>, "The type of parameter of event handler doesn't match the event argument type.");
+				return nullptr;
 			}
 		}
 
@@ -342,17 +343,6 @@ namespace nana
 		mutable unsigned height;	    ///< new height in pixels. If it is modified, the window's height will be the modified value
 	};
 
-	struct arg_size_move : public event_arg
-	{
-		::nana::window window_handle; ///< A handle to the event window
-	};
-
-    struct arg_activate : public event_arg
-	{
-        ::nana::window window_handle; ///< A handle to the event window
-        bool activated;
-    };
-
 	struct arg_unload : public event_arg
 	{
 		::nana::window window_handle;	///< A handle to the event window
@@ -363,7 +353,6 @@ namespace nana
 	{
 		::nana::window window_handle;	///< A handle to the event window
 	};
-
     /// a higher level event argument than just mouse down
 	struct arg_click : public event_arg
 	{
@@ -403,11 +392,7 @@ namespace nana
 		struct events_root_extension
 			: public general_events
 		{
-			basic_event<arg_size_move>	enter_size_move;
-			basic_event<arg_size_move>	exit_size_move;
-
-			basic_event<arg_activate>	activate;
-			basic_event<arg_unload>		unload;
+			basic_event<arg_unload>	unload;
 		};
 	}//end namespace detail
 }//end namespace nana

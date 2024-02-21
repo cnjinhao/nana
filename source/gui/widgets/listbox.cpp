@@ -6252,6 +6252,16 @@ namespace nana
 			return _m_ess().suspension_width();
 		}
 
+		void listbox::scroll_space(unsigned spc)
+		{
+			internal_scope_guard lock;
+			if(_m_ess().content_view)
+			{
+				_m_ess().content_view->space(spc);
+				_m_ess().resize_disp_area();
+			}
+		}
+
 		drawerbase::listbox::essence & listbox::_m_ess() const
 		{
 			return get_drawer_trigger().ess();

@@ -230,8 +230,6 @@ namespace detail
 
 		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
 				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
-
-		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
 	bedrock::~bedrock()
@@ -641,15 +639,12 @@ namespace detail
 
 		switch(msg)
 		{
-        case WM_ACTIVATEAPP:
 		case WM_COMMAND:
 		case WM_DESTROY:
 		case WM_DPICHANGED:
 		case WM_SHOWWINDOW:
 		case WM_SIZING:
 		case WM_MOVE:
-		case WM_ENTERSIZEMOVE:
-		case WM_EXITSIZEMOVE:
 		case WM_SIZE:
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
@@ -811,15 +806,6 @@ namespace detail
 						i->second();
 				}
 				break;
-            case WM_ACTIVATEAPP:
-			{
-                arg_activate arg;
-                arg.window_handle = msgwnd;
-                arg.activated = wParam ? true : false;
-                brock.emit(event_code::activate, msgwnd, arg, false, &context);
-                def_window_proc = true;
-                break;
-            }
 			case WM_DPICHANGED:
 				wd_manager.update_dpi(msgwnd);
 				{
@@ -1367,15 +1353,6 @@ namespace detail
 			case WM_MOVE:
 				brock.event_move(msgwnd, (int)(short) LOWORD(lParam), (int)(short) HIWORD(lParam));
 				break;
-				
-			case WM_ENTERSIZEMOVE:
-				brock.event_enter_size_move(msgwnd);
-				break;
-
-			case WM_EXITSIZEMOVE:
-				brock.event_exit_size_move(msgwnd);
-				break;
-
 			case WM_PAINT:
 				{
 					::PAINTSTRUCT ps;

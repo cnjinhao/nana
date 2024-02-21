@@ -984,6 +984,9 @@ namespace nana{	namespace paint
 		auto sp = storage_.get();
 		if((nullptr == sp) || (fade_rate == 1.0)) return;
 
+		if (r.right() < 0 || r.x >= static_cast<int>(sp->pixel_size.width) || r.bottom() < 0 || r.y >= static_cast<int>(sp->pixel_size.height))
+			return;
+
 		bool fade = (fade_rate != 0.0);
 		unsigned char * fade_table = nullptr;
 		std::unique_ptr<unsigned char[]> autoptr;
@@ -1061,7 +1064,7 @@ namespace nana{	namespace paint
 		{
 			if(ybeg == r.y)
 			{
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 				if(fade)
 				{
@@ -1078,7 +1081,7 @@ namespace nana{	namespace paint
 			if(r.y + static_cast<int>(r.height) == yend)
 			{
 				auto p_rgb = sp->raw_pixel_buffer + (yend - 1) * sp->pixel_size.width;
-				auto i = p_rgb;
+				auto i = p_rgb + xbeg;
 				auto end = p_rgb + xend;
 
 				if(fade)
@@ -1561,17 +1564,17 @@ namespace nana{	namespace paint
 		auto col = c.px_color();
 
 		    int wx, wy;
-		    int asq = int(a * a);
-		    int bsq = int(b * b);
+		    int asq = static_cast<int>(a * a);
+		    int bsq = static_cast<int>(b * b);
 		    int xa, ya;
 
-		    pixel({x, y + (int)b}, col);
-		    pixel({x, y - (int)b}, col);
+		    pixel({x, y + static_cast<int>(b)}, col);
+		    pixel({x, y - static_cast<int>(b)}, col);
 
 		    wx = 0;
-		    wy = (int) b;
+		    wy = static_cast<int>(b);
 		    xa = 0;
-		    ya = asq * 2 * (int) b;
+		    ya = static_cast<int>(asq * 2 * b);
 		    auto thresh = asq / 4 - asq * b;
 
 		    for (;;) {
@@ -1596,12 +1599,12 @@ namespace nana{	namespace paint
 		        pixel({x-wx, y+wy}, col);
 		    }
 
-		    pixel({x + (int) a, y}, col);
-		    pixel({x - (int) a, y}, col);
+		    pixel({x + static_cast<int>(a), y}, col);
+		    pixel({x - static_cast<int>(a), y}, col);
 
-		    wx = (int) a;
+		    wx = static_cast<int>(a);
 		    wy = 0;
-		    xa = bsq * 2 * (int) a;
+		    xa = static_cast<int>(bsq * 2 * a);
 
 		    ya = 0;
 		    thresh = bsq / 4 - bsq * a;

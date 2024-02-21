@@ -18,32 +18,15 @@
 #include <nana/paint/text_renderer.hpp>
 #include <stdexcept>
 #include <deque>
-#include "../source/detail/platform_abstraction.hpp"
 
 namespace nana
 {
 	namespace place_parts
 	{
-		struct display_metrics
-		{
-			std::size_t dpi;
-			double font_px{ 0 };
-
-			display_metrics(window wd) :
-				dpi(api::window_dpi(wd))
-			{
-				auto font_info = api::typeface(wd).info();
-				if (font_info)
-					font_px = font_info->size_pt * dpi / 72.0;
-			}
-		};
-
-		const unsigned int dockarea_caption_height = 20;
-
 		class splitter_interface
 		{
 		public:
-			virtual ~splitter_interface() {}
+			virtual ~splitter_interface(){}
 		};
 
 		class drawer_splitter
@@ -97,7 +80,7 @@ namespace nana
 				api::dev::lazy_refresh();
 			}
 		private:
-			window window_handle_{ nullptr };
+			window window_handle_{nullptr};
 			std::function<void(window, paint::graphics&, mouse_action)> renderer_;
 		};
 
@@ -129,7 +112,6 @@ namespace nana
 			virtual void notify_float() = 0;
 			virtual void notify_dock() = 0;
 			virtual void notify_move() = 0;
-			virtual void notify_move_started() = 0;
 			virtual void notify_move_stopped() = 0;
 
 			//a dockarea requests to close the dockpane
@@ -143,11 +125,6 @@ namespace nana
 			void on_close(std::function<void()>&& fn)
 			{
 				close_fn_ = std::move(fn);
-			}
-
-			void set_info(pane_info* info)
-			{
-				info_ = info;
 			}
 
 			bool hit_close() const
@@ -169,35 +146,29 @@ namespace nana
 
 				//draw caption
 				auto text = to_wstring(api::window_caption(window_handle_));
-				if ((graph.size().width > 20) && (graph.size().width - 20 > 10))
+				if((graph.size().width > 20) && (graph.size().width - 20 > 10))
 					text_rd_->render({ 3, 1 }, { text.data(), text.size() }, graph.size().width - 20, paint::text_renderer::mode::truncate_with_ellipsis);
 
 				//draw x button
-				if (info_->show_close_button)
+				auto r = _m_button_area();
+				if (x_pointed_)
 				{
-					auto r = _m_button_area();
-					if (x_pointed_)
-					{
-						color xclr = colors::red;
+					color xclr = colors::red;
 
-						if (x_state_ == ::nana::mouse_action::pressed)
-							xclr = xclr.blend(colors::white, 0.2);
+					if(x_state_ == ::nana::mouse_action::pressed)
+						xclr = xclr.blend(colors::white, 0.2);
 
-						graph.rectangle(r, true, xclr);
-					}
-
-					r.x += (r.width - 16) / 2;
-					r.y = (r.height - 16) / 2;
-
-					x_icon_.draw(graph, colors::red, colors::white, r, element_state::normal);
+					graph.rectangle(r, true, xclr);
 				}
+
+				r.x += (r.width - 16) / 2;
+				r.y = (r.height - 16) / 2;
+
+				x_icon_.draw(graph, colors::red, colors::white, r, element_state::normal);
 			}
 
 			void mouse_move(graph_reference graph, const arg_mouse& arg) override
 			{
-				if (!info_->show_close_button)
-					return;
-
 				x_pointed_ = _m_button_area().is_hit(arg.pos);
 
 				refresh(graph);
@@ -222,7 +193,7 @@ namespace nana
 				api::dev::lazy_refresh();
 			}
 
-			void mouse_up(graph_reference graph, const arg_mouse& mouse_args) override
+			void mouse_up(graph_reference graph, const arg_mouse&) override
 			{
 				if (!x_pointed_)
 					return;
@@ -231,15 +202,13 @@ namespace nana
 				refresh(graph);
 				api::dev::lazy_refresh();
 
-				if (mouse_args.is_left_button())
-					close_fn_();
+				close_fn_();
 			}
 		private:
 			::nana::rectangle _m_button_area() const
 			{
 				auto sz = api::window_size(window_handle_);
-
-				return{ static_cast<int>(sz.width) - platform_abstraction::dpi_scale(window_handle_, (int)dockarea_caption_height), 0, platform_abstraction::dpi_scale(window_handle_, dockarea_caption_height), sz.height };
+				return{static_cast<int>(sz.width) - 20, 0, 20, sz.height};
 			}
 		public:
 			window window_handle_;
@@ -249,7 +218,6 @@ namespace nana
 			facade<element::x_icon>	x_icon_;
 
 			std::function<void()>	close_fn_;
-			pane_info* info_{ nullptr };
 		};
 
 		class dockarea_caption
@@ -281,22 +249,17 @@ namespace nana
 				notifier_ = notifier;
 			}
 
-			void create(window parent, pane_info* info)
+			void create(window parent)
 			{
 				host_window_ = parent;
-				pane_info_ = info;
 				base_type::create(parent, true);
 				this->caption("dockarea");
 				caption_.create(*this, true);
-				caption_.caption(info->caption);
-				caption_.get_drawer_trigger().set_info(info);
 				caption_.get_drawer_trigger().on_close([this]
 				{
 					if (tabbar_)
 					{
-						auto index = tabbar_->selected();
 						tabbar_->erase(tabbar_->selected());
-						panels_.erase(panels_.begin() + index);
 						if (tabbar_->length())
 							return;
 					}
@@ -306,29 +269,22 @@ namespace nana
 
 				this->events().resized.connect_unignorable([this](const arg_resized& arg)
 				{
-					rectangle r{ 0, 0, arg.width, arg.height };
-					if (pane_info_->show_caption)
+					rectangle r{ 0, 0, arg.width, 20 };
+					caption_.move(r);
+
+					if (arg.height > 20)
 					{
-						unsigned int caption_height_scale = platform_abstraction::dpi_scale(this->handle(), dockarea_caption_height);
-
-						r.height = caption_height_scale;
-						caption_.move(r);
-
-						if (arg.height > caption_height_scale)
+						r.y = 20;
+						if (tabbar_)
 						{
-							r.y = caption_height_scale;
-							if (tabbar_)
-							{
-								tabbar_->move({ 0, int(arg.height) - int(caption_height_scale), arg.width, caption_height_scale });
-								r.height = arg.height - caption_height_scale * 2;
-							}
-							else
-								r.height = arg.height - caption_height_scale;
+							tabbar_->move({ 0, int(arg.height) - 20, arg.width, 20 });
+							r.height = arg.height - 40;
 						}
+						else
+							r.height = arg.height - 20;
 					}
-					
 
-					for (auto& pn : panels_)
+					for (auto & pn : panels_)
 					{
 						if (pn.widget_ptr)
 							pn.widget_ptr->move(r);
@@ -341,13 +297,9 @@ namespace nana
 					{
 						if (::nana::mouse::left_button == arg.button)
 						{
-							if (!caption_.get_drawer_trigger().hit_close())
-							{
-								moves_.started = true;
-								moves_.hasChanged = false;
-								moves_.start_pos = api::cursor_position();
-								moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
-							}
+							moves_.started = true;
+							moves_.start_pos = api::cursor_position();
+							moves_.start_container_pos = (floating() ? container_->pos() : this->pos());
 							caption_.set_capture(true);
 						}
 					}
@@ -366,25 +318,18 @@ namespace nana
 								move_pos += moves_.start_container_pos;
 								api::move_window(container_->handle(), move_pos);
 
-								if (!caption_.get_drawer_trigger().hit_close())
+								if(!caption_.get_drawer_trigger().hit_close())
 									notifier_->notify_move();
-							}
-
-							if (!moves_.hasChanged)
-							{
-								moves_.hasChanged = true;
-								notifier_->notify_move_started();
 							}
 						}
 					}
 					else if (event_code::mouse_up == arg.evt_code)
 					{
-						caption_.release_capture();
 						if ((::nana::mouse::left_button == arg.button) && moves_.started)
 						{
 							moves_.started = false;
-							if (moves_.hasChanged)
-								notifier_->notify_move_stopped();
+							caption_.release_capture();
+							notifier_->notify_move_stopped();
 						}
 					}
 				};
@@ -392,26 +337,19 @@ namespace nana
 				caption_.events().mouse_down.connect(grab_fn);
 				caption_.events().mouse_move.connect(grab_fn);
 				caption_.events().mouse_up.connect(grab_fn);
+
 			}
 
-			widget* add_pane(factory& fn)
+			widget* add_pane(factory & fn)
 			{
 				auto fn_ptr = &fn;
-				widget* w = nullptr;
+                widget * w = nullptr;
 
 				api::affinity_execute(*this, false, [this, fn_ptr, &w]
 				{
-					w = _m_add_pane(*fn_ptr);
+					w=_m_add_pane(*fn_ptr);
 				});
-				return w;
-			}
-
-			void add_pane(dockarea& other)
-			{
-				api::affinity_execute(*this, false, [this, &other]
-				{
-					_m_add_pane(other);
-				});
+                return w;
 			}
 
 			void float_away(const ::nana::point& move_pos)
@@ -434,7 +372,7 @@ namespace nana
 
 				container_->events().resized.connect_unignorable([this](const arg_resized& arg)
 				{
-					this->size({ arg.width - 2, arg.height - 2 });
+					this->size({arg.width - 2, arg.height - 2});
 				});
 
 				container_->show();
@@ -443,38 +381,11 @@ namespace nana
 				notifier_->notify_float();
 			}
 
-			void float_away(const ::nana::point& move_pos, nana::size newSize)
-			{
-				if (container_)
-					return;
-
-				rectangle r{ pos() + move_pos, size() };
-				container_.reset(new form(host_window_, r.pare_off(-1), form::appear::bald<form::appear::sizable>()));
-				drawing dw(container_->handle());
-				dw.draw([](paint::graphics& graph)
-				{
-					graph.rectangle(false, colors::coral);
-				});
-
-				api::set_parent_window(handle(), container_->handle());
-				this->move({ 1, 1 });
-
-				container_->events().resized.connect_unignorable([this](const arg_resized& arg)
-				{
-					this->size({ arg.width - 2, arg.height - 2 });
-				});
-
-				container_->size(newSize);
-				container_->show();
-			}
-
-			void dock(bool set_parent_to_host = true)
+			void dock()
 			{
 				caption_.release_capture();
 
-				if (set_parent_to_host)
-					api::set_parent_window(handle(), host_window_);
-
+				api::set_parent_window(handle(), host_window_);
 				container_.reset();
 				notifier_->notify_dock();
 			}
@@ -483,17 +394,14 @@ namespace nana
 			{
 				return (nullptr != container_);
 			}
-
 		private:
-			widget* _m_add_pane(factory& fn)
+			widget* _m_add_pane(factory & fn)
 			{
 				rectangle r{ this->size() };
 
-				unsigned int caption_height_scale = platform_abstraction::dpi_scale(this->handle(), dockarea_caption_height);
-
 				//get a rectangle excluding caption
-				r.y = caption_height_scale;
-				r.height = differ(r.height, caption_height_scale);
+				r.y = 20;
+				r.height = differ(r.height, 20);
 
 				if (!tabbar_)
 				{
@@ -510,11 +418,11 @@ namespace nana
 							caption_.caption(api::window_caption(handle));
 						});
 
-						r.height -= caption_height_scale;
-						tabbar_->move({ 0, r.bottom(), r.width, caption_height_scale });
+						r.height -= 20;
+						tabbar_->move({ 0, r.bottom(), r.width, 20 });
 
 						std::size_t pos = 0;
-						for (auto& pn : panels_)
+						for (auto & pn : panels_)
 						{
 							tabbar_->push_back(pn.widget_ptr->caption());
 							tabbar_->attach(pos++, *pn.widget_ptr);
@@ -522,7 +430,7 @@ namespace nana
 					}
 				}
 				else
-					r.height -= caption_height_scale;
+					r.height -= 20;
 
 				auto wdg = fn(*this);
 				if (wdg)
@@ -542,7 +450,7 @@ namespace nana
 
 					panels_.emplace_back().widget_ptr = std::move(wdg);
 
-					for (auto& pn : panels_)
+					for (auto & pn : panels_)
 					{
 						if (pn.widget_ptr)
 							pn.widget_ptr->move(r);
@@ -551,93 +459,44 @@ namespace nana
 				}
 				return nullptr;
 			}
-
-			void _m_add_pane(dockarea& other)
-			{
-				rectangle r{ this->size() };
-
-				unsigned int caption_height_scale = platform_abstraction::dpi_scale(this->handle(), dockarea_caption_height);
-
-				//get a rectangle excluding caption
-				r.y = caption_height_scale;
-				r.height = differ(r.height, caption_height_scale);
-
-				if (!tabbar_)
-				{
-					if (panels_.size() > 0)
-					{
-						tabbar_.reset(new tabbar_lite(*this));
-
-						tabbar_->events().selected.clear();
-						tabbar_->events().selected.connect([this](const event_arg&)
-						{
-							auto handle = tabbar_->attach(tabbar_->selected());
-							//Set caption through a caption of window specified by handle
-							//Empty if handle is null
-							caption_.caption(api::window_caption(handle));
-						});
-
-						r.height -= caption_height_scale;
-						tabbar_->move({ 0, r.bottom(), r.width, caption_height_scale });
-
-						std::size_t pos = 0;
-						for (auto& pn : panels_)
-						{
-							tabbar_->push_back(pn.widget_ptr->caption());
-							tabbar_->attach(pos++, *pn.widget_ptr);
-						}
-					}
-				}
-				else
-					r.height -= caption_height_scale;
-
-				if (other.panels_.size() > 0)
-				{
-					for (auto& pn : other.panels_)
-					{
-						API::set_parent_window(pn.widget_ptr->handle(), handle());
-						if (tabbar_)
-						{
-							tabbar_->push_back(::nana::charset(pn.widget_ptr->caption()));
-							tabbar_->attach(panels_.size(), pn.widget_ptr->handle());
-						}
-
-						panels_.emplace_back().widget_ptr.reset(pn.widget_ptr.release());
-					}
-					other.panels_.clear();
-				}
-
-				for (auto& pn : panels_)
-				{
-					if (pn.widget_ptr)
-						pn.widget_ptr->move(r);
-				}
-			}
 		private:
-			window host_window_{ nullptr };
+			window host_window_{nullptr};
 			place_parts::dock_notifier_interface* notifier_{ nullptr };
 			std::unique_ptr<form>	container_;
 			dockarea_caption	caption_;
 			std::deque<panel>	panels_;
 			std::unique_ptr<tabbar_lite> tabbar_;
-			pane_info* pane_info_;
 
 			struct moves
 			{
 				bool started{ false };
-				bool hasChanged{ false };
 				::nana::point start_pos;
 				::nana::point start_container_pos;
 			}moves_;
 		};//class dockarea
+
+
+		struct display_metrics
+		{
+			std::size_t dpi;
+			double font_px{ 0 };
+
+			display_metrics(window wd) :
+				dpi(api::window_dpi(wd))
+			{
+				auto font_info = api::typeface(wd).info();
+				if (font_info)
+					font_px = font_info->size_pt * dpi / 72;
+			}
+		};
 
 		//number_t is used for storing a number type variable
 		//such as integer, real and percent. Essentially, percent is a typo of real.
 		class number_t
 		{
 		public:
-			enum class kind { none, integer, real, percent };
-			enum class units { medium, px, em };
+			enum class kind{ none, integer, real, percent };
+			enum class units{medium, px, em};
 
 			number_t()
 			{
@@ -683,7 +542,7 @@ namespace nana
 				default:
 					return 0;
 				}
-
+				
 				if (to_system_px)
 				{
 					switch (unit_)
@@ -764,7 +623,7 @@ namespace nana
 			void unit(units u)
 			{
 				if (kind::percent == kind_)
-					throw std::invalid_argument{ "a persentage value can't be assigned with the unit" };
+					throw std::invalid_argument{"a persentage value can't be assigned with the unit"};
 				unit_ = u;
 			}
 
@@ -944,7 +803,7 @@ namespace nana
 			//A workaround for VC2013, becuase it does not generated an implicit declared move-constructor as defaulted.
 			repeated_array() = default;
 
-			repeated_array(repeated_array&& other)
+			repeated_array(repeated_array && other)
 				: repeated_{ other.repeated_ },
 				values_(std::move(other.values_))
 			{

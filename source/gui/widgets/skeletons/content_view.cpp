@@ -62,6 +62,7 @@ namespace nana {
 				point skew_horz;
 				point skew_vert;
 				nana::size extra_px;
+				unsigned space{16};		//Size of scroll bar
 
 				bool	passive{ true }; //The passive mode determines whether to update if scrollbar changes. It updates the client window if passive is true.
 
@@ -236,7 +237,7 @@ namespace nana {
 						cv_scroll->vert.move({
 							disp_area.x + static_cast<int>(imd_area.width) + skew_vert.x,
 							disp_area.y + skew_vert.y,
-							space(),
+							this->space,
 							imd_area.height + extra_px.height
 						});
 
@@ -267,7 +268,7 @@ namespace nana {
 							disp_area.x + skew_horz.x,
 							disp_area.y + static_cast<int>(imd_area.height) + skew_horz.y,
 							imd_area.width + extra_px.width,
-							space()
+							this->space
 						});
 
 						cv_scroll->horz.amount(content_size.width);
@@ -569,6 +570,16 @@ namespace nana {
 			void content_view::set_wheel_speed(std::function<unsigned()> fn)
 			{
 				impl_->provider.wheel_speed = std::move(fn);
+			}
+
+			unsigned content_view::space() const
+			{
+				return impl_->space;
+			}
+
+			void content_view::space(unsigned spc)
+			{
+				impl_->space = spc;
 			}
 		}
 	}

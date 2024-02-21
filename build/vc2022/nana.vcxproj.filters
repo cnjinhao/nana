@@ -286,6 +286,9 @@
     <ClCompile Include="..\..\source\gui\dragdrop.cpp">
       <Filter>Sources\gui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\gui\detail\virtual_keyboard.cpp">
+      <Filter>Sources\gui\detail</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\nana\gui\widgets\spinbox.hpp">
@@ -453,12 +456,6 @@
     <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
-    <ClInclude Include="..\..\source\gui\place_parts.hpp">
-      <Filter>Include\gui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\source\gui\place_parts.hpp">
-      <Filter>Include\gui</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\nana\pop_ignore_diagnostic">
