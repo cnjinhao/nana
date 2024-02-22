@@ -33,6 +33,8 @@ namespace nana
 
 	namespace drawerbase::treebox
 	{
+			using size_type = std::size_t;
+
 			enum class component
 			{
 				begin, expander = begin, crook, icon, text, bground, end
@@ -101,7 +103,7 @@ namespace nana
 			class item_proxy;
 
 			class trigger
-				:public drawer_trigger
+				: public drawer_trigger
 			{
 				class implementation;
 				class item_locator;
@@ -526,6 +528,7 @@ namespace nana
 #endif
 
 		item_proxy selected() const; ///< returns the selected node
+		void selected(std::vector<treebox::item_proxy>&) const; ///< returns the selected nodes
 
 		/// Scrolls a specified item into view.
 		/**
@@ -549,6 +552,9 @@ namespace nana
 		 * @param enable bool  whether to enable.
 		 */
 		void use_entire_line(bool enable);
+
+		void enable_multiselection(bool enable);
+		void use_select_contracted_parent_node(bool enable);
 
 		/// Return the first node of treebox
 		item_proxy first() const;
