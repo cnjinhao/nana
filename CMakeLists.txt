@@ -31,7 +31,7 @@ project(nana VERSION      1.8
 
 add_library(nana)
 add_library(nana::nana ALIAS nana)
-target_compile_features(nana PUBLIC cxx_std_17)
+target_compile_features(nana PUBLIC cxx_std_20)
 # set(CMAKE_CXX_STANDARD 17)
 
 #  need after cxx_std_14 or cxx_std_17 ??
@@ -110,6 +110,10 @@ endif()
 foreach(subdir ${NANA_INCLUDE_SUBDIRS})
     aux_source_directory(${NANA_INCLUDE_DIR}/nana${subdir} HEADERS)  # todo: use GLOB to add headers too !!!!!!!
 endforeach()
+# While this seems to work, there is no way for CMake to generate a build system that knows when a new source file has been added. 
+# Normally the generated build system knows when it needs to rerun CMake because the CMakeLists.txt file is modified to add a new source. 
+# When the source is just added to the directory without modifying this file, one would have to manually rerun CMake to generate a build system incorporating the new file.
+# https://cmake.org/cmake/help/latest/command/aux_source_directory.html
 
 ###  Some nana compilation options   ###
 option(NANA_CMAKE_AUTOMATIC_GUI_TESTING "Activate automatic GUI testing?" OFF)

@@ -1,19 +1,20 @@
 /**
  *	A Menu implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2009-2017 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2009-2021 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/widgets/menu.hpp
+ *	@file nana/gui/widgets/menu.hpp
  *
  */
 
 #ifndef NANA_GUI_WIDGETS_MENU_HPP
 #define NANA_GUI_WIDGETS_MENU_HPP
 #include "widget.hpp"
+#include <nana/gui/command.hpp>
 #include <nana/pat/cloneable.hpp>
 #include <nana/push_ignore_diagnostic>
 
@@ -59,12 +60,14 @@ namespace nana
 					std::size_t const	pos_;
 					::nana::menu* const	menu_;
 				};
-				    /// A callback functor type.  
+				    
+				/// A callback functor type.  
 				typedef std::function<void(item_proxy&)> event_fn_t;
 
 				//Default constructor initializes the item as a splitter
 				menu_item_type();
 				menu_item_type(std::string, const event_fn_t&);
+				menu_item_type(shared_command command);
 
 				struct
 				{
@@ -79,11 +82,12 @@ namespace nana
 					menu_type*		menu_ptr;
 				}linked;
 
-				std::string	text;
-				event_fn_t	event_handler;
+				std::string	    text;
+				event_fn_t	    event_handler;
 				checks			style{checks::none};
 				paint::image	image;
 				mutable wchar_t	hotkey{0};
+				shared_command  command;
 			};
 
 			class renderer_interface
@@ -136,17 +140,19 @@ namespace nana
 
 			/// Appends an item to the menu.
 		item_proxy	append(std::string text_utf8, const event_fn_t& handler = {});
+		item_proxy	append(shared_command command);
 		void		append_splitter();
 
-		/// Inserts new item at specified position
+		/// Inserts a new menu item at the specified position
 		/**
 		 * It will invalidate the existing item proxies from the specified position.
-		 * @param pos The position where new item to be inserted
-		 * @param text_utf8 The title of item
-		 * @param handler The event handler for the item.
-		 * @return the item proxy to the new inserted item.
+		 * @param pos The position where the new item will be inserted
+		 * @param text_utf8 The title (text) of item
+		 * @param handler The event handler for the item
+		 * @return the item proxy to the new inserted item
 		 */
 		item_proxy	insert(std::size_t pos, std::string text_utf8, const event_fn_t& handler = {});
+		item_proxy	insert(std::size_t pos, shared_command command);
 
 		void clear();								///< Erases all of the items.
 		/// Closes the menu. It does not destroy the menu; just close the window for the menu.

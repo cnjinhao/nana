@@ -71,6 +71,18 @@ namespace nana
 				linked.own_creation = false;
 				linked.menu_ptr = nullptr;
 			}
+			menu_item_type::menu_item_type(shared_command command_)
+				: text(command_->title), image (command_->image),
+				  event_handler([this](item_proxy& i) {this->command->event_handler(*command); }),
+				  command(command_)
+			{
+				flags.enabled = command->enabled ;
+				flags.splitter = false;
+				flags.checked = command->checked;
+
+				linked.own_creation = false;
+				linked.menu_ptr = nullptr;
+			}
 		//end class menu_item_type
 
 		class internal_renderer
@@ -743,7 +755,7 @@ namespace nana
 				api::calc_screen_point(*widget_, pos);
 
 				//get the screen coordinates of the widget pos.
-				auto scr_area = screen().from_point(detail_.monitor_pos).workarea();
+				const nana::rectangle scr_area = screen().from_point(detail_.monitor_pos).workarea();
 
 				if(pos.x + static_cast<int>(size.width) > scr_area.right())
 					pos.x = scr_area.right() - static_cast<int>(size.width);
@@ -1206,6 +1218,13 @@ namespace nana
 			return item_proxy{size() - 1, this};
 		}
 
+		auto menu::append(shared_command command)-> item_proxy
+		{
+			std::unique_ptr<item_type> item{ new item_type{ command } };
+			impl_->mbuilder.data().items.emplace_back(std::move(item));
+			return item_proxy{size() - 1, this};
+		}
+
 		void menu::append_splitter()
 		{
 			impl_->mbuilder.data().items.emplace_back(new item_type);
@@ -1215,9 +1234,30 @@ namespace nana
 		{
 			auto & items = impl_->mbuilder.data().items;
 			if (pos > items.size())
-				throw std::out_of_range("menu: a new item inserted to an invalid position");
+				throw std::out_of_range("menu: a new item inserted to an invalid position (" +
+					                     std::to_string(pos) + "): " + text_utf8);
 
 			std::unique_ptr<item_type> item{ new item_type{ std::move(text_utf8), handler } };
+
+			items.emplace(
+#ifdef _MSC_VER
+				items.cbegin() + pos,
+#else
+				items.begin() + pos,
+#endif
+				std::move(item));
+
+			return item_proxy{ pos, this};
+		}
+
+		auto menu::insert(std::size_t pos, shared_command command)-> item_proxy
+		{
+			auto & items = impl_->mbuilder.data().items;
+			if (pos > items.size())
+				throw std::out_of_range("menu: a new item inserted to an invalid position (" + 
+					                     std::to_string(pos) + "): " + command->title);
+
+			std::unique_ptr<item_type> item{ new item_type{ command } };
 
 			items.emplace(
 #ifdef _MSC_VER
