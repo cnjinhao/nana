@@ -801,6 +801,8 @@ namespace nana
 				void mouse_leave(graph_reference, const arg_mouse&)	override;
 				void mouse_down(graph_reference, const arg_mouse&)	override;
 				void mouse_up(graph_reference, const arg_mouse&)	override;
+				void click_common(graph_reference);
+				void click(graph_reference, const arg_click&)	override;
 				void dbl_click(graph_reference, const arg_mouse&)	override;
 				void resized(graph_reference, const arg_resized&)		override;
 				void key_press(graph_reference, const arg_keyboard&)	override;
