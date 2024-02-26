@@ -118,6 +118,7 @@ namespace nana
 					std::any value;
 					bool expanded;
 					bool hidden;
+					bool selected;
 					checkstate checked;
 					::std::string img_idstr;
 				};
@@ -529,6 +530,8 @@ namespace nana
 
 		item_proxy selected() const; ///< returns the selected node
 		void selected(std::vector<treebox::item_proxy>&) const; ///< returns the selected nodes
+
+		void deselect_all();
 
 		/// Scrolls a specified item into view.
 		/**
