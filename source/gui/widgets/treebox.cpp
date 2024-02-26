@@ -870,7 +870,7 @@ namespace nana
 				{
 					//node_state.selected through node
 					auto nodes_copy = node_state.nodes_selected;
-					node_state.deselect_all();
+					node_state.clear();
 					auto target1 = node_state.pivot_node;
 					auto target2 = node;
 					item_proxy{ data.trigger_ptr, attr.tree_cont.get_root() }.visit_recursively([&](item_proxy&& i)
