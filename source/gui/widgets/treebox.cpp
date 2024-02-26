@@ -15,6 +15,7 @@
 #include <nana/gui/layout_utility.hpp>
 #include <nana/system/platform.hpp>
 #include <map>
+#include "../../detail/platform_abstraction.hpp"
 
 namespace nana
 {
@@ -351,11 +352,7 @@ namespace nana
 				node_type * selected; //last selected
 				std::vector<node_type*> nodes_selected;
 				node_type * pressed_node;
-
-				bool is_selected_node(const node_type* node) const
-				{
-					return std::find(nodes_selected.begin(), nodes_selected.end(), node) != nodes_selected.end();
-				}
+				node_type * pivot_node;
 
 				void remove_node(node_type* node)
 				{
@@ -371,6 +368,13 @@ namespace nana
 				
 				void clear()
 				{
+					nodes_selected.clear();
+				}
+				
+				void deselect_all()
+				{
+					for (auto& sel_node : nodes_selected)
+						sel_node->value.second.selected = false;
 					nodes_selected.clear();
 				}
 			}node_state;
@@ -411,6 +415,7 @@ namespace nana
 				node_state.pointed = nullptr;
 				node_state.selected = nullptr;
 				node_state.pressed_node = nullptr;
+				node_state.pivot_node = nullptr;
 
 				track_node.key_time = 0;
 
@@ -439,7 +444,7 @@ namespace nana
 				ndattr.text = node->value.second.text;
 				ndattr.checked = node->value.second.checked;
 				ndattr.mouse_pointed = (node_state.pointed == node);
-				ndattr.selected = (node_state.is_selected_node(node));
+				ndattr.selected = node->value.second.selected;
 
 				ndattr.icon_hover.close();
 				ndattr.icon_normal.close();
@@ -840,15 +845,17 @@ namespace nana
 				if (crtl)
 				{
 					data.stop_drawing = true;
-					if (node_state.is_selected_node(node))
+					if (node->value.second.selected)
 					{
 						node_state.remove_node(node);
+						node->value.second.selected = false;
 						item_proxy iprx(data.trigger_ptr, node);
 						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 					}
 					else
 					{
 						node_state.add_node(node);
+						node->value.second.selected = true;
 						item_proxy iprx(data.trigger_ptr, node);
 						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 					}
@@ -862,9 +869,9 @@ namespace nana
 				if (node_state.selected)
 				{
 					//node_state.selected through node
-
-					node_state.clear();
-					auto target1 = node_state.selected;
+					auto nodes_copy = node_state.nodes_selected;
+					node_state.deselect_all();
+					auto target1 = node_state.pivot_node;
 					auto target2 = node;
 					item_proxy{ data.trigger_ptr, attr.tree_cont.get_root() }.visit_recursively([&](item_proxy&& i)
 					{
@@ -887,7 +894,7 @@ namespace nana
 							return false;
 						}
 
-						if (i._m_node() == node_state.selected)
+						if (i._m_node() == node_state.pivot_node)
 						{
 							target1 = nullptr;
 							node_state.add_node(i._m_node());
@@ -907,8 +914,22 @@ namespace nana
 						return true;
 					});
 
+					for (auto& old_node : nodes_copy)
+					{
+						if (node_state.pivot_node == old_node || std::find(node_state.nodes_selected.begin(), node_state.nodes_selected.end(), old_node) != node_state.nodes_selected.end())
+							continue;
+
+						old_node->value.second.selected = false;
+						item_proxy iprx(data.trigger_ptr, old_node);
+						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
+					}
+
 					for (auto& sel_node : node_state.nodes_selected)
 					{
+						if (node_state.pivot_node == sel_node || std::find(nodes_copy.begin(), nodes_copy.end(), sel_node) != nodes_copy.end())
+							continue;
+
+						sel_node->value.second.selected = true;
 						item_proxy iprx(data.trigger_ptr, sel_node);
 						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 					}
@@ -916,6 +937,7 @@ namespace nana
 				else
 				{
 					node_state.add_node(node);
+					node->value.second.selected = true;
 					item_proxy iprx(data.trigger_ptr, node);
 					data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 				}
@@ -926,17 +948,18 @@ namespace nana
 				return true;
 			}
 
-			bool set_selected(node_type * node)
+			bool set_selected(node_type * node, bool single_selection)
 			{
 				if(node_state.selected != node)
 				{
 					data.stop_drawing = true;
-					if (node_state.selected)
+					if (node_state.selected && single_selection || node == nullptr)
 					{
-						auto copy_nodes = node_state.nodes_selected;
+						auto nodes_copy = node_state.nodes_selected;
 						node_state.clear();
-						for (auto& selected_node : copy_nodes)
+						for (auto& selected_node : nodes_copy)
 						{
+							selected_node->value.second.selected = false;
 							item_proxy iprx(data.trigger_ptr, selected_node);
 							data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, false }, data.widget_ptr->handle());
 						}
@@ -946,6 +969,7 @@ namespace nana
 					if (node)
 					{
 						node_state.add_node(node_state.selected);
+						node_state.selected->value.second.selected = true;
 						item_proxy iprx(data.trigger_ptr, node_state.selected);
 						data.widget_ptr->events().selected.emit(::nana::arg_treebox{ *data.widget_ptr, iprx, true }, data.widget_ptr->handle());
 					}
@@ -963,7 +987,7 @@ namespace nana
 					{
 						//if contracting a parent of the selected node, select the contracted node.
 						if (use_select_contracted_parent_node && node->is_ancestor_of(node_state.selected))
-							set_selected(node);
+							set_selected(node, true);
 					}
 
 					node->value.second.expanded = value;
@@ -987,7 +1011,7 @@ namespace nana
 					{
 						//if hiding a parent of the selected node or the selected node itself - select nothing.
 						if (node->is_ancestor_of(node_state.selected) || node_state.selected == node)
-							set_selected(nullptr);
+							set_selected(nullptr, true);
 					}
 
 					node->value.second.hidden = value;
@@ -1227,7 +1251,7 @@ namespace nana
 				case event_code::mouse_up:
 					if(node_state.selected == node_state.pointed)
 						return;
-					set_selected(node_state.pointed);
+					set_selected(node_state.pointed, true);
 					break;
 				default:
 					set_expanded(node_state.selected, !node_state.selected->value.second.expanded);
@@ -1327,13 +1351,13 @@ namespace nana
 
 		bool item_proxy::selected() const
 		{
-			return (trigger_->impl()->node_state.selected == node_);
+			return node_->value.second.selected;
 		}
 
 		item_proxy& item_proxy::select(bool s)
 		{
 			auto * impl = trigger_->impl();
-			if(impl->set_selected(s ? node_ : nullptr))
+			if(impl->set_selected(s ? node_ : nullptr, !impl->use_multiselection))
 				impl->draw(true);
 
 			return *this;
@@ -1883,11 +1907,11 @@ namespace nana
 		//class trigger
 		//struct treebox_node_type
 		trigger::treebox_node_type::treebox_node_type()
-			:expanded(false), hidden(false), checked(checkstate::unchecked)
+			:expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
 		{}
 
 		trigger::treebox_node_type::treebox_node_type(std::string text)
-			:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked)
+			:text(std::move(text)), expanded(false), hidden(false), checked(checkstate::unchecked), selected(false)
 		{}
 
 		trigger::treebox_node_type& trigger::treebox_node_type::operator=(const treebox_node_type& rhs)
@@ -1897,6 +1921,7 @@ namespace nana
 				text = rhs.text;
 				value = rhs.value;
 				checked = rhs.checked;
+				selected = rhs.selected;
 				img_idstr = rhs.img_idstr;
 			}
 			return *this;
@@ -2242,6 +2267,20 @@ namespace nana
 
 				check(nl.node(), cs);
 			}
+			if (nl.item_body())
+			{
+				if (arg.shift && !impl_->node_state.pivot_node)
+				{
+					impl_->node_state.pivot_node = impl_->node_state.selected;
+				}
+				else if (!impl_->use_multiselection || !arg.shift)
+				{
+					impl_->node_state.pivot_node = nullptr;
+				}
+
+			}
+				
+			
 			if (impl_->use_multiselection && (arg.ctrl || arg.shift))
 			{
 				if ((nl.item_body() || nl.what() == component::crook))
@@ -2251,7 +2290,7 @@ namespace nana
 			}
 			else if ((impl_->node_state.selected != nl.node()) && (nl.item_body() || nl.what() == component::crook))
 			{
-				impl_->set_selected(nl.node());
+				impl_->set_selected(nl.node(), !impl_->use_multiselection || (!arg.ctrl));
 				if (impl_->make_adjust(impl_->node_state.selected, 1))
 					impl_->adjust.scroll_timestamp = 1;
 			}
@@ -2339,7 +2378,7 @@ namespace nana
 						}
 					}
 
-					impl_->set_selected(prev);
+					impl_->set_selected(prev, true);
 
 					if(impl_->make_adjust(prev, 4))
 						scroll = true;
@@ -2371,7 +2410,7 @@ namespace nana
 
 					if(node)
 					{
-						impl_->set_selected(node);
+						impl_->set_selected(node, true);
 						redraw = true;
 						scroll = impl_->make_adjust(node_state.selected, 4);
 					}
@@ -2384,7 +2423,7 @@ namespace nana
 					{
 						if(node_state.selected->owner != impl_->attr.tree_cont.get_root())
 						{
-							impl_->set_selected(node_state.selected->owner);
+							impl_->set_selected(node_state.selected->owner, true);
 							impl_->make_adjust(node_state.selected, 4);
 						}
 					}
@@ -2406,7 +2445,7 @@ namespace nana
 					}
 					else if(node_state.selected->child)
 					{
-						impl_->set_selected(node_state.selected->child);
+						impl_->set_selected(node_state.selected->child, true);
 						impl_->make_adjust(node_state.selected, 4);
 						redraw = true;
 						scroll = true;
@@ -2440,7 +2479,7 @@ namespace nana
 			auto node = const_cast<node_type*>(impl_->find_track_node(arg.key));
 			if(node && (node != impl_->node_state.selected))
 			{
-				impl_->set_selected(node);
+				impl_->set_selected(node, true);
 				impl_->make_adjust(node, 4);
 				do_refresh |= 2; //No need to reacts scrollbar
 			}
@@ -2641,6 +2680,12 @@ namespace nana
 		{
 			selected_nodes.push_back({ const_cast<drawer_trigger_t*>(dw) , item });
 		}
+	}
+
+	void treebox::deselect_all()
+	{
+		auto dw = &get_drawer_trigger();
+		dw->impl()->node_state.deselect_all();
 	}
 
 	void treebox::scroll_into_view(item_proxy item, align_v bearing)
