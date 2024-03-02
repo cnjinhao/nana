@@ -375,7 +375,10 @@ namespace nana
 				{
 					for (auto& sel_node : nodes_selected)
 						sel_node->value.second.selected = false;
+
 					nodes_selected.clear();
+					selected = nullptr;
+					pivot_node = nullptr;
 				}
 			}node_state;
 
@@ -2685,7 +2688,10 @@ namespace nana
 	void treebox::deselect_all()
 	{
 		auto dw = &get_drawer_trigger();
+		bool should_draw = dw->impl()->node_state.nodes_selected.size() > 0;
 		dw->impl()->node_state.deselect_all();
+		if (should_draw)
+			dw->impl()->draw(false);
 	}
 
 	void treebox::scroll_into_view(item_proxy item, align_v bearing)
