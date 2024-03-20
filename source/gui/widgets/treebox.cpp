@@ -1423,7 +1423,9 @@ namespace nana
 
 		item_proxy& item_proxy::text(const std::string& id)
 		{
-			trigger_->rename(node_, nullptr, id.data());
+			if (trigger_->rename(node_, nullptr, id.data()))
+				trigger_->impl()->draw(false);
+
 			return *this;
 		}
 #ifdef __cpp_char8_t
