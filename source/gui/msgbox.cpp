@@ -1,17 +1,18 @@
 /**
  *	A Message Box Class
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2020 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
  *	@file nana/gui/msgbox.hpp
- *	@Contributors
+ *	@contributors
  *		James Bremner
  *		Ariel Vina-Rodriguez
  */
+
 #define NOMINMAX
 #include <algorithm>  // max
 #include <functional>
@@ -473,15 +474,14 @@ namespace nana
 	//end class msgbox
 
 
-	//class inputbox todo: add schema
-
+	/// class inputbox todo: add schema
 	class inputbox_window
 		: public ::nana::form
 	{
 	public:
 		inputbox_window(window owner,
-		                paint::image (&imgs)[4],             ///< 4 ref to images
-		                ::nana::rectangle (&valid_areas)[4],
+		                paint::image (&imgs)[4],              ///< 4 ref to images
+		                ::nana::rectangle (&valid_areas)[4],  ///< 4 ref to valid areas
 		                const ::std::string & description,
 		                const ::std::string& title,
 		                std::size_t contents,

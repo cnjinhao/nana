@@ -203,7 +203,7 @@ namespace nana
 			text& operator=(const text&) = delete;
 		public:
 			text(::std::string label, ::std::string init_text = ::std::string());
-			text(::std::string label, std::vector<::std::string>);
+			text(::std::string label, std::vector<::std::string> options);
 
 			~text();
 
@@ -254,7 +254,7 @@ namespace nana
 		{
 			struct implement;
 		public:
-			path(::std::string label, const ::nana::filebox&);
+			path(::std::string label, const ::nana::filebox& f_box);
 			~path();
 
 			::std::string value() const;
@@ -266,12 +266,12 @@ namespace nana
 			std::unique_ptr<implement> impl_;
 		};
 
-		inputbox(window owner,     ///< A handle to an owner window (just a parent form or widget works)
+		inputbox(window owner,     ///< A handle to an owner window (parent form or widget)
 		         ::std::string description,   ///< tells users what the purpose for the input. It can be a formatted-text.
                  ::std::string title = ::std::string()  ///< The title for the inputbox.
         );
 
-		/// shows images at left/right side of inputbox
+		/// shows images at left or right side of the inputbox
 		void image(::nana::paint::image image,      ///< The image
 		           bool is_left,      ///< true to place the image at left side, false to the right side
 		           const rectangle& valid_area = {} ///< The area of the image to be displayed
