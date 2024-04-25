@@ -1153,7 +1153,7 @@ namespace nana
 
 		//end class revertible_mutex
 
-
+    /// \todo: generalize dpi to v2 awareness
 	struct platform_runtime
 	{
 		platform_abstraction::revertible_mutex mutex;
@@ -1283,6 +1283,7 @@ namespace nana
 		return data::storage->mutex;
 	}
 
+	/// \todo: generalize dpi to v2 awareness
 	double platform_abstraction::font_default_pt()
 	{
 #ifdef NANA_WINDOWS
@@ -1344,6 +1345,7 @@ namespace nana
 		platform_storage().dpi = dpi;
 	}
 
+	/// \todo: generalize dpi to v2 awareness
 	std::size_t platform_abstraction::current_dpi()
 	{
 		return platform_storage().dpi;
@@ -1425,7 +1427,7 @@ namespace nana
 		}
 #endif
 	}
-
+	/// \todo: generalize dpi to v2 awareness
 	unsigned platform_abstraction::screen_dpi(bool x_requested)
 	{
 #ifdef NANA_WINDOWS

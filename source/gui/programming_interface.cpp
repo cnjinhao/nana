@@ -1499,6 +1499,7 @@ namespace api
 		return false;
 	}
 
+	/// \todo: generalize dpi to v2 awareness
 	void typeface(window wd, const nana::paint::font_info& fi)
 	{
 		internal_scope_guard lock;

@@ -61,6 +61,9 @@ namespace nana
 		static void font_languages(const std::string&);
 		static ::std::shared_ptr<font> default_font(const ::std::shared_ptr<font>&);
 
+		/// \todo: generalize dpi to v2 awareness
+
+		/// 'manuallay' set the current system DPI, this is used for DPI scaling.
 		static void set_current_dpi(std::size_t dpi);
 		static std::size_t current_dpi();
 

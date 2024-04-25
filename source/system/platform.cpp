@@ -104,6 +104,7 @@ namespace system
 	bool get_async_mouse_state(int button)
 	{
 #if defined(NANA_WINDOWS)
+		/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 		bool swap = (::GetSystemMetrics(SM_SWAPBUTTON) != 0);
 		switch(button)
 		{

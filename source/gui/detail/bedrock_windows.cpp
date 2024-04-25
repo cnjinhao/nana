@@ -40,6 +40,7 @@
 #	define WM_MOUSEHWHEEL	0x020E
 #endif
 
+/// \todo: generalize dpi to v2 awareness
 #ifndef WM_DPICHANGED
 #	define WM_DPICHANGED 0x02E0
 #endif
@@ -231,6 +232,7 @@ namespace detail
 		restrict::imm_get_composition_string = reinterpret_cast<restrict::imm_get_composition_string_type>(
 				::GetProcAddress(imm32, "ImmGetCompositionStringW"));
 
+		/// \todo: generalize dpi to v2 awareness
 		platform_abstraction::set_current_dpi(detail::native_interface::system_dpi());
 	}
 
@@ -808,7 +810,7 @@ namespace detail
 						i->second();
 				}
 				break;
-			case WM_DPICHANGED:
+			case WM_DPICHANGED:  /// \todo: generalize dpi to v2 awareness
 				wd_manager.update_dpi(msgwnd);
 				{
 				

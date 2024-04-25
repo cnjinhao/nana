@@ -40,6 +40,8 @@ namespace nana
 			font(drawable_type);
 			font(const font&);
 
+			/// \todo: generalize dpi to v2 awareness
+
 			/// creates a font object.
 			/// @param info Specifies the font family, size and styles.
 			/// @param dpi Specifies the DPI for scaling the font, 0 indicates the system DPI.

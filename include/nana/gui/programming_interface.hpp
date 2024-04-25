@@ -509,6 +509,7 @@ namespace api
 	 */
 	::std::optional<std::pair<::nana::size, ::nana::size>> content_extent(window wd, unsigned limited_px, bool limit_width);
 
+	/// \todo: generalize dpi to v2 awareness
 	unsigned screen_dpi(bool x_requested);
 
 	std::size_t window_dpi(window);

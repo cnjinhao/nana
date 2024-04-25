@@ -50,6 +50,9 @@
     <Filter Include="Include\gui\widgets">
       <UniqueIdentifier>{0e6a58ab-652c-45d7-b9aa-8d9f2fa80ea1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\paint">
+      <UniqueIdentifier>{fc600cb9-126e-4bda-9ba6-de1915d3b41b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\basic_types.cpp">
@@ -456,6 +459,24 @@
     <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_format_defs.hpp" />
     <ClInclude Include="..\..\source\paint\detail\image_gif.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\graphics.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\image.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\image_process_interface.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\image_process_selector.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\pixel_buffer.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\nana\paint\text_renderer.hpp">
+      <Filter>Include\paint</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\include\nana\pop_ignore_diagnostic">

@@ -75,6 +75,7 @@ namespace nana
 		void cursor(nana::cursor);
 		nana::cursor cursor() const;		///< Retrieves the shape of cursor
 
+		/// \todo: generalize dpi to v2 awareness
 		void typeface(const paint::font_info&);	///< Sets font, the font will be scaled with the DPI of the window.
 		void typeface(const paint::font& font);	///< Sets font
 		paint::font typeface() const;
