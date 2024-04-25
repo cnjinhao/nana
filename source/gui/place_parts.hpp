@@ -475,7 +475,7 @@ namespace nana
 			}moves_;
 		};//class dockarea
 
-
+		/// \todo: generalize dpi to v2 awareness
 		struct display_metrics
 		{
 			std::size_t dpi;

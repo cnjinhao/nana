@@ -515,6 +515,12 @@
     <ClInclude Include="..\..\include\nana\internationalization.hpp" />
     <ClInclude Include="..\..\include\nana\key_type.hpp" />
     <ClInclude Include="..\..\include\nana\paint\font_info.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\graphics.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\image.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\image_process_interface.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\image_process_selector.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\pixel_buffer.hpp" />
+    <ClInclude Include="..\..\include\nana\paint\text_renderer.hpp" />
     <ClInclude Include="..\..\include\nana\traits.hpp" />
     <ClInclude Include="..\..\include\nana\unicode_bidi.hpp" />
     <ClInclude Include="..\..\include\nana\verbose_preprocessor.hpp" />

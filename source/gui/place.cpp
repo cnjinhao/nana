@@ -978,7 +978,7 @@ namespace nana
 
 				if (1 == set_weight)
 				{
-					//avoid deviation in dpi scaling.
+					/// \todo: generalize dpi to v2 awareness, avoid deviation in dpi scaling.
 					if (96 != dm.dpi)
 						this->weight.assign(static_cast<int>(fv * 96 / dm.dpi) + 1);
 					else

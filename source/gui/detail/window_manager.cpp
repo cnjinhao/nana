@@ -1368,7 +1368,7 @@ namespace detail
 			}
 		}
 
-		//updates the window elements when DPI is changed.
+		/// \todo: generalize dpi to v2 awareness - updates the window elements when DPI is changed.
 		void window_manager::update_dpi(basic_window* wd)
 		{
 			internal_scope_guard lock;

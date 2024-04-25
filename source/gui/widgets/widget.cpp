@@ -116,6 +116,7 @@ namespace nana
 			_m_cursor(cur);
 		}
 
+		/// \todo: generalize dpi to v2 awareness
 		void widget::typeface(const paint::font_info& fi)
 		{
 			api::typeface(handle(), fi);

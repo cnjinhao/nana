@@ -32,7 +32,8 @@ namespace nana{
 	namespace detail{
 
 #if defined(NANA_WINDOWS)
-
+		
+	    /// \todo: generalize dpi to v2 awareness
 		struct DPI_AWARENESS_CONTEXT___ { int unused; }; typedef struct DPI_AWARENESS_CONTEXT___* DPI_AWARENESS_CONTEXT_;
 
 #define DPI_AWARENESS_CONTEXT_UNAWARE_               ((DPI_AWARENESS_CONTEXT_)-1)
@@ -41,7 +42,7 @@ namespace nana{
 #define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_  ((DPI_AWARENESS_CONTEXT_)-4)
 #define DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED_     ((DPI_AWARENESS_CONTEXT_)-5)
 
-		// Dynamically load Windows DPI functions to check these APIs are supported by the SDK and OS.
+		/// Dynamically load Windows DPI functions to check these APIs are supported by the SDK and OS.
 		struct dpi_function
 		{
 			enum PROCESS_DPI_AWARENESS {
@@ -57,14 +58,15 @@ namespace nana{
 				MDT_DEFAULT
 			};
 
-			HRESULT(__stdcall* SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS) {nullptr};
-			HRESULT(__stdcall* SetProcessDpiAwarenessContext)(DPI_AWARENESS_CONTEXT_) { nullptr };
-			UINT(__stdcall* GetDpiForWindow)(HWND) { nullptr };
-			UINT(__stdcall* GetDpiForSystem)() { nullptr };
-			HRESULT(__stdcall* GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*) { nullptr };
-			UINT(__stdcall* GetDpiFromDpiAwarenessContext)(void*) { nullptr };
-			void* (__stdcall* GetThreadDpiAwarenessContext)() { nullptr };
-			HRESULT(__stdcall* SetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT_) { nullptr };
+			HRESULT(__stdcall* SetProcessDPIAware           )(                      ) { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
+			HRESULT(__stdcall* SetProcessDpiAwareness       )(PROCESS_DPI_AWARENESS ) { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
+			HRESULT(__stdcall* SetProcessDpiAwarenessContext)(DPI_AWARENESS_CONTEXT_) { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiawarenesscontext
+			UINT   (__stdcall* GetDpiForWindow              )(HWND                  ) { nullptr };
+			UINT   (__stdcall* GetDpiForSystem              )(                      ) { nullptr };
+			HRESULT(__stdcall* GetDpiForMonitor             )(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*) { nullptr };
+			UINT   (__stdcall* GetDpiFromDpiAwarenessContext)(void*                 ) { nullptr };
+			void*  (__stdcall* GetThreadDpiAwarenessContext )(                      ) { nullptr };
+			HRESULT(__stdcall* SetThreadDpiAwarenessContext )(DPI_AWARENESS_CONTEXT_) { nullptr };
 
 			dpi_function()
 			{
@@ -92,10 +94,17 @@ namespace nana{
 				}
 			}
 
+
+			/// todo: generalize dpi to v2 awareness - best test each function separatelly?
 			bool good() const
 			{
-				return this->SetProcessDpiAwareness && this->GetDpiForWindow && this->GetDpiForMonitor && this->GetDpiForSystem && this->GetThreadDpiAwarenessContext
-					&& this->SetThreadDpiAwarenessContext && this->SetProcessDpiAwarenessContext;
+				return this->SetProcessDpiAwareness 
+					&& this->GetDpiForWindow 
+					&& this->GetDpiForMonitor 
+					&& this->GetDpiForSystem 
+					&& this->GetThreadDpiAwarenessContext
+					&& this->SetThreadDpiAwarenessContext 
+					&& this->SetProcessDpiAwarenessContext;
 			}
 		};
 
@@ -430,6 +439,7 @@ namespace nana{
 		nana::size native_interface::primary_monitor_size()
 		{
 #if defined(NANA_WINDOWS)
+			/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 			return nana::size(::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN));
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
@@ -441,6 +451,7 @@ namespace nana{
 		rectangle native_interface::screen_area_from_point(const point& pos)
 		{
 #if defined(NANA_WINDOWS)
+			/// \todo: make DPI AWARE
 			typedef HMONITOR (__stdcall * MonitorFromPointT)(POINT,DWORD);
 
 			MonitorFromPointT mfp = reinterpret_cast<MonitorFromPointT>(::GetProcAddress(::GetModuleHandleA("User32.DLL"), "MonitorFromPoint"));
@@ -451,6 +462,8 @@ namespace nana{
 
 				MONITORINFO mi;
 				mi.cbSize = sizeof mi;
+
+				/// \todo: make DPI AWARE
 				if(::GetMonitorInfo(monitor, &mi))
 				{
 					return rectangle(mi.rcWork.left, mi.rcWork.top,
@@ -488,6 +501,7 @@ namespace nana{
 			if(owner && (nested == false))
 				::ClientToScreen(reinterpret_cast<HWND>(owner), &pt);
 
+			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
 			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
@@ -674,6 +688,7 @@ namespace nana{
 		{
 			if(nullptr == parent) return nullptr;
 #if defined(NANA_WINDOWS)
+			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilities for variation
 										L"NanaWindowInternal",
 										L"Nana Child Window",	// Title Text
@@ -1862,6 +1877,7 @@ namespace nana{
 			int y;
 			if(true_for_max)
 			{
+				/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 				x = ::GetSystemMetrics(SM_CXMAXTRACK);
 				y = ::GetSystemMetrics(SM_CYMAXTRACK);
 				if(static_cast<unsigned>(x) < sz.width + ext_width)
@@ -1871,6 +1887,7 @@ namespace nana{
 			}
 			else
 			{
+				/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 				x = ::GetSystemMetrics(SM_CXMINTRACK);
 				y = ::GetSystemMetrics(SM_CYMINTRACK);
 				if(static_cast<unsigned>(x) > sz.width + ext_width)

@@ -74,6 +74,7 @@ namespace nana
 	::nana::size screen::desktop_size()
 	{
 #if defined(NANA_WINDOWS)
+		/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
 		auto w = static_cast<size::value_type>(::GetSystemMetrics(SM_CXVIRTUALSCREEN));
 		auto h = static_cast<size::value_type>(::GetSystemMetrics(SM_CYVIRTUALSCREEN));
 		return{w, h};

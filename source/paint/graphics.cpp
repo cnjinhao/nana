@@ -124,6 +124,7 @@ namespace paint
 				impl_->real_font = rhs.impl_->real_font;
 		}
 
+		/// \todo: generalize dpi to v2 awareness
 		font::font(const font_info& fi, std::size_t dpi):
 			impl_(new impl_type)
 		{
