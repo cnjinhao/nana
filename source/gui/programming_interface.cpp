@@ -1073,8 +1073,7 @@ namespace api
 		return (is_window(wd) ? wd->flags.enabled : false);
 	}
 
-	//refresh_window
-	//@brief: Refresh the window and display it immediately.
+	/// Refresh the window and display it immediately.
 	void refresh_window(window wd)
 	{
 		restrict::wd_manager().update(wd, true, false);
@@ -1085,8 +1084,7 @@ namespace api
 		restrict::wd_manager().refresh_tree(wd);
 	}
 
-	//update_window
-	//@brief: it displays a window immediately without refreshing.
+	/// displays a window immediately without refreshing.
 	void update_window(window wd, bool now)
 	{
 		if (now)

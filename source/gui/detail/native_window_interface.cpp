@@ -10,6 +10,8 @@
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
 
+#include <iostream>  // for debugging
+
 #include "../../detail/platform_spec_selector.hpp"
 #include "../../detail/platform_abstraction.hpp"
 #include <nana/gui/detail/native_window_interface.hpp>
@@ -31,16 +33,20 @@
 namespace nana{
 	namespace detail{
 
-#if defined(NANA_WINDOWS)
+		#if defined(NANA_WINDOWS)
 		
 	    /// \todo: generalize dpi to v2 awareness
-		struct DPI_AWARENESS_CONTEXT___ { int unused; }; typedef struct DPI_AWARENESS_CONTEXT___* DPI_AWARENESS_CONTEXT_;
+		struct DPI_AWARENESS_CONTEXT___ { int unused; }; ///< introduce named dummy type to avoid including windows.h
+		typedef struct DPI_AWARENESS_CONTEXT___* DPI_AWARENESS_CONTEXT_; ///< introduce named dummy pointer type
 
-#define DPI_AWARENESS_CONTEXT_UNAWARE_               ((DPI_AWARENESS_CONTEXT_)-1)
-#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE_          ((DPI_AWARENESS_CONTEXT_)-2)
-#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_     ((DPI_AWARENESS_CONTEXT_)-3)
-#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_  ((DPI_AWARENESS_CONTEXT_)-4)
-#define DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED_     ((DPI_AWARENESS_CONTEXT_)-5)
+		/// force conversion of numbers '-1', '-2'... into a value of type pointer to some named structure
+		/// this is useful only for comparition/identification, but, please, don't dereferene that pointer!
+		/// why not use just an enum class?
+		#define DPI_AWARENESS_CONTEXT_UNAWARE_               ((DPI_AWARENESS_CONTEXT_)-1)
+		#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE_          ((DPI_AWARENESS_CONTEXT_)-2)
+		#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_     ((DPI_AWARENESS_CONTEXT_)-3)
+		#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_  ((DPI_AWARENESS_CONTEXT_)-4)
+		#define DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED_     ((DPI_AWARENESS_CONTEXT_)-5)
 
 		/// Dynamically load Windows DPI functions to check these APIs are supported by the SDK and OS.
 		struct dpi_function
@@ -58,39 +64,116 @@ namespace nana{
 				MDT_DEFAULT
 			};
 
-			HRESULT(__stdcall* SetProcessDPIAware           )(                      ) { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
-			HRESULT(__stdcall* SetProcessDpiAwareness       )(PROCESS_DPI_AWARENESS ) { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
-			HRESULT(__stdcall* SetProcessDpiAwarenessContext)(DPI_AWARENESS_CONTEXT_) { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiawarenesscontext
-			UINT   (__stdcall* GetDpiForWindow              )(HWND                  ) { nullptr };
-			UINT   (__stdcall* GetDpiForSystem              )(                      ) { nullptr };
-			HRESULT(__stdcall* GetDpiForMonitor             )(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*) { nullptr };
-			UINT   (__stdcall* GetDpiFromDpiAwarenessContext)(void*                 ) { nullptr };
-			void*  (__stdcall* GetThreadDpiAwarenessContext )(                      ) { nullptr };
-			HRESULT(__stdcall* SetThreadDpiAwarenessContext )(DPI_AWARENESS_CONTEXT_) { nullptr };
+			/// define function pointers types for each API
+			using SetProcessDPIAware_ftype            = HRESULT(__stdcall*)(                      );
+			using SetProcessDpiAwareness_ftype        = HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS );
+			using SetProcessDpiAwarenessContext_ftype = HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_);
+			using GetDpiForWindow_ftype               = UINT   (__stdcall*)(HWND                  );
+			using GetDpiForSystem_ftype               = UINT   (__stdcall*)(                      );
+			using GetDpiForMonitor_ftype              = HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
+			using GetDpiFromDpiAwarenessContext_ftype = UINT   (__stdcall*)(void*                 );
+			using GetThreadDpiAwarenessContext_ftype  = void*  (__stdcall*)(                      );
+			using SetThreadDpiAwarenessContext_ftype  = HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_);
+
+			/// define function pointers members for each API
+			SetProcessDPIAware_ftype            SetProcessDPIAware            { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
+			SetProcessDpiAwareness_ftype        SetProcessDpiAwareness        { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
+			SetProcessDpiAwarenessContext_ftype SetProcessDpiAwarenessContext { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiawarenesscontext
+			GetDpiForWindow_ftype               GetDpiForWindow               { nullptr };
+			GetDpiForSystem_ftype               GetDpiForSystem               { nullptr };
+			GetDpiForMonitor_ftype              GetDpiForMonitor              { nullptr };
+			GetDpiFromDpiAwarenessContext_ftype GetDpiFromDpiAwarenessContext { nullptr };
+			GetThreadDpiAwarenessContext_ftype  GetThreadDpiAwarenessContext  { nullptr };
+			SetThreadDpiAwarenessContext_ftype  SetThreadDpiAwarenessContext  { nullptr };
 
 			dpi_function()
 			{
+				/// Dynamically load User32.DLL to check these APIs are supported by the SDK and OS.
+				/// here we can find SetProcessDPIAware, (GetDpiForWindow, GetDpiForSystem, 
+				///      GetDpiFromDpiAwarenessContext, GetThreadDpiAwarenessContext, SetThreadDpiAwarenessContext, SetProcessDpiAwarenessContext,
+				/// EnableChildWindowDpiMessage, GetDpiMetrics, GetDpiForMonitorInternal, GetProcessDpiAwarenessInternal, GetWindowDPI, IsChildWindowDpiMessageEnabled
+				/// IsProcessDPIAware, IsWindowBroadcastingDpiToChildren, LogicalToPhysicalPointForPerMonitorDPI, PhysicalToLogicalPointForPerMonitorDPI, SetProcessDpiAwarenessInternal
 				auto user32 = ::GetModuleHandleW(L"User32.DLL");
-				this->GetDpiForWindow = reinterpret_cast<UINT(__stdcall*)(HWND)>(::GetProcAddress(user32, "GetDpiForWindow"));
-				this->GetDpiForSystem = reinterpret_cast<UINT(__stdcall*)()>(::GetProcAddress(user32, "GetDpiForSystem"));
+				if (nullptr == user32)  // ??
+				{
+					std::cerr << "User32.DLL not loaded for GetModuleHandleW" << std::endl;   // for debugging
 
-				this->GetDpiFromDpiAwarenessContext = reinterpret_cast<UINT(__stdcall*)(void*)>(::GetProcAddress(user32, "GetDpiFromDpiAwarenessContext"));
-				this->GetThreadDpiAwarenessContext = reinterpret_cast<void* (__stdcall*)()>(::GetProcAddress(user32, "GetThreadDpiAwarenessContext"));
+					user32 = ::LoadLibraryW(L"User32.DLL");
+						if (nullptr == user32)
+							std::cerr << "User32.DLL not loaded :  ERROR !!!!" << std::endl;   // for debugging
+						else std::cerr << "User32.DLL loaded" << std::endl;                    // for debugging
+				} else std::cerr << "User32.DLL already loaded" << std::endl;              // for debugging
 
-				this->SetThreadDpiAwarenessContext = reinterpret_cast<HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_)>(::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
-				this->SetProcessDpiAwarenessContext = reinterpret_cast<HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_)>(::GetProcAddress(user32, "SetProcessDpiAwarenessContext"));
+				this->SetProcessDPIAware = reinterpret_cast<SetProcessDPIAware_ftype>
+					           (::GetProcAddress(user32, "SetProcessDPIAware-------"));
+					if (nullptr == this->SetProcessDPIAware)
+						std::cerr << "SetProcessDPIAware not found" << std::endl;              // for debugging
+					else std::cerr << "SetProcessDPIAware found" << std::endl;                 // for debugging
 
+				this->GetDpiForWindow = reinterpret_cast<GetDpiForWindow_ftype>
+					           (::GetProcAddress(user32, "GetDpiForWindow"));
+					if (nullptr == this->GetDpiForWindow)
+						std::cerr << "GetDpiForWindow not found" << std::endl;                  // for debugging
+					else std::cerr << "GetDpiForWindow found" << std::endl;                     // for debugging
+
+				this->GetDpiForSystem = reinterpret_cast<GetDpiForSystem_ftype>
+					           (::GetProcAddress(user32, "GetDpiForSystem"));
+					if (nullptr == this->GetDpiForSystem)
+						std::cerr << "GetDpiForSystem not found" << std::endl;                  // for debugging
+					else std::cerr << "GetDpiForSystem found" << std::endl;                     // for debugging
+
+				this->GetDpiFromDpiAwarenessContext = reinterpret_cast<GetDpiFromDpiAwarenessContext_ftype>
+					           (::GetProcAddress(user32, "GetDpiFromDpiAwarenessContext"));
+					if (nullptr == this->GetDpiFromDpiAwarenessContext)
+						std::cerr << "GetDpiFromDpiAwarenessContext not found" << std::endl;    // for debugging
+					else std::cerr << "GetDpiFromDpiAwarenessContext found" << std::endl;       // for debugging
+
+				this->GetThreadDpiAwarenessContext = reinterpret_cast<GetThreadDpiAwarenessContext_ftype>
+					           (::GetProcAddress(user32, "GetThreadDpiAwarenessContext"));
+					if (nullptr == this->GetThreadDpiAwarenessContext)
+						std::cerr << "GetThreadDpiAwarenessContext not found" << std::endl;     // for debugging
+					else std::cerr << "GetThreadDpiAwarenessContext found" << std::endl;        // for debugging
+
+
+				this->SetThreadDpiAwarenessContext = reinterpret_cast<SetThreadDpiAwarenessContext_ftype>
+					           (::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
+					if (nullptr == this->SetThreadDpiAwarenessContext)
+						std::cerr << "SetThreadDpiAwarenessContext not found" << std::endl;         // for debugging
+					else std::cerr << "SetThreadDpiAwarenessContext found" << std::endl;            // for debugging
+
+				this->SetProcessDpiAwarenessContext = reinterpret_cast<SetProcessDpiAwarenessContext_ftype>
+					           (::GetProcAddress(user32, "SetProcessDpiAwarenessContext"));
+					if (nullptr == this->SetProcessDpiAwarenessContext)
+						std::cerr << "SetProcessDpiAwarenessContext not found" << std::endl;         // for debugging
+					else std::cerr << "SetProcessDpiAwarenessContext found" << std::endl;            // for debugging
+
+				/// Dynamically load Shcore.DLL to check these APIs are supported by the SDK and OS.
+				/// here we can finf GetDpiForMonitor and SetProcessDpiAwareness; 
+				///   and   GetDpiForShellUIComponent, GetProcessDpiAwareness
 				auto shcore = ::GetModuleHandleW(L"Shcore.DLL");
 				if (nullptr == shcore)
+				{
+					std::cerr << "Shcore.DLL not loaded for GetModuleHandleW" << std::endl;   // for debugging
 					shcore = ::LoadLibraryW(L"Shcore.DLL");
+                        if (nullptr == shcore)
+                            std::cerr << "Shcore.DLL not loaded :  ERROR !!!!" << std::endl;   // for debugging
+                        else std::cerr << "Shcore.DLL loaded" << std::endl;                    // for debugging
+				} else std::cerr << "Shcore.DLL already loaded" << std::endl;              // for debugging
 
 				if (shcore)
 				{
-					this->SetProcessDpiAwareness = reinterpret_cast<HRESULT(__stdcall*)(PROCESS_DPI_AWARENESS)>(
+					this->SetProcessDpiAwareness = reinterpret_cast<SetProcessDpiAwareness_ftype>(
 						::GetProcAddress(shcore, "SetProcessDpiAwareness"));
+						if (nullptr == this->SetProcessDpiAwareness)
+							std::cerr << "SetProcessDpiAwareness not found" << std::endl;              // for debugging
+						else std::cerr << "SetProcessDpiAwareness found" << std::endl;                 // for debugging
 
-					this->GetDpiForMonitor = reinterpret_cast<HRESULT(__stdcall*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*)>(
+					this->GetDpiForMonitor = reinterpret_cast<GetDpiForMonitor_ftype>(
 						::GetProcAddress(shcore, "GetDpiForMonitor"));
+						if (nullptr == this->GetDpiForMonitor)
+							std::cerr << "GetDpiForMonitor not found" << std::endl;                  // for debugging
+						else std::cerr << "GetDpiForMonitor found" << std::endl;                     // for debugging
+
 				}
 			}
 

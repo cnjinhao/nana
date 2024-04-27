@@ -1,7 +1,7 @@
 ﻿/**
  *	A Bedrock Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0.
  *	(See accompanying file LICENSE_1_0.txt or copy at
@@ -16,6 +16,9 @@
 
 #include "../../detail/platform_spec_selector.hpp"
 #if defined(NANA_WINDOWS)
+
+#include <iostream>	//use std::cerr
+
 #include "bedrock_types.hpp"
 #include <nana/gui/detail/event_code.hpp>
 #include <nana/system/platform.hpp>
@@ -29,8 +32,6 @@
 #include <nana/gui/detail/color_schemes.hpp>
 #include "inner_fwd_implement.hpp"
 #include "../../detail/platform_abstraction.hpp"
-
-#include <iostream>	//use std::cerr
 
 #ifndef WM_MOUSEWHEEL
 #	define WM_MOUSEWHEEL	0x020A
@@ -211,7 +212,8 @@ namespace detail
 
 		::RegisterClassEx(&wincl);
 
-		restrict::track_mouse_event = (restrict::track_mouse_event_type)::GetProcAddress(::GetModuleHandleA("User32.DLL"), "TrackMouseEvent");
+		restrict::track_mouse_event = (restrict::track_mouse_event_type)
+			    ::GetProcAddress(::GetModuleHandleA("User32.DLL"), "TrackMouseEvent");
 
 		if(!restrict::track_mouse_event)
 			restrict::track_mouse_event = restrict::dummy_track_mouse_event;
@@ -240,7 +242,8 @@ namespace detail
 	{
 		if(wd_manager().window_count())
 		{
-			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " + std::to_string(wd_manager().window_count()) + " window(s) are not uninstalled.";
+			std::string msg = "Nana.GUI detects a memory leaks in window_manager, " 
+				+ std::to_string(wd_manager().window_count()) + " window(s) are not uninstalled.";
 			std::cerr << msg;  /// \todo add list of cations of opening windows and if auto testing GUI do auto OK after 2 seconds.
 			::MessageBoxA(0, msg.c_str(), ("Nana C++ Library"), MB_OK);
 		}
