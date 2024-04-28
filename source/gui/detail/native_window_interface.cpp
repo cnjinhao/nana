@@ -143,7 +143,7 @@ namespace nana{
  				}
 			}
 
-			/// \todo: best test each function separatelly?
+			/// \deprecate: best test each function separatelly
 			bool good() const
 			{
 				return this->SetProcessDpiAwareness 
@@ -1970,7 +1970,7 @@ namespace nana{
 				return 0;
 
 			auto& dpi_fn = windows_dpi_function();
-			if (dpi_fn.good())
+			if (dpi_fn.GetDpiForWindow)
 				return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
 #endif
 			static_cast<void>(wd);	//eliminate the unused warning
@@ -1981,7 +1981,7 @@ namespace nana{
 		{
 #ifdef NANA_WINDOWS
 			auto& dpi_fn = windows_dpi_function();
-			if (dpi_fn.good())
+			if (dpi_fn.GetDpiForSystem)
 				return dpi_fn.GetDpiForSystem();
 
 			//When DPI-aware APIs are not supported by the running Windows, it returns
