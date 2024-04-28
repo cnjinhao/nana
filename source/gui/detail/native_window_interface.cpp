@@ -143,7 +143,7 @@ namespace nana{
  				}
 			}
 
-			/// \deprecate: best test each function separatelly
+			/// \deprecate: best test each function separately
 			bool good() const
 			{
 				return this->SetProcessDpiAwareness 
@@ -1954,13 +1954,22 @@ namespace nana{
 
 		void native_interface::start_dpi_awareness()
 		{
-#ifdef NANA_WINDOWS
+         #ifdef NANA_WINDOWS
 			auto& dpi_fn = windows_dpi_function();
-			if (dpi_fn.good())
+			// set SetProcessDpiAwarenessContext, or SetProcessDpiAwareness, or SetProcessDPIAware
+			if (dpi_fn.SetProcessDpiAwarenessContext)
 			{
 				dpi_fn.SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2_);
 			}
-#endif
+			else if (dpi_fn.SetProcessDpiAwareness)
+            {
+			    dpi_fn.SetProcessDpiAwareness(dpi_function::PROCESS_PER_MONITOR_DPI_AWARE);
+			}
+            else if (dpi_fn.SetProcessDPIAware)
+            {
+			    dpi_fn.SetProcessDPIAware();
+			}
+         #endif
 		}
 
 		std::size_t native_interface::window_dpi(native_window_type wd)
