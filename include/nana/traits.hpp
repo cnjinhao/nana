@@ -1,8 +1,8 @@
 /*
  *	Traits Implementation
- *	Copyright(C) 2003-2016 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
- *	@file: nana/traits.hpp
+ *	@file nana/traits.hpp
  */
 
 #ifndef NANA_TRAITS_HPP

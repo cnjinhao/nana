@@ -1,7 +1,7 @@
 /**
  *	Basic Types definition
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
@@ -13,8 +13,9 @@
 #ifndef NANA_BASIC_TYPES_HPP
 #define NANA_BASIC_TYPES_HPP
 
-#include <nana/deploy.hpp>
 #include <cctype>
+
+#include <nana/deploy.hpp>
 #include <nana/push_ignore_diagnostic>
 
 namespace nana
@@ -297,17 +298,19 @@ namespace nana
 		color(color_rgba);
 		color(unsigned red, unsigned green, unsigned blue, double alpha = 1.0);
 
-		/// Initializes the color with a CSS-like rgb string.
-		explicit color(std::string css_rgb);
+		
+		explicit color(std::string css_rgb);  ///< Initializes the color with a CSS-like rgb string.
 
-		color& alpha(double);	///< Sets alpha channel
-		color& from_rgb(unsigned red, unsigned green, unsigned blue);		///< immutable alpha channel
+		color& alpha(double alpha);	          ///< Sets alpha channel
 
-		/// Sets color with a HSL value.
-		/// @param hue in range of [0, 360]
-		/// @param saturation in range of [0, 1]
-		/// @param lightness  in range of [0, 1]
-		color& from_hsl(double hue, double saturation, double lightness);	///< immutable alpha channel
+		color& from_rgb(unsigned red, 
+						unsigned green, 
+						unsigned blue);		  ///< immutable alpha channel
+
+		color& from_hsl(double hue,           ///< in range of [0, 360]
+						double saturation,    ///< in range of [0,   1]
+						double lightness      ///< in range of [0,   1]
+		               );	                  ///< Sets color with a HSL value, immutable alpha channel
 
 		/// Blends color
 		/**

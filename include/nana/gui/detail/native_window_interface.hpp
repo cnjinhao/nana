@@ -1,22 +1,22 @@
-/*
+/**
  *	Platform Implementation
  *	Nana C++ Library(http://www.nanapro.org)
- *	Copyright(C) 2003-2022 Jinhao(cnjinhao@hotmail.com)
+ *	Copyright(C) 2003-2024 Jinhao(cnjinhao@hotmail.com)
  *
  *	Distributed under the Boost Software License, Version 1.0. 
  *	(See accompanying file LICENSE_1_0.txt or copy at 
  *	http://www.boost.org/LICENSE_1_0.txt)
  *
- *	@file: nana/gui/detail/native_window_interface.hpp
+ *	@file nana/gui/detail/native_window_interface.hpp
  */
 
 #ifndef NANA_GUI_DETAIL_NATIVE_WINDOW_INTERFACE_HPP
 #define NANA_GUI_DETAIL_NATIVE_WINDOW_INTERFACE_HPP
 
+#include <functional>
+
 #include "../basis.hpp"
 #include <nana/paint/image.hpp>
-
-#include <functional>
 
 namespace nana
 {
@@ -29,11 +29,11 @@ namespace detail
 		{
 			native_window_type native_handle;
 
-			unsigned width;		//client size
-			unsigned height;	//client size
+			unsigned width;		///< client size
+			unsigned height;	///< client size
 
-			unsigned extra_width;	//extra border size, it is useful in Windows, ignore in X11 always 0
-			unsigned extra_height;	//extra border size, it is useful in Windows, ignore in X11 always 0
+			unsigned extra_width;	///< extra border size, it is useful in Windows, ignore in X11 always 0
+			unsigned extra_height;	///< extra border size, it is useful in Windows, ignore in X11 always 0
 		};
 
 		struct frame_extents
@@ -46,7 +46,7 @@ namespace detail
 
 		using native_string_type = ::nana::detail::native_string_type;
 
-		//Invokes a function in the thread of the specified window.
+		/// Invokes a function in the thread of the specified window.
 		static void affinity_execute(native_window_type, bool post, std::function<void()>&&);
 
 		static nana::size	primary_monitor_size();
