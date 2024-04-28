@@ -29,17 +29,12 @@ namespace nana
 	{
 		typedef CharT char_type;
 
-		
-		//static constexpr bool eq(char_type c1, char_type c2) noexcept
-		//VC2012 does not support constexpr and noexcept keywords
-		static bool eq(char_type c1, char_type c2)
+		static bool eq(char_type c1, char_type c2) noexcept
 		{
 			return std::toupper(c1) == std::toupper(c2);
 		}
-
-		//static constexpr bool lt(char_type c1, char_type c2) noexcept
-		//VC2012 does not support constexpr and noexcept keywords
-		static bool lt(char_type c1, char_type c2)
+ 
+		static bool lt(char_type c1, char_type c2) noexcept
 		{
 			return std::toupper(c1) < std::toupper(c2);
 		}
