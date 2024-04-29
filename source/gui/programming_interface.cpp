@@ -615,7 +615,7 @@ namespace api
 	{
 		return interface_type::cursor_position();
 	}
-
+	/// \todo: generalize dpi to v2 awareness 
 	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
 		auto screen = interface_type::primary_monitor_size();

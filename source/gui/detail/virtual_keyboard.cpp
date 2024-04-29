@@ -1128,6 +1128,7 @@ namespace nana::detail
 			board_ = new keyboards::numeric{*this, host_, images_};
 		}
 	private:
+		/// \todo: generalize dpi to v2 awareness 
 		nana::rectangle _m_place()
 		{
 			auto start_pt = nana::point{ 0, static_cast<int>(nana::api::window_size(host_).height + 2) };

@@ -82,7 +82,7 @@ namespace nana
 		return ::nana::detail::native_interface::primary_monitor_size();
 #endif
 	}
-
+	/// \todo: generalize dpi to v2 awareness 
 	::nana::size screen::primary_monitor_size()
 	{
 		return ::nana::detail::native_interface::primary_monitor_size();

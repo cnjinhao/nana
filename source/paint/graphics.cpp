@@ -130,7 +130,7 @@ namespace paint
 		{
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
-
+		/// \todo: generalize dpi to v2 awareness
 		font::font(const std::string& font_family, double size_pt, const font_style& fs, std::size_t dpi):
 			impl_(new impl_type)
 		{
@@ -141,7 +141,7 @@ namespace paint
 			impl_->real_font = platform_abstraction::open_font(fi, (dpi ? dpi : platform_abstraction::current_dpi()), {});
 		}
 
-
+		/// \todo: generalize dpi to v2 awareness
 		font::font(double size_pt, const path_type& ttf, const font_style& fs, std::size_t dpi) :
 			impl_(new impl_type)
 		{
