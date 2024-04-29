@@ -57,8 +57,6 @@ namespace detail{
 			PROCESS_PER_MONITOR_DPI_AWARE
 		};
 
-
-
 		enum MONITOR_DPI_TYPE {
 			MDT_EFFECTIVE_DPI,
 			MDT_ANGULAR_DPI,
@@ -76,6 +74,9 @@ namespace detail{
 		using GetDpiFromDpiAwarenessContext_ftype = UINT   (__stdcall*)(void*                 );
 		using GetThreadDpiAwarenessContext_ftype  = void*  (__stdcall*)(                      );
 		using SetThreadDpiAwarenessContext_ftype  = HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_);
+		using GetSystemMetrics_ftype              = int    (__stdcall*)(int                   );
+		using GetSystemMetricsForDpi_ftype        = int    (__stdcall*)(int, UINT             );
+
 		/// define function pointers members for each API
 		SetProcessDPIAware_ftype            SetProcessDPIAware            { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
 		SetProcessDpiAwareness_ftype        SetProcessDpiAwareness        { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
@@ -86,6 +87,9 @@ namespace detail{
 		GetDpiFromDpiAwarenessContext_ftype GetDpiFromDpiAwarenessContext { nullptr };
 		GetThreadDpiAwarenessContext_ftype  GetThreadDpiAwarenessContext  { nullptr };
 		SetThreadDpiAwarenessContext_ftype  SetThreadDpiAwarenessContext  { nullptr };
+		GetSystemMetrics_ftype              GetSystemMetrics              { nullptr };
+		GetSystemMetricsForDpi_ftype        GetSystemMetricsForDpi        { nullptr };
+
 		dpi_function()
 		{
 			/// Dynamically load User32.DLL to check these APIs are supported by the SDK and OS.
@@ -101,6 +105,8 @@ namespace detail{
 				// if (nullptr == user32) std::cerr << "User32.DLL not loaded :  ERROR !!!!" << std::endl;    
 				// led to a crash in the program? just all pointers to DPI functions will be nullptr
 			}  
+			if (user32)
+			{
 				this->SetProcessDPIAware = reinterpret_cast<SetProcessDPIAware_ftype>
 								(::GetProcAddress(user32, "SetProcessDPIAware"));
 
@@ -121,6 +127,13 @@ namespace detail{
  
 				this->SetProcessDpiAwarenessContext = reinterpret_cast<SetProcessDpiAwarenessContext_ftype>
 								(::GetProcAddress(user32, "SetProcessDpiAwarenessContext"));
+
+				this->GetSystemMetrics = reinterpret_cast<GetSystemMetrics_ftype>
+                                (::GetProcAddress(user32, "GetSystemMetrics"));
+
+				this->GetSystemMetricsForDpi = reinterpret_cast<GetSystemMetricsForDpi_ftype>
+                                (::GetProcAddress(user32, "GetSystemMetricsForDpi"));
+			}
  
 			/// Dynamically load Shcore.DLL to check these APIs are supported by the SDK and OS.
 			/// here we can finf GetDpiForMonitor and SetProcessDpiAwareness; 
