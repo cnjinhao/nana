@@ -142,18 +142,6 @@ namespace nana{
 						::GetProcAddress(shcore, "GetDpiForMonitor"));
  				}
 			}
-
-			/// \deprecate: best test each function separately
-			bool good() const
-			{
-				return this->SetProcessDpiAwareness 
-					&& this->GetDpiForWindow 
-					&& this->GetDpiForMonitor 
-					&& this->GetDpiForSystem 
-					&& this->GetThreadDpiAwarenessContext
-					&& this->SetThreadDpiAwarenessContext 
-					&& this->SetProcessDpiAwarenessContext;
-			}
 		};
 
 		static dpi_function& windows_dpi_function()
