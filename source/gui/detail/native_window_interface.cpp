@@ -483,12 +483,38 @@ namespace detail{
   #endif	
 	}
 
-	/// \todo: generalize dpi to v2 awareness 
+	/// generalized to Windows dpi awareness v2
 	nana::size native_interface::primary_monitor_size()
 	{
   #if defined(NANA_WINDOWS)
-		/// \todo: add to dpi_function GetSystemMetricsForDpi and replace this
-		return nana::size(::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN));
+
+		if (dpi_function().GetSystemMetricsForDpi && dpi_function().GetDpiForWindow)
+        {
+            // get the main monitor HWND, HMONITOR
+			HWND primary_monitor = ::GetDesktopWindow();
+			UINT dpi = dpi_function().GetDpiForWindow(primary_monitor);
+            return nana::size(dpi_function().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
+							  dpi_function().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
+        }
+		if (dpi_function().GetSystemMetricsForDpi && dpi_function().GetDpiForMonitor)
+        {
+            // get the main monitor HWND
+			HWND primary_monitor = ::GetDesktopWindow();
+			HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
+			UINT x_dpi, y_dpi;
+			UINT dpi = dpi_function().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi);
+            return nana::size(dpi_function().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
+							  dpi_function().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
+        }
+		if (dpi_function().GetSystemMetricsForDpi && dpi_function().GetDpiForSystem)  // ??
+        {
+			UINT dpi = dpi_function().GetDpiForSystem();
+            return nana::size(dpi_function().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
+							  dpi_function().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
+        }
+		return nana::size(::GetSystemMetrics(SM_CXSCREEN), 
+						  ::GetSystemMetrics(SM_CYSCREEN));
+
   #elif defined(NANA_X11)
 		nana::detail::platform_scope_guard psg;
 		Screen* s = ::XScreenOfDisplay(restrict::spec.open_display(), ::XDefaultScreen(restrict::spec.open_display()));
