@@ -2014,17 +2014,33 @@ namespace detail{
 
 		std::size_t native_interface::system_dpi()
 		{
-#ifdef NANA_WINDOWS
-			auto& dpi_fn = wdpi_fns();
-			if (dpi_fn.GetDpiForSystem)
-				return dpi_fn.GetDpiForSystem();
+  #ifdef NANA_WINDOWS
 
-			//When DPI-aware APIs are not supported by the running Windows, it returns
-			//the system DPI
+			if (wdpi_fns().GetDpiForWindow)
+			{
+				// get the main monitor HWND
+				HWND primary_monitor = ::GetDesktopWindow();
+				return wdpi_fns().GetDpiForWindow(primary_monitor);
+			}
+			if (wdpi_fns().GetDpiForMonitor)
+			{
+				// get the main monitor HWND
+				HWND primary_monitor = ::GetDesktopWindow();
+				HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
+				UINT x_dpi, y_dpi;
+				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
+					return  x_dpi;  //  x_dpi != y_dpi ??
+			}
+			if (wdpi_fns().GetDpiForSystem)  
+			{
+				return wdpi_fns().GetDpiForSystem();
+			}
+			//When DPI-aware APIs are not supported by the running Windows, it returns the system DPI
 			auto hdc = ::GetDC(nullptr);
 			auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, LOGPIXELSX));
 			::ReleaseDC(nullptr, hdc);
 			return dots;
+
 #endif
 			return 96;
 		}
