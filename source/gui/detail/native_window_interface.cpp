@@ -157,7 +157,7 @@ namespace detail{
 		}
 	};
 
-	static dpi_function& windows_dpi_function()
+	static dpi_function& wdpi_fns() ///< Windows specific DPI functions
 	{
 		static dpi_function df;  ///< static object, so it is created only once
 		return df;
@@ -488,29 +488,29 @@ namespace detail{
 	{
   #if defined(NANA_WINDOWS)
 
-		if (dpi_function().GetSystemMetricsForDpi && dpi_function().GetDpiForWindow)
+		if (wdpi_fns().GetSystemMetricsForDpi && wdpi_fns().GetDpiForWindow)
         {
             // get the main monitor HWND, HMONITOR
 			HWND primary_monitor = ::GetDesktopWindow();
-			UINT dpi = dpi_function().GetDpiForWindow(primary_monitor);
-            return nana::size(dpi_function().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
-							  dpi_function().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
+			UINT dpi = wdpi_fns().GetDpiForWindow(primary_monitor);
+            return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
+							  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
         }
-		if (dpi_function().GetSystemMetricsForDpi && dpi_function().GetDpiForMonitor)
+		if (wdpi_fns().GetSystemMetricsForDpi && wdpi_fns().GetDpiForMonitor)
         {
             // get the main monitor HWND
 			HWND primary_monitor = ::GetDesktopWindow();
 			HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
 			UINT x_dpi, y_dpi;
-			UINT dpi = dpi_function().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi);
-            return nana::size(dpi_function().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
-							  dpi_function().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
+			UINT dpi = wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi);
+            return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
+							  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
         }
-		if (dpi_function().GetSystemMetricsForDpi && dpi_function().GetDpiForSystem)  // ??
+		if (wdpi_fns().GetSystemMetricsForDpi && wdpi_fns().GetDpiForSystem)  // ??
         {
-			UINT dpi = dpi_function().GetDpiForSystem();
-            return nana::size(dpi_function().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
-							  dpi_function().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
+			UINT dpi = wdpi_fns().GetDpiForSystem();
+            return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
+							  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
         }
 		return nana::size(::GetSystemMetrics(SM_CXSCREEN), 
 						  ::GetSystemMetrics(SM_CYSCREEN));
@@ -1981,7 +1981,7 @@ namespace detail{
 		void native_interface::start_dpi_awareness()
 		{
          #ifdef NANA_WINDOWS
-			auto& dpi_fn = windows_dpi_function();
+			auto& dpi_fn = wdpi_fns();
 			// set SetProcessDpiAwarenessContext, or SetProcessDpiAwareness, or SetProcessDPIAware
 			if (dpi_fn.SetProcessDpiAwarenessContext)
 			{
@@ -2004,7 +2004,7 @@ namespace detail{
 			if (!::IsWindow(reinterpret_cast<HWND>(wd)))
 				return 0;
 
-			auto& dpi_fn = windows_dpi_function();
+			auto& dpi_fn = wdpi_fns();
 			if (dpi_fn.GetDpiForWindow)
 				return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
 #endif
@@ -2015,7 +2015,7 @@ namespace detail{
 		std::size_t native_interface::system_dpi()
 		{
 #ifdef NANA_WINDOWS
-			auto& dpi_fn = windows_dpi_function();
+			auto& dpi_fn = wdpi_fns();
 			if (dpi_fn.GetDpiForSystem)
 				return dpi_fn.GetDpiForSystem();
 
