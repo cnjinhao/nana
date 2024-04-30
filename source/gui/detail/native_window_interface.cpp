@@ -502,9 +502,9 @@ namespace detail{
 			HWND primary_monitor = ::GetDesktopWindow();
 			HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
 			UINT x_dpi, y_dpi;
-			UINT dpi = wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi);
-            return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, dpi), 
-							  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, dpi));
+			if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
+				return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, x_dpi), 
+								  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, y_dpi));  // ???
         }
 		if (wdpi_fns().GetSystemMetricsForDpi && wdpi_fns().GetDpiForSystem)  // ??
         {
