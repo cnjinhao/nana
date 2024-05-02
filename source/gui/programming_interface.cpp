@@ -11,7 +11,9 @@
  *	@author: Jinhao
  */
 
-//#include <iostream> // for debugging in make_center
+#include <iostream> // for debugging in make_center
+
+#include <nana/config.hpp>
 
 #include "detail/basic_window.hpp"
 #include <nana/gui/programming_interface.hpp>
@@ -621,7 +623,8 @@ namespace api
 	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
 		auto screen = interface_type::primary_monitor_size();
-		// std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ") " << std::endl;
+	    if constexpr (dpi_debugging)
+			std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ") " << std::endl;
 		return{
 			static_cast<int>(width  > screen.width  ? 0 : (screen.width  - width ) >> 1),
 			static_cast<int>(height > screen.height ? 0 : (screen.height - height) >> 1),

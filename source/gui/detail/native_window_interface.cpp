@@ -10,8 +10,7 @@
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
 
-/// \todo: replace by #ifdef DPI_DEBUGGING or just fully eliminate
-static constexpr bool dpi_debugging = false;  ///< set to true to print DPI relates values for debugging
+
 #include <iostream>  // for print_monitor_dpi() for debugging
 
 #include "../../detail/platform_spec_selector.hpp"
