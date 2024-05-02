@@ -1366,6 +1366,7 @@ namespace detail{
 			}
 			else
 				::MoveWindow(reinterpret_cast<HWND>(wd), x, y, r.right - r.left, r.bottom - r.top, true);
+
 #elif defined(NANA_X11)
 			Display * disp = restrict::spec.open_display();
 
@@ -2083,8 +2084,9 @@ namespace detail{
 			return sz;
 		}
 
-		void native_interface::start_dpi_awareness()
+		void native_interface::start_dpi_awareness(bool aware)  //bool aware = false
 		{
+			if (!aware) return;
          #ifdef NANA_WINDOWS
 			auto& dpi_fn = wdpi_fns();
 			// set SetProcessDpiAwarenessContext, or SetProcessDpiAwareness, or SetProcessDPIAware

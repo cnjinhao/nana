@@ -192,7 +192,7 @@ namespace detail
 		:	pi_data_(new pi_data),
 			impl_(new private_impl)
 	{
-		detail::native_interface::start_dpi_awareness();
+		detail::native_interface::start_dpi_awareness(config_dpi_aware);
 
 		nana::detail::platform_spec::instance(); //to guaranty the platform_spec object is initialized before using.
 
