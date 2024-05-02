@@ -651,16 +651,16 @@ namespace detail{
 			if(app.floating)	style_ex |= WS_EX_TOPMOST;
 
 			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
-			std::size_t dpi = native_interface::window_dpi(owner);
+			int dpi = static_cast<int>(native_interface::window_dpi(owner));
 
 			if constexpr (dpi_debugging)
 				std::cout << "create_window():   orig rect= " << r.x     << ", " << r.y      << 
 											   " with size= " << r.width << ", " << r.height << std::endl;
 			nana::rectangle scaled_r = r;
-			scaled_r.x      = MulDiv(r.x,      static_cast<int>(dpi), 96);
-			scaled_r.y      = MulDiv(r.y,      static_cast<int>(dpi), 96);
-			scaled_r.width  = MulDiv(r.width,  static_cast<int>(dpi), 96);
-			scaled_r.height = MulDiv(r.height, static_cast<int>(dpi), 96);
+			scaled_r.x      = MulDiv(r.x,     dpi, 96);
+			scaled_r.y      = MulDiv(r.y,     dpi, 96);
+			scaled_r.width  = MulDiv(r.width, dpi, 96);
+			scaled_r.height = MulDiv(r.height,dpi, 96);
 
 			if constexpr (dpi_debugging)
 				std::cout << "create_window(): scaled rect= " << scaled_r.x     << ", " << scaled_r.y      << 
