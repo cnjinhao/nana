@@ -2144,12 +2144,6 @@ namespace detail{
 		{
   #ifdef NANA_WINDOWS
 
-			if (wdpi_fns().GetDpiForWindow)
-			{
-				// get the main monitor HWND
-				HWND primary_monitor = ::GetDesktopWindow();
-				return wdpi_fns().GetDpiForWindow(primary_monitor);
-			}
 			if (wdpi_fns().GetDpiForMonitor)
 			{
 				if constexpr (dpi_debugging) std::cout << "GetDpiForMonitor" << std::endl;
@@ -2170,9 +2164,9 @@ namespace detail{
 
 			//When DPI-aware APIs are not supported by the running Windows, it returns the system DPI
 			auto hdc = ::GetDC(nullptr);
-			auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, LOGPIXELSX));
+			auto dpi = static_cast<std::size_t>(::GetDeviceCaps(hdc, LOGPIXELSX));
 			::ReleaseDC(nullptr, hdc);
-			return dots;
+			return dpi;
 
 #endif
 			return 96;
