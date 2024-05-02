@@ -545,6 +545,7 @@ namespace detail{
 	}
 
 	/// generalized to Windows dpi awareness v2 to return already 'DPI' scaled size
+	/// this result is used to calculate the area available to draw with may be smaller than the monitor size
 	nana::size native_interface::primary_monitor_size()
 	{
   #if defined(NANA_WINDOWS)
@@ -559,42 +560,41 @@ namespace detail{
 			{
 				if constexpr (dpi_debugging) 
 					std::cout << "primary_monitor_size(): DPI= " << x_dpi << " x " << y_dpi << std::endl;
-				if ( wdpi_fns().GetSystemMetricsForDpi )
+
+				if (false) //wdpi_fns().GetSystemMetricsForDpi) // do not scale ?
 					return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, x_dpi),
 									  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, y_dpi));  //  x_dpi != y_dpi ?? 
+
 				else // fallback to GetSystemMetrics
-					return nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), x_dpi, 96),
-									  MulDiv(::GetSystemMetrics(SM_CYSCREEN), y_dpi, 96));
+					return nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, x_dpi),
+									  MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, y_dpi));
 			}
         }
 
 		std::size_t dpi = native_interface::system_dpi();  // originaly got from UINT or int: safe to get back to that
 		if constexpr (dpi_debugging) std::cout << "primary_monitor_size(): DPI= " << dpi << std::endl;
 
-		if (false) //wdpi_fns().GetSystemMetricsForDpi) 
+		if (false) //wdpi_fns().GetSystemMetricsForDpi) // do not scale ?
         {
-            auto sz = nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
-							              wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
+		    nana::size sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, int(dpi)),
+						               MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, int(dpi)));
+			if constexpr (dpi_debugging) 
+				std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
+						
+			sz = nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
+						    wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
 			if constexpr (dpi_debugging) 
 				std::cout << "primary_monitor_size() with GetSystemMetricsForDpi: size= " << sz.width << " x " << sz.height << std::endl;
 			
-		    sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), int(dpi), 96),
-						              MulDiv(::GetSystemMetrics(SM_CYSCREEN), int(dpi), 96));
-		    if constexpr (dpi_debugging) 
-				std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
-			
-
-			return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
-							  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
+			return sz;
         }
 
-		auto sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), int(dpi), 96),
-						              MulDiv(::GetSystemMetrics(SM_CYSCREEN), int(dpi), 96));
+		nana::size sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), 96, int(dpi)),
+						           MulDiv(::GetSystemMetrics(SM_CYSCREEN), 96, int(dpi)));
 		if constexpr (dpi_debugging) 
 			std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
 			
-		return nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), int(dpi), 96),
-						  MulDiv(::GetSystemMetrics(SM_CYSCREEN), int(dpi), 96));
+		return sz;
 
   #elif defined(NANA_X11)
 		nana::detail::platform_scope_guard psg;
