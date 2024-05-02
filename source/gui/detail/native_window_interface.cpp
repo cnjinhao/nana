@@ -11,7 +11,7 @@
  */
 
 /// \todo: replace by #ifdef DPI_DEBUGGING or just fully eliminate
-static constexpr bool dpi_debugging = false;  ///< set to true to print DPI relates values for debugging
+static constexpr bool dpi_debugging = true;  ///< set to true to print DPI relates values for debugging
 #include <iostream>  // for print_monitor_dpi() for debugging
 
 #include "../../detail/platform_spec_selector.hpp"
@@ -651,12 +651,27 @@ namespace detail{
 
 			if(app.floating)	style_ex |= WS_EX_TOPMOST;
 
-			POINT pt = {r.x, r.y};
+			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
+			std::size_t dpi = native_interface::window_dpi(owner);
+
+			if constexpr (dpi_debugging)
+				std::cout << "create_window():   orig rect= " << r.x     << ", " << r.y      << 
+											   " with size= " << r.width << ", " << r.height << std::endl;
+			nana::rectangle scaled_r = r;
+			scaled_r.x      = MulDiv(r.x,      static_cast<int>(dpi), 96);
+			scaled_r.y      = MulDiv(r.y,      static_cast<int>(dpi), 96);
+			scaled_r.width  = MulDiv(r.width,  static_cast<int>(dpi), 96);
+			scaled_r.height = MulDiv(r.height, static_cast<int>(dpi), 96);
+
+			if constexpr (dpi_debugging)
+				std::cout << "create_window(): scaled rect= " << scaled_r.x     << ", " << scaled_r.y      << 
+											   " with size= " << scaled_r.width << ", " << scaled_r.height << std::endl;
+
+			POINT pt = {scaled_r.x, scaled_r.y};
 
 			if(owner && (nested == false))
 				::ClientToScreen(reinterpret_cast<HWND>(owner), &pt);
 
-			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
 			HWND native_wd = ::CreateWindowEx(style_ex, L"NanaWindowInternal", L"Nana Window",
 											style,
 											pt.x, pt.y, 100, 100,
@@ -669,13 +684,16 @@ namespace detail{
 			::GetWindowRect(native_wd, &wd_area);
 
 			if constexpr (dpi_debugging) {
-			// print for debuging the position of creation of the window pt
-			std::cout << "create_window(): pt= " << pt.x << ", " << pt.y << " with size= " << 100 << ", " << 100 << std::endl;
-			// with a client area of:
-			std::cout << "create_window(): client= " << client.right << ", " << client.top << " with size= " << client.right - client.left << ", "<< client.bottom - client.top << ", " << std::endl;
-			// and a window area of:
-			std::cout << "create_window(): wd_area= " << wd_area.right << ", " << wd_area.top << " with size= " << wd_area.right - wd_area.left << ", "<< wd_area.bottom - wd_area.top << ", " << std::endl;
-			}
+				// print for debuging the position of creation of the window pt
+				std::cout << "create_window():          pt= " << pt.x << ", " << pt.y << 
+					                           " with size= " << 100  << ", " << 100  << std::endl;
+				// with a client area of:
+				std::cout << "create_window():      client= " << client.left                << ", " << client.top                 << 
+					                      " with size= " << client.right - client.left << ", " << client.bottom - client.top << std::endl;
+				// and a window area of:
+				std::cout << "create_window():     wd_area= " << wd_area.left                 << ", " << wd_area.top                  << 
+					                           " with size= " << wd_area.right - wd_area.left << ", " << wd_area.bottom - wd_area.top << std::endl;
+				}
 
 
 			//a dimension with borders and caption title
@@ -687,22 +705,25 @@ namespace detail{
 				wd_area.top = pt.y;
 			}
 
-			int delta_w = static_cast<int>(r.width) - client.right;
-			int delta_h = static_cast<int>(r.height) - client.bottom;
+			int delta_w = static_cast<int>(scaled_r.width ) - client.right;
+			int delta_h = static_cast<int>(scaled_r.height) - client.bottom;
 
 			::MoveWindow(native_wd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
 			// the window was moved to:
 			if constexpr (dpi_debugging) 
-				std::cout << "create_window(): moved to= " << wd_area.left << ", " << wd_area.top << " with size= " << wd_area.right + delta_w << ", "<< wd_area.bottom + delta_h << ", " << std::endl;
+				std::cout << "create_window():    moved to= " << wd_area.left                           << ", " << wd_area.top                           << 
+				                               " with size= " << wd_area.right + delta_w - wd_area.left << ", " << wd_area.bottom + delta_h -wd_area.top << std::endl;
 
 			::GetClientRect(native_wd, &client);
 			::GetWindowRect(native_wd, &wd_area);
 						
 			if constexpr (dpi_debugging) {
 				// with a client area of:
-			std::cout << "create_window(): moved client= " << client.right << ", " << client.top << " with size= " << client.right - client.left << ", "<< client.bottom - client.top << ", " << std::endl;
-			// and a window area of:
-			std::cout << "create_window(): moved wd_area= " << wd_area.right << ", " << wd_area.top << " with size= " << wd_area.right - wd_area.left << ", "<< wd_area.bottom - wd_area.top << ", " << std::endl;
+				std::cout << "create_window(): moved client= " << client.left                << ", " << client.top                 << 
+											    " with size= " << client.right - client.left << ", " << client.bottom - client.top << std::endl;
+				// and a window area of:
+				std::cout << "create_window(): moved wd_area= " << wd_area.left                 << ", " << wd_area.top                  << 
+					                             " with size= " << wd_area.right - wd_area.left << ", " << wd_area.bottom - wd_area.top << std::endl;
 			}
 
 			wd_area.right -= wd_area.left;
