@@ -10,7 +10,9 @@
  *	@file: nana/gui/detail/native_window_interface.cpp
  */
 
-//#include <iostream>  // for debugging
+/// \todo: replace by #ifdef DPI_DEBUGGING or just fully eliminate
+static constexpr bool dpi_debugging = false;  ///< set to true to print DPI relates values for debugging
+#include <iostream>  // for print_monitor_dpi() for debugging
 
 #include "../../detail/platform_spec_selector.hpp"
 #include "../../detail/platform_abstraction.hpp"
@@ -28,6 +30,7 @@
 #endif
 
 #include "../../paint/image_accessor.hpp"
+
 
 
 namespace nana
@@ -162,6 +165,64 @@ namespace detail{
 		static dpi_function df;  ///< static object, so it is created only once
 		return df;
 	};
+
+	// debuging function to print all monitor DPIs
+	void print_monitor_dpi()
+    {
+		// compile only if dpi_debugging is enabled
+		if constexpr (dpi_debugging) {
+        ::EnumDisplayMonitors(
+			nullptr,
+		nullptr,
+		[](HMONITOR	Arg1,
+					HDC		Arg2,
+					LPRECT		Arg3,
+					LPARAM		Arg4)
+		{
+			MONITORINFOEXA mif;
+			mif.cbSize = sizeof(MONITORINFOEXA);
+			if (::GetMonitorInfoA(Arg1, &mif) != 0)
+			{
+				std::cout << mif.szDevice << '\n';
+				std::cout
+					<< "monitor rect:    "
+					<< '(' << mif.rcMonitor.left << ',' << mif.rcMonitor.top << ")-"
+					<< '(' << mif.rcMonitor.right << ',' << mif.rcMonitor.bottom << ")\n";
+				std::cout
+					<< "work rect:       "
+					<< '(' << mif.rcWork.left << ',' << mif.rcWork.top << ")-"
+					<< '(' << mif.rcWork.right << ',' << mif.rcWork.bottom << ")\n";
+			}
+			UINT xdpi, ydpi;
+			LRESULT success = wdpi_fns().GetDpiForMonitor(Arg1, dpi_function::MDT_EFFECTIVE_DPI, &xdpi, &ydpi);
+			if (success == S_OK)
+			{
+				std::cout << "DPI (effective): " << xdpi << ',' << ydpi << '\n';
+			}
+			success = wdpi_fns().GetDpiForMonitor(Arg1, dpi_function::MDT_ANGULAR_DPI, &xdpi, &ydpi);
+			if (success == S_OK)
+			{
+				std::cout << "DPI (angular):   " << xdpi << ',' << ydpi << '\n';
+			}
+			success = wdpi_fns().GetDpiForMonitor(Arg1, dpi_function::MDT_RAW_DPI, &xdpi, &ydpi);
+			if (success == S_OK)
+			{
+				std::cout << "DPI (raw):       " << xdpi << ',' << ydpi << '\n';
+			}
+			DEVMODEA dm;
+			dm.dmSize = sizeof(DEVMODEA);
+			if (::EnumDisplaySettingsA(mif.szDevice, ENUM_CURRENT_SETTINGS, &dm) != 0)
+			{
+				std::cout << "BPP:             " << dm.dmBitsPerPel << '\n';
+				std::cout << "resolution:      " << dm.dmPelsWidth << ',' << dm.dmPelsHeight << '\n';
+				std::cout << "frequency:       " << dm.dmDisplayFrequency << '\n';
+			}
+			std::cout << '\n';
+			return TRUE;
+		},  0);
+		} // end of dpi_debugging
+    }
+	 
 
 	//This function is defined in bedrock_windows.cpp
 	HINSTANCE windows_module_handle();
@@ -495,21 +556,43 @@ namespace detail{
             HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
             UINT x_dpi, y_dpi;
             if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
-				if (wdpi_fns().GetSystemMetricsForDpi)
-					return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, x_dpi), 
-								      wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, y_dpi));  //  x_dpi != y_dpi ?? 
+			{
+				if constexpr (dpi_debugging) 
+					std::cout << "primary_monitor_size(): DPI= " << x_dpi << " x " << y_dpi << std::endl;
+				if ( wdpi_fns().GetSystemMetricsForDpi )
+					return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, x_dpi),
+									  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, y_dpi));  //  x_dpi != y_dpi ?? 
 				else // fallback to GetSystemMetrics
 					return nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), x_dpi, 96),
-						              MulDiv(::GetSystemMetrics(SM_CYSCREEN), y_dpi, 96));
+									  MulDiv(::GetSystemMetrics(SM_CYSCREEN), y_dpi, 96));
+			}
         }
 
 		std::size_t dpi = native_interface::system_dpi();  // originaly got from UINT or int: safe to get back to that
+		if constexpr (dpi_debugging) std::cout << "primary_monitor_size(): DPI= " << dpi << std::endl;
 
-		if (wdpi_fns().GetSystemMetricsForDpi) 
+		if (false) //wdpi_fns().GetSystemMetricsForDpi) 
         {
-            return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
+            auto sz = nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
+							              wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
+			if constexpr (dpi_debugging) 
+				std::cout << "primary_monitor_size() with GetSystemMetricsForDpi: size= " << sz.width << " x " << sz.height << std::endl;
+			
+		    sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), int(dpi), 96),
+						              MulDiv(::GetSystemMetrics(SM_CYSCREEN), int(dpi), 96));
+		    if constexpr (dpi_debugging) 
+				std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
+			
+
+			return nana::size(wdpi_fns().GetSystemMetricsForDpi(SM_CXSCREEN, UINT(dpi)), 
 							  wdpi_fns().GetSystemMetricsForDpi(SM_CYSCREEN, UINT(dpi)));
         }
+
+		auto sz = nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), int(dpi), 96),
+						              MulDiv(::GetSystemMetrics(SM_CYSCREEN), int(dpi), 96));
+		if constexpr (dpi_debugging) 
+			std::cout << "primary_monitor_size() with GetSystemMetrics: size= " << sz.width << " x " << sz.height << std::endl;
+			
 		return nana::size(MulDiv(::GetSystemMetrics(SM_CXSCREEN), int(dpi), 96),
 						  MulDiv(::GetSystemMetrics(SM_CYSCREEN), int(dpi), 96));
 
@@ -585,6 +668,16 @@ namespace detail{
 			::RECT wd_area;
 			::GetWindowRect(native_wd, &wd_area);
 
+			if constexpr (dpi_debugging) {
+			// print for debuging the position of creation of the window pt
+			std::cout << "create_window(): pt= " << pt.x << ", " << pt.y << " with size= " << 100 << ", " << 100 << std::endl;
+			// with a client area of:
+			std::cout << "create_window(): client= " << client.right << ", " << client.top << " with size= " << client.right - client.left << ", "<< client.bottom - client.top << ", " << std::endl;
+			// and a window area of:
+			std::cout << "create_window(): wd_area= " << wd_area.right << ", " << wd_area.top << " with size= " << wd_area.right - wd_area.left << ", "<< wd_area.bottom - wd_area.top << ", " << std::endl;
+			}
+
+
 			//a dimension with borders and caption title
 			wd_area.right -= wd_area.left;	//wd_area.right = width
 			wd_area.bottom -= wd_area.top;	//wd_area.bottom = height
@@ -598,9 +691,19 @@ namespace detail{
 			int delta_h = static_cast<int>(r.height) - client.bottom;
 
 			::MoveWindow(native_wd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
+			// the window was moved to:
+			if constexpr (dpi_debugging) 
+				std::cout << "create_window(): moved to= " << wd_area.left << ", " << wd_area.top << " with size= " << wd_area.right + delta_w << ", "<< wd_area.bottom + delta_h << ", " << std::endl;
 
 			::GetClientRect(native_wd, &client);
 			::GetWindowRect(native_wd, &wd_area);
+						
+			if constexpr (dpi_debugging) {
+				// with a client area of:
+			std::cout << "create_window(): moved client= " << client.right << ", " << client.top << " with size= " << client.right - client.left << ", "<< client.bottom - client.top << ", " << std::endl;
+			// and a window area of:
+			std::cout << "create_window(): moved wd_area= " << wd_area.right << ", " << wd_area.top << " with size= " << wd_area.right - wd_area.left << ", "<< wd_area.bottom - wd_area.top << ", " << std::endl;
+			}
 
 			wd_area.right -= wd_area.left;
 			wd_area.bottom -= wd_area.top;
@@ -768,6 +871,10 @@ namespace detail{
 										r.x, r.y, r.width, r.height,
 										reinterpret_cast<HWND>(parent),	// The window is a child-window to desktop
 										0, windows_module_handle(), 0);
+
+			if constexpr (dpi_debugging) // print for debuging the position of creation of the window pt
+				std::cout << "create_child_window(): in " << r.x << ", " << r.y << " with size= " << r.width << ", " << r.height << std::endl;
+
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 
@@ -1993,10 +2100,14 @@ namespace detail{
             {
 			    dpi_fn.SetProcessDPIAware();
 			}
+			if constexpr (dpi_debugging) {
+				std::cout << "start_dpi_awareness(): system_dpi = " << system_dpi() << '\n';
+				print_monitor_dpi();
+			}
          #endif
 		}
 
-		std::size_t native_interface::window_dpi(native_window_type wd)
+		std::size_t native_interface::window_dpi(native_window_type wd)  /// \todo: add bool x_requested = true)
 		{
 #ifdef NANA_WINDOWS
 			if (!::IsWindow(reinterpret_cast<HWND>(wd)))
@@ -2022,6 +2133,7 @@ namespace detail{
 			}
 			if (wdpi_fns().GetDpiForMonitor)
 			{
+				if constexpr (dpi_debugging) std::cout << "GetDpiForMonitor" << std::endl;
 				// get the main monitor HWND
 				HWND primary_monitor = ::GetDesktopWindow();
 				HMONITOR pmonitor = ::MonitorFromWindow(primary_monitor, MONITOR_DEFAULTTOPRIMARY);
@@ -2031,8 +2143,12 @@ namespace detail{
 			}
 			if (wdpi_fns().GetDpiForSystem)  
 			{
+				if constexpr (dpi_debugging) std::cout << "GetDpiForSystem" << std::endl;
 				return wdpi_fns().GetDpiForSystem();
 			}
+
+			if constexpr (dpi_debugging) std::cout << "GetDeviceCaps" << std::endl;
+
 			//When DPI-aware APIs are not supported by the running Windows, it returns the system DPI
 			auto hdc = ::GetDC(nullptr);
 			auto dots = static_cast<unsigned>(::GetDeviceCaps(hdc, LOGPIXELSX));

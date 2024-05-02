@@ -11,6 +11,8 @@
  *	@author: Jinhao
  */
 
+//#include <iostream> // for debugging in make_center
+
 #include "detail/basic_window.hpp"
 #include <nana/gui/programming_interface.hpp>
 #include <nana/gui/detail/bedrock.hpp>
@@ -615,20 +617,21 @@ namespace api
 	{
 		return interface_type::cursor_position();
 	}
-	/// \todo: generalize dpi to v2 awareness 
+	/// generalized to dpi awareness v2
 	::nana::rectangle make_center(unsigned width, unsigned height) noexcept
 	{
 		auto screen = interface_type::primary_monitor_size();
+		// std::cout << "API::make_center() on screen: (" << screen.width << ", " << screen.height << ") " << std::endl;
 		return{
-			static_cast<int>(width > screen.width ? 0 : (screen.width - width) >> 1),
+			static_cast<int>(width  > screen.width  ? 0 : (screen.width  - width ) >> 1),
 			static_cast<int>(height > screen.height ? 0 : (screen.height - height) >> 1),
 			width, height
 		};
 	}
-
+	/// \todo: generalize dpi to v2 awareness 
 	::nana::rectangle make_center(window wd, unsigned width, unsigned height) noexcept
 	{
-		nana::rectangle r = make_center(width, height);
+		nana::rectangle r = make_center(width, height); /// \todo: generalize dpi to v2 awareness 
 
 		auto pos = r.position();
 		calc_window_point(wd, pos);
@@ -1677,7 +1680,7 @@ namespace api
 		
 		return{};
 	}
-
+	/// \todo: generalize dpi to v2 awareness
 	unsigned screen_dpi(bool x_requested)
 	{
 		return ::nana::platform_abstraction::screen_dpi(x_requested);
