@@ -30,6 +30,9 @@
 #endif // NANA_dpi_aware 
 inline bool config_dpi_aware = NANA_dpi_aware;
 
+/// \todo: replace by #ifdef DPI_DEBUGGING or just fully eliminate
+static constexpr bool dpi_debugging = true;  ///< set to true to print DPI relates values for debugging
+
 #include "c++defines.hpp"
 
 //The following basic configurations are ignored when NANA_IGNORE_CONF is defined.
