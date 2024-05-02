@@ -2110,12 +2110,31 @@ namespace detail{
 		std::size_t native_interface::window_dpi(native_window_type wd)  /// \todo: add bool x_requested = true)
 		{
 #ifdef NANA_WINDOWS
-			if (!::IsWindow(reinterpret_cast<HWND>(wd)))
-				return 0;
+			
+			HWND hwnd = reinterpret_cast<HWND>(wd);
 
-			auto& dpi_fn = wdpi_fns();
-			if (dpi_fn.GetDpiForWindow)
-				return dpi_fn.GetDpiForWindow(reinterpret_cast<HWND>(wd));
+			if (!::IsWindow(hwnd))
+				return system_dpi();
+
+			if (wdpi_fns().GetDpiForWindow)  // how to get x_dpi or y_dpi?
+				return wdpi_fns().GetDpiForWindow(hwnd);
+						
+			if (wdpi_fns().GetDpiForMonitor)
+			{
+				HMONITOR pmonitor = ::MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+				UINT x_dpi, y_dpi;
+				if (S_OK == wdpi_fns().GetDpiForMonitor(pmonitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
+					return  x_dpi;  // x_requested ? x_dpi, y_dpi
+			}
+
+			HDC hdc = ::GetDC(hwnd);  // the old way. Works in any Windows version
+			if (hdc)
+			{
+				auto dpi = static_cast<std::size_t>(::GetDeviceCaps(hdc, LOGPIXELSX)); // x_requested ? LOGPIXELSX : LOGPIXELSY
+				::ReleaseDC(nullptr, hdc);
+				return dpi;
+			}
+
 #endif
 			static_cast<void>(wd);	//eliminate the unused warning
 			return system_dpi();
