@@ -37,7 +37,68 @@ namespace nana
 namespace detail{
 
   #if defined(NANA_WINDOWS)
-		
+
+    // create helper function to scale nana::rectangle to dpi
+    nana::rectangle scale_to_dpi(const nana::rectangle& r, int dpi)
+    {
+        auto scaled_r = nana::rectangle(MulDiv(r.x,      dpi, 96), 
+								                     MulDiv(r.y,      dpi, 96),
+							                         MulDiv(r.width,  dpi, 96), 
+								                     MulDiv(r.height, dpi, 96));
+		if constexpr (dpi_debugging)
+		{
+			std::cout << "   orig rect= " << r.x            << ", " << r.y             <<
+			             "   with size= " << r.width        << ", " << r.height        << '\n';
+			std::cout << " scaled rect= " << scaled_r.x     << ", " << scaled_r.y      << 
+					     "   with size= " << scaled_r.width << ", " << scaled_r.height << '\n';
+		}
+		return scaled_r;
+    }
+	nana::rectangle unscale_dpi(const nana::rectangle& r, int dpi)
+    {
+        auto scaled_r = nana::rectangle(MulDiv(r.x,      96, dpi), 
+								                     MulDiv(r.y,      96, dpi),
+							                         MulDiv(r.width,  96, dpi), 
+								                     MulDiv(r.height, 96, dpi));
+		if constexpr (dpi_debugging)
+		{
+			std::cout << " unscaled rect= " << scaled_r.x     << ", " << scaled_r.y      << 
+					     "   with size= " << scaled_r.width << ", " << scaled_r.height << '\n';
+		}
+		return scaled_r;
+    }
+	// create helper function to scale ::RECT to dpi
+	::RECT scale_to_dpi(const ::RECT& r, int dpi)
+    {
+        auto scaled_r = ::RECT(MulDiv(r.left,   dpi, 96), 
+						            MulDiv(r.top,    dpi, 96),
+						            MulDiv(r.right,  dpi, 96), 
+							        MulDiv(r.bottom, dpi, 96));
+
+        if constexpr (dpi_debugging)
+        {
+            std::cout << "   orig rect= " << r.left                         << ", " << r.top                          <<
+                         "   with size= " << r.right - r.left               << ", " << r.bottom - r.top               << '\n';
+            std::cout << " scaled rect= " << scaled_r.left                  << ", " << scaled_r.top                   << 
+                         "   with size= " << scaled_r.right - scaled_r.left << ", " << scaled_r.bottom - scaled_r.top << '\n';
+        }
+        return scaled_r;
+    }
+	::RECT unscale_dpi(const ::RECT& r, int dpi)
+    {
+        auto scaled_r = ::RECT(MulDiv(r.left,   96, dpi), 
+							       MulDiv(r.top,    96, dpi),
+							       MulDiv(r.right,  96, dpi), 
+							       MulDiv(r.bottom, 96, dpi));
+
+        if constexpr (dpi_debugging)
+        {
+            std::cout << " unscaled rect= " << scaled_r.left                  << ", " << scaled_r.top                   << 
+                           "   with size= " << scaled_r.right - scaled_r.left << ", " << scaled_r.bottom - scaled_r.top << '\n';
+        }
+        return scaled_r;
+    }
+
 	struct DPI_AWARENESS_CONTEXT___ { int unused; }; ///< introduce named dummy type, avoid including windows.h
 	typedef struct DPI_AWARENESS_CONTEXT___* DPI_AWARENESS_CONTEXT_; ///< introduce named dummy pointer type
 
@@ -650,21 +711,12 @@ namespace detail{
 
 			if(app.floating)	style_ex |= WS_EX_TOPMOST;
 
-			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
 			int dpi = static_cast<int>(native_interface::window_dpi(owner));
 
 			if constexpr (dpi_debugging)
-				std::cout << "create_window():   orig rect= " << r.x     << ", " << r.y      << 
-											   " with size= " << r.width << ", " << r.height << std::endl;
-			nana::rectangle scaled_r = r;
-			scaled_r.x      = MulDiv(r.x,     dpi, 96);
-			scaled_r.y      = MulDiv(r.y,     dpi, 96);
-			scaled_r.width  = MulDiv(r.width, dpi, 96);
-			scaled_r.height = MulDiv(r.height,dpi, 96);
+				std::cout << "   ---  create_window():\n";
 
-			if constexpr (dpi_debugging)
-				std::cout << "create_window(): scaled rect= " << scaled_r.x     << ", " << scaled_r.y      << 
-											   " with size= " << scaled_r.width << ", " << scaled_r.height << std::endl;
+			nana::rectangle scaled_r = scale_to_dpi(r, dpi);
 
 			POINT pt = {scaled_r.x, scaled_r.y};
 
@@ -684,14 +736,14 @@ namespace detail{
 
 			if constexpr (dpi_debugging) {
 				// print for debuging the position of creation of the window pt
-				std::cout << "create_window():          pt= " << pt.x << ", " << pt.y << 
-					                           " with size= " << 100  << ", " << 100  << std::endl;
+				std::cout << "          pt= " << pt.x << ", " << pt.y << 
+					         "   with size= " << 100  << ", " << 100  << std::endl;
 				// with a client area of:
-				std::cout << "create_window():      client= " << client.left                << ", " << client.top                 << 
-					                      " with size= " << client.right - client.left << ", " << client.bottom - client.top << std::endl;
+				std::cout << "      client= " << client.left                << ", " << client.top                 << 
+					         "   with size= " << client.right - client.left << ", " << client.bottom - client.top << std::endl;
 				// and a window area of:
-				std::cout << "create_window():     wd_area= " << wd_area.left                 << ", " << wd_area.top                  << 
-					                           " with size= " << wd_area.right - wd_area.left << ", " << wd_area.bottom - wd_area.top << std::endl;
+				std::cout << "     wd_area= " << wd_area.left                 << ", " << wd_area.top                  << 
+					         "   with size= " << wd_area.right - wd_area.left << ", " << wd_area.bottom - wd_area.top << std::endl;
 				}
 
 
@@ -710,19 +762,19 @@ namespace detail{
 			::MoveWindow(native_wd, wd_area.left, wd_area.top, wd_area.right + delta_w, wd_area.bottom + delta_h, true);
 			// the window was moved to:
 			if constexpr (dpi_debugging) 
-				std::cout << "create_window():    moved to= " << wd_area.left                           << ", " << wd_area.top                           << 
-				                               " with size= " << wd_area.right + delta_w - wd_area.left << ", " << wd_area.bottom + delta_h -wd_area.top << std::endl;
+				std::cout << "    moved to= " << wd_area.left                           << ", " << wd_area.top                           << 
+				             "   with size= " << wd_area.right + delta_w - wd_area.left << ", " << wd_area.bottom + delta_h -wd_area.top << std::endl;
 
 			::GetClientRect(native_wd, &client);
 			::GetWindowRect(native_wd, &wd_area);
 						
 			if constexpr (dpi_debugging) {
 				// with a client area of:
-				std::cout << "create_window(): moved client= " << client.left                << ", " << client.top                 << 
-											    " with size= " << client.right - client.left << ", " << client.bottom - client.top << std::endl;
+				std::cout << " moved client= " << client.left                << ", " << client.top                 << 
+			   			     "    with size= " << client.right - client.left << ", " << client.bottom - client.top << std::endl;
 				// and a window area of:
-				std::cout << "create_window(): moved wd_area= " << wd_area.left                 << ", " << wd_area.top                  << 
-					                             " with size= " << wd_area.right - wd_area.left << ", " << wd_area.bottom - wd_area.top << std::endl;
+				std::cout << " moved wd_area= " << wd_area.left                 << ", " << wd_area.top                  << 
+					          "    with size= " << wd_area.right - wd_area.left << ", " << wd_area.bottom - wd_area.top << std::endl;
 			}
 
 			wd_area.right -= wd_area.left;
@@ -887,21 +939,13 @@ namespace detail{
 		{
 			if(nullptr == parent) return nullptr;
   #if defined(NANA_WINDOWS)
-			/// \todo: make DPI AWARE with AdjustWindowRectExForDpi ?
-			std::size_t dpi = native_interface::window_dpi(parent);
+			 
+			int dpi = static_cast<int>(native_interface::window_dpi(parent));
 
 			if constexpr (dpi_debugging)
-				std::cout << "create_child_window():   orig rect= " << r.x     << ", " << r.y      << 
-											   " with size= " << r.width << ", " << r.height << std::endl;
-			nana::rectangle scaled_r = r;
-			scaled_r.x      = MulDiv(r.x,      static_cast<int>(dpi), 96);
-			scaled_r.y      = MulDiv(r.y,      static_cast<int>(dpi), 96);
-			scaled_r.width  = MulDiv(r.width,  static_cast<int>(dpi), 96);
-			scaled_r.height = MulDiv(r.height, static_cast<int>(dpi), 96);
+				std::cout << "   ---  create_child_window():\n";
 
-			if constexpr (dpi_debugging)
-				std::cout << "create_child_window(): scaled rect= " << scaled_r.x     << ", " << scaled_r.y      << 
-											   " with size= " << scaled_r.width << ", " << scaled_r.height << std::endl;
+			nana::rectangle scaled_r = scale_to_dpi(r, dpi);
 
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilities for variation
 										L"NanaWindowInternal",
