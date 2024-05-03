@@ -2143,6 +2143,9 @@ namespace detail{
 		bool native_interface::calc_screen_point(native_window_type wd, nana::point& pos)
 		{
 #if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging) 
+				std::wcout << "   ---  calc_screen_point() " << window_caption(wd) << ":\n";
+			pos = scale_to_dpi(wd, pos.x, pos.y);
 			POINT point = {pos.x, pos.y};
 			if(::ClientToScreen(reinterpret_cast<HWND>(wd), &point))
 			{
