@@ -167,6 +167,7 @@ namespace detail{
 		using SetThreadDpiAwarenessContext_ftype  = HRESULT(__stdcall*)(DPI_AWARENESS_CONTEXT_);
 		using GetSystemMetrics_ftype              = int    (__stdcall*)(int                   );
 		using GetSystemMetricsForDpi_ftype        = int    (__stdcall*)(int, UINT             );
+		using MonitorFromPoint_ftype              = HMONITOR(__stdcall*)(POINT, DWORD         );
 
 		/// define function pointers members for each API
 		SetProcessDPIAware_ftype            SetProcessDPIAware            { nullptr }; ///< https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiaware
@@ -180,6 +181,7 @@ namespace detail{
 		SetThreadDpiAwarenessContext_ftype  SetThreadDpiAwarenessContext  { nullptr };
 		GetSystemMetrics_ftype              GetSystemMetrics              { nullptr };
 		GetSystemMetricsForDpi_ftype        GetSystemMetricsForDpi        { nullptr };
+		MonitorFromPoint_ftype              MonitorFromPoint              { nullptr };
 
 		dpi_function()
 		{
@@ -224,6 +226,9 @@ namespace detail{
 
 				this->GetSystemMetricsForDpi = reinterpret_cast<GetSystemMetricsForDpi_ftype>
                                 (::GetProcAddress(user32, "GetSystemMetricsForDpi"));
+
+				this->MonitorFromPoint = reinterpret_cast<MonitorFromPoint_ftype>
+                                (::GetProcAddress(user32, "MonitorFromPoint"));
 			}
  
 			/// Dynamically load Shcore.DLL to check these APIs are supported by the SDK and OS.
@@ -691,26 +696,29 @@ namespace detail{
   #endif
 	}
     	/// \todo: generalize dpi to v2 awareness 
-		rectangle native_interface::screen_area_from_point(const point& pos)
+		rectangle native_interface::screen_area_from_point(const point& pos) ///< unused ?
 		{
 #if defined(NANA_WINDOWS)
-			/// \todo: make DPI AWARE
-			typedef HMONITOR (__stdcall * MonitorFromPointT)(POINT,DWORD);
-
-			MonitorFromPointT mfp = reinterpret_cast<MonitorFromPointT>(::GetProcAddress(::GetModuleHandleA("User32.DLL"), "MonitorFromPoint"));
-			if(mfp)
+			// led assume somehow coordinates in the united global big and 'fake'-96 DPI sytem monitor are provided 
+			// in pos (POINT structure that specifies the point of interest in virtual-screen coordinates.)
+			if(wdpi_fns().MonitorFromPoint)
 			{
 				POINT native_pos = {pos.x, pos.y};
-				HMONITOR monitor = mfp(native_pos, 2 /*MONITOR_DEFAULTTONEAREST*/);
-
-				MONITORINFO mi;
-				mi.cbSize = sizeof mi;
-
-				/// \todo: make DPI AWARE
-				if(::GetMonitorInfo(monitor, &mi))
+				HMONITOR monitor = wdpi_fns().MonitorFromPoint(native_pos, 2 /*MONITOR_DEFAULTTONEAREST*/);
+				UINT x_dpi, y_dpi;
+                if (S_OK == wdpi_fns().GetDpiForMonitor(monitor, dpi_function::MDT_EFFECTIVE_DPI, &x_dpi, &y_dpi))
 				{
-					return rectangle(mi.rcWork.left, mi.rcWork.top,
-									mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top);
+					if constexpr (dpi_debugging) 
+						std::cout << "screen_area_from_point(): DPI= " << x_dpi << " x " << y_dpi << std::endl;
+					MONITORINFO mi;
+					mi.cbSize = sizeof mi;
+ 
+					if(::GetMonitorInfo(monitor, &mi))
+					{
+						return unscale_dpi(rectangle(mi.rcWork.left,                   mi.rcWork.top,
+										             mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top),
+										   x_dpi);
+					}
 				}
 			}
 #else

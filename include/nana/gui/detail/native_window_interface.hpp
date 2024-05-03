@@ -50,8 +50,7 @@ namespace detail
 		static void affinity_execute(native_window_type, bool post, std::function<void()>&&);
 
 		static nana::size	primary_monitor_size(); ///< already 'DPI' scaled size
-		/// \todo: generalize dpi to v2 awareness 
-		static rectangle screen_area_from_point(const point&);
+		static rectangle screen_area_from_point(const point&);  ///< unused ?
 		static window_result create_window(native_window_type, bool nested, const rectangle&, const appearance&);
 		static native_window_type create_child_window(native_window_type, const rectangle&);
 
