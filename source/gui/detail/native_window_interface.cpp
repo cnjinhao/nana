@@ -1427,7 +1427,7 @@ namespace detail{
 		{
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging)
-				std::cout << "   ---  window_position():\n";
+				std::wcout << "   ---  window_position() " << window_caption(wd) << ":\n";
 
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), & r);
@@ -1836,7 +1836,7 @@ namespace detail{
 		{
 #if defined(NANA_WINDOWS)
 			if constexpr (dpi_debugging)
-				std::cout << "   ---  get_window_rect():\n";
+				std::wcout << "   ---  get_window_rect() " << window_caption(wd) << ":\n";
 			::RECT winr;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), &winr);
 			winr = unscale_dpi(winr, static_cast<int>(native_interface::window_dpi(wd)));
@@ -1956,6 +1956,8 @@ namespace detail{
 		nana::point native_interface::cursor_position()
 		{
 #if defined(NANA_WINDOWS)
+			// return system point, unscaled
+			//if constexpr (dpi_debugging) std::wcout << "   ---  cursor_position():\n";
 			POINT point;
 			::GetCursorPos(&point);
 			return nana::point(point.x, point.y);
@@ -2038,7 +2040,14 @@ namespace detail{
 		void native_interface::caret_create(native_window_type wd, const ::nana::size& caret_sz)
 		{
 #if defined(NANA_WINDOWS)
-			::CreateCaret(reinterpret_cast<HWND>(wd), 0, int(caret_sz.width), int(caret_sz.height));
+			if constexpr 
+				(dpi_debugging) std::wcout << "   ---  caret_create() " << window_caption(wd) << ":\n";
+
+			auto p = scale_to_dpi(wd, static_cast<int>(caret_sz.width), 
+								                static_cast<int>(caret_sz.height));
+			
+			::CreateCaret(reinterpret_cast<HWND>(wd), 0, p.x, p.y);
+
 #elif defined(NANA_X11)
 			nana::detail::platform_scope_guard psg;
 			restrict::spec.caret_open(wd, caret_sz);

@@ -84,7 +84,7 @@ namespace detail
 		static void	window_caption(native_window_type, const native_string_type&);
 		static native_string_type	window_caption(native_window_type);
 		static void	capture_window(native_window_type, bool);
-		static nana::point	cursor_position();
+		static nana::point	cursor_position(); ///< return system point, unscaled
 
 		static native_window_type get_window(native_window_type wd, window_relationship);
 		static native_window_type parent_window(native_window_type child, native_window_type new_parent, bool returns_previous);
