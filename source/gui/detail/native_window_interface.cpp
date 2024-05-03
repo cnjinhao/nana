@@ -2067,9 +2067,12 @@ namespace detail{
 #endif
 		}
 
-		void native_interface::caret_pos(native_window_type wd, const point& pos)
+		void native_interface::caret_pos(native_window_type wd, const point& pos_ori)
 		{
 #if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging) std::wcout << "   ---  caret_pos() " << window_caption(wd) << ":\n";
+			auto pos = scale_to_dpi(wd, pos_ori.x, pos_ori.y);
+
 			if(::GetCurrentThreadId() != ::GetWindowThreadProcessId(reinterpret_cast<HWND>(wd), 0))
 			{
 				auto cp = new nana::detail::messages::caret;
