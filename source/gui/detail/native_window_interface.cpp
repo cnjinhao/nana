@@ -758,7 +758,7 @@ namespace detail{
 			int dpi = static_cast<int>(native_interface::window_dpi(owner));
 
 			if constexpr (dpi_debugging)
-				std::cout << "   ---  create_window():\n";
+				std::wcout << "   ---  create_window():\n";  // on:" << window_caption(owner) << "\n";
 
 			nana::rectangle scaled_r = scale_to_dpi(r, dpi);
 
@@ -1470,7 +1470,7 @@ namespace detail{
 		void native_interface::move_window(native_window_type wd, int x, int y)
 		{
 #if defined(NANA_WINDOWS)
-			if constexpr (dpi_debugging) std::cout << "   ---  move_window(x,y):\n";
+			if constexpr (dpi_debugging) std::wcout << "   ---  move_window(x,y):" << window_caption(wd) << "\n";
 			auto p = scale_to_dpi(wd, x, y);
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), &r);
