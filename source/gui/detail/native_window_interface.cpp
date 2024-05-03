@@ -2169,11 +2169,13 @@ namespace detail{
 		bool native_interface::calc_window_point(native_window_type wd, nana::point& pos)
 		{
 #if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging) 
+				std::wcout << "   ---  calc_window_point() " << window_caption(wd) << ":\n";
+
 			POINT point = {pos.x, pos.y};
 			if(::ScreenToClient(reinterpret_cast<HWND>(wd), &point))
 			{
-				pos.x = point.x;
-				pos.y = point.y;
+				pos = unscale_dpi(wd, pos.x, pos.y);
 				return true;
 			}
 #elif defined(NANA_X11)
