@@ -1728,14 +1728,22 @@ namespace detail{
 			frame_extents fm_extents{0, 0, 0, 0};
 
 	#if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging)
+				std::cout << "   ---  window_frame_extents():\n";
+			int dpi = static_cast<int>(native_interface::window_dpi(wd));
+
 			::RECT client;
-			::GetClientRect(reinterpret_cast<HWND>(wd), &client);	//The right and bottom of client by GetClientRect indicate the width and height of the area
+			::GetClientRect(reinterpret_cast<HWND>(wd), &client);
+			//The right and bottom of client by GetClientRect indicate the width and height of the area
 			::RECT wd_area;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), &wd_area);
 
-			fm_extents.left = client.left - wd_area.left;
+			client  = unscale_dpi(client, dpi);  // first unscale to disminish rounding errors on small values
+			wd_area = unscale_dpi(wd_area, dpi);
+
+			fm_extents.left  = client.left - wd_area.left;
 			fm_extents.right = wd_area.right - client.right;
-			fm_extents.top = client.top - wd_area.top;
+			fm_extents.top   = client.top - wd_area.top;
 			fm_extents.bottom = wd_area.bottom - client.bottom;
 	#elif defined(NANA_X11)
 			Atom type;
