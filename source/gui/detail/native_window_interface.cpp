@@ -38,6 +38,23 @@ namespace detail{
 
   #if defined(NANA_WINDOWS)
 
+    nana::point scale_to_dpi(int x, int y, int dpi)
+    {
+        auto  scaled_p = nana::point(MulDiv(x, dpi, 96), 
+									           MulDiv(y, dpi, 96));
+		if constexpr (dpi_debugging)
+		{
+		    std::cout << "   orig point= " << x          << ", " << y          << '\n';
+		    std::cout << " scaled point= " << scaled_p.x << ", " << scaled_p.y << '\n';
+		}
+		return scaled_p;
+    }
+	nana::point scale_to_dpi(native_window_type wd, int x, int y)
+    {
+		int dpi = static_cast<int>(native_interface::window_dpi(wd));
+		return scale_to_dpi(x, y, dpi);
+    }
+
     // create helper function to scale nana::rectangle to dpi
     nana::rectangle scale_to_dpi(const nana::rectangle& r, int dpi)
     {
@@ -53,6 +70,11 @@ namespace detail{
 					     "   with size= " << scaled_r.width << ", " << scaled_r.height << '\n';
 		}
 		return scaled_r;
+    }
+	nana::rectangle scale_to_dpi(native_window_type wd, const nana::rectangle& r)
+    {
+		int dpi = static_cast<int>(native_interface::window_dpi(wd));
+		return scale_to_dpi(r, dpi);
     }
 	nana::rectangle unscale_dpi(const nana::rectangle& r, int dpi)
     {
@@ -84,6 +106,12 @@ namespace detail{
         }
         return scaled_r;
     }
+	::RECT scale_to_dpi(native_window_type wd, const ::RECT& r)
+    {
+		int dpi = static_cast<int>(native_interface::window_dpi(wd));
+		return scale_to_dpi(r, dpi);
+    }
+
 	::RECT unscale_dpi(const ::RECT& r, int dpi)
     {
         auto scaled_r = ::RECT(MulDiv(r.left,   96, dpi), 
@@ -939,13 +967,10 @@ namespace detail{
 		{
 			if(nullptr == parent) return nullptr;
   #if defined(NANA_WINDOWS)
-			 
-			int dpi = static_cast<int>(native_interface::window_dpi(parent));
 
-			if constexpr (dpi_debugging)
-				std::cout << "   ---  create_child_window():\n";
+			if constexpr (dpi_debugging) std::cout << "   ---  create_child_window():\n";
 
-			nana::rectangle scaled_r = scale_to_dpi(r, dpi);
+			nana::rectangle scaled_r = scale_to_dpi(parent, r);
 
 			HWND handle = ::CreateWindowEx(WS_EX_CONTROLPARENT,		// Extended possibilities for variation
 										L"NanaWindowInternal",
