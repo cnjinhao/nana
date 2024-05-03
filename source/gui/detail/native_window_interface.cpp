@@ -54,7 +54,15 @@ namespace detail{
 		int dpi = static_cast<int>(native_interface::window_dpi(wd));
 		return scale_to_dpi(x, y, dpi);
     }
-
+	nana::point unscale_dpi(native_window_type wd, int x, int y)
+	{
+	    int dpi = static_cast<int>(native_interface::window_dpi(wd));
+	    auto scaled_p = nana::point(MulDiv(x, 96, dpi), 
+									          MulDiv(y, 96, dpi));
+	    if constexpr (dpi_debugging)
+	        std::cout << " unscaled point= " << scaled_p.x << ", " << scaled_p.y << '\n';
+	    return scaled_p;
+	}
     // create helper function to scale nana::rectangle to dpi
     nana::rectangle scale_to_dpi(const nana::rectangle& r, int dpi)
     {
@@ -1418,6 +1426,9 @@ namespace detail{
 		nana::point native_interface::window_position(native_window_type wd)
 		{
 #if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging)
+				std::cout << "   ---  window_position():\n";
+
 			::RECT r;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), & r);
 			HWND coord_wd = ::GetWindow(reinterpret_cast<HWND>(wd), GW_OWNER);
@@ -1429,9 +1440,9 @@ namespace detail{
 			{
 				::POINT pos = {r.left, r.top};
 				::ScreenToClient(coord_wd, &pos);
-				return nana::point(pos.x, pos.y);
+				return unscale_dpi(wd, pos.x, pos.y);
 			}
-			return nana::point(r.left, r.top);
+			return unscale_dpi(wd, r.left, r.top);
 #elif defined(NANA_X11)
 			point scr_pos;
 			nana::detail::platform_scope_guard lock;
