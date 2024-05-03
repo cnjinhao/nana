@@ -1832,11 +1832,15 @@ namespace detail{
 #endif
 		}
 
-		void native_interface::get_window_rect(native_window_type wd, rectangle& r)
+		void native_interface::get_window_rect(native_window_type wd, rectangle& r) ///< unused ?
 		{
 #if defined(NANA_WINDOWS)
+			if constexpr (dpi_debugging)
+				std::cout << "   ---  get_window_rect():\n";
 			::RECT winr;
 			::GetWindowRect(reinterpret_cast<HWND>(wd), &winr);
+			winr = unscale_dpi(winr, static_cast<int>(native_interface::window_dpi(wd)));
+
 			r.x = winr.left;
 			r.y = winr.top;
 			r.width = winr.right - winr.left;

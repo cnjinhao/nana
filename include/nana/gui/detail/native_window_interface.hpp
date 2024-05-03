@@ -80,7 +80,7 @@ namespace detail
 
 		static frame_extents window_frame_extents(native_window_type);
 		static bool	window_size(native_window_type, const size&);
-		static void	get_window_rect(native_window_type, rectangle&);
+		static void	get_window_rect(native_window_type, rectangle&);  ///< unused ?
 		static void	window_caption(native_window_type, const native_string_type&);
 		static native_string_type	window_caption(native_window_type);
 		static void	capture_window(native_window_type, bool);
