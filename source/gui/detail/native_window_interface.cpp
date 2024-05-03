@@ -2175,7 +2175,9 @@ namespace detail{
 			POINT point = {pos.x, pos.y};
 			if(::ScreenToClient(reinterpret_cast<HWND>(wd), &point))
 			{
-				pos = unscale_dpi(wd, pos.x, pos.y);
+				//pos = unscale_dpi(wd, pos.x, pos.y); // work unscaled? wd_manager().find_window(native_handle, pos);
+				pos.x = point.x;
+				pos.y = point.y;
 				return true;
 			}
 #elif defined(NANA_X11)
